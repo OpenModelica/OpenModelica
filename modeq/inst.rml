@@ -354,7 +354,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(env,mods,pre,csets,ci_state, SCode.CLASSDEF(n,_,_,c))
 	  => (dae,env',csets,ci_state,[])
 
-	(**  A variable
+	(**  A component
 	 **
 	 ** This is the rule for instantiating a model component.  A
 	 ** component can be a structured subcomponent or a variable,
@@ -399,7 +399,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	elab_arraydim(env,ad,eq) => dims &
 
 	(** Instantiate the component *)
-	inst_var(env,mod',pre,csets,n,cl,attr,eq,dims,[])
+	inst_var(env,mod',pre,csets,n,cl,attr,dims,[])
 	  => (dae1,csets',ty) &
 
 	(** The environment is extended with the new variable *)
@@ -454,7 +454,7 @@ end
 (** relation: inst_var *)
 
 relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		     SCode.Class,SCode.Attributes,Mod.EqMod option,
+		     SCode.Class,SCode.Attributes,
 		     int list, int list)
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
@@ -475,7 +475,7 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	list_append(daex,dae3) => dae
 	--------------------------
 	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
-		 eq,[],idxs)
+		 [],idxs)
           => (dae,csets',ty)
 
   rule	print "= inst_array mod: " & print n & Mod.print_mod mod & print "\n" &
@@ -483,12 +483,12 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	  => (dae, csets', ty) &
 	Types.lift_array(ty,SOME(dim)) => ty'
 	-------------------------------
-	inst_var(env,mod,pre,csets,n,cl,attr,eq,dim::dims,idxs)
+	inst_var(env,mod,pre,csets,n,cl,attr,dim::dims,idxs)
           => (dae,csets',ty')
 
   rule	print "- inst_var failed: " & print n & print "\n"
 	--------------------------------------------------
-	inst_var(_,_,_,_,n,_,_,_,_,_) => fail
+	inst_var(_,_,_,_,n,_,_,_,_) => fail
 	
 end
 
@@ -504,7 +504,7 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	  => ([], csets, Types.T_NOTYPE)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
-	inst_var(env,mod',pre,csets,n,cl,attr,NONE,dims,i::idxs)
+	inst_var(env,mod',pre,csets,n,cl,attr,dims,i::idxs)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
 	inst_array(env,mod,pre,csets',n,(cl,attr),i',stop,dims,idxs)
@@ -1551,6 +1551,14 @@ end
 relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  => DAE.Element list =
 
+(*!ignorecode*)
+	(* This is pretty ugly, but I don't want to infect the report *)
+  rule  RTOpts.modelica_output => true
+	------------------------------
+	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME((e,prop2))))
+	  => [DAE.VARVAL(e)]
+(*!includecode*)
+	  
   rule  inst_eq_equation(Exp.CREF(cr),
 			 Static.PROP(ty1,false(*FIXME*)), e,prop2) => dae
 	-----------------------------------------------
