@@ -263,23 +263,23 @@ module Absyn:
 	       | CREF of ComponentRef
 	       | STRING of string
 	       | BOOL of bool
-	       | BINARY of Exp * Operator * Exp
-	       | UNARY of Operator * Exp
-	       | LBINARY of Exp * Operator * Exp
-	       | LUNARY of Operator * Exp
-	       | RELATION of Exp * Operator * Exp
-	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list 
-	       | CALL of ComponentRef * FunctionArgs
+	       | BINARY of Exp * Operator * Exp (* Binary operations, e.g. a*b *)
+	       | UNARY of Operator * Exp (* Unary operations, e.g. -(x) *)
+	       | LBINARY of Exp * Operator * Exp (* Logical binary operations: and, or *)
+	       | LUNARY of Operator * Exp (* Logical unary operations: not *)
+	       | RELATION of Exp * Operator * Exp (* Relations, e.g. a >= 0 *)
+	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list  (* If expressions *)
+	       | CALL of ComponentRef * FunctionArgs (* Function calls *)
 (*	       | ARRAY of Exp list *)
 
 (*P.R		ARRAY consists of an vector of the dimension sizes and an vector consiting of the vector data.*)	
 	       | ARRAY of Exp list
 
 	       | MATRIX of Exp list list
-	       | RANGE of Exp * Exp option * Exp
-	       | TUPLE of Exp list (*PR.*)
-	       | END
-	       | CODE of Code
+	       | RANGE of Exp * Exp option * Exp (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
+	       | TUPLE of Exp list (*PR.*) (* Tuples used in function calls returning several values *)
+	       | END (* array access operator for last element, e.g. a[end]:=1; *)
+	       | CODE of Code (* Modelica AST Code constructors *)
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
 

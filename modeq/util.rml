@@ -61,6 +61,7 @@ module Util :
   relation list_map_1: ('a list, ('a, 'b) => 'c, 'b) => 'c list
   relation list_map_2: ('a list, ('a, 'b,'c) => 'd, 'b,'c) => 'd list 
   relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list
+  relation list_fold: ('a list, ('a,'b)=> 'b, 'b) => 'b	  
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list 
   relation list_list_reverse: ('a list list) => 'a list list
   relation list_thread : ('a list, 'a list) => 'a list
@@ -73,6 +74,7 @@ module Util :
   relation list_deletemember: (''a list,''a) => ''a list
   relation list_getmember_p: (''a, ''a list,(''a,''a) => bool ) => ''a
   relation list_replaceat: (''a, int, ''a list) => ''a list 
+  relation list_replaceat_with_fill: (''a, int, ''a list,''a) => ''a list 
   relation list_union_elt: (''a , ''a list) => ''a list
   relation list_union_elt_p: (''a , ''a list , (''a, ''a) => bool) 
 	  => ''a list 
@@ -287,6 +289,23 @@ relation list_list_map : ('a list list, 'a => 'b) => 'b list list =
 	-------------------
 	list_list_map (f::r,fn) => f'::r'
 
+end
+(** relation: list_fold
+ ** Takes a list and a relation operating on list elements having an extra argument that is 'updated'
+ ** thus returned from the relation. The third argument is the startvalue for the updated value.
+ ** list_fold will call the relation for each element in a sequence, updating the startvalue 
+ ** For example,
+ ** list_fold([1,2,3],int_add,2) =>  8
+ ** int_add(1,2) => 3, int_add(2,3) => 5, int_add(3,5) => 8 
+**)
+relation list_fold: ('a list, ('a,'b)=> 'b, 'b) => 'b =
+
+  axiom	list_fold([],r,b) => b
+	
+  rule	r(l,b) => b' &
+	list_fold(lst,r,b') => b'' 
+	--------------------------
+	list_fold(l::lst,r,b) => b''
 end
 
 (** relation: list_list_reverse
@@ -563,13 +582,14 @@ relation list_list_union_p:  (''a list list, (''a,''a) => bool) => ''a list =
 end
 
 (** relation: list_replaceat
- ** Takes an element, a position and a list and replaces the value at the given position in the list.
+ ** Takes an element, a position and a list and replaces the value at the given position in 
+ ** the list. Position is an integer between 0 and n-1 for a list of n elements
  ** For example,
  ** list_replaceat("A", 2, ["a","b","c"]) => ["a","b","A"]
  **)
 relation list_replaceat: (''a, int, ''a list) => ''a list =
 
-  axiom list_replaceat(x,_,[]) => []
+  (*axiom list_replaceat(x,-1,[]) => []*)
 
   axiom	 list_replaceat (x,0,y::ys) => x::ys
 
@@ -578,7 +598,50 @@ relation list_replaceat: (''a, int, ''a list) => ''a list =
 	-----------------------------
 	list_replaceat(x,n,y::ys) => y::res
 
+ (* rule	print "-list_replaceat failed\n" 
+	-----------------------
+	list_replaceat(_,_,_) => fail*)
 end
+
+(** relation: list_replaceat_with_fill
+ ** Takes 
+ ** - an element, 
+ ** - a position 
+ ** - a list and 
+ ** - a fill value 
+ ** The relation replaces the value at the given position in the list, if the given position is 
+ ** out of range, the fill value is used to padd the list up to that element position and then
+ ** insert the value at the position
+ ** 
+ ** For example,
+ ** list_replaceat_withfill("A", 5, ["a","b","c"],"dummy") => ["a","b","c","dummy","A"]
+ **)
+relation list_replaceat_with_fill: (''a, int, ''a list,''a) => ''a list =
+
+  axiom list_replaceat_with_fill(x,0,[],fillv) => [x]
+	
+  axiom	list_replaceat_with_fill (x,0,y::ys,fillv) => x::ys
+	
+  axiom	list_replaceat_with_fill(x,1,[],fillv) => [fillv,x]
+	
+  rule	int_gt(numfills,1) => true &
+	int_sub(numfills,1) => numfills' &
+	list_fill(fillv,numfills') => res &
+	list_append(res,[x]) => res'
+	---------------------------------
+	list_replaceat_with_fill(x,numfills,[],fillv) => res'
+
+  rule	int_ge(n,1) => true & int_sub(n,1) => nn &
+	list_replaceat_with_fill(x,nn,ys,fillv) => res
+	----------------------------------------------
+	list_replaceat_with_fill(x,n,y::ys,fillv) => y::res
+
+  rule	print "-list_replaceat_with_fill failed row: " & int_string p => pos &
+	print pos & print "\n" 
+	----------------------
+	list_replaceat_with_fill(_,p,_,_) => fail
+end
+
 
 (** relation: list_reduce
  ** Takes a list and a relation operating on two elements of the list.

@@ -1412,6 +1412,8 @@ end
 
 relation print_component_ref_str : ComponentRef => string =
 
+  axiom	print_component_ref_str(CREF_IDENT(s,[])) => s (* optimize *)
+
   rule	print_component_ref2_str (s,subs) => str
 	----------------------------
 	print_component_ref_str CREF_IDENT(s,subs) => str
@@ -1449,7 +1451,7 @@ relation print_component_ref2_str : (Ident, Subscript list) => string =
 
   rule	RTOpts.modelica_output => false &
 	print_list_str (l, print_subscript_str, ",") => str &
-	string_append (s, "<cref>[") => str' &
+	string_append (s, "[") => str' &
 	string_append (str', str) => str'' &
 	string_append (str'', "]") => str'''
 	-------------------------------------------------------
