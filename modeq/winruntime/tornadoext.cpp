@@ -537,7 +537,7 @@ extern "C"
             }
           }
         if(index > 0) {
-          output_str << "  SetNoSubModels(" << index << ");" << output;
+			output_str << "  SetNoSubModels(" << index << ");" << output.str();
         }
       }
     }
