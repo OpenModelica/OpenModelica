@@ -80,14 +80,14 @@ SUBDIRS	= runtime absyn_builder
 .SUFFIXES: .o .rml .h
 .PHONY: all subdirs report
 
-%.o %.h: %.rml %.rml.impl
-	$(MYRML) "$(RML)" $*.rml
+#%.o %.h: %.rml %.rml.impl
+#	$(MYRML) "$(RML)" $*.rml
 
-#%.o : %.rml
-#	$(RML) -c $<
-#
-#%.h : %.rml
-#	$(RML) -c $<
+%.o : %.rml
+	$(RML) -c $<
+
+%.h : %.rml
+	$(RML) -c $<
 
 
 all : $(SRCO) subdirs $(PROG)

@@ -28,5 +28,3 @@ module Parser:
   relation parsestring: string => Absyn.Program
   relation parsestringexp: string => Interactive.InteractiveStmts
 end
-
-

@@ -85,3 +85,280 @@ relation print_cache: (Cache) => ()
 val empty_cache : Cache
 
 end
+
+
+with "dump.rml"
+val empty_cache = CACHE([],[])
+
+
+(** - Relations *)
+relation add_class : (Cache, SCode.Class, Env.Env, Absyn.Path option, Absyn.Path) 
+	  => Cache =
+
+  rule	(*print "cache before adding:\n" & print_cache cache &*)
+	update_cache(cache, Env.CLASS(c,env), path, classname) => cache'
+	(*& print "cache after adding:\n" & print_cache cache'*)
+	----------------------------------------------------------------
+	add_class(cache,c,env,path,classname) => cache'
+
+  rule	print "- add_class failed\n" 
+	-------------------
+	add_class(_,_,_,_,_) => fail
+end
+
+relation add_variable: (Cache,Types.Var, Absyn.Path option, Absyn.Path) => Cache =
+
+  rule	update_cache(cache, Env.VAR(var,NONE,true), path, varname) => cache'
+	--------------------------------------------------------------------
+	add_variable(cache, var, path, varname) => cache'
+end
+	
+relation add_type: (Cache, Types.Type, Absyn.Path option, Absyn.Path) => Cache =
+
+  rule	update_cache(cache, Env.TYPE(tp), path, typename) => cache'
+	-----------------------------------------------------------
+	add_type(cache, tp, path, typename) => cache'
+end
+
+relation get_class: (Cache, Absyn.Path option, Absyn.Path) => (SCode.Class, Env.Env)  =
+
+  rule	get_envitems(cache, path) => envitem &
+	get_envitem_from_envitems(envitem, classname) => eitem &
+	get_class_from_envitem(eitem) => (class,env)
+(*	& print "got_class, cache:" & print_cache cache*)
+	----------------------------------------------------------
+	get_class(cache, path, classname) => (class, env)
+end
+
+relation get_variable: (Cache, Absyn.Path option, Absyn.Path) => Types.Var =
+
+  rule	get_envitems(cache, path) => envitem &
+	get_envitem_from_envitems(envitem, classname) => eitem &
+	get_var_from_envitem(eitem) => v
+	-------------------------------------------------
+	get_variable(cache, path, classname) => v
+end
+
+relation get_type: (Cache, Absyn.Path option, Absyn.Path) => Types.Type =
+
+  rule	get_envitems(cache, path) => envitem &
+	get_envitem_from_envitems(envitem, classname) => eitem &
+	get_type_from_envitem(eitem) => tp
+	----------------------------------------------
+	get_type(cache, path, classname) => tp
+end
+
+(* Private relations *)
+
+relation update_cache: (Cache, Env.Item, Absyn.Path option, Absyn.Path) => Cache =
+
+  rule	update_eitems(topeitems,item,name) => topeitems'
+	------------------------------------------------
+	update_cache(CACHE(pitems,topeitems),item,NONE,name) 
+	  => CACHE(pitems,topeitems')
+
+  rule	update_eitems([],item,name) => eitems
+	-------------------------------------
+	update_cache (CACHE([],topeitems), item, SOME(Absyn.IDENT(id)), name) 
+	  => CACHE([PATHITEM(id,[],eitems)],topeitems)
+
+  rule	update_cache(CACHE([],topeitems), item, SOME(path), name) 
+	  => CACHE(pitems',topeitems')
+	-----------------------------------------------------------
+	update_cache (CACHE([],topeitems), item, SOME(Absyn.QUALIFIED(id,path)), name) 
+	  => CACHE([PATHITEM(id,pitems',[])],topeitems')
+
+  rule	id = id2 &
+	update_eitems(eitems,item,name) => eitems'
+	------------------------------------------
+	update_cache(CACHE(PATHITEM(id,pitems,eitems)::xs,topeitems),item, 
+		     SOME(Absyn.IDENT(id2)), name)
+	  => CACHE(PATHITEM(id,pitems,eitems')::xs,topeitems)
+
+  rule	not id = id2 &
+	update_cache(CACHE(xs,topeitems),item,SOME(Absyn.IDENT(id2)),name) 
+	  => CACHE(xs',topeitems')
+	---------------------------------------------------------------
+	update_cache(CACHE((x as PATHITEM(id,_,_))::xs,topeitems),item, 
+		     SOME(Absyn.IDENT(id2)),name)
+	  => CACHE(x::xs',topeitems')
+	  
+  rule	id = id2 &
+	update_cache(CACHE(pitems,topeitems), item, SOME(path), name) 
+	  => CACHE(pitems',topeitems')
+	----------------------------------
+	update_cache(CACHE(PATHITEM(id,pitems,eitems)::xs,topeitems), item, 
+		     SOME(Absyn.QUALIFIED(id2,path)),name)
+	  => CACHE(PATHITEM(id, pitems', eitems)::xs,topeitems')
+
+  rule	not id = id2 &
+	update_cache(CACHE(xs,topeitems), item, SOME(path), name) 
+	  => CACHE(xs',topeitems')
+	----------------------------------
+	update_cache(CACHE((x as PATHITEM(id,_,_))::xs,topeitems),item, 
+		     SOME(path as Absyn.QUALIFIED(id2,_)), name)
+	  => CACHE(x::xs',topeitems')
+
+  rule	print "- update_cache failed\n" 
+	-------------------------------
+	update_cache(_,_,_,_) => fail
+end
+
+relation update_eitems: (EnvItem list, Env.Item, Absyn.Path) => EnvItem list =
+
+  axiom	update_eitems ([],item, Absyn.IDENT(id)) => [ENVITEM(id,SOME(item),[])]
+
+  rule	update_eitems([],item,path) => envitems
+	---------------------------------------
+	update_eitems([],item,Absyn.QUALIFIED(id,path)) => [ENVITEM(id,NONE,envitems)]
+	
+  rule	id = id2
+	----------------------------
+	update_eitems(ENVITEM(id,item,items)::xs,item',Absyn.IDENT(id2)) 
+	  => ENVITEM(id,SOME(item'),items)::xs
+
+  rule	not id = id2 &
+	update_eitems(xs,item',Absyn.IDENT(id2)) => xs'
+	----------------------------
+	update_eitems(ENVITEM(id,item,items)::xs,item',Absyn.IDENT(id2)) 
+	  => ENVITEM(id,item,items)::xs'
+
+  rule	id = id2 &
+	update_eitems(items,item',path) => items'
+	-----------------------
+	update_eitems(ENVITEM(id,item,items)::xs, item', Absyn.QUALIFIED(id2,path))
+	  => ENVITEM(id, item, items')::xs
+
+  rule	not id = id2 &
+	update_eitems(xs,item',Absyn.IDENT(id2)) => xs'
+	-----------------------------------------------
+	update_eitems(ENVITEM(id,item,items)::xs, item', Absyn.QUALIFIED(id2,path))
+	  => ENVITEM(id, item, items)::xs'
+
+  rule	print "- update_eitems failed\n" 
+	-----------------
+	update_eitems(_,_,_) => fail
+end
+
+relation get_envitems: (Cache, Absyn.Path option) => EnvItem list =
+	
+  axiom	get_envitems(CACHE(_,topeitems),NONE) => topeitems
+
+  rule	id = id2
+	---------------------
+	get_envitems (CACHE(PATHITEM(id,_,eitems)::xs,topeitems),SOME(Absyn.IDENT(id2)))
+	  => eitems
+
+  rule	not id = id2 &
+	get_envitems(CACHE(xs,topeitems),SOME(Absyn.IDENT(id2))) => eitems
+	-------------------------------------------
+	get_envitems (CACHE(PATHITEM(id,_,_)::xs,topeitems),SOME(Absyn.IDENT(id2))) 
+	  => eitems
+
+  rule	id = id2 &
+	get_envitems(CACHE(pitems,topeitems),SOME(path)) => eitems
+	------------------------------------------
+	get_envitems (CACHE(PATHITEM(id,pitems,eitems)::xs,topeitems),
+		      SOME(Absyn.QUALIFIED(id2,path))) => eitems
+
+  rule	not id = id2 &
+	get_envitems(CACHE(xs,topeitems),path) => eitems
+	------------------------------------------
+	get_envitems (CACHE(PATHITEM(id,pitems,eitems)::xs,topeitems), 
+		      path as SOME(Absyn.QUALIFIED(id2,_))) => eitems
+end
+
+relation get_envitem_from_envitems: (EnvItem list, Absyn.Path) => Env.Item =
+
+  rule	id = id2
+	--------
+	get_envitem_from_envitems(ENVITEM(id, SOME(item),_)::xs, Absyn.IDENT(id2)) 
+	  => item
+
+  rule	not id = id2 &
+	get_envitem_from_envitems(xs,Absyn.IDENT(id2)) => item
+	-------------------------------------------------------
+	get_envitem_from_envitems(ENVITEM(id, SOME(item), _)::xs, Absyn.IDENT(id2)) 
+	  => item
+
+  rule	id = id2 &
+	get_envitem_from_envitems(eitems,path) => item
+	-----------------------------------------------
+	get_envitem_from_envitems(ENVITEM(id, SOME(item), eitems)::xs, Absyn.QUALIFIED(id2,path))
+	  => item
+
+  rule	not id = id2 &
+	get_envitem_from_envitems(xs,path) => item
+	-----------------------------------------------
+	get_envitem_from_envitems(ENVITEM(id, SOME(_),eitems)::xs, path as Absyn.QUALIFIED(id2,_))
+	  => item
+end
+relation get_class_from_envitem: (Env.Item) => ( SCode.Class, Env.Env) =
+
+  axiom	get_class_from_envitem (Env.CLASS(c,env)) => (c,env)
+end
+
+relation get_var_from_envitem: (Env.Item) => Types.Var =
+	
+  axiom	get_var_from_envitem(Env.VAR(v,_,_)) => v
+end
+
+relation get_type_from_envitem: (Env.Item) => Types.Type =
+
+  axiom	get_type_from_envitem(Env.TYPE(t)) => t
+end
+
+relation print_cache: (Cache) => () =
+
+  rule	print "Cache:\ntopitems: \n" &
+	print_eitems (topeitems,1) &
+	print_pitems (pitems,1)
+	--------------------
+	print_cache(CACHE(pitems,topeitems)) => ()
+end
+relation print_pitems: (PathItem list,int) => () =
+
+  axiom	print_pitems([],_) => ()
+	
+  rule	print_pitem(x,indent) &
+	print_pitems(xs,indent) 
+	--------------------
+	print_pitems(x::xs,indent) => ()
+end
+
+relation print_pitem: (PathItem,int) => () =
+	
+  rule	Dump.indent_str(i) => s1 &
+	print s1 &
+	print "PATHITEM(" & print id &
+	print ",\n" & int_add(i,1) => i' &
+	print_pitems(psubs,i') &
+	print ",\n" & print s1 & print_eitems(eitems,i') &
+	print "\n" & print s1 & print ")\n" 
+	-----------------------------------
+	print_pitem(PATHITEM(id,psubs,eitems),i)
+end
+
+relation print_eitems: (EnvItem list,int) => () =
+
+  axiom	print_eitems([],_) => ()
+	
+  rule	print_eitem(x,indent) &
+	print_eitems(xs,indent) 
+	--------------------
+	print_eitems(x::xs,indent) => ()
+end
+
+relation print_eitem: (EnvItem,int) => () =
+	
+  rule	Dump.indent_str(i) => s1 &
+	print s1 &
+	print "ENVITEM(" & print id &
+	print ",\n" & int_add(i,1) => i' &
+	print_eitems(eitems,i') &
+	print "\n" & print s1 & print ")\n" 
+	-----------------------------------
+	print_eitem(ENVITEM(id,envopt,eitems),i)
+end
+
+

@@ -47,3 +47,357 @@ module ModUtil :
   relation path_equal : (Absyn.Path, Absyn.Path) => bool
 
 end
+
+with "algorithm.rml"
+with "rtopts.rml"
+with "util.rml"
+with "print.rml"
+
+relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b) 
+					 => (), 'b, Exp.Exp list) 
+	  => Exp.Exp list =
+
+  axiom	string_prefix_component_refs (_, _, _, []) => []
+	
+  rule	string_prefix_component_refs (str, r, rarg, rest) => res &
+	string_prefix_component_ref (str, r, rarg, e) => e'
+	----------------------------------------------
+	string_prefix_component_refs (str, r, rarg, e::rest) => e'::res
+end
+
+
+relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b) 
+					=> (), 'b, Exp.Exp) 
+	  => Exp.Exp =
+
+  rule	r(cr, rarg) &
+	string_prefix_cref (str, cr) => cr'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.CREF(cr,t)) 
+	  => Exp.CREF(cr',t)
+
+  rule	not r(cr, rarg)
+	----------------------------------------------
+	string_prefix_component_ref (_, r, rarg, Exp.CREF(cr,t)) 
+	  => Exp.CREF(cr,t)
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.BINARY(e1,op,e2)) 
+	  => Exp.BINARY(e1',op,e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.UNARY(op,e1)) 
+	  => Exp.UNARY(op,e1')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.LBINARY(e1,op,e2)) 
+	  => Exp.LBINARY(e1',op,e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.LUNARY(op,e1)) 
+	  => Exp.LUNARY(op,e1')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.RELATION(e1,op,e2)) 
+	  => Exp.RELATION(e1',op,e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2' &
+	string_prefix_component_ref (str, r, rarg, e3) => e3'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.IFEXP(e1,e2,e3)) 
+	  => Exp.IFEXP(e1',e2',e3')
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.CALL(p, el,b,bi)) 
+	  => Exp.CALL(p, el',b,bi)
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.ARRAY(t,a,el)) 
+	  => Exp.ARRAY(t,a,el')
+
+  rule	Util.list_list_map(ell,Util.tuple2_1) => el &
+	Util.list_list_map(ell,Util.tuple2_2)=> bl &
+	string_prefix_component_refs_list (str, r, rarg, el) => el' &
+	Util.list_list_thread_tuple(el',bl) => ell'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.MATRIX(t,a,ell)) 
+	  => Exp.MATRIX(t,a,ell')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.RANGE(t,e1, NONE, e2))
+	  => Exp.RANGE(t,e1', NONE, e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2' &
+	string_prefix_component_ref (str, r, rarg, e3) => e3'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.RANGE(t,e1, SOME(e2), e3))
+	  => Exp.RANGE(t,e1', SOME(e2'), e3')
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.TUPLE(el)) 
+	  => Exp.TUPLE(el')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.CAST(ty, e1)) 
+	  => Exp.CAST(ty, e1')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.ASUB(e1, i)) 
+	  => Exp.ASUB(e1', i)
+
+  axiom	string_prefix_component_ref (str, r, rarg, e) => e
+
+end
+
+relation string_prefix_component_refs_list : 
+	(string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list list) => Exp.Exp list list =
+
+  axiom string_prefix_component_refs_list (_, _, _, []) => []
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el' &
+	string_prefix_component_refs_list (str, r, rarg, rest) => res
+	----------------------------------------------------
+	string_prefix_component_refs_list (str, r, rarg, el::rest) => el'::res
+
+end
+
+relation string_prefix_cref : (string, Exp.ComponentRef) 
+	  => Exp.ComponentRef =
+
+  rule	string_append (str, s) => s'
+	-----------------------
+	string_prefix_cref (str, Exp.CREF_IDENT(s, si)) => Exp.CREF_IDENT(s', si)
+
+  rule	string_append (str, s) => s'
+	-----------------------
+	string_prefix_cref (str, Exp.CREF_QUAL(s, si, cr)) 
+	  => Exp.CREF_QUAL(s', si, cr)
+
+end
+
+
+relation string_prefix_elements : (string, DAE.Element list, DAE.Element list) 
+	  => DAE.Element list =
+
+  axiom	string_prefix_elements (_, _, []) => []
+
+  rule	string_prefix_element (str, dae, el) => el' &
+	string_prefix_elements (str, dae, rest) => res
+	-----------------------------------------
+	string_prefix_elements (str, dae, el::rest) => el'::res
+
+end
+
+relation string_prefix_element : (string, DAE.Element list, DAE.Element) 
+	  => DAE.Element =
+
+
+  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.VAR(cr,vk,vd,ty,SOME(exp),inst_dims)) 
+	  => DAE.VAR(cr,vk,vd,ty,SOME(exp'),inst_dims)
+
+  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.DEFINE(cr,exp)) 
+	  => DAE.DEFINE(cr,exp')
+
+  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp1) 
+	  => exp1' &
+	string_prefix_component_ref (str, is_parameter_daelist, dae, exp2) 
+	  => exp2'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.EQUATION(exp1,exp2)) 
+	  => DAE.EQUATION(exp1',exp2')
+
+  rule	string_prefix_algorithm (str, dae, alg) => alg'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.ALGORITHM(alg)) 
+	  => DAE.ALGORITHM(alg')
+
+
+(** What happens if a variable is not found among dae, should we check dae1,
+    i.e. where the COMP and FUNCTION was found? **)
+  rule	string_prefix_elements (str, dae, dae) => dae'
+	----------------------------------------------
+	string_prefix_element (str, dae1, DAE.COMP(n, DAE.DAE(dae))) 
+	  => DAE.COMP(n, DAE.DAE(dae'))
+
+  rule	string_prefix_elements (str, dae, dae) => dae'
+	----------------------------------------------
+	string_prefix_element (str, dae1, DAE.FUNCTION(n, DAE.DAE(dae), ty)) 
+	  => DAE.FUNCTION(n, DAE.DAE(dae'), ty)
+
+  rule	string_prefix_elements (str, dae, dae) => dae'
+	----------------------------------------------
+	string_prefix_element (str, dae1, DAE.EXTFUNCTION(n, DAE.DAE(dae), ty,decl)) 
+	  => DAE.EXTFUNCTION(n, DAE.DAE(dae'), ty,decl)
+
+  axiom	string_prefix_element (str, dae, e) => e
+
+end
+
+
+relation string_prefix_algorithm : (string, DAE.Element list, Algorithm.Algorithm) 
+	  => Algorithm.Algorithm =
+
+  axiom	string_prefix_algorithm (str, dae, alg) => alg
+
+end
+
+
+relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
+
+  rule	Exp.cref_equal (cr, crv) => true
+	------------------------
+	is_parameter_daelist (cr, DAE.VAR(crv,DAE.PARAM,vd,ty,e,_)::rest)
+
+  rule	Exp.cref_equal (cr, crv) => true
+	------------------------
+	is_parameter_daelist (cr, DAE.VAR(crv,vk,vd,ty,e,_)::rest) => fail
+
+  rule	is_parameter_daelist (cr, rest)
+	-------------------------------
+	is_parameter_daelist (cr, e::rest)
+
+end
+
+relation string_prefix_params : DAE.DAElist => DAE.DAElist =
+
+  rule	string_prefix_elements ("params->", dae, dae) => dae'
+	-----------------------------------------------------
+	string_prefix_params DAE.DAE(dae) => DAE.DAE(dae')
+
+end
+
+
+relation get_component_ref_next : Exp.ComponentRef => Exp.ComponentRef =
+
+  axiom	get_component_ref_next Exp.CREF_QUAL(n, sl, cr) => cr
+  rule	Print.print_buf "#-- Cannot get subname of an unqualified component reference\n" &
+	Exp.print_component_ref cr
+	----------------------------------------------------------------------
+	get_component_ref_next (cr as Exp.CREF_IDENT(n, sl)) => fail
+
+end
+
+relation get_var_value_expr : (DAE.Element list, Exp.ComponentRef) 
+	  => Exp.Exp =
+
+  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, NONE,_)) &
+	Print.print_buf "#-- get_var_value_expr: Warning: Variable is not initialized\n" &
+	Exp.print_component_ref cr & Print.print_buf "\n"
+	---------------------------------------------------------
+	get_var_value_expr (dae, cr) => Exp.SCONST("UNDEF")
+
+
+  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, SOME(value),_))
+	---------------------------------------------------------
+	get_var_value_expr (dae, cr) => value
+
+  rule	Print.print_buf "#-- get_var_value_expr: Error: Variable not found\n" &
+	Exp.print_component_ref cr & Print.print_buf "\n"
+	---------------------------------------
+	get_var_value_expr (dae, cr) => fail
+
+end
+
+
+relation print_exp_no_funcall : Exp.Exp => () =
+
+  rule	path_string(fcn) => fs &
+	Print.print_buf fs
+	--------
+	print_exp_no_funcall Exp.CALL(fcn, args,_,_)
+
+  rule	Exp.print_exp e
+	---------------
+	print_exp_no_funcall e
+	
+end
+
+
+relation path_string: Absyn.Path => string =
+
+  rule	RTOpts.modelica_output => true &
+	path_string2(path,"__") => s
+	-------------------------------------
+	path_string path => s
+
+  rule	RTOpts.modelica_output => false &
+	path_string2(path,".") => s
+	-------------------------------------
+	path_string path => s
+	
+end
+
+
+relation path_string2: (Absyn.Path, string) => string =
+
+  axiom	path_string2(Absyn.IDENT(s),_) => s
+  
+  rule	path_string2(n,str) => ns &
+	string_append(s,str) => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	path_string2(Absyn.QUALIFIED(s,n), str) => ss
+	
+end
+
+
+
+
+relation find_var : (DAE.Element list, Exp.ComponentRef) => DAE.Element option =
+
+  axiom	find_var ([], _) => NONE
+
+  rule	Exp.cref_equal (cr1, cr2) => true
+	--------------------
+	find_var ((e as DAE.VAR(cr1, vk, vd, ty, value,_))::rest, cr2) => SOME(e)
+
+  rule	find_var (rest, cr) => e'
+	----------------------------
+	find_var (_::rest, cr) => e'
+
+end
+
+
+relation path_equal : (Absyn.Path, Absyn.Path) => bool =
+
+  rule	id1 = id2 
+	----------
+	path_equal (Absyn.IDENT(id1), Absyn.IDENT(id2)) => true
+
+  rule	not id1 = id2 
+	----------
+	path_equal (Absyn.IDENT(id1), Absyn.IDENT(id2)) => false
+
+  rule	id1 = id2 &
+	path_equal (path1, path2) => res
+	--------------------------------
+	path_equal (Absyn.QUALIFIED(id1, path1), Absyn.QUALIFIED(id2, path2)) => res
+	
+  rule	not id1 = id2
+	--------------------------------
+	path_equal (Absyn.QUALIFIED(id1, path1), Absyn.QUALIFIED(id2, path2)) => false
+
+  axiom	path_equal (_,_) => false
+
+end

@@ -27,20 +27,20 @@ module Print:
  * interactive mode.
  *)
 
-relation print_error_buf: string => ()
+ relation print_error_buf: string => ()
 
-relation clear_error_buf: () => ()
+ relation clear_error_buf: () => ()
 
-relation get_error_string: () => string
+ relation get_error_string: () => string
 
-relation print_buf: string => ()
+ relation print_buf: string => ()
 
-relation clear_buf: () => ()
+ relation clear_buf: () => ()
 
-relation get_string: () => string
+ relation get_string: () => string
 
-(* Write the buffer to a file specified by a filename *)
-relation write_buf: (string) => ()
+ (* Write the buffer to a file specified by a filename *)
+ relation write_buf: (string) => ()
 
 end
 

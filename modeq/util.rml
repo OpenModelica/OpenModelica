@@ -49,3 +49,249 @@ module Util :
   relation string_equal: (string,string) => bool
   relation list_matching : ('a list, 'a => ()) => 'a list
 end
+
+
+
+relation list_first: 'a list => 'a =	
+
+  axiom	list_first(x::_) => x
+end	  
+
+relation list_rest: 'a list => 'a list =
+	
+  axiom	list_rest (_::x) => x
+end
+
+relation list_flatten : 'a list list => 'a list =
+
+  axiom	list_flatten [] => []
+
+  rule	list_flatten r => r' &
+	list_append(f,r') => l
+	-----------------------
+	list_flatten f::r => l
+
+end
+
+relation list_map : ('a list, 'a => 'b) => 'b list =
+	
+  axiom	list_map ([],_) => []
+
+  rule	fn f => f' &
+	list_map(r,fn) => r'
+	-------------------
+	list_map (f::r,fn) => f'::r'
+
+end
+
+relation list_list_map : ('a list list, 'a => 'b) => 'b list list =
+	
+  axiom	list_list_map ([],_) => []
+
+  rule	list_map(f,fn) => f' &
+	list_list_map(r,fn) => r'
+	-------------------
+	list_list_map (f::r,fn) => f'::r'
+
+end
+
+relation list_thread : ('a list, 'a list) => 'a list =
+
+  axiom	list_thread([],[]) => []
+
+  rule	list_thread(ra,rb) => r' &
+	let c = fb::r' &
+	let d = fa::c
+	------------------------
+	list_thread(fa::ra,fb::rb) => d
+
+end
+
+relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list =
+
+  axiom	list_thread_tuple ([],[]) => []
+
+  rule	list_thread_tuple(ra,rb) => r
+	-----------------------------
+	list_thread_tuple (fa::ra, fb::rb) => ((fa,fb)::r)
+
+end
+
+relation list_list_thread_tuple : ('a list list, 'b list list) 
+	  => ('a * 'b) list list =
+
+  axiom	list_list_thread_tuple ([],[]) => []
+
+  rule	list_thread_tuple(fa,fb) => f &
+	list_list_thread_tuple(ra,rb) => r
+	-----------------------------
+	list_list_thread_tuple (fa::ra, fb::rb) => f::r
+
+end
+
+relation list_position =
+  rule	list_pos(x, ys, 0) => n
+	-----------------------
+	list_position(x, ys) => n
+end
+
+relation list_pos =
+  rule	x = y
+	-----
+	list_pos(x, y::ys, i) => i
+
+  rule	not x = y &
+	int_add(i, 1) => i' &
+	list_pos(x, ys, i') => n
+	------------------------
+	list_pos(x, y::ys, i) => n
+end
+
+relation list_getmember: (''a, ''a list) => ''a =
+
+  axiom list_getmember(_,[]) => fail
+
+  rule  x = y
+	-----
+	list_getmember(x,y::ys) => y 
+	
+  rule	not x = y & 
+	list_getmember(x,ys) => res 
+	----------------------
+	list_getmember(x,y::ys) => res
+end 
+
+relation list_replaceat: (''a, int, ''a list) => ''a list =
+
+  axiom list_replaceat(x,_,[]) => []
+
+  axiom	 list_replaceat (x,1,y::ys) => x::ys
+
+  rule	int_gt(n,1) => true & int_sub(n,1) => nn &
+	list_replaceat(x,nn,ys) => res
+	-----------------------------
+	list_replaceat(x,n,y::ys) => y::res
+end
+
+relation tuple2_1 : ('a * 'b) => 'a =
+	
+  axiom	tuple2_1 ((a,_)) => a
+
+end
+
+relation tuple2_2 : ('a * 'b) => 'b =
+	
+  axiom	tuple2_2 ((_,b)) => b
+
+end
+
+relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list) =
+  axiom	split_tuple2_list([]) => ([],[])
+
+  rule	split_tuple2_list(rest) => (xs,ys)
+	---------------------------------
+	split_tuple2_list((x,y)::rest) => (x::xs, y::ys)
+end
+
+relation if : (bool,'a,'a) => 'a =
+	
+  axiom	if (true,r,_) => r
+  axiom	if (false,_,r) => r
+
+end
+
+
+relation string_append_list : string list => string =
+	
+  axiom string_append_list [] => ""
+
+  axiom	string_append_list [f] => f
+
+  rule	string_append_list r => r' &
+	string_append(f,r') => str
+	---------------------------
+	string_append_list f::r => str
+
+end
+
+relation string_delimit_list : (string list, string) => string =
+	
+  axiom string_delimit_list([],_) => ""
+
+  axiom	string_delimit_list([f],delim) => f
+
+  rule	string_delimit_list(r,delim) => str1 &
+	string_append(f,delim) => str2 &
+	string_append(str2,str1) => str
+	---------------------------
+	string_delimit_list(f::r,delim) => str
+end
+
+
+relation bool_or_list: bool list => bool =
+
+  axiom	bool_or_list([b]) => b
+
+  rule	b = true
+	---------------------
+  	bool_or_list(b::rest) => true
+
+  rule	b = false &
+	bool_or_list(rest) => res
+	---------------------
+  	bool_or_list(b::rest) => res
+end
+
+relation bool_and_list: bool list => bool =
+
+  axiom	bool_and_list([b]) => b
+
+  rule	b = false
+	---------------------
+  	bool_and_list(b::rest) => false
+
+  rule	b = true &
+	bool_and_list(rest) => res
+	---------------------
+  	bool_and_list(b::rest) => res
+end
+
+
+
+relation bool_string: bool => string =
+  axiom	bool_string true => "true"
+  axiom	bool_string false => "false"
+end
+
+relation string_equal: (string,string) => bool =
+  rule	a = b
+	-----
+	string_equal(a,b) => true
+
+  axiom	string_equal(_,_) => false
+
+end
+
+relation list_matching: ('a list, 'a => () )  => 'a list =
+
+  axiom	list_matching ([],_) => []
+
+  rule	cond(v) &
+	list_matching (vl, cond) => vl'
+	-------------------
+	list_matching (v::vl, cond) => v::vl'
+
+  rule	not cond(v) &
+	list_matching (vl, cond) => vl'
+	--------------------------
+	list_matching (v::vl, cond) => vl'
+end	
+
+
+
+
+
+
+
+
+
