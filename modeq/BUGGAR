@@ -1,0 +1,10 @@
+Vad betyder "redeclare extends ..."
+
+Grammatiken: class_definition
+ Borde väl vara
+
+     "=" name [ array_dimensions ] [ class_modification ] )
+
+ och inte
+
+     "=" IDENT [ array_dimensions ] [ class_modification ] )
