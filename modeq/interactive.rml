@@ -241,8 +241,20 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
 
-  rule	get_icon_annotation(cr,p) => s1 &
+  rule	get_nth_connector_icon_annotation(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getNthConnectorIconAnnotation",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+
+  rule	Absyn.cref_to_path(cr) => path &
+	get_icon_annotation(path,p) => s1 &
+	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -320,14 +332,14 @@ relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Clas
 	
   rule	(* Look first inside 'inmodel' *)
 	get_pathed_class_in_program(inmodel,p) => inmodeldef &
-	get_pathed_class_in_program(path,Absyn.PROGRAM([inmodeldef])) => cdef &
+	get_pathed_class_in_program(path,Absyn.PROGRAM([inmodeldef],Absyn.TOP)) => cdef &
 	join_paths(inmodel,path) => newpath
 	--------------------------------
 	lookup_classdef(path, inmodel,p) => (cdef,newpath)
 
 	(* Then look inside next level *)
   rule	strip_last(inmodel) => innewpath &
-	lookup_classdef(path,innewpath) => (cdef,respath)
+	lookup_classdef(path,innewpath,p) => (cdef,respath)
 	------------------------------
 	lookup_classdef(path,inmodel,p) => (cdef,respath)
 	
@@ -335,10 +347,30 @@ relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Clas
 	get_pathed_class_in_program(path,p) => cdef
 	------------------------------------------
 	lookup_classdef(path,_,p) => (cdef,path)
-	
-  rule	print "#Error, lookup_classdef failed\n"
+
+  axiom	lookup_classdef(Absyn.IDENT("Real"),_,_) => 
+	(Absyn.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,Absyn.PARTS([])), 
+	 Absyn.IDENT("Real"))
+
+  axiom	lookup_classdef(Absyn.IDENT("Integer"),_,_) => 
+	(Absyn.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,Absyn.PARTS([])), 
+	 Absyn.IDENT("Integer"))
+
+  axiom	lookup_classdef(Absyn.IDENT("String"),_,_) => 
+	(Absyn.CLASS("String",false,Absyn.R_PREDEFINED_STRING,Absyn.PARTS([])), 
+	 Absyn.IDENT("String"))
+
+  axiom	lookup_classdef(Absyn.IDENT("Boolean"),_,_) => 
+	(Absyn.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([])), 
+	 Absyn.IDENT("Boolean"))
+
+  rule	print "#Error, lookup_classdef failed\n" &
+	Absyn.path_string path => s1 &
+	Absyn.path_string inpath => s2 &
+	print s1 & print " in " & print s2 &
+	print "\n" 
 	---------------------
-	lookup_classdef(_,_,_) => fail
+	lookup_classdef(path,inpath,_) => fail
 end
 	
 (** relation add_component
@@ -516,7 +548,7 @@ relation get_connector_count: ((* Env.Env, *) Absyn.ComponentRef, Absyn.Program)
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	count_public_connectors(modelpath,cdef,p) => count &
+	count_public_connectors(modelpath,p,cdef) => count &
 	int_string(count) => countstr
 	-------------------
 	get_connector_count (model,p) => countstr
@@ -531,33 +563,51 @@ end
 relation get_nth_connector: (Absyn.ComponentRef, Absyn.Program, int) => string =
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_nth_public_connector_str(modelpath,cdef,p,n) => resstr
+	get_nth_public_connector_str(modelpath,cdef,p,n) => (str,tp) &
+	Absyn.path_string tp => tpstr &
+	string_append(str,",") => s1 &
+	string_append(s1,tpstr) => resstr
 	-----------------
 	get_nth_connector(model,p,n)=> resstr
 
   axiom get_nth_connector(_,_,_) => "-1"
-	
+end
+
+(** relation: get_nth_connector
+ ** This relation takes a ComponentRef and a Program and an int and returns a string with the name of the nth
+ ** connectors icon annotation in the class given by ComponentRef in the Program.
+ **)
+relation get_nth_connector_icon_annotation: (Absyn.ComponentRef, Absyn.Program, int) => string =
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_nth_public_connector_str(modelpath,cdef,p,n) => (resstr,tp) &
+	get_icon_annotation(tp,p) => resstr
+	--------------------------
+	get_nth_connector_icon_annotation(model,p,n)=> resstr
+
+  axiom get_nth_connector_icon_annotation(_,_,_) => "-1"	
 end
 
 (** relation: get_icon_annotation
- ** This relation takes a ComponentRef and a Program and returns a comma separated
+ ** This relation takes a Path and a Program and returns a comma separated
  ** string of values for the icon annotation for the class named by the first argument. 	
 	FIXME:
 	Icon annotation is composed of several things:
 	1. Annotations in the class definition.
 	2. Annotations in base classes. This implies performing a partial instantiation removing inheritance (and applying modifications there)
 	3. Annotations found in connectors (components with type connector)
+ QUESTION: 3. Should not be performed in this relation. Instead, the client should
+ call other functions, like getNthConnectorIconAnnotation.
  *)
-relation get_icon_annotation: (Absyn.ComponentRef, Absyn.Program) => string =
-  rule	Absyn.cref_to_path(model) => modelpath &
-	get_pathed_class_in_program(modelpath,p) => cdef &
+relation get_icon_annotation: (Absyn.Path, Absyn.Program) => string =
+   rule	get_pathed_class_in_program(modelpath,p) => cdef &
 	get_base_classes(cdef) => crefs &
 	get_icon_annotation_from_baseclasses(crefs,p) => baseannlst &
 	get_icon_annotation_in_class(cdef) => s1 &
 	Util.string_append_list(baseannlst) => s2 &
 	string_append(s1,s2) => str
 	-----------------------------------------
-	get_icon_annotation(model,p) => str
+	get_icon_annotation(modelpath,p) => str
   axiom get_icon_annotation(_,_) => "get_icon_annotation failed!"
 end
 
@@ -603,7 +653,8 @@ relation get_icon_annotation_from_baseclasses :(Absyn.ComponentRef list, Absyn.P
 	=> string list =
   axiom	get_icon_annotation_from_baseclasses([],p) => []
 
-  rule	get_icon_annotation(cr,p) => s1 &
+  rule	Absyn.cref_to_path cr => path &
+	get_icon_annotation(path,p) => s1 &
 	get_icon_annotation_from_baseclasses(rest,p) => s2
 	------------------------------------------------
 	get_icon_annotation_from_baseclasses(cr::rest,p) => s1::s2
@@ -645,23 +696,24 @@ relation get_icon_annotation_str: (Absyn.ElementArg list) => string =
 	get_icon_annotation_str( _::xs) => str
 end
 
-relation get_nth_public_connector_str: (Absyn.Path, Absyn.Class, Absyn.Program,  int) => string =
+relation get_nth_public_connector_str: (Absyn.Path, Absyn.Class, Absyn.Program,  int) => (string,Absyn.Path) =
 	
-  rule	get_nth_connector_str (p, modelpath, elt, n) => res 
+  rule	get_nth_connector_str (p, modelpath, elt, n) => (str,tp)
 	------------------------------------------
-	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), p, n)  => res
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), p, n)  
+	  => (str,tp)
 	
 	(** The rule above failed, count the number of connectors in the first public list, subtract the number 
 	 ** and try the rest of the list **)
-  rule	count_public_connectors (modelpath,Absyn.CLASS(a,b,c,Absyn.PARTS([Absyn.PUBLIC(elt)])),p) => c1 &
+  rule	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,Absyn.PARTS([Absyn.PUBLIC(elt)]))) => c1 &
 	int_sub(n,c1) => c2 &
-	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)),p,c2) => resstr
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)),p,c2) => (str,tp)
 	--------------------------------------------------
-	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), p, n) => resstr
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), p, n) => (str,tp)
 	
-  rule	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)), p, n) => res
+  rule	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)), p, n) => (str,tp)
 	-----------------------------------------------------
-	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst)), p, n) => res
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst)), p, n) => (str,tp)
 	
 end
 
@@ -670,26 +722,41 @@ end
  ** in that list. 
  **)
 
-relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem list, int) => string =
+relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem list
+				 ,int)
+	  => (string, Absyn.Path) =
+
+  rule	lookup_classdef(tp,modelpath,p) => (cdef,newmodelpath) &
+	get_nth_public_connector_str(newmodelpath,cdef,p,n) => (str,tp)
+	-----------------
+	get_nth_connector_str(p,modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.EXTENDS(tp,_)))::lst,n) => (str,tp)
+
+  rule	lookup_classdef(tp,modelpath,p) => (cdef,newmodelpath) &
+	count_public_connectors(newmodelpath,p,cdef) => c1 &
+	int_sub(n,c1) => c2 &
+	get_nth_connector_str(p,modelpath,lst,c2) => (str,tp)
+	-----------------
+	get_nth_connector_str(p,modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.EXTENDS(tp,_)))::lst,n) => (str,tp) 
+
   rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	get_nth_compname(complst,n) => str 
 	----------------------------------
 	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n) 
-	  => str
+	  => (str,tp)
 
   rule	(** Not so fast, since we lookup and instantiate two times just because this was not 
 	 ** the connector we were looking for. **)
 	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	list_length(complst) => c1 &
 	int_sub(n,c1) => newn &
-	get_nth_connector_str(p,modelpath,lst,newn) => res
+	get_nth_connector_str(p,modelpath,lst,newn) => (str,tp)
 	---------------------------------------
 	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n)
-	  => res
+	  => (str,tp)
 	
-  rule	get_nth_connector_str(p,modelpath,lst,n) => res
+  rule	get_nth_connector_str(p,modelpath,lst,n) => (str,tp)
 	---------------------------------------
-	get_nth_connector_str(p,modelpath,_::lst,n) => res
+	get_nth_connector_str(p,modelpath,_::lst,n) => (str,tp)
 
   axiom	get_nth_connector_str(p,modelpath,[],n) => fail
 end
@@ -724,9 +791,9 @@ relation count_public_connectors: (Absyn.Path, Absyn.Program, Absyn.Class) => in
   axiom count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,Absyn.PARTS([]))) => 0
 
   rule	lookup_classdef(cname,modelpath,p) => (cdef,newmodelpath) &
-	count_public_connectors (newmodelpath,cdef) => res
+	count_public_connectors (newmodelpath,p,cdef) => res
 	--------------------------------------------------
-	count_public_connectors (modelpath,p, Absyn.CLASS(a,b,c,Absyn.DERIVED(cname,_,_))) => res
+	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,Absyn.DERIVED(cname,_,_))) => res
 end
 
 (** relation: count_connectors
@@ -736,15 +803,15 @@ end
 relation count_connectors: (Absyn.Path, Absyn.Program, Absyn.ElementItem list) => int =
 
   rule	lookup_classdef(tp, modelpath,p) => (cdef,newmodelpath) &
-	count_public_connectors(newmodelpath,cdef,p) => c1 &
-	count_connectors(modelpath, lst) => c2 &
+	count_public_connectors(newmodelpath,p,cdef) => c1 &
+	count_connectors(modelpath,p,lst) => c2 &
 	int_add(c1,c2) => res
 	---------------------
 	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.EXTENDS(tp,_)))::lst) => res
 
   rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	list_length(complst) => c1 &
-	count_connectors(modelpath, lst) => c2 &
+	count_connectors(modelpath,p,lst) => c2 &
 	int_add(c1,c2) => res
 	--------------------
 	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst) => res
@@ -948,6 +1015,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
 	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
+	print "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
