@@ -410,16 +410,36 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	add_connection(cr,c1,c2,p) => (s1,newp) &
+  rule	add_connection(cr,c1,c2,annlst,p) => (s1,newp) &
 	string_append(s1,"\n") => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("addConnection",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],annlst)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
+
+  rule	delete_connection(cr,c1,c2,p) => (s1,newp) &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("deleteConnection",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],_)))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
+  rule	delete_connection(cr,c1,c2,p) => (s1,newp) &
+	add_connection(cr,c1,c2,annlst,newp) => (s2,newp') &
+	string_append(s2,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("updateConnection",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],annlst)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp',s,ic,iv,cf))
 
   rule	get_nth_connection_annotation(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
@@ -1381,8 +1401,9 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int) => string 
 	axiom get_nth_connection(_,_,_) => "-1"
 end
 
-relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef,Absyn.Program) => 
-	(string,Absyn.Program) =
+relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef,
+			  Absyn.NamedArg list, Absyn.Program) => 
+	(string, Absyn.Program) =
 	
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
@@ -1390,8 +1411,58 @@ relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Componen
 	  => newcdef &
 	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
 	---------------------------------------------------
-	add_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
+	add_connection(model,c1,c2,[],p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
 
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	annotation_list_to_absyn(annlst) => annotation &
+	add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),SOME(Absyn.COMMENT(SOME(annotation),NONE)))) 
+	  => newcdef &
+	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
+	---------------------------------------------------
+	add_connection(model,c1,c2,annlst,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)	
+end
+
+relation delete_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program)
+	  => (string,Absyn.Program) =
+	
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	delete_equation_in_class(cdef,c1,c2) => newcdef &
+	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
+	---------------------------------------------------
+	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
+
+  axiom	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("-1",p)	
+end
+
+relation delete_equation_in_class: (Absyn.Class, Absyn.ComponentRef, Absyn.ComponentRef)
+	  => Absyn.Class =  
+	  
+  rule	get_equation_list(parts) => eqlst &
+	delete_equation_in_eqlist(eqlst,c1,c2) => eqlst' &
+	replace_equation_list(parts,eqlst') => parts2 
+	----------------------------
+	delete_equation_in_class(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),c1,c2)
+	  => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+end
+
+relation delete_equation_in_eqlist: (Absyn.EquationItem list, Absyn.ComponentRef,Absyn.ComponentRef) => Absyn.EquationItem list =
+
+  axiom	delete_equation_in_eqlist([],_,_) => []
+
+  rule	Absyn.cref_to_path(c1) => p1 & Absyn.path_string(p1) => s1 &
+	Absyn.cref_to_path(c2) => p2 & Absyn.path_string(p2) => s2 &
+	Absyn.cref_to_path(cn1) => pn1 & Absyn.path_string(pn1) => sn1 &
+	Absyn.cref_to_path(cn2) => pn2 & Absyn.path_string(pn2) => sn2 &
+	s1 = sn1 & s2 = sn2 &
+	delete_equation_in_eqlist(xs,c1,c2) => res
+	---------------------
+	delete_equation_in_eqlist(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(cn1,cn2),_)::xs,c1,c2) => res
+
+  rule	delete_equation_in_eqlist(xs,c1,c2) => res
+	------------------------------------
+	delete_equation_in_eqlist(x::xs,c1,c2) => x::res
 end
 
 (** relation: get_nth_connection_annotation
