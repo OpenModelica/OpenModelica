@@ -77,6 +77,15 @@ relation make_assignment : (Exp.Exp, Static.Properties,
 	make_assignment (lhs,Static.PROP(lt,true),
 			 rhs,Static.PROP(rt,_),_) => fail
 
+  rule	print "# Can't assign to " & Exp.print_exp e & print "\n"
+	---------------------------------------------------------
+	make_assignment(e,_,_,_, SCode.RO) => fail
+
+  rule	Static.match_prop(rhs, rhprop, lhprop) => rhs'
+	--------------------------------------
+	make_assignment(Exp.CREF(c), lhprop as Static.PROP(_,false),
+			rhs, rhprop, _) => ASSIGN(c,rhs')
+
   rule	Types.equivtypes (lt,rt) => false &
 	print "# Type mismatch in assignment\n" &
 	print "    " & Exp.print_exp lhs &
@@ -85,15 +94,6 @@ relation make_assignment : (Exp.Exp, Static.Properties,
  	print " := " & Types.print_type rt & print "\n"
 	-------------------------------------------
 	make_assignment (lhs,Static.PROP(lt,_),rhs,Static.PROP(rt,_),_) => fail
-
-  rule	print "# Can't assign to " & Exp.print_exp e & print "\n"
-	---------------------------------------------------------
-	make_assignment(e,_,_,_, SCode.RO) => fail
-
-  rule	Static.match_prop(rhs, lhprop, rhprop) => rhs'
-	--------------------------------------
-	make_assignment(Exp.CREF(c), lhprop as Static.PROP(_,false),
-			rhs, rhprop, _) => ASSIGN(c,rhs')
 
   rule	print "- Algorithm.make_assignment failed\n" &
 	print "    " & Exp.print_exp lhs &
