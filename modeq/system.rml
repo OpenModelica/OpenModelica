@@ -38,10 +38,6 @@ module System:
 
 with "values.rml"
 
-relation vector_setnth: ('a vector,int,'a) => ('a vector)
-(* This relation is impure since it has side effects, but neccessary from a
-   performance point of view. *)
-
 relation strcmp: (string,string) => int
 
 relation toupper: (string) => string
