@@ -1,0 +1,31 @@
+#
+# Makefile for rml2sig
+#
+# Andrzej BEDNARSKI
+#
+# $Id$
+
+LEX=@LEX@
+LEXLIB=@LEXLIB@
+
+all: rml2sig
+
+rml2sig: rml2sig.c
+	gcc -o $@ $< $(LEXLIB)
+
+rml2sig.c: rml2sig.lex
+	$(LEX) -t rml2sig.lex > $@
+
+clean:
+	$(RM) rml2sig.c rml2sig foo.c foo.h bar.c bar.h bar.sig
+
+# foo.rml depends on bar.rml (signature)
+
+foo.c: foo.rml bar.sig
+	rmlc +C foo.rml
+
+bar.c: bar.rml
+	rmlc +c bar.rml
+
+bar.sig: bar.rml
+	./rmldep.sh bar.rml
