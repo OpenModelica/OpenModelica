@@ -73,5 +73,3 @@ and (* relation *) dump: DAEform => () =
 		-------------------
 		dump DAE(l) => ()
 end
-
-
