@@ -22,7 +22,7 @@ An == Argument no. n
 <cref> == Component Reference, e.g. `A.B.C' or `A'
 <ident> == identifier, e.g. `A' or `Modelica'
 <string> == Modelica string, e.g. `"Nisse"' or `"foo"' 
-
+<expr> == Arbitrary Modelica expression
 The following functions are provided:
 
 Function				Meaning
@@ -93,7 +93,20 @@ addConnection(<cref>,<cref>,<cref>, annotate=<expr>)
 					annotate.
 
 updateConnection(<cref>,<cref>,<cref>, annotate=<expr>)
-					Updates an allready existing connection
+					Updates an allready existing
+					connection
+
+addEquation(<cref>,<expr>,<expr>)	Adds the equation A1=A2 to the
+					model named by A0.
+getEquationCount(<cref>)		returns the number of
+					equations in the model named
+					A0. (This includes connections)
+getNthEquation(<cref>,<int>)		returns the nth (A1) equation of
+					the model named by A0. e.g
+					"der(x)=-1" or
+					"connect(A.b,C.a)"
+deleteNthEquation(<cref>,<int>)		Deletes	the nth (A1) equation
+					in the model named by A0.
 					
 getConnectorCount(<cref>)		Returns the number of
 					connectors of a class.
@@ -117,12 +130,10 @@ getDiagramAnnotation(<cref>)		Returns the Diagram annotation of
 					performed that flattens the inheritance 
 					hierarchy in order to find all annotations.
 
-
 ERROR Handling
 ==============
 When an error occur in any of the functions above, the string
 "-1" is returned.
-
 
 Annotations
 ===========
@@ -178,7 +189,7 @@ Text({{-10,-10}, {10,10}}, textString=”Icon”)}));
 
 will produce the following string representation of the flat record
 Icon:
-{{{-10,-10},{10,10}},{Rectangle(true,extent={{-10,-10},{10,10}}),Text({{-10,-10},{10,10}},textString="Icon")}}
+{{{-10,-10},{10,10}},{Rectangle(true,{0,0,0},{0,0,0},LinePattern.Solid,FillPattern.None,0.25,BorderPattern.None,{{-10,-10},{10,10}},0),Text({{-10,-10},{10,10}},textString="Icon")}}
 
 This is the flat record for the Diagram annotation:
 

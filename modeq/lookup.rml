@@ -231,12 +231,12 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
   rule	Debug.fprint ("lotr", "lookup_functions_in_env") &	
 	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
 	Debug.fcall ("lotr", print_frame, items) &
-	lookup_functions_in_frame(items,id) => c1 &
+	lookup_functions_in_frame(items,env,id) => c1 &
 (*	print "\n Found type." & *)
 	lookup_functions_in_env(fs,iid) => c2 &
 	list_append (c1,c2) => reslist
 	---------------------
-	lookup_functions_in_env(Env.FRAME(items)::fs, iid as Absyn.IDENT(id)) => reslist
+	lookup_functions_in_env(env as (Env.FRAME(items)::fs), iid as Absyn.IDENT(id)) => reslist
 
 	(* Did not match. Continue*)
   rule	lookup_functions_in_env(fs,id) => c
@@ -253,9 +253,9 @@ end
 
 relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type) =
 
-  rule	lookup_type_in_frame(items,id) => c
+  rule	lookup_type_in_frame(items,env,id) => c
 	---------------------
-	lookup_type_in_env(Env.FRAME(items)::fs,Absyn.IDENT(id)) => c
+	lookup_type_in_env(env as (Env.FRAME(items)::fs),Absyn.IDENT(id)) => c
 
   rule	lookup_type_in_env(fs,id) => c
 	---------------------
@@ -265,6 +265,7 @@ end
 (**)
 
 relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
+				 Env.Env,
 				 SCode.Ident)
 	  => Types.Type =
 
@@ -272,24 +273,31 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 	   print n & print "\n" & *)
 	id = n
 	---------------------------------------------------------
-	lookup_type_in_frame((n,Env.TYPE(t))::_, id) => t
+	lookup_type_in_frame((n,Env.TYPE(t))::_,env, id) => t
 
   rule	id = n & print "# Error while looking up type " &
 	print id & print ": found a component\n"
 	------------------------------------
-	lookup_type_in_frame((n,Env.VAR(_))::_,id) => fail
+	lookup_type_in_frame((n,Env.VAR(_))::_,env,id) => fail
+
+  rule	id = n & 
+	build_record_constructor_varlst (cdef,env) => varlst &
+	Types.make_function_type(varlst) => ftype 
+	----------------------------------------
+	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype
 
   rule	(* print "  lookup_type_in_frame(" & print id & print "): not " &
 	   print n & print "\n" & *)
-	lookup_type_in_frame(fs,id) => t
+	lookup_type_in_frame(fs,env,id) => t
 	------------------------------
-	lookup_type_in_frame((n,_)::fs,id) => t
+	lookup_type_in_frame((n,_)::fs,env,id) => t
 end
 (**)
 
 (*PR. This actually only looks up the function name and find all
  corresponding types that have this function name.  *)
 relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
+				 Env.Env,
 				 SCode.Ident)
 	  => Types.Type list =
 
@@ -298,29 +306,71 @@ relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
 	------------------------------------
 	lookup_functions_in_frame([],id) => []
 *)
-  axiom	lookup_functions_in_frame([],id) => []
+  axiom	lookup_functions_in_frame([],env,id) => []
 
   rule	(* print "  lookup_type_in_frame(" & print id & print "): " &
 	   print n & print "\n" & *)
 (*	print ("\n found id in frame.") & *)
 	id = n &
-	lookup_functions_in_frame(rest, id) => t2
+	lookup_functions_in_frame(rest, env, id) => t2
 	---------------------------------------------------------
-	lookup_functions_in_frame((n,Env.TYPE(t))::rest, id) => t::t2
+	lookup_functions_in_frame((n,Env.TYPE(t))::rest, env, id) => t::t2
 
   rule	id = n & print "# Error while looking up type " &
 	print id & print ": found a component\n"
 	------------------------------------
-	lookup_functions_in_frame((n,Env.VAR(_))::_,id) => fail
+	lookup_functions_in_frame((n,Env.VAR(_))::_,env,id) => fail
+
+  rule	id = n & print "Found record when looking for function. Assuming implicit record constructor\n" &
+	build_record_constructor_varlst (cdef,env) => varlst &
+	lookup_functions_in_frame(rest,env,id) => t2 &
+	Types.make_function_type(varlst) => ftype
+	----------------------------------------
+	lookup_functions_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype::t2
 
   rule	 (* print "  lookup_type_in_frame(" & print id & print "): not " &
 	   print n & print "\n" & *)
-	lookup_functions_in_frame(fs,id) => t
+	lookup_functions_in_frame(fs,env,id) => t
 	------------------------------
-	lookup_functions_in_frame((n,_)::fs,id) => t
+	lookup_functions_in_frame((n,_)::fs,env,id) => t
 
 end
 (**)
+
+(** 
+ ** This relation takes a class  (`SCode.Class') which holds a definition of a record
+   ** and builds a list of variables of the record used for constructing a record constructor function.
+*)
+relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var list =
+
+  rule	build_varlst_from_elts(elts,env) => inputvarlst &
+	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cl,[]) => (_,_,ty,_) 
+	--------------------------------------
+	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,SCode.PARTS(elts,_,_)),env) 
+	(* Add the return type of the record constructor *)
+	    => Types.VAR("result",Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
+end
+
+relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list =
+
+  rule	build_varlst_from_elts(rest,env) => types &
+  (*P.A Here we need to do a lookup of the type. Therefore we need the env passed along from lookup_xxxx function. *)
+	lookup_class(env,t) => (cl,cenv) &
+	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
+	Inst.inst_class(cenv,mod',Prefix.NOPRE,[],cl,[]) => (_,_,tp,cistate) &	
+	Mod.mod_equation mod' => eq &
+	Inst.make_binding(env,attr,eq) => bind
+	-------------------------------------
+	build_varlst_from_elts (SCode.COMPONENT(id,_,prot,attr as SCode.ATTR(dim,f,acc,var,dir),t,mod)::rest,env) 
+	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp,bind)::types
+
+  axiom	build_varlst_from_elts ([],_) => []
+
+  rule	print "ERROR build_varlst_from_elts failed!\n"
+	----------------------------------------------
+	build_varlst_from_elts(_,_) => fail
+end
+
 relation lookup_package_type : (Env.Env, string, Absyn.Path) => Types.Type =
 	
   rule	locate_package (env,packname) => pack &

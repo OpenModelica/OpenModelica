@@ -46,6 +46,7 @@ module Dump:
   (* Dump routines for debugging of AST *)
 
   relation dump: Absyn.Program => ()
+  relation unparse_str: Absyn.Program => string
   relation dump_istmt: Interactive.InteractiveStmts => ()
   relation print_exp: Absyn.Exp => ()
   relation print_exp_str: Absyn.Exp => string
@@ -64,6 +65,7 @@ module Dump:
   relation print_select: (bool,string,string) => ()
   relation select_string: (bool,string,string) => string
   relation get_string_list : ('a list, 'a => string, string) => string
+  relation get_option_str: ('a option, 'a => string) => string 
 end
 
 
@@ -84,6 +86,87 @@ relation dump : Absyn.Program => () =
 	dump Absyn.PROGRAM(cs,w)
 	------------------------
 	dump Absyn.PROGRAM(c::cs,w) => ()
+
+end
+
+relation unparse_str : Absyn.Program => string =
+	
+  axiom	unparse_str Absyn.PROGRAM([],_) => ""
+	
+  rule	unparse_within(w) => s1 &
+	get_string_list(c,unparse_class_str,"\n") => s2 &
+	string_append(s1,s2) => str
+	------------------------
+	unparse_str Absyn.PROGRAM(c,w) => str
+end
+
+relation unparse_within: Absyn.Within => string =
+  axiom unparse_within Absyn.TOP => ""
+	
+  rule	Absyn.path_string p => s1 &
+	string_append("within ",s1) => s2 &
+	string_append(s2,";\n") => str
+	------------------------------
+	unparse_within Absyn.WITHIN(p) => str
+end
+
+relation unparse_class_str: Absyn.Class => string =
+  rule	select_string(p, "partial ","") => s1 &
+	unparse_restriction_str (r) => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," ") => s4 &
+	string_append(s4,n) => s5 &
+	string_append(s5,"\n") => s6 &
+	get_string_list (parts,unparse_class_part_str,"") => s7 &
+	string_append(s6,s7) => s8 &
+	string_append(s8, "\n end ") => s9 &
+        string_append(s9,n) => s10 &
+	string_append(s10,";\n") => str			     
+	-----------------------------
+	unparse_class_str(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => str
+
+  rule	select_string(p, "partial ", "") => s1 &
+	unparse_restriction_str (r)  => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," ") => s4 &
+	string_append(s4,n) => s5 &
+	string_append(s5,"= ") => s6 &
+	Absyn.path_string i => s7 &
+	get_option_str(dim,print_arraydim_str) => s8 &
+	unparse_mod1_str m => s9 &
+	string_append(s7,s8) => s10 &
+	string_append(s10,s9) => s11 &
+	string_append(s11,";\n") => str
+	------------------------------
+	unparse_class_str(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,dim,m))) => str
+
+  rule	select_string(p, "partial ", "") => s1 &
+	unparse_restriction_str (r)  => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," ") => s4 &
+	string_append(s4,n) => s5 &
+	string_append(s5,"= enumeration(") => s6 &
+	stringlist_append (l) => s7 &
+	string_append(s6,s7) => s8 &
+	string_append(s8,");\n") => str				      
+	-------------------------------
+	unparse_class_str(Absyn.CLASS(n,p,r,Absyn.ENUMERATION(l))) => str    
+end 
+
+relation unparse_restriction_str : Absyn.Restriction => string =
+
+  axiom unparse_restriction_str Absyn.R_CLASS			=> "class"
+  axiom	unparse_restriction_str Absyn.R_MODEL			=> "model"
+  axiom	unparse_restriction_str Absyn.R_RECORD			=> "record"
+  axiom unparse_restriction_str Absyn.R_BLOCK			=> "block"
+  axiom unparse_restriction_str Absyn.R_CONNECTOR		=> "connector"
+  axiom unparse_restriction_str Absyn.R_TYPE			=> "type"
+  axiom unparse_restriction_str Absyn.R_PACKAGE			=> "package"
+  axiom unparse_restriction_str Absyn.R_FUNCTION			=> "function"
+  axiom unparse_restriction_str  Absyn.R_PREDEFINED_INT		=> "Integer"
+  axiom unparse_restriction_str Absyn.R_PREDEFINED_REAL		=> "Real"
+  axiom unparse_restriction_str Absyn.R_PREDEFINED_STRING	=> "String"
+  axiom unparse_restriction_str Absyn.R_PREDEFINED_BOOL		=> "Boolean"
 
 end
 
@@ -153,6 +236,7 @@ relation print_class_restriction: Absyn.Restriction => () =
 
 end
 
+
 (**)
 
 relation print_class_modification =
@@ -165,6 +249,17 @@ relation print_class_modification =
 	
 end
 
+relation unparse_class_modification_str: Absyn.Modification => string =
+
+  axiom	unparse_class_modification_str(Absyn.CLASSMOD([],_)) => ""
+	
+  rule	get_string_list(l,unparse_element_arg_str,",") => s1 &
+	string_append("(",s1) => s2 &
+	string_append(s2,")") => str 
+	---------------------------------------------------------
+	unparse_class_modification_str(Absyn.CLASSMOD(l,_)) => str
+	
+end
 (**)
 
 relation print_element_arg =
@@ -186,7 +281,28 @@ relation print_element_arg =
 
 end
 
+relation unparse_element_arg_str: (Absyn.ElementArg) => string =
+	
+  rule	select_string(f,"final ","") => s1 &
+	print_component_ref_str(r) => s2 &
+	string_append(s1,s2) => s3 &
+	unparse_modification_str(m) => s4 &
+	string_append(s3,s4) => str
+	-------------------------------------------
+	unparse_element_arg_str(Absyn.MODIFICATION(f,r,m)) => str
+	
+  rule	print "REDECLARATION(" &
+	select_string(f,"final ","")  => s1 &
+	string_append("redeclare ",s1) => s2 &
+	unparse_elementspec_str spec => s3 &
+	string_append(s2,s3) => str
+	-------------------------------------------
+	unparse_element_arg_str(Absyn.REDECLARATION(f,spec)) => str
+end
+
 (**)
+
+
 
 relation print_class_part: Absyn.ClassPart => () =
 
@@ -212,6 +328,28 @@ relation print_class_part: Absyn.ClassPart => () =
 
 end
 
+relation unparse_class_part_str: Absyn.ClassPart => string =
+
+  rule	get_string_list(el,unparse_elementitem_str,"\n") => s1 & 
+	string_append("public \n",s1) => str 
+	-----------------------------------------------
+	unparse_class_part_str(Absyn.PUBLIC(el)) => str
+	
+  rule	get_string_list(el,unparse_elementitem_str,"\n") => s1 & 
+	string_append("protected \n",s1) => str 
+	---------------------------------------
+	unparse_class_part_str(Absyn.PROTECTED(el)) => str
+	
+  rule	get_string_list(eqs,unparse_equationitem_str,"\n") => s1 & 
+	string_append("equation \n",s1) => str 
+	--------------------------------------
+	unparse_class_part_str(Absyn.EQUATIONS(eqs)) => str
+	
+  rule	get_string_list(eqs,unparse_algorithm_str,"\n") => s1 & 
+	string_append("public \n",s1) => str 
+	--------------------------------------
+	unparse_class_part_str(Absyn.ALGORITHMS(eqs)) => str
+end
 
 (**)
 
@@ -249,20 +387,25 @@ relation print_annotation: Absyn.Annotation => () =
 	print_annotation(Absyn.ANNOTATION(mod))
 end
 	
+relation unparse_elementitem_str: Absyn.ElementItem => string =
 
-relation print_elements: Absyn.Element list => () =
+  rule  unparse_element_str e => str
+	----------------------------
+	unparse_elementitem_str Absyn.ELEMENTITEM(e) => str
 
-  axiom	print_elements [] => ()
-
-  rule	print_element e
-	--------------------------
-	print_elements [e]
+  rule	unparse_annotation_str a => str
+	-------------------------------
+	unparse_elementitem_str Absyn.ANNOTATIONITEM(a) => str
 	
-  rule	print_element e & print "," &
-	print_elements els
-	--------------------------
-	print_elements e::els
-	
+end
+
+relation unparse_annotation_str: Absyn.Annotation => string =	
+
+  rule	unparse_class_modification_str Absyn.CLASSMOD(mod,NONE) => s1 &
+	string_append("annotation(",s1) => s2 &
+	string_append(s2,")") => str
+	----------------------------
+	unparse_annotation_str(Absyn.ANNOTATION(mod)) => str
 end
 
 (**)
@@ -278,6 +421,19 @@ relation print_element: Absyn.Element => () =
 
 end
 
+relation unparse_element_str: Absyn.Element => string = 
+
+  rule	select_string(final, "final ", "") => s1 &
+	unparse_innerouter_str inout => s2 &
+	unparse_elementspec_str spec => s3 &
+	string_append(s1,s2) => s4 &
+	string_append(s4,s3) => s5 &
+	string_append(s5,";") => str
+	----------------------------
+	unparse_element_str Absyn.ELEMENT(final,inout,_,spec) => str
+end
+
+
 relation print_innerouter: Absyn.InnerOuter => () =
    rule print "INNER"
 	----------------------------
@@ -290,6 +446,15 @@ relation print_innerouter: Absyn.InnerOuter => () =
    rule print " "
         ----------------------------------
         print_innerouter(Absyn.UNSPECIFIED)
+end
+
+relation unparse_innerouter_str: Absyn.InnerOuter => string =
+	
+  axiom	unparse_innerouter_str(Absyn.INNER) => "innner"
+
+  axiom	unparse_innerouter_str(Absyn.OUTER) => "outer"
+
+  axiom	unparse_innerouter_str(Absyn.UNSPECIFIED) => ""
 end
 (**)
 
@@ -326,6 +491,43 @@ relation print_elementspec: Absyn.ElementSpec => () =
 
 end
 
+relation unparse_elementspec_str: Absyn.ElementSpec => string =
+	
+  rule	select_string(repl,"replaceable,","") => s1 &
+	unparse_class_str cl => s2 &
+	string_append(s1,s2) => str
+	-------------------------
+	unparse_elementspec_str(Absyn.CLASSDEF(repl,cl)) => str
+	
+  rule	print "EXTENDS(" & Absyn.path_string p => s1 &
+	string_append("extends ",s1) => s2 &
+	get_string_list(l,unparse_element_arg_str,",") => s3 &
+	string_append(s2,s3) => str
+	------------------------------------------
+	unparse_elementspec_str(Absyn.EXTENDS(p,l)) => str
+
+  rule	Absyn.path_string(t) => s1 &
+	unparse_elementattr_str(attr) => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," ") => s4 &
+	get_string_list(cs, unparse_componentitem_str, ",") => s5 &
+	string_append(s4,s5) => s6 &
+	string_append(s6,";") => str
+	------------------------------------------
+	unparse_elementspec_str(Absyn.COMPONENTS(attr,t,cs)) => str
+	
+  rule	unparse_import_str i => s1 &
+	string_append("import ",s1) => s2 &
+	string_append(s2,";") => str
+	----------------------------
+	unparse_elementspec_str(Absyn.IMPORT(i)) => str
+
+  rule	print " ##ERROR## "
+	-------------------
+	unparse_elementspec_str(_) => ""
+
+end
+
 relation print_import : Absyn.Import => () =
 
   rule	print i & print " = " &
@@ -341,6 +543,23 @@ relation print_import : Absyn.Import => () =
 	--------------------------
 	print_import(Absyn.UNQUAL_IMPORT(p))
 		     
+end
+relation unparse_import_str : Absyn.Import => string =
+
+  rule	string_append(i," = ") => s1 &
+	Absyn.path_string p => s2 &
+	string_append(s1,s2) => str
+	-----------------------
+	unparse_import_str(Absyn.NAMED_IMPORT(i,p)) => str
+
+  rule	Absyn.path_string p => str
+	-------------
+	unparse_import_str(Absyn.QUAL_IMPORT(p)) => str
+
+  rule	Absyn.path_string p => s1 &
+	string_append(s1, ".*") => str
+	--------------------------
+	unparse_import_str(Absyn.UNQUAL_IMPORT(p)) => str
 end
 
 relation print_elementattr: Absyn.ElementAttributes => () =
@@ -361,6 +580,25 @@ relation print_elementattr: Absyn.ElementAttributes => () =
 
 end
 
+relation unparse_elementattr_str: Absyn.ElementAttributes => string =
+
+  rule	
+	select_string(fl,"flow ","") => fs &
+	unparse_variability_symbol_str(var) => vs &
+	unparse_direction_symbol_str(dir) => ds &
+	string_append(fs,vs) => s1 &
+	string_append(s1," ") => s2 &
+	string_append(s2,ds) => s3 &
+	string_append(s3," ") => str
+	-----------------------------------
+	unparse_elementattr_str(Absyn.ATTR(fl,var,dir,adim)) => str
+
+  rule	print " ##ERROR## print_elementattr"
+	-------------------
+	unparse_elementattr_str(_) => ""
+
+end
+
 relation variability_symbol: Absyn.Variability => string =
 
   axiom variability_symbol(Absyn.VAR) => ""
@@ -375,6 +613,23 @@ relation direction_symbol: Absyn.Direction => string =
   axiom direction_symbol(Absyn.BIDIR) => ""
   axiom	direction_symbol(Absyn.INPUT) => "INPUT"
   axiom	direction_symbol(Absyn.OUTPUT) => "OUTPUT"
+
+end
+
+relation unparse_variability_symbol_str: Absyn.Variability => string =
+
+  axiom unparse_variability_symbol_str(Absyn.VAR) => ""
+  axiom	unparse_variability_symbol_str(Absyn.DISCRETE) => "discrete"
+  axiom	unparse_variability_symbol_str(Absyn.PARAM) => "parameter"
+  axiom	unparse_variability_symbol_str(Absyn.CONST) => "const"
+
+end
+
+relation unparse_direction_symbol_str: Absyn.Direction => string =
+
+  axiom unparse_direction_symbol_str(Absyn.BIDIR) => ""
+  axiom	unparse_direction_symbol_str(Absyn.INPUT) => "input"
+  axiom	unparse_direction_symbol_str(Absyn.OUTPUT) => "output"
 
 end
 
@@ -399,7 +654,26 @@ relation print_componentitem: Absyn.ComponentItem => () =
 	print ")"
 	------------------------------------------
 	print_componentitem(Absyn.COMPONENTITEM(c,a))
+end
 
+relation unparse_component_str: Absyn.Component => string =
+
+  rule	print_arraydim_str a => s1 &
+	string_append(n,s1) => s2 &
+	get_option_str(m,unparse_modification_str) => s3 &
+	string_append(s2,s3) => str
+	------------------------------------------
+	unparse_component_str(Absyn.COMPONENT(n,a,m)) => str
+end
+
+relation unparse_componentitem_str: Absyn.ComponentItem => string =
+
+  rule	
+	unparse_component_str c => s1 &
+	get_option_str(a, unparse_annotation_str) => s2 &
+	string_append(s1,s2) => str
+	------------------------------------------
+	unparse_componentitem_str(Absyn.COMPONENTITEM(c,a)) => str
 end
 
 (**)
@@ -478,6 +752,42 @@ relation print_mod2 : Absyn.Exp option => () =
 
 end
 
+
+relation unparse_modification_str: Absyn.Modification => string =
+	
+  rule	unparse_mod1_str l => s1 & 
+	unparse_mod2_str e => s2 &
+	string_append(s1,s2) => str
+	-------------------------
+	unparse_modification_str(Absyn.CLASSMOD(l, e)) => str
+	
+  rule	print " Failure MODIFICATION \n"
+	-------------
+	unparse_modification_str(_) => ""
+	
+end
+
+relation unparse_mod1_str: Absyn.ElementArg list => string =
+
+  axiom	unparse_mod1_str [] => ""
+
+  rule	get_string_list(l,unparse_element_arg_str,",") => s1 &
+	string_append("(",s1) => s2 &
+	string_append(s2,")") => str
+	------------------------------------
+	unparse_mod1_str l => str
+end
+
+relation unparse_mod2_str : Absyn.Exp option => string =
+
+  axiom	unparse_mod2_str NONE => ""
+
+  rule	print_exp_str(e) => s1 &
+	string_append("=",s1) => str
+	-------------------------
+	unparse_mod2_str SOME(e) => str
+end
+
 (* Equations *)
 
 relation print_equation: Absyn.Equation => () =
@@ -529,15 +839,92 @@ relation print_equationitem: Absyn.EquationItem => () =
 	--------------
 	print_equationitem Absyn.EQUATIONITEM(eq,NONE)
 end
+
+relation unparse_equation_str: Absyn.Equation => string =
+	
+  rule	 print_exp_str(e) => str 
+	-------------------------------------------
+	unparse_equation_str(Absyn.EQ_EXPR(e)) => str
+	
+  rule	print "IF (" & print_exp_str(e) => s1 &
+	string_append("if ",s1) => s2 &
+	string_append(s2," then \n") => s3 &
+	get_string_list(tb,unparse_equationitem_str, ";") => s4 &
+	string_append(s3,s4) => s5 &
+	get_string_list(eb,unparse_eq_elseif_str, " ") => s6 &
+	string_append(s5,s6) => s7 &
+	string_append(s7, "\n else") => s8 &
+	get_string_list(fb,unparse_equationitem_str,";") => s9 &
+	string_append(s8,s9) => str
+	----------------------------------------------------
+	unparse_equation_str(Absyn.EQ_IF(e,tb,eb,fb)) => str
+	
+  rule	print_exp_str(e1) => s1 &
+	string_append(s1,"=") => s2 &
+	print_exp_str(e2) => s3 &
+	string_append(s2,s3) => str
+	-------------------------------------------
+	unparse_equation_str(Absyn.EQ_EQUALS(e1,e2)) => str
+	
+  rule	print_component_ref_str(e1) => s1  &
+	string_append("connect(",s1) => s2 &
+	string_append(s2,",") => s3 &
+	print_component_ref_str(e2) => s4 &
+	string_append(s3,s4) => s5 &
+	string_append(s5,")") => str 
+	-------------------------------------------
+	unparse_equation_str(Absyn.EQ_CONNECT(e1,e2)) => str
+	
+  rule	string_append("for ",i) => s1 &
+	string_append(s1, " in " ) => s2 &
+	print_exp_str(e) => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4, "loop \n") => s5 &
+	get_string_list(el,unparse_equationitem_str,";\n") => s6 &
+	string_append(s5,s6) => s7 &
+	string_append(s7,"\nend loop;\n") => str
+	----------------------------------------------------------
+	unparse_equation_str Absyn.EQ_FOR(i,e,el) => str
+	
+  rule	print " ** Failure! UNKNOWN EQUATION ** "
+	--------------------------------
+	unparse_equation_str(_) => ""
+	
+end
+	
+relation unparse_equationitem_str: Absyn.EquationItem => string =
+  rule	
+	unparse_equation_str eq => s1 &
+	unparse_annotation_str ann => s2 &
+	string_append(s1, " ") => s3 &
+	string_append(s3,s2) => str
+	---------------------------
+	unparse_equationitem_str Absyn.EQUATIONITEM(eq,SOME(ann)) =>str 
+	
+  rule	unparse_equation_str eq => str 
+	--------------
+	unparse_equationitem_str Absyn.EQUATIONITEM(eq,NONE) => str
+end
+	
 (**)
-
+	
 relation print_eq_elseif : (Absyn.Exp * Absyn.EquationItem list) => () =
-
+	
   rule	print " ELSEIF " & print_exp e & print " THEN " &
 	print_list_debug("print_eq_elseif",el, print_equationitem, ";")
 	-----------------------------------
 	print_eq_elseif((e,el))
-
+end
+	
+relation unparse_eq_elseif_str : (Absyn.Exp * Absyn.EquationItem list) => string =
+	    
+  rule	print_exp_str e => s1 &
+	string_append ("\n elseif ",s1) => s2 &
+	string_append(s2," then \n") => s3 &
+	get_string_list(el,unparse_equationitem_str, ";") => s4 &
+ 	string_append(s3,s4) => str 
+	-----------------------------------
+	unparse_eq_elseif_str((e,el)) => str
 end
 
 (* Algorithm clauses *)
@@ -582,6 +969,64 @@ relation print_algorithm: Absyn.Algorithm => () =
 	
 end
 
+relation unparse_algorithm_str: Absyn.Algorithm => string =
+	
+  rule	print_component_ref_str cr => s1 &
+	string_append(s1,":=") => s2 &
+	print_exp_str(exp) => s3 & 
+	string_append(s2,s3) => str
+	-------------------------------------------
+	unparse_algorithm_str(Absyn.ALG_ASSIGN(cr,exp)) => str
+	
+  rule	
+	print "IF (" & print_exp_str(e) => s1 &
+	string_append("if ",s1) => s2 &
+	string_append (s2," then \n") => s3 &
+	get_string_list(tb,unparse_algorithm_str,";\n") => s4 &
+	string_append(s3,s4) => s5 &
+	get_string_list(eb,unparse_alg_elseif_str, " ") => s6 &
+	string_append(s5,s6) => s7 &
+	string_append(s7, "\n else") => s8 &
+	get_string_list(fb,unparse_algorithm_str,";\n") => s9 &
+	string_append(s8,s9) => s10 &
+	string_append(s10,"\n") => str
+	----------------------------------------------------
+	unparse_algorithm_str(Absyn.ALG_IF(e,tb,eb,fb)) => str
+	
+  rule	print "FOR " &
+	string_append("for ",i)=> s1 &
+	string_append(s1, " in ") => s2 & 
+	print_exp_str(e)=> s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," loop \n") => s5 &
+	get_string_list(el,unparse_algorithm_str," ;\n") => s6 &
+	string_append(s5,s6) => s7 &
+	string_append(s7,"\n end for;\n") => str
+	----------------------------------------------------------
+        unparse_algorithm_str Absyn.ALG_FOR(i,e,el) => str
+				     
+  rule	print "WHILE " & print_exp_str(e) => s1 &
+	string_append("while (",s1) => s2 &
+	string_append(s2,") loop \n") => s3 &
+	get_string_list(al,unparse_algorithm_str,";\n") => s4 &
+	string_append(s3,s4) => s5 &
+	string_append(s5,"\n end while;\n")=> str				     	----------------------------------------------------------
+	unparse_algorithm_str Absyn.ALG_WHILE(e,al) => str
+	
+  rule	print "WHEN_A " & print_exp_str(e)=>s1 &
+	string_append("when ",s1) => s2 &
+	string_append(s2," then \n") => s3 &
+	get_string_list(al,unparse_algorithm_str,";\n") => s4 &
+	string_append(s3,s4) => s5 &
+	string_append(s5,"\nend when;\n") => str
+	----------------------------------------------------------
+	unparse_algorithm_str Absyn.ALG_WHEN_A(e,al) => str
+	
+  rule	print " *Failure! UNKNOWN ALGORITHM CLAUSE ** "
+	--------------------------------
+	unparse_algorithm_str(_) => ""
+	
+end
 (**)
 
 relation print_alg_elseif : (Absyn.Exp * Absyn.Algorithm list) => () =
@@ -593,6 +1038,17 @@ relation print_alg_elseif : (Absyn.Exp * Absyn.Algorithm list) => () =
 
 end
 
+
+relation unparse_alg_elseif_str : (Absyn.Exp * Absyn.Algorithm list) => string =
+
+  rule  print_exp_str e => s1 &
+	string_append(" elseif ",s1) => s2 &
+	string_append(s2, " then \n") => s3 &
+	get_string_list(el,unparse_algorithm_str,";\n")=> s4 &
+	string_append(s3,s4) => str
+	-----------------------------------
+	unparse_alg_elseif_str((e,el)) => str
+end
 
 
 (* Component references and paths *)
@@ -1101,7 +1557,15 @@ relation print_bool : bool => () =
   rule	print_select (b, "true", "false")
 	---------------------------------
 	print_bool b
+end
 
+
+relation get_option_str: ('a option, 'a => string) => string =
+  rule  r (a) => str
+	------------
+	get_option_str (SOME(a),r) => str
+
+  axiom	get_option_str(NONE,_) => ""
 end
 
 relation print_bool_str : bool => string =
@@ -1110,4 +1574,14 @@ relation print_bool_str : bool => string =
 	---------------------------------
 	print_bool_str b => s
 
+end
+
+relation stringlist_append : string list => string =
+
+	axiom stringlist_append([]) => ""
+
+  rule	stringlist_append(xs) => s2 &
+	string_append(s1,s2) => str
+	-----------------------------
+        stringlist_append(s1::xs) => str
 end

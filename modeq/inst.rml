@@ -26,7 +26,7 @@
  **
  ** RCS: $Id$
  **
- ** This module exports only one relation.
+ ** This module exports only one relation. Not true anymore...
  **)
 
 (** debug flags: inst *)
@@ -49,6 +49,9 @@ module Inst:
 		  | DIMEXP of Exp.Subscript * Exp.Exp option
 
   relation instantiate: SCode.Program => DAE.DAElist
+  
+  relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option)
+	  => Types.Binding
 
   relation instantiate_class : (SCode.Program,SCode.Path) => DAE.DAElist
 
@@ -599,7 +602,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
-	make_binding (env,attr,eq,cl) => binding &
+	make_binding (env,attr,eq) => binding &
 	Debug.fcall ("insttr", Types.print_binding, binding) &
 	Debug.fcall ("insttr", print, "\n") &
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
@@ -2380,35 +2383,35 @@ end
  **
  **)
 
-relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option, SCode.Class)
+relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option)
 	  => Types.Binding =
 
-  axiom	make_binding (_,_,NONE,_) => Types.UNBOUND
+  axiom	make_binding (_,_,NONE) => Types.UNBOUND
 
 (* Numerical values becoms VALBOUND *)
-  axiom	make_binding (env, _, SOME((Exp.ICONST(i),_)),_) 
+  axiom	make_binding (env, _, SOME((Exp.ICONST(i),_))) 
 	    => Types.VALBOUND(Values.INTEGER(i))
 	    
-  axiom make_binding (env, _, SOME((Exp.RCONST(r),_)),_)
+  axiom make_binding (env, _, SOME((Exp.RCONST(r),_)))
 	    => Types.VALBOUND(Values.REAL(r))
 	    
-  axiom	make_binding (env, _, SOME((Exp.SCONST(s),_)),_)
+  axiom	make_binding (env, _, SOME((Exp.SCONST(s),_)))
 	=> Types.VALBOUND(Values.STRING(s))
 	    
-  axiom	make_binding (env, _, SOME((Exp.BCONST(b),_)),_)
+  axiom	make_binding (env, _, SOME((Exp.BCONST(b),_)))
 	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
-  axiom	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME((e,prop)), cl)
+  axiom	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME((e,prop)))
 	  => Types.EQBOUND(e,true)
 
 	(* default *)
 
-  axiom	make_binding (_,_, SOME((e,Static.PROP(t,c))),_) => Types.EQBOUND(e,c)
+  axiom	make_binding (_,_, SOME((e,Static.PROP(t,c)))) => Types.EQBOUND(e,c)
 
   rule	print "- make_binding failed\n"
 	-------------------------------
-	make_binding(_,_,_,_) => fail
+	make_binding(_,_,_) => fail
 
 end
 
