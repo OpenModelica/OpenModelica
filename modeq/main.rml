@@ -357,9 +357,20 @@ relation translate_file : string list => () =
 	----------------------------
 	translate_file _::_::_ => fail
 
-  rule	Print.print_buf "# Supply a file name\n"
-	----------------------------
-	translate_file [] => fail
+  rule	Print.print_buf "Usage: modeq <options> filename \n" &
+	Print.print_buf "modeq accepts .mo (Modelica files) \n" &
+	Print.print_buf "              .mof (Flat Modelica files) \n" &
+	Print.print_buf "              .mos (Modelica Script files) \n" &
+ 	Print.print_buf "Options:\n========" &
+	Print.print_buf "+s    Generate simulation code\n" &
+	Print.print_buf "+q    Run in quiet mode, ouput nothing\n" &
+	Print.print_buf "+d=flags, set flags: \n" &
+	Print.print_buf "    blt               apply blt transformation\n" &
+	Print.print_buf "    interactive       run in interactive mode\n" &
+	Print.print_buf "    interactiveCorba  run in interactive mode using Corba\n" &
+	Print.print_buf "    ..., see DEBUG.TXT for further flags\n" 
+ 	----------------------------
+ 	translate_file [] => fail
 
   rule	Print.print_buf "# An error occured. Perhaps this is not a Modelica file or does not end with .mo?\n" &
 	Print.get_string () => str 
@@ -516,8 +527,10 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	print cname_str & print "\n" &
 	Util.string_append_list([cname_str,".cpp"]) => filename &
 	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
+	Util.string_append_list([cname_str,".makefile"]) => makefilename &
 	SimCodegen.generate_residual_code(indexed_dae',ass1,ass2,m,mt,comps,classname,filename) &
-	SimCodegen.generate_init_data(indexed_dae',classname,init_filename,0.0,1.0,0.0001)				      
+	SimCodegen.generate_init_data(indexed_dae',classname,init_filename,0.0,1.0,0.0001) &
+	SimCodegen.generate_makefile(makefilename,classname)
 	--------------------
 	simcodegen(classname,dae,ass1,ass2,m,mt,comps)
 
