@@ -37,6 +37,7 @@ tokens {
 	EXTERNAL_FUNCTION_CALL;
     FOR_INDICES ;
 	FUNCTION_CALL		;
+	INITIAL_FUNCTION_CALL		;
 	FUNCTION_ARGUMENTS;
 	NAMED_ARGUMENTS;
 	QUALIFIED;
@@ -603,9 +604,12 @@ component_reference__function_call ! :
 			else 
 			{ 
 				#component_reference__function_call = #cr;
-			}
+			} 
 		}
-		;
+	| i:INITIAL LPAR! RPAR! {
+			#component_reference__function_call = #([INITIAL_FUNCTION_CALL,"INITIAL_FUNCTION_CALL"],i);
+		}
+	;
 
 name_path :
 		{ LA(2)!=DOT }? IDENT |
