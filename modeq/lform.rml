@@ -1,0 +1,177 @@
+(* lform.rml
+ *
+ *)
+
+module Lform:
+
+  with "exp.rml"
+  with "absyn.rml"
+
+  datatype Object = OBJECT of string
+
+  type Subscript = (Exp.Exp * ((Exp.Exp * (Exp.Exp option)) option)) option
+
+  type ComponentRef = (Object * (Subscript list)) list
+
+  datatype ArrayDim = ONEDIM of Subscript
+		    | TWODIM of Subscript*Subscript
+
+  datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
+		      | REDECLARATION of bool * ElementSpec
+
+  and	   Modification = CLASSMOD of ElementArg list
+			| EQUALMOD of Exp.Exp
+
+  and	   Component = COMPONENT of Object	(* component name *)
+				  * ArrayDim option
+				  * Modification option
+
+  and	   ElementSpec = CLASSDEF of bool		(* replaceable *)
+				   * Class
+		       | EXTENDS of Class * ElementArg list
+		       | COMPONENTS of bool	(* flow *)
+				     * bool	(* parameter *)
+				     * bool	(* constant *)
+				     * bool	(* input *)
+				     * bool	(* output *)
+				     * Type	(* type name *)
+				     * Component list
+
+  and	   Element = ELEMENT of bool		(* final *)
+			      * ElementSpec
+
+  and	   ClassRestriction = CL_CLASS
+			    | CL_MODEL
+			    | CL_RECORD
+			    | CL_BLOCK
+			    | CL_CONNECTOR
+			    | CL_TYPE
+			    | CL_PACKAGE
+			    | CL_FUNCTION
+
+  and	   Type = REAL | INTEGER | CLASSTYPE of Class
+
+  and	   Class = CLASS of Exp.Ident             (* Name *)
+			  * bool			(* Partial *)
+			  * ClassRestriction      (* Restricion *)
+			  * ClassDef		(* Parts *)
+
+  and	   ClassDef = PARTS of ClassPart list
+		    | DERIVED of Class
+			       * ArrayDim option
+			       * (ElementArg list) option
+
+  and	   ClassPart = PUBLIC of Element list
+		     | PROTECTED of Element list
+		     | EQUATIONS of Equation list
+		     | ALGORITHMS of Algorithm list
+
+  and	   Equation = EQ_EXPR of Exp.Exp (* more later *)
+		    | EQ_EQUALS of Exp.Exp * Exp.Exp
+
+  and	   Algorithm = ALGORITHM (* Fill in later *)
+
+  type Program = Class list
+
+  relation convert: Absyn.Program => Program
+
+end
+
+(**********************************************************************
+ *  Environment handling
+ **********************************************************************)
+
+type Binding = Exp.Ident * Class
+
+type Env = Binding list
+
+val empty_env = []
+
+relation mk_binding : (Exp.Ident,Class) => Binding =
+
+	axiom mk_binding(n,c) => ((n,c))
+
+end
+
+relation extend_env : (Env,Class) => Env =
+
+	rule	mk_binding(n,c) => b
+		------------------------------------
+		extend_env(e,c as CLASS(n,p,r,d)) => b::e
+
+end
+
+relation lookup_class: (Env,Exp.Ident) => Class =
+
+(*	axiom	lookup_class([],_) *)
+
+	rule	n = i
+		-------------------------------
+		lookup_class((n,c)::env,i) => c
+
+end
+
+(**********************************************************************
+ *  Conversions
+ **********************************************************************)
+
+relation convert_array_dim: Absyn.ArrayDim option => ArrayDim option =
+
+	axiom	convert_array_dim(NONE) => NONE
+	axiom	convert_array_dim(SOME(Absyn.ONEDIM(s))) => SOME(ONEDIM(s))
+	axiom	convert_array_dim(SOME(Absyn.TWODIM(s1,s2))) => SOME(TWODIM(s1,s2))
+
+end
+
+relation convert_class_restr: Absyn.ClassRestriction => ClassRestriction =
+
+	axiom	convert_class_restr(Absyn.CL_CLASS) => CL_CLASS
+	axiom	convert_class_restr(Absyn.CL_MODEL) => CL_MODEL
+	axiom	convert_class_restr(Absyn.CL_RECORD) => CL_RECORD
+	axiom	convert_class_restr(Absyn.CL_BLOCK) => CL_BLOCK
+	axiom	convert_class_restr(Absyn.CL_CONNECTOR) => CL_CONNECTOR
+	axiom	convert_class_restr(Absyn.CL_TYPE) => CL_TYPE
+	axiom	convert_class_restr(Absyn.CL_PACKAGE) => CL_PACKAGE
+	axiom	convert_class_restr(Absyn.CL_FUNCTION) => CL_FUNCTION
+
+end
+
+relation convert_class_def: (Env,Absyn.ClassDef) => ClassDef =
+
+	axiom	convert_class_def(env,Absyn.PARTS(l)) => PARTS([]) (* FIXME *)
+
+	rule	lookup_class(env,i) => c &
+		convert_array_dim(d) => d'
+		(* FIXME *)
+		-----------------------------------------------
+		convert_class_def(env, Absyn.DERIVED(i,d,a)) =>
+			DERIVED(c,d',NONE)
+
+end
+and	 convert_class: (Env,Absyn.Class) => Env * Class =
+
+	rule	convert_class_restr(r) => r' &
+		convert_class_def(env,d) => d' &
+		(* let *) c = CLASS(i,p,r',d') &
+		extend_env(env,c) => env'
+		------------------------------------------------------
+		convert_class(env, Absyn.CLASS(i,p,r,d)) => ((env',c))
+
+end
+and      convert_e: (Env,Absyn.Class list) => Env * Program =
+
+	axiom	convert_e(env,[]) => ((env,[]))
+
+	rule	convert_class(env,c) => ((env',cc)) &
+		convert_e(env',cs) => ((env'',ccs))
+		--------------------------------
+		convert_e(env,c::cs) => ((env'',cc::ccs))
+
+end
+and      convert: Absyn.Program => Program =
+
+	rule	convert_e(empty_env,cs) => ((env,cs'))
+		--------------------------
+		convert cs => cs'
+
+end
