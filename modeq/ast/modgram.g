@@ -292,9 +292,8 @@ element :
 
 extends_clause:
 	EXTENDS^ i:name_path
-	{ class_specialization }
-	<< #0->rml = Absyn__EXTENDS(#i->rml,
-				    mk_nil() /* FIXME */); >>
+	{ m:class_specialization }
+	<< #0->rml = Absyn__EXTENDS(#i->rml, #m ? #m->rml : mk_nil() ); >>
 	;
 
 /*
