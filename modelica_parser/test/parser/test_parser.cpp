@@ -1,11 +1,17 @@
-
-#include <antlr/Token.hpp>
-#include "antlr/ANTLRException.hpp"
-
 #include "modelica_lexer.hpp"
 #include "modelica_parser.hpp"
 #include "parse_tree_dumper.hpp"
 
+#include <antlr/Token.hpp>
+#include "antlr/ANTLRException.hpp"
+#include "antlr/CharStreamException.hpp"
+#include "antlr/TokenStreamException.hpp"
+#include "antlr/RecognitionException.hpp"
+#include "antlr/NoViableAltException.hpp"
+#include "antlr/MismatchedTokenException.hpp"
+#include "antlr/TokenStreamRecognitionException.hpp"
+#include "antlr/ASTFactory.hpp"
+#include "MyAST.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -31,24 +37,25 @@ int main(int argc, char* argv[])
     
     try 
     {
+    ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
 	modelica_lexer lexer(file);
 	lexer.setFilename(argv[1]);
-
+	
 	modelica_parser parser(lexer);
-
+	parser.initializeASTFactory(my_factory);
+	parser.setASTFactory (&my_factory);
 	parser.stored_definition();
 
-	parse_tree_dumper dumper(std::cout);
-	if (std::string(argv[0]) == "dot_parser")
-	{
-	    dumper.dump_dot(parser.getAST());
-	}
-	else
-	{
-	    dumper.dump(parser.getAST());
-	}
 
-	
+	//parse_tree_dumper dumper(std::cout);
+	//if (std::string(argv[0]) == "dot_parser")
+	//{
+	//    dumper.dump_dot(parser.getAST());
+	//}
+	//else
+	//{
+	//    dumper.dump(parser.getAST());
+	//}
     }
     catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
       {
