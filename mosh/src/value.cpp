@@ -11,6 +11,7 @@
 #include "runtime/numerical_array.hpp"
 
 #include <cmath>
+#include <stdio.h>
 
 value::value() : m_function(0)//,m_function_argument(0)
 {
@@ -648,7 +649,7 @@ const value& value::operator+= (const value& val)
 	    }
 	  else if (is_integer_array() && val.is_integer_array())
 	    {
-	      m_integer_array = val.m_integer_array;
+	      m_integer_array += val.m_integer_array;
 	    }
 	  else
 	    {
