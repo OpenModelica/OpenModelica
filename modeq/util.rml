@@ -182,8 +182,12 @@ module Util :
   relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list)
   relation string_append_list : string list => string
   relation string_delimit_list : (string list, string) => string
+  relation string_delimit_list_no_empty : (string list, string) => string
   relation string_replace_char : (string, char, char) => string
   relation string_split_at_char : (string, char) => string list 
+  relation is_empty_string : string => bool 
+  relation is_not_empty_string : string => bool 
+
 
   relation bool_and_list: bool list => bool
   relation bool_or_list: bool list => bool
@@ -1043,6 +1047,20 @@ relation string_delimit_list : (string list, string) => string =
 	string_delimit_list(f::r,delim) => str
 end
 
+(** relation string_delimit_list_no_empty
+ ** Takes a list of strings and a string delimiter and appends all list elements with
+ ** the string delimiter inserted between elements.
+ ** For example,
+ ** string_delimit_list(["x","y","z"], ", ") => "x, y, z"
+ **)
+relation string_delimit_list_no_empty : (string list, string) => string =
+	
+  rule  list_select(lst,is_not_empty_string) => lst1 &
+        string_delimit_list(lst1,delim) => str 
+	    ---------------------------
+	    string_delimit_list_no_empty(lst,delim) => str
+end
+
 (** relation string_replace_char
  ** Takes a string and two chars and replaces the first char to 
  ** second char:
@@ -1324,4 +1342,16 @@ relation flatten_option: ('a option, 'a) => 'a =
   axiom	flatten_option (NONE,n) => n
   axiom	flatten_option (SOME(c),n) => c
 
+end
+
+relation is_empty_string : string => bool =
+
+  axiom is_empty_string "" => true
+  axiom is_empty_string _ => false
+end
+
+relation is_not_empty_string : string => bool =
+
+  axiom is_not_empty_string "" => false
+  axiom is_not_empty_string _ => true
 end

@@ -1335,11 +1335,6 @@ relation generate_alloc_outvars : (DAE.Element list, string, string, int)
 
 end
 
-relation is_empty_string : string => bool =
-
-  axiom is_empty_string "" => true
-  axiom is_empty_string _ => false
-end
 	
 relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 
@@ -1347,7 +1342,7 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str1,_) &
 	Util.string_append_list([prefix,".",cref_str1]) => cref_str2 &
-	is_empty_string prefix => emptypre &
+	Util.is_empty_string prefix => emptypre &
 	Util.if (emptypre, cref_str1, cref_str2) => cref_str &
 	generate_size_subscripts(cref_str,inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
 	c_move_statements_to_inits cfn1 => cfn1' &
