@@ -41,9 +41,6 @@ module Static :
   with "env.rml"
   with "values.rml"
   with "classinf.rml"
-  with "lookup.rml"
-  with "debug.rml"
-  with "interactive.rml"
 
   type Ident = string
 
@@ -80,10 +77,10 @@ returns multiple arguments. *)
 			Exp.Exp option		   (* Contain the elaborated expression for the actual argument *)							  
 
   (* Expression analysis *)
-  relation elab_exp : (Env.Env, Absyn.Exp,Interactive.InteractiveSymbolTable option)
+  relation elab_exp : (Env.Env, Absyn.Exp,(Absyn.Path * Types.Type) list option)
 	    => (Exp.Exp, Properties)
   relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) (* Special relation for graphics annotations, because of inhomogenous array of graphics primitives *)
-  relation elab_exp_list : (Env.Env, Absyn.Exp list, Interactive.InteractiveSymbolTable option) 
+  relation elab_exp_list : (Env.Env, Absyn.Exp list, (Absyn.Path* Types.Type) list option) 
 	    => (Exp.Exp list, Properties list)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Properties, SCode.Accessibility)
@@ -93,9 +90,9 @@ returns multiple arguments. *)
 	  => (Exp.Subscript list, bool)
 
   (* Constant propagation *)
-  relation ceval : (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable option)
+  relation ceval : (Env.Env, Exp.Exp, (Absyn.Path * Types.Type) list option)
 	    => Values.Value
-  relation ceval_list : (Env.Env, Exp.Exp list, Interactive.InteractiveSymbolTable option)	  => Values.Value list
+  relation ceval_list : (Env.Env, Exp.Exp list, (Absyn.Path * Types.Type) list option)	  => Values.Value list
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
 
   (* Property matching (type conversions etc.) *)
@@ -121,12 +118,14 @@ end
 with "dump.rml"
 with "print.rml"
 with "system.rml"
+with "lookup.rml"
+with "debug.rml"
 
 (** LS:
  ** - Expression elaboration
  **)
 
-relation elab_exp_list : (Env.Env, Absyn.Exp list, Interactive.InteractiveSymbolTable option)
+relation elab_exp_list : (Env.Env, Absyn.Exp list, (Absyn.Path * Types.Type) list option)
 	  => (Exp.Exp list, Properties list) =
 
   axiom	elab_exp_list (_,[],_) => ([],[])
@@ -146,7 +145,7 @@ end
  ** `Exp.Exp' and the properties.
  **)
 
-relation elab_exp : (Env.Env, Absyn.Exp, Interactive.InteractiveSymbolTable option)
+relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
 	    => (Exp.Exp, Properties) =
 
   axiom	elab_exp(_, Absyn.INTEGER(x),_)
@@ -568,7 +567,7 @@ end
 
 (** relation: elab_array *)
 
-relation elab_array : (Env.Env, Absyn.Exp list,Interactive.InteractiveSymbolTable option)
+relation elab_array : (Env.Env, Absyn.Exp list,(Absyn.Path * Types.Type) list option)
 	  => (Exp.Exp list, Properties) =
 
   rule	elab_exp (env,e,st) => (e',prop)
@@ -652,7 +651,7 @@ relation match_with_promote : (Properties, Properties) => Properties =
 
 end
 
-relation elab_matrix_comma : (Env.Env, Absyn.Exp list, Interactive.InteractiveSymbolTable option)
+relation elab_matrix_comma : (Env.Env, Absyn.Exp list, (Absyn.Path * Types.Type) list option)
 	=> ((Exp.Exp*bool) list, Properties, int, int) =
 
 
@@ -682,7 +681,7 @@ end
 
 (** relation: elab_matrix_semi *)
 
-relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, Interactive.InteractiveSymbolTable option)
+relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, (Absyn.Path * Types.Type) list option)
 	=> ((Exp.Exp*bool) list list, Properties, int, int, int) =
 
   rule	elab_matrix_comma(env,el,st) => (el', props, dim, maxn)
@@ -905,7 +904,7 @@ end
  ** work.
  **)
 
-relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list,Interactive.InteractiveSymbolTable option)
+relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list,(Absyn.Path * Types.Type) list option)
 	=> (Exp.Exp, Properties) =
 
 	  (** LS: Check if a builtin function call, e.g. size()
@@ -937,7 +936,7 @@ end
  ** arguments to the formal parameters.
  **)
 
-relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list, Interactive.InteractiveSymbolTable option)
+relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list, (Absyn.Path * Types.Type) list option)
 	=> (Exp.Exp, Properties) =
 
   rule	(* This rule finds record constructors, user defined or implicit *)
@@ -1882,7 +1881,7 @@ end
  ** in which case function calls are evaluated.
  **)
 
-relation ceval : (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable option) 
+relation ceval : (Env.Env, Exp.Exp, (Absyn.Path * Types.Type) list option) 
 	    => Values.Value =
 
   axiom	ceval (_,Exp.ICONST(x),_) => Values.INTEGER(x)
@@ -2274,7 +2273,7 @@ end
  ** This relation does a constant evaluation on a number of expressions.
  **)
 
-relation ceval_list : (Env.Env, Exp.Exp list, Interactive.InteractiveSymbolTable option) 
+relation ceval_list : (Env.Env, Exp.Exp list, (Absyn.Path * Types.Type) list option) 
 	    => Values.Value list =
 	  
   rule	ceval (env, exp,st) => v

@@ -810,7 +810,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
-	elab_arraydim(env2,ad,eq,impl) => dims &
+	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
 
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
@@ -1124,7 +1124,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
-	elab_arraydim(env2,ad,eq,false) => dims &
+	elab_arraydim(env2,ad,eq,false,NONE) => dims &
 	print_dims dims &
 
 	(** Instantiate the component *)	
@@ -1271,21 +1271,21 @@ end
  ** check that that the dimension sizes are compatible and complete.
  **)
 
-relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool)
+relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,(Absyn.Path * Types.Type) list option)
 	  => DimExp list =
 
-  rule	elab_arraydim_decl(env,ad,impl) => dim &
+  rule	elab_arraydim_decl(env,ad,cf) => dim &
 	complete_arraydim(dim) => dim'
 	------------------------------
-	elab_arraydim(env,ad,NONE,impl) => dim'
+	elab_arraydim(env,ad,NONE,impl,cf) => dim'
 
-  rule	elab_arraydim_decl(env,ad,impl) => dim1 &
+  rule	elab_arraydim_decl(env,ad,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl) => dim3
+	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl,cf) => dim3
 
-  rule	elab_arraydim_decl(env,ad,impl) => dim1 &
+  rule	elab_arraydim_decl(env,ad,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	not compatible_arraydim(dim1,dim2) => dim3 &
 	Print.print_buf "# Array dimension mismatch\n" &
@@ -1294,12 +1294,12 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool)
 	Print.print_buf "    expected array dimensions [" &
 	print_dim dim1 & Print.print_buf "]\n"
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl) => fail
+	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl,cf) => fail
 
 
   rule	Print.print_buf "- elab_arraydim failed\n"
 	-------------------------------------
-	elab_arraydim(_,_,_,_) => fail
+	elab_arraydim(_,_,_,_,_) => fail
 
 end
 
@@ -1368,7 +1368,7 @@ end
  ** contain `NONE'.
  **)
 
-relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, Interactive.InteractiveSymbolTable option)
+relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type) list option)
 	    => (DimExp option) list =
 
   axiom	elab_arraydim_decl(_,[],_) => []
@@ -1386,7 +1386,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, Interactive.InteractiveS
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
 	Static.ceval(env,e,st) => Values.INTEGER(i) &
- 	elab_arraydim_decl(env,ds,false) => l
+ 	elab_arraydim_decl(env,ds,st) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) => SOME(DIMINT(i))::l
 

@@ -34,7 +34,6 @@
 
 
 module Absyn:
-    with "debug.rml"
 							  
   type Ident = string
 
@@ -290,6 +289,8 @@ module Absyn:
 				  ComponentRef option * (* ouput parameter as return value*)
 				  Exp list (* only positional arguments, i.e. expression list*)						     
 				   		       
+
+
   relation element_spec_name : ElementSpec => Ident
   relation cref_to_path : ComponentRef => Path
   relation path_to_cref : Path => ComponentRef
@@ -301,6 +302,7 @@ module Absyn:
   relation restr_string : Restriction => string
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
 end
+with "debug.rml"
 with "dump.rml"
 with "util.rml"
 with "print.rml"

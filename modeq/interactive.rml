@@ -38,14 +38,12 @@ module Interactive:
 					 Values.Value *  (* The expression containing the value *)
 					 Types.Type  (* The type of the expression *)
 
-  datatype CompiledFunction = COMPILEDFUNC of Absyn.Path * (* The F.Q. name of the function *)
-					      Types.Type (* The type of the function *)		  
 
   datatype InteractiveSymbolTable = SYMBOLTABLE of Absyn.Program * (*The ast*)
 						   SCode.Program * (* The exploded ast *)
 						   InstantiatedClass list * (* List of instantiated classes*)
 						   InteractiveVariable list * (*List of variables with values*)  
-  						   CompiledFunction list (* List of compiled functions*)
+  						   (Absyn.Path * Types.Type) list (* List of compiled functions, F.Q name + type*)
 
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) 
 
@@ -172,18 +170,19 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	(string,InteractiveSymbolTable) =
 	
   rule	build_env_from_symboltable(st) => env &	
-	Static.elab_exp(env,exp) => (sexp,prop) &
-	Static.ceval (env,sexp,SOME(st)) => value &
+	Static.elab_exp(env,exp,SOME(cr)) => (sexp,prop) &
+	Static.ceval (env,sexp,SOME(cf)) => value &
 	Values.val_string value =>  str
 	-------------------------------
-	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st)
+	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,cf)) => (str,st)
 	
   rule	build_env_from_symboltable(st) => env &
-	Static.elab_exp(env,exp) => (sexp,Static.PROP(t,_))  &
-	Static.ceval(env,sexp,SOME(st)) => value &
+	Static.elab_exp(env,exp,SOME(cr)) => (sexp,Static.PROP(t,_))  &
+	Static.ceval(env,sexp,SOME(cf)) => value &
 	add_var_to_symboltable(ident,value,t,st) => newst
 	-----------------------------------------------
-	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st) => ("",newst)
+	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st as SYMBOLTABLE(p,_,_,_,cf)) 
+	    => ("",newst)
 	
   rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str
 	-----------------------------
