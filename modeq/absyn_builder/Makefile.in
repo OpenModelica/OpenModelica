@@ -1,14 +1,13 @@
 CC=gcc
 CXX=g++
 
-ANTLR_HOME = /home/pelab/pub/pkg/antlr-2.7.1
-ANTLR_CPP = $(ANTLR_HOME)/lib/cpp/gcc-2.95.2
+ANTLR_HOME = @antlrhome@
 
-ANTLR_INCP = -I$(ANTLR_CPP)/include
-ANTLR_LIBP = -L$(ANTLR_CPP)/lib
+ANTLR_INCP = -I@antlrinc@
+ANTLR_LIBP = -L@antlrlib@
 
-RML_HOME =  /home/pelab/pub/pkg/rml/current
-RML_INCP = -I$(RML_HOME)/sparc-sol2-gcc/include/plain
+RML_HOME =  @rmlhome@
+RML_INCP = -I@rmlinc@
 
 PARSE_HOME = ../../modelica_parser
 PARSE_INCP = -I$(PARSE_HOME)/src
