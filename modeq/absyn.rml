@@ -136,11 +136,11 @@ module Absyn:
 	       | RANGE of Exp * Exp option * Exp
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
-  datatype Operator = ADD | SUB | MUL | DIV | POW
-		    | UMINUS | UPLUS
-		    | AND | OR
+  datatype Operator = ADD   | SUB    | MUL     | DIV       | POW
+		    | UPLUS | UMINUS
+		    | AND   | OR
 		    | NOT
-		    | LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
+		    | LESS  | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
   
   (** - Subscripts *)
   datatype Subscript = NOSUB
