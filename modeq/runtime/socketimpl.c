@@ -135,7 +135,7 @@ RML_BEGIN_LABEL(Socket__sendreply)
     perror("sendreply:");
     exit(1);
   }
-  
+  fsync(sock);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
