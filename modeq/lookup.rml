@@ -430,7 +430,7 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 	build_record_constructor_varlst (cdef,env) => varlst &
 	Types.make_function_type(varlst) => ftype 
 	----------------------------------------
-	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) 
+	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_RECORD,_),_))::rest,env,id) 
 	    => (ftype,env)
 
   rule	id = n & 
@@ -441,7 +441,7 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 	   a lot of changes......*)
 	Env.extend_frame_t(env,id,ty) => (env')
 	----------------------------------------
-	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_FUNCTION,_),_))::rest,env,id) => (ty,env')
+	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),_))::rest,env,id) => (ty,env')
 
   rule	(* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): not " &
 	   Print.print_buf n & Print.print_buf "\n" & *)
@@ -483,7 +483,7 @@ relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
 	lookup_functions_in_frame(rest,env,id) => t2 &
 	Types.make_function_type(varlst) => ftype
 	----------------------------------------
-	lookup_functions_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype::t2
+	lookup_functions_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_RECORD,_),_))::rest,env,id) => ftype::t2
 
   rule	 (* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): not " &
 	   Print.print_buf n & Print.print_buf "\n" & *)
@@ -529,7 +529,7 @@ relation lookup_recconst_in_frame: ((SCode.Ident * Env.Item) list,
   rule	id = n & Print.print_buf "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_class (cdef,env) => cdef 
 	----------------------------------------
-	lookup_recconst_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => (cdef,env)
+	lookup_recconst_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_RECORD,_),_))::rest,env,id) => (cdef,env)
 
   rule	 (* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): not " &
 	   Print.print_buf n & Print.print_buf "\n" & *)
@@ -546,8 +546,8 @@ relation build_record_constructor_class :(SCode.Class, Env.Env) => SCode.Class =
   rule	build_record_constructor_elts(elts,env) => funcelts &
 	build_record_constructor_result_elt(elts,id,env) => reselt
 	---------------------------------------------------
-	build_record_constructor_class (cl as SCode.CLASS(id,_,_,restr,SCode.PARTS(elts,_,_)),env) 
-	    => SCode.CLASS(id,false,false,Absyn.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[]))
+	build_record_constructor_class (cl as SCode.CLASS(id,_,_,restr,SCode.PARTS(elts,_,_,_)),env) 
+	    => SCode.CLASS(id,false,false,SCode.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[],NONE))
 end
 	
 relation build_record_constructor_elts: (SCode.Element list, Env.Env) => SCode.Element list =
@@ -593,7 +593,7 @@ relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var li
   rule	build_varlst_from_elts(elts,env) => inputvarlst &
 	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cl,[],true) => (_,_,ty,_) 
 	--------------------------------------
-	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_)),env) 
+	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_,_)),env) 
 	(* Add the return type of the record constructor *)
 	    => Types.VAR("result",Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
 end
@@ -653,12 +653,12 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path) => (SCode.Cla
 
   rule	lookup_class_in_parts(env,classname,parts) => (c,env)
 	----------------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_)),Absyn.IDENT(classname)) => (c,env)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)),Absyn.IDENT(classname)) => (c,env)
 	    
   rule	lookup_class_in_parts (env, c1, parts) => (c,env) &
 	lookup_class_in_class (env,c,p1) => (c',env)
 	-------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_)), Absyn.QUALIFIED(c1,p1)) => (c',env)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)), Absyn.QUALIFIED(c1,p1)) => (c',env)
 	
 end
 	
@@ -937,7 +937,7 @@ end
 relation assert_package : SCode.Class => () =
 
 	(* Break the generalize-to-class rule *)
-  axiom	assert_package SCode.CLASS(_,_,_,Absyn.R_PACKAGE,_)
+  axiom	assert_package SCode.CLASS(_,_,_,SCode.R_PACKAGE,_)
 
 end
 
@@ -957,7 +957,7 @@ relation lookup_class_in_package : (SCode.Class, Absyn.Path)
   rule	lookup_class_in_elements (els, path) => c
 	-----------------------------------------
 	lookup_class_in_package (SCode.CLASS(_,_,_,_,
-					       SCode.PARTS(els,_,_)),
+					       SCode.PARTS(els,_,_,_)),
 				 path) => (c, Env.empty_env)
 
 end

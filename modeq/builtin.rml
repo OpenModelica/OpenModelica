@@ -60,16 +60,16 @@ with "print.rml"
 
 (** - The primitive types *)
 
-val rl_type = SCode.CLASS("RealType",false,false,Absyn.R_PREDEFINED_REAL,
-			  SCode.PARTS([],[],[]))
-val int_type = SCode.CLASS("IntegerType",false,false,Absyn.R_PREDEFINED_INT,
-			   SCode.PARTS([],[],[]))
-val str_type = SCode.CLASS("StringType",false,false,Absyn.R_PREDEFINED_STRING,
-			   SCode.PARTS([],[],[]))
-val bool_type = SCode.CLASS("BooleanType",false,false,Absyn.R_PREDEFINED_BOOL,
-			    SCode.PARTS([],[],[]))
-val enum_type = SCode.CLASS("EnumType",false,false,Absyn.R_PREDEFINED_ENUM,
-			    SCode.PARTS([],[],[]))
+val rl_type = SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL,
+			  SCode.PARTS([],[],[],NONE))
+val int_type = SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INT,
+			   SCode.PARTS([],[],[],NONE))
+val str_type = SCode.CLASS("StringType",false,false,SCode.R_PREDEFINED_STRING,
+			   SCode.PARTS([],[],[],NONE))
+val bool_type = SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOL,
+			    SCode.PARTS([],[],[],NONE))
+val enum_type = SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUM,
+			    SCode.PARTS([],[],[],NONE))
 (** These are the primitive types that are used to build the types
  ** `Real', `Integer' etc. *)
 
@@ -87,38 +87,38 @@ val unit = SCode.COMPONENT("unit",true,false,
 (** - The `Real' type *)
 
 val real_type =
-SCode.CLASS("Real",false,false,Absyn.R_PREDEFINED_REAL,
+SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL,
 	    SCode.PARTS
 	    ([], (*[unit],*)
 	     [],
-	     []))
+	     [],NONE))
 
 (** - The `Integer' type *)
 
 val integer_type =
-SCode.CLASS("Integer",false,false,Absyn.R_PREDEFINED_INT,
+SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT,
 	    SCode.PARTS
 	    ([], (*[unit],*)
 	     [],
-	     []))
+	     [],NONE))
 
 (** - The `String' type *)
 
 val string_type =
-SCode.CLASS("String",false,false,Absyn.R_PREDEFINED_STRING,
+SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING,
 	    SCode.PARTS
 	    ([],
 	     [],
-	     []))
+	     [],NONE))
 
 (** - The `Boolean' type *)
 
 val boolean_type =
-SCode.CLASS("Boolean",false,false,Absyn.R_PREDEFINED_BOOL,
+SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL,
 	    SCode.PARTS
 	    ([],
 	     [],
-	     []))
+	     [],NONE))
 
 (** - The `time' variable *)
 

@@ -242,6 +242,11 @@ relation string_prefix_element : (string, DAE.Element list, DAE.Element)
 	string_prefix_element (str, dae1, DAE.FUNCTION(n, DAE.DAE(dae), ty)) 
 	  => DAE.FUNCTION(n, DAE.DAE(dae'), ty)
 
+  rule	string_prefix_elements (str, dae, dae) => dae'
+	----------------------------------------------
+	string_prefix_element (str, dae1, DAE.EXTFUNCTION(n, DAE.DAE(dae), ty,decl)) 
+	  => DAE.EXTFUNCTION(n, DAE.DAE(dae'), ty,decl)
+
   axiom	string_prefix_element (str, dae, e) => e
 
 end

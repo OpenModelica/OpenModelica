@@ -56,7 +56,7 @@ module DAE:
 		   | ALGORITHM of Algorithm.Algorithm
 		   | COMP of Ident * DAElist
 		   | FUNCTION of Absyn.Path * DAElist * Types.Type
-
+		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * Absyn.ExternalDecl
 
 
 (* 
@@ -172,6 +172,17 @@ relation dump2: DAElist => () =
 	dump2 (DAE(xs))
 	--------------
 	dump2 (DAE(FUNCTION(_,_,_)::xs))
+
+  rule	Print.print_buf "EXTFUNCTION(\n" &
+	Absyn.path_string path => str & Print.print_buf str &
+	Print.print_buf ", " &
+	dump2 dae &
+	Print.print_buf ", " &
+	Types.print_type tp &
+	Print.print_buf ")\n" &	
+	dump2 (DAE(xs))
+	--------------
+	dump2 (DAE(EXTFUNCTION(path,dae,tp,_)::xs))
 
   axiom dump2 (DAE([]))
 
@@ -940,6 +951,7 @@ end
 relation is_function : Element => () =
 
   axiom is_function FUNCTION(_,_,_)
+  axiom	is_function EXTFUNCTION(_,_,_,_)
 
 end
 

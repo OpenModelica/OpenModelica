@@ -419,7 +419,7 @@ end
  **)
 
 relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.ClassDef, Absyn.Restriction, bool,InstDims,bool)
+			 SCode.ClassDef, SCode.Restriction, bool,InstDims,bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -438,7 +438,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(dae5,dae3) => dae 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      SCode.PARTS(els,eqs,als), re, prot, inst_dims, impl)
+		      SCode.PARTS(els,eqs,als,_), re, prot, inst_dims, impl)
 	  => (dae,env''', csets''', ci_state'''', tys)
 
 	(** This rule describes how to instantiate a derived class *)
@@ -1607,7 +1607,7 @@ correct?
 	Debug.fprintl ("insttr", ["implicit_instantiation done:", n, "\n"])
 	--------------------------------------
 	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,Absyn.R_PACKAGE,_),
+			       c as SCode.CLASS(n,_,_,SCode.R_PACKAGE,_),
 			       inst_dims)
 	  => (env', dae)
 
@@ -1621,19 +1621,22 @@ correct?
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath
 	--------------------------------------
 	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,Absyn.R_FUNCTION,_),
+			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
 			       inst_dims)
 	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
-  rule	(*	Prefix.prefix_add(n,[],pre) => pre' & *)
+
+  rule	(* External functions should also have their type in env, but no dae! *)
+
 	inst_class(env,mod,pre,csets,c,inst_dims,true) => (dae, csets', ty, st) &
-	Env.extend_frame_t(env, n, ty) => env' &
-	Prefix.prefix_to_path pre => fpath
+	Env.extend_frame_t(env, n, ty) => env'	&
+	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
+	get_ext_decl(parts) => extdecl
 	--------------------------------------
 	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,Absyn.R_FUNCTION,_),
+			       c as SCode.CLASS(n,_,_,SCode.R_EXT_FUNCTION,parts),
 			       inst_dims)
-	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
+	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)])
 
   rule	(*let ty = Types.T_ENUMERATION(l) &
 	Env.extend_frame_t(env,n,ty) => env' & *)
@@ -1641,7 +1644,7 @@ correct?
 	Env.extend_frame_c(env,enumclass) => env'' 
 	-----------------------------------
 	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,Absyn.R_TYPE, SCode.ENUMERATION(l)),inst_dims)
+			       c as SCode.CLASS(n,_,_,SCode.R_TYPE, SCode.ENUMERATION(l)),inst_dims)
 	=> (env'', [])
 
   axiom	implicit_instantiation(env,mod,pre,csets,c,_) => (env,[])
@@ -1651,13 +1654,23 @@ correct?
 	implicit_instantiation(_,_,_,_,_,_) => fail
 end
 
+(** relation: get_ext_decl
+ ** This relation extracts the Absyn.ExternalDecl from a Scode.ClassDef
+**)
+
+relation get_ext_decl: (SCode.ClassDef) => Absyn.ExternalDecl =
+	
+  axiom	get_ext_decl(SCode.PARTS(_,_,_,SOME(decl))) => decl
+
+end
+
 (** relation: inst_enumeration
  ** This relation takes an 'Ident' and list of strings, and returns an enumeration class.
 **)
 relation inst_enumeration: (SCode.Ident, string list) => SCode.Class =
   rule	make_enum_components(l) => comp
 	--------------------------------
-	inst_enumeration(n,l) => SCode.CLASS(n,false,false,Absyn.R_ENUMERATION,SCode.PARTS(comp,[],[]))
+	inst_enumeration(n,l) => SCode.CLASS(n,false,false,SCode.R_ENUMERATION,SCode.PARTS(comp,[],[],NONE))
 end
 
 (** relation: make_enum_components
@@ -2588,7 +2601,7 @@ relation valid_connector : Types.Type => () =
 
   axiom	valid_connector Types.T_REAL
 
-  rule	ClassInf.valid(state,Absyn.R_CONNECTOR)
+  rule	ClassInf.valid(state,SCode.R_CONNECTOR)
 	---------------------------------------
 	valid_connector Types.T_COMPLEX(state,_)
 

@@ -31,34 +31,36 @@
 (* ------------------------------------------------------------------------- *)
 
 module Codegen :
-
-  with "dae.rml"
-  with "print.rml"
-
-
-  type Ident = string
-
-  type ReturnType          = string
-  type FunctionName        = string
-  type ArgumentDeclaration = string
-  type VariableDeclaration = string
-  type InitStatement       = string
-  type Statement           = string
-  type CleanupStatement    = string
-  type ReturnTypeStruct    = string list
-
-  datatype CFunction = CFUNCTION of 
-                         ReturnType *
-                         FunctionName * 
-                         ReturnTypeStruct *
-                         (ArgumentDeclaration list) *
-                         (VariableDeclaration list) *
-                         (InitStatement       list) *
-                         (Statement           list) *
-                         (CleanupStatement    list)
-
-  
-
+						      
+    with "dae.rml"
+    with "print.rml"
+							  
+							  
+    type Ident = string
+							  
+    type ReturnType          = string
+    type FunctionName        = string
+    type ArgumentDeclaration = string
+    type VariableDeclaration = string
+    type InitStatement       = string
+    type Statement           = string
+    type CleanupStatement    = string
+    type ReturnTypeStruct    = string list
+							  
+    datatype CFunction = CFUNCTION of 
+							  ReturnType *
+							  FunctionName * 
+							  ReturnTypeStruct *
+							  (ArgumentDeclaration list) *
+							  (VariableDeclaration list) *
+							  (InitStatement       list) *
+							  (Statement           list) *
+							  (CleanupStatement    list)
+		     | CEXTFUNCTION of
+							  ReturnType *
+							  FunctionName *
+							  ReturnTypeStruct *
+							  ArgumentDeclaration list							  
   relation generate_functions : DAE.DAElist => ()
 	  
 end
@@ -87,6 +89,12 @@ relation c_make_function : (ReturnType,
 	  => CFunction =
 
   axiom	c_make_function (rt,fn,rts,ads) => CFUNCTION(rt,fn,rts,ads,[],[],[],[])
+
+end
+
+relation c_make_function_decl: (ReturnType, FunctionName, ReturnTypeStruct, ArgumentDeclaration list) => CFunction =
+
+  axiom	c_make_function_decl(rt,fn,rts,ads) => CEXTFUNCTION(rt,fn,rts,ads)
 
 end
 
@@ -184,6 +192,14 @@ relation c_print_function : CFunction => () =
 	c_print_indented      ("}",i6) => i7 & Print.print_buf "\n"
 	-----------
 	c_print_function CFUNCTION(rt,fn,rts,ad,vd,is,st,cl)
+
+  rule	Util.string_delimit_list(ads,", ") => args_str &
+	Util.string_append_list [rt," ",fn,"(",args_str,");\n"] => stmt_str &
+	let i0 = 0 &
+	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
+	Print.print_buf "extern " & Print.print_buf stmt_str
+	---------------------------------------------------
+	c_print_function CEXTFUNCTION(rt,fn,rts,ads)
 
   rule	Print.print_buf "# c_print_function_failed\n"
 	-----------
@@ -422,6 +438,24 @@ relation generate_function : DAE.Element => CFunction list =
 				       Types.T_FUNCTION(args,restype)) 
 	  => [cfn,rcw_fn]
 
+  rule	(* External functions*)
+	generate_function_name fpath => fn_name_str &
+	Debug.fprintl ("cg", ["generating external function ", fn_name_str, "\n"]) &
+
+
+	DAE.get_output_vars dae => outvars &
+	DAE.get_input_vars dae => invars &
+	generate_result_struct (outvars,fpath) => struct_strs &
+	generate_return_type   fpath => retstr &
+	Util.list_map(args, generate_function_arg)  => arg_strs &
+        c_make_function_decl(retstr,fn_name_str,struct_strs,arg_strs) => func_decl &
+	generate_read_call_write_external(fn_name_str,outvars,retstr,invars) => rcw_fn
+	---------------------------------------
+	generate_function DAE.EXTFUNCTION(fpath, 
+				       DAE.DAE(dae), 
+				       Types.T_FUNCTION(args,restype),extdecl) 
+	  => [func_decl,rcw_fn]
+
 
   rule	generate_functions_elist daelist => cfns
 	----------------------
@@ -447,17 +481,6 @@ relation generate_result_struct : (DAE.Element list, Absyn.Path)
 	Util.list_flatten([defs,[first_row,"{"],var_strs',[last_row]]) => strs
 	-----------------------------------------
 	generate_result_struct (outvars, fpath) => strs
-
-(*
-  rule	DAE.get_vars ( daelist, DAE.is_parameter ) => params &
-	list_length params => nbrparams &
-	int_le (nbrparams, 0) => true &
-	Print.print_buf "#-- no params in " &
-	Print.print_buf n &
-	Print.print_buf "\n"
-	-----------------------------------------
-	generate_params_struct (daelist, n)
-*)
 
 end
 
@@ -2609,6 +2632,43 @@ relation generate_read_call_write : (string,
 	c_merge_fns([cfn1',cfn3',cfn4',cfn5']) => cfn 
 	------------------------------------------------------
 	generate_read_call_write(fnname,outvars,retstr,invars) => cfn
+
+end
+
+relation generate_read_call_write_external : (string,
+				     DAE.Element list,
+				     string,
+				     DAE.Element list)
+	=> CFunction =
+
+
+  rule	string_append(fnname,"_read_call_write") => rcw_fnname &
+	c_make_function("int",rcw_fnname,[],
+			["char const* in_filename",
+			 "char const* out_filename"]) => cfn1 &
+
+	Util.string_append_list([retstr," out;"]) => out_decl&
+	c_add_inits(cfn1,["PRE_VARIABLES",
+			       out_decl]) => cfn1' &
+	(*generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &*)
+	generate_var_decls(invars,is_rcw_input,1) => (cfn3,tnr2) &
+	c_add_statements(cfn3,["PRE_OPEN_INFILE"]) => cfn3' &
+	invar_names invars => in_names &
+	Util.string_delimit_list(in_names,", ") => in_args &
+	
+	generate_read(invars) => cfn4 &
+	Util.string_append_list(["out = ",fnname,"(",in_args,");"]) => fn_call &
+	c_add_statements(cfn4,["PRE_READ_DONE",
+			       fn_call,
+			       "PRE_OPEN_OUTFILE"]) => cfn4' &
+
+	generate_write(outvars) => cfn5 &
+	c_add_statements(cfn5,["PRE_WRITE_DONE",
+			       "return 0;"]) => cfn5' &
+
+	c_merge_fns([cfn1',cfn3',cfn4',cfn5']) => cfn 
+	------------------------------------------------------
+	generate_read_call_write_external(fnname,outvars,retstr,invars) => cfn
 
 end
 
