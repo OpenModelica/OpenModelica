@@ -1,0 +1,225 @@
+
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+with "print.rml"
+
+(** relation: make_assignment
+ **
+ ** This relation creates an `ASSIGN' construct, and checks that the
+ ** assignment is semantically valid, which means that the component
+ ** being assigned is not constant, and that the types match.
+ **)
+
+(** LS: Added call to get_prop_type and is_prop_const instead of
+having PROP in the rules. Otherwise rules must be repeated because of
+combinations with PROP_TUPLE
+**)
+
+relation make_assignment : (Exp.Exp, Types.Properties,
+			    Exp.Exp, Types.Properties,
+			    SCode.Accessibility) => Statement =
+
+  rule	Types.is_prop_const (lprop) => true &
+	Print.print_buf "# Trying to assign to constant component\n" &
+	Print.print_buf "    " & Exp.print_exp lhs &
+ 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
+	-------------------------------------------
+	make_assignment (lhs,lprop,rhs,rprop,_) => fail
+
+  rule	Print.print_buf "# Can't assign to (readonly) " & Exp.print_exp e & Print.print_buf "\n"
+	---------------------------------------------------------
+	make_assignment(e,_,_,_, SCode.RO) => fail
+
+(** LS: Replaced "as Types.PROP(_,false)" from lhprop", by the first
+predicate
+ **)
+  rule	Types.is_prop_const (lhprop) => false &
+	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
+	Types.is_prop_array lhprop => false &
+	get_prop_exp_type lhprop => t
+	----------------------------------------------
+	make_assignment(Exp.CREF(c,crt), lhprop,
+			rhs, rhprop, _) => ASSIGN(t,c,rhs')
+
+rule	Types.is_prop_const (lhprop) => false &
+	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
+	Types.is_prop_array lhprop => true &
+	get_prop_exp_type lhprop => t
+	----------------------------------------------
+	make_assignment(Exp.CREF(c,crt), lhprop,
+			rhs, rhprop, _) => ASSIGN_ARR(t,c,rhs')
+
+  rule	Types.get_prop_type lprop => lt &
+	Types.get_prop_type rprop => rt &
+	Types.equivtypes (lt,rt) => false &
+	Print.print_buf "# Type mismatch in assignment\n" &
+	Print.print_buf "    " & Exp.print_exp lhs &
+ 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n" &
+	Print.print_buf "    " & Types.print_type lt &
+ 	Print.print_buf " := " & Types.print_type rt & Print.print_buf "\n"
+	-------------------------------------------
+	make_assignment (lhs,lprop,rhs,rprop,_) => fail
+
+  rule	Print.print_buf "- Algorithm.make_assignment failed\n" &
+	Print.print_buf "    " & Exp.print_exp lhs &
+ 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n" 
+	---------------------------------------------
+	make_assignment (lhs, lprop, rhs, rprop, _) => fail
+
+end
+
+relation get_prop_exp_type : Types.Properties => Exp.Type =
+	
+  rule	Types.get_prop_type p => ty &
+	get_type_exp_type ty => t
+	--------------------------
+	get_prop_exp_type p => t
+
+end
+
+relation get_type_exp_type : Types.Type => Exp.Type =
+
+  axiom	get_type_exp_type Types.T_INTEGER => Exp.INT
+  axiom	get_type_exp_type Types.T_REAL => Exp.REAL
+  axiom	get_type_exp_type Types.T_STRING => Exp.STRING
+  axiom	get_type_exp_type Types.T_BOOL => Exp.BOOL
+
+  rule	get_type_exp_type t => t'
+	------------------------
+	get_type_exp_type Types.T_ARRAY(_,t) => t'
+
+  axiom	get_type_exp_type _ => fail
+
+end
+
+(** relation: make_if
+ **
+ ** This relation creates an `IF' construct, checking that the types
+ ** of the parts are correct.
+ **)
+
+relation make_if : (Exp.Exp,
+		    Types.Properties,
+		    Statement list,
+		    (Exp.Exp * Types.Properties * Statement list) list,
+		    Statement list) => Statement =
+
+  rule	make_else(eib,fb) => else
+	-------------------------
+	make_if(e,Types.PROP(Types.T_BOOL,_),tb,eib,fb) => IF(e,tb,else)
+
+  rule	Print.print_buf "# Type error in if conditional (" &
+	Exp.print_exp e & Print.print_buf ")\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
+	-------------------------------
+	make_if(e,Types.PROP(t,_),_,_,_) => fail
+
+end
+
+(** relation: make_else
+ **
+ ** 
+ **)
+
+relation make_else : ((Exp.Exp * Types.Properties * Statement list) list,
+		      Statement list) => Else =
+
+	(** This removes empty else branches *)
+  axiom	make_else ([],[]) => NOELSE
+
+  axiom	make_else ([],fb) => ELSE(fb)
+
+  rule	make_else (xs,fb) => else
+	-------------------------
+	make_else ((e,Types.PROP(Types.T_BOOL,_),b)::xs,fb)
+	  => ELSEIF(e,b,else)
+	
+  rule	Print.print_buf "# Type error in elseif conditional (" &
+	Exp.print_exp e & Print.print_buf ")\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
+	-------------------------------
+	make_else((e,Types.PROP(t,_),_)::_,_) => fail
+
+end
+
+(** relation: make_for *)
+
+relation make_for : (Ident, Exp.Exp, Types.Properties,
+		     Statement list) => Statement =
+
+  rule	Types.is_array t => array &
+	Types.elab_type t => et
+	-----------------------
+	make_for(i,e,Types.PROP(Types.T_ARRAY(_,t),_),stmts) => FOR(et,array,i,e,stmts)
+
+  rule	Print.print_buf "# Type error in for conditional.\n" &
+	Print.print_buf "    Expected array, got " &
+	Types.print_type t & Print.print_buf "\n"
+	-------------------------------
+	make_for(_,_,Types.PROP(t,_),_) => fail
+
+end
+
+(** relation: make_while *)
+
+relation make_while : (Exp.Exp, Types.Properties,
+		       Statement list) => Statement =
+
+  axiom	make_while(e,Types.PROP(Types.T_BOOL,_),stmts) => WHILE(e,stmts)
+
+  rule	Print.print_buf "# Type error in while conditional.\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
+	-------------------------------
+	make_while(_,Types.PROP(t,_),_) => fail
+
+end
+
+(** relation: make_when *)
+
+relation make_when_a : (Exp.Exp, Types.Properties,
+		      Statement list) => Statement =
+
+  axiom	make_when_a(e,Types.PROP(Types.T_BOOL,_),stmts) => WHEN(e,stmts)
+
+  rule	Print.print_buf "# Type error in when conditional.\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
+	-------------------------------
+	make_when_a(_,Types.PROP(t,_),_) => fail
+end
+
+relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties) 
+	  => Statement =
+
+  axiom	make_assert(cond, msg, Types.PROP(T_BOOL,_),Types.PROP(T_STRING,_)) 
+	  => ASSERT(cond,msg)
+ 
+  rule	not let T_BOOL = condt &
+	Print.print_buf "# Type error in assert condition.\n" &
+	Print.print_buf " Expected Boolean, got " &
+	Types.print_type condt & Print.print_buf "\n"
+	--------------------------------------------
+	make_assert(_,_,Types.PROP(condt,_),_) => fail
+end 

@@ -1,0 +1,166 @@
+(**
+ ** file:	 dump.rml
+ ** module:      Dump
+ ** description: debug printing
+ **
+ ** RCS: $Id$
+ **
+ ** Printing routines for debugging of the AST.  These relations do
+ ** nothing but print the data structures to the standard output.
+ **
+ ** The implementation of the relations are excluded from the report,
+ ** as they occupy a lot of space and do not convey any useful
+ ** semantic information.
+ **)
+
+val box = ATTR("shape","box")
+
+
+
+(* Relations *)
+
+relation dump : Node => () =
+	
+  rule	print "graph AST {\n" &
+	dump_node node => nm &
+	print "}\n"
+	----------------
+	dump node => ()
+
+end
+
+
+relation dump_node : Node => Ident =
+	
+  rule	nodename typ => nm &
+	make_label [typ] => typlbl &
+	list_append([ATTR("label", typlbl)], attr) => newattr &
+	make_node(nm, newattr) => out &
+	print out &
+	dump_children(nm, children)
+	---------------------------
+	dump_node (NODE(typ, attr, children)) => nm
+
+
+  rule	nodename typ => nm &
+	list_append ([typ], lbl) => lbl' &
+	make_label lbl' => lblstr &
+	list_append([ATTR("label", lblstr)], attr) => newattr &
+	make_node(nm, newattr) => out &
+	print out &
+	dump_children(nm, children)
+	---------------------------
+	dump_node (LNODE(typ, lbl, attr, children)) => nm
+
+end
+
+
+relation make_label: string list => string =
+
+  rule	make_label_req(sl) => s0 &
+	string_append("\"",s0) => s1 &
+	string_append(s1, "\"") => s2
+	------------------------------
+	make_label sl => s2
+
+end
+
+relation make_label_req: string list => string =
+
+  axiom	make_label_req [s] => s
+
+  rule	string_append(s1,"\\n") => s &
+	string_append(s,s2) => res
+	-------------------
+	make_label_req [s1,s2] => res
+
+  rule	make_label_req rest => old &
+	string_append(s1,"\\n") => s &
+	string_append(s,old) => res
+	-------------------
+	make_label_req s1::rest => res
+
+end
+
+
+
+relation dump_children : (Ident, Children) => () =
+
+  axiom dump_children (_, []) => ()
+
+  rule	dump_node node => nm &
+	print_edge(nm, parent) &
+	dump_children(parent, rest)
+	---------------------------
+	dump_children(parent, node::rest)
+end
+
+
+(* changed use of str as part of nodename, since it may contain spaces
+*)
+relation nodename : string => string =
+
+  rule	tick => i & int_string i => is & string_append("GVNOD",is) => s
+	-----------------------------------------------------------------
+	nodename str => s
+end
+
+
+relation print_edge : (Ident, Ident) => () =
+
+  rule	make_edge(n1,n2) => str &
+	print str & print ";\n"
+	-----------------------
+	print_edge(n1,n2)
+end
+
+
+relation make_edge : (Ident, Ident) => string =
+
+  rule	string_append(n1, " -- ") => s &
+	string_append(s, n2) => str
+	---------------------------
+	make_edge (n1, n2) => str
+
+end
+
+
+relation make_node : (Ident, Attributes) => string =
+
+  rule	make_attr attr => s &
+	string_append(nm, s) => s' &
+	string_append(s', ";") => str
+	-----------------------------
+	make_node (nm, attr) => str
+
+end
+
+
+relation make_attr : Attribute list => string = 
+
+  rule	make_attr_req l => res &
+	string_append ("[", res) => s &
+	string_append (s, "]") => str
+	----------------------------
+	make_attr l => str
+
+end
+
+
+relation make_attr_req : Attribute list => string =
+
+  rule	string_append(name,"=") => s &
+	string_append(s, v) => str
+	---------------------------
+	make_attr_req [ATTR(name,v)] => str
+
+
+  rule  make_attr_req(rest) => old &
+	string_append(name,"=") => s &
+	string_append(s,v) => s' &
+	string_append(s',",") => s'' &
+	string_append(s'', old) => str
+	---------------------------
+	make_attr_req(ATTR(name,v)::rest) => str
+
+end

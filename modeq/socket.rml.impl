@@ -18,32 +18,3 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 *)
-
-module ModUtil :
-
-  with "absyn.rml"
-  with "dae.rml"
-  with "exp.rml"
-
-  relation path_string: Absyn.Path => string
-  relation path_string2: (Absyn.Path, string) => string
-
-  relation string_prefix_component_refs : (string, 
-					   (Exp.ComponentRef, 'b) => (), 
-					   'b, 
-					   Exp.Exp list) => Exp.Exp list
-
-  relation string_prefix_component_ref : (string, 
-					  (Exp.ComponentRef, 'b) => (), 
-					  'b, 
-					  Exp.Exp) => Exp.Exp
-
-  relation string_prefix_elements : (string, 
-				     DAE.Element list, 
-				     DAE.Element list) => DAE.Element list
-
-  relation string_prefix_params : DAE.DAElist => DAE.DAElist
-
-  relation path_equal : (Absyn.Path, Absyn.Path) => bool
-
-end

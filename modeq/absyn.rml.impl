@@ -1,0 +1,281 @@
+(*
+   Copyright PELAB, Linkoping University
+   
+   This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+with "debug.rml"
+with "dump.rml"
+with "util.rml"
+with "print.rml"
+
+(** relation: element_spec_name
+ **
+ ** The `ElementSpec' type contans the name of the element, and this
+ ** relation extracts this name.
+ **)
+
+relation element_spec_name : ElementSpec => Ident =
+
+  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_,_)) => n
+
+  axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
+
+  rule  Print.print_buf "# element_spec_name EXTENDS\n"
+	-------------------------------------
+	element_spec_name EXTENDS(_,_) => fail
+
+end
+
+(** relation: path_string
+ **
+ ** This relation simply converts a `Path' to a `string'.
+ **)
+
+relation path_string: Path => string =
+
+  rule	path_string2 (path, ".") => s
+	-----------------------------
+	path_string path => s
+end
+
+relation path_string2: (Path, string) => string =
+
+  axiom	path_string2(IDENT(s),_) => s
+  
+  rule	path_string2(n,str) => ns &
+	string_append(s,str) => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	path_string2(QUALIFIED(s,n), str) => ss
+	
+end
+
+relation path_last_ident : Path => Ident =
+	
+  rule	path_last_ident(p) => res
+	-------------------------
+	path_last_ident(QUALIFIED(_,p)) => res
+	
+  axiom	path_last_ident(IDENT(n)) => n
+
+end
+
+relation get_cref_from_exp: ( Exp ) => ComponentRef list =
+
+  axiom	get_cref_from_exp(INTEGER(_)) => []
+  axiom	get_cref_from_exp(REAL(_)) => []
+  axiom	get_cref_from_exp(STRING(_)) => []
+  axiom	get_cref_from_exp(BOOL(_)) => []
+  axiom	get_cref_from_exp(CREF(cr)) => [cr]
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(BINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(UNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(LBINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(LUNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(RELATION(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	(* TODO elseif's e4 *)
+	---------------------------
+	get_cref_from_exp(IFEXP(e1,e2,e3,e4)) => res
+	
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	get_cref_from_farg(farg) => res
+	--------------------------------------------
+	get_cref_from_exp(CALL(_,farg)) => res
+
+
+  rule	Util.list_map(expl,get_cref_from_exp) => res1 &
+	Util.list_flatten(res1) => res
+	--------------------------------------------
+	get_cref_from_exp(ARRAY(expl)) => res
+
+  rule	Util.list_list_map(expll,get_cref_from_exp) => res1 & 
+	Util.list_flatten(res1) => res2 &
+	Util.list_flatten(res2) => res
+	----------------
+	get_cref_from_exp(MATRIX(expll)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	---------------------------
+	get_cref_from_exp(RANGE(e1,SOME(e3),e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res 
+	---------------------------
+	get_cref_from_exp(RANGE(e1,NONE,e2)) => res
+	    
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	Print.print_buf "Not implemented yet\n" 
+	------------------
+	get_cref_from_exp(TUPLE(expl)) => []
+
+end
+
+relation get_cref_from_farg: (FunctionArgs) => ComponentRef list =
+	
+  rule	Util.list_map(expl, get_cref_from_exp) => l1 &
+	Util.list_flatten(l1) => fl1 &
+	Util.list_map(nargl,get_cref_from_narg) => l2 &
+	Util.list_flatten(l2) => fl2 &
+	list_append(fl1,fl2) => res
+	--------------------------------------------
+	get_cref_from_farg (FUNCTIONARGS(expl,nargl)) => res
+
+end
+
+relation get_cref_from_narg: (NamedArg) => ComponentRef list =
+	
+  rule	get_cref_from_exp(exp) => res
+	-----------------------------
+	get_cref_from_narg(NAMEDARG(_,exp)) => res
+end
+
+
+relation join_paths: (Path, Path) => (Path) =
+
+  axiom	join_paths(IDENT(str),p2) => QUALIFIED(str,p2) 
+	
+  rule	join_paths(p,p2) => p'
+	-----------------------
+	join_paths(QUALIFIED(str,p),p2) => QUALIFIED(str,p')
+end
+
+relation strip_last: (Path) => Path =
+
+  axiom	strip_last(IDENT(_)) => fail
+	
+  axiom	strip_last(QUALIFIED(str,IDENT(_))) => IDENT(str)
+
+  rule	strip_last(p) => p'
+	-------------------
+	strip_last(QUALIFIED(str,p)) => QUALIFIED(str,p')	
+end
+
+
+(** relation: cref_to_path
+ **
+ ** This relation converts a `ComponentRef' to a `Path', if possible.
+ ** If the component reference contains subscripts, it will silently
+ ** fail.
+ **)
+
+relation cref_to_path : ComponentRef => Path =
+
+  axiom	cref_to_path CREF_IDENT(i,[]) => IDENT(i)
+
+  rule	cref_to_path c => p
+	-------------------
+	cref_to_path CREF_QUAL(i,[],c) => QUALIFIED(i,p)
+
+end
+
+relation path_to_cref : Path => ComponentRef =
+
+  axiom	path_to_cref IDENT(i) => CREF_IDENT(i,[])
+  rule	path_to_cref p => c
+	-------------------
+	path_to_cref QUALIFIED(i,p) => CREF_QUAL(i,[],c)
+end
+
+(** relation: print_restr
+ **
+ ** This is a utility relation for printing a `Restriction'.  The code
+ ** is excluded for brevity.
+ **)
+
+(*!ignorecode*)
+
+relation restr_string : Restriction => string =
+
+  axiom restr_string R_CLASS			=> "CLASS"
+  axiom	restr_string R_MODEL			=> "MODEL"
+  axiom	restr_string R_RECORD			=> "RECORD"
+  axiom restr_string R_BLOCK			=> "BLOCK"
+  axiom restr_string R_CONNECTOR		=> "CONNECTOR"
+  axiom restr_string R_TYPE			=> "TYPE"
+  axiom restr_string R_PACKAGE			=> "PACKAGE"
+  axiom restr_string R_FUNCTION			=> "FUNCTION"
+  axiom restr_string R_PREDEFINED_INT		=> "PREDEFINED_INT"
+  axiom restr_string R_PREDEFINED_REAL		=> "PREDEFINED_REAL"
+  axiom restr_string R_PREDEFINED_STRING	=> "PREDEFINED_STRING"
+  axiom restr_string R_PREDEFINED_BOOL		=> "PREDEFINED_BOOL"
+
+end
+
+relation print_restr : Restriction => () =
+
+  rule	restr_string restr => str &
+	Print.print_buf str
+	----------------
+	print_restr restr
+
+end
+
+
+(* PR. To debug. *)
+relation print_absyn_exp : Exp => () =
+  rule	Debug.print "This is an array: " &
+	Debug.print "[" &
+
+	Debug.print "]"
+	---------
+	print_absyn_exp (ARRAY(es))
+
+	(*PR.*)
+  rule	Debug.print "(" &
+
+	Debug.print ")"
+	---------
+	print_absyn_exp (TUPLE(es))
+
+
+  rule	Debug.print "\nNo tuple." 
+	---------
+	print_absyn_exp (_)
+end

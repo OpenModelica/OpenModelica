@@ -1,0 +1,201 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+with "system.rml"
+with "lookup.rml"
+with "interactive.rml"
+with "util.rml"
+with "parse.rml"
+with "print.rml"
+with "env.rml"
+with "dump.rml"
+(** relation: load_class
+ ** This relation takes a 'Path' and the $MODELICAPATH as a string
+ ** and tries to load the class from the path.
+ ** If the classname is qualified, the complete package is loaded. 
+ ** E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded.
+**)
+relation load_class: (Absyn.Path, string) => (Absyn.Program) =
+
+	(** Simple names: Just load the file if it can be found in $MODELICAPATH* *)
+  rule	load_class_from_mp(classname,mp) => p
+	-------------------------------------
+	load_class(Absyn.IDENT(classname),mp) => p
+
+	(** Qualified names: Load the complete package and then check that **)
+	(** the package contains the file **) 
+  rule	Print.print_buf "Qualified name, loading complete package\n" &
+	load_complete_package_from_mp(pack,mp,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
+	Interactive.get_pathed_class_in_program(path,p)=> _
+	-------------------------------------
+	load_class(path as Absyn.QUALIFIED(pack,rest),mp) => p
+
+  rule	print "load_class failed\n"
+	-------------------
+	load_class(_,_) => fail
+end
+
+relation exist_regular_file: (string) => () =
+
+  rule	string_append("test -f ",filename) => cmd &
+	System.system_call(cmd) => 0 
+	----------------------------
+	exist_regular_file(filename) 
+end
+
+relation exist_directory_file: (string) => () =
+
+  rule	string_append("test -d ",filename) => cmd &
+	System.system_call(cmd) => 0 
+	----------------------------
+	exist_directory_file(filename) 
+end
+
+relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
+	
+  rule	string_append(class,".mo") => classfile &
+	Util.string_append_list([mp,"/",classfile])=> classfile' &
+	exist_regular_file(classfile') &
+	print "parsing " & print classfile' & print "\n" &
+	Parser.parse(classfile') => p
+	---------------------------
+	load_class_from_mp(class,mp) => p
+
+  rule	Util.string_append_list([mp,"/",class]) => dirfile &
+	string_append(dirfile,"/package.mo") => packfile &
+	exist_directory_file dirfile &
+	exist_regular_file packfile &
+	Print.print_buf "Class is package stored in a directory, loading whole package(incl. subdir)\n" &
+	load_complete_package_from_mp(class,mp,Absyn.TOP,
+				      Absyn.PROGRAM([],Absyn.TOP)) => p 
+	--------------------------------------
+	load_class_from_mp(class,mp) => p
+	
+  rule	print "load_class_from_mp failed\n" 
+	--------------------
+	load_class_from_mp(_,_) => fail
+end
+
+relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absyn.Program) => Absyn.Program =
+	
+  rule	Util.string_append_list([mp,"/",pack]) => mp' &
+	string_append(mp',"/package.mo") => packagefile &
+	exist_regular_file(packagefile) &
+	print "parsing " & print packagefile & print "\n" &
+	Parser.parse(packagefile) => Absyn.PROGRAM(p1,w1) &
+	Print.print_buf("loading ") & Print.print_buf(packagefile) & Print.print_buf "\n" &
+	Interactive.update_program(Absyn.PROGRAM(p1,w1),Absyn.PROGRAM(oldc,Absyn.TOP)) => p1' &
+	System.sub_directories(mp') => subdirs &
+	Util.string_delimit_list(subdirs, ", ") => subdirstr &
+	print "subdirs =" & print subdirstr & print "\n" &
+	load_complete_subdirs(subdirs,pack,mp',within,p1') => p2 &
+	load_complete_subfiles(pack,mp',within,p2) => p 
+	------------------------------
+	load_complete_package_from_mp(pack,mp,within as Absyn.TOP,Absyn.PROGRAM(oldc,_)) => p
+
+  rule	Util.string_append_list([mp,"/",pack]) => mp' &
+	string_append(mp',"/package.mo") => packagefile &
+	exist_regular_file(packagefile) &
+	print "parsing " & print packagefile & print "\n" &
+	Parser.parse(packagefile) => Absyn.PROGRAM(p1,w1) &
+	Print.print_buf("loading ") & Print.print_buf(packagefile) & Print.print_buf "\n" &
+	Interactive.update_program(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath)),Absyn.PROGRAM(oldc,Absyn.TOP)) => p1' &
+	System.sub_directories(mp') => subdirs &
+	Util.string_delimit_list(subdirs, ", ") => subdirstr &
+	print "subdirs =" & print subdirstr & print "\n" &
+	load_complete_subdirs(subdirs,pack,mp',within,p1') => p2 &
+	Absyn.join_paths(wpath,Absyn.IDENT(pack))=> wpath' &
+	load_complete_subfiles(pack,mp',within,p2) => p
+	------------------------------
+	load_complete_package_from_mp(pack,mp,within as Absyn.WITHIN(wpath),Absyn.PROGRAM(oldc,_)) => p
+
+  axiom	load_complete_package_from_mp(_,_,_,_) => fail
+end
+
+relation load_complete_subdirs: (string list, Absyn.Ident, string, 
+				 Absyn.Within, Absyn.Program) 
+	  => Absyn.Program =
+	  
+  axiom	load_complete_subdirs([],_,_,w,Absyn.PROGRAM(oldcls,w2)) => Absyn.PROGRAM(oldcls,w2)
+	
+  rule	Absyn.join_paths(pack2,Absyn.IDENT(pack1)) => pack' &
+	load_complete_package_from_mp(pack,mp,Absyn.WITHIN(pack'),oldp) => p &
+	load_complete_subdirs(packs,pack1,mp,within,p) => p' 
+	---------------------------------------------
+ 	load_complete_subdirs(pack::packs,pack1,mp,within as Absyn.WITHIN(pack2),oldp) => p'
+ 
+  rule	Absyn.join_paths(Absyn.IDENT(pack1),Absyn.IDENT(pack)) => pack' &
+	load_complete_package_from_mp(pack,mp,Absyn.WITHIN(Absyn.IDENT(pack1)),oldp) => p &
+	load_complete_subdirs(packs,pack1,mp,within,p) => p' 
+	---------------------------------------------
+ 	load_complete_subdirs(pack::packs,pack1,mp,within as Absyn.TOP,oldp) => p'
+
+  rule	load_complete_subdirs(packs,pack1,mp,within,p) => p' 
+	---------------------------------------------
+ 	load_complete_subdirs(pack::packs,pack1,mp,within,p) => p'
+
+
+  rule	print "load_complete_subdirs failed\n"
+	----------------
+	load_complete_subdirs(_,_,_,_,_) => fail
+end
+
+relation load_complete_subfiles: (Absyn.Ident, string, Absyn.Within, Absyn.Program) 
+	  => Absyn.Program =
+
+  rule	(* Here *.mo files in same directory as package.mo should be loaded as sub-packages*)
+	System.mo_files(mp)=> mofiles &
+	Absyn.join_paths(within,Absyn.IDENT(pack)) => within' &
+	load_subpackage_files(mofiles,mp,Absyn.WITHIN(within'),oldp) => p 
+	------------------------------------------
+	load_complete_subfiles(pack,mp,Absyn.WITHIN(within),oldp) => p
+
+  rule	(* Here *.mo files in same directory as package.mo should be loaded as sub-packages*)
+	System.mo_files(mp)=> mofiles &
+	load_subpackage_files(mofiles,mp,Absyn.WITHIN(Absyn.IDENT(pack)),oldp) => p
+	------------------------------------------
+	load_complete_subfiles(pack,mp,Absyn.TOP,oldp) => p
+
+  rule	print "load_complete_subfiles failed\n"
+	------------------------------------------
+	load_complete_subfiles(_,_,_,_) => fail
+
+end
+
+relation load_subpackage_files: (string list, string, Absyn.Within, Absyn.Program) 
+	  => Absyn.Program =
+
+  axiom	load_subpackage_files([],mp,within,Absyn.PROGRAM(cls,w)) => Absyn.PROGRAM(cls,w)
+
+  rule	Util.string_append_list([mp,"/",f]) => f' &
+	print "parsing " & print f' & print "\n" &
+	Parser.parse(f') => Absyn.PROGRAM(cls,_) &
+	Print.print_buf("loading ") & Print.print_buf(f') & Print.print_buf "\n" &
+	Interactive.update_program(Absyn.PROGRAM(cls,within),Absyn.PROGRAM(oldc,Absyn.TOP))=> p' &
+	load_subpackage_files(fs, mp, within, p') => p''
+	-------------------------------
+	load_subpackage_files(f::fs,mp,within,Absyn.PROGRAM(oldc,_)) => p''
+
+  rule	print "load_subpackage_files failed\n"
+	---------------------
+	load_subpackage_files(_,_,_,_) => fail
+end
+

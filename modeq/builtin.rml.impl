@@ -1,0 +1,932 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+
+(**)
+
+with "exp.rml"
+with "types.rml"
+with "classinf.rml"
+with "debug.rml"
+with "print.rml"
+
+(** - The primitive types *)
+
+val rl_type = SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL,
+			  SCode.PARTS([],[],[],[],[],NONE))
+val int_type = SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INT,
+			   SCode.PARTS([],[],[],[],[],NONE))
+val str_type = SCode.CLASS("StringType",false,false,SCode.R_PREDEFINED_STRING,
+			   SCode.PARTS([],[],[],[],[],NONE))
+val bool_type = SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOL,
+			    SCode.PARTS([],[],[],[],[],NONE))
+val enum_type = SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUM,
+			    SCode.PARTS([],[],[],[],[],NONE))
+(** These are the primitive types that are used to build the types
+ ** `Real', `Integer' etc. *)
+
+(** LS: false for replaceable added **)
+val unit = SCode.COMPONENT("unit",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 Absyn.VAR,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("StringType"),
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
+(** This `unit' component is used in several places below, and it is
+ ** declared once here to make the definitions below easier to read. *)
+
+(** - The `Real' type *)
+
+val real_type =
+SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL,
+	    SCode.PARTS
+	    ([], (*[unit],*)
+	     [],
+	     [],
+	     [],
+	     [],NONE))
+
+(** - The `Integer' type *)
+
+val integer_type =
+SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT,
+	    SCode.PARTS
+	    ([], (*[unit],*)
+	     [],
+	     [],
+	     [],
+	     [],NONE))
+
+(** - The `String' type *)
+
+val string_type =
+SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING,
+	    SCode.PARTS
+	    ([],
+	     [],
+	     [],
+	     [],
+	     [],NONE))
+
+(** - The `Boolean' type *)
+
+val boolean_type =
+SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL,
+	    SCode.PARTS
+	    ([],
+	     [],
+	     [],
+	     [],
+	     [],NONE))
+
+(** - The `time' variable *)
+
+val time_var =
+Types.VAR("time", Types.ATTR(false, SCode.RO, Absyn.VAR, Absyn.BIDIR),
+	  false, Types.T_REAL, Types.UNBOUND)
+
+(** - Some assorted function types *)
+
+val nil2real = Types.T_FUNCTION([],
+				Types.T_REAL)
+
+val real2real = Types.T_FUNCTION([("x",Types.T_REAL)],
+				 Types.T_REAL)
+
+val real2int = Types.T_FUNCTION([("x",Types.T_REAL)],
+				 Types.T_INTEGER)
+
+val real_real2real = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
+				      Types.T_REAL)
+
+val bool2bool = Types.T_FUNCTION([("x",Types.T_BOOL)],
+				 Types.T_BOOL)
+
+val real_real2bool = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
+				      Types.T_BOOL)
+
+val array1dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_INTEGER)
+val array2dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_INTEGER)
+val array3dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_INTEGER)
+val array4dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_INTEGER)
+val array5dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_INTEGER)
+val array6dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_INTEGER)
+val array7dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_INTEGER)
+val array8dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_INTEGER)
+
+val array1dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_INTEGER)
+val array2dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_INTEGER)
+val array3dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_INTEGER)
+val array4dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_INTEGER)
+val array5dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_INTEGER)
+val array6dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_INTEGER)
+val array7dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_INTEGER)
+val array8dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_INTEGER)
+
+val array1dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_REAL)
+val array2dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_REAL)
+val array3dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_REAL)
+val array4dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_REAL)
+val array5dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_REAL)
+val array6dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_REAL)
+val array7dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_REAL)
+val array8dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_REAL)
+
+val array1dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_INTEGER)
+val array2dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_INTEGER)
+val array3dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_INTEGER)
+val array4dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_INTEGER)
+val array5dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_INTEGER)
+val array6dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_INTEGER)
+val array7dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_INTEGER)
+val array8dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_INTEGER)
+
+val array1dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_STRING)
+val array2dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_STRING)
+val array3dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_STRING)
+val array4dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_STRING)
+val array5dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_STRING)
+val array6dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_STRING)
+val array7dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_STRING)
+val array8dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_STRING)
+
+val array1dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_INTEGER)
+val array2dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_INTEGER)
+val array3dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_INTEGER)
+val array4dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_INTEGER)
+val array5dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_INTEGER)
+val array6dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_INTEGER)
+val array7dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_INTEGER)
+val array8dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_INTEGER)
+
+val array1dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_BOOL)
+val array2dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_BOOL)
+val array3dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_BOOL)
+val array4dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_BOOL)
+val array5dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_BOOL)
+val array6dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_BOOL)
+val array7dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_BOOL)
+val array8dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_BOOL)
+
+
+
+val array1dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array2dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array3dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array4dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array5dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array6dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array7dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array8dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+
+val array1dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array2dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array3dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array4dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array5dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array6dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array7dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array8dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+
+val array1dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array2dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array3dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array4dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array5dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array6dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array7dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array8dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+
+val array1dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array2dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array3dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array4dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array5dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array6dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array7dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array8dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+
+
+
+
+
+val array1dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array2dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array3dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array4dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array5dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array6dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array7dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array8dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+
+
+val array1dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array2dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array3dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array4dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array5dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array6dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array7dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array8dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+
+
+
+
+
+
+
+val array1dimint2array1dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array2dimint2array2dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array3dimint2array3dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
+val array4dimint2array4dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))
+val array5dimint2array5dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))
+val array6dimint2array6dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))
+val array7dimint2array7dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))
+val array8dimint2array8dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))
+
+val array1dimreal2array1dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array2dimreal2array2dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array3dimreal2array3dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))
+val array4dimreal2array4dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))
+val array5dimreal2array5dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))
+val array6dimreal2array6dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))
+val array7dimreal2array7dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))
+val array8dimreal2array8dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))
+
+val array1dimstring2array1dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array2dimstring2array2dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array3dimstring2array3dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))
+val array4dimstring2array4dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))
+val array5dimstring2array5dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))
+val array6dimstring2array6dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))
+val array7dimstring2array7dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))
+val array8dimstring2array8dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))
+
+val array1dimbool2array1dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array2dimbool2array2dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array3dimbool2array3dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))
+val array4dimbool2array4dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))
+val array5dimbool2array5dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))
+val array6dimbool2array6dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))
+val array7dimbool2array7dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))
+val array8dimbool2array8dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))
+
+
+
+
+
+
+
+
+val array1dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array2dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array3dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array4dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array5dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array6dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array7dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array8dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+
+val array1dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array2dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array3dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array4dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array5dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array6dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array7dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array8dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+
+val array1dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array2dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array3dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array4dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array5dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array6dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array7dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val array8dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+
+val array1dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array2dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array3dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array4dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array5dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array6dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array7dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array8dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+
+val array1dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array2dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array3dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array4dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array5dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array6dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array7dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+val array8dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
+
+val array1dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array2dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array3dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array4dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array5dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array6dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array7dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val array8dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+
+val array1dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array2dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array3dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array4dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array5dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array6dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array7dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array8dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+
+val array1dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array2dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array3dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array4dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array5dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array6dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array7dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+val array8dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
+
+val array1dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array2dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array3dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array4dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array5dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array6dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array7dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array8dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+
+
+val int2matrixint=       Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val real2matrixreal=     Types.T_FUNCTION([("x",Types.T_REAL)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
+val string2matrixstring= Types.T_FUNCTION([("x",Types.T_STRING)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
+val bool2matrixbool=     Types.T_FUNCTION([("x",Types.T_BOOL)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+
+
+val vector_vector2int    = Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER)),("y",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_INTEGER)
+val vector_vector2real  = Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL)),("y",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_REAL)
+
+val int2array1dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val int2array2dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val int2array3dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
+val int2array4dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))
+val int2array5dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))
+val int2array6dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))
+val int2array7dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))
+val int2array8dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))
+
+val n1int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val n2int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val n3int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
+val n4int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))
+val n5int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))
+val n6int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER),("x6",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))
+val n7int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER),("x6",Types.T_INTEGER),("x7",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))
+val n8int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER),("x6",Types.T_INTEGER),("x7",Types.T_INTEGER),("x8",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))
+
+val int_int2vectorreal=	Types.T_FUNCTION([("x",Types.T_INTEGER),("y",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+
+val array1dimint2array3dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
+val array1dimreal2array3dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))
+
+
+(*
+val array1dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL))], Types.T_REAL)
+val array2dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_REAL))], Types.T_REAL)
+val array3dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_REAL))], Types.T_REAL)
+val array4dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_REAL))], Types.T_REAL)
+*)
+
+(*
+val array1dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array2dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array3dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array4dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
+
+val array1dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
+val array2dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
+val array3dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
+val array4Dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
+*)
+
+(* etc...  *)
+
+
+(* T_ARRAY is apperantly not constant. To bad! *)
+val array2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_INTEGER)
+		
+(* Legal syntax: val array2one= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL))], TYPES.T_INTEGER) *)
+
+	(* For size(A) to transpose A *)
+(*
+val array2array=  Types.T_FUNCTION([("x",Types.T_ARRAY)],
+				      Types.T_ARRAY)
+val array_array2array=
+val int2array= Types.T_FUNCTION("x",Types.T_ARRAY(1,_)) *) (* Specifierar en vector, array of dimension one *)
+(* zeroes, ones, fill? *)
+(* 
+val real_real_int2array
+val array2real
+val array_array2int
+*)
+(** - Initial environment *)
+
+(** relation: initial_env
+ ** 
+ ** The initial environment where instantiation takes place is built
+ ** up using this relation.  It creates an empty environment and adds
+ ** all the built-in definitions to it.
+ **)
+ 
+relation initial_env =
+
+  rule	Debug.fprint ("insttr","Creating initial env.\n") &
+	Env.open_scope(Env.empty_env,false) => env1 &
+	Env.extend_frame_c(env1, rl_type) => env2 &
+	Env.extend_frame_c(env2, int_type) => env3 &
+	Env.extend_frame_c(env3, str_type) => env4 &
+	Env.extend_frame_c(env4, bool_type) => env5 &
+	Env.extend_frame_c(env5, enum_type) => env5' &
+	Env.extend_frame_c(env5', real_type) => env6 &
+	Env.extend_frame_c(env6, integer_type) => env7 &
+	Env.extend_frame_c(env7, string_type) => env8 &
+	Env.extend_frame_c(env8, boolean_type) => env9 &
+	(* LS: why twice? removing one *)
+(*	Env.extend_frame_c(env9, boolean_type) => env10 & *)
+
+	Env.extend_frame_v(env9, time_var,NONE,false) => env11 &
+
+	(* non-functions *)
+	Env.extend_frame_t(env11, "inital", nil2real)                => env12 &
+	Env.extend_frame_t(env12, "terminal", nil2real)              => env13 &
+	Env.extend_frame_t(env13, "event", bool2bool)                => env14 &
+	Env.extend_frame_t(env14, "switch", bool2bool)               => env15 &
+	Env.extend_frame_t(env15, "timeEvent", real_real2bool)       => env16 &
+	Env.extend_frame_t(env16, "der", real2real)                  => env17 &
+
+	(* non-differentiable functions *)
+	Env.extend_frame_t(env17, "div", real_real2real)             => env18 &
+	Env.extend_frame_t(env18, "rem", real_real2real)             => env19 &
+	Env.extend_frame_t(env19, "ceil", real2real)                 => env20 &
+	Env.extend_frame_t(env20, "floor", real2real)                => env20b&
+	Env.extend_frame_t(env20b, "integer", real2int)              => env21 &
+
+	(* differentiable functions *)
+	Env.extend_frame_t(env21, "abs", real2real)                  => env22 &
+	Env.extend_frame_t(env22, "sign", real2real)                 => env23 &
+
+	(* Not in the report *)
+	Env.extend_frame_t(env23, "sin", real2real) 		     => env24 &
+	Env.extend_frame_t(env24, "cos", real2real) 		     => env25 &
+	(* PR. Add the built in array functions here.*)
+	(* Also do it for real, string and bool*)
+	Env.extend_frame_t(env25, "ndims", array1dimint2int) 		     => env26 &
+	Env.extend_frame_t(env26, "ndims", array2dimint2int) 		     => env27 &
+	Env.extend_frame_t(env27, "ndims", array3dimint2int) 		     => env28 &
+	Env.extend_frame_t(env28, "ndims", array4dimint2int) 		     => env29 &
+	Env.extend_frame_t(env29, "ndims", array5dimint2int) 		     => env30 &
+	Env.extend_frame_t(env30, "ndims", array6dimint2int) 		     => env31 &
+	Env.extend_frame_t(env31, "ndims", array7dimint2int) 		     => env32 &
+	Env.extend_frame_t(env32, "ndims", array8dimint2int) 		     => env33 &
+	Env.extend_frame_t(env33, "ndims", array1dimreal2int) 		     => env34 &
+	Env.extend_frame_t(env34, "ndims", array2dimreal2int) 		     => env35 &
+	Env.extend_frame_t(env35, "ndims", array3dimreal2int) 		     => env36 &
+	Env.extend_frame_t(env36, "ndims", array4dimreal2int) 		     => env37 &
+	Env.extend_frame_t(env37, "ndims", array5dimreal2int) 		     => env38 &
+	Env.extend_frame_t(env38, "ndims", array6dimreal2int) 		     => env39 &
+	Env.extend_frame_t(env39, "ndims", array7dimreal2int) 		     => env40 &
+	Env.extend_frame_t(env40, "ndims", array8dimreal2int) 		     => env41 &
+	
+	Env.extend_frame_t(env41, "ndims", array1dimstring2int) 		     => env42 &
+	Env.extend_frame_t(env42, "ndims", array2dimstring2int) 		     => env43 &
+	Env.extend_frame_t(env43, "ndims", array3dimstring2int) 		     => env44 &
+	Env.extend_frame_t(env44, "ndims", array4dimstring2int) 		     => env45 &
+	Env.extend_frame_t(env45, "ndims", array5dimstring2int) 		     => env46 &
+	Env.extend_frame_t(env46, "ndims", array6dimstring2int) 		     => env47 &
+	Env.extend_frame_t(env47, "ndims", array7dimstring2int) 		     => env48 &
+	Env.extend_frame_t(env48, "ndims", array8dimstring2int) 		     => env49 &
+	
+	Env.extend_frame_t(env49, "ndims", array1dimbool2int) 		     => env50 &
+	Env.extend_frame_t(env50, "ndims", array2dimbool2int) 		     => env51 &
+	Env.extend_frame_t(env51, "ndims", array3dimbool2int) 		     => env52 &
+	Env.extend_frame_t(env52, "ndims", array4dimbool2int) 		     => env53 &
+	Env.extend_frame_t(env53, "ndims", array5dimbool2int) 		     => env54 &
+	Env.extend_frame_t(env54, "ndims", array6dimbool2int) 		     => env55 &
+	Env.extend_frame_t(env55, "ndims", array7dimbool2int) 		     => env56 &
+	Env.extend_frame_t(env56, "ndims", array8dimbool2int) 		     => env57 &
+(* Debug. Print.print_buf "\n Just before the built in built in size." &	*)
+
+	Env.extend_frame_t(env57, "size", array1dimint_int2int)	      => env58 & 
+	Env.extend_frame_t(env58, "size", array2dimint_int2int)	      => env59 &
+	Env.extend_frame_t(env59, "size", array3dimint_int2int)	      => env60 &
+	Env.extend_frame_t(env60, "size", array4dimint_int2int)	      => env61 &
+	Env.extend_frame_t(env61, "size", array5dimint_int2int)	      => env62 &
+	Env.extend_frame_t(env62, "size", array6dimint_int2int)	      => env63 &
+	Env.extend_frame_t(env63, "size", array7dimint_int2int)	      => env64 &
+	Env.extend_frame_t(env64, "size", array8dimint_int2int)	      => env65 &
+
+	Env.extend_frame_t(env65, "size", array1dimreal_int2int)	      => env66 &
+	Env.extend_frame_t(env66, "size", array2dimreal_int2int)	      => env67 &
+	Env.extend_frame_t(env67, "size", array3dimreal_int2int)	      => env68 &
+	Env.extend_frame_t(env68, "size", array4dimreal_int2int)	      => env69 &
+	Env.extend_frame_t(env69, "size", array5dimreal_int2int)	      => env70 &
+	Env.extend_frame_t(env70, "size", array6dimreal_int2int)	      => env71 &
+	Env.extend_frame_t(env71, "size", array7dimreal_int2int)	      => env72 &
+	Env.extend_frame_t(env72, "size", array8dimreal_int2int)	      => env73 &
+
+	Env.extend_frame_t(env73, "size", array1dimstring_int2int)	      => env74 &
+	Env.extend_frame_t(env74, "size", array2dimstring_int2int)	      => env75 &
+	Env.extend_frame_t(env75, "size", array3dimstring_int2int)	      => env76 &
+	Env.extend_frame_t(env76, "size", array4dimstring_int2int)	      => env77 &
+	Env.extend_frame_t(env77, "size", array5dimstring_int2int)	      => env78 &
+	Env.extend_frame_t(env78, "size", array6dimstring_int2int)	      => env79 &
+	Env.extend_frame_t(env79, "size", array7dimstring_int2int)	      => env80 &
+	Env.extend_frame_t(env80, "size", array8dimstring_int2int)	      => env81 &
+
+	Env.extend_frame_t(env81, "size", array1dimbool_int2int)	      => env82 &
+	Env.extend_frame_t(env82, "size", array2dimbool_int2int)	      => env83 &
+	Env.extend_frame_t(env83, "size", array3dimbool_int2int)	      => env84 &
+	Env.extend_frame_t(env84, "size", array4dimbool_int2int)	      => env85 &
+	Env.extend_frame_t(env85, "size", array5dimbool_int2int)	      => env86 &
+	Env.extend_frame_t(env86, "size", array6dimbool_int2int)	      => env87 &
+	Env.extend_frame_t(env87, "size", array7dimbool_int2int)	      => env88 &
+	Env.extend_frame_t(env88, "size", array8dimbool_int2int)	      => env89 &
+
+
+
+
+	Env.extend_frame_t(env89, "size", array1dimint2vectorint)	      => env90 & 
+	Env.extend_frame_t(env90, "size", array2dimint2vectorint)	      => env91   &
+	Env.extend_frame_t(env91, "size", array3dimint2vectorint)	      => env92 &
+	Env.extend_frame_t(env92, "size", array4dimint2vectorint)	      => env93 &
+	Env.extend_frame_t(env93, "size", array5dimint2vectorint)	      => env94 &
+	Env.extend_frame_t(env94, "size", array6dimint2vectorint)	      => env95 &
+	Env.extend_frame_t(env95, "size", array7dimint2vectorint)	      => env96 &
+	Env.extend_frame_t(env96, "size", array8dimint2vectorint)	      => env97 &
+
+	Env.extend_frame_t(env97, "size", array1dimreal2vectorint)	      => env98 &
+	Env.extend_frame_t(env98, "size", array2dimreal2vectorint)	      => env99 &
+	Env.extend_frame_t(env99, "size", array3dimreal2vectorint)	      => env100 &
+	Env.extend_frame_t(env100, "size", array4dimreal2vectorint)	      => env101 &
+	Env.extend_frame_t(env101, "size", array5dimreal2vectorint)	      => env102 &
+	Env.extend_frame_t(env102, "size", array6dimreal2vectorint)	      => env103 &
+	Env.extend_frame_t(env103, "size", array7dimreal2vectorint)	      => env104 &
+	Env.extend_frame_t(env104, "size", array8dimreal2vectorint)	      => env105 &
+
+	Env.extend_frame_t(env105, "size", array1dimstring2vectorint)	      => env106 &
+	Env.extend_frame_t(env106, "size", array2dimstring2vectorint)	      => env107 &
+	Env.extend_frame_t(env107, "size", array3dimstring2vectorint)	      => env108 &
+	Env.extend_frame_t(env108, "size", array4dimstring2vectorint)	      => env109 &
+	Env.extend_frame_t(env109, "size", array5dimstring2vectorint)	      => env110 &
+	Env.extend_frame_t(env110, "size", array6dimstring2vectorint)	      => env111 &
+	Env.extend_frame_t(env111, "size", array7dimstring2vectorint)	      => env112 &
+	Env.extend_frame_t(env112, "size", array8dimstring2vectorint)	      => env113 &
+
+	Env.extend_frame_t(env113, "size", array1dimbool2vectorint)	      => env114 &
+	Env.extend_frame_t(env114, "size", array2dimbool2vectorint)	      => env115 &
+	Env.extend_frame_t(env115, "size", array3dimbool2vectorint)	      => env116 &
+	Env.extend_frame_t(env116, "size", array4dimbool2vectorint)	      => env117 &
+	Env.extend_frame_t(env117, "size", array5dimbool2vectorint)	      => env118 &
+	Env.extend_frame_t(env118, "size", array6dimbool2vectorint)	      => env119 &
+	Env.extend_frame_t(env119, "size", array7dimbool2vectorint)	      => env120 &
+	Env.extend_frame_t(env120, "size", array8dimbool2vectorint)	      => env121 &
+Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
+	Env.extend_frame_t(env122, "scalar", array2dimint2int)	      => env123 &
+	Env.extend_frame_t(env123, "scalar", array3dimint2int)	      => env124 &
+	Env.extend_frame_t(env124, "scalar", array4dimint2int)	      => env125 &
+	Env.extend_frame_t(env125, "scalar", array5dimint2int)	      => env126 &
+	Env.extend_frame_t(env126, "scalar", array6dimint2int)	      => env127 &
+	Env.extend_frame_t(env127, "scalar", array7dimint2int)	      => env128 &
+	Env.extend_frame_t(env128, "scalar", array8dimint2int)	      => env129 &
+	
+	Env.extend_frame_t(env129, "scalar", array1dimreal2real)	      => env130 &
+	Env.extend_frame_t(env130, "scalar", array2dimreal2real)	      => env131 &
+	Env.extend_frame_t(env131, "scalar", array3dimreal2real)	      => env132 &
+	Env.extend_frame_t(env132, "scalar", array4dimreal2real)	      => env133 &
+	Env.extend_frame_t(env133, "scalar", array5dimreal2real)	      => env134 &
+	Env.extend_frame_t(env134, "scalar", array6dimreal2real)	      => env135 &
+	Env.extend_frame_t(env135, "scalar", array7dimreal2real)	      => env136 &
+	Env.extend_frame_t(env136, "scalar", array8dimreal2real)	      => env137 &
+
+	Env.extend_frame_t(env137, "scalar", array1dimbool2bool)	      => env138 &
+	Env.extend_frame_t(env138, "scalar", array2dimbool2bool)	      => env139 &
+	Env.extend_frame_t(env139, "scalar", array3dimbool2bool)	      => env140 &
+	Env.extend_frame_t(env140, "scalar", array4dimbool2bool)	      => env141 &
+	Env.extend_frame_t(env141, "scalar", array5dimbool2bool)	      => env142 &
+	Env.extend_frame_t(env142, "scalar", array6dimbool2bool)	      => env143 &
+	Env.extend_frame_t(env143, "scalar", array7dimbool2bool)	      => env144 &
+	Env.extend_frame_t(env144, "scalar", array8dimbool2bool)	      => env145 &
+
+	Env.extend_frame_t(env145, "scalar", array1dimstring2string)	      => env146 &
+	Env.extend_frame_t(env146, "scalar", array2dimstring2string)	      => env147 &
+	Env.extend_frame_t(env147, "scalar", array3dimstring2string)	      => env148 &
+	Env.extend_frame_t(env148, "scalar", array4dimstring2string)	      => env149 &
+	Env.extend_frame_t(env149, "scalar", array5dimstring2string)	      => env150 &
+	Env.extend_frame_t(env150, "scalar", array6dimstring2string)	      => env151 &
+	Env.extend_frame_t(env151, "scalar", array7dimstring2string)	      => env152 &
+	Env.extend_frame_t(env152, "scalar", array8dimstring2string)	      => env153 &
+
+
+(* PR. 991024 Continue here.*)
+
+
+	Env.extend_frame_t(env153, "vector", array1dimint2vectorint)	      => env154 &
+	Env.extend_frame_t(env154, "vector", array2dimint2vectorint)	      => env155 &
+	Env.extend_frame_t(env155, "vector", array3dimint2vectorint)	      => env156 &
+	Env.extend_frame_t(env156, "vector", array4dimint2vectorint)	      => env157 &
+	Env.extend_frame_t(env157, "vector", array5dimint2vectorint)	      => env158 &
+	Env.extend_frame_t(env158, "vector", array6dimint2vectorint)	      => env159 &
+	Env.extend_frame_t(env159, "vector", array7dimint2vectorint)	      => env160 &
+	Env.extend_frame_t(env160, "vector", array8dimint2vectorint)	      => env161 &
+	
+	Env.extend_frame_t(env161, "vector", array1dimreal2vectorreal)	      => env162 &
+	Env.extend_frame_t(env162, "vector", array2dimreal2vectorreal)	      => env163 &
+	Env.extend_frame_t(env163, "vector", array3dimreal2vectorreal)	      => env164 &
+	Env.extend_frame_t(env164, "vector", array4dimreal2vectorreal)	      => env165 &
+	Env.extend_frame_t(env165, "vector", array5dimreal2vectorreal)	      => env166 &
+	Env.extend_frame_t(env166, "vector", array6dimreal2vectorreal)	      => env167 &
+	Env.extend_frame_t(env167, "vector", array7dimreal2vectorreal)	      => env168 &
+	Env.extend_frame_t(env168, "vector", array8dimreal2vectorreal)	      => env169 &
+
+	Env.extend_frame_t(env169, "vector", array1dimbool2vectorbool)	      => env170 &
+	Env.extend_frame_t(env170, "vector", array2dimbool2vectorbool)	      => env171 &
+	Env.extend_frame_t(env171, "vector", array3dimbool2vectorbool)	      => env172 &
+	Env.extend_frame_t(env172, "vector", array4dimbool2vectorbool)	      => env173 &
+	Env.extend_frame_t(env173, "vector", array5dimbool2vectorbool)	      => env174 &
+	Env.extend_frame_t(env174, "vector", array6dimbool2vectorbool)	      => env175 &
+	Env.extend_frame_t(env175, "vector", array7dimbool2vectorbool)	      => env176 &
+	Env.extend_frame_t(env176, "vector", array8dimbool2vectorbool)	      => env177 &
+
+	Env.extend_frame_t(env177, "vector", array1dimstring2vectorstring)	      => env178 &
+	Env.extend_frame_t(env178, "vector", array2dimstring2vectorstring)	      => env179 &
+	Env.extend_frame_t(env179, "vector", array3dimstring2vectorstring)	      => env180 &
+	Env.extend_frame_t(env180, "vector", array4dimstring2vectorstring)	      => env181 &
+	Env.extend_frame_t(env181, "vector", array5dimstring2vectorstring)	      => env182 &
+	Env.extend_frame_t(env182, "vector", array6dimstring2vectorstring)	      => env183 &
+	Env.extend_frame_t(env183, "vector", array7dimstring2vectorstring)	      => env184 &
+	Env.extend_frame_t(env184, "vector", array8dimstring2vectorstring)	      => env185 & 
+
+
+
+
+
+	Env.extend_frame_t(env185, "matrix", int2matrixint)	      => env186 &
+	Env.extend_frame_t(env186, "matrix", real2matrixreal)	      => env187 &
+	Env.extend_frame_t(env187, "matrix", string2matrixstring)     => env188 &
+	Env.extend_frame_t(env188, "matrix", bool2matrixbool)	      => env189 &
+
+  	Env.extend_frame_t(env189, "matrix", array1dimint2matrixint)	      => env190 &
+	Env.extend_frame_t(env190, "matrix", array2dimint2matrixint)	      => env191 &
+	Env.extend_frame_t(env191, "matrix", array3dimint2matrixint)	      => env192 &
+	Env.extend_frame_t(env192, "matrix", array4dimint2matrixint)	      => env193 &
+	Env.extend_frame_t(env193, "matrix", array5dimint2matrixint)	      => env194 &
+	Env.extend_frame_t(env194, "matrix", array6dimint2matrixint)	      => env195 &
+	Env.extend_frame_t(env195, "matrix", array7dimint2matrixint)	      => env196 &
+	Env.extend_frame_t(env196, "matrix", array8dimint2matrixint)	      => env197 &
+	
+	Env.extend_frame_t(env197, "matrix", array1dimreal2matrixreal)	      => env198 &
+	Env.extend_frame_t(env198, "matrix", array2dimreal2matrixreal)	      => env199 &
+	Env.extend_frame_t(env199, "matrix", array3dimreal2matrixreal)	      => env200 &
+	Env.extend_frame_t(env200, "matrix", array4dimreal2matrixreal)	      => env201 &
+	Env.extend_frame_t(env201, "matrix", array5dimreal2matrixreal)	      => env202 &
+	Env.extend_frame_t(env202, "matrix", array6dimreal2matrixreal)	      => env203 &
+	Env.extend_frame_t(env203, "matrix", array7dimreal2matrixreal)	      => env204 &
+	Env.extend_frame_t(env204, "matrix", array8dimreal2matrixreal)	      => env205 &
+
+	Env.extend_frame_t(env205, "matrix", array1dimbool2matrixbool)	      => env206 &
+	Env.extend_frame_t(env206, "matrix", array2dimbool2matrixbool)	      => env207 &
+	Env.extend_frame_t(env207, "matrix", array3dimbool2matrixbool)	      => env208 &
+	Env.extend_frame_t(env208, "matrix", array4dimbool2matrixbool)	      => env209 &
+	Env.extend_frame_t(env209, "matrix", array5dimbool2matrixbool)	      => env210 &
+	Env.extend_frame_t(env210, "matrix", array6dimbool2matrixbool)	      => env211 &
+	Env.extend_frame_t(env211, "matrix", array7dimbool2matrixbool)	      => env212 &
+	Env.extend_frame_t(env212, "matrix", array8dimbool2matrixbool)	      => env213 &
+
+	Env.extend_frame_t(env213, "matrix", array1dimstring2matrixstring)	      => env214 &
+	Env.extend_frame_t(env214, "matrix", array2dimstring2matrixstring)	      => env215 &
+	Env.extend_frame_t(env215, "matrix", array3dimstring2matrixstring)	      => env216 &
+	Env.extend_frame_t(env216, "matrix", array4dimstring2matrixstring)	      => env217 &
+	Env.extend_frame_t(env217, "matrix", array5dimstring2matrixstring)	      => env218 &
+	Env.extend_frame_t(env218, "matrix", array6dimstring2matrixstring)	      => env219 &
+	Env.extend_frame_t(env219, "matrix", array7dimstring2matrixstring)	      => env220 &
+	Env.extend_frame_t(env220, "matrix", array8dimstring2matrixstring)	      => env221 &
+
+
+
+	Env.extend_frame_t(env221, "transpose", array2dimint2matrixint)	      => env222 &
+	Env.extend_frame_t(env222, "transpose", array3dimint2matrixint)	      => env223 &
+	Env.extend_frame_t(env223, "transpose", array4dimint2matrixint)	      => env224 &
+	Env.extend_frame_t(env224, "transpose", array5dimint2matrixint)	      => env225 &
+	Env.extend_frame_t(env225, "transpose", array6dimint2matrixint)	      => env226 &
+	
+
+	Env.extend_frame_t(env226, "transpose", array2dimreal2matrixreal)	      => env227 &
+	Env.extend_frame_t(env227, "transpose", array3dimreal2matrixreal)	      => env228 &
+	Env.extend_frame_t(env228, "transpose", array4dimreal2matrixreal)	      => env229 &
+	Env.extend_frame_t(env229, "transpose", array5dimreal2matrixreal)	      => env230 &
+	Env.extend_frame_t(env230, "transpose", array6dimreal2matrixreal)	      => env231 &
+
+	Env.extend_frame_t(env231, "transpose", array2dimbool2matrixbool)	      => env232 &
+	Env.extend_frame_t(env232, "transpose", array3dimbool2matrixbool)	      => env233 &
+	Env.extend_frame_t(env233, "transpose", array4dimbool2matrixbool)	      => env234 &
+	Env.extend_frame_t(env234, "transpose", array5dimbool2matrixbool)	      => env235 &
+	Env.extend_frame_t(env235, "transpose", array6dimbool2matrixbool)	      => env236 &
+
+	Env.extend_frame_t(env236, "transpose", array2dimstring2matrixstring)	      => env237 &
+	Env.extend_frame_t(env237, "transpose", array3dimstring2matrixstring)	      => env238 &
+	Env.extend_frame_t(env238, "transpose", array4dimstring2matrixstring)	      => env239 &
+	Env.extend_frame_t(env239, "transpose", array5dimstring2matrixstring)	      => env240 &
+	Env.extend_frame_t(env240, "transpose", array6dimstring2matrixstring)	      => env241 &
+
+
+	(* Only real and int makes sense here. And maybe bool. *)
+	Env.extend_frame_t(env241, "outerproduct", vector_vector2int)	      => env242 &
+	Env.extend_frame_t(env242, "outerproduct", vector_vector2real)	      => env243 &
+
+
+	Env.extend_frame_t(env243, "identity", int2array1dimint) 		     => env244 &
+	Env.extend_frame_t(env244, "identity", int2array2dimint) 		     => env245 &
+	Env.extend_frame_t(env245, "identity", int2array3dimint) 		     => env246 &
+	Env.extend_frame_t(env246, "identity", int2array4dimint) 		     => env247 &
+	Env.extend_frame_t(env247, "identity", int2array5dimint) 		     => env248 &
+	Env.extend_frame_t(env248, "identity", int2array6dimint) 		     => env249 &
+	Env.extend_frame_t(env249, "identity", int2array7dimint) 		     => env250 &
+	Env.extend_frame_t(env250, "identity", int2array8dimint) 		     => env251 &
+
+	Env.extend_frame_t(env251, "diagonal", array1dimint2matrixint)	      => env252 &
+	Env.extend_frame_t(env252, "diagonal", array1dimreal2matrixreal)      => env253 &
+	Env.extend_frame_t(env253, "diagonal", array1dimbool2matrixbool)      => env254 &
+	Env.extend_frame_t(env254, "diagonal", array1dimstring2matrixstring)  => env255 &
+(* There is a problem to represents these functions where you do not 
+ know how many argumetns they will take. In this implementation up to 8 arguments are supported. *)
+	
+	Env.extend_frame_t(env255, "zeros", n1int2arrayint) 		     => env256 &
+	Env.extend_frame_t(env256, "zeros", n2int2arrayint) 		     => env257 &
+	Env.extend_frame_t(env257, "zeros", n3int2arrayint) 		     => env258 &
+	Env.extend_frame_t(env258, "zeros", n4int2arrayint) 		     => env259 &
+	Env.extend_frame_t(env259, "zeros", n5int2arrayint) 		     => env260 &
+	Env.extend_frame_t(env260, "zeros", n6int2arrayint) 		     => env261 &
+	Env.extend_frame_t(env261, "zeros", n7int2arrayint) 		     => env262 &
+	Env.extend_frame_t(env262, "zeros", n8int2arrayint) 		     => env263 & 
+
+
+	Env.extend_frame_t(env263, "ones", n1int2arrayint)	      => env264 &
+	Env.extend_frame_t(env264, "ones", n2int2arrayint)	      => env265 &
+	Env.extend_frame_t(env265, "ones", n3int2arrayint)	      => env266 &
+	Env.extend_frame_t(env266, "ones", n4int2arrayint)	      => env267 &
+	Env.extend_frame_t(env267, "ones", n5int2arrayint)	      => env268 &
+	Env.extend_frame_t(env268, "ones", n6int2arrayint)	      => env269 &
+	Env.extend_frame_t(env269, "ones", n7int2arrayint)	      => env270 &
+	Env.extend_frame_t(env270, "ones", n8int2arrayint)	      => env271 &
+
+(*	Fill is impossible to do with this scemen, because the type of the array is unkown during the compile time of Modeq.
+
+	Env.extend_frame_t(env37, "fill", array2int) 		     => env38 &
+*)
+
+	Env.extend_frame_t(env271, "linspace", int_int2vectorreal)	      => env272 &
+	Env.extend_frame_t(env272, "min", array1dimint2int) 		     => env273 &
+	Env.extend_frame_t(env273, "min", array2dimint2int) 		     => env274 &
+	Env.extend_frame_t(env274, "min", array3dimint2int) 		     => env275 &
+	Env.extend_frame_t(env275, "min", array4dimint2int) 		     => env276 &
+	Env.extend_frame_t(env276, "min", array5dimint2int) 		     => env277 &
+	Env.extend_frame_t(env277, "min", array6dimint2int) 		     => env278 &
+	Env.extend_frame_t(env278, "min", array7dimint2int) 		     => env279 &
+	Env.extend_frame_t(env279, "min", array8dimint2int) 		     => env280 &
+
+	Env.extend_frame_t(env280, "min", array1dimreal2real) 		     => env281 &
+	Env.extend_frame_t(env281, "min", array2dimreal2real) 		     => env282 &
+	Env.extend_frame_t(env282, "min", array3dimreal2real) 		     => env283 &
+	Env.extend_frame_t(env283, "min", array4dimreal2real) 		     => env284 &
+	Env.extend_frame_t(env284, "min", array5dimreal2real) 		     => env285 &
+	Env.extend_frame_t(env285, "min", array6dimreal2real) 		     => env286 &
+	Env.extend_frame_t(env286, "min", array7dimreal2real) 		     => env287 &
+	Env.extend_frame_t(env287, "min", array8dimreal2real) 		     => env288 &
+
+	Env.extend_frame_t(env288, "max", array1dimint2int)	      => env289 &
+	Env.extend_frame_t(env289, "max", array2dimint2int)	      => env290 &
+	Env.extend_frame_t(env290, "max", array3dimint2int)	      => env291 &
+	Env.extend_frame_t(env291, "max", array4dimint2int)	      => env292 &
+	Env.extend_frame_t(env292, "max", array5dimint2int)	      => env293 &
+	Env.extend_frame_t(env293, "max", array6dimint2int)	      => env294 &
+	Env.extend_frame_t(env294, "max", array7dimint2int)	      => env295 &
+	Env.extend_frame_t(env295, "max", array8dimint2int)	      => env296 &
+
+	Env.extend_frame_t(env296, "max", array1dimreal2real)	      => env297 &
+	Env.extend_frame_t(env297, "max", array2dimreal2real)	      => env298 &
+	Env.extend_frame_t(env298, "max", array3dimreal2real)	      => env299 &
+	Env.extend_frame_t(env299, "max", array4dimreal2real)	      => env300 &
+	Env.extend_frame_t(env300, "max", array5dimreal2real)	      => env301 &
+	Env.extend_frame_t(env301, "max", array6dimreal2real)	      => env302 &
+	Env.extend_frame_t(env302, "max", array7dimreal2real)	      => env303 &
+	Env.extend_frame_t(env303, "max", array8dimreal2real)	      => env304 &
+
+	Env.extend_frame_t(env304, "sum", array1dimint2int)	      => env305 &
+	Env.extend_frame_t(env305, "sum", array2dimint2int)	      => env306 &
+	Env.extend_frame_t(env306, "sum", array3dimint2int)	      => env307 &
+	Env.extend_frame_t(env307, "sum", array4dimint2int)	      => env308 &
+	Env.extend_frame_t(env308, "sum", array5dimint2int)	      => env309 &
+	Env.extend_frame_t(env309, "sum", array6dimint2int)	      => env310 &
+	Env.extend_frame_t(env310, "sum", array7dimint2int)	      => env311 &
+	Env.extend_frame_t(env311, "sum", array8dimint2int)	      => env312 &
+
+	Env.extend_frame_t(env312, "sum", array1dimreal2real)	      => env313 &
+	Env.extend_frame_t(env313, "sum", array2dimreal2real)	      => env314 &
+	Env.extend_frame_t(env314, "sum", array3dimreal2real)	      => env315 &
+	Env.extend_frame_t(env315, "sum", array4dimreal2real)	      => env316 &
+	Env.extend_frame_t(env316, "sum", array5dimreal2real)	      => env317 &
+	Env.extend_frame_t(env317, "sum", array6dimreal2real)	      => env318 &
+	Env.extend_frame_t(env318, "sum", array7dimreal2real)	      => env319 &
+	Env.extend_frame_t(env319, "sum", array8dimreal2real)	      => env320 &
+
+
+	Env.extend_frame_t(env320, "product", array1dimint2int)	      => env321 &
+	Env.extend_frame_t(env321, "product", array2dimint2int)	      => env322 &
+	Env.extend_frame_t(env322, "product", array3dimint2int)	      => env323 &
+	Env.extend_frame_t(env323, "product", array4dimint2int)	      => env324 &
+	Env.extend_frame_t(env324, "product", array5dimint2int)	      => env325 &
+	Env.extend_frame_t(env325, "product", array6dimint2int)	      => env326 &
+	Env.extend_frame_t(env326, "product", array7dimint2int)	      => env327 &
+	Env.extend_frame_t(env327, "product", array8dimint2int)	      => env328 &
+
+	Env.extend_frame_t(env328, "product", array1dimreal2real)	      => env329 &
+	Env.extend_frame_t(env329, "product", array2dimreal2real)	      => env330 &
+	Env.extend_frame_t(env330, "product", array3dimreal2real)	      => env331 &
+	Env.extend_frame_t(env331, "product", array4dimreal2real)	      => env332 &
+	Env.extend_frame_t(env332, "product", array5dimreal2real)	      => env333 &
+	Env.extend_frame_t(env333, "product", array6dimreal2real)	      => env334 &
+	Env.extend_frame_t(env334, "product", array7dimreal2real)	      => env335 &
+	Env.extend_frame_t(env335, "product", array8dimreal2real)	      => env336 & 
+
+
+	Env.extend_frame_t(env336, "symmetric", array1dimint2array1dimint)	      => env337 &
+	Env.extend_frame_t(env337, "symmetric", array2dimint2array2dimint)	      => env338 &
+	Env.extend_frame_t(env338, "symmetric", array3dimint2array3dimint)	      => env339 &
+	Env.extend_frame_t(env339, "symmetric", array4dimint2array4dimint)	      => env340 &
+	Env.extend_frame_t(env340, "symmetric", array5dimint2array5dimint)	      => env341 &
+	Env.extend_frame_t(env341, "symmetric", array6dimint2array6dimint)	      => env342 &
+	Env.extend_frame_t(env342, "symmetric", array7dimint2array7dimint)	      => env343 &
+	Env.extend_frame_t(env343, "symmetric", array8dimint2array8dimint)	      => env344 &
+
+	Env.extend_frame_t(env344, "symmetric", array1dimreal2array1dimreal)	      => env345 &
+	Env.extend_frame_t(env345, "symmetric", array2dimreal2array2dimreal)	      => env346 &
+	Env.extend_frame_t(env346, "symmetric", array3dimreal2array3dimreal)	      => env347 &
+	Env.extend_frame_t(env347, "symmetric", array4dimreal2array4dimreal)	      => env348 &
+	Env.extend_frame_t(env348, "symmetric", array5dimreal2array5dimreal)	      => env349 &
+	Env.extend_frame_t(env349, "symmetric", array6dimreal2array6dimreal)	      => env350 &
+	Env.extend_frame_t(env350, "symmetric", array7dimreal2array7dimreal)	      => env351 &
+	Env.extend_frame_t(env351, "symmetric", array8dimreal2array8dimreal)	      => env352 &
+
+	Env.extend_frame_t(env352, "symmetric", array1dimstring2array1dimstring)	      => env353 &
+	Env.extend_frame_t(env353, "symmetric", array2dimstring2array2dimstring)	      => env354 &
+	Env.extend_frame_t(env354, "symmetric", array3dimstring2array3dimstring)	      => env355 &
+	Env.extend_frame_t(env355, "symmetric", array4dimstring2array4dimstring)	      => env356 &
+	Env.extend_frame_t(env356, "symmetric", array5dimstring2array5dimstring)	      => env357 &
+	Env.extend_frame_t(env357, "symmetric", array6dimstring2array6dimstring)	      => env358 &
+	Env.extend_frame_t(env358, "symmetric", array7dimstring2array7dimstring)	      => env359 &
+	Env.extend_frame_t(env359, "symmetric", array8dimstring2array8dimstring)	      => env360 &
+
+	Env.extend_frame_t(env360, "symmetric", array1dimbool2array1dimbool)	      => env361 &
+	Env.extend_frame_t(env361, "symmetric", array2dimbool2array2dimbool)	      => env362 &
+	Env.extend_frame_t(env362, "symmetric", array3dimbool2array3dimbool)	      => env363 &
+	Env.extend_frame_t(env363, "symmetric", array4dimbool2array4dimbool)	      => env364 &
+	Env.extend_frame_t(env364, "symmetric", array5dimbool2array5dimbool)	      => env365 &
+	Env.extend_frame_t(env365, "symmetric", array6dimbool2array6dimbool)	      => env366 &
+	Env.extend_frame_t(env366, "symmetric", array7dimbool2array7dimbool)	      => env367 &
+	Env.extend_frame_t(env367, "symmetric", array8dimbool2array8dimbool)	      => env368 &
+
+
+  	Env.extend_frame_t(env368, "cross", array1dimint2array1dimint)	      	     => env369 &
+	Env.extend_frame_t(env369, "cross", array1dimreal2array1dimreal)	     => env370 &
+
+	Env.extend_frame_t(env370, "skew", array1dimint2array3dimint) 		     => env371 & 
+	Env.extend_frame_t(env371, "skew", array1dimreal2array3dimreal)              => env372  
+
+(*Debug.	Print.print_buf "\n Just AFTER the built in array functions part." *)
+	----------------------------------------------
+	initial_env () => env372
+
+end

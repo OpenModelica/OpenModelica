@@ -1,0 +1,17 @@
+#!/bin/sh
+RML="$1"
+filerml="$2"
+file=`basename $filerml .rml`
+fileo="${file}.o"
+fileh="${file}.h"
+implfile="$2.impl"
+temprml=`tempfile -d . -s .rml`
+temp=`basename $temprml .rml`
+tempo="${temp}.o"
+temph="${temp}.h"
+
+cat ${filerml} ${implfile} > ${temprml}
+${RML} -c ${temprml}
+mv ${tempo} ${fileo}
+mv ${temph} ${fileh}
+rm ${temprml}
