@@ -1,1 +1,1 @@
-make -f $1
+make -f $1 > /dev/null
