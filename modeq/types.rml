@@ -3,6 +3,8 @@
  ** description: Type system
  **
  ** RCS: $Id$
+ **
+ ** FIXME: Remove dependency on `Absyn'.
  **)
 
 module Types :
@@ -11,6 +13,7 @@ module Types :
   with "absyn.rml"
   with "exp.rml"
   with "values.rml"
+  with "explode.rml"
 
   (** - Identifiers *)
   type Ident = string
@@ -18,7 +21,7 @@ module Types :
 
   (** - Variables *)
   datatype Var = VAR of Ident			  (* name *)
-		      * Absyn.VarAttr		  (* attributes *)
+		      * SCode.Attributes	  (* attributes *)
 		      * bool	                  (* protected *)
 		      * Type			  (* type *)
 		      * Binding			  (* equation modification *)
@@ -253,7 +256,7 @@ end
 (** relation: pick *)
 
 relation pick : (Var list, Ident)
-	  => (Var list, Absyn.VarAttr, Type) =
+	  => (Var list, SCode.Attributes, Type) =
 
   rule  n1 = n2
 	-------

@@ -432,10 +432,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,
-				     attr as Absyn.ATTR(ad,flow,param,dir),
+				     attr as SCode.ATTR(ad,flow,param,dir),
 				     t,m))
           => (dae, env',csets',ci_state,
-	      [Types.VAR(n,Absyn.ATTR([(* FIXME: why? *)],flow,param,dir),
+	      [Types.VAR(n,SCode.ATTR([(* FIXME: why? *)],flow,param,dir),
 			 prot, ty, binding)])
 	
 
@@ -468,7 +468,7 @@ end
 (** relation: inst_var *)
 
 relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		     SCode.Class,Absyn.VarAttr,Mod.EqMod option,
+		     SCode.Class,SCode.Attributes,Mod.EqMod option,
 		     int list, int list)
 	  => (DAE.DAEcomp list,Connect.Sets,Types.Type) =
 
@@ -483,12 +483,12 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	inst_mod_equation(cr,ty,mod) => dae2 &
-	dae_declare(cr,ty,Absyn.ATTR([], flow, vt, dir)) => dae3 &
+	dae_declare(cr,ty,SCode.ATTR([], flow, vt, dir)) => dae3 &
 
 	list_append(dae1,dae2) => daex &
 	list_append(daex,dae3) => dae
 	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,Absyn.ATTR(_,flow,vt,dir),eq,[],idxs)
+	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,vt,dir),eq,[],idxs)
           => (dae,csets',ty)
 
   rule	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs)
@@ -507,7 +507,7 @@ end
 (**)
 
 relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		       (SCode.Class*Absyn.VarAttr),int,int,int list,int list)
+		       (SCode.Class*SCode.Attributes),int,int,int list,int list)
 	  => (DAE.DAEcomp list,Connect.Sets,Types.Type) =
 
   rule	int_gt(i,stop) => true
@@ -748,7 +748,7 @@ relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
 
   rule	ClassInf.valid(st, Absyn.R_PACKAGE) &
 	Env.extend_frame_v(env,
-			   Types.VAR(n, Absyn.ATTR([],
+			   Types.VAR(n, SCode.ATTR([],
 						   false,Absyn.CONST,
 						   Absyn.BIDIR),
 				     false,
@@ -765,11 +765,11 @@ end
  **)
 
 relation dae_declare : (Exp.ComponentRef,
-			Types.Type, Absyn.VarAttr) => DAE.DAEcomp list =
+			Types.Type, SCode.Attributes) => DAE.DAEcomp list =
 
   rule	dae_declare2 (vn, ty, par, ad) => dae
 	-----------------------------------
-	dae_declare (vn, ty, Absyn.ATTR(ad,_,par,_)) => dae
+	dae_declare (vn, ty, SCode.ATTR(ad,_,par,_)) => dae
 
   rule	print "- dae_declare failed\n"
 	------------------------------
@@ -779,7 +779,7 @@ end
 
 (**)
 
-relation dae_declare2 : (Exp.ComponentRef, Types.Type, Absyn.VarType,
+relation dae_declare2 : (Exp.ComponentRef, Types.Type, Absyn.Variability,
 			 Absyn.ArrayDim)
 	  => DAE.DAEcomp list =
 
@@ -1003,7 +1003,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	print "   unroll: " & Values.print_val fst & print "\n" &
 	Env.open_scope env => env' &
 	Env.extend_frame_v (env',
-			    Types.VAR(i, Absyn.ATTR([],
+			    Types.VAR(i, SCode.ATTR([],
 						    false,
 						    Absyn.CONST,
 						    Absyn.BIDIR),
@@ -1133,9 +1133,9 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	Static.canon_cref(env, c1') => c1'' &
 	Static.canon_cref(env, c2') => c2'' &
 	Lookup.lookup_var_local(env,c1'')
-	  => (Absyn.ATTR(_,flow1,vt1,_),ty1,_) &
+	  => (SCode.ATTR(_,flow1,vt1,_),ty1,_) &
 	Lookup.lookup_var_local(env,c2'')
-	  => (Absyn.ATTR(_,flow2,vt2,_),ty2,_) &
+	  => (SCode.ATTR(_,flow2,vt2,_),ty2,_) &
 	print "  looked up connectors\n" &
 
 	(** Check that the types of the connectors are good. *)
@@ -1188,9 +1188,9 @@ end
  **)
 
 relation check_connect_types : (Exp.ComponentRef, Types.Type,
-				Absyn.VarType, bool,
+				Absyn.Variability, bool,
 			       	Exp.ComponentRef, Types.Type,
-				Absyn.VarType, bool) => () =
+				Absyn.Variability, bool) => () =
 
   rule	flow1 = flow2 &
 	Types.equivtypes(t1, t2) => true
@@ -1313,9 +1313,9 @@ relation connect_vars : (Connect.Sets,
 	connect_vars(sets',c1,f1,xs1,c2,f2,xs2) => sets''
 	--------------------------------------
 	connect_vars(sets,
-		     c1,f1, Types.VAR(n,Absyn.ATTR(_,flow1,vt1,_),
+		     c1,f1, Types.VAR(n,SCode.ATTR(_,flow1,vt1,_),
 				      _,ty1,_)::xs1,
-		     c2,f2, Types.VAR(_,Absyn.ATTR(_,flow2,vt2,_),
+		     c2,f2, Types.VAR(_,SCode.ATTR(_,flow2,vt2,_),
 				      _,ty2,_)::xs2)
 	  => sets''
 
@@ -1449,7 +1449,7 @@ end
  ** FIXME: Why is the result from make_const_binding ignored?
  **)
 
-relation make_binding : (Env.Env, Absyn.VarAttr, Mod.EqMod option, SCode.Class)
+relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option, SCode.Class)
 	  => Types.Binding =
 
   axiom	make_binding (_,_,NONE,_) => Types.UNBOUND
@@ -1459,7 +1459,7 @@ relation make_binding : (Env.Env, Absyn.VarAttr, Mod.EqMod option, SCode.Class)
 	make_const_binding (env,e, prop, ct) => binding
 	----------------------------------------
 	make_binding (env,
-		      Absyn.ATTR(_,_,Absyn.CONST,_), (* a constant component *)
+		      SCode.ATTR(_,_,Absyn.CONST,_), (* a constant component *)
 		      SOME((e,prop)),
 		      cl)
 	  => (* binding *) Types.EQBOUND(e,true)

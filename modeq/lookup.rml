@@ -18,9 +18,9 @@ module Lookup:
   relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type)
   relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class)
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr,Types.Type,Types.Binding)
+	  => (SCode.Attributes,Types.Type,Types.Binding)
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Types.Binding)
+	  => (SCode.Attributes, Types.Type, Types.Binding)
   relation lookup_ident_local : (Env.Env, Absyn.Ident) => Types.Var
 
 end
@@ -70,7 +70,7 @@ end
  **)
 
 relation lookup_var : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Types.Binding) =
+	  => (SCode.Attributes, Types.Type, Types.Binding) =
 
   rule	(* print " lookup_var: looking in frame\n" & *)
 	lookup_var_f(items,ref) => (attr,ty,binding)
@@ -88,7 +88,7 @@ end
  **)
 
 relation lookup_var_local : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Types.Binding) =
+	  => (SCode.Attributes, Types.Type, Types.Binding) =
 
   rule	lookup_var_f(items,ref) => (attr,ty,binding)
 	--------------------------------------------
@@ -242,20 +242,20 @@ relation check_subscripts : (Absyn.ArrayDim, Exp.Subscript list)
 end
 (**)
 relation lookup_in_var: (Types.Type, Exp.ComponentRef)
-	  => (Absyn.VarAttr,Types.Type,Types.Binding) =
+	  => (SCode.Attributes,Types.Type,Types.Binding) =
 
 	(* FIXME: Check protected flag *)
 
 	(* FIXME: Should I really strip the ArrayDim? *)
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),_,ty',binding)) &
+	  => (Types.VAR(_,SCode.ATTR(ad,fl,vt,di),_,ty',binding)) &
 	check_subscripts(ad, ss) => dim
 	------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
-	  => (Absyn.ATTR(dim,fl,vt,di),ty',binding)
+	  => (SCode.ATTR(dim,fl,vt,di),ty',binding)
 
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),_,ty',_)) &
+	  => (Types.VAR(_,SCode.ATTR(ad,fl,vt,di),_,ty',_)) &
 	check_subscripts(ad, ss) => _ &
 	lookup_in_var(ty', vs) => (attr, ty'',binding)
 	--------------------------------------
@@ -265,17 +265,17 @@ end
 (**)
 relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 			 Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Types.Binding) =
+	  => (SCode.Attributes, Types.Type, Types.Binding) =
 
   rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),_,ty,bind) &
+	lookup_var2(f, id) => Types.VAR(n,SCode.ATTR(ad,f,vt,di),_,ty,bind) &
 	check_subscripts(ad,ss) => dim
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
-	  => (Absyn.ATTR(dim,f,vt,di),ty,bind)
+	  => (SCode.ATTR(dim,f,vt,di),ty,bind)
 
   rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),_,ty,_) &
+	lookup_var2(f, id) => Types.VAR(n,SCode.ATTR(ad,f,vt,di),_,ty,_) &
 	check_subscripts(ad,ss) => [] & (* FIXME: error message *)
 	lookup_in_var(ty, ids) => (attr,ty,binding)
 	----------------------------------
