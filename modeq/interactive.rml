@@ -308,6 +308,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp,s,ic,iv,cf))
 
+  rule	delete_component(name,model,p) => (newp,resstr) &
+	add_component(name,tp,model,annlst,newp) => (newp2,resstr)
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("updateComponent",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp2,s,ic,iv,cf))
+
   rule	delete_component(name,model,p) => (newp,resstr)
 	& Print.get_string() => str & string_append(resstr,str) => resstr'
 	-----------------------
@@ -318,15 +328,15 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp,s,ic,iv,cf))
 
-  rule	add_icon_annotation(cr,annexpr,p) => newp &
+  rule	add_class_annotation(cr,annlst,p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
-		Absyn.CREF_IDENT("addIconAnnotation",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(cr),annexpr],_)))],_
+		Absyn.CREF_IDENT("addClassAnnotation",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],annlst)))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("not impl.\n",newst)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
 
   rule	get_component_count(cr,p) => count &
 	int_string count => str &
@@ -1073,17 +1083,152 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	
 end
 
-(** relation:add_icon_annotation 
+(** relation:add_class_annotation 
  ** This relation takes a `ComponentRef' and an `Exp' expression and a `Program' and adds the 
- ** expression as an icon annotation to the specified model in the program, 
+ ** expression as a annotation to the specified model in the program, 
  ** returning the updated program.
 **)
-relation add_icon_annotation:(Absyn.ComponentRef,Absyn.Exp,Absyn.Program) => Absyn.Program =
+relation add_class_annotation:(Absyn.ComponentRef,Absyn.NamedArg list,Absyn.Program) => Absyn.Program =
+  rule	(* Class inside other class *)
+	Absyn.cref_to_path(model) => modelpath &
+	Absyn.strip_last(modelpath) => modelwithin &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	add_class_annotation_to_class(cdef,annlst) => cdef' &
+	update_program(Absyn.PROGRAM([cdef'], Absyn.WITHIN(modelwithin)),p) => newp
+	-----------------------------
+	add_class_annotation(model as Absyn.CREF_QUAL(_,_,_),annlst,p) => newp
 
-  axiom add_icon_annotation(_,_,p) => p 
-	(* TODO:, implement add_icon_annotation *)
+  rule	(* Class on top level *)
+	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	add_class_annotation_to_class(cdef,annlst) => cdef' &
+	update_program(Absyn.PROGRAM([cdef'], Absyn.TOP),p) => newp
+	-----------------------------
+	add_class_annotation(model as Absyn.CREF_IDENT(_,_),annlst,p) => newp
 end
 
+(** relation: add_class_annotation_to_class
+ *
+ * This relation adds an annotation on element level to a `Class´.
+ **)
+relation add_class_annotation_to_class: ( Absyn.Class, Absyn.NamedArg list) 
+	  => Absyn.Class =
+	
+  rule	(* No annotation element found in class *)
+	get_public_list(parts) => publst &
+	not get_element_annotation_in_elements(publst) => _ &
+	annotation_list_to_absyn(annlst) => annotation &
+	add_to_public(cdef,Absyn.ANNOTATIONITEM(annotation)) => cdef' 
+	------------------------------------------------------------
+	add_class_annotation_to_class(cdef as Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)),annlst) => cdef'
+
+  rule	get_public_list(parts) => publst &
+	get_element_annotation_in_elements(publst) => Absyn.ANNOTATIONITEM(oldann) &
+	annotation_list_to_absyn(annlst) => newann &
+	merge_annotations(oldann,newann) => newann' &
+	replace_element_annotation_in_elements(publst,newann') => publst2 &
+	replace_public_list(parts,publst2) => parts2 
+	--------------------------------
+	add_class_annotation_to_class(cdef as Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),annlst)
+	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+end
+
+(** relation: replace_element_annotation_in_elements
+ *
+ * This relation takes an element list and replaces the first annotation with the
+ * one given as argument.
+ **)
+
+relation replace_element_annotation_in_elements: (Absyn.ElementItem list,Absyn.Annotation)
+	  => Absyn.ElementItem list =
+	  
+  axiom	replace_element_annotation_in_elements(Absyn.ANNOTATIONITEM(_)::xs,a) 
+	  => Absyn.ANNOTATIONITEM(a)::xs
+	
+  rule	replace_element_annotation_in_elements(xs,a2) => res
+	-----------------------
+	replace_element_annotation_in_elements(a::xs,a2) 
+	  => a::res
+
+  axiom	replace_element_annotation_in_elements([],_) => []
+end
+
+(** relation: get_element_annotation_in_elements
+ *
+ * This relation retrieves the forst Annotation among the elements taken as argument
+ *
+ **)
+relation get_element_annotation_in_elements: (Absyn.ElementItem list) 
+	  => Absyn.ElementItem =
+	  
+  axiom	get_element_annotation_in_elements((a as Absyn.ANNOTATIONITEM(_))::xs) => a
+	
+  rule	get_element_annotation_in_elements(xs) => a
+	-------------------------------------------
+	get_element_annotation_in_elements(_::xs) => a
+end
+
+(** relation: merge_annotations
+ *
+ * This relation takes an old annotation as first argument and a new annotation as 
+ * second argument and merges the two.
+ * Annotation "parts" that exist in both the old and the new annotation will be changed
+ * according to the new definition. For instance,
+ * mergee_annotations(annotation(x=1,y=2),annotation(x=3)) => annotation(x=3,y=2)
+ **)
+relation merge_annotations:(Absyn.Annotation, Absyn.Annotation) => Absyn.Annotation =
+	 
+  rule	not remove_modification_in_elementargs(eltargs,cr) => _ &
+	merge_annotations(Absyn.ANNOTATION(oldrest),Absyn.ANNOTATION(eltargs))
+	  => Absyn.ANNOTATION(neweltargs) 
+	  ----------------------------
+	merge_annotations(Absyn.ANNOTATION((mod as Absyn.MODIFICATION(_,_,cr,_,_))::oldrest),
+			  Absyn.ANNOTATION(eltargs))
+	  => Absyn.ANNOTATION(mod::neweltargs)
+	  
+  rule	remove_modification_in_elementargs(eltargs,cr) => eltargs' &
+	merge_annotations(Absyn.ANNOTATION(oldrest),Absyn.ANNOTATION(eltargs))
+	  => Absyn.ANNOTATION(neweltargs) 
+	-----------------------------------------------------------------------
+	merge_annotations(Absyn.ANNOTATION((mod as Absyn.MODIFICATION(_,_,cr,_,_))::oldrest),
+			  Absyn.ANNOTATION(eltargs))
+	  => Absyn.ANNOTATION(neweltargs)
+
+  axiom	merge_annotations(Absyn.ANNOTATION([]),a) => a
+end
+
+(** relation: remove_modification_in_elementargs
+ * This relation removes the class modification named by the second argument.
+* If no such class modification is found the relation fails.
+* Currently, only identifiers are allowed as class modifiers, i.e. a(...) and not a.b(...)
+**)
+relation remove_modification_in_elementargs:(Absyn.ElementArg list, Absyn.ComponentRef )
+	=> Absyn.ElementArg list = 
+
+  rule	id = id2 
+	---------------------------------------------
+	remove_modification_in_elementargs([Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),_,_)],cr as Absyn.CREF_IDENT(id2,_))
+	  => []
+  rule	not id = id2 
+	---------------------------------------------
+	remove_modification_in_elementargs([(m as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),_,_))],cr as Absyn.CREF_IDENT(id2,_))
+	  => fail
+
+  rule	id = id2 
+	---------------------------------------------
+	remove_modification_in_elementargs(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),_,_)::xs,cr as Absyn.CREF_IDENT(id2,_))
+	  => xs
+  rule	not id = id2 &
+	remove_modification_in_elementargs(xs, cr) => res 
+	---------------------------------------------
+	remove_modification_in_elementargs((m as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),_,_))::xs,cr as Absyn.CREF_IDENT(id2,_))
+	  => m::res
+
+  rule	remove_modification_in_elementargs(xs, cr) => res 
+	---------------------------------------------
+	remove_modification_in_elementargs((m as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),_,_))::xs,cr as Absyn.CREF_IDENT(id2,_))
+	  => m::res 
+end
 
 (** relation: get_inheritance_count
  ** This relation takes a `ComponentRef' and a `Program' and returns the number of inherited classes in the 
