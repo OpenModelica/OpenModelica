@@ -24,6 +24,9 @@ module DAE:
   datatype Type = REAL | INT | BOOL | STRING
 
   datatype Element = VAR of Exp.ComponentRef * VarKind * Type
+(*!ignorecode*)
+                   | VARVAL of Exp.Exp (* Ugly hack *)
+(*!includecod*)
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | EQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
@@ -115,46 +118,20 @@ relation dump_type =
 
 end
 
-relation dump_element: Element => () =
-	
-  rule	dump_kind kind & dump_type typ &
- 	Exp.print_component_ref id & print "\n"
-	--------------------------------------
-	dump_element(VAR(id, kind, typ))
-	
-  rule	print "  " & Exp.print_exp e1 &
-	print " = " & Exp.print_exp e2 & print ";\n"
-	--------------------------------------
-	dump_element(EQUATION(e1, e2))
-	
-  rule	RTOpts.modelica_output => false &
-	print "  " & Exp.print_component_ref c &
-	print " ::= " & Exp.print_exp e & print ";\n"
-	--------------------------------------
-	dump_element(DEFINE(c, e))
-	
-  rule	RTOpts.modelica_output => true &
-	print "  " & Exp.print_component_ref c &
-	print " ::= " & Exp.print_exp e & print ";\n"
-	--------------------------------------
-	dump_element(DEFINE(c, e))
-	
-  rule	print "{ begin " & print id & print " }\n" &
-	dump contents &
-	print "{ end " & print id & print " }\n"
-        --------------------------------------
-        dump_element ( COMP(id, contents))
-
-end
-
-relation dump_var : Element => () =
+relation dump_var : (Element, Exp.Exp option) => () =
 	
   rule	dump_kind kind & dump_type typ &
  	Exp.print_component_ref id & print ";\n"
 	--------------------------------------
-	dump_var(VAR(id, kind, typ))
+	dump_var(VAR(id, kind, typ), NONE)
 	
-  axiom	dump_var _
+  rule	dump_kind kind & dump_type typ &
+ 	Exp.print_component_ref id & print " = " &
+	Exp.print_exp e & print ";\n"
+	--------------------------------------
+	dump_var(VAR(id, kind, typ), SOME(e))
+	
+  axiom	dump_var (_,_)
 
 end
 
@@ -189,7 +166,12 @@ relation dump_vars: Element list => () =
 	
   axiom	dump_vars []
 	
-  rule	dump_var first &
+  rule	dump_var (first,SOME(e)) & (* Pretty, eh? *)
+	dump_vars rest
+	-------------------
+	dump_vars VARVAL(e) :: first :: rest
+
+  rule	dump_var (first,NONE) &
 	dump_vars rest
 	-------------------
 	dump_vars first :: rest
