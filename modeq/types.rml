@@ -754,6 +754,10 @@ relation unparse_type: Type => string =
 	---------------------------
 	unparse_type((t as T_COMPLEX(ClassInf.RECORD(name),vs),_))=> res
 
+  rule	ClassInf.get_state_name(ci_state) => res
+	--------------------------------------
+	unparse_type((T_COMPLEX(ci_state,vs),_)) => res
+
   axiom	unparse_type(_) => "not implemented yet\n" 
 end	
 

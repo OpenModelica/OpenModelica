@@ -23,7 +23,7 @@ module Util :
 
   
   relation if : (bool,'a,'a) => 'a
-
+	  
   relation list_first: 'a list => 'a
   relation list_rest: 'a list => 'a list
   relation list_flatten : 'a list list => 'a list
@@ -52,6 +52,8 @@ module Util :
   relation bool_string: bool => string 
   relation string_equal: (string,string) => bool
   relation list_matching : ('a list, 'a => ()) => 'a list
+
+  relation apply_option : ('a option,'a => 'b) => 'b option
 end
 
 
@@ -325,7 +327,14 @@ relation list_matching: ('a list, 'a => () )  => 'a list =
 	list_matching (v::vl, cond) => vl'
 end	
 
+relation apply_option : ('a option,'a => 'b) => 'b option =
 
+  axiom	apply_option(NONE,_) => NONE 
+
+  rule	rel(a) => b
+	-----------
+	apply_option( SOME(a),rel) => SOME(b)
+end
 
 
 

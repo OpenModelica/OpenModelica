@@ -91,7 +91,22 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
   axiom ceval (_,Exp.SCONST(x),_,st) => (Values.STRING(x),st)
   axiom ceval (_,Exp.BCONST(x),_,st) => (Values.BOOL(x),st)
 
-  axiom	ceval (_,Exp.CODE(c,_),_,st) => (Values.CODE(c),st)
+  rule	ceval_ast_exp(env,exp,impl,st) => exp'
+	--------------------------------------
+	ceval (env,Exp.CODE(Absyn.C_EXPRESSION(exp),_),impl,st) 
+	  => (Values.CODE(Absyn.C_EXPRESSION(exp')),st)
+
+  rule	ceval_ast_exp(env,exp,impl,st) => exp'
+	--------------------------------------
+	ceval (env,Exp.CODE(Absyn.C_EXPRESSION(exp),_),impl,st) 
+	  => (Values.CODE(Absyn.C_EXPRESSION(exp')),st)
+
+  rule	ceval_ast_elt(env,elt,impl,st) => elt'
+	--------------------------------------
+	ceval (env,Exp.CODE(Absyn.C_ELEMENT(elt),_),impl,st) 
+	  => (Values.CODE(Absyn.C_ELEMENT(elt')),st)
+
+  axiom	ceval(env, Exp.CODE(c,_),_,st) => (Values.CODE(c),st)
 
   rule	ceval_list (env,es,impl,st) => es' &
 	list_length es' => l
@@ -389,6 +404,246 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	Debug.fprint("failtrace", " failed\n") 
 	-----------------------------------------------------
 	ceval (_,e,_,_) => fail*)
+end
+
+
+
+(** relaton: ceval_ast_exp
+ **
+ ** This relation evaluates a piece of Expression AST, replacing Eval(variable) with
+ ** the value of the variable, given that it is of type "Expression".
+**)
+relation ceval_ast_exp: (Env.Env, Absyn.Exp, 
+			 bool, Interactive.InteractiveSymbolTable option)
+	=> Absyn.Exp =
+
+  axiom	ceval_ast_exp (_,e as Absyn.INTEGER(_),_,_) => e
+  axiom	ceval_ast_exp (_,e as Absyn.REAL(_),_,_) => e
+  axiom	ceval_ast_exp (_,e as Absyn.CREF(_),_,_) => e
+  axiom	ceval_ast_exp (_,e as Absyn.STRING(_),_,_) => e
+  axiom	ceval_ast_exp (_,e as Absyn.BOOL(_),_,_) => e
+
+  rule	ceval_ast_exp (env,e1,impl,st) => e1' &
+	ceval_ast_exp (env,e2,impl,st) => e2' 
+	---------------------------------
+	ceval_ast_exp (env, Absyn.BINARY(e1, op, e2),impl,st) 
+	  => Absyn.BINARY(e1',op,e2')
+
+  rule	ceval_ast_exp (env,e,impl,st) => e'
+	---------------------------------
+	ceval_ast_exp (env, Absyn.UNARY(op, e),impl,st) 
+	  => Absyn.UNARY(op,e')
+
+  rule	ceval_ast_exp (env,e1,impl,st) => e1' &
+	ceval_ast_exp (env,e2,impl,st) => e2' 
+	---------------------------------
+	ceval_ast_exp (env, Absyn.LBINARY(e1, op, e2),impl,st) 
+	  => Absyn.LBINARY(e1',op,e2')
+
+  rule	ceval_ast_exp (env,e,impl,st) => e'
+	---------------------------------
+	ceval_ast_exp (env, Absyn.LUNARY(op, e),impl,st) 
+	  => Absyn.LUNARY(op,e')
+
+  rule	ceval_ast_exp (env,e1,impl,st) => e1' &
+	ceval_ast_exp (env,e2,impl,st) => e2' 
+	---------------------------------
+	ceval_ast_exp (env, Absyn.RELATION(e1, op, e2),impl,st) 
+	  => Absyn.RELATION(e1',op,e2')
+
+  rule	ceval_ast_exp(env,cond,impl,st)=> cond' &
+	ceval_ast_exp(env,then,impl,st)=> then' &
+	ceval_ast_exp(env,else,impl,st)=> else' &
+	ceval_ast_expexp_list(env,nest,impl,st) =>  nest'
+	-----------------------------------------------
+	ceval_ast_exp (env, Absyn.IFEXP(cond,then,else,nest),impl,st)
+	  => Absyn.IFEXP(cond',then',else',nest')
+
+  rule	Static.elab_exp(env,e,impl,st) => (e',_,_) &
+	ceval(env,e',impl,st) => (Values.CODE(Absyn.C_EXPRESSION(exp)),_) 
+	----------------------------------
+	ceval_ast_exp (env, 
+		       Absyn.CALL(Absyn.CREF_IDENT("Eval",[]),
+				  Absyn.FUNCTIONARGS([e],[])),impl,st)
+	  => exp
+  axiom	ceval_ast_exp(env,e as Absyn.CALL(cr,fa),_,_) => e
+
+  rule	ceval_ast_exp_list(env,expl,impl,st) => expl'
+	---------------------------------------------
+	ceval_ast_exp(env,Absyn.ARRAY(expl),impl,st) 
+	  => Absyn.ARRAY(expl')
+
+  rule	ceval_ast_exp_list_list(env,expl,impl,st) => expl'
+	--------------------------------------------------
+	ceval_ast_exp(env,Absyn.MATRIX(expl),impl,st) 
+	  => Absyn.MATRIX(expl')
+	  
+  rule	ceval_ast_exp(env,e1,impl,st) => e1' &
+	ceval_ast_exp(env,e2,impl,st) => e2' &
+	ceval_ast_exp(env,e3,impl,st) => e3' 
+	------------------------------------
+	ceval_ast_exp(env,Absyn.RANGE(e1,SOME(e2),e3),impl,st) 
+	  => Absyn.RANGE(e1',SOME(e2'),e3')
+
+  rule	ceval_ast_exp(env,e1,impl,st) => e1' &
+	ceval_ast_exp(env,e3,impl,st) => e3'
+	------------------------------------
+	ceval_ast_exp(env,Absyn.RANGE(e1,NONE,e3),impl,st) 
+	  => Absyn.RANGE(e1',NONE,e3')
+  
+  rule	ceval_ast_exp_list(env,expl,impl,st) => expl'
+	---------------------------------------------
+	ceval_ast_exp(env,Absyn.TUPLE(expl),impl,st) 
+	  => Absyn.TUPLE(expl')
+
+  axiom	ceval_ast_exp(env,Absyn.END,_,_) => Absyn.END
+
+  axiom	ceval_ast_exp(env,e as Absyn.CODE(_),_,_) => e
+end
+
+relation ceval_ast_exp_list: (Env.Env, Absyn.Exp list, 
+			      bool, Interactive.InteractiveSymbolTable option) 
+	  => (Absyn.Exp list) =
+  axiom	ceval_ast_exp_list (env, [],_,_) => []
+
+  rule	ceval_ast_exp(env,e,impl,st) => e' &
+	ceval_ast_exp_list(env,es,impl,st) => res
+	-----------------------------------------
+	ceval_ast_exp_list(env,e::es,impl,st) 
+	  => e::res
+end
+
+relation ceval_ast_exp_list_list: (Env.Env, Absyn.Exp list list, 
+			  bool, Interactive.InteractiveSymbolTable option)
+	  => (Absyn.Exp list list) =
+
+  axiom	ceval_ast_exp_list_list(env, [], _,_) => []
+
+  rule	ceval_ast_exp_list(env,e,impl,st) => e' &
+	ceval_ast_exp_list_list(env,es,impl,st) => res
+	----------------------------------------------
+	ceval_ast_exp_list_list(env,e::es,impl,st) 
+	  => e::res
+end
+
+(* For IFEXP *)
+relation ceval_ast_expexp_list: (Env.Env, (Absyn.Exp*Absyn.Exp) list, 
+				 bool, Interactive.InteractiveSymbolTable option) 
+	  => (Absyn.Exp*Absyn.Exp) list =
+
+  axiom	ceval_ast_expexp_list(_,[],_,_) => []
+
+  rule	ceval_ast_exp(env,e1,impl,st)=> e1' &
+	ceval_ast_exp(env,e2,impl,st)=> e2' &
+	ceval_ast_expexp_list(env,xs,impl,st) => res
+	-------------------------------------
+	ceval_ast_expexp_list(env,(e1,e2)::xs,impl,st) 
+	  => ((e1',e2')::res)
+end
+
+
+(** relation: ceval_ast_elt
+ ** This relation evaluates the Eval function found everywhere inside an Element AST 
+ ** and replaces it with the value of the variable of the Eval opreratior if it is
+ ** of type Expression.
+**)
+relation ceval_ast_elt: (Env.Env, Absyn.Element, 
+			 bool, Interactive.InteractiveSymbolTable option)
+	  => (Absyn.Element) =
+
+  rule	ceval_ast_citems(env,citems,impl,st) => citems'
+	-----------------------------------------------
+	ceval_ast_elt (env, Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems),c),
+		       impl,st)
+	  => (Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems'),c))
+end
+
+relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list, 
+			 bool, Interactive.InteractiveSymbolTable option)
+	      => Absyn.ComponentItem list =
+  axiom	ceval_ast_citems(_,[],_,_) => []
+
+  rule	ceval_ast_citems(env,xs,impl,st) => res &
+	ceval_ast_modopt(env,modopt,impl,st) => modopt' &
+	ceval_ast_arraydim(env,ad,impl,st) => ad' 
+	------------------------------------------------
+	ceval_ast_citems (env,Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,modopt),cmt)::xs,
+			  impl,st)
+	  => (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad',modopt'),cmt)::res)
+
+  rule	(* If one component fails, the rest should still succeed *)
+	ceval_ast_citems(env,xs,impl,st) => res 
+	----------------------------------
+	ceval_ast_citems(env,x::xs,impl,st) => x::res
+end
+
+relation ceval_ast_modopt: (Env.Env, Absyn.Modification option,
+			    bool, Interactive.InteractiveSymbolTable option)
+	  => Absyn.Modification option	=
+
+  rule	ceval_ast_modification(env,mod,st,impl) => res
+	----------------------------------------------
+	ceval_ast_modopt(env,SOME(mod),st,impl) => SOME(res)
+
+  axiom	ceval_ast_modopt(env,NONE,_,_) => NONE
+end
+
+(**relation: ceval_ast_modification
+ ** This relation evaluates Eval(variable) inside an AST Modification  and replaces 
+ ** the Eval operator with the value of the variable if it has a type "Expression"
+**)
+relation ceval_ast_modification: (Env.Env, Absyn.Modification, 
+				  bool, Interactive.InteractiveSymbolTable option)
+	  => (Absyn.Modification) =
+
+  rule	ceval_ast_exp(env,e,impl,st) => e' &
+	ceval_ast_eltargs(env,eltargs,impl,st) => eltargs'
+	--------------------------------------------------
+	ceval_ast_modification(env,Absyn.CLASSMOD(eltargs,SOME(e)),impl,st)
+	  => (Absyn.CLASSMOD(eltargs',SOME(e')))
+
+  rule	ceval_ast_eltargs(env,eltargs,impl,st) => eltargs'
+	--------------------------------------------------
+	ceval_ast_modification(env,Absyn.CLASSMOD(eltargs,NONE),impl,st)
+	  => (Absyn.CLASSMOD(eltargs',NONE))
+end
+
+relation ceval_ast_eltargs: (Env.Env, Absyn.ElementArg list,
+			     bool, Interactive.InteractiveSymbolTable option)
+	  => (Absyn.ElementArg list) =
+
+  axiom	ceval_ast_eltargs(env,[],_,_) => []
+
+  rule	ceval_ast_modification(env,mod,impl,st) => mod' &
+	ceval_ast_eltargs(env,args,impl,st) => res 
+	-----------------------------------------------
+	ceval_ast_eltargs(env,Absyn.MODIFICATION(b,e,cr,SOME(mod),stropt)::args,
+			  impl,st) 
+	  => Absyn.MODIFICATION(b,e,cr,SOME(mod'),stropt)::res
+
+	  (**TODO: look through redeclarations for Eval(var) as well **)
+  rule	ceval_ast_eltargs(env,args,impl,st) => res
+	------------------------------------------
+	ceval_ast_eltargs(env,m::args,
+			  impl,st) 
+	  => m::res
+end
+
+relation ceval_ast_arraydim: (Env.Env, Absyn.ArrayDim, 
+			      bool, Interactive.InteractiveSymbolTable option)
+	=> (Absyn.ArrayDim) =
+  axiom	ceval_ast_arraydim (env,[],_,_) => []
+
+  rule	ceval_ast_arraydim(env,xs,impl,st) => res
+	-----------------------------------------
+	ceval_ast_arraydim(env,Absyn.NOSUB::xs,impl,st) 
+	  => Absyn.NOSUB::res
+
+  rule	ceval_ast_arraydim(env,xs,impl,st) => res &
+	ceval_ast_exp(env,e,impl,st) => e' 
+	----------------------------------
+	ceval_ast_arraydim(env,Absyn.SUBSCRIPT(e)::xs,impl,st) 
+	  => Absyn.SUBSCRIPT(e)::res
 end
 
 (* relation ceval_interactive_functions

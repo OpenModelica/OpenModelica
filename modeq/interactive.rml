@@ -3024,7 +3024,13 @@ end
 relation modification_to_absyn: (Absyn.NamedArg list) => Absyn.Modification option =
   axiom	modification_to_absyn([]) => NONE
 	
-  axiom	modification_to_absyn(Absyn.NAMEDARG("binding",exp)::xs) => SOME(Absyn.CLASSMOD([],SOME(exp)))
+  axiom	modification_to_absyn(Absyn.NAMEDARG("binding",exp)::xs) 
+	  => SOME(Absyn.CLASSMOD([],SOME(exp)))
+
+  axiom	modification_to_absyn(Absyn.NAMEDARG("modification",
+					     Absyn.CODE(Absyn.C_MODIFICATION(mod)))::xs)
+	  => SOME(mod)
+
   rule	modification_to_absyn(xs) => res
 	--------------------------------
 	modification_to_absyn(x::xs) => res
@@ -3040,6 +3046,12 @@ relation annotation_list_to_absyn_comment: (Absyn.NamedArg list) => Absyn.Commen
 	comment_to_absyn(nargs) => SOME(strcmt)
 	----------------------------------
 	annotation_list_to_absyn_comment(nargs) => SOME(Absyn.COMMENT(NONE,SOME(strcmt)))
+
+  rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
+	comment_to_absyn(nargs) => NONE
+	----------------------------------
+	annotation_list_to_absyn_comment(nargs) => NONE
+
   rule	annotation_list_to_absyn(nargs) => annotation &
 	comment_to_absyn(nargs) => strcmt
 	----------------------------------

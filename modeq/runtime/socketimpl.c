@@ -88,7 +88,7 @@ RML_BEGIN_LABEL(Socket__handlerequest)
     RML_TAILCALLK(rmlFC);
   }
   len = recv(sock,buf,bufSize,0);
-  buf[len]=0;
+
   FD_ZERO(&sockSet);
   FD_SET(sock,&sockSet); // create fd set of 
   if (len == bufSize) { // If we filled the buffer, check for more
@@ -106,6 +106,7 @@ RML_BEGIN_LABEL(Socket__handlerequest)
       buf=tmpBuf; bufSize=tmpBufSize;    
     }
   }
+  buf[len]=0;
   rmlA0=(void*)mk_scon(buf);
   free(buf);
   RML_TAILCALLK(rmlSC);
