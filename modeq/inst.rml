@@ -43,6 +43,8 @@ module Inst:
   with "prefix.rml"
   with "types.rml"
   with "util.rml"
+  with "interactive.rml"							  
+  
   type InstDims = Exp.Subscript list
 
   datatype DimExp = DIMINT of int
@@ -1271,7 +1273,7 @@ end
  ** check that that the dimension sizes are compatible and complete.
  **)
 
-relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,(Absyn.Path * Types.Type) list option)
+relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,Interactive.InteractiveSymbolTable option)
 	  => DimExp list =
 
   rule	elab_arraydim_decl(env,ad,cf) => dim &
@@ -1368,7 +1370,7 @@ end
  ** contain `NONE'.
  **)
 
-relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type) list option)
+relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, Interactive.InteractiveSymbolTable option)
 	    => (DimExp option) list =
 
   axiom	elab_arraydim_decl(_,[],_) => []
@@ -1379,7 +1381,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type
 	elab_arraydim_decl(env,Absyn.NOSUB::ds,impl) => NONE::l
 
   rule	Static.elab_exp(env, d,st)
-	    => (e,Types.PROP(Types.T_INTEGER,_)) &  
+	    => (e,Types.PROP(Types.T_INTEGER,_),_) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
@@ -1391,7 +1393,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) => SOME(DIMINT(i))::l
 
   rule	Static.elab_exp(env, d,st)
-	    => (e,Types.PROP(Types.T_INTEGER,true)) &  
+	    => (e,Types.PROP(Types.T_INTEGER,true),_) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
@@ -1402,14 +1404,14 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st as SOME(_)) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d,st) => (e,Types.PROP(Types.T_INTEGER,false)) &
+  rule	Static.elab_exp(env, d,st) => (e,Types.PROP(Types.T_INTEGER,false),_) &
 	elab_arraydim_decl(env,ds,st) => l
 	-------------------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) 
 	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l 
 
   rule	Static.elab_exp(env,d,st)
-	  => (e,Types.PROP(t,_)) &
+	  => (e,Types.PROP(t,_),_) &
 	Print.print_buf "# Array dimensions must be integer\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e &
  	Print.print_buf " (" & Types.print_type t & Print.print_buf ")\n"
@@ -1814,7 +1816,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(**  assert
 	 **)
 
-  rule	Static.elab_exp(env,e,NONE) => (e', Types.PROP(t, c)) &
+  rule	Static.elab_exp(env,e,NONE) => (e', Types.PROP(t, c),_) &
 	inst_assertion (env, e', t, c, d, pre) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
@@ -1869,10 +1871,10 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 Returns the output parameters from the funktion.
 	*)
 
-	Static.elab_exp(env,e1,NONE) => (e1',prop1) &
+	Static.elab_exp(env,e1,NONE) => (e1',prop1,_) &
 
 	Debug.print("\nDebug: did left elab.") &
-	Static.elab_exp(env,e2,NONE) => (e2',prop2) &
+	Static.elab_exp(env,e2,NONE) => (e2',prop2,_) &
 	Debug.print("\nDebug: did right elab.") &
 	(*Exp.print_exp(e1') &*)
 	Debug.print(", ") &
@@ -1917,7 +1919,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** should be used.
 	 **)
 
-  rule	Static.elab_exp(env,e,NONE) => (e',Types.PROP(Types.T_BOOL,true)) &
+  rule	Static.elab_exp(env,e,NONE) => (e',Types.PROP(Types.T_BOOL,true),_) &
 	Static.ceval(env,e',NONE) => Values.BOOL(cond) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
@@ -1947,7 +1949,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
  	Static.elab_exp (env,e,NONE)
 	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
-			     true)) &
+			     true),_) &
 	(* FIXEM: Check bounds *)
 	Static.ceval (env,e',NONE) => v &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
@@ -1975,7 +1977,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Static.elab_exp (env,e,NONE)
 	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   id_t),
-			     true)) &
+			     true),_) &
 	Debug.fprintln ("insti", "for expression elaborated") &
 	add_for_loop_scope(env,i,id_t) => env' &
 	Debug.fprintln ("insti", "loop-variable added to scope") &
@@ -2004,7 +2006,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Static.elab_exp (env,e,NONE)
 	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
-			     false)) &
+			     false),_) &
 	Print.print_buf "#-- Error: Non-constant iteration bounds not supported\n" &
 	Debug.fprintln ("insttr", "inst_equation_eqfor_2 succeeded")
 	-----------------------------------------------------------
@@ -2465,12 +2467,12 @@ end
 relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 
   rule	Static.elab_cref (env,cr) => (ce, cprop, acc) &
-	Static.elab_exp (env,e,NONE) => (e', eprop) &
+	Static.elab_exp (env,e,NONE) => (e', eprop,_) &
 	Algorithm.make_assignment(ce,cprop,e',eprop,acc) => stmt
 	--------------------------------------------------------
 	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
 
-  rule	Static.elab_exp(env,e,NONE) => (e',prop) &
+  rule	Static.elab_exp(env,e,NONE) => (e',prop,_) &
 	inst_statements(env,tb) => tb' &
 	inst_elseifs(env,eib) => eib' &
 	inst_statements(env,fb) => fb' &
@@ -2479,7 +2481,7 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
 
   rule	Static.elab_exp (env,e,NONE)  =>
-	(e', prop as Types.PROP(Types.T_ARRAY(_,t),_)) &
+	(e', prop as Types.PROP(Types.T_ARRAY(_,t),_),_) &
 	
 	add_for_loop_scope(env,i,t) => env' &
 	
@@ -2488,21 +2490,21 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_FOR(i,e,sl)) => stmt
 
-  rule	Static.elab_exp (env,e,NONE) => (e',prop) &
+  rule	Static.elab_exp (env,e,NONE) => (e',prop,_) &
 	inst_statements(env,sl) => sl' &
 	Algorithm.make_while(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHILE(e,sl)) => stmt
 
 
-  rule	Static.elab_exp (env,e,NONE) => (e',prop) &
+  rule	Static.elab_exp (env,e,NONE) => (e',prop,_) &
 	inst_statements(env,sl) => sl' &
 	Algorithm.make_when_a(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHEN_A(e,sl)) => stmt
 
 (* 1.0
- rule	Static.elab_exp (env,e,NONE) => (e',prop) &
+ rule	Static.elab_exp (env,e,NONE) => (e',prop,_) &
 	inst_statements(env,sl) => sl' &
 	Algorithm.make_when(e',prop,sl') => stmt
 	---------------------------------------
@@ -2524,7 +2526,7 @@ relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
 
   axiom	inst_elseifs (env,[]) => []
 
-  rule	Static.elab_exp(env,e,NONE) => (e',prop) &
+  rule	Static.elab_exp(env,e,NONE) => (e',prop,_) &
 	inst_statements(env,l) => stmts &
 	inst_elseifs(env,tail) => tail'
 	-------------------------------

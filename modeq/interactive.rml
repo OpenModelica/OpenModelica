@@ -170,19 +170,19 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	(string,InteractiveSymbolTable) =
 	
   rule	build_env_from_symboltable(st) => env &	
-	Static.elab_exp(env,exp,SOME(cf)) => (sexp,prop) &
-	Static.ceval (env,sexp,SOME(cf)) => value &
+	Static.elab_exp(env,exp,SOME(st)) => (sexp,prop,SOME(st')) &
+	Static.ceval (env,sexp,SOME(st')) => value &
 	Values.val_string value =>  str
 	-------------------------------
-	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,cf)) => (str,st)
+	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st')
 	
   rule	build_env_from_symboltable(st) => env &
-	Static.elab_exp(env,exp,SOME(cf)) => (sexp,Types.PROP(t,_))  &
-	Static.ceval(env,sexp,SOME(cf)) => value &
+	Static.elab_exp(env,exp,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
+	Static.ceval(env,sexp,SOME(st')) => value &
 	add_var_to_symboltable(ident,value,t,st) => newst
 	-----------------------------------------------
-	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st as SYMBOLTABLE(p,_,_,_,cf)) 
-	    => ("",newst)
+	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st as SYMBOLTABLE(p,_,_,_,_)) 
+	    => ("",st')
 	
   rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str
 	-----------------------------
@@ -306,13 +306,14 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	
 	
   rule	add_component(name,tp,model,annlst,p) => (newp,resstr)
+	& Print.get_string() => str & string_append(resstr,str) => resstr'
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("addComponent",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr',SYMBOLTABLE(newp,s,ic,iv,cf))
 
   rule	get_component_count(cr,p) => count &
 	int_string count => str &
@@ -2079,6 +2080,10 @@ relation record_constructor_to_modification: (Absyn.Exp ) => Absyn.ElementArg =
         let res = Absyn.MODIFICATION(false,cr,Absyn.CLASSMOD(eltarglst,NONE))
 	-----------------------------------
 	record_constructor_to_modification(Absyn.CALL(cr,Absyn.FUNCTIONARGS([],nargs))) => res	
+
+  rule	Print.print_buf "record_constructor_to_modification failed\n" 
+	-------------------------
+	record_constructor_to_modification(_) => fail
 end
 
 (** relation: namedarg_to_modification
