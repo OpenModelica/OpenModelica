@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
+#include <stdarg.h>
 
 int real_array_ok(real_array_t* a)
 {
@@ -75,15 +75,25 @@ void simple_alloc_2d_real_array(real_array_t* dest, int r, int c)
   dest->data = real_alloc(r*c);
 }
 
-
 void alloc_real_array(real_array_t* dest,int ndims,...)
 {
- /*  va_list ap; */
-/*   va_start(ap,ndims); */
   
-/*   /\* Allocate size for the dimension vector *\/ */
-/*   /\* Allocate size for array *\/ */
-/*   va_end(ap); */
+  int i;
+  int test;
+  va_list ap;
+  va_start(ap,ndims);
+  
+  dest->ndims = ndims;
+  dest->dim_size = size_alloc(ndims);
+    
+  for (i = 0; i < ndims; ++i)
+    {
+      dest->dim_size[i] = va_arg(ap,int);
+    }
+  va_end(ap);
+  
+  dest->data = real_alloc(real_array_nr_of_elements(dest));
+
 }
 
 
@@ -408,7 +418,6 @@ void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B)
 
 }
 
-
 void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
 {
   size_t nr_of_elements;
@@ -423,6 +432,13 @@ void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
     }
 }
 
+void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest)
+{
+  clone_real_array_spec(a,dest);
+  add_real_array(a,b,dest);
+}
+
+
 void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
 {
   size_t nr_of_elements;
@@ -436,6 +452,13 @@ void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
       dest->data[i] = a->data[i]-b->data[i];
     }
 }
+
+void sub_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest)
+{
+  clone_real_array_spec(a,dest);
+  sub_real_array(a,b,dest);
+}
+
 
 
 void mul_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest)
@@ -519,7 +542,7 @@ void mul_real_matrix_vector(real_array_t* a, real_array_t* b,real_array_t* dest)
 
   /* Assert a matrix */
   /* Assert b vector */
-  /* Assert dest correct size */
+  /* Assert dest correct size (a vector)*/
 
   i_size = a->dim_size[0];
   j_size = a->dim_size[1];
@@ -534,6 +557,7 @@ void mul_real_matrix_vector(real_array_t* a, real_array_t* b,real_array_t* dest)
       dest->data[i] = tmp;
     }
 }
+
 
 void mul_real_vector_matrix(real_array_t* a, real_array_t* b,real_array_t* dest)
 {
@@ -560,6 +584,33 @@ void mul_real_vector_matrix(real_array_t* a, real_array_t* b,real_array_t* dest)
       dest->data[i] = tmp;
     }
 }
+
+void mul_alloc_real_matrix_product_smart(real_array_t* a, real_array_t* b, real_array_t* dest)
+{
+
+  
+  if ((a->ndims == 1) && (b->ndims == 2))
+    {
+      simple_alloc_1d_real_array(dest,b->dim_size[1]);
+      mul_real_vector_matrix(a,b,dest);
+      
+    }
+  else if ((a->ndims == 2) && (b->ndims == 1))
+    {
+      simple_alloc_1d_real_array(dest,a->dim_size[0]);
+      mul_real_matrix_vector(a,b,dest);
+    }
+  else if ((a->ndims == 2) && (b->ndims == 2))
+    {
+      simple_alloc_2d_real_array(dest,a->dim_size[0],b->dim_size[1]);
+      mul_real_matrix_product(a,b,dest);
+    }
+  else
+    {
+      printf("Invalid size of matrix\n");
+    }
+}
+
 
 void div_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest)
 {
