@@ -425,9 +425,14 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	    
   rule	classdef_elts(elts) => cdefelts &
 	component_elts(elts) => compelts &
+	print " comp list length:" &
+	list_length(compelts) => len &
+	int_string len => lenstr &
+	print lenstr &
+	print "\n" &
 	extends_elts(elts) => extendselts &
 	(* 1. CLASSDEF nodes and COMPONENT nodes(add to env)*)
-	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims) => (dae,env',csets',ci_state',tys) &
+	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims) => (_,env',csets',ci_state',tys) &
 	
 	Debug.fprint ("decl", "calling extend_components_to_env\n") &
 	extend_components_to_env(env',mod,pre,csets,ci_state,compelts,inst_dims) => env'' &
@@ -438,8 +443,7 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	
 	(*3. instantiate COMPONENT nodes*)
 	inst_element_list2(env''',mod,pre,csets'',ci_state'',compelts,inst_dims) => (dae3,env'''',csets''',ci_state''',tys3) &
-	list_append(dae,dae2) => d1 &
-	list_append(d1,dae3) => totdae &
+	list_append(dae2,dae3) => totdae &
 	list_append(tys,tys2) => ts1 &
 	list_append(ts1,tys3) => tottys
 	----------------------------------------------------------------------------------------------------
@@ -503,8 +507,8 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 
 	Debug.fprint ("decl", "instantiating class to get type\n") &
 	inst_class(cenv,Mod.NOMOD,pre,csets,cl,inst_dims) => (_,_,ty,_) &
-	Env.extend_frame_v(cenv,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-	    prot,ty,Types.UNBOUND),SOME(comp)) => env' &
+	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+	    prot,ty,Types.UNBOUND),SOME(comp),false) => env' &
 	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims) => env''
 	-----------------
 	extend_components_to_env(env,mods,pre,csets,ci_state,
@@ -589,16 +593,17 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	 
 	(* If a variable is declared multiple times, the first is used *)
-  rule	Lookup.lookup_ident_local(env,n) => (_,NONE) &
+
+  rule	Lookup.lookup_ident_local(env,n) => (_,NONE,true) &
 	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,_,_,_),_)
-	  => ([],env,csets,ci_state,[])
+	  => ([],env,csets,ci_state,[]) 
 
   	  (* Illegal redeclarations *)
 
-  rule	Lookup.lookup_ident_local(env,n) => (_,_) &
+  rule	Lookup.lookup_ident_local(env,n) => (_,_,_) &
 	print "# Trying to redeclare the class " & print n &
 	print " as a variable\n"
 	------------------------
@@ -715,25 +720,27 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall("peter2",Env.print_env, cenv) &
 	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
-	  => (dae1,csets',ty) &
+	  => (dae,csets',ty) &
 	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &
 
-	(** The environment is extended with the new variable *)
+	(** The environment is extended (updated) with the new variable *)
 	(** binding. *)
 
 	make_binding (env2,attr,eq) => binding &
 	Debug.fcall ("insttr", Types.print_binding, binding) &
 	Debug.fcall ("insttr", print, "\n") &
-	Env.extend_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),NONE) => env' &
+	(* true in update_frame means the variable is now instantiated. *)
+	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+					 prot,ty,binding),true) => env' &
 
+	Debug.fprint ("peter5", "component: ") &
+	Debug.fprint ("peter5", n) &
+	Debug.fprint ("peter5", ", updated env: ") &
+	Debug.fcall("peter5",Env.print_env, env') &
+	Debug.fprint ("peter5", "\n") &
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
 					       
-(*	dae_declare (vn,cl,attr) => dae3 & *)
-	let dae = dae1 &
-	(*list_append(dae1, dae2) => dae4 & *)
-(*	list_append(dae1, dae3) => dae *)
 	Debug.fprint("insttr","inst_element Component succeeded\n") 
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
@@ -972,19 +979,21 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	Debug.fcall("peter3",Env.print_env, env) &
 	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
-	    t,m))) &
+	    t,m)),_) &
 
 	Debug.fprint("peter3","got local ident\n") &
 	Lookup.lookup_class(env,t) => (cl,cenv) & 
 	Debug.fprint("peter3","got class \n") &
 
 	get_cref_from_mod(m) => crefs &
-	Debug.fprint("peter3","inst_var, env =") &
-	Debug.fcall("peter3",Env.print_env, env) &
+	Debug.fprint("peter4","inst_var, env =") &
+	Debug.fcall("peter4",Env.print_env, env) &
  	update_variables_in_env(mods,crefs,env) => env2 &
-	Debug.fprint("peter3","performed update of variables for ident=")  &
-	Debug.fcall ("peter3", Dump.print_component_ref, cref) &
-	Debug.fprint ("peter3", "\n") &
+	Debug.fprint("peter4","performed update of variables for ident=")  &
+	Debug.fcall ("peter4", Dump.print_component_ref, cref) &
+	Debug.fprint ("peter4", "\n") &
+	Debug.fprint("peter4","inst_var, env =") &
+	Debug.fcall("peter4",Env.print_env, env2) &
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
@@ -1007,7 +1016,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 					       
 	Debug.fprintln ("peter3", "arraydim elabed") &
 	Debug.fprint("peter2","inst_var, env =") &
-	Debug.fcall("peter2",Env.print_env, env) &
+	Debug.fcall("peter2",Env.print_env, env2) &
 	(** Instantiate the component *)	
 	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[])
 	  => (dae1,csets',ty) &
@@ -1017,11 +1026,11 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	make_binding (env2,attr,eq) => binding &
 
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding)) => env' 
+					 prot,ty,binding),false) => env' 
 	----------------------------------
 	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env) => env'
 
-  rule	Lookup.lookup_ident(env,id) => (ty,NONE) 
+  rule	Lookup.lookup_ident(env,id) => (ty,NONE,_) 
 	----------------------------------
 	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env) => env
 
@@ -1662,7 +1671,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** and that component has an equation modifier, this equation *)
 	(** is discared. *)
   rule	Lookup.lookup_ident_local(env,n)
-	  => (Types.VAR(_,_,_,_,Types.EQBOUND(_,_)),_) &
+	  => (Types.VAR(_,_,_,_,Types.EQBOUND(_,_)),_,_) &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,
@@ -1865,7 +1874,7 @@ relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 						Absyn.BIDIR),
 				     false,
 				     typ, 
-				     Types.UNBOUND),NONE
+				     Types.UNBOUND),NONE,false
 			   ) => env''
 	---------------
 	add_for_loop_scope(env, i,typ) => env''
@@ -2225,7 +2234,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						    Absyn.BIDIR),
 				      true,
 				      Types.T_INTEGER,
-				      Types.VALBOUND(fst)),NONE) => env'' &
+				      Types.VALBOUND(fst)),NONE,false) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
 	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs)

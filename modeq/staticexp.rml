@@ -1417,10 +1417,10 @@ relation elab_cref2 : (Env.Env,
 	----------------
 	elab_cref2 (_,cr,_,Absyn.CONST,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
 
-  rule	elab_type tt => t &
+ rule	elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	----------------
-	elab_cref2 (_,cr,acc,Absyn.PARAM,tt, Types.VALBOUND(v)) => (Exp.CREF(cr',t),false,acc)
+ 	elab_cref2 (env,cr,acc,Absyn.PARAM,tt, Types.VALBOUND(v)) => (Exp.CREF(cr',t),false,acc)
 
   rule	elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
