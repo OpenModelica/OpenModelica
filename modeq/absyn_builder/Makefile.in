@@ -53,6 +53,7 @@ vctarget: vcparser $(walkergen) $(exprparsegen)
 
 vcparser:
 	cd $(PARSE_HOME)/src; $(MAKE) -f Makefile vctarget
+	cd $(FLAT_PARSE_HOME)/src; $(MAKE) -f Makefile vctarget
 
 parser:
 	cd $(PARSE_HOME)/src; $(MAKE) -f Makefile
