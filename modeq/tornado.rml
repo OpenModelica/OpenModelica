@@ -333,8 +333,10 @@ end
  relation generate_constructor_component_initialization: (string,Absyn.Program) => string =
          
   rule  Interactive.get_pathed_class_in_program(Absyn.IDENT(cname),program) => cdef &
-         count_and_generate_initializations(cdef,program) => (ini_str_list,nr_of_comp) &         
+	 (* call to helper function *)
+         count_and_generate_initializations(cdef,program,0) => (ini_str_list,nr_of_comp) &         
          int_string(nr_of_comp) => res &
+	 (* Generate the nr of submodels declaration *)
          Util.string_append_list(["  SetNoSubModels(",res,");\n"]) => res1 &
          Util.string_append_list(res1::ini_str_list) => res2 
          --------------------------------------
@@ -346,69 +348,58 @@ end
          
  end
 
-
-(** relation: count_and_generate_initializations
- ** Counts number of components in a model and generates initialization statements
- ** for them.
- ** 
- ** This relation only propagates the function call throughout public and protected parts of the class.
- ** 
- **)
- relation count_and_generate_initializations: (Absyn.Class,Absyn.Program) => (string list, int) =
+ relation count_and_generate_initializations: (Absyn.Class,Absyn.Program,int) => (string list, int) =
          
-  rule  count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program) => (str,c1) &
-	 count_and_generate_initializations_in_elts(elt,program,0) => (strlist,c2) &
+  rule	 (* For public declarations *)
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program, nr_of_found_components) => (str,c1) & 
+	 count_and_generate_initializations_in_elts(elt,program,nr_of_found_components) => (strlist,c2) &
 	 int_add(c1,c2) => res &
          list_append(str,strlist) => string_list
-	 ---------------------
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),program)
+         --------------------------------------
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),program, nr_of_found_components)
 	      => (string_list,res)
            
-  rule	count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program) => (str,c1) &
-	 count_and_generate_initializations_in_elts(elt,program,0) => (strlist,c2) &
+  rule	(* For protected declarations *)
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program, nr_of_found_components) => (str,c1) &
+	 count_and_generate_initializations_in_elts(elt,program,nr_of_found_components) => (strlist,c2) &
 	 int_add(c1,c2) => res &
          list_append(str,strlist) => string_list
-	 ---------------------
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)),program)
+	 -------------------------------------
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)),program, nr_of_found_components)
 	  => (string_list,res)
 
-  rule	count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program) => (str,c1)
-	     -----------------------------------------------------
-	     count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(_::lst,cmt)),program) => (str,c1)
+  rule	(* Non-public, non protected, -> Throw it away*)
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program, nr_of_found_components) => (str,c1)
+	 -----------------------------------------------------
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(_::lst,cmt)),program, nr_of_found_components) => (str,c1)
 	     
-  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS([],_)),program) => ([" "],0)
-  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.DERIVED(_,_,_,_,_)),_) => ([" "],-1)
+  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS([],_)),_,_) => ([" "],0)
+  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.DERIVED(_,_,_,_,_)),_,_) => ([" "],-1)
          
   rule print "count_and_generate_initializations failed\n"
          --------------------------------------
-         count_and_generate_initializations(_,_) => fail
+         count_and_generate_initializations(_,_,_) => fail
          
  end
 
-(** relation: count_and_generate_initializations_in_elts
- ** 
- ** 
- ** 
- **)
- relation count_and_generate_initializations_in_elts: (Absyn.ElementItem list,Absyn.Program,int) => (string list, int) =
-         
+ relation count_and_generate_initializations_in_elts: (Absyn.ElementItem list,Absyn.Program,int) => (string list, int) =         
 
-  rule	int_add(index,1) => inc_index &
-	 count_and_generate_initializations_in_elts(lst,program,inc_index) => (strlist,c1) &
-	 Interactive.is_primitive(Absyn.CREF_IDENT(ident,[]),program) => false &
+  rule	Interactive.is_primitive(Absyn.CREF_IDENT(ident,[]),program) => false & 
          generate_components_initializations(ident,componentItemList,index) => (comp_str_list,nrOfComponents) &
-	 int_add(c1,nrOfComponents) => res &
-	 list_append(comp_str_list,strlist) => str_list_res
+	 int_add(index,nrOfComponents) => inc_index1 &
+
+ 	 int_add(index,1) => inc_index2 &
+	 count_and_generate_initializations_in_elts(lst,program,inc_index2) => (strlist,c1) &
+	 list_append(comp_str_list,strlist) => str_list_res 
 	 --------------------------
 	 count_and_generate_initializations_in_elts(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,
-            Absyn.COMPONENTS(_,Absyn.IDENT(ident),componentItemList),_,_,NONE))::lst,program,index) => (str_list_res,res)
-
+            Absyn.COMPONENTS(_,Absyn.IDENT(ident),componentItemList),_,_,NONE))::lst,program,index) => (str_list_res,c1)
 	     
   rule	count_and_generate_initializations_in_elts(lst,program,index) => (strlist,res)
 	 ----------------------------
 	 count_and_generate_initializations_in_elts(_::lst,program,index) => (strlist,res)
          
-  axiom	count_and_generate_initializations_in_elts([],_,index) => ([""],0)
+  axiom	count_and_generate_initializations_in_elts([],_,index) => ([""],index)
 
   rule	print "count_and_generate_initializations_in_elts failed\n"
 	     ----------------------------
@@ -416,28 +407,18 @@ end
 
 end
 
-
-(** relation; generate_components_initializations
- ** 
- ** 
- ** 
- **)
 relation generate_components_initializations: (Absyn.Ident, Absyn.ComponentItem list, int) => (string list, int) =
   
-  rule  print "Found one component    " & 
-        int_string(index) => current_index_string &
+  rule  int_string(index) => current_index_string &
         int_add(index,1) => inc_index &	
         generate_components_initializations(componentType,rest,inc_index) => (res,ret_index) &
-        Util.string_append_list(["  SetSubModel(",current_index_string,", new C",componentType,"(L\"",componentIdent,"\"));\n"]) => gen_string &
-	print gen_string &
-	print "\n"
+        Util.string_append_list(["  SetSubModel(",current_index_string,", new C",componentType,"(L\"",componentIdent,"\"));\n"]) => gen_string
         -------------------------------------
         generate_components_initializations(componentType,Absyn.COMPONENTITEM(Absyn.COMPONENT(componentIdent,_,_),_)::rest, index) => (gen_string::res, ret_index)
 
   axiom	generate_components_initializations(componentType,[],index) => ([""],index)
 
 end
-
 
 
 (** relation: generate_compute_methods
@@ -531,23 +512,17 @@ end
 relation generate_state_partition:(int list list,DAELow.DAELow) => 
  (int list list, int list list) =
 
-  rule 
- 
- list_reverse(blt) => reversed_blt &
+  rule  list_reverse(blt) => reversed_blt &
  has_state_var(0,reversed_blt,dae) => state_component_number &
- print "First state component found in component (reversed): " &
- int_string(state_component_number) => state_component_number_string &
- print state_component_number_string &
- print "\n" &
- list_length(blt) => nr_of_components (*&
+ list_length(blt) => nr_of_components &
  int_sub(nr_of_components,state_component_number) => component_offset & 
  print "(non-reversed): " &
  int_string(component_offset) => component_offset_string &
  print component_offset_string &
  print "\n" &
- Util.list_split(blt,component_offset) => (blt_states,blt_no_states) *)
+ Util.list_split(blt,component_offset) => (blt_states,blt_no_states) 
  -----------------------------------------
- generate_state_partition(blt,dae) => (reversed_blt,reversed_blt)  
+ generate_state_partition(blt,dae) => (blt_states,blt_no_states)
 
   rule print "-generate_state_partition failed\n" 
  -----------------------------------------
