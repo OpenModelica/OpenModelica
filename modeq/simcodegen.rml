@@ -124,6 +124,8 @@ end
   rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
          build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
 	 DAELow.equation_list(seqn) => seqnl &
+	 DAELow.vararray_list(knvars) => knvlst &
+	 list_array(knvlst) => knvars &
          build_simple_equation(knvars,seqnl) => simple_eqn_str &
          Util.string_append_list(eqn_str_list) => coutput2 &
          Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
@@ -217,7 +219,7 @@ end
 	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v &
 	 int_sub(v,1) => v' &
-	 array_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	 DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	 DAELow.is_non_state kind &
 	 (*print "Solving for non-states\n" &*)
 
@@ -246,7 +248,7 @@ end
 	 vector_nth(ass2,e') => v &
 	 (* v == variable no solved in this equation *)
 	 int_sub(v,1) => v' &
-	 array_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+	 DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
 
 	 (*print "solving for state\n" &*)
          cref_modelica_str(cr) => cr_str &
@@ -277,7 +279,7 @@ end
 	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	 int_sub(v,1) => v' &
-	 array_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	 DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
 	 let varexp = Exp.CREF(cr,Exp.REAL) &
 	 not Exp.solve(e1,e2,varexp) => _ &
 	 print "nonlinear equation not implemented yet\n" 
