@@ -13,6 +13,7 @@ LDFLAGS = -lrml -lm
 RML	= rmlc -g
 PROG	= modeq
 AST	= ast/libast.a
+RTOBJ   = runtime/rtopts.o
 
 SRCRML=	types.rml \
 	absyn.rml \
@@ -37,7 +38,7 @@ SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
 SRCO=	$(SRCC:.c=.o)
 
-SUBDIRS	= ast
+SUBDIRS	= ast runtime
 
 .SUFFIXES:
 .SUFFIXES: .o .rml .h
@@ -54,8 +55,8 @@ all : $(SRCO) subdirs $(PROG)
 test:
 	@(cd testsuite ; make)
 
-$(PROG): $(SRCO) ast/libast.a
-	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
+$(PROG): $(SRCO) $(AST) $(RTOBJ)
+	$(RML) -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
 
 #absyn.o:	absyn.rml
 #exp.o:		exp.rml
