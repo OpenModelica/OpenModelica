@@ -46,6 +46,7 @@ extern "C"
 		modelica_lexer *lex=0;
 		modelica_parser *parse=0;
 		ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
+
 		try 
 		{
 			std::ifstream stream(filename);
@@ -110,6 +111,11 @@ extern "C"
 						std::cerr << "Error walking AST while  building RML data: " 
 							<< e.getMessage() << " AST: == NULL" << std::endl;
 					}
+
+					/* adrpo added 2004-10-27 */
+					if (parse) delete parse;
+					if (lex) delete lex;
+
 					throw e;
 				}
 
@@ -120,10 +126,18 @@ extern "C"
 
 				rmlA0 = ast ? ast : mk_nil();
 
+				/* adrpo added 2004-10-27 */
+				if (parse) delete parse;
+				if (lex) delete lex;
+
 				RML_TAILCALLK(rmlSC); 
 			}    
 			else 
 			{
+				/* adrpo added 2004-10-27 */
+				if (parse) delete parse;
+				if (lex) delete lex;
+
 				std::cerr << "Error building AST" << std::endl;
 			}
 		} 
@@ -160,6 +174,10 @@ extern "C"
 		}
 		//std::cerr << "Exiting Parse" << std::endl;
 
+		/* adrpo added 2004-10-27 */
+		if (parse) delete parse;
+		if (lex) delete lex;
+
 		RML_TAILCALLK(rmlFC);
 	}
 	RML_END_LABEL
@@ -168,10 +186,11 @@ extern "C"
 
 	char *get_string(std::ostringstream& s) 
 	{
-		static char *buf=0;
-		static unsigned int size=0;
+		char *buf=0;
+		unsigned int size=0;
 		string str = s.str();
-		if (str.length() >= size) {
+		if (str.length() >= size) 
+		{
 			size = 2*str.length();
 			if (buf)
 				delete [] buf;
@@ -199,6 +218,11 @@ extern "C"
 		* into the code. This way, if this relation fails at least the 
 		* ast is initialized */
 		void* ast = mk_nil();
+
+		/* adrpo added 2004-10-27 
+		 * I use this to delete [] the temp allocation of get_string(...)
+		 */
+		char* getStringHolder = NULL;
 
 		try 
 		{
@@ -247,7 +271,7 @@ extern "C"
 				<< "]: error: " << e.getMessage() << std::endl;
 			//		std::cerr << stringStream.str().c_str();
 			rmlA0 = mk_nil(); a0set=true;
-			rmlA1 = mk_scon(get_string(stringStream)); a1set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) 
 		{
@@ -261,21 +285,21 @@ extern "C"
 				<< "]: error: illegal token" << std::endl;
 			//		std::cerr << stringStream.str().c_str();
 			rmlA0 = mk_nil(); a0set=true;
-			rmlA1 = mk_scon(get_string(stringStream)); a1set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
 		{
 			//		std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
 			stringStream << "[-,-]: internal error: " << e.getMessage() << std::endl;
 			rmlA0 = mk_nil(); a0set=true;
-			rmlA1 = mk_scon(get_string(stringStream)); a1set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (std::exception &e) 
 		{
 			//		std::cerr << "Error while parsing: " << e.what() << "\n";
 			stringStream << "[-,-]: internal error: " << e.what() << std::endl;
 			rmlA0 = mk_nil(); a0set=true;
-			rmlA1 = mk_scon(get_string(stringStream)); a1set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (...) 
 		{
@@ -283,6 +307,12 @@ extern "C"
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon("[-,-]: internal error"); a1set=true;
 		}
+
+		/* adrpo added 2004-10-27 
+		 * no need for getStringHolder temp value allocated from get_string
+		 */
+		if (getStringHolder) delete [] getStringHolder; 
+
 		if (! a0set) 
 		{
 			rmlA0 = mk_nil(); a0set=true;
@@ -306,6 +336,13 @@ extern "C"
 		* into the code. This way, if this relation fails at least the 
 		* ast is initialized */
 		void* ast = mk_nil();
+
+
+		/* adrpo added 2004-10-27 
+		 * I use this to delete [] the temp allocation of get_string(...)
+		 */
+		char* getStringHolder = NULL;
+
 
 		try 
 		{
@@ -354,22 +391,29 @@ extern "C"
 			//std::cerr << "Error while parsing expression:\n" << e.getMessage() << "\n";
 			stringStream << "[-,-]: internal error: " << e.getMessage() << std::endl;
 			rmlA0 = mk_nil();
-			rmlA1 = mk_scon(get_string(stringStream));
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
 		catch (std::exception &e) 
 		{
 			//std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
 			stringStream << "[-,-]: internal error: " << e.what() << std::endl;
 			rmlA0 = mk_nil();
-			rmlA1 = mk_scon(get_string(stringStream));
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
 		catch (...) 
 		{
 			//std::cerr << "Error while parsing expression\n";
 			stringStream << "Error while parsing expression. Unknown exception in parse.cpp." << std::endl;
 			rmlA0 = mk_nil();
-			rmlA1 = mk_scon(get_string(stringStream));
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
+
+		/* adrpo added 2004-10-27 
+		 * no need for getStringHolder temp value allocated from get_string
+		 */
+		if (getStringHolder) delete [] getStringHolder; 
+
+
 		RML_TAILCALLK(rmlSC);
 	}
 	RML_END_LABEL
