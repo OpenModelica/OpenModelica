@@ -948,8 +948,8 @@ relation build_assignment: (Exp.ComponentRef, (* varname *)
 	      => string =
    
   rule  Exp.print_component_ref_str(cr) => cr_str & 
-        (*print_exp_cpp_str(exp) => exp_str & *)
-        Exp.print_exp_str(exp) => exp_str & 
+        print_exp_cpp_str(exp) => exp_str & 
+        (*Exp.print_exp_str(exp) => exp_str & *)
         Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str &
         print "\n build_assigment: " & print(eqn_str) 
         --------------------------------
