@@ -760,6 +760,8 @@ void promote_real_array(real_array_t* a, int n,real_array_t* dest)
 {
   size_t i;
   
+  dest->dim_size = size_alloc(n);
+  dest->data = a->data;
   /*Assert a->ndims>=n */
   for (i = 0; i < a->ndims; ++i)
     {
@@ -776,6 +778,11 @@ void promote_real_scalar(double s,int n,real_array_t* dest)
   size_t i;
   
   /* Assert that dest is of correct dimension */
+  
+  /* Alloc size */
+  dest->dim_size = size_alloc(n);
+  /*Alloc data */
+  dest->data = real_alloc(1);
 
   dest->data[0] = s;
   for (i = 0; i < n; ++i)
