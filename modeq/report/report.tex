@@ -12,7 +12,8 @@
 \usepackage{euler}
 
 \author{David Kågedal}
-\title{Blahonga Blahonga}
+\title{A Natural Semantics specification for the equation-based
+  modeling language Modelica}
 
 \makeindex
 
@@ -36,10 +37,10 @@
 
 \newcommand{\sourcefile}[2]{%
   \clearpage
-  \section{File \code{#1.rml}}
+  \section{Module \code{#1}}
   \label{src:#1}
   \addcontentsline{stc}{sourcefile}{%
-    \protect\numberline{\thesection}\protect\makebox[8em][l]{\code{#1.rml}}#2}}
+    \protect\numberline{\thesection}\protect\makebox[8em][l]{\code{#1}}#2}}
 \newcommand{\listofsources}{\@starttoc{stc}}
 \newcommand{\l@sourcefile}{%
   \@dottedtocline{1}{2em}{3em}%
@@ -88,18 +89,19 @@ been accepted as a natural way of describing the syntactical form of
 the language. Today everybody expects a BNF-like grammar for a new
 language. But that is not the case when it comes to describing the
 semantics of languages. Formalisms for the specifications of semantics
-has been available for many years, but are not often used by others
+has been available for many years, but are not often used by other
 than researchers.
 
 One advantage of using a formal description of the semantics is of
-course that the specification becomes more strict and unambiguous. But
-there is also the possibility of using the semantic specification to
-generate a language translator, or compiler, in an automatic way.
+course that the specification becomes more strict and unambiguous.
+However, there is also the possibility of using the semantic
+specification to generate a language translator, or compiler, in an
+automatic way.
 
 This report describes a partial formal semantics for Modelica. The
 notation used enables it to be passed to a compiler generator that
-generates a Modelica translator, that translates a Modelica model into
-a simple set of equations.
+generates a Modelica translator, which translates a Modelica model
+into a simple set of equations.
 
 The language used for the specification is called RML, and is based on
 Natural semantics, an operational semantic specification formalism.
@@ -593,7 +595,7 @@ have been done.  The limitations are listen in no particular order.
   However, this is currently hard to implement in this semantic
   specification because of RML limitations.  The RML module which does
   the instantiation is called \code{Inst} (see section
-  \ref{src:inst}).  It needs to do static analysize of expressions,
+  \ref{src:Inst}).  It needs to do static analysize of expressions,
   and for that purpose it uses the relations in the module
   \code{Static}.  But if the \code{Static} module encounters a
   function call it would need to do an implicit instantiation, which
@@ -681,7 +683,7 @@ To produce the annotated semantics in chapter \ref{cha:formsem} a
 small program was written to convert the RML source files with
 comments to \LaTeX{} source with the comments converted to ordinary
 text. This program is a quick'n'dirty Pike\cite{pike} hack, and is
-provided in appendix \ref{cha:rmldoc}
+provided in appendix \ref{app:rmldoc}
 
 
 \chapter{Some important notions in the Modelica semantics}
@@ -1437,7 +1439,7 @@ in the RML specification for further processing.
 
 The \firstref{abstract syntax} is closely modeled after the syntactic
 structure, and is defined in the module \code{Absyn} (section
-\ref{src:absyn}).  It basically defines data structures for
+\ref{src:Absyn}).  It basically defines data structures for
 representing the structure of the source file (the \firstref{abstract
   syntax tree}, or \firstref{AST}), which are used by the parser to
 build a tree describing the source file.  There is a datatype for
@@ -1479,7 +1481,7 @@ the abstract syntax in the following important respects:
 
 \item[Modifications]
   Modifications are stored using the data types in the \code{Mod}
-  module (section \ref{src:mod}).
+  module (section \ref{src:Mod}).
 \end{description}
 
 One might have thought that more work could be done at this stage,
@@ -1536,14 +1538,14 @@ analysis and constant propagation on expressions.  The primary reason
 to analyze expressions is to check their types, and make sure that
 there are no type errors.  Constant propagation is used whenever the
 translator needs to know the actual value of an expression.  The
-module is described in section \ref{src:static}, with the following
+module is described in section \ref{src:Static}, with the following
 highlights.
 
 \begin{itemize}
-\item The relation \code{elab\_exp} (\ref{src:static:elabexp})
+\item The relation \code{elab\_exp} (\ref{src:Static:elabexp})
   analyzes an expression and produces two results: a new expression
   and a set of properties.  The new expression is of type
-  \code{Exp.Exp} (\ref{src:exp}) and is much more specific than the
+  \code{Exp.Exp} (\ref{src:Exp}) and is much more specific than the
   abstract syntax expressions.  For each needed type conversion in the
   expression, an explicit type conversion operation is inserted, and
   the operators that are overloaded in the abstract syntax are
@@ -1554,7 +1556,7 @@ highlights.
   basically indicates whether the expression is constant or not.
 
 \item The relation \code{ceval} evaluates an expression and gives the
-  result as a \code{Values.Value} (section \ref{src:values}).  This
+  result as a \code{Values.Value} (section \ref{src:Values}).  This
   can obviously only be done for constant expressions.
 \end{itemize}
 
@@ -1638,7 +1640,7 @@ scanned to see what restrictions it breaks.
 
 This is done for each variable as it is instantiated, using the state
 machine in the file \filename{classinf.rml} (see section
-\ref{src:classinf}).  While instantiating a class the current state is
+\ref{src:ClassInf}).  While instantiating a class the current state is
 kept in a variable of type \code{ClassInf.State}.  It is initialized
 with the keyword used to declare the class using the relation
 \code{ClassInf.start}.  If the keyword was one of the restricted
@@ -1670,7 +1672,7 @@ are listed in table \ref{tab:classinfevents}.
 After instantiation of a class is complete, the state of the machine
 can be checked against a desired restriction to see if the class
 definition fulfills it, using the relation \code{valid}
-(\ref{src:classinf:valid}).
+(\ref{src:ClassInf:valid}).
 
 \section{Representation of types}
 \label{sec:typerep}
@@ -1823,9 +1825,11 @@ converted to more readable text.
 
 The specification is separated into a number of files, to modularize
 it and to make it easier to maintain and to make the structure
-clearer.  
+clearer.  Each file contains one module.  The names of the files are
+the names of the module it contains, with all letters in lower case,
+and with the suffex \code{.rml} appended.
 
-\subsection*{Source files}
+\subsection*{Source modules}
 
 \listofsources
 
@@ -1845,14 +1849,17 @@ clearer.
 \input{lookup.tex}
 \input{builtin.tex}
 \input{connect.tex}
+\input{values.tex}
 \input{staticexp.tex}
 \input{dae.tex}
 \input{dump.tex}
 
 %\end{landscape}
 
-\chapter{rmldoc \note{appendix}}
-\label{cha:rmldoc}
+\chapter{Appendices}
+\appendix
+\section{rmldoc}
+\label{app:rmldoc}
 
 {\codefont\verbatiminput{../tools/rmldoc}}
 
@@ -1866,10 +1873,10 @@ clearer.
 % ``Some Related Article I Wrote,''
 % {\em Some Fine Journal}, Vol. 17, pp. 1-100, 1987.
  
-\bibitem{drakboken}
-A. V. Aho, R. Sethi, and J. D. Ullman,
-{\em Compilers -- Principles, Techniques, and Tools,}
-Addison-Wesley, 1986.
+%\bibitem{drakboken}
+%A. V. Aho, R. Sethi, and J. D. Ullman,
+%{\em Compilers -- Principles, Techniques, and Tools,}
+%Addison-Wesley, 1986.
  
 \bibitem{pf}
 Peter Fritzson,
