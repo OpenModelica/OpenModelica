@@ -25,7 +25,8 @@ module Mod:
 
   (** - Modification datatype *)
   type Eqmod = (Exp.Exp * Types.Type * bool)
-  datatype SubMod = SUBMOD of Ident * int list * Mod
+  datatype SubMod = NAMEMOD of Ident * Mod
+		  | IDXMOD of int list * Mod
   and Mod = MOD of bool * (SubMod list) * Eqmod option
   	  | REDECL of bool * Absyn.ElementSpec
 	  | NOMOD
@@ -96,9 +97,10 @@ relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
   axiom	elab_submods (_,_,[]) => []
 
   rule	elab_submod (env,pre,x) => x' &
-	elab_submods (env,pre,xs) => xs'
-	--------------------------------
-	elab_submods (env,pre,x::xs) => x'::xs'
+	elab_submods (env,pre,xs) => xs' &
+	submod_insert (x',xs') => res
+	-----------------------------
+	elab_submods (env,pre,x::xs) => res
 
 end
 
@@ -106,11 +108,15 @@ end
 
 relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod =
 
+  rule	elab_mod (env,pre,m) => m'
+	--------------------------
+	elab_submod (env,pre,SCode.NAMEMOD(i,m)) => NAMEMOD(i,m')
+
   rule	elab_subscripts (env,pre,ss) => ss' &
 	(* Prefix.prefix_add (i,ss',pre) => pre' & *)
 	elab_mod (env,pre(*'*),m) => m'
 	---------------------------
-	elab_submod (env,pre,SCode.SUBMOD(i,ss,m)) => SUBMOD(i,ss',m')
+	elab_submod (env,pre,SCode.IDXMOD(ss,m)) => IDXMOD(ss',m')
 
 end
 
@@ -159,6 +165,32 @@ relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool) => int =
 
 end
 
+(** relation: submod_insert
+ **
+ ** This relation inserts a `SubMod' into a list of unique `SubMod's,
+ ** while keeping the uniqueness, merging the submod if necessary.
+ **)
+
+relation submod_insert : (SubMod, SubMod list) => SubMod list =
+
+  axiom	submod_insert (sub,[]) => [sub]
+
+  rule	n1 = n2 &
+	merge (m1,m2) => m
+	----------------------
+	submod_insert (NAMEMOD(n1,m1),NAMEMOD(n2,m2)::tail)
+	  => (NAMEMOD(n1,m)::tail)
+
+  rule	i1 = i2 &
+	merge (m1,m2) => m
+	----------------------
+	submod_insert (IDXMOD(i1,m1),IDXMOD(i2,m2)::tail)
+	  => (IDXMOD(i1,m)::tail)
+
+  axiom	submod_insert (sub1, sub2) => sub1::sub2
+
+end
+
 (**
  ** - Lookup
  **)
@@ -178,7 +210,10 @@ relation lookup_modification_p: (Mod,Absyn.Path) => Mod =
 
 end
 
-(** relation: lookup_modification *)
+(** relation: lookup_modification
+ **
+ ** This relation is used to look up an identifier in a modification.
+ **)
 
 relation lookup_modification: (Mod,Absyn.Ident,int list) => Mod =
 
@@ -206,15 +241,19 @@ relation lookup_modification2 : (SubMod list,Absyn.Ident,int list)
 
   axiom lookup_modification2([],_,_) => NOMOD
 
-  rule  n = m (* & ss = s FIXME: subscripts *)
+  rule  n = m
 	--------------------------------------
-	lookup_modification2(SUBMOD(n,ss,mod)::_,m,s) => mod
+	lookup_modification2(NAMEMOD(n,mod)::_,m,s) => mod
 	
 	(* FIXME: Redeclaration *)
 
   rule  lookup_modification2(xs,n,s) => mod
 	---------------------------------
 	lookup_modification2(x::xs,n,s) => mod
+
+  rule	print "- lookup_modification2 failed\n"
+	---------------------------------------
+	lookup_modification2 (_,_,_) => fail
 
 end
 
@@ -289,10 +328,9 @@ relation merge_subs2 : (SubMod list, SubMod)
 	(* Modifications in the list take precedence *)
 
   rule  n1 = n2 & print "   merge clash in " & print n1 & print "\n"
-	(* FIXME: check subscripts? *)
-	-------
-	merge_subs2((s1 as SUBMOD(n1,subs1,m1))::ss,
-		    SUBMOD(n2,subs2,m2)) => (ss, s1)
+	------------------------------------------------------------
+	merge_subs2((s1 as NAMEMOD(n1,m1))::ss,
+		    NAMEMOD(n2,m2)) => (ss, s1)
 
   rule  merge_subs2(ss, s2) => (ss',s)
 	------------------------------
@@ -391,9 +429,13 @@ end
 
 relation print_sub : SubMod => () =
 
-  rule  print n & print_subscripts ss & print_mod mod
+  rule  print n & print_mod mod
 	------------------
-	print_sub SUBMOD(n,ss,mod)
+	print_sub NAMEMOD(n,mod)
+
+  rule  print_subscripts ss & print_mod mod
+	------------------
+	print_sub IDXMOD(ss,mod)
 
 end
 

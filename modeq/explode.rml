@@ -17,7 +17,8 @@ module SCode :
   type Subscript = Absyn.Subscript
   type Restriction = Absyn.Restriction
 
-  datatype SubMod = SUBMOD of Ident * Subscript list * Mod
+  datatype SubMod = NAMEMOD of Ident * Mod
+		  | IDXMOD of Subscript list * Mod
   and Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
   	  | REDECL of bool * Absyn.ElementSpec
 	  | NOMOD
@@ -258,7 +259,7 @@ relation build_mod : (Absyn.Modification option, bool) => Mod =
 	  => MOD(final,[],e)
 
   rule  build_args(l) => subs
-	---------------------
+	---------------------------------
 	build_mod(SOME(Absyn.CLASSMOD(l,e)),final) => MOD(final,subs,e)
 
 end
@@ -269,23 +270,22 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
 
   rule  build_args xs => subs &
 	build_mod(SOME(mod),final) => mod' &
-	build_sub(path,mod') => sub
+	build_sub(cref,mod') => sub
 	----------------------
-	build_args((Absyn.MODIFICATION(final,path,mod)::xs)) => (sub::subs)
+	build_args((Absyn.MODIFICATION(final,cref,mod)::xs)) => (sub::subs)
 
   rule  build_args xs => subs &
 	Absyn.element_spec_name spec => n
 	---------------------------
 	build_args((Absyn.REDECLARATION(final,spec)::xs))
-	  => (SUBMOD(n,[],REDECL(final,spec))::subs)
+	  => (NAMEMOD(n,REDECL(final,spec))::subs)
 
 end
 
 (** relation: build_sub
  **
  ** This relation converts a `ComponentRef' into a number of nested
- ** `SUBMOD's.  It also prevents modifications of the type
- ** `x[17](..)'.
+ ** `SUBMOD's.
  **)
 
 relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
@@ -304,12 +304,24 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 	
 	(* Then the normal rules *)
 	
-  axiom build_sub(Absyn.CREF_IDENT(i,ss),mod) => SUBMOD(i,ss,mod)
+  rule	build_sub_sub (ss,mod) => mod'
+	------------------------------
+	build_sub(Absyn.CREF_IDENT(i,ss),mod) => NAMEMOD(i,mod')
 
-  rule  build_sub(path,mod) => sub
+  rule  build_sub(path,mod) => sub &
+	let mod = MOD(false,[sub],NONE) &
+	build_sub_sub(ss,mod) => mod'
 	--------------------------
-	build_sub(Absyn.CREF_QUAL(i,ss,path),mod)
-	  => SUBMOD(i,ss,MOD(false,[sub],NONE))
+	build_sub(Absyn.CREF_QUAL(i,ss,path),mod) => NAMEMOD(i,mod')
+
+end
+
+(** relation: build_sub_sub *)
+
+relation build_sub_sub : (Subscript list, Mod) => Mod =
+
+  axiom	build_sub_sub ([], m) => m
+  axiom	build_sub_sub (l, m) => MOD(false(*FIXME*),[IDXMOD(l,m)],NONE)
 
 end
 
@@ -347,14 +359,23 @@ relation print_subs : SubMod list => () =
 
   axiom print_subs []
 
-  rule  print n & Dump.print_subscripts ss & print_mod mod
-	------------------
-	print_subs [SUBMOD(n,ss,mod)]
+  rule  print n & print_mod mod
+	-----------------------
+	print_subs [NAMEMOD(n,mod)]
 
-  rule  print n & Dump.print_subscripts ss & print_mod mod & print ", " &
+  rule  print n & print_mod mod & print ", " &
+	print_subs subs
+	---------------
+	print_subs NAMEMOD(n,mod)::subs
+
+  rule  Dump.print_subscripts ss & print_mod mod
+	------------------
+	print_subs [IDXMOD(ss,mod)]
+
+  rule  Dump.print_subscripts ss & print_mod mod & print ", " &
 	print_subs subs
 	--------------
-	print_subs SUBMOD(n,ss,mod)::subs
+	print_subs IDXMOD(ss,mod)::subs
 
 end
 
