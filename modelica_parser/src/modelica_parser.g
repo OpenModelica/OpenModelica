@@ -13,6 +13,7 @@ class modelica_parser extends Parser;
 
 options {
 	importVocab = modelica;
+    defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
 }
@@ -31,6 +32,7 @@ tokens {
     EQUATION_STATEMENT;
 	EXPRESSION_LIST;
 	EXTERNAL_FUNCTION_CALL;
+    FOR_INDICES ;
 	FUNCTION_CALL		;
 	FUNCTION_ARGUMENTS;
 	QUALIFIED;
@@ -437,14 +439,28 @@ assert_clause :
  */
 
 expression :
-		(	simple_expression
-		|	if_expression
+		( if_expression
+        | simple_expression
 		)
 		;
 
 if_expression :
 		IF^ expression THEN! expression ELSE! expression
-		;
+    ;
+
+
+
+for_indices :
+        for_index (COMMA! for_index)*
+        {
+            #for_indices=#([FOR_INDICES,"FOR_INDICES"],#for_indices);
+        }
+    ;
+
+for_index:
+        (IDENT (COMMA^ IDENT)* IN^ expression)
+;
+
 
 simple_expression ! :
 		l1:logical_expression 
@@ -517,6 +533,11 @@ factor :
 		primary ( POWER^ primary )?
 		;
 
+
+
+
+
+
 primary :
 		( UNSIGNED_INTEGER
 		| UNSIGNED_REAL
@@ -528,10 +549,13 @@ primary :
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
 		| LBRACE^ expression_list RBRACE!
 		)
-		;
+    ;
+
+
+
 
 component_reference__function_call ! :
-		cr:component_reference ( fc:function_call )?
+		cr:component_reference ( fc:function_call )? 
 		{ 
 			if (#fc != null) 
 			{ 
@@ -575,10 +599,22 @@ function_call :
 		;
 
 function_arguments :
+//		( for_or_expression_list
 		( expression_list
 		| named_arguments
 		)?
 		;
+
+//for_or_expression_list 
+//    :
+//        e:expression
+//        ( COMMA! expression_list2
+//            {
+//                #for_or_expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
+//            }
+//        | FOR^ for_indices
+//        )?
+//    ;
 
 named_arguments :
 		named_argument ( COMMA! named_argument )*
@@ -589,12 +625,14 @@ named_argument :
 		;
 
 expression_list :
-		expression ( COMMA! expression )*
+		expression_list2
 		{
 			#expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#expression_list);
 		}
 		;
-
+expression_list2 :
+		expression ( COMMA! expression )*
+    ;
 array_subscripts :
 		LBRACK^ subscript ( COMMA! subscript )* RBRACK!
 	;

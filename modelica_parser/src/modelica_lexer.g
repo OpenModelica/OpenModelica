@@ -9,10 +9,11 @@ options {
 class modelica_lexer extends Lexer;
 
 options {
-  k=2;
-  charVocabulary = '\3'..'\377';
-  exportVocab = modelica;
-  testLiterals = false;
+    k=2;
+    charVocabulary = '\3'..'\377';
+    exportVocab = modelica;
+    testLiterals = false;
+    defaultErrorHandler = false;
 }
 
 tokens {
@@ -68,6 +69,9 @@ tokens {
 	WHEN		= "when"		;
 	WHILE		= "while"		;
 	WITHIN		= "within" 		;
+    
+//    SUM = "sum" ;
+//    ARRAY = "array";
 }
 
 
