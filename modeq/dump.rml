@@ -842,7 +842,7 @@ end
 
 relation unparse_equation_str: Absyn.Equation => string =
 	
-  rule	 print_exp_str(e) => str 
+  rule	print_exp_str(e) => str 
 	-------------------------------------------
 	unparse_equation_str(Absyn.EQ_EXPR(e)) => str
 	
