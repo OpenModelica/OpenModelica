@@ -583,15 +583,15 @@ relation build_record_constructor_class :(SCode.Class, Env.Env) => SCode.Class =
   rule	build_record_constructor_elts(elts,env) => funcelts &
 	build_record_constructor_result_elt(elts,id,env) => reselt
 	---------------------------------------------------
-	build_record_constructor_class (cl as SCode.CLASS(id,_,_,restr,SCode.PARTS(elts,_,_,_)),env) 
-	    => SCode.CLASS(id,false,false,SCode.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[],NONE))
+	build_record_constructor_class (cl as SCode.CLASS(id,_,_,restr,SCode.PARTS(elts,_,_,_,_,_)),env) 
+	    => SCode.CLASS(id,false,false,SCode.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[],[],[],NONE))
 end
 	
 relation build_record_constructor_elts: (SCode.Element list, Env.Env) => SCode.Element list =
   rule	build_record_constructor_elts (rest,env) => res
 	-------------------------------------------
-	build_record_constructor_elts((comp as SCode.COMPONENT(id,fl,prot,SCode.ATTR(d,f,ac,var,dir),tp,mod))::rest,env)
-	    => SCode.COMPONENT(id,fl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT),tp,mod)::res
+	build_record_constructor_elts((comp as SCode.COMPONENT(id,fl,repl,prot,SCode.ATTR(d,f,ac,var,dir),tp,mod))::rest,env)
+	    => SCode.COMPONENT(id,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT),tp,mod)::res
   axiom	build_record_constructor_elts([],_) => []
 end
 	
@@ -601,7 +601,7 @@ relation build_record_constructor_result_elt: (SCode.Element list, SCode.Ident, 
   rule	build_record_constructor_result_mod(elts) => submodlst
 	-------------------------------------------------
 	build_record_constructor_result_elt (elts,id,env) 
-	    => SCode.COMPONENT("result",false,false,SCode.ATTR([],false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE))
+	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE))
 end
 	
 (* This relation builds up the modification list for the output element of a record constructor.
@@ -616,7 +616,7 @@ relation build_record_constructor_result_mod: (SCode.Element list) => SCode.SubM
 	
   rule	build_record_constructor_result_mod(rest) => restmod
 	---------------------------------------------------
-	build_record_constructor_result_mod (SCode.COMPONENT(id,_,_,_,_,_)::rest) 
+	build_record_constructor_result_mod (SCode.COMPONENT(id,_,_,_,_,_,_)::rest) 
 	    => SCode.NAMEMOD("result",SCode.MOD(false,[SCode.NAMEMOD(id,SCode.MOD(false,[],SOME(Absyn.CREF(Absyn.CREF_IDENT(id,[])))))],NONE))::restmod
 
   axiom	build_record_constructor_result_mod([]) => []
@@ -630,7 +630,7 @@ relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var li
   rule	build_varlst_from_elts(elts,env) => inputvarlst &
 	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cl,[],true) => (_,_,ty,_) 
 	--------------------------------------
-	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_,_)),env) 
+	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_,_,_,_)),env) 
 	(* Add the return type of the record constructor *)
 	    => Types.VAR("result",Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
 end
@@ -641,7 +641,7 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
   (*P.A Here we need to do a lookup of the type. Therefore we need the env passed along from lookup_xxxx function. *)
 	Inst.inst_record_constructor_elt(env,comp) => var
 	-------------------------------------
-	build_varlst_from_elts ((comp as SCode.COMPONENT(_,_,_,_ ,_,_))::rest,env) 
+	build_varlst_from_elts ((comp as SCode.COMPONENT(_,_,_,_ ,_,_,_))::rest,env) 
 	    => var::vars
 
   axiom	build_varlst_from_elts ([],_) => []
@@ -731,42 +731,43 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (SCo
   rule	lookup_class_in_parts(env,classname,parts) => (c as SCode.CLASS(_,_,true,_,_) ,env) 
         (* true means here encapsulated *)
       	----------------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)),Absyn.IDENT(classname),true) => (c,env)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_,_,_)),Absyn.IDENT(classname),true) => (c,env)
 
   rule	lookup_class_in_parts(env,classname,parts) => (c as SCode.CLASS(_,_,false,_,_) ,env) &
         (* false means here non-encapsulated *)
         Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is already a simple name)\n")
       	----------------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)),Absyn.IDENT(classname),true) => fail
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_,_,_)),Absyn.IDENT(classname),true) => fail
 	
-rule	lookup_class_in_parts(env,classname,parts) => (c ,env) 
+  rule	lookup_class_in_parts(env,classname,parts) => (c ,env) 
         (* false means that we do not restrict lookup to encapsulated classes *)
       	----------------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)),Absyn.IDENT(classname),false) => (c,env)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_,_,_)),Absyn.IDENT(classname),false) => (c,env)
 
-rule	(* Restrict lookup to encapsulated elements only *)
+  rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_parts (env, c1, parts) => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env) &
        	Env.open_scope(env,encflag) => env2 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
   	lookup_class_in_class (env'',c,p1,false) => (c',env3)
 	-------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)), Absyn.QUALIFIED(c1,p1),true) => (c',env3)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_,_,_)), Absyn.QUALIFIED(c1,p1),true) => (c',env3)
 
-rule	(* Restrict lookup to encapsulated elements only *)
+  rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_parts (env, c1, parts) => (c as SCode.CLASS(id,_,encflag as false,restr,_) ,env) &
         Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is still qualified)\n")
 	-------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)), Absyn.QUALIFIED(c1,p1),true) => fail
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_,_,_)), Absyn.QUALIFIED(c1,p1),true) => fail
 
-rule	(* Lookup not restricted to encapsulated elts. only *)
+  rule	(* Lookup not restricted to encapsulated elts. only *)
 	lookup_class_in_parts (env, c1, parts) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env) &
        	Env.open_scope(env,encflag) => env2 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
   	lookup_class_in_class (env'',c,p1,false) => (c',env3)
 	-------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_)), Absyn.QUALIFIED(c1,p1),false) => (c',env3)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_,_,_)), Absyn.QUALIFIED(c1,p1),false) => (c',env3)
+
 end
 	
 (** relation: lookup_class_in_parts
@@ -1065,7 +1066,7 @@ relation lookup_class_in_package : (SCode.Class, Absyn.Path)
   rule	lookup_class_in_elements (els, path) => c
 	-----------------------------------------
 	lookup_class_in_package (SCode.CLASS(_,_,_,_,
-					       SCode.PARTS(els,_,_,_)),
+					       SCode.PARTS(els,_,_,_,_,_)),
 				 path) => (c, Env.empty_env)
 
 end
