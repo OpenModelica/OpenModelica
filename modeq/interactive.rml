@@ -461,8 +461,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr',SYMBOLTABLE(newp,s,ic,iv,cf))
 
-  rule	
-	add_icon_annotation(cr,annexpr,p) => newp &
+  rule	delete_component(name,model,p) => (newp,resstr)
+	& Print.get_string() => str & string_append(resstr,str) => resstr'
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("deleteComponent",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(model)],annlst)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr',SYMBOLTABLE(newp,s,ic,iv,cf))
+
+  rule	add_icon_annotation(cr,annexpr,p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
 	-----------------------
 	evaluate_graphical_api(
@@ -1060,7 +1069,68 @@ relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Clas
 	---------------------
 	lookup_classdef(path,inpath,_) => fail
 end
+
+(** relation: delete_component
+** This relation deletes a component from a class.
+**)
+relation delete_component: (string, Absyn.ComponentRef, Absyn.Program) 
+	  => (Absyn.Program ,string) =
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	not get_pathed_class_in_program(modelpath,p) => _
+	---------------------------------
+	delete_component (name,model,p) => (p,"false\n") 
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	Absyn.strip_last(modelpath) => modelwithin &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	delete_component_from_class(name, cdef) => newcdef &
+	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
+	------------------------------------------------
+	delete_component(name, model as Absyn.CREF_QUAL(_,_,_),p as Absyn.PROGRAM(_,w)) => (newp,"true\n")
 	
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	delete_component_from_class(name, cdef) => newcdef &
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
+	------------------------------------------------
+	delete_component( name, model as Absyn.CREF_IDENT(_,_), p as Absyn.PROGRAM(_,w)) => (newp,"true\n")
+
+  axiom	delete_component(_,_,p) => (p,"false\n") 
+end
+
+relation delete_component_from_class: (string, Absyn.Class) => Absyn.Class =
+	
+  rule	get_public_list(parts) => publst &
+	delete_component_from_elementitems(name,publst) => publst2 &
+	list_length(publst2) => l2 &
+	list_length(publst) => l1 &
+	int_sub(l1,1) => l1' &
+	l1' = l2 &
+	replace_public_list(parts,publst2) => parts2 
+	--------------------------------------------
+	delete_component_from_class ( name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt))) 
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+end	
+
+relation delete_component_from_elementitems: (string, Absyn.ElementItem list) 
+	  => Absyn.ElementItem list =
+  axiom	 delete_component_from_elementitems (_,[]) => []
+
+  rule	name = name2 
+	-------------
+	delete_component_from_elementitems(name,Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,[Absyn.COMPONENTITEM(Absyn.COMPONENT(name2,_,_),_)]),_))::xs) => xs
+
+  rule	not name = name2 &
+	delete_component_from_elementitems(name, xs) => res
+	-------------------------
+	delete_component_from_elementitems(name, (x as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,[Absyn.COMPONENTITEM(Absyn.COMPONENT(name2,_,_),_)]),_)))::xs) => x::res
+
+  rule	delete_component_from_elementitems(name, xs) => res
+	---------------------------------------------------
+	delete_component_from_elementitems(name,x::xs) => x::res 
+end
+
 (** relation add_component
  ** This relation takes:  arg1 - string giving the instancename, arg2 - `ComponentRef' giving the component type
  ** arg3 - ComponentRef giving the model to instantiate the component within, arg4 - `NamedArg' list of annotations 
@@ -1072,7 +1142,7 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
   rule	Absyn.cref_to_path(model) => modelpath &
 	not get_pathed_class_in_program(modelpath,p) => _
 	---------------------------------
-	add_component (name,tp,model,annlst,p) => (p,"Error, No such model\n") 
+	add_component (name,tp,model,annlst,p) => (p,"false\n") 
 	
 	(* Adding component to model that resides inside package *)
 	(* Without annotation*)
@@ -1085,7 +1155,7 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),NONE)]),NONE))) => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
 	------------------------------------------------
-	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),[],p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),[],p as Absyn.PROGRAM(_,w)) => (newp,"true\n")
 
 	(* Adding component to model that resides inside package *)
 	(* With annotation*)
