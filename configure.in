@@ -12,6 +12,8 @@ AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(USE_CORBA)
 AC_SUBST(CORBAHOME)
+AC_SUBST(USE_MODPAR)
+AC_SUBST(BOOSTHOME)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -191,5 +193,31 @@ fi
 AC_MSG_RESULT([enabling CORBA (no CORBAHOME given, using /usr/local)]); USE_CORBA="-DUSE_CORBA"; CORBAHOME="/usr/local";
 ])
 
-AC_OUTPUT(Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile  modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile)
+dnl should we compile modpar
+
+AC_ARG_WITH(MODPAR, [  --with-MODPAR        Compile with automatic parallelization, requires boost],
+[
+	USE_MODPAR="-DUSE_MODPAR"
+], [
+AC_MSG_RESULT([Not compiling ModPar]); USE_MODPAR=""; BOOSTHOME=""
+])
+
+AC_ARG_WITH(BOOST, [  --with-BOOST=DIR        With BOOST library in DIR],
+[
+if test "x$withval" = "xno" ; then 
+	AC_MSG_RESULT([disabling BOOST]); 
+	if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
+			AC_MSG_RESULT([ Warning, MODPAR requires BOOST, disabling MODPAR ] ) 
+	fi
+	USE_MODPAR=""; 
+	BOOSTHOME="";
+else 
+	AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]); 
+	BOOSTHOME="$withval";
+fi
+], [
+AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
+])
+
+AC_OUTPUT(Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile  modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile modeq/modpar/Makefile)
 
