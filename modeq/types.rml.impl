@@ -41,6 +41,19 @@ relation ndims : Type => int =
   axiom ndims _ => 0
 
 end
+relation get_dimension_sizes: Type => int list =
+
+  rule	get_dimension_sizes(tp) => res
+	----------------
+	get_dimension_sizes(T_ARRAY(DIM(SOME(i)),tp)) => i::res
+
+  rule	get_dimension_sizes(tp) => res
+	------------------------------
+	get_dimension_sizes(T_ARRAY(DIM(NONE),tp)) => -1::res
+
+  axiom	get_dimension_sizes(_) => []
+
+end
 
 (** relation: basic_type
  **
@@ -821,6 +834,24 @@ relation is_parameter: Var => () =
   (* LS: false means not protected, hence we ignore protected variables *)
   axiom	is_parameter VAR(n, ATTR(fl, ac, SCode.PARAM, dir), false, ty, bnd)
 
+end
+
+(* Returns true if a buitlin type, or array-type is Real *)
+relation contain_real: Type list => bool =
+
+  rule	contain_real([tp]) => r1 &
+	contain_real(xs) => r2 &
+	bool_or(r1,r2) => res 
+	---------------
+	contain_real (T_ARRAY(d,tp)::xs) => res 
+
+  axiom	contain_real (T_REAL(_)::_) => true
+
+  rule	contain_real(xs) => res
+	--------------
+	contain_real(_::xs) => res
+
+  axiom	contain_real(_)=> false
 end
 
 relation flatten_array_type : Type => (Type, int list) =

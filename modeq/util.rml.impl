@@ -20,6 +20,16 @@
 *)
 
 
+relation list_first: 'a list => 'a =	
+
+  axiom	list_first(x::_) => x
+end	  
+
+relation list_rest: 'a list => 'a list =
+	
+  axiom	list_rest (_::x) => x
+end
+
 relation list_flatten : 'a list list => 'a list =
 
   axiom	list_flatten [] => []

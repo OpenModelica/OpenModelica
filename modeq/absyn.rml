@@ -329,6 +329,7 @@ module Absyn:
   relation path_string2 : (Path, string) => string
   relation path_last_ident : Path => Ident
   relation get_cref_from_exp : ( Exp ) => ComponentRef list 
+  relation cref_get_first : ComponentRef => ComponentRef 
   relation join_paths: (Path, Path) => Path
   relation strip_last: (Path) => Path 
   relation print_restr : Restriction => ()

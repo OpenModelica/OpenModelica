@@ -21,6 +21,7 @@
 
 
 with "dump.rml"
+with "debug.rml"
 with "print.rml"
 with "inst.rml"
 
@@ -51,11 +52,9 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
   axiom	elab_mod (env, pre, m as SCode.REDECL(final, elist)) 
 	  =>  REDECL(final, elist)
 
-  rule	Print.print_buf "#-- elab_mod failed:\n" &
-	SCode.print_mod mod &
-	Print.print_buf "\n"
-	----------
-	elab_mod (_,pre,mod) => fail
+  rule	Debug.fprint("failtrace", "#-- elab_mod failed\n")
+	-------------------------------------------------
+	elab_mod (_,pre,mod) => fail 
 end
 
 

@@ -224,7 +224,9 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
 		   c),st)
 
-  rule	Print.print_buf "- elab_exp failed: " & Dump.print_exp e & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
+	Debug.fcall("failtrace", Dump.print_exp, e) & 
+	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
 
@@ -788,11 +790,97 @@ relation build_exp_list : (Exp.Exp, int) => Exp.Exp list =
 
 end
 
+relation elab_builtin_array : (Env.Env, Absyn.Exp list) 
+	  => (Exp.Exp, Types.Properties) =
+  rule	elab_exp_list(env, expl, false, NONE) 
+	  => (exp', typel, _) &
+	elab_builtin_array2 (exp',  typel) => (exp'', Types.PROP(tp,c)) &  
+	list_length(expl) => len &
+	let newtp = Types.T_ARRAY(Types.DIM(SOME(len)),tp) &
+	Types.elab_type(newtp) => newtp' &
+	let exp = Exp.ARRAY(newtp',c,exp') 
+	---------------------------------
+	elab_builtin_array(env,expl) => (exp, Types.PROP(newtp,c))
+end
+
+(* Asserts that all types are of same dimensionality and of same builtin types *)
+relation elab_builtin_array2: (Exp.Exp list, Types.Properties list)
+	=> (Exp.Exp list, Types.Properties) =
+
+  rule	same_dimensions(tpl) => false &
+	Print.print_buf "#Error, different dimension sizes in arguments to array.\n"
+	------------------------
+	elab_builtin_array2(expl,tpl) => fail
+
+  rule	(* If first elt is Integer but arguments contain Real, convert all to Real *)
+	Util.list_map(tpl,Types.get_prop_type) => tpl' &
+	Types.contain_real(tpl') => true &
+	elab_builtin_array3(expl,tpl,Types.PROP(Types.T_REAL([]),false)) => (expl', tp)
+	-------------------------------------------
+	elab_builtin_array2(expl,tpl) => (expl', tp)
+	
+  rule	elab_builtin_array3(expl,tpl,tp) => (expl',tp)
+	---------------------------
+	elab_builtin_array2(expl,tpl as (tp::_)) => (expl', tp)
+end
+
+relation elab_builtin_array3: (Exp.Exp list, Types.Properties list, Types.Properties)
+	=> (Exp.Exp list, Types.Properties) =
+  axiom	elab_builtin_array3([],[],tp) => ([],tp)
+
+  rule	Types.match_prop(e1,t1,tp) => e1' &
+	elab_builtin_array3(expl,tpl,tp) => (expl',_)
+	----------------------------------------
+	elab_builtin_array3(e1::expl,t1::tpl,tp) => (e1'::expl', t1)
+end
+
 relation elab_builtin_zeros : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_fill (env, Absyn.INTEGER(0)::args) => (e,p)
 	--------------------------------------------------------
 	elab_builtin_zeros (env, args) => (e,p)
+end
+
+relation same_dimensions: (Types.Properties list ) => bool =
+
+  rule	Util.list_map(tpl,Types.get_prop_type) => tpl' &
+	Util.list_map(tpl',Types.get_dimension_sizes) => dimsizes &
+	same_dimensions2(dimsizes) => res
+	--------------------------------
+	same_dimensions(tpl) => res
+end
+
+relation same_dimensions2:( int list list) => bool =
+
+  rule	Util.list_flatten(l) => []
+	------------------
+	same_dimensions2(l) => true
+	
+  rule	Util.list_map(l,Util.list_first) => elts &
+	Util.list_map(l,Util.list_rest) => restelts &
+	same_dimensions3(elts) => true &
+	same_dimensions2(restelts) => true
+	----------------------------------
+	same_dimensions2(l) => true
+  axiom	same_dimensions2(_) => false
+end
+			
+relation same_dimensions3: (int list) => bool =
+
+  axiom same_dimensions3([]) => true
+  axiom	same_dimensions3([_]) => true
+
+  rule	int_eq(i1,i2) => res 
+	--------------------
+	same_dimensions3([i1,i2]) => res
+
+  rule	same_dimensions3(i2::rest) => res &
+	int_eq(i1,i2) => res2 &
+	bool_and(res,res2) => res'
+	--------------------------
+	same_dimensions3(i1::i2::rest) => res'
+
+  axiom	same_dimensions3(_) => false
 end
 
 relation elab_builtin_ones : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
@@ -923,6 +1011,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom	elab_builtin_handler "max" => elab_builtin_max
   axiom	elab_builtin_handler "min" => elab_builtin_min
   axiom elab_builtin_handler "transpose" => elab_builtin_transpose
+  axiom	elab_builtin_handler "array" => elab_builtin_array
 
 end
 
@@ -971,7 +1060,7 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st')
 
-  rule	Print.print_buf "- elab_call failed\n"
+  rule	Debug.fprint("failtrace", "- elab_call failed\n")
 	----------------------------
 	elab_call (env,fn,args,nargs,impl,st) => fail
 
@@ -1533,7 +1622,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	elab_call_args(env,fn,_,_,_) => fail
 
   rule	(*elab_exp(env, e) => (e',Types.PROP(t,_)) &*)
-	Print.print_buf "- elab_call_args failed\n"
+	Debug.fprint("failtrace", "- elab_call_args failed\n")
 	---------------------------------
 	elab_call_args(_,_,_,_,_) => fail
 
@@ -1798,9 +1887,9 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, Slot l
 	
   axiom	elab_input_args(env,[],[],slots) => ([],slots,true)
 	
-  rule	Print.print_buf "#Error, elab_input_args failed.\n"
+(*  rule	Print.print_buf "#Error, elab_input_args failed.\n"
 	-----------------------------------------
-	elab_input_args(_,_,_,_) => fail
+	elab_input_args(_,_,_,_) => fail*)
 end
 
 relation make_empty_slots : (Types.FuncArg list) => Slot list =
@@ -2728,6 +2817,14 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Print.print_error_buf s2 
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	component_ref_to_path(cr) => path & 
+	Absyn.path_string path => pathstr &
+	Print.print_buf "Failed to instantiate " &
+	Print.print_buf pathstr & Print.print_buf " .\n" &
+	Print.get_string() => str 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 	
   rule	System.time => t1 &
 	ceval(env,exp,true,SOME(st)) => (value,st') &
@@ -3417,7 +3514,8 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 	list_length(lst2) => len2 &
 	int_string(len1) => str1 &
 	int_string(len2) => str2 &
-	Debug.fprintl("earg", [str1, " lst len2: ", str2, "\n"])  
+	Debug.fprintl("earg", [str1, " lst len2: ", str2, "\n"]) &
+	Debug.fprint("failtrace","- Static.elab_arglist failed.") 
 	--------------------------------------
 	elab_arglist (lst1,lst2) => fail
 end

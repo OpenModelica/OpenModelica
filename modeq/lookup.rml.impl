@@ -235,22 +235,26 @@ relation lookup_qualified_imported_class_in_env:(Cache.Cache, Env.Env, Env.Env,
 						 Absyn.Path) 
 	  => (Cache.Cache, SCode.Class, Env.Env) =
 
-  rule	lookup_qualified_imported_class_in_frame(cache,items,totenv,name) => (cache',c,_)
+  rule	lookup_qualified_imported_class_in_frame(cache,items,totenv,name) => (cache',c,env')
 	-----------------------------------------------------------------
 	lookup_qualified_imported_class_in_env(cache, env as (Env.FRAME(sid,items,_)::fs),totenv,Absyn.IDENT(name)) 
-	  => (cache', c, env)
+	  => (cache', c, env')
 
-  rule	lookup_qualified_imported_class_in_frame(cache, items, totenv, pack) 
+  rule	Debug.fprint("loimp","lookup_qualified_imp_cl_in_env QUAL\n") &
+	lookup_qualified_imported_class_in_frame(cache, items, totenv, pack) 
 	  => (cache', c as SCode.CLASS(id,_,encflag,restr,_), env') &
+	Debug.fprint("loimp","Found package. Instantiating.\n") &  
        	Env.open_scope(env',encflag) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(cache', env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state,
 			   c, false, [], true, true) 
 	  => (cache'',_,env4,_,_,_) &  
+	Debug.fprint("loimp","Instantiated\n") &
 
 	lookup_class_in_class(cache'', env4, c, path, false) 
 	  => (cache''', c', env'')
+	& Debug.fprint("loimp","Done\n") 
 	-----------------------------------------------------------------
 	lookup_qualified_imported_class_in_env(cache, env as (Env.FRAME(sid,items,_)::fs),totenv, Absyn.QUALIFIED(pack,path)) 
 	  => (cache''', c', env'')
@@ -263,8 +267,17 @@ end
 relation lookup_qualified_imported_class_in_frame: (Cache.Cache, (SCode.Ident * Env.Item) list,Env.Env,
     SCode.Ident)
 	    => (Cache.Cache, SCode.Class, Env.Env) =
+
+  rule	(* For imported paths A, not possible to assert sub-path package*)
+	id = ident &
+	Env.top_frame(env) => fr & 
+	lookup_class(cache,[fr],Absyn.IDENT(id),true) => (cache', c, env') 
+	------------------------------------------
+	lookup_qualified_imported_class_in_frame(cache, (_,Env.IMPORT(Absyn.QUAL_IMPORT(Absyn.IDENT(id))))::fs,env,ident)
+	    => (cache', c, env')
 	    
-  rule	Absyn.path_last_ident(path) => id &
+  rule	(* For imported path A.B.C, assert A.B is package*)
+	Absyn.path_last_ident(path) => id &
 	id = ident &
 	Env.top_frame(env) => fr & 
 	lookup_class(cache,[fr],path,true) => (cache', c, env') &
@@ -275,7 +288,8 @@ relation lookup_qualified_imported_class_in_frame: (Cache.Cache, (SCode.Ident * 
 	lookup_qualified_imported_class_in_frame(cache, (_,Env.IMPORT(Absyn.QUAL_IMPORT(path)))::fs,env,ident)
 	    => (cache'', c, env')
 
-  rule	Absyn.path_last_ident(path) => id &
+  rule	(* If not package, error *)
+	Absyn.path_last_ident(path) => id &
 	id = ident &
 	Env.top_frame(env) => fr & 
 	lookup_class(cache,[fr],path,true) => (cache', c, env') &
@@ -287,7 +301,8 @@ relation lookup_qualified_imported_class_in_frame: (Cache.Cache, (SCode.Ident * 
 	lookup_qualified_imported_class_in_frame(cache, (_,Env.IMPORT(Absyn.QUAL_IMPORT(path)))::fs,env,ident)
 	    => fail
 
-  rule	id = ident &
+  rule	(* Named imports*)
+	id = ident &
 	Env.top_frame(env) => fr & 
 	lookup_class(cache, [fr], path, true) => (cache', c, env') &
 	Absyn.strip_last(path) => strippath &
@@ -297,7 +312,8 @@ relation lookup_qualified_imported_class_in_frame: (Cache.Cache, (SCode.Ident * 
 	lookup_qualified_imported_class_in_frame(cache, (_,Env.IMPORT(Absyn.NAMED_IMPORT(id,path)))::fs,env,ident)
 	    => (cache'', c, env')
 
-  rule	id = ident &
+  rule	(* Assert package for Named imports *)
+	id = ident &
 	Env.top_frame(env) => fr & 
 	lookup_class(cache, [fr],path,true) => (cache', c, env') &
 	Absyn.strip_last(path) => strippath &
@@ -954,6 +970,18 @@ relation lookup_class_in_class: (Cache.Cache, Env.Env, SCode.Class, Absyn.Path, 
 	-------------------------------------------
 	lookup_class_in_class (cache, env, cdef, Absyn.QUALIFIED(c1,p1),false) 
 	  => (cache'', c', env5)
+
+  rule	lookup_qualified_imported_class_in_env(cache,env,env,path) 
+	  => (cache', c, env') 
+	-------------------------
+	lookup_class_in_class (cache, env, cdef, path,_) 
+	  => (cache', c, env')
+
+  rule	lookup_unqualified_imported_class_in_env(cache, env, env, path) 
+	  => (cache', c, env') 
+	-------------------------
+	lookup_class_in_class (cache, env, cdef, path ,_) 
+	  => (cache', c, env')
 
   rule	Print.print_buf "- lookup_class_in_class failed\n" &
 	Print.print_buf "  - class = " & Print.print_buf cname &

@@ -23,6 +23,8 @@ module Util :
 
   relation if : (bool,'a,'a) => 'a
 
+  relation list_first: 'a list => 'a
+  relation list_rest: 'a list => 'a list
   relation list_flatten : 'a list list => 'a list
   relation list_map : ('a list, 'a => 'b) => 'b list
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list

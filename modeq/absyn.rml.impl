@@ -223,6 +223,15 @@ relation path_to_cref : Path => ComponentRef =
 	path_to_cref QUALIFIED(i,p) => CREF_QUAL(i,[],c)
 end
 
+relation cref_get_first : ComponentRef => ComponentRef =
+
+  axiom	cref_get_first(CREF_IDENT(i,_)) => CREF_IDENT(i,[])
+
+  axiom	cref_get_first(CREF_QUAL(i,_,_)) => CREF_IDENT(i,[])
+
+end
+
+
 (** relation: print_restr
  **
  ** This is a utility relation for printing a `Restriction'.  The code
