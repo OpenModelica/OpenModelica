@@ -113,14 +113,21 @@ and dump_class_modification =
 
 end
 and dump_element_arg =
-
-	rule	print "ARG(" &
-		dump_select(f,"FINAL,",",") &
-		Exp.path_string(r) => s & print s &
-		dump_modification(m) &
-		print ")"
-		-------------------------------------------
-		dump_element_arg(Absyn.MODIFICATION(f,r,m))
+	
+  rule	print "ARG(" &
+	dump_select(f,"FINAL,",",") &
+	Exp.path_string(r) => s & print s &
+	dump_modification(m) &
+	print ")"
+	-------------------------------------------
+	dump_element_arg(Absyn.MODIFICATION(f,r,m))
+	
+  rule	print "REDECLARATION(" &
+	dump_select(f,"FINAL,",",") &
+	dump_elementspec spec &
+	print ")"
+	-------------------------------------------
+	dump_element_arg(Absyn.REDECLARATION(f,spec))
 
 end
 and dump_class_part: Absyn.ClassPart => () =
