@@ -648,9 +648,15 @@ relation print_element: Absyn.Element => () =
   rule	Print.print_buf "ELEMENT(" & print_select(final,"FINAL,","") &
 	print_innerouter inout &
 	Print.print_buf ", " &
-	print_elementspec spec & Print.print_buf ")"
-	----------------
-	print_element (Absyn.ELEMENT(final,repl,inout,_,spec,constr))
+	print_elementspec spec & 
+	Print.print_buf ", " &
+	Print.print_buf filename &
+	Print.print_buf ", " & 
+	int_string lineno => s1 &
+    	Print.print_buf s1 &
+	Print.print_buf ")"
+	---------------------------
+	print_element (Absyn.ELEMENT(final,repl,inout,_,spec,filename,lineno,constr))
 
 end
 
@@ -659,11 +665,12 @@ relation unparse_element_str: (int, Absyn.Element) => string =
   rule	select_string(final, "final ", "") => s1 &
 	select_string(repl, "replaceable ", "") => s2 &
 	unparse_innerouter_str inout => s3 &
-	unparse_elementspec_str(i, spec,s1,s2,s3) => s4 &
+	unparse_elementspec_str(i, spec,s1,s2,s3) => s4 &	
+	int_string(lineno) => s5 &
 	indent_str(i) => is &
-	Util.string_append_list([s4,";"]) => str
+	Util.string_append_list([s4, " ", filename," ", s5,";"]) => str 
 	----------------------------
-	unparse_element_str(i, Absyn.ELEMENT(final,repl,inout,_,spec,constr)) => str
+	unparse_element_str(i, Absyn.ELEMENT(final,repl,inout,_,spec,filename,lineno,constr)) => str
 end
 
 

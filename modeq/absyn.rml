@@ -1,3 +1,4 @@
+
 (*
    Copyright PELAB, Linkoping University
    
@@ -14,7 +15,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Foobar; if not, write to the Free Software
+    along with OpenModelica; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 *)
@@ -114,13 +115,16 @@ module Absyn:
 		       | ANNOTATIONITEM of Annotation 
   (** An element item is either an element or an annotation *)
 
+
   (** - Elements *)
-  datatype Element = ELEMENT of bool		     (* final *)
-			      * bool		     (* replaceable *)
-			      * InnerOuter	     (* inner/outer *)	     
+  datatype Element = ELEMENT of bool		      (* final *)
+			      * bool		      (* replaceable *)
+			      * InnerOuter	      (* inner/outer *)	     
 			      * Ident
 			      * ElementSpec
-			      * ConstrainClass option    (* only valid for classdef and component*)
+			      * string                (* Source code file *)
+			      * int                   (* Line number *)
+			      * ConstrainClass option (* only valid for classdef and component*)
 
   type ConstrainClass = ElementSpec			(* That must be EXTENDS*)
 

@@ -201,7 +201,7 @@ relation print_element: Absyn.Element => Node =
 	print_elementspec spec => elsp
 	(* & print "> End of rule print_element\n" *)
 	------------------
-	print_element (Absyn.ELEMENT(final,_,_,_,spec,_)) => Graphviz.NODE("ELEMENT",[fa],[elsp])
+	print_element (Absyn.ELEMENT(final,_,_,_,spec,_,_,_)) => Graphviz.NODE("ELEMENT",[fa],[elsp])
 
 end
 
