@@ -3,14 +3,14 @@
 
 #define _MODAST_H_
 
-#include "ASTBase.h"
-#include "tokens.h"
-#include "AToken.h"
-#include "ATokPtr.h"
+/* #include "ASTBase.h" */
+/* #include "tokens.h" */
+/* #include "AToken.h" */
+/* #include "ATokPtr.h" */
 #include "parser.h"
 
 
-ostream &operator<<(ostream &, AST *);
+/* ostream &operator<<(ostream &, AST *); */
 
 typedef enum {
   EP_FINAL,
@@ -21,13 +21,13 @@ typedef enum {
 
 typedef enum {
   OP_NONE,
-  OP_PREFIX,			// -argument
-  OP_POSTFIX,			// argument
-  OP_INFIX,			// term + term
-  OP_BALANCED,			// { argument }
-  OP_FUNCTION,			// function(arguments)
-  OP_ARRAYDECL,			// [[ (tokens)... ]]
-  OP_ARRAYRANGE			// ident[[tokens...]]
+  OP_PREFIX,			/* -argument           */
+  OP_POSTFIX,			/* argument	       */
+  OP_INFIX,			/* term + term	       */
+  OP_BALANCED,			/* { argument }	       */
+  OP_FUNCTION,			/* function(arguments) */
+  OP_ARRAYDECL,			/* [[ (tokens)... ]]   */
+  OP_ARRAYRANGE			/* ident[[tokens...]]  */
 } opType;
 
 typedef enum {
@@ -55,53 +55,53 @@ typedef enum {
   FUNCTION_EXTERNAL = (1<<4)
 } NodeProperties;
 
-class NodeInfo {
-  // A collection of extra information that can be attached
-  // to a node in the AST to help the code generator.
-public:
-  NodeType type;
-  unsigned long properties;
-};
+/* class NodeInfo { */
+/*   /* A collection of extra information that can be attached */
+/*      to a node in the AST to help the code generator. */
+/* public: */
+/*   NodeType type; */
+/*   unsigned long properties; */
+/* }; */
 
 
-class AST : public ASTBase {
+/* class AST : public ASTBase { */
 
-  char * expr_trans;
-  opType optype;
-  char opbalancer;
+/*   char * expr_trans; */
+/*   opType optype; */
+/*   char opbalancer; */
 
-public:
-  NodeInfo              ni;
-  char *classType;
+/* public: */
+/*   NodeInfo              ni; */
+/*   char *classType; */
 
-  /* constructor */	AST();
-  /* constructor */	AST(ANTLRTokenPtr t);
-  /* constructor */     AST(ANTLRTokenType);
-  //  /* constructor */     AST(ANTLRTokenType,opType);
-  /* constructor */     AST(ANTLRTokenType,char *,opType,char);
-  /* constructor */     AST(ANTLRTokenType,char *);
-  /* constructor */     AST(ANTLRTokenType,char *,opType);
+/*   /* constructor * /	AST(); */
+/*   /* constructor * /	AST(ANTLRTokenPtr t); */
+/*   /* constructor * /     AST(ANTLRTokenType); */
+/*   //  /* constructor * /     AST(ANTLRTokenType,opType); */
+/*   /* constructor * /     AST(ANTLRTokenType,char *,opType,char); */
+/*   /* constructor * /     AST(ANTLRTokenType,char *); */
+/*   /* constructor * /     AST(ANTLRTokenType,char *,opType); */
 
-  /* destructor */ virtual	~AST();
-  /* copy constructor */	AST(const AST &);	   // new copy of token
-  AST &			operator = (const AST &);  // new copy of token
-//  virtual void		dumpNode(const char * s=0);
-  virtual void		preorder_action();
-  virtual void preorder_before_action() { printf("["); }
-  virtual void preorder_after_action() { printf("]"); }
+/*   /* destructor * / virtual	~AST(); */
+/*   /* copy constructor * /	AST(const AST &);	   // new copy of token */
+/*   AST &			operator = (const AST &);  // new copy of token */
+/* //  virtual void		dumpNode(const char * s=0); */
+/*   virtual void		preorder_action(); */
+/*   virtual void preorder_before_action() { printf("["); } */
+/*   virtual void preorder_after_action() { printf("]"); } */
   
-  ANTLRTokenPtr         pToken;
+/*   ANTLRTokenPtr         pToken; */
   
-  AST *			ASTdown() {return (AST *)_down;};
-  AST *			ASTright() {return (AST *)_right;};
-  void setTranslation(char *t) { expr_trans=t; }
-  char *getTranslation() { return expr_trans; }
-  void dumpTree();
-  void setOpType(opType);
-  void setOpType(opType,char);
-  opType getOpType();
-  char getBalancer();
-};
+/*   AST *			ASTdown() {return (AST *)_down;}; */
+/*   AST *			ASTright() {return (AST *)_right;}; */
+/*   void setTranslation(char *t) { expr_trans=t; } */
+/*   char *getTranslation() { return expr_trans; } */
+/*   void dumpTree(); */
+/*   void setOpType(opType); */
+/*   void setOpType(opType,char); */
+/*   opType getOpType(); */
+/*   char getBalancer(); */
+/* }; */
 
 char *replaceUnderscore(char *s);
 
