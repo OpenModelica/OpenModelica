@@ -34,8 +34,8 @@ relation val_string : Value => string =
 
   axiom	val_string STRING(s) => s
 
-  axiom	val_string BOOL(FALSE) => "FALSE"
-  axiom	val_string BOOL(TRUE) => "TRUE"
+  axiom	val_string BOOL(FALSE) => "false"
+  axiom	val_string BOOL(TRUE) => "true"
 
   rule	val_list_string vs => s &
 	string_append("[",s) => s' &
