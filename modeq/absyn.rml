@@ -17,18 +17,20 @@ datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
 and	 Modification = CLASSMOD of ElementArg list
 		      | EQUALMOD of Exp.Exp
 
+and	 Component = COMPONENT of Exp.Ident	(* component name *)
+				* ArrayDim option
+				* Modification option
+
 and	 ElementSpec = CLASSDEF of bool		(* replaceable *)
 				 * Class
 		     | EXTENDS of string * ElementArg list
-		     | COMPONENT of bool	(* flow *)
-				  * bool	(* parameter *)
-				  * bool	(* constant *)
-				  * bool	(* input *)
-				  * bool	(* output *)
-				  * Exp.Path	(* type name *)
-				  * Exp.Ident	(* component name *)
-				  * ArrayDim option
-				  * Modification option
+		     | COMPONENTS of bool	(* flow *)
+				   * bool	(* parameter *)
+				   * bool	(* constant *)
+				   * bool	(* input *)
+				   * bool	(* output *)
+				   * Exp.Path	(* type name *)
+				   * Component list
 
 and	 Element = ELEMENT of bool		(* final *)
 			    * ElementSpec
