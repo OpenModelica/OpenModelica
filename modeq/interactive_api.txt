@@ -76,6 +76,15 @@ getNthConnectionAnnotation(<cref>,<int>)
 					annotation as comma separated
 					list of values of a flattened
 					record, see Annotation below.
+addConnection(<cref>,<cref>,<cref>, annotate=<expr>)
+					Adds connection connect(A0,A1)
+					to model A2, with annotation
+					given by the named argument
+					annotate.
+
+updateConnection(<cref>,<cref>,<cref>, annotate=<expr>)
+					Updates an allready existing connection
+
 					
 getConnectorCount(<cref>)		Returns the number of
 					connectors of a class.

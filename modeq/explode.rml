@@ -70,6 +70,7 @@ module SCode :
 		    | DERIVED of Path
 			       * Absyn.ArrayDim option
 			       * Mod
+		    | ENUMERATION of Ident list
 
   (** The major difference between these types and their `Absyn' *)
   (** counterparts is that the `PARTS' constructor contains separate *)
@@ -192,6 +193,7 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	-------------------------------------
 	elab_classdef (Absyn.PARTS(parts)) => PARTS(els,eqs,als)
 
+	axiom elab_classdef(Absyn.ENUMERATION(lst)) => ENUMERATION(lst)
 end
 
 
