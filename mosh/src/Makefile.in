@@ -12,19 +12,29 @@ PARSE_LIBP = -L../../modelica_parser/src
 READLINE_INCP = -I@readlineinc@
 READLINE_LIBP = -L@readlinelib@
 
-CORBAIMPL = -I../../modeq/runtime
+USE_CORBA = @USE_CORBA@
+CORBAHOME = @CORBAHOME@
 
-CORBAOBJS = ../../modeq/runtime/modeq_communication.o \
+ifdef USE_CORBA
+  CORBAIMPL = -I../../modeq/runtime
+  CORBAOBJS = ../../modeq/runtime/modeq_communication.o \
 	../../modeq/runtime/modeq_communication_impl.o
+  CORBALIB = -L$(CORBAHOME)/lib -lmico
+  CORBAINC = -I$(CORBAHOME)/include
+else
+  CORBAIMPL =
+  CORBAOBJS =
+  CORBALIB =
+endif
 
-INCP = $(ANTLR_INCP) $(PARSE_INCP) $(READLINE_INCP) $(CORBAIMPL)
+INCP = $(ANTLR_INCP) $(PARSE_INCP) $(READLINE_INCP) $(CORBAIMPL) $(CORBAINC)
 LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP) 
 
-CFLAGS = $(INCP) -g -Wall -DDEBUG
+CFLAGS = $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = $(LIBP) 
 
-LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap -lssl -lmico -lcrypto -lm -lpthread 
+LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap -lssl  $(CORBALIB) -lcrypto -lm -lpthread 
 
 
 OBJS += mosh.o options.o

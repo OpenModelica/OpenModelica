@@ -42,9 +42,10 @@
 
 #include <sys/param.h> /* MAXPATHLEN */
 #include "options.h"
+#ifdef USE_CORBA
 #include <CORBA.h>
 #include "modeq_communication.h"
-
+#endif
 
 using namespace std;
 
@@ -56,6 +57,7 @@ char * check_moshhome(void);
 void init_sockaddr (struct sockaddr_in *name,
                              const char *hostname,
                              int port);
+
 void doCorbaCommunication(int argc, char **argv,const string *);
 void doSocketCommunication(const string*);
 
@@ -132,6 +134,7 @@ int main(int argc, char* argv[])
   return EXIT_SUCCESS;
 }
 
+#ifdef USE_CORBA
 void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 {
  CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);  
@@ -187,7 +190,13 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
   write_history(historyfile);
   history_truncate_file(historyfile, maxhistoryfileentries);
 }
-
+#else
+void doCorbaCommunication(int argc, char **argv, const string *scriptname)
+{
+  cerr << "CORBA support disabled. configure with --with-CORBA to enable and recompile." << endl;
+  exit(1);
+}
+#endif
 
 void doSocketCommunication(const string * scriptname)
 {
