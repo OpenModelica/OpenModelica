@@ -1523,7 +1523,9 @@ primary returns [void* ast]
 			{
 				ast = Absyn__MATRIX(make_rml_list_from_stack(el_stack));
 			}
-		| #(LBRACE ast = expression_list) { ast = Absyn__ARRAY(ast); }
+		| #(LBRACE ( (ast = expression_list) { ast = Absyn__ARRAY(ast); }
+                   | (ast = for_iterator)
+                ) RBRACE)
 		| END { ast = Absyn__END; }
 		)
 	;
@@ -1600,7 +1602,8 @@ component_reference	returns [void* ast]
 
 function_call returns [void* ast]
 	:
-		#(FUNCTION_ARGUMENTS ast = function_arguments);
+		#(FUNCTION_ARGUMENTS ast = function_arguments)
+    ;
 
 function_arguments 	returns [void* ast]
 {
@@ -1609,12 +1612,15 @@ function_arguments 	returns [void* ast]
 	void* namel=0;
 }
 	:
-		(elist=expression_list)? (namel = named_arguments)?
-		{
-			if (!namel) namel = mk_nil();
-			if (!elist) elist = mk_nil();
-			ast = Absyn__FUNCTIONARGS(elist,namel); 		
-		}
+        (
+            (elist=expression_list)? (namel = named_arguments)?
+            {
+                if (!namel) namel = mk_nil();
+                if (!elist) elist = mk_nil();
+                ast = Absyn__FUNCTIONARGS(elist,namel); 		
+            }
+        |   #(FOR_ITERATOR ast = for_iterator)
+        )
 	;
 
 named_arguments returns [void* ast]
@@ -1639,6 +1645,20 @@ named_argument returns [void* ast]
 			ast = Absyn__NAMEDARG(to_rml_str(i),temp);
 		}
 	;
+
+for_iterator returns [void *ast]
+{
+    void* expr;
+    void* iter;
+    void* id;
+}
+    :
+        #(FOR expr = expression #(IN i:IDENT iter=expression))
+        {
+            id = to_rml_str(i);
+            ast = Absyn__FOR_5fITER_5fFARG(expr,id,iter);
+        }
+    ;
 
 expression_list returns [void* ast]
 {

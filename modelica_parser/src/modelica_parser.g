@@ -47,6 +47,7 @@ tokens {
 	EXPRESSION_LIST;
 	EXTERNAL_FUNCTION_CALL;
     FOR_INDICES ;
+    FOR_ITERATOR ;
 	FUNCTION_CALL		;
 	INITIAL_FUNCTION_CALL		;
 	FUNCTION_ARGUMENTS;
@@ -701,7 +702,7 @@ primary :
 		| component_reference__function_call
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
-		| LBRACE^ expression_list RBRACE!
+		| LBRACE^ for_or_expression_list RBRACE!
 		| END
 		)
     ;
@@ -765,13 +766,17 @@ for_or_expression_list
 			(
 				e:expression
 				( COMMA! for_or_expression_list2 
+                    {
+                        #for_or_expression_list = 
+                            #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
+                    }
 				| FOR^ for_indices
+                    {
+                        #for_or_expression_list = 
+                            #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
+                    }
 				)?
 			)
-			{
-				#for_or_expression_list = #([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
-			}
-
 		)
 		;
 
