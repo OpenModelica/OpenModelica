@@ -7,16 +7,16 @@
 #include <sys/stat.h>
 #include "read_write.h"
 #include "../values.h"
-#include <sys/dirent.h>
+#include <dirent.h>
 #include <time.h>
+#include <sys/param.h> /* MAXPATHLEN */
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 255
-#endif
 
 #ifndef _IFDIR
 #define _IFDIR S_IFDIR
+#endif
 
+#ifdef 0
 /* FIXME: scandir not available on solaris, put the code below inside
    ifdefs for solaris
 */
@@ -82,7 +82,7 @@ int scandir(const char* dirname,
   return count;
 }
 
-#endif
+#endif /* 0 */
 
 char * cc="/usr/bin/gcc";
 char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS";

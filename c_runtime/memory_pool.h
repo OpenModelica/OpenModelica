@@ -29,6 +29,7 @@
 #define NR_BOOLEAN_ELEMENTS 10000
 #define NR_SIZE_ELEMENTS 10000
 #define NR_INDEX_ELEMENTS 10000
+#define NR_CHAR_ELEMENTS 10000
 
 typedef double real;
 typedef int integer;
@@ -42,6 +43,7 @@ extern string string_buffer[NR_STRING_ELEMENTS];
 extern boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
 extern integer size_buffer[NR_SIZE_ELEMENTS];
 extern int* index_buffer[NR_INDEX_ELEMENTS];
+extern char char_buffer[NR_CHAR_ELEMENTS];
 
 struct state_s {
   _index_t real_buffer_ptr;
@@ -50,6 +52,7 @@ struct state_s {
   _index_t boolean_buffer_ptr;
   _index_t size_buffer_ptr;
   _index_t index_buffer_ptr;
+  _index_t char_buffer_ptr;
 };
 
 typedef struct state_s state;
@@ -72,6 +75,7 @@ string* string_alloc(int n);
 boolean* boolean_alloc(int n);
 int* size_alloc(int n);
 int** index_alloc(int n);
+char* char_alloc(int n);
 
 _index_t real_free(int n);
 _index_t integer_free(int n);
@@ -79,4 +83,5 @@ _index_t string_free(int n);
 _index_t boolean_free(int n);
 _index_t size_free(int n);
 _index_t index_free(int n);
+_index_t char_free(int n);
 #endif

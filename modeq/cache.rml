@@ -81,7 +81,11 @@ relation get_variable: (Cache, Absyn.Path option, Absyn.Path) => Types.Var
 relation get_type: (Cache, Absyn.Path option, Absyn.Path) => Types.Type
 
 relation print_cache: (Cache) => ()
+
+val empty_cache : Cache
+
 end
+
 with "dump.rml"
 val empty_cache = CACHE([],[])
 

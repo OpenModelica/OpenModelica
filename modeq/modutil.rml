@@ -26,6 +26,7 @@ module ModUtil :
   with "exp.rml"
 
   relation path_string: Absyn.Path => string
+  relation path_string2: (Absyn.Path, string) => string
 
   relation string_prefix_component_refs : (string, 
 					   (Exp.ComponentRef, 'b) => (), 
@@ -42,6 +43,8 @@ module ModUtil :
 				     DAE.Element list) => DAE.Element list
 
   relation string_prefix_params : DAE.DAElist => DAE.DAElist
+
+  relation path_equal : (Absyn.Path, Absyn.Path) => bool
 
 end
 
@@ -333,21 +336,28 @@ end
 
 relation path_string: Absyn.Path => string =
 
-  axiom	path_string(Absyn.IDENT(s)) => s
-  
   rule	RTOpts.modelica_output => true &
-	path_string(n) => ns &
-	string_append(s,"__") => s1 &
-	string_append(s1,ns) => ss
+	path_string2(path,"__") => s
 	-------------------------------------
-	path_string(Absyn.QUALIFIED(s,n)) => ss
+	path_string path => s
 
   rule	RTOpts.modelica_output => false &
-	path_string(n) => ns &
-	string_append(s,".") => s1 &
+	path_string2(path,".") => s
+	-------------------------------------
+	path_string path => s
+	
+end
+
+
+relation path_string2: (Absyn.Path, string) => string =
+
+  axiom	path_string2(Absyn.IDENT(s),_) => s
+  
+  rule	path_string2(n,str) => ns &
+	string_append(s,str) => s1 &
 	string_append(s1,ns) => ss
 	-------------------------------------
-	path_string(Absyn.QUALIFIED(s,n)) => ss
+	path_string2(Absyn.QUALIFIED(s,n), str) => ss
 	
 end
 
@@ -365,5 +375,29 @@ relation find_var : (DAE.Element list, Exp.ComponentRef) => DAE.Element option =
   rule	find_var (rest, cr) => e'
 	----------------------------
 	find_var (_::rest, cr) => e'
+
+end
+
+
+relation path_equal : (Absyn.Path, Absyn.Path) => bool =
+
+  rule	id1 = id2 
+	----------
+	path_equal (Absyn.IDENT(id1), Absyn.IDENT(id2)) => true
+
+  rule	not id1 = id2 
+	----------
+	path_equal (Absyn.IDENT(id1), Absyn.IDENT(id2)) => false
+
+  rule	id1 = id2 &
+	path_equal (path1, path2) => res
+	--------------------------------
+	path_equal (Absyn.QUALIFIED(id1, path1), Absyn.QUALIFIED(id2, path2)) => res
+	
+  rule	not id1 = id2
+	--------------------------------
+	path_equal (Absyn.QUALIFIED(id1, path1), Absyn.QUALIFIED(id2, path2)) => false
+
+  axiom	path_equal (_,_) => false
 
 end

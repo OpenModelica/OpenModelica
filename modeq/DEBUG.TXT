@@ -33,6 +33,7 @@ General--------------------------------------------------------------------
 		info		General information			  
 		olddebug	print messages sent to the old Debug.print
 Dump-----------------------------------------------------------------------
+	 	parsedump	dump the parse tree
 		dump		dump the absyn tree			  
 		dumpgraphviz	dump the absyn tree in graphviz format
 		daedump		dump the dae in printed form		  

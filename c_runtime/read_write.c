@@ -25,6 +25,7 @@ void read_to_eol(FILE* file)
   int c;
   while (((c = fgetc(file)) != '\n') && (c != EOF));
 }
+
 int read_type_description(FILE* file, type_description* desc)
 {
   int c;
@@ -195,3 +196,37 @@ void write_integer_array(FILE* file, integer_array_t* arr)
     return 0;
 }
 */
+
+int read_modelica_string(FILE* file, modelica_string_t* str)
+{
+  int length;
+  int i;
+  char c;
+  type_description desc;
+  modelica_string_t tmp;
+
+  if (read_type_description(file,&desc)) { in_report("ms type_desc"); return 1; }
+  if (desc.type != 's') { cleanup_description(&desc); in_report("ms type"); return 1; }
+  if (desc.ndims != 1) { cleanup_description(&desc); in_report("ms ndims"); return 1; }
+
+  tmp.length = desc.dim_size[0];
+  clone_modelica_string_spec(&tmp, str);
+  alloc_modelica_string_data(str);
+  cleanup_description(&desc);
+  
+  length = modelica_string_length(str);
+  for (i = 0; i< length; ++i) {
+    if (fscanf(file,"%c",&c) != 1) { in_report("ms parse"); return 1; }
+    str->data[i] = c;
+  }
+  read_to_eol(file);
+  return 0;
+}
+
+int write_modelica_string(FILE* file, modelica_string_t* str)
+{
+  fprintf(file,"# s[ %d %d", 1, str->length);
+  fprintf(file,"\n");
+  fprintf(file,"%s\n",str->data);
+  return 0;
+}

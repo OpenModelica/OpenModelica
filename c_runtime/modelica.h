@@ -30,10 +30,12 @@
 #include "string_array.h"
 #include "boolean_array.h"
 #include "utility.h"
+#include "modelica_string.h"
 #include "read_write.h"
 
 typedef real_array_t real_array;
 typedef integer_array_t integer_array;
+typedef modelica_string_t modelica_string;
 
 typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;

@@ -105,6 +105,8 @@ with "util.rml"
 with "rtopts.rml"
 with "parse.rml"
 with "classloader.rml"
+with "mod.rml"
+with "prefix.rml"
 
 (** LS:
  ** - Expression elaboration
@@ -1032,7 +1034,7 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 
   rule	Absyn.cref_to_path fn => fn' &
 	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
-	generate_compiled_function(fn,e,prop,st) => st' &
+	generate_compiled_function(env,fn,e,prop,st) => st' &
 	Debug.fprintln ("sei", "elab_call succeeded")
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st')
@@ -1317,25 +1319,28 @@ end
  ** we need to reimplement without using lookup functions, since we can not build
  ** correct env for packages containing functions.   
    *)
-relation generate_compiled_function: (Absyn.ComponentRef, Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option) =>
+relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option) =>
 	(Interactive.InteractiveSymbolTable option) =
-  axiom generate_compiled_function(_,_,_,NONE) => NONE
-	
-  rule	make_env_from_cf(cf) => env &
-	Absyn.cref_to_path(fn) => pfn &
-	Lookup.lookup_functions_in_env(env,pfn) => _::_ 
-	-----------------------------------------------
-	generate_compiled_function(fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cf))) => SOME(st)
 
-  rule	make_env_from_cf(cf) => env &
-	Absyn.cref_to_path(fn) => path &
-	Lookup.lookup_functions_in_env(env,path) => [] &
+  axiom generate_compiled_function(_,_,_,_,NONE) => NONE
+	
+  rule	Absyn.cref_to_path(fn) => pfn &
+	is_function_in_cflist (cflist,pfn) => true
+	-----------------------------------------------
+	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => SOME(st)
+
+  rule	Absyn.cref_to_path(fn) => path &
+	is_function_in_cflist (cflist, path) => false &
 	SCode.elaborate(p) => p' &
-	Inst.instantiate_implicit(p') => d &
+(*	Inst.instantiate_implicit(p') => d & *)
+	Lookup.lookup_class(Cache.CACHE([],[]), env, path, false) => (cache, cls, env') &
+	Inst.implicit_function_instantiation(cache, env', Mod.NOMOD,
+					     Prefix.NOPRE, [], cls, [], false)
+	  => (cache',env'',d) &
 	Print.clear_buf() &
-	ModUtil.string_prefix_params d => d' &
+	ModUtil.string_prefix_params DAE.DAE(d) => d' &
 	Codegen.generate_functions(d') &
-	Absyn.path_string path => pathstr &
+	ModUtil.path_string2 (path,"_") => pathstr &	
 	string_append(pathstr,".c") => filename &
 	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
 	Print.print_buf "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\\n\");\n      return 1;\n    }\n" &
@@ -1344,16 +1349,23 @@ relation generate_compiled_function: (Absyn.ComponentRef, Exp.Exp, Types.Propert
 	Print.write_buf(filename)& Print.clear_buf() &
 	System.compile_c_file(filename) 
 	-----------------------------------------------
-	generate_compiled_function(fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,a,b,c,cf))) => SOME(Interactive.SYMBOLTABLE(p,a,b,c,(path,t)::cf))
+	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,a,b,c,cflist))) => SOME(Interactive.SYMBOLTABLE(p,a,b,c,(path,t)::cflist))
+
 end
 
-relation make_env_from_cf: ((Absyn.Path * Types.Type) list) => Env.Env =
 
-  axiom	make_env_from_cf([]) => [Env.FRAME(NONE,[],false)]
+relation is_function_in_cflist : ((Absyn.Path * Types.Type) list, Absyn.Path) => bool =
 
-  rule	make_env_from_cf(rest) => [Env.FRAME(NONE,lst,encflag)]
-	-----------------------------------
-	make_env_from_cf((Absyn.IDENT(id),t)::rest) => [Env.FRAME(NONE,(id,Env.TYPE(t))::lst,encflag)]
+  axiom	is_function_in_cflist ([],_) => false
+
+  rule	ModUtil.path_equal (path1, path2) => true
+	-----------------------------------------
+	is_function_in_cflist ((path1, ty)::rest, path2) => true
+
+  rule	ModUtil.path_equal (path1, path2) => false &
+	is_function_in_cflist (rest, path2) => res
+	------------------------------------------
+	is_function_in_cflist ((path1, ty)::rest, path2) => res
 end
 
 (** relation: elab_call_args
@@ -1965,7 +1977,7 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	elab_cref(env, c) => fail
 
   rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n" & print "- elab_cref_failed , cr= " & Dump.print_component_ref_str c => s1 & print s1 & print " envpath =" &
-	Env.get_env_path env => SOME(envpath) & Absyn.path_string(envpath) => s2 & print s2 & print "\n"
+	Env.get_env_path env => SOME(envpath) & ModUtil.path_string(envpath) => s2 & print s2 & print "\n"
 	------------------------------
 	elab_cref (env,c) => fail
 
@@ -2366,7 +2378,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 
   rule	(* Call externally implemented functions. *) 
 	ceval_list(env,expl,true,st) => vallst &
-	Absyn.path_string(func) => funcstr &
+	ModUtil.path_string2(func,"_") => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
 	Values.write_to_file_as_args(vallst,infilename)  &
@@ -2623,7 +2635,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
 	Lookup.lookup_class(Cache.CACHE([],[]),env,path,true) => (_,c, env) &
 	Env.get_env_path(env) => SOME(p1) &
-	Absyn.path_string(p1) => s1 &
+	ModUtil.path_string(p1) => s1 &
 	Print.print_buf "Found class " &
 	Print.print_buf s1 & Print.print_buf "\n\n" &
 	Print.get_string() => str
@@ -2715,9 +2727,14 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 
   rule	SCode.elaborate(p) => p' &
 	component_ref_to_path(cr) => path &
-	Absyn.path_string path => pathstr &
-	Inst.instantiate_implicit(p') => d &
-	ModUtil.string_prefix_params d => d' &
+	ModUtil.path_string2 (path,"_") => pathstr &
+ (*	Inst.instantiate_implicit(p') => d & *)
+	Lookup.lookup_class(Cache.CACHE([],[]), env, path, false) => (cache, cls, env') &
+	Inst.implicit_function_instantiation(cache, env', Mod.NOMOD,
+					     Prefix.NOPRE, [], cls, [], false)
+	  => (cache',env'',d) &
+
+	ModUtil.string_prefix_params DAE.DAE(d) => d' &
 	Print.clear_buf &
 	Codegen.generate_functions(d') &
 	string_append(pathstr,".c") => filename &
@@ -2728,7 +2745,10 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Print.write_buf(filename)&
 	System.compile_c_file(filename) 
 	--------------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("generateCode"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("generateCode"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true), st)
+	(* add path to symboltable for compiled functions
+	 Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
+	 but where to get t? *)
 
   rule	System.modelicapath => mp &	
 	component_ref_to_path(cr) => path &
@@ -2740,7 +2760,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
 	
   rule	component_ref_to_path(cr) => path &
-	Absyn.path_string(path) => pathstr &
+	ModUtil.path_string(path) => pathstr &
 	Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str &
 	Print.print_error_buf str
 	------------------------------

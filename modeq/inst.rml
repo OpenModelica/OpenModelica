@@ -1943,7 +1943,7 @@ Removed *)
 	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
 	  => (cache', dae, csets', ty, st) &
 	Env.extend_frame_t(env, n, ty) => env' &
-	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath
+        package_prefix (env, Absyn.IDENT(n)) => fpath
 	--------------------------------------
 	implicit_instantiation(cache, env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
@@ -1956,7 +1956,7 @@ Removed *)
 	  => (cache', dae, csets', ty, st) &
 	
 	Env.extend_frame_t(env, n, ty) => env'	&
-	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
+        package_prefix (env, Absyn.IDENT(n)) => fpath &
         let prot = false & (* how to get this? *)
 	inst_classdef (cache', env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
 		       prot, inst_dims, true, false) 
@@ -1987,6 +1987,21 @@ Removed *)
 	implicit_instantiation(_,_,_,_,_,_,_,_) => fail
 end
 
+
+relation package_prefix : (Env.Env, Absyn.Path) => Absyn.Path =
+
+  rule	Env.get_env_path env => NONE
+	----------------------------
+	package_prefix (env,path) => path
+
+  rule	Env.get_env_path env => SOME(path') &
+	Absyn.join_paths(path',path) => path''
+	--------------------------------------
+	package_prefix (env,path) => path''
+
+end
+
+
 relation implicit_function_instantiation : (Cache.Cache, Env.Env, Mod.Mod, Prefix.Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Cache.Cache, Env.Env, DAE.Element list) =
@@ -1995,7 +2010,7 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
 	  => (cache', dae, csets', ty, st) &
 	Env.extend_frame_t(env, n, ty) => env' &
-	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath
+        package_prefix (env, Absyn.IDENT(n)) => fpath
 	--------------------------------------
 	implicit_function_instantiation(cache, env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
@@ -2008,7 +2023,7 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 	  => (cache', dae, csets', ty, st) &
 	
 	Env.extend_frame_t(env, n, ty) => env'	&
-	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
+        package_prefix (env, Absyn.IDENT(n)) => fpath &
         let prot = false & (* how to get this? *)
 	inst_classdef (cache', env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
 		       prot, inst_dims, true, false) 
@@ -2257,11 +2272,13 @@ end
 
 relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE.ExtArg =
 
-  rule	Lookup.lookup_var_local (env, cref) => (attr, ty, bnd)
+  rule	Lookup.lookup_var_local (env, cref) => (attr, ty, bnd) &
+	Print.print_buf "inst_ext_get_fargs_single lookup_var_local success\n"
 	--------------------------------------------------------
 	inst_ext_get_fargs_single (env, Exp.CREF(cref,crty), Types.PROP(ty,cnst)) => DAE.EXTARG(cref,attr,ty)
 
   rule	not Lookup.lookup_var_local (env, cref) => (attr, ty, bnd) &
+	Print.print_buf "inst_ext_get_fargs_single lookup_var_local failed\n" &
 	Exp.print_component_ref_str cref => crefstr &
 	Util.string_append_list (["#-- Unknown component ", crefstr, " in external clause\n"]) => str &
 	Print.print_buf str
@@ -2273,6 +2290,8 @@ relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE
 	inst_ext_get_fargs_single (env, Exp.SIZE(Exp.CREF(cref,crty), dim), Types.PROP(ty,cnst)) 
 	  => DAE.EXTARGSIZE(cref,attr,varty,dim)
 				   
+  axiom	inst_ext_get_fargs_single (env, exp, Types.PROP(ty,cnst)) => DAE.EXTARGEXP(exp,ty)
+
   rule	Print.print_buf "#-- inst_ext_get_fargs_single failed\n" &
 	Exp.print_exp_str exp => estr & 
 	Print.print_buf estr &

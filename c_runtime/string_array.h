@@ -23,13 +23,13 @@
 #ifndef STRING_ARRAY_H_
 #define STRING_ARRAY_H_
 
-typedef char* modelica_string;
+#include "modelica_string.h"
 
 struct string_array_s
 {
   int ndims;
   int* dim_size;
-  modelica_string* data;
+  modelica_string_t* data;
 };
 
 typedef struct string_array_s string_array_t;

@@ -30,7 +30,8 @@ state current_state = {
   0,/*string buffer*/
   0,/*boolean buffer*/
   0,/* size buffer */
-  0 /* index buffer */
+  0,/* index buffer */
+  0 /* char buffer */
 };
 
 real real_buffer[NR_REAL_ELEMENTS];
@@ -39,6 +40,7 @@ string string_buffer[NR_STRING_ELEMENTS];
 boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
 integer size_buffer[NR_SIZE_ELEMENTS];
 int* index_buffer[NR_INDEX_ELEMENTS];
+char char_buffer[NR_CHAR_ELEMENTS];
 
 
 state get_memory_state()
@@ -53,6 +55,7 @@ void print_current_state()
   printf("integer index: %d\n",current_state.integer_buffer_ptr);
   printf("string index: %d\n",current_state.string_buffer_ptr);
   printf("boolean: %d\n",current_state.boolean_buffer_ptr);
+  printf("char: %d\n",current_state.char_buffer_ptr);
 }
 
 void print_state(state s)
@@ -62,6 +65,7 @@ void print_state(state s)
   printf("integer index: %d\n",s.integer_buffer_ptr);
   printf("string index: %d\n",s.string_buffer_ptr);
   printf("boolean: %d\n",s.boolean_buffer_ptr);
+  printf("char: %d\n",s.char_buffer_ptr);
 }
 
 void restore_memory_state(state restore_state)
@@ -75,6 +79,7 @@ void clear_current_state()
   current_state.integer_buffer_ptr = 0;
   current_state.string_buffer_ptr = 0;
   current_state.boolean_buffer_ptr = 0;
+  current_state.char_buffer_ptr = 0;
 }
 
 /* allocates n reals in the real_buffer */
@@ -168,6 +173,20 @@ int** index_alloc(int n)
   /*  return start;*/
 }
 
+char* char_alloc(int n)
+{
+  _index_t start;
+  
+  assert(n>=0);
+  assert(n + current_state.char_buffer_ptr < NR_CHAR_ELEMENTS);
+ 
+  start = current_state.char_buffer_ptr;
+  current_state.char_buffer_ptr += n;
+  return char_buffer+start;
+
+  /*  return start;*/
+}
+
 _index_t real_free(int n)
 {
   assert(n>=0);
@@ -220,4 +239,13 @@ _index_t index_free(int n)
   
   current_state.index_buffer_ptr -= n;
   return current_state.index_buffer_ptr; 
+}
+
+_index_t char_free(int n)
+{
+  assert(n>=0);
+  assert(current_state.char_buffer_ptr-n>=0);
+  
+  current_state.char_buffer_ptr -= n;
+  return current_state.char_buffer_ptr; 
 }
