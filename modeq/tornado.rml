@@ -469,6 +469,13 @@ with "simcodegen.rml"
          --------------------------------------
          get_direction_for_variable(name,class_name,dae) => ("state","",
                                                              unit,default_value',lower_bound,upper_bound,Desc)
+  rule  find_dae_var(name,class_name,dae)
+          => (var as DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc) &
+         get_start_value(start) => default_value'
+         --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("state","",
+                                                             unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
           => var & DAELow.dump_vars([var]) &
@@ -1291,6 +1298,8 @@ relation generate_constructor_inputvars:(DAELow.DAELow) => (string, string) =
 end
 
 relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, int) = 
+
+        
         
   rule (* special case for when called second time and first time gave 
         list length zero *)
@@ -1306,14 +1315,15 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
          Values.val_string value => val_str &
+        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetInputVar(",
-                                 is,
+                                 var_flat_index_str,
                                  ", new CInputVar(L\"",
                                  crs,"\", L\"\",",
                                  val_str,"));"]) => r1
         
         ---------------------------------------------
-        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,SOME(value),_,start,_,_,_)::rest,i) 
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,SOME(value),_,start,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
 
   rule  int_add(i,1) => i' & int_string(i) => is &
@@ -1322,14 +1332,15 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
         get_start_value(start) => startstr &
+        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetInputVar(",
-                                 is,
+                                 var_flat_index_str,
                                  ", new CInputVar(L\"",
                                  crs,"\", L\"\",",
                                  startstr,"));"]) => r1
         
         ---------------------------------------------
-        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
 	      
   rule  int_add(i,1) => i' & int_string(i) => is &
@@ -1337,14 +1348,15 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
         generate_constructor_inputvars2(rest,i') => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
+        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetInputVar(",
-                                 is,
+                                 var_flat_index_str,
                                  ", new CInputVar(L\"",
                                  crs,"\", L\"\",",
                                  "0.00000","));"]) => r1
         
         ---------------------------------------------
-        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,_,_,_,_)::rest,i) 
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,_,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
  	    
 	      
@@ -1414,12 +1426,13 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
         generate_constructor_algvars2(rest,i') => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
+        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetAlgStateVar(",
-                                 is,
+                                 var_flat_index_str,
                                  ", new CAlgStateVar(L\"",
                                  crs,"\", L\"\",0));"]) => r1 
         ---------------------------------------------
-        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
           
           (* this rule take care of DUMMY_DER variables *)
@@ -1428,12 +1441,13 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
         generate_constructor_algvars2(rest,i') => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
+        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetAlgStateVar(",
                                  is,
                                  ", new CAlgStateVar(L\"",
                                  crs,"\", L\"\",0));"]) => r1 
         ---------------------------------------------
-        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
 	      
   rule  generate_constructor_algvars2(rest,i) => (res,no_of_vars) &
@@ -1510,12 +1524,13 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
         generate_constructor_outputvars2(rest,i') => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetOutputVar(",
-                                 is,
+                                 var_flat_index_str,
                                  ", new COutputVar(L\"",
                                  crs,"\", L\"\",0));"]) => r1 
         ---------------------------------------------
-        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
 
 	      (*   rule  generate_constructor_outputvars2(rest,i) => (res,no_of_vars) & *)
@@ -1617,141 +1632,128 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
          (*Exp.print_exp_str start => startstr &*)
          (*          SimCodegen.print_exp_cpp_str(start) => startstr & *)
          get_start_value(start) => startstr &
-         Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",",
+         get_var_index_str(cr,class_paths) => var_flat_index_str &
+         Util.string_append_list(["  SetDerStateVar(",var_flat_index_str,", new CDerStateVar(L\"",crs,"\", L\"\",",
                                   startstr,"));"]) 
           => r1 
            --------------------
-         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)::rest,
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,class_paths)::rest,
                                          i,
                                          var_values) 
           => (r1::res,no_of_vars',no_of_var_values')
 
-           (*   rule (\* If no start value is present*\) *)
-            (*          int_add(i,1) => i' & int_string(i) => is & *)
-            (*          int_add(j,1) => var_values' &  *)
-            (*          is_var_on_top_model(cr) => true & *)
-            (*          generate_constructor_statevars2(rest,i',var_values') => (res,no_of_vars,no_of_var_values) & *)
-            (*          int_add(no_of_vars,1) => no_of_vars' & *)
-            (*          int_add(no_of_var_values,1) => no_of_var_values' & *)
-            (*          SimCodegen.cref_modelica_str(cr) => crs &  *)
-            
-            (*          Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0));"])  *)
-            (*           => r1  *)
-            (*            -------------------- *)
-            (*          generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest, *)
-             (*                                          i, *)
-             (*                                          j)  *)
-            (*           => (r1::res, no_of_vars',no_of_var_values') *)
+           
+  rule  generate_constructor_statevars2(rest,i,j) => (res,no_of_vars,no_of_var_values) &
+         int_add(no_of_var_values,1) => no_of_var_values'
+         ---------------------------------------------
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)::rest,
+                                         i,
+                                         j)
+          => (res,no_of_vars,no_of_var_values')
+           
 
-            rule  generate_constructor_statevars2(rest,i,j) => (res,no_of_vars,no_of_var_values) &
-            int_add(no_of_var_values,1) => no_of_var_values'
-            ---------------------------------------------
-            generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)::rest,
-                                            i,
-                                            j)
-            => (res,no_of_vars,no_of_var_values')
-            
+  rule generate_constructor_statevars2(rest,i,j) => (res,no_of_vars,no_of_var_values)
+         -----------------------------------------------
+         generate_constructor_statevars2(_::rest,i,j) 
+          => (res,no_of_vars,no_of_var_values)
 
-            rule generate_constructor_statevars2(rest,i,j) => (res,no_of_vars,no_of_var_values)
-            -----------------------------------------------
-            generate_constructor_statevars2(_::rest,i,j) 
-            => (res,no_of_vars,no_of_var_values)
-
-            rule print "-generate_constructor_statevars2 failed\n" 
-            ----------------------
-            generate_constructor_statevars2(_,_,_) => fail
-            end
+  rule print "-generate_constructor_statevars2 failed\n" 
+         ----------------------
+         generate_constructor_statevars2(_,_,_) => fail
+ end
 
 
 
-            (* relation generate_constructor_parameters
-             ** Generates the outputvars methodcalls in the constructor.
-             ** The variables are indexed in the order they appear in the DAELow representation.
-             ** The first output variable has the index 0. 
-             *)
-            relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) = 
-            
-            rule  DAELow.vararray_list(vararr) => vars &
-            DAELow.vararray_list(knvararr) => knvars &
-            list_append(vars,knvars) => all_vars &
-            generate_constructor_parameters2(all_vars,0) => (lst,no_of_vars) &
+(* relation generate_constructor_parameters
+ ** Generates the outputvars methodcalls in the constructor.
+ ** The variables are indexed in the order they appear in the DAELow representation.
+ ** The first output variable has the index 0. 
+ *)
+relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) = 
+        
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
+        list_append(vars,knvars) => all_vars &
+        generate_constructor_parameters2(all_vars,0) => (lst,no_of_vars) &
 
-            no_of_vars = 0 
-            -------------------------------------------
-            generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
-                                                          DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
-            => ("","")
+        no_of_vars = 0 
+        -------------------------------------------
+        generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
+                                                      DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
+          => ("","")
 
-            rule  DAELow.vararray_list(vararr) => vars &
-            DAELow.vararray_list(knvararr) => knvars &
-            list_append(vars,knvars) => all_vars &
-            generate_constructor_parameters2(all_vars,0) => (lst,no_of_vars) &
-            
-	        Util.string_delimit_list(lst,"\n") => res &
-            
-	        int_string no_of_vars => lenstr &
-            Util.string_append_list([""(*SetNoParams(",lenstr,");\n"*)]) => prefix1 &
-                    Util.string_append_list(["  SetNoParamValues(",lenstr,");\n"]) => prefix2 &
-                    Util.string_append_list([prefix1,res,"\n"]) => res' 
-                    -------------------------------------------
-                    generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
-                                                                  DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) => (res',prefix2)
-            end
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
+        list_append(vars,knvars) => all_vars &
+        generate_constructor_parameters2(all_vars,0) => (lst,no_of_vars) &
+        
+	    Util.string_delimit_list(lst,"\n") => res &
+        
+	    int_string no_of_vars => lenstr &
+        Util.string_append_list([""(*SetNoParams(",lenstr,");\n"*)]) => prefix1 &
+        Util.string_append_list(["  SetNoParamValues(",lenstr,");\n"]) => prefix2 &
+        Util.string_append_list([prefix1,res,"\n"]) => res' 
+        -------------------------------------------
+        generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
+                                                      DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) => (res',prefix2)
+end
 
-            relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list, int) = 
-                    
+relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list, int) = 
+        
   rule (* special case for when called second time and first time gave 
         list length zero *)
-                    generate_constructor_parameters2(lst,0) => (res,i)
-                    ----------------------------------------------
-                    generate_constructor_parameters2(lst,-1) => (res,i)
-                    
+        generate_constructor_parameters2(lst,0) => (res,i)
+        ----------------------------------------------
+        generate_constructor_parameters2(lst,-1) => (res,i)
+        
   axiom generate_constructor_parameters2([],_) => ([],0)
-                    
+        
 
   rule  int_add(i,1) => i' & int_string(i) => is &
-                    is_var_on_top_model(cr) => true &
+        is_var_on_top_model(cr) => true &
 
-                    generate_constructor_parameters2(rest,i') => (res,no_of_vars) &
-                    int_add(no_of_vars,1) => no_of_vars' &
-                    Values.val_string(v) => vs & 
-                    SimCodegen.cref_modelica_str(cr) => crs &
-                    Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",",vs, 
- 				                             ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
+        generate_constructor_parameters2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
+        Values.val_string(v) => vs & 
+        SimCodegen.cref_modelica_str(cr) => crs &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
+        Util.string_append_list(["  SetParam(",var_flat_index_str,", new CParam(L\"",crs,"\", L\"\",",vs, 
+ 				                 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
           => r1 
-                      ---------------------------------------------
-                    generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(v),_,start,_,_,_)::rest,i) 
+          ---------------------------------------------
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(v),_,start,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
 
 
   rule  int_add(i,1) => i' & int_string(i) => is &
-                    is_var_on_top_model(cr) => true &
+        is_var_on_top_model(cr) => true &
 
-                    generate_constructor_parameters2(rest,i') => (res,no_of_vars) &
-                    int_add(no_of_vars,1) => no_of_vars' &
-                    SimCodegen.cref_modelica_str(cr) => crs &
-                    Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",","0.0", 
- 				                             ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
+        generate_constructor_parameters2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
+        SimCodegen.cref_modelica_str(cr) => crs &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
+        Util.string_append_list(["  SetParam(",var_flat_index_str,", new CParam(L\"",crs,"\", L\"\",","0.0", 
+ 				                 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
           => r1  
-                      ---------------------------------------------
-                    generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,i) 
+          ---------------------------------------------
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,class_paths)::rest,i) 
           => (r1::res,no_of_vars')
 
   rule  generate_constructor_parameters2(rest,i) => (res,no_of_vars) &
-                    int_add(no_of_vars,1) => no_of_vars'
-                    ---------------------------------------------
-                    generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,i) 
+        int_add(no_of_vars,1) => no_of_vars'
+        ---------------------------------------------
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,i) 
           => (res,no_of_vars')
 
-	                  
+	      
   rule  generate_constructor_parameters2(rest,i) => (res,no_of_vars)
-                    -----------------------------------------------
-                    generate_constructor_parameters2(_::rest,i) 
+        -----------------------------------------------
+        generate_constructor_parameters2(_::rest,i) 
           => (res,no_of_vars)
-	                  
+	      
   rule  print "-generate_constructor_parameters2 failed\n" 
-                    ----------------------
-                    generate_constructor_parameters2(_,_) => fail
+        ----------------------
+        generate_constructor_parameters2(_,_) => fail
   end
 
   relation generate_var_defines: (DAELow.DAELow) => string =
@@ -1800,7 +1802,7 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
 	      => string list =
   axiom generate_var_defines2([]) => []
          
-  rule  get_flat_var_index_str(cr,class_paths) => index_str &
+  rule  get_var_index_str(cr,class_paths) => index_str &
          SimCodegen.cref_modelica_str(cr) => crs &
          Util.string_append_list(["#define ",crs," (m_DerStateVarValues[",index_str,"])\n",
                                   "#define _D_",crs," (m_Derivatives[",index_str,"])\n"]) => r1 &
@@ -1812,7 +1814,7 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
            
   rule  Exp.cref_str(cr) => modelicaStr &
          is_var_on_top_model(cr) => top_bool &
-	     get_flat_var_index_str(cr,class_paths) => index_str &
+	     get_var_index_str(cr,class_paths) => index_str &
          SimCodegen.cref_modelica_str(cr) => crs &
          generate_type_name(kind,dir,top_bool) => ret_str &
          Util.string_append_list(["#define ",crs," ( m_",ret_str,"[",index_str,"])\n"]) => r1 &
