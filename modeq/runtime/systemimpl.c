@@ -143,12 +143,21 @@ RML_BEGIN_LABEL(System__strtok)
 
   void * res = (void*)mk_nil();
   s=strtok(str,delimit);
-  if (s == NULL) { rmlA0=res; RML_TAILCALLK(rmlFC); }
+  if (s == NULL) 
+  {
+	  /* adrpo added 2004-10-27 */
+	  free(str);	  
+	  rmlA0=res; RML_TAILCALLK(rmlFC); 
+  }
   res = (void*)mk_cons(mk_scon(s),res);
-  while (s=strtok(NULL,delimit)) {
+  while (s=strtok(NULL,delimit)) 
+  {
     res = (void*)mk_cons(mk_scon(s),res);
   }
   rmlA0=res;
+
+  /* adrpo added 2004-10-27 */
+  free(str);	  
 
   rml_prim_once(RML__list_5freverse);
   
@@ -160,10 +169,15 @@ RML_BEGIN_LABEL(System__toupper)
 {
   char *str = strdup(RML_STRINGDATA(rmlA0));
   char *res=str;
-  while (*str!= '\0') {
+  while (*str!= '\0') 
+  {
     *str=toupper(*str++);
   }
   rmlA0 = (void*) mk_scon(res);
+
+  /* adrpo added 2004-10-29 */
+  free(res);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -279,7 +293,8 @@ RML_BEGIN_LABEL(System__read_5ffile)
   struct stat statstr;
   res = stat(filename, &statstr);
 
-  if(res!=0){
+  if(res!=0)
+  {
     rmlA0 = (void*) mk_scon("No such file");
     RML_TAILCALLK(rmlSC);
   }
@@ -287,13 +302,20 @@ RML_BEGIN_LABEL(System__read_5ffile)
   file = fopen(filename,"rb");
   buf = malloc(statstr.st_size+1);
  
-  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size){
+  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
+  {
+	/* adrpo added 2004-10-26 */
+	free(buf);
     rmlA0 = (void*) mk_scon("Failed while reading file");
     RML_TAILCALLK(rmlSC);
   }
   buf[statstr.st_size] = '\0';
   fclose(file);
   rmlA0 = (void*) mk_scon(buf);
+
+  /* adrpo added 2004-10-26 */
+  free(buf);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -305,6 +327,7 @@ RML_BEGIN_LABEL(System__modelicapath)
       RML_TAILCALLK(rmlFC);
   
   rmlA0 = (void*) mk_scon(path);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -313,10 +336,12 @@ RML_BEGIN_LABEL(System__read_5fenv)
 {
   char* envname = RML_STRINGDATA(rmlA0);
   char *envvalue = getenv(envname);
-  if (envvalue == NULL) {
+  if (envvalue == NULL) 
+  {
     RML_TAILCALLK(rmlFC);
   }
   rmlA0 = (void*) mk_scon(envvalue);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -352,11 +377,14 @@ RML_BEGIN_LABEL(System__sub_5fdirectories)
   if (directory == NULL)
     RML_TAILCALLK(rmlFC);
   select_from_dir = directory;
-  count =
-    scandir(directory, &files, file_select_directories,NULL);
+  count = scandir(directory, &files, file_select_directories, NULL);
   res = (void*)mk_nil();
-  for (i=0; i<count; i++) {
+  for (i=0; i<count; i++) 
+  {
     res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
+    /* adrpo added 2004-10-28 */
+    //free(files[i]->d_name);
+	free(files[i]);
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
@@ -392,11 +420,14 @@ RML_BEGIN_LABEL(System__mo_5ffiles)
   if (directory == NULL)
     RML_TAILCALLK(rmlFC);
   select_from_dir = directory;
-  count =
-    scandir(directory, &files, file_select_mo,NULL);
+  count = scandir(directory, &files, file_select_mo, NULL);
   res = (void*)mk_nil();
-  for (i=0; i<count; i++) {
+  for (i=0; i<count; i++) 
+  {
     res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
+    /* adrpo added 2004-10-28 */
+    //free(files[i]->d_name);
+	free(files[i]);
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
