@@ -3,8 +3,9 @@
 SHELL	  = /bin/sh
 LATEX	  = latex
 MAKEINDEX = makeindex
+BIBTEX    = bibtex
 RMLDOC    = pike ../tools/rmldoc
-PIC       = pic
+PIC       = gpic
 
 SOURCES = exp.tex \
 	dae.tex \
@@ -20,6 +21,7 @@ SOURCES = exp.tex \
 	builtin.tex \
 	connect.tex \
 	classinf.tex \
+	values.tex \
 	staticexp.tex \
 	inst.tex \
 	main.tex \
@@ -45,6 +47,9 @@ report.ps: report.dvi
 
 index report.ind:
 	$(MAKEINDEX) report.idx
+
+report.bbl: report.bib
+	$(BIBTEX) report
 
 clean:
 	$(RM) $(SOURCES) $(TEXJUNK)
