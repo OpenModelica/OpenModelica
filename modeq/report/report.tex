@@ -6,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage{verbatim}
 %\usepackage{boxedminipage}
+%\usepackage{lscape}
 
 \author{David Kågedal}
 \title{Blahonga Blahonga}
@@ -16,6 +17,7 @@
 \newcommand{\firstref}[1]{\textit{#1}}
 \newcommand{\note}[1]{[\textsc{#1}]}
 \newcommand{\fixme}[1]{\mbox{}\marginpar{$\blacktriangleleft$}\note{#1}}
+\newcommand{\unfinished}{\fixme{\ldots}}
 
 \newtheorem{Def}{Definition}[chapter]
 
@@ -24,14 +26,20 @@
 \makeatletter
 
 \newcommand{\sourcefile}[2]{%
-  \section{File \code{#1}}
+  \clearpage
+  \section{File \code{#1.rml}}
   \label{src:#1}
   \addcontentsline{stc}{sourcefile}{%
-    \protect\numberline{\thesection}\protect\makebox[8em][l]{\code{#1}}#2}}
+    \protect\numberline{\thesection}\protect\makebox[8em][l]{\code{#1.rml}}#2}}
 \newcommand{\listofsources}{\@starttoc{stc}}
 \newcommand{\l@sourcefile}{%
   \@dottedtocline{1}{2em}{3em}%
   }
+
+% Some magic from Tommy Pettersson
+\def\dedu#1#2{{\setbox0=\hbox{$#1$}\dimen0=\wd0\setbox1=\hbox
+    to\dimen0{\hss$#2$\hss}\vbox{\box0\vspace{1mm}\hrule
+      width\dimen0\vspace{1mm}\box1}}}
 
 % See the verbatim package for info about this
 \def\boxedverbatim{\begingroup%
@@ -89,18 +97,297 @@ translator.
 \section{Introduction}
 \label{sec:intro}
 
+This chapter tries to give some background information outlining why
+this work was done, and what the basic concepts used are.
 
 \section{Overview of formal semantics}
 \label{sec:semoverview}
 
+Any new programming language needs to be described in one way or
+another.  The syntax of the language is conveniently described by a
+grammar in a common format, such as BNF.  However, when it comes to
+the semantics of a programming language, things are not so
+straightforward.
+
+The semantics of the language describes what any particular program
+written in the language ``means'', i.i. what should happen when the
+program is executed, or evaluated in some form.
+
+Most programming language semantic definitions are given by a standard
+text written in English which tries to give a complete an unambiguous
+specification of the language.  Unfortunately, this is often not
+enough.  Natural language is inherently not very exact, and it is hard
+to make sure that all special cases are covered.  One of the most
+important requirements of a language specification is that two
+different language implementors should be able to read thte
+specification and make implementations that interpret the
+specification in the same way.  This implies that the specification
+must be exact and unambiguous.
+
+For this reason formalisms for writing formal specifications of
+languages have been invented\cite{pagan}.  These formalisms
+allow for a mathematical semantic description, which as a consequence
+is exact, unambiguous and easier to verify.
+
+Several approaches has been explored as to how the semantics should be
+described formally.  See \cite{pi} for a good introduction to the
+various approaches.
+
+
+\section{Natural semantics}
+\label{sec:natsem}
+
+The formatlism that RML is based on is called \firstref{Natural
+  Semantics}.  The ``natural'' in Natural semantics is intended to
+indicate its similarities to natural deduction, which is a way of
+constructing proofs in formal logic systems.  A specification in
+Natural semantics is usually given a proof-theoretic interpretation,
+meaning that it is used to construct proofs.
+
+There are many different presentations of Natural semantics in the
+litterature, and I choose to present the simple form that RML uses.
+
+Natural seamtics uses \firstref{inference rules} to describe the
+semantics.  These rules consist of a \firstref{consequence} and a
+number of \firstref{premises}.
+
+$$
+\dedu{ p_1 \Rightarrow q_1 \hspace{1em}
+       \ldots \hspace{1em} p_n \Rightarrow q_1 }
+     { p \Rightarrow q }
+$$
+
+The number of premises may be zero, in which case we say that the rule
+is an \firstref{axiom}.
+
+$$
+p \Rightarrow q
+$$
+
+\subsection{A simple expression evaluator}
+
+The proof construction mechanism is described by a small example,
+describing a very basic expression language, with numbers and addition
+and multiplication operators.  First, we define the abstract syntax of
+the expression language:
+
+\begin{gather}
+  n \in \text{Int} \\
+  e \in \text{Exp} ::= n \;|\; e + e \;|\; e \cdot e
+\end{gather}
+
+Then we give the rules for the evaluation of expressions to integer
+values.
+
+\begin{gather}
+  \label{eq:int}
+  n => n \\
+  \label{eq:add}
+  \dedu{ e_1 \Rightarrow n_1 \hspace{1em}
+         e_2 \Rightarrow n_2 \hspace{1em}
+         n = n_1 + n_2 }
+       { e_1 + e_2 \Rightarrow n } \\
+  \label{eq:mul}
+  \dedu{ e_1 \Rightarrow n_1 \hspace{1em}
+         e_2 \Rightarrow n_2 \hspace{1em}
+         n = n_1 \cdot n_2 }
+       { e_1 \cdot e_2 \Rightarrow n }
+\end{gather}
+
+If we want to prove, using these rules, that the expression $3 \cdot
+(4 + 5)$ has a value, we do this by finding a rule, whose consequence
+can be instantiated to match this expression.  Such an instance is
+called a \firstref{sequent}.
+
+The only rule that matches is rule \ref{eq:mul}, leading to the
+following rule instance, where $3$ is substituted for $e_1$ and $(4 +
+5)$ is for $e_2$:
+
+$$
+  \dedu{ 3 \Rightarrow_2 n_1 \hspace{1em}
+         (4 + 5) \Rightarrow_3 n_2 \hspace{1em}
+         n = n_1 \cdot n_2 }
+       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+$$
+
+This is not a complete proof.  We need to prove the sequent $3
+\Rightarrow n_1$, and the only rule matching that is rule
+\ref{eq:int}, leading to the following proof tree where $3$ is
+substituted for $n_3$:
+
+$$
+  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
+         (4 + 5) \Rightarrow_3 n_2 \hspace{1em}
+         n = 3 \cdot n_2 }
+       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+$$
+
+The sequent labeled with a $3$ also need to be proved, and this can be
+done by instantiating rule \ref{eq:add}.
+
+$$
+  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
+         \dedu{ 4 \Rightarrow_4 n_3 \hspace{1em}
+                5 \Rightarrow_5 n_4 \hspace{1em}
+                n_2 = n_3 + n_4 }
+              { 4 + 5 \Rightarrow_3 n_2} \hspace{1em}
+                n = 3 \cdot n_2 }
+       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+$$
+
+Instantiating rule \ref{eq:int} twice leads to the following proof
+tree:
+
+$$
+  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
+         \dedu{ 4 \Rightarrow_4 4 \hspace{1em}
+                5 \Rightarrow_5 5 \hspace{1em}
+                n_2 = 4 + 5 }
+              { 4 + 5 \Rightarrow_3 n_2} \hspace{1em}
+                n = 3 \cdot n_2 }
+       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+$$
+
+Now we can substitute $9$ for $n_2$, and consequently $27$ for $n$,
+leading to the complete proof tree.
+
+$$
+  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
+         \dedu{ 4 \Rightarrow_4 4 \hspace{1em}
+                5 \Rightarrow_5 5 \hspace{1em}
+                9 = 4 + 5 }
+              { 4 + 5 \Rightarrow_3 9} \hspace{1em}
+                27 = 3 \cdot 9 }
+       { 3 \cdot (4 + 5) \Rightarrow_1 27 }
+$$
+
+Not only does this prove that the initial expression $3 \cdot (4+5)$
+has a value, it also computes the value $27$.
 
 \section{RML}
 \label{sec:rml}
 
+One of the nice properties of Natural semantics is that it lends
+itself to efficient implementation in a computer.  The semantic
+specification can be regarded as an operational description of how a
+language is interpreted or translated.
+
+This is what RML is all about.  The RML language provides a simple
+text syntax for specifying rules and data types.  This specification
+can then be compiled into an executable that can be used to interpret
+or translate any file in the described language.
+
+
+\subsection{RML syntax}
+\label{sec:rmlsyn}
+
+The RML syntax borrows elements from languages like SML\fixme{ref} to
+introduce a strict type system and a module system.  The sytax for
+rules looks like the normal Natural semantics rule layout, adjusted
+for ASCII text.
+
+The rules are grouped in \firstref{relations}.  A relation is a set of
+rules that have the same \firstref{signature}, meaning that they
+perform the same operation, but are applicable at different times.
+
+The type system includes basic types, such as \code{int}, \code{real}
+and \code{bool}.  User-defined algebraic types may be declared in ab
+SML-like syntax, as in the following example that declares the
+expression type used in the previous section.
+
+\begin{boxedverbatim}
+  datatype Exp = INT of int | ADD of Exp * Exp | MUL of Exp * Exp
+\end{boxedverbatim}
+
+With this type declaration, the expression $1*(2+3)$ is represented as
+the RML value \codebox{MUL(INT(1),ADD(NUM(2),NUM(3)))}.
+
+The signature of a relation can also be described as an RML type,
+using the \code{=>} type constructor.  A relation has a name, and each
+rule has a number of input arguments on the left side of the arrow,
+and a number of output arguments on the right side.  The types of
+these arguments form the signature.  The rules in the example above
+can be grouped in a relation that we call \code{eval}, with the
+following signature:
+
+\begin{boxedverbatim}
+  relation eval : Exp => int
+\end{boxedverbatim}
+
+The rules are placed inside the relation definition.  It uses the
+built-in relations \code{int\_add} and \code{int\_mul} that perform
+integer addition an multiplication, respectively.
+
+\begin{boxedverbatim}
+  relation eval : Exp => int =
+
+    axiom eval NUM(i) => i
+
+    rule  eval e1 => n1  &  eval e2 => n2  &  int_add(n1,n2) => n
+          -------------------------------------------------------
+          eval ADD(e1,e2) => n
+
+    rule  eval e1 => n1  &  eval e2 => n2  &  int_mul(n1,n2) => n
+          -------------------------------------------------------
+          eval MUL(e1,e2) => n
+
+  end
+\end{boxedverbatim}
 
 \section{Modelica}
 \label{sec:modelicabg}
 
+Modelica\cite{modelicawww} is an object-oriented language for modeling
+of physical systems for the purpose of efficient simulation.  The
+language unifies and generalizes previous object-oriented modeling
+languages designed by different companies and research institutions.
+
+Compared with the widespread simulation languages previously
+available, this language offers three important adnvaces:
+
+\begin{itemize}
+\item Non-causal modeling based on differential and algebraic
+  equations.
+
+\item Multidomain modeling capability, i.e. it is possible to combine
+  electrical, mechanical, thermodynamic, hydraulic etc. model
+  components within the same application model
+  
+\item A general type systen that unifies object-orientation, multiple
+  inheritance, and templates within a single class construct.
+\end{itemize}
+
+A Modelica model is defined in terms of classes containing equations
+and definitions.  The semantics of such a model is defined via
+tranlation of classes, instances, connections and functions into a
+flat set of constants, variables and equations.  Equations are sorted
+and converted to assignment statements when possible.  Strongly
+connected sets of equations are solved by using a symbolic or numeric
+solver.
+
+
+\section{The Modelica design group}
+\label{sec:designgroup}
+
+The Modelica language is designed by a group of people.  The work on
+designing a new modeling language began in 1996 when a number of
+experts formed a group to design a new multi-paradigm modeling
+language for hybrid systems.  Since the start, the group has expanded
+to include many new members from around Europe.
+
+A first version of the Modelica language definition was finalized in
+September 1997, and there was much rejoycing.  But no complete
+implementation existed yet, and there was actually a lot more work
+needed to make the specification comprehensive enough to be able to
+build a implementation for it.
+
+The work on the RML specification for Modelica began in November 1997.
+
+
+\section{PELAB}
+\label{sec:pela}
+
+\unfinished
 
 \chapter{Goals, motivation and stuff}
 \label{cha:goals}
@@ -113,13 +400,22 @@ translator.
 \section{Compiling RML}
 \label{sec:rmlc}
 
+The RML compiler is currently at version 2.0.  When the work on the
+Modeclia semantics began, the RML version was at 1.5.  The new
+compiler provided much improved error messages and freedom in writing
+source files.
 
 \section{Parser}
 \label{sec:parser}
 
 The Modelica parser was generated by the PCCTS\fixme{ref} compiler
 generation system.  It generates a parser in C, which is linked with
-the RML object files.
+the RML object files.  The glue between the languages is a special RML
+relation \code{parse}, which is implemented in C, rather than RML.
+
+The parser only builds an abstract syntax tree, and leaves the rest of
+the transformation logic to the RML code.  Therefore, the parser
+itself is not further described in this report.
 
 \section{The report}
 \label{sec:report}
@@ -129,8 +425,8 @@ This report was writting using the \LaTeX{} text formatting system.
 To produce the annotated semantics in chapter \ref{cha:formsem} a
 small program was written to convert the RML source files with
 comments to \LaTeX{} source with the comments converted to ordinary
-text. This program is a quick'n'dirty Pike\fixme{ref} hack, and is
-provided in appendix\fixme{ref}.
+text. This program is a quick'n'dirty Pike\cite{pike} hack, and is
+provided in appendix \ref{cha:rmldoc}
 
 
 \chapter{System overview}
@@ -159,32 +455,9 @@ of the source file.  This has several disadvantages when it comes to
 translating the program, and especially if the translation rules
 should be easy to read for a human.  For this reason a preparatory
 translation pass is introduced which translates the AST into an
-intermediate form, called SCode.  Besides some minor simplifications
-the SCode structure differs from the AST in the following respects:
-\fixme{Move this to design chapter}
-
-\begin{description}
-\item[All components are described separately]
-  In the source and in
-  the AST several components in a class definition can be declared at
-  once, as in \codebox{Real x, y[17];}.  In the SCode this is
-  represented as two unrelated declarations, as if it had been written
-  \codebox{Real x; Real y[17];}.
-
-\item[Class declaration sections]
-  In a Modelica class declaration the \code{public}, \code{protected},
-  \code{equation} and \code{algorithm} sections may be included in any
-  number and in any order, with an implicit \code{public} section
-  first.  In the SCode these sections are collected so that all
-  \code{public} and \code{protected} sections are combined into one
-  section, while keeping the order of the elements.  The information
-  about which elements were in a \code{protected} section is stored
-  with the element itself.
-
-\item[Modifications]
-  Modifications are stored using the datatypes in the \code{Mod}
-  module.
-\end{description}
+intermediate form, called SCode.  This intermediate form contains no
+more information than the abstract syntax.  It merey restructures the
+tree representation in it.
 
 One might have thought that more work could be done at this stage,
 like analyzing expression types and resolving names.  But due to the
@@ -206,6 +479,10 @@ files simply contain declarations of models and other kinds of
 classes, there is a convention that the last class, which should be a
 model, is instantiated as the top-level model.
 
+Many different things, such as expression analysis, equation expansion
+and connection equation generation takes place during the
+instantiation step.
+
 \section{Output of equations}
 \label{sec:output}
 
@@ -213,8 +490,6 @@ As the last stage of the translation the internal representation of
 the hybrid DAEs are written out in the format described in chapter
 \ref{cha:target}.
 
-
-\fixme{Parameters}
 
 \chapter{Informal semantics}
 \label{cha:semantics}
@@ -236,6 +511,61 @@ more comprehensive informal description of the language semantics.  It
 is indended to help the understanding of the formal semantics in
 chapter \ref{cha:formsem}.
 
+
+\section{Terminology}
+\label{sec:terminology}
+
+There has been some confusion about the terminology regarding Modelica
+language elements, and currently the language definition is not very
+strict on this point.  This will hopefully improve, but for now it is
+necessary to include a short list of terms here to specify what they
+mean.
+
+\begin{Def}[Element]
+  The term \firstref{element} corresponds closely to the non-terminal
+  \texttt{element} in the grammar in the Modelica specification, which
+  is a part of a class declaration.  It can be either a class
+  definition, a component declaration or an extends clause, that
+  appears inside a class definition.
+\end{Def}
+
+\begin{Def}[Instantiation]
+  The word \firstref{instantiate} is used in many language
+  descriptions, with slightly different meaning.  I choose to use a
+  definition that actually differs from the one used in the Modelica
+  specification, but conforms more closely to what I consider normal
+  object-oriented use.
+  
+  Instantiating a class means creating an object (or class instance)
+  from the description contained in the class definition, possibly
+  modified by any given modifiers.  This instance is not a run-time
+  object that needs an allocated piece of memory, as in many dynamic
+  object-oriented languages, but the principle is the same.
+\end{Def}
+
+\begin{Def}[Component]
+  The term \firstref{Component} refers to an class instance.  Many
+  components are composed of several other components.  \fixme{But it
+  is also used to refer to component declarations in class
+  definitions, right?}
+\end{Def}
+
+\begin{Def}[Immediate Subcomponent]
+  If component $A$ is a structure which is composed from other
+  components, each of these components is an \firstref{immediate
+  subcomponent} of $A$.
+\end{Def}
+
+\begin{Def}[Subcomponent]
+  This is a recursive definition of \firstref{subcomponent}.  A
+  subcomponent of a component $A$ is either
+
+  \begin{enumerate}
+  \item An immediate subcomponent of $A$.
+  \item A subcomponent of an immediate subcomponent of $A$.
+  \end{enumerate}
+\end{Def}
+
 \section{Types}
 \label{sec:types}
 
@@ -245,12 +575,17 @@ chapter \ref{cha:formsem}.
 
 The type system is based on \firstref{classes}. A class is the basic
 unit of modelling. It is used to modularize the model description and
-to \ldots{}
+to \unfinished
+
+\begin{Def}[Type]
+  A type is a property of an instantiated component
+\end{Def}
 
 
 \subsection{Type equality and subtypes}
 \label{sec:typeq}
 
+\fixme{\ldots}
 
 \subsection{Class restrictions}
 \label{sec:clrestr}
@@ -494,17 +829,47 @@ last equation in the model \code{M} is shown in figure
 \section{Abstract syntax}
 \label{sec:absyndesign}
 
-The abstract syntax is closely modelled after the syntactic
-structure.  Unfortunately, this form is not very convenient for
-the semantic description of the instantiation process.  To address
-this problem, a second internal form, called the \firstref{exploded
-  form} \fixme{Hmmm} is introduced. The main difference are that each
-variable declaration is a separate entity with type, attributes and
-modifications, instead of declaring several variables at once. Another
-difference is that the class parts (\code{public}, \code{protected},
-\code{equation} and \code{algorithm}) are sorted and collected in a
-more structured fashion.
+The \firstref{abstract syntax} is closely modelled after the syntactic
+structure, and is defined in the file \filename{absyn.rml} (section
+\ref{src:absyn}).  It basically describes the structure of the source
+file, and defines the top-level data type \code{Program} as a list of
+classes.  For instance, the expression type only contains constructors
+for two-dimensional arrays (matrices), since they are the only arrays
+that can be written literally in Modelica.
 
+\section{SCode}
+\label{sec:scode}
+
+Unfortunately, this abstract syntax is not very convenient for the
+semantic description of the instantiation process.  To address this
+problem, a second internal form, called \firstref{SCode}, is
+introduced (section \ref{src:scode}).  Besides some minor
+simplifications the SCode structure differs from the abstract syntax
+in the following respects:
+
+\begin{description}
+\item[All components are described separately]
+  
+  In the source and in the abstract syntax several components in a
+  class definition can be declared at once, as in \codebox{Real x,
+    y[17];}.  In the SCode this is represented as two unrelated
+  declarations, as if it had been written \codebox{Real x; Real
+    y[17];}.
+
+\item[Class declaration sections]
+  In a Modelica class declaration the \code{public}, \code{protected},
+  \code{equation} and \code{algorithm} sections may be included in any
+  number and in any order, with an implicit \code{public} section
+  first.  In the SCode these sections are collected so that all
+  \code{public} and \code{protected} sections are combined into one
+  section, while keeping the order of the elements.  The information
+  about which elements were in a \code{protected} section is stored
+  with the element itself.
+
+\item[Modifications]
+  Modifications are stored using the datatypes in the \code{Mod}
+  module (section \ref{src:mod}).
+\end{description}
 
 \section{Class restriction inference}
 \label{sec:classinf}
@@ -539,21 +904,102 @@ are listed in table \ref{tab:classinfevents}.
       \hline
       \code{FOUND\_EQUATION} & The class is now known to contain at
       least one equation. \\
+      \code{NEWDEF} & This class is not derived from another class
+      with the \code{class A = B} construct. \\
       \hline
-      \note{Fyll på} & \ldots
     \end{tabular}
     \caption{Class restriction inference events}
     \label{tab:classinfevents}
   \end{center}
 \end{table}
 
-\fixme{Skriv nåt om \code{ClassInf.valid}}
+After instantiation of a class is complete, the state of the machine
+can be checked against a desired restriction to see if the class
+definition fulfills it, using the relation \code{valid}
+(\ref{src:classinf:valid}).
 
+\section{Static expression analysis}
+\label{sec:static}
+
+The module \code{Static} contains relations that perform static
+analysis and constant propagation on expressions.  The primary reason
+to analyze expressions is to check their types, and make sure that
+there are no type errors.  Constant propagation is used whenever the
+translator needs to know the actual value of an expression.  The
+module is described in section \ref{src:static}, with the following
+highlights.
+
+\begin{itemize}
+\item The relation \code{elab\_exp} (\ref{src:static:elabexp})
+  analyzes an expression and produces two results: a new expression
+  and a set of properties.  The new expression is of type
+  \code{Exp.Exp} (\ref{src:exp}) and is much more specific than the
+  abstract syntax expressions.  For each needed type conversion in the
+  expression, an explicit type conversion operation is inserted, and
+  the operators that are overloaded in the abstract syntax are
+  replaced by non-overloaded counterparts.
+  
+  The set of properties describes the type of the expression (see
+  section \ref{sec:types}), and its \firstref{variability}, which
+  basically indicates whether the expression is constant or not.
+
+\item The relation \code{ceval} evaluates an expression and gives the
+  result as a \code{Values.Value} (section \ref{src:values}).  This
+  can obviously only be done for constant expressions.
+\end{itemize}
 
 \section{Equation transformations}
 \label{sec:eqtrans}
 
-\fixme{Unrolling}
+An equation in the equation section of a Modelica model can take
+several forms, and to describe the semantics of an equation, different
+transformations are applied to them.
+
+
+\subsection{Subcomponent equation expansion}
+
+\begin{figure}[htbp]
+  \begin{center}
+    \begin{boxedverbatim}
+      model M
+        real x[3], y[3];
+      equation
+        x = y;
+      end M;
+    \end{boxedverbatim}
+    \caption{Array component equation}
+    \label{fig:arreq}
+  \end{center}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{center}
+    \begin{boxedverbatim}
+      model M
+        real x[3], y[3];
+      equation
+        x[1] = y[1];
+        x[2] = y[2];
+        x[3] = y[3];
+      end M;
+    \end{boxedverbatim}
+    \caption{Expanded array equations}
+    \label{fig:arreqexp}
+  \end{center}
+\end{figure}
+
+When two arrays are equated, as in figure \ref{fig:arreq}, the
+equation has the same meaning as if all the array elements were
+equated.  Thus, in the output the equation is split into one equation
+for each pair of array elements, as in figure \ref{fig:arreqexp}.
+
+To be able to accomplish this, the possibility to index arbitrary
+array expressions, and not only components, needed to be added to the
+output language.
+
+Likewise, if two structured components are equated, the equation is
+expanded to one equation for each pair of public
+components. \fixme{not done yet}
 
 \section{Representation of types}
 \label{sec:typerep}
@@ -573,10 +1019,10 @@ specification, but two distinct types of usage can be noted.
   component attributes are needed to determine such things as what
   components can be connected to each other.
 \item[Type checking of expressions] Expressions are checked for type
-  errors, which means that information about the types of components
-  has to be known.  In this context less information is needed.
-  Either a component is of one of the built-in types, or it is a
-  complex type, but then only the names and types of the public
+  incompatibilities, which means that information about the types of
+  components has to be known.  In this context less information is
+  needed.  Either a component is of one of the built-in types, or it
+  is a complex type, but then only the names and types of the public
   subcomponents need to be known.
 \end{description}
 
@@ -584,6 +1030,12 @@ These two needs could be met by two different datatypes, and a
 previous version of the specification did it this way.  But having two
 datatypes that essentially does the same thing is more confusing than
 helpful, so they were reduced to only one.
+
+
+\section{Functions}
+\label{sec:functiondesign}
+
+\unfinished
 
 \chapter{Target language}
 \label{cha:target}
@@ -618,8 +1070,155 @@ structured way.  The major part of the translator output consists of a
 flat list of equations which are the result of instantiating the main
 model of the source file and its subcomponents.
 
-\fixme{structural parameters}
 
+\section{Flat Modelica}
+\label{sec:flatform}
+
+The language produced by the translator is similar to Modelica, but
+with a few restrictions and extensions.
+
+The following restrictions apply:
+
+\begin{itemize}
+  
+\item Flat models contain only components of predefined types.
+  Predefined attributes, e.g. \code{start}, \code{unit}, \code{min},
+  \code{max}, \ldots{} are declared as separate variables.
+  
+\item A flat model has one declaration section, optionally followed by
+  an equation section, which is followed by zero or more algorithm
+  sections.
+  
+\item No modifications are used, i.e. equation modifications made in
+  the Modelica source code are stated in the equation section of the
+  flat representation.  Redeclarations are taken care of while
+  flattening the model.
+  
+\item No connect statements are used, i.e. the corresponding
+  connection equations are stated.
+  
+\item For loops are not used in equations.  They are unrolled in the
+  flat representation.
+
+\end{itemize}
+
+The following extensions are made:
+
+\begin{itemize}
+  
+\item All array components are declared separately.  If the Modelica
+  model contains the declaration
+
+\begin{boxedverbatim}
+    Real x[2,3];
+\end{boxedverbatim}
+  
+  the flat model will contain the following declarations:
+  
+\begin{boxedverbatim}
+    Real x[1,1];
+    Real x[1,2];
+    Real x[1,3];
+    Real x[2,1];
+    Real x[2,2];
+    Real x[2,3];
+\end{boxedverbatim}
+  
+  This means that the brackets in declaration do not denote array
+  size, as they do in normal Modelica.
+  
+  This is a consequence of how the semantic specification looks at the
+  components.  Using the simple \codebox{x[2,3]} could be done instead, as it
+  is shorter and introduces no ambuguities.
+  
+\item Identifiers may contain dots (\code{.}) (resulting from
+  subcomponents in the originating Modelica code) and tilde signs
+  (\code{~}) (see below).  Identifiers may also contain subscripts, as
+  in \code{x[1]}.  This is a consequence of the fact that all array
+  components are declared separately.
+
+%   * In order to be able to declare a local variable VAR of a function
+%     FUNCNAME, an identifier of the form
+%          FUNCNAME`~'N`.'VAR
+%     with N a number is introduced. In this way calls to internal
+%     functions (that are defined in Modelica) can be expanded, e.g. to
+%     express the semantics of assigning input and output variables.
+%     The number N should be incremented for each call to the same
+%     function from the same class.
+
+%     <Peter: The expansion is not possible for recursive functions.>
+
+%     <david: This is still experimental. It might be removed.>
+
+%     Calls to predefined and external functions remain in the flat
+%     representation as they are in the Modelica code.
+  
+\item Automatic type conversions defined in the Modelica semantics,
+  e.g.  from an \code{Integer} \code{i} to \code{Real}, are stated
+  using the target type name as conversion operator, i.e.
+  \code{Real(i)}.
+  
+\item A new postfix subscripting operator is introduced.  In the flat
+  model, it is necessary to be able to subscript expression, so the
+  syntax \code{expression[x]} is allowed.  This is not allowed in
+  Modelica.
+  
+\item Almost no overloading of operators occus in the flat Modelica.
+  If a model contains an array multiplied by a scalar, the flat model
+  does not use the multiplication sign, but an operator that is
+  specialized for that particular operation.
+  
+  The normal integer and real arithmetic operators are still
+  overloaded, but they should not, really.
+  
+\item Due to the extensions a flat model representation is not valid
+  Modelica.  Therefore, the class definition in the flat code is
+  declared as \code{fclass} to differentiate it from Modelica's
+  \code{class}.
+
+\end{itemize}
+
+The output of the translator also has the following properties:
+
+\begin{itemize}
+
+\item The order of equations is undefined.
+  
+\item The order of statements in each algorithm section is kept
+  intact, but the order in which the algorithm sections appear is
+  undefined.
+  
+\end{itemize}
+
+The flat Modelica does not exactly meet the requirements described in
+the previous section.
+
+\begin{enumerate}
+  
+\item Most information gathered from the analysis is included.  Some
+  type information is lost, though.  The arithmetic operations on
+  scalars and the equatlity sign are still overloaded.  This is to
+  improve readability.  Changing the syntax to include this
+  information is very easy.
+
+\item The output looks reasonably much like Modelica, so a person
+  knowledgable of Modelica syntax should have no problem understanding
+  the output.
+  
+\item Parsing of the flat Modelica has not been explored. It should
+  possible to write a parser that will accept and understand flat
+  Modeilca.  One thing that may cause trouble is the extension where
+  array subscripting may be allowed on arbitrary expressions.
+
+\item Feeding the output to an equation solver needs either a special
+  parser for the solver or a filtering step to rewrite the flat
+  Modelica to a syntax understood by the solver.
+
+  
+\item Everything in Modelica is expressible in flat Modelica, although
+  obviously, structural information is lost.
+
+\end{enumerate}
 
 \chapter{Annotated formal semantics}
 \label{cha:formsem}
@@ -638,30 +1237,97 @@ clearer.
 
 \listofsources
 
+%\begin{landscape}
+  
 \input{main.tex}
 \input{absyn.tex}
-\input{exp.tex}
+%\input{exp.tex}
 \input{classinf.tex}
-\input{types.tex}
+%\input{types.tex}
 \input{explode.tex}
-\input{inst.tex}
-\input{prefix.tex}
+%\input{inst.tex}
+%\input{prefix.tex}
 \input{mod.tex}
-\input{env.tex}
-\input{lookup.tex}
-\input{builtin.tex}
-\input{connect.tex}
+%\input{env.tex}
+%\input{lookup.tex}
+%\input{builtin.tex}
+%\input{connect.tex}
 \input{staticexp.tex}
-\input{dae.tex}
-\input{dump.tex}
+%\input{dae.tex}
+%\input{dump.tex}
 
+%\end{landscape}
 
 \chapter{rmldoc \note{appendix}}
+\label{cha:rmldoc}
 
 {\codefont\verbatiminput{../tools/rmldoc}}
 
-\begin{thebibliography}{99}
-\bibitem[FOO]{Hm}
+\begin{thebibliography}{blah}
+ 
+% \bibitem{key:foo}
+% I. M. Author, 
+% ``Some Related Article I Wrote,''
+% {\em Some Fine Journal}, Vol. 17, pp. 1-100, 1987.
+ 
+\bibitem{drakboken}
+A. V. Aho, R. Sethi, and J. D. Ullman,
+{\em Compilers -- Principles, Techniques, and Tools,}
+Addison-Wesley, 1986.
+ 
+\bibitem{mml}
+D. Clément, J. Despeyroux, T. Despeyroux, and G. Khan,
+``A simple applicative language: Mini-ML,''
+{\em Proceedings of the 1986 ACM Conference on Lisp and Functional
+Programming, LFP'86,} pp. 13-27,
+ACM Press, 1986.
+ 
+\bibitem{pf}
+Peter Fritzson,
+{\em Generating Practical Compilers from Natural Semantics,}
+Draft, 1996.
+ 
+\bibitem{kahn}
+Gilles Kahn,
+``Natural Semantics,''
+{\em Proceedings of the Symposium on Theoretical Aspects of Computer Science,
+STACS'87}, Vol. 247 of {\em LNCS}, pp. 22-39,
+Springer-Verlag, 1987.
+ 
+\bibitem{sml}
+Robin Milner, Mads Tofte, and Robert Harper.
+{\em The Definition of Standard ML,}
+MIT Press, 1991.
+ 
+\bibitem{pagan}
+Frank G. Pagan,
+{\em Formal Specification of Programming Languages: A Panoramic Primer,}
+Prentice-Hall, 1981.
+ 
+\bibitem{rml}
+Mikael Pettersson,
+``RML -- a new language and implementation for natural semantics,''
+{\em Proceedings of the 6th International Symposium on Programming
+Language Implementation and Logic Programming, PLILP'94,} Vol. 844
+of {\em LNCS}, pp. 117-131.
+Springer-Verlag, 1994.
+ 
+\bibitem{pi}
+Mikael Pettersson,
+{\em Compiling Natural Semantics,}
+Ph.D. thesis,
+Linköping University, Dec 1995.
+To appear as a volume in {\em LNCS},
+Springer-Verlag, 1997.
+ 
+\bibitem{pike}
+Idonex AB,
+{\em The Pike programming language},
+{\tt http://pike.idonex.se/}
+
+\bibitem{modelicawww}
+Modelica, {\tt http://www.dynasim.se/Modelica/}
+
 \end{thebibliography}
 
 \end{document}
