@@ -31,6 +31,13 @@ with "system.rml"
 with "daelow.rml"
 with "exp.rml"
 
+(** relation: generate_code
+ ** This is the main relation that generates Tornado1 C++ code from the flat Modelica model
+ ** It will generate two files <modelname>.cpp and <modelname>.hpp, the implementation file and 
+ ** the header file. Those will currently be put in the current directory.
+ ** The implementation uses the DAELow module to lower the flat modelica model such that it
+ ** can be BLT sorted and indexed, etc.
+ **)
 relation generate_code:  (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
   rule	DAELow.lower(dae) => dae' &
@@ -53,7 +60,9 @@ relation generate_code:  (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	generate_code(_,_,_) => fail
 end
 
-(* Generate the content of the header file *)
+(** relation: generate_header
+ ** Generate the content of the header file. It only needs the name of the Modelica model.
+ **)
 relation generate_header: string => string =
 
   rule	System.toupper cname => CNAME &
@@ -79,9 +88,11 @@ relation generate_header: string => string =
 	generate_header(_) => fail
 end
 
-(* generate the "header" of the implementation file, includes, etc. *)
+(** relation generate_impl_header
+ ** generate the "header" of the implementation file, i.e. includes, ifdefs etc. 
+ ** It is NOT the generation of the headerfile. (That is in the relation generate_header above)
+ *)
 relation generate_impl_header: string => string =
-
 
   rule	Util.string_append_list(["#ifdef _MSC_VER\n",
 				 "#pragma warning(disable:4250)\n",
@@ -103,7 +114,10 @@ relation generate_impl_header: string => string =
 	generate_impl_header(_) => fail
 end
 
-(* Generates the implementation for the constructor*)
+(** relation generate_constructor:
+ ** Generates the implementation for the constructor which sets up the variables (names)
+ ** and their initial values.
+**)
 relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string =
 	
 	
@@ -139,7 +153,11 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
 
 end
 
-(* Generates the outputvars methodcalls in the constructor *)
+(* relation generate_constructor_outputvars
+ ** Generates the outputvars methodcalls in the constructor.
+ ** The variables are indexed in the order they appear in the DAELow representation.
+ ** The first output variable has the index 0. 
+ *)
 relation generate_constructor_outputvars:(DAELow.DAELow) => string = 
 
   rule	generate_constructor_outputvars2(vars,0) => lst1 &
@@ -185,6 +203,12 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
 end
 
 
+(* relation: generate_constructor_statevars
+ **  This relation is similar to the generate_constructor_outputvars relation above.
+ ** It also generates code placed in the contstructor, but for state variables.
+ ** They are also indexed in the order they appear in the DAELow representation, starting
+ ** with index 0.
+ *)
 relation generate_constructor_statevars:(DAELow.DAELow) => string = 
 
   rule	generate_constructor_statevars2(vars,0) => lst &
@@ -243,6 +267,14 @@ relation generate_var_defines: (DAELow.DAELow) => string =
 	generate_var_defines(_) => fail
 end
 
+(** relation: generate_compute_methods
+ ** This relation generates the code for the computation of the equations
+ ** They are separated into four parts.
+ ** - computing the output variables (algebraic variables)
+ ** - computing the state variables
+ ** - computing the initial conditions
+ ** - computing the terminal conditions
+ **)
 relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
 
   rule	generate_compute_output(cname,dae,p) => coutput &
@@ -281,6 +313,9 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
 	generate_compute_methods(_,_,_) => fail
 end 
 
+(** relation: generate_compute_output
+ ** This relation generates the code for the calculation of the output variables.
+ **)
 relation generate_compute_output:(string,DAELow.DAELow,Absyn.Program) => string =
 
   rule	Util.string_append_list(["/* output code here*/\n"]) => coutput
@@ -289,7 +324,9 @@ relation generate_compute_output:(string,DAELow.DAELow,Absyn.Program) => string 
 
 end
 
-
+(** relation: generate_compute_initial
+ ** This relation generates the code for the calculation of the initial conditions.
+ **)
 relation generate_compute_initial:(string,DAELow.DAELow,Absyn.Program) => string =
 
   rule	Util.string_append_list(["/* initial code here*/\n"]) => cinit
@@ -298,6 +335,9 @@ relation generate_compute_initial:(string,DAELow.DAELow,Absyn.Program) => string
 
 end
 
+(** relation: generate_compute_state
+ ** This relation generates the code for the calculation of the state variables.
+ **)
 relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program) => string =
 
   rule	Util.string_append_list(["/* state code here*/\n"]) => cstate
@@ -306,10 +346,16 @@ relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program) => string =
 
 end
 
+(** relation: generate_compute_terminal
+ ** This relation generates the code for the calculation of the terminal behavior.
+ ** This can be expressed in Modelica using when statements:
+ ** when terminal() then
+ **   x:=do_calc(x,y);
+ ** end when
+ *)
 relation generate_compute_terminal:(string,DAELow.DAELow,Absyn.Program) => string =
 
   rule	Util.string_append_list(["/* terminal code here*/\n"]) => cterm
 	-------------------------------------------------------------
 	generate_compute_terminal(cname,dae,p) => cterm
-
 end
