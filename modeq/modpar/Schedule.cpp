@@ -74,7 +74,7 @@ double get_lct(VertexID u, const TaskGraph &g, map<VertexID,double>*lct) {
 Schedule::Schedule(TaskGraph *tg,VertexID start, VertexID end, int nproc)
   :  m_allmerged(true), m_nproc(nproc), m_taskgraph(tg), m_start(start), m_end(end) 
 {
-  cerr << "m_start = " << getTaskID(m_start,m_taskgraph) << " m_end = " << getTaskID(m_end,m_taskgraph) << endl;
+  //cerr << "m_start = " << getTaskID(m_start,m_taskgraph) << " m_end = " << getTaskID(m_end,m_taskgraph) << endl;
 
   initialize_index(m_taskgraph);
 
@@ -94,16 +94,16 @@ void Schedule::scheduleTDS()
     cerr << "Error number of processors < 1" << endl;
     exit(-1);
   }
-  cerr << "starting tdsPass1" << endl;
+  //  cerr << "starting tdsPass1" << endl;
   tdsPass1();
-  cerr << "tdsPass1 done." << endl;
+  //  cerr << "tdsPass1 done." << endl;
   tdsPass2();
-  cerr << "tdsPass2 done." << endl;
+  //  cerr << "tdsPass2 done." << endl;
   tdsPass3();
-  cerr << "tdsPass3 done." << endl; 
+  //  cerr << "tdsPass3 done." << endl; 
 
   tdsPass4();
-  cerr << "tdsPass4 done." << endl;
+  //  cerr << "tdsPass4 done." << endl;
   
 }
 
@@ -111,7 +111,7 @@ void Schedule::scheduleTDS()
 void Schedule::tdsPass1()
 {
   pass1_visitor vis(&m_ect,&m_est,&m_fpred);
-  cerr << "Created visitor." << endl;
+  //  cerr << "Created visitor." << endl;
   
   reverse_depth_first_search(*m_taskgraph,
 			     vis,
@@ -209,10 +209,10 @@ void Schedule::tdsPass3()
   }
   
   while( !m_queue->empty()) {
-    cerr << " schedule loop. x= " << getTaskID(x,m_taskgraph) << " queue length =" << m_queue->size() << endl ;
+    //    cerr << " schedule loop. x= " << getTaskID(x,m_taskgraph) << " queue length =" << m_queue->size() << endl ;
     if (in_degree(x,*m_taskgraph) > 0) {
       y = get_fpred(x,*m_taskgraph,&m_fpred); 
-      cerr << "Scheduling. x= " << getTaskID(x,m_taskgraph) << " y= " << getTaskID(y,m_taskgraph) << endl;
+      //      cerr << "Scheduling. x= " << getTaskID(x,m_taskgraph) << " y= " << getTaskID(y,m_taskgraph) << endl;
       cost = getExecCost(y,m_taskgraph);
       if (isAssigned(y)!= -1) {
 	if (lst(x) - lct(y) >= cost) {
@@ -239,17 +239,17 @@ void Schedule::tdsPass3()
       x=y; 
     }
     if (in_degree(x,*m_taskgraph) == 0) { 
-      cerr << "Entry node" << endl;
+      //      cerr << "Entry node" << endl;
       //assignProcessor(x,i);
       x = m_queue->top(); m_queue->pop();
-      cerr << " x=" << getTaskID(x,m_taskgraph) << endl;
+      //      cerr << " x=" << getTaskID(x,m_taskgraph) << endl;
       while(isAssigned(x)!=-1) {
 	if (m_queue->empty()) break;
-	cerr << getTaskID(x,m_taskgraph) << " assigned, skipping" <<  endl;
+	//	cerr << getTaskID(x,m_taskgraph) << " assigned, skipping" <<  endl;
 	x = m_queue->top(); m_queue->pop();
       }
       i = newProcessor();
-      cerr << getTaskID(x,m_taskgraph) << " assigned: " << isAssigned(x) <<  endl;
+      //      cerr << getTaskID(x,m_taskgraph) << " assigned: " << isAssigned(x) <<  endl;
       if (isAssigned(x)==-1) 
 	assignProcessor(x,i);
     }
@@ -291,7 +291,7 @@ int Schedule::mergeTasks(void)
   map<int,TaskList*>::iterator i;
   for(i = m_proclists.begin(); i != m_proclists.end() ; i++ ) {
     procCost = calcTaskListCost(i->second);
-    cerr << i->second << " :procCost =" << procCost << endl;
+    //    cerr << i->second << " :procCost =" << procCost << endl;
     if (!merged[i->second]) {      
       if (min_cost > procCost) {
 	lowest = i->second;
@@ -305,10 +305,10 @@ int Schedule::mergeTasks(void)
       }    
     }
   }
-  cerr << "highest = " << highest << " lowest = " << lowest << endl;
-  cerr << "max_cost =" << max_cost << " min_cost =" << min_cost << endl;
+  //  cerr << "highest = " << highest << " lowest = " << lowest << endl;
+  //  cerr << "max_cost =" << max_cost << " min_cost =" << min_cost << endl;
   if (highest == lowest) { /* Never merge with itself */
-    cerr << "Highest == lowest, never merge with itself." << endl;    
+    //    cerr << "Highest == lowest, never merge with itself." << endl;    
 
     map<int,TaskList*>::iterator i; // Take first in queue n
     for( i = m_proclists.begin(); i != m_proclists.end(); i++) {
@@ -326,8 +326,8 @@ int Schedule::mergeTasks(void)
     m_allmerged = true;
     return 0;
   }
-  cerr << "About to merge" << endl;
-  cerr << "chosen :highest = " << highest << " lowest = " << lowest << endl;
+  //  cerr << "About to merge" << endl;
+  //  cerr << "chosen :highest = " << highest << " lowest = " << lowest << endl;
   assert(lowest != highest);
   mergeTaskLists(lowest,highest);
   merged[lowest] = true;
@@ -347,10 +347,10 @@ int Schedule::getTaskListIndex(TaskList *t)
 
 void Schedule::mergeTaskLists(TaskList *t1, TaskList *t2)
 {
-  cerr << "Merging, t2 =" << t2 << endl;
+  //  cerr << "Merging, t2 =" << t2 << endl;
 
   int t2indx= getTaskListIndex(t2);
-  cerr << "t2indx = " << t2indx << endl;
+  //  cerr << "t2indx = " << t2indx << endl;
   if (t2indx == 0) { // Proc 0 can not be merged into another processor, swap list
     TaskList *tmp;
     tmp=t1;
@@ -372,10 +372,10 @@ void Schedule::mergeTaskLists(TaskList *t1, TaskList *t2)
     t1->push(task); 
   }
 
-  cerr << "m_proclists.size before :" << m_proclists.size() << endl;
-  cerr << "removing t2:" << t2 << endl;
+  //  cerr << "m_proclists.size before :" << m_proclists.size() << endl;
+//  cerr << "removing t2:" << t2 << endl;
   m_proclists.erase(t2indx); // .. and remove t2
-  cerr << "m_proclists.size after :" << m_proclists.size() << endl;
+  // cerr << "m_proclists.size after :" << m_proclists.size() << endl;
 }
 
  
@@ -395,8 +395,8 @@ void Schedule::tdsPass4()
 	  
 	} else {
 	  numProc-= temp;
-	  cerr << "reduced by " << temp << " to " << numProc 
-	       << " (" << m_proclists.size() << ")" << endl;
+	  //	  cerr << "reduced by " << temp << " to " << numProc 
+	  //	       << " (" << m_proclists.size() << ")" << endl;
 	}
       }
   }
@@ -404,7 +404,7 @@ void Schedule::tdsPass4()
     cerr << "The number of required processors are smaller than the number of given ones." << endl;
     exit(-1);
   }
-  cerr << "Reduced no of processors to " << numProc << endl;
+  //  cerr << "Reduced no of processors to " << numProc << endl;
   
   reorderTaskLists();
 }
@@ -439,7 +439,7 @@ void Schedule::assignProcessor(VertexID v, int processor)
 {
   if (isAssigned(v) != processor) {
     setAssigned(v,processor);
-    cerr << "Assign " << getTaskID(v,m_taskgraph) << " to " << processor << endl;
+    //    cerr << "Assign " << getTaskID(v,m_taskgraph) << " to " << processor << endl;
   
     get_tasklist(processor)->push(v);
 
@@ -477,8 +477,8 @@ int Schedule::newProcessor()
   curProc++;
   m_proclists[curProc]=new TaskList(InvLevelCmp(m_taskgraph,&m_level));
   
-  cerr << "newProcessor: " << curProc << endl;
-  cerr << "size =:" << m_proclists.size() << endl;
+  //  cerr << "newProcessor: " << curProc << endl;
+  //  cerr << "size =:" << m_proclists.size() << endl;
   return curProc;
 }
 

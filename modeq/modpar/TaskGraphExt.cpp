@@ -228,8 +228,8 @@ extern int nproc;
     double l = rml_prim_get_real(rmlA0); 
     double b = rml_prim_get_real(rmlA1); 
     
-    cerr << "latency =" << l 
-	 << " bandwidth ="  << b << endl;
+    //cerr << "latency =" << l 
+    //	 << " bandwidth ="  << b << endl;
       
     
     ParallelOptions options(nproc,l,b);
@@ -275,7 +275,7 @@ extern int nproc;
   RML_BEGIN_LABEL(TaskGraphExt__schedule)
   {
     int n = RML_UNTAGFIXNUM(rmlA0);
-    cerr << "Schedule with " << n << " processors." << endl;
+    //cerr << "Schedule with " << n << " processors." << endl;
 
     schedule = new Schedule(&merged_taskgraph,
 			    taskmerging.get_starttask(),
@@ -312,7 +312,7 @@ extern int nproc;
     char *value = RML_STRINGDATA(rmlA1); 
     char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
-    cerr << "initvars[" << indx << "] =" << val << endl;
+    //    cerr << "initvars[" << indx << "] =" << val << endl;
     initvars.insert(initvars.begin()+indx,val);
     varnames.insert(varnames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
@@ -325,7 +325,7 @@ extern int nproc;
     char *value = RML_STRINGDATA(rmlA1); 
     char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
-    cerr << "initstates[" << indx << "] =" << val << endl;
+    //    cerr << "initstates[" << indx << "] =" << val << endl;
     initstates.insert(initstates.begin()+indx,val);
     statenames.insert(statenames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
@@ -338,7 +338,7 @@ extern int nproc;
     char *value = RML_STRINGDATA(rmlA1);
     char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
-    cerr << "initparams[" << indx << "] =" << val << endl;
+    //    cerr << "initparams[" << indx << "] =" << val << endl;
     initparams.insert(initparams.begin()+indx,val);
     paramnames.insert(paramnames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);

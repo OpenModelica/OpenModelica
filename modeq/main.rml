@@ -290,12 +290,14 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedump2", DAE.dump2, d)
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
-	& ModUtil.string_prefix_params d => d'
-	& Debug.fcall ("codegen", Codegen.generate_functions, d') 
+	(*& ModUtil.string_prefix_params d => d'*)
+	& Debug.fcall ("codegen", Codegen.generate_functions, d) 
 	& run_backend_q() => runbe 
 	& Debug.bcall (runbe, optimize_dae,d) 
 	& Print.get_string () => str
-	& print str
+	& RTOpts.silent() => silent 
+	& bool_not(silent) => notsilent
+	& Debug.bcall(notsilent,print, str)
 	------------------------------
 	translate_file [f]
 
@@ -351,12 +353,16 @@ end
 (* Used for both parallization and for normal execution.*)
 relation optimize_dae: (DAE.DAElist) => () =
 
-  rule	DAELow.lower(d) => d' 
+  rule	print "entering optimize_dae" &
+	DAELow.lower(d) => d' 
+	& print "lowered DAE\n" 
 	& Debug.fcall("dumpdaelow", DAELow.dump, d') 
 	& clock() => t1 
 	& DAELow.incidence_matrix(d') => m 
+	& print "computed incidence matrix\n" 
 	& clock() => t2 
 	& DAELow.transpose_matrix(m) => mT 
+	& print "transposed incidence matrix\n" 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
 	& clock() => t3

@@ -161,7 +161,7 @@ void::TaskMerging::reinsertSourceAndSink()
 void TaskMerging::add_edge_containing(const EdgeInfo &info)
 {
   if (info.source == m_invarID) {
-    cerr << "Source edge" << endl;
+    //cerr << "Source edge" << endl;
     VertexIterator v,v_end;
     // This is really expensive, fortunately there are no longer so many tasks
     for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
@@ -259,7 +259,7 @@ void TaskMerging::mergeRules()
     queue->push(*v);
   }
   t2 = clock();
-  cerr << "Sorting took " << (double)(t2-t1)/(double)CLOCKS_PER_SEC << " seconds." << endl;
+  //cerr << "Sorting took " << (double)(t2-t1)/(double)CLOCKS_PER_SEC << " seconds." << endl;
 
   while(change) {
     change = false;
@@ -280,14 +280,14 @@ void TaskMerging::mergeRules()
 		    );
   file.close();
 
-  cerr << "Reinserting source and sink" << endl;
+  //  cerr << "Reinserting source and sink" << endl;
 
   // put back source and sink nodes.
   reinsertSourceAndSink();
-  cerr << "Updating execution costs" << endl;
+  //  cerr << "Updating execution costs" << endl;
   updateExecCosts(); // When finished mergin, execcost should be calculated for each task 
 		     // from containSet.
-  cerr << "Leaving task merging.." << endl;
+  //  cerr << "Leaving task merging.." << endl;
 }
 
 //write the correct exec cost to each task, by investigating m_containTasks

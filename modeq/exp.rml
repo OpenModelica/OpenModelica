@@ -165,6 +165,8 @@ module Exp:
 	  => (Exp,int)
   relation replace_exp_list: (Exp (*expr*), Exp list (* source list*), Exp list (* target list*))
 	  => (Exp,int)
+  relation stringify_crefs: (Exp) => Exp
+  relation stringify_component_ref: ComponentRef => ComponentRef 
   relation binop_symbol_1 : Operator => string 
   relation unaryop_symbol : Operator => string 
   relation lunaryop_symbol : Operator => string 
@@ -181,6 +183,7 @@ with "util.rml"
 with "print.rml"
 with "modutil.rml"
 with "derive.rml"
+with "system.rml" 
 with "dump.rml"
 
 val rconstone = RCONST(1.0)
@@ -289,11 +292,20 @@ relation cref_equal : (ComponentRef, ComponentRef) => bool =
 	cref_equal (CREF_IDENT(n1, idx1), CREF_IDENT(n2, idx2)) => true
 
   rule	n1 = n2 &
-	subscript_equal(idx1,idx2) => true &
-	cref_equal (cr1, cr2) => true
+	cref_equal (cr1, cr2) => true &
+	subscript_equal(idx1,idx2) => true 
 	-----------------------------
 	cref_equal (CREF_QUAL(n1, idx1, cr1), CREF_QUAL(n2, idx2, cr2))
 	  => true
+
+  rule	(* There is a bug here somewhere or in RML.
+	 * Therefore as a last resort, print the strings and compare.
+	 **)
+ 	print_component_ref_str cr1 => s1 &
+	print_component_ref_str cr2 => s2 &
+	s1 = s2
+	------------------------
+	cref_equal(cr1,cr2) => true
 
   axiom	cref_equal (_, _) => false
 
@@ -302,14 +314,14 @@ end
 relation subscript_equal: ( Subscript list, Subscript list) => bool =
 	(* P.A: Just compare constant integer values for now. Might need to lookup variables
 	   in environment for evaluating arbitrary expressions in future impl. *)
-  rule	i1 = i2 &
+  rule	int_eq(i1,i2) => true &
 	subscript_equal(xs1,xs2) => res 
 	-------------------------------
 	subscript_equal(INDEX(ICONST(i1))::xs1,INDEX(ICONST(i2))::xs2) => res
 
   axiom	subscript_equal([],[]) => true
 
-  axiom	subscript_equal(_,_) => false
+  axiom	subscript_equal( _,_) => false
 end
 
 relation prepend_string_cref : (string, ComponentRef) => ComponentRef =
@@ -919,7 +931,7 @@ relation print_component_ref2 =
 
   rule	RTOpts.modelica_output => false &
 	Print.print_buf s &
-	Print.print_buf "<cref>[" & print_list(l,print_subscript,",") & Print.print_buf "]"
+	Print.print_buf "[" & print_list(l,print_subscript,",") & Print.print_buf "]"
 	-------------------------------------------------------
 	print_component_ref2 (s,l)
 
@@ -1413,7 +1425,7 @@ relation print_component_ref2_str : (Ident, Subscript list) => string =
 
   rule	RTOpts.modelica_output => false &
 	print_list_str (l, print_subscript_str, ",") => str &
-	string_append (s, "[") => str' &
+	string_append (s, "<cref>[") => str' &
 	string_append (str', str) => str'' &
 	string_append (str'', "]") => str'''
 	-------------------------------------------------------
@@ -2046,13 +2058,123 @@ relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*))
 	replace_exp(REDUCTION(p,e,id,r),source,target) 
 	  => (REDUCTION(p,e',id,r'),c)
 
-  axiom	replace_exp(e,_,_) => (e,0)
+(*  rule	print "WARNING WARNING replace_exp failed for Exp:" & 
+	print_exp_str e => es & print es & print " source: " &
+	print_exp_str s => ss & print ss & print "\n" 
+	------------------------------
+	replace_exp(e,s,_) => (e,0)*)
+ axiom	replace_exp(e,s,_) => (e,0)
 end
 
 
+relation stringify_component_ref: ComponentRef => ComponentRef =
+	
+  rule	print_component_ref_str(cr) => crs 
+	----------------------------------
+	stringify_component_ref(cr) => CREF_IDENT(crs,[])
+end
+
+(** relation: stringify_crefs
+ ** This relation takes an expression and transforms all component reference names
+ ** contained in the expression to a simpler form.
+ ** For instance CREF_QUAL("a",[], CREF_IDENT("b",[])) becomes
+ ** CREF_IDENT("a.b",[])
+ **)
+relation stringify_crefs: Exp => Exp =
+
+  axiom	stringify_crefs(e as ICONST(_)) => e
+  axiom	stringify_crefs(e as RCONST(_)) => e
+  axiom	stringify_crefs(e as SCONST(_)) => e
+  axiom	stringify_crefs(e as BCONST(_)) => e
+	
+  rule	stringify_component_ref(cr) => cr'
+	----------------------------------
+	stringify_crefs(CREF(cr,t)) => CREF(cr',t)
+
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e2) => e2' 
+	-------------------
+	stringify_crefs(BINARY(e1,op,e2)) => BINARY(e1',op,e2')
+
+  rule	stringify_crefs(e) => e'
+	-------------------
+	stringify_crefs(UNARY(op,e)) => UNARY(op,e')
+
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e2) => e2' 
+	-------------------
+	stringify_crefs(LBINARY(e1,op,e2)) => BINARY(e1',op,e2')
+	
+  rule	stringify_crefs(e) => e'
+	-------------------
+	stringify_crefs(LUNARY(op,e)) => UNARY(op,e')
+	
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e2) => e2' 
+	--------------------------
+	stringify_crefs(RELATION(e1,op,e2)) => RELATION(e1',op,e2')
+	
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e2) => e2' &
+	stringify_crefs(e3) => e3' 
+	--------------------------
+	stringify_crefs(IFEXP(e1,e2,e3)) => IFEXP(e1',e2',e3')
+	
+  rule	Util.list_map(expl,stringify_crefs) =>  expl'
+	-----------------------
+	stringify_crefs(CALL(p,expl,t,b)) => CALL(p,expl',t,b)
+
+  rule	Util.list_map(expl,stringify_crefs) =>  expl'
+	-----------------------
+	stringify_crefs(ARRAY(t,b,expl)) => ARRAY(t,b,expl')
+	
+  rule	print "stringify_crefs on MATRIX not impl. yet\n"
+	-----------------------
+	stringify_crefs(e as MATRIX(t,b,expl)) => e
+
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e2) => e2' &
+	stringify_crefs(e3) => e3' 
+	-----------------------
+	stringify_crefs(RANGE(t,e1,SOME(e2),e3)) => RANGE(t,e1',SOME(e2'),e3')
+
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e3) => e3' 
+	-----------------------
+	stringify_crefs(RANGE(t,e1,NONE,e3)) => RANGE(t,e1',NONE,e3')
 
 
+  rule	Util.list_map(expl,stringify_crefs) =>  expl'
+	-------------------
+	stringify_crefs(TUPLE(expl)) => TUPLE(expl')
 
+  rule	stringify_crefs(e1) => e1'
+	--------------------------
+	stringify_crefs(CAST(t,e1)) => CAST(t,e1')
+
+  rule	stringify_crefs(e1) => e1' 
+	--------------------------
+	stringify_crefs(ASUB(e1,i)) => ASUB(e1',i)
+
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e2) => e2' 
+	--------------------------
+	stringify_crefs(SIZE(e1,SOME(e2))) => SIZE(e1',SOME(e2'))
+
+  rule	stringify_crefs(e1) => e1'
+	--------------------------
+	stringify_crefs(SIZE(e1,NONE)) => SIZE(e1',NONE)
+
+  axiom	stringify_crefs(e as CODE(_,_)) => e
+
+  rule	stringify_crefs(e1) => e1' &
+	stringify_crefs(e2) => e2' 
+	--------------------------
+	stringify_crefs( REDUCTION(p,e1,id,e2)) => REDUCTION(p,e1',id,e2')
+
+  axiom	stringify_crefs END => END
+  axiom	stringify_crefs (e) => e
+end
 
 
 relation dump_exp_graphviz : Exp => Graphviz.Node =

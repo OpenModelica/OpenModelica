@@ -2940,8 +2940,7 @@ relation elab_cref2 : (Env.Env,
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
-	cref_vectorize(Exp.CREF(cr',t),tt) => e' &
-	value_exp v => e'
+	cref_vectorize(Exp.CREF(cr',t),tt) => e'
 	----------------
   	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) => (e',true,acc)
 

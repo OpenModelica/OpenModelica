@@ -598,13 +598,18 @@ relation states: (DAE.DAElist) => Exp.ComponentRef list =
   rule	states(DAE.DAE(xs)) => s &
 	states_exp(e1) => s1 &
 	states_exp(e2) => s2 &
-	Util.list_list_union_p([s,s1,s2],Exp.cref_equal) => res
+	Util.list_map(s,Exp.stringify_component_ref) => s' &
+	Util.list_map(s1,Exp.stringify_component_ref) => s1' &
+	Util.list_map(s2,Exp.stringify_component_ref) => s2' &
+	Util.list_list_union_p([s',s1',s2'],Exp.cref_equal) => res
 	-----------------------------------
 	states(DAE.DAE(DAE.EQUATION(e1,e2)::xs))  => res
 
   rule	states(dae) => s1 &
 	states(DAE.DAE(xs)) => s2 &
-	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+	Util.list_map(s1,Exp.stringify_component_ref) => s1' &
+	Util.list_map(s2,Exp.stringify_component_ref) => s2' &
+	Util.list_union_p(s1',s2',Exp.cref_equal) => res
 	-------------------------
 	states(DAE.DAE(DAE.COMP(_,dae)::xs)) => res
 	
@@ -732,18 +737,28 @@ end
 relation lower_eqn: (DAE.Element) => Equation =
 
   rule	Exp.simplify(e1) => e1' &
-	Exp.simplify(e2) => e2'
+	Exp.simplify(e2) => e2' &
+	Exp.stringify_crefs(e1') => e1'' &
+	Exp.stringify_crefs(e2') => e2'' 
 	-----------------------
-	lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1',e2')
+	lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1'',e2'')
 end
 
+(** relation: lower_var
+ ** Transforms a DAE variable to DAELOW variable.
+ ** Includes changing the ComponentRef name to a simpler form 'a'.'b'.'c' becomes
+ ** 'a.b.c' (as CREF_IDENT("a.b.c",[]) )
+ **)
 relation lower_var: (DAE.Element, Exp.ComponentRef list) => Var =
 
-  rule	lower_varkind(kind,name,states) => kind' &
-	Exp.print_component_ref_str name => origname
+  rule	Exp.print_component_ref_str name => origname &
+	let newname = Exp.CREF_IDENT(origname,[]) &
+	lower_varkind(kind,newname,states) => kind' & 
+	lower_binding(bind) => bind' &
+	lower_binding(start) => start'
 	----------------------------------------
 	lower_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_),states)
-	  => VAR(name,kind',dir,tp,bind,NONE,dims,start,-1,origname)
+	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,origname)
 
 (*  rule	print "-lower_var failed\n" 
 	------------------------
@@ -751,13 +766,24 @@ relation lower_var: (DAE.Element, Exp.ComponentRef list) => Var =
 
 end
 
+relation lower_binding: Exp.Exp option => Exp.Exp option =
+	
+  axiom	 lower_binding NONE => NONE 
+
+  rule	Exp.stringify_crefs(e) => e'
+	----------------------------
+	lower_binding(SOME(e)) =>  SOME(e)
+end
+
 relation lower_known_var: (DAE.Element) => Var =
 
   rule	lower_known_varkind(kind) => kind' &
-	Exp.print_component_ref_str name => origname
+	Exp.print_component_ref_str name => origname &
+	lower_binding(bind) => bind' &
+	lower_binding(start) => start'
 	----------------------------------------
 	lower_known_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_))
-	  => VAR(name,kind',dir,tp,bind,NONE,dims,start,-1,origname)
+	  => VAR(Exp.CREF_IDENT(origname,[]),kind',dir,tp,bind',NONE,dims,start',-1,origname)
 end
 
 relation lower_varkind: (DAE.VarKind, Exp.ComponentRef, Exp.ComponentRef list) 
@@ -1102,13 +1128,16 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 (*	  print "reduced index, new DAE:\n" &
 	dump dae &*)
 	  (* and try again, restarting. This could be optimized later. It should not
-	   be necessary to restart the matching. Instead one could continue the matching
-	   as usual. This has not been tested yet.*)
-	(*list_length(vars) => nv' &
-	list_length(eqns) => nf' &
+	   be necessary to restart the matching, according to Bernard Bachmann. Instead one 
+	   could continue the matching as usual. This was tested (2004-11-22) and it does not 
+	   work to continue without restarting.
+	   For instance the Influenca model "../testsuite/mofiles/Influenca.mo" does not work if
+	   not restarting.*)
+	list_length(vars) => nv' &
+ 	list_length(eqns) => nf' &
 	Util.list_fill(0,nv') => ass1 &
-	Util.list_fill(0,nf') => ass2 &*)
-	matching_algorithm2(dae,m,mt,nv,nf,(*1*)i,ass1,ass2)
+	Util.list_fill(0,nf') => ass2 &
+	matching_algorithm2(dae,m,mt,nv,nf,1,ass1,ass2)
 	  => (ass1',ass2',dae,m,mt)
 	------------------------
 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
@@ -2313,7 +2342,7 @@ relation transform_variables: (Var list, Exp.Exp list, Exp.Exp list) => (Var lis
   rule	transform_variables(vs,s,t) => vs' &
 	transform_variable(i,kind) => cr' &
 	Exp.print_component_ref_str(cr) => name &
-	Exp.replace_exp_list(e,s,t) => (e',_)
+	Exp.replace_exp_list(e,s,t) => (e',_) 
 	-------------------
 	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,f,i,_)::vs,s,t)
 	=> (VAR(cr',kind,a,b,SOME(e'),c,d,f,i,name)::vs')

@@ -20,6 +20,7 @@ int nproc;
 double latency=0.0;
 double bandwidth=0.0;
 int tornado_cg;
+int silent;
 
 void RTOpts_5finit(void)
 {
@@ -32,6 +33,7 @@ void RTOpts_5finit(void)
   debug_none = 1;
   nproc = 0;
   tornado_cg = 0;
+  silent = 0;
 }
 
 static int set_debug_flags(char *flagstr)
@@ -152,7 +154,7 @@ RML_BEGIN_LABEL(RTOpts__args)
 	params_struct = 1;
 	break;
       case 'q':
-	debug_flag_info = 1;
+	silent = 1;
 	break;
       case 'd':
 	if (arg[2]!='=' ||
@@ -230,16 +232,16 @@ RML_BEGIN_LABEL(RTOpts__modelica_5foutput)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__debug_5fflag_5finfo)
+RML_BEGIN_LABEL(RTOpts__params_5fstruct)
 {
-  rmlA0 = RML_PRIM_MKBOOL(debug_flag_info);
+  rmlA0 = RML_PRIM_MKBOOL(params_struct);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__params_5fstruct)
+RML_BEGIN_LABEL(RTOpts__silent)
 {
-  rmlA0 = RML_PRIM_MKBOOL(params_struct);
+  rmlA0 = RML_PRIM_MKBOOL(silent);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -1996,7 +1996,6 @@ end
 relation get_cref_from_elabed_mod: Types.Mod => Absyn.ComponentRef list =
 
   rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
-	Print.print_buf "cref from redeclare, mod:" &
 	get_cref_from_elabed_mod(Types.REDECL(b,xs)) => res1 &
 	get_cref_from_mod(m) => res2 &
 	list_append(res1,res2) => res
@@ -2278,21 +2277,14 @@ relation inst_array : (Env.Env,
 	  => (DAE.Element list, Connect.Sets, Types.Type) =
 	  
 (*  rule	(* If is a function var.*)
-	Print.print_buf "inst_array, is function" &
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  (* Which has an 
 							  expression binding *)
-	Print.print_buf "inst_array, calling inst_class\n" &
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
-	  Print.print_buf "got type: " &
-	  Types.print_type ty &
-	  Print.print_buf "\n" &
-	Print.print_buf "instantated the class\n" &
 	(* Check their types... *)
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty) => ty' &
 	Types.match_prop(e,Types.PROP(ty,false),p) => e' &
-	Print.print_buf "matched the types \n" &
 	make_dae_equation(Exp.CREF(cr,ty'),e',NON_INITIAL) => dae 
 	---------------------------------------------------
 	inst_array(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)

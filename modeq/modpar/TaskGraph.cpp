@@ -337,7 +337,7 @@ VertexID find_task(int taskID, TaskGraph *tg)
 {
   
   VertexIterator v,v_end;
-  cerr << "Warning, calling slow find_task function." << endl;
+  //cerr << "Warning, calling slow find_task function." << endl;
   for (tie(v,v_end) = vertices(*tg);v != v_end; v++) {
     if (getTaskID(*v,tg) == taskID)
       return *v;
