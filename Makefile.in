@@ -1,0 +1,8 @@
+.PHONY : all modeq mosh
+all : modeq mosh
+
+modeq:	
+	cd modeq; $(MAKE) -f Makefile
+mosh:
+	cd mosh/src; $(MAKE) -f Makefile
+

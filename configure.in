@@ -1,0 +1,109 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(c_runtime/boolean_array.c)
+AC_SUBST(rmlc_bin)
+AC_SUBST(rmlhome)
+AC_SUBST(rmlinc)
+AC_SUBST(antlrhome)
+AC_SUBST(antlrinc)
+AC_SUBST(antlrlib)
+AC_SUBST(readlineinc)
+AC_SUBST(readlinelib)
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_MAKE_SET
+AC_PATH_PROG(rmlc_bin,rmlc, AC_MSG_ERROR([Error rmlc not found.]),$PATH:/home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin)
+
+dnl check for environment variables
+
+AC_MSG_CHECKING([Checking for \$RMLHOME])
+if test ! -z "$RMLHOME" ; then
+  rmlhome=$RMLHOME
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+  AC_MSG_ERROR([RMLHOME variable not set.])
+fi
+
+AC_MSG_CHECKING([Checking for \$ANTLRHOME])
+if test ! -z "$ANTLRHOME" ; then
+    antlrhome=$ANTLRHOME
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+  AC_MSG_ERROR([ANTLRHOME variable not set.])
+fi
+
+dnl Checks for libraries.
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(sys/time.h)
+
+AC_MSG_CHECKING([Checking for rml includefiles in $RMLHOME])
+rmlinc=`find $RMLHOME -follow -type d -name plain |grep include/plain`
+if test -z "$rmlinc" ; then
+  AC_MSG_ERROR([rml headers not found])
+  AC_MSG_RESULT([no])
+else
+  AC_MSG_RESULT([yes])
+fi
+
+AC_MSG_CHECKING([Checking for antlr header files])
+antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | grep include | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
+if test -z "$antlrinc" ; then 
+  AC_MSG_ERROR([Could not find antlr include files])
+else 
+  AC_MSG_RESULT([yes])
+fi
+
+AC_MSG_CHECKING([Checking for antlr libs])
+antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | grep lib | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+if test -z "$antlrlib" ; then 
+  AC_MSG_ERROR([Could not find antlr lib file])
+else 
+  AC_MSG_RESULT([yes])
+fi
+
+AC_MSG_CHECKING([Checking for readline include])
+dnl First check in special place for pelab
+if test -d /home/pelab/pkg/gnu/include ; then
+  readlineinc="/home/pelab/pkg/gnu/include"
+  AC_MSG_RESULT([yes])
+else
+dnl Check in standard paths
+  readlineinc=`find /usr/include /usr/local/include -name readline.h | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+  if test -z "$readlineinc" ; then
+     AC_MSG_RESULT([no])
+     AC_MSG_ERROR([Could not find readline header files])
+  else
+     AC_MSG_RESULT([yes])
+  fi
+fi
+
+AC_MSG_CHECKING([Checking for readline libs])
+dnl First check in special place for pelab
+if test -d /home/pelab/pkg/gnu/lib ; then
+  readlinelib="/home/pelab/pkg/gnu/lib"
+  AC_MSG_RESULT([yes])
+else
+dnl Check in standard paths
+  readlinelib = find /usr/include /usr/local/include -name libreadline.a | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'  
+  if test -z "$readlinelib" ; then
+     AC_MSG_RESULT([no])
+     AC_MSG_ERROR([Could not find readline lib file])
+  else
+     AC_MSG_RESULT([yes])
+  fi
+fi
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS(strdup strerror)
+
+AC_OUTPUT(Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile c_runtime/Makefile modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile)
+
