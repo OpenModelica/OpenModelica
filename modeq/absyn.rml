@@ -282,6 +282,7 @@ module Absyn:
   
   relation element_spec_name : ElementSpec => Ident
   relation cref_to_path : ComponentRef => Path
+  relation path_to_cref : Path => ComponentRef
   relation path_string : Path => string
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
@@ -340,6 +341,14 @@ relation cref_to_path : ComponentRef => Path =
 	-------------------
 	cref_to_path CREF_QUAL(i,[],c) => QUALIFIED(i,p)
 
+end
+
+relation path_to_cref : Path => ComponentRef =
+
+  axiom	path_to_cref IDENT(i) => CREF_IDENT(i,[])
+  rule	path_to_cref p => c
+	-------------------
+	path_to_cref QUALIFIED(i,p) => CREF_QUAL(i,[],c)
 end
 
 (** relation: print_restr

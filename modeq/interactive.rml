@@ -112,6 +112,12 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	---------------------------------------------------
 	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
 	
+  rule	Parser.parse(name) => p1 &
+	update_program(p1,p) => newp 
+	---------------------------------------------------
+	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadFile",_),
+	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))]),st as SYMBOLTABLE(p,s,ic,iv))
+	    => ("OK\n",SYMBOLTABLE(newp,s,ic,iv))
 	
   rule	let resstr="GAPI function not implemented yet\n" & let newst = st
 	---------------------------------------------------
@@ -495,17 +501,70 @@ end
 	FIXME:
 	Icon annotation is composed of several things:
 	1. Annotations in the class definition.
-	2. Annotations in base classes. This implies performing a partial instantiation removing inheritance and applying modifications there..
+	2. Annotations in base classes. This implies performing a partial instantiation removing inheritance (and applying modifications there)
 	3. Annotations found in connectors (components with type connector)
  *)
 relation get_icon_annotation: (Absyn.ComponentRef, Absyn.Program) => string =
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_icon_annotation_in_class(cdef) => str
+	get_base_classes(cdef) => crefs &
+	get_icon_annotation_from_baseclasses(crefs,p) => baseannlst &
+	get_icon_annotation_in_class(cdef) => s1 &
+	Util.string_append_list(baseannlst) => s2 &
+	string_append(s1,s2) => str
 	-----------------------------------------
 	get_icon_annotation(model,p) => str
   axiom get_icon_annotation(_,_) => "get_icon_annotation failed!"
 end
+
+(* This relation gets all base classes of a class, NOT Recursive.*)
+relation get_base_classes : (Absyn.Class) => Absyn.ComponentRef list =
+
+  rule	get_base_classes_from_parts(parts) => res
+	-----------------------------------------
+	get_base_classes (Absyn.CLASS(_,_,_,Absyn.PARTS(parts))) =>res
+
+  axiom	get_base_classes (_) => []
+end
+
+relation get_base_classes_from_parts: (Absyn.ClassPart list) => Absyn.ComponentRef list =
+
+  rule	get_base_classes_from_elts(elts) => c1 &
+	get_base_classes_from_parts(rest) => c2 &
+	list_append(c1,c2) => res
+	----------------------------
+	get_base_classes_from_parts(Absyn.PUBLIC(elts)::rest) => res
+
+  rule	get_base_classes_from_parts(rest) => res
+	----------------------------------------
+	get_base_classes_from_parts(_::rest) => res
+
+  axiom	get_base_classes_from_parts([]) => []
+end
+
+relation get_base_classes_from_elts : (Absyn.ElementItem list) => Absyn.ComponentRef list =
+  rule	get_base_classes_from_elts(rest) => cl &
+	Absyn.path_to_cref(path) => cref
+	------------------------
+	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.EXTENDS(path,_)))::rest )
+	    => cref::cl
+  rule	get_base_classes_from_elts(rest) => cl
+	--------------------------------------
+	get_base_classes_from_elts (_::rest) => cl
+
+  axiom	get_base_classes_from_elts([]) => []
+end
+
+relation get_icon_annotation_from_baseclasses :(Absyn.ComponentRef list, Absyn.Program) 
+	=> string list =
+  axiom	get_icon_annotation_from_baseclasses([],p) => []
+
+  rule	get_icon_annotation(cr,p) => s1 &
+	get_icon_annotation_from_baseclasses(rest,p) => s2
+	------------------------------------------------
+	get_icon_annotation_from_baseclasses(cr::rest,p) => s1::s2
+end
+
 
 relation get_icon_annotation_in_class : (Absyn.Class) => string =
 
@@ -1292,9 +1351,3 @@ relation namedarg_to_modification: (Absyn.NamedArg) => Absyn.ElementArg =
 	----------------------------------------------------------------
 	namedarg_to_modification( Absyn.NAMEDARG(id,e)) => res
 end
-
-
-
-
-
-

@@ -34,7 +34,6 @@ module Util :
   relation list_getmember: (''a, ''a list) => ''a
   relation list_replaceat: (''a, int, ''a list) => ''a list 
 	      
-
   relation tuple2_1 : ('a * 'b) => 'a
   relation tuple2_2 : ('a * 'b) => 'b
 
