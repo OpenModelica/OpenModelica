@@ -1,0 +1,6 @@
+module RTOpts:
+
+  relation args : string list => string list
+  relation typeinfo : () => bool
+
+end
