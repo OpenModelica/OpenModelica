@@ -1167,6 +1167,49 @@ algorithm
     external "C" get_rheolef_blocked_values(meshfilename, meshnv, nbr_blockeds, 
         values, nbc, size(bc, 2), bc);
     end getBlockedValues;
+
+    function getForm 
+      input String formname;
+      input String meshfilename;
+      input Integer meshnv;
+      input FormSize s;
+      input Integer nbc;
+      input BCType bc[nbc];
+      output Form form(nu=s.nu, nb=s.nb);
+    protected 
+      Real auu[s.nu, s.nu];
+      Real aub[s.nu, s.nb];
+      Real abu[s.nb, s.nu];
+      Real abb[s.nb, s.nb];
+    algorithm 
+      (auu,aub,abu,abb) := getForm_internal(formname, meshfilename, meshnv, s, 
+        nbc, bc);
+      form.uu := auu;
+      form.ub := aub;
+      form.bu := abu;
+      form.bb := abb;
+      form.nu := s.nu;
+      form.nb := s.nb;
+    end getForm;
+
+    function getForm_internal 
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
+      //input Mesh.Data mesh;
+      input String formname;
+      input String meshfilename;
+      input Integer meshnv;
+      input Integer nu;
+      input Integer nb;
+      input Integer nbc;
+      input BCType bc[nbc];
+      output Real auu[nu, nu];
+      output Real aub[nu, nb];
+      output Real abu[nb, nu];
+      output Real abb[nb, nb];
+    external "C" get_rheolef_form(formname, meshfilename, meshnv, nu, nb, auu, 
+        aub, abu, abb, nbc, size(bc, 2), bc);
+    end getForm_internal;
   end FEMSolver;
   
   package DomainOperators 
