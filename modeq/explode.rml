@@ -147,7 +147,7 @@ end
 
 relation exp_class: Absyn.Class => Class =
 
-  rule	exp_classdef(d) => d'
+  rule	exp_classdef d => d'
 	--------------------------------------------
 	exp_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
 
