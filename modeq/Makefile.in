@@ -6,11 +6,11 @@
 # $Id$
 #
 
-ARCH = $(shell uname)
 ANTLR_HOME = @antlrhome@
 
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
+LIBSOCKET = @LIBSOCKET@
 
 SHELL	= /bin/sh
 CC	= gcc
@@ -20,22 +20,7 @@ RML	= @rmlc_bin@ -g
 RMLINC  = -I$(RMLHOME)/include/plain
 MYRML	= ./myrmlc
 
-LDFLAGS=
-ifeq ($(ARCH),CYGWIN_NT-5.1)
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr
-endif
-
-ifeq ($(ARCH),CYGWIN_NT-5.0)
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr
-endif
-
-ifeq ($(ARCH),Linux)
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr
-endif
-
-ifeq ($(strip $(LDFLAGS)),)
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr -lsocket -lnsl 
-endif
+LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET)
 
 PROG	= modeq
 AST	= absyn_builder/absyn_builder.a
@@ -98,7 +83,7 @@ SUBDIRS	= runtime absyn_builder
 all : $(SRCO) subdirs $(PROG)
 
 test:
-	@(cd testsuite ; make)
+	@(cd testsuite ; $(MAKE))
 
 $(PROG): $(SRCO) $(AST) $(RTOBJ)
 	g++ -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
