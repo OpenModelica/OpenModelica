@@ -58,6 +58,7 @@ module DAE:
   relation dump_type: Type => ()
   relation dump_algorithm: Element => ()
   relation get_matching_elements: (Element list, Element => () )  => Element list
+  relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
   relation is_output_var: Element => ()
   relation is_parameter: Element => ()
@@ -396,31 +397,25 @@ end
 (* LS *)
 relation get_matching_elements: (Element list, Element => () )  => Element list =
 
-  axiom	get_matching_elements ([],_) => []
+  rule	get_matching (elist, cond ) => elist
+	------------------------------------
+	get_matching_elements (elist, cond) => elist
+end	
 
-(*
-  rule	cond(v) &
-	get_matching_elements (vl, cond) => vl'
-	-------------------
-	get_matching_elements (((vv as VARVAL(cr,e))::v::vl), cond) => vv::v::vl'
-*)
+(* LS *)
+relation get_matching: ('a list, 'a => () )  => 'a list =
+
+  axiom	get_matching ([],_) => []
 
   rule	cond(v) &
-	get_matching_elements (vl, cond) => vl'
+	get_matching (vl, cond) => vl'
 	-------------------
-	get_matching_elements (v::vl, cond) => v::vl'
-(*
-  rule	not cond(v) &
-	get_matching_elements (vl, cond) => vl'
-	--------------------------
-	get_matching_elements (VARVAL(_,_)::v::vl, cond) => vl'
-*)
+	get_matching (v::vl, cond) => v::vl'
 
   rule	not cond(v) &
-	get_matching_elements (vl, cond) => vl'
+	get_matching (vl, cond) => vl'
 	--------------------------
-	get_matching_elements (v::vl, cond) => vl'
-
+	get_matching (v::vl, cond) => vl'
 end	
 
 
