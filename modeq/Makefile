@@ -12,13 +12,14 @@ RML	= rmlc
 PROG	= modeq
 AST	= ast/libast.a
 
-SRCRML=	class.rml exp.rml dae.rml main.rml
+SRCRML=	class.rml exp.rml dae.rml main.rml absyn.rml
 SRCC=	$(SRCRML:.rml=.c)
 SRCO=	$(SRCRML:.rml=.o)
 
 SUBDIRS	= ast
 
 .SUFFIXES: .rml
+.PHONY: subdirs
 
 .rml.c:
 	$(RML) -c $<
@@ -27,26 +28,28 @@ SUBDIRS	= ast
 	$(RML) -c $<
 #	$(CC) -c $*.c
 
-$(PROG): $(SUBDIRS) $(SRCO) $(AST)
-	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) $(AST) ast/modgram.o
+$(PROG): subdirs $(SRCO) $(AST)
+	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) ast/modgram.o $(AST)
 
 $(SRCO):	rml.h
-modelica.o: modelica.rml
-class.o: class.rml
-exp.o: exp.rml
-dae.o: dae.rml
-main.o: main.rml
+modelica.o:	modelica.rml
+class.o:	class.rml
+exp.o:		exp.rml
+dae.o:		dae.rml
+main.o:		main.rml
+absyn.o:	absyn.rml
+parse.o:	parse.rml
 
 ast/libast.a:
 	(cd ast ; $(MAKE) libast.a)
 
-$(SUBDIRS):
-	for d in $(SUBDIRS); do \
+subdirs:
+	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE)) \
 	done
 
 clean:
-	for d in $(SUBDIRS); do \
+	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
 	$(RM) $(SRCO) $(SRCC) $(PROG)
