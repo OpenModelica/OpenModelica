@@ -161,9 +161,9 @@ module Absyn:
   (** This type contains the information specific to one component. *)
 
   datatype EquationItem = EQUATIONITEM of Equation * Comment option
-					| EQUATIONITEMANN of Annotation 
+			| EQUATIONITEMANN of Annotation 
   datatype AlgorithmItem = ALGORITHMITEM  of Algorithm * Comment option
-					|  ALGORITHMITEMANN of Annotation 
+			 |  ALGORITHMITEMANN of Annotation 
 
   datatype Equation = EQ_EXPR of Exp	     (* more later? *)
 		    | EQ_IF of Exp
@@ -256,6 +256,7 @@ module Absyn:
 	       | TUPLE of Exp list (*PR.*)
 	       | END
 	       | CODE of Code
+	       | FOR_ITER_EXP of Exp * Ident * Exp
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
@@ -269,6 +270,7 @@ module Absyn:
   (** The 'Code' datatype is used for Meta-programming. It orgiginates from the Code quotation. *)
 
   datatype FunctionArgs =  FUNCTIONARGS of Exp list * NamedArg list
+			| FOR_ITER_FARG of Exp * Ident * Exp
   (** The `FunctionArgs' datatype consists of a list of positional arguments *)
   (** followed by a list of named arguments (Modelica v2.0) *)
 							  
