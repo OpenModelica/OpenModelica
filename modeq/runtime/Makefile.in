@@ -11,7 +11,7 @@ CFLAGS = @DEFS@
 
 SHELL	= /bin/sh
 CC	= gcc
-IDL	= idl --boa --no-poa
+IDL	= idl 
 CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 

@@ -33,12 +33,11 @@ char * modeq_message;
 
 
 CORBA::ORB_var orb;
-CORBA::BOA_var boa;
+PortableServer::POA_var poa;
 
 ModeqCommunication_impl * server;
 
 extern "C" {
-void writeServerId(CORBA::ORB_var orb);
 void* runOrb(void*arg);
   
 void Corba_5finit(void)
@@ -56,12 +55,24 @@ RML_BEGIN_LABEL(Corba__initialize)
   pthread_mutex_init(&modeq_waitlock,NULL);
   
   orb = CORBA::ORB_init(zero, 0,"mico-local-orb");
-  boa = orb->BOA_init(zero,0,"mico-local-boa");
+  CORBA::Object_var poaobj = orb->resolve_initial_references("RootPOA");
   
+  poa = PortableServer::POA::_narrow(poaobj);
+  PortableServer::POAManager_var mgr = poa->the_POAManager();
+
   server = new ModeqCommunication_impl(); 
 
-  writeServerId(orb);
-  boa->impl_is_ready(CORBA::ImplementationDef::_nil());
+  PortableServer::ObjectId_var oid = poa->activate_object(server);
+
+  /* Write reference to file */
+  ofstream of ("/tmp/openmodelica.objid");
+  CORBA::Object_var ref = poa->id_to_reference (oid.in());
+  CORBA::String_var str = orb->object_to_string (ref.in());
+  of << str.in() << endl;
+  of.close ();
+
+
+  mgr->activate();
 
   // Start thread that listens on incomming messages.
   pthread_t orb_thr_id;
@@ -78,17 +89,11 @@ RML_END_LABEL
 void* runOrb(void* arg) 
 {
   orb->run();
-  CORBA::release(server);
+  poa->destroy(TRUE,TRUE);
+  delete server;
   return NULL;
 }
 
-void writeServerId(CORBA::ORB_var orb)
-{
-  ofstream tmpFile ("/tmp/openmodelica.objid");  // Should be different on Windows
-  CORBA::String_var ref = orb->object_to_string(server);
-  tmpFile << ref << endl;
-  tmpFile.close();
-}
 
 RML_BEGIN_LABEL(Corba__wait_5ffor_5fcommand)
 {
@@ -124,7 +129,6 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__close)
 {
-  boa->deactivate_impl(CORBA::ImplementationDef::_nil());
   orb->shutdown(TRUE);
 #ifdef HAVE_PTHREAD_YIELD  
   pthread_yield(); // Allowing other thread to shutdown.
