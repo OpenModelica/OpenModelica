@@ -41,7 +41,7 @@
  ** exp_contains, exp_equal are part of this code.
  **
  ** This module also contains relations for printing expressions, to io or to
- ** strings. Also graphviz output is somewhat supported.
+ ** strings. Also graphviz output is supported.
  **)
 
 module Exp:
