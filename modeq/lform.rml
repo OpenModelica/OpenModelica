@@ -156,15 +156,6 @@ and convert_element_spec: (Env.Env,Absyn.ElementSpec)
 	convert_list(convert_element_arg,env',a) => a'
 	---------------------------------
 	convert_element_spec(env,Absyn.EXTENDS(c,a)) => (env',EXTENDS(c'',a'))
-(*
-  rule	lookup_type(env,n) => t &
-	convert_option(convert_modification,env,cm) => cm'
-	------------------------------------------------------------------
-	convert_element_spec(env,
-		Absyn.COMPONENTS(f,p,c,i,o,n,[Absyn.COMPONENT(ci,cd,cm)]))
-	  => (env,COMPONENT(f,p,c,i,o,t,ci,cd,cm'))
-*)
-	(* FIXME *)
 
 end
 and convert_element : Absyn.Element => Element =
