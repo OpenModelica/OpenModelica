@@ -2,10 +2,18 @@
 
 SHELL	= /bin/sh
 LATEX	= latex
+RMLDOC  = ../tools/rmldoc
+
+SOURCES = inst.tex classinf.tex mod.tex connect.tex
 
 .DEFAULT: report.dvi
+.SUFFIXES:
+.SUFFIXES: .rml .tex .dvi .ps
 
-report.dvi: report.tex report.aux
+%.tex : ../%.rml
+	$(RMLDOC) $< > $@
+
+report.dvi: report.tex report.aux $(SOURCES)
 	$(LATEX) $<
 
 report.ps: report.dvi
