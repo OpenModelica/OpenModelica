@@ -142,15 +142,98 @@ end
 	 
 	 let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xprime, double* y)\n{\n" &
 	 let func_footer = "\n}\n" &
- 
-         Util.string_append_list([func_header,"//insert output code here\n",func_footer]) 
-	  => coutput 
+	 build_blocks(dae,ass1,ass2,blocks) => eqn_str_lst &
+	 Util.list_flatten([[func_header],eqn_str_lst,[func_footer]]) => res &
+         Util.string_append_list(res) => coutput 
          -------------------------------------------------------------
          generate_compute_output(cname,
                                  dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvars,_,_),eqn,seqn,_,_),
                                  ass1,ass2,blocks) => coutput
          
  end
+
+(** relation build_blocks
+ **)
+ relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => string list =
+
+  axiom	build_blocks(_,_,_,[]) => []
+	     
+  rule	(* for single equations *)
+	 build_equation(dae,ass1,ass2,eqn) => eqn_str &
+	 build_blocks(dae,ass1,ass2,blocks) => res
+	 -------------------------------------
+	 build_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
+	 
+  rule	print "-build_blocks failed\n" 
+	 -----------------
+	 build_blocks(_,_,_,_) => fail
+ end
+
+
+(** relation build_equation 
+ ** This returns the string for a specific equation in the 
+ ** incidence matrix.
+ ** It is used both for state variables and regular variables
+ **)
+relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
+	     
+  rule  (* Solving for non-states *)
+	int_sub(e,1) => e' &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	int_sub(v,1) => v' &
+	DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	DAELow.is_non_state kind &
+	(*print "Solving for non-states\n" &*)
+	
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr &
+	
+        (* start debug output *)
+        Exp.print_exp_str e1 => e1s &
+	Exp.print_exp_str e2 => e2s &
+        int_string(e) => eqn_nr &
+        int_string(v) => var_nr &
+	(*    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
+	 print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
+	 print s & print "\ngiving:\n " &
+         Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
+        
+        Exp.simplify(expr) => simplify_exp &
+	build_assignment(cr,simplify_exp,origname)  => assigment_string
+	--------------------------------
+	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string	
+        
+	
+  rule	(* Solving the state s means solving for der(s) *)
+	int_sub(e,1) => e' &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+	let new_varexp = Exp.CREF(cr,Exp.REAL) &
+	Exp.solve(e1,e2,new_varexp) => expr &
+        Exp.simplify(expr) => simplify_exp &
+	build_assignment(cr ,simplify_exp,origname)  => assigment_string
+	--------------------------------
+	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string 
+	
+  rule	int_sub(e,1) => e' &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	not Exp.solve(e1,e2,varexp) => _ &
+	print "nonlinear equation not implemented yet\n" 
+	--------------------------------
+	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
+        
+  rule	print "-build_equation failed\n" 
+	--------------------------------
+	build_equation(_,_,_,_) => "//build_equation failed\n" 
+end
 
 
  relation build_simple_equation:(DAELow.Var array, DAELow.Equation list) 
@@ -290,24 +373,21 @@ end
  ** and makes a C++ assignment: cr = exp;
  **)
 
- relation build_assignment: (Exp.ComponentRef, (* varname *)
-			     Exp.Exp, (*expression*) 
-			     string) (* orig. name*) 
+relation build_assignment: (Exp.ComponentRef, (* varname *)
+			    Exp.Exp, (*expression*) 
+			    string) (* orig. name*) 
 	  => string =
-	   
-  rule  cref_modelica_str(cr) => cr_str & 
-         print_exp_cpp_str(exp) => exp_str & 
-         (*Exp.print_exp_str(exp) => exp_str & *)
-         Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str 
-         --------------------------------
-	 build_assignment(cr,exp,origname) => eqn_str
-         
+	  
+  rule  Exp.print_component_ref_str(cr) => cr_str &
+        print_exp_cpp_str(exp) => exp_str & 
+        Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str 
+        --------------------------------
+	build_assignment(cr,exp,origname) => eqn_str
+        
   rule	print "-build_assignment failed\n" 
-	 ------------------------
-	 build_assignment(cr,exp,origname) => fail
-         
-	 
- end
+	------------------------
+	build_assignment(cr,exp,origname) => fail
+end
 
 
 (** relation: print_exp_cpp_str
