@@ -921,7 +921,9 @@ relation string_split_at_char2 : (char list, char,char list) => string list  =
         string_split_at_char2([],_,chr_rest) => [res]
 
   rule  firstChar = chr &
-        list_string(chr_rest) => res &
+        (* this is needed because it returns the reversed list *)
+        list_reverse(chr_rest) => chrList &
+        list_string(chrList) => res &
         string_split_at_char2(rest,chr,[]) => res_str
         ---------------------------------
         string_split_at_char2(firstChar::rest,chr,chr_rest) => res::res_str
@@ -929,7 +931,7 @@ relation string_split_at_char2 : (char list, char,char list) => string list  =
   rule  not firstChar = chr &
         string_split_at_char2(rest,chr,firstChar::chr_rest) => res
         ---------------------------------
-        string_split_at_char2(firstChar::rest,chr,chr_rest) => res
+        string_split_at_char2(firstChar::rest,chr,chr_rest) => res 
 
   rule  print "string_split_at_char2 failed\n"
         ---------------------------------

@@ -38,7 +38,7 @@ LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(
 PROG	= modeq
 AST	= absyn_builder/absyn_builder.a
 RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runtime/socketimpl.o \
-	  runtime/printimpl.o runtime/ptolemyio.o runtime/daeext.o $(CORBAOBJ) \
+	  runtime/printimpl.o runtime/ptolemyio.o runtime/daeext.o runtime/tornadoext.o $(CORBAOBJ) \
 	modpar/libmodpar.a
 
 SRCRML= absyn.rml \
@@ -181,3 +181,4 @@ staticexp.o: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig value
 types.o: types.rml classinf.sig absyn.sig exp.sig values.sig explode.sig dump.sig debug.sig print.sig util.sig
 util.o: util.rml
 values.o: values.rml exp.sig absyn.sig print.sig system.sig util.sig dump.sig
+tornado.o: tornadoext.sig
