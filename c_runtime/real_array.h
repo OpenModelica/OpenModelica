@@ -81,6 +81,12 @@ void simple_index_real_array2(real_array_t* source,
 				       int, int, 
 				       real_array_t* dest);
 
+void array_real_array(real_array_t* dest,int n,real_array_t* first,...);
+void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...);
+
+void array_scalar_real_array(real_array_t* dest,int n,real* first,...);
+void array_alloc_scalar_real_array(real_array_t* dest,int n,real* first,...);
+
 real* real_array_element_addr(real_array_t* source,int ndims,...);
 
 void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B);

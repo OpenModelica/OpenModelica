@@ -427,6 +427,26 @@ void simple_index_real_array2(real_array_t* source,
 {
 }
 
+void array_real_array(real_array_t* dest,int n,real_array_t* first,...)
+{
+
+}
+
+void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...)
+{
+
+}
+
+void array_scalar_real_array(real_array_t* dest,int n,real* first,...)
+{
+
+}
+
+void array_alloc_scalar_real_array(real_array_t* dest,int n,real* first,...)
+{
+
+}
+
 real* real_array_element_addr(real_array_t* source,int ndims,...)
 {
   va_list ap;
