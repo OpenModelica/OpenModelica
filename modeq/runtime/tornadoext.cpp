@@ -532,7 +532,7 @@ extern "C"
         for(itr = search->second.begin(); itr != search->second.end(); ++itr)
           {
             if(itr->second.type == string("class")){
-              output << "  SetSubModel(" << index++ << ", new C" << modelica_str_to_cpp(itr->second.direction) << "(\""<< modelica_str_to_cpp(itr->second.name) << "\"));\n";
+              output << "  SetSubModel(" << index++ << ", new C" << modelica_str_to_cpp(itr->second.direction) << "(L\""<< modelica_str_to_cpp(itr->second.name) << "\"));\n";
               //SetSubModel(0, new CPopulation(L"Immune_Popul"));
               
             }

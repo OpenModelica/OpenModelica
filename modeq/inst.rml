@@ -1921,8 +1921,10 @@ relation inst_var2 : (Env.Env,
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	(*inst_mod_equation(cr,ty,mod) => dae2 &*)
+
+
 	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e), 
-		    inst_dims,NONE)
+		    inst_dims,NONE,NONE)
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
 (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
@@ -1940,7 +1942,8 @@ relation inst_var2 : (Env.Env,
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 (*	inst_mod_equation(cr,ty,mod) => dae2 &*)
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE)
+
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE)
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
@@ -1979,15 +1982,17 @@ relation inst_var2 : (Env.Env,
 	
         inst_start_binding_exp(mod,ty,idxs') => start &
 
-(*         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr & *)
-(*   	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp & *)
-(*         Debug.fprint("failtrace", str_tmp) & *)
-(*   	    Debug.fprint("failtrace", " <------------\n") & *)
+        inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr &
+  	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
+        Debug.fprint("failtrace", str_tmp) &
+  	    Debug.fprint("failtrace", " <------------\n") &
+        dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
+ 		            inst_dims, start, dae_var_attr) => dae3 & 
 
-
-
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
-		    inst_dims, start) => dae3 &
+(*         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE, *)
+(* 		            inst_dims, start, NONE) => dae3 & *)
+        
+        
 	list_append(dae1',dae2) => daex &
 	list_append(daex,dae3) => dae 
         (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
@@ -2007,7 +2012,8 @@ relation inst_var2 : (Env.Env,
 	Types.elab_type(ty') => ty'' &
 	Types.match_prop(e,Types.PROP(ty',false),p) => e' &
 	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
-	dae_declare(cr,ty,attr,NONE,dims',NONE) => dae1 &
+
+	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE) => dae1 &
 	list_append (dae1, [daeeq]) => dae
 	-------------------------------
 	inst_var2(env,ci_state as
@@ -2019,7 +2025,8 @@ relation inst_var2 : (Env.Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
 	inst_dim_exp_lst(dims,true) => dims' &
-	dae_declare(cr,ty,attr,NONE,dims',NONE) => dae &
+
+	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE) => dae &
 	make_array_type(dims,ty) => arrty 
 	-------------------------------
 	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl (*as false*))
@@ -2424,8 +2431,8 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 	absyn_dir_to_dae_dir dir => dir' &
 	fix_direction (r,dir) => r'
 	-----------------------------
-	fix_direction (DAE.VAR(cr,vk,DAE.BIDIR,t,e,id,start,flow,class)::r,dir) 
-	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow,class)::r'
+	fix_direction (DAE.VAR(cr,vk,DAE.BIDIR,t,e,id,start,flow,class,dae_var_attr)::r,dir) 
+	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow,class,dae_var_attr)::r'
 
   rule	(* Error, component declared as input or output  when containing variable that
 	 * has prefix input. 
@@ -2438,7 +2445,7 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 	Print.print_error_buf str &
 	Print.print_error_buf " declared as input\n"
  	-----------------------------
-	fix_direction (DAE.VAR(cr,vk,DAE.INPUT,t,e,id,start,flow,class)::r,dir) 
+	fix_direction (DAE.VAR(cr,vk,DAE.INPUT,t,e,id,start,flow,class,dae_var_attr)::r,dir) 
 	  => fail
 
 
@@ -2453,7 +2460,7 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 	Print.print_error_buf str & 
 	Print.print_error_buf " declared as input\n"
  	-----------------------------
-	fix_direction (DAE.VAR(cr,vk,DAE.OUTPUT,t,e,id,start,flow,class)::r,dir) 
+	fix_direction (DAE.VAR(cr,vk,DAE.OUTPUT,t,e,id,start,flow,class,dae_var_attr)::r,dir) 
 	  => fail
 
   rule	fix_direction(lst,dir) => lst' &
@@ -3422,8 +3429,8 @@ relation dae_declare : (Exp.ComponentRef,
 			SCode.Attributes, 
 			Exp.Exp option,
 			InstDims,
-			DAE.StartValue
-			) 
+			DAE.StartValue,
+			DAE.VariableAttributes option) 
 	  => DAE.Element list =
 
   rule	(*Debug.fprint( "insttr", "dae_declare(") &
@@ -3432,14 +3439,14 @@ relation dae_declare : (Exp.ComponentRef,
 	Debug.fcall ( "insttr", Types.print_type,ty)  &
 	Debug.fprint ("insttr", "...)\n") &*)
 	DAE.to_flow flow => flow' &
-	dae_declare2 (vn, ty, flow', par, dir, e, inst_dims, start) => dae
+	dae_declare2 (vn, ty, flow', par, dir, e, inst_dims, start,dae_var_attr) => dae
 	-----------------------------------
-	dae_declare (vn, ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start) 
+	dae_declare (vn, ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start,dae_var_attr) 
 	  => dae
 
   rule	Debug.fprint("failtrace", "- dae_declare failed\n")
 	------------------------------
-	dae_declare(_,_,_,_,_,_) => fail
+	dae_declare(_,_,_,_,_,_,_) => fail
 
 end
 
@@ -3448,40 +3455,40 @@ end
    correctly *)
 relation dae_declare2 : (Exp.ComponentRef, Types.Type, DAE.Flow, SCode.Variability,
 			 Absyn.Direction, Exp.Exp option, 
-			 InstDims, DAE.StartValue)
+			 InstDims, DAE.StartValue,DAE.VariableAttributes option)
 	  => DAE.Element list =
 
   rule	dae_declare3 (vn, ty, flow, DAE.VARIABLE, dir, e, 
-		      inst_dims,start) => dae
+		      inst_dims,start, dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.VAR, dir, e, inst_dims,start) => dae
+	dae_declare2 (vn, ty, flow, SCode.VAR, dir, e, inst_dims,start,dae_var_attr) => dae
 
   rule	dae_declare3 (vn, ty, flow,  DAE.DISCRETE, dir, e,  
-		      inst_dims,start) => dae
+		      inst_dims,start,dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.DISCRETE, dir, e, inst_dims,start) => dae
+	dae_declare2 (vn, ty, flow, SCode.DISCRETE, dir, e, inst_dims,start,dae_var_attr) => dae
 
   rule	dae_declare3 (vn, ty, flow, DAE.PARAM, dir, e,  
-		      inst_dims,start) => dae
+		      inst_dims,start,dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.PARAM, dir, e, inst_dims,start) 
+	dae_declare2 (vn, ty, flow, SCode.PARAM, dir, e, inst_dims,start,dae_var_attr) 
 	  => dae
 
   rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e,  
-		      inst_dims,start) => dae
+		      inst_dims,start,dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.CONST, dir, e, inst_dims,start) 
+	dae_declare2 (vn, ty, flow, SCode.CONST, dir, e, inst_dims,start,dae_var_attr) 
 	  => dae
 
   rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e, 
-		      inst_dims,start) => dae
+		      inst_dims,start,dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.STRUCTPARAM, dir, e, inst_dims,start) 
+	dae_declare2 (vn, ty, flow, SCode.STRUCTPARAM, dir, e, inst_dims,start,dae_var_attr) 
 	  => dae
 
   rule	Debug.fprint("failtrace", "- dae_declare2 failed\n")
 	------------------------------
-	dae_declare2(_,_,_,_,_,_,_,_) => fail
+	dae_declare2(_,_,_,_,_,_,_,_,_) => fail
 
 end
 
@@ -3489,25 +3496,25 @@ end
 
 relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 			 Absyn.Direction, Exp.Exp option, 
-			 InstDims, DAE.StartValue)
+			 InstDims, DAE.StartValue,DAE.VariableAttributes option)
 	  => DAE.Element list =
 
-  rule	dae_declare4 (vn, ty, fl, vk, DAE.INPUT, e, inst_dims,start) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.INPUT, e, inst_dims,start,dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, fl, vk, Absyn.INPUT, e, inst_dims,start) 
+	dae_declare3 (vn, ty, fl, vk, Absyn.INPUT, e, inst_dims,start,dae_var_attr) 
 	  => dae
 
-  rule	dae_declare4 (vn, ty, fl, vk, DAE.OUTPUT, e, inst_dims,start) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.OUTPUT, e, inst_dims,start,dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, fl, vk, Absyn.OUTPUT, e, inst_dims,start) => dae
+	dae_declare3 (vn, ty, fl, vk, Absyn.OUTPUT, e, inst_dims,start,dae_var_attr) => dae
 
-  rule	dae_declare4 (vn, ty, fl, vk, DAE.BIDIR, e, inst_dims,start) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.BIDIR, e, inst_dims,start,dae_var_attr) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, fl, vk, Absyn.BIDIR, e, inst_dims,start) => dae
+	dae_declare3 (vn, ty, fl, vk, Absyn.BIDIR, e, inst_dims,start,dae_var_attr) => dae
 
   rule	Debug.fprint("failtrace", "#- dae_declare3 failed\n")
 	------------------------------
-	dae_declare3(_,_,_,_,_,_,_,_) => fail
+	dae_declare3(_,_,_,_,_,_,_,_,_) => fail
 
 end
 
@@ -3517,37 +3524,39 @@ end
 
 relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 			 DAE.VarDirection, Exp.Exp option, InstDims, 
-			 DAE.StartValue)
+			 DAE.StartValue,DAE.VariableAttributes option)
 	  => DAE.Element list =
 
   axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), fl, kind, dir, e,  
-		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl,[])]
+		      inst_dims,start,dae_var_attr)
+	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl,[],dae_var_attr)]
 	
   axiom	dae_declare4 (vn, (Types.T_REAL(_),_), fl, kind, dir, e, 
-		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl,[])]
+		      inst_dims,start,dae_var_attr)
+	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl,[],dae_var_attr)]
 
   axiom	dae_declare4 (vn, (Types.T_BOOL(_),_), fl, kind, dir, e, 
-		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl,[])]
+		      inst_dims,start,dae_var_attr)
+	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl,[],dae_var_attr)]
 	
   axiom	dae_declare4 (vn, (Types.T_STRING(_),_), fl, kind, dir, e, 
-		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl,[])]
+		      inst_dims,start,dae_var_attr)
+	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl,[],dae_var_attr)]
 
-axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start)
+axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start,dae_var_attr)
 	=> []
 	(* We should not declare each enumeration value of an enumeration when instantiating,e.g Myenum my !=> constant EnumType my.enum1,... *)
 	(*[DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]*)
 
   axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), fl, kind, dir, e,
-		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,[])]
+		      inst_dims,start,dae_var_attr)
+	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,[],dae_var_attr)]
 
-  axiom	dae_declare4 (c,ty,_,_,_,_,_,_) => []
+  axiom	dae_declare4 (c,ty,_,_,_,_,_,_,_) => []
 
 end
+
+(**)
 
 (** LS & ELN 
  **
@@ -4126,8 +4135,9 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	(** stored using DAE.DEFINE rather than DAE.EQUATION.  This *)
 	(** makes it a little clearer. *)
   rule	new_ident => n &
+
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
-				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE)
+				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE)
 	  => decl &
 	inst_eq_equation_2(Exp.CREF(n,Exp.OTHER), e2, t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
@@ -4140,7 +4150,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	(** where none of the sides is a component reference *)
   rule	new_ident => n &
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
-				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE)
+				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE)
 	  => decl &
 	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
@@ -4980,7 +4990,12 @@ relation inst_start_binding_exp: (Types.Mod,Types.Type,int list) => DAE.StartVal
    
 end
 
-relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.VariableAttributes =
+(** relation inst_dae_variable_attributes 
+ ** this relation extracts the attributes from the modification
+ ** It returns a DAE.VariableAttributes option because 
+ ** somtimes a varible does not contain the variable-attr
+ **)
+relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.VariableAttributes option =
 
   rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
         inst_string_binding(mod,index_list,"unit") => unit_str &
@@ -4992,8 +5007,8 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
         inst_real_binding(mod,index_list,"nominal") => nominal_val 
         -----------------------------------------
         inst_dae_variable_attributes(mod,(Types.T_REAL(_),_),index_list) 
-          => DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),start_val,
-                               fixed_val,nominal_val,DAE.DEFAULT)
+          => SOME(DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),start_val,
+                               fixed_val,nominal_val,SOME(DAE.DEFAULT)))
 
   rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
         inst_int_binding(mod,index_list,"min") => min_val &
@@ -5002,39 +5017,39 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
         inst_bool_binding(mod,index_list,"fixed") => fixed_val 
         -----------------------------------------
         inst_dae_variable_attributes(mod,(Types.T_INTEGER(_),_),index_list) 
-          => DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,
-                               fixed_val)
+          => SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,
+                               fixed_val))
         
   rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
         inst_bool_binding(mod,index_list,"start") => start_val &
         inst_bool_binding(mod,index_list,"fixed") => fixed_val 
         -----------------------------------------
         inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
-          => DAE.VAR_ATTR_BOOL(quantity_str,start_val,
-                               fixed_val)
+          => SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,
+                               fixed_val))
   
   rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
         inst_string_binding(mod,index_list,"start") => start_val 
         -----------------------------------------
         inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
-          => DAE.VAR_ATTR_STRING(quantity_str,start_val)
+          => SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val))
 
-  rule  Print.print_error_buf "# unknown type for variable.\n"
+  rule (*  Print.print_error_buf "# unknown type for variable.\n" *)
         -----------------------------------------
-        inst_dae_variable_attributes(_,_,_) => fail
+        inst_dae_variable_attributes(_,_,_) => NONE
 
 end
 (*  x02lucpo FIXME: check the type of variable for the fixed because there is a difference between *)
 (*  parameters and variables *)
-relation inst_bool_binding: (Types.Mod,int list,string) => bool =
+relation inst_bool_binding: (Types.Mod,int list,string) => bool option =
      
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.BCONST(result))
         -----------------------------------------
-        inst_bool_binding(mod,index_list,bind_name) => result
+        inst_bool_binding(mod,index_list,bind_name) => SOME(result)
    
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_bool_binding(mod,index_list,bind_name) => false
+        inst_bool_binding(mod,index_list,bind_name) => NONE
 
   rule  Print.print_error_buf "# Wrong type on predefined.\n"
         -----------------------------------------
@@ -5042,15 +5057,15 @@ relation inst_bool_binding: (Types.Mod,int list,string) => bool =
    
 end
 
-relation inst_real_binding: (Types.Mod,int list,string) => real =
+relation inst_real_binding: (Types.Mod,int list,string) => real option =
      
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.RCONST(result))
         -----------------------------------------
-        inst_real_binding(mod,index_list,bind_name) => result
+        inst_real_binding(mod,index_list,bind_name) => SOME(result)
    
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_real_binding(mod,index_list,bind_name) => 0.0
+        inst_real_binding(mod,index_list,bind_name) => NONE
 
   rule  Print.print_error_buf "# Wrong type on predefined.\n"
         -----------------------------------------
@@ -5058,15 +5073,15 @@ relation inst_real_binding: (Types.Mod,int list,string) => real =
    
 end
 
-relation inst_int_binding: (Types.Mod,int list,string) => int =
+relation inst_int_binding: (Types.Mod,int list,string) => int option =
      
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.ICONST(result))
         -----------------------------------------
-        inst_int_binding(mod,index_list,bind_name) => result
+        inst_int_binding(mod,index_list,bind_name) => SOME(result)
    
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_int_binding(mod,index_list,bind_name) => 0
+        inst_int_binding(mod,index_list,bind_name) => NONE
 
   rule  Print.print_error_buf "# Wrong type on predefined.\n"
         -----------------------------------------
@@ -5074,15 +5089,15 @@ relation inst_int_binding: (Types.Mod,int list,string) => int =
    
 end
 
-relation inst_string_binding: (Types.Mod,int list,string) => string =
+relation inst_string_binding: (Types.Mod,int list,string) => string option =
      
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.SCONST(result))
         -----------------------------------------
-        inst_string_binding(mod,index_list,bind_name) => result
+        inst_string_binding(mod,index_list,bind_name) => SOME(result)
    
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_string_binding(mod,index_list,bind_name) => ""
+        inst_string_binding(mod,index_list,bind_name) => NONE
 
   rule  Print.print_error_buf "# Wrong type on predefined type string.\n"
         -----------------------------------------
@@ -5305,10 +5320,10 @@ relation init_vars_modelica_output_1 : (DAE.Element list, DAE.Element list)
 
   rule	init_vars_modelica_output_2 (cr, exp, done) => (exp', done') &
 	init_vars_modelica_output_2 (cr, exp', todorest) => (exp'', todorest') &
-	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims,start,flow,class)]) => done'' &
+	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims,start,flow,class,dae_var_attr)]) => done'' &
 	init_vars_modelica_output_1 (done'', todorest') => done'''
 	--------------------------------------------------------
-	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims,start,flow,class)) :: todorest)
+	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims,start,flow,class,dae_var_attr)) :: todorest)
 	  => done'''
 
 

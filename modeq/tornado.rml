@@ -52,7 +52,9 @@ with "tornadocodegen.rml"
 
  relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	     
-  rule  DAELow.lower(dae) => dae' &
+  rule 
+
+ DAELow.lower(dae) => dae' &
          generate_blt(dae') => (dae'',blt,ass1,ass2,m,mt) &
          
          (*          print "translating dae.\n" & *)
@@ -253,8 +255,8 @@ relation generate_components_name_with_subscripts: (string,DAELow.DAELow) => str
                                                                _,_,_,_)) 
           => res
 
-        (*         DAELow.get_var(cr,knvars) => (var1 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
-        (*         DAELow.get_var(cr2,vars) => (var2 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
+        (*         DAELow.get_var(cr,knvars) => (var1 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path,dae_var_attr),_) & *)
+        (*         DAELow.get_var(cr2,vars) => (var2 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path,dae_var_attr),_) & *)
 
 (*         generate_constructor_inputvars2(all_vars,0) => (lst,no_of_vars) & *)
 (*         no_of_vars = 0 *)
@@ -393,7 +395,7 @@ end
          (*         get_direction_for_variable(name,class_name,dae) => fail *)
          
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc) &
          TornadoCodeGen.get_start_value(start) => default_value' 
          --------------------------------------
@@ -401,7 +403,7 @@ end
                                                              unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc) &
          TornadoCodeGen.get_start_value(start) => default_value' 
          --------------------------------------
@@ -409,7 +411,7 @@ end
                                                              unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc) &
          TornadoCodeGen.get_start_value(start) => default_value'
          --------------------------------------
@@ -417,7 +419,7 @@ end
                                                              unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(value),_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(value),_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc)
          & Values.val_string value => val_str
          (*            & print "with value_: "  & print val_str & print "\n"  *)
@@ -426,7 +428,7 @@ end
                                                              unit,val_str,lower_bound,upper_bound,Desc)
 
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_))&
+          => (var as DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_,dae_var_attr))&
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc)
          (*            & print "without value\n"  *)
          --------------------------------------
@@ -434,35 +436,35 @@ end
                                                              unit,default_value,lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.CONST,_,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.CONST,_,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc)
          --------------------------------------
          get_direction_for_variable(name,class_name,dae) => ("parameter","",
                                                              unit,default_value,lower_bound,upper_bound,Desc)
 
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc)
          --------------------------------------
          get_direction_for_variable(name,class_name,dae) => ("dummy_der","",
                                                              unit,default_value,lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc)
          --------------------------------------
          get_direction_for_variable(name,class_name,dae) => ("dummy_state","",
                                                              unit,default_value,lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc) &
          TornadoCodeGen.get_start_value(start) => default_value'
          --------------------------------------
          get_direction_for_variable(name,class_name,dae) => ("state","",
                                                              unit,default_value',lower_bound,upper_bound,Desc)
   rule  find_dae_var(name,class_name,dae)
-          => (var as DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,_,start,_,_,_)) &
+          => (var as DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,_,start,_,_,_,dae_var_attr)) &
            TornadoCodeGen.get_default_values() => (unit,default_value,lower_bound,upper_bound,Desc) &
          TornadoCodeGen.get_start_value(start) => default_value'
          --------------------------------------
@@ -533,14 +535,14 @@ relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
         -------------------------------------
         find_dae_var2(name,
                       class_name,
-                      (var as DAELow.VAR(cr,_,_,_,_,_,_,start,_,org_name,class_paths))::rest) 
+                      (var as DAELow.VAR(cr,_,_,_,_,_,_,start,_,org_name,class_paths,dae_var_attr))::rest) 
           => var
           
   rule  find_dae_var2(name,class_name,rest) => var 
         -------------------------------------
         find_dae_var2(name,
                       class_name,
-                      DAELow.VAR(cr,_,_,_,_,_,_,start,_,org_name,from_class)::rest) 
+                      DAELow.VAR(cr,_,_,_,_,_,_,start,_,org_name,from_class,dae_var_attr)::rest) 
           => var
           
 end
@@ -730,7 +732,7 @@ end
 
          add_dummy_der_to_top_model2(rest,top_class_name) 
          ---------------------------------------------
-         add_dummy_der_to_top_model2(DAELow.VAR(cr,(kind as DAELow.DUMMY_DER),dir,_,_,_,_,start,_,_,class_paths)::rest,
+         add_dummy_der_to_top_model2(DAELow.VAR(cr,(kind as DAELow.DUMMY_DER),dir,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,
                                      top_class_name)
          
   rule  add_dummy_der_to_top_model2(rest,top_class_name) =>
@@ -787,7 +789,7 @@ end
          TORNADOEXT.add_variable_for_index(class_path_str,crs,type_str) &
          add_dae_var_to_index_map2(rest) 
          ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,kind,dir,_,_,_,_,start,_,_,class_paths)::rest)
+         add_dae_var_to_index_map2(DAELow.VAR(cr,kind,dir,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest)
          
   rule  add_dae_var_to_index_map2(rest) => 
          -----------------------------------------------
@@ -938,7 +940,7 @@ end
          (*print "extract_der_from_var_list Is not state\n" &*)
          extract_der_from_var_list(var_list) => (res1,res2)
          -------------------------------------------------------------
-         extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_))::var_list)  
+         extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr))::var_list)  
           => (res1,res2)
 
   rule  (*print "extract_der_from_var_list Is state" &*)
@@ -962,7 +964,7 @@ end
 
          extract_der_from_var_list(var_list) => (res1,res2)
          -------------------------------------------------------------
-         extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_))::var_list)  
+         extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr))::var_list)  
           => (dercall::res1, new_varexp::res2)
 
 
@@ -1106,7 +1108,7 @@ end
 	     
   rule	generate_compute_initial2(vars,es) => str_lst &
 	     DAELow.get_var(cr,vars) 
-	      => (DAELow.VAR(cr',_,_,_,_,_,_,_,_,_,_),_) &
+	      => (DAELow.VAR(cr',_,_,_,_,_,_,_,_,_,_,dae_var_attr),_) &
            SimCodegen.cref_modelica_str(cr') => crstr &
 	     SimCodegen.print_exp_cpp_str(e2) => rhs_str &
 	     Util.string_append_list(["  ",crstr, " = ",rhs_str, ";"]) => str 
@@ -1131,16 +1133,16 @@ end
          Util.string_append_list(["  ",crs, " = ", exp_str,";\n"]) => eqn_str &
          generate_compute_initial_from_start_values(rest) => res
          -------------------------------------------
-         generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,SOME(start),_,_,_)::rest) => eqn_str::res
+         generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,SOME(start),_,_,_,dae_var_attr)::rest) => eqn_str::res
 
   rule  Exp.is_const(start) => true &
          generate_compute_initial_from_start_values(rest) => res
          -------------------------------------------
-         generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,SOME(start),_,_,_)::rest) => res
+         generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,SOME(start),_,_,_,dae_var_attr)::rest) => res
 
   rule  generate_compute_initial_from_start_values(rest) => res
          -------------------------------------------
-         generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,NONE,_,_,_)::rest) => res
+         generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,NONE,_,_,_,dae_var_attr)::rest) => res
          
 
  end
@@ -1220,7 +1222,7 @@ end
 	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	     vector_nth(ass2,e') => v &
 	     int_sub(v,1) => v' &
-	     DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	     DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr)) &  
 	     DAELow.is_non_state kind &
 	     (*print "Solving for non-states\n" &*)
 
@@ -1250,7 +1252,7 @@ end
 	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	     vector_nth(ass2,e') => v &
 	     int_sub(v,1) => v' &
-	     DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	     DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr)) &  
 	     DAELow.is_non_state kind &
 	     (*print "Solving for non-states\n" &*)
 
@@ -1280,7 +1282,7 @@ end
 	     vector_nth(ass2,e') => v &
 	     (* v == variable no solved in this equation *)
 	     int_sub(v,1) => v' &
-	     DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+	     DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_,dae_var_attr) &
 
 	     (*print "solving for state\n" &*)
          SimCodegen.cref_modelica_str(cr) => cr_str &
@@ -1312,7 +1314,7 @@ end
 	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	     vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	     int_sub(v,1) => v' &
-	     DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	     DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr) &  
 	     let varexp = Exp.CREF(cr,Exp.REAL) &
 	     not Exp.solve(e1,e2,varexp) => _ &
 	     print "nonlinear equation not implemented yet\n" 

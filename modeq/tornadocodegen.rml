@@ -259,9 +259,9 @@ relation generate_simple_equation_links2: (string,
         is_var_on_top_model(cr2) => to_top_bool &
 
         DAELow.get_var(cr,knvars) 
-	      => (DAELow.VAR(_,from_kind,from_dir,_,_,_,_,_,_,_,from_class_paths),_) &
+	      => (DAELow.VAR(_,from_kind,from_dir,_,_,_,_,_,_,_,from_class_paths,dae_var_attr),_) &
           DAELow.get_var(cr2,vars) 
-	      => (to_var as DAELow.VAR(_,to_kind,to_dir,_,_,_,_,_,_,_,to_class_paths),varindx) &
+	      => (to_var as DAELow.VAR(_,to_kind,to_dir,_,_,_,_,_,_,_,to_class_paths,dae_var_attr),varindx) &
           generate_getsubmodel_code(top_class_name,cr,from_kind,from_dir) => sub_model_str &
         generate_getsubmodel_code(top_class_name,cr2,to_kind,to_dir) => to_sub_model_str &
 
@@ -294,9 +294,9 @@ relation generate_simple_equation_links2: (string,
         is_var_on_top_model(cr2) => to_top_bool &
 
         DAELow.get_var(cr,knvars) 
-	      => (DAELow.VAR(_,from_kind,from_dir,_,_,_,_,_,_,_,from_class_paths),_) &
+	      => (DAELow.VAR(_,from_kind,from_dir,_,_,_,_,_,_,_,from_class_paths,dae_var_attr),_) &
           DAELow.get_var(cr2,knvars) 
-	      => (to_var as DAELow.VAR(_,to_kind,to_dir,_,_,_,_,_,_,_,to_class_paths),varindx) &
+	      => (to_var as DAELow.VAR(_,to_kind,to_dir,_,_,_,_,_,_,_,to_class_paths,dae_var_attr),varindx) &
           generate_getsubmodel_code(top_class_name,cr,from_kind,from_dir) => sub_model_str &
         generate_getsubmodel_code(top_class_name,cr2,to_kind,to_dir) => to_sub_model_str &
 
@@ -414,7 +414,7 @@ end
          Util.string_append_list([link_str3]) => link_str &
          generate_links2(rest,top_class_name) => (params_str,res) 
          ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,(kind as DAELow.DUMMY_DER),dir,_,_,_,_,start,_,_,class_paths)::rest,
+         generate_links2(DAELow.VAR(cr,(kind as DAELow.DUMMY_DER),dir,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,
                          top_class_name) 
           => (params_str,link_str::res)
 
@@ -440,7 +440,7 @@ end
          Util.string_append_list([link_str1,link_str2,link_str3]) => link_str &
          generate_links2(rest,top_class_name) => (params_str,res) 
          ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,start,_,_,class_paths)::rest,
+         generate_links2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,
                          top_class_name) 
           => (params_str,link_str::res)
 
@@ -462,7 +462,7 @@ end
 
          generate_links2(rest,top_class_name) => (params_str,res) 
          ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,kind,dir,_,_,_,_,start,_,_,class_paths)::rest,
+         generate_links2(DAELow.VAR(cr,kind,dir,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,
                          top_class_name) 
           => (params_str,link_str::res)
 
@@ -516,7 +516,7 @@ end
                                   "#define _D_",crs," (m_Derivatives[",index_str,"])\n"]) => r1 &
          generate_var_defines2(rest) => res
          ----------------------------------------------
-         generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_,class_paths)::rest) 
+         generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_,class_paths,dae_var_attr)::rest) 
           => r1::res
 
            
@@ -528,7 +528,7 @@ end
          Util.string_append_list(["#define ",crs," ( m_",ret_str,"[",index_str,"])\n"]) => r1 &
          generate_var_defines2(rest) => res
          ----------------------------------------------
-         generate_var_defines2(DAELow.VAR(cr,kind,dir,_,_,_,_,_,_,_,class_paths)::rest) 
+         generate_var_defines2(DAELow.VAR(cr,kind,dir,_,_,_,_,_,_,_,class_paths,dae_var_attr)::rest) 
           => r1::res
 
   rule generate_var_defines2(rest) => res 
@@ -640,7 +640,8 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
                                  val_str,"));"]) => r1
         
         ---------------------------------------------
-        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,SOME(value),_,start,_,_,class_paths)::rest,i) 
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,
+                                                   SOME(value),_,start,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
 
   rule  int_add(i,1) => i' & int_string(i) => is &
@@ -657,7 +658,7 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
                                  startstr,"));"]) => r1
         
         ---------------------------------------------
-        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,class_paths)::rest,i) 
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
 	      
   rule  int_add(i,1) => i' & int_string(i) => is &
@@ -673,7 +674,7 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
                                  "0.00000","));"]) => r1
         
         ---------------------------------------------
-        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,_,_,_,class_paths)::rest,i) 
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,_,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
  	    
 	      
@@ -748,7 +749,7 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
                                  ", new CAlgStateVar(L\"",
                                  crs,"\", L\"\",0));"]) => r1 
         ---------------------------------------------
-        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,class_paths)::rest,i) 
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
           
           (* this rule take care of DUMMY_DER variables *)
@@ -763,13 +764,13 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
                                  ", new CAlgStateVar(L\"",
                                  crs,"\", L\"\",0));"]) => r1 
         ---------------------------------------------
-        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,class_paths)::rest,i) 
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
 	      
   rule  generate_constructor_algvars2(rest,i) => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars'
         ---------------------------------------------
-        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_,dae_var_attr)::rest,i) 
           => (res,no_of_vars')
 	      
   rule  generate_constructor_algvars2(rest,i) => (res,no_of_vars)
@@ -846,13 +847,13 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
                                  ", new COutputVar(L\"",
                                  crs,"\", L\"\",0));"]) => r1 
         ---------------------------------------------
-        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,class_paths)::rest,i) 
+        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
 
 	      (*   rule  generate_constructor_outputvars2(rest,i) => (res,no_of_vars) & *)
 	    (*         int_add(no_of_vars,1) => no_of_vars' *)
 	    (*           --------------------------------------------- *)
-	    (*         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i)  *)
+	    (*         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_,dae_var_attr)::rest,i)  *)
 	    (*           => (res,no_of_vars') *)
 
 	    
@@ -938,7 +939,7 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
                                   startstr,"));"]) 
           => r1 
            --------------------
-         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,class_paths)::rest,
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,
                                          i,
                                          var_values) 
           => (r1::res,no_of_vars',no_of_var_values')
@@ -947,7 +948,7 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
   rule  generate_constructor_statevars2(rest,i,j) => (res,no_of_vars,no_of_var_values) &
          int_add(no_of_var_values,1) => no_of_var_values'
          ---------------------------------------------
-         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)::rest,
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_,dae_var_attr)::rest,
                                          i,
                                          j)
           => (res,no_of_vars,no_of_var_values')
@@ -1021,7 +1022,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
  				                 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
           => r1 
           ---------------------------------------------
-        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(v),_,start,_,_,class_paths)::rest,i) 
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(v),_,start,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
 
 
@@ -1036,13 +1037,13 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
  				                 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
           => r1  
           ---------------------------------------------
-        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,class_paths)::rest,i) 
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,class_paths,dae_var_attr)::rest,i) 
           => (r1::res,no_of_vars')
 
   rule  generate_constructor_parameters2(rest,i) => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars'
         ---------------------------------------------
-        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_,dae_var_attr)::rest,i) 
           => (res,no_of_vars')
 
 	      

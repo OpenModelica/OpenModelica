@@ -151,8 +151,8 @@ module DAE:
 			StartValue * (* value of start attribute *)
 			Flow * (* Flow of connector variable. Needed for 
 			      unconnected flow variables *)
-			Absyn.Path list (* The class the variable is instantiated from *)
-
+			Absyn.Path list *(* The class the variable is instantiated from *)
+            VariableAttributes option
 
 
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
@@ -172,23 +172,23 @@ module DAE:
 		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl 
 	           | ASSERT of Exp.Exp
 
-  datatype VariableAttributes = VAR_ATTR_REAL of string * (* quantity *)
-             string *(* unit *)
-             string *(* displayUnit *)
-             (real * real) * (* min , max *)
-             real * (* Initial value *)
-             bool * (* fixed - true: default for parameter/constant, false - default for other variables *)
-             real  * (* nominal *)
-             StateSelect
-            | VAR_ATTR_INT of string * (* quantity *)
-             (int * int) * (* min , max *)
-             int * (* Initial value *)
-             bool  (* fixed - true: default for parameter/constant, false - default for other variables *)
-            | VAR_ATTR_BOOL of string * (* quantity *)
-             bool * (* Initial value *)
-             bool  (* fixed - true: default for parameter/constant, false - default for other variables *)
-            | VAR_ATTR_STRING of string * (* quantity *)
-             string  (* Initial value *)
+  datatype VariableAttributes = VAR_ATTR_REAL of string option * (* quantity *)
+             string option *(* unit *)
+             string option *(* displayUnit *)
+             (real option * real option) * (* min , max *)
+             real option * (* Initial value *)
+             bool option * (* fixed - true: default for parameter/constant, false - default for other variables *)
+             real  option * (* nominal *)
+             StateSelect option 
+            | VAR_ATTR_INT of string option * (* quantity *)
+             (int option * int option ) * (* min , max *)
+             int option * (* Initial value *)
+             bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_BOOL of string option * (* quantity *)
+             bool option * (* Initial value *)
+             bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_STRING of string option  * (* quantity *)
+             string option   (* Initial value *)
 
 
 
@@ -230,8 +230,8 @@ module DAE:
   relation dump_algorithm: Element => ()
   relation dump_algorithm_str : Element => string 
   relation dump_direction_str: VarDirection => string 
-  relation dump_variable_attributes: VariableAttributes => ()
-  relation dump_variable_attributes_str: VariableAttributes => string 
+  relation dump_variable_attributes: VariableAttributes option=> ()
+  relation dump_variable_attributes_str: VariableAttributes option => string 
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
@@ -300,7 +300,7 @@ relation dump2: DAElist => () =
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_,_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_,_,_)::xs)
 
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr &
@@ -308,7 +308,7 @@ relation dump2: DAElist => () =
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_,_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_,_,_)::xs)
 
   rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
@@ -784,73 +784,95 @@ relation dump_direction_str: VarDirection => string =
 
 end
 
-relation dump_stateSelect_str: StateSelect => string =
+relation dump_stateSelect_str: StateSelect option => string =
 
-  axiom dump_stateSelect_str(NEVER) => "NEVER"
-  axiom dump_stateSelect_str(AVOID) => "AVOID"
-  axiom dump_stateSelect_str(PREFER) => "PREFER"
-  axiom dump_stateSelect_str(ALWAYS) => "ALWAYS"  
-  axiom dump_stateSelect_str(DEFAULT) => "DEFAULT"
+  axiom dump_stateSelect_str(SOME(NEVER)) => "NEVER"
+  axiom dump_stateSelect_str(SOME(AVOID)) => "AVOID"
+  axiom dump_stateSelect_str(SOME(PREFER)) => "PREFER"
+  axiom dump_stateSelect_str(SOME(ALWAYS)) => "ALWAYS"  
+  axiom dump_stateSelect_str(SOME(DEFAULT)) => "DEFAULT"
+  axiom dump_stateSelect_str(NONE) => "none"
 
 end
 
-relation dump_variable_attributes: VariableAttributes => () =
+relation dump_variable_attributes: VariableAttributes option => () =
  
   rule  dump_variable_attributes_str(attr) => res &
         print res
         --------------------------------
         dump_variable_attributes(attr) 
-        
-
 
 
 end
 
-relation dump_variable_attributes_str: VariableAttributes => string =
- 
-  rule Dump.print_bool_str(fixed) => fixed_str &
-        dump_stateSelect_str(stateSel) => stateSel_str &
-        real_string(min) => min_str &
-        real_string(max) => max_str &
-        real_string(Initial) => Initial_str &
 
-        Util.string_append_list([" quantity: ",quantity,
-                                " unit: ", unit,
-                                " displayUnit: ", displayUnit,
+relation dump_variable_attributes_str: VariableAttributes option => string =
+ 
+  rule  Dump.get_option_str(fixed,Dump.print_bool_str) => fixed_str &
+        Util.flatten_option(quant,"NONE") => quantity &
+        Util.flatten_option(unit,"NONE") => unit_str &
+        Util.flatten_option(displayUnit,"NONE") => displayUnit_str &
+        dump_stateSelect_str(stateSel) => stateSel_str &
+        Dump.get_option_str(min,real_string) => min_str &
+        Dump.get_option_str(max,real_string) => max_str &
+        Dump.get_option_str(Initial,real_string) => Initial_str &
+
+         Util.string_append_list([" (quantity: ",quantity, 
+                                " unit: ", unit_str,
+                                " displayUnit: ", displayUnit_str,
                                 " min: ", min_str,
                                 " max: ", max_str,
                                 " Initial: ", Initial_str,
                                 " fixed: ", fixed_str,
-                                " stateSel: ", stateSel_str]) => res 
+                                " stateSel: ", stateSel_str,") "]) => res
         --------------------------------
-        dump_variable_attributes_str(VAR_ATTR_REAL(quantity,unit,displayUnit, (min , max),Initial,fixed,nominal,stateSel)) => res
+        dump_variable_attributes_str(SOME(VAR_ATTR_REAL(quant,
+                                                        unit,
+                                                        displayUnit, 
+                                                        (min , max),
+                                                        Initial,
+                                                        fixed,
+                                                        nominal,
+                                                        stateSel))) =>  res 
         
-  rule  Dump.print_bool_str(fixed) => fixed_str &
-        int_string(min) => min_str &
-        int_string(max) => max_str &
-        int_string(Initial) => Initial_str &
-        Util.string_append_list([" quantity: ",quantity,
+  rule  Dump.get_option_str(fixed,Dump.print_bool_str) => fixed_str &
+        Util.flatten_option(quant,"NONE") => quantity &
+        Dump.get_option_str(min,int_string) => min_str &
+        Dump.get_option_str(max,int_string) => max_str &
+        Dump.get_option_str(Initial,int_string) => Initial_str &
+        Util.string_append_list(["  (quantity: ",quantity,
                                  " min: ", min_str,
                                  " max: ", max_str,
                                  " Initial: ", Initial_str,
-                                 " fixed: ", fixed_str]) => res 
+                                 " fixed: ", fixed_str,") "]) => res 
         -----------------------------------------
-        dump_variable_attributes_str(VAR_ATTR_INT(quantity, (min , max),Initial,fixed)) => res
+        dump_variable_attributes_str(SOME(VAR_ATTR_INT(quant, 
+                                                  (min , max),
+                                                  Initial,
+                                                  fixed))) => res
         
-  rule  Dump.print_bool_str(fixed) => fixed_str &
-        Dump.print_bool_str(Initial) => Initial_str &
-        Util.string_append_list([" quantity: ",quantity,
+  rule   Dump.get_option_str(fixed,Dump.print_bool_str) => fixed_str &
+        Util.flatten_option(quant,"NONE") => quantity &
+        Dump.get_option_str(Initial,Dump.print_bool_str) => Initial_str &
+        Util.string_append_list(["  (quantity: ",quantity,
                                  " Initial: ", Initial_str,
-                                 " fixed: ", fixed_str]) => res 
+                                 " fixed: ", fixed_str,") "]) => res 
         -----------------------------------------
-        dump_variable_attributes_str(VAR_ATTR_BOOL(quantity,Initial,fixed)) => res
+        dump_variable_attributes_str(SOME(VAR_ATTR_BOOL(quant,
+                                                   Initial,
+                                                   fixed))) => res
 
-  rule  Util.string_append_list([" quantity: ",quantity,
-                                 " Initial: ", Initial]) => res 
+  rule  Util.flatten_option(quant,"NONE") => quantity &
+        Util.flatten_option(Initial,"NONE") => Initial_str &
+        Util.string_append_list(["  (quantity: ",quantity,
+                                 " Initial: ", Initial_str,") "]) => res 
         -----------------------------------------
-        dump_variable_attributes_str(VAR_ATTR_STRING(quantity,Initial)) => res
+        dump_variable_attributes_str(SOME(VAR_ATTR_STRING(quant,
+                                                          Initial))) => res
 
-  axiom dump_variable_attributes_str(VAR_ATTR_STRING(quantity,Initial)) => "unknown VariableAttributes"
+  axiom dump_variable_attributes_str(NONE) => " (NONE) "
+
+  axiom dump_variable_attributes_str(_) => "unknown VariableAttributes"
 
 end
 
@@ -915,7 +937,7 @@ relation dump_var : Element => () =
 	Print.print_buf "}\" " & *)
 	Print.print_buf ";\n"
 	--------------------------------------
-	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,classlst)
+	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,classlst,dae_var_attr)
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
@@ -923,7 +945,7 @@ relation dump_var : Element => () =
 	Print.print_buf " = " &
 	Exp.print_exp e & Print.print_buf ";\n"
 	--------------------------------------
-	dump_var VAR(id, kind, dir, typ, SOME(e),_,start,flow,class)
+	dump_var VAR(id, kind, dir, typ, SOME(e),_,start,flow,class,dae_var_attr)
 	
   axiom	dump_var (_)
 
@@ -940,7 +962,7 @@ relation dump_var_str : Element => string =
 	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
 	Util.string_append_list([s1,s2,s3,s4,s5,";\n"]) => str
 	--------------------------------------
-	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow,classlst) => str
+	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow,classlst,dae_var_attr) => str
 	
   rule	dump_kind_str kind => s1 & 
 	dump_direction_str dir => s2 &
@@ -953,7 +975,7 @@ relation dump_var_str : Element => string =
 	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6,";\n"] )
 	  => str
 	--------------------------------------
-	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,classlst) => str
+	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,classlst,dae_var_attr) => str
 	
   axiom	dump_var_str (_) => ""
 
@@ -1394,7 +1416,7 @@ end
 relation is_parameter: Element => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
-  axiom	is_parameter VAR(_, PARAM, _, _, _,  _,_,_,_)
+  axiom	is_parameter VAR(_, PARAM, _, _, _,  _,_,_,_,_)
 
 end
 
@@ -1452,8 +1474,8 @@ relation set_component_type: (Element list,Absyn.Path) => Element list =
 	
   rule	set_component_type(xs,newtype) => xs'
 	-------------------------------------
-	set_component_type(VAR(cr,kind,dir,tp,bind,dim,start,flow,lst)::xs,newtype) 
-	  => VAR(cr,kind,dir,tp,bind,dim,start,flow,newtype::lst)::xs'
+	set_component_type(VAR(cr,kind,dir,tp,bind,dim,start,flow,lst,dae_var_attr)::xs,newtype) 
+	  => VAR(cr,kind,dir,tp,bind,dim,start,flow,newtype::lst,dae_var_attr)::xs'
 	  
   rule	set_component_type(xs,newtype) => xs'
 	-------------------------------------
@@ -1465,21 +1487,21 @@ end
 (* LS *)
 relation is_output_var: Element => () =
 
-  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _, _, _,_)
+  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _, _, _,_,_)
 
 end
 
 (* LS *)
 relation is_bidir_var: Element => () =
 
-  axiom	is_bidir_var VAR(n, VARIABLE, BIDIR, ty, _, _, _, _,_)
+  axiom	is_bidir_var VAR(n, VARIABLE, BIDIR, ty, _, _, _, _,_,_)
 
 end
 
 (* HJ *)
 relation is_input_var: Element => () =
 
-  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _,_)
+  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _,_,_)
 
 end
 
@@ -1495,7 +1517,7 @@ end
 (* LS *)
 relation is_var: Element => () =
 
-  axiom	is_var VAR(_,_,_,_,_,_,_,_,_)
+  axiom	is_var VAR(_,_,_,_,_,_,_,_,_,_)
 
 end
 
@@ -1546,7 +1568,7 @@ relation dump_debug_element : Element => () =
 	dump_kind vk &
 	Print.print_buf ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_,_)
+	dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_,_,_)
 
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr & Print.print_buf ", " &
@@ -1554,7 +1576,7 @@ relation dump_debug_element : Element => () =
 	Exp.print_exp e &
 	Print.print_buf ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_,_)
+	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_,_,_)
 
   rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
@@ -1703,14 +1725,14 @@ relation build_gr_var_str : Element => string =
 
   rule	Exp.print_component_ref_str cr => str
 	-------------------------------------
-	build_gr_var_str VAR(cr,_,_,_,NONE,_,_,_,_) => str
+	build_gr_var_str VAR(cr,_,_,_,NONE,_,_,_,_,_) => str
 
   rule	Exp.print_component_ref_str cr => str &
 	print_exp_str_special exp => expstr &
 	string_append (str, " = ") => str' &
 	string_append (str', expstr) => str''
 	-------------------------------------
-	build_gr_var_str VAR(cr,_,_,_,SOME(exp),_,_,_,_) => str''
+	build_gr_var_str VAR(cr,_,_,_,SOME(exp),_,_,_,_,_) => str''
 
 end
 
@@ -1735,7 +1757,7 @@ relation build_gr_element : Element => Graphviz.Node =
   rule	Exp.print_component_ref_str cr => crstr &
 	dump_kind_str vk => vkstr
 	--------------------------
-	build_gr_element VAR(cr,vk,vd,ty,NONE,_,_,_,_) 
+	build_gr_element VAR(cr,vk,vd,ty,NONE,_,_,_,_,_) 
 	  => Graphviz.LNODE("VAR",[crstr,vkstr],[],[])
 
   rule	Exp.print_component_ref_str cr => crstr &
@@ -1743,7 +1765,7 @@ relation build_gr_element : Element => Graphviz.Node =
 	print_exp_str_special exp => expstr &
 	string_append ("= ", expstr) => expstr'
 	-------------------------------
-	build_gr_element VAR(cr,vk,vd,ty,SOME(exp),_,_,_,_) 
+	build_gr_element VAR(cr,vk,vd,ty,SOME(exp),_,_,_,_,_) 
 	  => Graphviz.LNODE("VAR",[crstr,vkstr,expstr'],[],[])
 
 
@@ -1801,8 +1823,8 @@ relation get_variable_list: Element list  => Element list =
 
   rule	get_variable_list lst => res
 	-------------------------------------
-	get_variable_list  VAR(a,b,c,d,e,f,g,h,i)::lst 
-	  => (VAR(a,b,c,d,e,f,g,h,i)::res)
+	get_variable_list  VAR(a,b,c,d,e,f,g,h,i,dae_var_attr)::lst 
+	  => (VAR(a,b,c,d,e,f,g,h,i,dae_var_attr)::res)
 
   rule	get_variable_list lst => res
 	----------------------------
@@ -1818,19 +1840,19 @@ relation get_bindings_str: Element list  => string =
 	get_bindings_str(lst) => s4 &
 	string_append(s3,s4) => str
 	-----------------
-	get_bindings_str((v as VAR(cr,_,_,_,SOME(e),_,_,_,_))::(lst as _::_)) => str
+	get_bindings_str((v as VAR(cr,_,_,_,SOME(e),_,_,_,_,_))::(lst as _::_)) => str
 
   rule	let s1 = "-," &
 	get_bindings_str(lst) => s2 &
 	string_append(s1,s2) => str
 	-----------------
-	get_bindings_str((v as VAR(cr,_,_,_,NONE,_,_,_,_))::(lst as _::_)) => str	
+	get_bindings_str((v as VAR(cr,_,_,_,NONE,_,_,_,_,_))::(lst as _::_)) => str	
 
   rule	Exp.print_exp_str e => str 
 	-----------------
-	get_bindings_str([v as VAR(cr,_,_,_,SOME(e),_,_,_,_)]) => str
+	get_bindings_str([v as VAR(cr,_,_,_,SOME(e),_,_,_,_,_)]) => str
 
-  axiom	get_bindings_str([v as VAR(cr,_,_,_,NONE,_,_,_,_)]) => ""	
+  axiom	get_bindings_str([v as VAR(cr,_,_,_,NONE,_,_,_,_,_)]) => ""	
 end
 
 
@@ -1847,7 +1869,7 @@ relation get_flow_variables: Element list => Exp.ComponentRef list =
 
   rule	get_flow_variables(xs) => res
 	-----------------------------
-	get_flow_variables(VAR(cr,_,_,_,_,_,_,FLOW,_)::xs) => cr::res
+	get_flow_variables(VAR(cr,_,_,_,_,_,_,FLOW,_,_)::xs) => cr::res
 
   rule	get_flow_variables(lst) => res1 &
 	get_flow_variables_2(res1,id) => res1' &
@@ -1914,8 +1936,8 @@ relation to_modelica_form_elts: (Element list) => Element list =
 	to_modelica_form_elts(elts) => elts' &
 	to_modelica_form_exp_opt(d) => d' 
 	------------------------------
-	to_modelica_form_elts(VAR(cr,a,b,c,d,e,f,g,h)::elts)
-	  => (VAR(Exp.CREF_IDENT(str',[]),a,b,c,d',e,f,g,h)::elts')
+	to_modelica_form_elts(VAR(cr,a,b,c,d,e,f,g,h,dae_var_attr)::elts)
+	  => (VAR(Exp.CREF_IDENT(str',[]),a,b,c,d',e,f,g,h,dae_var_attr)::elts')
 
   rule	to_modelica_form_exp(e) => e' &
 	to_modelica_form_cref(cr) => cr' &
@@ -2151,7 +2173,7 @@ relation get_all_exps_element : Element => Exp.Exp list =
 	cref_to_exp cref => crefexp &
 	Util.list_flatten([e1, e2, e3, [crefexp]]) => exps
 	-------------------------------------------------------
-	get_all_exps_element VAR(cref,vk,vd,ty,bndexp,instdims,startvalexp,flow,pathlist) => exps
+	get_all_exps_element VAR(cref,vk,vd,ty,bndexp,instdims,startvalexp,flow,pathlist,dae_var_attr) => exps
 
 
   rule	cref_to_exp cref => crefexp 
