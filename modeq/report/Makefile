@@ -3,7 +3,7 @@
 SHELL	  = /bin/sh
 LATEX	  = latex
 MAKEINDEX = makeindex
-RMLDOC    = ../tools/rmldoc
+RMLDOC    = pike ../tools/rmldoc
 
 SOURCES = exp.tex \
 	dae.tex \

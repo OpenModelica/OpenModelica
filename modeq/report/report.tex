@@ -414,7 +414,7 @@ formal semantic specification for Modelica using RML.''
 
 The two important words in this instructions are ``Modelica'' and
 ``RML'', and the main reasons for writing this specifications are
-threefold.
+threefold. \fixme{Fånigt}
 
 
 \section{A Modelica specification is needed}
@@ -433,7 +433,7 @@ The RML language and compiler were new, and only a few language
 specifications had been written using it.  More experience with
 various language specificatiosn was desired.
 
-\section{Natural semantics an equation-based languages}
+\section{Natural semantics and equation-based\\ languages}
 
 Modelica is not a programming language, such as C or LISP.  Instead it
 is a modeling language, with basically only static semantics.  For
@@ -692,11 +692,11 @@ be used.
   \end{center}
 \end{table}
 
-A valid program can always be transformed into another valid program
-by replacing all occurences of the restricted class keywords with the
-keyword \code{class}.  For a class declared with the keyword
-\code{class} to be able to be used as if it was declared with a
-restricted keyword \fixme{Fel men nästan rätt}, it has to adher to the
+A goal of the Modelica design is that a valid program can always be
+transformed into another valid program by replacing all occurences of
+the restricted class keywords with the keyword \code{class}.  For a
+class declared with the keyword \code{class} to be able to be used as
+if it was declared with a restricted keyword, it has to adher to the
 restrictions for that keyword.
 
 As an example, this means that if a variable is used in a connection,
@@ -710,8 +710,32 @@ because the keyword \code{record} has the same restrictions as the
 allowed in connections, but \code{class} is, as long as it fulfills
 the restrictions.
 
-\subsection{Arrays and matrices}
+It is currently not known if this goal will be fully met.  In most
+cases it could be done, but things like \code{package} and
+\code{function} might be problematic.
+
+\section{Arrays and matrices}
 \label{sec:arrays}
+
+The concept of arrays in Modelica have not been thoroughly examined as
+of writing.  Most of the basic properties of the type system should be
+clear, but there are some points worth noting.
+
+
+\subsection{Overloaded array operations}
+\label{sec:arrayop}
+
+The exact meaning of multiplication where one or more of the operands
+are arrays is currently being defined.  Simiarily for other
+operations.  The semantics specified here should be regarded as an
+absolute reference to what these operations should mean, but rather as
+a description of how the overloading of operators works.
+
+
+\subsection{Collapsing arrays}
+\label{sec:collaps}
+
+
 
 
 \section{Connections}
@@ -1129,6 +1153,11 @@ the previous section.
   obviously, structural information is lost.
 
 \end{enumerate}
+
+
+\chapter{An example}
+\label{cha:example}
+
 
 \chapter{Design}
 \label{cha:design}
