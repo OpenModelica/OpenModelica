@@ -26,6 +26,7 @@ SRCRML=	exp.rml \
 	connect.rml \
 	classinf.rml \
 	staticexp.rml \
+	values.rml \
 	inst.rml \
 	main.rml
 
@@ -36,10 +37,13 @@ SRCO=	$(SRCC:.c=.o)
 SUBDIRS	= ast
 
 .SUFFIXES:
-.SUFFIXES: .o .rml
+.SUFFIXES: .o .rml .h
 .PHONY: all subdirs report
 
 .rml.o:
+	$(RML) -c $<
+
+.rml.h:
 	$(RML) -c $<
 
 all : $(SRCO) subdirs $(PROG)
@@ -52,16 +56,16 @@ $(PROG): $(SRCO) ast/libast.a
 
 absyn.o:	absyn.rml
 exp.o:		exp.rml
-env.o:		env.rml
+env.o:		env.rml exp.h values.h
 explode.o:	explode.rml
-inst.o:		inst.rml env.rml
+inst.o:		inst.rml env.rml values.h
 mod.o:		mod.rml exp.rml absyn.h dae.h prefix.h env.h
 main.o:		main.rml
 dump.o:		dump.rml
 package.o:	env.h
 lookup.o:	env.h
 builtin.o:	builtin.rml env.h
-staticexp.o:	staticexp.rml env.h
+staticexp.o:	staticexp.rml env.h values.h
 
 #main.o:		main.rml absyn.rml parse.rml dump.rml \
 #		lform.rml dae.rml inst.rml

@@ -19,7 +19,7 @@
 
 \makeatletter
 
-% See the verbatim package
+% See the verbatim package for info about this
 \def\boxedverbatim{\begingroup%
   \parskip=0pt\topsep=0pt\partopsep=0pt%
   \def\verbatim@processline{%
@@ -117,6 +117,12 @@ small program was written to convert the RML source files with
 comments to \LaTeX{} source with the comments converted to ordinary
 text. This program is a quick'n'dirty Pike\note{ref} hack, and is
 provided in appendix\note{ref}.
+
+
+\chapter{System overview}
+\label{cha:system}
+
+
 
 \chapter{Informal semantics}
 \label{cha:semantics}
@@ -451,6 +457,25 @@ are listed in table \ref{tab:classinfevents}.
 
 \note{Skriv nåt om \code{ClassInf.valid}}
 
+
+\chapter{Target language}
+\label{cha:target}
+
+The formal semantic specification in chapter \ref{cha:formsem}
+specifies the semantics of Modelica by showing how it is translated
+into another, simpler, language.  The translation is a sort of
+flattening of the object-oriented structure of the model.  This
+chapter describes the format of the output of the translator.
+
+\section{Requirements}
+
+The target language needs to be able to express everything that can be
+expressed by the Modelica language, but it may do so in a much less
+structured way.  The major part of the translator output consists of a
+flat list of equations which are the result of instantiating the main
+model of the source file and its subcomponents.  Thus 
+
+
 \chapter{Annotated formal semantics}
 \label{cha:formsem}
 
@@ -460,23 +485,53 @@ converted to more readable text.
 
 \section{Overview}
 
+The specification is separated into a number of files, to modularize
+it and to make it easier to maintain and to make the structure
+clearer.  
+
+\begin{table}[htbp]
+  \begin{center}
+    \begin{tabular}{llp{8cm}}
+      \hline
+      \ref{src:exp} & \code{exp.tex}            & Expressions \\
+      \ref{src:classinf} & \code{classinf.tex}  & Class inference \\
+      \ref{src:dae} & \code{dae.tex}            & Output \\
+      \ref{src:types} & \code{types.tex}        &  \\
+      \ref{src:absyn} & \code{absyn.tex}        & Abstract syntax \\
+      \ref{src:explode} & \code{explode.tex}    &  \\
+      \ref{src:dump} & \code{dump.tex}          &  \\
+      \ref{src:prefix} & \code{prefix.tex}      &  \\
+      \ref{src:mod} & \code{mod.tex}            &  \\
+      \ref{src:env} & \code{env.tex}            &  \\
+      \ref{src:lookup} & \code{lookup.tex}      &  \\
+      \ref{src:builtin} & \code{builtin.tex}    &  \\
+      \ref{src:connect} & \code{connect.tex}    &  \\
+      \ref{src:staticexp} & \code{staticexp.tex}&  \\
+      \ref{src:inst} & \code{inst.tex}          &  \\
+      \ref{src:main} & \code{main.tex}          &  \\
+      \hline
+    \end{tabular}
+    \caption{Files in the specification}
+    \label{tab:files}
+  \end{center}
+\end{table}
 
 \input{exp.tex}
 \input{classinf.tex}
 \input{dae.tex}
-\input{types.tex}
-\input{absyn.tex}
-\input{explode.tex}
-\input{dump.tex}
-\input{prefix.tex}
-\input{mod.tex}
-\input{env.tex}
-\input{lookup.tex}
-\input{builtin.tex}
-\input{connect.tex}
-\input{staticexp.tex}
-\input{inst.tex}
-\input{main.tex}
+%\input{types.tex}
+%\input{absyn.tex}
+%\input{explode.tex}
+%\input{dump.tex}
+%\input{prefix.tex}
+%\input{mod.tex}
+%\input{env.tex}
+%\input{lookup.tex}
+%\input{builtin.tex}
+%\input{connect.tex}
+%\input{staticexp.tex}
+%\input{inst.tex}
+%\input{main.tex}
 
 
 \chapter{rmldoc \note{appendix}}

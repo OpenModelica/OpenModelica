@@ -10,10 +10,12 @@ and not
 
      "=" IDENT [ array_dimensions ] [ class_modification ] )
 
+Status: fixed
+
 * Redeclare of array elements
 
 This is currently allowed by the grammar, but seems to me to be
-obviously wrong.
+obviously wrong.  And it seems that others agree.
 
 	class Foo
 	  Int x;
@@ -49,6 +51,7 @@ Trouble: This disallows the following (correct) example:
 	  Foo y(x[17] = 123.0);
 	end Bar;
 
+Status: Unresolved. Maybe a semantic rule to prohibit this is needed.
 
 * Double modifiers
 
@@ -90,21 +93,11 @@ modifications simultaneously, as in the following example:
    constant Real         N_A     (final unit="mol-1")
                                  = 6.0221367e23  "Avogadro constant";
 
-There are two obvious solutions that I can see.
-
-I.  Rewrite the Standard Library to say
-
-   constant Real         N_A     (final unit="mol-1",
-                                  value = 6.0221367e23)  "Avogadro constant";
-
-II. Change the modification rule to something like
+Solution: Change the modification rule to something like
 
        modification :
           class_modification [ "=" expression ]
         | "=" expression
-
-I think that the latter is preferrable, and after reading design
-meeting minutes, I am sure of it.
 
 * final
 
@@ -113,18 +106,6 @@ prefixed with "final", but that is not described by the grammar.
 
 Suggestion: Change the production rule for class_definition.
 
-Previously:
-
-      class_definition :
-            [ partial ] 
-         ( class | model | record | block | connector | type |
-           package | function ) 
-         IDENT comment
-         ( composition end IDENT | 
-           "=" IDENT [ array_dimensions ] [ class_modification ] )
-
-New:
-
       class_definition :
             [ partial | final ] 
          ( class | model | record | block | connector | type |
@@ -132,6 +113,8 @@ New:
          IDENT comment
          ( composition end IDENT | 
            "=" IDENT [ array_dimensions ] [ class_modification ] )
+
+Status: fixed
 
 * connect
 
@@ -149,7 +132,11 @@ component_reference, as the can only be one dot in them (ref. Dag).
           | while_clause )
         comment
 
+Status: fixed in a similar way
+
 * File name suffix
 
 The file name suffix should be standardized. I have seen both .mdc,
 .mod and .mo. I vote for .mdc.
+
+Status: The preferred is ".mo".

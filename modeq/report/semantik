@@ -44,6 +44,8 @@ when the programmer forgot about the variable shadowing rules.
 In this case b1.x will be 1 and b2.x will be 100, but the modification
 of b1 is lost, so I can't see the need for it.
 
+Status: This seems to be actually needed.
+
 * Types in equations
 
 Vilka variabler får man ha i ekvationer? Bara Real(Type) och
@@ -56,6 +58,8 @@ Hur hanteras strängar i ekvationer.
 Exakt hur fungerar connect()?
 
 Beskrivningen av connect-semantiken (B.2) måste vara fel.
+
+Status: Being rewritten.
 
 * Kvalificerade identifierare
 
@@ -120,6 +124,8 @@ the same as
     equation
       x = y;
     end M;
+
+This is almost true, but not completely.
 
 * Allt är ekvationer
 
@@ -278,3 +284,59 @@ possible.
 	...
 
 This is not explained either, as far as I can tell.
+
+* Type equality(?) in equations
+
+What are the requirements on two components that are "=" in an
+equation?
+
+	class A
+	   ...
+	end A;
+
+	class B
+	  ...
+	end B;
+
+	class C
+	  A a;
+	  B b1;
+	  B b2 = a
+	equation
+	  a = b1;
+	end C;
+
+According to an example in the report ther might be enough with a
+subtype relation.
+
+* Recursive equations
+
+From the report:
+
+      transpose(a) * [1; x; x^2; ... x^n]
+
+if we could form the vector of increasing powers of x. A recursive formulation is possible. 
+
+      xpowers[1] = 1;
+      xpowers[2:n+1] = xpowers[1:n]*x;
+      y = transpose(a) * xpowers;
+
+The recursive formulation would be expanded to 
+
+      xpowers[1] = 1;
+      xpowers[2] = xpowers[1]*x;
+      xpowers[3] = xpowers[2]*x;
+      ...
+      xpowers[n+1] = xpowers[n]*x;
+      y = transpose(a) * xpowers;
+
+Thinking about this I see that there is no problem at all. The array
+equation is unrolled in the normal fashion.
+
+* while
+
+How are while loops treated in equation sections?
+
+* enable
+
+What are the semantics of the enable attribute?

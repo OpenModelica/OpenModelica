@@ -24,7 +24,7 @@ relation main =
 
 	print "\n = Instantiating\n\n" &
 	Inst.instantiate(p') => d &
-	print "\n" &
+	print "\nEquations:\n\n" &
 	DAE.dump d &
 	
 	print "\n[slut]\n"
