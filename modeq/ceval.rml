@@ -28,9 +28,21 @@
  ** 
  ** This module handles constant propagation (or evaluation)
  ** When elaborating expressions, in the Static module, expressions are checked to 
- ** find out its type. It also checks wether the expressions are constant and the relation 
+ ** find out its type. It also checks whether the expressions are constant and the relation 
  ** ceval in this module will then evaluate the expression to a constant value, defined
  ** in the Values module.
+ **
+ ** Input: 
+ **	Env: Environment with bindings
+ **	Exp: Expression to check for constant evaluation
+ **	Bool flag determines whether the current instantiation is implicit
+ **	InteractiveSymbolTable is optional, and used in interactive mode, *)
+ **	e.g. from mosh
+ **	
+ ** Output:
+ **	Value: The evaluated value
+ **     InteractiveSymbolTable: Modified symbol table
+ **     Subscript list : Evaluates subscripts and generates constant expressions. 
  **)
 
 
@@ -40,7 +52,7 @@ module Ceval :
   with "interactive.rml"
   with "values.rml"
 
-  relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option, int option)
+  relation ceval : (Env.Env, Exp.Exp, bool (*implicit*) , Interactive.InteractiveSymbolTable option, int option)
 	    => (Values.Value, Interactive.InteractiveSymbolTable option)
 
   relation ceval_list : (Env.Env, Exp.Exp list, bool,

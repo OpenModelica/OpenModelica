@@ -22,7 +22,14 @@
 (**
  ** file:	 codegen.rml
  ** module:      Codegen
- ** description: Generate code from DAE (Flat Modelica)
+ ** description: Generate C code from DAE (Flat Modelica) for Modelica 
+ ** functions. This code is compiled and linked to the simulation code or when
+ ** functions are called from the interactive environment.
+ **
+ ** Input: DAE
+ ** Output: -   (generated code through Print module)
+ ** Uses: Print Inst ModUtil Util
+ **
  **
  ** RCS: $Id$
  **

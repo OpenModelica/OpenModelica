@@ -22,15 +22,17 @@
 (**
  ** file:	 builtin.rml
  ** module:      Builtin
- ** description: Builting types and variables
+ ** description: Builting tyepes and variables
  **
  ** RCS: $Id$
  **
  ** This module defines the builtin types, variables and functions in
- ** Modelica.  The only exported relation is `initial_env'.
+ ** Modelica.  The only exported relations are `initial_env' and
+ ** simple_initial_env.
  ** 
- ** Currently, the only attribute defined in the built-in types is
- ** `unit'.  The others can easily be added.
+ ** There are several builtin attributes defined in the builtin types, such as
+ ** unit, start, etc. 
+ ** 
  **)
 
 module Builtin:

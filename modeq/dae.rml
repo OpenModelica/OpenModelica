@@ -26,8 +26,13 @@
  **
  ** RCS: $Id$
  ** 
- ** This module defines types for collecting DAE equations together
- ** with declarations of variables.
+ ** This module defines data structures for DAE equations and 
+ ** declarations of variables and functions. It also exports some help
+ ** relations for other modules. The DAE data structure is the result of *)
+ ** flattening, containing only flat modelica, i.e. equations, algorithms,
+ ** variables and functions. 
+ **
+ ** 
  **)
 
 (** - Module header *)
