@@ -1778,27 +1778,43 @@ relation inst_var2 : (Env.Env,
           => (dae,csets',ty)
 
   rule	(* Scalar Variables *)
-	list_reverse idxs => idxs' &
-	Prefix.prefix_add(n,idxs',pre) => pre' &
-	(* This is where redeclare should be handled *)
-(*	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
-	Debug.fcall ("envprint", Env.print_env, env) & *)
-	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
-	  => (dae1,_,csets',ty,st) &
-	fix_direction(dae1,dir) => dae1' &
- 	Exp.int_subscripts idxs' => subs &
-	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
-	inst_mod_equation(cr,ty,mod) => dae2 &
-	inst_start_binding(mod,ty) => start & 
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
-		    inst_dims, start) => dae3 &
-	list_append(dae1',dae2) => daex &
-	list_append(daex,dae3) => dae 
-(*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
-	& Debug.fprint("instvartr", "\nEnd of inst_var variables\n")*)
-	--------------------------
-	inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
-		 [],idxs,inst_dims,impl (*as false*))
+	    list_reverse idxs => idxs' &
+	    Prefix.prefix_add(n,idxs',pre) => pre' &
+	    (* This is where redeclare should be handled *)
+	    
+        Prefix.print_prefix_str(pre') => prefix_str &
+        
+	    Debug.fprintl ("insttr", ["instantiating var class: ", n," prefix ",prefix_str, "\n"]) &
+	    (*Debug.fcall ("envprint", Env.print_env, env) & *)
+	    
+	    inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
+	      => (dae1,_,csets',ty,st) &
+	      fix_direction(dae1,dir) => dae1' &
+
+ 	    (*& Debug.fcall ("insttr",DAE.dump2,DAE.DAE(dae'))*)
+
+        Exp.int_subscripts idxs' => subs &
+	    Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
+	    inst_mod_equation(cr,ty,mod) => dae2 &
+        
+        Util.list_map(idxs',int_string) => index_string &
+
+        Debug.fprint ("insttr", "\n ******************\n ") &
+        Debug.fprint ("insttr", "\n index_string ") &   Debug.fprintl ("insttr", index_string) &
+        Debug.fprint ("insttr", "\n component ref ") &   Debug.fcall ("insttr", Exp.print_component_ref,cr) &
+        Debug.fprint ("insttr", "\n ******************\n ") &
+	    Debug.fprint ("insttr", "\n ") &
+	    
+        inst_start_binding(mod,ty,idxs') => start & 
+	    dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
+		            inst_dims, start) => dae3 &
+	    list_append(dae1',dae2) => daex &
+	    list_append(daex,dae3) => dae 
+        (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
+	     & Debug.fprint("instvartr", "\nEnd of inst_var variables\n")*)
+	    --------------------------
+	    inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
+		          [],idxs,inst_dims,impl (*as false*))
           => (dae,csets',ty)
 
 
@@ -4709,24 +4725,106 @@ end
 
 
 (** relation: inst_start_binding
-** This relation investigates a modification and extracts the start modification. E.g. Real x(start=1+3) => 1+3
+** This relation investigates a modification and extracts the 
+** start modification. E.g. Real x(start=1+3) => 1+3
+** It also handles the case Integer T0[2](final start={5,6})={9,10} becomes
+** Integer T0[1](start=5); Integer T0[2](start=6);
+**
+** Arg 1 is the start modification  
+** Arg 2 is the expected type that the modification should have
+** Arg 3 is the index list for the element: for T0[1,2] is {1,2} 
+**
+**)
+relation inst_start_binding: (Types.Mod,Types.Type,int list) => DAE.StartValue =
+        
+  rule  
+        
+	    Mod.lookup_comp_modification(mod,"start") => mod2 &
+	    
+	    Mod.mod_equation(mod2) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
+	    Types.match_type(e,ty2,expected_type) => (e',ty') 
+
+	 (*   & Debug.fprint("failtrace", "NO INDEX-------------- \n inst_start_binding ") & 
+	    Debug.fcall("failtrace",Types.print_type, ty2) & 
+	    Debug.fprint("failtrace", "| mod: ") & 
+	    Debug.fcall("failtrace",Mod.print_mod, mod) & 
+	    Debug.fprint("failtrace", "\n | mod2: ") & 
+	    Debug.fcall("failtrace",Mod.print_mod, mod2) & 
+	    Debug.fprint("failtrace", "\n , expected type ") & 
+	    Debug.fcall("failtrace", Types.print_type, expected_type) &
+	    Debug.fprint("failtrace", "\n--------------\n") *)
+        
+	    ---------------------------------------------------
+	    inst_start_binding (mod,expected_type,[]) => SOME(e')
+        
+  rule  
+  	    
+	    Mod.lookup_comp_modification(mod,"start") => mod2 &
+	    
+        inst_start_binding2(mod2,etype,index_list) => result 
+	    ---------------------------------------------------
+        (*maybe this should be index::[]*)
+	    inst_start_binding (mod,etype,index_list) => result
+ 
+        
+  rule  (*Debug.fprint("failtrace", "inst_start_binding 3333333333333") & 
+	     Debug.fcall("failtrace", Types.print_type, etype) &
+	     Debug.fprint("failtrace", "\n") *)
+        ---------------------------------
+   	    inst_start_binding(mod,etype,_) => NONE
+
+end
+
+(** relation: inst_start_binding2
+** This relation investigates a modification and extracts the start modification if
+** the modification is in array of components. 
+** Help-relation to inst_start_binding
 *)
-relation inst_start_binding: (Types.Mod,Types.Type) => DAE.StartValue =
+relation inst_start_binding2: (Types.Mod,Types.Type,int list) => DAE.StartValue =
 
-  rule	Mod.lookup_comp_modification(mod,"start") => mod &
-	Mod.mod_equation(mod) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
-	Types.match_type(e,ty2,expected_type) => (e',ty') 
-	---------------------------------------------------
-	inst_start_binding (mod,expected_type) => SOME(e')
+  rule  (* this rule handles the case where there is only one element in the index-list*)
+        Mod.lookup_idx_modification(mod,index) => mod2 &
+	    
+        Mod.mod_equation(mod2) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
 
-  rule	Mod.lookup_comp_modification(mod,"start") => mod &
-	Mod.mod_equation(mod) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
-	Print.print_buf "#Error, wrong type for start attribute.\n"
-	---------------------------------------------------
-	inst_start_binding (mod,etype) => fail
+        Types.match_type(e,ty2,etype) => (e',ty') 
+        
+	   (* & Debug.fprint("failtrace", "-------------- \n inst_start_binding ") & 
+	    Debug.fcall("failtrace",Types.print_type, ty2) & 
+	    Debug.fprint("failtrace", "| mod: ") & 
+	    Debug.fcall("failtrace",Mod.print_mod, mod) & 
+	    Debug.fprint("failtrace", "\n | mod2: ") & 
+	    Debug.fcall("failtrace",Mod.print_mod, mod2) & 
+	    Debug.fprint("failtrace", "\n | mod3: ") & 
+	    Debug.fcall("failtrace", Types.print_type, etype) &
+	    Debug.fprint("failtrace", "\n--------------\n") *)
+        
+	    ---------------------------------------------------
+        (*maybe this should be index::[]*)
+	    inst_start_binding2 (mod,etype,index::[]) => SOME(e')
+ 
+  rule  (* this rule handles the case where there is several elements in the index-list*)
+        Mod.lookup_idx_modification(mod,index) => mod2 &
+	    
+        inst_start_binding2(mod2,etype,res) => result
 
-  axiom	inst_start_binding(mod,etype) => NONE
+	 (*   & Debug.fprint("failtrace", "-------------- \n inst_start_binding ") & 
+	    Debug.fprint("failtrace", "| mod: ") & 
+	    Debug.fcall("failtrace",Mod.print_mod, mod) & 
+	    Debug.fprint("failtrace", "\n | mod2: ") & 
+	    Debug.fcall("failtrace",Mod.print_mod, mod2) & 
+	    Debug.fprint("failtrace", "\n , expected type ") & 
+	    Debug.fcall("failtrace", Types.print_type, etype) &
+	    Debug.fprint("failtrace", "\n--------------\n") *)
+        
+	    ---------------------------------------------------
+        (*maybe this should be index::[]*)
+	    inst_start_binding2 (mod,etype,index::res) => result
 
+  rule  (*Print.print_buf("inst_start_binding2 failed\n")*)
+        ---------------------------------------------------
+	    inst_start_binding2 (_,_,_) => fail
+   
 end
 
 (** LS & ELN
