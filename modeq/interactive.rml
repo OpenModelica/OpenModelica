@@ -85,8 +85,12 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	let newst = SYMBOLTABLE(newp,s,ic,iv) &
 	string_append(name,"\n") => resstr
 	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("newModel",_),[Absyn.STRING(name)]))]),st as SYMBOLTABLE(p,s,ic,iv)) 
-	    => (resstr,newst)
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("newModel",_),
+		Absyn.FUNCTIONARGS([Absyn.STRING(name)],[])))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
 	    
   rule	componentref_to_path(cr) => path &
 	Absyn.update_program(
@@ -95,7 +99,12 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	let newst = SYMBOLTABLE(newp,s,ic,iv) &
 	string_append(name,"\n") => resstr
 	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("newModel",_),[Absyn.STRING(name),Absyn.CREF(cr)]))]), st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("newModel",_),
+		Absyn.FUNCTIONARGS([Absyn.STRING(name),Absyn.CREF(cr)],[])))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
 	    
 end
 

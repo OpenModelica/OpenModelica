@@ -725,7 +725,8 @@ relation print_exp : Absyn.Exp => () =
 	print_exp(Absyn.IFEXP(c,t,f))
 
   rule	print_component_ref(fcn) &
- 	print "(" & print_list_debug("print_exp",args,print_exp,",") & print ")"
+ 	print "(" & 
+	print_function_args(args) & print ")"
 	---------------------------------------------
 	print_exp(Absyn.CALL(fcn, args))
 
@@ -763,7 +764,26 @@ relation print_exp : Absyn.Exp => () =
 	print_exp (_)
 end
 
+relation print_function_args: Absyn.FunctionArgs => () =
+	
+  rule  print "FUNCTIONARGS(" &
+	print_list_debug("print_exp",expargs,print_exp,", ") 
+	print ", " &
+	print_list_debug("print_namedarg",nargs,print_named_arg,", ") &
+	print ")"
+	-------------------
+	print_function_args Absyn.FUNCTIONARGS(expargs,nargs)
+end
 
+relation print_named_arg: Absyn.NamedArg => () =
+  rule	print ident &
+	print "=" &
+	print_exp(e) 
+	------------
+	print_named_arg Absyn.NAMEDARG(ident,e)
+end
+
+	
 
 (**)
 
@@ -853,7 +873,7 @@ relation print_exp_str : Absyn.Exp => string =
 	print_exp_str(Absyn.IFEXP(c,t,f)) => s''''
 
   rule	print_component_ref_str(fcn) => fs &
-	print_list_str(args,print_exp_str,",") => argstr &
+	let argstr = "not implemented yet" & 
 	string_append(fs, "(") => s &
 	string_append(s, argstr) => s' &
 	string_append(s', ")") => s''

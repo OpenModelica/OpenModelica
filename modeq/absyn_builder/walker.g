@@ -1356,26 +1356,43 @@ function_call returns [void* ast]
 
 function_arguments 	returns [void* ast]
 {
-    ast = 0;
+    l_stack el_stack;
+    void* e=0;
+    void* elist=0;
+    void* namel=0;
 }
     :
-		( ast = expression_list
-		| named_arguments // TODO: fix Absyn to handle named arguments
-		)?
+		(e = expression { el_stack.push(e); } )* (namel = named_arguments)?
         {
-            if (!ast) ast = mk_nil();
+
+	    elist = make_rml_list_from_stack(el_stack);
+	    if (!namel) namel = mk_nil();
+	    ast = Absyn__FUNCTIONARGS(elist,namel); 		
         }
     ;
 
-named_arguments :
-		named_argument (named_argument)*;
+named_arguments returns [void* ast]
+{
+    l_stack el_stack;
+    void* n;
+} 
+	:
+		(n = named_argument { el_stack.push(n); }) (n = named_argument { el_stack.push(n); } )*
+	{
+		ast = make_rml_list_from_stack(el_stack);
+	}
+	;
 
-named_argument
+named_argument returns [void* ast]
 {
   void* temp;
 }
      :
-		#(eq:EQUALS i:IDENT temp = expression);
+		#(eq:EQUALS i:IDENT temp = expression)
+	{
+		ast = Absyn__NAMEDARG(to_rml_str(i),temp);
+	}
+	;
 
 expression_list returns [void* ast]
 {

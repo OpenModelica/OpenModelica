@@ -212,15 +212,14 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,prop)
 
 	(**  Function calls *)
+	(** PA. Only positional arguments are elaborated for now.*)
+	(** TODO: Implement elaboration of named arguments. *)
 
   rule	Dump.print_component_ref_str fn => fnstr &
 	Debug.fprintl("setr", ["elab_exp_call: ",fnstr,"\n"]) &
 	elab_call(env,fn,args) => (e,prop)
 	-------------------------------------
-	elab_exp (env,Absyn.CALL(fn,args)) => (e,prop)
-
-
-
+	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) => (e,prop)
 
 	(*PR. Get the properties for each expression in the tuple. 
 	* Each expression has its own constflag.

@@ -200,7 +200,7 @@ module Absyn:
 	       | LUNARY of Operator * Exp
 	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
-	       | CALL of ComponentRef * Exp list
+	       | CALL of ComponentRef * FunctionArgs
 (*	       | ARRAY of Exp list *)
 
 (*P.R		ARRAY consists of an vector of the dimension sizes and an vector consiting of the vector data.*)	
@@ -211,6 +211,14 @@ module Absyn:
 	       | TUPLE of Exp list (*PR.*)
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
+
+  datatype FunctionArgs =  FUNCTIONARGS of Exp list * NamedArg list
+  (** The `FunctionArgs' datatype consists of a list of positional arguments *)
+  (** followed by a list of named arguments (Modelica v2.0) *)
+							  
+  datatype NamedArg = NAMEDARG of Ident * Exp
+  (** The `NamedArg' datatype consist of an Identifier for the argument and an expression *)
+  (** giving the value of the argument *)
 
   datatype Operator = ADD   | SUB    | MUL     | DIV       | POW
 		    | UPLUS | UMINUS

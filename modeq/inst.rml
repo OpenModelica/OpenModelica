@@ -1199,7 +1199,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	--------------------------------------------------------------
 	inst_equation(env,mods,pre,csets, ci_state,
 		      SCode.EQ_EXPR(Absyn.CALL(Absyn.CREF_IDENT("assert",[]),
-					       [e,Absyn.STRING(d)])))
+					       Absyn.FUNCTIONARGS([e,Absyn.STRING(d)],[]))))
 	  => (dae,env,csets,ci_state')
 
 	(**  Normal equations *)
