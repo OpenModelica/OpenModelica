@@ -68,15 +68,30 @@ module ClassInf :
 
   (** - Exported relations *)
 
-  relation start : (SCode.Restriction, string) => State
+  relation start : (SCode.Restriction, string (*ident*)) => State
+
+  (** relation: trans
+   **
+   ** This is the state machine transition relation.  It describes the
+   ** transitions between states at different events.
+   **)
   relation trans : (State, Event) => State
 
-  relation valid : (State, SCode.Restriction) => ()
+  (** relation: valid
+   **
+   ** This is the validity relation which determines if a state is valid
+   ** according to one of the restrictions.  This means, that if a class
+   ** definition is to be used as, say, a connector, the state of the
+   ** state machine is checked against the `SCode.R_CONNECTOR'
+   ** restriction using this relation to find out if it is an error to
+   ** use this class definition as a connector.
+   **)
+   relation valid : (State, SCode.Restriction) => ()
   (* `assert_valid' is identical to 'valid'.  The only difference is *)
   (* that it prints an error message when it fails. *)
   relation assert_valid : (State, SCode.Restriction) => ()
   
-	  (* Succeeds if state is FUNCTION *)
+  (* Succeeds if state is FUNCTION *)
   relation is_function: State => ()
 
   relation matching_state : (State, State list) => bool

@@ -61,7 +61,11 @@ with "classinf.rml"
 with "debug.rml"
 with "print.rml"
 
-(** - The primitive types *)
+(** - The primitive types 
+ **
+ ** These are the primitive types that are used to build the types
+ ** `Real', `Integer' etc. 
+ **)
 
 val rl_type = SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL,
 			  SCode.PARTS([],[],[],[],[],NONE))
@@ -73,10 +77,9 @@ val bool_type = SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOL,
 			    SCode.PARTS([],[],[],[],[],NONE))
 val enum_type = SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUM,
 			    SCode.PARTS([],[],[],[],[],NONE))
-(** These are the primitive types that are used to build the types
- ** `Real', `Integer' etc. *)
 
-(** LS: false for replaceable added **)
+(** This `unit' component is used in several places below, and it is
+ ** declared once here to make the definitions below easier to read. *)
 val unit = SCode.COMPONENT("unit",true,false,false,
 			      SCode.ATTR([],
 					 false,
@@ -85,8 +88,7 @@ val unit = SCode.COMPONENT("unit",true,false,false,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
 			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE)
-(** This `unit' component is used in several places below, and it is
- ** declared once here to make the definitions below easier to read. *)
+
 val quantity = SCode.COMPONENT("quantity",true,false,false,
 			      SCode.ATTR([],
 					 false,
@@ -583,34 +585,13 @@ val array1dimint2array3dimint= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(
 val array1dimreal2array3dimreal= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL([]),NONE)),NONE))], (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL([]),NONE)),NONE)),NONE)
 
 
-(*
-val array1dimint2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(1,(Types.T_REAL([]),NONE)),NONE))], (Types.T_REAL([]),NONE)),NONE)
-val array2dimint2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(2,(Types.T_REAL([]),NONE)),NONE))], (Types.T_REAL([]),NONE)),NONE)
-val array3dimint2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(3,(Types.T_REAL([]),NONE)),NONE))], (Types.T_REAL([]),NONE)),NONE)
-val array4dimint2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(4,(Types.T_REAL([]),NONE)),NONE))], (Types.T_REAL([]),NONE)),NONE)
-*)
-
-(*
-val array1dimint_int2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(1,(Types.T_INTEGER([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
-val array2dimint_int2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(2,(Types.T_INTEGER([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
-val array3dimint_int2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(3,(Types.T_INTEGER([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
-val array4dimint_int2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(4,(Types.T_INTEGER([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
-
-val array1dimreal_int2real= (Types.T_FUNCTION([("x",(Types.T_ARRAY(1,(Types.T_REAL([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_REAL([]),NONE)),NONE)
-val array2dimreal_int2real= (Types.T_FUNCTION([("x",(Types.T_ARRAY(2,(Types.T_REAL([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_REAL([]),NONE)),NONE)
-val array3dimreal_int2real= (Types.T_FUNCTION([("x",(Types.T_ARRAY(3,(Types.T_REAL([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_REAL([]),NONE)),NONE)
-val array4Dimreal_int2real= (Types.T_FUNCTION([("x",(Types.T_ARRAY(4,(Types.T_REAL([]),NONE)),NONE)),("y",(Types.T_INTEGER([]),NONE))], (Types.T_REAL([]),NONE)),NONE)
-*)
-
-(* etc...  *)
-
 
 (* T_ARRAY is apperantly not constant. To bad! *)
 val array2real= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
 		
 (* Legal syntax: val array2one= (Types.T_FUNCTION([("x",(Types.T_ARRAY(1,(Types.T_REAL([]),NONE)),NONE))], TYPES.T_INTEGER) *)
 
-	(* For size(A) to transpose A *)
+(* For size(A) to transpose A *)
 (* val array1dimint2array1dimint = ... already defined *)
  val array2dimint2array1dimint = (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER([]),NONE)),NONE))], (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE)),NONE)
  val array3dimint2array1dimint = (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER([]),NONE)),NONE))], (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE)),NONE)
@@ -663,13 +644,17 @@ val real_real_int2array
 val array2real
 val array_array2int
 *)
+
+
 (** - Initial environment *)
 
-(** relation: initial_env
+(** relation: simple_initial_env
  ** 
  ** The initial environment where instantiation takes place is built
  ** up using this relation.  It creates an empty environment and adds
- ** all the built-in definitions to it.
+ ** all the built-in types to it.
+ **
+ ** This only creates a minimal environment, useful for debugging purposes.
  **)
 relation simple_initial_env =
 
@@ -689,6 +674,12 @@ relation simple_initial_env =
  	simple_initial_env () => env
 end
 
+(** relation: initial_env
+ ** 
+ ** The initial environment where instantiation takes place is built
+ ** up using this relation.  It creates an empty environment and adds
+ ** all the built-in definitions to it.
+ **)
 relation initial_env =
 
   rule	(*Debug.fprint ("insttr","Creating initial env.\n") &*)
