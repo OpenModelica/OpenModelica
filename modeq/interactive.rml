@@ -102,21 +102,21 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("newModel",_),
-		Absyn.FUNCTIONARGS([Absyn.STRING(name)],[])))]
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_))],[])))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
 	    
   rule	componentref_to_path(cr) => path &
 	Absyn.update_program(
-      Absyn.PROGRAM([Absyn.CLASS(name,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.WITHIN(path)),
-      p) => newp &
+	    Absyn.PROGRAM([Absyn.CLASS(name,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.WITHIN(path)),
+	    p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv) &
 	string_append(name,"\n") => resstr
 	---------------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("newModel",_),
-		Absyn.FUNCTIONARGS([Absyn.STRING(name),Absyn.CREF(cr)],[])))]
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(cr)],[])))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
 	
@@ -126,7 +126,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("addComponent",_),
-		Absyn.FUNCTIONARGS([Absyn.STRING(name),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))]
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,SYMBOLTABLE(newp,s,ic,iv))
 end
@@ -139,3 +139,5 @@ relation componentref_to_path: Absyn.ComponentRef => Absyn.Path =
 	-----------------------------
 	componentref_to_path(Absyn.CREF_QUAL(id,_,x)) => Absyn.QUALIFIED(id,px)
 end	
+
+
