@@ -4,34 +4,49 @@
 
 module Exp:
 
-type Ident = string
+  type Ident = string
 
-datatype Path = QUALIFIED of string * Path
-	      | IDENT of Ident
+  datatype Path = QUALIFIED of string * Path
+		| IDENT of Ident
 
-datatype BinOp = ADD | SUB | MUL | DIV | POW
-datatype UnaryOp = UMINUS | UPLUS
-datatype LBinOp = AND | OR
-datatype LUnaryOp = NOT
-datatype RelOp = LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
+  datatype BinOp = ADD | SUB | MUL | DIV | POW
+  datatype UnaryOp = UMINUS | UPLUS
+  datatype LBinOp = AND | OR
+  datatype LUnaryOp = NOT
+  datatype RelOp = LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
 
-datatype Exp = NUMBER of real
-             | PATH of Path
-	     | STRING of string
-	     | BOOL of bool
+  datatype Exp = NUMBER of real
+	       | PATH of Path
+	       | STRING of string
+	       | BOOL of bool
 
-             | BINARY of Exp * BinOp * Exp
-             | UNARY of UnaryOp * Exp
+	       | BINARY of Exp * BinOp * Exp
+	       | UNARY of UnaryOp * Exp
 
-             | LBINARY of Exp * LBinOp * Exp
-             | LUNARY of LUnaryOp * Exp
+	       | LBINARY of Exp * LBinOp * Exp
+	       | LUNARY of LUnaryOp * Exp
 
-	     | RELATION of Exp * RelOp * Exp
+	       | RELATION of Exp * RelOp * Exp
 
-	     | IFEXP of Exp * Exp * Exp
+	       | IFEXP of Exp * Exp * Exp
 
-             | CALL of Path * Exp list		(* Function call *)
-             (* | EQU of Exp * Exp			( * Equation *)
-	     | TIME
+	       | CALL of Path * Exp list		(* Function call *)
+	       (* | EQU of Exp * Exp			( * Equation *)
+	       | TIME
+
+  relation path_string : Path => string
+
+end
+
+
+relation path_string: Path => string =
+
+	axiom	path_string(IDENT(s)) => s
+
+	rule	path_string(n) => ns &
+		string_append(s,".") => s1 &
+		string_append(s1,ns) => ss
+		-------------------------------------
+		path_string(QUALIFIED(s,n)) => ss
 
 end

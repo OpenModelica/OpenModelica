@@ -85,25 +85,13 @@ relation relop_symbol: Exp.RelOp => string =
 	axiom	relop_symbol(Exp.NEQUAL)    => " <> "
 end
 
-relation path_string: Exp.Path => string =
-
-	axiom	path_string(Exp.IDENT(s)) => s
-
-	rule	path_string(n) => ns &
-		string_append(s,".") => s1 &
-		string_append(s1,ns) => ss
-		-------------------------------------
-		path_string(Exp.QUALIFIED(s,n)) => ss
-
-end
-
 relation dump_exp: Exp.Exp => () =
 	rule	real_string(x) => s &
 		print s
 		--------------
 		dump_exp(Exp.NUMBER(x))
 
-	rule	path_string(p) => s &
+	rule	Exp.path_string(p) => s &
 		print s
 		---------------
 		dump_exp(Exp.PATH(p))
@@ -151,7 +139,7 @@ relation dump_exp: Exp.Exp => () =
 		----------------------------
 		dump_exp(Exp.IFEXP(c,t,f))
 
-	rule	path_string(fcn) => fs &
+	rule	Exp.path_string(fcn) => fs &
 		print fs & print "(" & dump_list(args,dump_exp,",") & print ")"
 		---------------------------------------------
 		dump_exp(Exp.CALL(fcn, args))
@@ -231,7 +219,7 @@ and dump_class: Absyn.Class => () =
 
 	rule	dump_class_restriction(r) & print "(" &
 		print n & print "," & dump_select(p,"PARTIAL,","") &
-		print ") = " & path_string(i) => is & print is &
+		print ") = " & Exp.path_string(i) => is & print is &
 		dump_class_modification(m)
 		----------------------------------------
 		dump_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
@@ -250,7 +238,7 @@ and dump_element_arg =
 
 	rule	print "ARG(" &
 		dump_select(f,"FINAL,",",") &
-		path_string(r) => s & print s &
+		Exp.path_string(r) => s & print s &
 		dump_modification(m) &
 		print ")"
 		-------------------------------------------
@@ -308,7 +296,7 @@ and dump_elementspec: Absyn.ElementSpec => () =
 		dump_elementspec(Absyn.CLASSDEF(repl,cl))
 
 
-	rule	path_string(p) => s &
+	rule	Exp.path_string(p) => s &
 		print "EXTENDS(" & print s & print "," &
 		dump_list(l,dump_element_arg,",") & print ")"
 		------------------------------------------
@@ -320,7 +308,7 @@ and dump_elementspec: Absyn.ElementSpec => () =
 		dump_select(c,"CONSTANT,","") &
 		dump_select(i,"INPUT,","") &
 		dump_select(o,"OUTPUT,","") &
-		path_string(t) => ts & print ts & print "," &
+		Exp.path_string(t) => ts & print ts & print "," &
 		dump_list(cs, dump_component, ",") &
 		print ")"
 		------------------------------------------
