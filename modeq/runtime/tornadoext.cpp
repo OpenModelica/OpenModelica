@@ -60,11 +60,11 @@ extern "C"
         search2 != variables.end();
         ++search2)
       {
-        //output << search2->second.name << " : " << search2->second.direction << " = " << search2->second.type << endl;
         if((search2->second.direction == direction)
            && (search2->second.type == type))
           {
             return_val++;
+
           }
       }
     return return_val;
@@ -472,6 +472,33 @@ extern "C"
       ret_val = search->second + 1;
     }
     
+    rmlA0 = (void*) mk_icon(ret_val);
+ 
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL 
+
+  RML_BEGIN_LABEL(TORNADOEXT__get_5fno_5fof_5fvars_5fwith_5fdir_5fand_5ftype_5ffrom_5fclass)
+  {
+    char* dir_name = RML_STRINGDATA(rmlA0);
+    char* type_name = RML_STRINGDATA(rmlA1);
+    char* class_name = RML_STRINGDATA(rmlA2);
+
+    string str_key = string(class_name);
+    
+    
+    int ret_val = 0;
+    map<string, map<string,variable> >::iterator search;
+    search = generated_classes.find(str_key);
+    
+    if(search != generated_classes.end()){
+
+      ret_val = get_no_of_direction_vars_with_type(string(dir_name), 
+                                                       string(type_name),
+                                                       search->second);
+    } 
+
+
     rmlA0 = (void*) mk_icon(ret_val);
  
     RML_TAILCALLK(rmlSC);

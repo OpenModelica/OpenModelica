@@ -365,7 +365,7 @@ end
 relation get_start_value: (DAE.StartValue) => string =
 
   rule  SimCodegen.print_exp_cpp_str(e) => res 
-        & print res & print " <- \n"  
+(*         & print res & print " <- \n"   *)
         --------------------------------------
         get_start_value(SOME(e)) => res
 
@@ -392,11 +392,11 @@ end
           => (string,string,
               string,string,string,string,string) = 
            
-    rule  print "-get_direction_for_variable: " & print name
-         & print " in class " & print class_name  & print "\n" &
-         int_eq(1,0) => true
-         ---------------------------------
-        get_direction_for_variable(name,class_name,dae) => fail
+(*     rule  print "-get_direction_for_variable: " & print name *)
+(*          & print " in class " & print class_name  & print "\n" & *)
+(*          int_eq(1,0) => true *)
+(*          --------------------------------- *)
+(*         get_direction_for_variable(name,class_name,dae) => fail *)
  
   rule  find_dae_var(name,class_name,dae)
           => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)) &
@@ -666,9 +666,11 @@ end
          generate_constructor_parameters(dae) => (parameters,noParamsVar_str') &
          generate_links(dae,comp_name_list) => (links) &
          
-         generate_no_of_strings("AlgStateVarValues") => no_alg_values_str &
-         generate_no_of_strings("ParamValues") => no_param_values_str &
-         generate_no_of_strings("DerStateVarValues") => no_of_der_state_values_str &
+         generate_no_of_strings("","parameter",cname,"  SetNoParams") => no_param_var_str &
+
+         generate_no_of_values_strings("AlgStateVarValues") => no_alg_values_str &
+         generate_no_of_values_strings("ParamValues") => no_param_values_str &
+         generate_no_of_values_strings("DerStateVarValues") => no_of_der_state_values_str &
          
          Util.string_append_list(["C",cname,"::\n",
 				                  "C",cname,"(const wchar_t* Name)\n",
@@ -677,6 +679,8 @@ end
 				                  "  SetDesc(L\"",cname," test.\");\n",
 				                  "\n",
                                   "CDummy m_Dummy;\n\n",
+                                  no_param_var_str,
+                                  "\n",
 				                  parameters,
 				                  "\n",
 				                  "  SetNoIndepVars(1);\n",
@@ -719,18 +723,36 @@ end
 (**
  ** generates the strings for "SetNo<...>VarValues(<int>)"
  **)
- relation generate_no_of_strings:(string) => string =
+ relation generate_no_of_values_strings:(string) => string =
 	     
   rule  TORNADOEXT.get_no_of_vars_with_type(name) => no_of_values &
          no_of_values = 0
          -------------------------------------
-         generate_no_of_strings(name) => ""
+         generate_no_of_values_strings(name) => ""
 	     
   rule  TORNADOEXT.get_no_of_vars_with_type(name) => no_of_values &
          int_string(no_of_values) => values &
          Util.string_append_list(["  SetNo",name,"(",values,");\n"]) => res
          -------------------------------------
-         generate_no_of_strings(name) => res
+         generate_no_of_values_strings(name) => res
+	     
+         
+ end
+(**
+ ** generates the strings for "SetNo<...>Var(<int>)"
+ **)
+ relation generate_no_of_strings:(string,string,string,string) => string =
+	     
+  rule  TORNADOEXT.get_no_of_vars_with_dir_and_type_from_class(dir,var_type,name) => no_of_values &
+         no_of_values = 0
+         -------------------------------------
+         generate_no_of_strings(dir,var_type,name,call) => ""
+	     
+  rule  TORNADOEXT.get_no_of_vars_with_dir_and_type_from_class(dir,var_type,name) => no_of_values &
+         int_string(no_of_values) => values &
+         Util.string_append_list([call,"(",values,");\n"]) => res
+         -------------------------------------
+         generate_no_of_strings(dir,var_type,name,call) => res
 	     
          
  end
@@ -758,7 +780,7 @@ end
  ** This relation update the index in the map in TORNADOEXT
  ** algebraic variable links.
  ** ARG1 the daelow.var list
- ** DO NOT CHANGE THE STRING FOR THE DIFFERENT TYPES BECAUSE THERE ARE USED IN generate_no_of_strings
+ ** DO NOT CHANGE THE STRING FOR THE DIFFERENT TYPES BECAUSE THERE ARE USED IN generate_no_of_values_strings
  **)
  relation add_dae_var_to_index_map2:(DAELow.Var list) => () = 
 	     
@@ -1595,7 +1617,7 @@ relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) =
 	    Util.string_delimit_list(lst,"\n") => res &
         
 	    int_string no_of_vars => lenstr &
-        Util.string_append_list(["  "(*SetNoParams(",lenstr,");\n"*)]) => prefix1 &
+        Util.string_append_list([""(*SetNoParams(",lenstr,");\n"*)]) => prefix1 &
         Util.string_append_list(["  SetNoParamValues(",lenstr,");\n"]) => prefix2 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------

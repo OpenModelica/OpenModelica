@@ -80,10 +80,15 @@ module TORNADOEXT:
   relation get_flat_var_index: (string,string ) => int
 
           (** 
-           ** arg1 the class name where is instatiated i.e. "Temp" for Temp_foo
-           ** arg3 the type of the variable (algstatevar, parameter)
-           ** 
+           ** arg1 the type of variables: "parameter"
            **)
   relation get_no_of_vars_with_type:(string) => int
+          (** 
+           ** arg1 the directio of variables: "output"
+           ** arg1 the type of variables: "parameter"
+           ** arg2 the class name
+           ** 
+           **)
+  relation get_no_of_vars_with_dir_and_type_from_class:(string,string,string) => int
 end 
 
