@@ -14,6 +14,8 @@ datatype UnaryOp = UMINUS | UPLUS
 
 datatype Exp = NUMBER of real
              | PATH of Path
+	     | STRING of string
+	     | BOOL of bool
 
              | BINARY of Exp * BinOp * Exp
              | UNARY of UnaryOp * Exp
