@@ -32,7 +32,9 @@ SUBDIRS	= ast
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(PROG): $(SRCO) libast
+all : subdirs $(PROG)
+
+$(PROG): $(SRCO) ast/libast.a
 	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) $(AST)
 
 $(SRCO):	rml.h
@@ -44,7 +46,7 @@ main.o:		main.rml
 absyn.o:	absyn.rml
 parse.o:	parse.rml
 
-libast:
+ast/libast.a:
 	@(cd ast ; $(MAKE) libast.a)
 
 subdirs:
