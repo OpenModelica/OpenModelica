@@ -6,12 +6,12 @@ module Class:
 
 with "exp.rml"
 
-type Subscript = (Exp.Exp * (Exp.Exp * Exp.Exp option) option) option
+type Subscript = (Exp.Exp * ((Exp.Exp * (Exp.Exp option)) option)) option
 
 type ComponentRef = (string * Subscript list) list
 
 datatype ArrayDim = ONEDIM of Subscript
-		  | TWODIM of Subscript
+		  | TWODIM of Subscript*Subscript
 
 datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
 		    | REDECLARATION of bool * ElementSpec
@@ -29,15 +29,16 @@ and	 ElementSpec = CLASSDEF of bool		(* replaceable *)
 				  * bool	(* output *)
 				  * string	(* type name *)
 				  * string	(* component name *)
-				  * ArrayDim
-				  * Modification
+				  * ArrayDim option
+				  * Modification option (* optional? *)
 
-and	 Element = ELEMENT of bool*ElementSpec
+and	 Element = ELEMENT of bool		(* final *)
+			    * ElementSpec
 
-and	 ElementList = PUBLIC of Element list
-		     | PROTECTED of Element list
-		     | EQUATION of Element list
-		     | ALGORITHM of Element list
+and	 ElementListType = PUBLIC
+			 | PROTECTED
+			 | EQUATION
+			 | ALGORITHM
 
 and	 ClassRestriction = CL_CLASS
 			  | CL_TYPE
@@ -48,5 +49,7 @@ and	 ClassRestriction = CL_CLASS
 			  | CL_FUNCTION
 
 and	 Class = CLASS of ClassRestriction*(ElementList list)
+
+withtype ElementList = ElementListType*(Element list)
 
 end (* module Class *)
