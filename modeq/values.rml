@@ -631,7 +631,7 @@ relation val_string : Value => string =
 	val_string TUPLE(vs) => s''
 
   rule	val_record_string(r) => s &
-	Util.string_append_list(["record\n",s,"\n end record"]) => res
+	Util.string_append_list(["record\n",s,"end record"]) => res
 	---------------------------
 	val_string (r as RECORD(_,_,_)) => res
 
