@@ -178,11 +178,11 @@ relation print_exp: Exp => () =
 	---------------------------------
 	print_exp(SCONST(s))
 
-  rule	print "FALSE"
+  rule	print "false"
 	-------------
 	print_exp(BCONST(false))
 
-  rule	print "TRUE"
+  rule	print "true"
 	-------------
 	print_exp(BCONST(true))
 
@@ -211,9 +211,9 @@ relation print_exp: Exp => () =
 	-----------------------------------------------------------------
 	print_exp(RELATION(e1, op, e2))
 
-  rule	print "IF " & print_exp(c) &
-	print " THEN " & print_exp(t) &
-	print " ELSE " & print_exp(f)
+  rule	print "if " & print_exp(c) &
+	print " then " & print_exp(t) &
+	print " else " & print_exp(f)
 	----------------------------
 	print_exp(IFEXP(c,t,f))
 
@@ -241,7 +241,7 @@ relation print_exp: Exp => () =
 	-------------------------------------------------------------
 	print_exp RANGE(start,SOME(step),stop)
 
-  rule	print "real(" & print_exp e & print ")"
+  rule	print "Real(" & print_exp e & print ")"
 	---------------------------------------
 	print_exp CAST_TO_REAL(e)
 	
