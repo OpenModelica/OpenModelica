@@ -47,6 +47,8 @@ module Inst:
   with "cache.rml"
   with "absyn.rml"
 
+  datatype CallingScope = TOP_CALL | INNER_CALL
+
   type InstDims = Exp.Subscript list
 
   datatype Initial = INITIAL | NON_INITIAL
@@ -65,7 +67,7 @@ module Inst:
   relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
 	
   relation inst_class: ( Env.Env, Mod.Mod, Prefix.Prefix, 
-			Connect.Sets, SCode.Class, InstDims,bool)
+			Connect.Sets, SCode.Class, InstDims,bool,CallingScope)
 	  => ( DAE.Element list, Env.Env, Connect.Sets, Types.Type, ClassInf.State)
 
 
@@ -213,7 +215,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist, Env.En
 	inst_class_decls(env,cdecls,path)=> (env',_) &
 	Lookup.lookup_class(env',path,true) 
 	  => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
-	inst_class(env'', Mod.NOMOD, Prefix.NOPRE, [], cdef, [], false) 
+	inst_class(env'', Mod.NOMOD, Prefix.NOPRE, [], cdef, [], false,TOP_CALL) 
 	  => (dae,env'', _, _, _) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
@@ -229,7 +231,7 @@ end
 relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Element list, Env.Env) =
 	
   rule	name = name2 &
-	inst_class(env, Mod.NOMOD, Prefix.NOPRE, [], c, [], false) 
+	inst_class(env, Mod.NOMOD, Prefix.NOPRE, [], c, [], false,TOP_CALL) 
 	  => (dae, env', _, _,_) 
 	-------------------------------------------------------------
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) 
@@ -324,7 +326,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 
   rule	Debug.fprintln ("insttr", "inst_program1") &
 	(* Env.extend_frame_c(env,c) => env' & *)
-	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false,TOP_CALL) 
 	  => (dae,_,csets,_,_) 
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
@@ -376,31 +378,35 @@ end
  **    instantiation
  **)
 
-relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,bool)
+relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,bool,CallingScope)
 	  => (DAE.Element list, Env.Env, Connect.Sets, Types.Type, ClassInf.State) =
 	  
   rule	Print.print_buf "# Can't instantiate partial class " & Print.print_buf n & Print.print_buf "\n"
 	------------------------------------------------------	
-	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
+	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false,_) => fail
 
   rule	Env.open_scope(env,encflag) => env' &
 	Env.name_scope(env',n) => env'' &
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env'', mod, pre, csets, ci_state, c, false, inst_dims, impl,false)
 	  => (dae1, env''', csets', ci_state', tys) &
+	
+	is_top_call(callscope) => callscope' &  
 	Connect.equations csets' => dae2 &
-	list_append(dae1, dae2) => dae &
+	
+	Connect.unconnected_flow_equations (csets',dae1,callscope') => dae3 &
+	Util.list_flatten([dae1, dae2, dae3]) => dae &
 	package_prefix(env, Absyn.IDENT(n)) => typename &
 	mktype(typename,ci_state',tys) => ty
 	-------------------------------------------
-	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl)
+	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl,callscope)
 	  => (dae, env''', [], ty, ci_state')
 
   rule	Debug.fprint("failtrace", "- inst_class ") & 
 	Debug.fprint("failtrace",  n) &
 	Debug.fprint("failtrace", " failed\n") 
 	-----------------------------------------------------
-	inst_class(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl) => fail
+	inst_class(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl,_) => fail
 	
 end
 
@@ -1493,13 +1499,14 @@ relation inst_var2 : (Env.Env,
   rule	(* Constants *)
 	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
-	inst_class(env,mod,pre',csets,cl,inst_dims,impl) 
+	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
 	  => (dae1,_,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	(*inst_mod_equation(cr,ty,mod) => dae2 &*)
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims)
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),
+		    inst_dims,NONE)
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
@@ -1511,13 +1518,13 @@ relation inst_var2 : (Env.Env,
   rule	(* Parameters *)
 	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
-	inst_class(env,mod,pre',csets,cl,inst_dims,impl) 
+	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
 	  => (dae1,_,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 (*	inst_mod_equation(cr,ty,mod) => dae2 &*)
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims)
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE)
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
@@ -1532,13 +1539,15 @@ relation inst_var2 : (Env.Env,
 	(* This is where redeclare should be handled *)
 	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
 	Debug.fcall ("envprint", Env.print_env, env) & 
-	inst_class(env,mod,pre',csets,cl,inst_dims,impl) 
+	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
 	  => (dae1,_,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
  	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	inst_mod_equation(cr,ty,mod) => dae2 &
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,inst_dims) => dae3 &
+	inst_start_binding(mod,ty) => start & 
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
+		    inst_dims, start) => dae3 &
 	list_append(dae1',dae2) => daex &
 	list_append(daex,dae3) => dae 
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
@@ -1553,7 +1562,7 @@ relation inst_var2 : (Env.Env,
 	inst_dim_exp (dim,true) => dime &
 	list_append(inst_dims,[dime]) => inst_dims' &
 	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,p)) &  
-	inst_class(env,mod,pre,csets,cl,inst_dims,true) 
+	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
 	make_array_type(dim::dims,ty) => ty' &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
@@ -1565,12 +1574,12 @@ relation inst_var2 : (Env.Env,
           => ([dae],csets,ty')
 
   rule	(* Array variables without binding in functions , e.g. input Real x[:] *)
-	inst_class(env,mod,pre,csets,cl,inst_dims,true) 
+	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
 	inst_dim_exp_lst(dims,true) => dims' &
-	dae_declare(cr,ty,attr,NONE,dims') => dae &
+	dae_declare(cr,ty,attr,NONE,dims',NONE) => dae &
 	make_array_type(dims,ty) => arrty 
 	-------------------------------
 	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl (*as false*))
@@ -1954,8 +1963,8 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
   rule	absyn_dir_to_dae_dir dir => dir' &
 	fix_direction (r,dir) => r'
 	-----
-	fix_direction (DAE.VAR(cr,vk,_,t,e,id)::r,dir) 
-	  => DAE.VAR(cr,vk,dir',t,e,id)::r'
+	fix_direction (DAE.VAR(cr,vk,_,t,e,id,start,flow)::r,dir) 
+	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow)::r'
 
   rule	fix_direction(r,dir) => r'
 	---------------------------
@@ -1999,7 +2008,7 @@ relation inst_array : (Env.Env,
 	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,p)) &  (* Which has an 
 							  expression binding *)
 	Print.print_buf "inst_array, calling inst_class\n" &
-	inst_class(env,mod,pre,csets,cl,inst_dims,true) 
+	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
 	  Print.print_buf "got type: " &
 	  Types.print_type ty &
@@ -2412,7 +2421,7 @@ correct?
   rule	Prefix.prefix_add(n,[],pre) => pre' &
 	Debug.fprint ("insttr","implicit_instantiation called.\n") &
  	print "implicit_instantiation  of " & print n & print " called.\n" &
- 	inst_class(env,mod,pre',csets,c,inst_dims,true) 
+ 	inst_class(env,mod,pre',csets,c,inst_dims,true,INNER_CALL) 
  	 => (dae, _, csets', ty, st) &
  	Debug.fprint ("insttr","implicit_instantiation inst class done.\n") &
  	print "implicit_instantiation of " & print n & print " class done.\n" &
@@ -2430,7 +2439,7 @@ correct?
    one. They will contain the elements locally *)
 
 (*  rule
- 	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
+ 	inst_class(cache, env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
  	  => (cache', dae, _, csets', ty, st) &
  	Env.extend_frame_t(env, n, ty) => env' &
          package_prefix (env, Absyn.IDENT(n)) => fpath
@@ -2442,7 +2451,7 @@ correct?
 
 
    rule	
-  	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
+  	inst_class(cache, env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
  	  => (cache', dae, _, csets', ty, st) &
  	
  	Env.extend_frame_t(env, n, ty) => env'	&
@@ -2506,7 +2515,7 @@ relation implicit_function_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
 	  => (env', daefuncs)
 
 rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
-	inst_class(env, mod, pre, csets, c, inst_dims, true) 
+	inst_class(env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
 	  => (dae, _, csets', ty, st) &
 	Env.extend_frame_t(env, n, ty) => env' &
         package_prefix (env, Absyn.IDENT(n)) => fpath
@@ -2518,7 +2527,7 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 
 
   rule	(* External functions should also have their type in env, but no dae! *)
-	inst_class(env, mod, pre, csets, c, inst_dims, true) 
+	inst_class(env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
 	  => (dae, _, csets', ty, st) &
 	Env.extend_frame_t(env, n, ty) => env'	&
         package_prefix (env, Absyn.IDENT(n)) => fpath &
@@ -2549,7 +2558,7 @@ relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
   rule	(* Instantiate each function, add its FQ name to the type, needed when deoverloading *)
 	Lookup.lookup_class(env,fn,true) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_FUNCTION,_),cenv) &
-	inst_class(cenv, Mod.NOMOD, Prefix.NOPRE, [], c, [], true) 
+	inst_class(cenv, Mod.NOMOD, Prefix.NOPRE, [], c, [], true,INNER_CALL) 
 	  => (dae, _, _, (Types.T_FUNCTION(args,tp),_), st) &
         package_prefix (env, Absyn.IDENT(overloadname)) => fpath &
 	package_prefix (cenv, Absyn.IDENT(id)) => ovlfpath &
@@ -2888,7 +2897,8 @@ relation dae_declare : (Exp.ComponentRef,
 			Types.Type, 
 			SCode.Attributes, 
 			Exp.Exp option,
-			InstDims
+			InstDims,
+			DAE.StartValue
 			) 
 	  => DAE.Element list =
 
@@ -2897,70 +2907,81 @@ relation dae_declare : (Exp.ComponentRef,
 	Debug.fprint ( "insttr", ",") &
 	Debug.fcall ( "insttr", Types.print_type,ty)  &
 	Debug.fprint ("insttr", "...)\n") &
-	dae_declare2 (vn, ty, par, dir, e, inst_dims) => dae
+	DAE.to_flow flow => flow' &
+	dae_declare2 (vn, ty, flow', par, dir, e, inst_dims, start) => dae
 	-----------------------------------
-	dae_declare (vn, ty, SCode.ATTR(_,_,_,par,dir), e, inst_dims) => dae
+	dae_declare (vn, ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start) 
+	  => dae
 
   rule	Debug.fprint("failtrace", "- dae_declare failed\n")
 	------------------------------
-	dae_declare(_,_,_,_,_) => fail
+	dae_declare(_,_,_,_,_,_) => fail
 
 end
 
 (**)
 (* LS: Added direction so that function elements can be defined
    correctly *)
-relation dae_declare2 : (Exp.ComponentRef, Types.Type, SCode.Variability,
-			 Absyn.Direction, Exp.Exp option,InstDims)
+relation dae_declare2 : (Exp.ComponentRef, Types.Type, DAE.Flow, SCode.Variability,
+			 Absyn.Direction, Exp.Exp option,InstDims, DAE.StartValue)
 	  => DAE.Element list =
 
-  rule	dae_declare3 (vn, ty, DAE.VARIABLE, dir, e, inst_dims) => dae
+  rule	dae_declare3 (vn, ty, flow, DAE.VARIABLE, dir, e, 
+		      inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, SCode.VAR, dir, e,inst_dims) => dae
+	dae_declare2 (vn, ty, flow, SCode.VAR, dir, e,inst_dims,start) => dae
 
-  rule	dae_declare3 (vn, ty, DAE.DISCRETE, dir, e,inst_dims) => dae
+  rule	dae_declare3 (vn, ty, flow,  DAE.DISCRETE, dir, e,
+		      inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, SCode.DISCRETE, dir, e, inst_dims) => dae
+	dae_declare2 (vn, ty, flow, SCode.DISCRETE, dir, e, inst_dims,start) => dae
 
-  rule	dae_declare3 (vn, ty, DAE.PARAM, dir, e, inst_dims) => dae
+  rule	dae_declare3 (vn, ty, flow, DAE.PARAM, dir, e, 
+		      inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, SCode.PARAM, dir, e, inst_dims) => dae
+	dae_declare2 (vn, ty, flow, SCode.PARAM, dir, e, inst_dims,start) 
+	  => dae
 
-  rule	dae_declare3 (vn, ty, DAE.CONST, dir, e, inst_dims) => dae
+  rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e, 
+		      inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, SCode.CONST, dir, e, inst_dims) => dae
+	dae_declare2 (vn, ty, flow, SCode.CONST, dir, e, inst_dims,start) 
+	  => dae
 
-  rule	dae_declare3 (vn, ty, DAE.CONST, dir, e, inst_dims) => dae
+  rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e, 
+		      inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, SCode.STRUCTPARAM, dir, e, inst_dims) => dae
+	dae_declare2 (vn, ty, flow, SCode.STRUCTPARAM, dir, e, inst_dims,start) 
+	  => dae
 
   rule	Debug.fprint("failtrace", "- dae_declare2 failed\n")
 	------------------------------
-	dae_declare2(_,_,_,_,_,_) => fail
+	dae_declare2(_,_,_,_,_,_,_,_) => fail
 
 end
 
 
 
-relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
-			 Absyn.Direction, Exp.Exp option, InstDims)
+relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
+			 Absyn.Direction, Exp.Exp option, InstDims, DAE.StartValue)
 	  => DAE.Element list =
 
-  rule	dae_declare4 (vn, ty, vk, DAE.INPUT, e, inst_dims) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.INPUT, e, inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, vk, Absyn.INPUT, e, inst_dims) => dae
+	dae_declare3 (vn, ty, fl, vk, Absyn.INPUT, e, inst_dims,start) 
+	  => dae
 
-  rule	dae_declare4 (vn, ty, vk, DAE.OUTPUT, e, inst_dims) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.OUTPUT, e, inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, vk, Absyn.OUTPUT, e, inst_dims) => dae
+	dae_declare3 (vn, ty, fl, vk, Absyn.OUTPUT, e, inst_dims,start) => dae
 
-  rule	dae_declare4 (vn, ty, vk, DAE.BIDIR, e, inst_dims) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.BIDIR, e, inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, vk, Absyn.BIDIR, e, inst_dims) => dae
+	dae_declare3 (vn, ty, fl, vk, Absyn.BIDIR, e, inst_dims,start) => dae
 
   rule	Debug.fprint("failtrace", "#- dae_declare3 failed\n")
 	------------------------------
-	dae_declare3(_,_,_,_,_,_) => fail
+	dae_declare3(_,_,_,_,_,_,_,_) => fail
 
 end
 
@@ -2968,30 +2989,36 @@ end
 
 (**)
 
-relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
-			 DAE.VarDirection, Exp.Exp option, InstDims)
+relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
+			 DAE.VarDirection, Exp.Exp option, InstDims, DAE.StartValue)
 	  => DAE.Element list =
 
-  axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), kind, dir, e, inst_dims)
-	  => [DAE.VAR(vn, kind, dir, DAE.INT, e, inst_dims)]
+  axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), fl, kind, dir, e, 
+		      inst_dims,start)
+	  => [DAE.VAR(vn, kind, dir, DAE.INT, e, inst_dims,start,fl)]
 	
-  axiom	dae_declare4 (vn, (Types.T_REAL(_),_), kind, dir, e, inst_dims)
-	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims)]
+  axiom	dae_declare4 (vn, (Types.T_REAL(_),_), fl, kind, dir, e, 
+		      inst_dims,start)
+	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl)]
 
-  axiom	dae_declare4 (vn, (Types.T_BOOL(_),_), kind, dir, e, inst_dims)
-	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims)]
+  axiom	dae_declare4 (vn, (Types.T_BOOL(_),_), fl, kind, dir, e, 
+		      inst_dims,start)
+	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl)]
 	
-  axiom	dae_declare4 (vn, (Types.T_STRING(_),_), kind, dir, e, inst_dims)
-	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims)]
-axiom dae_declare4 (vn, (Types.T_ENUM,_), kind, dir, e, inst_dims)
+  axiom	dae_declare4 (vn, (Types.T_STRING(_),_), fl, kind, dir, e, 
+		      inst_dims,start)
+	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl)]
+
+axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start)
 	=> []
 	(* We should not declare each enumeration value of an enumeration when instantiating,e.g Myenum my !=> constant EnumType my.enum1,... *)
 	(*[DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]*)
 
-  axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), kind, dir, e, inst_dims)
-	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims)]
+  axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), fl, kind, dir, e, 
+		      inst_dims,start)
+	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl)]
 
-  axiom	dae_declare4 (c,ty,_,_,_,_) => []
+  axiom	dae_declare4 (c,ty,_,_,_,_,_,_) => []
 
 end
 
@@ -3436,13 +3463,6 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 
   rule	Debug.print("\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE") &
-	Print.print_buf "TYPE1 :" &
-	Types.print_type t1 &
-	Print.print_buf "\n" &
-	Print.print_buf "TYPE2 :" &
-	Types.print_type t2 &
-	Print.print_buf "\n" &
-
 	(*Exp.print_exp (e1) & *)
 	Types.match_prop(e1, p1, p2) => e1' &
 	(*Exp.print_exp (e1') & *)
@@ -3622,7 +3642,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	(** makes it a little clearer. *)
   rule	new_ident => n &
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
-				     SCode.VAR, Absyn.BIDIR), NONE,[])
+				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE)
 	  => decl &
 	inst_eq_equation_2(Exp.CREF(n,Exp.OTHER), e2, t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
@@ -3635,7 +3655,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	(** where none of the sides is a component reference *)
   rule	new_ident => n &
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
-				     SCode.VAR, Absyn.BIDIR), NONE,[])
+				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE)
 	  => decl &
 	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
@@ -4344,6 +4364,27 @@ end
 
 
 
+(** relation: inst_start_binding
+** This relation investigates a modification and extracts the start modification. E.g. Real x(start=1+3) => 1+3
+*)
+relation inst_start_binding: (Mod.Mod,Types.Type) => DAE.StartValue =
+
+  rule	Mod.lookup_comp_modification(mod,"start") => mod &
+	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,Types.PROP(ty2,c))) &
+	Types.match_type(e,ty2,expected_type) => (e',ty') 
+	---------------------------------------------------
+	inst_start_binding (mod,expected_type) => SOME(e')
+
+  rule	Mod.lookup_comp_modification(mod,"start") => mod &
+	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,Types.PROP(ty2,c))) &
+	Print.print_buf "#Error, wrong type for start attribute.\n"
+	---------------------------------------------------
+	inst_start_binding (mod,etype) => fail
+
+  axiom	inst_start_binding(mod,etype) => NONE
+
+end
+
 (** LS & ELN
  ** 
  ** Added NON_INITIAL for inst_eq_equation
@@ -4551,10 +4592,10 @@ relation init_vars_modelica_output_1 : (DAE.Element list, DAE.Element list)
 
   rule	init_vars_modelica_output_2 (cr, exp, done) => (exp', done') &
 	init_vars_modelica_output_2 (cr, exp', todorest) => (exp'', todorest') &
-	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims)]) => done'' &
+	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims,start,flow)]) => done'' &
 	init_vars_modelica_output_1 (done'', todorest') => done'''
 	--------------------------------------------------------
-	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims)) :: todorest)
+	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims,start,flow)) :: todorest)
 	  => done'''
 
 
@@ -4644,4 +4685,11 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Print.print_buf "\n"
 	------------------
 	inst_record_constructor_elt(env,elt) => fail
+end
+
+relation is_top_call: CallingScope => bool =
+ 
+  axiom	is_top_call TOP_CALL => true
+  axiom	is_top_call INNER_CALL => false
+
 end

@@ -38,6 +38,7 @@ module Connect :
   with "exp.rml"
   with "staticexp.rml"
   with "dae.rml"
+  with "env.rml"
 
   datatype Face = INNER | OUTER
   (** This type indicates whether a connector is an inner or an outer
@@ -55,7 +56,8 @@ module Connect :
 		       Exp.ComponentRef, Face) => Sets
   relation print_sets : Sets => ()
   relation equations : Sets => DAE.Element list
-
+  relation unconnected_flow_equations : (Sets, DAE.Element list, bool (* CallingScope*)) 
+	  => DAE.Element list
 end
 
 
@@ -402,6 +404,121 @@ relation remove_set : (Sets, Set) => Sets =
 	
 end
 
+(* Unconnected flow variables. *)
+
+(** relation: unconnected_flow_equations 
+ **
+ ** This relation will generate set-to-zero equations for INNER flow variables.
+ ** It can not generate for outer flow varaibles, since we do not yet know if 
+ ** these are connected or not. This is only known in the preceding recursive 
+ ** call. However, the top call must generate for both inner and outer 
+ ** connectors, hence the last argument, true for top call*)
+
+relation unconnected_flow_equations : (Sets, DAE.Element list, bool) => DAE.Element list =
+
+  rule	(* All flow variables, i.e. the outermost call to inst_class *)
+	DAE.get_flow_variables(dae) => vars &
+	get_all_flow_variables(csets) => vars2 &
+	remove_variables(vars,vars2) => unconnectedvars &
+	generate_zeroflow_equations(unconnectedvars) => dae'
+	----------------------------------
+	unconnected_flow_equations(csets,dae,true) => dae'
+
+	(* If not all variables, do none... *)
+  axiom	unconnected_flow_equations(csets,dae,false) => []
+
+  rule	Debug.fprint("failtrace","-unconnected_flow_equations failed\n") 
+	----------------------------------
+	unconnected_flow_equations(csets,dae,_) => []
+end
+
+relation remove_variables: (Exp.ComponentRef list, Exp.ComponentRef list) 
+	  => Exp.ComponentRef list =
+  axiom	remove_variables(vars,[]) => vars 
+
+  rule	remove_variable(r1,vars) => vars' &
+	remove_variables(vars',removelist) => res
+	-----------------------------------------
+	remove_variables(vars,r1::removelist) => res
+end
+relation remove_variable: (Exp.ComponentRef, Exp.ComponentRef list) 
+	  => Exp.ComponentRef list =
+
+  axiom	remove_variable(cr,[]) => [] 
+
+  rule	Exp.cref_equal(cr,cr2) => true
+	------------------------------
+	remove_variable(cr,cr2::xs) => xs
+
+  rule	remove_variable(cr,xs) => res
+	------------------------------
+	remove_variable(cr,cr2::xs) => cr2::res
+end
+
+relation generate_zeroflow_equations: Exp.ComponentRef list 
+	  => DAE.Element list =
+  axiom	generate_zeroflow_equations ([]) => []
+
+  rule	generate_zeroflow_equations(xs) => res 
+	--------------------------------------
+	generate_zeroflow_equations(cr::xs) 
+	  => DAE.EQUATION(Exp.CREF(cr,Exp.REAL),Exp.RCONST(0.0))::res
+end
+
+
+relation get_all_flow_variables: Sets => Exp.ComponentRef list =
+
+  axiom	get_all_flow_variables [] => []
+
+  rule	Util.list_map(varlst,Util.tuple2_1) => res1 &
+	get_all_flow_variables(xs) => res2 &
+	list_append(res1,res2) => res
+	---------------------------------- 
+	get_all_flow_variables(FLOW(varlst)::xs) => res 
+
+  rule	get_all_flow_variables(xs) => res 
+	---------------------------------- 
+	get_all_flow_variables(EQU(res1)::xs) => res 
+end
+
+relation get_inner_flow_variables: Sets => Exp.ComponentRef list =
+
+  axiom	get_inner_flow_variables([]) => []
+
+  rule	get_inner_flow_variables_2(vars) => res1 &
+	get_inner_flow_variables(xs) => res2 &
+	list_append(res1,res2) => res
+	---------------------------------- 
+	get_inner_flow_variables(FLOW(vars)::xs) => res 
+
+  rule	get_inner_flow_variables(xs) => res
+	---------------------------------- 
+	get_inner_flow_variables(EQU(_)::xs) => res 
+
+  rule	Debug.fprint("failtrace","-get_inner_flow_variables failed\n")
+	----------------------------------
+	get_inner_flow_variables(_) => fail 
+end
+
+relation get_inner_flow_variables_2: (Exp.ComponentRef * Face) list 
+	  => Exp.ComponentRef list =
+
+  axiom	get_inner_flow_variables_2 ([]) => []
+
+  rule	get_inner_flow_variables_2(xs) => res
+	-------------------------------------
+	get_inner_flow_variables_2( (cr,INNER)::xs) => cr::res
+
+  rule	get_inner_flow_variables_2(xs) => res
+	-------------------------------------
+	get_inner_flow_variables_2( _::xs) => res
+
+  rule	Debug.fprint("failtrace","-get_inner_flow_variables_2 failed\n")
+	----------------------------------
+	get_inner_flow_variables_2(_) => fail 
+end
+
+
 (**
  ** - Printing
  **
@@ -414,6 +531,8 @@ end
 
 with "dump.rml"
 with "print.rml"
+with "util.rml"
+with "debug.rml"
 
 (** relation: print_sets
  **

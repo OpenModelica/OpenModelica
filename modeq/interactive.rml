@@ -1373,7 +1373,7 @@ relation get_inheritance_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) => (c,env') &
-	Inst.inst_class (env', Mod.NOMOD, Prefix.NOPRE,[],c,[],true) 
+	Inst.inst_class (env', Mod.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
 	  => (_,env'',_,_,_) &
 	get_base_classes(cdef,env'') => lst &
 	list_length(lst) => count
@@ -1394,7 +1394,7 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program) => stri
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) => (c,env') &
-	Inst.inst_class (env', Mod.NOMOD, Prefix.NOPRE,[],c,[],true) 
+	Inst.inst_class (env', Mod.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
 	  => (_,env'',_,_,_) &
 	get_base_classes(cdef,env'') => lst &
 	int_sub(n,1) => n' &
@@ -1465,7 +1465,7 @@ relation get_nth_component: (Absyn.ComponentRef,Absyn.Program, int) => string =
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) => (c,env') &
-	Inst.inst_class (env', Mod.NOMOD, Prefix.NOPRE,[],c,[],true) 
+	Inst.inst_class (env', Mod.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
 	  => (_,env'',_,_,_) &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	get_nth_public_component_in_class(cdef,n) => comp &
@@ -2393,7 +2393,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &	
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
-			[], false) 
+			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &
 	Print.print_buf "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
@@ -2418,7 +2418,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
-			[], false) 
+			[], false,Inst.TOP_CALL) 
 	  => (dae, _,cs, t, state) &
 	Print.print_buf "Instantiated Diagram class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
@@ -2441,7 +2441,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
-			[], false) 
+			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &

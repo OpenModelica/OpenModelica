@@ -38,9 +38,10 @@ module Lookup:
   with "explode.rml"
   with "cache.rml"
 
-  relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type,Env.Env)
+  relation lookup_type       : (Env.Env, Absyn.Path, bool (*msg flag *)) 
+	  => (Types.Type,Env.Env)
   relation lookup_class      : (Env.Env, Absyn.Path,bool) 
-				=> (SCode.Class, Env.Env)
+	  => (SCode.Class, Env.Env)
   relation complete_path     : (Env.Env, Absyn.Path) => Absyn.Path
   relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) 
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
@@ -75,7 +76,8 @@ with "modutil.rml"
 (** relation: lookup_type
  **)
 
-relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
+relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *)) 
+	  => (Types.Type, Env.Env) =
 
 	(* Lookup of simple names *)
   rule	Debug.fprint ("lotype","lookup_type(")	&
@@ -87,7 +89,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	Debug.fprint ("lotype", "found type:") &
 	Debug.fcall ("lotype",Types.print_type, t) 
 	--------------------------------------
-	lookup_type(env, path as Absyn.IDENT(_)) => (t,env')
+	lookup_type(env, path as Absyn.IDENT(_),msg) => (t,env')
 
   rule	 (* If we didn't find the type, but found a class definition 
 	  * that is a function with the same name then we implicitly instantiate that
@@ -99,20 +101,20 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	  => (env'',_) &
 	lookup_type_in_env(env'',path) => (t,env3) 
 	--------------------------------------
-	lookup_type(env, path as Absyn.IDENT(_)) => (t,env3)
+	lookup_type(env, path as Absyn.IDENT(_),msg) => (t,env3)
 
 
   rule	 (* If we didn't find the type, but found a class definition 
 	  * that is an external function with the same name then we implicitly 
 	  * instantiate that function, and try again. *)
-	lookup_class(env, path, false) 
+	lookup_class(env, path, msg) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_EXT_FUNCTION,_),env') &
 	Inst.implicit_function_instantiation(env', Mod.NOMOD,
 					       Prefix.NOPRE, [], c, [], false) 
 	  => (env'',_) &
 	lookup_type_in_env(env'',path) => (t,env3) 
 	--------------------------------------
-	lookup_type(env, path as Absyn.IDENT(_)) => (t,env3)
+	lookup_type(env, path as Absyn.IDENT(_),msg) => (t,env3)
 
 	(* Lookup of qualified name *)
   rule	lookup_class(env, Absyn.IDENT(pack), false) 
@@ -127,10 +129,10 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	(* Has to do additional check for encapsulated classes, see rule below *)
 	lookup_type_in_class(env'', c, path, true) => (t, env''') 
 	--------------------------------------
-	lookup_type(env, Absyn.QUALIFIED(pack, path)) => (t, env''')
+	lookup_type(env, Absyn.QUALIFIED(pack, path),msg) => (t, env''')
 
 
-  rule	lookup_class(env, Absyn.IDENT(pack), false) 
+  rule	lookup_class(env, Absyn.IDENT(pack), msg) 
 	  => (c as SCode.CLASS(id, _, encflag, restr, _), env') &
 	Env.open_scope(env', encflag) => env2 &
 	Env.name_scope (env2,id) => env2' &
@@ -141,13 +143,13 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	(* Has NOT to do additional check for encapsulated classes, see rule above *)
 	lookup_type_in_class(env'', c, path, false) => (c', env''') 
 	--------------------------------------
-	lookup_type(env, p as Absyn.QUALIFIED(pack, path)(*, msgflag*)) => (c', env''')
+	lookup_type(env, p as Absyn.QUALIFIED(pack, path), msg) => (c', env''')
 
   rule	Absyn.path_string path => s1 & 
 	Util.string_append_list(["# Error, type ", s1, " not found.\n"]) => s2 &
 	Print.print_buf s2
 	---------------------
-	lookup_type(_,path) => fail
+	lookup_type(_,path,true) => fail
 end
 
 (** relation: lookup_class
@@ -899,7 +901,7 @@ end
 relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var list =
 
   rule	build_varlst_from_elts(elts,env) => inputvarlst &
-	Inst.inst_class(env, Mod.NOMOD, Prefix.NOPRE, [], cl, [], true) 
+	Inst.inst_class(env, Mod.NOMOD, Prefix.NOPRE, [], cl, [], true,Inst.TOP_CALL) 
 	  => (_,_,_,ty,_) 
 	--------------------------------------
 	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_,_,_,_)),env) 

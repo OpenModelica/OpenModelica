@@ -571,7 +571,7 @@ relation generate_return_decl: DAE.Element => (string, string) =
 	string_append(decl_str', expstr) => decl_str
 	---------------------------------------------------
 	generate_return_decl (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, 
-				      typ, initopt, inst_dims)) => (decl_str,id_str)
+				      typ, initopt, inst_dims,start,flow)) => (decl_str,id_str)
 
 (* not needed here, generate_return_decl is used to create the return struct
   rule	is_array id => is_a &
@@ -1150,7 +1150,7 @@ relation generate_alloc_outvars : (DAE.Element list, string, string, int)
 	generate_alloc_outvars(r,rd,rv,tnr1) => (cfn2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------------------------
-	generate_alloc_outvars ((var as DAE.VAR(cr,vk,vd,t,e,id))::r,
+	generate_alloc_outvars ((var as DAE.VAR(cr,vk,vd,t,e,id,start,flow))::r,
 				rd,rv,tnr)
 	  => (cfn,tnr2)
 
@@ -1188,7 +1188,8 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	  c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
 	-----------
-	generate_alloc_outvar(var as DAE.VAR(id, vk, vd, typ, e,inst_dims),
+	generate_alloc_outvar(var as DAE.VAR(id, vk, vd, typ, e,
+					     inst_dims,start,flow),
 			      prefix,
 			      tnr) 
 	  => (cfn,tnr1)
@@ -1212,7 +1213,8 @@ relation generate_alloc_outvars_ext : (DAE.Element list, string, string,int, DAE
 	generate_alloc_outvars_ext(r,rd,rv,tnr1,extdecl) => (cfn2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------------------------
-	generate_alloc_outvars_ext ((var as DAE.VAR(cr,vk,vd,t,e,id))::r,
+	generate_alloc_outvars_ext ((var as DAE.VAR(cr,vk,vd,t,e,
+						    id,start,flow))::r,
 				rd,rv,tnr,extdecl)
 	  => (cfn,tnr2)
 
@@ -1221,7 +1223,8 @@ relation generate_alloc_outvars_ext : (DAE.Element list, string, string,int, DAE
 	generate_alloc_outvars_ext(r,rd,rv,tnr1,extdecl) => (cfn2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------------------------
-	generate_alloc_outvars_ext ((var as DAE.VAR(cr,vk,vd,t,e,id))::r,
+	generate_alloc_outvars_ext ((var as DAE.VAR(cr,vk,vd,t,e,
+						    id,start,flow))::r,
 				rd,rv,tnr,extdecl)
 	  => (cfn,tnr2)
 
@@ -1252,7 +1255,8 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 	  c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
 	-----------
-	generate_alloc_outvar_f77(DAE.VAR(id, vk, DAE.BIDIR, typ, e,inst_dims),
+	generate_alloc_outvar_f77(DAE.VAR(id, vk, DAE.BIDIR, typ, e,
+					  inst_dims,start,flow),
 				  prefix,
 				  tnr) 
 	  => (cfn,tnr1)
@@ -1276,7 +1280,8 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 	  c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
 	-----------
-	generate_alloc_outvar_f77(DAE.VAR(id, vk, vd, typ, e,inst_dims),
+	generate_alloc_outvar_f77(DAE.VAR(id, vk, vd, typ, e,
+					  inst_dims,start,flow),
 				  prefix,
 				  tnr) 
 	  => (cfn,tnr1)
@@ -1695,7 +1700,7 @@ relation generate_var_init : (DAE.Element, int) => (CFunction, int) =
 				      DAE.OUTPUT, 
 				      typ, 
 				      SOME(e),
-				      _),tnr)
+				      _,start,flow),tnr)
 	=> (cfn, tnr)
 
   axiom	generate_var_init (_, tnr) => (c_empty_function, tnr)
@@ -1717,7 +1722,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 
   rule	is_first_in_array id => false
 	-----------------------------
-	generate_var(DAE.VAR(id,_,_,_,_,_),tnr) => (c_empty_function,tnr)
+	generate_var(DAE.VAR(id,_,_,_,_,_,_,_),tnr) => (c_empty_function,tnr)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
@@ -1739,7 +1744,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	Util.if (is_a,cfn'',cfn') => cfn
 	----------------------------------------------------
-	generate_var(DAE.VAR(id, vk, vd, typ, NONE,inst_dims),tnr) => (cfn,tnr1)
+	generate_var(DAE.VAR(id, vk, vd, typ, NONE,inst_dims,start,flow),tnr) => (cfn,tnr1)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
@@ -1764,7 +1769,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	Print.print_buf "# default value not implemented yet: " &
 	Exp.print_exp e & Print.print_buf "\n"
 	-----------
-	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) 
+	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims,start,flow),tnr) 
 	  => (cfn,tnr1)
 
   
@@ -1780,7 +1785,9 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	Print.print_buf "# default value not implemented yet: " &
 	Exp.print_exp e & Print.print_buf "\n"
 	-----------
-	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) => (cfn'',tnr1)
+	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),
+			     inst_dims,start,flow),tnr) 
+	  => (cfn'',tnr1)
 	
   rule	Print.print_buf "# generate_var failed\n  " &
 	DAE.dump_debug_element e & Print.print_buf "\n"
@@ -1792,7 +1799,7 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 
   rule	is_first_in_array id => false
 	-----------------------------
-	generate_var_decl(DAE.VAR(id,_,_,_,_,_),tnr) => (c_empty_function,tnr)
+	generate_var_decl(DAE.VAR(id,_,_,_,_,_,_,_),tnr) => (c_empty_function,tnr)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
@@ -1808,7 +1815,9 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 	
 	c_add_variables(c_empty_function,[decl_str]) => cfn
 	----------------------------------------------------
-	generate_var_decl(DAE.VAR(id, vk, vd, typ, NONE,inst_dims),tnr) => (cfn,tnr)
+	generate_var_decl(DAE.VAR(id, vk, vd, typ, NONE,
+				  inst_dims,start,flow),tnr) 
+	  => (cfn,tnr)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
@@ -1831,7 +1840,8 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 	Exp.print_exp e & Print.print_buf "\n"
 *)
 	-----------
-	generate_var_decl(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) 
+	generate_var_decl(DAE.VAR(id, vk, vd, typ, SOME(e),
+				  inst_dims,start,flow),tnr) 
 	  => (cfn,tnr1)
 
 	
@@ -1858,7 +1868,7 @@ relation is_var_q : DAE.Element => () =
   rule	generate_var_q(vk) &
 	generate_var_q2(vd)
 	---------------------
-	is_var_q DAE.VAR(id,vk,vd,_,_,_)
+	is_var_q DAE.VAR(id,vk,vd,_,_,_,_,_)
 
 end
 relation generate_var_q : DAE.VarKind => () =
@@ -1899,7 +1909,7 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
 	  =>stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
 	-----------
-	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_),
+	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
 			     varname,
 			     tnr)
 	  => (cfn,tnr)
@@ -1914,7 +1924,7 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
 	  => stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
 	-----------
-	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_),
+	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
 			     varname,
 			     tnr)
 	  => (cfn,tnr)
@@ -1922,7 +1932,7 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
   rule	is_array id => true &
 	is_first_in_array id => false
 	-----------
-	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_),
+	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
 			     varname,
 			     tnr)
 	  => (c_empty_function,tnr)
@@ -3207,11 +3217,11 @@ relation generate_extcall_copydecls_f77 : (DAE.Element list, int) => (CFunction,
 
   axiom	generate_extcall_copydecls_f77 ([], tnr) => (c_empty_function, tnr)
 
-  rule	let DAE.VAR(cref, vk, vd, ty, value, dims) = var &
+  rule	let DAE.VAR(cref, vk, vd, ty, value, dims,start,_) = var &
 	is_array cref => true &
 	var_name_external_cref cref => cref' &
 	list_reverse dims => dims' &
-	let extvar = DAE.VAR(cref', vk, vd, ty, value, dims') &
+	let extvar = DAE.VAR(cref', vk, vd, ty, value, dims',NONE,DAE.NON_FLOW) &
 	generate_var_decl (extvar, tnr) => (fn, tnr') &
 	generate_extcall_copydecls_f77 (rest, tnr') => (restfn, tnr''') &
 	c_merge_fn (fn, restfn) => resfn
@@ -3900,7 +3910,7 @@ relation invar_names : DAE.Element list => string list =
 	is_first_in_array id => true &
 	invar_names r => r'
 	----------
-	invar_names DAE.VAR(id,vk,DAE.INPUT,t,_,_)::r => cref_str::r'
+	invar_names DAE.VAR(id,vk,DAE.INPUT,t,_,_,_,_)::r => cref_str::r'
 
   rule	invar_names r => cfn
 	-------
@@ -3910,8 +3920,8 @@ end
 
 relation is_input_or_output_var : DAE.Element => () =
 	
-  axiom	is_input_or_output_var DAE.VAR(_,_,DAE.INPUT,_,_,_)
-  axiom	is_input_or_output_var DAE.VAR(_,_,DAE.OUTPUT,_,_,_)
+  axiom	is_input_or_output_var DAE.VAR(_,_,DAE.INPUT,_,_,_,_,_)
+  axiom	is_input_or_output_var DAE.VAR(_,_,DAE.OUTPUT,_,_,_,_,_)
 
 end
 
@@ -3973,14 +3983,14 @@ relation var_arg_names_external : DAE.Element list => string list =
 	is_first_in_array id => true &
 	var_arg_names_external r => r'
 	----------------------------
-	var_arg_names_external DAE.VAR(id,vk,DAE.INPUT,t,_,_)::r => cref_str::r'
+	var_arg_names_external DAE.VAR(id,vk,DAE.INPUT,t,_,_,_,_)::r => cref_str::r'
 
   rule	var_name_external id => cref_str &
 	string_append("&", cref_str) => cref_str2 &
 	is_first_in_array id => true &
 	var_arg_names_external r => r'
 	----------------------------
-	var_arg_names_external DAE.VAR(id,vk,DAE.OUTPUT,t,_,_)::r => cref_str2::r'
+	var_arg_names_external DAE.VAR(id,vk,DAE.OUTPUT,t,_,_,_,_)::r => cref_str2::r'
 
   rule	var_arg_names_external r => cfn
 	-----------------------------
@@ -4003,7 +4013,7 @@ relation generate_read : DAE.Element list => CFunction =
 	generate_read r => cfn2 &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------
-	generate_read DAE.VAR(id,vk,DAE.INPUT,t,_,[])::r => cfn
+	generate_read DAE.VAR(id,vk,DAE.INPUT,t,_,[],_,_)::r => cfn
 
   rule	comp_ref_cstr id => (cref_str,_) &
 	is_first_in_array id => true &
@@ -4015,7 +4025,7 @@ relation generate_read : DAE.Element list => CFunction =
 	generate_read r => cfn2 &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------
-	generate_read DAE.VAR(id,vk,DAE.INPUT,t,_,_::_)::r => cfn
+	generate_read DAE.VAR(id,vk,DAE.INPUT,t,_,_::_,_,_)::r => cfn
 
 	
   rule	generate_read r => cfn
@@ -4040,7 +4050,7 @@ relation generate_write : DAE.Element list => CFunction =
 	generate_write r => cfn2 &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------
-	generate_write DAE.VAR(id,vk,DAE.OUTPUT,t,_,[])::r => cfn
+	generate_write DAE.VAR(id,vk,DAE.OUTPUT,t,_,[],_,_)::r => cfn
 
   rule	comp_ref_cstr id => (cref_str,_) &
 	is_first_in_array id => true &
@@ -4052,7 +4062,7 @@ relation generate_write : DAE.Element list => CFunction =
 	generate_write r => cfn2 &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------
-	generate_write DAE.VAR(id,vk,DAE.OUTPUT,t,_,_::_)::r => cfn
+	generate_write DAE.VAR(id,vk,DAE.OUTPUT,t,_,_::_,_,_)::r => cfn
 
 	
   rule	generate_write r => cfn
