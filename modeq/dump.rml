@@ -1,0 +1,220 @@
+(* dump.rml *)
+
+module Dump:
+
+  with "exp.rml"
+  with "class.rml"
+  with "absyn.rml"
+
+  type Ident = string
+
+  (* Dump routines for debugging of AST *)
+
+  relation dump: Absyn.Program => ()
+
+end
+
+(*************************************************************************)
+(* Dump routines for debugging of AST *)
+
+relation dump_select: bool*string*string => () =
+
+	rule	print no
+		-------------------------
+		dump_select((false,yes,no))
+
+	rule	print yes
+		-------------------------
+		dump_select((true,yes,no))
+
+end
+
+relation dump_option = (* : ('a option)*('a => 'b) = *)
+
+	axiom	dump_option(NONE,_)
+
+	rule	r( x )
+		---------------------
+		dump_option(SOME(x),r)
+
+end
+
+relation dump_class_restriction: Class.ClassRestriction => () =
+
+	rule	print "CLASS"
+		--------------------------------------------
+		dump_class_restriction(Class.CL_CLASS) => ()
+
+	rule	print "TYPE"
+		----------------------------
+		dump_class_restriction(Class.CL_TYPE) => ()
+
+	rule	print "CONNECTOR"
+		----------------------------
+		dump_class_restriction(Class.CL_CONNECTOR) => ()
+
+	rule	print "MODEL"
+		----------------------------
+		dump_class_restriction(Class.CL_MODEL) => ()
+
+	rule	print "MODEL"
+		------------------------------------------------
+		dump_class_restriction(Class.CL_MODEL) => ()
+
+	rule	print "BLOCK"
+		------------------------------------------------
+		dump_class_restriction(Class.CL_BLOCK) => ()
+
+	rule	print "PACKAGE"
+		--------------------------------------------------
+		dump_class_restriction(Class.CL_PACKAGE) => ()
+
+	rule	print "FUNCTION"
+		---------------------------------------------------
+		dump_class_restriction(Class.CL_FUNCTION) => ()
+
+end
+
+relation dump_element_list_type: Class.ElementListType => () =
+
+	rule 	print "PUBLIC"
+		------------------------------------
+		dump_element_list_type(Class.PUBLIC)
+
+	rule 	print "PROTECTED"
+		---------------------------------------
+		dump_element_list_type(Class.PROTECTED)
+
+	rule 	print "EQUATION"
+		--------------------------------------
+		dump_element_list_type(Class.EQUATION)
+
+	rule 	print "ALGORITHM"
+		---------------------------------------
+		dump_element_list_type(Class.ALGORITHM)
+
+end
+
+relation dump: Absyn.Program => () =
+
+	axiom	dump [] => ()
+
+	rule	dump_class c & print "\n" &
+		dump cs
+		----------------
+		dump c::cs => ()
+
+end
+and dump_class: Class.Class => () =
+
+	rule	dump_class_restriction(r) & print "(" &
+		dump_element_list_list els & print ")"
+		----------------------------------------
+		dump_class(Class.CLASS(r,els)) => ()
+
+end
+and dump_element_list_list: Class.ElementList list => () =
+
+	axiom	dump_element_list_list [] => ()
+
+	rule    dump_element_list els &
+		dump_element_list_list elsl
+		--------------------------
+		dump_element_list_list els::elsl
+
+end
+and dump_element_list: Class.ElementList => () =
+
+	rule	dump_element_list_type t & print "(" &
+		dump_elements els & print ")"
+		-----------------------------
+		dump_element_list((t,els)) => ()
+
+end
+and dump_elements: Class.Element list => () =
+
+	axiom	dump_elements [] => ()
+
+	rule    dump_element e
+		--------------------------
+		dump_elements [e]
+
+	rule    dump_element e & print "," &
+		dump_elements els
+		--------------------------
+		dump_elements e::els
+
+end
+and dump_element: Class.Element => () =
+
+	rule	print "ELEMENT(" & dump_select((final,"FINAL,","")) &
+		dump_elementspec spec & print ")"
+		----------------
+		dump_element (Class.ELEMENT(final,spec))
+
+end
+and dump_elementspec: Class.ElementSpec => () =
+
+	rule	print "CLASSDEF(" & dump_select((repl,"REPLACEABLE,","")) &
+		dump_class cl & print ")"
+		-------------------------
+		dump_elementspec(Class.CLASSDEF(repl,cl))
+
+
+	rule	print "EXTENDS(" & print s & print ",...)"
+		------------------------------------------
+		dump_elementspec(Class.EXTENDS(s,l))
+
+	rule	print "COMPONENT(" &
+		dump_select((f,"FLOW,","")) &
+		dump_select((p,"PARAMETER,","")) &
+		dump_select((c,"CONSTANT,","")) &
+		dump_select((i,"INPUT,","")) &
+		dump_select((o,"OUTPUT,","")) &
+		print t & print "," & print n &
+		dump_option(a,dump_arraydim) &
+		dump_option(m,dump_modification)
+		------------------------------------------
+		dump_elementspec(Class.COMPONENT(f,p,c,i,o,t,n,a,m))
+
+end
+and dump_arraydim: Class.ArrayDim => () =
+
+	rule	print "[" & dump_subscript(s) & print "]"
+		-----------------------------------------
+		dump_arraydim(Class.ONEDIM(s))
+
+	rule	print "[" & dump_subscript(s1) &
+		print "," & dump_subscript(s2) & print "]"
+		-----------------------------------------
+		dump_arraydim(Class.TWODIM(s1,s2))
+
+end
+and dump_subscript: Class.Subscript => () =
+
+	rule	print ":"
+		---------
+		dump_subscript(NONE)
+
+	rule	Exp.dump(e1)
+		----------
+		dump_subscript(SOME((e1,NONE)))
+
+	rule	Exp.dump(e1) & print ":" & Exp.dump(e2)
+		-------------
+		dump_subscript(SOME((e1,SOME((e2,NONE)))))
+
+	rule	Exp.dump(e1) & print ":" &
+		Exp.dump(e2) & print ":" & Exp.dump(e3)
+		-------------
+		dump_subscript(SOME((e1,SOME((e2,SOME(e3))))))
+
+end
+and dump_modification: Class.Modification => () =
+
+	rule	print "(...)"
+		-------------
+		dump_modification(_)
+
+end
+

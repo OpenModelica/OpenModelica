@@ -1,0 +1,29 @@
+(* test.rml *)
+
+module Test:
+
+  with "absyn.rml"
+  val prog1: Absyn.Program
+
+end
+
+with "exp.rml"
+with "class.rml"
+
+val one = Exp.NUMBER(1.0)
+
+val component = Class.COMPONENT(false,
+				true,
+				false,
+				false,
+				false,
+				"Real",
+				"par1", 
+				SOME(Class.ONEDIM(SOME((one,NONE)))),
+				NONE)
+
+val ellist =
+	(Class.PUBLIC,[ Class.ELEMENT(true, component) ])
+
+val prog1 = [ Class.CLASS(Class.CL_MODEL,
+		          [ ellist ]) ]
