@@ -364,6 +364,14 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
 			 Exp.INDEX(Exp.ICONST(ind))::ys) => t'
 
+	(* HJ: Subscrits needn't be constant. No range-checking can
+	       be done *)
+
+  rule	check_subscripts(t, ys) => t'
+	------------------------------
+	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+			 Exp.INDEX(_)::ys) => t'
+
   rule	print "- check_subscripts failed (" &
 	Types.print_type t & print ", [" &
  	Exp.print_list(s,Exp.print_subscript,",") & print "])\n"

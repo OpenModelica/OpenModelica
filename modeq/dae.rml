@@ -22,6 +22,7 @@ module DAE:
   with "staticexp.rml"
 
   type Ident = string
+  type InstDims = int list
 
   datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
 
@@ -31,7 +32,7 @@ module DAE:
   datatype VarDirection = INPUT | OUTPUT | BIDIR
 
 (* LS: Removed VARVAL completely, and added Exp.Exp as an option to VAR *)
-  datatype Element = VAR of Exp.ComponentRef * VarKind * VarDirection * Type * Exp.Exp option
+  datatype Element = VAR of Exp.ComponentRef * VarKind * VarDirection * Type * Exp.Exp option * InstDims
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | EQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
@@ -229,13 +230,13 @@ relation dump_var : Element => () =
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & print ";\n"
 	--------------------------------------
-	dump_var VAR(id, kind, dir, typ, NONE)
+	dump_var VAR(id, kind, dir, typ, NONE,_)
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & print " = " &
 	Exp.print_exp e & print ";\n"
 	--------------------------------------
-	dump_var VAR(id, kind, dir, typ, SOME(e))
+	dump_var VAR(id, kind, dir, typ, SOME(e),_)
 	
   axiom	dump_var (_)
 
@@ -308,7 +309,15 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 	Exp.print_exp e &
 	print ";\n"
 	----------
-	pp_stmt (Algorithm.ASSIGN(c,e), i)
+	pp_stmt (Algorithm.ASSIGN(_,c,e), i)
+
+  rule	indent i &
+	Exp.print_component_ref c &
+	print " := " &
+	Exp.print_exp e &
+	print ";\n"
+	----------
+	pp_stmt (Algorithm.ASSIGN_ARR(_,c,e), i)
 
   rule	indent i &
  	print "if " & Exp.print_exp e & print " then\n" &
@@ -424,7 +433,7 @@ end
 relation is_parameter: Element => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
-  axiom	is_parameter VAR(_, PARAM, _, _, _)
+  axiom	is_parameter VAR(_, PARAM, _, _, _, _)
 
 end
 
@@ -448,7 +457,7 @@ end
 (* LS *)
 relation is_output_var: Element => () =
 
-  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _)
+  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _)
 
 end
 
@@ -464,7 +473,7 @@ end
 (* LS *)
 relation is_var: Element => () =
 
-  axiom	is_var VAR(_,_,_,_,_)
+  axiom	is_var VAR(_,_,_,_,_,_)
 
 end
 
@@ -502,7 +511,7 @@ relation dump_debug_element : Element => () =
 	dump_kind vk &
 	print ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,NONE)
+	dump_debug_element VAR(cr,vk,vd,ty,NONE,_)
 
   rule	print "VAR(" &
 	Exp.print_component_ref cr & print ", " &
@@ -510,7 +519,7 @@ relation dump_debug_element : Element => () =
 	Exp.print_exp e &
 	print ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,SOME(e))
+	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_)
 
   rule	print "DEFINE(" &
 	Exp.print_component_ref cr &
@@ -635,14 +644,14 @@ relation build_gr_var_str : Element => string =
 
   rule	Exp.print_component_ref_str cr => str
 	-------------------------------------
-	build_gr_var_str VAR(cr,_,_,_,NONE) => str
+	build_gr_var_str VAR(cr,_,_,_,NONE,_) => str
 
   rule	Exp.print_component_ref_str cr => str &
 	print_exp_str_special exp => expstr &
 	string_append (str, " = ") => str' &
 	string_append (str', expstr) => str''
 	-------------------------------------
-	build_gr_var_str VAR(cr,_,_,_,SOME(exp)) => str''
+	build_gr_var_str VAR(cr,_,_,_,SOME(exp),_) => str''
 
 end
 
@@ -667,14 +676,14 @@ relation build_gr_element : Element => Graphviz.Node =
   rule	Exp.print_component_ref_str cr => crstr &
 	dump_kind_str vk => vkstr
 	--------------------------
-	build_gr_element VAR(cr,vk,vd,ty,NONE) => Graphviz.LNODE("VAR",[crstr,vkstr],[],[])
+	build_gr_element VAR(cr,vk,vd,ty,NONE,_) => Graphviz.LNODE("VAR",[crstr,vkstr],[],[])
 
   rule	Exp.print_component_ref_str cr => crstr &
 	dump_kind_str vk => vkstr &
 	print_exp_str_special exp => expstr &
 	string_append ("= ", expstr) => expstr'
 	-------------------------------
-	build_gr_element VAR(cr,vk,vd,ty,SOME(exp)) => Graphviz.LNODE("VAR",[crstr,vkstr,expstr'],[],[])
+	build_gr_element VAR(cr,vk,vd,ty,SOME(exp),_) => Graphviz.LNODE("VAR",[crstr,vkstr,expstr'],[],[])
 
 
   rule	Exp.print_component_ref_str cr => crstr &

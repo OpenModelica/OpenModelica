@@ -108,7 +108,7 @@ end
 
 relation prefix_to_path: Prefix => Absyn.Path =
 
-  rule	print "#-- Error: Cannot conver empty prefix to a path\n"
+  rule	print "#-- Error: Cannot convert empty prefix to a path\n"
 	---------------------------------------------------------
 	prefix_to_path NOPRE => fail
 
@@ -195,11 +195,11 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
   rule	Lookup.lookup_var_local(env,p) => (_,_,_) &
 	prefix_cref(pre,p) => p'
 	--------------------------
-	prefix_exp(env,Exp.CREF(p),pre) => Exp.CREF(p')
+	prefix_exp(env,Exp.CREF(p,t),pre) => Exp.CREF(p',t)
 
   rule	not Lookup.lookup_var_local(env,p) => (_,_,_)
 	--------------------------
-	prefix_exp(env,e as Exp.CREF(p),pre) => e
+	prefix_exp(env,e as Exp.CREF(p,_),pre) => e
 
   rule	prefix_exp(env,e1,p) => e1' &
 	prefix_exp(env,e2,p) => e2'

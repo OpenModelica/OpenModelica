@@ -76,6 +76,7 @@ module Types :
   relation lookup_component : (Type, Ident) => Var
   relation lift_array : (Type,int option) => Type
   relation unlift_array : Type => Type
+  relation array_element_type : Type => Type
   relation print_type : Type => ()
   relation print_var : Var => ()
   relation print_binding : Binding => ()
@@ -344,6 +345,22 @@ end
 relation unlift_array : Type => Type =
 
   axiom	unlift_array T_ARRAY(DIM(_),ty) => ty
+
+end
+
+(** relation: array_element_type
+ **
+ ** This relation turns an array into the element type
+ ** of the array.
+ **)
+
+relation array_element_type : Type => Type =
+
+  rule	array_element_type(ty) => ty'
+	------------------------------
+	array_element_type T_ARRAY(DIM(_),ty) => ty'
+
+  axiom	array_element_type t => t
 
 end
 

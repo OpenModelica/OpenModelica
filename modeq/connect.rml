@@ -120,7 +120,7 @@ relation equ_equations : Exp.ComponentRef list => DAE.Element list =
   rule	equ_equations y::cs => eq
 	------------------------
 	equ_equations x::y::cs
-	  => DAE.EQUATION(Exp.CREF(x), Exp.CREF(y))::eq
+	  => DAE.EQUATION(Exp.CREF(x,Exp.OTHER), Exp.CREF(y,Exp.OTHER))::eq
 end
 
 (** relation: flow_equations
@@ -174,8 +174,8 @@ end
 
 relation sign_flow : (Exp.ComponentRef, Face) => Exp.Exp =
 
-  axiom	sign_flow (c,INNER) => Exp.CREF(c)
-  axiom	sign_flow (c,OUTER) => Exp.UNARY(Exp.UMINUS(Exp.REAL),Exp.CREF(c))
+  axiom	sign_flow (c,INNER) => Exp.CREF(c,Exp.OTHER)
+  axiom	sign_flow (c,OUTER) => Exp.UNARY(Exp.UMINUS(Exp.REAL),Exp.CREF(c,Exp.OTHER))
 
 end
 

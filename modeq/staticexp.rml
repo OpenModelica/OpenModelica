@@ -80,7 +80,10 @@ returns multiple arguments. *)
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
   relation value_exp : Values.Value => Exp.Exp
   relation get_prop_type : Properties => Types.Type
-  relation is_prop_const: Properties => bool
+  relation is_prop_const : Properties => bool
+  relation is_prop_array : Properties => bool
+
+  relation elab_type : Types.Type => Exp.Type
 
 end
 
@@ -402,7 +405,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 
   rule	elab_exp (env,ind) => (indexp, PROP(indty, true)) &
 	ceval (env, indexp) => Values.INTEGER(value) &
-	elab_exp (env,arraycr) => (Exp.CREF(cr), crprop) &
+	elab_exp (env,arraycr) => (Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	elab_builtin_size_2 (env, ty, value) => (exp, prop)
 	------------------------------------------------------
@@ -957,9 +960,53 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
-  rule	print "- elab_cref failed\n"
+  rule	print "- elab_cref failed: " & Dump.print_component_ref c & print "\n"
 	------------------------------
-	elab_cref (_,_) => fail
+	elab_cref (_,c) => fail
+
+end
+
+relation elab_type : Types.Type => Exp.Type =
+
+  axiom	elab_type Types.T_INTEGER => Exp.INT
+  axiom	elab_type Types.T_REAL => Exp.REAL
+  axiom	elab_type Types.T_BOOL => Exp.BOOL
+  axiom	elab_type Types.T_STRING => Exp.STRING
+
+  rule	Types.array_element_type t => et &
+	elab_type et => t'
+	----------------
+	elab_type (t as Types.T_ARRAY(_,_)) => t'
+
+  axiom	elab_type _ => Exp.OTHER
+
+end
+relation fill_cref_subscripts : (Exp.ComponentRef,Types.Type)
+	  => Exp.ComponentRef =
+
+  axiom	fill_cref_subscripts (e as Exp.CREF_IDENT(_,[]),t) => e
+
+  rule	fill_subscripts (subs,t) => subs'
+	------------------
+	fill_cref_subscripts (Exp.CREF_IDENT(id,subs),t)
+	  => Exp.CREF_IDENT(id,subs')
+
+  rule	fill_cref_subscripts (cref,t) => cref'
+	-----------------------------
+	fill_cref_subscripts (Exp.CREF_QUAL(id,subs,cref),t)
+			      => Exp.CREF_QUAL(id,subs,cref') 
+
+end
+
+relation fill_subscripts : (Exp.Subscript list, Types.Type) 
+	  => Exp.Subscript list =
+
+  rule	fill_subscripts (subs,t) => subs' &
+	list_append(subs,[Exp.WHOLEDIM]) => subs''
+	------------
+	fill_subscripts (subs,Types.T_ARRAY(_,t)) => subs''
+
+  axiom	fill_subscripts (subs,_) => subs
 
 end
 
@@ -976,15 +1023,26 @@ relation elab_cref2 : (Env.Env,
 		       Types.Type, Types.Binding)
 	  => (Exp.Exp,bool,SCode.Accessibility) =
 
-  axiom	elab_cref2 (_,cr, acc, Absyn.VAR, _,_) => (Exp.CREF(cr),false, acc)
-  axiom	elab_cref2 (_,cr, acc, Absyn.DISCRETE, _,_) => (Exp.CREF(cr),false,acc)
+  rule	elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr'
+	-----------------
+	elab_cref2 (_,cr, acc, Absyn.VAR, tt,_) => (Exp.CREF(cr',t),false, acc)
+
+  rule	elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr'
+	------------------
+	elab_cref2 (_,cr, acc, Absyn.DISCRETE,tt,_)
+	  =>(Exp.CREF(cr',t),false,acc)
 
   rule	value_exp v => e
 	----------------
 	elab_cref2 (_,cr,_,_,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
 
-  axiom	elab_cref2 (env,cr,acc,_,t, Types.EQBOUND(exp,true))
-	  => (Exp.CREF(cr),true,acc)
+  rule	elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr'
+	-----------------
+	elab_cref2 (env,cr,acc,_,tt, Types.EQBOUND(exp,true))
+	  => (Exp.CREF(cr',t),true,acc)
 
   rule	print "# Constant or parameter with a non-constant initializer\n" &
 	print "# component: " & Exp.print_component_ref cr & print " = " &
@@ -1030,6 +1088,7 @@ end
  **
  ** This relation converts a list of `Absyn.Subscript' to a list of
  ** `Exp.Subscript', and checks if all subscripts are constant.
+ ** HJ: not checking for constant, returning if constant or not
  **)
 
 relation elab_subscripts : (Env.Env, Absyn.Subscript list)
@@ -1042,7 +1101,13 @@ relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 	bool_and (const1, const2) => true &
 	ceval_subscripts(env, sub'::subs') => ss
 	-----------------------------------
-	elab_subscripts (env,sub::subs) => (ss,true)
+	elab_subscripts (env,sub::subs) => (ss, true)
+
+  rule	elab_subscript (env,sub) => (sub',const1) &
+	elab_subscripts (env,subs) => (subs',const2) &
+	bool_and (const1, const2) => false
+	-----------------------------------
+	elab_subscripts (env,sub::subs) => (sub'::subs', false)
 
 end
 
@@ -1102,7 +1167,7 @@ relation subscript_cref_type : (Exp.Exp, Types.Type) => Types.Type =
 
   rule	subscript_cref_type2 (c, t) => t'
 	---------------------------------
-	subscript_cref_type (Exp.CREF(c), t) => t'
+	subscript_cref_type (Exp.CREF(c,_), t) => t'
 
   axiom	subscript_cref_type (e, t) => t
 
@@ -1238,7 +1303,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 
   rule	ceval_cref (env,c) => v
 	---------------------------
-	ceval (env,Exp.CREF(c)) => v
+	ceval (env,Exp.CREF(c,_)) => v
 
   rule	print "# Can't call functions at compile time\n" &
 	print "    expression: " & Exp.print_exp e & print "\n"
@@ -2357,5 +2422,21 @@ relation is_prop_tuple_const: Const => bool =
 	is_prop_tuple_const TUPLE_CONST(rest) => res
 	--------------------------------------------
 	is_prop_tuple_const TUPLE_CONST(first::rest) => res
+
+end
+
+relation is_prop_array : Properties => bool =
+
+  rule	get_prop_type p => t &
+	is_type_array t => b
+	----------------------
+	is_prop_array p => b
+
+end
+
+relation is_type_array : Types.Type => bool =
+	
+	axiom is_type_array Types.T_ARRAY(_,_) => true
+	axiom is_type_array _ => false
 
 end

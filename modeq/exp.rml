@@ -25,7 +25,7 @@ module Exp:
   (** identifiers in Modelica. *)
 
   (** - Basic types *)
-  datatype Type = INT | REAL | BOOL | STRING 
+  datatype Type = INT | REAL | BOOL | STRING | OTHER 
   (** These types are not used as expression types (see the `Types'
    ** module for expression types).  They are used to parameterize
    ** operators which may work on several simple types. *)
@@ -35,7 +35,7 @@ module Exp:
 	       | RCONST of real
 	       | SCONST of string
 	       | BCONST of bool
-	       | CREF of ComponentRef
+	       | CREF of ComponentRef * Type
 	       | BINARY of Exp * Operator * Exp
 	       | UNARY of Operator * Exp
 	       | LBINARY of Exp * Operator * Exp
@@ -71,6 +71,7 @@ module Exp:
 		    | MUL_SCALAR_PRODUCT of Type (* {a, b} * {c, d}         *)
 		    | MUL_MATRIX_PRODUCT of Type (* {{..},..} * {{..},{..}} *)
 		    | DIV_ARRAY_SCALAR of Type   (* {a, b} / c              *)
+		    | POW_ARR     of Type
 		    | AND | OR
 		    | NOT
 		    | LESS        of Type
@@ -208,15 +209,15 @@ relation simplify : Exp => Exp =
 	------------------------
 	simplify ASUB(e, i) => IFEXP(c,t',f')
 
-  rule	simplify e => CREF(CREF_IDENT(n,s)) &
+  rule	simplify e => CREF(CREF_IDENT(n,s),t) &
 	subscripts_append(s,i) => s'
 	------------------------
-	simplify ASUB(e, i) => CREF(CREF_IDENT(n,s'))
+	simplify ASUB(e, i) => CREF(CREF_IDENT(n,s'),t)
 
-  rule	simplify e => CREF(CREF_QUAL(n,s,c)) &
-	simplify ASUB(CREF(c), i) => CREF(c')
+  rule	simplify e => CREF(CREF_QUAL(n,s,c),t) &
+	simplify ASUB(CREF(c,t), i) => CREF(c',t)
 	-------------------------------------
-	simplify ASUB(e, i) => CREF(CREF_QUAL(n,s,c'))
+	simplify ASUB(e, i) => CREF(CREF_QUAL(n,s,c'),t)
 
   axiom	simplify e => e
 
@@ -373,7 +374,7 @@ relation print_exp2 : (Exp,int) => () =
 
   rule	print_component_ref(c)
 	---------------------
-	print_exp2(CREF(c),_)
+	print_exp2(CREF(c,_),_)
 
   rule	binop_symbol(op) => sym &
  	binop_priority op => pri2 &
@@ -858,7 +859,7 @@ relation print_exp2_str : (Exp,int) => string =
 
   rule	print_component_ref_str (c) => s
 	--------------------------------
-	print_exp2_str(CREF(c),_) => s
+	print_exp2_str(CREF(c,_),_) => s
 
   rule	binop_symbol(op) => sym &
  	binop_priority op => pri2 &

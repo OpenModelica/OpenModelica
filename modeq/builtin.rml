@@ -64,7 +64,7 @@ val unit = SCode.COMPONENT("unit",true,false,
 val real_type =
 SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
 	    SCode.PARTS
-	    ([unit],
+	    ([], (*[unit],*)
 	     [],
 	     []))
 
@@ -73,7 +73,7 @@ SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
 val integer_type =
 SCode.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,
 	    SCode.PARTS
-	    ([unit],
+	    ([], (*[unit],*)
 	     [],
 	     []))
 
