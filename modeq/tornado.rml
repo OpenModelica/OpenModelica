@@ -285,7 +285,7 @@ end
 relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
 
   rule	generate_blt(dae) => blt &
-	generate_state_partition(blt) => a &
+	generate_state_partition(blt,dae) => a &
 	generate_compute_output(cname,dae,p) => coutput &
 	generate_compute_initial(cname,dae,p) => cinitial &
 	generate_compute_state(cname,dae,p) => cstate &
@@ -335,11 +335,9 @@ relation generate_blt:(DAELow.DAELow) => (int list list) =
 	Debug.fcall("dumpdaelow", DAELow.dump, d') 
 	& DAELow.incidence_matrix(d') => m 
 	& DAELow.transpose_matrix(m) => mT 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
 	& DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
+(*	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) *)
 	& Debug.fcall("bltdump", DAELow.dump,d'')
 	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
 	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
@@ -358,20 +356,20 @@ end
  ** this relation extracts the rightmost part 
  **
  **) 
-relation generate_state_partition:(int list list) => (int list list) =
+relation generate_state_partition:(int list list,DAELow.DAELow) => (int list list) =
 
   rule	list_reverse(blt) => reversed_blt &
-	has_state_var(1,reversed_blt) => component_number &
+	has_state_var(0,reversed_blt,dae) => component_number &
 	print "First state component found in component (reversed)" &
 	int_string(component_number) => component_number_string &
 	print component_number_string &
 	print "\n\n"
 	-----------------------------------------
-	generate_state_partition(blt) => blt (* not correct *)
+	generate_state_partition(blt,dae) => blt (* not correct *)
 
   rule	print "-generate_state_partition failed\n" 
 	-----------------------------------------
-	generate_state_partition(_) => fail
+	generate_state_partition(_,_) => fail
 
 end
 
@@ -380,28 +378,88 @@ end
  ** statevariable
  ** 
  **) 
-relation has_state_var:(int, int list list) => int =
+relation has_state_var:(int, int list list, DAELow.DAELow) => int =
 	  
-  rule	(*if first component contains a statevar, return index *)
-	
+  rule	(*if this component contains a statevar, return index *)
+	check_component_for_statevars(0,element,dae) => true
 	-----------------------------------------
-	has_state_var(index,element::reversed_blt) => index
+	has_state_var(index,element::reversed_blt,dae) => index
 
 	(* If we have no more components return 0 *)
   rule	
 	-----------------------------------------
-	has_state_var(index,[]) => 0
+	has_state_var(_,[],_) => 0
 	
   rule	(* If no statevars found in this component, continue with the next one*)
 	int_add(1,index) => next_index &
-	has_state_var(next_index,reversed_blt) => ret_value
+	has_state_var(next_index,reversed_blt,dae) => ret_value
 	-----------------------------------------
-	has_state_var(index,element::reversed_blt) => ret_value
+	has_state_var(index,element::reversed_blt,dae) => ret_value
 
   rule	print "-generate_state_partition2 failed\n" 
 	-----------------------------------------
-	has_state_var(_,_) => fail
+	has_state_var(_,_,_) => fail
 end
+
+(** relation:check_component_for_statevars
+ ** Arg 1 is the index in the component to the current variable to check
+ ** Arg 2 is the component itself
+ ** Arg 3 is the DAEs
+ **)
+relation check_component_for_statevars:(int, int list, DAELow.DAELow) => bool =
+
+  rule	print "check_component_for_statevars failed: Empty component" 
+	-------------------------------------------------------------
+	check_component_for_statevars(_,[],_) => fail
+
+
+  rule	(* Termination condition. variables checked.
+	   This means that the component did not contain any state vars *)
+	print " PIGS: 2 1\n" &
+	print " index: " &
+	int_string i => s &
+	print s &
+	list_length(component) => nr_of_variables &
+	print " list_length: " &
+	int_string nr_of_variables => s &
+	print s &
+	int_eq(nr_of_variables,i) => true &
+	print " PIGS: 2\n"
+	-------------------------------------------------------------
+	check_component_for_statevars(i,component,_) => false
+
+  rule	(* If this variable is a state variable, return true *)
+	list_nth(component,i) => variable_index_to_check &
+	print " variable_index_to_check  : " &
+	int_string variable_index_to_check => s &
+	print s &
+        list_nth(var_list,variable_index_to_check) => DAELow.VAR(_,STATE,_,_,_,_,_,_,_,_) &
+	print " State variable found: " &
+	int_string i => s &
+	print s &
+	print "\n"
+	-------------------------------------------------------------
+	check_component_for_statevars(i,component,dae as DAELow.DAELOW(var_list,_,_,_)) => true
+
+  rule	(* If this variable is not state variable, try the next one *)
+	list_nth(component,i) => variable_index_to_check &
+        list_nth(var_list,variable_index_to_check) => DAELow.VAR(_,_,_,_,_,_,_,_,_,_) &
+	print " Non State variable found: " &
+	int_string i => s &
+	print s &
+	print "\n" &
+	int_add(i,1) => next_i &
+	check_component_for_statevars(next_i,component,dae) => result
+	-------------------------------------------------------------
+	check_component_for_statevars(i,component,dae as DAELow.DAELOW(var_list,_,_,_)) 
+	  => result
+
+  rule	print "check_component_for_statevars failed" 
+	-------------------------------------------------------------
+	check_component_for_statevars(_,_,_) => fail
+
+end 
+
 
 
 (** relation: generate_compute_output
