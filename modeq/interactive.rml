@@ -1852,6 +1852,10 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program) => stri
 	  get_nth_inherited_class2(c,cdef,n,env') => str 
 	-------------------------------------------------
 	get_nth_inherited_class( model,n,p) => str
+
+  rule	Print.get_string() => str
+	-------------------------------------------------
+	get_nth_inherited_class( model,n,p) => str
 	
   axiom	get_nth_inherited_class (_,_,_) => "-1"
 end
@@ -1869,10 +1873,9 @@ relation get_nth_inherited_class2: (SCode.Class, Absyn.Class,int, Env.Env)
 	  => str
 
   rule	(* If that fails, instantiate, which takes more time*)
-	Env.open_scope(env,encflag,0) => env2 &
-	Env.name_scope (env2,id) => env3 &
+	Env.open_scope(env,encflag,SOME(id)) => env2 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.partial_inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
 	  => (env'',_) &
 	get_base_classes(cdef,env'') => lst &  
 	int_sub(n,1) => n' &
@@ -1971,10 +1974,9 @@ relation get_nth_component2: (SCode.Class,Absyn.Class, int, Env.Env)
 *)
 
 rule	(* If fails, instantiate class and search... *)
-	Env.open_scope(env,encflag,0) => env2 &
-	Env.name_scope (env2,id) => env3 &
+	Env.open_scope(env,encflag,SOME(id)) => env2 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.partial_inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
 	  => (env'',_) &
 	get_nth_component_in_class(cdef,n) => comp &
 	get_component_name_and_type_and_comment (comp,env'') => [s1] &
@@ -2001,10 +2003,9 @@ relation get_components: (Absyn.ComponentRef,Absyn.Program) => string =
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
-	Env.open_scope(env',encflag,0) => env2 &
-	Env.name_scope (env2,id) => env3 &
+	Env.open_scope(env',encflag,SOME(id)) => env2 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.partial_inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
 	  => (env'',_) &
 	get_components_in_class(cdef) => comps &
 	get_components_name_and_type_and_comment (comps,env'') => s1 &

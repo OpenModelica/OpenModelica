@@ -68,6 +68,7 @@ module Dump:
   relation op_symbol : Absyn.Operator => string
   relation print_bool : bool => ()
   relation print_select: (bool,string,string) => ()
+  relation print_option : (('a option),('a => ())) => () 
   relation select_string: (bool,string,string) => string
   relation get_string_list : ('a list, 'a => string, string) => string
   relation get_option_str: ('a option, 'a => string) => string 
@@ -2090,13 +2091,13 @@ relation print_select: (bool,string,string) => () =
 
 end
 
-relation print_option = (* : ('a option)*('a => 'b) = *)
+relation print_option : (('a option),('a => ())) => () =
 
-  axiom	print_option(NONE,_)
+  axiom	print_option(NONE,_) => ()
 	
   rule	r( x )
 	------
-	print_option(SOME(x),r)
+	print_option(SOME(x),r) => ()
 end
 
 relation print_list_debug : (string, 'a list, 'a => (), string) => () =
