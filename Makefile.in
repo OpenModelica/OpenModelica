@@ -2,6 +2,7 @@
 all : modeq mosh
 
 modeq:	
+	cd c_runtime; $(MAKE) -f Makefile
 	cd modeq/rml2sig; $(MAKE) -f Makefile
 	cd modeq; $(MAKE) -f Makefile
 mosh:
