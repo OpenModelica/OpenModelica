@@ -39,7 +39,7 @@ public:
   numerical_array() {};
   numerical_array(std::vector<int> dims) : modelica_array<Tp>(dims) {};
   numerical_array(std::vector<int> dims,std::vector<Tp> scalars) : modelica_array<Tp>(dims,scalars) {};
-   numerical_array(modelica_array<Tp>& arr) : modelica_array<Tp>(arr) {};
+  numerical_array(modelica_array<Tp> const& arr) : modelica_array<Tp>(arr) {};
 protected:
   
 };
@@ -91,6 +91,7 @@ const numerical_array<Tp>& numerical_array<Tp>::operator+= (const numerical_arra
 {
   assert(m_dim_size == arr.m_dim_size);
 
+
   for (size_t i = 0; i < m_data.size(); ++i)
     {
       m_data[i] += arr.m_data[i];
@@ -111,6 +112,7 @@ template <typename Tp>
 const numerical_array<Tp>& numerical_array<Tp>::operator-= (const numerical_array<Tp>& arr)
 {
   assert(m_dim_size == arr.m_dim_size);
+
 
   for (size_t i = 0; i < m_data.size(); ++i)
     {
@@ -153,11 +155,22 @@ public:
 
   /// Constructs an array with specified dimensions from scalars.
   real_array(std::vector<int> dims,std::vector<double> scalars) : numerical_array<double>(dims,scalars) {};
-  real_array(const numerical_array<double>& arr) : numerical_array<double>(arr) {};
+
+  real_array(modelica_array<double> const& arr) : numerical_array<double>(arr) {};
  
+  real_array(modelica_array<int> const& arr) 
+  {
+    m_dim_size = arr.size();
+    m_ndims = m_dim_size.size();
+    m_data.resize(nr_of_elements());
+    std::copy(arr.data_begin(),arr.data_end(),m_data.begin());
+  }
+
+
  ~real_array() {};
 
 };
+
 
 class integer_array : public numerical_array<int>
 {
@@ -170,12 +183,14 @@ public:
 
   /// Constructs an array with specified dimensions from scalars.
   integer_array(std::vector<int> dims,std::vector<int> scalars) : numerical_array<int>(dims,scalars) {};
-  integer_array(const numerical_array<int>& arr) : numerical_array<int>(arr) {};
+  integer_array(modelica_array<int> const& arr) : numerical_array<int>(arr) {};
 
   //integer_array(const modelica_array<int>& arr) : modelica_array<int>(arr) {};
   //  integer_array(const modelica_array<int>& arr) { m_dim_size = arr.m_dim_size;};
 
  ~integer_array() {};
+
+
 
   /// Returns the n x n identity matrix.
   //  friend integer_array identity_matrix(int n);
@@ -187,6 +202,7 @@ public:
 //   friend integer_array ones(std::vector<int> dims);
   
 };
+
 
 // integer_array identity_matrix(int n)
 // {

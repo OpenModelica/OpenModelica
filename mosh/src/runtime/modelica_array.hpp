@@ -6,6 +6,7 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 template <class Tp>
 class modelica_array
@@ -37,15 +38,23 @@ public:
   void fill_array(Tp s);
 
   friend modelica_array<Tp> create_array<Tp>(std::vector<Tp> data);
-  friend modelica_array<Tp> create_array<Tp>(std::vector<modelica_array<Tp> > arrays);
+  friend modelica_array<Tp> create_array2<Tp>(std::vector<modelica_array<Tp> > const& arrays);
   
   void print_dims();
   void print_data() const;
 //  void print();
   modelica_array<Tp> slice(std::vector<int> idx);
-  void set_element(std::vector<int> idx,Tp elem);
+  void set_element(std::vector<int> const& idx,Tp elem);
 
-  friend ostream& operator<< <Tp>(ostream&, const modelica_array<Tp> arr);
+  friend ostream& operator<< <Tp>(ostream&, const modelica_array<Tp>& arr);
+
+  typedef vector<Tp>::iterator data_iterator; 
+  typedef vector<Tp>::const_iterator const_data_iterator; 
+
+  const_data_iterator data_begin() const { return m_data.begin(); }
+  const_data_iterator data_end() const { return m_data.end(); }
+  data_iterator data_begin() { return m_data.begin(); }
+  data_iterator data_end() { return m_data.end(); }
 
 protected:
   modelica_array() {};
@@ -58,7 +67,7 @@ protected:
 
   
 
-  typedef vector<Tp>::iterator data_iterator; 
+
   vector<Tp> m_data;
   
   int m_ndims;
@@ -98,7 +107,7 @@ std::vector<int> modelica_array<Tp>::size() const
 template <class Tp>
 int modelica_array<Tp>::size(int dim) const
 {
-  assert((dim>=0) && (dim<m_dim_size.size()));
+  assert((dim>=0) && (dim<(int)m_dim_size.size()));
   return m_dim_size[dim];
 }
 
@@ -123,20 +132,31 @@ modelica_array<Tp> create_array(std::vector<Tp> data)
 }
 
 template <typename Tp>
-modelica_array<Tp> create_array(std::vector<modelica_array<Tp> > arrays)
+modelica_array<Tp> create_array2(std::vector<modelica_array<Tp> > const& arrays)
 {
-  modelica_array<Tp> result;
 
-  std::vector<int> dims(1,1);
-  //dims = arrays[1].m_dim_size;
-  dims.insert(dims.end(),result.m_dim_size.begin(),m_dim_size.end());
+  if (arrays.size() > 0)
+    {
+      std::vector<int> fdims = arrays[0].size();
+      std::vector<int> dims = fdims;
+      dims.insert(dims.begin(),arrays.size());
 
-  result(dims);
-  
-  //  result.m_data
-  
-  return result;
-  
+      modelica_array<Tp> result(dims);
+
+      modelica_array<Tp>::data_iterator it = result.data_begin();
+      for(int i = 0; i < (int)arrays.size(); ++i)
+	{
+	  if (i > 0 && arrays[i].size() != fdims)
+	    {
+	      throw std::runtime_error("Non uniform array");
+	    }
+
+	  it = std::copy(arrays[i].data_begin(),arrays[i].data_end(),it);
+	}
+      return result;
+    }
+
+  return modelica_array<Tp>();
 }
 
 template <class Tp>
@@ -149,30 +169,51 @@ void modelica_array<Tp>::fill_array(Tp s)
 }
 
 template <typename Tp>
-void modelica_array<Tp>::set_element(std::vector<int> idx,Tp elem)
+void modelica_array<Tp>::set_element(std::vector<int> const& idx,Tp elem)
 {
   int data_index = compute_data_index(idx);
-  assert(data_index < m_data.size());
+  assert(data_index < (int)m_data.size());
 
   m_data[data_index] = elem;
 }
 
 template <typename Tp>
-ostream& operator<< (ostream& o, const modelica_array<Tp> arr)
+ostream& operator<< (ostream& o, const modelica_array<Tp>& arr)
 {
-  o << "{";
   
-  assert (arr.ndims() == 1);
 
-  if (arr.m_data.size() > 0)
+  int ndims = arr.m_dim_size.size();
+  std::vector<int> idx(ndims,0);
+
+  for (int i = 0; i < ndims; ++i)
+    o << "{";
+
+  
+  modelica_array<Tp>::const_data_iterator it = arr.data_begin();
+  while (it != arr.data_end())
     {
-      o << arr.m_data[0];
-      for (size_t i = 1; i < arr.m_data.size(); ++i)
- 	{
- 	  o << "," << arr.m_data[i] << flush;
+      o << *it;
+      int d = ndims-1;
+      idx[d]++;
+      while (d && (idx[d] == arr.m_dim_size[d]))
+	{
+	  o << "}";
+	  idx[d] = 0;
+	  idx[--d]++;
 	}
+      ++it;
+      if (it != arr.data_end())
+	{
+	  o << ", ";
+	  for (int i = 0; i < ndims - d - 1; ++i) o << "{";
+	}
+  
     }
-  o << "}"; 
+  for (int i = 0; i < ndims-1; ++i)
+    o << "}"; 
+
+  if (ndims == 1) o << "}";
+  return o;
  }
 
 template <class Tp>
@@ -205,7 +246,7 @@ int modelica_array<Tp>::compute_data_index(const std::vector<int>& idx) const
 {
   assert(idx.size() > 0);
   int stride = idx[0];
-  for (int i = 1; i < idx.size(); ++i)
+  for (int i = 1; i < (int)idx.size(); ++i)
     {
       assert((idx[i] >= 0) && (idx[i] < m_dim_size[i]));
       stride = idx[i] + m_dim_size[i]*stride;
@@ -217,7 +258,7 @@ int modelica_array<Tp>::compute_data_index(const std::vector<int>& idx) const
 template <class Tp>
 void modelica_array<Tp>::print_data() const
 {
-  for (int i = 0; i < m_data.size();++i)
+  for (int i = 0; i < (int)m_data.size();++i)
     {
       cout << "m_data[" << i <<"] = " << m_data[i] << endl;
     }

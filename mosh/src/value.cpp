@@ -30,7 +30,7 @@ value::value(int val)
   m_basic_type = create_integer();
 }
 
-value::value(std::string val)
+value::value(std::string const& val)
 {
   m_string = val;
   m_basic_type = create_string();
@@ -58,6 +58,12 @@ value::value(const boolean_array& arr)
 {
   m_boolean_array = arr;
   m_basic_type = create_boolean_array(arr.size());
+}
+
+value::value(const tuple_type& tuple)
+{
+  m_tuple = tuple;
+  m_basic_type = create_tuple();
 }
 
 value::value(modelica_function* fcn)
@@ -127,6 +133,11 @@ value::value(const value& val)
       m_boolean_array = val.m_boolean_array;
       m_basic_type = create_boolean_array(val.m_boolean_array.size());
       return;
+    }
+  else if (m_basic_type.is_tuple())
+    {
+      m_tuple = val.m_tuple;
+      m_basic_type = create_tuple();
     }
   else if (m_basic_type.is_function())
     {
@@ -202,6 +213,176 @@ void value::set_value(function_argument* func_arg)
   m_basic_type = create_function_argument_type();
 }
 
+void value::set_value(tuple_type const& tuple)
+{
+  m_tuple = tuple;
+  m_basic_type = create_tuple();
+}
+
+void value::make_array(std::vector<value> const& exp_list)
+{
+  std::vector<double> tmp_real;
+  std::vector<int> tmp_integer;
+ 
+  bool is_real = true;
+  bool is_integer = true;
+  bool is_bool = true;
+  bool is_string = true;
+
+  for (unsigned int i = 0; i < exp_list.size(); ++i)
+    {
+      is_real    = is_real && (exp_list[i].is_real() 
+			       || exp_list[i].is_integer());
+      is_integer = is_integer && exp_list[i].is_integer();
+      is_bool    = is_bool && exp_list[i].is_boolean();
+      is_string  = is_string && exp_list[i].is_string();
+    }
+
+  if (is_integer)
+    {
+      std::vector<int> dims(1,exp_list.size());
+      integer_array arr(dims);
+      std::vector<int> idx(1);
+      for (idx[0] = 0; idx[0] < (int)exp_list.size(); ++idx[0])
+	{
+	  arr.set_element(idx,exp_list[idx[0]].get_integer());
+	}
+      set_value(arr);
+    }
+  else if (is_real)
+    {
+      std::vector<int> dims(1,exp_list.size());
+      real_array arr(dims);
+      std::vector<int> idx(1);
+      for (idx[0] = 0; idx[0] < (int)exp_list.size(); ++idx[0])
+	{
+	  if (exp_list[idx[0]].is_integer())
+	    {
+	      arr.set_element(idx,exp_list[idx[0]].get_integer());
+	    }
+	  else
+	    {
+	      arr.set_element(idx,exp_list[idx[0]].get_real());
+	    }
+	}
+      set_value(arr);
+    }
+  else if (is_bool)
+    {
+      throw modelica_runtime_error("array of booleans not implemented yet");
+    }
+  else if (is_string)
+    {
+      throw modelica_runtime_error("array of strings not implemented yet");
+    }
+  else
+    {
+      bool is_real_array = true;
+      bool is_integer_array = true;
+      bool is_bool_array = true;
+      bool is_string_array = true;
+      bool dims_match = true;
+      bool first = true;
+      std::vector<int> fdims;
+      std::vector<int> dims;
+
+      for (int i = 0; i < (int)exp_list.size(); ++i)
+	{
+	  if (first)
+	    {
+	      first = false;
+	      if (exp_list[i].is_real_array())
+		{
+		  fdims = exp_list[i].get_real_array().size();
+		}
+	      else if (exp_list[i].is_integer_array())
+		{
+		  fdims = exp_list[i].get_integer_array().size();
+		}
+	      else if (exp_list[i].is_boolean_array())
+		{
+		  fdims = exp_list[i].get_boolean_array().size();
+		}
+	      else if (exp_list[i].is_string_array())
+		{
+		  fdims = exp_list[i].get_string_array().size();
+		}
+	    }
+	  else
+	    {
+	      if (exp_list[i].is_real_array())
+		{
+		  dims = exp_list[i].get_real_array().size();
+		}
+	      else if (exp_list[i].is_integer_array())
+		{
+		  dims = exp_list[i].get_integer_array().size();
+		}
+	      else if (exp_list[i].is_boolean_array())
+		{
+		  dims = exp_list[i].get_boolean_array().size();
+		}
+	      else if (exp_list[i].is_string_array())
+		{
+		  dims = exp_list[i].get_string_array().size();
+		}
+	      dims_match = dims_match && (dims == fdims);
+	    }
+
+	  is_real_array=is_real_array && (exp_list[i].is_real_array() 
+					  || exp_list[i].is_integer_array());
+	  is_integer_array =is_integer_array && exp_list[i].is_integer_array();
+	  is_bool_array    = is_bool_array && exp_list[i].is_boolean_array();
+	  is_string_array  = is_string_array && exp_list[i].is_string_array();
+	}
+
+      if (is_integer_array)
+	{
+	  dims.insert(dims.begin(),(int)exp_list.size());
+	  std::vector<modelica_array<int> > arrs(exp_list.size(),integer_array());
+	  
+	  for (int i = 0; i < (int)exp_list.size(); ++i)
+	    {
+	      arrs[i] = exp_list[i].get_integer_array();
+	    }
+	  integer_array arr = create_array2(arrs);
+	  set_value(arr);
+	}
+      else if (is_real_array)
+	{
+	  dims.insert(dims.begin(),(int)exp_list.size());
+	  std::vector<modelica_array<double> > arrs(exp_list.size(),real_array());
+	  
+	  for (int i = 0; i < (int)exp_list.size(); ++i)
+	    {
+	      if (exp_list[i].is_integer_array())
+		{
+		  arrs[i] = real_array(exp_list[i].get_integer_array());
+		}
+	      else
+		{
+		  arrs[i] = exp_list[i].get_real_array();
+		}
+	    }
+	  real_array arr = create_array2(arrs);
+	  set_value(arr);
+	}
+      else if (is_bool_array)
+	{
+	  throw modelica_runtime_error("array of booleans not implemented yet");
+	}
+      else if (is_string_array)
+	{
+	  throw modelica_runtime_error("array of strings not implemented yet");
+	}
+      else
+	{
+	  throw modelica_runtime_error("mismatched types");
+	}
+    }
+
+}
+	      
 std::string value::get_string() const
 {
   return m_string;
@@ -230,30 +411,23 @@ modelica_function* value::get_function()
   return m_function;
 }
 
-real_array value::get_real_array() const
-{
-  return m_real_array;
-}
+real_array    const& value::get_real_array()    const {return m_real_array;}
+integer_array const& value::get_integer_array() const {return m_integer_array;}
+string_array  const& value::get_string_array()  const {return m_string_array;}
+boolean_array const& value::get_boolean_array() const {return m_boolean_array;}
+value::tuple_type const& value::get_tuple()     const {return m_tuple;}
 
-integer_array value::get_integer_array() const
-{
-  return m_integer_array;
-}
-
-string_array value::get_string_array() const
-{
-  return m_string_array;
-}
-
-boolean_array value::get_boolean_array() const
-{
-  return m_boolean_array;
-}
+real_array&    value::get_real_array()    { return m_real_array; }
+integer_array& value::get_integer_array() { return m_integer_array; }
+string_array&  value::get_string_array()  { return m_string_array; }
+boolean_array& value::get_boolean_array() { return m_boolean_array; }
+value::tuple_type& value::get_tuple()     { return m_tuple; }
 
 function_argument* value::get_function_argument()
 {
   return m_function_argument;
 }
+
 
 modelica_type value::type() const
 {
@@ -333,6 +507,11 @@ bool value::is_boolean_array() const
   return m_basic_type.is_boolean_array();
 }
 
+bool value::is_tuple() const
+{
+  return m_basic_type.is_tuple();
+}
+
 bool value::is_function_argument() const
 {
   //  return m_is_function_argument;
@@ -374,37 +553,60 @@ ostream& operator<< (ostream& o, const value& v)
   
   if (v.is_integer()) 
     {
+      o << "Integer:\n";
       o << v.m_integer;
     }
 
   if (v.is_boolean())
     {
+      o << "Boolean:\n";
       o << v.m_boolean;
     }
   
   if (v.is_real())
     {
+      o << "Real:\n";
       o << v.m_real;
     }
 
   if (v.is_string())
     {
-      o << v.m_string;
+      o << "String:\n";
+      o << " \"" << v.m_string << "\"";
     }
 
   if (v.is_function())
     {
-      //      o << v.m_function->name();
+      o << "Function:\n";
+      o << v.m_function->name() << "()";
     }
 
   if (v.is_real_array())
     {
-      o << v.get_real_array();
+      real_array const& arr = v.get_real_array();
+      o << "Real[";
+      for (int i = 0; i < arr.ndims(); ++i)
+	{
+	  if (i > 0) o << ", ";
+	  o << arr.size(i);
+	  
+	}
+      o << "]:\n";
+      o << arr;
     }
 
   if (v.is_integer_array())
     {
-      o << v.get_integer_array();
+      integer_array const& arr = v.get_integer_array();
+      o << "Integer[";
+      for (int i = 0; i < arr.ndims(); ++i)
+	{
+	  if (i > 0) o << ", ";
+	  o << arr.size(i);
+	  
+	}
+      o << "]:\n";
+      o << arr;
     }
   
   if (v.is_string_array())
@@ -415,6 +617,17 @@ ostream& operator<< (ostream& o, const value& v)
   if (v.is_boolean_array())
     {
       o << v.get_boolean_array();
+    }
+  if (v.is_tuple())
+    {
+      value::tuple_type const& tuple = v.get_tuple();
+      o << "Tuple: " << tuple.size() << "\n";
+      for (value::tuple_type::const_iterator it = tuple.begin();
+	   it != tuple.end();
+	   ++it)
+	{
+	  o << *it << "\n";
+	}
     }
 
   return o;
@@ -773,7 +986,7 @@ const value create_array(const value& x)
   return tmp;
 }
 
-const value create_array(const value& x, const value& y, const value& z)
+const value create_range_array(const value& x, const value& y, const value& z)
 {
   if (!x.is_numeric() || !y.is_numeric() || !z.is_numeric())
 	{
@@ -786,25 +999,39 @@ const value create_array(const value& x, const value& y, const value& z)
 
   if (x.is_integer() && y.is_integer() && z.is_integer())
     {
-      //  cout << x;
-      //cout << y;
-      //cout << z;
-      double upper = floor( (z.get_integer()-x.get_integer()) / y.get_integer());
-      for (int i = 0; i <= upper; i++)
+      int size = (z.get_integer()-x.get_integer())/y.get_integer() + 1;
+      if (size < 0) size = 0;
+      integer_array arr(std::vector<int>(1,size));
+      int v = x.get_integer();
+      for (integer_array::data_iterator it = arr.data_begin();
+	   it != arr.data_end(); ++it)
 	{
-	  //	  tmp.append_to_array(value(x.get_integer()+int(i)*y.get_integer()));
+	  *it = v;
+	  v += y.get_integer();
 	}
+      tmp.set_value(arr);
     }
   else
     {
+
+
       double lower = x.is_real() ? x.get_real() : x.get_integer();
       double increment = y.is_real() ? y.get_real() : y.get_integer();
       double upper = z.is_real() ? z.get_real() : z.get_integer();
+
+      int size = (int)floor( (upper-lower)/increment) + 1;
+      if (size < 0) size = 0;
+
+      real_array arr(std::vector<int>(1,size));
  
-      for (int i = 0; i <= floor((upper-lower)/increment); ++i)
+      double v = lower;
+      for (real_array::data_iterator it = arr.data_begin();
+	   it != arr.data_end(); ++it)
 	{
-	  // tmp.append_to_array(value(lower+i*increment));
+	  *it = v;
+	  v += increment;
 	}
+      tmp.set_value(arr);
     }
   return tmp;
     

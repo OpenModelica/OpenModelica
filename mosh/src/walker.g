@@ -788,11 +788,11 @@ simple_expression returns [value val]
 		:
 		#(RANGE3 log_expr1 = logical_expression log_expr2 = logical_expression log_expr3 = logical_expression)
 		{
-			//val = create_array(log_expr1,log_expr2,log_expr3);
+			val = create_range_array(log_expr1,log_expr2,log_expr3);
 		}
 		|#(RANGE2 log_expr1 = logical_expression log_expr2 = logical_expression)
 		{
-	  		//val = create_array(log_expr1,log_expr2);
+	  		val = create_range_array(log_expr1, value(1),log_expr2);
 		}
 		|val = logical_expression
 		{
@@ -1179,35 +1179,8 @@ expression_list_array returns [value val]
             )*
         )
 		{
-			// Check type. Create array
-            
-            std::vector<double> tmp_real;
-            std::vector<int> tmp_integer;
-            
-            if (exp_list.size() > 0)
-            {
-                if (exp_list[0].is_real())
-                {
-                    for (size_t i=0; i < exp_list.size();++i)
-                    {
-                          tmp_real.push_back(exp_list[i].get_real());
-                    }
-                    real_array ra(std::vector<int>(1,tmp_real.size()),tmp_real);
-              //      cout << "Size of inserted vector " << tmp_real.size() << endl;
-                    val.set_value(ra);
-                }
-                else if (exp_list[0].is_integer())
-                {
-                    for (size_t i=0; i < exp_list.size();++i)
-                    {
-                          tmp_integer.push_back(exp_list[i].get_integer());
-                    }
-                    integer_array ia(std::vector<int>(1,tmp_integer.size()),tmp_integer);
-                    val.set_value(ia);
-            //        cout << "Size of inserted vector " << tmp_integer.size() << endl;
-                }
-            }
-         }
+            val.make_array(exp_list);
+        }
 		;
 
 expression_list_fn_args[function_argument* args] //returns [value val]

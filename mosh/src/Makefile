@@ -57,9 +57,13 @@ mosh : $(OBJS)
 $(parsergen): expandedexpression_parser.g
 	java antlr.Tool $(ANTLRFLAGS) expandedexpression_parser.g
 
-$(walkergen): walker.g modelica_expression_parserTokenTypes.txt runtime/modelica_array.hpp runtime/numerical_array.hpp
+#$(walkergen): walker.g modelica_expression_parserTokenTypes.txt runtime/modelica_array.hpp runtime/numerical_array.hpp
+$(walkergen): walker.g modelica_expression_parserTokenTypes.txt 
 	java antlr.Tool $(ANTLRFLAGS) walker.g
 #$<
+
+
+$(walkerobjs) : runtime/modelica_array.hpp runtime/numerical_array.hpp
 
 expandedexpression_parser.g: expression_parser.g
 	java antlr.Tool -glib ../../modelica_parser/src/modelica_parser.g expression_parser.g
@@ -67,6 +71,8 @@ expandedexpression_parser.g: expression_parser.g
 #modelica_parserTokenTypes.txt : ../../src/modelica_parserTokenTypes.txt
 #	cp ../../src/modelica_parserTokenTypes.txt .
 
+depend :
+	gcc -M $(CXXFLAGS) mosh.cpp $(walkersrcs) > Makefile.depend
 
 clean:
 	-rm -f *.o *~ core *.core mosh
@@ -77,3 +83,4 @@ reallyclean: clean
 
 mosh.o : mosh.cpp ../../modelica_parser/src/modelica_lexer.hpp ../../modelica_parser/src/modelica_parser.hpp
 
+include Makefile.depend

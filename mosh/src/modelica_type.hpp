@@ -27,6 +27,8 @@ public:
   bool is_string_array() const;
   bool is_boolean_array() const;
 
+  bool is_tuple() const;
+
   bool is_function() const;
   bool is_function_argument() const;
 
@@ -39,6 +41,9 @@ public:
   void set_integer_array();
   void set_string_array();
   void set_boolean_array();
+
+  void set_tuple();
+
   void set_function();
   void set_function_argument();
 
@@ -53,10 +58,15 @@ public:
   friend modelica_type create_integer_array(std::vector<int> s);
   friend modelica_type create_string_array(std::vector<int> s);
   friend modelica_type create_boolean_array(std::vector<int> s);
+
+  // Should probably take a vector of types
+  friend modelica_type create_tuple();
+
   friend modelica_type create_function_type();
   friend modelica_type create_function_argument_type();
 
   friend ostream& operator<< (ostream& o, const modelica_type& v);
+  ostream& print_dims(ostream&);
 protected:
   std::vector<int> m_dimensions;
   
@@ -69,6 +79,7 @@ protected:
      integer_array_t,
      string_array_t,
      boolean_array_t,
+     tuple_t,
      function_t,
      function_argument_t,
      undefined

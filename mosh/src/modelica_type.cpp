@@ -114,6 +114,11 @@ bool modelica_type::is_boolean_array() const
   return (m_type == boolean_array_t);
 }
 
+bool modelica_type::is_tuple() const
+{
+  return (m_type == tuple_t);
+}
+
 bool modelica_type::is_function() const
 {
   return (m_type == function_t);
@@ -162,6 +167,11 @@ void modelica_type::set_boolean_array()
 void modelica_type::set_string_array()
 {
   m_type = string_array_t;;
+}
+
+void modelica_type::set_tuple()
+{
+  m_type = tuple_t;
 }
 
 void modelica_type::set_function()
@@ -266,6 +276,14 @@ modelica_type create_boolean_array(std::vector<int> s)
   return result;
 }
 
+modelica_type create_tuple()
+{
+  modelica_type result;
+  result.set_tuple();
+
+  return result;
+}
+
 modelica_type create_function_type()
 {
   modelica_type result;
@@ -335,6 +353,15 @@ ostream& operator<< (ostream& o, const modelica_type& v)
   else
     {
       o << "unknown type";
+    }
+  return o;
+}
+
+ostream& modelica_type::print_dims(ostream& o) 
+{
+  for (size_t i = 0; i < m_dimensions.size();++i)
+    {
+      o << "dimensions[" << i << "] : " << m_dimensions[i];
     }
   return o;
 }
