@@ -325,13 +325,16 @@ end
 
 relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
 	
-  rule	implicit_instantiation(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+  rule	Debug.fprintln ("insttr", "inst_program_implicit") &
+	implicit_instantiation(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
 	inst_program_implicit(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
 	inst_program_implicit(env,(c as SCode.CLASS(n,_,_,restr,_))::cs) => dae
 
-  axiom	 inst_program_implicit(env,[]) => []
+  rule	Debug.fprintln ("insttr", "inst_program_implicit (end)")
+	----------------------------------------------------
+	 inst_program_implicit(env,[]) => []
 
 end
 
@@ -918,9 +921,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", Mod.print_mod, mm) &
 	(* The types in the environment does not have correct Binding.
 	   We must update those variables that is found in m into a new environment.*)
-	get_cref_from_mod(m) => crefs &
- 	update_variables_in_env(mods,crefs, env ,impl) => env2' &	
-	get_cref_from_dim(ad) => crefs2 &
+	let owncref = Absyn.CREF_IDENT(n,[]) &
+	get_cref_from_mod(m) => crefs1' &
+	remove_cref_from_crefs (crefs1', owncref) => crefs1 &
+ 	update_variables_in_env(mods,crefs1, env ,impl) => env2' &	
+	get_cref_from_dim(ad) => crefs2' &
+	remove_cref_from_crefs (crefs2', owncref) => crefs2 &
 	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
 
 	(* Update the untyped modifiers to typed ones, and extract class *)
@@ -1016,6 +1022,26 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(_,_,_,_,_,el,_,_) => fail
 
 end	
+
+relation remove_cref_from_crefs : (Absyn.ComponentRef list, Absyn.ComponentRef)
+	  => Absyn.ComponentRef list =
+
+  axiom	remove_cref_from_crefs ([],_) => []
+
+  rule	let Absyn.CREF_IDENT(n1,[]) = cr1 &
+	let Absyn.CREF_IDENT(n2,[]) = cr2 &
+	n1 = n2 &
+	remove_cref_from_crefs (rest, cr2) => rest'
+	------------------------------------------
+	remove_cref_from_crefs (cr1::rest, cr2) => rest'
+
+  rule	remove_cref_from_crefs (rest, cr2) => rest'
+	------------------------------------------
+	remove_cref_from_crefs (cr1::rest, cr2) => cr1::rest'
+
+
+end
+
 
 (** relation: redeclare_type
  ** This relation takes a 'Mod' and an SCode.Element and if the modification contain
@@ -1891,7 +1917,8 @@ relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef) => DAE.ExternalDecl =
 	inst_ext_get_fname (extdecl, n) => fname &
 	inst_ext_get_fargs (env, extdecl) => fargs &
 	inst_ext_get_rettype (env, extdecl) => rettype &
-	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype)
+	inst_ext_get_lang (extdecl) => lang &
+	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang)
 	-------------------------------------
 	inst_ext_decl (env, n, SCode.PARTS(_,_,_,_,_,SOME(extdecl))) => daeextdecl
 
@@ -1900,7 +1927,8 @@ relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef) => DAE.ExternalDecl =
 	inst_ext_get_fname (extdecl, n) => fname &
 	inst_ext_get_fargs (env, extdecl) => fargs &
 	inst_ext_get_rettype (env, extdecl) => rettype &
-	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype)
+	inst_ext_get_lang (extdecl) => lang &
+	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang)
 	-------------------------------------
 	inst_ext_decl (env, n, SCode.PARTS(els,_,_,_,_,SOME(orgextdecl))) => daeextdecl
 
@@ -2020,6 +2048,14 @@ relation inst_ext_get_fname : (Absyn.ExternalDecl, Ident) => Ident =
 
   axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(SOME(id),_,_,_), fid) => id
   axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(NONE,_,_,_), fid) => fid
+
+end
+
+(* Default is "C", so if no language specified, return "C" *)
+relation inst_ext_get_lang : Absyn.ExternalDecl => string =
+
+  axiom	inst_ext_get_lang Absyn.EXTERNALDECL(_,SOME(lang),_,_) => lang
+  axiom	inst_ext_get_lang Absyn.EXTERNALDECL(_,NONE,_,_) => "C"
 
 end
 

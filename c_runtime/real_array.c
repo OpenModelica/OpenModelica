@@ -237,6 +237,13 @@ void copy_real_array_data(real_array_t* source, real_array_t* dest)
   
 }
 
+void copy_real_array(real_array_t* source, real_array_t* dest)
+{
+  clone_real_array_spec (source, dest);
+  alloc_real_array_data(dest);
+  copy_real_array_data(source,dest);
+}
+
 /*
 
  a[1:3] := b;
@@ -308,6 +315,7 @@ real* calc_real_index_va(real_array_t* source,int ndims,va_list ap)
 
   return source->data+index;
 }
+
 void print_real_matrix(real_array_t* source)
 {
   size_t i,j;
@@ -327,8 +335,8 @@ void print_real_matrix(real_array_t* source)
     }
 }
 
+
 void print_real_array(real_array_t* source)
-			       
 {
     size_t i,j,k,n;
     modelica_real* data;	
@@ -1055,18 +1063,20 @@ void transpose_real_array(real_array_t* a, real_array_t* dest)
   size_t i;
   size_t j;
   /*  size_t k;*/
+  size_t n,m;
 
-  for (i = 0; i < a->dim_size[0]; ++i)
-    {
-      for (j = 0; j < a->dim_size[1]; ++i)
-	{
-	  /*for (k = 0; k < k_size; ++k)
-	    {
-	        dest->data[j*dest->dim_size[1]+i] = a->data[i*a->dim_size[1]+j];
-	    }
-	  */
-	}
+  assert(a->ndims==2 && dest->ndims==2);
+
+  n = a->dim_size[0];
+  m = a->dim_size[1];
+
+  assert(dest->dim_size[0] == m && dest->dim_size[1] == n);
+  
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < m; ++j) {
+      dest->data[j*n+i] = a->data[i*m+j];
     }
+  }
 }
 
 void outer_product_real_array(real_array_t* v1,real_array_t* v2,real_array_t* dest)
@@ -1095,44 +1105,39 @@ void identity_real_array(int n, real_array_t* dest)
 {
   size_t i;
   size_t j;
-  size_t nr_of_elements;
   
   assert(real_array_ok(dest));
   
   /* Check that dest size is ok */
-  if (dest->ndims!=2) 
-    exit(0);
-
-  if ((dest->dim_size[0]!=n) || (dest->dim_size[1]!=n))
-    exit(0);
-
-  nr_of_elements = real_array_nr_of_elements(dest);
-  
-  for (i=0;i < nr_of_elements;++i)
-    {
-      for ( j = 0;j <= nr_of_elements; ++j)
-	{
-	  dest->data[i*n+j] = i==j? 1:0;
-	}
+  assert(dest->ndims==2);
+  assert((dest->dim_size[0]==n) && (dest->dim_size[1]==n));
+    
+  for (i=0; i < n; ++i)  { 
+    for (j=0; j < n; ++j) {
+      dest->data[i*n+j] = i==j? 1:0;
     }
+  }
 }
 
 void diagonal_real_array(real_array_t* v,real_array_t* dest)
 {
   size_t i;
   size_t j;
-  size_t nr_of_elements;
+  size_t n;
 
   /* Assert that v is a vector */
-  nr_of_elements = real_array_nr_of_elements(v);
+  assert(v->ndims==1);
 
-  for (i = 0; i < nr_of_elements; ++i)
-    {
-      for (i = 0; j < nr_of_elements;++j)
-      {
-	dest->data[i*nr_of_elements+j] = (i==j)?v->data[i]:0;
-      }
+  /* Assert that dest is a nxn matrix */
+  n = v->dim_size[0];
+  assert(dest->ndims==2);
+  assert((dest->dim_size[0]==n) && (dest->dim_size[1]==n));
+
+  for (i = 0; i < n; ++i) {
+    for (i = 0; j < n; ++j) {
+      dest->data[i*n+j] = (i==j) ? v->data[i] : 0;
     }
+  }
 }
 
 void fill_real_array(real_array_t* dest,modelica_real s)
@@ -1142,9 +1147,9 @@ void fill_real_array(real_array_t* dest,modelica_real s)
 
   nr_of_elements = real_array_nr_of_elements(dest);  
   for (i = 0; i < nr_of_elements; ++i)
-    {
-      dest->data[i] = s;
-    }
+  {
+    dest->data[i] = s;
+  }
 }
 
 void linspace_real_array(double x1, double x2, int n,real_array_t* dest)
@@ -1298,4 +1303,33 @@ void skew_real_array(real_array_t* x,real_array_t* dest)
   dest->data[6] = x->data[1];
   dest->data[7] = x->data[0];
   dest->data[6] = 0;
+}
+
+void clone_reverse_real_array_spec(real_array_t* source, real_array_t* dest)
+{
+  int i;
+  assert(real_array_ok(source));
+
+  dest->ndims = source->ndims;
+  dest->dim_size = size_alloc(dest->ndims*sizeof(int));
+  assert(dest->dim_size);
+  
+  for (i = 0; i < dest->ndims; ++i)
+  {
+    dest->dim_size[i] = source->dim_size[dest->ndims - 1 - i];
+  }
+}
+
+void convert_alloc_real_array_to_f77(real_array_t* a, real_array_t* dest) 
+{
+  clone_reverse_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
+  transpose_real_array (a,dest);
+}
+
+void convert_alloc_real_array_from_f77(real_array_t* a, real_array_t* dest)
+{
+  clone_reverse_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
+  transpose_real_array (a,dest);
 }

@@ -142,6 +142,7 @@ returns multiple arguments. *)
   relation is_array : Type => bool
   relation is_input_attr : Attributes => bool
   relation is_output_attr : Attributes => bool
+  relation is_bidir_attr : Attributes => bool
   relation ndims : Type => int
   
   relation is_prop_const : Properties => bool
@@ -880,6 +881,12 @@ end
 relation is_output_attr : Attributes => bool =
 
   axiom	is_output_attr ATTR(_,_,_,Absyn.OUTPUT) => true
+
+end
+
+relation is_bidir_attr : Attributes => bool =
+
+  axiom	is_bidir_attr ATTR(_,_,_,Absyn.BIDIR) => true
 
 end
 

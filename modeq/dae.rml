@@ -67,7 +67,8 @@ module DAE:
 
   datatype ExternalDecl = EXTERNALDECL of Ident * (* external function name *)
 					  ExtArg list * (* parameters *)
-					  ExtArg (* return type *)
+					  ExtArg * (* return type *)
+					  string (* language *)
 	  
 
 (* 
@@ -90,16 +91,19 @@ module DAE:
   relation dump_graphviz: DAElist => ()
   relation dump_type: Type => ()
   relation dump_type_str: Type => string
+  relation dump_ext_arg_str : ExtArg => string 
   relation dump_algorithm: Element => ()
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
+  relation get_bidir_vars: Element list  => Element list
   relation get_input_vars: Element list  => Element list
   relation is_algorithm : Element => ()
   relation is_function : Element => ()
   relation is_var: Element => ()
   relation is_output_var: Element => ()
   relation is_input_var: Element => ()
+  relation is_bidir_var: Element => ()
   relation is_parameter: Element => ()
   relation is_comp: Element => ()
   relation find_element: (Element list, Element => ()) => Element option
@@ -232,9 +236,10 @@ relation dump_ext_decl_str : ExternalDecl => string =
 
   rule	Dump.get_string_list (extargs, dump_ext_arg_str, ",") => extargsstr &
 	dump_ext_arg_str retty => rettystr &
-	Util.string_append_list(["EXTERNALDECL(",id,", (",extargsstr,"), ",rettystr]) => str
+	Util.string_append_list(["EXTERNALDECL(",id,", (",extargsstr,"), ",
+				 rettystr,", \"",lang,"\")"]) => str
 	-----------------------------------------------------------------------
-	dump_ext_decl_str EXTERNALDECL(id,extargs,retty) => str
+	dump_ext_decl_str EXTERNALDECL(id,extargs,retty,lang) => str
 end
 
 relation dump_ext_arg_str : ExtArg => string = 
@@ -1073,6 +1078,14 @@ relation get_output_vars: Element list  => Element list =
 	get_output_vars vl => vl'
 end
 
+(* LS *)
+relation get_bidir_vars: Element list  => Element list =
+	
+  rule	get_matching_elements(vl, is_bidir_var) => vl'
+	---------------------------------
+	get_bidir_vars vl => vl'
+end
+
 (* HJ *)
 relation get_input_vars: Element list  => Element list =
 	
@@ -1085,6 +1098,13 @@ end
 relation is_output_var: Element => () =
 
   axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _)
+
+end
+
+(* LS *)
+relation is_bidir_var: Element => () =
+
+  axiom	is_bidir_var VAR(n, VARIABLE, BIDIR, ty, _, _)
 
 end
 

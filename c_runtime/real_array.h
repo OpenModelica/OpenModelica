@@ -62,6 +62,9 @@ void clone_real_array_spec(real_array_t* source, real_array_t* dest);
 /* Copy real data*/
 void copy_real_array_data(real_array_t* source, real_array_t* dest);
 
+/* Copy real array*/
+void copy_real_array(real_array_t* source, real_array_t* dest);
+
 real* calc_real_index(int ndims,size_t* idx_vec,real_array_t* arr);
 real* calc_real_index_va(real_array_t* source,int ndims,va_list ap);
 
@@ -163,6 +166,7 @@ void vector_real_scalar(double a,real_array_t* dest);
 void matrix_real_array(real_array_t* a, real_array_t* dest);
 void matrix_real_scalar(double a,real_array_t* dest);
 void transpose_real_array(real_array_t* a, real_array_t* dest);
+void convert_real_array_to_f77(real_array_t* a, real_array_t* dest);
 void outer_product_real_array(real_array_t* v1,real_array_t* v2,real_array_t* dest);
 void identity_real_array(int n, real_array_t* dest);
 void diagonal_real_array(real_array_t* v,real_array_t* dest);
@@ -177,5 +181,8 @@ void cross_real_array(real_array_t* x,real_array_t* y, real_array_t* dest);
 void skew_real_array(real_array_t* x,real_array_t* dest);
 
 size_t real_array_nr_of_elements(real_array_t* a);
+
+void convert_real_array_to_f77(real_array_t* a, real_array_t* dest);
+void convert_real_array_from_f77(real_array_t* a, real_array_t* dest);
 
 #endif

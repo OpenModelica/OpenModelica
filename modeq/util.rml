@@ -42,6 +42,7 @@ module Util :
   relation string_delimit_list : (string list, string) => string
 
   relation bool_and_list: bool list => bool
+  relation bool_or_list: bool list => bool
   relation bool_string: bool => string 
 
   relation list_matching : ('a list, 'a => ()) => 'a list
@@ -213,14 +214,36 @@ relation string_delimit_list : (string list, string) => string =
 	string_delimit_list(f::r,delim) => str
 end
 
+
+relation bool_or_list: bool list => bool =
+
+  axiom	bool_or_list([b]) => b
+
+  rule	b = true
+	---------------------
+  	bool_or_list(b::rest) => true
+
+  rule	b = false &
+	bool_or_list(rest) => res
+	---------------------
+  	bool_or_list(b::rest) => res
+end
+
 relation bool_and_list: bool list => bool =
+
   axiom	bool_and_list([b]) => b
 
-  rule	bool_and_list(rest) => b1 &
-	bool_and(b1,b) => res
+  rule	b = false
+	---------------------
+  	bool_and_list(b::rest) => false
+
+  rule	b = true &
+	bool_and_list(rest) => res
 	---------------------
   	bool_and_list(b::rest) => res
 end
+
+
 
 relation bool_string: bool => string =
   axiom	bool_string true => "true"
