@@ -411,11 +411,11 @@ relation optimize_dae: (DAE.DAElist, Absyn.Path) => () =
 
   rule	run_backend_q() => true
 	& print "entering optimize_dae" 
-	& DAELow.lower(d) => d' 
+	& DAELow.lower(dae) => dlow 
 	& print "lowered DAE\n" 
-	& Debug.fcall("dumpdaelow", DAELow.dump, d') 
+	& Debug.fcall("dumpdaelow", DAELow.dump, dlow) 
 	& clock() => t1 
-	& DAELow.incidence_matrix(d') => m 
+	& DAELow.incidence_matrix(dlow) => m 
 	& print "computed incidence matrix\n" 
 	& clock() => t2 
 	& DAELow.transpose_matrix(m) => mT 
@@ -423,13 +423,13 @@ relation optimize_dae: (DAE.DAElist, Absyn.Path) => () =
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
 	& clock() => t3
-	& DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
+	& DAELow.matching_algorithm(dlow,m,mT) => (v1,v2,dlow',m,mT) 
 	& clock() => t4
 	& real_sub(t4,t3) => t4' & real_string(t4') => tstr &
 	print "MATCHING look: " & print tstr & print "\n" 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
-	& Debug.fcall("bltdump", DAELow.dump,d'')
+	& Debug.fcall("bltdump", DAELow.dump,dlow')
 
 	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
 	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
@@ -454,11 +454,11 @@ relation optimize_dae: (DAE.DAElist, Absyn.Path) => () =
 	& print "Strong Components took: " 
 	& print strongtimes
 	& print " seconds\n"
-	& modpar(d'',v1,v2,comps) 
-	& simcodegen(classname,d'',v1,v2,m,mT,comps)
+	& modpar(dlow',v1,v2,comps) 
+	& simcodegen(classname,dae,dlow',v1,v2,m,mT,comps)
 	& DAELow.dump_components(comps) 
 	-----------------------
-	optimize_dae(d,classname) => ()
+	optimize_dae(dae,classname) => ()
 
 	(* If not running backend. *)
   axiom	optimize_dae(_,_) => ()
@@ -511,6 +511,7 @@ end
  ** Genereates simulation code using the SimCodegen module
  **)
 relation simcodegen: (Absyn.Path, (* classname *)
+		      DAE.DAElist, 
 		      DAELow.DAELow, 
 		      int vector, (* ass1 *)
 		      int vector, (* ass2 *)
@@ -520,22 +521,26 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	  => () =
 
   rule	RTOpts.simulation_cg() => true &
-	DAELow.translate_dae (dae) => indexed_dae &
-	DAELow.calculate_values(indexed_dae) => indexed_dae' &
+	DAELow.translate_dae (dlow) => indexed_dlow &
+	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
 	print "Generating simulation code for " &
 	Absyn.path_string(classname) => cname_str &
 	print cname_str & print "\n" &
 	Util.string_append_list([cname_str,".cpp"]) => filename &
+	Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
 	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
 	Util.string_append_list([cname_str,".makefile"]) => makefilename &
-	SimCodegen.generate_residual_code(indexed_dae',ass1,ass2,m,mt,comps,classname,filename) &
-	SimCodegen.generate_init_data(indexed_dae',classname,init_filename,0.0,1.0,0.0001) &
+	SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	SimCodegen.generate_residual_code(indexed_dlow',ass1,ass2,m,mt,comps,classname,filename) &
+	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,0.0,1.0,0.0001) &
 	SimCodegen.generate_makefile(makefilename,classname)
-	--------------------
-	simcodegen(classname,dae,ass1,ass2,m,mt,comps)
+	----------------------------------------------------------------------------------
+	simcodegen(classname,dae,dlow,ass1,ass2,m,mt,comps)
+
+
 
 	(* If not generating simulation code*)
-  axiom	simcodegen(_,_,_,_,_,_,_) => ()
+  axiom	simcodegen(_,_,_,_,_,_,_,_) => ()
 
 end
 

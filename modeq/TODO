@@ -130,6 +130,30 @@ List of things to implement:
 	  for i in 1:5, j in 1:3 loop a[i,j]=i*j; end for;
 	Implemented in the parser, but doesn't seem to be in walker.g or in rest of modeq.
 
+
+
+29.	 Functions code generation in simulation code
+
+	- Functions are generated on the fly during constant
+	evaluation, if they are detected as constant (all arguments
+	constants). Compiled functions should be stored so that they
+	don't need to be generated when called several times. Checking
+	of existing files with same names should be fixed. An existing
+	file function.c might be overwritten.  
+	Relevant relations: Static.elab_call, Staticexp.generate_compiled_function,
+	Ceval.ceval
+
+	- Add going through of algorithms in daelow to get all the expressions
+	See DAELow.get_all_exps
+
+	- Add going through functions (algorithms) to find new
+	expressions with function calls so that we can generate code
+	for those as well. This means we have to go through all DAE also.
+
+	- Only top level functions are checked in DAE.get_named_function
+	- External functions in DAE.get_named_function ? 
+
+
 Specific adaptions:
 
 For SKF:	

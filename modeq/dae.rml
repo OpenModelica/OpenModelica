@@ -85,7 +85,7 @@ module DAE:
 		   | COMP of Ident * DAElist
 		   | FUNCTION of Absyn.Path * DAElist * Types.Type
 		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl 
-	            | ASSERT of Exp.Exp
+	           | ASSERT of Exp.Exp
 
   datatype ExtArg = EXTARG of Exp.ComponentRef * Types.Attributes * Types.Type
                      | EXTARGEXP of Exp.Exp * Types.Type
@@ -145,6 +145,8 @@ module DAE:
   relation get_flow_variables: Element list => Exp.ComponentRef list
   relation dae_to_record_value: Element list => Values.Value
   relation to_modelica_form: (DAElist) => DAElist
+  relation get_named_function : (Absyn.Path, Element list) => Element list
+
 end
 
 (** - Relations
@@ -161,6 +163,7 @@ with "dump.rml"
 with "print.rml"
 with "util.rml"
 with "ceval.rml"
+with "modutil.rml"
 
 (** relation: dump
  **
@@ -1902,3 +1905,26 @@ rule	to_modelica_form_exp(e) => e'
   axiom	to_modelica_form_exp(e) => e
 end
 
+(** relation: get_named_function
+ ** return the FUNCTION with the given name. Returns empty list if not found
+ ** TODO: Only top level functions are checked. Add recursing into the DAE
+ ** and path name checking.
+ ** TODO: External functions?
+ **)
+relation get_named_function : (Absyn.Path, Element list) => Element list  =
+
+  axiom	get_named_function (_, []) => []
+
+  rule	ModUtil.path_equal (path, elpath) => true
+	-----------------------------------------	
+	get_named_function (path, (el as FUNCTION(elpath, _, _))::rest) => [el]
+
+  rule	get_named_function (path, rest) => res
+	-----------------------------------------	
+	get_named_function (path, el::rest) => res
+
+  rule	Print.print_buf "#-- get_named_function failed\n"
+	-------------------------------------------------
+	get_named_function (_, _) => fail
+
+end

@@ -755,4 +755,3 @@ relation cref_equal: (ComponentRef, ComponentRef) =>  bool =
 
   axiom	cref_equal(_,_) => false
 end
-	

@@ -61,7 +61,7 @@ module DAELow:
 			DAE.InstDims *
 			DAE.StartValue *  (* value of start attribute *)
 			int * (* index in impl. vector *)
-		    string *(* original variable name *)
+			string *(* original variable name *)
 			Absyn.Path list (* classname variable belongs to *)
 
 
@@ -204,6 +204,9 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation is_state_var: (Var) => bool
   relation is_non_state: VarKind => ()
   relation is_var_known : (Var list, Exp.ComponentRef) => bool 
+
+  relation get_all_exps : DAELow => Exp.Exp list
+
 end (* End Module *)
 
 (* Implementation *)
@@ -2676,7 +2679,7 @@ relation replace_dummy_der2:(Exp.ComponentRef,
   rule	let dercall = Exp.CALL(Absyn.IDENT("der"),
 			       [Exp.CREF(st,Exp.REAL)],
 			       false,
-			       false) &
+			       true) &
 	Exp.replace_exp(e1,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e1',_) &
 	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e2',_)
 	---------------------------------------------------------------
@@ -4018,7 +4021,7 @@ relation derivative_replacements: (Exp.ComponentRef list, Var list)
 	  => (Exp.CALL(Absyn.IDENT("der"),
 		       [Exp.CREF(s,Exp.REAL)],
 		       false,
-		       false
+		       true
 		       )::s1,
 	      Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
@@ -4649,3 +4652,101 @@ relation is_var_known : (Var list, Exp.ComponentRef) => bool =
         is_var_known((variable as VAR(cr,_,_,_,_,_,_,_,indx,origname,_))::rest,
                      var_name) => res
 end 
+
+
+(** relation: get_all_exps
+ ** 
+ ** This relation goes through the DAELow structure and finds all the
+ ** expressions and returns them in a list
+ **)
+relation get_all_exps : DAELow => Exp.Exp list =
+
+  rule	get_all_exps_vars vars1 => exps1 &
+	get_all_exps_vars vars2 => exps2 &
+	get_all_exps_eqns eqns => exps3 &
+	get_all_exps_eqns reqns => exps4 &
+	get_all_exps_eqns ieqns => exps5 &
+	Util.list_flatten([exps1, exps2, exps3, exps4, exps5]) => exps
+	(*
+	get_all_exps_algs algs => exps6 &
+	Util.list_flatten([exps1, exps2, exps3, exps4, exps5, exps6]) => exps *)
+	---------------------------------------------------------------------	
+	get_all_exps (DAELOW(vars1,vars2,eqns,reqns,ieqns,algs)) => exps
+
+end
+
+
+(** relation: get_all_exps_vars
+ ** 
+ ** Helper to get_all_exps. Goes through the Variables type
+ **)
+relation get_all_exps_vars : Variables => Exp.Exp list =
+
+	(* We can ignore crefs, they don't contains real expressions *)
+  rule	vararray_list vararray => vars &
+	Util.list_map(vars, get_all_exps_var) => exps &
+	Util.list_flatten(exps) => exps
+	---------------------------------------------------------------------	
+	get_all_exps_vars VARIABLES(crefindex, vararray, bsize, nvars) => exps
+
+end
+
+
+
+(** relation: get_all_exps_var
+ ** 
+ ** Helper to get_all_exps_vars. Get all exps from a  Var.
+ ** Exp.OTHER is used as type for componentref. Not important here.
+ ** We only use the exp list for finding function calls
+ **)
+relation get_all_exps_var : Var => Exp.Exp list =
+
+  rule	Util.option_to_list bndexp => e1 &
+	Util.option_to_list startvalexp => e2 &
+	Util.list_map(instdims, get_all_exps_subscript) => e3 &
+	Util.list_flatten(e3) => e3 &
+	Util.list_flatten([e1, e2, e3, [Exp.CREF(cref, Exp.OTHER)]]) => exps
+	-------------------------------------------------------
+	get_all_exps_var VAR(cref, vk, vd, ty, bndexp, bndval, instdims,
+			     startvalexp, ind, orgname, clsnames) => exps
+			     
+end
+
+(** relation: get_all_exps_subscript
+ ** 
+ ** Get all exps from a Subscript 
+ **)
+relation get_all_exps_subscript : Exp.Subscript => Exp.Exp list =
+
+  axiom	get_all_exps_subscript Exp.WHOLEDIM => []
+  axiom	get_all_exps_subscript Exp.SLICE(e) => [e]
+  axiom	get_all_exps_subscript Exp.INDEX(e) => [e]
+			     
+end
+
+
+(** relation: get_all_exps_eqns
+ ** 
+ ** Helper to get_all_exps. Goes through the EquationArray type
+ **)
+relation get_all_exps_eqns : EquationArray => Exp.Exp list =
+
+  rule	equation_list eqnarray => eqns &
+	Util.list_map(eqns, get_all_exps_eqn) => exps &
+	Util.list_flatten(exps) => exps
+	-------------------------------
+	get_all_exps_eqns (eqnarray as EQUATION_ARRAY(_,_,_)) => exps
+
+end
+
+(** relation: get_all_exps_eqn
+ ** 
+ ** Helper to get_all_exps_eqns. Get all exps from an Equation.
+ **)
+relation get_all_exps_eqn : Equation => Exp.Exp list =
+
+  axiom	get_all_exps_eqn EQUATION(e1, e2) => [e1, e2]
+  axiom	get_all_exps_eqn SOLVED_EQUATION(cr, e) => [e]
+  axiom	get_all_exps_eqn ALGORITHM(_,_,_) => []
+			     
+end

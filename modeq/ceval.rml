@@ -201,7 +201,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env,Exp.CALL(Absyn.IDENT("diagonal"),[exp1],_,_),impl,st,_) => (v,st) 	
 
 
-  rule	 ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') & 
+  rule	ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') & 
  	ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') & 
         int_real(lhv) => lhvr &
         int_real(rhv) => rhvr &
@@ -211,7 +211,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
  	    ceval (env, Exp.BINARY(lh, Exp.POW(Exp.INT), rh),impl,st,dim) 
 	  => (Values.INTEGER(res),st'')
 
-  rule	 ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') & 
+  rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') & 
  	ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') & 
         int_real(rhv) => rhvr &
         real_pow(lhv,rhvr) => resr
@@ -219,7 +219,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
  	    ceval (env, Exp.BINARY(lh, Exp.POW(Exp.REAL), rh),impl,st,dim) 
 	  => (Values.REAL(resr),st'')
 
-  rule	 ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') & 
+  rule	ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') & 
  	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') & 
         int_real(lhv) => lhvr &
         real_pow(lhvr,rhv) => resr 
@@ -227,7 +227,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
  	    ceval (env, Exp.BINARY(lh, Exp.POW(Exp.REAL), rh),impl,st,dim) 
 	  => (Values.REAL(resr),st'')
 
-  rule	 ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') & 
+  rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') & 
  	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') & 
         real_pow(lhv,rhv) => resr 
 	    ------------------------
@@ -241,16 +241,20 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	(* FIXME: functions are always generated. Put back the check
 	   and write another rule for the false case that generates the function *)
   rule	(* Static.is_function_in_cflist(cflist,funcpath) => true & *)
-	ceval_generate_function(env, funcpath) &	
+	Debug.fprint("ceval", "- ceval call begin") &
+	ceval_generate_function(env, funcpath) &
+	Debug.fprint("ceval", "- ceval func generated") &
 	ceval_list(env,expl,impl,st) => vallst &
+	Debug.fprint("ceval", "- ceval args evaluated") &
 	ModUtil.path_string2(funcpath,"_") => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
 	Values.write_to_file_as_args(vallst,infilename)  &
 	System.execute_function(funcstr) &
 	System.read_values_from_file(outfilename) => newval
+	& Debug.fprint("ceval", "- ceval call success")
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(funcpath,expl,_,_),impl as false,st as NONE,_) => (newval,st)
+	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => (newval,st)
 
 (*	ceval (env, e as Exp.CALL(funcpath,expl,_,_),false,st as SOME(Interactive.SYMBOLTABLE(_,_,_,_,cflist)),_) => (newval,st)
 *)
@@ -259,12 +263,13 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
         (* FIXME: Fix this in order to allow calling of constant-marked function
 	 * calls. One should call the function as if we were in interactive
 	 * mode, and put the result instead of the function call *)
-	 
+(*	 
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(_,_,_,_),false,NONE,_) => fail
+*)
 
   rule	(* Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
 	   Exp.print_exp e & Print.print_buf "\n" *)
@@ -1481,7 +1486,7 @@ relation ceval_builtin_sqrt : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSy
         real_sqrt rv => rv' 
     --------------------------------------
     ceval_builtin_sqrt(env,exp,impl,st) => (Values.REAL(rv'),st)
- 
+
 end
 
 relation ceval_builtin_sin : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
@@ -1491,9 +1496,7 @@ relation ceval_builtin_sin : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSym
         real_sin rv => rv' 
 	--------------------------------------
 	ceval_builtin_sin(env,exp,impl,st) => (Values.REAL(rv'),st)
-  rule	print "ceval_builtin_sin failed\n" 
-	--------------
-	ceval_builtin_sin(_,_,_,_) => fail
+
 end
 
 relation ceval_builtin_cos : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
@@ -1704,7 +1707,8 @@ end
 
 relation ceval_generate_function : (Env.Env, Absyn.Path) => () =
 
-  rule	ModUtil.path_string2 (path,"_") => pathstr &
+  rule	Debug.fprint("ceval", "- ceval_generate_function starting") &
+	ModUtil.path_string2 (path,"_") => pathstr &
 	Lookup.lookup_class(env, path, false) => (cls, env') &
 	Inst.implicit_function_instantiation(env', Types.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
@@ -2021,7 +2025,9 @@ end
 
 relation ceval_list : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	    => Values.Value list =
-	  
+
+  axiom	ceval_list (env, [], _, _) => []
+
   rule	ceval (env, exp,impl,st,NONE) => (v,_)
 	----------------------------
 	ceval_list (env, [exp],impl,st) => [v]

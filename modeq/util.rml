@@ -114,6 +114,8 @@ module Util :
 
   relation make_option: 'a => 'a option
 
+  relation option_to_list: 'a option => 'a list
+
   relation list_split : ('a list, int) => ('a list, 'a list)
 
   relation int_positive: int => bool
@@ -1218,4 +1220,15 @@ relation int_positive: int => bool =
   rule	int_ge(v,0) => res
 	--------------
 	int_positive(v) => res
+end
+
+(** relation: option_to_list
+ ** Returns an empty list for NONE and a list containing
+ ** the one element for SOME. To use with list_append
+ **)
+relation option_to_list: 'a option => 'a list =
+
+  axiom	option_to_list NONE => []
+  axiom	option_to_list SOME(e) => [e]
+
 end

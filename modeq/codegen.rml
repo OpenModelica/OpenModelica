@@ -381,7 +381,7 @@ relation generate_functions : DAE.DAElist => () =
 
   rule	Print.print_buf "# generate_functions failed\n"
 	--------------------------------------
-	generate_functions _ 
+	generate_functions _  => fail
 
 end
 

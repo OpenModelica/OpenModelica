@@ -43,33 +43,35 @@
 
 module SimCodegen:
 
+  with "dae.rml"
   with "daelow.rml"
   with "absyn.rml"
   with "exp.rml"
 
-relation generate_residual_code: (DAELow.DAELow, 		      
-				  int vector, (* ass1 *)
-				  int vector, (* ass2 *)
-				  DAELow.IncidenceMatrix,
-				  DAELow.IncidenceMatrixT,
-				  int list list, (* blocks*)
-				  Absyn.Path,  (* classname *)
-				  string) => ()
-
-relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => ()
-
-relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
-			      string,real,real,real)  => ()
-
-relation generate_makefile: (string (*filename*), 
-			     Absyn.Path (* classname *)
-			     ) => ()
-
-relation print_exp_cpp_str : Exp.Exp => string 
-
-relation cref_modelica_str : Exp.ComponentRef => string 
-
-
+  relation generate_residual_code: (DAELow.DAELow, 		      
+				    int vector, (* ass1 *)
+				    int vector, (* ass2 *)
+				    DAELow.IncidenceMatrix,
+				    DAELow.IncidenceMatrixT,
+				    int list list, (* blocks*)
+				    Absyn.Path,  (* classname *)
+				    string) => ()
+	  
+  relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => ()
+	  
+  relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
+				string,real,real,real)  => ()
+	  
+  relation generate_makefile: (string (*filename*), 
+			       Absyn.Path (* classname *)
+			       ) => ()
+	  
+  relation print_exp_cpp_str : Exp.Exp => string 
+	  
+  relation cref_modelica_str : Exp.ComponentRef => string 
+	  
+  relation generate_functions: (DAE.DAElist, DAELow.DAELow, Absyn.Path, string) => ()
+	  
 end
 
 with "util.rml"
@@ -77,6 +79,9 @@ with "rtopts.rml"
 with "debug.rml"
 with "system.rml"
 with "values.rml"
+with "codegen.rml"
+with "print.rml"
+with "modutil.rml"
 
 (** relation generate_makefile
  ** This relation generates a makefile for the simulation code.
@@ -181,6 +186,37 @@ relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => () =
   rule	
 	-------------------------------------------
 	generate_ode_code(dae,class,filename) => ()
+end
+
+(** relation generate_functions
+ **
+ ** Finds the called functions in daelow and generates code for them
+ ** from the given DAE. Hence, the functions must exist in the DAE.Element list.
+**)
+relation generate_functions: (DAE.DAElist, DAELow.DAELow, Absyn.Path, string) => () =
+
+  rule	get_called_functions(dlow) => funcpaths &	
+	Util.list_map(funcpaths, Absyn.path_string) => funcstrs &
+	Util.string_delimit_list (funcstrs, "\n") => str &
+	print str &
+	Util.list_map_1(funcpaths, DAE.get_named_function, elements) => funcelems &
+	Util.list_flatten(funcelems) => funcelems &	
+	Codegen.generate_functions(DAE.DAE(funcelems)) &
+	Print.write_buf(filename)
+	--------------------------------------------------
+	generate_functions (DAE.DAE(elements), dlow, path, filename)
+
+(*
+  rule	get_called_functions(dlow) => funclist &
+	Codegen.generate_functions(DAE.DAElist(funcelems))
+	----------------------------------------------
+	generate_functions (dae, dlow, path, filename)
+*)
+
+  rule	print "-generate_functions failed\n" 
+	-------------------------------------
+	generate_functions (_, _, _, _) => fail
+
 end
 
 
@@ -888,3 +924,74 @@ relation cref_modelica_str : Exp.ComponentRef => string =
 	 cref_modelica_str(Exp.CREF_QUAL(s,_,n)) => ss
 end
 
+
+(** relation: get_called_functions
+ **
+ ** Goes through the DAELow structure, finds all function calls and returns them
+ ** in a list. Removes duplicates.
+ **)
+
+relation get_called_functions : DAELow.DAELow => Absyn.Path list =
+
+  rule	DAELow.get_all_exps dae => explist &
+	Exp.get_function_calls_list explist => fcallexps &
+	Util.list_select(fcallexps, is_not_builtin_call) => fcallexps' &
+	Util.list_map(fcallexps', get_call_path) => calledfuncs &
+	remove_duplicate_paths calledfuncs => res
+	--------------------------------------------
+	get_called_functions dae => res
+	
+end
+
+
+(** relation: is_not_builtin_call
+ **
+ ** return true if the given Exp.CALL is a call but not to a builtin function.
+ ** checks the builtin flag in Exp.CALL
+ **)
+relation is_not_builtin_call : Exp.Exp => bool =
+
+  rule	bool_not(builtin) => res
+	------------------
+	is_not_builtin_call Exp.CALL(_,_,_,builtin) => res
+
+  axiom	is_not_builtin_call e => false
+
+end
+
+relation get_call_path : Exp.Exp => Absyn.Path =
+
+  axiom	get_call_path Exp.CALL(path,_,_,_) => path
+
+end
+
+
+relation remove_duplicate_paths : Absyn.Path list => Absyn.Path list =
+
+  axiom	remove_duplicate_paths [] => []
+
+
+  rule	remove_path_from_list (rest, first) => restwithoutfirst &
+	remove_duplicate_paths restwithoutfirst => recresult
+	----------------------------------------------------
+	remove_duplicate_paths first::rest => first::recresult
+
+
+end
+
+relation remove_path_from_list : (Absyn.Path list, Absyn.Path) => Absyn.Path list =
+
+  axiom	remove_path_from_list ([],_) => []
+
+  rule	ModUtil.path_equal (first, path) => true &
+	remove_path_from_list (rest, path) => res
+	-----------------------------------------
+	remove_path_from_list (first::rest, path) => res
+
+  rule	ModUtil.path_equal (first, path) => false &
+	remove_path_from_list (rest, path) => res
+	-----------------------------------------
+	remove_path_from_list (first::rest, path) => first::res
+
+
+end

@@ -192,6 +192,9 @@ module Exp:
   relation solve : (Exp, Exp, Exp) => Exp
   relation get_cref_from_exp: (Exp) => ComponentRef list	 
   relation typeof: (Exp) => Type 
+  relation get_function_calls_list : Exp list => Exp list
+  relation get_function_calls : Exp  => Exp list
+
 end
 
 
@@ -2962,4 +2965,105 @@ relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 	get_cref_from_exp(ASUB(e,_)) => res
 
   axiom	get_cref_from_exp(_) => []
+end
+
+
+(** relation: get_function_calls_list
+ ** calls get_function_calls for a list of exps
+ **)
+relation get_function_calls_list : Exp list => Exp list =
+
+  rule	Util.list_map(exps, get_function_calls) => explists &
+	Util.list_flatten (explists) => res
+	-----------------------------------
+	get_function_calls_list exps => res
+end
+
+
+
+(** relation: get_function_calls
+ ** Return all exps that are function calls.
+ ** Inner call exps are returned separately but not extracted from the exp they
+ ** are in, e.g. CALL(foo, [CALL(bar)]) will return
+ ** [CALL(foo, [CALL(bar)]), CALL(bar,[])]
+ **)
+relation get_function_calls : Exp => Exp list =
+
+  rule	get_function_calls_list args => argexps &
+	list_append([e], argexps) => exps
+	---------------------------------
+	get_function_calls(e as CALL(path,args,tuple,builtin)) => exps
+
+	(* Binary *)
+  rule	get_function_calls e1 => a &
+	get_function_calls e2 => b &
+	list_append(a,b) => res
+	--------------------------------------
+	get_function_calls(BINARY(e1,_,e2)) => res
+
+	(* Unary *)
+  rule	get_function_calls(e) => res
+	---------------------
+	get_function_calls(UNARY(_,e)) => res
+
+	(* LBinary *)
+  rule	get_function_calls(e1) => a &
+	get_function_calls(e2) => b &
+	list_append(a,b) => res
+	---------------------
+	get_function_calls(LBINARY(e1,_,e2)) => res
+
+	(* LUnary *)
+  rule	get_function_calls(e) => res
+	---------------------
+	get_function_calls(LUNARY(_,e)) => res
+
+	(* Relation *)
+  rule	get_function_calls(e1) => a &
+	get_function_calls(e2) => b &
+	list_append(a,b) => res
+	---------------------
+	get_function_calls(RELATION(e1,_,e2)) => res
+
+  rule	get_function_calls_list [e1,e2,e3] => res
+	--------------------------------
+	get_function_calls(IFEXP(e1,e2,e3)) => res
+
+	(* Array *)
+  rule	get_function_calls_list elts => res
+	------------------------------
+	get_function_calls(ARRAY(_,_,elts)) => res
+
+	(* Matrix *)
+  rule	Util.list_flatten(explst) => flatexplst &
+	Util.list_map(flatexplst,Util.tuple2_1) => elst &
+	get_function_calls_list elst => res	
+	----------------------------------------
+	get_function_calls(MATRIX(_,_,explst)) => res
+
+	(* Range *)
+  rule	Util.option_to_list optexp => e3 &
+	list_append([e1,e2], e3) => elist &
+	get_function_calls_list (elist) => res
+	--------------------------------------
+	get_function_calls(RANGE(_,e1,optexp,e2)) => res
+
+	(* Tuple *)
+  rule	get_function_calls_list exps => res
+	-----------------------------------
+	get_function_calls(TUPLE(exps)) => res
+
+  rule	get_function_calls(e) => res
+	------------------------------
+	get_function_calls(CAST(_,e)) => res
+	
+	(* Size *)
+  rule	Util.option_to_list e2 => a &
+	list_append(a, [e1]) => elist &
+	get_function_calls_list elist => res
+	--------------------------------
+	get_function_calls(SIZE(e1,e2)) => res
+
+ axiom	get_function_calls(_) => []
+
 end
