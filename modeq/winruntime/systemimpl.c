@@ -143,6 +143,7 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   printf("compile using: %s\n",command);
+  _putenv("GCC_EXEC_PREFIX="); 
   if (system(command) != 0) {
     RML_TAILCALLK(rmlFC);
   }

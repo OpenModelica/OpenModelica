@@ -69,7 +69,8 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
 	Debug.fprint ("interactivedump" , str ) &
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
-	handle_command (str,isymb)  => (true,replystr,newsymb) &
+    Print.clear_buf & 
+   	handle_command (str,isymb)  => (true,replystr,newsymb) &
 	Socket.sendreply(shandle,replystr) &
 	server_loop (shandle,newsymb) => ressymb
 	-----------------------------
@@ -459,6 +460,7 @@ end
 relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
 
   rule	Corba.wait_for_command() => str &
+    Print.clear_buf & 
 	handle_command (str,isymb)  => (true,replystr,newsymb) &
 	Corba.sendreply(replystr) &
 	server_loop_corba (newsymb) => ressymb

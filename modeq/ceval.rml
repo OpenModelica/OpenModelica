@@ -844,11 +844,13 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	-------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
+
   rule	Static.component_ref_to_path(cr) => path &
 	SCode.elaborate(p) => p' &
 	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
 	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
 	DAE.dump_str (dae) => str &
+
 
 (* get rid of f in fclass so that old modsimpack works. 
    Get rid of this when modsimpack understands fclass. *)
@@ -879,7 +881,9 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
-  rule	Static.component_ref_to_path(cr) => path & 
+  rule	
+    System.read_env("MOSHHOME") => moshhome &
+    Static.component_ref_to_path(cr) => path & 
 	Absyn.path_string path => pathstr &
 	Print.print_buf "Failed to instantiate " &
 	Print.print_buf pathstr & Print.print_buf " .\n" &
@@ -887,6 +891,12 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 	
+  axiom
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING("The environment variable MOSHHOME was not set"),st)
+  
+  
+
   rule	(* Build and simulate model *)
 	Static.component_ref_to_path(cr) => path &
 	SCode.elaborate(p) => p' &
@@ -933,7 +943,15 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,newst)
 	  
-  rule	let simValue = Values.RECORD([Values.STRING("Simulation Failed.")],["resultFile"])
+  rule	(* simulation fail for som other reason than MOSHOME not being set.*)
+    System.read_env("MOSHHOME") => moshhome &
+    let simValue = Values.RECORD([Values.STRING("Simulation Failed.")],["resultFile"])
+	------------------------------------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (simValue,st)
+
+  rule	
+    let simValue = Values.RECORD([Values.STRING("Simulation Failed. Environment variable MOSHHOME not set.")],["resultFile"])
 	------------------------------------------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,st)
@@ -962,7 +980,13 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => fail
 
-  rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
+
+
+  rule	
+    System.read_env("PTII") => ptii &
+    string_length(ptii) => ptii_length &
+    int_gt(ptii_length,0) => true &
+    Util.list_map(vars,Exp.print_exp_str) => vars' &
 	Util.list_union_elt("time",vars') => vars'' &
 	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
 	  => (Values.RECORD([Values.STRING(filename)],_),_) &
@@ -980,6 +1004,9 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
+	axiom ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING("The environment variable PTII must point to the ptplot installation in order to use the plot command"),st)
+	  
   rule	System.time => t1 &
 	ceval(env,exp,true,SOME(st),NONE) => (value,SOME(st')) &   
 	System.time => t2 &
