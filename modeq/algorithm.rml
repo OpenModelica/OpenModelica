@@ -67,40 +67,51 @@ end
  ** being assigned is not constant, and that the types match.
  **)
 
+(** LS: Added call to get_prop_type and is_prop_const instead of
+having PROP in the rules. Otherwise rules must be repeated because of
+combinations with PROP_TUPLE
+**)
+
 relation make_assignment : (Exp.Exp, Static.Properties,
 			    Exp.Exp, Static.Properties,
 			    SCode.Accessibility) => Statement =
 
-  rule	print "# Trying to assign to constant component\n" &
+  rule	Static.is_prop_const (lprop) => true &
+	print "# Trying to assign to constant component\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n"
 	-------------------------------------------
-	make_assignment (lhs,Static.PROP(lt,true),
-			 rhs,Static.PROP(rt,_),_) => fail
+	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
-  rule	print "# Can't assign to " & Exp.print_exp e & print "\n"
+  rule	print "# Can't assign to (readonly) " & Exp.print_exp e & print "\n"
 	---------------------------------------------------------
 	make_assignment(e,_,_,_, SCode.RO) => fail
 
-  rule	Static.match_prop(rhs, rhprop, lhprop) => rhs'
-	--------------------------------------
-	make_assignment(Exp.CREF(c), lhprop as Static.PROP(_,false),
+(** LS: Replaced "as Static.PROP(_,false)" from lhprop", by the first
+predicate
+ **)
+  rule	Static.is_prop_const (lhprop) => false &
+	Static.match_prop(rhs, rhprop, lhprop) => rhs'
+	----------------------------------------------
+	make_assignment(Exp.CREF(c), lhprop,
 			rhs, rhprop, _) => ASSIGN(c,rhs')
 
-  rule	Types.equivtypes (lt,rt) => false &
+  rule	Static.get_prop_type lprop => lt &
+	Static.get_prop_type rprop => rt &
+	Types.equivtypes (lt,rt) => false &
 	print "# Type mismatch in assignment\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n" &
 	print "    " & Types.print_type lt &
  	print " := " & Types.print_type rt & print "\n"
 	-------------------------------------------
-	make_assignment (lhs,Static.PROP(lt,_),rhs,Static.PROP(rt,_),_) => fail
+	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
   rule	print "- Algorithm.make_assignment failed\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n"
 	---------------------------------------------
-	make_assignment (lhs,_,rhs,_,_) => fail
+	make_assignment (lhs, lprop, rhs, rprop, _) => fail
 
 end
 
