@@ -196,9 +196,8 @@ relation eval_subscript : (Env.Env, Exp.Exp, Static.Properties)
 	print "- Ignoring all but the first index in modification\n"
 	--------------------------------------------
 	eval_subscript (env,e,
-			Static.PROP(Types.T_ARRAY(Types.DIM(SOME(sz),
-							       Types.NODIM),
-						     Types.T_INTEGER),true))
+			Static.PROP(Types.T_ARRAY(Types.DIM(SOME(sz)),
+						  Types.T_INTEGER),true))
 	  => xs
 
   rule	not t = Types.T_INTEGER &

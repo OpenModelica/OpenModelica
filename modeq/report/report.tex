@@ -479,13 +479,14 @@ semantics were.  This has been done by taking part of the Modelica
 design effort, including participation in design meetings and
 electronic discussions.
 
-This was not directly part of the work on the thesis, but was needed
-to be able to write the formal semantics.  However, this lead to a
-chicken-and-egg problem, because until I had tried to write the
-specification I didn't know what the problems with the Modelica
-semantics were.  These problems could be discussed with the design
-group, leading to new ideas about how the semantics should have been
-written from the start.
+These discussions lay outside the scope of the thesis, and was not
+directly part of the work.  However, it was needed to be able to write
+the formal semantics.  Unfortunately, this lead to a chicken-and-egg
+problem, because until I had tried to write the specification I didn't
+know what the problems with the Modelica semantics were.  These
+problems could then be discussed with the design group, leading to new
+ideas about how the semantics should have been written in the first
+place.
 
 Another goal of the formal specification was to build a usable
 Modelica translator, which could be used for real-world applications.
@@ -500,10 +501,23 @@ elements of the two matrices.
 \section{Limitations of the semantic specification}
 \label{sec:limitations}
 
-The semantic specification is far from complete.  This is mainly
-caused by Modelica still being very imcomplete.  And during the work
-on this specification the Modelica semantics has been a moving target
-which has caused redesigns at several occasionas.
+For the reasons outlined above, the semantic specification is far from
+complete.  Even the language Modelica itself is still very incomplete.
+
+Most of the work has been put into describing the most important
+aspects of instantiation and expression analysis, while other things,
+like functions and other algorithmic aspects needs more attention.
+Also more work is needed to add the polish to fix all the details with
+preventing things like instantiation of partial classes.  But this is
+something that should not be done before the overall structure is
+fixed.
+
+Below is a list of things that is not covered by the semantic
+specification.
+
+\begin{enumerate}
+\item 
+\end{enumerate}
 
 \unfinished
 
