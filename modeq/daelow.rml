@@ -95,6 +95,8 @@ module DAELow:
   relation calculate_sizes: DAELow => (int, (* nx *)
 				       int, (* ny *)
 				       int) (* np *)
+
+  relation states: (DAE.DAElist) => Exp.ComponentRef list 
 end (* End Module *)
 
 (* Implementation *)
@@ -1998,7 +2000,7 @@ relation translate_dae: DAELow => DAELow =
 	Util.string_delimit_list(sl,", ") => sstr &
 	Util.list_map(t,Exp.print_exp_str) => tl &
 	Util.string_delimit_list(tl,", ") => tstr &
-	print "replace " & print sstr & print "with " & print tstr & print "\n" &
+	print "replace " & print sstr & print " with " & print tstr & print "\n" &
 	replace_variables(eqns,s,t) => eqns' &
 	transform_variables(vars',s,t) => vars'' &
 	transform_variables(kv',s,t) => kv'' 

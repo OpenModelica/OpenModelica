@@ -49,6 +49,7 @@ module Exp:
   with "absyn.rml"
   with "graphviz.rml"
 
+
   (** - Identifiers *)
   type Ident = string
   (** Define `Ident' as an alias for `string' and use it for all *)
@@ -180,6 +181,7 @@ with "util.rml"
 with "print.rml"
 with "modutil.rml"
 with "derive.rml"
+with "dump.rml"
 
 val rconstone = RCONST(1.0)
 
