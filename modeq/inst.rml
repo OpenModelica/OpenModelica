@@ -1006,7 +1006,7 @@ end
 relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.Env =
 
 	
-  rule		Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
+  rule	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
 	    t,m)),_) &
 
@@ -1050,7 +1050,12 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
   rule	Lookup.lookup_ident(env,id) => (ty,NONE,_) 
 	----------------------------------
 	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env) => env
-
+	(* Qualified names should not be considered, because:
+	 FIXME: explanation...
+	 *)
+  rule	print "nisse\n"
+	----------------
+	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env) => env
   rule	print "update_variable_in_env failed\n ident ="  &
 	Dump.print_component_ref cref &
 	print "\n" 
