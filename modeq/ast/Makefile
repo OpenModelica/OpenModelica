@@ -20,7 +20,8 @@ ERR = err
 HDR_FILE =
 #PCCTS = /home/pelab/pkg/pccts
 #PCCTS = /home/x97davka/src/pccts
-PCCTS = /net/ent4000/files/dsk1/ida/x98petro/TMP/pcctc133m18/pccts
+#PCCTS = /net/ent4000/files/dsk1/ida/x98petro/TMP/pcctc133m18/pccts
+PCCTS = /home/pelab/pkg/pccts-1.33mr19
 
 ANTLR_H = $(PCCTS)/h
 BIN = $(PCCTS)/bin
@@ -45,8 +46,8 @@ ANTLR_SPAWN = modgram.c \
               $(DLG_FILE) $(TOKENS)
 DLG_SPAWN = scanner.c mode.h
 CCC=g++
-#CC=gcc
-CC=cc
+CC=gcc
+#CC=cc
 
 libast.a : $(OBJ)
 	ar -rc $@ $(OBJ)

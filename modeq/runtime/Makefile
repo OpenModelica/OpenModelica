@@ -9,7 +9,7 @@
 RMLINCLUDE = /home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/include/plain
 
 SHELL	= /bin/sh
-CC	= cc
+CC	= gcc
 CFLAGS	= -I$(RMLINCLUDE)
 
 SRC	= rtopts.c
