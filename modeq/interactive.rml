@@ -469,6 +469,27 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
 
+  rule	get_component_modifier_value(class,ident,subident,p) => resstr 
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getComponentModifierValue",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident),Absyn.CREF(subident)],[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	set_component_modifier(class,ident,subident,mod,p) => (p',resstr)
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("setComponentModifier",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),
+				    Absyn.CREF(ident),
+				    Absyn.CREF(subident),
+				    Absyn.CODE(Absyn.C_MODIFICATION(mod))
+				    ],[])))],_),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
+
   rule	get_parameter_value(class,ident,p) => resstr 
 	--------------------------------------------
 	evaluate_graphical_api(
@@ -1005,6 +1026,243 @@ relation get_parameter_names: (Absyn.ComponentRef, (* class *)
 axiom	get_parameter_names(_,_) => "Error"
 end
 
+(** relation: set_component_modifier
+ ** Sets a submodifier of a component.
+ **)
+relation set_component_modifier: (Absyn.ComponentRef, (* class *)
+				  Absyn.ComponentRef, (* variable name *)
+				  Absyn.ComponentRef, (* submodifier name*)
+				  Absyn.Modification, 
+				  Absyn.Program)
+	  => (Absyn.Program, string) =
+	  
+  rule	Absyn.cref_to_path(class) => p_class &
+	Absyn.cref_to_path(varname) => Absyn.IDENT(varname) &
+ 	Absyn.cref_to_path(subident) => Absyn.IDENT(subidentname) &
+ 	build_within(p_class) => within &
+ 	get_pathed_class_in_program(p_class,p) => cdef &
+ 	set_component_submodifier_in_class(cdef,varname,subidentname,mod) => cdef' &
+ 	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
+	-----------------------------------
+	set_component_modifier(class,varname,subident,mod,p) => (newp,"Ok") 
+	
+  axiom	set_component_modifier(_,_,_,_,p) => (p, "Error")
+end
+
+
+(** relation: set_component_submodifier_in_class
+ ** Sets a sub modifier on a component in a class.
+ **)
+relation set_component_submodifier_in_class: (Absyn.Class, 
+					      Absyn.Ident, (* component name*)
+					      Absyn.Ident, (* subvariable name *)
+					      Absyn.Modification)
+	  => Absyn.Class =
+	  
+  rule	set_component_submodifier_in_classparts(parts,varname,submodident,mod) 
+	  => parts'
+	  ---------------------------------------------------------
+	set_component_submodifier_in_class(Absyn.CLASS(id,p,f,e,r,
+						       Absyn.PARTS(parts,cmt)),
+					   varname, submodident,mod)
+	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt))
+end
+
+(** relation: set_component_submodifier_in_classparts
+ ** Helper relation to set_component_submodifier_in_class
+ **)
+relation set_component_submodifier_in_classparts: (Absyn.ClassPart list, 
+						   Absyn.Ident, (* component name*)
+						   Absyn.Ident, (* subvariable name*)
+						   Absyn.Modification)
+	=> Absyn.ClassPart list =
+  axiom	set_component_submodifier_in_classparts([],_,_,_) => []
+
+  rule	set_component_submodifier_in_classparts(rest,varname,submodident,mod) 
+	  => res &
+	set_component_submodifier_in_elementitems(elts,varname,submodident,mod) 
+	  => elts'
+	-------------------------------------
+	set_component_submodifier_in_classparts(Absyn.PUBLIC(elts)::rest,
+		 				varname,submodident,mod)
+ 	  => (Absyn.PUBLIC(elts')::res)
+	  
+  rule	set_component_submodifier_in_classparts(rest,varname,submodident,mod) 
+	  => res &
+ 	set_component_submodifier_in_elementitems(elts,varname,submodident,mod) 
+ 	  => elts'
+ 	-------------------------------------
+ 	set_component_submodifier_in_classparts(Absyn.PROTECTED(elts)::rest,varname,submodident,mod)
+ 	  => (Absyn.PROTECTED(elts')::res)
+
+   rule	set_component_submodifier_in_classparts(rest,varname,submodident,mod) => res 
+	-------------------------------------
+ 	set_component_submodifier_in_classparts(elt::rest,varname,submodident,mod)
+	  => (elt::res)
+end
+
+(** relation: set_component_submodifier_in_elementitems
+ ** Helper relation to set_component_submodifier_in_classparts
+ **)
+relation set_component_submodifier_in_elementitems:(Absyn.ElementItem list,
+						    Absyn.Ident, (* component name*)
+						    Absyn.Ident, (* subvariable name*)
+						    Absyn.Modification)
+	=> Absyn.ElementItem list =
+
+  axiom	set_component_submodifier_in_elementitems([],_,_,_) => [] 
+	
+  rule	set_component_submodifier_in_elementitems(rest,varname,submodident,mod) 
+	  => res &
+	set_component_submodifier_in_element(elt,varname,submodident,mod) => elt'
+	-------------------------------------------------
+	set_component_submodifier_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,varname,submodident,mod)
+	  => Absyn.ELEMENTITEM(elt')::res
+	  
+  rule	set_component_submodifier_in_elementitems(rest,varname,submodident,mod) 
+	  => res 
+	-------------------------------------------------
+	set_component_submodifier_in_elementitems(elt::rest,varname,submodident,mod)
+	  => elt::res
+end
+
+(** relation: set_component_submodifier_in_element
+ ** Helper relation to set_component_submodifier_in_elementitems
+ **)
+relation set_component_submodifier_in_element: (Absyn.Element, 
+						Absyn.Ident, (* component name*)
+						Absyn.Ident, (* submodifier name*)
+						Absyn.Modification)
+	=> Absyn.Element =
+
+  rule	set_component_submodifier_in_compitems(compitems,varname,submodident,mod) 
+	  => compitems'
+	----------------------------------------------------
+	set_component_submodifier_in_element(Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems),s,l,constr),varname,submodident,mod) 
+	  => Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems'),s,l,constr)
+
+  axiom	set_component_submodifier_in_element(elt,_,_,_) => elt
+end
+
+(** relation: set_component_submodifier_in_compitems
+ ** Helper relation to set_component_submodifier_in_element
+ **)
+relation set_component_submodifier_in_compitems:(Absyn.ComponentItem list,
+						 Absyn.Ident, (* component name*)
+						 Absyn.Ident, (* submodifier name*)
+						 Absyn.Modification)
+	=> (Absyn.ComponentItem list) =
+	  
+  axiom	set_component_submodifier_in_compitems([],_,_,_) => []
+
+  rule	varname = id &
+	set_component_submodifier_in_elementargs(args,submodident,mod) => args'
+	---------------------------------------
+	set_component_submodifier_in_compitems(
+			  Absyn.COMPONENTITEM(
+                           Absyn.COMPONENT(id,dim,
+					   SOME(Absyn.CLASSMOD(args,
+							       expopt))),cmt)::rest,
+					       varname,submodident,mod)
+	  => (Absyn.COMPONENTITEM(
+                Absyn.COMPONENT(id,dim,
+				SOME(Absyn.CLASSMOD(args',
+						    expopt))),cmt)::rest)
+	
+  rule	varname = id 
+	----------------------------
+	set_component_submodifier_in_compitems(
+			  Absyn.COMPONENTITEM(
+                           Absyn.COMPONENT(id,dim,NONE),cmt)::rest,
+					       varname,submodident,mod)
+	  => (Absyn.COMPONENTITEM(
+                Absyn.COMPONENT(id,dim,
+				SOME(Absyn.CLASSMOD([Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(submodident,[]),SOME(mod),NONE)],NONE))),cmt)::rest)
+
+  rule	set_component_submodifier_in_compitems(rest,varname,submodident,mod) => res
+	---------------------------------
+	set_component_submodifier_in_compitems(comp::rest,varname,submodident,mod)
+	  => comp::res
+end
+
+(** relation: set_component_submodifier_in_elementargs
+ ** Helper relation to set_component_submodifier_in_compitems
+ **)
+relation set_component_submodifier_in_elementargs: (Absyn.ElementArg list,
+						     Absyn.Ident, (* subcomponent name*)
+						    Absyn.Modification)
+	  => Absyn.ElementArg list =
+	  
+  axiom	set_component_submodifier_in_elementargs([],_,_) => []
+
+  rule	name = submodident
+	 ----------------------
+ 	set_component_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),_,cmt)::rest,submodident,mod) 
+	  => Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt)::rest
+
+  rule	name = submodident
+	----------------------
+	set_component_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_QUAL(name,idx,cr),_,cmt)::rest,submodident,mod) 
+	  => Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt)::rest
+
+  rule	set_component_submodifier_in_elementargs(rest,submodident,mod) => res
+ 	----------------------
+ 	set_component_submodifier_in_elementargs(m::rest,submodident,mod) 
+	  => m::res
+end
+				 
+(** relation: get_component_modifier_value(class,ident,subident,p) => resstr 
+ ** Returns the modifier value of component ident for modifier subident.
+ ** For instance, 
+ ** model A
+ **  B b1(a1(p1=0,p2=0));
+ ** end A;
+ ** getComponentModifierValues(A,b1,a1) => Code((p1=0,p2=0))
+**)
+relation get_component_modifier_value: (Absyn.ComponentRef, (* class *)
+					Absyn.ComponentRef, (* variable name *)
+					Absyn.ComponentRef, (* submodifier name*)
+					Absyn.Program)
+	=> string =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	Absyn.cref_to_path(ident) => Absyn.IDENT(name) &
+	Absyn.cref_to_path(subident) => Absyn.IDENT(subidentname) &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	get_components_in_class(cdef) => comps &
+	Util.list_map(comps,get_componentitems_in_element) => compelts &
+	Util.list_flatten(compelts) => compelts' & 
+	Util.list_select_1(compelts',name,componentitem_named) 
+	  => [Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_)] &
+	get_modification_value(mod,subidentname) => mod  &
+	Dump.unparse_modification_str(mod) => res 
+	  ---------------------------
+	get_component_modifier_value(class,ident,subident,p) => res
+
+  axiom	get_component_modifier_value(_,_,_,_) => "Error"
+
+end
+
+(** relation: get_modification_value
+ ** Helper relation to get_component_modifier_value
+ ** Investigates modifications to find submodifier.
+**)
+relation get_modification_value:(Absyn.ElementArg list, Absyn.Ident) 
+	  => Absyn.Modification =
+  rule	name=name2
+	---------------------
+	get_modification_value (Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name2,_),SOME(mod),cmt)::rest,name) => mod
+
+  rule	name=name2
+	---------------------
+	get_modification_value (Absyn.MODIFICATION(f,each,Absyn.CREF_QUAL(name2,_,cr),SOME(mod),cmt)::rest,name) 
+	  => Absyn.CLASSMOD([Absyn.MODIFICATION(f,each,cr,SOME(mod),cmt)],NONE)
+
+
+  rule	get_modification_value(rest,name) => mod
+	---------------------
+	get_modification_value (_::rest,name) => mod
+end
 
 (** relation: get_component_modifier_names
  ** Return the modifiernames of a component, i.e. Foo f( ) 
