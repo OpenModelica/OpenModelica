@@ -112,7 +112,7 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
   rule	lookup_class(env,Absyn.IDENT(pack)) => (c as SCode.CLASS(id,_,_,restr,_),env') &
 	Env.open_scope(env') => env2 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) => (_,env'',_,_,_) &
+	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
 	lookup_class_in_class(env'',c,path) => (c',env''') 
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path)) => (c', env''')
@@ -302,7 +302,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	Debug.fprintl ("lotr", ["lookup_var_in_packages. instantiating class", n, "\n"]) &
 	Env.open_scope(env) => env' &
 	ClassInf.start(r,n) => ci_state &
-	Inst.inst_class_in (env',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) => (_,env'',_,_,types) &
+	Inst.inst_class_in (env',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,types) &
 	lookup_var(env'',cref) => (attr,ty,bind) &
 	Debug.fprint ("lotr", "found var " ) &
 	Debug.fcall("lotr", Exp.print_component_ref, cref)  &
