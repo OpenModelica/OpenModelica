@@ -31,7 +31,7 @@ if test -x $RMLHOME/bin/rmlc ; then
    rmlc_bin=$RMLHOME/bin/rmlc
   AC_MSG_RESULT([yes])
 else
-  rmlc_bin = `find $RMLHOME -name rmlc| tail -1`
+  rmlc_bin=`find $RMLHOME -name rmlc| tail -1`
   if test -z "$rmlc_bin" ; then
     AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin or anywhere in \$RMLHOME])
     AC_MSG_RESULT([no])
