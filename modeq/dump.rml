@@ -258,7 +258,8 @@ and dump_elementspec: Absyn.ElementSpec => () =
 		dump_elementspec(Absyn.CLASSDEF(repl,cl))
 
 
-	rule	print "EXTENDS(" & print s & print ",...)"
+	rule	print "EXTENDS(" & print s & print "," &
+		dump_list(l,dump_element_arg,",") & print ")"
 		------------------------------------------
 		dump_elementspec(Absyn.EXTENDS(s,l))
 
