@@ -116,16 +116,27 @@ RML_BEGIN_LABEL(System__strtok)
 
   void * res = (void*)mk_nil();
   s=strtok(str,delimit);
-  if (s == NULL) { rmlA0=res; RML_TAILCALLK(rmlFC); }
+  if (s == NULL) 
+  {
+	  /* adrpo added 2004-10-27 */
+	  free(str);	  
+	  rmlA0=res; RML_TAILCALLK(rmlFC); 
+  }
   res = (void*)mk_cons(mk_scon(s),res);
-  while (s=strtok(NULL,delimit)) {
+  while (s=strtok(NULL,delimit)) 
+  {
     res = (void*)mk_cons(mk_scon(s),res);
   }
   rmlA0=res;
 
+  /* adrpo added 2004-10-27 */
+  free(str);	  
+
+  /* adrpo changed 2004-10-29 
   rml_prim_once(RML__list_5freverse);
-  
   RML_TAILCALLK(rmlSC);
+  */
+  RML_TAILCALLQ(RML__list_5freverse,1);
 }
 RML_END_LABEL
 
@@ -146,6 +157,18 @@ RML_BEGIN_LABEL(System__toupper)
 }
 RML_END_LABEL
 
+
+RML_BEGIN_LABEL(System__strcmp)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  char *str2 = RML_STRINGDATA(rmlA1);
+  int res= strcmp(str,str2);
+
+  rmlA0 = (void*) mk_icon(res);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__compile_5fc_5ffile)
 {
@@ -291,7 +314,8 @@ RML_BEGIN_LABEL(System__read_5ffile)
   struct stat statstr;
   res = stat(filename, &statstr);
 
-  if(res!=0){
+  if(res!=0)
+  {
     rmlA0 = (void*) mk_scon("No such file");
     RML_TAILCALLK(rmlSC);
   }
@@ -299,13 +323,20 @@ RML_BEGIN_LABEL(System__read_5ffile)
   file = fopen(filename,"rb");
   buf = malloc(statstr.st_size+1);
  
-  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size){
+  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
+  {
+	/* adrpo added 2004-10-26 */
+	free(buf);
     rmlA0 = (void*) mk_scon("Failed while reading file");
     RML_TAILCALLK(rmlSC);
   }
   buf[statstr.st_size] = '\0';
   fclose(file);
   rmlA0 = (void*) mk_scon(buf);
+
+  /* adrpo added 2004-10-26 */
+  free(buf);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
