@@ -73,6 +73,7 @@ module Exp:
 	       | ASUB of Exp * int
                | SIZE of Exp * Exp option
 	       | CODE of Absyn.Code * Type
+	       | REDUCTION of Absyn.Path * Exp (*expr*) * Ident * Exp (*range*)
 	       | END
   (** The `Exp' datatype closely corresponds to the `Absyn.Exp'
    ** datatype, but is used for statically analyzed expressions.  It
@@ -785,7 +786,12 @@ relation print_exp2 : (Exp,int) => () =
 	Print.print_buf str
 	-------------
 	print_exp2 (e as SIZE(cr,NONE),_)
-	
+
+  rule	print_exp_str e => str &
+	Print.print_buf str
+	-----------------------------
+	print_exp2 (e as REDUCTION(fcn,exp,i,iterexp),_)
+
   rule	Print.print_buf "#UNKNOWN EXPRESSION# ----eee "
         ----------------------------------
 	print_exp2 (_,_)
@@ -1341,6 +1347,16 @@ relation print_exp2_str : (Exp,int) => string =
 	Util.string_append_list(["size(",crstr,")"]) => str
 	------------------------
 	print_exp2_str (SIZE(cr,NONE),_) => str
+
+
+  rule	Absyn.path_string fcn => fs &
+	print_exp_str exp => expstr &
+	print_exp_str iterexp => iterstr &
+	Util.string_append_list(["<reduction>",
+				 fs,"(",expstr," for ",
+				 id," in ",iterstr,")"]) => str
+	-------------------------------------------------------
+	print_exp2_str (REDUCTION(fcn,exp,id,iterexp),_) => str
 
   axiom	print_exp2_str (_,_) => "#UNKNOWN EXPRESSION# ----eee "
 

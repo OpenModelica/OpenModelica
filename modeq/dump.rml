@@ -895,7 +895,7 @@ relation print_componentitem: Absyn.ComponentItem => () =
 
   rule	Print.print_buf "COMPONENTITEM(" &
 	print_component c &
-	Print.print_buf ",..)"
+	Print.print_buf ",<comment>)"
 	------------------------------------------
 	print_componentitem(Absyn.COMPONENTITEM(c,optcmt))
 end
@@ -1238,7 +1238,7 @@ relation print_algorithmitem: Absyn.AlgorithmItem => () =
 	-------------------
 	print_algorithmitem (Absyn.ALGORITHMITEM(alg,_))
 
-  rule	Print.print_buf "ALGORITHMITEMANN(..)\n"
+  rule	Print.print_buf "ALGORITHMITEMANN(<annotation>)\n"
 	----------------------------------------
 	print_algorithmitem(Absyn.ALGORITHMITEMANN(ann))
 end
@@ -1639,7 +1639,7 @@ relation print_exp : Absyn.Exp => () =
 	---------------------------------------------
 	print_exp(Absyn.CALL(fcn, args))
 
-  rule	Print.print_buf "[" &
+  rule	Print.print_buf "ARRAY[" &
 	print_list_debug("print_exp",es, print_exp, ",") &
 	Print.print_buf "]"
 	---------
@@ -1653,17 +1653,17 @@ relation print_exp : Absyn.Exp => () =
 	---------
 	print_exp Absyn.TUPLE(es)
 	
-  rule	Print.print_buf "[" &
+  rule	Print.print_buf "MATRIX[" &
 	print_list_debug("print_exp",es, print_row, ";") &
 	Print.print_buf "]"
 	---------
 	print_exp Absyn.MATRIX(es)
 
-  rule	Print.print_buf "(" & print_exp start & Print.print_buf ":" & print_exp stop & Print.print_buf ")"
+  rule	Print.print_buf "RANGE(" & print_exp start & Print.print_buf ":" & print_exp stop & Print.print_buf ")"
 	-------------------------------------------------------------
 	print_exp Absyn.RANGE(start,NONE,stop)
 
-  rule	Print.print_buf "(" & print_exp start & Print.print_buf ":" & print_exp step &
+  rule	Print.print_buf "RANGE(" & print_exp start & Print.print_buf ":" & print_exp step &
  	Print.print_buf ":" & print_exp stop & Print.print_buf ")"
 	-------------------------------------------------------------
 	print_exp Absyn.RANGE(start,SOME(step),stop)

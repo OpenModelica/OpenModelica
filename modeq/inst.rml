@@ -104,7 +104,7 @@ module Inst:
 	  => ( Env.Env, DAE.Element list)
   relation package_prefix : (Env.Env, Absyn.Path) => Absyn.Path
   relation add_nomod: SCode.Element list => (SCode.Element*Types.Mod) list
-	  
+
 end
 
 
@@ -1478,6 +1478,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	check_prot(prot, mm', vn) &
 (*	Debug.fprintln ("insttr", "Protection checked") &*)
 
+	Debug.fcall("myeqmod",Mod.print_mod, mod') & Debug.fprintln ("myeqmod", "\n") &
 	Mod.mod_equation mod' => eq &
 
 (*	Debug.fprintln ("insttr", "mod equation done, from mod:") &
@@ -3514,7 +3515,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
 					   (Types.T_INTEGER(_),_)),_),
 			     true),_) &
-	(* FIXEM: Check bounds *)
+	(* FIXME: Check bounds *)
 	Ceval.ceval (env,e',false,NONE,NONE) => (v,_) &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el)
@@ -3535,7 +3536,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
 					   (Types.T_INTEGER(_),_)),_),
 			     true),_) &
-	(* FIXEM: Check bounds *)
+	(* FIXME: Check bounds *)
 	Ceval.ceval (env,e',false,NONE,NONE) => (v,_) &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_e_initialequation, el)
@@ -3557,6 +3558,8 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **
 	 **)
 
+	(** FIXME: Why lookup after add_for_loop_scope ? **)
+
   rule	(*Debug.fprintln ("insttr", "inst_equation_common_eqfor_1") &*)
 	Static.elab_exp (env,e,false,NONE)
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
@@ -3571,7 +3574,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
 (*	Debug.fprintln ("insti", "loop variable looked up") &*)
 	
-	(* FIXEM: Check bounds *)
+	(* FIXME: Check bounds *)
 	Ceval.ceval (env,e',false,NONE,NONE) => (v,_) &
 (*	Debug.fprintln ("insti", "for expression evaluated") &*)
 	unroll(env',mod,pre,csets,ci_state,i,v,el,initial) => (dae, csets') &
@@ -3581,6 +3584,8 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => (dae, env,csets', ci_state')
+
+	  (** FIXME: Old code? no add_for_loop_scope **)
 
   rule	(*Debug.fprintln ("insttr", "inst_equation_common_eqfor_2") &*)
 	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
@@ -3597,6 +3602,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => fail
 
+	  (** FIXME: Old code? loop variable need not be in scope **)
   rule	not Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
 	      (Types.T_INTEGER(_),_), Types.UNBOUND) &

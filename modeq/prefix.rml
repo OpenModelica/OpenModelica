@@ -210,7 +210,7 @@ end
  ** expression.
  **)
 
-relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
+relation prefix_exp : (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
   axiom	prefix_exp(_,e as Exp.ICONST(_),_) => e
   axiom	prefix_exp(_,e as Exp.RCONST(_),_) => e
@@ -307,6 +307,11 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
   rule	prefix_exp(env,e,p) => e'
 	-----------------------
 	prefix_exp(env,Exp.CAST(Exp.REAL,e), p) => Exp.CAST(Exp.REAL,e')
+
+  rule	prefix_exp(env,exp,p) => exp' &
+	prefix_exp(env,iterexp,p) => iterexp'
+	-------------------------------------
+	prefix_exp(env,Exp.REDUCTION(fcn,exp,id,iterexp), p) => Exp.REDUCTION(fcn,exp',id,iterexp')
 
   rule	Print.print_buf "- prefix_exp failed\n" &
 	Print.print_buf "  expression: " & Exp.print_exp e & Print.print_buf "\n"
