@@ -32,7 +32,7 @@ SUBDIRS	= ast
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-all : subdirs $(PROG)
+all : $(SRCO) subdirs $(PROG)
 
 $(PROG): $(SRCO) ast/libast.a
 	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) $(AST)
