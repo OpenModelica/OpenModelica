@@ -1188,23 +1188,20 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 
   rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
-	comp_ref_cstr id => (cref_str,_) &
-	generate_size_subscripts(inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
+	comp_ref_cstr id => (cref_str1,_) &
+	Util.string_append_list([prefix,".",cref_str1]) => cref_str2 &
+	is_empty_string prefix => emptypre &
+	Util.if (emptypre, cref_str1, cref_str2) => cref_str &
+	generate_size_subscripts(cref_str,inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
 	c_move_statements_to_inits cfn1 => cfn1' &
-
 	list_length dim_strs => ndims &
 	int_string ndims => ndims_str &
 	Util.string_delimit_list(dim_strs,", ") => dims_str &
-	is_empty_string prefix => emptypre &
-	Util.if (emptypre, "", ".") => presep &
-	Util.string_append_list(["alloc_",typ_str,
-			"(&",prefix,presep,cref_str,", ",
-			ndims_str,", ",dims_str,");"])
+	Util.string_append_list(["alloc_",typ_str,"(&",cref_str,", ", ndims_str,", ",dims_str,");"])
 	  => alloc_str &
-	  
-	  c_add_inits(cfn1',[alloc_str]) => cfn' &
+	c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
-	-----------
+	--------------------------------
 	generate_alloc_outvar(var as DAE.VAR(id, vk, vd, typ, e,
 					     inst_dims,start,flow),
 			      prefix,
@@ -1212,7 +1209,7 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	  => (cfn,tnr1)
 
   rule	not DAE.is_var e
-	-------------
+	----------------
 	generate_alloc_outvar (e,_,tnr) => (c_empty_function,tnr)
 
 end
@@ -1261,20 +1258,17 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 	Util.string_append_list ([prefix,".",cref_str1]) => cref_str2 &
 	Util.if (emptypre, cref_str1, cref_str2) => cref_str &
 (*	list_reverse inst_dims => inst_dims' & *)
-	generate_size_subscripts(inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
+	generate_size_subscripts(cref_str, inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
 	c_move_statements_to_inits cfn1 => cfn1' &
 
 	list_length dim_strs => ndims &
 	int_string ndims => ndims_str &
 	Util.string_delimit_list(dim_strs,", ") => dims_str &
-	Util.string_append_list(["alloc_",typ_str,
-			"(&",cref_str,", ",
-			ndims_str,", ",dims_str,");"])
+	Util.string_append_list(["alloc_",typ_str,"(&",cref_str,", ", ndims_str,", ",dims_str,");"])
 	  => alloc_str &
-	  
-	  c_add_inits(cfn1',[alloc_str]) => cfn' &
+	c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
-	-----------
+	--------------------------------
 	generate_alloc_outvar_f77(var as DAE.VAR(id, vk, vd, typ, e,
 						 inst_dims,start,flow),
 				  prefix,
@@ -1287,22 +1281,34 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 
 end
 
-relation generate_size_subscripts : (Exp.Subscript list,int)
+relation generate_size_subscripts : (string, Exp.Subscript list,int)
 	  => (CFunction,string list,int) =
 
-  axiom	generate_size_subscripts ([],tnr) => (c_empty_function,[],tnr)
+  axiom	generate_size_subscripts (_,[],tnr) => (c_empty_function,[],tnr)
 
   rule	generate_expression (e,tnr) => (cfn1,var1,tnr1) &
+	generate_size_subscripts (id, r, tnr1) => (cfn2,vars2,tnr2) &
+	c_merge_fn(cfn1,cfn2) => cfn
+	----------------------------
+	generate_size_subscripts (id, Exp.INDEX(e)::r, tnr)
+	  => (cfn, var1::vars2, tnr2)
+
+(*
+  rule	generate_temp_decl("WHOLEDIM",tnr) => (decl,var1,tnr1) &
+	c_add_variables (c_empty_function, [decl]) => cfn1 &
 	generate_size_subscripts (r,tnr1) => (cfn2,vars2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
-	-------
-	generate_size_subscripts (Exp.INDEX(e)::r,tnr)
+	----------------------------
+	generate_size_subscripts (Exp.WHOLEDIM::r,tnr)
 	  => (cfn,var1::vars2,tnr2)
+*)
 
-  rule	Print.print_buf "# generate_size_subscripts failed\n" & Print.print_buf " - [" &
+  rule	Print.print_buf "# generate_size_subscripts failed\n" & 
+	Util.string_append_list ([" - ", id, "["]) => s &
+	Print.print_buf s &
 	Dump.print_list(subs,Exp.print_subscript,", ") & Print.print_buf "]\n"
-	-----------
-	generate_size_subscripts(subs,_) => fail
+	----------------------------------------------------------------------
+	generate_size_subscripts(id,subs,_) => fail
 
 end
 
@@ -1312,7 +1318,7 @@ relation generate_alloc_array_f77 : (string , Types.Type) => CFunction =
 	Types.flatten_array_type ty => (elty, dims) &
 	Exp.int_subscripts dims => dimsubs &
 	tick => tnr &
-	generate_size_subscripts(dimsubs, tnr) => (cfn1, dim_strs, tnr1) &
+	generate_size_subscripts(crefstr, dimsubs, tnr) => (cfn1, dim_strs, tnr1) &
 	c_move_statements_to_inits cfn1 => cfn1' &
 	generate_type ty => typ_str &
 	list_length dim_strs => ndims &
@@ -1730,7 +1736,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
   rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	generate_size_subscripts(inst_dims,tnr) => (cfn1',vars1,tnr1) &
+	generate_size_subscripts(cref_str,inst_dims,tnr) => (cfn1',vars1,tnr1) &
 	c_move_statements_to_inits cfn1' => cfn1 &
 	Util.string_delimit_list(vars1,", ") => dimvars_str &
 	Util.list_map(inst_dims,dim_string) => dim_strs &
@@ -1751,7 +1757,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
   rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	generate_size_subscripts(inst_dims,tnr) => (cfn1',vars1,tnr1) &
+	generate_size_subscripts(cref_str,inst_dims,tnr) => (cfn1',vars1,tnr1) &
 	c_move_statements_to_inits cfn1' => cfn1 &
 	Util.string_delimit_list(vars1,", ") => dimvars_str &
 	Util.list_map(inst_dims,dim_string) => dim_strs &
@@ -2109,7 +2115,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(Exp.CALL(fn,args,false,builtin),tnr) 
 	  => (cfn,var,tnr2)
 
-rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
+  rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	generate_return_type fn => ret_type &
 	generate_function_name fn => fn_name &
 	generate_temp_decl(ret_type,tnr1) => (tdecl,tvar,tnr2) &
@@ -2122,6 +2128,22 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	-------------------------
 	generate_expression(Exp.CALL(fn,args,true,builtin),tnr) 
 	  => (cfn,tvar,tnr2)
+
+  rule	generate_expression (crexp,tnr) => (cfn1,var1,tnr1) &
+	generate_temp_decl("size_t",tnr1) => (tdecl,tvar,tnr2) &
+	c_add_variables(cfn1,[tdecl]) => cfn2 &
+	exp_type_str (ty,true) => typestr &
+	generate_expression (dim,tnr2) => (cfn3, var2, tnr3) & 
+	Util.string_append_list([tvar," = size_of_dimension_", typestr,"(", var1, ",",var2,");"]) => stmt &
+	c_merge_fn(cfn2,cfn3) => cfn4 &
+	c_add_statements(cfn4,[stmt]) => cfn
+	-------------------------
+	generate_expression(Exp.SIZE(crexp as Exp.CREF(cr,ty), SOME(dim)), tnr)
+	  => (cfn,tvar,tnr2)
+
+  rule	Print.print_buf "#-- Codegen.generate_expression: size(X) not implemented"
+	--------------------------------------------------------------------------
+	generate_expression(Exp.SIZE(cr, NONE), tnr) => fail
 
   rule	generate_expressions(elist,tnr) => (cfn1,vars1,tnr1) &
 	list_length vars1 => nvars &
@@ -2174,7 +2196,7 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	-------------------------
 	generate_expression(Exp.RANGE(t,e1,SOME(e2),e3),tnr) => (cfn,tvar,tnr4)
 
-  rule	Print.print_buf "# tuple not implemented\n"
+  rule	Print.print_buf "# Codegen.generate_expression: tuple not implemented\n"
 	-------------------------
 	generate_expression(Exp.TUPLE(_),_) => fail
 
@@ -2188,14 +2210,14 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	-------------------------------------
 	generate_expression(Exp.CAST(Exp.REAL,e),tnr) => (cfn,var',tnr')
 
-  rule	Print.print_buf "# asub not implemented\n"
+  rule	Print.print_buf "# Codegen.generate_expression: asub not implemented\n"
 	-------------------------
 	generate_expression(Exp.ASUB(_,_),_) => fail
 
   
-  rule	Debug.fprintln("ccode","# generate_expression failed") &
-	Debug.fcall("ccode",Exp.print_exp,e) &
-	Debug.fprintln("ccode","")
+  rule	Debug.fprintln("failtrace","# generate_expression failed") &
+	Debug.fcall("failtrace",Exp.print_exp,e) &
+	Debug.fprintln("failtrace","")
 	----------------
 	generate_expression(e,_) => fail
 end

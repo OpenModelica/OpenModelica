@@ -2307,11 +2307,11 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 
   rule	(* Size(x,1) in e.g. functions => Unknown dimension *)
 	Static.elab_exp(env,d,impl,st)
-	  => (Exp.SIZE(_,_),Types.PROP(t,_),_) &
+	  => (e as Exp.SIZE(_,_),Types.PROP(t,_),_) &
 	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) 
-	  => NONE::l
+	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l
 
   rule	Static.elab_exp(env,d,impl,st)
 	  => (e,Types.PROP(t,_),_) &
