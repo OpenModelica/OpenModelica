@@ -1067,6 +1067,12 @@ relation print_exp2_str : (Exp,int) => string =
 	---------------------------------------
 	print_exp2_str (CAST(REAL,ICONST(ival)),_) => res
 
+  rule	RTOpts.modelica_output => false &
+	int_real ival => rval &
+	real_string rval => res &
+	string_append("-",res) => res2
+	---------------------------------------
+	print_exp2_str (CAST(REAL,UNARY(UMINUS(_),ICONST(ival))),_) => res2
 
   rule	RTOpts.modelica_output => false &
 	print_exp_str e => s & 

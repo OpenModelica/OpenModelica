@@ -160,18 +160,11 @@ getPackages(<cref>)			Returns the names of all Packages in class
 					named by A0 as a list,
 					e.g. getPackages(Modelica) =>
 					{Electrical,Blocks,Mechanics,Constants,Math,SIunits}
-getPackages()				Returns the names of all
-					Packages reachable from
-					MODELICAPATH. (global scope)
 
-getModels(<cref>)			Returns the names of all model
+getClassNames(<cref>)			Returns the names of all class
 					defintions in a class
 					(package),
-					e.g.
-					getModels(Modelica.Electrical.Analog.Sensors)
-					=>
-					{PotentialSensor,VoltageSensor,CurrentSensor}
-getModels()				Returns the names of all model
+getClassNames()				Returns the names of all class
 					definitions in the global scope.
 
 isType(<cref>)				Returns true if class is a type, otherwise false.
