@@ -52,8 +52,8 @@ tokens {
 	LOOP		= "loop"	;
 	MODEL		= "model"	;
 	NOT		= "not"		;
-	OVERLOAD    = "overload";
 	OUTER		= "outer"	;
+    OVERLOAD    = "overload";
 	OR		= "or"		;
 	OUTPUT		= "output"	;
 	PACKAGE		= "package"	;
@@ -134,8 +134,9 @@ SL_COMMENT :
 		{  $setType(antlr::Token::SKIP); }
   	;
 
-IDENT options { testLiterals = true;} :
-		NONDIGIT (NONDIGIT | DIGIT)*;
+IDENT options { testLiterals = true; paraphrase = "an identifier";} :
+		NONDIGIT (NONDIGIT | DIGIT)*
+		;
 
 protected
 NONDIGIT : 	('_' | 'a'..'z' | 'A'..'Z');
@@ -150,33 +151,15 @@ EXPONENT :
 	('e'|'E') ('+' | '-')? (DIGIT)+
 	;
 
-/*
-NUM_INT
-	:	('0'..'9')+ // everything starts with a digit sequence
-		(	(	{(LA(2)!='.')&&(LA(2)!=')')}?				// force k=2; avoid ".."
-//PSPSPS example ARRAY (.1..99.) OF char; // after .. thinks it's a NUM_REAL
-				'.' {$setType(NUM_REAL);}	// dot means we are float
-				('0'..'9')+ (EXPONENT)?
-			)?
-		|	EXPONENT {$setType(NUM_REAL);}	// 'E' means we are float
-		)
-	;
-
-// a couple protected methods to assist in matching floating point numbers
-protected
-EXPONENT
-	:	('e') ('+'|'-')? ('0'..'9')+
-	;
-*/
 
 UNSIGNED_INTEGER :
-    (DIGIT)+
-		( ( {LA(2) != '.' }?
-		 '.' {$setType(UNSIGNED_REAL);}
-		 (DIGIT)* (EXPONENT)?
-		 )?
-	     | (EXPONENT { $setType(UNSIGNED_REAL); } )
-	    )
+	(( (DIGIT)+ '.' ) => (DIGIT)+ ( '.' (DIGIT)* ) 
+			{ 
+				$setType(UNSIGNED_REAL); 
+			}
+	| 	(DIGIT)+
+	)
+	(EXPONENT { $setType(UNSIGNED_REAL); } )?
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;

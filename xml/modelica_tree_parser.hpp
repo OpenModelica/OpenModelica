@@ -16,7 +16,7 @@
 #line 17 "modelica_tree_parser.hpp"
 #include <antlr/config.hpp>
 #include "modelica_tree_parserTokenTypes.hpp"
-/* $ANTLR 2.7.2: "walker.g" -> "modelica_tree_parser.hpp"$ */
+/* $ANTLR 2.7.3: "walker.g" -> "modelica_tree_parser.hpp"$ */
 #include <antlr/TreeParser.hpp>
 
 #line 15 "walker.g"
@@ -45,11 +45,15 @@ Comments: we walk on the modelica tree, buil a XML DOM tree and serialize
 #include "modelicaxml.h"
 #endif
 
+#include "MyAST.h"
 
-#line 50 "modelica_tree_parser.hpp"
-class modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreeParser, public modelica_tree_parserTokenTypes
+typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
+
+
+#line 54 "modelica_tree_parser.hpp"
+class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreeParser, public modelica_tree_parserTokenTypes
 {
-#line 69 "walker.g"
+#line 74 "walker.g"
 
 
 	/* some xml helpers declarations */
@@ -57,79 +61,59 @@ class modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreeParser, public
     DOMElement* pRootElementModelica;
 	DOMElement* pRootElementModelicaXML;
     DOMImplementation* pDOMImpl;
-	DOMElement *pColon;
-	DOMElement *pSemiColon;
+	char stmp[500];
 
+
+    typedef std::stack<DOMElement*> l_stack;
     typedef std::string mstring;
+	enum anno {UNSPECIFIED, INSIDE_EXTERNAL, INSIDE_ELEMENT, INSIDE_EQUATION, INSIDE_ALGORITHM, INSIDE_COMMENT};
     
-    const XMLCh* str2xml(antlr::RefAST &node)
+    const XMLCh* str2xml(RefMyAST node)
     {
 		return XMLString::transcode(node->getText().c_str());
     }
 
-	/*
-    DOMNode* make_inner_outer(antlr::RefAST &i,antlr::RefAST &o)
-    {
-		DOMElement *innerouter = pModelicaXMLDoc->createElement(X("innerouter"));
-		if (i!=NULL) 
-		{
-			innerouter->setAttribute(X("innerouter"), X("inner")); 
-		} 
-		else 
-			if (o != NULL) 
-			{
-				innerouter->setAttribute(X("innerouter"), X("outer")); 
-			} 
-			else 
-			{
-				innerouter->setAttribute(X("innerouter"), X("unspecified")); 
-			}
-		return innerouter;
-	}
-	*/
 
-    /*
-    int str2int(mstring const& str)
-    {
-		return atoi(str.c_str());
-    }
-    
-    double str2double(std::string const& str)
-    {
-        return atof(str.c_str());
-    }
-	*/
-    
-    typedef std::stack<DOMNode*> l_stack;
-
-    DOMNode* stack2DOMNode(l_stack& s, mstring name)
+    DOMElement* stack2DOMNode(l_stack& s, mstring name)
     {
 		// @HACK,@FIXME reverse the stack (better use a fifo) 
 		DOMElement *pHoldingNode = pModelicaXMLDoc->createElement(X(name.c_str()));
 		l_stack s_reverse;
+		//std::cout << "\nstack [" ;
         while (!s.empty())
         {            
-			s_reverse.push(s.top());
+			DOMElement*z = s.top();
+			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ", ";			
+			s_reverse.push(z);
 			s.pop();
-        }   
+        }
+		//std::cout << "]" << std::endl;
+		//std::cout << "\n" << XMLString::transcode((XMLCh*)(((DOMElement*)pHoldingNode)->getTagName())) << "/kids [" ;
         while (!s_reverse.empty())
         {
-			pHoldingNode->appendChild((DOMElement*)s_reverse.top());
+			DOMElement*z = s_reverse.top();
+			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ", ";
+			pHoldingNode->appendChild((DOMElement*)z);
             s_reverse.pop();
-        }   
+        }
+		//std::cout << "]" << std::endl;
         return pHoldingNode;
     }
 
     
-    DOMNode* appendKids(l_stack& s, DOMNode* pParentNode)
+    DOMElement* appendKids(l_stack& s, DOMElement* pParentNode)
     {
 		// @HACK,@FIXME reverse the stack (better use a fifo) 
 		l_stack s_reverse;
+		//std::cout << "\n" << XMLString::transcode((XMLCh*)(((DOMElement*)pParentNode)->getTagName())) << "/kids [" ;
         while (!s.empty())
         {            
-			s_reverse.push(s.top());
+			DOMElement*z = s.top();
+			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ",";			
+			s_reverse.push(z);
 			s.pop();
         }   
+		//std::cout << "]" << std::endl;
         while (!s_reverse.empty())
         {
 			pParentNode->appendChild((DOMElement*)s_reverse.top());
@@ -137,40 +121,72 @@ class modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreeParser, public
         }   
         return pParentNode;
     }
+
+    DOMElement* appendKidsFromStack(l_stack* s, DOMElement* pParentNode)
+    {
+		// @HACK,@FIXME reverse the stack (better use a fifo) 
+		l_stack s_reverse;
+		//std::cout << "\n" << XMLString::transcode((XMLCh*)(((DOMElement*)pParentNode)->getTagName())) << "/kids [" ;
+        while (!s->empty())
+        {            
+			DOMElement*z = s->top();
+			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ",";			
+			s_reverse.push(z);
+			s->pop();
+        }   
+		//std::cout << "]" << std::endl;
+        while (!s_reverse.empty())
+        {
+			pParentNode->appendChild((DOMElement*)s_reverse.top());
+            s_reverse.pop();
+        }   
+        return pParentNode;
+    }
+
+	void setAttributes(DOMElement *pNodeTo, DOMElement *pNodeFrom)
+	{
+		DOMNamedNodeMap *pAttributes = pNodeFrom->getAttributes();
+		for (XMLSize_t i=0; i < pAttributes->getLength(); i++)
+		{
+			DOMAttr *z = (DOMAttr*)pAttributes->item(i);
+			pNodeTo->setAttribute(z->getName(), z->getValue());
+		}
+	}
     
     struct type_prefix_t
     {
         type_prefix_t():flow(0), variability(0),direction(0){}
-		DOMNode* flow;
-        DOMNode* variability;
-        DOMNode* direction;
+		DOMElement* flow;
+        DOMElement* variability;
+        DOMElement* direction;
     };
 
     struct class_specifier_t
     {
         class_specifier_t():string_comment(0), composition(0), enumeration(0), derived(0), overload(0){}
-		DOMNode* string_comment;
-		DOMNode *composition;
-        DOMNode* derived;
-        DOMNode* enumeration;
-		DOMNode* overload;
+		DOMElement* string_comment;
+		DOMElement *composition;
+        DOMElement* derived;
+        DOMElement* enumeration;
+		DOMElement* overload;
     };
 
-	DOMAttr* getAttributeNode(DOMNode* pNode, mstring stdstr)
+	DOMAttr* getAttributeNode(DOMElement* pNode, mstring stdstr)
 	{
 		return ((DOMElement*)pNode)->getAttributeNode(X(stdstr.c_str()));
 	}
 
-	void appendKids(DOMNode* pNode, DOMNodeList* pNodeList)
+
+	void setVisibility(int iSwitch, DOMElement* pNode)
 	{
-		XMLSize_t i;
-		for (i=0; i < pNodeList->getLength(); i++) 
-			((DOMElement*)pNode)->appendChild(pNodeList->item(i));
+		if (iSwitch == 1) pNode->setAttribute(X("visibility"), X("public"));
+		else if (iSwitch == 2) pNode->setAttribute(X("visibility"), X("protected"));
+		else { /* error, shouldn't happen */ } 
 	}
-#line 54 "modelica_tree_parser.hpp"
+#line 58 "modelica_tree_parser.hpp"
 public:
 	modelica_tree_parser();
-	void initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory );
+	static void initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory );
 	int getNumTokens() const
 	{
 		return modelica_tree_parser::NUM_TOKENS;
@@ -180,108 +196,170 @@ public:
 		if( type > getNumTokens() ) return 0;
 		return modelica_tree_parser::tokenNames[type];
 	}
-	public: DOMNode * stored_definition(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
-		mstring filename
+	const char* const* getTokenNames() const
+	{
+		return modelica_tree_parser::tokenNames;
+	}
+	public: DOMElement * stored_definition(RefMyAST _t,
+		mstring xmlFilename, mstring moFilename
 	);
-	public: DOMNode*  within_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  class_definition(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
-		bool final
+	public: DOMElement*  within_clause(RefMyAST _t,
+		DOMElement* parent
 	);
-	public: DOMNode*  name_path(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: void class_restriction(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: void class_specifier(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
+	public: DOMElement*  class_definition(RefMyAST _t,
+		bool final, DOMElement *definitionElement
+	);
+	public: void * name_path(RefMyAST _t);
+	public: void class_restriction(RefMyAST _t);
+	public: void class_specifier(RefMyAST _t,
 		class_specifier_t& sClassSpec
 	);
-	public: DOMNode*  string_comment(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  composition(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  derived_class(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  enumeration(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  overloading(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: void type_prefix(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
-		type_prefix_t& prefix
+	public: DOMElement*  string_comment(RefMyAST _t);
+	public: DOMElement*  composition(RefMyAST _t,
+		DOMElement* definition
 	);
-	public: DOMNode*  array_subscripts(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  class_modification(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  comment(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  enumeration_literal(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  element_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
-		int iSwitch
+	public: DOMElement*  derived_class(RefMyAST _t);
+	public: DOMElement*  enumeration(RefMyAST _t);
+	public: DOMElement*  overloading(RefMyAST _t);
+	public: void type_prefix(RefMyAST _t,
+		DOMElement* parent
 	);
-	public: DOMNode*  public_element_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  protected_element_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  equation_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  algorithm_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  external_function_call(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  annotation(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  expression_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  component_reference(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  element(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  import_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  extends_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  component_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  constraining_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  explicit_import_name(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  implicit_import_name(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  type_specifier(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  component_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  component_declaration(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  declaration(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  modification(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  argument_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  argument(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  element_modification(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  element_redeclaration(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  component_clause1(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  equation(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  algorithm(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  equality_equation(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  conditional_equation_e(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  for_clause_e(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  when_clause_e(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  connect_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  equation_funcall(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  function_call(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  algorithm_function_call(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  conditional_equation_a(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  for_clause_a(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  while_clause(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  when_clause_a(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  simple_expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  equation_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  equation_elseif(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  algorithm_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  algorithm_elseif(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  for_indices(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  else_when_e(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  else_when_a(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  if_expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  code_expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  elseif_expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  logical_expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  logical_term(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  logical_factor(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  relation(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  arithmetic_expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  unary_arithmetic_expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  term(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  factor(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  primary(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  component_reference__function_call(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  tuple_expression_list(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  function_arguments(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  named_arguments(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  named_argument(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  subscript(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  string_concatenation(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
-	public: DOMNode*  interactive_stmt(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
+	public: DOMElement*  array_subscripts(RefMyAST _t,
+		int kind
+	);
+	public: void * class_modification(RefMyAST _t);
+	public: DOMElement*  comment(RefMyAST _t);
+	public: DOMElement*  enumeration_literal(RefMyAST _t);
+	public: DOMElement*  element_list(RefMyAST _t,
+		int iSwitch, DOMElement*definition
+	);
+	public: DOMElement*  public_element_list(RefMyAST _t,
+		DOMElement* definition
+	);
+	public: DOMElement*  protected_element_list(RefMyAST _t,
+		DOMElement* definition
+	);
+	public: DOMElement*  equation_clause(RefMyAST _t,
+		DOMElement *definition
+	);
+	public: DOMElement*  algorithm_clause(RefMyAST _t,
+		DOMElement* definition
+	);
+	public: DOMElement*  external_function_call(RefMyAST _t,
+		DOMElement *pExternalFunctionCall
+	);
+	public: DOMElement*  annotation(RefMyAST _t,
+		int iSwitch, DOMElement *parent, enum anno awhere
+	);
+	public: DOMElement*  expression_list(RefMyAST _t);
+	public: DOMElement*  component_reference(RefMyAST _t);
+	public: DOMElement*  element(RefMyAST _t,
+		int iSwitch, DOMElement *parent
+	);
+	public: DOMElement*  import_clause(RefMyAST _t,
+		int iSwitch, DOMElement *parent
+	);
+	public: DOMElement*  extends_clause(RefMyAST _t,
+		int iSwitch, DOMElement* parent
+	);
+	public: DOMElement*  component_clause(RefMyAST _t,
+		DOMElement* parent, DOMElement* attributes
+	);
+	public: DOMElement*  constraining_clause(RefMyAST _t);
+	public: DOMElement*  explicit_import_name(RefMyAST _t);
+	public: DOMElement*  implicit_import_name(RefMyAST _t);
+	public: void*  type_specifier(RefMyAST _t);
+	public: DOMElement*  component_list(RefMyAST _t,
+		DOMElement* parent, DOMElement *attributes, DOMElement* type_array
+	);
+	public: DOMElement*  component_declaration(RefMyAST _t,
+		DOMElement* parent, DOMElement *attributes, DOMElement *type_array
+	);
+	public: DOMElement*  declaration(RefMyAST _t,
+		DOMElement* parent, DOMElement* type_array
+	);
+	public: DOMElement*  modification(RefMyAST _t);
+	public: DOMElement*  expression(RefMyAST _t);
+	public: void * argument_list(RefMyAST _t);
+	public: DOMElement*  argument(RefMyAST _t);
+	public: DOMElement*  element_modification(RefMyAST _t);
+	public: DOMElement*  element_redeclaration(RefMyAST _t);
+	public: DOMElement*  component_clause1(RefMyAST _t,
+		DOMElement *parent
+	);
+	public: DOMElement*  equation(RefMyAST _t,
+		DOMElement* definition
+	);
+	public: DOMElement*  algorithm(RefMyAST _t,
+		DOMElement *definition
+	);
+	public: DOMElement*  equality_equation(RefMyAST _t);
+	public: DOMElement*  conditional_equation_e(RefMyAST _t);
+	public: DOMElement*  for_clause_e(RefMyAST _t);
+	public: DOMElement*  when_clause_e(RefMyAST _t);
+	public: DOMElement*  connect_clause(RefMyAST _t);
+	public: DOMElement*  equation_funcall(RefMyAST _t);
+	public: DOMElement*  function_call(RefMyAST _t);
+	public: DOMElement*  tuple_expression_list(RefMyAST _t);
+	public: DOMElement*  algorithm_function_call(RefMyAST _t);
+	public: DOMElement*  conditional_equation_a(RefMyAST _t);
+	public: DOMElement*  for_clause_a(RefMyAST _t);
+	public: DOMElement*  while_clause(RefMyAST _t);
+	public: DOMElement*  when_clause_a(RefMyAST _t);
+	public: DOMElement*  simple_expression(RefMyAST _t);
+	public: DOMElement*  equation_list(RefMyAST _t,
+		DOMElement* pEquationList
+	);
+	public: DOMElement*  equation_elseif(RefMyAST _t);
+	public: DOMElement*  algorithm_list(RefMyAST _t,
+		DOMElement*  pAlgorithmList
+	);
+	public: DOMElement*  algorithm_elseif(RefMyAST _t);
+	public: DOMElement*  for_indices(RefMyAST _t);
+	public: DOMElement*  else_when_e(RefMyAST _t);
+	public: DOMElement*  else_when_a(RefMyAST _t);
+	public: DOMElement*  if_expression(RefMyAST _t);
+	public: DOMElement*  code_expression(RefMyAST _t);
+	public: DOMElement*  elseif_expression(RefMyAST _t);
+	public: DOMElement*  logical_expression(RefMyAST _t);
+	public: DOMElement*  logical_term(RefMyAST _t);
+	public: DOMElement*  logical_factor(RefMyAST _t);
+	public: DOMElement*  relation(RefMyAST _t);
+	public: DOMElement*  arithmetic_expression(RefMyAST _t);
+	public: DOMElement*  unary_arithmetic_expression(RefMyAST _t);
+	public: DOMElement*  term(RefMyAST _t);
+	public: DOMElement*  factor(RefMyAST _t);
+	public: DOMElement*  primary(RefMyAST _t);
+	public: DOMElement*  component_reference__function_call(RefMyAST _t);
+	public: DOMElement*  function_arguments(RefMyAST _t);
+	public: DOMElement*  expression_list2(RefMyAST _t,
+		DOMElement *parent
+	);
+	public: DOMElement*  named_arguments(RefMyAST _t,
+		DOMElement *parent
+	);
+	public: DOMElement*  named_argument(RefMyAST _t);
+	public: DOMElement*  subscript(RefMyAST _t,
+		DOMElement* parent
+	);
+	public: DOMElement*  string_concatenation(RefMyAST _t);
+	public: DOMElement*  interactive_stmt(RefMyAST _t);
+public:
+	ANTLR_USE_NAMESPACE(antlr)RefAST getAST()
+	{
+		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
+	}
+	
+protected:
+	RefMyAST returnAST;
+	RefMyAST _retTree;
 private:
 	static const char* tokenNames[];
 #ifndef NO_STATIC_CONSTS
-	static const int NUM_TOKENS = 134;
+	static const int NUM_TOKENS = 139;
 #else
 	enum {
-		NUM_TOKENS = 134
+		NUM_TOKENS = 139
 	};
 #endif
 	

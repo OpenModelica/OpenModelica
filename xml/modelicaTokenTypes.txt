@@ -1,4 +1,4 @@
-// $ANTLR 2.7.2: modelica_lexer.g -> modelicaTokenTypes.txt$
+// $ANTLR 2.7.3: modelica_lexer.g -> modelicaTokenTypes.txt$
 modelica    // output token vocab name
 ALGORITHM="algorithm"=4
 AND="and"=5
@@ -35,8 +35,8 @@ INPUT="input"=35
 LOOP="loop"=36
 MODEL="model"=37
 NOT="not"=38
-OVERLOAD="overload"=39
-OUTER="outer"=40
+OUTER="outer"=39
+OVERLOAD="overload"=40
 OR="or"=41
 OUTPUT="output"=42
 PACKAGE="package"=43
@@ -82,7 +82,7 @@ WS=82
 ML_COMMENT=83
 ML_COMMENT_CHAR=84
 SL_COMMENT=85
-IDENT=86
+IDENT("an identifier")=86
 NONDIGIT=87
 DIGIT=88
 EXPONENT=89

@@ -1,4 +1,4 @@
-/* $ANTLR 2.7.2: "modelica_lexer.g" -> "modelica_lexer.cpp"$ */
+/* $ANTLR 2.7.3: "modelica_lexer.g" -> "modelica_lexer.cpp"$ */
 #include "modelica_lexer.hpp"
 #include <antlr/CharBuffer.hpp>
 #include <antlr/TokenStreamException.hpp>
@@ -38,12 +38,12 @@ void modelica_lexer::initLiterals()
 	literals["while"] = 57;
 	literals["end"] = 19;
 	literals["equation"] = 21;
-	literals["overload"] = 39;
+	literals["overload"] = 40;
 	literals["flow"] = 27;
 	literals["then"] = 52;
 	literals["unsigned_real"] = 55;
 	literals["and"] = 5;
-	literals["outer"] = 40;
+	literals["outer"] = 39;
 	literals["not"] = 38;
 	literals["package"] = 43;
 	literals["external"] = 24;
@@ -96,218 +96,218 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 		resetText();
 		try {   // for lexical and char stream error handling
 			switch ( LA(1)) {
-			case static_cast<unsigned char>('('):
+			case 0x28 /* '(' */ :
 			{
 				mLPAR(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>(')'):
+			case 0x29 /* ')' */ :
 			{
 				mRPAR(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('['):
+			case 0x5b /* '[' */ :
 			{
 				mLBRACK(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>(']'):
+			case 0x5d /* ']' */ :
 			{
 				mRBRACK(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('{'):
+			case 0x7b /* '{' */ :
 			{
 				mLBRACE(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('}'):
+			case 0x7d /* '}' */ :
 			{
 				mRBRACE(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('+'):
+			case 0x2b /* '+' */ :
 			{
 				mPLUS(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('-'):
+			case 0x2d /* '-' */ :
 			{
 				mMINUS(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('*'):
+			case 0x2a /* '*' */ :
 			{
 				mSTAR(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('.'):
+			case 0x2e /* '.' */ :
 			{
 				mDOT(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>(','):
+			case 0x2c /* ',' */ :
 			{
 				mCOMMA(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>(';'):
+			case 0x3b /* ';' */ :
 			{
 				mSEMICOLON(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('^'):
+			case 0x5e /* '^' */ :
 			{
 				mPOWER(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('\t'):
-			case static_cast<unsigned char>('\n'):
-			case static_cast<unsigned char>('\r'):
-			case static_cast<unsigned char>(' '):
+			case 0x9 /* '\t' */ :
+			case 0xa /* '\n' */ :
+			case 0xd /* '\r' */ :
+			case 0x20 /* ' ' */ :
 			{
 				mWS(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('A'):
-			case static_cast<unsigned char>('B'):
-			case static_cast<unsigned char>('C'):
-			case static_cast<unsigned char>('D'):
-			case static_cast<unsigned char>('E'):
-			case static_cast<unsigned char>('F'):
-			case static_cast<unsigned char>('G'):
-			case static_cast<unsigned char>('H'):
-			case static_cast<unsigned char>('I'):
-			case static_cast<unsigned char>('J'):
-			case static_cast<unsigned char>('K'):
-			case static_cast<unsigned char>('L'):
-			case static_cast<unsigned char>('M'):
-			case static_cast<unsigned char>('N'):
-			case static_cast<unsigned char>('O'):
-			case static_cast<unsigned char>('P'):
-			case static_cast<unsigned char>('Q'):
-			case static_cast<unsigned char>('R'):
-			case static_cast<unsigned char>('S'):
-			case static_cast<unsigned char>('T'):
-			case static_cast<unsigned char>('U'):
-			case static_cast<unsigned char>('V'):
-			case static_cast<unsigned char>('W'):
-			case static_cast<unsigned char>('X'):
-			case static_cast<unsigned char>('Y'):
-			case static_cast<unsigned char>('Z'):
-			case static_cast<unsigned char>('_'):
-			case static_cast<unsigned char>('a'):
-			case static_cast<unsigned char>('b'):
-			case static_cast<unsigned char>('c'):
-			case static_cast<unsigned char>('d'):
-			case static_cast<unsigned char>('e'):
-			case static_cast<unsigned char>('f'):
-			case static_cast<unsigned char>('g'):
-			case static_cast<unsigned char>('h'):
-			case static_cast<unsigned char>('i'):
-			case static_cast<unsigned char>('j'):
-			case static_cast<unsigned char>('k'):
-			case static_cast<unsigned char>('l'):
-			case static_cast<unsigned char>('m'):
-			case static_cast<unsigned char>('n'):
-			case static_cast<unsigned char>('o'):
-			case static_cast<unsigned char>('p'):
-			case static_cast<unsigned char>('q'):
-			case static_cast<unsigned char>('r'):
-			case static_cast<unsigned char>('s'):
-			case static_cast<unsigned char>('t'):
-			case static_cast<unsigned char>('u'):
-			case static_cast<unsigned char>('v'):
-			case static_cast<unsigned char>('w'):
-			case static_cast<unsigned char>('x'):
-			case static_cast<unsigned char>('y'):
-			case static_cast<unsigned char>('z'):
+			case 0x41 /* 'A' */ :
+			case 0x42 /* 'B' */ :
+			case 0x43 /* 'C' */ :
+			case 0x44 /* 'D' */ :
+			case 0x45 /* 'E' */ :
+			case 0x46 /* 'F' */ :
+			case 0x47 /* 'G' */ :
+			case 0x48 /* 'H' */ :
+			case 0x49 /* 'I' */ :
+			case 0x4a /* 'J' */ :
+			case 0x4b /* 'K' */ :
+			case 0x4c /* 'L' */ :
+			case 0x4d /* 'M' */ :
+			case 0x4e /* 'N' */ :
+			case 0x4f /* 'O' */ :
+			case 0x50 /* 'P' */ :
+			case 0x51 /* 'Q' */ :
+			case 0x52 /* 'R' */ :
+			case 0x53 /* 'S' */ :
+			case 0x54 /* 'T' */ :
+			case 0x55 /* 'U' */ :
+			case 0x56 /* 'V' */ :
+			case 0x57 /* 'W' */ :
+			case 0x58 /* 'X' */ :
+			case 0x59 /* 'Y' */ :
+			case 0x5a /* 'Z' */ :
+			case 0x5f /* '_' */ :
+			case 0x61 /* 'a' */ :
+			case 0x62 /* 'b' */ :
+			case 0x63 /* 'c' */ :
+			case 0x64 /* 'd' */ :
+			case 0x65 /* 'e' */ :
+			case 0x66 /* 'f' */ :
+			case 0x67 /* 'g' */ :
+			case 0x68 /* 'h' */ :
+			case 0x69 /* 'i' */ :
+			case 0x6a /* 'j' */ :
+			case 0x6b /* 'k' */ :
+			case 0x6c /* 'l' */ :
+			case 0x6d /* 'm' */ :
+			case 0x6e /* 'n' */ :
+			case 0x6f /* 'o' */ :
+			case 0x70 /* 'p' */ :
+			case 0x71 /* 'q' */ :
+			case 0x72 /* 'r' */ :
+			case 0x73 /* 's' */ :
+			case 0x74 /* 't' */ :
+			case 0x75 /* 'u' */ :
+			case 0x76 /* 'v' */ :
+			case 0x77 /* 'w' */ :
+			case 0x78 /* 'x' */ :
+			case 0x79 /* 'y' */ :
+			case 0x7a /* 'z' */ :
 			{
 				mIDENT(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('0'):
-			case static_cast<unsigned char>('1'):
-			case static_cast<unsigned char>('2'):
-			case static_cast<unsigned char>('3'):
-			case static_cast<unsigned char>('4'):
-			case static_cast<unsigned char>('5'):
-			case static_cast<unsigned char>('6'):
-			case static_cast<unsigned char>('7'):
-			case static_cast<unsigned char>('8'):
-			case static_cast<unsigned char>('9'):
+			case 0x30 /* '0' */ :
+			case 0x31 /* '1' */ :
+			case 0x32 /* '2' */ :
+			case 0x33 /* '3' */ :
+			case 0x34 /* '4' */ :
+			case 0x35 /* '5' */ :
+			case 0x36 /* '6' */ :
+			case 0x37 /* '7' */ :
+			case 0x38 /* '8' */ :
+			case 0x39 /* '9' */ :
 			{
 				mUNSIGNED_INTEGER(true);
 				theRetToken=_returnToken;
 				break;
 			}
-			case static_cast<unsigned char>('"'):
+			case 0x22 /* '"' */ :
 			{
 				mSTRING(true);
 				theRetToken=_returnToken;
 				break;
 			}
 			default:
-				if ((LA(1) == static_cast<unsigned char>(':')) && (LA(2) == static_cast<unsigned char>('='))) {
+				if ((LA(1) == 0x3a /* ':' */ ) && (LA(2) == 0x3d /* '=' */ )) {
 					mASSIGN(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('<')) && (LA(2) == static_cast<unsigned char>('='))) {
+				else if ((LA(1) == 0x3c /* '<' */ ) && (LA(2) == 0x3d /* '=' */ )) {
 					mLESSEQ(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('>')) && (LA(2) == static_cast<unsigned char>('='))) {
+				else if ((LA(1) == 0x3e /* '>' */ ) && (LA(2) == 0x3d /* '=' */ )) {
 					mGREATEREQ(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('=')) && (LA(2) == static_cast<unsigned char>('='))) {
+				else if ((LA(1) == 0x3d /* '=' */ ) && (LA(2) == 0x3d /* '=' */ )) {
 					mEQEQ(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('<')) && (LA(2) == static_cast<unsigned char>('>'))) {
+				else if ((LA(1) == 0x3c /* '<' */ ) && (LA(2) == 0x3e /* '>' */ )) {
 					mLESSGT(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('/')) && (LA(2) == static_cast<unsigned char>('*'))) {
+				else if ((LA(1) == 0x2f /* '/' */ ) && (LA(2) == 0x2a /* '*' */ )) {
 					mML_COMMENT(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('/')) && (LA(2) == static_cast<unsigned char>('/'))) {
+				else if ((LA(1) == 0x2f /* '/' */ ) && (LA(2) == 0x2f /* '/' */ )) {
 					mSL_COMMENT(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('=')) && (true)) {
+				else if ((LA(1) == 0x3d /* '=' */ ) && (true)) {
 					mEQUALS(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('/')) && (true)) {
+				else if ((LA(1) == 0x2f /* '/' */ ) && (true)) {
 					mSLASH(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('<')) && (true)) {
+				else if ((LA(1) == 0x3c /* '<' */ ) && (true)) {
 					mLESS(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>('>')) && (true)) {
+				else if ((LA(1) == 0x3e /* '>' */ ) && (true)) {
 					mGREATER(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == static_cast<unsigned char>(':')) && (true)) {
+				else if ((LA(1) == 0x3a /* ':' */ ) && (true)) {
 					mCOLON(true);
 					theRetToken=_returnToken;
 				}
@@ -345,7 +345,7 @@ void modelica_lexer::mLPAR(bool _createToken) {
 	_ttype = LPAR;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('('));
+	match('(');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -359,7 +359,7 @@ void modelica_lexer::mRPAR(bool _createToken) {
 	_ttype = RPAR;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>(')'));
+	match(')');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -373,7 +373,7 @@ void modelica_lexer::mLBRACK(bool _createToken) {
 	_ttype = LBRACK;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('['));
+	match('[');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -387,7 +387,7 @@ void modelica_lexer::mRBRACK(bool _createToken) {
 	_ttype = RBRACK;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>(']'));
+	match(']');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -401,7 +401,7 @@ void modelica_lexer::mLBRACE(bool _createToken) {
 	_ttype = LBRACE;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('{'));
+	match('{');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -415,7 +415,7 @@ void modelica_lexer::mRBRACE(bool _createToken) {
 	_ttype = RBRACE;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('}'));
+	match('}');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -429,7 +429,7 @@ void modelica_lexer::mEQUALS(bool _createToken) {
 	_ttype = EQUALS;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('='));
+	match('=');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -457,7 +457,7 @@ void modelica_lexer::mPLUS(bool _createToken) {
 	_ttype = PLUS;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('+'));
+	match('+');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -471,7 +471,7 @@ void modelica_lexer::mMINUS(bool _createToken) {
 	_ttype = MINUS;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('-'));
+	match('-');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -485,7 +485,7 @@ void modelica_lexer::mSTAR(bool _createToken) {
 	_ttype = STAR;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('*'));
+	match('*');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -499,7 +499,7 @@ void modelica_lexer::mSLASH(bool _createToken) {
 	_ttype = SLASH;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('/'));
+	match('/');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -513,7 +513,7 @@ void modelica_lexer::mDOT(bool _createToken) {
 	_ttype = DOT;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('.'));
+	match('.');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -527,7 +527,7 @@ void modelica_lexer::mCOMMA(bool _createToken) {
 	_ttype = COMMA;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>(','));
+	match(',');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -541,7 +541,7 @@ void modelica_lexer::mLESS(bool _createToken) {
 	_ttype = LESS;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('<'));
+	match('<');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -569,7 +569,7 @@ void modelica_lexer::mGREATER(bool _createToken) {
 	_ttype = GREATER;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('>'));
+	match('>');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -625,7 +625,7 @@ void modelica_lexer::mCOLON(bool _createToken) {
 	_ttype = COLON;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>(':'));
+	match(':');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -639,7 +639,7 @@ void modelica_lexer::mSEMICOLON(bool _createToken) {
 	_ttype = SEMICOLON;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>(';'));
+	match(';');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -653,7 +653,7 @@ void modelica_lexer::mPOWER(bool _createToken) {
 	_ttype = POWER;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('^'));
+	match('^');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -669,37 +669,39 @@ void modelica_lexer::mWS(bool _createToken) {
 	
 	{
 	switch ( LA(1)) {
-	case static_cast<unsigned char>(' '):
+	case 0x20 /* ' ' */ :
 	{
-		match(static_cast<unsigned char>(' '));
+		match(' ');
 		break;
 	}
-	case static_cast<unsigned char>('\t'):
+	case 0x9 /* '\t' */ :
 	{
-		match(static_cast<unsigned char>('\t'));
+		match('\t');
 		break;
 	}
-	case static_cast<unsigned char>('\n'):
-	case static_cast<unsigned char>('\r'):
+	case 0xa /* '\n' */ :
+	case 0xd /* '\r' */ :
 	{
 		{
-		if ((LA(1) == static_cast<unsigned char>('\r')) && (LA(2) == static_cast<unsigned char>('\n'))) {
+		if ((LA(1) == 0xd /* '\r' */ ) && (LA(2) == 0xa /* '\n' */ )) {
 			match("\r\n");
 		}
-		else if ((LA(1) == static_cast<unsigned char>('\r')) && (true)) {
-			match(static_cast<unsigned char>('\r'));
+		else if ((LA(1) == 0xd /* '\r' */ ) && (true)) {
+			match('\r');
 		}
-		else if ((LA(1) == static_cast<unsigned char>('\n'))) {
-			match(static_cast<unsigned char>('\n'));
+		else if ((LA(1) == 0xa /* '\n' */ )) {
+			match('\n');
 		}
 		else {
 			throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 		}
 		
 		}
+		if ( inputState->guessing==0 ) {
 #line 115 "modelica_lexer.g"
-		newline();
-#line 703 "modelica_lexer.cpp"
+			newline();
+#line 704 "modelica_lexer.cpp"
+		}
 		break;
 	}
 	default:
@@ -708,9 +710,11 @@ void modelica_lexer::mWS(bool _createToken) {
 	}
 	}
 	}
+	if ( inputState->guessing==0 ) {
 #line 117 "modelica_lexer.g"
-	_ttype = antlr::Token::SKIP;
-#line 714 "modelica_lexer.cpp"
+		_ttype = antlr::Token::SKIP;
+#line 717 "modelica_lexer.cpp"
+	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -727,8 +731,8 @@ void modelica_lexer::mML_COMMENT(bool _createToken) {
 	match("/*");
 	{ // ( ... )*
 	for (;;) {
-		if (((LA(1) == static_cast<unsigned char>('*')) && ((LA(2) >= static_cast<unsigned char>('\3') && LA(2) <= static_cast<unsigned char>('\377'))))&&(LA(2)!='/')) {
-			match(static_cast<unsigned char>('*'));
+		if (((LA(1) == 0x2a /* '*' */ ) && ((LA(2) >= 0x3 /* '\3' */  && LA(2) <= 0xff)))&&(LA(2)!='/')) {
+			match('*');
 		}
 		else if ((_tokenSet_0.member(LA(1)))) {
 			mML_COMMENT_CHAR(false);
@@ -741,9 +745,11 @@ void modelica_lexer::mML_COMMENT(bool _createToken) {
 	_loop29:;
 	} // ( ... )*
 	match("*/");
+	if ( inputState->guessing==0 ) {
 #line 124 "modelica_lexer.g"
-	_ttype = antlr::Token::SKIP;
-#line 747 "modelica_lexer.cpp"
+		_ttype = antlr::Token::SKIP;
+#line 752 "modelica_lexer.cpp"
+	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -757,17 +763,17 @@ void modelica_lexer::mML_COMMENT_CHAR(bool _createToken) {
 	_ttype = ML_COMMENT_CHAR;
 	int _saveIndex;
 	
-	if ((LA(1) == static_cast<unsigned char>('\n') || LA(1) == static_cast<unsigned char>('\r'))) {
+	if ((LA(1) == 0xa /* '\n' */  || LA(1) == 0xd /* '\r' */ )) {
 		{
 		switch ( LA(1)) {
-		case static_cast<unsigned char>('\r'):
+		case 0xd /* '\r' */ :
 		{
 			match("\r\n");
 			break;
 		}
-		case static_cast<unsigned char>('\n'):
+		case 0xa /* '\n' */ :
 		{
-			match(static_cast<unsigned char>('\n'));
+			match('\n');
 			break;
 		}
 		default:
@@ -776,9 +782,11 @@ void modelica_lexer::mML_COMMENT_CHAR(bool _createToken) {
 		}
 		}
 		}
+		if ( inputState->guessing==0 ) {
 #line 128 "modelica_lexer.g"
-		newline();
-#line 782 "modelica_lexer.cpp"
+			newline();
+#line 789 "modelica_lexer.cpp"
+		}
 	}
 	else if ((_tokenSet_1.member(LA(1)))) {
 		{
@@ -817,9 +825,11 @@ void modelica_lexer::mSL_COMMENT(bool _createToken) {
 	}
 	_loop36:;
 	} // ( ... )*
+	if ( inputState->guessing==0 ) {
 #line 134 "modelica_lexer.g"
-	_ttype = antlr::Token::SKIP;
-#line 823 "modelica_lexer.cpp"
+		_ttype = antlr::Token::SKIP;
+#line 832 "modelica_lexer.cpp"
+	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -837,73 +847,73 @@ void modelica_lexer::mIDENT(bool _createToken) {
 	{ // ( ... )*
 	for (;;) {
 		switch ( LA(1)) {
-		case static_cast<unsigned char>('A'):
-		case static_cast<unsigned char>('B'):
-		case static_cast<unsigned char>('C'):
-		case static_cast<unsigned char>('D'):
-		case static_cast<unsigned char>('E'):
-		case static_cast<unsigned char>('F'):
-		case static_cast<unsigned char>('G'):
-		case static_cast<unsigned char>('H'):
-		case static_cast<unsigned char>('I'):
-		case static_cast<unsigned char>('J'):
-		case static_cast<unsigned char>('K'):
-		case static_cast<unsigned char>('L'):
-		case static_cast<unsigned char>('M'):
-		case static_cast<unsigned char>('N'):
-		case static_cast<unsigned char>('O'):
-		case static_cast<unsigned char>('P'):
-		case static_cast<unsigned char>('Q'):
-		case static_cast<unsigned char>('R'):
-		case static_cast<unsigned char>('S'):
-		case static_cast<unsigned char>('T'):
-		case static_cast<unsigned char>('U'):
-		case static_cast<unsigned char>('V'):
-		case static_cast<unsigned char>('W'):
-		case static_cast<unsigned char>('X'):
-		case static_cast<unsigned char>('Y'):
-		case static_cast<unsigned char>('Z'):
-		case static_cast<unsigned char>('_'):
-		case static_cast<unsigned char>('a'):
-		case static_cast<unsigned char>('b'):
-		case static_cast<unsigned char>('c'):
-		case static_cast<unsigned char>('d'):
-		case static_cast<unsigned char>('e'):
-		case static_cast<unsigned char>('f'):
-		case static_cast<unsigned char>('g'):
-		case static_cast<unsigned char>('h'):
-		case static_cast<unsigned char>('i'):
-		case static_cast<unsigned char>('j'):
-		case static_cast<unsigned char>('k'):
-		case static_cast<unsigned char>('l'):
-		case static_cast<unsigned char>('m'):
-		case static_cast<unsigned char>('n'):
-		case static_cast<unsigned char>('o'):
-		case static_cast<unsigned char>('p'):
-		case static_cast<unsigned char>('q'):
-		case static_cast<unsigned char>('r'):
-		case static_cast<unsigned char>('s'):
-		case static_cast<unsigned char>('t'):
-		case static_cast<unsigned char>('u'):
-		case static_cast<unsigned char>('v'):
-		case static_cast<unsigned char>('w'):
-		case static_cast<unsigned char>('x'):
-		case static_cast<unsigned char>('y'):
-		case static_cast<unsigned char>('z'):
+		case 0x41 /* 'A' */ :
+		case 0x42 /* 'B' */ :
+		case 0x43 /* 'C' */ :
+		case 0x44 /* 'D' */ :
+		case 0x45 /* 'E' */ :
+		case 0x46 /* 'F' */ :
+		case 0x47 /* 'G' */ :
+		case 0x48 /* 'H' */ :
+		case 0x49 /* 'I' */ :
+		case 0x4a /* 'J' */ :
+		case 0x4b /* 'K' */ :
+		case 0x4c /* 'L' */ :
+		case 0x4d /* 'M' */ :
+		case 0x4e /* 'N' */ :
+		case 0x4f /* 'O' */ :
+		case 0x50 /* 'P' */ :
+		case 0x51 /* 'Q' */ :
+		case 0x52 /* 'R' */ :
+		case 0x53 /* 'S' */ :
+		case 0x54 /* 'T' */ :
+		case 0x55 /* 'U' */ :
+		case 0x56 /* 'V' */ :
+		case 0x57 /* 'W' */ :
+		case 0x58 /* 'X' */ :
+		case 0x59 /* 'Y' */ :
+		case 0x5a /* 'Z' */ :
+		case 0x5f /* '_' */ :
+		case 0x61 /* 'a' */ :
+		case 0x62 /* 'b' */ :
+		case 0x63 /* 'c' */ :
+		case 0x64 /* 'd' */ :
+		case 0x65 /* 'e' */ :
+		case 0x66 /* 'f' */ :
+		case 0x67 /* 'g' */ :
+		case 0x68 /* 'h' */ :
+		case 0x69 /* 'i' */ :
+		case 0x6a /* 'j' */ :
+		case 0x6b /* 'k' */ :
+		case 0x6c /* 'l' */ :
+		case 0x6d /* 'm' */ :
+		case 0x6e /* 'n' */ :
+		case 0x6f /* 'o' */ :
+		case 0x70 /* 'p' */ :
+		case 0x71 /* 'q' */ :
+		case 0x72 /* 'r' */ :
+		case 0x73 /* 's' */ :
+		case 0x74 /* 't' */ :
+		case 0x75 /* 'u' */ :
+		case 0x76 /* 'v' */ :
+		case 0x77 /* 'w' */ :
+		case 0x78 /* 'x' */ :
+		case 0x79 /* 'y' */ :
+		case 0x7a /* 'z' */ :
 		{
 			mNONDIGIT(false);
 			break;
 		}
-		case static_cast<unsigned char>('0'):
-		case static_cast<unsigned char>('1'):
-		case static_cast<unsigned char>('2'):
-		case static_cast<unsigned char>('3'):
-		case static_cast<unsigned char>('4'):
-		case static_cast<unsigned char>('5'):
-		case static_cast<unsigned char>('6'):
-		case static_cast<unsigned char>('7'):
-		case static_cast<unsigned char>('8'):
-		case static_cast<unsigned char>('9'):
+		case 0x30 /* '0' */ :
+		case 0x31 /* '1' */ :
+		case 0x32 /* '2' */ :
+		case 0x33 /* '3' */ :
+		case 0x34 /* '4' */ :
+		case 0x35 /* '5' */ :
+		case 0x36 /* '6' */ :
+		case 0x37 /* '7' */ :
+		case 0x38 /* '8' */ :
+		case 0x39 /* '9' */ :
 		{
 			mDIGIT(false);
 			break;
@@ -932,69 +942,69 @@ void modelica_lexer::mNONDIGIT(bool _createToken) {
 	
 	{
 	switch ( LA(1)) {
-	case static_cast<unsigned char>('_'):
+	case 0x5f /* '_' */ :
 	{
-		match(static_cast<unsigned char>('_'));
+		match('_');
 		break;
 	}
-	case static_cast<unsigned char>('a'):
-	case static_cast<unsigned char>('b'):
-	case static_cast<unsigned char>('c'):
-	case static_cast<unsigned char>('d'):
-	case static_cast<unsigned char>('e'):
-	case static_cast<unsigned char>('f'):
-	case static_cast<unsigned char>('g'):
-	case static_cast<unsigned char>('h'):
-	case static_cast<unsigned char>('i'):
-	case static_cast<unsigned char>('j'):
-	case static_cast<unsigned char>('k'):
-	case static_cast<unsigned char>('l'):
-	case static_cast<unsigned char>('m'):
-	case static_cast<unsigned char>('n'):
-	case static_cast<unsigned char>('o'):
-	case static_cast<unsigned char>('p'):
-	case static_cast<unsigned char>('q'):
-	case static_cast<unsigned char>('r'):
-	case static_cast<unsigned char>('s'):
-	case static_cast<unsigned char>('t'):
-	case static_cast<unsigned char>('u'):
-	case static_cast<unsigned char>('v'):
-	case static_cast<unsigned char>('w'):
-	case static_cast<unsigned char>('x'):
-	case static_cast<unsigned char>('y'):
-	case static_cast<unsigned char>('z'):
+	case 0x61 /* 'a' */ :
+	case 0x62 /* 'b' */ :
+	case 0x63 /* 'c' */ :
+	case 0x64 /* 'd' */ :
+	case 0x65 /* 'e' */ :
+	case 0x66 /* 'f' */ :
+	case 0x67 /* 'g' */ :
+	case 0x68 /* 'h' */ :
+	case 0x69 /* 'i' */ :
+	case 0x6a /* 'j' */ :
+	case 0x6b /* 'k' */ :
+	case 0x6c /* 'l' */ :
+	case 0x6d /* 'm' */ :
+	case 0x6e /* 'n' */ :
+	case 0x6f /* 'o' */ :
+	case 0x70 /* 'p' */ :
+	case 0x71 /* 'q' */ :
+	case 0x72 /* 'r' */ :
+	case 0x73 /* 's' */ :
+	case 0x74 /* 't' */ :
+	case 0x75 /* 'u' */ :
+	case 0x76 /* 'v' */ :
+	case 0x77 /* 'w' */ :
+	case 0x78 /* 'x' */ :
+	case 0x79 /* 'y' */ :
+	case 0x7a /* 'z' */ :
 	{
-		matchRange(static_cast<unsigned char>('a'),static_cast<unsigned char>('z'));
+		matchRange('a','z');
 		break;
 	}
-	case static_cast<unsigned char>('A'):
-	case static_cast<unsigned char>('B'):
-	case static_cast<unsigned char>('C'):
-	case static_cast<unsigned char>('D'):
-	case static_cast<unsigned char>('E'):
-	case static_cast<unsigned char>('F'):
-	case static_cast<unsigned char>('G'):
-	case static_cast<unsigned char>('H'):
-	case static_cast<unsigned char>('I'):
-	case static_cast<unsigned char>('J'):
-	case static_cast<unsigned char>('K'):
-	case static_cast<unsigned char>('L'):
-	case static_cast<unsigned char>('M'):
-	case static_cast<unsigned char>('N'):
-	case static_cast<unsigned char>('O'):
-	case static_cast<unsigned char>('P'):
-	case static_cast<unsigned char>('Q'):
-	case static_cast<unsigned char>('R'):
-	case static_cast<unsigned char>('S'):
-	case static_cast<unsigned char>('T'):
-	case static_cast<unsigned char>('U'):
-	case static_cast<unsigned char>('V'):
-	case static_cast<unsigned char>('W'):
-	case static_cast<unsigned char>('X'):
-	case static_cast<unsigned char>('Y'):
-	case static_cast<unsigned char>('Z'):
+	case 0x41 /* 'A' */ :
+	case 0x42 /* 'B' */ :
+	case 0x43 /* 'C' */ :
+	case 0x44 /* 'D' */ :
+	case 0x45 /* 'E' */ :
+	case 0x46 /* 'F' */ :
+	case 0x47 /* 'G' */ :
+	case 0x48 /* 'H' */ :
+	case 0x49 /* 'I' */ :
+	case 0x4a /* 'J' */ :
+	case 0x4b /* 'K' */ :
+	case 0x4c /* 'L' */ :
+	case 0x4d /* 'M' */ :
+	case 0x4e /* 'N' */ :
+	case 0x4f /* 'O' */ :
+	case 0x50 /* 'P' */ :
+	case 0x51 /* 'Q' */ :
+	case 0x52 /* 'R' */ :
+	case 0x53 /* 'S' */ :
+	case 0x54 /* 'T' */ :
+	case 0x55 /* 'U' */ :
+	case 0x56 /* 'V' */ :
+	case 0x57 /* 'W' */ :
+	case 0x58 /* 'X' */ :
+	case 0x59 /* 'Y' */ :
+	case 0x5a /* 'Z' */ :
 	{
-		matchRange(static_cast<unsigned char>('A'),static_cast<unsigned char>('Z'));
+		matchRange('A','Z');
 		break;
 	}
 	default:
@@ -1016,7 +1026,7 @@ void modelica_lexer::mDIGIT(bool _createToken) {
 	_ttype = DIGIT;
 	int _saveIndex;
 	
-	matchRange(static_cast<unsigned char>('0'),static_cast<unsigned char>('9'));
+	matchRange('0','9');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -1032,14 +1042,14 @@ void modelica_lexer::mEXPONENT(bool _createToken) {
 	
 	{
 	switch ( LA(1)) {
-	case static_cast<unsigned char>('e'):
+	case 0x65 /* 'e' */ :
 	{
-		match(static_cast<unsigned char>('e'));
+		match('e');
 		break;
 	}
-	case static_cast<unsigned char>('E'):
+	case 0x45 /* 'E' */ :
 	{
-		match(static_cast<unsigned char>('E'));
+		match('E');
 		break;
 	}
 	default:
@@ -1050,26 +1060,26 @@ void modelica_lexer::mEXPONENT(bool _createToken) {
 	}
 	{
 	switch ( LA(1)) {
-	case static_cast<unsigned char>('+'):
+	case 0x2b /* '+' */ :
 	{
-		match(static_cast<unsigned char>('+'));
+		match('+');
 		break;
 	}
-	case static_cast<unsigned char>('-'):
+	case 0x2d /* '-' */ :
 	{
-		match(static_cast<unsigned char>('-'));
+		match('-');
 		break;
 	}
-	case static_cast<unsigned char>('0'):
-	case static_cast<unsigned char>('1'):
-	case static_cast<unsigned char>('2'):
-	case static_cast<unsigned char>('3'):
-	case static_cast<unsigned char>('4'):
-	case static_cast<unsigned char>('5'):
-	case static_cast<unsigned char>('6'):
-	case static_cast<unsigned char>('7'):
-	case static_cast<unsigned char>('8'):
-	case static_cast<unsigned char>('9'):
+	case 0x30 /* '0' */ :
+	case 0x31 /* '1' */ :
+	case 0x32 /* '2' */ :
+	case 0x33 /* '3' */ :
+	case 0x34 /* '4' */ :
+	case 0x35 /* '5' */ :
+	case 0x36 /* '6' */ :
+	case 0x37 /* '7' */ :
+	case 0x38 /* '8' */ :
+	case 0x39 /* '9' */ :
 	{
 		break;
 	}
@@ -1082,7 +1092,7 @@ void modelica_lexer::mEXPONENT(bool _createToken) {
 	{ // ( ... )+
 	int _cnt47=0;
 	for (;;) {
-		if (((LA(1) >= static_cast<unsigned char>('0') && LA(1) <= static_cast<unsigned char>('9')))) {
+		if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
 			mDIGIT(false);
 		}
 		else {
@@ -1106,61 +1116,106 @@ void modelica_lexer::mUNSIGNED_INTEGER(bool _createToken) {
 	_ttype = UNSIGNED_INTEGER;
 	int _saveIndex;
 	
-	{ // ( ... )+
-	int _cnt50=0;
-	for (;;) {
-		if (((LA(1) >= static_cast<unsigned char>('0') && LA(1) <= static_cast<unsigned char>('9')))) {
-			mDIGIT(false);
-		}
-		else {
-			if ( _cnt50>=1 ) { goto _loop50; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
-		}
-		
-		_cnt50++;
-	}
-	_loop50:;
-	}  // ( ... )+
 	{
-	if ((LA(1) == static_cast<unsigned char>('E') || LA(1) == static_cast<unsigned char>('e'))) {
-		{
-		mEXPONENT(false);
-#line 178 "modelica_lexer.g"
-		_ttype = UNSIGNED_REAL;
-#line 1130 "modelica_lexer.cpp"
-		}
-	}
-	else {
-		{
-		if (((LA(1) == static_cast<unsigned char>('.')))&&(LA(2) != '.' )) {
-			match(static_cast<unsigned char>('.'));
-#line 175 "modelica_lexer.g"
-			_ttype = UNSIGNED_REAL;
-#line 1139 "modelica_lexer.cpp"
-			{ // ( ... )*
+	bool synPredMatched53 = false;
+	if ((((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ )) && (_tokenSet_3.member(LA(2))))) {
+		int _m53 = mark();
+		synPredMatched53 = true;
+		inputState->guessing++;
+		try {
+			{
+			{ // ( ... )+
+			int _cnt52=0;
 			for (;;) {
-				if (((LA(1) >= static_cast<unsigned char>('0') && LA(1) <= static_cast<unsigned char>('9')))) {
+				if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
 					mDIGIT(false);
 				}
 				else {
-					goto _loop54;
+					if ( _cnt52>=1 ) { goto _loop52; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 				}
 				
+				_cnt52++;
 			}
-			_loop54:;
-			} // ( ... )*
-			{
-			if ((LA(1) == static_cast<unsigned char>('E') || LA(1) == static_cast<unsigned char>('e'))) {
-				mEXPONENT(false);
+			_loop52:;
+			}  // ( ... )+
+			match('.');
+			}
+		}
+		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& pe) {
+			synPredMatched53 = false;
+		}
+		rewind(_m53);
+		inputState->guessing--;
+	}
+	if ( synPredMatched53 ) {
+		{ // ( ... )+
+		int _cnt55=0;
+		for (;;) {
+			if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
+				mDIGIT(false);
 			}
 			else {
+				if ( _cnt55>=1 ) { goto _loop55; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 			}
 			
+			_cnt55++;
+		}
+		_loop55:;
+		}  // ( ... )+
+		{
+		match('.');
+		{ // ( ... )*
+		for (;;) {
+			if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
+				mDIGIT(false);
 			}
+			else {
+				goto _loop58;
+			}
+			
 		}
-		else {
+		_loop58:;
+		} // ( ... )*
 		}
-		
+		if ( inputState->guessing==0 ) {
+#line 157 "modelica_lexer.g"
+			
+							_ttype = UNSIGNED_REAL; 
+						
+#line 1186 "modelica_lexer.cpp"
 		}
+	}
+	else if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ )) && (true)) {
+		{ // ( ... )+
+		int _cnt60=0;
+		for (;;) {
+			if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
+				mDIGIT(false);
+			}
+			else {
+				if ( _cnt60>=1 ) { goto _loop60; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
+			}
+			
+			_cnt60++;
+		}
+		_loop60:;
+		}  // ( ... )+
+	}
+	else {
+		throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
+	}
+	
+	}
+	{
+	if ((LA(1) == 0x45 /* 'E' */  || LA(1) == 0x65 /* 'e' */ )) {
+		mEXPONENT(false);
+		if ( inputState->guessing==0 ) {
+#line 162 "modelica_lexer.g"
+			_ttype = UNSIGNED_REAL;
+#line 1216 "modelica_lexer.cpp"
+		}
+	}
+	else {
 	}
 	
 	}
@@ -1177,26 +1232,26 @@ void modelica_lexer::mSTRING(bool _createToken) {
 	_ttype = STRING;
 	int _saveIndex;
 	
-	_saveIndex=text.length();
-	match(static_cast<unsigned char>('"'));
+	_saveIndex = text.length();
+	match('"');
 	text.erase(_saveIndex);
 	{ // ( ... )*
 	for (;;) {
-		if ((_tokenSet_3.member(LA(1)))) {
+		if ((_tokenSet_4.member(LA(1)))) {
 			mSCHAR(false);
 		}
-		else if ((LA(1) == static_cast<unsigned char>('\\'))) {
+		else if ((LA(1) == 0x5c /* '\\' */ )) {
 			mSESCAPE(false);
 		}
 		else {
-			goto _loop59;
+			goto _loop64;
 		}
 		
 	}
-	_loop59:;
+	_loop64:;
 	} // ( ... )*
-	_saveIndex=text.length();
-	match(static_cast<unsigned char>('"'));
+	_saveIndex = text.length();
+	match('"');
 	text.erase(_saveIndex);
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1212,18 +1267,18 @@ void modelica_lexer::mSCHAR(bool _createToken) {
 	int _saveIndex;
 	
 	switch ( LA(1)) {
-	case static_cast<unsigned char>('\n'):
-	case static_cast<unsigned char>('\r'):
+	case 0xa /* '\n' */ :
+	case 0xd /* '\r' */ :
 	{
 		{
 		{
 		switch ( LA(1)) {
-		case static_cast<unsigned char>('\n'):
+		case 0xa /* '\n' */ :
 		{
-			match(static_cast<unsigned char>('\n'));
+			match('\n');
 			break;
 		}
-		case static_cast<unsigned char>('\r'):
+		case 0xd /* '\r' */ :
 		{
 			match("\r\n");
 			break;
@@ -1235,20 +1290,22 @@ void modelica_lexer::mSCHAR(bool _createToken) {
 		}
 		}
 		}
-#line 186 "modelica_lexer.g"
-		newline();
-#line 1241 "modelica_lexer.cpp"
+		if ( inputState->guessing==0 ) {
+#line 169 "modelica_lexer.g"
+			newline();
+#line 1297 "modelica_lexer.cpp"
+		}
 		break;
 	}
-	case static_cast<unsigned char>('\t'):
+	case 0x9 /* '\t' */ :
 	{
-		match(static_cast<unsigned char>('\t'));
+		match('\t');
 		break;
 	}
 	default:
-		if ((_tokenSet_4.member(LA(1)))) {
+		if ((_tokenSet_5.member(LA(1)))) {
 			{
-			match(_tokenSet_4);
+			match(_tokenSet_5);
 			}
 		}
 	else {
@@ -1268,62 +1325,62 @@ void modelica_lexer::mSESCAPE(bool _createToken) {
 	_ttype = SESCAPE;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('\\'));
+	match('\\');
 	{
 	switch ( LA(1)) {
-	case static_cast<unsigned char>('\\'):
+	case 0x5c /* '\\' */ :
 	{
-		match(static_cast<unsigned char>('\\'));
+		match('\\');
 		break;
 	}
-	case static_cast<unsigned char>('"'):
+	case 0x22 /* '"' */ :
 	{
-		match(static_cast<unsigned char>('"'));
+		match('"');
 		break;
 	}
-	case static_cast<unsigned char>('\''):
+	case 0x27 /* '\'' */ :
 	{
 		match("'");
 		break;
 	}
-	case static_cast<unsigned char>('?'):
+	case 0x3f /* '?' */ :
 	{
-		match(static_cast<unsigned char>('?'));
+		match('?');
 		break;
 	}
-	case static_cast<unsigned char>('a'):
+	case 0x61 /* 'a' */ :
 	{
-		match(static_cast<unsigned char>('a'));
+		match('a');
 		break;
 	}
-	case static_cast<unsigned char>('b'):
+	case 0x62 /* 'b' */ :
 	{
-		match(static_cast<unsigned char>('b'));
+		match('b');
 		break;
 	}
-	case static_cast<unsigned char>('f'):
+	case 0x66 /* 'f' */ :
 	{
-		match(static_cast<unsigned char>('f'));
+		match('f');
 		break;
 	}
-	case static_cast<unsigned char>('n'):
+	case 0x6e /* 'n' */ :
 	{
-		match(static_cast<unsigned char>('n'));
+		match('n');
 		break;
 	}
-	case static_cast<unsigned char>('r'):
+	case 0x72 /* 'r' */ :
 	{
-		match(static_cast<unsigned char>('r'));
+		match('r');
 		break;
 	}
-	case static_cast<unsigned char>('t'):
+	case 0x74 /* 't' */ :
 	{
-		match(static_cast<unsigned char>('t'));
+		match('t');
 		break;
 	}
-	case static_cast<unsigned char>('v'):
+	case 0x76 /* 'v' */ :
 	{
-		match(static_cast<unsigned char>('v'));
+		match('v');
 		break;
 	}
 	default:
@@ -1345,17 +1402,17 @@ void modelica_lexer::mESC(bool _createToken) {
 	_ttype = ESC;
 	int _saveIndex;
 	
-	match(static_cast<unsigned char>('\\'));
+	match('\\');
 	{
 	switch ( LA(1)) {
-	case static_cast<unsigned char>('"'):
+	case 0x22 /* '"' */ :
 	{
-		match(static_cast<unsigned char>('"'));
+		match('"');
 		break;
 	}
-	case static_cast<unsigned char>('\\'):
+	case 0x5c /* '\\' */ :
 	{
-		match(static_cast<unsigned char>('\\'));
+		match('\\');
 		break;
 	}
 	default:
@@ -1378,7 +1435,7 @@ const unsigned long modelica_lexer::_tokenSet_0_data_[] = { 4294967288UL, 429496
 // "Code" "class" "connect" "connector" "constant" "discrete" "each" "else" 
 // "elseif" "elsewhen" "end" "enumeration" "equation" "encapsulated" "extends" 
 // "external" "false" "final" "flow" "for" "function" "if" "import" "in" 
-// "initial" "inner" "input" "loop" "model" "not" "overload" "outer" "or" 
+// "initial" "inner" "input" "loop" "model" "not" "outer" "overload" "or" 
 // "package" "parameter" "partial" "protected" "public" "record" "redeclare" 
 // "replaceable" "results" "then" "true" "type" "unsigned_real" "when" 
 // "while" "within" LPAR RPAR LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN 
@@ -1391,7 +1448,7 @@ const unsigned long modelica_lexer::_tokenSet_1_data_[] = { 4294958072UL, 429496
 // "Code" "connect" "connector" "discrete" "each" "else" "elseif" "elsewhen" 
 // "end" "enumeration" "equation" "encapsulated" "extends" "external" "false" 
 // "final" "flow" "for" "function" "if" "import" "in" "initial" "inner" 
-// "input" "loop" "model" "not" "overload" "outer" "or" "package" "parameter" 
+// "input" "loop" "model" "not" "outer" "overload" "or" "package" "parameter" 
 // "partial" "protected" "public" "record" "redeclare" "replaceable" "results" 
 // "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR 
 // LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT 
@@ -1404,7 +1461,7 @@ const unsigned long modelica_lexer::_tokenSet_2_data_[] = { 4294958072UL, 429496
 // "Code" "connect" "connector" "discrete" "each" "else" "elseif" "elsewhen" 
 // "end" "enumeration" "equation" "encapsulated" "extends" "external" "false" 
 // "final" "flow" "for" "function" "if" "import" "in" "initial" "inner" 
-// "input" "loop" "model" "not" "overload" "outer" "or" "output" "package" 
+// "input" "loop" "model" "not" "outer" "overload" "or" "output" "package" 
 // "parameter" "partial" "protected" "public" "record" "redeclare" "replaceable" 
 // "results" "then" "true" "type" "unsigned_real" "when" "while" "within" 
 // LPAR RPAR LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR 
@@ -1412,30 +1469,34 @@ const unsigned long modelica_lexer::_tokenSet_2_data_[] = { 4294958072UL, 429496
 // POWER WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT 
 // EXPONENT UNSIGNED_INTEGER STRING SCHAR SESCAPE ESC 
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_2(_tokenSet_2_data_,16);
-const unsigned long modelica_lexer::_tokenSet_3_data_[] = { 4294967288UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const unsigned long modelica_lexer::_tokenSet_3_data_[] = { 0UL, 67059712UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// "protected" "record" "redeclare" "replaceable" "results" "then" "true" 
+// "type" "unsigned_real" "when" "while" 
+const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_3(_tokenSet_3_data_,10);
+const unsigned long modelica_lexer::_tokenSet_4_data_[] = { 4294967288UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary" 
 // "Code" "class" "connect" "connector" "constant" "discrete" "each" "else" 
 // "elseif" "elsewhen" "end" "enumeration" "equation" "encapsulated" "extends" 
 // "external" "false" "final" "flow" "for" "function" "if" "import" "in" 
-// "initial" "input" "loop" "model" "not" "overload" "outer" "or" "output" 
+// "initial" "input" "loop" "model" "not" "outer" "overload" "or" "output" 
 // "package" "parameter" "partial" "protected" "public" "record" "redeclare" 
 // "replaceable" "results" "then" "true" "type" "unsigned_real" "when" 
 // "while" "within" LPAR RPAR LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN 
 // PLUS MINUS STAR SLASH DOT COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT 
 // COLON SEMICOLON POWER WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT 
 // NONDIGIT DIGIT EXPONENT UNSIGNED_INTEGER STRING SESCAPE ESC 
-const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_3(_tokenSet_3_data_,16);
-const unsigned long modelica_lexer::_tokenSet_4_data_[] = { 4294957560UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_4(_tokenSet_4_data_,16);
+const unsigned long modelica_lexer::_tokenSet_5_data_[] = { 4294957560UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary" 
 // "connect" "connector" "discrete" "each" "else" "elseif" "elsewhen" "end" 
 // "enumeration" "equation" "encapsulated" "extends" "external" "false" 
 // "final" "flow" "for" "function" "if" "import" "in" "initial" "input" 
-// "loop" "model" "not" "overload" "outer" "or" "output" "package" "parameter" 
+// "loop" "model" "not" "outer" "overload" "or" "output" "package" "parameter" 
 // "partial" "protected" "public" "record" "redeclare" "replaceable" "results" 
 // "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR 
 // LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT 
 // COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER 
 // WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT 
 // UNSIGNED_INTEGER STRING SESCAPE ESC 
-const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_4(_tokenSet_4_data_,16);
+const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_5(_tokenSet_5_data_,16);
 

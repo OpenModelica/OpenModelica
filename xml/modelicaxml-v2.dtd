@@ -34,7 +34,7 @@
       for an equation/algorithm element we have initial attribute to know if is initial -->
 <!ENTITY % composition "( ( ( %elements; )* | annotation* | equation* | algorithm* )* , external? )">
 <!-- a class can be either a composition, can be derived (using =) or can be an enumeration -->
-<!ENTITY % class_specifier "( (%composition;) | derived | enumeration )">
+<!ENTITY % class_specifier "( (%composition;) | (derived, constrain?) | enumeration )">
 <!-- type prefix can be flow, variability, direction -->
 <!ENTITY % type_prefix "flow (true) #IMPLIED 
                                         variability (discrete | parameter | constant) #IMPLIED 
@@ -45,10 +45,10 @@
 <!ENTITY % class_modification "( ( ( element_modification | element_redeclaration)+ )? )">
 <!-- a modification states the modifications are made to the components of a class or to the class itself -->
 <!ENTITY % modification "(modification_arguments | modification_equals | modification_assign)">
-<!ENTITY % exp "( if | range | or | and | not | lt | lte | gt |  gte | eq | ne | add | sub  | mul | div | pow | integer_literal | real_literal | string_literal | bool_literal  | component_reference  | call | output_expression_list | concat | arr | end )">
-<!ENTITY % expression_list "((%exp;)+)">
+<!ENTITY % exp "( if | range | or | and | not | lt | lte | gt |  gte | eq | ne | add | sub  | mul | div | pow | integer_literal | real_literal | string_literal | bool_literal  | component_reference  | call | output_expression_list | concat | array | end )">
+
 <!ENTITY % equation_list "(equation*)">
-<!ENTITY % algorithm_list "(algorithm+)">
+<!ENTITY % algorithm_list "(algorithm*)">
 <!ENTITY % named_arguments "(named_argument)+">
 <!ENTITY % subscript "(colon | %exp;)">
 <!--
@@ -60,20 +60,35 @@
     - flat
 	  + here will be the flat modelica representation
 -->
-<!ELEMENT modelica (modelicaxml*, ANY)>
+<!ELEMENT modelica (modelicaxml*, flatmodelicaxml*)>
 
 <!ELEMENT modelicaxml (definition*)>
 <!ATTLIST modelicaxml
 	within CDATA #IMPLIED
+	file CDATA #IMPLIED	
 	%location; 
 >
-<!-- comments are either string comments or annotations -->
-<!ELEMENT comment (annotation?)>
+
+<!ELEMENT flatmodelicaxml EMPTY>
+
+
+<!-- comments are either string comments or annotations or empty -->
+<!ELEMENT comment ((string_comment?, annotation?))>
 <!-- a string comment set as an attribute -->
 <!ATTLIST comment
-	string_comment CDATA #IMPLIED
 	%location; 
 >
+
+<!ELEMENT string_comment (add_string|string_literal)?>
+<!ATTLIST string_comment
+	%location; 
+>
+
+<!ELEMENT add_string ((add_string|string_literal), string_literal)>
+<!ATTLIST add_string	
+	%location; 
+>
+
 <!-- annotation are class modifications (a list of arguments that can be either redeclarations or modifications)-->
 <!ELEMENT annotation (%class_modification;)>
 <!-- annotation can appear inside ellement_list, equation_clause, algorithm_clause, comment 
@@ -85,7 +100,7 @@
 	%location; 
 >
 <!-- class definition is formed from class_specifier entity-->
-<!ELEMENT definition (%class_specifier;)>
+<!ELEMENT definition ((%class_specifier;), string_comment?)>
 <!-- for a definition we have attributes:
       ident: the name
       final, partial, encapsulated:  these attributes are set to true or does not exist
@@ -133,7 +148,7 @@
   (* ExternalDecl *)
   ident and language_specifications are specified as attributes
 -->
-<!ELEMENT external ((external_equal?, (%expression_list;)?), annotation?, (semicolon, annotation)?)>
+<!ELEMENT external ((external_equal?, (expression_list)?), annotation?, (semicolon, annotation)?)>
 <!ATTLIST external
 	ident CDATA #IMPLIED
 	language_specification CDATA #IMPLIED
@@ -147,14 +162,33 @@
 	imports (public/protected)
 	extends (public/protected)
 	element (final, innerouter, replaceable) and (constraining_clause (extends) + comment) -->
-<!ELEMENT import (comment?)>
+
+<!ELEMENT import ((named_import|qualified_import|unqualified_import), comment?)>
 <!ATTLIST import
-	ident CDATA #IMPLIED
-	name CDATA #REQUIRED
-	dotstar (true) #IMPLIED
 	visibility (public | protected) #IMPLIED
 	%location; 
 >
+
+<!ELEMENT named_import EMPTY>
+<!ATTLIST named_import
+	ident CDATA #IMPLIED
+	name CDATA #REQUIRED
+	%location; 
+>
+	
+<!ELEMENT qualified_import EMPTY>
+<!ATTLIST qualified_import
+	name CDATA #REQUIRED
+	%location; 
+>
+
+<!ELEMENT unqualified_import EMPTY>
+<!ATTLIST unqualified_import
+	name CDATA #REQUIRED
+	%location; 
+>
+
+
 <!ELEMENT extends (%class_modification;)>
 <!ATTLIST extends
 	type CDATA #REQUIRED
@@ -174,6 +208,7 @@ nformation specific to one component. *)
 	ident CDATA #REQUIRED
 	type CDATA #REQUIRED
 	%type_prefix; 
+	final (true) #IMPLIED
 	inside (element | redeclaration) #IMPLIED
 	innerouter (inner | outer) #IMPLIED
 	replaceable (true) #IMPLIED
@@ -247,7 +282,7 @@ Algorithm
 	initial (true) #IMPLIED
 	%location; 
 >
-<!ELEMENT alg_assign ((component_reference, %exp;) | (output_expression_list, component_reference, function_arguments))>
+<!ELEMENT alg_assign ((component_reference, %exp;) | (output_expression_list, call))>
 <!ATTLIST alg_assign
 	%location; 
 >
@@ -342,6 +377,7 @@ Algorithm
 <!--
   (** - expression_list *)
 -->
+
 <!ELEMENT integer_literal EMPTY>
 <!ATTLIST integer_literal
 	value CDATA #REQUIRED
@@ -420,22 +456,25 @@ Algorithm
 <!ATTLIST pow
 	%location; 
 >
-<!ELEMENT arr (function_arguments)>
-<!ATTLIST arr
+<!ELEMENT array (function_arguments)>
+<!ATTLIST array
 	%location; 
 >
-<!ELEMENT concat (%expression_list;, (semicolon, %expression_list;)?)>
+<!ELEMENT concat (expression_list, expression_list*)>
 <!ATTLIST concat
 	%location; 
 >
+
 <!ELEMENT semicolon EMPTY>
 <!ATTLIST semicolon
 	%location; 
 >
+
 <!ELEMENT if ((%exp;), then, elseif*, else)>
 <!ATTLIST if
 	%location; 
 >
+
 <!ELEMENT then (%exp;)>
 <!ATTLIST then
 	%location; 
@@ -448,7 +487,7 @@ Algorithm
 <!ATTLIST else
 	%location; 
 >
-<!ELEMENT call (component_reference, function_arguments)>
+<!ELEMENT call (component_reference, function_arguments?)>
 <!ATTLIST call
 	%location; 
 >
@@ -456,10 +495,17 @@ Algorithm
 <!ATTLIST range
 	%location; 
 >
+
 <!ELEMENT output_expression_list ((%exp;)?, (comma, (%exp;)?)*)>
 <!ATTLIST output_expression_list
 	%location; 
 >
+
+<!ELEMENT expression_list ((%exp;), (comma, (%exp;)?)*)>
+<!ATTLIST expression_list
+	%location; 
+>
+
 <!ELEMENT comma EMPTY>
 <!ATTLIST comma
 	%location; 
@@ -468,7 +514,7 @@ Algorithm
 <!ATTLIST end
 	%location; 
 >
-<!ELEMENT function_arguments ((%exp;, (function_arguments | for_indices)?) | %named_arguments;)>
+<!ELEMENT function_arguments ((%exp;, (%exp; | for_indices)*) | %named_arguments;)>
 <!ATTLIST function_arguments
 	%location; 
 >

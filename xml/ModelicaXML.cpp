@@ -8,7 +8,7 @@
   Source:
   Revision:
   Author:	Adrian Pop
-  Date:		2003-10-25
+  Date:		2004-05-12
 *******************************************************************************
 */
 
@@ -34,7 +34,7 @@
 #include "antlr/AST.hpp"
 #include "antlr/CommonAST.hpp"
 #include "antlr/ASTFactory.hpp"
-
+#include "MyAST.h"
 
 
 using namespace std;
@@ -49,7 +49,7 @@ using namespace std;
 int main( int argc, char* argv[] )
 {
 	ifstream file;
-	ofstream wfile;
+	//ofstream wfile;
 
 	// check if the modelica file is present in the argument list
     if (argc != 2){
@@ -67,20 +67,20 @@ int main( int argc, char* argv[] )
   		return 2;
      }
  
-    /*try*/ 
+    try 
 	{
-	  antlr::ASTFactory my_factory; 
+	  antlr::ASTFactory my_factory("MyAST", MyAST::factory); 
 	  modelica_lexer lexer(file);
 	  lexer.setFilename(argv[1]);
 	  modelica_parser parser(lexer);
 	  parser.initializeASTFactory(my_factory);
 	  parser.setASTFactory(&my_factory);
 	  parser.stored_definition();
-	  wfile.open("output.txt");
-	  wfile << parser.getAST()->toStringList() << endl;
+	  //wfile.open("output.txt");
+	  //wfile << parser.getAST()->toStringList() << std::endl;
 	  antlr::RefAST ast = parser.getAST();
-	  parse_tree_dumper dumper(std::cout);
-	  std::cout << std::flush;
+	  //parse_tree_dumper dumper(std::cout);
+	  //std::cout << std::flush;
 	  if (ast) 
 	    {
 	      //dumper.dump(ast);
@@ -89,14 +89,14 @@ int main( int argc, char* argv[] )
 		  walker.setASTFactory(&my_factory);
 		  std::string xmlFile(argv[1]);
 		  xmlFile += ".xml";
-		  walker.stored_definition(ast, xmlFile);
+		  walker.stored_definition(RefMyAST(ast), xmlFile, argv[1]);
 	    }
 	  else
 	    {
-			wfile << std::endl << "Parse error: <NULL> AST\n";
+			//wfile << std::endl << "Parse error: <NULL> AST\n";
+			std::cerr << std::endl << "Parse error: <NULL> AST\n";
 	    }
 	}
-	/*
     catch(antlr::ANTLRException& e) 
 	{
 		std::cerr << "Parser/Lexer/Walker Exception: " << e.toString() << std::endl;
@@ -113,11 +113,10 @@ int main( int argc, char* argv[] )
 		getchar();
 		return EXIT_FAILURE;
 	}
-	*/
   
     file.close();
 	std::cout << "SUCCESS! File:" << argv[1] << std::endl;
-	wfile << std::endl << "SUCCESS! File:" << argv[1] << std::endl;
-	wfile.close();
+	//wfile << std::endl << "SUCCESS! File:" << argv[1] << std::endl;
+	//wfile.close();
     return EXIT_SUCCESS;
 }

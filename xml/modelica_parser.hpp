@@ -2,23 +2,24 @@
 #define INC_modelica_parser_hpp_
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.2: "modelica_parser.g" -> "modelica_parser.hpp"$ */
+/* $ANTLR 2.7.3: "modelica_parser.g" -> "modelica_parser.hpp"$ */
 #include <antlr/TokenStream.hpp>
 #include <antlr/TokenBuffer.hpp>
 #include "modelica_parserTokenTypes.hpp"
 #include <antlr/LLkParser.hpp>
 
-#line 2 "modelica_parser.g"
-
+#line 3 "modelica_parser.g"
 
 #define null 0
+#include "MyAST.h"
 
+typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
 
-#line 18 "modelica_parser.hpp"
-class modelica_parser : public ANTLR_USE_NAMESPACE(antlr)LLkParser, public modelica_parserTokenTypes
+#line 19 "modelica_parser.hpp"
+class CUSTOM_API modelica_parser : public ANTLR_USE_NAMESPACE(antlr)LLkParser, public modelica_parserTokenTypes
 {
 #line 1 "modelica_parser.g"
-#line 22 "modelica_parser.hpp"
+#line 23 "modelica_parser.hpp"
 public:
 	void initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory );
 protected:
@@ -44,10 +45,12 @@ public:
 		return modelica_parser::tokenNames;
 	}
 	public: void stored_definition();
+	public: void class_type();
+	public: void component_clause();
+	public: void import_clause();
 	public: void within_clause();
 	public: void class_definition();
 	public: void name_path();
-	public: void class_type();
 	public: void class_specifier();
 	public: void string_comment();
 	public: void composition();
@@ -55,10 +58,10 @@ public:
 	public: void array_subscripts();
 	public: void class_modification();
 	public: void comment();
-	public: void overloading();
 	public: void enumeration();
-	public: void type_prefix();
+	public: void overloading();
 	public: void name_list();
+	public: void type_prefix();
 	public: void enum_list();
 	public: void enumeration_literal();
 	public: void element_list();
@@ -75,9 +78,7 @@ public:
 	public: void component_reference();
 	public: void expression_list();
 	public: void element();
-	public: void import_clause();
 	public: void extends_clause();
-	public: void component_clause();
 	public: void constraining_clause();
 	public: void explicit_import_name();
 	public: void implicit_import_name();
@@ -138,21 +139,29 @@ public:
 	public: void factor();
 	public: void primary();
 	public: void component_reference__function_call();
-	public: void function_arguments();
 	public: void for_or_expression_list();
+	public: void function_arguments();
 	public: void named_arguments();
 	public: void for_or_expression_list2();
 	public: void named_arguments2();
 	public: void named_argument();
 	public: void expression_list2();
 	public: void subscript();
+public:
+	ANTLR_USE_NAMESPACE(antlr)RefAST getAST()
+	{
+		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
+	}
+	
+protected:
+	RefMyAST returnAST;
 private:
 	static const char* tokenNames[];
 #ifndef NO_STATIC_CONSTS
-	static const int NUM_TOKENS = 131;
+	static const int NUM_TOKENS = 136;
 #else
 	enum {
-		NUM_TOKENS = 131
+		NUM_TOKENS = 136
 	};
 #endif
 	
@@ -202,6 +211,16 @@ private:
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_21;
 	static const unsigned long _tokenSet_22_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_22;
+	static const unsigned long _tokenSet_23_data_[];
+	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_23;
+	static const unsigned long _tokenSet_24_data_[];
+	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_24;
+	static const unsigned long _tokenSet_25_data_[];
+	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_25;
+	static const unsigned long _tokenSet_26_data_[];
+	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_26;
+	static const unsigned long _tokenSet_27_data_[];
+	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_27;
 };
 
 #endif /*INC_modelica_parser_hpp_*/

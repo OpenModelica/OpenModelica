@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="ModelicaXML"
 	ProjectGUID="{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}"
 	Keyword="Win32Proj">
@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)\antlr-2.7.2\lib\cpp\&quot;;&quot;$(InputDir)\xercesc\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)\..\antlr-2.7.3\lib\cpp\&quot;;&quot;$(InputDir)\..\xercesc\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -35,7 +35,7 @@
 				AdditionalDependencies="antlrD.lib xerces-c_2D.lib"
 				OutputFile="$(OutDir)/ModelicaXML.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)\xercesc\lib&quot;;&quot;$(InputDir)\lib\&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)\..\xercesc\lib&quot;;&quot;$(InputDir)\lib\&quot;"
 				IgnoreDefaultLibraryNames="libcmtd.lib"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/ModelicaXML.pdb"
@@ -54,7 +54,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -67,7 +73,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="&quot;$(InputDir)\antlr-2.7.2\lib\cpp\&quot;;&quot;$(InputDir)\xercesc\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)\..\antlr-2.7.3\lib\cpp\&quot;;&quot;$(InputDir)\..\xercesc\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
@@ -81,9 +87,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="antlr.lib xerces-c_2.lib"
-				OutputFile="$(OutDir)/ModelicaXMLr.exe"
+				OutputFile="$(OutDir)/ModelicaXML.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)\xercesc\lib&quot;;&quot;$(InputDir)\lib\&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)\..\xercesc\lib&quot;;&quot;$(InputDir)\lib\&quot;"
 				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"
@@ -103,19 +109,21 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
-			<File
-				RelativePath="ModelicaXML.cpp">
-			</File>
-			<File
-				RelativePath="ModelicaXMLUtilities.cpp">
-			</File>
 			<File
 				RelativePath="modelica_lexer.cpp">
 			</File>
@@ -165,6 +173,12 @@
 				RelativePath="modelica_tree_parser.cpp">
 			</File>
 			<File
+				RelativePath="ModelicaXML.cpp">
+			</File>
+			<File
+				RelativePath="ModelicaXMLUtilities.cpp">
+			</File>
+			<File
 				RelativePath="parse_tree_dumper.cpp">
 			</File>
 			<File
@@ -195,12 +209,6 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
-				RelativePath="ModelicaXMLUtilities.hpp">
-			</File>
-			<File
-				RelativePath="modelicaTokenTypes.hpp">
-			</File>
-			<File
 				RelativePath="modelica_lexer.hpp">
 			</File>
 			<File
@@ -216,7 +224,16 @@
 				RelativePath="modelica_tree_parserTokenTypes.hpp">
 			</File>
 			<File
+				RelativePath="modelicaTokenTypes.hpp">
+			</File>
+			<File
 				RelativePath="modelicaxml.h">
+			</File>
+			<File
+				RelativePath="ModelicaXMLUtilities.hpp">
+			</File>
+			<File
+				RelativePath=".\MyAST.h">
 			</File>
 			<File
 				RelativePath="parse_tree_dumper.hpp">
@@ -244,7 +261,16 @@
 				RelativePath="ModelicaTreeParserTokenTypes.txt">
 			</File>
 			<File
+				RelativePath=".\modelicaxml-detailed.dtd">
+			</File>
+			<File
 				RelativePath="modelicaxml-v2.dtd">
+			</File>
+			<File
+				RelativePath=".\walker-2004-03-18.txt">
+			</File>
+			<File
+				RelativePath=".\save\walker.g">
 			</File>
 		</Filter>
 		<Filter
@@ -257,7 +283,22 @@
 				RelativePath="testsuite\GenMicroCircuit.mo">
 			</File>
 			<File
+				RelativePath="testsuite\GenMicroCircuit.mo.xml">
+			</File>
+			<File
+				RelativePath="test\output.txt">
+			</File>
+			<File
 				RelativePath="testsuite\SecondOrderSystem.mo">
+			</File>
+			<File
+				RelativePath="test\test.mo">
+			</File>
+			<File
+				RelativePath="test\test.mo.xml">
+			</File>
+			<File
+				RelativePath="trash.txt">
 			</File>
 		</Filter>
 	</Files>

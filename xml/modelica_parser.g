@@ -1,9 +1,12 @@
 
-header "post_include_hpp" {
-
+header "post_include_hpp" 
+{
 #define null 0
+#include "MyAST.h"
 
+typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
 }
+
 
 options {
 	language = "Cpp";
@@ -16,11 +19,14 @@ options {
     defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
+	/* adrpo - for line numbers (code from Kaj) */
+    ASTLabelType = "RefMyAST";
 }
 
 tokens {
     ALGORITHM_STATEMENT;
 	ARGUMENT_LIST;
+    BEGIN_DEFINITION;
 	CLASS_DEFINITION	;
 	CLASS_MODIFICATION;
 	CODE_EXPRESSION;
@@ -31,8 +37,10 @@ tokens {
 	CODE_ALGORITHM;
 	CODE_INITIALALGORITHM;
 	COMMENT;
+    COMPONENT_DEFINITION;
 	DECLARATION	; 
 	DEFINITION ;
+    END_DEFINITION;
 	ENUMERATION_LITERAL;
 	ELEMENT		;
 	ELEMENT_MODIFICATION		;
@@ -40,9 +48,11 @@ tokens {
     EQUATION_STATEMENT;
  	INITIAL_EQUATION;
 	INITIAL_ALGORITHM;
+    IMPORT_DEFINITION;
 	EXPRESSION_LIST;
 	EXTERNAL_FUNCTION_CALL;
     FOR_INDICES ;
+    FOR_ITERATOR ;
 	FUNCTION_CALL		;
 	INITIAL_FUNCTION_CALL		;
 	FUNCTION_ARGUMENTS;
@@ -65,6 +75,38 @@ tokens {
 
 
 stored_definition :
+// To handle split models into several evaluations, "package A", 
+// "model test end test", "end A;" as in MathModelica
+        ( (ENCAPSULATED)? 
+ 		(PARTIAL)?
+ 		class_type
+ 		IDENT EOF ) => ( (ENCAPSULATED)? 
+ 		(PARTIAL)?
+ 		class_type
+ 		IDENT EOF!)
+         {
+             #stored_definition = #([BEGIN_DEFINITION,"BEGIN_DEFINITION"],
+                                      #stored_definition);
+         }
+        |
+            END! IDENT SEMICOLON! EOF! {
+                #stored_definition = #([END_DEFINITION,"END_DEFINITION"],
+                                     #stored_definition);
+        } 
+        |
+        (component_clause) => component_clause SEMICOLON! EOF! 
+        {
+                #stored_definition = #([COMPONENT_DEFINITION,"COMPONENT_DEFINITION"],
+                                     #stored_definition);
+        }
+        |
+        import_clause SEMICOLON! EOF! 
+        {
+            #stored_definition = #([IMPORT_DEFINITION,"IMPORT_DEFINITION"],
+                                     #stored_definition);
+        }
+        |
+// End handle split models.
 			(within_clause SEMICOLON!)?
 			((f:FINAL)? class_definition SEMICOLON!)* 
 			EOF!
@@ -72,6 +114,7 @@ stored_definition :
 				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
 				#stored_definition);
 			}
+
 			;
 
 within_clause :
@@ -103,18 +146,19 @@ class_type :
 class_specifier :
 		( string_comment composition END! IDENT!
 		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
-		| EQUALS^ overloading
 		| EQUALS^ enumeration
+		| EQUALS^ overloading	
 		)
 		;
+
+overloading:
+		OVERLOAD^ LPAR! name_list RPAR! comment
+	;
 
 base_prefix:
 		type_prefix
 		;
 
-overloading:
-		OVERLOAD^ LPAR! name_list RPAR! comment
-		;
 name_list:
 		name_path (COMMA! name_path)*
 		;
@@ -149,10 +193,10 @@ composition :
 external_clause :
         EXTERNAL^	
             ( language_specification )? 
-            ( external_function_call )?
-			(SEMICOLON!) ?  
+            ( external_function_call )?  
+			(SEMICOLON!)?
 			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
-			( annotation SEMICOLON! )?
+			( annotation SEMICOLON!)? ( annotation SEMICOLON! )?
         ;
 		
 public_element_list :
@@ -554,7 +598,7 @@ simple_expression ! :
 		;
 /* Code quotation mechanism */
 code_expression ! :
-		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element 
+		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element (SEMICOLON!)?
 		| eq:code_equation_clause | ieq:code_initial_equation_clause
 		| alg:code_algorithm_clause | ialg:code_initial_algorithm_clause
 		)  RPAR 
@@ -663,7 +707,7 @@ primary :
 		| component_reference__function_call
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
-		| LBRACE^ expression_list RBRACE!
+		| LBRACE^ for_or_expression_list RBRACE!
 		| END
 		)
     ;
@@ -726,14 +770,20 @@ for_or_expression_list
 		|
 			(
 				e:expression
-				( COMMA! for_or_expression_list2 
-				| FOR^ for_indices
+				( COMMA! explist:for_or_expression_list2                     
+				| FOR^ forind:for_indices
 				)?
 			)
-			{
-				#for_or_expression_list = #([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
-			}
-
+            {
+                if (#forind != null) {
+                    #for_or_expression_list = 
+                        #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
+                }
+                else {
+                    #for_or_expression_list = 
+                        #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
+                }
+            }
 		)
 		;
 

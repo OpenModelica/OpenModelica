@@ -1,13 +1,24 @@
 <pre>
-# Author: Adrian Pop, URL:http://www.ida.liu.se/~adrpo, mailto:adrpo@ida.liu.se
-# Version: 2
-# Organization: Programming Environments Laboratory (PELAB), Department of Computer and Information Science (IDA), Linköping University (LiU), Sweden
-# Date: 2003-10-25
+**********************************************************************
+* ezDTD                                        
+* VERSION 1.0                                  
+* BY DUCNAN CHEN                               
+* ====================================================================
+* THIS IS A FREEWARE.                          
+* PLEASE SEND COMMENT TO FASTHAND@BIGFOOT.COM  
+**********************************************************************
+
+
+
+# Author: 
+# Version: 
+# Organization: 
+# Date: 
 </pre>
 <PRE>
-&lt;!-- 2003-10-20 -->
-&lt;!-- Adrian Pop, http://www.ida.liu.se/~adrpo/, mailto:adrpo@ida.liu.se -->
-&lt;!--modelicaxml-v2.dtd version 2 conform with Modelica Language Specification 2.0/2.1 -->
+&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;!--Adrian Pop 2003-07-01 adrpo@ida.liu.se-->
+&lt;!--modelica.dtd version 0.1 conform with Modelica Language Specification 2.0/2.1 -->
 &lt;!--   Copyright PELAB, Linkoping University
    
    This file is part of Open Source Modelica (OSM).
@@ -27,6 +38,82 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA-->
 &lt;!-- A DTD for Modelica, an XML representation of Modelica Source Code (AST) -->
 &lt;!--http://www.ida.liu.se/~adrpo/modelica/xml-->
+&lt;!-- we use location to make the mapping between xml elements and the location of the elements in the source representation -->
+&lt;!-- elements inside composition are import, extends, definitions, components, componet, constrain -->
+&lt;!-- composition defines parts of the class (elements, annotations,  algorithm, equation) 
+      for elements we have visibility attribute to decide public/protected, same for annotation 
+      for an equation/algorithm element we have initial attribute to know if is initial -->
+&lt;!-- a class can be either a composition, can be derived (using =) or can be an enumeration -->
+&lt;!-- type prefix can be flow, variability, direction -->
+&lt;!-- enumeration_list is used in the class definitions -->
+&lt;!-- class modifications states what modifications are made to a class when it is used -->
+&lt;!-- a modification states the modifications are made to the components of a class or to the class itself -->
+&lt;!--
+  - modelica 
+    - modelicaxml (stored_definition*)
+      + a model model is a set of definitions togheter with a within statement
+    - intermediate
+      + here will lay the intermediate code
+    - flat
+	  + here will be the flat modelica representation
+-->
+&lt;!-- comments are either string comments or annotations or empty -->
+&lt;!-- a string comment set as an attribute -->
+&lt;!-- annotation are class modifications (a list of arguments that can be either redeclarations or modifications)-->
+&lt;!-- annotation can appear inside ellement_list, equation_clause, algorithm_clause, comment 
+      we model this as attributes -->
+&lt;!-- class definition is formed from class_specifier entity-->
+&lt;!-- for a definition we have attributes:
+      ident: the name
+      final, partial, encapsulated:  these attributes are set to true or does not exist
+      restriction: say what kind of class this is 
+       -->
+&lt;!-- derived element states the definitions of the form class CapacitorMicroCircuit = GenMicroCircuit(%class_modification;); 
+      the type attribute here is GenMicroCircuit 
+      example:
+	&lt;definition ident="CapacitorMicroCircuit" restriction="class">
+		&lt;derived type="GenMicroCircuit">
+			&lt;element_redeclaration>
+				&lt;definition ident="CompType" restriction="type">
+					&lt;derived type="Capacitor"/>
+				&lt;/definition>
+			&lt;/element_redeclaration>
+		&lt;/derived>
+	&lt;/definition>      
+      -->
+&lt;!--
+  (* ExternalDecl *)
+  ident and language_specifications are specified as attributes
+-->
+&lt;!-- elements are:
+	imports (public/protected)
+	extends (public/protected)
+	element (final, innerouter, replaceable) and (constraining_clause (extends) + comment) -->
+&lt;!--
+  (** - Components *)   
+nformation specific to one component. *)
+-->
+&lt;!--
+equation_list
+-->
+&lt;!--
+Algorithm
+ -->
+&lt;!--
+   (** - Modifications *)
+-->
+&lt;!--
+  (** - Array dimensions *)
+-->
+&lt;!--
+  (** type_array_subscripts are used in a component to specify if the array subscripts comes with the type,
+       example: Real[3] x; [3] will go into the type_array_subscripts  *)
+-->
+&lt;!--
+  (** - expression_list *)
+-->
+
+
 
 
 
@@ -39,7 +126,7 @@
 <A NAME="#composition"></A>
 <pre>&lt;!ENTITY % composition "( ( ( %elements; )* | annotation* | equation* | algorithm* )* , external? )"></pre>
 <A NAME="#class_specifier"></A>
-<pre>&lt;!ENTITY % class_specifier "( (%composition;) | derived | enumeration )"></pre>
+<pre>&lt;!ENTITY % class_specifier "( (%composition;) | (derived, constrain?) | enumeration )"></pre>
 <A NAME="#type_prefix"></A>
 <pre>&lt;!ENTITY % type_prefix "flow (true) #IMPLIED                                           variability (discrete | parameter | constant) #IMPLIED                                           direction (input | output | bidirectional) #IMPLIED"></pre>
 <A NAME="#enum_list"></A>
@@ -49,13 +136,11 @@
 <A NAME="#modification"></A>
 <pre>&lt;!ENTITY % modification "(modification_arguments | modification_equals | modification_assign)"></pre>
 <A NAME="#exp"></A>
-<pre>&lt;!ENTITY % exp "( if | range | or | and | not | lt | lte | gt |  gte | eq | ne | add | sub  | mul | div | pow | integer_literal | real_literal | string_literal | bool_literal  | component_reference  | call | output_expression_list | concat | arr | end )"></pre>
-<A NAME="#expression_list"></A>
-<pre>&lt;!ENTITY % expression_list "((%exp;)+)"></pre>
+<pre>&lt;!ENTITY % exp "( if | range | or | and | not | lt | lte | gt |  gte | eq | ne | add | sub  | mul | div | pow | integer_literal | real_literal | string_literal | bool_literal  | component_reference  | call | output_expression_list | concat | array | end )"></pre>
 <A NAME="#equation_list"></A>
 <pre>&lt;!ENTITY % equation_list "(equation*)"></pre>
 <A NAME="#algorithm_list"></A>
-<pre>&lt;!ENTITY % algorithm_list "(algorithm+)"></pre>
+<pre>&lt;!ENTITY % algorithm_list "(algorithm*)"></pre>
 <A NAME="#named_arguments"></A>
 <pre>&lt;!ENTITY % named_arguments "(named_argument)+"></pre>
 <A NAME="#subscript"></A>
@@ -77,6 +162,21 @@ COMMENT:
 	%location;
  ></pre>
 
+<A name="#add_string">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: add_string
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT add_string  ((<A HREF="##add_string">add_string</A>|<A HREF="##string_literal">string_literal</A>), <A HREF="##string_literal">string_literal</A>)  >
+<pre>&lt;!ATTLIST add_string  
+	
+	%location;
+ ></pre>
+
 <A name="#alg_assign">
 </A>
 <pre>
@@ -87,8 +187,7 @@ COMMENT:
 </pre>
 
 <pre>&lt;!ELEMENT alg_assign  ((<A HREF="##component_reference">component_reference</A>, %<A HREF="##exp">exp</A>;) | 
-          (<A HREF="##output_expression_list">output_expression_list</A>, <A HREF="##component_reference">component_reference</A>, 
-          <A HREF="##function_arguments">function_arguments</A>))  >
+          (<A HREF="##output_expression_list">output_expression_list</A>, <A HREF="##call">call</A>))  >
 <pre>&lt;!ATTLIST alg_assign  
 
 	%location;
@@ -310,17 +409,17 @@ COMMENT:
 	%location;
  ></pre>
 
-<A name="#arr">
+<A name="#array">
 </A>
 <pre>
 **********************************************************************
-ELEMENT: arr
+ELEMENT: array
 COMMENT:  
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT arr  (<A HREF="##function_arguments">function_arguments</A>)  >
-<pre>&lt;!ATTLIST arr  
+<pre>&lt;!ELEMENT array  (<A HREF="##function_arguments">function_arguments</A>)  >
+<pre>&lt;!ATTLIST array  
 
 	%location;
  ></pre>
@@ -365,7 +464,7 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT call  (<A HREF="##component_reference">component_reference</A>, <A HREF="##function_arguments">function_arguments</A>)  >
+<pre>&lt;!ELEMENT call  (<A HREF="##component_reference">component_reference</A>, <A HREF="##function_arguments">function_arguments</A>?)  >
 <pre>&lt;!ATTLIST call  
 
 	%location;
@@ -410,10 +509,9 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT comment  (<A HREF="##annotation">annotation</A>?)  >
+<pre>&lt;!ELEMENT comment  ((<A HREF="##string_comment">string_comment</A>?, <A HREF="##annotation">annotation</A>?))  >
 <pre>&lt;!ATTLIST comment  
 
-	string_comment CDATA #IMPLIED
 	%location;
  ></pre>
 
@@ -433,6 +531,7 @@ COMMENT:
 	ident CDATA #REQUIRED
 	type CDATA #REQUIRED
 	%type_prefix; 
+	final (true) #IMPLIED
 	inside (element | redeclaration) #IMPLIED
 	innerouter (inner | outer) #IMPLIED
 	replaceable (true) #IMPLIED
@@ -466,8 +565,7 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT concat  (%<A HREF="##expression_list">expression_list</A>;, (<A HREF="##semicolon">semicolon</A>, 
-          %<A HREF="##expression_list">expression_list</A>;)?)  >
+<pre>&lt;!ELEMENT concat  (<A HREF="##expression_list">expression_list</A>, <A HREF="##expression_list">expression_list</A>*)  >
 <pre>&lt;!ATTLIST concat  
 
 	%location;
@@ -497,7 +595,7 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT definition  (%<A HREF="##class_specifier">class_specifier</A>;)  >
+<pre>&lt;!ELEMENT definition  ((%<A HREF="##class_specifier">class_specifier</A>;), <A HREF="##string_comment">string_comment</A>?)  >
 <pre>&lt;!ATTLIST definition  
 
 	ident CDATA #REQUIRED
@@ -839,6 +937,21 @@ COMMENT:
 	%location;
  ></pre>
 
+<A name="#expression_list">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: expression_list
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT expression_list  ((%<A HREF="##exp">exp</A>;), (<A HREF="##comma">comma</A>, (%<A HREF="##exp">exp</A>;)?)*)  >
+<pre>&lt;!ATTLIST expression_list  
+
+	%location;
+ ></pre>
+
 <A name="#extends">
 </A>
 <pre>
@@ -865,7 +978,7 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT external  ((<A HREF="##external_equal">external_equal</A>?, (%<A HREF="##expression_list">expression_list</A>;)?), 
+<pre>&lt;!ELEMENT external  ((<A HREF="##external_equal">external_equal</A>?, (<A HREF="##expression_list">expression_list</A>)?), 
           <A HREF="##annotation">annotation</A>?, (<A HREF="##semicolon">semicolon</A>, <A HREF="##annotation">annotation</A>)?)  >
 <pre>&lt;!ATTLIST external  
 
@@ -887,6 +1000,19 @@ COMMENT:
 <pre>&lt;!ATTLIST external_equal  
 
 	%location;
+ ></pre>
+
+<A name="#flatmodelicaxml">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: flatmodelicaxml
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT flatmodelicaxml  EMPTY  >
+<pre>&lt;!ATTLIST flatmodelicaxml  
  ></pre>
 
 <A name="#for_index">
@@ -929,7 +1055,7 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT function_arguments  ((%<A HREF="##exp">exp</A>;, (<A HREF="##function_arguments">function_arguments</A> | <A HREF="##for_indices">for_indices</A>)?) | 
+<pre>&lt;!ELEMENT function_arguments  ((%<A HREF="##exp">exp</A>;, (%<A HREF="##exp">exp</A>; | <A HREF="##for_indices">for_indices</A>)*) | 
           %<A HREF="##named_arguments">named_arguments</A>;)  >
 <pre>&lt;!ATTLIST function_arguments  
 
@@ -990,12 +1116,11 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT import  (<A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ELEMENT import  
+((<A HREF="##named_import">named_import</A>|<A HREF="##qualified_import">qualified_import</A>|<A HREF="##unqualified_import">unqualified_import</A>),
+          <A HREF="##comment">comment</A>?)  >
 <pre>&lt;!ATTLIST import  
 
-	ident CDATA #IMPLIED
-	name CDATA #REQUIRED
-	dotstar (true) #IMPLIED
 	visibility (public | protected) #IMPLIED
 	%location;
  ></pre>
@@ -1055,7 +1180,7 @@ COMMENT:
 **********************************************************************
 </pre>
 
-<pre>&lt;!ELEMENT modelica  (<A HREF="##modelicaxml">modelicaxml</A>*, ANY)  >
+<pre>&lt;!ELEMENT modelica  (<A HREF="##modelicaxml">modelicaxml</A>*, <A HREF="##flatmodelicaxml">flatmodelicaxml</A>*)  >
 <pre>&lt;!ATTLIST modelica  
  ></pre>
 
@@ -1072,6 +1197,7 @@ COMMENT:
 <pre>&lt;!ATTLIST modelicaxml  
 
 	within CDATA #IMPLIED
+	file CDATA #IMPLIED	
 	%location;
  ></pre>
 
@@ -1151,6 +1277,23 @@ COMMENT:
 	%location;
  ></pre>
 
+<A name="#named_import">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: named_import
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT named_import  EMPTY  >
+<pre>&lt;!ATTLIST named_import  
+
+	ident CDATA #IMPLIED
+	name CDATA #REQUIRED
+	%location;
+ ></pre>
+
 <A name="#ne">
 </A>
 <pre>
@@ -1226,6 +1369,22 @@ COMMENT:
 	%location;
  ></pre>
 
+<A name="#qualified_import">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: qualified_import
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT qualified_import  EMPTY  >
+<pre>&lt;!ATTLIST qualified_import  
+
+	name CDATA #REQUIRED
+	%location;
+ ></pre>
+
 <A name="#range">
 </A>
 <pre>
@@ -1268,6 +1427,21 @@ COMMENT:
 
 <pre>&lt;!ELEMENT semicolon  EMPTY  >
 <pre>&lt;!ATTLIST semicolon  
+
+	%location;
+ ></pre>
+
+<A name="#string_comment">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: string_comment
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT string_comment  (<A HREF="##add_string">add_string</A>|<A HREF="##string_literal">string_literal</A>)?  >
+<pre>&lt;!ATTLIST string_comment  
 
 	%location;
  ></pre>
@@ -1331,5 +1505,21 @@ COMMENT:
 <pre>&lt;!ELEMENT type_array_subscripts  ((%<A HREF="##subscript">subscript</A>;)+)  >
 <pre>&lt;!ATTLIST type_array_subscripts  
 
+	%location;
+ ></pre>
+
+<A name="#unqualified_import">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: unqualified_import
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT unqualified_import  EMPTY  >
+<pre>&lt;!ATTLIST unqualified_import  
+
+	name CDATA #REQUIRED
 	%location;
  ></pre>

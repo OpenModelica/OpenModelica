@@ -2,7 +2,7 @@
 #define INC_modelica_lexer_hpp_
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.2: "modelica_lexer.g" -> "modelica_lexer.hpp"$ */
+/* $ANTLR 2.7.3: "modelica_lexer.g" -> "modelica_lexer.hpp"$ */
 #include <antlr/CommonToken.hpp>
 #include <antlr/InputBuffer.hpp>
 #include <antlr/BitSet.hpp>
@@ -13,7 +13,7 @@
 
 
 #line 16 "modelica_lexer.hpp"
-class modelica_lexer : public ANTLR_USE_NAMESPACE(antlr)CharScanner, public modelicaTokenTypes
+class CUSTOM_API modelica_lexer : public ANTLR_USE_NAMESPACE(antlr)CharScanner, public modelicaTokenTypes
 {
 #line 1 "modelica_lexer.g"
 #line 20 "modelica_lexer.hpp"
@@ -77,6 +77,8 @@ private:
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_3;
 	static const unsigned long _tokenSet_4_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_4;
+	static const unsigned long _tokenSet_5_data_[];
+	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_5;
 };
 
 #endif /*INC_modelica_lexer_hpp_*/

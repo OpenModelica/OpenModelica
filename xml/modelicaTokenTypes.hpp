@@ -1,8 +1,15 @@
 #ifndef INC_modelicaTokenTypes_hpp_
 #define INC_modelicaTokenTypes_hpp_
 
-/* $ANTLR 2.7.2: "modelica_lexer.g" -> "modelicaTokenTypes.hpp"$ */
-struct modelicaTokenTypes {
+/* $ANTLR 2.7.3: "modelica_lexer.g" -> "modelicaTokenTypes.hpp"$ */
+
+#ifndef CUSTOM_API
+# define CUSTOM_API
+#endif
+
+#ifdef __cplusplus
+struct CUSTOM_API modelicaTokenTypes {
+#endif
 	enum {
 		EOF_ = 1,
 		ALGORITHM = 4,
@@ -40,8 +47,8 @@ struct modelicaTokenTypes {
 		LOOP = 36,
 		MODEL = 37,
 		NOT = 38,
-		OVERLOAD = 39,
-		OUTER = 40,
+		OUTER = 39,
+		OVERLOAD = 40,
 		OR = 41,
 		OUTPUT = 42,
 		PACKAGE = 43,
@@ -98,5 +105,7 @@ struct modelicaTokenTypes {
 		ESC = 94,
 		NULL_TREE_LOOKAHEAD = 3
 	};
+#ifdef __cplusplus
 };
+#endif
 #endif /*INC_modelicaTokenTypes_hpp_*/
