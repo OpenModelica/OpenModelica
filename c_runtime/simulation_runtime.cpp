@@ -84,7 +84,8 @@ int main(int argc, char **argv)
   long ipar = 0;
   long jroot;
   int i;
-  long numpoints;
+  long numpoints; // the number of points allocated for in data array
+  long actual_points=0; // the number of actual points saved
   
 
   for(i=0; i<15; i++) 
@@ -93,6 +94,11 @@ int main(int argc, char **argv)
     iwork[i] = 0;
   for(i=0; i<lrw; i++) 
     rwork[i] = 0.0;
+  
+  if (argc == 2 && flagSet("?",argc,argv)) {
+    cout << "usage: " << argv[0]  << " <-f initfile> <-r result file>" << endl;
+    exit(0);
+  }
 
   read_input(argc,argv,x,xd,y,p,nx,ny,np,&start,&stop,&step);
   
@@ -102,24 +108,29 @@ int main(int argc, char **argv)
   
   t=start;
   tout = t+step;
-
  
-  add_result(data,t,x,xd,y,nx,ny);
-
-
   DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /* rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
+  functionDAE_output(&t,x,xd,y);
+  add_result(data,t,x,xd,y,nx,ny,&actual_points);
   info[0] = 1;
   //dumpresult(t,y,idid,rwork,iwork);
   tout += step;
   while(t<stop) {
     DDASRT(functionDAE_res, &nx, &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /*rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
     functionDAE_output(&t,x,xd,y);
-    add_result(data,t,x,xd,y,nx,ny);
+    add_result(data,t,x,xd,y,nx,ny,&actual_points);
     //dumpresult(t,y,idid,rwork,iwork);
     tout += step;
   }  
 
-  store_result("result.txt",data,numpoints,nx,ny);
+  string * result_file =(string*)getFlagValue("-r",argc,argv);
+  const char * result_file_cstr;
+  if (!result_file) {
+    result_file_cstr = string(string(model_name)+string("_res.plt")).c_str();
+  } else {
+    result_file_cstr = result_file->c_str();
+  }
+  store_result(result_file_cstr,data,actual_points,nx,ny);
 
   return 0;
 }
@@ -129,7 +140,7 @@ int main(int argc, char **argv)
 * suitable for plotting, etc.
 */
 
-void store_result(char * filename, double*data,long numpoints, long nx, long ny)
+void store_result(const char * filename, double*data,long numpoints, long nx, long ny)
 {
   ofstream f(filename);
   if (!f)
@@ -184,7 +195,7 @@ void store_result(char * filename, double*data,long numpoints, long nx, long ny)
  */
 
 void add_result(double *data, double time,double *x, double *xd, double *y,
-		long nx, long ny)
+		long nx, long ny, long *actual_points)
 {
   static long current_pos = 0;
   
@@ -205,7 +216,7 @@ void add_result(double *data, double time,double *x, double *xd, double *y,
     data[current_pos] = y[i];
   }
   //cerr << "  ... done" << endl;
-  
+  (*actual_points)++;
 }
 
   /* read_input
@@ -222,7 +233,7 @@ void add_result(double *data, double time,double *x, double *xd, double *y,
 
   string *filename=(string*)getFlagValue("f",argc,argv);
   if (filename == NULL) { 
-    filename = new string(init_file);  // init_file defined in generated code for model.
+    filename = new string(string(model_name)+"_init.txt");  // model_name defined in generated code for model.
   }
 
   ifstream file(filename->c_str());

@@ -70,7 +70,7 @@ extern long lrw;
 extern double rwork[];
 extern long iwork[];
 extern long nx,ny,np;
-extern char *init_file;
+extern char *model_name;
 
 // function for calculating ouput values 
 int 
@@ -81,9 +81,9 @@ int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
 
 void add_result(double *data, double time,double *nx, double *ndx, double *y,
-		long nx, long ny);
+		long nx, long ny, long *actual_points);
 
-void store_result(char * filename, double*data,
+void store_result(const char * filename, double*data,
 		  long numpoints, long nx, long ny);
 
 #endif
