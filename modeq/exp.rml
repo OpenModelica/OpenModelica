@@ -62,29 +62,30 @@ module Exp:
    ** operators which may work on several simple types. *)
 
   (** - Expressions *)
-  datatype Exp = ICONST of int
-	       | RCONST of real
-	       | SCONST of string
-	       | BCONST of bool
-	       | CREF of ComponentRef * Type
-	       | BINARY of Exp * Operator * Exp
-	       | UNARY of Operator * Exp
-	       | LBINARY of Exp * Operator * Exp
-	       | LUNARY of Operator * Exp
-	       | RELATION of Exp * Operator * Exp
-	       | IFEXP of Exp * Exp * Exp
+  datatype Exp = ICONST of int					(* Integer constants *)
+	       | RCONST of real					(* Real constants *)
+	       | SCONST of string				(* String constants *)
+	       | BCONST of bool					(* Bool constants *)
+	       | CREF of ComponentRef * Type			(* component references, e.g. a.b[2].c[1] *)
+	       | BINARY of Exp * Operator * Exp			(* Binary operations, e.g. a+4 *)
+	       | UNARY of Operator * Exp			(* Unary operations, -(4*x) *)
+	       | LBINARY of Exp * Operator * Exp		(* Logical binary operations: and, or *)
+	       | LUNARY of Operator * Exp			(* Logical unary operations: not *)
+	       | RELATION of Exp * Operator * Exp		(* Relation, e.g. a <= 0 *)
+	       | IFEXP of Exp * Exp * Exp			(* If expressions *)
 	       | CALL of Absyn.Path * Exp list * bool (* tuple *) * bool (* builtin *) (* Function call *)
-	       | ARRAY of Type * bool * Exp list
-	       | MATRIX of Type * int * (Exp*bool) list list
-	       | RANGE of Type * Exp * Exp option * Exp
-	       | TUPLE of Exp list (*PR.*)
+	       | ARRAY of Type * bool * Exp list		(* Array constructor, e.g. {1,3,4} *)
+	       | MATRIX of Type * int * (Exp*bool) list	list	(* Matrix constructor. e.g. [1,0;0,1] *)
+	       | RANGE of Type * Exp * Exp option * Exp		(* Range constructor, e.g. 1:0.5:10 *)
+	       | TUPLE of Exp list (*PR.*)			(* Tuples, used in func calls returning several 
+								  arguments *)
                  (* New constructors *)
-	       | CAST of Type * Exp
-	       | ASUB of Exp * int
-               | SIZE of Exp * Exp option
-	       | CODE of Absyn.Code * Type
-	       | REDUCTION of Absyn.Path * Exp (*expr*) * Ident * Exp (*range*)
-	       | END
+	       | CAST of Type * Exp				(* Cast operator *)
+	       | ASUB of Exp * int				(* Array subscripts *)
+               | SIZE of Exp * Exp option			(* The size operator *)
+	       | CODE of Absyn.Code * Type			(* Modelica AST constructor *)
+	       | REDUCTION of Absyn.Path * Exp (*expr*) * Ident * Exp (*range*)  (* Reduction expression *)
+	       | END						(* array index to last element, e.g. a[end]:=1; *)
   (** The `Exp' datatype closely corresponds to the `Absyn.Exp'
    ** datatype, but is used for statically analyzed expressions.  It
    ** includes explicit type promotions and typed (non-overloaded)
