@@ -348,14 +348,46 @@ relation print_class_part: Absyn.ClassPart => () =
 	Print.print_buf ")"
 	--------------------------------------
 	print_class_part(Absyn.EQUATIONS(eqs))
+
+  rule	Print.print_buf "INITIALEQUATIONS(" &
+	print_list_debug("print_class_part",eqs,print_equationitem,",") &
+	Print.print_buf ")"
+	--------------------------------------
+	print_class_part(Absyn.INITIALEQUATIONS(eqs))
 	
-  rule	Print.print_buf "ALGORITHM(" &
+  rule	Print.print_buf "ALGORITHMS(" &
 	print_list_debug("print_class_part",eqs,print_algorithmitem,",") &
 	Print.print_buf ")"
 	--------------------------------------
 	print_class_part(Absyn.ALGORITHMS(eqs))
 
+  rule	Print.print_buf "INITIALALGORITHMS(" &
+	print_list_debug("print_class_part",eqs,print_algorithmitem,",") &
+	Print.print_buf ")"
+	--------------------------------------
+	print_class_part(Absyn.INITIALALGORITHMS(eqs))
+
+  rule	Print.print_buf "EXTERNAL(" &
+	print_external_decl (edecl) &
+	Print.print_buf ")"
+	-------------------
+	print_class_part(Absyn.EXTERNAL(edecl))
+
 end
+
+relation print_external_decl : Absyn.ExternalDecl => () =
+
+  rule	get_option_str (id, identity) => idstr &
+	get_option_str (lang, identity) => langstr &
+	get_option_str (cref, print_component_ref_str) => crefstr &
+	print_list_str(exps,print_exp_str,",") => expstr &
+	Util.string_append_list([idstr, ", ", langstr, ", ", crefstr, ", (",
+				 expstr, ")"]) => str &
+	Print.print_buf str
+	-------------------
+	print_external_decl Absyn.EXTERNALDECL(id, lang, cref, exps)
+end
+
 
 relation unparse_class_part_str: Absyn.ClassPart => string =
 
