@@ -33,8 +33,14 @@ static int set_debug_flags(char *flagstr)
   int flagc=1;
   int flag;
 
-  if (len==0)
-    return 1;
+  if (len==0) {
+    debug_flagc = 0;
+    debug_flagstr = (char*)malloc(sizeof(char));
+    debug_flagstr = '\0';
+    debug_all = 0;
+    debug_flags = 0;
+    return 0;
+  }
 
   debug_flagstr=(char*)malloc((len+1)*sizeof(char));
   strcpy(debug_flagstr, flagstr);
