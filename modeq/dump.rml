@@ -469,11 +469,13 @@ relation print_exp: Absyn.Exp => () =
 	---------------------------------------------
 	print_exp(Absyn.CALL(fcn, args))
 
+(*
   rule	print "[" &
 	print_list(es, print_exp, ",") &
 	print "]"
 	---------
 	print_exp Absyn.ARRAY(es)
+*)
 	
   rule	print "[" &
 	print_list(es, print_row, ";") &
