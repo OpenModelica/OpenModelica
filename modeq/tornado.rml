@@ -47,7 +47,7 @@ with "env.rml"
  **)
 relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
-  rule	DAELow.lower(dae) => (dae' as DAELow.DAELOW(_,_,eqns,_)) &
+  rule	DAELow.lower(dae) => (dae' as DAELow.DAELOW(_,_,eqns,_,_)) &
         generate_blt(dae') => (dae'',blt,ass1,ass2) &
 	DAELow.calculate_values(dae'') => dae''' & 
 	Absyn.path_string(class) => cname &
@@ -314,9 +314,8 @@ relation generate_links:(DAELow.DAELow,string list) => (string, int) =
         Util.string_append_list(indep_var_list) => indep_var_str &
         Util.string_append_list([params_list_str',"\n",indep_var_str,res']) => res''
         -------------------------------------------
-        generate_links(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn),
-                       comp_name_list) => (res'',no_alg_values)
-        
+        generate_links(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_),
+                       comp_name_list) => (res'',no_alg_values)        
 
   axiom generate_links(_,_) => ("/* generation of variables linking has failed */",42)
 end
@@ -526,7 +525,7 @@ relation generate_constructor_inputvars:(DAELow.DAELow) => (string, string) =
         
         -------------------------------------------
         generate_constructor_inputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => 
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) => 
         ("","")
 
  rule  vector_list(vars_vec) => vars &
@@ -541,8 +540,8 @@ relation generate_constructor_inputvars:(DAELow.DAELow) => (string, string) =
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
         generate_constructor_inputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => 
-        (res',prefix2)
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) => (res',prefix2)
+
 end
 
 relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, int) = 
@@ -603,7 +602,7 @@ relation generate_constructor_algvars:(DAELow.DAELow) => (string, string,int) =
 	    no_of_vars = 0 
         -------------------------------------------
         generate_constructor_algvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                   DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) 
+                                                   DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) 
           => ("","",0)
 
   rule  vector_list(vars_vec) => vars &
@@ -620,8 +619,8 @@ relation generate_constructor_algvars:(DAELow.DAELow) => (string, string,int) =
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
         generate_constructor_algvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                   DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) 
-          => (res',prefix2,no_of_vars)
+                                                   DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) 
+	  => (res',prefix2,no_of_vars)
 end
 
 relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, int) = 
@@ -683,7 +682,7 @@ relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) =
         no_of_vars = 0 
         -------------------------------------------
         generate_constructor_outputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) 
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) 
           => ("","")
 
   rule  vector_list(vars_vec) => vars &
@@ -702,7 +701,8 @@ relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) =
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
         generate_constructor_outputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) 
+	  => (res',prefix2)
 end
 
 relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list, int) = 
@@ -779,7 +779,7 @@ end
          Util.string_append_list(["  SetNoDerStateVarValues(",lenstr,");\n"]) => prefix2 &
          Util.string_append_list([prefix1,res,"\n"]) => res' 
          ----------------------
-         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) => (res',prefix2)
  end
 
  relation generate_constructor_statevars2: (DAELow.Var list,int) => (string list,int) =
@@ -848,7 +848,7 @@ relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) =
         no_of_vars = 0 
         -------------------------------------------
         generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) 
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) 
           => ("","")
 
   rule  vector_list(vars_vec) => vars &
@@ -864,7 +864,7 @@ relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) =
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
         generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) => (res',prefix2)
 end
 
 relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list, int) = 
@@ -989,7 +989,7 @@ relation generate_var_defines: (DAELow.DAELow) => string =
         Util.string_append_list(vdefs1list) => vdefs1 &
         Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n\n",vdefs1,"\n"]) => vdefs
         ---------------------
-        generate_var_defines(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => vdefs
+        generate_var_defines(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn,_)) => vdefs
          
   rule  print "-generate_var_defines failed\n"
          --------------------------------------
@@ -1429,7 +1429,7 @@ relation check_component_for_statevars:(int, int list, DAELow.DAELow,int vector,
 	    vector_nth(var_list,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	    not is_non_state(kind)
         -------------------------------------------------------------
-        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(var_list,_),_,_,_),ass1,ass2) => true
+        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(var_list,_),_,_,_,_),ass1,ass2) => true
 
   rule  (* If this variable is nt state variable, try the next one *)
         list_nth(component,i) => variable_index_to_check &
@@ -1442,7 +1442,7 @@ relation check_component_for_statevars:(int, int list, DAELow.DAELow,int vector,
         int_add(i,1) => next_i &
         check_component_for_statevars(next_i,component,dae,ass1,ass2) => result
         -------------------------------------------------------------
-        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(var_list,_),_,_,_),ass1,ass2) 
+        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(var_list,_),_,_,_,_),ass1,ass2) 
           => result
 
   rule  print "check_component_for_statevars failed" 
@@ -1459,10 +1459,12 @@ relation translate_dae: DAELow.DAELow => DAELow.DAELow =
         
   rule  vector_list(var_vec) => var_list &
         extract_der_from_var_list(var_list) => (from_list,to_list) &
-        replace_exp_in_eqns(eqn_list,from_list,to_list) => res_eqns
+	array_list(eqns) => eqn_list &
+        replace_exp_in_eqns(eqn_list,from_list,to_list) => res_eqns &
+	list_array(res_eqns) => eqns' 
         -------------------------------------------------------------
-        translate_dae(dae as DAELow.DAELOW(vars as DAELow.VARIABLES(var_vec,_),a,eqn_list,b)) 
-          => DAELow.DAELOW(vars,a,res_eqns,b)
+        translate_dae(dae as DAELow.DAELOW(vars as DAELow.VARIABLES(var_vec,_),a,eqns,b,c)) 
+          => DAELow.DAELOW(vars,a,eqns',b,c)
 
 
 
@@ -1561,18 +1563,20 @@ relation generate_compute_output:(string,
                                                  
   rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-        build_simple_equation(knvars,seqn) => simple_eqn_str &
+	array_list(seqn) => seqnl &
+        build_simple_equation(knvars,seqnl) => simple_eqn_str &
         Util.string_append_list(eqn_str_list) => coutput2 &
         Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
         -------------------------------------------------------------
         generate_compute_output(cname,
-                                dae as DAELow.DAELOW(DAELow.VARIABLES(vars,_),DAELow.VARIABLES(knvars,_),eqn,seqn),
+                                dae as DAELow.DAELOW(DAELow.VARIABLES(vars,_),DAELow.VARIABLES(knvars,_),eqn,seqn,_),
                                 p,ass1,ass2,blocks) => coutput
         
 end
 
 
-relation build_simple_equation:(DAELow.Var vector, DAELow.Equation list) => string =
+relation build_simple_equation:(DAELow.Var vector, DAELow.Equation list) 
+ => string =
         
   
         
@@ -1726,18 +1730,18 @@ end
  ** It is used both for state variables and regular variables
  **)
 relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
-	
-  rule  (* Solving for non-states *)
-        int_sub(e,1) => e' &
-	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
-	    vector_nth(ass2,e') => v &
-	    int_sub(v,1) => v' &
-	    vector_nth(vars,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
-	    is_non_state kind &
+ 
+ rule  (* Solving for non-states *)
+	int_sub(e,1) => e' &
+	array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	int_sub(v,1) => v' &
+	vector_nth(vars,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	is_non_state kind &
 	    (*print "Solving for non-states\n" &*)
 
-	    let varexp = Exp.CREF(cr,Exp.REAL) &
-	    Exp.solve(e1,e2,varexp) => expr &
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr &
 	    
         (* start debug output *)
         Exp.print_exp_str e1 => e1s &
@@ -1752,12 +1756,12 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
         Exp.simplify(expr) => simplify_exp &
 	    build_assignment(cr,simplify_exp,origname)  => assigment_string
 	    --------------------------------
-	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_),ass1,ass2,e) => assigment_string	
+	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => assigment_string	
         
 
   rule  (* Solving the state s means solving for der(s) *)
 	    int_sub(e,1) => e' &
-	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	    array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	    vector_nth(ass2,e') => v &
 	    (* v == variable no solved in this equation *)
 	    int_sub(v,1) => v' &
@@ -1786,10 +1790,10 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
         Exp.simplify(expr) => simplify_exp &
 	    build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
 	    --------------------------------
-	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_),ass1,ass2,e) => assigment_string 
+	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => assigment_string 
 
   rule	int_sub(e,1) => e' &
-	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	    array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	    vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	    int_sub(v,1) => v' &
 	    vector_nth(vars,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
@@ -1797,7 +1801,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    not Exp.solve(e1,e2,varexp) => _ &
 	    print "nonlinear equation not implemented yet\n" 
 	    --------------------------------
-	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_),ass1,ass2,e) => fail
+	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => fail
         
   rule  print "-build_equation failed\n" 
 	    --------------------------------
