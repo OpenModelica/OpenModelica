@@ -1,0 +1,42 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+(* $Name$ *)
+
+module Interactive:
+  with "absyn.rml"
+  with "explode.rml" 
+  with "dae.rml" 
+  datatype InteractiveStmt = IALG of Absyn.Algorithm
+			   | IEXP of Absyn.Exp
+  datatype InteractiveStmts = ISTMTS of InteractiveStmt list
+							  
+  datatype InstantiatedClass =  INSTCLASS of Absyn.Path * (* The F.Q. name of the instantiated class*)
+					     DAE.Element list (* The list of DAE elements *)
+  datatype InteractiveVariable = IVAR of Absyn.Ident * (* The variable identifier *)
+					 Absyn.Exp (* The expression containing the value *)
+
+  datatype InteractiveSymbolTable = SYMBOLTABLE of Absyn.Program * (*The ast*)
+						   SCode.Program * (* The exploded ast *)
+						   InstantiatedClass list * (* List of instantiated classes*)
+						   InteractiveVariable	list (* List of variables with values*)  
+end
+

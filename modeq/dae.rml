@@ -35,7 +35,6 @@
 module DAE:
   
   with "absyn.rml"
-  with "dump.rml"
   with "exp.rml"
   with "explode.rml"
   with "algorithm.rml"
@@ -105,6 +104,7 @@ end
 
 with "rtopts.rml"
 with "graphviz.rml"
+with "dump.rml"
 
 (** relation: dump
  **

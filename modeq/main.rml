@@ -40,6 +40,7 @@ with "dumpgraphviz.rml"
 with "explode.rml"
 with "dae.rml"
 with "inst.rml"
+with "interactive.rml"
 with "rtopts.rml"
 with "debug.rml"
 with "codegen.rml"
@@ -51,7 +52,7 @@ with "socket.rml"
     which recieves modelica expressions,  
 **)
 
-relation server_loop: int => () =
+relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
 
   rule	Socket.handlerequest shandle => str &
 	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
@@ -59,16 +60,16 @@ relation server_loop: int => () =
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
 	handle_command str  => true &
 	Socket.sendreply(shandle,"OK\n") &
-	server_loop shandle 
+	server_loop (shandle,isymb) => newsymb
 	-----------------------------
-	server_loop shandle
+	server_loop (shandle,isymb) => newsymb
 
   rule  print "Exiting\n" &
 	Socket.sendreply(shandle, "quit requested, shutting server down") &
 	Socket.close shandle &
 	Socket.cleanup 
 	---------------------
-	server_loop shandle
+	server_loop (shandle,isymb) => isymb
 	
 end
 
@@ -215,7 +216,7 @@ end
 relation interactivemode: string list => () =
 
   rule	Socket.waitforconnect 29500  => shandle &
-	server_loop shandle
+	server_loop (shandle, Interactive.SYMBOLTABLE([],[],[],[])) => _
 	-------------------
 	interactivemode _
 end
