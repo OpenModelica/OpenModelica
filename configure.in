@@ -13,7 +13,7 @@ dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_MAKE_SET
-AC_PATH_PROG(rmlc_bin,rmlc, AC_MSG_ERROR([Error rmlc not found.]),$PATH:/home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin)
+AC_PATH_PROG(rmlc_bin,rmlc, AC_MSG_ERROR([Error rmlc not found.]),${PATH}:/home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin)
 
 dnl check for environment variables
 

@@ -798,7 +798,7 @@ else
   ;;
   *)
   IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS="${IFS}:"
-  for ac_dir in $PATH:/home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin$ac_dummy; do
+  for ac_dir in ${PATH}:/home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin$ac_dummy; do
     test -z "$ac_dir" && ac_dir=.
     if test -f $ac_dir/$ac_word; then
       ac_cv_path_rmlc_bin="$ac_dir/$ac_word"
