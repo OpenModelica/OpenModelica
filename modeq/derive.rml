@@ -64,6 +64,19 @@ relation differentiate_equation_time: (DAELow.Equation,
 	  => DAELow.EQUATION(e1'',e2'')
 end
 
+(** relation: differentiate_exp_time
+ ** This relation differentiates expressions with respect to the 'time' variable.
+ ** All other variables that are varying over time are given as the second variable.
+ ** For instance, given the model:
+ ** model test 
+ **   Real x,y; 
+ **   parameter Real PI=3.14; 
+ ** equation
+ **   x+y=5*PI;	
+ ** end test;
+ ** gives
+ ** differentiate_exp_time('x+y=5*PI', [x,y]) => der(x)+der(y)=0
+ **)
 relation differentiate_exp_time: (Exp.Exp,Exp.ComponentRef list) => Exp.Exp =
 
   axiom	differentiate_exp_time(Exp.ICONST(_),_) => Exp.RCONST(0.0)
@@ -183,18 +196,24 @@ relation differentiate_exp_time: (Exp.Exp,Exp.ComponentRef list) => Exp.Exp =
 
 end
 
-
+(** relation: differenatiate_exp
+ ** This relation differentiates expressions with respect to a given variable, given as second argument.
+ ** For example.
+ ** differentiate_exp('2*x*y+2*x+y',x) => 2*x+2
+ **)
 relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 
   axiom	differentiate_exp(Exp.ICONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp(Exp.RCONST(_),_) => Exp.RCONST(0.0)
 
-  rule	Exp.cref_equal (cr, crx) => true &
-	int_real(1) => rval
+  rule	(* D(x)/dx => 1 *)
+	Exp.cref_equal (cr, crx) => true &
+	int_real(1) => rval (* Since bug in RML makes 1.0 into 0.0 *)
 	--------------------------------
 	differentiate_exp(Exp.CREF(cr,_), crx) => Exp.RCONST(rval)
 	  
-  rule	Exp.cref_equal (cr, crx) => false
+  rule	(* D(c)/dx => 0 *)
+ 	Exp.cref_equal (cr, crx) => false
 	--------------------------------
 	differentiate_exp(e as Exp.CREF(cr,_), crx) => Exp.RCONST(0.0)
 	
