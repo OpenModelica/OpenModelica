@@ -160,12 +160,12 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
   rule	print " connecting " &
 	Dump.dump_component_ref(c1) & print " with " &
 	Dump.dump_component_ref(c2) & print "\n" &
-	StaticExp.elab_cref(env, pre, c1) => (c1',_,_) &
-	StaticExp.elab_cref(env, pre, c2) => (c2',_,_) &
+	StaticExp.elab_cref(env, pre, c1) => (Exp.CREF(c1'),_,_) &
+	StaticExp.elab_cref(env, pre, c2) => (Exp.CREF(c2'),_,_) &
 	Env.lookup_var(env,c1')
-	  => (Types.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_)) &
+	  => (Types.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_),_) &
 	Env.lookup_var(env,c2')
-	  => (Types.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_)) &
+	  => (Types.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_),_) &
 	ClassInf.assert_valid(st1,ClassInf.R_CONNECTOR) &
 	ClassInf.assert_valid(st2,ClassInf.R_CONNECTOR) &
 	Types.same_type(ty1, ty2) &
@@ -225,13 +225,13 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([],env,csets,ci_state')
 
   rule	print " equation\n" &
-	Prefix.prefix_exp(e1,pre) => e1' &
-	Prefix.prefix_exp(e2,pre) => e2' &
+	StaticExp.elab_exp(env,pre,Exp.RELATION(e1,Exp.EQUAL,e2))
+	  => (e, ty1, c1) &
+	Prefix.prefix_exp(e,pre) => e' & (* FIXME: remove *)
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------
 	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
-	  => ([DAE.EQUATION(Exp.RELATION(e1',Exp.EQUAL,e2'))],
-	      env,csets,ci_state')
+	  => ([DAE.EQUATION(e')], env, csets, ci_state')
 
 end
 
@@ -279,14 +279,14 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 * of the extended class.
 	 *)
 	 
-  rule	Env.lookup_class(env,cn)
+  rule	Exp.path_string(cn) => cns &
+	print "  extending class " & print cns & print "\n" &
+	
+	Env.lookup_class(env,cn)
 	  => (c as Explode.CLASS(cn2,_,restr,def), classmod) &
 
 	(* Make sure that the 'partial' flag is off *)
 	let c' = Explode.CLASS(cn2,false,restr,def) &
-	
-	Exp.path_string(cn) => cns &
-	print "  extending with class " & print cns & print "\n" &
 	
 	(* Build the combind set of modifications *)
 	(* classmod is the modifications stored with the class *)

@@ -20,7 +20,10 @@ module ClassInf :
 		       | R_TYPE
 		       | R_PACKAGE
 		       | R_FUNCTION
-		       | R_PREDEFINED (* For internal use only *)
+		       | R_PREDEFINED_INT (* For internal use only *)
+		       | R_PREDEFINED_REAL
+		       | R_PREDEFINED_STRING
+		       | R_PREDEFINED_BOOL
 
   datatype State = UNKNOWN       of string
 		 | MODEL	 of string
@@ -30,14 +33,18 @@ module ClassInf :
 		 | TYPE		 of string
 		 | PACKAGE	 of string
 		 | FUNCTION	 of string
-		 | PREDEFINED	 of string
 		 | HAS_EQUATIONS of string
 		 | IS_NEW        of string
+		 | TYPE_INTEGER  of string
+		 | TYPE_REAL     of string
+		 | TYPE_STRING   of string
+		 | TYPE_BOOL     of string
 
   datatype Event = FOUND_EQUATION     (* There are definitions *)
 		 | NEWDEF	      (* This is not a derived class *)
 
   relation print_restr : Restriction => ()
+  relation print_state : State => ()
   relation start : (Restriction, string) => State
   relation trans : (State, Event) => State
   relation valid : (State, Restriction) => ()
@@ -79,9 +86,21 @@ relation print_restr : Restriction => () =
 	----------------
 	print_restr R_FUNCTION
 
-  rule	print "PREDEFINED"
+  rule	print "PREDEFINED_INT"
 	----------------
-	print_restr R_PREDEFINED
+	print_restr R_PREDEFINED_INT
+
+  rule	print "PREDEFINED_REAL"
+	----------------
+	print_restr R_PREDEFINED_REAL
+
+  rule	print "PREDEFINED_STRING"
+	----------------
+	print_restr R_PREDEFINED_STRING
+
+  rule	print "PREDEFINED_BOOL"
+	----------------
+	print_restr R_PREDEFINED_BOOL
 
 end
 
@@ -119,9 +138,21 @@ relation print_state : State => () =
 	----------------------------
 	print_state FUNCTION(s)
 
-  rule	print "PREDEFINED " & print s
+  rule	print "TYPE_INTEGER " & print s
 	----------------------------
-	print_state PREDEFINED(s)
+	print_state TYPE_INTEGER(s)
+
+  rule	print "TYPE_REAL " & print s
+	----------------------------
+	print_state TYPE_REAL(s)
+
+  rule	print "TYPE_STRING " & print s
+	----------------------------
+	print_state TYPE_STRING(s)
+
+  rule	print "TYPE_BOOL " & print s
+	----------------------------
+	print_state TYPE_BOOL(s)
 
   rule	print "IS_NEW " & print s
 	----------------------------
@@ -143,7 +174,10 @@ relation start : (Restriction, string) => State =
   axiom	start (R_TYPE, s) => TYPE(s)
   axiom	start (R_PACKAGE, s) => PACKAGE(s)
   axiom	start (R_FUNCTION, s) => FUNCTION(s)
-  axiom	start (R_PREDEFINED, s) => PREDEFINED(s)
+  axiom	start (R_PREDEFINED_INT, s) => TYPE_INTEGER(s)
+  axiom	start (R_PREDEFINED_REAL, s) => TYPE_REAL(s)
+  axiom	start (R_PREDEFINED_STRING, s) => TYPE_STRING(s)
+  axiom	start (R_PREDEFINED_BOOL, s) => TYPE_BOOL(s)
 
 end
 
@@ -164,7 +198,10 @@ relation trans : (State, Event) => State =
 
   axiom	trans(PACKAGE(s),        NEWDEF) => PACKAGE(s)
   axiom	trans(FUNCTION(s),       NEWDEF) => FUNCTION(s)
-  axiom	trans(PREDEFINED(s),     NEWDEF) => PREDEFINED(s)
+  axiom	trans(TYPE_INTEGER(s),   NEWDEF) => TYPE_INTEGER(s)
+  axiom	trans(TYPE_REAL(s),      NEWDEF) => TYPE_REAL(s)
+  axiom	trans(TYPE_STRING(s),    NEWDEF) => TYPE_STRING(s)
+  axiom	trans(TYPE_BOOL(s),      NEWDEF) => TYPE_BOOL(s)
 
 	(* FOUND_EQUATION *)
 
@@ -216,7 +253,10 @@ relation valid : (State, Restriction) => () =
   axiom	valid(IS_NEW(s),        R_CONNECTOR)
 
   axiom	valid(TYPE(s),          R_TYPE)
-  axiom	valid(PREDEFINED(s),    R_TYPE)
+  axiom	valid(TYPE_INTEGER(s),  R_TYPE)
+  axiom	valid(TYPE_REAL(s),     R_TYPE)
+  axiom	valid(TYPE_STRING(s),   R_TYPE)
+  axiom	valid(TYPE_BOOL(s),     R_TYPE)
 
   axiom	valid(IS_NEW(s),        R_PACKAGE)
   axiom	valid(PACKAGE(s),       R_PACKAGE)

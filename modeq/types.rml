@@ -22,6 +22,7 @@ module Types :
 
   relation same_type : (Type, Type) => ()
   relation lookup_component : (Type, Ident) => Var
+  relation known_type : ClassInf.State => Exp.Type
 
 end
 
@@ -73,12 +74,19 @@ end
 
 relation lookup_component : (Type, Ident) => Var =
 
-  rule  print "# trying to lookup in builtin type " & print n & print "\n"
-	------------------------------------------------------------------
-	lookup_component(TYPE(ClassInf.PREDEFINED(n),_),_) => fail
-
   rule  lookup_component2(cs, id) => v
 	------------------------------
 	lookup_component(TYPE(st,cs), id) => v
+
+end
+
+
+relation known_type : ClassInf.State => Exp.Type =
+
+  axiom	known_type ClassInf.TYPE_INTEGER(_) => Exp.T_INTEGER
+  axiom	known_type ClassInf.TYPE_REAL(_) => Exp.T_REAL
+  axiom	known_type ClassInf.TYPE_STRING(_) => Exp.T_STRING
+  axiom	known_type ClassInf.TYPE_BOOL(_) => Exp.T_BOOL
+  axiom	known_type _ => Exp.T_OTHER
 
 end

@@ -9,7 +9,7 @@ module StaticExp :
   relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
 	  => (Exp.Exp, Exp.Type, bool)
   relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
-	  => (Exp.ComponentRef, Exp.Type, bool)
+	  => (Exp.Exp, Exp.Type, bool)
 
 end
 
@@ -25,9 +25,9 @@ relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
   axiom	elab_exp(_,_, x as Exp.STRING(_))  => (x, Exp.T_STRING,  true)
   axiom	elab_exp(_,_, x as Exp.BOOL(_))    => (x, Exp.T_BOOL,    true)
 
-  rule	elab_cref(env, pre, cr) => (cr',t,c)
+  rule	elab_cref(env, pre, cr) => (ce,t,c)
 	---------------------------------------
-	elab_exp(env, pre, Exp.CREF(cr)) => (Exp.CREF(cr'),t,c)
+	elab_exp(env, pre, Exp.CREF(cr)) => (ce,t,c)
 
   rule	elab_exp (env,pre,e1) => (e1', t1, c1) &
 	elab_exp (env,pre,e2) => (e2', t2, c2) &
@@ -36,6 +36,13 @@ relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
 	-------------------------------------------------------
 	elab_exp (env,pre,Exp.BINARY(e1,op,e2)) => (e,t',c)
 
+  rule	elab_exp (env,pre,e1) => (e1', t1, c1) &
+	elab_exp (env,pre,e2) => (e2', t2, c2) &
+	elab_numtypes (e1',t1,e2',t2) => (e1'',e2'',t)
+	----------------------------------------------
+	elab_exp (env,pre,Exp.RELATION(e1,op,e2))
+	  => (Exp.RELATION(e1'',op,e2''),t,false)
+
   rule	print "- elab_exp failed: " & Exp.dump_exp e & print "\n"
 	---------------------------------------------------------
 	elab_exp(_,_,e) => fail
@@ -43,14 +50,44 @@ relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
 end
 
 relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
-	  => (Exp.ComponentRef, Exp.Type, bool) =
+	  => (Exp.Exp, Exp.Type, bool) =
 
-  rule	elab_cref_subs(env,pre,c) => (c', const) &
-	print "- FIXME: elab_cref: " & Exp.dump_component_ref c & print "\n"
-	----------------------------
-	elab_cref(env, pre, c) => (c', Exp.T_INTEGER, false)
+  rule	elab_cref_subs (env,pre,c) => (c', const) &
+	Env.lookup_var (env,c') => (Types.ATTR(_,_,vartype,_),
+				    Types.TYPE(st, _),
+				    ass) &
+	Types.known_type st => t &
+	elab_cref2 (env, pre, c', vartype, t, ass) => (exp,const) &
+	print "    elab_cref " & Exp.dump_component_ref c &
+	print " => " & Exp.dump_exp exp & print "\n"
+	-------------------------
+	elab_cref(env, pre, c) => (exp, t, const)
+
+  rule	print "- elab_cref fallthru\n"
+	------------------------------
+	elab_cref (_,_,_) => fail
 
 end
+
+relation elab_cref2 : (Env.Env, Prefix.Prefix,
+		       Exp.ComponentRef, Types.VarType,
+		       Exp.Type, Exp.Exp option) => (Exp.Exp, bool) =
+
+	(* FIXME: Check type of expression anyway? *)
+  axiom	elab_cref2 (_,_,cr, Types.VAR, _, _) => (Exp.CREF(cr), false)
+
+  rule	elab_exp (env,pre,exp) => (exp', t', c) (* &
+	c = true &
+	t = t' (* FIXME: cast *) *)
+	------------------------
+	elab_cref2 (env,pre,_,_,t, SOME(exp)) => (exp', true)
+
+  rule	print "# Constant or parameter without a value (I think)\n" &
+	print "# component: " & Exp.dump_component_ref cr & print "\n"
+	----------------------------------------------
+	elab_cref2 (_,_,cr, _,_,_) => fail
+
+end	
 
 relation elab_cref_subs : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 	  => (Exp.ComponentRef, bool) =
@@ -116,6 +153,10 @@ relation elab_numtypes : (Exp.Exp, Exp.Type, Exp.Exp, Exp.Type)
   axiom	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_INTEGER)
 	  => (e1, Exp.CAST_TO_REAL(e2), Exp.T_REAL)
 
+  rule	print "- elab_numtypes fallthru\n"
+	----------------------------------
+	elab_numtypes (_,_,_,_) => fail
+
 end
 
 relation elab_binary : (Exp.Exp, Exp.Type, bool,
@@ -157,7 +198,12 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
 			
   axiom	elab_binary (e1,Exp.T_REAL,_,Exp.SUB,e2,Exp.T_REAL,_)
 	  => (Exp.BINARY(e1,Exp.SUB,e2), Exp.T_REAL, false)
-			
+
+  rule	print "- elab_binary failed (" & Exp.dump_exp e1 &
+	print ") · (" & Exp.dump_exp e2 & print ")\n"
+	---------------------------------------------
+	elab_binary(e1, t1, c1, op, e2, t2, c2) => fail
+
 end
 
 relation is_const : Exp.Exp => () =

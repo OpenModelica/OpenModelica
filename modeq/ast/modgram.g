@@ -686,7 +686,7 @@ primary : << bool is_matrix; >>
 	| f:FALS/*E*/        << #f->rml = Exp__BOOL(RML_FALSE); >>
 	| t:TRU/*E*/         << #t->rml = Exp__BOOL(RML_TRUE); >>
 	| (name_path_function_arguments)?
-	| (member_list)?
+	/*	| (member_list)? */
 	| i:component_reference << #0->rml = Exp__CREF(#i->rml); >>
 	| TIME               << #0->rml = Exp__TIME; >>
 	| s:STRING           << #s->rml = Exp__STRING(mk_scon($s.u.stringval)); >>
@@ -709,14 +709,14 @@ name_path : << bool qualified = false; >>
              #0->rml = Exp__IDENT(mk_scon($i.u.stringval)); >>
 	;
 
-member_list:
-	comp_ref { dot:DOT^
-	( (member_list)? | name_path ) }
-	;
+/* member_list: */
+/* 	comp_ref { dot:DOT^ */
+/* 	( (member_list)? | name_path ) } */
+/* 	; */
 
-comp_ref:
-	name_path b:LBRACK^ subscript_list RBRACK!
-	;
+/* comp_ref: */
+/* 	name_path b:LBRACK^ subscript_list RBRACK! */
+/* 	; */
 
 component_reference : << void *tail = NULL; >>
 	  i:IDENT^ { a:subscripts }

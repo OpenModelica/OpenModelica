@@ -6,7 +6,7 @@ module Exp:
   
   type Ident = string
 
-  datatype Type = T_INTEGER | T_REAL | T_STRING | T_BOOL
+  datatype Type = T_INTEGER | T_REAL | T_STRING | T_BOOL | T_OTHER
   
   datatype Subscript = NOSUB
 		     | SUB1 of Exp
@@ -50,7 +50,6 @@ module Exp:
   relation path_string : Path => string
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
   relation eq_cref : (ComponentRef, ComponentRef) => ()
-  relation infer_type : Exp => TypedExp
 
   relation dump_component_ref : ComponentRef => ()
   relation dump_exp: Exp => ()
@@ -112,134 +111,6 @@ relation eq_cref : (ComponentRef, ComponentRef) => () =
 	eq_cref(c1,c2)
 	-------------------
 	eq_cref((n1,s1)::c1, (n2,s2)::c2)
-
-end
-
-(**********************************************************************
- * Type inference
- **********************************************************************)
-
-relation infer_type : Exp => TypedExp =
-
-  rule	infer e => (e,t)
-	----------------
-	infer_type e => ((e,t))
-
-  rule	print "# Type inference error in expression: " &
-	dump_exp e
-	----------
-	infer_type e => fail
-
-end
-
-relation infer : Exp => (Exp, Type) =
-
-  axiom	infer (e as INTEGER(_)) => (e, T_INTEGER)
-  axiom	infer (e as REAL(_)) => (e, T_REAL)
-  axiom	infer (e as STRING(_)) => (e, T_STRING)
-  axiom	infer (e as BOOL(_)) => (e, T_BOOL)
-
-  rule	print "- Can't lookup variable types\n"
-	---------------------------------------
-	infer CREF(_) => fail
-
-  rule	infer e1 => (e1',t1) &
-	infer e1 => (e2',t2) &
-	infer_add(BINARY(e1',ADD,e2'),t1,t2) => (e',t)
-	---------------------
-	infer BINARY(e1,ADD,e2) => (e', t)
-
-  rule	infer e1 => (e1',t1) &
-	infer e1 => (e2',t2) &
-	infer_add(BINARY(e1',SUB,e2'),t1,t2) => (e',t)
-	---------------------
-	infer BINARY(e1,SUB,e2) => (e', t)
-
-  rule	infer e1 => (e1',t1) &
-	infer e1 => (e2',t2) &
-	infer_add(BINARY(e1',MUL,e2'),t1,t2) => (e',t)
-	---------------------
-	infer BINARY(e1,MUL,e2) => (e', t)
-
-  rule	infer e1 => (e1',t1) &
-	assert_real (e1',t1) => e1'' &
-	infer e2 => (e2',t2) &
-	assert_real (e2',t2) => e2''
-	--------------
-	infer BINARY(e1,DIV,e2) => (BINARY(e1'',DIV,e2''), T_REAL)
-
-  rule	infer e1 => (e1',t1) &
-	assert_real (e1',t1) => e1'' &
-	infer e2 => (e2',t2) &
-	assert_real (e2',t2) => e2''
-	--------------
-	infer BINARY(e1,POW,e2) => (BINARY(e1'',POW,e2''), T_REAL)
-
-  rule	infer e1 => (e1',t)
-	-------------------
-	infer UNARY(op,e1) => (UNARY(op,e1'), t)
-
-  rule	infer e1 => (e1',T_BOOL) &
-	infer e2 => (e2',T_BOOL)
-	------------------------
-	infer LBINARY(e1,op,e2) => (LBINARY(e1',op,e2'), T_BOOL)
-
-  rule	infer e1 => (e1',T_BOOL)
-	------------------------
-	infer LUNARY(op,e1) => (LUNARY(op,e1'), T_BOOL)
-
-  rule	infer e1 => (e1',t1) &
-	assert_real (e1',t1) => e1'' &
-	infer e2 => (e2',t2) &
-	assert_real (e2',t2) => e2''
-	----------------------------
-	infer RELATION(e1,op,e2) => (RELATION(e1'',op,e2''), T_BOOL)
-
-  rule	infer c => (c',T_BOOL) &
-	infer te => (te',t1) &
-	infer fe => (fe',t2) &
-	assert_compatible(te', t1, fe', t2) => (te'', fe'', t)
-	--------------------------------------------------
-	infer IFEXP(c,te,fe) => (IFEXP(c, te'', fe''), t)
-
-  rule	print "- Can't lookup function types\n"
-	-----------------------
-	infer CALL(f,args) => fail
-
-  axiom	infer TIME => (TIME, T_REAL)
-
-end
-
-relation infer_add : (Exp, Type, Type) => (Exp, Type) =
-
-  axiom	infer_add(e, T_INTEGER, T_INTEGER) => (e, T_INTEGER)
-  axiom	infer_add(e, T_REAL,    T_REAL)    => (e, T_REAL)
-
-  axiom	infer_add(e as BINARY(e1,op,e2),T_INTEGER,T_REAL)
-	  => (BINARY(CAST_TO_REAL(e1),op,e2),T_REAL)
-  axiom	infer_add(e as BINARY(e1,op,e2),T_REAL,T_INTEGER)
-	  => (BINARY(e1,op,CAST_TO_REAL(e2)),T_REAL)
-
-end
-
-relation assert_real : (Exp,Type) => Exp =
-
-  axiom	assert_real (e,T_REAL) => e
-  axiom	assert_real (e,T_INTEGER) => CAST_TO_REAL(e)
-
-end
-
-relation assert_compatible : (Exp, Type, Exp, Type) => (Exp, Exp, Type) =
-
-  axiom	assert_compatible(e1, T_INTEGER, e2, T_INTEGER) => (e1, e2, T_INTEGER)
-  axiom	assert_compatible(e1, T_REAL,    e2, T_REAL)    => (e1, e2, T_REAL)
-  axiom	assert_compatible(e1, T_STRING,  e2, T_STRING)  => (e1, e2, T_STRING)
-  axiom assert_compatible(e1, T_BOOL,    e2, T_BOOL)    => (e1, e2, T_BOOL)
-
-  axiom	assert_compatible(e1, T_INTEGER, e2, T_REAL)
-	  => (CAST_TO_REAL(e1), e2, T_REAL)
-  axiom	assert_compatible(e1, T_REAL,    e2, T_INTEGER)
-	  => (e1, CAST_TO_REAL(e2), T_REAL)
 
 end
 
@@ -335,13 +206,13 @@ end
 
 and dump_exp: Exp => () =
 	
-  rule	real_string(x) => s & print s
-	-----------------------------
-	dump_exp(REAL(x))
-
   rule	int_string(x) => s & print s
 	----------------------------
 	dump_exp(INTEGER(x))
+
+  rule	real_string(x) => s & print s
+	-----------------------------
+	dump_exp(REAL(x))
 
   rule	dump_component_ref(c)
 	---------------------
@@ -406,6 +277,10 @@ and dump_exp: Exp => () =
   rule	print "TIME"
 	------------------
 	dump_exp(TIME)
+
+  rule	print "real(" & dump_exp(e) & print ")"
+	----------------------------------------
+	dump_exp CAST_TO_REAL(e)
 
   rule	print "#UNKNOWN EXPRESSION#"
         ----------------------------------
