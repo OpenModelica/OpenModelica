@@ -438,7 +438,7 @@ relation generate_function : DAE.Element => CFunction list =
 	---------------------------
 	generate_function DAE.FUNCTION(fpath, 
 				       DAE.DAE(dae), 
-				       Types.T_FUNCTION(args,restype)) 
+				       Types.T_FUNCTION(args,restype,ffpath)) 
 	  => [cfn,rcw_fn]
 
   rule	generate_function_name fpath => fn_name_str &
@@ -466,7 +466,7 @@ relation generate_function : DAE.Element => CFunction list =
 	---------------------------------------------------------------------------------------------
 	generate_function DAE.EXTFUNCTION(fpath, 
 				       DAE.DAE(orgdae), 
-				       Types.T_FUNCTION(args,restype),
+				       Types.T_FUNCTION(args,restype,ffpath),
 					  extdecl) 
 	  => [func_decl,rcw_fn]
 
@@ -831,7 +831,7 @@ relation generate_simple_type : Types.Type => string =
   rule	string_append ("const ", n) => n' &
 	string_append (n', "&") => n''
 	------------------------------
-	generate_simple_type Types.T_COMPLEX (ClassInf.RECORD(n),_) => n''
+	generate_simple_type Types.T_COMPLEX (p, ClassInf.RECORD(n),_) => n''
 
   rule	Types.array_element_type t => t' &
 	array_type_string t' => t_str

@@ -70,7 +70,10 @@ module Absyn:
 			       * Comment option	     (* comment *)
 
 		    | ENUMERATION of EnumLiteral list   
-				  * Comment option     (* comment*)		
+				* Comment option     (* comment*)		
+
+		    | OVERLOAD of Path list (* function names*)
+				* Comment option
 
   (** The `ClassDef' type contains the definition part of a class *)
   (** declaration.  The definition is either explicit, with a list of *)

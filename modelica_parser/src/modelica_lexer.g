@@ -52,6 +52,7 @@ tokens {
 	LOOP		= "loop"	;
 	MODEL		= "model"	;
 	NOT		= "not"		;
+	OVERLOAD    = "overload";
 	OUTER		= "outer"	;
 	OR		= "or"		;
 	OUTPUT		= "output"	;

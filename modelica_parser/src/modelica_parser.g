@@ -103,13 +103,22 @@ class_type :
 class_specifier :
 		( string_comment composition END! IDENT!
 		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
-		| EQUALS^ enumeration 
+		| EQUALS^ overloading
+		| EQUALS^ enumeration
 		)
 		;
 
 base_prefix:
 		type_prefix
 		;
+
+overloading:
+		OVERLOAD^ LPAR! name_list RPAR! comment
+		;
+name_list:
+		name_path (COMMA! name_path)*
+		;
+
 enumeration :
 		ENUMERATION^ LPAR! enum_list RPAR! comment 
 		;

@@ -90,7 +90,7 @@ module Static :
 			 (Exp.Exp * Types.Type) list,
 			 Absyn.Exp)
 	  => (Exp.Operator, Exp.Exp list, Types.Type)
-  relation operators : Absyn.Operator
+  relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	  => (Exp.Operator * Types.Type list * Types.Type) list
 
   (* Utility relations *)
@@ -182,49 +182,54 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	Debug.fprintln("eexpbin","\nt2:") &
 	Debug.fcall("eexpbin",Types.print_type,t2) & 
 	bool_and (c1,c2) => c &
-	operators op => ops &
+	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
+	replace_operator_with_fcall(Exp.BINARY(e1'',op',e2''),c) => exp' &
 	Debug.fprintln("eexpbin", "operator deoverloaded, resulting type:") &
 	Debug.fcall("eexpbin",Types.print_type,rtype) 
-	---------------------------------------------------------------------
+	---------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),impl,st)
-	  => (Exp.BINARY(e1'',op',e2''),Types.PROP(rtype,c),st'')
+	  => (exp',Types.PROP(rtype,c),st'')
 
   rule	Debug.fprintln("setr", "elab_exp_unary") &
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
- 	operators op => ops &
-	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
-	------------------------------------------------------
+ 	operators(op, env, t, Types.T_NOTYPE) => ops &
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
+	replace_operator_with_fcall(Exp.UNARY(op',e''),c) => exp'
+	---------------------------------------------------------
 	elab_exp (env,exp as Absyn.UNARY(op,e),impl, st)
-	  => (Exp.UNARY(op',e''),Types.PROP(rtype,c),st')
+	  => (exp', Types.PROP(rtype,c),st')
 	
   rule	Debug.fprintln("setr", "elab_exp_lbinary") &
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') &
 	bool_and (c1,c2) => c &
-	operators op => ops &
-	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
-	---------------------------------------------------------------------
+	operators(op, env, t1, t2) => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
+	replace_operator_with_fcall(Exp.LBINARY(e1'',op',e2''),c) => exp'
+	-----------------------------------------------------------------
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2),impl,st)
-	  => (Exp.LBINARY(e1'',op',e2''),Types.PROP(rtype,c),st'')
+	  => (exp', Types.PROP(rtype,c),st'')
 
   rule	Debug.fprintln("setr", "elab_exp_lunary") &
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
- 	operators op => ops &
-	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
-	------------------------------------------------------
+ 	operators(op, env, t, Types.T_NOTYPE) => ops &
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
+	replace_operator_with_fcall(Exp.LUNARY(op',e''),c) => exp'
+	----------------------------------------------------------
 	elab_exp (env,exp as Absyn.LUNARY(op,e),impl,st)
-	  => (Exp.LUNARY(op',e''),Types.PROP(rtype,c),st')
+	  => (exp',Types.PROP(rtype,c),st')
 
   rule	Debug.fprintln("setr", "elab_exp_relation") &
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') & 
 	bool_and (c1,c2) => c &
-	operators op => ops &
-	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
-	----------------------------------------------
+	operators(op, env, t1, t2) => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
+	replace_operator_with_fcall(Exp.RELATION(e1'',op',e2''),c) => exp'
+	-----------------------------------------------------------------
 	elab_exp (env,exp as Absyn.RELATION(e1,op,e2),impl,st)
-	  => (Exp.RELATION(e1'',op',e2''),Types.PROP(rtype,c),st'')
+	  => (exp', Types.PROP(rtype,c),st'')
 
 	(**  Conditional expressions *)
 
@@ -333,6 +338,30 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 
 end
 
+(** relation: replace_operator_with_fcall
+ ** Replaces a userdefined operator expression with a corresponding function call expression.
+ ** Other expressions just passes through.
+**)
+relation replace_operator_with_fcall: (Exp.Exp,bool (*const*)) => Exp.Exp =
+
+  axiom	replace_operator_with_fcall(Exp.BINARY(e1,Exp.USERDEFINED(funcname),e2),c) 
+	  => (Exp.CALL(funcname,[e1,e2],false,c))
+	  
+  axiom	replace_operator_with_fcall(Exp.UNARY(Exp.USERDEFINED(funcname),e1),c) 
+	  => (Exp.CALL(funcname,[e1],false,c))
+
+  axiom	replace_operator_with_fcall(Exp.LBINARY(e1,Exp.USERDEFINED(funcname),e2),c) 
+	  => (Exp.CALL(funcname,[e1,e2],false,c))
+
+  axiom	replace_operator_with_fcall(Exp.LUNARY(Exp.USERDEFINED(funcname),e1),c) 
+	  => (Exp.CALL(funcname,[e1],false,c))
+
+  axiom	replace_operator_with_fcall(Exp.RELATION(e1,Exp.USERDEFINED(funcname),e2),c) 
+	  => (Exp.CALL(funcname,[e1,e2],false,c))
+	  
+  axiom	replace_operator_with_fcall(e,_) => e
+end
+
 (** relation: elab_code_type
  ** This relation will construct the correct type for the given Code expression.
  ** The types are built-in classes of different types. E.g. the class TypeName is the type
@@ -340,14 +369,14 @@ end
 **)
 relation elab_code_type: (Env.Env, Absyn.Code) => Types.Type =
 
-  axiom	elab_code_type(env, Absyn.C_TYPENAME(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[])
-  axiom	elab_code_type(env, Absyn.C_VARIABLENAME(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("VariableName"),[])
-  axiom	elab_code_type(env, Absyn.C_EQUATIONSECTION(_,_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("EquationSection"),[])
-  axiom	elab_code_type(env, Absyn.C_ALGORITHMSECTION(_,_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("AlgorithmSection"),[])
-  axiom	elab_code_type(env, Absyn.C_ELEMENT(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("Element"),[])
-  axiom	elab_code_type(env, Absyn.C_EXPRESSION(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("Expression"),[])
+  axiom	elab_code_type(env, Absyn.C_TYPENAME(_)) => Types.T_COMPLEX(Absyn.IDENT("$TOP$"),ClassInf.UNKNOWN("TypeName"),[])
+  axiom	elab_code_type(env, Absyn.C_VARIABLENAME(_)) => Types.T_COMPLEX(Absyn.IDENT("$TOP$"),ClassInf.UNKNOWN("VariableName"),[])
+  axiom	elab_code_type(env, Absyn.C_EQUATIONSECTION(_,_)) => Types.T_COMPLEX(Absyn.IDENT("$TOP$"),ClassInf.UNKNOWN("EquationSection"),[])
+  axiom	elab_code_type(env, Absyn.C_ALGORITHMSECTION(_,_)) => Types.T_COMPLEX(Absyn.IDENT("$TOP$"),ClassInf.UNKNOWN("AlgorithmSection"),[])
+  axiom	elab_code_type(env, Absyn.C_ELEMENT(_)) => Types.T_COMPLEX(Absyn.IDENT("$TOP$"),ClassInf.UNKNOWN("Element"),[])
+  axiom	elab_code_type(env, Absyn.C_EXPRESSION(_)) => Types.T_COMPLEX(Absyn.IDENT("$TOP$"),ClassInf.UNKNOWN("Expression"),[])
 
-  axiom	elab_code_type(env, Absyn.C_MODIFICATION(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("Modification"),[])
+  axiom	elab_code_type(env, Absyn.C_MODIFICATION(_)) => Types.T_COMPLEX(Absyn.IDENT("$TOP$"),ClassInf.UNKNOWN("Modification"),[])
 
 end
 
@@ -373,7 +402,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
-	operators op => ops &
+	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.BINARY(e1,op,e2))
@@ -381,7 +410,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_unary") &
 	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
- 	operators op => ops &
+ 	operators(op, env, t, Types.T_NOTYPE) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.UNARY(op,e))
@@ -391,7 +420,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
-	operators op => ops &
+	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.LBINARY(e1,op,e2))
@@ -399,7 +428,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_lunary") &
 	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
- 	operators op => ops &
+ 	operators(op, env, t, Types.T_NOTYPE) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.LUNARY(op,e))
@@ -412,7 +441,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	
 	bool_and (c1,c2) => c &
-	operators op => ops &
+	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	----------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.RELATION(e1,op,e2))
@@ -1344,7 +1373,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 
   rule	elab_untyped_cref(env,cr) => cr' &
 	let recordtype = 
-	Types.T_COMPLEX(
+	Types.T_COMPLEX(Absyn.IDENT("$TOP$"),
 			ClassInf.RECORD("SimulationResult")
 			,[Types.VAR("exeFile",
 				    Types.ATTR(false, 
@@ -1755,7 +1784,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
   rule	(* This rule finds record constructors, user defined or implicit *)
 
-	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype as Types.T_COMPLEX(ClassInf.RECORD(_),_)),env') &
+	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype as Types.T_COMPLEX(_,ClassInf.RECORD(_),_),_),env') &
 	Debug.fprintln ("sei", "function is record constructor\n") &
 	
 	make_empty_slots(fargs) => slots &
@@ -1780,36 +1809,21 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
 	(* This rule finds user-defined functions. *)
 
+(* P.A: Removed. All functions can be overloaded. Thus, we need to fetch ALL type definitions
+  and find the right one 
   rule	
-	(* PR. We found a function definition of fn. *)
+
 	Debug.fprintln ("sei", "Looking up function in elab_call_args. env:\n") &
 	Debug.fcall ("sei", Env.print_env,env) &
 	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype),env') &
-	(* ClassInf.valid(st, SCode.R_FUNCTION) & *)
+
 	Debug.fprint("setr", "Did lookup in elab_call_args.\n") &
-	(*PR. Find function parameters in the function definition.*)
-	(*LS: Function type implemented, so just take second part of FunctionArg *)
-(*	get_types(fargs) => in & *)
 
 	Debug.fprintln ("sei", "Got types.") &
-	(*PR. elaborate input parameters from the function call(args).
-	* In are the in-parameters specified in the function declaration.
-	* c indicate if all input parameters are constant, this means that
-	* all output parameters are constant as well, since they only 
-	* depends on the input parameters.
-	* c is true if all input arguments are constant.
-	*)
 	make_empty_slots(fargs) => slots &
 	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
 	Debug.fprintln ("sei", "Did elab_input_args, constant=") &
-	(*PR. !! Fix this. The function body is examined to determine the 
-	* constness of each output argument.
-	 At the moment this just gives a false list.
-	*)
 	elab_consts(outtype) => const &
- 	(* Returns Types.PROP_TUPLE if there is more than one element in the list. 
-	   If there is only one element then Types.PROP is returned.
-	 *)
 	is_tuple(outtype) => tuple &
 	Debug.fprintln ("sei", "Elaborated consts") &
 	get_properties(outtype, const) => prop &
@@ -1817,8 +1831,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	
 	Debug.fprintln ("setr", "elab_call_args_succeeded")
 	--------------------------------------------
-	elab_call_args(env,fn,args,nargs,st) => (Exp.CALL(fn,args',tuple,false), prop )
-
+	elab_call_args(env,fn,args,nargs,st) => (Exp.CALL(fn,args',tuple,false), prop ) *)
 	(* 
 	 Functions that returns just one argument should not return a
 	 tuple. It just returns a simple expression. 
@@ -1838,17 +1851,34 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	 in the funktion type of the user function and check both the
 	 funktion name and the function's type. 
 	 *)
-
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
-	elab_types (env, args, typelist) => (args', c, restype) &
+	Debug.fprintln("sei", "elab_call_args, found types: ") &
+	Debug.fprint_list("sei",typelist,Types.print_type,", ") &
+	elab_types (env, args, typelist) => (args', c, restype, functype) &
+	deoverload_funcname(fn,functype) => fn' &
 	is_tuple restype => tuple &
+	elab_consts(restype) => const &
+	get_properties(restype,const) => prop &
 	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
 (*	Print.print_buf "Debug: We did a lookup T_FUNCTION " &
 *)
 (*PR.	elab_input_args(env, args, params) => (args',c)  *)
 	Debug.fprintln ("sei", "elab_call_args succeeded")
 	-----------------------------------------------
-	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn,args',tuple,false), Types.PROP(restype, c))
+	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn',args',tuple,false), prop)
+
+  rule	(* Rule above failed. Also consider koening lookup. *)
+	get_koening_function_types(env,fn,args,nargs) => ktypelist &
+	Debug.fprintln("sei", "elab_call_args, found koening types: ") &
+	Debug.fprint_list("sei",ktypelist,Types.print_type,", ") &
+	elab_types (env, args, ktypelist) => (args', c, restype, functype) &
+	deoverload_funcname(fn,functype) => fn' &
+	is_tuple restype => tuple &
+	elab_consts(restype) => const &
+	get_properties(restype,const) => prop &
+	Debug.fprintln ("sei", "elab_call_args succeeded in koening lookup.")
+	-----------------------------------------------
+	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn',args',tuple,false), prop)
 
   rule	not Lookup.lookup_type(env,fn) => (_,_) &
 	
@@ -1863,6 +1893,20 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
 end
 
+(** relation: deoverload_funcname
+ ** This relation is used to deoverload function calls. It investigates the type of the function
+ ** to see if it has the optional functionname set. If so this is returned. 
+ ** Otherwise return input.
+**)
+relation deoverload_funcname: (Absyn.Path, Types.Type) => Absyn.Path =
+
+  axiom	deoverload_funcname(fn,Types.T_FUNCTION(_,_,SOME(fn'))) => fn'
+
+  axiom	deoverload_funcname(fn,_) => fn
+
+end
+
+
 relation is_tuple : Types.Type => bool =
 
   axiom is_tuple Types.T_TUPLE(_) => true
@@ -1871,7 +1915,7 @@ relation is_tuple : Types.Type => bool =
 end
 (*PR.*)
 relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list) 
-	  => (Exp.Exp list, bool, Types.Type) =
+	  => (Exp.Exp list, bool, Types.Type(*result type*), Types.Type(*function type*)) =
 
 	(* 
 	 We found nothing. This is an error. return to the calling
@@ -1891,16 +1935,19 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list)
 	elab_input_args(env, args, [], slots ) => (args',newslots, c) &
         Debug.fprintln ("sei", "We found a match." )
 	------------------
-        elab_types(env, args, (t as Types.T_FUNCTION(params,restype))::trest)
-	  => (args', c, restype)
+        elab_types(env, args, (t as Types.T_FUNCTION(params,restype,fpath))::trest)
+	  => (args', c, restype, t)
 
 	(* We did not found a match, try next. *)
   rule 	Debug.fprintln ("sei", "The elab_input_args failed, try next.") &
-	elab_types(env, args, trest) => (args',c, restype) 
+	elab_types(env, args, trest) => (args',c, restype,t) 
         ------------------
-        elab_types(env, args, Types.T_FUNCTION(params,restype)::trest) 
-	  => (args', c, restype)
-       
+        elab_types(env, args, Types.T_FUNCTION(params,restype,fpath)::trest) 
+	  => (args', c, restype,t)
+
+  rule	Debug.fprint("failtrace","- elab_types failed.") 
+	--------------
+	elab_types(env,_,_) => fail
 end
 
 
@@ -3952,7 +3999,7 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
   axiom	compute_return_type (Exp.GREATEREQ(_),_,typ) => typ
   axiom	compute_return_type (Exp.EQUAL(_),_,typ) => typ
   axiom	compute_return_type (Exp.NEQUAL(_),_,typ) => typ
-
+  axiom	compute_return_type (Exp.USERDEFINED(_),_,typ) => typ
 end 
 
 relation n_dims : Types.Type => int =
@@ -4002,14 +4049,14 @@ end
 
 (** LS: POW added
  **)
-relation operators : Absyn.Operator
+relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	  => (Exp.Operator * Types.Type list * Types.Type) list =
 
 	(**  Arithmetical operators *)
 
-  rule	array_type_list(2 (*9*), Types.T_INTEGER([])) => intarrtypes &
-	array_type_list(2 (*9*), Types.T_REAL([])) => realarrtypes &
-	array_type_list(2 (*9*), Types.T_STRING([])) => stringarrtypes &
+  rule	array_type_list(9, Types.T_INTEGER([])) => intarrtypes &
+	array_type_list(9, Types.T_REAL([])) => realarrtypes &
+	array_type_list(9, Types.T_STRING([])) => stringarrtypes &
 	
 	operator_return(Exp.ADD_ARR(Exp.INT), 
 			intarrtypes, 
@@ -4036,15 +4083,15 @@ relation operators : Absyn.Operator
 			[Types.T_STRING([]), Types.T_STRING([])],
 			Types.T_STRING([]))
 		       ] &
-	
+	get_koening_operator_types("plus",env,t1,t2) => userops &
 	Util.list_flatten([intarrs,realarrs,stringarrs]) => arrays &
-	list_append(scalars,arrays) => types
+	Util.list_flatten([scalars,arrays,userops]) => types 
 	------------------------
-	operators Absyn.ADD => types
+	operators (Absyn.ADD,env,t1,t2) => types
 
 
-  rule	array_type_list(2(*9*), Types.T_INTEGER([])) => intarrtypes &
-	array_type_list(2(*9*), Types.T_REAL([])) => realarrtypes &
+  rule	array_type_list(9, Types.T_INTEGER([])) => intarrtypes &
+	array_type_list(9, Types.T_REAL([])) => realarrtypes &
 	
 	operator_return(Exp.SUB_ARR(Exp.INT), 
 			intarrtypes, 
@@ -4063,16 +4110,15 @@ relation operators : Absyn.Operator
 			[Types.T_REAL([]), Types.T_REAL([])],
 			Types.T_REAL([]))		  
 		       ] &
-	
-	list_append(intarrs,realarrs) => arrays &
-	list_append(scalars,arrays) => types
+	get_koening_operator_types("minus",env,t1,t2) => userops &
+	Util.list_flatten([scalars,intarrs,realarrs,userops]) => types
 	---------------------------
-	operators Absyn.SUB => types
+	operators(Absyn.SUB,env,t1,t2) => types
 
-  rule	array_type_list(2(*9*), Types.T_INTEGER([])) => intarrtypes &
-	array_type_list(2(*9*), Types.T_REAL([])) => realarrtypes &
-	n_types(2(*9*), Types.T_INTEGER([])) => inttypes &
-	n_types(2(*9*), Types.T_REAL([])) => realtypes &
+  rule	array_type_list(9, Types.T_INTEGER([])) => intarrtypes &
+	array_type_list(9, Types.T_REAL([])) => realarrtypes &
+	n_types(9, Types.T_INTEGER([])) => inttypes &
+	n_types(9, Types.T_REAL([])) => realtypes &
 	
 	let int_mul = Exp.MUL(Exp.INT) &
 	let real_mul = Exp.MUL(Exp.REAL) &
@@ -4130,21 +4176,15 @@ relation operators : Absyn.Operator
 			realtypes, 
 			realarrtypes) => realarrsscalar &	
 
-
-	list_append(scalars, intscalararrs) => types1 &
-	list_append(types1, realscalararrs) => types2 &
-	list_append(types2, intarrsscalar) => types3 &
-	list_append(types3, realarrsscalar) => types4 &
-	list_append(types4, scalarprod) => types5 &
-	list_append(types5, matrixprod) => types6 &
+	get_koening_operator_types("times",env,t1,t2) => userops &
 	
+	Util.list_flatten([scalars, intscalararrs, realscalararrs, intarrsscalar,
+			   realarrsscalar,scalarprod,matrixprod,userops]) => types
+	--------------------------------------------------------------------------
+	operators(Absyn.MUL,env,t1,t2) => types
 
-	let types = types6
-	---------------------------
-	operators Absyn.MUL => types
-
-  rule	array_type_list(2(*9*), Types.T_REAL([])) => realarrtypes &
-	n_types(2(*9*), Types.T_REAL([])) => realtypes &
+  rule	array_type_list(9, Types.T_REAL([])) => realarrtypes &
+	n_types(9, Types.T_REAL([])) => realtypes &
 	let real_div = Exp.DIV(Exp.REAL) &
 	let real_scalar = Types.T_REAL([]) &
 	let scalars = [(real_div,[real_scalar, real_scalar], real_scalar)] &
@@ -4153,10 +4193,10 @@ relation operators : Absyn.Operator
 			realarrtypes,
 			realtypes,
 			realarrtypes) => realarrscalar &
-
-	list_append(scalars,realarrscalar) => types
-	--------------------------------------------
-	operators Absyn.DIV => types
+	get_koening_operator_types("divide",env,t1,t2) => userops &
+	Util.list_flatten([scalars,realarrscalar,userops]) => types
+	-----------------------------------------------------------
+	operators(Absyn.DIV,env,t1,t2) => types
 
   rule	let real_scalar = Types.T_REAL([]) &
 	let int_scalar = Types.T_INTEGER([]) &
@@ -4169,80 +4209,97 @@ relation operators : Absyn.Operator
 	let arrscalar = [(Exp.POW_ARR(Exp.REAL),
 			  [real_matrix,int_scalar],
 			  real_matrix)] &
-	
-	list_append(scalars,arrscalar) => types
-	-------------------
-	operators Absyn.POW => types
+	get_koening_operator_types("power",env,t1,t2) => userops &
+	Util.list_flatten([scalars,arrscalar,userops]) => types
+	-------------------------------------------------------
+	operators(Absyn.POW,env,t1,t2) => types
 
-  axiom	operators Absyn.UMINUS
-	  => [(Exp.UMINUS(Exp.INT),
+  rule	let scalars = [(Exp.UMINUS(Exp.INT),
 	       [Types.T_INTEGER([])],
 	       Types.T_INTEGER([])),
 	      (Exp.UMINUS(Exp.REAL),
 	       [Types.T_REAL([])],
-	       Types.T_REAL([]))]
+	       Types.T_REAL([]))] &
+	get_koening_operator_types("unaryMinus",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators (Absyn.UMINUS,env,t1,t2) => types
 
-  axiom	operators Absyn.UPLUS
-	  => [(Exp.UPLUS(Exp.INT),
+  rule	let scalars = [(Exp.UPLUS(Exp.INT),
 	       [Types.T_INTEGER([])],
 	       Types.T_INTEGER([])),
 	      (Exp.UPLUS(Exp.REAL),
 	       [Types.T_REAL([])],
-	       Types.T_REAL([]))]
+	       Types.T_REAL([]))] &
+	get_koening_operator_types("unaryPlus",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators(Absyn.UPLUS,env,t1,t2) => types
 
-	(**  Logical operators *)
+	(**  Logical operators *) (* Not considered for overloading yet. *)
 
-  axiom	operators Absyn.AND
+  axiom	operators(Absyn.AND,env,t1,t2)
 	  => [(Exp.AND,
 	       [Types.T_BOOL([]), Types.T_BOOL([])],
 	       Types.T_BOOL([]))]
 
-  axiom	operators Absyn.OR
+  axiom	operators(Absyn.OR,env,t1,t2)
 	  => [(Exp.OR,
 	       [Types.T_BOOL([]), Types.T_BOOL([])],
 	       Types.T_BOOL([]))]
 
-  axiom	operators Absyn.NOT
+  axiom	operators(Absyn.NOT,env,t1,t2)
 	  => [(Exp.NOT,
 	       [Types.T_BOOL([])],
 	       Types.T_BOOL([]))]
 
 	(**  Relational operators *)
 
-  axiom	operators Absyn.LESS
-	  => [(Exp.LESS(Exp.INT),
+  rule let scalars = [(Exp.LESS(Exp.INT),
 	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
 	       Types.T_BOOL([])),
 	      (Exp.LESS(Exp.REAL),
 	       [Types.T_REAL([]), Types.T_REAL([])],
-	       Types.T_BOOL([]))]
+	       Types.T_BOOL([]))] &
+	get_koening_operator_types("less",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators(Absyn.LESS,env,t1,t2) => types
 
-  axiom	operators Absyn.LESSEQ
-	  => [(Exp.LESSEQ(Exp.INT),
+  rule	let scalars = [(Exp.LESSEQ(Exp.INT),
 	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
 	       Types.T_BOOL([])),
 	      (Exp.LESSEQ(Exp.REAL),
 	       [Types.T_REAL([]), Types.T_REAL([])],
-	       Types.T_BOOL([]))]
+	       Types.T_BOOL([]))] &
+	get_koening_operator_types("lessEqual",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators(Absyn.LESSEQ,env,t1,t2) => types
 
-  axiom	operators Absyn.GREATER
-	  => [(Exp.GREATER(Exp.INT),
+  rule	let scalars = [(Exp.GREATER(Exp.INT),
 	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
 	       Types.T_BOOL([])),
 	      (Exp.GREATER(Exp.REAL),
 	       [Types.T_REAL([]), Types.T_REAL([])],
-	       Types.T_BOOL([]))]
+	       Types.T_BOOL([]))] &
+	get_koening_operator_types("greater",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators(Absyn.GREATER,env,t1,t2) => types
 
-  axiom	operators Absyn.GREATEREQ
-	  => [(Exp.GREATEREQ(Exp.INT),
+  rule	let scalars = [(Exp.GREATEREQ(Exp.INT),
 	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
 	       Types.T_BOOL([])),
 	      (Exp.GREATEREQ(Exp.REAL),
 	       [Types.T_REAL([]), Types.T_REAL([])],
-	       Types.T_BOOL([]))]
+	       Types.T_BOOL([]))] &
+	get_koening_operator_types("greaterEqual",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators(Absyn.GREATEREQ,env,t1,t2) => types
 
-  axiom	operators Absyn.EQUAL
-	  => [(Exp.EQUAL(Exp.INT),
+  rule	let scalars = [(Exp.EQUAL(Exp.INT),
 	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
 	       Types.T_BOOL([])),
 	      (Exp.EQUAL(Exp.REAL),
@@ -4253,10 +4310,13 @@ relation operators : Absyn.Operator
 	       Types.T_BOOL([])),
 	      (Exp.EQUAL(Exp.BOOL),
 	       [Types.T_BOOL([]), Types.T_BOOL([])],
-	       Types.T_BOOL([]))]
+	       Types.T_BOOL([]))] &
+	get_koening_operator_types("equal",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators(Absyn.EQUAL,env,t1,t2) => types
 
-  axiom	operators Absyn.NEQUAL
-	  => [(Exp.NEQUAL(Exp.INT),
+  rule	let scalars = [(Exp.NEQUAL(Exp.INT),
 	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
 	       Types.T_BOOL([])),
 	      (Exp.NEQUAL(Exp.REAL),
@@ -4267,14 +4327,159 @@ relation operators : Absyn.Operator
 	       Types.T_BOOL([])),
 	      (Exp.NEQUAL(Exp.BOOL),
 	       [Types.T_BOOL([]), Types.T_BOOL([])],
-	       Types.T_BOOL([]))]
+	       Types.T_BOOL([]))] &
+	get_koening_operator_types("notEqual",env,t1,t2) => userops &
+	Util.list_flatten([scalars,userops]) => types
+	---------------------------------------------
+	operators(Absyn.NEQUAL,env,t1,t2) => types
 
 
   rule	Print.print_buf "- operators(" & Dump.op_symbol op => s &
  	Print.print_buf s & Print.print_buf ") failed\n"
 	----------------------------
-	operators op => fail
+	operators(op,env,t1,t2) => fail
 
+end
+
+(** relation: get_koening_function_types
+ ** Used for userdefined function overloads.
+ ** This relation will search the types of the arguments for matching function definitions 
+ ** corresponding to the koening C++ lookup rule.
+ ** Question: What happens if we have A.foo(x,y)? Should we search for function A.foo in
+ ** scope where type of x and y are defined? Or is it an error?
+ ** See also: get_koening_operator_types
+ ** Note: The reason for having two relations here is that operators and functions differs a lot.
+ ** Operators have fixed no of arguments, functions can both have positional and named 
+ ** arguments, etc. Perhaps these two could be unified. This would require major refactoring.
+ **)
+relation get_koening_function_types: (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list)
+	=> Types.Type list =
+
+  rule	elab_exp(env,e1,false,NONE) => (_,Types.PROP(t,_),_) &
+	Types.get_classname(t) => p1 &
+	Lookup.lookup_class(env,p1,false) => (c,f::_) &
+
+	(* To make sure the function is implicitly instantiated.*)
+	Lookup.lookup_type([f],fn) => (_,f'::_) &
+
+	Lookup.lookup_functions_in_env([f'],fn) => typelist &
+	get_koening_function_types(env,fn,exps,na) => typelist2 &
+	list_append(typelist,typelist2) => res
+	--------------------------------------
+	get_koening_function_types(env,fn as Absyn.IDENT(_),e1::exps,na) => res 
+
+  rule	get_koening_function_types(env,fn,exps,na) => typelist
+	------------------------------------------------------
+	get_koening_function_types(env,fn as Absyn.IDENT(_),e1::exps,na) => typelist
+	
+  rule	elab_exp(env,exp,false,NONE) => (_,Types.PROP(t,_),_) &
+	Types.get_classname(t) => p1 &
+	Lookup.lookup_class(env,p1,false) => (c,f::_) &
+	(* To make sure the function is implicitly instantiated.*)
+	Lookup.lookup_type([f],fn) => (_,f'::_) &
+
+	Lookup.lookup_functions_in_env([f'],fn) => typelist &
+	get_koening_function_types(env,fn,[],na) => typelist2 &
+	list_append(typelist,typelist2) => res
+	------------------------------------------------------
+	get_koening_function_types(env,fn as Absyn.IDENT(_),[],Absyn.NAMEDARG(id,exp)::na) 
+	  => res
+
+  rule	get_koening_function_types(env,fn,[],na) => res
+	------------------------------------------------------
+	get_koening_function_types(env,fn as Absyn.IDENT(_),[],_::na) => res
+
+  axiom	get_koening_function_types(env,fn as Absyn.IDENT(_),[],[]) => []
+	
+  rule	Print.print_buf "# Error, koening lookup of non-simple function name, " &
+	Absyn.path_string fn => fnstr & Print.print_buf fnstr & 
+	Print.print_buf "\n"
+	-------------------
+	get_koening_function_types(env,fn as Absyn.QUALIFIED(_,_),_,_) => fail
+
+  rule	Debug.fprint("failtrace", "- get_koening_function_types failed\n") 
+	------------------------------------------------------------------
+	get_koening_function_types(env,fn as Absyn.QUALIFIED(_,_),_,_) => fail
+	
+end
+(** relation: get_koening_operator_types
+ ** Used for userdefined operator overloads.
+ ** This relation will search the scopes of the classes of the two 
+ ** corresponding types and look for user defined operator overloaded
+ ** functions, such as 'plus', 'minus' and 'times'. This corresponds
+ ** to the koening C++ lookup rule.
+ **)
+relation get_koening_operator_types: (string, Env.Env, Types.Type, Types.Type)
+	=> (Exp.Operator * Types.Type list * Types.Type) list =
+
+  rule	(* Both types user defined *)
+	Types.get_classname(t1) => p1 &
+	Lookup.lookup_class(env,p1,false) => (c,env1) &
+	get_koening_operator_types_in_scope(op,env1) => res1 &
+	Types.get_classname(t2) => p2 &
+	Lookup.lookup_class(env,p2,false) => (c,env2) &
+	get_koening_operator_types_in_scope(op,env2) => res2 &
+	list_append(res1,res2) => res
+	-----------------------------
+	get_koening_operator_types(op,env,t1,t2) => res
+
+  rule	(* User defined types only in t2*)
+	not Types.get_classname(t1) => _ &
+	Types.get_classname(t2) => p2 &
+	Lookup.lookup_class(env,p2,false) => (c,env2) &
+	get_koening_operator_types_in_scope(op,env2) => res
+	---------------------------------------------------
+	get_koening_operator_types(op,env,t1,t2) => res
+
+  rule	(* User defined types only in t1*)
+	not Types.get_classname(t2) => _ &
+	Types.get_classname(t1) => p1 &
+	Lookup.lookup_class(env,p1,false) => (c,env1) &
+	get_koening_operator_types_in_scope(op,env1) => res
+	---------------------------------------------------
+	get_koening_operator_types(op,env,t1,t2) => res
+
+  rule	(* No User defined types at all. *)
+	not Types.get_classname(t1) => _ &
+	not Types.get_classname(t2) => _ 
+	--------------------------------
+	get_koening_operator_types(op,env,t1,t2) => []
+end
+
+(** relation: get_koening_operator_types_in_scope
+ ** This relation is a help relation to get_koening_operator_types
+ ** and it will look for functions in the current scope of the passed
+ ** environment, according to the koening rule. 
+**)
+relation get_koening_operator_types_in_scope: (string, Env.Env) 
+	  => (Exp.Operator * Types.Type list * Types.Type) list =
+
+  rule	(* To make sure the function is implicitly instantiated.*)
+	Lookup.lookup_type([f],Absyn.IDENT(funcname)) => (_,f'::_) &
+
+	(* TODO: Fix so lookup_functions_in_env also does instantiation to get type *)
+	Lookup.lookup_functions_in_env([f'],Absyn.IDENT(funcname)) => tplst &
+	list_length(tplst) => tplen &
+	Inst.package_prefix(f'::fs,Absyn.IDENT(funcname)) => fullfuncname &
+	build_operator_types(tplst,fullfuncname) => res
+	--------------------------------------------------
+	get_koening_operator_types_in_scope(funcname,f::fs) => res
+end
+
+(** relation: build_operator_types
+ ** This relation takes the types operator overloaded user functions and
+ ** builds  the type list structure suitable for the deoverload relation. 
+**)
+relation build_operator_types: (Types.Type list,Absyn.Path) 
+	  => (Exp.Operator * Types.Type list * Types.Type) list =
+
+  axiom	build_operator_types([],_) => []
+
+  rule	Util.list_map(args,Util.tuple2_2) => argtypes &
+	build_operator_types(tps,funcname) => rest
+	------------------------------------
+	build_operator_types(Types.T_FUNCTION(args,tp,fpath)::tps,funcname) 
+	  => ((Exp.USERDEFINED(funcname),argtypes,tp)::rest) 
 end
 
 relation n_dim_array : (int, Types.Type) => Types.Type =

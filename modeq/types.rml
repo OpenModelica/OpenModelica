@@ -71,9 +71,16 @@ module Types :
 		| T_ENUM 
 		| T_ENUMERATION of string list * Var list
 		| T_ARRAY of ArrayDim * Type
-		| T_COMPLEX of ClassInf.State
+		| T_COMPLEX of Absyn.Path (* The fully qualified path 
+					   to the classdef. of the type
+					   Used in Koening lookup of overloaded func.*)
+			     * ClassInf.State
 			     * Var list
-		| T_FUNCTION of FuncArg list * Type (* Only single-result *)
+		| T_FUNCTION of FuncArg list 
+			     * Type (* Only single-result *)
+			     * Absyn.Path option (* The fully qualified class name of the function 
+					   definition, used so deoverloading of functions can 
+					   be performed *)
 		| T_TUPLE of Type list (*PR. Used by functions who return multiple values. *)
 		| T_NOTYPE
 
@@ -134,12 +141,13 @@ returns multiple arguments. *)
   relation print_binding : Binding => ()
   relation print_params : FuncArg list => () 
   relation print_farg: FuncArg => () 
-  relation make_function_type : (Var list) => Type
+  relation make_function_type : (Absyn.Path, Var list) => Type
   relation make_enumeration_type : (Var list) => Type
   relation is_parameter: Var => ()
   relation contain_real: Type list => bool
 	 
   relation get_vars: (Var list, Var => () )  => Var list
+  relation get_classname: (Type) => Absyn.Path
   relation get_type_name: Type => string
   relation is_array : Type => bool
   relation is_input_attr : Attributes => bool
@@ -214,7 +222,7 @@ relation basic_type : Type => bool =
   axiom	basic_type T_BOOL(_) => true
   axiom	basic_type T_ENUM => true
   axiom	basic_type T_ARRAY(_,_) => false
-  axiom	basic_type T_COMPLEX(_,_) => false
+  axiom	basic_type T_COMPLEX(_,_,_) => false
   axiom	basic_type T_ENUMERATION(_,_) => false
 end
 
@@ -273,7 +281,7 @@ relation subtype : (Type, Type) => bool =
 	
   rule	subtype_varlist(els1, els2) => true
 	-----------------------------------
-	subtype(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
+	subtype(T_COMPLEX(_,st1,els1), T_COMPLEX(_,st2,els2)) => true
 
 	(* PR. Check of tuples, similar to complex. Just that
 	 identifier name do not have to be checked. Only types are
@@ -375,12 +383,12 @@ relation lookup_component : (Type, Ident) => Var =
 
   rule  lookup_component2(cs, id) => v
 	------------------------------
-	lookup_component(T_COMPLEX(st,cs), id) => v
+	lookup_component(T_COMPLEX(p,st,cs), id) => v
 
   rule	lookup_component2(cs,id) => VAR(n,attr,prot,ty,bnd) &
 	let ty' = T_ARRAY(dim,ty)
 	-----------------------------
-	lookup_component(T_ARRAY(dim,T_COMPLEX(st,cs)), id) => VAR(n,attr,prot,ty',bnd)
+	lookup_component(T_ARRAY(dim,T_COMPLEX(p,st,cs)), id) => VAR(n,attr,prot,ty',bnd)
 
   rule	Print.print_buf "- Looking up " &
 	Print.print_buf id &
@@ -676,7 +684,7 @@ relation unparse_type: Type => string =
 	Util.string_append_list(vars) => vstr &
 	Util.string_append_list(["record ",name,"\n",vstr,"end record;"]) => res
 	---------------------------
-	unparse_type(t as T_COMPLEX(ClassInf.RECORD(name),vs))=> res
+	unparse_type(t as T_COMPLEX(p,ClassInf.RECORD(name),vs))=> res
 
   axiom	unparse_type(_) => "not implemented yet\n" 
 end	
@@ -719,12 +727,14 @@ relation print_type : Type => () =
 	print_type T_ENUMERATION(l,_)
 
   rule	Print.print_buf "composite(" &
+	Dump.print_path p &
+	Print.print_buf ", (" &
 	ClassInf.print_state(st) &
 	Print.print_buf ", (" &
 	Dump.print_list(vars, print_var, ", ") &
 	Print.print_buf "))"
 	-----------------
-	print_type T_COMPLEX(st,vars)
+	print_type T_COMPLEX(p,st,vars)
 
   rule	Print.print_buf "array[" & print_arraydim dim & Print.print_buf "] of " &
 	print_type t
@@ -732,9 +742,15 @@ relation print_type : Type => () =
 	print_type T_ARRAY(dim,t)
 
   rule	Print.print_buf "function(" & print_params params & Print.print_buf " => " &
+	print_type restype & Absyn.path_string p => str & Print.print_buf " ," &
+	Print.print_buf str & Print.print_buf ")"
+	------------------------------
+	print_type T_FUNCTION(params,restype,SOME(p))
+
+  rule	Print.print_buf "function(" & print_params params & Print.print_buf " => " &
 	print_type restype & Print.print_buf ")"
 	------------------------------
-	print_type T_FUNCTION(params,restype)
+	print_type T_FUNCTION(params,restype,NONE)
 
   rule	Print.print_buf "(" & 
 	Dump.print_list(tys, print_type, ", ") &
@@ -832,7 +848,7 @@ relation print_binding : Binding => () =
 end
 
 (* LS *)
-relation make_function_type: (Var list) => Type =
+relation make_function_type: (Absyn.Path, Var list) => Type =
 
   rule	get_input_vars vl => invl &
 	get_output_vars vl => outvl &
@@ -847,7 +863,7 @@ relation make_function_type: (Var list) => Type =
 	Debug.fcall ("ft", print_type, rettype) &
 	Debug.fprint ("ft", " >")
 	---------------------------------
-	make_function_type vl => T_FUNCTION(fargs, rettype)
+	make_function_type(p,vl) => T_FUNCTION(fargs, rettype,SOME(p))
 
 end
 
@@ -883,6 +899,12 @@ relation get_output_vars: Var list  => Var list =
 	get_output_vars vl => vl'
 end
 
+
+relation get_classname: (Type) => Absyn.Path =
+
+  axiom	get_classname(T_COMPLEX(p,_,_)) => p
+
+end
 
 (* LS *)
 relation get_vars: (Var list, Var => () )  => Var list =
@@ -1038,7 +1060,7 @@ relation get_type_name: Type => string =
 
   rule	ClassInf.get_state_name st => n
 	-------------------------------
-	get_type_name T_COMPLEX(st, _) => n
+	get_type_name T_COMPLEX(p,st, _) => n
 
   rule	flatten_array_type arrayty => (ty, dims) &
 	Util.list_map(dims, int_string) => dimstrs &

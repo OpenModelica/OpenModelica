@@ -170,6 +170,16 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	Util.string_append_list([is,s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5]) => str
 	-------------------------------
 	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,cmt)),fi,re,io) => str    
+
+  rule	indent_str(i) => is &
+	select_string(p, "partial ", "") => s1 &
+	select_string(f, "final ", "") => s2 &
+	unparse_restriction_str (r)  => s3 &
+	print_list_str(l,Absyn.path_string,",") => s4 &
+	unparse_comment_option(cmt) => s5 &
+	Util.string_append_list([is,s1,s2,re,io,s3," ",n,"= overload(",s4,")",s5]) => str
+	-------------------------------
+	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.OVERLOAD(l,cmt)),fi,re,io) => str
 end 
 
 relation unparse_comment_option: (Absyn.Comment option) => string =

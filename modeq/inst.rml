@@ -45,6 +45,7 @@ module Inst:
   with "util.rml"
   with "interactive.rml"							  
   with "cache.rml"
+  with "absyn.rml"
 
   type InstDims = Exp.Subscript list
 
@@ -80,7 +81,7 @@ module Inst:
 
   relation inst_record_constructor_elt : (Env.Env, SCode.Element) 
 	 => (Types.Var)
-  relation mktype : (ClassInf.State,Types.Var list) => Types.Type
+  relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type
 
   relation init_vars_modelica_output : DAE.Element list => DAE.Element list
 
@@ -89,11 +90,11 @@ module Inst:
 					      Prefix.Prefix, Connect.Sets, SCode.Class,
 					      InstDims, bool)
 	  => ( Env.Env, DAE.Element list)
-	    
+  relation package_prefix : (Env.Env, Absyn.Path) => Absyn.Path
+	  
 end
 
 
-with "absyn.rml"
 with "algorithm.rml"
 with "builtin.rml"
 with "dump.rml"
@@ -385,7 +386,8 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	  => (dae1, env''', csets', ci_state', tys) &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
-	mktype(ci_state',tys) => ty
+	package_prefix(env''', Absyn.IDENT(n)) => typename &
+	mktype(typename,ci_state',tys) => ty
 	-------------------------------------------
 	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl)
 	  => (dae, env''', [], ty, ci_state')
@@ -619,7 +621,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      SCode.DERIVED(cn,ad,mod), re, prot, 
 		      inst_dims, impl, packimpl)
 	  => fail
-
+	
   rule	Debug.fprint("failtrace", "- inst_classdef failed\n")
 	----------------------------------
 	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
@@ -2268,6 +2270,15 @@ relation implicit_function_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
+  rule	(* Overloaded functions *)
+	inst_overloaded_functions(env,n,funcnames) => (env',daefuncs)
+	-----------------------------
+	implicit_function_instantiation(env,mod,pre,csets,
+			       c as SCode.CLASS(n,_,_, restr as SCode.R_FUNCTION, 
+			       SCode.OVERLOAD(funcnames)),
+			       inst_dims, false)
+	  => (env', daefuncs)
+
 rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 	inst_class(env, mod, pre, csets, c, inst_dims, true) 
 	  => (dae, _, csets', ty, st) &
@@ -2294,11 +2305,44 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 	inst_ext_decl(tempenv, n, parts) => extdecl
 	--------------------------------------
 	implicit_function_instantiation(env, mod, pre, csets,
-			       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
+		       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
 			       parts as SCode.PARTS(els,_,_,_,_,_)),
 			       inst_dims, false)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
+					
 end
+
+(** relation: inst_overloaded_functions
+ ** This relation instantiates the functions in the overload list of a overloading
+ ** function definition and register the function types using the overloaded name.
+ ** It also creates dae elements for the functions 
+**)
+relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
+	=> (Env.Env, DAE.Element list) =
+
+  axiom	inst_overloaded_functions(env,_,[]) => (env, [])
+
+  rule	(* Instantiate each function, add its FQ name to the type, needed when deoverloading *)
+	Lookup.lookup_class(env,fn,true) 
+	  => (c as SCode.CLASS(id, _, encflag, SCode.R_FUNCTION,_),cenv) &
+	inst_class(cenv, Mod.NOMOD, Prefix.NOPRE, [], c, [], true) 
+	  => (dae, _, _, Types.T_FUNCTION(args,tp,_), st) &
+        package_prefix (env, Absyn.IDENT(overloadname)) => fpath &
+	package_prefix (cenv, Absyn.IDENT(id)) => ovlfpath &
+	let ty = Types.T_FUNCTION(args,tp,SOME(ovlfpath)) &
+	Env.extend_frame_t(env, overloadname, ty) => env' &
+	inst_overloaded_functions(env',overloadname,fns) => (env'', dae1) 	
+	-----------------------------------------------------------------
+	inst_overloaded_functions(env,overloadname,fn::fns) 
+	  => (env'', DAE.FUNCTION(fpath, DAE.DAE(dae), ty)::dae1 )
+
+  rule	print "inst_overloaded_functions failed\n" &
+	Debug.fprint("failtrace",  "#-- inst_ext_decl failed" ) &
+	Debug.fcall("failtrace", Env.print_env, env) 
+	--------------------------
+	inst_overloaded_functions(env,_,_) => fail
+end
+
 
 (** relation: inst_ext_decl
  **
@@ -3318,17 +3362,17 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	-----------------------------------------
 	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t),initial) => [dae]
 
-  axiom	inst_eq_equation_2(e1, e2, Types.T_COMPLEX(_,[]), initial) => []
+  axiom	inst_eq_equation_2(e1, e2, Types.T_COMPLEX(p,_,[]), initial) => []
 
   rule	Exp.extend_cref(c1,n,[]) => c1' &
 	Exp.extend_cref(c2,n,[]) => c2' &
 	inst_eq_equation_2(Exp.CREF(c1',t1), Exp.CREF(c2',t2), t, initial) => dae1 &
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   Types.T_COMPLEX(cs,vs), initial) => dae2 &
+			   Types.T_COMPLEX(p,cs,vs), initial) => dae2 &
 	list_append(dae1, dae2) => dae
 	------------------------------
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   Types.T_COMPLEX(cs,Types.VAR(n,_,_,t,_)::vs), initial) => dae
+			   Types.T_COMPLEX(p,cs,Types.VAR(n,_,_,t,_)::vs), initial) => dae
 
 	(** When the type of the expressions is a complex type, and *)
 	(** the left-hand side of the equation is not a component *)
@@ -3350,7 +3394,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2 as Exp.CREF(_,_),
-			   t as Types.T_COMPLEX(_,_), initial) => dae
+			   t as Types.T_COMPLEX(_,_,_), initial) => dae
 
 	(** When the right-hand side is not a component reference a *)
 	(** similar trick is applied.  This also catched the case *)
@@ -3362,7 +3406,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
 	-------------------------------------------------------------
-	inst_eq_equation_2(e1, e2, t as Types.T_COMPLEX(_,_), initial) => dae
+	inst_eq_equation_2(e1, e2, t as Types.T_COMPLEX(_,_,_), initial) => dae
 
   rule	Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=") &
 	Debug.fcall("failtrace",Exp.print_exp, e1) &
@@ -3771,7 +3815,7 @@ relation valid_connector : Types.Type => () =
 
   rule	ClassInf.valid(state,SCode.R_CONNECTOR)
 	---------------------------------------
-	valid_connector Types.T_COMPLEX(state,_)
+	valid_connector Types.T_COMPLEX(p,state,_)
 
   rule	Print.print_buf "# Can't connect objects of type " &
 	Types.print_type t & Print.print_buf "\n"
@@ -3916,8 +3960,8 @@ relation connect_components: (Connect.Sets,
 	Prefix.prefix_cref(pre, c2) => c2' &
 	connect_vars(sets,c1',f1,l1,c2',f2,l2) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1, Types.T_COMPLEX(_,l1),
-			   c2,f2, Types.T_COMPLEX(_,l2),_) => sets'
+	connect_components(sets,pre,c1,f1, Types.T_COMPLEX(_,_,l1),
+			   c2,f2, Types.T_COMPLEX(_,_,l2),_) => sets'
 	
 	(**  Error *)
 	
@@ -3966,41 +4010,41 @@ relation connect_vars : (Connect.Sets,
 end
 
 (** relation: mktype **
- ** From a class inference state, and a list of subcomponents, this
+ ** From a class typename, its inference state, and a list of subcomponents, this
  ** relation returns `Types.Type'.  If the class inference state
  ** indicates that the type should be a built-in type, one of the
  ** built-in type constructors is used.  Otherwise, a `T_COMPLEX' is
  ** built.
  **)
 
-relation mktype : (ClassInf.State,Types.Var list) => Types.Type =
+relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type =
 
-  axiom	mktype(ClassInf.TYPE_INTEGER(_),v) => Types.T_INTEGER(v)
-  axiom	mktype(ClassInf.TYPE_REAL(_),v)    => Types.T_REAL(v)
-  axiom	mktype(ClassInf.TYPE_STRING(_),v)  => Types.T_STRING(v)
-  axiom	mktype(ClassInf.TYPE_BOOL(_),v)    => Types.T_BOOL(v)
-  axiom	mktype(ClassInf.TYPE_ENUM(_),_)    => Types.T_ENUM
+  axiom	mktype(_,ClassInf.TYPE_INTEGER(_),v) => Types.T_INTEGER(v)
+  axiom	mktype(_,ClassInf.TYPE_REAL(_),v)    => Types.T_REAL(v)
+  axiom	mktype(_,ClassInf.TYPE_STRING(_),v)  => Types.T_STRING(v)
+  axiom	mktype(_,ClassInf.TYPE_BOOL(_),v)    => Types.T_BOOL(v)
+  axiom	mktype(_,ClassInf.TYPE_ENUM(_),_)    => Types.T_ENUM
 
 	(* Insert function type construction here
 	   after checking input/output arguments? 
 	   see types.rml T_FUNCTION *)
 
-  rule	Types.make_function_type (vl) => functype
+  rule	Types.make_function_type (p,vl) => functype
 	--------------------------
-	mktype(st as ClassInf.FUNCTION(name), vl) => functype
+	mktype(p,st as ClassInf.FUNCTION(name), vl) => functype
 
   rule	Types.make_enumeration_type (v1) => enumtype
 	--------------------------------------------
-	mktype(ClassInf.ENUMERATION(name),v1) => enumtype
+	mktype(p,ClassInf.ENUMERATION(name),v1) => enumtype
 (*
   rule	Print.print_buf " <function " & Print.print_buf name & Print.print_buf "> <" &
 	Dump.print_list (vl, Types.print_var, ", ") &
 	Print.print_buf " >"
 	--------------------------
-	mktype(st as ClassInf.FUNCTION(name), vl) => Types.T_COMPLEX(st,vl)
+	mktype(st as ClassInf.FUNCTION(name), vl) => Types.T_COMPLEX(p,st,vl)
 *)
 
-  axiom	mktype(st,l) => Types.T_COMPLEX(st,l)
+  axiom	mktype(p,st,l) => Types.T_COMPLEX(p,st,l)
 
 end
 

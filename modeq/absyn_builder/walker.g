@@ -206,7 +206,7 @@ class_specifier returns [void* ast]
 				ast = Absyn__PARTS(comp,cmt ? mk_some(cmt) : mk_none());
 			}
 		)
-	| #(EQUALS ( ast = derived_class | ast = enumeration))
+	| #(EQUALS ( ast = derived_class | ast = enumeration | ast = overloading)) 
 
 	;
 
@@ -272,6 +272,30 @@ enumeration_literal returns [void *ast] :
 			ast = Absyn__ENUMLITERAL(to_rml_str(i1),c1 ? mk_some(c1) : mk_none());
 		}
 	;	
+
+overloading returns [void *ast] 
+{
+	l_stack el_stack;
+	void *el = 0;
+	void *cmt = 0;
+}
+	:
+		#(OVERLOAD 
+			el = name_path
+			{ el_stack.push(el); }
+			(
+				el = name_path
+				{ el_stack.push(el); }
+				
+			)* 
+			(cmt=comment)?
+		)
+		{
+			ast = Absyn__OVERLOAD(make_rml_list_from_stack(el_stack),
+				cmt ? mk_some(cmt) : mk_none());
+		}
+	;
+
 composition returns [void* ast]
 {
     void* el = 0;
@@ -726,10 +750,10 @@ element_modification returns [void* ast]
 element_redeclaration returns [void* ast]
 {
 	void* class_def = 0;
-	void* e_spec; 
+	void* e_spec = 0; 
 	void* constr = 0;
-	void* final;
-	void* each;
+	void* final = 0;
+	void* each = 0;
 }
 	:
 		(#(r:REDECLARE (e:EACH)? (f:FINAL)?
@@ -899,7 +923,7 @@ algorithm returns [void* ast]
 	void* expr;
 	void* tuple;
 	void* args;
-  	void* cmt;
+  	void* cmt=0;
 }
 	:
 		#(ALGORITHM_STATEMENT 

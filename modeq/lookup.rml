@@ -92,7 +92,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
   rule	 (* If we didn't find the type, but found a class definition 
 	  * that is a function with the same name then we implicitly instantiate that
 	  function, and try again. *)
-	lookup_class(env, path, true) 
+	lookup_class(env, path, false) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_FUNCTION,_),env') &
 	Inst.implicit_function_instantiation(env', Mod.NOMOD,
 					       Prefix.NOPRE, [], c, [], false) 
@@ -105,7 +105,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
   rule	 (* If we didn't find the type, but found a class definition 
 	  * that is an external function with the same name then we implicitly 
 	  * instantiate that function, and try again. *)
-	lookup_class(env, path, true) 
+	lookup_class(env, path, false) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_EXT_FUNCTION,_),env') &
 	Inst.implicit_function_instantiation(env', Mod.NOMOD,
 					       Prefix.NOPRE, [], c, [], false) 
@@ -115,7 +115,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	lookup_type(env, path as Absyn.IDENT(_)) => (t,env3)
 
 	(* Lookup of qualified name *)
-  rule	lookup_class(env, Absyn.IDENT(pack), true) 
+  rule	lookup_class(env, Absyn.IDENT(pack), false) 
 	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
 	Env.open_scope(env', encflag) => env2 &
 	Env.name_scope (env2,id) => env2' &
@@ -130,7 +130,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	lookup_type(env, Absyn.QUALIFIED(pack, path)) => (t, env''')
 
 
-  rule	lookup_class(env, Absyn.IDENT(pack), true) 
+  rule	lookup_class(env, Absyn.IDENT(pack), false) 
 	  => (c as SCode.CLASS(id, _, encflag, restr, _), env') &
 	Env.open_scope(env', encflag) => env2 &
 	Env.name_scope (env2,id) => env2' &
@@ -666,7 +666,7 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
   rule	Debug.fprint ("lotr", "lookup_functions_in_env") &	
 	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
 	Debug.fcall ("lotr", Env.print_hashtable, ht) &
-	lookup_functions_in_frame(httypes,env,id) => c1 &
+	lookup_functions_in_frame(ht,httypes,env,id) => c1 &
 (*	Print.print_buf "\n Found type." & *)
 	lookup_functions_in_env(fs,iid) => c2 &
 	list_append (c1,c2) => reslist
@@ -718,47 +718,56 @@ relation lookup_type_in_frame: (Env.HashTable, (* Classes and vars*)
   rule	(* Each time a record constructor function is looked up, this rule will create the function.*)
 	(* An improvement (perhaps needing lot of code) is to add the function to the environment, which is *)
 	(* returned from this relation.*)
-	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_RECORD,_),_) &
+	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(n,_,_,SCode.R_RECORD,_),_) &
+	Inst.package_prefix(env,Absyn.IDENT(n)) => fpath &
 	build_record_constructor_varlst (cdef,env) => varlst &
-	Types.make_function_type(varlst) => ftype 
+	Types.make_function_type(fpath,varlst) => ftype 
 	----------------------------------------
 	lookup_type_in_frame(ht,httypes,env,id) 
 	    => (ftype,env)
 
-  rule	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),_) &
-	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],true) => (_,_,_,ty,_)  &
-	(* This rule is applied when a class definition, "below" in the code is a function and its type is 
-	   requested. We should really add the type `ty' to the environment in the future, but that means 
-	   a lot of changes......*)
-	Env.extend_frame_t(env,id,ty) => (env')
+  rule	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),cenv) &
+	Inst.implicit_function_instantiation(cenv,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
+	  => (env',_) &
+	lookup_type_in_env(env',Absyn.IDENT(id)) => (ty,env'')
 	----------------------------------------
-	lookup_type_in_frame(ht,httypes,env,id) => (ty,env')
-
+	lookup_type_in_frame(ht,httypes,env,id) => (ty,env'')
 end
 (**)
 
 (*PR. This actually only looks up the function name and find all
  corresponding types that have this function name.  *)
-relation lookup_functions_in_frame: (Env.HashTable, Env.Env, SCode.Ident)
+relation lookup_functions_in_frame: (Env.HashTable, (*Classes and vars*)
+				     Env.HashTable, (*Types *)
+				     Env.Env,
+				     SCode.Ident)
 	  => Types.Type list =
 
 
-  rule	Env.hash_get(ht, id, Env.myhash) => Env.TYPE(tps)
+  rule	Env.hash_get(httypes, id, Env.myhash) => Env.TYPE(tps)
 	---------------------------------------------------------
-	lookup_functions_in_frame(ht, env, id) => tps
+	lookup_functions_in_frame(ht,httypes, env, id) => tps
 
   rule	Env.hash_get(ht, id, Env.myhash) => Env.VAR(_,_,_) &
 	Print.print_buf "# Error while looking up type " &
 	Print.print_buf id & Print.print_buf ": found a component\n"
 	------------------------------------
-	lookup_functions_in_frame(ht,env,id) => fail
+	lookup_functions_in_frame(ht,httypes,env,id) => fail
 
-  rule	Env.hash_get(ht, id, Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_RECORD,_),_) &
+  rule	Env.hash_get(ht, id, Env.myhash) => Env.CLASS(cdef as SCode.CLASS(n,_,_,SCode.R_RECORD,_),cenv) &
 	Print.print_buf "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_varlst (cdef,env) => varlst &
-	Types.make_function_type(varlst) => ftype
+	Inst.package_prefix(cenv,Absyn.IDENT(n)) => fpath &
+	Types.make_function_type(fpath,varlst) => ftype
 	----------------------------------------
-	lookup_functions_in_frame(ht,env,id) => [ftype]
+	lookup_functions_in_frame(ht,httypes,env,id) => [ftype]
+
+  rule	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),cenv) &
+	Inst.implicit_function_instantiation(cenv,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
+	  => (env',_) &
+	lookup_functions_in_env(env',Absyn.IDENT(id)) => tps
+	----------------------------------------------------
+	lookup_functions_in_frame(ht,httypes,env,id) => tps
 end
 
 relation lookup_recconst_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
