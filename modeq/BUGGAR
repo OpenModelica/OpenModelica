@@ -1,5 +1,5 @@
 Vad betyder "redeclare extends ..."
-
+--
 Grammatiken: class_definition
  Borde väl vara
 
@@ -8,3 +8,6 @@ Grammatiken: class_definition
  och inte
 
      "=" IDENT [ array_dimensions ] [ class_modification ] )
+--
+Vilka variabler får man ha i ekvationer? Bara Real(Type) och
+Integer(type)? Exakt hur fungerar connect()?
