@@ -116,25 +116,6 @@ void System_5finit(void)
   set_cflags("-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
 }
 
-RML_BEGIN_LABEL(System__vector_5fsetnth)
-{
-  /* This will not work until the garbage collector in RML is rewritten
-    such that is can handle side effects correctly. 
-  */
-    rml_uint_t nelts = 0;
-    void *vec = rmlA0;
-    void *data;
-    rml_uint_t i = (rml_uint_t)RML_UNTAGFIXNUM(rmlA1);
-    if( i >= RML_HDRSLOTS(RML_GETHDR(vec)) ) {
-      RML_TAILCALLK(rmlFC);
-    } else {
-      RML_STRUCTDATA(vec)[i] = rmlA2;      
-      RML_TAILCALLK(rmlSC);
-    }
-}
-RML_END_LABEL
-
-
 RML_BEGIN_LABEL(System__strtok)
 {
   char *s;

@@ -29,10 +29,6 @@
  ** Printing routines for debugging of the AST.  These relations do
  ** nothing but print the data structures to the standard output.
  **
- ** The implementation of the relations are excluded from the report,
- ** as they occupy a lot of space and do not convey any useful
- ** semantic information.
- **
  ** The main entrypoint for this module is the relation "dump" which
  ** takes an entire program as an argument, and prints it all in
  ** Modelica source form. The other interface relations can be used

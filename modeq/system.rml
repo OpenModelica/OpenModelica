@@ -20,17 +20,15 @@
 *)
 
 (**
- ** file:	 types.rml
- ** module:      Types
- ** description: Type system
+ ** file:	 system.rml
+ ** module:      System
+ ** description: This file contains runtime system specific relation, which are implemented in 
+ ** C.
  **
  ** RCS: $Id$
  **
  ** This module contain a set of system calls, for e.g. compiling and 
  ** executing stuff, reading and writing files and so on.
- ** 
- ** 
- ** 
  ** 
  ** 
  ** 

@@ -876,6 +876,20 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  rule	(* For now, renaming a class clears all caches... *)
+	(* Substantial analysis required to find out what to keep in cache and 
+	  what must be thrown out *)
+	rename_class(p,old_cname,new_cname) => p'  &
+	SCode.elaborate(p') => s'
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("renameClass",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(old_cname), Absyn.CREF(new_cname)],_)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	  => ("OK",SYMBOLTABLE(p',s',[],[],[]))
+
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -886,6 +900,183 @@ relation componentref_to_path: Absyn.ComponentRef => Absyn.Path =
 	-----------------------------
 	componentref_to_path(Absyn.CREF_QUAL(id,_,x)) => Absyn.QUALIFIED(id,px)
 end	
+
+(** relation: rename_class
+ ** This relation renames a class (given as a qualified path name) to a new name 
+ ** -in the same scope-. All references to the class name in the program is updated to the 
+ ** new name. The relation does not allow a renaming that will move the class to antoher
+ ** package. To do this, the class must be copied.
+ **)
+relation rename_class: (Absyn.Program, 
+			Absyn.ComponentRef, (* old class as qualified name*)
+			Absyn.ComponentRef) (* new class, as identifier *)
+	  => Absyn.Program =
+	  
+  rule	(* class in package *)
+	Absyn.cref_to_path(old_class) => old_path &
+	traverse_classes(p,rename_class_visitor,(old_path,new_name),
+			 true (* traverse protected*)) => ((p',_))
+	------------------------
+	rename_class(p,old_class as Absyn.CREF_QUAL(_,_,_),Absyn.CREF_IDENT(new_name,_))
+	  => p'
+end
+
+(**relation: rename_class_visitor
+ ** This visitor renames a class given a new name
+ **)
+
+relation rename_class_visitor: ((Absyn.Class* (Absyn.Path*string)))
+	  => ((Absyn.Class*(Absyn.Path*string))) =
+	
+  rule	Absyn.path_last_ident(old_class) => id2 &
+	id = id2 
+	----------------
+	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e),(old_class,new_name)))
+	  => ((Absyn.CLASS(new_name,a,b,c,d,e),(old_class,new_name)))
+
+  axiom	rename_class_visitor((class,args)) => ((class,args))
+
+end
+
+
+(** relation traverse_classes
+ ** This relation traverses all classes of a program and applies a re-lation to each
+ ** class. The re-lation takes the Absyn.Class and an additional argument and returns
+ ** an updated class and the additional values.
+ **)
+ relation traverse_classes: (Absyn.Program, 
+			     ((Absyn.Class * 'a) => (Absyn.Class * 'a)),  (* rel-ation to apply*)
+			     'a, (* extra value passed to re-lation*)
+			     bool) (* true = traverse protected elements*)
+	  => (Absyn.Program* 'a) =
+	   
+  rule	traverse_classes2(lst,visitor,args,traverse_prot) => ((lst',args'))
+	-------------------------------------------------------------------------
+	 traverse_classes(Absyn.PROGRAM(lst,within),visitor,args,traverse_prot) 
+	  => ((Absyn.PROGRAM(lst',within),args'))
+end
+
+(** relation: traverse_classes2
+ ** Helper relation to traverse_classes.
+ **)
+relation traverse_classes2:(Absyn.Class list,
+ ((Absyn.Class * 'a) => (Absyn.Class * 'a)),  (* rel-ation to apply*)
+			     'a, (* extra value passed to re-lation*)
+			     bool) (* true = traverse protected elements*)
+	  => (Absyn.Class list * 'a) =
+	  
+  axiom	traverse_classes2([],_,args,_) => (([],args))
+	
+  rule	visitor((class,args)) => ((class',args')) &
+ 	traverse_inner_class(class,visitor,args',traverse_prot) => ((class'',args'')) &
+	traverse_classes2(classes,visitor,args'',traverse_prot) => ((classes',args'''))
+	------------------------
+	traverse_classes2(class::classes,visitor,args,traverse_prot)
+	=> ((class''::classes',args'''))
+
+  rule	print "-traverse_classes2 failed\n" 
+	---------------------
+	traverse_classes2(_,_,_,_) => fail
+end
+
+(** relation: traverse_inner_class
+ ** Helper relation to traverse_inner_classes. This relation traverses all inner classes 
+ ** of a class.
+ **)
+
+ relation traverse_inner_class:(Absyn.Class, (* class to traverse inner classes in *)
+				((Absyn.Class * 'a) => (Absyn.Class * 'a)), (* visitor rlation*)
+				 'a (* extra argument *),
+				bool ) (* true = traverse protected elts *)
+	  => (Absyn.Class * 'a) =
+				
+
+  rule  traverse_inner_class_parts(parts,visitor,args,visit_prot) => ((parts',args'))
+	 
+	 --------------------------------------------------------------
+	 traverse_inner_class(Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts,str_opt)),visitor,args,visit_prot) 
+	  => ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts',str_opt)),args'))
+	   
+  axiom	traverse_inner_class(cl,_,args,_) => ((cl,args))
+
+end
+
+(** relation: traverse_inner_class_parts
+ ** Helper relation to traverse_inner_class
+ **)
+
+relation traverse_inner_class_parts: (Absyn.ClassPart list,
+				      ((Absyn.Class * 'a) => (Absyn.Class * 'a)), (* visitor*)
+				      'a,
+				      bool) (* true = visit protected elements*)
+	=> (Absyn.ClassPart list * 'a) =
+
+  axiom	traverse_inner_class_parts([],_,args,_) => (([],args))
+
+  rule	traverse_inner_class_elements(elts,visitor,args,visit_prot) => ((elts',args')) &
+	traverse_inner_class_parts(parts,visitor,args',visit_prot) => ((parts',args''))
+	------------------------------------------------------------------
+	traverse_inner_class_parts(Absyn.PUBLIC(elts)::parts,visitor,args,visit_prot)
+	  => ((Absyn.PUBLIC(elts')::parts',args''))
+  
+  rule	traverse_inner_class_elements(elts,visitor,args,true) => ((elts',args')) &
+	traverse_inner_class_parts(parts,visitor,args',true) => ((parts',args''))
+	------------------------------------------------------------------
+	traverse_inner_class_parts(Absyn.PROTECTED(elts)::parts,visitor,args,true)
+	  => ((Absyn.PROTECTED(elts')::parts',args''))
+
+  rule	traverse_inner_class_parts(parts,visitor,args,true) => ((parts',args'))
+	------------------------------------------------------------------
+	traverse_inner_class_parts(part::parts,visitor,args,true)
+	  => ((part::parts',args'))
+end
+
+(** relation traverse_inner_class_elements
+ ** Helper relation to traverse_inner_class_parts.
+ **)
+relation traverse_inner_class_elements:(Absyn.ElementItem list,
+				      ((Absyn.Class * 'a) => (Absyn.Class * 'a)), (* visitor*)
+				      'a,
+					bool)  (* visit protected elts *)
+	  => (Absyn.ElementItem list * 'a) =
+
+  axiom	traverse_inner_class_elements([],_,args,_) => (([],args))
+
+  rule	traverse_inner_class_elementspec(elt_spec,visitor,args,visit_prot) 
+	  => ((elt_spec',args')) &
+	traverse_inner_class_elements(elts,visitor,args',visit_prot) 
+	  => ((elts',args''))
+	-------------------------------------------------------------
+	traverse_inner_class_elements(Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,n,elt_spec,file,line,constr))::elts,visitor,args,visit_prot)
+	  => ((Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,n,elt_spec',file,line,constr))::elts',
+	      args''))
+
+  rule	traverse_inner_class_elements(elts,visitor,args,visit_prot) 
+	  => ((elts',args'))
+	----------------------------------------------------------------
+	traverse_inner_class_elements(elt::elts,visitor,args,visit_prot) 
+	  => ((elt::elts',args'))
+end
+
+(** relation: traverse_inner_class_elementspec
+ ** Helper relation to traverse_inner_class_elements
+ **)
+
+relation traverse_inner_class_elementspec: ( Absyn.ElementSpec,
+					    ((Absyn.Class * 'a) => (Absyn.Class * 'a)), (* visitor*)
+					    'a,
+					    bool) (* visit protected elts *)
+	  => (Absyn.ElementSpec * 'a) =
+	  	  
+  rule	visitor((class,args)) => ((class',args')) &
+ 	traverse_inner_class(class',visitor,args',visit_prot) => ((class'',args'')) 
+	-------------------------------------
+	traverse_inner_class_elementspec(Absyn.CLASSDEF(repl,class),visitor,args,visit_prot)
+	=> ((Absyn.CLASSDEF(repl,class''),args''))
+
+  axiom	traverse_inner_class_elementspec(elt_spec,_,args,_) => ((elt_spec,args))
+
+end
 
 (** relation: is_primitive 
  ** This relation takes a component reference and a program. 
@@ -920,7 +1111,7 @@ relation delete_class: (Absyn.ComponentRef, Absyn.Program) => (string, Absyn.Pro
 	Absyn.strip_last(parentcpath) => parentparentcpath &
 	get_pathed_class_in_program(cpath, p) => cdef &
 	get_pathed_class_in_program(parentcpath, p) => parentcdef &
-  remove_inner_class(cdef, parentcdef) => parentcdef' &
+	remove_inner_class(cdef, parentcdef) => parentcdef' &
 	update_program(Absyn.PROGRAM([parentcdef'], Absyn.WITHIN(parentparentcpath)), p) => newp
 	----------------------------------------------------------------------------
 	delete_class(class, p as Absyn.PROGRAM(clist, w)) => ("true", newp)
@@ -930,7 +1121,7 @@ relation delete_class: (Absyn.ComponentRef, Absyn.Program) => (string, Absyn.Pro
 	Absyn.strip_last(cpath) => parentcpath &
 	get_pathed_class_in_program(cpath, p) => cdef &
 	get_pathed_class_in_program(parentcpath, p) => parentcdef &
-  remove_inner_class(cdef, parentcdef) => parentcdef' &
+	remove_inner_class(cdef, parentcdef) => parentcdef' &
 	update_program(Absyn.PROGRAM([parentcdef'], Absyn.TOP), p) => newp
 	----------------------------------------------------------------------------
 	delete_class(class, p as Absyn.PROGRAM(clist, w)) => ("true", newp)
@@ -3177,7 +3368,7 @@ relation get_componentitems_annotations_from_items: (Absyn.ComponentItem list,
 
   rule	Lookup.lookup_class(env,Absyn.IDENT("Placement"),false) => (c,env') &
 	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' &
-	Mod.elab_mod(env',Prefix.NOPRE,mod') => mod'' &
+	Mod.elab_mod(env',Prefix.NOPRE,mod',false) => mod'' &
 	Inst.inst_class(env', mod'', Prefix.NOPRE, [], c,
 			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &
@@ -3308,7 +3499,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
-	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &	
+	Mod.elab_mod (env,Prefix.NOPRE,mod',false) => mod'' &	
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &
@@ -3331,7 +3522,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Inst.make_env_from_program(p',Absyn.IDENT("Diagram")) => env  & 
 	get_class_in_program("Diagram",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
-	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
+	Mod.elab_mod (env,Prefix.NOPRE,mod',false) => mod'' &
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false,Inst.TOP_CALL) 
 	  => (dae, _,cs, t, state) &
@@ -3354,7 +3545,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Inst.make_env_from_program(p',Absyn.IDENT(anncname)) => env  & 
 	get_class_in_program(anncname,p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
-	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
+	Mod.elab_mod (env,Prefix.NOPRE,mod',false) => mod'' &
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &

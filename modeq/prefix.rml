@@ -26,15 +26,13 @@
  **
  ** RCS: $Id$
  **
- ** When instantiating an expression, there is a prefix that *sometimes* 
+ ** When instantiating an expression, there is a prefix that 
  ** has to be added to each variable name to be able to use it in the 
  ** flattened equation set.
  ** 
  ** A prefix for a variable x could be for example a.b.c so that the 
  ** fully qualified name is a.b.c.x. 
- ** 
- ** Some components should not have prefixes added, for example constants.
- ** 
+ **
  **)
 
 module Prefix:
