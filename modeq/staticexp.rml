@@ -34,6 +34,23 @@
  ** expression is constant or not.
  ** If the expression is constant, the 'Ceval' module is used to evaluate the expression
  ** value. A value of an expression is described using the 'Values' module.
+
+ ** The main relation in this module is 'eval_exp' which takes an Absyn.Exp and transform it 
+ ** into an Exp.Exp, while performing type checking and automatic type conversions, etc.
+ ** To determine types of builtin functions and operators, the module also contain an elaboration
+ ** handler for functions and operators. This relation is called 'elab_builtin_handler'. 
+ ** NOTE: These relations should only determine the type and properties of the builtin functions and
+ ** operators and not evaluate them. Constant evaluation is performed by the 'Ceval' module.
+ ** The module also contain a relation for deoverloading of operators, in the 'deoverload' relation.
+ ** It transforms operators like '+' to its specific form, ADD, ADD_ARR, etc.
+ **
+ ** Interactive function calls are also given their types by 'elab_exp', which calls 
+ ** 'elab_call_interactive'.
+ **
+ ** Elaboration for functions involve checking the types of the arguments by filling slots of the
+ ** argument list with first positional and then named arguments to find a matching function. The 
+ ** details of this mechanism can be found in the Modelica specification.
+ ** The elaboration also contain function deoverloading which will be added to Modelica in the future.
  **)
 
 module Static :
@@ -356,7 +373,11 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 
 end
 
-
+(** relation: add_for_loop_scope_const 
+ ** Creates a new scope on the environment used for loops and adds a loop variable 
+ ** which is named by the second argument. The variable is given the value 1 (one) such that
+ ** elaboration of expressions of containing the loop variable become constant.
+ **)
 relation add_for_loop_scope_const : (Env.Env, Ident, Types.Type) => Env.Env =
 
   rule	Env.open_scope (env,false,SOME("$for loop scope$")) => env' &
