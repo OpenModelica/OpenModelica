@@ -77,9 +77,9 @@ relation connect_vars : (Connect.Sets,
   rule	Exp.extend_cref(c1, n, []) => c1' &
 	Exp.extend_cref(c2, n, []) => c2' &
 	(* print "  connect_vars: " &
-	Dump.dump_component_ref c1' & print " <-> " &
-	Dump.dump_component_ref c2' &
-	print "\n" & *)
+	 * Dump.dump_component_ref c1' & print " <-> " &
+	 * Dump.dump_component_ref c2' &
+	 * print "\n" & *)
 	connect_components(sets,[], c1',f1, c2',f2, ty, flow) => sets' &
 	connect_vars(sets',c1,f1,c2,f2,xs) => sets''
 	--------------------------------------
