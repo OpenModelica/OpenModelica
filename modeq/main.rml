@@ -16,7 +16,7 @@ relation main =
 
   rule	print "\n = Parsing\n\n" &
 	Parser.parse f => p &
-	(* Dump.dump p & *)
+	Dump.dump p &
 	
 	print "\n = Exploding\n\n" &
 	Explode.explode(p) => p' &
