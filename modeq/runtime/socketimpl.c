@@ -83,11 +83,13 @@ RML_BEGIN_LABEL(Socket__handlerequest)
   fd_set sockSet;
   struct timeval timeout={0,100000}; // 100 milliseconds timeout
   int sock=(int) RML_UNTAGFIXNUM(rmlA0);
-  buf = (char*)malloc(bufSize);
+  buf = (char*)malloc(bufSize+1);
   if (buf == NULL) {
     RML_TAILCALLK(rmlFC);
   }
   len = recv(sock,buf,bufSize,0);
+  buf[len]=0;
+  printf("got %s\n",buf);
   FD_ZERO(&sockSet);
   FD_SET(sock,&sockSet); // create fd set of 
   while ( select(1,&sockSet,NULL,NULL,&timeout) > 0) {

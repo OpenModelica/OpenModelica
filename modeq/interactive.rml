@@ -2430,7 +2430,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
         Parser.parsestring totstring => p &
 	SCode.elaborate(p) => p' &
 	Print.print_buf "elaborated program\n" &
-	Inst.make_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
+	Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
 	Print.print_buf "made env\n" &
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
