@@ -470,6 +470,41 @@ specify programming languages, could be applied to it.
 \section{Scope of the thesis}
 \label{sec:scope}
 
+The work that is forms the basis for this thesis only concerns the
+formal specification of the Modelica semantics.  The initial goal was
+to write a complete semantic specification for Modelica 1.0.
+Unfortunately, Modelica 1.0 was not very well-defined, which means
+that considerable effort has been needed to figure out what the
+semantics were.  This has been done by taking part of the Modelica
+design effort, including participation in design meetings and
+electronic discussions.
+
+This was not directly part of the work on the thesis, but was needed
+to be able to write the formal semantics.  However, this lead to a
+chicken-and-egg problem, because until I had tried to write the
+specification I didn't know what the problems with the Modelica
+semantics were.  These problems could be discussed with the design
+group, leading to new ideas about how the semantics should have been
+written from the start.
+
+Another goal of the formal specification was to build a usable
+Modelica translator, which could be used for real-world applications.
+Since this partly conflicts with the desire to produce a clear
+semantical description, which not necessarily gives translation
+efficiency high priority, a decision needed to be made on what to
+focus on.  I chose to concentrate on the semantical description, which
+shows in things like describing the semantics of equations between to
+matrices as a number of simple equations between the individual
+elements of the two matrices.
+
+\section{Limitations of the semantic specification}
+\label{sec:limitations}
+
+The semantic specification is far from complete.  This is mainly
+caused by Modelica still being very imcomplete.  And during the work
+on this specification the Modelica semantics has been a moving target
+which has caused redesigns at several occasionas.
+
 \unfinished
 
 \chapter{Development environment}
