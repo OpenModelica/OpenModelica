@@ -1279,11 +1279,17 @@ function_call returns [void* ast]
 		#(FUNCTION_ARGUMENTS ast = function_arguments);
 
 function_arguments 	returns [void* ast]
+{
+    ast = 0;
+}
     :
 		( ast = expression_list
 		| named_arguments // TODO: fix Absyn to handle named arguments
-		)
-		;
+		)?
+        {
+            if (!ast) ast = mk_nil();
+        }
+    ;
 
 named_arguments :
 		named_argument (named_argument)*;

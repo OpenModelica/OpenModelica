@@ -897,7 +897,7 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
 
   rule	Debug.fprintln ("sei", "Entering elab_input_args-2") &
 	elab_exp(env, e) => (e',PROP(t, c1)) &
-	match_type(e', t, vt) => e'' &
+	match_type(e', t, vt) => (e'',_) &
 	elab_input_args(env, es, vs) => (args', c2) &
 	bool_and(c1, c2) => c &
 	Debug.fprintln ("sei", "elab_input_args-2 succeeded")
@@ -1682,15 +1682,23 @@ end
  **)
 
 relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
-	=> Exp.Exp list =
+	=> (Exp.Exp list,Types.Type list) =
 
-  axiom	elab_arglist ([],[]) => []
+  axiom	elab_arglist ([],[]) => ([],[])
 
-  rule	match_type(arg, atype, pt) => arg' &
-	elab_arglist (pts, args) => args'
+  rule	Debug.fprint("earg","Match: ") & 
+	Debug.fcall ("earg",Types.print_type, atype) & 
+	Debug.fprint("earg"," == ") & 
+	Debug.fcall ("earg",Types.print_type,pt) &
+	Debug.fprint("earg","\n") &
+	match_type(arg, atype, pt) => (arg',atype') &
+	elab_arglist (pts, args) => (args',atypes')
 	---------------------------------
-	elab_arglist (pt::pts, (arg, atype)::args) => arg'::args'
+	elab_arglist (pt::pts, (arg, atype)::args) => (arg'::args',atype'::atypes')
 
+  rule	Debug.fprint("earg","- Static.elab_arglist failed\n")
+	--------------------------------------
+	elab_arglist (_,_) => fail
 end
 
 (** relation: match_prop
@@ -1705,12 +1713,12 @@ end
 relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
 
   rule	Debug.print "Debug: match prop." &
-	match_type(e, gt, et) => e'
+	match_type(e, gt, et) => (e',_)
 	---------------------------
 	match_prop(e, PROP(gt,_), PROP(et,_)) => e'
 
   rule	Debug.print "\nDebug: match prop (PROP TUPLE). " &
-	match_type(e, gt, et) => e'
+	match_type(e, gt, et) => (e',_)
 	---------------------------
 	match_prop(e, PROP_TUPLE(gt,_), PROP_TUPLE(et,_)) => e'
 
@@ -1722,16 +1730,16 @@ end
  ** converts the expression to the expected type if necessary.
  **)
 
-relation match_type : (Exp.Exp, Types.Type, Types.Type) => Exp.Exp =
+relation match_type : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Type) =
 
   rule	Types.subtype(e_type, expected_type) => true
 	--------------------------------------------
-	match_type(e, e_type, expected_type) => e
+	match_type(e, e_type, expected_type) => (e, e_type)
 
   rule	Types.subtype(e_type, expected_type) => false &
-	type_convert(e, e_type, expected_type) => e'
+	type_convert(e, e_type, expected_type) => (e',e_type')
 	--------------------------------------------
-	match_type(e, e_type, expected_type) => e'
+	match_type(e, e_type, expected_type) => (e',e_type')
 
 end
 
@@ -1744,9 +1752,9 @@ end
  ** If no type conversion is possible, this relation fails.
  **)
 
-relation type_convert : (Exp.Exp, Types.Type, Types.Type) => Exp.Exp =
+relation type_convert : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Type) =
 
-  axiom	type_convert(e, Types.T_INTEGER, Types.T_REAL) => Exp.CAST(Exp.REAL,e)
+  axiom	type_convert(e, Types.T_INTEGER, Types.T_REAL) => (Exp.CAST(Exp.REAL,e),Types.T_REAL)
 
   rule	int_eq (dim1, dim2) => true &
 	type_convert_array (elist, ty1, ty2) => elist'
@@ -1754,15 +1762,36 @@ relation type_convert : (Exp.Exp, Types.Type, Types.Type) => Exp.Exp =
 	type_convert(Exp.ARRAY(elist), 
 		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
 		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
-	  => Exp.ARRAY(elist')
+	  => (Exp.ARRAY(elist'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
 
-  rule	type_convert_list (elist, tys1, tys2) => elist'
+  rule	type_convert (e, ty1, ty2) => (e',t') 
+	------------------------------------------
+	type_convert(e, 
+		     Types.T_ARRAY(Types.DIM(NONE), ty1), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
+	  => (e', Types.T_ARRAY(Types.DIM(NONE), t'))
+
+  rule	type_convert (e, ty1, ty2) => (e',t') 
+	------------------------------------------
+	type_convert(e, 
+		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
+		     Types.T_ARRAY(Types.DIM(NONE), ty2))
+	  => (e', Types.T_ARRAY(Types.DIM(SOME(dim1)), t'))
+
+  rule	type_convert_list (elist, tys1, tys2) => (elist',tys')
 	------------------------------------------
 	type_convert(Exp.TUPLE(elist), 
 		     Types.T_TUPLE(tys1), 
 		     Types.T_TUPLE(tys2))
-	  => Exp.TUPLE(elist')
+	  => (Exp.TUPLE(elist'), Types.T_TUPLE(tys'))
 
+  rule	Debug.fprint("tcvt","- type conversion failed: ") &
+	Debug.fcall ("tcvt",Types.print_type,t1) & 
+	Debug.fprint("tcvt",", ") & 
+	Debug.fcall ("tcvt",Types.print_type,t2) &
+	Debug.fprint("tcvt","\n")
+	-------------------------------
+	type_convert (_,t1,t2) => fail
 end
 
 relation type_convert_array : (Exp.Exp list, Types.Type, Types.Type) => Exp.Exp list =
@@ -1770,21 +1799,25 @@ relation type_convert_array : (Exp.Exp list, Types.Type, Types.Type) => Exp.Exp 
   axiom type_convert_array ([], _, _) => []
 
   rule	type_convert_array (rest, ty1, ty2) => rest' &
-	type_convert (first, ty1, ty2) => first'
+	type_convert (first, ty1, ty2) => (first',_)
 	-------------------------------------------
 	type_convert_array (first::rest, ty1, ty2) => first'::rest'
+
+  rule	print "- type conversion of array failed\n"
+	-------------------------------
+	type_convert_array (_,_,_) => fail
 
 end
 
 relation type_convert_list : (Exp.Exp list, Types.Type list, Types.Type list) 
-	  => Exp.Exp list =
+	  => (Exp.Exp list, Types.Type list) =
 
-  axiom type_convert_list ([], _, _) => []
+  axiom type_convert_list ([], _, _) => ([],[])
 
-  rule	type_convert_list (rest, ty1rest, ty2rest) => rest' &
-	type_convert (first, ty1, ty2) => first'
+  rule	type_convert_list (rest, ty1rest, ty2rest) => (rest',tyrest') &
+	type_convert (first, ty1, ty2) => (first',ty')
 	-------------------------------------------
-	type_convert_list (first::rest, ty1::ty1rest, ty2::ty2rest) => first'::rest'
+	type_convert_list (first::rest, ty1::ty1rest, ty2::ty2rest) => (first'::rest',ty'::tyrest')
 
 end
 
@@ -1813,9 +1846,12 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 		       Absyn.Exp)
 	  => (Exp.Operator, Exp.Exp list, Types.Type) =
 
-  rule	elab_arglist (params, args) => args'
+  rule	Debug.fprint_list("dovl",params,Types.print_type,"\n") & 
+	Debug.fprint("dovl","\n===\n") &
+	elab_arglist (params, args) => (args',types') &
+	compute_return_type(op, types', rtype) => rtype'
 	------------------------------------
-	deoverload ((op, params, rtype)::_, args, _) => (op, args', rtype)
+	deoverload ((op, params, rtype)::_, args, _) => (op, args', rtype')
 
   rule	deoverload (xs, args, exp) => (op, args', rtype)
 	------------------------------
@@ -1827,6 +1863,161 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 	deoverload([], args, exp) => fail
 
 end
+
+relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Types.Type =
+
+  rule	Types.subtype(typ1,typ2) => true
+	-----------------------------
+	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],rtype) => typ1
+
+  rule	Types.subtype(typ1,typ2) => true
+	-----------------------------
+	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],rtype) => typ1
+
+  rule	print "# +: Incompatible argument types " &
+	Types.print_type typ1 & print ", " & Types.print_type typ2 &
+	print "\n"
+	----------------------
+	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],_) => fail
+
+  rule	Types.subtype(typ1,typ2) => true
+	-----------------------------
+	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],rtype) => typ1
+
+  rule	Types.subtype(typ1,typ2) => true
+	-----------------------------
+	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],rtype) => typ1
+
+  rule	print "# -: Incompatible argument types " &
+	Types.print_type typ1 & print ", " & Types.print_type typ2 &
+	print "\n"
+	----------------------
+	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],_) => fail
+
+  rule	Types.subtype(typ1,typ2) => true
+	-----------------------------
+	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),
+			     [typ1,typ2],
+			     rtype) => rtype
+
+  rule	Types.subtype(typ1,typ2) => true
+	-----------------------------
+	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),
+			     [typ1,typ2],
+			     rtype) => rtype
+
+  rule	print "# *: Incompatible argument types " &
+	Types.print_type typ1 & print ", " & Types.print_type typ2 &
+	print "\n"
+	----------------------
+	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),[typ1,typ2],_) => fail
+
+  rule	n_dims typ1 => 1 &
+	n_dims typ2 => 2 &
+	dim_size(typ1,1) => n1 &
+	dim_size(typ2,1) => n2 &
+	dim_size(typ2,2) => m &
+	n1 = n2 &
+	element_type typ1 => etype &
+	let rtype = Types.T_ARRAY(Types.DIM(SOME(m)),etype)
+	----------------------------------------------
+	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
+
+  rule	n_dims typ1 => 2 &
+	n_dims typ2 => 1 &
+	dim_size(typ1,1) => n &
+	dim_size(typ1,2) => m1 &
+	dim_size(typ2,1) => m2 &
+	m1 = m2 &
+	element_type typ2 => etype &
+	let rtype = Types.T_ARRAY(Types.DIM(SOME(n)),etype)
+	----------------------------------------------
+	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
+
+  rule	n_dims typ1 => 2 &
+	n_dims typ2 => 2 &
+	dim_size(typ1,1) => n &
+	dim_size(typ1,2) => m1 &
+	dim_size(typ2,1) => m2 &
+	dim_size(typ2,2) => p &
+	m1 = m2 &
+	element_type typ1 => etype &
+	let rtype = Types.T_ARRAY(Types.DIM(SOME(n)),
+				  Types.T_ARRAY(Types.DIM(SOME(p)),etype))
+	-----------
+	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
+
+  rule	print "# *: Incompatible argument types " &
+	Types.print_type typ1 & print ", " & Types.print_type typ2 &
+	print "\n"
+	-----------------
+	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => fail
+
+  axiom	compute_return_type (Exp.MUL_SCALAR_ARRAY(_),[typ1,typ2],rtype) => typ2
+  axiom	compute_return_type (Exp.MUL_ARRAY_SCALAR(_),[typ1,typ2],rtype) => typ1
+
+
+
+  axiom	compute_return_type (Exp.ADD(_),_,typ) => typ
+  axiom	compute_return_type (Exp.SUB(_),_,typ) => typ
+  axiom	compute_return_type (Exp.MUL(_),_,typ) => typ
+  axiom	compute_return_type (Exp.DIV(_),_,typ) => typ
+  axiom	compute_return_type (Exp.POW(_),_,typ) => typ
+  axiom	compute_return_type (Exp.UMINUS(_),_,typ) => typ
+  axiom	compute_return_type (Exp.UPLUS(_),_,typ) => typ
+  axiom	compute_return_type (Exp.AND,_,typ) => typ
+  axiom	compute_return_type (Exp.OR,_,typ) => typ
+  axiom	compute_return_type (Exp.NOT,_,typ) => typ
+  axiom	compute_return_type (Exp.LESS(_),_,typ) => typ
+  axiom	compute_return_type (Exp.LESSEQ(_),_,typ) => typ
+  axiom	compute_return_type (Exp.GREATER(_),_,typ) => typ
+  axiom	compute_return_type (Exp.GREATEREQ(_),_,typ) => typ
+  axiom	compute_return_type (Exp.EQUAL(_),_,typ) => typ
+  axiom	compute_return_type (Exp.NEQUAL(_),_,typ) => typ
+
+end 
+
+relation n_dims : Types.Type => int =
+	
+  axiom	n_dims Types.T_INTEGER => 0
+  axiom	n_dims Types.T_REAL => 0
+  axiom	n_dims Types.T_STRING => 0
+  axiom	n_dims Types.T_BOOL => 0
+
+  rule	n_dims t => ns &
+	int_add(ns,1) => n
+	-----------------------------
+	n_dims Types.T_ARRAY(_,t) => n
+
+end
+
+relation dim_size : (Types.Type,int) => int =
+
+  axiom	dim_size(Types.T_ARRAY(Types.DIM(SOME(n)),_),1) => n
+
+  rule	int_gt(d,1) => true &
+	int_sub(d,1) => d' &
+	dim_size(t,d') => n
+	----------------------
+	dim_size(Types.T_ARRAY(_,t),d) => n
+
+
+
+end
+
+relation element_type : Types.Type => Types.Type =
+	
+  axiom	element_type(t as Types.T_INTEGER) => t
+  axiom	element_type(t as Types.T_REAL) => t
+  axiom	element_type(t as Types.T_STRING) => t
+  axiom	element_type(t as Types.T_BOOL) => t
+
+  rule	element_type(t) => t'
+	---------------------------
+	element_type(Types.T_ARRAY(_,t)) => t'
+
+end
+
 
 (** relation: operators
  **
@@ -1841,32 +2032,135 @@ relation operators : Absyn.Operator
 
 	(**  Arithmetical operators *)
 
-  axiom	operators Absyn.ADD
-	  => [(Exp.ADD(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_INTEGER),
-	      (Exp.ADD(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_REAL),
-	      (Exp.ADD(Exp.STRING),
-	       [Types.T_STRING, Types.T_STRING],
-	       Types.T_STRING)]
+  rule	array_type_list(9, Types.T_INTEGER) => intarrtypes &
+	array_type_list(9, Types.T_REAL) => realarrtypes &
+	
+	operator_return(Exp.ADD_ARR(Exp.INT), 
+			intarrtypes, 
+			intarrtypes, 
+			intarrtypes) => intarrs &
 
-  axiom	operators Absyn.SUB
-	  => [(Exp.SUB(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_INTEGER),
-	      (Exp.SUB(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_REAL)]
+	operator_return(Exp.ADD_ARR(Exp.REAL), 
+			realarrtypes, 
+			realarrtypes, 
+			realarrtypes) => realarrs &
+	
+	let scalars = [(Exp.ADD(Exp.INT),
+			[Types.T_INTEGER, Types.T_INTEGER],
+			Types.T_INTEGER),
+		       (Exp.ADD(Exp.REAL),
+			[Types.T_REAL, Types.T_REAL],
+			Types.T_REAL),
+		       (Exp.ADD(Exp.STRING),
+			[Types.T_STRING, Types.T_STRING],
+			Types.T_STRING)
+		       ] &
+	
+	list_append(intarrs,realarrs) => arrays &
+	list_append(scalars,arrays) => types
+	------------------------
+	operators Absyn.ADD => types
 
-  axiom	operators Absyn.MUL
-	  => [(Exp.MUL(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_INTEGER),
-	      (Exp.MUL(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_REAL)]
+
+  rule	array_type_list(9, Types.T_INTEGER) => intarrtypes &
+	array_type_list(9, Types.T_REAL) => realarrtypes &
+	
+	operator_return(Exp.SUB_ARR(Exp.INT), 
+			intarrtypes, 
+			intarrtypes, 
+			intarrtypes) => intarrs &
+
+	operator_return(Exp.SUB_ARR(Exp.REAL), 
+			realarrtypes, 
+			realarrtypes, 
+			realarrtypes) => realarrs &
+	
+	let scalars = [(Exp.SUB(Exp.INT),
+			[Types.T_INTEGER, Types.T_INTEGER],
+			Types.T_INTEGER),
+		       (Exp.SUB(Exp.REAL),
+			[Types.T_REAL, Types.T_REAL],
+			Types.T_REAL)		  
+		       ] &
+	
+	list_append(intarrs,realarrs) => arrays &
+	list_append(scalars,arrays) => types
+	---------------------------
+	operators Absyn.SUB => types
+
+  rule	array_type_list(9, Types.T_INTEGER) => intarrtypes &
+	array_type_list(9, Types.T_REAL) => realarrtypes &
+	n_types(9, Types.T_INTEGER) => inttypes &
+	n_types(9, Types.T_REAL) => realtypes &
+	
+	let int_mul = Exp.MUL(Exp.INT) &
+	let real_mul = Exp.MUL(Exp.REAL) &
+	let int_mul_sp = Exp.MUL_SCALAR_PRODUCT(Exp.INT) &
+	let real_mul_sp = Exp.MUL_SCALAR_PRODUCT(Exp.REAL) &
+	let int_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.INT) &
+	let real_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.REAL) &
+	
+	let int_scalar = Types.T_INTEGER &
+	let int_vector = Types.T_ARRAY(Types.DIM(NONE),int_scalar) &
+	let int_matrix = Types.T_ARRAY(Types.DIM(NONE), int_vector) &
+	let real_scalar = Types.T_REAL &
+	let real_vector = Types.T_ARRAY(Types.DIM(NONE),real_scalar) &
+	let real_matrix = Types.T_ARRAY(Types.DIM(NONE), real_vector) &
+
+
+	let scalars = [
+		       (int_mul,[int_scalar, int_scalar], int_scalar),
+		       (real_mul,[real_scalar, real_scalar], real_scalar)
+		       ] &
+
+
+	
+	let scalarprod = [
+			  (int_mul_sp,[int_vector, int_vector],int_scalar),
+			  (real_mul_sp,[real_vector,real_vector],real_scalar)
+			  ] &
+			
+	let matrixprod = [
+			  (int_mul_mp, [int_vector, int_matrix], int_vector),
+			  (int_mul_mp, [int_matrix, int_vector], int_vector),
+			  (int_mul_mp, [int_matrix, int_matrix], int_matrix),
+			  (real_mul_mp,[real_vector,real_matrix],real_vector),
+			  (real_mul_mp,[real_matrix,real_vector],real_vector),
+			  (real_mul_mp,[real_matrix, real_matrix],real_matrix)
+			  ] &
+
+	operator_return(Exp.MUL_SCALAR_ARRAY(Exp.INT), 
+			inttypes, 
+			intarrtypes, 
+			intarrtypes) => intscalararrs &
+
+	operator_return(Exp.MUL_SCALAR_ARRAY(Exp.REAL), 
+			realtypes, 
+			realarrtypes, 
+			realarrtypes) => realscalararrs &
+	
+	operator_return(Exp.MUL_ARRAY_SCALAR(Exp.INT), 
+			intarrtypes, 
+			inttypes, 
+			intarrtypes) => intarrsscalar &
+
+	operator_return(Exp.MUL_ARRAY_SCALAR(Exp.REAL), 
+			realarrtypes, 
+			realtypes, 
+			realarrtypes) => realarrsscalar &	
+
+
+	list_append(scalars, intscalararrs) => types1 &
+	list_append(types1, realscalararrs) => types2 &
+	list_append(types2, intarrsscalar) => types3 &
+	list_append(types3, realarrsscalar) => types4 &
+	list_append(types4, scalarprod) => types5 &
+	list_append(types5, matrixprod) => types6 &
+	
+
+	let types = types6
+	---------------------------
+	operators Absyn.MUL => types
 
   axiom	operators Absyn.DIV
 	  => [(Exp.DIV(Exp.REAL),
@@ -1979,6 +2273,55 @@ relation operators : Absyn.Operator
  	print s & print ") failed\n"
 	----------------------------
 	operators op => fail
+
+end
+
+relation n_dim_array : (int, Types.Type) => Types.Type =
+
+  axiom	n_dim_array (0, t) => t
+
+  rule	int_sub(n,1) => n' &
+	n_dim_array (n',t) => t'
+	------------------------
+	n_dim_array (n, t) => Types.T_ARRAY(Types.DIM(NONE),t')
+
+end
+relation n_types : (int, Types.Type) => Types.Type list =
+
+  axiom	n_types (0,_) => []
+
+  rule	int_sub(n,1) => n' &
+	n_types(n',t) => l
+	-----------------------
+	n_types (n, t) => t::l
+
+end
+
+relation operator_return : (Exp.Operator, 
+			    Types.Type list, 
+			    Types.Type list, 
+			    Types.Type list) 
+	  =>  (Exp.Operator * Types.Type list * Types.Type) list =
+
+  axiom operator_return (_,[],[],[]) => []
+
+  rule	operator_return (op, lr, rr, rer) => rest &
+	let t = (op,[l,r],re)
+	---------------------------------------
+	operator_return (op, l::lr, r::rr, re::rer) => t::rest
+
+end
+
+relation array_type_list : (int, Types.Type) => Types.Type list =
+  
+  axiom array_type_list (0,_) => []
+
+  rule	int_sub(n,1) => n' &
+	n_dim_array(n,t) => f &
+	array_type_list (n', t) => r
+	-----------------------------
+	array_type_list (n, t) => f::r
+
 
 end
 

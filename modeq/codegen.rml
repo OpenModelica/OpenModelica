@@ -474,7 +474,7 @@ relation generate_simple_type : Types.Type => string =
 	------------------------------
 	generate_simple_type Types.T_COMPLEX (ClassInf.RECORD(n),_) => n''
 
-  rule	print "#--generate_simple_type failed" &
+  rule	print "#--generate_simple_type failed " &
 	Types.print_type ty & 
 	print "\n"
 	--------------------------------------
@@ -510,6 +510,7 @@ relation generate_function_body : (Absyn.Path, DAE.Element list, DAE.Element, Ty
 	print " {\n" &
 	indent 2 &
 	generate_vars dae &
+	(* A function cannot contain equations *)
 	generate_equations dae &
 	generate_algorithms dae &
 	indent 2 &

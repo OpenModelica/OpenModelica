@@ -25,7 +25,7 @@ module Exp:
   (** identifiers in Modelica. *)
 
   (** - Basic types *)
-  datatype Type = INT | REAL | BOOL | STRING
+  datatype Type = INT | REAL | BOOL | STRING 
   (** These types are not used as expression types (see the `Types'
    ** module for expression types).  They are used to parameterize
    ** operators which may work on several simple types. *)
@@ -64,6 +64,13 @@ module Exp:
 		    | POW    	  of Type
 		    | UMINUS 	  of Type
 		    | UPLUS  	  of Type
+		    | ADD_ARR     of Type
+		    | SUB_ARR     of Type
+		    | MUL_SCALAR_ARRAY of Type   (* a * { b, c }            *)
+		    | MUL_ARRAY_SCALAR of Type   (* {a, b} * c              *)
+		    | MUL_SCALAR_PRODUCT of Type (* {a, b} * {c, d}         *)
+		    | MUL_MATRIX_PRODUCT of Type (* {{..},..} * {{..},{..}} *)
+		    | DIV_ARRAY_SCALAR of Type   (* {a, b} / c              *)
 		    | AND | OR
 		    | NOT
 		    | LESS        of Type
@@ -527,8 +534,15 @@ end
 relation binop_priority : Operator => int =
   axiom	binop_priority(ADD(_))    	      	 => 32
   axiom	binop_priority(SUB(_))    	      	 => 32
+  axiom	binop_priority(ADD_ARR(_))    	      	 => 32
+  axiom	binop_priority(SUB_ARR(_))    	      	 => 32
   axiom	binop_priority(MUL(_))    	      	 => 33
+  axiom	binop_priority(MUL_SCALAR_ARRAY(_))   	 => 33
+  axiom	binop_priority(MUL_ARRAY_SCALAR(_))    	 => 33
+  axiom	binop_priority(MUL_SCALAR_PRODUCT(_))  	 => 33
+  axiom	binop_priority(MUL_MATRIX_PRODUCT(_))  	 => 33
   axiom	binop_priority(DIV(_))   	      	 => 34
+  axiom	binop_priority(DIV_ARRAY_SCALAR(_))    	 => 34
   axiom	binop_priority(POW(_))   	      	 => 35      
 end
 
@@ -579,6 +593,13 @@ relation binop_symbol_1 : Operator => string =
   axiom	binop_symbol_1(MUL(_)) => " * "
   axiom	binop_symbol_1(DIV(_)) => " / "
   axiom	binop_symbol_1(POW(_)) => " ^ "
+  axiom	binop_symbol_1(ADD_ARR(_)) => " + "
+  axiom	binop_symbol_1(SUB_ARR(_)) => " - "
+  axiom	binop_symbol_1(MUL_SCALAR_ARRAY(_)) => " * "
+  axiom	binop_symbol_1(MUL_ARRAY_SCALAR(_)) => " * "
+  axiom	binop_symbol_1(MUL_SCALAR_PRODUCT(_)) => " * "
+  axiom	binop_symbol_1(MUL_MATRIX_PRODUCT(_)) => " * "
+  axiom	binop_symbol_1(DIV_ARRAY_SCALAR(_)) => " / "
 
 (*
   rule	int_string dim => s1 &
@@ -615,6 +636,14 @@ relation binop_symbol_2 : Operator => string =
 	binop_symbol_2(DIV(t)) => s'
 
   axiom	binop_symbol_2(POW(t)) => " ^ "
+
+  axiom	binop_symbol_2(ADD_ARR(_)) => " + "
+  axiom	binop_symbol_2(SUB_ARR(_)) => " - "
+  axiom	binop_symbol_2(MUL_SCALAR_ARRAY(_)) => " * "
+  axiom	binop_symbol_2(MUL_ARRAY_SCALAR(_)) => " * "
+  axiom	binop_symbol_2(MUL_SCALAR_PRODUCT(_)) => " * "
+  axiom	binop_symbol_2(MUL_MATRIX_PRODUCT(_)) => " * "
+  axiom	binop_symbol_2(DIV_ARRAY_SCALAR(_)) => " / "
 
 (*
   rule	int_string dim => s1 &
