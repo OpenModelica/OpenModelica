@@ -130,6 +130,9 @@ List of things to implement:
         according to specification. Implemented in parser but not
 	walker and absyn.
 
+28.	Multiple loop ranges, e.g.:
+	  for i in 1:5, j in 1:3 loop a[i,j]=i*j; end for;
+	Implemented in the parser, but doesn't seem to be in walker.g or in rest of modeq.
 
 Specific adaptions:
 
