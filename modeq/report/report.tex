@@ -406,11 +406,10 @@ modeling.
 \section{The Modelica design group}
 \label{sec:designgroup}
 
-The Modelica language is designed by a group of people.  The work on
-designing a new modeling language began in 1996 when a number of
-experts formed a group to design a new multi-paradigm modeling
-language for hybrid systems.  Since the start, the group has expanded
-to include many new members from around Europe.
+The work on designing a new modeling language began in 1996 when a
+number of experts formed a group to design a new multi-paradigm
+modeling language for hybrid systems.  Since the start, the group has
+expanded to include many new members from around Europe.
 
 A first version of the Modelica language definition was finalized in
 September 1997, and there was much rejoicing.  But no complete
@@ -424,21 +423,22 @@ The work on the RML specification for Modelica began in November 1997.
 \section{PELAB}
 \label{sec:pela}
 
-The Programming Environment Laboratory, PELAB, (Fritzson, professor)
-is concerned with research in software engineering, i.e. tools and
-methods for the specification, development and maintenance of computer
-programs. Some examples are: programming languages, debuggers,
-incremental programming environments and compilers, compiler
-generators, tools for debugging and maintenance of distributed and
-real-time systems, compilers and programming environments for parallel
-computers, high-level environments and mathematical modeling languages
-and systems for scientific computing, program transformation systems,
-etc.  The view of programming environment research is rather
-pragmatic, and the primary interest is in developing and investigating
-new methods and tools that have potential for practical applications,
-e.g. in support systems for software specialists. Developing such
-tools is very important, since most of the rising cost of computer
-systems is due to development, debugging and maintenance of software.
+The Programming Environment Laboratory, PELAB, (\fixme{say what?}
+professor Peter Fritzson) is concerned with research in software
+engineering, i.e. tools and methods for the specification, development
+and maintenance of computer programs. Some examples are: programming
+languages, debuggers, incremental programming environments and
+compilers, compiler generators, tools for debugging and maintenance of
+distributed and real-time systems, compilers and programming
+environments for parallel computers, high-level environments and
+mathematical modeling languages and systems for scientific computing,
+program transformation systems, etc.  The view of programming
+environment research is rather pragmatic, and the primary interest is
+in developing and investigating new methods and tools that have
+potential for practical applications, e.g. in support systems for
+software specialists. Developing such tools is very important, since
+most of the rising cost of computer systems is due to development,
+debugging and maintenance of software.
 
 \chapter{Motivation and scope of the thesis}
 \label{cha:goals}
@@ -536,23 +536,64 @@ have been done.  The limitations are listen in no particular order.
 
 \item Class names can only denote classes, which means that it is not
   possible to define a ``type synonym'' for an array type, as in
-  \codebox{type Point Real[3]}.
+  \codebox{type Point = Real[3]}.
+  
+  This might seem like a very basic feature to support, but it depends
+  on properties of the type system which are not completely clear yet.
+  
+  A type is a property of a peice of data.  Instantiating a class
+  gives an object of a certain class, and by examining the class
+  definition it is possible to determine what the type will be
+  \emph{if the class is instantiated without modifications}.  But the
+  class may be modified giving the instance another, slightly
+  different, type.  For this reason it is not possible to say that a
+  class name denotes a type, but instead it simply denotes a class
+  definition.  So the above definition of \code{Point} would not be a
+  definition of a new type (in the type system sense, the Modelica
+  keyword \code{type} is used for classifying class definitions).  But
+  what is it?  It is some sort of ``array of class definitions,'' but
+  the semantic problems of this has not fully been brought to the
+  attention of the design group.
   
 \item Modifying array slices does not work, as in \codebox{AModel
     a(x[3:5] = [1.0,2.0,3.0])}.
 
-\item Array slices are note expanded in array equations.
-
+\item Array slices are not expanded in array equations.
+  
 \item The built-in pseudo-functions (size etc.) are not implemented.
+  These are not functions in the normal sense, but are constructions
+  which must be evaluated at instantiation-time, since they are often
+  used to define the type (array sizes) of objects.
 
 \item Actually no evaluation of function calls are performed during
   translation.  This would be needed when the value of a constant (or
   parameter) is defined in terms of a function call.
+  
+\item Functions are implemented in too simplistic way.  A simple
+  type-checking of arguments and a single return value is perform, but
+  it only allows complete types, meaning that the sizes of array
+  dimensions in input or output arguments must by fully specified, and
+  can not depend on the actual arguments given in each function call.
+  
+  The function semantics are still uncertain.  There has been though
+  about a proposal where function calls are defined in terms of
+  ``implicit instantiation'', where each function definition would be
+  instantiated once for each function call in the model.  This would
+  make it possible to determine the full type of the arguments for
+  each function call.
+  
+  However, this is currently hard to implement in this semantic
+  specification because of RML limitations.  The RML module which does
+  the instantiation is called \code{Inst} (see section
+  \ref{src:inst}).  It needs to do static analysize of expressions,
+  and for that purpose it uses the relations in the module
+  \code{Static}.  But if the \code{Static} module encounters a
+  function call it would need to do an implicit instantiation, which
+  would require the use of the \code{Inst} module.  Unfortunately,
+  circular dependencies between modules are not allowed in RML.
 
-\item Functions are implemented in a pretty brain-damaged way.  There
-  is a proposal where function calls are defined in terms of
-  ``implicit instantiation'', but this is hard to implement because of
-  RML limitations.
+  This can be worked around in several ways, but all of them would
+  make the specification less structured or harder to understand.
 
 \item The checking of component attributes is severely lacking.  For
   instance, it is currently possible to use a variable in an outer
@@ -569,6 +610,12 @@ have been done.  The limitations are listen in no particular order.
 
 \item Assertions are lost during translation.
   
+\item When instantiation an \code{extends} element, the extended class
+  definition is instantiated in the scope where the \code{extends}
+  element appears.  This means that the extended class may refer to
+  elements defined in the extending class, as long as it appears above
+  the \code{extends} element.
+
 \item There are some remaining bugs with the parts that are
   implemented.  And some of the most recent design decisions and
   clarifications of the Modelica semantics are not incorporated into
@@ -626,7 +673,7 @@ text. This program is a quick'n'dirty Pike\cite{pike} hack, and is
 provided in appendix \ref{cha:rmldoc}
 
 
-\chapter{Some thoughts on the informal semantics of Modelica}
+\chapter{Some important notions in the Modelica semantics}
 \label{cha:semantics}
 
 
@@ -680,11 +727,11 @@ mean.
   \end{boxedverbatim}
 \end{example}
 
-\begin{Def}{Instantiation}
-  The word \term{instantiate} is used in many language
-  descriptions, with slightly different meaning.  In the specification
-  it is used in two related, but slightly different, meanings.
+The word \term{instantiate} is used in many language descriptions,
+with slightly different meaning.  In the specification it is used in
+two related, but slightly different, meanings.
   
+\begin{Def}{Instantiation}
   Instantiating a class means creating an object (or class instance)
   from the description contained in the class definition, possibly
   modified by any given modifiers.  This instance is not a run-time
@@ -1249,14 +1296,20 @@ The following extensions are made:
   model, it is necessary to be able to subscript expression, so the
   syntax \code{expression[x]} is allowed.  This is not allowed in
   Modelica.
-
-\item A a special kind of equation \codebox{ident ::= expression} is
+  
+\item A special kind of equation \codebox{ident ::= expression} is
   used to indicate that \code{ident} is not equal to
   \code{expression}, but rather \emph{defined as} \code{expression}.
-  This is used for splitting up equations between two expressions
-  which contain subcomponents.  If one of the expressions are not a
-  simple name, a temporary name is introduced for that expression, and
-  the name is used instead.
+  
+  This is used for splitting equations between two expressions which
+  contain subcomponents.  If one of the expressions is not a simple
+  name, a temporary name is introduced for that expression, and the
+  name is used instead.  If an ordinary equation between the temporary
+  name and the expression was introduced, this would not solve the
+  problem but just create a new, similar problem.
+
+  From a mathematical point of view, there is no difference in the
+  meaning of \code{::=} and \code{=}.
 
 \item Almost no overloading of operators occurs in the flat Modelica.
   If a model contains an array multiplied by a scalar, the flat model
@@ -1304,6 +1357,9 @@ the previous section.
   possible to write a parser that will accept and understand flat
   Modelica.  One thing that may cause trouble is the extension where
   array subscripting may be allowed on arbitrary expressions.
+
+  An extension of the translator is currently being developed which
+  will allow it to produce valid Modelica.
 
 \item Feeding the output to an equation solver needs either a special
   parser for the solver or a filtering step to rewrite the flat
