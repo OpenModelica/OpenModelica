@@ -8,7 +8,7 @@
 MODEQ=../modeq
 CC=gcc
 
-CFLAGS= -Wall -ansi -pedantic -g -I../../c_runtime
+CFLAGS= -W -Wall -ansi -pedantic-errors -Werror -g -I../../c_runtime
 
 LDFLAGS= -L../../c_runtime -lm
 

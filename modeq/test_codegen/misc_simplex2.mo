@@ -72,7 +72,7 @@ algorithm
 
     
     if (q < M+1) and (p < N+1) then
-      a := pivot(a,p,q);
+      a := pivot2(a,p,q);
     end if;
 
   end while;
