@@ -171,22 +171,19 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
 	  => (Exp.RANGE(start',SOME(step'),stop'), PROP(t, const))
 
-(*
   rule	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l
 	--------------------------------------------------------------
 	elab_exp (env, Absyn.ARRAY(es))
 	  => (Exp.ARRAY(es'),
-	      PROP(Types.T_ARRAY(Types.DIM(SOME(l),Types.NODIM), t),
+	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
 		   const))
-*)
 	
   rule	elab_matrix (env, es) => (es', t, dim, const) & list_length es' => l
 	--------------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es))
 	  => (Exp.MATRIX(es'),
-	      PROP(Types.T_ARRAY(Types.DIM(SOME(l),
-					   Types.DIM(SOME(dim),
-						     Types.NODIM)), t),
+	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)),
+				 Types.T_ARRAY(Types.DIM(SOME(dim)), t)),
 		   const))
 
   rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
@@ -205,7 +202,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
 	elab_range_type (env,start,NONE,stop,true)
-	  => Types.T_ARRAY(Types.DIM(SOME(n'),Types.NODIM), Types.T_INTEGER)
+	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_INTEGER)
 
   rule	ceval (env,start) => Values.INTEGER(startv) &
 	ceval (env,step) => Values.INTEGER(stepv) &
@@ -215,10 +212,10 @@ relation elab_range_type : (Env.Env, Exp.Exp,
  	int_add (n',1) => n''
 	-------------------------------------------------
 	elab_range_type (env,start,SOME(step),stop,true)
-	  => Types.T_ARRAY(Types.DIM(SOME(n''),Types.NODIM), Types.T_INTEGER)
+	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER)
 
   axiom	elab_range_type (_,_,_,_,false)
-	  => Types.T_ARRAY(Types.DIM(NONE, Types.NODIM), Types.T_INTEGER)
+	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_INTEGER)
 
 end
 
@@ -640,16 +637,17 @@ relation subscript_cref_type2 : (Exp.ComponentRef, Types.Type) => Types.Type =
 
   axiom	subscript_cref_type2 (Exp.CREF_IDENT(_,[]), t) => t
 
-  rule	subscript_type (dim,subs) => Types.NODIM
+  rule	subscript_type (t,subs) => t'
 	----------------------------------------
-	subscript_cref_type2 (Exp.CREF_IDENT(_,subs),
-			      Types.T_ARRAY(dim,t)) => t
+	subscript_cref_type2 (Exp.CREF_IDENT(_,subs), t) => t'
 
 	(* double work *)
+(*
   rule	subscript_type (dim,subs) => dim'
 	-----------------------------
 	subscript_cref_type2 (Exp.CREF_IDENT(_,subs),
 			      Types.T_ARRAY(dim,t)) => Types.T_ARRAY(dim',t)
+*)
 
   rule	subscript_cref_type2 (c, t) => t'
 	---------------------------------
@@ -663,20 +661,22 @@ end
  ** relation reduces the dimensionality.
  **)
 
-relation subscript_type : (Types.ArrayDim, Exp.Subscript list)
-	  => Types.ArrayDim =
+relation subscript_type : (Types.Type, Exp.Subscript list)
+	  => Types.Type =
 
-  axiom	subscript_type (dim,[]) => dim
+  axiom	subscript_type (t,[]) => t
 
-  rule	subscript_type (dim, subs) => dim'
+  rule	subscript_type (t, subs) => t'
 	----------------------------------
-	subscript_type (Types.DIM(_,dim), Exp.INDEX(_)::subs) => dim'
+	subscript_type (Types.T_ARRAY(Types.DIM(_),t),
+			Exp.INDEX(_)::subs) => t'
 
-	(** FIXME: What happens when you slice the first index of a multidimensional array? *)
-  rule	subscript_type (dim, subs) => dim'
-	----------------------------------
-	subscript_type (Types.DIM(x,dim), Exp.SLICE(_)::subs)
-	  => Types.DIM(x,dim')
+  rule	subscript_type (t, subs) => t'
+	(* FIXME: calculate size of slice *)
+	------------------------------
+	subscript_type (Types.T_ARRAY(dim,t),
+			Exp.SLICE(_)::subs)
+	  => Types.T_ARRAY(dim,t')
 
   rule	print "- subscript_type failed\n"
 	---------------
@@ -775,6 +775,11 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
   rule	ceval_cref (env,c) => v
 	---------------------------
 	ceval (env,Exp.CREF(c)) => v
+
+  rule	print "# Can't call functions at compile time\n" &
+	print "    expression: " & Exp.print_exp e & print "\n"
+	-------------------------------------------------------
+	ceval (env, e as Exp.CALL(_,_)) => fail
 
 	(**  Numerical *)
 
@@ -1230,8 +1235,7 @@ end
  ** necessary, the expression is modified to match.  The only relevant
  ** property is the type.
  **
- ** FIXME: This could check the variability also, but it might need to
- different things in different places.
+ ** FIXME: This could check the variability also, but it might need to do different things in different places.
  **)
 
 relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
