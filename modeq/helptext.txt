@@ -1,8 +1,15 @@
 Open Source Modelica functions
 ------------------------------
 
-translateModel(modelname) - Instantiates a model/class and return a string
+instantiateModel(modelname) - Instantiates a model/class and return a string
 containing the flat class definition.
+
+translateModel(modelname) - Instantiates a model, generates C-code and 
+compiles it into an executable file. It returns a record, SimulationObject.
+
+simulate(modelname) - translates a model and simulates it.
+
+plot(vars) - Plots the variables (given as a vector) using an external plotter.
 
 list() - Returns a string containing all class definitions.
 

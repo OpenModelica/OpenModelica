@@ -23,6 +23,24 @@ in an interactive mode, where it listens on port no 29500 on the
 localhost for a (one) incomming connection. This is how the compiler
 is used togheter with the mosh (Modelica shell) binary.
 
+When the program has been installed some environment variables have to
+be set.
+\begin{itemize}
+\item{{\tt MODELICAPATH}} - has to be set to a directory containg Modelica
+models according to the specification, e.g.  \\ {\tt export
+MODELICAPATH=<instdir>/ModelicaLibrary/ }
+\item{{\tt MOSHHOME}} - has to be set to the mosh directory in the
+installation directory, e.g. {\tt export
+MODELICAPATH=<instdir>/mosh/ } 
+\item{{\tt MODELICAUSERCFLAGS}} - can be set to additional libraries
+that should be linked when complining external functions, e.g. \\
+{\tt export MODELICAUSERCFLAGS="<instdir>/modeq/lib/blas\_cygwin.a \\
+<instdir>/modeq/lib/lapack\_cygwin.a  \\
+<instdir>/modeq/lib/libF77.a" } to
+get a lapack interface to work. Note that annotations for finding such
+libraries have not been implemented yet.
+\end{itemize}
+
 For debugging purposes it is possible to start mosh and modeq in
 interactive mode in two separate windows. This can be done by the
 follwing commands:
@@ -69,6 +87,19 @@ Below follows the description of each predefined function in the
 interactive environment.
 \funcbegin
 \func{translateModel(\emph{className})}
+Instantiates a class, generates C-code and returns a record
+SimulationObject, containing the flat class as a string and a string
+for the simulator executable. 
+The function header is defined as:
+\begin{verbatim}
+function translateModel
+    input TypeName className;
+    output SimulationObject res;
+...
+end translateModel;
+\end{verbatim}
+
+\func{instantiateModel(\emph{className})}
 Instantiates a class and return a string
 containing the flat class definition. 
 

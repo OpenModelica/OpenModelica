@@ -701,6 +701,20 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 	---------------------
 	lookup_functions_in_env(env as (Env.FRAME(sid,ht,httypes,_,_)::fs), iid as Absyn.IDENT(id)) => reslist
 
+  rule	(* For qualified function names, e.g. Modelica.Math.sin *)
+	lookup_class(env, Absyn.IDENT(pack), false) 
+	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
+	Env.open_scope(env', encflag) => env2 &
+	Env.name_scope (env2,id) => env2' &
+	ClassInf.start(restr, id) => ci_state &
+	(* Instantiate implicit (last argument = true) *)
+	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,false) 
+	  => (_,env'',_,cistate1,_) &
+	  lookup_functions_in_env(env'',path) => reslist
+	-------------------------------
+	lookup_functions_in_env(env as (Env.FRAME(sid,ht,httypes,_,_)::fs), iid as Absyn.QUALIFIED(pack,path)) 
+	  => reslist
+	  
 	(* Did not match. Continue*)
   rule	lookup_functions_in_env(fs,id) => c
 	---------------------
