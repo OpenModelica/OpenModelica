@@ -135,7 +135,7 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
 	
 	
   rule	generate_constructor_component_initialization(cname,p) => (initializationvars,comp_name_list) &
-        (*generate_links(dae,comp_name_list) => links &*)
+        generate_links(dae,comp_name_list) => links &
         generate_constructor_outputvars(dae) => (outputvars,noOutputVar_str) &
 		generate_constructor_statevars(dae) => (statevars,noStateVar_str) &
 		Util.string_append_list(["C",cname,"::\n",
@@ -160,7 +160,7 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
 				                 initializationvars,
 				                 "\n",
 				                 "\n",
-                                 (*links,*)
+                                 links,
                                  "  Reset();\n",
 		                         "}\n",
 				                 "\n"]) => constr
@@ -178,20 +178,16 @@ relation generate_links:(DAELow.DAELow,string list) => string =
         
   rule  vector_list(vars_vec) => vars &
         vector_list(knvars_vec) => knvars &
+        list_append(knvars,vars) => all_vars &
         generate_indep_var(comp_name_list,1) => indep_var_list &
 
-        generate_links2(vars,0,comp_name_list) => (vars_params_list_str,lst1) &
-	    list_length(lst1) => len &
-	    int_sub(len,1) => len' &
-	    generate_links2(knvars,len',comp_name_list) => (knvars_params_list_str,lst2) &
-	    list_append(lst1,lst2) => lst &
+        generate_links2(all_vars,0,0,comp_name_list) => (vars_params_list_str,vars_lst) &
 
 
-        list_append(knvars_params_list_str,vars_params_list_str) => params_list_str &
-        Util.string_append_list(params_list_str) => params_list_str' &
-        Util.string_append_list(lst) => res' &
+        Util.string_append_list(vars_params_list_str) => params_list_str' &
+        Util.string_append_list(vars_lst) => res' &
         Util.string_append_list(indep_var_list) => indep_var_str &
-        Util.string_append_list([params_list_str',indep_var_str,res']) => res''
+        Util.string_append_list([params_list_str',"\n",indep_var_str,res']) => res''
         -------------------------------------------
         generate_links(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn),
                        comp_name_list) => res''
@@ -222,22 +218,32 @@ end
 (** relation generate_links2
  ** this return the string list for the parameters and the string list for the 
  ** variables.
+ ** ARG1 the daelow.var list
+ ** ARG2 the index for the variables (output, input)
+ ** ARG3 the index for the parameter
+ ** ARG4 the component list to get the submodel. The submodel is the index in this list
  ** [GetSubModel(<component index>)->GetParam(0)->LinkValue(this, MSLE_PARAM, <param index>);,...]
  ** [GetSubModel(<component index>)->Get___Var(0)->LinkValue(this, MSLE_INDEP_VAR, <variable index>);]
  **)
 
-relation generate_links2:(DAELow.Var list,int,string list) => (string list, string list) = 
+relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, string list) = 
   
   rule (* special case for when called second time and first time gave 
         list length zero *)
-        generate_links2(lst,0,comp_name_list) => (param_res,res)
+        generate_links2(lst,0,param_index,comp_name_list) => (param_res,res)
         ----------------------------------------------
-        generate_links2(lst,-1,comp_name_list) => (param_res,res)
+        generate_links2(lst,-1,param_index,comp_name_list) => (param_res,res)
+ 
+  rule (* special case for when called second time and first time gave 
+        list length zero *)
+        generate_links2(lst,var_index,0,comp_name_list) => (param_res,res)
+        ----------------------------------------------
+        generate_links2(lst,var_index,-1,comp_name_list) => (param_res,res)
+       
+  axiom generate_links2([],_,_,_) => ([],[])
         
-  axiom generate_links2([],_,_) => ([],[])
-        
-  rule  int_add(i,1) => i' & int_string(i) => is &
-        generate_links2(rest,i',comp_name_list) => (params_str,res) &
+  rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) &
         cref_modelica_str(cr) => crs &
         Util.string_append_list([" ",
                                  is,
@@ -245,50 +251,64 @@ relation generate_links2:(DAELow.Var list,int,string list) => (string list, stri
                                  crs,"\" );\n"]) => r1 
           ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,
-                        i,
+                        var_index,
+                        param_index,
                         comp_name_list) 
           => (params_str,(r1::res))
  
           (* this rule take car of BIDIR variables *)
-  rule  int_add(i,1) => i' & int_string(i) => is &
-        generate_links2(rest,i',comp_name_list) => (params,res) &
-        cref_modelica_str(cr) => crs &
+  rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params,res) &
+ (*       cref_modelica_str(cr) => crs &
         Util.string_append_list([" ",
                                  is,
                                  "  \"",
-                                 crs,"\" );\n"]) => r1 
+                                 crs,"\" );\n"]) => r1 *)
+
+        Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::rest &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetInputVar(0)->LinkValue(this, < unknown >, ",
+                                 is,");", " // ",crs,"\n"]) => r1 
         
         ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,
-                        i
-                        ,comp_name_list) 
+                        var_index,
+                        param_index,
+                        comp_name_list) 
           => (params,(r1::res))
 
-  rule  int_add(i,1) => i' & int_string(i) => is &
-        generate_links2(rest,i',comp_name_list) => (params,res) &
-        cref_modelica_str(cr) => crs &
+  rule  
+        int_add(param_index,1) => param_index' & int_string(param_index) => is &
+        generate_links2(rest,var_index,param_index',comp_name_list) => (params,res) &
+        Exp.cref_str(cr) => crs &
         Util.string_split_at_char(crs,#".") => comp_name::rest &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
         Util.string_append_list(["  GetSubModel(",
                                  index_str,
                                  ")->GetParam(0)->LinkValue(this, MSLE_PARAM, ",
-                                 index_str,"\"\n"]) => r1 
+                                 is,");", " // ",crs,"\n"]) => r1 
           ---------------------------------------------
-        generate_links2(DAELow.VAR(cr,DAELow.PARAM,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,
-                        i,
+        generate_links2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,
+                        var_index,
+                        param_index,
                         comp_name_list) 
           => (r1::params,res)
           
-  rule  generate_links2(rest,i,comp_name_list) => (params, res)
+  rule  generate_links2(rest,var_index,param_index,comp_name_list) => (params, res)
         -----------------------------------------------
-        generate_links2(_::rest,i,comp_name_list) 
+        generate_links2(_::rest,var_index,param_index,comp_name_list) 
           => (params,res)
 
   rule  print "-generate_links2 failed\n" 
         ----------------------
-        generate_links2(_,_,_) => (["TEST"],["/* not yet implemented */"])
+        generate_links2(_,_,_,_) => (["TEST"],["/* not yet implemented */"])
 end
+
 
 
 (* relation generate_constructor_outputvars
@@ -421,14 +441,12 @@ end
  relation generate_var_defines: (DAELow.DAELow) => string =
 
   rule  vector_list(vars_vec) => vars &
-         generate_var_defines2(vars,0,0) => vdefs1list &
-         list_length(vdefs1list) => len &
-         int_sub(len,1) => len' &
-         Util.string_append_list(vdefs1list) => vdefs1 &
          vector_list(knvars_vec) => knvars &
-         generate_var_defines2(knvars,0,0) => vdefs2list &
-         Util.string_append_list(vdefs2list) => vdefs2 &
-         Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n",vdefs1,vdefs2,"\n"]) => vdefs
+         (* this is to generate the correct index for all the vars *)
+         list_append(knvars,vars) => all_vars &
+         generate_var_defines2(all_vars,0,0,0) => vdefs1list &
+         Util.string_append_list(vdefs1list) => vdefs1 &
+         Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n\n",vdefs1,"\n"]) => vdefs
          ---------------------
          generate_var_defines(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => vdefs
          
@@ -444,20 +462,21 @@ end
  ** Arg1 is the list of variables
  ** Arg2 is the counter for Output variables
  ** Arg3 is the counter for DerState and derivative variables
+ ** Arg4 is the counter for parameters
 **)
-relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
+relation generate_var_defines2: (DAELow.Var list,int,int,int) => string list =
 
-  axiom generate_var_defines2([],_,_) => []
+  axiom generate_var_defines2([],_,_,_) => []
         
   rule int_string(outputCounter) => outputCounterString &
         Exp.cref_str(cr) => modelicaStr &
         cref_modelica_str(cr) => crs &
         Util.string_append_list(["#define ",crs," m_OutputVarValues[",outputCounterString,"]\n"]) => r1 &
         int_add(outputCounter,1) => outputCounter' & 
-        generate_var_defines2(rest,outputCounter',derStateCounter) => res
+        generate_var_defines2(rest,outputCounter',derStateCounter,paramCounter) => res
         ----------------------------------------------
         generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,dir,_,_,_,_,_,_,_,_)::rest,
-                              outputCounter,derStateCounter) 
+                              outputCounter,derStateCounter,paramCounter) 
           => r1::res
           
   rule int_string(derStateCounter) => derStateCounterString &
@@ -465,19 +484,30 @@ relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
         Util.string_append_list(["#define ",crs," m_DerStateVarValues[",derStateCounterString,"]\n",
                                  "#define _D_",crs,"_ m_Derivatives[",derStateCounterString,"]\n"]) => r1 &
         int_add(derStateCounter,1) => derStateCounter' & 
-        generate_var_defines2(rest,outputCounter,derStateCounter') => res
+        generate_var_defines2(rest,outputCounter,derStateCounter',paramCounter) => res
         ----------------------------------------------
         generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_,_)::rest,
-                              outputCounter,derStateCounter) 
+                              outputCounter,derStateCounter,paramCounter) 
           => r1::res
-          
-  rule generate_var_defines2(rest,outputCounter,derStateCounter) => res 
+
+   rule int_string(paramCounter) => paramCounterString &
+        Exp.cref_str(cr) => modelicaStr &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["\n#define ",crs," m_ParamValues[",paramCounterString,"]\n"]) => r1 &
+        int_add(paramCounter,1) => paramCounter' & 
+        generate_var_defines2(rest,outputCounter,derStateCounter,paramCounter') => res
+        ----------------------------------------------
+        generate_var_defines2(DAELow.VAR(cr,DAELow.PARAM,dir,_,_,_,_,_,_,_,_)::rest,
+                              outputCounter,derStateCounter,paramCounter) 
+          => r1::res
+         
+  rule generate_var_defines2(rest,outputCounter,derStateCounter,paramCounter) => res 
         -----------------------------------------------
-        generate_var_defines2(_::rest,outputCounter,derStateCounter) => res
+        generate_var_defines2(_::rest,outputCounter,derStateCounter,paramCounter) => res
         
   rule print "-generate_var_defines2 failed\n"
         --------------------------------------
-        generate_var_defines2(_,_,_) => fail
+        generate_var_defines2(_,_,_,_) => fail
 end
 
 (** relation: generate_constructor_component_initialization
