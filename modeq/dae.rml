@@ -62,6 +62,7 @@ module DAE:
 		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl
 
   datatype ExtArg = EXTARG of Exp.ComponentRef * Types.Attributes * Types.Type
+                    | EXTARGSIZE of Exp.ComponentRef * Types.Attributes * Types.Type * Exp.Exp
                     | NOEXTARG
 
   datatype ExternalDecl = EXTERNALDECL of Ident * (* external function name *)
@@ -246,6 +247,12 @@ relation dump_ext_arg_str : ExtArg => string =
 	Util.string_append_list([dirstr," ",tystr," ",crstr]) => str
 	------------------------------------------------------------
 	dump_ext_arg_str EXTARG(cr,Types.ATTR(fl,acc,var,dir),ty) => str
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	Exp.print_exp_str dim => dimstr &
+	Util.string_append_list(["size(",crstr,",",dimstr,")"]) => str
+	------------------------------------------------------------
+	dump_ext_arg_str EXTARGSIZE(cr,attr,ty,dim) => str
 end
 
 (** relation: dump_str

@@ -71,12 +71,14 @@ module Exp:
                  (* New constructors *)
 	       | CAST of Type * Exp
 	       | ASUB of Exp * int
+               | SIZE of Exp * Exp
   (** The `Exp' datatype closely corresponds to the `Absyn.Exp'
    ** datatype, but is used for statically analyzed expressions.  It
    ** includes explicit type promotions and typed (non-overloaded)
    ** operators. It also contains expression indexing with the `ASUB'
    ** constructor.  Indexing arbitrary array expressions is currently
    ** not supported in Modelica, but it is needed here. *)
+  (** LS: Added size for external function interface **)
 
   datatype Operator = ADD    	  of Type
 		    | SUB    	  of Type
@@ -556,6 +558,11 @@ relation print_exp2 : (Exp,int) => () =
  	int_string i => s & Print.print_buf s & Print.print_buf "]"
 	---------------------------------------
 	print_exp2 (ASUB(e,i),pri1)
+
+  rule	print_exp_str e => str &
+	Print.print_buf str
+	-------------
+	print_exp2 (e as SIZE(cr,dim),_)
 	
   rule	Print.print_buf "#UNKNOWN EXPRESSION# ----eee "
         ----------------------------------
@@ -1099,7 +1106,13 @@ relation print_exp2_str : (Exp,int) => string =
 	string_append (s''', "]") => s''''
 	---------------------------------------
 	print_exp2_str (ASUB(e,i),pri1) => s''''
-	
+
+  rule	print_exp_str cr => crstr &
+	print_exp_str dim => dimstr &
+	Util.string_append_list(["size(",crstr,",",dimstr]) => str
+	------------------------
+	print_exp2_str (SIZE(cr,dim),_) => str
+
   axiom	print_exp2_str (_,_) => "#UNKNOWN EXPRESSION# ----eee "
 
 end
