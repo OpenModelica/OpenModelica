@@ -1,0 +1,12 @@
+(* parse.rml *)
+
+module Parser:
+  with "absyn.rml"
+  relation parse: string => Absyn.Program
+end
+
+(*
+relation parse: string => Absyn.Program =
+  axiom parse _ => []
+end
+*)

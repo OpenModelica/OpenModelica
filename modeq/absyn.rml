@@ -1,0 +1,6 @@
+(* absyn.rml *)
+
+module Absyn:
+  with "class.rml"
+  type Program = Class.Class list
+end
