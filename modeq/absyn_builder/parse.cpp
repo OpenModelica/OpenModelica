@@ -34,8 +34,9 @@ void Parser_5finit(void)
 RML_BEGIN_LABEL(Parser__parse)
 {
   char* filename = RML_STRINGDATA(rmlA0);
-  //  bool debug = check_debug_flag("parsedump");
-  bool debug = true;
+  bool debug = check_debug_flag("parsedebug");
+  bool parsedump = check_debug_flag("parsedump");
+  // bool debug = true;
   modelica_lexer *lex=0;
   modelica_parser *parse=0;
   ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
@@ -64,7 +65,7 @@ RML_BEGIN_LABEL(Parser__parse)
     }
 	
     if (t) {
-      if (debug) {
+      if (parsedump) {
 	parse_tree_dumper dumper(std::cout);
 	//dumper.initializeASTFactory(factory);
 	//dumper.setASTFactory(&factory);
@@ -78,16 +79,16 @@ RML_BEGIN_LABEL(Parser__parse)
 	ast = build.stored_definition(t);
       }
       catch (ANTLR_USE_NAMESPACE(antlr)NoViableAltException &e) {
-	parse_tree_dumper dumper(std::cout);
 	std::cerr << "Error walking AST while  building RML data: " 
 		  << e.getMessage() << " AST:" << std::endl;
+	parse_tree_dumper dumper(std::cerr);
 	dumper.dump(RefMyAST(e.node));	      
       }
       catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e) {
-	parse_tree_dumper dumper(std::cout);
 	if (e.node) {
 	  std::cerr << "Error walking AST while  building RML data: " 
 		    << e.getMessage() << " AST:" << std::endl;
+	  parse_tree_dumper dumper(std::cerr);
 	  dumper.dump(RefMyAST(e.node));	      
 	} else {
 	  std::cerr << "Error walking AST while  building RML data: " 
@@ -134,6 +135,7 @@ RML_BEGIN_LABEL(Parser__parse)
     std::cerr << "Error while parsing\n";
   }
   std::cerr << "Exiting Parse" << std::endl;
+
   RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL
