@@ -44,7 +44,8 @@ module Inst:
   with "types.rml"
   with "util.rml"
   with "interactive.rml"							  
-  
+  with "cache.rml"
+
   type InstDims = Exp.Subscript list
 
   datatype Initial = INITIAL | NON_INITIAL
@@ -62,19 +63,19 @@ module Inst:
 
   relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
 	
-  relation inst_class: (Env.Env, Mod.Mod, Prefix.Prefix, 
+  relation inst_class: (Cache.Cache, Env.Env, Mod.Mod, Prefix.Prefix, 
 			Connect.Sets, SCode.Class, InstDims,bool)
-	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State)
+	  => (Cache.Cache, DAE.Element list, Connect.Sets, Types.Type, ClassInf.State)
 
 
-  relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
+  relation inst_class_decl : (Cache.Cache, Env.Env, Mod.Mod, Prefix.Prefix,
 			      Connect.Sets, SCode.Class, InstDims, bool)
-	  => (Env.Env, DAE.Element list)
+	  => (Cache.Cache, Env.Env, DAE.Element list)
 
-  relation inst_class_in: (Env.Env, Mod.Mod, Prefix.Prefix, 
+  relation inst_class_in: (Cache.Cache, Env.Env, Mod.Mod, Prefix.Prefix, 
 			   Connect.Sets, ClassInf.State,
 			   SCode.Class, bool, InstDims, bool, bool)
-	  => (DAE.Element list, Env.Env, Connect.Sets, 
+	  => (Cache.Cache, DAE.Element list, Env.Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list)
 
   relation inst_record_constructor_elt : (Env.Env, SCode.Element) 
@@ -84,7 +85,11 @@ module Inst:
   relation init_vars_modelica_output : DAE.Element list => DAE.Element list
 
   relation new_ident : () => Exp.ComponentRef
-	
+  relation implicit_function_instantiation : (Cache.Cache, Env.Env, Mod.Mod, 
+					      Prefix.Prefix, Connect.Sets, SCode.Class,
+					      InstDims, bool)
+	  => (Cache.Cache, Env.Env, DAE.Element list)
+	    
 end
 
 (** Other modules used by this module *)
@@ -99,7 +104,7 @@ with "rtopts.rml"
 with "staticexp.rml"
 with "values.rml"
 with "print.rml"
-
+with "system.rml"
 (**
  ** These type aliases are introduced to make the code a little more
  ** readable.
@@ -201,8 +206,10 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 
   rule	Builtin.initial_env => env &
 	inst_class_decls(env,cdecls,path)=> (env',_) &
-	Lookup.lookup_class(env',path,true) => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
-	inst_class(env'',Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) => (dae,_,_,_) &
+	Lookup.lookup_class(Cache.CACHE([],[]),env',path,true) 
+	  => (_,cdef as SCode.CLASS(n,_,_,_,_), env'') &
+	inst_class(Cache.CACHE([],[]), env'', Mod.NOMOD, Prefix.NOPRE, [], cdef, [], false) 
+	  => (_, dae, _, _, _) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
 	instantiate_class(cdecls, path as Absyn.QUALIFIED(name,_)) 
@@ -217,7 +224,8 @@ end
 relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Element list) =
 	
   rule	name = name2 &
-	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (dae,_,_,_) 
+	inst_class(Cache.CACHE([],[]), env, Mod.NOMOD, Prefix.NOPRE, [], c, [], false) 
+	  => (_, dae, _, _, _) 
 	-------------------------------------------------------------
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) => dae
 
@@ -235,7 +243,8 @@ end
 
 relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Element list) =
   rule	not name = name2 &
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
+	inst_class_decl(Cache.CACHE([],[]), env, Mod.NOMOD, Prefix.NOPRE, [], c, [], false) 
+	  => (_, env', dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae
 	-----------------------------
@@ -248,14 +257,16 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 
   rule	name = name2 &      
 	(* How should be do here ??? *)
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
+	inst_class_decl(Cache.CACHE([],[]),env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	  => (_,env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
 	-----------------------------
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
 
   rule	not name = name2 &      
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
+	inst_class_decl(Cache.CACHE([],[]),env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	  => (_,env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
 	-----------------------------
@@ -305,13 +316,15 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 
   rule	Debug.fprintln ("insttr", "inst_program1") &
 	(* Env.extend_frame_c(env,c) => env' & *)
-	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (dae,csets,_,_) 
+	inst_class(Cache.CACHE([],[]),env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	  => (_,dae,csets,_,_) 
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
   rule	Debug.fprintln ("insttr", "inst_program2") &
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
+	inst_class_decl(Cache.CACHE([],[]),env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	  => (_,env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_program(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
@@ -327,7 +340,8 @@ end
 relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
 	
   rule	Debug.fprintln ("insttr", "inst_program_implicit") &
-	implicit_instantiation(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
+	implicit_instantiation(Cache.CACHE([],[]),env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	  => (_, env', dae1) &
 	inst_program_implicit(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
@@ -354,28 +368,28 @@ end
  **    instantiation
  **)
 
-relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,bool)
-	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State) =
+relation inst_class : (Cache.Cache, Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,bool)
+	  => (Cache.Cache, DAE.Element list, Connect.Sets, Types.Type, ClassInf.State) =
 
   rule	Print.print_buf "# Can't instantiate partial class " & Print.print_buf n & Print.print_buf "\n"
 	------------------------------------------------------	
-	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
+	inst_class(cache,env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
 
   rule	Env.open_scope(env,encflag) => env' &
 	Env.name_scope(env',n) => env'' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env'', mod, pre, csets, ci_state, c, false, inst_dims, impl,false)
-	  => (dae1, _, csets', ci_state', tys) &
+	inst_class_in(cache, env'', mod, pre, csets, ci_state, c, false, inst_dims, impl,false)
+	  => (cache', dae1, _, csets', ci_state', tys) &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
 	mktype(ci_state',tys) => ty
 	-------------------------------------------
-	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl)
-	  => (dae, [], ty, ci_state')
+	inst_class(cache, env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl)
+	  => (cache', dae, [], ty, ci_state')
 
   rule	Print.print_buf "- inst_class " & Print.print_buf n & Print.print_buf " failed\n"
 	-----------------------------------------------------
-	inst_class(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl) => fail
+	inst_class(_,_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl) => fail
 	
 end
 
@@ -392,15 +406,15 @@ end
  ** constant in its body) 
  **)
 
-relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+relation inst_class_in: (Cache.Cache, Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Class, bool, InstDims, bool, bool)
-	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
+	  => (Cache.Cache, DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
   rule	(*print "inst_class_in " & print n & print "\n" &*)
-	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims
+	inst_classdef(cache, env,mods,pre,csets,ci_state,d,r,prot,inst_dims
 		      ,impl,packimpl)
-	  => (l,env', csets', ci_state', tys) &
+	  => (cache', l,env', csets', ci_state', tys) &
 	Prefix.print_prefix_str pre => prestr &
 	string_append(prestr, " : ") => prestr' &
 	string_append(prestr', n) => prestr'' &
@@ -409,14 +423,14 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("envprint", Env.print_env, env') & 
 	Debug.fprintl ("envprint", ["------------ /", prestr'', "\n"])
 	-------------------------------------
-	inst_class_in(env,mods,pre,csets,ci_state,
+	inst_class_in(cache, env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims,
 		      impl,packimpl)
-	  => (l,env', csets', ci_state', tys)
+	  => (cache', l,env', csets', ci_state', tys)
 
   rule  Print.print_buf "- inst_class_in failed\n"
 	----------------------------------
-	inst_class_in(_,_,_,csets,_,_,_,_,_,_) => fail
+	inst_class_in(_,_,_,_,csets,_,_,_,_,_,_) => fail
 
 end
 
@@ -435,10 +449,10 @@ end
  ** implicit instantiation and implicit package instantiation
  **)
 
-relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+relation inst_classdef: (Cache.Cache, Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.ClassDef, SCode.Restriction, bool,InstDims,
 			 bool, bool)
-	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
+	  => (Cache.Cache, DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
 	(** This rule describes how to instantiate an explicit
@@ -458,8 +472,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*2. EXTENDS Nodes*)
 	(* inst_extends_list only flatten inhteritance structure. *)
 	(* It does not perform component instantiations. *)
-	inst_extends_list(env1,mods,extendselts,impl)
-	  => (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) &
+	inst_extends_list(cache, env1, mods, extendselts, impl)
+	  => (cache', env2, emods, extcomps, eqs2, initeqs2, alg2, initalg2) &
 		
 	Util.list_flatten([extcomps,compelts,cdefelts]) => compelts' &	
 	
@@ -473,9 +487,9 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
-	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', 
+	inst_element_list(cache', env3, mods, pre, csets, ci_state1, compelts', 
 			  inst_dims, impl, false)
-	  => (dae1,env4, csets1, ci_state2, tys) &
+	  => (cache'',dae1,env4, csets1, ci_state2, tys) &
 	inst_list(env4,mods,pre,csets1,ci_state2,inst_equation, eqs')
 	  => (dae2,_,csets2, ci_state3) &
 	inst_list(env4,mods,pre,csets2,ci_state3,inst_initialequation, initeqs')
@@ -489,10 +503,10 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(dae7,dae4) => dae8 &
 	list_append(dae8,dae5) => dae 
 	------------------------------------------------------
-	inst_classdef(env,mods,pre, csets, ci_state,
+	inst_classdef(cache, env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
 		      inst_dims, impl, false)
-	  => (dae, env4, csets5, ci_state6, tys)
+	  => (cache'', dae, env4, csets5, ci_state6, tys)
 
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
@@ -504,15 +518,13 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	component_elts(els) => compelts &
 	extends_elts(els) => extendselts &
 	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
-(*	inst_element_list2(env,mods,pre,csets,ci_state,cdefelts,inst_dims, impl)
-	  => (_,env1,csets',ci_state',tys) &*)	
 	add_classdefs_to_env(env,cdefelts,impl) => env1 &
 
 	(*2. EXTENDS Nodes*)
 	(* inst_extends_list only flatten inhteritance structure. *)
 	(* It does not perform component instantiations. *)
-	inst_extends_list(env1,mods,extendselts,impl)
-	  => (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) &
+	inst_extends_list(cache, env1, mods, extendselts, impl)
+	  => (cache', env2, emods, extcomps, eqs2, initeqs2, alg2, initalg2) &
 		
 	Util.list_flatten([extcomps,compelts,cdefelts]) => compelts' &	
 	
@@ -526,14 +538,14 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
-	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', 
+	inst_element_list(cache',env3,mods,pre,csets,ci_state1, compelts', 
 			  inst_dims, impl, true)
-	  => (dae1,env4, csets1, ci_state2, tys) 
+	  => (cache'', dae1, env4, csets1, ci_state2, tys) 
 	------------------------------------------------------
-	inst_classdef(env,mods,pre, csets, ci_state,
+	inst_classdef(cache, env, mods, pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
 		      inst_dims, impl, true)
-	  => (dae1, env4, csets1, ci_state2, tys)
+	  => (cache'', dae1, env4, csets1, ci_state2, tys)
 
 
 	(** This rule describes how to instantiate a derived class *)
@@ -542,7 +554,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.print_prefix_str pre => prestr &
 	Absyn.path_string cn => cnstr &
 	Debug.fprintl ("insttr", ["inst_class derived: ", cnstr, ", pre=",prestr,"\n"]) &
-	Lookup.lookup_class(env,cn,true) => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
+	Lookup.lookup_class(Cache.CACHE([],[]),env,cn,true) 
+	  => (_, c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
 	Env.open_scope(cenv,enc2) => cenv' &
 	Env.name_scope(cenv',cn2) => cenv'' &
 	Mod.lookup_modification_p(mods,cn) => m &
@@ -550,33 +563,33 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
-	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false)
-	  => (dae,env'', csets', ci_state', tys) &
+	inst_class_in(cache, cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false)
+	  => (cache', dae, env'', csets', ci_state', tys) &
 
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
-	inst_classdef(env,mods,pre, csets, ci_state,
+	inst_classdef(cache, env, mods, pre, csets, ci_state,
 		      SCode.DERIVED(cn,ad,mod), re, prot, 
 		      inst_dims, impl, packimpl)
-	  => (dae,env'', csets', ci_state', tys)
+	  => (cache', dae, env'', csets', ci_state', tys)
 
 	(** If the class is derived from a class that can not be *)
 	(** found in the environment, this rule prints an error *)
 	(** message. *)
 
-  rule	not Lookup.lookup_class(env,cn,false) => (_,_) &
+  rule	not Lookup.lookup_class(Cache.CACHE([],[]), env,cn,false) => (_,_,_) &
 	Absyn.path_string(cn) => cns &
 	Print.print_buf "# unknown class: " & Print.print_buf cns & Print.print_buf "\n"
 	----------------------------------------
-	inst_classdef(env,mods,pre,csets,ci_state,
+	inst_classdef(cache, env,mods,pre,csets,ci_state,
 		      SCode.DERIVED(cn,ad,mod), re, prot, 
 		      inst_dims, impl, packimpl)
 	  => fail
 
   rule	Print.print_buf "- inst_classdef failed\n"
 	----------------------------------
-	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
+	inst_classdef(_,_,_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
 
@@ -587,20 +600,20 @@ end
  ** of that list. The result is a list of components and lists of equations
  ** and algorithms.
 **)
-relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
-	  => (Env.Env, Mod.Mod, SCode.Element list, SCode.Equation list,
+relation	inst_extends_list:(Cache.Cache, Env.Env, Mod.Mod, SCode.Element list, bool)
+	  => (Cache.Cache, Env.Env, Mod.Mod, SCode.Element list, SCode.Equation list,
 	      SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) 
 	=
-  rule	Lookup.lookup_class(env, tp, true) 
-	  => (c as SCode.CLASS(cn,_,encf,r,_), cenv) &
+  rule	Lookup.lookup_class(cache, env, tp, true) 
+	  => (cache', c as SCode.CLASS(cn,_,encf,r,_), cenv) &
 	Mod.lookup_modification_p(mod, Absyn.IDENT(cn)) => innermod &
 	inst_derived_classes(cenv, innermod, c, impl) =>
 	  (cenv1, els, eq1, ieq1, alg1, ialg1) &
 	make_complete_type_names(cenv1,els) => els' &
-	inst_extends_list(cenv1, innermod, els', impl) 
-	  => (_,mods, compelts1, eq2, ieq2, alg2, ialg2) &  
-	inst_extends_list(env, mod, rest, impl)
-	  => (env', mods', compelts2, eq3, ieq3, alg3, ialg3) & 
+	inst_extends_list(cache',cenv1, innermod, els', impl) 
+	  => (cache'',_,mods, compelts1, eq2, ieq2, alg2, ialg2) &  
+	inst_extends_list(cache'', env, mod, rest, impl)
+	  => (cache''', env', mods', compelts2, eq3, ieq3, alg3, ialg3) & 
 	(* Must merge(mod,emod) here and then apply the bindings to the *)
 	(* corresponding elements. But emod is Absyn.Mod and can not  *)
 	(* be elaborated, because for instance extends A(x=y) can reference *)
@@ -627,25 +640,26 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
 	Util.list_flatten([alg1, alg2, alg3]) => alg &
 	Util.list_flatten([ialg1, ialg2,ialg3]) => ialg 
 	-----------------------------------
-	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl)
-	  => (env', mods',compelts3, eq, ieq, alg, ialg)
+	inst_extends_list(cache, env, mod, SCode.EXTENDS(tp,emod)::rest, impl)
+	  => (cache''', env', mods',compelts3, eq, ieq, alg, ialg)
 
   rule	print "Failed inst_extends_list on EXTENDS\n" 
 	------------------------------------------------
-	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl) 
+	inst_extends_list(cache, env, mod, SCode.EXTENDS(tp,emod)::rest, impl) 
 	  => fail
 
-  rule	inst_extends_list(env, mod, rest, impl)
-	  => (env', mods, compelts2, eq2, initeq2, alg2, ialg2) 
+  rule	inst_extends_list(cache, env, mod, rest, impl)
+	  => (cache', env', mods, compelts2, eq2, initeq2, alg2, ialg2) 
 	------------------------------------------------
-	inst_extends_list(env, mod, elt::rest, impl) 
-	  => (env',mods, elt::compelts2, eq2, initeq2, alg2, ialg2) 
+	inst_extends_list(cache, env, mod, elt::rest, impl) 
+	  => (cache', env',mods, elt::compelts2, eq2, initeq2, alg2, ialg2) 
 
-  axiom	inst_extends_list(env,mod,[],impl) => (env, mod, [], [], [], [], [])
+  axiom	inst_extends_list(cache, env, mod, [], impl) 
+	  => (cache, env, mod, [], [], [], [], [])
 
   rule	Print.print_buf "- inst_extends_list failed\n" 
 	---------------------
-	inst_extends_list(_,_,_,_) => fail
+	inst_extends_list(_,_,_,_,_) => fail
 end
 
 (** relation: update_components
@@ -707,7 +721,7 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	
   rule	make_complete_type_names(env, rest) => res &
 	Lookup.complete_path(env, path) => path' 
-	& print "completed to " & Absyn.path_string path' => s & print s & print "\n" 
+	(*& print "completed to " & Absyn.path_string path' => s & print s & print "\n" *)
 	------------------------------------
 	make_complete_type_names(env, SCode.EXTENDS(path, mod)::rest)
 	  => SCode.EXTENDS(path', mod)::res
@@ -745,7 +759,7 @@ relation inst_derived_classes: 	(Env.Env, Mod.Mod, SCode.Class, bool) =>
 	
   axiom	inst_derived_classes(env,mod,SCode.CLASS(_,_,_,_,SCode.PARTS(elt,eq,ieq,alg,ialg,_)),_) => (env,elt,eq,ieq,alg,ialg)
 
-  rule	Lookup.lookup_class(env,tp,true) => (c,cenv) &
+  rule	Lookup.lookup_class(Cache.CACHE([],[]),env,tp,true) => (_,c,cenv) &
 	(* Mod.lookup_modification_p(mod, c) => innermod & *)
 	(* We have to merge and apply modifications as well! *)
 	inst_derived_classes(cenv, mod, c, impl) 
@@ -775,29 +789,29 @@ end
  ** This handles COMPONENT nodes.
  **)
 
-relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+relation inst_element_list : (Cache.Cache, Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			    SCode.Element list, InstDims, bool, bool)
-	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
+	    => (Cache.Cache, DAE.Element list, Env, Connect.Sets, ClassInf.State,
 		Types.Var list) =
 	
-  axiom	inst_element_list(env,_,_,csets,ci_state,[],_,_,_)
-	    => ([], env, csets, ci_state, [])
+  axiom	inst_element_list(cache, env,_,_,csets,ci_state,[],_,_,_)
+	    => (cache,[], env, csets, ci_state, [])
 	
-  rule  inst_element(env,mod,pre,csets,ci_state,el,inst_dims,impl, packimpl)
-	  => (dae1,env',csets',ci_state',tys1) &
-	inst_element_list(env',mod,pre,csets',ci_state',els,inst_dims,impl,packimpl)
-	  => (dae2,env'',csets'',ci_state'',tys2) &
+  rule  inst_element(cache,env,mod,pre,csets,ci_state,el,inst_dims,impl, packimpl)
+	  => (cache',dae1,env',csets',ci_state',tys1) &
+	inst_element_list(cache',env',mod,pre,csets',ci_state',els,inst_dims,impl,packimpl)
+	  => (cache'',dae2,env'',csets'',ci_state'',tys2) &
 	list_append(tys1, tys2) => tys &
 	list_append(dae1, dae2) => dae 
 	------------------------------
-	inst_element_list(env,mod,pre,csets,ci_state,el::els,inst_dims,impl,packimpl)
-	  => (dae, env'', csets'', ci_state'', tys)
+	inst_element_list(cache, env, mod, pre, csets, ci_state, el::els, inst_dims, impl, packimpl)
+	  => (cache'', dae, env'', csets'', ci_state'', tys)
 
   rule	Print.print_buf "- inst_element_list2 failed\n" &
 	Dump.print_list (els, SCode.print_element, ", ") &
 	Print.print_buf "\n"
 	------------------------------------
-	inst_element_list(_,_,_,_,_,els,_,_,_) => fail
+	inst_element_list(_,_,_,_,_,_,els,_,_,_) => fail
 end
 
 relation classdef_elts: (SCode.Element list) => (SCode.Element list) =
@@ -862,7 +876,7 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State
 			    SCode.Element list, InstDims, bool)
 	    => (Env) =
 
-  rule	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
+  rule	Lookup.lookup_class(Cache.CACHE([],[]),env,t,true) => (_,cl,cenv) & 
 	Debug.fprint ("decl", "got class \n") &
 
 	(** PA: PROBLEM, Modifiers should be merged in this phase, but
@@ -908,9 +922,9 @@ end
  ** Last two bools are implicit instanitation and implicit package instantiation
  **)
 
-relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+relation inst_element : (Cache.Cache, Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Element, InstDims, bool, bool)
-	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
+	  => (Cache.Cache, DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
 	(** imports
@@ -919,16 +933,17 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Env.extend_frame_i(env,imp) => env'
 	------------------------------------
-	inst_element(env,mod,pre,csets,ci_state,SCode.IMPORT(imp),instdims,_,_) => ([],env',csets,ci_state,[])
+	inst_element(cache, env, mod, pre, csets, ci_state, SCode.IMPORT(imp), instdims,_,_) 
+	  => (cache, [], env', csets, ci_state, [])
 		 
 	(* If a variable is declared multiple times, the first is used *)
 
   rule	Lookup.lookup_ident_local(env,n) => (_,NONE,true) &
 	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
-	inst_element(env,mods,pre,csets,ci_state,
+	inst_element(cache, env, mods, pre, csets, ci_state,
 		     SCode.COMPONENT(n,final,repl,prot,_,_,_),_,_,_)
-	  => ([],env,csets,ci_state,[]) 
+	  => (cache, [], env, csets, ci_state, []) 
 
   	  (* Illegal redeclarations *)
 
@@ -937,15 +952,15 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf " as a variable\n, env =" &
 	Env.print_env env
 	------------------------
-	inst_element(env,mods,pre,csets,ci_state,
+	inst_element(cache, env, mods, pre, csets, ci_state,
 		     SCode.CLASSDEF(n,_,_,_),_,_,_)
 	  => fail
 	  
-  rule	Lookup.lookup_class(env,Absyn.IDENT(n),false) => (_,_) &
+  rule	Lookup.lookup_class(Cache.CACHE([],[]), env,Absyn.IDENT(n),false) => (_,_,_) &
 	Print.print_buf "# Trying to redeclare the variable " & Print.print_buf n &
 	Print.print_buf " as a class\n"
 	---------------------
-	inst_element(env,mods,pre,csets,ci_state,
+	inst_element(cache, env, mods, pre, csets, ci_state,
 		     SCode.COMPONENT(n,_,_,_,_,_,_),_,_,_)
 	  => fail
 	  
@@ -962,11 +977,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "*--*All mods") &
 	Debug.fcall ("insttr", Mod.print_mod, mods) &
-	inst_class_decl(env,classmod,pre,csets,cls2,inst_dims,packimpl) => (env',dae)
+	inst_class_decl(cache, env, classmod, pre, csets, cls2, inst_dims, packimpl)
+	  => (cache', env', dae)
 	-------------------------------------------------
-	inst_element(env,mods,pre,csets,ci_state, 
-		     SCode.CLASSDEF(n,_,true,c),inst_dims,impl,packimpl)
-	  => (dae,env',csets,ci_state,[])
+	inst_element(cache, env, mods, pre, csets, ci_state, 
+		     SCode.CLASSDEF(n,_,true,c), inst_dims, impl, packimpl)
+	  => (cache', dae, env', csets, ci_state, [])
 
   rule	(* Redeclare of class definition, replaceable is false *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
@@ -974,7 +990,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf "# Trying to redeclare class " & Print.print_buf n &
 	Print.print_buf " but class not declared as replacable.\n" 
 	-------------------------------------------------
-	inst_element(env,mods,pre,csets,ci_state, 
+	inst_element(cache, env, mods, pre, csets, ci_state, 
 		     SCode.CLASSDEF(n,_,false,c),inst_dims,impl,packimpl)
 	  => fail
 
@@ -984,11 +1000,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "**All mods") &
 	Debug.fcall ("insttr", Mod.print_mod, mods) &
-	inst_class_decl(env,classmod,pre,csets,c,inst_dims,packimpl) => (env',dae)
+	inst_class_decl(cache,env,classmod,pre,csets,c,inst_dims,packimpl) 
+	  => (cache',env',dae)
 	-------------------------------------------------------
-	inst_element(env,mods,pre,csets,ci_state, 
+	inst_element(cache, env, mods, pre, csets, ci_state, 
 		     SCode.CLASSDEF(n,_,_,c),inst_dims,impl,packimpl)
-	  => (dae,env',csets,ci_state,[]) 
+	  => (cache', dae, env', csets, ci_state, []) 
 	  
 	  (**  A component
 	   **
@@ -1052,7 +1069,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall("insttr",Env.print_env,env) &
 	Debug.fprint("insttr"," \n") &
 	
-	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
+	Lookup.lookup_class(cache,env,t,true) => (cache',cl,cenv) & 
 	
 	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	
@@ -1070,8 +1087,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	elab_arraydim(env2',ad,eq,impl,NONE) => dims &
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
-	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims,impl)
-	  => (dae,csets',ty) &
+	inst_var(cache', cenv, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
+	  => (cache'', dae, csets', ty) &
 	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &
 
 	(** The environment is extended (updated) with the new variable *)
@@ -1089,11 +1106,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 					       
 	Debug.fprint("insttr","inst_element Component succeeded\n") 
 	-----------------------------------------------------------
-	inst_element(env,mods,pre,csets,ci_state,
+	inst_element(cache,env,mods,pre,csets,ci_state,
 		     comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m),inst_dims,impl,packimpl)
-          => (dae, env',csets',ci_state,
+          => (cache', dae, env',csets',ci_state,
 	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
 
@@ -1103,7 +1120,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
 	(**  Failure *)
-  rule	not Lookup.lookup_class(env,t,false) => (cl,cenv) &
+  rule	not Lookup.lookup_class(Cache.CACHE([],[]),env,t,false) => (_,cl,cenv) &
 	Absyn.path_string(t) => s &
 	Print.print_buf "# unknown class '" & Print.print_buf s & Print.print_buf "' while instantiating " &
 	Prefix.prefix_add(n,[],pre) => pre' &
@@ -1111,15 +1128,15 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf ns & Print.print_buf "\n" &
 	Debug.fcall ("instdb", Env.print_env, env)
 	--------------------------
-	inst_element(env,_,pre,csets,ci_state,
+	inst_element(cache,env,_,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,repl,prot,_,t,_),_,_,_)
-         => ([],env,csets,ci_state,[])
+         => (cache,[],env,csets,ci_state,[])
 
   rule	Print.print_buf "- inst_element failed\n" &
 	SCode.print_element el &
 	Print.print_buf "\n"
 	-----------------------------------------------------------------
-	inst_element(_,_,_,_,_,el,_,_,_) => fail
+	inst_element(_,_,_,_,_,_,el,_,_,_) => fail
 
 end	
 
@@ -1187,7 +1204,8 @@ end
  ** separately.
  **)
 
-relation inst_var : (Env.Env,
+relation inst_var : (Cache.Cache,
+		     Env.Env,
 		     Mod.Mod,
 		     Prefix.Prefix,
 		     Connect.Sets,
@@ -1198,7 +1216,7 @@ relation inst_var : (Env.Env,
 		     int list,
 		     InstDims,
 		     bool)
-	  => (DAE.Element list,Connect.Sets,Types.Type) =
+	  => (Cache.Cache, DAE.Element list,Connect.Sets,Types.Type) =
 
 	(** The class is instantiated with the calculated *)
 	(** modification, and an extended prefix. *)
@@ -1220,7 +1238,8 @@ relation inst_var : (Env.Env,
 	(* This is where redeclare should be handled *)
 	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
 	Debug.fcall ("envprint", Env.print_env, env) & 
-	inst_class(env,mod,pre',csets,cl,inst_dims,impl) => (dae1,csets',ty,st) &
+	inst_class(cache,env,mod,pre',csets,cl,inst_dims,impl) 
+	  => (cache',dae1,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
@@ -1232,25 +1251,25 @@ relation inst_var : (Env.Env,
 	list_append(daex,dae3) => dae
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
+	inst_var(cache,env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
 		 [],idxs,inst_dims,impl)
-          => (dae,csets',ty)
+          => (cache',dae,csets',ty)
 
 
 
   rule	inst_dim_exp (dim,impl) => dime &
 	list_append(inst_dims,[dime]) => inst_dims' &
-	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl)
-	  => (dae, csets', ty) &
+	inst_array(cache,env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl)
+	  => (cache',dae, csets', ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty'
 	-------------------------------
-	inst_var(env,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl)
-          => (dae,csets',ty')
+	inst_var(cache,env,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl)
+          => (cache',dae,csets',ty')
 
   rule	Print.print_buf "- inst_var failed: " & Print.print_buf n & Print.print_buf "\n"
 	--------------------------------------------------
-	inst_var(_,_,_,_,n,_,_,_,_,_,_) => fail
+	inst_var(_,_,_,_,_,n,_,_,_,_,_,_) => fail
 	
 end
 
@@ -1404,7 +1423,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 				   attr as SCode.ATTR(ad,flow,acc,param,dir),
 				   t,m)),_) &
 
-	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
+	Lookup.lookup_class(Cache.CACHE([],[]),env,t,false) => (_,cl,cenv) & 
 
 	get_cref_from_mod(m) => crefs &
  	update_variables_in_env(mods,crefs,env,impl) => env2' &
@@ -1428,8 +1447,9 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var((*PA:was env2*)cenv,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[],false)
-	  => (dae1,csets',ty) &
+	inst_var(Cache.CACHE([],[]), cenv, mod', Prefix.NOPRE, [], n, cl, attr,
+		 dims, [], [], false)
+	  => (_, dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
@@ -1514,7 +1534,8 @@ end
  ** element separately.
  **)
 
-relation inst_array : (Env.Env,
+relation inst_array : (Cache.Cache,
+		       Env.Env,
 		       Mod.Mod,
 		       Prefix.Prefix,
 		       Connect.Sets,
@@ -1527,34 +1548,34 @@ relation inst_array : (Env.Env,
 		       InstDims,
 		       bool
 		       )
-	  => (DAE.Element list,Connect.Sets,Types.Type) =
+	  => (Cache.Cache, DAE.Element list, Connect.Sets, Types.Type) =
 
-  rule	inst_var(env,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
-	  => (dae,csets,ty)
+  rule	inst_var(cache,env,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+	  => (cache',dae,csets,ty)
 	-----------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
-	  => (dae,csets,ty)
+	inst_array(cache,env,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
+	  => (cache',dae,csets,ty)
 
   rule	int_gt(i,stop) => true
 	----------------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
-	  => ([], csets, Types.T_NOTYPE)
+	inst_array(cache,env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
+	  => (cache,[], csets, Types.T_NOTYPE)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
-	inst_var(env,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
-	  => (dae1,csets',ty) &
+	inst_var(cache,env,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+	  => (cache',dae1,csets',ty) &
 	int_add(i,1) => i' &
-	inst_array(env,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
-	  => (dae2, csets'',_) &
+	inst_array(cache',env,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
+	  => (cache'',dae2, csets'',_) &
 
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
-          => (dae,csets'',ty)
+	inst_array(cache,env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
+          => (cache'',dae,csets'',ty)
 
   rule	Print.print_buf "- inst_array failed: " & Print.print_buf n & Print.print_buf "\n"
 	--------------------------------------------------
-	inst_array(_,_,_,_,n,(_,_),_,_,_,_,_,_) => fail
+	inst_array(_,_,_,_,_,n,(_,_),_,_,_,_,_,_) => fail
 	
 end
 
@@ -1856,24 +1877,25 @@ end
  ** anything else.
  **)
 
-relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
+relation inst_class_decl : (Cache.Cache, Env.Env, Mod.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class,InstDims, bool)
-	  => (Env.Env, DAE.Element list) =
+	  => (Cache.Cache, Env.Env, DAE.Element list) =
 
   rule	Debug.fprint("insttr","+\tinst_class_decl called\n") &
 	Env.extend_frame_c(env,c) => env' &
 	Debug.fprint("insttr","+\textended frame\n") &
-	implicit_instantiation(env',Mod.NOMOD,pre,csets,c,inst_dims,packimpl) => (env'',dae) &
+	implicit_instantiation(cache,env',Mod.NOMOD,pre,csets,c,inst_dims,packimpl) 
+	  => (cache', env'',dae) &
 	Debug.fprint("insttr","+\timplicit instantiation of ") &
 	Debug.fprint("insttr",n) & Debug.fprint("insttr", " finshed\n\n") 
 	----------------------------------
-	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,restr,_),inst_dims,packimpl)
-	  => (env'', dae)
+	inst_class_decl(cache,env,mod,pre,csets,c as SCode.CLASS(n,_,_,restr,_),inst_dims,packimpl)
+	  => (cache', env'', dae)
 
   rule	Print.print_buf "- inst_class_decl failed\n Env=" &
 	Env.print_env env
 	----------------------------------
-	inst_class_decl(env,_,_,_,_,_,_) => fail
+	inst_class_decl(cache,env,_,_,_,_,_,_) => fail
 end
 
 (** relation implicit_instantiation
@@ -1884,9 +1906,9 @@ end
  ** same name as the class name.
  **)
 
-relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
+relation implicit_instantiation : (Cache.Cache, Env.Env, Mod.Mod, Prefix.Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool)
-	  => (Env.Env, DAE.Element list) =
+	  => (Cache.Cache, Env.Env, DAE.Element list) =
 
 (* LS:This rule extends the frame with the package as a type, but
 inst_class also extends the frame with the package as a class. Is this
@@ -1899,63 +1921,106 @@ correct?
 (*	let pre' = pre & *)
 	Debug.fprint ("insttr","implicit_instantiation called.\n") &
 	print "implicit_instantiation  of " & print n & print " called.\n" &
-	inst_class(env,mod,pre',csets,c,inst_dims,true) => (dae, csets', ty, st) &
+	inst_class(cache,env,mod,pre',csets,c,inst_dims,true) 
+	 => (cache', dae, csets', ty, st) &
 	Debug.fprint ("insttr","implicit_instantiation inst class done.\n") &
 	print "implicit_instantiation of " & print n & print " class done.\n" &
 	Env.extend_frame_t(env, n, ty) => env' &
 (*	let env' = env & *)
 	Debug.fprintl ("insttr", ["implicit_instantiation done:", n, "\n"])
 	--------------------------------------
-	implicit_instantiation(env,mod,pre,csets,
+	implicit_instantiation(cache, env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_,SCode.R_PACKAGE,_),
 			       inst_dims)
-	  => (env', dae)
+	  => (cache', env', dae)
 Removed *)
 
 (* LS: changed from returning empty dae to returning a DAE.FUNCTION *)
 (* LS: removed prefix because function elements shouldn't have
    one. They will contain the elements locally *)
 
-  rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
-	inst_class(env,mod,pre,csets,c,inst_dims,true) => (dae, csets', ty, st) &
+(*  rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
+	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
+	  => (cache', dae, csets', ty, st) &
 	Env.extend_frame_t(env, n, ty) => env' &
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath
 	--------------------------------------
-	implicit_instantiation(env,mod,pre,csets,
+	implicit_instantiation(cache, env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
-			       inst_dims,false)
-	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
+			       inst_dims, false)
+	  => (cache', env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
 
   rule	(* External functions should also have their type in env, but no dae! *)
-	inst_class(env,mod,pre,csets,c,inst_dims,true) => (dae, csets', ty, st) &
+	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
+	  => (cache', dae, csets', ty, st) &
 	
 	Env.extend_frame_t(env, n, ty) => env'	&
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
         let prot = false & (* how to get this? *)
-	inst_classdef (env,mod,pre,csets,ClassInf.UNKNOWN(n),parts,restr,prot,inst_dims,true,false) =>
-	  (_,tempenv,_,_,_) &
+	inst_classdef (cache', env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
+		       prot, inst_dims, true, false) 
+	  =>(cache'', _, tempenv,_,_,_) &
+
 	inst_ext_decl(tempenv, n, parts) => extdecl
 	--------------------------------------
-	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,restr as SCode.R_EXT_FUNCTION,parts as SCode.PARTS(els,_,_,_,_,_)),
-			       inst_dims,false)
-	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)])
+	implicit_instantiation(cache, env, mod, pre, csets,
+			       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
+			       parts as SCode.PARTS(els,_,_,_,_,_)),
+			       inst_dims, false)
+	  => (cache'', env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
+*)
 
   rule	(*let ty = Types.T_ENUMERATION(l) &
 	Env.extend_frame_t(env,n,ty) => env' & *)
 	inst_enumeration(n,l) => enumclass &
 	Env.extend_frame_c(env,enumclass) => env'' 
 	-----------------------------------
-	implicit_instantiation(env,mod,pre,csets,
+	implicit_instantiation(cache, env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_,SCode.R_TYPE, SCode.ENUMERATION(l)),inst_dims,_)
-	=> (env'', [])
+	=> (cache, env'', [])
 
-  axiom	implicit_instantiation(env,mod,pre,csets,c,_,_) => (env,[])
+  axiom	implicit_instantiation(cache, env, mod, pre, csets, c, _, _) => (cache, env, [])
 	
   rule	Print.print_buf "- implicit_instantiation failed\n" 
 	----------------
-	implicit_instantiation(_,_,_,_,_,_,_) => fail
+	implicit_instantiation(_,_,_,_,_,_,_,_) => fail
+end
+
+relation implicit_function_instantiation : (Cache.Cache, Env.Env, Mod.Mod, Prefix.Prefix,
+				   Connect.Sets, SCode.Class,InstDims, bool)
+	  => (Cache.Cache, Env.Env, DAE.Element list) =
+
+rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
+	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
+	  => (cache', dae, csets', ty, st) &
+	Env.extend_frame_t(env, n, ty) => env' &
+	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath
+	--------------------------------------
+	implicit_function_instantiation(cache, env, mod, pre, csets,
+			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
+			       inst_dims, false)
+	  => (cache', env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
+
+
+  rule	(* External functions should also have their type in env, but no dae! *)
+	inst_class(cache, env, mod, pre, csets, c, inst_dims, true) 
+	  => (cache', dae, csets', ty, st) &
+	
+	Env.extend_frame_t(env, n, ty) => env'	&
+	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
+        let prot = false & (* how to get this? *)
+	inst_classdef (cache', env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
+		       prot, inst_dims, true, false) 
+	  =>(cache'', _, tempenv,_,_,_) &
+
+	inst_ext_decl(tempenv, n, parts) => extdecl
+	--------------------------------------
+	implicit_function_instantiation(cache, env, mod, pre, csets,
+			       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
+			       parts as SCode.PARTS(els,_,_,_,_,_)),
+			       inst_dims, false)
+	  => (cache'', env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
 end
 
 (** relation: inst_ext_decl
@@ -3323,9 +3388,23 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHEN(e,sl)) => stmt
 *)
-  rule	Print.print_buf "- inst_statement failed\n"
+
+  rule	Static.elab_exp (env,cond,false,NONE) 
+	  => (cond',cprop,_) &
+	Static.elab_exp (env,msg,false,NONE) 
+	  => (msg',msgprop,_) &
+	Algorithm.make_assert(cond',msg',cprop,msgprop) => stmt
+	---------------------------------------
+	inst_statement(env,Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),
+					       Absyn.FUNCTIONARGS([cond,msg],[])))
+	  => stmt
+
+  rule	Print.print_buf "- inst_statement failed , alg:" &
+	Dump.unparse_algorithm_str(2,Absyn.ALGORITHMITEM(alg,NONE)) => s1 &
+	Print.print_buf s1 &
+	Print.print_buf "\n" 
 	---------------------------------
-	inst_statement(_,_) => fail
+	inst_statement(env,alg) => fail
 
 end
 
@@ -3842,13 +3921,14 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
   rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
 	elab_arraydim(env,dim,NONE,true,NONE) => dimexp &
 	Debug.fprint ("recconst", "elaborated arraydim\n") &
-	Lookup.lookup_class(env,t,true) => (cl,cenv) &
+	Lookup.lookup_class(Cache.CACHE([],[]),env,t,true) => (_,cl,cenv) &
 	Debug.fprint ("recconst", "looked up class\n") &
 	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
 	
 	elab_arraydim(env,dim,NONE,true,NONE) => dimexp &
 	Debug.fprint ("recconst", "calling inst_var\n") &
-	inst_var(cenv,mod',Prefix.NOPRE,[],id,cl,attr,dimexp,[],[],true) => (_,_,tp') &
+	inst_var(Cache.CACHE([],[]), cenv, mod', Prefix.NOPRE, [], id, cl, attr,
+		 dimexp, [], [], true) => (_, _, _, tp') &
 	Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &

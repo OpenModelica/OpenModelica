@@ -42,6 +42,7 @@ module Static :
   with "values.rml"
   with "classinf.rml"
   with "interactive.rml"
+  with "cache.rml"
 
   type Ident = string
 
@@ -814,6 +815,33 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 
 end
 
+relation elab_builtin_transpose : (Env.Env, Absyn.Exp list) 
+	  => (Exp.Exp, Types.Properties) =
+
+  rule	elab_exp (env,matexp,false,NONE) => (matexp', Types.PROP(matty, true),_) &
+	elab_builtin_transpose_2(env,matexp',matty) => (exp,prop)
+	------------------------------------------------------
+	elab_builtin_transpose (env, [matexp]) => (exp, prop)
+
+  rule	elab_exp (env,matexp,false,NONE) 
+	  => (exp', Types.PROP(Types.T_ARRAY(d1,Types.T_ARRAY(d2,eltp)),_),_) &
+	let newtp = Types.T_ARRAY(d2,Types.T_ARRAY(d1,eltp)) &
+	let exp = Exp.CALL(Absyn.IDENT("transpose"),
+			   [exp'],false,true) &
+	let prop = Types.PROP(newtp,false)
+	------------------------------------
+	elab_builtin_transpose (env, [matexp]) => (exp, prop)
+end
+
+relation elab_builtin_transpose_2 : (Env.Env, Exp.Exp, Types.Type) => 
+	(Exp.Exp, Types.Properties) =
+
+  rule	print "- elab_builtin_transpose_2 not implemented yet\n" &
+	Print.print_buf "- elab_builtin_transpose_2 not implemented yet\n" 
+	------------------------
+	elab_builtin_transpose_2(env, exp, tp) => fail
+end
+
 relation build_exp_list : (Exp.Exp, int) => Exp.Exp list =
 
   axiom	build_exp_list(e,0) => []
@@ -960,6 +988,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom	elab_builtin_handler "fill" => elab_builtin_fill
   axiom	elab_builtin_handler "max" => elab_builtin_max
   axiom	elab_builtin_handler "min" => elab_builtin_min
+  axiom elab_builtin_handler "transpose" => elab_builtin_transpose
 
 end
 
@@ -1092,6 +1121,19 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       false),
 	      Types.PROP(Types.T_BOOL,false),
 	      SOME(st))
+
+  rule	elab_exp(env,exp,impl,SOME(st)) => (exp',prop,st')
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("timing",_),
+			      [exp],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("timing"),
+		       [exp'],
+		       false,
+		       false),
+	      Types.PROP(Types.T_REAL,false),
+	      st')
+
 
   rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
 	------------------------------------------------------------------
@@ -1239,6 +1281,17 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 		       false),
 	      Types.PROP(Types.T_BOOL,false),
 	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("help",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("help"),
+		       [],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+
 end
 
 relation path_to_component_ref: Absyn.Path => Exp.ComponentRef =
@@ -1300,7 +1353,7 @@ relation make_env_from_cf: ((Absyn.Path * Types.Type) list) => Env.Env =
 
   rule	make_env_from_cf(rest) => [Env.FRAME(NONE,lst,encflag)]
 	-----------------------------------
-	make_env_from_cf((Absyn.IDENT(id),t)::rest) =>[Env.FRAME(NONE,(id,Env.TYPE(t))::lst,encflag)]
+	make_env_from_cf((Absyn.IDENT(id),t)::rest) => [Env.FRAME(NONE,(id,Env.TYPE(t))::lst,encflag)]
 end
 
 (** relation: elab_call_args
@@ -1912,7 +1965,7 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	elab_cref(env, c) => fail
 
   rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n" & print "- elab_cref_failed , cr= " & Dump.print_component_ref_str c => s1 & print s1 & print " envpath =" &
-	Env.get_env_path env => envpath & Absyn.path_string(envpath) => s2 & print s2 & print "\n"
+	Env.get_env_path env => SOME(envpath) & Absyn.path_string(envpath) => s2 & print s2 & print "\n"
 	------------------------------
 	elab_cref (env,c) => fail
 
@@ -2568,8 +2621,8 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
   rule	component_ref_to_path(cr) => path &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
-	Lookup.lookup_class(env,path,true) => (c, env) &
-	Env.get_env_path(env) => p1 &
+	Lookup.lookup_class(Cache.CACHE([],[]),env,path,true) => (_,c, env) &
+	Env.get_env_path(env) => SOME(p1) &
 	Absyn.path_string(p1) => s1 &
 	Print.print_buf "Found class " &
 	Print.print_buf s1 & Print.print_buf "\n\n" &
@@ -2609,6 +2662,13 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 	
+  rule	System.time => t1 &
+	ceval(env,exp,true,SOME(st)) => (value,st') &
+	System.time => t2 &
+	real_sub(t2,t1) => time 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("timing"),[exp],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.REAL(time),st)
+
   rule	System.set_c_compiler(str)
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompiler"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
@@ -2721,6 +2781,11 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveClass"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
+  rule	System.read_file("$MOSHHOME/../modeq/helptext.txt") => str 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("help"),[],_,_),
+				     st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(str),st)
 end
 
 relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list) => Values.Value list =

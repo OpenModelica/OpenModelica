@@ -72,6 +72,8 @@ with "debug.rml"
   relation get_option_str: ('a option, 'a => string) => string 
   relation unparse_annotation_option: (int, Absyn.Annotation option) => string 
   relation unparse_within: (int, Absyn.Within) => string 
+  relation indent_str: (int) => string 
+  relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string 
   end
 
 

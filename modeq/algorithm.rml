@@ -50,6 +50,7 @@ module Algorithm:
 		     | FOR of Exp.Type * bool * Ident * Exp.Exp * Statement list
 		     | WHILE of Exp.Exp * Statement list
 		     | WHEN of Exp.Exp * Statement list
+		     | ASSERT of Exp.Exp * Exp.Exp
   (** There are four kinds of statements.  Assignments (`a := b;'),
    ** if statements (`if A then B; elseif C; else D;'), for loops
    ** (`for i in 1:10 loop ...; end for;') and when statements
@@ -79,6 +80,9 @@ module Algorithm:
 	
   relation make_when_a : (Exp.Exp, Types.Properties,
 			Statement list) => Statement
+
+  relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties) 
+	  => Statement
 	
 end
 with "print.rml"
@@ -269,5 +273,18 @@ relation make_when_a : (Exp.Exp, Types.Properties,
 	Types.print_type t & Print.print_buf "\n"
 	-------------------------------
 	make_when_a(_,Types.PROP(t,_),_) => fail
-
 end
+
+relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties) 
+	  => Statement =
+
+  axiom	make_assert(cond, msg, Types.PROP(T_BOOL,_),Types.PROP(T_STRING,_)) 
+	  => ASSERT(cond,msg)
+ 
+  rule	not let T_BOOL = condt &
+	Print.print_buf "# Type error in assert condition.\n" &
+	Print.print_buf " Expected Boolean, got " &
+	Types.print_type condt & Print.print_buf "\n"
+	--------------------------------------------
+	make_assert(_,_,Types.PROP(condt,_),_) => fail
+end 

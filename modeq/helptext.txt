@@ -1,0 +1,39 @@
+Open Source Modelica functions
+------------------------------
+
+translateClass(classname) - Instantiates a class and return a string containing the 
+			  flat class definition.
+
+list() - Returns a string containing all classdefinitions.
+
+list(classname) - Returns a string containing the classdefinition of the named class.
+
+typeOf(variable) - Returns the type of the variable as a string.
+
+clear() - Clears everything.
+
+clearVariables() - Clears the variables.
+
+timing(expr) - Evaluates expression and returns the number of seconds the evaluation took.
+
+cd() - Return the current directory
+
+cd(dir) - Change directory to the directory given as string.
+
+system(str) - Execute str as a system(shell) command, return integer success value.
+
+readFile(str) - Load file given as string and return a string of the file content.
+
+listVariables() - Return a vector of the defined variables names.
+
+runScript(str) - Exectute script file given as string argument.
+
+loadClass(classname) - Load classname from MODELICAPATH.
+
+loadFile(str) - Load modelica file (.mo) given as string argument.
+
+saveClass(str,classname) - Save the class with name classname in the file given by the 
+			 string argument.
+help() - print this helptext (returned as a string).
+
+

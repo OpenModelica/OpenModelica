@@ -77,6 +77,7 @@ with "codegen.rml"
 with "print.rml"
 with "system.rml"
 with "classloader.rml"
+with "cache.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
@@ -2331,7 +2332,9 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &	
-	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[],false) => (dae,cs,t,state) &
+	Inst.inst_class(Cache.CACHE([],[]), env, mod'', Prefix.NOPRE, [], placementclass,
+			[], false) 
+	  => (_, dae, cs, t, state) &
 	Print.print_buf "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
@@ -2354,7 +2357,9 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program("Diagram",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
-	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[],false) => (dae,cs,t,state) &
+	Inst.inst_class(Cache.CACHE([],[]), env, mod'', Prefix.NOPRE, [], placementclass,
+			[], false) 
+	  => (_, dae, cs, t, state) &
 	Print.print_buf "Instantiated Diagram class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
@@ -2375,7 +2380,9 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program(anncname,p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
-	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[],false) => (dae,cs,t,state) &
+	Inst.inst_class(Cache.CACHE([],[]), env, mod'', Prefix.NOPRE, [], placementclass,
+			[], false) 
+	  => (_, dae, cs, t, state) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
 	Debug.fprint ("interactivedump","Annotation DAE = ") &
