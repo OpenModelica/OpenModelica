@@ -18,7 +18,6 @@ module Dump:
 
   with "absyn.rml"
   with "debug.rml"
-  with "myprint.rml"
 
   type Ident = string
 
@@ -235,7 +234,6 @@ relation variability_symbol: Absyn.Variability => string =
   axiom	variability_symbol(Absyn.DISCRETE) => "DISCRETE"
   axiom	variability_symbol(Absyn.PARAM) => "PARAM"
   axiom	variability_symbol(Absyn.CONST) => "CONST"
-  axiom	variability_symbol(Absyn.SPACE) => "SPACE"
 
 end
 

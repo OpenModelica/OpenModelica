@@ -54,7 +54,6 @@ with "builtin.rml"
 with "dump.rml"
 with "staticexp.rml"
 with "rtopts.rml"
-with "myprint.rml"
 with "codegen.rml"
 
 (**
@@ -996,7 +995,7 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
   axiom	dae_declare4 (vn, Types.T_STRING, kind, dir, e)
 	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e)]
 
-  axiom	dae_declare3 (c,ty,_) => []
+  axiom	dae_declare4 (c,ty,_,_,_) => []
 
 end
 

@@ -17,7 +17,7 @@ RMLINC  = -I$(RMLHOME)/include/plain
 #RML	= rmlc -g
 PROG	= modeq
 AST	= ast/libast.a
-RTOBJ   = runtime/rtopts.o mystuff/myprint.o
+RTOBJ   = runtime/rtopts.o
 
 SRCRML=	debug.rml \
 	types.rml \

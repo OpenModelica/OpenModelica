@@ -978,7 +978,6 @@ relation elab_cref2 : (Env.Env,
 
   axiom	elab_cref2 (_,cr, acc, Absyn.VAR, _,_) => (Exp.CREF(cr),false, acc)
   axiom	elab_cref2 (_,cr, acc, Absyn.DISCRETE, _,_) => (Exp.CREF(cr),false,acc)
-  axiom	elab_cref2 (_,cr, acc, Absyn.SPACE, _,_) => (Exp.CREF(cr),false, acc)
 
   rule	value_exp v => e
 	----------------

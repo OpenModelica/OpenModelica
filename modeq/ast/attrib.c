@@ -76,7 +76,6 @@ void print_attr(Attrib *attr, FILE *f)
 
   tokprinter(IMPORT);		/* 3 */
   tokprinter(CLASS_);		/* 4 */
-  tokprinter(BOUNDARY);		/* 5 */
   tokprinter(MODEL);		/* 6 */
   tokprinter(FUNCTION);		/* 7 */
   tokprinter(PACKAGE);		/* 8 */

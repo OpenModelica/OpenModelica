@@ -20,7 +20,6 @@ module Debug:
 end
 
 with "rtopts.rml"
-with "myprint.rml"
 with "dump.rml"
 
 
