@@ -1,0 +1,50 @@
+% -*- Modelica -*-
+\begin{boxedverbatim}
+class Circuit
+  Real C1.p.v;
+  Real C1.p.i;
+  Real C1.n.v;
+  Real C1.n.i;
+  Real C1.v;
+  Real C1.i;
+  parameter Real C1.C;
+
+  Real C2.p.v;
+  Real C2.p.i;
+  Real C2.n.v;
+  Real C2.n.i;
+  Real C2.v;
+  Real C2.i;
+  parameter Real C2.C;
+  Real AC.p.v;
+  Real AC.p.i;
+  Real AC.n.v;
+  Real AC.n.i;
+  Real AC.v;
+  Real AC.i;
+  parameter Real AC.VA;
+  parameter Real AC.f;
+  constant Real AC.PI;
+  Real i;
+equation
+  C1.v = C1.p.v - C1.n.v;
+  0 = C1.p.i + C1.n.i; 
+  C1.i = C1.p.i;
+  C1.C*der(v) = C1.i;
+  C2.v = C2.p.v - C2.n.v;
+  0 = C2.p.i + C2.n.i; 
+  C2.i = C2.p.i;
+  C2.C*der(v) = C2.i;
+  AC.v = AC.p.v - AC.n.v;
+  0 = AC.p.i + AC.n.i; 
+  AC.i = AC.p.i;
+  AC.v = AC.VA*sin(2*AC.PI*AC.f*time);
+  AC.p.v = C1.p.v;
+  C1.p.v = C2.p.v;
+  AC.p.i + C1.p.i + C2.p.i = 0.0;
+  AC.n.v = C1.n.v;
+  C1.n.v = C2.n.v;
+  AC.n.i + C1.n.i + C2.n.i = 0.0;
+  i = AC.i;
+end Circuit;
+\end{boxedverbatim}

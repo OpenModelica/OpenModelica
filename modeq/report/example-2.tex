@@ -1,0 +1,15 @@
+% -*- Modelica -*-
+\begin{boxedverbatim}
+model Circuit
+  public Capacitor C1(C=0.01);
+  public Capacitor C2(C=0.02);
+  public VsourceAC AC;
+  protected Current i;
+equation
+  connect (AC.p, C1.p);
+  connect (AC.p, C2.p);
+  connect (C1.n, AC.p);
+  connect (C2.n, Ac.n);
+  i = AC.i;
+end Circuit;
+\end{boxedverbatim}

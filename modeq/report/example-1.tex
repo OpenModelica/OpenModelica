@@ -1,0 +1,49 @@
+% -*- Modelica -*-
+\begin{boxedverbatim}
+type Voltage = Real(unit="V");
+type Current = Real(unit="A");
+
+connector Pin 
+  Voltage      v;
+  flow Current i;
+end Pin;
+
+partial model TwoPin "Superclass of elements with two electrical pins" 
+  Pin p, n;
+  Voltage v;
+  Current i;
+equation
+  v = p.v - n.v;
+  0 = p.i + n.i; 
+  i = p.i;
+end TwoPin;
+
+model Capacitor "Ideal electrical capacitor" 
+  extends TwoPin;
+  parameter Real C(unit="F") "Capacitance";
+equation 
+  C*der(v) = i;
+end Capacitor;
+
+model VsourceAC "Sin-wave voltage source" 
+  extends TwoPin;
+  parameter Voltage VA = 220 "Amplitude";
+  parameter Real f(unit="Hz") = 50  "Frequency";
+  constant  Real PI=3.141592653589793;  
+equation 
+  v = VA*sin(2*PI*f*time);
+end VsourceAC;
+
+model Circuit
+  Capacitor  C1(C=0.01), C2(C=0.02);
+  VsourceAC AC;
+protected
+  Current i;
+equation
+  connect (AC.p, C1.p);
+  connect (AC.p, C2.p);
+  connect (C1.n, AC.n);
+  connect (C2.n, Ac.n);
+  i = AC.i;
+end Circuit;
+\end{boxedverbatim}
