@@ -10,7 +10,8 @@ CC=gcc
 
 CRTHOME=$(MOSHHOME)/../c_runtime
 
-CFLAGS= -W -Wall -ansi -pedantic-errors -Werror -g -I$(CRTHOME) -I.
+#CFLAGS= -W -Wall -ansi -pedantic-errors -Werror -g -I$(CRTHOME) -I.
+CFLAGS= -O3 -finline-functions -I$(CRTHOME) -I.
 
 LDFLAGS= -L$(CRTHOME) -lm
 
