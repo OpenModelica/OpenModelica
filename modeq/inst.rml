@@ -47,6 +47,8 @@ module Inst:
   
   type InstDims = Exp.Subscript list
 
+  datatype Initial = INITIAL | NON_INITIAL
+
   datatype DimExp = DIMINT of int
 		  | DIMEXP of Exp.Subscript * Exp.Exp option
 
@@ -426,19 +428,25 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** class definition *)
   rule	Prefix.print_prefix_str pre => prestr &
 	Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &       
-	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state' &
-	inst_element_list(env,mods,pre,csets,ci_state', els, inst_dims, impl)
-	  => (dae1,env', csets', ci_state'', tys) &
-	inst_list(env',mods,pre,csets',ci_state'',inst_equation, eqs)
-	  => (dae2,env'',csets'', ci_state''') &
-	inst_list(env'',mods,pre,csets'',ci_state''', inst_algorithm, als)
-	  => (dae3,env''',csets''', ci_state'''') &
-	list_append(dae1,dae2) => dae5 &
-	list_append(dae5,dae3) => dae 
+	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
+	inst_element_list(env,mods,pre,csets,ci_state1, els, inst_dims, impl)
+	  => (dae1,env1, csets1, ci_state2, tys) &
+	inst_list(env1,mods,pre,csets1,ci_state2,inst_equation, eqs)
+	  => (dae2,_,csets2, ci_state3) &
+	inst_list(env1,mods,pre,csets2,ci_state3,inst_initialequation, initeqs)
+	  => (dae3,_,csets3, ci_state4) &
+	inst_list(env1,mods,pre,csets3,ci_state4, inst_algorithm, als)
+	  => (dae4,_,csets4, ci_state5) &
+	inst_list(env1,mods,pre,csets4,ci_state5, inst_initialalgorithm, initals)
+	  => (dae5,_,csets5, ci_state6) &
+	list_append(dae1,dae2) => dae6 &
+	list_append(dae6,dae3) => dae7 &
+	list_append(dae7,dae4) => dae8 &
+	list_append(dae8,dae5) => dae 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      SCode.PARTS(els,eqs,als,_), re, prot, inst_dims, impl)
-	  => (dae,env''', csets''', ci_state'''', tys)
+		      SCode.PARTS(els,eqs,initeqs,als,initals,_), re, prot, inst_dims, impl)
+	  => (dae, env1, csets5, ci_state6, tys)
 
 	(** This rule describes how to instantiate a derived class *)
 	(** definition *)
@@ -479,6 +487,9 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_classdef(_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
+
+
+
 
 (** relation: inst_element_list
  **
@@ -562,7 +573,7 @@ relation component_elts: (SCode.Element list) => (SCode.Element list) =
 	
   rule	component_elts(xs) => res
 	------------------------
-	component_elts ((cdef as SCode.COMPONENT(_,_,_,_,_,_))::xs) => cdef::res
+	component_elts ((cdef as SCode.COMPONENT(_,_,_,_,_,_,_))::xs) => cdef::res
 
   rule	component_elts(xs) => res
 	------------------------
@@ -596,7 +607,7 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 	Debug.fcall ("decl", Env.print_env, env'') 
 	-----------------
 	extend_components_to_env(env,mods,pre,csets,ci_state,
-		     (comp as SCode.COMPONENT(n,final,prot,
+		     (comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m))::xs,inst_dims,impl) => env''
   axiom	extend_components_to_env(env,_,_,_,_,[],_,_) => env
@@ -691,7 +702,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,prot,_,_,_),_,_)
+		     SCode.COMPONENT(n,final,repl,prot,_,_,_),_,_)
 	  => ([],env,csets,ci_state,[]) 
 
   	  (* Illegal redeclarations *)
@@ -710,7 +721,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf " as a class\n"
 	---------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,_,_,_,_,_),_,_)
+		     SCode.COMPONENT(n,_,_,_,_,_,_),_,_)
 	  => fail
 	  
           (**  A new class definition
@@ -835,7 +846,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint("insttr","inst_element Component succeeded\n") 
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,prot,
+		     SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m),inst_dims,impl)
           => (dae, env',csets',ci_state,
@@ -857,7 +868,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("instdb", Env.print_env, env)
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,prot,_,t,_),_,_)
+		     SCode.COMPONENT(n,final,repl,prot,_,t,_),_,_)
          => ([],env,csets,ci_state,[])
 
   rule	Print.print_buf "- inst_element failed\n" &
@@ -1101,7 +1112,7 @@ end
 relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool) 
 	  => Env.Env =
 	
-  rule	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
+  rule	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,repl,prot,
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
 	    t,m)),_) &
 
@@ -1656,7 +1667,7 @@ end
 
 relation get_ext_decl: (SCode.ClassDef) => Absyn.ExternalDecl =
 	
-  axiom	get_ext_decl(SCode.PARTS(_,_,_,SOME(decl))) => decl
+  axiom	get_ext_decl(SCode.PARTS(_,_,_,_,_,SOME(decl))) => decl
 
 end
 
@@ -1666,8 +1677,10 @@ end
 relation inst_enumeration: (SCode.Ident, string list) => SCode.Class =
   rule	make_enum_components(l) => comp
 	--------------------------------
-	inst_enumeration(n,l) => SCode.CLASS(n,false,false,SCode.R_ENUMERATION,SCode.PARTS(comp,[],[],NONE))
+	inst_enumeration(n,l) => SCode.CLASS(n,false,false,SCode.R_ENUMERATION,SCode.PARTS(comp,[],[],[],[],NONE))
 end
+
+(** LS: false for replaceable added **)
 
 (** relation: make_enum_components
  ** This relation takes a list of strings and returns the elements of 
@@ -1675,12 +1688,12 @@ end
  **)
 relation make_enum_components: string list => SCode.Element list =
   axiom make_enum_components ([str]) 
-	  =>  [SCode.COMPONENT(str,true,false,SCode.ATTR([],false,SCode.RO,Absyn.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD)]
+	  =>  [SCode.COMPONENT(str,true,false,false,SCode.ATTR([],false,SCode.RO,Absyn.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD)]
 	  
   rule	make_enum_components(x) => els
 	----------------------------
 	make_enum_components (str::(x as (_::_)))
-	  => SCode.COMPONENT(str,true,false,SCode.ATTR([],false,SCode.RO,Absyn.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD):: els
+	  => SCode.COMPONENT(str,true,false,false,SCode.ATTR([],false,SCode.RO,Absyn.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD):: els
 end
 
 (** relation: dae_declare
@@ -1803,7 +1816,57 @@ axiom dae_declare4 (vn, Types.T_ENUM, kind, dir, e, inst_dims)
 
 end
 
-(** relation: inst_equation
+(** LS & ELN 
+ **
+ ** Calls inst_equation_common with Inital set to NON_INITIAL. 
+ ** 
+ ** Has the same interface and semantics as the old inst_equation
+ **)
+
+relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
+			  SCode.Equation)
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
+
+  rule	inst_equation_common (env,mods,pre,csets,ci_state,eq,NON_INITIAL)
+	  => (dae,_,csets',ci_state')
+	----------------------------------------------------------
+	inst_equation (env,mods,pre,csets,ci_state,eq)
+	  => (dae,env,csets',ci_state')
+
+  rule	Print.print_buf "- inst_equation failed\n"
+	----------------------------------
+	inst_equation (_,_,_,_,_,_) => fail
+
+end
+
+(** LS & ELN 
+ **
+ ** Calls inst_equation_common with Inital set to INITIAL
+ **)
+
+relation inst_initialequation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
+				 SCode.Equation)
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
+
+  rule	inst_equation_common (env,mods,pre,csets,ci_state,eq,INITIAL)
+	  => (dae,_,csets',ci_state')
+	----------------------------------------------------------
+	inst_initialequation (env,mods,pre,csets,ci_state,eq)
+	  => (dae,env,csets',ci_state')
+
+  rule	Print.print_buf "- inst_initialequation failed\n"
+	----------------------------------
+	inst_initialequation (_,_,_,_,_,_) => fail
+
+end
+
+(** LS & ELN 
+ **
+ ** Old inst_equation was renamed to inst_equation_common and 
+ ** the Initial parameter was added.
+ **)
+
+(** relation: inst_equation_common
  **
  ** The DAE output of the translation contains equations which
  ** in most cases directly corresponds to equations in the source.
@@ -1811,10 +1874,11 @@ end
  **
  ** This relation takes an equation from the source and generates DAE
  ** equations and connection sets.
+ ** 
  **)
 
-relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-			  SCode.Equation)
+relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
+				 SCode.Equation, Initial)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
 	(**  connect
@@ -1823,9 +1887,11 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	inst_connect(csets,env,pre,c1,c2) => csets' &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 	------------------------------------------------------------
-	inst_equation(env,mods,pre, csets, ci_state, SCode.EQ_CONNECT(c1,c2))
+	inst_equation_common(env,mods,pre, csets, ci_state, 
+			     SCode.EQ_CONNECT(c1,c2), 
+			     initial)
 	  => ([],env,csets',ci_state')
 	  
 	(**  assert
@@ -1833,30 +1899,32 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Static.elab_exp(env,e,false,NONE) => (e', Types.PROP(t, c),_) &
 	inst_assertion (env, e', t, c, d, pre) => dae &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 	--------------------------------------------------------------
-	inst_equation(env,mods,pre,csets, ci_state,
-		      SCode.EQ_EXPR(Absyn.CALL(Absyn.CREF_IDENT("assert",[]),
-					       Absyn.FUNCTIONARGS([e,Absyn.STRING(d)],[]))))
+	inst_equation_common(env,mods,pre,csets, ci_state,
+			     SCode.EQ_EXPR(Absyn.CALL(Absyn.CREF_IDENT("assert",[]),
+						      Absyn.FUNCTIONARGS([e,Absyn.STRING(d)],[]))),
+			     initial)
 	  => (dae,env,csets,ci_state')
 
 	(**  Normal equations *)
 
   rule	Print.print_buf "- No expression equations yet\n" &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state' (* but fail? *)
 	-------------------------------------
-	inst_equation(env,mods,pre,csets,ci_state,SCode.EQ_EXPR(_)) => fail
+	inst_equation_common(env,mods,pre,csets,ci_state,SCode.EQ_EXPR(_),initial) => fail
 
 	(** The following rule handles shadowed (replaced) equations. *)
 	(** If an equation has a simple name on the left-hand side, *)
 	(** and that component has an equation modifier, this equation *)
-	(** is discared. *)
+	(** is discarded. *)
   rule	Lookup.lookup_ident_local(env,n)
 	  => (Types.VAR(_,_,_,_,Types.EQBOUND(_,_)),_,_) &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 	------------------------------------------------------
-	inst_equation(env,mods,pre,csets,ci_state,
-		      SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2))
+	inst_equation_common(env,mods,pre,csets,ci_state,
+			     SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2),
+			     initial)
 	  => ([],env,csets,ci_state')
 
 (* PR. This is probably where type checking of functions happen.*)
@@ -1908,11 +1976,11 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
  prefix_params (env, e2'') => e2''' & 
 *)
 	(*PR. Check that the lefthandside and the righthandside get along. *)
-	inst_eq_equation(e1'',prop1,e2'',prop2) => dae &
+	inst_eq_equation(e1'',prop1,e2'',prop2,initial) => dae &
 	Debug.print("\nDebug: did inst_eq_equation.") &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'  &
-	Debug.print("\nDebug: did ClassInf trans.")
-	& Prefix.print_prefix_str pre => prestr &
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state' &
+	Debug.print("\nDebug: did ClassInf trans.") &
+	Prefix.print_prefix_str pre => prestr &
 	Exp.print_exp_str e1' => e1str &
 	Exp.print_exp_str e2' => e2str &
 	string_append (prestr, ": ") => debugstr &
@@ -1924,7 +1992,9 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("expenvprint", Env.print_env, env) &
 	Debug.fprintl ("expenvprint", ["------------ /", debugstr4, "\n"])
 	--------------------------------------------------------------
-	inst_equation(env, mods, pre, csets, ci_state, SCode.EQ_EQUALS(e1,e2))
+	inst_equation_common(env, mods, pre, csets, ci_state,
+			     SCode.EQ_EQUALS(e1,e2), 
+			     initial)
 	  => (dae, env, csets, ci_state')
 
 	(**  `if' statements
@@ -1945,7 +2015,23 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_list(env,mod,pre,csets,ci_state,inst_equation, b)
 	  => (dae,env',csets', ci_state')
 	--------------------------------------------------------
-	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb))
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb),
+			     NON_INITIAL)
+	  => (dae,env',csets', ci_state')
+
+  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP(Types.T_BOOL,true),_) &
+	Static.ceval(env,e',false,NONE) => Values.BOOL(cond) &
+	Debug.print("\nEQ_IF: ") &
+(*!!	print(cond) &
+*)
+(*	Dump.print_exp(cond) &
+	*)
+	select(cond,tb,fb) => b &
+	inst_list(env,mod,pre,csets,ci_state,inst_initialequation, b)
+	  => (dae,env',csets', ci_state')
+	--------------------------------------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb),
+			     INITIAL)
 	  => (dae,env',csets', ci_state')
 
 
@@ -1970,12 +2056,32 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_equation, el)
 	  => (dae,env',csets', ci_state') (*&
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 *)	-----------------------------------------------------------
-	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el))
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el),
+			     initial as NON_INITIAL)
 	  => (dae, env',csets', ci_state')
 
+(* Test this! 1.1*)
+  rule	(* This is only done for 'for' loops. 
+	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
+	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
+	      Types.T_INTEGER, Types.UNBOUND)  &  *)
 
+ 	Static.elab_exp (env,e,false,NONE)
+	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
+					   Types.T_INTEGER),
+			     true),_) &
+	(* FIXEM: Check bounds *)
+	Static.ceval (env,e',false,NONE) => v &
+	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
+	inst_list(env,mod,pre,csets,ci_state,inst_initialequation, el)
+	  => (dae,env',csets', ci_state') (*&
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
+*)	-----------------------------------------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el),
+			     initial as INITIAL)
+	  => (dae, env',csets', ci_state')
 
 
 
@@ -1988,7 +2094,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **
 	 **)
 
-  rule	Debug.fprintln ("insttr", "inst_equation_eqfor_1") &
+  rule	Debug.fprintln ("insttr", "inst_equation_common_eqfor_1") &
 	Static.elab_exp (env,e,false,NONE)
 	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   id_t),
@@ -2005,15 +2111,15 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* FIXEM: Check bounds *)
 	Static.ceval (env,e',false,NONE) => v &
 	Debug.fprintln ("insti", "for expression evaluated") &
-	unroll(env',mod,pre,csets,ci_state,i,v,el) => (dae, csets') &
+	unroll(env',mod,pre,csets,ci_state,i,v,el,initial) => (dae, csets') &
 	Debug.fprintln ("insti", "for expression unrolled") &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state' &
-	Debug.fprintln ("insttr", "inst_equation_eqfor_1 succeeded")
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state' &
+	Debug.fprintln ("insttr", "inst_equation_common_eqfor_1 succeeded")
 	-----------------------------------------------------------
-	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el))
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => (dae, env,csets', ci_state')
 
-  rule	Debug.fprintln ("insttr", "inst_equation_eqfor_2") &
+  rule	Debug.fprintln ("insttr", "inst_equation_common_eqfor_2") &
 	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
 	      Types.T_INTEGER, Types.UNBOUND) &
@@ -2023,9 +2129,9 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 					   Types.T_INTEGER),
 			     false),_) &
 	Print.print_buf "#-- Error: Non-constant iteration bounds not supported\n" &
-	Debug.fprintln ("insttr", "inst_equation_eqfor_2 succeeded")
+	Debug.fprintln ("insttr", "inst_equation_common_eqfor_2 succeeded")
 	-----------------------------------------------------------
-	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el))
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => fail
 
   rule	not Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
@@ -2033,15 +2139,32 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	      Types.T_INTEGER, Types.UNBOUND) &
 	Print.print_buf "# Invalid loop variable: " & Print.print_buf i & Print.print_buf "\n"
 	-----------------------------------------------------------
-	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el))
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => fail
 
-  rule	Print.print_buf "- inst_equation failed\n"
+  rule	Print.print_buf "- inst_equation_common failed\n"
 	----------------------------------
-	inst_equation(_,_,_,_,_,_) => fail
+	inst_equation_common(_,_,_,_,_,_,_) => fail
 
 end
 
+(** LS & ELN **)
+relation inst_equation_common_ci_trans : (ClassInf.State, Initial)
+	  => ClassInf.State = 
+
+  rule	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	---------------------------------------------------------------
+	inst_equation_common_ci_trans (ci_state, NON_INITIAL) => ci_state'
+
+  axiom	inst_equation_common_ci_trans (ci_state, INITIAL) => ci_state
+
+(*
+  rule	ClassInf.trans(ci_state, ClassInf.FOUND_INITIALEQUATION) => ci_state'
+	---------------------------------------------------------------
+	inst_equation_common_ci_trans (ci_state, INITIAL) => ci_state'
+*)
+
+end
 
 (** HJ: **)
 relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
@@ -2082,6 +2205,13 @@ relation prefix_params : (Env.Env, Exp.Exp) => Exp.Exp =
 
 end
 
+
+(** LS & ELN 
+ **
+ ** Initial is added as a parameter.
+ **  
+ **)
+
 (** relation: inst_eq_equation
  **
  ** Equations follow the same typing rules as equality expressions.
@@ -2090,7 +2220,7 @@ end
  **)
 
 relation inst_eq_equation : (Exp.Exp, Types.Properties,
-			     Exp.Exp, Types.Properties) => DAE.Element list =
+			     Exp.Exp, Types.Properties, Initial) => DAE.Element list =
 	(*PR. e1= lefthandside, e2=righthandside
 	* This seem to be a strange relation. 
 	* wich rule is matched? or is both rules matched?
@@ -2105,22 +2235,22 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	 *)
   rule	Debug.print("\ninst_eq_equation (match e1) PROP, PROP") &
 	Types.match_prop(e1, p1, p2) => e1' &
-	inst_eq_equation_2(e1', e2, t2) => dae 
+	inst_eq_equation_2(e1', e2, t2, initial) => dae 
 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
-			 e2,p2 as Types.PROP(t2,_))
+			 e2,p2 as Types.PROP(t2,_), initial)
 	  => dae
 
 	(* If it fails then this rule is matched. *)
   rule	Debug.print("\ninst_eq_equation (match e2) PROP, PROP") &
 	Types.match_prop(e2, p2, p1) => e2'&
 	Debug.print("\n Second rule of relation_ inst_eq_equation ") &
-	inst_eq_equation_2(e1, e2', t1) => dae &
+	inst_eq_equation_2(e1, e2', t1, initial) => dae &
 	Debug.print("\n Second rule complete. ") 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
-			 e2,p2 as Types.PROP(t2,_))
+			 e2,p2 as Types.PROP(t2,_), initial)
 	  => dae
 
 
@@ -2129,10 +2259,10 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	(*Exp.print_exp (e1) & *)
 	Types.match_prop(e1, p1, p2) => e1' &
 	(*Exp.print_exp (e1') & *)
-	inst_eq_equation_2(e1', e2, t2) => dae 
+	inst_eq_equation_2(e1', e2, t2, initial) => dae 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
-			 e2,p2 as Types.PROP_TUPLE(t2,_))
+			 e2,p2 as Types.PROP_TUPLE(t2,_), initial)
 	  => dae
 
 
@@ -2154,27 +2284,27 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	Debug.print "\n About to do a static match e2. " &
 	Types.match_prop(e2, p2, p1) => e2'&
 	Debug.print("\n Second rule of relation_ inst_eq_equation ") &
-	inst_eq_equation_2(e1, e2', t1) => dae &
+	inst_eq_equation_2(e1, e2', t1, initial) => dae &
 	Debug.print("\n Second rule complete. ") 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
-			 e2,p2 as Types.PROP_TUPLE(t2,_))
+			 e2,p2 as Types.PROP_TUPLE(t2,_), initial)
 	  => dae
 
 	  (* An assignment to a varaible of T_ENUMERATION type is an explicit 
 	     assignment to the value componnent of the enumeration, i.e. having a type T_ENUM*)
 	
   rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
-	inst_eq_equation_2(e1,e2,t) => dae
+	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
 	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP(Types.T_ENUMERATION(_),_),
-	    e2,Types.PROP(t as Types.T_ENUM,_)) => dae
+	    e2,Types.PROP(t as Types.T_ENUM,_), initial) => dae
 
   rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
-	inst_eq_equation_2(e1,e2,t) => dae
+	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
 	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP(Types.T_ENUMERATION(_),_),
-	    e2,Types.PROP(t as Types.T_ENUMERATION(_),_)) => dae
+	    e2,Types.PROP(t as Types.T_ENUMERATION(_),_), initial) => dae
 
 
   rule	(* Types.equivtypes(t1,t2) => false & *)
@@ -2185,7 +2315,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	Print.print_buf " :: " & Types.print_type t2 & Print.print_buf "\n"
 	----------
 	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2,Types.PROP(t2,_)) => fail
+			 e2,Types.PROP(t2,_), initial) => fail
 
 
 (* PR To debug*)
@@ -2193,17 +2323,17 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
   rule	Debug.print("\ne1 is PROP and e2 is PROP_TUPLE.  ")
 	---------------------------------	
 	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2, Types.PROP_TUPLE(_,_)) => fail
+			 e2, Types.PROP_TUPLE(_,_), initial) => fail
 
   rule	Debug.print("e2 is PROP")
 	---------------------------------
 	inst_eq_equation(e1,_,
-			 e2,Types.PROP(t2,_)) => fail
+			 e2,Types.PROP(t2,_), initial) => fail
 
   rule	Debug.print("e1 is PROP")
 	---------------------------------
 	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2, _) => fail
+			 e2, _, initial) => fail
 
 
 
@@ -2211,9 +2341,15 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 (* No match. *)
   rule	Print.print_buf ("\n No match in inst_eq_equation. ")
 	---------------------------------	
-	inst_eq_equation(_,_,_,_) => fail
+	inst_eq_equation(_,_,_,_,_) => fail
 
 end
+
+(** LS & ELN 
+ **
+ ** Initial is added as a parameter.
+ **
+ **)
 
 (** relation: inst_eq_equation_2
  **
@@ -2221,60 +2357,67 @@ end
  ** checked.
  **)
 
-relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
+relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	=> DAE.Element list =
 
-  axiom	inst_eq_equation_2(e1,e2,Types.T_INTEGER)
-	=> [DAE.EQUATION(e1,e2)]
+  rule	make_dae_equation (e1,e2,initial) => dae
+	---------------------------------------
+	inst_eq_equation_2(e1,e2,Types.T_INTEGER,initial) => [dae]
 
-  axiom	inst_eq_equation_2(e1,e2,Types.T_REAL)
-	=> [DAE.EQUATION(e1,e2)]
+  rule	make_dae_equation (e1,e2,initial) => dae
+	---------------------------------------
+	inst_eq_equation_2(e1,e2,Types.T_REAL,initial) => [dae]
 
-  axiom	inst_eq_equation_2(e1,e2,Types.T_STRING)
-	=> [DAE.EQUATION(e1,e2)]
+  rule	make_dae_equation (e1,e2,initial) => dae
+	---------------------------------------
+	inst_eq_equation_2(e1,e2,Types.T_STRING,initial) => [dae]
 
-  axiom	inst_eq_equation_2(e1,e2,Types.T_BOOL)
-	=> [DAE.EQUATION(e1,e2)]
+  rule	make_dae_equation (e1,e2,initial) => dae
+	---------------------------------------
+	inst_eq_equation_2(e1,e2,Types.T_BOOL,initial) => [dae]
 
-  axiom	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUM)
-	=> [DAE.DEFINE(cr,e2)]
+  rule	make_dae_define (cr,e2,initial) => dae
+	---------------------------------------
+	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUM,initial) => [dae]
 
-  axiom	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUMERATION(_))
-	=> [DAE.DEFINE(cr,e2)]
-      
+  rule	make_dae_define (cr,e2,initial) => dae
+	---------------------------------------
+	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUMERATION(_),initial) => [dae]
+
 
   rule	RTOpts.split_arrays => true &
 	(* For debugging.
 	Print.print_buf "  Array equation: " &
 	Exp.print_exp e1 & Print.print_buf " = " &
 	Exp.print_exp e2 & Print.print_buf "\n" & *)
-	inst_array_equation(e1,e2,ad,t) => dae
+	inst_array_equation(e1,e2,ad,t,initial) => dae
 	-----------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t)) => dae
+	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t),initial) => dae
 
 
 	(* PR. The muliple outputs from functions is outputed as is. *)
 
-  axiom	inst_eq_equation_2(e1,e2,Types.T_TUPLE(_))
-	  => [DAE.EQUATION(e1,e2)]
+  rule	make_dae_equation (e1,e2,initial) => dae
+	----------------------------------------
+	inst_eq_equation_2 (e1,e2,Types.T_TUPLE(_),initial) => [dae]
 
 
-  rule	RTOpts.split_arrays => false
+  rule	RTOpts.split_arrays => false &
+	make_dae_equation (e1, e2, initial) => dae
 	-----------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t))
-	  => [DAE.EQUATION(e1,e2)]
+	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t),initial) => [dae]
 
-  axiom	inst_eq_equation_2(e1, e2, Types.T_COMPLEX(_,[])) => []
+  axiom	inst_eq_equation_2(e1, e2, Types.T_COMPLEX(_,[]), initial) => []
 
   rule	Exp.extend_cref(c1,n,[]) => c1' &
 	Exp.extend_cref(c2,n,[]) => c2' &
-	inst_eq_equation_2(Exp.CREF(c1',t1), Exp.CREF(c2',t2), t) => dae1 &
+	inst_eq_equation_2(Exp.CREF(c1',t1), Exp.CREF(c2',t2), t, initial) => dae1 &
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   Types.T_COMPLEX(cs,vs)) => dae2 &
+			   Types.T_COMPLEX(cs,vs), initial) => dae2 &
 	list_append(dae1, dae2) => dae
 	------------------------------
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   Types.T_COMPLEX(cs,Types.VAR(n,_,_,t,_)::vs)) => dae
+			   Types.T_COMPLEX(cs,Types.VAR(n,_,_,t,_)::vs), initial) => dae
 
 	(** When the type of the expressions is a complex type, and *)
 	(** the left-hand side of the equation is not a component *)
@@ -2292,11 +2435,11 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
 				     Absyn.VAR, Absyn.BIDIR), NONE,[])
 	  => decl &
-	inst_eq_equation_2(Exp.CREF(n,Exp.OTHER), e2, t) => dae1 &
+	inst_eq_equation_2(Exp.CREF(n,Exp.OTHER), e2, t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2 as Exp.CREF(_,_),
-			   t as Types.T_COMPLEX(_,_)) => dae
+			   t as Types.T_COMPLEX(_,_), initial) => dae
 
 	(** When the right-hand side is not a component reference a *)
 	(** similar trick is applied.  This also catched the case *)
@@ -2305,10 +2448,10 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
 				     Absyn.VAR, Absyn.BIDIR), NONE,[])
 	  => decl &
-	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t) => dae1 &
+	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
 	-------------------------------------------------------------
-	inst_eq_equation_2(e1, e2, t as Types.T_COMPLEX(_,_)) => dae
+	inst_eq_equation_2(e1, e2, t as Types.T_COMPLEX(_,_), initial) => dae
 
   rule	Print.print_buf "- inst_eq_equation_2 failed\n exp1=" &
 	Exp.print_exp e1 &
@@ -2318,7 +2461,27 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	Types.print_type t &
 	Print.print_buf "\n"
 	-------------------------------------
-	inst_eq_equation_2(e1,e2,t) => fail
+	inst_eq_equation_2(e1,e2,t,initial) => fail
+
+end
+
+(** LS & ELN **)
+
+relation make_dae_equation : (Exp.Exp, Exp.Exp, Initial) => DAE.Element =
+
+  axiom	make_dae_equation (e1,e2,NON_INITIAL) => DAE.EQUATION(e1,e2)
+
+  axiom	make_dae_equation (e1,e2,INITIAL) => DAE.INITIALEQUATION(e1,e2)
+
+end
+
+(** LS & ELN **)
+
+relation make_dae_define : (Exp.ComponentRef, Exp.Exp, Initial) => DAE.Element = 
+
+  axiom	make_dae_define (cr, e2, NON_INITIAL) => DAE.DEFINE(cr,e2)
+
+  axiom	make_dae_define (cr, e2, INITIAL) => DAE.INITIALDEFINE(cr,e2)
 
 end
 
@@ -2329,22 +2492,22 @@ end
  **)
 
 relation inst_array_equation : (Exp.Exp, Exp.Exp,
-				Types.ArrayDim, Types.Type)
+				Types.ArrayDim, Types.Type, Initial)
 	  => DAE.Element list =
 
   rule	Print.print_buf "# Cannot instantiate equations with arrays of unknown size\n" &
 	Print.print_buf "    " & Exp.print_exp e1 & Print.print_buf " = " & Exp.print_exp e2&
 	Print.print_buf "\n"
 	----------
-	inst_array_equation(e1, e2, Types.DIM(NONE), t) => fail
+	inst_array_equation(e1, e2, Types.DIM(NONE), t, initial) => fail
 
-  rule	inst_array_el_eq(e1, e2, t, 1, sz) => dae
+  rule	inst_array_el_eq(e1, e2, t, 1, sz, initial) => dae
 	---------------------------------------------
-	inst_array_equation(e1, e2, Types.DIM(SOME(sz)), t) => dae
+	inst_array_equation(e1, e2, Types.DIM(SOME(sz)), t, initial) => dae
 
   rule	Print.print_buf "- inst_array_equation failed\n"
 	--------------------------------------
-	inst_array_equation (_,_,_,_) => fail
+	inst_array_equation (_,_,_,_,_) => fail
 
 end
 
@@ -2354,26 +2517,26 @@ end
  ** arrays and generates an equation for each pair of elements.
  **)
 
-relation inst_array_el_eq : (Exp.Exp, Exp.Exp, Types.Type, int, int)
+relation inst_array_el_eq : (Exp.Exp, Exp.Exp, Types.Type, int, int, Initial)
 	  => DAE.Element list =
 
   rule	int_le(i,sz) => true &
 	Exp.simplify(Exp.ASUB(e1,i)) => e1' &
 	Exp.simplify(Exp.ASUB(e2,i)) => e2' &
-	inst_eq_equation_2(e1',e2',t) => dae1 &
+	inst_eq_equation_2(e1',e2',t,initial) => dae1 &
 	int_add(i,1) => i' &
-	inst_array_el_eq(e1,e2,t,i',sz) => dae2 &
+	inst_array_el_eq(e1,e2,t,i',sz,initial) => dae2 &
 	list_append(dae1, dae2) => dae
 	------------------------------
-	inst_array_el_eq(e1, e2, t, i, sz) => dae
+	inst_array_el_eq(e1, e2, t, i, sz, initial) => dae
 
   rule	int_le(i,sz) => false
 	---------------------
-	inst_array_el_eq(e1, e2, t, i, sz) => []
+	inst_array_el_eq(e1, e2, t, i, sz, initial) => []
 
   rule	Print.print_buf "- inst_array_el_eq failed\n"
 	-----------------------------------
-	inst_array_el_eq(_,_,_,_,_) => fail
+	inst_array_el_eq(_,_,_,_,_,_) => fail
 
 end
 
@@ -2401,6 +2564,11 @@ relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
 	
 end
 
+(** LS & ELN
+ **
+ ** Added the Initial parameter
+ **)
+
 (** relation: unroll
  **
  ** Unrolling a loop is a way of removing the non-linear structure of
@@ -2409,10 +2577,10 @@ end
  **)
 
 relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		   Ident, Values.Value, SCode.Equation list)
+		   Ident, Values.Value, SCode.Equation list, Initial)
 	  => (DAE.Element list, Connect.Sets) =
 
-  axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_) => ([], csets)
+  axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_,_) => ([], csets)
 
   rule	Env.open_scope (env,false) => env' &
 	Env.extend_frame_v (env',
@@ -2425,16 +2593,34 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				      Types.VALBOUND(fst)),NONE,false) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
-	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs)
+	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs, initial)
 	  => (dae2, csets'') &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs)
+	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as NON_INITIAL)
+	  => (dae, csets'')
+
+  rule	Env.open_scope (env, false) => env' &
+	Env.extend_frame_v (env',
+			    Types.VAR(i, Types.ATTR(false,
+						    SCode.RO,
+						    Absyn.CONST,
+						    Absyn.BIDIR),
+				      true,
+				      Types.T_INTEGER,
+				      Types.VALBOUND(fst)),NONE,false) => env'' &
+	inst_list(env'',mods,pre,csets,ci_state,inst_initialequation, eqs)
+	  => (dae1,env''',csets', ci_state') &
+	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs, initial)
+	  => (dae2, csets'') &
+	list_append(dae1,dae2) => dae
+	-----------------------------
+	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as INITIAL)
 	  => (dae, csets'')
 
   rule	Print.print_buf "- unroll " & Values.print_val v & Print.print_buf " failed\n"
 	-------------------------
-	unroll (_,_,_,_,_,_,v,_) => fail
+	unroll (_,_,_,_,_,_,v,_,_) => fail
 
 end
 
@@ -2459,6 +2645,30 @@ relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Print.print_buf "- inst_algorithm failed\n"
 	---------------------------------
 	inst_algorithm(_,_,_,_,_,_) => fail
+
+end
+
+(** relation: inst_initialalgorithm
+ **
+ ** Algorithms are converted to the representation defined in the
+ ** module `Algorithm', and the added to the DAE result.
+ **
+ ** This relation converts an algorithm section.
+ **)
+
+relation inst_initialalgorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			   SCode.Algorithm)
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
+
+  rule	inst_statements(env,statements) => statements'
+	----------------------------------------------
+	inst_initialalgorithm(env,_,_,csets,ci_state,SCode.ALGORITHM(statements))
+	  => ([DAE.INITIALALGORITHM(Algorithm.ALGORITHM(statements'))],
+	      env,csets,ci_state)
+
+  rule	Print.print_buf "- inst_algorithm failed\n"
+	---------------------------------
+	inst_initialalgorithm(_,_,_,_,_,_) => fail
 
 end
 
@@ -2858,6 +3068,12 @@ end
 
 
 
+(** LS & ELN
+ ** 
+ ** Added NON_INITIAL for inst_eq_equation
+ **
+ **)
+
 (** relation: inst_mod_equation
  **
  ** This relation adds the equation in the declaration of a variable,
@@ -2878,7 +3094,7 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  
   rule	Types.elab_type ty1 => t &
 	inst_eq_equation(Exp.CREF(cr,t),
-			 Types.PROP(ty1,false(*FIXME*)), e,prop2) => dae
+			 Types.PROP(ty1,false(*FIXME*)), e,prop2,NON_INITIAL) => dae
 	-----------------------------------------------
 	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME((e,prop2))))
 	  => dae
@@ -3075,7 +3291,8 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Mod.mod_equation mod' => eq &
 	make_binding(env,attr,eq) => bind
 	---------------------------------------
-	inst_record_constructor_elt (env,SCode.COMPONENT(id,_,prot,attr as SCode.ATTR(dim,f,acc,var,dir),t,mod)) 
+	inst_record_constructor_elt (env,SCode.COMPONENT(id,_,repl,prot,
+							 attr as SCode.ATTR(dim,f,acc,var,dir),t,mod)) 
 	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp',bind)
 
   rule	Print.print_buf "#Error, inst_record_constructor_elt failed\n  element =" &
