@@ -27,6 +27,7 @@ module Lookup:
 end
 
 with "parse.rml"
+with "debug.rml"
 
 (**
  ** - Lookup relations
@@ -67,23 +68,68 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
 end
 
+(* LS: when looking up qualified component reference, lookup_var only
+checks variables when looking for the prefix, i.e. for Constants.PI
+where Constants is a package and is implicitly instantiated, PI is not
+found since Constants is not a variable (it is a type and/or class).
+
+1) One option is to make it a variable and put it in the global frame.
+2) Another option is to add a lookup rule that also looks in types.
+
+Now implicitly instantiated packages exists both as a class and as a
+type (see implicit_instantiation in inst.rml). Is this correct?
+
+lookup_var is modified to implement 2. Is this correct?
+
+old lookup_var is changed to lookup_var_internal and a new lookup_var
+is written, that first tests the old lookup_var, and if not found
+looks in the types
+ *)
+
 (** relation: lookup_var
  **)
 
-relation lookup_var : (Env.Env,Exp.ComponentRef)
+relation lookup_var : (Env.Env, Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
-  rule	(* print " lookup_var: looking in frame\n" & *)
-	lookup_var_f(items,ref) => (attr,ty,binding)
-	--------------------------------------------
-	lookup_var(Env.FRAME(items)::fs,ref) => (attr,ty,binding)
+	  (* try the old lookup_var *)
+  rule	lookup_var_internal (env,cref) => (attr, ty, binding)
+	------------------------------------------------------
+	lookup_var (env, cref) => (attr, ty, binding)
 
-  rule	(* print " lookup_var: next frame\n" & *)
-	lookup_var(fs,ref) => (attr,ty,binding)
-	---------------------------------------
-	lookup_var(_::fs,ref) => (attr,ty,binding)
+	(* then look in classes (implicitly instantiated packages)
+	 *)
+  rule	lookup_var_in_packages (env, cref) => (attr, ty, binding)
+	------------------------------------------------------
+	lookup_var (env, cref) => (attr,ty,binding)
 
 end
+
+relation lookup_var_internal : (Env.Env,Exp.ComponentRef)
+	  => (Types.Attributes, Types.Type, Types.Binding) =
+
+  rule	Debug.fprint ("lotr", "lookup_var: Looking in frame\n") &
+	lookup_var_f(items,ref) => (attr,ty,binding) &
+	Debug.fprint ("lotr", "lookup_var: Done frame\n") 
+	--------------------------------------------
+	lookup_var_internal (Env.FRAME(items)::fs,ref) => (attr,ty,binding)
+
+  rule	Debug.fprint ("lotr", "lookup_var: next frame\n") &
+	lookup_var_internal (fs,ref) => (attr,ty,binding)
+	---------------------------------------
+	lookup_var_internal (_::fs,ref) => (attr,ty,binding)
+
+end
+
+relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef) 
+	  => (Types.Attributes, Types.Type, Types.Binding) =
+
+  rule	print "--lookup_var_in_packages not implemented yet\n"
+	--------------------------------------------------
+	lookup_var_in_packages (env, Exp.CREF_QUAL(id, [], cref)) => fail
+
+end
+
 
 (** relation: lookup_var_local
  ** 
@@ -115,18 +161,23 @@ end
 (* PR. Returns a list of types that the function has. *)
 relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 
-        (* PR. Do nothing, could have used a axiom. But this led to an bug unexpected error before. I do not take my chances at the moment.  *)
-  rule   print "\n lookup terminated." 
+        (* PR. Do nothing, could have used a axiom. But this led to an
+	 bug unexpected error before. I do not take my chances at the moment.
+	 *)
+  rule  Debug.fprint ("li", "\n lookup_functions_in_env terminated." )
 	---------------------
 	lookup_functions_in_env([],id) => []
 
 
-  rule	lookup_functions_in_frame(items,id) => c1 &
-	print "\n Found type." &
+  rule	Debug.fprint ("lotr", "lookup_functions_in_env") &	
+	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
+	Debug.fcall ("lotr", print_frame, items) &
+	lookup_functions_in_frame(items,id) => c1 &
+(*	print "\n Found type." & *)
 	lookup_functions_in_env(fs,iid) => c2 &
 	list_append (c1,c2) => reslist
 	---------------------
-	lookup_functions_in_env(Env.FRAME(items)::fs,iid as Absyn.IDENT(id)) => reslist
+	lookup_functions_in_env(Env.FRAME(items)::fs, iid as Absyn.IDENT(id)) => reslist
 
 	(* Did not match. Continue*)
   rule	lookup_functions_in_env(fs,id) => c
@@ -177,19 +228,22 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 end
 (**)
 
-(*PR. This actually only looks up the function name and find all corresponding types that have this function name.  *)
+(*PR. This actually only looks up the function name and find all
+ corresponding types that have this function name.  *)
 relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
 				 SCode.Ident)
 	  => Types.Type list =
 
+(*
   rule  print "\n FRAME IS FINSHED"
 	------------------------------------
 	lookup_functions_in_frame([],id) => []
-
+*)
+  axiom	lookup_functions_in_frame([],id) => []
 
   rule	(* print "  lookup_type_in_frame(" & print id & print "): " &
 	   print n & print "\n" & *)
-	print ("\n found id in frame.") &
+(*	print ("\n found id in frame.") & *)
 	id = n &
 	lookup_functions_in_frame(rest, id) => t2
 	---------------------------------------------------------
@@ -200,8 +254,8 @@ relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
 	------------------------------------
 	lookup_functions_in_frame((n,Env.VAR(_))::_,id) => fail
 
-  rule	 print "  lookup_type_in_frame(" & print id & print "): not " &
-	   print n & print "\n" & 
+  rule	 (* print "  lookup_type_in_frame(" & print id & print "): not " &
+	   print n & print "\n" & *)
 	lookup_functions_in_frame(fs,id) => t
 	------------------------------
 	lookup_functions_in_frame((n,_)::fs,id) => t
@@ -268,7 +322,8 @@ end
 relation lookup_var2 : ((SCode.Ident * Env.Item) list,SCode.Ident)
 	  => Types.Var =
 
-  rule	id = n
+  rule	Debug.fprintl ("locom", ["Comparing: ", n, " <=> ", id, "\n"]) &
+	id = n
 	--------------------------------------------
 	lookup_var2((n,Env.VAR(fv))::_,id) => fv
 
@@ -360,20 +415,78 @@ relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 			 Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
-  rule  lookup_var2(f, id)
+  rule  Debug.fprint ("lotr", "lookup_var_f IDENT:") &	
+	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
+	Debug.fcall ("lotr", print_frame, f) &
+	lookup_var2(f, id)
 	  => Types.VAR(n, Types.ATTR(f,acc,vt,di),_,ty,bind) &
+	Debug.fprintl ("lotr", ["looking up: found ", id, "\n"]) &
 	check_subscripts(ty,ss) => ty'
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
 	  => (Types.ATTR(f,acc,vt,di),ty',bind)
 
-  rule	lookup_var2(f, id) => Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,_) &
+  rule	Debug.fprint ("lotr", "lookup_var_f QUAL:") &
+	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
+	Debug.fcall ("lotr", print_frame, f) &
+	lookup_var2(f, id) => Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,_) &
+	Debug.fprintl ("lotr", ["looking up: found ", id, "\n"]) &
 	check_subscripts(ty,ss) => ty' & (* FIXME: Check for non-array *)
 	lookup_in_var(ty', ids) => (attr,ty'',binding)
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty'',binding)
 
+
+  rule	Debug.fprintln ("lotr", "lookup_var_f failed")
+	--------------------------------
+	lookup_var_f(_,_) => fail
+
 end
+
+
+relation print_frame : ((SCode.Ident * Env.Item) list) => () =
+
+  rule	print "FRAME: " &
+	print_frame_contents cont &
+	print "\n"
+	--------------------------------------------
+	print_frame cont
+
+end
+
+
+relation print_frame_contents: ((SCode.Ident * Env.Item) list) => () =
+
+  axiom	print_frame_contents [] 
+
+  rule	print_frame_element e
+	-------------------------
+	print_frame_contents [e as (n,i)]
+
+  rule	print_frame_element e & print "," & print_frame_contents rst
+	------------------------------------------------
+	print_frame_contents ((e as (n,i))::rst)
+end
+
+
+relation print_frame_element: (SCode.Ident * Env.Item) => () =
+
+  rule	print "v:" & print n
+	-------
+	print_frame_element ((n,Env.VAR(_)))
+
+  rule	print "c:" & print n
+	-------
+	print_frame_element ((n,Env.CLASS(_,_)))
+
+  rule	print "t:" & print n
+	-------
+	print_frame_element ((n,Env.TYPE(_)))
+
+end
+
+
+
 
 (**
  **  Package handling
