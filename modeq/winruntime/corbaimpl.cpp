@@ -1,6 +1,8 @@
+
+#ifndef NOMICO
 #include "modeq_communication.h"
 #include "modeq_communication_impl.h"
-
+#endif
 
 
 extern "C" {
@@ -26,11 +28,12 @@ HANDLE modeq_return_value_ready;
 
 char * modeq_message;
 
-
+#ifndef NOMICO
 CORBA::ORB_var orb;
 PortableServer::POA_var poa;
 
 ModeqCommunication_impl * server;
+#endif
 
 extern "C" {
 //void* runOrb(void*arg);
@@ -43,8 +46,15 @@ void Corba_5finit(void)
 
 RML_BEGIN_LABEL(Corba__initialize)
 {
-  char *dummyArgv="modeq";
-  int zero=0;
+#ifndef NOMICO
+  char *dummyArgv[3];
+  dummyArgv[0] = "modeq";
+  dummyArgv[1] = "-ORBNoResolve";
+  dummyArgv[2] = "-ORBIIOPAddr";
+//  dummyArgv[3] = "inet:S04093:7777";
+  dummyArgv[3] = "inet:127.0.0.1:0";
+  int argc=4;
+//  int argc=1;
 
   modeq_client_request_event = CreateEvent(NULL,FALSE,FALSE,"modeq_client_request_event");
   if (modeq_client_request_event == NULL) {
@@ -56,7 +66,9 @@ RML_BEGIN_LABEL(Corba__initialize)
   }
   lock = CreateMutex(NULL, FALSE, "lock");
 
-  orb = CORBA::ORB_init(zero, 0,"mico-local-orb");
+  
+
+  orb = CORBA::ORB_init(argc, dummyArgv,"mico-local-orb");
   CORBA::Object_var poaobj = orb->resolve_initial_references("RootPOA");
   
   poa = PortableServer::POA::_narrow(poaobj);
@@ -86,13 +98,15 @@ RML_BEGIN_LABEL(Corba__initialize)
   orb_thr_handle = CreateThread(NULL, 0, runOrb, NULL, 0, &orb_thr_id);
 
   std::cout << "Created server." << std::endl;
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 //void* runOrb(void* arg) 
 DWORD WINAPI runOrb(void* arg) {
-  try {
+#ifndef NOMICO
+	try {
     orb->run();
   } catch (CORBA::Exception) {
     // run can throw exception when other side closes.
@@ -100,6 +114,7 @@ DWORD WINAPI runOrb(void* arg) {
 
   poa->destroy(TRUE,TRUE);
   delete server;
+#endif
   return NULL;
 }
 
@@ -118,7 +133,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__sendreply)
 {
-  char *msg=RML_STRINGDATA(rmlA0);
+#ifndef NOMICO
+	char *msg=RML_STRINGDATA(rmlA0);
 
   // Signal to Corba that it can return, taking the value in message
   modeq_message = CORBA::string_dup(msg);
@@ -126,19 +142,21 @@ RML_BEGIN_LABEL(Corba__sendreply)
   SetEvent(modeq_return_value_ready);
 
   ReleaseMutex(lock); // Unlock, so other threads can ask modeq stuff.
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__close)
 {
+#ifndef NOMICO
   try {
     orb->shutdown(FALSE);
   } catch (CORBA::Exception) {
     cerr << "Error shutting down." << endl;
   }
   remove(obj_ref);
-
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
