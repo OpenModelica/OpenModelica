@@ -97,7 +97,7 @@ val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; re
 val Diagram_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Diagram CoordinateSystem coordinateSystem(extent ={{-100.0, -100.0}, {100.0, 100.0}}); /*GraphicItem graphics[:];*/ end Diagram;"
 
 (* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
-val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:,2]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text;"
+val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:,2]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text; record Bitmap bool visible; Real extent[2,2]; string fileName; string imageSource; end Bitmap;"
 
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
@@ -368,7 +368,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 
   rule	(*delete_component(name,model,p) => (newp,resstr) &
 	add_component(name,tp,model,nargs,newp) => (newp2,resstr)*)
-	update_component(name,tp,model,nargs,p) =>( newp, res)
+	update_component(name,tp,model,nargs,p) =>(newp, res)
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -1521,7 +1521,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	    Absyn.COMPONENTS(attr,tp,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE)))
 	  => newcdef &	
-	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
+	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p) => newp
 	--------------------------
 	update_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) 
 	  => (newp, "true\n")
