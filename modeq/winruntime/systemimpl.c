@@ -9,7 +9,6 @@
 #include "../values.h"
 #include <time.h>
 #include "../absyn_builder/yacclib.h"
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -45,12 +44,29 @@ void set_cflags(char *str)
 
 void System_5finit(void)
 {
+	char* path;
+	char* newPath;
+	char* moshhome;
+	char* mingwpath;
 	set_cc("gcc");
 	if (getenv("MODELICAUSERCFLAGS") != NULL) {
 		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\modeq\\win -lc_runtime_mingw %MODELICAUSERCFLAGS%");
 	}
 	else {
 		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\modeq\\win -lc_runtime_mingw");
+	}
+	path = getenv("PATH");
+	moshhome = getenv("MOSHHOME");
+	if (moshhome) {
+		mingwpath = malloc(strlen(moshhome)+20);
+		sprintf(mingwpath,"%s\\..\\mingw\\bin", moshhome); 
+		if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
+			newPath = malloc(strlen(path)+strlen(mingwpath)+10);
+			sprintf(newPath,"PATH=%s;%s",mingwpath,path);
+			putenv(newPath);
+			free(newPath);
+		}
+		free(mingwpath);
 	}
 }
 
@@ -148,14 +164,34 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__system_5fcall)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  int ret_val;
+	int ret_val;
+	char* str = RML_STRINGDATA(rmlA0);
+	printf("call:%s\n",str);
+	if (str[0] == '\"') {
+		char longname[MAX_PATH];
+		char shortname[MAX_PATH];
+		char* endpos = strstr(&str[1],"\"");
+		char* tmp;
+		char* pathend;
+		char* mark;
 
-  ret_val = system(str);
+		for(pathend = endpos; pathend > str && *pathend != '\\'; pathend--);
+		
+		strncpy(longname,&str[1],pathend-str-1);
+		GetShortPathName(longname,shortname,MAX_PATH);
+		tmp = strdup(str);
+		sprintf(tmp,"%s%s",shortname,pathend);
+		mark = strstr(tmp, "\"");
+		if (mark) *mark = ' ';
+		strcpy(str, tmp);
+		printf("call:%s\n",tmp);
+		free(tmp);
+	}
+	ret_val	= system(str);
+	printf("result:%d\n",ret_val);
+	rmlA0	= (void*) mk_icon(ret_val);
 
-  rmlA0 = (void*) mk_icon(ret_val);
-
-  RML_TAILCALLK(rmlSC);
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
