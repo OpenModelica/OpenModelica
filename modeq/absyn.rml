@@ -72,6 +72,7 @@ module Absyn:
   type Program = Class list
 
   relation explode_components: Program => Program
+  relation element_spec_name : ElementSpec => Ident
 
 end
 
@@ -175,5 +176,19 @@ relation explode_components: Program => Program =
 	explode_components(cs) => cs'
 	-----------------------------
 	explode_components(c::cs) => (c'::cs')
+
+end
+
+(**********************************************************************)
+
+relation element_spec_name : ElementSpec => Ident =
+
+  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_)) => n
+
+  axiom element_spec_name COMPONENTS(_,_,_,_,_,_,[COMPONENT(n,_,_)]) => n
+
+  rule  print "# element_spec_name EXTENDS\n" & fail
+	--------------------------------------------
+	element_spec_name EXTENDS(_,_) => "#error#"
 
 end
