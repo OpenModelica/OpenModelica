@@ -13,6 +13,76 @@
 #define MAXPATHLEN 255
 #endif
 
+#ifndef _IFDIR
+#define _IFDIR S_IFDIR
+
+/* FIXME: scandir not available on solaris, put the code below inside
+   ifdefs for solaris
+*/
+
+#include <dirent.h>
+
+typedef int _file_select_func_type(struct dirent *);
+typedef int _file_compar_func_type(struct dirent **, struct dirent **);
+
+void reallocdirents(struct dirent ***entries, 
+		    unsigned int oldsize, 
+		    unsigned int newsize) {
+  struct dirent **newentries;
+  if (newsize<=oldsize)
+    return;
+  newentries = (struct dirent**)malloc(newsize * sizeof(struct dirent *));
+  if (*entries != NULL) {
+    int i;
+    for (i=0; i<oldsize; i++)
+      newentries[i] = (*entries)[i];
+    for(; i<newsize; i++)
+      newentries[i] = NULL;
+    if (oldsize > 0)
+      free(*entries);
+  }
+  *entries = newentries;
+}
+
+/* 
+ * compar function is ignored
+ */
+int scandir(const char* dirname, 
+	    struct dirent ***entries, 
+	    _file_select_func_type select, 
+	    _file_compar_func_type compar)
+{
+  DIR *dir = opendir(dirname);
+  struct dirent *entry;
+  unsigned int count = 0;
+  unsigned int maxents = 100;
+  *entries = NULL;
+  reallocdirents(entries,0,maxents);
+  do {
+    entry = readdir(dir);
+    if (entry == NULL)
+      break;
+    if (select == NULL || select(entry)) {
+      struct dirent *entcopy = (struct dirent*)malloc(sizeof(struct dirent));
+      if (count >= maxents) {
+	unsigned int oldmaxents = maxents;
+	maxents = maxents * 2;
+	reallocdirents(entries, oldmaxents, maxents);
+      }	
+      (*entries)[count] = entcopy;
+      count++;
+    }
+  } while (count < maxents); /* shouldn't be needed */
+  /* 
+     write code for calling qsort using compar for sorting the
+     entries.
+  */
+  closedir(dir);
+  return count;
+}
+
+#endif
+
 char * cc="/usr/bin/gcc";
 char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS";
 
@@ -198,20 +268,21 @@ int file_select_directories(struct dirent *entry)
   }
 }
 
+
 RML_BEGIN_LABEL(System__sub_5fdirectories)
 {
   int i,count;
   void *res;
   char* directory = RML_STRINGDATA(rmlA0);
+  struct dirent **files;
   if (directory == NULL)
     RML_TAILCALLK(rmlFC);
-  struct dirent **files;
   select_from_dir = directory;
   count =
     scandir(directory, &files, file_select_directories,NULL);
-  res = mk_nil();
+  res = (void*)mk_nil();
   for (i=0; i<count; i++) {
-    res = mk_cons(mk_scon(files[i]->d_name),res);
+    res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
@@ -228,7 +299,7 @@ int file_select_mo(struct dirent *entry)
       (strcmp(entry->d_name, "package.mo") == 0)) {
     return (0);
   } else {
-    ptr = rindex(entry->d_name, '.');
+    ptr = (char*)rindex(entry->d_name, '.');
     if ((ptr != NULL) &&
 	((strcmp(ptr, ".mo") == 0))) {
       return (1);
@@ -243,15 +314,15 @@ RML_BEGIN_LABEL(System__mo_5ffiles)
   int i,count;
   void *res;
   char* directory = RML_STRINGDATA(rmlA0);
+  struct dirent **files;
   if (directory == NULL)
     RML_TAILCALLK(rmlFC);
-  struct dirent **files;
   select_from_dir = directory;
   count =
     scandir(directory, &files, file_select_mo,NULL);
-  res = mk_nil();
+  res = (void*)mk_nil();
   for (i=0; i<count; i++) {
-    res = mk_cons(mk_scon(files[i]->d_name),res);
+    res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
@@ -375,7 +446,7 @@ void * generate_array(char type, int curdim, type_description *desc,void *data)
     }
   } else {
     for (i=0; i< desc->dim_size[curdim-1]; i++) {
-      lst = mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
+      lst = (void*)mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
     }
   }
   return lst;
