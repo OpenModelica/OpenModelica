@@ -27,7 +27,20 @@
  **
  ** RCS: $Id$
  **
- ** This module exports only one relation. Not true anymore...
+ ** This module is responsible for instantiation of Modelica
+ **  models. The instantation is the process of instantiating model
+ ** components, flattening inheritance and generating equations from
+ ** connect statements.
+ ** The instantiation process takes Modelica AST as defined in SCode
+ ** and produces variables and equations and algorithms, etc. as
+ ** defined in DAE.
+ ** 
+ ** This module uses 'Lookup' to lookup classes and variables from the
+ ** environment defined in 'Env'. It uses 'Connect' for generating equations from
+ ** connect statements. The type system defined in 'Types' is used for
+ ** variable instantiation and type . 'Mod' is used for modifiers and
+ ** merging of modifiers. 
+ ** 
  **)
 
 (** debug flags: inst *)
@@ -36,16 +49,12 @@ module Inst:
   with "classinf.rml"
   with "connect.rml"
   with "dae.rml"
-  with "debug.rml"
   with "env.rml"
   with "exp.rml"
   with "explode.rml"
   with "mod.rml"
   with "prefix.rml"
   with "types.rml"
-  with "util.rml"
-  with "interactive.rml"							  
-  with "cache.rml"
   with "absyn.rml"
 
   datatype CallingScope = TOP_CALL | INNER_CALL
@@ -108,7 +117,9 @@ module Inst:
 
 end
 
-
+with "debug.rml"
+with "interactive.rml"							  
+with "util.rml"
 with "algorithm.rml"
 with "builtin.rml"
 with "dump.rml"
@@ -1346,14 +1357,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(env, mods, pre, csets, ci_state,
 		     (SCode.CLASSDEF(n,_,_,_,_),_),_,_,_)
  	  => fail 
-	  
- (* rule	Lookup.lookup_class(Cache.CACHE([],[]), env,Absyn.IDENT(n),false) => (_,_,_) &
-	Print.print_buf "# Trying to redeclare the variable " & Print.print_buf n &
-	Print.print_buf " as a class\n"
-	---------------------
-	inst_element(cache, env, mods, pre, csets, ci_state,
-		     SCode.COMPONENT(n,_,_,_,_,_,_,_),_,_,_)
-	  => fail*)
 	  
           (**  A new class definition
 	   **
