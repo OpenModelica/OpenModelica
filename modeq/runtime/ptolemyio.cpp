@@ -3,7 +3,7 @@
 */
 #include <iostream>
 #include <fstream>
-#include <sstream>
+#include <string>
 
 
 
@@ -13,6 +13,7 @@ extern "C"
 {
 #include "rml.h"  
 #include "../values.h"
+#include <stdio.h>
 #include "../absyn_builder/yacclib.h"
 
   /* Given a file name and an array of variables, return the RML datastructure
