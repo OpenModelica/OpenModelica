@@ -807,12 +807,11 @@ relation print_elementattr: Absyn.ElementAttributes => () =
 	select_string(fl,"FLOW,","") => fs &
 	variability_symbol(var) => vs &
 	direction_symbol(dir) => ds &
-	field_symbol(fld) => flds &
-	let sl = [fs,vs,ds,flds] &
+	let sl = [fs,vs,ds] &
 	print_list_debug("print_elementattr",sl, Print.print_buf, ",") &
 	Print.print_buf ")"
 	-----------------------------------
-	print_elementattr(Absyn.ATTR(fl,var,dir,adim,fld))
+	print_elementattr(Absyn.ATTR(fl,var,dir,adim))
 
   rule	Print.print_buf " ##ERROR## print_elementattr"
 	-------------------
@@ -826,10 +825,9 @@ relation unparse_elementattr_str: Absyn.ElementAttributes => string =
 	select_string(fl,"flow ","") => fs &
 	unparse_variability_symbol_str(var) => vs &
 	unparse_direction_symbol_str(dir) => ds &
-	unparse_field_symbol_str(fld) => flds &
-	Util.string_append_list([fs,vs,ds,flds]) => str
+	Util.string_append_list([fs,vs,ds]) => str
 	------------------------------------------
-	unparse_elementattr_str(Absyn.ATTR(fl,var,dir,adim,fld)) => str
+	unparse_elementattr_str(Absyn.ATTR(fl,var,dir,adim)) => str
 
   rule	Print.print_buf " ##ERROR## unparse_elementattr_str"
 	-------------------
@@ -841,7 +839,7 @@ relation unparse_arraydim_in_attr: Absyn.ElementAttributes => string =
 
   rule	print_arraydim_str(adim) => str
 	-----------------------------------
-	unparse_arraydim_in_attr(Absyn.ATTR(_,_,_,adim,_)) => str
+	unparse_arraydim_in_attr(Absyn.ATTR(_,_,_,adim)) => str
   axiom	unparse_arraydim_in_attr(_) => ""
 end
 
@@ -863,12 +861,6 @@ relation direction_symbol: Absyn.Direction => string =
 
 end
 
-relation field_symbol: Absyn.Field => string =
-
-  axiom field_symbol(Absyn.FIELD) => "FIELD"
-  axiom	field_symbol(Absyn.NON_FIELD) => ""
-
-end
 
 relation unparse_variability_symbol_str: Absyn.Variability => string =
 
@@ -884,13 +876,6 @@ relation unparse_direction_symbol_str: Absyn.Direction => string =
   axiom unparse_direction_symbol_str(Absyn.BIDIR) => ""
   axiom	unparse_direction_symbol_str(Absyn.INPUT) => "input "
   axiom	unparse_direction_symbol_str(Absyn.OUTPUT) => "output "
-
-end
-
-relation unparse_field_symbol_str: Absyn.Field => string =
-
-  axiom unparse_field_symbol_str(Absyn.FIELD) => "field "
-  axiom	unparse_field_symbol_str(Absyn.NON_FIELD) => " "
 
 end
 
@@ -1101,12 +1086,11 @@ end
 relation print_equationitem: Absyn.EquationItem => () =
   rule	Print.print_buf "EQUATIONITEM(" &
 	print_equation eq &
-	Print.print_buf ",... " &
-	Print.print_buf ")\n"
-	--------------
+	Print.print_buf ", <comment>)\n"
+	-------------------------------
 	print_equationitem Absyn.EQUATIONITEM(eq,_)
 	
-  rule	Print.print_buf "EQUATIONITEMANN(...)\n" 
+  rule	Print.print_buf "EQUATIONITEMANN(<annotation>)\n" 
 	--------------
 	print_equationitem Absyn.EQUATIONITEMANN(_)
 end
@@ -1702,6 +1686,16 @@ relation print_function_args: Absyn.FunctionArgs => () =
 	Print.print_buf ")"
 	-------------------
 	print_function_args Absyn.FUNCTIONARGS(expargs,nargs)
+
+  rule  Print.print_buf "FOR_ITER_FARG(" &
+	print_exp exp &
+	Print.print_buf ", " &
+	Print.print_buf id &
+	Print.print_buf ", " &
+	print_exp iterexp &
+	Print.print_buf ")"
+	-------------------
+	print_function_args Absyn.FOR_ITER_FARG (exp, id, iterexp)
 end
 
 relation print_function_args_str: Absyn.FunctionArgs => string =
@@ -1723,9 +1717,17 @@ relation print_function_args_str: Absyn.FunctionArgs => string =
 	print_list_str(expargs,print_exp_str,", ") => str 
 	---------------------------------------------
 	print_function_args_str Absyn.FUNCTIONARGS(expargs,[]) => str
+
+  rule	print_exp_str exp => estr &
+	print_exp_str iterexp => istr &
+	Util.string_append_list([estr," for ",id," in ", istr]) => str
+	--------------------------------------------------------------
+	print_function_args_str Absyn.FOR_ITER_FARG(exp,id,iterexp) => str
+	
 end
 
 relation print_named_arg: Absyn.NamedArg => () =
+
   rule	Print.print_buf ident &
 	Print.print_buf "=" &
 	print_exp(e) 
