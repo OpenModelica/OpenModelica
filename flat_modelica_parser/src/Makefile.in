@@ -2,9 +2,11 @@ CC=gcc
 CXX=g++
 AR=ar -r
 
-ANTLR_HOME=/home/kaj/src/antlr-2.7.3
+MODELICAPARSER=../../modelica_parser/src
 
-INCLUDES=-I/usr/local/include/  -I$(ANTLR_HOME)/lib/cpp -I$(MODELICAPARSER)
+ANTLR_HOME=@antlrhome@
+
+INCLUDES=-I@antlrinc@ -I$(MODELICAPARSER)
 
 LIBP=-L$(ANTLR_HOME)/lib/cpp/src
 
@@ -14,8 +16,6 @@ CXXFLAGS = $(CFLAGS)
 ANTLRFLAGS=
 
 LIB = $(LIBP) -lantlr
-
-MODELICAPARSER=../../modelica_parser/src
 
 lexergen= $(MODELICAPARSER)/modelica_lexer.cpp $(MODELICAPARSER)/modelica_lexer.hpp
 
