@@ -152,6 +152,20 @@ module Exp:
   relation print_component_ref_str : ComponentRef => string
   relation print_subscript: Subscript => ()
   relation print_subscript_str: Subscript => string
+
+  relation print_leftpar_str : (int,int) => (string, int) 
+  relation print_rightpar_str : (int,int) => string 
+  relation binop_symbol : Operator => string
+  relation binop_priority : Operator => int 
+  relation lbinop_symbol : Operator => string
+  relation lbinop_priority : Operator => int
+  relation unaryop_priority : Operator => int 
+  relation lunaryop_priority : Operator => int 
+  relation relop_priority : Operator => int 
+  relation print_row_str : (Exp*bool) list => string 
+
+
+
   relation print_list : ('a list, 'a => (), string) => ()
   relation cref_equal : (ComponentRef, ComponentRef) => bool
   relation cref_str : ComponentRef => string
@@ -1925,7 +1939,7 @@ end
  NOTE: Not repreteadly applied, so the source and target lists must be disjunct
  Useful for instance when replacing several variables at once in an expression. 
  *)
-relation replace_exp_list: (Exp (*expr*), Exp list (* source list*), Exp list (* target list*))
+ relation replace_exp_list: (Exp (*expr*), Exp list (* source list*), Exp list (* target list*))
 	  => (Exp,int) =
 
   axiom	replace_exp_list(e,[],[]) => (e,0)

@@ -31,7 +31,7 @@ with "system.rml"
 with "daelow.rml"
 with "exp.rml"
 with "debug.rml"
-
+with "rtopts.rml"
 
 (** relation: generate_code
  ** This is the main relation that generates Tornado1 C++ code from the flat Modelica model
@@ -331,9 +331,11 @@ end
  **)
  relation generate_constructor_component_initialization: (string,Absyn.Program) => string =
   
+ 
   rule  Interactive.get_pathed_class_in_program(Absyn.IDENT(cname),program) => cdef &
 	 (* call to helper function *)
          count_and_generate_initializations(cdef,program,0) => (ini_str_list,nr_of_comp) &         
+         (* if there are no components then it will not generate constructors *)
          int_eq(nr_of_comp,0) => true
          --------------------------------------
          generate_constructor_component_initialization(cname,program) => ""
@@ -946,6 +948,7 @@ relation build_assignment: (Exp.ComponentRef, (* varname *)
 	      => string =
    
   rule  Exp.print_component_ref_str(cr) => cr_str & 
+        (*print_exp_cpp_str(exp) => exp_str & *)
         Exp.print_exp_str(exp) => exp_str & 
         Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str &
         print "\n build_assigment: " & print(eqn_str) 
@@ -957,6 +960,250 @@ relation build_assignment: (Exp.ComponentRef, (* varname *)
 	    build_assignment(cr,exp,origname) => fail
         
        
+end
+
+
+
+(** relation: print_exp_str
+ **
+ ** This relation prints a complete expression.
+ **)
+
+relation print_exp_cpp_str : Exp.Exp => string =
+
+  rule	print_exp2_str (e,0) => s
+	--------------------
+	print_exp_cpp_str e => s
+
+end
+
+
+relation print_exp2_str : (Exp.Exp,int) => string =
+	
+  axiom print_exp2_str(END,_) => "end"
+  
+  rule	int_string(x) => s
+	----------------------------
+	print_exp2_str(Exp.ICONST(x),_) => s
+
+  rule	real_string(x) => s
+	-----------------------------
+	print_exp2_str(Exp.RCONST(x),_) => s
+
+  rule	string_append ("\"", s) => s' &
+	string_append (s', "\"") => s''
+	---------------------------------
+	print_exp2_str(Exp.SCONST(s),_) => s''
+
+  axiom	print_exp2_str(Exp.BCONST(false),_) => "false"
+
+  axiom	print_exp2_str(Exp.BCONST(true),_) => "true"
+
+  rule	Exp.print_component_ref_str (c) => s
+	--------------------------------
+	print_exp2_str(Exp.CREF(c,_),_) => s
+
+  rule	Exp.binop_symbol(op) => sym &
+ 	Exp.binop_priority op => pri2' &
+	int_add (pri2',1) => pri2 & (* binary minus have higher priority than itself *)
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e1,pri3) => s2 & 
+	print_exp2_str (e2,pri2) => s3 &
+	Exp.print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	------------------------
+	print_exp2_str (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22)),pri1) => s'''
+
+  rule	Exp.binop_symbol(op) => sym &
+ 	Exp.binop_priority op => pri2 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e1,pri3) => s2 & 
+	print_exp2_str (e2,pri2) => s3 &
+	Exp.print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	------------------------
+	print_exp2_str (Exp.BINARY(e1, op, e2),pri1) => s'''
+
+  rule	Exp.unaryop_symbol(op) => sym &
+	Exp.unaryop_priority(op) => pri2 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e,pri3) => s2 &
+	Exp.print_rightpar_str (pri1,pri2) => s3 &
+	string_append (s1, sym) => s &
+	string_append (s, s2) => s' &
+	string_append (s', s3) => s''
+	----------------------------
+	print_exp2_str(Exp.UNARY(op, e),pri1) => s''
+
+  rule	Exp.lbinop_symbol(op) => sym &
+	Exp.lbinop_priority(op) => pri2 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e1,pri3) => s2 & 
+	print_exp2_str (e2,pri2) => s3 &
+	Exp.print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	----------------------------------------------------------------
+	print_exp2_str(Exp.LBINARY(e1, op, e2),pri1) => s'''
+
+  rule	Exp.lunaryop_symbol(op) => sym &
+ 	Exp.lunaryop_priority(op) => pri2 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	print_exp2_str (e,pri3) => s2 &
+	Exp.print_rightpar_str (pri1,pri2) => s3 &
+	string_append (s1, sym) => s &
+	string_append (s, s2) => s' &
+	string_append (s', s3) => s''
+	---------------------------------------------------
+	print_exp2_str(Exp.LUNARY(op, e),pri1) => s''
+
+  rule	Exp.relop_symbol(op) => sym &
+ 	Exp.relop_priority(op) => pri2 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	print_exp2_str(e1,pri3) => s2 & 
+	print_exp2_str(e2,pri2) => s3 &
+	Exp.print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	-----------------------------------------------------------------
+	print_exp2_str(Exp.RELATION(e1, op, e2),pri1) => s'''
+
+  rule	print_exp2_str(c,0) => ifstr &
+	print_exp2_str(t,0) => thenstr &
+	print_exp2_str(f,0) => elsestr &
+	string_append ("( ", ifstr) => s &
+	string_append (s, " ) ? ( ") => s' &
+	string_append (s', thenstr) => s'' &
+	string_append (s'', " ) : ( ") => s''' &
+	string_append (s''', elsestr) => s'''' &
+	string_append (s'''', " ) ") => slast 
+	----------------------------
+	print_exp2_str(Exp.IFEXP(c,t,f),_) => slast
+
+  rule	Absyn.path_string(fcn) => fs &
+	Exp.print_list_str(args,print_exp_cpp_str,",") => argstr &
+	string_append(fs, "(") => s &
+	string_append(s, argstr) => s' &
+	string_append(s', ")") => s''
+	---------------------------------------------
+	print_exp2_str(Exp.CALL(fcn, args,_,_),_) => s''
+
+  rule	Exp.print_list_str(es, print_exp_cpp_str, ",") => s &
+	string_append ("{",s) => s' &
+	string_append (s',"}") => s''
+	-----------------------------
+	print_exp2_str (Exp.ARRAY(_,_,es),_) => s''
+
+  rule	Exp.print_list_str(es, print_exp_cpp_str, ",") => s &
+	string_append ("(",s) => s' &
+	string_append (s',")") => s''
+	-----------------------------
+	print_exp2_str (Exp.TUPLE(es),_) => s''
+	
+  rule	Exp.print_list_str(es, Exp.print_row_str, "},{") => s &
+	string_append ("{{",s) => s' &
+	string_append (s',"}}") => s''
+	-----------------------------
+	print_exp2_str (Exp.MATRIX(_,_,es),_) => s''
+
+  rule	let pri2 = 41 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (start,pri3) => s2 &
+	print_exp2_str (stop,pri3) => s3 &
+ 	Exp.print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, ":") => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	-------------------------------------------------------------
+	print_exp2_str (Exp.RANGE(_,start,NONE,stop),pri1) => s'''
+
+  rule	let pri2 = 41 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1,pri3) &
+	print_exp2_str (start,pri3) => s2 &
+	print_exp2_str (step,pri3) => s3 &
+ 	print_exp2_str (stop,pri3) => s4 &
+ 	Exp.print_rightpar_str (pri1,pri2) => s5 &
+	string_append (s1, s2) => s &
+	string_append (s, ":") => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', ":") => s''' &
+	string_append (s''', s4) => s'''' &
+	string_append (s'''', s5) => s'''''
+	-------------------------------------
+	print_exp2_str (Exp.RANGE(_,start,SOME(step),stop),pri1) => s'''''
+
+  rule	RTOpts.modelica_output => false &
+	int_real ival => rval &
+	real_string rval => res
+	---------------------------------------
+	print_exp2_str (Exp.CAST(REAL,Exp.ICONST(ival)),_) => res
+
+  rule	RTOpts.modelica_output => false &
+	int_real ival => rval &
+	real_string rval => res &
+	string_append("-",res) => res2
+	---------------------------------------
+	print_exp2_str (Exp.CAST(REAL,Exp.UNARY(Exp.UMINUS(_),Exp.ICONST(ival))),_) => res2
+
+  rule	RTOpts.modelica_output => false &
+	print_exp_cpp_str e => s & 
+	string_append ("Real(", s) => s' &
+	string_append (s', ")") => s''
+	---------------------------------------
+	print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s''
+
+  rule	RTOpts.modelica_output => true &
+	print_exp_cpp_str e => s
+	---------------------------------------
+	print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s
+
+  rule	let pri2 = 51 &
+	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e,pri3) => s2 &
+ 	Exp.print_rightpar_str (pri1,pri2) => s3 &
+ 	int_string i => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, s3) => s' &
+	string_append (s', "[") => s'' &
+	string_append (s'', s4) => s''' &
+	string_append (s''', "]") => s''''
+	---------------------------------------
+	print_exp2_str (Exp.ASUB(e,i),pri1) => s''''
+
+  rule	print_exp_cpp_str cr => crstr &
+	print_exp_cpp_str dim => dimstr &
+	Util.string_append_list(["size(",crstr,",",dimstr,")"]) => str
+	------------------------
+	print_exp2_str (Exp.SIZE(cr,SOME(dim)),_) => str
+
+  rule	print_exp_cpp_str cr => crstr &
+	Util.string_append_list(["size(",crstr,")"]) => str
+	------------------------
+	print_exp2_str (Exp.SIZE(cr,NONE),_) => str
+
+
+  rule	Absyn.path_string fcn => fs &
+	print_exp_cpp_str exp => expstr &
+	print_exp_cpp_str iterexp => iterstr &
+	Util.string_append_list(["<reduction>",
+				 fs,"(",expstr," for ",
+				 id," in ",iterstr,")"]) => str
+	-------------------------------------------------------
+	print_exp2_str (Exp.REDUCTION(fcn,exp,id,iterexp),_) => str
+
+  axiom	print_exp2_str (_,_) => "#UNKNOWN EXPRESSION# ----eee "
+
 end
 
 
