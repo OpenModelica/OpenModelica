@@ -4,7 +4,9 @@
  **
  ** RCS: $Id$
  **
- ** This file defines the abstract syntax for Modelica.
+ ** This file defines the abstract syntax for Modelica.  It mainly
+ ** contains datatypes for constructing the abstract syntax tree
+ ** (AST), and a few relations for printing the AST.
  **)
 
 module Absyn:
@@ -56,14 +58,19 @@ module Absyn:
   datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
 				   * Class
 		       | EXTENDS of Path * ElementArg list
-		       | COMPONENTS of VarAttr
+		       | COMPONENTS of ElementAttributes
 				     * Path	     (* type name *)
 				     * Component list
-  (** An element is something that occurs in a public or protected *)
-  (** section in a class definition.  There is one constructor in the *)
-  (** `ElementSpec' type for each possible element type.  There are *)
-  (** class definitions (`CLASSDEF'), `extends' clauses (`EXTENDS') *)
-  (** and component declarations (`COMPONENTS'). *)
+  (** An element is something that occurs in a public or protected
+   ** section in a class definition.  There is one constructor in the
+   ** `ElementSpec' type for each possible element type.  There are
+   ** class definitions (`CLASSDEF'), `extends' clauses (`EXTENDS')
+   ** and component declarations (`COMPONENTS').
+   ** 
+   ** As an example, if the element `extends TwoPin;' appears
+   ** in the source, it is represented in the AST as
+   ** `EXTENDS(IDENT("TwoPin"),[])'.
+   **)
 
   datatype Component = COMPONENT of Ident	     (* component name *)
 				  * ArrayDim
@@ -101,21 +108,26 @@ module Absyn:
 
   datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
 		      | REDECLARATION of bool * ElementSpec
-  (** Modifications are described by the `Modification' type. *)
+  (** Modifications are described by the `Modification' type.  There *)
+  (** are two forms of modifications: redeclarations and component *)
+  (** modifications. *)
 
-  (** - Variable attributes *)
-  datatype VarAttr = ATTR of ArrayDim
-			   * bool	(* flow *)
-			   * VarType	(* parameter *)
-			   * Direction
-  datatype VarType = VAR | DISCRETE | PARAM | CONST
+  (** - Component attributes *)
+  datatype ElementAttributes = ATTR of bool	(* flow *)
+			     	     * Variability	(* parameter *)
+			     	     * Direction
+  datatype Variability = VAR | DISCRETE | PARAM | CONST
   datatype Direction = INPUT | OUTPUT | BIDIR
+  (** Component attributes are *)
+  (** properties of components which are applied by type prefixes. *)
+  (** As an example, declaring a component as `input Real x;' will *)
+  (** give the attributes `ATTR([],false,VAR,INPUT)'. *)
 
   (** - Array dimensions *)
   type ArrayDim = Subscript list
-  (** Variables in Modelica can be scalar or arrays with one or more *)
+  (** Components in Modelica can be scalar or arrays with one or more *)
   (** dimensions. This datatype is used to indicate the dimensionality *)
-  (** of a variable or a type definition. *)
+  (** of a component or a type definition. *)
 
   (** - Expressions *)
 
@@ -146,7 +158,7 @@ module Absyn:
   datatype Subscript = NOSUB
 		     | SUBSCRIPT of Exp
   (** The `Subscript' datatype is used both in array declarations and *)
-  (** variable references. *)
+  (** component references. *)
 
   (** - Component references and paths *)
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
@@ -155,9 +167,9 @@ module Absyn:
   datatype Path = QUALIFIED of Ident * Path
 	      	| IDENT of Ident
   (** A component reference is the fully or partially qualified name of *)
-  (** a component (variable).  It is represented as a list of *)
+  (** a component.  It is represented as a list of *)
   (** identifier--subscript pairs.  The type `Path', on the other hand, *)
-  (** is used to store references to class names, or components inside *)
+  (** is used to store references to class names, or names inside *)
   (** class definitions. *)
 	      	
   (** - Restrictions *)
@@ -224,6 +236,9 @@ relation cref_to_path : ComponentRef => Path =
 end
 
 (** relation: element_spec_name
+ **
+ ** The `ElementSpec' type contans the name of the element, and this
+ ** relation extracts this name.
  **)
 
 relation element_spec_name : ElementSpec => Ident =
