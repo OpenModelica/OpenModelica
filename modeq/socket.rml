@@ -23,7 +23,7 @@
  ** module:      Socket
  ** description: Modelica socket communication module
  **
- ** RCS: %W %M 
+ ** RCS: $Id$
  **
  ** This is the socket connection module of the compiler
  **)
