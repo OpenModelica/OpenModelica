@@ -51,7 +51,7 @@ libast.a : $(OBJ)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 modgram.o: modgram.c attrib.h parser.h tokens.h \
-	$(RMLINCLUDE)/rml.h ../dae.h ../exp.h mode.h
+	$(RMLINCLUDE)/rml.h ../dae.h ../exp.h ../types.h ../absyn.h mode.h
 scanner.o: scanner.c attrib.h parser.h
 err.o: err.c attrib.h parser.h tokens.h
 yacclib.o: yacclib.c $(RMLINCLUDE)/rml.h yacclib.h
