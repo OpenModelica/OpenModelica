@@ -6,7 +6,7 @@
 # $Id$
 #
 
-RMLINCLUDE = /home/pelab/pub/pkg/rml/current/sol2-sparc/include/plain
+RMLINCLUDE = /home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/include/plain
 
 SHELL	= /bin/sh
 CC	= cc

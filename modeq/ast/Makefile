@@ -10,7 +10,7 @@
 # ANTLR-defined token types
 #
 
-RMLINCLUDE = /home/pelab/pub/pkg/rml/current/sol2-sparc/include/plain
+RMLINCLUDE = /home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/include/plain
 
 TOKENS = tokens.h
 #
@@ -19,7 +19,9 @@ DLG_FILE = parser.dlg
 ERR = err
 HDR_FILE =
 #PCCTS = /home/pelab/pkg/pccts
-PCCTS = /home/x97davka/src/pccts
+#PCCTS = /home/x97davka/src/pccts
+PCCTS = /net/ent4000/files/dsk1/ida/x98petro/TMP/pcctc133m18/pccts
+
 ANTLR_H = $(PCCTS)/h
 BIN = $(PCCTS)/bin
 ANTLR = $(BIN)/antlr
