@@ -4,8 +4,6 @@
 # David Kågedal <x97davka@ida.liu.se>
 #
 
-RMLDIR  = /home/pelab/pub/pkg/rml/rml-1.9.1/sol2-sparc
-
 SHELL	= /bin/sh
 CC	= cc
 CFLAGS	= 
@@ -21,6 +19,7 @@ SRCRML=	exp.rml \
 	dump.rml \
 	prefix.rml \
 	mod.rml \
+	types.rml \
 	env.rml \
 	builtin.rml \
 	inst.rml \
@@ -52,6 +51,7 @@ $(PROG): $(SRCO) ast/libast.a
 	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
 
 # $(SRCO):	rml.h
+absyn.o:	absyn.rml
 exp.o:		exp.rml
 env.o:		env.rml
 	$(RML) -c $<
