@@ -53,6 +53,7 @@ module Exp:
 
   relation dump_component_ref : ComponentRef => ()
   relation dump_exp: Exp => ()
+  relation print_type : Type => ()
   
 end
 
@@ -287,3 +288,27 @@ and dump_exp: Exp => () =
 	dump_exp (_)
 end
 
+
+relation print_type : Type => () =
+
+  rule	print "integer"
+	---------------
+	print_type T_INTEGER
+
+  rule	print "real"
+	------------
+	print_type T_REAL
+
+  rule	print "string"
+	--------------
+	print_type T_STRING
+
+  rule	print "bool"
+	------------
+	print_type T_BOOL
+
+  rule	print "complex"
+	------------
+	print_type T_OTHER
+
+end
