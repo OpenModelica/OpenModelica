@@ -23,15 +23,14 @@ module DAE:
 
   datatype Type = REAL | INT | BOOL | STRING
 
-  datatype DAEcomp = VAR of Exp.ComponentRef * VarKind * Type
-			  * Absyn.ArrayDim (*FIXME*)
-		   | VARVAL of Ident * VarKind * Exp.Exp
+  datatype Element = VAR of Exp.ComponentRef * VarKind * Type
 		   | EQUATION of Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
-		   | COMP of Ident * DAEform
-  and	 DAEform = DAE of DAEcomp list
+		   | COMP of Ident * DAElist
+
+  datatype DAElist = DAE of Element list
 	  
-  relation dump: DAEform => ()
+  relation dump: DAElist => ()
 	  
 end
 
@@ -48,7 +47,7 @@ end
  ** This relation prints the DAE in the standard outpur format.
  **)
 
-relation dump: DAEform => () =
+relation dump: DAElist => () =
 	
   rule	print "fclass " & print n & print "\n" &
 	dump(l) &
@@ -108,14 +107,9 @@ end
 relation dump_comp: DAEcomp => () =
 	
   rule	dump_kind kind & dump_type typ &
- 	Exp.print_component_ref id & Dump.print_arraydim ad & print "\n"
+ 	Exp.print_component_ref id & print "\n"
 	--------------------------------------
-	dump_comp(VAR(id, kind, typ, ad))
-	
-  rule	dump_kind kind & print id &
-	print "=" & Exp.print_exp ex & print "\n"
-	--------------------------------------
-	dump_comp(VARVAL(id, kind, ex))
+	dump_comp(VAR(id, kind, typ))
 	
   rule	print "  " & Exp.print_exp eq & print "\n"
 	--------------------------------------
@@ -132,9 +126,9 @@ end
 relation dump_var : DAEcomp => () =
 	
   rule	dump_kind kind & dump_type typ &
- 	Exp.print_component_ref id & Dump.print_arraydim ad & print ";\n"
+ 	Exp.print_component_ref id & print ";\n"
 	--------------------------------------
-	dump_var(VAR(id, kind, typ, ad))
+	dump_var(VAR(id, kind, typ))
 	
   axiom	dump_var _
 
