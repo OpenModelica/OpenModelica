@@ -20,6 +20,7 @@ module ClassInf :
 		       | R_TYPE
 		       | R_PACKAGE
 		       | R_FUNCTION
+		       | R_PREDEFINED (* For internal use only *)
 
   datatype State = UNKNOWN       of string
 		 | MODEL	 of string
@@ -29,9 +30,12 @@ module ClassInf :
 		 | TYPE		 of string
 		 | PACKAGE	 of string
 		 | FUNCTION	 of string
+		 | PREDEFINED	 of string
 		 | HAS_EQUATIONS of string
+		 | IS_NEW        of string
 
-  datatype Event = FOUND_EQUATION
+  datatype Event = FOUND_EQUATION     (* There are definitions *)
+		 | NEWDEF	      (* This is not a derived class *)
 
   relation print_restr : Restriction => ()
   relation start : (Restriction, string) => State
@@ -74,6 +78,10 @@ relation print_restr : Restriction => () =
 	----------------
 	print_restr R_FUNCTION
 
+  rule	print "PREDEFINED"
+	----------------
+	print_restr R_PREDEFINED
+
 end
 
 relation print_state : State => () =
@@ -110,6 +118,14 @@ relation print_state : State => () =
 	----------------------------
 	print_state FUNCTION(s)
 
+  rule	print "PREDEFINED " & print s
+	----------------------------
+	print_state PREDEFINED(s)
+
+  rule	print "IS_NEW " & print s
+	----------------------------
+	print_state IS_NEW(s)
+
   rule	print "HAS_EQUATIONS " & print s
 	----------------------------
 	print_state HAS_EQUATIONS(s)
@@ -126,16 +142,40 @@ relation start : (Restriction, string) => State =
   axiom	start (R_TYPE, s) => TYPE(s)
   axiom	start (R_PACKAGE, s) => PACKAGE(s)
   axiom	start (R_FUNCTION, s) => FUNCTION(s)
+  axiom	start (R_PREDEFINED, s) => PREDEFINED(s)
 
 end
 
 relation trans : (State, Event) => State =
 
+	(* NEWDEF *)
+
+  axiom	trans(UNKNOWN(s),        NEWDEF) => IS_NEW(s)
+  axiom	trans(MODEL(s),          NEWDEF) => MODEL(s)
+  axiom	trans(RECORD(s),         NEWDEF) => RECORD(s)
+  axiom	trans(BLOCK(s),          NEWDEF) => BLOCK(s)
+  axiom	trans(CONNECTOR(s),      NEWDEF) => CONNECTOR(s)
+
+  rule	print "# In class " & print s & print "\n" &
+	print "# 'type' can only be derived from predefined types\n"
+	-----------------------------------------------
+	trans(TYPE(s),           NEWDEF) => fail
+
+  axiom	trans(PACKAGE(s),        NEWDEF) => PACKAGE(s)
+  axiom	trans(FUNCTION(s),       NEWDEF) => FUNCTION(s)
+  axiom	trans(PREDEFINED(s),     NEWDEF) => PREDEFINED(s)
+
 	(* FOUND_EQUATION *)
 
   axiom	trans(UNKNOWN(s),        FOUND_EQUATION) => HAS_EQUATIONS(s)
+  axiom	trans(IS_NEW(s),         FOUND_EQUATION) => HAS_EQUATIONS(s)
   axiom	trans(MODEL(s),          FOUND_EQUATION) => MODEL(s)
-  axiom	trans(RECORD(s),         FOUND_EQUATION) => fail
+
+  rule	print "# In class " & print s & print "\n" &
+	print "# Equations not allowed in records\n"
+	-----------------------------------------------
+	trans(RECORD(s),         FOUND_EQUATION) => fail
+
   axiom	trans(BLOCK(s),          FOUND_EQUATION) => BLOCK(s)
 
   rule	print "# In class " & print s & print "\n" &
@@ -148,7 +188,9 @@ relation trans : (State, Event) => State =
   axiom	trans(FUNCTION(s),       FOUND_EQUATION) => fail
   axiom	trans(HAS_EQUATIONS(s),  FOUND_EQUATION) => HAS_EQUATIONS(s)
 
-
+  rule	print "- trans fallthru: " & print_state st & print "\n"
+	--------------------------------------------------------
+	trans(st, ev) => fail
 
 end
 
@@ -156,22 +198,29 @@ relation valid : (State, Restriction) => () =
 
   axiom	valid(UNKNOWN(s), _)
 
+  axiom	valid(IS_NEW(s),        R_CLASS)
   axiom	valid(HAS_EQUATIONS(s), R_CLASS)
 
   axiom	valid(MODEL(s),         R_MODEL)
+  axiom	valid(IS_NEW(s),        R_MODEL)
   axiom	valid(HAS_EQUATIONS(s), R_MODEL)
 
   axiom	valid(RECORD(s),        R_RECORD)
+  axiom	valid(IS_NEW(s),        R_RECORD)
 
   axiom	valid(BLOCK(s),         R_BLOCK)
   axiom	valid(HAS_EQUATIONS(s), R_BLOCK)
 
   axiom	valid(CONNECTOR(s),     R_CONNECTOR)
+  axiom	valid(IS_NEW(s),        R_CONNECTOR)
 
   axiom	valid(TYPE(s),          R_TYPE)
+  axiom	valid(PREDEFINED(s),    R_TYPE)
 
+  axiom	valid(IS_NEW(s),        R_PACKAGE)
   axiom	valid(PACKAGE(s),       R_PACKAGE)
 
+  axiom	valid(IS_NEW(s),        R_FUNCTION)
   axiom	valid(FUNCTION(s),      R_FUNCTION)
 
   rule	print "# Restriction violation: " & print_state st &
