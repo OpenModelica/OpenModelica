@@ -288,10 +288,11 @@ itself to efficient implementation in a computer.  The semantic
 specification can be regarded as an operational description of how a
 language is interpreted or translated.
 
-This is what RML\cite{rml} is all about.  The RML language provides a
-simple text syntax for specifying rules and data types.  This
-specification can then be compiled into an executable that can be used
-to interpret or translate any file in the described language.
+This is what RML\cite{rml,petfrrml,pirml} is all about.  The RML
+language provides a simple text syntax for specifying rules and data
+types.  This specification can then be compiled into an executable
+that can be used to interpret or translate any file in the described
+language.
 
 
 \subsection{RML syntax}
@@ -381,6 +382,7 @@ and converted to assignment statements when possible.  Strongly
 connected sets of equations are solved by using a symbolic or numeric
 solver.
 
+\fixme{More stuff}
 
 \section{The Modelica design group}
 \label{sec:designgroup}
@@ -403,25 +405,23 @@ The work on the RML specification for Modelica began in November 1997.
 \section{PELAB}
 \label{sec:pela}
 
-PELAB is the Programming Environments Laboratory at the Department of
-Computer and Information Science at Linköping University.
+\fixme{No access to \filename{/home/petfr/doc/pelab/pelab-abstract97.txt}}
 
-\unfinished
-
-\chapter{Goals, motivation and stuff}
+\chapter{Goals, scope, motivation and stuff}
 \label{cha:goals}
 
 \fixme{Fixa rubriken}
 
+
+This chapter describes the goals and the scope of this thesis.
+
+\section{Goal}
+
 The initial assignment was very simple in its formulation: ``Write a
-formal semantic specification for Modelica using RML.''
+formal semantic specification for Modelica using RML.''  There were at
+least three important reasons for doing exactly this.
 
-The two important words in this instructions are ``Modelica'' and
-``RML'', and the main reasons for writing this specifications are
-threefold. \fixme{Fånigt}
-
-
-\section{A Modelica specification is needed}
+\subsection{A Modelica specification is needed}
 
 The Modelica design process was, and still is, in dire need of a
 formalized description of the language.  The language specification
@@ -431,19 +431,31 @@ nobody knew exactly how the language worked, and it was not certain
 that everybody in the design group agreed on the semantical details,
 since they were not clearly described anywhere.
 
-\section{Gaining experience with RML}
+Peter Fritzson is a member of the Modelica design group and there are
+several projects at PELAB that concerns Modelica.  This project would
+be an important contribution to the Modelica design effort.
 
-The RML language and compiler were new, and only a few language
-specifications had been written using it.  More experience with
-various language specifications was desired.
+\subsection{Gaining experience with RML}
 
-\section{Natural semantics and equation-based\\ languages}
+The RML language and compiler were developed at IDA by Mikael
+Pettersson.  They were new, and only a few language specifications had
+yet been written using it.  More experience with various language
+specifications was desired to gain experience with its advantages and
+shortcomings.
+
+\subsection{Natural semantics and equation-based\\ languages}
 
 Modelica is not a programming language, such as C or LISP.  Instead it
 is a modeling language, with basically only static semantics.  For
 this reason it was interesting to see how a formalism like Natural
-semantics, which is usually used to specify programming languages,
-could be applied to it.
+semantics, and more specificatlly RML, which is usually used to
+specify programming languages, could be applied to it.
+
+
+\section{Scope of the thesis}
+\label{sec:scope}
+
+
 
 \chapter{Development environment}
 \label{cha:devenv}
@@ -492,7 +504,7 @@ text. This program is a quick'n'dirty Pike\cite{pike} hack, and is
 provided in appendix \ref{cha:rmldoc}
 
 
-\chapter{Informal semantics}
+\chapter{Informal semantics of Modelica}
 \label{cha:semantics}
 
 
@@ -507,10 +519,10 @@ some cases, the semantics was easy to guess, but in other cases,
 discussions with the authors and reading of design meeting minutes was
 the needed to find out what was really intended.
 
-This chapter complements the Modelica specification by providing a
-more comprehensive informal description of the language semantics.  It
-is intended to help the understanding of the formal semantics in
-chapter \ref{cha:formsem}.
+This chapter complements the Modelica specification by filling in some
+of the larger holes in the informal language semantics.  It is
+intended to help the understanding of the formal semantics in chapter
+\ref{cha:formsem}.
 
 
 \section{Terminology}
@@ -530,6 +542,8 @@ mean.
   appears inside a class definition.
 \end{Def}
 
+\fixme{Example}
+
 \begin{Def}{Instantiation}
   The word \term{instantiate} is used in many language
   descriptions, with slightly different meaning.  I choose to use a
@@ -542,7 +556,12 @@ mean.
   modified by any given modifiers.  This instance is not a run-time
   object that needs an allocated piece of memory, as in many dynamic
   object-oriented languages, but the principle is the same.
+  
+  \fixme{Call this ``Component instantiation,'' and then define
+  ``type instantiation?''}
 \end{Def}
+
+\fixme{Example}
 
 \begin{Def}{Component}
   The term \term{Component} refers to an class instance.  Many
@@ -566,6 +585,8 @@ mean.
   \item A subcomponent of an immediate subcomponent of $A$.
   \end{enumerate}
 \end{Def}
+
+\fixme{Example}
 
 \section{Types}
 \label{sec:types}
@@ -617,7 +638,8 @@ this specification and the Modelica language definition.
 \end{Def}
 
 \fixme{Should we make a difference between incomplete and complete
-  types?}
+  types?  Important for functions, where input arguments may be of
+  incomplete type.}
 
 \unfinished
 
@@ -913,69 +935,7 @@ last equation in the model \code{M} is shown in figure
   \end{center}
 \end{figure}
 
-\chapter{System overview}
-\label{cha:system}
-
-
-\section{Lexical analysis and parsing}
-\label{sec:laxparse}
-
-The lexical analyzer and parser are not really part of the semantic
-specification, and this report will not go into detail about the
-parsing of Modelica.
-
-The Modelica source file being translated is first passed to the
-lexical analyzer that scans the source for tokens, which it then
-passes on to the parser.  The parser uses its grammar to build the
-abstract syntax tree (AST).  The abstract syntax tree is an RML data
-structure described in the module \code{Absyn} (see section
-\ref{src:absyn}).
-
-\section{Preparing the AST}
-\label{sec:asttoscode}
-
-The AST closely corresponds to the parse tree and keeps the structure
-of the source file.  This has several disadvantages when it comes to
-translating the program, and especially if the translation rules
-should be easy to read for a human.  For this reason a preparatory
-translation pass is introduced which translates the AST into an
-intermediate form, called SCode.  This intermediate form contains no
-more information than the abstract syntax.  It merely restructures the
-tree representation in it.
-
-One might have thought that more work could be done at this stage,
-like analyzing expression types and resolving names.  But due to the
-nature of the Modelica language, the only way to know anything about
-how the names will be resolved during instantiation is to do a more or
-less full instantiation.  It is possible to analyze a class
-declaration and find out what the parts of the declaration would mean
-if the class was to be instantiated as-is, but since it is possible to
-modify much of the class while instantiating it that analysis would
-not be of much use.
-
-\section{Instantiation}
-\label{sec:instantiation}
-
-The major part of the translation procedure, as described by the RML
-specification is the translation from SCode to hybrid
-differential-algebraic equations (hybrid DAEs).  As a Modelica source
-files simply contain declarations of models and other kinds of
-classes, there is a convention that the last class, which should be a
-model, is instantiated as the top-level model.
-
-Many different things, such as expression analysis, equation expansion
-and connection equation generation takes place during the
-instantiation step.
-
-\section{Output of equations}
-\label{sec:output}
-
-As the last stage of the translation the internal representation of
-the hybrid DAEs are written out in the format described in chapter
-\ref{cha:target}.
-
-
-\chapter{Target language}
+\chapter{The Target language: Flat Modelica}
 \label{cha:target}
 
 The formal semantic specification in chapter \ref{cha:formsem}
@@ -1159,15 +1119,76 @@ the previous section.
 \end{enumerate}
 
 
-\chapter{An example}
-\label{cha:example}
+\chapter{System overview}
+\label{cha:system}
+
+
+\section{Lexical analysis and parsing}
+\label{sec:laxparse}
+
+The lexical analyzer and parser are not really part of the semantic
+specification, and this report will not go into detail about the
+parsing of Modelica.
+
+The Modelica source file being translated is first passed to the
+lexical analyzer that scans the source for tokens, which it then
+passes on to the parser.  The parser uses its grammar to build the
+abstract syntax tree (AST).  The abstract syntax tree is an RML data
+structure described in the module \code{Absyn} (see section
+\ref{src:absyn}).
+
+\section{Preparing the AST}
+\label{sec:asttoscode}
+
+The AST closely corresponds to the parse tree and keeps the structure
+of the source file.  This has several disadvantages when it comes to
+translating the program, and especially if the translation rules
+should be easy to read for a human.  For this reason a preparatory
+translation pass is introduced which translates the AST into an
+intermediate form, called SCode.  This intermediate form contains no
+more information than the abstract syntax.  It merely restructures the
+tree representation in it.
+
+One might have thought that more work could be done at this stage,
+like analyzing expression types and resolving names.  But due to the
+nature of the Modelica language, the only way to know anything about
+how the names will be resolved during instantiation is to do a more or
+less full instantiation.  It is possible to analyze a class
+declaration and find out what the parts of the declaration would mean
+if the class was to be instantiated as-is, but since it is possible to
+modify much of the class while instantiating it that analysis would
+not be of much use.
+
+\section{Instantiation}
+\label{sec:instantiation}
+
+The major part of the translation procedure, as described by the RML
+specification is the translation from SCode to hybrid
+differential-algebraic equations (hybrid DAEs).  As a Modelica source
+files simply contain declarations of models and other kinds of
+classes, there is a convention that the last class, which should be a
+model, is instantiated as the top-level model.
+
+Many different things, such as expression analysis, equation expansion
+and connection equation generation takes place during the
+instantiation step.
+
+\section{Output of equations}
+\label{sec:output}
+
+As the last stage of the translation the internal representation of
+the hybrid DAEs are written out in the format described in chapter
+\ref{cha:target}.
+
+
+\section{An example}
 
 To show how the translation of a Modelica model is done in a more
-visual manner, this chapter gives a small example of a model, and how
+visual manner, this section gives a small example of a model, and how
 it is translated to a flat representation.
 
 
-\section{The model}
+\subsection{The model}
 
 The source model is given in figure \ref{fig:modelsource}.  It is a
 very simple electrical circuit, with a AC voltage source and two
@@ -1180,7 +1201,7 @@ capacitors.
 \end{figure}
 
 
-\section{First transformation}
+\subsection{First transformation}
 
 Th first this the translator does it to transform the abstract syntax
 tree representing the model into an SCode representation.  This mainly
@@ -1195,7 +1216,7 @@ representation.
 \end{figure}
 
 
-\section{Flattening}
+\subsection{Flattening}
 
 The main translation step does several things simultaneously.  One
 important part is the flattening of the hierarchical structure.  This
@@ -1215,7 +1236,7 @@ The set of all components is listen with their global name in figure
 \end{figure}
 
 
-\section{Connection equations}
+\subsection{Connection equations}
 
 Generating equations from the connections in the model is done by
 collecting the connected variables into connection sets (see section
@@ -1237,7 +1258,7 @@ that the connection sets will generate the equations given in figure
   \end{center}
 \end{figure}
 
-\section{Flat Modelica}
+\subsection{Flat Modelica}
 
 The output of the translator is shown in figure \ref{fig:ex-eq}, which
 is the Flat Modelica version of the source model.  All the components
@@ -1253,7 +1274,7 @@ are expanded into their simple components.
   \end{center}
 \end{figure}
 
-\chapter{Design}
+\chapter{Design notes for the RML specification}
 \label{cha:design}
 
 
@@ -1487,22 +1508,22 @@ clearer.
 
 %\begin{landscape}
   
-\input{main.tex}
-\input{absyn.tex}
-\input{exp.tex}
-\input{classinf.tex}
-\input{types.tex}
-\input{explode.tex}
-\input{inst.tex}
-\input{prefix.tex}
-\input{mod.tex}
-\input{env.tex}
-\input{lookup.tex}
-\input{builtin.tex}
-\input{connect.tex}
-\input{staticexp.tex}
-\input{dae.tex}
-\input{dump.tex}
+%\input{main.tex}
+%\input{absyn.tex}
+%\input{exp.tex}
+%\input{classinf.tex}
+%\input{types.tex}
+%\input{explode.tex}
+%\input{inst.tex}
+%\input{prefix.tex}
+%\input{mod.tex}
+%\input{env.tex}
+%\input{lookup.tex}
+%\input{builtin.tex}
+%\input{connect.tex}
+%\input{staticexp.tex}
+%\input{dae.tex}
+%\input{dump.tex}
 
 %\end{landscape}
 
