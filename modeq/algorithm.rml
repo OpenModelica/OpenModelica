@@ -14,6 +14,7 @@ module Algorithm:
   with "exp.rml"
   with "types.rml"
   with "staticexp.rml"
+  with "explode.rml"
 
   type Ident = string
 
@@ -38,7 +39,8 @@ module Algorithm:
   (** optional `else' branch. *)
 
   relation make_assignment : (Exp.Exp, Static.Properties,
-			      Exp.Exp, Static.Properties) => Statement
+			      Exp.Exp, Static.Properties,
+			      SCode.Accessibility) => Statement
 
   relation make_if : (Exp.Exp,
 		      Static.Properties,
@@ -65,19 +67,15 @@ end
  **)
 
 relation make_assignment : (Exp.Exp, Static.Properties,
-			    Exp.Exp, Static.Properties) => Statement =
-
-  rule	Static.match_prop(rhs, lhprop, rhprop) => rhs'
-	--------------------------------------
-	make_assignment(Exp.CREF(c), lhprop as Static.PROP(_,false),
-			rhs, rhprop) => ASSIGN(c,rhs')
+			    Exp.Exp, Static.Properties,
+			    SCode.Accessibility) => Statement =
 
   rule	print "# Trying to assign to constant component\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n"
 	-------------------------------------------
 	make_assignment (lhs,Static.PROP(lt,true),
-			 rhs,Static.PROP(rt,_)) => fail
+			 rhs,Static.PROP(rt,_),_) => fail
 
   rule	Types.equivtypes (lt,rt) => false &
 	print "# Type mismatch in assignment\n" &
@@ -86,13 +84,22 @@ relation make_assignment : (Exp.Exp, Static.Properties,
 	print "    " & Types.print_type lt &
  	print " := " & Types.print_type rt & print "\n"
 	-------------------------------------------
-	make_assignment (lhs,Static.PROP(lt,_),rhs,Static.PROP(rt,_)) => fail
+	make_assignment (lhs,Static.PROP(lt,_),rhs,Static.PROP(rt,_),_) => fail
+
+  rule	print "# Can't assign to " & Exp.print_exp e & print "\n"
+	---------------------------------------------------------
+	make_assignment(e,_,_,_, SCode.RO) => fail
+
+  rule	Static.match_prop(rhs, lhprop, rhprop) => rhs'
+	--------------------------------------
+	make_assignment(Exp.CREF(c), lhprop as Static.PROP(_,false),
+			rhs, rhprop, _) => ASSIGN(c,rhs')
 
   rule	print "- Algorithm.make_assignment failed\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n"
 	---------------------------------------------
-	make_assignment (lhs,_,rhs,_) => fail
+	make_assignment (lhs,_,rhs,_,_) => fail
 
 end
 
