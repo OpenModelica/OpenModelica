@@ -282,6 +282,7 @@ with "dump.rml"
 with "debug.rml"
 with "print.rml"
 with "util.rml"
+with "staticexp.rml"
 
 relation is_array : Type => bool =
 
@@ -365,8 +366,71 @@ relation values_to_mods: (Values.Value list,Ident list) => Mod =
 	values_to_mods(Values.REAL(r)::rest,id::ids) 
 	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.RCONST(r),PROP((T_REAL([]),NONE),false)))))::res,NONE)
 
+  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+	---------------------------------------
+	values_to_mods(Values.STRING(s)::rest,id::ids) 
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.SCONST(s),PROP((T_STRING([]),NONE),false)))))::res,NONE)
+
+  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+	---------------------------------------
+	values_to_mods(Values.BOOL(b)::rest,id::ids) 
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.BCONST(b),PROP((T_BOOL([]),NONE),false)))))::res,NONE)
+
+  rule	values_to_mods(rest,ids) => MOD(_,res,_) &
+	values_to_record_constructor_call(cname,vals) => rec_call &
+	values_to_vars(vals,val_names) => varlst &
+	Absyn.path_string(cname) => cname_str 
+	----------------------------------------
+	values_to_mods(Values.RECORD(cname,vals,val_names)::rest,id::ids)
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(rec_call,
+							  PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst),NONE),false)))))::res,NONE)
+
+  rule	Debug.fprint("failtrace","-values_to_mods failed for value: ") &
+	Values.val_string(v) => vs & 
+	Debug.fprint("failtrace",vs) &
+	Debug.fprint("failtrace","\n")
+	--------------------------
+	values_to_mods(v::_,_) => fail
 end
 
+(** relation: values_to_record_constructor_call
+ ** This relation transforms a list of values and an Absyn.Path to a function call
+ ** to a record constructor.
+ **)
+relation values_to_record_constructor_call:(Absyn.Path, Values.Value list) 
+	  => Exp.Exp =
+
+  rule	Util.list_map(values,Static.value_exp) => expl 
+	----------------------------------------------
+	values_to_record_constructor_call(funcname,values) 
+	  => Exp.CALL(funcname,expl,false,false)
+end
+
+(** relation values_to_vars
+ ** Translates a list of Values.Value to a Var list, using a list
+ ** of identifiers as component names.
+ ** Used e.g. when retrieving the type of a record value.
+ **)
+relation values_to_vars:(Values.Value list,Exp.Ident list) => Var list =
+	
+  axiom	values_to_vars([],[]) => []
+
+  rule	type_of_value(v) => tp &
+	values_to_vars(vs,ids) => rest
+	------------------------
+	values_to_vars(v::vs,id::ids) 
+	  => VAR(id,ATTR(false,SCode.RW,SCode.VAR,Absyn.BIDIR),false,tp,UNBOUND)::rest
+
+  rule	Debug.fprint("failtrace","-values_to_vars failed\n") 
+	-------------------------
+	values_to_vars(_,_) => fail
+end
+	
+(** relation: type_of_value
+ ** Returns the type of a Values.Value.
+ ** Some information is lost in the translation, like attributes
+ ** of the builtin type.
+ **)
 relation type_of_value: (Values.Value) => Type =
 
   axiom	type_of_value(Values.INTEGER(_)) => ((T_INTEGER([]),NONE))
@@ -385,6 +449,10 @@ relation type_of_value: (Values.Value) => Type =
 	--------------------
 	type_of_value(w as Values.ARRAY(v::vs)) 
 	  => ((T_ARRAY(DIM(SOME(dim1)),tp),NONE))
+
+  rule	Debug.fprint("failtrace","-type_of_values failed\n")
+	----------------------------------------------------
+	type_of_value(_) => fail
 end
 
 

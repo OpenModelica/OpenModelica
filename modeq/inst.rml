@@ -5371,19 +5371,19 @@ end
 relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
 	Types.Var =
 	  
-  rule	(*Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &*)
+  rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
 	Lookup.lookup_class(env,t,true) => (cl,cenv) &
-	(*Debug.fprint ("recconst", "looked up class\n") &*)
+	Debug.fprint ("recconst", "looked up class\n") &
 	Mod.elab_mod(env,Prefix.NOPRE,mod,impl) => mod' &
 	let owncref = Absyn.CREF_IDENT(id,[]) &
-	elab_arraydim(env,owncref,dim,NONE,true,NONE) => dimexp &
-	(*Debug.fprint ("recconst", "calling inst_var\n") &*)
+	elab_arraydim(env,owncref,dim,NONE,false,NONE) => dimexp &
+	Debug.fprint ("recconst", "calling inst_var\n") &
 	inst_var(cenv, ClassInf.FUNCTION(""),mod', Prefix.NOPRE, [], id, cl, attr,
 		 dimexp, [], [], false (*impl*) ) => (_, _, tp') &
-	(*Debug.fprint ("recconst", "Type of argument:") &
+	Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &
-	Debug.fcall ("recconst",Mod.print_mod,mod') &*)
+	Debug.fcall ("recconst",Mod.print_mod,mod') &
 	Mod.mod_equation mod' => eq &
 	make_binding(env,attr,eq) => bind
 	---------------------------------------
@@ -5393,7 +5393,10 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
 						     SCode.ATTR(dim,f,acc,var,dir),t,mod,bc),impl) 
 	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp',bind)
 
-  rule	Debug.fprint("failtrace", "- inst_record_constructor_elt failed.\n")
+  rule	Debug.fprint("failtrace", "- inst_record_constructor_elt failed.,elt:")
+	& SCode.print_element_str elt => str &
+	Debug.fprint("failtrace", str) &
+	Debug.fprint("failtrace","\n") 
 	---------------------------------------
 	inst_record_constructor_elt(env,elt,impl) => fail
 end

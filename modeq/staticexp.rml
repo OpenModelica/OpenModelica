@@ -3658,9 +3658,10 @@ relation value_type : Values.Value => Types.Type =
 	---------------------------------------
 	value_type Values.TUPLE(vl) => ((Types.T_TUPLE(tylist),NONE))
 
-  rule	Util.list_map(vl, value_type) => tylist
+  rule	Util.list_map(vl, value_type) => tylist &
+	Absyn.path_string(cname) => cname_str
 	---------------------------------------
-	value_type Values.RECORD(vl,ids) => ((Types.T_COMPLEX(ClassInf.RECORD("from value_type"),[]),NONE))
+	value_type Values.RECORD(cname,vl,ids) => ((Types.T_COMPLEX(ClassInf.RECORD(cname_str),[]),NONE))
 
   rule	Print.print_error_buf "- value_type failed: " &	
 	Values.val_string v => vs &

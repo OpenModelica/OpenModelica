@@ -252,7 +252,7 @@ module DAE:
   relation get_variable_bindings_str: Element list => string
   relation to_flow: bool => Flow
   relation get_flow_variables: Element list => Exp.ComponentRef list
-  relation dae_to_record_value: (Element list, bool (*impl*) ) => Values.Value
+  relation dae_to_record_value: (Absyn.Path,Element list, bool (*impl*) ) => Values.Value
   relation to_modelica_form: (DAElist) => DAElist
   relation get_named_function : (Absyn.Path, Element list) => Element list
   relation get_all_exps : Element list => Exp.Exp list
@@ -1872,25 +1872,29 @@ relation	get_flow_variables_2: (Exp.ComponentRef list ,Ident)
 	get_flow_variables_2(cr::xs,id) => cr'::res
 end
 
-relation dae_to_record_value: (Element list, bool (*impl*) ) => Values.Value =
-  axiom	dae_to_record_value([],_) => Values.RECORD([],[])
-
-(*  rule	Ceval.ceval([],e,true,NONE,NONE)  => (value,_) &
-	dae_to_record_value(rest) => Values.RECORD(vals,names)
-	--------------------------------------------------
-	dae_to_record_value(VAR(Exp.CREF_IDENT(id,_),_,_,_,SOME(e),_,_,_,_)::rest) 
-	  => Values.RECORD(value::vals,id::names)*)
+(** relation: dae_to_record_value
+ ** Transforms a list of elements into a record value.
+ ** TODO: This does not work for records inside records. 
+ ** For a general approach we need to build an environment from the DAE and then
+ ** instead investigate the variables and lookup their values from the created environment.
+ **)
+relation dae_to_record_value: (Absyn.Path, Element list, bool (*impl*) ) => Values.Value =
+  axiom	dae_to_record_value(cname,[],_) => Values.RECORD(cname,[],[])
 
 rule	Ceval.ceval([],rhs,impl,NONE,NONE)  => (value,_) &
-	dae_to_record_value(rest,impl) => Values.RECORD(vals,names)
+	dae_to_record_value(cname,rest,impl) => Values.RECORD(cname,vals,names) &
+	Exp.print_component_ref_str(cr) => cr_str 
 	--------------------------------------------------
-	dae_to_record_value(EQUATION(Exp.CREF(Exp.CREF_IDENT(id,_),_),rhs)::rest,impl) 
-	  => Values.RECORD(value::vals,id::names)
+	dae_to_record_value(cname,EQUATION(Exp.CREF(cr,_),rhs)::rest,impl) 
+	  => Values.RECORD(cname,value::vals,cr_str::names)
 
-  rule	dae_to_record_value(rest,impl) => res
-	--------------------------------------------------
-	dae_to_record_value(_::rest,impl) => res
+  rule	dae_to_record_value(cname,rest,impl) => res
+	----------------------------------------------
+	dae_to_record_value(cname,_::rest,impl) => res
 
+  rule	Debug.fprint("failtrace","-dae_to_record_value failed\n")
+	---------------------------------------------------------
+	dae_to_record_value(_,_,_) => fail
 end
 
 (* Transforms all variables from a.b.c to a_b_c, etc*)

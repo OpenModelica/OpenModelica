@@ -128,7 +128,9 @@ with "absyn.rml"
 		 | ENUM of string
 		 | ARRAY of Value list
 		 | TUPLE of Value list 
-		 | RECORD of Value list * Exp.Ident list
+		 | RECORD of Absyn.Path * (* record name *)
+			     Value list * (* orderd set of values *)
+			     Exp.Ident list(* comp names for each value*)
 		 | CODE of Absyn.Code
 		(* A record consist of value * Ident pairs *)
 
@@ -631,7 +633,7 @@ relation val_string : Value => string =
   rule	val_record_string(r) => s &
 	Util.string_append_list(["record\n",s,"\n end record"]) => res
 	---------------------------
-	val_string (r as RECORD(_,_)) => res
+	val_string (r as RECORD(_,_,_)) => res
 
   rule	Dump.print_code_str(c) => res &
 	Util.string_append_list(["Code(",res,")"]) => res'
@@ -650,19 +652,20 @@ end
  separating each value with a comma.
  **)
 relation val_record_string: Value => string =
-  axiom	val_record_string(RECORD([],[])) => ""
+
+  axiom	val_record_string(RECORD(cname,[],[])) => ""
 
   rule	val_string(x) => s1 &
-	val_record_string(RECORD(xs,ids))=> s2 &
+	val_record_string(RECORD(cname,xs,ids))=> s2 &
 	Util.string_append_list([id, " = ",s1,",\n",s2]) => res
 	------------------------------------
-	val_record_string(RECORD(x::(xs as _::_),id::(ids as _::_))) => res
+	val_record_string(RECORD(cname,x::(xs as _::_),id::(ids as _::_))) => res
 
   rule	val_string(x) => s1 &
-	val_record_string(RECORD(xs,ids))=> s2 &
+	val_record_string(RECORD(cname,xs,ids))=> s2 &
 	Util.string_append_list(["    ", id, " = ",s1,"\n",s2]) => res
 	------------------------------------
-	val_record_string(RECORD(x::xs,id::ids)) => res
+	val_record_string(RECORD(cname,x::xs,id::ids)) => res
 end
 
 (** relation: val_list_string

@@ -966,7 +966,6 @@ relation lookup_recconst_in_frame: (Env.BinTree, Env.Env, SCode.Ident)
 	lookup_recconst_in_frame(ht,env,id) => fail
 
   rule	Env.tree_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_RECORD,_),_) &
-	Print.print_error_buf "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_class (cdef,env) => cdef 
 	----------------------------------------
 	lookup_recconst_in_frame(ht,env,id) => (cdef,env)
