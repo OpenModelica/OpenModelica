@@ -837,11 +837,12 @@ end
 
   axiom	build_residual_blocks(_,_,_,_,[]) => []
 	 
-         (* rule	(* For system of equations *) *)
-	 (* build_system(dlow,ass1,ass2,block) &
-	  build_residual_blocks(dae,dlow,ass1,ass2,blocks)
-	  -------------------------------------
-	  build_residual_blocks(dae,dlow,ass1,ass2,(block as (_::_::_))::blocks)*)
+  rule	(* For system of equations *) 
+	 build_residual_system(dae,dlow,ass1,ass2,block) => eqn_str &
+	 build_residual_blocks(dae,dlow,ass1,ass2,blocks) => res 
+	 -------------------------------------
+	 build_residual_blocks(dae,dlow,ass1,ass2,(block as (_::_::_))::blocks) 
+	  => eqn_str::res
 	 
   rule	(* for single equations *)
 	 build_residual_equation(dae,dlow,ass1,ass2,eqn) => eqn_str &
@@ -853,6 +854,27 @@ end
 	 -----------------
 	 build_residual_blocks(_,_,_,_,_) => fail
  end
+
+(** relation build_residual_system
+ ** A system of equations on residual form is still only an output of each residual
+ ** equation. The numerical solver will solve the system.
+**)
+relation build_residual_system: (DAE.DAElist,
+				   DAELow.DAELow, 
+				   int vector, (* assignments1*)
+				   int vector, (* assignments2*)
+				   int list (* equation no. *)
+				   ) => string =
+
+  axiom	build_residual_system(_,_,_,_,[]) => ""
+
+  rule	build_residual_equation(dae,dlow,ass1,ass2,eqn) => s1 &
+	build_residual_system(dae,dlow,ass1,ass2,eqns) => s2 &
+	string_append(s1,s2) => str
+	---------------------------------------------
+	build_residual_system(dae,dlow,ass1,ass2,eqn::eqns) => str
+end
+
 
 (** relation build_residual_equation 
  ** This relation generates code on residual form for one equation.
