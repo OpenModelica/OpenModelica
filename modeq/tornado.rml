@@ -134,38 +134,41 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
   rule	generate_constructor_component_initialization(cname,p) => (initializationvars,comp_name_list) &
         generate_links(dae,comp_name_list) => links &
         generate_constructor_outputvars(dae) => (outputvars,noOutputVar_str) &
-	generate_constructor_statevars(dae) => (statevars,noStateVar_str) &
+        generate_constructor_algvars(dae) => (algvars,noAlgVar_str) &
+	    generate_constructor_statevars(dae) => (statevars,noStateVar_str) &
         generate_constructor_parameters(dae) => parameters &
-	Util.string_append_list(["C",cname,"::\n",
-				 "C",cname,"(const wchar_t* Name)\n",
-				 "{\n",
-				 "  SetName(Name);\n",
-				 "  SetDesc(L\"",cname," test.\");\n",
-				 "\n",
-				 parameters,
-				 "\n",
-				 "  SetNoIndepVars(1);\n",
-				 "  SetIndepVar(0, new CIndepVar(L\"t\",L\"s\"));\n",
-				 "\n",
-				 outputvars,
-				 "\n",
-				 "\n",
-				 statevars,
-				 "\n",
-				 "  SetNoIndepVarValues(1);\n",
+	    Util.string_append_list(["C",cname,"::\n",
+				                 "C",cname,"(const wchar_t* Name)\n",
+				                 "{\n",
+				                 "  SetName(Name);\n",
+				                 "  SetDesc(L\"",cname," test.\");\n",
+				                 "\n",
+				                 parameters,
+				                 "\n",
+				                 "  SetNoIndepVars(1);\n",
+				                 "  SetIndepVar(0, new CIndepVar(L\"t\",L\"s\"));\n",
+				                 "\n",
+				                 outputvars,
+				                 "\n",
+				                 statevars,
+				                 "\n",
+                                 algvars,
+                                 "\n",
+				                 "  SetNoIndepVarValues(1);\n",
                                  noOutputVar_str,
                                  noStateVar_str,
-				 "\n",
-				 "  Link();\n",
-				 initializationvars,
-				 "\n",
-				 "\n",
+                                 noAlgVar_str,
+				                 "\n",
+				                 "  Link();\n",
+				                 initializationvars,
+				                 "\n",
+				                 "\n",
                                  links,
                                  "  Reset();\n",
-		                 "}\n",
-				 "\n"]) => constr
-	-----------------------------------------
-	generate_constructor(cname,p,dae) => constr
+		                         "}\n",
+				                 "\n"]) => constr
+	    -----------------------------------------
+	    generate_constructor(cname,p,dae) => constr
         
         
   rule  print "-generate_constructor failed\n" 
@@ -313,6 +316,76 @@ end
 
 
 
+(* relation generate_constructor_algvars
+ ** Generates the outputvars methodcalls in the constructor.
+ ** The variables are indexed in the order they appear in the DAELow representation.
+ ** The first output variable has the index 0. 
+ *)
+relation generate_constructor_algvars:(DAELow.DAELow) => (string, string) = 
+        
+  rule  vector_list(vars_vec) => vars &
+        vector_list(knvars_vec) => knvars &
+        generate_constructor_algvars2(vars,0) => lst &
+        generate_constructor_algvars2(knvars,0) => knlst &
+        
+        list_append(lst,knlst) => lst' &
+	Util.string_delimit_list(lst',"\n") => res &
+
+
+	list_length(lst') => len &
+
+	int_string len => lenstr &
+        Util.string_append_list(["  SetNoAlgStateVars(",lenstr,");\n"]) => prefix1 &
+        Util.string_append_list(["  SetNoAlgStateVarValues(",lenstr,");\n"]) => prefix2 &
+        Util.string_append_list([prefix1,res,"\n"]) => res' 
+        -------------------------------------------
+        generate_constructor_algvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+end
+
+relation generate_constructor_algvars2:(DAELow.Var list,int) => string list = 
+        
+  rule (* special case for when called second time and first time gave 
+        list length zero *)
+        generate_constructor_algvars2(lst,0) => res
+        ----------------------------------------------
+        generate_constructor_algvars2(lst,-1) => res
+        
+  axiom generate_constructor_algvars2([],_) => []
+        
+ 
+         (* this rule take care of BIDIR variables *)
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        is_var_on_top_model(cr) => true &
+        generate_constructor_algvars2(rest,i') => res &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["  SetAlgVar(",
+                                 is,
+                                 ", new CAlgStateVar(L\"",
+                                 crs,"\", L\"\",0));"]) => r1 
+          ---------------------------------------------
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
+          => r1::res
+  
+  rule  (*int_add(i,1) => i' & int_string(i) => is &*)
+        generate_constructor_outputvars2(rest,i') => res &
+        Util.string_append_list([" "]) => r1 
+          ---------------------------------------------
+        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
+          => r1::res
+         
+  rule  generate_constructor_algvars2(rest,i) => res 
+        -----------------------------------------------
+        generate_constructor_algvars2(_::rest,i) 
+          => res
+
+  rule  print "-generate_constructor_algvars2 failed\n" 
+        ----------------------
+        generate_constructor_algvars2(_,_) => fail
+end
+
+
+
 (* relation generate_constructor_outputvars
  ** Generates the outputvars methodcalls in the constructor.
  ** The variables are indexed in the order they appear in the DAELow representation.
@@ -321,15 +394,23 @@ end
 relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) = 
         
   rule  vector_list(vars_vec) => vars &
+        vector_list(knvars_vec) => knvars &
         generate_constructor_outputvars2(vars,0) => lst &
-	Util.string_delimit_list(lst,"\n") => res &
-	list_length(lst) => len &
+        generate_constructor_outputvars2(knvars,0) => knlst &
+        
+        list_append(lst,knlst) => lst' &
+	Util.string_delimit_list(lst',"\n") => res &
+
+
+	list_length(lst') => len &
+
 	int_string len => lenstr &
         Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix1 &
         Util.string_append_list(["  SetNoOutputVarValues(",lenstr,");\n"]) => prefix2 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
-        generate_constructor_outputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+        generate_constructor_outputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
 end
 
 relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list = 
@@ -343,6 +424,8 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
   axiom generate_constructor_outputvars2([],_) => []
         
   rule  int_add(i,1) => i' & int_string(i) => is &
+        is_var_on_top_model(cr) => true &
+
         generate_constructor_outputvars2(rest,i') => res &
         cref_modelica_str(cr) => crs &
         Util.string_append_list(["  SetOutputVar(",
@@ -352,19 +435,15 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
           ---------------------------------------------
         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
           => r1::res
- 
-          (* this rule take car of BIDIR variables *)
-  rule  int_add(i,1) => i' & int_string(i) => is &
+
+  rule  (*int_add(i,1) => i' & int_string(i) => is &*)
         generate_constructor_outputvars2(rest,i') => res &
-        cref_modelica_str(cr) => crs &
-        Util.string_append_list(["  SetOutputVar(",
-                                 is,
-                                 ", new COutputVar(L\"",
-                                 crs,"\", L\"\",0));"]) => r1 
+        Util.string_append_list([" "]) => r1 
           ---------------------------------------------
-        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
           => r1::res
-          
+
+ 
   rule  generate_constructor_outputvars2(rest,i) => res 
         -----------------------------------------------
         generate_constructor_outputvars2(_::rest,i) 
@@ -375,6 +454,19 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
         generate_constructor_outputvars2(_,_) => fail
 end
 
+
+relation is_var_on_top_model:(Exp.ComponentRef) => bool =
+
+  rule  (*this checks if the variable is on the top model*)
+        Util.string_split_at_char(cr,#".") => string_list &
+        list_length(string_list) => string_list_len &
+        string_list_len = 1 
+        ----------------------------------------
+        is_var_on_top_model(Exp.CREF_IDENT(cr,_)) => true
+
+  axiom is_var_on_top_model(_) => false
+
+end 
 
 (* relation: generate_constructor_statevars
  **  This relation is similar to the generate_constructor_outputvars relation above.
@@ -424,6 +516,14 @@ end
            --------------------
          generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest,i) 
           => r1::res
+
+  rule  (*int_add(i,1) => i' & int_string(i) => is &*)
+         generate_constructor_outputvars2(rest,i') => res &
+         Util.string_append_list([" "]) => r1 
+         ---------------------------------------------
+         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.STATE,_,_,_,_,start,_,_,_)::rest,i) 
+          => r1::res
+           
 
   rule generate_constructor_statevars2(rest,i) => res 
          -----------------------------------------------

@@ -35,7 +35,8 @@ module TORNADOEXT:
   
 
   relation dump_testing: (int) => ()
-  relation get_state_alg_number: (string) => int
+  relation get_output_var_number: (string) => int
+  relation get_input_var_number: (string) => int
 
   
 	  
