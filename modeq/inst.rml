@@ -82,6 +82,11 @@ module Inst:
 	  => ( DAE.Element list, Env.Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list)
 
+  relation partial_inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
+			   Connect.Sets, ClassInf.State,
+			   SCode.Class, bool, InstDims)
+	  => (Env.Env, ClassInf.State)
+
   relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
 				     Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list)
@@ -489,6 +494,34 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end
 
+relation partial_inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			 SCode.Class, bool, InstDims)
+	  => (Env, ClassInf.State) =
+
+  axiom	partial_inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("Real",_,_,_,_),_,_) 
+	  => (env,ci_state)
+
+  axiom	partial_inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("Integer",_,_,_,_),_,_)
+	  => (env,ci_state)
+
+  axiom	partial_inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("String",_,_,_,_),_,_)
+	  => (env,ci_state)
+
+  axiom	partial_inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("Boolean",_,_,_,_),_,_)
+	  => (env,ci_state)
+  rule	
+	partial_inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims)
+	  => (env',ci_state')
+	-------------------------------------
+	partial_inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims)
+	  => (env',ci_state')
+end
+
 (** relation: inst_classdef
  **
  ** There are two kinds of class definitions, either explicit
@@ -671,6 +704,68 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	----------------------------------
 	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
 
+end	
+
+(** relation: partial_inst_classdef
+ **
+ **)
+
+relation partial_inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			 SCode.ClassDef, SCode.Restriction, bool,InstDims)
+	  => ( Env, ClassInf.State ) =
+
+  rule	
+	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
+
+	classdef_elts(els) => cdefelts &
+	extends_elts(els) => extendselts &
+	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
+	add_classdefs_to_env(env,cdefelts,true) => env1 &
+
+	(*2. EXTENDS Nodes*)
+	(* inst_extends_list only flatten inhteritance structure. *)
+	(* It does not perform component instantiations. *)
+	inst_extends_list(env1, mods, extendselts, ci_state, true)
+	  => (env2, emods, extcomps, eqs2, initeqs2, alg2, initalg2) 
+	------------------------------------------------------
+	partial_inst_classdef(env, mods, pre, csets, ci_state,
+		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
+		      inst_dims)
+	  => (env2,ci_state1)
+
+
+	(** This rule describes how to instantiate a derived class *)
+	(** definition *)
+
+  rule	Lookup.lookup_class(env,cn,true) 
+	  => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
+	Env.open_scope(cenv,enc2,0) => cenv' &
+	Env.name_scope(cenv',cn2) => cenv'' &
+	Mod.lookup_modification_p(mods,cn) => m &
+	Mod.elab_mod(env,pre,mod) => mod' &
+	ClassInf.start(r, cn2) => new_ci_state &
+	Mod.merge(mods,m,cenv'',pre) => mods' &
+	Mod.merge(mods',mod',cenv'',pre) => mods'' &
+	partial_inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims)
+	  =>  (env'',new_ci_state')
+	----------------------------------------
+	partial_inst_classdef(env, mods, pre, csets, ci_state,
+		      SCode.DERIVED(cn,ad,mod), re, prot, 
+		      inst_dims)
+	  => (env'',new_ci_state')
+
+	(** If the class is derived from a class that can not be *)
+	(** found in the environment, this rule prints an error *)
+	(** message. *)
+
+  rule	not Lookup.lookup_class(env,cn,false) => (_,_) &
+	Absyn.path_string(cn) => cns &
+	Print.print_buf "# unknown class: " & Print.print_buf cns & Print.print_buf "\n"
+	----------------------------------------
+	partial_inst_classdef(env,mods,pre,csets,ci_state,
+		      SCode.DERIVED(cn,ad,mod), re, prot, 
+		      inst_dims)
+	  => fail
 end	
 
 relation update_compelts_mods: (Env.Env, Prefix.Prefix, (SCode.Element*Types.Mod) list,

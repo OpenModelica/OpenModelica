@@ -1747,8 +1747,8 @@ relation get_nth_inherited_class2: (SCode.Class, Absyn.Class,int, Env.Env)
 	Env.open_scope(env,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
-	  => (_,env'',_,_,_) &
+	Inst.partial_inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	  => (env'',_) &
 	get_base_classes(cdef,env'') => lst &  
 	int_sub(n,1) => n' &
 	list_nth(lst,n') => cref &
@@ -1848,8 +1848,8 @@ rule	(* If fails, instantiate class and search... *)
 	Env.open_scope(env,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
-	  => (_,env'',_,_,_) &
+	Inst.partial_inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	  => (env'',_) &
 	get_nth_component_in_class(cdef,n) => comp &
 	get_component_name_and_type_and_comment (comp,env'') => [s1] &
 	string_append("{",s1) => s2 &
@@ -1878,8 +1878,8 @@ relation get_components: (Absyn.ComponentRef,Absyn.Program) => string =
 	Env.open_scope(env',encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
-	  => (_,env'',_,_,_) &
+	Inst.partial_inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	  => (env'',_) &
 	get_components_in_class(cdef) => comps &
 	get_components_name_and_type_and_comment (comps,env'') => s1 &
 	string_append("{",s1) => s2 &
@@ -2435,7 +2435,7 @@ end
 
 relation get_icon_annotation_in_class : (Absyn.Class) => string =
 
-  rule	get_annotations_from_parts(parts) => annlst &
+  rule	get_icon_annotation_from_parts(parts) => annlst &
 	get_icon_annotation_str(annlst) => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => str 
@@ -2444,93 +2444,90 @@ relation get_icon_annotation_in_class : (Absyn.Class) => string =
 	  => str	
 end
 
-relation get_annotations_from_parts: Absyn.ClassPart list 
+relation get_icon_annotation_from_parts: Absyn.ClassPart list 
 	  => Absyn.ElementArg list =
 	
-  axiom	get_annotations_from_parts [] => []
+  axiom	get_icon_annotation_from_parts [] => []
 	
-  rule	get_annotations_from_elts(elts) => lst1 &
-	get_annotations_from_parts(rest) => lst2 &
-	list_append(lst1,lst2) => res
+  rule	get_icon_annotation_from_elts(elts) => res
 	-----------------------------------------
-	get_annotations_from_parts(Absyn.PUBLIC(elts)::rest) => res
+	get_icon_annotation_from_parts(Absyn.PUBLIC(elts)::rest) => res
 
-  rule	get_annotations_from_elts(elts) => lst1 &
-	get_annotations_from_parts(rest) => lst2 &
-	list_append(lst1,lst2) => res
+  rule	get_icon_annotation_from_elts(elts) => res
 	-----------------------------------------
-	get_annotations_from_parts(Absyn.PROTECTED(elts)::rest) => res
+	get_icon_annotation_from_parts(Absyn.PROTECTED(elts)::rest) => res
 
-  rule	get_annotations_from_eqns(eqns) => lst1 &
-	get_annotations_from_parts(rest) => lst2 &
-	list_append(lst1,lst2) => res
+  rule	get_icon_annotation_from_eqns(eqns) => res
 	-----------------------------------------
-	get_annotations_from_parts(Absyn.EQUATIONS(eqns)::rest) => res
+	get_icon_annotation_from_parts(Absyn.EQUATIONS(eqns)::rest) => res
 
-  rule	get_annotations_from_eqns(eqns) => lst1 &
-	get_annotations_from_parts(rest) => lst2 &
-	list_append(lst1,lst2) => res
+  rule	get_icon_annotation_from_eqns(eqns) => res
 	-----------------------------------------
-	get_annotations_from_parts(Absyn.INITIALEQUATIONS(eqns)::rest) => res
+	get_icon_annotation_from_parts(Absyn.INITIALEQUATIONS(eqns)::rest) => 
+	res
 
-  rule	get_annotations_from_algs(algs) => lst1 &
-	get_annotations_from_parts(rest) => lst2 &
-	list_append(lst1,lst2) => res
+  rule	get_icon_annotation_from_algs(algs) => res
 	-----------------------------------------
-	get_annotations_from_parts(Absyn.ALGORITHMS(algs)::rest) => res
+	get_icon_annotation_from_parts(Absyn.ALGORITHMS(algs)::rest) => res
 
-  rule	get_annotations_from_algs(algs) => lst1 &
-	get_annotations_from_parts(rest) => lst2 &
-	list_append(lst1,lst2) => res
+  rule	get_icon_annotation_from_algs(algs) => res
 	-----------------------------------------
-	get_annotations_from_parts(Absyn.INITIALALGORITHMS(algs)::rest) => res
+	get_icon_annotation_from_parts(Absyn.INITIALALGORITHMS(algs)::rest) => res
+  rule	get_icon_annotation_from_parts(rest) => res
+	-----------------------------------------
+	get_icon_annotation_from_parts(_::rest) => res
 end
 
-relation get_annotations_from_elts: (Absyn.ElementItem list) 
+relation get_icon_annotation_from_elts: (Absyn.ElementItem list) 
 	  => Absyn.ElementArg list =
-  axiom get_annotations_from_elts [] => []
+  axiom get_icon_annotation_from_elts [] => []
 
-  rule	get_annotations_from_elts(rest) => lst1 &
-	list_append(lst1,lst2) => res
+  rule	contain_icon_annotation(lst)
 	-----------------------------
-	get_annotations_from_elts(Absyn.ANNOTATIONITEM(Absyn.ANNOTATION(lst2))::rest)
-	  => res
-
-  rule	get_annotations_from_elts(rest) => res
+	get_icon_annotation_from_elts(Absyn.ANNOTATIONITEM(Absyn.ANNOTATION(lst))::rest)
+	  => lst
+  rule	get_icon_annotation_from_elts(rest) => res
 	-----------------------------
-	get_annotations_from_elts(_::rest)
+	get_icon_annotation_from_elts(_::rest)
 	  => res
 end
 
-relation get_annotations_from_eqns: (Absyn.EquationItem list) 
+relation contain_icon_annotation: Absyn.ElementArg list => () =
+
+  axiom	contain_icon_annotation(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),_,_)::_) => ()
+
+  rule	contain_icon_annotation(lst)
+	-----------------------------
+	contain_icon_annotation(_::lst) 
+end
+
+relation get_icon_annotation_from_eqns: (Absyn.EquationItem list) 
 	  => Absyn.ElementArg list =
 
-  axiom	get_annotations_from_eqns [] => []
+  axiom	get_icon_annotation_from_eqns [] => []
 
-  rule	get_annotations_from_eqns(rest) => lst1 &
-	list_append(lst1,lst2) => res
+  rule	contain_icon_annotation(lst)
 	--------------------------------------
-	get_annotations_from_eqns(Absyn.EQUATIONITEMANN(Absyn.ANNOTATION(lst2))::rest)
-	  => res
+	get_icon_annotation_from_eqns(Absyn.EQUATIONITEMANN(Absyn.ANNOTATION(lst))::rest)
+	  => lst
 
-  rule	get_annotations_from_eqns(rest) => res
+  rule	get_icon_annotation_from_eqns(rest) => res
 	--------------------------------------
-	get_annotations_from_eqns(_::rest) => res
+	get_icon_annotation_from_eqns(_::rest) => res
 end
 
-relation get_annotations_from_algs: Absyn.AlgorithmItem list 
+relation get_icon_annotation_from_algs: Absyn.AlgorithmItem list 
 	  => Absyn.ElementArg list =
 
-  axiom	get_annotations_from_algs [] => []
+  axiom	get_icon_annotation_from_algs [] => []
 
-  rule	get_annotations_from_algs(rest) => lst1 &
-	list_append(lst1,lst2) => res
+  rule	contain_icon_annotation(lst)
 	-----------------------------
-	get_annotations_from_algs(Absyn.ALGORITHMITEMANN(Absyn.ANNOTATION(lst2))::rest) 
-	=> res
-  rule	get_annotations_from_algs(rest) => res
+	get_icon_annotation_from_algs(Absyn.ALGORITHMITEMANN(Absyn.ANNOTATION(lst))::rest) 
+	=> lst
+  rule	get_icon_annotation_from_algs(rest) => res
 	-----------------------------
-	get_annotations_from_algs(_::rest) => res
+	get_icon_annotation_from_algs(_::rest) => res
 end
 
 relation get_icon_annotation_in_elementitemlist: (Absyn.ElementItem list) => string =
