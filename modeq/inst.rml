@@ -12,7 +12,6 @@ module Inst:
 
   with "explode.rml"
   with "dae.rml"
-
   relation instantiate: SCode.Program => DAE.DAElist
 
 end
@@ -855,7 +854,7 @@ end
  **
  ** The DAE output of the translation contains equations which
  ** in most cases directly corresponds to equations in the source.
- ** Some of them are also generated from `commect' clauses.
+ ** Some of them are also generated from `connect' clauses.
  **
  ** This relation takes an equation from the source and generates DAE
  ** equations and connection sets.
@@ -907,12 +906,33 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 		      SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2))
 	  => ([],env,csets,ci_state')
 
-  rule	Static.elab_exp(env,e1) => (e1',prop1) &
+(* PR. This is probably where type checking of functions happen.*)
+  rule	
+
+	(*PR. propx contains the type/types(for functions) of the resulting expression. But why are e1', e2' needed? They are used to generate the dae's. Probably their type may have been modified.  *)
+	print("\n Expressions matched in inst equation:") &
+	Absyn.print_absyn_exp(e1) &
+	print(", ") &
+	Absyn.print_absyn_exp(e2) &
+	print("\n") &
+	Static.elab_exp(env,e1) => (e1',prop1) &
+	print("\nDebug: did left elab.") &
 	Static.elab_exp(env,e2) => (e2',prop2) &
+	print("\nDebug: did right elab.") &
+	Exp.print_exp(e1') &
+	print(", ") &
+	Exp.print_exp(e2') &
+	print("\n") &
+
+	
 	Prefix.prefix_exp(env,e1',pre) => e1'' &
 	Prefix.prefix_exp(env,e2',pre) => e2'' &
+	print("\nDebug: did prefixes.") &
+	(*PR. Check that the lefthandside and the righthandside get along. *)
 	inst_eq_equation(e1'',prop1,e2'',prop2) => dae &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	print("\nDebug: did inst_eq_equation.") &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'&
+	print("\nDebug: did ClassInf trans.")
 	--------------------------------------------------------------
 	inst_equation(env, mods, pre, csets, ci_state, SCode.EQ_EQUALS(e1,e2))
 	  => (dae, env, csets, ci_state')
@@ -926,12 +946,50 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Static.elab_exp(env,e) => (e',Static.PROP(Types.T_BOOL,true)) &
 	Static.ceval(env,e') => Values.BOOL(cond) &
+	print("\nEQ_IF: ") &
+(*!!	print(cond) &
+*)
+(*	Dump.print_exp(cond) &
+	*)
 	select(cond,tb,fb) => b &
 	inst_list(env,mod,pre,csets,ci_state,inst_equation, b)
 	  => (dae,env',csets', ci_state')
 	--------------------------------------------------------
 	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb))
 	  => (dae,env',csets', ci_state')
+
+
+	(**  `when equation' statement, modelica 1.1 
+	 **
+	 ** When statements are instantiated by evaluating the
+	 ** conditional expression.
+	 **)
+
+(* Test this! 1.1*)
+  rule	(* This is only done for 'for' loops. 
+	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
+	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
+	      Types.T_INTEGER, Types.UNBOUND)  &  *)
+
+ 	Static.elab_exp (env,e)
+	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
+					   Types.T_INTEGER),
+			     true)) &
+	(* FIXEM: Check bounds *)
+	Static.ceval (env,e') => v &
+	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
+	inst_list(env,mod,pre,csets,ci_state,inst_equation, el)
+	  => (dae,env',csets', ci_state') (*&
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+*)	-----------------------------------------------------------
+	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el))
+	  => (dae, env',csets', ci_state')
+
+
+
+
+
+
 
 	(**  `for' loops
 	 **
@@ -978,21 +1036,75 @@ end
 
 relation inst_eq_equation : (Exp.Exp, Static.Properties,
 			     Exp.Exp, Static.Properties) => DAE.Element list =
-
+	(*PR. e1= lefthandside, e2=righthandside
+	* This seem to be a strange relation. 
+	* wich rule is matched? or is both rules matched?
+	*)
+	
+	(* This rule is matched first, if it fail the next rule is matched.
+	 *)
   rule	Static.match_prop(e1, p1, p2) => e1' &
-	inst_eq_equation_2(e1', e2, t2) => dae
+	print("\n first rule of relation inst_eq_equation ") &
+	inst_eq_equation_2(e1', e2, t2) => dae &
+	print("\n first rule complete. ") 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
 			 e2,p2 as Static.PROP(t2,_))
 	  => dae
-	
+
+	(* If it fails then this rule is matched. *)
   rule	Static.match_prop(e2, p2, p1) => e2'&
-	inst_eq_equation_2(e1, e2', t1) => dae
+	print("\n Second rule of relation inst_eq_equation ") &
+	inst_eq_equation_2(e1, e2', t1) => dae &
+	print("\n Second rule complete. ") 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
 			 e2,p2 as Static.PROP(t2,_))
 	  => dae
+
+
+
+  rule	print "\n About to do a static match e1. " &
+	print ("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>") &
+	print ("\norginal exp in inst eq equation: ") &
+	Exp.print_exp (e1) &
+	Static.match_prop(e1, p1, p2) => e1' &
+	print ("\n Converted exp in inst eq equation: ") &
+	Exp.print_exp (e1') &
+	print("\n first rule of relation inst_eq_equation ") &
+	inst_eq_equation_2(e1', e2, t2) => dae & 
+	print ("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><") &
+	print("\n first rule complete. ") 
+	------------------------------------------
+	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
+			 e2,p2 as Static.PROP_TUPLE(t2,_))
+	  => dae
+
+
+(*
+  rule
+	print("\n So far so good.") &
 	
+	print("\n  ") 
+	------------------------------------------
+	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
+			 e2,Static.PROP_TUPLE(t2,_))
+	  => fail
+*)
+
+
+
+	(* PR. *)	
+  rule 	print "\n About to do a static match e2. " &
+	Static.match_prop(e2, p2, p1) => e2'&
+	print("\n Second rule of relation inst_eq_equation ") &
+	inst_eq_equation_2(e1, e2', t1) => dae &
+	print("\n Second rule complete. ") 
+	------------------------------------------
+	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
+			 e2,p2 as Static.PROP_TUPLE(t2,_))
+	  => dae
+
   rule	(* Types.equivtypes(t1,t2) => false & *)
 	print "# Illegal types in equation\n"&
 	print "    lhs: " & Exp.print_exp e1 &
@@ -1002,6 +1114,12 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	----------
 	inst_eq_equation(e1,Static.PROP(t1,_),
 			 e2,Static.PROP(t2,_)) => fail
+
+
+(* No match. *)
+  rule  print ("\n No match in inst_eq_equation. ")
+	---------------
+	inst_eq_equation(_,_,_,_) => fail
 
 end
 
@@ -1033,6 +1151,13 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	inst_array_equation(e1,e2,ad,t) => dae
 	-----------------------------------------
 	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t)) => dae
+
+
+	(* PR. The muliple outputs from functions is outputed as is. *)
+
+  axiom	inst_eq_equation_2(e1,e2,Types.T_TUPLE(_))
+	  => [DAE.EQUATION(e1,e2)]
+
 
   rule	RTOpts.split_arrays => false
 	-----------------------------------------
@@ -1073,7 +1198,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	inst_eq_equation_2(e1, e2 as Exp.CREF(_),
 			   t as Types.T_COMPLEX(_,_)) => dae
 
-	(** When the right-hand siade is not a component reference a *)
+	(** When the right-hand side is not a component reference a *)
 	(** similar trick is applied.  This also catched the case *)
 	(** where none of the sides is a component reference *)
   rule	new_ident => n &
@@ -1283,12 +1408,20 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHILE(e,sl)) => stmt
 
+
+  rule	Static.elab_exp (env,e) => (e',prop) &
+	inst_statements(env,sl) => sl' &
+	Algorithm.make_when_a(e',prop,sl') => stmt
+	---------------------------------------
+	inst_statement(env,Absyn.ALG_WHEN_A(e,sl)) => stmt
+
+(* 1.0
   rule	Static.elab_exp (env,e) => (e',prop) &
 	inst_statements(env,sl) => sl' &
 	Algorithm.make_when(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHEN(e,sl)) => stmt
-
+*)
   rule	print "- inst_statement failed\n"
 	---------------------------------
 	inst_statement(_,_) => fail

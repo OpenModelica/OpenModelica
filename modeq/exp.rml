@@ -46,6 +46,7 @@ module Exp:
 	       | ARRAY of Exp list
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp
+	       | TUPLE of Exp list (*PR.*)
                  (* New constructors *)
 	       | CAST of Type * Exp
 	       | ASUB of Exp * int
@@ -300,7 +301,7 @@ end
  ** This relation prints a complete expression.
  **)
 
-relation print_exp: Exp => () =
+relation print_exp : Exp => () =
 
   rule	print_exp2 (e,0)
 	----------------
@@ -308,7 +309,7 @@ relation print_exp: Exp => () =
 
 end
 
-relation print_exp2: (Exp,int) => () =
+relation print_exp2 : (Exp,int) => () =
 	
   rule	int_string(x) => s & print s
 	----------------------------
@@ -385,11 +386,19 @@ relation print_exp2: (Exp,int) => () =
 	---------------------------------------------
 	print_exp2(CALL(fcn, args),_)
 
-  rule	print "[" &
+  rule	print "This an array: " &
+	print "[" &
 	print_list(es, print_exp, ",") &
 	print "]"
 	---------
 	print_exp2 (ARRAY(es),_)
+
+	(*PR.*)
+  rule	print "(" &
+	print_list(es, print_exp, ",") &
+	print ")"
+	---------
+	print_exp2 (TUPLE(es),_)
 	
   rule	print "[" &
 	print_list(es, print_row, ";") &

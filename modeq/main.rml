@@ -29,8 +29,13 @@ relation translate_file : string list => () =
 
   rule	print "Parsing\n" &
 	Parser.parse f => p &
+	print "\n---------------The parsed program---------------\n" &
+	Dump.dump p &
+	print "\n------------------------------------------------------------ \n" &
 	print "elaborating\n" &
 	SCode.elaborate(p) => p' &
+	print "\n-------------------- Scode representation of program ---------------------- \n" &
+	(*Dump.dump p' & *)
 	print "instantiating\n" &
 	Inst.instantiate(p') => d &
 	DAE.dump d

@@ -136,6 +136,12 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-------------------------------
 	prefix_exp(env,Exp.ARRAY(es),p) => Exp.ARRAY(es')
 
+
+(* PR. *)
+  rule	prefix_explist(env,es,p) => es'
+	-------------------------------
+	prefix_exp(env,Exp.TUPLE(es),p) => Exp.TUPLE(es')
+
   axiom	prefix_exp(env,Exp.MATRIX([]),p) => Exp.MATRIX([])
 
   rule	prefix_explist(env,x,p) => x' &

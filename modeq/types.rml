@@ -51,7 +51,9 @@ module Types :
 		| T_COMPLEX of ClassInf.State
 			     * Var list
 		| T_FUNCTION of FuncArg list * Type (* Only single-result *)
+		| T_TUPLE of Type list (*PR. Used by functions who return multiple values. *)
 		| T_NOTYPE
+
 
   datatype ArrayDim = DIM of int option
 
@@ -139,8 +141,42 @@ relation subtype : (Type, Type) => bool =
 	-----------------------------------
 	subtype(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
 
+	(* PR. Check of tuples, similar to complex. Just that identifier name do not have to be checked. Only types are checked. *)	
+ rule 	print("\nDebug: subtype t_tuple") &
+	subtype_typelist(type_list1,type_list2) => true &
+	print("\nDebug: subtype t_tuple finished.") 
+	-----------------------------------
+	subtype(T_TUPLE(type_list1), T_TUPLE(type_list2)) => true
+
+  rule	print "\nDebug: no matching subtype rule." 
+	-----------------------------------
+	subtype(_,_) => false
+
 	(* default *)
+
   axiom	subtype(_,_) => false
+
+end
+
+
+(** PR. relation: subtype_typelist
+ **
+ ** This relation checks if the both `Type' lists matches types, element
+ ** by element.
+ **)
+
+relation subtype_typelist: (Type list,Type list) => bool =
+
+  axiom	subtype_typelist ([], []) => true
+
+  rule	subtype(t1,t2) => true &
+	subtype_typelist(rest1,rest2) => true		
+	-----------------------------
+	subtype_typelist(t1::rest1,t2::rest2) => true
+
+	(* default *)
+  axiom	subtype_typelist(_,_) => false
+
 
 end
 

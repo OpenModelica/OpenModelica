@@ -55,7 +55,7 @@ module Algorithm:
   relation make_while : (Exp.Exp, Static.Properties,
 			 Statement list) => Statement
 	
-  relation make_when : (Exp.Exp, Static.Properties,
+  relation make_when_a : (Exp.Exp, Static.Properties,
 			Statement list) => Statement
 	
 end
@@ -188,15 +188,15 @@ end
 
 (** relation: make_when *)
 
-relation make_when : (Exp.Exp, Static.Properties,
+relation make_when_a : (Exp.Exp, Static.Properties,
 		      Statement list) => Statement =
 
-  axiom	make_when(e,Static.PROP(Types.T_BOOL,_),stmts) => WHEN(e,stmts)
+  axiom	make_when_a(e,Static.PROP(Types.T_BOOL,_),stmts) => WHEN(e,stmts)
 
   rule	print "# Type error in when conditional.\n" &
 	print "    Expected Boolean, got " &
 	Types.print_type t & print "\n"
 	-------------------------------
-	make_when(_,Static.PROP(t,_),_) => fail
+	make_when_a(_,Static.PROP(t,_),_) => fail
 
 end

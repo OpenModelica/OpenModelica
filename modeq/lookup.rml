@@ -205,7 +205,7 @@ relation lookup_package_class : (Env.Env, string, Absyn.Path)
 
 end
 (**)
-relation lookup_var2: ((SCode.Ident * Env.Item) list,SCode.Ident)
+relation lookup_var2 : ((SCode.Ident * Env.Item) list,SCode.Ident)
 	  => Types.Var =
 
   rule	id = n

@@ -10,6 +10,8 @@
  ** (AST), and a few relations for printing the AST.
  **)
 
+
+
 module Absyn:
 
   type Ident = string
@@ -58,7 +60,7 @@ module Absyn:
   datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
 				   * Class
 		       | EXTENDS of Path * ElementArg list
-		       | COMPONENTS of ElementAttributes
+		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
 				     * Path	     (* type name *)
 				     * Component list
   (** An element is something that occurs in a public or protected
@@ -72,7 +74,7 @@ module Absyn:
    ** `EXTENDS(IDENT("TwoPin"),[])'.
    **)
 
-  datatype Component = COMPONENT of Ident	     (* component name *)
+  datatype Component = COMPONENT of Ident 	     (* component name *)
 				  * ArrayDim
 				  * Modification option
   (** Several component declarations can be grouped together in one *)
@@ -87,6 +89,8 @@ module Absyn:
 		    | EQ_EQUALS of Exp * Exp
 		    | EQ_CONNECT of ComponentRef * ComponentRef
 		    | EQ_FOR of Ident * Exp * Equation list
+		    | EQ_WHEN_E of Exp * Equation list (*1.1*) 
+
   (** The `Equation' type describes one equation in an equation *)
   (** section. *)
 
@@ -95,9 +99,10 @@ module Absyn:
 			       * Algorithm list	     (* true branch *)  
 			       * (Exp * Algorithm list) list (* elseif *)
 			       * Algorithm list	     (* else branch *)
-		     | ALG_FOR of Ident * Exp * Algorithm list
-		     | ALG_WHILE of Exp * Algorithm list
-		     | ALG_WHEN of Exp * Algorithm list
+		    | ALG_FOR of Ident * Exp * Algorithm list
+		    | ALG_WHILE of Exp * Algorithm list
+		(* Old 1.0     | ALG_WHEN of Exp * Algorithm list  *)
+		     | ALG_WHEN_A of Exp * Algorithm list (*1.1*)
   (** The `Algorithm' type describes one algorithm statement in an *)
   (** algorithm section.  It does not describe a whole algorithm.  The *)
   (** reason this type is named like this is that the name of the *)
@@ -116,6 +121,8 @@ module Absyn:
   datatype ElementAttributes = ATTR of bool	(* flow *)
 			     	     * Variability	(* parameter *)
 			     	     * Direction
+				     * ArrayDim  (*1.1*)
+     
   datatype Variability = VAR | DISCRETE | PARAM | CONST
   datatype Direction = INPUT | OUTPUT | BIDIR
   (** Component attributes are *)
@@ -146,6 +153,8 @@ module Absyn:
 	       | ARRAY of Exp list
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp
+	       | TUPLE of Exp list (*PR.*)
+
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
   datatype Operator = ADD   | SUB    | MUL     | DIV       | POW
@@ -202,7 +211,7 @@ module Absyn:
   relation cref_to_path : ComponentRef => Path
   relation element_spec_name : ElementSpec => Ident
   relation print_restr : Restriction => ()
-
+  relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
 end
 
 (** relation: path_string
@@ -315,4 +324,29 @@ relation print_restr : Restriction => () =
 	----------------
 	print_restr R_PREDEFINED_BOOL
 
+end
+
+
+(* PR. To debug. *)
+relation print_absyn_exp : Exp => () =
+  rule	print "This an array: " &
+	print "[" &
+
+	print "]"
+	---------
+	print_absyn_exp (ARRAY(es))
+
+	(*PR.*)
+  rule	print "(" &
+
+	print ")"
+	---------
+	print_absyn_exp (TUPLE(es))
+
+
+  rule	print "\nNo tuple." 
+	---------
+	print_absyn_exp (_)
+
+	
 end

@@ -61,6 +61,7 @@ module SCode :
 		    | EQ_EQUALS of Absyn.Exp * Absyn.Exp
 		    | EQ_CONNECT of Absyn.ComponentRef * Absyn.ComponentRef
 		    | EQ_FOR of Ident * Absyn.Exp * Equation list
+		    | EQ_WHEN of Absyn.Exp * Equation list
   (** These are almost identical to the `Absyn' versions.  In `EQ_IF', *)
   (** the `elseif' branches are represented as normal `else' branches *)
   (** with a single `if' statement in them. *)
@@ -94,7 +95,7 @@ module SCode :
 			      * Accessibility
 	  		      * Absyn.Variability	(* parameter *)
 			      * Absyn.Direction
-
+			   
   datatype Accessibility = RW	(* read/write *)
 			 | RO	(* read-only *)
 			 | WO	(* write-only (not used) *)
@@ -243,12 +244,13 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
   axiom	elab_elementspec(_,_,Absyn.COMPONENTS(_,_,[])) => []
 
   rule	elab_elementspec(final,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
-	build_mod(m,false) => mod
+	build_mod(m,false) => mod &
+	list_append(d,ad) => tot_dim
 	--------------------------------------------------
 	elab_elementspec(final,prot,
-			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di),t,
+			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di,ad),t,
 					  (Absyn.COMPONENT(n,d,m))::xs))
-	  => COMPONENT(n,final,prot,ATTR(d,fl,RW,pa,di),t,mod)::xs'
+	  => COMPONENT(n,final,prot,ATTR(tot_dim,fl,RW,pa,di),t,mod)::xs'
 
 end
 

@@ -338,10 +338,15 @@ relation print_algorithm: Absyn.Algorithm => () =
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHILE(e,al)
 	
-  rule	print "WHEN " & print_exp(e) &
+(*  rule	print "WHEN_E " & print_exp(e) &
 	print " {" & print_list(al, print_algorithm, ";") & print "}"
 	----------------------------------------------------------
-	print_algorithm Absyn.ALG_WHEN(e,al)
+	print_algorithm Absyn.ALG_WHEN_E(e,al)
+*)
+  rule	print "WHEN_A " & print_exp(e) &
+	print " {" & print_list(al, print_algorithm, ";") & print "}"
+	----------------------------------------------------------
+	print_algorithm Absyn.ALG_WHEN_A(e,al)
 	
   rule	print " ** UNKNOWN ALGORITHM CLAUSE ** "
 	--------------------------------
@@ -475,6 +480,13 @@ relation print_exp: Absyn.Exp => () =
 	print "]"
 	---------
 	print_exp Absyn.ARRAY(es)
+
+	(* PR. *)
+  rule	print "(" &
+	print_list(es, print_exp, ",") &
+	print ")"
+	---------
+	print_exp Absyn.TUPLE(es)
 	
   rule	print "[" &
 	print_list(es, print_row, ";") &

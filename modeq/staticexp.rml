@@ -25,8 +25,26 @@ module Static :
   type Ident = string
 
   (** - Expression properties *)
+	(* A tuple is added to the Types. This is used by functions whom
+returns multiple arguments. *)
+
+(* Used by split_props  *)
+ datatype Const = CONST of bool |
+		   TUPLE_CONST  of Const list 
+
   datatype Properties = PROP of Types.Type (* type *)
-			      * bool       (* constant *)
+			      * bool (* if the type is a tuple, each element have a const flag. *)
+(*			      * bool *)       (* constant *)
+(* Types.Type is meant to be T_TUPLE *)
+			| PROP_TUPLE of Types.Type * Const (* The elements might be tuple themselfs. *)
+	
+(*	* P.R 1.1 for multiple return arguments from functions, 
+	*  one constant flag for each return argument. 
+	*
+*)
+
+
+
   (** The datatype `Properties' contain information about an
    ** expression.  The properties are created by analyzing the
    ** expressions. *)
@@ -145,6 +163,23 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	-------------------------------------
 	elab_exp (env,Absyn.CALL(fn,args)) => (e,prop)
 
+
+
+
+	(*PR. Get the properties for each expression in the tuplel. 
+	* Each expression has its own constflag.
+	* !!The output from functions does just have one const flag. 
+	* Fix this!!
+	*)
+	
+  rule	print "\n#####################elab_exp tuple.####################" &
+	elab_tuple(env,e) => (e', props) &
+	print "\nThe elaborated tuple." &
+	split_props(props) => (types, consts)
+	-------------------------------------
+	elab_exp (env,Absyn.TUPLE(e)) => (Exp.TUPLE(e'),PROP_TUPLE(Types.T_TUPLE(types), TUPLE_CONST(consts)))
+
+
 	(**  Array-related expressions *)
 
   rule	elab_exp (env, start) => (start', PROP(Types.T_INTEGER, c_start)) &
@@ -210,6 +245,18 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 
   axiom	elab_range_type (_,_,_,_,false)
 	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_INTEGER)
+
+end
+
+relation elab_tuple : (Env.Env, Absyn.Exp list)
+	  => (Exp.Exp list, Properties list) =
+
+  rule	elab_exp (env,e) => (e',p) &
+	elab_tuple(env,exps) => (exps',props)
+	-----------------------------
+	elab_tuple(env,e::exps) => (e'::exps', p::props) 
+
+  axiom elab_tuple(env,[]) => ([], []) 
 
 end
 
@@ -295,6 +342,10 @@ relation elab_matrix : (Env.Env, Absyn.Exp list list)
 
 end
 
+
+
+
+
 (** relation: elab_call
  **
  ** This relation elaborates on a function call.  It converts the name
@@ -329,16 +380,43 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 
 	(* This rule finds user-defined functions. *)
 
-  rule	Lookup.lookup_type(env,fn) => (t as Types.T_COMPLEX(st,vl)) &
+  rule	
+	(* PR. We found a function definition of fn. *)
+	Lookup.lookup_type(env,fn) => (t as Types.T_COMPLEX(st,vl)) &
 	(* ClassInf.valid(st, Absyn.R_FUNCTION) & *)
-	function_params(vl) => (in,out as [(_,rt)]) &
-	elab_input_args(env, args, in) => (args', c)
+	print("Did lookup.") &
+	(*PR. Find function parameters in the function definition.*)
+	function_params(vl) => (in,out) & (*P.R 1.1 Many outputs are possible *)
+	print("Did function_params") &
+	get_types(out) => types &
+	print("\nGot types.") &
+	(*PR. elaborate input parameters from the function call(args).
+	* In are the in-parameters specified in the function declaration.
+	* c indicate if all input parameters are constant, this means that
+	* all output parameters are constant as well, since they only 
+	* depends on the input parameters.
+	* c is true if all input arguments are constant.
+	*)
+	elab_input_args(env, args, in) => (args', c) &
+
+	(*PR. !! Fix this. The function body is examined to determine the 
+	* constness of each output argument.
+	 At the moment this just gives a false list.
+	*)
+	elab_consts(out) => const &	
+
+	print("Did elab_input_args")
 	--------------------------------------------
-	elab_call_args(env,fn,args) => (Exp.CALL(fn,args'), PROP(rt, c))
+	elab_call_args(env,fn,args) => (Exp.CALL(fn,args'), PROP_TUPLE(Types.T_TUPLE(types), const))
 
 	(* This rule finds the built-in functions *)
 
-  rule	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) &
+  rule	
+
+	
+	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) &
+	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
+	print "Debug: We did a lookup T_FUNCTION " &
 	elab_input_args(env, args, params) => (args',c)
 	-----------------------------------------------
 	elab_call_args (env,fn,args) => (Exp.CALL(fn,args'), PROP(restype, c))
@@ -355,6 +433,109 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 
 end
 
+
+
+
+
+(** PR. assisting routines
+ ** This just splits the properties list into a type list and a const list. 
+ **)
+
+relation elab_consts : ((Ident * Types.Type) list) => Const =
+  rule	check_consts out => consts
+	-------------------------------
+	elab_consts out => TUPLE_CONST(consts)
+end
+
+relation check_consts : ((Ident * Types.Type) list) => Const list =	
+  rule  check_const(a) => c &
+	check_consts(rest) => rest'
+	-------------------------------
+	check_consts a::rest=> c::rest'
+
+  axiom check_consts [] => []
+end
+
+
+
+(*PR. !! At the moment this matke all outputs non cons.
+* All ouputs sholud be checked in the function body for constness. 
+*)
+relation check_const : (Ident*Types.Type) => Const  =	
+	
+rule	print("\n Error. No support for tuples built by tuples. Yet.") 
+	-------------------------------
+	check_const((_, Types.T_TUPLE(_))) => fail
+
+axiom	check_const((_, _)) => CONST(true)
+
+end
+
+
+relation split_props : (Properties list) => (Types.Type list, Const list) =
+  rule 	(*list_append(ts,t::[]) => t1 &
+	list_append(cs,CONST(c)::[]) => t2 &
+*)	split_props(props) => (types, consts)
+	-------------------------------------
+	split_props (PROP(t,c)::props)=> (t::types,CONST(c)::consts)
+
+  rule 	(*list_append(ts,t::[]) => ts' & *)
+	(*list_append(cs, t_c::[]) => cs' & 
+*)	split_props(props) => (types, consts)
+	-------------------------------------
+	split_props (PROP_TUPLE(t,t_c)::props)=> (t::types,t_c::consts)
+  
+  axiom	split_props([]) => ([], [])
+end
+
+
+
+
+
+
+
+
+
+
+(* obsolete
+relation split_props: (Properties list, Types.Type list, Const list) => (Types.Type list, Const list) =
+  rule 	list_append(ts,t::[]) => t1 &
+	list_append(cs,CONST(c)::[]) => t2 &
+	split_props(props, t1, t2) => (types, consts)
+	-------------------------------------
+	split_props (PROP(t,c)::props, ts, cs)=> (types,consts)
+
+  rule 	(*list_append(ts,t::[]) => ts' & *)
+	list_append(cs, t_c::[]) => cs' & 
+	split_props(props, [], cs') => (types, consts)
+	-------------------------------------
+	split_props (PROP_TUPLE(t,t_c)::props, ts, cs)=> (types,consts)
+  
+  axiom	split_props([],ts,cs) => (ts, cs)
+end
+*)
+
+
+
+
+
+
+
+
+
+
+relation get_types :((Ident * Types.Type) list) => Types.Type list =
+
+rule	print("\nDebug: Got a type for output of function. ") &
+	get_types(rest) => types 
+	-----------------
+	get_types ((i,t)::rest) => t::types
+
+axiom	get_types ([]) => []
+	
+end
+
+
 (** relation: function_params
  **
  ** A function definition is just a class definition where all public
@@ -369,17 +550,20 @@ relation function_params : Types.Var list => ((Ident * Types.Type) list,
   axiom	function_params [] => ([],[])
 
 	(* Ignore protected components *)
-  rule	function_params vs => (in, out)
+  rule	print("protected") &
+	function_params vs => (in, out)
 	-------------------------------
 	function_params((Types.VAR(_,_,true,_,_))::vs) => (in, out)
 
-  rule	function_params vs => (in, out)
+  rule	print("not protected. intput") &
+	function_params vs => (in, out)
 	------------------------------
 	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.INPUT),
 				   false,t,Types.UNBOUND)::vs)
 	  => ((n,t)::in, out)
 
-  rule	function_params vs => (in, out)
+  rule	print("not protected. output") &
+	function_params vs => (in, out)
 	------------------------------
 	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.OUTPUT),
 					 false,t,Types.UNBOUND)::vs)
@@ -405,10 +589,21 @@ end
  ** `Types.Var'.
  **)
 
+(*PR. env, input args from the function call, in arguments in the function definition. *)
 relation elab_input_args : (Env.Env, Absyn.Exp list, (Ident * Types.Type) list)
 	  => (Exp.Exp list, bool) =
 
   axiom	elab_input_args(_, [], []) => ([], true)
+	(*PR. What is the c for. If all input arguments from the function 
+	* call are constants then the result is a constant. 
+ 	* Of course the output variable must be a constant since all 
+	* input variables are constant and the output do not depend on 
+	* any other variable.
+	*
+	* This is also true for multiple output arguments. But if some input arguments are constant then some output argument may be constant too. In this case the function body  have to be analysed in more detail. 
+	
+	Which is not done at all now??
+	*)
 
   rule	elab_exp(env, e) => (e',PROP(t, c1)) &
 	match_type(e', t, vt) => e'' &
@@ -1200,9 +1395,15 @@ end
 
 relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
 
-  rule	match_type(e, gt, et) => e'
+  rule	print "Debug: match prop." &
+	match_type(e, gt, et) => e'
 	---------------------------
 	match_prop(e, PROP(gt,_), PROP(et,_)) => e'
+
+  rule	print "\nDebug: match prop (PROP TUPLE). " &
+	match_type(e, gt, et) => e'
+	---------------------------
+	match_prop(e, PROP_TUPLE(gt,_), PROP_TUPLE(et,_)) => e'
 
 end
 
@@ -1213,7 +1414,6 @@ end
  **)
 
 relation match_type : (Exp.Exp, Types.Type, Types.Type) => Exp.Exp =
-
   rule	Types.subtype(e_type, expected_type) => true
 	--------------------------------------------
 	match_type(e, e_type, expected_type) => e
@@ -1422,3 +1622,4 @@ relation operators : Absyn.Operator
 	operators op => fail
 
 end
+
