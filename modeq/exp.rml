@@ -6,76 +6,20 @@ module Exp:
 
 type Ident = string
 
+datatype Path = QUALIFIED of string * Path
+	      | IDENT of Ident
+
 datatype BinOp = ADD | SUB | MUL | DIV
 datatype UnaryOp = UMINUS | UPLUS
 
 datatype Exp = NUMBER of real
-             | IDENT of Ident
-             | PATH of Ident * Exp
+             | PATH of Path
 
              | BINARY of Exp * BinOp * Exp
              | UNARY of UnaryOp * Exp
 
-             | PAR of Exp			(* Expression in () *)
-             | CALL of Ident * Exp (*list*)		(* Function call *)
+             | CALL of Path * Exp list		(* Function call *)
              | EQU of Exp * Exp			(* Equation *)
+	     | TIME
 
-relation dump: Exp => ()
-
-end
-
-relation binop_symbol: BinOp => string =
-	axiom	binop_symbol(ADD) => " + "
-	axiom	binop_symbol(SUB) => " - "
-	axiom	binop_symbol(MUL) => "*"
-	axiom	binop_symbol(DIV) => "/"
-end
-
-relation unaryop_symbol: UnaryOp => string =
-	axiom	unaryop_symbol(UMINUS) => "-"
-	axiom	unaryop_symbol(UPLUS) => "+"
-end
-
-relation dump: Exp => () =
-	rule	print "N"
-		--------------
-		dump(NUMBER(x))
-
-	rule	print id
-		---------------
-		dump(IDENT(id))
-
-	rule	print id & print "." &
-		dump rest
-		---------------
-		dump(PATH(id, rest))
-
-	rule	binop_symbol(op) => sym &
-		dump e1 & print sym & dump e2
-		----------------------------
-		dump(BINARY(e1, op, e2))
-
-	rule	unaryop_symbol(op) => sym &
-		print sym & dump e
-		----------------------------
-		dump(UNARY(op, e))
-
-	rule	print "(" & dump e & print ")"
-		------------------------------
-		dump(PAR(e))
-
-	rule	print fcn & print "(" & dump args & print ")"
-		---------------------------------------------
-		dump(CALL(fcn, args))
-
-	rule	print "EQUATION " & 
-		dump lhs &
-		print " = " &
-		dump rhs
-		------------------------
-		dump(EQU(lhs, rhs))
-
-  rule print "E"
-       ----------------------------------
-       dump (_)
 end
