@@ -2461,11 +2461,12 @@ relation get_componentitems_modification: Absyn.ComponentItem list => string =
 	
   rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => s1 &
 	get_componentitems_modification(rest) => s2 &
-	Util.string_append_list([s1,",",s2]) => res
+	Util.string_append_list(["Code(",s1,"),",s2]) => res
 	-------------------------------------------
 	get_componentitems_modification (Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(mod)),_)::(rest as (_::_))) => res
 	
-  rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => res 
+  rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => s1 &
+	Util.string_append_list(["Code(",s1,")"]) => res
 	-------------------------------------------------------------
 	get_componentitems_modification ([Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(mod)),_)]) => res
 
