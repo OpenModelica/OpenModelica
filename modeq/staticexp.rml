@@ -22,11 +22,17 @@ module StaticExp :
 		       Absyn.Exp)           => (Exp.Exp, Types.Type, bool)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Types.Type, bool)
-  relation elab_relop : (Absyn.RelOp, Types.Type) => Exp.RelOp
   relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
   relation value_exp : Values.Value => Exp.Exp
+
+  relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
+			 (Exp.Exp * Types.Type) list,
+			 Absyn.Exp)
+	  => (Exp.Operator, Exp.Exp list, Types.Type)
+  relation operators : Absyn.Operator
+	  => (Exp.Operator * Types.Type list * Types.Type) list
 
 end
 
@@ -49,35 +55,55 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
 
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
+	bool_and (c1,c2) => c &
+	operators op => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
 	print "  binary: " &
- 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") × " &
+ 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") * " &
  	Exp.print_exp e2' & print " (" & Types.print_type t2 & print ") => " &
-	elab_numtypes (e1',t1,e2',t2) => (e1'',t1',e2'',t2') &
- 	Exp.print_exp e1'' & print " (" & Types.print_type t1' & print ") × " &
- 	Exp.print_exp e2'' & print " (" & Types.print_type t2' & print ")\n" &
-	elab_binary (e1'', t1', c1, op, e2'', t2', c2) => (e, t', c) &
-	print "  binary exp: " & Exp.print_exp e & print "\n"
+	Exp.print_exp Exp.BINARY(e1'',op',e2'') & print "\n"
 	-------------------------------------------------------
-	elab_exp (env,Absyn.BINARY(e1,op,e2)) => (e,t',c)
-
-	(** FIXME: UNARY *)
-	(** FIXME: LBINARY *)
+	elab_exp (env,exp as Absyn.BINARY(e1,op,e2))
+	  => (Exp.BINARY(e1'',op',e2''),rtype,c)
 
   rule	elab_exp (env,e) => (e',t,c) &
-	elab_lunaryop op => op' &
+ 	Exp.print_exp e' & print " (" & Types.print_type t & print ") => " &
+	operators op => ops &
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
+	print "  unary: " &
+	Exp.print_exp Exp.UNARY(op',e'') & print "\n"
+	---------------------------------------------
+	elab_exp (env,exp as Absyn.UNARY(op,e)) => (Exp.UNARY(op',e''),rtype,c)
+	
+  rule	elab_exp (env,e1) => (e1', t1, c1) &
+	elab_exp (env,e2) => (e2', t2, c2) &
+	bool_and (c1,c2) => c &
+	operators op => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
+	print "  lbinary: " &
+ 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") * " &
+ 	Exp.print_exp e2' & print " (" & Types.print_type t2 & print ") => " &
+	Exp.print_exp Exp.LBINARY(e1'',op',e2'') & print "\n"
+	-------------------------------------------------------
+	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2))
+	  => (Exp.LBINARY(e1'',op',e2''),rtype,c)
+
+  rule	elab_exp (env,e) => (e',t,c) &
+ 	operators op => ops &
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
 	print "  lunary: " &
- 	Exp.print_exp e' & print " (" & Types.print_type t & print ")\n" &
-	t = Types.T_BOOL
+	Exp.print_exp Exp.LUNARY(op',e'') & print "\n"
 	-----------------------
-	elab_exp (env,Absyn.LUNARY(op,e)) => (Exp.LUNARY(op',e'),t,c)
+	elab_exp (env,exp as Absyn.LUNARY(op,e)) => (Exp.LUNARY(op',e''),rtype,c)
 
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
-	elab_numtypes (e1',t1,e2',t2) => (e1'',t1',e2'',t2') &
-	elab_relation (e1'', c1, t1', op, e2'', c2, t2') => (e, t', c)
+	bool_and (c1,c2) => c &
+	operators op => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	----------------------------------------------
-	elab_exp (env,Absyn.RELATION(e1,op,e2))
-	  => (e,t',c)
+	elab_exp (env,exp as Absyn.RELATION(e1,op,e2))
+	  => (Exp.RELATION(e1'',op',e2''),rtype,c)
 
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
@@ -280,11 +306,18 @@ relation elab_call_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
   axiom	elab_call_args (env,[],[]) => ([],true)
 
   rule	elab_exp (env,arg) => (arg',t1,c1) &
-	Types.same_type(t1,pt) => true &
+	elab_arg (pt,arg',t1) => arg'' &
 	elab_call_args (env,args,params) => (args',c2) &
 	bool_and (c1,c2) => c
 	---------------------------------
-	elab_call_args (env,arg::args,(pn,pt)::params) => (arg'::args',c)
+	elab_call_args (env,arg::args,(pn,pt)::params) => (arg''::args',c)
+
+  rule	elab_exp (env,arg) => (arg',t1,c1) &
+	not elab_arg (pt,arg',t1) => arg'' &
+	print "# Incompatible type of function argument: " &
+	Exp.print_exp arg' & print "\n"
+	-------------------------------
+	elab_call_args (env,arg::args,(pn,pt)::params) => fail
 
   rule	print "# Too many functiion arguments\n"
 	----------------------------------------
@@ -503,219 +536,6 @@ relation subscript_type : (Types.ArrayDim, Exp.Subscript list)
 
 end
 
-(** relation: elab_numtypes
- **
- ** Elaborate on the types of numerical expression to unify their
- ** types. If one of them is a real expression and the other an
- ** integer expression, an explicit type promotion to `real' is added
- ** to the second expression.  If either is an array of integers of
- ** reals, it is treated as if it was simply a real or an integer.
- **)
-
-relation elab_numtypes : (Exp.Exp, Types.Type, Exp.Exp, Types.Type)
-	  => (Exp.Exp, Types.Type, Exp.Exp, Types.Type) =
-
-	(** FIXME: This is a strange trick that doesn't really work *)
-  rule	elab_numtypes (e1, t1, e2, t2) => (e1,t1',e2,t2')
-	-------------------------------------------
-	elab_numtypes (e1, Types.T_ARRAY(dim1,t1), e2, t2)
-	  => (e1, Types.T_ARRAY(dim1,t1'), e2, t2')
-
-  rule	elab_numtypes (e1, t1, e2, t2) => (e1,t1',e2,t2')
-	-------------------------------------------
-	elab_numtypes (e1, t1, e2, Types.T_ARRAY(dim2,t2))
-	  => (e1, t1', e2, Types.T_ARRAY(dim2,t2'))
-
-  axiom	elab_numtypes (e1, Types.T_INTEGER, e2, Types.T_INTEGER)
-	  => (e1, Types.T_INTEGER, e2, Types.T_INTEGER)
-
-  axiom	elab_numtypes (e1, Types.T_REAL, e2, Types.T_REAL)
-	  => (e1, Types.T_REAL, e2, Types.T_REAL)
-
-  axiom	elab_numtypes (e1, Types.T_INTEGER, e2, Types.T_REAL)
-	  => (Exp.CAST_TO_REAL(e1), Types.T_REAL, e2, Types.T_REAL)
-
-  axiom	elab_numtypes (e1, Types.T_REAL, e2, Types.T_INTEGER)
-	  => (e1,Types.T_REAL, Exp.CAST_TO_REAL(e2), Types.T_REAL)
-
-  axiom	elab_numtypes (e1, Types.T_STRING, e2, Types.T_STRING)
-	  => (e1, Types.T_STRING, e2, Types.T_STRING)
-
-  axiom	elab_numtypes (e1, Types.T_BOOL, e2, Types.T_BOOL)
-	  => (e1, Types.T_STRING, e2, Types.T_STRING)
-
-  rule	print "- elab_numtypes failed\n" &
-	print "  type1 = " & Types.print_type t1 &
-	print "  type2 = " & Types.print_type t2 &
-	print "\n"
-	----------------------------------
-	elab_numtypes (_,t1,_,t2) => fail
-
-end
-
-(** relation: elab_binary *)
-
-relation elab_binary : (Exp.Exp, Types.Type, bool,
-			Absyn.BinOp,
-			Exp.Exp, Types.Type, bool)
-	  => (Exp.Exp, Types.Type, bool) =
-
-	(**  ADD *)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_INTEGER,c1,Absyn.ADD,e2,Types.T_INTEGER,c2)
-	  => (Exp.BINARY(e1,Exp.INT_ADD,e2), Types.T_INTEGER, c)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_REAL,c1,Absyn.ADD,e2,Types.T_REAL,c2)
-	  => (Exp.BINARY(e1,Exp.REAL_ADD,e2), Types.T_REAL, c)
-
-	(**  SUB *)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_INTEGER,c1,Absyn.SUB,e2,Types.T_INTEGER,c2)
-	  => (Exp.BINARY(e1,Exp.INT_SUB,e2), Types.T_INTEGER, c)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_REAL,c1,Absyn.SUB,e2,Types.T_REAL,c2)
-	  => (Exp.BINARY(e1,Exp.REAL_SUB,e2), Types.T_REAL, c)
-
-	(**  MUL *)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_INTEGER,c1,Absyn.MUL,e2,Types.T_INTEGER,c2)
-	  => (Exp.BINARY(e1,Exp.INT_MUL,e2), Types.T_INTEGER, c)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_REAL,c1,Absyn.MUL,e2,Types.T_REAL,c2)
-	  => (Exp.BINARY(e1,Exp.REAL_MUL,e2), Types.T_REAL, c)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_ARRAY(dim,T_INTEGER),c1,
-		     Absyn.MUL,
-		     e2,Types.T_INTEGER,c2)
-	  => (Exp.BINARY(e1,Exp.INT_ARRAY_SCALAR_MUL(1(*FIXME*)),e2),
-	      Types.T_ARRAY(dim,T_INTEGER),
-	      c)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_ARRAY(dim,T_REAL),c1,
-		     Absyn.MUL,
-		     e2,Types.T_REAL,c2)
-	  => (Exp.BINARY(e1,Exp.REAL_ARRAY_SCALAR_MUL(1(*FIXME*)),e2),
-	      Types.T_ARRAY(dim,T_REAL),
-	      c)
-
-	(**  DIV
-	 **
-	 ** Division is always real division. Integers are always
-	 ** promoted to reals before the division is made. *)
-	
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,Types.T_INTEGER,c1,Absyn.DIV,e2,Types.T_INTEGER,c2)
-	  => (Exp.BINARY(Exp.CAST_TO_REAL(e1),
-			 Exp.REAL_DIV,
-			 Exp.CAST_TO_REAL(e2)), Types.T_REAL, c)
-
-  rule	bool_and (c1,c2) => c
-	---------------------
-	elab_binary (e1,_,c1,Absyn.DIV,e2,_,c2)
-	  => (Exp.BINARY(e1,Exp.REAL_DIV,e2), Types.T_REAL, c)
-
-	(**  Failure *)
-  rule	print "- elab_binary failed " (* &
-	Absyn.dump_exp e1 & print " (" & Types.print_type t1 & print ") o " &
-	Absyn.dump_exp e2 & print " (" & Types.print_type t2 *) & print ")\n"
-	---------------------------------------------
-	elab_binary(e1, t1, c1, op, e2, t2, c2) => fail
-			
-end
-
-(** relation: elab_relation *)
-
-relation elab_relation : (Exp.Exp, bool, Types.Type,
-			  Absyn.RelOp,
-			  Exp.Exp, bool, Types.Type)
-	  => (Exp.Exp, Types.Type, bool) =
-
-	(** First some rules to reduce the number of operators to just *)
-	(** four: `<' `<=' `=' `!='. *)
-
-  rule	elab_relation (e2,c2,t1,Absyn.LESS,e1,c1,t2) => (e,t,c)
-	----------------------------------------
-	elab_relation (e1,c1,t1,Absyn.GREATER,e2,c2,t2) => (e,t,c)
-
-  rule	elab_relation (e2,c2,t1,Absyn.LESSEQ,e1,c1,t2) => (e,t,c)
-	----------------------------------------
-	elab_relation (e1,c1,t1,Absyn.GREATEREQ,e2,c2,t2) => (e,t,c)
-
-	(** Then the real rules *)
-
-  rule	bool_and (c1,c2) => c &
-	elab_relop (op,t1) => op'
-	---------------------
-	elab_relation (e1,c1,t1,op,e2,c2,t2)
-	  => (Exp.RELATION(e1,op',e2), Types.T_BOOL, c)
-
-	(**  Failure *)
-  rule	print "- elab_relation failed\n"
-	--------------------------------
-	elab_relation(_,_,_,_,_,_,_) => fail
-			
-end
-
-(** relation: elab_relop *)
-
-relation elab_relop : (Absyn.RelOp, Types.Type) => Exp.RelOp =
-
-  axiom	elab_relop (Absyn.LESS,      Types.T_INTEGER) => Exp.INT_LESS
-  axiom	elab_relop (Absyn.LESS,      Types.T_REAL)    => Exp.REAL_LESS
-  axiom	elab_relop (Absyn.LESSEQ,    Types.T_INTEGER) => Exp.INT_LESSEQ
-  axiom	elab_relop (Absyn.LESSEQ,    Types.T_REAL)    => Exp.REAL_LESSEQ
-  axiom	elab_relop (Absyn.GREATER,   Types.T_INTEGER) => Exp.INT_GREATER
-  axiom	elab_relop (Absyn.GREATER,   Types.T_REAL)    => Exp.REAL_GREATER
-  axiom	elab_relop (Absyn.GREATEREQ, Types.T_INTEGER) => Exp.INT_GREATEREQ
-  axiom	elab_relop (Absyn.GREATEREQ, Types.T_REAL)    => Exp.REAL_GREATEREQ
-  axiom	elab_relop (Absyn.EQUAL,     Types.T_INTEGER) => Exp.INT_EQUAL
-  axiom	elab_relop (Absyn.EQUAL,     Types.T_REAL)    => Exp.REAL_EQUAL
-  axiom	elab_relop (Absyn.EQUAL,     Types.T_BOOL)    => Exp.BOOL_EQUAL
-  axiom	elab_relop (Absyn.EQUAL,     Types.T_STRING)  => Exp.STRING_EQUAL
-  axiom	elab_relop (Absyn.NEQUAL,    Types.T_INTEGER) => Exp.INT_NEQUAL
-  axiom	elab_relop (Absyn.NEQUAL,    Types.T_REAL)    => Exp.REAL_NEQUAL
-  axiom	elab_relop (Absyn.NEQUAL,    Types.T_BOOL)    => Exp.BOOL_NEQUAL
-  axiom	elab_relop (Absyn.NEQUAL,    Types.T_STRING)  => Exp.STRING_NEQUAL
-
-	(* FIXME: What about arrays and = ? Fake it for now *)
-  axiom	elab_relop (Absyn.LESS,      Types.T_ARRAY(_,_)) => Exp.INT_LESS
-  axiom	elab_relop (Absyn.LESSEQ,    Types.T_ARRAY(_,_)) => Exp.INT_LESSEQ
-  axiom	elab_relop (Absyn.GREATER,   Types.T_ARRAY(_,_)) => Exp.INT_GREATER
-  axiom	elab_relop (Absyn.GREATEREQ, Types.T_ARRAY(_,_)) => Exp.INT_GREATEREQ
-  axiom	elab_relop (Absyn.EQUAL,     Types.T_ARRAY(_,_)) => Exp.INT_EQUAL
-  axiom	elab_relop (Absyn.NEQUAL,    Types.T_ARRAY(_,_)) => Exp.INT_NEQUAL
-
-  rule	print "- elab_relop failed\n"
-	-----------------------------
-	elab_relop (_,_) => fail
-
-end
-
-(** relation: elab_lunaryop *)
-
-relation elab_lunaryop : Absyn.LUnaryOp => Exp.LUnaryOp =
-
-  axiom	elab_lunaryop Absyn.NOT => Exp.NOT
-
-end
-
 (** relation: elab_ifexp *)
 
 relation elab_ifexp : (Exp.Exp, Types.Type, bool,
@@ -807,7 +627,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	ceval (env, rh) => Values.REAL(rhv) &
 	real_add(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.REAL_ADD, rh))
+	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh))
 	  => Values.REAL(sum)
 
   rule	Exp.print_exp(rh) & print "\n" &
@@ -815,34 +635,73 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_add(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.INT_ADD, rh)) => Values.INTEGER(sum)
+	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh)) => Values.INTEGER(sum)
 	(**)
   rule	ceval (env, lh) => Values.REAL(lhv) &
 	ceval (env, rh) => Values.REAL(rhv) &
 	real_sub(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.REAL_SUB, rh)) => Values.REAL(sum)
+	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.REAL), rh)) => Values.REAL(sum)
 
   rule	ceval (env, lh) => Values.INTEGER(lhv) &
 	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_sub(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.INT_SUB, rh)) => Values.INTEGER(sum)
+	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh))
+	  => Values.INTEGER(sum)
 	(**)
   rule	ceval (env, lh) => Values.REAL(lhv) &
 	ceval (env, rh) => Values.REAL(rhv) &
 	real_mul(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.REAL_MUL, rh)) => Values.REAL(sum)
+	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh)) => Values.REAL(sum)
 
   rule	ceval (env, lh) => Values.INTEGER(lhv) &
 	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_mul(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.INT_MUL, rh))
+	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh))
 	  => Values.INTEGER(sum)
+	(**)
+  rule	ceval (env, exp) => Values.REAL(x) &
+	real_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp))
+	  => Values.REAL(x')
+
+  rule	ceval (env, exp) => Values.INTEGER(x) &
+	int_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp))
+	  => Values.INTEGER(x')
+	(**)
+  rule	ceval (env, exp) => Values.REAL(x) &
+	real_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp))
+	  => Values.REAL(x')
+
+  rule	ceval (env, exp) => Values.INTEGER(x) &
+	int_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp))
+	  => Values.INTEGER(x')
 
 	(**  Logical *)
+
+  rule	ceval (env, lh) => Values.BOOL(lhv) &
+	ceval (env, rh) => Values.BOOL(rhv) &
+	bool_and(lhv, rhv) => x
+	------------------------
+	ceval (env, Exp.LBINARY(lh, Exp.AND, rh))
+	  => Values.BOOL(x)
+
+  rule	ceval (env, lh) => Values.BOOL(lhv) &
+	ceval (env, rh) => Values.BOOL(rhv) &
+	bool_or(lhv, rhv) => x
+	------------------------
+	ceval (env, Exp.LBINARY(lh, Exp.OR, rh))
+	  => Values.BOOL(x)
 
   rule	ceval (env,e) => Values.BOOL(b) &
 	bool_not(b) => b'
@@ -875,7 +734,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
   rule	ceval (env,e) => Values.INTEGER(i) &
 	int_real i => r
 	---------------
-	ceval (env, Exp.CAST_TO_REAL(e)) => Values.REAL(r)
+	ceval (env, Exp.CAST(Exp.REAL,e)) => Values.REAL(r)
 
   rule	print "- ceval " & Exp.print_exp e & print " failed\n"
 	-----------------------------------------------------
@@ -888,27 +747,31 @@ end
  ** Performs the relation check and gives a boolean result.
  **)
 
-relation ceval_relation : (Values.Value, Exp.RelOp, Values.Value)
+relation ceval_relation : (Values.Value, Exp.Operator, Values.Value)
  	  => Values.Value =
+
+  rule	ceval_relation (v2, Exp.LESS(t), v1) => v
+	-----------------------------------------
+	ceval_relation (v1, Exp.GREATER(t), v2) => v
 
 	(**  Integers *)
 
   rule	int_lt (i1,i2) => b
 	-------------------
 	ceval_relation (Values.INTEGER(i1),
-			Exp.INT_LESS,
+			Exp.LESS(Exp.INT),
 			Values.INTEGER(i2)) => Values.BOOL(b)
 
   rule	int_eq (i1,i2) => b
 	-------------------
 	ceval_relation (Values.INTEGER(i1),
-			Exp.INT_EQUAL,
+			Exp.EQUAL(Exp.INT),
 			Values.INTEGER(i2)) => Values.BOOL(b)
 
   rule	int_ne (i1,i2) => b
 	-------------------
 	ceval_relation (Values.INTEGER(i1),
-			Exp.INT_EQUAL,
+			Exp.NEQUAL(Exp.INT),
 			Values.INTEGER(i2)) => Values.BOOL(b)
 
 	(**  Reals *)
@@ -916,20 +779,24 @@ relation ceval_relation : (Values.Value, Exp.RelOp, Values.Value)
   rule	real_lt (i1,i2) => b
 	-------------------
 	ceval_relation (Values.REAL(i1),
-			Exp.REAL_LESS,
+			Exp.LESS(Exp.REAL),
 			Values.REAL(i2)) => Values.BOOL(b)
 
   rule	real_eq (i1,i2) => b
 	-------------------
 	ceval_relation (Values.REAL(i1),
-			Exp.REAL_EQUAL,
+			Exp.EQUAL(Exp.REAL),
 			Values.REAL(i2)) => Values.BOOL(b)
 
   rule	real_ne (i1,i2) => b
 	-------------------
 	ceval_relation (Values.REAL(i1),
-			Exp.REAL_EQUAL,
+			Exp.NEQUAL(Exp.REAL),
 			Values.REAL(i2)) => Values.BOOL(b)
+
+  rule	print "- ceval_relation failed\n"
+	---------------------------------
+	ceval_relation (_,_,_) => fail
 
 end
 
@@ -1165,5 +1032,237 @@ relation eq_subscript : (Exp.Subscript, Exp.Subscript) => () =
   rule	print "- eq_subscript failed\n"
 	-------------------------------
 	eq_subscript(_,_)
+
+end
+
+(** - Argument type casting and operator de-overloading
+ **
+ ** If a function is called with arguments that don't match the
+ ** expected parameter types, implicit type conversions are performed
+ ** in some cases.  Usually it is an integer argument that is promoted
+ ** to a real.
+ **
+ ** Many operators in Modelica are overloaded, meaning that they can
+ ** operate on several different types of arguments.  To describe what
+ ** it means to add, say, an integer and a real number, the
+ ** expressions have to be de-overloaded, with one operator for each
+ ** distinct operation.
+ **)
+
+(** relation: elab_arglist
+ **
+ ** Given a list of parameter types and an argument list, this
+ ** relation tries to match the two, promoting the type of arguments
+ ** when necessary.
+ **)
+
+relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
+	=> Exp.Exp list =
+
+  axiom	elab_arglist ([],[]) => []
+
+  rule	elab_arg (pt,arg,atype) => arg' &
+	elab_arglist (pts, args) => args'
+	---------------------------------
+	elab_arglist (pt::pts, (arg, atype)::args) => arg'::args'
+
+end
+
+(** relation: elab_arg
+ **
+ ** This is the relation that takes care of the type conversions.  All
+ ** type conversion rules are described in this relation.
+ **)
+
+relation elab_arg : (Types.Type, Exp.Exp, Types.Type) => Exp.Exp =
+
+  axiom	elab_arg(Types.T_REAL,e,Types.T_INTEGER) => Exp.CAST(Exp.REAL,e)
+
+  rule	Types.same_type(t1,t2) => true
+	------------------------------
+	elab_arg(t1,e,t2) => e
+
+end
+
+(** relation: deoverlooad
+ **
+ ** Given several lists of parameter types and one argument list, this
+ ** relation tries to find one list of parameter types which is
+ ** compatible with the argument list.  It uses `elab_arglist' to do
+ ** the matching, which means that automatic type conversions will be
+ ** made when necessary.  The new argument list, together with a new
+ ** operator that corresponds to the parameter type list is returned.
+ **
+ ** The basic principle is that the first operator that matches is
+ ** chosen.
+ **
+ ** The third argument to the relation is the expression containing
+ ** the operation to be deoverloaded.  It is only used for error
+ ** messages.
+ **)
+
+relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
+		       (Exp.Exp * Types.Type) list,
+		       Absyn.Exp)
+	  => (Exp.Operator, Exp.Exp list, Types.Type) =
+
+  rule	elab_arglist (params, args) => args'
+	------------------------------------
+	deoverload ((op, params, rtype)::_, args, _) => (op, args', rtype)
+
+  rule	deoverload (xs, args, exp) => (op, args', rtype)
+	------------------------------
+	deoverload (_::xs, args, exp) => (op, args', rtype)
+
+  rule	print "# Can't resolve type of expression: " &
+	Dump.print_exp exp & print "\n"
+	------------------------------
+	deoverload([], args, exp) => fail
+
+end
+
+(** relation: operators
+ **
+ ** This relation relates the operators in the abstract syntax to the
+ ** de-overaloaded operators in the SCode.
+ **)
+
+relation operators : Absyn.Operator
+	  => (Exp.Operator * Types.Type list * Types.Type) list =
+
+	(**  Arithmetical operators *)
+
+  axiom	operators Absyn.ADD
+	  => [(Exp.ADD(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_INTEGER),
+	      (Exp.ADD(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_REAL),
+	      (Exp.ADD(Exp.STRING),
+	       [Types.T_STRING, Types.T_STRING],
+	       Types.T_STRING)]
+
+  axiom	operators Absyn.SUB
+	  => [(Exp.SUB(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_INTEGER),
+	      (Exp.SUB(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_REAL)]
+
+  axiom	operators Absyn.MUL
+	  => [(Exp.MUL(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_INTEGER),
+	      (Exp.MUL(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_REAL)]
+
+  axiom	operators Absyn.DIV
+	  => [(Exp.DIV(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_REAL)]
+
+  axiom	operators Absyn.UMINUS
+	  => [(Exp.UMINUS(Exp.INT),
+	       [Types.T_INTEGER],
+	       Types.T_INTEGER),
+	      (Exp.UMINUS(Exp.REAL),
+	       [Types.T_REAL],
+	       Types.T_REAL)]
+
+  axiom	operators Absyn.UPLUS
+	  => [(Exp.UPLUS(Exp.INT),
+	       [Types.T_INTEGER],
+	       Types.T_INTEGER),
+	      (Exp.UPLUS(Exp.REAL),
+	       [Types.T_REAL],
+	       Types.T_REAL)]
+
+	(**  Logical operators *)
+
+  axiom	operators Absyn.AND
+	  => [(Exp.AND,
+	       [Types.T_BOOL, Types.T_BOOL],
+	       Types.T_BOOL)]
+
+  axiom	operators Absyn.OR
+	  => [(Exp.OR,
+	       [Types.T_BOOL, Types.T_BOOL],
+	       Types.T_BOOL)]
+
+  axiom	operators Absyn.NOT
+	  => [(Exp.NOT,
+	       [Types.T_BOOL],
+	       Types.T_BOOL)]
+
+	(**  Relational operators *)
+
+  axiom	operators Absyn.LESS
+	  => [(Exp.LESS(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_BOOL),
+	      (Exp.LESS(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_BOOL)]
+
+  axiom	operators Absyn.LESSEQ
+	  => [(Exp.LESSEQ(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_BOOL),
+	      (Exp.LESSEQ(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_BOOL)]
+
+  axiom	operators Absyn.GREATER
+	  => [(Exp.GREATER(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_BOOL),
+	      (Exp.GREATER(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_BOOL)]
+
+  axiom	operators Absyn.GREATEREQ
+	  => [(Exp.GREATEREQ(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_BOOL),
+	      (Exp.GREATEREQ(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_BOOL)]
+
+  axiom	operators Absyn.EQUAL
+	  => [(Exp.EQUAL(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_BOOL),
+	      (Exp.EQUAL(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_BOOL),
+	      (Exp.EQUAL(Exp.STRING),
+	       [Types.T_STRING, Types.T_STRING],
+	       Types.T_BOOL),
+	      (Exp.EQUAL(Exp.BOOL),
+	       [Types.T_BOOL, Types.T_BOOL],
+	       Types.T_BOOL)]
+
+  axiom	operators Absyn.NEQUAL
+	  => [(Exp.NEQUAL(Exp.INT),
+	       [Types.T_INTEGER, Types.T_INTEGER],
+	       Types.T_BOOL),
+	      (Exp.NEQUAL(Exp.REAL),
+	       [Types.T_REAL, Types.T_REAL],
+	       Types.T_BOOL),
+	      (Exp.NEQUAL(Exp.STRING),
+	       [Types.T_STRING, Types.T_STRING],
+	       Types.T_BOOL),
+	      (Exp.NEQUAL(Exp.BOOL),
+	       [Types.T_BOOL, Types.T_BOOL],
+	       Types.T_BOOL)]
+
+
+  rule	print "- operators(" & Dump.op_symbol op => s &
+ 	print s & print ") failed\n"
+	----------------------------
+	operators op => fail
 
 end
