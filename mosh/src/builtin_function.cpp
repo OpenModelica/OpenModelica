@@ -319,7 +319,7 @@ value gethrtime_t::do_apply(value args)
     std::cout << "Internal error: Wrong number of arguments. Usage gethrtime()\n";
   } else {
     std::cout << "calling gethrtime\n";
-    ret.set_value((long)gethrtime());
+    ret.set_value((long)0);
   }
   
   return ret;
