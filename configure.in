@@ -28,10 +28,16 @@ fi
 
 AC_MSG_CHECKING([for rmlc])
 if test -x $RMLHOME/bin/rmlc ; then
+   rmlc_bin=$RMLHOME/bin/rmlc
   AC_MSG_RESULT([yes])
 else
-  AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin])
-  AC_MSG_RESULT([no])
+  rmlc_bin = `find $RMLHOME -name rmlc| tail -1`
+  if test -z "$rmlc_bin" ; then
+    AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin or anywhere in \$RMLHOME])
+    AC_MSG_RESULT([no])
+  else
+     AC_MSG_RESULT([yes])
+  fi
 fi
 
 AC_MSG_CHECKING([for \$ANTLRHOME])
