@@ -10,198 +10,26 @@ module Inst:
 
 end
 
-type Prefix = string list
+with "prefix.rml"
+with "env.rml"
+with "mod.rml"
 
-(**********************************************************************)
-(* Environments *)
-
-datatype FrameVal = FRAMEVAR of Absyn.Ident
-			      * Absyn.ArrayDim
-			      * Absyn.Class
-			      * bool	(* flow *)
-			      * bool	(* parameter *)
-			      * bool	(* constant *)
-			      * bool	(* input *)
-			      * bool	(* output *)
-		  | FRAMECLASS of Absyn.Class
-
-datatype Frame = FRAME of FrameVal list
-
-type Env = Frame list
-
-val empty_frame = FRAME []
-
-relation new_frame: Env => Env =
-
-  axiom	new_frame(env) => empty_frame::env
-
-end
-
-relation lookup_class2: (Frame,Absyn.Ident) => Absyn.Class =
-
-  rule	id = n
-	---------------------------------------------------------
-	lookup_class2(FRAME(FRAMECLASS(c as Absyn.CLASS(n,_,_,_))::_),id) => c
-
-  rule	lookup_class2(FRAME(fs),id) => c
-	-------------------------
-	lookup_class2(FRAME(_::fs),id) => c
-
-end
-
-relation lookup_class: (Env,Absyn.Ident) => Absyn.Class =
-
-  rule	lookup_class2(f,id) => c
-	---------------------
-	lookup_class(f::fs,id) => c
-
-  rule	lookup_class(fs,id) => c
-	---------------------
-	lookup_class(f::fs,id) => c
-
-end
-
-relation lookup_var2: (Frame,Absyn.Ident) => () =
-
-  rule	id = n
-	---------------------------------------------------------
-	lookup_var2(FRAME(FRAMEVAR(n,_,_,_,_,_,_,_)::_),id)
-
-  rule	lookup_var2(FRAME(fs),id)
-	-------------------------
-	lookup_var2(FRAME(_::fs),id)
-
-end
-
-relation lookup_var: (Env,Absyn.Ident) => () =
-
-  rule	lookup_var2(f,id)
-	--------------------
-	lookup_var(f::fs,id)
-
-  rule	lookup_var(fs,id)
-	--------------------
-	lookup_var(f::fs,id)
-
-end
-
-
-(**********************************************************************)
-(* Modifications *)
-
-type Mods = Absyn.Modification
+type Prefix = Prefix.Prefix
 
 (**********************************************************************)
 
-relation prefix_add: (Exp.Path,Prefix) => Exp.Path =
+relation inst_list (* : (Env.Env, Mod.Mod, Prefix, =>, foo list) *)
+	 =
 
-  axiom	prefix_add(p,[]) => p
+  axiom inst_list(env,mod,pre,r,[]) => (([],env))
 
-  rule	prefix_add(Exp.QUALIFIED(s,p),ss) => p'
-	---------------------------
-	prefix_add(p,s::ss) => p'
-
-end
-
-relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
-
-  axiom	prefix_explist([],_) => []
-
-  rule	prefix_exp2(e,p) => e' &
-	prefix_explist(es,p) => es'
-	---------------------------
-	prefix_explist(e::es,p) => (e'::es')
+  rule	r(env,mod,pre,e) => ((l,env')) &
+	inst_list(env',mod,pre,r,es) => ((l',env'')) &
+	list_append(l,l') => l''
+	--------------------------------------------
+	inst_list(env,mod,pre,r,e::es) => ((l'',env''))
 
 end
-and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
-
-  axiom	prefix_exp2(e as Exp.NUMBER(_),_) => e
-  axiom	prefix_exp2(e as Exp.STRING(_),_) => e
-  axiom	prefix_exp2(e as Exp.BOOL(_),_) => e
-  axiom	prefix_exp2(e as Exp.TIME,_) => e
-
-  rule	prefix_add(p,pre) => p'
-	--------------------------
-	prefix_exp2(Exp.PATH(p),pre) => Exp.PATH(p')
-
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2'
-	-----------------------
-	prefix_exp2(Exp.BINARY(e1,o,e2),p) => Exp.BINARY(e1',o,e2')
-
-  rule	prefix_exp2(e1,p) => e1'
-	-----------------------
-	prefix_exp2(Exp.UNARY(o,e1),p) => Exp.UNARY(o,e1')
-
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2'
-	-----------------------
-	prefix_exp2(Exp.LBINARY(e1,o,e2),p) => Exp.LBINARY(e1',o,e2')
-
-  rule	prefix_exp2(e1,p) => e1'
-	-----------------------
-	prefix_exp2(Exp.LUNARY(o,e1),p) => Exp.LUNARY(o,e1')
-
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2'
-	-----------------------
-	prefix_exp2(Exp.RELATION(e1,o,e2),p) => Exp.RELATION(e1',o,e2')
-
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2' &
-	prefix_exp2(e3,p) => e3'
-	-----------------------
-	prefix_exp2(Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
-
-  rule	prefix_explist(es,p) => es'
-	-----------------------
-	prefix_exp2(Exp.CALL(f,es),p) => Exp.CALL(f,es')
-
-end
-
-relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
-
-  rule	list_reverse(p) => p' &
-	prefix_exp2(e,p') => e'
-	-----------------------
-	prefix_exp(e,p) => e'
-
-end
-
-(**********************************************************************)
-
-relation inst_list =
-
-  axiom	inst_list(_,[],_) => []
-
-  rule	r(x,p) => x' &
-	inst_list(r,xs,p) => xs' &
-	list_append(x',xs') => y
-	----------------------
-	inst_list(r,x::xs,p) => y
-
-end
-
-(**********************************************************************)
-
-relation modify_classdef: (Env,Absyn.Modification,Absyn.ClassDef) => Absyn.ClassDef =
-
-  axiom	modify_classdef(env,mod,p as Absyn.PARTS([])) => p
-
-  rule	modify_classpart(mod,p) => p' &
-	modify_classdef(env,mod,Absyn.PARTS(ps))
-	------------------------------------
-	modify_classdef(env,mod,Absyn.PARTS(p::ps)) => Absyn.PARTS(p'::ps')
-
-  rule	lookup_class(env,p) => Absyn.CLASS(n,_,r,d) &
-	(* FIXME: Check restriction *)
-	modify_classdef(env,mod,es,d) => d'
-	---------------------------------
-	modify_classef(env,mod,Absyn.DERIVED(p,ad,es)) => d
-
-end
-
-(**********************************************************************)
 
 relation inst_connect: (Exp.Exp,Exp.Exp) => DAE.DAEcomp list =
 
@@ -211,7 +39,8 @@ relation inst_connect: (Exp.Exp,Exp.Exp) => DAE.DAEcomp list =
 
 end
 
-relation inst_equation: (Env,Mods,Prefix,Absyn.Equation) => (DAE.DAEcomp list*Env) =
+relation inst_equation: (Env.Env,Mod.Mod,Prefix,Absyn.Equation)
+	  => (DAE.DAEcomp list*Env.Env) =
 
   rule	inst_connect(o1,o2) => l
 	------------------------
@@ -221,50 +50,73 @@ relation inst_equation: (Env,Mods,Prefix,Absyn.Equation) => (DAE.DAEcomp list*En
 	--------------------------------------------
 	inst_equation(env,mods,pre,Absyn.EQ_EXPR(_)) => (([],env))
 
-  rule	prefix_exp(e1,pre) => e1' &
-	prefix_exp(e2,pre) => e2'
+  rule	Prefix.prefix_exp(e1,pre) => e1' &
+	Prefix.prefix_exp(e2,pre) => e2'
 	------------------------
 	inst_equation(env,mods,pre,Absyn.EQ_EQUALS(e1,e2)) =>
 		(([DAE.EQUATION(Exp.RELATION(e1',Exp.EQUAL,e2'))],env))
 
 end
 
-relation inst_element: (Env,Mods,Prefix,Absyn.Element) => (DAE.DAEcomp list*Env) =
+relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
+	  => (DAE.DAEcomp list*Env.Env) =
 
-  rule	modify_classdef(mods,d) => d' &
-	extend_frame(env,FRAMECLASS(d')) => env'
-	----------------------------------------
-	inst_element(env,mods,pre,Absyn.ELEMENT(_,d as Absyn.CLASSDEF(_,_))) =>
-		(([],env'))
-
-  rule	lookup_class(env,cn) => c &
-	modify_class(m,c) => c' &
-	(* Can't use inst_class, as that create a new frame *)
-	modify_extends(mods,c') => Absyn.CLASS(n,_,r,d) &
+  rule	Env.lookup_class(env,cn) => c &
+	Mod.modify_class(env,Absyn.CLASSMOD(m),c) => c' &
+	Mod.modify_class(env,mods,c') => Absyn.CLASS(n,_,r,d) &
+	(* Can't use inst_class, as that creates a new frame *)
 	inst_classdef(env,mods,pre,d) => x
 	----------------------------------
-	inst_element(env,mods,pre,ELEMENT(_,Absyn.EXTENDS(cn,m))) => x
+	inst_element(env,mods,pre,Absyn.ELEMENT(_,_,Absyn.EXTENDS(cn,m)))
+	 => x
 
   	(* If a variable is declared multiple times, the first is used *)
-  rule	lookup_var(env,n) => v
+  rule	Env.lookup_var(env,n)
 	--------------------------
 	inst_element(env,mods,pre,
-		     ELEMENT(_,COMPONENTS(_,_,_,_,_,_,[COMPONENT(n,_,_)]))) =>
-		(([],env))
+		     Absyn.ELEMENT(_,n,Absyn.COMPONENTS(_,_,_,_,_,_,_)))
+	 => (([],env))
 
-  rule	lookup_class(env,t) => cl &
-	modify_class(m,cl) => cl' &
-	lookup_modification(mods,n) => mm &
-	modify_class(mm,cl') => cl'' &
-	extend_frame(env,FRAMEVAR(n,ad,cl'',f,p,c,i,o)) => env'
+  rule	Env.lookup_var(env,n) &
+	print "Trying to redeclare the class " & print n &
+	print " as a variable\n" &
+	fail
+	------------------------
+	inst_element(env,mods,pre,Absyn.ELEMENT(_,n,Absyn.CLASSDEF(_,_)))
+	 => (([],env))
+
+  rule	Env.lookup_class(env,Exp.IDENT(n)) => v &
+	print "Trying to redeclare the variable " & print n &
+	print " as a class\n" &
+	fail
+	------------------------
+	inst_element(env,mods,pre,
+		     Absyn.ELEMENT(_,n,Absyn.COMPONENTS(_,_,_,_,_,_,_)))
+	 => (([],env))
+
+  rule	Mod.lookup_modification(mods,n) => mm &
+	Mod.maybe_modify_class(env,mm,c) => c' &
+	Env.extend_frame_c(env,c') => env'
+	----------------------------------------
+	inst_element(env,mods,pre,
+		     Absyn.ELEMENT(_,n,Absyn.CLASSDEF(_,c)))
+	 => (([],env'))
+
+  rule	Env.lookup_class(env,t) => cl &
+	Mod.maybe_modify_class(env,m,cl) => cl' &
+	Mod.lookup_modification(mods,n) => mm &
+	Mod.maybe_modify_class(env,mm,cl') => cl'' &
+	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,cl'',f,p,c,i,o)) => env'
 	--------------------------
 	inst_element(env,mods,pre,
-		     ELEMENT(_,COMPONENTS(f,p,c,i,o,t,[COMPONENT(n,ad,m)]))) =>
-		(([],env'))
+		     Absyn.ELEMENT(_,_,Absyn.COMPONENTS(f,p,c,i,o,t,
+					    [Absyn.COMPONENT(n,ad,m)])))
+         => (([],env'))
 
 end
 
-relation inst_classpart: (Env,Mods,Prefix,Absyn.ClassPart) => (DAE.DAEcomp list*Env) =
+and inst_classpart: (Env.Env,Mod.Mod,Prefix,Absyn.ClassPart)
+	  => (DAE.DAEcomp list*Env.Env) =
 
   rule	inst_list(env,mods,pre,inst_element,l) => x
 	-------------------------------------------
@@ -284,7 +136,8 @@ relation inst_classpart: (Env,Mods,Prefix,Absyn.ClassPart) => (DAE.DAEcomp list*
 
 end
 
-relation inst_classdef: (Env,Mods,Prefix,Absyn.ClassDef) => (DAE.DAEcomp list*Env) =
+and inst_classdef: (Env.Env,Mod.Mod,Prefix,Absyn.ClassDef)
+	  => (DAE.DAEcomp list*Env.Env) =
 
   rule	inst_list(env,mods,pre,inst_classpart,pl) => x
 	------------------------------------------------
@@ -292,21 +145,21 @@ relation inst_classdef: (Env,Mods,Prefix,Absyn.ClassDef) => (DAE.DAEcomp list*En
 
   rule	print "DERIVED not handled\n" & fail
 	------------------------------------
-	inst_classdef(_,_,_,Absyn.DERIVED(_,_,_)) => []
+	inst_classdef(env,_,_,Absyn.DERIVED(_,_,_)) => (([],env))
 end
 
-relation inst_class: (Env,Mods,Prefix,Absyn.Class) => DAE.DAEcomp list =
+relation inst_class: (Env.Env,Mod.Mod,Prefix,Absyn.Class) => DAE.DAEcomp list =
 
   rule	print "instantiating " & print n & print "\n" &
-	new_frame(env) => env' &
-	inst_classdef(env',mods,pre,d) => l
+	Env.new_frame(env) => env' &
+	inst_classdef(env',mods,pre,d) => ((l,_))
 	------------------------------------------------------	
-	inst_class(env,mods,pre,c as Absyn.CLASS(n,FALSE,r,d)) => l
+	inst_class(env,mods,pre,c as Absyn.CLASS(n,false,r,d)) => l
 
   rule	print "Can't instantiate partial class " & print n & print "\n" &
 	fail
 	------------------------------------------------------	
-	inst_class(Absyn.CLASS(n,TRUE,_,_),p) => []
+	inst_class(env,mod,pre,Absyn.CLASS(n,true,_,_)) => []
 
   (* FIXME *)
 
@@ -318,7 +171,7 @@ relation instantiate: Absyn.Program => DAE.DAEform =
 	------------------------------
 	instantiate([]) => DAE.DAE([])
 
-  rule	inst_class(c,[]) => l'
+  rule	inst_class(Env.empty_env,Absyn.CLASSMOD([]),[],c) => l'
 	-----------------------------
 	instantiate([c]) => DAE.DAE(l')
 
