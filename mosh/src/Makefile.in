@@ -1,17 +1,16 @@
 CC=gcc
 CXX=g++
 
-ANTLR_HOME = /home/pelab/pub/pkg/antlr-2.7.1
-ANTLR_CPP = $(ANTLR_HOME)/lib/cpp/gcc-2.95.2
+ANTLR_HOME = @antlrhome@
 
-ANTLR_INCP = -I$(ANTLR_CPP)/include
-ANTLR_LIBP = -L$(ANTLR_CPP)/lib
+ANTLR_INCP = -I@antlrinc@
+ANTLR_LIBP = -L@antlrlib@
 
 PARSE_INCP = -I../../modelica_parser/src
 PARSE_LIBP = -L../../modelica_parser/src
 
-READLINE_INCP = -I /home/pelab/pkg/gnu/include
-READLINE_LIBP = -L /home/pelab/pkg/gnu/lib
+READLINE_INCP = -I@readlineinc@
+READLINE_LIBP = -L@readlinelib@
 
 INCP = $(ANTLR_INCP) $(PARSE_INCP) $(READLINE_INCP)
 LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP)
