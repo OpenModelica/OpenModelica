@@ -14,6 +14,7 @@
 module DAE:
 
 with "exp.rml"
+with "dump.rml"
 
 type Ident = string
 
@@ -50,11 +51,11 @@ relation dump_comp: DAEcomp => () =
 		dump_comp(VAR(id, kind)) => ()
 
 	rule	dump_kind kind & print id &
-		print "=" & Exp.dump ex & print "\n"
+		print "=" & Dump.dump_exp ex & print "\n"
 		--------------------------------------
 		dump_comp(VARVAL(id, kind, ex)) => ()
 
-	rule	print "  " & Exp.dump eq & print "\n"
+	rule	print "  " & Dump.dump_exp eq & print "\n"
 		--------------------------------------
 		dump_comp(EQUATION(eq)) => ()
 

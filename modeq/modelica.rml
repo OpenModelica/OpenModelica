@@ -7,6 +7,7 @@ module Modelica:
 with "exp.rml"
 with "dae.rml"
 with "class.rml"
+with "dump.rml"
 
 type Ident = string
 
@@ -175,7 +176,7 @@ and (* relation *) dump_element: Element => () =
 		--------------
 		dump_element(COMP(typ, comp))
 
-	rule	Exp.dump(eq) & print "\n"
+	rule	Dump.dump_exp(eq) & print "\n"
 		--------------
 		dump_element(EQUATION(eq))
 
