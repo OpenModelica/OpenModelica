@@ -421,6 +421,13 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Class, bool, InstDims, bool, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
+(*
+  rule	(*print "nomod &  nopre on class " & print cname & print "\n" &*)
+	int_eq(1,0) => true
+	------------
+	inst_class_in(env,Mod.NOMOD, Prefix.NOPRE,_,_,c as SCode.CLASS(cname,_,_,restr,d),
+		       _,_,_,_) => ([],env,[], ClassInf.UNKNOWN("foo"), [])
+*)
 	
   rule	(*For the builtin classes. no DAE for elts. E.g. unit, quantity, ... *)
 	Util.string_equal(cname,"Real") => r &
@@ -1536,12 +1543,11 @@ relation inst_var2 : (Env.Env,
  	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	inst_mod_equation(cr,ty,mod) => dae2 &
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,inst_dims)
-	  => dae3 & 
- 
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,inst_dims) => dae3 &
 	list_append(dae1',dae2) => daex &
-	list_append(daex,dae3) => dae
+	list_append(daex,dae3) => dae 
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
+	& Debug.fprint("instvartr", "\nEnd of inst_var variables\n")
 	--------------------------
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
 		 [],idxs,inst_dims,impl (*as false*))
@@ -1585,6 +1591,7 @@ relation inst_var2 : (Env.Env,
 	  => (dae, csets', ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty'
+	& Debug.fprint("instvartr", "\nEnd of inst_var variables array non-function\n")
 	-------------------------------
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl (*as false*))
           => (dae,csets',ty')
@@ -1818,7 +1825,6 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.
 	list_append(crefs,crefs2) => crefs' &
 	remove_cref_from_crefs(crefs',cref) => crefs'' &
 	update_variables_in_env(mods,crefs'',env,ci_state,impl) => env2 &
-	
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
@@ -4369,6 +4375,13 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	inst_mod_equation(cr,ty1,mod) => [] *)
 	  
   rule	Types.elab_type ty1 => t &
+(*
+	Debug.print ("Debug: inst_mod_equation calling inst_eq_equation\n") &
+	fix_mod_subscript (cr, e, prop2) => (e', prop2') &
+	inst_eq_equation(Exp.CREF(cr,t),
+			 Types.PROP(ty1,false(*FIXME*)), e',prop2',NON_INITIAL)
+ => dae
+*)
 	inst_eq_equation(Exp.CREF(cr,t),
 			 Types.PROP(ty1,false(*FIXME*)), e,prop2,NON_INITIAL) => dae
 	-----------------------------------------------
@@ -4386,7 +4399,66 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 end
 
 
+(* might be needed from inst_mod_equation
 
+relation fix_mod_subscript : (Exp.ComponentRef, Exp.Exp, Types.Properties) 
+	  => (Exp.Exp, Types.Properties) = 
+
+  rule	get_last_subscripts cr1 => subs &
+	put_last_subscripts (cr2, subs) => cr2' &
+	list_length subs => sublength &
+	unlift_array_times (typrop, sublength) => typrop' &
+	get_exp_type typrop' => ty2' &
+	let newexp = Exp.CREF(cr2', ty2') &
+	let newprop = Types.PROP(typrop', flg) 
+	--------------------------------------
+	fix_mod_subscript (cr1, Exp.CREF(cr2,ty2), Types.PROP(typrop,flg)) => (newexp, newprop)
+end
+
+relation unlift_array_times : (Types.Type, int) => Types.Type =
+	
+  axiom	unlift_array_times (ty, 0) => ty
+
+  rule	Types.unlift_array ty => ty' &
+	int_sub (cnt,1) => cnt' &
+	unlift_array_times (ty', cnt') => ty''
+	-------------------
+	unlift_array_times (ty, cnt) => ty''
+			 
+end
+
+relation get_exp_type : Types.Type => Exp.Type =
+
+  axiom	get_exp_type Types.T_INTEGER(_) => Exp.INT
+  axiom	get_exp_type Types.T_REAL(_) => Exp.REAL
+  axiom	get_exp_type Types.T_STRING(_) => Exp.STRING
+  axiom	get_exp_type Types.T_BOOL(_) => Exp.BOOL
+  axiom	get_exp_type Types.T_ENUM => Exp.ENUM
+  axiom	get_exp_type _ => Exp.OTHER
+
+end
+
+
+relation get_last_subscripts : Exp.ComponentRef => Exp.Subscript list =
+
+  axiom	get_last_subscripts Exp.CREF_IDENT (n, subs) => subs
+
+  rule	get_last_subscripts rest => subs
+	--------------------------------
+	get_last_subscripts Exp.CREF_QUAL (n, subs, rest) => subs
+end
+
+relation put_last_subscripts : (Exp.ComponentRef, Exp.Subscript list) 
+	  => Exp.ComponentRef =
+
+  axiom	put_last_subscripts (Exp.CREF_IDENT(n, subs), subs') 
+	  => Exp.CREF_IDENT(n,subs') 
+
+  rule	put_last_subscripts (rest,subs) => rest'
+	--------------------------------
+	put_last_subscripts (Exp.CREF_QUAL(n, s, rest), subs) => Exp.CREF_QUAL(n,s,rest')
+end
+*)
 
 
 
@@ -4567,8 +4639,10 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Mod.mod_equation mod' => eq &
 	make_binding(env,attr,eq) => bind
 	---------------------------------------
-	inst_record_constructor_elt (env,SCode.COMPONENT(id,_,repl,prot,
-							 attr as SCode.ATTR(dim,f,acc,var,dir),t,mod)) 
+	inst_record_constructor_elt (env,
+				     SCode.COMPONENT(id,_,repl,prot,
+						     attr as
+						     SCode.ATTR(dim,f,acc,var,dir),t,mod)) 
 	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp',bind)
 
   rule	Print.print_buf "#Error, inst_record_constructor_elt failed\n  element =" &

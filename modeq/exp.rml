@@ -63,7 +63,7 @@ module Exp:
 	       | LUNARY of Operator * Exp
 	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
-	       | CALL of Absyn.Path * Exp list * bool * bool (* Function call bool1 = tuple bool2 = constant *)
+	       | CALL of Absyn.Path * Exp list * bool (* tuple *) * bool (* builtin *) (* Function call *)
 	       | ARRAY of Type * bool * Exp list
 	       | MATRIX of Type * int * (Exp*bool) list list
 	       | RANGE of Type * Exp * Exp option * Exp
@@ -540,7 +540,7 @@ relation print_component_ref2 =
 
   rule	RTOpts.modelica_output => false &
 	Print.print_buf s &
-	Print.print_buf "[" & print_list(l,print_subscript,",") & Print.print_buf "]"
+	Print.print_buf "<cref>[" & print_list(l,print_subscript,",") & Print.print_buf "]"
 	-------------------------------------------------------
 	print_component_ref2 (s,l)
 
@@ -671,7 +671,7 @@ relation print_exp2 : (Exp,int) => () =
 	---------
 	print_exp2 (TUPLE(es),_)
 	
-  rule	Print.print_buf "[" &
+  rule	Print.print_buf "<matrix>[" &
 	print_list(es, print_row, ";") &
 	Print.print_buf "]"
 	---------
@@ -714,7 +714,7 @@ relation print_exp2 : (Exp,int) => () =
 	print_leftpar(pri1,pri2) => pri3 &
 	print_exp2 (e,pri3) &
  	print_rightpar(pri1,pri2) &
- 	Print.print_buf "[" &
+ 	Print.print_buf "<asub>[" &
  	int_string i => s & Print.print_buf s & Print.print_buf "]"
 	---------------------------------------
 	print_exp2 (ASUB(e,i),pri1)

@@ -977,7 +977,7 @@ relation elab_builtin_sum : (Env.Env, Absyn.Exp list)
 	elab_exp(env,arrexp,false,NONE) 
 	      => (exp',Types.PROP((Types.T_ARRAY(dim,tp),_),c as false),_) &
 	let exp'' = Exp.CALL(Absyn.IDENT("sum"),
-			   [exp'],false,false) 
+			   [exp'],false,true)
 	---------------------------------------
 	elab_builtin_sum(env,[arrexp]) => (exp'', Types.PROP(tp,c))
 end
@@ -988,7 +988,7 @@ relation elab_builtin_pre : (Env.Env, Absyn.Exp list)
   rule	elab_exp(env,exp,false,NONE) => (exp',Types.PROP(tp,c),_) &
 	Types.basic_type(tp) => true &
 	let exp'' = Exp.CALL(Absyn.IDENT("pre"),
-			   [exp'],false,false) 
+			   [exp'],false,true)
 	------------------------------------
 	elab_builtin_pre(env,[exp]) => (exp'', Types.PROP(tp,c))
 
@@ -1008,7 +1008,7 @@ relation elab_builtin_initial : (Env.Env, Absyn.Exp list)
 
   axiom	elab_builtin_initial(env,[]) 
 	  => (Exp.CALL(Absyn.IDENT("initial"),
-			   [],false,false), Types.PROP((Types.T_BOOL([]),NONE),false))
+			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),false))
 
   rule	Print.print_buf "#Error, initial takes no arguments.\n"
 	------------------
@@ -1020,7 +1020,7 @@ relation elab_builtin_terminal : (Env.Env, Absyn.Exp list)
 
   axiom	elab_builtin_terminal(env,[]) 
 	  => (Exp.CALL(Absyn.IDENT("terminal"),
-			   [],false,false), Types.PROP((Types.T_BOOL([]),NONE),false))
+			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),false))
 
   rule	Print.print_buf "#Error, terminal takes no arguments.\n"
 	------------------
@@ -1859,7 +1859,8 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
 
 	(* This rule finds the built-in functions *)
-
+	(* FIXME: LS: How do we know that? Anyway, if true, I've changed false *)
+	(* to true in Exp.CALL() where last flag stands for "builtin" *)
   rule	
 
 	(* PR. A function can have several types. Taking an array with

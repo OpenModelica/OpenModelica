@@ -147,6 +147,8 @@ returns multiple arguments. *)
   relation get_classname: (Type) => Absyn.Path
   relation get_type_name: Type => string
   relation is_array : Type => bool
+  relation is_string : Type => bool
+  relation is_array_or_string : Type => bool
   relation is_input_attr : Attributes => bool
   relation is_output_attr : Attributes => bool
   relation is_bidir_attr : Attributes => bool
@@ -179,6 +181,27 @@ relation is_array : Type => bool =
 
   axiom	is_array((T_ARRAY(_,_),_)) => true
   axiom	is_array((_,_)) => false
+
+end
+
+relation is_string : Type => bool =
+
+  axiom	is_string ((T_STRING(_),_)) => true
+  axiom	is_string ((_,_)) => false
+
+end
+
+relation is_array_or_string : Type => bool =
+
+  rule	is_array ty => true
+	-------------------
+	is_array_or_string ty => true
+
+  rule	is_string ty => true
+	-------------------
+	is_array_or_string ty => true
+
+  axiom	is_array_or_string _ => false
 
 end
 

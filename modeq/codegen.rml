@@ -542,8 +542,21 @@ relation generate_return_decls : DAE.Element list => (string list,
 
 end
 
+relation tmpprintinit : Exp.Exp option => string =
+
+  axiom tmpprintinit NONE => ""
+
+  rule	Exp.print_exp_str e => str &
+	Util.string_append_list ([" /* ", str, " */"]) => str1
+	--------------------------
+	tmpprintinit SOME(e) => str1
+
+end
 
 relation generate_return_decl: DAE.Element => (string, string) =
+
+(* changed DAE.VAR(..., NONE, inst_dims) to ..._, inst_dims) because removed second *)
+(* rule *)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
@@ -553,19 +566,23 @@ relation generate_return_decl: DAE.Element => (string, string) =
 	Util.string_delimit_list(dim_strs,", ") => dims_str &
 	Util.string_append_list([typ_str," ",id_str,";",
 				 " /* [",dims_str,"] */"]) 
-	  => decl_str
+	  => decl_str' &
+	tmpprintinit initopt => expstr &
+	string_append(decl_str', expstr) => decl_str
 	---------------------------------------------------
-	generate_return_decl (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, NONE,inst_dims))
-	  => (decl_str,id_str)
+	generate_return_decl (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, 
+				      typ, initopt, inst_dims)) => (decl_str,id_str)
 
+(* not needed here, generate_return_decl is used to create the return struct
   rule	is_array id => is_a &
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (id_str,_) &
-	Util.string_append_list([typ_str," ",id_str,";"]) => decl_str &
+	Util.string_append_list([typ_str," ",id_str,";"]) => decl_str' &
 	Print.print_buf "# default/init values not implemented yet: " &
 	Exp.print_exp_str e => str & Print.print_buf str &
-	Print.print_buf "\n"
+	Print.print_buf "\n" &
+	Util.string_append_list ([decl_str', " /* ", str, " */"]) => decl_str
 	-----------
 	generate_return_decl (DAE.VAR(id, 
 				      DAE.VARIABLE, 
@@ -574,7 +591,7 @@ relation generate_return_decl: DAE.Element => (string, string) =
 				      SOME(e),
 				      _))
 	=> (decl_str,id_str)
-
+*)
 
   axiom	generate_return_decl (_) => ("","")
 
@@ -590,6 +607,25 @@ relation is_array : Exp.ComponentRef => bool =
 	------------------
 	is_array Exp.CREF_QUAL(_,[],cref) => b
 
+end
+
+relation is_array_or_string : (Exp.ComponentRef, DAE.Type) => bool =
+
+  rule	is_array cr => true &
+	Print.print_buf "#-- array of strings is probably not supported yet\n"
+	------------------------------------------------------------------
+	is_array_or_string (cr, DAE.STRING) => fail
+
+  rule	is_array cr => true
+	-------------------
+	is_array_or_string (cr, _) => true
+
+  axiom	is_array_or_string (_, DAE.STRING) => true
+
+  rule	Print.print_buf "#-- is_array_or_string failed\n"
+	------------------------------------------------------------------
+	is_array_or_string (_,_) => fail
+	
 end
 
 relation is_first_in_array : Exp.ComponentRef => bool =
@@ -753,7 +789,7 @@ relation generate_type_internal_namepart : Types.Type => string =
   axiom generate_type_internal_namepart((Types.T_REAL(_),_))	=> "real"
   axiom	generate_type_internal_namepart((Types.T_STRING(_),_))	=> "string"
   axiom	generate_type_internal_namepart((Types.T_BOOL(_),_))	=> "boolean"
-  axiom	generate_type_internal_namepart((Types.T_ENUM,_))	=> "NOT_IMPLEMENTED"
+  axiom	generate_type_internal_namepart((Types.T_ENUM,_))	=> "T_ENUM_NOT_IMPLEMENTED"
 
 end
 
@@ -891,6 +927,11 @@ relation generate_function_arg : Types.FuncArg => string =
 
 end
 
+(* FIXME : shouldn't it be "const <type> *" instead of
+   <type> const *"
+   changed this already.
+*)
+
 relation generate_ext_arg_type : (Types.Attributes, Types.Type) => string =
 
   rule	Types.is_array ty => false & 
@@ -900,7 +941,7 @@ relation generate_ext_arg_type : (Types.Attributes, Types.Type) => string =
 
   rule	Types.is_array ty => true & 
 	generate_type_external ty => str &
-	string_append(str," const *") => resstr
+	Util.string_append_list(["const ",str," *"]) => resstr
 	----------------------------------------------------
 	generate_ext_arg_type (Types.ATTR(_,_,_,Absyn.INPUT), ty) => resstr
 
@@ -960,7 +1001,7 @@ end
 relation generate_ext_arg_type_f77 : (Types.Attributes, Types.Type) => string =
 
   rule	generate_type_external ty => str &
-	string_append(str," const *") => resstr
+	Util.string_append_list(["const ", str, " *"]) => resstr
 	----------------------------------------------------
 	generate_ext_arg_type_f77 (Types.ATTR(_,_,_,Absyn.INPUT), ty) => resstr
 
@@ -1191,6 +1232,30 @@ relation generate_alloc_outvars_ext : (DAE.Element list, string, string,int, DAE
 end
 
 relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int) =
+
+  rule	is_array id => is_a &
+	is_first_in_array id => true &
+	dae_type_str (typ,is_a) => typ_str &
+	comp_ref_cstr id => (cref_str,_) &
+(*	list_reverse inst_dims => inst_dims' & *)
+	generate_size_subscripts(inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
+	c_move_statements_to_inits cfn1 => cfn1' &
+
+	list_length dim_strs => ndims &
+	int_string ndims => ndims_str &
+	Util.string_delimit_list(dim_strs,", ") => dims_str &
+	Util.string_append_list(["alloc_",typ_str,
+			"(&",cref_str,", ",
+			ndims_str,", ",dims_str,");"])
+	  => alloc_str &
+	  
+	  c_add_inits(cfn1',[alloc_str]) => cfn' &
+	Util.if (is_a,cfn',cfn1') => cfn
+	-----------
+	generate_alloc_outvar_f77(DAE.VAR(id, vk, DAE.BIDIR, typ, e,inst_dims),
+				  prefix,
+				  tnr) 
+	  => (cfn,tnr1)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
@@ -1596,7 +1661,46 @@ relation generate_var_decls : (DAE.Element list,DAE.Element => (),int)
 	
 end
 
+relation generate_var_inits : (DAE.Element list, int) => (CFunction, int) =
 
+  axiom	generate_var_inits ([],tnr) => (c_empty_function, tnr)
+
+  rule	generate_var_init (first, tnr) => (cfn1, tnr1) &
+	generate_var_inits(rest, tnr1) => (cfn2, tnr2) &
+	c_merge_fn(cfn1, cfn2) => cfn
+	-----------------------------
+	generate_var_inits (first::rest, tnr) => (cfn, tnr2)
+
+  rule	Print.print_buf "# generate_var_inits failed\n"
+	---------------------------------
+	generate_var_inits (_,_) => fail
+	
+end
+
+
+relation generate_var_init : (DAE.Element, int) => (CFunction, int) =
+
+  rule	is_array id => is_a &
+	is_first_in_array id => true &
+	dae_type_str (typ, is_a) => typ_str &
+	comp_ref_cstr id => (id_str,_) &
+	Exp.print_exp_str e => expstr & 
+	Util.string_append_list (["copy_", typ_str,
+				  "_data(", id_str, ",", expstr, ");"
+				  ]) => init_str &
+	c_add_statements(c_empty_function,[init_str]) => cfn
+	-----------
+	generate_var_init    (DAE.VAR(id, 
+				      DAE.VARIABLE, 
+				      DAE.OUTPUT, 
+				      typ, 
+				      SOME(e),
+				      _),tnr)
+	=> (cfn, tnr)
+
+  axiom	generate_var_init (_, tnr) => (c_empty_function, tnr)
+
+end
 
 relation generate_var : (DAE.Element,int) => (CFunction,int) =
 (*
@@ -3034,12 +3138,22 @@ relation generate_read_call_write_external : (string,
 	list_append (invars, outvars) => vars' &
 	list_append (vars', bivars) => vars &
 
-	generate_ext_call (vars, extdecl, tnr_bivars) => (extcall, tnr_extcall) &
+(*
+	generate_var_inits(outvars, tnr_bivars) => (cfnvarinits1, tnr_varinits1) &
+	generate_var_inits(bivars, tnr_varinits1) => (cfnvarinits2, tnr_varinits2) &
 
+	c_merge_fns([cfnvarinits1,cfnvarinits2]) => cfnvarinits &
+
+	generate_ext_call (vars, extdecl, tnr_varinits2) => (extcall, tnr_extcall) &
+*)
+
+	generate_ext_call (vars, extdecl, tnr_bivars) => (extcall, tnr_extcall) &
 	c_add_statements(extcall,["PRE_OPEN_OUTFILE"]) => cfn4' &
 
 	generate_write(outvars) => cfn5 &
 	c_add_statements(cfn5,["PRE_WRITE_DONE"]) => cfn5' &
+
+(*	c_merge_fns([cfn1',cfn3',readdone,mem_fn,biallocstmts,cfnvarinits,cfn4',cfn5']) => cfn' & *)
 
 	c_merge_fns([cfn1',cfn3',readdone,mem_fn,biallocstmts,cfn4',cfn5']) => cfn' &
 
@@ -3152,12 +3266,16 @@ relation generate_extcall_vardecl : DAE.ExtArg => CFunction =
 	(* INPUT NON-ARRAY *)
   rule	let DAE.EXTARG(cref, Types.ATTR(_,_,_,Absyn.INPUT), ty) = arg &
 	Types.is_array ty => false &
+	Types.is_string ty => false &
 	generate_type_external ty => tystr &
 	var_name_external cref => name &
 	comp_ref_cstr cref => (orgname, _) &
 	generate_vardecl_func (tystr, name, SOME(orgname)) => res
 	--------------------------------------------------------
 	generate_extcall_vardecl arg => res
+
+	(* INPUT NON-ARRAY STRING *)
+	(* do nothing *)
 
 	(* INPUT ARRAY *)
   rule	let DAE.EXTARG(cref, Types.ATTR(_,_,_,Absyn.INPUT), ty) = arg &
@@ -3166,7 +3284,7 @@ relation generate_extcall_vardecl : DAE.ExtArg => CFunction =
 	generate_extcall_vardecl arg => c_empty_function
 
 	(* OUTPUT NON-ARRAY *)
-  rule	let DAE. EXTARG(cref, Types.ATTR(_,_,_,Absyn.OUTPUT), ty) = arg &
+  rule	let DAE.EXTARG(cref, Types.ATTR(_,_,_,Absyn.OUTPUT), ty) = arg &
 	Types.is_array ty => false &
 	generate_type_external ty => tystr &
 	var_name_external cref => name &
@@ -3203,6 +3321,8 @@ relation generate_extcall_vardecl : DAE.ExtArg => CFunction =
 
 end
 
+
+
 relation generate_extcall_vardecls2_f77 : (DAE.ExtArg list, DAE.ExtArg, int)
 	  => (CFunction, DAE.ExtArg list, int) =
 
@@ -3230,12 +3350,13 @@ relation generate_c_to_f77_converter : Types.Type => string =
 	generate_type_internal_namepart elty => eltystr &
 	Util.string_append_list (["convert_alloc_",eltystr,"_array_to_f77"]) => str
 	---------------------------------------------------------------------
-	generate_c_to_f77_converter((Types.T_ARRAY(_,(Types.T_ARRAY(_,ty),_)),_)) => str
+	generate_c_to_f77_converter (ty as (Types.T_ARRAY(_,_),_)) => str
 
   rule	Print.print_buf "#-- generate_c_to_f77_converter failed\n" &
-	Print.print_buf "#-- Not an array?\n"
+	Print.print_buf "#-- Not an array?\n" &
+	Types.print_type ty
 	---------------------------------------------
-	generate_c_to_f77_converter _ => fail
+	generate_c_to_f77_converter ty => fail
 
 end
 
@@ -3410,10 +3531,11 @@ end
 *)
 relation generate_ext_call_fcall_arg : DAE.ExtArg => string =
 
-	(* INPUT NON-ARRAY *)
+	(* INPUT NON-ARRAY NON-STRING *)
   rule	let DAE.EXTARG(cref, attr, ty) = arg &
 	Types.is_input_attr attr => true &
 	Types.is_array ty => false &
+	Types.is_string ty => false &
 	var_name_external cref => res
 	-----------------------------
 	generate_ext_call_fcall_arg arg => res
@@ -3435,9 +3557,9 @@ relation generate_ext_call_fcall_arg : DAE.ExtArg => string =
 	-----------------------------
 	generate_ext_call_fcall_arg arg => res
 
-	(* INPUT/OUTPUT ARRAY *)
+	(* INPUT/OUTPUT STRING *)
   rule	let DAE.EXTARG(cref, attr, ty) = arg &
-	Types.is_array ty => true &
+	Types.is_string ty => true &
 	comp_ref_cstr cref => (name,_) &
 	string_append(name, ".data") => res
 	-----------------------------
@@ -3469,9 +3591,11 @@ relation generate_ext_call_fcall_arg : DAE.ExtArg => string =
 	generate_ext_call_fcall_arg (arg as DAE.EXTARGSIZE(_,_,_,_)) => str
 
 
-  rule	Print.print_buf "#-- generate_ext_call_fcall_arg failed\n"
+  rule	Print.print_buf "#-- generate_ext_call_fcall_arg failed\n" &
+	DAE.dump_ext_arg_str arg => str &
+	Print.print_buf str & Print.print_buf "\n"
 	----------------------------------------------------------
-	generate_ext_call_fcall_arg _ => fail
+	generate_ext_call_fcall_arg arg => fail
 
 end
 
@@ -3820,14 +3944,21 @@ end
 
 relation var_name_array : (Exp.ComponentRef, Types.Attributes) => string =
 
+	(* INPUT *)
   rule	comp_ref_cstr cref => (str, _) &
 	Types.is_input_attr attr => true
 	---------------------------------------
 	var_name_array (cref,attr) => str
 
+	(* OUTPUT *)
   rule	comp_ref_cstr cref => (cref_str, _) &
 	Types.is_output_attr attr => true &
 	string_append ("out.", cref_str) => str
+	---------------------------------------
+	var_name_array (cref,attr) => str
+
+	(* INPUT/OUTPUT *)
+  rule	comp_ref_cstr cref => (str, _)
 	---------------------------------------
 	var_name_array (cref,attr) => str
 

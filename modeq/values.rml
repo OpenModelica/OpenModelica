@@ -99,10 +99,8 @@ relation unparse_values: (Value list) => string =
 
   rule	unparse_description([v]) => s1 &
 	unparse_value_numbers([v]) => s2 &
-	unparse_values(vallst) => s3 &	
-	string_append(s1,s2) => s4 &
-	string_append(s4,"\n") => s5 &
-	string_append(s5,s3) => str
+	unparse_values(vallst) => s3 &
+	Util.string_append_list([s1,s2,"\n",s3]) => str
 	-----------------------------
 	unparse_values(v::vallst) => str
 
@@ -131,8 +129,16 @@ relation unparse_value_numbers: (Value list) => string =
 	---------------------------
 	unparse_value_numbers(REAL(i)::xs) => res
 
+  rule	unparse_value_numbers(xs) => s1 &
+	string_append(sval," ") => s2 &
+	string_append(s2,s1) => res
+	---------------------------
+	unparse_value_numbers(STRING(sval)::xs) => res
+
 	axiom unparse_value_numbers([]) => ""
+
 end
+
 
 relation unparse_description:(Value list) => string =
 
@@ -145,6 +151,13 @@ relation unparse_description:(Value list) => string =
 	string_append("# r!\n",s1) => str
 	-------------------------------
 	unparse_description(REAL(_)::xs)=> str
+
+  rule	unparse_description(xs) => s1 &
+	string_length sval => slen &
+	int_string slen => slenstr &
+	Util.string_append_list(["# s[ 1 ", slenstr, "\n"]) => str
+	-------------------------------
+	unparse_description(STRING(sval)::xs)=> str
 	
   rule	unparse_description(xs) => s1 &
 	unparse_array_description(vallst) => s2 &
