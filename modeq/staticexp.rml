@@ -260,8 +260,7 @@ relation ceval_if_constant: (Exp.Exp, Types.Properties, bool (* constant *), boo
   axiom	ceval_if_constant(e,prop,cnst as true ,impl as true,_) => (e, prop)
 	
 
-  rule	print "constant evaluation becaus const flag true\n" &
-	Ceval.ceval(env,e,impl,NONE,NONE) => (v,_) &
+  rule	Ceval.ceval(env,e,impl,NONE,NONE) => (v,_) &
 	value_exp(v) => e' &
 	value_type(v) => vt
 	---------------------------------
