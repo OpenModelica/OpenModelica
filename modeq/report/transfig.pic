@@ -10,7 +10,7 @@ box "Modelica"                    ; label("\itshape Parsing")      ; arrow 0.45
 box "AST"                         ; label("\itshape Transformation") ; arrow
 box "SCode"                       ; label("\itshape Instantiation")  ; arrow
 box "Internal DAE representation" ; label("\itshape Emission")     ; arrow 0.45
-box "DAE list"
+box "Flat Modelica (DAE list)"
 
 btop = 2nd box.n.y + 0.15 ; bbot = last box.n.y + 0.15
 box at (-0.3,(bbot + btop)/2) ht (btop - bbot) width 2.9
