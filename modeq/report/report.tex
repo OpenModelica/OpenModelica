@@ -577,15 +577,70 @@ The type system is based on \firstref{classes}. A class is the basic
 unit of modelling. It is used to modularize the model description and
 to \unfinished
 
+The definition of what a type is has been the subject of discussion in
+the Modelica group, but the following definition is used in this
+specification.
+
 \begin{Def}[Type]
-  A type is a property of an instantiated component
+  A type is a property of components and expressions.  It is defined
+  as one of the following:
+
+  \begin{enumerate}
+  \item A built-in type (\code{RealType}, \code{IntegerType},
+    \code{StringType} or \code{BooleanType}) \fixme{not exactly}
+    
+  \item A structured type, containing a set of public components
+    $(N,T)$, where $N$ is an identifier and $T$ is a type.  No two
+    components in the set can have the same identifier.
+    
+  \item An array of a type, with a undefined or non-negative, integer
+    size.
+  \end{enumerate}
 \end{Def}
 
+Note that there is no special provision for multi-dimensional arrays.
+They are regarded as equal to arrays of arrays.  A Modelica
+implementation might do it the other way around, regard arrays of
+arrays as multidimensional arrays.  The important thing is that they
+are the same.
 
-\subsection{Type equality and subtypes}
+\fixme{Should we make a difference between incompete and complete
+  types?}
+
+\unfinished
+
+\subsection{Type equivalence and subtypes}
 \label{sec:typeq}
 
-\fixme{\ldots}
+The concepts of equivalent types and subtypes appears in several
+places in the specification.
+
+\begin{Def}[Subtype]
+  A type $T_1$ is a \firstref{subtype} of another type $T_2$ if and
+  only if one of the following hold:
+  \begin{enumerate}
+  \item $T_1$ and $T_2$ are the same built-in type
+  \item $T_1$ and $T_2$ are structured types, where all public
+    components in $T_2$ appear in $T_1$.  The type of the component in
+    $T_1$ must be a subtype of the type of the corresponding component
+    in $T_2$.
+  \item $T_1$ is an array of type $T_1'$ and $T_2$ is an array of type
+    $T_2'$, where $T_1'$ is a subtype of $T_2'$.  Also either the size
+    of $T_2$ is undefined or the size of $T_1$ is equal to the size of
+    $T_2$.
+  \end{enumerate}
+\end{Def}
+
+\begin{Def}[Supertype]
+  If $T_1$ is a subtype of $T_2$, then $T_2$ is a \firstref{supertype}
+  of $T_1$.
+\end{Def}
+
+\begin{Def}[Equivalent types]
+  Two types $T_1$ and $T_2$ are said to be \firstref{equivalent types}
+  if and only if $T_1$ is a subtype of $T_2$ and $T_2$ is a subtype of
+  $T_1$.
+\end{Def}
 
 \subsection{Class restrictions}
 \label{sec:clrestr}
@@ -1241,20 +1296,20 @@ clearer.
   
 \input{main.tex}
 \input{absyn.tex}
-%\input{exp.tex}
+\input{exp.tex}
 \input{classinf.tex}
-%\input{types.tex}
+\input{types.tex}
 \input{explode.tex}
-%\input{inst.tex}
-%\input{prefix.tex}
+\input{inst.tex}
+\input{prefix.tex}
 \input{mod.tex}
-%\input{env.tex}
-%\input{lookup.tex}
-%\input{builtin.tex}
-%\input{connect.tex}
+\input{env.tex}
+\input{lookup.tex}
+\input{builtin.tex}
+\input{connect.tex}
 \input{staticexp.tex}
-%\input{dae.tex}
-%\input{dump.tex}
+\input{dae.tex}
+\input{dump.tex}
 
 %\end{landscape}
 
