@@ -1008,8 +1008,8 @@ relation print_exp2_str : (Exp,int) => string =
 	print_exp2_str(CALL(fcn, args,_,_),_) => s''
 
   rule	print_list_str(es, print_exp_str, ",") => s &
-	string_append ("[",s) => s' &
-	string_append (s',"]") => s''
+	string_append ("{",s) => s' &
+	string_append (s',"}") => s''
 	-----------------------------
 	print_exp2_str (ARRAY(_,_,es),_) => s''
 
@@ -1020,8 +1020,8 @@ relation print_exp2_str : (Exp,int) => string =
 	print_exp2_str (TUPLE(es),_) => s''
 	
   rule	print_list_str(es, print_row_str, ";") => s &
-	string_append ("[",s) => s' &
-	string_append (s',"]") => s''
+	string_append ("{",s) => s' &
+	string_append (s',"}") => s''
 	-----------------------------
 	print_exp2_str (MATRIX(_,_,es),_) => s''
 
@@ -1072,9 +1072,9 @@ relation print_exp2_str : (Exp,int) => string =
  	int_string i => s4 &
 	string_append (s1, s2) => s &
 	string_append (s, s3) => s' &
-	string_append (s', "[") => s'' &
+	string_append (s', "{") => s'' &
 	string_append (s'', s4) => s''' &
-	string_append (s''', "]") => s''''
+	string_append (s''', "}") => s''''
 	---------------------------------------
 	print_exp2_str (ASUB(e,i),pri1) => s''''
 	

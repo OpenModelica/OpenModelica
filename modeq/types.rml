@@ -105,6 +105,7 @@ module Types :
   relation print_var : Var => ()
   relation print_binding : Binding => ()
   relation print_params : FuncArg list => () 
+  relation print_farg: FuncArg => () 
   relation make_function_type : (Var list) => Type
   relation make_enumeration_type : (Var list) => Type
   relation is_parameter: Var => ()

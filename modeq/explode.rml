@@ -128,6 +128,7 @@ module SCode :
   relation elaborate : Absyn.Program => Program
   relation elab_class: Absyn.Class => Class	
   relation build_mod : (Absyn.Modification option, bool) => Mod
+  relation get_element_named: (Ident, Class) => Element
   relation print_mod : Mod => ()
   relation print_element : Element => ()
 	  
@@ -523,6 +524,38 @@ relation build_sub_sub : (Subscript list, Mod) => Mod =
 
 end
 
+relation get_element_named: (Ident, Class) => Element =
+	
+  rule	get_element_named_from_elts(id,elts) => elt
+	----------------------------------------
+	get_element_named(id,CLASS(_,_,_,PARTS(elts,_,_))) => elt
+end
+
+relation get_element_named_from_elts: (Ident, Element list) => Element =
+
+  rule	not id1 = id2 &
+	get_element_named_from_elts(id2,xs) => elt
+	---------------------------
+	get_element_named_from_elts(id2,COMPONENT(id1,_,_,_,_,_)::xs) => elt
+	
+  rule	not id1 = id2 &
+	get_element_named_from_elts(id2,xs) => elt
+	---------------------------
+	get_element_named_from_elts(id2,CLASSDEF(id1,_,_,_)::xs) => elt
+
+  rule	get_element_named_from_elts(id2,xs) => elt
+	---------------------------
+	get_element_named_from_elts(id2,EXTENDS(_,_)::xs) => elt
+
+  rule	id1 = id2
+	--------------------
+	get_element_named_from_elts(id2,(comp as COMPONENT(id1,_,_,_,_,_))::_) => comp
+
+  rule	id1 = id2
+	--------------------
+	get_element_named_from_elts(id2,(cdef as CLASSDEF(id1,_,_,_))::_) => cdef
+
+end
 (** relation: print_mod
  **
  ** This relation prints a modification.  The code is excluded from

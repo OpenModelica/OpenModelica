@@ -39,6 +39,7 @@ module Lookup:
 
   relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type)
   relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class, Env.Env)
+  relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) 
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes,Types.Type,Types.Binding)
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
@@ -109,6 +110,21 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 	Debug.fcall("lotr",Dump.print_path,path)
 	--------------------------------------
 	lookup_class(env, Absyn.QUALIFIED(pack,path)) => (c, env')
+
+end
+
+relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
+
+  rule	Debug.fprint("lotr","lookup_record_constructor_class(") &
+	Debug.fcall("lotr",Dump.print_path,path) &
+	Debug.fprint("lotr",") called\n") &
+	
+	lookup_recconst_in_env(env,path) => (c, env') &
+	Debug.fprint("lotr", "lookup_class_in_env => ") &
+	Debug.fcall("lotr",Dump.print_path,path) &
+	Debug.fprint("lotr","\n")
+	--------------------------------------
+	lookup_record_constructor_class(env, path) => (c, env')
 
 end
 
@@ -335,8 +351,98 @@ relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
 	lookup_functions_in_frame((n,_)::fs,env,id) => t
 
 end
+
+relation lookup_recconst_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
+
+  rule	lookup_recconst_in_frame(items,env,id) => (c, _) 
+	---------------------
+	lookup_recconst_in_env(env as (Env.FRAME(items)::fs),Absyn.IDENT(id))
+	    => (c,env)
+
+  rule	lookup_recconst_in_env(fs,id) => (c, _)
+	---------------------
+	lookup_recconst_in_env(f::fs,id) => (c, f::fs)
+
+end
+
+(** relation: lookup_recconst_in_frame
+ **This relation lookups the implicit record constructor class (function) of a record in a frame
+**)
+relation lookup_recconst_in_frame: ((SCode.Ident * Env.Item) list,
+				 Env.Env,
+				 SCode.Ident)
+	  => (SCode.Class, Env.Env) =
+
+
+
+  rule	id = n &
+	lookup_recconst_in_frame(rest, env, id) => (c2,env')
+	---------------------------------------------------------
+	lookup_recconst_in_frame((n,Env.TYPE(t))::rest, env, id) => (c2,env')
+
+  rule	id = n & print "# Error while looking up record constructor class " &
+	print id & print ": found a component\n"
+	------------------------------------
+	lookup_recconst_in_frame((n,Env.VAR(_))::_,env,id) => fail
+
+  rule	id = n & print "Found record when looking for function. Assuming implicit record constructor\n" &
+	build_record_constructor_class (cdef,env) => cdef 
+	----------------------------------------
+	lookup_recconst_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,Absyn.R_RECORD,_),_))::rest,env,id) => (cdef,env)
+
+  rule	 (* print "  lookup_type_in_frame(" & print id & print "): not " &
+	   print n & print "\n" & *)
+	lookup_recconst_in_frame(fs,env,id) => (c,env)
+	------------------------------
+	lookup_recconst_in_frame((n,_)::fs,env,id) => (c,env)
+
+end
+
 (**)
 
+relation build_record_constructor_class :(SCode.Class, Env.Env) => SCode.Class =
+
+  rule	build_record_constructor_elts(elts,env) => funcelts &
+	build_record_constructor_result_elt(elts,id,env) => reselt
+	---------------------------------------------------
+	build_record_constructor_class (cl as SCode.CLASS(id,_,restr,SCode.PARTS(elts,_,_)),env) 
+	    => SCode.CLASS(id,false,Absyn.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[]))
+end
+	
+relation build_record_constructor_elts: (SCode.Element list, Env.Env) => SCode.Element list =
+  rule	build_record_constructor_elts (rest,env) => res
+	-------------------------------------------
+	build_record_constructor_elts((comp as SCode.COMPONENT(id,fl,prot,SCode.ATTR(d,f,ac,var,dir),tp,mod))::rest,env)
+	    => SCode.COMPONENT(id,fl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT),tp,mod)::res
+  axiom	build_record_constructor_elts([],_) => []
+end
+	
+(** This relation builds the result element of a record constructor function, i.e. the returned variable *)
+relation build_record_constructor_result_elt: (SCode.Element list, SCode.Ident, Env.Env) => SCode.Element =
+	
+  rule	build_record_constructor_result_mod(elts) => submodlst
+	-------------------------------------------------
+	build_record_constructor_result_elt (elts,id,env) 
+	    => SCode.COMPONENT("result",false,false,SCode.ATTR([],false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE))
+end
+	
+(* This relation builds up the modification list for the output element of a record constructor.
+ ** Example: 
+ **   record foo
+ **      Real x;
+ **      String y;
+ **      end foo;
+ **  => modifier list become 'result.x=x, result.y=y'
+ *)
+relation build_record_constructor_result_mod: (SCode.Element list) => SCode.SubMod list =
+	
+  rule	build_record_constructor_result_mod(rest) => restmod
+	---------------------------------------------------
+	build_record_constructor_result_mod (SCode.COMPONENT(id,_,_,_,_,_)::rest) 
+	    => SCode.NAMEMOD("result",SCode.MOD(false,[SCode.NAMEMOD(id,SCode.MOD(false,[],SOME(Absyn.CREF(Absyn.CREF_IDENT(id,[])))))],NONE))::restmod
+
+  axiom	build_record_constructor_result_mod([]) => []
+end
 (** 
  ** This relation takes a class  (`SCode.Class') which holds a definition of a record
    ** and builds a list of variables of the record used for constructing a record constructor function.

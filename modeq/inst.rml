@@ -1724,8 +1724,12 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
   axiom	inst_eq_equation_2(e1,e2,Types.T_BOOL)
 	=> [DAE.EQUATION(e1,e2)]
 
-  axiom	inst_eq_equation_2(e1,e2,Types.T_ENUM)
-	=> [DAE.EQUATION(e1,e2)]
+  axiom	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUM)
+	=> [DAE.DEFINE(cr,e2)]
+
+  axiom	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUMERATION(_))
+	=> [DAE.DEFINE(cr,e2)]
+      
 
   rule	RTOpts.split_arrays => true &
 	(* For debugging.
@@ -1794,9 +1798,15 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2, t as Types.T_COMPLEX(_,_)) => dae
 
-  rule	print "- inst_eq_equation_2 failed\n"
+  rule	print "- inst_eq_equation_2 failed\n exp1=" &
+	Exp.print_exp e1 &
+	print " exp2=" &
+	Exp.print_exp e2 &
+	print " type =" &
+	Types.print_type t &
+	print "\n"
 	-------------------------------------
-	inst_eq_equation_2(_,_,_) => fail
+	inst_eq_equation_2(e1,e2,t) => fail
 
 end
 
@@ -2517,22 +2527,29 @@ end
 relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Types.Var =
 	  
-  rule	elab_arraydim(env,dim,NONE) => dimexp &
+  rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
+	elab_arraydim(env,dim,NONE) => dimexp &
+	Debug.fprint ("recconst", "elaborated arraydim\n") &
 	Lookup.lookup_class(env,t) => (cl,cenv) &
+	Debug.fprint ("recconst", "looked up class\n") &
 	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
 	
 	elab_arraydim(env,dim,NONE) => dimexp &
+	Debug.fprint ("recconst", "calling inst_var\n") &
 	inst_var(cenv,mod',Prefix.NOPRE,[],id,cl,attr,dimexp,[],[]) => (_,_,tp') &
 	Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
-	Debug.fprint ("recconst","\n") &
+	Debug.fprint ("recconst","\nMod=") &
+	Debug.fcall ("recconst",Mod.print_mod,mod') &
 	Mod.mod_equation mod' => eq &
 	make_binding(env,attr,eq) => bind
 	---------------------------------------
 	inst_record_constructor_elt (env,SCode.COMPONENT(id,_,prot,attr as SCode.ATTR(dim,f,acc,var,dir),t,mod)) 
 	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp',bind)
 
-  rule	print "#Error, inst_record_constructor_elt failed\n"
+  rule	print "#Error, inst_record_constructor_elt failed\n  element =" &
+	SCode.print_element elt &
+	print "\n"
 	------------------
-	inst_record_constructor_elt(_,_) => fail
+	inst_record_constructor_elt(env,elt) => fail
 end

@@ -26,6 +26,8 @@ module Interactive:
   with "inst.rml"
   with "explode.rml" 
   with "dae.rml" 							  
+  with "staticexp.rml"							  
+  with "exp.rml"
   datatype InteractiveStmt = IALG of Absyn.Algorithm
 			   | IEXP of Absyn.Exp
   datatype InteractiveStmts = ISTMTS of InteractiveStmt list
@@ -64,8 +66,7 @@ val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,Das
 val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); GraphicItem graphics[:]; end Icon;"
 
 (* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
-(* PA. Only Line for now... *)
-val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
+val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text;"
 
 
 (** relation: evaluate
@@ -528,52 +529,13 @@ end
 relation get_icon_annotation_str: (Absyn.ElementArg list) => string =
 
   rule	string_append(Icon_records,Graphics_records) => records &
-	get_annotation_string (records,Absyn.ANNOTATION([ann])) => s1 &
-	get_graphics_constructors_str(mod) => s2 &
-	string_append(s1,",") => s3 &
-	string_append(s3,s2) => str
-	-----------------------------------------------
-	get_icon_annotation_str ( (ann as Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Icon",_),mod))::_) => str
-	
-	(* Rule above failed, no graphics elements*)
-  rule	get_annotation_string (Icon_records,Absyn.ANNOTATION([ann])) => str
+	get_annotation_string (records,Absyn.ANNOTATION([ann])) => str 
 	-----------------------------------------------
 	get_icon_annotation_str ( (ann as Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Icon",_),mod))::_) => str
 
   rule	get_icon_annotation_str (xs) => str
 	-------------------------------
 	get_icon_annotation_str( _::xs) => str
-end
-
-(** relation: get_graphics_constructors_str
- ** This relation takes a Modification and extracts the modification of the graphics component
- ** and makes a list of record constructors for each element of the graphics component.
- ** This information is then sent to clients as a representation of graphics objects.
- **)
-relation get_graphics_constructors_str: (Absyn.Modification) => string =
-
-  rule	get_graphics_constructors_from_modification(mod) => str
-	-------------------------------------------------------
-	get_graphics_constructors_str(Absyn.CLASSMOD(Absyn.MODIFICATION(_,Absyn.CREF_IDENT("graphics",_),mod)::_,_)) => str
-
-  rule	get_graphics_constructors_str(Absyn.CLASSMOD(xs,b)) => str
-	----------------------------------------
-	get_graphics_constructors_str(Absyn.CLASSMOD(_::xs,b)) => str
-  rule	print "get_graphics_constructors_str FAILED!\n" 
-	---------
-	get_graphics_constructors_str(_) => fail
-end
-
-relation  get_graphics_constructors_from_modification: (Absyn.Modification) => string = 
-	
-  rule	get_graphics_constructors_from_modification(Absyn.CLASSMOD(xs,b)) => s1 &
-	get_annotation_string(Line_records,Absyn.ANNOTATION([ann])) => s2 &
-	string_append(s1,s2) => str
-	---------------------------
-	get_graphics_constructors_from_modification(Absyn.CLASSMOD((ann as Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Line",_),_))::xs,b)) => str
-	    
-  axiom	get_graphics_constructors_from_modification(Absyn.CLASSMOD([],_)) => ""
-	
 end
 
 relation get_nth_public_connector_str: (Env.Env, Absyn.Class, int) => string =
@@ -860,6 +822,27 @@ end
 
 relation get_annotation_string: (string,Absyn.Annotation) => string =
 
+  rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,Absyn.CLASSMOD(_,SOME(graphicexp)))]) &
+	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
+	
+        Parser.parsestring totstring => p &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
+	get_class_in_program("Icon",p) => placementc &
+	SCode.elab_class(placementc) => placementclass &
+	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
+	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
+	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
+	Inst.init_vars_modelica_output dae => dae' &
+     	DAE.get_variable_bindings_str dae' => str  &
+	
+	Static.elab_exp(env,graphicexp) => (graphicexp2,prop) &
+	Exp.print_exp_str(graphicexp2) => gexpstr &
+	string_append(str,",") => s1 &
+	string_append(s1,gexpstr) => totstr
+	---------------
+	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Icon",_),Absyn.CLASSMOD(mod,_)))])) => totstr
+
   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' & 
 
         Parser.parsestring totstring => p &
@@ -876,12 +859,27 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Debug.fprint ("interactivedump","Mod =") &
 	Debug.fcall ("interactivedump",SCode.print_mod, mod') &
      	DAE.get_variable_bindings_str dae' => str 
-	---------------------------
+	-----------------------------------------
 	get_annotation_string(totstring, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT(anncname,_),Absyn.CLASSMOD(mod,_)))])) => str
 
   rule	print "get_annotation_string failed!\n"
 	---------------------------------------
 	get_annotation_string(_,_) => fail
+end
+
+(** relation: strip_graphics_modification
+ ** This relation strips out the `graphics' modification from an ElementArg list and return 
+ ** two lists, one with the other modifications and the second with the `graphics' modification
+**)
+relation strip_graphics_modification: (Absyn.ElementArg list) => (Absyn.ElementArg list, Absyn.ElementArg list) =
+	
+  axiom	strip_graphics_modification((mod as Absyn.MODIFICATION(_,Absyn.CREF_IDENT("graphics",_),_))::rest) => (rest, [mod])
+	
+  rule	strip_graphics_modification(rest) => (l1,l2) 
+	------------------------------------------
+	strip_graphics_modification((mod as Absyn.MODIFICATION(_,_,_))::rest) => (mod::l1,l2)
+
+  axiom	strip_graphics_modification([]) => ([],[])
 end
 	
 relation get_nth_public_component_in_class:  (Absyn.Class,int) => Absyn.Element =

@@ -222,7 +222,7 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
   rule	Dump.print_component_ref_str fn => fnstr &
 	Debug.fprintl("setr", ["elab_exp_call: ",fnstr,"\n"]) &
-	elab_call(env,fn,args,nargs) => (e,prop)
+	elab_call(env,fn,args,nargs) => (e,prop) 
 	--------------------------------------
 	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) 
 		=> (e,prop)
@@ -744,6 +744,31 @@ end
 relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list)
 	=> (Exp.Exp, Properties) =
 
+  rule	(* This rule finds record constructors, user defined or implicit *)
+
+	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype as Types.T_COMPLEX(ClassInf.RECORD(_),_))) &
+	Debug.fprintln ("sei", "function is record constructor\n") &
+	
+	make_empty_slots(fargs) => slots &
+	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
+	Debug.fprintln ("sei", "Did elab_input_args") &
+
+	elab_consts(outtype) => const &
+
+	Debug.fprintln ("sei", "Elaborated consts") &
+	get_properties(outtype, const) => prop &
+
+	Lookup.lookup_record_constructor_class(env,fn) => (cl,env') &
+	Debug.fprintln ("sei", "got record constructor class") &
+	
+	fill_default_slots(newslots,cl,env') => newslots2 &
+	Debug.fprint ("sei", "filled slots:") &
+	Debug.fcall ("sei",print_slots,newslots2) &
+	exp_list_from_slots(newslots2) => args'' &
+	Debug.fprintln ("setr", "elab_call_args_succeeded")
+	------------------------------------
+	elab_call_args(env,fn,args,nargs) => (Exp.CALL(fn,args'',false,false), prop )
+
 	(* This rule finds user-defined functions. *)
 
   rule	
@@ -766,7 +791,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	*)
 	make_empty_slots(fargs) => slots &
 	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
-	Debug.fprintln ("sei", "Did elab_input_args") &
+	Debug.fprintln ("sei", "Did elab_input_args, constant=") &
 	(*PR. !! Fix this. The function body is examined to determine the 
 	* constness of each output argument.
 	 At the moment this just gives a false list.
@@ -778,6 +803,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	is_tuple(outtype) => tuple &
 	Debug.fprintln ("sei", "Elaborated consts") &
 	get_properties(outtype, const) => prop &
+	
 	
 	Debug.fprintln ("setr", "elab_call_args_succeeded")
 	--------------------------------------------
@@ -1124,6 +1150,49 @@ relation exp_list_from_slots: (Slot list ) => Exp.Exp list =
 	------------------------------
 	exp_list_from_slots(SLOT(_,_,NONE)::xs) => lst
 end
+
+(** relation: fill_default_slots
+ ** This function takes a slot list and a class definition of a function and fills default values into slots which 
+ ** have not been filled.
+   **)
+	
+relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
+	
+  rule	fill_default_slots(xs,class,env) => res
+	----------------------------
+	fill_default_slots ( SLOT(fa,true,e)::xs,class,env) => SLOT(fa,true,e)::res
+
+  rule	fill_default_slots(xs,class,env) => res &
+	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,SCode.MOD(_,_,SOME(dexp))) &
+	elab_exp (env,dexp) => (exp,PROP(t,c1)) &
+	match_type(exp,t,tp) => (exp',_) 
+	---------------------------------------------------------------------------------
+	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,SOME(exp'))::res
+
+  rule	fill_default_slots(xs,class,env) => res &
+	print "#Error filling slot, id =" &
+	print id &
+	print "\n"
+	----------
+	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,e)::xs
+
+  axiom	fill_default_slots([],_,_) => []
+end
+
+relation print_slots: Slot list => () =
+  rule	print "SLOT(" &
+	Types.print_farg farg &
+	print  ", " &
+	Dump.print_select(filled,"filled","not filled") &
+	print ", " &
+	Dump.get_option_str(exp,Exp.print_exp_str) => str &
+	print str &
+	print ")\n" &
+	print_slots(xs)
+	---------------
+	print_slots (SLOT(farg,filled,exp)::xs) => ()
+  axiom	print_slots([] ) => ()
+end 
 
 (** relation: elab_positional_input_args
  ** This relation elaborates the positional input arguments of a function.
@@ -2169,6 +2238,11 @@ relation type_convert : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Typ
 		     Types.T_TUPLE(tys2))
 	  => (Exp.TUPLE(elist'), Types.T_TUPLE(tys'))
 
+  axiom	type_convert(exp, 
+	    Types.T_ENUM,
+	    Types.T_ENUMERATION(l))
+	    => (exp, Types.T_ENUMERATION(l))
+	    
   rule	Debug.fprint("tcvt","- type conversion failed: ") &
 	Debug.fcall ("tcvt",Types.print_type,t1) & 
 	Debug.fprint("tcvt",", ") & 
@@ -2187,9 +2261,15 @@ relation type_convert_array : (Exp.Exp list, Types.Type, Types.Type) => Exp.Exp 
 	-------------------------------------------
 	type_convert_array (first::rest, ty1, ty2) => first'::rest'
 
-  rule	print "- type conversion of array failed\n"
+  rule	print "- type conversion of array failed exp=" &
+	Exp.print_exp e &
+	print "t1 = " &
+	Types.print_type t1 & 
+	print " t2 = " &
+	Types.print_type t2 &
+	print "\n" 
 	-------------------------------
-	type_convert_array (_,_,_) => fail
+	type_convert_array (e::_,t1,t2) => fail
 
 end
 
