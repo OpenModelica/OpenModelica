@@ -1,0 +1,1148 @@
+(**
+ ** file:	 codegen.rml
+ ** module:      Codegen
+ ** description: Generate code from DAE (Flat Modelica)
+ **
+ ** RCS: $Id$
+ **
+ **)
+
+
+module Codegen:
+
+  with "dae.rml"
+  with "exp.rml"
+  with "types.rml"
+  with "algorithm.rml"
+
+  type Ident = string
+
+
+  relation generate_functions : DAE.DAElist => ()
+  relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list) => Exp.Exp list
+  relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp) => Exp.Exp
+  relation string_prefix_elements : (string, DAE.Element list, DAE.Element list) => DAE.Element list
+  relation string_prefix_params : DAE.DAElist => DAE.DAElist
+
+end
+
+
+with "dump.rml"
+with "debug.rml"
+with "staticexp.rml"
+with "inst.rml"
+with "rtopts.rml"
+with "absyn.rml"
+with "classinf.rml"
+
+relation generate_functions : DAE.DAElist => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_functions") &
+	generate_functions_elist elist
+	------------------------------
+	generate_functions DAE.DAE(elist)
+
+  rule	print "#--- generate_functions failed\n"
+	--------------------------------------
+	generate_functions _
+
+end
+
+
+
+relation generate_functions_elist : DAE.Element list => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_functions_elist") 
+	----------------------------------------------------
+	generate_functions_elist []
+
+  rule	Debug.fprintln ("cgtr", "generate_functions_elist") &
+	generate_function f &
+	generate_functions_elist rest
+	----------------------------
+	generate_functions_elist f :: rest
+	
+end
+
+relation generate_params_type : Ident => string =
+
+  rule	string_append (n, "_params") => s
+	---------------------------------
+	generate_params_type n => s
+
+end
+
+
+relation generate_function : DAE.Element => () =
+
+  rule	path_string fpath => fstr &
+	Debug.fprintl ("cg", ["generating function ", fstr, "\n"]) &
+(*	generate_params_struct (dae,n) & *)
+	DAE.get_output_vars dae => [outvar] &
+	Types.print_type restype &
+	print " " &
+	generate_function_name fpath & 
+(*	generate_params_type n => ptname & *)
+	print "(" & 
+(*	print ptname & print " params, " & *)
+	Dump.get_string_list (args, generate_function_arg, ", ") => str &
+	print str &
+	print ")" &
+	generate_function_body (fpath, dae, outvar, restype)
+	---------------------------
+	generate_function DAE.FUNCTION(fpath, DAE.DAE(dae), Types.T_FUNCTION(args,restype))
+
+  rule	path_string fpath => fstr &
+	Debug.fprintl ("cg", ["generating function ", fstr, "\n"]) &
+(*	generate_params_struct (dae,n) & *)
+	DAE.get_output_vars dae => outvars &
+	list_length outvars => outvarslen &
+	int_gt(outvarslen, 1) => true &
+	generate_result_struct (outvars,fpath) &
+	generate_return_type fpath => retstr &
+	print retstr &
+	print " " &
+	generate_function_name fpath & 
+(*	generate_params_type fpath => ptname & *)
+	print "(" & 
+(*	print ptname & print " params, " & *)
+	Dump.get_string_list (args, generate_function_arg, ", ") => str &
+	print str &
+	print ")" &
+	generate_function_body_tuple (fpath, dae, restype)
+	---------------------------
+	generate_function DAE.FUNCTION(fpath, DAE.DAE(dae), Types.T_FUNCTION(args,restype))
+
+
+  rule	generate_functions dae
+	----------------------
+	generate_function DAE.COMP(n, dae)
+
+	(* for non-function elements *)
+
+  axiom	generate_function _
+	
+end
+
+
+relation generate_params_struct : (DAE.Element list, Ident) => () =
+
+  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
+	(* list_length params => nbrparams &
+	int_gt (nbrparams, 0) => true & *) (* if we do this we have to modify the function 
+					    * declaration as well *)
+	generate_params_type n => ptname &
+	print "typedef struct " & print ptname & print "_s {\n" &
+	generate_param_decls params &
+	print "} " & print ptname & print ";\n"
+	-----------------------------------------
+	generate_params_struct (daelist, n)
+
+(*
+  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
+	list_length params => nbrparams &
+	int_le (nbrparams, 0) => true &
+	print "#-- no params in " &
+	print n &
+	print "\n"
+	-----------------------------------------
+	generate_params_struct (daelist, n)
+*)
+
+end
+
+
+relation generate_param_decls : DAE.Element list => () =
+
+  axiom	generate_param_decls []
+
+  rule	Debug.fprintln ("cgtr", "generate_param_decls-1") &
+	generate_param_decl first &
+	generate_param_decls rest
+	------------------
+	generate_param_decls first :: rest
+
+end
+
+
+relation generate_param_decl: DAE.Element => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_param_decl-1") &
+	indent 2 &
+	DAE.dump_type typ &
+	Exp.print_component_ref id &
+	print ";\n"
+	-----------
+	generate_param_decl DAE.VAR(id, DAE.PARAM, _, typ, _)
+
+  rule	print "#-- generate_param_decl didn't match" &
+	DAE.dump_debug DAE.DAE([d])
+	---------------------------
+	generate_param_decl d
+
+end
+
+relation generate_params_init_fkn : (DAE.Element list, Ident) => () =
+
+  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
+	generate_params_type n => ptname &
+	print "void " & print ptname & print "_init (" & 
+	print ptname & print " *params) {\n" &
+	generate_param_inits ("params->", params) &
+	print "}\n"
+	-----------------------------------------
+	generate_params_init_fkn (daelist, n)
+
+end
+
+relation generate_params_init_fkn_decl : (DAE.Element list, Ident) => () =
+
+  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
+	generate_params_type n => ptname &
+	print "void " & print ptname & print "_init (" & 
+	print ptname & print " *params);\n"
+	-----------------------------------------
+	generate_params_init_fkn_decl (daelist, n)
+
+end
+
+
+relation generate_param_inits : (string, DAE.Element list) => () =
+
+  axiom	generate_param_inits (_, [])
+
+  rule	Debug.fprintln ("cgtr", "generate_param_inits-1") &
+	generate_param_init (str, first) &
+	generate_param_inits (str, rest)
+	------------------
+	generate_param_inits (str, first :: rest)
+
+end
+
+relation generate_param_init: (string, DAE.Element) => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_param_init-1") &
+	indent 2 &
+	print str &
+	Exp.print_component_ref id &
+	print " = " &
+	print_exp_no_funcall e &
+	print ";\n"
+	-----------
+	generate_param_init (str, DAE.VAR(id, DAE.PARAM, _, _, SOME(e)))
+
+
+	(** What to do if there is no value for the parameter?
+	 set to zero, or don't generate initialization at all? **)
+
+  rule	Debug.fprintln ("cgtr", "generate_param_init-2") &
+	indent 2 &
+	print str &
+	Exp.print_component_ref id &
+	print " = 0" &
+	print ";\t\t/* uninitialized, set to zero by modeq */\n"
+	-----------
+	generate_param_init (str, DAE.VAR(id, DAE.PARAM, _, typ, NONE))
+
+
+  rule	print "#-- generate_param_decl didn't match" &
+	DAE.dump_debug DAE.DAE([d])
+	---------------------------
+	generate_param_init (_, d)
+
+end
+
+
+relation generate_result_struct : (DAE.Element list, Absyn.Path) => () =
+
+  rule	generate_return_type fpath => ptname &
+	print "typedef struct " & print ptname & print "_s {\n" &
+	generate_return_decls outvars &
+	print "} " & print ptname & print ";\n"
+	-----------------------------------------
+	generate_result_struct (outvars, fpath)
+
+(*
+  rule	DAE.get_vars ( daelist, DAE.is_parameter ) => params &
+	list_length params => nbrparams &
+	int_le (nbrparams, 0) => true &
+	print "#-- no params in " &
+	print n &
+	print "\n"
+	-----------------------------------------
+	generate_params_struct (daelist, n)
+*)
+
+end
+
+
+
+relation generate_return_decls : DAE.Element list => () =
+
+  axiom	generate_return_decls []
+
+  rule	generate_return_decl first &
+	generate_return_decls rest
+	------------------
+	generate_return_decls first :: rest
+
+end
+
+
+relation generate_return_decl: DAE.Element => () =
+
+  rule	indent 2 &
+	DAE.dump_type typ &
+	Exp.print_component_ref id &
+	print ";\n"
+	-----------
+	generate_return_decl (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, NONE))
+
+  rule	indent 2 &
+	DAE.dump_type typ &
+	Exp.print_component_ref id &
+	print " = " &
+	Exp.print_exp e &
+	print ";\n"
+	-----------
+	generate_return_decl (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, SOME(e)))
+
+
+  axiom	generate_return_decl (_)
+
+end
+
+
+relation generate_type : Types.Type => () =
+
+
+  rule	Debug.fprintln ("cgtr", "generate_type") &
+	generate_tuple_type tys => str &
+	print str
+	---------------------------
+	generate_type Types.T_TUPLE(tys)
+
+
+  rule	Debug.fprintln ("cgtr", "generate_type") &
+	flatten_array_type tys => (arrayty, dims) &
+	generate_array_type (arrayty, dims)
+	-----------------------------------
+	generate_type (tys as Types.T_ARRAY(_,_))
+
+
+  rule	print "Integer"
+	---------------
+	generate_type Types.T_INTEGER
+
+  rule	print "Real"
+	------------
+	generate_type Types.T_REAL
+
+  rule	print "String"
+	--------------
+	generate_type Types.T_STRING
+
+  rule	print "Boolean"
+	---------------
+	generate_type Types.T_BOOL
+
+
+  rule	print "#-- generate_type failed\n" &
+	Types.print_type ty & print "\n"
+	--------------------------------
+	generate_type ty => fail
+
+end
+
+
+relation generate_return_type : Absyn.Path => string =
+
+  rule	path_string fpath => fstr &
+	string_append (fstr, "_rettype" ) => res
+	--------------------------
+	generate_return_type fpath => res
+end
+
+(*
+relation generate_return_type : Types.Type => () =
+
+
+  rule	Debug.fprintln ("cgtr", "generate_type") &
+	generate_tuple_type tys => str &
+	print str
+	---------------------------
+	generate_return_type Types.T_TUPLE(tys)
+
+
+  rule	Debug.fprintln ("cgtr", "generate_type") &
+	flatten_array_type tys => (arrayty, dims) &
+	generate_array_return_type (arrayty, dims)
+	-----------------------------------
+	generate_return_type (tys as Types.T_ARRAY(_,_))
+
+
+  rule	print "#-- generate_type failed\n" &
+	Types.print_type ty & print "\n"
+	--------------------------------
+	generate_return_type ty => fail
+
+end
+*)
+
+relation flatten_array_type : Types.Type => (Types.Type, int list) =
+
+  rule	Debug.fprintln ("cgtr", "flatten_array_type1") &
+	flatten_array_type ty => (ty', dimlist')
+	--------------------------------------
+  	flatten_array_type Types.T_ARRAY(Types.DIM(NONE), ty) => (ty', dimlist')
+
+  rule	Debug.fprintln ("cgtr", "flatten_array_type2") &
+	flatten_array_type ty => (ty', dimlist) &
+	list_append (dimlist,[dim]) => dimlist'
+	--------------------------------------
+  	flatten_array_type Types.T_ARRAY(Types.DIM(SOME(dim)), ty) => (ty', dimlist')
+
+  axiom	flatten_array_type ty => (ty, [])
+
+end
+
+relation generate_array_type : (Types.Type, int list) => () =
+
+  rule	Types.print_type ty &
+	print "[" & Dump.print_list (dims, print_int, ",") & print "]" 
+	-------------------------------------------------------------
+	generate_array_type (ty, dims)
+
+end
+
+relation generate_array_return_type : (Types.Type, int list) => () =
+
+  rule	Types.print_type ty &
+	Dump.print_list (dims, print_star, "") 
+	-------------------------------------------------------------
+	generate_array_return_type (ty, dims)
+
+end
+
+relation print_int : int => () =
+
+  rule	int_string i => str &
+	print str
+	---------
+	print_int i
+end
+
+relation print_star : int => () =
+
+  rule	print "*"
+	---------
+	print_star i
+
+end
+
+
+
+relation generate_tuple_type : Types.Type list => string =
+
+
+  rule	Debug.fprintln ("cgtr", "generate_tuple_type_1") &
+	generate_simple_type ty => str
+	--------------------------------
+	generate_tuple_type [ty] => str
+
+
+  rule	Debug.fprintln ("cgtr", "generate_tuple_type_2") &
+	generate_simple_type ty => str &
+	generate_tuple_type tys => str' &
+	string_append (str, str') => str'' &
+	string_append ("struct ", str'') => str'''
+	----------------------------------
+	generate_tuple_type (ty::tys) => str'''
+
+end
+
+
+
+relation generate_simple_type : Types.Type => string =
+
+  axiom	generate_simple_type Types.T_INTEGER => "Integer"
+  axiom	generate_simple_type Types.T_REAL => "Real"
+  axiom	generate_simple_type Types.T_STRING => "const String&"
+  axiom	generate_simple_type Types.T_BOOL => "Boolean"
+  rule	string_append ("const ", n) => n' &
+	string_append (n', "&") => n''
+	------------------------------
+	generate_simple_type Types.T_COMPLEX (ClassInf.RECORD(n),_) => n''
+
+  rule	print "#--generate_simple_type failed" &
+	Types.print_type ty & 
+	print "\n"
+	--------------------------------------
+	generate_simple_type ty => fail
+end
+
+
+relation generate_function_name : Absyn.Path => () =
+
+  rule	path_string fpath => fstr &
+	print fstr
+	----------
+	generate_function_name fpath
+
+end
+
+
+
+relation generate_function_arg : Types.FuncArg => string =
+
+  rule	generate_tuple_type [ty] => str &
+	string_append (str, " ") => str' &
+	string_append (str', name) => str''
+	-----------------------------------
+	generate_function_arg ((name, ty)) => str''
+
+end
+
+
+relation generate_function_body : (Absyn.Path, DAE.Element list, DAE.Element, Types.Type) => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_function_body") &
+	print " {\n" &
+	indent 2 &
+	generate_vars dae &
+	generate_equations dae &
+	generate_algorithms dae &
+	indent 2 &
+	print "return " &
+	Exp.print_component_ref retvar &
+	print ";\n}\n"
+	--------------
+	generate_function_body (fpath, dae, DAE.VAR(retvar,vk,vd,ty,e), restype)
+
+end
+
+relation generate_function_body_tuple : (Absyn.Path, DAE.Element list, Types.Type) => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_function_body") &
+	print " {\n" &
+	indent 2 &
+	generate_return_type fpath => pt &
+	print pt &
+	print " result;\n" &
+	generate_vars dae &
+	generate_equations dae &
+	generate_algorithms dae &
+	generate_result_vars dae &
+	indent 2 &
+	print "return result;\n}\n"
+	--------------
+	generate_function_body_tuple (fpath, dae, restype)
+
+end
+
+
+relation generate_algorithms: DAE.Element list => () =
+
+  axiom	generate_algorithms []
+
+  rule	generate_algorithm first &
+	generate_algorithms rest
+	------------------------
+	generate_algorithms first :: rest
+
+end
+
+
+
+relation generate_algorithm: DAE.Element => () =
+
+  rule	Dump.print_list(stmts, pp_statement, "")
+	----------------------------------------
+	generate_algorithm DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))
+
+  axiom	generate_algorithm _
+
+end
+
+
+relation generate_vars : DAE.Element list => () =
+
+  axiom	generate_vars []
+
+  rule	generate_var first &
+	generate_vars rest
+	------------------
+	generate_vars first :: rest
+
+end
+
+
+relation generate_var: DAE.Element => () =
+(*
+ parameters are put in the params struct
+
+  rule	generate_var_q2 (vd) &
+	indent 2 &
+	DAE.dump_type typ &
+	Exp.print_component_ref id &
+	print " = 0;  /* Warning: without value, set to zero */\n"
+	-----------
+	generate_var(DAE.VAR(id, DAE.PARAM, vd, typ, NONE))
+*)
+
+  rule	generate_var_q (vk) &
+	generate_var_q2 (vd) &
+	indent 2 &
+	DAE.dump_type typ &
+	Exp.print_component_ref id &
+	print " = " &
+	Exp.print_exp e &
+	print ";\n"
+	-----------
+	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e)))
+
+  rule	generate_var_q (vk) &
+	generate_var_q2 (vd) &
+	indent 2 &
+	DAE.dump_type typ &
+	Exp.print_component_ref id &
+	print ";\n"
+	-----------
+	generate_var(DAE.VAR(id, vk, vd, typ, NONE))
+
+  rule	generate_var_q (vk) &
+	generate_var_q2 (vd) &
+	indent 2 &
+	DAE.dump_type typ &
+	Exp.print_component_ref id &
+	print " = " &
+	Exp.print_exp e &
+	print ";\n"
+	-----------
+	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e)))
+
+  axiom	generate_var (_)
+
+end
+
+
+relation generate_var_q : DAE.VarKind => () =
+
+  axiom	generate_var_q DAE.VARIABLE
+(*  axiom	generate_var_q DAE.PARAM *)
+  axiom	generate_var_q DAE.CONST 
+
+end
+
+relation generate_var_q2 : DAE.VarDirection => () =
+
+  axiom	generate_var_q2 DAE.OUTPUT
+  axiom	generate_var_q2 DAE.BIDIR
+
+end
+
+
+relation generate_result_vars : DAE.Element list => () =
+
+  axiom	generate_result_vars []
+
+  rule	generate_result_var first &
+	generate_result_vars rest
+	--------------------------------
+	generate_result_vars first :: rest
+
+end
+
+relation generate_result_var: DAE.Element => () =
+
+  rule	indent 2 &
+	print "result." &
+	Exp.print_component_ref id &
+	print " = " &
+	Exp.print_component_ref id &
+	print ";\n"
+	-----------
+	generate_result_var DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _)
+
+  axiom	generate_result_var _
+
+end
+
+
+(* LS: ATT! These can only be assignments for the moment, 
+ since no sorting or solving exists *)
+
+relation generate_equations : DAE.Element list => () =
+
+  axiom	generate_equations []
+
+  rule	indent 2 & 
+	Exp.print_exp e1 &
+	print " = " &
+	Exp.print_exp e2 &
+	print ";\n" &
+	generate_equations rest
+	------------------
+	generate_equations DAE.EQUATION(e1,e2) :: rest
+
+  rule	generate_equations rest
+	-----------------------
+	generate_equations _ :: rest
+
+end
+
+
+
+
+
+
+(*******************************)
+(* LS: Copied from dae.rml     *)
+(* and maybe modified slightly *)
+(*******************************)
+
+
+
+(** relation: pp_statement
+ **
+ ** Prettyprint an algorithm statement
+ **)
+
+relation pp_statement : Algorithm.Statement => () =
+
+  rule	pp_stmt (alg,2)
+	--------------
+	pp_statement alg
+
+end
+
+relation pp_stmt : (Algorithm.Statement, int) => () =
+
+  rule	indent i &
+	Exp.print_component_ref c &
+	print " = " &
+	Exp.print_exp e &
+	print ";\n"
+	----------
+	pp_stmt (Algorithm.ASSIGN(c,e), i)
+
+  rule	indent i &
+ 	print "if " & Exp.print_exp e & print " then\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (then, i') &
+	pp_else (else, i) &
+	indent i & print "end if;\n"
+        -------------------
+	pp_stmt (Algorithm.IF(e,then,else), i)
+	
+  rule	indent i &
+	print "for " & print id & print " in " &
+ 	Exp.print_exp e & print " loop\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	print "end for;\n"
+        -------------------
+	pp_stmt (Algorithm.FOR(id,e,stmts), i)
+	
+  rule	indent i &
+	print "while " & Exp.print_exp e & print " loop\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	print "end while;\n"
+        -------------------
+	pp_stmt (Algorithm.WHILE(e,stmts), i)
+	
+  rule	indent i &
+	print "when " & Exp.print_exp e & print " do\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	print "end when;\n"
+        -------------------
+	pp_stmt (Algorithm.WHEN(e,stmts), i)
+	
+  rule	indent i & print "**ALGORITHM**;\n"
+	----------------------------------
+	pp_stmt (_,i)
+
+end
+
+relation pp_stmt_list : (Algorithm.Statement list, int) => () =
+
+  axiom	pp_stmt_list ([],_)
+
+  rule	pp_stmt (stmt,i) & pp_stmt_list(stmts,i)
+	--------------------------------
+	pp_stmt_list (stmt::stmts,i)
+
+end
+
+relation pp_else : (Algorithm.Else, int) => () =
+
+  axiom	pp_else (Algorithm.NOELSE, _)
+
+  rule	indent i &
+ 	print "elseif " & Exp.print_exp e & print " then\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (then, i') &
+	pp_else (else, i)
+        -----------------
+	pp_else (Algorithm.ELSEIF(e,then,else), i)
+
+  rule	indent i &
+ 	print "else\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i')
+        ------------------------
+	pp_else (Algorithm.ELSE(stmts), i)
+
+end
+
+relation indent : int => () =
+
+  axiom indent 0
+
+  rule	print " " & int_sub(i,1) => i' & indent i'
+	------------------------------------------
+	indent i
+end
+
+(***********************************)
+(* / LS: End of copy from dae.rml  *)
+(***********************************)
+
+
+
+relation find_var : (DAE.Element list, Exp.ComponentRef) => DAE.Element option =
+
+  axiom	find_var ([], _) => NONE
+
+  rule	Exp.cref_equal (cr1, cr2) => true
+	--------------------
+	find_var ((e as DAE.VAR(cr1, vk, vd, ty, value))::rest, cr2) => SOME(e)
+
+  rule	find_var (rest, cr) => e'
+	----------------------------
+	find_var (_::rest, cr) => e'
+
+end
+
+
+
+relation generate_exp : Exp.Exp => () =
+
+  rule	print "{" &
+	Exp.print_list (es, generate_exp, ", ") &
+	print "}"
+	---------------------------------------
+	generate_exp Exp.ARRAY(es)
+
+  rule	Exp.print_exp e
+	---------------
+	generate_exp e
+
+end
+
+
+
+relation get_array_dim : Types.Type => int =
+
+  axiom	get_array_dim Types.T_ARRAY(Types.DIM(SOME(ad)), ty2) => ad
+
+	(** LS: Fail if not array, or if there is no dim value **)
+
+end
+
+
+relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list) 
+	  => Exp.Exp list =
+
+  axiom	string_prefix_component_refs (_, _, _, []) => []
+	
+  rule	string_prefix_component_refs (str, r, rarg, rest) => res &
+	string_prefix_component_ref (str, r, rarg, e) => e'
+	----------------------------------------------
+	string_prefix_component_refs (str, r, rarg, e::rest) => e'::res
+end
+
+
+relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp) 
+	  => Exp.Exp =
+
+  rule	r(cr, rarg) &
+	string_prefix_cref (str, cr) => cr'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.CREF(cr)) 
+	  => Exp.CREF(cr')
+
+  rule	not r(cr, rarg)
+	----------------------------------------------
+	string_prefix_component_ref (_, r, rarg, Exp.CREF(cr)) 
+	  => Exp.CREF(cr)
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.BINARY(e1,op,e2)) 
+	  => Exp.BINARY(e1',op,e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.UNARY(op,e1)) 
+	  => Exp.UNARY(op,e1')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.LBINARY(e1,op,e2)) 
+	  => Exp.LBINARY(e1',op,e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.LUNARY(op,e1)) 
+	  => Exp.LUNARY(op,e1')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.RELATION(e1,op,e2)) 
+	  => Exp.RELATION(e1',op,e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2' &
+	string_prefix_component_ref (str, r, rarg, e3) => e3'
+	----------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.IFEXP(e1,e2,e3)) 
+	  => Exp.IFEXP(e1',e2',e3')
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.CALL(p, el)) 
+	  => Exp.CALL(p, el')
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.ARRAY(el)) 
+	  => Exp.ARRAY(el')
+
+  rule	string_prefix_component_refs_list (str, r, rarg, ell) => ell'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.MATRIX(ell)) 
+	  => Exp.MATRIX(ell')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.RANGE(e1, NONE, e2))
+	  => Exp.RANGE(e1', NONE, e2')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
+	string_prefix_component_ref (str, r, rarg, e2) => e2' &
+	string_prefix_component_ref (str, r, rarg, e3) => e3'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.RANGE(e1, SOME(e2), e3))
+	  => Exp.RANGE(e1', SOME(e2'), e3')
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.TUPLE(el)) 
+	  => Exp.TUPLE(el')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.CAST(ty, e1)) 
+	  => Exp.CAST(ty, e1')
+
+  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
+	--------------------------------------------
+	string_prefix_component_ref (str, r, rarg, Exp.ASUB(e1, i)) 
+	  => Exp.ASUB(e1', i)
+
+  axiom	string_prefix_component_ref (str, r, rarg, e) => e
+
+end
+
+relation string_prefix_component_refs_list : 
+	(string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list list) => Exp.Exp list list =
+
+  axiom string_prefix_component_refs_list (_, _, _, []) => []
+
+  rule	string_prefix_component_refs (str, r, rarg, el) => el' &
+	string_prefix_component_refs_list (str, r, rarg, rest) => res
+	----------------------------------------------------
+	string_prefix_component_refs_list (str, r, rarg, el::rest) => el'::res
+
+end
+
+relation string_prefix_cref : (string, Exp.ComponentRef) 
+	  => Exp.ComponentRef =
+
+  rule	string_append (str, s) => s'
+	-----------------------
+	string_prefix_cref (str, Exp.CREF_IDENT(s, si)) => Exp.CREF_IDENT(s', si)
+
+  rule	string_append (str, s) => s'
+	-----------------------
+	string_prefix_cref (str, Exp.CREF_QUAL(s, si, cr)) 
+	  => Exp.CREF_QUAL(s', si, cr)
+
+end
+
+
+relation string_prefix_elements : (string, DAE.Element list, DAE.Element list) 
+	  => DAE.Element list =
+
+  axiom	string_prefix_elements (_, _, []) => []
+
+  rule	string_prefix_element (str, dae, el) => el' &
+	string_prefix_elements (str, dae, rest) => res
+	-----------------------------------------
+	string_prefix_elements (str, dae, el::rest) => el'::res
+
+end
+
+relation string_prefix_element : (string, DAE.Element list, DAE.Element) 
+	  => DAE.Element =
+
+
+  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.VAR(cr,vk,vd,ty,SOME(exp))) 
+	  => DAE.VAR(cr,vk,vd,ty,SOME(exp'))
+
+  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.DEFINE(cr,exp)) 
+	  => DAE.DEFINE(cr,exp')
+
+  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp1) 
+	  => exp1' &
+	string_prefix_component_ref (str, is_parameter_daelist, dae, exp2) 
+	  => exp2'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.EQUATION(exp1,exp2)) 
+	  => DAE.EQUATION(exp1',exp2')
+
+  rule	string_prefix_algorithm (str, dae, alg) => alg'
+	-----------------------------------------------------------------
+	string_prefix_element (str, dae, DAE.ALGORITHM(alg)) 
+	  => DAE.ALGORITHM(alg')
+
+
+(** What happens if a variable is not found among dae, should we check dae1,
+    i.e. where the COMP and FUNCTION was found? **)
+  rule	string_prefix_elements (str, dae, dae) => dae'
+	----------------------------------------------
+	string_prefix_element (str, dae1, DAE.COMP(n, DAE.DAE(dae))) 
+	  => DAE.COMP(n, DAE.DAE(dae'))
+
+  rule	string_prefix_elements (str, dae, dae) => dae'
+	----------------------------------------------
+	string_prefix_element (str, dae1, DAE.FUNCTION(n, DAE.DAE(dae), ty)) 
+	  => DAE.FUNCTION(n, DAE.DAE(dae'), ty)
+
+  axiom	string_prefix_element (str, dae, e) => e
+
+end
+
+
+relation string_prefix_algorithm : (string, DAE.Element list, Algorithm.Algorithm) 
+	  => Algorithm.Algorithm =
+
+  axiom	string_prefix_algorithm (str, dae, alg) => alg
+
+end
+
+
+relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
+
+  rule	Exp.cref_equal (cr, crv) => true
+	------------------------
+	is_parameter_daelist (cr, DAE.VAR(crv,DAE.PARAM,vd,ty,e)::rest)
+
+  rule	Exp.cref_equal (cr, crv) => true
+	------------------------
+	is_parameter_daelist (cr, DAE.VAR(crv,vk,vd,ty,e)::rest) => fail
+
+  rule	is_parameter_daelist (cr, rest)
+	-------------------------------
+	is_parameter_daelist (cr, e::rest)
+
+end
+
+relation string_prefix_params : DAE.DAElist => DAE.DAElist =
+
+  rule	string_prefix_elements ("params->", dae, dae) => dae'
+	-----------------------------------------------------
+	string_prefix_params DAE.DAE(dae) => DAE.DAE(dae')
+
+end
+
+
+relation get_component_ref_next : Exp.ComponentRef => Exp.ComponentRef =
+
+  axiom	get_component_ref_next Exp.CREF_QUAL(n, sl, cr) => cr
+  rule	print "#-- Cannot get subname of an unqualified component reference\n" &
+	Exp.print_component_ref cr
+	----------------------------------------------------------------------
+	get_component_ref_next (cr as Exp.CREF_IDENT(n, sl)) => fail
+
+end
+
+relation get_var_value_expr : (DAE.Element list, Exp.ComponentRef) 
+	  => Exp.Exp =
+
+  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, NONE)) &
+	print "#-- get_var_value_expr: Warning: Variable is not initialized\n" &
+	Exp.print_component_ref cr & print "\n"
+	---------------------------------------------------------
+	get_var_value_expr (dae, cr) => Exp.SCONST("UNDEF")
+
+
+  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, SOME(value)))
+	---------------------------------------------------------
+	get_var_value_expr (dae, cr) => value
+
+  rule	print "#-- get_var_value_expr: Error: Variable not found\n" &
+	Exp.print_component_ref cr & print "\n"
+	---------------------------------------
+	get_var_value_expr (dae, cr) => fail
+
+end
+
+
+relation print_exp_no_funcall : Exp.Exp => () =
+
+  rule	path_string(fcn) => fs &
+	print fs
+	--------
+	print_exp_no_funcall Exp.CALL(fcn, args)
+
+  rule	Exp.print_exp e
+	---------------
+	print_exp_no_funcall e
+
+end
+
+
+relation path_string: Absyn.Path => string =
+
+  axiom	path_string(Absyn.IDENT(s)) => s
+  
+  rule	RTOpts.modelica_output => true &
+	path_string(n) => ns &
+	string_append(s,"__") => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	path_string(Absyn.QUALIFIED(s,n)) => ss
+
+  rule	RTOpts.modelica_output => false &
+	path_string(n) => ns &
+	string_append(s,".") => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	path_string(Absyn.QUALIFIED(s,n)) => ss
+	
+end
