@@ -14,18 +14,25 @@ module Prefix:
   
   type Prefix = string list
 
-  relation prefix_exp : (Exp.Exp,Prefix) => Exp.Exp
-  relation prefix_add : (Exp.Path,Prefix) => Exp.Path
+  relation prefix_add  : (Exp.Ident, Prefix) => Prefix
+  relation prefix_exp  : (Exp.Exp,Prefix) => Exp.Exp
+  relation prefix_path : (Exp.Path,Prefix) => Exp.Path
 
 end
-       
-relation prefix_add: (Exp.Path,Prefix) => Exp.Path =
 
-  axiom	prefix_add(p,[]) => p
+relation prefix_add : (Exp.Ident, Prefix) => Prefix =
 
-  rule	prefix_add(Exp.QUALIFIED(s,p),ss) => p'
+  axiom prefix_add(s,p) => ((s::p))
+
+end
+
+relation prefix_path: (Exp.Path,Prefix) => Exp.Path =
+
+  axiom	prefix_path(p,[]) => p
+
+  rule	prefix_path(Exp.QUALIFIED(s,p),ss) => p'
 	---------------------------
-	prefix_add(p,s::ss) => p'
+	prefix_path(p,s::ss) => p'
 
 end
 
@@ -46,7 +53,7 @@ and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
   axiom	prefix_exp2(e as Exp.BOOL(_),_) => e
   axiom	prefix_exp2(e as Exp.TIME,_) => e
 
-  rule	prefix_add(p,pre) => p'
+  rule	prefix_path(p,pre) => p'
 	--------------------------
 	prefix_exp2(Exp.PATH(p),pre) => Exp.PATH(p')
 
