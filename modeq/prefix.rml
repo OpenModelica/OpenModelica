@@ -14,7 +14,8 @@ module Prefix:
   
   type Prefix = string list
 
-  relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp
+  relation prefix_exp : (Exp.Exp,Prefix) => Exp.Exp
+  relation prefix_add : (Exp.Path,Prefix) => Exp.Path
 
 end
        
