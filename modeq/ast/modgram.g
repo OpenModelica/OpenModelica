@@ -11,8 +11,15 @@ typedef int bool;
 #include "parser.h"
 #include "modAST.h"
 
-#define AST_FIELDS Attrib *attr; void *rml;
-#define zzcr_ast(ast,atr,ttype,text) ast->attr=copy_attr(atr); ast->rml=NULL;
+#define AST_FIELDS Attrib *attr; void *rml; void *aux[5];
+#define zzcr_ast(ast,atr,ttype,text) \
+	ast->attr=copy_attr(atr); \
+	ast->rml=NULL; \
+	ast->aux[0]=NULL; \
+	ast->aux[1]=NULL; \
+	ast->aux[2]=NULL; \
+	ast->aux[3]=NULL; \
+	ast->aux[4]=NULL;
 
 >>
 
@@ -145,6 +152,7 @@ extern void *sibling_list(AST *ast);
 #token FUNCALL
 #token ELEMENT
 #token MODIFICATION
+#token SUBSCRIPT
 
 #token "//(~[\n])*"  << zzskip(); >> /* skip C++-style comments */
 
@@ -184,7 +192,7 @@ import_statement :
 
 class_definition[bool is_replaceable,bool is_final] :
         << void *restr;
-	   bool partial=false, has_array_decl=false, has_class_spec=false; >>
+	   bool partial=false, has_array_dim=false, has_class_spec=false; >>
 	{ PARTIAL << partial = true; >> }
         ( CLASS_                  << restr = Absyn__CL_5fCLASS; >>
 	| MODEL			  << restr = Absyn__CL_5fMODEL; >>
@@ -206,7 +214,7 @@ class_definition[bool is_replaceable,bool is_final] :
 				    restr, Absyn__PARTS(sibling_list(#c)));
 	  >>
 	| EQUALS di:IDENT
-	  { da:array_decl << has_array_decl=true; >> }
+	  { da:array_dimensions << has_array_dim=true; >> }
 	  { ds:class_specialization << has_class_spec=true; >> } 
 	  << 
 	     Attrib a = $[CLASS_,"---"];
@@ -215,7 +223,7 @@ class_definition[bool is_replaceable,bool is_final] :
 				    RML_PRIM_MKBOOL(partial),
 				    restr,
 				    Absyn__DERIVED(mk_scon($di.u.stringval),
-						   (has_array_decl
+						   (has_array_dim
 						    ? mk_some(#da->rml)
 						    : mk_none()),
 						   (has_class_spec
@@ -308,9 +316,13 @@ component_clause!:
 				      RML_PRIM_MKBOOL(ou),
 				      #s->rml,
 				      #l->rml,
-				      mk_none(),
-				      mk_none());
-
+				      (#l->aux[0]
+				       ? mk_some(#l->aux[0])
+				       : mk_none()),
+				      (#l->aux[1]
+				       ? mk_some(#l->aux[1])
+				       : mk_none()));
+				       
 	>> 
 	;
 
@@ -332,21 +344,31 @@ component_list[NodeType nt] :
 	;
 
 component_declaration[NodeType nt] :
-        declaration[nt] comment
+        declaration[nt] comment!
 	;
 
 declaration[NodeType nt] :
 	i:IDENT^ << /* #i->ni.type=nt; */ >>
-	{ array_decl  }
-	{ specialization }
-	<< #i->rml = mk_scon($i.u.stringval); >>
+	{ a:array_dimensions }
+	{ s:specialization }
+	<< #i->rml = mk_scon($i.u.stringval);
+	   #i->aux[0] = #a ? #a->rml : NULL;
+	   #i->aux[1] = #s ? #s->rml : NULL; >>
         ;
 
-array_decl :
+array_dimensions :
 	brak:LBRACK^
-	subscript_list
+	s1:subscript { ","! s2:subscript }
 	RBRACK!
-	<< /* #brak->setOpType(OP_ARRAYDECL); */ >>
+	<< if(#s2) #0->rml = Absyn__TWODIM(#s1->rml,#s2->rml);
+	   else #0->rml = Absyn__ONEDIM(#s1->rml); >>
+	;
+
+subscripts :
+	brak:LBRACK^
+	s:subscript_list
+	RBRACK!
+	<< #0->rml = sibling_list(#s); >>
 	;
 
 subscript_list :
@@ -354,30 +376,31 @@ subscript_list :
  	( "," subscript )*
 	;
 
-subscript! :
-  (expression ":")? ex1:expression ":" { ex2:expression }
-
-	<< 
-/* 	   if ex2 was parsed, build a [n:m] treee */
-  /*if (ex2_ast) #0=#(0,#ex1,#[EXTRA_TOKEN,"|"],#ex2); */
-/* 	   else build a [n:] tree */
-  /* else #0=#(0,#ex1,#[EXTRA_TOKEN,"|"],#[EXTRA_TOKEN,"_"]); */
+subscript :
+	<< Attrib a = $[SUBSCRIPT,"---"]; >>
+	ex1:expression { ":"! ex2:expression { ":"! ex3:expression } }
+	<<
+	   #0 = #(#[&a],#0);
+	   if(#ex3)
+	     #0->rml = mk_some(mk_box2(0,
+				       #ex1->rml,
+				       mk_some(mk_box2(0,
+						       #ex2->rml,
+						       mk_some(#ex3->rml)))));
+	   else if(#ex2)
+	     #0->rml = mk_some(mk_box2(0,
+				       #ex1->rml,
+				       mk_some(mk_box2(0,
+						       #ex2->rml,
+						       mk_none()))));
+	   else
+	     #0->rml = mk_some(mk_box2(0,#ex1->rml,mk_none()));
 	>>
 
-  | ":" { ex3:expression }
+        | ":"!
 	<<
-/* 	  if (ex3_ast) { */
-/* 	    if ex3 was parsed, build a [:m] tree */
-	    /* #0=#(0,#[EXTRA_TOKEN,"1"],#[EXTRA_TOKEN,"|"],#ex3); */
-/* 	  } else { */
-/* 	    else build a [:] tree */
-	    /* #0=#(0,#[EXTRA_TOKEN,"_"]); */
-/* 	  } */
-	>>
-  | ex4:expression
-	<<
-/* 	  single expression; build [n] tree */
-  /* #0=#(0,#ex4); */
+	   #0 = #(#[&a],#0);
+	   #0->rml = mk_none();
 	>>
   ;
 
@@ -387,7 +410,7 @@ subscript! :
 
 specialization :
 	  c:class_specialization /* { EQUALS expression } */
-	  << #0->rml = Absyn__CLASSMOD(#c); >>
+	  << #0->rml = Absyn__CLASSMOD(#0->rml); >>
 	| EQUALS^ e:expression
 	  << #0->rml = Absyn__EQUALMOD(#e->rml); >>
 	;
@@ -689,10 +712,10 @@ comp_ref:
 	;
 
 component_reference : << void *tail = NULL; >>
-	  i:IDENT^ { a:array_decl }
+	  i:IDENT^ { a:subscripts }
 	  << #i->rml = mk_box2(0,
 			       mk_scon($i.u.stringval),
-			       mk_nil() /* FIXME */); >>
+			       #a ? mk_some(#a->rml) : mk_nil()); >>
 	  { dot:DOT^ c:component_reference << tail = #c->rml; >> }
 	  << #0->rml = mk_cons(#i->rml, tail != NULL ? tail : mk_nil()); >>
 	;
