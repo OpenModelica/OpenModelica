@@ -19,6 +19,22 @@
 
 *)
 
+(**
+ ** file:	 rtopts.rml
+ ** module:      RTOpts
+ ** description: Runtime options
+ **
+ ** RCS: $Id$
+ **
+ ** This module takes care of command line options. It is possible to 
+ ** ask it what flags are set, what arguments were given etc.
+ **  
+ ** This module is used pretty much everywhere where debug calls are made.
+ ** 
+ **)
+
+
+
 module RTOpts:
 
   relation args : string list => string list

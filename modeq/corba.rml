@@ -23,9 +23,21 @@
  ** module:      Corba
  ** description: Modelica Corba communication module
  **
- ** RCS: %W %E
+ ** RCS: $Id$
  **
- ** This is the Corba connection module of the compiler
+ ** This is the CORBA connection module of the compiler
+ ** 
+ ** The actual implementation differs between Windows and Unix versions. 
+ ** The Windows implementation is located in ./winruntime and the Unix
+ ** version lies in ./runtime
+ ** 
+ ** OpenModelica does not in itself include a complete CORBA implementaton.
+ ** You need to download one, for example MICO from http://www.mico.org.
+ **
+ ** There exists some options that can be sent to configure concerinng 
+ ** the usage of corba: 
+ **    --with-CORBA=/location/of/corba/library
+ **    --without-CORBA
  **)
 
 module Corba:

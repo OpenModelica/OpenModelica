@@ -33,7 +33,8 @@
  ** processing of any kind, except for building the datastructure is 
  ** done in this module.
  ** 
- ** 
+ ** It is used primarily by inst.rml which both provides its input data
+ ** and uses its "output" data.
  ** 
  **)
 

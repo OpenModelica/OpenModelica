@@ -35,7 +35,7 @@
  ** relation `start' initializes a new machine, and the relation
  ** `trans' signals transitions in the machine.  Finally, the state
  ** can be checked agains a restriction with the `valid' relation.
- **
+ ** 
  **)
 
 module ClassInf :

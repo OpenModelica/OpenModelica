@@ -32,6 +32,11 @@
  ** The implementation of the relations are excluded from the report,
  ** as they occupy a lot of space and do not convey any useful
  ** semantic information.
+ **
+ ** The main entrypoint for this module is the relation "dump" which
+ ** takes an entire program as an argument, and prints it all in
+ ** Modelica source form. The other interface relations can be used
+ ** to print smaller portions of a program.
  **)
 
 
@@ -39,7 +44,6 @@ module Dump:
   
   with "absyn.rml"
   with "interactive.rml"							  
-  with "debug.rml"
 
   type Ident = string
 
@@ -88,6 +92,7 @@ with "classinf.rml"
 with "rtopts.rml"
 with "print.rml"
 with "util.rml"
+with "debug.rml"
 
 (* Relations *)
 

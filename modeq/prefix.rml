@@ -26,9 +26,15 @@
  **
  ** RCS: $Id$
  **
- ** When instantiating an expression, there is a prefix that has to be
- ** added to each variable name to be able to use it in the flattened
- ** equation set. These relations take care of adding the prefixes.
+ ** When instantiating an expression, there is a prefix that *sometimes* 
+ ** has to be added to each variable name to be able to use it in the 
+ ** flattened equation set.
+ ** 
+ ** A prefix for a variable x could be for example a.b.c so that the 
+ ** fully qualified name is a.b.c.x. 
+ ** 
+ ** Some components should not have prefixes added, for example constants.
+ ** 
  **)
 
 module Prefix:
@@ -77,8 +83,7 @@ relation print_prefix_str : Prefix => string =
 
   rule	print_prefix_str rest => rest' &
 	string_append (rest', ".") => s &
-	string_append (s, str) => s' &
-	string_append (s', "[]") => s''
+	string_append (s, str) => s'	string_append (s', "[]") => s''
 	----------------------------
 	print_prefix_str PRE(str, _, rest) => s''
 
@@ -268,15 +273,12 @@ relation prefix_exp : (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-----------------------
 	prefix_exp(env,Exp.CALL(f,es,b,bi),p) => Exp.CALL(f,es',b,bi)
 
-	(**)
   axiom	prefix_exp(env,Exp.ARRAY(t,a,[]),p) => Exp.ARRAY(t,a,[])
 
   rule	prefix_exp_list(env,es,p) => es'
 	-------------------------------
 	prefix_exp(env,Exp.ARRAY(t,a,es),p) => Exp.ARRAY(t,a,es')
 
-
-(* PR. *)
   rule	prefix_exp_list(env,es,p) => es'
 	-------------------------------
 	prefix_exp(env,Exp.TUPLE(es),p) => Exp.TUPLE(es')

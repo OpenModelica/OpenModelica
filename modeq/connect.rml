@@ -26,11 +26,15 @@
  **
  ** RCS: $Id$
  **
- ** Connections generate connection sets which are constructed during
- ** instantiation.  When a connection set is generated, it is used to
- ** create a number of equations.
- **
- ** This module performs connection set management.
+ ** Connections generate connection sets (datatype SET is described below)
+ ** which are constructed during instantiation.  When a connection 
+ ** set is generated, it is used to create a number of equations. 
+ ** The kind of equations created depends on the type of the set. 
+ ** 
+ ** Connect.rml is called from inst.rml and is responsible for 
+ ** creation of all connect-equations later passed to the DAE module 
+ ** in dae.rml.
+ ** 
  **)
 
 module Connect :

@@ -26,7 +26,11 @@
  **
  ** RCS: $Id$
  **
- ** This module loads classes from $MODELICAPATH.
+ ** This module loads classes from $MODELICAPATH. It exports only one
+ ** relation: the load_class relation. It is currently (2004-09-27) 
+ ** only used by ceval.rml when using the "loadclass" function in 
+ ** the interactive environment.
+ ** 
  **)
 
 module ClassLoader:
@@ -54,7 +58,7 @@ relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 
 	(** Simple names: Just load the file if it can be found in $MODELICAPATH* *)
   rule System.group_delimiter => gd &	
-    System.strtok(mp,gd) => mps &
+	System.strtok(mp,gd) => mps &
 	load_class_from_mps(classname,mps) => p
 	-------------------------------------
 	load_class(Absyn.IDENT(classname),mp) => p
@@ -69,7 +73,7 @@ relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 	(** Qualified names: Else, load the complete package and then check that **)
 	(** the package contains the file **) 
   rule	System.group_delimiter => gd &	
-    System.strtok(mp,gd) => mps &
+	System.strtok(mp,gd) => mps &
 	load_complete_package_from_mps(pack,mps,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
 	Interactive.get_pathed_class_in_program(path,p)=> _
 	-------------------------------------
