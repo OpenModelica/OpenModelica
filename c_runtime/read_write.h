@@ -55,5 +55,6 @@ int write_integer_array(FILE*,integer_array_t*);
 
 int read_modelica_string(FILE*,modelica_string_t*);
 int write_modelica_string(FILE*,modelica_string_t*);
+int read_type_description(FILE*, type_description*);
 
 #endif

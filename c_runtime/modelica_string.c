@@ -23,6 +23,7 @@
 #include "modelica_string.h"
 #include "memory_pool.h"
 #include <assert.h>
+#include <string.h>
 
 int modelica_string_ok(modelica_string_t* a)
 {
