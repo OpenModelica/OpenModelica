@@ -46,6 +46,130 @@ module Exp:
   
 end
 
+(**********************************************************************
+ * Constant evaluation
+ **********************************************************************)
+
+relation ceval : Exp => Exp =
+
+  axiom	ceval (x as NUMBER(_)) => x
+  axiom ceval (x as STRING(_)) => x
+  axiom ceval (x as BOOL(_)) => x
+
+  rule	ceval_cref c => exp
+	-------------------
+	ceval CREF(c) => exp
+
+	(* Numerical *)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_add(lhv, rhv) => sum
+	-------------------------
+	ceval BINARY(lh, ADD, rh) => NUMBER(sum)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_sub(lhv, rhv) => diff
+	-------------------------
+	ceval BINARY(lh, SUB, rh) => NUMBER(diff)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_mul(lhv, rhv) => prod
+	-------------------------
+	ceval BINARY(lh, MUL, rh) => NUMBER(prod)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_div(lhv, rhv) => quot
+	--------------------------
+	ceval BINARY(lh, DIV, rh) => NUMBER(quot)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_pow(lhv, rhv) => pow
+	-------------------------
+	ceval BINARY(lh, POW, rh) => NUMBER(pow)
+
+  rule	ceval rh => NUMBER(rhv) &
+	real_neg(rhv) => rhv'
+	-------------------------
+	ceval UNARY(UMINUS, rh) => NUMBER(rhv')
+
+  rule	ceval rh => NUMBER(rhv)
+	-----------------------
+	ceval UNARY(UPLUS, rh) => NUMBER(rhv)
+
+	(* Boolean *)
+
+  rule	ceval lh => BOOL(lhv) &
+	ceval rh => BOOL(rhv) &
+	bool_and(lhv, rhv) => con
+	-------------------------
+	ceval LBINARY(lh, AND, rh) => BOOL(con)
+
+  rule	ceval lh => BOOL(lhv) &
+	ceval rh => BOOL(rhv) &
+	bool_or(lhv, rhv) => disj
+	-------------------------
+	ceval LBINARY(lh, OR, rh) => BOOL(disj)
+
+  rule	ceval rh => BOOL(rhv) &
+	bool_not rhv => rhv'
+	--------------------
+	ceval LUNARY(NOT, rh) => BOOL(rhv')
+
+	(* Relations *)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_lt(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, LESS, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_le(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, LESSEQ, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_gt(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, GREATER, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_ge(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, GREATEREQ, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_eq(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, EQUAL, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_ne(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, NEQUAL, rh) => BOOL(b)
+
+end
+
+and ceval_cref : ComponentRef => Exp =
+
+  rule	print "# ceval_cref\n"
+	----------------------
+	ceval_cref c => fail
+
+end
+
+(**********************************************************************)
+
 relation path_string: Path => string =
 
   axiom	path_string(IDENT(s)) => s
@@ -73,9 +197,11 @@ relation eq_subscript : (Subscript, Subscript) => () =
   axiom	eq_subscript(NOSUB,NOSUB)
 
 	(* FIXME *)
-  rule	print "# Subscript expression\n"
-	--------------------------------
-	eq_subscript(_,_) => fail
+  rule	ceval s1 => v1 &
+	ceval s2 => v2 &
+	v1 = v2
+	-------------------------------
+	eq_subscript(SUB1(s1),SUB1(s2))
 
 end
 
