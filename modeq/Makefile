@@ -17,6 +17,7 @@ SRCRML=	class.rml exp.rml dae.rml main.rml absyn.rml \
 	prefix.rml \
 	env.rml \
 	mod.rml \
+	builtin.rml \
 	inst.rml
 #	lform.rml
 SRCC=	$(SRCRML:.rml=.c)
