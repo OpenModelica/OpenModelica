@@ -71,7 +71,7 @@ else
 fi
 
 AC_MSG_CHECKING([for antlr header files])
-antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | grep include | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
+antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
 if test -z "$antlrinc" ; then 
   AC_MSG_ERROR([Could not find antlr include files])
 else 
@@ -79,7 +79,7 @@ else
 fi
 
 AC_MSG_CHECKING([for antlr libs])
-antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | grep lib | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
 if test -z "$antlrlib" ; then 
   AC_MSG_ERROR([Could not find antlr lib file])
 else 
