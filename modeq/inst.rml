@@ -1,4 +1,8 @@
-(** file: inst.rml
+(**
+ ** file:	 inst.rml
+ ** description: Model instantiation
+ **
+ ** RCS: $Id$
  **
  ** This module exports only one relation. *)
 
@@ -27,8 +31,9 @@ with "classinf.rml"
 with "staticexp.rml"
 with "mod.rml"
 
-(** These type aliases are introduced to make the code a little more *)
-(** readable. FIXME: maybe they should be removed? *)
+(** These type aliases are introduced to make the code a little more
+ ** readable.
+ ** FIXME: maybe they should be removed? *)
 
 type Prefix = Prefix.Prefix
 type Mod = Mod.Mod
@@ -69,12 +74,12 @@ relation inst_program : (Env, SCode.Program) => DAE.DAEcomp list =
 	inst_program(env,[]) => fail
 
   rule	(* Env.extend_frame_c(env,c) => env' & *)
-	inst_class(env,SCode.NOMOD,Prefix.NOPRE,[],c) => (dae,csets,_,_)
+	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c) => (dae,csets,_,_)
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
-  rule	inst_class_decl(env,SCode.NOMOD,Prefix.NOPRE,[],c) => (env',dae1) &
+  rule	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c) => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_program(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
@@ -170,7 +175,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
 
-	(* FIXME: propagate prot *)
+	(** FIXME: propagate prot *)
   rule	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state' &
 	inst_element_list(env,mods,pre,csets,ci_state', els)
 	  => (dae1,env', csets', ci_state'', tys) &
@@ -190,10 +195,11 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,r,_)) &
 	Mod.lookup_modification_p(mods,cn) => m &
+	Mod.elab_mod(env,pre,mod) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
 	(* FIXME order *)
 	Mod.merge(mods,m) => mods' &
-	Mod.merge(mods',mod) => mods'' &
+	Mod.merge(mods',mod') => mods'' &
 	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
 	  => (dae,env, csets', ci_state', tys) &
 	(* Check for restriction violations *)
@@ -270,17 +276,18 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	
 	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,restr,def)) &
 	Mod.lookup_modification_p(mods,cn) => classmod &
+	Mod.elab_mod(env,pre,m) => m' &
 
 	(* Build the combind set of modifications *)
 	(* classmod is the modifications stored with the class *)
 	(* mods     is the modifications passed to the relation *)
 	(* m        is the modification stored in the element *)
 	(* FIXME: verify order *)
-	(* print "  mod 1: " & print cns & SCode.print_mod classmod & print "\n" &
-	print "  mod 2: " & print cns & SCode.print_mod mods & print "\n" &
-	print "  mod 3: " & print cns & SCode.print_mod m & print "\n" & *)
+	(* print "  mod 1: " & print cns & Mod.print_mod classmod & print "\n" &
+	print "  mod 2: " & print cns & Mod.print_mod mods & print "\n" &
+	print "  mod 3: " & print cns & Mod.print_mod m' & print "\n" & *)
 	Mod.merge(classmod,mods) => mods' &
-	Mod.merge(mods',m) => mods'' &
+	Mod.merge(mods',m') => mods'' &
 	
 	(* Can't use inst_class, as that creates a new frame *)
 	inst_class_in(env,mods'',pre,csets,ci_state,c,false(*FIXME: FOO?*))
@@ -354,14 +361,14 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Lookup.lookup_class(env,t) => cl &
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_modification(mods,n,[(*FIXME*)]) => mm &
-	print "  mod 1: " & SCode.print_mod classmod & print "\n" &
-	print "  mod 2: " & SCode.print_mod mm & print "\n" &
-	print "  mod 3: " & SCode.print_mod m & print "\n" &
-
 	Mod.elab_mod(env,pre,m) => m' &
+	print "  mod 1: " & Mod.print_mod classmod & print "\n" &
+	print "  mod 2: " & Mod.print_mod mm & print "\n" &
+	print "  mod 3: " & Mod.print_mod m' & print "\n" &
+
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m') => mod' &
-	print "  modification: " & SCode.print_mod mod' & print "\n" &
+	print "  modification: " & Mod.print_mod mod' & print "\n" &
 
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
@@ -381,14 +388,14 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
-	make_binding (env,attr,eq,cl) => binding &
+	make_binding (env,attr,eq,cl) => (binding,eqexp) &
 	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,binding)) => env' &
 	print " extended frame with variable " & Exp.print_component_ref vn &
  	print "\n" &
 
 	(** If the modification includes an equation, it is added. *)
 	(* FIXME: use env or env'? *)
-	inst_mod_equation(env',pre,n,mod') => dae2 &
+	inst_mod_equation(env',pre,n,ty,mod') => dae2 &
 
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
@@ -402,7 +409,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				     attr as Absyn.ATTR(ad,flow,param,dir),
 				     t,m))
           => (dae, env',csets',ci_state,
-	      [Types.VAR(n,Absyn.ATTR([],flow,param,dir), ty,eq)])
+	      [Types.VAR(n,Absyn.ATTR([],flow,param,dir), ty,eqexp)])
 	
 
 	(** If the class lookup in the previous rule fails, this
@@ -427,11 +434,14 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end	
 
+(**)
+
 relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		     SCode.Class,Absyn.Exp option,int list, int list)
+		     SCode.Class,Mod.Eqmod option,int list, int list)
 	  => (DAE.DAEcomp list,Connect.Sets,Types.Type list) =
 
-  rule	(** The class is instantiated with the calculated *)
+  rule	
+	(** The class is instantiated with the calculated *)
 	(** modification, and an extended prefix. *)
 
 	list_reverse idxs => idxs' &
@@ -453,6 +463,8 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 
 
 end
+
+(**)
 
 relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		       SCode.Class,int,int,int list,int list)
@@ -476,7 +488,9 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 
 end
 
-relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Absyn.Exp option)
+(**)
+
+relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.Eqmod option)
 	  => int list =
 
   rule	elab_arraydim_decl(env,ad) => dim &
@@ -485,17 +499,18 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Absyn.Exp option)
 	elab_arraydim(env,ad,NONE) => dim'
 
   rule	elab_arraydim_decl(env,ad) => dim1 &
-	StaticExp.elab_exp(env, exp) => (e,t,c) &
 	elab_arraydim_type(t) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,ad,SOME(exp)) => dim3
+	elab_arraydim(env,ad,SOME((e,t,c))) => dim3
 
   rule	print "- elab_arraydim failed\n"
 	-------------------------------------
 	elab_arraydim(_,_,_) => fail
 
 end
+
+(**)
 
 relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 
@@ -517,6 +532,8 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 	
 end
 
+(**)
+
 relation complete_arraydim : (int option) list => int list =
 
   axiom	complete_arraydim [] => []
@@ -526,6 +543,8 @@ relation complete_arraydim : (int option) list => int list =
 	complete_arraydim SOME(x)::xs => x::xs'
 
 end
+
+(**)
 
 relation compatible_arraydim : ((int option) list,(int option) list)
 	  => int list =
@@ -547,6 +566,8 @@ relation compatible_arraydim : ((int option) list,(int option) list)
 
 end
 
+(**)
+
 relation elab_arraydim_type : Types.Type => (int option) list =
 
   rule	elab_arraydim_type2(d) => l
@@ -557,6 +578,8 @@ relation elab_arraydim_type : Types.Type => (int option) list =
   axiom	elab_arraydim_type(_) => []
 
 end
+
+(**)
 
 relation elab_arraydim_type2 : Types.ArrayDim => (int option) list =
 
@@ -723,11 +746,15 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([],env,csets,ci_state')
 
   rule	print " equation\n" &
-	inst_eq_equation(env,pre,e1,e2) => e' &
+	StaticExp.elab_exp(env,e1) => (e1',t1,c1) &
+	StaticExp.elab_exp(env,e2) => (e2',t2,c2) &
+	Prefix.prefix_exp(env,e1',pre) => e1'' &
+	Prefix.prefix_exp(env,e2',pre) => e2'' &
+	inst_eq_equation(e1'',t1,e2'',t2) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
 	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
-	  => ([DAE.EQUATION(e')], env, csets, ci_state')
+	  => (dae, env, csets, ci_state')
 
 	(**  `for' loops
 	 **
@@ -755,14 +782,21 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end
 
-relation inst_eq_equation : (Env.Env, Prefix, Absyn.Exp, Absyn.Exp)
-	  => Exp.Exp =
+relation inst_eq_equation : (Exp.Exp, Types.Type, Exp.Exp, Types.Type)
+	  => DAE.DAEcomp list =
 
-  rule	StaticExp.elab_exp(env,Absyn.RELATION(e1,Absyn.EQUAL,e2))
-	  => (e, ty1, c1) &
-	Prefix.prefix_exp(env,e,pre) => e' (* FIXME: remove *)
-	----------------------------------
-	inst_eq_equation (env,pre,e1,e2) => e'
+  rule	Types.same_type(t1,t2) => true &
+	(* FIXME: magic? *)
+	StaticExp.elab_relop(Absyn.EQUAL, t1) => op
+	--------------------------------------------
+	inst_eq_equation(e1,t1,e2,t2) => [DAE.EQUATION(Exp.RELATION(e1,op,e2))]
+	
+  rule	Types.same_type(t1,t2) => false &
+	print "# Type mismatch in equation\n"&
+	print "# " & Exp.print_exp e1 & print " = " & Exp.print_exp e2 &
+	print "\n"
+	----------
+	inst_eq_equation(e1,t1,e2,t2) => fail
 
 end
 
@@ -1055,51 +1089,43 @@ end
  ** if such an equation exists.
  ***)
 
-relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
+relation inst_mod_equation : (Env, Prefix, Ident, Types.Type, Mod)
+	  => DAE.DAEcomp list =
 
   rule  print "  equation modification: " & print v & Mod.print_mod mod &
 	print "\n" &
 
-	inst_eq_equation(env,pre,
-			 Absyn.CREF(Absyn.CREF_IDENT(v,[])), e) => e'
-
-	(*
-	StaticExp.elab_exp(env,
-			   Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(v,[])),
-					  Absyn.EQUAL,e))
-	  => (e', ty1, c1) &
-	Prefix.prefix_exp(env,e',pre) => e'' ( * FIXME: remove * )
-	*)
-
-	(*
-	StaticExp.elab_exp (env, e) => (e',t,_) &
-	( * FIXME: Check type * )
-	StaticExp.elab_relop (Absyn.EQUAL, t) => op &
-	let e'' = Exp.RELATION(Exp.CREF(Exp.CREF_IDENT(v,[])), op, e') &
-	Prefix.prefix_exp(env, e'', pre) => e'''
-	*)
-	-----------------------------------------
-	inst_mod_equation(env,pre,v,mod as Mod.Mod(_,_,SOME(e,t,c)))
-	  => [DAE.EQUATION(e')]
+	Types.same_type(ty1,ty2) => true &
+	Prefix.prefix_cref(pre,Exp.CREF_IDENT(v,[])) => cr &
+	inst_eq_equation(Exp.CREF(cr),ty1,e,ty2) => dae
+	-----------------------------------------------
+	inst_mod_equation(env,pre,v,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
+	  => dae
 	  
-  axiom inst_mod_equation(_,_,_,Mod.MOD(_,_,NONE)) => []
-  axiom inst_mod_equation(_,_,_,Mod.NOMOD) => []
+  rule  Types.same_type(ty1,ty2) => false &
+	print "# Wrong type in equation modifier\n"
+	-------------------------------------------
+	inst_mod_equation(env,pre,v,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
+	  => fail
+	  
+  axiom inst_mod_equation(_,_,_,_,Mod.MOD(_,_,NONE)) => []
+  axiom inst_mod_equation(_,_,_,_,Mod.NOMOD) => []
 
   rule	print "- inst_mod_equation failed\n"
 	------------------------------------
-  	inst_mod_equation (_,_,_,_) => fail
+  	inst_mod_equation (_,_,_,_,_) => fail
 
 end
 
 (**)
 
-relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
+relation check_prot : (bool, Mod.Mod, Exp.ComponentRef) => () =
 
   rule  print "  public variable " & Exp.print_component_ref cref & print "\n"
 	--------------------------------------------------
 	check_prot(false,_,cref)
 	
-  axiom check_prot(_,SCode.NOMOD,_)
+  axiom check_prot(_,Mod.NOMOD,_)
 
   rule  print "# Trying to modify protected element " &
 	Exp.print_component_ref cref & print "\n"
@@ -1108,23 +1134,26 @@ relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
 
 end
 
-(**)
+(** relation: make_binding
+ **
+ ** FIXME: Should the `CONST' attribute be checked, or should the
+ ** analyzed constant property be used?
+ **)
 
-relation make_binding : (Env.Env, Absyn.VarAttr, Absyn.Exp option, SCode.Class)
-	  => Env.Binding =
+relation make_binding : (Env.Env, Absyn.VarAttr, Mod.Eqmod option, SCode.Class)
+	  => (Env.Binding, Exp.Exp option) =
 
-  axiom	make_binding (_,_,NONE,_) => Env.UNBOUND
+  axiom	make_binding (_,_,NONE,_) => (Env.UNBOUND, NONE)
 
   rule	class_type cl => ct &
-	StaticExp.elab_exp (env, e) => (e', t, c) &
-	make_const_binding (env,e', t, ct, c) => binding
+	make_const_binding (env,e, t, ct, c) => binding
 	----------------------------------------
-	make_binding (env,Absyn.ATTR(_,_,Absyn.CONST,_),SOME(e),cl)
-	  => (* binding *) Env.EQBOUND(e)
+	make_binding (env,Absyn.ATTR(_,_,Absyn.CONST,_),SOME((e,t,c)),cl)
+	  => (* binding *) (Env.EQBOUND(e), SOME(e))
 
 	(* default *)
 
-  axiom make_binding (_,_, SOME(e),_) => Env.EQBOUND(e)
+  axiom make_binding (_,_, SOME((e,t,c)),_) => (Env.EQBOUND(e), SOME(e))
 
 end
 

@@ -1,4 +1,9 @@
-(** file: lookup.rml
+(**
+ ** file:	 lookup.rml
+ ** description: Scoping rules
+ **
+ ** RCS: $Id$
+ **
  **)
 
 module Lookup:

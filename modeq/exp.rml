@@ -1,5 +1,6 @@
 (**
- ** file:  exp.rml
+ ** file:	 exp.rml
+ ** description: Expressions
  **
  ** This file contains the module `Exp', which contains data types for
  ** describing Modelica expressions.  It is used throughout the
@@ -98,6 +99,8 @@ end
  ** output.  This is used for error messages, and for debugging the
  ** semantic description.
  **)
+
+(*!ignorecode*)
  
 (** relation: print_component_ref
  **
@@ -130,7 +133,10 @@ relation print_component_ref2 =
 
 end
 
-(** relation: print_subscript *)
+(** relation: print_subscript
+ **
+ ** Print a `Subscript'.
+ **)
 
 relation print_subscript: Subscript => () =
 
@@ -243,11 +249,6 @@ relation print_exp: Exp => () =
         ----------------------------------
 	print_exp (_)
 end
-
-(** relation: *_symbol
- **
- ** Make a string describing different operators.
- **)
 
 relation binop_symbol : BinOp => string =
   axiom	binop_symbol(INT_ADD) => " + "

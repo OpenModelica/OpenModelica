@@ -1,4 +1,8 @@
-(* main.rml - Modelica main program *)
+(**
+ ** file:        main.rml
+ ** description: Modelica main program
+ **)
+
 module Main:
 	relation main: string list => ()
 end

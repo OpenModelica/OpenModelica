@@ -1,17 +1,22 @@
-(** file: types.rml
+(**
+ ** file:	 types.rml
+ ** description: Type system
+ **
+ ** RCS: $Id$
  **)
 
 module Types :
 
   with "classinf.rml"
   with "absyn.rml"
+  with "exp.rml"
 
   (** - Identifiers *)
   type Ident = string
   (** FIXME: This is declared in many places. *)
 
   (** - Variables *)
-  datatype Var = VAR of Ident * Absyn.VarAttr * Type * Absyn.Exp option
+  datatype Var = VAR of Ident * Absyn.VarAttr * Type * Exp.Exp option
   (** I wonder why this goes here? *)
 
   (** - Types *)
@@ -53,91 +58,8 @@ module Types :
 
 end
 
-(** relation: simplify_type *)
-
-(*
-relation simplify_type : Type => Type =
-
-  rule	known_type(st,[]) => t
-	----------------------
-	simplify_type(TYPE(st,_)) => t
-
-  rule	simplify_vars(v) => cl
-	----------------------
-	simplify_type(TYPE(_,v)) => T_COMPLEX(cl)
-
-end
-*)
-
-(** relation: simplify_vars *)
-
-(*
-relation simplify_vars : Var list => Component list =
-
-	(* FIXME: What about array dimensions? *)
-
-  axiom	simplify_vars [] => []
-	
-  rule	simplify_type t => t' & simplify_vars(vs) => cs
-	-----------------------------------------------
-	simplify_vars(VAR(n,_,t,_)::vs) => COMP(n,t')::cs
-
-end
-*)
-
 (** relation: same_type
  **)
-
-(*relation same_type : (Type, Type) => bool =
-	
-  axiom	same_type (T_INTEGER,T_INTEGER) => true
-  axiom	same_type (T_REAL,T_REAL)       => true
-  axiom	same_type (T_STRING,T_STRING)   => true
-  axiom	same_type (T_BOOL,T_BOOL)       => true
-
-  rule	same_arraydim (d1,d2) => true & same_type (t1,t2) => true
-	---------------------------------------------------------
-	same_type (T_ARRAY(d1,t1),T_ARRAY(d2,t2)) => true
-	
-  rule	same_type_comp (c1, c2) => true
-	----------------------------------
-	same_type (T_COMPLEX(c1),T_COMPLEX(c2)) => true
-
-	(* default *)
-  axiom	same_type (_,_) => false
-
-end
-*)
-
-relation same_arraydim : (ArrayDim, ArrayDim) => bool =
-
-  axiom	same_arraydim (NODIM,NODIM) => true
-
-  rule	i1 = i2 & same_arraydim (d1,d2) => true
-	---------------------------------------
-	same_arraydim (DIM(i1,d1),DIM(i2,d2)) => true
-
-	(* default *)
-  axiom	same_arraydim (_,_) => false
-
-end
-
-(*
-relation same_type_comp : (Component list, Component list) => bool =
-
-  axiom same_type_comp([], []) => true
-
-  rule  pick(xs2,n) => (xs2',t2) &
-	same_type(t1,t2) => true &
-	same_type_comp(xs1,xs2') => true
-	---------------------
-	same_type_comp(COMP(n,t1)::xs1, xs2) => true
-
-	(* default *)
-  axiom	same_type_comp (_,_) => false
-
-end
-*)
 
 relation same_type : (Type, Type) => bool =
 	
@@ -159,6 +81,23 @@ relation same_type : (Type, Type) => bool =
   axiom	same_type (_,_) => false
 
 end
+
+(**)
+
+relation same_arraydim : (ArrayDim, ArrayDim) => bool =
+
+  axiom	same_arraydim (NODIM,NODIM) => true
+
+  rule	i1 = i2 & same_arraydim (d1,d2) => true
+	---------------------------------------
+	same_arraydim (DIM(i1,d1),DIM(i2,d2)) => true
+
+	(* default *)
+  axiom	same_arraydim (_,_) => false
+
+end
+
+(**)
 
 relation same_type_c : (Var list, Var list) => bool =
 

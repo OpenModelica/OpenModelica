@@ -21,6 +21,8 @@ SOURCES = exp.tex \
 	inst.tex \
 	main.tex
 
+TEXJUNK = report.log report.toc report.stc report.dvi report.aux
+
 .DEFAULT: report.dvi
 .SUFFIXES:
 .SUFFIXES: .rml .tex .dvi .ps
@@ -35,4 +37,4 @@ report.ps: report.dvi
 	dvips -o $@ $<
 
 clean:
-	$(RM) $(SOURCES) report.dvi report.ps report.aux report.toc report.log
+	$(RM) $(SOURCES) $(TEXJUNK)

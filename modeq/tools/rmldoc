@@ -2,6 +2,7 @@
 // -*- pike -*-
 
 object comstart = Regexp("^[ \t]*(\\(|)\\*\\*(.*)$");
+object procinst = Regexp("^[ \t]*\\(\\*!([a-z]*)");
 
 string untabify(string s)
 {
@@ -24,20 +25,36 @@ string tex_escape(string s)
   return ss + s;
 }
 
+#define OUT(x) outbuf += (x)
 
 void convert(string f)
 {
   array(string) lines = Stdio.read_file(f) / "\n";
-  string state = "start", buf = "", fn = (f/"/")[-1];
+  string state = "start", buf = "", fn = (f/"/")[-1], desc = "";
   array a;
+  int ignorecode = 0, lno = 0;
+  string outbuf = "";
 
-  write("\\section{File \\texttt{"+fn+"}}\n"
-	"\\label{src:"+(fn/".")[0]+"}\n");
   foreach(lines, string line)
   {
     int empty = Regexp("^[ \t]*$")->match(line);
-    if(a = comstart->split(line))
+    lno++;
+    // write(sprintf("+%s\n",line));
+    if(a = procinst->split(line))
     {
+      switch(a[0]) {
+      case "ignorecode":
+	ignorecode = 1; break;
+      case "includecode":
+	ignorecode = 0; break;
+      default:
+	werror(sprintf("%s:%d: unknown processing instruction: %s\n",
+		       f, lno, a[0]));
+      }
+    }
+    else if(a = comstart->split(line))
+    {
+      // write("-com\n");
       string s, newstate;
       switch(state) {
       case "start":
@@ -45,10 +62,10 @@ void convert(string f)
       case "itemize":
 	break;
       case "code2":
-	write("\\end{boxedverbatim}\n\n");
+	OUT("\\end{boxedverbatim}\n\n");
 	break;
       case "code1":
-	write("\n");
+	OUT("\n");
 	break;
       }
       newstate = "comment";
@@ -64,46 +81,63 @@ void convert(string f)
 	;
       else if(s[..2] == " - ")
       {
-	write("\n\\subsection{"+s[3..]+"}\n\n");
+	OUT("\n\\subsection{"+s[3..]+"}\n\n");
       }
       else if(s[..3] == "  o ")
       {
 	newstate = "itemize";
 	if(state != "itemize")
-	  write("\\begin{itemize}\n");
-	write("\\item "+s[4..]+"\n");
+	  OUT("\\begin{itemize}\n");
+	OUT("\\item "+s[4..]+"\n");
       }
       else if(s[..3] == "    " && state == "itemize")
       {
 	newstate = "itemize";
-	write("      "+s[4..]+"\n");
+	OUT("      "+s[4..]+"\n");
       }
       else if(s[..1] == "  ")
-	write("\\subsubsection{"+s[2..]+"}\n");
-      else if(a = Regexp(" *file: *(.*)")->split(s))
+	OUT("\\subsubsection{"+s[2..]+"}\n");
+      else if(a = Regexp("^ *([a-zA-Z]*):[ \t]*(.*)")->split(s))
       {
-	if(a[0] != fn)
-	  werror("Filename mismatch in file "+f+": claims to be '"+a[0]+"'\n");
+	switch(lower_case(a[0])) {
+	case "file":
+	  if(a[1] != fn)
+	    werror("Filename mismatch in file "+f+
+		   ": claims to be '"+a[0]+"'\n");
+	  break;
+	case "description":
+	  desc = a[1];
+	  break;
+	case "relation":
+	  OUT("\\subsubsection{Relation \\code{"+a[1]+"}}\n");
+	  break;
+	case "purpose":
+	  OUT("\\textbf{Purpose:} "+a[1]+"\n\\vspace{1ex}\n");
+	  break;
+	case "fixme":
+	  OUT("\\fixme{"+a[1]+"}\n");
+	  break;
+	default:
+	  werror(sprintf("%s:%d: Warning: ignored header %s\n",
+			 f,lno,a[0]));
+	}
       }
-      else if(a = Regexp(" *relation: *(.*)")->split(s))
-	write("\\subsubsection{Relation \\texttt{"+a[0]+"}}\n");
-      else if(a = Regexp(" *purpose: *(.*)")->split(s))
-	write("\\textbf{Purpose:} "+a[0]+"\n\\vspace{1ex}\n");
       else
-	write(s+"\n");
+	OUT(s+"\n");
       if(state == "itemize" && newstate != "itemize")
-	write("\\end{itemize}\n");
+	OUT("\\end{itemize}\n");
       state = newstate;
     }
-    else
+    else if(!ignorecode)
     {
+      // write("-code: "+state+"\n");
       switch (state) {
       case "code1":
       case "code2":
 	break;
       case "start":
       case "comment":
-	// write("{\\small\\begin{verbatim}\n");
+	// OUT("{\\small\\begin{verbatim}\n");
 	buf = "";
 	break;
       }
@@ -111,7 +145,7 @@ void convert(string f)
       if(!empty)
       {
 	if(state!="code2")
-	  write("\\begin{boxedverbatim}\n");
+	  OUT("\\begin{boxedverbatim}\n");
 	state = "code2";
       }
       else if (state != "code2")
@@ -122,15 +156,17 @@ void convert(string f)
 	  buf += "\n";
 	else
 	{
-	  write(buf+line+"\n");
+	  OUT(buf+line+"\n");
 	  buf = "";
 	}
     }
   }
 
   if(state == "code2")
-    // write("\\end{verbatim}}\n");
-    write("\\end{boxedverbatim}\n\n");
+    // OUT("\\end{verbatim}}\n");
+    OUT("\\end{boxedverbatim}\n\n");
+
+  write("\\sourcefile{"+fn+"}{"+desc+"}\n"+outbuf);
 }
 
 int main(int argc, array argv)

@@ -1,3 +1,11 @@
+(**
+ ** file:	 staticexp.rml
+ ** description: Static analysis of expressions
+ **
+ ** RCS: $Id$
+ **
+ **)
+
 module StaticExp :
 
   with "absyn.rml"

@@ -1,4 +1,8 @@
-(** file: absyn.rml
+(**
+ ** file:	 absyn.rml
+ ** description: Abstract syntax
+ **
+ ** RCS: $Id$
  **
  ** This file defines the abstract syntax for Modelica. It uses data
  ** types from the `Exp' and `Types' modules.  Each type is described

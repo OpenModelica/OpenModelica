@@ -1,7 +1,8 @@
 (**
- ** file: explode.rml
+ ** file:	 scode.rml
+ ** description: SCode intermediate form
  **
- ** $Id$
+ ** RCS: $Id$
  **
  **)
 

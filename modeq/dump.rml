@@ -1,6 +1,15 @@
-(** file: dump.rml
+(**
+ ** file:	 dump.rml
+ ** description: debug printing
  **
- ** Dump routines for debugging of the AST.
+ ** RCS: $Id$
+ **
+ ** Printing routines for debugging of the AST.  These relations do
+ ** nothing but print the data structures to the standard output.
+ **
+ ** The implementation of the relations are excluded from the report,
+ ** as they occupy a lot of space and do not convey any useful
+ ** semantic information.
  **)
 
 
@@ -22,6 +31,8 @@ module Dump:
   relation print_list : ('a list, 'a => (), string) => ()
 
 end
+
+(*!ignorecode*)
 
 with "classinf.rml"
 

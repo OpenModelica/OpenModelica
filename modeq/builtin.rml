@@ -1,4 +1,10 @@
-(** file: builtin.rml *)
+(**
+ ** file:	 builtin.rml
+ ** description: Builting types and variables
+ **
+ ** RCS: $Id$
+ **
+ **)
 
 (** - Module header
  **

@@ -1,5 +1,8 @@
 (**
- ** file: classinf.rml
+ ** file:	 classinf.rml
+ ** description: Class restrictions
+ **
+ ** RCS:	 $Id$
  **
  ** This module deals with class inference, that is determining if a
  ** class definition adhers to one of the class restrictions, and, if
@@ -70,6 +73,8 @@ end
 (**)
 (** Some relations for printing error and debug information about the *)
 (** state machine. *)
+
+(*!ignorecode*)
 
 (** relation: print_state *)
 
@@ -147,6 +152,8 @@ relation print_event : Event => () =
 
 end
 
+(*!includecode*)
+
 (** - Transitions *)
 
 (** relation: start
@@ -171,11 +178,14 @@ relation start : (Absyn.Restriction, string) => State =
 end
 
 (** relation: trans
+ **
+ ** This is the state machine transition relation.  It describes the
+ ** transitions between states at different events.
  **)
 
 relation trans : (State, Event) => State =
 
-	(* NEWDEF *)
+	(** Event `NEWDEF' *)
 
   axiom	trans(UNKNOWN(s),        NEWDEF) => IS_NEW(s)
   axiom	trans(MODEL(s),          NEWDEF) => MODEL(s)
@@ -196,7 +206,7 @@ relation trans : (State, Event) => State =
   axiom	trans(TYPE_STRING(s),    NEWDEF) => TYPE_STRING(s)
   axiom	trans(TYPE_BOOL(s),      NEWDEF) => TYPE_BOOL(s)
 
-	(* FOUND_EQUATION *)
+	(** Event `FOUND_EQUATION' *)
 
   axiom	trans(UNKNOWN(s),        FOUND_EQUATION) => HAS_EQUATIONS(s)
   axiom	trans(IS_NEW(s),         FOUND_EQUATION) => HAS_EQUATIONS(s)

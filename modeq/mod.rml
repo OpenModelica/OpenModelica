@@ -1,7 +1,8 @@
 (**
- ** file: mod.rml
+ ** file:        mod.rml
+ ** description: Modification handling
  **
- ** $Id$
+ ** RCS: $Id$
  **
  ** Modifications are simply the same kind of modifications used in
  ** the `Absyn' module.
@@ -23,8 +24,9 @@ module Mod:
   type Ident = string
 
   (** - Modification datatype *)
+  type Eqmod = (Exp.Exp * Types.Type * bool)
   datatype SubMod = SUBMOD of Ident * int list * Mod
-  and Mod = MOD of bool * (SubMod list) * (Exp.Exp * Types.Type * bool) option
+  and Mod = MOD of bool * (SubMod list) * Eqmod option
   	  | REDECL of bool * Absyn.ElementSpec
 	  | NOMOD
   (** This type is very similar to `SCode.Mod'.  The main difference is
@@ -32,14 +34,14 @@ module Mod:
    ** here are prefixed and typechecked.
    **)
 
-  val empty_mod : Mod
-
   relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod
 
   relation lookup_modification: (Mod,Absyn.Ident,int list) => Mod
   relation lookup_modification_p: (Mod,Absyn.Path) => Mod
   relation merge : (Mod, Mod) => Mod
-  relation mod_equation : Mod => (Exp.Exp * Types.Type * bool) option
+  relation mod_equation : Mod => Eqmod option
+
+  relation print_mod : Mod => ()
 
 (*
   relation modify_class: (Env.Env, Absyn.Path, Mod, Prefix.Prefix, Absyn.Class)
@@ -68,18 +70,25 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
 
   axiom	elab_mod (_,_,SCode.NOMOD) => NOMOD
 
-  rule	elab_submods (env,pre,subs) => subs'
+  rule	elab_submods (env,pre,subs) => subs' &
+	let res = MOD(final,subs',NONE) &
+	print "   elab_mod " & SCode.print_mod m &
+	print " => " & print_mod res & print "\n"
 	------------------------------------
-	elab_mod (env,pre,MOD(final,subs,NONE)) => MOD(final,subs',NONE)
+	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE)) => res
 	
   rule	elab_submods (env,pre,subs) => subs' &
-	StatixExp.elab_exp(env,e) => (e',t,c) &
-	Prefix.prefix_exp(env,e',pre) => e''
+	StaticExp.elab_exp(env,e) => (e',t,c) &
+	Prefix.prefix_exp(env,e',pre) => e'' &
+	let res = MOD(final,subs',SOME((e'',t,c))) &
+	print "   elab_mod " & SCode.print_mod m &
+	print " => " & print_mod res & print "\n"
 	------------------------------------
-	elab_mod (env,pre,MOD(final,subs,SOME(e)))
-	  => MOD(final,subs',SOME(e'',t,c))
+	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e))) => res
 
 end
+
+(**)
 
 relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
 	  => SubMod list =
@@ -93,15 +102,19 @@ relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
 
 end
 
+(**)
+
 relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod =
 
   rule	elab_subscripts (env,pre,ss) => ss' &
-	Prefix.prefix_add (i,ss',pre) => pre' &
-	elab_mod (env,pre',m) => m'
+	(* Prefix.prefix_add (i,ss',pre) => pre' & *)
+	elab_mod (env,pre(*'*),m) => m'
 	---------------------------
 	elab_submod (env,pre,SCode.SUBMOD(i,ss,m)) => SUBMOD(i,ss',m')
 
 end
+
+(**)
 
 relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
 	=> int list =
@@ -120,6 +133,8 @@ relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
 	elab_subscripts (env,pre,Absyn.SUBSCRIPT(e)::xs) => i::xs'
 	
 end
+
+(**)
 
 relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool) => int =
 
@@ -141,22 +156,6 @@ relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool) => int =
   rule	print "- Mod.eval_subscript failed\n"
 	-------------------------------------
 	eval_subscript(_,_,_,_) => fail
-
-end
-
-(**)
-
-with "dump.rml"
-
-val empty_mod = MOD(false,[],NONE)
-
-(**)
-
-relation expand_nomod : Mod => Mod =
-
-  axiom expand_nomod(m as MOD(_,_,_)) => m
-
-  axiom expand_nomod NOMOD => empty_mod
 
 end
 
@@ -193,12 +192,14 @@ relation lookup_modification: (Mod,Absyn.Ident,int list) => Mod =
 	lookup_modification(MOD(_,subs,_),n,s) => mod
 	
   rule	print "# Mod.lookup_modification(" &
-	(* print_mod mod & print "," & print i & *)
+	print_mod mod & print "," & print i &
 	print ") failed\n"
 	--------------------
 	lookup_modification(mod,i,s) => fail
 
 end	
+
+(**)
 
 relation lookup_modification2 : (SubMod list,Absyn.Ident,int list)
 	  => Mod =
@@ -226,6 +227,7 @@ end
  ** the "inner" modifications. FIXME: correct?
  **
  **)
+
 (** relation: merge
  **)
 
@@ -301,9 +303,7 @@ end
 (** relation: merge_eq
  **)
 
-relation merge_eq : ((Exp.Exp * Types.Type * bool) option,
-		     (Exp.Exp * Types.Type * bool) option)
-	  => (Exp.Exp * Types.Type * bool) option =
+relation merge_eq : (Eqmod option, Eqmod option) => Eqmod option =
 
 	(* Outer assignments take precedence *)
 
@@ -316,7 +316,7 @@ end
 (** relation: mod_equation
  **)
 
-relation mod_equation : Mod => (Exp.Exp * Types.Type * bool) option =
+relation mod_equation : Mod => Eqmod option =
 
   axiom mod_equation NOMOD => NONE
 
@@ -325,3 +325,118 @@ relation mod_equation : Mod => (Exp.Exp * Types.Type * bool) option =
   axiom mod_equation MOD(_,_,e) => e
 
 end
+
+(*!ignorecode*)
+
+(** - Printing *)
+
+(** relation: print_mod
+ **
+ ** This relation prints a modification. It uses a few other relation
+ ** to do its stuff.
+ **
+ ** The relations are excluded from the report for brevity.
+ **)
+
+relation print_mod : Mod => () =
+
+  axiom	print_mod(NOMOD)
+
+  rule  print "(redeclared)"
+	------------------------------
+	print_mod REDECL(_,_)
+	
+  rule	print_final final &
+	print_subs1 subs &
+	print_eqmod eq
+	--------------
+	print_mod MOD(final, subs, eq)
+
+end
+
+(**)
+
+relation print_final : bool => () =
+
+  axiom print_final false
+
+  rule print " final "
+       --------------
+       print_final true
+
+end
+
+(**)
+
+relation print_subs1 : SubMod list => () =
+
+  axiom print_subs1 [] => ()
+
+  rule	print "(" & print_sub x & print_subs2 xs & print ")"
+	------------------------------------
+	print_subs1 x::xs
+
+end
+
+(**)
+
+relation print_subs2 : SubMod list => () =
+
+  axiom print_subs2 []
+
+  rule  print "," & print_sub sub & print_subs2 subs
+	----------------------------------------------
+	print_subs2 sub::subs
+
+end
+
+(**)
+
+relation print_sub : SubMod => () =
+
+  rule  print n & print_subscripts ss & print_mod mod
+	------------------
+	print_sub SUBMOD(n,ss,mod)
+
+end
+
+(**)
+
+relation print_subscripts : int list => () =
+
+  axiom	print_subscripts []
+
+  rule	print "[" &
+	int_string x => s & print s &
+	print_subscripts2 xs &
+	print "]"
+	-----------------------------------------------------
+	print_subscripts x::xs
+
+end
+
+(**)
+
+relation print_subscripts2 : int list => () =
+
+  axiom	print_subscripts2 []
+
+  rule	print "," & int_string x => s & print s &
+	print_subscripts2 xs
+	--------------------
+	print_subscripts2 x::xs
+
+end
+
+(**)
+
+relation print_eqmod : Eqmod option => () =
+
+  axiom print_eqmod NONE
+
+  rule  print " = " & Exp.print_exp e
+	-----------------------------
+	print_eqmod SOME((e,t,c))
+
+end
+	

@@ -1,4 +1,8 @@
-(** file: dae.rml
+(**
+ ** file:	 dae.rml
+ ** description: DAE management and output
+ **
+ ** RCS: $Id$
  **
  ** This file is not really mine.  It will be rewritten later.
  **)
@@ -30,7 +34,35 @@ module DAE:
 	  
 end
 
-(** - Relations *)
+(** - Relations
+ **
+ ** The only relations in this module are for printing, and are not
+ ** included in the report.
+ **)
+
+(*!ignorecode*)
+
+(** relation: dump
+ **
+ ** This relation prints the DAE in the standard outpur format.
+ **)
+
+relation dump: DAEform => () =
+	
+  rule	print "fclass " & print n & print "\n" &
+	dump(l) &
+	print "end " & print n & print ";\n"
+	-----------------------------------
+	dump DAE([COMP(n,l)])
+
+  rule	dump_vars l &
+	print "equation\n" &
+	dump_equations l &
+	dump_algorithms l
+	-----------------
+	dump DAE(l)
+
+end
 
 relation dump_kind =
 
@@ -158,23 +190,6 @@ relation dump_algorithms: DAEcomp list => () =
 	dump_algorithms rest
 	-------------------
 	dump_algorithms first :: rest
-
-end
-
-relation dump: DAEform => () =
-	
-  rule	print "fclass " & print n & print "\n" &
-	dump(l) &
-	print "end " & print n & print ";\n"
-	-----------------------------------
-	dump DAE([COMP(n,l)])
-
-  rule	dump_vars l &
-	print "equation\n" &
-	dump_equations l &
-	dump_algorithms l
-	-----------------
-	dump DAE(l)
 
 end
 

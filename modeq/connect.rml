@@ -1,5 +1,9 @@
 (**
- ** file: connect.rml
+ ** file:	 connect.rml
+ ** description: Connection set management
+ **
+ ** RCS: $Id$
+ **
  **)
 
 module Connect :
@@ -57,10 +61,22 @@ relation add_flow : (Sets, Exp.ComponentRef, Face, Exp.ComponentRef, Face)
 end
 
 (**
- ** - Dumping
+ ** - Printing
+ **
+ ** These are a few relations used for printing a description of the
+ ** connection sets.  The implementation is excluded from the report
+ ** for brevity.
  **)
 
+(*!ignorecode*)
+
 with "dump.rml"
+
+(** relation: print_sets
+ **
+ ** Prints a description of a number of connection sets to the
+ ** standard output.
+ **)
 
 relation print_sets : Sets => () =
 
@@ -102,6 +118,8 @@ relation print_flow_ref : (Exp.ComponentRef * Face) => () =
 	print_flow_ref((c,OUTER))
 
 end
+
+(*!includecode*)
 
 (**
  ** - Equation generation
