@@ -19,6 +19,24 @@
 
 *)
 
+
+
+(**
+ ** file:	 Util.rml
+ ** module:      Util
+ ** description: Miscellanous RML utilities
+ **
+ ** RCS: $Id$
+ ** 
+ ** This module contains various RML utilities *sigh*, mosly 
+ ** related to lists.
+ ** It is used pretty much everywhere. The difference between this 
+ ** module and the Util module is that ModUtil contains modelica 
+ ** related utilities. The Util module only contains "low-level" 
+ ** rml utilities, for example finding elements in lists.
+ ** 
+ **)
+
 module Util :
 
   
@@ -504,10 +522,3 @@ relation apply_option : ('a option,'a => 'b) => 'b option =
 	-----------
 	apply_option( SOME(a),rel) => SOME(b)
 end
-
-
-
-
-
-
-

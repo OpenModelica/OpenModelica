@@ -83,7 +83,8 @@ relation print_prefix_str : Prefix => string =
 
   rule	print_prefix_str rest => rest' &
 	string_append (rest', ".") => s &
-	string_append (s, str) => s'	string_append (s', "[]") => s''
+	string_append (s, str) => s'	&
+	string_append (s', "[]") => s''
 	----------------------------
 	print_prefix_str PRE(str, _, rest) => s''
 

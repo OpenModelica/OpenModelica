@@ -22,12 +22,17 @@
 (**
  ** file:	 modutil.rml
  ** module:      ModUtil
- ** description: Miscellanous utilities (The horror, THE HORROR)
+ ** description: Miscellanous modelica related utilities (The horror, THE HORROR)
  **
  ** RCS: $Id$
  ** 
- ** This module communicates with the backend (through files) for simulation
- ** plotting etc.
+ ** This module contains various utilities. For example
+ ** converting a path to a string and comparing two paths.
+ ** It is used pretty much everywhere. The difference between this 
+ ** module and the Util module is that ModUtil contains modelica 
+ ** related utilities. The Util module only contains "low-level" 
+ ** rml utilities, for example finding elements in lists.
+ ** 
  **)
 
 
