@@ -10,6 +10,7 @@ with "parse.rml"
 with "dump.rml"
 with "lform.rml"
 with "dae.rml"
+with "inst.rml"
 (* with "modelica.rml" *)
 
 relation main =
@@ -30,8 +31,11 @@ relation main =
 		(* & Dump.dump Test.prog1 *)
 		print "\n = Translating\n\n" &
 		Lform.convert p' => p'' &
-		(* Modelica.progDAE p => d & *)
-		(*DAE.dump d & *)
+
+		print "\n = Instantiating\n\n" &
+		Inst.instantiate(p'') => d &
+		DAE.dump d &
+
 		print "\n[slut]\n"
 		----------------
 		main [f]
