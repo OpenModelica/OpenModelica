@@ -71,6 +71,11 @@ getConnectionCount(<cref>)		Returns the number of
 getNthConnection(<cref>,<int>)		Returns the nth connection,
 					as a comma separated pair of
 					connectors, e.g. "R1.n,R2.p".
+deleteConnection(<cref>,<cref>,<cref>)	Deletes the connection between the two 
+					connectors given as arguments A1,A2. A0 is 
+					the model name.
+deleteNthConnection(<cref>,<int>)	Deletes the nth connection in class given 
+					by A0. 
 getNthConnectionAnnotation(<cref>,<int>)
 					Returns the nth connection
 					annotation as comma separated
@@ -84,7 +89,6 @@ addConnection(<cref>,<cref>,<cref>, annotate=<expr>)
 
 updateConnection(<cref>,<cref>,<cref>, annotate=<expr>)
 					Updates an allready existing connection
-
 					
 getConnectorCount(<cref>)		Returns the number of
 					connectors of a class.

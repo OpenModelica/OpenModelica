@@ -52,10 +52,14 @@ with "util.rml"
 with "parse.rml"
 with "prefix.rml"
 with "mod.rml"
+with "env.rml"
+with "lookup.rml"
+with "types.rml"
+with "classinf.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
-val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3;  Boolean smooth=false; end Line;"
+val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
 
 
 (** relation: evaluate
@@ -201,6 +205,26 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("getNthConnectionAnnotation",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_connector_count(cr,p) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getConnectorCount",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_nth_connector(cr,p,n) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getNthConnector",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
@@ -405,6 +429,152 @@ relation get_nth_connection_annotation: (Absyn.ComponentRef, Absyn.Program, int)
 	get_nth_connection_annotation(model,p,n) => str
 
   axiom	get_nth_connection_annotation(_,_,_) => "-1"
+end
+
+(** relation: get_connector_count
+ ** This relation takes a ComponentRef and a Program and returns the number
+ ** of connector components in the class given by the classname in the 
+ ** ComponentRef .
+ **)
+relation get_connector_count: ((* Env.Env, *) Absyn.ComponentRef, Absyn.Program) => string =
+	(** P.A. Eventually, a global env will be held in the symboltable, for lookup of classes, etc.
+	 ** For now, we build the environment when we need it. **)
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	SCode.elaborate(p) => p' &
+	(* Since we will lookup types of components in model 'modelpath', we can exclude
+	 instantiate that class... *)
+	Inst.make_env_from_program(p', modelpath) => env &
+	count_public_connectors(env,cdef) => count &
+	int_string(count) => countstr
+	-------------------
+	get_connector_count (model,p) => countstr
+
+	axiom get_connector_count(_,_) => "-1"
+end
+
+(** relation: get_nth_connector
+ ** This relation takes a ComponentRef and a Program and an int and returns a string with the name of the nth
+ ** connector component in the class given by ComponentRef in the Program.
+ **)
+relation get_nth_connector: (Absyn.ComponentRef, Absyn.Program, int) => string =
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	SCode.elaborate(p) => p' &
+	(* Since we will lookup types of components in model 'modelpath', we can exclude
+	 instantiate that class... *)
+	Inst.make_env_from_program(p', modelpath) => env &
+	get_nth_public_connector_str(env,cdef,n) => resstr
+	-----------------
+	get_nth_connector(model,p,n)=> resstr
+
+  axiom get_nth_connector(_,_,_) => "-1"
+	
+end
+
+relation get_nth_public_connector_str: (Env.Env, Absyn.Class, int) => string =
+	
+  rule	get_nth_connector_str (env, elt, n) => res 
+	------------------------------------------
+	get_nth_public_connector_str (env, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), n)  => res
+	
+	(** The rule above failed, count the number of connectors in the first public list, subtract the number 
+	 ** and try the rest of the list **)
+  rule	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS([Absyn.PUBLIC(elt)]))) => c1 &
+	int_sub(n,c1) => c2 &
+	get_nth_public_connector_str(env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)),c2) => resstr
+	--------------------------------------------------
+	get_nth_public_connector_str(env, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)),n) => resstr
+	
+  rule	get_nth_public_connector_str (env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)),n) => res
+	-----------------------------------------------------
+	get_nth_public_connector_str (env, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst)), n) => res
+	
+end
+
+(** relation: get_nth_connector_str
+ ** This relation takes an ElementItem list and an int and  returns the name of the nth connector component
+ ** in that list. 
+ **)
+
+relation get_nth_connector_str: (Env.Env, Absyn.ElementItem list, int) => string =
+  rule	Lookup.lookup_class(env, tp) => (cdef,env') &
+	Inst.inst_class(env',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,_,ClassInf.CONNECTOR(_)) &
+	get_nth_compname(complst,n) => str 
+	--------------------
+	get_nth_connector_str(env, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n) 
+	  => str
+
+  rule	(** Not so fast, since we lookup and instantiate two times just because this was not 
+	 ** the connector we were looking for. **)
+	Lookup.lookup_class(env, tp) => (cdef,env') &
+	Inst.inst_class(env',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,_,ClassInf.CONNECTOR(_)) &
+	list_length(complst) => c1 &
+	int_sub(n,c1) => newn &
+	get_nth_connector_str(env,lst,newn) => res
+	---------------------------------------
+	get_nth_connector_str(env, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n) 
+	  => res
+	
+  rule	get_nth_connector_str(env,lst,n) => res
+	---------------------------------------
+	get_nth_connector_str(env,_::lst,n) => res
+
+  axiom	get_nth_connector_str(env,[],n) => fail
+end
+
+relation get_nth_compname: (Absyn.ComponentItem list, int) => string =
+
+  axiom	get_nth_compname (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,_,_),_)::lst,1) => id
+	
+  rule	int_sub(n,1) => n1 &
+	get_nth_compname (xs, n1) => res
+	--------------------------------
+	get_nth_compname (_::xs,n ) => res
+  axiom	get_nth_compname ([],_) => fail
+end
+
+relation count_public_connectors: (Env.Env, Absyn.Class) => int =
+
+  rule	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst))) => c1 &
+	count_connectors(env,elt) => c2 &
+	int_add(c1,c2) => res
+	---------------------
+	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst))) 
+	    => res
+
+  rule	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst))) => res
+	-----------------------------------------------------
+	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst))) => res
+	
+  axiom count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS([]))) => 0
+  (* This is not entierly true, since a derived class can also contain connectors *)
+  axiom count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.DERIVED(_,_,_))) => -1
+end
+
+(** relation: count_connectors
+ ** This relation takes an ElementItem list and returns the number of connector components
+ ** in that list 
+ **)
+relation count_connectors: (Env.Env, Absyn.ElementItem list) => int =
+
+  rule	(** In order to know if a component is a connector we have to look up the class defintion of the type 
+	 ** and instantiate the class to check the state of the statemachine ClassInfo which should be CONNECTOR. **)
+	Lookup.lookup_class(env, tp) => (cdef,env') &
+	Inst.inst_class(env',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,_,ClassInf.CONNECTOR(_)) &
+	list_length(complst) => c1 &
+	count_connectors(env, lst) => c2 &
+	int_add(c1,c2) => res
+	--------------------
+	count_connectors(env, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst) => res
+
+	(* Rule above didn't match => element not connector components, try rest of list*)
+  rule	count_connectors(env, lst) => res 
+	---------------------
+	count_connectors(env, _::lst) => res
+
+  axiom	count_connectors(emv, []) => 0
 end
 
 (** relation: get_connection_annotation_str

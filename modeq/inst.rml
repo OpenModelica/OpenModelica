@@ -1283,7 +1283,9 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
   axiom	dae_declare4 (vn, Types.T_STRING, kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims)]
 axiom dae_declare4 (vn, Types.T_ENUM, kind, dir, e, inst_dims)
-	=> [DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]
+	=> []
+	(* We should not declare each enumeration value of an enumeration when instantiating,e.g Myenum my !=> constant EnumType my.enum1,... *)
+	(*[DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]*)
 
   axiom	dae_declare4 (vn, Types.T_ENUMERATION(l), kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims)]

@@ -67,14 +67,25 @@ with "prefix.rml"
 
 relation lookup_type: (Env.Env,Absyn.Path) => Types.Type =
 
-  rule	lookup_type_in_env(env,path) => t
+  rule	Debug.fprint ("lotr","lookup_type(")	&
+	Debug.fcall ("lotr",Env.print_env, env) &
+	Debug.fprint ("lotr",", ") & 
+	Debug.fcall ("lotr",Dump.print_path,path) &
+	Debug.fprint ("lotr",")\n") &
+	lookup_type_in_env(env,path) => t &
+
+	Debug.fprint ("lotr", "found type:") &
+	Debug.fcall ("lotr",Types.print_type, t) 
 	--------------------------------------
 	lookup_type(env, path) => t
 
   rule	lookup_package_type (env,pack,path) => t
 	--------------------------------------
 	lookup_type(env, Absyn.QUALIFIED(pack,path)) => t
-
+	
+  rule	print "lookup_type failed!\n" 
+	---------------------
+	lookup_type(_,_) => fail
 end
 
 (** relation: lookup_class
