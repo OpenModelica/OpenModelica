@@ -5,13 +5,16 @@ file=`basename $filerml .rml`
 fileo="${file}.o"
 fileh="${file}.h"
 implfile="$2.impl"
-temprml=`tempfile -d . -s .rml`
+temprml="${file}.tmp.rml"
 temp=`basename $temprml .rml`
 tempo="${temp}.o"
 temph="${temp}.h"
 
 cat ${filerml} ${implfile} > ${temprml}
-${RML} -c ${temprml}
+if ( `${RML} -c ${temprml}` ) then
 mv ${tempo} ${fileo}
 mv ${temph} ${fileh}
 rm ${temprml}
+else
+return 1
+fi
