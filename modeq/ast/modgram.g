@@ -771,7 +771,8 @@ primary : << bool is_matrix; >>
 	     if (is_matrix) {
 	       #0->rml = Absyn__MATRIX(#c->rml);
 	     } else {
-	       #0->rml = Absyn__ARRAY(#c->rml);
+	       /* #0->rml = Absyn__ARRAY(#c->rml); */
+	       #0->rml = Absyn__MATRIX(mk_cons(#c->rml, mk_nil()));
 	     }
 	  >>
 	  RBRACK!
