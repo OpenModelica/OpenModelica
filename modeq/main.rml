@@ -515,7 +515,9 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	Absyn.path_string(classname) => cname_str &
 	print cname_str & print "\n" &
 	Util.string_append_list([cname_str,".cpp"]) => filename &
-	SimCodegen.generate_residual_code(indexed_dae',ass1,ass2,m,mt,comps,classname,filename)
+	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
+	SimCodegen.generate_residual_code(indexed_dae',ass1,ass2,m,mt,comps,classname,filename) &
+	SimCodegen.generate_init_data(indexed_dae',classname,init_filename,0.0,1.0,0.0001)				      
 	--------------------
 	simcodegen(classname,dae,ass1,ass2,m,mt,comps)
 

@@ -51,6 +51,9 @@ relation generate_residual_code: (DAELow.DAELow,
 
 relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => ()
 
+relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
+			      string,real,real,real)  => ()
+
 relation print_exp_cpp_str : Exp.Exp => string 
 
 relation cref_modelica_str : Exp.ComponentRef => string 
@@ -62,6 +65,7 @@ with "util.rml"
 with "rtopts.rml"
 with "debug.rml"
 with "system.rml"
+with "values.rml"
 
 (** relation generate_residual_code
  ** Outputs simulation code from a DAELow suitable for connection to DASSL.
@@ -105,6 +109,152 @@ relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => () =
 	generate_ode_code(dae,class,filename) => ()
 
 end
+
+
+(** relation generate_init_data
+ ** This relation generates initial values for the simulation
+ ** by investigating values of variables 
+ **)
+relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
+			      string,real,real,real) 
+	  => () =
+
+  rule	real_string(start) => start_str &
+	real_string(stop) => stop_str &
+	real_string(step) => step_str &
+	DAELow.calculate_sizes(dae) => (nx,ny,np) &
+	int_string(nx) => nx_str &
+	int_string(ny) => ny_str &
+	int_string(np) => np_str &
+	generate_init_data2(dae,nx,ny,np) => init_str &
+	Util.string_append_list([start_str, " // start value\n",
+				 stop_str, " // stop value\n",
+				 step_str, " // step value\n",
+				 nx_str, " // n states\n",
+				 ny_str, " // n alg vars\n",
+				 np_str, " //n parameters\n",
+				 init_str]) => str &
+	System.write_file(filename,str) 
+	--------------------------
+	generate_init_data(dae,class,filename,start,stop,step)
+
+  rule	print "-generate_init_data failed\n"
+	------------------------------------
+	generate_init_data(_,_,_,_,_,_) => fail
+end
+
+(** relation: generate_init_data2
+ ** Helper relation to generate_init_data
+ ** Generates init data for states, variables and parameters.
+ **)
+relation generate_init_data2:(DAELow.DAELow,int(*nx*),int(*ny*),int(*np*)) => string =
+
+  rule	DAELow.var_list(vars) => var_lst &
+	DAELow.var_list(knvars) => knvar_lst &
+	array_create(nx,"") => nxarr &
+	array_create(nx,"0.0") => nxdarr &
+	array_create(ny,"") => nyarr &
+	array_create(np,"") => nparr &
+	generate_init_data3(var_lst,nxarr,nxdarr,nyarr,nparr) 
+	  =>(nxarr',nxdarr',nyarr',nparr') &
+	generate_init_data3(knvar_lst,nxarr',nxdarr',nyarr',nparr')  
+	  =>(nxarr'',nxdarr'',nyarr'',nparr'') &
+	array_list(nxarr'') => nx_lst &
+	array_list(nxdarr'') => nxd_lst &
+	array_list(nyarr'') => ny_lst &
+	array_list(nparr'') => np_lst &
+	Util.list_flatten([nx_lst,nxd_lst,ny_lst,np_lst]) => whole_lst &
+	Util.string_delimit_list(whole_lst,"\n") => res
+	-----------------------------
+	generate_init_data2(DAELow.DAELOW(vars,knvars,_,_,initeqn,alg),nx,ny,np) => res
+
+end
+
+relation print_exp_str_opt: Exp.Exp option => string =
+
+  axiom	print_exp_str_opt NONE => "0.0"
+
+  rule	Exp.print_exp_str e => str 
+	--------------------------
+	print_exp_str_opt SOME(e) => str 
+end
+
+relation generate_init_data3:(DAELow.Var list,
+			      string array,
+			      string array,
+			      string array,
+			      string array) 
+	  => (string array,
+	      string array,
+	      string array,
+	      string array) =
+
+  axiom	generate_init_data3([],nxarr,nxdarr,nyarr,nparr) 
+	  => (nxarr,nxdarr,nyarr,nparr)
+
+  rule	print_exp_str_opt(value) => v &
+	Util.string_append_list([v, " // ",origname]) => str &
+	array_setnth(nyarr,indx,str) => nyarr &
+	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr)
+	  =>  (nxarr,nxdarr,nyarr,nparr)
+	--------------------
+	generate_init_data3(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
+				_,value,indx,origname,_)::rest,
+ 			    nxarr,nxdarr,nyarr,nparr)
+ 	  => (nxarr,nxdarr,nyarr,nparr)
+
+   rule	print_exp_str_opt(value) => v &
+	Util.string_append_list([v, " // ",origname]) => str &
+	array_setnth(nxarr,indx,str) => nxarr &
+	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr)
+	=> (nxarr,nxdarr,nyarr,nparr)
+	--------------------
+	 generate_init_data3(DAELow.VAR(_,DAELow.STATE,_,_,_,_,_,value,indx,origname,_)::rest,nxarr,nxdarr,nyarr,nparr)
+	  => (nxarr,nxdarr,nyarr,nparr)
+
+  rule	print_exp_str_opt(value) => v &
+	Util.string_append_list([v, " // ",origname]) => str &
+	array_setnth(nyarr,indx,str) => nyarr &
+	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
+	  => (nxarr,nxdarr,nyarr,nparr)
+ 	--------------------
+ 	generate_init_data3(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,_,value,indx,origname,_)::rest,nxarr,nxdarr,nyarr,nparr)
+	=> (nxarr,nxdarr,nyarr,nparr)
+
+  rule	print_exp_str_opt(value) => v &
+	Util.string_append_list([v, " // ",origname]) => str &
+	array_setnth(nyarr,indx,str) => nyarr &
+ 	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
+	=> (nxarr,nxdarr,nyarr,nparr) 
+ 	--------------------
+ 	generate_init_data3(DAELow.VAR(_,DAELow.DUMMY_STATE,_,_,_,_,
+				       _,value,indx,origname,_)::rest,
+			    nxarr,nxdarr,nyarr,nparr)
+	  => (nxarr,nxdarr,nyarr,nparr)
+
+  rule	Values.val_string(value) => v &
+	Util.string_append_list([v, " // ",origname]) => str &
+	array_setnth(nparr,indx,str) => nparr &
+	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
+	=> (nxarr,nxdarr,nyarr,nparr) 
+	--------------------
+	generate_init_data3(DAELow.VAR(_,DAELow.PARAM,_,_,_,SOME(value),_,
+				_,indx,origname,_)::rest,
+			    nxarr,nxdarr,nyarr,nparr)
+	  => (nxarr,nxdarr,nyarr,nparr)
+
+  rule	Util.string_append_list(["0.0  // ",origname]) => str &
+	array_setnth(nparr,indx,str) => nparr &
+	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
+	=> (nxarr,nxdarr,nyarr,nparr) 
+	--------------------
+	generate_init_data3(DAELow.VAR(_,DAELow.PARAM,_,_,_,NONE,_,
+				_,indx,origname,_)::rest,
+			    nxarr,nxdarr,nyarr,nparr)
+	  => (nxarr,nxdarr,nyarr,nparr)
+end
+
+
 
 (** relation: generate_compute_residual_state
  ** This relation generates the code for the calculation of the state variables.
