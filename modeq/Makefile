@@ -52,6 +52,9 @@ $(PROG): $(SRCO) ast/libast.a
 	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
 
 # $(SRCO):	rml.h
+exp.o:		exp.rml
+env.o:		env.rml
+	$(RML) -c $<
 explode.o:	explode.rml
 	$(RML) -c $<
 inst.o:		inst.rml
