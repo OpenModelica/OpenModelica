@@ -270,14 +270,10 @@ module Absyn:
 	       | RELATION of Exp * Operator * Exp (* Relations, e.g. a >= 0 *)
 	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list  (* If expressions *)
 	       | CALL of ComponentRef * FunctionArgs (* Function calls *)
-(*	       | ARRAY of Exp list *)
-
-(*P.R		ARRAY consists of an vector of the dimension sizes and an vector consiting of the vector data.*)	
-	       | ARRAY of Exp list
-
-	       | MATRIX of Exp list list
+	       | ARRAY of Exp list (* Array construction using '{','}' or 'array' *)
+	       | MATRIX of Exp list list (* Matrix construction using '[', ']' *)
 	       | RANGE of Exp * Exp option * Exp (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
-	       | TUPLE of Exp list (*PR.*) (* Tuples used in function calls returning several values *)
+	       | TUPLE of Exp list  (* Tuples used in function calls returning several values *)
 	       | END (* array access operator for last element, e.g. a[end]:=1; *)
 	       | CODE of Code (* Modelica AST Code constructors *)
 
@@ -385,7 +381,7 @@ module Absyn:
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
   relation cref_equal: (ComponentRef, ComponentRef) =>  bool
-  relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
+  relation print_absyn_exp : Exp => ()  
   relation last_classname: Program => Path
 end
 
