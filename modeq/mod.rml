@@ -701,10 +701,10 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	elab_mod(env,pre,m2) => m2' &
 	merge(m1',m2',env,pre) => m'' 
 	--------------------------------------
-	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1),_)]),
-	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2),_)])
+	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1,bc),_)]),
+	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2,bc2),_)])
 			       ,env,pre) 
-	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD),m'')])
+	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc),m'')])
 *)
 
   rule	(* If didn't work, try with untyped modifications*)
@@ -713,18 +713,18 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	elab_untyped_mod(m2,env,pre) => m2' &
 	merge(m1',m2',env,pre) => m'' 
 	--------------------------------------
-	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1),_)]),
-	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2),_)])
+	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1,bc),_)]),
+	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2,bc2),_)])
 			       ,env,pre) 
-	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD),m'')])
+	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc),m'')])
 	  
-  axiom	merge(Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_),_)]),
+  axiom	merge(Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_),_)]),
 	      Types.MOD(_,subs,_),env,pre) 
 	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
 		       NONE)
 	  
   axiom	merge(Types.MOD(_,subs,_),
-	      Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_),_)]),
+	      Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_),_)]),
 	      env,pre)
 	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
 		       NONE)

@@ -97,30 +97,34 @@ module SCode :
 
 
   (* - Equations *)
-  datatype Equation = EQ_EXPR of Absyn.Exp	(* more later? *)
+  datatype Equation = EQUATION of EEquation
+				  * Absyn.Path option (*baseclassname if in bclass*)
+  datatype EEquation = EQ_EXPR of Absyn.Exp	(* more later? *)
 		    | EQ_IF of Absyn.Exp	(* conditional *)
-			     * Equation list	(* true branch *)  
-			     * Equation list	(* false branch *)
+			     * EEquation list	(* true branch *)  
+			     * EEquation list	(* false branch *)
 		    | EQ_EQUALS of Absyn.Exp * Absyn.Exp
 		    | EQ_CONNECT of Absyn.ComponentRef * Absyn.ComponentRef
-		    | EQ_FOR of Ident * Absyn.Exp * Equation list
-		    | EQ_WHEN of Absyn.Exp * Equation list
+		    | EQ_FOR of Ident * Absyn.Exp * EEquation list
+		    | EQ_WHEN of Absyn.Exp * EEquation list
   (** These are almost identical to the `Absyn' versions.  In `EQ_IF', *)
   (** the `elseif' branches are represented as normal `else' branches *)
   (** with a single `if' statement in them. *)
 
   (** - Algorithms *)
   datatype Algorithm = ALGORITHM of Absyn.Algorithm list
+				    * Absyn.Path option (*baseclassname if in bclass*)
   (** The `Absyn' module uses the terminology from the grammar, where *)
   (** `algorithm' means an algorithmic statement.  But here, *)
   (** `Algorithm' means a whole algorithm section. *)
 
   (** - Elements *)
-  datatype Element = EXTENDS of Path * Mod
+  datatype Element = EXTENDS of  Path * Mod
 		   | CLASSDEF of Ident		(* name *)
 			       * bool		(* final *)
 			       * bool		(* replaceable *)
 			       * Class
+			       * Path option    (*baseclassname if in baseclass*)
 		   | IMPORT    of Absyn.Import
 		   | COMPONENT of Ident		(* component name *)
 				* bool		(* final *)
@@ -129,6 +133,7 @@ module SCode :
 				* Attributes
 				* Path		(* type name *)
 				* Mod
+			        * Path option    (*baseclassname if in baseclass*)
   (** There are three types of elements in a declaration, represented *)
   (** by the constructors `EXTENDS' (for `extends' clauses), *)
   (** `CLASSDEF' (for local class definitions) and `COMPONENT' (for *)
@@ -350,7 +355,7 @@ relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
 
   rule	elab_classdef_algorithms rest => als &
 	elab_classdef_algorithmitems al => al' &
-	let als' = ALGORITHM(al')::als
+	let als' = ALGORITHM(al',NONE)::als
 	-----------------------------
 	elab_classdef_algorithms (Absyn.ALGORITHMS(al)::rest) => als'
 
@@ -369,7 +374,7 @@ relation elab_classdef_initialalgorithms: Absyn.ClassPart list => Algorithm list
 
   rule	elab_classdef_initialalgorithms rest => als &
 	elab_classdef_algorithmitems al => al' &
-	let als' = ALGORITHM(al')::als
+	let als' = ALGORITHM(al',NONE)::als
 	-----------------------------
 	elab_classdef_initialalgorithms (Absyn.INITIALALGORITHMS(al)::rest) => als'
 
@@ -458,7 +463,7 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 	elab_restriction(cl,re) => re'
 	-----------------------
 	elab_elementspec(final,repl,prot,Absyn.CLASSDEF(rp,cl as Absyn.CLASS(n,pa,fi,e,re,de)))
-	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re',de'))]
+	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re',de'),NONE)]
 
   rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
 	Absyn.path_string(n) => ns
@@ -478,7 +483,7 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 	elab_elementspec(final,repl,prot,
 			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di,ad),t,
 					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_)::xs))
-	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa',di),t,mod)::xs'
+	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa',di),t,mod,NONE)::xs'
 
   axiom	elab_elementspec(final,repl,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
 
@@ -506,7 +511,7 @@ relation elab_equations : Absyn.EquationItem list => Equation list =
   rule	elab_equation e => e' &
 	elab_equations es => es'
 	------------------------
-	elab_equations Absyn.EQUATIONITEM(e,_)::es => e'::es'
+	elab_equations Absyn.EQUATIONITEM(e,_)::es => EQUATION(e',NONE)::es'
 
   rule	elab_equations es => es'
 	------------------------
@@ -514,6 +519,21 @@ relation elab_equations : Absyn.EquationItem list => Equation list =
 
 end
 
+
+relation elab_e_equations : Absyn.EquationItem list => EEquation list =
+
+  axiom	elab_e_equations [] => []
+
+  rule	elab_equation e => e' &
+	elab_e_equations es => es'
+	------------------------
+	elab_e_equations Absyn.EQUATIONITEM(e,_)::es => e'::es'
+
+  rule	elab_e_equations es => es'
+	------------------------
+	elab_e_equations Absyn.EQUATIONITEMANN(_)::es => es'
+
+end
 
 (** relation: elab_equation
  **
@@ -523,12 +543,12 @@ end
  **)
 
 (* PR Arrays seem to keep their absyn.rml structure. *)
-relation elab_equation : Absyn.Equation => Equation =
+relation elab_equation : Absyn.Equation => EEquation =
 
   axiom	elab_equation Absyn.EQ_EXPR(e) => EQ_EXPR(e)
 	
-  rule	elab_equations tb => tb' &
-	elab_equations fb => fb'
+  rule	elab_e_equations tb => tb' &
+	elab_e_equations fb => fb'
 	------------------------
 	elab_equation Absyn.EQ_IF(e,tb,[],fb) => EQ_IF(e,tb',fb')
 
@@ -540,7 +560,7 @@ relation elab_equation : Absyn.Equation => Equation =
 
   axiom	elab_equation Absyn.EQ_CONNECT(c1,c2) => EQ_CONNECT(c1,c2)
 
-  rule	elab_equations l => l'
+  rule	elab_e_equations l => l'
 	----------------------
 	elab_equation Absyn.EQ_FOR(i,e,l) => EQ_FOR(i,e,l')
 
@@ -651,12 +671,12 @@ relation get_element_named_from_elts: (Ident, Element list) => Element =
   rule	not id1 = id2 &
 	get_element_named_from_elts(id2,xs) => elt
 	---------------------------
-	get_element_named_from_elts(id2,COMPONENT(id1,_,_,_,_,_,_)::xs) => elt
+	get_element_named_from_elts(id2,COMPONENT(id1,_,_,_,_,_,_,_)::xs) => elt
 	
   rule	not id1 = id2 &
 	get_element_named_from_elts(id2,xs) => elt
 	---------------------------
-	get_element_named_from_elts(id2,CLASSDEF(id1,_,_,_)::xs) => elt
+	get_element_named_from_elts(id2,CLASSDEF(id1,_,_,_,_)::xs) => elt
 
   rule	get_element_named_from_elts(id2,xs) => elt
 	---------------------------
@@ -664,11 +684,11 @@ relation get_element_named_from_elts: (Ident, Element list) => Element =
 
   rule	id1 = id2
 	--------------------
-	get_element_named_from_elts(id2,(comp as COMPONENT(id1,_,_,_,_,_,_))::_) => comp
+	get_element_named_from_elts(id2,(comp as COMPONENT(id1,_,_,_,_,_,_,_))::_) => comp
 
   rule	id1 = id2
 	--------------------
-	get_element_named_from_elts(id2,(cdef as CLASSDEF(id1,_,_,_))::_) => cdef
+	get_element_named_from_elts(id2,(cdef as CLASSDEF(id1,_,_,_,_))::_) => cdef
 
 end
 (** relation: print_mod
@@ -810,7 +830,7 @@ relation print_element : Element => () =
 
   rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & Print.print_buf ")"
 	---------------------------------------
-	print_element CLASSDEF(n,final,repl,cl)
+	print_element CLASSDEF(n,final,repl,cl,_)
 
   rule	Print.print_buf "COMPONENT(" & Print.print_buf n &
 	Print.print_buf ",mod:" & print_mod mod & 
@@ -818,7 +838,7 @@ relation print_element : Element => () =
 	Print.print_buf s &
 	Print.print_buf ")"
 	----------------------------------------
-	print_element COMPONENT(n,final,repl,prot,attr,typath,mod)
+	print_element COMPONENT(n,final,repl,prot,attr,typath,mod,_)
 
   rule	Print.print_buf "IMPORT(_)\n" 
 	-------------------------
@@ -856,5 +876,5 @@ relation component_names_from_elts:(Element list) => string list =
 
   rule	component_names_from_elts(rest) => res 
 	--------------------------------------
-	component_names_from_elts(COMPONENT(id,_,_,_,_,_,_)::rest) => id::res
+	component_names_from_elts(COMPONENT(id,_,_,_,_,_,_,_)::rest) => id::res
 end

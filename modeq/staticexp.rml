@@ -2349,7 +2349,7 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
 	fill_default_slots ( SLOT(fa,true,e)::xs,class,env) => SLOT(fa,true,e)::res
 
   rule	fill_default_slots(xs,class,env) => res &
-	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,_,SCode.MOD(_,_,SOME(dexp))) &
+	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,_,SCode.MOD(_,_,SOME(dexp)),_) &
 	elab_exp (env,dexp,false,NONE) => (exp,Types.PROP(t,c1),_) &
 	Types.match_type(exp,t,tp) => (exp',_) 
 	---------------------------------------------------------------------------------

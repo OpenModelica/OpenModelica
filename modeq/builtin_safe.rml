@@ -79,7 +79,7 @@ val unit = SCode.COMPONENT("unit",true,false,
 					 Absyn.VAR,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
-			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE)
 (** This `unit' component is used in several places below, and it is
  ** declared once here to make the definitions below easier to read. *)
 
