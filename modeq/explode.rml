@@ -3,13 +3,14 @@
 module Explode :
 
   with "exp.rml"
+  with "types.rml"
   with "absyn.rml"
   with "mod.rml"
 
   type Ident = Absyn.Ident
   type Path = Absyn.Path
   type Subscript = Absyn.Subscript
-  type ComponentRef = Absyn.ComponentRef
+  type ComponentRef = Exp.ComponentRef
   type ArrayDim = Absyn.ArrayDim
   type ClassRestriction = Absyn.ClassRestriction
   type Equation = Absyn.Equation
@@ -21,13 +22,8 @@ module Explode :
 				   * Class
 		       | EXTENDS of Path * Mod
 		       | COMPONENT of Ident	(* component name *)
-				    * bool	(* flow *)
-				    * bool	(* parameter *)
-				    * bool	(* constant *)
-				    * bool	(* input *)
-				    * bool	(* output *)
+				    * Types.VarAttr
 				    * Path	(* type name *)
-				    * ArrayDim option
 				    * Mod
 
   and	   Element = ELEMENT of bool		(* final *)
@@ -64,18 +60,19 @@ relation exp_elementspec: Absyn.ElementSpec => (Ident*ElementSpec) list =
   rule	Mod.build(SOME(Absyn.CLASSMOD(args)), false) => mod &
 
 	Exp.path_string(n) => ns &
-	print "extends " & Mod.dump(mod,ns) & print "\n"
+	print "extends " & print ns & Mod.dump mod & print "\n"
 	---------------------------------------------------
 	exp_elementspec(Absyn.EXTENDS(n,args)) => [("",EXTENDS(n,mod))]
 
-  axiom	exp_elementspec(Absyn.COMPONENTS(_,_,_,_,_,_,[])) => []
+  axiom	exp_elementspec(Absyn.COMPONENTS(_,_,[])) => []
 
-  rule	exp_elementspec(Absyn.COMPONENTS(f,p,c,i,o,t,xs)) => xs' &
+  rule	exp_elementspec(Absyn.COMPONENTS(attr,t,xs)) => xs' &
 	Mod.build(m,false) => mod
 	--------------------------------------------------
-	exp_elementspec(Absyn.COMPONENTS(f,p,c,i,o,t,
+	exp_elementspec(Absyn.COMPONENTS(attr as Types.ATTR(Types.NODIM,
+							    fl,pa,di),t,
 					 (Absyn.COMPONENT(n,d,m))::xs))
-	  => ((n,COMPONENT(n,f,p,c,i,o,t,d,mod))::xs')
+	  => ((n,COMPONENT(n,Types.ATTR(d,fl,pa,di),t,mod))::xs')
 
 end
 
@@ -173,7 +170,7 @@ relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_)) => n
 
-  axiom element_spec_name COMPONENT(n,_,_,_,_,_,_,_,_) => n
+  axiom element_spec_name COMPONENT(n,_,_,_) => n
 
   rule  print "# element_spec_name EXTENDS\n" & fail
 	--------------------------------------------
