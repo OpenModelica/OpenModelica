@@ -50,6 +50,6 @@ relation progDAE: Absyn.Program => DAE.DAEform =
 
 	rule	map(p,classDAE) => l
 		--------------------
-		progDAE p => DAE.DAE l
+		progDAE PROGRAM(p,_) => DAE.DAE l
 
 end

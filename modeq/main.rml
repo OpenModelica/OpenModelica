@@ -71,10 +71,10 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Socket.cleanup 
 	---------------------
 	server_loop (shandle,isymb) => isymb
-	
 end
 
 relation charlistcompare: (char list, char list, int) => bool =
+
   rule	a = b
 	-------------------
 	charlistcompare(a::_,b::_,1) => true
@@ -106,6 +106,7 @@ relation check_classdef: string => bool =
 	strncmp ("class",str,5) => false &
 	strncmp ("model",str,5) => false &
 	strncmp ("block",str,5) => false &
+	strncmp ("within",str,6) => false &
 	strncmp ("record",str,6) => false &
  	strncmp ("package",str,7) => false &
 	strncmp ("function",str,8) => false &
@@ -131,7 +132,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
   rule	check_classdef str => true &
 	Debug.fprint ("dump","\nDetected class definition, parsing...\n") &
 	Parser.parsestring str => p &
-	Absyn.update_program (iprog,p) => newprog &
+	Absyn.update_program (p,iprog) => newprog &
  	Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n") &
 	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
 	Debug.fcall ("dump", Dump.dump, newprog) 
@@ -219,7 +220,7 @@ end
 relation interactivemode: string list => () =
 
   rule	Socket.waitforconnect 29500  => shandle &
-	server_loop (shandle, Interactive.SYMBOLTABLE([],[],[],[])) => _
+	server_loop (shandle, Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[])) => _
 	-------------------
 	interactivemode _
 end

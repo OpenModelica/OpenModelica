@@ -76,7 +76,7 @@ relation build_graphviz : Absyn.Program => Node =
 	print_classes cs => nl
 	(* & print "> End of rule build_graphviz\n" *)
 	----------------------
-	build_graphviz(cs) => Graphviz.NODE("ROOT",[],nl)
+	build_graphviz(Absyn.PROGRAM(cs,_)) => Graphviz.NODE("ROOT",[],nl)
 
 end
 

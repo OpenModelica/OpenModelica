@@ -142,12 +142,12 @@ with "debug.rml"
 
 relation elaborate : Absyn.Program => Program =
 
-  axiom	elaborate([]) => []
+  axiom	elaborate(Absyn.PROGRAM([],_)) => []
 
   rule	elab_class(c) => c' &
-	elaborate(cs) => cs'
+	elaborate(Absyn.PROGRAM(cs,w)) => cs'
 	-----------------------------
-	elaborate(c::cs) => (c'::cs')
+	elaborate(Absyn.PROGRAM(c::cs,w)) => (c'::cs')
 
 end
 

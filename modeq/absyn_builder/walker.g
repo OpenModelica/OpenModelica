@@ -102,7 +102,8 @@ stored_definition returns [void *ast]
             )*
         )
         {
-            ast = make_rml_list_from_stack(el_stack);
+	    if (within == 0) { printf("Within ==0\n"); within=Absyn__TOP;}
+	    ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within);
         }
     ;
 
@@ -125,9 +126,12 @@ interactive_stmt returns [void *ast]
 
 within_clause returns [void *ast]
 {
-    ast = 0;
+    void * name= 0;
 }
-    : #(WITHIN (ast = name_path)? )
+    : #(WITHIN (name = name_path)? )	
+     {
+	ast = Absyn__WITHIN(name);
+     }
     ;
 
 class_definition [bool final] returns [ void* ast ]

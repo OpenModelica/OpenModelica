@@ -78,12 +78,12 @@ with "rtopts.rml"
 
 relation dump : Absyn.Program => () =
 	
-  axiom	dump [] => ()
+  axiom	dump Absyn.PROGRAM([],_) => ()
 	
   rule	print_class c & print "\n" &
-	dump cs
-	----------------
-	dump c::cs => ()
+	dump Absyn.PROGRAM(cs,w)
+	------------------------
+	dump Absyn.PROGRAM(c::cs,w) => ()
 
 end
 

@@ -544,9 +544,9 @@ relation locate_package : (Env.Env, string) => SCode.Class =
 
   rule	string_append (pack, ".mo") => filename &
 	print "Loading " & print filename & print "...\n" &
-	Parser.parse filename => ((c as Absyn.CLASS(classname,_,_,_))::_) &
+	Parser.parse filename => (Absyn.PROGRAM((c as Absyn.CLASS(classname,_,_,_))::_,w)) &
 	pack = classname &
-	SCode.elaborate [c] => [c'] &
+	SCode.elaborate Absyn.PROGRAM([c],w) => [c'] &
 	assert_package c'
 	--------------------------------------------
 	locate_package(env, pack) => c'

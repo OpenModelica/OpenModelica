@@ -39,10 +39,16 @@ module Absyn:
   type Ident = string
 
   (** - Programs *)
-  type Program = Class list
+  datatype Program = PROGRAM of Class list (* List of classes *)
+				* Within (* Within statement *)
+
   (** A program is simply a list of class definitions declared at top
-   ** level in the source file.
+   ** level in the source file, combined with a within statement that
+   ** indicates the hieractical position of the program. 
    **)
+
+  (** Within *)
+  datatype Within = WITHIN of Path | TOP
 
   (** - Classes *)
   datatype Class = CLASS of Ident		     (* Name *)
@@ -263,19 +269,19 @@ end
  **)
 
 relation update_program: (Program,Program) => Program = 
-  axiom	update_program ([],prg) => prg
+  axiom	update_program (PROGRAM([],_),prg) => prg
 
   rule	class_in_program(name,p2) => false &
 	print "class not in program\n" &
-	update_program(p1,c1::p2) => pnew
-	---------------------------------
-	update_program ((c1 as CLASS(name,_,_,_))::p1,p2) => pnew
+	update_program(PROGRAM(c2,w),PROGRAM((c1::c3),w)) => pnew
+	---------------------------------------------------------
+	update_program (PROGRAM((c1 as CLASS(name,_,_,_))::c2,w as TOP),p2 as PROGRAM(c3,_)) => pnew
 
   rule	class_in_program(name,p2) => true &
 	print "class in program\n" &
-	update_program(p1,p2) => pnew
-	-----------------------------
-	update_program ((c1 as CLASS(name,_,_,_))::p1,p2) => pnew
+	update_program(PROGRAM(c2,w),p2) => pnew
+	----------------------------------------
+	update_program (PROGRAM((c1 as CLASS(name,_,_,_))::c2,w as TOP),p2) => pnew
 
   rule	print "Further program merging not implemented yet\n"
 	------------------------
@@ -289,12 +295,12 @@ end
 
 relation class_in_program:(string,Program) => bool = 
 
-  axiom class_in_program (str,[]) => false
+  axiom class_in_program (str,PROGRAM([],_)) => false
 	
   rule	not str = c1 &
-	class_in_program(str,p) => res
+	class_in_program(str,PROGRAM(p,w)) => res
 	-----------------------
-	class_in_program (str, CLASS(c1,_,_,_)::p) => res
+	class_in_program (str, PROGRAM(CLASS(c1,_,_,_)::p,w)) => res
 	
   axiom class_in_program (_,_) => true
 end
