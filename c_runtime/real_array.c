@@ -101,7 +101,7 @@ void alloc_real_array_data(real_array_t* a)
 {
   size_t array_size;
 
-  array_size = real_array_nr_of_elements(a) * sizeof(modelica_real);
+  array_size = real_array_nr_of_elements(a);
   a->data = real_alloc(array_size);
 
   /*  size_t array_size;
@@ -437,12 +437,12 @@ void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...)
 
 }
 
-void array_scalar_real_array(real_array_t* dest,int n,real* first,...)
+void array_scalar_real_array(real_array_t* dest,int n,real first,...)
 {
 
 }
 
-void array_alloc_scalar_real_array(real_array_t* dest,int n,real* first,...)
+void array_alloc_scalar_real_array(real_array_t* dest,int n,real first,...)
 {
 
 }
@@ -459,10 +459,16 @@ real* real_array_element_addr(real_array_t* source,int ndims,...)
   return tmp;
 }
 
-void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B)
-{
 
+void cat_real_array(int k, real_array_t* dest,  int n, real_array_t* first,...)
+{
+  assert(0 && "Not implemented yet");
 }
+void cat_alloc_real_array(int k, real_array_t* dest, int n, real_array_t* first,...)
+{
+  assert(0 && "Not implemented yet");
+}
+
 
 void range_alloc_real_array(real start, real stop, real inc, real_array_t* dest)
 {
@@ -773,7 +779,7 @@ void promote_real_array(real_array_t* a, int n,real_array_t* dest)
     }
 }
 
-void promote_real_scalar(double s,int n,real_array_t* dest)
+void promote_scalar_real_array(double s,int n,real_array_t* dest)
 {
   size_t i;
   
@@ -798,13 +804,14 @@ int ndims_real_array(real_array_t* a)
   return a->ndims;
 }
 
-int size_of_dimension_real_array(real_array_t* a, int i)
+int size_of_dimension_real_array(real_array_t a, int i)
 {
-  assert(real_array_ok(a));
-  assert((i > 0) && (i <= a->ndims));
+  assert(real_array_ok(&a));
+  assert((i > 0) && (i <= a.ndims));
 
-  return a->dim_size[i];
+  return a.dim_size[i-1];
 }
+
 
 void size_real_array(real_array_t* a, real_array_t* dest)
 {

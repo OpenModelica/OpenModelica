@@ -1,5 +1,5 @@
 #ifndef READ_WRITE_H_
-#define READ_WIRTE_H_
+#define READ_WRITE_H_
 
 #include <stdio.h>
 #include <errno.h>
@@ -13,14 +13,22 @@
 #define PRE_READ_DONE if (close_file) fclose(in_file);
 #define PRE_WRITE_DONE if (close_file) fclose(out_file);
 
-void read_modelica_real(FILE*,modelica_real*);
-void read_real_array(FILE*,real_array_t*);
-void write_modelica_real(FILE*,modelica_real*);
-void write_real_array(FILE*,real_array_t*);
+struct type_desc_s {
+  char type;
+  int ndims;
+  int *dim_size;
+};
 
-void read_modelica_integer(FILE*,modelica_integer*);
-void read_integer_array(FILE*,integer_array_t*);
-void write_modelica_integer(FILE*,modelica_integer*);
-void write_integer_array(FILE*,integer_array_t*);
+typedef struct type_desc_s type_description;
+
+int read_modelica_real(FILE*,modelica_real*);
+int read_real_array(FILE*,real_array_t*);
+int write_modelica_real(FILE*,modelica_real*);
+int write_real_array(FILE*,real_array_t*);
+
+int read_modelica_integer(FILE*,modelica_integer*);
+int read_integer_array(FILE*,integer_array_t*);
+int write_modelica_integer(FILE*,modelica_integer*);
+int write_integer_array(FILE*,integer_array_t*);
 
 #endif

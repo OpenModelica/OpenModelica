@@ -84,12 +84,13 @@ void simple_index_real_array2(real_array_t* source,
 void array_real_array(real_array_t* dest,int n,real_array_t* first,...);
 void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...);
 
-void array_scalar_real_array(real_array_t* dest,int n,real* first,...);
-void array_alloc_scalar_real_array(real_array_t* dest,int n,real* first,...);
+void array_scalar_real_array(real_array_t* dest,int n,real first,...);
+void array_alloc_scalar_real_array(real_array_t* dest,int n,real first,...);
 
 real* real_array_element_addr(real_array_t* source,int ndims,...);
 
-void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B);
+void cat_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
+void cat_alloc_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
 
 void range_alloc_real_array(real start,real stop,real inc,real_array_t* dest);
 void range_real_array(real start,real stop, real inc,real_array_t* dest);
@@ -121,10 +122,12 @@ void exp_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
 void exp_alloc_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
 
 void promote_real_array(real_array_t* a, int n,real_array_t* dest);
-void promote_real_scalar(double s,int n,real_array_t* dest);
+void promote_scalar_real_array(double s,int n,real_array_t* dest);
 
 int ndims_real_array(real_array_t* a);
-int size_of_dimension_real_array(real_array_t* a, int i);
+int size_of_dimension_real_array(real_array_t a, int i);
+typedef modelica_integer size_of_dimension_real_array_rettype;
+
 void size_real_array(real_array_t* a,real_array_t* dest);
 double scalar_real_array(real_array_t* a);
 void vector_real_array(real_array_t* a, real_array_t* dest);
