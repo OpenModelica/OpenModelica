@@ -407,11 +407,18 @@ void index_real_array(real_array_t* source,
 {
   
 }
+/* Returns dest := source[i1,:,:...]*/
+void simple_index_alloc_real_array1(real_array_t* source,int i1,real_array_t* dest)
+{
+
+}
 
 void simple_index_real_array1(real_array_t* source, 
 				       int i1, 
 				       real_array_t* dest)
 {
+  
+
 }
 
 void simple_index_real_array2(real_array_t* source, 
@@ -435,6 +442,25 @@ real* real_array_element_addr(real_array_t* source,int ndims,...)
 void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B)
 {
 
+}
+
+void range_alloc_real_array(real start, real stop, real inc, real_array_t* dest)
+{
+  int n;
+
+  n = floor((stop-start)/inc)+1;
+  simple_alloc_1d_real_array(dest,n);
+  range_real_array(start,stop,inc,dest);
+}
+
+void range_real_array(real start, real stop, real inc, real_array_t* dest)
+{
+  int i;
+  /* Assert that dest has correct size */
+  for (i = 0; i < dest->dim_size[0]; ++i)
+    {
+      dest->data[i] = start + i*inc; 
+    } 
 }
 
 void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)

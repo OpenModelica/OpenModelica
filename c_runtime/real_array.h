@@ -5,6 +5,8 @@
 #include "index_spec.h"
 #include "memory_pool.h"
 #include <stdio.h>
+#include <stdarg.h>
+#include <math.h>
 
 typedef double modelica_real;
 
@@ -38,6 +40,9 @@ void clone_real_array_spec(real_array_t* source, real_array_t* dest);
 /* Copy real data*/
 void copy_real_array_data(real_array_t* source, real_array_t* dest);
 
+real* calc_index(int ndims,size_t* idx_vec,real_array_t* arr);
+real* calc_index_va(real_array_t* source,int ndims,va_list ap);
+
 void put_real_element(real value,int i1,real_array_t* dest);
 void put_matrix_element(real value, int r, int c, real_array_t* dest);
 
@@ -67,6 +72,8 @@ void simple_indexed_assign_real_array2(real_array_t* source,
 void index_real_array(real_array_t* source, 
 			       index_spec_t* spec, 
 			       real_array_t*);
+void simple_index_alloc_real_array1(real_array_t* source,int i1,real_array_t* dest);
+
 void simple_index_real_array1(real_array_t* source, 
 				       int, 
 				       real_array_t* dest);
