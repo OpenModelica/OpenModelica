@@ -26,7 +26,7 @@ module Mod:
   relation build : (Absyn.Modification option, bool) => Mod
   relation lookup_modification: (Mod,Absyn.Ident) => Mod
   relation merge : (Mod, Mod) => Mod
-  relation mod_assignment : Mod => Exp.Exp option
+  relation mod_equation : Mod => Exp.Exp option
 
 (*
   relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
@@ -296,15 +296,15 @@ relation merge_ass : (Exp.Exp option, Exp.Exp option) => Exp.Exp option =
 
 end
 
-(** relation: mod_assignment
+(** relation: mod_equation
  **)
 
-relation mod_assignment : Mod => Exp.Exp option =
+relation mod_equation : Mod => Exp.Exp option =
 
-  axiom mod_assignment NOMOD => NONE
+  axiom mod_equation NOMOD => NONE
 
-  axiom mod_assignment REDECL(_,_) => NONE
+  axiom mod_equation REDECL(_,_) => NONE
 
-  axiom mod_assignment MOD(_,_,e) => e
+  axiom mod_equation MOD(_,_,e) => e
 
 end
