@@ -46,10 +46,15 @@ module Algorithm:
 
   type Ident = string
 
-  datatype Algorithm = ALGORITHM of Statement list
   (** The `Algorithm' type corresponds to a whole algorithm secion. *)
   (** It is simple a list of algorithm statements. *)
+  datatype Algorithm = ALGORITHM of Statement list
 
+
+  (** There are four kinds of statements.  Assignments (`a := b;'),
+   ** if statements (`if A then B; elseif C; else D;'), for loops
+   ** (`for i in 1:10 loop ...; end for;') and when statements
+   ** (`when E do S; end when;'). *)
   datatype Statement = ASSIGN of Exp.Type * Exp.ComponentRef * Exp.Exp
 		     | TUPLE_ASSIGN of Exp.Type * Exp.Exp list * Exp.Exp
 		     | ASSIGN_ARR of Exp.Type * Exp.ComponentRef * Exp.Exp
@@ -58,16 +63,12 @@ module Algorithm:
 		     | WHILE of Exp.Exp * Statement list
 		     | WHEN of Exp.Exp * Statement list
 		     | ASSERT of Exp.Exp * Exp.Exp
-  (** There are four kinds of statements.  Assignments (`a := b;'),
-   ** if statements (`if A then B; elseif C; else D;'), for loops
-   ** (`for i in 1:10 loop ...; end for;') and when statements
-   ** (`when E do S; end when;'). *)
 
+  (** An if statements can one or more `elseif' branches and an
+   ** optional `else' branch. *)
   datatype Else = NOELSE
 		| ELSEIF of Exp.Exp * Statement list * Else
 		| ELSE of Statement list
-  (** An if statements can one or more `elseif' branches and an
-   ** optional `else' branch. *)
 
   relation make_assignment : (Exp.Exp, Types.Properties,
 			      Exp.Exp, Types.Properties,
@@ -106,13 +107,11 @@ with "debug.rml"
  ** This relation creates an `ASSIGN' construct, and checks that the
  ** assignment is semantically valid, which means that the component
  ** being assigned is not constant, and that the types match.
+ **
+ ** LS: Added call to get_prop_type and is_prop_const instead of
+ ** having PROP in the rules. Otherwise rules must be repeated because of
+ ** combinations with PROP_TUPLE
  **)
-
-(** LS: Added call to get_prop_type and is_prop_const instead of
-having PROP in the rules. Otherwise rules must be repeated because of
-combinations with PROP_TUPLE
-**)
-
 relation make_assignment : (Exp.Exp, Types.Properties,
 			    Exp.Exp, Types.Properties,
 			    SCode.Accessibility) => Statement =
@@ -128,9 +127,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	---------------------------------------------------------
 	make_assignment(e,_,_,_, SCode.RO) => fail
 
-(** LS: Replaced "as Types.PROP(_,false)" from lhprop", by the first
-predicate
- **)
+	(* LS: Replaced "as Types.PROP(_,false)" from lhprop", by the first predicate *)
   rule	Types.is_prop_const (lhprop) => false &
 	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
 	Types.is_prop_array lhprop => false &
@@ -172,7 +169,6 @@ end
  ** assignment is semantically valid, which means that the component
  ** being assigned is not constant, and that the types match.
  **)
-
 relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 			    Exp.Exp, Types.Properties) => Statement =
 
@@ -203,6 +199,11 @@ relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 end
 
 
+(** relation: get_prop_exp_type
+ **
+ ** Returns the expression type for a given Properties by calling
+ ** get_type_exp_type. Used by make_assignment.
+ **)
 relation get_prop_exp_type : Types.Properties => Exp.Type =
 	
   rule	Types.get_prop_type p => ty &
@@ -212,6 +213,11 @@ relation get_prop_exp_type : Types.Properties => Exp.Type =
 
 end
 
+(** relation: get_type_exp_type
+ **
+ ** Returns the expression type for a given Type module type. Used only by
+ ** get_prop_exp_type. 
+ **)
 relation get_type_exp_type : Types.Type => Exp.Type =
 
   axiom	get_type_exp_type((Types.T_INTEGER(_),_)) => Exp.INT
@@ -230,9 +236,9 @@ end
 (** relation: make_if
  **
  ** This relation creates an `IF' construct, checking that the types
- ** of the parts are correct.
+ ** of the parts are correct. Else part is generated using the make_else
+ ** relation.
  **)
-
 relation make_if : (Exp.Exp,
 		    Types.Properties,
 		    Statement list,
@@ -256,7 +262,6 @@ end
  **
  ** 
  **)
-
 relation make_else : ((Exp.Exp * Types.Properties * Statement list) list,
 		      Statement list) => Else =
 
@@ -279,8 +284,8 @@ relation make_else : ((Exp.Exp * Types.Properties * Statement list) list,
 
 end
 
-(** relation: make_for *)
-
+(** relation: make_for 
+ **)
 relation make_for : (Ident, Exp.Exp, Types.Properties,
 		     Statement list) => Statement =
 
@@ -297,8 +302,8 @@ relation make_for : (Ident, Exp.Exp, Types.Properties,
 
 end
 
-(** relation: make_while *)
-
+(** relation: make_while 
+ **)
 relation make_while : (Exp.Exp, Types.Properties,
 		       Statement list) => Statement =
 
@@ -312,8 +317,8 @@ relation make_while : (Exp.Exp, Types.Properties,
 
 end
 
-(** relation: make_when *)
-
+(** relation: make_when_a
+ **)
 relation make_when_a : (Exp.Exp, Types.Properties,
 		      Statement list) => Statement =
 
@@ -329,18 +334,21 @@ relation make_when_a : (Exp.Exp, Types.Properties,
 	make_when_a(_,Types.PROP(t,_),_) => fail
 end
 
+(** relation: make_assert
+ **)
 relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties) 
 	  => Statement =
 
   axiom	make_assert(cond, msg, Types.PROP((Types.T_BOOL(_),_),_),Types.PROP((Types.T_STRING(_),_),_)) 
 	  => ASSERT(cond,msg)
 
-(* RML does not handle the pattern below T_BOOL(_), hence we need to implement this differently.
-*) 
-(*  rule	not let T_BOOL(_) = condt &  
-	Print.print_buf "# Type error in assert condition.\n" &
-	Print.print_buf " Expected Boolean, got " &
-	Types.print_type condt & Print.print_buf "\n"
-	--------------------------------------------
-	make_assert(_,_,Types.PROP(condt,_),_) => fail *)
+	  (* RML does not handle the pattern below T_BOOL(_), hence we need to
+	     implement this differently. *) 
+	(*  rule	not let T_BOOL(_) = condt &  
+	 Print.print_buf "# Type error in assert condition.\n" &
+	 Print.print_buf " Expected Boolean, got " &
+	 Types.print_type condt & Print.print_buf "\n"
+	 --------------------------------------------
+	 make_assert(_,_,Types.PROP(condt,_),_) => fail 
+	 *)
 end 
