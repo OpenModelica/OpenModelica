@@ -1007,11 +1007,15 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
 				      starttime_r,stoptime_r,stepsize_r) &
 	SimCodegen.generate_makefile(makefilename,classname) &
-	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
-	
+(*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
+*)
+	System.path_delimiter => pd &
+	System.read_env("MOSHHOME") => moshhome &
+	Util.string_append_list([moshhome, pd, "..", pd, "modeq", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
+
 	System.system_call(s_call) => 0 &
-	Util.string_append_list([cname_str,".exe"]) => sim_call &
-	System.system_call(sim_call) => _ & 
+	Util.string_append_list([".", pd, cname_str,".exe"]) => sim_call &
+	System.system_call(sim_call) => _ &
 	Util.string_append_list([cname_str,"_res.plt"]) => result_file &
 	let simValue = Values.RECORD([Values.STRING(result_file)],["resultFile"]) &
 	let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
