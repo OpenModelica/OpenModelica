@@ -5,6 +5,9 @@
 \author{David Kågedal}
 \title{Blahonga Blahonga}
 
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\firstref}[1]{\textit{#1}}
+
 \begin{document}
 
 \titlepage
@@ -40,6 +43,31 @@ translator.
 \chapter{Background}
 \label{cha:bg}
 
+
+\chapter{Semantics}
+\label{cha:semantics}
+
+
+\section{Connections}
+\label{sec:connections}
+
+Connections between objects are introduced by the \code{connect}
+construct in the equation part of a class declaration.  The
+\code{connect} construct takes two references to connectors in the
+same class or in one of its components and connects them according to
+the rules below.  Each connector reference has either the syntactic
+form \code{c}, where \code{c} is a connector instance in the class
+containing the \code{connect} construct, or \code{m.c}, where \code{m}
+is the name of a component or an array of components (??) of the class
+containing the \code{connect} construct, and \code{c} is the name of a
+connector variable in the component \code{m}.
+
+
+\subsection{Connection sets}
+\label{sec:connectsets}
+
+To create equations from the \code{connect} constructs, the
+connections are collected in \firstref{connection sets}.
 
 
 \end{document}
