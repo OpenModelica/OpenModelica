@@ -15,11 +15,15 @@ module Mod:
 
   type Mod = Absyn.Modification
 
+  val empty_mod : Mod
+
   relation modify_class       : (Env.Env,Mod, Absyn.Class) => Absyn.Class
   relation maybe_modify_class : (Env.Env,Mod option,Absyn.Class) => Absyn.Class
   relation lookup_modification: (Mod,Absyn.Ident) => Mod option
 
 end
+
+val empty_mod = Absyn.CLASSMOD([])
 
 (**********************************************************************)
 
