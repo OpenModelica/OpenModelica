@@ -1,4 +1,3 @@
-
 (*
    Copyright PELAB, Linkoping University
    
@@ -45,13 +44,16 @@
  **  
  **)
 
-
-
 module Absyn:
 							  
+  (** An identifier, for example a variable name *)
   type Ident = string
 
-  (** - Programs *)
+  (** - Programs, the top level construct *)
+  (** A program is simply a list of class definitions declared at top
+   ** level in the source file, combined with a within statement that
+   ** indicates the hieractical position of the program. 
+   **)
   datatype Program = PROGRAM of Class list (* List of classes *)
 				* Within (* Within statement *)
 		   | BEGIN_DEFINITION   of Path  (* For split definitions*)
@@ -66,50 +68,50 @@ module Absyn:
 					* Path option (* insert into. 
 						       Default, NONE *)
 
-  (** A program is simply a list of class definitions declared at top
-   ** level in the source file, combined with a within statement that
-   ** indicates the hieractical position of the program. 
-   **)
 
-  (** Within *)
+  (** Within statements *)
   datatype Within = WITHIN of Path | TOP
 
   (** - Classes *)
+  (** A class definition consists of a name, a flag to indicate if this *)
+  (** class is declared as `partial', the declared class restriction, *)
+  (** and the body of the declaration. *)
   datatype Class = CLASS of Ident		     (* Name *)
 			  * bool		     (* Partial *)
 			  * bool		     (* Final *)
 			  * bool		     (* Encapsulated *)
 			  * Restriction	             (* Restricion *)
 			  * ClassDef		     (* Body *)
-  (** A class definition consists of a name, a flag to indicate if this *)
-  (** class is declared as `partial', the declared class restriction, *)
-  (** and the body of the declaration. *)
 
-
+ 
+  (** The `ClassDef' type contains the definition part of a class *)
+  (** declaration.  The definition is either explicit, with a list of *)
+  (** parts (`public', `protected', `equationc' and `algorithm'), or it *)
+  (** is a definition derived from another class or an enumeration type. *)
+  (** For a derived type, the  type contains the name of the derived class and an optional *)
+  (** array dimension and a list of modifications. An enumeration type contains a list of *)
   datatype ClassDef = PARTS of ClassPart list
 			       * string option	     (* string comment *)
 		    | DERIVED of Path
-			       * ArrayDim option
+			       * ArrayDim option     (* *)
 			       * ElementAttributes   
 			       * ElementArg list
 			       * Comment option	     (* comment *)
-
 		    | ENUMERATION of EnumLiteral list   
 				* Comment option     (* comment*)		
 	            | OVERLOAD of Path list (* function names *)
 				* Comment option
-  (** The `ClassDef' type contains the definition part of a class *)
-  (** declaration.  The definition is either explicit, with a list of *)
-  (** parts (`public', `protected', `equation' and `algorithm'), or it *)
-  (** is a definition derived from another class or an enumeration type. *)
-  (** For a derived type, the  type contains the name of the derived class and an optional *)
-  (** array dimension and a list of modifications. An enumeration type contains a list of *)
-  (** EnumLiteral and an optional Comment.*)
 
+  (** EnumLiteral, which is a name in an enumeration and an optional
+   Comment.*)
   datatype EnumLiteral = ENUMLITERAL of Ident	     (* Literal *)
 			 * Comment option	     (* comment *)
 
-
+  (** A class definition contains several parts.  There are public and *)
+  (** protected component declarations, type definitions and `extends' *)
+  (** clauses, collectively called elements.  There are also equation *)
+  (** sections and algorithm sections. The EXTERNAL part is used only by functions *)
+  (** which can be declared as external C or FORTRAN functions. *)
   datatype ClassPart = PUBLIC of ElementItem list
 		     | PROTECTED of ElementItem list
 		     | EQUATIONS of EquationItem list
@@ -117,44 +119,27 @@ module Absyn:
 		     | ALGORITHMS of AlgorithmItem list
 		     | INITIALALGORITHMS of AlgorithmItem list
 		     | EXTERNAL of ExternalDecl * Annotation option
-  (** A class definition contains several parts.  There are public and *)
-  (** protected component declarations, type definitions and `extends' *)
-  (** clauses, collectively called elements.  There are also equation *)
-  (** sections and algorithm sections. The EXTERNAL part is used only by functions *)
-  (** which can be declared as external C or FORTRAN functions. *)
-  (** - ElementList *)
 
+  (** An element item is either an element or an annotation *)
   datatype ElementItem = ELEMENTITEM of Element 
 		       | ANNOTATIONITEM of Annotation 
-  (** An element item is either an element or an annotation *)
+
 
 
   (** - Elements *)
+  (* The basic element type in Modelica *)
   datatype Element = ELEMENT of bool		      (* final *)
 			      * bool		      (* replaceable *)
 			      * InnerOuter	      (* inner/outer *)	     
-			      * Ident
-			      * ElementSpec
+			      * Ident                 (* Element name *)
+			      * ElementSpec           (* Actual element specification*)
 			      * string                (* Source code file *)
 			      * int                   (* Line number *)
 			      * ConstrainClass option (* only valid for classdef and component*)
 
-  type ConstrainClass = ElementSpec			(* That must be EXTENDS*)
-
-  datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
-				   * Class
-		       | EXTENDS of Path * ElementArg list
-		       | IMPORT of Import * Comment option
-		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
-				     * Path	     (* type name *)
-				     * ComponentItem list
-  (** One of the keyword inner and outer CAN be given to reference an inner or
-      outer component. Thus there are three disjoint possibilities. **)		     
-  datatype InnerOuter = INNER | OUTER | UNSPECIFIED
-				     
-  datatype Import = NAMED_IMPORT of Ident * Path
-		  | QUAL_IMPORT of Path
-		  | UNQUAL_IMPORT of Path
+  
+  (* Constraining type, must be extendes *)
+  type ConstrainClass = ElementSpec
 
   (** An element is something that occurs in a public or protected
    ** section in a class definition.  There is one constructor in the
@@ -166,39 +151,62 @@ module Absyn:
    ** in the source, it is represented in the AST as
    ** `EXTENDS(IDENT("TwoPin"),[])'.
    **)
-							  
+  datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
+				   * Class
+		       | EXTENDS of Path * ElementArg list
+		       | IMPORT of Import * Comment option
+		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
+				     * Path	     (* type name *)
+				     * ComponentItem list
+  (** One of the keyword inner and outer CAN be given to reference an inner or
+      outer component. Thus there are three disjoint possibilities. **)		     
+  datatype InnerOuter = INNER | OUTER | UNSPECIFIED
+
+  (* Import statements, different kinds  *) 				     
+  datatype Import = NAMED_IMPORT of Ident * Path
+		  | QUAL_IMPORT of Path
+		  | UNQUAL_IMPORT of Path
+
+  (* Collection of component and an optional comment *)
   datatype ComponentItem = COMPONENTITEM of Component
 					  * Comment option
 
+  (* Some kind of Modelica entity (object or variable) *)
   datatype Component = COMPONENT of Ident 	     (* component name *)
-				  * ArrayDim
-				  * Modification option
+				  * ArrayDim         (* Array dimensions, if any *) 
+				  * Modification option (* Optional modification *) 
+
   (** Several component declarations can be grouped together in one *)
   (** `ElementSpec' by writing them on the same line in the source. *)
   (** This type contains the information specific to one component. *)
-
   datatype EquationItem = EQUATIONITEM of Equation * Comment option
 			| EQUATIONITEMANN of Annotation 
+
+  (** Info specific for an algorithm item. *)
   datatype AlgorithmItem = ALGORITHMITEM  of Algorithm * Comment option
 			 |  ALGORITHMITEMANN of Annotation 
 
-  datatype Equation = EQ_EXPR of Exp	     (* more later? *)
-		    | EQ_IF of Exp
+  (* Information on one (kind) of equation, different constructors for different
+     kinds of equations *)
+  datatype Equation = (* REMOVE - If noone complains, I will remove this 2004-11-01
+		       EQ_EXPR of Exp                    One sided equations? *)
+		     EQ_IF of Exp                     (* Conditional expression *)
 			     * EquationItem list	     (* true branch *)  
 			     * (Exp * EquationItem list) list (* elseif branches *)
 			     * EquationItem list	     (* else branch *)
-		    | EQ_EQUALS of Exp * Exp
-		    | EQ_CONNECT of ComponentRef * ComponentRef 
-		    | EQ_FOR of Ident * Exp * EquationItem list
-		    | EQ_WHEN_E of Exp 
-				* EquationItem list 
+		    | EQ_EQUALS of Exp * Exp           (* Standard 2-side eqn*)
+		    | EQ_CONNECT of ComponentRef * ComponentRef (* Connect stmt *)
+		    | EQ_FOR of Ident * Exp * EquationItem list (* For-loops *)
+		    | EQ_WHEN_E of Exp  (* Condition *)
+				* EquationItem list (* Loop body *)
 				* (Exp * EquationItem list) list (* else when *)
 		    | EQ_NORETCALL of Ident * FunctionArgs	 (* fcalls without return value *)
 
-  (** The `Equation' type describes one equation in an equation *)
-  (** section. *)
-
-  datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp
+  (** The `Algorithm' type describes one algorithm statement in an *)
+  (** algorithm section.  It does not describe a whole algorithm.  The *)
+  (** reason this type is named like this is that the name of the *)
+  (** grammar rule for algorithm statements is `algorithm'. *)
+  datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp 
 		     | ALG_TUPLE_ASSIGN of Exp 		(*tuple*)  
 					* Exp 		(* value*) 	
 		     | ALG_IF of Exp
@@ -212,19 +220,17 @@ module Absyn:
 					* (Exp * AlgorithmItem list) list (* elsewhen *)
 		     | ALG_NORETCALL of ComponentRef * FunctionArgs	   (* general fcalls without return value *)
 
-  (** The `Algorithm' type describes one algorithm statement in an *)
-  (** algorithm section.  It does not describe a whole algorithm.  The *)
-  (** reason this type is named like this is that the name of the *)
-  (** grammar rule for algorithm statements is `algorithm'. *)
 
   (** - Modifications *)
-  datatype Modification = CLASSMOD of ElementArg list * Exp option
-
-  datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification option * string option
-		      | REDECLARATION of bool * Each * ElementSpec * ConstrainClass option
   (** Modifications are described by the `Modification' type.  There *)
   (** are two forms of modifications: redeclarations and component *)
   (** modifications. *)
+  datatype Modification = CLASSMOD of ElementArg list * Exp option
+
+  (* Wrapper for things that modify elements, modifications and redeclarations *)
+  datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification option * string option
+		      | REDECLARATION of bool * Each * ElementSpec * ConstrainClass option
+
 
   (** - Each attribute *)
   (** The each keyword can be present in both MODIFICATION's and REDECLARATION's. *)
@@ -232,11 +238,14 @@ module Absyn:
 
   (** - Component attributes *)
   datatype ElementAttributes = ATTR of bool	(* flow *)
-			     	     * Variability	(* parameter *)
+			     	     * Variability (* parameter, constant etc. *)
 			     	     * Direction
 				     * ArrayDim  (*1.1*)
      
+  (* Dete *) 
   datatype Variability = VAR | DISCRETE | PARAM | CONST
+
+
   datatype Direction = INPUT | OUTPUT | BIDIR
   (** Component attributes are *)
   (** properties of components which are applied by type prefixes. *)

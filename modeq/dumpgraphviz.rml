@@ -271,9 +271,10 @@ end
 
 relation print_equation: Absyn.Equation => Node =
 
-  rule	Dump.print_exp_str e => s
+(* REMOVE - If noone complains, I will remove this 2004-11-01 
+ rule	Dump.print_exp_str e => s
 	------------------
-	print_equation (Absyn.EQ_EXPR(e)) => Graphviz.LNODE("EQ_EXPR",[s],[],[])
+	print_equation (Absyn.EQ_EXPR(e)) => Graphviz.LNODE("EQ_EXPR",[s],[],[]) *)
 
   rule	Dump.print_exp_str e1 => s1 &
 	Dump.print_exp_str e2 => s2 &

@@ -1063,9 +1063,10 @@ end
 
 relation print_equation: Absyn.Equation => () =
 	
-  rule	Print.print_buf "EQ_EXPR(" & print_exp(e) & Print.print_buf ")"
+(*  REMOVE - If noone complains, I will remove this 2004-11-01
+ rule	Print.print_buf "EQ_EXPR(" & print_exp(e) & Print.print_buf ")"
 	-------------------------------------------
-	print_equation(Absyn.EQ_EXPR(e))
+	print_equation(Absyn.EQ_EXPR(e)) *)
 	
   rule	Print.print_buf "IF (" & print_exp(e) & Print.print_buf ") THEN " &
 	print_list_debug("print_equation",tb, print_equationitem, ";") &
@@ -1109,9 +1110,10 @@ end
 
 relation unparse_equation_str: (int, Absyn.Equation) => string =
 	
-  rule	print_exp_str(e) => str 
+(* REMOVE - If noone complains, I will remove this 2004-11-01
+ rule	print_exp_str(e) => str 
 	-------------------------------------------
-	unparse_equation_str(i, Absyn.EQ_EXPR(e)) => str
+	unparse_equation_str(i, Absyn.EQ_EXPR(e)) => str *)
 
   rule	print_exp_str(e) => s1 &
 	int_add(i,1) => i' &

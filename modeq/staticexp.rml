@@ -1294,24 +1294,21 @@ relation elab_builtin_ceil : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 end
 
 relation elab_builtin_abs : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
-  rule 
-      elab_exp (env,s1,false,NONE) 
-	   => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
-          print "# abs function not implemented yet REAL\n" 
-     --------------------------------------
-     elab_builtin_abs(env,[s1]) 
-        => (Exp.CALL(Absyn.IDENT("abs"),[s1'],false,false),
-            Types.PROP((Types.T_REAL([]),NONE),c))
 
-  rule  elab_exp (env,s1,false,NONE) 
-	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
-          print "# abs function not implemented yet INTEGER\n" 
-        
-        --------------------------------------
+  rule	elab_exp (env,s1,false,NONE) 
+	  => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+	  --------------------------------------
+	elab_builtin_abs(env,[s1]) 
+          => (Exp.CALL(Absyn.IDENT("abs"),[s1'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+	
+  rule	elab_exp (env,s1,false,NONE) 
+	  => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+          --------------------------------------
         elab_builtin_abs(env,[s1]) 
           => (Exp.CALL(Absyn.IDENT("abs"),[s1'],false,false),
               Types.PROP((Types.T_INTEGER([]),NONE),c))
- 
+	
 end
 
 

@@ -101,8 +101,9 @@ module SCode :
   (* - Equations *)
   datatype Equation = EQUATION of EEquation
 				  * Absyn.Path option (*baseclassname if in bclass*)
-  datatype EEquation = EQ_EXPR of Absyn.Exp	(* more later? *)
-		    | EQ_IF of Absyn.Exp	(* conditional *)
+  datatype EEquation = (*REMOVE - If noone complains, I will remove this 2004-11-01
+			EQ_EXPR of Absyn.Exp	(* more later? *)
+		    | *)EQ_IF of Absyn.Exp	(* conditional *)
 			     * EEquation list	(* true branch *)  
 			     * EEquation list	(* false branch *)
 		    | EQ_EQUALS of Absyn.Exp * Absyn.Exp
@@ -548,7 +549,8 @@ end
 (* PR Arrays seem to keep their absyn.rml structure. *)
 relation elab_equation : Absyn.Equation => EEquation =
 
-  axiom	elab_equation Absyn.EQ_EXPR(e) => EQ_EXPR(e)
+(* REMOVE - If noone complains, I will remove this 2004-11-01
+ axiom	elab_equation Absyn.EQ_EXPR(e) => EQ_EXPR(e) *)
 	
   rule	elab_e_equations tb => tb' &
 	elab_e_equations fb => fb'

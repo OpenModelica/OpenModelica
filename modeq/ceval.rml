@@ -151,6 +151,10 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-----------------------------------------
 	ceval (env,Exp.SIZE(cref,NONE),impl,st,_) => (v,st) 	
 
+  rule	ceval_builtin_abs(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("abs"),[exp],_,_),impl,st,_) => (v,st) 	
+
 	(* Start luc_pop *)
   rule	ceval_builtin_floor(env,exp,impl,st) => (v,st)
 	-----------------------------------------
@@ -1319,6 +1323,22 @@ relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
 	ceval_builtin_size_2(_,_) => fail
 end
 
+relation ceval_builtin_abs : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+       
+  rule  ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_abs(rv) => rv'
+	--------------------------------------
+	ceval_builtin_abs(env,exp,impl,st) => (Values.REAL(rv'),st)
+
+  rule  ceval (env,exp,impl,st,NONE) => (Values.INTEGER(iv),_) &
+        int_abs(iv) => iv  
+	--------------------------------------
+	ceval_builtin_abs(env,exp,impl,st) => (Values.INTEGER(iv),st)
+
+
+end
+
 (* Start luc_pop *)
 (* floor *)
 relation ceval_builtin_floor : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
@@ -1334,8 +1354,7 @@ end
 relation ceval_builtin_ceil : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
-  rule  (**print "# ceil function not implemented CEVAL yet\n" &*)
-   	    ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+  rule  ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_floor rv => rv' &
         real_int rv' => ri &
         int_real ri => rvt &
@@ -1343,13 +1362,8 @@ relation ceval_builtin_ceil : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSy
         --------------------------------------
         ceval_builtin_ceil(env,exp,impl,st) => (Values.REAL(rv'),st)
 
-  rule (**print "# ceil function not implemented CEVAL yet\n" &**)
-   	    ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+  rule  ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_floor rv => rv' &
-        (**print "# ceil function not implemented CEVAL yet\n" &**)
-        (** this should be like this but real_add(rv',1.0) does not work!
-	     **real_add(rv', 1.0) => rv''
-         **)
         real_int rv' => ri &
         int_add(ri,1) => ri' &
         int_real ri' => rv''
