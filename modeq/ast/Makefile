@@ -10,7 +10,7 @@
 # ANTLR-defined token types
 #
 
-RMLINCLUDE = /home/pelab/pub/pkg/rml/rml-1.9.2/sol2-sparc/include/plain
+RMLINCLUDE = /home/pelab/pub/pkg/rml/current/sol2-sparc/include/plain
 
 TOKENS = tokens.h
 #
