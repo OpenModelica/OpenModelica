@@ -410,7 +410,7 @@ subscript :
  */
 
 specialization :
-	  c:class_specialization /* { EQUALS expression } */
+	  c:class_specialization /* FIXME { EQUALS expression } */
 	  << #0->rml = Absyn__CLASSMOD(#0->rml); >>
 	| EQUALS^ e:expression
 	  << #0->rml = Absyn__EQUALMOD(#e->rml); >>
