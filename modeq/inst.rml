@@ -970,7 +970,14 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
 	    t,m))) &
 
-	Mod.elab_mod(env,Prefix.NOPRE,m) => m' &
+	Lookup.lookup_class(env,t) => (cl,cenv) & 
+
+	get_cref_from_mod(m) => crefs &
+ 	update_variables_in_env(mods,crefs,cenv) => env2 &
+
+	(* Prefix does not matter, since we only update types in env, and does
+	   not make any dae elements, etc.. *)
+	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
 
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
@@ -986,22 +993,21 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
-	elab_arraydim(env,ad,eq) => dims &
+	elab_arraydim(env2,ad,eq) => dims &
 					       
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	Debug.fprint("peter2","inst_var, env =") &
 	Debug.fcall("peter2",Env.print_env, env) &
 	(** Instantiate the component *)	
-	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
+	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[])
 	  => (dae1,csets',ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
-	make_binding (env,attr,eq) => binding &
+	make_binding (env2,attr,eq) => binding &
 
-	Env.update_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding)) => env' 
-
 	----------------------------------
 	update_variable_in_env (mods,Absyn.CREF_IDENT(id,subscr),env) => env'
 
