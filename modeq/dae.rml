@@ -43,14 +43,24 @@ end
 
 (*!ignorecode*)
 
+with "rtopts.rml"
+
 (** relation: dump
  **
- ** This relation prints the DAE in the standard outpur format.
+ ** This relation prints the DAE in the standard output format.
  **)
 
 relation dump: DAElist => () =
 	
-  rule	print "fclass " & print n & print "\n" &
+  rule	RTOpts.modelica_output => false &
+	print "fclass " & print n & print "\n" &
+	dump(l) &
+	print "end " & print n & print ";\n"
+	-----------------------------------
+	dump DAE([COMP(n,l)])
+
+  rule	RTOpts.modelica_output => true &
+	print "class " & print n & print "\n" &
 	dump(l) &
 	print "end " & print n & print ";\n"
 	-----------------------------------
@@ -117,7 +127,14 @@ relation dump_element: Element => () =
 	--------------------------------------
 	dump_element(EQUATION(e1, e2))
 	
-  rule	print "  " & Exp.print_component_ref c &
+  rule	RTOpts.modelica_output => false &
+	print "  " & Exp.print_component_ref c &
+	print " ::= " & Exp.print_exp e & print ";\n"
+	--------------------------------------
+	dump_element(DEFINE(c, e))
+	
+  rule	RTOpts.modelica_output => true &
+	print "  " & Exp.print_component_ref c &
 	print " ::= " & Exp.print_exp e & print ";\n"
 	--------------------------------------
 	dump_element(DEFINE(c, e))
