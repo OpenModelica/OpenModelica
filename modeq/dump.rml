@@ -133,6 +133,14 @@ relation print_class: Absyn.Class => () =
 	----------------------------------------
 	print_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
 
+  rule	print_class_restriction(r) & print "(" &
+	print n & print "," &
+	print_select(p,"PARTIAL,","") &
+	print "ENUMERATION(" &
+	print_list_debug("print_class",l,print, ",") &
+	print ")\n"
+	----------
+	print_class(Absyn.CLASS(n,p,r,Absyn.ENUMERATION(l))) => ()
 end
 
 (**)

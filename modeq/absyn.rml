@@ -64,12 +64,14 @@ module Absyn:
 		    | DERIVED of Path
 			       * ArrayDim option
 			       * ElementArg list
+		    | ENUMERATION of Ident list
+
   (** The `ClassDef' type contains the definition part of a class *)
   (** declaration.  The definition is either explicit, with a list of *)
   (** parts (`public', `protected', `equation' and `algorithm'), or it *)
-  (** is a definition derived from another class.  In the latter case *)
-  (** this type contains the name of the derived class and an optional *)
-  (** array dimension and a list of modifications. *)
+  (** is a definition derived from another class or an enumeration type. *)
+  (** For a derived type, the  type contains the name of the derived class and an optional *)
+  (** array dimension and a list of modifications. An enumeration type contains a list of identifiers. *)
 
   datatype ClassPart = PUBLIC of ElementItem list
 		     | PROTECTED of ElementItem list
