@@ -343,7 +343,7 @@ end
  ** Replaces a userdefined operator expression with a corresponding function call expression.
  ** Other expressions just passes through.
 **)
-relation replace_operator_with_fcall: (Exp.Exp,bool (*built in*)) => Exp.Exp =
+relation replace_operator_with_fcall: (Exp.Exp,bool (*builtin*)) => Exp.Exp =
 
   axiom	replace_operator_with_fcall(Exp.BINARY(e1,Exp.USERDEFINED(funcname),e2),c) 
 	  => (Exp.CALL(funcname,[e1,e2],false,c))

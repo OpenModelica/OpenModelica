@@ -83,16 +83,37 @@ int scandir(const char* dirname,
 
 #endif /* 0 */
 
-char * cc="/usr/bin/gcc";
-char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS";
+char * cc=NULL;
+char * cflags=NULL;
 
 void * generate_array(char,int,type_description *,void *data);
 float next_realelt(float*);
 int next_intelt(int*);
 
+void set_cc(char *str)
+{
+  if (cc != NULL) {
+    free(cc);
+  }
+  cc = (char*)malloc(strlen(str)+1);
+  assert(cc != NULL);
+  memcpy(cc,str,strlen(str)+1);
+}
+
+void set_cflags(char *str)
+{
+  if (cflags != NULL) {
+    free(cflags);
+  }
+  cflags = (char*)malloc(strlen(str)+1);
+  assert(cflags != NULL);
+  memcpy(cflags,str,strlen(str)+1);
+}
+
 void System_5finit(void)
 {
-
+  set_cc("/usr/bin/gcc");
+  set_cflags("-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
 }
 
 RML_BEGIN_LABEL(System__vector_5fsetnth)
@@ -160,12 +181,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__set_5fc_5fcompiler)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  if (cc != NULL) {
-    free(cc);
-  }
-  cc = (char*)malloc(strlen(str)+1);
-  assert(cc != NULL);
-  memcpy(cc,str,strlen(str)+1);
+  set_cc(str);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -174,13 +190,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__set_5fc_5fflags)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  if (cflags != NULL) {
-    free(cflags);
-  }
-  cflags = (char*)malloc(strlen(str)+1);
-  assert(cflags != NULL);
-  memcpy(cflags,str,strlen(str)+1);
-
+  set_cflags(str);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

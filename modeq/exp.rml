@@ -126,6 +126,7 @@ module Exp:
 
   relation is_range : Exp => bool
 
+  relation prepend_string_cref : (string, ComponentRef) => ComponentRef
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
   relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef
   relation int_subscripts : int list => Subscript list
@@ -234,6 +235,18 @@ relation subscript_equal: ( Subscript list, Subscript list) => bool =
 
   axiom	subscript_equal(_,_) => false
 end
+
+relation prepend_string_cref : (string, ComponentRef) => ComponentRef =
+
+  rule	string_append (p, i) => i'
+	------------------------------
+	prepend_string_cref (p, CREF_QUAL(i, s, c)) => CREF_QUAL(i',s,c)
+
+  rule	string_append (p, i) => i'
+	--------------------------
+	prepend_string_cref (p,CREF_IDENT(i, s)) => CREF_IDENT(i',s)
+
+end	
 
 (** relation: extend_cref
  **

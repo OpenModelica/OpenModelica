@@ -160,12 +160,36 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
 	    => (str, newst)
+
+       (* Since expressions cannot be tuples an empty string is returned *)
+  rule	build_env_from_symboltable(st) => env &
+	Static.elab_exp_list(env,exps,true,SOME(st)) => (sexps,props,SOME(st'))	&
+	Util.list_map(props, Types.get_prop_type) => types &
+	Util.list_map(crefexps, get_ident_from_crefexp) => idents &
+	Static.ceval_list(env,sexps,true,SOME(st')) => values &
+	add_vars_to_symboltable(idents,values,types,st') => newst
+	-----------------------------------------------
+	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),Absyn.TUPLE(exps)),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
+	    => ("", newst)
 	
   rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str
 	-----------------------------
 	evaluate_expr(stmt,st) => (str,st)
 end
+
+relation get_ident_from_crefexp : Absyn.Exp => Absyn.Ident =
+
+  axiom	get_ident_from_crefexp Absyn.CREF(Absyn.CREF_IDENT(id, _)) => id
 	
+  rule	Print.print_buf "#-- Not a component reference in tuple assignment:\n#-- " &
+	Dump.print_exp_str exp => str &
+	Print.print_buf str &
+	Print.print_buf "\n"
+	--------------------
+	get_ident_from_crefexp exp => fail
+end
+
+
 relation get_variable_names: (InteractiveVariable list) => string =
 
   rule	get_variable_list_str(vars) => strlst &
@@ -196,6 +220,19 @@ relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.
 	----------------------------------------------
 	get_type_of_variable (varid,IVAR(id,_,_)::rest) => tp 
 end
+
+relation add_vars_to_symboltable: (Absyn.Ident list, Values.Value list,
+				  Types.Type list, InteractiveSymbolTable) 
+	    => InteractiveSymbolTable =
+
+  axiom	add_vars_to_symboltable ([],_,_,st) => st
+
+  rule	add_var_to_symboltable (id, v, t, st) => st' &
+	add_vars_to_symboltable(idrest, vrest, trest, st') => st''
+	-------------------------------------------------------------
+	add_vars_to_symboltable (id::idrest, v::vrest, t::trest, st) => st''
+end
+
 
 relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
 	    => InteractiveSymbolTable =

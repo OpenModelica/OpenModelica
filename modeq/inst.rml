@@ -1559,19 +1559,21 @@ relation inst_var2 : (Env.Env,
 
 
   rule	(* Array variables with binding in functions , e.g. input Real x[:]=Y *)
-	inst_dim_exp (dim,true) => dime &
-	list_append(inst_dims,[dime]) => inst_dims' &
+	inst_dim_exp_lst (dims,true) => dims' &
 	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,p)) &  
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
-	make_array_type(dim::dims,ty) => ty' &
+	make_array_type(dims,ty) => ty' &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty') => ty'' &
 	Types.match_prop(e,Types.PROP(ty',false),p) => e' &
-	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => dae  
+	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
+	dae_declare(cr,ty,attr,NONE,dims',NONE) => dae1 &
+	list_append (dae1, [daeeq]) => dae
 	-------------------------------
-	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl (*as false*))
-          => ([dae],csets,ty')
+	inst_var2(env,ci_state as
+		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl (*as false*))
+          => (dae,csets,ty')
 
   rule	(* Array variables without binding in functions , e.g. input Real x[:] *)
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 

@@ -104,6 +104,7 @@ module DAE:
   relation dump_graphviz: DAElist => ()
   relation dump_type: Type => ()
   relation dump_type_str: Type => string
+  relation dump_ext_decl_str : ExternalDecl => string
   relation dump_ext_arg_str : ExtArg => string 
   relation dump_algorithm: Element => ()
   relation get_matching_elements: (Element list, Element => () )  => Element list

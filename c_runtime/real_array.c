@@ -1065,6 +1065,11 @@ void transpose_real_array(real_array_t* a, real_array_t* dest)
   /*  size_t k;*/
   size_t n,m;
 
+  if (a->ndims == 1) {
+    copy_real_array_data(a,dest);
+    return;
+  }
+
   assert(a->ndims==2 && dest->ndims==2);
 
   n = a->dim_size[0];

@@ -1068,18 +1068,25 @@ void transpose_integer_array(integer_array_t* a, integer_array_t* dest)
   size_t i;
   size_t j;
   /*  size_t k;*/
+  size_t n,m;
 
-  for (i = 0; i < a->dim_size[0]; ++i)
-    {
-      for (j = 0; j < a->dim_size[1]; ++i)
-	{
-	  /*for (k = 0; k < k_size; ++k)
-	    {
-	        dest->data[j*dest->dim_size[1]+i] = a->data[i*a->dim_size[1]+j];
-	    }
-	  */
-	}
+  if (a->ndims == 1) {
+    copy_integer_array_data(a,dest);
+    return;
+  }
+
+  assert(a->ndims==2 && dest->ndims==2);
+
+  n = a->dim_size[0];
+  m = a->dim_size[1];
+
+  assert(dest->dim_size[0] == m && dest->dim_size[1] == n);
+  
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < m; ++j) {
+      dest->data[j*n+i] = a->data[i*m+j];
     }
+  }
 }
 
 void outer_product_integer_array(integer_array_t* v1,integer_array_t* v2,integer_array_t* dest)
