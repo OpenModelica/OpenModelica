@@ -3,11 +3,9 @@ module Main:
 	relation main: string list => ()
 end
 
-with "class.rml"
 with "absyn.rml"
 with "parse.rml"
 with "dump.rml"
-with "lform.rml"
 with "dae.rml"
 with "inst.rml"
 
@@ -15,28 +13,30 @@ with "inst.rml"
 
 relation main =
 
-	rule	print "\n = Parsing\n\n" &
-		Parser.parse f => p &
-		Dump.dump p &
+  rule	print "\n = Parsing\n\n" &
+	Parser.parse f => p &
+	Dump.dump p &
+	
+	print "\n = Exploding\n\n" &
+	Absyn.explode_components(p) => p' &
+	Dump.dump p' &
+(*	
+	print "\n = Elaborating\n\n" &
+	Lform.elaborate(p') => p'' &
+*)	
+	let p'' = p' &
 
-		print "\n = Exploding\n\n" &
-		Absyn.explode_components(p) => p' &
-		Dump.dump p' &
-
-		print "\n = Elaborating\n\n" &
-		Lform.elaborate(p') => p'' &
-		
-		print "\n = Instantiating\n\n" &
-		Inst.instantiate(p'') => d &
-		print "\n" &
-		DAE.dump d &
-
-		print "\n[slut]\n"
-		----------------
-		main [f]
-
-	rule	print "Supply a file name\n"
-		----------------------------
-		main []
+	print "\n = Instantiating\n\n" &
+	Inst.instantiate(p'') => d &
+	print "\n" &
+	DAE.dump d &
+	
+	print "\n[slut]\n"
+	----------------
+	main [f]
+	
+  rule	print "Supply a file name\n"
+	----------------------------
+	main []
 
 end
