@@ -28,6 +28,7 @@ module Interactive:
   with "dae.rml" 							  
   with "staticexp.rml"							  
   with "exp.rml"
+  with "values.rml"
   datatype InteractiveStmt = IALG of Absyn.Algorithm
 			   | IEXP of Absyn.Exp
   datatype InteractiveStmts = ISTMTS of InteractiveStmt list
@@ -98,9 +99,40 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------
 	evaluate(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))]),st) => (str,newst)
+	
+  rule	evaluate_expr(exp,st) => (str,newst)
+	------------------------------------------------------
+	evaluate(stmts as ISTMTS([exp]),st) => (str,newst)
+	
   axiom	evaluate(_,st) => ("Not implemented yet\n",st)
 end
 
+
+(** relation: evaluate_expr
+ ** This relation takes an 'InteractiveStmt´ and a symboltable and 
+ ** evaluates the expression using Staticexp.
+ **)
+		 
+ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
+	 (string,InteractiveSymbolTable) =
+	 
+  rule	 build_env_from_symboltable(st) => env &
+	 Static.elab_exp(env,exp) => (sexp,prop) &
+	 Static.ceval (env,sexp) => value &
+	 Values.val_string value =>  str 
+	 --------------------
+	 evaluate_expr(IEXP(exp),st) => (str,st)
+
+  axiom	evaluate_expr(stmt,st) => ("Error evaluating expr.",st)
+end
+
+
+relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
+	
+  rule	
+	------------------------
+	build_env_from_symboltable(s) => Env.empty_env
+end
 
 (** relation: evaluate_graphical_api
  ** This relation evaluates all primitives in the graphical api.
