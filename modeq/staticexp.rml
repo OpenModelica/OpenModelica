@@ -1270,6 +1270,193 @@ relation elab_builtin_min_2 : (Values.Value) => (Values.Value, Types.Type) =
 	  => (Values.REAL(i),(Types.T_REAL([]),NONE))
 end
 
+relation elab_builtin_floor : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+
+  rule (*print "# floor function not implemented yet\n" &*)
+      elab_exp (env,s1,false,NONE) 
+	   => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+     --------------------------------------
+     elab_builtin_floor(env,[s1]) 
+        => (Exp.CALL(Absyn.IDENT("floor"),[s1'],false,false),
+            Types.PROP((Types.T_REAL([]),NONE),c))
+end
+
+relation elab_builtin_ceil : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+        
+  rule (**print "# ceil function not implemented yet\n" &**)
+        elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+          --------------------------------------
+        elab_builtin_ceil(env,[s1]) 
+          => (Exp.CALL(Absyn.IDENT("ceil"),[s1'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+end
+
+relation elab_builtin_abs : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule 
+      elab_exp (env,s1,false,NONE) 
+	   => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+          print "# abs function not implemented yet REAL\n" 
+     --------------------------------------
+     elab_builtin_abs(env,[s1]) 
+        => (Exp.CALL(Absyn.IDENT("abs"),[s1'],false,false),
+            Types.PROP((Types.T_REAL([]),NONE),c))
+
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+          print "# abs function not implemented yet INTEGER\n" 
+        
+        --------------------------------------
+        elab_builtin_abs(env,[s1]) 
+          => (Exp.CALL(Absyn.IDENT("abs"),[s1'],false,false),
+              Types.PROP((Types.T_INTEGER([]),NONE),c))
+ 
+end
+
+
+relation elab_builtin_sqrt : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule 
+        elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+          (**print "# sqrt function not implemented yet REAL\n" **)
+     --------------------------------------
+     elab_builtin_sqrt(env,[s1]) 
+        => (Exp.CALL(Absyn.IDENT("sqrt"),[s1'],false,false),
+            Types.PROP((Types.T_REAL([]),NONE),c))
+
+end
+
+relation elab_builtin_div : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+        --------------------------------------
+        elab_builtin_div(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("div"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+          --------------------------------------
+        elab_builtin_div(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("div"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+        
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+          --------------------------------------
+        elab_builtin_div(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("div"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+        --------------------------------------
+        elab_builtin_div(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("div"),[s1',s2'],false,false),
+              Types.PROP((Types.T_INTEGER([]),NONE),c))
+        
+end
+
+relation elab_builtin_mod : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+        --------------------------------------
+        elab_builtin_mod(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("mod"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+          --------------------------------------
+        elab_builtin_mod(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("mod"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+        
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+          --------------------------------------
+        elab_builtin_mod(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("mod"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+        --------------------------------------
+        elab_builtin_mod(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("mod"),[s1',s2'],false,false),
+              Types.PROP((Types.T_INTEGER([]),NONE),c))
+        
+end
+
+relation elab_builtin_rem : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+        --------------------------------------
+        elab_builtin_rem(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("rem"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+          --------------------------------------
+        elab_builtin_rem(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("rem"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+        
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+          --------------------------------------
+        elab_builtin_rem(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("rem"),[s1',s2'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),c))
+
+  rule  elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+          elab_exp (env,s2,false,NONE) 
+	      => (s2', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+        --------------------------------------
+        elab_builtin_rem(env,[s1,s2]) 
+          => (Exp.CALL(Absyn.IDENT("rem"),[s1',s2'],false,false),
+              Types.PROP((Types.T_INTEGER([]),NONE),c))
+        
+end
+
+relation elab_builtin_integer : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule 
+        elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
+          (**print "# integer function not implemented yet REAL\n" **)
+     --------------------------------------
+     elab_builtin_integer(env,[s1]) 
+        => (Exp.CALL(Absyn.IDENT("integer"),[s1'],false,false),
+            Types.PROP((Types.T_INTEGER([]),NONE),c))
+
+end
+
+
+
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
 					  => (Exp.Exp, Types.Properties)) =
 
@@ -1285,6 +1472,15 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom	elab_builtin_handler "pre" => elab_builtin_pre
   axiom	elab_builtin_handler "initial" => elab_builtin_initial
   axiom	elab_builtin_handler "terminal" => elab_builtin_terminal
+  axiom elab_builtin_handler "floor" => elab_builtin_floor
+  axiom elab_builtin_handler "ceil" => elab_builtin_ceil
+  axiom elab_builtin_handler "abs" => elab_builtin_abs
+  axiom elab_builtin_handler "sqrt" => elab_builtin_sqrt
+  axiom elab_builtin_handler "div" => elab_builtin_div
+  axiom elab_builtin_handler "integer" => elab_builtin_integer
+  axiom elab_builtin_handler "mod" => elab_builtin_mod
+  axiom elab_builtin_handler "rem" => elab_builtin_rem
+
 end
 
 

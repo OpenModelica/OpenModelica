@@ -134,6 +134,38 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-----------------------------------------
 	ceval (env,Exp.SIZE(cref,NONE),impl,st,_) => (v,st) 	
 
+(* Start luc_pop *)
+  rule	ceval_builtin_floor(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("floor"),[exp],_,_),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_ceil(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("ceil"),[exp],_,_),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_sqrt(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("sqrt"),[exp],_,_),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_integer(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("integer"),[exp],_,_),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_div(env,exp1,exp2,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("div"),[exp1, exp2],_,_),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_mod(env,exp1,exp2,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("mod"),[exp1, exp2],_,_),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_rem(env,exp1,exp2,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("rem"),[exp1, exp2],_,_),impl,st,_) => (v,st) 	
+
+
+
+(* end luc_pop *)
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
@@ -267,7 +299,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	int_sub(lhv, rhv) => sum
 	------------------------
 	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh),impl,st,dim)
-	  => (Values.INTEGER(sum),st'')
+	  => (Values.INTEGER(sum),st'') 
 	(**)
   rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') &
 	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
@@ -1222,6 +1254,242 @@ relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
 	-------------------------------------
 	ceval_builtin_size_2(_,_) => fail
 end
+
+(* Start luc_pop *)
+(* floor *)
+relation ceval_builtin_floor : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule (*print "# floor function not implemented CEVAL yet\n" &*)
+    	ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_floor rv => rv' 
+    --------------------------------------
+    ceval_builtin_floor(env,exp,impl,st) => (Values.REAL(rv'),st)
+end
+
+relation ceval_builtin_ceil : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule  (**print "# ceil function not implemented CEVAL yet\n" &*)
+   	    ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_floor rv => rv' &
+        real_int rv' => ri &
+        int_real ri => rvt &
+        real_eq(rvt,rv) => true 
+        --------------------------------------
+        ceval_builtin_ceil(env,exp,impl,st) => (Values.REAL(rv'),st)
+
+  rule (**print "# ceil function not implemented CEVAL yet\n" &**)
+   	    ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_floor rv => rv' &
+        (**print "# ceil function not implemented CEVAL yet\n" &**)
+        (** this should be like this but real_add(rv',1.0) does not work!
+	     **real_add(rv', 1.0) => rv''
+         **)
+        real_int rv' => ri &
+        int_add(ri,1) => ri' &
+        int_real ri' => rv''
+        --------------------------------------
+        ceval_builtin_ceil(env,exp,impl,st) => (Values.REAL(rv''),st)
+end
+
+relation ceval_builtin_sqrt : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_lt (rv,0.0) => true &
+        Print.print_buf "# sqrt - the input is negative\n" 
+    --------------------------------------
+    ceval_builtin_sqrt(env,exp,impl,st) => fail
+ 
+  rule (** print "# sqrt function not implemented CEVAL yet\n" &**)
+        ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_sqrt rv => rv' 
+    --------------------------------------
+    ceval_builtin_sqrt(env,exp,impl,st) => (Values.REAL(rv'),st)
+ 
+end
+
+relation ceval_builtin_div : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule  ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+	    real_div(rv1,rv2) => rv' &
+        real_int rv' => ri &
+        int_real ri => rv''
+        --------------------------------------
+        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.REAL(rv''),st)
+        
+  rule  ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri),_) &
+        int_real ri => rv1 &
+        ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+	    real_div(rv1,rv2) => rv' &
+        real_int rv' => ri' &
+        int_real ri' => rv''
+        --------------------------------------
+        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.REAL(rv''),st)
+        
+  rule  ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri),_) &
+        int_real ri => rv2 &
+	    real_div(rv1,rv2) => rv' &
+        real_int rv' => ri' &
+        int_real ri' => rv''
+        --------------------------------------
+        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.REAL(rv''),st)
+        
+  rule  ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
+	    int_div(ri1,ri2) => ri' 
+         --------------------------------------
+        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.INTEGER(ri'),st)
+        
+  rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+        real_eq(rv2, 0.0) => true &
+ 	    Print.print_buf "#Error, division by zero.\n" 
+        --------------------------------------
+        ceval_builtin_div(env,exp1,exp2,impl,st) => fail
+
+  rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
+        int_eq(ri2, 0) => true &
+ 	    Print.print_buf "#Error, division by zero.\n" 
+        --------------------------------------
+        ceval_builtin_div(env,exp1,exp2,impl,st) => fail
+        
+end
+
+relation ceval_builtin_mod : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule  (*print "# mod real real" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+	    real_div(rv1,rv2) => rva &
+	    real_floor(rva) => rvb &
+	    real_mul(rvb,rv2) => rvc &
+	    real_sub(rv1,rvc) => rvd 
+        --------------------------------------
+        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        
+  rule  (*print "# mod INTEGER REAL" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri),_) &
+        int_real ri => rv1 &
+        ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+	    real_div(rv1,rv2) => rva &
+	    real_floor(rva) => rvb &
+	    real_mul(rvb,rv2) => rvc &
+	    real_sub(rv1,rvc) => rvd 
+        --------------------------------------
+        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        
+  rule  (*print "# mod REAL INTEGER" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri),_) &
+        int_real ri => rv2 &
+	    real_div(rv1,rv2) => rva &
+	    real_floor(rva) => rvb &
+	    real_mul(rvb,rv2) => rvc &
+	    real_sub(rv1,rvc) => rvd 
+        --------------------------------------
+        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        
+  rule  (*print "# mod INTEGER INTEGER" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
+        int_real ri1 => rv1 &
+	    int_real ri2 => rv2 &
+	    real_div(rv1,rv2) => rva &
+	    real_floor(rva) => rvb &
+	    real_mul(rvb,rv2) => rvc &
+	    real_sub(rv1,rvc) => rvd &
+	    real_int rvd => ri'
+        --------------------------------------
+        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.INTEGER(ri'),st)
+        
+  rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+        real_eq(rv2, 0.0) => true &
+ 	    Print.print_buf "#Second argument in mod should be non-zero.\n" 
+        --------------------------------------
+        ceval_builtin_mod(env,exp1,exp2,impl,st) => fail
+
+  rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
+        int_eq(ri2, 0) => true &
+ 	    Print.print_buf "#Second argument in mod should be non-zero.\n" 
+        --------------------------------------
+        ceval_builtin_mod(env,exp1,exp2,impl,st) => fail
+        
+end
+
+relation ceval_builtin_rem : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule  (*print "# rem real real" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+	    real_div(rv1,rv2) => rva &
+	    real_mul(rva,rv2) => rvb &
+		real_sub(rv1,rvb) => rvd
+        --------------------------------------
+        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        
+  rule  (*print "# rem INTEGER REAL" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri),_) &
+        int_real ri => rv1 &
+        ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+	    real_div(rv1,rv2) => rva &
+	    real_mul(rva,rv2) => rvb &
+		real_sub(rv1,rvb) => rvd
+        --------------------------------------
+        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        
+  rule  (*print "# rem REAL INTEGER" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri),_) &
+        int_real ri => rv2 &
+	    real_div(rv1,rv2) => rva &
+	    real_mul(rva,rv2) => rvb &
+		real_sub(rv1,rvb) => rvd
+        --------------------------------------
+        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        
+  rule  (*print "# rem INTEGER INTEGER" &*)
+		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri1),_) &
+        ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
+        int_real ri1 => rv1 &
+	    int_real ri2 => rv2 &
+	    real_div(rv1,rv2) => rva &
+	    real_mul(rva,rv2) => rvb &
+		real_sub(rv1,rvb) => rvd &
+		real_int rvd => ri'
+        --------------------------------------
+        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.INTEGER(ri'),st)
+        
+  rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
+        real_eq(rv2, 0.0) => true &
+ 	    Print.print_buf "#Second argument in rem should be non-zero.\n" 
+        --------------------------------------
+        ceval_builtin_rem(env,exp1,exp2,impl,st) => fail
+
+  rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
+        int_eq(ri2, 0) => true &
+ 	    Print.print_buf "#Second argument in rem should be non-zero.\n" 
+        --------------------------------------
+        ceval_builtin_rem(env,exp1,exp2,impl,st) => fail
+        
+end
+
+relation ceval_builtin_integer : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule (** print "# integer function not implemented CEVAL yet\n" &**)
+        ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_int rv => ri 
+    --------------------------------------
+    ceval_builtin_integer(env,exp,impl,st) => (Values.INTEGER(ri),st)
+ 
+end
+(* end luc_pop*)
 
 (* For size(A) *)
 relation ceval_builtin_size_matrix : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
