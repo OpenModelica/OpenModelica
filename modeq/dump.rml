@@ -67,6 +67,7 @@ relation unaryop_symbol: Exp.UnaryOp => string =
 end
 
 relation path_string: Exp.Path => string =
+
 	axiom	path_string(Exp.IDENT(s)) => s
 
 	rule	path_string(n) => ns &
@@ -77,7 +78,8 @@ relation path_string: Exp.Path => string =
 end
 
 relation dump_exp: Exp.Exp => () =
-	rule	print "N"
+	rule	real_string(x) => s &
+		print s
 		--------------
 		dump_exp(Exp.NUMBER(x))
 
@@ -85,6 +87,10 @@ relation dump_exp: Exp.Exp => () =
 		print s
 		---------------
 		dump_exp(Exp.PATH(p))
+
+	rule	print "\"" & print s & print "\""
+		--
+		dump_exp(Exp.STRING(s))
 
 	rule	binop_symbol(op) => sym &
 		dump_exp e1 & print sym & dump_exp e2
@@ -194,7 +200,7 @@ and dump_element_arg =
 
 	rule	print "ARG(" &
 		dump_select(f,"FINAL,",",") &
-		dump_component_ref(r) & print "," &
+		dump_component_ref(r) &
 		dump_modification(m) &
 		print ")"
 		-------------------------------------------
@@ -308,6 +314,16 @@ and dump_subscript: Absyn.Subscript => () =
 
 end
 and dump_modification: Absyn.Modification => () =
+
+	rule	print "CLASSMOD(" &
+		dump_list(l,dump_element_arg,",") &
+		print ")"
+		------------------------------------
+		dump_modification(Absyn.CLASSMOD(l))
+
+	rule	print " = " & dump_exp(e)
+		------------------------------------
+		dump_modification(Absyn.EQUALMOD(e))
 
 	rule	print "( ** MODIFICATION ** )"
 		-------------
