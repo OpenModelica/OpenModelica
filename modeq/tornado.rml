@@ -30,6 +30,8 @@ with "util.rml"
 with "system.rml"
 with "daelow.rml"
 with "exp.rml"
+with "debug.rml"
+
 
 (** relation: generate_code
  ** This is the main relation that generates Tornado1 C++ code from the flat Modelica model
@@ -138,6 +140,7 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
 				 "\n",
 				 statevars,
 				 "\n",
+				 "  SetNoIndepVarValues(1);\n",
 				 "\n",
 				 "  Link();\n",
 				 "  Reset();\n",
@@ -158,7 +161,7 @@ end
  ** The variables are indexed in the order they appear in the DAELow representation.
  ** The first output variable has the index 0. 
  *)
-relation generate_constructor_outputvars:(DAELow.DAELow) => string = 
+relation generate_constructor_outputvars:(DAELow.DAELow) => string= 
 
   rule	generate_constructor_outputvars2(vars,0) => lst1 &
 	list_length(lst1) => len &
@@ -169,6 +172,7 @@ relation generate_constructor_outputvars:(DAELow.DAELow) => string =
 	list_length(lst) => len &
 	int_string len => lenstr &
 	Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix &
+	Util.string_append_list(["  SetNoOutputVarValues(",lenstr,");\n"]) => prefix &
 	string_append(prefix,res) => res'
 	-------------------------------------------
 	generate_constructor_outputvars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
@@ -216,6 +220,7 @@ relation generate_constructor_statevars:(DAELow.DAELow) => string =
 	list_length(lst) => len &
 	int_string len => lenstr &
 	Util.string_append_list(["  SetNoDerStateVars(",lenstr,");\n"]) => prefix &
+	Util.string_append_list(["  SetNoDerStateVarValues(",lenstr,");\n"]) => prefix &
 	string_append(prefix,res) => res'
 	----------------------
 	generate_constructor_statevars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
@@ -279,7 +284,9 @@ end
  **)
 relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
 
-  rule	generate_compute_output(cname,dae,p) => coutput &
+  rule	generate_blt(dae) => blt &
+	generate_state_partition(blt) => a &
+	generate_compute_output(cname,dae,p) => coutput &
 	generate_compute_initial(cname,dae,p) => cinitial &
 	generate_compute_state(cname,dae,p) => cstate &
 	generate_compute_terminal(cname,dae,p) => cterm &
@@ -315,6 +322,88 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
 	generate_compute_methods(_,_,_) => fail
 end 
 
+
+(** relation generate_blt
+ ** This relation computes the block lower triangular form of the equation 
+ ** system using a list of the DAEs. 
+ **
+ **)
+relation generate_blt:(DAELow.DAELow) => (int list list) =
+
+	
+  rule	(*DAELow.lower(d) => d' *)
+	Debug.fcall("dumpdaelow", DAELow.dump, d') 
+	& DAELow.incidence_matrix(d') => m 
+	& DAELow.transpose_matrix(m) => mT 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
+	& DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
+	& Debug.fcall("bltdump", DAELow.dump,d'')
+	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
+	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
+	& DAELow.dump_components(comps) 
+	-------------------------------------------------------------
+	generate_blt(d') => (comps)
+
+  rule	print "-generate_blt failed\n" 
+	-----------------------------------------
+	generate_blt(_) => fail
+
+end
+
+
+(** relation:generate_state_partition
+ ** this relation extracts the rightmost part 
+ **
+ **) 
+relation generate_state_partition:(int list list) => (int list list) =
+
+  rule	list_reverse(blt) => reversed_blt &
+	has_state_var(1,reversed_blt) => component_number &
+	print "First state component found in component (reversed)" &
+	int_string(component_number) => component_number_string &
+	print component_number_string &
+	print "\n\n"
+	-----------------------------------------
+	generate_state_partition(blt) => blt (* not correct *)
+
+  rule	print "-generate_state_partition failed\n" 
+	-----------------------------------------
+	generate_state_partition(_) => fail
+
+end
+
+(** Helper relation for generate state partition
+ ** Determines which list of coefficients contains the first 
+ ** statevariable
+ ** 
+ **) 
+relation has_state_var:(int, int list list) => int =
+	  
+  rule	(*if first component contains a statevar, return index *)
+	
+	-----------------------------------------
+	has_state_var(index,element::reversed_blt) => index
+
+	(* If we have no more components return 0 *)
+  rule	
+	-----------------------------------------
+	has_state_var(index,[]) => 0
+	
+  rule	(* If no statevars found in this component, continue with the next one*)
+	int_add(1,index) => next_index &
+	has_state_var(next_index,reversed_blt) => ret_value
+	-----------------------------------------
+	has_state_var(index,element::reversed_blt) => ret_value
+
+  rule	print "-generate_state_partition2 failed\n" 
+	-----------------------------------------
+	has_state_var(_,_) => fail
+end
+
+
 (** relation: generate_compute_output
  ** This relation generates the code for the calculation of the output variables.
  **)
@@ -342,7 +431,8 @@ end
  **)
 relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program) => string =
 
-  rule	Util.string_append_list(["/* state code here*/\n"]) => cstate
+  rule	Util.string_append_list(["/* state code here*/\n"]) => cstate 
+	
 	-------------------------------------------------------------
 	generate_compute_state(cname,dae,p) => cstate
 
