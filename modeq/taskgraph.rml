@@ -28,7 +28,16 @@
  ** 
  **)
 
-(** - Module header *)
+(**
+ ** This module is used in the modpar part of OpenModelica for bulding task graphs
+ ** from the BLT decomposition for automatic parallelization.
+ ** The exported relation 'build_taskgraph' takes the lowered form of the DAE defined in
+ ** 'DAELow' and two assignments vectors (which variable is solved in which equation) and
+ ** the list of blocks given by the BLT decomposition.
+
+ ** The module uses 'TaskGraphExt' for the task graph datastructure itself, which
+ ** is implemented using Boost Graph Library in C++
+ *)
 
 module TaskGraph:
   with "exp.rml"

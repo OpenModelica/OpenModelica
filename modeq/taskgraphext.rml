@@ -25,11 +25,14 @@
  ** description: The external representation of a task graph, using Boost Graph Library
  ** in C++.
  **
- ** RCS: %W% %E%
+ ** RCS: $Id$
  ** 
  **)
 
-(** - Module header *)
+(**
+ ** This module is the interface to the externally implemented task graph using Boost 
+ ** Graph Library in C++
+ *)
 
 module TaskGraphExt:
   with "exp.rml"
