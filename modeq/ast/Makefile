@@ -30,10 +30,12 @@ GRM = modgram.g
 SRC = modgram.c \
       modAST.h \
       scanner.c \
-      err.c
+      err.c \
+      yacclib.c
 OBJ = modgram.o \
       scanner.o \
-      err.o
+      err.o \
+      yacclib.o
 ANTLR_SPAWN = modgram.c \
               $(DLG_FILE) $(TOKENS)
 DLG_SPAWN = scanner.c mode.h
