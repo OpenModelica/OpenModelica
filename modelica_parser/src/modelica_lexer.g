@@ -21,7 +21,6 @@ tokens {
 	AND			= "and"	;
 	ANNOTATION	= "annotation"	;
 	BLOCK		= "block"	;
-	BOUNDARY	= "boundary"	;
 	CODE		= "Code"		;
 	CLASS		= "class"	;
 	CONNECT		= "connect"	;
