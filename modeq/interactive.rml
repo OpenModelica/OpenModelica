@@ -98,7 +98,7 @@ val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; re
 val Diagram_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Diagram CoordinateSystem coordinateSystem(extent ={{-100.0, -100.0}, {100.0, 100.0}}); /*GraphicItem graphics[:];*/ end Diagram;"
 
 (* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
-val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:,2]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text; record Bitmap Boolean visible=true; Real extent[2,2]; String fileName=\"\"; String imageSource=\"\"; end Bitmap;"
+val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:,2]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize = 0.0; String fontName=\"\"; TextStyle textStyle[:]; end Text; record Bitmap Boolean visible=true; Real extent[2,2]; String fileName=\"\"; String imageSource=\"\"; end Bitmap;"
 
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
@@ -2894,7 +2894,8 @@ end
 relation get_connection_annotation_str: Absyn.EquationItem => string =
 	
   rule	create_funcargs_from_elementargs(elts) => fargs &
-        Parser.parsestring Line_records => p &
+	Parser.parsestring Line_records => (p,parsestr) & (* Always succeeds, check parsestr for errors *)
+ 	parsestr = "Ok" &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Static.elab_graphics_exp(env,Absyn.CALL(Absyn.CREF_IDENT("Line",[]),fargs)) => (newexp,_) &	
@@ -3045,7 +3046,9 @@ end
 relation get_component_annotations_from_elts: (Absyn.Element list) 
 	  => string =
 
-  rule	Parser.parsestring Placement_records => p &
+  rule
+	Parser.parsestring Placement_records => (p,parsestr) & (* Always succeeds, check parsestr for errors *)
+	parsestr = "Ok" &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
 	get_componentitems_annotations(comps,env) => res &
@@ -3212,8 +3215,8 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 
   rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
-	
-        Parser.parsestring totstring => p &
+	Parser.parsestring totstring => (p,parsestr) & (* Always succeeds, check parsestr for errors *)
+	parsestr = "Ok" &
 	SCode.elaborate(p) => p' &
 	Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
 	get_class_in_program("Icon",p) => placementc &
@@ -3235,8 +3238,8 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 
   rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
-	
-        Parser.parsestring totstring => p &
+	Parser.parsestring totstring => (p,parsestr) & (* Always succeeds, check parsestr for errors *)
+	parsestr = "Ok" &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("Diagram")) => env  & 
 	get_class_in_program("Diagram",p) => placementc &
@@ -3258,8 +3261,8 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Diagram",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => totstr
 
   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' & 
-
-        Parser.parsestring totstring => p &
+	Parser.parsestring totstring => (p,parsestr) & (* Always succeeds, check parsestr for errors *)
+	parsestr = "Ok" &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT(anncname)) => env  & 
 	get_class_in_program(anncname,p) => placementc &
@@ -4161,4 +4164,3 @@ end
 	get_instantiated_class((x as INSTCLASS(path,_,_))::xs, path2) 
 	  => res
 end
-
