@@ -159,6 +159,7 @@ module Dump:
   relation select_string: (bool,string,string) => string
   relation get_string_list : ('a list, 'a => string, string) => string
   relation get_option_str: ('a option, 'a => string) => string 
+  relation get_option_with_concat_str: ('a option, 'a => string,string) => string 
   relation unparse_annotation_option: (int, Absyn.Annotation option) => string 
   relation unparse_within: (int, Absyn.Within) => string 
   relation indent_str: (int) => string 
@@ -2284,6 +2285,15 @@ relation get_option_str: ('a option, 'a => string) => string =
 	get_option_str (SOME(a),r) => str
 
   axiom	get_option_str(NONE,_) => ""
+end
+
+relation get_option_with_concat_str: ('a option, 'a => string,string) => string =
+  rule  r (a) => str &
+        string_append(default_str,str) => str'
+	------------
+	get_option_with_concat_str (SOME(a),r,default_str) => str'
+
+  axiom	get_option_with_concat_str(NONE,_,default_str) => ""
 end
 
 relation unparse_string_comment_option: string option => string =
