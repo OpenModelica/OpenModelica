@@ -1025,8 +1025,9 @@ relation get_cref_from_exp: ( Absyn.Exp ) => Absyn.ComponentRef list =
 	list_append(l1,l2) => res1 &
 	get_cref_from_exp(e3) => l3 &
 	list_append(res1,l3) => res
+	(* TODO elseif's e4 *)
 	---------------------------
-	get_cref_from_exp(Absyn.IFEXP(e1,e2,e3)) => res
+	get_cref_from_exp(Absyn.IFEXP(e1,e2,e3,e4)) => res
 	
   rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
 	get_cref_from_farg(farg) => res
@@ -2480,8 +2481,24 @@ relation inst_statements : (Env, Absyn.Algorithm list)
 	inst_statements(env,xs) => xs'
 	------------------------------
 	inst_statements(env,x::xs) => x'::xs'
+end
+
+relation inst_algorithmitems : (Env, Absyn.AlgorithmItem list)
+	  => Algorithm.Statement list =
+
+  axiom	inst_algorithmitems(env,[]) => []
+
+  rule	inst_statement(env,x) => x' &
+	inst_algorithmitems(env,xs) => xs'
+	------------------------------
+	inst_algorithmitems(env,Absyn.ALGORITHMITEM(x,_)::xs) => x'::xs'
+
+  rule	inst_algorithmitems(env,xs) => xs'
+	------------------------------
+	inst_algorithmitems(env,Absyn.ALGORITHMITEMANN(_)::xs) => xs'
 
 end
+
 
 (** relation: inst_statement
  **
@@ -2499,9 +2516,9 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
-	inst_statements(env,tb) => tb' &
+	inst_algorithmitems(env,tb) => tb' &
 	inst_elseifs(env,eib) => eib' &
-	inst_statements(env,fb) => fb' &
+	inst_algorithmitems(env,fb) => fb' &
 	Algorithm.make_if(e',prop,tb',eib',fb') => stmt
 	--------------------------------------------
 	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
@@ -2511,27 +2528,28 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	
 	add_for_loop_scope(env,i,t) => env' &
 	
-	inst_statements(env',sl) => sl' &
+	inst_algorithmitems(env',sl) => sl' &
 	Algorithm.make_for(i,e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_FOR(i,e,sl)) => stmt
 
   rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
-	inst_statements(env,sl) => sl' &
+	inst_algorithmitems(env,sl) => sl' &
 	Algorithm.make_while(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHILE(e,sl)) => stmt
 
 
   rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
-	inst_statements(env,sl) => sl' &
+	inst_algorithmitems(env,sl) => sl' &
 	Algorithm.make_when_a(e',prop,sl') => stmt
+	(* TODO elsewhen *)
 	---------------------------------------
-	inst_statement(env,Absyn.ALG_WHEN_A(e,sl)) => stmt
+	inst_statement(env,Absyn.ALG_WHEN_A(e,sl,el)) => stmt
 
 (* 1.0
  rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
-	inst_statements(env,sl) => sl' &
+	inst_algorithmitems(env,sl) => sl' &
 	Algorithm.make_when(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHEN(e,sl)) => stmt
@@ -2547,13 +2565,13 @@ end
  ** This relation helps `inst_statement' to handle `elseif' parts.
  **)
 
-relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
+relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.AlgorithmItem list) list)
 	=> (Exp.Exp * Types.Properties * Algorithm.Statement list) list =
 
   axiom	inst_elseifs (env,[]) => []
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
-	inst_statements(env,l) => stmts &
+	inst_algorithmitems(env,l) => stmts &
 	inst_elseifs(env,tail) => tail'
 	-------------------------------
 	inst_elseifs(env,(e,l)::tail) => ((e',prop,stmts)::tail')

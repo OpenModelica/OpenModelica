@@ -196,8 +196,9 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,e2,impl,st') => (e2', prop2,st'') &
 	elab_exp (env,e3,impl,st'') => (e3', prop3,st''') &
 	elab_ifexp(e1',prop1,e2',prop2,e3',prop3) => (e,prop)
+	(*TODO elseif part *)
 	------------------------------------------------------
-	elab_exp (env,Absyn.IFEXP(e1,e2,e3),impl,st) => (e,prop,st''')
+	elab_exp (env,Absyn.IFEXP(e1,e2,e3,_),impl,st) => (e,prop,st''')
 
 	(**  Function calls *)
 	(** PA. Only positional arguments are elaborated for now.*)
@@ -357,8 +358,9 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,e2) => (e2', prop2) &
 	elab_graphics_exp (env,e3) => (e3', prop3) &
 	elab_ifexp(e1',prop1,e2',prop2,e3',prop3) => (e,prop)
+	(* TODO elseif part*)
 	------------------------------------------------------
-	elab_graphics_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,prop)
+	elab_graphics_exp (env,Absyn.IFEXP(e1,e2,e3,_)) => (e,prop)
 
 	(**  Function calls *)
 	(** PA. Only positional arguments are elaborated for now.*)

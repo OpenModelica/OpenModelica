@@ -35,15 +35,15 @@
  **)
 
 
-module Dump:
-
+ module Dump:
+  
   with "absyn.rml"
-  with "interactive.rml"							  
-  with "debug.rml"
+with "interactive.rml"							  
+with "debug.rml"
 
   type Ident = string
 
-  (* Dump routines for debugging of AST *)
+(* Dump routines for debugging of AST *)
 
   relation dump: Absyn.Program => ()
   relation unparse_str: Absyn.Program => string
@@ -68,7 +68,7 @@ module Dump:
   relation select_string: (bool,string,string) => string
   relation get_string_list : ('a list, 'a => string, string) => string
   relation get_option_str: ('a option, 'a => string) => string 
-end
+  end
 
 
 
@@ -108,70 +108,90 @@ relation unparse_within: Absyn.Within => string =
   axiom unparse_within Absyn.TOP => ""
 	
   rule	Absyn.path_string p => s1 &
-	string_append("within ",s1) => s2 &
-	string_append(s2,";\n") => str
+	Util.string_append_list(["within ",s1,";\n"]) => str
 	------------------------------
 	unparse_within Absyn.WITHIN(p) => str
 end
 
 relation unparse_class_str: Absyn.Class => string =
   rule	select_string(p, "partial ","") => s1 &
-	unparse_restriction_str (r) => s2 &
-	string_append(s1,s2) => s3 &
-	string_append(s3," ") => s4 &
-	string_append(s4,n) => s5 &
-	string_append(s5,"\n") => s6 &
-	get_string_list (parts,unparse_class_part_str,"") => s7 &
-	string_append(s6,s7) => s8 &
-	string_append(s8, "\nend ") => s9 &
-        string_append(s9,n) => s10 &
-	string_append(s10,";\n") => str			     
+	select_string(f, "final ","") => s2 &
+	unparse_restriction_str (r) => s3 &
+	get_string_list (parts,unparse_class_part_str,"") => s4 &
+	unparse_comment_option(optcmt) => s5 &
+	Util.string_append_list([s1, s2, s3, " ", n, s5, "\n", s4, "\nend ", n, ";\n"]) => str
 	-----------------------------
-	unparse_class_str(Absyn.CLASS(n,p,e,r,Absyn.PARTS(parts))) => str
+	unparse_class_str(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt))) => str
 
   rule	select_string(p, "partial ", "") => s1 &
-	unparse_restriction_str (r)  => s2 &
-	string_append(s1,s2) => s3 &
-	string_append(s3," ") => s4 &
-	string_append(s4,n) => s5 &
-	string_append(s5,"= ") => s6 &
-	Absyn.path_string i => s7 &
-	get_option_str(dim,print_arraydim_str) => s8 &
-	unparse_mod1_str m => s9 &
-	string_append(s7,s8) => s10 &
-	string_append(s10,s9) => s11 &
-	string_append(s11,";\n") => str
+	select_string(f, "final ", "") => s2 &
+	unparse_restriction_str (r)  => s3 &
+	string_append(s1,s2) => s4 &
+	Absyn.path_string i => s5 &
+	get_option_str(dim,print_arraydim_str) => s6 &
+	unparse_mod1_str m => s7 &
+	unparse_comment_option(optcmt) => s8 &
+	Util.string_append_list([s1,s2,s3," ",n,"= ",s4,s5,s6,s7,s8,";\n"]) => str
 	------------------------------
-	unparse_class_str(Absyn.CLASS(n,p,e,r,Absyn.DERIVED(i,dim,m))) => str
-
+	unparse_class_str(Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,dim,m,optcmt))) => str
+	
   rule	select_string(p, "partial ", "") => s1 &
-	unparse_restriction_str (r)  => s2 &
-	string_append(s1,s2) => s3 &
-	string_append(s3," ") => s4 &
-	string_append(s4,n) => s5 &
-	string_append(s5,"= enumeration(") => s6 &
-	Util.string_delimit_list(l,", ") => s7 &
-	string_append(s6,s7) => s8 &
-	string_append(s8,");\n") => str				      
+	select_string(f, "final ", "") => s2 &
+	unparse_restriction_str (r)  => s3 &
+	unparse_enumliterals(l) => s4 &
+	unparse_comment_option(cmt) => s5 &
+	Util.string_append_list([s1,s2,s3," ",n,"= enumeration(",s4,")",s5,";\n"]) => str
 	-------------------------------
-	unparse_class_str(Absyn.CLASS(n,p,e,r,Absyn.ENUMERATION(l))) => str    
+	unparse_class_str(Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,cmt))) => str    
 end 
 
-relation unparse_restriction_str : Absyn.Restriction => string =
+relation unparse_comment_option: (Absyn.Comment option) => string =
 
-  axiom unparse_restriction_str Absyn.R_CLASS			=> "class"
+	axiom unparse_comment_option(NONE) => ""
+	
+  rule	unparse_annotation_option(annopt) => s1 &
+	Util.string_append_list([s1," ", cmt]) => str
+	---------------------------------------------
+	unparse_comment_option(SOME(Absyn.COMMENT(annopt,SOME(cmt)))) => str
+	
+  rule	unparse_annotation_option(annopt) => str 
+	---------------------------------------------
+	unparse_comment_option(SOME(Absyn.COMMENT(annopt,NONE))) => str
+	
+end
+
+relation unparse_enumliterals : Absyn.EnumLiteral list => string =
+	
+  axiom	unparse_enumliterals([]) => ""
+	
+  rule	unparse_comment_option(optcmt) => s1 &
+	unparse_enumliterals(a::b)=> s2 &
+	Util.string_append_list([str,s1,", ",s2]) => res
+	---------------------------
+	unparse_enumliterals(Absyn.ENUMLITERAL(str,optcmt)::a::b) => res
+	
+  rule	unparse_comment_option(optcmt) => s1 &
+	unparse_comment_option(optcmt2) => s2 &
+	Util.string_append_list([str,s1,", ",str2,s2]) => res
+	---------------------------
+	unparse_enumliterals([Absyn.ENUMLITERAL(str,optcmt),Absyn.ENUMLITERAL(str2,optcmt2)]) => res
+end
+
+relation unparse_restriction_str : Absyn.Restriction => string =
+	
+  axiom	unparse_restriction_str Absyn.R_CLASS			=> "class"
   axiom	unparse_restriction_str Absyn.R_MODEL			=> "model"
   axiom	unparse_restriction_str Absyn.R_RECORD			=> "record"
-  axiom unparse_restriction_str Absyn.R_BLOCK			=> "block"
-  axiom unparse_restriction_str Absyn.R_CONNECTOR		=> "connector"
-  axiom unparse_restriction_str Absyn.R_TYPE			=> "type"
-  axiom unparse_restriction_str Absyn.R_PACKAGE			=> "package"
-  axiom unparse_restriction_str Absyn.R_FUNCTION			=> "function"
-  axiom unparse_restriction_str  Absyn.R_PREDEFINED_INT		=> "Integer"
-  axiom unparse_restriction_str Absyn.R_PREDEFINED_REAL		=> "Real"
-  axiom unparse_restriction_str Absyn.R_PREDEFINED_STRING	=> "String"
-  axiom unparse_restriction_str Absyn.R_PREDEFINED_BOOL		=> "Boolean"
-
+  axiom	unparse_restriction_str Absyn.R_BLOCK			=> "block"
+  axiom	unparse_restriction_str Absyn.R_CONNECTOR		=> "connector"
+  axiom	unparse_restriction_str Absyn.R_TYPE			=> "type"
+  axiom	unparse_restriction_str Absyn.R_PACKAGE			=> "package"
+  axiom	unparse_restriction_str Absyn.R_FUNCTION			=> "function"
+  axiom	unparse_restriction_str  Absyn.R_PREDEFINED_INT		=> "Integer"
+  axiom	unparse_restriction_str Absyn.R_PREDEFINED_REAL		=> "Real"
+  axiom	unparse_restriction_str Absyn.R_PREDEFINED_STRING	=> "String"
+  axiom	unparse_restriction_str Absyn.R_PREDEFINED_BOOL		=> "Boolean"
+	
 end
 
 relation dump_istmt : Interactive.InteractiveStmts => () =
@@ -180,8 +200,8 @@ relation dump_istmt : Interactive.InteractiveStmts => () =
 	Print.print_buf ")\n" 
 	--------------------------
 	dump_istmt(Interactive.ISTMTS([Interactive.IALG(alg)])) => ()
-	    
-  rule  Print.print_buf ("IEXP(") &
+	
+  rule	Print.print_buf ("IEXP(") &
 	print_exp(expr) &
 	Print.print_buf ")\n" 
 	----------------------
@@ -193,41 +213,39 @@ relation dump_istmt : Interactive.InteractiveStmts => () =
 	dump_istmt(Interactive.ISTMTS(l)) => ()
 	--------------------------
 	dump_istmt(Interactive.ISTMTS(Interactive.IALG(alg)::l)) => ()
-
+	
   rule Print.print_buf "IEXP(" &
 	print_exp(expr) => () &
 	Print.print_buf "," &
 	dump_istmt(Interactive.ISTMTS(l)) => ()
 	--------------------------
 	dump_istmt(Interactive.ISTMTS(Interactive.IEXP(expr)::l)) => ()
-
+	
   axiom	dump_istmt(_) => ()
 end
-	(**)
+(**)
 
 relation print_class: Absyn.Class => () =
-
+	
   rule	print_class_restriction(r) & Print.print_buf "(" &
 	Print.print_buf n & Print.print_buf "," & print_select(p,"PARTIAL,","") &
 	print_list_debug("print_class1",parts,print_class_part,",") & Print.print_buf ")"
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,e,r,Absyn.PARTS(parts))) => ()
-
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_))) => ()
+	
   rule	print_class_restriction(r) & Print.print_buf "(" &
 	Print.print_buf n & Print.print_buf "," & print_select(p,"PARTIAL,","") &
 	Print.print_buf ") = " & print_path(i) &
 	print_class_modification(m)
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,e,r,Absyn.DERIVED(i,_,m))) => ()
-
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,_,m,_))) => ()
+	
   rule	print_class_restriction(r) & Print.print_buf "(" &
 	Print.print_buf n & Print.print_buf "," &
 	print_select(p,"PARTIAL,","") &
-	Print.print_buf "ENUMERATION(" &
-	print_list_debug("print_class",l,print, ",") &
-	Print.print_buf ")\n"
+	Print.print_buf "ENUMERATION(...)\n"
 	----------
-	print_class(Absyn.CLASS(n,p,e,r,Absyn.ENUMERATION(l))) => ()
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,_))) => ()
 end
 
 (**)
@@ -237,7 +255,7 @@ relation print_class_restriction: Absyn.Restriction => () =
   rule	Absyn.print_restr re
 	-----------------------
 	print_class_restriction re
-
+	
 end
 
 
@@ -274,14 +292,14 @@ relation print_element_arg =
 	print_modification(m) &
 	Print.print_buf ")"
 	-------------------------------------------
-	print_element_arg(Absyn.MODIFICATION(f,r,m))
+	print_element_arg(Absyn.MODIFICATION(f,r,m,optcmt))
 
   rule	Print.print_buf "REDECLARATION(" &
 	print_select(f,"FINAL,",",") &
 	print_elementspec spec &
-	Print.print_buf ")"
+	Print.print_buf ",_)"
 	-------------------------------------------
-	print_element_arg(Absyn.REDECLARATION(f,spec))
+	print_element_arg(Absyn.REDECLARATION(f,spec,_))
 
 end
 
@@ -289,25 +307,24 @@ relation unparse_element_arg_str: (Absyn.ElementArg) => string =
 	
   rule	select_string(f,"final ","") => s1 &
 	print_component_ref_str(r) => s2 &
-	string_append(s1,s2) => s3 &
-	unparse_modification_str(m) => s4 &
-	string_append(s3,s4) => str
+	unparse_modification_str(m) => s3 &
+	unparse_string_comment_option(optstr) => s4 &
+	Util.string_append_list([s1, s2, s3, s4]) => str
 	-------------------------------------------
-	unparse_element_arg_str(Absyn.MODIFICATION(f,r,m)) => str
+	unparse_element_arg_str(Absyn.MODIFICATION(f,r,m,optstr)) => str
 	
-  rule	Print.print_buf "REDECLARATION(" &
-	select_string(f,"final ","")  => s1 &
-	string_append("redeclare ",s1) => s2 &
-	unparse_elementspec_str spec => s3 &
-	string_append(s2,s3) => str
-	-------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,spec)) => str
+  rule	select_string(f,"final ","")  => s1 &
+	unparse_elementspec_str spec => s2 &
+	get_option_str(constropt,unparse_elementspec_str) => s3 &
+	Util.string_append_list([s1,"redeclare ",s2," ",s3]) => str
+	-----------------------------------------------------------
+	unparse_element_arg_str(Absyn.REDECLARATION(f,spec,constropt)) => str
 end
 
 (**)
 
 
-
+				
 relation print_class_part: Absyn.ClassPart => () =
 
   rule	Print.print_buf "PUBLIC(" & print_elementitems(el) & Print.print_buf ")"
@@ -325,7 +342,7 @@ relation print_class_part: Absyn.ClassPart => () =
 	print_class_part(Absyn.EQUATIONS(eqs))
 	
   rule	Print.print_buf "ALGORITHM(" &
-	print_list_debug("print_class_part",eqs,print_algorithm,",") &
+	print_list_debug("print_class_part",eqs,print_algorithmitem,",") &
 	Print.print_buf ")"
 	--------------------------------------
 	print_class_part(Absyn.ALGORITHMS(eqs))
@@ -348,11 +365,16 @@ relation unparse_class_part_str: Absyn.ClassPart => string =
 	string_append("\nequation \n",s1) => str 
 	--------------------------------------
 	unparse_class_part_str(Absyn.EQUATIONS(eqs)) => str
-	
+				
   rule	get_string_list(eqs,unparse_algorithm_str,"\n") => s1 & 
-	string_append("public \n",s1) => str 
+	string_append("algorithm \n",s1) => str 
 	--------------------------------------
 	unparse_class_part_str(Absyn.ALGORITHMS(eqs)) => str
+
+  rule	get_string_list(eqs,unparse_algorithm_str,"\n") => s1 & 
+	string_append("initial algorithm \n",s1) => str 
+	-----------------------------------------------
+	unparse_class_part_str(Absyn.INITIALALGORITHMS(eqs)) => str
 
   rule	get_option_str(lang,identity) => langstr &
 	print_component_ref_str output => outputstr &
@@ -417,20 +439,23 @@ relation unparse_elementitem_str: Absyn.ElementItem => string =
 	----------------------------
 	unparse_elementitem_str Absyn.ELEMENTITEM(e) => str
 
-  rule	unparse_annotation_str a => str
+  rule	unparse_annotation_option SOME(a) => str
 	-------------------------------
 	unparse_elementitem_str Absyn.ANNOTATIONITEM(a) => str
 	
 end
 
-relation unparse_annotation_str: Absyn.Annotation => string =	
-
+relation unparse_annotation_option: Absyn.Annotation option => string =	
+	
   rule	unparse_class_modification_str Absyn.CLASSMOD(mod,NONE) => s1 &
 	string_append(" annotation(",s1) => s2 &
 	string_append(s2,")") => str
 	----------------------------
-	unparse_annotation_str(Absyn.ANNOTATION(mod)) => str
+	unparse_annotation_option(SOME(Absyn.ANNOTATION(mod))) => str
+
+  axiom	unparse_annotation_option(NONE) => ""
 end
+
 
 (**)
 
@@ -441,20 +466,19 @@ relation print_element: Absyn.Element => () =
 	Print.print_buf ", " &
 	print_elementspec spec & Print.print_buf ")"
 	----------------
-	print_element (Absyn.ELEMENT(final,inout,_,spec))
+	print_element (Absyn.ELEMENT(final,repl,inout,_,spec,constr))
 
 end
 
 relation unparse_element_str: Absyn.Element => string = 
 
   rule	select_string(final, "final ", "") => s1 &
-	unparse_innerouter_str inout => s2 &
-	unparse_elementspec_str spec => s3 &
-	string_append(s1,s2) => s4 &
-	string_append(s4,s3) => s5 &
-	string_append(s5,";") => str
+	select_string(repl, "replaceable ", "") => s2 &
+	unparse_innerouter_str inout => s3 &
+	unparse_elementspec_str spec => s4 &
+	Util.string_append_list([s1, s2, s3, s4, ";"]) => str
 	----------------------------
-	unparse_element_str Absyn.ELEMENT(final,inout,_,spec) => str
+	unparse_element_str Absyn.ELEMENT(final,repl,inout,_,spec,constr) => str
 end
 
 
@@ -507,7 +531,7 @@ relation print_elementspec: Absyn.ElementSpec => () =
 	print_import i &
 	Print.print_buf ")"
 	--------
-	print_elementspec(Absyn.IMPORT(i))
+	print_elementspec(Absyn.IMPORT(i,_))
 
   rule	Print.print_buf " ##ERROR## "
 	-------------------
@@ -543,7 +567,7 @@ relation unparse_elementspec_str: Absyn.ElementSpec => string =
 	string_append("import ",s1) => s2 &
 	string_append(s2,";") => str
 	----------------------------
-	unparse_elementspec_str(Absyn.IMPORT(i)) => str
+	unparse_elementspec_str(Absyn.IMPORT(i,_)) => str
 
   rule	Print.print_buf " ##ERROR## "
 	-------------------
@@ -672,11 +696,9 @@ relation print_componentitem: Absyn.ComponentItem => () =
 
   rule	Print.print_buf "COMPONENTITEM(" &
 	print_component c &
-	Print.print_buf ", " &
-	print_option(a, print_annotation) &
-	Print.print_buf ")"
+	Print.print_buf ",..)"
 	------------------------------------------
-	print_componentitem(Absyn.COMPONENTITEM(c,a))
+	print_componentitem(Absyn.COMPONENTITEM(c,optcmt))
 end
 
 relation unparse_component_str: Absyn.Component => string =
@@ -693,10 +715,10 @@ relation unparse_componentitem_str: Absyn.ComponentItem => string =
 
   rule	
 	unparse_component_str c => s1 &
-	get_option_str(a, unparse_annotation_str) => s2 &
+	unparse_comment_option cmtopt => s2 &
 	string_append(s1,s2) => str
 	------------------------------------------
-	unparse_componentitem_str(Absyn.COMPONENTITEM(c,a)) => str
+	unparse_componentitem_str(Absyn.COMPONENTITEM(c,cmtopt)) => str
 end
 
 (**)
@@ -850,17 +872,14 @@ end
 relation print_equationitem: Absyn.EquationItem => () =
   rule	Print.print_buf "EQUATIONITEM(" &
 	print_equation eq &
-	Print.print_buf ", " &
-	print_annotation ann &
+	Print.print_buf ",... " &
 	Print.print_buf ")\n"
 	--------------
-	print_equationitem Absyn.EQUATIONITEM(eq,SOME(ann))
+	print_equationitem Absyn.EQUATIONITEM(eq,_)
 	
-  rule	Print.print_buf "EQUATIONITEM(" &
-	print_equation eq &
-	Print.print_buf ",NONE)\n"
+  rule	Print.print_buf "EQUATIONITEMANN(...)\n" 
 	--------------
-	print_equationitem Absyn.EQUATIONITEM(eq,NONE)
+	print_equationitem Absyn.EQUATIONITEMANN(_)
 end
 
 relation unparse_equation_str: Absyn.Equation => string =
@@ -869,45 +888,31 @@ relation unparse_equation_str: Absyn.Equation => string =
 	-------------------------------------------
 	unparse_equation_str(Absyn.EQ_EXPR(e)) => str
 	
-  rule	Print.print_buf "IF (" & print_exp_str(e) => s1 &
-	string_append("if ",s1) => s2 &
-	string_append(s2," then \n") => s3 &
-	get_string_list(tb,unparse_equationitem_str, ";") => s4 &
-	string_append(s3,s4) => s5 &
-	get_string_list(eb,unparse_eq_elseif_str, " ") => s6 &
-	string_append(s5,s6) => s7 &
-	string_append(s7, "\n else") => s8 &
-	get_string_list(fb,unparse_equationitem_str,";") => s9 &
-	string_append(s8,s9) => str
+  rule	print_exp_str(e) => s1 &
+	get_string_list(tb,unparse_equationitem_str, ";") => s2 &
+	get_string_list(eb,unparse_eq_elseif_str, " ") => s3 &
+	get_string_list(fb,unparse_equationitem_str,"") => s4 &
+	Util.string_append_list(["if ", s1, " then\n", s2, s3, "\nelse", s4]) => str
 	----------------------------------------------------
 	unparse_equation_str(Absyn.EQ_IF(e,tb,eb,fb)) => str
 	
   rule	print_exp_str(e1) => s1 &
-	string_append(s1,"=") => s2 &
-	print_exp_str(e2) => s3 &
-	string_append(s2,s3) => str
+	print_exp_str(e2) => s2 &
+	Util.string_append_list([s1, "=", s2]) => str
 	-------------------------------------------
 	unparse_equation_str(Absyn.EQ_EQUALS(e1,e2)) => str
 	
   rule	print_component_ref_str(e1) => s1  &
-	string_append("connect(",s1) => s2 &
-	string_append(s2,",") => s3 &
-	print_component_ref_str(e2) => s4 &
-	string_append(s3,s4) => s5 &
-	string_append(s5,");\n") => str 
+	print_component_ref_str(e2) => s2 &
+	Util.string_append_list(["connect(", s1, ",", s2, ")"]) => str
 	-------------------------------------------
 	unparse_equation_str(Absyn.EQ_CONNECT(e1,e2)) => str
 	
-  rule	string_append("for ",i) => s1 &
-	string_append(s1, " in " ) => s2 &
-	print_exp_str(e) => s3 &
-	string_append(s2,s3) => s4 &
-	string_append(s4, "loop \n") => s5 &
-	get_string_list(el,unparse_equationitem_str,";\n") => s6 &
-	string_append(s5,s6) => s7 &
-	string_append(s7,"\nend loop;\n") => str
+  rule	print_exp_str(e) => s1 &
+	get_string_list(el,unparse_equationitem_str,";\n") => s2 &
+	Util.string_append_list(["for ", i, " in ", s1, "loop\n", s2, "\nend loop"]) => str
 	----------------------------------------------------------
-	unparse_equation_str Absyn.EQ_FOR(i,e,el) => str
+	unparse_equation_str (Absyn.EQ_FOR(i,e,el)) => str
 	
   rule	Print.print_buf " ** Failure! UNKNOWN EQUATION ** "
 	--------------------------------
@@ -918,15 +923,14 @@ end
 relation unparse_equationitem_str: Absyn.EquationItem => string =
   rule	
 	unparse_equation_str eq => s1 &
-	unparse_annotation_str ann => s2 &
-	string_append(s1, " ") => s3 &
-	string_append(s3,s2) => str
+	unparse_comment_option(optcmt) => s2 &
+	string_append(s1,s2) => str
 	---------------------------
-	unparse_equationitem_str Absyn.EQUATIONITEM(eq,SOME(ann)) =>str 
+	unparse_equationitem_str Absyn.EQUATIONITEM(eq,optcmt) => str 
 	
-  rule	unparse_equation_str eq => str 
-	--------------
-	unparse_equationitem_str Absyn.EQUATIONITEM(eq,NONE) => str
+  rule	unparse_annotation_option(SOME(ann)) => str
+	-------------------------------------------
+	unparse_equationitem_str Absyn.EQUATIONITEMANN(ann) => str
 end
 	
 (**)
@@ -952,6 +956,19 @@ end
 
 (* Algorithm clauses *)
 
+relation print_algorithmitem: Absyn.AlgorithmItem => () =
+
+  rule	Print.print_buf "ALGORITHMITEM(" &
+	print_algorithm(alg)&
+	Print.print_buf ")\n"
+	-------------------
+	print_algorithmitem (Absyn.ALGORITHMITEM(alg,_))
+
+  rule	Print.print_buf "ALGORITHMITEMANN(..)\n"
+	----------------------------------------
+	print_algorithmitem(Absyn.ALGORITHMITEMANN(ann))
+end
+
 relation print_algorithm: Absyn.Algorithm => () =
 	
   rule	Print.print_buf "ALG_ASSIGN(" & print_component_ref cr &
@@ -960,31 +977,31 @@ relation print_algorithm: Absyn.Algorithm => () =
 	print_algorithm(Absyn.ALG_ASSIGN(cr,exp))
 	
   rule	Print.print_buf "IF (" & print_exp(e) & Print.print_buf ") THEN " &
-	print_list_debug("print_algorithm",tb, print_algorithm, ";") &
+	print_list_debug("print_algorithm",tb, print_algorithmitem, ";") &
 	print_list_debug("print_algorithm",eb, print_alg_elseif, " ") &
-	Print.print_buf " ELSE " & print_list_debug("print_algorithm",fb, print_algorithm, ";")
+	Print.print_buf " ELSE " & print_list_debug("print_algorithm",fb, print_algorithmitem, ";")
 	----------------------------------------------------
 	print_algorithm(Absyn.ALG_IF(e,tb,eb,fb))
 	
   rule	Print.print_buf "FOR " & Print.print_buf i & Print.print_buf " in " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",el, print_algorithm, ";") & Print.print_buf "}"
+	Print.print_buf " {" & print_list_debug("print_algorithm",el, print_algorithmitem, ";") & Print.print_buf "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_FOR(i,e,el)
 	
   rule	Print.print_buf "WHILE " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithm, ";") & Print.print_buf "}"
+	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.print_buf "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHILE(e,al)
 	
 	(*  rule	Print.print_buf "WHEN_E " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithm, ";") & Print.print_buf "}"
+	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.print_buf "}"
 	 ----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHEN_E(e,al)
 *)
   rule	Print.print_buf "WHEN_A " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithm, ";") & Print.print_buf "}"
+	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.print_buf "}"
 	----------------------------------------------------------
-	print_algorithm Absyn.ALG_WHEN_A(e,al)
+	print_algorithm Absyn.ALG_WHEN_A(e,al,el)
 	
   rule	Print.print_buf " ** UNKNOWN ALGORITHM CLAUSE ** "
 	--------------------------------
@@ -992,59 +1009,49 @@ relation print_algorithm: Absyn.Algorithm => () =
 	
 end
 
-relation unparse_algorithm_str: Absyn.Algorithm => string =
-	
+relation unparse_algorithm_str: Absyn.AlgorithmItem => string =
+				
   rule	print_component_ref_str cr => s1 &
-	string_append(s1,":=") => s2 &
-	print_exp_str(exp) => s3 & 
-	string_append(s2,s3) => str
+	print_exp_str(exp) => s2 & 
+	unparse_comment_option(optcmt) => s3 &
+	Util.string_append_list([s1,":=",s2,s3]) => str
 	-------------------------------------------
-	unparse_algorithm_str(Absyn.ALG_ASSIGN(cr,exp)) => str
+	unparse_algorithm_str(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(cr,exp),optcmt)) => str
 	
-  rule	
-	Print.print_buf "IF (" & print_exp_str(e) => s1 &
-	string_append("if ",s1) => s2 &
-	string_append (s2," then \n") => s3 &
-	get_string_list(tb,unparse_algorithm_str,";\n") => s4 &
-	string_append(s3,s4) => s5 &
-	get_string_list(eb,unparse_alg_elseif_str, " ") => s6 &
-	string_append(s5,s6) => s7 &
-	string_append(s7, "\n else") => s8 &
-	get_string_list(fb,unparse_algorithm_str,";\n") => s9 &
-	string_append(s8,s9) => s10 &
-	string_append(s10,"\n") => str
+  rule	print_exp_str(e) => s1 &
+	get_string_list(tb,unparse_algorithm_str,";\n") => s2 &
+	get_string_list(eb,unparse_alg_elseif_str, " ") => s3 &
+	get_string_list(fb,unparse_algorithm_str,";\n") => s4 &
+	unparse_comment_option(optcmt) => s5 &
+	Util.string_append_list(["if ",s1," then \n", s2, s3, "\n else", s4, "end if" ,s5, ";\n"]) => str
 	----------------------------------------------------
-	unparse_algorithm_str(Absyn.ALG_IF(e,tb,eb,fb)) => str
-	
-  rule	Print.print_buf "FOR " &
-	string_append("for ",i)=> s1 &
-	string_append(s1, " in ") => s2 & 
-	print_exp_str(e)=> s3 &
-	string_append(s2,s3) => s4 &
-	string_append(s4," loop \n") => s5 &
-	get_string_list(el,unparse_algorithm_str," ;\n") => s6 &
-	string_append(s5,s6) => s7 &
-	string_append(s7,"\n end for;\n") => str
+	unparse_algorithm_str(Absyn.ALGORITHMITEM(Absyn.ALG_IF(e,tb,eb,fb),optcmt)) => str
+
+  rule	print_exp_str(e)=> s1 &
+	get_string_list(el,unparse_algorithm_str," ;\n") => s2 &
+	unparse_comment_option(optcmt) => s3 &
+	Util.string_append_list(["for ", i, " in ", s1, " loop\n", s2, "\nend for", s3, ";\n"]) => str
 	----------------------------------------------------------
-        unparse_algorithm_str Absyn.ALG_FOR(i,e,el) => str
+        unparse_algorithm_str (Absyn.ALGORITHMITEM(Absyn.ALG_FOR(i,e,el),optcmt)) => str
 				     
-  rule	Print.print_buf "WHILE " & print_exp_str(e) => s1 &
-	string_append("while (",s1) => s2 &
-	string_append(s2,") loop \n") => s3 &
-	get_string_list(al,unparse_algorithm_str,";\n") => s4 &
-	string_append(s3,s4) => s5 &
-	string_append(s5,"\n end while;\n")=> str				     	----------------------------------------------------------
-	unparse_algorithm_str Absyn.ALG_WHILE(e,al) => str
-	
-  rule	Print.print_buf "WHEN_A " & print_exp_str(e)=>s1 &
-	string_append("when ",s1) => s2 &
-	string_append(s2," then \n") => s3 &
-	get_string_list(al,unparse_algorithm_str,";\n") => s4 &
-	string_append(s3,s4) => s5 &
-	string_append(s5,"\nend when;\n") => str
+  rule	print_exp_str(e) => s1 &
+	get_string_list(al,unparse_algorithm_str,";\n") => s2 &
+	unparse_comment_option(optcmt) => s3 &
+	Util.string_append_list(["while (", s1, ") loop\n", s2, "\nend while", s3, ";\n"]) => str
 	----------------------------------------------------------
-	unparse_algorithm_str Absyn.ALG_WHEN_A(e,al) => str
+	unparse_algorithm_str (Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(e,al),optcmt)) => str
 	
+  rule	print_exp_str(e) => s1 &
+	get_string_list(al,unparse_algorithm_str,";\n") => s2 &
+	unparse_comment_option(optcmt) => s3 &
+	Util.string_append_list(["when ", s1, " then\n", s2, "\nend when", s3, ";\n"]) => str
+	(* TODO elsewhen *)
+        ----------------------------------------------------------
+	unparse_algorithm_str (Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(e,al,al2),optcmt)) => str
+	
+  rule	unparse_annotation_option SOME(ann) => str
+	------------------------------------------
+	unparse_algorithm_str (Absyn.ALGORITHMITEMANN(ann)) => str			       
   rule	Print.print_buf " *Failure! UNKNOWN ALGORITHM CLAUSE ** "
 	--------------------------------
 	unparse_algorithm_str(_) => ""
@@ -1052,17 +1059,16 @@ relation unparse_algorithm_str: Absyn.Algorithm => string =
 end
 (**)
 
-relation print_alg_elseif : (Absyn.Exp * Absyn.Algorithm list) => () =
+relation print_alg_elseif : (Absyn.Exp * Absyn.AlgorithmItem list) => () =
 
   rule	Print.print_buf " ELSEIF " & print_exp e & Print.print_buf " THEN " &
-	print_list_debug("print_alg_elseif",el, print_algorithm, ";")
+	print_list_debug("print_alg_elseif",el, print_algorithmitem, ";")
 	-----------------------------------
 	print_alg_elseif((e,el))
 
 end
 
-
-relation unparse_alg_elseif_str : (Absyn.Exp * Absyn.Algorithm list) => string =
+relation unparse_alg_elseif_str : (Absyn.Exp * Absyn.AlgorithmItem list) => string =
 
   rule  print_exp_str e => s1 &
 	string_append(" elseif ",s1) => s2 &
@@ -1072,7 +1078,6 @@ relation unparse_alg_elseif_str : (Absyn.Exp * Absyn.Algorithm list) => string =
 	-----------------------------------
 	unparse_alg_elseif_str((e,el)) => str
 end
-
 
 (* Component references and paths *)
 
@@ -1225,7 +1230,7 @@ relation print_exp : Absyn.Exp => () =
 	Print.print_buf " then " & print_exp(t) &
 	Print.print_buf " else " & print_exp(f)
 	----------------------------
-	print_exp(Absyn.IFEXP(c,t,f))
+	print_exp(Absyn.IFEXP(c,t,f,lst))
 
   rule	print_component_ref(fcn) &
  	Print.print_buf "(" & 
@@ -1388,13 +1393,10 @@ relation print_exp_str : Absyn.Exp => string =
   rule	print_exp_str c => cs &
 	print_exp_str t => ts &
 	print_exp_str f => fs &
-	string_append ("if ", cs) => s &
-	string_append (s, " then ") => s' &
-	string_append (s', ts) => s'' &
-	string_append (s'', " else ") => s''' &
-	string_append (s''', fs) => s''''
+	print_elseif_str elseif => el &		       
+	Util.string_append_list(["if ", cs, " then ", ts, el, " else ", fs]) => str
 	---------------------------------
-	print_exp_str(Absyn.IFEXP(c,t,f)) => s''''
+	print_exp_str(Absyn.IFEXP(c,t,f,elseif)) => str
 
   rule	print_component_ref_str(fcn) => fs &
 	print_function_args_str(args) => argsstr &
@@ -1447,7 +1449,17 @@ relation print_exp_str : Absyn.Exp => string =
   axiom	print_exp_str (_) =>  "#UNKNOWN EXPRESSION#"
 
 end
+			       
+relation print_elseif_str: (Absyn.Exp * Absyn.Exp) list => string =
+  axiom print_elseif_str ([]) => ""
 
+  rule	print_exp_str(ec) => s1 &
+	print_exp_str(ee) => s2 &
+	print_elseif_str(rest) => s3 &
+	Util.string_append_list([" elseif ", s1, " then ", s2, s3]) => str
+	-------------------------------------------------------------
+	print_elseif_str((ec,ee)::rest) => str
+end
 
 relation print_row_str : Absyn.Exp list => string =
 
@@ -1610,6 +1622,15 @@ relation get_option_str: ('a option, 'a => string) => string =
 	get_option_str (SOME(a),r) => str
 
   axiom	get_option_str(NONE,_) => ""
+end
+
+relation unparse_string_comment_option: string option => string =
+	
+  axiom unparse_string_comment_option(NONE) => ""
+	
+  rule	string_append(" ",s)=> str
+	--------------------------
+	unparse_string_comment_option(SOME(s)) => str
 end
 
 relation identity: ('a) => 'a =

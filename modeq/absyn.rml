@@ -52,7 +52,8 @@ module Absyn:
   (** - Classes *)
   datatype Class = CLASS of Ident		     (* Name *)
 			  * bool		     (* Partial *)
-			  * bool		     (* Encapsulated *)							  
+			  * bool		     (* Final *)
+			  * bool		     (* Encapsulated *)
 			  * Restriction	             (* Restricion *)
 			  * ClassDef		     (* Body *)
   (** A class definition consists of a name, a flag to indicate if this *)
@@ -61,22 +62,32 @@ module Absyn:
 
 
   datatype ClassDef = PARTS of ClassPart list
+			       * Comment option	     (* comment *)
 		    | DERIVED of Path
 			       * ArrayDim option
 			       * ElementArg list
-		    | ENUMERATION of Ident list
+			       * Comment option	     (* comment *)
+		    | ENUMERATION of EnumLiteral list   
+				  * Comment option     (* comment*)		
 
   (** The `ClassDef' type contains the definition part of a class *)
   (** declaration.  The definition is either explicit, with a list of *)
   (** parts (`public', `protected', `equation' and `algorithm'), or it *)
   (** is a definition derived from another class or an enumeration type. *)
   (** For a derived type, the  type contains the name of the derived class and an optional *)
-  (** array dimension and a list of modifications. An enumeration type contains a list of identifiers. *)
+  (** array dimension and a list of modifications. An enumeration type contains a list of *)
+  (** EnumLiteral and an optional Comment.*)
+
+  datatype EnumLiteral = ENUMLITERAL of Ident	     (* Literal *)
+			 * Comment option	     (* comment *)
+
 
   datatype ClassPart = PUBLIC of ElementItem list
 		     | PROTECTED of ElementItem list
 		     | EQUATIONS of EquationItem list
-		     | ALGORITHMS of Algorithm list
+		     | INITIALEQUATIONS of EquationItem list	
+		     | ALGORITHMS of AlgorithmItem list
+		     | INITIALALGORITHMS of AlgorithmItem list
 		     | EXTERNAL of ExternalDecl
   (** A class definition contains several parts.  There are public and *)
   (** protected component declarations, type definitions and `extends' *)
@@ -91,14 +102,18 @@ module Absyn:
 
   (** - Elements *)
   datatype Element = ELEMENT of bool		     (* final *)
+			      * bool		     (* replaceable *)
 			      * InnerOuter	     (* inner/outer *)	     
 			      * Ident
 			      * ElementSpec
+			      * ConstrainClass option    (* only valid for classdef and component*)
+
+  type ConstrainClass = ElementSpec			(* That must be EXTENDS*)
 
   datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
 				   * Class
 		       | EXTENDS of Path * ElementArg list
-		       | IMPORT of Import
+		       | IMPORT of Import * Comment option
 		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
 				     * Path	     (* type name *)
 				     * ComponentItem list
@@ -122,7 +137,7 @@ module Absyn:
    **)
 							  
   datatype ComponentItem = COMPONENTITEM of Component
-					  * Annotation option
+					  * Comment option
 
   datatype Component = COMPONENT of Ident 	     (* component name *)
 				  * ArrayDim
@@ -131,8 +146,10 @@ module Absyn:
   (** `ElementSpec' by writing them on the same line in the source. *)
   (** This type contains the information specific to one component. *)
 
-  datatype EquationItem = EQUATIONITEM of Equation
-					  * Annotation option
+  datatype EquationItem = EQUATIONITEM of Equation * Comment option
+					| EQUATIONITEMANN of Annotation 
+  datatype AlgorithmItem = ALGORITHMITEM  of Algorithm * Comment option
+					|  ALGORITHMITEMANN of Annotation 
 
   datatype Equation = EQ_EXPR of Exp	     (* more later? *)
 		    | EQ_IF of Exp
@@ -142,35 +159,38 @@ module Absyn:
 		    | EQ_EQUALS of Exp * Exp
 		    | EQ_CONNECT of ComponentRef * ComponentRef 
 		    | EQ_FOR of Ident * Exp * EquationItem list
-		    | EQ_WHEN_E of Exp * EquationItem list (*1.1*) 
-		    | EQ_ASSERT of Assert
+		    | EQ_WHEN_E of Exp 
+				* EquationItem list 
+				* (Exp * EquationItem list) list (* else when *)
+		    | EQ_NORETCALL of Ident * FunctionArgs		   (* fcalls without return value *)
 
   (** The `Equation' type describes one equation in an equation *)
   (** section. *)
 
   datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp
+		     | ALG_TUPLE_ASSIGN of Exp 		(*tuple*)  
+					* Exp 		(* value*) 	
 		     | ALG_IF of Exp
-			       * Algorithm list	     (* true branch *)  
-			       * (Exp * Algorithm list) list (* elseif *)
-			       * Algorithm list	     (* else branch *)
-		    | ALG_FOR of Ident * Exp * Algorithm list
-		    | ALG_WHILE of Exp * Algorithm list
-		(* Old 1.0     | ALG_WHEN of Exp * Algorithm list  *)
-		     | ALG_WHEN_A of Exp * Algorithm list (*1.1*)
-		     | ALG_ASSERT of Assert
+			       * AlgorithmItem list	     (* true branch *)  
+			       * (Exp * AlgorithmItem list) list (* elseif *)
+			       * AlgorithmItem list	     (* else branch *)
+		     | ALG_FOR of Ident * Exp * AlgorithmItem list
+		     | ALG_WHILE of Exp * AlgorithmItem list
+		     | ALG_WHEN_A of Exp 
+					* AlgorithmItem list 
+					* (Exp * AlgorithmItem list) list (* elsewhen *)
+		     | ALG_NORETCALL of ComponentRef * FunctionArgs	   (* general fcalls without return value *)
+
   (** The `Algorithm' type describes one algorithm statement in an *)
   (** algorithm section.  It does not describe a whole algorithm.  The *)
   (** reason this type is named like this is that the name of the *)
   (** grammar rule for algorithm statements is `algorithm'. *)
 
-  datatype Assert = ASSERT of Exp * string list
-		  | TERMINATE of string list
-
   (** - Modifications *)
   datatype Modification = CLASSMOD of ElementArg list * Exp option
 
-  datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
-		      | REDECLARATION of bool * ElementSpec
+  datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification * string option
+		      | REDECLARATION of bool * ElementSpec * ConstrainClass option
   (** Modifications are described by the `Modification' type.  There *)
   (** are two forms of modifications: redeclarations and component *)
   (** modifications. *)
@@ -206,7 +226,7 @@ module Absyn:
 	       | LBINARY of Exp * Operator * Exp
 	       | LUNARY of Operator * Exp
 	       | RELATION of Exp * Operator * Exp
-	       | IFEXP of Exp * Exp * Exp
+	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list 
 	       | CALL of ComponentRef * FunctionArgs
 (*	       | ARRAY of Exp list *)
 
@@ -216,6 +236,7 @@ module Absyn:
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp
 	       | TUPLE of Exp list (*PR.*)
+	       | END
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
@@ -282,6 +303,10 @@ module Absyn:
   datatype Annotation = ANNOTATION of ElementArg list
   (** An Annotation is a class_modification. *)
 
+  (** Comment *)	
+  datatype Comment = COMMENT of Annotation option 	
+				* string option
+
   (* ExternalDecl *)
   datatype ExternalDecl = EXTERNALDECL of 
 				  Ident option  * (* The name of the external function *)
@@ -315,7 +340,7 @@ with "print.rml"
 
 relation element_spec_name : ElementSpec => Ident =
 
-  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_)) => n
+  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_,_)) => n
 
   axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
 

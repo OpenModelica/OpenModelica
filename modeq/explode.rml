@@ -183,7 +183,7 @@ relation elab_class: Absyn.Class => Class =
   rule	elab_classdef d => d' &
 	elab_restriction(c,r) => r'
 	---------------------
-	elab_class(c as Absyn.CLASS(n,p,e,r,d)) => CLASS(n,p,e,r',d')
+	elab_class(c as Absyn.CLASS(n,p,f,e,r,d)) => CLASS(n,p,e,r',d')
 
 end
 
@@ -216,11 +216,11 @@ end
 	
 relation contain_external_func_decl:(Absyn.Class) => bool =
 	
-  axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_)::_))) => true
+  axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_)::_,_))) => true
 	
-  rule	contain_external_func_decl(Absyn.CLASS(a,b,c,d,Absyn.PARTS(rest))) => res
+  rule	contain_external_func_decl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt))) => res
 	----------------------
-	contain_external_func_decl(Absyn.CLASS(a,b,c,d,Absyn.PARTS(_::rest))) => res
+	contain_external_func_decl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::rest,cmt))) => res
 
   axiom	contain_external_func_decl(_) => false
 end
@@ -242,7 +242,7 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 
   rule	build_mod(SOME(Absyn.CLASSMOD(a, NONE)), false) => mod
 	------------------------------------------------
-	elab_classdef(Absyn.DERIVED(p,d,a)) => DERIVED(p,d,mod)
+	elab_classdef(Absyn.DERIVED(p,d,a,cmt)) => DERIVED(p,d,mod)
 
 
   rule	elab_classdef_elements parts => els &
@@ -250,11 +250,21 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	elab_classdef_algorithms parts => als &
 	elab_classdef_externaldecls parts => decl
 	-------------------------------------
-	elab_classdef (Absyn.PARTS(parts)) => PARTS(els,eqs,als,decl)
+	elab_classdef (Absyn.PARTS(parts,cmt)) => PARTS(els,eqs,als,decl)
 
-	axiom elab_classdef(Absyn.ENUMERATION(lst)) => ENUMERATION(lst)
+  rule	elab_enumlist(lst) => lst'
+	--------------------------
+	elab_classdef(Absyn.ENUMERATION(lst,_)) => ENUMERATION(lst')
 end
 
+relation elab_enumlist:(Absyn.EnumLiteral list) => Ident list =
+
+  axiom	elab_enumlist([]) => []
+	
+  rule	elab_enumlist(rest) => res
+	-----------------------------------------
+	elab_enumlist(Absyn.ENUMLITERAL(id,_)::rest) => id::res
+end
 
 relation elab_classdef_elements: Absyn.ClassPart list => Element list =
 
@@ -306,7 +316,8 @@ relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
   axiom	elab_classdef_algorithms [] => []
 
   rule	elab_classdef_algorithms rest => als &
-	let als' = ALGORITHM(al)::als
+	elab_classdef_algorithmitems al => al' &
+	let als' = ALGORITHM(al')::als
 	-----------------------------
 	elab_classdef_algorithms (Absyn.ALGORITHMS(al)::rest) => als'
 
@@ -319,6 +330,19 @@ relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
 
 end
 
+relation elab_classdef_algorithmitems: Absyn.AlgorithmItem list => Absyn.Algorithm list =
+
+  axiom	elab_classdef_algorithmitems [] => []
+	
+  rule	elab_classdef_algorithmitems(rest) => res
+	-----------------------------------------
+	elab_classdef_algorithmitems (Absyn.ALGORITHMITEM(alg,_)::rest) => alg::res
+
+  rule	elab_classdef_algorithmitems(rest) => res
+	-----------------------------------------
+	elab_classdef_algorithmitems (_::rest) => res
+end
+
 relation elab_classdef_externaldecls: (Absyn.ClassPart list) => Absyn.ExternalDecl option =
 
   axiom	elab_classdef_externaldecls(Absyn.EXTERNAL(decl)::_) => SOME(decl)
@@ -329,53 +353,6 @@ relation elab_classdef_externaldecls: (Absyn.ClassPart list) => Absyn.ExternalDe
 
   axiom	elab_classdef_externaldecls([]) => NONE
 end
-
-
-
-
-(** LS: replaced this with separate collector relations above for
-       elements, equations and algorithms
-
-  axiom	elab_classdef(Absyn.PARTS([])) => PARTS([],[],[])
-
-
- Lots of unnecessary consing ahead... 
-  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-	elab_equations(l) => l' &
-	list_append(eqs,l') => eqs'
-	------------------------------
-	elab_classdef(Absyn.PARTS(Absyn.EQUATIONS(l)::ps))
-	  => PARTS(els,eqs',als)
-
-  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-	let als' = ALGORITHM(l)::als
-	----------------------------
-	elab_classdef(Absyn.PARTS(Absyn.ALGORITHMS(l)::ps))
-	  => PARTS(els,eqs,als')
-
-  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-  	elab_eitemlist(es,false) => es' &
-	list_append(els,es') => els'
-	------------------------------
-	elab_classdef(Absyn.PARTS(Absyn.PUBLIC(es)::ps))
-	  => PARTS(els',eqs,als)
-
-  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-  	elab_eitemlist(es,true) => es' &
-	list_append(els,es') => els'
-	------------------------------
-	elab_classdef(Absyn.PARTS(Absyn.PROTECTED(es)::ps))
-	  => PARTS(els',eqs,als)
-
-  rule	Print.print_buf "#-- elab_classdef failed\n"
-	----------------------------------
-	elab_classdef _ => fail
-
-end	
-**)
-
-
-
 
 (** relation: elab_eitemlist
  **
@@ -411,7 +388,7 @@ relation elab_element : (Absyn.Element, bool) => Element list =
 
   rule	elab_elementspec(f,prot,s) => es
 	--------------------------------
-	elab_element(Absyn.ELEMENT(f,_,_,s), prot) => es
+	elab_element(Absyn.ELEMENT(f,_,_,_,s,_), prot) => es
 
 end
 
@@ -427,7 +404,7 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
   rule	elab_classdef(de) => de' &
 	elab_restriction(cl,re) => re'
 	-----------------------
-	elab_elementspec(final,prot,Absyn.CLASSDEF(rp,cl as Absyn.CLASS(n,pa,e,re,de)))
+	elab_elementspec(final,prot,Absyn.CLASSDEF(rp,cl as Absyn.CLASS(n,pa,fi,e,re,de)))
 	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re',de'))]
 
   rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
@@ -449,7 +426,7 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_)::xs))
 	  => COMPONENT(n,final,prot,ATTR(tot_dim,fl,RW,pa,di),t,mod)::xs'
 
-  axiom	elab_elementspec(final,prot,Absyn.IMPORT(imp)) => [IMPORT(imp)]
+  axiom	elab_elementspec(final,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
 end
 
 (** relation: elab_equations
@@ -466,7 +443,11 @@ relation elab_equations : Absyn.EquationItem list => Equation list =
   rule	elab_equation e => e' &
 	elab_equations es => es'
 	------------------------
-	elab_equations Absyn.EQUATIONITEM(e,ann)::es => e'::es'
+	elab_equations Absyn.EQUATIONITEM(e,_)::es => e'::es'
+
+  rule	elab_equations es => es'
+	------------------------
+	elab_equations Absyn.EQUATIONITEMANN(_)::es => es'
 
 end
 
@@ -534,14 +515,14 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
 	build_mod(SOME(mod),final) => mod' &
 	build_sub(cref,mod') => sub
 	----------------------
-	build_args((Absyn.MODIFICATION(final,cref,mod)::xs)) => (sub::subs)
+	build_args((Absyn.MODIFICATION(final,cref,mod,cmt)::xs)) => (sub::subs)
 
   rule	build_args xs => subs &
 	Absyn.element_spec_name spec => n &
 	(** LS:: don't know what to use for "protected", so using false **)
 	elab_elementspec(final,false,spec) => elist
 	---------------------------
-	build_args((Absyn.REDECLARATION(final,spec)::xs))
+	build_args((Absyn.REDECLARATION(final,spec,constropt)::xs))
 	  => (NAMEMOD(n,REDECL(final,elist))::subs)
 
 end

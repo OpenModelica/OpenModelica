@@ -101,7 +101,7 @@ relation print_class: Absyn.Class => Node =
 	print_parts parts => nl
 	(* & print "> End of rule print_class\n" *)
 	-----------------------
-	print_class(Absyn.CLASS(n,p,e,r,Absyn.PARTS(parts))) => Graphviz.NODE(rs,[],nl)
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_))) => Graphviz.NODE(rs,[],nl)
 
 end
 
@@ -201,7 +201,7 @@ relation print_element: Absyn.Element => Node =
 	print_elementspec spec => elsp
 	(* & print "> End of rule print_element\n" *)
 	------------------
-	print_element (Absyn.ELEMENT(final,_,_,spec)) => Graphviz.NODE("ELEMENT",[fa],[elsp])
+	print_element (Absyn.ELEMENT(final,_,_,_,spec,_)) => Graphviz.NODE("ELEMENT",[fa],[elsp])
 
 end
 
@@ -300,17 +300,25 @@ relation print_equation: Absyn.Equation => Node =
 end
 
 
-relation print_algorithms: Absyn.Algorithm list => Node list =
+relation print_algorithms: Absyn.AlgorithmItem list => Node list =
 
   axiom	print_algorithms [] => []
 
-  rule	print_algorithm e => node &
+  rule	print_algorithmitem e => node &
 	print_algorithms el => nl
 	--------------------------
 	print_algorithms e::el => node::nl
 	
 end
 
+relation print_algorithmitem: Absyn.AlgorithmItem => Node =
+	
+  rule	print_algorithm (alg) => node
+	---------------------------------
+	print_algorithmitem (Absyn.ALGORITHMITEM(alg,_)) => node
+
+  axiom	print_algorithmitem (_) => Graphviz.NODE("ALG_ERROR",[],[])
+end
 
 relation print_algorithm: Absyn.Algorithm => Node =
 
