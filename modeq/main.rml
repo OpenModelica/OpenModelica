@@ -15,7 +15,7 @@ with "inst.rml"
 
 relation main =
 
-  rule	print "\n = Parsing\n\n" &
+  rule	(* print "\n = Parsing\n\n" & *)
 	Parser.parse f => p &
 	Dump.dump p &
 	
