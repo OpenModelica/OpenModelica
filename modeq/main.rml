@@ -229,15 +229,20 @@ relation translate_file : string list => () =
 	& fix_modelica_output (d') => d
 (* & Debug.	print "\nJust instantiated" *)
 	& Debug.fprint ("info", "---dumping\n")
-	& Print.clear_buf() 
-	& DAE.dump_str d => s 
-	& print "f" & print s 
+	& Debug.fcallret ("flatmodelica", DAE.dump_str, d, "") => s
+	& Debug.fcall ("flatmodelica", Print.print_buf, "f")
+	& Debug.fcall ("flatmodelica", Print.print_buf, s)
+	& Debug.fcallret ("none", DAE.dump_str, d, "") => s
+	& Debug.fcall ("none", Print.print_buf, "f")
+	& Debug.fcall ("none", Print.print_buf, s)
 	& Debug.fcall ("daedump", DAE.dump, d)
 	& Debug.fcall ("daedump2", DAE.dump2, d)
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	& ModUtil.string_prefix_params d => d'
-	& Debug.fcall ("codegen", Codegen.generate_functions, d') 
+	& Debug.fcall ("codegen", Codegen.generate_functions, d')
+	& Print.get_string () => str
+	& print str
 	------------------------------
 	translate_file [f]
 
