@@ -371,6 +371,21 @@ end
 	 ------------------------
 	 print_exp2_str (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22)),pri1) => s'''
 
+  rule	
+ 	 Exp.binop_priority op => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e1,pri3) => s2 & 
+	 print_exp2_str (e2,pri2) => s3 &
+	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 string_append (s1, s2) => s &
+         string_append("pow(",s) => s' &
+         string_append(s',",") => s'' &
+         string_append(s'',s3) => s''' &
+         string_append(s''',")") => res &
+	     string_append (res, s4) => res'
+	 ------------------------
+	 print_exp2_str (Exp.BINARY(e1, (op as Exp.POW(_)), e2),pri1) => res'
+
   rule	Exp.binop_symbol(op) => sym &
  	 Exp.binop_priority op => pri2 &
 	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
@@ -561,10 +576,13 @@ end
  end
 
 relation cref_modelica_str : Exp.ComponentRef => string =
-  rule  Util.string_replace_char(s,#".",#"_") => res'
+
+  rule  Util.string_replace_char(s,#".",#"_") => res' &
+        Util.string_replace_char(res',#"[",#"_") => res'' &
+        Util.string_replace_char(res'',#"]",#"_") => res''' 
         (* & Util.string_append_list(["_",res,"_"]) => res'*)
         ------------------------------
-        cref_modelica_str(Exp.CREF_IDENT(s,_)) => res'
+        cref_modelica_str(Exp.CREF_IDENT(s,_)) => res'''
         
   rule	cref_modelica_str(n) => ns &
 (*  	string_append(s,"_") => s1 &  *)

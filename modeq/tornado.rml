@@ -2250,10 +2250,10 @@ relation generate_compute_initial2:(DAELow.Variables,
 	
   rule	generate_compute_initial2(vars,es) => str_lst &
 	DAELow.get_var(cr,vars) 
-	  => (DAELow.VAR(_,_,_,_,_,_,_,_,_,_,_),_) &
-	Exp.print_component_ref_str(cr) => crstr &
+	  => (DAELow.VAR(cr',_,_,_,_,_,_,_,_,_,_),_) &
+          SimCodegen.cref_modelica_str(cr') => crstr &
 	SimCodegen.print_exp_cpp_str(e2) => rhs_str &
-	Util.string_append_list([crstr, " = ",rhs_str, ";"]) => str 
+	Util.string_append_list(["  ",crstr, " = ",rhs_str, ";"]) => str 
 	------------------------------
 	generate_compute_initial2(vars,DAELow.EQUATION(Exp.CREF(cr,_),e2)::es) 
 	  => str::str_lst
