@@ -26,26 +26,7 @@
 
 module ClassInf :
 
-  (** - Restrictions *)
-  datatype Restriction = R_CLASS
-		       | R_MODEL
-		       | R_RECORD
-		       | R_BLOCK
-		       | R_CONNECTOR
-		       | R_TYPE
-		       | R_PACKAGE
-		       | R_FUNCTION
-		       | R_PREDEFINED_INT
-		       | R_PREDEFINED_REAL
-		       | R_PREDEFINED_STRING
-		       | R_PREDEFINED_BOOL
-  (** These constructors each correspond to a different kind of class *)
-  (** declaration in Modelica, except the last four, which are used *)
-  (** for the predefined types.  The parser assignes each class *)
-  (** declaration one of the restrictions, and the actual class *)
-  (** definition is checked for conformance during translation.  The *)
-  (** predefined types are created in the `Builtin' module and are *)
-  (** assigned special restrictions. *)
+  with "absyn.rml"
 
   (** - Machine states *)
   datatype State = UNKNOWN       of string
@@ -72,16 +53,15 @@ module ClassInf :
 
   (** - Exported relations *)
 
-  relation start : (Restriction, string) => State
+  (* relation start : (Restriction, string) => State *)
   relation trans : (State, Event) => State
 
-  relation valid : (State, Restriction) => ()
+  relation valid : (State, Absyn.Restriction) => ()
   (* `assert_valid' is identical to 'valid'.  The only difference is *)
   (* that it prints an error message when it fails. *)
-  relation assert_valid : (State, Restriction) => ()
+  relation assert_valid : (State, Absyn.Restriction) => ()
 
   (* Debug relation *)
-  relation print_restr : Restriction => ()
   relation print_state : State => ()
 
 end
@@ -90,60 +70,6 @@ end
 (**)
 (** Some relations for printing error and debug information about the *)
 (** state machine. *)
-
-(** relation: print_restr *)
-
-relation print_restr : Restriction => () =
-
-  rule	print "CLASS"
-	-------------
-	print_restr R_CLASS
-	
-  rule	print "MODEL"
-	-------------
-	print_restr R_MODEL
-	
-  rule	print "RECORD"
-	--------------
-	print_restr R_RECORD
-	
-  rule	print "BLOCK"
-	-------------
-	print_restr R_BLOCK
-	
-  rule	print "CONNECTOR"
-	-----------------
-	print_restr R_CONNECTOR
-	
-  rule	print "TYPE"
-	------------
-	print_restr R_TYPE
-	
-  rule	print "PACKAGE"
-	---------------
-	print_restr R_PACKAGE
-	
-  rule	print "FUNCTION"
-	----------------
-	print_restr R_FUNCTION
-
-  rule	print "PREDEFINED_INT"
-	----------------
-	print_restr R_PREDEFINED_INT
-
-  rule	print "PREDEFINED_REAL"
-	----------------
-	print_restr R_PREDEFINED_REAL
-
-  rule	print "PREDEFINED_STRING"
-	----------------
-	print_restr R_PREDEFINED_STRING
-
-  rule	print "PREDEFINED_BOOL"
-	----------------
-	print_restr R_PREDEFINED_BOOL
-
-end
 
 (** relation: print_state *)
 
@@ -226,8 +152,8 @@ end
 (** relation: start
  ** purpose:  State machine initialization
  **)
-
-relation start : (Restriction, string) => State =
+(*
+relation start : (Absyn.Restriction, string) => State =
 
   axiom	start (R_CLASS, s) 	       => UNKNOWN(s)
   axiom	start (R_MODEL, s) 	       => MODEL(s)
@@ -243,7 +169,7 @@ relation start : (Restriction, string) => State =
   axiom	start (R_PREDEFINED_BOOL, s)   => TYPE_BOOL(s)
 
 end
-
+*)
 (** relation: trans
  **)
 
@@ -303,51 +229,51 @@ end
 (** relation: valid
  **)
 
-relation valid : (State, Restriction) => () =
+relation valid : (State, Absyn.Restriction) => () =
 
   axiom	valid(UNKNOWN(s), _)
 
-  axiom	valid(IS_NEW(s),        R_CLASS)
-  axiom	valid(HAS_EQUATIONS(s), R_CLASS)
+  axiom	valid(IS_NEW(s),        Absyn.R_CLASS)
+  axiom	valid(HAS_EQUATIONS(s), Absyn.R_CLASS)
 
-  axiom	valid(MODEL(s),         R_MODEL)
-  axiom	valid(IS_NEW(s),        R_MODEL)
-  axiom	valid(HAS_EQUATIONS(s), R_MODEL)
+  axiom	valid(MODEL(s),         Absyn.R_MODEL)
+  axiom	valid(IS_NEW(s),        Absyn.R_MODEL)
+  axiom	valid(HAS_EQUATIONS(s), Absyn.R_MODEL)
 
-  axiom	valid(RECORD(s),        R_RECORD)
-  axiom	valid(IS_NEW(s),        R_RECORD)
+  axiom	valid(RECORD(s),        Absyn.R_RECORD)
+  axiom	valid(IS_NEW(s),        Absyn.R_RECORD)
 
-  axiom	valid(BLOCK(s),         R_BLOCK)
-  axiom	valid(HAS_EQUATIONS(s), R_BLOCK)
+  axiom	valid(BLOCK(s),         Absyn.R_BLOCK)
+  axiom	valid(HAS_EQUATIONS(s), Absyn.R_BLOCK)
 
-  axiom	valid(CONNECTOR(s),     R_CONNECTOR)
-  axiom	valid(IS_NEW(s),        R_CONNECTOR)
+  axiom	valid(CONNECTOR(s),     Absyn.R_CONNECTOR)
+  axiom	valid(IS_NEW(s),        Absyn.R_CONNECTOR)
 
-  axiom	valid(TYPE(s),          R_TYPE)
-  axiom	valid(TYPE_INTEGER(s),  R_TYPE)
-  axiom	valid(TYPE_REAL(s),     R_TYPE)
-  axiom	valid(TYPE_STRING(s),   R_TYPE)
-  axiom	valid(TYPE_BOOL(s),     R_TYPE)
+  axiom	valid(TYPE(s),          Absyn.R_TYPE)
+  axiom	valid(TYPE_INTEGER(s),  Absyn.R_TYPE)
+  axiom	valid(TYPE_REAL(s),     Absyn.R_TYPE)
+  axiom	valid(TYPE_STRING(s),   Absyn.R_TYPE)
+  axiom	valid(TYPE_BOOL(s),     Absyn.R_TYPE)
 
-  axiom	valid(IS_NEW(s),        R_PACKAGE)
-  axiom	valid(PACKAGE(s),       R_PACKAGE)
+  axiom	valid(IS_NEW(s),        Absyn.R_PACKAGE)
+  axiom	valid(PACKAGE(s),       Absyn.R_PACKAGE)
 
-  axiom	valid(IS_NEW(s),        R_FUNCTION)
-  axiom	valid(FUNCTION(s),      R_FUNCTION)
+  axiom	valid(IS_NEW(s),        Absyn.R_FUNCTION)
+  axiom	valid(FUNCTION(s),      Absyn.R_FUNCTION)
 
 end
 
 (** relation: assert_valid
  **)
 
-relation assert_valid : (State, Restriction) => () =
+relation assert_valid : (State, Absyn.Restriction) => () =
 
   rule	valid(st,re)
 	------------
 	assert_valid(st,re)
 
   rule	print "# Restriction violation: " & print_state st &
-	print " is not a " & print_restr re & print "\n" 
+	print " is not a " & Absyn.print_restr re & print "\n" 
 	-------------------------------------------
 	assert_valid(st,re) => fail
 

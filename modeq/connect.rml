@@ -19,7 +19,7 @@ module Connect :
   relation add_flow : (Sets,
 		       Exp.ComponentRef, Face,
 		       Exp.ComponentRef, Face) => Sets
-  relation dump_sets : Sets => ()
+  relation print_sets : Sets => ()
   relation equations : Sets => DAE.DAEcomp list
 
 end
@@ -35,7 +35,7 @@ relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 	find_equ_set(ss,r2) => s2 &
 	(* print "   add_equ: found, merging\n" & *)
 	merge(ss,s1,s2) => ss' (* &
-	dump_sets ss' *)
+	print_sets ss' *)
 	----------------------
 	add_equ(ss,r1,r2) => ss'
 	
@@ -49,7 +49,7 @@ relation add_flow : (Sets, Exp.ComponentRef, Face, Exp.ComponentRef, Face)
 	find_flow_set(ss,r2,d2) => s2 &
 	(* print "   add_flow: found, merging\n" & *)
 	merge(ss,s1,s2) => ss' (* &
-	dump_sets ss' *)
+	print_sets ss' *)
 	----------------------
 	add_flow(ss,r1,d1,r2,d2) => ss'
 	
@@ -61,44 +61,44 @@ end
 
 with "dump.rml"
 
-relation dump_sets : Sets => () =
+relation print_sets : Sets => () =
 
-  axiom	dump_sets []
+  axiom	print_sets []
 
-  rule	dump_set x &
-	dump_sets xs
+  rule	print_set x &
+	print_sets xs
 	------------
-	dump_sets x::xs
+	print_sets x::xs
 
 end
 (**)
-relation dump_set : Set => () =
+relation print_set : Set => () =
 
   rule	print " non-flow set: { " &
-	Dump.dump_list(cs, Dump.dump_component_ref, ", ") &
+	Exp.print_list(cs, Exp.print_component_ref, ", ") &
 	print " }\n"
 	----------------------------------------------------
-	dump_set EQU(cs)
+	print_set EQU(cs)
 
   rule	print " flow set: { " &
-	Dump.dump_list(cs, dump_flow_ref, ", ") &
+	Exp.print_list(cs, print_flow_ref, ", ") &
 	print " }\n"
 	----------------------------------------------------
-	dump_set FLOW(cs)
+	print_set FLOW(cs)
 
 end
 (**)
-relation dump_flow_ref : (Exp.ComponentRef * Face) => () =
+relation print_flow_ref : (Exp.ComponentRef * Face) => () =
 
-  rule	Dump.dump_component_ref c &
+  rule	Exp.print_component_ref c &
 	print " INNER"
 	-----------
-	dump_flow_ref((c,INNER))
+	print_flow_ref((c,INNER))
 
-  rule	Dump.dump_component_ref c &
+  rule	Exp.print_component_ref c &
 	print " OUTER"
 	-----------
-	dump_flow_ref((c,OUTER))
+	print_flow_ref((c,OUTER))
 
 end
 
@@ -130,10 +130,11 @@ relation equ_equations : Exp.ComponentRef list => DAE.DAEcomp list =
 
   axiom	equ_equations [_] => []
 
-  rule	equ_equations y::cs => eq
+  rule	(* FIXME: check types. Must be real. *)
+	equ_equations y::cs => eq
 	------------------------
 	equ_equations x::y::cs => DAE.EQUATION(Exp.RELATION(Exp.CREF(x),
-							    Exp.EQUAL,
+							    Exp.REAL_EQUAL,
 							    Exp.CREF(y)))::eq
 end
 (**)
@@ -142,8 +143,8 @@ relation flow_equations : (Exp.ComponentRef * Face) list => DAE.DAEcomp list =
   rule	flow_sum cs => sum
 	------------------
 	flow_equations cs => [DAE.EQUATION(Exp.RELATION(sum,
-							Exp.EQUAL,
-							Exp.REAL(0.0)))]
+							Exp.REAL_EQUAL,
+							Exp.RCONST(0.0)))]
 
 end
 (**)
@@ -156,7 +157,7 @@ relation flow_sum : (Exp.ComponentRef * Face) list => Exp.Exp =
   rule	sign_flow(c,f) => exp1 &
 	flow_sum cs => exp2
 	------------------
-	flow_sum ((c,f)::cs) => Exp.BINARY(exp1, Exp.ADD, exp2)
+	flow_sum ((c,f)::cs) => Exp.BINARY(exp1, Exp.REAL_ADD, exp2)
 
 end
 (**)

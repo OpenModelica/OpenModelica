@@ -11,14 +11,14 @@ module Builtin:
   with "explode.rml"
   with "env.rml"
 
+  val rl_type   : SCode.Class
+  val int_type  : SCode.Class
+  val str_type  : SCode.Class
+  val bool_type : SCode.Class
+
+  val real_type : SCode.Class
+
   relation initial_env : () => Env.Env
-
-  val rl_type   : Explode.Class
-  val int_type  : Explode.Class
-  val str_type  : Explode.Class
-  val bool_type : Explode.Class
-
-  val real_type : Explode.Class
 
 end
 
@@ -26,127 +26,94 @@ end
 
 with "exp.rml"
 with "types.rml"
-with "mod.rml"
 with "classinf.rml"
 
 (** - The primitive types *)
 
-val rl_type = Explode.CLASS("RealType",false,ClassInf.R_PREDEFINED_REAL,
-			    Explode.PARTS([],[],[]))
-val int_type = Explode.CLASS("IntegerType",false,ClassInf.R_PREDEFINED_INT,
-			     Explode.PARTS([],[],[]))
-val str_type = Explode.CLASS("StringType",false,ClassInf.R_PREDEFINED_STRING,
-			     Explode.PARTS([],[],[]))
-val bool_type = Explode.CLASS("BooleanType",false,ClassInf.R_PREDEFINED_BOOL,
-			      Explode.PARTS([],[],[]))
+val rl_type = SCode.CLASS("RealType",false,Absyn.R_PREDEFINED_REAL,
+			  SCode.PARTS([],[],[]))
+val int_type = SCode.CLASS("IntegerType",false,Absyn.R_PREDEFINED_INT,
+			   SCode.PARTS([],[],[]))
+val str_type = SCode.CLASS("StringType",false,Absyn.R_PREDEFINED_STRING,
+			   SCode.PARTS([],[],[]))
+val bool_type = SCode.CLASS("BooleanType",false,Absyn.R_PREDEFINED_BOOL,
+			    SCode.PARTS([],[],[]))
 
 (** - The `Real' type *)
 
 val real_type =
-Explode.CLASS("Real",false,ClassInf.R_PREDEFINED_REAL,
-	      Explode.PARTS
-	      ([Explode.ELEMENT(true,
-				false,
-				"value",
-			      	Explode.COMPONENT("value",
-						  Types.ATTR(Types.NODIM,
-							     false,
-							     Types.VAR,
-							     Types.BIDIR),
-						  Exp.IDENT("RealType"),
-						  Mod.NOMOD)),
-	      	(* quantity *)
-	      	Explode.ELEMENT(true,false,"unit",
-			      	Explode.COMPONENT("unit",
-						  Types.ATTR(Types.NODIM,
-							     false,
-							     Types.VAR,
-							     Types.BIDIR),
-						  Exp.IDENT("StringType"),
-						  Mod.NOMOD))],
-	       (* displayUnit *)
-	       [],
-	       []))
+SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
+	    SCode.PARTS
+	    ([(* quantity *)
+	      SCode.COMPONENT("unit",true,false,
+			      Absyn.ATTR(Absyn.NODIM,
+					 false,
+					 Absyn.VAR,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("StringType"),
+			      SCode.NOMOD)],
+	     (* displayUnit *)
+	     [],
+	     []))
 
 (** - The `Integer' type *)
 
 val integer_type =
-Explode.CLASS("Integer",false,ClassInf.R_PREDEFINED_INT,
-	      Explode.PARTS
-	      ([Explode.ELEMENT(true,
-				false,
-				"value",
-			      	Explode.COMPONENT("value",
-						  Types.ATTR(Types.NODIM,
-							     false,
-							     Types.VAR,
-							     Types.BIDIR),
-						  Exp.IDENT("IntegerType"),
-						  Mod.NOMOD)),
-	      	(* quantity *)
-	      	Explode.ELEMENT(true,false,"unit",
-			      	Explode.COMPONENT("unit",
-						  Types.ATTR(Types.NODIM,
-							     false,
-							     Types.VAR,
-							     Types.BIDIR),
-						  Exp.IDENT("StringType"),
-						  Mod.NOMOD))],
-	       (* displayUnit *)
-	       [],
-	       []))
+SCode.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,
+	    SCode.PARTS
+	    ([(* quantity *)
+	      SCode.COMPONENT("unit",true,false,
+			      Absyn.ATTR(Absyn.NODIM,
+					 false,
+					 Absyn.VAR,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("StringType"),
+			      SCode.NOMOD)],
+	     (* displayUnit *)
+	     [],
+	     []))
 
 (** - The `String' type *)
 
 val string_type =
-Explode.CLASS("String",false,ClassInf.R_PREDEFINED_STRING,
-	      Explode.PARTS
-	      ([Explode.ELEMENT(true,
-				false,
-				"value",
-			      	Explode.COMPONENT("value",
-						  Types.ATTR(Types.NODIM,
-							     false,
-							     Types.VAR,
-							     Types.BIDIR),
-						  Exp.IDENT("StringType"),
-						  Mod.NOMOD))],
-	       [],
-	       []))
+SCode.CLASS("String",false,Absyn.R_PREDEFINED_STRING,
+	    SCode.PARTS
+	    ([],
+	     [],
+	     []))
 
 (** - The `Boolean' type *)
 
 val boolean_type =
-Explode.CLASS("Boolean",false,ClassInf.R_PREDEFINED_BOOL,
-	      Explode.PARTS
-	      ([Explode.ELEMENT(true,
-				false,
-				"value",
-			      	Explode.COMPONENT("value",
-						  Types.ATTR(Types.NODIM,
-							     false,
-							     Types.VAR,
-							     Types.BIDIR),
-						  Exp.IDENT("BooleanType"),
-						  Mod.NOMOD))],
-	       [],
-	       []))
+SCode.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,
+	    SCode.PARTS
+	    ([],
+	     [],
+	     []))
 
+(** - The `time' variable *)
+
+(* FIXME: Shuold contain components (attributes) from the real Real type *)
+val time_var =
+Env.FRAMEVAR("time", Absyn.ATTR(Absyn.NODIM, false, Absyn.VAR, Absyn.BIDIR),
+	     Types.TYPE(ClassInf.TYPE_REAL("time"), []), Env.UNBOUND)
 
 (** - Initial environment *)
 
 relation initial_env =
 
-  rule	Env.open_scope(Env.empty_env) => env &
-	Env.extend_frame_c(env, rl_type, Mod.NOMOD) => env' &
-	Env.extend_frame_c(env', int_type, Mod.NOMOD) => env'' &
-	Env.extend_frame_c(env'', str_type, Mod.NOMOD) => env''' &
-	Env.extend_frame_c(env''', bool_type, Mod.NOMOD) => env'''' &
-	Env.extend_frame_c(env'''', real_type, Mod.NOMOD) => env''''' &
-	Env.extend_frame_c(env''''', integer_type, Mod.NOMOD) => env'''''' &
-	Env.extend_frame_c(env'''''', string_type, Mod.NOMOD) => env''''''' &
-	Env.extend_frame_c(env''''''', boolean_type, Mod.NOMOD) => env''''''''
+  rule	Env.open_scope(Env.empty_env) => env1 &
+	Env.extend_frame_c(env1, rl_type, SCode.NOMOD) => env2 &
+	Env.extend_frame_c(env2, int_type, SCode.NOMOD) => env3 &
+	Env.extend_frame_c(env3, str_type, SCode.NOMOD) => env4 &
+	Env.extend_frame_c(env4, bool_type, SCode.NOMOD) => env5 &
+	Env.extend_frame_c(env5, real_type, SCode.NOMOD) => env6 &
+	Env.extend_frame_c(env6, integer_type, SCode.NOMOD) => env7 &
+	Env.extend_frame_c(env7, string_type, SCode.NOMOD) => env8 &
+	Env.extend_frame_c(env8, boolean_type, SCode.NOMOD) => env9 &
+	Env.extend_frame_c(env9, boolean_type, SCode.NOMOD) => env10 &
+	Env.extend_frame_v(env10, time_var) => env11
 	----------------------------------------------
-	initial_env () => env''''''''
+	initial_env () => env11
 
 end

@@ -8,13 +8,12 @@
 module DAE:
   
   with "exp.rml"
-  with "dump.rml"
 
-  type Ident = Exp.Ident
+  type Ident = string
 
   datatype VarKind = LOCAL | PARAM | CONST
 
-  datatype DAEcomp = VAR of Ident * VarKind
+  datatype DAEcomp = VAR of Exp.ComponentRef * VarKind
 		   | VARVAL of Ident * VarKind * Exp.Exp
 		   | EQUATION of Exp.Exp
 		   | COMP of Ident * DAEform
@@ -44,16 +43,16 @@ end
 
 relation dump_comp: DAEcomp => () =
 	
-  rule	dump_kind kind & print id & print "\n"
+  rule	dump_kind kind & Exp.print_component_ref id & print "\n"
 	--------------------------------------
 	dump_comp(VAR(id, kind))
 	
   rule	dump_kind kind & print id &
-	print "=" & Dump.dump_exp ex & print "\n"
+	print "=" & Exp.print_exp ex & print "\n"
 	--------------------------------------
 	dump_comp(VARVAL(id, kind, ex))
 	
-  rule	print "  " & Dump.dump_exp eq & print "\n"
+  rule	print "  " & Exp.print_exp eq & print "\n"
 	--------------------------------------
 	dump_comp(EQUATION(eq))
 	

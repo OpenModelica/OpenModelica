@@ -1,6 +1,7 @@
 \documentclass[a4paper]{report}
 \usepackage[english]{babel}
 \usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{verbatim}
 %\usepackage{boxedminipage}
@@ -9,6 +10,7 @@
 \title{Blahonga Blahonga}
 
 \newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\codebox}[1]{\fbox{\code{#1}}}
 \newcommand{\filename}[1]{\texttt{#1}}
 \newcommand{\firstref}[1]{\textit{#1}}
 \newcommand{\note}[1]{[\textsc{#1}]}
@@ -123,6 +125,84 @@ provided in appendix\note{ref}.
 \label{cha:system}
 
 
+\section{Lexical analysis and parsing}
+\label{sec:laxparse}
+
+The lexical analyzer and parser are not really part of the semantic
+specification, and this report will not go into detail about the
+parsing of Moedlica.
+
+The Modelica source file being translated is first passed to the
+lexical analyzer that scans the source for tokens, which it then
+passes on to the parser.  The parser uses its grammar to build the
+abstract syntax tree (AST).  The abstract syntax tree is an RML data
+structure described in the module \code{Absyn} (see section
+\ref{src:absyn}).
+
+\section{Preparing the AST}
+\label{sec:asttoscode}
+
+The AST closely corresponds to the parse tree and keeps the structure
+of the source file.  This has several disadvantages when it comes to
+translating the program, and especially if the translation rules
+should be easy to read for a human.  For this reason a preparatory
+translation pass is introduced which translates the AST into an
+intermediate form, called SCode.  Besides some minor simplifications
+the SCode structure differs from the AST in the following respects:
+\note{Move this to design chapter}
+
+\begin{description}
+\item[All components are described separately]
+  In the source and in
+  the AST several components in a class definition can be declared at
+  once, as in \codebox{Real x, y[17];}.  In the SCode this is
+  represented as two unrelated declarations, as if it had been written
+  \codebox{Real x; Real y[17];}.
+
+\item[Class declaration sections]
+  In a Modelica class declaration the \code{public}, \code{protected},
+  \code{equation} and \code{algorithm} sections may be included in any
+  number and in any order, with an implicit \code{public} section
+  first.  In the SCode these sections are collected so that all
+  \code{public} and \code{protected} sections are combined into one
+  section, while keeping the order of the elements.  The information
+  about which elements were in a \code{protected} section is stored
+  with the element itself.
+
+\item[Modifications]
+  Modifications are stored using the datatypes in the \code{Mod}
+  module.
+\end{description}
+
+One might have thought that more work could be done at this stage,
+like analyzing expression types and resolving names.  But due to the
+nature of the Modelica language, the only way to know anything about
+how the names will be resolved during instantiation is to do a more or
+less full instantiation.  It is possible to analyze a class
+declaration and find out what the parts of the declaration would mean
+if the class was to be instantiated as-is, but since it is possible to
+modify much of the class while instantiating it that analysis would
+not be of much use.
+
+\section{Instantiation}
+\label{sec:instantiation}
+
+The major part of the translation procedure, as described by the RML
+specification is the translation from SCode to hybrid
+differential-algebraic equations (hybrid DAEs).  As a Modelica source
+files simply contain declarations of models and other kinds of
+classes, there is a convention that the last class, which should be a
+model, is instantiated as the top-level model.
+
+\section{Output of equations}
+\label{sec:output}
+
+As the last stage of the translation the internal representation of
+the hybrid DAEs are written out in the format described in chapter
+\ref{cha:target}.
+
+
+\note{Parameters}
 
 \chapter{Informal semantics}
 \label{cha:semantics}
@@ -516,22 +596,22 @@ clearer.
   \end{center}
 \end{table}
 
+\input{main.tex}
+\input{absyn.tex}
 \input{exp.tex}
 \input{classinf.tex}
+\input{types.tex}
+\input{explode.tex}
+\input{inst.tex}
+\input{prefix.tex}
+\input{mod.tex}
+\input{env.tex}
+\input{lookup.tex}
+\input{builtin.tex}
+\input{connect.tex}
+\input{staticexp.tex}
 \input{dae.tex}
-%\input{types.tex}
-%\input{absyn.tex}
-%\input{explode.tex}
 %\input{dump.tex}
-%\input{prefix.tex}
-%\input{mod.tex}
-%\input{env.tex}
-%\input{lookup.tex}
-%\input{builtin.tex}
-%\input{connect.tex}
-%\input{staticexp.tex}
-%\input{inst.tex}
-%\input{main.tex}
 
 
 \chapter{rmldoc \note{appendix}}

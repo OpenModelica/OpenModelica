@@ -1,201 +1,296 @@
 (** file: explode.rml
  **)
 
-module Explode :
+module SCode :
 
-  with "exp.rml"
-  with "types.rml"
+  (* with "exp.rml" *)
+  (* with "types.rml" *)
   with "absyn.rml"
-  with "mod.rml"
 
   type Ident = Absyn.Ident
   type Path = Absyn.Path
   type Subscript = Absyn.Subscript
-  type ComponentRef = Exp.ComponentRef
-  type ClassRestriction = Absyn.ClassRestriction
+  type Restriction = Absyn.Restriction
   type Equation = Absyn.Equation
   type Algorithm = Absyn.Algorithm
 
-  type Mod = Mod.Mod
-
-  datatype ElementSpec = CLASSDEF of bool		(* replaceable *)
-				   * Class
-		       | EXTENDS of Path * Mod
-		       | COMPONENT of Ident	(* component name *)
-				    * Types.VarAttr
-				    * Path	(* type name *)
-				    * Mod
-
-  and	   Element = ELEMENT of bool		(* final *)
-			      * bool            (* protected *)
-			      * Ident
-			      * ElementSpec
-
-  and	   Class = CLASS of Ident		(* Name *)
-			  * bool		(* Partial *)
-			  * ClassRestriction	(* Restricion *)
-			  * ClassDef		(* Parts *)
-
-  and	   ClassDef = PARTS of Element list
-			     * Equation list
-			     * Algorithm list
-		    | DERIVED of Path
-			       * Types.ArrayDim option
-			       * Mod
+  datatype SubMod = SUBMOD of Ident * Mod
+  and Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
+  	  | REDECL of bool * Absyn.ElementSpec
+	  | NOMOD
 
   type Program = Class list
 
-  relation explode : Absyn.Program => Program
-  relation element_spec_name : ElementSpec => Ident
+  (** - Classes *)
+  datatype Class = CLASS of Ident		(* Name *)
+			  * bool		(* Partial *)
+			  * Restriction	        (* Restricion *)
+			  * ClassDef		(* Parts *)
+  (* FIXME: should the name really be part of the class type? *)
 
+  datatype ClassDef = PARTS of Element list
+			     * Equation list
+			     * Algorithm list
+		    | DERIVED of Path
+			       * Absyn.ArrayDim option
+			       * Mod
+
+  (** - Elements *)
+  datatype Element = EXTENDS of Path * Mod
+		   | CLASSDEF of Ident		(* name *)
+			       * bool		(* final *)
+			       * bool		(* replaceable *)
+			       * Class
+		   | COMPONENT of Ident		(* component name *)
+				* bool		(* final *)
+				* bool		(* protected *)
+				* Absyn.VarAttr
+				* Path		(* type name *)
+				* Mod
+  (** There are three types of elements in a declaration, represented *)
+  (** by the constructors `EXTENDS' (for `extends' clauses), *)
+  (** `CLASSDEF' (for local class definitions) and `COMPONENT' (for *)
+  (** local variables). *)
+
+  relation elaborate : Absyn.Program => Program
+
+  (* Modification handling *)
+  relation build_mod : (Absyn.Modification option, bool) => Mod
+  relation print_mod : Mod => ()
+	  
 end
 
-(** relation: explode
+with "dump.rml"
+
+(** relation: elaborate
  **)
 
-relation explode: Absyn.Program => Program =
+relation elaborate: Absyn.Program => Program =
 
-  axiom	explode([]) => []
+  axiom	elaborate([]) => []
 
-  rule	exp_class(c) => c' &
-	explode(cs) => cs'
+  rule	elab_class(c) => c' &
+	elaborate(cs) => cs'
 	-----------------------------
-	explode(c::cs) => (c'::cs')
+	elaborate(c::cs) => (c'::cs')
 
 end
 
-(** relation: exp_class
+(** relation: elab_class
  **)
 
-relation exp_class: Absyn.Class => Class =
+relation elab_class: Absyn.Class => Class =
 
-  rule	exp_classdef d => d'
+  rule	elab_classdef d => d'
 	--------------------------------------------
-	exp_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
+	elab_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
 
 end
 
-(** relation: exp_classdef
+(** relation: elab_classdef
  **)
 
-relation exp_classdef: Absyn.ClassDef => ClassDef =
+relation elab_classdef: Absyn.ClassDef => ClassDef =
 
-  rule	Mod.build(SOME(Absyn.CLASSMOD(a, NONE)), false) => mod
+  rule	build_mod(SOME(Absyn.CLASSMOD(a, NONE)), false) => mod
 	------------------------------------------------
-	exp_classdef(Absyn.DERIVED(p,d,a)) => DERIVED(p,d,mod)
+	elab_classdef(Absyn.DERIVED(p,d,a)) => DERIVED(p,d,mod)
 
-  axiom	exp_classdef(Absyn.PARTS([])) => PARTS([],[],[])
+  axiom	elab_classdef(Absyn.PARTS([])) => PARTS([],[],[])
 
 	(* Lots of unnecessary consing ahead... *)
-  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
 	list_append(eqs,l) => eqs'
 	------------------------------
-	exp_classdef(Absyn.PARTS(Absyn.EQUATIONS(l)::ps))
+	elab_classdef(Absyn.PARTS(Absyn.EQUATIONS(l)::ps))
 	  => PARTS(els,eqs',als)
 
-  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
 	list_append(als,l) => als'
 	------------------------------
-	exp_classdef(Absyn.PARTS(Absyn.ALGORITHMS(l)::ps))
+	elab_classdef(Absyn.PARTS(Absyn.ALGORITHMS(l)::ps))
 	  => PARTS(els,eqs,als')
 
-  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-  	exp_elist(es,false) => es' &
+  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+  	elab_elist(es,false) => es' &
 	list_append(els,es') => els'
 	------------------------------
-	exp_classdef(Absyn.PARTS(Absyn.PUBLIC(es)::ps))
+	elab_classdef(Absyn.PARTS(Absyn.PUBLIC(es)::ps))
 	  => PARTS(els',eqs,als)
 
-  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-  	exp_elist(es,true) => es' &
+  rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+  	elab_elist(es,true) => es' &
 	list_append(els,es') => els'
 	------------------------------
-	exp_classdef(Absyn.PARTS(Absyn.PROTECTED(es)::ps))
+	elab_classdef(Absyn.PARTS(Absyn.PROTECTED(es)::ps))
 	  => PARTS(els',eqs,als)
 
 end
 
-(** relation: exp_elist
+(** relation: elab_elist
  **)
 
-relation exp_elist : (Absyn.Element list, bool) => Element list =
+relation elab_elist : (Absyn.Element list, bool) => Element list =
 
-  axiom	exp_elist([],_) => []
+  axiom	elab_elist([],_) => []
 
-  rule	exp_element(e, prot) => e' &
-	exp_elist(es, prot) => es' &
+  rule	elab_element(e, prot) => e' &
+	elab_elist(es, prot) => es' &
 	list_append(e',es') => l
 	---------------------
-	exp_elist(e::es, prot) => l
+	elab_elist(e::es, prot) => l
 
 end
 
-(** relation: exp_element
+(** relation: elab_element
  **)
 
-relation exp_element : (Absyn.Element, bool) => Element list =
+relation elab_element : (Absyn.Element, bool) => Element list =
 
-  rule	exp_elementspec(s) => ss &
-        mk_elements(f,ss,prot) => es
-	-------------------------------
-	exp_element(Absyn.ELEMENT(f,_,s), prot) => es
+  rule	elab_elementspec(f,prot,s) => es
+	--------------------------------
+	elab_element(Absyn.ELEMENT(f,_,s), prot) => es
 
 end
 
-(** relation: mk_elements
+(** relation: elab_elementspec
  **)
 
-relation mk_elements: (bool,(Ident*ElementSpec) list, bool)
-	  => Element list =
+relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 
-  axiom	mk_elements(_,[],_) => []
-
-  rule	mk_elements(f,ss,prot) => ss'
-	------------------------
-	mk_elements(f,(n,s)::ss,prot) => ELEMENT(f,prot,n,s)::ss'
-
-end
-
-(** relation: exp_elementspec
- **)
-
-relation exp_elementspec: Absyn.ElementSpec => (Ident*ElementSpec) list =
-
-  rule	exp_classdef(de) => de'
+  rule	elab_classdef(de) => de'
 	-----------------------
-	exp_elementspec(Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,re,de)))
-	  => [(n,CLASSDEF(rp,CLASS(n,pa,re,de')))]
+	elab_elementspec(final,prot,Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,re,de)))
+	  => [CLASSDEF(n,final,rp,CLASS(n,pa,re,de'))]
 
-  rule	Mod.build(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
-
-	Exp.path_string(n) => ns &
-	print "extends " & print ns & Mod.dump mod & print "\n"
+  rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
+	Absyn.path_string(n) => ns &
+	print "extends " & print ns & print_mod mod & print "\n"
 	---------------------------------------------------
-	exp_elementspec(Absyn.EXTENDS(n,args)) => [("",EXTENDS(n,mod))]
+	elab_elementspec(final,prot,Absyn.EXTENDS(n,args))
+	  => [EXTENDS(n,mod)]
 
-  axiom	exp_elementspec(Absyn.COMPONENTS(_,_,[])) => []
+  axiom	elab_elementspec(_,_,Absyn.COMPONENTS(_,_,[])) => []
 
-  rule	exp_elementspec(Absyn.COMPONENTS(attr,t,xs)) => xs' &
-	Mod.build(m,false) => mod
+  rule	elab_elementspec(final,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
+	build_mod(m,false) => mod
 	--------------------------------------------------
-	exp_elementspec(Absyn.COMPONENTS(attr as Types.ATTR(Types.NODIM,
-							    fl,pa,di),t,
-					 (Absyn.COMPONENT(n,d,m))::xs))
-	  => ((n,COMPONENT(n,Types.ATTR(d,fl,pa,di),t,mod))::xs')
+	elab_elementspec(final,prot,
+			 Absyn.COMPONENTS(attr as Absyn.ATTR(Absyn.NODIM,
+							     fl,pa,di),t,
+					  (Absyn.COMPONENT(n,d,m))::xs))
+	  => COMPONENT(n,final,prot,Absyn.ATTR(d,fl,pa,di),t,mod)::xs'
 
 end
 
-(** relation: element_spec_name
- **)
+(** - Modification management *)
 
-relation element_spec_name : ElementSpec => Ident =
+relation build_mod : (Absyn.Modification option, bool) => Mod =
 
-  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_)) => n
+  axiom build_mod(NONE, _) => NOMOD
 
-  axiom element_spec_name COMPONENT(n,_,_,_) => n
+  axiom	build_mod(SOME(Absyn.CLASSMOD([], e as SOME(_))), final)
+	  => MOD(final,[],e)
 
-  rule  print "# element_spec_name EXTENDS\n"
-	-------------------------------------
-	element_spec_name EXTENDS(_,_) => fail
+  rule  build_args(l) => subs
+	---------------------
+	build_mod(SOME(Absyn.CLASSMOD(l,e)),final) => MOD(final,subs,e)
 
 end
+
+relation build_args : (Absyn.ElementArg list) => SubMod list =
+
+  axiom build_args [] => []
+
+  rule  build_args xs => subs &
+	build_mod(SOME(mod),final) => mod' &
+	build_sub(path,mod') => sub
+	----------------------
+	build_args((Absyn.MODIFICATION(final,path,mod)::xs)) => (sub::subs)
+
+  rule  build_args xs => subs &
+	Absyn.element_spec_name spec => n
+	---------------------------
+	build_args((Absyn.REDECLARATION(final,spec)::xs))
+	  => (SUBMOD(n,REDECL(final,spec))::subs)
+
+end
+
+relation build_sub : (Absyn.Path,Mod) => SubMod =
+
+  axiom build_sub(Absyn.IDENT(i),mod) => SUBMOD(i,mod)
+
+  rule  build_sub(path,mod) => sub
+	--------------------------
+	build_sub(Absyn.QUALIFIED(i,path),mod)
+	  => SUBMOD(i,MOD(false,[sub],NONE))
+
+end
+
+(** relation: print_mod *)
+
+relation print_mod : Mod => () =
+
+  axiom	print_mod(NOMOD)
+
+  rule  print "(redeclared)"
+	------------------------------
+	print_mod REDECL(_,_)
+	
+  rule	print_final final &
+	print_subs1 subs &
+	print_eqmod ass
+	------------
+	print_mod MOD(final, subs, ass)
+
+end
+
+(**)
+
+relation print_final : bool => () =
+
+  axiom print_final false
+
+  rule print " final "
+       --------------
+       print_final true
+
+end
+
+relation print_subs : SubMod list => () =
+
+  axiom print_subs []
+
+  rule  print n & print_mod mod
+	------------------
+	print_subs [SUBMOD(n,mod)]
+
+  rule  print n & print_mod mod & print ", " &
+	print_subs subs
+	--------------
+	print_subs SUBMOD(n,mod)::subs
+
+end
+
+relation print_subs1 : SubMod list => () =
+
+  axiom print_subs1 [] => ()
+
+  rule	print "(" &
+	print_subs l &
+	print ")"
+	-----------
+	print_subs1 l
+
+end
+
+relation print_eqmod : Absyn.Exp option => () =
+
+  axiom print_eqmod NONE
+
+  rule  print " = " & Dump.print_exp e
+	-----------------------------
+	print_eqmod SOME(e)
+
+end
+	

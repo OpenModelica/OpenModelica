@@ -3,10 +3,9 @@ module Main:
 	relation main: string list => ()
 end
 
-with "absyn.rml"
-with "explode.rml"
 with "parse.rml"
 with "dump.rml"
+with "explode.rml"
 with "dae.rml"
 with "inst.rml"
 
@@ -19,7 +18,7 @@ relation main =
 	Dump.dump p &
 	
 	print "\n = Exploding\n\n" &
-	Explode.explode(p) => p' &
+	SCode.elaborate(p) => p' &
 	(* Dump.dump p' & *)
 
 	print "\n = Instantiating\n\n" &

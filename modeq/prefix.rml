@@ -7,14 +7,14 @@
 
 module Prefix:
 
-  with "exp.rml"
+  with "absyn.rml"
   
-  type Prefix = (string * Exp.Subscript list) list
+  type Prefix = (string * Absyn.Subscript list) list
 
-  relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix
-  relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
-  relation prefix_exp  : (Exp.Exp,Prefix) => Exp.Exp
-  relation prefix_path : (Exp.Path,Prefix) => Exp.Path
+  relation prefix_add : (Absyn.Ident, Absyn.Subscript list, Prefix) => Prefix
+  relation prefix_cref : (Prefix, Absyn.ComponentRef) => Absyn.ComponentRef
+  relation prefix_exp  : (Absyn.Exp,Prefix) => Absyn.Exp
+  relation prefix_path : (Absyn.Path,Prefix) => Absyn.Path
 
 end
 
@@ -27,7 +27,7 @@ end
  ** normal order used when displaying them.
  **)
 
-relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix =
+relation prefix_add : (Absyn.Ident, Absyn.Subscript list, Prefix) => Prefix =
 
   axiom prefix_add(i,s,p) => (((i,s)::p))
 
@@ -39,11 +39,11 @@ end
  ** returning a new `Path'.
  **)
 
-relation prefix_path: (Exp.Path,Prefix) => Exp.Path =
+relation prefix_path: (Absyn.Path,Prefix) => Absyn.Path =
 
   axiom	prefix_path(p,[]) => p
   
-  rule	prefix_path(Exp.QUALIFIED(s,p),ss) => p'
+  rule	prefix_path(Absyn.QUALIFIED(s,p),ss) => p'
 	---------------------------
 	prefix_path(p,(s,_)::ss) => p'
 
@@ -55,11 +55,11 @@ end
  ** it and returning a new `ComponentRef'.
  **)
 
-relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
+relation prefix_cref : (Prefix, Absyn.ComponentRef) => Absyn.ComponentRef =
 
   axiom	prefix_cref([], cref) => cref
 
-  rule	prefix_cref(xs, Exp.CREF_QUAL(i,s,cref)) => cref'
+  rule	prefix_cref(xs, Absyn.CREF_QUAL(i,s,cref)) => cref'
 	---------------------------------
 	prefix_cref((i,s)::xs, cref) => cref'
 
@@ -71,7 +71,7 @@ end
  ** expression.
  **)
 
-relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
+relation prefix_exp: (Absyn.Exp,Prefix) => Absyn.Exp =
 
   rule	list_reverse(p) => p' &
 	prefix_exp2(e,p') => e'
@@ -86,60 +86,68 @@ end
 
 (**)
 
-relation prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
+relation prefix_exp2: (Absyn.Exp,Prefix) => Absyn.Exp =
 
-  axiom	prefix_exp2(e as Exp.INTEGER(_),_) => e
-  axiom	prefix_exp2(e as Exp.REAL(_),_) => e
-  axiom	prefix_exp2(e as Exp.STRING(_),_) => e
-  axiom	prefix_exp2(e as Exp.BOOL(_),_) => e
-  axiom	prefix_exp2(e as Exp.TIME,_) => e
+  axiom	prefix_exp2(e as Absyn.INTEGER(_),_) => e
+  axiom	prefix_exp2(e as Absyn.REAL(_),_) => e
+  axiom	prefix_exp2(e as Absyn.STRING(_),_) => e
+  axiom	prefix_exp2(e as Absyn.BOOL(_),_) => e
 
   rule	prefix_cref(pre,p) => p'
 	--------------------------
-	prefix_exp2(Exp.CREF(p),pre) => Exp.CREF(p')
+	prefix_exp2(Absyn.CREF(p),pre) => Absyn.CREF(p')
 
   rule	prefix_exp2(e1,p) => e1' &
 	prefix_exp2(e2,p) => e2'
 	-----------------------
-	prefix_exp2(Exp.BINARY(e1,o,e2),p) => Exp.BINARY(e1',o,e2')
+	prefix_exp2(Absyn.BINARY(e1,o,e2),p) => Absyn.BINARY(e1',o,e2')
 
   rule	prefix_exp2(e1,p) => e1'
 	-----------------------
-	prefix_exp2(Exp.UNARY(o,e1),p) => Exp.UNARY(o,e1')
+	prefix_exp2(Absyn.UNARY(o,e1),p) => Absyn.UNARY(o,e1')
 
   rule	prefix_exp2(e1,p) => e1' &
 	prefix_exp2(e2,p) => e2'
 	-----------------------
-	prefix_exp2(Exp.LBINARY(e1,o,e2),p) => Exp.LBINARY(e1',o,e2')
+	prefix_exp2(Absyn.LBINARY(e1,o,e2),p) => Absyn.LBINARY(e1',o,e2')
 
   rule	prefix_exp2(e1,p) => e1'
 	-----------------------
-	prefix_exp2(Exp.LUNARY(o,e1),p) => Exp.LUNARY(o,e1')
+	prefix_exp2(Absyn.LUNARY(o,e1),p) => Absyn.LUNARY(o,e1')
 
   rule	prefix_exp2(e1,p) => e1' &
 	prefix_exp2(e2,p) => e2'
 	-----------------------
-	prefix_exp2(Exp.RELATION(e1,o,e2),p) => Exp.RELATION(e1',o,e2')
+	prefix_exp2(Absyn.RELATION(e1,o,e2),p) => Absyn.RELATION(e1',o,e2')
 
   rule	prefix_exp2(e1,p) => e1' &
 	prefix_exp2(e2,p) => e2' &
 	prefix_exp2(e3,p) => e3'
 	-----------------------
-	prefix_exp2(Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
+	prefix_exp2(Absyn.IFEXP(e1,e2,e3),p) => Absyn.IFEXP(e1',e2',e3')
 
   rule	prefix_explist(es,p) => es'
 	-----------------------
-	prefix_exp2(Exp.CALL(f,es),p) => Exp.CALL(f,es')
+	prefix_exp2(Absyn.CALL(f,es),p) => Absyn.CALL(f,es')
 
-  rule	prefix_exp2 (e,p) => e'
-	------------------
-	prefix_exp2 (Exp.CAST_TO_REAL(e), p) => Exp.CAST_TO_REAL(e')
+  rule	prefix_exp2 (start, p) => start' &
+	prefix_exp2 (stop, p) => stop'
+	------------------------------
+	prefix_exp2 (Absyn.RANGE(start,NONE,stop), p)
+	  => Absyn.RANGE(start',NONE,stop')
+
+  rule	prefix_exp2 (start, p) => start' &
+	prefix_exp2 (step, p) => step' &
+	prefix_exp2 (stop, p) => stop'
+	------------------------------
+	prefix_exp2 (Absyn.RANGE(start,SOME(step),stop), p)
+	  => Absyn.RANGE(start',SOME(step'),stop')
 
 end
 
 (**)
 
-relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
+relation prefix_explist: (Absyn.Exp list,Prefix) => Absyn.Exp list =
 
   axiom	prefix_explist([],_) => []
 

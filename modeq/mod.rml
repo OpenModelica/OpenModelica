@@ -8,35 +8,32 @@
 
 module Mod:
 
-  with "exp.rml"
+  (* with "exp.rml" *)
   with "absyn.rml"
   (* with "env.rml" *)
   (* with "lform.rml" *)
   with "dae.rml"
   with "prefix.rml"
+  with "explode.rml"
 
-  datatype SubMod = SUBMOD of Exp.Ident * Mod
-  and Mod = MOD of bool * (SubMod list) * (Exp.Exp option)
-  	  | REDECL of bool * Absyn.ElementSpec
-	  | NOMOD
+  type Ident = string
 
-  val empty_mod : Mod
 
-  relation dump : Mod => ()
-  relation build : (Absyn.Modification option, bool) => Mod
-  relation lookup_modification: (Mod,Absyn.Ident) => Mod
-  relation merge : (Mod, Mod) => Mod
-  relation mod_equation : Mod => Exp.Exp option
+  val empty_mod : SCode.Mod
+
+  relation lookup_modification: (SCode.Mod,Absyn.Ident) => SCode.Mod
+  relation merge : (SCode.Mod, SCode.Mod) => SCode.Mod
+  relation mod_equation : SCode.Mod => Absyn.Exp option
 
 (*
-  relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
+  relation modify_class: (Env.Env, Absyn.Path, SCode.Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
+  relation simple_modify_class : (Env.Env, SCode.Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation maybe_modify_class: (Env.Env, Exp.Path, Mod,
+  relation maybe_modify_class: (Env.Env, Absyn.Path, SCode.Mod,
 				Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_maybe_modify_class : (Env.Env, Mod,
+  relation simple_maybe_modify_class : (Env.Env, SCode.Mod,
 				        Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
 *)
@@ -47,7 +44,7 @@ end
 
 with "dump.rml"
 
-val empty_mod = MOD(false,[],NONE)
+val empty_mod = SCode.MOD(false,[],NONE)
 
 (**)
 
@@ -61,22 +58,22 @@ relation dump_final : bool => () =
 
 end
 
-relation dump_subs : SubMod list => () =
+relation dump_subs : SCode.SubMod list => () =
 
   axiom dump_subs []
 
   rule  print n & dump mod
 	------------------
-	dump_subs [SUBMOD(n,mod)]
+	dump_subs [SCode.SUBMOD(n,mod)]
 
   rule  print n & dump mod & print ", " &
 	dump_subs subs
 	--------------
-	dump_subs SUBMOD(n,mod)::subs
+	dump_subs SCode.SUBMOD(n,mod)::subs
 
 end
 
-relation dump_subs1 : SubMod list => () =
+relation dump_subs1 : SCode.SubMod list => () =
 
   axiom dump_subs1 [] => ()
 
@@ -88,7 +85,7 @@ relation dump_subs1 : SubMod list => () =
 
 end
 
-relation dump_ass : Exp.Exp option => () =
+relation dump_ass : Absyn.Exp option => () =
 
   axiom dump_ass NONE
 
@@ -98,70 +95,13 @@ relation dump_ass : Exp.Exp option => () =
 
 end
 	
-relation dump : Mod => () =
-
-  axiom	dump(NOMOD)
-
-  rule  print "(redeclared)"
-	------------------------------
-	dump REDECL(_,_)
-	
-  rule	dump_final final &
-	dump_subs1 subs &
-	dump_ass ass
-	------------
-	dump MOD(final, subs, ass)
-
-end
-
 (**)
 
-relation expand_nomod : Mod => Mod =
+relation expand_nomod : SCode.Mod => SCode.Mod =
 
-  axiom expand_nomod(m as MOD(_,_,_)) => m
+  axiom expand_nomod(m as SCode.MOD(_,_,_)) => m
 
-  axiom expand_nomod NOMOD => empty_mod
-
-end
-
-relation build_sub : (Exp.Path,Mod) => SubMod =
-
-  axiom build_sub(Exp.IDENT(i),mod) => SUBMOD(i,mod)
-
-  rule  build_sub(path,mod) => sub
-	--------------------------
-	build_sub(Exp.QUALIFIED(i,path),mod)
-	  => SUBMOD(i,MOD(false,[sub],NONE))
-
-end
-
-relation build_args : (Absyn.ElementArg list) => SubMod list =
-
-  axiom build_args [] => []
-
-  rule  build_args xs => subs &
-	build(SOME(mod),final) => mod' &
-	build_sub(path,mod') => sub
-	----------------------
-	build_args((Absyn.MODIFICATION(final,path,mod)::xs)) => (sub::subs)
-
-  rule  build_args xs => subs &
-	Absyn.element_spec_name spec => n
-	---------------------------
-	build_args((Absyn.REDECLARATION(final,spec)::xs))
-	  => (SUBMOD(n,REDECL(final,spec))::subs)
-
-end
-
-and build : (Absyn.Modification option, bool) => Mod =
-
-  axiom build(NONE, _) => NOMOD
-
-  axiom	build(SOME(Absyn.CLASSMOD([], e as SOME(_))),final) => MOD(final,[],e)
-
-  rule  build_args(l) => subs
-	---------------------------
-	build(SOME(Absyn.CLASSMOD(l,e)),final) => MOD(final,subs,e)
+  axiom expand_nomod SCode.NOMOD => empty_mod
 
 end
 
@@ -171,16 +111,16 @@ end
 
 (** relation: lookup_modification *)
 
-relation lookup_modification: (Mod,Absyn.Ident) => Mod =
+relation lookup_modification: (SCode.Mod,Absyn.Ident) => SCode.Mod =
 
-  axiom lookup_modification(NOMOD,_) => NOMOD
+  axiom lookup_modification(SCode.NOMOD,_) => SCode.NOMOD
 
 	(* FIXME: Is this correct? *)
-  axiom	lookup_modification(REDECL(_,_),_) => NOMOD
+  axiom	lookup_modification(SCode.REDECL(_,_),_) => SCode.NOMOD
 
   rule  lookup_modification2(subs,n) => mod
 	---------------------------------
-	lookup_modification(MOD(_,subs,_),n) => mod
+	lookup_modification(SCode.MOD(_,subs,_),n) => mod
 
   rule	print "# Mod.lookup_modification(" &
 	dump mod & print "," & print i &
@@ -190,13 +130,13 @@ relation lookup_modification: (Mod,Absyn.Ident) => Mod =
 
 end	
 
-relation lookup_modification2 : (SubMod list,Absyn.Ident) => Mod =
+relation lookup_modification2 : (SCode.SubMod list,Absyn.Ident) => Mod =
 
-  axiom lookup_modification2([],_) => NOMOD
+  axiom lookup_modification2([],_) => SCode.NOMOD
 
   rule  n = m
 	-----
-	lookup_modification2(SUBMOD(n,mod)::_,m) => mod
+	lookup_modification2(SCode.SUBMOD(n,mod)::_,m) => mod
 	
 	(* FIXME: Redeclaration *)
 
@@ -218,31 +158,31 @@ end
 (** relation: merge
  **)
 
-relation merge : (Mod, Mod) => Mod =
+relation merge : (SCode.Mod, SCode.Mod) => SCode.Mod =
 
-  axiom merge(NOMOD,NOMOD) => NOMOD
+  axiom merge(SCode.NOMOD,SCode.NOMOD) => SCode.NOMOD
 
-  axiom merge(NOMOD,m) => m
+  axiom merge(SCode.NOMOD,m) => m
 
-  axiom merge(m,NOMOD) => m
+  axiom merge(m,SCode.NOMOD) => m
 
   rule  print " ignoring inner modification\n"
 	--------------------------------------
-	merge(m as REDECL(_,_),_) => m
+	merge(m as SCode.REDECL(_,_),_) => m
 
   rule  print "# can't merge modification with a redeclaration\n"
 	---------------------------------------------------------
-	merge(_,REDECL(_,_)) => fail
+	merge(_,SCode.REDECL(_,_)) => fail
 
   rule  print "# trying to modify final element\n"
 	------------------------------------------
-	merge(_,m as MOD(true,_,_)) => fail
+	merge(_,m as SCode.MOD(true,_,_)) => fail
 
   rule  merge_subs(subs1, subs2) => subs &
 	merge_ass(ass1, ass2) => ass
 	----------------------------
-	merge(MOD(final,subs1,ass1), MOD(false,subs2,ass2))
-	  => MOD(final,subs,ass)
+	merge(SCode.MOD(final,subs1,ass1), SCode.MOD(false,subs2,ass2))
+	  => SCode.MOD(final,subs,ass)
 
   rule	print "# incomplete handling of modification merging\n"
 	-----------------------------------------------------
@@ -253,7 +193,8 @@ end
 (** relation: merge_subs
  **)
 
-relation merge_subs : (SubMod list, SubMod list) => SubMod list =
+relation merge_subs : (SCode.SubMod list, SCode.SubMod list)
+	  => SCode.SubMod list =
 
   axiom merge_subs(s1,[]) => s1
 
@@ -267,7 +208,8 @@ end
 (** relation: merge_subs2
  **)
 
-relation merge_subs2 : (SubMod list, SubMod) => (SubMod list, SubMod) =
+relation merge_subs2 : (SCode.SubMod list, SCode.SubMod)
+	  => (SCode.SubMod list, SCode.SubMod) =
 
   axiom merge_subs2([],m) => ([],m)
 
@@ -275,7 +217,8 @@ relation merge_subs2 : (SubMod list, SubMod) => (SubMod list, SubMod) =
 
   rule  n1 = n2 & print "   merge clash in " & print n1 & print "\n"
 	-------
-	merge_subs2((s1 as SUBMOD(n1,m1))::ss, SUBMOD(n2,m2)) => (ss, s1)
+	merge_subs2((s1 as SCode.SUBMOD(n1,m1))::ss,
+		    SCode.SUBMOD(n2,m2)) => (ss, s1)
 
   rule  merge_subs2(ss, s2) => (ss',s)
 	------------------------------
@@ -286,7 +229,7 @@ end
 (** relation: merge_ass
  **)
 
-relation merge_ass : (Exp.Exp option, Exp.Exp option) => Exp.Exp option =
+relation merge_ass : (Absyn.Exp option, Absyn.Exp option) => Absyn.Exp option =
 
 	(* Outer assignments take precedence *)
 
@@ -299,12 +242,12 @@ end
 (** relation: mod_equation
  **)
 
-relation mod_equation : Mod => Exp.Exp option =
+relation mod_equation : SCode.Mod => Absyn.Exp option =
 
-  axiom mod_equation NOMOD => NONE
+  axiom mod_equation SCode.NOMOD => NONE
 
-  axiom mod_equation REDECL(_,_) => NONE
+  axiom mod_equation SCode.REDECL(_,_) => NONE
 
-  axiom mod_equation MOD(_,_,e) => e
+  axiom mod_equation SCode.MOD(_,_,e) => e
 
 end

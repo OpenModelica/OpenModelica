@@ -3,25 +3,15 @@
 
 module Types :
 
-  with "exp.rml"
   with "classinf.rml"
-
-  type Restriction = ClassInf.Restriction
-
-  (** - Array dimensions *)
-  datatype ArrayDim = NODIM
-		    | ONEDIM of Exp.Subscript
-		    | TWODIM of Exp.Subscript * Exp.Subscript
-  (** Variables in Modelica can be scalar, one-dimensional arrays, or *)
-  (** two-dimensional matrices.  This datatype is used to indicate the *)
-  (** dimensionality of a variable or a type definition. *)
+  with "absyn.rml"
 
   (** - Identifiers *)
   type Ident = string
   (** FIXME: This is declared in many places. *)
 
   (** - Variables *)
-  type Var = (Ident * VarAttr * Type)
+  type Var = (Ident * Absyn.VarAttr * Type)
   (** I wonder why this goes here? *)
 
   (** - Types *)
@@ -30,18 +20,28 @@ module Types :
   (** instantiated variable. The only information that is kept is the *)
   (** class inference state, and the subcomponents. *)
 
-  (** - Variable attributes *)
-  datatype VarAttr = ATTR of ArrayDim
-			   * bool	(* flow *)
-			   * VarType	(* parameter *)
-			   * Direction
-  datatype VarType = VAR | PARAM | CONST
-  datatype Direction = INPUT | OUTPUT | BIDIR
+  (** - Basic types and arrays *)
+  datatype BasicType = T_INTEGER
+		     | T_REAL
+		     | T_STRING
+		     | T_BOOL
+		     | T_OTHER
+		     | T_ARRAY of int * BasicType
+  (** To generate the correct set of equations, the translator has to *)
+  (** differentiate between the primitive types `Real', `Integer', *)
+  (** `String', `Boolean' and types directly derived from then from *)
+  (** other, complex types.  For arrays and matrices the type *)
+  (** `T_ARRAY' is used, with the first argument being the number of *)
+  (** dimensions, and the second being the type of the objects in the *)
+  (** array.  The `BasicType' type is used to store *)
+  (** information about whether a class is derived from a primitive *)
+  (** type, and whether a variable is of one of these types.  *)
 
   (** - Exported relations *)
   relation same_type : (Type, Type) => ()
   relation lookup_component : (Type, Ident) => Var
-  relation known_type : ClassInf.State => Exp.Type
+  relation known_type : ClassInf.State => BasicType
+  relation print_type : BasicType => ()
 
 end
 
@@ -72,7 +72,7 @@ end
 (** relation: pick *)
 
 relation pick : (Var list, Ident)
-	  => (Var list, VarAttr, Type) =
+	  => (Var list, Absyn.VarAttr, Type) =
 
   rule  n1 = n2
 	-------
@@ -110,12 +110,48 @@ end
 
 (** relation: known_type *)
 
-relation known_type : ClassInf.State => Exp.Type =
+relation known_type : ClassInf.State => BasicType =
 
-  axiom	known_type ClassInf.TYPE_INTEGER(_) => Exp.T_INTEGER
-  axiom	known_type ClassInf.TYPE_REAL(_) => Exp.T_REAL
-  axiom	known_type ClassInf.TYPE_STRING(_) => Exp.T_STRING
-  axiom	known_type ClassInf.TYPE_BOOL(_) => Exp.T_BOOL
-  axiom	known_type _ => Exp.T_OTHER
+  axiom	known_type ClassInf.TYPE_INTEGER(_) => T_INTEGER
+  axiom	known_type ClassInf.TYPE_REAL(_)    => T_REAL
+  axiom	known_type ClassInf.TYPE_STRING(_)  => T_STRING
+  axiom	known_type ClassInf.TYPE_BOOL(_)    => T_BOOL
+  axiom	known_type _                        => T_OTHER
+
+end
+
+(** relation: print_type
+ **
+ ** This relation prints a textual description of a Modelica type.  If
+ ** the type is not one of the primitive types, it simply prints
+ ** `complex'.
+ **)
+
+relation print_type : BasicType => () =
+
+  rule	print "integer"
+	---------------
+	print_type T_INTEGER
+
+  rule	print "real"
+	------------
+	print_type T_REAL
+
+  rule	print "string"
+	--------------
+	print_type T_STRING
+
+  rule	print "bool"
+	------------
+	print_type T_BOOL
+
+  rule	print "complex"
+	------------
+	print_type T_OTHER
+
+  rule	print "array(" & int_string dim => s & print s & print ") of " &
+	print_type t
+	------------
+	print_type T_ARRAY(dim,t)
 
 end

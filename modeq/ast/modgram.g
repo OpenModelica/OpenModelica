@@ -225,7 +225,7 @@ class_definition[bool is_replaceable,bool is_final] :
 	  >>
 	| EQUALS dp:name_path
 	  { da:array_dimensions << has_array_dim=true; >> }
-	  { ds:class_specialization << has_class_spec=true; >> } 
+	  { ds:class_modification << has_class_spec=true; >> } 
 	  << 
 	     Attrib a = $[CLASS_,"---"];
 	     #0 = #(#[&a], #0);
@@ -296,7 +296,7 @@ element :
 
 extends_clause:
 	EXTENDS^ i:name_path
-	{ m:class_specialization }
+	{ m:class_modification }
 	<< #0->rml = Absyn__EXTENDS(#i->rml, #m ? #m->rml : mk_nil() ); >>
 	;
 
@@ -354,7 +354,7 @@ component_declaration :
 declaration :
 	i:IDENT^
 	{ a:array_dimensions }
-	{ s:specialization }
+	{ s:modification }
 	<< #i->rml = Absyn__COMPONENT(mk_scon($i.u.stringval),
 				      #a ? #a->rml : Types__NODIM,
 				      #s ? mk_some(#s->rml) : mk_none()); >>
@@ -400,18 +400,18 @@ subscript :
   ;
 
 /*
- * Modification (here: specialization)
+ * Modification (here: modification)
  */
 
-specialization :
-	  c:class_specialization { EQUALS! e1:expression } /* FIXME */
+modification :
+	  c:class_modification { EQUALS! e1:expression } /* FIXME */
 	  << #0->rml = Absyn__CLASSMOD(#0->rml,
 				       #e1 ? mk_some(#e1->rml) : mk_none()); >>
 	| EQUALS^ e2:expression
 	  << #0->rml = Absyn__CLASSMOD(mk_nil(), mk_some(#e2->rml)); >>
 	;
 
-class_specialization :
+class_modification :
 	  LPAR^ al:argument_list RPAR! 
 	  << #0->rml = sibling_list(#al); >>
 	;
@@ -428,7 +428,7 @@ argument :
 element_modification : << bool is_final=false; >>
 	{ FINAL << is_final=true; >> } 
 	np:name_path /* Not in spec */
-	sp:specialization
+	sp:modification
 	<< 
 	   Attrib a = $[MODIFICATION,"---"];
 	   #0 = #(#[&a],#0);
@@ -604,14 +604,26 @@ equation_list :
 
 expression :
 
-	simple_expression 
+	range_expression 
 	| ifpart:IF^
 	  e1:expression 
 	  THEN!
-	  e2:simple_expression
+	  e2:range_expression
 	  ELSE!
 	  e3:expression
 	  << #0->rml = Exp__IFEXP(#e1->rml, #e2->rml, #e3->rml); >>
+	;
+
+range_expression :
+	e1:simple_expression
+	{ ":"^ e2:simple_expression { ":"! e3:simple_expression } }
+	<<
+	   if (#e2)
+     	     if (#e3)
+               #0->rml = Exp__RANGE(#e1->rml,mk_some(#e2->rml),#e3->rml);
+             else
+               #0->rml = Exp__RANGE(#e1->rml,mk_none(),#e2->rml);
+        >>
 	;
 
 simple_expression : << void *l, *op; >>
@@ -697,13 +709,11 @@ primary : << bool is_matrix; >>
 	     }
 	  >>
 	  RBRACK!
-
 	| ni:UNSIGNED_INTEGER << #ni->rml = Exp__INTEGER(mk_icon($ni.u.ival)); >>
 	| nr:UNSIGNED_REAL   << #nr->rml = Exp__REAL(mk_rcon($nr.u.realval)); >>
 	| f:FALS/*E*/        << #f->rml = Exp__BOOL(RML_FALSE); >>
 	| t:TRU/*E*/         << #t->rml = Exp__BOOL(RML_TRUE); >>
 	| (name_path_function_arguments)?
-	/*	| (member_list)? */
 	| i:component_reference << #0->rml = Exp__CREF(#i->rml); >>
 	| TIME               << #0->rml = Exp__TIME; >>
 	| s:STRING           << #s->rml = Exp__STRING(mk_scon($s.u.stringval)); >>
@@ -772,5 +782,5 @@ comment :
 	;
 
 annotation :
-	ANNOTATION class_specialization
+	ANNOTATION class_modification
 	;

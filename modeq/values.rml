@@ -43,9 +43,15 @@ relation val_string : Value => string =
 	----------------------------
 	val_string ARRAY(vs) => s''
 
+  rule	print "- val_string failed\n"
+	-----------------------------
+	val_string _ => fail
+
 end
 
 relation val_list_string : Value list => string =
+
+  axiom	val_list_string [] => "## EMPTY LIST ##"
 
   rule	val_string v => s
 	-----------------
@@ -57,6 +63,10 @@ relation val_list_string : Value list => string =
 	string_append (s'',s') =>s'''
 	------------------------------
 	val_list_string v::vs => s'''
+
+  rule	print "- val_list_string failed\n"
+	----------------------------------
+	val_list_string _ => fail
 
 end
 

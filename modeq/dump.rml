@@ -6,8 +6,6 @@
 
 module Dump:
 
-  with "exp.rml"
-  with "types.rml"
   with "absyn.rml"
 
   type Ident = string
@@ -15,9 +13,9 @@ module Dump:
   (* Dump routines for debugging of AST *)
 
   relation dump: Absyn.Program => ()
-  relation dump_exp: Exp.Exp => ()
-  relation dump_component_ref: Exp.ComponentRef => ()
-  relation dump_list : ('a list, 'a => (), string) => ()
+  relation print_exp: Absyn.Exp => ()
+  relation print_component_ref: Absyn.ComponentRef => ()
+  relation print_list : ('a list, 'a => (), string) => ()
 
 end
 
@@ -29,7 +27,7 @@ relation dump: Absyn.Program => () =
 	
   axiom	dump [] => ()
 	
-  rule	dump_class c & print "\n" &
+  rule	print_class c & print "\n" &
 	dump cs
 	----------------
 	dump c::cs => ()
@@ -38,319 +36,457 @@ end
 
 (**)
 
-relation dump_class: Absyn.Class => () =
+relation print_class: Absyn.Class => () =
 
-  rule	dump_class_restriction(r) & print "(" &
-	print n & print "," & dump_select(p,"PARTIAL,","") &
-	dump_list(parts,dump_class_part,",") & print ")"
+  rule	print_class_restriction(r) & print "(" &
+	print n & print "," & print_select(p,"PARTIAL,","") &
+	print_list(parts,print_class_part,",") & print ")"
 	----------------------------------------
-	dump_class(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => ()
+	print_class(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => ()
 
-  rule	dump_class_restriction(r) & print "(" &
-	print n & print "," & dump_select(p,"PARTIAL,","") &
-	print ") = " & Exp.path_string(i) => is & print is &
-	dump_class_modification(m)
+  rule	print_class_restriction(r) & print "(" &
+	print n & print "," & print_select(p,"PARTIAL,","") &
+	print ") = " & Absyn.path_string(i) => is & print is &
+	print_class_modification(m)
 	----------------------------------------
-	dump_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
+	print_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
 
 end
 
 (**)
 
-relation dump_class_restriction: Absyn.ClassRestriction => () =
+relation print_class_restriction: Absyn.Restriction => () =
 
-  rule	ClassInf.print_restr re
+  rule	Absyn.print_restr re
 	-----------------------
-	dump_class_restriction re
+	print_class_restriction re
 
 end
 
 (**)
 
-relation dump_class_modification =
+relation print_class_modification =
 
-  axiom	dump_class_modification([])
+  axiom	print_class_modification([])
 	
-  rule	print "(" & dump_list(l,dump_element_arg,",") & print ")"
+  rule	print "(" & print_list(l,print_element_arg,",") & print ")"
 	---------------------------------------------------------
-	dump_class_modification(l)
+	print_class_modification(l)
 	
 end
 
 (**)
 
-relation dump_element_arg =
+relation print_element_arg =
 	
   rule	print "ARG(" &
-	dump_select(f,"FINAL,",",") &
-	Exp.path_string(r) => s & print s &
-	dump_modification(m) &
+	print_select(f,"FINAL,",",") &
+	Absyn.path_string(r) => s & print s &
+	print_modification(m) &
 	print ")"
 	-------------------------------------------
-	dump_element_arg(Absyn.MODIFICATION(f,r,m))
+	print_element_arg(Absyn.MODIFICATION(f,r,m))
 	
   rule	print "REDECLARATION(" &
-	dump_select(f,"FINAL,",",") &
-	dump_elementspec spec &
+	print_select(f,"FINAL,",",") &
+	print_elementspec spec &
 	print ")"
 	-------------------------------------------
-	dump_element_arg(Absyn.REDECLARATION(f,spec))
+	print_element_arg(Absyn.REDECLARATION(f,spec))
 
 end
 
 (**)
 
-relation dump_class_part: Absyn.ClassPart => () =
+relation print_class_part: Absyn.ClassPart => () =
 
-  rule 	print "PUBLIC(" & dump_elements(el) & print ")"
+  rule 	print "PUBLIC(" & print_elements(el) & print ")"
 	-----------------------------------------------
-	dump_class_part(Absyn.PUBLIC(el))
+	print_class_part(Absyn.PUBLIC(el))
 	
-  rule 	print "PROTECTED(" & dump_elements(el) & print ")"
+  rule 	print "PROTECTED(" & print_elements(el) & print ")"
 	---------------------------------------
-	dump_class_part(Absyn.PROTECTED(el))
+	print_class_part(Absyn.PROTECTED(el))
 	
   rule 	print "EQUATIONS(" &
-	dump_list(eqs,dump_equation,",") &
+	print_list(eqs,print_equation,",") &
 	print ")"
 	--------------------------------------
-	dump_class_part(Absyn.EQUATIONS(eqs))
+	print_class_part(Absyn.EQUATIONS(eqs))
 	
   rule 	print "ALGORITHMS(...)"
 	---------------------------------------
-	dump_class_part(Absyn.ALGORITHMS(_))
+	print_class_part(Absyn.ALGORITHMS(_))
 	
 end
 
 (**)
 
-relation dump_elements: Absyn.Element list => () =
+relation print_elements: Absyn.Element list => () =
 
-  axiom	dump_elements [] => ()
+  axiom	print_elements [] => ()
 
-  rule	dump_element e
+  rule	print_element e
 	--------------------------
-	dump_elements [e]
+	print_elements [e]
 	
-  rule	dump_element e & print "," &
-	dump_elements els
+  rule	print_element e & print "," &
+	print_elements els
 	--------------------------
-	dump_elements e::els
+	print_elements e::els
 	
 end
 
 (**)
 
-relation dump_element: Absyn.Element => () =
+relation print_element: Absyn.Element => () =
 	
-  rule	print "ELEMENT(" & dump_select(final,"FINAL,","") &
-	dump_elementspec spec & print ")"
+  rule	print "ELEMENT(" & print_select(final,"FINAL,","") &
+	print_elementspec spec & print ")"
 	----------------
-	dump_element (Absyn.ELEMENT(final,_,spec))
+	print_element (Absyn.ELEMENT(final,_,spec))
 
 end
 
 (**)
 
-relation dump_elementspec: Absyn.ElementSpec => () =
+relation print_elementspec: Absyn.ElementSpec => () =
 	
-  rule	print "CLASSDEF(" & dump_select(repl,"REPLACEABLE,","") &
-	dump_class cl & print ")"
+  rule	print "CLASSDEF(" & print_select(repl,"REPLACEABLE,","") &
+	print_class cl & print ")"
 	-------------------------
-	dump_elementspec(Absyn.CLASSDEF(repl,cl))
+	print_elementspec(Absyn.CLASSDEF(repl,cl))
 	
 	
-  rule	Exp.path_string(p) => s &
+  rule	Absyn.path_string(p) => s &
 	print "EXTENDS(" & print s & print "," &
-	dump_list(l,dump_element_arg,",") & print ")"
+	print_list(l,print_element_arg,",") & print ")"
 	------------------------------------------
-	dump_elementspec(Absyn.EXTENDS(p,l))
+	print_elementspec(Absyn.EXTENDS(p,l))
 
   rule	print "COMPONENTS(attr... ," &
-	Exp.path_string(t) => ts & print ts & print "," &
-	dump_list(cs, dump_component, ",") &
+	Absyn.path_string(t) => ts & print ts & print "," &
+	print_list(cs, print_component, ",") &
 	print ")"
 	------------------------------------------
-	dump_elementspec(Absyn.COMPONENTS(attr,t,cs))
+	print_elementspec(Absyn.COMPONENTS(attr,t,cs))
 	
   rule	print " ##ERROR## "
 	-------------------
-		dump_elementspec(_)
+		print_elementspec(_)
 
 end
 
 (**)
 
-relation dump_component: Absyn.Component => () =
+relation print_component: Absyn.Component => () =
 
 	rule	print n &
-		dump_arraydim a &
-		dump_option(m,dump_modification)
+		print_arraydim a &
+		print_option(m,print_modification)
 		------------------------------------------
-		dump_component(Absyn.COMPONENT(n,a,m))
+		print_component(Absyn.COMPONENT(n,a,m))
 
 end
 
 (**)
 
-relation dump_arraydim: Types.ArrayDim => () =
+relation print_arraydim: Absyn.ArrayDim => () =
 
-  axiom dump_arraydim(Types.NODIM)
+  axiom print_arraydim(Absyn.NODIM)
 
-  rule	print "[" & dump_subscript(s) & print "]"
+  rule	print "[" & print_subscript(s) & print "]"
 	-----------------------------------------
-	dump_arraydim(Types.ONEDIM(s))
+	print_arraydim(Absyn.ONEDIM(s))
 	
-  rule	print "[" & dump_subscript(s1) &
-	print "," & dump_subscript(s2) & print "]"
+  rule	print "[" & print_subscript(s1) &
+	print "," & print_subscript(s2) & print "]"
 	-----------------------------------------
-	dump_arraydim(Types.TWODIM(s1,s2))
+	print_arraydim(Absyn.TWODIM(s1,s2))
 	
 end
 
-relation dump_subscript: Absyn.Subscript => () =
+relation print_subscript: Absyn.Subscript => () =
 
 	rule	print ":"
 		---------
-		dump_subscript(Exp.NOSUB)
+		print_subscript(Absyn.NOSUB)
 
-	rule	dump_exp(e1)
+	rule	print_exp(e1)
 		----------
-		dump_subscript(Exp.SUB1(e1))
+		print_subscript(Absyn.SUB1(e1))
 
-	rule	dump_exp(e1) & print ":" & dump_exp(e2)
+	rule	print_exp(e1) & print ":" & print_exp(e2)
 		-------------
-		dump_subscript(Exp.SUB2(e1,e2))
+		print_subscript(Absyn.SUB2(e1,e2))
 
-	rule	dump_exp(e1) & print ":" &
-		dump_exp(e2) & print ":" & dump_exp(e3)
+	rule	print_exp(e1) & print ":" &
+		print_exp(e2) & print ":" & print_exp(e3)
 		----------------------------------------------
-		dump_subscript(Exp.SUB3(e1,e2,e3))
+		print_subscript(Absyn.SUB3(e1,e2,e3))
 
 end
 
 (** - Modifications *)
 
-relation dump_modification: Absyn.Modification => () =
+relation print_modification: Absyn.Modification => () =
 	
-  rule	dump_mod1 l & dump_mod2 e
+  rule	print_mod1 l & print_mod2 e
 	-------------------------
-	dump_modification(Absyn.CLASSMOD(l, e))
+	print_modification(Absyn.CLASSMOD(l, e))
 	
   rule	print "( ** MODIFICATION ** )"
 	-------------
-	dump_modification(_)
+	print_modification(_)
 	
 end
 
-relation dump_mod1: Absyn.ElementArg list => () =
+relation print_mod1: Absyn.ElementArg list => () =
 
-  axiom	dump_mod1 []
+  axiom	print_mod1 []
 
   rule	print "(" &
-	dump_list(l,dump_element_arg,",") &
+	print_list(l,print_element_arg,",") &
 	print ")"
 	------------------------------------
-	dump_mod1 l
+	print_mod1 l
 
 end
 
-relation dump_mod2 : Exp.Exp option => () =
+relation print_mod2 : Absyn.Exp option => () =
 
-  axiom	dump_mod2 NONE
+  axiom	print_mod2 NONE
 
-  rule	print " = " & dump_exp(e)
+  rule	print " = " & print_exp(e)
 	-------------------------
-	dump_mod2 SOME(e)
+	print_mod2 SOME(e)
 
 end
 
 (** - Equations *)
 
-relation dump_equation: Absyn.Equation => () =
+relation print_equation: Absyn.Equation => () =
 	
-  rule	print "EQ_EXPR(" & dump_exp(e) & print ")"
+  rule	print "EQ_EXPR(" & print_exp(e) & print ")"
 	-------------------------------------------
-	dump_equation(Absyn.EQ_EXPR(e))
+	print_equation(Absyn.EQ_EXPR(e))
 	
-  rule	print "EQ_EQUALS(" & dump_exp(e1) & print "," &
-	dump_exp(e2) & print ")"
+  rule	print "EQ_EQUALS(" & print_exp(e1) & print "," &
+	print_exp(e2) & print ")"
 	-------------------------------------------
-	dump_equation(Absyn.EQ_EQUALS(e1,e2))
+	print_equation(Absyn.EQ_EQUALS(e1,e2))
 	
-  rule	print "EQ_CONNECT(" & dump_component_ref(e1) & print "," &
-	dump_component_ref(e2) & print ")"
+  rule	print "EQ_CONNECT(" & print_component_ref(e1) & print "," &
+	print_component_ref(e2) & print ")"
 	-------------------------------------------
-	dump_equation(Absyn.EQ_CONNECT(e1,e2))
+	print_equation(Absyn.EQ_CONNECT(e1,e2))
 	
-  rule	print "FOR " & print i & print " in " & dump_exp(e) &
-	print " {" & dump_list(el, dump_equation, ";") & print "}"
+  rule	print "FOR " & print i & print " in " & print_exp(e) &
+	print " {" & print_list(el, print_equation, ";") & print "}"
 	----------------------------------------------------------
-	dump_equation Absyn.EQ_FOR(i,e,el)
+	print_equation Absyn.EQ_FOR(i,e,el)
 	
   rule	print " ** UNKNOWN EQUATION ** "
 	--------------------------------
-	dump_equation(_)
+	print_equation(_)
 	
 end
 
 (** - Component references *)
 
-relation dump_component_ref : Exp.ComponentRef => () =
+(** relation: print_component_ref
+ **
+ ** Print a `ComponentRef'.
+ **)
 
-  rule	Exp.dump_component_ref c
-	------------------------
-	dump_component_ref c
+relation print_component_ref : Absyn.ComponentRef => () =
+
+  rule	print_component_ref2 (s,subs)
+	----------------------------
+	print_component_ref Absyn.CREF_IDENT(s,subs)
+
+  rule	print_component_ref2 (s,subs) &
+	print "." &
+	print_component_ref cr
+	---------------------
+	print_component_ref Absyn.CREF_QUAL(s,subs,cr)
+end
+
+relation print_component_ref2 =
+
+  rule	print s
+	-------
+	print_component_ref2 (s,[])
+
+  rule	print s &
+	print "[" & print_list(l,print_subscript,",") & print "]"
+	-------------------------------------------------------
+	print_component_ref2 (s,l)
 
 end
 
 (** - Expressions *)
 
-relation dump_exp: Exp.Exp => () =
+(** relation: print_exp
+ **
+ ** This relation prints a complete expression.
+ **)
 
-  rule	Exp.dump_exp e
-	--------------
-	dump_exp e
+relation print_exp: Absyn.Exp => () =
+	
+  rule	int_string(x) => s & print s
+	----------------------------
+	print_exp(Absyn.INTEGER(x))
 
-end 
+  rule	real_string(x) => s & print s
+	-----------------------------
+	print_exp(Absyn.REAL(x))
+
+  rule	print_component_ref(c)
+	---------------------
+	print_exp(Absyn.CREF(c))
+
+  rule	print "\"" & print s & print "\""
+	---------------------------------
+	print_exp(Absyn.STRING(s))
+
+  rule	print "FALSE"
+	-------------
+	print_exp(Absyn.BOOL(false))
+
+  rule	print "TRUE"
+	-------------
+	print_exp(Absyn.BOOL(true))
+
+  rule	binop_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
+	---------------------------------------------------------------
+	print_exp(Absyn.BINARY(e1, op, e2))
+
+  rule	unaryop_symbol(op) => sym &
+	print sym & print_exp e
+	----------------------------
+	print_exp(Absyn.UNARY(op, e))
+
+  rule	lbinop_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
+	----------------------------------------------------------------
+	print_exp(Absyn.LBINARY(e1, op, e2))
+
+  rule	lunaryop_symbol(op) => sym & print sym & print_exp e
+	---------------------------------------------------
+	print_exp(Absyn.LUNARY(op, e))
+
+  rule	relop_symbol(op) => sym & print_exp(e1) & print sym & print_exp(e2)
+	-----------------------------------------------------------------
+	print_exp(Absyn.RELATION(e1, op, e2))
+
+  rule	print "IF " & print_exp(c) &
+	print " THEN " & print_exp(t) &
+	print " ELSE " & print_exp(f)
+	----------------------------
+	print_exp(Absyn.IFEXP(c,t,f))
+
+  rule	Absyn.path_string(fcn) => fs &
+	print fs & print "(" & print_list(args,print_exp,",") & print ")"
+	---------------------------------------------
+	print_exp(Absyn.CALL(fcn, args))
+
+  rule	print "[" &
+	print_list(es, print_exp, ",") &
+	print "]"
+	---------
+	print_exp Absyn.ARRAY(es)
+	
+  rule	print "[MATRIX]"
+	---------
+	print_exp Absyn.MATRIX(es)
+
+  rule	print "(" & print_exp start & print ":" & print_exp stop & print ")"
+	-------------------------------------------------------------
+	print_exp Absyn.RANGE(start,NONE,stop)
+
+  rule	print "(" & print_exp start & print ":" & print_exp step &
+ 	print ":" & print_exp stop & print ")"
+	-------------------------------------------------------------
+	print_exp Absyn.RANGE(start,SOME(step),stop)
+
+  rule	print "#UNKNOWN EXPRESSION#"
+        ----------------------------------
+	print_exp (_)
+end
+
+(** relation: *_symbol
+ **
+ ** Make a string describing different operators.
+ **)
+
+relation binop_symbol : Absyn.BinOp => string =
+  axiom	binop_symbol(Absyn.ADD) => " + "
+  axiom	binop_symbol(Absyn.SUB) => " - "
+  axiom	binop_symbol(Absyn.MUL) => "*"
+  axiom	binop_symbol(Absyn.DIV) => "/"
+  axiom	binop_symbol(Absyn.POW) => "^"
+end
+
+relation unaryop_symbol : Absyn.UnaryOp => string =
+  axiom	unaryop_symbol(Absyn.UMINUS) => "-"
+  axiom	unaryop_symbol(Absyn.UPLUS) => "+"
+end
+
+relation lbinop_symbol : Absyn.LBinOp => string =
+  axiom	lbinop_symbol(Absyn.AND) => " AND "
+  axiom	lbinop_symbol(Absyn.OR) => " OR "
+end
+
+relation lunaryop_symbol : Absyn.LUnaryOp => string =
+  axiom	lunaryop_symbol(Absyn.NOT) => "NOT "
+end
+
+relation relop_symbol : Absyn.RelOp => string =
+  axiom	relop_symbol(Absyn.LESS)      => " < "
+  axiom	relop_symbol(Absyn.LESSEQ)    => " <= "
+  axiom	relop_symbol(Absyn.GREATER)   => " > "
+  axiom	relop_symbol(Absyn.GREATEREQ) => " >= "
+  axiom	relop_symbol(Absyn.EQUAL)     => " = "
+  axiom	relop_symbol(Absyn.NEQUAL)    => " <> "
+end
 
 (** - Utility relations
  **
  ** These are utility relations used in some of the other
  ** relations. *)
 
-relation dump_select: (bool,string,string) => () =
+relation print_select: (bool,string,string) => () =
 
   rule	print no
 	-------------------------
-	dump_select(false,yes,no)
+	print_select(false,yes,no)
 	
   rule	print yes
 	-------------------------
-	dump_select(true,yes,no)
+	print_select(true,yes,no)
 
 end
 
-relation dump_option = (* : ('a option)*('a => 'b) = *)
+relation print_option = (* : ('a option)*('a => 'b) = *)
 
-  axiom	dump_option(NONE,_)
+  axiom	print_option(NONE,_)
 	
   rule	r( x )
 	------
-	dump_option(SOME(x),r)
+	print_option(SOME(x),r)
 	
 end
 
-relation dump_list : ('a list, 'a => (), string) => () =
+relation print_list : ('a list, 'a => (), string) => () =
 
-  axiom	dump_list([],_,_)
+  axiom	print_list([],_,_)
 	
   rule	r(h)
 	------------------
-	dump_list([h],r,_)
+	print_list([h],r,_)
 
-  rule	r(h) & print sep & dump_list(t,r,sep)
+  rule	r(h) & print sep & print_list(t,r,sep)
 	-------------------------------------
-	dump_list(h::t,r,sep)
+	print_list(h::t,r,sep)
 
 end

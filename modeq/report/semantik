@@ -340,3 +340,8 @@ How are while loops treated in equation sections?
 * enable
 
 What are the semantics of the enable attribute?
+
+* Restrictions on the top-level model
+
+Does the last class in the file have to be a `model' (or a compatible
+`class')?

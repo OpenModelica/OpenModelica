@@ -12,19 +12,18 @@ RML	= rmlc -g
 PROG	= modeq
 AST	= ast/libast.a
 
-SRCRML=	exp.rml \
-	dae.rml \
+SRCRML=	dae.rml \
 	types.rml \
 	absyn.rml \
 	explode.rml \
 	dump.rml \
 	prefix.rml \
-	mod.rml \
 	env.rml \
 	lookup.rml \
 	builtin.rml \
 	connect.rml \
 	classinf.rml \
+	exp.rml \
 	staticexp.rml \
 	values.rml \
 	inst.rml \
@@ -54,21 +53,17 @@ test:
 $(PROG): $(SRCO) ast/libast.a
 	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
 
-absyn.o:	absyn.rml
-exp.o:		exp.rml
-env.o:		env.rml exp.h values.h
-explode.o:	explode.rml
-inst.o:		inst.rml env.rml values.h
-mod.o:		mod.rml exp.rml absyn.h dae.h prefix.h env.h
-main.o:		main.rml
-dump.o:		dump.rml
-package.o:	env.h
-lookup.o:	env.h
-builtin.o:	builtin.rml env.h
-staticexp.o:	staticexp.rml env.h values.h
-
-#main.o:		main.rml absyn.rml parse.rml dump.rml \
-#		lform.rml dae.rml inst.rml
+#absyn.o:	absyn.rml
+#exp.o:		exp.rml
+#env.o:		env.rml values.h
+#explode.o:	explode.rml
+#inst.o:		inst.rml env.rml values.h
+#mod.o:		mod.rml absyn.h dae.h prefix.h env.h
+#main.o:		main.rml
+#dump.o:		dump.rml
+#lookup.o:	env.h
+#builtin.o:	builtin.rml env.h
+#staticexp.o:	staticexp.rml env.h values.h
 
 ast/libast.a:
 	@(cd ast ; $(MAKE) libast.a)
@@ -85,7 +80,6 @@ clean:
 	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG) *~
 
 reallyclean: clean
-	$(RM) dae.h exp.h main.h modelica.h
 
 report:
 	@(cd report ; $(MAKE))

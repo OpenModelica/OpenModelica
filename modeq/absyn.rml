@@ -7,18 +7,12 @@
 
 module Absyn:
 
-  with "exp.rml"
-  with "types.rml"
-
   (** - Imported types *)
   (** These types are imported from other modules and given unqualified *)
   (** names to help the readibility, and for backwards compatibility *)
   (** with older versions.  This should be changed. *)
 
-  type Ident = Exp.Ident
-  type Path = Exp.Path
-  type Subscript = Exp.Subscript
-  type ClassRestriction = Types.Restriction
+  type Ident = string
 
   (** - Programs *)
   type Program = Class list
@@ -30,7 +24,7 @@ module Absyn:
   datatype Class = CLASS of Ident		     (* Name *)
 			  * bool		     (* Partial *)
 			  (* FIXME: final *)
-			  * ClassRestriction	     (* Restricion *)
+			  * Restriction	             (* Restricion *)
 			  * ClassDef		     (* Body *)
   (** A class definition consists of a name, a flag to indicate if this *)
   (** class is declared as `partial', the declared class restriction, *)
@@ -39,7 +33,7 @@ module Absyn:
 
   datatype ClassDef = PARTS of ClassPart list
 		    | DERIVED of Path
-			       * Types.ArrayDim option
+			       * ArrayDim option
 			       * ElementArg list
   (** The `ClassDef' type contains the definition part of a class *)
   (** declaration.  The definition is either explicit, with a list of *)
@@ -60,28 +54,131 @@ module Absyn:
   datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
 				   * Class
 		       | EXTENDS of Path * ElementArg list
-		       | COMPONENTS of Types.VarAttr
+		       | COMPONENTS of VarAttr
 				     * Path	     (* type name *)
 				     * Component list
 
   datatype Component = COMPONENT of Ident	     (* component name *)
-				  * Types.ArrayDim
+				  * ArrayDim
 				  * Modification option
 
-  datatype Equation = EQ_EXPR of Exp.Exp	     (* more later? *)
-		    | EQ_EQUALS of Exp.Exp * Exp.Exp
-		    | EQ_CONNECT of Exp.ComponentRef * Exp.ComponentRef
-		    | EQ_FOR of Ident * Exp.Exp * Equation list
+  datatype Equation = EQ_EXPR of Exp	     (* more later? *)
+		    | EQ_EQUALS of Exp * Exp
+		    | EQ_CONNECT of ComponentRef * ComponentRef
+		    | EQ_FOR of Ident * Exp * Equation list
 
   datatype Algorithm = ALGORITHM		     (* FIXME *)
 
-  datatype Modification = CLASSMOD of ElementArg list * Exp.Exp option
+  datatype Modification = CLASSMOD of ElementArg list * Exp option
 
   datatype ElementArg = MODIFICATION of bool * Path * Modification
 		      | REDECLARATION of bool * ElementSpec
 
-  relation element_spec_name : ElementSpec => Ident
+  (** - Variable attributes *)
+  datatype VarAttr = ATTR of ArrayDim
+			   * bool	(* flow *)
+			   * VarType	(* parameter *)
+			   * Direction
+  datatype VarType = VAR | PARAM | CONST
+  datatype Direction = INPUT | OUTPUT | BIDIR
 
+  (** - Array dimensions *)
+  datatype ArrayDim = NODIM
+		    | ONEDIM of Subscript
+		    | TWODIM of Subscript * Subscript
+  (** Variables in Modelica can be scalar, one-dimensional arrays, or *)
+  (** two-dimensional matrices.  This datatype is used to indicate the *)
+  (** dimensionality of a variable or a type definition. *)
+
+  (** - Expressions *)
+
+  datatype Exp = INTEGER of int
+	       | REAL of real
+	       | CREF of ComponentRef
+	       | STRING of string
+	       | BOOL of bool
+	       | BINARY of Exp * BinOp * Exp
+	       | UNARY of UnaryOp * Exp
+	       | LBINARY of Exp * LBinOp * Exp
+	       | LUNARY of LUnaryOp * Exp
+	       | RELATION of Exp * RelOp * Exp
+	       | IFEXP of Exp * Exp * Exp
+	       | CALL of Path * Exp list		(* Function call *)
+	       | ARRAY of Exp list
+	       | MATRIX of Exp list list
+	       | RANGE of Exp * Exp option * Exp
+  (** The `Exp' datatype is the container of a Modelica expression. *)
+
+  datatype BinOp = ADD | SUB | MUL | DIV | POW
+  datatype UnaryOp = UMINUS | UPLUS
+  datatype LBinOp = AND | OR
+  datatype LUnaryOp = NOT
+  datatype RelOp = LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
+  
+  (** - Subscripts *)
+  datatype Subscript = NOSUB
+		     | SUB1 of Exp
+		     | SUB2 of Exp * Exp
+		     | SUB3 of Exp * Exp * Exp
+  (** The `Subscript' datatype is used in variable references.  An *)
+  (** one-dimensional array variable `a' can be supscriptet as `a[1]', *)
+  (** `a[1:2]' or `a[1:2:3]'. *)
+
+  (** - Component references and paths *)
+  datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
+		    	| CREF_IDENT of Ident * (Subscript list)
+
+  datatype Path = QUALIFIED of Ident * Path
+	      	| IDENT of Ident
+  (** A component reference is the fully or partially qualified name of *)
+  (** a component (variable).  It is represented as a list of *)
+  (** identifier--subscript pairs.  The type `Path', on the other hand, *)
+  (** is used to store references to class names, or components inside *)
+  (** class definitions. *)
+	      	
+  (** - Restrictions *)
+  datatype Restriction = R_CLASS
+		       | R_MODEL
+		       | R_RECORD
+		       | R_BLOCK
+		       | R_CONNECTOR
+		       | R_TYPE
+		       | R_PACKAGE
+		       | R_FUNCTION
+		       | R_PREDEFINED_INT
+		       | R_PREDEFINED_REAL
+		       | R_PREDEFINED_STRING
+		       | R_PREDEFINED_BOOL
+  (** These constructors each correspond to a different kind of class *)
+  (** declaration in Modelica, except the last four, which are used *)
+  (** for the predefined types.  The parser assignes each class *)
+  (** declaration one of the restrictions, and the actual class *)
+  (** definition is checked for conformance during translation.  The *)
+  (** predefined types are created in the `Builtin' module and are *)
+  (** assigned special restrictions. *)
+
+
+  relation path_string : Path => string
+  relation element_spec_name : ElementSpec => Ident
+  relation print_restr : Restriction => ()
+
+end
+
+(** relation: path_string
+ **
+ ** This relation simply converts a `Path' to a `string'.
+ **)
+
+relation path_string: Path => string =
+
+  axiom	path_string(IDENT(s)) => s
+  
+  rule	path_string(n) => ns &
+	string_append(s,".") => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	path_string(QUALIFIED(s,n)) => ss
+	
 end
 
 (** relation: element_spec_name
@@ -96,5 +193,59 @@ relation element_spec_name : ElementSpec => Ident =
   rule  print "# element_spec_name EXTENDS\n"
 	-------------------------------------
 	element_spec_name EXTENDS(_,_) => fail
+
+end
+
+(** relation: print_restr *)
+
+relation print_restr : Restriction => () =
+
+  rule	print "CLASS"
+	-------------
+	print_restr R_CLASS
+	
+  rule	print "MODEL"
+	-------------
+	print_restr R_MODEL
+	
+  rule	print "RECORD"
+	--------------
+	print_restr R_RECORD
+	
+  rule	print "BLOCK"
+	-------------
+	print_restr R_BLOCK
+	
+  rule	print "CONNECTOR"
+	-----------------
+	print_restr R_CONNECTOR
+	
+  rule	print "TYPE"
+	------------
+	print_restr R_TYPE
+	
+  rule	print "PACKAGE"
+	---------------
+	print_restr R_PACKAGE
+	
+  rule	print "FUNCTION"
+	----------------
+	print_restr R_FUNCTION
+
+  rule	print "PREDEFINED_INT"
+	----------------
+	print_restr R_PREDEFINED_INT
+
+  rule	print "PREDEFINED_REAL"
+	----------------
+	print_restr R_PREDEFINED_REAL
+
+  rule	print "PREDEFINED_STRING"
+	----------------
+	print_restr R_PREDEFINED_STRING
+
+  rule	print "PREDEFINED_BOOL"
+	----------------
+	print_restr R_PREDEFINED_BOOL
 
 end
