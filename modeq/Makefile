@@ -54,12 +54,14 @@ absyn.o:	absyn.rml
 exp.o:		exp.rml
 env.o:		env.rml
 explode.o:	explode.rml
-inst.o:		inst.rml
-mod.o:		mod.rml exp.h absyn.h dae.h prefix.h
+inst.o:		inst.rml env.rml
+mod.o:		mod.rml exp.rml absyn.h dae.h prefix.h env.h
 main.o:		main.rml
 dump.o:		dump.rml
-package.o:	env.rml
-lookup.o:	env.rml
+package.o:	env.h
+lookup.o:	env.h
+builtin.o:	builtin.rml env.h
+staticexp.o:	staticexp.rml env.h
 
 #main.o:		main.rml absyn.rml parse.rml dump.rml \
 #		lform.rml dae.rml inst.rml
