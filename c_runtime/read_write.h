@@ -18,4 +18,9 @@ void read_real_array(FILE*,real_array_t*);
 void write_modelica_real(FILE*,modelica_real*);
 void write_real_array(FILE*,real_array_t*);
 
+void read_modelica_integer(FILE*,modelica_integer*);
+void read_integer_array(FILE*,integer_array_t*);
+void write_modelica_integer(FILE*,modelica_integer*);
+void write_integer_array(FILE*,integer_array_t*);
+
 #endif
