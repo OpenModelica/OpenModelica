@@ -144,10 +144,12 @@ relation dump2: DAElist => () =
 	Exp.print_component_ref cr &
 	Print.print_buf "=" &
 	Exp.print_exp e &
+	Print.print_buf ",dims=" &
+	Dump.print_list(dims,Exp.print_subscript,", ") &
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,SOME(e),_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims)::xs)
 
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr &

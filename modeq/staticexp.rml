@@ -836,7 +836,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	Types.array_element_type ty => ((Types.T_INTEGER(_),_)) &
 	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, ind_const),_) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_integer_array"),
-			   [crefe,indexp],false,true) &
+			   [crefe,indexp],false,false) &
 	let prop = Types.PROP((Types.T_INTEGER([]),NONE),false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
@@ -848,7 +848,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	Types.array_element_type ty => ((Types.T_REAL(_),_)) &
 	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, ind_const),_) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_real_array"),
-			   [crefe,indexp],false,true) &
+			   [crefe,indexp],false,false) &
 	let prop = Types.PROP((Types.T_INTEGER([]),NONE),false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
@@ -1403,10 +1403,10 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 			  ]
 			),NONE))
 	------------------------------------------------------------------
-	elab_call_interactive(env, Absyn.CREF_IDENT("translateClass",_),
+	elab_call_interactive(env, Absyn.CREF_IDENT("translateModel",_),
 			      [ Absyn.CREF(cr)],[],impl,
 			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("translateClass"),
+	  => (Exp.CALL(Absyn.IDENT("translateModel"),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
@@ -1870,6 +1870,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	 in the funktion type of the user function and check both the
 	 funktion name and the function's type. 
 	 *)
+	Debug.fprintln("sei", "elab_call_args, searching for types...\n") &
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
 	Debug.fprintln("sei", "elab_call_args, found types: ") &
 	Debug.fprint_list("sei",typelist,Types.print_type,", ") &
@@ -2410,13 +2411,14 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	elab_cref(env, c) => (exp, Types.PROP(t, const), acc')
 
   rule	elab_cref_subs (env,c) => (c', const) &
-	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\nenv:" &
-	Env.print_env env & print "# Unknown component." 
+	Print.print_buf "# Unknown component: " & Dump.print_component_ref c &
+	Print.print_buf "\n" 
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
-  rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n" & print "- elab_cref_failed , cr= " & Dump.print_component_ref_str c => s1 & print s1 & print " envpath =" &
-	Env.get_env_path env => SOME(envpath) & ModUtil.path_string(envpath) => s2 & print s2 & print "\n"
+  rule	Debug.fprint("failtrace", "- elab_cref failed: ") & 
+	Debug.fcall("failtrace",Dump.print_component_ref, c) & 
+	Debug.fprint("failtrace", "\n")
 	------------------------------
 	elab_cref (env,c) => fail
 
@@ -2525,18 +2527,32 @@ relation elab_cref2 : (Env.Env,
 	------------------------------
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,false)) => fail
 
-  rule	print "# Constant or parameter without a value\n" &
-	Print.print_buf "# Constant or parameter without a value\n" &
-	Print.print_buf "# component: " & Exp.print_component_ref cr 
-	& Print.print_buf " env:\n" & Env.print_env env & Print.print_buf "\n"
+  rule	print "# Constant without a value :" &
+	Print.print_buf "# Constant  without a value\n" &
+	Print.print_buf "# component: " & Exp.print_component_ref cr &
+	Exp.print_component_ref_str cr => str & print str & print "\n" &
+	 Print.print_buf " env:\n" & Env.print_env env & Print.print_buf "\n"
 	----------------------------------------------
-	elab_cref2 (env,cr,_,_,_,Types.UNBOUND) => fail
+	elab_cref2 (env,cr,_,SCode.CONST,_,Types.UNBOUND) => fail
+
+  rule	print "# Parameter without a value :" &
+	Print.print_buf "# Constant  without a value\n" &
+	Print.print_buf "# component: " & Exp.print_component_ref cr &
+	Exp.print_component_ref_str cr => str & print str & print "\n" &
+	 Print.print_buf " env:\n" & Env.print_env env & Print.print_buf "\n"
+	----------------------------------------------
+	elab_cref2 (env,cr,_,SCode.PARAM,_,Types.UNBOUND) => fail
+
 
   rule	print "- elab_cref2 failed (component: " &
+	Exp.print_component_ref_str cr => str & print str & print "\n" &
 	Print.print_buf "- elab_cref2 failed (component: " &
-	Exp.print_component_ref cr & Print.print_buf ")\n"
+	Exp.print_component_ref cr & Print.print_buf ")\n" &
+	Types.unparse_type tp => ts & print "type = " & print ts & print ", " &
+	Types.print_binding_str bind => binds & print "binding =" & print binds & print "\n" &
+	SCode.variability_string var => vs & print "var = " & print vs & print "\n" 
 	----------------------------------------
-	elab_cref2 (_,cr,_,_,_,_) => fail
+	elab_cref2 (_,cr,acc,var,tp,bind) => fail
 
 end	
 
@@ -2815,7 +2831,8 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(_,_,_,_),false,NONE) => fail
 
-  rule	Print.print_buf "implicit evaluation of function calls without symbol table\n" 
+  rule	(*Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
+	Exp.print_exp e & Print.print_buf "\n" *)
 	-------------------------------------------
 	ceval(env, e as Exp.CALL(_,_,_,_),true,NONE) => fail
 
@@ -3064,7 +3081,9 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, Exp.CAST(Exp.REAL,e as Exp.MATRIX(Exp.INT,_,_)),impl,st) => 
 		(Values.ARRAY(vallst'),st')
 
-  rule	Print.print_buf "- ceval " & Exp.print_exp e & Print.print_buf " failed\n"
+  rule	Debug.fprint("failtrace", "- ceval ") &
+	Debug.fcall("failtrace",Exp.print_exp, e) &
+	Debug.fprint("failtrace", " failed\n") 
 	-----------------------------------------------------
 	ceval (_,e,_,_) => fail
 	
@@ -3121,6 +3140,11 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
 	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
 	DAE.dump_str (dae) => str &
+	Debug.fcall ("daedump", DAE.dump, dae) &
+	Debug.fcall ("daedump2", DAE.dump2, dae) &
+	Debug.fcall ("daedumpdebug", DAE.dump_debug, dae) &
+	Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, dae) &
+
 	Print.get_string() => s2 &
 	Print.print_error_buf s2 &
 	
@@ -3131,7 +3155,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	
 	let record = Values.RECORD([Values.STRING(str),Values.INTEGER(1)],["flatClass","exefile"])
 	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
   rule	component_ref_to_path(cr) => path & 
@@ -3140,7 +3164,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Print.print_buf pathstr & Print.print_buf " .\n" &
 	Print.get_string() => str 
 	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 	
   rule	System.time => t1 &
 	ceval(env,exp,true,SOME(st)) => (value,st') &

@@ -131,6 +131,7 @@ module Exp:
   relation int_subscripts : int list => Subscript list
   relation simplify : Exp => Exp
   relation unelab_exp : Exp => Absyn.Exp 	   
+  relation contain_functioncall : Exp => bool
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()
   relation print_component_ref_str : ComponentRef => string
@@ -304,6 +305,109 @@ relation simplify : Exp => Exp =
 
   axiom	simplify e => e
 
+end
+(** relation: contain_functioncall
+ ** Returns true if expression or subexpression is a functioncall.
+ ** otherwise false 
+**)
+relation contain_functioncall : Exp => bool =
+
+  axiom	contain_functioncall(CALL(_,_,_,_)) => true
+
+	(* Binary *)
+  rule	contain_functioncall(e1) => true
+	---------------------
+	contain_functioncall(BINARY(e1,_,e2)) => true
+
+  rule	contain_functioncall(e2) => true 
+	---------------------
+	contain_functioncall(BINARY(e1,_,e2)) => true
+
+	(* Unary *)
+  rule	contain_functioncall(e) => res
+	---------------------
+	contain_functioncall(UNARY(_,e)) => res
+
+	(* LBinary *)
+  rule	contain_functioncall(e1) => true
+	---------------------
+	contain_functioncall(LBINARY(e1,_,e2)) => true
+
+  rule	contain_functioncall(e2) => true 
+	---------------------
+	contain_functioncall(LBINARY(e1,_,e2)) => true
+
+	(* LUnary *)
+  rule	contain_functioncall(e) => res
+	---------------------
+	contain_functioncall(LUNARY(_,e)) => res
+
+	(* Relation *)
+  rule	contain_functioncall(e1) => true
+	---------------------
+	contain_functioncall(RELATION(e1,_,e2)) => true
+
+  rule	contain_functioncall(e2) => true
+	---------------------
+	contain_functioncall(RELATION(e1,_,e2)) => true
+
+	(* If exp*)
+  rule	contain_functioncall(e1) => true
+	--------------------------------
+	contain_functioncall(IFEXP(e1,e2,e3)) => true
+
+  rule	contain_functioncall(e2) => true
+	--------------------------------
+	contain_functioncall(IFEXP(e1,e2,e3)) => true
+
+  rule	contain_functioncall(e3) => true
+	--------------------------------
+	contain_functioncall(IFEXP(e1,e2,e3)) => true
+
+	(* Array *)
+  rule	Util.list_map(elst,contain_functioncall) => blst &
+	Util.bool_or_list(blst) => res
+	------------------------------
+	contain_functioncall(ARRAY(_,_,elst)) => res
+
+	(* Matrix *)
+  rule	Util.list_flatten(explst) => flatexplst &
+	Util.list_map(flatexplst,Util.tuple2_1) => elst &
+	Util.list_map(elst,contain_functioncall) => blst &
+	Util.bool_or_list(blst) => res
+	------------------------------
+	contain_functioncall(MATRIX(_,_,explst)) => res
+
+	(* Range *)
+  rule	contain_functioncall(e1) => true
+	------------------------------
+	contain_functioncall(RANGE(_,e1,optexp,e2)) => true
+
+  rule	contain_functioncall(e2) => true
+	------------------------------
+	contain_functioncall(RANGE(_,e1,optexp,e2)) => true
+
+  rule	contain_functioncall(e) => true
+	------------------------------
+	contain_functioncall(RANGE(_,e1,SOME(e),e2)) => true
+
+	(* Tuple *)
+  axiom	contain_functioncall(TUPLE(_)) => true
+
+  rule	contain_functioncall(e) => res
+	------------------------------
+	contain_functioncall(CAST(_,e)) => res
+	
+	(* Size *)
+  rule	contain_functioncall(e1) => true
+	--------------------------------
+	contain_functioncall(SIZE(e1,e2)) => true
+
+  rule	contain_functioncall(e2) => true
+	--------------------------------
+	contain_functioncall(SIZE(e1,e2)) => true
+
+  axiom	contain_functioncall(_) => false
 end
 
 relation unelab_exp : Exp => Absyn.Exp =

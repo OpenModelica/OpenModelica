@@ -141,7 +141,7 @@ module SCode :
 	  		      * Variability	(* parameter *)
 			      * Absyn.Direction
 
-  datatype Variability = VAR | DISCRETE | PARAM | STRUCTPARAM | CONST
+  datatype Variability = VAR | DISCRETE | PARAM | STRUCTPARAM | CONST 
 
   datatype Accessibility = RW	(* read/write *)
 			 | RO	(* read-only *)
@@ -156,6 +156,7 @@ module SCode :
   relation print_element : Element => ()
   relation print_element_list : Element list => ()	  
   relation print_restr: Restriction => ()
+  relation variability_string: Variability => string
 	  
 end
 
@@ -823,4 +824,10 @@ relation print_element : Element => () =
 	print_element(IMPORT(_))
 end	
 
-
+relation variability_string: Variability => string =
+  axiom	variability_string(VAR) => "VAR"
+  axiom	variability_string(DISCRETE) => "DISCRETE"
+  axiom	variability_string(PARAM) => "PARAM" 
+  axiom	variability_string(STRUCTPARAM) => "STRUCTPARAM"
+  axiom	variability_string(CONST) => "CONST" 
+end

@@ -75,6 +75,7 @@ module Dump:
   relation unparse_within: (int, Absyn.Within) => string 
   relation indent_str: (int) => string 
   relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string 
+  relation variability_symbol: Absyn.Variability => string
 end
 
 

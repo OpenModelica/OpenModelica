@@ -135,6 +135,7 @@ returns multiple arguments. *)
   relation unparse_type : Type => string
   relation print_var : Var => ()
   relation print_binding : Binding => ()
+  relation print_binding_str : Binding => string
   relation print_params : FuncArg list => () 
   relation print_farg: FuncArg => () 
   relation make_function_type : (Absyn.Path, Var list) => Type
@@ -835,6 +836,23 @@ relation print_binding : Binding => () =
 	Values.print_val v
 	--------------------
 	print_binding VALBOUND (v)
+
+end
+
+relation print_binding_str : Binding => string =
+
+  axiom	print_binding_str UNBOUND => "UNBOUND" 
+
+  rule	Exp.print_exp_str exp => str &
+	Dump.select_string (f, " true", " false") => str2 &
+	Util.string_append_list(["EQBOUND(", str, ", ",str2, ")"]) => res
+	----------------------------------------
+	print_binding_str EQBOUND (exp,f) => res
+
+  rule	Values.unparse_values [v] => s &
+	Util.string_append_list(["VALBOUND(",s,")"]) => res
+	--------------------
+	print_binding_str VALBOUND (v) => res
 
 end
 

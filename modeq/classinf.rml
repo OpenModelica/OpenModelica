@@ -76,6 +76,9 @@ module ClassInf :
   (* `assert_valid' is identical to 'valid'.  The only difference is *)
   (* that it prints an error message when it fails. *)
   relation assert_valid : (State, SCode.Restriction) => ()
+  
+	  (* Succeeds if state is FUNCTION *)
+  relation is_function: State => ()
 
   (* Debug relation *)
   relation print_state : State => ()
@@ -347,4 +350,8 @@ relation assert_valid : (State, SCode.Restriction) => () =
 	-------------------------------------------
 	assert_valid(st,re) => fail
 
+end
+
+relation is_function: State => () =
+  axiom is_function FUNCTION(_) => ()
 end
