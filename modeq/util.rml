@@ -92,6 +92,7 @@ module Util :
   relation string_append_list : string list => string
   relation string_delimit_list : (string list, string) => string
   relation string_replace_char : (string, char, char) => string
+  relation string_split_at_char : (string, char) => string list 
 
   relation bool_and_list: bool list => bool
   relation bool_or_list: bool list => bool
@@ -787,6 +788,47 @@ relation string_replace_char2 : (char list, char, char) => char list =
   rule  print "string_replace_char2 failed\n"
         ---------------------------------
         string_replace_char2(strList,_,_) => strList
+
+end
+
+ 
+(** relation string_split_at_char
+ ** Takes a string and a char and split the string at the char
+ ** example: string_split_at_char("hej.b.c",#".") => ["hej,"b","c"]
+ **)      
+relation string_split_at_char : (string, char) => string list =
+ 
+  rule  string_list(str) => chrList &
+        string_split_at_char2(chrList,chr,[]) => stringList
+        (*list_string(resList) => res*)
+        -------------------------------
+        string_split_at_char(str, chr) => stringList
+
+  rule  print "string_split_at_char failed\n"
+        ---------------------------------
+        string_split_at_char(strList,_) => [strList]
+end
+
+relation string_split_at_char2 : (char list, char,char list) => string list  =
+
+  rule  list_string(chr_rest) => res
+        ---------------------------------
+        string_split_at_char2([],_,chr_rest) => [res]
+
+  rule  firstChar = chr &
+        list_string(chr_rest) => res &
+        string_split_at_char2(rest,chr,[]) => res_str
+        ---------------------------------
+        string_split_at_char2(firstChar::rest,chr,chr_rest) => res::res_str
+
+  rule  not firstChar = chr &
+        string_split_at_char2(rest,chr,firstChar::chr_rest) => res
+        ---------------------------------
+        string_split_at_char2(firstChar::rest,chr,chr_rest) => res
+
+  rule  print "string_split_at_char2 failed\n"
+        ---------------------------------
+        string_split_at_char2(strList,_,_) => fail
 
 end
 
