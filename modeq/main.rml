@@ -455,7 +455,7 @@ relation translate_file : string list => () =
 (*	& fix_modelica_output (dimpl') => dimpl
 *)
 (* & Debug.	print "\nJust instantiated" *)
-	(* & Print.clear_buf() *)
+	& Print.clear_buf()
 	& Debug.fprint ("info", "---dumping\n")
 	& Debug.fcallret ("flatmodelica", DAE.dump_str, d, "") => s
 	& Debug.fcall ("flatmodelica", Print.print_buf, s)

@@ -200,6 +200,11 @@ relation ceval_builtin : (Env.Env, Exp.Exp, bool (*impl*),
 	-----------------------------------------
 	ceval_builtin (env,Exp.CALL(Absyn.IDENT(id),args,_,builtin (*as true*)),impl,st,_) => (v,st)
 
+  rule	ceval_list(env,expl,impl,st) => vallst &
+	ceval_call_function (env,e,vallst) => newval
+	-------------------------------------------------------
+	ceval_builtin (env, e as Exp.CALL(funcpath,expl,_,builtin as true),impl,st as NONE,_) => (newval,st)
+
   (* It's ok if ceval_builtin fails. Just means the call wasn't a builtin function *)
 	
 end
@@ -346,19 +351,8 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
         (* Call functions in non-interactive mode. *) 
 	(* FIXME: functions are always generated. Put back the check
 	   and write another rule for the false case that generates the function *)
-  rule	(* Static.is_function_in_cflist(cflist,funcpath) => true & *)
-	Debug.fprintln("ceval", "- ceval call begin") &
-	ceval_generate_function(env, funcpath) &
-	Debug.fprintln("ceval", "- ceval func generated") &
-	ceval_list(env,expl,impl,st) => vallst &
-	Debug.fprintln("ceval", "- ceval args evaluated") &
-	ModUtil.path_string2(funcpath,"_") => funcstr &
-	string_append(funcstr,"_in.txt") => infilename &
-	string_append(funcstr,"_out.txt") => outfilename &
-	Values.write_to_file_as_args(vallst,infilename)  &
-	System.execute_function(funcstr) &
-	System.read_values_from_file(outfilename) => newval
-	& Debug.fprintln("ceval", "- ceval call success")
+  rule	ceval_list(env,expl,impl,st) => vallst &
+	ceval_call_function (env,e,vallst) => newval
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => (newval,st)
 
@@ -369,13 +363,14 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
         (* FIXME: Fix this in order to allow calling of constant-marked function
 	 * calls. One should call the function as if we were in interactive
 	 * mode, and put the result instead of the function call *)
-	 
+
+(*	 
 
   rule	Print.print_buf "# Can't call builtin functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(_,_,_,builtin as true),impl as false,NONE,_) => fail
-
+*)
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
@@ -701,6 +696,29 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 end
 
 
+relation ceval_call_function : (Env.Env, Exp.Exp, Values.Value list) => Values.Value =
+
+        (* Call functions in non-interactive mode. *) 
+	(* FIXME: functions are always generated. Put back the check
+	   and write another rule for the false case that generates the function *)
+  rule	(* Static.is_function_in_cflist(cflist,funcpath) => true & *)
+	ceval_generate_function(env, funcpath) &
+	ModUtil.path_string2(funcpath,"_") => funcstr &
+	string_append(funcstr,"_in.txt") => infilename &
+	string_append(funcstr,"_out.txt") => outfilename &
+	Values.write_to_file_as_args(vallst,infilename)  &
+	System.execute_function(funcstr) &
+	System.read_values_from_file(outfilename) => newval
+	-------------------------------------------------------
+	ceval_call_function (env, e as Exp.CALL(funcpath,expl,_,builtin), vallst) => newval
+
+  rule	Debug.fprint("failtrace", "- ceval_call_function failed: ")
+	& Exp.print_exp_str e => str 
+	& Debug.fprintln("failtrace",str)
+	-----------------------------------------------------
+	ceval_call_function (env,e,_) => fail
+
+end
 
 (** relation: ceval_function 
  ** 
