@@ -3,6 +3,7 @@
 module Dump:
 
   with "exp.rml"
+  with "types.rml"
   with "absyn.rml"
 
   type Ident = string
@@ -11,6 +12,7 @@ module Dump:
 
   relation dump: Absyn.Program => ()
   relation dump_exp: Exp.Exp => ()
+  relation dump_component_ref: Exp.ComponentRef => ()
 
 end
 
@@ -91,10 +93,9 @@ relation dump_exp: Exp.Exp => () =
 		--------------
 		dump_exp(Exp.NUMBER(x))
 
-	rule	Exp.path_string(p) => s &
-		print s
-		---------------
-		dump_exp(Exp.PATH(p))
+	rule	dump_component_ref(c)
+		---------------------
+		dump_exp(Exp.CREF(c))
 
 	rule	print "\"" & print s & print "\""
 		---------------------------------
@@ -302,27 +303,22 @@ and dump_elementspec: Absyn.ElementSpec => () =
 		------------------------------------------
 		dump_elementspec(Absyn.EXTENDS(p,l))
 
-	rule	print "COMPONENTS(" &
-		dump_select(f,"FLOW,","") &
-		dump_select(p,"PARAMETER,","") &
-		dump_select(c,"CONSTANT,","") &
-		dump_select(i,"INPUT,","") &
-		dump_select(o,"OUTPUT,","") &
-		Exp.path_string(t) => ts & print ts & print "," &
-		dump_list(cs, dump_component, ",") &
-		print ")"
-		------------------------------------------
-		dump_elementspec(Absyn.COMPONENTS(f,p,c,i,o,t,cs))
-
-	rule	print " ##ERROR## "
-		-------------------
+  rule	print "COMPONENTS(attr... ," &
+	Exp.path_string(t) => ts & print ts & print "," &
+	dump_list(cs, dump_component, ",") &
+	print ")"
+	------------------------------------------
+	dump_elementspec(Absyn.COMPONENTS(attr,t,cs))
+	
+  rule	print " ##ERROR## "
+	-------------------
 		dump_elementspec(_)
 
 end
 and dump_component: Absyn.Component => () =
 
 	rule	print n &
-		dump_option(a,dump_arraydim) &
+		dump_arraydim a &
 		dump_option(m,dump_modification)
 		------------------------------------------
 		dump_component(Absyn.COMPONENT(n,a,m))
@@ -331,34 +327,36 @@ and dump_component: Absyn.Component => () =
 end
 and dump_arraydim: Absyn.ArrayDim => () =
 
-	rule	print "[" & dump_subscript(s) & print "]"
-		-----------------------------------------
-		dump_arraydim(Absyn.ONEDIM(s))
+  axiom dump_arraydim(Types.NODIM)
 
-	rule	print "[" & dump_subscript(s1) &
-		print "," & dump_subscript(s2) & print "]"
-		-----------------------------------------
-		dump_arraydim(Absyn.TWODIM(s1,s2))
-
+  rule	print "[" & dump_subscript(s) & print "]"
+	-----------------------------------------
+	dump_arraydim(Types.ONEDIM(s))
+	
+  rule	print "[" & dump_subscript(s1) &
+	print "," & dump_subscript(s2) & print "]"
+	-----------------------------------------
+	dump_arraydim(Types.TWODIM(s1,s2))
+	
 end
 and dump_subscript: Absyn.Subscript => () =
 
 	rule	print ":"
 		---------
-		dump_subscript(NONE)
+		dump_subscript(Exp.NOSUB)
 
 	rule	dump_exp(e1)
 		----------
-		dump_subscript(SOME((e1,NONE)))
+		dump_subscript(Exp.SUB1(e1))
 
 	rule	dump_exp(e1) & print ":" & dump_exp(e2)
 		-------------
-		dump_subscript(SOME((e1,SOME((e2,NONE)))))
+		dump_subscript(Exp.SUB2(e1,e2))
 
 	rule	dump_exp(e1) & print ":" &
 		dump_exp(e2) & print ":" & dump_exp(e3)
 		----------------------------------------------
-		dump_subscript(SOME((e1,SOME((e2,SOME(e3))))))
+		dump_subscript(Exp.SUB3(e1,e2,e3))
 
 end
 and dump_modification: Absyn.Modification => () =
@@ -399,10 +397,10 @@ and dump_equation: Absyn.Equation => () =
 		dump_equation(_)
 
 end
-and dump_component_ref =
+and dump_component_ref : Exp.ComponentRef => () =
 
 	rule	dump_list(cr,dump_component_ref2,".")
-		---------------------------------------------------------
+		-------------------------------------
 		dump_component_ref(cr)
 
 end
