@@ -82,7 +82,10 @@ module Interactive:
 
 
   relation get_elementitems_in_class: (Absyn.Class) => Absyn.ElementItem list 
+  relation get_components_in_class: (Absyn.Class) => Absyn.Element list 
   relation get_classnames_in_elts: (Absyn.ElementItem list) => string list
+  relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env) => string list
+  relation get_components: (Absyn.ComponentRef,Absyn.Program) => string 
 end
 
 
@@ -3544,7 +3547,8 @@ relation get_components_name_and_type_and_comment2: (Absyn.Element list, Env.Env
 end
 
 (** relation: get_component_name_and_type_and_comment
- ** This relation takes an `Element' and returns a list of strings of comma separated values of the 
+ ** This relation takes an `Element' and returns a list of strings 
+ ** of comma separated values of the 
  **  type and name and comment of the component, e.g. 'Resistor,R1, "comment"' 
  ** or 'Resistor,R1,"comment1",R2,"comment2"'
  ** If Element is not a component, the empty string is returned
@@ -3586,7 +3590,8 @@ end
 
 
 (** relation_get_componentitems_name
- ** This relation takes a `ComponentItems' list and returns a comma separated list of all
+ ** This relation takes a `ComponentItems' list and returns a 
+ ** comma separated list of all
  ** component names and comments (if any).
 **)
 relation get_componentitems_name: Absyn.ComponentItem list => string list =

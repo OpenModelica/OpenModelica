@@ -38,8 +38,7 @@ module TORNADOEXT:
   relation get_output_var_number: (string) => int
   relation get_input_var_number: (string) => int
   relation get_param_var_number: (string) => int
-
-  
+(*   relation add_output_var_to_class: (string,string) => () *)
 	  
 end 
 
