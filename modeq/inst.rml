@@ -409,7 +409,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist,Env.Env
 	inst_class_decls(env,cdecls,path)=> (env',_) &
 	Lookup.lookup_class(env',path,true) 
 	  => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
-	inst_class(env'', Types.NOMOD, Prefix.NOPRE, [], cdef, [], false,TOP_CALL) 
+	inst_class(env'', Types.NOMOD, Prefix.NOPRE, [], cdef, [], false(*impl*),TOP_CALL) 
 	  => (dae,env'', _, _, _) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
@@ -425,7 +425,7 @@ end
 relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Element list, Env.Env) =
 	
   rule	name = name2 &
-	inst_class(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false,TOP_CALL) 
+	inst_class(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false(*impl*),TOP_CALL) 
 	  => (dae, env', _, _,_) 
 	-------------------------------------------------------------
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) 
@@ -451,7 +451,7 @@ end
  **)
 relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Element list) =
   rule	not name = name2 &
-	inst_class_decl(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false) 
+	inst_class_decl(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false(*packimpl*)) 
 	  => (env', dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae
@@ -465,7 +465,7 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 
   rule	name = name2 &      
 	(* How should be do here ??? *)
-	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
 	  => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
@@ -473,7 +473,7 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
 
   rule	not name = name2 &      
-	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
 	  => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
@@ -535,14 +535,14 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	Debug.fprint ("insttr", n) &
 	Debug.fprintln ("insttr", "") &
 	(* Env.extend_frame_c(env,c) => env' & *)
-	inst_class(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false,TOP_CALL) 
+	inst_class(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimp*),TOP_CALL) 
 	  => (dae,env',csets,_,_) 
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
   rule	Debug.fprintln ("insttr", "inst_program2") &
-	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
 	  => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_program(env',cs) => dae2 &
@@ -561,7 +561,7 @@ relation inst_program_implicit : (Env, SCode.Program) => (DAE.Element list, Env)
   rule	Debug.fprint ("insttr", "inst_program_implicit: ") &
 	Debug.fprint ("insttr", n) &
 	Debug.fprintln("insttr", "") &
-	implicit_instantiation(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	implicit_instantiation(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
 	  => (env', dae1) &
 	inst_program_implicit(env',cs) => (dae2, env'') &
 	list_append(dae1,dae2) => dae
@@ -602,7 +602,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 
   rule	Env.open_scope(env,encflag,SOME(n)) => env' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env', mod, pre, csets, ci_state, c, false, inst_dims, impl,false (*packimpl*))
+	inst_class_in(env', mod, pre, csets, ci_state, c, false(*accesibility*), inst_dims, impl,false (*packimpl*))
 	  => (dae1, env''', csets', ci_state', tys) &
 	  fully_qualified(Absyn.IDENT(n),env) => fq_class &
 	DAE.set_component_type(dae1,fq_class) => dae1' &
@@ -805,7 +805,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
 	inst_element_list(env4, mods, pre, csets, ci_state1, compelts'', 
-			  inst_dims, impl, false)
+			  inst_dims, impl, packimpl)
 	  => (dae1,env5, csets1, ci_state2, tys) &
 	inst_list(env5,mods,pre,csets1,ci_state2,inst_equation, eqs',impl)
 	  => (dae2,_,csets2, ci_state3) &
@@ -822,7 +822,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
-		      inst_dims, impl, false)
+		      inst_dims, impl, packimpl as false)
 	  => (dae, env5, csets5, ci_state6, tys)
 
 	(** This rule describes how to instantiate an explicit
@@ -858,12 +858,12 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
 	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', 
-			  inst_dims, impl, true)
+			  inst_dims, impl, true(*packimpl*))
 	  => (dae1, env4, csets1, ci_state2, tys) 
 	------------------------------------------------------
 	inst_classdef(env, mods, pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
-		      inst_dims, impl, true)
+		      inst_dims, impl, true(*packimpl*))
 	  => (dae1, env4, csets1, ci_state2, tys)
 
 
@@ -881,7 +881,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m,cenv'',pre) => mods' &
 	Mod.merge(mods',mod',cenv'',pre) => mods'' &
-	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false)
+	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false(*packimpl*))
 	  => (dae, env'', csets', ci_state', tys) &
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
@@ -1289,7 +1289,7 @@ end
  **)
 
 relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    (SCode.Element*Types.Mod) list, InstDims, bool, bool)
+			    (SCode.Element*Types.Mod) list, InstDims, bool(*impl*), bool(*packimpl*))
 	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 		Types.Var list) =
 	
@@ -1711,7 +1711,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", print, "\n") &*)
 	(* true in update_frame means the variable is now instantiated. *)
 	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),true) => env' 
+					 prot,ty,binding),true(*encapsulated*)) => env' 
 
 	(* Now we can also put the binding into the dae *)
 	(** If the type is one of the simple, predifined types a *)
@@ -1974,18 +1974,18 @@ relation inst_var2 : (Env.Env,
         
         Util.list_map(idxs',int_string) => index_string &
 
-        Debug.fprint ("insttr", "\n ******************\n ") &
-        Debug.fprint ("insttr", "\n index_string ") &   Debug.fprintl ("insttr", index_string) &
-        Debug.fprint ("insttr", "\n component ref ") &   Debug.fcall ("insttr", Exp.print_component_ref,cr) &
-        Debug.fprint ("insttr", "\n ******************\n ") &
-	Debug.fprint ("insttr", "\n ") &
+        Debug.fprint ("insttrind", "\n ******************\n ") &
+        Debug.fprint ("insttrind", "\n index_string ") &   Debug.fprintl ("insttr", index_string) &
+        Debug.fprint ("insttrind", "\n component ref ") &   Debug.fcall ("insttr", Exp.print_component_ref,cr) &
+        Debug.fprint ("insttrind", "\n ******************\n ") &
+	Debug.fprint ("insttrind", "\n ") &
 	
         inst_start_binding_exp(mod,ty,idxs') => start &
 
 (*         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr & *)
 (*   	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp & *)
-(*         Debug.fprint("failtrace", str_tmp) & *)
-(*   	    Debug.fprint("failtrace", " <------------\n") & *)
+(*         Debug.fprint("insttr", str_tmp) & *)
+(*   	    Debug.fprint("insttr", " <------------\n") & *)
 (*         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE, *)
 (*  		            inst_dims, start, dae_var_attr) => dae3 &  *)
 
@@ -2300,14 +2300,14 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 
 	(** Instantiate the component *)	
 	inst_var(cenv,ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
-		 dims, [], [], false)
+		 dims, [], [], impl)
 	  => (dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
 	make_binding (env2,attr,eq) => binding &
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),false) => env' 
+					 prot,ty,binding),false(*encapsulated*)) => env' 
 (*	& Debug.fprint("insttr","Updated variable ") &
 	Debug.fprint("insttr", id) &
 	Debug.fprint("insttr"," in env.\n ") *)
@@ -2369,7 +2369,7 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	make_binding (env2,attr,eq) => binding &
 
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),false) => env' 
+					 prot,ty,binding),false(*encapsulated*)) => env' 
 	------------
 	update_variable_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, impl) 
 	  => env'

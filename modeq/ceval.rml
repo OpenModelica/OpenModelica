@@ -173,6 +173,64 @@ with "codegen.rml"
 with "classloader.rml"
 
 
+
+
+(** relation: ceval_builtin
+ **
+ ** Helper for ceval. Parts for builtin calls are moved here, for readability.
+ ** See ceval for documentation.
+ **
+ **)
+relation ceval_builtin : (Env.Env, Exp.Exp, bool (*impl*),
+			  Interactive.InteractiveSymbolTable option, 
+			  int option) 
+	    => (Values.Value, Interactive.InteractiveSymbolTable option) =
+
+	 (* Handle size separately *)
+  rule	ceval_builtin_size(env,exp,dim,impl,st) => (v,st)
+	-----------------------------------------
+	ceval_builtin (env,Exp.SIZE(exp,SOME(dim)),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_size_matrix(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval_builtin (env,Exp.SIZE(exp,NONE),impl,st,_) => (v,st) 	
+
+  rule	ceval_builtin_handler id => handler &
+	handler(env,args,impl,st) => (v,st)
+	-----------------------------------------
+	ceval_builtin (env,Exp.CALL(Absyn.IDENT(id),args,_,builtin (*as true*)),impl,st,_) => (v,st)
+
+  (* It's ok if ceval_builtin fails. Just means the call wasn't a builtin function *)
+	
+end
+
+
+relation ceval_builtin_handler : Absyn.Ident  => ((Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option)
+						  => (Values.Value, Interactive.InteractiveSymbolTable option)) =
+  (* size handled specially. see ceval_builtin *)
+  (* axiom	ceval_builtin_handler "size" => ceval_builtin_size *)
+
+  axiom ceval_builtin_handler "floor" => ceval_builtin_floor
+  axiom ceval_builtin_handler "ceil" => ceval_builtin_ceil
+  axiom ceval_builtin_handler "abs" => ceval_builtin_abs
+  axiom ceval_builtin_handler "sqrt" => ceval_builtin_sqrt
+  axiom ceval_builtin_handler "div" => ceval_builtin_div
+  axiom ceval_builtin_handler "sin" => ceval_builtin_sin
+  axiom ceval_builtin_handler "cos" => ceval_builtin_cos
+  axiom ceval_builtin_handler "tan" => ceval_builtin_tan
+  axiom ceval_builtin_handler "integer" => ceval_builtin_integer
+  axiom ceval_builtin_handler "mod" => ceval_builtin_mod
+  axiom ceval_builtin_handler "rem" => ceval_builtin_rem
+  axiom	ceval_builtin_handler "diagonal" => ceval_builtin_diagonal
+
+  rule	Debug.fprint("ceval", "No ceval_builtin_handler found for: ") &
+	Debug.fprintln("ceval", id)
+	--------------------------
+	ceval_builtin_handler id => fail
+
+end
+
+
 (** relation: ceval
  **
  ** This relation is used when the value of a constant expression is
@@ -230,68 +288,16 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 	   * mode..*)
 	ceval_cref(env,c,false) => v
 	---------------------------
-	ceval (env,Exp.CREF(c,_),impl,SOME(st),_) => (v,SOME(st)) 
+	ceval (env,Exp.CREF(c,_),impl as false,SOME(st),_) => (v,SOME(st)) 
 
   rule	ceval_cref (env,c,impl) => v
 	---------------------------
 	ceval (env,Exp.CREF(c,_),impl,st,_) => (v,st) 
 
-  rule	ceval_builtin_size(env,cref,dim,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.SIZE(cref,SOME(dim)),impl,st,_) => (v,st) 	
 
-  rule	ceval_builtin_size_matrix(env,cref,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.SIZE(cref,NONE),impl,st,_) => (v,st) 	
-
-  rule	ceval_builtin_abs(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("abs"),[exp],_,_),impl,st,_) => (v,st) 	
-
-	(* Start luc_pop *)
-  rule	ceval_builtin_floor(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("floor"),[exp],_,_),impl,st,_) => (v,st) 	
-
-  rule	ceval_builtin_ceil(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("ceil"),[exp],_,_),impl,st,_) => (v,st) 	
-
-  rule	ceval_builtin_sqrt(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("sqrt"),[exp],_,_),impl,st,_) => (v,st)
-	
-  rule	ceval_builtin_sin(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("sin"),[exp],_,_),impl,st,_) => (v,st)
-
-  rule	ceval_builtin_cos(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("cos"),[exp],_,_),impl,st,_) => (v,st)
-
-  rule	ceval_builtin_tan(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("tan"),[exp],_,_),impl,st,_) => (v,st)
-
-  rule	ceval_builtin_integer(env,exp,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("integer"),[exp],_,_),impl,st,_) => (v,st) 	
-
-  rule	ceval_builtin_div(env,exp1,exp2,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("div"),[exp1, exp2],_,_),impl,st,_) => (v,st) 	
-
-  rule	ceval_builtin_mod(env,exp1,exp2,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("mod"),[exp1, exp2],_,_),impl,st,_) => (v,st) 	
-
-  rule	ceval_builtin_rem(env,exp1,exp2,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("rem"),[exp1, exp2],_,_),impl,st,_) => (v,st) 	
-
-  rule	ceval_builtin_diagonal(env,exp1,impl,st) => (v,st)
-	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("diagonal"),[exp1],_,_),impl,st,_) => (v,st) 	
+  rule	ceval_builtin (env, exp, impl, st, dim) => (v, st')
+	---------------------------------------------------
+	ceval (env,exp,impl,st,dim) => (v,st') 	
 
 
   rule	ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') & 
@@ -342,24 +348,16 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 	   and write another rule for the false case that generates the function *)
   rule	(* Static.is_function_in_cflist(cflist,funcpath) => true & *)
 	Debug.fprintln("ceval", "- ceval call begin") &
- print "ceval call begin" &
 	ceval_generate_function(env, funcpath) &
- print "ceval func" &
 	Debug.fprintln("ceval", "- ceval func generated") &
- print "ceval list" &
 	ceval_list(env,expl,impl,st) => vallst &
 	Debug.fprintln("ceval", "- ceval args evaluated") &
- print "ceval path_string2" &
 	ModUtil.path_string2(funcpath,"_") => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
- print "ceval write" &
 	Values.write_to_file_as_args(vallst,infilename)  &
- print "ceval sysexec" &
 	System.execute_function(funcstr) &
- print "ceval sysread" &
 	System.read_values_from_file(outfilename) => newval
-& print "ceval done"
 	& Debug.fprintln("ceval", "- ceval call success")
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => (newval,st)
@@ -1553,20 +1551,66 @@ end
 relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
-  rule	(* Crefs are looked up to find dimensional size*)
-	ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dim),st') &
+
+  rule	(* If dimensions known, always ceval *)
 	Lookup.lookup_var(env,cr) => (attr, tp, bind) &
+	Types.dimensions_known(tp) => true &
 	Types.get_dimension_sizes(tp) => sizelst &
+	ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dim),st') &
 	int_sub(dim,1) => dim' &
 	list_nth(sizelst,dim') => v
 	------------------------------------
 	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl,st) => (Values.INTEGER(v),st')
 
-  rule	ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dim),st') &
-	ceval(env,cref,impl,st,NONE) => (v,st') &
-	ceval_builtin_size_2(v,dim) => v2
+  rule	(* If dimensions not known and impl=true, just silently fail *)
+	Lookup.lookup_var(env,cr) => (attr, tp, bind) &
+	Types.dimensions_known(tp) => false
 	------------------------------------
-	ceval_builtin_size(env,cref,dim,impl,st) => (v2,st')
+	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as true,st) => fail
+
+  rule	(* If dimensions not known and impl=false, error message *)
+	Lookup.lookup_var(env,cr) => (attr, tp, bind) &
+	Types.dimensions_known(tp) => false &
+	Print.print_error_buf "#-- ceval_builtin_size: Dimensions must be known when instantiating models\n"
+	------------------------------------
+	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st) => fail
+
+
+  rule	(*For crefs without value binding*) 
+	Lookup.lookup_var(env,cr) => (attr, tp, Types.UNBOUND) &
+	Print.print_error_buf "#-- ceval_builtin_size: Value of cref not known when instantiating: "  &
+	Exp.print_exp_str exp => expstr &
+	Print.print_error_buf expstr &
+	Print.print_error_buf "\n"
+	------------------------------------
+	ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl as false,st) => fail
+
+  rule	(*For crefs without value binding. If impl=true just silently fail *) 
+	Lookup.lookup_var(env,cr) => (attr, tp, Types.UNBOUND)
+	------------------------------------
+	ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl as true,st) => fail
+
+  rule	(*For crefs with value binding*) 
+	Lookup.lookup_var(env,cr) => (attr, tp, binding) &
+	ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dimv),st') &
+	ceval_cref_binding (env,cr,binding,impl) => v &
+	ceval_builtin_size_2(v,dimv) => v2
+	------------------------------------
+	ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl,st) => (v2,st')
+
+  rule	(* try to ceval expression, for constant expressions *)
+	ceval(env,exp,impl,st,NONE) => (v, st') &
+	ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dimv),st') &
+	ceval_builtin_size_2(v,dimv) => v2
+	---------------------------------
+	ceval_builtin_size(env,exp,dim,impl,st) => (v2,st')
+
+  rule	Print.print_error_buf "#-- ceval_builtin_size failed: "  &
+	Exp.print_exp_str exp => expstr &
+	Print.print_error_buf expstr &
+	Print.print_error_buf "\n"
+	------------------------------------
+	ceval_builtin_size(env,exp,dim,impl,st) => fail
 end
 
 relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
@@ -1585,35 +1629,35 @@ relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
 	ceval_builtin_size_2(_,_) => fail
 end
 
-relation ceval_builtin_abs : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_abs : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
        
   rule  ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_abs(rv) => rv'
 	--------------------------------------
-	ceval_builtin_abs(env,exp,impl,st) => (Values.REAL(rv'),st)
+	ceval_builtin_abs(env,[exp],impl,st) => (Values.REAL(rv'),st)
 
   rule  ceval (env,exp,impl,st,NONE) => (Values.INTEGER(iv),_) &
         int_abs(iv) => iv  
 	--------------------------------------
-	ceval_builtin_abs(env,exp,impl,st) => (Values.INTEGER(iv),st)
+	ceval_builtin_abs(env,[exp],impl,st) => (Values.INTEGER(iv),st)
 
 
 end
 
 (* Start luc_pop *)
 (* floor *)
-relation ceval_builtin_floor : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_floor : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule (*print "# floor function not implemented CEVAL yet\n" &*)
     	ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_floor rv => rv' 
     --------------------------------------
-    ceval_builtin_floor(env,exp,impl,st) => (Values.REAL(rv'),st)
+    ceval_builtin_floor(env,[exp],impl,st) => (Values.REAL(rv'),st)
 end
 
-relation ceval_builtin_ceil : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_ceil : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule  ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
@@ -1622,7 +1666,7 @@ relation ceval_builtin_ceil : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSy
         int_real ri => rvt &
         real_eq(rvt,rv) => true 
         --------------------------------------
-        ceval_builtin_ceil(env,exp,impl,st) => (Values.REAL(rv'),st)
+        ceval_builtin_ceil(env,[exp],impl,st) => (Values.REAL(rv'),st)
 
   rule  ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_floor rv => rv' &
@@ -1630,48 +1674,48 @@ relation ceval_builtin_ceil : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSy
         int_add(ri,1) => ri' &
         int_real ri' => rv''
         --------------------------------------
-        ceval_builtin_ceil(env,exp,impl,st) => (Values.REAL(rv''),st)
+        ceval_builtin_ceil(env,[exp],impl,st) => (Values.REAL(rv''),st)
 end
 
-relation ceval_builtin_sqrt : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_sqrt : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_lt (rv,0.0) => true &
         Print.print_error_buf "# sqrt - the input is negative\n" 
     --------------------------------------
-    ceval_builtin_sqrt(env,exp,impl,st) => fail
+    ceval_builtin_sqrt(env,[exp],impl,st) => fail
  
   rule (** print "# sqrt function not implemented CEVAL yet\n" &**)
         ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_sqrt rv => rv' 
     --------------------------------------
-    ceval_builtin_sqrt(env,exp,impl,st) => (Values.REAL(rv'),st)
+    ceval_builtin_sqrt(env,[exp],impl,st) => (Values.REAL(rv'),st)
 
 end
 
-relation ceval_builtin_sin : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_sin : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
  
   rule	ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_sin rv => rv' 
 	--------------------------------------
-	ceval_builtin_sin(env,exp,impl,st) => (Values.REAL(rv'),st)
+	ceval_builtin_sin(env,[exp],impl,st) => (Values.REAL(rv'),st)
 
 end
 
-relation ceval_builtin_cos : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_cos : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
  
   rule	
         ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_cos rv => rv' 
 	--------------------------------------
-	ceval_builtin_cos(env,exp,impl,st) => (Values.REAL(rv'),st)
+	ceval_builtin_cos(env,[exp],impl,st) => (Values.REAL(rv'),st)
  
 end
 
-relation ceval_builtin_tan : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_tan : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
  
   rule	(* tan is not implemented in RML for some strange reason...
@@ -1682,10 +1726,10 @@ relation ceval_builtin_tan : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSym
 	real_cos rv => cv &
 	real_div(sv,cv) => rv' 
 	--------------------------------------
-	ceval_builtin_tan(env,exp,impl,st) => (Values.REAL(rv'),st)
+	ceval_builtin_tan(env,[exp],impl,st) => (Values.REAL(rv'),st)
 end
 
-relation ceval_builtin_div : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_div : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule  ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
@@ -1694,7 +1738,7 @@ relation ceval_builtin_div : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
         real_int rv' => ri &
         int_real ri => rv''
         --------------------------------------
-        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.REAL(rv''),st)
+        ceval_builtin_div(env,[exp1,exp2],impl,st) => (Values.REAL(rv''),st)
         
   rule  ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri),_) &
         int_real ri => rv1 &
@@ -1703,7 +1747,7 @@ relation ceval_builtin_div : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
         real_int rv' => ri' &
         int_real ri' => rv''
         --------------------------------------
-        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.REAL(rv''),st)
+        ceval_builtin_div(env,[exp1,exp2],impl,st) => (Values.REAL(rv''),st)
         
   rule  ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
         ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri),_) &
@@ -1712,29 +1756,29 @@ relation ceval_builtin_div : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
         real_int rv' => ri' &
         int_real ri' => rv''
         --------------------------------------
-        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.REAL(rv''),st)
+        ceval_builtin_div(env,[exp1,exp2],impl,st) => (Values.REAL(rv''),st)
         
   rule  ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri1),_) &
         ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
 	int_div(ri1,ri2) => ri' 
          --------------------------------------
-        ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.INTEGER(ri'),st)
+        ceval_builtin_div(env,[exp1,exp2],impl,st) => (Values.INTEGER(ri'),st)
         
   rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
  	Print.print_error_buf "#Error, division by zero.\n" 
         --------------------------------------
-        ceval_builtin_div(env,exp1,exp2,impl,st) => fail
+        ceval_builtin_div(env,[exp1,exp2],impl,st) => fail
 
   rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
  	Print.print_error_buf "#Error, division by zero.\n" 
         --------------------------------------
-        ceval_builtin_div(env,exp1,exp2,impl,st) => fail
+        ceval_builtin_div(env,[exp1,exp2],impl,st) => fail
         
 end
 
-relation ceval_builtin_mod : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_mod : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule  (*print "# mod real real" &*)
@@ -1745,7 +1789,7 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 	    real_mul(rvb,rv2) => rvc &
 	    real_sub(rv1,rvc) => rvd 
         --------------------------------------
-        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        ceval_builtin_mod(env,[exp1,exp2],impl,st) => (Values.REAL(rvd),st)
         
   rule  (*print "# mod INTEGER REAL" &*)
 		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri),_) &
@@ -1756,7 +1800,7 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 	    real_mul(rvb,rv2) => rvc &
 	    real_sub(rv1,rvc) => rvd 
         --------------------------------------
-        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        ceval_builtin_mod(env,[exp1,exp2],impl,st) => (Values.REAL(rvd),st)
         
   rule  (*print "# mod REAL INTEGER" &*)
 		ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
@@ -1767,7 +1811,7 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 	    real_mul(rvb,rv2) => rvc &
 	    real_sub(rv1,rvc) => rvd 
         --------------------------------------
-        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        ceval_builtin_mod(env,[exp1,exp2],impl,st) => (Values.REAL(rvd),st)
         
   rule  (*print "# mod INTEGER INTEGER" &*)
 		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri1),_) &
@@ -1780,23 +1824,23 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 	    real_sub(rv1,rvc) => rvd &
 	    real_int rvd => ri'
         --------------------------------------
-        ceval_builtin_mod(env,exp1,exp2,impl,st) => (Values.INTEGER(ri'),st)
+        ceval_builtin_mod(env,[exp1,exp2],impl,st) => (Values.INTEGER(ri'),st)
         
   rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
  	Print.print_error_buf "#Second argument in mod should be non-zero.\n" 
         --------------------------------------
-        ceval_builtin_mod(env,exp1,exp2,impl,st) => fail
+        ceval_builtin_mod(env,[exp1,exp2],impl,st) => fail
 
   rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
  	Print.print_error_buf "#Second argument in mod should be non-zero.\n" 
         --------------------------------------
-        ceval_builtin_mod(env,exp1,exp2,impl,st) => fail
+        ceval_builtin_mod(env,[exp1,exp2],impl,st) => fail
         
 end
 
-relation ceval_builtin_rem : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_rem : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule  (*print "# rem real real" &*)
@@ -1806,7 +1850,7 @@ relation ceval_builtin_rem : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 	    real_mul(rva,rv2) => rvb &
 		real_sub(rv1,rvb) => rvd
         --------------------------------------
-        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        ceval_builtin_rem(env,[exp1,exp2],impl,st) => (Values.REAL(rvd),st)
         
   rule  (*print "# rem INTEGER REAL" &*)
 		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri),_) &
@@ -1816,7 +1860,7 @@ relation ceval_builtin_rem : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 	    real_mul(rva,rv2) => rvb &
 		real_sub(rv1,rvb) => rvd
         --------------------------------------
-        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        ceval_builtin_rem(env,[exp1,exp2],impl,st) => (Values.REAL(rvd),st)
         
   rule  (*print "# rem REAL INTEGER" &*)
 		ceval (env,exp1,impl,st,NONE) => (Values.REAL(rv1),_) &
@@ -1826,7 +1870,7 @@ relation ceval_builtin_rem : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 	    real_mul(rva,rv2) => rvb &
 		real_sub(rv1,rvb) => rvd
         --------------------------------------
-        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.REAL(rvd),st)
+        ceval_builtin_rem(env,[exp1,exp2],impl,st) => (Values.REAL(rvd),st)
         
   rule  (*print "# rem INTEGER INTEGER" &*)
 		ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri1),_) &
@@ -1838,30 +1882,30 @@ relation ceval_builtin_rem : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
 		real_sub(rv1,rvb) => rvd &
 		real_int rvd => ri'
         --------------------------------------
-        ceval_builtin_rem(env,exp1,exp2,impl,st) => (Values.INTEGER(ri'),st)
+        ceval_builtin_rem(env,[exp1,exp2],impl,st) => (Values.INTEGER(ri'),st)
         
   rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
  	Print.print_error_buf "#Second argument in rem should be non-zero.\n" 
         --------------------------------------
-        ceval_builtin_rem(env,exp1,exp2,impl,st) => fail
+        ceval_builtin_rem(env,[exp1,exp2],impl,st) => fail
 
   rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
  	Print.print_error_buf "#Second argument in rem should be non-zero.\n" 
         --------------------------------------
-        ceval_builtin_rem(env,exp1,exp2,impl,st) => fail
+        ceval_builtin_rem(env,[exp1,exp2],impl,st) => fail
         
 end
 
-relation ceval_builtin_integer : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_integer : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule (** print "# integer function not implemented CEVAL yet\n" &**)
         ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_int rv => ri 
     --------------------------------------
-    ceval_builtin_integer(env,exp,impl,st) => (Values.INTEGER(ri),st)
+    ceval_builtin_integer(env,[exp],impl,st) => (Values.INTEGER(ri),st)
  
 end
 
@@ -1965,7 +2009,7 @@ end
 ** ie A[1,1] == a, A[2,2] == b ...
 *)
 
-relation ceval_builtin_diagonal : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+relation ceval_builtin_diagonal : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule  ceval (env,exp,impl,st,NONE) => (Values.ARRAY(rv2),_) &
@@ -1976,12 +2020,11 @@ relation ceval_builtin_diagonal : (Env.Env, Exp.Exp, bool, Interactive.Interacti
         retExp &
 	
    	int_string dimension => dimensionString &
-   	Debug.fcall("failtrace", Print.print_buf, "== dimensionString ") & 
-   	Debug.fcall("failtrace", Print.print_buf, dimensionString) & 
-   	Debug.fcall("failtrace", Print.print_buf, "\n") 
-   	
+   	Debug.fcall("ceval", Print.print_buf, "== dimensionString ") & 
+   	Debug.fcall("ceval", Print.print_buf, dimensionString) & 
+   	Debug.fcall("ceval", Print.print_buf, "\n")    	
 	--------------------------------------
-	ceval_builtin_diagonal(env,exp,impl,st) => (Values.ARRAY(retExp),st)
+	ceval_builtin_diagonal(env,[exp],impl,st) => (Values.ARRAY(retExp),st)
 	
 	
   rule  print"#-- ceval_builtin_diagonal: Couldn't elaborate ceval_builtin_diagonal()\n" 
@@ -2277,8 +2320,8 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) ) => Values.Valu
   rule	Debug.fprintln("ceval", "ceval_cref: Skipping ceval_cref_binding because implicit inst")
 	----------------------------------------------------------------------------
 	ceval_cref (env,c,impl as true) => fail
-*)
 
+*)
 
   rule	Lookup.lookup_var (env, c) => (_,_,binding) &
 	ceval_cref_binding (env,c,binding,impl) => v
@@ -2291,7 +2334,7 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) ) => Values.Valu
 	Exp.print_component_ref_str c => str &
 	Print.print_error_buf str & Print.print_error_buf "\n"
 	-------------------------------------
-	ceval_cref (_,c,impl (*as false*) ) => fail
+	ceval_cref (_,c,impl as false ) => fail
 
 end
 
@@ -2299,7 +2342,7 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*i
 
 (* FIXME: For now, we don't try to check binding if implicit instantiation *)
 
-(*
+(* 
   rule	Debug.fprintln("ceval", "ceval_cref_binding: shouldn't have been called.") &
 	Debug.fprintln("ceval", "Skipping because implicit inst")
 	----------------------------------------------------------------------------
@@ -2310,19 +2353,23 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*i
 	Types.get_dimension_sizes(tp) => sizelst &
 	ceval_subscript_value(env,subsc,v, sizelst,impl) => res
 	-----------------------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl (*as false*))
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl)
 	  => res
 
   rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
-	ceval_cref_binding (env,_,Types.UNBOUND,impl (*as false*)) => fail
+	ceval_cref_binding (env,_,Types.UNBOUND,impl as false) => fail
+
+  rule	Debug.fprint("ceval", "#- ceval_cref__binding: Ignoring unbound when implicit")	
+	-------------------------------------
+	ceval_cref_binding (env,_,Types.UNBOUND,impl as true) => fail
 	
 
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
 	rfn = "array" &
-	Print.print_buf "#-- ceval_cref_binding Array evaluation\n"
+	Debug.fprintln("ceval", "#-- ceval_cref_binding Array evaluation")
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl (*as false*))
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
 	  => fail
 
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
@@ -2332,7 +2379,7 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*i
 	ceval (env,exp,impl,NONE,NONE) => (v,_) &
 	ceval_subscript_value (env,subsc,v,sizelst,impl) => res
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl (*as false*))
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
 	  => res
 
   rule	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
@@ -2340,13 +2387,15 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*i
 	ceval (env,exp,impl,NONE,NONE) => (v,_) &
 	ceval_subscript_value(env,subsc,v,sizelst,impl) => res
 	------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl (*as false*)) 
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl) 
 	  => res
 
-  rule	Print.print_buf "- ceval_cref__binding failed (nonconstant EQBOUND(" &
-	Exp.print_exp exp & Print.print_buf ")\n"
+  rule	Debug.fprint("ceval", "#- ceval_cref__binding failed (nonconstant EQBOUND(") &
+	Exp.print_exp_str exp => expstr &
+	Debug.fprint("ceval", expstr) &
+	Debug.fprintln("ceval", "))") 
 	--------------------------------
-	ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl (*as false*)) => fail
+	ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl) => fail
 	
 end
 

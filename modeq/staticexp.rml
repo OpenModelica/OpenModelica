@@ -459,8 +459,8 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env, Absyn.CODE(c),impl,st) =>  (Exp.CODE(c,tp'),Types.PROP(tp,true),st)
 
   rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
-	Debug.fcall("failtrace", Dump.print_exp, e) & 
-	Debug.fprint("failtrace", "\n") 
+	Debug.fcallret("failtrace", Dump.print_exp_str, e, "") => expstr & 
+	Debug.fprintln("failtrace", expstr) 
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
 end 
@@ -832,7 +832,7 @@ relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, Exp.Exp, bool (*co
 	Util.flatten_option (s2opt,"none") => s2 &
 	Exp.print_exp_str stop => s3 &
 	Util.if(const, "const", "non-const") => s4 &
-	Util.if(const, "impl", "expl") => s5 &
+	Util.if(impl, "impl", "expl") => s5 &
 	Exp.type_string expty => s6 &
 	Util.string_append_list(["(",s1,":",s2,":",s3,") ",s4," ",s5," ",s6]) => str &
 	Debug.fprintln("failtrace", str)	
@@ -1054,7 +1054,8 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list, bool (*impl*) ) => (Exp.E
 	---------------------------------------------------------------
 	elab_builtin_size (env, [arraycr], impl) 
 	  => (exp,Types.PROP((Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE),c))
-  rule	(*Debug.fprint("failtrace", "- elab_builtin_size failed\n")*)
+
+  rule	Debug.fprint("failtrace", "- elab_builtin_size failed\n")
 	----------------------------------------------------------
 	elab_builtin_size (env,expl,impl) => fail
 end

@@ -158,8 +158,8 @@ module Exp:
 	       | RELATION of Exp * Operator * Exp		(* Relation, e.g. a <= 0 *)
 	       | IFEXP of Exp * Exp * Exp			(* If expressions *)
 	       | CALL of Absyn.Path * Exp list * bool (* tuple *) * bool (* builtin *) (* Function call *)
-	       | ARRAY of Type * bool * Exp list		(* Array constructor, e.g. {1,3,4} *)
-	       | MATRIX of Type * int * (Exp*bool) list	list	(* Matrix constructor. e.g. [1,0;0,1] *)
+	       | ARRAY of Type * bool (*scalar for codegen*) * Exp list		(* Array constructor, e.g. {1,3,4} *)
+	       | MATRIX of Type * int * (Exp*bool (*scalar*)) list list	(* Matrix constructor. e.g. [1,0;0,1] *)
 	       | RANGE of Type * Exp * Exp option * Exp		(* Range constructor, e.g. 1:0.5:10 *)
 	       | TUPLE of Exp list (*PR.*)			(* Tuples, used in func calls returning several 
 								  arguments *)

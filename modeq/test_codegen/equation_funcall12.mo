@@ -28,12 +28,12 @@ model mo
   parameter Real a=5;
   parameter Real b[3]={1,2,3};
   Real x1=test(a);
-  Real x2=size(test2(b),1);
+  parameter Real x2=size(test2(b),1);
 //  Real x3=test(size(test2(size(b,1),b),1));
   Real y;
   Real z;
 equation
-  y = test(x1+x2);
-  z = test(test3(y));
+  y = test3(x1+x2);
+  z = test(y);
 end mo;
 

@@ -324,7 +324,7 @@ relation ndims : Type => int =
 end
 relation dimensions_known: Type => bool =
 	
-  rule	not get_dimension_sizes(tp) => _
+  rule	get_dimension_sizes(tp) => []
 	-----------------------
 	dimensions_known(tp) => false
 
