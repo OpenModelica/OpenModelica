@@ -558,10 +558,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** precedence rules are followed. *)
 
 	Lookup.lookup_class(env,t) => (cl,cenv) & 
-	Debug.fprint ("insttr"," lookup_class returned env:") &
-	Debug.fcall ("insttr", Env.print_env, cenv ) &
-	Debug.fprint ("insttr","... when input env was:") &
-	Debug.fcall ("insttr", Env.print_env, env ) &
 
 	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	Debug.fprintln ("insttr", "Looking up class modifications") &

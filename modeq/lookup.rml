@@ -155,12 +155,33 @@ end
 relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef) 
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
-  rule	print "--lookup_var_in_packages not implemented yet\n"
+  rule	lookup_class_in_env(env, Absyn.IDENT(id)) => (c, env) &
+	lookup_var_in_class(env, c, cref) => (attr,ty,bind) 
 	--------------------------------------------------
-	lookup_var_in_packages (env, Exp.CREF_QUAL(id, [], cref)) => fail
-
+	lookup_var_in_packages (env, Exp.CREF_QUAL(id, [], cref)) => (attr,ty,bind)
 end
 
+relation lookup_var_in_class: (Env.Env, SCode.Class, Exp.ComponentRef)
+	    => (Types.Attributes, Types.Type, Types.Binding) =
+
+  rule	lookup_var_in_parts(id,parts) => (attr,ty,bind)
+	-----------------------------------------------
+	lookup_var_in_class(env, SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)), Exp.CREF_IDENT(id,_))
+	    => (attr, ty, bind)
+
+  rule	lookup_class_in_class(env,c,Absyn.IDENT(id)) => (c2,env) &
+	lookup_var_in_class(env,c2,cref) => (attr, ty, bind) 
+	--------------
+	lookup_var_in_class(env, c as SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)), Exp.CREF_QUAL(id,_,cref))
+	    => (attr, ty, bind)
+end
+
+relation lookup_var_in_parts: (Absyn.Ident, SCode.Element list) 
+	    => (Types.Attributes, Types.Type, Types.Binding) =
+
+(* Fortsätt här...*)
+
+end
 
 (** relation: lookup_var_local
  ** 
