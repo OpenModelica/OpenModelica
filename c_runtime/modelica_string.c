@@ -36,6 +36,16 @@ int modelica_string_length(modelica_string_t* a)
   return a->length;
 }
 
+void init_modelica_string(modelica_string_t* dest, const char* str)
+{
+  int i;
+  int length = strlen(str);
+  alloc_modelica_string(dest, length);
+  alloc_modelica_string_data(dest);
+  for (i = 0; i<length; ++i) {
+    dest->data[i] = str[i];
+  }
+}
 
 void alloc_modelica_string(modelica_string_t* dest, int n)
 { 

@@ -34,6 +34,9 @@ typedef struct modelica_string_s modelica_string_t;
 int modelica_string_ok(modelica_string_t* a);
 
 int modelica_string_length(modelica_string_t* a);
+
+void init_modelica_string(modelica_string_t* dest, const char* str);
+
 void alloc_modelica_string(modelica_string_t* dest,int length);
 
 /* Allocation of real data */
