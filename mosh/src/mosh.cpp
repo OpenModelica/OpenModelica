@@ -114,7 +114,17 @@ int main(int argc, char* argv[])
     }
     add_history(line);
     int nbytes = write(sock,line,strlen(line)+1);
+    if (nbytes == 0) {
+      cout << "Error writing to server" << endl;
+      done = true;
+      break;
+    }
     int recvbytes = read(sock,buf,40000);
+    if (recvbytes == 0) {
+      cout << "Recieved 0 bytes, exiting" << endl;
+      done = true;
+      break;
+    }
     cout << buf;
     free(line);
   }
