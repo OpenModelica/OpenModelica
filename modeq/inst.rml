@@ -426,7 +426,7 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	classdef_elts(elts) => cdefelts &
 	component_elts(elts) => compelts &
 	extends_elts(elts) => extendselts &
-	(* 1. CLASSDEF nodes and COMPONENT nodes(add to env)*)
+	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
 	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims) => (_,env',csets',ci_state',tys) &
 	
 	Debug.fprint ("decl", "calling extend_components_to_env, env=\n") &
@@ -458,6 +458,10 @@ relation classdef_elts: (SCode.Element list) => (SCode.Element list) =
   rule	classdef_elts(xs) => res
 	------------------------
 	classdef_elts ((cdef as SCode.CLASSDEF(_,_,_,_))::xs) => cdef::res
+
+  rule	classdef_elts(xs) => res
+	------------------------
+	classdef_elts((imp as SCode.IMPORT(_))::xs) => imp::res
 
   rule	classdef_elts(xs) => res
 	------------------------
@@ -558,6 +562,15 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Element, InstDims)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
+
+	(** imports
+	   ** imports are simply added to the current frame, so that the lookup rule can find them.
+	   **)
+
+  rule	Env.extend_frame_i(env,imp) => env'
+	------------------------------------
+	inst_element(env,mod,pre,csets,ci_state,SCode.IMPORT(imp),instdims) => ([],env',csets,ci_state,[])
+	
 
 	(**  extends
 	 **

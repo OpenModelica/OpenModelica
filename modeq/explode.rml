@@ -102,6 +102,7 @@ module SCode :
 			       * bool		(* final *)
 			       * bool		(* replaceable *)
 			       * Class
+		   | IMPORT    of Absyn.Import
 		   | COMPONENT of Ident		(* component name *)
 				* bool		(* final *)
 				* bool		(* protected *)
@@ -380,6 +381,7 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_)::xs))
 	  => COMPONENT(n,final,prot,ATTR(tot_dim,fl,RW,pa,di),t,mod)::xs'
 
+  axiom	elab_elementspec(final,prot,Absyn.IMPORT(imp)) => [IMPORT(imp)]
 end
 
 (** relation: elab_equations

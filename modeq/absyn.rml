@@ -284,6 +284,7 @@ module Absyn:
   relation cref_to_path : ComponentRef => Path
   relation path_to_cref : Path => ComponentRef
   relation path_string : Path => string
+  relation path_last_ident : Path => Ident
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
@@ -324,6 +325,16 @@ relation path_string: Path => string =
 	-------------------------------------
 	path_string(QUALIFIED(s,n)) => ss
 	
+end
+
+relation path_last_ident : Path => Ident =
+	
+  rule	path_last_ident(p) => res
+	-------------------------
+	path_last_ident(QUALIFIED(_,p)) => res
+	
+  axiom	path_last_ident(IDENT(n)) => n
+
 end
 
 (** relation: cref_to_path
