@@ -6,7 +6,7 @@
 (**
 **
   ** file:	 tornado.rml
- ** module:      Tornado
+ ** module:		 Tornado
  ** description: Code generation of Nodelica models including equation
  ** code and symbolic information to the Tornado-1 format.
  ** Part of the Hemmis project at MathCore Engineering AB.
@@ -40,7 +40,7 @@ with "debug.rml"
  ** The implementation uses the DAELow module to lower the flat modelica model such that it
  ** can be BLT sorted and indexed, etc.
  **)
-relation generate_code:  (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
+relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
   rule	DAELow.lower(dae) => dae' &
 	Absyn.path_string(class) => cname &
@@ -72,7 +72,7 @@ relation generate_header: string => string =
 	Util.string_append_list(["#define __",CNAME,"_H__\n"]) => r2 &
 	Util.string_append_list(["\n#include \"Tornado/EE/MSLE/MSLE.h\"\n",
 				 "\n\nclass C",cname," : public Tornado::CDAEModel\n"]) => r3 &
-	Util.string_append_list(["{\n  public:\n\n    C",cname,"(const wchar_t* Name);\n",
+	Util.string_append_list(["{\n  public:\n\n     C",cname,"(const wchar_t* Name);\n",
 				 "\n  public:\n\n",
 				 "    void ComputeInitial();\n",
 				 "    void ComputeTerminal();\n",
@@ -124,9 +124,10 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
 	
 	
   rule	
-	generate_constructor_outputvars(dae) => outputvars &
-	generate_constructor_statevars(dae) => statevars &
-	Util.string_append_list(["C",cname,"::\n",
+		generate_constructor_outputvars(dae) => outputvars &
+		generate_constructor_statevars(dae) => statevars &
+		generate_constructor_component_initialization(cname,p) => initializationvars &
+		Util.string_append_list(["C",cname,"::\n",
 				 "C",cname,"(const wchar_t* Name)\n",
 				 "{\n",
 				 "  SetName(Name);\n",
@@ -142,7 +143,8 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
 				 "\n",
 				 "  SetNoIndepVarValues(1);\n",
 				 "\n",
-				 "  Link();\n",
+				 "  Link(); sadfj====>\n",
+				 initializationvars,
 				 "  Reset();\n",
 				 "}\n",
 				 "\n"]) => constr
@@ -162,49 +164,49 @@ end
  ** The first output variable has the index 0. 
  *)
 relation generate_constructor_outputvars:(DAELow.DAELow) => string= 
-
-  rule	generate_constructor_outputvars2(vars,0) => lst1 &
-	list_length(lst1) => len &
-	int_sub(len,1) => len' &
-	generate_constructor_outputvars2(knvars,len') => lst2 &
-	list_append(lst1,lst2) => lst &
-	Util.string_delimit_list(lst,"\n") => res &
-	list_length(lst) => len &
-	int_string len => lenstr &
-	Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix &
-	Util.string_append_list(["  SetNoOutputVarValues(",lenstr,");\n"]) => prefix &
-	string_append(prefix,res) => res'
-	-------------------------------------------
-	generate_constructor_outputvars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
+        
+  rule  generate_constructor_outputvars2(vars,0) => lst1 &
+	    list_length(lst1) => len &
+	    int_sub(len,1) => len' &
+	    generate_constructor_outputvars2(knvars,len') => lst2 &
+	    list_append(lst1,lst2) => lst &
+	    Util.string_delimit_list(lst,"\n") => res &
+	    list_length(lst) => len &
+	    int_string len => lenstr &
+        Util.string_append_list([" SetNoOutputVars(",lenstr,");\n"]) => prefix &
+        Util.string_append_list([" SetNoOutputVarValues(",lenstr,");\n"]) => prefix &
+        string_append(prefix,res) => res'
+        -------------------------------------------
+        generate_constructor_outputvars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
 end
 
 relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list = 
 
-  rule	(* special case for when called second time and first time gave 
-	 list length zero *)
-	generate_constructor_outputvars2(lst,0) => res
-	----------------------------------------------
-	generate_constructor_outputvars2(lst,-1) => res
+  rule (* special case for when called second time and first time gave 
+  list length zero *)
+ generate_constructor_outputvars2(lst,0) => res
+ ----------------------------------------------
+ generate_constructor_outputvars2(lst,-1) => res
 
-  axiom	generate_constructor_outputvars2([],_) => []
+  axiom generate_constructor_outputvars2([],_) => []
 
-  rule	int_add(i,1) => i' & int_string(i) => is &
-	generate_constructor_outputvars2(rest,i') => res &
-	Exp.cref_modelica_str(cr) => crs &
-	Util.string_append_list(["  SetOutputVar(",is,", new COutputVar(L\"",crs,"\", L\"\",0);"]) 
-	  => r1 
-	--------------------
-	generate_constructor_outputvars2(DAELow.VAR(cr,VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_)::rest,i) 
-	  => r1::res
+  rule int_add(i,1) => i' & int_string(i) => is &
+ generate_constructor_outputvars2(rest,i') => res &
+ Exp.cref_modelica_str(cr) => crs &
+ Util.string_append_list([" SetOutputVar(",is,", new COutputVar(L\"",crs,"\", L\"\",0);"]) 
+   => r1 
+ --------------------
+ generate_constructor_outputvars2(DAELow.VAR(cr,VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_)::rest,i) 
+   => r1::res
 
-  rule	generate_constructor_outputvars2(rest,i) => res 
-	-----------------------------------------------
-	generate_constructor_outputvars2(_::rest,i) 
-	  => res
+  rule generate_constructor_outputvars2(rest,i) => res 
+ -----------------------------------------------
+ generate_constructor_outputvars2(_::rest,i) 
+   => res
 
-  rule	print "-generate_constructor_outputvars2 failed\n" 
-	----------------------
-	generate_constructor_outputvars2(_,_) => fail
+  rule print "-generate_constructor_outputvars2 failed\n" 
+ ----------------------
+ generate_constructor_outputvars2(_,_) => fail
 end
 
 
@@ -216,69 +218,69 @@ end
  *)
 relation generate_constructor_statevars:(DAELow.DAELow) => string = 
 
-  rule	generate_constructor_statevars2(vars,0) => lst &
-	Util.string_delimit_list(lst,"\n")=> res & 
-	list_length(lst) => len &
-	int_string len => lenstr &
-	Util.string_append_list(["  SetNoDerStateVars(",lenstr,");\n"]) => prefix &
-	Util.string_append_list(["  SetNoDerStateVarValues(",lenstr,");\n"]) => prefix &
-	string_append(prefix,res) => res'
-	----------------------
-	generate_constructor_statevars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
+  rule generate_constructor_statevars2(vars,0) => lst &
+ Util.string_delimit_list(lst,"\n")=> res & 
+ list_length(lst) => len &
+ int_string len => lenstr &
+ Util.string_append_list([" SetNoDerStateVars(",lenstr,");\n"]) => prefix &
+ Util.string_append_list([" SetNoDerStateVarValues(",lenstr,");\n"]) => prefix &
+ string_append(prefix,res) => res'
+ ----------------------
+ generate_constructor_statevars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
 end
 
 relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
 
-  axiom	generate_constructor_statevars2([],_) => []
+  axiom generate_constructor_statevars2([],_) => []
 
-  rule	(* When start value is present*)
-	int_add(i,1) => i' & int_string(i) => is &
-	generate_constructor_statevars2(rest,i') => res &
-	Exp.cref_modelica_str(cr) => crs & 
-	Exp.print_exp_str start => startstr &
-	Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",",
-				 startstr,");"]) 
-	  => r1 
-	--------------------
-	generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_)::rest,i) 
-	  => r1::res
+  rule (* When start value is present*)
+ int_add(i,1) => i' & int_string(i) => is &
+ generate_constructor_statevars2(rest,i') => res &
+ Exp.cref_modelica_str(cr) => crs & 
+ Exp.print_exp_str start => startstr &
+ Util.string_append_list([" SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",",
+     startstr,");"]) 
+   => r1 
+ --------------------
+ generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_)::rest,i) 
+   => r1::res
 
-  rule	(* If no start value is present*)
-	int_add(i,1) => i' & int_string(i) => is &
-	generate_constructor_statevars2(rest,i') => res &
-	Exp.cref_modelica_str(cr) => crs & 
-	
-	Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0);"]) 
-	  => r1 
-	--------------------
-	generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_)::rest,i) 
-	  => r1::res
+  rule (* If no start value is present*)
+ int_add(i,1) => i' & int_string(i) => is &
+ generate_constructor_statevars2(rest,i') => res &
+ Exp.cref_modelica_str(cr) => crs & 
+ 
+ Util.string_append_list([" SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0);"]) 
+   => r1 
+ --------------------
+ generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_)::rest,i) 
+   => r1::res
 
-  rule	generate_constructor_statevars2(rest,i) => res 
-	-----------------------------------------------
-	generate_constructor_statevars2(_::rest,i) 
-	  => res
+  rule generate_constructor_statevars2(rest,i) => res 
+ -----------------------------------------------
+ generate_constructor_statevars2(_::rest,i) 
+   => res
 
-  rule	print "-generate_constructor_statevars2 failed\n" 
-	----------------------
-	generate_constructor_statevars2(_,_) => fail
+  rule print "-generate_constructor_statevars2 failed\n" 
+ ----------------------
+ generate_constructor_statevars2(_,_) => fail
 end
 
 relation generate_var_defines: (DAELow.DAELow) => string =
 
-  rule	generate_var_defines2(vars,0,0) => vdefs1list &
-	list_length(vdefs1list) => len &
-	int_sub(len,1) => len' &
-	Util.string_append_list(vdefs1list) => vdefs1 &
-	generate_var_defines2(knvars,0,0) => vdefs2list &
-	Util.string_append_list(vdefs2list) => vdefs2 &
-	Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n",vdefs1,vdefs2,"\n"]) => vdefs
-	---------------------
-	generate_var_defines(DAELow.DAELOW(vars,knvars,eqn,seqn)) => vdefs
+  rule generate_var_defines2(vars,0,0) => vdefs1list &
+ list_length(vdefs1list) => len &
+ int_sub(len,1) => len' &
+ Util.string_append_list(vdefs1list) => vdefs1 &
+ generate_var_defines2(knvars,0,0) => vdefs2list &
+ Util.string_append_list(vdefs2list) => vdefs2 &
+ Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n",vdefs1,vdefs2,"\n"]) => vdefs
+ ---------------------
+ generate_var_defines(DAELow.DAELOW(vars,knvars,eqn,seqn)) => vdefs
 
-  rule	print "-generate_var_defines failed\n"
-	--------------------------------------
-	generate_var_defines(_) => fail
+  rule print "-generate_var_defines failed\n"
+ --------------------------------------
+ generate_var_defines(_) => fail
 end
 
 
@@ -291,36 +293,149 @@ end
 **)
 relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
 
-  axiom	generate_var_defines2([],_,_) => []
+  axiom generate_var_defines2([],_,_) => []
+        
+  rule int_string(outputCounter) => outputCounterString &
+        Exp.cref_modelica_str(cr) => crs &
+        Util.string_append_list(["#define ",crs,"_ m_OutputVarValues[",outputCounterString,"]\n"]) => r1 &
+        int_add(outputCounter,1) => outputCounter' & 
+        generate_var_defines2(rest,outputCounter',derStateCounter) => res
+        ----------------------------------------------
+        generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,dir,_,_,_,_,_,_,_)::rest,
+                              outputCounter,derStateCounter) 
+          => r1::res
+          
+  rule int_string(derStateCounter) => derStateCounterString &
+        Exp.cref_modelica_str(cr) => crs &
+        Util.string_append_list(["#define ",crs,"_ m_DerStateVarValues[",derStateCounterString,"]\n",
+                                 "#define _D_",crs,"_ m_Derivatives[",derStateCounterString,"]\n"]) => r1 &
+        int_add(derStateCounter,1) => derStateCounter' & 
+        generate_var_defines2(rest,outputCounter,derStateCounter') => res
+        ----------------------------------------------
+        generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_)::rest,
+                              outputCounter,derStateCounter) 
+          => r1::res
+          
+  rule generate_var_defines2(rest,outputCounter,derStateCounter) => res 
+        -----------------------------------------------
+        generate_var_defines2(_::rest,outputCounter,derStateCounter) => res
+        
+  rule print "-generate_var_defines2 failed\n"
+        --------------------------------------
+        generate_var_defines2(_,_,_) => fail
+end
 
-  rule	int_string(outputCounter) => outputCounterString &
-	Exp.cref_modelica_str(cr) => crs &
-	Util.string_append_list(["#define _",crs,"_ m_OutputVarValues[",outputCounterString,"]\n"]) => r1 &
-	int_add(outputCounter,1) => outputCounter' & 
-	generate_var_defines2(rest,outputCounter',derStateCounter) => res
-	----------------------------------------------
-	generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,dir,_,_,_,_,_,_,_)::rest,
-			      outputCounter,derStateCounter) 
-	  => r1::res
+(** relation: generate_constructor_component_initialization
+ ** this relation generates the code for initialization of internal
+ ** components for a model. The components are non-primitive types.
+ ** x02lucpo
+ **)
+ relation generate_constructor_component_initialization: (string,Absyn.Program) => string =
+         
+  rule  Interactive.get_pathed_class_in_program(Absyn.IDENT(cname),program) => cdef &
+         count_and_generate_initializations(cdef,program) => (ini_str_list,nr_of_comp) &         
+         int_string(nr_of_comp) => res &
+         Util.string_append_list(["  SetNoSubModels(",res,");\n"]) => res1 &
+         Util.string_append_list(res1::ini_str_list) => res2 
+         --------------------------------------
+         generate_constructor_component_initialization(cname,program) => res2
+         
+  rule  print "generate_constructor_component_initialization failed\n"
+         --------------------------------------
+         generate_constructor_component_initialization(_,_) => fail
+         
+ end
 
-  rule	int_string(derStateCounter) => derStateCounterString &
-	Exp.cref_modelica_str(cr) => crs &
-	Util.string_append_list(["#define _",crs,"_ m_DerStateVarValues[",derStateCounterString,"]\n",
-				 "#define _D_",crs,"_ m_Derivatives[",derStateCounterString,"]\n"]) => r1 &
- 	int_add(derStateCounter,1) => derStateCounter' & 
-	generate_var_defines2(rest,outputCounter,derStateCounter') => res
-	----------------------------------------------
-	generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_)::rest,
-			      outputCounter,derStateCounter) 
-	  => r1::res
 
-  rule	generate_var_defines2(rest,outputCounter,derStateCounter) => res 
-	-----------------------------------------------
-	generate_var_defines2(_::rest,outputCounter,derStateCounter) => res
+(** relation: count_and_generate_initializations
+ ** Counts number of components in a model and generates initialization statements
+ ** for them.
+ ** 
+ ** This relation only propagates the function call throughout public and protected parts of the class.
+ ** 
+ **)
+ relation count_and_generate_initializations: (Absyn.Class,Absyn.Program) => (string list, int) =
+         
+  rule  count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program) => (str,c1) &
+	 count_and_generate_initializations_in_elts(elt,program,0) => (strlist,c2) &
+	 int_add(c1,c2) => res &
+         list_append(str,strlist) => string_list
+	 ---------------------
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),program)
+	      => (string_list,res)
+           
+  rule	count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program) => (str,c1) &
+	 count_and_generate_initializations_in_elts(elt,program,0) => (strlist,c2) &
+	 int_add(c1,c2) => res &
+         list_append(str,strlist) => string_list
+	 ---------------------
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)),program)
+	  => (string_list,res)
 
-  rule	print "-generate_var_defines2 failed\n"
-	--------------------------------------
-	generate_var_defines2(_,_,_) => fail
+  rule	count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program) => (str,c1)
+	     -----------------------------------------------------
+	     count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(_::lst,cmt)),program) => (str,c1)
+	     
+  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS([],_)),program) => ([" "],0)
+  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.DERIVED(_,_,_,_,_)),_) => ([" "],-1)
+         
+  rule print "count_and_generate_initializations failed\n"
+         --------------------------------------
+         count_and_generate_initializations(_,_) => fail
+         
+ end
+
+(** relation: count_and_generate_initializations_in_elts
+ ** 
+ ** 
+ ** 
+ **)
+ relation count_and_generate_initializations_in_elts: (Absyn.ElementItem list,Absyn.Program,int) => (string list, int) =
+         
+
+  rule	int_add(index,1) => inc_index &
+	 count_and_generate_initializations_in_elts(lst,program,inc_index) => (strlist,c1) &
+	 Interactive.is_primitive(Absyn.CREF_IDENT(ident,[]),program) => false &
+         generate_components_initializations(ident,componentItemList,index) => (comp_str_list,nrOfComponents) &
+	 int_add(c1,nrOfComponents) => res &
+	 list_append(comp_str_list,strlist) => str_list_res
+	 --------------------------
+	 count_and_generate_initializations_in_elts(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,
+            Absyn.COMPONENTS(_,Absyn.IDENT(ident),componentItemList),_,_,NONE))::lst,program,index) => (str_list_res,res)
+
+	     
+  rule	count_and_generate_initializations_in_elts(lst,program,index) => (strlist,res)
+	 ----------------------------
+	 count_and_generate_initializations_in_elts(_::lst,program,index) => (strlist,res)
+         
+  axiom	count_and_generate_initializations_in_elts([],_,index) => ([""],0)
+
+  rule	print "count_and_generate_initializations_in_elts failed\n"
+	     ----------------------------
+	     count_and_generate_initializations_in_elts(_,_,_) => fail
+
+end
+
+
+(** relation; generate_components_initializations
+ ** 
+ ** 
+ ** 
+ **)
+relation generate_components_initializations: (Absyn.Ident, Absyn.ComponentItem list, int) => (string list, int) =
+  
+  rule  print "Found one component    " & 
+        int_string(index) => current_index_string &
+        int_add(index,1) => inc_index &	
+        generate_components_initializations(componentType,rest,inc_index) => (res,ret_index) &
+        Util.string_append_list(["  SetSubModel(",current_index_string,", new C",componentType,"(L\"",componentIdent,"\"));\n"]) => gen_string &
+	print gen_string &
+	print "\n"
+        -------------------------------------
+        generate_components_initializations(componentType,Absyn.COMPONENTITEM(Absyn.COMPONENT(componentIdent,_,_),_)::rest, index) => (gen_string::res, ret_index)
+
+  axiom	generate_components_initializations(componentType,[],index) => ([""],index)
+
 end
 
 
@@ -335,44 +450,44 @@ end
  **)
 relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
 
-  rule	generate_blt(dae) => blt &
-	generate_state_partition(blt,dae) => (blt_states,blt_no_states) &
-	Debug.fcall("bltdump", DAELow.dump_components, blt_states) &
-	Debug.fcall("bltdump", DAELow.dump_components, blt_no_states) &
-	generate_compute_output(cname,dae,p) => coutput &
-	generate_compute_initial(cname,dae,p) => cinitial &
-	generate_compute_state(cname,dae,p) => cstate &
-	generate_compute_terminal(cname,dae,p) => cterm &
-	Util.string_append_list(["void C",cname,"::\n",
-				 "ComputeOutput()\n",
-				 "{\n",
-				 coutput,
-				 "}\n",
-				 "\n",
-				 "void C",cname,"::\n",
-				 "ComputeInitial()\n",
-				 "{\n",
-				 cinitial,
-				 "}\n",
-				 "\n",
-				 "void C",cname,"::\n",
-				 "ComputeState()\n",
-				 "{\n",
-				 cstate,
-				 "}\n",
-				 "\n",
-				 "void C",cname,"::\n",
-				 "ComputeTerminal()\n",
-				 "{\n",
-				 cterm,
-				 "}\n",
-				 "\n"]) => methods
-	---------------------------
-	generate_compute_methods(cname,dae,p) => methods
+  rule generate_blt(dae) => blt &
+  generate_state_partition(blt,dae) => (blt_states,blt_no_states) &
+  Debug.fcall("bltdump", DAELow.dump_components, blt_states) &
+  Debug.fcall("bltdump", DAELow.dump_components, blt_no_states) &
+  generate_compute_output(cname,dae,p) => coutput &
+ generate_compute_initial(cname,dae,p) => cinitial &
+ generate_compute_state(cname,dae,p) => cstate &
+ generate_compute_terminal(cname,dae,p) => cterm &
+ Util.string_append_list(["void C",cname,"::\n",
+     "ComputeOutput()\n",
+     "{\n",
+     coutput,
+     "}\n",
+     "\n",
+     "void C",cname,"::\n",
+     "ComputeInitial()\n",
+     "{\n",
+     cinitial,
+     "}\n",
+     "\n",
+     "void C",cname,"::\n",
+     "ComputeState()\n",
+     "{\n",
+     cstate,
+     "}\n",
+     "\n",
+     "void C",cname,"::\n",
+     "ComputeTerminal()\n",
+     "{\n",
+     cterm,
+     "}\n",
+     "\n"]) => methods
+ ---------------------------
+ generate_compute_methods(cname,dae,p) => methods
 
-  rule	print "-generate_compute_methods failed\n" 
-	-----------------------------------------
-	generate_compute_methods(_,_,_) => fail
+  rule print "-generate_compute_methods failed\n" 
+ -----------------------------------------
+ generate_compute_methods(_,_,_) => fail
 end 
 
 
@@ -383,24 +498,24 @@ end
  **)
 relation generate_blt:(DAELow.DAELow) => (int list list) =
 
-	
-  rule	(*DAELow.lower(d) => d' *)
-	Debug.fcall("dumpdaelow", DAELow.dump, d') 
-	& DAELow.incidence_matrix(d') => m 
-	& DAELow.transpose_matrix(m) => mT 
-	& DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-(*	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) *)
-	& Debug.fcall("bltdump", DAELow.dump,d'')
-	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
-	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
-	& DAELow.dump_components(comps) 
-	-------------------------------------------------------------
-	generate_blt(d') => (comps)
+ 
+  rule (*DAELow.lower(d) => d' *)
+ Debug.fcall("dumpdaelow", DAELow.dump, d') 
+ & DAELow.incidence_matrix(d') => m 
+ & DAELow.transpose_matrix(m) => mT 
+ & DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
+ & Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
+(* & Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) *)
+ & Debug.fcall("bltdump", DAELow.dump,d'')
+ & Debug.fcall("bltdump", DAELow.dump_matching, v1)
+ & DAELow.strong_components(m,mT,v1,v2) => (comps) 
+ & DAELow.dump_components(comps) 
+ -------------------------------------------------------------
+ generate_blt(d') => (comps)
 
-  rule	print "-generate_blt failed\n" 
-	-----------------------------------------
-	generate_blt(_) => fail
+  rule print "-generate_blt failed\n" 
+ -----------------------------------------
+ generate_blt(_) => fail
 
 end
 
@@ -414,29 +529,29 @@ end
  ** of blocks is performed.
  **) 
 relation generate_state_partition:(int list list,DAELow.DAELow) => 
-	(int list list, int list list) =
+ (int list list, int list list) =
 
-  rule	
-	
-	list_reverse(blt) => reversed_blt &
-	has_state_var(0,reversed_blt,dae) => state_component_number &
-	print "First state component found in component (reversed): " &
-	int_string(state_component_number) => state_component_number_string &
-	print state_component_number_string &
-	print "\n" &
- 	list_length(blt) => nr_of_components (*&
-	int_sub(nr_of_components,state_component_number) => component_offset &	
-	print "(non-reversed): " &
-	int_string(component_offset) => component_offset_string &
-	print component_offset_string &
-	print "\n" &
-	Util.list_split(blt,component_offset) => (blt_states,blt_no_states) *)
-	-----------------------------------------
-	generate_state_partition(blt,dae) => (reversed_blt,reversed_blt)  
+  rule 
+ 
+ list_reverse(blt) => reversed_blt &
+ has_state_var(0,reversed_blt,dae) => state_component_number &
+ print "First state component found in component (reversed): " &
+ int_string(state_component_number) => state_component_number_string &
+ print state_component_number_string &
+ print "\n" &
+ list_length(blt) => nr_of_components (*&
+ int_sub(nr_of_components,state_component_number) => component_offset & 
+ print "(non-reversed): " &
+ int_string(component_offset) => component_offset_string &
+ print component_offset_string &
+ print "\n" &
+ Util.list_split(blt,component_offset) => (blt_states,blt_no_states) *)
+ -----------------------------------------
+ generate_state_partition(blt,dae) => (reversed_blt,reversed_blt)  
 
-  rule	print "-generate_state_partition failed\n" 
-	-----------------------------------------
-	generate_state_partition(_,_) => fail
+  rule print "-generate_state_partition failed\n" 
+ -----------------------------------------
+ generate_state_partition(_,_) => fail
 
 end
 
@@ -448,24 +563,24 @@ end
  ** which contais a state variable.
  **) 
 relation has_state_var:(int, int list list, DAELow.DAELow) => int =
-	  
-  rule	(*if this component contains a statevar, return index *)
-	check_component_for_statevars(0,element,dae) => true
-	-----------------------------------------
-	has_state_var(index,element::reversed_blt,dae) => index
+   
+  rule (*if this component contains a statevar, return index *)
+ check_component_for_statevars(0,element,dae) => true
+ -----------------------------------------
+ has_state_var(index,element::reversed_blt,dae) => index
 
-	(* If we have no more components return 0 *)
-  axiom	has_state_var(_,[],_) => 0
-	
-  rule	(* If no statevars found in this component, continue with the next one*)
-	int_add(1,index) => next_index &
-	has_state_var(next_index,reversed_blt,dae) => ret_value
-	-----------------------------------------
-	has_state_var(index,element::reversed_blt,dae) => ret_value
+ (* If we have no more components return 0 *)
+  axiom has_state_var(_,[],_) => 0
+ 
+  rule (* If no statevars found in this component, continue with the next one*)
+ int_add(1,index) => next_index &
+ has_state_var(next_index,reversed_blt,dae) => ret_value
+ -----------------------------------------
+ has_state_var(index,element::reversed_blt,dae) => ret_value
 
-  rule	print "-generate_state_partition2 failed\n" 
-	-----------------------------------------
-	has_state_var(_,_,_) => fail
+  rule print "-generate_state_partition2 failed\n" 
+ -----------------------------------------
+ has_state_var(_,_,_) => fail
 end
 
 (** relation:check_component_for_statevars
@@ -476,44 +591,44 @@ end
  **)
 relation check_component_for_statevars:(int, int list, DAELow.DAELow) => bool =
 
-  rule	print "check_component_for_statevars failed: Empty component\n" 
-	-------------------------------------------------------------
-	check_component_for_statevars(_,[],_) => fail
+  rule print "check_component_for_statevars failed: Empty component\n" 
+ -------------------------------------------------------------
+ check_component_for_statevars(_,[],_) => fail
 
 
-  rule	(* Termination condition. variables checked.
-	   This means that the component did not contain any state vars *)
-	list_length(component) => nr_of_variables &
-	int_eq(nr_of_variables,i) => true
-	-------------------------------------------------------------
-	check_component_for_statevars(i,component,_) => false
+  rule (* Termination condition. variables checked.
+    This means that the component did not contain any state vars *)
+ list_length(component) => nr_of_variables &
+ int_eq(nr_of_variables,i) => true
+ -------------------------------------------------------------
+ check_component_for_statevars(i,component,_) => false
 
-  rule	(* If this variable is a state variable, return true *)
-	list_nth(component,i) => variable_index_to_check &
-	(* Variable indexing starts from 1 but lists start from 0.
-	 Thus decrease index by one*) 
-	int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
-        list_nth(var_list,adjusted_variable_index_to_check) => 
-	  (hej as DAELow.VAR(cref,DAELow.STATE,_,_,_,_,_,_,_,_))
-	-------------------------------------------------------------
-	check_component_for_statevars(i,component,dae as DAELow.DAELOW(var_list,_,_,_)) => true
+  rule (* If this variable is a state variable, return true *)
+ list_nth(component,i) => variable_index_to_check &
+ (* Variable indexing starts from 1 but lists start from 0.
+  Thus decrease index by one*) 
+ int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
+  list_nth(var_list,adjusted_variable_index_to_check) => 
+   (hej as DAELow.VAR(cref,DAELow.STATE,_,_,_,_,_,_,_,_))
+ -------------------------------------------------------------
+ check_component_for_statevars(i,component,dae as DAELow.DAELOW(var_list,_,_,_)) => true
 
-  rule	(* If this variable is nt state variable, try the next one *)
-	list_nth(component,i) => variable_index_to_check &
-	(* Variable indexing starts from 1 but lists start from 0.
-	 Thus decrease index by one*) 
-	int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
-        list_nth(var_list,adjusted_variable_index_to_check) => 
-	  DAELow.VAR(cref,_,_,_,_,_,_,_,_,_) &
-	int_add(i,1) => next_i &
-	check_component_for_statevars(next_i,component,dae) => result
-	-------------------------------------------------------------
-	check_component_for_statevars(i,component,dae as DAELow.DAELOW(var_list,_,_,_)) 
-	  => result
+  rule (* If this variable is nt state variable, try the next one *)
+ list_nth(component,i) => variable_index_to_check &
+ (* Variable indexing starts from 1 but lists start from 0.
+  Thus decrease index by one*) 
+ int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
+  list_nth(var_list,adjusted_variable_index_to_check) => 
+   DAELow.VAR(cref,_,_,_,_,_,_,_,_,_) &
+ int_add(i,1) => next_i &
+ check_component_for_statevars(next_i,component,dae) => result
+ -------------------------------------------------------------
+ check_component_for_statevars(i,component,dae as DAELow.DAELOW(var_list,_,_,_)) 
+   => result
 
-  rule	print "check_component_for_statevars failed" 
-	-------------------------------------------------------------
-	check_component_for_statevars(_,_,_) => fail
+  rule print "check_component_for_statevars failed" 
+ -------------------------------------------------------------
+ check_component_for_statevars(_,_,_) => fail
 
 end 
 
@@ -524,9 +639,9 @@ end
  **)
 relation generate_compute_output:(string,DAELow.DAELow,Absyn.Program) => string =
 
-  rule	Util.string_append_list(["/* output code here*/\n"]) => coutput
-	-------------------------------------------------------------
-	generate_compute_output(cname,dae,p) => coutput
+  rule Util.string_append_list(["/* output code here*/\n"]) => coutput
+ -------------------------------------------------------------
+ generate_compute_output(cname,dae,p) => coutput
 
 end
 
@@ -535,9 +650,9 @@ end
  **)
 relation generate_compute_initial:(string,DAELow.DAELow,Absyn.Program) => string =
 
-  rule	Util.string_append_list(["/* initial code here*/\n"]) => cinit
-	-------------------------------------------------------------
-	generate_compute_initial(cname,dae,p) => cinit
+  rule Util.string_append_list(["/* initial code here*/\n"]) => cinit
+ -------------------------------------------------------------
+ generate_compute_initial(cname,dae,p) => cinit
 
 end
 
@@ -546,10 +661,10 @@ end
  **)
 relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program) => string =
 
-  rule	Util.string_append_list(["/* state code here*/\n"]) => cstate 
-	
-	-------------------------------------------------------------
-	generate_compute_state(cname,dae,p) => cstate
+  rule Util.string_append_list(["/* state code here*/\n"]) => cstate 
+ 
+ -------------------------------------------------------------
+ generate_compute_state(cname,dae,p) => cstate
 
 end
 
@@ -561,8 +676,8 @@ end
  ** end when
  *)
 relation generate_compute_terminal:(string,DAELow.DAELow,Absyn.Program) => string =
-
-  rule	Util.string_append_list(["/* terminal code here*/\n"]) => cterm
-	-------------------------------------------------------------
-	generate_compute_terminal(cname,dae,p) => cterm
+        
+  rule Util.string_append_list(["/* terminal code here*/\n"]) => cterm
+     -------------------------------------------------------------
+     generate_compute_terminal(cname,dae,p) => cterm
 end
