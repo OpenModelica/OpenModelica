@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     {
       // Starting background server.
       char systemstr[255];
-      sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log &",
+      sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log 2>&1 &",
 	      moshhome,moshhome);
       int res = system(systemstr);
       std::cout << "Started server using:"<< systemstr << "\n res = " << res << std::endl;
@@ -114,22 +114,24 @@ int main(int argc, char* argv[])
     char* line = readline(">>> ");
     if ( line == 0 || strcmp(line,"quit()") == 0 ) {
       done =true;
-      if (line == 0)  line ="quit()";
+      if (line == 0)  { line = "quit()"; }
     }
-    add_history(line);
-    int nbytes = write(sock,line,strlen(line)+1);
-    if (nbytes == 0) {
-      std::cout << "Error writing to server" << std::endl;
-      done = true;
-      break;
+    if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) { 
+      add_history(line);
+      int nbytes = write(sock,line,strlen(line)+1);
+      if (nbytes == 0) {
+	std::cout << "Error writing to server" << std::endl;
+	done = true;
+	break;
+      }
+      int recvbytes = read(sock,buf,40000);
+      if (recvbytes == 0) {
+	std::cout << "Recieved 0 bytes, exiting" << std::endl;
+	done = true;
+	break;
+      }
+      std::cout << buf;
     }
-    int recvbytes = read(sock,buf,40000);
-    if (recvbytes == 0) {
-      std::cout << "Recieved 0 bytes, exiting" << std::endl;
-      done = true;
-      break;
-    }
-    std::cout << buf;
     free(line);
   }
   close (sock);  
