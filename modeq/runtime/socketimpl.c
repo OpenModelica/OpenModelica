@@ -75,10 +75,10 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Socket__handlerequest)
 {
-  char buf[400]={0};
+  char buf[4000]={0};
   int len;
   int sock=(int) RML_UNTAGFIXNUM(rmlA0);
-  len = recv(sock,buf,400,0);
+  len = recv(sock,buf,4000,0);
 
   rmlA0=(void*)mk_scon(buf);
   RML_TAILCALLK(rmlSC);
