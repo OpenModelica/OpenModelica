@@ -32,7 +32,9 @@ string tex_escape(string s)
 void convert(string f)
 {
   array(string) lines = Stdio.read_file(f) / "\n";
-  string state = "start", buf = "", fn = (f/"/")[-1], desc = "";
+  string state = "start", buf = "", desc = "";
+  string fn = (f/"/")[-1];
+  string module = fn - ".rml";
   array a;
   int ignorecode = 0, lno = 0;
   string outbuf = "";
@@ -104,20 +106,28 @@ void convert(string f)
 	switch(lower_case(a[0])) {
 	case "file":
 	  if(a[1] != fn)
+	  {
 	    werror("Filename mismatch in file "+f+
-		   ": claims to be '"+a[0]+"'\n");
+		   ": claims to be '"+a[1]+"'\n");
+	    fn = (a[1]/"/")[-1];
+	    module = fn - ".rml";
+	  }
 	  break;
 	case "description":
 	  desc = a[1];
 	  break;
 	case "relation":
-	  OUT("\\subsubsection{Relation \\code{"+a[1]+"}}\n");
+	  OUT("\\subsubsection{Relation \\code{"+a[1]+"}}\n"
+	      "\\label{src:"+module+":"+lower_case(a[1]-"\\_")+"}\n");
 	  break;
 	case "purpose":
 	  OUT("\\textbf{Purpose:} "+a[1]+"\n\\vspace{1ex}\n");
 	  break;
 	case "fixme":
 	  OUT("\\fixme{"+a[1]+"}\n");
+	  break;
+	case "rcs":
+	  OUT("% "+a[1]+"\n");
 	  break;
 	default:
 	  werror(sprintf("%s:%d: Warning: ignored header %s\n",
@@ -168,7 +178,7 @@ void convert(string f)
     // OUT("\\end{verbatim}}\n");
     OUT("\\end{boxedverbatim}\n\n");
 
-  write("\\sourcefile{"+fn+"}{"+desc+"}\n"+outbuf);
+  write("\\sourcefile{"+module+"}{"+desc+"}\n"+outbuf);
 }
 
 int main(int argc, array argv)
