@@ -50,6 +50,7 @@ SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
 	      SCode.COMPONENT("unit",true,false,
 			      SCode.ATTR([],
 					 false,
+					 SCode.RW,
 					 Absyn.VAR,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
@@ -67,6 +68,7 @@ SCode.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,
 	      SCode.COMPONENT("unit",true,false,
 			      SCode.ATTR([],
 					 false,
+					 SCode.RW,
 					 Absyn.VAR,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
@@ -97,7 +99,7 @@ SCode.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,
 
 (* FIXME: Shuold contain components (attributes) from the real Real type *)
 val time_var =
-Types.VAR("time", SCode.ATTR([] , false, Absyn.VAR, Absyn.BIDIR),
+Types.VAR("time", SCode.ATTR([] , false, SCode.RO, Absyn.VAR, Absyn.BIDIR),
 	  false, Types.T_REAL, Types.UNBOUND)
 
 (** - Some assorted function types *)
