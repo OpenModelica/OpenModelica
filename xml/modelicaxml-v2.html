@@ -1,0 +1,1335 @@
+<pre>
+# Author: Adrian Pop, URL:http://www.ida.liu.se/~adrpo, mailto:adrpo@ida.liu.se
+# Version: 2
+# Organization: Programming Environments Laboratory (PELAB), Department of Computer and Information Science (IDA), Linköping University (LiU), Sweden
+# Date: 2003-10-25
+</pre>
+<PRE>
+&lt;!-- 2003-10-20 -->
+&lt;!-- Adrian Pop, http://www.ida.liu.se/~adrpo/, mailto:adrpo@ida.liu.se -->
+&lt;!--modelicaxml-v2.dtd version 2 conform with Modelica Language Specification 2.0/2.1 -->
+&lt;!--   Copyright PELAB, Linkoping University
+   
+   This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA-->
+&lt;!-- A DTD for Modelica, an XML representation of Modelica Source Code (AST) -->
+&lt;!--http://www.ida.liu.se/~adrpo/modelica/xml-->
+
+
+
+</PRE>
+
+<A NAME="#location"></A>
+<pre>&lt;!ENTITY % location "              sline CDATA #IMPLIED               scolumn CDATA #IMPLIED               eline CDATA #IMPLIED               ecolumn CDATA #IMPLIED                     info CDATA #IMPLIED"></pre>
+<A NAME="#elements"></A>
+<pre>&lt;!ENTITY % elements " (import | extends | ( (definition | component), constrain?) )"></pre>
+<A NAME="#composition"></A>
+<pre>&lt;!ENTITY % composition "( ( ( %elements; )* | annotation* | equation* | algorithm* )* , external? )"></pre>
+<A NAME="#class_specifier"></A>
+<pre>&lt;!ENTITY % class_specifier "( (%composition;) | derived | enumeration )"></pre>
+<A NAME="#type_prefix"></A>
+<pre>&lt;!ENTITY % type_prefix "flow (true) #IMPLIED                                           variability (discrete | parameter | constant) #IMPLIED                                           direction (input | output | bidirectional) #IMPLIED"></pre>
+<A NAME="#enum_list"></A>
+<pre>&lt;!ENTITY % enum_list "(enumeration_literal+)"></pre>
+<A NAME="#class_modification"></A>
+<pre>&lt;!ENTITY % class_modification "( ( ( element_modification | element_redeclaration)+ )? )"></pre>
+<A NAME="#modification"></A>
+<pre>&lt;!ENTITY % modification "(modification_arguments | modification_equals | modification_assign)"></pre>
+<A NAME="#exp"></A>
+<pre>&lt;!ENTITY % exp "( if | range | or | and | not | lt | lte | gt |  gte | eq | ne | add | sub  | mul | div | pow | integer_literal | real_literal | string_literal | bool_literal  | component_reference  | call | output_expression_list | concat | arr | end )"></pre>
+<A NAME="#expression_list"></A>
+<pre>&lt;!ENTITY % expression_list "((%exp;)+)"></pre>
+<A NAME="#equation_list"></A>
+<pre>&lt;!ENTITY % equation_list "(equation*)"></pre>
+<A NAME="#algorithm_list"></A>
+<pre>&lt;!ENTITY % algorithm_list "(algorithm+)"></pre>
+<A NAME="#named_arguments"></A>
+<pre>&lt;!ENTITY % named_arguments "(named_argument)+"></pre>
+<A NAME="#subscript"></A>
+<pre>&lt;!ENTITY % subscript "(colon | %exp;)"></pre>
+
+<A name="#add">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: add
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT add  (%<A HREF="##exp">exp</A>;, (%<A HREF="##exp">exp</A>;)?)  >
+<pre>&lt;!ATTLIST add  
+
+	operation (binary | unary) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#alg_assign">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_assign
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_assign  ((<A HREF="##component_reference">component_reference</A>, %<A HREF="##exp">exp</A>;) | 
+          (<A HREF="##output_expression_list">output_expression_list</A>, <A HREF="##component_reference">component_reference</A>, 
+          <A HREF="##function_arguments">function_arguments</A>))  >
+<pre>&lt;!ATTLIST alg_assign  
+
+	%location;
+ ></pre>
+
+<A name="#alg_break">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_break
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_break  EMPTY  >
+<pre>&lt;!ATTLIST alg_break  
+
+	%location;
+ ></pre>
+
+<A name="#alg_call">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_call
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_call  (<A HREF="##component_reference">component_reference</A>, <A HREF="##function_arguments">function_arguments</A>)  >
+<pre>&lt;!ATTLIST alg_call  
+
+	%location;
+ ></pre>
+
+<A name="#alg_else">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_else
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_else  (%<A HREF="##algorithm_list">algorithm_list</A>;)  >
+<pre>&lt;!ATTLIST alg_else  
+
+	%location;
+ ></pre>
+
+<A name="#alg_elseif">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_elseif
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_elseif  (%<A HREF="##exp">exp</A>;, <A HREF="##alg_then">alg_then</A>)  >
+<pre>&lt;!ATTLIST alg_elseif  
+
+	%location;
+ ></pre>
+
+<A name="#alg_elsewhen">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_elsewhen
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_elsewhen  (%<A HREF="##exp">exp</A>;, <A HREF="##alg_then">alg_then</A>)  >
+<pre>&lt;!ATTLIST alg_elsewhen  
+
+	%location;
+ ></pre>
+
+<A name="#alg_for">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_for
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_for  (<A HREF="##for_indices">for_indices</A>, %<A HREF="##algorithm_list">algorithm_list</A>;)  >
+<pre>&lt;!ATTLIST alg_for  
+
+	%location;
+ ></pre>
+
+<A name="#alg_if">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_if
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_if  (%<A HREF="##exp">exp</A>;, <A HREF="##alg_then">alg_then</A>, <A HREF="##alg_elseif">alg_elseif</A>*, <A HREF="##alg_else">alg_else</A>?)  >
+<pre>&lt;!ATTLIST alg_if  
+
+	%location;
+ ></pre>
+
+<A name="#alg_return">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_return
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_return  EMPTY  >
+<pre>&lt;!ATTLIST alg_return  
+
+	%location;
+ ></pre>
+
+<A name="#alg_then">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_then
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_then  (%<A HREF="##algorithm_list">algorithm_list</A>;)  >
+<pre>&lt;!ATTLIST alg_then  
+
+	%location;
+ ></pre>
+
+<A name="#alg_when">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_when
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_when  (%<A HREF="##exp">exp</A>;, <A HREF="##alg_then">alg_then</A>, <A HREF="##alg_elsewhen">alg_elsewhen</A>*)  >
+<pre>&lt;!ATTLIST alg_when  
+
+	%location;
+ ></pre>
+
+<A name="#alg_while">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: alg_while
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT alg_while  (%<A HREF="##exp">exp</A>;, %<A HREF="##algorithm_list">algorithm_list</A>;)  >
+<pre>&lt;!ATTLIST alg_while  
+
+	%location;
+ ></pre>
+
+<A name="#algorithm">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: algorithm
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT algorithm  ((<A HREF="##alg_assign">alg_assign</A> | <A HREF="##alg_call">alg_call</A> | <A HREF="##alg_if">alg_if</A> | <A HREF="##alg_for">alg_for</A> | 
+          <A HREF="##alg_while">alg_while</A> | <A HREF="##alg_when">alg_when</A> | <A HREF="##alg_break">alg_break</A> | <A HREF="##alg_return">alg_return</A>), 
+          <A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ATTLIST algorithm  
+
+	initial (true) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#and">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: and
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT and  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST and  
+
+	%location;
+ ></pre>
+
+<A name="#annotation">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: annotation
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT annotation  (%<A HREF="##class_modification">class_modification</A>;)  >
+<pre>&lt;!ATTLIST annotation  
+
+	visibility (public | protected) #IMPLIED
+	initial (true) #IMPLIED
+	inside (element | equation | algorithm | comment) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#arr">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: arr
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT arr  (<A HREF="##function_arguments">function_arguments</A>)  >
+<pre>&lt;!ATTLIST arr  
+
+	%location;
+ ></pre>
+
+<A name="#array_subscripts">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: array_subscripts
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT array_subscripts  ((%<A HREF="##subscript">subscript</A>;)+)  >
+<pre>&lt;!ATTLIST array_subscripts  
+
+	%location;
+ ></pre>
+
+<A name="#bool_literal">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: bool_literal
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT bool_literal  EMPTY  >
+<pre>&lt;!ATTLIST bool_literal  
+
+	value (true | false) #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#call">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: call
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT call  (<A HREF="##component_reference">component_reference</A>, <A HREF="##function_arguments">function_arguments</A>)  >
+<pre>&lt;!ATTLIST call  
+
+	%location;
+ ></pre>
+
+<A name="#colon">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: colon
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT colon  EMPTY  >
+<pre>&lt;!ATTLIST colon  
+
+	%location;
+ ></pre>
+
+<A name="#comma">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: comma
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT comma  EMPTY  >
+<pre>&lt;!ATTLIST comma  
+
+	%location;
+ ></pre>
+
+<A name="#comment">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: comment
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT comment  (<A HREF="##annotation">annotation</A>?)  >
+<pre>&lt;!ATTLIST comment  
+
+	string_comment CDATA #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#component">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: component
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT component  (<A HREF="##type_array_subscripts">type_array_subscripts</A>?, <A HREF="##array_subscripts">array_subscripts</A>?, 
+          (%<A HREF="##modification">modification</A>;)?, <A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ATTLIST component  
+
+	ident CDATA #REQUIRED
+	type CDATA #REQUIRED
+	%type_prefix; 
+	inside (element | redeclaration) #IMPLIED
+	innerouter (inner | outer) #IMPLIED
+	replaceable (true) #IMPLIED
+	visibility (public | protected) #IMPLIED
+	list (start | end | continue) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#component_reference">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: component_reference
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT component_reference  (<A HREF="##array_subscripts">array_subscripts</A>?, <A HREF="##component_reference">component_reference</A>?)  >
+<pre>&lt;!ATTLIST component_reference  
+
+	ident CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#concat">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: concat
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT concat  (%<A HREF="##expression_list">expression_list</A>;, (<A HREF="##semicolon">semicolon</A>, 
+          %<A HREF="##expression_list">expression_list</A>;)?)  >
+<pre>&lt;!ATTLIST concat  
+
+	%location;
+ ></pre>
+
+<A name="#constrain">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: constrain
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT constrain  (<A HREF="##extends">extends</A>, <A HREF="##comment">comment</A>?)?  >
+<pre>&lt;!ATTLIST constrain  
+
+	%location;
+ ></pre>
+
+<A name="#definition">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: definition
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT definition  (%<A HREF="##class_specifier">class_specifier</A>;)  >
+<pre>&lt;!ATTLIST definition  
+
+	ident CDATA #REQUIRED
+	final (true) #IMPLIED
+	partial (true) #IMPLIED
+	encapsulated (true) #IMPLIED
+	restriction (class | model | record | block | connector | type | package | function) #REQUIRED
+	inside (element | redeclaration) #IMPLIED
+	innerouter (inner | outer) #IMPLIED
+	replaceable (true) #IMPLIED
+	visibility (public | protected) #IMPLIED
+	string_comment CDATA #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#derived">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: derived
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT derived  (<A HREF="##array_subscripts">array_subscripts</A>?, (%<A HREF="##class_modification">class_modification</A>;)?, 
+          <A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ATTLIST derived  
+
+	type CDATA #REQUIRED
+	%type_prefix; 
+	%location;
+ ></pre>
+
+<A name="#div">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: div
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT div  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST div  
+
+	%location;
+ ></pre>
+
+<A name="#element_modification">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: element_modification
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT element_modification  (<A HREF="##component_reference">component_reference</A>, (%<A HREF="##modification">modification</A>;)?)  >
+<pre>&lt;!ATTLIST element_modification  
+
+	string_comment CDATA #IMPLIED
+	final (true) #IMPLIED
+	each (true) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#element_redeclaration">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: element_redeclaration
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT element_redeclaration  ((<A HREF="##definition">definition</A> | <A HREF="##component">component</A>), <A HREF="##constrain">constrain</A>?)  >
+<pre>&lt;!ATTLIST element_redeclaration  
+
+	final (true) #IMPLIED
+	each (true) #IMPLIED
+	replaceable (true) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#else">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: else
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT else  (%<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST else  
+
+	%location;
+ ></pre>
+
+<A name="#elseif">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: elseif
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT elseif  (%<A HREF="##exp">exp</A>;, <A HREF="##then">then</A>)  >
+<pre>&lt;!ATTLIST elseif  
+
+	%location;
+ ></pre>
+
+<A name="#end">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: end
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT end  EMPTY  >
+<pre>&lt;!ATTLIST end  
+
+	%location;
+ ></pre>
+
+<A name="#enumeration">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: enumeration
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT enumeration  (((%<A HREF="##enum_list">enum_list</A>;)? | <A HREF="##colon">colon</A>), <A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ATTLIST enumeration  
+ ></pre>
+
+<A name="#enumeration_literal">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: enumeration_literal
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT enumeration_literal  (<A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ATTLIST enumeration_literal  
+
+	ident CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#eq">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: eq
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT eq  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST eq  
+
+	%location;
+ ></pre>
+
+<A name="#equ_call">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_call
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_call  (<A HREF="##function_arguments">function_arguments</A>)  >
+<pre>&lt;!ATTLIST equ_call  
+
+	ident CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#equ_connect">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_connect
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_connect  (<A HREF="##component_reference">component_reference</A>, <A HREF="##component_reference">component_reference</A>)  >
+<pre>&lt;!ATTLIST equ_connect  
+
+	%location;
+ ></pre>
+
+<A name="#equ_else">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_else
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_else  (%<A HREF="##equation_list">equation_list</A>;)  >
+<pre>&lt;!ATTLIST equ_else  
+
+	%location;
+ ></pre>
+
+<A name="#equ_elseif">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_elseif
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_elseif  (%<A HREF="##exp">exp</A>;, <A HREF="##equ_then">equ_then</A>)  >
+<pre>&lt;!ATTLIST equ_elseif  
+
+	%location;
+ ></pre>
+
+<A name="#equ_elsewhen">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_elsewhen
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_elsewhen  (%<A HREF="##exp">exp</A>;, <A HREF="##equ_then">equ_then</A>)  >
+<pre>&lt;!ATTLIST equ_elsewhen  
+
+	%location;
+ ></pre>
+
+<A name="#equ_equal">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_equal
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_equal  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST equ_equal  
+
+	%location;
+ ></pre>
+
+<A name="#equ_for">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_for
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_for  (<A HREF="##for_indices">for_indices</A>, %<A HREF="##equation_list">equation_list</A>;)  >
+<pre>&lt;!ATTLIST equ_for  
+
+	%location;
+ ></pre>
+
+<A name="#equ_if">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_if
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_if  (%<A HREF="##exp">exp</A>;, <A HREF="##equ_then">equ_then</A>, <A HREF="##equ_elseif">equ_elseif</A>*, <A HREF="##equ_else">equ_else</A>?)  >
+<pre>&lt;!ATTLIST equ_if  
+
+	%location;
+ ></pre>
+
+<A name="#equ_then">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_then
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_then  (%<A HREF="##equation_list">equation_list</A>;)  >
+<pre>&lt;!ATTLIST equ_then  
+
+	%location;
+ ></pre>
+
+<A name="#equ_when">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equ_when
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equ_when  (%<A HREF="##exp">exp</A>;, <A HREF="##equ_then">equ_then</A>, <A HREF="##equ_elsewhen">equ_elsewhen</A>*)  >
+<pre>&lt;!ATTLIST equ_when  
+
+	%location;
+ ></pre>
+
+<A name="#equation">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: equation
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT equation  ((<A HREF="##equ_equal">equ_equal</A> | <A HREF="##equ_if">equ_if</A> | <A HREF="##equ_connect">equ_connect</A> | <A HREF="##equ_for">equ_for</A> | 
+          <A HREF="##equ_when">equ_when</A> | <A HREF="##equ_call">equ_call</A>), <A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ATTLIST equation  
+
+	initial (true) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#extends">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: extends
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT extends  (%<A HREF="##class_modification">class_modification</A>;)  >
+<pre>&lt;!ATTLIST extends  
+
+	type CDATA #REQUIRED
+	visibility (public | protected) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#external">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: external
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT external  ((<A HREF="##external_equal">external_equal</A>?, (%<A HREF="##expression_list">expression_list</A>;)?), 
+          <A HREF="##annotation">annotation</A>?, (<A HREF="##semicolon">semicolon</A>, <A HREF="##annotation">annotation</A>)?)  >
+<pre>&lt;!ATTLIST external  
+
+	ident CDATA #IMPLIED
+	language_specification CDATA #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#external_equal">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: external_equal
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT external_equal  (<A HREF="##component_reference">component_reference</A>)  >
+<pre>&lt;!ATTLIST external_equal  
+
+	%location;
+ ></pre>
+
+<A name="#for_index">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: for_index
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT for_index  (%<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST for_index  
+
+	ident CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#for_indices">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: for_indices
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT for_indices  (<A HREF="##for_index">for_index</A>+)  >
+<pre>&lt;!ATTLIST for_indices  
+
+	%location;
+ ></pre>
+
+<A name="#function_arguments">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: function_arguments
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT function_arguments  ((%<A HREF="##exp">exp</A>;, (<A HREF="##function_arguments">function_arguments</A> | <A HREF="##for_indices">for_indices</A>)?) | 
+          %<A HREF="##named_arguments">named_arguments</A>;)  >
+<pre>&lt;!ATTLIST function_arguments  
+
+	%location;
+ ></pre>
+
+<A name="#gt">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: gt
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT gt  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST gt  
+
+	%location;
+ ></pre>
+
+<A name="#gte">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: gte
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT gte  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST gte  
+
+	%location;
+ ></pre>
+
+<A name="#if">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: if
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT if  ((%<A HREF="##exp">exp</A>;), <A HREF="##then">then</A>, <A HREF="##elseif">elseif</A>*, <A HREF="##else">else</A>)  >
+<pre>&lt;!ATTLIST if  
+
+	%location;
+ ></pre>
+
+<A name="#import">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: import
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT import  (<A HREF="##comment">comment</A>?)  >
+<pre>&lt;!ATTLIST import  
+
+	ident CDATA #IMPLIED
+	name CDATA #REQUIRED
+	dotstar (true) #IMPLIED
+	visibility (public | protected) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#integer_literal">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: integer_literal
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT integer_literal  EMPTY  >
+<pre>&lt;!ATTLIST integer_literal  
+
+	value CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#lt">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: lt
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT lt  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST lt  
+
+	%location;
+ ></pre>
+
+<A name="#lte">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: lte
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT lte  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST lte  
+
+	%location;
+ ></pre>
+
+<A name="#modelica">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: modelica
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT modelica  (<A HREF="##modelicaxml">modelicaxml</A>*, ANY)  >
+<pre>&lt;!ATTLIST modelica  
+ ></pre>
+
+<A name="#modelicaxml">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: modelicaxml
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT modelicaxml  (<A HREF="##definition">definition</A>*)  >
+<pre>&lt;!ATTLIST modelicaxml  
+
+	within CDATA #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#modification_arguments">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: modification_arguments
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT modification_arguments  (%<A HREF="##class_modification">class_modification</A>;, <A HREF="##modification_equals">modification_equals</A>?)  >
+<pre>&lt;!ATTLIST modification_arguments  
+
+	%location;
+ ></pre>
+
+<A name="#modification_assign">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: modification_assign
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT modification_assign  (%<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST modification_assign  
+
+	%location;
+ ></pre>
+
+<A name="#modification_equals">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: modification_equals
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT modification_equals  (%<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST modification_equals  
+
+	%location;
+ ></pre>
+
+<A name="#mul">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: mul
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT mul  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST mul  
+
+	%location;
+ ></pre>
+
+<A name="#named_argument">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: named_argument
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT named_argument  (%<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST named_argument  
+
+	ident CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#ne">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: ne
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT ne  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST ne  
+
+	%location;
+ ></pre>
+
+<A name="#not">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: not
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT not  (%<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST not  
+
+	%location;
+ ></pre>
+
+<A name="#or">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: or
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT or  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST or  
+
+	%location;
+ ></pre>
+
+<A name="#output_expression_list">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: output_expression_list
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT output_expression_list  ((%<A HREF="##exp">exp</A>;)?, (<A HREF="##comma">comma</A>, (%<A HREF="##exp">exp</A>;)?)*)  >
+<pre>&lt;!ATTLIST output_expression_list  
+
+	%location;
+ ></pre>
+
+<A name="#pow">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: pow
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT pow  (%<A HREF="##exp">exp</A>;, %<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST pow  
+
+	%location;
+ ></pre>
+
+<A name="#range">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: range
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT range  ((%<A HREF="##exp">exp</A>;), (%<A HREF="##exp">exp</A>;, (%<A HREF="##exp">exp</A>;)?)?)  >
+<pre>&lt;!ATTLIST range  
+
+	%location;
+ ></pre>
+
+<A name="#real_literal">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: real_literal
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT real_literal  EMPTY  >
+<pre>&lt;!ATTLIST real_literal  
+
+	value CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#semicolon">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: semicolon
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT semicolon  EMPTY  >
+<pre>&lt;!ATTLIST semicolon  
+
+	%location;
+ ></pre>
+
+<A name="#string_literal">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: string_literal
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT string_literal  EMPTY  >
+<pre>&lt;!ATTLIST string_literal  
+
+	value CDATA #REQUIRED
+	%location;
+ ></pre>
+
+<A name="#sub">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: sub
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT sub  (%<A HREF="##exp">exp</A>;, (%<A HREF="##exp">exp</A>;)?)  >
+<pre>&lt;!ATTLIST sub  
+
+	operation (binary | unary) #IMPLIED
+	%location;
+ ></pre>
+
+<A name="#then">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: then
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT then  (%<A HREF="##exp">exp</A>;)  >
+<pre>&lt;!ATTLIST then  
+
+	%location;
+ ></pre>
+
+<A name="#type_array_subscripts">
+</A>
+<pre>
+**********************************************************************
+ELEMENT: type_array_subscripts
+COMMENT:  
+**********************************************************************
+</pre>
+
+<pre>&lt;!ELEMENT type_array_subscripts  ((%<A HREF="##subscript">subscript</A>;)+)  >
+<pre>&lt;!ATTLIST type_array_subscripts  
+
+	%location;
+ ></pre>
