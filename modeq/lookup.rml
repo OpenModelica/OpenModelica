@@ -177,10 +177,12 @@ relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 	---------------------------------------------------------
 	lookup_class_in_frame((n,Env.CLASS(c))::_, id) => c
 
+(*
   rule	id = n & print "# Error while looking up class " &
 	print id & print ": found a component\n"
 	------------------------------------
 	lookup_class_in_frame((n,Env.VAR(_))::_,id) => fail
+*)
 
   rule	lookup_class_in_frame(fs,id) => c
 	------------------------------
@@ -205,6 +207,7 @@ relation lookup_var2: ((SCode.Ident * Env.Item) list,SCode.Ident)
 	--------------------------------------------
 	lookup_var2((n,Env.VAR(fv))::_,id) => fv
 
+(*
   rule	id = n & print "# Error while looking up component " &
 	print id & print ": found a class\n"
 	------------------------------------
@@ -214,6 +217,7 @@ relation lookup_var2: ((SCode.Ident * Env.Item) list,SCode.Ident)
 	print id & print ": found a type\n"
 	------------------------------------
 	lookup_var2((n,Env.TYPE(_))::_,id) => fail
+*)
 
   rule	lookup_var2(fs,id) => fv
 	------------------------
