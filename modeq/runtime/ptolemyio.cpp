@@ -1,5 +1,25 @@
+/*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*/
 /* Interface for pltolemy plot format.
-  Peter Aronsson.
+  Peter Aronsson. 2003-10-30
 */
 #include <iostream>
 #include <fstream>
@@ -23,46 +43,59 @@ extern "C"
     char buf[255];
     void *lst;
     void *olst;
-    //cout << "opening file "<<filename << endl;
     ifstream stream(filename);
     
     if (!stream) {
       cerr << "Error opening file" << endl;
       return NULL;
     }
-    //cout << "Entering reading ptolemy data\n";
+
+    // Find interval size
+    while( stream.getline(buf,255)
+	   && string(buf).find("#IntervalSize") == string(buf).npos);
+    string intervalText=string(buf);
+    int equalPos=intervalText.find("=");
+    int readIntervalSize = atoi(intervalText.substr(equalPos+1).c_str());
+    // exit if intervals not compatible...
+    if (datasize == 0) { 
+      datasize = readIntervalSize;
+    } else {
+      if( readIntervalSize == 0) {return NULL;}
+      if (readIntervalSize != datasize) {return NULL;}
+    }
     olst = mk_nil();
     for (int i=0; i<size; i++) {
       string readstr;
       double val; char ch;
-      string var(vars[i]);
+      string var(string("DataSet: ")+vars[i]);
       
-      // Search to the correct position.
-      //cout << "searching for " << var << endl;
+
       stream.seekg(0); //Reset stream
-      while( stream.getline(buf,255)
-	     && string(buf).find(var) == string(buf).npos) {
+      // Search to the correct position.
+      stream.getline(buf,255);
+      while( string(buf).find(var) == string(buf).npos) {
+	if (!stream.getline(buf,255)) {
+	  // if we reached end of file return..
+	  return NULL;
+	}
       }
-      if (!stream.getline(buf,255)) { return NULL; }
+
       lst = mk_nil();
       int j=0;
       while(j<datasize) {
 	stream.getline(buf,255);
+
 	if (string(buf).find("DataSet:") == 1) {
 	  j = datasize;
 	  break;
 	}
 	string values(buf);
-	//cout << "values: " << values << endl;
 	int commapos=values.find(",");
-	//cout << "value : " << values.substr(commapos+1) << endl;
-	val = atof(values.substr(commapos+1).c_str());
-	//cout <<  "got value " << val << endl;
+	val = atof(values.substr(commapos+1).c_str()); // Second value after comma
 	
 	lst = (void*)mk_cons(Values__REAL(mk_rcon(val)),lst);
 	j++;
       }
-      //cout << "Done variable no." << i <<endl;
 
       olst = (void*)mk_cons(Values__ARRAY(lst),olst);
     }

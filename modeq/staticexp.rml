@@ -3292,13 +3292,13 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	System.pwd => pwd &
 	Util.string_append_list([pwd,"/",filename]) => filename' &
 	System.write_file(filename',str) &
-	print "wrote flat file: " & 
-	print str & print "\n" &
 	ModSim.compile_flat_class(filename',modelname) => exefile &
 	ceval(env,starttime,true,SOME(st)) => (Values.REAL(start),_) &
 	ceval(env,stoptime,true,SOME(st)) => (Values.REAL(stop),_) &
 	ceval(env,interval,true,SOME(st)) => (Values.INTEGER(interv),_) &
-	ModSim.run_simulation(exefile,start,stop,interv) => (0,resultfile) &
+	Util.string_append_list([pwd,"/",modelname,"_res.plt"]) => resultfile &
+	int_sub(interv,1) => interv' &
+	ModSim.run_simulation(exefile,start,stop,interv',resultfile) => 0 &
 	let simValue = Values.RECORD([Values.STRING(resultfile)],["resultFile"]) &
 	let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
 			,[Types.VAR("resultFile",
@@ -3331,15 +3331,15 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	  => fail
 
   rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
-	Util.list_union(["time"],vars') => vars'' &
+	Util.list_union_elt("time",vars') => vars'' &
 	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st)) 
 	  => (Values.RECORD([Values.STRING(filename)],_),_) &
-	System.read_ptolemyplot_dataset(filename,vars'',100) => value &
+	System.read_ptolemyplot_dataset(filename,vars'',0) => value &
 	System.pwd() => pwd &
 	Util.string_append_list([pwd,"/","tmpPlot.plt"]) => tmpPlotFile &
 	Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
-	  Util.string_append_list(["exec /cygdrive/c/ptolemy/ptplot5.2/ptplot.exe `cygpath -w \"",
+	  Util.string_append_list(["exec ptplot.exe `cygpath -w \"",
 				   tmpPlotFile,"\"` &"]) => call &
 	  System.system_call(call) => _
 	  ------------------------------------

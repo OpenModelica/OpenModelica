@@ -32,7 +32,7 @@
 module ModSim :
   
   relation compile_flat_class: (string,string) => (string)
-  relation run_simulation: (string,real,real,int) => (int,string)
+  relation run_simulation: (string,real,real,int,string) => int
 
 end
 with "system.rml"
@@ -41,11 +41,11 @@ with "util.rml"
 relation compile_flat_class: (string,string) => (string) =
 
   rule	System.read_env("MOSHHOME") => moshhome &
-	string_append(moshhome,"/../ModSimPack/bin/") 
+	string_append(moshhome,"/../ModSimPack/") 
 	  => dirname &
 	System.pwd() => pwd &
 	System.cd(dirname) => 0 &
-	Util.string_append_list(["ModelicaOptimizer.exe ",
+	Util.string_append_list(["bin/ModelicaOptimizer.exe ",
 				 "`cygpath -w \"",flatfile,"\"`"]) => call &
 	System.system_call(call) => 0 &
 	print "Compiled model to C-code, compiling C-code...\n" &
@@ -59,7 +59,7 @@ relation compile_flat_class: (string,string) => (string) =
 	compile_flat_class(flatfile,exefile) => res
 end
 
-relation run_simulation: (string,real,real,int) => (int,string) =
+relation run_simulation: (string,real,real,int,string) => int =
 
   rule	real_string(start) => t1 &
 	real_string(stop) => t2 &
@@ -67,11 +67,13 @@ relation run_simulation: (string,real,real,int) => (int,string) =
 	System.read_env("MOSHHOME") => moshhome &
 	string_append(moshhome,"/../ModSimPack/bin/") 
 	  => bindir &
-	Util.string_append_list(["cd ",bindir,";",exefile," ",t1," ",t2," ",steps]) => call &
+	Util.string_append_list(["cd ",bindir,";",exefile," ",t1," ",t2," ",steps, 
+				 " `cygpath -w \"",outfile,"\"`"]) 
+	  => call &
 	print call &
 	System.system_call(call) => res 
 	-----------------------------------
-	run_simulation(exefile,start,stop,interval) 
-	  => (res,"simulationRes.plt")
+	run_simulation(exefile,start,stop,interval,outfile) 
+	  => res
 
 end

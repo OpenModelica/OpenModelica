@@ -81,6 +81,35 @@ function translateModel
 end translateModel;
 \end{verbatim}
 
+\func{simulate(\emph{className, options})}
+Translate a class, produce C-code and execute to produce a simulation result.
+Options are: startTime, stopTime, numberOfIntervals.
+Returns a record SimulationResult with information about the result.
+
+The function header is defined as:
+\begin{verbatim}
+function simulate
+    input TypeName className;
+    input Real startTime=0.0;
+    input Real stopTime=1.0;
+    input Integer numberOfIntervals=500;	
+    output String flatclass;
+...
+end simulate;
+\end{verbatim}
+
+\func{plot(\emph{variables})}
+Plot a vector of variables using Ptolemy plot tool.
+
+The function header is defined as:
+\begin{verbatim}
+function plot
+    input VariableName variables[:];
+    output Bool res;
+...
+end plot;
+\end{verbatim}
+
 \func{list()}
 Returns a string containing all class definitions.
 

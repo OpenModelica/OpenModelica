@@ -37,7 +37,7 @@ module Util :
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_replaceat: (''a, int, ''a list) => ''a list 
-  relation list_union: (''a list, ''a list) => ''a list 	  
+  relation list_union_elt: (''a , ''a list) => ''a list 	  
   relation list_reduce: ('a list, ('a,'a) => 'a) => 'a
 	      
   relation tuple2_1 : ('a * 'b) => 'a
@@ -174,21 +174,15 @@ relation list_getmember: (''a, ''a list) => ''a =
 end 
 
 
-relation list_union: (''a list, ''a list) => ''a list =
-	
-  axiom	list_union(a,[]) => a
+relation list_union_elt: (''a , ''a list) => ''a list =
 
-  rule	list_union(a,xs) => res &
-	list_getmember(x,a) => _ & 
-	list_append(a,res) => res'
-	-----------------------
-	list_union(a,x::xs) => res'
+  rule	list_getmember(x,lst) => _ 
+	--------------------------
+	list_union_elt(x,lst) => lst
 
-  rule	list_union(a,xs) => res &
-	not list_getmember(x,a) => _ & 
-	list_append(a,x::res) => res'
-	-----------------------
-	list_union(a,x::xs) => res'
+  rule	not list_getmember(x,lst) => _ 
+	--------------------------
+	list_union_elt(x,lst) => x::lst	
 end
 
 relation list_replaceat: (''a, int, ''a list) => ''a list =
