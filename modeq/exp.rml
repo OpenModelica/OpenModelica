@@ -425,10 +425,31 @@ relation simplify : Exp => Exp =
 	simplify(e2) => e2' 
 	-------------------
 	simplify (BINARY(e1,ADD(tp),UNARY(UMINUS(tp2),e2))) => BINARY(e1',SUB(tp),e2')
+
   rule	simplify(e1) => e1' &
 	simplify(e2) => e2' 
 	-------------------
 	simplify (BINARY(UNARY(UMINUS(tp2),e2),ADD(tp),e1)) => BINARY(e1',SUB(tp),e2')
+
+  rule	(* a/b/c => (a*c)/b) *)
+	simplify(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2)) => e
+	-------------------
+	simplify (BINARY(e1,DIV(tp),BINARY(e2,DIV(tp2),e3))) => e
+
+  rule	(* (a/b)/c => a/(b*c)) *)
+	simplify(BINARY(e1,DIV(tp2),BINARY(e2,MUL(tp),e3))) => e
+	-------------------
+	simplify (BINARY(BINARY(e1,DIV(tp2),e2),DIV(tp),e3)) => e
+
+  rule	(* e1 / e2 where e1 and e2 can be factorized with common factor
+	 e.g  a*b/c*a => b/c *)
+	gcd(e1,e2) => factor &
+ 	remove_factor(factor,e1) => e1' &
+	simplify(e1') => e1'' &
+	remove_factor(factor,e2) => e2' &
+	simplify(e2') => e2'' 
+	---------------------------------------
+	simplify (BINARY(e1,DIV(tp),e2)) => BINARY(e1'',DIV(tp),e2'')
 
 	(* Array and Matrix stuff *)
 
@@ -503,6 +524,163 @@ relation simplify : Exp => Exp =
 
 end
 
+(** relation: remove_factor
+ ** Remove the factor from the expression (factorize it out)
+**)
+relation remove_factor: (Exp, (* factor *)
+			 Exp) (* expr *)
+	=> (Exp) =	(* updated expr *)
+
+  rule  factors(factor) => e1s &
+	factors(expr) => e2s &
+	Util.list_setdifference_p(e2s,e1s,exp_equal) => factors' &
+	make_product(factors') => exp
+	----------------------
+	remove_factor(factor,expr) => exp
+
+  (*rule	print_exp_str factor => fs & 
+	print_exp_str expr => es & print "remove_factor failed, factor:" &
+	print fs & print " expr:" & print es & print "\n" 
+	--------------------
+	remove_factor(factor,expr) => fail*)
+end
+
+(** relation: gcd
+ ** Return the greatest common divisor expression from two expressions.
+ ** If no common divisor besides a numerical expression can be found, the relation fails.
+ **)
+relation gcd: (Exp, Exp) => Exp =
+
+
+  rule	factors(e1) => e1s &
+	factors(e2) => e2s &
+	Util.list_intersection_p(e1s,e2s,exp_equal) => (factor as _::_) &
+	make_product(factor) => product
+	------------------------------
+	gcd(e1,e2) => product
+end
+
+(** relation: factors
+ ** Returns the factors of the expression if any as a list of expressions
+ **)
+relation factors: Exp => Exp list =
+
+  rule	factors(e1) => f1 &
+	factors(e2) => f2 &
+	list_append(f1,f2) => res
+	-------------------------
+	factors (BINARY(e1,MUL(_),e2)) => res
+
+  axiom	factors (e as CREF(cr,_)) => [e]
+
+  axiom	factors (_) => []
+end
+(** relation: make_product
+ ** Takes a list of expressions an makes a product expression multiplying all 
+ ** elements in the list.
+ **)
+relation make_product: (Exp list) => Exp =
+
+  axiom	make_product([e1]) => e1
+
+  rule	(* Take type info from e1, ok since type checking already performed. *)
+	typeof(e1) => tp
+	----------------
+	make_product([e1,e2]) => BINARY(e1,MUL(tp),e2)
+
+  rule	make_product(rest) => e2 &
+	typeof(e2) => tp
+	------------------
+	make_product(e1::rest) => BINARY(e1,MUL(tp),e2)
+
+  rule	print "-make_product failed\n" 
+	------------------------------
+	make_product(lst) => fail
+end
+
+(** relation typeof
+ ** Retrieves the Type of the Expression
+ **)
+relation typeof: (Exp) => Type =
+  axiom	typeof (ICONST(_)) =>  INT
+  axiom	typeof (RCONST(_)) =>  REAL
+  axiom	typeof (SCONST(_)) =>  STRING
+  axiom	typeof (BCONST(_)) =>  BOOL
+  axiom	typeof (CREF(_,tp)) => tp
+
+  rule	typeof_op(op) => tp
+	-----------------------
+	typeof (BINARY(_,op,_)) => tp
+
+  rule	typeof_op(op) => tp
+	-----------------------
+	typeof (UNARY(op,_)) => tp
+
+  rule	typeof_op(op) => tp
+	-----------------------
+	typeof (LBINARY(_,op,_)) => tp
+
+  rule	typeof_op(op) => tp
+	-----------------------
+	typeof (LUNARY(op,_)) => tp
+
+  rule	typeof_op(op) => tp
+	-----------------------
+	typeof (RELATION(_,op,_)) => tp
+
+  rule	typeof(e2) => tp
+	----------------
+	typeof(IFEXP(e1,e2,e3)) => tp
+
+  axiom	typeof(CALL(_,_,_,_)) => OTHER (* Not always true *)
+
+  axiom	typeof(ARRAY(tp,_,_)) => tp
+  axiom	typeof(MATRIX(tp,_,_)) => tp
+  axiom	typeof(RANGE(tp,_,_,_)) => tp
+  axiom	typeof(CAST(tp,_)) => tp
+
+  rule	typeof(e) => tp
+	-------------------
+	typeof(ASUB(e,_)) => tp
+
+  axiom	typeof(CODE(_,tp)) => tp
+
+  rule	typeof (e) => tp
+	----------------
+	typeof(REDUCTION(_,e,_,_)) => tp
+
+  axiom	typeof(END) => OTHER (* Can be any type. *)
+end
+
+relation typeof_op: Operator => Type =
+
+  axiom	typeof_op(ADD(t)) => t
+  axiom	typeof_op(SUB(t)) => t
+  axiom	typeof_op(MUL(t)) => t
+  axiom	typeof_op(DIV(t)) => t
+  axiom	typeof_op(POW(t)) => t
+  axiom	typeof_op(UMINUS(t)) => t
+  axiom	typeof_op(UPLUS(t)) => t
+  axiom	typeof_op(UMINUS_ARR(t)) => t
+  axiom	typeof_op(UPLUS_ARR(t)) => t
+  axiom	typeof_op(ADD_ARR(t)) => t
+  axiom	typeof_op(SUB_ARR(t)) => t
+  axiom	typeof_op(MUL_SCALAR_ARRAY(t)) => t
+  axiom	typeof_op(MUL_SCALAR_PRODUCT(t)) => t
+  axiom	typeof_op(MUL_MATRIX_PRODUCT(t)) => t
+  axiom	typeof_op(DIV_ARRAY_SCALAR(t)) => t
+  axiom	typeof_op(POW_ARR(t)) => t
+  axiom	typeof_op(AND) => BOOL
+  axiom	typeof_op(OR) => BOOL
+  axiom	typeof_op(NOT) => BOOL
+  axiom	typeof_op(LESS(t)) => t
+  axiom	typeof_op(LESSEQ(t)) => t
+  axiom	typeof_op(GREATER(t)) => t
+  axiom	typeof_op(GREATEREQ(t)) => t
+  axiom	typeof_op(EQUAL(t)) => t
+  axiom	typeof_op(NEQUAL(t)) => t
+  axiom	typeof_op(USERDEFINED(t)) => OTHER
+end
 
 relation is_const_one : Exp => bool =
 

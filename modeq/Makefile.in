@@ -72,7 +72,8 @@ SRCRML= absyn.rml \
 	taskgraph.rml \
 	tornado.rml \
 	util.rml \
-	values.rml
+	values.rml \
+	vartransform.rml
 
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)

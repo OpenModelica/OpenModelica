@@ -40,9 +40,9 @@ module Derive:
   with "daelow.rml"
   with "exp.rml"
   relation differentiate_equation_time: (DAELow.Equation,
-				    Exp.ComponentRef list) (* time varying variables *)
+				    DAELow.Variables) (* all time varying variables *)
 	  => DAELow.Equation
-  relation differentiate_exp_time: (Exp.Exp, Exp.ComponentRef list) => Exp.Exp
+  relation differentiate_exp_time: (Exp.Exp, DAELow.Variables) => Exp.Exp
   relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp
 end
 
@@ -52,7 +52,7 @@ with "util.rml"
 with "print.rml" 
 
 relation differentiate_equation_time: (DAELow.Equation,
-				  Exp.ComponentRef list) (* time varying variables *)
+				  DAELow.Variables) (* time varying variables *)
 	  => DAELow.Equation =
 
   rule	differentiate_exp_time(e1,timevars) => e1' &
@@ -77,14 +77,14 @@ end
  ** gives
  ** differentiate_exp_time('x+y=5*PI', [x,y]) => der(x)+der(y)=0
  **)
-relation differentiate_exp_time: (Exp.Exp,Exp.ComponentRef list) => Exp.Exp =
+relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 
   axiom	differentiate_exp_time(Exp.ICONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp_time(Exp.RCONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp_time(Exp.CREF(Exp.CREF_IDENT("time",[]),tp),_) 
 	  => Exp.RCONST(1.0)
 	  
-  rule	list_member(cr,timevars) => true
+  rule	DAELow.get_var(cr,timevars) => (_,_)
 	--------------------------------
 	differentiate_exp_time(e as Exp.CREF(cr,tp),timevars) 
 	  => Exp.CALL(Absyn.IDENT("der"),[e],false,true)
@@ -193,7 +193,6 @@ relation differentiate_exp_time: (Exp.Exp,Exp.ComponentRef list) => Exp.Exp =
 	------------------------------
 	differentiate_exp_time(Exp.REDUCTION(a,e1,b,e2),tv) 
 	  => Exp.REDUCTION(a,e1',b,e2')
-
 end
 
 (** relation: differenatiate_exp
@@ -310,7 +309,6 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	------------------------------
 	differentiate_exp(Exp.REDUCTION(a,e1,b,e2),tv) 
 	  => Exp.REDUCTION(a,e1',b,e2')
-
 end
 
 

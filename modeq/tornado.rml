@@ -697,7 +697,7 @@ end
          & DAELow.transpose_matrix(m) => mT 
          & DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
          & Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-         (* & Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) *)
+         (* & Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) *)
          & Debug.fcall("bltdump", DAELow.dump,d'')
          & Debug.fcall("bltdump", DAELow.dump_matching, v1)
          & DAELow.strong_components(m,mT,v1,v2) => (comps) 

@@ -55,6 +55,7 @@ module Util :
   relation list_rest: 'a list => 'a list
   relation list_last: 'a list => 'a	  
   relation list_flatten : 'a list list => 'a list
+  relation list_append_elt : ('a,'a list) => 'a list
   relation list_map_0 : ('a list, 'a => ()) => ()
   relation list_map : ('a list, 'a => 'b) => 'b list
   relation list_map__2 : ('a list, 'a => ('b,'c)) => ('b list,'c list)
@@ -80,6 +81,8 @@ module Util :
 	  => ''a list 
   relation list_union:  (''a list, ''a list) => ''a list
   relation list_union_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list
+  relation list_intersection_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list
+  relation list_setdifference_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list
   relation list_list_union:  (''a list list) => ''a list 
   relation list_list_union_p:  (''a list list, (''a,''a) => bool) => ''a list 
 	  
@@ -171,6 +174,20 @@ relation list_flatten : 'a list list => 'a list =
 	-----------------------
 	list_flatten f::r => l
 
+end
+
+(** relation: list_append_elt
+ ** This relation adds an element last to the list
+ ** For example
+ ** list_append_elt(1,[2,3]) => [2,3,1]
+ **)
+relation list_append_elt : ('a,'a list) => 'a list =
+
+  axiom	list_append_elt(elt,[]) => [elt]
+
+  rule	list_append_elt(elt,xs) => xs'
+	------------------------------
+	list_append_elt(elt,x::xs) => x::xs'
 end
 
 (** relation: list_map
@@ -455,6 +472,24 @@ relation list_deletemember: (''a list,''a) => ''a list =
 
 end
 
+(** relation: list_deletemember_p
+ ** Takes a list and a value and a comparison relation and deletes the first occurence of 
+ ** the value in the list
+ ** For example,
+ ** list_deletemember([1,2,3,2],2,int_eq) => [1,3,2]
+ **)
+relation list_deletemember_p: (''a list,''a,(''a,''a)=> bool ) => ''a list =
+
+  rule	(* A bit ugly *)
+	list_getmember_p(elt,lst,cond) => elt' &
+	list_position(elt',lst) => pos &
+	list_delete(lst,pos) => lst'
+	----------------------------
+	list_deletemember_p(lst,elt,cond) => lst'
+
+  axiom	list_deletemember_p(lst,_,_) => lst
+
+end
 (** relation list_getmember_p
  ** Takes a value and a list of values and a comparison relation over two values.
  ** If the value is present in the list (using the comparison relation returning true)
@@ -563,6 +598,52 @@ relation list_union_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list =
 	list_union_p(xs,r1,p) => res
 	-----------------------
 	list_union_p(x::xs,lst2,p) => res
+end
+
+(** relation: list_intersection_p
+ ** Takes two lists and a comparison relation over two elements of the list.
+ ** It returns the intersection of the two lists, using the comparison relation passed as 
+ ** argument to determine identity between two elements.
+ ** For example
+ ** given the relation string_equal(string,string) returning true if the strings are equal
+ ** list_intersection_p(["a","aa"],["b","aa"],string_equal) => ["aa"]
+ **)
+relation list_intersection_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list =
+
+  axiom	list_intersection_p([],_,_) => []
+
+  rule	list_getmember_p(x1,xs2,cond) => _ &
+	list_intersection_p(xs1,xs2,cond) => res
+	---------------------------------
+	list_intersection_p(x1::xs1,xs2,cond) => x1::res
+
+  rule	(* not list_getmember_p(x1,xs2,cond) => _ *)
+	list_intersection_p(xs1,xs2,cond) => res
+	---------------------------------
+	list_intersection_p(x1::xs1,xs2,cond) => res
+end
+
+(** relation: list_setdifference_p
+ ** Takes two lists and a comparison relation over two elements of the list.
+ ** It returns the set difference of the two lists A-B, using the comparison relation passed as 
+ ** argument to determine identity between two elements.
+ ** For example
+ ** given the relation string_equal(string,string) returning true if the strings are equal
+ ** list_setdifference_p(["a","b","c"],["a","c"],string_equal) => ["b"]
+**)
+relation list_setdifference_p:  (''a list (* A *), ''a list (* B *), (''a,''a) => bool) 
+	  => ''a list =
+
+  axiom	list_setdifference_p(a,[],cond) => a
+
+  rule	list_deletemember_p(a,x1,cond) => a' &
+	list_setdifference_p(a',xs,cond) => a''
+	-------------------------------
+	list_setdifference_p(a,x1::xs,cond) => a''
+
+  rule	print "-list_setdifference_p failed\n" 
+	--------------------------------------
+	list_setdifference_p(_,_,_) => fail
 end
 
 (** relation: list_list_union_p

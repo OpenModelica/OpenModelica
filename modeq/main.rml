@@ -372,12 +372,14 @@ relation optimize_dae: (DAE.DAElist) => () =
 	& DAELow.transpose_matrix(m) => mT 
 	& print "transposed incidence matrix\n" 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
 	& clock() => t3
 	& DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
 	& clock() => t4
+	& real_sub(t4,t3) => t4' & real_string(t4') => tstr &
+	print "MATCHING look: " & print tstr & print "\n" 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
 	& Debug.fcall("bltdump", DAELow.dump,d'')
 
 	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
