@@ -40,7 +40,7 @@ SUBDIRS	= runtime absyn_builder modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .rml .h
-.PHONY: all subdirs report vctarget absyn_subdir debug release depend clean dclean test reallyclean
+.PHONY: all subdirs report vctarget absyn_subdir debug release depend clean dclean test reallyclean modeq_release modeq_debug
 
 all : debug subdirs #release
 
@@ -56,15 +56,17 @@ release: $(PROG)
 #		cp modeq_debug/$$x .; \
 #	done
 
-$(PROG): 
-	(cd modeq_release && $(MAKE))
+$(PROG): modeq_release
 	cp modeq_release/$(PROG)$(EXEEXT) .
 
-
-$(PROGD): 
-	(cd modeq_debug && $(MAKE))
+$(PROGD): modeq_debug
 	cp modeq_debug/$(PROGD)$(EXEEXT) .
 
+modeq_release:
+	(cd modeq_release && $(MAKE))
+
+modeq_debug:
+	(cd modeq_debug && $(MAKE))
 
 
 vctarget: $(SRCC) absyn_subdir

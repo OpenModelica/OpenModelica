@@ -58,6 +58,9 @@ SRCRML= absyn.rml \
 	values.rml \
 	vartransform.rml
 
+ALLRML = $(SRCRML) daeext.rml print.rml rtopts.rml system.rml parse.rml \
+		taskgraphext.rml corba.rml socket.rml tornadoext.rml
+
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
 SRCSIG=	$(SRCRML:.rml=.sig)

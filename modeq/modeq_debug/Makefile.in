@@ -16,23 +16,26 @@ SHELL	= /bin/sh
 CC	= gcc
 CFLAGS	= $(USE_CORBA)
 RMLHOME	= @rmlhome@
-RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
-#RML	= @rmlc_bin@ -Wc,-O3
 RMLINC  = -I$(RMLHOME)/include/plain
-
 
 USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
-
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
-#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
 
 srcdir = ..
 top_builddir = ../..
 
 include $(srcdir)/Makefile.common
 
+
 PROG = modeqd
+RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
+LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
+
+#PROG = modeq
+#RML	= @rmlc_bin@ -Wc,-O3
+#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
+
+
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
@@ -40,14 +43,21 @@ SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 .SUFFIXES: .o .rml .h
 .PHONY: all subdirs report vctarget absyn_subdir clean reallyclean
 
-%.rml : $(srcdir)/%.rml
-	cp $< $@ 
+SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
+
+all: $(PROG)
+
+$(ALLRML): %.rml : $(srcdir)/%.rml
+	cp $< $@
 
 %.o : %.rml
 	$(RML) -c $<
 
 %.c : %.rml
 	$(RML) +C $<
+
+$(SRCHSRCDIR) : $(srcdir)/%.h : %.h
+	cp $< $@
 
 %.h : %.rml
 	$(RML) -c $<
@@ -56,18 +66,17 @@ SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 	$(srcdir)/rml2sig/rmldep.sh $<
 
 
-all : $(SRCRML) $(SRCO) subdirs $(PROG)
+all : $(SRCO) subdirs $(PROG)
 
 vctarget: $(SRCC) absyn_subdir
 
 absyn_subdir:
 	@(cd $(srcdir)/absyn_builder ; $(MAKE) vctarget)
 
-$(PROG): $(SRCRML) $(SRCO) $(AST) $(RTOBJ)
+$(PROG): $(SRCO) $(AST) $(RTOBJ)
 	g++ -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
 
-subdirs:
-	cp $(SRCH) $(srcdir)
+subdirs: $(SRCHSRCDIR)
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE)) \
 	done
@@ -78,11 +87,13 @@ clean:
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
 	done	
-	$(RM) $(SRCO) $(SRCC) $(SRCH) $(SRCSIG) $(PROG) *~
+	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG) *~
 
 reallyclean: clean
+	$(RM) $(SRCSIG) $(ALLRML)
 
-.PRECIOUS: Makefile
+# don't remove these files after intermediate build steps
+.PRECIOUS: Makefile $(ALLRML)
 
 Makefile: Makefile.in
 	$(top_builddir)/config.status Makefile
