@@ -20,6 +20,7 @@
 */
 
 #include <iostream>
+#include <string>
 #include <limits>
 #include "simulation_runtime.h"
 #include "options.h"
@@ -291,9 +292,21 @@ void add_result(double *data, double time,double *x, double *xd, double *y,
 
 inline void read_commented_value( ifstream &f, double *res)
 {
-  f >> *res;   
+  string line;
+//  f >> *res;   
   char c[160];
   f.getline(c,160);
+  line = c;
+
+  if (line.find("true") != line.npos) {
+	  *res = 1.0;
+  }
+  else if (line.find("false") != line.npos) {
+	  *res = 0.0;
+  }
+  else {
+    *res = atof(c);
+  }
 }
 
 inline void read_commented_value( ifstream &f, int *res)
