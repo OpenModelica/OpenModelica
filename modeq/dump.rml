@@ -30,6 +30,7 @@ module Dump:
   relation print_equation: Absyn.Equation => ()
   relation print_algorithm: Absyn.Algorithm => ()
   relation print_list : ('a list, 'a => (), string) => ()
+  relation op_symbol : Absyn.Operator => string
 
 end
 
@@ -436,24 +437,24 @@ relation print_exp: Absyn.Exp => () =
 	-------------
 	print_exp(Absyn.BOOL(true))
 
-  rule	binop_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
+  rule	op_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
 	---------------------------------------------------------------
 	print_exp(Absyn.BINARY(e1, op, e2))
 
-  rule	unaryop_symbol(op) => sym &
+  rule	op_symbol(op) => sym &
 	print sym & print_exp e
 	----------------------------
 	print_exp(Absyn.UNARY(op, e))
 
-  rule	lbinop_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
+  rule	op_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
 	----------------------------------------------------------------
 	print_exp(Absyn.LBINARY(e1, op, e2))
 
-  rule	lunaryop_symbol(op) => sym & print sym & print_exp e
+  rule	op_symbol(op) => sym & print sym & print_exp e
 	---------------------------------------------------
 	print_exp(Absyn.LUNARY(op, e))
 
-  rule	relop_symbol(op) => sym & print_exp(e1) & print sym & print_exp(e2)
+  rule	op_symbol(op) => sym & print_exp(e1) & print sym & print_exp(e2)
 	-----------------------------------------------------------------
 	print_exp(Absyn.RELATION(e1, op, e2))
 
@@ -504,40 +505,32 @@ relation print_row : Absyn.Exp list => () =
 
 end
 
-(** relation: *_symbol
+(** relation: op_symbol
  **
  ** Make a string describing different operators.
  **)
 
-relation binop_symbol : Absyn.BinOp => string =
-  axiom	binop_symbol(Absyn.ADD) => " + "
-  axiom	binop_symbol(Absyn.SUB) => " - "
-  axiom	binop_symbol(Absyn.MUL) => "*"
-  axiom	binop_symbol(Absyn.DIV) => "/"
-  axiom	binop_symbol(Absyn.POW) => "^"
-end
+relation op_symbol : Absyn.Operator => string =
+  axiom	op_symbol(Absyn.ADD) => " + "
+  axiom	op_symbol(Absyn.SUB) => " - "
+  axiom	op_symbol(Absyn.MUL) => "*"
+  axiom	op_symbol(Absyn.DIV) => "/"
+  axiom	op_symbol(Absyn.POW) => "^"
 
-relation unaryop_symbol : Absyn.UnaryOp => string =
-  axiom	unaryop_symbol(Absyn.UMINUS) => "-"
-  axiom	unaryop_symbol(Absyn.UPLUS) => "+"
-end
+  axiom	op_symbol(Absyn.UMINUS) => "-"
+  axiom	op_symbol(Absyn.UPLUS) => "+"
 
-relation lbinop_symbol : Absyn.LBinOp => string =
-  axiom	lbinop_symbol(Absyn.AND) => " AND "
-  axiom	lbinop_symbol(Absyn.OR) => " OR "
-end
+  axiom	op_symbol(Absyn.AND) => " AND "
+  axiom	op_symbol(Absyn.OR) => " OR "
 
-relation lunaryop_symbol : Absyn.LUnaryOp => string =
-  axiom	lunaryop_symbol(Absyn.NOT) => "NOT "
-end
+  axiom	op_symbol(Absyn.NOT) => "NOT "
 
-relation relop_symbol : Absyn.RelOp => string =
-  axiom	relop_symbol(Absyn.LESS)      => " < "
-  axiom	relop_symbol(Absyn.LESSEQ)    => " <= "
-  axiom	relop_symbol(Absyn.GREATER)   => " > "
-  axiom	relop_symbol(Absyn.GREATEREQ) => " >= "
-  axiom	relop_symbol(Absyn.EQUAL)     => " = "
-  axiom	relop_symbol(Absyn.NEQUAL)    => " <> "
+  axiom	op_symbol(Absyn.LESS)      => " < "
+  axiom	op_symbol(Absyn.LESSEQ)    => " <= "
+  axiom	op_symbol(Absyn.GREATER)   => " > "
+  axiom	op_symbol(Absyn.GREATEREQ) => " >= "
+  axiom	op_symbol(Absyn.EQUAL)     => " = "
+  axiom	op_symbol(Absyn.NEQUAL)    => " <> "
 end
 
 (** - Utility relations

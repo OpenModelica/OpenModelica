@@ -152,9 +152,10 @@ relation equ_equations : Exp.ComponentRef list => DAE.DAEcomp list =
   rule	(* FIXME: check types. Must be real. *)
 	equ_equations y::cs => eq
 	------------------------
-	equ_equations x::y::cs => DAE.EQUATION(Exp.RELATION(Exp.CREF(x),
-							    Exp.REAL_EQUAL,
-							    Exp.CREF(y)))::eq
+	equ_equations x::y::cs
+	  => DAE.EQUATION(Exp.RELATION(Exp.CREF(x),
+				       Exp.EQUAL(Exp.REAL),
+				       Exp.CREF(y)))::eq
 end
 (**)
 relation flow_equations : (Exp.ComponentRef * Face) list => DAE.DAEcomp list =
@@ -162,7 +163,7 @@ relation flow_equations : (Exp.ComponentRef * Face) list => DAE.DAEcomp list =
   rule	flow_sum cs => sum
 	------------------
 	flow_equations cs => [DAE.EQUATION(Exp.RELATION(sum,
-							Exp.REAL_EQUAL,
+							Exp.EQUAL(Exp.REAL),
 							Exp.RCONST(0.0)))]
 
 end
@@ -176,14 +177,14 @@ relation flow_sum : (Exp.ComponentRef * Face) list => Exp.Exp =
   rule	sign_flow(c,f) => exp1 &
 	flow_sum cs => exp2
 	------------------
-	flow_sum ((c,f)::cs) => Exp.BINARY(exp1, Exp.REAL_ADD, exp2)
+	flow_sum ((c,f)::cs) => Exp.BINARY(exp1, Exp.ADD(Exp.REAL), exp2)
 
 end
 (**)
 relation sign_flow : (Exp.ComponentRef, Face) => Exp.Exp =
 
   axiom	sign_flow (c,INNER) => Exp.CREF(c)
-  axiom	sign_flow (c,OUTER) => Exp.UNARY(Exp.UMINUS,Exp.CREF(c))
+  axiom	sign_flow (c,OUTER) => Exp.UNARY(Exp.UMINUS(Exp.REAL),Exp.CREF(c))
 
 end
 
