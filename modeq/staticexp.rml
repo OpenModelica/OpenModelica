@@ -139,9 +139,15 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
   rule	Debug.fprintln("setr", "elab_exp_binary") &
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') &
+	Debug.fprintln("eexpbin","types of binary exp t1:") &
+	Debug.fcall("eexpbin",Types.print_type,t1) & 
+	Debug.fprintln("eexpbin","\nt2:") &
+	Debug.fcall("eexpbin",Types.print_type,t2) & 
 	bool_and (c1,c2) => c &
 	operators op => ops &
-	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
+	Debug.fprintln("eexpbin", "operator deoverloaded, resulting type:") &
+	Debug.fcall("eexpbin",Types.print_type,rtype) 
 	---------------------------------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),impl,st)
 	  => (Exp.BINARY(e1'',op',e2''),Types.PROP(rtype,c),st'')
@@ -693,7 +699,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	Types.array_element_type ty => Types.T_INTEGER &
 	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, ind_const),_) &
-	let exp = Exp.CALL(Absyn.IDENT("size_integer_array"),
+	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_integer_array"),
 			   [crefe,indexp],false,true) &
 	let prop = Types.PROP(Types.T_INTEGER,false)
 	------------------------------------------------------
@@ -1496,6 +1502,8 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	Lookup.lookup_var (env,c') => (Types.ATTR(_,acc,variability,_),
 				       t,
 				       binding) &
+	Debug.fprint("ecref","elab_cref, looked up type:\n") &
+	Debug.fcall("ecref",Types.print_type,t) &
 	elab_cref2 (env, c', acc, variability, t, binding)
 	  => (exp,const,acc')
 	(* FIXME subscript_cref_type (exp,t) => t' &  *)
@@ -2102,6 +2110,11 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	---------------
 	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => Values.REAL(r)
 
+  rule	ceval (env,e,impl,st) => Values.ARRAY(ivals) &
+	Values.type_convert(Exp.INT,Exp.REAL,ivals) => rvals
+	----------------------------------------------------
+	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => Values.ARRAY(rvals)
+
   rule	Types.type_convert_array(expl, Types.T_INTEGER, Types.T_REAL) => expl' &
 	ceval_list(env,expl,impl,st) => vallst
 	--------------------------
@@ -2518,9 +2531,14 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 	---------------------------------
 	elab_arglist (pt::pts, (arg, atype)::args) => (arg'::args',atype'::atypes')
 
-  rule	Debug.fprint("earg","- Static.elab_arglist failed\n")
+  rule	Debug.fprint("earg","- Static.elab_arglist failed lst1 len:") &
+	list_length(lst1) => len1 &
+	list_length(lst2) => len2 &
+	int_string(len1) => str1 &
+	int_string(len2) => str2 &
+	Debug.fprintl("earg", [str1, " lst len2: ", str2, "\n"])  
 	--------------------------------------
-	elab_arglist (_,_) => fail
+	elab_arglist (lst1,lst2) => fail
 end
 
 
@@ -2656,9 +2674,9 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => fail
 
-  axiom	compute_return_type (Exp.MUL_SCALAR_ARRAY(_),[typ1,typ2],rtype) => typ2
-  axiom	compute_return_type (Exp.MUL_ARRAY_SCALAR(_),[typ1,typ2],rtype) => typ1
-
+	
+  axiom	compute_return_type (Exp.MUL_SCALAR_ARRAY(_),[typ1,typ2],rtype) => (*typ2*) rtype
+  axiom	compute_return_type (Exp.MUL_ARRAY_SCALAR(_),[typ1,typ2],rtype) => (*typ1*) rtype
 
 
   axiom	compute_return_type (Exp.ADD(_),_,typ) => typ
@@ -2735,8 +2753,8 @@ relation operators : Absyn.Operator
 
 	(**  Arithmetical operators *)
 
-  rule	array_type_list(9, Types.T_INTEGER) => intarrtypes &
-	array_type_list(9, Types.T_REAL) => realarrtypes &
+  rule	array_type_list(2 (*9*), Types.T_INTEGER) => intarrtypes &
+	array_type_list(2 (*9*), Types.T_REAL) => realarrtypes &
 	
 	operator_return(Exp.ADD_ARR(Exp.INT), 
 			intarrtypes, 
@@ -2765,8 +2783,8 @@ relation operators : Absyn.Operator
 	operators Absyn.ADD => types
 
 
-  rule	array_type_list(9, Types.T_INTEGER) => intarrtypes &
-	array_type_list(9, Types.T_REAL) => realarrtypes &
+  rule	array_type_list(2(*9*), Types.T_INTEGER) => intarrtypes &
+	array_type_list(2(*9*), Types.T_REAL) => realarrtypes &
 	
 	operator_return(Exp.SUB_ARR(Exp.INT), 
 			intarrtypes, 
@@ -2791,10 +2809,10 @@ relation operators : Absyn.Operator
 	---------------------------
 	operators Absyn.SUB => types
 
-  rule	array_type_list(9, Types.T_INTEGER) => intarrtypes &
-	array_type_list(9, Types.T_REAL) => realarrtypes &
-	n_types(9, Types.T_INTEGER) => inttypes &
-	n_types(9, Types.T_REAL) => realtypes &
+  rule	array_type_list(2(*9*), Types.T_INTEGER) => intarrtypes &
+	array_type_list(2(*9*), Types.T_REAL) => realarrtypes &
+	n_types(2(*9*), Types.T_INTEGER) => inttypes &
+	n_types(2(*9*), Types.T_REAL) => realtypes &
 	
 	let int_mul = Exp.MUL(Exp.INT) &
 	let real_mul = Exp.MUL(Exp.REAL) &
@@ -2865,8 +2883,8 @@ relation operators : Absyn.Operator
 	---------------------------
 	operators Absyn.MUL => types
 
-  rule	array_type_list(9, Types.T_REAL) => realarrtypes &
-	n_types(9, Types.T_REAL) => realtypes &
+  rule	array_type_list(2(*9*), Types.T_REAL) => realarrtypes &
+	n_types(2(*9*), Types.T_REAL) => realtypes &
 	let real_div = Exp.DIV(Exp.REAL) &
 	let real_scalar = Types.T_REAL &
 	let scalars = [(real_div,[real_scalar, real_scalar], real_scalar)] &

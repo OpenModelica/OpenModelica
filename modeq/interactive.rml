@@ -153,6 +153,14 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompilerFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	  => ("Ok\n",st)
 	  
+  rule	string_append("+d=",str) => str' &
+	RTOpts.args [str'] => args &
+	Util.string_append_list(args) => res &
+	string_append(res,"\n") => res'
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setDebugFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
+	  => (res',st)
+
   rule	get_type_of_variable(varid,vars) => tp &
 	Print.clear_buf & 
 	Types.print_type tp & Print.get_string => str &
@@ -2150,8 +2158,9 @@ end
  **)
 relation namedarg_to_modification: (Absyn.NamedArg) => Absyn.ElementArg = 
 
-  rule	record_constructor_to_modification(c) => elt &
-	let res = Absyn.MODIFICATION(false,cr,Absyn.CLASSMOD([elt],NONE))
+  rule	record_constructor_to_modification(c) => Absyn.MODIFICATION(_,_,Absyn.CLASSMOD(elts,_)) &
+	let cr' = Absyn.CREF_IDENT(id,[]) &
+	let res = Absyn.MODIFICATION(false,cr',Absyn.CLASSMOD(elts,NONE))
 	----------------------------
 	namedarg_to_modification( Absyn.NAMEDARG(id,c as Absyn.CALL(cr,Absyn.FUNCTIONARGS([],nargs)))) => res
 

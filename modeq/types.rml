@@ -889,7 +889,7 @@ end
 relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 
   axiom	type_convert(e, T_INTEGER, T_REAL) => (Exp.CAST(Exp.REAL,e),T_REAL)
-
+	    
   rule	int_eq (dim1, dim2) => true &
 	type_convert_array (elist, ty1, ty2) => elist' &
 	elab_type ty2 => at &
@@ -949,6 +949,13 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 		     T_ARRAY(DIM(SOME(dim2)), ty2))
 	  => (e', T_ARRAY(DIM(NONE), t'))
 
+  rule	type_convert (e, ty1, ty2) => (e',t') 
+	--------------------
+	type_convert(e,
+	    T_ARRAY(DIM(NONE), ty1), 
+	    T_ARRAY(DIM(NONE), ty2))
+	    => (e', T_ARRAY(DIM(NONE), t'))
+	    
   rule	type_convert (e, ty1, ty2) => (e',t') 
 	------------------------------------------
 	type_convert(e, 
