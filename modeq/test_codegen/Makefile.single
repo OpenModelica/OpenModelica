@@ -12,23 +12,34 @@ CFLAGS= -Wall -ansi -pedantic -g -I../../c_runtime
 
 LDFLAGS= -L../../c_runtime -lm
 
+CDIR = csrc
+ODIR = obj
+BDIR = bin
+
 MOFILES = $(TARGET:=.mo)
-TARGETS = $(MOFILES:.mo=)
-OBJS = $(MOFILES:%.mo=%.main.o)
-GENC = $(MOFILES:%.mo=%.c)
-
-all : $(MOFILES:.mo=) 
+TARGETS = $(MOFILES:%.mo=$(BDIR)/%)
+OBJS = $(MOFILES:%.mo=$(ODIR)/%.main.o)
+GENC = $(MOFILES:%.mo=$(CDIR)/%.c)
 
 
-$(TARGETS) : % : %.main.o
+all : $(CDIR) $(ODIR) $(BDIR) $(TARGETS) 
+
+
+$(TARGETS) : $(BDIR)/% : $(ODIR)/%.main.o
 	gcc -g -o $@ $(LDFLAGS) $< -lc_runtime
 
-$(OBJS) : %.main.o : %.c main.c
+$(OBJS) : $(ODIR)/%.main.o : $(CDIR)/%.c main.c
 	@echo compiling $(subst .main.o,,$@)
-	@$(CC) $(CFLAGS) \
-	-DCFILE_TO_INCLUDE="\"$(subst .main.o,.c,$@)\""\
-	 -DCFUNCTION_TO_CALL="$(subst .main.o,,$@)_read_call_write"\
+	$(CC) $(CFLAGS) \
+	-DCFILE_TO_INCLUDE="\"$(subst $(ODIR),$(CDIR),$(subst .main.o,.c,$@))\""\
+	 -DCFUNCTION_TO_CALL="$(subst $(ODIR)/,,$(subst .main.o,,$@))_read_call_write"\
 	 -c -o $@ main.c
+
+$(GENC) : $(CDIR)/%.c : %.mo 
+	@$(MODEQ) $< +d=codegen > $@
+
+$(CDIR) $(ODIR) $(BDIR) : % :
+	mkdir $@
 
 .SUFFIXES: .mo
 
