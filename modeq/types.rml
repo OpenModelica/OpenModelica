@@ -130,7 +130,7 @@ returns multiple arguments. *)
   datatype SubMod = NAMEMOD of Ident * Mod
 		  | IDXMOD of int list * Mod
   and Mod = MOD of bool * (SubMod list) * EqMod option
-  	  | REDECL of bool * SCode.Element list
+  	  | REDECL of bool * (SCode.Element*Mod) list
 	  | NOMOD
 
 

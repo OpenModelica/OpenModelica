@@ -1416,9 +1416,9 @@ relation get_inheritance_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) => (c,env') &
-	Inst.inst_class (env', Types.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
-	  => (_,env'',_,_,_) &
-	get_base_classes(cdef,env'') => lst &
+	(*Inst.inst_class (env', Types.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
+	  => (_,env'',_,_,_) &*)
+	get_base_classes(cdef,env') => lst &
 	list_length(lst) => count
 	-------------------------------------------------
 	get_inheritance_count( model,p) => count

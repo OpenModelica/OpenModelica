@@ -97,6 +97,7 @@ module Inst:
 					      InstDims, bool)
 	  => ( Env.Env, DAE.Element list)
   relation package_prefix : (Env.Env, Absyn.Path) => Absyn.Path
+  relation add_nomod: SCode.Element list => (SCode.Element*Types.Mod) list
 	  
 end
 
@@ -429,28 +430,23 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Class, bool, InstDims, bool, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
-(*
-  rule	(*print "nomod &  nopre on class " & print cname & print "\n" &*)
-	int_eq(1,0) => true
-	------------
-	inst_class_in(env,Types.NOMOD, Prefix.NOPRE,_,_,c as SCode.CLASS(cname,_,_,restr,d),
-		       _,_,_,_) => ([],env,[], ClassInf.UNKNOWN("foo"), [])
-*)
-	
-  rule	(*For the builtin classes. no DAE for elts. E.g. unit, quantity, ... *)
-	Util.string_equal(cname,"Real") => r &
-	Util.string_equal(cname,"Integer") => i &
-	Util.string_equal(cname,"String") => s &
-	Util.string_equal(cname,"Boolean") => b &
-	Util.bool_or_list([r,i,s,b]) => true & 
-	inst_classdef(env,mods,pre,csets,ci_state,d,restr,prot,inst_dims
-		      ,impl,packimpl)
-	  => (l,env', csets', ci_state', tys)
-	-------------------------------------
-	inst_class_in(env,mods,pre,csets,ci_state,
-		      c as SCode.CLASS(cname,_,_,restr,d), prot, inst_dims,
-		      impl,packimpl)
-	  => ([] (* No DAE *), env', csets', ci_state', tys)
+
+  axiom	inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("Real",_,_,_,_),_,_, impl,packimpl)
+	  => ([] (* No DAE *), env, [], ci_state, [])
+
+  axiom	inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("Integer",_,_,_,_),_,_, impl,packimpl)
+	  => ([] (* No DAE *), env, [], ci_state, [])
+
+  axiom	inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("String",_,_,_,_),_,_, impl,packimpl)
+	  => ([] (* No DAE *), env, [], ci_state, [])
+
+  axiom	inst_class_in(env,mods,pre,csets,ci_state,
+		      c as SCode.CLASS("Boolean",_,_,_,_),_,_, impl,packimpl)
+	  => ([] (* No DAE *), env, [], ci_state, [])
+
 
   rule	clock() => t1 &
 	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims
@@ -546,7 +542,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
-	add_components_to_env(env1,emods,pre,csets,ci_state,compelts',compelts',inst_dims,impl) 
+	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',compelts',inst_dims,impl) 
 	  => env3 &
 	  (* Update the modifiers of elements to typed ones, needed for modifiers
 	   on components that are inherited. *)
@@ -635,8 +631,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.lookup_modification_p(mods,cn) => m &
 	Mod.elab_mod(env,pre,mod) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
-	Mod.merge(mods,m) => mods' &
-	Mod.merge(mods',mod') => mods'' &
+	Mod.merge(mods,m,cenv'',pre) => mods' &
+	Mod.merge(mods',mod',cenv'',pre) => mods'' &
 	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false)
 	  => (dae, env'', csets', ci_state', tys) &
 	(* Check for restriction violations *)
@@ -723,19 +719,19 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	inst_derived_classes(cenv, outermod, c, impl) =>
 	  (cenv1, els, eq1, ieq1, alg1, ialg1) &
 	
-	Env.open_scope(cenv1,encf) => cenv' &
-	Env.name_scope(cenv',cn) => cenv'' &
+	Env.open_scope(cenv1,encf) => cenv2 &
+	Env.name_scope(cenv2,cn) => cenv3 &
 	ClassInf.start(r, cn) => new_ci_state &
-	Mod.elab_untyped_mod(emod) => mod' &
-	Mod.merge(outermod,mod') => mod'' &
+	Mod.elab_untyped_mod(emod,cenv3,Prefix.NOPRE) => mod' &
+	Mod.merge(outermod,mod',cenv3,Prefix.NOPRE) => mod'' &
 
-	add_local_classes_to_env(cenv',c) => env'' &
+	Env.add_inherits(env,tp) => env1 &
 
-	make_complete_type_names(env'',els) => els' &
-	inst_extends_list(env'', outermod, els', ci_state, impl) 
+	inst_extends_list(env1, outermod, els, ci_state, impl) 
 	  => (_,mods, compelts1, eq2, ieq2, alg2, ialg2) &  
-	inst_extends_list(env, mod, rest, ci_state,impl)
-	  => (env', mods', compelts2, eq3, ieq3, alg3, ialg3) & 
+
+	inst_extends_list(env1, mod, rest, ci_state,impl)
+	  => (env2, mods', compelts2, eq3, ieq3, alg3, ialg3) & 
 	(* Must merge(mod,emod) here and then apply the bindings to the *)
 	(* corresponding elements. But emod is Absyn.Mod and can not  *)
 	(* be elaborated, because for instance extends A(x=y) can reference *)
@@ -746,9 +742,9 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	(* to a Mod, but set the type information to unknown. *)
 	(* We can then perform the merge, and update untyped modifications *)
 	(* later (using update_mod), when we are instantiating the components. *)
-	Mod.elab_untyped_mod(emod) => emod' &
-	Mod.merge(mod,mods') => mod' &			      
-	Mod.merge(mod',emod') => mods' &
+	Mod.elab_untyped_mod(emod,env2,Prefix.NOPRE) => emod' &
+	Mod.merge(mod,mods',env2,Prefix.NOPRE) => mod' &
+	Mod.merge(mod',emod',env2,Prefix.NOPRE) => mods' &
 	list_append(compelts1, compelts2) => compelts &	
 				      
 (*	  Print.print_buf "\n compelts list: " &
@@ -756,14 +752,14 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	Print.print_buf "mod =" & 
 	Mod.print_mod mods' &	
 	Print.get_string() => str1 & print str1 &*)
-	update_components(compelts,mods') => compelts3 &
+	update_components(compelts,mods',env2) => compelts3 &
         Util.list_flatten([eq1, eq2, eq3]) => eq &
 	Util.list_flatten([ieq1, ieq2, ieq3]) => ieq &
 	Util.list_flatten([alg1, alg2, alg3]) => alg &
 	Util.list_flatten([ialg1, ialg2,ialg3]) => ialg 
 	-----------------------------------
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state,impl)
-	  => (env', mods',compelts3, eq, ieq, alg, ialg)
+	  => (env2, mods',compelts3, eq, ieq, alg, ialg)
 
   rule	Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n")
 	------------------------------------------------
@@ -832,35 +828,36 @@ end
  ** the class definition. For instance model A extends B(modifiers) end A; will result in a list of components from B 
  ** which 'modifiers' should be applied to.
 **)
-relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod) => (SCode.Element*Types.Mod)list =
+relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod,Env.Env)
+	  => (SCode.Element*Types.Mod) list =
 
-  axiom	update_components([],_) => []
+  axiom	update_components([],_,_) => []
 
   rule 	Mod.lookup_comp_modification(mod,id) => cmod2 &
-	Mod.merge(cmod,cmod2) => mod' &
-	update_components(xs,mod) => res 
+	Mod.merge(cmod,cmod2,env,Prefix.NOPRE) => mod' &
+	update_components(xs,mod,env) => res 
 	--------------------------------
-	update_components((comp as SCode.COMPONENT(id,_,_,_,_,_,_),cmod)::xs,mod) 
+	update_components((comp as SCode.COMPONENT(id,_,_,_,_,_,_),cmod)::xs,mod,env) 
 	  => ((comp,mod')::res)
 
-  rule	update_components(xs,mod) => res 
+  rule	update_components(xs,mod,env) => res 
 	--------------------------------
-	update_components(((c as SCode.EXTENDS(_,_)),emod)::xs,mod) 
+	update_components(((c as SCode.EXTENDS(_,_)),emod)::xs,mod,env) 
 	  => ((c,emod)::res)
 
-  rule	update_components(xs,mod) => res 
+  rule	update_components(xs,mod,env) => res 
 	--------------------------------
-	update_components(((c as SCode.CLASSDEF(_,_,_,_)),cmod)::xs,mod) 
+	update_components(((c as SCode.CLASSDEF(_,_,_,_)),cmod)::xs,mod,env) 
 	  => ((c,cmod)::res)
 
-  rule	update_components(xs,mod) => res 
+  rule	update_components(xs,mod,env) => res 
 	--------------------------------
-	update_components(((c as SCode.IMPORT(_)),_)::xs,mod) 
+	update_components(((c as SCode.IMPORT(_)),_)::xs,mod,env) 
 	  => ((c,Types.NOMOD)::res)
 
   rule	Debug.fprint("failtrace", "-update_components failed\n")
 	----------------------
-	update_components(_,_) => fail
+	update_components(_,_,_) => fail
 end
 
 
@@ -905,7 +902,6 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	--------------------------------------
 	make_complete_type_names(_, _) => fail
 end
-
 
 (** relation: inst_derived_classes
  ** 
@@ -1098,8 +1094,7 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 			    (SCode.Element*Types.Mod) list, InstDims, bool)
 	    => (Env) =
 
-  rule	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
-	Debug.fprint ("decl", "got class \n") &
+  rule	Debug.fprint ("decl", "got class \n") &
 
 	(** PA: PROBLEM, Modifiers should be merged in this phase, but
 	   since undeclared components can not be found (is done in this phase)
@@ -1122,12 +1117,6 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 		     ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m),cmod))::xs,inst_dims,impl) => env''
-
-(*  rule	add_components_to_env2(env,mods,pre,csets,ci_state,
-				 xs,inst_dims,impl) => env' 
-	-----------------
-	add_components_to_env2(env,mods,pre,csets,ci_state,
-				 nocomp::xs,inst_dims,impl) => env' *)
 
 
   axiom	add_components_to_env2(env,_,_,_,_,[],_,_) => env
@@ -1227,7 +1216,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	(* Redeclare of class definition, replaceable is true *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
-	  => (classmod as Types.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
+	  => (classmod as Types.REDECL(final, [(SCode.CLASSDEF(n2,f2,repl2,cls2),_)])) &
 	Debug.fprintln ("insttr", "*--*Classdef mods") &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "*--*All mods") &
@@ -1241,7 +1230,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	(* Redeclare of class definition, replaceable is false *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
-	  => (classmod as Types.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
+	  => (classmod as Types.REDECL(final, [(SCode.CLASSDEF(n2,f2,repl2,cls2),_)])) &
 	Print.print_buf "# Trying to redeclare class " & Print.print_buf n &
 	Print.print_buf " but class not declared as replacable.\n" 
 	-------------------------------------------------
@@ -1303,7 +1292,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		
 	Util.list_flatten([crefs,crefs2]) => crefs' &
 	remove_cref_from_crefs(crefs',owncref) => crefs'' &
-	
 	update_variables_in_env(mods,crefs'',env,ci_state,impl) => env2 &
 	Debug.fprint("insttr", "updated variables in env\n") &
 	(* Update the untyped modifiers to typed ones, and extract class *)
@@ -1322,10 +1310,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.elab_mod(env2,pre,m) => m' &
 	Debug.fcall ("insttr", Mod.print_mod, m') &
 
-	Mod.merge(classmod',mm') => mod &
-	Mod.merge(mod,m') => mod1 &
-	Mod.merge(cmod,mod1) => mod1' &
+	Mod.merge(classmod',mm',env2,pre) => mod &
+	Mod.merge(mod,m',env2,pre) => mod1 &
+	Mod.merge(cmod,mod1,env2,pre) => mod1' &
 
+	
 	redeclare_type(mod1',comp,env2,pre,ci_state,impl) 
 	  => (SCode.COMPONENT(n,final,repl,prot,
 			      attr as SCode.ATTR(ad,flow,acc,param,dir),
@@ -1334,9 +1323,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint("insttr", "looking for type ") &
 	Debug.fcall("insttr",Dump.print_path,t) &
 	Debug.fprint("insttr"," \n") &
-	
 	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
-	
 	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	
 	(** If the element is `protected', and an external *)
@@ -1450,16 +1437,17 @@ relation redeclare_type: (Types.Mod,
   rule	n1=n2 &
 	get_cref_from_mod(mod) => crefs &
 	update_variables_in_env(Types.NOMOD (* m *),crefs,env,ci_state,impl) => env' &
-	Mod.elab_mod(env',pre,mod) => m' 
+	Mod.elab_mod(env',pre,mod) => m' &
+	Mod.merge(rmod,m',env',pre) => m''
 	--------------------------------
-	redeclare_type (m as Types.REDECL(_,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod))::rest),
-			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre,ci_state,impl) => (redecl,m',env')
+	redeclare_type ((m as Types.REDECL(_,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod)),rmod)::rest)),
+			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre,ci_state,impl) => (redecl,m'',env')
 
   rule	not n1=n2 &
 	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
 	  => (newcomp,mod,env')
 	-------------
-	redeclare_type (Types.REDECL(redfin,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_))::rest),
+	redeclare_type (Types.REDECL(redfin,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_)),rmod)::rest),
 			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre,ci_state,impl)
 	  => (newcomp,mod,env')
 
@@ -1715,7 +1703,7 @@ relation get_usertype_dimensions:(Env.Env, Types.Mod, Prefix.Prefix, SCode.Class
 	let owncref = Absyn.CREF_IDENT(id,[]) &
 	get_option_arraydim(ad) => ad' &
 	Mod.elab_mod(env,pre,mod) => mod' &
-	Mod.merge(mods,mod') => mods'' &
+	Mod.merge(mods,mod',env,pre) => mods'' &
 	Mod.mod_equation mods'' => eq &
 	Mod.lookup_comp_modification(mods'',id) => mods''' &
 	get_usertype_dimensions(cenv,mods''',pre,cl,dims) => dim1 &
@@ -1806,7 +1794,7 @@ relation get_cref_from_elabed_mod: Types.Mod => Absyn.ComponentRef list =
 	get_cref_from_mod(m) => res2 &
 	list_append(res1,res2) => res
 	-----------------------------
-	get_cref_from_elabed_mod(Types.REDECL(b, SCode.COMPONENT(n,_,_,_,_,_,m)::xs)) 
+	get_cref_from_elabed_mod(Types.REDECL(b, (SCode.COMPONENT(n,_,_,_,_,_,m),_)::xs)) 
 	  => res
   rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
 	get_cref_from_elabed_mod(Types.REDECL(b,xs)) => res
@@ -1900,9 +1888,9 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
-	Mod.merge(classmod,mm) => mod &
-	Mod.merge(mod,m') => mod' &
-	Mod.merge(cmod,mod') => mod'' &
+	Mod.merge(classmod,mm,env2,Prefix.NOPRE) => mod &
+	Mod.merge(mod,m',env2,Prefix.NOPRE) => mod' &
+	Mod.merge(cmod,mod',env2,Prefix.NOPRE) => mod'' &
 	
 	Mod.mod_equation mod'' => eq &
 
@@ -1959,9 +1947,9 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
-	Mod.merge(classmod,mm) => mod &
-	Mod.merge(mod,m') => mod' &
-	Mod.merge(cmod,mod') => mod'' &
+	Mod.merge(classmod,mm,env2,Prefix.NOPRE) => mod &
+	Mod.merge(mod,m',env2,Prefix.NOPRE) => mod' &
+	Mod.merge(cmod,mod',env2,Prefix.NOPRE) => mod'' &
 	Mod.mod_equation mod'' => eq &
 
 	(** The variable declaration and the (optional) equation *)
@@ -1985,13 +1973,15 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	update_variable_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, impl) 
 	  => env'
 
-  rule	Debug.fprint("failtrace", "-update_variable_in_env failed, ident =") &
+  rule	Debug.fprint("failtrace", "-update_variable_in_env failed, ident = ") &
 	Debug.fcall("failtrace", Dump.print_component_ref, cref) &
-	Debug.fprint("failtrace", "env:" ) &
+	Debug.fprint("failtrace","\n mods:") &
+	Debug.fcall("failtrace", Mod.print_mod , mod) &
+	Debug.fprint("failtrace", "\n   env:   " ) &
 	Debug.fcall("failtrace", Env.print_env , env) &
 	Debug.fprint("failtrace","\n") 
 	---------------------------
-	update_variable_in_env(_,cref,env,ci_state,impl) => env
+	update_variable_in_env(mod,cref,env,ci_state,impl) => env
 end
 
 relation inst_dim_exp_lst : (DimExp list, bool) => Exp.Subscript list =

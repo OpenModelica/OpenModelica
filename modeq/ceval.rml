@@ -1067,9 +1067,9 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 
 (* Uncomment this when struct params work *)
 (*  rule	(* Parameters should not be evaluated. Exception: structural parameters *)
-	Lookup.lookup_var (env, c) => (Types.ATTR(_,_,SCode.PARAM,_),_,binding) 
-	-------------------------------------
-	ceval_cref (env,c) => fail *)
+ Lookup.lookup_var (env, c) => (Types.ATTR(_,_,SCode.PARAM,_),_,binding) 
+ -------------------------------------
+ ceval_cref (env,c) => fail *)
 
   rule	Lookup.lookup_var (env, c) => (_,_,binding) &
 	ceval_cref_binding (env,c,binding) => v
@@ -1092,13 +1092,16 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding) => Value
 	ceval_cref_binding (env,Exp.CREF_IDENT(_,subsc),Types.VALBOUND(v))
 	  => res
 
+
   rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
 	ceval_cref_binding (env,_,Types.UNBOUND) => fail
 	
-  rule	ceval (env,exp,false,NONE) => (v,_)
+  rule	ceval (env,exp,false,NONE) => (v,_) &
+	ceval_subscript_value(env,subsc,v) => res
 	------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(_,[]),Types.EQBOUND(exp,true)) => v
+	ceval_cref_binding (env,Exp.CREF_IDENT(_,subsc),Types.EQBOUND(exp,true)) 
+	  => res
 
   rule	Print.print_buf "- ceval_cref__binding failed (nonconstant EQBOUND(" &
 	Exp.print_exp exp & Print.print_buf ")\n"

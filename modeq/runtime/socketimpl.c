@@ -75,12 +75,36 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Socket__handlerequest)
 {
-  char buf[4000]={0}; // This buffer must be made dynamic.
+  char *buf,*tmpBuf;
+  int bufSize=4000;
+  int nAdditionalElts;
+  int tmpBufSize;
   int len;
+  fd_set sockSet;
+  struct timeval timeout={0,100000}; // 100 milliseconds timeout
   int sock=(int) RML_UNTAGFIXNUM(rmlA0);
-  len = recv(sock,buf,4000,0);
-
+  buf = (char*)malloc(bufSize);
+  if (buf == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  len = recv(sock,buf,bufSize,0);
+  FD_ZERO(&sockSet);
+  FD_SET(sock,&sockSet); // create fd set of 
+  while ( select(1,&sockSet,NULL,NULL,&timeout) > 0) {
+    tmpBufSize*=(int)(bufSize*1.4);
+    nAdditionalElts = tmpBufSize-bufSize;
+    tmpBuf=(char*)malloc(tmpBufSize);
+    if (tmpBuf == NULL) {
+      RML_TAILCALLK(rmlFC);
+    }
+    
+    memcpy(tmpBuf,buf,bufSize);
+    free(buf);
+    len +=recv(sock,tmpBuf+bufSize,nAdditionalElts,0);
+    buf=tmpBuf; bufSize=tmpBufSize;    
+  }
   rmlA0=(void*)mk_scon(buf);
+  free(buf);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

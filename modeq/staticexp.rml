@@ -78,6 +78,10 @@ module Static :
 
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
 
+  relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
+					  => (Exp.Exp, Types.Properties)) 
+
+
   (* Property matching (type conversions etc.) *)
 
   relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
@@ -2478,7 +2482,7 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 
   rule	elab_cref_subs (env,c) => (c', const) &
 	Print.print_buf "# Unknown component: " & Dump.print_component_ref c &
-	Print.print_buf "\n" 
+	Print.print_buf "\n  ENV:   " & Env.print_env env 
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 

@@ -54,12 +54,12 @@ module Mod:
   relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Types.Mod
   relation unelab_mod : (Types.Mod) => SCode.Mod
   relation update_mod: (Env.Env, Prefix.Prefix, Types.Mod) => Types.Mod 
-  relation elab_untyped_mod : (SCode.Mod) => Types.Mod
+  relation elab_untyped_mod : (SCode.Mod,Env.Env, Prefix.Prefix) => Types.Mod
 
   relation lookup_comp_modification: (Types.Mod, Absyn.Ident) => Types.Mod
   relation lookup_idx_modification: (Types.Mod, int) => Types.Mod
   relation lookup_modification_p: (Types.Mod,Absyn.Path) => Types.Mod
-  relation merge : (Types.Mod, Types.Mod) => Types.Mod
+  relation merge : (Types.Mod, Types.Mod,Env.Env, Prefix.Prefix) => Types.Mod
   relation mod_equation : Types.Mod => Types.EqMod option
 
   relation print_mod : Types.Mod => ()
@@ -72,6 +72,7 @@ with "print.rml"
 with "inst.rml"
 with "staticexp.rml"
 with "values.rml"
+with "util.rml"
 
 (** relation: elab_mod
  **
@@ -100,8 +101,10 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Types.Mod =
 	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)))
 	  => Types.MOD(final,subs',SOME(Types.TYPED(e'',prop)))
 
-  axiom	elab_mod (env, pre, m as SCode.REDECL(final, elist)) 
-	  =>  Types.REDECL(final, elist)
+  rule	Inst.add_nomod(elist) => elist' 
+	-------------------------------
+	elab_mod (env, pre, m as SCode.REDECL(final, elist)) 
+	  =>  Types.REDECL(final, elist')
 
   rule	Debug.fprint("failtrace", "#-- elab_mod failed\n")
 	-------------------------------------------------
@@ -130,8 +133,10 @@ relation unelab_mod: Types.Mod => SCode.Mod =
 	unelab_mod (m as Types.MOD(final,subs,SOME(Types.TYPED(e,p))))
 	  => SCode.MOD(final,subs',SOME(e'))
 	  
-  axiom	unelab_mod (m as Types.REDECL(final, elist)) 
-	  =>  SCode.REDECL(final, elist)
+  rule	Util.list_map(elist,Util.tuple2_1) => elist'
+	--------------------------------------------
+	unelab_mod (m as Types.REDECL(final, elist)) 
+	  =>  SCode.REDECL(final, elist')
 	  
   rule	Print.print_buf "#-- elab_untyped_mod failed:\n" &
 	print "- unelab_mod failed\n" 
@@ -217,7 +222,7 @@ relation update_submods: (Env.Env, Prefix.Prefix, Types.SubMod list)
 
   rule	update_submod (env,pre,x) => x' &
 	update_submods (env,pre,xs) => xs' &
-	insert_submods (x',xs') => res
+	insert_submods (x',xs',env,pre) => res
 	-----------------------------
 	update_submods (env,pre,x::xs) => res
 end
@@ -251,28 +256,30 @@ end
  ** Notice that the correct type information must be updated later on.
  **)
 
-relation elab_untyped_mod: (SCode.Mod) => Types.Mod =
+relation elab_untyped_mod: (SCode.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 
-  axiom	elab_untyped_mod (SCode.NOMOD) => Types.NOMOD
+  axiom	elab_untyped_mod (SCode.NOMOD,_,_) => Types.NOMOD
 
-  rule	elab_untyped_submods (subs) => subs'
+  rule	elab_untyped_submods (subs,env,pre) => subs'
 	------------------------------------
-	elab_untyped_mod (m as SCode.MOD(final,subs,NONE))
+	elab_untyped_mod (m as SCode.MOD(final,subs,NONE),env,pre)
 	  => Types.MOD(final,subs',NONE)
 	
-  rule	elab_untyped_submods (subs) => subs' 
+  rule	elab_untyped_submods (subs,env,pre) => subs' 
 	------------------------------------
-	elab_untyped_mod (m as SCode.MOD(final,subs,SOME(e)))
+	elab_untyped_mod (m as SCode.MOD(final,subs,SOME(e)),env,pre)
 	  => Types.MOD(final,subs',SOME(Types.UNTYPED(e)))
 
-  axiom	elab_untyped_mod (m as SCode.REDECL(final, elist)) 
-	  =>  Types.REDECL(final, elist)
+  rule	Inst.add_nomod(elist) => elist'
+	-----------------
+	elab_untyped_mod (m as SCode.REDECL(final, elist),env,pre) 
+	  =>  Types.REDECL(final, elist')
 
   rule	Print.print_buf "#-- elab_untyped_mod failed:\n" &
 	SCode.print_mod mod &
 	Print.print_buf "\n"
 	----------
-	elab_untyped_mod (mod) => fail
+	elab_untyped_mod (mod,env,pre) => fail
 end
 
 (** relation: elab_submods
@@ -288,7 +295,7 @@ relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
 
   rule	elab_submod (env,pre,x) => x' &
 	elab_submods (env,pre,xs) => xs' &
-	insert_submods (x',xs') => res
+	insert_submods (x',xs',env,pre) => res
 	-----------------------------
 	elab_submods (env,pre,x::xs) => res
 
@@ -320,16 +327,16 @@ end
  ** of submodifications.
  **)
 
-relation elab_untyped_submods : (SCode.SubMod list)
+relation elab_untyped_submods : (SCode.SubMod list,Env.Env,Prefix.Prefix)
 	  => Types.SubMod list =
 
-  axiom	elab_untyped_submods ([]) => []
+  axiom	elab_untyped_submods ([],_,_) => []
 
-  rule	elab_untyped_submod (x) => x' &
-	elab_untyped_submods (xs) => xs' &
-	insert_submods (x',xs') => res
+  rule	elab_untyped_submod (x,env,pre) => x' &
+	elab_untyped_submods (xs,env,pre) => xs' &
+	insert_submods (x',xs',env,pre) => res
 	-----------------------------
-	elab_untyped_submods (x::xs) => res
+	elab_untyped_submods (x::xs,env,pre) => res
 end
 
 (** relation: elab_untyped_submod
@@ -338,15 +345,17 @@ end
  ** `SCode.SubMod' into one or more `Types.SubMod's, wihtout type information.
  **)
 
-relation elab_untyped_submod : (SCode.SubMod) => Types.SubMod list =
+relation elab_untyped_submod : (SCode.SubMod,Env.Env,Prefix.Prefix) 
+	  => Types.SubMod list =
 
-  rule	elab_untyped_mod (m) => m'
+  rule	elab_untyped_mod (m,env,pre) => m'
 	--------------------------
-	elab_untyped_submod (SCode.NAMEMOD(i,m)) => [Types.NAMEMOD(i,m')]
+	elab_untyped_submod (SCode.NAMEMOD(i,m),env,pre) 
+	  => [Types.NAMEMOD(i,m')]
 
-  rule	elab_untyped_mod (m) => m'
+  rule	elab_untyped_mod (m,env,pre) => m'
 	---------------------------
-	elab_untyped_submod (SCode.IDXMOD(subcr,m))
+	elab_untyped_submod (SCode.IDXMOD(subcr,m),env,pre)
 	  => [Types.IDXMOD([-1],m')]
 end
 
@@ -456,15 +465,17 @@ end
  ** insert several sub-modifications.
  **)
 
-relation insert_submods : (Types.SubMod list, Types.SubMod list) => Types.SubMod list =
+relation insert_submods : (Types.SubMod list, Types.SubMod list, 
+			   Env.Env, Prefix.Prefix) 
+	  => Types.SubMod list =
 
-  axiom	insert_submods ([],_) => []
+  axiom	insert_submods ([],_,_,_) => []
 
-  rule	insert_submod (x,y) => x' &
-	insert_submods (xs,y) => xs' &
+  rule	insert_submod (x,y,env,pre) => x' &
+	insert_submods (xs,y,env,pre) => xs' &
 	list_append(x', xs') => l
 	-------------------------
-	insert_submods (x::xs,y) => l
+	insert_submods (x::xs,y,env,pre) => l
 
 end
 
@@ -474,23 +485,25 @@ end
  ** while keeping the uniqueness, merging the submod if necessary.
  **)
 
-relation insert_submod : (Types.SubMod, Types.SubMod list) => Types.SubMod list =
+relation insert_submod : (Types.SubMod, Types.SubMod list,
+			  Env.Env, Prefix.Prefix) 
+	  => Types.SubMod list =
 
-  axiom	insert_submod (sub,[]) => [sub]
+  axiom	insert_submod (sub,[],_,_) => [sub]
 
   rule	n1 = n2 &
-	merge (m1,m2) => m
+	merge (m1,m2,env,pre) => m
 	----------------------
-	insert_submod (Types.NAMEMOD(n1,m1),Types.NAMEMOD(n2,m2)::tail)
+	insert_submod (Types.NAMEMOD(n1,m1),Types.NAMEMOD(n2,m2)::tail,env,pre)
 	  => (Types.NAMEMOD(n1,m)::tail)
 
   rule	i1 = i2 &
-	merge (m1,m2) => m
+	merge (m1,m2,env,pre) => m
 	----------------------
-	insert_submod (Types.IDXMOD(i1,m1),Types.IDXMOD(i2,m2)::tail)
+	insert_submod (Types.IDXMOD(i1,m1),Types.IDXMOD(i2,m2)::tail,env,pre)
 	  => (Types.IDXMOD(i1,m)::tail)
 
-  axiom	insert_submod (sub1, sub2) => sub1::sub2
+  axiom	insert_submod (sub1, sub2,_,_) => sub1::sub2
 
 end
 
@@ -580,10 +593,10 @@ relation lookup_idx_modification: (Types.Mod, int) => Types.Mod =
   axiom	lookup_idx_modification(Types.REDECL(_,_),_) => Types.NOMOD
 
   rule  lookup_idx_modification2(subs,NONE,idx) => (mod',subs') &
-	merge (Types.MOD(f,subs',NONE),mod') => mod'' &
+	merge (Types.MOD(f,subs',NONE),mod',[],Prefix.NOPRE) => mod'' &
 
 	index_eqmod (eq,[idx]) => eq' &
-	merge (mod'',Types.MOD(false,[],eq')) => mod'''
+	merge (mod'',Types.MOD(false,[],eq'),[],Prefix.NOPRE) => mod'''
 	-----------------------------------
 	lookup_idx_modification(Types.MOD(f,subs,eq),idx) => mod'''
 	
@@ -674,36 +687,63 @@ end
  ** modifications takes precedence over the second.
  **)
 
-relation merge : (Types.Mod, Types.Mod) => Types.Mod =
+relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 
-  axiom merge(Types.NOMOD,Types.NOMOD) => Types.NOMOD
+  axiom merge(Types.NOMOD,Types.NOMOD,_,_) => Types.NOMOD
 
-  axiom merge(Types.NOMOD,m) => m
+  axiom merge(Types.NOMOD,m,_,_) => m
 
-  axiom merge(m,Types.NOMOD) => m
+  axiom merge(m,Types.NOMOD,_,_) => m
 
-  rule  Print.print_buf "- ignoring inner modification:\n" &
-	print_mod ignmod & Print.print_buf "\n" 
+(*  rule	(* If redeclaring same component*)
+	id1 = id2 &
+	elab_mod(env,pre,m1) => m1' &
+	elab_mod(env,pre,m2) => m2' &
+	merge(m1',m2',env,pre) => m'' 
 	--------------------------------------
-	merge(m as Types.REDECL(_,_),ignmod) => m
+	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1),_)]),
+	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2),_)])
+			       ,env,pre) 
+	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD),m'')])
+*)
 
-  rule  Print.print_buf "# can't merge modification with a redeclaration\n"
-	---------------------------------------------------------
-	merge(_,Types.REDECL(_,_)) => fail
+  rule	(* If didn't work, try with untyped modifications*)
+	id1 = id2 &
+	elab_untyped_mod(m2,env,pre) => m1' &
+	elab_untyped_mod(m2,env,pre) => m2' &
+	merge(m1',m2',env,pre) => m'' 
+	--------------------------------------
+	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1),_)]),
+	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2),_)])
+			       ,env,pre) 
+	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD),m'')])
+	  
+  axiom	merge(Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_),_)]),
+	      Types.MOD(_,subs,_),env,pre) 
+	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
+		       NONE)
+	  
+  axiom	merge(Types.MOD(_,subs,_),
+	      Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_),_)]),
+	      env,pre)
+	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
+		       NONE)
 
   rule  Print.print_buf "# trying to modify final element\n"
 	------------------------------------------
-	merge(_,m as Types.MOD(true,_,_)) => fail
+	merge(_,m as Types.MOD(true,_,_),_,_) => fail
 
-  rule  merge_subs(subs1, subs2) => subs &
+  rule  merge_subs(subs1, subs2, env, pre) => subs &
 	merge_eq(ass1, ass2) => ass
 	----------------------------
-	merge(Types.MOD(final,subs1,ass1), Types.MOD(false,subs2,ass2))
+	merge(Types.MOD(final,subs1,ass1), Types.MOD(false,subs2,ass2),env,pre)
 	  => Types.MOD(final,subs,ass)
 
-  rule	Print.print_buf "# incomplete handling of modification merging\n"
+  rule	Print.print_buf "# incomplete handling of modification merging. Outer:" &
+	print_mod outer & Print.print_buf " inner:" &
+	print_mod inner 
 	-----------------------------------------------------
-	merge(outer,inner) => outer
+	merge(outer,inner,_,_) => outer
 
 end
 
@@ -712,15 +752,15 @@ end
  ** This relation merges to list of `Types.SubMod's.
  **)
 
-relation merge_subs : (Types.SubMod list, Types.SubMod list)
+relation merge_subs : (Types.SubMod list, Types.SubMod list, Env.Env, Prefix.Prefix)
 	  => Types.SubMod list =
 
-  axiom merge_subs(s1,[]) => s1
+  axiom merge_subs(s1,[],_,_) => s1
 
-  rule  merge_subs2(s1,s) => (s1',s') &
-	merge_subs(s1',s2) => ss
+  rule  merge_subs2(s1,s,env,pre) => (s1',s') &
+	merge_subs(s1',s2,env,pre) => ss
 	------------------------
-	merge_subs(s1,s::s2) => s'::ss
+	merge_subs(s1,s::s2,env,pre) => s'::ss
 
 end
 
@@ -732,25 +772,26 @@ end
  ** given in the second argument is discarded.
  **)
 
-relation merge_subs2 : (Types.SubMod list, Types.SubMod)
+relation merge_subs2 : (Types.SubMod list, Types.SubMod, Env.Env, Prefix.Prefix)
 	  => (Types.SubMod list, Types.SubMod) =
 
-  axiom merge_subs2([],m) => ([],m)
+  axiom merge_subs2([],m,_,_) => ([],m)
 
 	(* Modifications in the list take precedence *)
 
-  rule  n1 = n2 & merge(m1,m2) => m
+  rule  n1 = n2 & merge(m1,m2,env,pre) => m
 	---------------------------
-	merge_subs2(Types.NAMEMOD(n1,m1)::ss, Types.NAMEMOD(n2,m2))
+	merge_subs2(Types.NAMEMOD(n1,m1)::ss, Types.NAMEMOD(n2,m2),env,pre)
 	  => (ss, Types.NAMEMOD(n1,m))
 
-  rule  i1 = i2 & merge(m1,m2) => m
+  rule  i1 = i2 & merge(m1,m2,env,pre) => m
 	---------------------------
-	merge_subs2(Types.IDXMOD(i1,m1)::ss, Types.IDXMOD(i2,m2)) => (ss, Types.IDXMOD(i1,m))
+	merge_subs2(Types.IDXMOD(i1,m1)::ss, Types.IDXMOD(i2,m2),env,pre) 
+	  => (ss, Types.IDXMOD(i1,m))
 
-  rule  merge_subs2(ss, s2) => (ss',s)
+  rule  merge_subs2(ss, s2,env,pre) => (ss',s)
 	------------------------------
-	merge_subs2(s1::ss, s2) => (s1::ss',s)
+	merge_subs2(s1::ss, s2,env,pre) => (s1::ss',s)
 
 end
 
@@ -801,7 +842,8 @@ relation print_mod : Types.Mod => () =
 	print_mod(Types.NOMOD)
 
   rule  Print.print_buf "(redeclare(" &
-	Dump.print_list(elist, SCode.print_element, ", ") &
+	Util.list_map(elist,Util.tuple2_1)=> elist' &
+	Dump.print_list(elist', SCode.print_element, ", ") &
 	Print.print_buf "))"
 	------------------------------
 	print_mod Types.REDECL(final,elist)
