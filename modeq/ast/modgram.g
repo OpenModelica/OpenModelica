@@ -134,6 +134,12 @@ extern void *sibling_list(AST *ast);
 #token MULT             "\*"
 #token DIV              "/"
 #token DOT		"."
+#token LESS		"<"
+#token LESSEQ		"<="
+#token GREATER		">"
+#token GREATEREQ	">="
+#token EQEQ		"=="
+#token LESSGT		"<>"
 
 /* #tokclass COMP_BEGIN	{ LPAR RECORD_BEGIN } */
 /* #tokclass COMP_END	{ RPAR RECORD_END } */
@@ -141,7 +147,7 @@ extern void *sibling_list(AST *ast);
 /* #tokclass ARR_ARG_BEG	{ LPAR LBRACK } */
 /* #tokclass ARR_ARG_END   { RPAR RBRACK } */
 
-#tokclass REL_OP 	{ "<" "<=" ">" ">=" "==" "<>" }
+#tokclass REL_OP 	{ LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT }
 #tokclass ADD_OP	{ PLUS MINUS }
 #tokclass MUL_OP	{ MULT DIV }
 
@@ -615,12 +621,16 @@ logical_factor :
 	| relation 
 	;
 
-relation :
-	arithmetic_expression 
-	{ rel:REL_OP^ arithmetic_expression 
-	<< /* if (!strcmp(mytoken($rel)->getText(),"<>")) #rel->setTranslation("!=");
-	      else if (!strcmp(mytoken($rel)->getText(),"==")) #rel->setTranslation("==="); */
-	>>
+relation : << void *relop; >>
+	e1:arithmetic_expression 
+	{ ( LESS^      << relop = Exp__LESS; >>
+	  | LESSEQ^    << relop = Exp__LESSEQ; >>
+	  | GREATER^   << relop = Exp__GREATER; >>
+	  | GREATEREQ^ << relop = Exp__GREATEREQ; >>
+	  | EQEQ^      << relop = Exp__EQUAL; >>
+	  | LESSGT^    << relop = Exp__NEQUAL; >>
+	  ) e2:arithmetic_expression 
+	  << #0->rml = Exp__RELATION(#e1->rml, relop, #e2->rml); >>
 	}
 	;
 
