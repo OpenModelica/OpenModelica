@@ -6,7 +6,7 @@ end
 with "class.rml"
 with "absyn.rml"
 with "parse.rml"
-with "test.rml"
+(* with "test.rml" *)
 with "dump.rml"
 
 (* with "modelica.rml" *)
@@ -21,10 +21,10 @@ relation main =
 *)
 
    rule print "Jahaja\n" &
-	Parser.parse "foo.mod" => p &
+	Parser.parse f => p &
 	Dump.dump p
 	(* & Dump.dump Test.prog1 *)
 	& print "[slut]\n"
 	----------------
-	main _
+	main f::_
 end
