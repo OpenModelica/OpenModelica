@@ -66,6 +66,7 @@ module DAELow:
 		  * Variables (* Known variables, i.e. constants and parameters*)
 	          * EquationArray (* ordered Equations *)
 	          * EquationArray (* Removed equations a=b*)
+		  * EquationArray (* Initial equations *)
 		  * Algorithm.Algorithm array (* Algorithms *)
 
  datatype Variables = VARIABLES of CrefIndex list array (* HashTB, cref->indx*)
@@ -204,7 +205,7 @@ val empty_bintree = TREENODE(NONE,NONE,NONE)
 relation lower: (DAE.DAElist) => DAELow =
 
   rule	states(lst,empty_bintree) => s &
-	lower2(lst,s) => (vars,knvars,eqns,reqns,algs)  &
+	lower2(lst,s) => (vars,knvars,eqns,reqns,ieqns,algs)  &
 	(*	print "lowered dae:" & dump low &*)	
 	lower_algorithms(vars,algs) => algeqns &
 	list_append(algeqns,eqns) => eqns &
@@ -213,6 +214,7 @@ relation lower: (DAE.DAElist) => DAELow =
 	sort_eqn(eqns) => eqns' &
 	list_equation(eqns') => eqnarr &
 	list_equation(reqns) => reqnarr &
+	list_equation(ieqns) => ieqnarr &
 	list_array(algs) => algarr
 (*	& print "removed simple equations, dae:" &
 	dump low' *)
@@ -225,7 +227,7 @@ relation lower: (DAE.DAElist) => DAELow =
 	print st & print "\n" &
 	print es & print " equations\n" *)
 	--------------------
-	lower(lst) => DAELOW(vars,knvars,eqnarr,reqnarr,algarr)
+	lower(lst) => DAELOW(vars,knvars,eqnarr,reqnarr,ieqnarr,algarr)
 end
 
 (** relation sort_eqn 
@@ -365,7 +367,7 @@ relation check_component_for_statevars:(int, int list, DAELow,int vector, int ve
 	list_nth(varlst,v') => (v as VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	not is_non_state(kind)
         -------------------------------------------------------------
-        check_component_for_statevars(i,component,dae as DAELOW(vars,_,_,_,_),ass1,ass2) => true
+        check_component_for_statevars(i,component,dae as DAELOW(vars,_,_,_,_,_),ass1,ass2) => true
 
   rule  (* If this variable is nt state variable, try the next one *)
         list_nth(component,i) => variable_index_to_check &
@@ -379,7 +381,7 @@ relation check_component_for_statevars:(int, int list, DAELow,int vector, int ve
         int_add(i,1) => next_i &
         check_component_for_statevars(next_i,component,dae,ass1,ass2) => result
         -------------------------------------------------------------
-        check_component_for_statevars(i,component,dae as DAELOW(vars,_,_,_,_),ass1,ass2) 
+        check_component_for_statevars(i,component,dae as DAELOW(vars,_,_,_,_,_),ass1,ass2) 
           => result
 
   rule  print "check_component_for_statevars failed" 
@@ -434,9 +436,16 @@ relation dump: DAELow => () =
 	int_string(eqnlen) => eqnlen_str &
 	print eqnlen_str & print ")\n" &
 	print "=========\n" &
-	dump_eqns reqnsl 
+	dump_eqns reqnsl &
+	print "Initial Equations (" &
+	equation_list(ieqns) => ieqnsl &
+	list_length(ieqnsl) => eqnlen &
+	int_string(eqnlen) => eqnlen_str &
+	print eqnlen_str & print ")\n" &
+	print "=========\n" &
+	dump_eqns ieqnsl 
 	-----------------
-	dump(DAELOW(vars1,vars2,eqns,reqns,algs))
+	dump(DAELOW(vars1,vars2,eqns,reqns,ieqns,algs))
 end
 
 (** relation: var_list
@@ -949,60 +958,69 @@ relation lower2: (DAE.DAElist, BinTree (* states *))
 	      Variables,
 	      Equation list,
 	      Equation list,
+	      Equation list,
 	      Algorithm.Algorithm list) =
 	
   rule	empty_vars() => v1 &
 	empty_vars() => v2
 	------------------
-	lower2 (DAE.DAE([]),_) => (v1,v2,[],[],[])
+	lower2 (DAE.DAE([]),_) => (v1,v2,[],[],[],[])
 	
   rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,algs) &
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
 	lower_var (v,states) => v' &
 	add_var(v',vars) => vars' 
 	--------------------------------
 	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_))::xs),states) 
-	  => (vars',knvars,eqns,reqns,algs)
+	  => (vars',knvars,eqns,reqns,ieqns,algs)
 
   rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,algs) &
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
 	(* in previous rule, lower_var failed.  *)
 	lower_known_var (v) => v' &
 	add_var(v',knvars) => knvars'
 	--------------------------------
 	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_))::xs),states) 
-	  => (vars,knvars',eqns,reqns,algs)
+	  => (vars,knvars',eqns,reqns,ieqns,algs)
 	  
   rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,algs) &
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
 	lower_eqn(e) => e' 
 	--------------------------------
 	lower2 (DAE.DAE((e as DAE.EQUATION(e1,e2))::xs),states) 
-	  => (vars,knvars,e'::eqns,reqns,algs)
+	  => (vars,knvars,e'::eqns,reqns,ieqns,algs)
 
   rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,algs) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+	lower_eqn(e) => e' 
+	--------------------------------
+	lower2 (DAE.DAE((e as DAE.INITIALEQUATION(e1,e2))::xs),states) 
+	  => (vars,knvars,eqns,reqns,e'::ieqns,algs)
+
+  rule	lower2(DAE.DAE(xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs) 
 	--------------------------------
 	lower2 (DAE.DAE((DAE.ALGORITHM(a))::xs),states) 
-	  => (vars,knvars,eqns,reqns,a::algs)
+	  => (vars,knvars,eqns,reqns,ieqns,a::algs)
 
   rule	lower2(dae,states) 
-	  => (vars1,knvars1,eqns1,reqns1,algs1) &
+	  => (vars1,knvars1,eqns1,reqns1,ieqns1,algs1) &
 	lower2(DAE.DAE(xs),states) 
-	  => (vars2,knvars2,eqns2,reqns2,algs2) &
+	  => (vars2,knvars2,eqns2,reqns2,ieqns2,algs2) &
 	merge_vars(vars1,vars2) => vars &
 	list_append(eqns1,eqns2) => eqns &
+	list_append(ieqns1,ieqns2) => ieqns &
 	list_append(reqns1,reqns2) => reqns &
 	merge_vars(knvars1,knvars2) => knvars &
 	list_append(algs1,algs2) => algs 
 	--------------------------------
 	lower2(DAE.DAE(DAE.COMP(_,dae)::xs),states) 
-	  => (vars,knvars,eqns,reqns,algs)
+	  => (vars,knvars,eqns,reqns,ieqns,algs)
 	
   rule	lower2(DAE.DAE(xs),states) 
-	  => (v,kv,e,re,al)
+	  => (v,kv,e,re,ie,al)
 	---------------------
-	lower2 (DAE.DAE(_::xs),states) => (v,kv,e,re,al)
+	lower2 (DAE.DAE(_::xs),states) => (v,kv,e,re,ie,al)
 
   rule	print "-lower2 failed\n" 
 	------------------------
@@ -1313,7 +1331,7 @@ relation incidence_matrix: (DAELow)
 	incidence_matrix2(vars,eqnsl) => lstlst &
 	list_array(lstlst) => arr
 	-------------------
-	incidence_matrix(DAELOW(vars,knvars,eqns,reqns,_)) => arr
+	incidence_matrix(DAELOW(vars,knvars,eqns,reqns,_,_)) => arr
 
   rule	print "incidence_matrix failed\n" 
 	----------------------
@@ -2081,7 +2099,7 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	 the original equation is removed from the system.
 	 *)
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
-	  => (dae as DAELOW(VARIABLES(_,_,_,nv'),VARIABLES(_,_,_,nkv),eqns,_,_),m,mt) &
+	  => (dae as DAELOW(VARIABLES(_,_,_,nv'),VARIABLES(_,_,_,nkv),eqns,_,_,_),m,mt) &
 	  print "Reduced index by differentiating equation\n" &
 
 	  (* and try again, restarting. This could be optimized later. It should not
@@ -2214,7 +2232,7 @@ relation update_incidence_matrix2: (DAELow,
 	vars_in_eqn(m',e) => changedvars1 &
 	update_incidence_matrix2(dae,m',eqns) => (m'',changedvars2) 
 	---------------------------------------------------
-	update_incidence_matrix2(dae as DAELOW(vars,knvars,daeeqns,daeseqns,_),m,e::eqns) 
+	update_incidence_matrix2(dae as DAELOW(vars,knvars,daeeqns,daeseqns,_,_),m,e::eqns) 
 	  => (m'',changedvars1::changedvars2)
 
   rule	print "-update_incididence_matrix2 failed\n" 
@@ -2256,7 +2274,8 @@ relation make_algebraic: (DAELow,
   rule	get_var(cr,vars) => (VAR(cr,kind,d,t,b,value,dim,start,idx,name,class) ,indx) &
 	add_var(VAR(cr,DUMMY_STATE,d,t,b,value,dim,start,idx,name,class),vars) => vars'
 	-------------------------------------------------------------------------
-	make_algebraic(DAELOW(vars,kv,e,se,al),cr) => DAELOW(vars',kv,e,se,al)
+	make_algebraic(DAELOW(vars,kv,e,se,ie,al),cr) 
+	  => DAELOW(vars',kv,e,se,ie,al)
 
   rule	print "-make_algebraic failed\n" 
 	--------------------------------
@@ -2287,10 +2306,10 @@ relation replace_dummy_der: (Exp.ComponentRef, (* state *)
 	 Util.list_replaceat(row',e',m) => m' &
 	 transpose_matrix(m') => mt' &*)
 	equation_setnth(eqns,e',eqn') => eqns' &
-	replace_dummy_der(state,dummyder,DAELOW(v',kv,eqns',seqns,al),m,mt,rest) 
+	replace_dummy_der(state,dummyder,DAELOW(v',kv,eqns',seqns,ie,al),m,mt,rest) 
 	  => (dae,m,mt) 
 	  -------------------------------
-	replace_dummy_der(state,dummyder,DAELOW(v,kv,eqns,seqns,al),m,mt,e::rest)
+	replace_dummy_der(state,dummyder,DAELOW(v,kv,eqns,seqns,ie,al),m,mt,e::rest)
 	  => (dae,m,mt)
 	  
   rule	print "-replace_dummy_der failed\n" 
@@ -2465,8 +2484,8 @@ relation new_dummy_var:(Exp.ComponentRef,DAELow) => (Exp.ComponentRef,DAELow) =
 	add_var(VAR(dummyvar,DUMMY_DER,dir,tp,NONE,NONE,dim,NONE,0,"dummyvar",class),vars) 
 	  => vars'
 	-----------------------------------
-	new_dummy_var(var,DAELOW(vars,kv,eqns,seqns,al)) 
-	  => (dummyvar, DAELOW(vars',kv,eqns,seqns,al))
+	new_dummy_var(var,DAELOW(vars,kv,eqns,seqns,ie,al)) 
+	  => (dummyvar, DAELOW(vars',kv,eqns,seqns,ie,al))
 end
 
 (** relation: create_dummy_var
@@ -2525,7 +2544,7 @@ relation states_in_eqns: (int list (* eqns *),
 	
   axiom	states_in_eqns([],_,_,_) => ([],[])
 	
-  rule	states_in_eqns(rest,DAELOW(vars,kv,eqns,seqns,al),m,mt) => (res1,res2) &
+  rule	states_in_eqns(rest,DAELOW(vars,kv,eqns,seqns,ie,al),m,mt) => (res1,res2) &
 	int_sub(e,1) => e' &
 	equation_nth(eqns,e') => eqn &
 	states_in_eqn(eqn,vars) => vars2 &
@@ -2534,7 +2553,7 @@ relation states_in_eqns: (int list (* eqns *),
 	list_append(res11,res1) => res1' &
 	list_append(res22,res2) => res2'
 	--------------------------------
-	states_in_eqns(e::rest,DAELOW(vars,kv,eqns,seqns,al),m,mt) => (res1',res2')
+	states_in_eqns(e::rest,DAELOW(vars,kv,eqns,seqns,ie,al),m,mt) => (res1',res2')
 	
   rule	print "-states_in_eqns failed\n"
 	-------------------------
@@ -2603,10 +2622,10 @@ relation differentiate_eqns: (DAELow,
 	Debug.fprint("bltdump", "\n") &
 	equation_add(eqns,eqn') => eqns' &
 	equation_size(eqns') => leneqns & (* length gives index of new equation *)
-	differentiate_eqns(DAELOW(v,kv,eqns',seqns,al),m,mt,nv,nf,es) 
+	differentiate_eqns(DAELOW(v,kv,eqns',seqns,ie,al),m,mt,nv,nf,es) 
 	  => (dae,m,mt,nv,nf,reqns)
 	  ----------------------------
-	differentiate_eqns(dae as DAELOW(v,kv,eqns,seqns,al),m,mt,nv,nf,e::es) 
+	differentiate_eqns(dae as DAELOW(v,kv,eqns,seqns,ie,al),m,mt,nv,nf,e::es) 
 	  => (dae,m,mt,nv,nf,leneqns::e::reqns)
 	  
   rule	print "-differentiate_eqns failed\n" 
@@ -3358,8 +3377,8 @@ relation translate_dae: DAELow => DAELow =
 	add_vars(knvarlst'',knvars') => knvars'' &
 	list_equation(eqnsl') => eqns'
 	------------------------------------
-	translate_dae(DAELOW(vars,knvars,eqns,seqns,al)) 
-	  => DAELOW(vars'',knvars'',eqns',seqns,al)
+	translate_dae(DAELOW(vars,knvars,eqns,seqns,ie,al)) 
+	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al)
 end
 
 (** relation: add_vars
@@ -3386,7 +3405,7 @@ relation calculate_sizes: DAELow => (int, (* nx *)
 	calculate_param_sizes(knvarlst) => np &
 	calculate_var_sizes(varlst,0,0) => (nx,ny)
 	-----------------------------------
-	calculate_sizes(DAELOW(vars,knvars,_,_,_)) => (nx,ny,np)
+	calculate_sizes(DAELOW(vars,knvars,_,_,_,_)) => (nx,ny,np)
 end
 
 (** relation: calculate_param_sizes
@@ -3482,8 +3501,8 @@ relation calculate_values: (DAELow) => DAELow =
 	empty_vars() => knvars &
 	add_vars(knvarlst',knvars) => knvars'
 	--------------------------------------
-	calculate_values(DAELOW(vars,knvars,eqns,seqns,al)) 
-	  => DAELOW(vars,knvars',eqns,seqns,al)
+	calculate_values(DAELOW(vars,knvars,eqns,seqns,ie,al)) 
+	  => DAELOW(vars,knvars',eqns,seqns,ie,al)
 end
 
 (** relation: add_variables_to_env
@@ -3854,7 +3873,7 @@ relation print_equation_no: (int, DAELow) => () =
 	equation_nth(eqns,eqno') => eq &
 	print_equation eq => ()
 	----------------
-	print_equation_no(eqno,DAELOW(_,_,eqns,_,_)) => ()
+	print_equation_no(eqno,DAELOW(_,_,eqns,_,_,_)) => ()
 end
 
 (** relation: print_equation

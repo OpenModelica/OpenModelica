@@ -266,7 +266,7 @@ extern "C"
 
     string str_key = string(class_name);
     
-    //cout << "adding var: " << variable_name_str << " to class " << str_key << endl;
+    cout << "adding var: " << variable_name_str << " to class " << str_key << endl;
 
     map<string, map<string,variable> >::iterator search;
     search = generated_classes.find(str_key);

@@ -129,7 +129,7 @@ end
          Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
          -------------------------------------------------------------
          generate_compute_output(cname,
-                                 dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvars,_,_),eqn,seqn,_),
+                                 dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvars,_,_),eqn,seqn,_,_),
                                  ass1,ass2,blocks) => coutput
          
  end
@@ -237,7 +237,7 @@ end
          Exp.simplify(expr) => simplify_exp &
 	 build_assignment(cr,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => assigment_string	
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string	
          
 
   rule  (* Solving the state s means solving for der(s) *)
@@ -271,7 +271,7 @@ end
          Exp.simplify(expr) => simplify_exp &
 	 build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => assigment_string 
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string 
 
   rule	int_sub(e,1) => e' &
 	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -282,7 +282,7 @@ end
 	 not Exp.solve(e1,e2,varexp) => _ &
 	 print "nonlinear equation not implemented yet\n" 
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => fail
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
          
   rule  print "-build_equation failed\n" 
 	 --------------------------------
