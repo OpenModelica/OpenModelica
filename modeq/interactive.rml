@@ -178,6 +178,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_nth_connection(cr,p,n) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getNthConnection",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -346,6 +356,94 @@ relation get_connection_count: (Absyn.ComponentRef, Absyn.Program) => string =
 	
 	axiom get_connection_count(_,_) => "-1"
 end
+
+(** relation: get_nth_connection
+ ** This relation takes a `ComponentRef' and a `Program' and an int and 
+** returns a comma separated string for the nth connection, e.g. "R1.n,C.p".
+**)
+relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int) => string =
+	
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_nth_connection_in_class(cdef,n) => eq &
+	get_connection_str eq => str
+	----------------------------
+	get_nth_connection (model,p,n) => str
+
+	axiom get_nth_connection(_,_,_) => "-1"
+end
+
+(**relation: get_nth_connection_in_class
+ ** This relation takes a `Class' and  an int ane returns the nth connection
+ ** in that class.
+**)
+relation get_nth_connection_in_class: (Absyn.Class, int) => Absyn.Equation =
+
+  rule	get_nth_connection_in_classparts(parts,n) => eq
+	-------------------------
+	get_nth_connection_in_class ( Absyn.CLASS(_,_,_,Absyn.PARTS(parts)),n) => eq
+end
+
+(**relation: get_nth_connection_in_classparts
+ ** This relation takes a `ClassPart' list and an int and returns 
+** the nth connections as an `Equation'.
+**)
+
+relation get_nth_connection_in_classparts: (Absyn.ClassPart list, int) => Absyn.Equation =
+	
+  rule	get_nth_connection_in_equations(e,n) => eq
+	-------------------------------------
+	get_nth_connection_in_classparts (Absyn.EQUATIONS(e)::xs,n) => eq
+
+	(* The rule above failed, subtract the number of connections in the first equation section *)
+	(* and try with the rest of the classparts*)
+  rule	count_connections_in_equations(e) => c1 &
+	int_sub(n,c1)=> newn &
+	get_nth_connection_in_classparts(xs,newn) => eq
+	-----------------------------------------------
+	get_nth_connection_in_classparts (Absyn.EQUATIONS(e)::xs,n) => eq
+
+  rule	get_nth_connection_in_classparts(xs,n) => eq
+	--------------------------------------------
+	get_nth_connection_in_classparts(_::xs,n) => eq
+
+end
+
+(** relation: get_nth_connection_in_equations
+   ** This relation takes  an `Equation' list and an int and 
+   ** returns the nth connection as an `Equation'. If the number is larger than the number of connections
+ ** in the list, the relation fails.
+**)
+relation get_nth_connection_in_equations: (Absyn.Equation list, int) => Absyn.Equation =
+
+axiom	get_nth_connection_in_equations ((eq as Absyn.EQ_CONNECT(_,_))::xs,1) => eq
+
+  rule	int_sub (n,1) => newn &
+	get_nth_connection_in_equations (xs,newn) => eq
+	-----------------------------------------------
+	get_nth_connection_in_equations (Absyn.EQ_CONNECT(_,_)::xs,n) => eq
+
+  rule	get_nth_connection_in_equations (xs,n) => eq
+	--------------------------------------------
+	get_nth_connection_in_equations (_::xs,n) => eq
+
+  axiom get_nth_connection_in_equations([],_) => fail
+end
+
+(** relation: get_connection_str
+   ** This relation takes an `Equation' assumed to contain a connection and returns a 
+   ** comma separated string of componentreferences, e.g "R1.n,C.p" for  connect(R1.n,C.p).
+   **)
+relation get_connection_str:  Absyn.Equation => string =
+  rule	Absyn.cref_to_path cr1 => p1 &
+	Absyn.cref_to_path cr2 => p2 &
+	Absyn.path_string p1 => s1 &
+	Absyn.path_string p2 => s2 &
+	string_append(s1,",") => s3 &
+	string_append(s3,s2) => str
+	---------------------------
+	get_connection_str Absyn.EQ_CONNECT(cr1,cr2) => str
+end 
 
 (** relation: count_connections
  ** This relation takes a `Class' and returns an int with the number of connections
