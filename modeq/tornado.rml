@@ -368,10 +368,10 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => string list =
           => r1::res
   
   rule  (*int_add(i,1) => i' & int_string(i) => is &*)
-        generate_constructor_outputvars2(rest,i') => res &
+        generate_constructor_outputvars2(rest,i) => res &
         Util.string_append_list([" "]) => r1 
           ---------------------------------------------
-        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
           => r1::res
          
   rule  generate_constructor_algvars2(rest,i) => res 
@@ -437,7 +437,7 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
           => r1::res
 
   rule  (*int_add(i,1) => i' & int_string(i) => is &*)
-        generate_constructor_outputvars2(rest,i') => res &
+        generate_constructor_outputvars2(rest,i) => res &
         Util.string_append_list([" "]) => r1 
           ---------------------------------------------
         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
@@ -518,10 +518,10 @@ end
           => r1::res
 
   rule  (*int_add(i,1) => i' & int_string(i) => is &*)
-         generate_constructor_outputvars2(rest,i') => res &
+         generate_constructor_outputvars2(rest,i) => res &
          Util.string_append_list([" "]) => r1 
          ---------------------------------------------
-         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.STATE,_,_,_,_,start,_,_,_)::rest,i) 
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)::rest,i) 
           => r1::res
            
 
@@ -544,8 +544,8 @@ end
 relation generate_constructor_parameters:(DAELow.DAELow) => (string) = 
 
   rule	vector_list(knvars_vec) => knvars &
-	Util.list_select(knvars,is_param) => knvars' &
-	top_level_parameters(knvars') => (knvars'' as _::_) &
+	    Util.list_select(knvars,is_param) => knvars' &
+	    top_level_parameters(knvars') => (knvars'' as _::_) &
         generate_constructor_parameters2(knvars'',0) => lst &
         Util.string_delimit_list(lst,"\n")=> res & 
         list_length(knvars') => len &
