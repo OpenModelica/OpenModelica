@@ -71,6 +71,12 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(CLASS_);
   tokprinter(BOUNDARY);
   tokprinter(MODEL);
+  tokprinter(FUNCTION);
+  tokprinter(PACKAGE);
+  tokprinter(RECORD);
+  tokprinter(BLOCK);
+  tokprinter(CONNECTOR);
+  tokprinter(TYPE);
   tokprinter(PARTIAL);
   tokprinter(EXTENDS);
   tokprinter(PUBLIC);
@@ -80,13 +86,17 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(PARAMETER);
   tokprinter(CONSTANT);
   tokprinter(EQUATION);
+  tokprinter(FINAL);
   tokprinter(LPAR);
   tokprinter(RPAR);
   tokprinter(DOT);
+  tokprinter(EQUALS);
+  tokprinter(ASSIGN);
+  tokprinter(PLUS);
+  tokprinter(MINUS);
   tokprinter(COMPONENTS);
   tokprinter(TYPE_PREFIX);
   tokprinter(FUNCALL);
-  tokprinter(EQUALS);
   tokprinter(ELEMENT);
 
   case zzEOF_TOKEN:
