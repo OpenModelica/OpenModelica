@@ -143,7 +143,7 @@ module Absyn:
 	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
 	       | CALL of ComponentRef * Exp list
-	       (* | ARRAY of Exp list *)
+	       | ARRAY of Exp list
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp
   (** The `Exp' datatype is the container of a Modelica expression. *)
