@@ -13,6 +13,7 @@ SOURCES = exp.tex \
 	dump.tex \
 	prefix.tex \
 	mod.tex \
+	algorithm.tex \
 	env.tex \
 	lookup.tex \
 	builtin.tex \
