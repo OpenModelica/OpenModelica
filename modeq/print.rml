@@ -19,13 +19,24 @@
 
 *)
 
+
+(**
+ ** file:        print.rml
+ ** module:      Print
+ ** description: Printing to buffers
+ **
+ ** RCS: $Id$
+ **
+ ** This module contains a buffered print relation to be used instead of 
+ ** the built in print relation, when the output should be redirected to 
+ ** some other place. It also contains print relations for error messages, to be
+ ** used in interactive mode.
+ **
+ **)
+
+
 module Print:
 
-(* This module contain a buffered print relation to be used instead of 
- * the built in print relation, when the output should be redirected to 
- * some other place. It also contain print relations for error messages, to be used in 
- * interactive mode.
- *)
 
  relation print_error_buf: string => ()
 
