@@ -183,20 +183,6 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	lookup_class(env, path as Absyn.IDENT(name),msgflag) 
 	  => (c, env')
 
-(*  rule	lookup_qualified_imported_class_in_env([f],env,path) 
-	  => (c, env') 
-	----------------------------------------------------------
-	lookup_class(env as (f::_), path, _) => (c, env')
-
-  rule	lookup_unqualified_imported_class_in_env([f], env, path) 
-	  => (c, env') 
-	----------------------------------------------------------
-	lookup_class(env as (f::_), path, _) => (c, env')
-
-  rule	lookup_class_in_env(env,path,false) => (c, env') 
-	--------------------------------------
-	lookup_class(env, path as Absyn.IDENT(name),msgflag) => (c, env')
-*)
 
   rule	(* If we search for A1.A2....An.x while in scope A1.A2...An
 	 , just search for x. Must do like this to ensure finite recursion *)
@@ -356,24 +342,31 @@ relation lookup_qualified_imported_class_in_frame: ( Env.Item list,Env.Env,
 	  => (c, env')
 end
 
-relation lookup_unqualified_imported_class_in_env:(Env.Env, 
-						   Env.Env, Absyn.Path)
-	  => (SCode.Class, Env.Env) =
 
-	
-  rule	lookup_unqualified_imported_class_in_frame(items, totenv, name) 
-	  => (c, env')
-	-----------------------------------------------------------------
-	lookup_unqualified_imported_class_in_env(env as (Env.FRAME(sid,_,_,items,_)::fs),totenv,Absyn.IDENT(name)) 
-	  => (c, env')
 
-  rule	lookup_unqualified_imported_class_in_env(fs, env, id) => (c, _)
-	---------------------------------------------
-	lookup_unqualified_imported_class_in_env(f::fs,env,id) => (c,f::fs)
+relation more_lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.Env, SCode.Ident)
+	    => bool =
+
+  rule	Env.top_frame(env) => fr & 
+	lookup_class([fr],path,false) 
+	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
+	Env.open_scope(env', encflag,SOME(id)) => env2 &
+	ClassInf.start(restr, id) => ci_state &
+	Inst.partial_inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, []) 
+	  => (env'',_) &
+	lookup_class(env'',Absyn.IDENT(ident),false) => (_,_)
+	-----------------------------------------------------
+	more_lookup_unqualified_imported_class_in_frame(Env.IMPORT(Absyn.UNQUAL_IMPORT(path))::fs,env,ident) => true
+
+  rule	more_lookup_unqualified_imported_class_in_frame(fs, env, ident) => res
+	----------------------------------------------------------------------
+	more_lookup_unqualified_imported_class_in_frame(_::fs, env, ident) => res
+
+  axiom  more_lookup_unqualified_imported_class_in_frame([],_,_) => false
 end
 
 relation lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.Env, SCode.Ident)
-	    => (SCode.Class, Env.Env) =
+	    => (SCode.Class, Env.Env, bool (*unique*) ) =
 	    
   rule	Env.top_frame(env) => fr & 
 	lookup_class([fr],path,false) 
@@ -382,32 +375,19 @@ relation lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.Env, SC
 	ClassInf.start(restr, id) => ci_state &
 	Inst.partial_inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, []) 
 	  => (env'',cistate1) &
-
-(*	lookup_class_in_class(env'', c, Absyn.IDENT(ident), false) 
-	  => (c', env''') &*)
-	  lookup_class(env,Absyn.IDENT(ident),false) => (c',env''') &
-	not lookup_unqualified_imported_class_in_frame(fs, env, ident) => (_,_) 
+	lookup_class(env'',Absyn.IDENT(ident),false) => (c',env''')  & 
+	more_lookup_unqualified_imported_class_in_frame(fs, env, ident) => more &
+	bool_not more => unique
 	-------------------------------------------
 	lookup_unqualified_imported_class_in_frame(Env.IMPORT(Absyn.UNQUAL_IMPORT(path))::fs,env,ident)
-	    => (c', env''')
+	    => (c', env''', unique)
 
-  rule	Env.top_frame(env) => fr & 
-	lookup_class_in_env([fr], path, false) => (c, env') &
-
-	lookup_class(env,Absyn.IDENT(ident),false) => (c',env'') &
-(*	lookup_class_in_class(env, c, Absyn.IDENT(ident), false) 
-	  => (c', env'') &*)
-	lookup_unqualified_imported_class_in_frame(fs, env, ident) => (_,_) &
-	Print.print_buf "# Error, class found in several unqualified import statements\n"
-	-------------------------------------------
-	lookup_unqualified_imported_class_in_frame(Env.IMPORT(Absyn.UNQUAL_IMPORT(path))::fs,env,ident)
-	    => fail
 
   rule	lookup_unqualified_imported_class_in_frame(fs, env, ident) 
-	  => (c, env')
+	  => (c, env', unique)
 	-----------------------
 	lookup_unqualified_imported_class_in_frame(_::fs, env, ident) 
-	  => (c, env')
+	  => (c, env', unique)
 end
 
 relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
@@ -1035,17 +1015,6 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
 	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) 
 	  => (c', env5)
 
-(*  rule	lookup_qualified_imported_class_in_env(env,env,path) 
-	  => (c, env') 
-	-------------------------
-	lookup_class_in_class (env, cdef, path,_) 
-	  => (c, env')*)
-
-(*  rule	lookup_unqualified_imported_class_in_env(env, env, path) 
-	  => (c, env') 
-	-------------------------
-	lookup_class_in_class (env, cdef, path ,_) 
-	  => (c, env')*)
 
   rule	Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
 	Debug.fprint("failtrace",cname) &
@@ -1177,10 +1146,17 @@ relation lookup_class_in_frame: (Env.Frame,Env.Env,
 	  => (c, env')
 
   rule	lookup_unqualified_imported_class_in_frame(items, totenv, name) 
-	  => (c, env')
+	  => (c, env', true (*unique*) )
 	---------------------------------------------------------
 	lookup_class_in_frame(Env.FRAME(sid,_,_,items,_),totenv, name,_) 
 	  => (c, env')
+
+  rule	lookup_unqualified_imported_class_in_frame(items, totenv, name) 
+	  => (c, env', false (*unique*) ) &
+	Print.print_buf "# Error, class found in several unqualified import statements\n"  
+	---------------------------------------------------------
+	lookup_class_in_frame(Env.FRAME(sid,_,_,items,_),totenv, name,_) 
+	  => fail
 end
 
 (**)
