@@ -1,6 +1,12 @@
 (**
  ** file:        main.rml
  ** description: Modelica main program
+ **
+ ** RCS: $Id$
+ **
+ ** This is the main program in the Modelica specification.  It
+ ** only contains the `main' relation which is invoked by the RML
+ ** runtime system.
  **)
 
 module Main:
