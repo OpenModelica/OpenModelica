@@ -1,8 +1,9 @@
 # Makefile for the report
 
-SHELL	= /bin/sh
-LATEX	= latex
-RMLDOC  = ../tools/rmldoc
+SHELL	  = /bin/sh
+LATEX	  = latex
+MAKEINDEX = makeindex
+RMLDOC    = ../tools/rmldoc
 
 SOURCES = exp.tex \
 	dae.tex \
@@ -30,11 +31,14 @@ TEXJUNK = report.log report.toc report.stc report.dvi report.aux
 %.tex : ../%.rml
 	$(RMLDOC) $< > $@
 
-report.dvi: report.tex $(SOURCES)
+report.dvi: report.tex report.ind report.bbl $(SOURCES)
 	$(LATEX) $<
 
 report.ps: report.dvi
 	dvips -o $@ $<
+
+index report.ind:
+	$(MAKEINDEX) report.idx
 
 clean:
 	$(RM) $(SOURCES) $(TEXJUNK)
