@@ -197,6 +197,12 @@ relation unparse_values: (Value list) => string =
 end
 
 relation unparse_value_numbers: (Value list) => string =
+
+  rule	unparse_value_numbers(lst) => s1 &
+	unparse_value_numbers(xs) => s2 &
+	string_append(s1,s2) => res 
+	---------------------------
+	unparse_value_numbers (TUPLE(lst)::xs)=> res
 	
   rule	unparse_value_numbers(lst) => s1 &
 	unparse_value_numbers(xs) => s2 &

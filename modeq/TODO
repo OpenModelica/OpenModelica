@@ -190,6 +190,7 @@ List of things to implement:
 34. inst.rml:inst_var2. If impl=true and we cannot flatten the array variable, we 
     should leave it unflattened, but with correct type and dimensions, e.g. similar to
     functions.
+35. values_to_mods doesn't handle all value types, e.g. arrays.
 
 
 Specific adaptions:

@@ -231,6 +231,7 @@ returns multiple arguments. *)
   relation print_prop : Properties => ()
   relation print_prop_str: Properties => string 
   relation unparse_type : Type => string
+  relation unparse_const : Const => string
   relation print_var : Var => ()
   relation print_binding : Binding => ()
   relation print_binding_str : Binding => string
@@ -256,8 +257,10 @@ returns multiple arguments. *)
   relation type_of_value: (Values.Value) => Type
 
   relation values_to_mods: (Values.Value list,string list) => Mod
+  relation values_to_vars:(Values.Value list,Exp.Ident list) => Var list
 	  
-  relation is_prop_const : Properties => bool
+  relation is_prop_any_const : Properties => bool
+  relation is_prop_all_const : Properties => bool
   relation get_prop_type : Properties => Type
   relation is_prop_array : Properties => bool
 
@@ -347,6 +350,7 @@ relation get_dimension_sizes: Type => int list =
 
 end
 
+(* FIXME: How about other value types, e.g. array, enum etc *)
 (* This relation takes a list of values and convert into a Modification.
  Used for record construction evaluation. PersonRecord("name",45) has a value list 
  { "name",45 } that needs to be converted into a modifier for the record class
@@ -438,21 +442,28 @@ relation type_of_value: (Values.Value) => Type =
   axiom	type_of_value(Values.STRING(_)) => ((T_STRING([]),NONE))
   axiom	type_of_value(Values.BOOL(_)) => ((T_BOOL([]),NONE))
 
-  rule	type_of_value(v) => (tp as(T_ARRAY(_,_),_)) &
-	list_length(v::vs) => dim1 
-	--------------------
-	type_of_value(w as Values.ARRAY(v::vs)) 
-	  => ((T_ARRAY(DIM(SOME(dim1)),tp),NONE))
+  axiom	type_of_value (Values.ENUM(_)) => ((T_ENUM,NONE))
 
   rule	type_of_value(v) => tp &
 	list_length(v::vs) => dim1 
 	--------------------
-	type_of_value(w as Values.ARRAY(v::vs)) 
-	  => ((T_ARRAY(DIM(SOME(dim1)),tp),NONE))
+	type_of_value(w as Values.ARRAY(v::vs)) => ((T_ARRAY(DIM(SOME(dim1)),tp),NONE))
 
-  rule	Debug.fprint("failtrace","-type_of_values failed\n")
+  rule	Util.list_map(vs, type_of_value) => ts
+	--------------------------------------
+	type_of_value(w as Values.TUPLE(vs)) => ((T_TUPLE(ts),NONE))
+
+  rule	values_to_vars (vl, ids) => vars &
+	Absyn.path_string(cname) => cname_str
+	---------------------------------------
+	type_of_value Values.RECORD(cname,vl,ids) => ((T_COMPLEX(ClassInf.RECORD(cname_str),vars),NONE))
+
+  rule	Debug.fprint("failtrace","-type_of_values failed: ") &
+	Values.val_string v => vs &
+	Debug.fprintln("failtrace", vs)
 	----------------------------------------------------
-	type_of_value(_) => fail
+	type_of_value(v) => fail
+
 end
 
 
@@ -939,9 +950,38 @@ relation unparse_type: Type => string =
 	--------------------------------------
 	unparse_type((T_COMPLEX(ci_state,vs),_)) => res
 
-  axiom	unparse_type(_) => "unparse_type: not implemented yet\n" 
+  rule  Util.list_map(params, unparse_param) => paramstrs &	
+	Util.string_delimit_list(paramstrs, ", ") => paramstr &
+	unparse_type restype => restypestr &
+	Util.string_append_list(["/* function(", paramstr, ") => ", restypestr, "*/"]) => res 
+	--------------------------------------
+	unparse_type((T_FUNCTION(params,restype),_)) => res
+
+  rule	Util.list_map(tys, unparse_type) => tystrs &
+	Util.string_delimit_list(tystrs, ", ") => tystr &
+	Util.string_append_list(["/* (", tystr, ") */"]) => res
+	--------------------------------------------------
+	unparse_type ((T_TUPLE(tys),_)) => res
+
+  axiom	unparse_type ((T_NOTYPE,_)) => "/* #NOTYPE# */"	
+
+  axiom	unparse_type(ty) => "/* unparse_type: not implemented yet */\n"  
 
 end	
+
+relation unparse_const : Const => string =
+
+  rule	Util.bool_string b => bstr
+	--------------------------
+	unparse_const CONST(b) => bstr
+
+  rule	Util.list_map(constlist, unparse_const) => strlist &
+	Util.string_delimit_list(strlist, ", ") => res &
+	Util.string_append_list(["(", res, ")"]) => res'
+	----------------------------------------------
+	unparse_const TUPLE_CONST(constlist) => res'
+
+end
 
 (** relation: print_type
  **
@@ -1076,6 +1116,14 @@ relation unparse_var: Var => string =
 	Util.string_append_list([t," ",n,";\n"]) => res
 	----------------------------
 	unparse_var VAR(n, attr, prot, typ, bind) => res
+end
+
+relation unparse_param: FuncArg => string =
+
+  rule	unparse_type ty => tstr &
+	Util.string_append_list([id, ":", tstr]) => res
+	----------------------------
+	unparse_param ((id, ty)) => res
 end
 
 (* LS *)
@@ -1359,31 +1407,89 @@ relation get_type_name: Type => string =
 
 end
 
-(** LS: If PROP_TUPLE, returns true if any of the flags is true **)
-relation is_prop_const: Properties => bool =
+(** LS: If PROP_TUPLE, returns true if all of the flags are true **)
+relation is_prop_all_const: Properties => bool =
 
-  axiom	is_prop_const PROP(_,constant) => constant
+  axiom	is_prop_all_const PROP(_,constant) => constant
 
-  rule	is_prop_tuple_const constant => res
+  rule	is_prop_tuple_all_const constant => res
 	-----------------------------------
-	is_prop_const PROP_TUPLE(_,constant) => res
+	is_prop_all_const PROP_TUPLE(_,constant) => res
 
+  rule	Debug.fprint("failtrace", "- is_prop_all_const failed: ") &
+	print_prop_str prop => str &
+	Debug.fprintln("failtrace", str)
+	---------------------------------------------------------------
+	is_prop_all_const prop => fail
 end
+
+(** LS: If PROP_TUPLE, returns true if any of the flags are true **)
+relation is_prop_any_const: Properties => bool =
+
+  axiom	is_prop_any_const PROP(_,constant) => constant
+
+  rule	is_prop_tuple_any_const constant => res
+	-----------------------------------
+	is_prop_any_const PROP_TUPLE(_,constant) => res
+
+  rule	Debug.fprint("failtrace", "- is_prop_any_const failed: ") &
+	print_prop_str prop => str &
+	Debug.fprintln("failtrace", str)
+	---------------------------------------------------------------
+	is_prop_any_const prop => fail
+end
+
 (** LS: **)
-relation is_prop_tuple_const: Const => bool =
+relation is_prop_tuple_any_const: Const => bool =
 
-  axiom	is_prop_tuple_const CONST(f) => f
+  axiom	is_prop_tuple_any_const CONST(f) => f
 
-  rule	is_prop_tuple_const first => true
+  rule	is_prop_tuple_any_const first => true
 	---------------------------------
-	is_prop_tuple_const TUPLE_CONST(first::rest) => true
+	is_prop_tuple_any_const TUPLE_CONST(first::rest) => true
 
-  rule	is_prop_tuple_const first => false &
-	is_prop_tuple_const TUPLE_CONST(rest) => res
+  rule	is_prop_tuple_any_const first => false
 	--------------------------------------------
-	is_prop_tuple_const TUPLE_CONST(first::rest) => res
+	is_prop_tuple_any_const TUPLE_CONST(first::[]) => false
+
+  rule	is_prop_tuple_any_const first => false &
+	is_prop_tuple_any_const TUPLE_CONST(rest) => res
+	--------------------------------------------
+	is_prop_tuple_any_const TUPLE_CONST(first::rest) => res
+
+  rule	Debug.fprint("failtrace", "- is_prop_tuple_any_const failed: ") &
+	unparse_const const => str &
+	Debug.fprintln("failtrace", str)
+	---------------------------------------------------------------
+	is_prop_tuple_any_const const => fail
+end
+
+(** LS: **)
+relation is_prop_tuple_all_const: Const => bool =
+
+  axiom	is_prop_tuple_all_const CONST(f) => f
+
+  rule	is_prop_tuple_all_const first => false
+	---------------------------------
+	is_prop_tuple_all_const TUPLE_CONST(first::rest) => false
+
+  rule	is_prop_tuple_all_const first => true
+	--------------------------------------------
+	is_prop_tuple_all_const TUPLE_CONST(first::[]) => true
+
+  rule	is_prop_tuple_all_const first => true &
+	is_prop_tuple_all_const TUPLE_CONST(rest) => res
+	--------------------------------------------
+	is_prop_tuple_all_const TUPLE_CONST(first::rest) => res
+
+  rule	Debug.fprint("failtrace", "- is_prop_tuple_all_const failed: ") &
+	unparse_const const => str &
+	Debug.fprintln("failtrace", str)
+	---------------------------------------------------------------
+	is_prop_tuple_all_const const => fail
 
 end
+
 
 relation is_prop_array : Properties => bool =
 
@@ -1752,7 +1858,8 @@ relation print_prop_str: Properties => string =
 	print_prop_str PROP(ty,const) => res
 
   rule	unparse_type ty => ty_str &
-	Util.string_append_list(["PROP_TUPLE(",ty_str,",<Type.Const>)"]) => res
+	unparse_const const => const_str &
+	Util.string_append_list(["PROP_TUPLE(",ty_str, ", ", const_str, ")"]) => res
 	---------------------------------
 	print_prop_str PROP_TUPLE(ty,const) => res
 end

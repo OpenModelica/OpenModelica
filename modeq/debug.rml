@@ -160,7 +160,7 @@ relation print: string => () =
 
     *)
 
-   rule (*fprint ("olddebug", s)*)
+   rule fprint ("olddebug", s)
 	----------------------
 	print s => ()
 

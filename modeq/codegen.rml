@@ -3557,8 +3557,10 @@ end
 
 relation generate_vardecl_func : (string, string, string option) => CFunction =
 
-  rule	Util.string_append_list ([tystr, " ", name, " = (", tystr, ")", expr, ";"]) => str &
-	c_add_variables(c_empty_function, [str]) => res
+  rule	Util.string_append_list ([tystr, " ", name, ";"]) => str &
+	c_add_variables(c_empty_function, [str]) => f1 &
+	Util.string_append_list ([name, " = (", tystr, ")", expr, ";"]) => str3 &
+	c_add_statements(f1, [str3]) => res
 	-----------------------------------------------
 	generate_vardecl_func (tystr, name, SOME(expr)) => res
 

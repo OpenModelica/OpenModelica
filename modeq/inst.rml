@@ -1983,9 +1983,8 @@ relation inst_var2 : (Env.Env,
         inst_start_binding_exp(mod,ty,idxs') => start &
 
         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr &
-  	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
-        Debug.fprint("failtrace", str_tmp) &
-  	    Debug.fprint("failtrace", " <------------\n") &
+  	DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
+        Debug.fprintln("failtrace", str_tmp) &
         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
  		            inst_dims, start, dae_var_attr) => dae3 &
 
@@ -4012,10 +4011,22 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	----------
 	inst_eq_equation(e1,Types.PROP(t1,_), e2,Types.PROP(t2,_), initial,impl) => fail
 
+
 (* No match. *)
-  rule	Debug.fprintln("failtrace", "\n No match in inst_eq_equation. ")
+  rule	Print.print_error_buf "# No match in inst_eq_equation\n" &
+	Print.print_error_buf "    lhs: " & Exp.print_exp_str e1 => str &
+	Print.print_error_buf str &
+	Print.print_error_buf " :: " & 
+	Types.print_prop_str p1 => str & Print.print_error_buf str &
+	Print.print_error_buf "\n" &
+	Print.print_error_buf "    rhs: " & 
+	Exp.print_exp_str e2 => str &	Print.print_error_buf str &
+	Print.print_error_buf " :: " & 
+	Types.print_prop_str p2  => str & Print.print_error_buf str &
+	Print.print_error_buf "\n"
 	---------------------------------	
-	inst_eq_equation(_,_,_,_,_,_) => fail
+	inst_eq_equation(e1,p1,e2,p2,initial,impl) => fail
+
 
 end
 

@@ -248,6 +248,7 @@ relation elab_exp_list_list : (Env.Env, Absyn.Exp list list, bool
 	elab_exp_list_list (env, e::rest,impl,st) => (exp::exps, p::props,st'') 
 end
 
+
 (** relation: ceval_if_constant
  ** This relation calls Ceval.ceval if the boolean parameter is true
  ** on the expression.
@@ -257,14 +258,19 @@ relation ceval_if_constant: (Exp.Exp, Types.Properties, bool (* constant *), boo
 
   axiom	ceval_if_constant(e,prop,cnst as false,_,_) => (e, prop)
 
-  axiom	ceval_if_constant(e,prop,cnst as true ,impl as true,_) => (e, prop)
-	
+  axiom	ceval_if_constant(e,prop,cnst as true ,impl as true,_) => (e, prop)	
 
   rule	Ceval.ceval(env,e,impl,NONE,NONE) => (v,_) &
 	value_exp(v) => e' &
 	value_type(v) => vt
 	---------------------------------
-	ceval_if_constant(e,prop,cnst as true,impl (*as false*),env) => (e',Types.PROP(vt,true(*const*)))
+	ceval_if_constant(e,prop as Types.PROP(_,c),cnst as true,impl (*as false*),env) => (e',Types.PROP(vt,c))
+
+  rule	Ceval.ceval(env,e,impl,NONE,NONE) => (v,_) &
+	value_exp(v) => e' &
+	value_type(v) => vt
+	---------------------------------
+	ceval_if_constant(e,prop as Types.PROP_TUPLE(_,c),cnst as true,impl (*as false*),env) => (e',Types.PROP_TUPLE(vt,c))
 
   axiom	ceval_if_constant(e,prop,const,impl,env) => (e,prop)
 
@@ -379,7 +385,8 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	(** PA. Only positional arguments are elaborated for now.*)
 	(** TODO: Implement elaboration of named arguments. *)
 	Debug.fprintln("sei", "elab_exp CALL...") &
-	elab_call(env,fn,args,nargs,impl,st) => (e,prop as Types.PROP(t,c),st') &
+	elab_call(env,fn,args,nargs,impl,st) => (e,prop,st') &
+	Types.is_prop_all_const prop => c &
 	ceval_if_constant(e,prop,c,impl,env) => (e',prop')
 	& Debug.fprintln("sei", "elab_exp CALL done")
 	--------------------------------------
@@ -399,6 +406,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	-------------------------------------
 	elab_exp (env,Absyn.TUPLE(e as e1::rest),impl,st) 
 	  => (Exp.TUPLE(e'),Types.PROP_TUPLE((Types.T_TUPLE(types),NONE), Types.TUPLE_CONST(consts)),st)
+
 	(**  Array-related expressions *)
 
 	(** Elab reduction expressions, including array() constructor **)
@@ -2518,7 +2526,7 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	Absyn.cref_to_path(fn) => pfn &
 	is_function_in_cflist (cflist,pfn) => true
 	-----------------------------------------------
-	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => SOME(st)
+	generate_compiled_function(env,fn,e,prop,SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => SOME(st)
 
   rule	Debug.fprintln("sei", "generate_compiled_function: start2") &
 	Absyn.cref_to_path(fn) => path &
@@ -2543,16 +2551,17 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	Print.print_buf pathstr &
 	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
 	Print.write_buf(filename)& Print.clear_buf() &
-	System.compile_c_file(filename) 
+	System.compile_c_file(filename) &
+	Types.get_prop_type prop => t
 (*	& Debug.fprintln("sei", "generate_compiled_function: compiled")*)
 	-----------------------------------------------
-	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,a,b,c,cflist))) => SOME(Interactive.SYMBOLTABLE(p,a,b,c,(path,t)::cflist))
+	generate_compiled_function(env,fn,e,prop,SOME(st as Interactive.SYMBOLTABLE(p,a,b,c,cflist))) => SOME(Interactive.SYMBOLTABLE(p,a,b,c,(path,t)::cflist))
 
 
 
   rule	Debug.fprintln("sei", "generate_compiled_function: start3")
 	-----------------------------------------------
-	generate_compiled_function(env,fn,e,Types.PROP(t,_),NONE) => NONE
+	generate_compiled_function(env,fn,e,prop,NONE) => NONE
 	(* PROP_TUPLE? *)
 
 (*
@@ -2561,15 +2570,14 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	generate_compiled_function(_,_,_,_,st) => st
 *)
 
-  rule	Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
+  rule	Debug.fprintln("failtrace", "- generate_compiled_function failed4") &
 	Dump.print_component_ref_str cr => str1 &
 	Exp.print_exp_str exp => str2 &
-	Print.print_error_buf str1 &
-	Print.print_error_buf " -- " &
-	Print.print_error_buf str2 &
-	Print.print_error_buf "\n"
+	Debug.fprint("failtrace", str1) &
+	Debug.fprint("failtrace", " -- ") &
+	Debug.fprintln("failtrace", str2)
 	------------------------------------------------------------------
-	generate_compiled_function(env,cr,exp,_,st) => st
+	generate_compiled_function(env,cr,exp,prop,st) => st
 
   rule	(* If fails, skip it. *)
 	--------------------------------------------------
@@ -2617,13 +2625,15 @@ relation elab_call_args : (Env.Env,
   rule	(* This rule finds record constructors, user defined or implicit *)	
 	Lookup.lookup_type(env,fn,true) => (t as (Types.T_FUNCTION(fargs,outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_),_)),_),env') &
 	make_empty_slots(fargs) => slots &
-	elab_input_args(env,args,nargs,slots,impl) => (args',newslots, const) &
+	elab_input_args(env,args,nargs,slots,impl) => (args',newslots, constlist) &
+	Util.bool_and_list constlist => const &
+	elab_consts(outtype,const) => tyconst &
+	get_properties(outtype,tyconst) => prop &
 	Lookup.lookup_record_constructor_class(env',fn) => (cl,env'') &	
 	fill_default_slots(newslots,cl,env'',impl) => newslots2 &
 	exp_list_from_slots(newslots2) => args'' 
 	------------------------------------
-	elab_call_args(env,fn,args,nargs,impl,st) 
-	  => (Exp.CALL(fn,args'',false,false), Types.PROP(outtype,const))
+	elab_call_args(env,fn,args,nargs,impl,st) => (Exp.CALL(fn,args'',false (*tuple*),false (*builtin*)), prop)
 
 
 	(* This rule finds the built-in functions *)
@@ -2643,27 +2653,29 @@ relation elab_call_args : (Env.Env,
 	(* The constness of a function depends on the inputs. If all inputs are
 	 * constant the call itself is constant.
 	 *)
-	elab_types (env, args, typelist,impl) => (args', const, restype, functype) &
-	deoverload_funcname(fn,functype) => fn' &
-	is_tuple restype => tuple &
-	is_builtin_func fn' => builtin
-	-----------------------------------------------
-	elab_call_args (env,fn,args,nargs,impl,st) 
-	  => (Exp.CALL(fn',args',tuple,builtin), Types.PROP(restype,const))
-
-  rule	(* Rule above failed. Also consider koening lookup. *)
-	get_koening_function_types(env,fn,args,nargs,impl) => ktypelist &
-	elab_types (env, args, ktypelist,impl) => (args', c, restype, functype) &
+	elab_types (env, args, typelist,impl) => (args', constlist, restype, functype) &
 	deoverload_funcname(fn,functype) => fn' &
 	is_tuple restype => tuple &
 	is_builtin_func fn' => builtin &
-	elab_consts(restype) => const &
-	get_properties(restype,const) => prop 
+	Util.bool_and_list constlist => const &
+	elab_consts(restype,const) => tyconst &
+	get_properties(restype,tyconst) => prop
 	-----------------------------------------------
 	elab_call_args (env,fn,args,nargs,impl,st) => (Exp.CALL(fn',args',tuple,builtin), prop)
 
-  rule	not Lookup.lookup_type(env,fn,false (*msg*)) => (_,_) &
-	
+  rule	(* Rule above failed. Also consider koening lookup. *)
+	get_koening_function_types(env,fn,args,nargs,impl) => ktypelist &
+	elab_types (env, args, ktypelist,impl) => (args', constlist, restype, functype) &
+	deoverload_funcname(fn,functype) => fn' &
+	is_tuple restype => tuple &
+	is_builtin_func fn' => builtin &
+	Util.bool_and_list constlist => const &
+	elab_consts(restype,const) => tyconst &
+	get_properties(restype,tyconst) => prop
+	-----------------------------------------------
+	elab_call_args (env,fn,args,nargs,impl,st) => (Exp.CALL(fn',args',tuple,builtin), prop)
+
+  rule	not Lookup.lookup_type(env,fn,false (*msg*)) => (_,_) &	
 	Print.print_error_buf "# Couldn't find function " & 
 	Absyn.path_string fn => s & Print.print_error_buf s &
 	Print.print_error_buf "\n" 
@@ -2699,7 +2711,7 @@ relation is_tuple : Types.Type => bool =
 end
 (*PR.*)
 relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list, bool (*impl*) ) 
-	  => (Exp.Exp list, bool, Types.Type(*result type*), Types.Type(*function type*)) =
+	  => (Exp.Exp list, bool list (*const*), Types.Type(*result type*), Types.Type(*function type*)) =
 
 	(* 
 	 We found nothing. This is an error. return to the calling
@@ -2716,20 +2728,20 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list, bool (*impl*)
 	Debug.fprintln ("sei", "testing type:") &
 	Debug.fcall ("sei", Types.print_type,t) &*)
 	make_empty_slots(params) => slots &
-	elab_input_args(env, args, [], slots,impl ) => (args',newslots, c) 
+	elab_input_args(env, args, [], slots,impl ) => (args',newslots, clist) 
  (*       & Debug.fprintln ("sei", "We found a match." )*)
 	------------------
         elab_types(env, args, (t as (Types.T_FUNCTION(params,restype),_))::trest,impl)
-	  => (args', c, restype, t)
+	  => (args', clist, restype, t)
 
 	(* We did not found a match, try next. *)
   rule 	(*Debug.fprintln ("sei", "The elab_input_args failed, try next.") &*)
-	elab_types(env, args, trest,impl) => (args',c, restype,t) 
+	elab_types(env, args, trest,impl) => (args',clist, restype,t) 
         ------------------
         elab_types(env, args, (Types.T_FUNCTION(params,restype),_)::trest,impl) 
-	  => (args', c, restype,t)
+	  => (args', clist, restype,t)
 
-  rule	Debug.fprint("failtrace","- elab_types failed.") 
+  rule	Debug.fprintln("failtrace","- elab_types failed.") 
 	--------------
 	elab_types(env,_,_,_) => fail
 
@@ -2749,41 +2761,79 @@ relation get_properties : (Types.Type, Types.Const)  => Types.Properties =
 	 * is then identical to that of a single expression. *)
   axiom	get_properties(t, Types.TUPLE_CONST(Types.CONST(b)::[]))  => Types.PROP(t, b)
 
+  axiom	get_properties(t, Types.TUPLE_CONST(Types.CONST(b)::[]))  => Types.PROP(t, b)
+
+  axiom	get_properties(t, Types.CONST(b))  => Types.PROP(t, b)
+
+  rule	Debug.fprint("failtrace", "- get_properties failed: ") &
+	Types.unparse_type ty => tystr &
+	Types.unparse_const const => conststr &
+	Debug.fprint("failtrace", tystr) &
+	Debug.fprint("failtrace", ", ") &
+	Debug.fprintln("failtrace", conststr)
+	------------------------------------------------------
+	get_properties (ty,const) => fail
 end
 
+(** LS:
+ ** 
+ ** Build a TUPLE_CONST (Types.Const) for a PROP_TUPLE for a function call
+ ** from a list of bools derived from arguments
+ **
+ ** We should check functions actual arguments instead of their formal
+ ** parameters as done below
+ **)
+relation build_tuple_const : bool list => Types.Const =
+
+  rule	build_tuple_const_list blist => clist
+	-------------------------------------
+	build_tuple_const blist => Types.TUPLE_CONST(clist)
+end
+
+
+relation build_tuple_const_list : bool list => Types.Const list =
+
+  axiom	build_tuple_const_list [] => []
+	
+  rule build_tuple_const_list crest => restlist
+       ----------------------------------------
+       build_tuple_const_list c::crest => Types.CONST(c)::restlist
+
+end
 
 (** PR. assisting routines
  ** This just splits the properties list into a type list and a const list. 
  **)
 (* LS: Changed to take a Type, which is the functions return type *)
-relation elab_consts : Types.Type  => Types.Const =
+(* LS: Update: const is derived from the input arguments and sent here *)
+relation elab_consts : (Types.Type, bool (*const*))  => Types.Const =
 
-  rule	check_consts tys => consts
+  rule	check_consts (tys,c) => consts
 	-------------------------------
-	elab_consts((Types.T_TUPLE(tys),_)) => Types.TUPLE_CONST(consts)
+	elab_consts((Types.T_TUPLE(tys),_),c) => Types.TUPLE_CONST(consts)
 
   (* LS: If not a tuple then one normal type, T_INTEGER etc, but we make a list of types
      with one element and call the same check_consts, so that we always have Types.TUPLE_CONST as result
    *)
-  rule	check_consts [ty] => consts
+  rule	check_consts ([ty],c) => consts
 	-----------------------
-	elab_consts ty => Types.TUPLE_CONST(consts)
+	elab_consts (ty,c) => Types.TUPLE_CONST(consts)
 
 end
 
 (* LS: Changed to take a Type list, which is the functions return type. Only
    for functions returning a tuple *)
-relation check_consts : Types.Type list => Types.Const list =	
+(* LS: Update: const is derived from the input arguments and sent here *)
+relation check_consts : (Types.Type list, bool (*const*)) => Types.Const list =	
 
-  axiom	check_consts [] => []
+  axiom	check_consts ([],_) => []
 
-  rule  check_const(a) => c &
-	check_consts(rest) => rest'
+  rule  check_const(a,const) => c &
+	check_consts(rest,const) => rest'
 	-------------------------------
-	check_consts a::rest => c::rest'
+	check_consts (a::rest,const) => c::rest'
 
 end
-
 
 
 (*PR. !! At the moment this make all outputs non cons.
@@ -2791,13 +2841,14 @@ end
 *)
 (* LS: but it says true? *)
 (* LS: Adapted to check one type instead of funcarg, since it just checks return type *)
-relation check_const : Types.Type => Types.Const  =	
+(* LS: Update: const is derived from the input arguments and sent here *)
+relation check_const : (Types.Type, bool (*const*)) => Types.Const  =	
 	
-  rule	print("\n Error. No support for tuples built by tuples. Yet.") 
+  rule	Print.print_error_buf("\n Error. No support for tuples built by tuples. Yet.") 
 	-------------------------------
-	check_const ((Types.T_TUPLE(_),_)) => fail
+	check_const ((Types.T_TUPLE(_),_), c) => fail
 
-  axiom	check_const((_,_)) => Types.CONST(true)
+  axiom	check_const((_,_), c) => Types.CONST(c)
 	
 end
 
@@ -2900,28 +2951,28 @@ end
 *)
 relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, 
 			    Slot list, bool (* impl *) )
-	=> (Exp.Exp list, Slot list, bool) =
+	=> (Exp.Exp list, Slot list, bool list (*const*)) =
 
   rule	(*Debug.fprint ("sei","elab_input_args, positional arguments\n") &*)
 	funcarg_lst_from_slots(slots) => farg &
-	elab_positional_input_args(env,exp,farg,slots,impl) => (slots',c) &
-	elab_input_args(env,[],narg,slots',impl) => (_,newslots,c2) &
-	bool_and(c,c2) => c3 &
+	elab_positional_input_args(env,exp,farg,slots,impl) => (slots',clist1) &
+	elab_input_args(env,[],narg,slots',impl) => (_,newslots,clist2) &
+	list_append(clist1,clist2) => clist &
 	exp_list_from_slots(newslots) => explst
 	----------------------------------------------------------------
-	elab_input_args(env,exp as _::_,narg,slots,impl) => (explst,newslots,c3)
+	elab_input_args(env,exp as _::_,narg,slots,impl) => (explst,newslots,clist)
 
   rule	(*Debug.fprint ("sei","elab_input_args, named arguments\n") &*)
 	funcarg_lst_from_slots(slots) => farg &
 	(*Debug.fprint ("sei","elab_input_args, got funcarg\n") &*)
-	elab_named_input_args(env,narg,farg,slots,impl) => (newslots,c) &
+	elab_named_input_args(env,narg,farg,slots,impl) => (newslots,clist) &
 	exp_list_from_slots(newslots) => newexp 
 	(*& Debug.fprint ("sei","elab_input_args, got expressions: ") &
  	Debug.fprint_list ("sei",newexp,Exp.print_exp,", ")*)
 	------------------------------------------------------------
-	elab_input_args(env,[],narg as _::_,slots,impl) => (newexp,newslots,c)
+	elab_input_args(env,[],narg as _::_,slots,impl) => (newexp,newslots,clist)
 	
-  axiom	elab_input_args(env,[],[],slots,impl) => ([],slots,true)
+  axiom	elab_input_args(env,[],[],slots,impl) => ([],slots,[])
 	
 (*  rule	Print.print_buf "#Error, elab_input_args failed.\n"
 	-----------------------------------------
@@ -3021,18 +3072,17 @@ end
 relation elab_positional_input_args : (Env.Env, Absyn.Exp list, 
 				       Types.FuncArg list,  Slot list, 
 				       bool (* impl *) ) 
-	  => (Slot list, bool) =
+	  => (Slot list, bool list (*const*)) =
 	  
-  axiom	elab_positional_input_args(_, [], _, slots, impl) => (slots, true)
+  axiom	elab_positional_input_args(_, [], _, slots, impl) => (slots, [])
 	
   rule	elab_exp(env, e,impl,NONE) => (e',Types.PROP(t, c1),_) &
 	Types.match_type(e', t, vt) => (e'',_) &
-	elab_positional_input_args(env, es, vs,slots,impl) => (slots',c2) &
-	bool_and(c1, c2) => c &
+	elab_positional_input_args(env, es, vs,slots,impl) => (slots',clist) &
 	fill_slot(farg, e'',slots') => newslots
 	-------------------------------------
 	elab_positional_input_args(env, e::es, (farg as (_,vt))::vs, slots, impl) 
-	    => (newslots, c)
+	    => (newslots, c1::clist)
 end
 
 (** relation elab_named_input_args
@@ -3043,7 +3093,7 @@ end
 *)
 relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, 
 				  Types.FuncArg list, Slot list, bool (*impl*) ) 
-	=> (Slot list, bool) =
+	=> (Slot list, bool list (*const*)) =
 
 (*  rule	check_slots_filled(env,slots) 
 	----------------------------
@@ -3053,13 +3103,12 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list,
 	find_named_arg_type(id,farg) => vt &
 	Types.match_type(e', t, vt) => (e'',_) &
 	fill_slot((id,vt), e'', slots) => slots' &
-	elab_named_input_args(env, nas, farg ,slots',impl) => (newslots, c2) &
-	bool_and(c1, c2) => c 
+	elab_named_input_args(env, nas, farg ,slots',impl) => (newslots, clist)
 	---------------------
 	elab_named_input_args (env, Absyn.NAMEDARG(id,e)::nas,farg,slots,impl) 
-	  => (newslots, c)
+	  => (newslots, c1::clist)
 
-axiom elab_named_input_args (_,[],_,slots,impl) => (slots,true)
+axiom elab_named_input_args (_,[],_,slots,impl) => (slots,[])
 
   rule	Debug.fprint("failtrace", "- elab_named_input_args failed\n") 
 	-----------------
@@ -3652,13 +3701,16 @@ relation value_exp : Values.Value => Exp.Exp =
   axiom value_exp (Values.BOOL(x))    => Exp.BCONST(x)
   axiom	value_exp (Values.ARRAY([]))  => Exp.ARRAY(Exp.OTHER,false,[])
 
-  rule	value_exp x => x' &
+  rule	Util.list_map(x::xs, value_exp) => explist &
 	value_type x => vt &
 	Types.elab_type vt => t &
-	Types.is_array vt => a &
-  	value_exp Values.ARRAY(xs) => Exp.ARRAY(_,_,xs')
+	Types.is_array vt => a
 	--------------------------------------------
-	value_exp (Values.ARRAY(x::xs)) => Exp.ARRAY(t,a,x'::xs')
+	value_exp (Values.ARRAY(x::xs)) => Exp.ARRAY(t,a,explist)
+
+  rule	Util.list_map(vallist, value_exp) => explist
+	--------------------------------------------
+	value_exp (Values.TUPLE(vallist)) => Exp.TUPLE(explist)
 
   rule	Print.print_error_buf "- value_exp failed: " &	
 	Values.val_string v => vs &
@@ -3669,10 +3721,14 @@ relation value_exp : Values.Value => Exp.Exp =
 
 end
 
+(* FIXME: Already a relation in Types called type_of_value *)
+
 (** relation: value_type
  ** This relation investigates a Value and return the Type of this value.
  **)
 
+(* LS: Removed. Using Types.type_of_value instead *)
+(*
 relation value_type : Values.Value => Types.Type =
 
   axiom	value_type Values.INTEGER(x) => ((Types.T_INTEGER([]),NONE))
@@ -3692,10 +3748,10 @@ relation value_type : Values.Value => Types.Type =
 	---------------------------------------
 	value_type Values.TUPLE(vl) => ((Types.T_TUPLE(tylist),NONE))
 
-  rule	Util.list_map(vl, value_type) => tylist &
+  rule	Types.values_to_vars(vl,ids) => vars &
 	Absyn.path_string(cname) => cname_str
 	---------------------------------------
-	value_type Values.RECORD(cname,vl,ids) => ((Types.T_COMPLEX(ClassInf.RECORD(cname_str),[]),NONE))
+	value_type Values.RECORD(cname,vl,ids) => ((Types.T_COMPLEX(ClassInf.RECORD(cname_str),vars),NONE))
 
   rule	Print.print_error_buf "- value_type failed: " &	
 	Values.val_string v => vs &
@@ -3705,6 +3761,16 @@ relation value_type : Values.Value => Types.Type =
 	value_type v => fail
 
 end
+*)
+
+relation value_type : Values.Value => Types.Type =
+
+  rule	Types.type_of_value v => t
+	--------------------------
+	value_type v => t
+
+end	
+
 
 (** relation: canon_cref
  **

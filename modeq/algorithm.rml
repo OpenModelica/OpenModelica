@@ -193,7 +193,7 @@ with "debug.rml"
  ** assignment is semantically valid, which means that the component
  ** being assigned is not constant, and that the types match.
  **
- ** LS: Added call to get_prop_type and is_prop_const instead of
+ ** LS: Added call to get_prop_type and is_prop_any_const instead of
  ** having PROP in the rules. Otherwise rules must be repeated because of
  ** combinations with PROP_TUPLE
  **)
@@ -201,7 +201,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 			    Exp.Exp, Types.Properties,
 			    SCode.Accessibility) => Statement =
 
-  rule	Types.is_prop_const (lprop) => true &
+  rule	Types.is_prop_any_const (lprop) => true &
 	Print.print_error_buf "# Trying to assign to constant component\n" &
 	Print.print_error_buf "    " & Exp.print_exp lhs &
  	Print.print_error_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
@@ -213,7 +213,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	make_assignment(e,_,_,_, SCode.RO) => fail
 
 	(* LS: Replaced "as Types.PROP(_,false)" from lhprop", by the first predicate *)
-  rule	Types.is_prop_const (lhprop) => false &
+  rule	Types.is_prop_any_const (lhprop) => false &
 	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
 	Types.is_prop_array lhprop => false &
 	get_prop_exp_type lhprop => t
@@ -221,7 +221,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	make_assignment(Exp.CREF(c,crt), lhprop,
 			rhs, rhprop, _) => ASSIGN(t,c,rhs')
 
-  rule	Types.is_prop_const (lhprop) => false &
+  rule	Types.is_prop_any_const (lhprop) => false &
 	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
 	Types.is_prop_array lhprop => true &
 	get_prop_exp_type lhprop => t
@@ -257,7 +257,7 @@ end
 relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 			    Exp.Exp, Types.Properties) => Statement =
 
-  rule	Util.list_map(lprop, Types.is_prop_const) => bvals &
+  rule	Util.list_map(lprop, Types.is_prop_any_const) => bvals &
 	Util.bool_or_list(bvals) => true &
 	Print.print_error_buf "# Trying to assign to constant component in tuple assignment\n" &
 	Print.print_error_buf "    " & 
@@ -267,7 +267,7 @@ relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 	-------------------------------------------
 	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
 
-  rule	Util.list_map(lhprops, Types.is_prop_const) => bvals &
+  rule	Util.list_map(lhprops, Types.is_prop_any_const) => bvals &
 	Util.bool_or_list(bvals) => false &
 	Util.list_map(lhprops,Types.get_prop_type) => lhrtypes &
 	Types.match_type_list(rhs,tpl,lhrtypes) => (rhs',_)
