@@ -8,7 +8,8 @@ with "absyn.rml"
 with "parse.rml"
 (* with "test.rml" *)
 with "dump.rml"
-
+with "lform.rml"
+with "dae.rml"
 (* with "modelica.rml" *)
 
 relation main =
@@ -22,9 +23,13 @@ relation main =
 
 	rule	print "Jahaja\n" &
 		Parser.parse f => p &
-		Dump.dump p
+		Dump.dump p &
 		(* & Dump.dump Test.prog1 *)
-		& print "[slut]\n"
+		print "Translating\n" &
+		Lform.convert p => p' &
+		(* Modelica.progDAE p => d & *)
+		(*DAE.dump d & *)
+		print "[slut]\n"
 		----------------
 		main [f]
 
