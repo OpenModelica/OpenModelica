@@ -1,6 +1,67 @@
 (* absyn.rml *)
 
 module Absyn:
-  with "class.rml"
-  type Program = Class.Class list
+
+with "exp.rml"
+
+type Subscript = (Exp.Exp * ((Exp.Exp * (Exp.Exp option)) option)) option
+
+type ComponentRef = (string * (Subscript list)) list
+
+datatype ArrayDim = ONEDIM of Subscript
+		  | TWODIM of Subscript*Subscript
+
+datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
+		    | REDECLARATION of bool * ElementSpec
+
+and	 Modification = CLASSMOD of ElementArg list
+		      | EQUALMOD of Exp.Exp
+
+and	 ElementSpec = CLASSDEF of bool		(* replaceable *)
+				 * Class
+		     | EXTENDS of string * ElementArg list
+		     | COMPONENT of bool	(* flow *)
+				  * bool	(* parameter *)
+				  * bool	(* constant *)
+				  * bool	(* input *)
+				  * bool	(* output *)
+				  * Exp.Path	(* type name *)
+				  * Exp.Ident	(* component name *)
+				  * ArrayDim option
+				  * Modification option
+
+and	 Element = ELEMENT of bool		(* final *)
+			    * ElementSpec
+
+and	 ClassRestriction = CL_CLASS
+			  | CL_MODEL
+			  | CL_RECORD
+			  | CL_BLOCK
+			  | CL_CONNECTOR
+			  | CL_TYPE
+			  | CL_PACKAGE
+			  | CL_FUNCTION
+
+and	 Class = CLASS of Exp.Ident             (* Name *)
+			* bool			(* Partial *)
+			* ClassRestriction      (* Restricion *)
+			* ClassDef		(* Parts *)
+
+and	 ClassDef = PARTS of ClassPart list
+		  | DERIVED of Exp.Ident
+			     * ArrayDim option
+			     * (ElementArg list) option
+
+and	 ClassPart = PUBLIC of Element list
+		   | PROTECTED of Element list
+		   | EQUATIONS of Equation list
+		   | ALGORITHMS of Algorithm list
+
+and	 Equation = EQ_EXPR of Exp.Exp (* more later *)
+		  | EQ_EQUALS of Exp.Exp * Exp.Exp
+
+and	 Algorithm = ALGORITHM (* Fill in later *)
+
+type Program = Class list
+
 end
