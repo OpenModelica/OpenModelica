@@ -613,6 +613,15 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	simplify_binary (_, MUL(ty), e1, UNARY(UMINUS(ty2),e2)) 
 	  => BINARY(e1',MUL(ty),e2')
 
+  rule	is_const_zero (e1) => true 
+	---------------------------
+	simplify_binary (_, DIV(ty), e1, e2) =>  RCONST(0.0)
+
+  rule	is_const_zero (e2) => true &
+        Print.print_buf "# Error, division by zero.\n" 
+	---------------------------
+	simplify_binary (_, DIV(ty), e1, e2) =>  fail
+
   rule	is_const_one (e2) => true &
 	simplify e1 => e1'
 	---------------------------
