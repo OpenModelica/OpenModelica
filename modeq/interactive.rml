@@ -231,7 +231,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	---------------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
-		Absyn.CREF_IDENT("newModel",_),
+		Absyn.CREF_IDENT("createModel",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_))],[])))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
