@@ -316,14 +316,14 @@ end
  ** This relation prints the DAE to a string.
 **)
 relation dump_str : DAElist => string =
-	
-  rule	dump_comp_element_str d => str &
-	dump_str(DAE(dl)) => str2 &
-	string_append(str,str2) => str3
-	-------------------------------
-	dump_str DAE((d as COMP(_,_))::dl) => str3
 
-	axiom dump_str DAE([]) => ""
+  rule	Util.list_map(daelist,dump_function_str) => flist &
+	Util.list_map(daelist,dump_comp_element_str) => clist &
+	list_append(flist,clist) => slist &
+	Util.string_append_list(slist) => str
+	-------------------------------------
+	dump_str DAE(daelist) => str
+
 end
 	
 	
@@ -338,17 +338,25 @@ relation dump_list : ('a list, 'a => ()) => () =
 	
 end
 
+relation dump_list_str : (Element list, Element => string) => string =
+	
+  rule	Util.list_map (daelist, func) => slist &
+	Util.string_append_list(slist) => str
+	-------------------------------------
+	dump_list_str (daelist,func) => str
+end
+
 relation dump_comp_element : Element => () =
 	
   rule	RTOpts.modelica_output => false &
-	Print.print_buf "class " & Print.print_buf n & Print.print_buf "\n" &
+	Print.print_buf "fclass " & Print.print_buf n & Print.print_buf "\n" &
 	dump_elements(l) &
 	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
 	-----------------------------------
 	dump_comp_element COMP(n,DAE(l))
 
   rule	RTOpts.modelica_output => true &
-	Print.print_buf "class " & Print.print_buf n & Print.print_buf "\n" &
+	Print.print_buf "fclass " & Print.print_buf n & Print.print_buf "\n" &
 	dump_elements(l) &
 	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
 	-----------------------------------
@@ -362,7 +370,7 @@ end
 relation dump_comp_element_str : Element => string =
 	
   rule	RTOpts.modelica_output => false &
-	string_append("class ",n) => s1 &
+	string_append("fclass ",n) => s1 &
 	string_append(s1,"\n") => s2 &
 	dump_elements_str(l) => s3 &
 	string_append(s2,s3) => s4 &
@@ -812,12 +820,28 @@ relation dump_function: Element => () =
 	Absyn.path_string fpath => fstr &
 	Print.print_buf fstr & Print.print_buf "\n" &
 	dump_elements(dae) &
-	Print.print_buf "end " & Print.print_buf fstr & Print.print_buf ";\n\n\n"
+	Print.print_buf "end " & Print.print_buf fstr & Print.print_buf ";\n\n"
 	------------------------------------
 	dump_function FUNCTION(fpath,DAE(dae),t)
 	
   axiom	dump_function _
 
+
+end
+
+(* LS *)
+relation dump_function_str: Element => string =
+
+
+  rule	Absyn.path_string fpath => fstr &
+	dump_elements_str(dae) => daestr &
+	Util.string_append_list(["function ", fstr, "\n", 
+				 daestr,
+				 "end ", fstr, ";\n\n"]) => str
+	------------------------------------
+	dump_function_str FUNCTION(fpath,DAE(dae),t) => str
+	
+  axiom	dump_function_str _ => ""
 
 end
 

@@ -2662,37 +2662,35 @@ correct?
 (* LS: removed prefix because function elements shouldn't have
    one. They will contain the elements locally *)
 
-(*  rule
- 	inst_class(cache, env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
- 	  => (cache', dae, _, csets', ty, st) &
+  rule 	inst_class(env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
+ 	  => (dae, _, csets', ty, st) &
  	Env.extend_frame_t(env, n, ty) => env' &
          package_prefix (env, Absyn.IDENT(n)) => fpath
  	--------------------------------------
- 	implicit_instantiation(cache, env, mod, pre, csets,
+ 	implicit_instantiation(env, mod, pre, csets,
  			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
  			       inst_dims, false)
- 	  => (cache', env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
+ 	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
 
-   rule	
-  	inst_class(cache, env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
- 	  => (cache', dae, _, csets', ty, st) &
+   rule inst_class(env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
+ 	  => (dae, _, csets', ty, st) &
  	
  	Env.extend_frame_t(env, n, ty) => env'	&
 	package_prefix (env, Absyn.IDENT(n)) => fpath &
 	let prot = false & 
-	inst_classdef (cache', env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
+	inst_classdef (env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
 		       prot, inst_dims, true, false) 
-	  =>(cache'', _, tempenv,_,_,_) &
+	  =>(_, tempenv,_,_,_) &
 
 	inst_ext_decl(tempenv, n, parts) => extdecl
 	--------------------------------------
-	implicit_instantiation(cache, env, mod, pre, csets,
+	implicit_instantiation(env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
 			       parts as SCode.PARTS(els,_,_,_,_,_)),
 			       inst_dims, false)
-	  => (cache'', env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
-*)
+	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
+
 
   rule	(*let ty = Types.T_ENUMERATION(l) &
 	Env.extend_frame_t(env,n,ty) => env' & *)

@@ -241,10 +241,8 @@ relation translate_file : string list => () =
 (* & Debug.	print "\nJust instantiated" *)
 	& Debug.fprint ("info", "---dumping\n")
 	& Debug.fcallret ("flatmodelica", DAE.dump_str, d, "") => s
-	& Debug.fcall ("flatmodelica", Print.print_buf, "f")
 	& Debug.fcall ("flatmodelica", Print.print_buf, s)
 	& Debug.fcallret ("none", DAE.dump_str, d, "") => s
-	& Debug.fcall ("none", Print.print_buf, "f")
 	& Debug.fcall ("none", Print.print_buf, s)
 	& Debug.fcall ("daedump", DAE.dump, d)
 	& Debug.fcall ("daedump2", DAE.dump2, d)
