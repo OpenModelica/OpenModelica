@@ -1,0 +1,76 @@
+Debug flags
+
+Run modeq with comma separated list of flags without spaces,
+"+d=flg1,flg2,..." where flg1,flg2,... are one of the strings on the
+leftmost column. Special flag named "all" turns on all flags.
+
+Each debug printing is done by giving a flag name to the print function, like:
+
+  Debug.fprint ("li", "Lookup information:...")
+
+If modeq is run with +d=foo,li,bar,etc this line will appear on
+stdout, not otherwise.  For backwards compatibility for debug prints
+not yet sorted, the old 
+
+  Debug.print 
+
+was changed to a call like
+
+  Debug.fprint ("olddebug",...)
+
+So if modeq is run with the debug flag "olddebug" (or "all"), these
+messages will appear. The calls to Debug.print should eventually be
+changed to appropriate flagged calls.
+
+'-' in front of a flag turns of that flag, i.e. d=all,-dump will turn on all flags 
+except dump.
+
+
+---------------------------------------------------------------------------
+		all		Turn on all debugging.			  
+General--------------------------------------------------------------------
+									  
+		info		General information			  
+		olddebug	print messages sent to the old Debug.print
+Dump-----------------------------------------------------------------------
+		dump		dump the absyn tree			  
+		dumpgraphviz	dump the absyn tree in graphviz format
+		daedump		dump the dae in printed form		  
+		daedumpdebug	dump the dae in expression form		  
+		dumptr		dump trace
+Types----------------------------------------------------------------------
+		tf		functions				  
+		tytr		trace					  
+Lookup---------------------------------------------------------------------
+		li		information				  
+		lotr		trace					  
+		locom		compare					  
+Static---------------------------------------------------------------------
+		sei		information				  
+		setr		trace					  
+SCode----------------------------------------------------------------------
+		ecd		elab_classdef				  
+Instantiation--------------------------------------------------------------
+		insttr		trace					  
+Codegen--------------------------------------------------------------------
+		cg							  
+		cgtr		tracing matching rules			  
+		codegen		code generation
+		cgpde		pde related code generation
+		cgpdeheader	header part of pde related code, use with cgpde
+		cgpdecode	code part of pde related code, use with cgpde
+PDE------------------------------------------------------------------------
+		pde							  
+		pdaedumpdebug	dump the pdae in expression form		  
+		pdaedumpgraphv  dump the pdae in graphviz format
+		beforefixmodout	dump the pdae in expression form before 
+				moving the modification equations into the
+				 VAR declarations
+---------------------------------------------------------------------------
+
+
+
+Graphviz
+
+To use graphviz, give one of the graphviz flags, and redirect the output to a file. 
+Then run "dot -Tps filename -o filename.ps" or "dotty filename".

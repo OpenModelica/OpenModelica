@@ -1,2 +1,104 @@
 --
 --
+Problem with env when using "extends":
+
+
+domain Domain2D
+  space Real x,y;
+end Domain2D;
+
+model PDECoeff2
+  Real u(spacedim=2);
+  parameter Real da=0;
+  parameter Real c=0;
+  parameter Real alfa=0;
+  parameter Real gamma=0;
+  parameter Real a=0;
+  parameter Real beta=0;
+  parameter Real f=0;
+  Domain2D defdom;
+end PDECoeff2;
+
+
+model GenNeumann
+  extends PDECoeff2;
+  parameter Real n=1;
+  parameter Real q=0;
+  parameter Real g=0;
+end GenNeumann;
+
+
+model HeatTransfer
+  extends PDECoeff2;
+equation
+  da=1;
+  c=1;
+  alfa=0;
+  gamma=0;
+  a=0;
+  beta=0;
+  f=0;
+end HeatTransfer;
+
+model HeatNeumann
+  extends GenNeumann;
+  parameter Real k=1;
+  parameter Real qh=0;
+  parameter Real hh=1;
+  parameter Real Tinf=25;
+equation
+  c=k;
+  alfa=0;
+  gamma=0;
+  q=hh;
+  g=qh + hh*Tinf;
+end HeatNeumann;
+
+function MyFunc
+  constant Real PI=3.14159265358979;
+  parameter Real x0=0, y0=0, ra=1, rb=1;
+  input Real u;
+  output Real x,y;
+algorithm
+  x := x0 + ra*sin(u*PI*2);
+  y := y0 + rb*cos(u*PI*2);
+end MyFunc;
+
+domain Line2D
+  space Real x,y;
+//  extends Domain2D;
+  parameter Real x0=0, y0=0, x1=1, y1=1;
+  PDECoeff2 eq;
+end Line2D;
+
+domain Rectangular
+  space Real x,y;
+//  extends Domain2D;
+  space Real u;
+  PDECoeff2 eq;
+  parameter Real x0=0, y0=0, x1=1, y1=1;
+  Line2D left(x0=x0, y0=y0, x1=x0, y1=y1);
+  Line2D top(x0=x0, y0=y1, x1=x1, y1=y1);
+  Line2D right(x0=x1, y0=y1, x1=x1 ,y1=y0);
+  Line2D bottom(x0=x1, y0=y0, x1=x0, y1=y0);
+end Rectangular;
+
+
+model PDEModel
+  parameter Real u_init(spacedim=2)=55; 
+  HeatNeumann h_iso;
+  HeatNeumann h_glass(qh=1.5);
+  HeatTransfer pde(u(start=u_init));
+  Rectangular rect;
+
+end PDEModel;
+
+
+
+The commented extends lines causes:
+
+# unknown class 'PDECoeff2' while instantiating rect.eq
+# unknown class 'Line2D' while instantiating rect.left
+# unknown class 'Line2D' while instantiating rect.top
+# unknown class 'Line2D' while instantiating rect.right
+# unknown class 'Line2D' while instantiating rect.bottom
