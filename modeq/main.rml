@@ -21,15 +21,18 @@ relation main =
 		main _
 *)
 
-	rule	print "Jahaja\n" &
+	rule	print "Jahaja\n\n" &
 		Parser.parse f => p &
 		Dump.dump p &
+		print "\n = Exploding\n\n" &
+		Absyn.explode_components(p) => p' &
+		Dump.dump p' &
 		(* & Dump.dump Test.prog1 *)
-		print "Translating\n" &
-		Lform.convert p => p' &
+		print "\n = Translating\n\n" &
+		Lform.convert p' => p'' &
 		(* Modelica.progDAE p => d & *)
 		(*DAE.dump d & *)
-		print "[slut]\n"
+		print "\n[slut]\n"
 		----------------
 		main [f]
 
