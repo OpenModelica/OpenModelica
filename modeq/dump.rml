@@ -271,6 +271,13 @@ relation print_equation: Absyn.Equation => () =
 	-------------------------------------------
 	print_equation(Absyn.EQ_EXPR(e))
 	
+  rule	print "IF (" & print_exp(e) & print ") THEN " &
+	print_list(tb, print_equation, ";") &
+	print_list(eb, print_elseif, " ") &
+	print " ELSE " & print_list(fb, print_equation, ";")
+	----------------------------------------------------
+	print_equation(Absyn.EQ_IF(e,tb,eb,fb))
+	
   rule	print "EQ_EQUALS(" & print_exp(e1) & print "," &
 	print_exp(e2) & print ")"
 	-------------------------------------------
@@ -290,6 +297,17 @@ relation print_equation: Absyn.Equation => () =
 	--------------------------------
 	print_equation(_)
 	
+end
+
+(**)
+
+relation print_elseif : (Absyn.Exp * Absyn.Equation list) => () =
+
+  rule	print " ELSEIF " & print_exp e & print " THEN " &
+	print_list(el, print_equation, ";")
+	-----------------------------------
+	print_elseif((e,el))
+
 end
 
 (** - Algorithm clauses *)
@@ -412,9 +430,9 @@ relation print_exp: Absyn.Exp => () =
 	-----------------------------------------------------------------
 	print_exp(Absyn.RELATION(e1, op, e2))
 
-  rule	print "IF " & print_exp(c) &
-	print " THEN " & print_exp(t) &
-	print " ELSE " & print_exp(f)
+  rule	print "if " & print_exp(c) &
+	print " then " & print_exp(t) &
+	print " else " & print_exp(f)
 	----------------------------
 	print_exp(Absyn.IFEXP(c,t,f))
 
