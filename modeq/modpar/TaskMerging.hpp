@@ -30,10 +30,10 @@ typedef priority_queue<VertexID,vector<VertexID>,TLevelCmp> TQueue;
 
 class EdgeInfo {
 public:
-  EdgeInfo(int s,int t, string*res) : source(s),target(t),result(res) {};
+  EdgeInfo(int s,int t, ResultSet &res) : source(s),target(t),result(res) {};
   int source;
   int target;
-  string * result;
+  ResultSet &result;
 };
 
 class TaskMerging 

@@ -95,7 +95,7 @@ void Codegen::generateParallelFunctionBody(TaskList *tasks,
   m_cstream << endl << TAB << "/* Proc body */" << endl;
   generateParallelFunctionLocals(tasks);
   VertexID t;
-
+  
   while(!tasks->empty()) {
     t = tasks->top(); 
     generateRecvData(t,proc);
@@ -118,7 +118,7 @@ void Codegen::generateRecvData(VertexID task, int proc)
     set<int> s= *m_schedule->getAssignedProcessors(*p); // copy 
     set<int>::iterator i;
     for (i = s.begin(); i != s.end(); i++) {
-      if (!m_schedule->isAssignedTo(task,*i)) {
+      if (!m_schedule->isAssignedTo(task,proc)) {
 	m_cstream << TAB << "/* Recv from Task " << getTaskID(*p,m_tg) << "*/" 
 		  << endl;
 	generateRecvCommand(*p,task,proc,*i);
@@ -135,7 +135,7 @@ void Codegen::generateSendData(VertexID task, int proc)
     set<int> s= *m_schedule->getAssignedProcessors(*c); // copy 
     set<int>::iterator i;
     for (i = s.begin(); i != s.end(); i++) {
-      if (!m_schedule->isAssignedTo(task,*i)) {
+      if (!m_schedule->isAssignedTo(task,proc)) {
 	m_cstream << TAB << "/* Send to Task " << getTaskID(*c,m_tg) << "*/" << endl;
 	generateSendCommand(task,*c,proc,*i);
       }

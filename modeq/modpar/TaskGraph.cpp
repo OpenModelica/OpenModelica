@@ -211,6 +211,27 @@ siblings( VertexID, const TaskGraph &tg)
 }
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
+	      ResultSet &rset)
+{
+  EdgeID e;
+  bool edge_exist;
+  tie(e,edge_exist)= edge(parent,child,*tg);
+
+  if (edge_exist) {
+    setCommCost(e,getCommCost(e,tg)+1,tg);
+    ResultSet & s=getResultSet(e,tg);
+    s.make_union(&rset);
+  }
+  else {
+    bool succeed;
+    tie(e,succeed) = boost::add_edge(parent,child,*tg);
+    setCommCost(e,1,tg);
+    setResultSet(e,rset,tg);
+  }
+  return e;
+}
+
+EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
 	      string * result)
 {
   EdgeID e;
@@ -234,12 +255,12 @@ EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
 }
 
 const int max_result_sets=max_nodes;
+static int curNo=0;
+const int maxNo=200000;
+static ResultSet sets[maxNo];
 // Create a result_set given a first result entry.
 ResultSet& make_resultset(string *firstelt)
 {
-  const int maxNo=200000;
-  static ResultSet sets[maxNo];
-  static int curNo=0;
   ResultSet & set=sets[curNo++];
   if (curNo == maxNo) {
     cerr << "Error, ResultSet allocator reached maximum no :" << maxNo << endl;
@@ -249,6 +270,25 @@ ResultSet& make_resultset(string *firstelt)
     set.insert(*firstelt);
     //cerr << "Creating resultset with elt: " << *firstelt << endl;
   }
+  return set;
+}
+
+ResultSet& copy_resultset(ResultSet &s)
+{
+  cerr << "Entering copy_resultset" << endl;
+  ResultSet & set=sets[curNo++];
+  if (curNo == maxNo) {
+    cerr << "Error, ResultSet allocator reached maximum no :" << maxNo << endl;
+    exit(-1);
+  }
+  ResultSet::iterator vname; 
+  cerr << "loop over set..." << endl;
+  for( vname= s.begin(),cerr<<"start"<< endl; vname != s.end(); vname++) {
+    cerr << "name: " << *vname << endl;
+    set.insert(*vname);
+
+  }
+  cerr << "done copy_resultset" << endl;
   return set;
 }
 

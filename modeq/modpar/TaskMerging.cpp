@@ -128,6 +128,9 @@ void::TaskMerging::reinsertSourceAndSink()
 
  m_invartask = boost::add_vertex(*m_taskgraph);
  m_outvartask = boost::add_vertex(*m_taskgraph);
+
+ (*m_containTasks)[m_invartask] = new ContainSet();
+ (*m_containTasks)[m_outvartask] = new ContainSet();
  nameVertex(m_invartask,m_taskgraph,"invar");
  nameVertex(m_invartask,m_taskgraph,"outvar"); 
  put(VertexUniqueIDProperty(m_taskgraph),
@@ -148,9 +151,14 @@ void TaskMerging::add_edge_containing(const EdgeInfo &info)
     VertexIterator v,v_end;
     // This is really expensive, fortunately there are no longer so many tasks
     for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
-    ContainSet *cset = m_containTasks->find(*v)->second;
-      if (cset && cset->find(info.target) != cset->end()) {
-	add_edge(m_invartask,*v,m_taskgraph,info.result);
+      if (*v != m_invartask && *v != m_outvartask) {
+	cerr << "Trying to find set." << endl;
+	ContainSet *cset = m_containTasks->find(*v)->second;
+	cerr << "found " << endl;
+	if (cset && cset->find(info.target) != cset->end()) {
+	  add_edge(m_invartask,*v,m_taskgraph,info.result);
+	  cerr << "done" << endl;
+	}
       }
     }
   } else if (info.target == m_outvarID) {
@@ -158,13 +166,15 @@ void TaskMerging::add_edge_containing(const EdgeInfo &info)
     VertexIterator v,v_end;
     // This is really expensive, fortunately there are no longer so many tasks
     for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) { 
-    ContainSet *cset = m_containTasks->find(*v)->second;
-      if (cset && cset->find(info.source) != cset->end()) {
-	add_edge(*v,m_outvartask,m_taskgraph,info.result);
+      if (*v != m_invartask && *v != m_outvartask) {
+	cerr << "Trying to find set." << endl;
+	ContainSet *cset = m_containTasks->find(*v)->second;
+	cerr << "found " << endl;
+	if (cset && cset->find(info.source) != cset->end()) {
+	  add_edge(*v,m_outvartask,m_taskgraph,info.result);
+	}
       }
     }
-    
-    
   }  
 }
 
@@ -179,15 +189,21 @@ void TaskMerging::removeSourceAndSink()
   m_outvarID = getTaskID(m_outvartask,m_taskgraph);
 
   for(tie(c,c_end) = children(m_invartask,*m_taskgraph); c != c_end; c++) {
+    bool tmp; EdgeID e;
+    tie(e,tmp) = edge(m_invartask,*c,*m_taskgraph);
+    if (!tmp) { cerr << "Error, edge does not exist." << endl; exit(-1); }
     m_source_sink_edges.push_back(EdgeInfo(m_invarID,
 					   getTaskID(*c,m_taskgraph),
-					   &getResultName(*c,m_taskgraph)));
+					   copy_resultset(getResultSet(e,m_taskgraph))));
   }
 
   for(tie(p,p_end) = parents(m_outvartask,*m_taskgraph); p != p_end; p++) {
+    bool tmp; EdgeID e;
+    tie(e,tmp) = edge(*p,m_outvartask,*m_taskgraph);
+    if (!tmp) { cerr << "Error, edge does not exist." << endl; exit(-1); }
     m_source_sink_edges.push_back(EdgeInfo(getTaskID(*p,m_taskgraph),
 					   m_outvarID,
-					   &getResultName(*p,m_taskgraph)));
+					   copy_resultset(getResultSet(e,m_taskgraph))));
   }
   
   clear_vertex(m_invartask,*m_taskgraph);
@@ -196,6 +212,10 @@ void TaskMerging::removeSourceAndSink()
   remove_vertex(m_outvartask,*m_taskgraph);
   m_taskRemoved[m_invartask]=true;
   m_taskRemoved[m_outvartask]=true;
+
+  
+  m_containTasks->erase(m_containTasks->find(m_invartask));
+  m_containTasks->erase(m_containTasks->find(m_outvartask));
 
   ofstream file("removed.viz");
   my_write_graphviz(file,
@@ -243,10 +263,21 @@ void TaskMerging::mergeRules()
     }
   }
 
+  ofstream file("merged_nosourcesink.viz");
+  my_write_graphviz(file,*m_taskgraph,
+		    make_label_writer(VertexUniqueIDProperty(m_taskgraph)),
+		    make_label_writer(EdgeCommCostProperty(m_taskgraph))
+		    );
+  file.close();
+
+  cerr << "Reinserting source and sink" << endl;
+
   // put back source and sink nodes.
   reinsertSourceAndSink();
+  cerr << "Updating execution costs" << endl;
   updateExecCosts(); // When finished mergin, execcost should be calculated for each task 
 		     // from containSet.
+  cerr << "Leaving task merging.." << endl;
 }
 
 //write the correct exec cost to each task, by investigating m_containTasks

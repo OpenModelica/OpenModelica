@@ -60,6 +60,7 @@ class UnionSet : public std::set<T> {
 public:
   inline  void make_union (const set<T> *s) {
     typename set<T>::iterator it;
+    if (s == this) { return; }
     for (it=s->begin(); it != s->end(); it++) 
       insert(*it);
   };
@@ -177,11 +178,16 @@ string * genTemp();
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg, 
 	      string *result=0);
 
+EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
+		ResultSet &rset);
+
 VertexID find_task(VertexID alientask,TaskGraph *alientg,TaskGraph *tg);
 
 VertexID find_task(int taskID,TaskGraph *tg);
 
 ResultSet& make_resultset(string *firstelt=0);
+
+ResultSet& copy_resultset(ResultSet &);
 
 extern map<int,double> execcost; // mapping from unique id to exec cost.
 
