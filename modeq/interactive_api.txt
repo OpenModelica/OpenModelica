@@ -106,7 +106,19 @@ getNthConnectorAnnotation(<cref>,<int>	Returns the nth connector
 					list of values of a flat
 					record, see Annotation below.
 
-Error Handling
+getIconAnnotation(<cref>)		Returns the Icon Annotation of 
+					the class named by A0. 
+
+getDiagramAnnotation(<cref>)		Returns the Diagram annotation of 
+					the class named by A0. 
+					NOTE: Since the Diagram 
+					annotations can be found in base
+					classes a partial instantiation is 
+					performed that flattens the inheritance 
+					hierarchy in order to find all annotations.
+
+
+ERROR Handling
 ==============
 When an error occur in any of the functions above, the string
 "-1" is returned.

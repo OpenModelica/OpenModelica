@@ -61,6 +61,7 @@ val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scal
 
 val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
 
+val Icon_records = "record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); end Icon;"
 
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
@@ -226,6 +227,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("getNthConnector",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_icon_annotation(cr,p) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getIconAnnotation",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
 end
@@ -471,6 +482,54 @@ relation get_nth_connector: (Absyn.ComponentRef, Absyn.Program, int) => string =
 
   axiom get_nth_connector(_,_,_) => "-1"
 	
+end
+
+(** relation: get_icon_annotation
+ ** This relation takes a ComponentRef and a Program and returns a comma separated
+ ** string of values for the icon annotation for the class named by the first argument. 	
+ *)
+relation get_icon_annotation: (Absyn.ComponentRef, Absyn.Program) => string =
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_icon_annotation_in_class(cdef) => str
+	-----------------------------------------
+	get_icon_annotation(model,p) => str
+  axiom get_icon_annotation(_,_) => "get_icon_annotation failed!"
+end
+
+relation get_icon_annotation_in_class : (Absyn.Class) => string =
+
+  rule	get_public_list(parts) => publst &
+	get_icon_annotation_in_elementitemlist(publst) => str
+	----------------------------
+	get_icon_annotation_in_class (Absyn.CLASS(_,_,_,Absyn.PARTS(parts))) => str	
+end
+
+
+relation get_icon_annotation_in_elementitemlist: (Absyn.ElementItem list) => string =
+  axiom	get_icon_annotation_in_elementitemlist [] => ""
+	
+  rule	get_icon_annotation_str(annlst) => s1 &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str	
+	----------------------------
+	get_icon_annotation_in_elementitemlist (Absyn.ANNOTATIONITEM(Absyn.ANNOTATION(annlst))::_) => str
+	
+  rule	get_icon_annotation_in_elementitemlist(xs) => str
+	------------------------------------------------
+	get_icon_annotation_in_elementitemlist(_::xs) => str
+end
+
+relation get_icon_annotation_str: (Absyn.ElementArg list) => string =
+
+  rule	get_annotation_string (Icon_records,Absyn.ANNOTATION([ann])) => str
+	(* P.A: Insert record constructors for graphics items here! *)
+	-----------------------------------------------
+	get_icon_annotation_str ( (ann as Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Icon",_),_))::_) => str
+	
+  rule	get_icon_annotation_str (xs) => str
+	-------------------------------
+	get_icon_annotation_str( _::xs) => str
 end
 
 relation get_nth_public_connector_str: (Env.Env, Absyn.Class, int) => string =
@@ -770,6 +829,8 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Inst.init_vars_modelica_output dae => dae' &
 	Debug.fprint ("interactivedump","Annotation DAE = ") &
 	Debug.fcall ("interactivedump", DAE.dump2, DAE.DAE(dae)) &
+	Debug.fprint ("interactivedump","Mod =") &
+	Debug.fcall ("interactivedump",SCode.print_mod, mod') &
      	DAE.get_variable_bindings_str dae' => str 
 	---------------------------
 	get_annotation_string(totstring, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT(anncname,_),Absyn.CLASSMOD(mod,_)))])) => str
