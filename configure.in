@@ -152,8 +152,8 @@ return 0;
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
       [AC_MSG_RESULT([no])])                              
 
+
 dnl check for socket
-AC_MSG_CHECKING([for socket])
 
 AC_CHECK_FUNC(socket, 
  [AC_MSG_RESULT([yes]); LIBSOCKET=""],

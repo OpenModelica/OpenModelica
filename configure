@@ -1425,16 +1425,15 @@ else
 fi
 rm -f conftest*                              
 
-echo $ac_n "checking for socket""... $ac_c" 1>&6
-echo "configure:1430: checking for socket" >&5
+
 
 echo $ac_n "checking for socket""... $ac_c" 1>&6
-echo "configure:1433: checking for socket" >&5
+echo "configure:1432: checking for socket" >&5
 if eval "test \"`echo '$''{'ac_cv_func_socket'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1438 "configure"
+#line 1437 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char socket(); below.  */
@@ -1457,7 +1456,7 @@ socket();
 
 ; return 0; }
 EOF
-if { (eval echo configure:1461: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:1460: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_func_socket=yes"
 else
@@ -1476,9 +1475,9 @@ else
   echo "$ac_t""no" 1>&6
 echo "$ac_t""no" 1>&6;
   echo $ac_n "checking for libsocket""... $ac_c" 1>&6
-echo "configure:1480: checking for libsocket" >&5;
+echo "configure:1479: checking for libsocket" >&5;
   echo $ac_n "checking for socket in -lsocket""... $ac_c" 1>&6
-echo "configure:1482: checking for socket in -lsocket" >&5
+echo "configure:1481: checking for socket in -lsocket" >&5
 ac_lib_var=`echo socket'_'socket | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -1486,7 +1485,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lsocket  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1490 "configure"
+#line 1489 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1497,7 +1496,7 @@ int main() {
 socket()
 ; return 0; }
 EOF
-if { (eval echo configure:1501: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:1500: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
