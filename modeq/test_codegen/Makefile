@@ -27,6 +27,6 @@ matrix_vector_product.main.o : matrix_vector_product.main.c matrix_vector_produc
 	$(MODEQ) $< +d=codegen > $(<:.mo=.c)
 
 clean :
-	rm -f test
-	rm -f test.main.o
-	rm -f test.c
+	rm -f $(MOFILES:.mo=)
+	rm -f $(MOFILES:.mo=.main.o)
+	rm -f $(MOFILES:.mo=.c)

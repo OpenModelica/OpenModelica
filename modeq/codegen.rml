@@ -2257,7 +2257,7 @@ relation generate_read_call_write : (string,
 			 "char const* out_filename"]) => cfn1 &
 
 	append_strings([retstr," out;"],"") => out_decl&
-	c_add_statements(cfn1,["PRE_VARIABLES",
+	c_add_inits(cfn1,["PRE_VARIABLES",
 			       out_decl]) => cfn1' &
 	(*generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &*)
 	generate_vars(invars,is_rcw_input,1) => (cfn3,tnr2) &

@@ -1,7 +1,7 @@
 
 function matrix_vector_product
-  Real matr[2,2];
-  Real vect[2];
+  input Real matr[2,2];
+  input Real vect[2];
   output Real[2] rvect;
 algorithm
   rvect := vect*matr;

@@ -1,15 +1,18 @@
 #include <stdio.h>
+#include "modelica.h"
 
-#include "test.c"
+#include "matrix_vector_product.c"
 
 int main(int argc, char** argv)
 {
 
-  t_rettype r;
-
-  r = t(5.0);
-
-  printf("t(5.0) == %e\n",r.y);
+  if (argc != 3)
+    {
+      fprintf(stderr,"# Incorrrect number of arguments\n");
+      return 1;
+    }
+  
+  matrix_vector_product_read_call_write(argv[1],argv[2]);
 
   return 0;
 

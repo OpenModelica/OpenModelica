@@ -2,6 +2,7 @@
 #define READ_WIRTE_H_
 
 #include <stdio.h>
+#include <errno.h>
 #include "modelica.h"
 
 #define PRE_VARIABLES FILE *in_file,*out_file;int close_file;

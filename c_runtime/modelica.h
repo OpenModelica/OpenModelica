@@ -8,5 +8,8 @@
 #include "integer_array.h"
 #include "string_array.h"
 #include "boolean_array.h"
+#include "read_write.h"
+
+typedef real_array_t real_array;
 
 #endif
