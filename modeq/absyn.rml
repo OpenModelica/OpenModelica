@@ -66,6 +66,7 @@ module Absyn:
 
   and	   Equation = EQ_EXPR of Exp.Exp (* more later *)
 		    | EQ_EQUALS of Exp.Exp * Exp.Exp
+		    | EQ_CONNECT of ComponentRef * ComponentRef
 
   and	   Algorithm = ALGORITHM (* Fill in later *)
 
