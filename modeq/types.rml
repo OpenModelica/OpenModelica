@@ -142,14 +142,14 @@ relation subtype : (Type, Type) => bool =
 	subtype(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
 
 	(* PR. Check of tuples, similar to complex. Just that identifier name do not have to be checked. Only types are checked. *)	
- rule 	print("\nDebug: subtype t_tuple") &
-	subtype_typelist(type_list1,type_list2) => true &
+ rule 	(*print("\nDebug: subtype t_tuple") &
+*)	subtype_typelist(type_list1,type_list2) => true (* &
 	print("\nDebug: subtype t_tuple finished.") 
-	-----------------------------------
+*)	-----------------------------------
 	subtype(T_TUPLE(type_list1), T_TUPLE(type_list2)) => true
 
-  rule	print "\nDebug: no matching subtype rule." 
-	-----------------------------------
+  rule	(*print "\nDebug: no matching subtype rule." 
+*)	-----------------------------------
 	subtype(_,_) => false
 
 	(* default *)
@@ -315,7 +315,10 @@ end
 
 relation lift_array : (Type,int option) => Type =
 
-  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty)
+  rule	(*print("\nDebug: lifts the array.") 
+*)	-------------------
+	lift_array (ty,i) => T_ARRAY(DIM(i),ty)
+(* PR  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty) *)
 
 end
 

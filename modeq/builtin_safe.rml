@@ -118,6 +118,12 @@ val bool2bool = Types.T_FUNCTION([("x",Types.T_BOOL)],
 val real_real2bool = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
 				      Types.T_BOOL)
 
+ (*PR. Types for the built in array types 
+ Requirements that an array should for example have at least two dimensions might be handled as genereated asserts.
+ Vector should probably be type checked as a vector/matrix (not as an array) in for example the identity function. In the array type the dimension is included. So just specify the dimension in the val.
+ Since you cannot assume that the number of eimensions on an array is known at kompile time you cannot evaluate these funktions during compile time. You have to perform them at runtime. 
+*)
+
 val array1dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_INTEGER)
 val array2dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_INTEGER)
 val array3dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_INTEGER)
@@ -458,7 +464,8 @@ relation initial_env =
 
   rule	Env.open_scope(Env.empty_env) => env1 &
 	Env.extend_frame_c(env1, rl_type) => env2 &
-	Env.extend_frame_c(env2, int_type) => env3 &
+	Env.extend_frame_c(env2, int_type) => env3 
+
 	Env.extend_frame_c(env3, str_type) => env4 &
 	Env.extend_frame_c(env4, bool_type) => env5 &
 	Env.extend_frame_c(env5, real_type) => env6 &
@@ -490,6 +497,9 @@ relation initial_env =
 	(* Not in the report *)
 	Env.extend_frame_t(env23, "sin", real2real) 		     => env24 &
 	Env.extend_frame_t(env24, "cos", real2real) 		     => env25 &
+
+	print "\n Just before the built in array functions part." &
+
 	(* PR. Add the built in array functions here.*)
 	(* Also do it for real, string and bool*)
 	Env.extend_frame_t(env25, "ndims", array1dimint2int) 		     => env26 &
@@ -500,6 +510,7 @@ relation initial_env =
 	Env.extend_frame_t(env30, "ndims", array6dimint2int) 		     => env31 &
 	Env.extend_frame_t(env31, "ndims", array7dimint2int) 		     => env32 &
 	Env.extend_frame_t(env32, "ndims", array8dimint2int) 		     => env33 &
+	
 	Env.extend_frame_t(env33, "ndims", array1dimreal2int) 		     => env34 &
 	Env.extend_frame_t(env34, "ndims", array2dimreal2int) 		     => env35 &
 	Env.extend_frame_t(env35, "ndims", array3dimreal2int) 		     => env36 &
@@ -526,7 +537,8 @@ relation initial_env =
 	Env.extend_frame_t(env54, "ndims", array6dimbool2int) 		     => env55 &
 	Env.extend_frame_t(env55, "ndims", array7dimbool2int) 		     => env56 &
 	Env.extend_frame_t(env56, "ndims", array8dimbool2int) 		     => env57 &
-(* Debug. print "\n Just before the built in built in size." &	*)
+
+	print "\n Just before the built in built in size." &	
 
 	Env.extend_frame_t(env57, "size", array1dimint_int2int)	      => env58 & 
 	Env.extend_frame_t(env58, "size", array2dimint_int2int)	      => env59 &
@@ -602,7 +614,10 @@ relation initial_env =
 	Env.extend_frame_t(env118, "size", array6dimbool2vectorint)	      => env119 &
 	Env.extend_frame_t(env119, "size", array7dimbool2vectorint)	      => env120 &
 	Env.extend_frame_t(env120, "size", array8dimbool2vectorint)	      => env121 &
-Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
+
+	(* One function prototype for each possible type. *)
+	
+	Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
 	Env.extend_frame_t(env122, "scalar", array2dimint2int)	      => env123 &
 	Env.extend_frame_t(env123, "scalar", array3dimint2int)	      => env124 &
 	Env.extend_frame_t(env124, "scalar", array4dimint2int)	      => env125 &
@@ -725,6 +740,7 @@ Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
 
 
 
+
 	Env.extend_frame_t(env221, "transpose", array2dimint2matrixint)	      => env222 &
 	Env.extend_frame_t(env222, "transpose", array3dimint2matrixint)	      => env223 &
 	Env.extend_frame_t(env223, "transpose", array4dimint2matrixint)	      => env224 &
@@ -769,7 +785,8 @@ Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
 	Env.extend_frame_t(env252, "diagonal", array1dimreal2matrixreal)      => env253 &
 	Env.extend_frame_t(env253, "diagonal", array1dimbool2matrixbool)      => env254 &
 	Env.extend_frame_t(env254, "diagonal", array1dimstring2matrixstring)  => env255 &
-(* There is a problem to represents these functions where you do not 
+
+(* I am sorry to announce that there is a problem to represents these functions where you do not 
  know how many argumetns they will take. In this implementation up to 8 arguments are supported. *)
 	
 	Env.extend_frame_t(env255, "zeros", n1int2arrayint) 		     => env256 &
@@ -852,6 +869,8 @@ Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
 	Env.extend_frame_t(env319, "sum", array8dimreal2real)	      => env320 &
 
 
+
+
 	Env.extend_frame_t(env320, "product", array1dimint2int)	      => env321 &
 	Env.extend_frame_t(env321, "product", array2dimint2int)	      => env322 &
 	Env.extend_frame_t(env322, "product", array3dimint2int)	      => env323 &
@@ -912,10 +931,10 @@ Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
 	Env.extend_frame_t(env369, "cross", array1dimreal2array1dimreal)	     => env370 &
 
 	Env.extend_frame_t(env370, "skew", array1dimint2array3dimint) 		     => env371 & 
-	Env.extend_frame_t(env371, "skew", array1dimreal2array3dimreal)              => env372  
+	Env.extend_frame_t(env371, "skew", array1dimreal2array3dimreal)              => env372  &
 
-(*Debug.	print "\n Just AFTER the built in array functions part." *)
+	print "\n Just AFTER the built in array functions part." 
 	----------------------------------------------
-	initial_env () => env372
+	initial_env () => env3
 
 end

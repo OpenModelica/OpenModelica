@@ -100,13 +100,10 @@ void unimpl(char *rule)
 #token PUBLIC		"public"
 /* #token PRIVATE		"private" */
 #token PROTECTED	"protected"
-#token COMMA            ","
 #token LPAR		"\("
 #token RPAR		"\)"
 #token LBRACK		"\["
 #token RBRACK		"\]"
-#token LCURL	        "\{" 
-#token RCURL	        "\}" 
 /* #token RECORD_BEGIN	"\{" */
 /* #token RECORD_END	"\}" */
 #token IF		"if"
@@ -170,7 +167,6 @@ void unimpl(char *rule)
 #token SUBSCRIPT
 #token ROW
 #token COLUMN
-#token TUPLE
 
 #token "//(~[\n])*"  << zzskip(); >> /* skip C++-style comments */
 
@@ -243,7 +239,7 @@ class_definition[bool is_replaceable,bool is_final] :
 	  >>
 	| EQUALS dp:name_path
 	    /* FIXME: grammar says array_dimensions */
-	  { da:array_subscripts<< has_array_dim=true; >> }
+	  { da:array_subscripts << has_array_dim=true; >> }
 	  { ds:class_modification << has_class_spec=true; >> } 
 	  << 
 	     Attrib a = $[CLASS_,"---"];
@@ -324,7 +320,7 @@ extends_clause:
  */
 
 component_clause!:
-	<< bool fl=false, di=false, pa=false, co=false, in=false, ou=false, has_array=false; 
+	<< bool fl=false, di=false, pa=false, co=false, in=false, ou=false;
 	   Attrib a = $[COMPONENTS,"---"]; >>
         /* inline type_prefix for easy access to the flags */
 	{ f:FLOW      << fl = true; >> } 
@@ -334,19 +330,16 @@ component_clause!:
 	{ i:INPUT     << in = true; >>
 	| o:OUTPUT    << ou = true; >> }
 	s:type_specifier
-{ as:array_subscripts << has_array=true; >> } /* Extra part for 1.1  */
 	l:component_list
         << #0 = #(#[&a], #p, #s, #l);
-/*!! Add the array subscripts. Done  */
 	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(RML_PRIM_MKBOOL(fl),
 						   pa ? Absyn__PARAM :
 						   co ? Absyn__CONST :
-						   di ? Absyn__DISCRETE :						   Absyn__VAR,
+						   di ? Absyn__DISCRETE :
+						   Absyn__VAR,
 						   in ? Absyn__INPUT :
 						   ou ? Absyn__OUTPUT:
-						   Absyn__BIDIR,
-						   has_array ? #as->rml : mk_nil() /*1.1*/
-						  	   ),
+						   Absyn__BIDIR),
 				       #s->rml,
 				       sibling_list(#l));
 				       
@@ -389,25 +382,18 @@ array_subscripts :
 	;
 
 subscript :
-/*modgram.g, line 394: warning: alts 1 and 2 of the rule itself ambiguous upon { ":" } */ /* Why? ':' is not an expression. The (...)? takes care of it. */
-
 	  << Attrib a = $[SUBSCRIPT,"---"]; >>
-
-         
-          (":"!
-	  <<
-	     #0 = #(#[&a],#0);
-	     #0->rml = Absyn__NOSUB;
-	  >>)? 
-	 |
 	  ex1:expression
 	  <<
 	     #0 = #(#[&a],#0);
 	     #0->rml = Absyn__SUBSCRIPT(#ex1->rml);
-	  >> 
-	  
+	  >>
 
-
+        | ":"!
+	  <<
+	     #0 = #(#[&a],#0);
+	     #0->rml = Absyn__NOSUB;
+	  >>
 	;
 
 /*
@@ -483,7 +469,7 @@ component_clause1!:
 						   Absyn__VAR,
 						   in ? Absyn__INPUT :
 						   ou ? Absyn__OUTPUT:
-						   Absyn__BIDIR, mk_nil()),
+						   Absyn__BIDIR),
 				       #s->rml,
 				       mk_cons(#decl->rml, mk_nil()));
 				       
@@ -522,24 +508,14 @@ algorithm_clause :
 	;
 
 equation : << bool is_assign = false; AST *top; >>
-	(
-
-	 /*o 1.0 e1:range_expression EQUALS^ e2:expression */ 
-	 e1:simple_expression EQUALS^ e2:expression /* 1.1 */
-	 
+	( e1:range_expression EQUALS^ e2:expression
 	  << #0->rml = Absyn__EQ_5fEQUALS(#e1->rml, #e2->rml); >>
 	| conditional_equation_e
 	| for_clause_e
-	| when_clause_e /* 1.1*/
 	| connect_clause )
 	comment!
 	;
-/*
-left_expression :
-range_expression | LPAR single_component_reference ","  single_component_reference { ","  single_component_reference } RPAR 
-	;
-	*
-	*/
+
 algorithm :
 	( cr:component_reference
 	  ( ASSIGN^ e:expression
@@ -548,7 +524,7 @@ algorithm :
 	| conditional_equation_a
         | for_clause_a
 	| while_clause
-	| when_clause_a )
+	| when_clause )
   	comment!
   	;
 
@@ -636,29 +612,14 @@ while_clause :
 	END! WHILE!
 	<< #wh->rml = Absyn__ALG_5fWHILE(#e->rml, sibling_list(#el)); >>
 	;
-/*1.1*/
-when_clause_e :
-	wh:WHEN^ e:expression DO!
-	el:equation_list
-	END! WHEN!
-	<< #wh->rml = Absyn__EQ_5fWHEN_5fE(#e->rml, sibling_list(#el)); >>
-	;
 
-/*1.1*/
-when_clause_a :
-	wh:WHEN^ e:expression DO!
-	el:algorithm_list
-	END! WHEN!
-	<< #wh->rml = Absyn__ALG_5fWHEN_5fA(#e->rml, sibling_list(#el)); >>
-	;
-/*o 1.0
 when_clause :
 	wh:WHEN^ e:expression DO!
 	el:algorithm_list
 	END! WHEN!
 	<< #wh->rml = Absyn__ALG_5fWHEN(#e->rml, sibling_list(#el)); >>
 	;
-*/
+
 equation_list :
 	( equation ";"! )*
 	;
@@ -783,81 +744,37 @@ factor :
 						     #e2->rml); >> }
 	;
 
-primary : << bool is_tuple, is_matrix; void* parts;>>
+primary : << bool is_matrix; >>
 	  ni:UNSIGNED_INTEGER
 	  << #ni->rml = Absyn__INTEGER(mk_icon($ni.u.ival)); >>
 	| nr:UNSIGNED_REAL
-	  << #nr->rml = Absyn__REAL(mk_rcon($nr.u.realval));
-/*printf("Parse>> RealValue read: %f", $nr.u.realval);
- */
->>
-        | s:STRING << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>	
-        | f:FALS/*E*/        << #f->rml = Absyn__BOOL(RML_FALSE); >>
+	  << #nr->rml = Absyn__REAL(mk_rcon($nr.u.realval)); >>
+	| f:FALS/*E*/        << #f->rml = Absyn__BOOL(RML_FALSE); >>
 	| t:TRU/*E*/         << #t->rml = Absyn__BOOL(RML_TRUE); >>
-
-	| i:component_reference { fc:function_call }
-		  << if(#fc)
-     /*	       #0->rml = Absyn__CALL(#i->rml,#fc->rml); */
-     	       #0->rml = Absyn__CALL(#i->rml,#fc->rml); 
+/* 	| (name_path_function_arguments)? */
+	| i:component_reference
+	  { fc:function_call }
+	  << if(#fc)
+	       #0->rml = Absyn__CALL(#i->rml,#fc->rml);
      	     else
 	       #0->rml = Absyn__CREF(#i->rml);
           >>
-	 
-	/* Modelica 1.1. Meaning, see spec. page 19 */	
-	/* Mutiple return values from functions. */
-	| par:LPAR! e:expression_list> [is_tuple] RPAR! 
-	     <<
-	     /*	     Attrib a = $[TUPLE_,"---"];
-		     #0 = #(#[&a], #0);*/ 
-	     if (is_tuple) {
-	 	     parts=sibling_list(#e);
-		                  #0->rml=Absyn__TUPLE(parts); 
-		     /*o             #0->rml=Absyn__TUPLE(#e->rml); */
-             }
-             else {
-		    /* Because the e is already constucted in the xpression rule , just return it. */
-		    /*	      #par->rml=#e->rml; */
-	      #0->rml=#e->rml; 
-		    
-             }
-             >>
-	
-	| /* Array concatination. */
-
+	| s:STRING << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
+	| par:LPAR^
+	  e:expression RPAR!
+	  << #par->rml = #e->rml; >>
 	| op:LBRACK^
 	  c:column_expression > [is_matrix] 
 	  << 
 	     if (is_matrix) {
-               /* This is a list of lists*/
 	       #0->rml = Absyn__MATRIX(#c->rml);
-	       /* This is a list of lists*/
 	     } else {
-	  /* Here only a simple list is needed. */
 	       #0->rml = Absyn__ARRAY(#c->rml);
+	       /* #0->rml = Absyn__MATRIX(mk_cons(#c->rml, mk_nil()));*/
 	     }
 	  >>
 	  RBRACK!
-
-	  | /* Array construction. */
-	  LCURL! e1:expression_list> [is_tuple] RCURL! 
-	  << 	/*  #0->rml = Absyn__ARRAY(#e1->rml);  */
-
-	  /*	 	     parts=sibling_list(#e1);
-			     #0->rml=Absyn__TUPLE(parts); */
-
->>
-
-	  ;
-/*
-component_references:
-	  single_component_reference { function_or_multiple_references }
-       ;
-
-function_or_multiple_references:
-	    function_call 
-	    | "," single_component_reference { "," single_component_reference }
-	  ;
-*/
+	;
 
 /* name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >> */
 /* 	n:name_path f:function_arguments */
@@ -897,46 +814,10 @@ component_reference : << void *tail = NULL;>>
 
 function_call :
 	  LPAR^ f:function_arguments RPAR!
-	     << #0->rml = sibling_list(#f); >> 
+	  << #0->rml = sibling_list(#f); >>
 	;
 
-
-/*!! 1.1*/
-expression_list > [bool is_tuple] :
- << $is_tuple=false; >>
-	e:expression (COMMA! expression << $is_tuple=true; >>)* 
-
-	/*o	<< if ($is_tuple) {
-	 Attrib a= $[TUPLE,"---"];
-	 #0 = #(#[&a], #e);
-         #0->rml = sibling_list(#e);
-	 } >> */
-         
-	;
-        
-function_arguments : << bool is_tuple;  >>
-	  expression_list > [is_tuple]
-	| IDENT EQUALS^ expression (","! IDENT EQUALS^ expression)*
-  	  << unimpl("function_arguments (named parameters)"); >>
-	;
-
-comment : 
-        /* several strings in a row is really one string continued on
-	   several lines. */
-	( s:STRING! )*
-        /* Why is this syntactic predicate necessary?? */
-	{ (annotation)? annotation! }
-	;
-
-annotation :
-	ANNOTATION class_modification
-	;
-
-
-
-/* Help functions for keeping track of the concatenation along first and second dimensions. The operators ';' respectivly ',' are shorhand notation for this. */
-
-
+/* not in document's grammar */
 column_expression > [bool is_matrix] :
 	<< $is_matrix=false; >>
 	e:row_expression ( ";"! row_expression << $is_matrix=true; >> )*
@@ -951,8 +832,25 @@ row_expression :
 	e:expression 
 	( ","! expression 
 	)*
-	/* Obs! e points to the head of the datastructure constructed by pccts. It automatically connects all the expressions in this clause.  */
 	<< Attrib a = $[ROW,"---"];
 	   #0 = #(#[&a], #e);
 	   #0->rml = sibling_list(#e); >>
+	;
+
+function_arguments :
+	  expression ( ","! expression )*
+	| IDENT EQUALS^ expression (","! IDENT EQUALS^ expression)*
+  	  << unimpl("function_arguments (named parameters)"); >>
+	;
+
+comment : 
+        /* several strings in a row is really one string continued on
+	   several lines. */
+	( s:STRING! )*
+        /* Why is this syntactic predicate necessary?? */
+	{ (annotation)? annotation! }
+	;
+
+annotation :
+	ANNOTATION class_modification
 	;

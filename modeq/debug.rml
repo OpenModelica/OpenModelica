@@ -1,0 +1,30 @@
+(**
+ ** file:	 debug.rml
+ ** module:      Debug
+ ** description: debug printing
+ **
+ ** RCS: $Id$
+ **
+ ** Printing routines for debug ouput of strings. To remove the 
+ ** printing just change the rule.
+ **
+ **)
+
+module Debug:
+ relation print: string => ()
+end
+
+(* PR 
+ * This realtion is used for debug printing. 
+ *)
+relation print: string => () =
+   (* Debug output.
+	Takes a lot of time during runtime. Hangs
+   rule print s
+	------------
+	print s => () *)
+
+   (* No debug output *)
+   axiom print s => ()
+
+end 

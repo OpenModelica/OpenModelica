@@ -22,7 +22,7 @@ int zzcr_attr(Attrib *attr, int type, char *text)
     attr->u.stringval[l-2] = 0;
     break;
   default:
-    fprintf("No data in attrib is set."); break;
+    /*    fprintf("No data in attrib is set."); break; */
     break;
   }
 }

@@ -21,6 +21,7 @@ module Static :
   with "values.rml"
   with "classinf.rml"
   with "lookup.rml"
+  with "debug.rml"
 
   type Ident = string
 
@@ -139,8 +140,11 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env,exp as Absyn.LUNARY(op,e))
 	  => (Exp.LUNARY(op',e''),PROP(rtype,c))
 
-  rule	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
+  rule	
+	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
+	
 	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
+	
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
@@ -166,18 +170,21 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
 
 
-	(*PR. Get the properties for each expression in the tuplel. 
+	(*PR. Get the properties for each expression in the tuple. 
 	* Each expression has its own constflag.
 	* !!The output from functions does just have one const flag. 
 	* Fix this!!
 	*)
 	
-  rule	print "\n#####################elab_exp tuple.####################" &
+  rule	Debug.print "\n#####################elab_exp tuple.####################" &
+(*	Dump.print_exp e1 &
+*)	Debug.print "\n ###################" &
 	elab_tuple(env,e) => (e', props) &
-	print "\nThe elaborated tuple." &
-	split_props(props) => (types, consts)
+	Debug.print "\nThe elaborated tuple." &
+	split_props(props) => (types, consts) &
+	Debug.print "\n split_props was just executed."
 	-------------------------------------
-	elab_exp (env,Absyn.TUPLE(e)) => (Exp.TUPLE(e'),PROP_TUPLE(Types.T_TUPLE(types), TUPLE_CONST(consts)))
+	elab_exp (env,Absyn.TUPLE(e as e1::rest)) => (Exp.TUPLE(e'),PROP_TUPLE(Types.T_TUPLE(types), TUPLE_CONST(consts)))
 
 
 	(**  Array-related expressions *)
@@ -200,7 +207,9 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
 	  => (Exp.RANGE(start',SOME(step'),stop'), PROP(t, const))
 
-  rule	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l
+  rule	
+(*	print "\nDebug: elaborate an ARRAY " &
+*)	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l
 	--------------------------------------------------------------
 	elab_exp (env, Absyn.ARRAY(es))
 	  => (Exp.ARRAY(es'),
@@ -251,13 +260,24 @@ end
 relation elab_tuple : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Properties list) =
 
-  rule	elab_exp (env,e) => (e',p) &
-	elab_tuple(env,exps) => (exps',props)
+  rule	Debug.print "\nEntered elab_tuple." &
+	elab_exp (env,e) => (e',p) &
+	Debug.print "\nElaborated expression." &
+	elab_tuple(env,exps) => (exps',props) &
+	Debug.print "\nThe last element was just elaborated."
 	-----------------------------
 	elab_tuple(env,e::exps) => (e'::exps', p::props) 
 
-  axiom elab_tuple(env,[]) => ([], []) 
+(*PR.  rule	elab_exp (env,e) => (e',p) 
+	-----------------------------
+	elab_tuple(env,e::[]) => (e', p) 
+*)
+  rule 	Debug.print "elaborating last element."
+	----------------
+	elab_tuple(env,[]) => ([], []) 
 
+(*  axiom elab_tuple(env,[]) => ([], []) 
+*)
 end
 
 (** relation: elab_array *)
@@ -384,12 +404,14 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 	(* PR. We found a function definition of fn. *)
 	Lookup.lookup_type(env,fn) => (t as Types.T_COMPLEX(st,vl)) &
 	(* ClassInf.valid(st, Absyn.R_FUNCTION) & *)
-	print("Did lookup.") &
+	Debug.print("Did lookup.") &
 	(*PR. Find function parameters in the function definition.*)
 	function_params(vl) => (in,out) & (*P.R 1.1 Many outputs are possible *)
-	print("Did function_params") &
+	Debug.print("Did function_params") &
 	get_types(out) => types &
-	print("\nGot types.") &
+
+	
+	Debug.print("\nGot types.") &
 	(*PR. elaborate input parameters from the function call(args).
 	* In are the in-parameters specified in the function declaration.
 	* c indicate if all input parameters are constant, this means that
@@ -404,37 +426,108 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 	 At the moment this just gives a false list.
 	*)
 	elab_consts(out) => const &	
-
-	print("Did elab_input_args")
+ 	(* Returns PROP_TUPLE if there is more than one element in the list. 
+	   If there is only one element then PROP is returned.
+	 *)
+	get_properties(types, const) => prop &
+	
+	Debug.print("Did elab_input_args")
 	--------------------------------------------
-	elab_call_args(env,fn,args) => (Exp.CALL(fn,args'), PROP_TUPLE(Types.T_TUPLE(types), const))
+(*	elab_call_args(env,fn,args) => (Exp.CALL(fn,args'), PROP_TUPLE(Types.T_TUPLE(types), const)) *)
+	elab_call_args(env,fn,args) => (Exp.CALL(fn,args'), prop )
+
+
+(* Functions that returns just one argument should not return a tuple. It just returns a simple expression. *)
+
+
+
+
+
+
+
+
+
+
+
+
 
 	(* This rule finds the built-in functions *)
 
   rule	
 
-	
-	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) &
+	(* PR. A function can have several types. Taking an array with different dimensions  as parameter for example. Because of this we cannot just lookup the function name and trust that it returns the correct function. It returns just one functiontype of several possibilites. The solution is to send in the funktion type of the user function and check both the funktion name and the function's type. *)	
+
+(*	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) 
+& *)
+	Lookup.lookup_functions_in_env(env,fn) => typelist &
+	print "\n We got the type list" &
+	elab_types (env,args,typelist) => (args', c, restype) &
+	print "\n We just elaborated the types" 
+
 	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
-	print "Debug: We did a lookup T_FUNCTION " &
-	elab_input_args(env, args, params) => (args',c)
+(*	print "Debug: We did a lookup T_FUNCTION " &
+*)
+(*PR.	elab_input_args(env, args, params) => (args',c)  *)
 	-----------------------------------------------
 	elab_call_args (env,fn,args) => (Exp.CALL(fn,args'), PROP(restype, c))
 
 
+(*  rule	not Lookup.lookup_type(env,fn) => _ &
+	
+	print "# Couldn't find function " & Dump.print_path fn & print "\n"
+	-------------------------------------------------------------------
+	elab_call_args(env,fn,_) => fail
+*)
   rule	not Lookup.lookup_type(env,fn) => _ &
+	
 	print "# Couldn't find function " & Dump.print_path fn & print "\n"
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,_) => fail
 
-  rule	print "- elab_call_args failed\n"
+  rule	(*elab_exp(env, e) => (e',PROP(t,_)) &*)
+	print "- elab_call_args failed\n"
 	---------------------------------
 	elab_call_args(_,_,_) => fail
 
 end
 
+(*PR.*)
+relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list) => (Exp.Exp list, bool, Types.Type) =
 
 
+
+	(* We found nothing. This is an error. return to the calling function that writes an error message that makes sense (the name of the funtion etc). *)
+	(* If trest gets empty then we will return with a missmatch.  and write an error message in the calling function. *)		
+
+
+	(* We found a match.*)
+	rule	print "\n We try the elab_input " &
+		elab_input_args(env, args, params ) => (args',c) &
+        	print "\n We found a match." 
+		------------------
+             	elab_types(env, args, Types.T_FUNCTION(params,restype)::trest) => (args', c, restype)
+
+	(* We did not found a match, try next. *)
+	rule 	print "\nThe elab_input_args failed, try next." &
+		elab_types(env, args, trest) => (args',c, restype) 
+        	------------------
+             	elab_types(env, args, Types.T_FUNCTION(params,restype)::trest) => (args', c, restype)
+	
+
+	
+end
+
+
+(* PR get_prop 
+*)
+relation get_properties : (Types.Type list, Const)  => Properties =
+	(* One type, this is a tuple with one element. The resulting properties 
+	 * is then identical to that of a single expression. *)
+axiom	get_properties(t::[], TUPLE_CONST(CONST(b)::[]))  => PROP(t, b)
+	(* At least two elements in the type list, this is a tuple. *)
+axiom	get_properties (types,const) => PROP_TUPLE(Types.T_TUPLE(types), const)
+
+end
 
 
 (** PR. assisting routines
@@ -458,7 +551,7 @@ end
 
 
 
-(*PR. !! At the moment this matke all outputs non cons.
+(*PR. !! At the moment this make all outputs non cons.
 * All ouputs sholud be checked in the function body for constness. 
 *)
 relation check_const : (Ident*Types.Type) => Const  =	
@@ -471,7 +564,7 @@ axiom	check_const((_, _)) => CONST(true)
 
 end
 
-
+(* Splits the properties list into the separated types list and const list. *)
 relation split_props : (Properties list) => (Types.Type list, Const list) =
   rule 	(*list_append(ts,t::[]) => t1 &
 	list_append(cs,CONST(c)::[]) => t2 &
@@ -526,8 +619,8 @@ end
 
 relation get_types :((Ident * Types.Type) list) => Types.Type list =
 
-rule	print("\nDebug: Got a type for output of function. ") &
-	get_types(rest) => types 
+rule	(*print("\nDebug: Got a type for output of function. ") &
+*)	get_types(rest) => types 
 	-----------------
 	get_types ((i,t)::rest) => t::types
 
@@ -550,19 +643,19 @@ relation function_params : Types.Var list => ((Ident * Types.Type) list,
   axiom	function_params [] => ([],[])
 
 	(* Ignore protected components *)
-  rule	print("protected") &
+  rule	Debug.print("protected") &
 	function_params vs => (in, out)
 	-------------------------------
 	function_params((Types.VAR(_,_,true,_,_))::vs) => (in, out)
 
-  rule	print("not protected. intput") &
+  rule	Debug.print("not protected. intput") &
 	function_params vs => (in, out)
 	------------------------------
 	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.INPUT),
 				   false,t,Types.UNBOUND)::vs)
 	  => ((n,t)::in, out)
 
-  rule	print("not protected. output") &
+  rule	Debug.print("not protected. output") &
 	function_params vs => (in, out)
 	------------------------------
 	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.OUTPUT),
@@ -611,7 +704,7 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, (Ident * Types.Type) list)
 	bool_and(c1, c2) => c
 	-------------------------------------
 	elab_input_args(env, e::es, (_,vt)::vs) => (e''::args', c)
-
+(* PR.
   rule	elab_exp(env, e) => (e',PROP(t,_)) &
 	print "# Argument (" & Dump.print_exp e &
  	print ") doesn't match parameter type\n" &
@@ -619,7 +712,7 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, (Ident * Types.Type) list)
 	print "    argument type: " & Types.print_type t & print "\n"
 	-------------------------------------------------------------
 	elab_input_args(env, e::es, (_,vt)::vs) => fail
-
+*)
 end
 
 (** relation: elab_cref
@@ -1395,12 +1488,12 @@ end
 
 relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
 
-  rule	print "Debug: match prop." &
+  rule	Debug.print "Debug: match prop." &
 	match_type(e, gt, et) => e'
 	---------------------------
 	match_prop(e, PROP(gt,_), PROP(et,_)) => e'
 
-  rule	print "\nDebug: match prop (PROP TUPLE). " &
+  rule	Debug.print "\nDebug: match prop (PROP TUPLE). " &
 	match_type(e, gt, et) => e'
 	---------------------------
 	match_prop(e, PROP_TUPLE(gt,_), PROP_TUPLE(et,_)) => e'

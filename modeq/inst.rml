@@ -12,6 +12,7 @@ module Inst:
 
   with "explode.rml"
   with "dae.rml"
+  with "debug.rml"
   relation instantiate: SCode.Program => DAE.DAElist
 
 end
@@ -82,8 +83,12 @@ end
 
 relation instantiate: SCode.Program => DAE.DAElist =
 
-  rule	Builtin.initial_env => env &
-	inst_program(env,p) => l
+  rule	(*Debug. print "\nBefore initial." & *)
+	Builtin.initial_env => env &
+	(*Debug. print "\nBefore inst_program" & *)
+	
+	inst_program(env,p) => l 
+	(*Debug. print "\nFinished instantiate." *)
 	-----------------------------
 	instantiate(p) => DAE.DAE(l)
 
@@ -103,19 +108,29 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	------------------------------
 	inst_program(env,[]) => fail
 
-  rule	(* Env.extend_frame_c(env,c) => env' & *)
+
+  rule	(*Debug. print "\nhepp" &*)
+	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c) => (dae,csets,_,_)
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
-  rule	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c) => (env',dae1) &
+   (*Debug. rule print "\nfailed" 
+	------------
+	inst_program(_,_) => fail
+*)
+  rule	(*Debug. print "\nhopp" & *)
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c) => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_program(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
 	----------------------
 	inst_program(env,c::(cs as (_::_))) => dae
 
+   rule print "failed" 
+	------------
+	inst_program(_,_) => fail
 end
 
 (** relation: inst_class
@@ -136,8 +151,11 @@ relation inst_class: (Env, Mod, Prefix, Connect.Sets, SCode.Class)
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_)) => fail
 
-  rule	Env.open_scope(env) => env' &
+  rule	(*Debug. print "\n Before open_scope" & *)
+	Env.open_scope(env) => env' &
+	(*Debug. print "\n Before start" & *)
 	ClassInf.start(r,n) => ci_state &
+	(*Debug.  print "\n Before inst_class" & *)
 	inst_class_in(env', mod, pre, csets, ci_state, c, false)
 	  => (dae1,_,csets',ci_state', tys) &
 	Connect.equations csets' => dae2 &
@@ -397,7 +415,9 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
+
 	elab_arraydim(env,ad,eq) => dims &
+
 
 	(** Instantiate the component *)
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[])
@@ -485,7 +505,8 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		 [],idxs)
           => (dae,csets',ty)
 
-  rule	print "= inst_array mod: " & print n & Mod.print_mod mod & print "\n" &
+  rule	(* for debugging.
+	print "= inst_array mod: " & print n & Mod.print_mod mod & print "\n" & *)
 	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs)
 	  => (dae, csets', ty) &
 	Types.lift_array(ty,SOME(dim)) => ty'
@@ -572,6 +593,7 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 	print_dim dim1 & print "]\n"
 	---------------------------------
 	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c)))) => fail
+
 
   rule	print "- elab_arraydim failed\n"
 	-------------------------------------
@@ -715,12 +737,18 @@ end
 relation elab_arraydim_type : (Types.Type, Absyn.ArrayDim)
 	  => int option list =
 
-  rule	elab_arraydim_type(t,ad) => l
+  rule  elab_arraydim_type(t,ad) => l
 	---------------------------
 	elab_arraydim_type(Types.T_ARRAY(Types.DIM(i),t), _::ad) => i::l
 	
-  axiom	elab_arraydim_type(_,[]) => []
+ axiom elab_arraydim_type(_,[]) => []
 
+ (* PR, for debugging *)
+ rule  print "Undefined!" &
+	print " The type detected: " &
+  	Types.print_type t 
+       --------------------
+	elab_arraydim_type(t,_::ad) => fail
 end
 
 (** relation: inst_class_decl
@@ -910,29 +938,44 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	
 
 	(*PR. propx contains the type/types(for functions) of the resulting expression. But why are e1', e2' needed? They are used to generate the dae's. Probably their type may have been modified.  *)
-	print("\n Expressions matched in inst equation:") &
-	Absyn.print_absyn_exp(e1) &
-	print(", ") &
-	Absyn.print_absyn_exp(e2) &
-	print("\n") &
+	Debug.print("\n Expressions matched in inst equation:") &
+
+(*	Absyn.print_absyn_exp(e1) &
+*)	
+	Debug.print(", ") &
+
+(*	Absyn.print_absyn_exp(e2) &
+*)	
+	Debug.print("\n") &
+
+	(* 
+	Do static analysis and constant evaluation of expressions. 
+	Gives expression and properties (Type * bool | (Type * Const as (bool | Const list))).
+	For a function, it checks the funtion name. 
+	Also the function call's in parameters are type checked with the functions definition's inparameters. This is done with regard to the position of the input arguments.
+
+	Returns the output parameters from the funktion.
+	*)
+
 	Static.elab_exp(env,e1) => (e1',prop1) &
-	print("\nDebug: did left elab.") &
+
+	Debug.print("\nDebug: did left elab.") &
 	Static.elab_exp(env,e2) => (e2',prop2) &
-	print("\nDebug: did right elab.") &
-	Exp.print_exp(e1') &
-	print(", ") &
-	Exp.print_exp(e2') &
-	print("\n") &
+	Debug.print("\nDebug: did right elab.") &
+	(*Exp.print_exp(e1') &*)
+	Debug.print(", ") &
+	(*Exp.print_exp(e2') & *)
+	Debug.print("\n") &
 
 	
 	Prefix.prefix_exp(env,e1',pre) => e1'' &
 	Prefix.prefix_exp(env,e2',pre) => e2'' &
-	print("\nDebug: did prefixes.") &
+	Debug.print("\nDebug: did prefixes.") &
 	(*PR. Check that the lefthandside and the righthandside get along. *)
 	inst_eq_equation(e1'',prop1,e2'',prop2) => dae &
-	print("\nDebug: did inst_eq_equation.") &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'&
-	print("\nDebug: did ClassInf trans.")
+	Debug.print("\nDebug: did inst_eq_equation.") &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'  &
+	Debug.print("\nDebug: did ClassInf trans.")
 	--------------------------------------------------------------
 	inst_equation(env, mods, pre, csets, ci_state, SCode.EQ_EQUALS(e1,e2))
 	  => (dae, env, csets, ci_state')
@@ -946,7 +989,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Static.elab_exp(env,e) => (e',Static.PROP(Types.T_BOOL,true)) &
 	Static.ceval(env,e') => Values.BOOL(cond) &
-	print("\nEQ_IF: ") &
+	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
 *)
 (*	Dump.print_exp(cond) &
@@ -1043,20 +1086,21 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	
 	(* This rule is matched first, if it fail the next rule is matched.
 	 *)
-  rule	Static.match_prop(e1, p1, p2) => e1' &
-	print("\n first rule of relation inst_eq_equation ") &
-	inst_eq_equation_2(e1', e2, t2) => dae &
-	print("\n first rule complete. ") 
+  rule	Debug.print("\ninst_eq_equation (match e1) PROP, PROP") &
+	Static.match_prop(e1, p1, p2) => e1' &
+	inst_eq_equation_2(e1', e2, t2) => dae 
+
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
 			 e2,p2 as Static.PROP(t2,_))
 	  => dae
 
 	(* If it fails then this rule is matched. *)
-  rule	Static.match_prop(e2, p2, p1) => e2'&
-	print("\n Second rule of relation inst_eq_equation ") &
+  rule	Debug.print("\ninst_eq_equation (match e2) PROP, PROP") &
+	Static.match_prop(e2, p2, p1) => e2'&
+	Debug.print("\n Second rule of relation inst_eq_equation ") &
 	inst_eq_equation_2(e1, e2', t1) => dae &
-	print("\n Second rule complete. ") 
+	Debug.print("\n Second rule complete. ") 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
 			 e2,p2 as Static.PROP(t2,_))
@@ -1064,17 +1108,12 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 
 
 
-  rule	print "\n About to do a static match e1. " &
-	print ("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>") &
-	print ("\norginal exp in inst eq equation: ") &
-	Exp.print_exp (e1) &
+  rule	
+	Debug.print("\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE") &
+	(*Exp.print_exp (e1) & *)
 	Static.match_prop(e1, p1, p2) => e1' &
-	print ("\n Converted exp in inst eq equation: ") &
-	Exp.print_exp (e1') &
-	print("\n first rule of relation inst_eq_equation ") &
-	inst_eq_equation_2(e1', e2, t2) => dae & 
-	print ("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><") &
-	print("\n first rule complete. ") 
+	(*Exp.print_exp (e1') & *)
+	inst_eq_equation_2(e1', e2, t2) => dae 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
 			 e2,p2 as Static.PROP_TUPLE(t2,_))
@@ -1095,11 +1134,12 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 
 
 	(* PR. *)	
-  rule 	print "\n About to do a static match e2. " &
+  rule 	Debug.print("\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE") &
+	Debug.print "\n About to do a static match e2. " &
 	Static.match_prop(e2, p2, p1) => e2'&
-	print("\n Second rule of relation inst_eq_equation ") &
+	Debug.print("\n Second rule of relation inst_eq_equation ") &
 	inst_eq_equation_2(e1, e2', t1) => dae &
-	print("\n Second rule complete. ") 
+	Debug.print("\n Second rule complete. ") 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
 			 e2,p2 as Static.PROP_TUPLE(t2,_))
@@ -1114,6 +1154,26 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	----------
 	inst_eq_equation(e1,Static.PROP(t1,_),
 			 e2,Static.PROP(t2,_)) => fail
+
+
+(* PR To debug*)
+
+rule	Debug.print("\ne1 is PROP and e2 is PROP_TUPLE.  ")
+	----------
+	inst_eq_equation(e1,Static.PROP(t1,_),
+			 e2, Static.PROP_TUPLE(_,_)) => fail
+
+rule	Debug.print("e2 is PROP")
+	----------
+	inst_eq_equation(e1,_,
+			 e2,Static.PROP(t2,_)) => fail
+
+rule	Debug.print("e1 is PROP")
+	----------
+	inst_eq_equation(e1,Static.PROP(t1,_),
+			 e2, _) => fail
+
+
 
 
 (* No match. *)
@@ -1145,9 +1205,10 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	=> [DAE.EQUATION(e1,e2)]
 
   rule	RTOpts.split_arrays => true &
+	(* For debugging.
 	print "  Array equation: " &
 	Exp.print_exp e1 & print " = " &
-	Exp.print_exp e2 & print "\n" &
+	Exp.print_exp e2 & print "\n" & *)
 	inst_array_equation(e1,e2,ad,t) => dae
 	-----------------------------------------
 	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t)) => dae

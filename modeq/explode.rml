@@ -115,7 +115,7 @@ with "dump.rml"
  ** from it.
  **)
 
-relation elaborate: Absyn.Program => Program =
+relation elaborate : Absyn.Program => Program =
 
   axiom	elaborate([]) => []
 
@@ -133,7 +133,10 @@ end
 
 relation elab_class: Absyn.Class => Class =
 
-  rule	elab_classdef d => d'
+  rule	
+	print "before elab_classdef" &
+	elab_classdef d => d' &
+	print "after elab_classdef"
 	--------------------------------------------
 	elab_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
 
@@ -245,6 +248,7 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 
   rule	elab_elementspec(final,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
 	build_mod(m,false) => mod &
+	(* PR. This adds the arraydimension that may be specified together with the type of the component.  *)
 	list_append(d,ad) => tot_dim
 	--------------------------------------------------
 	elab_elementspec(final,prot,
@@ -279,6 +283,7 @@ end
  ** contains simple `if'-`else' constructs, and no `elseif'.
  **)
 
+(* PR Arrays seem to keep their absyn.rml structure. *)
 relation elab_equation : Absyn.Equation => Equation =
 
   axiom	elab_equation Absyn.EQ_EXPR(e) => EQ_EXPR(e)

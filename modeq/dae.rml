@@ -55,7 +55,7 @@ with "rtopts.rml"
  ** This relation prints the DAE in the standard output format.
  **)
 
-relation dump: DAElist => () =
+relation dump : DAElist => () =
 	
   rule	RTOpts.modelica_output => false &
 	print "fclass " & print n & print "\n" &

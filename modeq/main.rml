@@ -18,6 +18,7 @@ with "explode.rml"
 with "dae.rml"
 with "inst.rml"
 with "rtopts.rml"
+with "debug.rml"
 
 (** relation: translate_file
  **
@@ -27,18 +28,27 @@ with "rtopts.rml"
 
 relation translate_file : string list => () =
 
-  rule	print "Parsing\n" &
+  rule	(*print "Parsing\n" &
+*)	
 	Parser.parse f => p &
-	print "\n---------------The parsed program---------------\n" &
+
+	print "\n--------------- Parsed program ---------------\n" &
+	Debug.print "Some debug info testing.\n " &	
 	Dump.dump p &
-	print "\n------------------------------------------------------------ \n" &
-	print "elaborating\n" &
+
+(*	print "\n------------------------------------------------------------ \n" & *)
+(*	print "elaborating\n" &
+*)	
 	SCode.elaborate(p) => p' &
-	print "\n-------------------- Scode representation of program ---------------------- \n" &
+
+	print "\n-------------------- elaborated program ---------------------- \n" &
 	(*Dump.dump p' & *)
-	print "instantiating\n" &
-	Inst.instantiate(p') => d &
+	
+(*	print "instantiating\n" &
+*)	Inst.instantiate(p') => d &
+(*Debug.	print "\nJust instantiated" & *)
 	DAE.dump d
+
 	----------
 	translate_file [f]
 	

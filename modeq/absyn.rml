@@ -13,6 +13,7 @@
 
 
 module Absyn:
+  with "debug.rml"
 
   type Ident = string
 
@@ -150,7 +151,11 @@ module Absyn:
 	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
 	       | CALL of ComponentRef * Exp list
+(*	       | ARRAY of Exp list *)
+
+(*P.R		ARRAY consists of an vector of the dimension sizes and an vector consiting of the vector data.*)	
 	       | ARRAY of Exp list
+
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp
 	       | TUPLE of Exp list (*PR.*)
@@ -329,22 +334,22 @@ end
 
 (* PR. To debug. *)
 relation print_absyn_exp : Exp => () =
-  rule	print "This an array: " &
-	print "[" &
+  rule	Debug.print "This is an array: " &
+	Debug.print "[" &
 
-	print "]"
+	Debug.print "]"
 	---------
 	print_absyn_exp (ARRAY(es))
 
 	(*PR.*)
-  rule	print "(" &
+  rule	Debug.print "(" &
 
-	print ")"
+	Debug.print ")"
 	---------
 	print_absyn_exp (TUPLE(es))
 
 
-  rule	print "\nNo tuple." 
+  rule	Debug.print "\nNo tuple." 
 	---------
 	print_absyn_exp (_)
 

@@ -441,7 +441,7 @@ relation print_exp2 : (Exp,int) => () =
 	---------------------------------------
 	print_exp2 (ASUB(e,i),pri1)
 	
-  rule	print "#UNKNOWN EXPRESSION#"
+  rule	print "#UNKNOWN EXPRESSION# ----eee "
         ----------------------------------
 	print_exp2 (_,_)
 

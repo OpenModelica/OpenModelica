@@ -17,7 +17,8 @@ PROG	= modeq
 AST	= ast/libast.a
 RTOBJ   = runtime/rtopts.o
 
-SRCRML=	types.rml \
+SRCRML=	debug.rml \
+	types.rml \
 	absyn.rml \
 	explode.rml \
 	dump.rml \

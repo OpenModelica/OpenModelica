@@ -17,6 +17,7 @@
 module Dump:
 
   with "absyn.rml"
+  with "debug.rml"
 
   type Ident = string
 
@@ -32,8 +33,10 @@ module Dump:
   relation print_algorithm: Absyn.Algorithm => ()
   relation print_list : ('a list, 'a => (), string) => ()
   relation op_symbol : Absyn.Operator => string
-
 end
+
+
+
 
 (*!ignorecode*)
 
@@ -41,7 +44,7 @@ with "classinf.rml"
 
 (* Relations *)
 
-relation dump: Absyn.Program => () =
+relation dump : Absyn.Program => () =
 	
   axiom	dump [] => ()
 	
@@ -417,7 +420,7 @@ end
  * This relation prints a complete expression.
  *)
 
-relation print_exp: Absyn.Exp => () =
+relation print_exp : Absyn.Exp => () =
 	
   rule	int_string(x) => s & print s
 	----------------------------
@@ -482,7 +485,8 @@ relation print_exp: Absyn.Exp => () =
 	print_exp Absyn.ARRAY(es)
 
 	(* PR. *)
-  rule	print "(" &
+  rule	print "TUPLE" &
+	print "(" &
 	print_list(es, print_exp, ",") &
 	print ")"
 	---------
