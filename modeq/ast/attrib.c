@@ -93,6 +93,7 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(LPAR);		/* 31 */
   tokprinter(RPAR);		/* 32 */
   tokprinter(AND);		/* 40 */
+  tokprinter(CONNECT);
   tokprinter(EQUALS);		/* 49 */
   tokprinter(ASSIGN);		/* 50 */
   tokprinter(PLUS);		/* 51 */

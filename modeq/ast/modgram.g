@@ -110,6 +110,7 @@ extern void *sibling_list(AST *ast);
 #token TIME		"time"
 #token FALS		"false"
 #token TRU		"true"
+#token CONNECT		"connect"
 
 /* #token FORALL		"forall" */
 /* #token ENDFORALL	"endforall" */
@@ -481,16 +482,18 @@ algorithm_clause :
 	;
 
 equation : << bool is_assign = false; AST *top; >>
-	( lh:simple_expression << top = #lh; >>
-	  { ( a:ASSIGN^ << top = #a; >>
-	    | e:EQUALS^ << top = #e; >> )
-	    rh:expression << is_assign=true; >> }
-	  << 
-	     if(is_assign)
-	       top->rml = Absyn__EQ_5fEQUALS(#lh->rml, #rh->rml);
-	     else
-	       top->rml = Absyn__EQ_5fEXPR(#lh->rml);
-	  >>
+	CONNECT^ LPAR c1: component_reference "," c2:component_reference RPAR
+	  << #0->rml = Absyn__EQ_5fCONNECT(#c1->rml,#c2->rml); >>
+	| ( lh:simple_expression << top = #lh; >>
+	    { ( a:ASSIGN^ << top = #a; >>
+	      | e:EQUALS^ << top = #e; >> )
+	      rh:expression << is_assign=true; >> }
+	    << 
+	       if(is_assign)
+		 top->rml = Absyn__EQ_5fEQUALS(#lh->rml, #rh->rml);
+	       else
+		 top->rml = Absyn__EQ_5fEXPR(#lh->rml);
+	    >>
 	| conditional_equation
 	| for_clause
 	| while_clause )
