@@ -251,7 +251,7 @@ and dump_class_part: Absyn.ClassPart => () =
 		-----------------------------------------------
 		dump_class_part(Absyn.PUBLIC(el))
 
-	rule 	print "PROTECTED" & dump_elements(el) & print ")"
+	rule 	print "PROTECTED(" & dump_elements(el) & print ")"
 		---------------------------------------
 		dump_class_part(Absyn.PROTECTED(el))
 
