@@ -6,7 +6,7 @@
  **
  **)
 
-module StaticExp :
+module Static :
 
   with "absyn.rml"
   with "exp.rml"
@@ -18,15 +18,23 @@ module StaticExp :
 
   type Ident = string
 
-  relation elab_exp : (Env.Env,
-		       Absyn.Exp)           => (Exp.Exp, Types.Type, bool)
-  relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.Exp, Types.Type, bool)
+  (** - Expression properties *)
+  datatype Properties = PROP of Types.Type (* type *)
+			      * bool       (* constant *)
+  (** The datatype `Properties' contain information about an
+   ** expression.  The properties are created by analyzing the
+   ** expressions. *)
+
+
+  relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties)
+  relation elab_cref : (Env.Env, Absyn.ComponentRef) => (Exp.Exp, Properties)
+
   relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
   relation value_exp : Values.Value => Exp.Exp
 
+  relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
   relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 			 (Exp.Exp * Types.Type) list,
 			 Absyn.Exp)
@@ -42,19 +50,23 @@ with "dump.rml"
  ** - Expression elaboration
  **)
 
-relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
+relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
-  axiom	elab_exp(_, Absyn.INTEGER(x)) => (Exp.ICONST(x), Types.T_INTEGER,true)
-  axiom	elab_exp(_, Absyn.REAL(x))    => (Exp.RCONST(x), Types.T_REAL,   true)
-  axiom	elab_exp(_, Absyn.STRING(x))  => (Exp.SCONST(x), Types.T_STRING, true)
-  axiom	elab_exp(_, Absyn.BOOL(x))    => (Exp.BCONST(x), Types.T_BOOL,   true)
+  axiom	elab_exp(_, Absyn.INTEGER(x))
+	  => (Exp.ICONST(x), PROP(Types.T_INTEGER,true))
+  axiom	elab_exp(_, Absyn.REAL(x))
+	  => (Exp.RCONST(x), PROP(Types.T_REAL,   true))
+  axiom	elab_exp(_, Absyn.STRING(x))
+	  => (Exp.SCONST(x), PROP(Types.T_STRING, true))
+  axiom	elab_exp(_, Absyn.BOOL(x))
+	  => (Exp.BCONST(x), PROP(Types.T_BOOL,   true))
 
-  rule	elab_cref(env, cr) => (exp,t,c)
+  rule	elab_cref(env, cr) => (exp,prop)
 	---------------------------------------
-	elab_exp(env, Absyn.CREF(cr)) => (exp,t,c)
+	elab_exp(env, Absyn.CREF(cr)) => (exp,prop)
 
-  rule	elab_exp (env,e1) => (e1', t1, c1) &
-	elab_exp (env,e2) => (e2', t2, c2) &
+  rule	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
+	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
@@ -64,19 +76,20 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
 	Exp.print_exp Exp.BINARY(e1'',op',e2'') & print "\n"
 	-------------------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2))
-	  => (Exp.BINARY(e1'',op',e2''),rtype,c)
+	  => (Exp.BINARY(e1'',op',e2''),PROP(rtype,c))
 
-  rule	elab_exp (env,e) => (e',t,c) &
+  rule	elab_exp (env,e) => (e',PROP(t,c)) &
  	Exp.print_exp e' & print " (" & Types.print_type t & print ") => " &
 	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
 	print "  unary: " &
 	Exp.print_exp Exp.UNARY(op',e'') & print "\n"
 	---------------------------------------------
-	elab_exp (env,exp as Absyn.UNARY(op,e)) => (Exp.UNARY(op',e''),rtype,c)
+	elab_exp (env,exp as Absyn.UNARY(op,e))
+	  => (Exp.UNARY(op',e''),PROP(rtype,c))
 	
-  rule	elab_exp (env,e1) => (e1', t1, c1) &
-	elab_exp (env,e2) => (e2', t2, c2) &
+  rule	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
+	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
@@ -86,69 +99,70 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
 	Exp.print_exp Exp.LBINARY(e1'',op',e2'') & print "\n"
 	-------------------------------------------------------
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2))
-	  => (Exp.LBINARY(e1'',op',e2''),rtype,c)
+	  => (Exp.LBINARY(e1'',op',e2''),PROP(rtype,c))
 
-  rule	elab_exp (env,e) => (e',t,c) &
+  rule	elab_exp (env,e) => (e',PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
 	print "  lunary: " &
 	Exp.print_exp Exp.LUNARY(op',e'') & print "\n"
 	-----------------------
-	elab_exp (env,exp as Absyn.LUNARY(op,e)) => (Exp.LUNARY(op',e''),rtype,c)
+	elab_exp (env,exp as Absyn.LUNARY(op,e))
+	  => (Exp.LUNARY(op',e''),PROP(rtype,c))
 
-  rule	elab_exp (env,e1) => (e1', t1, c1) &
-	elab_exp (env,e2) => (e2', t2, c2) &
+  rule	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
+	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	----------------------------------------------
 	elab_exp (env,exp as Absyn.RELATION(e1,op,e2))
-	  => (Exp.RELATION(e1'',op',e2''),rtype,c)
+	  => (Exp.RELATION(e1'',op',e2''),PROP(rtype,c))
 
-  rule	elab_exp (env,e1) => (e1', t1, c1) &
-	elab_exp (env,e2) => (e2', t2, c2) &
-	elab_exp (env,e3) => (e3', t3, c3) &
-	elab_ifexp(e1',t1,c1,e2',t2,c2,e3',t3,c3) => (e,et,ec)
+  rule	elab_exp (env,e1) => (e1', prop1) &
+	elab_exp (env,e2) => (e2', prop2) &
+	elab_exp (env,e3) => (e3', prop3) &
+	elab_ifexp(e1',prop1,e2',prop2,e3',prop3) => (e,prop)
 	------------------------------------------------------
-	elab_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,et,ec)
+	elab_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,prop)
 
-  rule	elab_call(env,fn,args) => (e,t,c)
+  rule	elab_call(env,fn,args) => (e,prop)
 	-------------------------------------
-	elab_exp (env,Absyn.CALL(fn,args)) => (e,t,c)
+	elab_exp (env,Absyn.CALL(fn,args)) => (e,prop)
 
-  rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
-	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
+  rule	elab_exp (env, start) => (start', PROP(Types.T_INTEGER, c_start)) &
+	elab_exp (env, stop) => (stop', PROP(Types.T_INTEGER, c_stop)) &
 	bool_and (c_start, c_stop) => const &
 	elab_range_type (env,start',NONE,stop',const) => t
 	--------------------------------------------------
 	elab_exp (env, Absyn.RANGE(start, NONE, stop))
-	  => (Exp.RANGE(start',NONE,stop'), t, const)
+	  => (Exp.RANGE(start',NONE,stop'), PROP(t, const))
 
-  rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
-	elab_exp (env, step) => (step', Types.T_INTEGER, c_step) &
-	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
+  rule	elab_exp (env, start) => (start', PROP(Types.T_INTEGER, c_start)) &
+	elab_exp (env, step) => (step', PROP(Types.T_INTEGER, c_step)) &
+	elab_exp (env, stop) => (stop', PROP(Types.T_INTEGER, c_stop)) &
 	bool_and (c_start, c_step) => c1 &
 	bool_and (c1, c_stop) => const &
 	elab_range_type (env,start',SOME(step'),stop',const) => t
 	---------------------
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
-	  => (Exp.RANGE(start',SOME(step'),stop'), t, const)
+	  => (Exp.RANGE(start',SOME(step'),stop'), PROP(t, const))
 
-  rule	elab_array (env, es) => (es', t, const) & list_length es' => l
+  rule	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l
 	--------------------------------------------------------------
 	elab_exp (env, Absyn.ARRAY(es))
 	  => (Exp.ARRAY(es'),
-	      Types.T_ARRAY(Types.DIM(SOME(l),Types.NODIM), t),
-	      const)
+	      PROP(Types.T_ARRAY(Types.DIM(SOME(l),Types.NODIM), t),
+		   const))
 
   rule	elab_matrix (env, es) => (es', t, dim, const) & list_length es' => l
 	--------------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es))
 	  => (Exp.MATRIX(es'),
-	      Types.T_ARRAY(Types.DIM(SOME(l),
-				      Types.DIM(SOME(dim),
-						Types.NODIM)), t),
-	      const)
+	      PROP(Types.T_ARRAY(Types.DIM(SOME(l),
+					   Types.DIM(SOME(dim),
+						     Types.NODIM)), t),
+		   const))
 
   rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
 	---------------------------------------------------------
@@ -186,22 +200,22 @@ end
 (**)
 
 relation elab_array : (Env.Env, Absyn.Exp list)
-	  => (Exp.Exp list, Types.Type, bool) =
+	  => (Exp.Exp list, Properties) =
 
 	(* FIXME: Should we handle empty arrays? *)
-  rule	elab_exp (env,e) => (e',t,c)
+  rule	elab_exp (env,e) => (e',prop)
 	-----------------------------
-	elab_array (env,[e]) => ([e'],t,c)
+	elab_array (env,[e]) => ([e'],prop)
 
-  rule	elab_exp (env,e) => (e',t1,c1) &
-	elab_array (env,es) => (es',t2,c2) &
+  rule	elab_exp (env,e) => (e',PROP(t1,c1)) &
+	elab_array (env,es) => (es',PROP(t2,c2)) &
 	t1 = t2 &
 	bool_and (c1,c2) => c
 	---------------------------------
-	elab_array (env,e::es) => (e'::es',t1,c)
+	elab_array (env,e::es) => (e'::es',PROP(t1,c))
 
-  rule	elab_exp (env,e) => (e',t1,c1) &
-	elab_array (env,es) => (es',t2,c2) &
+  rule	elab_exp (env,e) => (e',PROP(t1,c1)) &
+	elab_array (env,es) => (es',PROP(t2,c2)) &
 	not t1 = t2 &
 	print "# Incompatible types in array expression\n" &
 	print "  " & Dump.print_exp e & print " is of type " &
@@ -223,12 +237,12 @@ relation elab_matrix : (Env.Env, Absyn.Exp list list)
 	=> (Exp.Exp list list, Types.Type, int, bool) =
 
   rule	list_length(el) => dim &
-	elab_array(env,el) => (el', t, c)
+	elab_array(env,el) => (el', PROP(t, c))
 	---------------------------------
 	elab_matrix(env,[el]) => ([el'], t, dim, c)
 
   rule	list_length(el) => dim1 &
-	elab_array(env,el) => (el',t1,c1) &
+	elab_array(env,el) => (el',PROP(t1,c1)) &
 	elab_matrix(env,els) => (els',t2,dim2,c2) &
 	t1 = t2 & dim1 = dim2 &
 	bool_and(c1,c2) => c
@@ -241,7 +255,7 @@ relation elab_matrix : (Env.Env, Absyn.Exp list list)
 	-------------------------------------------------------
 	elab_matrix(_,[]) => fail
 
-  rule	elab_array(env,el) => (el',t1,c1) &
+  rule	elab_array(env,el) => (el',PROP(t1,c1)) &
 	elab_matrix(env,els) => (els',t2,dim2,c2) &
 	not t1 = t2 &
 	print "# Incompatible types in matrix rows\n" &
@@ -267,15 +281,19 @@ relation elab_matrix : (Env.Env, Absyn.Exp list list)
 end
 
 (** relation: elab_call
+ **
+ ** This relation elaborates on a function call.  It converts the name
+ ** to a `Path', and used the `elab_call_args' to do the rest of the
+ ** work.
  **)
 
 relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
-	=> (Exp.Exp, Types.Type, bool) =
+	=> (Exp.Exp, Properties) =
 
   rule	Absyn.cref_to_path fn => fn' &
-	elab_call2 (env,fn',args) => (e,t,c)
+	elab_call_args (env,fn',args) => (e,prop)
 	------------------------------------
-	elab_call (env,fn,args) => (e,t,c)
+	elab_call (env,fn,args) => (e,prop)
 
   rule	print "# Invalid function name: " &
 	Dump.print_component_ref fn & print "\n"
@@ -284,40 +302,114 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
 
 end
 
-(**)
+(** relation: elab_call_args
+ **
+ ** Given the name of a function and a list of expressions to be used
+ ** as actual arguments in a function call to that function, this
+ ** relation finds the function definition and matches the actual
+ ** arguments to the formal parameters.
+ **)
 
-relation elab_call2 : (Env.Env, Absyn.Path, Absyn.Exp list)
-	=> (Exp.Exp, Types.Type, bool) =
+relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
+	=> (Exp.Exp, Properties) =
 
+(*
   rule	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) &
 	print "   function " & Dump.print_path fn & print " is " &
 	Types.print_type t & print "\n" &
 	elab_call_args(env,args,params) => (args',c)
 	-------------------------------------
-	elab_call2 (env,fn,args) => (Exp.CALL(fn,args'), restype, c)
+	elab_call2 (env,fn,args) => (Exp.CALL(fn,args'), PROP(restype, c))
+*)
 
-  rule	print "# Couldn't find function " & Dump.print_path fn & print "\n"
+  rule	Lookup.lookup_class(env,fn) => fcl &
+	Lots of work neede here (t as Types.T_COMPLEX(st,vl)) &
+	ClassInf.valid(st, Absyn.R_FUNCTION) &
+	function_params(vl) => (in,out as [Types.VAR(_,_,rt,_)]) &
+	elab_input_args(env, args, in) => args'
+	(** FIXME: calculate properties *)
+	----------------------------------
+	elab_call_args(env,fn,args) => (Exp.CALL(fn,args'), PROP(rt, false))
+
+  rule	not Lookup.lookup_type(env,fn) => _ &
+	print "# Couldn't find function " & Dump.print_path fn & print "\n"
 	-------------------------------------------------------------------
-	elab_call2 (_,fn,_) => fail
+	elab_call_args(env,fn,_) => fail
+
+  rule	print "- elab_call_args failed\n"
+	---------------------------------
+	elab_call_args(_,_,_) => fail
+
+end
+
+(** relation: function_params
+ **
+ ** A function definition is just a class definition where all public
+ ** components are declared as either `input' or `output'.  This
+ ** relation find all those components and separates them into two
+ ** separate lists.
+ **)
+
+relation function_params : Types.Var list => (Types.Var list, Types.Var list) =
+
+  axiom	function_params [] => ([],[])
+
+  rule	function_params vs => (in, out)
+	------------------------------
+	function_params ((v as Types.VAR(_,Absyn.ATTR(_,_,_,Absyn.INPUT),
+					 _,_))::vs)
+	  => (v::in, out)
+
+  rule	function_params vs => (in, out)
+	------------------------------
+	function_params ((v as Types.VAR(_,Absyn.ATTR(_,_,_,Absyn.OUTPUT),
+					 _,_))::vs)
+	  => (in, v::out)
+
+  rule	print "- function_params failed\n"
+	----------------------------------
+	function_params _ => fail
+
+end
+
+(** relation: elab_input_args
+ **
+ ** This relation elaborates on a number of expressions and matches
+ ** them to a number of `Types.Var' object, applying type conversions
+ ** on the expressions when necessary to match the type of the
+ ** `Types.Var'.
+ **)
+
+relation elab_input_args : (Env.Env, Absyn.Exp list, Types.Var list)
+	  => Exp.Exp list =
+
+  axiom	elab_input_args(_, [], []) => []
+
+  rule	elab_exp(env, e) => (e',PROP(t,_)) &
+	match_type(e', t, vt) => e'' &
+	elab_input_args(env, es, vs) => args'
+	-------------------------------------
+	elab_input_args(env, e::es, Types.VAR(_,_,vt,_)::vs) => e''::args'
 
 end
 
 (**)
 
+(*
 relation elab_call_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
 	  => (Exp.Exp list, bool) =
 
   axiom	elab_call_args (env,[],[]) => ([],true)
 
-  rule	elab_exp (env,arg) => (arg',t1,c1) &
-	elab_arg (pt,arg',t1) => arg'' &
+  rule	elab_exp (env,arg) => (arg',PROP(t1,c1)) &
+	match_type(arg',t1,pt) => arg'' &
 	elab_call_args (env,args,params) => (args',c2) &
 	bool_and (c1,c2) => c
 	---------------------------------
 	elab_call_args (env,arg::args,(pn,pt)::params) => (arg''::args',c)
 
-  rule	elab_exp (env,arg) => (arg',t1,c1) &
-	not elab_arg (pt,arg',t1) => arg'' &
+  rule	elab_exp (env,arg) => (arg',PROP(t1,c1)) &
+	not match_type(arg',t1,pt) => arg'' &
 	print "# Incompatible type of function argument: " &
 	Exp.print_exp arg' & print "\n"
 	-------------------------------
@@ -336,6 +428,7 @@ relation elab_call_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
 	elab_call_args(_,_,_) => fail
 
 end
+*)
 
 (** relation: elab_cref
  **
@@ -345,8 +438,7 @@ end
  ** equation binding with a constant expression.
  **)
 
-relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.Exp, Types.Type, bool) =
+relation elab_cref : (Env.Env, Absyn.ComponentRef) => (Exp.Exp, Properties) =
 
   rule	print "    elab_cref " & Dump.print_component_ref c & print "\n" &
 	elab_cref_subs (env,c) => (c', const) &
@@ -360,7 +452,7 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	print "    elab_cref " & Dump.print_component_ref c &
 	print " => " & print " (" & Types.print_type t' & print ")\n"
 	-------------------------
-	elab_cref(env, c) => (exp, t', const)
+	elab_cref(env, c) => (exp, PROP(t', const))
 
   rule	print "- elab_cref failed\n"
 	------------------------------
@@ -449,7 +541,7 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
   axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.NOSUB, true)
 
-  rule	elab_exp (env,sub) => (sub', ty, const) &
+  rule	elab_exp (env,sub) => (sub', PROP(ty, const)) &
 	elab_subscript_type (ty, sub, sub') => sub''
 	--------------------------------------------
 	elab_subscript (env,Absyn.SUBSCRIPT(sub)) => (sub'', const)
@@ -542,36 +634,38 @@ end
 
 (** relation: elab_ifexp *)
 
-relation elab_ifexp : (Exp.Exp, Types.Type, bool,
-		       Exp.Exp, Types.Type, bool,
-		       Exp.Exp, Types.Type, bool)
-	  => (Exp.Exp, Types.Type, bool) =
+relation elab_ifexp : (Exp.Exp, Properties,
+		       Exp.Exp, Properties,
+		       Exp.Exp, Properties)
+	  => (Exp.Exp, Properties) =
 
-  rule	Types.same_type(t2,t3) => true &
+  rule	Types.equivtypes(t2,t3) => true &
 	const_ifexp(e1,c1,c2,c3) => c
 	-----------------------------
-	elab_ifexp(e1,Types.T_BOOL,c1,
-		   e2,t2,c2,e3,t3,c3) => (Exp.IFEXP(e1,e2,e3), t2, c)
+	elab_ifexp(e1,PROP(Types.T_BOOL,c1),
+		   e2,PROP(t2,c2),
+		   e3,PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3), PROP(t2, c))
 
   rule	not t1 = Types.T_BOOL &
 	print "# conditional in if expression has to be boolean\n" &
 	print "    got type: " & Types.print_type t1 & print "\n" &
 	print "    expression: " & Exp.print_exp e1 & print "\n"
 	--------------------------------------------------------
-	elab_ifexp(e1,t1,c1,e2,t2,c2,e3,t3,c3) => fail
+	elab_ifexp(e1,PROP(t1,c1),e2,PROP(t2,c2),e3,PROP(t3,c3)) => fail
 
-  rule	Types.same_type(t2,t3) => false &
+  rule	Types.equivtypes(t2,t3) => false &
 	print "# Type mismatch in if-expression\n" &
 	print "    true branch : " & Exp.print_exp e2 &
  	print " :: " & Types.print_type t2 & print "\n" &
 	print "    false branch: " & Exp.print_exp e3 &
  	print " :: " & Types.print_type t3 & print "\n"
 	-----------------------------------------------
-	elab_ifexp(e1,Types.T_BOOL,c1,e2,t2,c2,e3,t3,c3) => fail
+	elab_ifexp(e1,PROP(Types.T_BOOL,c1),
+		   e2,PROP(t2,c2),e3,PROP(t3,c3)) => fail
 
   rule	print "- elab_ifexp failed\n"
 	-----------------------------
-	elab_ifexp(_,_,_,_,_,_,_,_,_) => fail
+	elab_ifexp(_,_,_,_,_,_) => fail
 
 end
 
@@ -1065,31 +1159,63 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 
   axiom	elab_arglist ([],[]) => []
 
-  rule	elab_arg (pt,arg,atype) => arg' &
+  rule	match_type(arg, atype, pt) => arg' &
 	elab_arglist (pts, args) => args'
 	---------------------------------
 	elab_arglist (pt::pts, (arg, atype)::args) => arg'::args'
 
 end
 
-(** relation: elab_arg
+(** relation: match_prop
  **
- ** This is the relation that takes care of the type conversions.  All
- ** type conversion rules are described in this relation.
+ ** This is basically a wrapper aroune `match_type'.  It matches an
+ ** expression with properties with another set of properties.  If
+ ** necessary, the expression is modified to match.  The only relevant
+ ** property is the type.
  **
- ** The first argument is the expected type.  The second and third
- ** arguments are the given expression and its type, respectively.
- ** When a type case is required, an `Exp.CAST()' is wrapped around
- ** the expressions.
+ ** FIXME: This could check the variability also, but it might need to
+ different things in different places.
  **)
 
-relation elab_arg : (Types.Type, Exp.Exp, Types.Type) => Exp.Exp =
+relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
 
-  axiom	elab_arg(Types.T_REAL,e,Types.T_INTEGER) => Exp.CAST(Exp.REAL,e)
+  rule	match_type(e, gt, et) => e'
+	---------------------------
+	match_prop(e, PROP(gt,_), PROP(et,_)) => e'
 
-  rule	Types.same_type(t1,t2) => true
-	------------------------------
-	elab_arg(t1,e,t2) => e
+end
+
+(** relation: match_type
+ **
+ ** This relation matches an expression with an expected type, and
+ ** converts the expression to the expected type if necessary.
+ **)
+
+relation match_type : (Exp.Exp, Types.Type, Types.Type) => Exp.Exp =
+
+  rule	Types.subtype(e_type, expected_type) => true
+	--------------------------------------------
+	match_type(e, e_type, expected_type) => e
+
+  rule	Types.subtype(e_type, expected_type) => false &
+	type_convert(e, e_type, expected_type) => e'
+	--------------------------------------------
+	match_type(e, e_type, expected_type) => e'
+
+end
+
+(** relation: type_convert
+ **
+ ** This relations converts the expression in the first argument to
+ ** the type specified in the third argument.  The current type of the
+ ** expression is given in the second argument.
+ **
+ ** If no type conversion is possible, this relation fails.
+ **)
+
+relation type_convert : (Exp.Exp, Types.Type, Types.Type) => Exp.Exp =
+
+  axiom	type_convert(e, Types.T_INTEGER, Types.T_REAL) => Exp.CAST(Exp.REAL,e)
 
 end
 
