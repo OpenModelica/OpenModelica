@@ -99,7 +99,7 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
   rule	lookup_class_in_env(env,path) => (c, env') 
 	--------------------------------------
-	lookup_class(env, path as Absyn.IDENT(_)) => (c, env')
+	lookup_class(env, path as Absyn.IDENT(name)) => (c, env')
 
   rule	lookup_qualified_imported_class_in_env(env,env,path) => (c, env')
 	----------------------------------------------------------
@@ -113,8 +113,6 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 	Env.open_scope(env') => env2 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) => (_,env'',_,_,_) &
-	Print.print_buf "instantiated package, env:" &
-	Env.print_env env'' &
 	lookup_class_in_class(env'',c,path) => (c',env''') 
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path)) => (c', env''')
@@ -704,7 +702,7 @@ relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
   rule	lookup_class_in_frame(fs,id) => (c, env)
 	------------------------------
 	lookup_class_in_frame(_::fs,id) => (c, env)
-
+	
 end
 (**)
 relation lookup_package_class : (Env.Env, string, Absyn.Path)

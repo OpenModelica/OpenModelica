@@ -29,6 +29,10 @@ RML_BEGIN_LABEL(Parser__parse)
   try 
     {
       std::ifstream stream(filename);
+      
+      if (!stream) {
+	RML_TAILCALLK(rmlFC);
+      }
 
       modelica_lexer lex(stream);
       modelica_parser parse(lex);

@@ -21,13 +21,14 @@ RML_BEGIN_LABEL(Print__print_5fbuf)
   char* str = RML_STRINGDATA(rmlA0);
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
   
-  while (strlen(str)+1 > cursize-nfilled) {
+  assert(str != NULL);
+  while (nfilled + strlen(str)+1 > cursize) {
     increase_buffer();
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
   }
 
   sprintf((char*)(buf+strlen(buf)),"%s",str);
-  nfilled+=strlen(buf);
+  nfilled=strlen(buf);
 
   /*  printf("%s",str);*/
 
@@ -48,6 +49,10 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__get_5fstring)
 {
+  if (buf == 0) {
+    increase_buffer();
+  }
+
   rmlA0=(void*)mk_scon(buf);
   RML_TAILCALLK(rmlSC);
 }
@@ -83,6 +88,7 @@ void increase_buffer(void)
   if (cursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE);
     assert(new_buf != NULL);
+    new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
     new_buf = (char*)malloc(new_size =(int) (cursize * GROWTH_FACTOR));

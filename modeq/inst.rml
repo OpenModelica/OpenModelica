@@ -197,18 +197,13 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 	instantiate_class(cdecls, path as Absyn.IDENT(name2)) => DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))])
 
   rule	Builtin.initial_env => env &
-	print "initial env built\n" &
 	inst_class_decls(env,cdecls,path)=> (env',_) &
-	print "class decls instanitated\n" &
-	Env.print_env env' &
-	Print.get_string() => str &
-	print str &
 	Lookup.lookup_class(env',path) => (cdef, env'') &
-	print "class looked up\n" &
-	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) => (dae,_,_,_) 
+	inst_class(env'',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) => (dae,_,_,_) &
+	Absyn.path_string path => pathstr
 	--------------------------------------------
 	instantiate_class(cdecls, path as Absyn.QUALIFIED(name,_)) 
-	  => DAE.DAE([DAE.COMP(name,DAE.DAE(dae))])
+	  => DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))])
 	
 
   rule	Print.print_buf "- instantiate_class failed\n" &
@@ -250,13 +245,22 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 	-----------------------------
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.IDENT(name2)) => (env',dae2)
 
-  rule	print "empty program\n" 
-	------------------------
-	inst_class_decls(env,[],_) => (env,[])
+  rule	name = name2 &      
+	(* How should be do here ??? *)
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	inst_class_decls(env',cs,ref) => (env'', dae2) &
+	list_append(dae1,dae2) => dae  
+	-----------------------------
+	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
+
+
+axiom	inst_class_decls(env,[],_) => (env,[])
 	
-  rule	print "inst_class_decls failed\n" 
+  rule	print "inst_class_decls failed\n ref =" &
+	Absyn.path_string ref => str &
+	print str & print "\n" 
 	--------------------
-	inst_class_decls(_,_,_) => fail
+	inst_class_decls(_,_,ref) => fail
 end
 
 (** relation: make_env_from_program

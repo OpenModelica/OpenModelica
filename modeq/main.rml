@@ -144,6 +144,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
   rule	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => exp &
 	Interactive.evaluate(exp,isymb) => (resultstr,newisymb) &
+	Print.clear_buf()  &
 	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
 	Debug.fcall ("dump", Dump.dump_istmt, exp)
 	--------------------------------------------------
