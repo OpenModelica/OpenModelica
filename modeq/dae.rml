@@ -52,8 +52,11 @@ module DAE:
 (* LS: Removed VARVAL completely, and added Exp.Exp as an option to VAR *)
   datatype Element = VAR of Exp.ComponentRef * VarKind * VarDirection * Type * Exp.Exp option * InstDims
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
+		   | INITIALDEFINE of Exp.ComponentRef * Exp.Exp
 		   | EQUATION of Exp.Exp * Exp.Exp
+		   | INITIALEQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
+		   | INITIALALGORITHM of Algorithm.Algorithm
 		   | COMP of Ident * DAElist
 		   | FUNCTION of Absyn.Path * DAElist * Types.Type
 		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * Absyn.ExternalDecl
@@ -140,13 +143,21 @@ relation dump2: DAElist => () =
 	dump2 (DAE(xs))
 	-------------------
 	dump2 DAE(VAR(cr,_,_,_,NONE,_)::xs)
+
   rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	---------
 	dump2 DAE(DEFINE(cr,_)::xs)
-	
+
+  rule	Print.print_buf "INITIALDEFINE(" &
+	Exp.print_component_ref cr &
+	Print.print_buf ")\n" &
+	dump2 (DAE(xs))
+	---------
+	dump2 DAE(INITIALDEFINE(cr,_)::xs)
+
   rule	Print.print_buf "EQUATION(" &
 	Exp.print_exp e1 &
 	Print.print_buf " = " &
@@ -155,11 +166,25 @@ relation dump2: DAElist => () =
 	dump2( DAE(xs))
 	---------
 	dump2 DAE(EQUATION(e1,e2)::xs)
+	
+  rule	Print.print_buf "INITIALEQUATION(" &
+	Exp.print_exp e1 &
+	Print.print_buf " = " &
+	Exp.print_exp e2 &
+	Print.print_buf ")\n" &
+	dump2( DAE(xs))
+	---------
+	dump2 DAE(INITIALEQUATION(e1,e2)::xs)
 
   rule	Print.print_buf "ALGORITHM(...)" &
 	dump2 (DAE(xs))
 	------------
 	dump2 (DAE(ALGORITHM(_)::xs))
+
+  rule	Print.print_buf "INITIALALGORITHM(...)" &
+	dump2 (DAE(xs))
+	------------
+	dump2 (DAE(INITIALALGORITHM(_)::xs))
 
   rule	Print.print_buf "COMP(" &
 	Print.print_buf ident &
@@ -191,7 +216,7 @@ relation dump2: DAElist => () =
 	---------------------
 	dump2 (_)
 end
-	
+
 (** relation: dump_str
  ** 
  ** This relation prints the DAE to a string.
@@ -274,8 +299,11 @@ end
 relation dump_elements : Element list => () =
 
   rule	dump_vars l &
+	Print.print_buf "initial equation\n" &
+	dump_list (l, dump_initialequation) &
 	Print.print_buf "equation\n" &
 	dump_list (l, dump_equation) &
+	dump_list (l, dump_initialalgorithm) & 
 	dump_list (l, dump_algorithm) & 
 	dump_list (l, dump_comp_element)
 	-----------------
@@ -286,11 +314,16 @@ end
 relation dump_elements_str : Element list => string =
 
   rule	dump_vars_str l => s1 &
-	string_append(s1,"equation\n") => s2 &
-	dump_equations_str(l) => s3 &
+	string_append(s1,"initial equation\n") => s2 &
+	dump_initialequations_str(l) => s3 &
 	string_append(s2,s3) => s4 &
-	dump_algorithms_str(l) => s5 &
-	string_append(s4,s5) => str
+	string_append(s4,"equation\n") => s5 &
+	dump_equations_str(l) => s6 &
+	string_append(s5,s6) => s7 &
+	dump_initialalgorithms_str(l) => s8 &
+	string_append(s7,s8) => s9 &
+	dump_algorithms_str(l) => s10 &
+	string_append(s9,s10) => str
 	---------------------------
 	dump_elements_str l => str
 
@@ -310,6 +343,24 @@ relation dump_algorithms_str: Element list => string =
 	dump_algorithms_str(_::xs) => str
 	
   axiom dump_algorithms_str([])  => ""
+
+end
+
+relation dump_initialalgorithms_str: Element list => string = 
+	
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("algorithm\n",s1) => s2 &
+	dump_initialalgorithms_str(xs) => s3 &
+	string_append(s1,s3) => str
+	--------------------------------------
+	dump_initialalgorithms_str (INITIALALGORITHM(Algorithm.ALGORITHM(stmts))::xs) => str
+
+  rule	dump_initialalgorithms_str(xs) => str
+	------------------------------
+	dump_initialalgorithms_str(_::xs) => str
+	
+  axiom dump_initialalgorithms_str([])  => ""
+
 end
 
 relation dump_equations_str: Element list => string =
@@ -340,7 +391,40 @@ relation dump_equations_str: Element list => string =
 	-----------------------------
 	dump_equations_str(_::xs) => str
 	
-	axiom dump_equations_str([]) => ""
+  axiom dump_equations_str([]) => ""
+
+end
+
+relation dump_initialequations_str: Element list => string =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," = ") => s3 &
+	Exp.print_exp_str e2  => s4 &
+	string_append(s3,s4) => s4' &
+	string_append(s4',";\n") => s5 &
+	dump_equations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_initialequations_str( INITIALEQUATION(e1,e2)::xs) => str
+	
+  rule	Exp.print_component_ref_str c => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," := ") => s3 &
+	Exp.print_exp_str e  => s4 &
+	string_append(s3,s4) => s4' &
+	string_append(s4',";\n") => s5 &
+	dump_initialequations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_initialequations_str( INITIALDEFINE(c,e)::xs) => str
+
+  rule	dump_initialequations_str(xs) => str
+	-----------------------------
+	dump_initialequations_str(_::xs) => str
+	
+  axiom dump_initialequations_str([]) => ""
+
 end
 
 
@@ -537,6 +621,22 @@ relation dump_equation : Element => () =
 
 end
 
+relation dump_initialequation : Element => () =
+	
+  rule	Print.print_buf "  " & Exp.print_exp e1 &
+	Print.print_buf " = " & Exp.print_exp e2 & Print.print_buf ";\n"
+	--------------------------------------
+	dump_initialequation(INITIALEQUATION(e1, e2))
+	
+  rule	Print.print_buf "  " & Exp.print_component_ref c &
+	Print.print_buf " ::= " & Exp.print_exp e & Print.print_buf ";\n"
+	--------------------------------------
+	dump_initialequation(INITIALDEFINE(c, e))
+	
+  axiom	dump_initialequation _
+
+end
+
 relation dump_equation_str : Element => string =
 	
   rule	
@@ -573,6 +673,17 @@ relation dump_algorithm : Element => () =
 
 end
 
+relation dump_initialalgorithm : Element => () =
+
+  rule	Print.print_buf "initial algorithm\n" &
+	Dump.print_list(stmts, pp_statement, "")
+	----------------------------------------------
+	dump_initialalgorithm INITIALALGORITHM(Algorithm.ALGORITHM(stmts))
+
+  axiom	dump_initialalgorithm _
+
+end
+
 relation dump_algorithm_str : Element => string =
 
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -581,6 +692,18 @@ relation dump_algorithm_str : Element => string =
 	dump_algorithm_str ALGORITHM(Algorithm.ALGORITHM(stmts)) => str
 
   axiom	dump_algorithm_str _ => ""
+
+end
+
+
+relation dump_initialalgorithm_str : Element => string =
+
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("initial algorithm\n",s1) => str
+	----------------------------------------------
+	dump_initialalgorithm_str INITIALALGORITHM(Algorithm.ALGORITHM(stmts)) => str
+
+  axiom	dump_initialalgorithm_str _ => ""
 
 end
 
@@ -1015,6 +1138,14 @@ relation dump_debug_element : Element => () =
 	----------------
 	dump_debug_element DEFINE(cr,exp)
 
+  rule	Print.print_buf "INITIALDEFINE(" &
+	Exp.print_component_ref cr &
+	Print.print_buf ", " &
+	Exp.print_exp exp &
+	Print.print_buf ")"
+	----------------
+	dump_debug_element INITIALDEFINE(cr,exp)
+
   rule	Print.print_buf "EQUATION(" &
 	Exp.print_exp e1 &
 	Print.print_buf "," &
@@ -1023,9 +1154,21 @@ relation dump_debug_element : Element => () =
 	------------------
 	dump_debug_element EQUATION(e1,e2)
 
+  rule	Print.print_buf "INITIALEQUATION(" &
+	Exp.print_exp e1 &
+	Print.print_buf "," &
+	Exp.print_exp e2 &
+	Print.print_buf ")"
+	------------------
+	dump_debug_element INITIALEQUATION(e1,e2)
+
   rule	Print.print_buf "ALGORITHM()"
 	-------------------
 	dump_debug_element ALGORITHM(_)
+
+  rule	Print.print_buf "INITIALALGORITHM()"
+	-------------------
+	dump_debug_element INITIALALGORITHM(_)
 
   rule	Print.print_buf "COMP(" & Print.print_buf n & Print.print_buf "," &
 	dump_debug (l) &
@@ -1041,6 +1184,10 @@ relation dump_debug_element : Element => () =
 	Print.print_buf ")"
 	--------------------------------------
 	dump_debug_element FUNCTION(fpath,l,t)
+
+  rule	Print.print_buf "UNKNOWN "
+	---------------------------
+	dump_debug_element _
 
 end
 
@@ -1184,6 +1331,19 @@ relation build_gr_element : Element => Graphviz.Node =
 	build_gr_element EQUATION(e1,e2) => Graphviz.LNODE("EQUATION",[e1str,"=",e2str],[],[])
 
   axiom	build_gr_element ALGORITHM(_) => Graphviz.NODE("ALGORITHM",[],[])
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	print_exp_str_special exp => expstr &
+	string_append ("= ", expstr) => expstr'
+	---------------------------------------
+	build_gr_element INITIALDEFINE(cr,exp) => Graphviz.LNODE("INITIALDEFINE",[crstr,expstr'],[],[])
+
+  rule	print_exp_str_special e1 => e1str &
+	print_exp_str_special e2 => e2str
+	---------------------------------------
+	build_gr_element INITIALEQUATION(e1,e2) => Graphviz.LNODE("INITIALEQUATION",[e1str,"=",e2str],[],[])
+
+  axiom	build_gr_element INITIALALGORITHM(_) => Graphviz.NODE("INITIALALGORITHM",[],[])
 
   rule	build_graphviz dae => node
 	---------------------------------------
