@@ -1,9 +1,9 @@
-(* inst.rml *)
+(** file: inst.rml
+ **
+ ** This module exports only one relation. *)
 
 module Inst:
 
-  with "exp.rml"
-  with "absyn.rml"
   with "explode.rml"
   with "dae.rml"
 
@@ -11,6 +11,10 @@ module Inst:
 
 end
 
+(** Other modules used by this module *)
+
+with "exp.rml"
+with "absyn.rml"
 with "prefix.rml"
 with "env.rml"
 with "lookup.rml"
@@ -22,89 +26,491 @@ with "connect.rml"
 with "classinf.rml"
 with "staticexp.rml"
 
-(* These make the code a little more readable *)
+(** These type aliases are introduced to make the code a little more *)
+(** readable. FIXME: maybe they should be removed? *)
+
 type Prefix = Prefix.Prefix
 type Mod = Mod.Mod
 type Ident = Exp.Ident
 type Env = Env.Env
 
 
-(**********************************************************************)
+(** relation: instantiate
+ ** purpose:  Instantiate a Modelica program
+ **
+ ** To instantiate a Modelica program, an initial environment is
+ ** built, containing the predefined types. Then the program is
+ ** instantiated by the relation `inst_program'
+ **)
 
-relation assert : (bool, bool, string) => () =
+relation instantiate: Explode.Program => DAE.DAEform =
 
-  rule  x = y
-	-----
-	assert(x,y,_)
-
-  rule  not x = y &
-	print "# " & print m & print "\n"
-	--------------------------------------
-	assert(x,y,m)
-
-end
-
-relation optional_cons : ('a option, 'a list) => 'a list =
-
-  axiom optional_cons(NONE, l) => l
-
-  axiom optional_cons(SOME(x), l) => x::l
+  rule	Builtin.initial_env => env &
+	inst_program(env,p) => l
+	-----------------------------
+	instantiate(p) => DAE.DAE(l)
 
 end
 
-(**********************************************************************)
+(** relation: inst_program
+ ** purpose:  Instantiate a Modelica program using a provided environment.
+ **
+ ** Instantiating a Modelica program is the same as instantiating the
+ ** last class definition in the source file. First all the class
+ ** definitions is added to the environment without modifications, and
+ ** then the last class is instantiated in the relation `inst_class'
+ **)
 
-relation inst_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		      (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		       'a) => ('b list, Env, Connect.Sets, ClassInf.State),
-		      'a list)
-	  => ('b list, Env, Connect.Sets, ClassInf.State) =
+relation inst_program : (Env, Explode.Program) => DAE.DAEcomp list =
 
-  axiom inst_list(env,mod,pre,csets,ci_state,r,[]) => ([],env,csets,ci_state)
+  rule	print "Empty program\n"
+	------------------------------
+	inst_program(env,[]) => fail
 
-  rule	r(env,mod,pre,csets,ci_state,e) => (l,env',csets',ci_state') &
-	inst_list(env',mod,pre,csets',ci_state',r,es)
-	  => (l',env'',csets'',ci_state'') &
-	list_append(l,l') => l''
-	--------------------------------------------
-	inst_list(env,mod,pre,csets,ci_state,r,e::es)
-	  => (l'',env'',csets'',ci_state'')
+  rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
+	inst_class(env',Mod.NOMOD,[],[],c) => (dae,csets,_,_)
+	-----------------------------
+	inst_program(env,[c]) => dae
 
-end
-
-relation connect_vars : (Connect.Sets,
-			 Exp.ComponentRef, Connect.Face,
-			 Exp.ComponentRef, Connect.Face,
-			 Types.Var list) => Connect.Sets =
-
-  axiom	connect_vars(sets,_,_,_,_,[]) => sets
-
-  rule	Exp.extend_cref(c1, n, []) => c1' &
-	Exp.extend_cref(c2, n, []) => c2' &
-	(* print "  connect_vars: " &
-	 * Dump.dump_component_ref c1' & print " <-> " &
-	 * Dump.dump_component_ref c2' &
-	 * print "\n" & *)
-	connect_components(sets,[], c1',f1, c2',f2, ty, flow) => sets' &
-	connect_vars(sets',c1,f1,c2,f2,xs) => sets''
-	--------------------------------------
-	connect_vars(sets,c1,f1,c2,f2,(n,Types.ATTR(_,flow,_,_),ty)::xs)
-	  => sets''
+  rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
+	inst_program(env',cs) => l
+	----------------------
+	inst_program(env,c::cs) => l
 
 end
 
-relation component_face : Exp.ComponentRef => Connect.Face =
+(** relation: inst_class
+ ** purpose:  Instantiate a complete class definition.
+ **
+ ** Instantiating a class consists of the following steps:
+ **
+ **  o Create a new frame on the environment
+ **  o Initialize the class inference state machine
+ **  o Instantiate all the elements and equations
+ **  o Generate equations from the connection sets built during
+ **    instantiation
+ **)
 
-  axiom component_face (c as [_,_]) => Connect.INNER
+relation inst_class: (Env, Mod, Prefix, Connect.Sets, Explode.Class)
+	  => (DAE.DAEcomp list, Connect.Sets, Types.Type, ClassInf.State) =
 
-  axiom	component_face (c as [_]) => Connect.OUTER
+  rule	print "# Can't instantiate partial class " & print n & print "\n"
+	------------------------------------------------------	
+	inst_class(env,mod,pre, csets, Explode.CLASS(n,true,_,_)) => fail
 
-  rule	print "# component_face error: " &
-	Dump.dump_component_ref c & print "\n"
-	--------------------------------------
-	component_face c => fail
+  rule	Env.new_frame(env) => env' &
+	ClassInf.start(r,n) => ci_state &
+	inst_class_in(env', mod, pre, csets, ci_state, c, false)
+	  => (dae1,_,csets',ci_state', tys) &
+	Connect.dump_sets csets' &
+	Connect.equations csets' => dae2 &
+	list_append(dae1, dae2) => dae &
+	mktype(ci_state',tys) => ty
+	-------------------------------------------
+	inst_class(env, mod, pre, csets, c as Explode.CLASS(n,_,r,_))
+	  => (dae, [], ty,ci_state')
+
+  rule	print "- inst_class " & print n & print " failed\n"
+	-----------------------------------------------------
+	inst_class(_,_,_,_,Explode.CLASS(n,_,_,_)) => fail
+	
+end
+
+(** relation: inst_class_in
+ ** purpose:  Instantiate the contents of a class definition, with a
+ ** new environment already setup.
+ **
+ ** This relation is just a wrapper around `inst_classdef', and could
+ ** probably be removed.
+ **)
+
+relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			 Explode.Class, bool)
+	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	      Types.Var list) =
+
+  rule	print " instantiating " & print n & print "\n" &
+	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
+	  => (l,env', csets', ci_state', tys)
+	------------------------------------------------------	
+	inst_class_in(env,mods,pre,csets,ci_state,
+		      c as Explode.CLASS(n,false,r,d), prot)
+	  => (l,env', csets', ci_state', tys)
+
+	(* FIXME *)
+  rule  print "- Fallthru in inst_class_in\n"
+	----------------------------------
+	inst_class_in(_,_,_,csets,_,_,_) => fail
 
 end
+
+(** relation: inst_classdef
+ ** purpose:  Instantiate the contents of a class definition.
+ **
+ ** There are two kinds of class definitions, either explicit
+ ** definitions (`Explode.PARTS()') or derived definitions
+ ** (`Explode.DERIVED()').
+ **
+ ** When instantiating an explicit definition, the elements are first
+ ** instantiated, using `inst_element_list', and then the equations
+ ** and finally the algorithms are instantiated using `inst_equation'
+ ** and `inst_algorithm', respectively. The resulting lists of
+ ** equations are concatenated to produce the result.
+ **)
+
+relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			 Explode.ClassDef, ClassInf.Restriction, bool)
+	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	      Types.Var list) =
+
+	(** This rule describes how to instantiate an explicit
+	 ** class definition *)
+
+	(* FIXME: propagate prot *)
+  rule	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state' &
+	inst_element_list(env,mods,pre,csets,ci_state', els)
+	  => (dae1,env', csets', ci_state'', tys) &
+	inst_list(env',mods,pre,csets',ci_state'',inst_equation, eqs)
+	  => (dae2,env'',csets'', ci_state''') &
+	inst_list(env'',mods,pre,csets'',ci_state''', inst_algorithm, als)
+	  => (dae3,env''',csets''', ci_state'''') &
+	list_append(dae1,dae2) => dae5 &
+	list_append(dae5,dae3) => dae
+	-----------------------------
+	inst_classdef(env,mods,pre, csets, ci_state,
+		      Explode.PARTS(els,eqs,als), re, prot)
+	  => (dae,env''', csets''', ci_state'''', tys)
+
+	(** This rule describes how to instantiate a derived class *)
+	(** definition *)
+
+  rule	Lookup.lookup_class(env,cn) => (c as Explode.CLASS(cn2,_,r,_),m) &
+	ClassInf.start(r, cn2) => new_ci_state &
+	(* FIXME order *)
+	Mod.merge(mods,m) => mods' &
+	Mod.merge(mods',mod) => mods'' &
+	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
+	  => (dae,env, csets', ci_state', tys) &
+	(* Check for restriction violations *)
+	ClassInf.assert_valid(ci_state', re)
+	----------------------------------------
+	inst_classdef(env,mods,pre, csets, ci_state,
+		      Explode.DERIVED(cn,ad,mod), re, prot)
+	  => (dae,env, csets', ci_state', tys)
+
+	(** If the class is derived from a class that can not be *)
+	(** found in the environment, this rule prints an error *)
+	(** message. *)
+
+  rule	not Lookup.lookup_class(env,cn) => (_,_) &
+	Exp.path_string(cn) => cns &
+	print "# unknown class: " & print cns & print "\n"
+	----------------------------------------
+	inst_classdef(env,mods,pre,csets,ci_state,
+		      Explode.DERIVED(cn,ad,mod), re, prot)
+	  => fail
+
+  rule	print "- inst_classdef failed\n"
+	----------------------------------
+	inst_classdef(_,_,_,_,_,_,_,_) => fail
+
+end	
+
+(** relation: inst_element_list
+ ** purpose:  Instantiate a list of elements
+ **
+ ** Instantiate elements one at a time, and concatenate the resulting
+ ** lists of equations.
+ **)
+
+relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			      Explode.Element list)
+	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	      Types.Var list) =
+
+  axiom inst_element_list(env,_,_,csets,ci_state,[])
+	  => ([], env, csets, ci_state, [])
+
+  rule  inst_element(env,mod,pre,csets,ci_state,el)
+	  => (dae1,env',csets',ci_state',tys1) &
+	inst_element_list(env',mod,pre,csets',ci_state',els)
+	  => (dae2,env'',csets'',ci_state'',tys2) &
+	list_append(tys1, tys2) => tys &
+	list_append(dae1, dae2) => dae
+	------------------------------
+	inst_element_list(env,mod,pre,csets,ci_state,el::els)
+	  => (dae, env'', csets'', ci_state'', tys)
+
+end
+
+(** relation: inst_element
+ ** purpose:  Instantiate an element of a class definition.
+ **
+ ** An element is either a class definition, a variable, or an
+ ** `extends' clause.
+ **)
+
+relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			Explode.Element)
+	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	      Types.Var list) =
+
+	(**  extends
+	 **
+	 ** Handle "extends" elements by instantiating the class definition
+	 ** of the extended class.
+	 **)
+	 
+  rule	Exp.path_string(cn) => cns &
+	print "  extending class " & print cns & print "\n" &
+	
+	Lookup.lookup_class(env,cn)
+	  => (c as Explode.CLASS(cn2,_,restr,def), classmod) &
+
+	(* Build the combind set of modifications *)
+	(* classmod is the modifications stored with the class *)
+	(* mods     is the modifications passed to the relation *)
+	(* m        is the modification stored in the element *)
+	(* FIXME: verify order *)
+	print "  modification 1: " & print cns & Mod.dump classmod & print "\n" &
+	print "  modification 2: " & print cns & Mod.dump mods & print "\n" &
+	print "  modification 3: " & print cns & Mod.dump m & print "\n" &
+	Mod.merge(classmod,mods) => mods' &
+	Mod.merge(mods',m) => mods'' &
+	
+	(* Can't use inst_class, as that creates a new frame *)
+	inst_class_in(env,mods'',pre,csets,ci_state,c,prot)
+	  => (dae,env',csets',ci_state',vars)
+	----------------------------------
+	inst_element(env,mods,pre,csets, ci_state,
+	Explode.ELEMENT(final,prot,_,Explode.EXTENDS(cn,m)))
+	  => (dae,env',csets',ci_state',vars)
+	
+  	(**  Rules to catch redeclarations and name collsions
+	 **)
+	 
+	 (* If a variable is declared multiple times, the first is used *)
+  rule	Lookup.lookup_var_local(env,n) => _ &
+	print " ignoring shadowed variable " & print n & print "\n"
+	--------------------------
+	inst_element(env,mods,pre,csets,ci_state,
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.COMPONENT(_,_,_,_)))
+	  => ([],env,csets,ci_state,[])
+	
+  	(* Illegal redeclarations *)
+  rule	Lookup.lookup_var_local(env,n) => _ &
+	print "Trying to redeclare the class " & print n &
+	print " as a variable\n"
+	------------------------
+	inst_element(env,mods,pre,csets,ci_state,
+		     Explode.ELEMENT(final,prot,n, Explode.CLASSDEF(_,_)))
+	  => fail
+
+  rule	Lookup.lookup_class(env,Exp.IDENT(n)) => (v,_) &
+	print "Trying to redeclare the variable " & print n &
+	print " as a class\n"
+	---------------------
+	inst_element(env,mods,pre,csets,ci_state,
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.COMPONENT(_,_,_,_)))
+	  => fail
+
+        (**  A new class definition
+	 **
+	 ** Put it in the current frame in the environment
+	 **)
+   
+  rule	(* Explode.convert(c) => c' & *)
+	Mod.lookup_modification(mods,n) => classmod &
+	print "  adding " & print n & Mod.dump classmod & print "\n" &
+	(* Mod.simple_maybe_modify_class(env,mm,pre,c') => (c'',dae) & *)
+	Env.extend_frame_c(env,c,classmod) => env'
+	----------------------------------------
+	inst_element(env,mods,pre,csets,ci_state,
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.CLASSDEF(_,c)))
+	  => ([],env',csets,ci_state,[])
+
+	(**  A variable
+	 **
+	 ** Lookup the class name, apply specializations and add the
+	 ** variable to the current frame in the environment. Then
+	 ** instantiate the class with an extended prefix.
+	 **)
+
+  rule	Prefix.prefix_cref(pre,[(n,[])]) => vn &
+
+	print " variable " & Dump.dump_component_ref vn & print "\n" &
+
+	(* Find the set of modifications *)
+	(* FIXME: merge order *)
+	Lookup.lookup_class(env,t) => (cl,classmod) &
+	print "  modification 1: " & Mod.dump classmod & print "\n" &
+
+	Mod.lookup_modification(mods,n) => mm &
+	print "  modification 2: " & Mod.dump mm & print "\n" &
+	print "  modification 3: " & Mod.dump m & print "\n" &
+
+	(* classmod is the modifications stored with the class *)
+	(* mm       is the modifications passed to the relation *)
+	(* m        is the modification stored in the element *)
+
+	(* Check for modifications to a protected element *)
+	check_prot(prot, mm, vn) &
+
+	Mod.merge(classmod,mm) => mod &
+	Mod.merge(mod,m) => mod' &
+	print "  modification: " & Mod.dump mod' & print "\n" &
+
+	Prefix.prefix_add(n,[],pre) => pre' &
+
+	
+
+	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
+
+	Mod.mod_assignment mod' => ass &
+	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,ass)) => env' &
+	print " extended frame with variable " & Dump.dump_component_ref vn &
+ 	print "\n" &
+
+	(* If the modification assigns a value to this variable, add an
+	   equation *)
+	inst_mod_assignment(pre,n,mod') => dae2 &
+
+	list_append(dae1, dae2) => dae
+	--------------------------
+	inst_element(env,mods,pre,csets,ci_state,
+		     Explode.ELEMENT(final,prot,_,
+				     Explode.COMPONENT(n,attr,t,m)))
+         => (dae,env',csets',ci_state,[(n,attr,ty)])
+
+	(** If the class lookup in the previous rule fails, this
+	 ** rule catches
+	 ** the error and prints an error message about the unknown class.
+	 **)
+
+  rule	not Lookup.lookup_class(env,t) => (cl,_) &
+	Exp.path_string(t) => s &
+	print "# unknown class '" & print s & print "' while instantiating " &
+	Prefix.prefix_path(Exp.IDENT(n),pre) => n' &
+	Exp.path_string(n') => ns &
+	print ns & print "\n"
+	--------------------------
+	inst_element(env,_,pre,csets,ci_state,
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.COMPONENT(_,_,t,_)))
+         => ([],env,csets,ci_state,[])
+
+end
+
+(** relation: inst_equation
+ **)
+
+relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
+			 Explode.Equation)
+	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
+
+	(**  connect
+	 **
+	 ** Handle connct statements
+	 **)
+
+  rule	inst_connect(csets,env,pre,c1,c2) => csets' &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	------------------------------------------------------------
+	inst_equation(env,mods,pre, csets, ci_state, Absyn.EQ_CONNECT(c1,c2))
+	  => ([],env,csets',ci_state')
+	  
+	(**  assert
+	 **
+	 ** FIXME: Handle assertions
+	 **)
+
+  rule	Prefix.prefix_exp(e,pre) => e' &
+	print " ASSERTION(" & Dump.dump_exp(e') & print "): " &
+	print d & print "\n" &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	------------------------
+	inst_equation(env,mods,pre,csets, ci_state,
+		      Absyn.EQ_EXPR(Exp.CALL(Exp.IDENT("assert"),
+					     [e,Exp.STRING(d)])))
+	  => ([],env,csets,ci_state')
+
+  rule	print "- No expression equations yet\n" &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	-------------------------------------
+	inst_equation(env,mods,pre,csets,ci_state,Absyn.EQ_EXPR(_)) => fail
+
+  rule	Lookup.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
+	print " shadowed equation for " & print n & print "\n" &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	------------------------------------------------------
+	inst_equation(env,mods,pre,csets,ci_state,
+		      Absyn.EQ_EQUALS(Exp.CREF([(n,[])]), e2))
+	  => ([],env,csets,ci_state')
+
+  rule	print " equation\n" &
+	StaticExp.elab_exp(env,pre,Exp.RELATION(e1,Exp.EQUAL,e2))
+	  => (e, ty1, c1) &
+	print " - equation\n" &
+	Prefix.prefix_exp(e,pre) => e' & (* FIXME: remove *)
+	print " -- equation\n" &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	------------------------
+	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
+	  => ([DAE.EQUATION(e')], env, csets, ci_state')
+
+  rule	print "- inst_equation fallthru\n"
+	----------------------------------
+	inst_equation(_,_,_,_,_,_) => fail
+
+end
+
+(** relation: inst_algorithm
+ **)
+
+relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			   Explode.Algorithm)
+	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
+
+  rule  print "# no algorithms yet\n"
+	-----------------------------
+	inst_algorithm(env,_,_,csets,ci_state,_) => ([],env,csets,ci_state)
+
+end
+
+(**)
+
+relation inst_connect: (Connect.Sets, Env, Prefix,
+			Explode.ComponentRef,Explode.ComponentRef)
+	  => Connect.Sets =
+
+  rule	print " connecting " &
+	Dump.dump_component_ref(c1) & print " with " &
+	Dump.dump_component_ref(c2) & print "\n" &
+	StaticExp.elab_cref(env, pre, c1) => (Exp.CREF(c1'),_,_) &
+	StaticExp.elab_cref(env, pre, c2) => (Exp.CREF(c2'),_,_) &
+	Lookup.lookup_var(env,c1')
+	  => (Types.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_),_) &
+	Lookup.lookup_var(env,c2')
+	  => (Types.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_),_) &
+	ClassInf.assert_valid(st1,ClassInf.R_CONNECTOR) &
+	ClassInf.assert_valid(st2,ClassInf.R_CONNECTOR) &
+	Types.same_type(ty1, ty2) &
+	component_face(c1') => f1 &
+	component_face(c2') => f2 &
+	connect_components(sets, pre, c1', f1, c2', f2, ty1, false) => sets'
+	---------------------------------
+	inst_connect(sets, env,pre,c1,c2) => sets'
+
+  rule	print "# could not connect\n"
+	---------------------------------
+	inst_connect(sets,_,_,_,_) => fail
+
+end
+
+(**)
 
 relation connect_components: (Connect.Sets,
 			      Prefix,
@@ -154,93 +560,98 @@ relation connect_components: (Connect.Sets,
 	
 end
 
-relation inst_connect: (Connect.Sets, Env, Prefix,
-			Explode.ComponentRef,Explode.ComponentRef)
-	  => Connect.Sets =
+(**)
 
-  rule	print " connecting " &
-	Dump.dump_component_ref(c1) & print " with " &
-	Dump.dump_component_ref(c2) & print "\n" &
-	StaticExp.elab_cref(env, pre, c1) => (Exp.CREF(c1'),_,_) &
-	StaticExp.elab_cref(env, pre, c2) => (Exp.CREF(c2'),_,_) &
-	Lookup.lookup_var(env,c1')
-	  => (Types.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_),_) &
-	Lookup.lookup_var(env,c2')
-	  => (Types.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_),_) &
-	ClassInf.assert_valid(st1,ClassInf.R_CONNECTOR) &
-	ClassInf.assert_valid(st2,ClassInf.R_CONNECTOR) &
-	Types.same_type(ty1, ty2) &
-	component_face(c1') => f1 &
-	component_face(c2') => f2 &
-	connect_components(sets, pre, c1', f1, c2', f2, ty1, false) => sets'
-	---------------------------------
-	inst_connect(sets, env,pre,c1,c2) => sets'
+relation connect_vars : (Connect.Sets,
+			 Exp.ComponentRef, Connect.Face,
+			 Exp.ComponentRef, Connect.Face,
+			 Types.Var list) => Connect.Sets =
 
-  rule	print "# could not connect\n"
-	---------------------------------
-	inst_connect(sets,_,_,_,_) => fail
+  axiom	connect_vars(sets,_,_,_,_,[]) => sets
+
+  rule	Exp.extend_cref(c1, n, []) => c1' &
+	Exp.extend_cref(c2, n, []) => c2' &
+	(* print "  connect_vars: " &
+	 * Dump.dump_component_ref c1' & print " <-> " &
+	 * Dump.dump_component_ref c2' &
+	 * print "\n" & *)
+	connect_components(sets,[], c1',f1, c2',f2, ty, flow) => sets' &
+	connect_vars(sets',c1,f1,c2,f2,xs) => sets''
+	--------------------------------------
+	connect_vars(sets,c1,f1,c2,f2,(n,Types.ATTR(_,flow,_,_),ty)::xs)
+	  => sets''
 
 end
 
-relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-			 Explode.Equation)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
+(**)
 
-  (* connect
-   *
-   * Handle connct statements
-   *)
+relation mktype : (ClassInf.State,Types.Var list) => Types.Type =
 
-  rule	inst_connect(csets,env,pre,c1,c2) => csets' &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
-	------------------------------------------------------------
-	inst_equation(env,mods,pre, csets, ci_state, Absyn.EQ_CONNECT(c1,c2))
-	 => ([],env,csets',ci_state')
-
-  (* assert
-   *
-   * FIXME: Handle assertions
-   *)
-
-  rule	Prefix.prefix_exp(e,pre) => e' &
-	print " ASSERTION(" & Dump.dump_exp(e') & print "): " &
-	print d & print "\n" &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
-	------------------------
-	inst_equation(env,mods,pre,csets, ci_state,
-		      Absyn.EQ_EXPR(Exp.CALL(Exp.IDENT("assert"),
-					     [e,Exp.STRING(d)])))
-	  => ([],env,csets,ci_state')
-
-  rule	print "- No expression equations yet\n" &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
-	-------------------------------------
-	inst_equation(env,mods,pre,csets,ci_state,Absyn.EQ_EXPR(_)) => fail
-
-  rule	Lookup.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
-	print " shadowed equation for " & print n & print "\n" &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
-	------------------------------------------------------
-	inst_equation(env,mods,pre,csets,ci_state,
-		      Absyn.EQ_EQUALS(Exp.CREF([(n,[])]), e2))
-	  => ([],env,csets,ci_state')
-
-  rule	print " equation\n" &
-	StaticExp.elab_exp(env,pre,Exp.RELATION(e1,Exp.EQUAL,e2))
-	  => (e, ty1, c1) &
-	print " - equation\n" &
-	Prefix.prefix_exp(e,pre) => e' & (* FIXME: remove *)
-	print " -- equation\n" &
-	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
-	------------------------
-	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
-	  => ([DAE.EQUATION(e')], env, csets, ci_state')
-
-  rule	print "- inst_equation fallthru\n"
-	----------------------------------
-	inst_equation(_,_,_,_,_,_) => fail
+  axiom	mktype(st,l) => Types.TYPE(st,l)
 
 end
+
+(**)
+
+relation assert : (bool, bool, string) => () =
+
+  rule  x = y
+	-----
+	assert(x,y,_)
+
+  rule  not x = y &
+	print "# " & print m & print "\n"
+	--------------------------------------
+	assert(x,y,m)
+
+end
+
+(**)
+
+relation optional_cons : ('a option, 'a list) => 'a list =
+
+  axiom optional_cons(NONE, l) => l
+
+  axiom optional_cons(SOME(x), l) => x::l
+
+end
+
+(**)
+
+relation inst_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+		      (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+		       'a) => ('b list, Env, Connect.Sets, ClassInf.State),
+		      'a list)
+	  => ('b list, Env, Connect.Sets, ClassInf.State) =
+
+  axiom inst_list(env,mod,pre,csets,ci_state,r,[]) => ([],env,csets,ci_state)
+
+  rule	r(env,mod,pre,csets,ci_state,e) => (l,env',csets',ci_state') &
+	inst_list(env',mod,pre,csets',ci_state',r,es)
+	  => (l',env'',csets'',ci_state'') &
+	list_append(l,l') => l''
+	--------------------------------------------
+	inst_list(env,mod,pre,csets,ci_state,r,e::es)
+	  => (l'',env'',csets'',ci_state'')
+
+end
+
+(**)
+
+relation component_face : Exp.ComponentRef => Connect.Face =
+
+  axiom component_face (c as [_,_]) => Connect.INNER
+
+  axiom	component_face (c as [_]) => Connect.OUTER
+
+  rule	print "# component_face error: " &
+	Dump.dump_component_ref c & print "\n"
+	--------------------------------------
+	component_face c => fail
+
+end
+
+(**)
 
 relation inst_mod_assignment : (Prefix, Ident, Mod) => DAE.DAEcomp list =
 
@@ -260,6 +671,8 @@ relation inst_mod_assignment : (Prefix, Ident, Mod) => DAE.DAEcomp list =
   
 end
 
+(**)
+
 relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
 
   rule  print "  public variable " & Dump.dump_component_ref cref & print "\n"
@@ -275,316 +688,3 @@ relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
 
 end
 
-relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			Explode.Element)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
-	      Types.Var list) =
-
-	(* extends
-	 *
-	 * Handle "extends" elements by instantiating the class definition
-	 * of the extended class.
-	 *)
-	 
-  rule	Exp.path_string(cn) => cns &
-	print "  extending class " & print cns & print "\n" &
-	
-	Lookup.lookup_class(env,cn)
-	  => (c as Explode.CLASS(cn2,_,restr,def), classmod) &
-
-	(* Make sure that the 'partial' flag is off *)
-	let c' = Explode.CLASS(cn2,false,restr,def) &
-	
-	(* Build the combind set of modifications *)
-	(* classmod is the modifications stored with the class *)
-	(* mods     is the modifications passed to the relation *)
-	(* m        is the modification stored in the element *)
-	(* FIXME: verify order *)
-	print "  modification 1: " & print cns & Mod.dump classmod & print "\n" &
-	print "  modification 2: " & print cns & Mod.dump mods & print "\n" &
-	print "  modification 3: " & print cns & Mod.dump m & print "\n" &
-	Mod.merge(classmod,mods) => mods' &
-	Mod.merge(mods',m) => mods'' &
-	
-	(* Can't use inst_class, as that creates a new frame *)
-	inst_class_in(env,mods'',pre,csets,ci_state,c',prot)
-	  => (dae,env',csets',ci_state',vars)
-	----------------------------------
-	inst_element(env,mods,pre,csets, ci_state,
-	Explode.ELEMENT(final,prot,_,Explode.EXTENDS(cn,m)))
-	  => (dae,env',csets',ci_state',vars)
-	
-  	(* components
-	 *
-	 * Rules for instantiating components.
-	 *)
-	 
-	 (* If a variable is declared multiple times, the first is used *)
-  rule	Lookup.lookup_var_local(env,n) => _ &
-	print " ignoring shadowed variable " & print n & print "\n"
-	--------------------------
-	inst_element(env,mods,pre,csets,ci_state,
-		     Explode.ELEMENT(final,prot,n,
-				     Explode.COMPONENT(_,_,_,_)))
-	  => ([],env,csets,ci_state,[])
-	
-  	(* Illegal redeclarations *)
-  rule	Lookup.lookup_var_local(env,n) => _ &
-	print "Trying to redeclare the class " & print n &
-	print " as a variable\n"
-	------------------------
-	inst_element(env,mods,pre,csets,ci_state,
-		     Explode.ELEMENT(final,prot,n, Explode.CLASSDEF(_,_)))
-	  => fail
-
-  rule	Lookup.lookup_class(env,Exp.IDENT(n)) => (v,_) &
-	print "Trying to redeclare the variable " & print n &
-	print " as a class\n"
-	---------------------
-	inst_element(env,mods,pre,csets,ci_state,
-		     Explode.ELEMENT(final,prot,n,
-				     Explode.COMPONENT(_,_,_,_)))
-	  => fail
-
-  (* A new class definition
-   *
-   * Put it in the current frame in the environment
-   *)
-   
-  rule	(* Explode.convert(c) => c' & *)
-	Mod.lookup_modification(mods,n) => classmod &
-	print "  adding " & print n & Mod.dump classmod & print "\n" &
-	(* Mod.simple_maybe_modify_class(env,mm,pre,c') => (c'',dae) & *)
-	Env.extend_frame_c(env,c,classmod) => env'
-	----------------------------------------
-	inst_element(env,mods,pre,csets,ci_state,
-		     Explode.ELEMENT(final,prot,n,
-				     Explode.CLASSDEF(_,c)))
-	  => ([],env',csets,ci_state,[])
-
-  (* A variable
-   *
-   * Lookup the class name, apply specializations and add the variable
-   * to the current frame in the environment. Then instantiate the class
-   * with an extended prefix.
-   *)
-
-  rule	Prefix.prefix_cref(pre,[(n,[])]) => vn &
-
-	print " variable " & Dump.dump_component_ref vn & print "\n" &
-
-	(* Find the set of modifications *)
-	(* FIXME: merge order *)
-	Lookup.lookup_class(env,t) => (cl,classmod) &
-	print "  modification 1: " & Mod.dump classmod & print "\n" &
-
-	Mod.lookup_modification(mods,n) => mm &
-	print "  modification 2: " & Mod.dump mm & print "\n" &
-	print "  modification 3: " & Mod.dump m & print "\n" &
-
-	(* classmod is the modifications stored with the class *)
-	(* mm       is the modifications passed to the relation *)
-	(* m        is the modification stored in the element *)
-
-	(* Check for modifications to a protected element *)
-	check_prot(prot, mm, vn) &
-
-	Mod.merge(classmod,mm) => mod &
-	Mod.merge(mod,m) => mod' &
-	print "  modification: " & Mod.dump mod' & print "\n" &
-
-	Prefix.prefix_add(n,[],pre) => pre' &
-
-	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
-
-	Mod.mod_assignment mod' => ass &
-	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,ass)) => env' &
-	print " extended frame with variable " & Dump.dump_component_ref vn &
- 	print "\n" &
-
-	(* If the modification assigns a value to this variable, add an
-	   equation *)
-	inst_mod_assignment(pre,n,mod') => dae2 &
-
-	list_append(dae1, dae2) => dae
-	--------------------------
-	inst_element(env,mods,pre,csets,ci_state,
-		     Explode.ELEMENT(final,prot,_,
-				     Explode.COMPONENT(n,attr,t,m)))
-         => (dae,env',csets',ci_state,[(n,attr,ty)])
-
-  (*
-   * If the class lookup in the previous rule fails, this rule catches
-   * the error and prints an error message about the unknown class.
-   *)
-
-  rule	not Lookup.lookup_class(env,t) => (cl,_) &
-	Exp.path_string(t) => s &
-	print "# unknown class '" & print s & print "' while instantiating " &
-	Prefix.prefix_path(Exp.IDENT(n),pre) => n' &
-	Exp.path_string(n') => ns &
-	print ns & print "\n"
-	--------------------------
-	inst_element(env,_,pre,csets,ci_state,
-		     Explode.ELEMENT(final,prot,n,
-				     Explode.COMPONENT(_,_,t,_)))
-         => ([],env,csets,ci_state,[])
-
-end
-
-and inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 Explode.Element list)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
-	      Types.Var list) =
-
-  axiom inst_element_list(env,_,_,csets,ci_state,[])
-	  => ([], env, csets, ci_state, [])
-
-  rule  inst_element(env,mod,pre,csets,ci_state,el)
-	  => (dae1,env',csets',ci_state',tys1) &
-	inst_element_list(env',mod,pre,csets',ci_state',els)
-	  => (dae2,env'',csets'',ci_state'',tys2) &
-	list_append(tys1, tys2) => tys &
-	list_append(dae1, dae2) => dae
-	------------------------------
-	inst_element_list(env,mod,pre,csets,ci_state,el::els)
-	  => (dae, env'', csets'', ci_state'', tys)
-
-end
-
-and inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		      Explode.Algorithm)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
-
-  rule  print "# no algorithms yet\n"
-	-----------------------------
-	inst_algorithm(env,_,_,csets,ci_state,_) => ([],env,csets,ci_state)
-
-end
-
-and inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		    Explode.ClassDef, ClassInf.Restriction, bool)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
-	      Types.Var list) =
-
-	(* FIXME: propagate prot *)
-  rule	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state' &
-	inst_element_list(env,mods,pre,csets,ci_state', els)
-	  => (dae1,env', csets', ci_state'', tys) &
-	inst_list(env',mods,pre,csets',ci_state'',inst_equation, eqs)
-	  => (dae2,env'',csets'', ci_state''') &
-	inst_list(env'',mods,pre,csets'',ci_state''', inst_algorithm, als)
-	  => (dae3,env''',csets''', ci_state'''') &
-	list_append(dae1,dae2) => dae5 &
-	list_append(dae5,dae3) => dae
-	-----------------------------
-	inst_classdef(env,mods,pre, csets, ci_state,
-		      Explode.PARTS(els,eqs,als), re, prot)
-	  => (dae,env''', csets''', ci_state'''', tys)
-
-  rule	Lookup.lookup_class(env,cn) => (c as Explode.CLASS(cn2,_,r,_),m) &
-
-	ClassInf.start(r, cn2) => new_ci_state &
-
-	(* FIXME order *)
-	Mod.merge(mods,m) => mods' &
-	Mod.merge(mods',mod) => mods'' &
-	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
-	  => (dae,env, csets', ci_state', tys) &
-
-	(* Check for restriction violations *)
-	ClassInf.assert_valid(ci_state', re)
-	----------------------------------------
-	inst_classdef(env,mods,pre, csets, ci_state,
-		      Explode.DERIVED(cn,ad,mod), re, prot)
-	  => (dae,env, csets', ci_state', tys)
-
-  rule	not Lookup.lookup_class(env,cn) => (_,_) &
-	Exp.path_string(cn) => cns &
-	print "# unknown class: " & print cns & print "\n"
-	----------------------------------------
-	inst_classdef(env,mods,pre,csets,ci_state,
-		      Explode.DERIVED(cn,ad,mod), re, prot)
-	  => fail
-
-  rule	print "- inst_classdef fallthru\n"
-	----------------------------------
-	inst_classdef(_,_,_,_,_,_,_,_) => fail
-
-end	
-
-and inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		    Explode.Class, bool)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
-	      Types.Var list) =
-
-  rule	print " instantiating " & print n & print "\n" &
-	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
-	  => (l,env', csets', ci_state', tys)
-	------------------------------------------------------	
-	inst_class_in(env,mods,pre,csets,ci_state,
-		      c as Explode.CLASS(n,false,r,d), prot)
-	  => (l,env', csets', ci_state', tys)
-
-  rule	print "# Can't instantiate partial class " & print n & print "\n"
-	------------------------------------------------------	
-	inst_class_in(env,mod,pre, csets,ci_state,
-		      Explode.CLASS(n,true,_,_), prot)
-	  => fail
-
-	(* FIXME *)
-  rule  print "- Fallthru in inst_class_in\n"
-	----------------------------------
-	inst_class_in(_,_,_,csets,_,_,_) => fail
-
-end
-
-and mktype : (ClassInf.State,Types.Var list) => Types.Type =
-
-  axiom	mktype(st,l) => Types.TYPE(st,l)
-
-end
-
-and inst_class: (Env, Mod, Prefix, Connect.Sets, Explode.Class)
-	  => (DAE.DAEcomp list, Connect.Sets, Types.Type, ClassInf.State) =
-
-  rule	Env.new_frame(env) => env' &
-	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env', mod, pre, csets, ci_state, c, false)
-	  => (dae1,_,csets',ci_state', tys) &
-	Connect.dump_sets csets' &
-	Connect.equations csets' => dae2 &
-	list_append(dae1, dae2) => dae &
-	mktype(ci_state',tys) => ty
-	-------------------------------------------
-	inst_class(env, mod, pre, csets, c as Explode.CLASS(n,_,r,_))
-	  => (dae, [], ty,ci_state')
-
-end
-
-relation inst_program : (Env, Explode.Program) => DAE.DAEcomp list =
-
-  rule	print "Empty program\n"
-	------------------------------
-	inst_program(env,[]) => fail
-
-  rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
-	inst_class(env',Mod.NOMOD,[],[],c) => (dae,csets,_,_)
-	-----------------------------
-	inst_program(env,[c]) => dae
-
-  rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
-	inst_program(env',cs) => l
-	----------------------
-	inst_program(env,c::cs) => l
-
-end
-
-relation instantiate: Explode.Program => DAE.DAEform =
-
-  rule	Builtin.initial_env => env &
-	inst_program(env,p) => l
-	-----------------------------
-	instantiate(p) => DAE.DAE(l)
-
-end

@@ -1,11 +1,10 @@
-(**********************************************************************
- *
- *   Modifications
- *
- * Modifications are simply the same kind of modifications used in
- * Absyn.
- *
- **********************************************************************)
+(**
+ ** file: mod.rml
+ **
+ ** Modifications are simply the same kind of modifications used in
+ ** the `Absyn' module.
+ **
+ **)
 
 module Mod:
 
@@ -44,13 +43,13 @@ module Mod:
 
 end
 
-with "dump.rml"
+(**)
 
-(**********************************************************************)
+with "dump.rml"
 
 val empty_mod = MOD(false,[],NONE)
 
-(**********************************************************************)
+(**)
 
 relation dump_final : bool => () =
 
@@ -115,7 +114,7 @@ relation dump : Mod => () =
 
 end
 
-(**********************************************************************)
+(**)
 
 relation expand_nomod : Mod => Mod =
 
@@ -167,7 +166,7 @@ and build : (Absyn.Modification option, bool) => Mod =
 end
 
 
-(**********************************************************************)
+(**)
 
 relation lookup_modification2 : (SubMod list,Absyn.Ident) => Mod =
 
@@ -195,52 +194,17 @@ relation lookup_modification: (Mod,Absyn.Ident) => Mod =
 
 end
 
-(**********************************************************************
- *
- *   Merging
- *
- * The merge relation merges to modifications to one. The first
- * argument is the "outer" modification that should take precedence over
- * the "inner" modifications. FIXME: correct?
- *
- **********************************************************************)
-
-relation merge_subs2 : (SubMod list, SubMod) => (SubMod list, SubMod) =
-
-  axiom merge_subs2([],m) => ([],m)
-
-	(* Modifications in the list take precedence *)
-
-  rule  n1 = n2 & print "   merge clash in " & print n1 & print "\n"
-	-------
-	merge_subs2((s1 as SUBMOD(n1,m1))::ss, SUBMOD(n2,m2)) => (ss, s1)
-
-  rule  merge_subs2(ss, s2) => (ss',s)
-	------------------------------
-	merge_subs2(s1::ss, s2) => (s1::ss',s)
-
-end
-
-relation merge_subs : (SubMod list, SubMod list) => SubMod list =
-
-  axiom merge_subs(s1,[]) => s1
-
-  rule  merge_subs2(s1,s) => (s1',s') &
-	merge_subs(s1',s2) => ss
-	------------------------
-	merge_subs(s1,s::s2) => s'::ss
-
-end
-
-relation merge_ass : (Exp.Exp option, Exp.Exp option) => Exp.Exp option =
-
-	(* Outer assignments take precedence *)
-
-  axiom merge_ass(e as SOME(_), _) => e
-
-  axiom merge_ass(NONE,e) => e
-
-end
+(**
+ **
+ **   Merging
+ **
+ ** The merge relation merges to modifications to one. The first
+ ** argument is the "outer" modification that should take precedence over
+ ** the "inner" modifications. FIXME: correct?
+ **
+ **)
+(** relation: merge
+ **)
 
 relation merge : (Mod, Mod) => Mod =
 
@@ -274,7 +238,54 @@ relation merge : (Mod, Mod) => Mod =
 
 end
 
-(**********************************************************************)
+(** relation: merge_subs
+ **)
+
+relation merge_subs : (SubMod list, SubMod list) => SubMod list =
+
+  axiom merge_subs(s1,[]) => s1
+
+  rule  merge_subs2(s1,s) => (s1',s') &
+	merge_subs(s1',s2) => ss
+	------------------------
+	merge_subs(s1,s::s2) => s'::ss
+
+end
+
+(** relation: merge_subs2
+ **)
+
+relation merge_subs2 : (SubMod list, SubMod) => (SubMod list, SubMod) =
+
+  axiom merge_subs2([],m) => ([],m)
+
+	(* Modifications in the list take precedence *)
+
+  rule  n1 = n2 & print "   merge clash in " & print n1 & print "\n"
+	-------
+	merge_subs2((s1 as SUBMOD(n1,m1))::ss, SUBMOD(n2,m2)) => (ss, s1)
+
+  rule  merge_subs2(ss, s2) => (ss',s)
+	------------------------------
+	merge_subs2(s1::ss, s2) => (s1::ss',s)
+
+end
+
+(** relation: merge_ass
+ **)
+
+relation merge_ass : (Exp.Exp option, Exp.Exp option) => Exp.Exp option =
+
+	(* Outer assignments take precedence *)
+
+  axiom merge_ass(e as SOME(_), _) => e
+
+  axiom merge_ass(NONE,e) => e
+
+end
+
+(** relation: mod_assignment
+ **)
 
 relation mod_assignment : Mod => Exp.Exp option =
 
