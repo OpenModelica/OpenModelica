@@ -118,7 +118,7 @@ RML_BEGIN_LABEL(Print__write_5fbuf)
 
   fprintf(file,"%s",buf);
   
-  if (fclose(file) != NULL) {
+  if (fclose(file) != 0) {
     /* RMLFAIL */
   }
   
