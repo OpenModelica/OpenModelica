@@ -740,23 +740,25 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    print "Solving for non-states\n" &
 
         (* build the component ref from "x" to the form: "x_" *)
-        Exp.print_component_ref_str(cr) => cr_str &
-	    Util.string_append_list([cr_str,"_"]) => id &
 
-        (* build a component ref from the id *)
-	    let cr' = Exp.CREF_IDENT(id,[]) &
-	    let varexp = Exp.CREF(cr',Exp.REAL) &
+	    let varexp = Exp.CREF(cr,Exp.REAL) &
 	    Exp.solve(e1,e2,varexp) => expr &
 	    
         (* start debug output *)
-(*        Exp.print_exp_str e1 => e1s &
+        Exp.print_exp_str e1 => e1s &
 	    Exp.print_exp_str e2 => e2s &
 	    print "Equation " & print e1s & print " = " & print e2s &
 	    print " solved for " & Exp.print_exp_str varexp => s &
 	    print s & print " giving " &
-	    Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
-        (* end debug output *)
-
+	    Exp.print_exp_str expr => s2 & print s2 & print "\n" &
+        
+        Exp.print_component_ref_str(cr) => cr_str &
+        Util.string_append_list([cr_str,"_"]) => id &
+        
+        (* build a component ref from the id *)
+        let cr' = Exp.CREF_IDENT(id,[]) &
+        let varexp = Exp.CREF(cr',Exp.REAL) &
+        
 	    build_assignment(cr',expr,origname)  => assigment_string
 	    --------------------------------
 	    build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e) => assigment_string	
@@ -772,21 +774,25 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    print "solving for state\n" &
 	    int_string(indx) => indxs &
 
-        (* build the component ref from "x" to the form: "_D_x_" *)
- 	    Util.string_append_list(["_D_",origname]) => id &
+	    Util.string_append_list(["xd[",indxs,"]"]) => id &
 	    let cr' = Exp.CREF_IDENT(id,[]) &
 	    let varexp = Exp.CREF(cr',Exp.REAL) &
 	    Exp.solve(e1,e2,varexp) => expr &
+        
+        (* build the component ref from "x" to the form: "_D_x_" *)
+ 	    Util.string_append_list(["_D_",origname]) => id_ass &
+	    let cr_ass = Exp.CREF_IDENT(id_ass,[]) &
+        
 
-(*	    Exp.print_exp_str e1 => e1s &
+        Exp.print_exp_str e1 => e1s &
 	    Exp.print_exp_str e2 => e2s &
 	    print " Equation " & print e1s & print " = " & print e2s &
 	    print " solved for " & Exp.print_exp_str varexp => s &
 	    print s & print " giving " &
-	    Exp.print_exp_str expr => s2 & print s2 & print "\n" & *)
+	    Exp.print_exp_str expr => s2 & print s2 & print "\n" & 
 
 
-	    build_assignment(cr' ,expr,origname)  => assigment_string
+	    build_assignment(cr_ass ,expr,origname)  => assigment_string
 	    --------------------------------
 	    build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e) => assigment_string 
 
