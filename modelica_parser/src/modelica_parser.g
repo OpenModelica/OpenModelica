@@ -1,8 +1,9 @@
 
 header "post_include_hpp" {
-
 #define null 0
+#include "MyAST.h"
 
+typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
 }
 
 options {
@@ -12,10 +13,14 @@ options {
 class modelica_parser extends Parser;
 
 options {
+    codeGenMakeSwitchThreshold = 3;
+    codeGenBitsetTestThreshold = 4;
 	importVocab = modelica;
-    defaultErrorHandler = false;
+//    defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
+    ASTLabelType = "RefMyAST";
+
 }
 
 tokens {
@@ -103,7 +108,7 @@ stored_definition :
         |
 // End handle split models.
 			(within_clause SEMICOLON!)?
-			((f:FINAL)? class_definition SEMICOLON!)* 
+			((FINAL)? class_definition SEMICOLON!)* 
 			EOF!
 			{
 				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],

@@ -126,11 +126,11 @@ ML_COMMENT :
 protected
 ML_COMMENT_CHAR :	
 		("\r\n" | '\n') { newline(); }	
-		| ~('*'|'\n'|'\r')
+		| ~('*'|'\n'|'\r') 
 		;
 		
 SL_COMMENT :
-		"//" (~('\n' | '\r'))* 
+		"//" (~('\n' | '\r') { newline(); } )*
 		{  $setType(antlr::Token::SKIP); }
   	;
 

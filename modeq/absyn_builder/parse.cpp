@@ -15,6 +15,7 @@
 #include "antlr/MismatchedTokenException.hpp"
 #include "antlr/TokenStreamRecognitionException.hpp"
 #include "antlr/ASTFactory.hpp"
+#include "MyAST.h"
 
 using namespace std;
 extern "C"
@@ -32,79 +33,90 @@ void Parser_5finit(void)
 
 RML_BEGIN_LABEL(Parser__parse)
 {
-	char* filename = RML_STRINGDATA(rmlA0);
-	bool debug = check_debug_flag("parsedump");
-	modelica_lexer *lex=0;
-	modelica_parser *parse=0;
-	ANTLR_USE_NAMESPACE(antlr)ASTFactory factory;
-	try {
-		std::ifstream stream(filename);
+  char* filename = RML_STRINGDATA(rmlA0);
+  //  bool debug = check_debug_flag("parsedump");
+  bool debug = true;
+  modelica_lexer *lex=0;
+  modelica_parser *parse=0;
+  ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
+  try 
+    {
+      std::ifstream stream(filename);
+      
+      if (!stream) {
+	std::cerr << "Error opening file" << std::endl;
+	RML_TAILCALLK(rmlFC);
+      }
+      lex = new modelica_lexer(stream);
+      lex->setFilename(filename); 
+      //modelica_lexer lex(stream);
+      parse = new modelica_parser(*lex);
+      parse->setFilename(filename); 
+      
+      // make factory with customized type of MyAST
+      parse->initializeASTFactory(my_factory);
+      parse->setASTFactory( &my_factory );
 
-		if (!stream) {
-			std::cerr << "Error opening file" << std::endl;
-			RML_TAILCALLK(rmlFC);
-		}
-		lex = new modelica_lexer(stream);
-		//modelica_lexer lex(stream);
-		parse = new modelica_parser(*lex);
-		parse->initializeASTFactory(factory);
-		parse->setASTFactory(&factory);
+      parse->stored_definition();
+      RefMyAST t = RefMyAST(parse->getAST());
 
-		//modelica_parser parse(lex);
-		parse->stored_definition();
-		antlr::RefAST t = parse->getAST();
+      if (debug) {
+	std::cerr << "Parsing complete. Starting to traverse ast." << std::endl;
+      }
+	
+      if (t)
+	{
+	  if (debug)
+	    {
+	      parse_tree_dumper dumper(std::cout);
+	      //dumper.initializeASTFactory(factory);
+	      //dumper.setASTFactory(&factory);
+	      dumper.dump(t);
+	    }
+	  modelica_tree_parser build;      
+	  void* ast=0;
+	  try {
+		  build.initializeASTFactory(my_factory);
+		  build.setASTFactory(&my_factory);
+		  ast = build.stored_definition(t);
+	  }
+	  catch (ANTLR_USE_NAMESPACE(antlr)NoViableAltException &e)
+	    {
+	      parse_tree_dumper dumper(std::cout);
+	      std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
+	      dumper.dump(RefMyAST(e.node));	      
+	    }
+	  catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e)
+	    {
+	      parse_tree_dumper dumper(std::cout);
+	      if (e.node) {
+		std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
+		dumper.dump(RefMyAST(e.node));	      
+	      } else {
+		std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST: == NULL" << std::endl;
+	      }
+	      throw e;
+	    }
+	      
+	  if (debug)
+	    {
+	  std::cout << "Build done\n";
+	    } 
 
-		if (debug) {
-			std::cerr << "Parsing complete. Starting to traverse ast." << std::endl;
-		}
-
-		if (t)
-		{
-			if (debug)
-			{
-				parse_tree_dumper dumper(std::cerr);
-				//dumper.initializeASTFactory(factory);
-				//dumper.setASTFactory(&factory);
-				dumper.dump(t);
-			}
-			modelica_tree_parser build;      
-			void* ast=0;
-			try {
-				build.initializeASTFactory(factory);
-				build.setASTFactory(&factory);
-				ast = build.stored_definition(t);
-			}
-			catch (ANTLR_USE_NAMESPACE(antlr)NoViableAltException &e) {
-				parse_tree_dumper dumper(std::cerr);
-				std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
-				dumper.dump(e.node);	      
-			}
-			catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e) {
-				parse_tree_dumper dumper(std::cerr);
-				if (e.node) {
-					std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
-					dumper.dump(e.node);	      
-				} else {
-					std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST: == NULL" << std::endl;
-				}
-				throw e;
-			}
-
-			if (debug) {
-				std::cerr << "Build done\n";
-			} 
-
-			rmlA0 = ast ? ast : mk_nil();
-
-			RML_TAILCALLK(rmlSC);
-		}    
-		else {
-			std::cerr << "Error building AST" << std::endl;
-		}
-	} 
-	catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) {
-		std::cerr << "Lexical error (CharStreamException). "  << std::endl;    
-	}
+	  rmlA0 = ast ? ast : mk_nil();
+	  
+	  RML_TAILCALLK(rmlSC); 
+	}    
+      else {
+	std::cerr << "Error building AST" << std::endl;
+      }
+    } 
+  catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) {
+    std::cerr << "Lexical error. CharStreamException. "  << std::endl;    
+  }
+  catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e) {
+    std::cerr << "Parsing error. TokenStreamRecognitionException on line "  << lex->getLine() << "near :"<< lex->getText() << std::endl;    
+  }
   catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) {
 		std::cerr << "[" << filename << ":" << e.getLine() << ":" << e.getColumn() << "]: error: " << e.getMessage() << std::endl;
   }
@@ -128,42 +140,44 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Parser__parsestring)
 {
-	std::ostringstream stringStream;
-
-	char* str = RML_STRINGDATA(rmlA0);
-	bool debug = check_debug_flag("parsedump");
-	std::istringstream stream(str);
-	modelica_lexer lex(stream);
-	modelica_parser parse(lex);
-	try {
-		ANTLR_USE_NAMESPACE(antlr)ASTFactory factory;
-		parse.initializeASTFactory(factory);
-		parse.setASTFactory(&factory);
-
-		parse.stored_definition();
-
-		antlr::RefAST t = parse.getAST();
-
-		if (t) {
-			if (debug) {
-				parse_tree_dumper dumper(std::cerr);
-				//dumper.initializeASTFactory(factory);
-				//dumper.setASTFactory(&factory);
-				dumper.dump(t);
-			}
-
-			modelica_tree_parser build;
-			build.initializeASTFactory(factory);
-			build.setASTFactory(&factory);
-			void* ast = build.stored_definition(t);
-
-			if (debug) { std::cerr << "Build done\n"; }
-
-			rmlA0 = ast ? ast : mk_nil();
-			rmlA1 = mk_scon("Ok");
-
-			RML_TAILCALLK(rmlSC); 
-		}    
+  std::ostringstream stringStream;
+  
+  char* str = RML_STRINGDATA(rmlA0);
+  bool debug = check_debug_flag("parsedump");
+  std::istringstream stream(str);
+  modelica_lexer lex(stream);
+  modelica_parser parse(lex);
+  try {
+    ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
+    
+    parse.initializeASTFactory(my_factory);
+    parse.setASTFactory(&my_factory);
+    
+	  parse.stored_definition();
+	  
+	  RefMyAST t = RefMyAST(parse.getAST());
+	  
+	  
+	  if (t) {
+	    if (debug) {
+	      parse_tree_dumper dumper(std::cerr);
+	      //dumper.initializeASTFactory(factory);
+	      //dumper.setASTFactory(&factory);
+	      dumper.dump(t);
+	    }
+	    
+	    modelica_tree_parser build;
+	    build.initializeASTFactory(my_factory);
+	    build.setASTFactory(&my_factory);
+	    void* ast = build.stored_definition(t);
+	    
+	    if (debug) { std::cerr << "Build done\n"; }
+	    
+	    rmlA0 = ast ? ast : mk_nil();
+	    rmlA1 = mk_scon("Ok");
+	    
+	    RML_TAILCALLK(rmlSC); 
+	  }    
   } 
   catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) {
 		stringStream << "[" << e.getLine() << ":" << e.getColumn() << "]: error: " << e.getMessage() << std::endl;
@@ -219,7 +233,7 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
       parse.initializeASTFactory(factory);
       parse.setASTFactory(&factory);
       parse.interactiveStmts();
-      antlr::RefAST t = parse.getAST();
+      RefMyAST t = RefMyAST(parse.getAST());
       
       if (t)
 	{
@@ -282,7 +296,7 @@ RML_BEGIN_LABEL(Parser__parseexp)
       parse.initializeASTFactory(factory);
       parse.setASTFactory(&factory);
       parse.interactiveStmts();
-      antlr::RefAST t = parse.getAST();
+      RefMyAST t = RefMyAST(parse.getAST());
       
       if (t)
 	{

@@ -1061,7 +1061,7 @@ relation get_components_contains_name: (Absyn.ComponentRef, Absyn.ElementItem li
 
   rule	get_compitem_named(cr,ellst) => _
 	-------------------
-	get_components_contains_name (cr,Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,res as Absyn.COMPONENTS(_,_,ellst),_))::xs) => res
+	get_components_contains_name (cr,Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,res as Absyn.COMPONENTS(_,_,ellst),_,_,_))::xs) => res
 
   rule	get_components_contains_name(cr,xs) => res
 	-----------------------------------------
@@ -1178,6 +1178,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 	update_program(Absyn.PROGRAM(c2,w),pnew) => pnew' 
 	---------------------------------------------
 	update_program(Absyn.PROGRAM(c1::c2,w as Absyn.WITHIN(path)),p2) => pnew'
+
   rule	(* nested packages (of form A.B) *)
 	get_pathed_class_in_program(path,p) => cdef &
 	Absyn.strip_last(path) => modelwithin &
@@ -1188,7 +1189,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 						      false, 
 						      Absyn.UNSPECIFIED,
 						      "",
-						      elt,NONE)))
+						      elt,"",0,NONE)))
 	  => newcdef &	
 	 update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)
 	  => newp
@@ -1205,7 +1206,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 						      false, 
 						      Absyn.UNSPECIFIED,
 						      "",
-						      elt,NONE)))
+						      elt,"",0,NONE)))
 	  => newcdef &	
 	 update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)
 	  => newp
@@ -1223,7 +1224,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 						      false, 
 						      Absyn.UNSPECIFIED,
 						      "",
-						      elt,NONE)))
+						      elt,"",0,NONE)))
  	  => newcdef &	
 	  update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)
 	  => newp
@@ -1239,7 +1240,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 						      false, 
 						      Absyn.UNSPECIFIED,
 						      "",
-						      elt,NONE)))
+						      elt,"",0,NONE)))
  	  => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)
 	  => newp
@@ -1515,12 +1516,12 @@ relation delete_component_from_elementitems: (string, Absyn.ElementItem list)
 
   rule	name = name2 
 	-------------
-	delete_component_from_elementitems(name,Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,[Absyn.COMPONENTITEM(Absyn.COMPONENT(name2,_,_),_)]),_))::xs) => xs
+	delete_component_from_elementitems(name,Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,[Absyn.COMPONENTITEM(Absyn.COMPONENT(name2,_,_),_)]),_,_,_))::xs) => xs
 
   rule	not name = name2 &
 	delete_component_from_elementitems(name, xs) => res
 	-------------------------
-	delete_component_from_elementitems(name, (x as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,[Absyn.COMPONENTITEM(Absyn.COMPONENT(name2,_,_),_)]),_)))::xs) => x::res
+	delete_component_from_elementitems(name, (x as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,[Absyn.COMPONENTITEM(Absyn.COMPONENT(name2,_,_),_)]),_,_,_)))::xs) => x::res
 
   rule	delete_component_from_elementitems(name, xs) => res
 	---------------------------------------------------
@@ -1550,7 +1551,7 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	modification_to_absyn(nargs,NONE) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),"",0,NONE))) => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
 	------------------------------------------------
 	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
@@ -1563,7 +1564,7 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	modification_to_absyn(nargs,NONE) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),"",0,NONE))) => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)=> newp
 	------------------------------------------------
 	add_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
@@ -1596,7 +1597,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	modification_to_absyn(nargs,mod) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(attr,tp,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE)))
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),"",0,NONE)))
 	  => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p) => newp
 	--------------------------
@@ -1618,7 +1619,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	modification_to_absyn(nargs,mod) => modification &
 	add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(attr,tp,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE)))
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),"",0,NONE)))
 	  => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p) => newp
 	--------------------------
@@ -1641,7 +1642,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	modification_to_absyn(nargs,mod) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(attr,tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) 
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),"",0,NONE))) 
 	  => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
 	------------------------------------------------
@@ -1664,7 +1665,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	modification_to_absyn(nargs,mod) => modification &
 	add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(attr,tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) 
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),"",0,NONE))) 
 	  => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
 	------------------------------------------------
@@ -1933,7 +1934,7 @@ relation count_components_in_elts: Absyn.ElementItem list => int =
 	list_length(complst) => ncomps &
 	int_add(c1,ncomps) => res
 	--------------------------
-	count_components_in_elts(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,complst),NONE))::lst) => res
+	count_components_in_elts(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,complst),_,_,NONE))::lst) => res
 	
   rule	count_components_in_elts(lst) => res
 	----------------------------
@@ -2378,7 +2379,7 @@ relation get_packages_in_elts: (Absyn.ElementItem list) => string list =
 	
   rule	get_packages_in_elts(rest) => res
 	--------------------------------
-	get_packages_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,Absyn.R_PACKAGE,_)),NONE))::rest) => id::res
+	get_packages_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,Absyn.R_PACKAGE,_)),_,_,NONE))::rest) => id::res
 
   rule	get_packages_in_elts(rest) => res
 	--------------------------------
@@ -2465,7 +2466,7 @@ relation get_classnames_in_elts: (Absyn.ElementItem list) => string list =
 	
   rule	get_classnames_in_elts(rest) => res
 	--------------------------------
-	get_classnames_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,_,_)),NONE))::rest) => id::res
+	get_classnames_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,_,_)),_,_,NONE))::rest) => id::res
   rule	get_classnames_in_elts(rest) => res
 	--------------------------------
 	get_classnames_in_elts (_::rest) => res
@@ -2512,7 +2513,7 @@ relation get_base_classes_from_elts : (Absyn.ElementItem list, Env.Env)
 	Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
 	Absyn.path_to_cref(p') => cref
 	------------------------
-	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_))::rest, env )
+	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_,_,_))::rest, env )
 	    => cref::cl
 
   rule	(* Inherited class defined on top level scope*)
@@ -2521,7 +2522,7 @@ relation get_base_classes_from_elts : (Absyn.ElementItem list, Env.Env)
 	Env.get_env_path(env') => NONE &
 	Absyn.path_to_cref(path) => cref
 	--------------------------------
-	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_))::rest, env )
+	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_,_,_))::rest, env )
 	    => cref::cl
 
   rule	get_base_classes_from_elts(rest, env) => cl
@@ -2569,7 +2570,7 @@ relation count_base_classes_from_elts : (Absyn.ElementItem list)
 	count_base_classes_from_elts(rest) => cl &
 	int_add(cl,1) => res
 	------------------------
-	count_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_))::rest )
+	count_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_,_,_))::rest )
 	    => res
 
   rule	count_base_classes_from_elts(rest) => cl
@@ -2791,19 +2792,19 @@ relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem li
   rule	lookup_classdef(tp,modelpath,p) => (cdef,newmodelpath) &
 	get_nth_public_connector_str(newmodelpath,cdef,p,n) => (str,tp)
 	-----------------
-	get_nth_connector_str(p,modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),NONE))::lst,n) => (str,tp)
+	get_nth_connector_str(p,modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),_,_,NONE))::lst,n) => (str,tp)
 
   rule	lookup_classdef(tp,modelpath,p) => (cdef,newmodelpath) &
 	count_public_connectors(newmodelpath,p,cdef) => c1 &
 	int_sub(n,c1) => c2 &
 	get_nth_connector_str(p,modelpath,lst,c2) => (str,tp)
 	-----------------
-	get_nth_connector_str(p,modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),NONE))::lst,n) => (str,tp) 
+	get_nth_connector_str(p,modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),_,_,NONE))::lst,n) => (str,tp) 
 
   rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	get_nth_compname(complst,n) => str 
 	----------------------------------
-	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,tp,complst),NONE))::lst, n) 
+	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,tp,complst),_,_,NONE))::lst, n) 
 	  => (str,tp)
 
   rule	(** Not so fast, since we lookup and instantiate two times just because this was not 
@@ -2813,7 +2814,7 @@ relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem li
 	int_sub(n,c1) => newn &
 	get_nth_connector_str(p,modelpath,lst,newn) => (str,tp)
 	---------------------------------------
-	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,tp,complst),NONE))::lst, n)
+	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,tp,complst),_,_,NONE))::lst, n)
 	  => (str,tp)
 	
   rule	get_nth_connector_str(p,modelpath,lst,n) => (str,tp)
@@ -2869,14 +2870,14 @@ relation count_connectors: (Absyn.Path, Absyn.Program, Absyn.ElementItem list) =
 	count_connectors(modelpath,p,lst) => c2 &
 	int_add(c1,c2) => res
 	---------------------
-	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),NONE))::lst) => res
+	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),_,_,NONE))::lst) => res
 
   rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	list_length(complst) => c1 &
 	count_connectors(modelpath,p,lst) => c2 &
 	int_add(c1,c2) => res
 	--------------------
-	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,tp,complst),NONE))::lst) => res
+	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,tp,complst),_,_,NONE))::lst) => res
 
 	
 	(* Rule above didn't match => element not connector components, try rest of list*)
@@ -3067,12 +3068,12 @@ relation get_componentitems_annotations: (Absyn.Element list, Env.Env)
 	  get_componentitems_annotations(rest,env) => res2 &
 	list_append(res1,res2) => res
 	------------------------
-	get_componentitems_annotations(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,items),_)::rest,env) 
+	get_componentitems_annotations(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,items),_,_,_)::rest,env) 
 	  => res
   rule	get_componentitems_annotations(rest,env) => res2 &
 	list_append(["{}"],res2) => res
 	------------------------
-	get_componentitems_annotations(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,_),_)::rest,env) 
+	get_componentitems_annotations(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,_),_,_,_)::rest,env) 
 	  => res
 
   rule	get_componentitems_annotations(rest,env) => res 
@@ -3123,7 +3124,7 @@ relation get_component_annotation: Absyn.Element => string =
 	
   rule	get_componentitems_annotation(lst) => str
 	-----------------------------------------
-	get_component_annotation(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),NONE)) => str
+	get_component_annotation(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),_,_,NONE)) => str
 	axiom get_component_annotation _ => ""
 end 
 
@@ -3170,7 +3171,7 @@ relation get_component_modification: Absyn.Element => string =
 	
   rule	get_componentitems_modification(lst) => str
 	-----------------------------------------
-	get_component_modification(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),NONE)) => str
+	get_component_modification(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),_,_,NONE)) => str
 	axiom get_component_modification _ => ""
 end 
 
@@ -3384,23 +3385,23 @@ end
 relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) 
 	  => Absyn.Element =
 
-  axiom	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,elt::_),g))::_,1) 
-	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g)
+  axiom	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,elt::_),g,h,i))::_,1) 
+	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g,h,i)
 
   rule	list_length(lst) => numcomps &
 	int_gt(n,numcomps) => true &
 	int_sub(n,numcomps) => newn &
 	get_nth_component_in_elementitems(rest,newn) => res
 	---------------------------------------------------
-	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),_))::rest,n) => res
+	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),_,_,_))::rest,n) => res
 
   rule	list_length(lst) => numcomps &
 	int_le(n,numcomps) => true &
 	int_sub(n,1) => n' &
 	list_nth(lst,n') => elt
 	-----------------------------
-	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt as Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,lst),g))::rest,n) 
-	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g)
+	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt as Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,lst),g,h,i))::rest,n) 
+	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g,h,i)
 
 
 (*  rule	int_ge(n,1) => true &
@@ -3451,7 +3452,7 @@ relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env)
 	get_componentitems_name(lst) => names &
 	prefix_typename(typename,names) => lst
 	-------------------------------------------
-	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_),env) => lst
+	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_),env) => lst
 
   rule	Lookup.lookup_class(env,p,true) => (c,env') &
 	Env.get_env_path(env') => NONE &
@@ -3459,7 +3460,7 @@ relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env)
 	get_componentitems_name(lst) => names &
 	prefix_typename(typename,names) => lst
 	-------------------------------------------
-	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_),env) => lst
+	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_),env) => lst
 
 	axiom	get_component_name_and_type_and_comment(_,env) => []
 
@@ -3686,20 +3687,20 @@ relation replace_class_in_elementitemlist: (Absyn.ElementItem list, Absyn.Class)
   rule	not name1 = name &
 	replace_class_in_elementitemlist(xs,c) => res
 	------------------------------------------
-	replace_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_)) => e1::res
+	replace_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_)) => e1::res
 	
   rule name1 = name 
 	-----------------------------
 	replace_class_in_elementitemlist(
-	    (e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, Absyn.CLASS(name1,_,_,_,_,_)),f)))::xs,
+	    (e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, Absyn.CLASS(name1,_,_,_,_,_)),f,g,h)))::xs,
 	    c2 as Absyn.CLASS(name,_,_,_,_,_))
-	    => Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e,c2),f))::xs
+	    => Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e,c2),f,g,h))::xs
 	
   rule	replace_class_in_elementitemlist(xs,c) => res
 	-----------------------------------------
 	replace_class_in_elementitemlist(c1::xs,c) => c1::res
 
-  axiom	 replace_class_in_elementitemlist([],c) => [Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",Absyn.CLASSDEF(false,c),NONE))]
+  axiom	 replace_class_in_elementitemlist([],c) => [Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",Absyn.CLASSDEF(false,c),"",0,NONE))]
 end
 
 (** relation: get_inner_class
@@ -3865,12 +3866,12 @@ relation get_class_from_elementitemlist: (Absyn.ElementItem list, Absyn.Ident) =
 
   rule	name1 = name2
 	------------------------------
-	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),NONE))::xs,name2) => c1
+	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE))::xs,name2) => c1
 
   rule	not name1 = name &
 	get_class_from_elementitemlist(xs,name) => res
 	------------------------------------------
-	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),NONE))::xs,name) => res
+	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE))::xs,name) => res
 
   rule	get_class_from_elementitemlist(xs,name) => res
 	----------------------------------------------
@@ -3952,7 +3953,7 @@ relation get_classes_in_elts: Absyn.ElementItem list => Absyn.Class list =
   axiom	get_classes_in_elts [] => []
   rule	get_classes_in_elts (rest) => res
 	---------------------------------
-	get_classes_in_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,class),NONE))::rest)
+	get_classes_in_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,class),_,_,NONE))::rest)
 	    => class::res
   rule	get_classes_in_elts (rest) => res
 	---------------------------------

@@ -607,9 +607,9 @@ relation ceval_ast_elt: (Env.Env, Absyn.Element,
 
   rule	ceval_ast_citems(env,citems,impl,st) => citems'
 	-----------------------------------------------
-	ceval_ast_elt (env, Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems),c),
+	ceval_ast_elt (env, Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems),file,line,c),
 		       impl,st)
-	  => (Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems'),c))
+	  => (Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems'),file,line,c))
 end
 
 relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list, 
@@ -951,7 +951,7 @@ axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.S
 	 Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
 	 but where to get t? *)
 
-  rule	System.modelicapath => mp &	
+  rule	System.modelicapath => mp &
 	Static.component_ref_to_path(cr) => path &
 	ClassLoader.load_class(path, mp) => pnew &
 	Interactive.update_program(pnew,p) => p' &

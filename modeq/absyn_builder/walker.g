@@ -16,6 +16,7 @@ header "post_include_hpp" {
 	#include "../interactive.h"
 	#include <stack>
 	#include <string>
+	#include "MyAST.h"
     
 }
 
@@ -28,9 +29,10 @@ options {
 class modelica_tree_parser extends TreeParser;
 
 options {
+    ASTLabelType = "RefMyAST";
+    buildAST = true;
     importVocab = modelica_parser;
     k = 2;
-    buildAST = true;
     defaultErrorHandler = false;
 }
 
@@ -43,12 +45,12 @@ tokens {
     
     typedef std::string mstring;
     
-    void* to_rml_str(antlr::RefAST &t)
+    void* to_rml_str(RefMyAST &t)
     {
         return mk_scon(const_cast<char*>(t->getText().c_str()));
     }
 
-    void* make_inner_outer(antlr::RefAST &i,antlr::RefAST &o)
+    void* make_inner_outer(RefMyAST &i,RefMyAST &o)
     {
 		void *innerouter;
 		if (i!=NULL) {
@@ -110,10 +112,10 @@ stored_definition returns [void *ast]
         #(BEGIN_DEFINITION (e:ENCAPSULATED)? (p:PARTIAL)? 
             restr = class_restriction i:IDENT)
         {
-        ast = Absyn__BEGIN_5fDEFINITION(Absyn__IDENT(to_rml_str(i)),
-            restr,
-            RML_PRIM_MKBOOL(p != 0),
-            RML_PRIM_MKBOOL(e != 0));
+            ast = Absyn__BEGIN_5fDEFINITION(Absyn__IDENT(to_rml_str(i)),
+                restr,
+                RML_PRIM_MKBOOL(p != 0),
+                RML_PRIM_MKBOOL(e != 0));
         }
         |
         #(END_DEFINITION i2:IDENT) 
@@ -459,23 +461,40 @@ element returns [void* ast]
 	void* innerouter = 0;
 	void* constr = 0;
 }
+
+//expr:   #(ASSIGN expr expr)
+//        | ...
+//        | a:ID
+//          {              
+//     MyASTNode *q = static_cast<MyASTNode*>((ANTLR_USE_NAMESPACE(antlr)AST*)a);
+//           std::cout  a->getText()  " is at line "  q->getLine()
+//                 " at file "    q->getFilename()  std::endl; 
+//          }
+
+//File information will be added later since this requires a custom token type
+//in the lexer as well.   /kajny
+           
 	: 
-		( e_spec = import_clause
-			{
-				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("import"),e_spec,mk_none());
+		( e_spec = i_clause:import_clause
+			{                
+				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("import"),
+                    e_spec,mk_scon("NoFile"),mk_icon(i_clause->getLine()),mk_none());
 			}
-		| e_spec = extends_clause
+		| e_spec = e_clause:extends_clause
 			{
-				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("extends"),e_spec,mk_none());
+				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("extends"),
+                    e_spec,mk_scon("NoFile"),mk_icon(e_clause->getLine()),mk_none());
 			}
-		| #(DECLARATION 
+		| #(decl:DECLARATION 
 				(   
-					(f:FINAL)? { final = f!=NULL ? RML_TRUE : RML_FALSE; }
+					(f:FINAL)? { final = f!=NULL ? RML_TRUE : RML_FALSE; ;}
 					(i:INNER | o:OUTER)? { innerouter = make_inner_outer(i,o); }
 					(e_spec = component_clause
 						{
 							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,
-								mk_scon("component"),e_spec,mk_none());
+								mk_scon("component"),e_spec,
+                                mk_scon("NoFile"),mk_icon(decl->getLine()),mk_none());
+            
 						}
 					| r:REPLACEABLE 
 						e_spec = component_clause 
@@ -485,12 +504,13 @@ element returns [void* ast]
 								r ? RML_TRUE : RML_FALSE,
 								Absyn__UNSPECIFIED,
 								mk_scon("replaceable_component"),e_spec,
+                                mk_scon("NoFile"),mk_icon(decl->getLine()),
 								constr? mk_some(constr):mk_none());
 						}
 					)
 				)
 			)
-		| #(DEFINITION
+		| #(def:DEFINITION
 				(   
 					(fd:FINAL)? { final = fd!=NULL?RML_TRUE:RML_FALSE; }
 					(id:INNER | od:OUTER)? { innerouter = make_inner_outer(i,o); }
@@ -499,7 +519,8 @@ element returns [void* ast]
 						{
 							ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(0),
 								class_def);
-							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,mk_scon("??"),ast,mk_none());
+							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,mk_scon("??"),
+                                ast,mk_scon("NoFile"),mk_icon(def->getLine()),mk_none());
 
 						}
 					| 
@@ -513,7 +534,8 @@ element returns [void* ast]
 							ast = Absyn__ELEMENT(final,
 								rd ? RML_TRUE : RML_FALSE,innerouter,
 								mk_scon("??"),
-								ast,constr ? mk_some(constr) : mk_none());
+								ast,mk_scon("NoFile"),mk_icon(def->getLine()),
+                                constr ? mk_some(constr) : mk_none());
 						}
 					)
 				)
@@ -921,7 +943,7 @@ equation returns [void* ast]
 	void *cmt = 0;
 }
 	:
-		#(EQUATION_STATEMENT
+		#(i:EQUATION_STATEMENT
 			(	ast = equality_equation
 			|	ast = conditional_equation_e
 			|	ast = for_clause_e
