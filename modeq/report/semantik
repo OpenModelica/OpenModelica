@@ -138,3 +138,39 @@ Frågan är hur man ser om det är ett derivat. En lösning är ju att
 alltid göra så här om det finns en variabel "value", men det är nog
 ett dåligt sätt. Man skulle också kunna ha en "special"-flagga i
 klassen som sedan ärvs.
+
+* Conflicting modifications
+
+If the grammar change of the "modification" production rule is made,
+what are the semantic consequences?
+
+Consider the following program:
+
+	class Foo
+	  parameter Real x = 17;
+	end;
+
+	class Bar
+	  Foo a(x = 4711);
+	  Foo b(x = 1) = a;
+	end;
+
+Does this even make sense when the class is not Real, Integer, String
+or Boolean? The normal semantics for equality modifications is to
+rewrite it as a separate equation, so it might not be a problem, other
+than an implementation hassle.
+
+	class Foo
+	  parameter Real x = 17;
+	end;
+
+	class Bar
+	  Foo a(x = 4711);
+	  Foo b(x = 1);
+	equation
+	  b = a;
+	end;
+
+* What can you modify?
+
+Both variables and class declarations?
