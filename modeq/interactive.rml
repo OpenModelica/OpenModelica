@@ -23,8 +23,9 @@
 
 module Interactive:
   with "absyn.rml"
+  with "inst.rml"
   with "explode.rml" 
-  with "dae.rml" 
+  with "dae.rml" 							  
   datatype InteractiveStmt = IALG of Absyn.Algorithm
 			   | IEXP of Absyn.Exp
   datatype InteractiveStmts = ISTMTS of InteractiveStmt list
@@ -41,7 +42,8 @@ module Interactive:
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) 
 end
 with "dump.rml"
-
+with "debug.rml"
+with "rtopts.rml"
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
 **)
@@ -57,11 +59,23 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),_))]),st as SYMBOLTABLE(p,_,_,_))
 	    => (" symboltable :",st)
 
+  rule	SCode.elaborate(p) => p' &
+	Absyn.cref_to_path(cr) => path &
+	Inst.instantiate_class(p',path) => dae &
+	DAE.dump_debug dae &
+	print "dumped dae:\n" &
+	DAE.dump_str (dae) => str 
+	--------------------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	    => (str,st)
+	    
+
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------
 	evaluate(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))]),st) => (str,newst)
   axiom	evaluate(_,st) => ("Not implemented yet\n",st)
 end
+
 
 (** relation: evaluate_graphical_api
  ** This relation evaluates all primitives in the graphical api.

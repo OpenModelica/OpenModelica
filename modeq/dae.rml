@@ -73,10 +73,12 @@ module DAE:
   datatype DAElist = DAE of Element list
 	  
   relation dump: DAElist => ()
+  relation dump_str: DAElist => string
   relation dump_debug: DAElist => ()
   relation dump_debug_element : Element => ()
   relation dump_graphviz: DAElist => ()
   relation dump_type: Type => ()
+  relation dump_type_str: Type => string
   relation dump_algorithm: Element => ()
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_matching: ('a list, 'a => () )  => 'a list
@@ -112,30 +114,44 @@ with "dump.rml"
  **)
 
 relation dump : DAElist => () =
-
+	
   rule	dump_list (daelist, dump_function) &
-	dump_list (daelist, dump_comp_element)
+	dump_list (daelist, dump_comp_element) 
 	-------------
 	dump DAE(daelist)
 end
+	
+(** relation: dump_str
+ ** 
+ ** This relation prints the DAE to a string.
+**)
+relation dump_str : DAElist => string =
+	
+  rule	dump_comp_element_str d => str &
+	dump_str(DAE(dl)) => str2 &
+	string_append(str,str2) => str3
+	-------------------------------
+	dump_str DAE((d as COMP(_,_))::dl) => str3
 
-
-
+	axiom dump_str DAE([]) => ""
+end
+	
+	
 relation dump_list : ('a list, 'a => ()) => () =
-
+	
   axiom	dump_list ([],_)
-
+	
   rule	r(first) &
 	dump_list (rest, r)
 	-------------------
 	dump_list (first::rest, r)
-
+	
 end
-
-
-
+	
+	
+	
 relation dump_comp_element : Element => () =
-
+	
   rule	RTOpts.modelica_output => false &
 	print "fclass " & print n & print "\n" &
 	dump_elements(l) &
@@ -156,6 +172,35 @@ relation dump_comp_element : Element => () =
 
 end
 
+relation dump_comp_element_str : Element => string =
+	
+  rule	RTOpts.modelica_output => false &
+	string_append("fclass",n) => s1 &
+	string_append(s1,"\n") => s2 &
+	dump_elements_str(l) => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4,"end ") => s5 &
+        string_append(s5,n) => s6 &
+        string_append(s6,";\n") => str
+	-----------------------------------
+	dump_comp_element_str COMP(n,DAE(l)) => str
+
+  rule	RTOpts.modelica_output => true &
+	string_append("class ",n) => s1 &
+	string_append(s1,"\n") => s2 &
+	dump_elements_str(l) => s3 &
+	string_append(s2,s3)  => s4 &
+	string_append(s4,"end ") => s5 &
+	string_append(s5,n) => s6 &
+	string_append(s6,";\n") => str
+  	-----------------------------------
+	dump_comp_element_str COMP(n,DAE(l)) => str
+
+(* LS: for non-COMPS, which are only FUNCTIONS at the moment *)
+
+  axiom	dump_comp_element_str _ => ""
+
+end
 
 
 relation dump_elements : Element list => () =
@@ -168,6 +213,55 @@ relation dump_elements : Element list => () =
 	dump_elements l
 
 end
+
+relation dump_elements_str : Element list => string =
+
+  rule	dump_vars_str l => s1 &
+	string_append(s1,"equation\n") => s2 &
+	dump_equations_str(l) => s3 &
+	string_append(s2,s3) => s4 &
+	dump_algorithms_str(l) => s5 &
+	string_append(s4,s5) => str
+	---------------------------
+	dump_elements_str l => str
+
+end
+
+relation dump_algorithms_str: Element list => string = 
+	
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("algorithm\n",s1) => s2 &
+	dump_algorithms_str(xs) => s3 &
+	string_append(s1,s3) => str
+	--------------------------------------
+	dump_algorithms_str (ALGORITHM(Algorithm.ALGORITHM(stmts))::xs) => str
+
+  rule	dump_algorithms_str(xs) => str
+	------------------------------
+	dump_algorithms_str(_::xs) => str
+	
+  axiom dump_algorithms_str([])  => ""
+end
+
+relation dump_equations_str: Element list => string =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," = ") => s3 &
+	Exp.print_exp_str e2  => s4 &
+	string_append(s4,";\n") => s5 &
+	dump_equations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_equations_str( EQUATION(e1,e2)::xs) => str
+	
+  rule	dump_equations_str(xs) => str
+	-----------------------------
+	dump_equations_str(_::xs) => str
+	
+	axiom dump_equations_str([]) => ""
+end
+
 
 (* replace this with dump_list when everything works after the VARVAL removal *)
  (* project *)
@@ -182,6 +276,17 @@ relation dump_vars: Element list => () =
 
 end
 
+relation dump_vars_str: Element list => string =
+	
+  axiom	dump_vars_str [] => ""
+	
+  rule	dump_var_str first => s1 &
+	dump_vars_str rest => s2 &
+	string_append(s1,s2) => str
+	-------------------
+	dump_vars_str first :: rest => str
+
+end
 
 
 relation dump_kind =
@@ -230,6 +335,15 @@ relation dump_direction =
 
 end
 
+relation dump_direction_str: VarDirection => string =
+
+  axiom	dump_direction_str INPUT => " input  "
+	
+  axiom dump_direction_str OUTPUT => " output "
+	
+  axiom	dump_direction_str BIDIR => "        "
+
+end
 
 relation dump_type =
 
@@ -251,6 +365,18 @@ relation dump_type =
 
 end
 
+relation dump_type_str =
+
+  axiom	dump_type_str INT => "Integer " 
+	
+  axiom	dump_type_str REAL => "Real    "
+
+  axiom	dump_type_str BOOL => "Boolean "
+
+  axiom	dump_type_str STRING => "String  "
+
+end
+
 relation dump_var : Element => () =
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
@@ -265,6 +391,36 @@ relation dump_var : Element => () =
 	dump_var VAR(id, kind, dir, typ, SOME(e),_)
 	
   axiom	dump_var (_)
+
+end
+
+relation dump_var_str : Element => string =
+	
+  rule	dump_kind_str kind => s1 & 
+	dump_direction_str dir => s2 &
+	string_append(s1,s2)=>s3 &
+	dump_type_str typ => s4 &	
+	string_append(s3,s4) => s5 &
+	Exp.print_component_ref_str id => s6 & 
+	string_append(s5,s6) => s7 &
+	string_append(s7,";\n") => str
+	--------------------------------------
+	dump_var_str VAR(id, kind, dir, typ, NONE,_) => str
+	
+  rule	dump_kind_str kind => s1 & 
+	dump_direction_str dir => s2 &
+	string_append(s1,s2)=>s3 &
+	dump_type_str typ => s4 &	
+	string_append(s3,s4) => s5 &
+	Exp.print_component_ref_str id => s6 & 
+	string_append(s6," = ") => s7 &
+	Exp.print_exp_str e => s8 & 
+	string_append(s7,s8) => s9 &
+	string_append(s9,";\n") => str
+	--------------------------------------
+	dump_var_str VAR(id, kind, dir, typ, SOME(e),_) => str
+	
+  axiom	dump_var_str (_) => ""
 
 end
 
@@ -284,6 +440,31 @@ relation dump_equation : Element => () =
 
 end
 
+relation dump_equation_str : Element => string =
+	
+  rule	
+	Exp.print_exp_str e1 => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2, " = ") => s3 &
+	Exp.print_exp_str e2  => s4 & 
+	string_append(s3,s4)=> s5 &
+	string_append(s5,";\n") => str
+	--------------------------------------
+	dump_equation_str(EQUATION(e1, e2)) => str
+	
+  rule	print "  " & Exp.print_component_ref_str c => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(" ::= ",s2) => s3 &
+	Exp.print_exp_str e => s4 & 
+	string_append(s3,s4) => s5 &
+	string_append(s5,";\n") => str
+	--------------------------------------
+	dump_equation_str(DEFINE(c, e)) => str
+	
+  axiom	dump_equation_str _ => ""
+
+end
+
 relation dump_algorithm : Element => () =
 
   rule	print "algorithm\n" &
@@ -295,6 +476,16 @@ relation dump_algorithm : Element => () =
 
 end
 
+relation dump_algorithm_str : Element => string =
+
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("algorithm\n",s1) => str
+	----------------------------------------------
+	dump_algorithm_str ALGORITHM(Algorithm.ALGORITHM(stmts)) => str
+
+  axiom	dump_algorithm_str _ => ""
+
+end
 
 (* LS *)
 relation dump_function: Element => () =
@@ -324,6 +515,14 @@ relation pp_statement : Algorithm.Statement => () =
   rule	pp_stmt (alg,2)
 	--------------
 	pp_statement alg
+
+end
+
+relation pp_statement_str : Algorithm.Statement => string =
+
+  rule	pp_stmt_str (alg,2) => str
+	--------------
+	pp_statement_str alg => str
 
 end
 
@@ -388,6 +587,94 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 
 end
 
+relation pp_stmt_str : (Algorithm.Statement, int) => string =
+
+  rule	indent_str i => s1 &
+	Exp.print_component_ref_str c => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," := ") => s4 &
+	Exp.print_exp_str e => s5 &
+	string_append(s4,s5) => s6 &
+	string_append(s6,";\n") => str
+	----------
+	pp_stmt_str (Algorithm.ASSIGN(_,c,e), i) => str
+
+  rule	indent_str i => s1 &
+	Exp.print_component_ref_str c => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," := ") => s4 &
+	Exp.print_exp_str e => s5 &
+	string_append(s4,s5) => s6 &
+	string_append(s6,";\n") => str
+	----------
+	pp_stmt_str (Algorithm.ASSIGN_ARR(_,c,e), i) => str
+
+  rule	indent_str i => s1 &
+	string_append(s1,"if ") => s2 &
+	Exp.print_exp_str e => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," then\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (then, i') => s6 &
+	string_append(s5,s6) => s7 &
+	pp_else_str (else, i) => s8 &
+	string_append(s7,s8) => s9 &
+	indent_str i => s10 & 
+	string_append(s9,s10) => s11 &
+	string_append(s11,"end if;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.IF(e,then,else), i) => str
+	
+  rule	indent_str i => s1 &
+	string_append(s1,"for ") => s2 &
+	string_append(s2,id) => s3 &
+	string_append(s3," in ") => s4 &
+ 	Exp.print_exp_str e => s5 &
+	string_append(s4,s5) => s6 &
+	string_append(s6," loop\n") => s7 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s8 &
+	string_append(s7,s8) => s9 &				   
+	indent_str i => s10 &
+	string_append(s9,s10) => s11 &
+	string_append(s11,"end for;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.FOR(_,_,id,e,stmts), i) => str
+	
+  rule	indent_str i => s1 &
+	string_append(s1,"while ") => s2 &
+	Exp.print_exp_str e => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," loop\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s6 &
+	string_append(s5,s6) => s7 &
+	indent_str i => s8 &
+	string_append(s7,s8) => s9 &
+	string_append(s9,"end while;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.WHILE(e,stmts), i) => str
+	
+  rule	indent_str i => s1 &
+	string_append(s1,"when ") => s2 &
+	Exp.print_exp_str e => s3 & 
+	string_append(s2,s3) => s4 &
+	string_append(s4," do\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s6 &
+	string_append(s5,s6) => s7 &				  
+	indent_str i => s8 &
+	string_append(s7,s8) => s9 &
+	string_append(s9,"end when;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.WHEN(e,stmts), i) => str
+	
+  rule	indent_str i => s1 & string_append(s1,"**ALGORITHM**;\n") => str
+	----------------------------------
+	pp_stmt_str (_,i) => str
+
+end
+
 relation pp_stmt_list : (Algorithm.Statement list, int) => () =
 
   axiom	pp_stmt_list ([],_)
@@ -395,6 +682,17 @@ relation pp_stmt_list : (Algorithm.Statement list, int) => () =
   rule	pp_stmt (stmt,i) & pp_stmt_list(stmts,i)
 	--------------------------------
 	pp_stmt_list (stmt::stmts,i)
+
+end
+
+relation pp_stmt_list_str : (Algorithm.Statement list, int) => string =
+
+  axiom	pp_stmt_list_str ([],_) => ""
+
+  rule	pp_stmt_str (stmt,i) =>s1 & pp_stmt_list_str(stmts,i) => s2 &
+	string_append(s1,s2) => str
+	--------------------------------
+	pp_stmt_list_str (stmt::stmts,i) => str
 
 end
 
@@ -419,6 +717,33 @@ relation pp_else : (Algorithm.Else, int) => () =
 
 end
 
+relation pp_else_str : (Algorithm.Else, int) => string =
+
+  axiom	pp_else_str (Algorithm.NOELSE, _) => ""
+
+  rule	indent_str i => s1 &
+	string_append(s1,"elseif ") => s2 &
+	Exp.print_exp_str e => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," then\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (then, i') => s6 &
+	string_append(s5,s6) => s7 &
+	pp_else_str (else, i) => s8 &
+	string_append(s7,s8) => str
+        -----------------
+	pp_else_str (Algorithm.ELSEIF(e,then,else), i) => str
+
+  rule	indent_str i => s1 &
+ 	string_append(s1,"else\n") => s2 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s3 &
+	string_append(s2,s3) => str
+        ------------------------
+	pp_else_str (Algorithm.ELSE(stmts), i) => str
+
+end
+
 relation indent : int => () =
 
   axiom indent 0
@@ -429,6 +754,16 @@ relation indent : int => () =
 
 end
 
+relation indent_str : int => string =
+
+  axiom indent_str 0 => ""
+
+  rule	int_sub(i,1) => i' & indent_str i' => s1 &
+	string_append(" ",s1) => str
+	------------------------------------------
+	indent_str i => str
+
+end
 
 (* LS *)
 relation get_matching_elements: (Element list, Element => () )  => Element list =

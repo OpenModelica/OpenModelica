@@ -32,7 +32,6 @@
 (** debug flags: inst *)
 
 module Inst:
-
   with "classinf.rml"
   with "connect.rml"
   with "dae.rml"
@@ -42,7 +41,7 @@ module Inst:
   with "explode.rml"
   with "mod.rml"
   with "prefix.rml"
-  with "types.rml"
+  with "types.rml"							  
 
   type InstDims = Exp.Subscript list
 
@@ -51,9 +50,12 @@ module Inst:
 
   relation instantiate: SCode.Program => DAE.DAElist
 
+  relation instantiate_class : (SCode.Program,SCode.Path) => DAE.DAElist
+
   relation inst_class: (Env.Env, Mod.Mod, Prefix.Prefix, 
 			Connect.Sets, SCode.Class, InstDims)
 	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State)
+
 
   relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 			      Connect.Sets, SCode.Class, InstDims)
@@ -139,6 +141,66 @@ relation instantiate: SCode.Program => DAE.DAElist =
 	-----------------------------
 	instantiate(p) => DAE.DAE(l)
 
+end
+
+
+(** relation: instantiate_class
+ **
+ **
+ ** To enable interactive instantiation, an arbitrary class in the program needs to be
+ ** possible to instantiate. This relation performs the same action as `inst_program', 
+ **  but given a specific class to instantiate.
+ **  First all the class
+ ** definitions is added to the environment without modifications, and
+ ** then the specified class is instantiated in the relation `inst_class'
+ **)
+
+relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
+
+  rule	print "# Empty program\n"
+	------------------------------
+	instantiate_class([],cr) => fail
+
+  rule	Builtin.initial_env => env &
+	inst_class_decls(env,cdecls,path) => (env',dae1) &
+	inst_class_in_program(env',cdecls,path) => dae
+	-----------------------------
+	instantiate_class(cdecls, path as Absyn.IDENT(name2)) => DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))]) 
+
+  rule	print "- inst_program failed\n" 
+	------------
+	instantiate_class(_,_) => fail
+end
+
+relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Element list) =
+	
+  rule	name = name2 &
+	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (dae,_,_,_) 
+	-------------------------------------------------------------
+	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_))::cs,Absyn.IDENT(name2)) => dae
+
+  rule	not name = name2 &
+	inst_class_in_program(env,cs,path) => dae
+	-------------------------------------------------------------
+	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_))::cs, path as Absyn.IDENT(name2)) => dae
+  axiom	inst_class_in_program(env,[],_) => []
+
+end
+
+relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Element list) =
+  rule	not name = name2 &
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	inst_class_decls(env',cs,ref) => (env'', dae2) &
+	list_append(dae1,dae2) => dae
+	-----------------------------
+	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_))::cs,ref as Absyn.IDENT(name2)) => (env'',dae)
+
+  rule	name = name2 &      
+	inst_class_decls(env,cs,ref) => (env', dae2)
+	-----------------------------
+	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_))::cs,ref as Absyn.IDENT(name2)) => (env',dae2)
+
+  axiom	inst_class_decls(env,[],_) => (env,[])
 end
 
 (** relation: inst_program
