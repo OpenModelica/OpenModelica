@@ -25,12 +25,21 @@
  ** description: DAELow a lower form of DAE including sparse matrises for
  ** BLT decomposition, etc.
  **
- ** RCS: %W% %E%
+ ** RCS: $Id$
  ** 
  **)
 
-(** - Module header *)
-
+(** 
+ ** This module is a lowered form of a DAE including equations simple equations in
+ ** two separate lists. The variables are split into known variables
+ ** (parameters and constants) and unknown variables 
+ ** (states and algebraic variables).
+ ** The module includes the BLT sorting algorithm which sorts the
+ ** equations into blocks, and the index reduction algorithm using
+ ** dummy derivatives for solving higher index problems.
+ ** It also includes the tarjan algorithm to detect strong components
+ ** in the BLT sorting.
+**)
 module DAELow:
   
   with "dae.rml"
