@@ -1,7 +1,31 @@
 #include "index_spec.h"
 #include "memory_pool.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+int index_spec_ok(index_spec_t* s)
+{
+    int i;
+    if (!s) return 0;
+    if (s->ndims < 0) return 0;
+    if (!s->dim_size) return 0;
+    if (!s->index) return 0;
+    for (i = 0; i < s->ndims; ++i) 
+    {
+      
+	if (s->dim_size[i] < 0) return 0;
+	if ((s->index[i] == 0) && (s->dim_size[i] != 1)) 
+	  {
+	    fprintf(stderr,"index[%d] == 0, size == %d\n",i,(unsigned int)s->dim_size[i]);
+	    return 0;	  
+	  }
+	
+    }  
+    return 1;
+}
+
+
 
 void alloc_index_spec(index_spec_t* s)
 {
@@ -31,7 +55,7 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
   dest->index = index_alloc(nridx);   
   for (i = 0; i < nridx; ++i)
     {
-      dest->dim_size[i] = va_arg(ap,int);
+      dest->dim_size[i] = va_arg(ap,int);      
       dest->index[i] = va_arg(ap,int*);
     }
   va_end(ap);

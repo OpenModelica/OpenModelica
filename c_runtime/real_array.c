@@ -26,11 +26,20 @@ int real_array_shape_eq(real_array_t* a, real_array_t* b)
 {
     int i;
 
-    if (a->ndims != b->ndims) return 0;
+    if (a->ndims != b->ndims) 
+      {
+	fprintf(stderr,"a->ndims != b->ndims, %d != %d\n",a->ndims,b->ndims);
+	return 0;
+      }
     
     for (i = 0; i < a->ndims; ++i) 
     {
-	if (a->dim_size[i] != b->dim_size[i]) return 0;
+	if (a->dim_size[i] != b->dim_size[i]) 
+	  {
+	    fprintf(stderr,"a->dim_size[%d] != b->dim_size[%d], %d != %d\n",
+		    i,i,a->dim_size[i],b->dim_size[i]);
+	    return 0;
+	  }
     }
     
     return 1;
@@ -44,6 +53,40 @@ int real_array_one_element_ok(real_array_t* a)
     {
       if (a->dim_size[i] != 1) return 0;
     }
+  return 1;
+}
+
+int index_spec_fit_real_array(index_spec_t* s, real_array_t* a)
+{
+  int i,j;
+
+  if (s->ndims != a->ndims) return 0;
+  for (i = 0; i < s->ndims; ++i)
+    {
+      if (s->dim_size[i] == 0) 
+	{
+	  if ((s->index[i][0] <= 0) || (s->index[i][0] > a->dim_size[i]))
+	    {
+	      fprintf(stderr,
+		      "scalar s->index[%d][0] == %d incorrect, a->dim_size[%d] == %d\n",
+		      i,s->index[i][0],i,a->dim_size[i]);
+	      return 0;
+	    }
+	}
+
+      for (j = 0; j < s->dim_size[i]; ++j)
+	{	  
+	  if (s->index[i] && ((s->index[i][j] <= 0) ||
+	      (s->index[i][j] > a->dim_size[i]))) 
+	    {
+	      fprintf(stderr,
+		      "array s->index[%d][%d] == %d incorrect, a->dim_size[%d] == %d\n",
+		      i,j,s->index[i][j],i,a->dim_size[i]);
+	      return 0;	  
+	    }
+	}
+    }
+
   return 1;
 }
 
@@ -181,27 +224,34 @@ void copy_real_array_data(real_array_t* source, real_array_t* dest)
 
 modelica_real* calc_index_spec(int ndims, size_t* idx_vec, real_array_t* arr, index_spec_t* spec)
 {
+  /* idx_vec is zero based */
+  /* spec is one based */
     int i;
     int d,d2;
-    modelica_real* data = arr->data;
-    size_t stride = 1;
+    int index = 0;
+
+    assert (real_array_ok(arr));
+    assert (index_spec_ok(spec));
+    assert (index_spec_fit_real_array(spec,arr));
+    assert ((ndims == arr->ndims) && (ndims == spec->ndims));
+
+    index = 0;
     for (i = 0; i < ndims; ++i)
     {
 	d = idx_vec[i];
 	if (spec->index[i])
 	{
-	    d2 = spec->index[i][d];
+	    d2 = spec->index[i][d] - 1;
 	}
 	else 
 	{
 	    d2 = d;
 	}
-	data += d2*stride;
-	stride *= arr->dim_size[i];
+	index = index*arr->dim_size[i] + d2;
 	
     }
 
-    return data;
+    return arr->data + index;
 }
 
 /* Uses zero based indexing */
@@ -210,6 +260,7 @@ modelica_real* calc_index(int ndims, size_t* idx_vec, real_array_t* arr)
   int i;
   int index;
 
+  assert(ndims == arr->ndims);
   index = 0;
   for (i = 0; i < ndims; ++i)
     {
@@ -342,57 +393,82 @@ void simple_indexed_assign_real_array2(real_array_t* source,
   dest->data[i1*size_j+i2] = source->data[i1*size_j+i2];
 }
 
+int imax(int i,int j)
+{
+  return i < j ? j : i;
+}
+
+int next_index(int ndims, size_t* idx, size_t* size) 
+{
+  int d = ndims - 1;
+
+  idx[d]++;
+  while (idx[d] >= size[d])
+    {
+      idx[d] = 0;
+      if (!d) { return 1; }
+      d--;
+      idx[d]++;	    
+    }
+  return 0;
+}
+
 void indexed_assign_real_array(real_array_t* source, 
 			       real_array_t* dest,
-			       index_spec_t* spec)
+			       index_spec_t* dest_spec)
 {
   
-    size_t* idx_vec;
-    size_t d,d2;
-    size_t quit;
+    size_t* idx_vec1;
+    size_t* idx_vec2;
+    size_t* idx_size;
+    int quit;
+    int i,j;
+    state mem_state;
 
     assert(real_array_ok(source));
     assert(real_array_ok(dest));
+    assert(index_spec_ok(dest_spec));
+    assert(index_spec_fit_real_array(dest_spec, dest));
+    for (i = 0,j = 0; i < dest_spec->ndims; ++i) 
+      if (dest_spec->dim_size[i] != 0) ++j;
+    assert(j == source->ndims);
 
-/*    assert(index_spec_ok(spec));
-    assert(real_array_index_ok(dest, spec));
-    assert(real_array_index_result_ok(source, dest, spec));
-*/
-    idx_vec = calloc(source->ndims, sizeof(size_t));
+    mem_state = get_memory_state();
+    idx_vec1 = (size_t *)size_alloc(dest->ndims);
+    idx_vec2 = (size_t *)size_alloc(source->ndims);
+    idx_size = (size_t *)size_alloc(dest_spec->ndims);
+
+    for (i = 0; i < dest_spec->ndims; ++i)
+      {
+	idx_vec1[i] = 0;
+
+	if (dest_spec->index[i])
+	  idx_size[i] = imax(dest_spec->dim_size[i],1);
+	else
+	  idx_size[i] = dest->dim_size[i];
+      }
     
-    d2 = d = source->ndims - 1;
-
     quit = 0;
     while(1)
-    {
-/*
-	for (i = 0; i < source->ndims; ++i)
-	{
-	    printf("%d",idx_vec[i]);
-	    if (i < source->ndims-1) printf(", ");
-	}
-	printf("\n");
-*/
-	*calc_index_spec(source->ndims,idx_vec,dest,spec) =
-	    *calc_index(source->ndims,idx_vec, source);
+      {
+	for (i = 0,j=0; i < dest_spec->ndims; ++i) 
+	  {
+	    if (dest_spec->dim_size[i] != 0) 
+	      {
+		idx_vec2[j] = idx_vec1[i];
+		++j;
+	      }
+	  }
 
-	idx_vec[d]++;
-	d2 = d;
-	while (idx_vec[d2] >= source->dim_size[d2])
-	{
-	    idx_vec[d2] = 0;
-	    if (!d2) 
-	    {
-		quit = 1;
-		break;
-	    }
-	    d2--;
-	    idx_vec[d2]++;	    
-	}
+	*calc_index_spec(dest->ndims,idx_vec1,dest,dest_spec) =
+	  *calc_index(source->ndims,idx_vec2, source);
+
+	quit = next_index(dest_spec->ndims,idx_vec1,idx_size);
+
 	if (quit) break;
     }
     
-
+    restore_memory_state(mem_state);
     
 }
 
@@ -401,18 +477,102 @@ void indexed_assign_real_array(real_array_t* source,
  a := b[1:3];
 
 */
+
+
 void index_real_array(real_array_t* source, 
-			       index_spec_t* spec, 
-			       real_array_t* dest)
+		      index_spec_t* source_spec, 
+		      real_array_t* dest)
 {
+    size_t* idx_vec1;
+    size_t* idx_vec2;
+    size_t* idx_size;
+    int quit;
+    int j;
+    int i;
+    state mem_state;
+
+
+    assert(real_array_ok(source));
+    assert(real_array_ok(dest));
+    assert(index_spec_ok(source_spec));
+    assert(index_spec_fit_real_array(source_spec,source));
+    for (i = 0,j=0; i < source->ndims; ++i) 
+      if (source_spec->dim_size[i] != 0) ++j;
+    assert(j == dest->ndims);
+
+    mem_state = get_memory_state();
+    idx_vec1 = (size_t *)size_alloc(source->ndims);
+    idx_vec2 = (size_t *)size_alloc(dest->ndims);
+    idx_size = (size_t *)size_alloc(source_spec->ndims);
+
+    for (i = 0; i < source->ndims; ++i) idx_vec1[i] = 0;
+    for (i = 0; i < source_spec->ndims; ++i)
+      {
+	if (source_spec->index[i])
+	  idx_size[i] = imax(source_spec->dim_size[i],1);
+	else
+	  idx_size[i] = source->dim_size[i];
+      }
+
+    quit = 0;
+    while(1)
+      {
+	for (i = 0,j=0; i < source->ndims; ++i) {
+	  if (source_spec->dim_size[i] != 0) {
+	    idx_vec2[j] = idx_vec1[i];
+	    ++j;
+	  }
+	}
+		
+	*calc_index(dest->ndims,idx_vec2, dest) 
+	  = *calc_index_spec(source->ndims,idx_vec1, source,source_spec);
+
+	quit = next_index(source->ndims,idx_vec1,idx_size);
+	if (quit) break;
+    }
+
+    restore_memory_state(mem_state);
   
 }
 
 void index_alloc_real_array(real_array_t* source, 
-			       index_spec_t* spec, 
+			       index_spec_t* source_spec, 
 			       real_array_t* dest)
 {
-  
+  int i;
+  int j;
+  int ndimsdiff;
+
+  assert(real_array_ok(source));
+  assert(index_spec_ok(source_spec));
+  assert(index_spec_fit_real_array(source_spec,source));
+
+  ndimsdiff = 0;
+  for (i = 0; i < source_spec->ndims; ++i)
+    {
+      if (source_spec->dim_size[i] == 0) ndimsdiff--;
+    }
+
+  dest->ndims = source->ndims + ndimsdiff;
+  dest->dim_size = size_alloc(dest->ndims);
+
+  for (i = 0,j = 0; i < dest->ndims; ++i)
+    {
+      while (source_spec->dim_size[i+j] == 0) ++j;
+      if (source_spec->index[i+j] == 0)
+	{
+	  dest->dim_size[i] = source->dim_size[i+j];
+	}
+      else
+	{
+	  dest->dim_size[i] = source_spec->dim_size[i+j];
+	}
+    }
+
+  alloc_real_array_data(dest);
+
+  index_real_array(source,source_spec,dest);
+
 }
 
 

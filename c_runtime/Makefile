@@ -1,6 +1,6 @@
 CC = gcc
 AR = ar -ru
-CFLAGS = -Wall -ansi -pedantic
+CFLAGS = -g -Wall -ansi -pedantic
 
 
 

@@ -1,6 +1,7 @@
 
 #include "read_write.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 void cleanup_description(type_description* desc)
@@ -11,6 +12,16 @@ void cleanup_description(type_description* desc)
     }
 }
 
+void in_report(const char *str)
+{
+  fprintf(stderr,"input failed: %s\n",str);
+}
+
+void read_to_eol(FILE* file)
+{
+  int c;
+  while (((c = fgetc(file)) != '\n') && (c != EOF));
+}
 int read_type_description(FILE* file, type_description* desc)
 {
   int c;
@@ -65,20 +76,23 @@ int read_type_description(FILE* file, type_description* desc)
       
     } while (0);
 
-  /* read to end of line */
-  while (((c = fgetc(file)) != '\n') && (c != EOF));
+  read_to_eol(file);
+
   return 0;
 }
+
+
 
 int read_modelica_real(FILE* file, modelica_real* data)
 {
   float f;
   type_description desc;
-  if (read_type_description(file,&desc)) return 1;
-  if ((desc.type != 'r') && (desc.type != 'i')) { cleanup_description(&desc); return 1; }
-  if (desc.ndims != 0) { cleanup_description(&desc); return 1; }
-  if (fscanf(file,"%e",&f) != 1) { cleanup_description(&desc); return 1; }
+  if (read_type_description(file,&desc)) { in_report("rs type_desc"); return 1; }
+  if ((desc.type != 'r') && (desc.type != 'i')) { cleanup_description(&desc); in_report("rs type"); return 1; }
+  if (desc.ndims != 0) { cleanup_description(&desc); in_report("rs dims"); return 1; }
+  if (fscanf(file,"%e",&f) != 1) { cleanup_description(&desc); in_report("rs parse"); return 1; }
   *data = f;
+  read_to_eol(file);
   cleanup_description(&desc);
   return 0;
 }
@@ -86,10 +100,11 @@ int read_modelica_real(FILE* file, modelica_real* data)
 int read_modelica_integer(FILE* file, modelica_integer* data)
 {
   type_description desc;
-  if (read_type_description(file,&desc)) return 1;
-  if (desc.type != 'i') { cleanup_description(&desc); return 1; }
-  if (desc.ndims != 0) { cleanup_description(&desc); return 1; }
-  if (fscanf(file,"%d",data) != 1) { cleanup_description(&desc); return 1; }
+  if (read_type_description(file,&desc)) { in_report("is type_desc"); return 1; }
+  if (desc.type != 'i') { cleanup_description(&desc); in_report("is type"); return 1; }
+  if (desc.ndims != 0) { cleanup_description(&desc); in_report("is ndims"); return 1; }
+  if (fscanf(file,"%d",data) != 1) { cleanup_description(&desc); in_report("is parse"); return 1; }
+  read_to_eol(file);
   cleanup_description(&desc);
   return 0;
 }
@@ -102,9 +117,9 @@ int read_real_array(FILE* file, real_array_t* arr)
   real_array_t tmp;
   type_description desc;
 
-  if (read_type_description(file,&desc)) return 1;
-  if ((desc.type != 'r') && (desc.type != 'i')) return 1;
-  if (desc.ndims <= 0) return 1;
+  if (read_type_description(file,&desc)) { in_report("ra type_desc"); return 1; }
+  if ((desc.type != 'r') && (desc.type != 'i')) { in_report("ra type"); return 1; }
+  if (desc.ndims <= 0) { in_report("ra ndims"); return 1; }
   
   tmp.ndims = desc.ndims;
   tmp.dim_size = desc.dim_size;
@@ -115,9 +130,10 @@ int read_real_array(FILE* file, real_array_t* arr)
   nr_elements = real_array_nr_of_elements(arr);
   for (i = 0; i < nr_elements; ++i)
     {
-      if (fscanf(file,"%e",&f) != 1) return 1;
+      if (fscanf(file,"%e",&f) != 1) { in_report("ra parse"); return 1; }
       arr->data[i] = f;
     }
+  read_to_eol(file);
   return 0;
 }
 /*

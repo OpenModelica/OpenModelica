@@ -127,7 +127,7 @@ int* size_alloc(int n)
  
   start = current_state.size_buffer_ptr;
   current_state.size_buffer_ptr += n;
-  return size_buffer+n;
+  return size_buffer+start;
 
   /*  return start;*/
 }
@@ -141,7 +141,7 @@ int** index_alloc(int n)
  
   start = current_state.index_buffer_ptr;
   current_state.index_buffer_ptr += n;
-  return index_buffer+n;
+  return index_buffer+start;
 
   /*  return start;*/
 }
