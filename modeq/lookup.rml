@@ -388,10 +388,10 @@ relation lookup_unqualified_imported_class_in_env:(Env.Env,
 	  => (SCode.Class, Env.Env) =
 
   rule	lookup_unqualified_imported_class_in_frame(items, totenv, name) 
-	  => (c, _)
+	  => (c, env')
 	-----------------------------------------------------------------
 	lookup_unqualified_imported_class_in_env(env as (Env.FRAME(sid,items,_)::fs),totenv,Absyn.IDENT(name)) 
-	  => (c, env)
+	  => (c, env')
 
   rule	lookup_unqualified_imported_class_in_env(fs, env, id) => (c, _)
 	---------------------------------------------
@@ -403,13 +403,20 @@ relation lookup_unqualified_imported_class_in_frame: ((SCode.Ident * Env.Item) l
 	    => (SCode.Class, Env.Env) =
 	    
   rule	Env.top_frame(env) => fr & 
-	lookup_class_in_env([fr],path,false) => (c, env') &
-	lookup_class_in_class(env, c, Absyn.IDENT(ident), false) 
-	  => (c', env'') &
+	lookup_class([fr],path,false) 
+	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
+	Env.open_scope(env', encflag) => env2 &
+	Env.name_scope (env2,id) => env2' &
+	ClassInf.start(restr, id) => ci_state &
+	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,false) 
+	  => (_,env'',_,cistate1,_) &
+
+	lookup_class_in_class(env'', c, Absyn.IDENT(ident), false) 
+	  => (c', env''') &
 	not lookup_unqualified_imported_class_in_frame(fs, env, ident) => (_,_) 
 	-------------------------------------------
 	lookup_unqualified_imported_class_in_frame((_,Env.IMPORT(Absyn.UNQUAL_IMPORT(path)))::fs,env,ident)
-	    => (c', env'')
+	    => (c', env''')
 
   rule	Env.top_frame(env) => fr & 
 	lookup_class_in_env([fr], path, false) => (c, env') &
