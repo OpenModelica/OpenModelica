@@ -2,13 +2,13 @@ CC=gcc
 CXX=g++
 AR=ar -r
 
-MODELICAPARSER=../../modelica_parser/src
+MODELICA_PARSER=../../modelica_parser/src
 
 ANTLR_HOME=@antlrhome@
 
-INCLUDES=-I@antlrinc@ -I$(MODELICAPARSER)
+INCLUDES=-I@antlrinc@ -I$(MODELICA_PARSER)
 
-LIBP=-L$(ANTLR_HOME)/lib/cpp/src
+LIBP=-L@antlrlib@
 
 CFLAGS =-g -Wall $(INCLUDES) -D DEBUG
 CXXFLAGS = $(CFLAGS)
@@ -17,31 +17,34 @@ ANTLRFLAGS=
 
 LIB = $(LIBP) -lantlr
 
-lexergen= $(MODELICAPARSER)/modelica_lexer.cpp $(MODELICAPARSER)/modelica_lexer.hpp
+lexergen= flat_modelica_lexer.cpp flat_modelica_lexer.hpp \
+	  modelicaTokenTypes.hpp modelicaTokenTypes.txt
 
 parsergen= flat_modelica_parser.cpp flat_modelica_parser.hpp \
 	   flat_modelica_parserTokenTypes.hpp flat_modelica_parserTokenTypes.txt
 
+lexersrcs=$(filter %.cpp,$(lexergen))
 parsersrcs=$(filter %.cpp,$(parsergen))
 
+lexerobjs=$(lexersrcs:.cpp=.o)
 parserobjs=$(parsersrcs:.cpp=.o)
 
-helperobjs = $(MODELICAPARSER)/token_names.o $(MODELICAPARSER)/parse_tree_dumper.o
+#helperobjs =  parse_tree_dumper.o token_names.o
 
-OBJS +=  $(parserobjs) $(helperobjs)
+OBJS += $(lexerobjs) $(parserobjs) 
+#$(helperobjs)
 
 all: libflat_modelica_parser.a
 
-lexer: 
-	cd $(MODELICAPARSER); make modelica_lexer; cd ../../flat_modelica_parser2/src
-
-vctarget:  $(parsergen)
+vctarget: $(lexergen) $(parsergen)
 
 libflat_modelica_parser.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 
+$(lexergen): flat_modelica_lexer.g
+	java antlr.Tool $(ANTLRFLAGS) $<
 
-$(parsergen): flat_modelica_parser.g 
+$(parsergen): flat_modelica_parser.g flat_modelica_lexer.g
 	java antlr.Tool $(ANTLRFLAGS) $<
 
 .c.o:
@@ -50,17 +53,20 @@ $(parsergen): flat_modelica_parser.g
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-test: $(MODELICAPARSER)/modelica_lexer.o libflat_modelica_parser.a test.o
-	$(CXX) -o test test.o libflat_modelica_parser.a $(MODELICAPARSER)/modelica_lexer.o $(LIB)
-
+test: test.cpp libflat_modelica_parser.a
+	$(CXX) -o test test.cpp libflat_modelica_parser.a  $(LIB) $(INCLUDES)
 
 depend: $(DFILES)
 
 clean:
-	-rm -f test* *.o *~ core *.core libflat_modelica_parser.a
+	-rm -f *.o *~ core *.core libflat_modelica_parser.a
 
 reallyclean: clean
-	-rm -f $(parsergen)
+	-rm -f $(lexergen) $(parsergen)
 
+flat_modelica_lexer.o:flat_modelica_lexer.cpp flat_modelica_lexer.hpp
 flat_modelica_parser.o:flat_modelica_parser.cpp flat_modelica_parser.hpp
+#token_names.o:token_names.cpp
+#parse_tree_dumper.o:parse_tree_dumper.cpp parse_tree_dumper.hpp
+#include $(DFILES)
 

@@ -241,6 +241,13 @@ relation is_modelica_file: string => () =
 	last = "mo"
 	------------
 	is_modelica_file(filename)
+
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mof"
+	------------
+	is_modelica_file(filename)
+
 end
 
 relation is_modelica_script_file: string => () =
@@ -265,14 +272,18 @@ relation translate_file : string list => () =
 	run_tornado_cg_q() => true 
 	& Parser.parse f => p
 	& SCode.elaborate(p) => p'
+	& print "scode elab done"
 	& Inst.instantiate(p') => d
+	& print "inst done"
 	& Absyn.last_classname(p) => cname
+	& print "absynfippel done"
 	& Tornado.generate_code(p,d,cname) 
+	& print "tornadogen done"
 	----------------------------
 	translate_file [f] 
 
-  rule	(*Print.print_buf "Parsing\n" &
-	 *)	is_modelica_file(f) 
+  rule	(*Print.print_buf "Parsing\n" &	 *)
+	is_modelica_file(f) 
 	& Parser.parse f => p
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
 	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
@@ -325,7 +336,7 @@ relation translate_file : string list => () =
 	----------------------------
 	translate_file [] => fail
 
-  rule	Print.print_buf "# An error occured\n" &
+  rule	Print.print_buf "# An error occured. Perhaps this is not a Modelica file or does not end with .mo?\n" &
 	Print.get_string () => str 
 	& print str 
 	----------------------------
