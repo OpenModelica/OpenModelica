@@ -12,8 +12,9 @@ RML	= rmlc
 PROG	= modeq
 AST	= ast/libast.a
 
-SRCRML=	class.rml exp.rml dae.rml main.rml absyn.rml
+SRCRML=	class.rml exp.rml dae.rml main.rml absyn.rml dump.rml test.rml
 SRCC=	$(SRCRML:.rml=.c)
+SRCH=	$(SRCRML:.rml=.h)
 SRCO=	$(SRCRML:.rml=.o)
 
 SUBDIRS	= ast
@@ -28,8 +29,8 @@ SUBDIRS	= ast
 	$(RML) -c $<
 #	$(CC) -c $*.c
 
-$(PROG): subdirs $(SRCO) $(AST)
-	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) ast/modgram.o $(AST)
+$(PROG): $(SRCO) libast
+	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) $(AST)
 
 $(SRCO):	rml.h
 modelica.o:	modelica.rml
@@ -40,8 +41,8 @@ main.o:		main.rml
 absyn.o:	absyn.rml
 parse.o:	parse.rml
 
-ast/libast.a:
-	(cd ast ; $(MAKE) libast.a)
+libast:
+	@(cd ast ; $(MAKE) libast.a)
 
 subdirs:
 	@for d in $(SUBDIRS); do \
@@ -52,7 +53,7 @@ clean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
-	$(RM) $(SRCO) $(SRCC) $(PROG)
+	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG) *~
 
 reallyclean: clean
 	$(RM) class.h dae.h exp.h main.h modelica.h
