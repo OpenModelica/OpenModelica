@@ -71,6 +71,7 @@ extern double rwork[];
 extern long iwork[];
 extern long nx,ny,np;
 extern char *model_name;
+extern char *varnames[];
 
 // function for calculating ouput values 
 int 
