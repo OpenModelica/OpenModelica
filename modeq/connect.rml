@@ -5,6 +5,7 @@
 module Connect :
 
   with "exp.rml"
+  with "staticexp.rml"
   with "dae.rml"
 
   (* datatype Dir = IN | OUT *)
@@ -174,7 +175,7 @@ end
 
 relation find_in_set_equ : (Exp.ComponentRef list, Exp.ComponentRef) => () =
 
-  rule	Exp.eq_cref(c1,c2)
+  rule	StaticExp.eq_cref(c1,c2)
 	------------------
 	find_in_set_equ(c1::_,c2)
 
@@ -187,7 +188,7 @@ end
 relation find_in_set_flow : ((Exp.ComponentRef * Face) list, Exp.ComponentRef)
 	  => () =
 
-  rule	Exp.eq_cref(c1,c2)
+  rule	StaticExp.eq_cref(c1,c2)
 	------------------
 	find_in_set_flow((c1,_)::_,c2)
 

@@ -52,6 +52,8 @@ void *sibling_list(AST *ast)
   }
 }
 
+int parse_failed;
+
 RML_BEGIN_LABEL(Parser__parse)
 {
   AST *root = NULL;
@@ -60,20 +62,28 @@ RML_BEGIN_LABEL(Parser__parse)
     fprintf(stderr, "freopen %s failed: %s\n",
 	    RML_STRINGDATA(a0), strerror(errno));
     RML_TAILCALLK(rmlFC);
+  } else {
+    int fail;
+    parse_failed = 0;
+    ANTLR(model_specification(&root/*, &fail*/), stdin);
+    printf("fail = %d\n", fail);
+    if(parse_failed) {
+      fprintf(stderr, "parse erro\n");
+      RML_TAILCALLK(rmlFC);
+    } else {
+      /* fprintf(stderr, "root = %p\n", root); */
+      /* fprintf(stderr, "\n"); */
+      /* zzpre_ast(root, &print_token, &print_lpar, &print_rpar); */
+      fprintf(stderr, "\n\n");
+      
+      /* if( !root )
+       *   RML_TAILCALLK(rmlFC); */
+      
+      rmlA0 = sibling_list(root);
+      
+      RML_TAILCALLK(rmlSC);
+    }
   }
-  
-  ANTLR(model_specification(&root), stdin);	/* start first rule */
-  /* fprintf(stderr, "root = %p\n", root); */
-  /* fprintf(stderr, "\n"); */
-  /* zzpre_ast(root, &print_token, &print_lpar, &print_rpar); */
-  fprintf(stderr, "\n\n");
-  
-  /* if( !root )
-   *   RML_TAILCALLK(rmlFC); */
-
-  rmlA0 = sibling_list(root);
-  
-  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

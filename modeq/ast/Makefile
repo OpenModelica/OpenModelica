@@ -26,6 +26,7 @@ DLG = $(BIN)/dlg
 #CFLAGS = -ggdb -I. -I$(ANTLR_H) #does not work in linux
 CFLAGS = -g -I. -I.. -I$(ANTLR_H) -I$(RMLINCLUDE)
 #AFLAGS = -CC -gt 
+#AFLAGS = -gt -gl
 AFLAGS = -gt -gl -gh
 #DFLAGS = -C2 -CC -cs
 DFLAGS = -C2
@@ -55,7 +56,7 @@ modgram.o: modgram.c attrib.h parser.h tokens.h \
 scanner.o: scanner.c attrib.h parser.h
 err.o: err.c attrib.h parser.h tokens.h
 yacclib.o: yacclib.c $(RMLINCLUDE)/rml.h yacclib.h
-attrib.o: attrib.c stdpccts.h attrib.h parser.h tokens.h mode.h
+attrib.o: attrib.c attrib.h parser.h tokens.h mode.h stdpccts.h
 
 $(SCAN).o : $(SCAN).c $(TOKENS)
 	$(CC) -c $(CFLAGS) -o $(SCAN).o $(SCAN).c

@@ -9,13 +9,15 @@ module Prefix:
 
   with "absyn.rml"
   with "exp.rml"
+  with "env.rml"
+  with "lookup.rml"
   
   datatype Prefix = NOPRE
 		  | PRE of string * Exp.Subscript list * Prefix
 
   relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix
   relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
-  relation prefix_exp  : (Exp.Exp,Prefix) => Exp.Exp
+  relation prefix_exp  : (Env.Env,Exp.Exp,Prefix) => Exp.Exp
   relation prefix_path : (Absyn.Path,Prefix) => Absyn.Path
 
 end
@@ -73,93 +75,98 @@ end
  ** expression.
  **)
 
-relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
+relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
   rule	(* list_reverse(p) => p' & *)
-	prefix_exp2(e,p(*'*)) => e'
+	prefix_exp2(env,e,p(*'*)) => e'
 	-----------------------
-	prefix_exp(e,p) => e'
+	prefix_exp(env,e,p) => e'
 
   rule	print "- prefix_exp fallthru\n"
 	-------------------------------
-	prefix_exp (_,_) => fail
+	prefix_exp (_,_,_) => fail
 
 end
 
 (**)
 
-relation prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
+relation prefix_exp2: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
-  axiom	prefix_exp2(e as Exp.ICONST(_),_) => e
-  axiom	prefix_exp2(e as Exp.RCONST(_),_) => e
-  axiom	prefix_exp2(e as Exp.SCONST(_),_) => e
-  axiom	prefix_exp2(e as Exp.BCONST(_),_) => e
+  axiom	prefix_exp2(_,e as Exp.ICONST(_),_) => e
+  axiom	prefix_exp2(_,e as Exp.RCONST(_),_) => e
+  axiom	prefix_exp2(_,e as Exp.SCONST(_),_) => e
+  axiom	prefix_exp2(_,e as Exp.BCONST(_),_) => e
 
-  rule	prefix_cref(pre,p) => p'
+  rule	Lookup.lookup_var_local(env,p) => (_,_,_) &
+	prefix_cref(pre,p) => p'
 	--------------------------
-	prefix_exp2(Exp.CREF(p),pre) => Exp.CREF(p')
+	prefix_exp2(env,Exp.CREF(p),pre) => Exp.CREF(p')
 
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2'
+  rule	not Lookup.lookup_var_local(env,p) => (_,_,_)
+	--------------------------
+	prefix_exp2(env,e as Exp.CREF(p),pre) => e
+
+  rule	prefix_exp2(env,e1,p) => e1' &
+	prefix_exp2(env,e2,p) => e2'
 	-----------------------
-	prefix_exp2(Exp.BINARY(e1,o,e2),p) => Exp.BINARY(e1',o,e2')
+	prefix_exp2(env,Exp.BINARY(e1,o,e2),p) => Exp.BINARY(e1',o,e2')
 
-  rule	prefix_exp2(e1,p) => e1'
+  rule	prefix_exp2(env,e1,p) => e1'
 	-----------------------
-	prefix_exp2(Exp.UNARY(o,e1),p) => Exp.UNARY(o,e1')
+	prefix_exp2(env,Exp.UNARY(o,e1),p) => Exp.UNARY(o,e1')
 
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2'
+  rule	prefix_exp2(env,e1,p) => e1' &
+	prefix_exp2(env,e2,p) => e2'
 	-----------------------
-	prefix_exp2(Exp.LBINARY(e1,o,e2),p) => Exp.LBINARY(e1',o,e2')
+	prefix_exp2(env,Exp.LBINARY(e1,o,e2),p) => Exp.LBINARY(e1',o,e2')
 
-  rule	prefix_exp2(e1,p) => e1'
+  rule	prefix_exp2(env,e1,p) => e1'
 	-----------------------
-	prefix_exp2(Exp.LUNARY(o,e1),p) => Exp.LUNARY(o,e1')
+	prefix_exp2(env,Exp.LUNARY(o,e1),p) => Exp.LUNARY(o,e1')
 
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2'
+  rule	prefix_exp2(env,e1,p) => e1' &
+	prefix_exp2(env,e2,p) => e2'
 	-----------------------
-	prefix_exp2(Exp.RELATION(e1,o,e2),p) => Exp.RELATION(e1',o,e2')
+	prefix_exp2(env,Exp.RELATION(e1,o,e2),p) => Exp.RELATION(e1',o,e2')
 
-  rule	prefix_exp2(e1,p) => e1' &
-	prefix_exp2(e2,p) => e2' &
-	prefix_exp2(e3,p) => e3'
+  rule	prefix_exp2(env,e1,p) => e1' &
+	prefix_exp2(env,e2,p) => e2' &
+	prefix_exp2(env,e3,p) => e3'
 	-----------------------
-	prefix_exp2(Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
+	prefix_exp2(env,Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
 
-  rule	prefix_explist(es,p) => es'
+  rule	prefix_explist(env,es,p) => es'
 	-----------------------
-	prefix_exp2(Exp.CALL(f,es),p) => Exp.CALL(f,es')
+	prefix_exp2(env,Exp.CALL(f,es),p) => Exp.CALL(f,es')
 
-  rule	prefix_exp2 (start, p) => start' &
-	prefix_exp2 (stop, p) => stop'
+  rule	prefix_exp2(env,start, p) => start' &
+	prefix_exp2(env,stop, p) => stop'
 	------------------------------
-	prefix_exp2 (Exp.RANGE(start,NONE,stop), p)
+	prefix_exp2(env,Exp.RANGE(start,NONE,stop), p)
 	  => Exp.RANGE(start',NONE,stop')
 
-  rule	prefix_exp2 (start, p) => start' &
-	prefix_exp2 (step, p) => step' &
-	prefix_exp2 (stop, p) => stop'
+  rule	prefix_exp2(env,start, p) => start' &
+	prefix_exp2(env,step, p) => step' &
+	prefix_exp2(env,stop, p) => stop'
 	------------------------------
-	prefix_exp2 (Exp.RANGE(start,SOME(step),stop), p)
+	prefix_exp2(env,Exp.RANGE(start,SOME(step),stop), p)
 	  => Exp.RANGE(start',SOME(step'),stop')
 
-  rule	prefix_exp2 (e,p) => e'
+  rule	prefix_exp2(env,e,p) => e'
 	-----------------------
-	prefix_exp2 (Exp.CAST_TO_REAL(e), p) => Exp.CAST_TO_REAL(e')
+	prefix_exp2(env,Exp.CAST_TO_REAL(e), p) => Exp.CAST_TO_REAL(e')
 
 end
 
 (**)
 
-relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
+relation prefix_explist: (Env.Env,Exp.Exp list,Prefix) => Exp.Exp list =
 
-  axiom	prefix_explist([],_) => []
+  axiom	prefix_explist(_,[],_) => []
 
-  rule	prefix_exp2(e,p) => e' &
-	prefix_explist(es,p) => es'
+  rule	prefix_exp2(env,e,p) => e' &
+	prefix_explist(env,es,p) => es'
 	---------------------------
-	prefix_explist(e::es,p) => (e'::es')
+	prefix_explist(env,e::es,p) => (e'::es')
 
 end	

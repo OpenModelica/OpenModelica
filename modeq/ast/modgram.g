@@ -21,6 +21,9 @@ typedef int bool;
 	ast->aux[3]=NULL; \
 	ast->aux[4]=NULL;
 
+/* #define MATCH */
+
+extern int parse_failed;
 >>
 
 <<
@@ -181,6 +184,10 @@ extern void *sibling_list(AST *ast);
 
 /**************************************************************/
 /* The main part of the Modelica parser. */
+
+/* exception */
+/*   default : */
+/*     << parse_failed = 1; >> */
 
 model_specification :
 	(

@@ -103,15 +103,15 @@ Env.FRAMEVAR("time", Absyn.ATTR(Absyn.NODIM, false, Absyn.VAR, Absyn.BIDIR),
 relation initial_env =
 
   rule	Env.open_scope(Env.empty_env) => env1 &
-	Env.extend_frame_c(env1, rl_type, SCode.NOMOD) => env2 &
-	Env.extend_frame_c(env2, int_type, SCode.NOMOD) => env3 &
-	Env.extend_frame_c(env3, str_type, SCode.NOMOD) => env4 &
-	Env.extend_frame_c(env4, bool_type, SCode.NOMOD) => env5 &
-	Env.extend_frame_c(env5, real_type, SCode.NOMOD) => env6 &
-	Env.extend_frame_c(env6, integer_type, SCode.NOMOD) => env7 &
-	Env.extend_frame_c(env7, string_type, SCode.NOMOD) => env8 &
-	Env.extend_frame_c(env8, boolean_type, SCode.NOMOD) => env9 &
-	Env.extend_frame_c(env9, boolean_type, SCode.NOMOD) => env10 &
+	Env.extend_frame_c(env1, rl_type) => env2 &
+	Env.extend_frame_c(env2, int_type) => env3 &
+	Env.extend_frame_c(env3, str_type) => env4 &
+	Env.extend_frame_c(env4, bool_type) => env5 &
+	Env.extend_frame_c(env5, real_type) => env6 &
+	Env.extend_frame_c(env6, integer_type) => env7 &
+	Env.extend_frame_c(env7, string_type) => env8 &
+	Env.extend_frame_c(env8, boolean_type) => env9 &
+	Env.extend_frame_c(env9, boolean_type) => env10 &
 	Env.extend_frame_v(env10, time_var) => env11
 	----------------------------------------------
 	initial_env () => env11

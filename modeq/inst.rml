@@ -68,15 +68,17 @@ relation inst_program : (Env, SCode.Program) => DAE.DAEcomp list =
 	------------------------------
 	inst_program(env,[]) => fail
 
-  rule	Env.extend_frame_c(env,c,SCode.NOMOD) => env' &
-	inst_class(env',SCode.NOMOD,Prefix.NOPRE,[],c) => (dae,csets,_,_)
+  rule	(* Env.extend_frame_c(env,c) => env' & *)
+	inst_class(env,SCode.NOMOD,Prefix.NOPRE,[],c) => (dae,csets,_,_)
 	-----------------------------
 	inst_program(env,[c]) => dae
 
-  rule	Env.extend_frame_c(env,c,SCode.NOMOD) => env' &
-	inst_program(env',cs) => l
+  rule	inst_class_decl(env,SCode.NOMOD,Prefix.NOPRE,[],c) => (env',dae1) &
+	(* Env.extend_frame_c(env,c) => env' & *)
+	inst_program(env',cs) => dae2 &
+	list_append(dae1,dae2) => dae
 	----------------------
-	inst_program(env,c::(cs as (_::_))) => l
+	inst_program(env,c::(cs as (_::_))) => dae
 
 end
 
@@ -185,7 +187,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** This rule describes how to instantiate a derived class *)
 	(** definition *)
 
-  rule	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,r,_),_) &
+  rule	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,r,_)) &
 	Mod.lookup_modification_p(mods,cn) => m &
 	ClassInf.start(r, cn2) => new_ci_state &
 	(* FIXME order *)
@@ -204,7 +206,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** found in the environment, this rule prints an error *)
 	(** message. *)
 
-  rule	not Lookup.lookup_class(env,cn) => (_,_) &
+  rule	not Lookup.lookup_class(env,cn) => _ &
 	Absyn.path_string(cn) => cns &
 	print "# unknown class: " & print cns & print "\n"
 	----------------------------------------
@@ -265,8 +267,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Absyn.path_string(cn) => cns &
 	print "  extending class " & print cns & print "\n" &
 	
-	Lookup.lookup_class(env,cn)
-	  => (c as SCode.CLASS(cn2,_,restr,def), _) &
+	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,restr,def)) &
 	Mod.lookup_modification_p(mods,cn) => classmod &
 
 	(* Build the combind set of modifications *)
@@ -291,7 +292,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 	 
 	 (* If a variable is declared multiple times, the first is used *)
-  rule	Lookup.lookup_var_local(env,n) => _ &
+  rule	Lookup.lookup_ident_local(env,n) => _ &
 	print " ignoring shadowed variable " & print n & print "\n"
 	--------------------------
 	inst_element(env,mods,pre,csets,ci_state,
@@ -299,7 +300,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([],env,csets,ci_state,[])
 	
   	(* Illegal redeclarations *)
-  rule	Lookup.lookup_var_local(env,n) => _ &
+  rule	Lookup.lookup_ident_local(env,n) => _ &
 	print "Trying to redeclare the class " & print n &
 	print " as a variable\n"
 	------------------------
@@ -307,7 +308,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     SCode.CLASSDEF(n,_,_,_))
 	  => fail
 
-  rule	Lookup.lookup_class(env,Absyn.IDENT(n)) => (v,_) &
+  rule	Lookup.lookup_class(env,Absyn.IDENT(n)) => v &
 	print "Trying to redeclare the variable " & print n &
 	print " as a class\n"
 	---------------------
@@ -320,14 +321,11 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** Put it in the current frame in the environment
 	 **)
    
-  rule	(* SCode.convert(c) => c' & *)
-	Mod.lookup_modification(mods,n) => classmod &
-	print "  adding " & print n & SCode.print_mod classmod & print "\n" &
-	(* Mod.simple_maybe_modify_class(env,mm,pre,c') => (c'',dae) & *)
-	Env.extend_frame_c(env,c,classmod) => env'
-	----------------------------------------
+  rule	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) => classmod &
+	inst_class_decl(env,classmod,pre,csets,c) => (env',dae)
+	-------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state, SCode.CLASSDEF(n,_,_,c))
-	  => ([],env',csets,ci_state,[])
+	  => (dae,env',csets,ci_state,[])
 
 	(**  A variable
 	 **
@@ -352,7 +350,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
 
-	Lookup.lookup_class(env,t) => (cl,_) &
+	Lookup.lookup_class(env,t) => cl &
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_modification(mods,n) => mm &
 	print "  mod 1: " & SCode.print_mod classmod & print "\n" &
@@ -389,19 +387,23 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** If the modification includes an equation, it is added. *)
 	inst_mod_equation(env',pre,n,mod') => dae2 &
 
-	list_append(dae1, dae2) => dae
+	(** If the type is one of the simple, predifined types a *)
+	(** simple variable declaration is added to the DAE. *)
+	dae_declare (vn,cl,attr) => dae3 &
+
+	list_append(dae1, dae2) => dae4 &
+	list_append(dae3, dae4) => dae
 	--------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,attr,t,m))
-         => ((*DAE.VAR(vn, DAE.LOCAL)::*)dae,
-	     env',csets',ci_state,[Types.VAR(n,attr,ty,eq)])
+          => (dae, env',csets',ci_state,[Types.VAR(n,attr,ty,eq)])
 
 	(** If the class lookup in the previous rule fails, this
-	 ** rule catches
-	 ** the error and prints an error message about the unknown class.
+	 ** rule catches the error and prints an error message about
+	 ** the unknown class. 
 	 **)
 
-  rule	not Lookup.lookup_class(env,t) => (cl,_) &
+  rule	not Lookup.lookup_class(env,t) => cl &
 	Absyn.path_string(t) => s &
 	print "# unknown class '" & print s & print "' while instantiating " &
 	Prefix.prefix_path(Absyn.IDENT(n),pre) => n' &
@@ -417,6 +419,104 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element (_,_,_,_,_,_) => fail
 
 end	
+
+(** relation: inst_class_decl
+ **
+ ** The class definition is instantiated although no variable
+ ** is declared with it.  After instantiating it, it is
+ ** checked to see if it can be used as a package, and if it
+ ** can, then it is added as a variable under the same name as
+ ** the class.  This makes it possible to use a unified lookup
+ ** mechanism.  And since packages only can contain constants
+ ** and class definition, instantiating a package does not do
+ ** anything else.
+ **)
+
+relation inst_class_decl : (Env.Env, SCode.Mod, Prefix.Prefix,
+			    Connect.Sets, SCode.Class)
+	  => (Env.Env, DAE.DAEcomp list) =
+
+  rule	print "  adding " & print n & print "\n" &
+	Env.extend_frame_c(env,c) => env' &
+
+	Prefix.prefix_add(n,[],pre) => pre' &
+	inst_class(env,mod,pre',csets,c) => (dae,csets',ty,st) &
+	add_package(env',n,ty,st,dae) => (env'', dae')
+	----------------------------------
+	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,_))
+	  => (env'', dae')
+
+end
+
+(** relation: add_package
+ **)
+
+relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
+			DAE.DAEcomp list)
+	  => (Env.Env, DAE.DAEcomp list) =
+
+  rule	ClassInf.valid(st, Absyn.R_PACKAGE) &
+	Env.extend_frame_v(env,
+			   Env.FRAMEVAR(n, Absyn.ATTR(Absyn.NODIM,
+						      false,Absyn.CONST,
+						      Absyn.BIDIR),
+					ty,Env.UNBOUND)) => env' &
+	print "  added package " & print n & print "\n"
+	--------------------------------------------------------
+	add_package(env,n,ty,st,dae) => (env',dae)
+
+  axiom	add_package(env,_,_,_,_) => (env,[])
+
+end
+
+(** relation: dae_declare
+ **)
+
+relation dae_declare : (Exp.ComponentRef, SCode.Class, Absyn.VarAttr)
+	  => DAE.DAEcomp list =
+
+  rule	dae_declare2 (vn, rest, par) => dae
+	-----------------------------------
+	dae_declare (vn, SCode.CLASS(_,_,rest,_),
+		     Absyn.ATTR(_,_,par,_)) => dae
+
+end
+
+relation dae_declare2 : (Exp.ComponentRef, Absyn.Restriction, Absyn.VarType)
+	  => DAE.DAEcomp list =
+
+  rule	dae_declare3 (vn, rest, DAE.LOCAL) => dae
+	-----------------------------------------
+	dae_declare2 (vn, rest, Absyn.VAR) => dae
+
+  rule	dae_declare3 (vn, rest, DAE.PARAM) => dae
+	-----------------------------------------
+	dae_declare2 (vn, rest, Absyn.PARAM) => dae
+
+  rule	dae_declare3 (vn, rest, DAE.CONST) => dae
+	-----------------------------------------
+	dae_declare2 (vn, rest, Absyn.CONST) => dae
+
+end
+
+relation dae_declare3 : (Exp.ComponentRef, Absyn.Restriction, DAE.VarKind)
+	  => DAE.DAEcomp list =
+
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_INT, kind)
+	  => [DAE.VAR(vn, kind, DAE.INT)]
+	
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_REAL, kind)
+	  => [DAE.VAR(vn, kind, DAE.REAL)]
+	
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_BOOL, kind)
+	  => [DAE.VAR(vn, kind, DAE.BOOL)]
+	
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_STRING, kind)
+	  => [DAE.VAR(vn, kind, DAE.STRING)]
+
+  axiom	dae_declare3 (_,_,_) => []
+
+end
 
 (** relation: inst_equation
  **)
@@ -442,7 +542,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	StaticExp.elab_exp(env,e) => (e', t, c) &
-	inst_assertion (e', t, c, d, pre) => dae &
+	inst_assertion (env, e', t, c, d, pre) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
 	inst_equation(env,mods,pre,csets, ci_state,
@@ -455,7 +555,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	-------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,Absyn.EQ_EXPR(_)) => fail
 
-  rule	Lookup.lookup_var_local(env,n)
+  rule	Lookup.lookup_ident_local(env,n)
 	  => Env.FRAMEVAR(_,_,_,Env.EQBOUND(_)) &
 	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
@@ -468,7 +568,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	StaticExp.elab_exp(env,Absyn.RELATION(e1,Absyn.EQUAL,e2))
 	  => (e, ty1, c1) &
 	print " - equation\n" &
-	Prefix.prefix_exp(e,pre) => e' & (* FIXME: remove *)
+	Prefix.prefix_exp(env,e,pre) => e' & (* FIXME: remove *)
 	print " -- equation\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------
@@ -504,27 +604,28 @@ end
  ** Instantiate an assertion.
  **)
 
-relation inst_assertion : (Exp.Exp, Types.BasicType, bool, string, Prefix)
+relation inst_assertion : (Env.Env, Exp.Exp, Types.BasicType,
+			   bool, string, Prefix)
 	  => DAE.DAEcomp list =
 
-  rule	Prefix.prefix_exp(e,pre) => e' &
+  rule	Prefix.prefix_exp(env,e,pre) => e' &
 	print " (constant) ASSERTION(" & Exp.print_exp e' & print "): " &
 	print d & print "\n"
 	--------------------
-	inst_assertion (e, Types.T_BOOL, true, d, pre) => [(*FIXME*)]
+	inst_assertion (env, e, Types.T_BOOL, true, d, pre) => [(*FIXME*)]
 
-  rule	Prefix.prefix_exp(e,pre) => e' &
+  rule	Prefix.prefix_exp(env,e,pre) => e' &
 	print " ASSERTION(" & Exp.print_exp e' & print "): " &
 	print d & print "\n"
 	--------------------
-	inst_assertion (e, Types.T_BOOL, _, d, pre) => [(*FIXME*)]
+	inst_assertion (env, e, Types.T_BOOL, _, d, pre) => [(*FIXME*)]
 
   rule	print "# Assertions have to be of type Boolean\n" &
 	print "  assertion: (" &
-	Prefix.prefix_exp(e,pre) => e' & Exp.print_exp e' & print "): " &
+	Prefix.prefix_exp(env,e,pre) => e' & Exp.print_exp e' & print "): " &
  	print d & print "\n"
 	-----------------------------
-	inst_assertion (e, _, _, d, pre) => fail
+	inst_assertion (env, e, _, _, d, pre) => fail
 	
 end
 
@@ -588,18 +689,20 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
   rule	print " connecting " &
 	Dump.print_component_ref(c1) & print " with " &
 	Dump.print_component_ref(c2) & print "\n" &
-	StaticExp.elab_cref(env, c1) => (c1',t1,con1) &
-	StaticExp.elab_cref(env, c2) => (c2',t2,con2) &
-	Lookup.lookup_var(env,c1')
+	StaticExp.elab_cref(env, c1) => (Exp.CREF(c1'),t1,con1) &
+	StaticExp.elab_cref(env, c2) => (Exp.CREF(c2'),t2,con2) &
+	StaticExp.canon_cref(env, c1') => c1'' &
+	StaticExp.canon_cref(env, c2') => c2'' &
+	Lookup.lookup_var(env,c1'')
 	  => (Absyn.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_),_) &
-	Lookup.lookup_var(env,c2')
+	Lookup.lookup_var(env,c2'')
 	  => (Absyn.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_),_) &
-	check_connect_vars(c1',ty1,con1,c2',ty2,con2) &
+	check_connect_vars(c1'',ty1,con1,c2'',ty2,con2) &
 	ClassInf.assert_valid(st1,Absyn.R_CONNECTOR) &
 	ClassInf.assert_valid(st2,Absyn.R_CONNECTOR) &
-	component_face(c1') => f1 &
-	component_face(c2') => f2 &
-	connect_components(sets, pre, c1', f1, c2', f2, ty1, false) => sets'
+	component_face(c1'') => f1 &
+	component_face(c2'') => f2 &
+	connect_components(sets, pre, c1'', f1, c2'', f2, ty1, false) => sets'
 	---------------------------------
 	inst_connect(sets, env,pre,c1,c2) => sets'
 
@@ -781,14 +884,14 @@ relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
 			   Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(v,[])),
 					  Absyn.EQUAL,e))
 	  => (e', ty1, c1) &
-	Prefix.prefix_exp(e',pre) => e'' (* FIXME: remove *)
+	Prefix.prefix_exp(env,e',pre) => e'' ( * FIXME: remove * )
 	*)
 
 	StaticExp.elab_exp (env, e) => (e',t,_) &
 	(* FIXME: Check type *)
 	StaticExp.elab_relop (Absyn.EQUAL, t) => op &
 	let e'' = Exp.RELATION(Exp.CREF(Exp.CREF_IDENT(v,[])), op, e') &
-	Prefix.prefix_exp(e'', pre) => e'''
+	Prefix.prefix_exp(env, e'', pre) => e'''
 	-----------------------------------------
 	inst_mod_equation(env,pre,v,mod as SCode.MOD(_,_,SOME(e)))
 	  => [DAE.EQUATION(e''')]
@@ -831,7 +934,7 @@ relation make_binding : (Env.Env, Absyn.VarAttr, Absyn.Exp option, SCode.Class)
 	make_const_binding (env,e', t, ct, c) => binding
 	----------------------------------------
 	make_binding (env,Absyn.ATTR(_,_,Absyn.CONST,_),SOME(e),cl)
-	  => binding
+	  => (* binding *) Env.EQBOUND(e)
 
 	(* default *)
 

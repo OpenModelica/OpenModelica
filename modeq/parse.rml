@@ -5,8 +5,4 @@ module Parser:
   relation parse: string => Absyn.Program
 end
 
-(*
-relation parse: string => Absyn.Program =
-  axiom parse _ => []
-end
-*)
+

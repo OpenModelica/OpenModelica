@@ -13,7 +13,9 @@ module DAE:
 
   datatype VarKind = LOCAL | PARAM | CONST
 
-  datatype DAEcomp = VAR of Exp.ComponentRef * VarKind
+  datatype Type = REAL | INT | BOOL | STRING
+
+  datatype DAEcomp = VAR of Exp.ComponentRef * VarKind * Type
 		   | VARVAL of Ident * VarKind * Exp.Exp
 		   | EQUATION of Exp.Exp
 		   | COMP of Ident * DAEform
@@ -27,7 +29,7 @@ end
 
 relation dump_kind =
 
-  rule	print "  constant "
+  rule	print "  constant  "
 	--------------------
 	dump_kind CONST
 	
@@ -35,17 +37,38 @@ relation dump_kind =
 	--------------------
 	dump_kind PARAM
 	
-  rule	print "  local "
+  rule	print "  variable  "
 	--------------------
 	dump_kind LOCAL
 
 end
 
+relation dump_type =
+
+  rule	print "integer "
+	----------------
+	dump_type INT
+
+  rule	print "real    "
+	----------------
+	dump_type REAL
+
+  rule	print "bool    "
+	----------------
+	dump_type BOOL
+
+  rule	print "string  "
+	----------------
+	dump_type STRING
+
+end
+
 relation dump_comp: DAEcomp => () =
 	
-  rule	dump_kind kind & Exp.print_component_ref id & print "\n"
+  rule	dump_kind kind & dump_type typ &
+ 	Exp.print_component_ref id & print "\n"
 	--------------------------------------
-	dump_comp(VAR(id, kind))
+	dump_comp(VAR(id, kind, typ))
 	
   rule	dump_kind kind & print id &
 	print "=" & Exp.print_exp ex & print "\n"
@@ -64,21 +87,55 @@ relation dump_comp: DAEcomp => () =
 
 end
 
-relation dump_list: DAEcomp list => () =
+relation dump_var : DAEcomp => () =
 	
-  axiom	dump_list []
+  rule	dump_kind kind & dump_type typ &
+ 	Exp.print_component_ref id & print "\n"
+	--------------------------------------
+	dump_var(VAR(id, kind, typ))
 	
-  rule	dump_comp first &
-	dump_list rest
+  axiom	dump_var _
+
+end
+
+relation dump_equation : DAEcomp => () =
+	
+  rule	print "  " & Exp.print_exp eq & print "\n"
+	--------------------------------------
+	dump_equation(EQUATION(eq))
+	
+  axiom	dump_equation _
+
+end
+
+relation dump_vars: DAEcomp list => () =
+	
+  axiom	dump_vars []
+	
+  rule	dump_var first &
+	dump_vars rest
 	-------------------
-	dump_list first :: rest
+	dump_vars first :: rest
+
+end
+
+relation dump_equations: DAEcomp list => () =
+	
+  axiom	dump_equations []
+	
+  rule	dump_equation first &
+	dump_equations rest
+	-------------------
+	dump_equations first :: rest
 
 end
 
 relation dump: DAEform => () =
 	
-  rule	dump_list l
-	-------------------
+  rule	dump_vars l &
+	print "\nequations\n\n" &
+	dump_equations l
+	----------------
 	dump DAE(l)
 
 end

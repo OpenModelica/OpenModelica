@@ -67,7 +67,6 @@ module Exp:
   (** translations of the corresponding types in the `Exp' module. *)
 
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
-  relation eq_cref : (ComponentRef, ComponentRef) => ()
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()
   relation print_list : ('a list, 'a => (), string) => ()
@@ -89,72 +88,6 @@ relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
   rule	extend_cref (c,i,s) => c'
 	-------------------------
 	extend_cref (CREF_QUAL(i1,s1,c), i, s) => CREF_QUAL(i1,s1,c')
-
-end
-
-(** - Equality relations *)
-
-(** relation: eq_cref
- **
- ** This relation checks if two component references can be considered
- ** equal and fails if not.  Two component references are equal if all
- ** corresponding identifiers are the same, and if the subscripts are
- ** equal, according to the relation `eq_subscripts'.
- **)
-
-relation eq_cref : (ComponentRef, ComponentRef) => () =
-
-  rule	n1 = n2 &
-	eq_subscripts (s1,s2)
-	---------------------
-	eq_cref (CREF_IDENT(n1,s1), CREF_IDENT(n2,s2))
-
-  rule	n1 = n2 &
-	eq_subscripts (s1,s2) &
-	eq_cref (c1,c2)
-	---------------
-	eq_cref (CREF_QUAL(n1,s1,c1), CREF_QUAL(n2,s2,c2))
-
-end
-
-(** relation: eq_subscripts
- **
- ** Two list of subscripts are equal if they are of equal length and
- ** all their elements are pairwise equal according to the relation
- ** `eq_subscript'.
- **)
-
-relation eq_subscripts : (Subscript list, Subscript list) => () =
-
-  axiom	eq_subscripts([],[])
-
-  rule	eq_subscript(s1,s2) &
-	eq_subscripts(ss1,ss2)
-	----------------------
-	eq_subscripts(s1::ss1, s2::ss2)
-
-end
-
-(** relation: eq_subscript
- **
- ** This relation test whether two subscripts are equal.  Two
- ** subscripts are equal if they have the same constructor, and if all
- ** corresponding expressions are either syntactically equal, or if
- ** they have the same constant value.
- **)
-
-relation eq_subscript : (Subscript, Subscript) => () =
-
-  axiom	eq_subscript(NOSUB,NOSUB)
- 	
- 	(* FIXME: this is not complete at all *)
-  rule	s1 = s2
-	-------------------------------
-	eq_subscript(SUB1(s1),SUB1(s2))
-	
-  rule	print "- eq_subscript failed\n"
-	-------------------------------
-	eq_subscript(_,_)
 
 end
 

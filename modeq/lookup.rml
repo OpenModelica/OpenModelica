@@ -8,13 +8,14 @@ module Lookup:
   with "absyn.rml"
   with "exp.rml"
   with "env.rml"
-  with "mod.rml"
   with "explode.rml"
 
-  relation lookup_class     : (Env.Env, Absyn.Path) => (SCode.Class, SCode.Mod)
-  relation lookup_var       : (Env.Env,Exp.ComponentRef)
-	  			=> (Absyn.VarAttr,Types.Type,Env.Binding)
-  relation lookup_var_local : (Env.Env, Absyn.Ident) => Env.FrameVar
+  relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class)
+  relation lookup_var        : (Env.Env,Exp.ComponentRef)
+	  => (Absyn.VarAttr,Types.Type,Env.Binding)
+  relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
+	  => (Absyn.VarAttr, Types.Type, Env.Binding)
+  relation lookup_ident_local : (Env.Env, Absyn.Ident) => Env.FrameVar
 
 end
 
@@ -32,15 +33,15 @@ with "parse.rml"
 (** relation: lookup_class
  **)
 
-relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class,SCode.Mod) =
+relation lookup_class: (Env.Env,Absyn.Path) => SCode.Class =
 
-  rule	lookup_class_in_env(env,path) => (c,m)
+  rule	lookup_class_in_env(env,path) => c
 	--------------------------------------
-	lookup_class(env, path) => (c,m)
+	lookup_class(env, path) => c
 
-  rule	lookup_package_class (env,pack,path) => (c,m)
+  rule	lookup_package_class (env,pack,path) => c
 	--------------------------------------
-	lookup_class(env, Absyn.QUALIFIED(pack,path)) => (c,m)
+	lookup_class(env, Absyn.QUALIFIED(pack,path)) => c
 
 end
 
@@ -65,53 +66,60 @@ end
 (** relation: lookup_var_local
  **)
 
-relation lookup_var_local : (Env.Env, SCode.Ident) => Env.FrameVar =
+relation lookup_var_local : (Env.Env,Exp.ComponentRef)
+	  => (Absyn.VarAttr, Types.Type, Env.Binding) =
+
+  rule	lookup_var_f(vs,ref) => (attr,ty,binding)
+	-------------------------
+	lookup_var_local(Env.FRAME(vs,_)::fs,ref) => (attr,ty,binding)
+
+end
+
+relation lookup_ident_local : (Env.Env, SCode.Ident) => Env.FrameVar =
 
   rule  lookup_var2(vs, id) => fv
 	-------------------------
-	lookup_var_local(Env.FRAME(vs,_)::_, id) => fv
+	lookup_ident_local(Env.FRAME(vs,_)::_, id) => fv
 
 end
 
 (** - Internal relations *)
 
-relation lookup_class_in_frame: ((SCode.Ident * SCode.Class *
-				  SCode.Mod) list,
+relation lookup_class_in_frame: ((SCode.Ident * SCode.Class) list,
 				 SCode.Ident)
-	  => (SCode.Class,SCode.Mod) =
+	  => SCode.Class =
 
   rule	(* print "  lookup_class_in_frame(" & print id & print "): " &
 	print n & print "\n" & *)
 	id = n
 	---------------------------------------------------------
-	lookup_class_in_frame((n,c,m)::_, id) => (c,m)
+	lookup_class_in_frame((n,c)::_, id) => c
 
-  rule	lookup_class_in_frame(fs,id) => (c,m)
+  rule	lookup_class_in_frame(fs,id) => c
 	------------------------------
-	lookup_class_in_frame(_::fs,id) => (c,m)
+	lookup_class_in_frame(_::fs,id) => c
 
 end
 (**)
-relation lookup_class_in_env: (Env.Env,Absyn.Path) => (SCode.Class,SCode.Mod) =
+relation lookup_class_in_env: (Env.Env,Absyn.Path) => (SCode.Class) =
 
-  rule	lookup_class_in_frame(cs,id) => (c,m)
+  rule	lookup_class_in_frame(cs,id) => c
 	---------------------
-	lookup_class_in_env(Env.FRAME(_,cs)::fs,Absyn.IDENT(id)) => (c,m)
+	lookup_class_in_env(Env.FRAME(_,cs)::fs,Absyn.IDENT(id)) => c
 
-  rule	lookup_class_in_env(fs,id) => (c,m)
+  rule	lookup_class_in_env(fs,id) => c
 	---------------------
-	lookup_class_in_env(f::fs,id) => (c,m)
+	lookup_class_in_env(f::fs,id) => c
 
 end
 (**)
 relation lookup_package_class : (Env.Env, string, Absyn.Path)
-	  => (SCode.Class, SCode.Mod) =
+	  => SCode.Class =
 
   rule	locate_package (env,packname) => pack &
-	(* FIXME: modifications? *)
 	lookup_class_in_package (pack, path) => c
 	-------------------------------------
-	lookup_package_class (env, packname, path) => (c, SCode.NOMOD)
+	lookup_package_class (env, packname, path) => c
 
 end
 (**)
@@ -130,7 +138,7 @@ end
 (**)
 relation check_subscripts : (Absyn.ArrayDim, Exp.Subscript list) => () =
 
-	(* FIXME: Check range too? *)
+	(* FIXME: Check range too? Yes! *)
   axiom check_subscripts(Absyn.NODIM, [])
   axiom check_subscripts(Absyn.ONEDIM(_), [_])
   axiom check_subscripts(Absyn.TWODIM(_,_), [_,_])
@@ -193,7 +201,7 @@ end
 
 relation locate_package : (Env.Env, string) => SCode.Class =
 
-  rule	lookup_class(env, Absyn.IDENT(pack)) => (c,_) &
+  rule	lookup_class(env, Absyn.IDENT(pack)) => c &
 	(* FIXME: modifications? *)
 	assert_package c
 	----------------

@@ -14,9 +14,11 @@ module StaticExp :
   relation elab_exp : (Env.Env,
 		       Absyn.Exp)           => (Exp.Exp, Types.BasicType, bool)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.ComponentRef, Types.BasicType, bool)
+	  => (Exp.Exp, Types.BasicType, bool)
   relation elab_relop : (Absyn.RelOp, Types.BasicType) => Exp.RelOp
   relation ceval : (Env.Env, Exp.Exp)	  => (Values.Value, Types.BasicType)
+  relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
+  relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
 
 end
 
@@ -33,9 +35,9 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.BasicType, bool) =
   axiom	elab_exp(_, Absyn.STRING(x))  => (Exp.SCONST(x), Types.T_STRING, true)
   axiom	elab_exp(_, Absyn.BOOL(x))    => (Exp.BCONST(x), Types.T_BOOL,   true)
 
-  rule	elab_cref(env, cr) => (cr',t,c)
+  rule	elab_cref(env, cr) => (exp,t,c)
 	---------------------------------------
-	elab_exp(env, Absyn.CREF(cr)) => (Exp.CREF(cr'),t,c)
+	elab_exp(env, Absyn.CREF(cr)) => (exp,t,c)
 
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
@@ -148,7 +150,7 @@ end
  **)
 
 relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.ComponentRef, Types.BasicType, bool) =
+	  => (Exp.Exp, Types.BasicType, bool) =
 
   rule	print "    elab_cref " & Dump.print_component_ref c & print "\n" &
 	elab_cref_subs (env,c) => (c', const) &
@@ -156,11 +158,11 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 				       Types.TYPE(st, _),
 				       binding) &
 	Types.known_type st => t &
-	elab_cref2 (env, c', vartype, t, binding) => const &
+	elab_cref2 (env, c', vartype, t, binding) => (exp,const) &
 	print "    elab_cref " & Dump.print_component_ref c &
 	print " => " & print " (" & Types.print_type t & print ")\n"
 	-------------------------
-	elab_cref(env, c) => (c', t, const)
+	elab_cref(env, c) => (exp, t, const)
 
   rule	print "- elab_cref failed\n"
 	------------------------------
@@ -172,20 +174,20 @@ end
 
 relation elab_cref2 : (Env.Env,
 		       Exp.ComponentRef, Absyn.VarType,
-		       Types.BasicType, Env.Binding) => bool =
+		       Types.BasicType, Env.Binding) => (Exp.Exp,bool) =
 
 	(* FIXME: Check type of expression anyway? *)
-  axiom	elab_cref2 (_,cr, Absyn.VAR, _, _) => false
+  axiom	elab_cref2 (_,cr, Absyn.VAR, _, _) => (Exp.CREF(cr),false)
 
   rule	value_exp v => e
 	----------------
-	elab_cref2 (_,cr,_,t, Env.VALBOUND(v)) => true
+	elab_cref2 (_,cr,_,t, Env.VALBOUND(v)) => (e,true)
 
   rule	elab_exp (env,exp) => (exp', t', c) &
 	c = true (* & *)
 	(* t = t' *) (* FIXME: cast *)
 	------------------------
-	elab_cref2 (env,cr,_,t, Env.EQBOUND(exp)) => true
+	elab_cref2 (env,cr,_,t, Env.EQBOUND(exp)) => (Exp.CREF(cr),true)
 
   rule	print "# Constant or parameter with a non-constant initializer\n" &
 	print "# component: " & Exp.print_component_ref cr & print " = " &
@@ -655,7 +657,7 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef)
 
   rule	print "    ceval_cref " & Exp.print_component_ref c & print " => " &
 	Lookup.lookup_var (env, c) => (_,_,binding) &
-	ceval_cref_binding binding => (v,t) &
+	ceval_cref_binding (env,binding) => (v,t) &
 	Values.print_val v & print " (" & Types.print_type t & print ")\n"
 	-----------------------------------
 	ceval_cref (env,c) => (v,t)
@@ -669,19 +671,26 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef)
 
 end
 
-relation ceval_cref_binding : Env.Binding => (Values.Value, Types.BasicType) =
+relation ceval_cref_binding : (Env.Env, Env.Binding)
+	  => (Values.Value, Types.BasicType) =
 
   rule	value_type v => t
 	-----------------
-	ceval_cref_binding Env.VALBOUND(v) => (v,t)
+	ceval_cref_binding (env,Env.VALBOUND(v)) => (v,t)
 
   rule	print "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
-	ceval_cref_binding Env.UNBOUND => fail
+	ceval_cref_binding (env,Env.UNBOUND) => fail
 	
-  rule	print "- ceval_cref_binding failed (EQBOUND)\n"
-	-------------------------------------
-	ceval_cref_binding Env.EQBOUND(_) => fail
+  rule	elab_exp (env,exp) => (exp',t,true) &
+	ceval (env,exp') => (v,t)
+	------------------------
+	ceval_cref_binding (env,Env.EQBOUND(exp)) => (v,t)
+
+  rule	print "- ceval_cref__binding failed (nonconstant EQBOUND(" &
+	Dump.print_exp exp & print ")\n"
+	--------------------------------
+	ceval_cref_binding (env,Env.EQBOUND(exp)) => fail
 	
 end
 
@@ -712,5 +721,144 @@ relation value_type : Values.Value => Type =
   rule	print "- value_type failed\n"
 	----------------------------
 	value_type _ => fail
+
+end
+
+(** relation: canon_cref
+ **
+ ** This relation relates a `Exp.ComponentRef' to its canonical form,
+ ** which is when all subscripts are evaluated to constant values.  If
+ ** Such an evaluation is not possible, there is no canonical form and
+ ** this relation fails.
+ **)
+
+relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef =
+
+  rule	ceval_subscripts (env,ss) => ss'
+	--------------------------------
+	canon_cref (env, Exp.CREF_IDENT(n,ss)) => Exp.CREF_IDENT(n,ss')
+
+  rule	ceval_subscripts (env,ss) => ss' &
+	canon_cref (env,c) => c'
+	------------------------
+	canon_cref (env, Exp.CREF_QUAL(n,ss,c)) => Exp.CREF_QUAL(n,ss',c')
+
+end
+
+(** relation: ceval_subscripts
+ **
+ ** This relation relates a list of subscripts to their canonical
+ ** forms, which is when all expressions are evaluated to constant
+ ** values.
+ **)
+
+relation ceval_subscripts : (Env.Env, Exp.Subscript list)
+	  => Exp.Subscript list =
+
+  axiom	ceval_subscripts (_,[]) => []
+
+  rule	ceval_subscript (env,sub) => sub' &
+	ceval_subscripts (env,subs) => subs'
+	------------------------------------
+	ceval_subscripts (env,sub::subs) => (sub'::subs')
+
+end
+
+(** relation: ceval_subscripts
+ **
+ ** This relation relates a subscript to its canonical forms, which is
+ ** when all expressions are evaluated to constant values.
+ **)
+
+relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
+
+  axiom	ceval_subscript (env, Exp.NOSUB) => Exp.NOSUB
+
+  rule	ceval (env, e1) => (v1, Types.T_INTEGER) &
+	value_exp v1 => e1'
+	-----------------------------------------
+	ceval_subscript (env, Exp.SUB1(e1)) => Exp.SUB1(e1')
+	
+  rule	ceval (env, e1) => (v1, Types.T_INTEGER) &
+	value_exp v1 => e1' &
+	ceval (env, e2) => (v2, Types.T_INTEGER) &
+	value_exp v2 => e2'
+	-----------------------------------------
+	ceval_subscript (env, Exp.SUB2(e1,e2)) => Exp.SUB2(e1',e2')
+	
+  rule	ceval (env, e1) => (v1, Types.T_INTEGER) &
+	value_exp v1 => e1' &
+	ceval (env, e2) => (v2, Types.T_INTEGER) &
+	value_exp v2 => e2' &
+	ceval (env, e3) => (v3, Types.T_INTEGER) &
+	value_exp v3 => e3'
+	-----------------------------------------
+	ceval_subscript (env, Exp.SUB3(e1,e2,e3)) => Exp.SUB3(e1',e2',e3')
+	
+end
+
+(** - Equality relations *)
+
+(** relation: eq_cref
+ **
+ ** This relation checks if two component references can be considered
+ ** equal and fails if not.  Two component references are equal if all
+ ** corresponding identifiers are the same, and if the subscripts are
+ ** equal, according to the relation `eq_subscripts'.
+ **)
+
+relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => () =
+
+  rule	n1 = n2 &
+	eq_subscripts (s1,s2)
+	---------------------
+	eq_cref (Exp.CREF_IDENT(n1,s1), Exp.CREF_IDENT(n2,s2))
+
+  rule	n1 = n2 &
+	eq_subscripts (s1,s2) &
+	eq_cref (c1,c2)
+	---------------
+	eq_cref (Exp.CREF_QUAL(n1,s1,c1), Exp.CREF_QUAL(n2,s2,c2))
+
+end
+
+(** relation: eq_subscripts
+ **
+ ** Two list of subscripts are equal if they are of equal length and
+ ** all their elements are pairwise equal according to the relation
+ ** `eq_subscript'.
+ **)
+
+relation eq_subscripts : (Exp.Subscript list, Exp.Subscript list) => () =
+
+  axiom	eq_subscripts([],[])
+
+  rule	eq_subscript(s1,s2) &
+	eq_subscripts(ss1,ss2)
+	----------------------
+	eq_subscripts(s1::ss1, s2::ss2)
+
+end
+
+(** relation: eq_subscript
+ **
+ ** This relation test whether two subscripts are equal.  Two
+ ** subscripts are equal if they have the same constructor, and if all
+ ** corresponding expressions are either syntactically equal, or if
+ ** they have the same constant value.
+ **)
+
+relation eq_subscript : (Exp.Subscript, Exp.Subscript) => () =
+
+  axiom	eq_subscript(Exp.NOSUB,Exp.NOSUB)
+ 	
+ 	(* FIXME: A little better, but probably not good *)
+  rule	s1 = s2
+	-------------------------------
+	eq_subscript(Exp.SUB1(s1),Exp.SUB1(s2))
+	
+  rule	print "- eq_subscript failed\n"
+	-------------------------------
+	eq_subscript(_,_)
 
 end
