@@ -9,8 +9,11 @@ type Ident = string
 datatype Path = QUALIFIED of string * Path
 	      | IDENT of Ident
 
-datatype BinOp = ADD | SUB | MUL | DIV
+datatype BinOp = ADD | SUB | MUL | DIV | POW
 datatype UnaryOp = UMINUS | UPLUS
+datatype LBinOp = AND | OR
+datatype LUnaryOp = NOT
+datatype RelOp = LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
 
 datatype Exp = NUMBER of real
              | PATH of Path
@@ -20,8 +23,15 @@ datatype Exp = NUMBER of real
              | BINARY of Exp * BinOp * Exp
              | UNARY of UnaryOp * Exp
 
+             | LBINARY of Exp * LBinOp * Exp
+             | LUNARY of LUnaryOp * Exp
+
+	     | RELATION of Exp * RelOp * Exp
+
+	     | IFEXP of Exp * Exp * Exp
+
              | CALL of Path * Exp list		(* Function call *)
-             | EQU of Exp * Exp			(* Equation *)
+             (* | EQU of Exp * Exp			( * Equation *)
 	     | TIME
 
 end

@@ -59,11 +59,30 @@ relation binop_symbol: Exp.BinOp => string =
 	axiom	binop_symbol(Exp.SUB) => " - "
 	axiom	binop_symbol(Exp.MUL) => "*"
 	axiom	binop_symbol(Exp.DIV) => "/"
+	axiom	binop_symbol(Exp.POW) => "^"
 end
 
 relation unaryop_symbol: Exp.UnaryOp => string =
 	axiom	unaryop_symbol(Exp.UMINUS) => "-"
 	axiom	unaryop_symbol(Exp.UPLUS) => "+"
+end
+
+relation lbinop_symbol: Exp.LBinOp => string =
+	axiom	lbinop_symbol(Exp.AND) => " AND "
+	axiom	lbinop_symbol(Exp.OR) => " OR "
+end
+
+relation lunaryop_symbol: Exp.LUnaryOp => string =
+	axiom	lunaryop_symbol(Exp.NOT) => "NOT "
+end
+
+relation relop_symbol: Exp.RelOp => string =
+	axiom	relop_symbol(Exp.LESS)      => " < "
+	axiom	relop_symbol(Exp.LESSEQ)    => " <= "
+	axiom	relop_symbol(Exp.GREATER)   => " > "
+	axiom	relop_symbol(Exp.GREATEREQ) => " >= "
+	axiom	relop_symbol(Exp.EQUAL)     => " == "
+	axiom	relop_symbol(Exp.NEQUAL)    => " <> "
 end
 
 relation path_string: Exp.Path => string =
@@ -92,6 +111,14 @@ relation dump_exp: Exp.Exp => () =
 		--
 		dump_exp(Exp.STRING(s))
 
+	rule	print "FALSE"
+		-------------
+		dump_exp(Exp.BOOL(false))
+
+	rule	print "TRUE"
+		-------------
+		dump_exp(Exp.BOOL(true))
+
 	rule	binop_symbol(op) => sym &
 		dump_exp e1 & print sym & dump_exp e2
 		----------------------------
@@ -102,18 +129,40 @@ relation dump_exp: Exp.Exp => () =
 		----------------------------
 		dump_exp(Exp.UNARY(op, e))
 
+	rule	lbinop_symbol(op) => sym &
+		dump_exp e1 & print sym & dump_exp e2
+		----------------------------
+		dump_exp(Exp.LBINARY(e1, op, e2))
+
+	rule	lunaryop_symbol(op) => sym &
+		print sym & dump_exp e
+		----------------------------
+		dump_exp(Exp.LUNARY(op, e))
+
+	rule	relop_symbol(op) => sym &
+		dump_exp(e1) & print sym & dump_exp(e2)
+		---------------------------------------
+		dump_exp(Exp.RELATION(e1, op, e2))
+
+	rule	print "IF " & dump_exp(c) &
+		print " THEN " & dump_exp(t) &
+		print " ELSE " & dump_exp(f)
+		----------------------------
+		dump_exp(Exp.IFEXP(c,t,f))
+
 	rule	path_string(fcn) => fs &
 		print fs & print "(" & dump_list(args,dump_exp,",") & print ")"
 		---------------------------------------------
 		dump_exp(Exp.CALL(fcn, args))
 
+(*
 	rule	print "EQUATION " & 
 		dump_exp lhs &
 		print " = " &
 		dump_exp rhs
 		------------------------
 		dump_exp(Exp.EQU(lhs, rhs))
-
+*)
 	rule	print "TIME"
 		------------------
 		dump_exp(Exp.TIME)
