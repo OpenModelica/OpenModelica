@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
       sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log &",
 	      moshhome,moshhome);
       int res = system(systemstr);
-      cout << "Started server..." << endl;
+      cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
     }
   
   if (argc > 2)
@@ -84,6 +84,8 @@ int main(int argc, char* argv[])
       exit (EXIT_FAILURE);
     }
 
+  sleep(3);
+
   /* Connect to the server. */
   struct sockaddr_in servername;
   init_sockaddr (&servername, hostname, port);
@@ -101,9 +103,11 @@ int main(int argc, char* argv[])
     if (strcmp(line,"quit()") == 0) {
       done =true;
     }
+    add_history(line);
     int nbytes = write(sock,line,strlen(line)+1);
     int recvbytes = read(sock,buf,40000);
     cout << buf;
+    free(line);
   }
   close (sock);  
   return EXIT_SUCCESS;
