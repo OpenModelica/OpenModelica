@@ -38,6 +38,7 @@ module Debug:
  relation fprintl: (string, string list) => ()
  relation fprint_list: (string, 'a list, 'a => (), string) => ()
  relation fcall: (string, 'a => (), 'a) => ()
+ relation bcall: (bool, 'a => (), 'a) => () 
  relation notfcall: (string, 'a => (), 'a) => ()
 end
 
@@ -134,6 +135,16 @@ relation fcall: (string, 'a => (), 'a) => () =
 	fcall (flag, func, str)
 
   axiom	fcall (_,_,_)
+
+end
+
+relation bcall: (bool, 'a => (), 'a) => () =
+
+  rule	func(str)
+	------------
+	bcall (true, func, str)
+
+  axiom	bcall (false,_,_)
 
 end
 

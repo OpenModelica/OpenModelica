@@ -20,11 +20,15 @@ RML	= @rmlc_bin@ -Wc,-O3
 RMLINC  = -I$(RMLHOME)/include/plain
 MYRML	= ./myrmlc
 
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET)
+
+LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) \
+	 -lssl -lmico -lcrypto -ldl -lm -lpthread 
 
 PROG	= modeq
 AST	= absyn_builder/absyn_builder.a
-RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runtime/socketimpl.o runtime/printimpl.o runtime/cacheimpl.o runtime/ptolemyio.o
+RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runtime/socketimpl.o \
+	  runtime/printimpl.o runtime/cacheimpl.o runtime/ptolemyio.o runtime/corbaimpl.o \
+	  runtime/modeq_communication_impl.o runtime/modeq_communication.o 
 
 SRCRML= absyn.rml \
 	algorithm.rml \

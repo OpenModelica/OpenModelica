@@ -1,0 +1,6 @@
+// As simple as can be modeq communication, sending and recieving of strings.
+ 
+interface ModeqCommunication {
+  string sendExpression( in string expr);
+  string sendClass( in string model);
+};

@@ -47,6 +47,7 @@ with "debug.rml"
 with "codegen.rml"
 with "socket.rml"
 with "print.rml"
+with "corba.rml"
 
 (** relation: server_loop
  **
@@ -251,6 +252,33 @@ relation interactivemode: string list => () =
 	interactivemode _
 end
 	
+relation interactivemode_corba: string list => () =
+
+  rule	Corba.initialize &
+	server_loop_corba (Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])) => _
+	-------------------
+	interactivemode_corba _
+end
+
+(** relation: server_loop_corba
+ **
+ ** This relation is the main loop of the server for a CORBA impl.
+**)
+relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
+
+  rule	Corba.wait_for_command() => str &
+	handle_command (str,isymb)  => (true,replystr,newsymb) &
+	Corba.sendreply(replystr) &
+	server_loop_corba (newsymb) => ressymb
+	-----------------------------
+	server_loop_corba (isymb) => ressymb
+
+  rule  Print.print_buf "Exiting\n" &
+	Corba.sendreply("quit requested, shutting server down\n") &
+ 	Corba.close
+	---------------------
+	server_loop_corba (isymb) => isymb
+end
 
 (** relation: main
  **
@@ -261,8 +289,13 @@ end
 relation main : string list => () =
 
   rule	RTOpts.args args => args' &
-	Debug.fcall ("interactive", interactivemode, args' ) &
-	Debug.notfcall ("interactive", translate_file, args')
+	RTOpts.debug_flag("interactive") => ismode &
+	RTOpts.debug_flag("interactiveCorba") => icmode &
+	bool_or(ismode,icmode) => imode &
+	bool_not(imode) => imode' &
+	Debug.bcall (ismode, interactivemode, args' ) &
+	Debug.bcall (icmode, interactivemode_corba, args') &
+	Debug.bcall (imode', translate_file, args') 
 	--------------------
 	main args
 
