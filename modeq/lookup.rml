@@ -212,6 +212,17 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	----------------------------------------------------------
 	lookup_class(env, path, _) => (c, env')
 
+  rule	(* If we search for A1.A2....An.x while in scope A1.A2...An
+	 , just search for x. Must do like this to ensure finite recursion *)
+	Env.get_env_path(env) => SOME(ep) &
+	Absyn.strip_last(p) => packp & 
+	ModUtil.path_equal(ep,packp) => true &
+	Absyn.path_last_ident(p) => id &
+	lookup_class(env,Absyn.IDENT(id),msgflag) => (c,env')
+	--------------------------------------
+	lookup_class(env, p as Absyn.QUALIFIED(_,_),msgflag) 
+	  => (c, env)
+
   rule	Debug.fprint ("lotr","TRIES lookup_class(4)\n") &
         lookup_class(env,Absyn.IDENT(pack),msgflag) => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
 	Env.open_scope(env',encflag) => env2 &
