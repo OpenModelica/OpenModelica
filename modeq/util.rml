@@ -39,6 +39,9 @@ module Util :
 
   relation string_append_list : string list => string
   relation string_delimit_list : (string list, string) => string
+
+  relation bool_string: bool => string 
+
 end
 
 
@@ -197,5 +200,9 @@ relation string_delimit_list : (string list, string) => string =
 	string_append(str2,str1) => str
 	---------------------------
 	string_delimit_list(f::r,delim) => str
+end
 
+relation bool_string: bool => string =
+  axiom	bool_string true => "true"
+  axiom	bool_string false => "false"
 end

@@ -74,6 +74,10 @@ getNthComponentAnnotation(<cref>,<int>) Returns the flattened
 					string of 15 values, see
 					Annotations below, e.g "false,10,30,..."
 
+getInheritanceCount(<cref>)		Returns the number of inherited classes of a class.
+
+getNthInheritedClass(<cref>,<int>)	Returns the type name of the nth inherited class of a class
+
 getConnectionCount(<cref>)		Returns the number of
 					connections in the model.
 
@@ -169,6 +173,22 @@ getModels(<cref>)			Returns the names of all model
 					{PotentialSensor,VoltageSensor,CurrentSensor}
 getModels()				Returns the names of all model
 					definitions in the global scope.
+
+isType(<cref>)				Returns true if class is a type, otherwise false.
+
+isPrimitive(<cref>)			Returns true if class is of primitive type, otherwise false.
+
+isConnector(<cref>)			Returns true if class is a connector, otherwise false.
+
+isModel(<cref>)				Returns true if class is a model, otherwise false.
+
+isRecord(<cref>)			Returns true if class is a record, otherwise false.
+
+isBlock(<cref>)				Returns true if class is a block, otherwise false.
+
+isFunction(<cref>)			Returns true if class is a function, otherwise false.
+
+isPackage(<cref>)			Returns true if class is a package, otherwise false.
 
 ERROR Handling
 ==============

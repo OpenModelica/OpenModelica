@@ -414,6 +414,27 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  rule	get_inheritance_count(cr,p) => count &
+	int_string count => str &
+	string_append(str,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getInheritanceCount",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	get_nth_inherited_class(cr,n,p) => str &
+	string_append(str,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getNthInheritedClass",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
   rule	get_connection_count(cr,p) => s1 &
 	string_append(s1,"\n") => resstr
 	-----------------------
@@ -549,6 +570,86 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_primitive(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isPrimitive",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_type(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isType",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_connector(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isConnector",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_model(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isModel",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_record(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isRecord",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_block(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isBlock",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_function(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isFunction",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_package(cr,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isPackage",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -559,6 +660,149 @@ relation componentref_to_path: Absyn.ComponentRef => Absyn.Path =
 	-----------------------------
 	componentref_to_path(Absyn.CREF_QUAL(id,_,x)) => Absyn.QUALIFIED(id,px)
 end	
+
+(** relation: is_primitive 
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced type is a primitive type, otherwise it returns the 
+ ** string "false".
+**)
+relation is_primitive: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => class &
+	is_primitive_class(class,p) => bval &
+	Util.bool_string bval => res 
+	----------------------------
+	is_primitive(cr,p) => res
+
+(* Instead of elaborating and lookup these in env, we optimize a bit and just return "true" for these *)
+  axiom	is_primitive(Absyn.CREF_IDENT("Real",_),_) => "true"
+  axiom	is_primitive(Absyn.CREF_IDENT("Integer",_),_) => "true"
+  axiom	is_primitive(Absyn.CREF_IDENT("String",_),_) => "true"
+  axiom	is_primitive(Absyn.CREF_IDENT("Boolean",_),_) => "true"
+  axiom	is_primitive(_,_) => "false"
+end
+
+(** relation: is_type 
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced class has the restriction "type", otherwise it returns the 
+ ** string "false".
+**)
+relation is_type: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_TYPE,_) 
+	----------------------------
+	is_type(cr,p) => "true"
+
+  axiom	is_type(cr,p) => "false"
+end
+
+(** relation: is_connector
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced class has the restriction "connector", otherwise it returns the 
+ ** string "false".
+**)
+relation is_connector: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_) 
+	----------------------------
+	is_connector(cr,p) => "true"
+
+  axiom	is_connector(cr,p) => "false"
+end
+
+(** relation: is_model
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced class has the restriction "model", otherwise it returns the 
+ ** string "false".
+**)
+relation is_model: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_MODEL,_) 
+	----------------------------
+	is_model(cr,p) => "true"
+
+  axiom	is_model(cr,p) => "false"
+end
+
+(** relation: is_record
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced class has the restriction "record", otherwise it returns the 
+ ** string "false".
+**)
+relation is_record: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_RECORD,_) 
+	----------------------------
+	is_record(cr,p) => "true"
+
+  axiom	is_record(cr,p) => "false"
+end
+
+(** relation: is_block
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced class has the restriction "block", otherwise it returns the 
+ ** string "false".
+**)
+relation is_block: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK,_) 
+	----------------------------
+	is_block(cr,p) => "true"
+
+  axiom	is_block(cr,p) => "false"
+end
+
+(** relation: is_function
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced class has the restriction "function", otherwise it returns the 
+ ** string "false".
+**)
+relation is_function: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION,_) 
+	----------------------------
+	is_function(cr,p) => "true"
+
+  axiom	is_function(cr,p) => "false"
+end
+
+(** relation: is_package
+ ** This relation takes a component reference and a program. 
+ ** It returns the string "true" if the refrenced class has the restriction "package", otherwise it returns the 
+ ** string "false".
+**)
+relation is_package: (Absyn.ComponentRef, Absyn.Program) => string =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE,_) 
+	----------------------------
+	is_package(cr,p) => "true"
+
+  axiom	is_package(cr,p) => "false"
+end
+
+relation is_primitive_class: (Absyn.Class,Absyn.Program) => bool =
+	
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_INT,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_REAL,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_STRING,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_BOOL,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_TYPE,_),_) => true
+	
+  rule	Absyn.cref_to_path(Absyn.CREF_IDENT(cname,[])) => inmodel &
+	lookup_classdef(path,inmodel,p)=> (cdef,_) &
+	is_primitive_class(cdef,p) => res
+	-------------------------------
+	is_primitive_class(Absyn.CLASS(cname,_,_,_,Absyn.R_CLASS,Absyn.DERIVED(path,_,_,_)),p) => res
+
+end
 
 (** relation: remove_compiled_functions
 **
@@ -714,6 +958,43 @@ relation add_icon_annotation:(Absyn.ComponentRef,Absyn.Exp,Absyn.Program) => Abs
   axiom add_icon_annotation(_,_,p) => p 
 	(* TODO:, implement add_icon_annotation *)
 end
+
+
+(** relation: get_inheritance_count
+ ** This relation takes a `ComponentRef' and a `Program' and returns the number of inherited classes in the 
+ ** class referenced by the `ComponentRef'.
+   **)
+relation get_inheritance_count: (Absyn.ComponentRef,Absyn.Program) => int = 
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_base_classes(cdef) => lst &
+	list_length(lst) => count
+	-------------------------------------------------
+	get_inheritance_count( model,p) => count
+	
+  axiom	get_inheritance_count (_,_) => 0
+end
+
+(** relation: get_inheritance_count
+ ** This relation takes a `ComponentRef' and a `Program' and returns the number of inherited classes in the 
+ ** class referenced by the `ComponentRef'.
+   **)
+relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program) => string = 
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_base_classes(cdef) => lst &
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => cref &
+	Absyn.cref_to_path(cref) => path &
+	Absyn.path_string(path) => str
+	-------------------------------------------------
+	get_nth_inherited_class( model,n,p) => str
+	
+  axiom	get_nth_inherited_class (_,_,_) => "-1"
+end
+
 
 (** relation: get_component_count
  ** This relation takes a `ComponentRef' and a `Program' and returns the number of public components in the 
@@ -922,11 +1203,7 @@ end
 relation get_diagram_annotation: (Absyn.Path, Absyn.Program) => string =
 
   rule	get_pathed_class_in_program (modelpath,p) => cdef &
-	get_base_classes(cdef) => crefs &
-	get_diagram_annotation_from_baseclasses(crefs,p) => baseannlst &
-	get_diagram_annotation_in_class(cdef) => s1 &
-	Util.string_append_list(baseannlst) => s2 &
-	string_append(s1,s2) => str
+	get_diagram_annotation_in_class(cdef) => str
 	---------------------------
 	get_diagram_annotation(modelpath,p) => str
 
@@ -936,19 +1213,10 @@ end
 (** relation: get_icon_annotation
  ** This relation takes a Path and a Program and returns a comma separated
  ** string of values for the icon annotation for the class named by the first argument. 	
- **  Icon annotation is composed of several things:
- **   1. Annotations in the class definition.
- **	2. Annotations in base classes. This implies performing a partial instantiation
- ** removing inheritance (and applying modifications there, but we skip applying modifications 
- ** for now, since dymola does not either.)
  *)
 relation get_icon_annotation: (Absyn.Path, Absyn.Program) => string =
    rule	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_base_classes(cdef) => crefs &
-	get_icon_annotation_from_baseclasses(crefs,p) => baseannlst &
-	get_icon_annotation_in_class(cdef) => s1 &
-	Util.string_append_list(baseannlst) => s2 &
-	string_append(s1,s2) => str
+	get_icon_annotation_in_class(cdef) => str
 	-----------------------------------------
 	get_icon_annotation(modelpath,p) => str
   axiom get_icon_annotation(_,_) => "get_icon_annotation failed!"
