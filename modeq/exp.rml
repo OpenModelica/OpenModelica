@@ -491,7 +491,11 @@ relation simplify : Exp => Exp =
 	-------------------------------------
 	simplify ASUB(e, i) => CREF(CREF_QUAL(n,s,c'),t)
 
-
+  rule	(* For arbitrary vector operations, e.g (a+b-c)[1] => a[1]+b[1]-c[1] *)
+	
+ 	simplify_asub(e,i) => e 
+	-----------------------
+	simplify ASUB(e,i) => e
 
 	(* Operations *)
 
@@ -529,6 +533,53 @@ relation simplify : Exp => Exp =
 	simplify (exp as LBINARY(e1, op, e2)) => e
 
   axiom	simplify e => e
+
+end
+
+
+(** relation: simplify_asub
+ ** This relation simplifies array subscripts on vector operations
+ **)
+		 
+relation simplify_asub: (Exp, int) => Exp =
+
+  rule	simplify_asub(e,indx) => e'
+	-----------------------------
+	simplify_asub(UNARY(UMINUS_ARR(t),e),indx)
+	  => UNARY(UMINUS_ARR(t),e')
+
+  rule	simplify_asub(e,indx) => e'
+	-------------------------
+	simplify_asub(UNARY(UPLUS_ARR(t),e),indx)
+	  => UNARY(UPLUS_ARR(t),e')
+
+  rule	simplify_asub(e1,indx) => e1' &
+	simplify_asub(e2,indx) => e2' 
+	-----------------------------
+	simplify_asub(BINARY(e1,SUB_ARR(t),e2),indx)
+	  => BINARY(e1',SUB_ARR(t),e2')
+      
+  rule	simplify_asub(e2,indx) => e2' &
+	simplify(e1) => e1' 
+	----------------------------
+	simplify_asub(BINARY(e1,MUL_SCALAR_ARRAY(t),e2),indx)
+	  => (BINARY(e1',MUL_SCALAR_ARRAY(t),e2'))
+
+  rule	simplify_asub(e1,indx) => e1' &
+	simplify(e2) => e2' 
+	----------------------------
+	simplify_asub(BINARY(e1,MUL_ARRAY_SCALAR(t),e2),indx)
+	  => (BINARY(e1',MUL_ARRAY_SCALAR(t),e2'))
+
+  rule	simplify_asub(e1,indx) => e1' &
+	simplify(e2) => e2' 
+	----------------------------
+	simplify_asub(BINARY(e1,DIV_ARRAY_SCALAR(t),e2),indx)
+	  => (BINARY(e1',DIV_ARRAY_SCALAR(t),e2'))
+
+  rule	simplify(ASUB(e,indx)) => e'
+	--------------------------------
+	simplify_asub(e as CREF(cr,t),indx) => e'
 
 end
 
