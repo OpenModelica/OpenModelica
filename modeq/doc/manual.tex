@@ -1,0 +1,608 @@
+\documentclass{report}
+\usepackage{verbatim}
+\title{Manual - Open Source Modelica Compiler and Interactive Environment}
+%\newcommand{\func}[1]{\item{#1}}
+%\newcommand{\funcbegin}{\begin{itemize}}
+%\newcommand{\funcend}{\end{itemize}}
+%\newcommand{\func}[1]{\\ \hline \bf{#1} & }
+%\newcommand{\funcbegin}{\begin{tabular}{|l|l} }
+%\newcommand{\funcend}{\end{tabular}}
+\newcommand{\func}[1]{\section{#1}}
+\newcommand{\funcbegin}{}
+\newcommand{\funcend}{}
+
+\begin{document}
+\maketitle
+\chapter{Introduction}
+This is the manual for the Open Source Modelica compiler and
+interactive environment. The compiler consists of the binary file
+\emph{modeq}. It can either be executed as a standard compiler if it
+is given a filename as argument. But the compiler can also be started
+in an interactive mode, where it listens on port no 29500 on the
+localhost for a (one) incomming connection. This is how the compiler
+is used togheter with the mosh (Modelica shell) binary.
+
+For debugging purposes it is possible to start mosh and modeq in
+interactive mode in two separate windows. This can be done by the
+follwing commands:
+\begin{verbatim}
+cd modelica/mosh/src;./mosh -noserv
+\end{verbatim}
+and in another shell:
+\begin{verbatim}
+cd modelica/modeq/; ./modeq +d=interactive 
+\end{verbatim}
+
+In the following chapters we describe the builtin functions that are
+available for use when running the interactive session using mosh.
+
+\chapter{Functions for Interactive use}
+This section describes a set of functions to be used in the
+interactive environment, e.g.\ for loading and saving models,
+translating models, and eventually simulation and plotting of results.
+In the interactive environment type names and component references
+(e.g.\ variables) are given as parameters to these functions \emph{as
+they are}. That is, a type name is written for instance like:
+\begin{verbatim}
+translateClass(Modelica.Electrical.Analog.Basic.Resistor)
+\end{verbatim}
+and a variable is written similarly like:
+\begin{verbatim}
+plot({R1.i,C1.i})
+\end{verbatim}
+The types of these two expressions are {\tt TypeName} and {\tt
+VariableName}, and special automatic quoting mechanisms are applied
+when the expected type of an expression is any of these types.
+For instance,
+\begin{verbatim}
+translateClass(A.B)
+\end{verbatim}
+is automatically quoted (since the expected type of the parameter is
+{\tt TypeName}, and is therefore equivalent to
+\begin{verbatim}
+translateClass(Code(A.B))
+\end{verbatim}
+where {\tt Code} is the quote identifier.
+
+Below follows the description of each predefined function in the
+interactive environment.
+\funcbegin
+\func{translateClass(\emph{className})}
+Instantiates a class and return a string
+containing the flat class definition. 
+
+The function header is defined as:
+\begin{verbatim}
+function translateClass
+    input TypeName className;
+    output String flatclass;
+...
+end translateClass;
+\end{verbatim}
+
+\func{list()}
+Returns a string containing all class definitions.
+
+The function header is defined as:
+\begin{verbatim}
+function list
+    output String classes;
+...
+end list;
+\end{verbatim}
+
+\func{list(\emph{className})}
+Returns a string containing the class definition of
+the named class.
+
+The function header is defined as:
+\begin{verbatim}
+function list
+    input TypeName className;
+    output String class;
+...
+end list;
+\end{verbatim}
+
+\func{typeOf(\emph{variable})}
+Returns the type of the variable as a string.
+
+The function header is defined as:
+\begin{verbatim}
+function typeOf
+    input VariableName variable;
+    output String type;
+...
+end typeOf;
+\end{verbatim}
+\func{clear()} 
+Clears the complete session, as if the environment was restarted.
+
+The function header is defined as:
+\begin{verbatim}
+function clear
+    output Boolean res=true;
+...
+end clear;
+\end{verbatim}
+\func{clearVariables()} Clears the variable definitions that have been defined in the interactive environment.
+
+The function header is defined as:
+\begin{verbatim}
+function clearVariables
+    output Boolean res=true;
+...
+end clearVariables;
+\end{verbatim}
+\func{clearCache()} 
+Clears the cache of flat Modelica classes.
+
+The function header is defined as:
+\begin{verbatim}
+function clearCache
+    output Boolean res=true;
+...
+end clearCache;
+\end{verbatim}
+\func{timing(\emph{expr})} 
+Evaluates expression and returns the number of seconds
+the evaluation took.
+
+The function header is defined as:
+\begin{verbatim}
+function timing
+    input Code expression; // Code is the supertype of
+                           // any AST type, like TypeName 
+                           // or VariableName.
+    output Real time;
+...
+end timing;
+\end{verbatim}
+\func{cd()} 
+Return the current directory as a string.
+
+The function header is defined as:
+\begin{verbatim}
+function cd
+    output String dir;
+...
+end cd;
+\end{verbatim}
+\func{cd(\emph{dir})} 
+Change directory to the directory given as string, Returns true if successful.
+
+The function header is defined as:
+\begin{verbatim}
+function cd
+    input String dir;
+    output Boolean res;
+...
+end cd;
+\end{verbatim}
+
+\func{system(\emph{str})} 
+Execute \emph{str} as a system(shell) command, return integer success value.
+
+The function header is defined as:
+\begin{verbatim}
+function system
+    input String dir;
+    output Integer res;
+...
+end system;
+\end{verbatim}
+
+\func{readFile(\emph{file})} 
+Load \emph{file} and return a string of the
+file content.
+
+The function header is defined as:
+\begin{verbatim}
+function readFile
+    input String file;
+    output String content;
+...
+end readFile;
+\end{verbatim}
+
+\func{listVariables()} Return a vector of variable names that have been
+defined in the interactive environment.
+
+The function header is defined as:
+\begin{verbatim}
+function listVariables
+    output VariableName variables[:];
+...
+end listVariables;
+\end{verbatim}
+\func{runScript(\emph{str})} Exectute script file given as string argument.
+
+The function header is defined as:
+\begin{verbatim}
+function runScript
+    input String scriptFile;
+    output Boolean res;
+...
+end runScript;
+\end{verbatim}
+
+\func{loadClass(\emph{classname})}  
+Load \emph{classname} from the MODELICAPATH enviroment variable,
+returns true if successful.
+
+The function header is defined as:
+\begin{verbatim}
+function loadClass
+    input TypeName class;
+    output Boolean res;
+...
+end loadClass;
+\end{verbatim}
+
+\func{loadFile(\emph{filename)}} Load the modelica file given as string argument.
+
+The function header is defined as:
+\begin{verbatim}
+function loadFile
+    input String fileName;
+    output Boolean res;
+...
+end loadFile;
+\end{verbatim}
+
+\func{saveClass(\emph{filename},\emph{className})} 
+Save the class with name \emph{className} in the file \emph{filename}.
+
+The function header is defined as:
+\begin{verbatim}
+function saveFile
+    input String fileName;
+    input TypeName className;
+    output Boolean res;
+...
+end saveFile;
+\end{verbatim}
+\func{help()} Print a short heltext of the most commonly used
+commands.
+
+The function header is defined as:
+\begin{verbatim}
+function help
+    output String helpText;
+...
+end help;
+\end{verbatim}
+\funcend
+
+\chapter{Functions for Modelica reflection}
+This section contain functions for retrieving model information, such
+as units of variables, etc.
+
+\funcbegin
+
+\func{getUnit(\emph{variableName, className})} Retrieve the unit of
+the variable named \emph{variableName} in the class named
+\emph{className}. This function will instantiate the model in order to
+retrieve the unit of the given variable. It will also store the
+translated (flat) class in a cache so that consecutive calls can be
+made faster (e.g.\ when retrieving the units of all variables in a
+class). The cache can be emptied by issuing the clearCache()
+function. 
+
+The function header is defined as:
+\begin{verbatim}
+function getUnit
+    input VariableName variable;
+    input TypeName class;
+    output String unit;
+...
+end getUnit;
+\end{verbatim}
+
+\func{getQuantity(\emph{variableName, className})}
+Retrieve the quantity of the variable named \emph{variableName} in the
+class named \emph{className}.
+
+The function header is defined as:
+\begin{verbatim}
+function getQuantity
+    input VariableName variable;
+    input TypeName class;
+    output String quantity;
+...
+end getQuantity;
+\end{verbatim}
+
+\func{getDisplayUnit(\emph{variableName, className})}
+Retrieve the displayUnit of the variable named \emph{variableName} in the
+class named \emph{className}.
+
+The function header is defined as:
+\begin{verbatim}
+function getDisplayUnit
+    input VariableName variable;
+    input TypeName class;
+    output String displayUnit;
+...
+end getDisplayUnit;
+\end{verbatim}
+
+\func{getMin\emph{variableName, className})}
+Retrieve the min value of the variable named \emph{variableName} in the
+class named \emph{className}.
+
+The function header is defined as:
+\begin{verbatim}
+function getMin
+    input VariableName variable;
+    input TypeName class;
+    output Real min;
+...
+end getMin;
+\end{verbatim}
+
+\func{getMax\emph{variableName, className})}
+Retrieve the max value of the variable named \emph{variableName} in the
+class named \emph{className}.
+
+The function header is defined as:
+\begin{verbatim}
+function getMax
+    input VariableName variable;
+    input TypeName class;
+    output Real max;
+...
+end getMax;
+\end{verbatim}
+
+\func{getStart\emph{variableName, className})}
+Retrieve the start value of the variable named \emph{variableName} in the
+class named \emph{className}. \emph{\bf{Note:} If the start value is given
+as an initial equation, it is currently not retrievable.}
+
+The function header is defined as:
+\begin{verbatim}
+function getStart
+    input VariableName variable;
+    input TypeName class;
+    output Real start;
+...
+end getStart;
+\end{verbatim}
+
+\func{getFixed\emph{variableName, className})}
+Retrieve the fixed value of the variable named \emph{variableName} in the
+class named \emph{className}. 
+
+The function header is defined as:
+\begin{verbatim}
+function getFixed
+    input VariableName variable;
+    input TypeName class;
+    output Boolean fixed;
+...
+end getFixed;
+\end{verbatim}
+
+\func{getNominal\emph{variableName, className})}
+Retrieve the nominal value of the variable named \emph{variableName} in the
+class named \emph{className}. 
+
+The function header is defined as:
+\begin{verbatim}
+function getNominal
+    input VariableName variable;
+    input TypeName class;
+    output Real nominal;
+...
+end getNominal;
+\end{verbatim}
+
+\func{getStateSelect\emph{variableName, className})}
+Retrieve the StateSelect value of the variable named
+\emph{variableName} in the class named \emph{className}. StateSelect
+is defined as (According to the Modelica Language Specification)
+\begin{verbatim}
+type StateSelect = 
+  enumeration(never, avoid, default, prefer, always);
+\end{verbatim}
+
+The function header is defined as:
+\begin{verbatim}
+function getStateSelect
+    input VariableName variable;
+    input TypeName class;
+    output StateSelect stateSelect;
+...
+end getStateSelect;
+\end{verbatim}
+
+\funcend
+
+\chapter{Commands for model building}
+It is possible to send commands to the interactive environment for
+builing and browsing models, typically used by e.g.\ a model
+editor. These commands are allmost as modelica functions like the ones
+above, except that they can not be used in subexpressions. They must
+therefore be issued directly at the command prompt. \footnote{The reason for
+this is that they are captured by the compiler before semantic checks
+like type checking etc are preformed, because some of the functions
+does not return true Modelica values. However, the goal is when the
+Code quotation and its corresponding type system has been completely
+designed to introduce these functions as Modelica functions with side
+effect.} 
+\footnote{These functions can also be given in a script file.}
+
+\funcbegin
+
+\func{createModel(\emph{modelName})}
+Creates an empty model with the name \emph{modelName}.
+
+\func{deleteModel(\emph{modelName})}
+Deletes the model with the name \emph{modelName}.
+
+\func{addComponent(\emph{compName, typeName, className, options})}
+Adds a component named \emph{compName} with the type \emph{typeName}
+to the class named \emph{className}. Additionally three optional named
+arguments can be given:
+\begin{itemize}
+\item{\emph{annotate}} To give a graphical annotation to the
+component. For instance
+\begin{verbatim}
+addComponent(R,Resistor,test, 
+        annotate=Placement(transformation(x=10,y=10)));
+\end{verbatim}
+\item{\emph{comment}} To give a string comment to the component.
+For instance
+\begin{verbatim}
+addComponent(C1,Capacitor,test,
+        comment="The capacitor in the RC circuit");
+\end{verbatim}
+\item{\emph{binding}} To give the variable a binding.
+For instance
+\begin{verbatim}
+addComponent(C1,Capacitor,test,
+        binding=Code(C1=0.001));
+\end{verbatim}
+\end{itemize}
+
+\func{updateComponent(\emph{compName, typeName, className, options})}
+Updates the already existing component with e.g.\ a new annotation or
+comment or binding.  
+
+\func{deleteComponent(\emph{compName, className})}
+Delete the component named \emph{compName} in the class named
+\emph{className}.
+
+\func{addClassAnnotation(\emph{className,options})}
+Adds the named argument \emph{annotate=expression} as a class
+annotation to the class named \emph{className}.
+
+\func{getComponentCount(\emph{className})}
+Returns the number of components of the class named \emph{className}.
+
+\func{getNthComponent(\emph{className, n})}
+Returns the \emph{n}:th component of the class named
+\emph{className}. The return value is a \emph{vector} of the component
+name, its type and the optional comment of the component.
+
+\func{getNthComponentAnnotation(\emph{className, n})}
+Returns the \emph{n}:th component annotation of the class named
+\emph{className}. The return value is a \emph{vector} of the values of
+the flat record for the Placement record, defined in the Modelica
+Language Specification.
+
+\func{getInheritanceCount(\emph{className})}
+Returns the number of inherited classes of the class named
+\emph{className}.
+
+\func{getNthInheritedClass(\emph{className, n}}
+Returns the type name of the \emph{n}:th inhertited class.
+
+\func{getConnectionCount(\emph{className})}
+Returns the number of connections in the class named \emph{className}.
+
+\func{getNthConnection(\emph{className, n})}
+Returns the names of the \emph{n}:th connection of the class named \emph{className}.
+
+\func{getNthConnectionAnnotation(\emph{className, n})}
+Returns the \emph{n}:th connection annotation of the class named
+\emph{className}.
+
+\func{addConnection(\emph{c1,c2,className,options})}
+Adds the connection between connectors \emph{c1} and \emph{c2} in the
+class named \emph{className}, with the optional named argument
+\emph{annotate}, giving the graphical connection annotation.
+
+\func{updateConnection(\emph{c1,c2,className,options})}
+Updates an already existing connection with a new graphical
+annotation.
+
+\func{addEquation(\emph{className, expr1, expr2})}
+Adds the equation \emph{expr1 = expr2} to the class named
+\emph{className}. 
+
+\func{getEquationCount(\emph{className})}
+Returns the number of equations in the class named \emph{className}.
+
+\func{getNthEquation(\emph{className, n})}
+Returns the \emph{n}:th equation of the class named \emph{className}.
+
+\func{deleteNthEquation(\emph{className, n})}
+Deletes the \emph{n}:th equation of the class named \emph{className}.
+
+\func{getConnectorCount(\emph{className})}
+Returns the number of connector instances of the class named
+\emph{className}. \emph{\bf{Note:} This function will perform a partial
+instanitation of the class in order to find all connector instances.}
+
+\func{getNthConnector(\emph{className, n})}
+Returns the name of the \emph{n}:th connector in the class named
+\emph{className}.
+
+\func{getNthConnectorIconAnnotation(\emph{className, n})}
+Returns the \emph{n}:th connector icon layer annotation.
+
+\func{getNthConnectorDiagramAnnotation(\emph{className, n})}
+Returns the \emph{n}:th connector diagram layer annotation.
+
+\func{getIconAnnotation(\emph{className})}
+Returns the Icon annotation of the class named \emph{className}.
+
+\func{getIconAnnotation(\emph{className})}
+Returns the Diagram annotation of the class named \emph{className}.
+
+\func{getPackages(\emph{className})}
+Returns the names of all packages in the class named \emph{className}.
+
+\func{getClassNames(\emph{className})}
+Returns the names of all local classes in the class named \emph{className}.
+
+\func{getClassNames()}
+Returns the names of all classes defined at the top level (global
+scope).
+
+\func{isType(\emph{className})}
+Returns true if class is a type, false otherwise.
+
+\func{isPrimitive(\emph{className})}
+Returns true if class is a primitive type, false otherwise.
+
+\func{isConnector(\emph{className})}
+Returns true if class is a connector, false otherwise.
+
+\func{isModel(\emph{className})}
+Returns true if class is a model, false otherwise.
+
+\func{isRecord(\emph{className})}
+Returns true if class is a record, false otherwise.
+
+\func{isBlock(\emph{className})}
+Returns true if class is a block, false otherwise.
+
+\func{isFunction(\emph{className})}
+Returns true if class is a function, false otherwise.
+
+\func{isPackage(\emph{className})}
+Returns true if class is a package, false otherwise.
+
+\func{existClass(\emph{className})}
+Returns true if class is defined, false otherwise.
+
+\func{existModel(\emph{className})}
+Returns true if class is defined and also is a model, false otherwise.
+
+\func{existPackage(\emph{className})}
+Returns true if class is defined and also is a package, false otherwise.
+
+\func{isParameter(\emph{componentName, className})}
+Returns true if component named \emph{componentName} in the class
+named \emph{className} is a parameter.
+
+\func{isConstant(\emph{componentName, className})}
+Returns true if component named \emph{componentName} in the class
+named \emph{className} is a constant.
+
+\funcend
+
+\end{document}
