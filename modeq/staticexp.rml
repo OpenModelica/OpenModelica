@@ -100,6 +100,7 @@ with "inst.rml"
 with "codegen.rml"
 with "modutil.rml"
 with "dae.rml"
+with "util.rml"
 
 (** LS:
  ** - Expression elaboration
@@ -429,11 +430,13 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_array") &
 	elab_graphics_array (env, es) => (es', Types.PROP(t, const)) & list_length es' => l&
+	ceval_list(env,es',false,NONE) => vl &
+	Util.list_map(vl, value_exp) => es'' &
 	Types.elab_type t => at &
 	Types.is_array t => a
 	--------------------------------------------------------------
 	elab_graphics_exp (env, Absyn.ARRAY(es))
-	  => (Exp.ARRAY(at,a,es'),
+	  => (Exp.ARRAY(at,a,es''),
 	      Types.PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
 		   const))
 	
@@ -589,11 +592,11 @@ end
 relation elab_graphics_array : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Types.Properties) =
 
-  rule	elab_exp (env,e,false,NONE) => (e',prop,_)
+  rule	elab_graphics_exp (env,e) => (e',prop)
 	-----------------------------
 	elab_graphics_array (env,[e]) => ([e'],prop)
 
-  rule	elab_exp (env,e,false,NONE) => (e',Types.PROP(t1,c1),_) &
+  rule	elab_graphics_exp (env,e) => (e',Types.PROP(t1,c1)) &
 	elab_graphics_array (env,es) => (es',Types.PROP(t2,c2)) &
 	bool_and (c1,c2) => c
 	---------------------------------
@@ -2267,10 +2270,10 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	----------------------------------------------------
 	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => Values.ARRAY(rvals)
 
-  rule	Types.type_convert_array(expl, Types.T_INTEGER, Types.T_REAL) => expl' &
-	ceval_list(env,expl,impl,st) => vallst
+  rule	ceval (env,e,impl,st) => Values.ARRAY(vallst) &
+	Values.type_convert(Exp.INT, Exp.REAL, vallst) => vallst'
 	--------------------------
-	ceval (env, Exp.CAST(Exp.REAL,Exp.ARRAY(Exp.INT,_,expl)),impl,st) => Values.ARRAY(vallst)
+	ceval (env, Exp.CAST(Exp.REAL,e as Exp.ARRAY(Exp.INT,_,expl)),impl,st) => Values.ARRAY(vallst')
 
   rule	ceval (env,e,impl,st) => Values.ARRAY(vallst) &
 	Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'

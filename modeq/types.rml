@@ -1071,8 +1071,6 @@ end
  **)
 
 relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
-
-  axiom	type_convert(e, T_INTEGER, T_REAL) => (Exp.CAST(Exp.REAL,e),T_REAL)
 	    
   rule	int_eq (dim1, dim2) => true &
 	type_convert_array (elist, ty1, ty2) => elist' &
@@ -1126,6 +1124,29 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 		     T_ARRAY(DIM(NONE), T_ARRAY(DIM(SOME(dim22)),t2)))
 	    => (Exp.MATRIX(at,nmax,ell'),T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t2)))
 
+  rule	(* This rule is used to ensure that casts are made on each *)
+	(* element, instead of on the whole array *)
+	type_convert_array (elist, ty1, ty2) => (elist') &
+	elab_type ty2 => at &
+	is_array ty2 => a
+	------------------------------------------
+	type_convert(Exp.ARRAY(_,_,elist), 
+		     T_ARRAY(DIM(NONE), ty1), 
+		     T_ARRAY(DIM(SOME(dim2)), ty2))
+	  => (Exp.ARRAY(at,a,elist'), T_ARRAY(DIM(NONE), ty2))
+
+	    
+  rule	(* This rule is used to ensure that casts are made on each *)
+	(* element, instead of on the whole array *)
+	type_convert_array (elist, ty1, ty2) => (elist') &
+	elab_type ty2 => at &
+	is_array ty2 => a
+	------------------------------------------
+	type_convert(Exp.ARRAY(_,_,elist), 
+		     T_ARRAY(DIM(SOME(dim1)), ty1), 
+		     T_ARRAY(DIM(NONE), ty2))
+	  => (Exp.ARRAY(at,a,elist'), T_ARRAY(DIM(SOME(dim1)), ty2))
+
   rule	type_convert (e, ty1, ty2) => (e',t') 
 	------------------------------------------
 	type_convert(e, 
@@ -1159,6 +1180,8 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	    T_ENUMERATION(l))
 	    => (exp, T_ENUMERATION(l))
 	    
+  axiom	type_convert(e, T_INTEGER, T_REAL) => (Exp.CAST(Exp.REAL,e),T_REAL)
+
   rule	Debug.fprint("tcvt","- type conversion failed: ") &
 	Debug.fcall ("tcvt",print_type,t1) & 
 	Debug.fprint("tcvt",", ") & 
