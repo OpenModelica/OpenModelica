@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #include "real_array.h"
 #include "index_spec.h"
 #include "integer_array.h"

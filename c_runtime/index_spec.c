@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #include "index_spec.h"
 #include "memory_pool.h"
 #include <stdio.h>

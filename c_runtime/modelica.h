@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef MODELICA_H_
 #define MODELICA_H_
 

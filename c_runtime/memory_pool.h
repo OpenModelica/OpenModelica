@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef MEMORY_POOL_H_
 #define MEMORY_POOL_H_
 

@@ -1,3 +1,6 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
 
 #include "read_write.h"
 

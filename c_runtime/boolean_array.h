@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef BOOLEAN_ARRAY_H_
 #define BOOLEAN_ARRAT_H_
 

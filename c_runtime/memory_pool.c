@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #include "memory_pool.h"
 #include <assert.h>
 #include <stdio.h>

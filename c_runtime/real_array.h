@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef REAL_ARRAY_H_
 #define REAL_ARRAY_H_
 

@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef STRING_ARRAY_H_
 #define STRING_ARRAY_H_
 

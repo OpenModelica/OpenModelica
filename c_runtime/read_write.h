@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef READ_WRITE_H_
 #define READ_WRITE_H_
 

@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #include "modelica.h"
 
 int in_range_integer(modelica_integer i, 

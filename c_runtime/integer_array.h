@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef INTEGER_ARRAY_H_
 #define INTEGER_ARRAY_H_
 

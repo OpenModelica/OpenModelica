@@ -1,3 +1,7 @@
+/*
+// Copyright PELAB, Linkoping University
+*/
+
 #ifndef INDEX_SPEC_H_
 #define INDEX_SPEC_H_
 
