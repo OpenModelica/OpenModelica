@@ -12,24 +12,29 @@ PARSE_LIBP = -L../../modelica_parser/src
 READLINE_INCP = -I@readlineinc@
 READLINE_LIBP = -L@readlinelib@
 
-INCP = $(ANTLR_INCP) $(PARSE_INCP) $(READLINE_INCP)
-LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP)
+CORBAIMPL = -I../../modeq/runtime
+
+CORBAOBJS = ../../modeq/runtime/modeq_communication.o \
+	../../modeq/runtime/modeq_communication_impl.o
+
+INCP = $(ANTLR_INCP) $(PARSE_INCP) $(READLINE_INCP) $(CORBAIMPL)
+LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP) 
 
 CFLAGS = $(INCP) -g -Wall -DDEBUG
 CXXFLAGS = $(CFLAGS)
-LINKFLAGS = $(LIBP) -static
+LINKFLAGS = $(LIBP) 
 
-LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap
+LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap -lssl -lmico -lcrypto -ldl -lm -lpthread 
 
 
-OBJS += mosh.o
+OBJS += mosh.o options.o
 
 
 all : mosh
 
 
 mosh : $(OBJS) 
-	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS)
+	$(CXX) -o $@ $(OBJS) $(CORBAOBJS) $(LINKFLAGS) $(LIBS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
@@ -40,5 +45,7 @@ clean:
 
 
 mosh.o : mosh.cpp 
+options.o: options.cpp
+
 
 

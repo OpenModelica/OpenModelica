@@ -23,7 +23,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdio>
-#include <strstream>
+#include <sstream>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -41,7 +41,14 @@
 #include <netdb.h>
 
 #include <sys/param.h> /* MAXPATHLEN */
+#include "options.h"
+#include <CORBA.h>
+#include "modeq_communication.h"
 
+
+using namespace std;
+
+/* Local functios */
 void open_socket(char* hostname, int port);
 
 char * check_moshhome(void);
@@ -49,43 +56,126 @@ char * check_moshhome(void);
 void init_sockaddr (struct sockaddr_in *name,
                              const char *hostname,
                              int port);
+void doCorbaCommunication(int argc, char **argv);
+void doSocketCommunication(void);
+
+
+/* Global variables */
+
+char* historyfile = "mosh_history";
+int maxhistoryfileentries = 3000;
+
+
+pthread_mutex_t lock;
+
+// Condition variable for keeping modeq waiting for client requests
+pthread_cond_t modeq_waitformsg;
+pthread_mutex_t modeq_waitlock;
+bool modeq_waiting=false;
+
+// Condition variable for keeping corba waiting for returnvalue from modeq
+pthread_cond_t corba_waitformsg;
+pthread_mutex_t corba_waitlock;
+bool corba_waiting=false;
+
+char * modeq_message;
+
+
+/* Main function, handles options: -noserv -corba 
+   and calls appropriate function. */
 int main(int argc, char* argv[])
 {
-  char buf[40000];
-  
+  bool corba_comm=false;
+  bool noserv=false;
   
   char * moshhome=check_moshhome();
   
-  if (argc==1) 
-    {
-      // Starting background server.
+  corba_comm = flagSet("corba",argc,argv);
+  if ((noserv=flagSet("noserv",argc,argv))){
+    cout << "Skip starting server, assumed to be running" << endl;
+  }
+  if ((corba_comm=flagSet("corba",argc,argv))) {
+    cout << "Using corba communication" << endl;
+  }  
+  
+  cout << "Open Source Modelica 0.1" << endl;
+  cout << "Copyright 2002, PELAB, Linkoping University" << endl;
+  
+  if (corba_comm) {
+    if (!noserv) {
+      // Starting background server using corba
+      char systemstr[255];
+      sprintf(systemstr,"%s/../modeq/modeq +d=interactiveCorba > %s/error.log 2>&1 &",
+	      moshhome,moshhome);
+      int res = system(systemstr);
+      cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+    }
+    doCorbaCommunication(argc,argv);
+  } else {
+    if (!noserv) {
+     // Starting background server using corba
       char systemstr[255];
       sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log 2>&1 &",
 	      moshhome,moshhome);
       int res = system(systemstr);
-      std::cout << "Started server using:"<< systemstr << "\n res = " << res << std::endl;
-    }
-  
-  else if (argc == 2 && strcmp(argv[1],"-noserv")==0)
-    {
-      std::cout << "Skip starting server, assumed to be running" << std::endl;
-    }
-  else {
-      std::cerr << "Incorrect number of arguments\n";
-      return EXIT_FAILURE;    
+      cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+    } 
+    doSocketCommunication();
   }
+  return EXIT_SUCCESS;
+}
+
+void doCorbaCommunication(int argc, char **argv)
+{
+  CORBA::ORB_var orb = CORBA::ORB_init(argc,argv,"mico-local-orb");
+  CORBA::BOA_var boa = orb->BOA_init(argc,argv,"mico-local-boa");
   
-  std::cout << "Open Source Modelica 0.1" << std::endl;
-  std::cout << "Copyright 2002, PELAB, Linkoping University" << std::endl;
-      
-  int port=29500;
+  ifstream tmpFile ("/tmp/openmodelica.objid"); // Must match filename in 
+						// corbaimpl.cpp
+  
+  char ref[1000];
+  tmpFile >> ref;
+  tmpFile.close();
+  
+  CORBA::Object_var obj = orb->string_to_object(ref);
+  ModeqCommunication_var client = ModeqCommunication::_narrow(obj);
+
+  // initialize history usage
+  using_history();
+
+  // Read the history file
+  read_history(historyfile);
+
+  bool done=false;	
+  while (!done) {
+    char* line = readline(">>> ");
+    if ( line == 0 || strcmp(line,"quit()") == 0 ) {
+      done =true;
+      if (line == 0)  { line = "quit()"; }
+    }
+    if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) { 
+      add_history(line);
+      char *res =client->sendExpression(line);
+      cout << res;
+      free(res);
+      // Should res be freed?
+    }
+    free(line);
+  }
+  // write history file
+  write_history(historyfile);
+  history_truncate_file(historyfile, maxhistoryfileentries);
+}
+
+
+void doSocketCommunication(void)
+{
+  int port=29500; 
+  char buf[40000];
   
   char* hostname ="localhost";
   // TODO: add port nr. and host as command line option
 
-  char* historyfile = "mosh_history";
-  int maxhistoryfileentries = 3000;
-  
  /* Create the socket. */
   int sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
@@ -122,8 +212,8 @@ int main(int argc, char* argv[])
   char cd_cmd[MAXPATHLEN+6];
   getcwd(cd_buf,MAXPATHLEN);
   sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
-  int cd_nbytes = write(sock,cd_cmd,strlen(cd_cmd)+1);
-  int cd_recvbytes = read(sock,buf,40000);
+  write(sock,cd_cmd,strlen(cd_cmd)+1);
+  read(sock,buf,40000);
 
   // initialize history usage
   using_history();
@@ -143,17 +233,17 @@ int main(int argc, char* argv[])
       add_history(line);
       int nbytes = write(sock,line,strlen(line)+1);
       if (nbytes == 0) {
-	std::cout << "Error writing to server" << std::endl;
+	cout << "Error writing to server" << endl;
 	done = true;
 	break;
       }
       int recvbytes = read(sock,buf,40000);
       if (recvbytes == 0) {
-	std::cout << "Recieved 0 bytes, exiting" << std::endl;
+	cout << "Recieved 0 bytes, exiting" << endl;
 	done = true;
 	break;
       }
-      std::cout << buf;
+      cout << buf;
     }
     free(line);
   }
@@ -162,9 +252,8 @@ int main(int argc, char* argv[])
   // write history file
   write_history(historyfile);
   history_truncate_file(historyfile, maxhistoryfileentries);
-
-  return EXIT_SUCCESS;
 }
+
 
 char * check_moshhome(void)
 {
