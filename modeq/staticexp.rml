@@ -2,6 +2,7 @@ module StaticExp :
 
   with "exp.rml"
   with "env.rml"
+  with "lookup.rml"
   with "prefix.rml"
   with "types.rml"
   with "classinf.rml"
@@ -32,7 +33,7 @@ relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
   rule	elab_exp (env,pre,e1) => (e1', t1, c1) &
 	elab_exp (env,pre,e2) => (e2', t2, c2) &
 	elab_numtypes (e1',t1,e2',t2) => (e1'',e2'',t) &
-	elab_binary (e1'', t1, c1, op, e2'', t2, c2) => (e, t', c)
+	elab_binary (e1'', t, c1, op, e2'', t, c2) => (e, t', c)
 	-------------------------------------------------------
 	elab_exp (env,pre,Exp.BINARY(e1,op,e2)) => (e,t',c)
 
@@ -43,9 +44,30 @@ relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
 	elab_exp (env,pre,Exp.RELATION(e1,op,e2))
 	  => (Exp.RELATION(e1'',op,e2''),t,false)
 
+  rule	(* FIXME: lookup function *)
+	elab_exp_list (env,pre,args) => args'
+	-------------------------------------
+	elab_exp (env,pre,Exp.CALL(fn,args)) => (Exp.CALL(fn,args'),
+						 Exp.T_REAL (*FIXME*),
+						 false)
+
+  axiom	elab_exp (_,_,Exp.TIME) => (Exp.TIME, Exp.T_REAL, false)
+
   rule	print "- elab_exp failed: " & Exp.dump_exp e & print "\n"
 	---------------------------------------------------------
 	elab_exp(_,_,e) => fail
+
+end
+
+relation elab_exp_list : (Env.Env, Prefix.Prefix, Exp.Exp list)
+	  => Exp.Exp list =
+
+  axiom	elab_exp_list (_,_,[]) => []
+
+  rule	elab_exp (env,pre,e) => (e',_,_) &
+	elab_exp_list (env,pre,es) => es'
+	---------------------------------
+	elab_exp_list (env,pre,e::es) => e'::es'
 
 end
 
@@ -53,13 +75,14 @@ relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 	  => (Exp.Exp, Exp.Type, bool) =
 
   rule	elab_cref_subs (env,pre,c) => (c', const) &
-	Env.lookup_var (env,c') => (Types.ATTR(_,_,vartype,_),
-				    Types.TYPE(st, _),
-				    ass) &
+	Lookup.lookup_var (env,c') => (Types.ATTR(_,_,vartype,_),
+				       Types.TYPE(st, _),
+				       ass) &
 	Types.known_type st => t &
 	elab_cref2 (env, pre, c', vartype, t, ass) => (exp,const) &
 	print "    elab_cref " & Exp.dump_component_ref c &
-	print " => " & Exp.dump_exp exp & print "\n"
+	print " => " & Exp.dump_exp exp & print " (" &
+	Exp.print_type t & print ")\n"
 	-------------------------
 	elab_cref(env, pre, c) => (exp, t, const)
 
@@ -76,11 +99,11 @@ relation elab_cref2 : (Env.Env, Prefix.Prefix,
 	(* FIXME: Check type of expression anyway? *)
   axiom	elab_cref2 (_,_,cr, Types.VAR, _, _) => (Exp.CREF(cr), false)
 
-  rule	elab_exp (env,pre,exp) => (exp', t', c) (* &
-	c = true &
-	t = t' (* FIXME: cast *) *)
+  rule	elab_exp (env,pre,exp) => (exp', t', c) &
+	c = true (* & *)
+	(* t = t' *) (* FIXME: cast *)
 	------------------------
-	elab_cref2 (env,pre,_,_,t, SOME(exp)) => (exp', true)
+	elab_cref2 (env,pre,cr,_,t, SOME(exp)) => ((*exp'*) Exp.CREF(cr), true)
 
   rule	print "# Constant or parameter without a value (I think)\n" &
 	print "# component: " & Exp.dump_component_ref cr & print "\n"
@@ -148,14 +171,34 @@ relation elab_numtypes : (Exp.Exp, Exp.Type, Exp.Exp, Exp.Type)
   axiom	elab_numtypes (e1, Exp.T_INTEGER, e2, Exp.T_INTEGER)
 	  => (e1, e2, Exp.T_INTEGER)
   axiom	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_REAL) => (e1, e2, Exp.T_REAL)
-  axiom	elab_numtypes (e1, Exp.T_INTEGER, e2, Exp.T_REAL)
-	  => (Exp.CAST_TO_REAL(e1), e2, Exp.T_REAL)
-  axiom	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_INTEGER)
-	  => (e1, Exp.CAST_TO_REAL(e2), Exp.T_REAL)
+
+  rule	cast_to_real e1 => e1'
+	----------------------
+	elab_numtypes (e1, Exp.T_INTEGER, e2, Exp.T_REAL) => (e1', e2,
+							      Exp.T_REAL)
+
+  rule	cast_to_real e2 => e2'
+	----------------------
+	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_INTEGER) => (e1, e2',
+							      Exp.T_REAL)
 
   rule	print "- elab_numtypes fallthru\n"
 	----------------------------------
 	elab_numtypes (_,_,_,_) => fail
+
+end
+
+relation cast_to_real : Exp.Exp => Exp.Exp =
+
+  rule	print "  casting " & int_string i => is & print is &
+ 	print " to real\n" &
+	int_real i => r
+	---------------
+	cast_to_real Exp.INTEGER(i) => Exp.REAL(r)
+
+  rule	print "  Casting " & Exp.dump_exp e & print " to real\n"
+	-------
+	cast_to_real e => Exp.CAST_TO_REAL(e)
 
 end
 
@@ -199,11 +242,39 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
   axiom	elab_binary (e1,Exp.T_REAL,_,Exp.SUB,e2,Exp.T_REAL,_)
 	  => (Exp.BINARY(e1,Exp.SUB,e2), Exp.T_REAL, false)
 
-  rule	print "- elab_binary failed (" & Exp.dump_exp e1 &
-	print ") · (" & Exp.dump_exp e2 & print ")\n"
+	(* MUL *)
+
+  rule	int_mul(i1,i2) => i
+	------------------------------------------------
+	elab_binary (Exp.INTEGER(i1),_,true,Exp.MUL,Exp.INTEGER(i2),_,true)
+	  => (Exp.INTEGER(i), Exp.T_INTEGER, true)
+			
+  rule	real_mul(i1,i2) => i
+	------------------------------------------------
+	elab_binary (Exp.REAL(i1),_,true,Exp.MUL,Exp.REAL(i2),_,true)
+	  => (Exp.REAL(i), Exp.T_REAL, true)
+			
+  rule	print "elab_binary int " & Exp.dump_exp e1 & print " × " &
+	Exp.dump_exp e2 & print "\n" &
+	bool_and (c1,c2) => const
+	-------------------------
+	elab_binary (e1,Exp.T_INTEGER,c1,Exp.MUL,e2,Exp.T_INTEGER,c2)
+	  => (Exp.BINARY(e1,Exp.MUL,e2), Exp.T_INTEGER, false)
+			
+  rule	print "elab_binary real " & Exp.dump_exp e1 & print " × " &
+	Exp.dump_exp e2 & print "\n" &
+	bool_and (c1,c2) => const
+	-------------------------
+	elab_binary (e1,Exp.T_REAL,c1,Exp.MUL,e2,Exp.T_REAL,c2)
+	  => (Exp.BINARY(e1,Exp.MUL,e2), Exp.T_REAL, const)
+
+	(* failure *)
+  rule	print "- elab_binary failed " &
+	Exp.dump_exp e1 & print " (" & Exp.print_type t1 & print ") · " &
+	Exp.dump_exp e2 & print " (" & Exp.print_type t2 & print ")\n"
 	---------------------------------------------
 	elab_binary(e1, t1, c1, op, e2, t2, c2) => fail
-
+			
 end
 
 relation is_const : Exp.Exp => () =
