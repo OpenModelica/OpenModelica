@@ -68,12 +68,13 @@ inline double * initialize_simdata(long numpoints,long nx, long ny)
 
 int main(int argc, char **argv) 
 {
+  int status;
   double start = 0.0; //default value
   double stop = 5;
   double step = 0.05;
   
   long info[15];
-
+  status = 0;
   long ng = 0;
   double t;
   double tout;
@@ -130,6 +131,7 @@ int main(int argc, char **argv)
   if (idid < 0 ) {
     cerr << "Error, simulation stopped at time: " << t << endl;
     cerr << "Result written to file." << endl;
+	status = 1;
   }
   string * result_file =(string*)getFlagValue("-r",argc,argv);
   const char * result_file_cstr;
@@ -140,7 +142,7 @@ int main(int argc, char **argv)
   }
   store_result(result_file_cstr,data,actual_points,nx,ny);
 
-  return 0;
+  return status;
 }
 
 /* store_result
