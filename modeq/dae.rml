@@ -1,14 +1,5 @@
 (* dae.rml
  *
- * RML module that describes the DAE output format after instantiating
- * a Modelica model.  The module also contains a relation for printing
- * Dymola syntax from the DAE form.
- *
- * The DAE can be represented in two ways: either with the component
- * structure of the orginal model, or in flattened form where all local
- * names have been mangled to encode the component hierarchy and only
- * variables and equations remain.
- *
  *)
 
 module DAE:
