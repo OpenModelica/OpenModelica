@@ -20,18 +20,18 @@
 *)
 
 (**
- ** file:	 dump.rml
- ** module:      Dump
- ** description: debug printing
+ ** file:	 graphviz.rml
+ ** module:      Graphviz
+ ** description: Graphviz is a tool for drawing graphs from a textual
+ ** representation. This module generates the textual input to graphviz from a
+ ** tree defined using the data structures defined here, e.g. Node for tree *)
+ ** nodes. See http://www.research.att.com/sw/tools/graphviz/ .
+ **
+ ** Input: The tree constructed from data structures in Graphviz
+ ** Output: Textual input to graphviz, written to stdout.
  **
  ** RCS: $Id$
  **
- ** Printing routines for debugging of the AST.  These relations do
- ** nothing but print the data structures to the standard output.
- **
- ** The implementation of the relations are excluded from the report,
- ** as they occupy a lot of space and do not convey any useful
- ** semantic information.
  **)
 
 
