@@ -1453,7 +1453,22 @@ relation elab_builtin_integer : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Pro
 
 end
 
+relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties)	=
 
+   rule 
+		elab_exp (env,s1,false,NONE) 
+	      => (s1', Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dimension)),_),NONE),c),_)
+          (**print "# integer function not implemented yet REAL\n" **)
+     --------------------------------------
+     elab_builtin_diagonal(env,[s1]) 
+        => (Exp.CALL(Absyn.IDENT("diagonal"),[s1'],false,false),
+            Types.PROP((Types.T_INTEGER([]),NONE),c))
+       
+  rule  print"#-- elab_builtin_diagonal: Couldn't elaborate diagonal()\n"
+	    ---------------------------------------------------------
+	    elab_builtin_diagonal (_,_) => fail
+
+end
 
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
 					  => (Exp.Exp, Types.Properties)) =
@@ -1478,6 +1493,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom elab_builtin_handler "integer" => elab_builtin_integer
   axiom elab_builtin_handler "mod" => elab_builtin_mod
   axiom elab_builtin_handler "rem" => elab_builtin_rem
+  axiom	elab_builtin_handler "diagonal" => elab_builtin_diagonal
 
 end
 
@@ -3496,8 +3512,8 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 		       Absyn.Exp)
 	  => (Exp.Operator, Exp.Exp list, Types.Type) =
 
-  rule	(*Debug.fprint_list("dovl",params,Types.print_type,"\n") & 
-	Debug.fprint("dovl","\n===\n") &*)
+  rule	Debug.fprint_list("dovl",params,Types.print_type,"\n") & 
+	Debug.fprint("dovl","\n===\n") &
 	elab_arglist (params, args) => (args',types') &
 	compute_return_type(op, types', rtype) => rtype'
 	------------------------------------
