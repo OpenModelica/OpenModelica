@@ -1921,9 +1921,9 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program) => stri
 	-------------------------------------------------
 	get_nth_inherited_class( model,n,p) => str
 
-  rule	Print.get_string() => str
+(*  rule	Print.get_string() => str
 	-------------------------------------------------
-	get_nth_inherited_class( model,n,p) => str
+	get_nth_inherited_class( model,n,p) => str*)
 	
   axiom	get_nth_inherited_class (_,_,_) => "-1"
 end
@@ -3365,25 +3365,28 @@ relation strip_graphics_modification: (Absyn.ElementArg list) => (Absyn.ElementA
   axiom	strip_graphics_modification([]) => ([],[])
 end
 	
+
+(** relation: get_components_in_class
+ ** 
+ ** Both public and protected lists are searched.
+**)
 relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
 
-  axiom	 get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) 
-	  => []
-  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)))
-	  => lst1 &
+  axiom	 get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) => []
+	  
+  (* Search in public list *)
+  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
 	get_components_in_elementitems(elts) => lst2 &
 	list_append(lst2,lst1) => res
 	------------------------------
-	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt))) 
-	  => res
+	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt))) => res
 
-  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)))
-	  => lst1 &
+  (* Search in protected list *)
+  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
 	get_components_in_elementitems(elts) => lst2 &
 	list_append(lst2,lst1) => res
 	------------------------------
-	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt))) 
-	  => res
+	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt))) => res
 
   axiom	get_components_in_class(_) => []
 end
@@ -3521,9 +3524,7 @@ relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env)
 	-------------------------------------------
 	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_),env) => lst
 
-  rule	Lookup.lookup_class(env,p,true) => (c,env') &
-	Env.get_env_path(env') => NONE &
-	Absyn.path_string(p) => typename &
+	rule	Absyn.path_string(p) => typename &
 	get_componentitems_name(lst) => names &
 	prefix_typename(typename,names) => lst
 	-------------------------------------------
