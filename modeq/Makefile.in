@@ -71,7 +71,9 @@ SRCRML= absyn.rml \
 
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
+SRCSIG=	$(SRCRML:.rml=.sig)
 SRCO=	$(SRCC:.c=.o)
+
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime absyn_builder
@@ -88,6 +90,9 @@ SUBDIRS	= runtime absyn_builder
 
 %.h : %.rml
 	$(RML) -c $<
+
+%.sig : %.rml
+	./rml2sig/rmldep.sh $<
 
 
 all : $(SRCO) subdirs $(PROG)
@@ -111,7 +116,7 @@ clean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
-	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG) *~
+	$(RM) $(SRCO) $(SRCC) $(SRCH) $(SRCSIG) $(PROG) *~
 
 reallyclean: clean
 
@@ -121,38 +126,40 @@ report:
 depend:
 	$(RM) .dep
 	for f in $(SRCRML); do \
-	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.rml/p' < $$f | egrep -v 'nothing'` >> .dep ; \
+	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.sig/p' < $$f | egrep -v 'nothing'` >> .dep ; \
 	done
 	mv Makefile.in Makefile.in.save
+	mv Makefile Makefile.save
 	sed -n -e "1,/^## dependencies/p" < Makefile.in.save > Makefile.in
+	sed -n -e "1,/^## dependencies/p" < Makefile.save > Makefile
 	cat .dep >> Makefile.in
-	$(RM) .dep Makefile.in.save
+	cat .dep >> Makefile
+	$(RM) .dep Makefile.in.save Makefile.save
 
 ## dependencies
-absyn.o: absyn.rml debug.rml dump.rml util.rml print.rml
-algorithm.o: algorithm.rml exp.rml types.rml explode.rml print.rml
-builtin.o: builtin.rml absyn.rml explode.rml env.rml exp.rml types.rml classinf.rml debug.rml print.rml
-cache.o: cache.rml env.rml absyn.rml explode.rml types.rml dump.rml
-classinf.o: classinf.rml explode.rml print.rml absyn.rml
-classloader.o: classloader.rml absyn.rml system.rml lookup.rml interactive.rml util.rml parse.rml print.rml env.rml dump.rml
-codegen.o: codegen.rml dae.rml print.rml
-connect.o: connect.rml exp.rml staticexp.rml dae.rml dump.rml print.rml
-dae.o: dae.rml absyn.rml exp.rml algorithm.rml types.rml rtopts.rml graphviz.rml dump.rml print.rml util.rml
-debug.o: debug.rml rtopts.rml dump.rml print.rml
-dump.o: dump.rml absyn.rml interactive.rml debug.rml classinf.rml rtopts.rml print.rml util.rml
-dumpgraphviz.o: dumpgraphviz.rml absyn.rml debug.rml graphviz.rml classinf.rml dump.rml
-env.o: env.rml absyn.rml values.rml explode.rml types.rml classinf.rml exp.rml dump.rml graphviz.rml dae.rml print.rml
-exp.o: exp.rml absyn.rml rtopts.rml util.rml print.rml
-explode.o: explode.rml absyn.rml dump.rml debug.rml print.rml
+absyn.o: absyn.rml debug.sig dump.sig util.sig print.sig
+algorithm.o: algorithm.rml exp.sig types.sig explode.sig print.sig
+builtin.o: builtin.rml absyn.sig explode.sig env.sig types.sig classinf.sig debug.sig print.sig
+classinf.o: classinf.rml explode.sig print.sig absyn.sig
+classloader.o: classloader.rml absyn.sig system.sig lookup.sig interactive.sig util.sig parse.sig print.sig env.sig dump.sig
+codegen.o: codegen.rml dae.sig print.sig dump.sig debug.sig absyn.sig algorithm.sig classinf.sig exp.sig modutil.sig types.sig util.sig inst.sig
+connect.o: connect.rml exp.sig staticexp.sig dae.sig dump.sig print.sig
+dae.o: dae.rml absyn.sig exp.sig algorithm.sig types.sig rtopts.sig graphviz.sig dump.sig print.sig util.sig
+debug.o: debug.rml rtopts.sig dump.sig print.sig
+dump.o: dump.rml absyn.sig interactive.sig debug.sig classinf.sig rtopts.sig print.sig util.sig
+dumpgraphviz.o: dumpgraphviz.rml absyn.sig debug.sig graphviz.sig classinf.sig dump.sig
+env.o: env.rml absyn.sig values.sig explode.sig types.sig classinf.sig exp.sig dump.sig graphviz.sig dae.sig print.sig
+exp.o: exp.rml absyn.sig rtopts.sig util.sig print.sig
+explode.o: explode.rml absyn.sig dump.sig debug.sig print.sig
 graphviz.o: graphviz.rml
-inst.o: inst.rml classinf.rml connect.rml dae.rml debug.rml env.rml exp.rml explode.rml mod.rml prefix.rml types.rml util.rml interactive.rml cache.rml absyn.rml algorithm.rml builtin.rml dump.rml lookup.rml modutil.rml rtopts.rml staticexp.rml values.rml print.rml system.rml
-interactive.o: interactive.rml absyn.rml explode.rml dae.rml types.rml values.rml env.rml dump.rml debug.rml rtopts.rml util.rml parse.rml prefix.rml mod.rml lookup.rml classinf.rml exp.rml inst.rml staticexp.rml modutil.rml codegen.rml print.rml system.rml classloader.rml cache.rml
-lookup.o: lookup.rml classinf.rml types.rml absyn.rml exp.rml env.rml explode.rml cache.rml parse.rml debug.rml dump.rml inst.rml mod.rml prefix.rml print.rml builtin.rml util.rml
-main.o: main.rml absyn.rml modutil.rml parse.rml dump.rml dumpgraphviz.rml explode.rml dae.rml inst.rml interactive.rml rtopts.rml debug.rml codegen.rml socket.rml print.rml
-mod.o: mod.rml absyn.rml dae.rml env.rml exp.rml prefix.rml explode.rml types.rml staticexp.rml values.rml dump.rml print.rml inst.rml
-modutil.o: modutil.rml absyn.rml dae.rml exp.rml algorithm.rml rtopts.rml util.rml print.rml
-prefix.o: prefix.rml absyn.rml exp.rml env.rml lookup.rml util.rml print.rml
-staticexp.o: staticexp.rml absyn.rml exp.rml explode.rml types.rml env.rml values.rml classinf.rml interactive.rml cache.rml dump.rml print.rml system.rml lookup.rml debug.rml inst.rml codegen.rml modutil.rml dae.rml util.rml rtopts.rml parse.rml classloader.rml mod.rml prefix.rml
-types.o: types.rml classinf.rml absyn.rml exp.rml values.rml explode.rml dump.rml debug.rml print.rml util.rml
+inst.o: inst.rml classinf.sig connect.sig dae.sig debug.sig env.sig exp.sig explode.sig mod.sig prefix.sig types.sig util.sig interactive.sig cache.sig absyn.sig algorithm.sig builtin.sig dump.sig lookup.sig modutil.sig rtopts.sig staticexp.sig values.sig print.sig system.sig
+interactive.o: interactive.rml absyn.sig explode.sig dae.sig types.sig values.sig env.sig dump.sig debug.sig rtopts.sig util.sig parse.sig prefix.sig mod.sig lookup.sig classinf.sig exp.sig inst.sig staticexp.sig modutil.sig codegen.sig print.sig system.sig classloader.sig cache.sig
+lookup.o: lookup.rml classinf.sig types.sig absyn.sig exp.sig env.sig explode.sig cache.sig parse.sig debug.sig dump.sig inst.sig mod.sig prefix.sig print.sig builtin.sig util.sig
+main.o: main.rml absyn.sig modutil.sig parse.sig dump.sig dumpgraphviz.sig explode.sig dae.sig inst.sig interactive.sig rtopts.sig debug.sig codegen.sig socket.sig print.sig
+mod.o: mod.rml absyn.sig dae.sig env.sig exp.sig prefix.sig explode.sig types.sig staticexp.sig values.sig dump.sig debug.sig print.sig inst.sig
+modutil.o: modutil.rml absyn.sig dae.sig exp.sig algorithm.sig rtopts.sig util.sig print.sig
+prefix.o: prefix.rml absyn.sig exp.sig env.sig lookup.sig util.sig print.sig
+staticexp.o: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig values.sig classinf.sig interactive.sig cache.sig dump.sig print.sig system.sig lookup.sig debug.sig inst.sig codegen.sig modutil.sig dae.sig util.sig rtopts.sig parse.sig classloader.sig mod.sig prefix.sig
+types.o: types.rml classinf.sig absyn.sig exp.sig values.sig explode.sig dump.sig debug.sig print.sig util.sig
 util.o: util.rml
-values.o: values.rml exp.rml print.rml system.rml util.rml
+values.o: values.rml exp.sig print.sig system.sig util.sig

@@ -13,15 +13,14 @@
 
 
 #ifndef _IFDIR
-#define _IFDIR S_IFDIR
+# ifdef S_IFDIR
+#  define _IFDIR S_IFDIR
+# else
+#  error "Neither _IFDIR nor S_IFDIR is defined."
 #endif
 
 #ifdef 0
-/* FIXME: scandir not available on solaris, put the code below inside
-   ifdefs for solaris
-*/
 
-#include <dirent.h>
 
 typedef int _file_select_func_type(struct dirent *);
 typedef int _file_compar_func_type(struct dirent **, struct dirent **);
