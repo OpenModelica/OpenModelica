@@ -134,9 +134,10 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
   rule	generate_constructor_component_initialization(cname,p) => (initializationvars,comp_name_list) &
         generate_links(dae,comp_name_list) => links &
         generate_constructor_outputvars(dae) => (outputvars,noOutputVar_str) &
+        generate_constructor_inputvars(dae) => (inputvars,noInputVar_str) &
         generate_constructor_algvars(dae) => (algvars,noAlgVar_str) &
 	    generate_constructor_statevars(dae) => (statevars,noStateVar_str) &
-        generate_constructor_parameters(dae) => parameters &
+        generate_constructor_parameters(dae) => (parameters,noParamsVar_str) &
 	    Util.string_append_list(["C",cname,"::\n",
 				                 "C",cname,"(const wchar_t* Name)\n",
 				                 "{\n",
@@ -150,14 +151,18 @@ relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string 
 				                 "\n",
 				                 outputvars,
 				                 "\n",
+				                 (*inputvars,
+				                 "\n",*)
 				                 statevars,
 				                 "\n",
                                  algvars,
                                  "\n",
 				                 "  SetNoIndepVarValues(1);\n",
                                  noOutputVar_str,
+                                 (*noInputVar_str,*)
                                  noStateVar_str,
                                  noAlgVar_str,
+                                 noParamsVar_str,
 				                 "\n",
 				                 "  Link();\n",
 				                 initializationvars,
@@ -231,12 +236,47 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
        
   axiom generate_links2([],_,_,_) => ([],[])
         
+
+        (* check first if output variable is on the top model.*)
   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
         cref_modelica_str(cr) => crs &
+        is_var_on_top_model(cr) => true &
+        Util.string_append_list([" "(*,
+                                 is,
+                                 "  \"",
+                                 crs,"\" );\n"*)]) => r1 &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) 
+          ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,
+                        var_index,
+                        param_index,
+                        comp_name_list) 
+          => (params_str,(r1::res))
+
+        (*if the output variable is not on the top model then generate link*)
+ rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
+
+(*        cref_modelica_str(cr) => crs &
+
+
         Util.string_append_list([" ",
                                  is,
                                  "  \"",
-                                 crs,"\" );\n"]) => r1 &
+                                 crs,"\" );\n"]) => r1 &*)
+
+        Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        TORNADOEXT.get_output_var_number(comp_name) => input_number &
+        int_string(input_number) => input_number_str &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetOutputVar(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
+                                 is,");", " // ",crs,"\n"]) => r1 &
+
         generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) 
           ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,
@@ -247,10 +287,37 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
  
    rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
         cref_modelica_str(cr) => crs &
+        is_var_on_top_model(cr) => true &
+        Util.string_append_list([" "(*,
+                                 is,
+                                 "  \"",
+                                 crs,"\" );\n"*)]) => r1 &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) 
+          ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)::rest,
+                        var_index,
+                        param_index,
+                        comp_name_list) 
+          => (params_str,(r1::res))
+ 
+  rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
+        (*cref_modelica_str(cr) => crs &
         Util.string_append_list([" ",
                                  is,
                                  "  \"",
-                                 crs,"\" );\n"]) => r1 &
+                                 crs,"\" );\n"]) => r1 &*)
+        Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        TORNADOEXT.get_output_var_number(comp_name) => input_number &
+        int_string(input_number) => input_number_str &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetInputVar(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
+                                 is,");", " // ",crs,"\n"]) => r1 &
         generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) 
           ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)::rest,
@@ -290,13 +357,17 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
   rule	int_add(param_index,1) => param_index' & int_string(param_index) => is &
         Exp.cref_str(cr) => crs &
         Util.string_split_at_char(crs,#".") => comp_name::_ &
+        TORNADOEXT.get_input_var_number(comp_name) => input_number &
+        int_string(input_number) => input_number_str &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
         Util.string_append_list(["  GetSubModel(",
                                  index_str,
-                                 ")->GetParam(0)->LinkValue(this, MSLE_PARAM, ",
+                                 ")->GetParam(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_PARAM, ",
                                  is,");", " // ",crs,"\n"]) => r1 &
-	generate_links2(rest,var_index,param_index',comp_name_list) => (params,res) 
+	    generate_links2(rest,var_index,param_index',comp_name_list) => (params,res) 
         ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,
                         var_index,
@@ -316,6 +387,74 @@ end
 
 
 
+(* relation generate_constructor_inputvars
+ ** Generates the outputvars methodcalls in the constructor.
+ ** The variables are indexed in the order they appear in the DAELow representation.
+ ** The first output variable has the index 0. 
+ *)
+relation generate_constructor_inputvars:(DAELow.DAELow) => (string, string) = 
+        
+  rule  vector_list(vars_vec) => vars &
+        vector_list(knvars_vec) => knvars &
+        generate_constructor_inputvars2(vars,0) => (lst,no_of_vars') &
+        generate_constructor_inputvars2(knvars,0) => (knlst,no_of_vars'') &
+        
+        list_append(lst,knlst) => lst' &
+        int_add(no_of_vars',no_of_vars'') => no_of_vars &
+	    Util.string_delimit_list(lst',"\n") => res &
+
+
+	    int_string no_of_vars => lenstr &
+        Util.string_append_list(["  SetNoInputVars(",lenstr,");\n"]) => prefix1 &
+        Util.string_append_list(["  SetNoInputVarValues(",lenstr,");\n"]) => prefix2 &
+        Util.string_append_list([prefix1,res,"\n"]) => res' 
+        -------------------------------------------
+        generate_constructor_inputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+end
+
+relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, int) = 
+        
+  rule (* special case for when called second time and first time gave 
+        list length zero *)
+        generate_constructor_inputvars2(lst,0) => (res,no_of_vars)
+        ----------------------------------------------
+        generate_constructor_inputvars2(lst,-1) => (res,no_of_vars)
+        
+  axiom generate_constructor_inputvars2([],_) => ([],0)
+        
+ 
+         (* this rule take care of BIDIR variables *)
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        is_var_on_top_model(cr) => true &
+        generate_constructor_inputvars2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["  SetInputVar(",
+                                 is,
+                                 ", new CAlgInputVar(L\"",
+                                 crs,"\", L\"\",0));"]) => r1 
+          ---------------------------------------------
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)::rest,i) 
+          => (r1::res,no_of_vars')
+  
+  rule  generate_constructor_statevars2(rest,i) => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars'
+        ---------------------------------------------
+        generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)::rest,i) 
+          => (res,no_of_vars')
+         
+  rule  generate_constructor_inputvars2(rest,i) => (res,no_of_vars)
+        -----------------------------------------------
+        generate_constructor_inputvars2(_::rest,i) 
+          => (res,no_of_vars)
+
+  rule  print "-generate_constructor_inputvars2 failed\n" 
+        ----------------------
+        generate_constructor_inputvars2(_,_) => fail
+end
+
+
 (* relation generate_constructor_algvars
  ** Generates the outputvars methodcalls in the constructor.
  ** The variables are indexed in the order they appear in the DAELow representation.
@@ -325,59 +464,56 @@ relation generate_constructor_algvars:(DAELow.DAELow) => (string, string) =
         
   rule  vector_list(vars_vec) => vars &
         vector_list(knvars_vec) => knvars &
-        generate_constructor_algvars2(vars,0) => lst &
-        generate_constructor_algvars2(knvars,0) => knlst &
+        list_append(knvars,vars) => all_vars &       
+        generate_constructor_algvars2(all_vars,0) => (lst,no_of_vars) &
         
-        list_append(lst,knlst) => lst' &
-	Util.string_delimit_list(lst',"\n") => res &
+	    Util.string_delimit_list(lst,"\n") => res &
 
 
-	list_length(lst') => len &
-
-	int_string len => lenstr &
+	    int_string no_of_vars => lenstr &
         Util.string_append_list(["  SetNoAlgStateVars(",lenstr,");\n"]) => prefix1 &
         Util.string_append_list(["  SetNoAlgStateVarValues(",lenstr,");\n"]) => prefix2 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
         generate_constructor_algvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
-                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+                                                   DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
 end
 
-relation generate_constructor_algvars2:(DAELow.Var list,int) => string list = 
+relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, int) = 
         
   rule (* special case for when called second time and first time gave 
         list length zero *)
-        generate_constructor_algvars2(lst,0) => res
+        generate_constructor_algvars2(lst,0) => (res,no_of_vars)
         ----------------------------------------------
-        generate_constructor_algvars2(lst,-1) => res
+        generate_constructor_algvars2(lst,-1) => (res,no_of_vars)
         
-  axiom generate_constructor_algvars2([],_) => []
+  axiom generate_constructor_algvars2([],_) => ([],0)
         
  
          (* this rule take care of BIDIR variables *)
   rule  int_add(i,1) => i' & int_string(i) => is &
         is_var_on_top_model(cr) => true &
-        generate_constructor_algvars2(rest,i') => res &
+        generate_constructor_algvars2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
         cref_modelica_str(cr) => crs &
-        Util.string_append_list(["  SetAlgVar(",
+        Util.string_append_list(["  SetAlgStateVar(",
                                  is,
                                  ", new CAlgStateVar(L\"",
                                  crs,"\", L\"\",0));"]) => r1 
           ---------------------------------------------
         generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
-          => r1::res
+          => (r1::res,no_of_vars')
   
-  rule  (*int_add(i,1) => i' & int_string(i) => is &*)
-        generate_constructor_outputvars2(rest,i) => res &
-        Util.string_append_list([" "]) => r1 
-          ---------------------------------------------
+  rule  generate_constructor_algvars2(rest,i) => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars'
+        ---------------------------------------------
         generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
-          => r1::res
-         
-  rule  generate_constructor_algvars2(rest,i) => res 
+          => (res,no_of_vars')
+      
+  rule  generate_constructor_algvars2(rest,i) => (res,no_of_vars)
         -----------------------------------------------
         generate_constructor_algvars2(_::rest,i) 
-          => res
+          => (res,no_of_vars)
 
   rule  print "-generate_constructor_algvars2 failed\n" 
         ----------------------
@@ -395,16 +531,15 @@ relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) =
         
   rule  vector_list(vars_vec) => vars &
         vector_list(knvars_vec) => knvars &
-        generate_constructor_outputvars2(vars,0) => lst &
-        generate_constructor_outputvars2(knvars,0) => knlst &
+        generate_constructor_outputvars2(vars,0) => (lst,no_of_vars') &
+        generate_constructor_outputvars2(knvars,0) => (knlst,no_of_vars'') &
         
+        int_add(no_of_vars',no_of_vars'') => no_of_vars &
         list_append(lst,knlst) => lst' &
-	Util.string_delimit_list(lst',"\n") => res &
-
-
-	list_length(lst') => len &
-
-	int_string len => lenstr &
+	    Util.string_delimit_list(lst',"\n") => res &
+        
+        
+	    int_string no_of_vars => lenstr &
         Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix1 &
         Util.string_append_list(["  SetNoOutputVarValues(",lenstr,");\n"]) => prefix2 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
@@ -413,20 +548,21 @@ relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) =
                                                       DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
 end
 
-relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list = 
+relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list, int) = 
         
   rule (* special case for when called second time and first time gave 
         list length zero *)
-        generate_constructor_outputvars2(lst,0) => res
+        generate_constructor_outputvars2(lst,0) => (res,i)
         ----------------------------------------------
-        generate_constructor_outputvars2(lst,-1) => res
+        generate_constructor_outputvars2(lst,-1) => (res,i)
         
-  axiom generate_constructor_outputvars2([],_) => []
+  axiom generate_constructor_outputvars2([],_) => ([],0)
         
   rule  int_add(i,1) => i' & int_string(i) => is &
         is_var_on_top_model(cr) => true &
 
-        generate_constructor_outputvars2(rest,i') => res &
+        generate_constructor_outputvars2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
         cref_modelica_str(cr) => crs &
         Util.string_append_list(["  SetOutputVar(",
                                  is,
@@ -434,20 +570,19 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
                                  crs,"\", L\"\",0));"]) => r1 
           ---------------------------------------------
         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
-          => r1::res
+          => (r1::res,no_of_vars')
 
-  rule  (*int_add(i,1) => i' & int_string(i) => is &*)
-        generate_constructor_outputvars2(rest,i) => res &
-        Util.string_append_list([" "]) => r1 
+  rule  generate_constructor_outputvars2(rest,i) => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars'
           ---------------------------------------------
         generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
-          => r1::res
+          => (res,no_of_vars')
 
  
-  rule  generate_constructor_outputvars2(rest,i) => res 
+  rule  generate_constructor_outputvars2(rest,i) => (res,no_of_vars)
         -----------------------------------------------
         generate_constructor_outputvars2(_::rest,i) 
-          => res
+          => (res,no_of_vars)
 
   rule  print "-generate_constructor_outputvars2 failed\n" 
         ----------------------
@@ -478,10 +613,9 @@ end
 
   rule  vector_list(vars_vec) => vars &
          vector_list(knvars_vec) => knvars &
-         generate_constructor_statevars2(vars,0) => lst &
+         generate_constructor_statevars2(vars,0) => (lst, no_of_vars') &
          Util.string_delimit_list(lst,"\n")=> res & 
-         list_length(lst) => len &
-         int_string len => lenstr &
+         int_string no_of_vars' => lenstr &
          Util.string_append_list(["  SetNoDerStateVars(",lenstr,");\n"]) => prefix1 &
          Util.string_append_list(["  SetNoDerStateVarValues(",lenstr,");\n"]) => prefix2 &
          Util.string_append_list([prefix1,res,"\n"]) => res' 
@@ -489,13 +623,14 @@ end
          generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
  end
 
- relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
+ relation generate_constructor_statevars2: (DAELow.Var list,int) => (string list,int) =
 
-  axiom generate_constructor_statevars2([],_) => []
+  axiom generate_constructor_statevars2([],_) => ([],0)
 
   rule (* When start value is present*)
          int_add(i,1) => i' & int_string(i) => is &
-         generate_constructor_statevars2(rest,i') => res &
+         generate_constructor_statevars2(rest,i') => (res,no_of_vars) &
+         int_add(no_of_vars,1) => no_of_vars' &
          cref_modelica_str(cr) => crs & 
          (*Exp.print_exp_str start => startstr &*)
          print_exp_cpp_str(start) => startstr &
@@ -504,112 +639,178 @@ end
           => r1 
            --------------------
          generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_,_)::rest,i) 
-          => r1::res
+          => (r1::res,no_of_vars')
 
   rule (* If no start value is present*)
          int_add(i,1) => i' & int_string(i) => is &
-         generate_constructor_statevars2(rest,i') => res &
+         generate_constructor_statevars2(rest,i') => (res,no_of_vars) &
+         int_add(no_of_vars,1) => no_of_vars' &
          cref_modelica_str(cr) => crs & 
          
          Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0));"]) 
           => r1 
            --------------------
          generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest,i) 
-          => r1::res
+          => (r1::res, no_of_vars')
 
-  rule  (*int_add(i,1) => i' & int_string(i) => is &*)
-         generate_constructor_outputvars2(rest,i) => res &
-         Util.string_append_list([" "]) => r1 
+  rule  generate_constructor_statevars2(rest,i) => (res,no_of_vars) &
+         int_add(no_of_vars,1) => no_of_vars'
          ---------------------------------------------
          generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)::rest,i) 
-          => r1::res
+          => (res,no_of_vars')
            
 
-  rule generate_constructor_statevars2(rest,i) => res 
+  rule generate_constructor_statevars2(rest,i) => (res,no_of_vars)
          -----------------------------------------------
          generate_constructor_statevars2(_::rest,i) 
-          => res
+          => (res,no_of_vars)
 
   rule print "-generate_constructor_statevars2 failed\n" 
          ----------------------
          generate_constructor_statevars2(_,_) => fail
  end
 
-(* relation: generate_constructor_parameters
- **  This relation is similar to the generate_constructor_outputvars relation above.
- ** It also generates code placed in the contstructor, but for parameters
- ** They are also indexed in the order they appear in the DAELow representation, starting
- ** with index 0.
+
+
+(* relation generate_constructor_parameters
+ ** Generates the outputvars methodcalls in the constructor.
+ ** The variables are indexed in the order they appear in the DAELow representation.
+ ** The first output variable has the index 0. 
  *)
-relation generate_constructor_parameters:(DAELow.DAELow) => (string) = 
-
-  rule	vector_list(knvars_vec) => knvars &
-	    Util.list_select(knvars,is_param) => knvars' &
-	    top_level_parameters(knvars') => (knvars'' as _::_) &
-        generate_constructor_parameters2(knvars'',0) => lst &
-        Util.string_delimit_list(lst,"\n")=> res & 
-        list_length(knvars') => len &
-        int_string len => lenstr &
-        Util.string_append_list(["  SetNoParams(",lenstr,");\n"]) => prefix1 &
+relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) = 
+        
+  rule  vector_list(vars_vec) => vars &
+        vector_list(knvars_vec) => knvars &
+        generate_constructor_parameters2(vars,0) => (lst,no_of_vars') &
+        generate_constructor_parameters2(knvars,0) => (knlst,no_of_vars'') &
+        
+        int_add(no_of_vars',no_of_vars'') => no_of_vars &
+        list_append(lst,knlst) => lst' &
+	    Util.string_delimit_list(lst',"\n") => res &
+        
+        
+	    int_string no_of_vars => lenstr &
+        Util.string_append_list(["  "(*SetNoParams(",lenstr,");\n"*)]) => prefix1 &
+        Util.string_append_list(["  SetNoParamsValues(",lenstr,");\n"]) => prefix2 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
+        -------------------------------------------
+        generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),
+                                                      DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+end
+
+relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list, int) = 
+        
+  rule (* special case for when called second time and first time gave 
+        list length zero *)
+        generate_constructor_parameters2(lst,0) => (res,i)
+        ----------------------------------------------
+        generate_constructor_parameters2(lst,-1) => (res,i)
+        
+  axiom generate_constructor_parameters2([],_) => ([],0)
+        
+
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        is_var_on_top_model(cr) => true &
+
+        generate_constructor_parameters2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
+        Values.val_string(v) => vs & 
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",",vs, 
+ 				                ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
+          => r1 
+          ---------------------------------------------
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(v),_,start,_,_,_)::rest,i) 
+          => (r1::res,no_of_vars')
+
+
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        is_var_on_top_model(cr) => true &
+
+        generate_constructor_parameters2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",","0.0", 
+ 				                 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  
+          => r1  
+          ---------------------------------------------
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,i) 
+          => (r1::res,no_of_vars')
+
+ rule  generate_constructor_parameters2(rest,i) => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars'
+          ---------------------------------------------
+        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,i) 
+          => (res,no_of_vars')
+
+ 
+  rule  generate_constructor_parameters2(rest,i) => (res,no_of_vars)
+        -----------------------------------------------
+        generate_constructor_parameters2(_::rest,i) 
+          => (res,no_of_vars)
+
+  rule  print "-generate_constructor_parameters2 failed\n" 
         ----------------------
-        generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => res'
-
-	(* if top level parameters are zero *)
-  axiom	generate_constructor_parameters(_) => "\n" 
- end
-
-(** relation top_level_parameters
- ** Return those parameters in the var list that are top level parameters.
- ** This is checked by searching for '.' in the variable names.
- **)
-relation top_level_parameters: (DAELow.Var list) => DAELow.Var list =
-
-  axiom top_level_parameters([]) => []
-
-  rule	Util.string_split_at_char(str,#".") => [_] &
-	top_level_parameters(rest) => res 
-	--------------------------------------------
-	top_level_parameters((v as DAELow.VAR(_,_,_,_,_,_,_,_,_,str,_))::rest)
-	  => v::res
-  rule	top_level_parameters(rest) => res 
-	--------------------------------------------
-	top_level_parameters((v as DAELow.VAR(_,_,_,_,_,_,_,_,_,str,_))::rest)
-	  => res
+        generate_constructor_parameters2(_,_) => fail
 end
 
-relation generate_constructor_parameters2: (DAELow.Var list,int) => string list =
+
+(* (\* relation: generate_constructor_parameters *)
+(*  **  This relation is similar to the generate_constructor_outputvars relation above. *)
+(*  ** It also generates code placed in the contstructor, but for parameters *)
+(*  ** They are also indexed in the order they appear in the DAELow representation, starting *)
+(*  ** with index 0. *)
+(*  *\) *)
+(* relation generate_constructor_parameters:(DAELow.DAELow) => (string) =  *)
+
+(*   rule	vector_list(knvars_vec) => knvars & *)
+(* 	    Util.list_select(knvars,is_param) => knvars' & *)
+(* 	    top_level_parameters(knvars') => (knvars'' as _::_) & *)
+(*         generate_constructor_parameters2(knvars'',0) => lst & *)
+(*         Util.string_delimit_list(lst,"\n")=> res &  *)
+(*         list_length(knvars') => len & *)
+(*         int_string len => lenstr & *)
+(*         Util.string_append_list(["  SetNoParams(",lenstr,");\n"]) => prefix1 & *)
+(*         Util.string_append_list([prefix1,res,"\n"]) => res'  *)
+(*         ---------------------- *)
+(*         generate_constructor_parameters(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => res' *)
+
+(* 	(\* if top level parameters are zero *\) *)
+(*   axiom	generate_constructor_parameters(_) => "\n"  *)
+(*  end *)
+
+(* relation generate_constructor_parameters2: (DAELow.Var list,int) => string list = *)
 	
-  axiom	generate_constructor_parameters2([],_) => []
-	
-  rule	int_add(i,1) => i' & int_string(i) => is &
-        generate_constructor_parameters2(rest,i') => res &
-        cref_modelica_str(cr) => crs & 
-	Values.val_string(v) => vs &
-        Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",",vs,
-				 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"]) 
-          => r1 
-          --------------------
-        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(v),_,_,_,_,_)::rest,i) 
-          => r1::res
-  rule	int_add(i,1) => i' & int_string(i) => is &
-        generate_constructor_parameters2(rest,i') => res &
-        cref_modelica_str(cr) => crs & 
-	
-        Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",","0.0",
-				 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"]) 
-          => r1 
-          --------------------
-        generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,NONE,_,_,_,_,_)::rest,i) 
-          => r1::res
-  rule	print "generate_constructor_parameters2 failed\n"
-	-------------------------------------------------
-	generate_constructor_parameters2(_,_) => fail
-end
+(*   axiom	generate_constructor_parameters2([],_) => [] *)
+	    
+(*   rule  int_add(i,1) => i' & int_string(i) => is & *)
+(*         generate_constructor_parameters2(rest,i') => res & *)
+(*         cref_modelica_str(cr) => crs &  *)
+(* 	    Values.val_string(v) => vs & *)
+(*         Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",",vs, *)
+(* 				                 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  *)
+(*           => r1  *)
+(*           -------------------- *)
+(*         generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(v),_,_,_,_,_)::rest,i)  *)
+(*           => r1::res *)
+(*   rule	int_add(i,1) => i' & int_string(i) => is & *)
+(*         generate_constructor_parameters2(rest,i') => res & *)
+(*         cref_modelica_str(cr) => crs &  *)
+	    
+(*         Util.string_append_list(["  SetParam(",is,", new CParam(L\"",crs,"\", L\"\",","0.0", *)
+(* 				                 ", MSLE_MIN_INF, MSLE_PLUS_INF, L\"",crs,"\"));"])  *)
+(*           => r1  *)
+(*           -------------------- *)
+(*         generate_constructor_parameters2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,NONE,_,_,_,_,_)::rest,i)  *)
+(*           => r1::res *)
+(*   rule	print "generate_constructor_parameters2 failed\n" *)
+(* 	    ------------------------------------------------- *)
+(* 	    generate_constructor_parameters2(_,_) => fail *)
+(* end *)
 
 relation generate_var_defines: (DAELow.DAELow) => string =
-	
-  rule	vector_list(vars_vec) => vars &
+	    
+  rule  vector_list(vars_vec) => vars &
         vector_list(knvars_vec) => knvars &
 	(* Varaibles in known variables are removed alg.vars, they should not generate code.*)
 	Util.list_select(knvars,is_not_param) => knvars' &

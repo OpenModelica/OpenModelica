@@ -17,6 +17,7 @@ extern "C"
 
   map<string,int> output_var_number;
   map<string,int> input_var_number;
+  map<string,int> param_var_number;
 
 
   
@@ -78,6 +79,30 @@ extern "C"
 //     }
 
     input_var_number[str_key] = ret_val;
+    rmlA0 = (void*) mk_icon(ret_val);
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+ 
+  RML_BEGIN_LABEL(TORNADOEXT__get_5fparam_5fvar_5fnumber)
+  {
+    int nvars = RML_UNTAGFIXNUM(rmlA0);
+    char* str = RML_STRINGDATA(rmlA0);
+    string str_key = string(str);
+    
+    map<string, int>::const_iterator search;
+    search = param_var_number.find(str_key);
+    int ret_val = 0;
+    if(search != param_var_number.end()){
+      ret_val = static_cast<int>(search->second);
+      ret_val += 1;
+//       cout << "\nSTATE_ALG:" << str_key << " " << ret_val << nvars << endl;
+
+    } // else {
+//        cout << "\nNO STATE_ALG:" << str_key << " " << ret_val << nvars << endl;
+//     }
+
+    param_var_number[str_key] = ret_val;
     rmlA0 = (void*) mk_icon(ret_val);
     RML_TAILCALLK(rmlSC);
   }
