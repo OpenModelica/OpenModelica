@@ -572,27 +572,14 @@ conditional_equation :
 	>>
 	;
 
-for_clause ! :
-	for_:FOR id:IDENT IN! e1:expression ":"! e2:expression
-	{ ":"! e3:expression } LOOP!
-	el:equation_list << /* #el->setTranslation(";"); */ >>
+for_clause :
+	FOR^ id:IDENT IN! e1:expression LOOP!
+	el:equation_list
 	END! FOR!
-	<< /* #for_=#[for_];
-	   #for_->setOpType(OP_FUNCTION); 
-	   #for_->setTranslation("For");
-	   if (e3_ast) {
-	     #0=#(#for_,
-	          #(#[EXTRA_TOKEN,"="],#[id],#e1),
-                  #(#[EXTRA_TOKEN,"<="],#[id],#e2),
-	          #(#[EXTRA_TOKEN,"="],#[id],#(#[EXTRA_TOKEN,"+"],#[id],#e3)),
-	          #el);
-          } else {
-	     #0=#(#for_,
-	          #(#[EXTRA_TOKEN,"="],#[id],#e1),
-                  #(#[EXTRA_TOKEN,"<="],#[id],#e2),
-	          #(#[EXTRA_TOKEN,"++",OP_POSTFIX],#[id]),
-	          #el);
-           }	 */   
+	<< 
+	   #0->rml = Absyn__EQ_5fFOR(mk_scon($id.u.stringval),
+				     #e1->rml,
+				     sibling_list(#el));
 	>>
 	;
 
@@ -700,14 +687,14 @@ primary : << bool is_matrix; >>
 	  par:LPAR^
 	  e:expression RPAR!
 	  << #par->rml = #e->rml; >>
-	| op:LBRACK^ << /* #op->setOpType(OP_BALANCED,'}');
-			   #op->setTranslation("{"); */ >>
-	  column_expression > [is_matrix] 
-	  << if (!is_matrix) {
-	        /* Probable memory leak! */
-/* 		elevate row expression to get rid of {{ }} */
-	  /* #0->setDown(#0->down()->down()); */
-		  }
+	| op:LBRACK^
+	  c:column_expression > [is_matrix] 
+	  << 
+	     if (is_matrix) {
+	       /* FIXME */
+	     } else {
+	       #0->rml = Exp__ARRAY(sibling_list(#c));
+	     }
 	  >>
 	  RBRACK!
 
