@@ -640,7 +640,10 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp, bool (*impl*) ) => (Exp.Exp, T
 				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t),NONE)),NONE),
 		   c))
 
-  rule	Print.print_buf "- elab_graphics_exp failed: " & Dump.print_exp e & Print.print_buf "\n"
+  rule	Print.print_error_buf "- elab_graphics_exp failed: " &
+	Dump.print_exp_str e => es & 
+	Print.print_error_buf es &
+	Print.print_error_buf "\n"
 	-----------------------------------------------------------
 	elab_graphics_exp(_,e,impl) => fail
 
@@ -812,7 +815,7 @@ relation elab_array : (Env.Env, Absyn.Exp list,bool (*impl*), Interactive.Intera
 	---------------------------------------------------------
 	elab_array (env,e::es,impl,st) => fail
 
-  rule	Print.print_buf "- elab_array failed\n"
+  rule	Print.print_error_buf "- elab_array failed\n"
 	-----------------------------
 	elab_array (_,_,_,_) => fail
 
@@ -834,7 +837,7 @@ relation elab_graphics_array : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	---------------------------------
 	elab_graphics_array (env,e::es,impl) => (e'::es',Types.PROP(t1,c))
 
-  rule	Print.print_buf "- elab_graphics_array failed\n"
+  rule	Print.print_error_buf "- elab_graphics_array failed\n"
 	-----------------------------
 	elab_graphics_array (_,_,impl) => fail
 
@@ -1012,7 +1015,7 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 	  => (Exp.ARRAY(at,a,arraylist), 
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(v)), ty),NONE), true))
 	
-  rule	Print.print_buf "#-- elab_builtin_fill_2: Failed to elaborate fill()\n"
+  rule	Print.print_error_buf "#-- elab_builtin_fill_2: Failed to elaborate fill()\n"
 	-------------------------------------------------------------
 	elab_builtin_fill_2 (_,_,_,_) => fail
 
@@ -1047,7 +1050,7 @@ relation elab_builtin_transpose_2 : (Env.Env, Exp.Exp, Types.Type) =>
 	(Exp.Exp, Types.Properties) =
 
   rule	print "- elab_builtin_transpose_2 not implemented yet\n" &
-	Print.print_buf "- elab_builtin_transpose_2 not implemented yet\n" 
+	Print.print_error_buf "- elab_builtin_transpose_2 not implemented yet\n" 
 	------------------------
 	elab_builtin_transpose_2(env, exp, tp) => fail
 end
@@ -1145,7 +1148,7 @@ relation elab_builtin_terminal : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	  => (Exp.CALL(Absyn.IDENT("terminal"),
 			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),false))
 
-  rule	Print.print_buf "#Error, terminal takes no arguments.\n"
+  rule	Print.print_error_buf "#Error, terminal takes no arguments.\n"
 	------------------
 	elab_builtin_terminal(env,_,impl) 
 	  => (Exp.CALL(Absyn.IDENT("terminal"),
@@ -2463,10 +2466,10 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
   rule	Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
 	Dump.print_component_ref_str cr => str1 &
 	Exp.print_exp_str exp => str2 &
-	Print.print_buf str1 &
-	Print.print_buf " -- " &
-	Print.print_buf str2 &
-	Print.print_buf "\n"
+	Print.print_error_buf str1 &
+	Print.print_error_buf " -- " &
+	Print.print_error_buf str2 &
+	Print.print_error_buf "\n"
 	------------------------------------------------------------------
 	generate_compiled_function(env,cr,exp,_,st) => st
 
@@ -2775,7 +2778,7 @@ relation function_params : Types.Var list => (Types.FuncArg list,
 	function_params((v as Types.VAR(n,Types.ATTR(_,_,_,Absyn.BIDIR),_,_,_))
 			::vs) => fail
 
-  rule	Print.print_buf "- function_params failed\n"
+  rule	Print.print_error_buf "- function_params failed\n"
 	----------------------------------
 	function_params _ => fail
 
@@ -3540,9 +3543,12 @@ relation value_exp : Values.Value => Exp.Exp =
 	--------------------------------------------
 	value_exp (Values.ARRAY(x::xs)) => Exp.ARRAY(t,a,x'::xs')
 
-  rule	Print.print_buf "- value_exp failed\n"
+  rule	Print.print_error_buf "- value_exp failed: " &	
+	Values.val_string v => vs &
+	Print.print_error_buf vs &
+	Print.print_error_buf "\n"
 	----------------------------
-	value_exp _ => fail
+	value_exp v => fail
 
 end
 
@@ -3557,9 +3563,28 @@ relation value_type : Values.Value => Types.Type =
   axiom value_type Values.STRING(x)  => ((Types.T_STRING([]),NONE))
   axiom value_type Values.BOOL(x)    => ((Types.T_BOOL([]),NONE))
 
-  rule	Print.print_buf "- value_type failed\n"
+  axiom	value_type Values.ENUM(x) => ((Types.T_ENUM,NONE))
+
+  rule	value_type vlfirst => eltype &
+	list_length(vlrest) => dim &
+	int_add(dim,1) => dim'
 	----------------------------
-	value_type _ => fail
+	value_type Values.ARRAY(vlfirst::vlrest) => ((Types.T_ARRAY(Types.DIM(SOME(dim')), eltype),NONE))
+
+  rule	Util.list_map(vl, value_type) => tylist
+	---------------------------------------
+	value_type Values.TUPLE(vl) => ((Types.T_TUPLE(tylist),NONE))
+
+  rule	Util.list_map(vl, value_type) => tylist
+	---------------------------------------
+	value_type Values.RECORD(vl,ids) => ((Types.T_COMPLEX(ClassInf.RECORD("from value_type"),[]),NONE))
+
+  rule	Print.print_error_buf "- value_type failed: " &	
+	Values.val_string v => vs &
+	Print.print_error_buf vs &
+	Print.print_error_buf "\n"
+	----------------------------
+	value_type v => fail
 
 end
 

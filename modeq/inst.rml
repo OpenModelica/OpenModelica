@@ -1918,8 +1918,7 @@ relation inst_var2 : (Env.Env,
   rule	(* Array variables with binding in functions , e.g. input Real x[:]=Y *)
 	inst_dim_exp_lst (dims,true) => dims' &
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  
-	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
-	  => (_,_,_,ty,st) &
+	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) => (_,_,_,ty,st) &
 	make_array_type(dims,ty) => ty' &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty') => ty'' &
@@ -1933,8 +1932,7 @@ relation inst_var2 : (Env.Env,
           => (dae,csets,ty')
 
   rule	(* Array variables without binding in functions , e.g. input Real x[:] *)
-	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
-	  => (_,_,_,ty,st) &
+	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) => (_,_,_,ty,st) &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
 	inst_dim_exp_lst(dims,true) => dims' &
@@ -2290,7 +2288,7 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	update_variable_in_env(mod,cref,env,ci_state,impl) => env
 end
 
-relation inst_dim_exp_lst : (DimExp list, bool) => Exp.Subscript list =
+relation inst_dim_exp_lst : (DimExp list, bool (*impl*)) => Exp.Subscript list =
   axiom	inst_dim_exp_lst ([],_) => []
 
   rule	inst_dim_exp_lst(xs,b) => res &
@@ -2299,17 +2297,17 @@ relation inst_dim_exp_lst : (DimExp list, bool) => Exp.Subscript list =
 	inst_dim_exp_lst(x::xs,b) => r::res
 end
 
-relation inst_dim_exp : (DimExp, bool) => Exp.Subscript =
+relation inst_dim_exp : (DimExp, bool (*impl*) ) => Exp.Subscript =
 
   rule	Print.print_error_buf "# Error, can not determine size of array.\n"
 	-------------------------------------------
-	inst_dim_exp (DIMEXP(Exp.WHOLEDIM,_),false) => fail
+	inst_dim_exp (DIMEXP(Exp.WHOLEDIM,_),impl as false) => fail
 
   rule	Print.print_error_buf "# Error, can not determine size of array slice\n"
 	-------------------------------------------
-	inst_dim_exp (DIMEXP(Exp.SLICE(_),_),false) => fail
+	inst_dim_exp (DIMEXP(Exp.SLICE(_),_),impl as false) => fail
 
-  axiom	inst_dim_exp (DIMEXP(e as Exp.WHOLEDIM,_),true) => e
+  axiom	inst_dim_exp (DIMEXP(e as Exp.WHOLEDIM,_),impl as true) => e
   axiom	inst_dim_exp (DIMINT(i),_) => Exp.INDEX(Exp.ICONST(i))
 
   axiom	inst_dim_exp (DIMEXP(e as Exp.INDEX(_),_),_) => e
