@@ -152,7 +152,7 @@ EXPONENT :
 
 
 UNSIGNED_INTEGER :
-	(( (DIGIT)+ '.' ) => (DIGIT)+ ( '.' (DIGIT)+ ) 
+	(( (DIGIT)+ '.' ) => (DIGIT)+ ( '.' (DIGIT)* ) 
 			{ 
 				$setType(UNSIGNED_REAL); 
 			}

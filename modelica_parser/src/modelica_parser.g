@@ -350,7 +350,8 @@ equation_clause :
   		;
 
 equation_annotation_list :
-		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL}?
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL 
+		 || LA(1) == PROTECTED || LA(1) == PUBLIC }?
 		|
 		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
 		; 
