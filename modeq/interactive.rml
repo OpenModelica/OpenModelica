@@ -51,6 +51,7 @@ with "rtopts.rml"
 with "util.rml"
 with "parse.rml"
 with "prefix.rml"
+with "mod.rml"
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
 **)
@@ -367,15 +368,16 @@ end
 relation get_annotation_string: Absyn.Annotation => string =
 
   rule	SCode.build_mod(SOME(Absyn.CLASSMOD([mod],NONE)),false) => mod' & 
-	let pstring = "record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation" &
+	let pstring = "record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" &
 	let tstring = "record Transformation Real x=0; Real y=0; Real scale=1; Real aspectRatio=1; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0; end Transformation;" &
 	string_append(tstring,pstring) => totstring &	
         Parser.parsestring totstring => p &
-	SCode.elaborate p => p' &
+	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("Placement")) => env  & 
 	get_class_in_program("Placement",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
-	Inst.inst_class(env,mod',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
+	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
+	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
 	DAE.get_variable_bindings_str dae => str 
 	---------------------------
 	get_annotation_string(Absyn.ANNOTATION([(mod as (Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Placement",_),_)))])) => str

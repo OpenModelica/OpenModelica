@@ -354,7 +354,11 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_list(env'',mods,pre,csets'',ci_state''', inst_algorithm, als)
 	  => (dae3,env''',csets''', ci_state'''') &
 	list_append(dae1,dae2) => dae5 &
-	list_append(dae5,dae3) => dae
+	list_append(dae5,dae3) => dae &
+	print "element list \n"&
+	DAE.dump_elements dae &
+	print "Env: \n" &
+	Env.print_env env'''
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,als), re, prot, inst_dims)
@@ -419,7 +423,7 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element_list(env',mod,pre,csets',ci_state',els, inst_dims)
 	  => (dae2,env'',csets'',ci_state'',tys2) &
 	list_append(tys1, tys2) => tys &
-	list_append(dae1, dae2) => dae
+	list_append(dae1, dae2) => dae 
 	------------------------------
 	inst_element_list(env,mod,pre,csets,ci_state,el::els, inst_dims)
 	  => (dae, env'', csets'', ci_state'', tys)
@@ -2263,6 +2267,14 @@ end
 relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  => DAE.Element list =
 
+  rule	print "inst_mod_equation\n" &
+	Exp.cref_str cr => str &
+	print "cref = " & print str &
+	print "\nmod=" &
+	Mod.print_mod mod &
+	int_eq(1,0) => true
+	----------
+	inst_mod_equation(cr,ty1,mod) => []
 	  
   rule	Static.elab_type ty1 => t &
 	inst_eq_equation(Exp.CREF(cr,t),
@@ -2270,7 +2282,7 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	-----------------------------------------------
 	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME((e,prop2))))
 	  => dae
-	  
+
   axiom inst_mod_equation(_,_,Mod.MOD(_,_,NONE)) => []
   axiom inst_mod_equation(_,_,Mod.NOMOD) => []
 

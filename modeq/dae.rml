@@ -73,6 +73,7 @@ module DAE:
   datatype DAElist = DAE of Element list
 	  
   relation dump: DAElist => ()
+  relation dump_elements : Element list => () 
   relation dump_str: DAElist => string
   relation dump_debug: DAElist => ()
   relation dump_debug_element : Element => ()
