@@ -443,33 +443,40 @@ and inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 end
 
 and inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		    Explode.ClassDef, bool)
+		    Explode.ClassDef, ClassInf.Restriction, bool)
 	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
 	(* FIXME: propagate prot *)
-  rule	inst_element_list(env,mods,pre,csets,ci_state, els)
-	  => (dae1,env', csets', ci_state', tys) &
-	inst_list(env',mods,pre,csets',ci_state',inst_equation, eqs)
-	  => (dae2,env'',csets'', ci_state'') &
-	inst_list(env'',mods,pre,csets'',ci_state'', inst_algorithm, als)
-	  => (dae3,env''',csets''', ci_state''') &
+  rule	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state' &
+	inst_element_list(env,mods,pre,csets,ci_state', els)
+	  => (dae1,env', csets', ci_state'', tys) &
+	inst_list(env',mods,pre,csets',ci_state'',inst_equation, eqs)
+	  => (dae2,env'',csets'', ci_state''') &
+	inst_list(env'',mods,pre,csets'',ci_state''', inst_algorithm, als)
+	  => (dae3,env''',csets''', ci_state'''') &
 	list_append(dae1,dae2) => dae5 &
 	list_append(dae5,dae3) => dae
 	-----------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      Explode.PARTS(els,eqs,als), prot)
-	  => (dae,env''', csets''', ci_state''', tys)
+		      Explode.PARTS(els,eqs,als), re, prot)
+	  => (dae,env''', csets''', ci_state'''', tys)
 
-  rule	Env.lookup_class(env,cn) => (c,m) &
+  rule	Env.lookup_class(env,cn) => (c as Explode.CLASS(cn2,_,r,_),m) &
+
+	ClassInf.start(r, cn2) => new_ci_state &
+
 	(* FIXME order *)
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod) => mods'' &
-	inst_class_in(env, mods'', pre, csets, ci_state, c, prot)
-	  => (dae,env, csets', ci_state', tys)
+	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
+	  => (dae,env, csets', ci_state', tys) &
+
+	(* Check for restriction violations *)
+	ClassInf.valid(ci_state', re)
 	----------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      Explode.DERIVED(cn,ad,mod), prot)
+		      Explode.DERIVED(cn,ad,mod), re, prot)
 	  => (dae,env, csets', ci_state', tys)
 
   rule	not Env.lookup_class(env,cn) => (_,_) &
@@ -477,7 +484,7 @@ and inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	print "# unknown class: " & print cns & print "\n"
 	----------------------------------------
 	inst_classdef(env,mods,pre,csets,ci_state,
-		      Explode.DERIVED(cn,ad,mod), prot)
+		      Explode.DERIVED(cn,ad,mod), re, prot)
 	  => fail
 
 end
@@ -488,14 +495,14 @@ and inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
   rule	print " instantiating " & print n & print "\n" &
-	inst_classdef(env,mods,pre,csets,ci_state,d,prot)
+	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
 	  => (l,env', csets', ci_state', tys)
 	------------------------------------------------------	
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as Explode.CLASS(n,false,r,d), prot)
 	  => (l,env', csets', ci_state', tys)
 
-  rule	print "Can't instantiate partial class " & print n & print "\n"
+  rule	print "# Can't instantiate partial class " & print n & print "\n"
 	------------------------------------------------------	
 	inst_class_in(env,mod,pre, csets,ci_state,
 		      Explode.CLASS(n,true,_,_), prot)
