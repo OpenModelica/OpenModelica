@@ -39,7 +39,7 @@ module Types :
 		| T_NOTYPE
 
   datatype ArrayDim = NODIM
-		    | DIM of int (* FIXME: option needed? *) option * ArrayDim
+		    | DIM of int option * ArrayDim
 
   type FuncArg = Ident * Type
 
@@ -55,7 +55,9 @@ module Types :
 
   (** - Exported relations *)
   relation basic_type : Type => bool
-  relation same_type : (Type, Type) => bool
+  relation equivtypes : (Type, Type) => bool
+  relation subtype : (Type, Type) => bool
+  (* relation same_type : (Type, Type) => bool *)
   relation lookup_component : (Type, Ident) => Var
   relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type
   relation lift_array : (Type,int option) => Type
@@ -77,6 +79,115 @@ relation basic_type : Type => bool =
   axiom	basic_type T_BOOL => true
   axiom	basic_type T_ARRAY(_,_) => false
   axiom	basic_type T_COMPLEX(_,_) => false
+
+end
+
+(** relation: equivtypes
+ **
+ ** This is the type equivalence relation.  It is defined in terms of
+ ** the subtype relation.  Two types are considered equivalent if they
+ ** are subtypes of each other.
+ **)
+
+relation equivtypes : (Type, Type) => bool =
+
+  rule	subtype(t1, t2) => true &
+	subtype(t2, t1) => true
+	-----------------------
+	equivtypes(t1, t2) => true
+
+	(* default *)
+  axiom	equivtypes(t1, t2) => false
+
+end
+
+(** relation: subtype
+ **
+ ** Is the first type a subtype of the second type?  This relation
+ ** specifies the rules for subtyping in Modelica.
+ **)
+
+relation subtype : (Type, Type) => bool =
+	
+  axiom	subtype (T_INTEGER,T_INTEGER) => true
+  axiom	subtype (T_REAL,T_REAL)       => true
+  axiom	subtype (T_STRING,T_STRING)   => true
+  axiom	subtype (T_BOOL,T_BOOL)       => true
+
+  rule	sub_arraydim (d1,d2) => true &
+ 	subtype (t1,t2) => true
+	---------------------------------------------------------
+	subtype(T_ARRAY(d1,t1),T_ARRAY(d2,t2)) => true
+	
+	(* FIXME: Check state? *)
+  rule	subtype_varlist(els1, els2) => true
+	-----------------------------------
+	subtype(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
+
+	(* default *)
+  axiom	subtype(_,_) => false
+
+end
+
+(** FIXME: Incorporate `sub_arraydim' in `subtype' *)
+
+relation sub_arraydim : (ArrayDim, ArrayDim) => bool =
+
+  axiom	sub_arraydim (NODIM,NODIM) => true
+
+  rule	sub_arraydim (d1,d2) => true
+	---------------------------------------
+	sub_arraydim (DIM(_,d1),DIM(NONE,d2)) => true
+
+  rule	i1 = i2 &
+ 	sub_arraydim (d1,d2) => true
+	---------------------------------------
+	sub_arraydim (DIM(SOME(i1),d1),DIM(SOME(i2),d2)) => true
+
+	(* default *)
+  axiom	sub_arraydim (_,_) => false
+
+end
+
+(** relation: subtype_varlist
+ **
+ ** This relation checks if the `Var' list in the first list is a
+ ** subset of the list in the second argument.  More precisely, it
+ ** checks if, for each `Var' in the second list there is a `Var' in
+ ** the first list with a type that is a subtype of the `Var' in the
+ ** second list.
+ **)
+
+relation subtype_varlist : (Var list, Var list) => bool =
+
+  axiom	subtype_varlist(_, []) => true
+
+  rule	varlist_lookup(l,n) => VAR(_,_,t1,_) &
+	subtype(t1,t2) => true &
+	subtype_varlist(l,vs) => true
+	-----------------------------
+	subtype_varlist(l, VAR(n,_,t2,_)::vs) => true
+
+	(* default *)
+  axiom	subtype_varlist(_,_) => false
+
+end
+
+(** relation: varlist_lookup
+ **
+ ** Given a list of `Var' and a name, this relation finds any `Var'
+ ** with the given name.
+ **)
+
+relation varlist_lookup : (Var list, Ident) => Var =
+
+  rule	n = name
+	--------
+	varlist_lookup((v as VAR(n,_,_,_))::_, name) => v
+
+  rule	varlist_lookup(vs, name) => v
+	-----------------------------
+	varlist_lookup(v::vs, name) => v
 
 end
 
