@@ -13,7 +13,7 @@ extern "C"
 {
 #include <assert.h>
 #include "rml.h"
-#include "../absyn_builder/yacclib.h"
+#include "absyn_builder/yacclib.h"
 
   string top_class;
   
@@ -537,6 +537,7 @@ extern "C"
             }
           }
         if(index > 0) {
+			output << ends;
 			output_str << "  SetNoSubModels(" << index << ");" << output.str();
         }
       }
@@ -556,16 +557,19 @@ extern "C"
     string component_str_key = string(component_name);
     map<string, map<string,variable> >::iterator search;
     search = generated_classes.find(class_str_key);
-    int ret_val = 0;//for error checking
+    int ret_val = -1;//for error checking
     
     if(search != generated_classes.end()){
       map<string,variable>::const_iterator itr;
       if(search->second.size() > 0){
-        int index;
+        int index = 0;
         for(itr = search->second.begin(), index = 0; itr != search->second.end(); ++itr)
           {
-            if(itr->second.type == string("class") && itr->second.name == component_str_key){
-              ret_val = index++;
+            if(itr->second.type == string("class")){
+				if(itr->second.name == component_str_key){
+					ret_val = index;
+				}
+				index += 1;
             }
           }
       }
@@ -573,7 +577,7 @@ extern "C"
     
     rmlA0 = (void*) mk_icon(ret_val);
     
-    if(ret_val == 0)
+    if(ret_val == -1)
       RML_TAILCALLK(rmlFC);
     else
       RML_TAILCALLK(rmlSC);
