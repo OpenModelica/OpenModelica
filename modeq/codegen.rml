@@ -1209,7 +1209,7 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
 	--------------------------------
-	generate_alloc_outvar(var as DAE.VAR(id, vk, vd, typ, e,
+	generate_alloc_outvar(var as DAE.VAR(id, vk, vd, typ, e, 
 					     inst_dims,start,flow),
 			      prefix,
 			      tnr) 
@@ -1276,7 +1276,7 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 	c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
 	--------------------------------
-	generate_alloc_outvar_f77(var as DAE.VAR(id, vk, vd, typ, e,
+	generate_alloc_outvar_f77(var as DAE.VAR(id, vk, vd, typ, e, 
 						 inst_dims,start,flow),
 				  prefix,
 				  tnr) 
@@ -1713,6 +1713,7 @@ relation generate_var_init : (DAE.Element, int) => (CFunction, int) =
 					     DAE.OUTPUT, 
 					     typ, 
 					     SOME(e),
+					     _,
 					     _,start,flow),tnr)
 	  => (cfn, tnr)
 

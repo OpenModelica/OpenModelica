@@ -19,7 +19,8 @@ public:
   
   void initialize(TaskGraph*, TaskGraph*, Schedule *, ContainSetMap *,int nproc,
 		  int nx, int ny, int np, VertexID start, VertexID stop, vector<double> initvars
-		  ,vector<double> initstates, vector<double> initparams);
+		  ,vector<double> initstates, vector<double> initparams,
+		  vector<string> varnames, vector<string> statenames, vector<string> paramnames);
   
   void generateCode();
 
@@ -94,6 +95,10 @@ private:
   vector<double> m_initvars; /* initial values for alg. variables */
   vector<double> m_initstates; /* initial values for state variables */
   vector<double> m_initparams; /* "initial values" for parameters */
+
+  vector<string> m_varnames;
+  vector<string> m_statenames;
+  vector<string> m_paramnames;
 };
 
 

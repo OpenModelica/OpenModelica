@@ -120,7 +120,7 @@ module Inst:
   relation make_binding : (Env.Env, SCode.Attributes, Types.EqMod option)
 	  => Types.Binding
 
-  relation instantiate_class : (SCode.Program,SCode.Path) => (DAE.DAElist, Env.Env)
+  relation instantiate_class : (SCode.Program,SCode.Path) => (DAE.DAElist,Env.Env)
 
   relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
   relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
@@ -270,7 +270,7 @@ end
  ** then the specified class is instantiated in the relation `inst_class'
  **)
 
-relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist, Env.Env) =
+relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist,Env.Env) =
 
   rule	Print.print_buf "# Empty program\n"
 	------------------------------
@@ -281,7 +281,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist, Env.En
  	inst_class_in_program(env',cdecls,path) => (dae,env'')
 	-----------------------------
 	instantiate_class(cdecls, path as Absyn.IDENT(name2)) 
-	  => (DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))]), env'')
+	  => (DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))]),env'')
 
   rule	Builtin.initial_env => env &
 	inst_class_decls(env,cdecls,path)=> (env',_) &
@@ -292,7 +292,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist, Env.En
 	Absyn.path_string path => pathstr
 	--------------------------------------------
 	instantiate_class(cdecls, path as Absyn.QUALIFIED(name,_)) 
-	  => (DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))]), env'')
+	  => (DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))]),env'')
 	
 
   rule	(*Debug.fprint("failtrace", "- instantiate_class failed\n")*)
@@ -412,7 +412,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
   rule	(*Debug.fprintln ("insttr", "inst_program1") &*)
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_class(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false,TOP_CALL) 
-	  => (dae,_,csets,_,_) 
+	  => (dae,env',csets,_,_) 
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
@@ -1533,6 +1533,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding),true) => env' 
 
+
+	(* Now we can also put the binding into the dae *)
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
 					       
@@ -1573,6 +1575,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(_,_,_,_,_,(el,_),_,_,_) => fail 
 
 end	
+
 
 relation get_derived_env: (Env.Env, Absyn.Path option) => Env.Env =
 
@@ -1734,12 +1737,12 @@ relation inst_var2 : (Env.Env,
 	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
 	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
-	  => (dae1,_,csets',ty,st) &
+	  => (dae1,env',csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	(*inst_mod_equation(cr,ty,mod) => dae2 &*)
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e), 
 		    inst_dims,NONE)
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
@@ -1753,7 +1756,7 @@ relation inst_var2 : (Env.Env,
 	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
 	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
-	  => (dae1,_,csets',ty,st) &
+	  => (dae1,env',csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
@@ -3195,26 +3198,27 @@ end
 (* LS: Added direction so that function elements can be defined
    correctly *)
 relation dae_declare2 : (Exp.ComponentRef, Types.Type, DAE.Flow, SCode.Variability,
-			 Absyn.Direction, Exp.Exp option,InstDims, DAE.StartValue)
+			 Absyn.Direction, Exp.Exp option, 
+			 InstDims, DAE.StartValue)
 	  => DAE.Element list =
 
   rule	dae_declare3 (vn, ty, flow, DAE.VARIABLE, dir, e, 
 		      inst_dims,start) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.VAR, dir, e,inst_dims,start) => dae
+	dae_declare2 (vn, ty, flow, SCode.VAR, dir, e, inst_dims,start) => dae
 
-  rule	dae_declare3 (vn, ty, flow,  DAE.DISCRETE, dir, e,
+  rule	dae_declare3 (vn, ty, flow,  DAE.DISCRETE, dir, e,  
 		      inst_dims,start) => dae
 	-----------------------------------------
 	dae_declare2 (vn, ty, flow, SCode.DISCRETE, dir, e, inst_dims,start) => dae
 
-  rule	dae_declare3 (vn, ty, flow, DAE.PARAM, dir, e, 
+  rule	dae_declare3 (vn, ty, flow, DAE.PARAM, dir, e,  
 		      inst_dims,start) => dae
 	-----------------------------------------
 	dae_declare2 (vn, ty, flow, SCode.PARAM, dir, e, inst_dims,start) 
 	  => dae
 
-  rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e, 
+  rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e,  
 		      inst_dims,start) => dae
 	-----------------------------------------
 	dae_declare2 (vn, ty, flow, SCode.CONST, dir, e, inst_dims,start) 
@@ -3235,7 +3239,8 @@ end
 
 
 relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
-			 Absyn.Direction, Exp.Exp option, InstDims, DAE.StartValue)
+			 Absyn.Direction, Exp.Exp option, 
+			 InstDims, DAE.StartValue)
 	  => DAE.Element list =
 
   rule	dae_declare4 (vn, ty, fl, vk, DAE.INPUT, e, inst_dims,start) => dae
@@ -3262,12 +3267,13 @@ end
 (**)
 
 relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
-			 DAE.VarDirection, Exp.Exp option, InstDims, DAE.StartValue)
+			 DAE.VarDirection, Exp.Exp option, InstDims, 
+			 DAE.StartValue)
 	  => DAE.Element list =
 
-  axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), fl, kind, dir, e, 
+  axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), fl, kind, dir, e,  
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.INT, e, inst_dims,start,fl)]
+	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl)]
 	
   axiom	dae_declare4 (vn, (Types.T_REAL(_),_), fl, kind, dir, e, 
 		      inst_dims,start)
@@ -3286,7 +3292,7 @@ axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start)
 	(* We should not declare each enumeration value of an enumeration when instantiating,e.g Myenum my !=> constant EnumType my.enum1,... *)
 	(*[DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]*)
 
-  axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), fl, kind, dir, e, 
+  axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), fl, kind, dir, e,
 		      inst_dims,start)
 	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl)]
 

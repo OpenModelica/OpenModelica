@@ -286,7 +286,7 @@ void Codegen::generateSubTaskCode(VertexID task)
   case TempVar: 
     m_cstream << TAB << getResultName(task,m_tg) << "=" 
 	      << insert_strings(getVertexName(task,m_tg),parentnames) << ";"
-	      << TAB << "// Task " << getTaskID(task,m_tg) << endl;
+	      << TAB << "// Task " << getTaskID(task,m_tg) << " variable " << getOrigName(task,m_tg) << endl;
     break;
   case Begin:
     m_cstream << "        /* Begin */" << endl;
@@ -303,6 +303,12 @@ void Codegen::generateSubTaskCode(VertexID task)
     break;
   case NonLinSys:
     m_cstream << TAB << "/* NonLinear system*/" << endl;
+    break;
+  case Copy:
+    m_cstream << TAB << getResultName(task,m_tg) 
+	      << "=" << parentnames[0] << ";" 
+	      << TAB << "// " << getTaskID(task,m_tg) << " variable " 
+	      << getOrigName(task,m_tg) << endl;
     break;
   default:
     assert(false);    
@@ -375,7 +381,10 @@ void Codegen::initialize(TaskGraph* tg, TaskGraph* m_merged_tg,
 			 VertexID stop,
 			 vector<double> initvars,
 			 vector<double> initstates, 
-			 vector<double> initparams)
+			 vector<double> initparams,
+			 vector<string> varnames, 
+			 vector<string> statenames, 
+			 vector<string> paramnames)
 {
   m_tg = tg;
   m_merged_tg = m_merged_tg;
@@ -390,8 +399,10 @@ void Codegen::initialize(TaskGraph* tg, TaskGraph* m_merged_tg,
   m_initvars = initvars;
   m_initstates = initstates;
   m_initparams = initparams;
+  m_varnames = varnames;
+  m_statenames = statenames;
+  m_paramnames = paramnames;
 }
-
 
 void  Codegen::generateParallelMPIHeaders()
 {
@@ -423,7 +434,7 @@ void  Codegen::generateParallelMPIGlobals()
 
 void Codegen::generateGlobals()
 {
-  int numsteps = 1000;
+  int numsteps = 10;
   m_cstream << "#include <stdlib.h>" << endl;
   m_cstream << "#include \"" << m_fileNameFunc << "\"" << endl << endl;
   m_cstream << "#include \"solvers.hpp\"" << endl;
@@ -501,16 +512,19 @@ void Codegen::generateInitialConditions()
   m_initstream << m_np << "  // n pars" << endl;
   
   for (int i=0; i < m_nx ; i++) {
-    m_initstream << m_initstates[i]  << "  // x[" << i << "]." << endl;
+    m_initstream << m_initstates[i]  << "  // x[" << i << "]  " 
+		 << m_statenames[i] << endl;
   }
   for (int i=0; i < m_nx ; i++) {
     m_initstream << "0.0  // xd[" << i << "] guessing, not from model." << endl;
   }
   for (int i=0; i < m_ny ; i++) {
-    m_initstream << m_initvars[i] << "  // y[" << i << "]" << endl;
+    m_initstream << m_initvars[i] << "  // y[" << i << "]  " 
+		 << m_varnames[i] << endl;
   }
   for (int i=0; i < m_np ; i++) {
-    m_initstream << m_initparams[i] << "  // p[" << i << "]" << endl;
+    m_initstream << m_initparams[i] << "  // p[" << i << "]  " 
+		 << m_paramnames[i] << endl;
   }
 }
 

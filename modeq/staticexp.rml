@@ -347,12 +347,12 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	-------------------
 	elab_exp (env, Absyn.CODE(c),impl,st) =>  (Exp.CODE(c,tp'),Types.PROP(tp,true),st)
 
-(*  rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
+  rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
 	Debug.fcall("failtrace", Dump.print_exp, e) & 
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
-*)
+
 
 end
 
@@ -2898,9 +2898,10 @@ relation elab_cref2 : (Env.Env,
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
+	cref_vectorize(Exp.CREF(cr',t),tt) => e' &
 	value_exp v => e'
 	----------------
-  	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) => (Exp.CREF(cr',t),true,acc)
+  	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) => (e',true,acc)
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
@@ -2909,10 +2910,11 @@ relation elab_cref2 : (Env.Env,
   	elab_cref2 (env,cr,acc,SCode.STRUCTPARAM,tt, Types.VALBOUND(v)) => (e',true,acc)
 
   rule	Types.elab_type tt => t &
-	fill_cref_subscripts (cr,tt) => cr'
-	----------------
+	fill_cref_subscripts (cr,tt) => cr' &
+	cref_vectorize(Exp.CREF(cr',t),tt) => e'
+	-----------------------------------
 	elab_cref2 (env,cr,acc,_,tt, Types.EQBOUND(exp,true))
-	  => (Exp.CREF(cr',t),true,acc)
+	  => (e',true,acc)
 
 	  (* Enum constants does not have a value expression *)
   rule	Types.elab_type tt => t
@@ -2969,6 +2971,46 @@ relation elab_cref2 : (Env.Env,
 
 end	
 
+(** relation: cref_vectorize
+ ** This relation takes a 'Exp.Exp' and a 'Types.Type' and if the expression
+ ** is a ComponentRef and the type is an array it returns an array of 
+ ** component references with subscripts for each index.
+ ** For instance, parameter Real x[3];   
+ ** gives cref_vectorize('x', <arraytype>) => '{x[1],x[2],x[3]}'
+ ** This is needed since the DAE does not know what the variable 'x' is, it only
+ ** knows the variables 'x[1]', 'x[2]' and 'x[3]'.
+**)
+relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
+
+  rule	create_cref_array(cr,1,ds,exptp,t) => e
+	-----------------------------------
+	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),t),_)) =>  e
+
+  axiom	cref_vectorize(e,_) => e
+end
+
+(** relation: create_cref_array
+ ** helper relation to cref_vectorize, creates each individual cref, e.g. {x[1],x[2], ...} from x.
+**)
+
+relation create_cref_array: (Exp.ComponentRef,int,int,Exp.Type, Types.Type) => Exp.Exp =
+
+  rule	int_gt(indx,ds) => true
+	------------------------
+	create_cref_array(cr,indx,ds,et,t) => Exp.ARRAY(et,false,[])
+
+  rule	int_add(indx,1) => indx' &
+	create_cref_array(cr,indx',ds,et,t) => Exp.ARRAY(_,_,expl) &
+	Exp.subscript_cref(cr,[Exp.INDEX(Exp.ICONST(indx))]) => cr' &
+	cref_vectorize(Exp.CREF(cr',et),t) => e'
+	------------------------
+	create_cref_array(cr,indx,ds,et,t) => Exp.ARRAY(et,false,e'::expl)
+
+  rule	Debug.fprint("failtrace","create_cref_array failed\n")
+	------------------------
+	create_cref_array(cr,indx,ds,et,t) => fail
+end
+
 (** relation: elab_cref_subs
  **
  ** This relation elaborates on all subscripts in a component reference.
@@ -2977,8 +3019,7 @@ end
 relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.ComponentRef, bool) =
 
-  rule	
-	Lookup.lookup_var (env,Exp.CREF_IDENT(id,[])) => (_,t,_) &
+  rule	Lookup.lookup_var (env,Exp.CREF_IDENT(id,[])) => (_,t,_) &
 	Types.get_dimension_sizes t => sl &
 	elab_subscripts_dims(env,ss,sl) => (ss', const) 
  (*   elab_subscripts (env, ss) => (ss', const) *)
@@ -2986,8 +3027,7 @@ relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
 	elab_cref_subs(env,Absyn.CREF_IDENT(id,ss))
 	  => (Exp.CREF_IDENT(id,ss'), const)
 
-  rule
-    elab_subscripts (env, ss) => (ss', const)
+  rule	elab_subscripts (env, ss) => (ss', const)
 	----------------------------------------------
 	elab_cref_subs(env,Absyn.CREF_IDENT(id,ss))
 	  => (Exp.CREF_IDENT(id,ss'), const)

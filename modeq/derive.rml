@@ -189,9 +189,10 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
   axiom	differentiate_exp(Exp.ICONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp(Exp.RCONST(_),_) => Exp.RCONST(0.0)
 
-  rule	Exp.cref_equal (cr, crx) => true
+  rule	Exp.cref_equal (cr, crx) => true &
+	int_real(1) => rval
 	--------------------------------
-	differentiate_exp(Exp.CREF(cr,_), crx) => Exp.RCONST(1.0)
+	differentiate_exp(Exp.CREF(cr,_), crx) => Exp.RCONST(rval)
 	  
   rule	Exp.cref_equal (cr, crx) => false
 	--------------------------------

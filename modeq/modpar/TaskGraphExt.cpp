@@ -53,6 +53,11 @@ vector<double> initvars;
 vector<double> initstates;
 vector<double> initparams;
 
+// Variable names
+vector<string> varnames;
+vector<string> statenames;
+vector<string> paramnames;
+
 extern "C"
 {
 #include <assert.h>
@@ -129,9 +134,11 @@ extern int nproc;
     char *str = RML_STRINGDATA(rmlA0); 
     int task = RML_UNTAGFIXNUM(rmlA1);
     int send_to_end = (rml_sint_t)(rmlA2);
+    char *orig_name = RML_STRINGDATA(rmlA3);
     VertexID taskID;
     map<int,VertexID>::iterator i;
     string str2=string(str);
+    string str3=string(orig_name);
 
     symboltable[str2]=task;
 
@@ -140,6 +147,7 @@ extern int nproc;
     taskID = i->second;
 
     setResultName(taskID,str2,&taskgraph);
+    setOrigName(taskID,str3,&taskgraph);
  
     if (send_to_end) {
       add_edge(taskID,stop_task,&taskgraph,new string(str));
@@ -281,7 +289,8 @@ extern int nproc;
     codegen = new Codegen("model.cpp","model.hpp","modelinit.txt");
     
     codegen->initialize(&taskgraph,&merged_taskgraph,schedule,&contain_set,nproc,nx,ny,np,
-			merged_start_task,merged_stop_task,initvars,initstates,initparams);
+			merged_start_task,merged_stop_task,initvars,initstates,initparams,
+			varnames,statenames,paramnames);
 
     codegen->generateCode();
     			  
@@ -294,10 +303,11 @@ extern int nproc;
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
     char *value = RML_STRINGDATA(rmlA1); 
-
+    char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
     cerr << "initvars[" << indx << "] =" << val << endl;
     initvars.insert(initvars.begin()+indx,val);
+    varnames.insert(varnames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL  
@@ -306,9 +316,11 @@ extern int nproc;
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
     char *value = RML_STRINGDATA(rmlA1); 
+    char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
     cerr << "initstates[" << indx << "] =" << val << endl;
     initstates.insert(initstates.begin()+indx,val);
+    statenames.insert(statenames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL  
@@ -316,11 +328,25 @@ extern int nproc;
   RML_BEGIN_LABEL(TaskGraphExt__add_5finitparam)
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
-    char *value = RML_STRINGDATA(rmlA1); 
+    char *value = RML_STRINGDATA(rmlA1);
+    char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
     cerr << "initparams[" << indx << "] =" << val << endl;
     initparams.insert(initparams.begin()+indx,val);
+    paramnames.insert(paramnames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL  
+
+  RML_BEGIN_LABEL(TaskGraphExt__set_5ftasktype)
+  {
+    int taskID = RML_UNTAGFIXNUM(rmlA0);
+    int type = RML_UNTAGFIXNUM(rmlA1); 
+    VertexID task = find_task(taskID,&taskgraph);
+    setTaskType(task,(TaskType)type,&taskgraph);      
+    RML_TAILCALLK(rmlSC);
+  } 
+  RML_END_LABEL  
+
+
 } // extern "C"

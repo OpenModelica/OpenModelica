@@ -63,7 +63,7 @@ module DAE:
 			VarKind * 
 			VarDirection * 
 			Type * 
-			Exp.Exp option * (* Binding e.g. for parameters*)
+			Exp.Exp option * (* Binding expression e.g. for parameters*)
 			InstDims *
 			StartValue * (* value of start attribute *)
 			Flow (* Flow of connector variable. Needed for 
@@ -119,6 +119,7 @@ module DAE:
   relation get_output_vars: Element list  => Element list
   relation get_bidir_vars: Element list  => Element list
   relation get_input_vars: Element list  => Element list
+  relation generate_dae_type: Type => Types.Type
   relation is_algorithm : Element => ()
   relation is_function : Element => ()
   relation is_var: Element => ()
@@ -1164,7 +1165,7 @@ end
 relation is_parameter: Element => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
-  axiom	is_parameter VAR(_, PARAM, _, _, _, _,_,_)
+  axiom	is_parameter VAR(_, PARAM, _, _, _,  _,_,_)
 
 end
 
@@ -1201,6 +1202,17 @@ relation get_input_vars: Element list  => Element list =
 	get_input_vars vl => vl'
 end
 
+(* Generate a Types.Type from a DAE.Type
+ ** Is needed when investigating the DAE and want to e.g. evaluate expressions.
+ **)
+relation generate_dae_type: Type => Types.Type =
+
+  axiom	generate_dae_type(REAL) => ((Types.T_REAL([]),NONE))
+  axiom	generate_dae_type(INT) => ((Types.T_INTEGER([]),NONE))
+  axiom	generate_dae_type(BOOL) => ((Types.T_BOOL([]),NONE))
+  axiom	generate_dae_type(STRING) => ((Types.T_STRING([]),NONE))
+end
+
 (* LS *)
 relation is_output_var: Element => () =
 
@@ -1218,7 +1230,7 @@ end
 (* HJ *)
 relation is_input_var: Element => () =
 
-  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty, _, _, _, _)
+  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _)
 
 end
 

@@ -30,7 +30,7 @@ relation add_edge: (int,int,string) => ()
 
 relation get_task: string => int 
 
-relation store_result: (string, int, bool) => ()
+relation store_result: (string, int, bool(*send to endtask? *),string (* orig name*)) => ()
 
 relation dump_graph: (string) => ()
 
@@ -54,12 +54,23 @@ relation generate_code: (int, (* n states *)
 relation set_execcost: (int , (* taskid *)
 			real) (* value *) => ()
 
+relation set_tasktype: (int , (* taskid *)
+			int) (* type *) => ()
+
 relation set_commcost: (int, (* source *)
 			int, (* target *)
 			int) (* value *) => ()
 
-relation add_initvar: (int, string) => ()
-relation add_initstate: (int, string) => ()
-relation add_initparam: (int, string) => ()
+relation add_initvar: (int, 
+		       string(*value*),
+		       string(*origname*)) => ()
+
+relation add_initstate: (int, 
+			 string(*value*),
+			 string(*origname*)) => ()
+
+relation add_initparam: (int, 
+			 string(*value*),
+			 string(*origname*)) => ()
 
 end

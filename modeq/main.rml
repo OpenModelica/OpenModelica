@@ -384,9 +384,10 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 	print "old dae:" & DAELow.dump dae &
 	print "translating dae.\n" &
 	DAELow.translate_dae (dae) => indexed_dae &
-	print "new dae:" & DAELow.dump indexed_dae &
+	DAELow.calculate_values(indexed_dae) => indexed_dae' &
+	print "new dae:" & DAELow.dump indexed_dae' &
 	print "building task graph\n" &
-	TaskGraph.build_taskgraph(indexed_dae,ass1,ass2,comps) &
+	TaskGraph.build_taskgraph(indexed_dae',ass1,ass2,comps) &
 	TaskGraphExt.dump_graph("model.viz") &
 	RTOpts.latency  => l &
 	RTOpts.bandwidth => b &
@@ -399,7 +400,7 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 	TaskGraphExt.dump_merged_graph("merged_model.viz") &
 	RTOpts.no_proc => n &
 	TaskGraphExt.schedule(n) &
-	DAELow.calculate_sizes(indexed_dae) => (nx,ny,np)  &
+	DAELow.calculate_sizes(indexed_dae') => (nx,ny,np)  &
 	int_string np => nps &
 	print "=======\nnp =" & print nps & print "=======\n" &
 	TaskGraphExt.generate_code(nx,ny,np) &

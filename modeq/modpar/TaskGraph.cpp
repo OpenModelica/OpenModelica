@@ -41,6 +41,13 @@ VertexResultNameMap::type VertexResultNameProperty(TaskGraph *tg)
   return pmap;
 }
 
+VertexOrigNameMap::type VertexOrigNameProperty(TaskGraph *tg)
+{
+  vertex_origname_t pname;
+  VertexOrigNameMap::type pmap = get(pname, *tg);
+  return pmap;
+}
+
 VertexTaskTypeMap::type VertexTaskTypeProperty(TaskGraph *tg)
 {
   vertex_tasktype_t pname;
@@ -155,6 +162,18 @@ string & getResultName(VertexID task, TaskGraph *tg)
 {
   return get(VertexResultNameProperty(tg),task);
 }  
+
+void setOrigName(VertexID task, string &s, TaskGraph *tg)
+{ 
+ put(VertexOrigNameProperty(tg),
+     task,
+     s); 
+} 
+string & getOrigName(VertexID task, TaskGraph *tg)
+{
+  return get(VertexOrigNameProperty(tg),task);
+}  
+
 
 string * genTemp()
 {

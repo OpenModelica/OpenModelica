@@ -29,6 +29,7 @@ module DAELow:
   
   with "dae.rml"
   with "exp.rml"
+  with "values.rml"
 
 
   datatype VarKind = VARIABLE | STATE | DUMMY_DER | DUMMY_STATE | DISCRETE | PARAM | CONST
@@ -37,10 +38,12 @@ module DAELow:
 			VarKind * 
 			DAE.VarDirection * 
 			DAE.Type * 
-			Exp.Exp option * (* Binding e.g. for parameters*)
+			Exp.Exp option * (* Binding expression e.g. for parameters*)
+			Values.Value option * (* binding value for parameters*)
 			DAE.InstDims *
 			DAE.StartValue *  (* value of start attribute *)
-			int (* index in impl. vector *)
+			int * (* index in impl. vector *)
+		        string (* original variable name *)
 
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp
@@ -83,7 +86,8 @@ module DAELow:
 
   relation dump_components: (int list list) => ()
 
-  relation translate_dae: DAELow => DAELow 	  
+  relation translate_dae: DAELow => DAELow 
+  relation calculate_values: DAELow => DAELow	  
 	  
   relation calculate_sizes: DAELow => (int, (* nx *)
 				       int, (* ny *)
@@ -96,7 +100,12 @@ with "daeext.rml"
 with "absyn.rml"
 with "print.rml"
 with "derive.rml"
-with "debug.rml" 
+with "debug.rml"
+with "env.rml" 
+with "builtin.rml"
+with "ceval.rml" 
+with "types.rml"
+with "explode.rml"
 
 relation lower: (DAE.DAElist) => DAELow =
 
@@ -182,8 +191,7 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
 	      Var list, (* variables states+alg *)
 	      Var list) (* known variables *) =
 
-  rule	list_member(cr1,states) => false &
-	list_member(cr2,states) => false &
+  rule	list_member(cr2,states) => false &
 	Util.list_deletemember(alleqns,e) => alleqns' &
 	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
 	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
@@ -193,10 +201,21 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
 	--------------------------------------------------
 	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr1,_),Exp.CREF(cr2,_)))::eqns,states,vars,knvars) 
 	  => (alleqns''',e::reqns,vars'',knvars'')
+
+  rule	(* as above but swapped args *)
+	list_member(cr2,states) => false &
+	Util.list_deletemember(alleqns,e) => alleqns' &
+	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
+	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
+	remove_variable_named(vars,cr2) => (vars',var) &	
+	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
+	  => (alleqns''',reqns,vars'',knvars'')
+	--------------------------------------------------
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr2,_),Exp.CREF(cr1,_)))::eqns,states,vars,knvars) 
+	  => (alleqns''',e::reqns,vars'',knvars'')
 	
 
   rule	Exp.is_zero(e2) => true &
-	list_member(cr1,states) => false &
 	list_member(cr2,states) => false &
 	Util.list_deletemember(alleqns,e) => alleqns' &	
 	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
@@ -206,6 +225,19 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
 	  => (alleqns''',reqns,vars'',knvars'')
 	--------------------------------------------------
 	remove_simple_equations2(alleqns,(e as EQUATION(Exp.BINARY(Exp.CREF(cr1,_),Exp.SUB(_),Exp.CREF(cr2,_)),e2))::eqns,states,vars,knvars) 
+	  => (alleqns''',e::reqns,vars'',knvars'')
+
+  rule	(* As above but swapped args *)
+	Exp.is_zero(e2) => true &
+	list_member(cr2,states) => false &
+	Util.list_deletemember(alleqns,e) => alleqns' &	
+	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
+	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
+	remove_variable_named(vars,cr2) => (vars',var) &	
+	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
+	  => (alleqns''',reqns,vars'',knvars'')
+	--------------------------------------------------
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.BINARY(Exp.CREF(cr2,_),Exp.SUB(_),Exp.CREF(cr1,_)),e2))::eqns,states,vars,knvars) 
 	  => (alleqns''',e::reqns,vars'',knvars'')
 
   rule	remove_simple_equations2(alleqns,eqns,states,vars,knvars) 
@@ -223,11 +255,11 @@ relation remove_variable_named: (Var list,  Exp.ComponentRef) => (Var list, Var)
 
   rule	Exp.cref_equal(cr1,cr2) => true
 	-------------------------------
-	remove_variable_named(  (v as VAR(cr1,_,_,_,_,_,_,_))::rest,cr2) => (rest,v)
+	remove_variable_named(  (v as VAR(cr1,_,_,_,_,_,_,_,_,_))::rest,cr2) => (rest,v)
 
   rule	remove_variable_named(rest,cr2) => (res,v2)
 	-------------------------------
-	remove_variable_named(  (v as VAR(cr1,_,_,_,_,_,_,_))::rest,cr2) => (v::res,v2)
+	remove_variable_named(  (v as VAR(cr1,_,_,_,_,_,_,_,_,_))::rest,cr2) => (v::res,v2)
 end
 
 relation replace_all: (Equation, (* equation *)
@@ -318,12 +350,19 @@ relation dump_vars: Var list => ()=
 
   axiom	dump_vars [] => ()
 
-  rule	Exp.cref_str(cr) => str &
+  rule	Exp.print_component_ref_str(cr) => str &
+	print str & print ":" & dump_kind kind &
+	print "= " & Exp.print_exp_str e => s & print s & print ", " &
+	dump_vars(xs) 
+	-------------
+	dump_vars(VAR(cr,kind,_,_,SOME(e),_,_,_,_,_)::xs)
+
+  rule	Exp.print_component_ref_str(cr) => str &
 	print str & print ":" & dump_kind kind &
 	print ", " &
 	dump_vars(xs) 
 	-------------
-	dump_vars(VAR(cr,kind,_,_,_,_,_,_)::xs)
+	dump_vars(VAR(cr,kind,_,_,NONE,_,_,_,_,_)::xs)
 end 
 relation dump_kind: VarKind => () =
 
@@ -460,13 +499,13 @@ relation lower2: (DAE.DAElist, Exp.ComponentRef list) => DAELow =
   rule	lower2(DAE.DAE(xs),states) => DAELOW(vars,knvars,eqns,reqns) &
 	lower_var (v,states) => v'
 	--------------------------------
-	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_, _,_,_,_))::xs),states) 
+	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_))::xs),states) 
 	  => DAELOW(v'::vars,knvars,eqns,reqns)
 
   rule	lower2(DAE.DAE(xs),states) => DAELOW(vars,knvars,eqns,reqns) &
 	lower_known_var (v) => v'
 	--------------------------------
-	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_, _,_,_,_))::xs),states) 
+	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_))::xs),states) 
 	  => DAELOW(vars,v'::knvars,eqns,reqns)
 	  
   rule	lower2(DAE.DAE(xs),states) => DAELOW(vars,knvars,eqns,reqns) &
@@ -504,10 +543,11 @@ end
 
 relation lower_var: (DAE.Element, Exp.ComponentRef list) => Var =
 
-  rule	lower_varkind(kind,name,states) => kind'
+  rule	lower_varkind(kind,name,states) => kind' &
+	Exp.print_component_ref_str name => origname
 	----------------------------------------
 	lower_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_),states)
-	  => VAR(name,kind',dir,tp,bind,dims,start,0)
+	  => VAR(name,kind',dir,tp,bind,NONE,dims,start,-1,origname)
 
 (*  rule	print "-lower_var failed\n" 
 	------------------------
@@ -517,10 +557,11 @@ end
 
 relation lower_known_var: (DAE.Element) => Var =
 
-  rule	lower_known_varkind(kind) => kind'
+  rule	lower_known_varkind(kind) => kind' &
+	Exp.print_component_ref_str name => origname
 	----------------------------------------
 	lower_known_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_))
-	  => VAR(name,kind',dir,tp,bind,dims,start,0)
+	  => VAR(name,kind',dir,tp,bind,NONE,dims,start,-1,origname)
 end
 
 relation lower_varkind: (DAE.VarKind, Exp.ComponentRef, Exp.ComponentRef list) 
@@ -550,7 +591,7 @@ relation varnames: Var list => Exp.ComponentRef list =
 
   rule	varnames(vs) => res
 	-----------------
-	varnames (VAR(cr,_,_,_, _,_,_,_)::vs) => cr::res
+	varnames (VAR(cr,_,_,_, _,_,_,_,_,_)::vs) => cr::res
 end
 
 
@@ -587,19 +628,19 @@ relation incidence_row_exp: (Exp.Exp, Var list )
 
   rule	(* If variable x is a state, der(x) is a variable in incidence matrix,
 	 but not x itself, it is considered known.*)
-	get_var(cr,vars) => (VAR(_,STATE,_,_ ,_,_,_,_),_)
+	get_var(cr,vars) => (VAR(_,STATE,_,_,_ ,_,_,_,_,_),_)
  	-----------------------------
 	incidence_row_exp(Exp.CREF(cr,_),vars) => []
 	
-  rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_, _,_,_,_),p) 
+  rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_,_, _,_,_,_,_),p) 
 	-----------------------------
 	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
 
-  rule	get_var(cr,vars) => (VAR(_,DUMMY_DER,_,_ ,_,_,_,_),p) 
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_DER,_,_,_ ,_,_,_,_,_),p) 
 	-----------------------------
 	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
 
-  rule	get_var(cr,vars) => (VAR(_,DUMMY_STATE,_,_, _,_,_,_),p) 
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_STATE,_,_,_, _,_,_,_,_),p) 
 	-----------------------------
 	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
 
@@ -636,7 +677,7 @@ relation incidence_row_exp: (Exp.Exp, Var list )
 	-------------------------
 	incidence_row_exp(Exp.IFEXP(e1,e2,e3),vars) => res
 
-  rule  get_var(cr,vars) => (VAR(_,STATE,_,_, _,_,_,_),p)
+  rule  get_var(cr,vars) => (VAR(_,STATE,_,_,_, _,_,_,_,_),p)
 	--------------------------------
 	incidence_row_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
 	  => [p]
@@ -686,12 +727,12 @@ relation get_var: (Exp.ComponentRef, Var list) => (Var,int) =
 	
   rule	Exp.cref_equal(cr,cr2) => true
 	-----------------------------
-	get_var(cr,(v as VAR(cr2,_,_,_ ,_,_,_,_))::vars) => (v,1)
+	get_var(cr,(v as VAR(cr2,_,_,_,_ ,_,_,_,_,_))::vars) => (v,1)
 	
   rule	get_var(cr,vars) => (v,pos) &
 	int_add(pos,1) => pos'
 	-----------------------------
-	get_var(cr,v as VAR(cr2,_,_,_, _,_,_,_)::vars) => (v,pos')
+	get_var(cr,v as VAR(cr2,_,_,_,_, _,_,_,_,_)::vars) => (v,pos')
 end
 
 relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
@@ -958,8 +999,8 @@ relation make_algebraic: (DAELow,
 	
   rule	Exp.cref_equal(cr,state) => true 
 	--------------------------------
-	make_algebraic(DAELOW((v as VAR(cr,kind,d,t,b,dim,start,idx))::vs,kv,e,se),state)
-	  =>	(DAELOW(VAR(cr,DUMMY_STATE,d,t,b,dim,start,idx)::vs,kv,e,se))
+	make_algebraic(DAELOW((v as VAR(cr,kind,d,t,b,value,dim,start,idx,name))::vs,kv,e,se),state)
+	  =>	(DAELOW(VAR(cr,DUMMY_STATE,d,t,b,value,dim,start,idx,name)::vs,kv,e,se))
 	  
   rule	make_algebraic(DAELOW(vs,kv,e,se),state) => DAELOW(vs',kv',e',se')
 	-----------------------------------------------------------
@@ -1035,11 +1076,11 @@ relation replace_dummy_der_others:( Var list ,Equation) => (Equation,Var list) =
 	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e2',c2) &
 	int_add(c1,c2) => c &
 	int_gt(c,0) => cond &
-	Util.if(cond,[VAR(dummyder,DUMMY_DER,a,b,NONE,d,NONE,0)],[]) => varlst &
+	Util.if(cond,[VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,d,NONE,0,"dummyder")],[]) => varlst &
 	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
 	Util.list_union_p(allvars,varlst,var_equal) => allvars'
 	---------------------------------------------------------------
-	replace_dummy_der_others(VAR(cr,DUMMY_DER,a,b,c,d,e,f)::vs,EQUATION(e1,e2))
+	replace_dummy_der_others(VAR(cr,DUMMY_DER,a,b,c,h,d,e,f,g)::vs,EQUATION(e1,e2))
 	  => (res,allvars')
 
   rule	(* der(der(s)) s is state => der_der_s) *)
@@ -1056,11 +1097,11 @@ relation replace_dummy_der_others:( Var list ,Equation) => (Equation,Var list) =
 	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder',Exp.REAL)) => (e2',c2) &
 	int_add(c1,c2) => c &
 	int_gt(c,0) => cond &
-	Util.if(cond,[VAR(dummyder',DUMMY_DER,a,b,NONE,d,NONE,0)],[]) => varlst &
+	Util.if(cond,[VAR(dummyder',DUMMY_DER,a,b,NONE,NONE,d,NONE,0,"dummyder")],[]) => varlst &
 	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
 	Util.list_union_p(allvars,varlst,var_equal) => allvars'
 	---------------------------------------------------------------------------
-	replace_dummy_der_others(VAR(cr,STATE,a,b,c,d,e,f)::vs,EQUATION(e1,e2))
+	replace_dummy_der_others(VAR(cr,STATE,a,b,c,h,d,e,f,g)::vs,EQUATION(e1,e2))
 	  => (res,allvars')
 
   rule	(* der(v) v is alg var => der_v *)
@@ -1074,11 +1115,11 @@ relation replace_dummy_der_others:( Var list ,Equation) => (Equation,Var list) =
 	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder',Exp.REAL)) => (e2',c2) &
 	int_add(c1,c2) => c &
 	int_gt(c,0) => cond &
-	Util.if(cond,[VAR(dummyder',DUMMY_DER,a,b,NONE,d,NONE,0)],[]) => varlst &
+	Util.if(cond,[VAR(dummyder',DUMMY_DER,a,b,NONE,NONE,d,NONE,0,"dummyder")],[]) => varlst &
 	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
 	Util.list_union_p(allvars,varlst,var_equal) => allvars'
 	---------------------------------------------------------------------------
-	replace_dummy_der_others(VAR(cr,VARIABLE,a,b,c,d,e,f)::vs,EQUATION(e1,e2))
+	replace_dummy_der_others(VAR(cr,VARIABLE,a,b,c,h,d,e,f,g)::vs,EQUATION(e1,e2))
 	  => (res,allvars')
 
   rule	replace_dummy_der_others(vs,EQUATION(e1,e2)) => (res,allvars)
@@ -1091,15 +1132,15 @@ relation var_equal: (Var,Var) => bool =
 
   rule	Exp.cref_equal(cr1,cr2) => res 
 	------------------------------
-	var_equal(VAR(cr1,_,_,_ ,_,_,_,_),VAR(cr2,_,_,_ ,_,_,_,_)) => res
+	var_equal(VAR(cr1,_,_,_,_ ,_,_,_,_,_),VAR(cr2,_,_,_,_ ,_,_,_,_,_)) => res
 end
 
 (* creates a new variable named "der_"+<varname> and adds it to the dae *) 
 relation new_dummy_var:(Exp.ComponentRef,DAELow) => (Exp.ComponentRef,DAELow) =
 
-  rule	get_var(var,vars) => (VAR(_,kind,dir,tp,bind,dim,start,idx),_) &
+  rule	get_var(var,vars) => (VAR(_,kind,dir,tp,bind,value,dim,start,idx,name),_) &
 	create_dummy_var(var) => dummyvar &
-	list_append(vars,[VAR(dummyvar,DUMMY_DER,dir,tp,NONE,dim,NONE,0)]) 
+	list_append(vars,[VAR(dummyvar,DUMMY_DER,dir,tp,NONE,NONE,dim,NONE,0,"dummyvar")]) 
 	  => vars'
 	-----------------------------------
 	new_dummy_var(var,DAELOW(vars,kv,eqns,seqns)) 
@@ -1171,7 +1212,7 @@ relation states_in_vars: (Var list, int list) =>
   axiom	states_in_vars (vars,[]) => ([],[])
 
   rule	int_sub(v,1) => v' &
-	list_nth(vars,v') => VAR(cr,_,_,_,_,_,_,_) &
+	list_nth(vars,v') => VAR(cr,_,_,_,_, _,_,_,_,_) &
 	states_in_vars(vars,rest) => (res1,res2)  
 	---------------------------------
 	states_in_vars(vars,v::rest) => (cr::res1,v::res2)
@@ -1243,22 +1284,22 @@ relation time_varying_vars:(DAELow) => Exp.ComponentRef list =
 
   rule	time_varying_vars(DAELOW(vs,kv,e,se)) => res 
 	-----------------------------------------
-	time_varying_vars(DAELOW(VAR(cr,STATE,_,_ ,_,_,_,_)::vs,kv,e,se)) 
+	time_varying_vars(DAELOW(VAR(cr,STATE,_,_,_ ,_,_,_,_,_)::vs,kv,e,se)) 
 	  => cr::res
 
   rule	time_varying_vars(DAELOW(vs,kv,e,se)) => res 
 	-----------------------------------------
-	time_varying_vars(DAELOW(VAR(cr,DUMMY_DER,_,_, _,_,_,_)::vs,kv,e,se)) 
+	time_varying_vars(DAELOW(VAR(cr,DUMMY_DER,_,_,_, _,_,_,_,_)::vs,kv,e,se)) 
 	  => cr::res
 
   rule	time_varying_vars(DAELOW(vs,kv,e,se)) => res 
 	-----------------------------------------
-	time_varying_vars(DAELOW(VAR(cr,VARIABLE,_,_, _,_,_,_)::vs,kv,e,se)) 
+	time_varying_vars(DAELOW(VAR(cr,VARIABLE,_,_,_, _,_,_,_,_)::vs,kv,e,se)) 
 	  => cr::res
 
   rule	time_varying_vars(DAELOW(vs,kv,e,se)) => res 
 	-----------------------------------------
-	time_varying_vars(DAELOW(VAR(cr,DUMMY_STATE,_,_, _,_,_,_)::vs,kv,e,se)) 
+	time_varying_vars(DAELOW(VAR(cr,DUMMY_STATE,_,_,_, _,_,_,_,_)::vs,kv,e,se)) 
 	  => cr::res
 
   rule	time_varying_vars(DAELOW(vs,kv,e,se)) => res 
@@ -1393,14 +1434,14 @@ relation states_as_algebraic_vars:( Var list) => Var list =
   rule	(* states treated as algebraic variables *)
 	states_as_algebraic_vars(vs) => res 
 	------------------------------------
-	states_as_algebraic_vars(VAR(cr,STATE,a,b,c,d,e,f)::vs) 
-	  => (VAR(cr,VARIABLE,a,b,c,d,e,f)::res)
+	states_as_algebraic_vars(VAR(cr,STATE,a,b,c,d,e,f,g,h)::vs) 
+	  => (VAR(cr,VARIABLE,a,b,c,d,e,f,g,h)::res)
 
   rule	(* other variables treated as known *)
 	states_as_algebraic_vars(vs) => res 
 	------------------------------------
-	states_as_algebraic_vars(VAR(cr,_,a,b,c,d,e,f)::vs) 
-	  => (VAR(cr,CONST,a,b,c,d,e,f)::res)
+	states_as_algebraic_vars(VAR(cr,_,a,b,c,d,e,f,g,h)::vs) 
+	  => (VAR(cr,CONST,a,b,c,d,e,f,g,h)::res)
 
   rule	states_as_algebraic_vars(vs) => res 
 	----------------------
@@ -1765,9 +1806,10 @@ relation translate_dae: DAELow => DAELow =
 	Util.string_delimit_list(tl,", ") => tstr &
 	print "replace " & print sstr & print "with " & print tstr & print "\n" &
 	replace_variables(eqns,s,t) => eqns' &
-	transform_variables(vars') => vars'' 
+	transform_variables(vars',s,t) => vars'' &
+	transform_variables(kv',s,t) => kv'' 
 	------------------------------------
-	translate_dae(DAELOW(vars,kv,eqns,seqns)) => DAELOW(vars'',kv,eqns',seqns)
+	translate_dae(DAELOW(vars,kv,eqns,seqns)) => DAELOW(vars'',kv'',eqns',seqns)
 end
 
 relation calculate_sizes: DAELow => (int, (* nx *)
@@ -1786,12 +1828,12 @@ relation calculate_param_sizes:( Var list) => (int) =
   rule	calculate_param_sizes(vs) => s1 &
 	int_add(s1,1) => s2 
 	------------------
-	calculate_param_sizes(VAR(_,PARAM,_,_,_,_,_,_)::vs) 
+	calculate_param_sizes(VAR(_,PARAM,_,_,_, _,_,_,_,_)::vs) 
 	  => (s2)
 
   rule	calculate_param_sizes(vs) => s1 
 	------------------
-	calculate_param_sizes(VAR(_,_,_,_,_,_,_,_)::vs) 
+	calculate_param_sizes(VAR(_,_,_,_,_ ,_,_,_,_,_)::vs) 
 	  => (s1)
 end
 	
@@ -1802,25 +1844,25 @@ relation calculate_var_sizes:( Var list, int, int) => (int, int) =
   rule	int_add(ny,1) => ny' &
 	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
 	----------------------------
-	calculate_var_sizes(VAR(_,VARIABLE,_,_,_,_,_,_)::vs,nx,ny) 
+	calculate_var_sizes(VAR(_,VARIABLE,_,_,_, _,_,_,_,_)::vs,nx,ny) 
 	  => (nx'',ny'')
 
   rule	int_add(nx,1) => nx' &
 	calculate_var_sizes(vs,nx',ny) => (nx'',ny'')
 	----------------------------
-	calculate_var_sizes(VAR(_,STATE,_,_,_,_,_,_)::vs,nx,ny) 
+	calculate_var_sizes(VAR(_,STATE,_,_,_ ,_,_,_,_,_)::vs,nx,ny) 
 	  => (nx'',ny'')
 
   rule	int_add(ny,1) => ny' &
 	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
 	----------------------------
-	calculate_var_sizes(VAR(_,DUMMY_STATE,_,_,_,_,_,_)::vs,nx,ny) 
+	calculate_var_sizes(VAR(_,DUMMY_STATE,_,_,_ ,_,_,_,_,_)::vs,nx,ny) 
 	  => (nx'',ny'')
 
   rule	int_add(ny,1) => ny' &
 	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
 	----------------------------
-	calculate_var_sizes(VAR(_,DUMMY_DER,_,_,_,_,_,_)::vs,nx,ny) 
+	calculate_var_sizes(VAR(_,DUMMY_DER,_,_,_, _,_,_,_,_)::vs,nx,ny) 
 	  => (nx'',ny'')
 
   rule	print "-calculate_var_sizes failed\n" 
@@ -1844,6 +1886,83 @@ relation replace_variables: (Equation list, Exp.Exp list, Exp.Exp list) => (Equa
   rule	print "-replace_variables failed\n" 
 	------------------
 	replace_variables(_,_,_) => fail
+end
+
+(**
+ ** This relation calculates the values from the parameter binding expressions.
+ ** This is performed by building an environment and adding all the parameters and constants
+ ** to it and then calling ceval to retreive the constant values of each parameter or constant.
+ ** NOTE: This depends on the DAELow having the indexed forms of component references, since the 
+ ** environmen requires simple names for each variable.
+ **
+**)
+relation calculate_values: (DAELow) => DAELow =
+	
+  rule	Builtin.initial_env => env &
+	add_variables_to_env(knvars,env) => env' &
+	update_variables(knvars,env') => knvars'
+	--------------------------------------
+	calculate_values(DAELOW(vars,knvars,eqns,seqns)) 
+	  => DAELOW(vars,knvars',eqns,seqns)
+end
+
+relation add_variables_to_env: (Var list, Env.Env) => Env.Env =
+	
+  axiom	add_variables_to_env([],env) => env
+	
+  rule	(* Some of the attributes added to env here does not matter, defaults are used *)
+	DAE.generate_dae_type(t) => t' &
+	Env.extend_frame_v(env,Types.VAR(crn,Types.ATTR(false,SCode.RW,SCode.CONST,Absyn.BIDIR),false,t',Types.EQBOUND(e,true)),
+			   NONE,false) 
+	  => env' &
+	add_variables_to_env(rest,env') => env'' 
+	------------------
+	add_variables_to_env(VAR(Exp.CREF_IDENT(crn,_),a,b,t,SOME(e),_,d,f,g,h)::rest,env) => env''
+	
+  rule	(* Some of the attributes added to env here does not matter, defaults are used *)
+	DAE.generate_dae_type(t) => t' &
+	Env.extend_frame_v(env,Types.VAR(crn,Types.ATTR(false,SCode.RW,SCode.CONST,Absyn.BIDIR),false,t',Types.UNBOUND),
+			   NONE,false)
+	  => env' &
+	add_variables_to_env(rest,env') => env'' 
+	-------------------------------------------
+	add_variables_to_env(VAR(Exp.CREF_IDENT(crn,_),a,b,t,NONE,_,d,f,g,h)::rest,env) => env''
+
+  rule	Print.print_buf "Warning, skipping a variable qualified:" &
+	Exp.print_component_ref cr &
+	add_variables_to_env(rest,env) => env'
+	------------------
+	add_variables_to_env(VAR(cr as Exp.CREF_QUAL(_,_,_),_,_,_,_,_,_,_,_,_)::rest,env) => env'
+
+  rule	Print.print_buf "Warning, skipping a variable :" &
+	add_variables_to_env(rest,env) => env'
+	------------------
+	add_variables_to_env(_::rest,env) => env'
+
+end
+
+relation update_variables:(Var list, Env.Env) => Var list =
+
+  axiom	update_variables([],_) => []
+
+  rule	update_variables(rest,env) => rest' &
+	Ceval.ceval(env,e,false,NONE,NONE) => (v,_)
+	-----------------------------------
+	update_variables(VAR(cr,a,b,c,SOME(e),_,d,f,g,h)::rest,env)
+	  => (VAR(cr,a,b,c,SOME(e),SOME(v),d,f,g,h)::rest')
+
+  rule	update_variables(rest,env) => rest' &
+	not Ceval.ceval(env,e,false,NONE,NONE) => (_,_) &
+	Print.print_buf "Warning, ceval failed for parameter: " &
+	Exp.print_component_ref cr & Print.print_buf "\n" 
+	-----------------------------------
+	update_variables(VAR(cr,a,b,c,SOME(e),v,d,f,g,h)::rest,env)
+	  => (VAR(cr,a,b,c,SOME(e),v,d,f,g,h)::rest')
+
+  rule	update_variables(rest,env) => rest'
+	-----------------------------------
+	update_variables(VAR(cr,a,b,c,NONE,v,d,f,g,h)::rest,env)
+	  => (VAR(cr,a,b,c,NONE,v,d,f,g,h)::rest')
 end
 
 (* Returns a two list of replacement expressions for variable transformations.
@@ -1876,56 +1995,56 @@ relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 	int_string(indx) => indxs &
 	Util.string_append_list(["y[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,VARIABLE,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,VARIABLE,_,_,_ ,_,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["x[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,STATE,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,STATE,_,_,_, _,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["y[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,DUMMY_DER,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,DUMMY_DER,_,_, _,_,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["y[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,DUMMY_STATE,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,DUMMY_STATE,_,_, _,_,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["y[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,DISCRETE,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,DISCRETE,_,_, _,_,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["p[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,PARAM,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,PARAM,_,_, _,_,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["p[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,STRUCTPARAM,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,STRUCTPARAM,_,_, _,_,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["p[",indxs,"]"]) => newid
 	--------------------
-	alg_variable_replacements(VAR(cr,CONST,_,_,_,_,_,indx)::vs)
+	alg_variable_replacements(VAR(cr,CONST,_,_, _,_,_,_,indx,_)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	print "-alg_variable_replacements failed\n" 
@@ -1973,7 +2092,7 @@ relation get_index: (Exp.ComponentRef, Var list) => int =
 
   rule	Exp.cref_equal(cr1,cr2) => true
 	-------------------------------
-	get_index(cr1,VAR(cr2,_,_,_,_,_,_,indx)::_) => indx
+	get_index(cr1,VAR(cr2,_,_,_,_, _,_,_,indx,_)::_) => indx
 
   rule	get_index(cr1,vs) => indx
 	-------------------------
@@ -1991,15 +2110,25 @@ relation calculate_indexes: (Var list) => Var list =
 	calculate_indexes(_) => fail
 end
 
-relation transform_variables: (Var list ) => (Var list) =
+relation transform_variables: (Var list, Exp.Exp list, Exp.Exp list) => (Var list) =
 
-  axiom transform_variables([]) => []
+  axiom transform_variables([],_,_) => []
 
-  rule	transform_variables(vs) => vs' &
-	transform_variable(i,kind) => cr'
+  rule	transform_variables(vs,s,t) => vs' &
+	transform_variable(i,kind) => cr' &
+	Exp.print_component_ref_str(cr) => name &
+	Exp.replace_exp_list(e,s,t) => (e',_)
 	-------------------
-	transform_variables(VAR(cr,kind,a,b, c,d,e,i)::vs)
-	=> (VAR(cr',kind,a,b,c,d,e,i)::vs')
+	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,f,i,_)::vs,s,t)
+	=> (VAR(cr',kind,a,b,SOME(e'),c,d,f,i,name)::vs')
+
+  rule	transform_variables(vs,s,t) => vs' &
+	transform_variable(i,kind) => cr' &
+	Exp.print_component_ref_str(cr) => name 
+	---------------------------------------
+	transform_variables(VAR(cr,kind,a,b,NONE, c,d,f,i,_)::vs,s,t)
+	=> (VAR(cr',kind,a,b,NONE,c,d,f,i,name)::vs')
+
 end
 
 relation transform_variable: (int, VarKind) => Exp.ComponentRef =
@@ -2047,46 +2176,47 @@ relation calculate_indexes2: (Var list,int,int,int,int,int) => Var list =
   rule	int_add(y,1) => y' &
 	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
 	----------------------------------------
-	calculate_indexes2(VAR(cr,VARIABLE,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,VARIABLE,d,tp,b,dim,start,y)::vars'
+	calculate_indexes2(VAR(cr,VARIABLE,d,tp,b,value,dim,start,_,name)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,VARIABLE,d,tp,b,value,dim,start,y,name)::vars'
 
   rule	int_add(x,1) => x' &
 	calculate_indexes2(vs,x',xd,y,p,dummy) => vars' 
 	----------------------------------------
-	calculate_indexes2(VAR(cr,STATE,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,STATE,d,tp,b,dim,start,x)::vars'
+	calculate_indexes2(VAR(cr,STATE,d,tp,b,value,dim,start,_,name)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,STATE,d,tp,b,value,dim,start,x,name)::vars'
 
  rule	(* Dummy derivatives become algebraic variables *)
 	int_add(y,1) => y' &
 	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
 	----------------------------------------
-	calculate_indexes2(VAR(cr,DUMMY_DER,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,DUMMY_DER,d,tp,b,dim,start,y)::vars'
+	calculate_indexes2(VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,_,name)::vs,x,xd,y,p,dummy)
+ 	  => VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,y,name)::vars'
+
 
   rule	(* Dummy state become algebraic variables *)
 	int_add(y,1) => y' &
 	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
 	----------------------------------------
-	calculate_indexes2(VAR(cr,DUMMY_STATE,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,DUMMY_STATE,d,tp,b,dim,start,y)::vars'
+	calculate_indexes2(VAR(cr,DUMMY_STATE,d,tp,b,value,dim,start,_,name)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,DUMMY_STATE,d,tp,b,value,dim,start,y,name)::vars'
 
   rule	int_add(y,1) => y' &
 	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
 	----------------------------------------
-	calculate_indexes2(VAR(cr,DISCRETE,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,DISCRETE,d,tp,b,dim,start,y)::vars'
+	calculate_indexes2(VAR(cr,DISCRETE,d,tp,b,value,dim,start,_,name)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,DISCRETE,d,tp,b,value,dim,start,y,name)::vars'
 
   rule	int_add(p,1) => p' &
 	calculate_indexes2(vs,x,xd,y,p',dummy) => vars' 
 	----------------------------------------
-	calculate_indexes2(VAR(cr,PARAM,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,PARAM,d,tp,b,dim,start,p)::vars'
+	calculate_indexes2(VAR(cr,PARAM,d,tp,b,value,dim,start,_,name)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,PARAM,d,tp,b,value,dim,start,p,name)::vars'
 
   rule	int_add(p,1) => p' &
 	calculate_indexes2(vs,x,xd,y,p',dummy) => vars' 
 	----------------------------------------
-	calculate_indexes2(VAR(cr,CONST,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,CONST,d,tp,b,dim,start,p)::vars'
+	calculate_indexes2(VAR(cr,CONST,d,tp,b,value,dim,start,_,name)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,CONST,d,tp,b,value,dim,start,p,name)::vars'
 end
 
 relation print_equations: (int list, DAELow) => () =

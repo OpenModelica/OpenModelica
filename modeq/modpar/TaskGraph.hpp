@@ -33,11 +33,15 @@ struct vertex_resultname_t {
   typedef boost::vertex_property_tag kind;
 };
 
+struct vertex_origname_t {
+  typedef boost::vertex_property_tag kind;
+};
+
 struct vertex_tasktype_t {
   typedef boost::vertex_property_tag kind;
 };
 
-enum TaskType {Assignment, TempVar, LinSys, NonLinSys, Begin, End};
+enum TaskType {Assignment=0, TempVar=1, LinSys=2, NonLinSys=3, Begin=4, End=5, Copy=6};
 
 typedef boost::property<boost::vertex_name_t,string,
 	 boost::property<vertex_execcost_t,float,
@@ -45,7 +49,9 @@ typedef boost::property<boost::vertex_name_t,string,
 	   boost::property<boost::vertex_index_t,int,
 	    boost::property<boost::vertex_color_t, boost::default_color_type,
 	     boost::property<vertex_resultname_t, string,
-	      boost::property<vertex_tasktype_t, TaskType>
+	      boost::property<vertex_tasktype_t, TaskType,
+       	       boost::property<vertex_origname_t, string>
+	      >
 	     >
 	    >
            >
@@ -81,6 +87,7 @@ typedef  boost::property_map<TaskGraph,vertex_execcost_t> VertexExecCostMap;
 typedef  boost::property_map<TaskGraph,vertex_unique_id_t> VertexUniqueIDMap;
 typedef  boost::property_map<TaskGraph,boost::vertex_index_t> VertexIndexMap;
 typedef  boost::property_map<TaskGraph,vertex_resultname_t> VertexResultNameMap;
+typedef  boost::property_map<TaskGraph,vertex_origname_t> VertexOrigNameMap;
 typedef  boost::property_map<TaskGraph,vertex_tasktype_t> VertexTaskTypeMap;
 typedef  boost::property_map<TaskGraph,boost::vertex_color_t> VertexColorMap;
 
@@ -112,6 +119,8 @@ VertexUniqueIDMap::type VertexUniqueIDProperty(const TaskGraph* tg);
 VertexExecCostMap::type VertexExecCostProperty(TaskGraph* tg);
   
 VertexIndexMap::type VertexIndexProperty(TaskGraph* tg);
+
+VertexOrigNameMap::type VertexOrigNameProperty(TaskGraph *tg);
 
 VertexResultNameMap::type VertexResultNameProperty(TaskGraph *tg);
 
@@ -155,6 +164,11 @@ string & getVertexName(VertexID task,TaskGraph *tg);
 
 void setResultName(VertexID, string&, TaskGraph *tg);
 string & getResultName(VertexID task, TaskGraph *tg);
+
+// The original name used in the Modelica model, must be 
+// used because var names change to e.g. x[4] and xd[2]
+void setOrigName(VertexID, string&, TaskGraph *tg);
+string & getOrigName(VertexID task, TaskGraph *tg);
 
 // Provide formatstrings for std::string (as for printf)
 string & insert_strings(string &s, vector<string> &v);

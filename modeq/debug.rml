@@ -46,6 +46,7 @@ module Debug:
  relation fcall0: (string, () => ()) => ()
  relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b
  relation bcall: (bool, 'a => (), 'a) => () 
+ relation bcall_2: (bool, ('a,'b) => (), 'a,'b) => () 
  relation notfcall: (string, 'a => (), 'a) => ()
 end
 
@@ -180,6 +181,16 @@ relation bcall: (bool, 'a => (), 'a) => () =
 	bcall (true, func, str)
 
   axiom	bcall (false,_,_)
+
+end
+
+relation bcall_2: (bool, ('a,'b) => (), 'a,'b) => () =
+
+  rule	func(a,b)
+	------------
+	bcall_2 (true, func, a,b)
+
+  axiom	bcall_2 (false,_,_,_)
 
 end
 

@@ -145,4 +145,11 @@ extern "C"
   } 
   RML_END_LABEL  
 
+  RML_BEGIN_LABEL(TaskGraphExt__set_5ftasktype)
+  {
+    errormsg();
+    RML_TAILCALLK(rmlFC);			  
+  } 
+  RML_END_LABEL  
+
 } // extern "C"

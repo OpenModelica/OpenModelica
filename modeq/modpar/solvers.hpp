@@ -14,3 +14,5 @@ void read_input(int argc, char **argv,
 		double *p, int nx,int ny, int np,
 		double *start, double *stop,
 		double *step);
+
+void write_result_txt(char * filename, int nx, int ny, int numpts,double *data);

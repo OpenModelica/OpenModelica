@@ -182,7 +182,6 @@ with "modutil.rml"
 with "derive.rml"
 
 val rconstone = RCONST(1.0)
-val rconstzero = RCONST(0.0)
 
 
 (** relation: cref_to_path
@@ -478,7 +477,8 @@ end
 
 relation is_const_one : Exp => bool =
 
-  rule	e = rconstone
+  rule	int_real(1) => rval &
+	e = RCONST(rval)
 	--------------
 	is_const_one e => true
 
@@ -489,11 +489,12 @@ end
 
 relation is_const_minus_one : Exp => bool =
 
-  rule	real_eq(v,-1.0) => true
+  rule	int_real(-1) => rval &
+	real_eq(v,rval) => true
 	-----------------------
 	is_const_minus_one RCONST(v) => true
 
-  axiom	is_const_minus_one ICONST(1) => true
+  axiom	is_const_minus_one ICONST(-1) => true
   axiom is_const_minus_one (_) => false
 
 end
@@ -501,7 +502,8 @@ end
 
 relation is_const_zero : Exp => bool =
 
-  rule	e = rconstzero
+  rule	int_real(0) => rval &
+	e = RCONST(rval)
 	--------------
 	is_const_zero e => true
 
@@ -512,28 +514,36 @@ end
 
 relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 
-  rule	is_const_zero (e1) => true 
-	---------------------------
-	simplify_binary (_, ADD(ty), e1, e2) => e2
-
-  rule	is_const_zero (e2) => true 
-	---------------------------
-	simplify_binary (_, ADD(ty), e1, e2) => e1
-
   rule	is_const_zero (e1) => true &
-	let e = UNARY(UMINUS(ty), e2)
+	simplify e2 => e2'
 	---------------------------
-	simplify_binary (_, SUB(ty), e1, e2) => e
+	simplify_binary (_, ADD(ty), e1, e2) => e2'
 
-  rule	is_const_zero (e2) => true 
+  rule	is_const_zero (e2) => true &
+	simplify e1 => e1'
 	---------------------------
-	simplify_binary (_, SUB(ty), e1, e2) => e1
+	simplify_binary (_, ADD(ty), e1, e2) => e1'
 
-  rule	is_const_zero (e2) => true 
+  rule	is_const_zero (e1) => true &	
+	let e = UNARY(UMINUS(ty), e2) &
+	simplify e => e'
 	---------------------------
-	simplify_binary (_, SUB(ty), e1, e2) => e1
+	simplify_binary (_, SUB(ty), e1, e2) => e'
 
-  axiom	simplify_binary (_, SUB(ty), e1, UNARY(UMINUS(ty2),e2)) => BINARY(e1,ADD(ty),e2)
+  rule	is_const_zero (e2) => true &
+	simplify e1 => e1'
+	---------------------------
+	simplify_binary (_, SUB(ty), e1, e2) => e1'
+
+  rule	is_const_zero (e2) => true &
+	simplify e1 => e1'
+	---------------------------
+	simplify_binary (_, SUB(ty), e1, e2) => e1'
+
+  rule  (* a-(-b) = a+b *)
+	simplify BINARY(e1, ADD(ty), e2) => e
+	--------------------
+	simplify_binary (_, SUB(ty), e1, UNARY(UMINUS(ty2),e2)) => e
 
   rule	is_const_zero (e1) => true 
 	---------------------------
@@ -543,29 +553,60 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	---------------------------
 	simplify_binary (_, MUL(ty), e1, e2) => e2
 
-  rule	is_const_one (e1) => true 
+  rule	is_const_one (e1) => true &
+	simplify e2 => e2'
 	---------------------------
-	simplify_binary (_, MUL(ty), e1, e2) => e2
+	simplify_binary (_, MUL(ty), e1, e2) => e2'
 
-  rule	is_const_one (e2) => true 
+  rule	is_const_one (e2) => true &
+	simplify e1 => e1'
 	---------------------------
 	simplify_binary (_, MUL(ty), e1, e2) => e1
 
-  rule	is_const_minus_one (e1) => true
+  rule	is_const_minus_one (e1) => true &
+	simplify UNARY(UMINUS(ty),e2) => e
 	---------------------------
-	simplify_binary (_, MUL(ty), e1, e2) => UNARY(UMINUS(ty),e2)
+	simplify_binary (_, MUL(ty), e1, e2) => e
 
-  rule	is_const_minus_one (e2) => true
+  rule	is_const_minus_one (e2) => true &
+	simplify e1 => e1'
 	---------------------------
 	simplify_binary (_, MUL(ty), e1, e2) => UNARY(UMINUS(ty),e1)
 
-  rule	is_const_one (e2) => true 
+  rule	simplify BINARY(e1,MUL(ty),e2) => e
+	---------------------------
+	simplify_binary (_, MUL(ty), UNARY(UMINUS(ty1),e1), UNARY(UMINUS(ty2),e2)) 
+	  => e
+
+  rule	(* e1 * -e2 => -e1 * e2 *)
+	simplify UNARY(UMINUS(ty),e1) => e1' &
+	simplify e2  => e2' 
+	---------------------------
+	simplify_binary (_, MUL(ty), e1, UNARY(UMINUS(ty2),e2)) 
+	  => BINARY(e1',MUL(ty),e2')
+
+  rule	is_const_one (e2) => true &
+	simplify e1 => e1'
 	---------------------------
 	simplify_binary (_, DIV(ty), e1, e2) => e1
 
-  rule	is_const_minus_one (e2) => true 
+  rule	is_const_minus_one (e2) => true &
+	simplify e1 => e1'
 	---------------------------
-	simplify_binary (_, DIV(ty), e1, e2) => UNARY(UMINUS(ty),e1)
+	simplify_binary (_, DIV(ty), e1, e2) => UNARY(UMINUS(ty),e1')
+
+  rule	simplify e1 => e1' &
+	simplify e2 => e2'
+	---------------------------
+	simplify_binary (_, DIV(ty), UNARY(UMINUS(ty1),e1), UNARY(UMINUS(ty2),e2)) 
+	  => BINARY(e1',DIV(ty),e2')
+
+  rule	(* e1 / -e2  => -e1 / e2 *)
+	simplify UNARY(UMINUS(ty),e1) => e1' &
+	simplify e2 => e2'
+	---------------------------
+	simplify_binary (_, DIV(ty), e1, UNARY(UMINUS(ty2),e2)) 
+	  => BINARY(e1',DIV(ty),e2')
 
   axiom	simplify_binary (e, _, _, _) => e
 
@@ -575,12 +616,35 @@ relation simplify_unary : (Exp, Operator, Exp) => Exp =
 
   axiom	simplify_unary (_, UPLUS(ty), e1) => e1
 
-  rule	is_const_zero e1 => true
+  rule	simplify e1 => e1' &
+	is_const_zero e1' => true
 	-----------------------
-	simplify_unary (_, UMINUS(ty), e1) => e1
+	simplify_unary (_, UMINUS(ty), e1) => e1'
+
+  rule	(* -(a-b) => b-a *)
+	simplify BINARY(e2,SUB(ty1),e1) => e' 
+	-----------------------
+	simplify_unary (_, UMINUS(ty), BINARY(e1,SUB(ty1),e2)) => e'
+
+  rule	(* -(a+b) => b-a *)
+	simplify BINARY(UNARY(UMINUS(ty),e1),ADD(ty1),UNARY(UMINUS(ty),e2)) => e'
+	-----------------------
+	simplify_unary (_, UMINUS(ty), BINARY(e1,ADD(ty1),e2)) => e'
+
+  rule	(* -(a/b) => -a/b *)
+	simplify BINARY(UNARY(UMINUS(ty),e1),DIV(ty1),e2) => e'
+	-----------------------
+	simplify_unary (_, UMINUS(ty), BINARY(e1,DIV(ty1),e2)) => e'
+
+  rule	(* -(a*b) => -a*b *)
+	simplify BINARY(UNARY(UMINUS(ty),e1),MUL(ty1),e2) => e'
+	-----------------------
+	simplify_unary (_, UMINUS(ty), BINARY(e1,MUL(ty1),e2)) => e'
 
 	(* Should we check ty1 == ty2? *)
-  axiom	simplify_unary (_, UMINUS(ty1), UNARY(UMINUS(ty2),e1)) => e1
+  rule	simplify e1 => e1'
+	-------------------
+	simplify_unary (_, UMINUS(ty1), UNARY(UMINUS(ty2),e1)) => e1'
 
   axiom	simplify_unary (e, _, _) => e
 
@@ -2146,7 +2210,10 @@ relation solve : (Exp, (* lhs *)
 	solve (e1, e2, e3) => fail
 end
 
-relation solve2 : (Exp, Exp, Exp) => Exp =
+(** relation: solve2
+ ** This relation solves an equation e1 = e2 with respect to the variable
+ ** given as an expression e3 *)
+relation solve2 : ( Exp (*e1*), Exp (*e2*), Exp(*e3*)) => Exp =
 
   rule	let lhs = BINARY(e1, SUB(REAL), e2) &
 	Derive.differentiate_exp (lhs, cr) => lhsder &

@@ -8,7 +8,7 @@
    xn[n+1]=x[n]+f(x[n],y[t],t)*h
 */
 #include "options.h"
-
+#include "solvers.hpp"
 #include <fstream>
 #include <iostream>
 
@@ -39,21 +39,24 @@ void euler ( double *x, double *xd, double *y, double *p, double *res,
     if (pt % npts_per_result == 0 || sim_time+step > stop) { // store result
       for (int i=0; i< nx; i++) {
 	res[j++] = x[i];
+	cerr << "time=" << sim_time<< "  x["<<i<<"]="<<x[i]<< endl;
       }
       for (int i=0; i< nx; i++) {
 	res[j++] = xd[i];
+	cerr << "time=" << sim_time<< "  xd["<<i<<"]="<<xd[i]<< endl;
       }
       for (int i=0; i< ny; i++) {
 	res[j++] = y[i];
       }
       res[j++] = sim_time; //store time last.
-      cerr << "storing result for time " << time << " indx :" << j << endl;
+      cerr << "storing result for time " << sim_time << " indx :" << j << endl;
     } 
     f(x,xd,y,p,nx,ny,np,sim_time); // calculate equations
     for(int i=0; i < nx; i++) {
       x[i]=x[i]+xd[i]*step; // Based on that, calculate state variables.
     }
   }
+  write_result_txt("res.txt",nx,ny,numpoints,res);
 }
 
 
@@ -119,4 +122,36 @@ inline void read_commented_value( ifstream &f, int *res)
   f >> *res; 
   char c[160];
   f.getline(c,160);
+}
+
+
+/* Write the result of a simulation to a text file on a format suitable for reading into Mathematica.
+   The data is stored as 
+   { v1,v2,v3,...,vn} where each v is a vector.
+*/
+
+void write_result_txt(char *filename, int nx, int ny, int numpts,double *data)
+{
+
+  ofstream file(filename);
+  if (!file) { 
+    cerr << "Error, can not write to file " << filename << endl;
+    exit(-1);
+  }
+  file << "{" << endl;
+  int numvars = nx*2+ny+1;
+  for (int i =0; i < nx*2+ny+1; i++) {
+    file << "{";
+    for (int t=0; t < numpts; t++ ) {
+      file << data[numvars*t+i];
+      if (t != numpts-1) file << ", ";
+    }
+    if (i != nx*2+ny) { 
+      file  << "}," << endl; 
+    } else {
+      file << "}" << endl;
+    }
+  }
+  file << "}" << endl;
+  file.close();
 }

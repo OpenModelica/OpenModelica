@@ -424,8 +424,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),impl,st,dim) 
 	  => (Values.ARRAY(arr),st'')
 
-  rule	
-	ceval (env,start,impl,st,dim) => (Values.REAL(start'),st') &
+  rule	ceval (env,start,impl,st,dim) => (Values.REAL(start'),st') &
 	ceval (env,step,impl,st',dim) => (Values.REAL(step'),st'') &
 	ceval (env,stop,impl,st'',dim) => (Values.REAL(stop'),st''') &
 	ceval_range_real(start', step', stop') => arr
@@ -474,18 +473,27 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, Exp.IFEXP(b,e1,e2),impl,st,dim) 
 	  => (v,st'')
 
+  rule	(* asub *)
+	ceval (env,e,impl,st,dim) => (Values.ARRAY(vals),st') &
+	int_sub(indx,1) => indx' &
+	list_nth(vals,indx') => v
+	-----------------------
+	ceval (env, Exp.ASUB(e,indx),impl,st,dim) => (v,st')
+
   rule	Print.print_buf "#-- ceval reduction\n"
 	---------------------------------------
 	ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim)
 	  => fail (* (v,st) *)
 
-  (*  ceval can apparently fail and that is ok, catched by other rules...
-   rule	Debug.fprint("failtrace", "- ceval ") &
+ (*   ceval can apparently fail and that is ok, catched by other rules...*)
+  rule	Debug.fprint("failtrace", "- ceval ") &
 	Debug.fcall("failtrace",Exp.print_exp, e) &
-	Debug.fprint("failtrace", " failed\n") 
+	Debug.fprint("failtrace", " failed\n") & 
+	Debug.fprint("failtrace", " Env:" ) &
+	Debug.fcall("failtrace",Env.print_env, env)
 	-----------------------------------------------------
-	ceval (_,e,_,_,_) => fail
-   *)
+	ceval (env,e,_,_,_) => fail
+
 end
 
 
@@ -1746,9 +1754,9 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 	(* default *)
 
   rule	print "# No constant binding for " &
-	Exp.print_component_ref_str c => str & print str &  print "\n"
+	Exp.print_component_ref_str c => str & print str &  print "\n" 
 	-------------------------------------
-	ceval_cref (_,c) => fail
+	ceval_cref (env,c) => fail
 
   rule	Print.print_buf "# No constant binding for " &
 	Exp.print_component_ref c & Print.print_buf "\n"
