@@ -1,71 +1,66 @@
+CC=gcc
 CXX=g++
-JAVA=java
+AR=ar -r
 
-ANTLRFLAGS = 
-ANTLR_HOME = /home/pelab/pub/pkg/antlr-2.7.1
-ANTLR_CP= $(ANTLR_HOME)/classes/jdk13
+ANTLR_HOME=/home/kaj/src/antlr-2.7.3
 
-ANTLR_INCP = -I$(ANTLR_HOME)/lib/cpp
-ANTLR_LIBP = -L$(ANTLR_HOME)/lib/cpp/gcc-2.95.2/lib
+INCLUDES=-I/usr/local/include/  -I$(ANTLR_HOME)/lib/cpp -I$(MODELICAPARSER)
 
-PARSE_HOME = ..
-PARSE_INCP = -I$(PARSE_HOME)/src
-PARSE_LIBP = -L$(PARSE_HOME)/src
+LIBP=-L$(ANTLR_HOME)/lib/cpp/src
 
-INCP = $(ANTLR_INCP) $(PARSE_INCP)
-LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
-
-CFLAGS = $(INCP) -g -Wall
+CFLAGS =-g -Wall $(INCLUDES) -D DEBUG
 CXXFLAGS = $(CFLAGS)
 
-LIBS = -lantlr
+ANTLRFLAGS=
 
-ANTLR = $(JAVA) -cp $(ANTLR_CP) antlr.Tool 
+LIB = $(LIBP) -lantlr
 
-all : cpp modSimPackTest
+MODELICAPARSER=../../modelica_parser/src
 
-tmp : walker modSimPackTest 
+lexergen= $(MODELICAPARSER)/modelica_lexer.cpp $(MODELICAPARSER)/modelica_lexer.hpp
 
-test : modSimPackTest
+parsergen= flat_modelica_parser.cpp flat_modelica_parser.hpp \
+	   flat_modelica_parserTokenTypes.hpp flat_modelica_parserTokenTypes.txt
 
-modSimPackTest : flat_modelica_lexer.o flat_modelica_parser.o \
-	flat_modelica_tree_parser.o parse_tree_dumper.o
-	$(CXX) $(CXXFLAGS) -o modSimPackTest modSimPackTest.cc $(LIBP) \
-	flat_modelica_lexer.o flat_modelica_parser.o flat_modelica_tree_parser.o \
-	parse_tree_dumper.o $(LIBS) 
+parsersrcs=$(filter %.cpp,$(parsergen))
 
-cpp : lexer parser walker
+parserobjs=$(parsersrcs:.cpp=.o)
 
-lexer:  flat_modelica_lexer.g
-	$(ANTLR) flat_modelica_lexer.g $(ANTLRFLAGS)
+helperobjs = $(MODELICAPARSER)/token_names.o $(MODELICAPARSER)/parse_tree_dumper.o
 
-parser: flat_modelica_parser.g
-	$(ANTLR) flat_modelica_parser.g $(ANTLRFLAGS)
+OBJS +=  $(parserobjs) $(helperobjs)
 
-walker: walker.g
-	$(ANTLR) walker.g $(ANTLRFLAGS)
+all: libflat_modelica_parser.a
+
+lexer: 
+	cd $(MODELICAPARSER); make modelica_lexer; cd ../../flat_modelica_parser2/src
+
+vctarget:  $(parsergen)
+
+libflat_modelica_parser.a: $(OBJS)
+	$(AR) $@ $(OBJS)
 
 
-flat_modelica_parserTokenTypes.txt: 
+$(parsergen): flat_modelica_parser.g 
+	java antlr.Tool $(ANTLRFLAGS) $<
 
-flat_modelica_lexer.o : flat_modelica_lexer.cpp flat_modelica_lexer.hpp
-	$(CXX) $(CXXFLAGS) -c flat_modelica_lexer.cpp
+.c.o:
+	$(CC) $(CFLAGS) -c $<
 
-flat_modelica_parser.o : flat_modelica_parser.cpp flat_modelica_lexer.hpp \
-	flat_modelica_parser.hpp flat_modelica_parserTokenTypes.txt
-	$(CXX) $(CXXFLAGS) -c flat_modelica_parser.cpp
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c $<
 
-flat_modelica_tree_parser.o : flat_modelica_tree_parser.cpp flat_modelica_lexer.hpp \
-	flat_modelica_parser.hpp
-	$(CXX) $(CXXFLAGS) -c flat_modelica_tree_parser.cpp
+test: $(MODELICAPARSER)/modelica_lexer.o libflat_modelica_parser.a test.o
+	$(CXX) -o test test.o libflat_modelica_parser.a $(MODELICAPARSER)/modelica_lexer.o $(LIB)
 
-parse_tree_dumper.o : parse_tree_dumper.cpp parse_tree_dumper.hpp
-	$(CXX) $(CXXFLAGS) -c parse_tree_dumper.cpp
 
+depend: $(DFILES)
 
 clean:
-	-rm -f *.o *~ core *.core absyn_builder.a
-	-rm -f $(walkergen) flat_modelica_parserTokenTypes.txt
+	-rm -f test* *.o *~ core *.core libflat_modelica_parser.a
 
 reallyclean: clean
-	-rm -r *.hpp *.cpp
+	-rm -f $(parsergen)
+
+flat_modelica_parser.o:flat_modelica_parser.cpp flat_modelica_parser.hpp
+

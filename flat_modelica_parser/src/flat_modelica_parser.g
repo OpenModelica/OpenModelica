@@ -1,8 +1,9 @@
 
 header "post_include_hpp" {
-
 #define null 0
-
+#include "MyAST.h"
+#include <string>
+typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
 }
 
 options {
@@ -12,20 +13,34 @@ options {
 class flat_modelica_parser extends Parser;
 
 options {
+    codeGenMakeSwitchThreshold = 3;
+    codeGenBitsetTestThreshold = 4;
 	importVocab = flatmodelica;
-	defaultErrorHandler = false;
+    defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
+    ASTLabelType = "RefMyAST";
+
 }
 
 tokens {
     ALGORITHM_STATEMENT;
 	ARGUMENT_LIST;
+    BEGIN_DEFINITION;
 	CLASS_DEFINITION	;
 	CLASS_MODIFICATION;
+	CODE_EXPRESSION;
+	CODE_MODIFICATION;
+	CODE_ELEMENT;
+	CODE_EQUATION;
+	CODE_INITIALEQUATION;
+	CODE_ALGORITHM;
+	CODE_INITIALALGORITHM;
 	COMMENT;
+    COMPONENT_DEFINITION;
 	DECLARATION	; 
 	DEFINITION ;
+    END_DEFINITION;
 	ENUMERATION_LITERAL;
 	ELEMENT		;
 	ELEMENT_MODIFICATION		;
@@ -33,9 +48,11 @@ tokens {
     EQUATION_STATEMENT;
  	INITIAL_EQUATION;
 	INITIAL_ALGORITHM;
+    IMPORT_DEFINITION;
 	EXPRESSION_LIST;
 	EXTERNAL_FUNCTION_CALL;
     FOR_INDICES ;
+    FOR_ITERATOR ;
 	FUNCTION_CALL		;
 	INITIAL_FUNCTION_CALL		;
 	FUNCTION_ARGUMENTS;
@@ -48,7 +65,7 @@ tokens {
 	UNARY_MINUS	;
 	UNARY_PLUS	;
 	UNQUALIFIED;
-
+    DOT_IDENT;
 }
 
 
@@ -57,29 +74,40 @@ tokens {
  */
 
 
+//Removed final?
 stored_definition :
-			(within_clause SEMICOLON!)?
-			((f:FINAL)? class_definition SEMICOLON!)* 
-			EOF!
-			{
-				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
-				#stored_definition);
-			}
-			;
+        ((FINAL)? class_definition )+
+        {
+            #stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
+            #stored_definition);
+        }
+        
+    ;
 
-within_clause :
-  				WITHIN^ (name_path)?
-			;
 
 /*
  * 2.2.2 Class definition
  */
 
+//This is a new item for flat modelica. It allows IDENTS with dots inside them 
+dot_ident  
+        {
+            std::string text;
+        } :
+        i:IDENT { text.append(i->getText()); }
+        (DOT^ j:IDENT^ 
+            { text.append(".");
+                text.append(j->getText()); }
+        )*
+        {
+
+            #dot_ident = #([DOT_IDENT,text]);
+        }
+        ;
+
 class_definition :
-		(ENCAPSULATED)? 
-		(PARTIAL)?
-		class_type
-		IDENT
+		MODEL
+		dot_ident
 		class_specifier
 		{ 
 			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], 
@@ -87,25 +115,26 @@ class_definition :
 		}
 		;
 
-class_type :
-		( CLASS | MODEL | RECORD | BLOCK | CONNECTOR | TYPE | PACKAGE 
-			| FUNCTION 
-		)
-		;
-
+//End of rule to enable extra "garbage" after the end model-statement. 
 class_specifier :
-		( string_comment composition END! IDENT!
-		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
-		| EQUALS^ enumeration 
+		( string_comment composition END! name_path! SEMICOLON! (.)* EOF!
+		| EQUALS^  base_prefix name_path ( array_subscripts )?  comment
+		| EQUALS^ enumeration
 		)
 		;
 
 base_prefix:
 		type_prefix
 		;
+
+name_list:
+		name_path (COMMA! name_path)*
+		;
+
 enumeration :
 		ENUMERATION^ LPAR! enum_list RPAR! comment 
 		;
+
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
 		;
@@ -127,17 +156,8 @@ composition :
 		|	equation_clause
 		|	algorithm_clause
 		)*
-		( external_clause )?
 		;
 
-external_clause :
-        EXTERNAL^	
-            ( language_specification )? 
-            ( external_function_call )?
-			(SEMICOLON!) ?  
-			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
-			( annotation SEMICOLON! )?
-        ;
 		
 public_element_list :
 		PUBLIC^ element_list
@@ -161,21 +181,17 @@ external_function_call :
 		;
 
 element_list :
-		((element | annotation ) SEMICOLON!)*
+		(element  SEMICOLON!)*
 		;
 
+
 element :
-			ic:import_clause
-		|	ec:extends_clause			 
 		|	(FINAL)?	 
 			(INNER | OUTER)?
 		(	(class_definition | cc:component_clause)
-			|(REPLACEABLE ( class_definition | cc2:component_clause )
-				(constraining_clause comment)?
-			 )
 		)
 		{ 
-			if(#cc != null || #cc2 != null) 
+			if(#cc != null) 
 			{ 
 				#element = #([DECLARATION,"DECLARATION"], #element); 
 			}
@@ -186,44 +202,6 @@ element :
 		}
 		;
 
-import_clause : 
-		IMPORT^ (explicit_import_name | implicit_import_name) comment
-		;
-
-explicit_import_name:
-		IDENT EQUALS^ name_path
-		;
-
-implicit_import_name!
-		{
-			bool has_star = false;
-		}
-		:
-		has_star = np:name_path_star
-		{
-			if (has_star)
-			{
-				#implicit_import_name = #([UNQUALIFIED,"UNQUALIFIED"],#np);
-			}
-			else
-			{
-				#implicit_import_name = #([QUALIFIED,"QUALIFIED"],#np);
-			}
-		};
-/*
- * 2.2.3 Extends
- */
-
-// Note that this is a minor modification of the standard by 
-// allowing the comment.
-extends_clause : 
-		EXTENDS^ name_path ( class_modification )?
-		;
-
-constraining_clause :
-		extends_clause
-		;
-
 /*
  * 2.2.4 Component clause
  */
@@ -231,6 +209,7 @@ constraining_clause :
 component_clause :
 		type_prefix type_specifier (array_subscripts)? component_list
 		;
+
 
 type_prefix :
 		(FLOW)?
@@ -242,6 +221,7 @@ type_prefix :
 		|OUTPUT
 		)?
 		;
+
 
 type_specifier :
 		name_path
@@ -255,17 +235,9 @@ component_declaration :
 		declaration comment
 		;
 
-
 declaration :
-		component_reference  //(modification)?
+		dot_ident (array_subscripts)? (modification)?
 		;
-
-/* Changed from the modelica parser /Kaj
- * 
- * declaration :
- *		IDENT^ (array_subscripts)? (modification)?
- *		;
- */
 
 /*
  * 2.2.5 Modification
@@ -298,25 +270,12 @@ argument ! :
 		{ 
 			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em); 
 		}
-		| er:element_redeclaration 
-		{ 
-			#argument = #([ELEMENT_REDECLARATION,"ELEMENT_REDECLARATION"], #er); 		}
-		)
+        )
 		;
 
 element_modification :
-		( EACH )? ( FINAL )? component_reference modification string_comment
+		( EACH )? ( FINAL )? component_reference ( modification )? string_comment
 	;
-
-element_redeclaration :
-		REDECLARE^ ( EACH )? (FINAL )?
-		(	(class_definition | component_clause1)
-			|
-			( REPLACEABLE ( class_definition | component_clause1 )
-				(constraining_clause)?
-			)
-		)
-		;
 
 component_clause1 :
 		type_prefix type_specifier component_declaration
@@ -342,23 +301,19 @@ equation_clause :
   		;
 
 equation_annotation_list :
-		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL}?
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL }?
 		|
-		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
+		equation SEMICOLON! equation_annotation_list
 		; 
 
 algorithm_clause :
 		ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
-		)*
+		(algorithm SEMICOLON!)*
 		;
 initial_algorithm_clause :
 		{ LA(2)==ALGORITHM}?
 		INITIAL! ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
-		)*
+		(algorithm SEMICOLON!)*
 		{
 	            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #initial_algorithm_clause);
 		}
@@ -368,7 +323,6 @@ equation :
 		(	(simple_expression EQUALS) => equality_equation
 		|	conditional_equation_e
 		|	for_clause_e
-		|	connect_clause
 		|	when_clause_e
 		|   IDENT function_call
 		)
@@ -380,7 +334,6 @@ equation :
 
 algorithm :
 		( assign_clause_a
-		|	multi_assign_clause_a
 		|	conditional_equation_a
 		|	for_clause_a
 		|	while_clause
@@ -393,9 +346,6 @@ algorithm :
 		;
 
 assign_clause_a : component_reference	( ASSIGN^ expression | function_call );
-
-multi_assign_clause_a :
-        LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
 
 equality_equation :
 		simple_expression EQUALS^ expression
@@ -475,18 +425,6 @@ equation_list :
 
 algorithm_list :
 		( algorithm SEMICOLON! )*
-		;
-
-connect_clause :
-		CONNECT^ LPAR! connector_ref COMMA! connector_ref RPAR!
-		;
-
-connector_ref :
-		IDENT^ ( array_subscripts )? ( DOT^ connector_ref_2 )?
-		;
-
-connector_ref_2 :
-		IDENT^ ( array_subscripts )?
 		;
 
 /*
@@ -592,6 +530,7 @@ factor :
 		primary ( POWER^ primary )?
 		;
 
+
 primary :
 		( UNSIGNED_INTEGER
 		| UNSIGNED_REAL
@@ -601,7 +540,7 @@ primary :
 		| component_reference__function_call
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
-		| LBRACE^ expression_list RBRACE!
+		| LBRACE^ for_or_expression_list RBRACE!
 		| END
 		)
     ;
@@ -622,6 +561,7 @@ component_reference__function_call ! :
 			#component_reference__function_call = #([INITIAL_FUNCTION_CALL,"INITIAL_FUNCTION_CALL"],i);
 		}
 	;
+
 
 name_path :
 		{ LA(2)!=DOT }? IDENT |
@@ -664,14 +604,20 @@ for_or_expression_list
 		|
 			(
 				e:expression
-				( COMMA! for_or_expression_list2 
-				| FOR^ for_indices
+				( COMMA! explist:for_or_expression_list2                     
+				| FOR^ forind:for_indices
 				)?
 			)
-			{
-				#for_or_expression_list = #([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
-			}
-
+            {
+                if (#forind != null) {
+                    #for_or_expression_list = 
+                        #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
+                }
+                else {
+                    #for_or_expression_list = 
+                        #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
+                }
+            }
 		)
 		;
 
@@ -716,8 +662,7 @@ subscript :
 
 comment :
 		(
-			//string_comment	 ANNOTATION )=> annotation
-			string_comment (annotation)?
+			string_comment 
 		)
 		{
 			#comment=#([COMMENT,"COMMENT"],#comment);
@@ -725,7 +670,7 @@ comment :
 		;
 
 string_comment :
-		( STRING (PLUS STRING) => ( PLUS^ STRING )* )?
+		( STRING ((PLUS STRING) => ( PLUS^ STRING )+ | ) )?
 		{
             if (#string_comment)
             {
@@ -734,6 +679,3 @@ string_comment :
 		}
 ;
 
-annotation :
-		ANNOTATION^ class_modification
-		;
