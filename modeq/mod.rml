@@ -23,7 +23,7 @@ module Mod:
 
   val empty_mod : Mod
 
-  relation dump : (Mod,string) => ()
+  relation dump : Mod => ()
   relation build : (Absyn.Modification option, bool) => Mod
   relation lookup_modification: (Mod,Absyn.Ident) => Mod
   relation merge : (Mod, Mod) => Mod
@@ -56,7 +56,7 @@ relation dump_final : bool => () =
 
   axiom dump_final false
 
-  rule print "final "
+  rule print " final "
        --------------
        dump_final true
 
@@ -66,11 +66,11 @@ relation dump_subs : SubMod list => () =
 
   axiom dump_subs []
 
-  rule  dump(mod,n)
-	-----------
+  rule  print n & dump mod
+	------------------
 	dump_subs [SUBMOD(n,mod)]
 
-  rule  dump(mod,n) & print ", " &
+  rule  print n & dump mod & print ", " &
 	dump_subs subs
 	--------------
 	dump_subs SUBMOD(n,mod)::subs
@@ -99,22 +99,19 @@ relation dump_ass : Exp.Exp option => () =
 
 end
 	
-relation dump : (Mod,string) => () =
+relation dump : Mod => () =
 
-  rule  print n
-	-------------
-	dump(NOMOD,n)
+  axiom	dump(NOMOD)
 
-  rule  print n & print "(redeclared)"
+  rule  print "(redeclared)"
 	------------------------------
-	dump(REDECL(_,_),n)
-
-  rule  dump_final final &
-	print n &
+	dump REDECL(_,_)
+	
+  rule	dump_final final &
 	dump_subs1 subs &
 	dump_ass ass
 	------------
-	dump(MOD(final, subs, ass),n)
+	dump MOD(final, subs, ass)
 
 end
 
