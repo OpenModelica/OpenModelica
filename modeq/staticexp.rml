@@ -1814,6 +1814,40 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP((Types.T_ENUMERATION(["never", "avoid", "default", "prefer", "always"],[]),NONE),false),
 	      SOME(st))
 
+
+
+(* FIXME: test code: remove *)
+
+  rule	elab_exp(env,aexp,impl,SOME(st)) => (exp1',prop1,SOME(st')) &
+	elab_exp(env,acref,impl,SOME(st')) => (exp2',prop2,SOME(st''))
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("exp_contains",_),
+			      [ aexp, acref],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("exp_contains"),
+		       [exp1', exp2'],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),false),
+	      SOME(st''))
+
+  rule	elab_exp(env,aexp1,impl,SOME(st)) => (exp1',prop1,SOME(st')) &
+	elab_exp(env,aexp2,impl,SOME(st')) => (exp2',prop2,SOME(st'')) &
+	elab_exp(env,acref,impl,SOME(st'')) => (exp3',prop3,SOME(st'''))
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("solve",_),
+			      [ aexp1, aexp2, acref],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("solve"),
+		       [exp1', exp2', exp3'],
+		       false,
+		       true),
+	      prop3,
+	      SOME(st'''))
+
+(* /FIXME: test code: remove *)
+
+
 end
 
 (* This relation elaborates variablenames to Exp.Exp. A variablename can

@@ -1081,6 +1081,24 @@ axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.S
 				    st)
 	  => (v, st')
 
+
+(* FIXME: test code: remove *)
+  rule	Exp.exp_contains (exp1, exp2) => res
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("exp_contains"),
+						  [exp1, exp2], _, _),
+				    st)
+	  => (Values.BOOL(res), st)
+
+  rule	Exp.solve (Exp.RELATION(exp1, Exp.EQUAL(Exp.REAL), exp2), exp3) => res1 &
+	Exp.print_exp_str res1 => res
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("solve"),
+						  [exp1, exp2, exp3], _, _),
+				    st)
+	  => (Values.STRING(res), st)
+(* /FIXME: test code: remove *)
+
 end
 
 
