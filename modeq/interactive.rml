@@ -458,7 +458,16 @@ end
  **)
 
 relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) => 
-	(string, InteractiveSymbolTable) = 			
+	(string, InteractiveSymbolTable) = 
+
+  rule	get_component_modifier_names(class,ident,p) => resstr 
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getComponentModifierNames",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident)],[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
 
   rule	get_parameter_value(class,ident,p) => resstr 
 	--------------------------------------------
@@ -994,6 +1003,53 @@ relation get_parameter_names: (Absyn.ComponentRef, (* class *)
 	get_parameter_names(class,p) => res'
 
 axiom	get_parameter_names(_,_) => "Error"
+end
+
+
+(** relation: get_component_modifier_names
+ ** Return the modifiernames of a component, i.e. Foo f( ) 
+**)
+relation get_component_modifier_names: (Absyn.ComponentRef, (* class *)
+					Absyn.ComponentRef, (* variable name *)
+					Absyn.Program) 
+	=> string =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	Absyn.cref_to_path(ident) => Absyn.IDENT(name) &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	get_components_in_class(cdef) => comps &
+	Util.list_map(comps,get_componentitems_in_element) => compelts &
+	Util.list_flatten(compelts) => compelts' & 
+	Util.list_select_1(compelts',name,componentitem_named) 
+	  => [Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_)] &
+	get_modification_names(mod) => res &
+	Util.string_delimit_list(res,", ") => res' &
+	Util.string_append_list(["{",res',"}"]) => res''
+	------------------------------------------------
+	get_component_modifier_names(class,ident,p) => res''
+
+  axiom	get_component_modifier_names(_,_,_) => "{e}"
+end
+
+relation get_modification_names:(Absyn.ElementArg list) 
+	  => string list  =
+
+  axiom	get_modification_names([]) => []
+
+  rule	get_modification_names(rest) => names
+	---------------
+	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,_),mod,cmt)::rest)
+	  => name::names
+
+  rule	get_modification_names(rest) => names
+	---------------
+	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_QUAL(name,[],cr),mod,cmt)::rest)
+	  => name::names
+
+  rule	get_modification_names(rest) => names
+	---------------
+	get_modification_names(_::rest)
+	  => names
 end
 
 (** relation: get_parameter_value
