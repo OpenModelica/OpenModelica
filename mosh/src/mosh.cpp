@@ -84,19 +84,28 @@ int main(int argc, char* argv[])
       exit (EXIT_FAILURE);
     }
 
-  sleep(3);
 
-  /* Connect to the server. */
-  struct sockaddr_in servername;
-  init_sockaddr (&servername, hostname, port);
-  if (0 > connect (sock,
-                   (struct sockaddr *) &servername,
-                   sizeof (servername)))
+  int tryconnect = 0;
+  bool connected=false;
+  while (!connected && tryconnect < 10 ) {
+    /* Connect to the server. */
+    struct sockaddr_in servername;
+    init_sockaddr (&servername, hostname, port);
+    if (0 > connect (sock,
+		     (struct sockaddr *) &servername,
+		     sizeof (servername)))
     {
-      perror ("connect (client)");
-      exit (EXIT_FAILURE);
+      tryconnect++;
+      if(connected % 3 == 0) {sleep(1); } // Sleep a second every third try...
+      
+    } else {
+      connected=true;
     }
-
+  }
+  if (!connected) {
+    perror("Error connecting to modeq server in interactive mode.\n");
+    exit(1);
+  }
   bool done=false;	
   while (!done) {
     char* line = readline(">>> ");
