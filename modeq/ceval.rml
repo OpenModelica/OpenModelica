@@ -427,6 +427,11 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, Exp.IFEXP(b,e1,e2),impl,st,dim) 
 	  => (v,st'')
 
+  rule	Print.print_buf "#-- ceval reduction\n"
+	---------------------------------------
+	ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim)
+	  => fail (* (v,st) *)
+
 (* ceval can apparently fail and that is ok, catched by other rules...
   rule	Debug.fprint("failtrace", "- ceval ") &
 	Debug.fcall("failtrace",Exp.print_exp, e) &
@@ -1414,20 +1419,36 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding) => Value
 
   rule  Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
 	Types.get_dimension_sizes(tp) => sizelst &
-    ceval_subscript_value(env,subsc,v, sizelst) => res
+	ceval_subscript_value(env,subsc,v, sizelst) => res
 	-----------------------------------------
 	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v))
 	  => res
-
 
   rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
 	ceval_cref_binding (env,_,Types.UNBOUND) => fail
 	
-  rule
-  	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
+
+  rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
+	rfn = "array" &
+	Print.print_buf "#-- ceval_cref_binding Array evaluation\n"
+	---------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true))
+	  => fail
+
+  rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
+	not rfn = "array" &
+	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
 	Types.get_dimension_sizes(tp) => sizelst &
-    ceval (env,exp,false,NONE,NONE) => (v,_) &
+	ceval (env,exp,false,NONE,NONE) => (v,_) &
+	ceval_subscript_value (env,subsc,v,sizelst) => res
+	---------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true))
+	  => res
+
+  rule	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
+	Types.get_dimension_sizes(tp) => sizelst &
+	ceval (env,exp,false,NONE,NONE) => (v,_) &
 	ceval_subscript_value(env,subsc,v,sizelst) => res
 	------------------------
 	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true)) 
@@ -1443,8 +1464,7 @@ end
 relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value, int list) 
 	  => Values.Value =
 
-  rule	
-    ceval(env,exp,false,NONE,SOME(dim)) => (Values.INTEGER(n),_) &
+  rule	ceval(env,exp,false,NONE,SOME(dim)) => (Values.INTEGER(n),_) &
 	int_sub(n,1) => n' &
 	list_nth(lst,n') => subval &
 	ceval_subscript_value(env,subs,subval,dims) => res
