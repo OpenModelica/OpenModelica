@@ -136,12 +136,22 @@ relation lookup_var2: ((SCode.Ident * Env.FrameVar) list,SCode.Ident)
 
 end
 (**)
-relation check_subscripts : (Absyn.ArrayDim, Exp.Subscript list) => () =
+relation check_subscripts : (Absyn.ArrayDim, Exp.Subscript list)
+	  => (Absyn.ArrayDim) =
 
 	(* FIXME: Check range too? Yes! *)
-  axiom check_subscripts(Absyn.NODIM, [])
-  axiom check_subscripts(Absyn.ONEDIM(_), [_])
-  axiom check_subscripts(Absyn.TWODIM(_,_), [_,_])
+  axiom check_subscripts(Absyn.NODIM, []) => Absyn.NODIM
+  axiom check_subscripts(Absyn.ONEDIM(_), [_]) => Absyn.NODIM
+  axiom check_subscripts(Absyn.TWODIM(_,_), [_,_]) => Absyn.NODIM
+
+  axiom check_subscripts(Absyn.ONEDIM(x), []) => Absyn.ONEDIM(x)
+  axiom check_subscripts(Absyn.TWODIM(_,x), [_]) => Absyn.ONEDIM(x)
+
+  axiom check_subscripts(Absyn.TWODIM(x,y), []) => Absyn.TWODIM(x,y)
+
+  rule	print "- check_subscripts failed\n"
+	-----------------------------------
+	check_subscripts(_,_) => fail
 
 end
 (**)
@@ -154,14 +164,14 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
   rule  Types.lookup_component(ty, id)
 	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),ty',eqexp)) &
 	mkbinding eqexp => binding &
-	check_subscripts(ad, ss)
+	check_subscripts(ad, ss) => dim
 	------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
-	  => (Absyn.ATTR(Absyn.NODIM,fl,vt,di),ty',binding)
+	  => (Absyn.ATTR(dim,fl,vt,di),ty',binding)
 
   rule  Types.lookup_component(ty, id)
 	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),ty',_)) &
-	check_subscripts(ad, ss) &
+	check_subscripts(ad, ss) => _ &
 	lookup_in_var(ty', vs) => (attr, ty'',binding)
 	--------------------------------------
 	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty'',binding)
@@ -174,14 +184,14 @@ relation lookup_var_f : ((SCode.Ident * Env.FrameVar) list,
 
   rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
 	lookup_var2(f, id) => Env.FRAMEVAR(n,Absyn.ATTR(ad,f,vt,di),ty,bind) &
-	check_subscripts(ad,ss)
+	check_subscripts(ad,ss) => dim
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
-	  => (Absyn.ATTR(Absyn.NODIM,f,vt,di),ty,bind)
+	  => (Absyn.ATTR(dim,f,vt,di),ty,bind)
 
-  rule  (* print " lookup_var_f 2: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Env.FRAMEVAR(n,Absyn.ATTR(ad,_,_,_),ty,_) &
-	check_subscripts(ad,ss) &
+  rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
+	lookup_var2(f, id) => Env.FRAMEVAR(n,Absyn.ATTR(ad,f,vt,di),ty,_) &
+	check_subscripts(ad,ss) => Absyn.NODIM & (* FIXME: error message *)
 	lookup_in_var(ty, ids) => (attr,ty,binding)
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty,binding)

@@ -422,8 +422,8 @@ relation print_exp: Absyn.Exp => () =
 	----------------------------
 	print_exp(Absyn.IFEXP(c,t,f))
 
-  rule	Absyn.path_string(fcn) => fs &
-	print fs & print "(" & print_list(args,print_exp,",") & print ")"
+  rule	print_component_ref(fcn) &
+ 	print "(" & print_list(args,print_exp,",") & print ")"
 	---------------------------------------------
 	print_exp(Absyn.CALL(fcn, args))
 

@@ -40,7 +40,7 @@ module Types :
   (** - Exported relations *)
   relation same_type : (Type, Type) => ()
   relation lookup_component : (Type, Ident) => Var
-  relation known_type : ClassInf.State => BasicType
+  relation known_type : (ClassInf.State, Absyn.ArrayDim) => BasicType
   relation print_type : BasicType => ()
 
 end
@@ -110,13 +110,25 @@ end
 
 (** relation: known_type *)
 
-relation known_type : ClassInf.State => BasicType =
+relation known_type : (ClassInf.State, Absyn.ArrayDim) => BasicType =
 
-  axiom	known_type ClassInf.TYPE_INTEGER(_) => T_INTEGER
-  axiom	known_type ClassInf.TYPE_REAL(_)    => T_REAL
-  axiom	known_type ClassInf.TYPE_STRING(_)  => T_STRING
-  axiom	known_type ClassInf.TYPE_BOOL(_)    => T_BOOL
-  axiom	known_type _                        => T_OTHER
+  rule	known_type (st, Absyn.NODIM) => t
+	---------------------------------
+	known_type (st, Absyn.ONEDIM(_)) => T_ARRAY(1,t)
+
+  rule	known_type (st, Absyn.NODIM) => t
+	---------------------------------
+	known_type (st, Absyn.TWODIM(_,_)) => T_ARRAY(2,t)
+
+  axiom	known_type (ClassInf.TYPE_INTEGER(_),Absyn.NODIM) => T_INTEGER
+  axiom	known_type (ClassInf.TYPE_REAL(_),Absyn.NODIM)    => T_REAL
+  axiom	known_type (ClassInf.TYPE_STRING(_),Absyn.NODIM)  => T_STRING
+  axiom	known_type (ClassInf.TYPE_BOOL(_),Absyn.NODIM)    => T_BOOL
+  axiom	known_type (_,Absyn.NODIM)                        => T_OTHER
+
+  rule	print "- known_type failed\n"
+	-----------------------------
+	known_type (_,_) => fail
 
 end
 

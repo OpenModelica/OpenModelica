@@ -7,13 +7,14 @@
 
 module DAE:
   
+  with "absyn.rml"
   with "dump.rml"
   with "exp.rml"
   with "explode.rml"
 
   type Ident = string
 
-  datatype VarKind = LOCAL | PARAM | CONST
+  datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
 
   datatype Type = REAL | INT | BOOL | STRING
 
@@ -40,9 +41,13 @@ relation dump_kind =
 	--------------------
 	dump_kind PARAM
 	
+  rule	print "  discrete  "
+	--------------------
+	dump_kind DISCRETE
+
   rule	print "  variable  "
 	--------------------
-	dump_kind LOCAL
+	dump_kind VARIABLE
 
 end
 
@@ -113,8 +118,8 @@ end
 
 relation dump_algorithm : DAEcomp => () =
 
-  rule	print "algorithm\n\n" &
-	Dump.print_list(alg, Dump.print_algorithm, "\n  ") &
+  rule	print "\nalgorithm\n\n" &
+	Dump.print_list(alg, pp_algorithm, "") &
 	print "\n"
 	----------------------------------------------
 	dump_algorithm ALGORITHM(SCode.ALGORITHM(alg))
@@ -158,11 +163,70 @@ end
 
 relation dump: DAEform => () =
 	
-  rule	dump_vars l &
+  rule	print "\nvariables\n\n" &
+	dump_vars l &
 	print "\nequations\n\n" &
 	dump_equations l &
 	dump_algorithms l
 	-----------------
 	dump DAE(l)
+
+end
+
+(** relation: pp_algorithm
+ **
+ ** Prettyprint an algorithm element
+ **)
+
+relation pp_algorithm : Absyn.Algorithm => () =
+
+  rule	pp_alg (alg,2)
+	--------------
+	pp_algorithm alg
+
+end
+
+relation pp_alg : (Absyn.Algorithm, int) => () =
+
+  rule	indent i &
+	Dump.print_component_ref c &
+	print " := " &
+	Dump.print_exp e &
+	print "\n"
+	----------
+	pp_alg (Absyn.ALG_ASSIGN(c,e), i)
+
+  rule	indent i &
+	print "while(" & Dump.print_exp e & print ") loop\n" &
+	int_add(i,2) => i' &
+	pp_alg_list (algs, i') &
+	indent i &
+	print "end while\n"
+        -------------------
+	pp_alg (Absyn.ALG_WHILE(e,algs), i)
+	
+  rule	indent i & print "**ALGORITHM**\n"
+	----------------------------------
+	pp_alg (_,i)
+
+end
+
+relation pp_alg_list : (Absyn.Algorithm list, int) => () =
+
+  axiom	pp_alg_list ([],_)
+
+  rule	pp_alg (alg,i) & pp_alg_list(algs,i)
+	--------------------------------
+	pp_alg_list (alg::algs,i)
+
+end
+
+relation indent : int => () =
+
+  axiom indent 0
+
+  rule	print " " & int_sub(i,1) => i' & indent i'
+	------------------------------------------
+	indent i
 
 end

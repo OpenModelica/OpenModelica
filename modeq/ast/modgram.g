@@ -313,11 +313,12 @@ extends_clause:
  */
 
 component_clause!:
-	<< bool fl=false, pa=false, co=false, in=false, ou=false;
+	<< bool fl=false, di=false, pa=false, co=false, in=false, ou=false;
 	   Attrib a = $[COMPONENTS,"---"]; >>
         /* inline type_prefix for easy access to the flags */
 	{ f:FLOW      << fl = true; >> } 
-	{ p:PARAMETER << pa = true; >>
+	{ d:DISCRETE  << di = true; >>
+	| p:PARAMETER << pa = true; >>
 	| c:CONSTANT  << co = true; >> }
 	{ i:INPUT     << in = true; >>
 	| o:OUTPUT    << ou = true; >> }
@@ -328,6 +329,7 @@ component_clause!:
 						   RML_PRIM_MKBOOL(fl),
 						   pa ? Absyn__PARAM :
 						   co ? Absyn__CONST :
+						   di ? Absyn__DISCRETE :
 						   Absyn__VAR,
 						   in ? Absyn__INPUT :
 						   ou ? Absyn__OUTPUT:
@@ -475,6 +477,7 @@ component_clause1!:
 						   RML_PRIM_MKBOOL(fl),
 						   pa ? Absyn__PARAM :
 						   co ? Absyn__CONST :
+						   di ? Absyn__DISCRETE :
 						   Absyn__VAR,
 						   in ? Absyn__INPUT :
 						   ou ? Absyn__OUTPUT:
@@ -529,7 +532,7 @@ algorithm :
 	( cr:component_reference
 	  ( ASSIGN^ e:expression
 	    << #0->rml = Absyn__ALG_5fASSIGN(#cr->rml, #e->rml); >>
-	  | function_call[#cr->rml] << unimpl("algorithm function_call"); >> )
+	  | function_call << unimpl("algorithm function_call"); >> )
 	| conditional_equation_a
         | for_clause_a
 	| while_clause
@@ -545,6 +548,7 @@ conditional_equation_e :
 	{ ELSE!
 	  el2:equation_list }
 	END! IF!
+	<< unimpl("conditional_equation_e"); >>
 	;
 
 conditional_equation_a :
@@ -555,6 +559,7 @@ conditional_equation_a :
 	{ ELSE!
 	  el2:algorithm_list }
 	END! IF!
+	<< unimpl("conditional_equation_a"); >>
 	;
 
 for_clause_e :
@@ -602,7 +607,7 @@ algorithm_list :
 	;
 
 connect_clause :
-	  CONNECT^ LPAR c1: connector_ref "," c2:connector_ref RPAR
+	  CONNECT^ LPAR! c1:connector_ref ","! c2:connector_ref RPAR!
 	  << #0->rml = Absyn__EQ_5fCONNECT(#c1->rml,#c2->rml); >>
 	;
 
@@ -610,7 +615,8 @@ connector_ref : << void *tail = NULL; >>
 	  i1:IDENT^ { a1:subscripts }
 	  << #i1->rml = mk_scon($i1.u.stringval); >>
 	  { dot:DOT^ i2:IDENT { a2:subscripts }
-	    << tail = Absyn__CREF_5fIDENT(#i2->rml, #a2?#a2->rml:mk_nil()); >>
+	    << tail = Absyn__CREF_5fIDENT(mk_scon($i2.u.stringval),
+					  #a2?#a2->rml:mk_nil()); >>
 	    }
 
 	  << if(tail)
@@ -724,9 +730,14 @@ primary : << bool is_matrix; >>
 	| f:FALS/*E*/        << #f->rml = Absyn__BOOL(RML_FALSE); >>
 	| t:TRU/*E*/         << #t->rml = Absyn__BOOL(RML_TRUE); >>
 /* 	| (name_path_function_arguments)? */
-	| i:component_reference << #0->rml = Absyn__CREF(#i->rml); >>
-	  { fc:function_call[#0->rml] << #0->rml = #fc->rml; >> }
-	| s:STRING           << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
+	| i:component_reference
+	  { fc:function_call }
+	  << if(#fc)
+	       #0->rml = Absyn__CALL(#i->rml,#fc->rml);
+     	     else
+	       #0->rml = Absyn__CREF(#i->rml);
+          >>
+	| s:STRING << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
 	| par:LPAR^
 	  e:expression RPAR!
 	  << #par->rml = #e->rml; >>
@@ -778,9 +789,9 @@ component_reference : << void *tail = NULL;>>
 	       #0->rml = Absyn__CREF_5fIDENT(#i->rml, #a?#a->rml:mk_nil()); >>
 	;
 
-function_call[void *name] :
+function_call :
 	  LPAR^ f:function_arguments RPAR!
-	  << #0->rml = Absyn__CALL(name, sibling_list(#f)); >>
+	  << #0->rml = sibling_list(#f); >>
 	;
 
 /* not in document's grammar */

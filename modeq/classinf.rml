@@ -246,8 +246,12 @@ relation valid : (State, Absyn.Restriction) => () =
   axiom	valid(BLOCK(s),         Absyn.R_BLOCK)
   axiom	valid(HAS_EQUATIONS(s), Absyn.R_BLOCK)
 
-  axiom	valid(CONNECTOR(s),     Absyn.R_CONNECTOR)
-  axiom	valid(IS_NEW(s),        Absyn.R_CONNECTOR)
+  axiom	valid(CONNECTOR(_),     Absyn.R_CONNECTOR)
+  axiom	valid(IS_NEW(_),        Absyn.R_CONNECTOR)
+  axiom valid(TYPE_INTEGER(_),	Absyn.R_CONNECTOR)
+  axiom valid(TYPE_REAL(_),	Absyn.R_CONNECTOR)
+  axiom valid(TYPE_STRING(_),	Absyn.R_CONNECTOR)
+  axiom valid(TYPE_BOOL(_),	Absyn.R_CONNECTOR)
 
   axiom	valid(TYPE(s),          Absyn.R_TYPE)
   axiom	valid(TYPE_INTEGER(s),  Absyn.R_TYPE)

@@ -439,9 +439,13 @@ relation inst_class_decl : (Env.Env, SCode.Mod, Prefix.Prefix,
   rule	print "  adding " & print n & print "\n" &
 	Env.extend_frame_c(env,c) => env' &
 
+	let env'' = env' &
+	let dae' = []
+	(*
 	Prefix.prefix_add(n,[],pre) => pre' &
 	inst_class(env,mod,pre',csets,c) => (dae,csets',ty,st) &
 	add_package(env',n,ty,st,dae) => (env'', dae')
+	*)
 	----------------------------------
 	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,_))
 	  => (env'', dae')
@@ -485,9 +489,13 @@ end
 relation dae_declare2 : (Exp.ComponentRef, Absyn.Restriction, Absyn.VarType)
 	  => DAE.DAEcomp list =
 
-  rule	dae_declare3 (vn, rest, DAE.LOCAL) => dae
+  rule	dae_declare3 (vn, rest, DAE.VARIABLE) => dae
 	-----------------------------------------
 	dae_declare2 (vn, rest, Absyn.VAR) => dae
+
+  rule	dae_declare3 (vn, rest, DAE.DISCRETE) => dae
+	-----------------------------------------
+	dae_declare2 (vn, rest, Absyn.DISCRETE) => dae
 
   rule	dae_declare3 (vn, rest, DAE.PARAM) => dae
 	-----------------------------------------
@@ -546,7 +554,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
 	inst_equation(env,mods,pre,csets, ci_state,
-		      Absyn.EQ_EXPR(Absyn.CALL(Absyn.IDENT("assert"),
+		      Absyn.EQ_EXPR(Absyn.CALL(Absyn.CREF_IDENT("assert",[]),
 					       [e,Absyn.STRING(d)])))
 	  => (dae,env,csets,ci_state')
 
@@ -565,13 +573,9 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([],env,csets,ci_state')
 
   rule	print " equation\n" &
-	StaticExp.elab_exp(env,Absyn.RELATION(e1,Absyn.EQUAL,e2))
-	  => (e, ty1, c1) &
-	print " - equation\n" &
-	Prefix.prefix_exp(env,e,pre) => e' & (* FIXME: remove *)
-	print " -- equation\n" &
+	inst_eq_equation(env,pre,e1,e2) => e' &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
-	------------------------
+	--------------------------------------------------------------
 	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
 	  => ([DAE.EQUATION(e')], env, csets, ci_state')
 
@@ -596,6 +600,17 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	print "- inst_equation failed\n"
 	----------------------------------
 	inst_equation(_,_,_,_,_,_) => fail
+
+end
+
+relation inst_eq_equation : (Env.Env, Prefix, Absyn.Exp, Absyn.Exp)
+	  => Exp.Exp =
+
+  rule	StaticExp.elab_exp(env,Absyn.RELATION(e1,Absyn.EQUAL,e2))
+	  => (e, ty1, c1) &
+	Prefix.prefix_exp(env,e,pre) => e' (* FIXME: remove *)
+	----------------------------------
+	inst_eq_equation (env,pre,e1,e2) => e'
 
 end
 
@@ -698,9 +713,9 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	StaticExp.elab_cref(env, c2) => (Exp.CREF(c2'),t2,con2) &
 	StaticExp.canon_cref(env, c1') => c1'' &
 	StaticExp.canon_cref(env, c2') => c2'' &
-	Lookup.lookup_var(env,c1'')
+	Lookup.lookup_var_local(env,c1'')
 	  => (Absyn.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_),_) &
-	Lookup.lookup_var(env,c2'')
+	Lookup.lookup_var_local(env,c2'')
 	  => (Absyn.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_),_) &
 	check_connect_vars(c1'',ty1,con1,c2'',ty2,con2) &
 	ClassInf.assert_valid(st1,Absyn.R_CONNECTOR) &
@@ -743,13 +758,13 @@ relation connect_components: (Connect.Sets,
 	(* flow type *)
 
   rule	ClassInf.valid(st, Absyn.R_TYPE) &
-	(* Prefix.prefix_cref(pre, c1) => c1' &
-	   Prefix.prefix_cref(pre, c2) => c2' &
-	   print "  connect_components flow: " &
+	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	(* print "  connect_components flow: " &
 	   Dump.dump_component_ref c1' & print " <-> " &
 	   Dump.dump_component_ref c2' &
 	   print "\n" & *)
-	Connect.add_flow(sets, c1, f1, c2, f2) => sets'
+	Connect.add_flow(sets, c1', f1, c2', f2) => sets'
 	-----------------------------------------
 	connect_components(sets, pre, c1, f1, c2, f2, Types.TYPE(st,_), true)
 	  => sets'
@@ -757,26 +772,26 @@ relation connect_components: (Connect.Sets,
 	(* non-flow type *)
 
   rule	ClassInf.valid(st, Absyn.R_TYPE) &
-	(* Prefix.prefix_cref(pre, c1) => c1' &
-	   Prefix.prefix_cref(pre, c2) => c2' &
-	   print "  connect_components non-flow: " &
+	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	(* print "  connect_components non-flow: " &
 	   Dump.dump_component_ref c1' & print " <-> " &
 	   Dump.dump_component_ref c2' &
 	   print "\n" & *)
-	Connect.add_equ(sets, c1, c2) => sets'
+	Connect.add_equ(sets, c1', c2') => sets'
 	-----------------------------------------
 	connect_components(sets, pre, c1, _, c2, _, Types.TYPE(st,_), false)
 	  => sets'
 
 	(* Not a TYPE *)
 
-  rule	(* Prefix.prefix_cref(pre, c1) => c1' &
-	   Prefix.prefix_cref(pre, c2) => c2' &
-	   print "  connect_components 2: " &
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	(* print "  connect_components 2: " &
 	   Dump.dump_component_ref c1' & print " <-> " &
 	   Dump.dump_component_ref c2' &
 	   print "\n" & *)
-	connect_vars(sets,c1,f1,c2,f2, l) => sets'
+	connect_vars(sets,c1',f1,c2',f2, l) => sets'
 	----------------------------------------
 	connect_components(sets,pre,c1,f1,c2,f2,Types.TYPE(_,l),_) => sets'
 	
@@ -877,12 +892,19 @@ relation component_face : Exp.ComponentRef => Connect.Face =
 
 end
 
-(**)
+(** relation: inst_mod_equation
+ **
+ ** This relation adds the equation in the declaration of a variable,
+ ** if such an equation exists.
+ ***)
 
 relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
 
   rule  print "  equation modification: " & print v & SCode.print_mod mod &
 	print "\n" &
+
+	inst_eq_equation(env,pre,
+			 Absyn.CREF(Absyn.CREF_IDENT(v,[])), e) => e'
 
 	(*
 	StaticExp.elab_exp(env,
@@ -892,14 +914,16 @@ relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
 	Prefix.prefix_exp(env,e',pre) => e'' ( * FIXME: remove * )
 	*)
 
+	(*
 	StaticExp.elab_exp (env, e) => (e',t,_) &
-	(* FIXME: Check type *)
+	( * FIXME: Check type * )
 	StaticExp.elab_relop (Absyn.EQUAL, t) => op &
 	let e'' = Exp.RELATION(Exp.CREF(Exp.CREF_IDENT(v,[])), op, e') &
 	Prefix.prefix_exp(env, e'', pre) => e'''
+	*)
 	-----------------------------------------
 	inst_mod_equation(env,pre,v,mod as SCode.MOD(_,_,SOME(e)))
-	  => [DAE.EQUATION(e''')]
+	  => [DAE.EQUATION(e')]
 	  
   axiom inst_mod_equation(_,_,_,SCode.MOD(_,_,NONE)) => []
   axiom inst_mod_equation(_,_,_,SCode.NOMOD) => []

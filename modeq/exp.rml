@@ -250,9 +250,9 @@ end
  **)
 
 relation binop_symbol : BinOp => string =
-  axiom	binop_symbol(INT_ADD) => " +(int) "
-  axiom	binop_symbol(REAL_ADD) => " +(real) "
-  axiom	binop_symbol(STRING_ADD) => " +(string) "
+  axiom	binop_symbol(INT_ADD) => " + "
+  axiom	binop_symbol(REAL_ADD) => " + "
+  axiom	binop_symbol(STRING_ADD) => " + "
   axiom	binop_symbol(INT_SUB) => " - "
   axiom	binop_symbol(REAL_SUB) => " - "
   axiom	binop_symbol(INT_MUL) => "*"

@@ -108,7 +108,7 @@ module Absyn:
 	       | LUNARY of LUnaryOp * Exp
 	       | RELATION of Exp * RelOp * Exp
 	       | IFEXP of Exp * Exp * Exp
-	       | CALL of Path * Exp list		(* Function call *)
+	       | CALL of ComponentRef * Exp list
 	       | ARRAY of Exp list
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp
@@ -164,6 +164,7 @@ module Absyn:
 
 
   relation path_string : Path => string
+  relation cref_to_path : ComponentRef => Path
   relation element_spec_name : ElementSpec => Ident
   relation print_restr : Restriction => ()
 
@@ -184,6 +185,23 @@ relation path_string: Path => string =
 	-------------------------------------
 	path_string(QUALIFIED(s,n)) => ss
 	
+end
+
+(** relation: cref_to_path
+ **
+ ** This relation converts a `ComponentRef' to a `Path', if possible.
+ ** If the component reference contains subscripts, it will silently
+ ** fail.
+ **)
+
+relation cref_to_path : ComponentRef => Path =
+
+  axiom	cref_to_path CREF_IDENT(i,[]) => IDENT(i)
+
+  rule	cref_to_path c => p
+	-------------------
+	cref_to_path CREF_QUAL(i,[],c) => QUALIFIED(i,p)
+
 end
 
 (** relation: element_spec_name

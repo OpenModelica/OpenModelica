@@ -66,9 +66,9 @@ RML_BEGIN_LABEL(Parser__parse)
     int fail;
     parse_failed = 0;
     ANTLR(model_definition(&root/*, &fail*/), stdin);
-    printf("fail = %d\n", fail);
-    if(parse_failed) {
-      fprintf(stderr, "parse erro\n");
+    /* printf("fail = %d\n", fail); */
+    if(parse_failed || !root) {
+      fprintf(stderr, "parse error\n");
       RML_TAILCALLK(rmlFC);
     } else {
       /* fprintf(stderr, "root = %p\n", root); */
