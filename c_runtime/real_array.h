@@ -74,7 +74,12 @@ void simple_index_real_array2(real_array_t* source,
 				       int, int, 
 				       real_array_t* dest);
 
+real* real_array_element_addr(real_array_t* source,int ndims,...);
+
 void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B);
+
+void range_alloc_real_array(real start,real stop,real inc,real_array_t* dest);
+void range_real_array(real start,real stop, real inc,real_array_t* dest);
 
 void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest);
 void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
@@ -84,15 +89,23 @@ void sub_alloc_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 
 
 void mul_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);
+void mul_alloc_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);
+
 void mul_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
+void mul_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
+
 double mul_real_scalar_product(real_array_t* a, real_array_t* b);
+
 void mul_real_matrix_product(real_array_t*a,real_array_t*b,real_array_t*dest);
 void mul_real_matrix_vector(real_array_t* a, real_array_t* b,real_array_t* dest);
 void mul_real_vector_matrix(real_array_t* a, real_array_t* b,real_array_t* dest);
 void mul_alloc_real_matrix_product_smart(real_array_t* a, real_array_t* b, real_array_t* dest);
+
 void div_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
+void div_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
 
 void exp_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
+void exp_alloc_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
 
 void promote_real_array(real_array_t* a, int n,real_array_t* dest);
 void promote_real_scalar(double s,int n,real_array_t* dest);
