@@ -548,7 +548,7 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 	elab_arraydim_type(t) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,t,c))) => dim3
+	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c)))) => dim3
 
   rule	elab_arraydim_decl(env,ad) => dim1 &
 	elab_arraydim_type(t) => dim2 &
@@ -559,7 +559,7 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 	print "    expected array dimensions [" &
 	print_dim dim1 & print "]\n"
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,t,c))) => fail
+	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c)))) => fail
 
   rule	print "- elab_arraydim failed\n"
 	-------------------------------------
@@ -601,8 +601,9 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 	-------------------------------
 	elab_arraydim_decl(env,Absyn.NOSUB::ds) => NONE::l
 
-  rule	StaticExp.elab_exp(env, d) => (e,Types.T_INTEGER,true) &
-	StaticExp.ceval(env,e) => Values.INTEGER(i) &
+  rule	Static.elab_exp(env, d)
+	  => (e,Static.PROP(Types.T_INTEGER,true)) &
+	Static.ceval(env,e) => Values.INTEGER(i) &
 	elab_arraydim_decl(env,ds) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => SOME(i)::l
@@ -822,7 +823,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** FIXME: Handle assertions
 	 **)
 
-  rule	StaticExp.elab_exp(env,e) => (e', t, c) &
+  rule	Static.elab_exp(env,e) => (e', Static.PROP(t, c)) &
 	inst_assertion (env, e', t, c, d, pre) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
@@ -846,11 +847,11 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([],env,csets,ci_state')
 
   rule	print " equation\n" &
-	StaticExp.elab_exp(env,e1) => (e1',t1,c1) &
-	StaticExp.elab_exp(env,e2) => (e2',t2,c2) &
+	Static.elab_exp(env,e1) => (e1',prop1) &
+	Static.elab_exp(env,e2) => (e2',prop2) &
 	Prefix.prefix_exp(env,e1',pre) => e1'' &
 	Prefix.prefix_exp(env,e2',pre) => e2'' &
-	inst_eq_equation(e1'',t1,e2'',t2) => dae &
+	inst_eq_equation(e1'',prop1,e2'',prop2) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
 	inst_equation(env, mods, pre, csets, ci_state, SCode.EQ_EQUALS(e1,e2))
@@ -860,8 +861,8 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **
 	 **)
 
-  rule	StaticExp.elab_exp(env,e) => (e',Types.T_BOOL,true) &
-	StaticExp.ceval(env,e') => Values.BOOL(cond) &
+  rule	Static.elab_exp(env,e) => (e',Static.PROP(Types.T_BOOL,true)) &
+	Static.ceval(env,e') => Values.BOOL(cond) &
 	select(cond,tb,fb) => b &
 	inst_list(env,mod,pre,csets,ci_state,inst_equation, b)
 	  => (dae,env',csets', ci_state')
@@ -875,11 +876,11 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** integers, and then the loop is unrolled.
 	 **)
 
-  rule	StaticExp.elab_exp (env,e)
-	  => (e',Types.T_ARRAY(Types.DIM(_,Types.NODIM),
-			       Types.T_INTEGER),
-	      true) &
-	StaticExp.ceval (env,e') => v &
+  rule	Static.elab_exp (env,e)
+	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_,Types.NODIM),
+					   Types.T_INTEGER),
+			     true)) &
+	Static.ceval (env,e') => v &
 	print "  Unrolling " & print i & print " in " &
  	Dump.print_exp e & print " = " &
  	Values.print_val v & print "\n" &
@@ -901,25 +902,27 @@ end
  ** This relation adds the equation to the DAE.
  **)
 
-relation inst_eq_equation : (Exp.Exp, Types.Type, Exp.Exp, Types.Type)
-	  => DAE.DAEcomp list =
+relation inst_eq_equation : (Exp.Exp, Static.Properties,
+			     Exp.Exp, Static.Properties) => DAE.DAEcomp list =
 
-  rule	StaticExp.operators Absyn.EQUAL => ops &
-	StaticExp.deoverload (ops,[(e1,t1),(e2,t2)],
+  rule	Static.operators Absyn.EQUAL => ops &
+	Static.deoverload (ops,[(e1,t1),(e2,t2)],
 			      Absyn.STRING("#INTERNAL ERROR#")) (*FIXME*)
 	  => (op, [e1',e2'], t)
 	------------------------------------------------------------------
-	inst_eq_equation(e1,t1,e2,t2)
+	inst_eq_equation(e1,Static.PROP(t1,_),
+			 e2,Static.PROP(t2,_))
 	  => [DAE.EQUATION(Exp.RELATION(e1',op,e2'))]
 	
-  rule	(* Types.same_type(t1,t2) => false & *)
+  rule	(* Types.equivtypes(t1,t2) => false & *)
 	print "# Illegal types in equation\n"&
 	print "    lhs: " & Exp.print_exp e1 &
 	print " :: " & Types.print_type t1 & print "\n" &
 	print "    rhs: " & Exp.print_exp e2 &
 	print " :: " & Types.print_type t2 & print "\n"
 	----------
-	inst_eq_equation(e1,t1,e2,t2) => fail
+	inst_eq_equation(e1,Static.PROP(t1,_),
+			 e2,Static.PROP(t2,_)) => fail
 
 end
 
@@ -1027,35 +1030,35 @@ end
 
 relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 
-  rule	StaticExp.elab_cref (env,cr) => (ce, ct, ccon) &
-	StaticExp.elab_exp (env,e) => (e', et, econ) &
-	Algorithm.make_assignment(ce,ct,ccon,e',et,econ) => stmt
+  rule	Static.elab_cref (env,cr) => (ce, cprop) &
+	Static.elab_exp (env,e) => (e', eprop) &
+	Algorithm.make_assignment(ce,cprop,e',eprop) => stmt
 	--------------------------------------------------------
 	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
 
-  rule	StaticExp.elab_exp(env,e) => (e',t,c) &
+  rule	Static.elab_exp(env,e) => (e',prop) &
 	inst_statements(env,tb) => tb' &
 	inst_elseifs(env,eib) => eib' &
 	inst_statements(env,fb) => fb' &
-	Algorithm.make_if(e',t,tb',eib',fb') => stmt
+	Algorithm.make_if(e',prop,tb',eib',fb') => stmt
 	--------------------------------------------
 	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
 
-  rule	StaticExp.elab_exp (env,e) => (e',t,c) &
+  rule	Static.elab_exp (env,e) => (e',prop) &
 	inst_statements(env,sl) => sl' &
-	Algorithm.make_for(i,e',t,c,sl') => stmt
+	Algorithm.make_for(i,e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_FOR(i,e,sl)) => stmt
 
-  rule	StaticExp.elab_exp (env,e) => (e',t,c) &
+  rule	Static.elab_exp (env,e) => (e',prop) &
 	inst_statements(env,sl) => sl' &
-	Algorithm.make_while(e',t,c,sl') => stmt
+	Algorithm.make_while(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHILE(e,sl)) => stmt
 
-  rule	StaticExp.elab_exp (env,e) => (e',t,c) &
+  rule	Static.elab_exp (env,e) => (e',prop) &
 	inst_statements(env,sl) => sl' &
-	Algorithm.make_when(e',t,c,sl') => stmt
+	Algorithm.make_when(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHEN(e,sl)) => stmt
 
@@ -1068,15 +1071,15 @@ end
 (** relation: inst_elseifs *)
 
 relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
-	=> (Exp.Exp * Types.Type * Algorithm.Statement list) list =
+	=> (Exp.Exp * Static.Properties * Algorithm.Statement list) list =
 
   axiom	inst_elseifs (env,[]) => []
 
-  rule	StaticExp.elab_exp(env,e) => (e',t,c) &
+  rule	Static.elab_exp(env,e) => (e',prop) &
 	inst_statements(env,l) => stmts &
 	inst_elseifs(env,tail) => tail'
 	-------------------------------
-	inst_elseifs(env,(e,l)::tail) => ((e',t,stmts)::tail')
+	inst_elseifs(env,(e,l)::tail) => ((e',prop,stmts)::tail')
 
   rule	print "- inst_elseifs failed\n"
 	-------------------------------
@@ -1093,10 +1096,10 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
   rule	print " connecting " &
 	Dump.print_component_ref(c1) & print " with " &
 	Dump.print_component_ref(c2) & print "\n" &
-	StaticExp.elab_cref(env, c1) => (Exp.CREF(c1'),t1,con1) &
-	StaticExp.elab_cref(env, c2) => (Exp.CREF(c2'),t2,con2) &
-	StaticExp.canon_cref(env, c1') => c1'' &
-	StaticExp.canon_cref(env, c2') => c2'' &
+	Static.elab_cref(env, c1) => (Exp.CREF(c1'),prop1) &
+	Static.elab_cref(env, c2) => (Exp.CREF(c2'),prop2) &
+	Static.canon_cref(env, c1') => c1'' &
+	Static.canon_cref(env, c2') => c2'' &
 	Lookup.lookup_var_local(env,c1'')
 	  => (Absyn.ATTR(_,flow1,vt1,_),ty1,_) &
 	Lookup.lookup_var_local(env,c2'')
@@ -1155,11 +1158,10 @@ end
 relation check_connect_types : (Exp.ComponentRef, Types.Type,
 				Absyn.VarType, bool,
 			       	Exp.ComponentRef, Types.Type,
-				Absyn.VarType, bool)
-	  => () =
+				Absyn.VarType, bool) => () =
 
   rule	flow1 = flow2 &
-	Types.same_type(t1, t2) => true
+	Types.equivtypes(t1, t2) => true
 	-------------------------------
 	check_connect_types(_,t1,_,flow1,_,t2,_,flow2)
 
@@ -1371,9 +1373,10 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 
   rule  print "  equation modification: " & Exp.print_component_ref cr &
  	Mod.print_mod mod & print "\n" &
-	inst_eq_equation(Exp.CREF(cr),ty1,e,ty2) => dae
+	inst_eq_equation(Exp.CREF(cr),Static.PROP(ty1,false(*FIXME*)),
+			 e,prop2) => dae
 	-----------------------------------------------
-	inst_mod_equation(cr,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
+	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME((e,prop2))))
 	  => dae
 	  
   axiom inst_mod_equation(_,_,Mod.MOD(_,_,NONE)) => []
@@ -1404,8 +1407,12 @@ end
 
 (** relation: make_binding
  **
- ** FIXME: Should the `CONST' attribute be checked, or should the
- ** analyzed constant property be used?
+ ** This relation looks at the equation part of a modification, and if
+ ** there is a declaration equation builds a `Types.Binding' for it.
+ ** If the component being declared is declared to be constant, the
+ ** relation `make_const_binding' is used.
+ **
+ ** FIXME: Why is the result from make_const_binding ignored?
  **)
 
 relation make_binding : (Env.Env, Absyn.VarAttr, Mod.EqMod option, SCode.Class)
@@ -1415,16 +1422,19 @@ relation make_binding : (Env.Env, Absyn.VarAttr, Mod.EqMod option, SCode.Class)
 
   rule	print "  constant binding: " & Exp.print_exp e & print "\n" &
 	class_type cl => ct &
-	make_const_binding (env,e, t, ct, c) => binding
+	make_const_binding (env,e, prop, ct) => binding
 	----------------------------------------
-	make_binding (env,Absyn.ATTR(_,_,Absyn.CONST,_),SOME((e,t,c)),cl)
-	  => (* binding *) Types.EQBOUND(e,c)
+	make_binding (env,
+		      Absyn.ATTR(_,_,Absyn.CONST,_), (* a constant component *)
+		      SOME((e,prop)),
+		      cl)
+	  => (* binding *) Types.EQBOUND(e,true)
 
 	(* default *)
 
   rule	print "  nonconstant binding: " & Exp.print_exp e & print "\n"
 	-----------------------------------------------------------
-	make_binding (_,_, SOME((e,t,c)),_) => Types.EQBOUND(e,c)
+	make_binding (_,_, SOME((e,Static.PROP(t,c))),_) => Types.EQBOUND(e,c)
 
   rule	print "- make_binding failed\n"
 	-------------------------------
@@ -1434,34 +1444,28 @@ end
 
 (** relation: make_const_binding *)
 
-relation make_const_binding : (Env.Env, Exp.Exp,
-			       Types.Type, Types.Type, bool) => Types.Binding =
+relation make_const_binding : (Env.Env, Exp.Exp, Static.Properties,
+			       Types.Type) => Types.Binding =
 
-	(* Cast the value to real if necessary *)
-  rule	make_const_binding (env,Exp.CAST(Exp.REAL,e),
-			    Types.T_REAL, Types.T_REAL,c) => b
-	------------------------------------------------------
-	make_const_binding (env,e,Types.T_INTEGER,Types.T_REAL,c) => b
-
-  rule	t = ct &
-	StaticExp.ceval (env, e) => v &
+  rule	Static.match_prop(e, prop, Static.PROP(ct,true)) => e' &
+	Static.ceval (env, e') => v &
 	print "  constant expression " & Exp.print_exp e &
  	print " = " & Values.print_val v & print " detected\n"
 	---------------------------------
-	make_const_binding (env,e,t,ct,true) => Types.VALBOUND(v)
+	make_const_binding (env,e,prop as Static.PROP(t,true),ct)
+	  => Types.VALBOUND(v)
 
-  rule	not t = ct &
-	print "# Different types in binding\n"
+  rule	print "# Incompatible types in binding\n"
 	--------------------------------------
-	make_const_binding (env,e,t,ct,true) => fail
+	make_const_binding (env,e,Static.PROP(t,true),ct) => fail
 
   rule	print "# Non-constant equation for constant\n"
 	---------------------------------
-	make_const_binding (env,e,t,ct,false) => fail
+	make_const_binding (env,e,Static.PROP(t,false),ct) => fail
 
   rule	print "- make_const_binding failed\n"
 	-------------------------------
-	make_const_binding(_,_,_,_,_) => fail
+	make_const_binding(_,_,_,_) => fail
 
 end
 
