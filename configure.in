@@ -139,7 +139,7 @@ AC_MSG_CHECKING([for scandir])
 AC_TRY_LINK([
 #include <dirent.h>      
 ], [
-int file_select_directories(struct dirent *entry) {	      
+int file_select_directories(const struct dirent *entry) {	      
  return 0;						      
 }							      
 							      
@@ -147,7 +147,7 @@ int main() {
 char dir[]=".";					      
 int count;						      
 struct dirent **files;				      
-scandir(dir, &files, file_select_directories, NULL);      
+scandir(dir, &files, file_select_directories, 0);      
 return 0;						      
 }							      
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
