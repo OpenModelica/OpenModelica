@@ -1245,6 +1245,13 @@ relation lower_eqn: (DAE.Element) => Equation =
 	-----------------------
 	lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1'',e2'')
 
+  rule	Exp.simplify(e1) => e1' &
+	Exp.simplify(e2) => e2' &
+	Exp.stringify_crefs(e1') => e1'' &
+	Exp.stringify_crefs(e2') => e2'' 
+	-----------------------
+	lower_eqn(DAE.INITIALEQUATION(e1,e2)) => EQUATION(e1'',e2'')
+
 end
 
 (** relation: lower_var
@@ -1941,9 +1948,7 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 	array_length(mt) => neqns &
 	int_gt(nvars,0) => true &
 	int_gt(neqns,0) => true &
-	int_real(nvars) => nrvars &
-	real_mul(nrvars,2.0)=> nrvars' &
-	real_int(nrvars') => memsize & 
+	int_add(nvars,nvars) => memsize &
 	assignments_create(nvars,memsize,0) => assign1 &
 	assignments_create(nvars,memsize,0) => assign2 &
 	
@@ -1983,7 +1988,11 @@ end
 relation assignments_create: (int (*size*), int(*memsize*), int) 
 	  => Assignments =
 
-  rule	array_create(memsize,v) => arr
+  rule	Util.list_fill(0,memsize) => lst &
+	list_array(lst) => arr 
+(*	array_create(memsize,v) => arr &
+	*)
+	
 	------------------------------
 	assignments_create(n,memsize,v) => ASSIGNMENTS(n,memsize,arr)
 end
@@ -2100,7 +2109,6 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	 *)
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae as DAELOW(VARIABLES(_,_,_,nv'),VARIABLES(_,_,_,nkv),eqns,_,_,_),m,mt) &
-	  print "Reduced index by differentiating equation\n" &
 
 	  (* and try again, restarting. This could be optimized later. It should not
 	   be necessary to restart the matching, according to Bernard Bachmann. Instead one 
@@ -2152,7 +2160,7 @@ relation reduce_index_dummy_der: (DAELow,
 	
   rule	DAEEXT.get_marked_eqns() => eqns &
 
-	(*Util.list_map(eqns,int_string) => es &
+(*	Util.list_map(eqns,int_string) => es &
 	Util.string_delimit_list(es,", ") => es' &
 	print "marked equations " & print es' & print "\n" &*)
 	(* Collect the states in the equations that are singular, i.e. composing
@@ -2486,6 +2494,10 @@ relation new_dummy_var:(Exp.ComponentRef,DAELow) => (Exp.ComponentRef,DAELow) =
 	-----------------------------------
 	new_dummy_var(var,DAELOW(vars,kv,eqns,seqns,ie,al)) 
 	  => (dummyvar, DAELOW(vars',kv,eqns,seqns,ie,al))
+
+  rule	print "-new_dummy_var failed\n" 
+	-------------------------
+	new_dummy_var(_,_) => fail
 end
 
 (** relation: create_dummy_var
@@ -2493,12 +2505,6 @@ end
  ** Helper relation to new_dummy_var.
  **)
 relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
-	
-  rule	RTOpts.tornado_cg => true 
-(*       &  string_append("_DUMMYDER_",id) => id' *)
-	-------------------------------
-	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
-	  => Exp.CREF_IDENT(id(* id' *),subs)
 	  
   rule  string_append("der_",id) => id'
 	-------------------------------
@@ -2611,13 +2617,13 @@ relation differentiate_eqns: (DAELow,
 	Derive.differentiate_equation_time(eqn,v) => eqn' &
 	(* update equation row in IncidenceMatrix *)	
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
-	(*print "differentiated equation " &*)
+(*	print "differentiated equation " &*)
 	equation_str eqn => str & 
 (*	print str & print "\n" &*)
 	Debug.fprint("bltdump", str) &
 	Debug.fprint("bltdump", " to ") & 
 	equation_str eqn' => str &
-	(*print " to " & print str &  print "\n" &*)
+(*	print " to " & print str &  print "\n" &*)
 	Debug.fprint("bltdump",str) & 
 	Debug.fprint("bltdump", "\n") &
 	equation_add(eqns,eqn') => eqns' &
@@ -3172,30 +3178,6 @@ relation reachable_nodes: (int,
 	list_delete(reachable',pos) => reachable''
 	----------------------------------------
 	reachable_nodes(eqn,m,mt,a1,a2) => reachable''
-
-  rule	(*print "-reachable_nodes, eqn :" &*)
-	array_length(m) => mlen &
-	int_string(mlen) => mlen_str &
-(* 	print "Incidence_matrix len:" & print mlen_str & print "\n" & *)
-	int_string(eqn) => eqn_str &
-(* 	print eqn_str & *)
-	int_sub(eqn,1) => eqn' &
-	vector_nth(a2,eqn') => var &
-	int_string(var) => var_str &
-	int_abs(var) => var' &
-	int_sub(var',1) => var'' &
-(* 	print "\n var:" & print var_str & print "\n" & *)
-	array_nth(mt,var'') => reachable &
-	Util.list_map(reachable,int_abs) => reachable' &
-(* 	print "reachable':" &  *)
-	Util.list_map(reachable',int_string) => r_strlst &
-	Util.string_delimit_list(r_strlst,", ") => str &
-(* 	print str & print "\n" & *)
-	Util.list_position(eqn,reachable') => pos &
-	int_string(pos) => pos_str 
-(* 	& print "pos :" & print pos_str & print "\n"  *)
-	----------------------------
-	reachable_nodes(eqn,m,mt,_,a2) => fail
 end			  
 
 (** relation: iterate_reachable_nodes

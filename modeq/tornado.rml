@@ -52,34 +52,34 @@ with "simcodegen.rml"
 	     
   rule	DAELow.lower(dae) => dae' &
          generate_blt(dae') => (dae'',blt,ass1,ass2) &
-	     DAELow.calculate_values(dae'') => dae''' & 
-	     Absyn.path_string(class) => cname &
+	 DAELow.calculate_values(dae'') => dae''' & 
+	 Absyn.path_string(class) => cname &
          generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
-	     generate_header(cname) => header &
-	     generate_impl_header(cname) => implheader &
-	     generate_constructor(cname,p,dae''') => constr &
-	     generate_var_defines(dae''') => defines &
-	     generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
+	 generate_header(cname) => header &
+	 generate_impl_header(cname) => implheader &
+	 generate_constructor(cname,p,dae''') => constr &
+	 generate_var_defines(dae''') => defines &
+	 generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
          generate_dll_code(cname) => dll_code &
          TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
          Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
          Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
          Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
-	     string_append(cname,".h") => headerfile &
-	     string_append(cname,".cpp") => implfile &
-	     string_append(cname,"DLL.cpp") => dllfile &
-	     print "Generating: " & print headerfile & print "\n" &
-	     System.write_file(headerfile,header') &
-	     print "Generating: " & print implfile & print "\n" &
-	     System.write_file(implfile,impl) &
-	     print "Generating: " & print dllfile & print "\n" &
-	     System.write_file(dllfile,dll_code) 
-	     -------------------------------------------------------------------
-	     generate_code(p,dae,class) => 
+	 string_append(cname,".h") => headerfile &
+	 string_append(cname,".cpp") => implfile &
+	 string_append(cname,"DLL.cpp") => dllfile &
+	 print "Generating: " & print headerfile & print "\n" &
+	 System.write_file(headerfile,header') &
+	 print "Generating: " & print implfile & print "\n" &
+	 System.write_file(implfile,impl) &
+	 print "Generating: " & print dllfile & print "\n" &
+	 System.write_file(dllfile,dll_code) 
+	 -------------------------------------------------------------------
+	 generate_code(p,dae,class) => 
          
   rule	print "generate_code failed\n" 
-	     ------------------------------
-	     generate_code(_,_,_) => fail
+	 ------------------------------
+	 generate_code(_,_,_) => fail
  end
 
 (** relation generate_dll_code 
@@ -2128,13 +2128,42 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 (** relation: generate_compute_initial
  ** This relation generates the code for the calculation of the initial conditions.
  **)
- relation generate_compute_initial:(string,DAELow.DAELow,Absyn.Program) => string =
+relation generate_compute_initial:(string,
+				   DAELow.DAELow,
+				   Absyn.Program) 
+	  => string =
 
-  rule  Util.string_append_list(["/* initial code here*/\n"]) => cinit
-         -------------------------------------------------------------
-         generate_compute_initial(cname,dae,p) => cinit
+  rule	DAELow.equation_list(ieqnarr) => eqn_lst &
+	list_length(eqn_lst) => lst_len &
+	generate_compute_initial2(vars,eqn_lst) => str_lst &
+	Util.string_delimit_list(str_lst,"\n") => cinit 
+        -------------------------------------------------------------
+        generate_compute_initial(cname,dae as DAELow.DAELOW(vars,knvars,_,_,ieqnarr,_),p) => cinit
          
  end
+
+
+(** relation: generate_compute_initial2
+ ** Helper relation to generate_compute_initial
+**)
+relation generate_compute_initial2:(DAELow.Variables,
+				    DAELow.Equation list) => string list =
+  axiom	generate_compute_initial2(_,[]) => ["\n"]
+	
+  rule	generate_compute_initial2(vars,es) => str_lst &
+	DAELow.get_var(cr,vars) 
+	  => (DAELow.VAR(_,_,_,_,_,_,_,_,_,_,_),_) &
+	Exp.print_component_ref_str(cr) => crstr &
+	SimCodegen.print_exp_cpp_str(e2) => rhs_str &
+	Util.string_append_list([crstr, " = ",rhs_str, ";"]) => str 
+	------------------------------
+	generate_compute_initial2(vars,DAELow.EQUATION(Exp.CREF(cr,_),e2)::es) 
+	  => str::str_lst
+
+  rule	print "Error, intial equation not on form x = <expr> for variable x.\n"
+	---------------------------
+	generate_compute_initial2(_,_) => fail
+end
 
 (** relation: generate_compute_state
  ** This relation generates the code for the calculation of the state variables.
