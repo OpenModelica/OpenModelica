@@ -15,19 +15,19 @@ and not
 This is currently allowed by the grammar, but seems to me to be
 obviously wrong.
 
-  class Foo
-    Int x;
-  end;
+	class Foo
+	  Int x;
+	end;
 
-  class Bar
-    Foo y[10];
-  end;
+	class Bar
+	  Foo y[10];
+	end;
 
-  class Weird
-    Bar z(y[5](redeclare Real x));
-  end;
+	class Weird
+	  Bar z(y[5](redeclare Real x));
+	end;
 
-Solution: Change the production rule for element_modification
+BAD Solution: Change the production rule for element_modification
 
 Previously:
 
@@ -38,6 +38,16 @@ New:
 
       element_modification :
          [ final ] name modification
+
+Trouble: This disallows the following (correct) example:
+
+	class Foo
+	  Real x[100];
+	end Foo;
+
+	class Bar
+	  Foo y(x[17] = 123.0);
+	end Bar;
 
 
 * Double modifiers
