@@ -395,11 +395,21 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("newModel",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(cr)],[])))],_
+		Absyn.FUNCTIONARGS( [Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(cr)] , [])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
+
+
+	rule	delete_class(cr,p) => (resstr, newp)
+	---------------------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("deleteClass",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)], [])))],_
+		),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 	
-	
+
   rule	add_component(name,tp,model,nargs,p) => (newp,resstr)
 	& Print.get_string() => str & string_append(resstr,str) => resstr'
 	-----------------------
@@ -878,6 +888,63 @@ relation is_primitive: (Absyn.ComponentRef, Absyn.Program) => bool =
   axiom	is_primitive(Absyn.CREF_IDENT("String",_),_) => true
   axiom	is_primitive(Absyn.CREF_IDENT("Boolean",_),_) => true
   axiom	is_primitive(_,_) => false
+end
+
+(** relation: delete_class
+ ** This relation takes a component reference and a program. 
+ ** It deletes the class specified by the component reference from the given program.
+ **)
+relation delete_class: (Absyn.ComponentRef, Absyn.Program) => (string, Absyn.Program) =
+
+  rule	(* Class inside another class, inside another class *)
+	Absyn.cref_to_path(class) => cpath &
+	Absyn.strip_last(cpath) => parentcpath &
+	Absyn.strip_last(parentcpath) => parentparentcpath &
+	get_pathed_class_in_program(cpath, p) => cdef &
+	get_pathed_class_in_program(parentcpath, p) => parentcdef &
+  remove_inner_class(cdef, parentcdef) => parentcdef' &
+	update_program(Absyn.PROGRAM([parentcdef'], Absyn.WITHIN(parentparentcpath)), p) => newp
+	----------------------------------------------------------------------------
+	delete_class(class, p as Absyn.PROGRAM(clist, w)) => ("true", newp)
+
+  rule	(* Class inside other class *)
+	Absyn.cref_to_path(class) => cpath &
+	Absyn.strip_last(cpath) => parentcpath &
+	get_pathed_class_in_program(cpath, p) => cdef &
+	get_pathed_class_in_program(parentcpath, p) => parentcdef &
+  remove_inner_class(cdef, parentcdef) => parentcdef' &
+	update_program(Absyn.PROGRAM([parentcdef'], Absyn.TOP), p) => newp
+	----------------------------------------------------------------------------
+	delete_class(class, p as Absyn.PROGRAM(clist, w)) => ("true", newp)
+
+  rule	(* Top level class *)
+	Absyn.cref_to_path(class) => cpath &
+	get_pathed_class_in_program(cpath, p) => cdef &
+	delete_class_from_list(cdef, clist) => clist'
+	---------------------------------------------------------------------------------------
+	delete_class(class, p as Absyn.PROGRAM(clist, w)) => ("true", Absyn.PROGRAM(clist', w))
+
+  axiom	delete_class(_, p) => ("false",p)	
+end
+
+relation delete_class_from_list: (Absyn.Class, Absyn.Class list)
+	 => Absyn.Class list =
+	
+	(* Empty list *)
+  axiom	 delete_class_from_list(_,[]) => []
+
+  rule name = name2
+	-------------------------------------------------------------------------------------------
+  delete_class_from_list(Absyn.CLASS(name,_,_,_,_,_), Absyn.CLASS(name2,_,_,_,_,_)::xs) => xs
+
+  rule not name = name2 &
+  delete_class_from_list(cdef, xs) => res
+	--------------------------------------
+  delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_), (x as Absyn.CLASS(name2,_,_,_,_,_))::xs) => x::res
+
+  rule delete_class_from_list(cdef, xs) => res
+	--------------------------------------
+  delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_), x::xs) => x::res
 end
 
 (** relation: is_type 
@@ -3603,7 +3670,7 @@ end
 (** relation: insert_class_in_program 
  ** This relation inserts the class into the Program at the scope given by the 
  ** within argument. If the class referenced by the within argument is not 
- **  defined, the relation prints an error message and fails.
+ ** defined, the relation prints an error message and fails.
  **)
 	
 relation insert_class_in_program: (Absyn.Class, Absyn.Within, Absyn.Program) => Absyn.Program =
@@ -3656,6 +3723,53 @@ end
 relation get_first_ident_from_path: Absyn.Path => Absyn.Ident =
      axiom get_first_ident_from_path (Absyn.IDENT(name)) => name
      axiom get_first_ident_from_path (Absyn.QUALIFIED(name,path)) => name
+end
+
+(** relation: remove_inner_class 
+ ** This relation takes two class definitions. The first one is the local class that should be
+ ** removed from the second one.
+ **)
+relation remove_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
+
+  rule	get_public_list(parts) => publst &
+	remove_class_in_elementitemlist(publst,c1) => publst2 &
+	replace_public_list(parts,publst2) => parts2 
+	-----------------------------------------------
+	remove_inner_class (c1,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt))) 
+	    => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt))
+
+  rule	Print.print_buf "Failed in remove_inner_class\n"
+	---------------------------------------
+	remove_inner_class (_,_) => fail
+end
+
+(** relation: remove_class_in_elementitemlist
+ ** This relation takes an Element list and a Class and returns a modified element list
+ ** where the class definition of the class is removed.
+  **)
+relation remove_class_in_elementitemlist: (Absyn.ElementItem list, Absyn.Class) => Absyn.ElementItem list =
+	
+  rule	remove_class_in_elementitemlist(xs,c) => res
+	-----------------------------------------
+	remove_class_in_elementitemlist((a1 as Absyn.ANNOTATIONITEM(_))::xs,c) => a1::res
+
+  rule	not name1 = name &
+	remove_class_in_elementitemlist(xs,c) => res
+	------------------------------------------
+	remove_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_)) => e1::res
+	
+  rule name1 = name 
+	-----------------------------
+	remove_class_in_elementitemlist(
+	    (e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, Absyn.CLASS(name1,_,_,_,_,_)),f,g,h)))::xs,
+	    c2 as Absyn.CLASS(name,_,_,_,_,_))
+	    => xs
+	
+  rule	remove_class_in_elementitemlist(xs,c) => res
+	-----------------------------------------
+	remove_class_in_elementitemlist(c1::xs,c) => c1::res
+
+  axiom	 remove_class_in_elementitemlist([],c) => [Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",Absyn.CLASSDEF(false,c),"",0,NONE))]
 end
 
 (** relation: replace_inner_class 
