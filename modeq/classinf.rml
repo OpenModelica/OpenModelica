@@ -1,0 +1,182 @@
+(*
+ *  CLASS -+- TYPE --- RECORD --- CONNECTOR
+ *         |
+ *         +- BLOCK --- FUNCTION
+ *         |
+ *         +- PACKAGE
+ *         |
+ *         +- MODEL
+ *
+ *)
+ 
+
+module ClassInf :
+
+  datatype Restriction = R_CLASS
+		       | R_MODEL
+		       | R_RECORD
+		       | R_BLOCK
+		       | R_CONNECTOR
+		       | R_TYPE
+		       | R_PACKAGE
+		       | R_FUNCTION
+
+  datatype State = UNKNOWN       of string
+		 | MODEL	 of string
+		 | RECORD	 of string
+		 | BLOCK	 of string
+		 | CONNECTOR	 of string
+		 | TYPE		 of string
+		 | PACKAGE	 of string
+		 | FUNCTION	 of string
+		 | HAS_EQUATIONS of string
+
+  datatype Event = FOUND_EQUATION
+
+  relation print_restr : Restriction => ()
+  relation start : (Restriction, string) => State
+  relation trans : (State, Event) => State
+  relation valid : (State, Restriction) => ()
+
+end
+
+relation print_restr : Restriction => () =
+
+  rule	print "CLASS"
+	-------------
+	print_restr R_CLASS
+	
+  rule	print "MODEL"
+	-------------
+	print_restr R_MODEL
+	
+  rule	print "RECORD"
+	--------------
+	print_restr R_RECORD
+	
+  rule	print "BLOCK"
+	-------------
+	print_restr R_BLOCK
+	
+  rule	print "CONNECTOR"
+	-----------------
+	print_restr R_CONNECTOR
+	
+  rule	print "TYPE"
+	------------
+	print_restr R_TYPE
+	
+  rule	print "PACKAGE"
+	---------------
+	print_restr R_PACKAGE
+	
+  rule	print "FUNCTION"
+	----------------
+	print_restr R_FUNCTION
+
+end
+
+relation print_state : State => () =
+
+  rule	print "UNKNOWN " & print s
+	----------------------------
+	print_state UNKNOWN(s)
+
+  rule	print "MODEL " & print s
+	----------------------------
+	print_state MODEL(s)
+
+  rule	print "RECORD " & print s
+	----------------------------
+	print_state RECORD(s)
+
+  rule	print "BLOCK " & print s
+	----------------------------
+	print_state BLOCK(s)
+
+  rule	print "CONNECTOR " & print s
+	----------------------------
+	print_state CONNECTOR(s)
+
+  rule	print "TYPE " & print s
+	----------------------------
+	print_state TYPE(s)
+
+  rule	print "PACKAGE " & print s
+	----------------------------
+	print_state PACKAGE(s)
+
+  rule	print "FUNCTION " & print s
+	----------------------------
+	print_state FUNCTION(s)
+
+  rule	print "HAS_EQUATIONS " & print s
+	----------------------------
+	print_state HAS_EQUATIONS(s)
+
+end
+
+relation start : (Restriction, string) => State =
+
+  axiom	start (R_CLASS, s) => UNKNOWN(s)
+  axiom	start (R_MODEL, s) => MODEL(s)
+  axiom	start (R_RECORD, s) => RECORD(s)
+  axiom	start (R_BLOCK, s) => BLOCK(s)
+  axiom	start (R_CONNECTOR, s) => CONNECTOR(s)
+  axiom	start (R_TYPE, s) => TYPE(s)
+  axiom	start (R_PACKAGE, s) => PACKAGE(s)
+  axiom	start (R_FUNCTION, s) => FUNCTION(s)
+
+end
+
+relation trans : (State, Event) => State =
+
+	(* FOUND_EQUATION *)
+
+  axiom	trans(UNKNOWN(s),        FOUND_EQUATION) => HAS_EQUATIONS(s)
+  axiom	trans(MODEL(s),          FOUND_EQUATION) => MODEL(s)
+  axiom	trans(RECORD(s),         FOUND_EQUATION) => fail
+  axiom	trans(BLOCK(s),          FOUND_EQUATION) => BLOCK(s)
+
+  rule	print "# In class " & print s & print "\n" &
+	print "# Equations not allowed in connectors\n"
+	-----------------------------------------------
+	trans(CONNECTOR(s),      FOUND_EQUATION) => fail
+
+  axiom	trans(TYPE(s),           FOUND_EQUATION) => fail (* CORRECT? *)
+  axiom	trans(PACKAGE(s),        FOUND_EQUATION) => fail
+  axiom	trans(FUNCTION(s),       FOUND_EQUATION) => fail
+  axiom	trans(HAS_EQUATIONS(s),  FOUND_EQUATION) => HAS_EQUATIONS(s)
+
+
+
+end
+
+relation valid : (State, Restriction) => () =
+
+  axiom	valid(UNKNOWN(s), _)
+
+  axiom	valid(HAS_EQUATIONS(s), R_CLASS)
+
+  axiom	valid(MODEL(s),         R_MODEL)
+  axiom	valid(HAS_EQUATIONS(s), R_MODEL)
+
+  axiom	valid(RECORD(s),        R_RECORD)
+
+  axiom	valid(BLOCK(s),         R_BLOCK)
+  axiom	valid(HAS_EQUATIONS(s), R_BLOCK)
+
+  axiom	valid(CONNECTOR(s),     R_CONNECTOR)
+
+  axiom	valid(TYPE(s),          R_TYPE)
+
+  axiom	valid(PACKAGE(s),       R_PACKAGE)
+
+  axiom	valid(FUNCTION(s),      R_FUNCTION)
+
+  rule	print "# Restriction violation: " & print_state st &
+	print " is not a " & print_restr re & print "\n" 
+	-------------------------------------------
+	valid(st,re) => fail
+
+end
