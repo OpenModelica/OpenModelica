@@ -172,7 +172,7 @@ extern "C"
       }
     output << "\n";
     output << "  SetNoIndepVars(1);\n\n";
-    output << "  SetIndepVar(0, new CIndepVar(L\"t\",L\"d\", 0.000000, 0.000000, MSLE_PLUS_INF, L\"t\"));\n\n";
+    output << "  SetIndepVar(0, new CIndepVar(L\"time\",L\"d\", 0.000000, 0.000000, MSLE_PLUS_INF, L\"t\"));\n\n";
 
     int no_of_state_vars = get_no_of_direction_vars_with_type(string(""),
                                                               string("state"),

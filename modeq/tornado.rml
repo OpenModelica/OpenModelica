@@ -365,11 +365,11 @@ end
 relation get_start_value: (DAE.StartValue) => string =
 
   rule  SimCodegen.print_exp_cpp_str(e) => res 
-(*         & print res & print " <- \n"  *)
+        & print res & print " <- \n"  
         --------------------------------------
         get_start_value(SOME(e)) => res
 
-  axiom get_start_value(_) => "+++0.000000"
+  axiom get_start_value(_) => "0.000000"
         
 end
 
@@ -392,11 +392,11 @@ end
           => (string,string,
               string,string,string,string,string) = 
            
-(*     rule  print "-get_direction_for_variable: " & print name    *)
-(*          & print " in class " & print class_name  & print "\n" & *)
-(*          int_eq(1,0) => true *)
-(*          --------------------------------- *)
-(*         get_direction_for_variable(name,class_name,dae) => fail *)
+    rule  print "-get_direction_for_variable: " & print name
+         & print " in class " & print class_name  & print "\n" &
+         int_eq(1,0) => true
+         ---------------------------------
+        get_direction_for_variable(name,class_name,dae) => fail
  
   rule  find_dae_var(name,class_name,dae)
           => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)) &
@@ -680,7 +680,7 @@ end
 				                  parameters,
 				                  "\n",
 				                  "  SetNoIndepVars(1);\n",
-				                  "  SetIndepVar(0, new CIndepVar(L\"t\",L\"s\"));\n",
+				                  "  SetIndepVar(0, new CIndepVar(L\"time\",L\"s\"));\n",
 				                  "\n",
 				                  outputvars,
 				                  "\n",
@@ -1671,7 +1671,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
           list_append(knvars',vars) => all_vars &
           generate_var_defines2(all_vars) => vdefs1list &
           Util.string_append_list(vdefs1list) => vdefs1 &
-          Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n\n",vdefs1,"\n"]) => vdefs
+          Util.string_append_list(["#define time m_IndepVarValues[0]\n\n",vdefs1,"\n"]) => vdefs
           ---------------------
           generate_var_defines(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
                                              DAELow.VARIABLES(_,knvararr,_,_),
