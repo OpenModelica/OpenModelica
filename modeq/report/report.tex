@@ -24,6 +24,7 @@
 \newcommand{\unfinished}{\fixme{\ldots}}
 
 \newtheorem{defth}{Definition}[chapter]
+\newtheorem{example}{Example}[chapter]
 
 \newenvironment{Def}[1]{\begin{defth}[#1]\index{#1|textbf}}{\end{defth}}
 
@@ -437,7 +438,7 @@ be an important contribution to the Modelica design effort.
 
 \subsection{Gaining experience with RML}
 
-The RML language and compiler were developed at IDA by Mikael
+The RML language and compiler were developed at PELAB by Mikael
 Pettersson.  They were new, and only a few language specifications had
 yet been written using it.  More experience with various language
 specifications was desired to gain experience with its advantages and
@@ -455,7 +456,7 @@ specify programming languages, could be applied to it.
 \section{Scope of the thesis}
 \label{sec:scope}
 
-
+\unfinished
 
 \chapter{Development environment}
 \label{cha:devenv}
@@ -482,14 +483,17 @@ generation system.  It generates a parser in C, which is linked with
 the RML object files.  The glue between the languages is a special RML
 relation \code{parse}, which is implemented in C, rather than RML.
 
-The parser only builds an abstract syntax tree, and leaves the rest of
-the transformation logic to the RML code.  Therefore, the parser
-itself is not further described in this report.
+The parser only builds an abstract syntax tree (AST), and leaves the
+rest of the transformation logic to the RML code.  Therefore, the
+parser itself is not further described in this report.
 
 The parser generator in PCCTS is powerful, but it has a few problems,
 and is currently not maintained very actively.  Because of problems
 with error handlers, the translator does not deal very well with
-syntax errors.
+syntax errors.  If an error occurs while parsing, an error message
+will be printed, but the tranlator will try to translate the result of
+parsing anyway.  Since the resulting AST will be severely broken, this
+will fail.
 
 \section{The report}
 \label{sec:report}
@@ -542,7 +546,21 @@ mean.
   appears inside a class definition.
 \end{Def}
 
-\fixme{Example}
+\begin{example}
+  The following class definition contains four elements.  One
+  \code{extends} statement, one class definition, and two class
+  definitions.   Note that the definitions of \code{width} and
+  \code{height} are separate elements, but the grammar only needs one
+  \code{element} rule to match them.
+
+  \begin{boxedverbatim}
+    class C
+      extends OtherClass;
+      type Length = Real(unit = "m");
+      Length width, height;
+    end C;
+  \end{boxedverbatim}
+\end{example}
 
 \begin{Def}{Instantiation}
   The word \term{instantiate} is used in many language
@@ -556,24 +574,41 @@ mean.
   modified by any given modifiers.  This instance is not a run-time
   object that needs an allocated piece of memory, as in many dynamic
   object-oriented languages, but the principle is the same.
-  
+
+  For every component declaration in the class definition (possible
+  inherited from another class definitions using an \code{extends}
+  element), the component declarations class is also instantiated.
+
   \fixme{Call this ``Component instantiation,'' and then define
-  ``type instantiation?''}
+  ``type instantiation?''  But what is that?}
 \end{Def}
 
-\fixme{Example}
+\begin{example}
+  The following Modelica example contains three class definitions.  If
+  the last one (\code{C}) is instantiated, it means that the class
+  \code{B} needs to be instantiated twice to create the subcomponents
+  \code{b1} and \code{b2}.
+
+  \begin{boxedverbatim}
+    class B
+      Real x;
+    end B;
+
+    class C
+      B b1,b2;
+    end C;
+  \end{boxedverbatim}
+\end{example}
 
 \begin{Def}{Component}
   The term \term{Component} refers to an class instance.  Many
-  components are composed of several other components.  \fixme{But it
-  is also used to refer to component declarations in class
-  definitions, right?}
+  components are composed of several other components.
 \end{Def}
 
 \begin{Def}{Immediate Subcomponent}
-  If component $A$ is a structure which is composed from other
+  If component $A$ is a structure which is composed of other
   components, each of these components is an \term{immediate
-  subcomponent} of $A$.
+    subcomponent} of $A$.
 \end{Def}
 
 \begin{Def}{Subcomponent}
@@ -612,8 +647,9 @@ specification.
   as one of the following:
 
   \begin{enumerate}
-  \item A built-in type (\code{RealType}, \code{IntegerType},
-    \code{StringType} or \code{BooleanType}) \fixme{not exactly}
+  \item A built-in type (Real, Integer, String or Boolean).  These
+    correspond to the Modelica predefined classes \code{RealType},
+    \code{IntegerType}, \code{StringType} and \code{BooleanType}.
     
   \item A structured type, containing a set of public components
     $(N,T)$, where $N$ is an identifier and $T$ is a type.  No two
@@ -637,11 +673,14 @@ this specification and the Modelica language definition.
   synonym for a two-dimensional array.
 \end{Def}
 
-\fixme{Should we make a difference between incomplete and complete
-  types?  Important for functions, where input arguments may be of
-  incomplete type.}
+\begin{Def}{Incomplete types}
+  If a type includes an undefined array size, it is an
+  \term{incomplete type}.  If not, it is a \term{complete type}.
+\end{Def}
 
-\unfinished
+All components must have a complete type.  All expressions also have
+complete types.  Incomplete types only appear as the input argument
+types of function. \fixme{But nobody known how this actually works}
 
 \subsection{Type equivalence and subtypes}
 \label{sec:typeq}
@@ -753,7 +792,7 @@ clear, but there are some points worth noting.
 
 The exact meaning of multiplication where one or more of the operands
 are arrays is currently being defined.  Similarly for other
-operations.  The semantics specified here should be regarded as an
+operations.  The semantics specified here should not be regarded as an
 absolute reference to what these operations should mean, but rather as
 a description of how the overloading of operators works.
 
@@ -761,7 +800,14 @@ a description of how the overloading of operators works.
 \subsection{Collapsing arrays}
 \label{sec:collaps}
 
+\fixme{This won't be implemented anyway}
 
+
+
+\section{Functions}
+\label{sec:functions}
+
+\fixme{Who knows how functions work?}
 
 
 \section{Connections}
