@@ -862,15 +862,15 @@ connectsion sets in figure \ref{fig:csetex3}.  Each component in the
 sets are marked with a label indicating whether they were added from
 an inner or an outer connector.
 
-\newcommand{\Outer}[1]{\code{#1}^{\text{outer}}}
-\newcommand{\inner}[1]{\code{#1}^{\text{inner}}}
+\newcommand{\couter}[1]{\code{#1}^{\text{outer}}}
+\newcommand{\cinner}[1]{\code{#1}^{\text{inner}}}
 
 \begin{figure}[htbp]
   \begin{center}
-    $\left\{ \Outer{con.x}, \inner{a1.con1.x}, \inner{a2.con1.x} \right\}$
-    $\left\{ \inner{con.y}, \inner{a1.con1.y}, \inner{a2.con1.y} \right\}$
-    $\left\{ \inner{a1.con2.x}, \inner{a2.con2.x} \right\}$
-    $\left\{ \inner{a1.con2.y}, \inner{a2.con2.y} \right\}$
+    $\left\{ \couter{con.x}, \cinner{a1.con1.x}, \cinner{a2.con1.x} \right\}$
+    $\left\{ \cinner{con.y}, \cinner{a1.con1.y}, \cinner{a2.con1.y} \right\}$
+    $\left\{ \cinner{a1.con2.x}, \cinner{a2.con2.x} \right\}$
+    $\left\{ \cinner{a1.con2.y}, \cinner{a2.con2.y} \right\}$
     \caption{Connection sets from \code{M}}
     \label{fig:csetex2}
   \end{center}
@@ -878,10 +878,10 @@ an inner or an outer connector.
 
 \begin{figure}[htbp]
   \begin{center}
-    $\left\{ \Outer{a1.con1.x}, \Outer{a1.con2.x} \right\}$
-    $\left\{ \Outer{a1.con1.y}, \Outer{a1.con2.y} \right\}$
-    $\left\{ \Outer{a2.con1.x}, \Outer{a2.con2.x} \right\}$
-    $\left\{ \Outer{a2.con1.y}, \Outer{a2.con2.y} \right\}$
+    $\left\{ \couter{a1.con1.x}, \couter{a1.con2.x} \right\}$
+    $\left\{ \couter{a1.con1.y}, \couter{a1.con2.y} \right\}$
+    $\left\{ \couter{a2.con1.x}, \couter{a2.con2.x} \right\}$
+    $\left\{ \couter{a2.con1.y}, \couter{a2.con2.y} \right\}$
     \caption{Connection sets from \code{A}}
     \label{fig:csetex3}
   \end{center}
@@ -1158,6 +1158,96 @@ the previous section.
 \chapter{An example}
 \label{cha:example}
 
+To show how the translation of a Modelica model is done in a more
+visual manner, this chapter gives a small example of a model, and how
+it is translated to a flat representation.
+
+
+\section{The model}
+
+The source model is given in figure \ref{fig:modelsource}.  It is a
+very simple electrical circuit, with a AC voltage source and two
+capacitors.
+
+\begin{figure}[htbp]
+  \input{example-1.tex}
+  \caption{Model source}
+  \label{fig:modelsource}
+\end{figure}
+
+
+\section{First transformation}
+
+Th first this the translator does it to transform the abstract syntax
+tree representing the model into an SCode representation.  This mainly
+effects the \code{Circuit} model definition, giving something that is
+described in figure \ref{fig:ex-scode}, using a pseudo-Modelica
+representation.
+
+\begin{figure}[htbp]
+  \input{example-2.tex}
+  \caption{SCode for \code{Circuit}}
+  \label{fig:ex-scode}
+\end{figure}
+
+
+\section{Flattening}
+
+The main translation step does several things simultaneously.  One
+important part is the flattening of the heirarchical structure.  This
+means that all composite components are split up in subcomponents, and
+all ``atomic'' components \fixme{terminologi} will recieve a new name
+that identifies it with a unique identifer in the global namespace.
+For instance, the voltage variable in the positive connector in the
+capacitor named \code{C2} will get the global name \code{C2.p.v}.
+
+The set of all components is listen with their global name in figure
+\ref{fig:ex-flatname}.
+
+\begin{figure}[htbp]
+  \input{example-3}
+  \caption{Global component names}
+  \label{fig:ex-flatname}
+\end{figure}
+
+
+\section{Connection equations}
+
+Generating equations from the connections in the model is done by
+collecting the connected variables into connection sets (see section
+\ref{sec:connectsets}).  There will be one set for each set of
+connected voltage variables and one set for each set of connected
+current variables, giving the connection sets in figure
+\ref{fig:ex-csets}.  All connectors are inner connectors, which means
+that the connection sets will generate the equations given in figure
+\ref{fig:ex-eq}.
+
+\begin{figure}[htbp]
+  \begin{center}
+    $\left\{ \code{AC.p.v}, \code{C1.p.v}, \code{C2.p.v} \right\}$
+    $\left\{ \code{AC.p.i}, \code{C1.p.i}, \code{C2.p.i} \right\}$
+    $\left\{ \code{AC.n.v}, \code{C1.n.v}, \code{C2.n.v} \right\}$
+    $\left\{ \code{AC.n.i}, \code{C1.n.i}, \code{C2.n.i} \right\}$
+    \caption{Connection sets}
+    \label{fig:ex-csets}
+  \end{center}
+\end{figure}
+
+\section{Flat Modelica}
+
+The output of the translator is shown in figure \ref{fig:ex-eq}, which
+is the Flat Modelica version of the source model.  All the components
+are expanded into their simple components.
+
+\unfinished{}
+
+\begin{figure}[htbp]
+  \begin{center}
+    \input{example-4}
+    \caption{Flat Modelica output}
+    \label{fig:ex-eq}
+  \end{center}
+\end{figure}
 
 \chapter{Design}
 \label{cha:design}
@@ -1393,22 +1483,22 @@ clearer.
 
 %\begin{landscape}
   
-%\input{main.tex}
-%\input{absyn.tex}
-%\input{exp.tex}
-%\input{classinf.tex}
-%\input{types.tex}
-%\input{explode.tex}
-%\input{inst.tex}
-%\input{prefix.tex}
-%\input{mod.tex}
-%\input{env.tex}
-%\input{lookup.tex}
-%\input{builtin.tex}
-%\input{connect.tex}
-%\input{staticexp.tex}
-%\input{dae.tex}
-%\input{dump.tex}
+\input{main.tex}
+\input{absyn.tex}
+\input{exp.tex}
+\input{classinf.tex}
+\input{types.tex}
+\input{explode.tex}
+\input{inst.tex}
+\input{prefix.tex}
+\input{mod.tex}
+\input{env.tex}
+\input{lookup.tex}
+\input{builtin.tex}
+\input{connect.tex}
+\input{staticexp.tex}
+\input{dae.tex}
+\input{dump.tex}
 
 %\end{landscape}
 
