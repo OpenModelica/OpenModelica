@@ -2,6 +2,8 @@
 
 #header <<
 
+#undef STRING_AST
+
 typedef enum { false=0, true=1 } bool;
 /* #include "bool.h" */
 
@@ -16,6 +18,17 @@ typedef struct {
     char *stringval;
   } u;
 } Attrib;
+
+Attrib *copy_attr(Attrib *);
+
+#ifdef STRING_AST
+# define AST_FIELDS char *t;
+# define zzcr_ast(ast,atr,ttype,text) fprintf(stderr,"%s\n",text); ast->t = strdup(text);
+#else
+# define AST_FIELDS Attrib *attr;
+# define zzcr_ast(ast,atr,ttype,text) ast->attr = copy_attr(atr);
+#endif
+
 
 >>
 
@@ -32,6 +45,7 @@ typedef struct {
 #include "dae.h"
 #include "exp.h"
 #include "class.h"
+#include "errno.h"
 
 static int errors=0;
 
@@ -48,8 +62,16 @@ int zzcr_attr(Attrib *attr, int type, char *text)
   attr->type = type;
   switch (type)
   {
-  case UNSIGNED_NUMBER: attr->u.floatval = atof(text); break;
-  case STRING: attr->u.stringval = strdup(text); break;
+  case UNSIGNED_NUMBER:
+    attr->u.floatval = atof(text); break;
+  case IDENT:
+  case STRING:
+    attr->u.stringval = strdup(text); break;
+  case MODEL:
+  case END:
+  case PARTIAL:
+  case zzEOF_TOKEN:
+    break;
   default:
     fprintf(stderr, "zzcr_attr: unknown type: %d\n", type);
   }
@@ -59,11 +81,55 @@ void zzd_attr(Attrib *attr)
 {
   switch(attr->type)
   {
-  case STRING: free(attr->u.stringval); break;
+  case IDENT:
+  case STRING:
+    free(attr->u.stringval); break;
   }
 }
 
-#if 1
+Attrib *copy_attr(Attrib *attr)
+{
+  int l;
+  Attrib *a = (Attrib*)malloc(sizeof(Attrib));
+  if(!a)
+  {
+    fprintf(stderr, "Out of memory!\n");
+    abort();
+  }
+  memcpy(a, attr, sizeof(Attrib));
+  switch(attr->type)
+  {
+  case IDENT:
+    a->u.stringval = strdup(attr->u.stringval); break;
+  case STRING:
+    l = strlen(attr->u.stringval);
+    a->u.stringval = (char *)malloc(l-1);
+    memcpy(a->u.stringval, attr->u.stringval+1, l-2);
+    a->u.stringval[l-2] = 0;
+    break;
+  }
+  return a;
+}
+
+void print_attr(Attrib *attr, FILE *f)
+{
+  switch (attr->type)
+  {
+  case UNSIGNED_NUMBER:
+    fprintf(f, "%d", attr->u.floatval); break;
+  case IDENT:
+  case STRING:
+    fprintf(f, "\"%s\"", attr->u.stringval); break;
+  case MODEL: fprintf(f, "MODEL"); break;
+  case IMPORT: fprintf(f, "IMPORT"); break;
+  case END: fprintf(f, "END"); break;
+  case PARTIAL: fprintf(f, "PARTIAL"); break;
+  case zzEOF_TOKEN:
+  default:
+    fprintf(f, "TOKEN_%d", attr->type); break;
+  }
+}
+
 /* Also see rml-1.3.6/examples/etc/ccall.c */
 
 static void *rml_ast = NULL;
@@ -72,114 +138,42 @@ void Parser_5finit(void)
 {
 }
 
+void print_token(AST *ast)
+{
+#ifdef STRING_AST
+  fprintf(stderr, "%s", ast->t);
+#else
+  print_attr(ast->attr, stderr);
+#endif
+  fprintf(stderr, ",");
+}
+void print_lpar(AST *ast)  { fprintf(stderr, "("); }
+void print_rpar(AST *ast)  { fprintf(stderr, ")"); }
+
 RML_BEGIN_LABEL(Parser__parse)
 {
-  /* ANTLR(model_specification(), stdin);	/* start first rule */
+  AST *root;
+  void *a0, *a0hdr;
+  RML_INSPECTBOX(a0, a0hdr, rmlA0);
+  if( a0hdr == RML_IMMEDIATE(RML_UNBOUNDHDR) )
+    RML_TAILCALLK(rmlFC);
+  if( !freopen(RML_STRINGDATA(a0), "r", stdin) ) {
+    fprintf(stderr, "freopen %s failed: %s\n",
+	    RML_STRINGDATA(a0), strerror(errno));
+    RML_TAILCALLK(rmlFC);
+  }
+  
   rmlA0 = mk_cons(Class__CLASS(Class__CL_5fMODEL,mk_nil()), mk_nil());
-
+  
+  ANTLR(model_specification(&root), stdin);	/* start first rule */
+  fprintf(stderr, "root = %p\n", root);
+  fprintf(stderr, "\n");
+  zzpre_ast(root, &print_token, &print_lpar, &print_rpar);
+  fprintf(stderr, "\n\n");
+  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-#endif
-
-int not_main(int argc, char **argv)
-{
-  
-#ifdef _WIN32
-  __progname = argv[0];
-#endif
-  
-  bool nocode=false;
-  bool dump=false;
-  bool noprint=true;
-  bool verbosemode=false;
-  
-  FILE *source;
-  
-  int c;
-  extern char *optarg;
-  extern int optind;
-  int errflg = 0;
-  
-  /* Initialize RML */
-  Class_5finit();
-  
-  while ((c = getopt(argc, argv, "svxdr:o:D")) != EOF)
-    switch (c) {
-    case 'v':
-      verbosemode=true;
-      break;
-    case 'd':
-      noprint=false;
-      break;
-    case 'D':
-      dump=true;
-      break;
-    case 'o':
-      outputfilename = optarg;
-      fprintf(stderr, "ofile = %s\n", outputfilename);
-      break;
-    case '?':
-      errflg++;
-    }
-  if (errflg) {
-    fprintf(stderr, "usage: modeq [-v] [-x] [-d] [-D] [-r <contextname>] [-o <filename>] file\n");
-    exit (2);
-  }
-  
-  if (verbosemode) {
-    fprintf(stderr, "Input filename: %s\n", ( filename? filename : "stdin" ));
-    fprintf(stderr, "Output filename: %s\n", ( outputfilename? outputfilename : "stdout" ));
-  }
-
-  filename = argv[optind];
-  
-  if (filename) {
-    source=fopen(filename,"r");
-  } else {
-    source=stdin;
-  }
-  
-  /* Declare the parser objects */
-#if 0
-  DLGFileInput in(source);	/* define the input file; in this
-				   case, source */
-  DLGLexer scanner(&in);	/* define an instance of your scanner */
-  ANTLRTokenBuffer pipe(&scanner); /* define a token buffer between
-				      scanner and parser */
-  ANTLRToken tok;		/* create a token to use as a model */
-  ASTBase *root=NULL;
-  AST *rootCopy;
-  ModParse parser(&pipe);	/* create an instance of your parser */
-  
-  scanner.setToken(&tok);	/* tell the scanner what type the
-				   token is */
-  
-  parser.init();		/* initialize your parser */
-  parser.model_specification(&root); /* start first rule */
-  
-  if (filename) fclose(source);
-  
-  rootCopy=(AST *) root;
-#endif
-
-  ANTLR(model_specification(), stdin);	/* start first rule */
-
-  if (!noprint) {
-    printf("Dump of tree:\n");
-/*     rootCopy->preorder(); */
-    printf("\n\n");
-  }
-  if (dump) {
-    printf("Dump of tree:\n");
-/*     rootCopy->dumpTree(); */
-  }
-
-/*   rootCopy->destroy(); */
-  fprintf(stderr,"%d errors.\n",errors);
-  return 0;
-}
-
 
 >>
 
@@ -298,7 +292,7 @@ int not_main(int argc, char **argv)
 model_specification :
 	(
 	  cl:class_definition[false,false] ";"! 
-	  | import_statement
+	| import_statement
 	)+
 	"@"!
 	;
@@ -308,36 +302,20 @@ import_statement :
 	;
 
 class_definition[bool is_virtual,bool is_final] :
-	<< bool is_ext=false,is_external=false,is_fun=false, is_type=false,is_partial=false; char *classType; >>
-	{ PARTIAL! << is_partial=true; >> } 
-        ( CLASS_! << classType="Class"; >>
-	| MODEL! << classType="Model"; >>
-	| RECORD! << classType="RecordType"; >>
-	| BLOCK! << classType="BlockClass"; >>
-	| CONNECTOR! << classType="Connector"; >>
-	| TYPE! << classType="Type"; is_type=true; >>
-	| PACKAGE! << classType="Package"; >>
-	| { EXTERNAL! << is_external=true; >> } FUNCTION! << is_fun=true; >> )
-	id:IDENT^
+	{ PARTIAL } 
+        ( CLASS_^
+	| MODEL^
+	| RECORD^
+	| BLOCK^
+	| CONNECTOR^
+	| TYPE^
+	| PACKAGE^
+	| { EXTERNAL } FUNCTION^ )
+	id:IDENT
 	comment
 	( composition END! { IDENT! } |
-	  "="! << is_ext=true; >> 
-	  IDENT { array_decl } { class_specialization } 	  
+	  "=" IDENT { array_decl } { class_specialization } 	  
 	)
-	<< if (is_ext) {
-	     /* #id->ni.type=ET_EXTCLASS; */
-	   } else if (is_fun) {
-	     /* #id->ni.type=ET_FUNCTION; */
-	   } else {
-	     /* #id->ni.type=CLASSDEF; */
-	   }
-          /* #id->classType=classType; */
-/*           #id->classType="Class"; */
-/* 	  if (is_virtual)  #id->ni.properties |= CLASS_VIRTUAL; */
-/* 	  if (is_final)    #id->ni.properties |= IS_FINAL; */
-/* 	  if (is_partial)  #id->ni.properties |= CLASS_PARTIAL; */
-/* 	  if (is_external) #id->ni.properties |= FUNCTION_EXTERNAL; */
-	>>
 	;
 
 composition :
