@@ -9,6 +9,9 @@
 # DLG scanner
 # ANTLR-defined token types
 #
+
+RMLINCLUDE = /home/pelab/pub/pkg/rml/rml-1.9.0/sol2-sparc/include/plain
+
 TOKENS = tokens.h
 #
 # The following filenames must be consistent with ANTLR/DLG flags
@@ -21,7 +24,7 @@ BIN = $(PCCTS)/bin
 ANTLR = $(BIN)/antlr
 DLG = $(BIN)/dlg
 #CFLAGS = -ggdb -I. -I$(ANTLR_H) #does not work in linux
-CFLAGS = -g -I. -I.. -I$(ANTLR_H)
+CFLAGS = -g -I. -I.. -I$(ANTLR_H) -I$(RMLINCLUDE)
 #AFLAGS = -CC -gt 
 AFLAGS = -gt -gl -gh
 #DFLAGS = -C2 -CC -cs
@@ -48,10 +51,10 @@ libast.a : $(OBJ)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 modgram.o: modgram.c attrib.h parser.h modAST.h tokens.h \
- ../rml.h ../dae.h ../exp.h ../class.h mode.h
+	$(RMLINCLUDE)/rml.h ../dae.h ../exp.h mode.h
 scanner.o: scanner.c attrib.h parser.h modAST.h
 err.o: err.c attrib.h parser.h modAST.h tokens.h
-yacclib.o: yacclib.c ../rml.h yacclib.h
+yacclib.o: yacclib.c $(RMLINCLUDE)/rml.h yacclib.h
 attrib.o: attrib.c stdpccts.h attrib.h parser.h modAST.h tokens.h mode.h
 
 $(SCAN).o : $(SCAN).c $(TOKENS)
