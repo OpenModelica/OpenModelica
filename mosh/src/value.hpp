@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #ifndef VALUE_HPP_
 #define VALUE_HPP_
 

@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #include "modelica_array.hpp"
 #include "numerical_array.hpp"
 

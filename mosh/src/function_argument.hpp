@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #ifndef FUNCTION_ARGUMENT_HPP_
 #define FUNCTION_ARGUMENT_HPP_
 

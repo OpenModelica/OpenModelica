@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #include "modelica_lexer.hpp"
 #include "modelica_expression_parser.hpp"
 #include "modelica_tree_parser.hpp"
@@ -33,8 +37,8 @@ int main(int argc, char* argv[])
     if (argc == 1) // Interactiv mode
       {
 	
-	cout << "OpenModelica 0.1" << endl;
-	cout << "Copyright 2002, PELAB, Linkoping University" << endl;
+	std::cout << "Open Source Modelica 0.1" << endl;
+	std::cout << "Copyright 2002, PELAB, Linkoping University" << endl;
 
 	bool done = false;
 	while (!done)

@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #ifndef MODELICA_ARRAY_HPP_
 #define MODELICA_ARRAY_HPP_
 

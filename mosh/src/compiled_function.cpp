@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #include "compiled_function.hpp"
 #include <stdio.h>
 #include <fstream>

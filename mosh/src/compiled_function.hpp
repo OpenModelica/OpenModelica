@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #ifndef COMPILED_FUNCTION_HPP_
 #define COMPILED_FUNCTION_HPP_
 

@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #ifndef MODELICA_RUNTIME_ERROR_
 #define MODELICA_RUNTIME_ERROR_
 

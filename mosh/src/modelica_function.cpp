@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #include "modelica_function.hpp"
 
 #include "value.hpp"

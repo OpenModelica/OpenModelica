@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #include "symboltable.hpp"
 
 #include "builtin_function.hpp"

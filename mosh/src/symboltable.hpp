@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #ifndef SYMBOLTABLE_HPP_
 #define SYMBOLTABLE_HPP_
 

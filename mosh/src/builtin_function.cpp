@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #include "builtin_function.hpp"
 
 #include "runtime/modelica_runtime_error.hpp"

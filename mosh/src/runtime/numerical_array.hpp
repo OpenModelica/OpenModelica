@@ -1,3 +1,7 @@
+//
+// Copyright PELAB, Linkoping University
+//
+
 #ifndef NUMERICAL_ARRAY_
 #define NUMERICAL_ARRAY_
 
