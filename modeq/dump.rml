@@ -807,11 +807,12 @@ relation print_elementattr: Absyn.ElementAttributes => () =
 	select_string(fl,"FLOW,","") => fs &
 	variability_symbol(var) => vs &
 	direction_symbol(dir) => ds &
-	let sl = [fs,vs,ds] &
-	print_list_debug("print_elementattr",sl, print, ",") &
+	field_symbol(fld) => flds &
+	let sl = [fs,vs,ds,flds] &
+	print_list_debug("print_elementattr",sl, Print.print_buf, ",") &
 	Print.print_buf ")"
 	-----------------------------------
-	print_elementattr(Absyn.ATTR(fl,var,dir,adim))
+	print_elementattr(Absyn.ATTR(fl,var,dir,adim,fld))
 
   rule	Print.print_buf " ##ERROR## print_elementattr"
 	-------------------
@@ -825,12 +826,12 @@ relation unparse_elementattr_str: Absyn.ElementAttributes => string =
 	select_string(fl,"flow ","") => fs &
 	unparse_variability_symbol_str(var) => vs &
 	unparse_direction_symbol_str(dir) => ds &
-	string_append(fs,vs) => s1 &
-	string_append(s1,ds) => str 
-	-----------------------------------
-	unparse_elementattr_str(Absyn.ATTR(fl,var,dir,adim)) => str
+	unparse_field_symbol_str(fld) => flds &
+	Util.string_append_list([fs,vs,ds,flds]) => str
+	------------------------------------------
+	unparse_elementattr_str(Absyn.ATTR(fl,var,dir,adim,fld)) => str
 
-  rule	Print.print_buf " ##ERROR## print_elementattr"
+  rule	Print.print_buf " ##ERROR## unparse_elementattr_str"
 	-------------------
 	unparse_elementattr_str(_) => ""
 
@@ -840,7 +841,7 @@ relation unparse_arraydim_in_attr: Absyn.ElementAttributes => string =
 
   rule	print_arraydim_str(adim) => str
 	-----------------------------------
-	unparse_arraydim_in_attr(Absyn.ATTR(_,_,_,adim)) => str
+	unparse_arraydim_in_attr(Absyn.ATTR(_,_,_,adim,_)) => str
   axiom	unparse_arraydim_in_attr(_) => ""
 end
 
@@ -862,6 +863,13 @@ relation direction_symbol: Absyn.Direction => string =
 
 end
 
+relation field_symbol: Absyn.Field => string =
+
+  axiom field_symbol(Absyn.FIELD) => "FIELD"
+  axiom	field_symbol(Absyn.NON_FIELD) => ""
+
+end
+
 relation unparse_variability_symbol_str: Absyn.Variability => string =
 
   axiom unparse_variability_symbol_str(Absyn.VAR) => ""
@@ -876,6 +884,13 @@ relation unparse_direction_symbol_str: Absyn.Direction => string =
   axiom unparse_direction_symbol_str(Absyn.BIDIR) => ""
   axiom	unparse_direction_symbol_str(Absyn.INPUT) => "input "
   axiom	unparse_direction_symbol_str(Absyn.OUTPUT) => "output "
+
+end
+
+relation unparse_field_symbol_str: Absyn.Field => string =
+
+  axiom unparse_field_symbol_str(Absyn.FIELD) => "field "
+  axiom	unparse_field_symbol_str(Absyn.NON_FIELD) => " "
 
 end
 
