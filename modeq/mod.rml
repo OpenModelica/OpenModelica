@@ -319,16 +319,13 @@ end
 relation mod_equation : Mod => Eqmod option =
 
   axiom mod_equation NOMOD => NONE
-
   axiom mod_equation REDECL(_,_) => NONE
-
   axiom mod_equation MOD(_,_,e) => e
 
 end
 
-(*!ignorecode*)
-
 (** - Printing *)
+(*!ignorecode*)
 
 (** relation: print_mod
  **
