@@ -29,8 +29,6 @@ SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
 SRCO=	$(SRCC:.c=.o)
 
-RMLINCLUDE = $(RMLDIR)/include/plain
-
 SUBDIRS	= ast
 
 .SUFFIXES:
