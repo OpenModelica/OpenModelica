@@ -260,8 +260,6 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Parser__parseexp)
 {
-	std::cerr << "parseexp" << std::endl;
-
 	char * filename = RML_STRINGDATA(rmlA0);
   bool debug = check_debug_flag("parsedump");
   try 
