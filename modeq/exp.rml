@@ -55,21 +55,21 @@ module Exp:
    ** constructor.  Indexing arbitrary array expressions is currently
    ** not supported in Modelica, but it is needed here. *)
 
-  datatype Operator = ADD    	of Type
-		    | SUB    	of Type
-		    | MUL    	of Type
-		    | DIV    	of Type
-		    | POW    	of Type
-		    | UMINUS 	of Type
-		    | UPLUS  	of Type
+  datatype Operator = ADD    	  of Type
+		    | SUB    	  of Type
+		    | MUL    	  of Type
+		    | DIV    	  of Type
+		    | POW    	  of Type
+		    | UMINUS 	  of Type
+		    | UPLUS  	  of Type
 		    | AND | OR
 		    | NOT
-		    | LESS      of Type
-		    | LESSEQ    of Type
-		    | GREATER   of Type
-		    | GREATEREQ of Type
-		    | EQUAL     of Type
-		    | NEQUAL    of Type
+		    | LESS        of Type
+		    | LESSEQ      of Type
+		    | GREATER     of Type
+		    | GREATEREQ   of Type
+		    | EQUAL       of Type
+		    | NEQUAL      of Type
   (** Operators which are overloaded in the abstract syntax are here
    ** made type-specific.  The integer addition operator (`ADD(INT)')
    ** and the real addition operator (`ADD(REAL)') are two distinct
@@ -147,10 +147,33 @@ end
 
 relation simplify : Exp => Exp =
 
-  rule	int_sub (i,1) => i' &
+  rule	simplify e => ARRAY(exps) &
+	int_sub (i,1) => i' &
 	list_nth(exps,i') => exp
 	-----------------------
-	simplify ASUB(ARRAY(exps),i) => exp
+	simplify ASUB(e, i) => exp
+
+  rule	simplify e => MATRIX(exps) &
+	int_sub (i,1) => i' &
+	list_nth(exps,i') => exp
+	-----------------------
+	simplify ASUB(e, i) => ARRAY(exp)
+
+  rule	simplify e => IFEXP(c,t,f) &
+	simplify ASUB(t,i) => t' &
+	simplify ASUB(f,i) => f'
+	------------------------
+	simplify ASUB(e, i) => IFEXP(c,t',f')
+
+  rule	simplify e => CREF(CREF_IDENT(n,s)) &
+	list_append(s,[INDEX(ICONST(i))]) => s'
+	------------------------
+	simplify ASUB(e, i) => CREF(CREF_IDENT(n,s'))
+
+  rule	simplify e => CREF(CREF_QUAL(n,s,c)) &
+	simplify ASUB(CREF(c), i) => CREF(c')
+	-------------------------------------
+	simplify ASUB(e, i) => CREF(CREF_QUAL(n,s,c'))
 
   axiom	simplify e => e
 
