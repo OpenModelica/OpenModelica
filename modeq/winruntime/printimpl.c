@@ -43,9 +43,9 @@ void Print_5finit(void)
 
 }
 
-RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
+
+void print_error_buf_impl(char *str)
 {
-  char* str = RML_STRINGDATA(rmlA0);
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
   
   assert(str != NULL);
@@ -56,6 +56,12 @@ RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
 
   sprintf((char*)(errorBuf+strlen(errorBuf)),"%s",str);
   errorNfilled=strlen(errorBuf);
+}
+
+RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
+{
+ char* str = RML_STRINGDATA(rmlA0);
+ print_error_buf_impl(str);
 
   /*  printf("%s",str);*/
 
@@ -100,6 +106,7 @@ RML_BEGIN_LABEL(Print__print_5fbuf)
   sprintf((char*)(buf+strlen(buf)),"%s",str);
   nfilled=strlen(buf);
 
+  /*  printf("%s",str);*/
 
   RML_TAILCALLK(rmlSC);
 }
@@ -136,12 +143,14 @@ RML_BEGIN_LABEL(Print__write_5fbuf)
   
   if (file == NULL||buf == NULL || buf[0]=='\0') {
     /* HOWTO: RML fail */    
+    /* RML_TAILCALLK(rmlFC); */
   }
 
   fprintf(file,"%s",buf);
   
   if (fclose(file) != 0) {
     /* RMLFAIL */
+    /* RML_TAILCALLK(rmlFC); */
   }
   
   RML_TAILCALLK(rmlSC);
