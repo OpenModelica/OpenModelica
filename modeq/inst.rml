@@ -199,10 +199,8 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 	instantiate_class(cdecls, path as Absyn.IDENT(name2)) => DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))])
 
   rule	Builtin.initial_env => env &
-	print "calling inst_class_decls..  \n" &
 	inst_class_decls(env,cdecls,path)=> (env',_) &
-	print "done \n" &
-	Lookup.lookup_class(env',path,true) => (cdef, env'') &
+	Lookup.lookup_class(env',path,true) => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
 	inst_class(env'',Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) => (dae,_,_,_) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
@@ -210,8 +208,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 	  => DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))])
 	
 
-  rule	Print.print_buf "- instantiate_class failed\n" &
-	print "instantiate_class failed\n" 
+  rule	Print.print_buf "- instantiate_class failed\n" 
 	------------
 	instantiate_class(_,_) => fail
 end
@@ -517,12 +514,16 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	extends_elts(elts) => extendselts &
 	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
 	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims, impl) => (_,env',csets',ci_state',tys) &
-	
-	Debug.fprint ("decl", "calling extend_components_to_env, env=\n") &
-	Debug.fcall ("decl",Env.print_env, env') &
+(*	print "calling extend_components_to_env, env=" &
+	Print.clear_buf& Env.print_env env' & Print.get_string => str & print str & print "\n" &
+	Debug.fprint ("extend", "calling extend_components_to_env, env=\n") & *)
+	Debug.fcall ("extend",Env.print_env, env') &
 	extend_components_to_env(env',mod,pre,csets,ci_state,compelts,inst_dims,impl) => env'' &
-	Debug.fprint("decl"," extended components to env, env=") &
-	Debug.fcall ("decl",Env.print_env, env'') &
+(*	print "updated extend_components_to_env, env=" &
+	Print.clear_buf& Env.print_env env'' & Print.get_string => str & print str & print "\n" & 
+	print "prefix = " & Prefix.print_prefix_str pre => prefixstr & print prefixstr & print "\n" & *)
+	Debug.fprint("extend"," extended components to env, env=") &
+	Debug.fcall ("extend",Env.print_env, env'') &
 	(*2. EXTENDS Nodes*)
 	inst_element_list2(env'',mod,pre,csets',ci_state',extendselts,inst_dims,impl) => (dae2,env''',csets'',ci_state'',tys2) &
 
@@ -537,6 +538,10 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	----------------------------------------------------------------------------------------------------
 	inst_element_list(env,mod,pre,csets,ci_state,elts,inst_dims, impl) 
 	    => (totdae,env'''',csets''',ci_state''',tottys)
+
+  rule	Print.print_buf "- inst_element_list failed\n" 
+	---------------------
+	inst_element_list(_,_,_,_,_,_,_,_) => fail
 end
 
 
@@ -613,6 +618,11 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m))::xs,inst_dims,impl) => env''
   axiom	extend_components_to_env(env,_,_,_,_,[],_,_) => env
+
+  rule	Print.print_buf "- extend_components_to_env failed\n" &
+	Print.print_buf "  - env: \n" & Env.print_env env & Print.print_buf "\n" 
+	--------------------
+	extend_components_to_env(env,_,_,_,_,_,_,_) => fail
 end
 
 relation inst_element_list2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -688,11 +698,17 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "Modifications merged again") &
 	
 	(* Can't use inst_class, as that creates a new frame *)
+	(* The extends node is instantiated in the environment beloning to *)
+	(* extended class, i.e. cenv. However, the  variables, classes and types inserted in this *)
+	(* environment (top frame of env'), by  inst_class_in, should be *)
+	(* copied into the resulting environment *)
+	 
 	inst_class_in(cenv,mods'',pre,csets,ci_state,c,false,inst_dims,impl)
-	  => (dae,env',csets',ci_state',vars)
+	  => (dae,fr::env',csets',ci_state',vars) &
+	Env.merge_inherited_content(fr,env) => env''
 	  ----------------------------------
 	inst_element(env,mods,pre,csets,ci_state,SCode.EXTENDS(cn,m),inst_dims,impl)
-	  => (dae,env',csets',ci_state',vars)
+	  => (dae,env'',csets',ci_state',vars)
 	  
   	  (**  Rules to catch redeclarations and name collsions
 	   **)
@@ -797,7 +813,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* The types in the environment does not have correct Binding.
 	   We must update those variables that is found in m into a new environment.*)
 	get_cref_from_mod(m) => crefs &
- 	update_variables_in_env(mods,crefs,env,impl) => env2' &
+ 	update_variables_in_env(mods,crefs, env ,impl) => env2' &
 	
 	get_cref_from_dim(ad) => crefs2 &
 	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
@@ -823,9 +839,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "mod equation done") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-	Print.get_string () => errstr & Print.clear_buf() &
 	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
-	Print.clear_buf() & Print.print_buf errstr &
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims,impl)
@@ -970,6 +984,10 @@ relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 	get_cref_from_mod(SCode.MOD(_,submods,NONE)) => res 
 	
   axiom	get_cref_from_mod(_) => []
+
+  rule	Print.print_buf "- get_cref_from_mod failed\n" 
+	----------
+	get_cref_from_mod(_) => fail
 end
 
 relation get_cref_from_dim: Absyn.ArrayDim => Absyn.ComponentRef list =
@@ -985,6 +1003,10 @@ relation get_cref_from_dim: Absyn.ArrayDim => Absyn.ComponentRef list =
 	get_cref_from_dim(Absyn.NOSUB::rest) => res
 
   axiom	 get_cref_from_dim([]) => []
+
+  rule	Print.print_buf "- get_cref_from_dim failed\n" 
+	------------
+	get_cref_from_dim(_) => fail
 end
 
 relation get_cref_from_submods: (SCode.SubMod list) => Absyn.ComponentRef list =
@@ -1139,10 +1161,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-	Print.get_string () => errstr & Print.clear_buf() &
 	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
-	Print.clear_buf() & Print.print_buf errstr &
-	print_dims dims &
 
 	(** Instantiate the component *)	
 	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[],false)
@@ -1575,11 +1594,12 @@ relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class,InstDims)
 	  => (Env.Env, DAE.Element list) =
 
-  rule	Debug.fprint("insttr","inst_class_decl called\n") &
+  rule	Debug.fprint("insttr","+\tinst_class_decl called\n") &
 	Env.extend_frame_c(env,c) => env' &
-	Debug.fprint("insttr","extended frame\n") &
+	Debug.fprint("insttr","+\textended frame\n") &
 	implicit_instantiation(env',Mod.NOMOD,pre,csets,c,inst_dims) => (env'',dae) &
-	Debug.fprint("insttr","inst_class_def finished\n") 
+	Debug.fprint("insttr","+\timplicit instantiation of ") &
+	Debug.fprint("insttr",n) & Debug.fprint("insttr", " finshed\n\n") 
 	----------------------------------
 	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,restr,_),inst_dims)
 	  => (env'', dae)
@@ -1591,6 +1611,7 @@ relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 end
 
 (** relation implicit_instantiation
+ ** This relation adds types to the environment.
  **
  ** If a class definition is a function or a package or an enumeration , 
  ** it is implicitly instantiated and added as a type binding under the
@@ -1604,13 +1625,17 @@ relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
 (* LS:This rule extends the frame with the package as a type, but
 inst_class also extends the frame with the package as a class. Is this
 correct?
+* PA: No, since we have now a special relation for looking up variables, first checking 
+* the types and thereafter checking classes.
 *)
-
+(* Removed
   rule	Prefix.prefix_add(n,[],pre) => pre' &
 (*	let pre' = pre & *)
 	Debug.fprint ("insttr","implicit_instantiation called.\n") &
+	print "implicit_instantiation  of " & print n & print " called.\n" &
 	inst_class(env,mod,pre',csets,c,inst_dims,true) => (dae, csets', ty, st) &
 	Debug.fprint ("insttr","implicit_instantiation inst class done.\n") &
+	print "implicit_instantiation of " & print n & print " class done.\n" &
 	Env.extend_frame_t(env, n, ty) => env' &
 (*	let env' = env & *)
 	Debug.fprintl ("insttr", ["implicit_instantiation done:", n, "\n"])
@@ -1619,6 +1644,7 @@ correct?
 			       c as SCode.CLASS(n,_,_,SCode.R_PACKAGE,_),
 			       inst_dims)
 	  => (env', dae)
+Removed *)
 
 (* LS: changed from returning empty dae to returning a DAE.FUNCTION *)
 (* LS: removed prefix because function elements shouldn't have

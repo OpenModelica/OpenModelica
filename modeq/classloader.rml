@@ -99,9 +99,8 @@ relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	exist_directory_file dirfile &
 	exist_regular_file packfile &
 	Print.print_buf "Class is package stored in a directory, loading whole package(incl. subdir)\n" &
-	load_complete_package_from_mp(class,mp,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
-	Interactive.build_env_from_symboltable(Interactive.SYMBOLTABLE(p,[],[],[],[])) => env &
-	Lookup.lookup_class(env,Absyn.IDENT(class),true) => (_,_)
+	load_complete_package_from_mp(class,mp,Absyn.TOP,
+				      Absyn.PROGRAM([],Absyn.TOP)) => p 
 	--------------------------------------
 	load_class_from_mp(class,mp) => p
 	

@@ -311,6 +311,9 @@ relation lookup_modification_p: (Mod,Absyn.Path) => Mod =
 	-------------------------------------
 	lookup_modification_p (m,Absyn.QUALIFIED(n,p)) => mod'
 
+  rule	Print.print_buf "- lookup_modification_p failed\n" 
+	-----------------------
+	lookup_modification_p(_,_) => fail
 end
 
 (** relation: lookup_comp_modification

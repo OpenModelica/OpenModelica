@@ -593,7 +593,7 @@ relation unparse_elementspec_str: Absyn.ElementSpec => string =
 	-------------------------
 	unparse_elementspec_str(Absyn.CLASSDEF(repl,cl)) => str
 	
-  rule	Print.print_buf "EXTENDS(" & Absyn.path_string p => s1 &
+  rule	Absyn.path_string p => s1 &
 	string_append("extends ",s1) => s2 &
 	get_string_list(l,unparse_element_arg_str,",") => s3 &
 	string_append(s2,s3) => str

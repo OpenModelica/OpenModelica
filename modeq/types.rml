@@ -720,7 +720,7 @@ relation print_var : Var => () =
 
   rule	print_type typ & Print.print_buf " " &
 	Print.print_buf n & Print.print_buf " " & 
-	print_type typ
+	print_binding bind 
 	-------
 	print_var VAR(n, attr, prot, typ, bind)
 
