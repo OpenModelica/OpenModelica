@@ -10,7 +10,7 @@ RMLINCLUDE = @rmlinc@
 
 SHELL	= /bin/sh
 CC	= gcc
-CFLAGS	= -I$(RMLINCLUDE)
+CFLAGS	= -I$(RMLINCLUDE) -I../../c_runtime
 
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c
 

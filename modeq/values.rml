@@ -67,13 +67,16 @@ end
 
 relation unparse_values: (Value list) => string =
 
-  rule	unparse_description(vallst) => s1 &
-	unparse_value_numbers(vallst) => s2 &
-	string_append(s1,s2) => str
+  rule	unparse_description([v]) => s1 &
+	unparse_value_numbers([v]) => s2 &
+	unparse_values(vallst) => s3 &	
+	string_append(s1,s2) => s4 &
+	string_append(s4,"\n") => s5 &
+	string_append(s5,s3) => str
 	-----------------------------
-	unparse_values(vallst) => str
+	unparse_values(v::vallst) => str
 
-  axiom	unparse_values(_) => "Unparse values failed\n"
+  axiom	unparse_values([]) => ""
 end
 
 relation unparse_value_numbers: (Value list) => string =
@@ -104,8 +107,8 @@ end
 relation unparse_description:(Value list) => string =
 
   rule	unparse_description(xs) => s1 &
-	string_append("# i!\n",s1) => str
-	-------------------------------
+	string_append("# i!\n",s1) => str 
+	--------------------------------
 	unparse_description(INTEGER(_)::xs)=> str
 
   rule	unparse_description(xs) => s1 &
@@ -115,8 +118,8 @@ relation unparse_description:(Value list) => string =
 	
   rule	unparse_description(xs) => s1 &
 	unparse_array_description(vallst) => s2 &
-	string_append("# [ ",s2) => s3 &
-	string_append(s3,s1) => str 
+	string_append(s2,s1) => s4 &
+	string_append(s4," \n") => str
 	-------------------------------
 	unparse_description(ARRAY(vallst)::xs)=> str
 
@@ -125,13 +128,29 @@ end
 
 relation unparse_array_description:(Value list) => string  =
 
-  rule	unparse_num_dims(lst) => i1 &
-	int_string(i1) => s1 &
-	string_append(s1," ") => s2 &
-	unparse_dim_sizes(lst) => s3 &
-	string_append(s2,s3) => str
+  rule	unparse_prim_type (lst) => pt &
+	string_append("# ",pt) => s1 &
+	string_append(s1,"[") => s2 &
+	unparse_num_dims(lst) => i1 &
+	int_string(i1) => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," ") => s5 &
+	unparse_dim_sizes(lst) => s6 &
+	string_append(s5,s6) => str
 	------------------
 	unparse_array_description(lst) => str
+end
+
+relation unparse_prim_type: (Value list) => string =
+
+  rule	unparse_prim_type(elts) => res
+	------------------------------
+	unparse_prim_type(ARRAY(elts)::_) => res
+  axiom	unparse_prim_type(INTEGER(_)::_) => "i"
+  axiom	unparse_prim_type(REAL(_)::_) => "r"
+  axiom	unparse_prim_type(STRING(_)::_) => "s"
+  axiom	unparse_prim_type(BOOL(_)::_) => "b"
+  axiom	unparse_prim_type(_) => "error"
 end
 
 relation unparse_num_dims: (Value list) => int =

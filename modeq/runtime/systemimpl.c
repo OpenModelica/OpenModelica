@@ -5,7 +5,11 @@
 #include "../values.h"
 
 char * cc="/usr/bin/gcc";
-char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime";
+char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm";
+
+void * generate_array(char,int,type_description *,void *data);
+float next_realelt(float*);
+int next_intelt(int*);
 
 void System_5finit(void)
 {
@@ -21,7 +25,9 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
   if (cc == NULL||cflags == NULL) {
     /* RMLFAIL */
   }
-  memcpy(exename,str,strlen(str)-1);
+  memcpy(exename,str,strlen(str)-2);
+  exename[strlen(str)-2]='\0';
+
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   printf("compile using: %s\n",command);
  if (system(command) != 0) {
@@ -65,7 +71,7 @@ RML_BEGIN_LABEL(System__execute_5ffunction)
   char* str = RML_STRINGDATA(rmlA0);
   char command[255];
   int ret_val;
-  sprintf(command,"%s %s_in.txt %s_out.txt",str,str,str);
+  sprintf(command,"./%s %s_in.txt %s_out.txt",str,str,str);
   ret_val = system(command);
   
   assert(ret_val == 0);
@@ -102,7 +108,10 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
   type_description desc;
   void * res, *res2;
   int ival;
-  double rval;
+  float rval;
+  float *rval_arr;
+  int *ival_arr;
+  int size;
 
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file=NULL;
@@ -123,34 +132,95 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
     } 
   else  /* Array value */
     {
-      int currdim,el;
+      int currdim,el,i;
       if (desc.type == 'r') {
-	res = (void*) mk_nil();
+	/* Create array to hold inserted values, max dimension as size */
+	size = 1;
 	for (currdim=0;currdim < desc.ndims; currdim++) {
-	  res2 = (void*)mk_nil();
-	  for (el=0; el < desc.dim_size[currdim]; el++) {
-	    fscanf(file,"%e",&rval);
-	    res2 =(void*) mk_cons(Values__REAL(mk_rcon(rval)),res2);
-	  }
-	  res = (void*) mk_cons(res,Values__ARRAY(res2));
+	  size *= desc.dim_size[currdim];
 	}
-	res = (void*) Values__ARRAY(res2);
+	rval_arr = (float*)malloc(sizeof(float)*size);
+	assert(rval_arr);
+	/* Fill the array in reversed order */
+	for(i=size-1;i>=0;i--) {
+	  fscanf(file,"%e",&rval_arr[i]);
+	}
+
+	next_realelt(NULL);
+	/* 1 is current dimension (start value) */
+	res =(void*) Values__ARRAY(generate_array('r',1,&desc,(void*)rval_arr)); 
       }
-  
-      if (desc.type == 'r') {
-	res = (void*) mk_nil();
+	
+      if (desc.type == 'i') {
+	int currdim,el,i;
+	/* Create array to hold inserted values, mult of dimensions as size */
+	size = 1;
 	for (currdim=0;currdim < desc.ndims; currdim++) {
-	  res2 = (void*) mk_nil();
-	  for (el=0; el < desc.dim_size[currdim]; el++) {
-	    fscanf(file,"%e",&rval);
-	    res2 = (void*) mk_cons(Values__REAL(mk_rcon(rval)),res2);
-	  }
-	  res = (void*) mk_cons(res,Values__ARRAY(res2));
+	  size *= desc.dim_size[currdim];
 	}
-	res = (void*) Values__ARRAY(res2);
+	ival_arr = (int*)malloc(sizeof(int)*size);
+	assert(rval_arr);
+	/* Fill the array in reversed order */
+	for(i=size-1;i>=0;i--) {
+	  fscanf(file,"%f",&ival_arr[i]);
+	}
+	next_intelt(NULL);
+	res = (void*) Values__ARRAY(generate_array('i',1,&desc,(void*)ival_arr));
+	
       }      
     }
   rmlA0 = (void*)res;
   RML_TAILCALLK(rmlSC);
-}
+}   
 RML_END_LABEL
+
+float next_realelt(float *arr)
+{
+  static int curpos;
+  
+  if(arr == NULL) {
+    curpos = 0;
+    return 0.0;
+  }
+  else {
+    return arr[curpos++];
+  }
+}
+
+int next_intelt(int *arr)
+{
+  static int curpos;
+  
+  if(arr == NULL) {
+    curpos = 0;
+    return 0.0;
+  }
+  else return arr[curpos++];
+}
+
+void * generate_array(char type, int curdim, type_description *desc,void *data)
+
+{
+  void *lst;
+  float rval;
+  int ival;
+  int i;
+  lst = (void*)mk_nil();
+  if (curdim == desc->ndims) {
+    for (i=0; i< desc->dim_size[curdim-1]; i++) {
+      if (type == 'r') {
+	rval = next_realelt((float*)data);
+	lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
+	
+      } else if (type == 'i') {
+	ival = next_intelt((int*)data);
+	lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
+      }
+    }
+  } else {
+    for (i=0; i< desc->dim_size[curdim-1]; i++) {
+      lst = mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
+    }
+  }
+  return lst;
+}
