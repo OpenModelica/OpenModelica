@@ -18,6 +18,7 @@ module Dump:
 
   with "absyn.rml"
   with "debug.rml"
+  with "myprint.rml"
 
   type Ident = string
 
@@ -25,14 +26,22 @@ module Dump:
 
   relation dump: Absyn.Program => ()
   relation print_exp: Absyn.Exp => ()
+  relation print_exp_str: Absyn.Exp => string
   relation print_component_ref: Absyn.ComponentRef => ()
+  relation print_component_ref_str : Absyn.ComponentRef => string
   relation print_path : Absyn.Path => ()
   relation print_subscripts : Absyn.Subscript list => ()
   relation print_arraydim: Absyn.ArrayDim => ()
   relation print_equation: Absyn.Equation => ()
   relation print_algorithm: Absyn.Algorithm => ()
+  relation print_list_debug : (string, 'a list, 'a => (), string) => ()
   relation print_list : ('a list, 'a => (), string) => ()
+  relation print_elementspec: Absyn.ElementSpec => ()
   relation op_symbol : Absyn.Operator => string
+  relation print_bool : bool => ()
+  relation print_select: (bool,string,string) => ()
+  relation select_string: (bool,string,string) => string
+  relation get_string_list : ('a list, 'a => string, string) => string
 end
 
 
@@ -41,6 +50,7 @@ end
 (*!ignorecode*)
 
 with "classinf.rml"
+with "rtopts.rml"
 
 (* Relations *)
 
@@ -61,7 +71,7 @@ relation print_class: Absyn.Class => () =
 
   rule	print_class_restriction(r) & print "(" &
 	print n & print "," & print_select(p,"PARTIAL,","") &
-	print_list(parts,print_class_part,",") & print ")"
+	print_list_debug("print_class1",parts,print_class_part,",") & print ")"
 	----------------------------------------
 	print_class(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => ()
 
@@ -90,7 +100,7 @@ relation print_class_modification =
 
   axiom	print_class_modification([])
 	
-  rule	print "(" & print_list(l,print_element_arg,",") & print ")"
+  rule	print "(" & print_list_debug("print_class_modification",l,print_element_arg,",") & print ")"
 	---------------------------------------------------------
 	print_class_modification(l)
 	
@@ -120,27 +130,28 @@ end
 
 relation print_class_part: Absyn.ClassPart => () =
 
-  rule 	print "PUBLIC(" & print_elements(el) & print ")"
+  rule	print "PUBLIC(" & print_elements(el) & print ")"
 	-----------------------------------------------
 	print_class_part(Absyn.PUBLIC(el))
 	
-  rule 	print "PROTECTED(" & print_elements(el) & print ")"
+  rule	print "PROTECTED(" & print_elements(el) & print ")"
 	---------------------------------------
 	print_class_part(Absyn.PROTECTED(el))
 	
-  rule 	print "EQUATIONS(" &
-	print_list(eqs,print_equation,",") &
+  rule	print "EQUATIONS(" &
+	print_list_debug("print_class_part",eqs,print_equation,",") &
 	print ")"
 	--------------------------------------
 	print_class_part(Absyn.EQUATIONS(eqs))
 	
-  rule 	print "ALGORITHM(" &
-	print_list(eqs,print_algorithm,",") &
+  rule	print "ALGORITHM(" &
+	print_list_debug("print_class_part",eqs,print_algorithm,",") &
 	print ")"
 	--------------------------------------
 	print_class_part(Absyn.ALGORITHMS(eqs))
-	
+
 end
+
 
 (**)
 
@@ -181,20 +192,58 @@ relation print_elementspec: Absyn.ElementSpec => () =
 	
 	
   rule	print "EXTENDS(" & print_path p & print "," &
-	print_list(l,print_element_arg,",") & print ")"
+	print_list_debug("print_elementspec",l,print_element_arg,",") & print ")"
 	------------------------------------------
 	print_elementspec(Absyn.EXTENDS(p,l))
 
-  rule	print "COMPONENTS(attr... ," &
+  rule	print "COMPONENTS(" &
+	print_elementattr(attr) & print "," &
 	print_path(t) & print "," &
-	print_list(cs, print_component, ",") &
+	print_list_debug("print_elementspec",cs, print_component, ",") &
 	print ")"
 	------------------------------------------
 	print_elementspec(Absyn.COMPONENTS(attr,t,cs))
 	
   rule	print " ##ERROR## "
 	-------------------
-		print_elementspec(_)
+	print_elementspec(_)
+
+end
+
+
+relation print_elementattr: Absyn.ElementAttributes => () =
+
+  rule	print "ATTR(" &
+	select_string(fl,"FLOW,","") => fs &
+	variability_symbol(var) => vs &
+	direction_symbol(dir) => ds &
+	let sl = [fs,vs,ds] &
+	print_list_debug("print_elementattr",sl, print, ",") &
+	print ")"
+	-----------------------------------
+	print_elementattr(Absyn.ATTR(fl,var,dir,adim))
+
+  rule	print " ##ERROR## print_elementattr"
+	-------------------
+	print_elementattr(_)
+
+end
+
+relation variability_symbol: Absyn.Variability => string =
+
+  axiom variability_symbol(Absyn.VAR) => ""
+  axiom	variability_symbol(Absyn.DISCRETE) => "DISCRETE"
+  axiom	variability_symbol(Absyn.PARAM) => "PARAM"
+  axiom	variability_symbol(Absyn.CONST) => "CONST"
+  axiom	variability_symbol(Absyn.SPACE) => "SPACE"
+
+end
+
+relation direction_symbol: Absyn.Direction => string =
+
+  axiom direction_symbol(Absyn.BIDIR) => ""
+  axiom	direction_symbol(Absyn.INPUT) => "INPUT"
+  axiom	direction_symbol(Absyn.OUTPUT) => "OUTPUT"
 
 end
 
@@ -202,11 +251,11 @@ end
 
 relation print_component: Absyn.Component => () =
 
-	rule	print n &
-		print_arraydim a &
-		print_option(m,print_modification)
-		------------------------------------------
-		print_component(Absyn.COMPONENT(n,a,m))
+  rule	print n &
+	print_arraydim a &
+	print_option(m,print_modification)
+	------------------------------------------
+	print_component(Absyn.COMPONENT(n,a,m))
 
 end
 
@@ -220,15 +269,33 @@ relation print_arraydim: Absyn.ArrayDim => () =
 	
 end
 
+relation print_arraydim_str: Absyn.ArrayDim => string =
+
+  rule	print_subscripts_str (s) => str
+	-------------------------------
+	print_arraydim_str(s) => str
+	
+end
+
 relation print_subscript: Absyn.Subscript => () =
 
-	rule	print ":"
-		---------
-		print_subscript(Absyn.NOSUB)
+  rule	print ":"
+	---------
+	print_subscript(Absyn.NOSUB)
 
-	rule	print_exp(e1)
-		----------
-		print_subscript(Absyn.SUBSCRIPT(e1))
+  rule	print_exp(e1)
+	----------
+	print_subscript(Absyn.SUBSCRIPT(e1))
+
+end
+
+relation print_subscript_str: Absyn.Subscript => string =
+
+  axiom	print_subscript_str (Absyn.NOSUB) => ":"
+
+  rule	print_exp_str (e1) => s
+	-----------------------
+	print_subscript_str (Absyn.SUBSCRIPT(e1)) => s
 
 end
 
@@ -251,7 +318,7 @@ relation print_mod1: Absyn.ElementArg list => () =
   axiom	print_mod1 []
 
   rule	print "(" &
-	print_list(l,print_element_arg,",") &
+	print_list_debug("print_mod1",l,print_element_arg,",") &
 	print ")"
 	------------------------------------
 	print_mod1 l
@@ -277,9 +344,9 @@ relation print_equation: Absyn.Equation => () =
 	print_equation(Absyn.EQ_EXPR(e))
 	
   rule	print "IF (" & print_exp(e) & print ") THEN " &
-	print_list(tb, print_equation, ";") &
-	print_list(eb, print_eq_elseif, " ") &
-	print " ELSE " & print_list(fb, print_equation, ";")
+	print_list_debug("print_equation",tb, print_equation, ";") &
+	print_list_debug("print_equation",eb, print_eq_elseif, " ") &
+	print " ELSE " & print_list_debug("print_equation",fb, print_equation, ";")
 	----------------------------------------------------
 	print_equation(Absyn.EQ_IF(e,tb,eb,fb))
 	
@@ -294,7 +361,7 @@ relation print_equation: Absyn.Equation => () =
 	print_equation(Absyn.EQ_CONNECT(e1,e2))
 	
   rule	print "FOR " & print i & print " in " & print_exp(e) &
-	print " {" & print_list(el, print_equation, ";") & print "}"
+	print " {" & print_list_debug("print_equation",el, print_equation, ";") & print "}"
 	----------------------------------------------------------
 	print_equation Absyn.EQ_FOR(i,e,el)
 	
@@ -309,7 +376,7 @@ end
 relation print_eq_elseif : (Absyn.Exp * Absyn.Equation list) => () =
 
   rule	print " ELSEIF " & print_exp e & print " THEN " &
-	print_list(el, print_equation, ";")
+	print_list_debug("print_eq_elseif",el, print_equation, ";")
 	-----------------------------------
 	print_eq_elseif((e,el))
 
@@ -325,29 +392,29 @@ relation print_algorithm: Absyn.Algorithm => () =
 	print_algorithm(Absyn.ALG_ASSIGN(cr,exp))
 	
   rule	print "IF (" & print_exp(e) & print ") THEN " &
-	print_list(tb, print_algorithm, ";") &
-	print_list(eb, print_alg_elseif, " ") &
-	print " ELSE " & print_list(fb, print_algorithm, ";")
+	print_list_debug("print_algorithm",tb, print_algorithm, ";") &
+	print_list_debug("print_algorithm",eb, print_alg_elseif, " ") &
+	print " ELSE " & print_list_debug("print_algorithm",fb, print_algorithm, ";")
 	----------------------------------------------------
 	print_algorithm(Absyn.ALG_IF(e,tb,eb,fb))
 	
   rule	print "FOR " & print i & print " in " & print_exp(e) &
-	print " {" & print_list(el, print_algorithm, ";") & print "}"
+	print " {" & print_list_debug("print_algorithm",el, print_algorithm, ";") & print "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_FOR(i,e,el)
 	
   rule	print "WHILE " & print_exp(e) &
-	print " {" & print_list(al, print_algorithm, ";") & print "}"
+	print " {" & print_list_debug("print_algorithm",al, print_algorithm, ";") & print "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHILE(e,al)
 	
-(*  rule	print "WHEN_E " & print_exp(e) &
-	print " {" & print_list(al, print_algorithm, ";") & print "}"
-	----------------------------------------------------------
+	(*  rule	print "WHEN_E " & print_exp(e) &
+	print " {" & print_list_debug("print_algorithm",al, print_algorithm, ";") & print "}"
+	 ----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHEN_E(e,al)
 *)
   rule	print "WHEN_A " & print_exp(e) &
-	print " {" & print_list(al, print_algorithm, ";") & print "}"
+	print " {" & print_list_debug("print_algorithm",al, print_algorithm, ";") & print "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHEN_A(e,al)
 	
@@ -362,11 +429,13 @@ end
 relation print_alg_elseif : (Absyn.Exp * Absyn.Algorithm list) => () =
 
   rule	print " ELSEIF " & print_exp e & print " THEN " &
-	print_list(el, print_algorithm, ";")
+	print_list_debug("print_alg_elseif",el, print_algorithm, ";")
 	-----------------------------------
 	print_alg_elseif((e,el))
 
 end
+
+
 
 (* Component references and paths *)
 
@@ -394,9 +463,44 @@ relation print_subscripts : Absyn.Subscript list => () =
 
   axiom	print_subscripts []
 
-  rule	print "[" & print_list(l,print_subscript,",") & print "]"
+  rule	print "[" & print_list_debug("print_subscripts",l,print_subscript,",") & print "]"
 	-------------------------------------------------------
 	print_subscripts l
+
+end
+
+(* relation: print_component_ref_str
+ *
+ * Print a `ComponentRef' and return as a string.
+ *)
+
+relation print_component_ref_str : Absyn.ComponentRef => string =
+
+  rule	print_subscripts_str subs => subsstr &
+	string_append (s, subsstr) => s'
+	--------------------------------
+	print_component_ref_str Absyn.CREF_IDENT(s,subs) => s'
+
+  rule	print_component_ref_str cr => crs &
+	print_subscripts_str subs => subsstr &
+	string_append (s, subsstr) => s' &
+	string_append (s', ".") => s'' &
+	string_append (s'', crs) => s'''
+	--------------------------------
+	print_component_ref_str Absyn.CREF_QUAL(s,subs,cr) => s'''
+
+end
+
+
+relation print_subscripts_str : Absyn.Subscript list => string =
+
+  axiom	print_subscripts_str [] => ""
+
+  rule	print_list_str(l,print_subscript_str,",") => s &
+	string_append ("[", s) => s' & 
+	string_append (s', "]") => s''
+	-------------------------------------------------------
+	print_subscripts_str l => s''
 
 end
 
@@ -410,6 +514,19 @@ relation print_path : Absyn.Path => () =
   rule	Absyn.path_string p => s & print s
 	----------------------------------
 	print_path p
+
+end
+
+(* relation: print_path
+ *
+ * Print a `Path'.
+ *)
+
+relation print_path_str : Absyn.Path => string =
+
+  rule	Absyn.path_string p => s
+	----------------------------------
+	print_path_str p => s
 
 end
 
@@ -474,12 +591,12 @@ relation print_exp : Absyn.Exp => () =
 	print_exp(Absyn.IFEXP(c,t,f))
 
   rule	print_component_ref(fcn) &
- 	print "(" & print_list(args,print_exp,",") & print ")"
+ 	print "(" & print_list_debug("print_exp",args,print_exp,",") & print ")"
 	---------------------------------------------
 	print_exp(Absyn.CALL(fcn, args))
 
   rule	print "[" &
-	print_list(es, print_exp, ",") &
+	print_list_debug("print_exp",es, print_exp, ",") &
 	print "]"
 	---------
 	print_exp Absyn.ARRAY(es)
@@ -487,13 +604,13 @@ relation print_exp : Absyn.Exp => () =
 	(* PR. *)
   rule	print "TUPLE" &
 	print "(" &
-	print_list(es, print_exp, ",") &
+	print_list_debug("print_exp",es, print_exp, ",") &
 	print ")"
 	---------
 	print_exp Absyn.TUPLE(es)
 	
   rule	print "[" &
-	print_list(es, print_row, ";") &
+	print_list_debug("print_exp",es, print_row, ";") &
 	print "]"
 	---------
 	print_exp Absyn.MATRIX(es)
@@ -508,19 +625,183 @@ relation print_exp : Absyn.Exp => () =
 	print_exp Absyn.RANGE(start,SOME(step),stop)
 
   rule	print "#UNKNOWN EXPRESSION#"
-        ----------------------------------
+	----------------------------------
 	print_exp (_)
 end
+
+
 
 (**)
 
 relation print_row : Absyn.Exp list => () =
 
-  rule	print_list(es, print_exp, ",")
+  rule	print_list_debug("print_row",es, print_exp, ",")
 	------------------------------
 	print_row es
 
 end
+
+
+
+(* relation: print_exp
+ *
+ * This relation prints a complete expression.
+ *)
+
+relation print_exp_str : Absyn.Exp => string =
+	
+  rule	int_string(x) => s
+	----------------------------
+	print_exp_str(Absyn.INTEGER(x)) => s
+
+  rule	real_string(x) => s
+	-----------------------------
+	print_exp_str(Absyn.REAL(x)) => s
+
+  rule	print_component_ref_str (c) => s
+	---------------------
+	print_exp_str(Absyn.CREF(c)) => s
+
+  rule	string_append("\"", s) => s' &
+	string_append(s', "\"") => s''
+	---------------------------------
+	print_exp_str(Absyn.STRING(s)) => s''
+
+  rule	print_bool_str b => s
+	---------------------
+	print_exp_str(Absyn.BOOL(b)) => s
+
+  rule	op_symbol(op) => sym & 
+	print_exp_str e1 => s1 &
+	print_exp_str e2 => s2 &
+	string_append (s1, sym) => s &
+	string_append (s, s2) => s'
+	---------------------------
+	print_exp_str(Absyn.BINARY(e1, op, e2)) => s1
+
+  rule	op_symbol(op) => sym &
+	print_exp_str e => s &
+	string_append (sym, s) => s'
+	----------------------------
+	print_exp_str(Absyn.UNARY(op, e)) => s'
+
+  rule	op_symbol(op) => sym & 
+	print_exp_str e1 => s1 &
+	print_exp_str e2 => s2 &
+	string_append (s1, sym) => s &
+	string_append (s, s2) => s'
+	---------------------------
+	print_exp_str (Absyn.LBINARY(e1, op, e2)) => s'
+
+  rule	op_symbol(op) => sym &
+	print_exp_str e => s &
+	string_append (sym, s) => s'
+	----------------------------
+	print_exp_str(Absyn.LUNARY(op, e)) => s'
+
+  rule	op_symbol(op) => sym & 
+	print_exp_str e1 => s1 &
+	print_exp_str e2 => s2 &
+	string_append (s1, sym) => s &
+	string_append (s, s2) => s'
+	---------------------------
+	print_exp_str(Absyn.RELATION(e1, op, e2)) => s'
+
+  rule	print_exp_str c => cs &
+	print_exp_str t => ts &
+	print_exp_str f => fs &
+	string_append ("if ", cs) => s &
+	string_append (s, " then ") => s' &
+	string_append (s', ts) => s'' &
+	string_append (s'', " else ") => s''' &
+	string_append (s''', fs) => s''''
+	---------------------------------
+	print_exp_str(Absyn.IFEXP(c,t,f)) => s''''
+
+  rule	print_component_ref_str(fcn) => fs &
+	print_list_str(args,print_exp_str,",") => argstr &
+	string_append(fs, "(") => s &
+	string_append(s, argstr) => s' &
+	string_append(s', ")") => s''
+	---------------------------------------------
+	print_exp_str(Absyn.CALL(fcn, args)) => s''
+
+  rule	print_list_str(es, print_exp_str, ",") => s &
+	string_append ("[",s) => s' &
+	string_append (s',"]") => s''
+	-----------------------------
+	print_exp_str Absyn.ARRAY(es) => s''
+
+	(* PR. *)
+  rule	print_list_str(es, print_exp_str, ",") => s &
+	string_append ("(",s) => s' &
+	string_append (s',")") => s''
+	-----------------------------
+	print_exp_str Absyn.TUPLE(es) => s''
+	
+  rule	print_list_str(es, print_row_str, ";") => s &
+	string_append ("[",s) => s' &
+	string_append (s',"]") => s''
+	-----------------------------
+	print_exp_str Absyn.MATRIX(es) => s''
+
+  rule	print_exp_str (start) => s1 &
+	print_exp_str (stop) => s3 &
+	string_append ("(", s1) => s &
+	string_append (s, ":") => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', ")") => s'''
+	--------------------------------
+	print_exp_str Absyn.RANGE(start,NONE,stop) => s'''
+
+  rule	print_exp_str (start) => s1 &
+	print_exp_str (step) => s2 &
+	print_exp_str (stop) => s3 &
+	string_append ("(", s1) => s &
+	string_append (s, ":") => s' &
+	string_append (s', s2) => s'' &
+	string_append (s'', ":") => s''' &
+	string_append (s''', s3) => s'''' &
+	string_append (s'''', ")") => s'''''
+	------------------------------------
+	print_exp_str Absyn.RANGE(start,SOME(step),stop) => s'''''
+
+  axiom	print_exp_str (_) =>  "#UNKNOWN EXPRESSION#"
+
+end
+
+
+relation print_row_str : Absyn.Exp list => string =
+
+  rule	print_list_str (es, print_exp_str, ",") => s
+	----------------------------
+	print_row_str es => s
+
+end
+
+(** relation: print_list_str
+ **
+ ** Same as print_list, except it returns a string
+ ** instead of printing
+ **)
+
+relation print_list_str : ('a list, 'a => string, string) => string =
+
+  axiom	print_list_str ([],_,_) => ""
+	
+  rule	r(h) => s
+	------------------
+	print_list_str ([h],r,_) => s
+
+  rule	r(h) => s & 
+	print_list_str (t,r,sep) => srest &
+	string_append (s, sep) => s' & 
+	string_append (s', srest) => s''
+	-------------------------------------
+	print_list_str (h::t,r,sep) => s''
+
+end
+
 
 (* relation: op_symbol
  *
@@ -555,15 +836,19 @@ end
  * These are utility relations used in some of the other
  * relations. *)
 
+relation select_string: (bool,string,string) => string =
+
+  axiom	select_string(true,a,b) => a
+  axiom	select_string(false,a,b) => b
+
+end
+
 relation print_select: (bool,string,string) => () =
 
-  rule	print no
+  rule	select_string(f,yes,no) => res &
+	print res
 	-------------------------
-	print_select(false,yes,no)
-	
-  rule	print yes
-	-------------------------
-	print_select(true,yes,no)
+	print_select(f,yes,no)
 
 end
 
@@ -577,6 +862,29 @@ relation print_option = (* : ('a option)*('a => 'b) = *)
 	
 end
 
+relation print_list_debug : (string, 'a list, 'a => (), string) => () =
+
+  rule	Debug.fprintln ("dumptr", "print_list_debug-1")
+	-----------------------------------------------
+	print_list_debug(_,[],_,_)
+	
+  rule	Debug.fprintl ("dumptr", ["print_list_debug-2 from ", caller, "\n"]) &
+	r(h) &
+	Debug.fprintln ("dumptr", "//print_list_debug-2")
+	------------------
+	print_list_debug(caller,[h],r,_)
+
+  rule	string_append("print_list_debug-3 from ", caller) => s1 &
+	Debug.fprintl ("dumptr", [s1, "\n"]) &
+	r(h) & 
+	print sep & 
+	Debug.fprintln ("dumptr", "//print_list_debug-3") &
+	print_list_debug(s1, rest, r, sep)
+	-------------------------------------
+	print_list_debug(caller, h::rest, r, sep)
+
+end
+
 relation print_list : ('a list, 'a => (), string) => () =
 
   axiom	print_list([],_,_)
@@ -585,8 +893,43 @@ relation print_list : ('a list, 'a => (), string) => () =
 	------------------
 	print_list([h],r,_)
 
-  rule	r(h) & print sep & print_list(t,r,sep)
+  rule	r(h) & print sep &
+	print_list(t,r,sep)
 	-------------------------------------
 	print_list(h::t,r,sep)
+
+end
+
+
+relation get_string_list : ('a list, 'a => string, string) => string =
+
+  axiom	get_string_list ([],_,_) => ""
+	
+  rule	r(h) => s
+	------------------
+	get_string_list([h],r,_) => s
+
+  rule	r(h) => s & 
+	string_append (s, sep) => s' &
+	get_string_list (t,r,sep) => srest &
+	string_append (s', srest) => s''
+	-------------------------------------
+	get_string_list (h::t,r,sep) => s''
+
+end
+
+relation print_bool : bool => () =
+
+  rule	print_select (b, "true", "false")
+	---------------------------------
+	print_bool b
+
+end
+
+relation print_bool_str : bool => string =
+
+  rule	select_string (b, "true", "false") => s
+	---------------------------------
+	print_bool_str b => s
 
 end
