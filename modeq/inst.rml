@@ -354,11 +354,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_list(env'',mods,pre,csets'',ci_state''', inst_algorithm, als)
 	  => (dae3,env''',csets''', ci_state'''') &
 	list_append(dae1,dae2) => dae5 &
-	list_append(dae5,dae3) => dae &
-	print "element list \n"&
-	DAE.dump_elements dae &
-	print "Env: \n" &
-	Env.print_env env'''
+	list_append(dae5,dae3) => dae 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,als), re, prot, inst_dims)
@@ -691,7 +687,6 @@ relation inst_var : (Env.Env,
 	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
 	inst_class(env,mod,pre',csets,cl,inst_dims) => (dae1,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
-
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	inst_mod_equation(cr,ty,mod) => dae2 &
@@ -751,7 +746,7 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 
   rule	fix_direction(r,dir) => r'
 	---------------------------
-	fix_direction (_::r,dir) => r'
+	fix_direction (x::r,dir) => x::r'
 
 end
 
@@ -2267,14 +2262,14 @@ end
 relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  => DAE.Element list =
 
-  rule	print "inst_mod_equation\n" &
+(*  rule	print "inst_mod_equation\n" &
 	Exp.cref_str cr => str &
 	print "cref = " & print str &
 	print "\nmod=" &
 	Mod.print_mod mod &
 	int_eq(1,0) => true
 	----------
-	inst_mod_equation(cr,ty1,mod) => []
+	inst_mod_equation(cr,ty1,mod) => [] *)
 	  
   rule	Static.elab_type ty1 => t &
 	inst_eq_equation(Exp.CREF(cr,t),

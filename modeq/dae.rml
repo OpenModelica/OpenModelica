@@ -73,6 +73,7 @@ module DAE:
   datatype DAElist = DAE of Element list
 	  
   relation dump: DAElist => ()
+  relation dump2: DAElist => ()
   relation dump_elements : Element list => () 
   relation dump_str: DAElist => string
   relation dump_debug: DAElist => ()
@@ -122,6 +123,54 @@ relation dump : DAElist => () =
 	-------------
 	dump DAE(daelist)
 end
+
+relation dump2: DAElist => () =
+  rule	print "VAR(" &
+	Exp.print_component_ref cr &
+	print ")\n" &
+	dump2 (DAE(xs))
+	-------------------
+	dump2 DAE(VAR(cr,_,_,_,_,_)::xs)
+
+  rule	print "DEFINE(" &
+	Exp.print_component_ref cr &
+	print ")\n" &
+	dump2 (DAE(xs))
+	---------
+	dump2 DAE(DEFINE(cr,_)::xs)
+	
+  rule	print "EQUATION(" &
+	Exp.print_exp e1 &
+	print " = " &
+	Exp.print_exp e2 &
+	print ")\n" &
+	dump2( DAE(xs))
+	---------
+	dump2 DAE(EQUATION(e1,e2)::xs)
+
+  rule	print "ALGORITHM(...)" &
+	dump2 (DAE(xs))
+	------------
+	dump2 (DAE(ALGORITHM(_)::xs))
+
+  rule	print "COMP(" &
+	print ident &
+	dump2 (lst) &
+	print ")\n" &
+	dump2 (DAE(xs))
+	----------
+	dump2 (DAE(COMP(ident,lst)::xs))
+
+  rule	print "FUNCTION(...)\n" &
+	dump2 (DAE(xs))
+	--------------
+	dump2 (DAE(FUNCTION(_,_,_)::xs))
+  axiom dump2 (DAE([]))
+
+  rule	print "dump2 failed\n"
+	---------------------
+	dump2 (_)
+end
 	
 (** relation: dump_str
  ** 
@@ -169,8 +218,7 @@ relation dump_comp_element : Element => () =
 	dump_comp_element COMP(n,DAE(l))
 
 (* LS: for non-COMPS, which are only FUNCTIONS at the moment *)
-
-  axiom	dump_comp_element _
+axiom	dump_comp_element _
 
 end
 
@@ -210,7 +258,8 @@ relation dump_elements : Element list => () =
   rule	dump_vars l &
 	print "equation\n" &
 	dump_list (l, dump_equation) &
-	dump_list (l, dump_algorithm)
+	dump_list (l, dump_algorithm) & 
+	dump_list (l, dump_comp_element)
 	-----------------
 	dump_elements l
 
