@@ -2491,7 +2491,6 @@ end
 
 relation get_icon_annotation_from_elts: (Absyn.ElementItem list) 
 	  => Absyn.ElementArg list =
-  axiom get_icon_annotation_from_elts [] => []
 
   rule	contain_icon_annotation(lst)
 	-----------------------------
