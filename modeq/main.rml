@@ -40,6 +40,7 @@ with "dump.rml"
 with "dumpgraphviz.rml"
 with "explode.rml"
 with "dae.rml"
+with "daelow.rml"
 with "inst.rml"
 with "interactive.rml"
 with "rtopts.rml"
@@ -245,9 +246,8 @@ end
 relation translate_file : string list => () =
 
   rule	(*Print.print_buf "Parsing\n" &
-*)	is_modelica_file(f) &
-	Parser.parse f => p
-
+	 *)	is_modelica_file(f) 
+	& Parser.parse f => p
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
 	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
 	& Debug.fcall ("dump", Dump.dump, p)
@@ -273,15 +273,17 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	& ModUtil.string_prefix_params d => d'
-	& Debug.fcall ("codegen", Codegen.generate_functions, d')
+	& Debug.fcall ("codegen", Codegen.generate_functions, d') 
+
+	& Debug.fcall ("blt", optimize_dae,d') 
 	& Print.get_string () => str
-	& print str
+(*	& print str*)
 	------------------------------
 	translate_file [f]
 
   rule	(*Print.print_buf "Parsing\n" &
 *)	is_modelica_script_file(f) &
-	Parser.parseexp f => stmts &
+ 	Parser.parseexp f => stmts &
 	Interactive.evaluate(stmts,Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),true) => (res,newst) &
 	print res
 	------------------------------
@@ -303,6 +305,50 @@ relation translate_file : string list => () =
 
 end
 
+relation optimize_dae: (DAE.DAElist) => () =
+
+  rule	DAELow.lower(d) => d' 
+	& Debug.fcall("dumpdaelow", DAELow.dump, d') 
+	& clock() => t1 
+	& DAELow.incidence_matrix(d') => m 
+	& clock() => t2 
+	& DAELow.transpose_matrix(m) => mT 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
+	& clock() => t3
+	& DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
+	& clock() => t4
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_inv, mT) 
+	& Debug.fcall("bltdump", DAELow.dump,d'')
+
+	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
+	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
+	& clock() => t5 
+	& real_sub(t2,t1) => mtime 
+	& real_sub(t3,t2) => trtime
+	& real_sub(t4,t3) => matchtime 
+	& real_sub(t5,t4) => strongtime
+	& real_string(mtime) => mtimes  
+	& real_string(trtime) => trtimes
+	& real_string(matchtime) => matchtimes
+	& real_string(strongtime) => strongtimes  
+	& print "Incidence Matrix took: " 
+	& print mtimes
+	& print " seconds\n"
+	& print "Inversing Matrix took: " 
+	& print trtimes
+	& print " seconds\n"
+	& print "Matching took: " 
+	& print matchtimes
+	& print " seconds\n"
+	& print "Strong Components took: " 
+	& print strongtimes
+	& print " seconds\n"
+	& DAELow.dump_components(comps) 
+	-----------------------
+	optimize_dae(d) => ()
+end
 
 relation fix_modelica_output : DAE.DAElist => DAE.DAElist =
 

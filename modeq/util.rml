@@ -24,20 +24,35 @@ module Util :
   
   relation if : (bool,'a,'a) => 'a
 	  
+  relation list_fill: ('a ,int) => 'a list
   relation list_first: 'a list => 'a
   relation list_rest: 'a list => 'a list
   relation list_flatten : 'a list list => 'a list
+  relation list_map_0 : ('a list, 'a => ()) => ()
   relation list_map : ('a list, 'a => 'b) => 'b list
-  relation list_list_map : ('a list list, 'a => 'b) => 'b list list
+  relation list_map_1: ('a list, ('a, 'b) => 'c, 'b) => 'c list
+  relation list_map_2: ('a list, ('a, 'b,'c) => 'd, 'b,'c) => 'd list 
+  relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list
+  relation list_list_map : ('a list list, 'a => 'b) => 'b list list 
   relation list_list_reverse: ('a list list) => 'a list list
   relation list_thread : ('a list, 'a list) => 'a list
+  relation list_thread_map : ('a list, 'b list, ('a,'b) => 'c) => 'c list
   relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list
   relation list_list_thread_tuple : ('a list list, 'b list list) 
 	  => ('a * 'b) list list
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
+  relation list_deletemember: (''a list,''a) => ''a list
+  relation list_getmember_p: (''a, ''a list,(''a,''a) => bool ) => ''a
   relation list_replaceat: (''a, int, ''a list) => ''a list 
-  relation list_union_elt: (''a , ''a list) => ''a list 	  
+  relation list_union_elt: (''a , ''a list) => ''a list
+  relation list_union_elt_p: (''a , ''a list , (''a, ''a) => bool) 
+	  => ''a list 
+  relation list_union:  (''a list, ''a list) => ''a list
+  relation list_union_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list
+  relation list_list_union:  (''a list list) => ''a list 
+  relation list_list_union_p:  (''a list list, (''a,''a) => bool) => ''a list 
+	  
   relation list_reduce: ('a list, ('a,'a) => 'a) => 'a
 	      
   relation tuple2_1 : ('a * 'b) => 'a
@@ -56,6 +71,16 @@ module Util :
   relation apply_option : ('a option,'a => 'b) => 'b option
 end
 
+
+relation list_fill: ('a ,int) => 'a list =
+
+  axiom	list_fill (a,1) => [a]
+
+  rule	int_sub(n,1) => n' &
+	list_fill(a,n') => res
+	----------------------
+	list_fill (a,n) => a::res
+end
 
 
 relation list_first: 'a list => 'a =	
@@ -90,6 +115,49 @@ relation list_map : ('a list, 'a => 'b) => 'b list =
 
 end
 
+(* Same as list map, but for relations taking one extra argument *)
+relation list_map_1: ('a list, ('a, 'b) => 'c, 'b) => 'c list =
+
+  axiom	list_map_1 ([],_,_) => []
+
+  rule	fn (f,extraarg) => f' &
+	list_map_1(r,fn,extraarg) => r'
+	-------------------
+	list_map_1(f::r,fn,extraarg) => f'::r'
+end
+
+(*.. and for 2 extra arguments *)
+relation list_map_2: ('a list, ('a, 'b,'c) => 'd, 'b,'c) => 'd list =
+
+  axiom	list_map_2 ([],_,_,_) => []
+
+  rule	fn (f,extraarg1,extraarg2) => f' &
+	list_map_2(r,fn,extraarg1,extraarg2) => r'
+	-------------------
+	list_map_2(f::r,fn,extraarg1,extraarg2) => f'::r'
+end
+
+relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list =
+
+  axiom	list_map_2_2 ([],_,_,_) => []
+
+  rule	fn (f,extraarg1,extraarg2) => (f1,f2) &
+	list_map_2_2(r,fn,extraarg1,extraarg2) => r'
+	-------------------
+	list_map_2_2(f::r,fn,extraarg1,extraarg2) => ((f1,f2)::r')
+end
+
+(* For relation that do not return a value, like print and other sideeffect functions *)
+relation list_map_0 : ('a list, 'a => ()) => () =
+
+  axiom	list_map_0 ([],_) => ()
+
+  rule	fn (f) => () &
+	list_map_0(r,fn) => ()
+	-------------------
+	list_map_0(f::r,fn) => ()
+end
+
 relation list_list_map : ('a list list, 'a => 'b) => 'b list list =
 	
   axiom	list_list_map ([],_) => []
@@ -120,6 +188,16 @@ relation list_thread : ('a list, 'a list) => 'a list =
 	list_thread(fa::ra,fb::rb) => d
 
 end
+
+relation list_thread_map : ('a list, 'b list, ('a,'b) => 'c) => 'c list =
+
+  axiom	list_thread_map([],[],_) => []
+
+  rule	fn(fa,fb) => fr &
+	list_thread_map(ra,rb,fn) => res
+	--------------------------------
+	list_thread_map(fa::ra,fb::rb,fn) => fr::res
+end 
 
 relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list =
 
@@ -175,6 +253,31 @@ relation list_getmember: (''a, ''a list) => ''a =
 	list_getmember(x,y::ys) => res
 end 
 
+(* Only deletes first occurence of element in list *)
+relation list_deletemember: (''a list,''a) => ''a list =
+
+  rule	list_position(elt,lst) => pos &
+	list_delete(lst,pos) => lst'
+	----------------------------
+	list_deletemember(lst,elt) => lst'
+
+  axiom	list_deletemember(lst,_) => lst
+
+end
+
+relation list_getmember_p: (''a, ''a list,(''a,''a) => bool) => ''a =
+
+  axiom list_getmember_p(_,[],p) => fail
+
+  rule  p(x, y) => true
+	-----
+	list_getmember_p(x,y::ys,p) => y 
+	
+  rule	p(x, y) => false & 
+	list_getmember_p(x,ys,p) => res 
+	----------------------
+	list_getmember_p(x,y::ys,p) => res
+end 
 
 relation list_union_elt: (''a , ''a list) => ''a list =
 
@@ -187,13 +290,68 @@ relation list_union_elt: (''a , ''a list) => ''a list =
 	list_union_elt(x,lst) => x::lst	
 end
 
+relation list_union:  (''a list, ''a list) => ''a list =
+	
+  axiom	list_union([],res) => res
+
+  rule	list_union_elt(x,lst2) => r1 &
+	list_union(xs,r1) => res
+	-----------------------
+	list_union(x::xs,lst2) => res
+end
+
+relation list_list_union:  (''a list list) => ''a list =
+  
+  axiom	list_list_union([]) => []
+
+  axiom	list_list_union([x]) => x
+
+  rule	list_union(x1,x2) => r1 &
+	list_list_union(r1::rest) => res
+	-----------------------
+	list_list_union(x1::x2::rest) => res
+end
+
+relation list_union_elt_p: (''a , ''a list , (''a, ''a) => bool) => ''a list =
+
+  rule	list_getmember_p(x,lst,p) => _ 
+	--------------------------
+	list_union_elt_p(x,lst,p) => lst
+
+  rule	not list_getmember_p(x,lst,p) => _ 
+	--------------------------
+	list_union_elt_p(x,lst,p) => x::lst	
+end
+
+relation list_union_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list =
+	
+  axiom	list_union_p([],res,p) => res
+
+  rule	list_union_elt_p(x,lst2,p) => r1 &
+	list_union_p(xs,r1,p) => res
+	-----------------------
+	list_union_p(x::xs,lst2,p) => res
+end
+
+relation list_list_union_p:  (''a list list, (''a,''a) => bool) => ''a list =
+  
+  axiom	list_list_union_p([],p) => []
+
+  axiom	list_list_union_p([x],p) => x
+
+  rule	list_union_p(x1,x2,p) => r1 &
+	list_list_union_p(r1::rest,p) => res
+	------------------------------------
+	list_list_union_p(x1::x2::rest,p) => res
+end
+
 relation list_replaceat: (''a, int, ''a list) => ''a list =
 
   axiom list_replaceat(x,_,[]) => []
 
-  axiom	 list_replaceat (x,1,y::ys) => x::ys
+  axiom	 list_replaceat (x,0,y::ys) => x::ys
 
-  rule	int_gt(n,1) => true & int_sub(n,1) => nn &
+  rule	int_ge(n,1) => true & int_sub(n,1) => nn &
 	list_replaceat(x,nn,ys) => res
 	-----------------------------
 	list_replaceat(x,n,y::ys) => y::res

@@ -1,0 +1,1627 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+(**
+ ** file:	 daelow.rml
+ ** module:      DAELow
+ ** description: DAELow a lower form of DAE including sparse matrises for
+ ** BLT decomposition, etc.
+ **
+ ** RCS: %W% %E%
+ ** 
+ **)
+
+(** - Module header *)
+
+module DAELow:
+  
+  with "dae.rml"
+  with "exp.rml"
+
+
+  datatype VarKind = VARIABLE | STATE | DUMMY_DER | DUMMY_STATE | DISCRETE | PARAM | CONST
+
+  datatype Var = VAR of Exp.ComponentRef * 
+			VarKind * 
+			DAE.VarDirection * 
+			DAE.Type * 
+			Exp.Exp option * (* Binding e.g. for parameters*)
+			DAE.InstDims *
+			DAE.StartValue  (* value of start attribute *)
+
+  datatype Equation = EQUATION of Exp.Exp * Exp.Exp
+
+  datatype DAELow = DAELOW of Var list (* ordered Variables, only states and alg. vars*)		    
+	          * Equation list (* ordered Equations *)
+	          * Equation list (* Removed equations a=b*)
+
+
+  type IncidenceMatrix = int list list 
+
+  type IncidenceMatrixT = IncidenceMatrix
+
+  relation dump: DAELow => ()
+ 	  
+  relation lower: (DAE.DAElist) => DAELow
+  
+  relation incidence_matrix: (DAELow) => IncidenceMatrix
+ 
+  relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT
+		  
+  relation dump_incidence_matrix: IncidenceMatrix => ()
+
+  relation dump_incidence_matrix_inv: IncidenceMatrixT => ()
+
+  relation dump_matching: (int vector) => () 
+	  
+  relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT) 
+	  => (int vector,(* var solved in eqn*) 
+	      int vector, (* eqn solves var *) 
+	      DAELow,
+	      IncidenceMatrix, 
+	      IncidenceMatrixT)
+
+  relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
+			       int vector, int vector) => 
+	  (int list list )
+
+  relation dump_components: (int list list) => ()
+	  
+end (* End Module *)
+
+(* Implementation *)
+with "util.rml" 
+with "daeext.rml"
+with "absyn.rml"
+with "print.rml"
+with "derive.rml"
+with "debug.rml" 
+
+relation lower: (DAE.DAElist) => DAELow =
+
+  rule	states(lst) => s &
+	(*print "states:" &
+	Util.list_map(s,Exp.cref_str) => crefs &
+	Util.string_delimit_list(crefs,", " ) => st &
+	print st & print "\n" &*)
+	lower2(lst,s) => (low as DAELOW(vars,eqns,reqns)) 
+(*	remove_simple_equations(low,s) => low' *)
+	(*list_length(vars) => varlen &
+	int_string(varlen) => vs &
+	list_length(eqns) => eqnlen &
+	int_string(eqnlen) => es &
+	print vs & print " variables\n========" &
+	dump_vars(vars) &
+	print st & print "\n" &
+	print es & print " equations\n" *)
+	--------------------
+	lower(lst) => low
+end
+
+relation dump: DAELow => () =
+
+  rule	print "Variables\n" &
+	print "=========\n" &
+	dump_vars vars &
+	print "\n" &
+	print "Equations\n" &
+	print "=========\n" &
+	dump_eqns eqns &
+	print "Simple Equations\n" &
+	print "=========\n" &
+	dump_eqns reqns 
+	-----------------
+	dump(DAELOW(vars,eqns,reqns))
+end
+relation dump_eqns: Equation list => () =
+
+  rule	Util.list_map(eqns,equation_str) => lst &
+	Util.string_delimit_list(lst,", ") => s &
+	print s & print "\n" 
+	----------------
+	dump_eqns(eqns)
+end
+
+relation equation_str: Equation => string =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	Exp.print_exp_str e2 => s2 &
+	Util.string_append_list([s1,"=",s2]) => res
+	--------------------
+	equation_str(EQUATION(e1,e2)) => res
+end
+
+(* Move simple equations on the form a=b from equations 2nd in DAELow
+ to simple equations 3rd in DAELow to speed up assignment alg. *)
+relation remove_simple_equations: (DAELow,Exp.ComponentRef list) 
+	=> (DAELow) =
+
+  rule	remove_simple_equations2(eqns,eqns,states)
+	  => (eqns',reqns')	  
+	-------------------------------------
+	remove_simple_equations(DAELOW(vars,eqns,reqns),states) 
+	  => DAELOW(vars,eqns,reqns')
+end
+
+relation remove_simple_equations2: (Equation list, (* all equations *)
+				    Equation list, (* eqns to iterate*)
+				    Exp.ComponentRef list) (* states *)
+	  => (Equation list, (* all equations *)  
+	      Equation list) (* removed equations*) =
+
+  rule	list_member(cr1,states) => false &
+	list_member(cr2,states) => false &
+	Util.list_deletemember(alleqns,e) => alleqns' &
+	Util.list_map_2(alleqns,replace_all,cr1,cr2) => alleqns'' &
+	remove_simple_equations2(alleqns'',eqns,states) => (alleqns''',reqns)
+	--------------------------------------------------
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr1,_),Exp.CREF(cr2,_)))::eqns,states) 
+	  => (alleqns''',e::reqns)
+	
+  rule	remove_simple_equations2(alleqns,eqns,states) => (alleqns',reqns)
+	--------------------------------------------------------------
+	remove_simple_equations2(alleqns,_::eqns,states)
+	  => (alleqns',reqns)
+
+  axiom	remove_simple_equations2(alleqns,[],states) => (alleqns,[])
+
+end 
+
+relation replace_all: (Equation, (* equation *)
+		       Exp.ComponentRef, (*source variable, *)
+		       Exp.ComponentRef) (*target variable: src replaced with*)
+	=> Equation =
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	replace_all_exp(e2,s,t) => e2'
+	------------------------------
+	replace_all (EQUATION(e1,e2),s,t) => EQUATION(e1',e2')
+end
+
+relation replace_all_exp: (Exp.Exp, 
+			   Exp.ComponentRef, (* source variable *)
+			   Exp.ComponentRef) (* target variable *)
+	  => (Exp.Exp) =
+  rule	replace_all_exp(e1,s,t) => e1' &
+	replace_all_exp(e2,s,t) => e2' 
+	-----------------------------
+	replace_all_exp(Exp.BINARY(e1,op,e2),s,t) => Exp.BINARY(e1',op,e2')
+
+  rule	replace_all_exp(e,s,t) => e' 
+	-----------------------------
+	replace_all_exp(Exp.UNARY(op,e),s,t) => Exp.UNARY(op,e')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	replace_all_exp(e2,s,t) => e2' 
+	-----------------------------
+	replace_all_exp(Exp.LBINARY(e1,op,e2),s,t) => Exp.LBINARY(e1,op,e2)
+	
+  rule	replace_all_exp(e,s,t) => e'
+	-----------------------------
+	replace_all_exp(Exp.LUNARY(op,e),s,t) => Exp.LUNARY(op,e')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	replace_all_exp(e2,s,t) => e2'
+	-------------------------
+	replace_all_exp(Exp.RELATION(e1,rel,e2),s,t) => Exp.RELATION(e1',rel,e2')
+	
+  rule	replace_all_exp(e1,s,t) => e1' &
+	replace_all_exp(e2,s,t) => e2' &
+	replace_all_exp(e3,s,t) => e3'
+	-------------------------
+	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1',e2',e3')
+
+  rule	Util.list_map_2(expl,replace_all_exp,s,t) => expl' 
+	-------------------------------------------------
+	replace_all_exp(Exp.CALL(a,expl,b,c),s,t) => Exp.CALL(a,expl',b,c)
+	
+  rule	Util.list_map_2(expl,replace_all_exp,s,t) => expl' 
+	--------------------------------------------
+	replace_all_exp(Exp.ARRAY(tp,b,expl),s,t) => Exp.ARRAY(tp,b,expl')
+
+  rule	Print.print_buf "replace_all_exp on MATRIX not impl.\n" &
+	print "replace_all_exp on MATRIX not impl.\n"
+	---------------------------------------
+	replace_all_exp(e as Exp.MATRIX(_,_,_),s,t) => e
+	
+  rule	Util.list_map_2(expl,replace_all_exp,s,t) => expl'
+	-----------------------
+	replace_all_exp(Exp.TUPLE(expl),s,t) => Exp.TUPLE(expl')
+
+  rule	replace_all_exp(e,s,t) => e'
+	-----------------------
+	replace_all_exp(Exp.CAST(tp,e),s,t) => Exp.CAST(tp,e')
+
+  rule	replace_all_exp(e,s,t) => e'
+	----------------------------
+	replace_all_exp(Exp.ASUB(e,i),s,t) => Exp.ASUB(e,i)
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	replace_all_exp(e2,s,t) => e2' 
+	------------------------------
+	replace_all_exp(Exp.REDUCTION(a,e1,b,e2),s,t) 
+	  => Exp.REDUCTION(a,e1',b,e2')
+
+  axiom	replace_all_exp(e,s,t) => e
+end
+
+
+relation dump_vars: Var list => ()=
+
+  axiom	dump_vars [] => ()
+
+  rule	Exp.cref_str(cr) => str &
+	print str & print ":" & dump_kind kind &
+	print ", " &
+	dump_vars(xs) 
+	-------------
+	dump_vars(VAR(cr,kind,_,_,_,_,_)::xs)
+end 
+relation dump_kind: VarKind => () =
+
+  rule	print "VARIABLE" 
+	--------------
+	dump_kind VARIABLE
+
+  rule	print "STATE" 
+	--------------
+	dump_kind STATE
+
+  rule	print "DUMMY_DER" 
+	--------------
+	dump_kind DUMMY_DER
+
+  rule	print "DUMMY_STATE" 
+	--------------
+	dump_kind DUMMY_STATE
+
+  rule	print "DISCRETE" 
+	--------------
+	dump_kind DISCRETE
+
+  rule	print "PARAM" 
+	--------------
+	dump_kind PARAM
+
+  rule	print "CONST" 
+	--------------
+	dump_kind CONST
+end
+
+relation states: (DAE.DAElist) => Exp.ComponentRef list =
+
+  axiom states DAE.DAE([]) => []
+
+  rule	states(DAE.DAE(xs)) => s &
+	states_exp(e1) => s1 &
+	states_exp(e2) => s2 &
+	Util.list_list_union_p([s,s1,s2],Exp.cref_equal) => res
+	-----------------------------------
+	states(DAE.DAE(DAE.EQUATION(e1,e2)::xs))  => res
+
+  rule	states(dae) => s1 &
+	states(DAE.DAE(xs)) => s2 &
+	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+	-------------------------
+	states(DAE.DAE(DAE.COMP(_,dae)::xs)) => res
+	
+  rule  states(DAE.DAE(xs)) => res
+	-----------------
+	states(DAE.DAE(_::xs)) => res
+end
+
+relation states_exp: (Exp.Exp) => Exp.ComponentRef list =
+
+  rule	states_exp(e1) => s1 &
+	states_exp(e2) => s2 &
+	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+	-----------------------------
+	states_exp(Exp.BINARY(e1,_,e2)) => res
+
+  rule	states_exp(e) => res
+	-----------------------------
+	states_exp(Exp.UNARY(_,e)) => res
+
+  rule	states_exp(e1) => s1 &
+	states_exp(e2) => s2 &
+	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+	-----------------------------
+	states_exp(Exp.LBINARY(e1,_,e2)) => res
+	
+  rule	states_exp(e) => res
+	-----------------------------
+	states_exp(Exp.LUNARY(_,e)) => res
+
+  rule	states_exp(e1) => s1 &
+	states_exp(e2) => s2 &
+	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+	-------------------------
+	states_exp(Exp.RELATION(e1,_,e2)) => res
+	
+  rule	states_exp(e1) => s1 &
+	states_exp(e2) => s2 &
+	states_exp(e3) => s3 &
+	Util.list_list_union_p([s1,s2,s3],Exp.cref_equal) => res
+	-------------------------
+	states_exp(Exp.IFEXP(e1,e2,e3)) => res
+
+  axiom	states_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_)) => [cr]
+
+  rule	Util.list_map(expl,states_exp) => lst &
+	Util.list_list_union_p(lst,Exp.cref_equal) => res
+	------------------------
+	states_exp(Exp.CALL(_,expl,_,_)) => res
+	
+  rule	Util.list_map(expl,states_exp) => lst &
+	Util.list_list_union_p(lst,Exp.cref_equal) => res
+	-----------------------
+	states_exp(Exp.ARRAY(_,_,expl)) => res
+
+  rule	Print.print_buf "states_exp on MATRIX not impl.\n" &
+	print "states_exp on MATRIX not impl.\n"
+	---------------------------------------
+	states_exp(Exp.MATRIX(_,_,_)) => []
+	
+  rule	Util.list_map(expl,states_exp) => lst &
+	Util.list_list_union_p(lst,Exp.cref_equal) => res
+	-----------------------
+	states_exp(Exp.TUPLE(expl)) => res
+
+  rule	states_exp(e) => res
+	-----------------------
+	states_exp(Exp.CAST(_,e)) => res
+
+  rule	states_exp(e) => res
+	-----------------------
+	states_exp(Exp.ASUB(e,_)) => res
+
+  rule	states_exp(e1) => s1 &
+	states_exp(e2) => s2 &
+	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+	-------------------------
+	states_exp(Exp.REDUCTION(_,e1,_,e2)) => res
+
+  axiom	states_exp(_) => []
+end
+
+
+relation lower2: (DAE.DAElist, Exp.ComponentRef list) => DAELow =
+	
+  axiom	lower2 (DAE.DAE([]),_) => DAELOW([],[],[])
+	
+  rule	lower2(DAE.DAE(xs),states) => DAELOW(vars,eqns,reqns) &
+	lower_var (v,states) => v'
+	--------------------------------
+	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_, _,_,_,_))::xs),states) 
+	  => DAELOW(v'::vars,eqns,reqns)
+	  
+  rule	lower2(DAE.DAE(xs),states) => DAELOW(vars,eqns,reqns) &
+	lower_eqn(e) => e' 
+	--------------------------------
+	lower2 (DAE.DAE((e as DAE.EQUATION(e1,e2))::xs),states) 
+	  => DAELOW(vars,e'::eqns,reqns)
+
+  rule	lower2(dae,states) => DAELOW(vars1,eqns1,reqns1) &
+	lower2(DAE.DAE(xs),states) => DAELOW(vars2,eqns2,reqns2) &
+	list_append(vars1,vars2) => vars &
+	list_append(eqns1,eqns2) => eqns &
+	list_append(reqns1,reqns2) => reqns
+	--------------------------------
+	lower2(DAE.DAE(DAE.COMP(_,dae)::xs),states) 
+	  => DAELOW(vars,eqns,reqns)
+	
+  rule	lower2(DAE.DAE(xs),states) => res
+	---------------------
+	lower2 (DAE.DAE(_::xs),states) => res	
+
+  rule	print "-lower2 failed\n" 
+	------------------------
+	lower2 (_,_) => fail	
+end
+
+relation lower_eqn: (DAE.Element) => Equation =
+
+  axiom	 lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1,e2)
+
+end
+
+relation lower_var: (DAE.Element, Exp.ComponentRef list) => Var =
+
+  rule	lower_varkind(kind,name,states) => kind'
+	----------------------------------------
+	lower_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_),states)
+	  => VAR(name,kind',dir,tp,bind,dims,start)
+
+(*  rule	print "-lower_var failed\n" 
+	------------------------
+	lower_var (_,_) => fail*)
+
+end
+
+relation lower_varkind: (DAE.VarKind, Exp.ComponentRef, Exp.ComponentRef list) 
+	=> VarKind =
+	(* Fails for not states that are not algebraic variables, e.g.
+	 parameters and constants *)
+
+  rule	list_member(v,states) => true
+	-----------------------------
+	lower_varkind(DAE.VARIABLE,v,states) => STATE
+
+  axiom	lower_varkind(DAE.VARIABLE,_,_) => VARIABLE
+
+end
+
+
+relation varnames: Var list => Exp.ComponentRef list =
+
+  axiom	varnames [] => []
+
+  rule	varnames(vs) => res
+	-----------------
+	varnames (VAR(cr,_,_,_,_,_,_)::vs) => cr::res
+end
+
+
+relation incidence_matrix: (DAELow)
+	  => IncidenceMatrix =
+	  
+  axiom	incidence_matrix(DAELOW(_,[],_)) => [] 
+
+  rule	incidence_matrix(DAELOW(vars,eqns,reqns)) => lst &
+	incidence_row(vars,e) => row
+	----------------------------
+	incidence_matrix(DAELOW(vars,e::eqns,reqns)) => row::lst
+
+  rule	print "incidence_matrix failed\n" 
+	----------------------
+	incidence_matrix(_) => fail
+end
+
+
+relation incidence_row: ( Var list, Equation) 
+	  => int list =
+	
+  rule	(*Inefficient to for each cref in equation traverse the varlist*)
+	(* Should use a map or a bintree*)
+	incidence_row_exp(e1,vars) => lst1 &
+	incidence_row_exp(e2,vars) => lst2 &
+	list_append(lst1,lst2) => res
+	------------------------------------
+	incidence_row(vars,EQUATION(e1,e2)) => res
+end 
+
+relation incidence_row_exp: (Exp.Exp, Var list ) 
+	  => int list =
+
+  rule	(* If variable x is a state, der(x) is a variable in incidence matrix,
+	 but not x itself, it is considered known.*)
+	get_var(cr,vars) => (VAR(_,STATE,_,_,_,_,_),_)
+ 	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => []
+	
+  rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_,_,_,_),p) 
+	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
+
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_DER,_,_,_,_,_),p) 
+	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
+
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_STATE,_,_,_,_,_),p) 
+	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	-----------------------------
+	incidence_row_exp(Exp.BINARY(e1,_,e2),vars) => res
+
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------------
+	incidence_row_exp(Exp.UNARY(_,e),vars) => res
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	-----------------------------
+	incidence_row_exp(Exp.LBINARY(e1,_,e2),vars) => res
+	
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------------
+	incidence_row_exp(Exp.LUNARY(_,e),vars) => res
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	-------------------------
+	incidence_row_exp(Exp.RELATION(e1,_,e2),vars) => res
+	
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	incidence_row_exp(e3,vars) => s3 &
+	Util.list_flatten([s1,s2,s3]) => res
+	-------------------------
+	incidence_row_exp(Exp.IFEXP(e1,e2,e3),vars) => res
+
+  rule  get_var(cr,vars) => (VAR(_,STATE,_,_,_,_,_),p)
+	--------------------------------
+	incidence_row_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
+	  => [p]
+
+  rule  get_var(cr,vars) => (_,p)
+	--------------------------------
+	incidence_row_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
+	  => []
+
+  rule	Util.list_map_1(expl,incidence_row_exp,vars) => lst &
+	Util.list_flatten(lst) => res
+	-----------------------------------------------
+	incidence_row_exp(Exp.CALL(_,expl,_,_),vars) => res
+	
+  rule	print "not impl. yet" 
+	-----------------------
+	incidence_row_exp(Exp.ARRAY(_,_,expl),vars) => []
+
+  rule	Print.print_buf "incidence_row_exp on MATRIX not impl.\n" &
+	print "incidence_row_exp on MATRIX not impl.\n"
+	---------------------------------------
+	incidence_row_exp(Exp.MATRIX(_,_,_),vars) => []
+	
+  rule	print "not impl. yet." 
+	-----------------------
+	incidence_row_exp(Exp.TUPLE(expl),vars) => []
+
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------
+	incidence_row_exp(Exp.CAST(_,e),vars) => res
+
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------
+	incidence_row_exp(Exp.ASUB(e,_),vars) => res
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	--------------------
+	incidence_row_exp(Exp.REDUCTION(_,e1,_,e2),vars) => res
+
+  axiom	incidence_row_exp(_,_) => []
+end
+
+
+relation get_var: (Exp.ComponentRef, Var list) => (Var,int) =
+	
+  rule	Exp.cref_equal(cr,cr2) => true
+	-----------------------------
+	get_var(cr,(v as VAR(cr2,_,_,_,_,_,_))::vars) => (v,1)
+	
+  rule	get_var(cr,vars) => (v,pos) &
+	int_add(pos,1) => pos'
+	-----------------------------
+	get_var(cr,v as VAR(cr2,_,_,_,_,_,_)::vars) => (v,pos')
+end
+
+relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
+
+  rule	list_length(m) => neq &
+	transpose_matrix2(m,neq,0,[]) => mt
+	----------------
+	transpose_matrix(m) => mt
+end
+relation transpose_matrix2: (IncidenceMatrix,int,int,IncidenceMatrixT) 
+	  => IncidenceMatrixT =
+  axiom	transpose_matrix2(_,0,_,_) => []
+
+  rule	int_sub(neq,1) => neq' &
+	int_add(eqno,1) => eqno' &
+	transpose_matrix2(m,neq',eqno',mt) => mt'&
+	transpose_row(m,eqno',1) => row
+	-------------------------
+	transpose_matrix2(m,neq,eqno,mt) => row::mt'
+end
+
+relation transpose_row: (IncidenceMatrix,int,int) => int list =
+
+  axiom	transpose_row([],_,_) => []
+	
+  rule	list_member(eqn,m) => true &
+	int_add(varno,1) => varno' &
+	transpose_row(ms,eqn,varno') => res
+	---------------------------
+	transpose_row(m::ms,eqn,varno) => varno::res
+
+  rule	list_member(eqn,m) => false &
+	int_add(varno,1) => varno' &
+	transpose_row(ms,eqn,varno') => res
+	---------------------------
+	transpose_row(m::ms,eqn,varno) => res
+end
+
+relation dump_incidence_matrix: IncidenceMatrix => () =
+
+  rule	print "Incidence Matrix\n (row == equation)" &
+	print "====================================\n" &
+	dump_incidence_matrix2(m) 
+	-------------------------
+	dump_incidence_matrix(m) => ()
+end 
+
+relation dump_incidence_matrix_inv: IncidenceMatrix => () =
+
+  rule	print "Transpose Incidence Matrix (row == var)\n" &
+	print "=====================================\n" &
+	dump_incidence_matrix2(m) 
+	-------------------------
+	dump_incidence_matrix_inv(m) => ()
+end 
+	
+relation dump_incidence_matrix2: IncidenceMatrix => () =
+
+  axiom	dump_incidence_matrix2([]) => ()
+
+  rule	dump_incidence_row(row) &
+	dump_incidence_matrix2(rows)
+	---------------------------
+	dump_incidence_matrix2(row::rows)
+end
+
+relation dump_incidence_row: int list => () =
+
+  rule	print "\n"
+	----------
+	dump_incidence_row [] 
+
+  rule	int_string(x) => s &
+	print s & print " " &
+	dump_incidence_row(xs) 
+	----------------------
+	dump_incidence_row (x::xs)
+end
+
+relation dump_matching: (int vector) => () =
+	
+  rule	print "Matching\n" &
+	print "========\n" &
+	dump_matching2(v,0) 
+	-------------------
+	dump_matching(v) 
+end
+
+relation dump_matching2: (int vector, int) => () =
+
+  rule	vector_length(v) => len &
+	int_add(i,1) => i' &
+	int_eq(len,i') => true &
+	int_string i' => s & 
+	print "var " & print s & 
+	print " is solved in eqn " &
+	vector_nth(v,i) => eqn &
+	int_string eqn => s2 & print s2 & print "\n" 
+	---------------------
+	dump_matching2(v,i) 
+
+  rule	vector_length(v) => len &
+	int_add(i,1) => i' &
+	int_eq(len,i') => false &
+	int_string i' => s & 
+	print "var " & print s & 
+	print " is solved in eqn " &
+	vector_nth(v,i) => eqn &
+	int_string eqn => s2 & print s2 & print "\n" &
+	dump_matching2(v,i') 
+	---------------------
+	dump_matching2(v,i) 
+end
+
+relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT) 
+	  => ( int vector , int vector,
+	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
+
+  rule	list_length(m) => nvars &
+	list_length(mt) => neqns &
+	Util.list_fill(0,nvars) => assign1 &
+	Util.list_fill(0,nvars) => assign2 &
+	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2) 
+	  => (lst1, lst2,dae,m,mt) &
+	list_vector(lst1) => vec1 &
+	list_vector(lst2) => vec2 
+	----------------------
+	matching_algorithm(dae,m,mt) => (vec1,vec2,dae,m,mt)
+end
+
+relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
+			       ,int (* number of vars*)
+			       ,int (* number of eqns*)
+			       ,int (* current var*)
+			       , int list, int list) 
+	  =>  (int list, 
+	       int list,
+	       DAELow,
+	       IncidenceMatrix, 
+	       IncidenceMatrixT) =
+	  
+  rule	int_eq(nv,i) => true &
+	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')  (* exit loop *)
+	---------------------------------------------
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	  => (ass1',ass2',dae,m,mt)
+
+  rule	int_add(i,1) => i' &
+	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2') & 
+	matching_algorithm2(dae,m,mt,nv,nf,i',ass1',ass2') 
+	  => (ass1'',ass2'',dae,m,mt)
+	----------------------------------------------------------------
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	  => (ass1'',ass2'',dae,m,mt) 
+
+  rule	(* path_found failed, Try index reduction using dummy derivatives.
+	 When a constraint exist between states and index reduction is needed
+	 the dummy derivative will select one of the states as a dummy state
+	 (and the derivative of that state as a dummy derivative).
+	 For instance, u1=u2 is a constraint between states. Choose u1 as dummy state
+	 and der(u1) as dummy derivative, named der_u1. The differentiated function 
+	 then becomes: der_u1 = der(u2).
+	 In the dummy derivative method this equation is added and the original equation
+	 u1=u2 is kept. This is not the case for the original pantilides algorithm, where
+	 the original equation is removed from the system.
+	 *)
+	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
+	  => (dae as DAELOW(vars,eqns,_),m,mt) &
+	  (* and try again, restarting. This could be optimized later. It should not
+	   be necessary to restart the matching. Instead one could continue the matching
+	   as usual. This has not been tested yet.*)
+	list_length(vars) => nv' &
+	list_length(eqns) => nf' &
+	Util.list_fill(0,nv') => ass1 &
+	Util.list_fill(0,nf') => ass2 &
+	matching_algorithm2(dae,m,mt,nv',nf',1,ass1,ass2)
+	  => (ass1',ass2',dae,m,mt)
+	------------------------
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	  => (ass1',ass2',dae,m,mt)
+
+  rule	print "Error, model singular. i=" &
+	int_string(i) => is & print is & print "\n" 
+	& DAEEXT.dump_marked_equations(nf) 
+	& DAEEXT.dump_marked_variables(nv)
+	------------------------------
+ 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) => fail
+end
+
+relation reduce_index_dummy_der: (DAELow, 
+				  IncidenceMatrix, 
+				  IncidenceMatrixT,
+				  int, (* number of vars*)
+				  int, (* number of eqns*)
+				  int) (* i *)
+			    
+			    => (DAELow,
+				IncidenceMatrix, 
+				IncidenceMatrixT) =
+	
+  rule	marked_eqns(nf) => eqns &
+	
+	(* Collect the states in the equations that are singular, i.e. composing
+	 a constraint between states.*)
+	states_in_eqns(eqns,dae,m,mt) => (states,stateindx) &
+	differentiate_eqns(dae,m,mt,nv,nf,eqns) 
+	  => (dae,m,mt,nv,nf,deqns) &	
+	  update_incidence_matrix(dae,m,mt,i) => (m,mt) &
+	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
+	new_dummy_var(state,dae) => (dummy_der,dae) &
+	eqns_for_var(mt,stateno) => reqns &
+	Util.list_union_p(reqns,deqns,int_eq) => changedeqns &
+	(* We need to change variables in the differentiated equations and in the 
+	  equations having the dummy derivative *)
+	replace_dummy_der(state,dummy_der,dae,m,mt,changedeqns) => (dae,m,mt) &
+	make_algebraic(dae,state) => dae &
+	update_incidence_matrix(dae,m,mt,i) => (m,mt) 
+	---------------------------------------------
+	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
+	  => (dae,m,mt)
+
+  rule	print "-reduce_index_dummy_der failed\n"
+	--------------------
+	reduce_index_dummy_der(_,_,_,_,_,_) => fail
+end
+
+relation update_incidence_matrix:(DAELow,
+				  IncidenceMatrix, 
+				  IncidenceMatrixT,
+				  int) (* i *) 
+	  => (IncidenceMatrix, 
+	      IncidenceMatrixT) =
+
+  rule	(* Inefficient, should only update the added differentiated variables *)
+	incidence_matrix(dae) => m' &
+	transpose_matrix(m') => mt'
+	---------------------
+	update_incidence_matrix(dae,m,mt,i) => (m',mt')
+end
+
+(* Make the variable a dummy derivative, i.e. change varkind from STATE to DUMMY_STATE *)
+relation make_algebraic: (DAELow, 
+			  Exp.ComponentRef) (* state *)
+	  => (DAELow) =
+
+  axiom	make_algebraic(DAELOW([],e,es),_) => DAELOW([],e,es)
+	
+  rule	Exp.cref_equal(cr,state) => true 
+	--------------------------------
+	make_algebraic(DAELOW((v as VAR(cr,kind,d,t,b,dim,start))::vs,e,se),state)
+	  =>	(DAELOW(VAR(cr,DUMMY_STATE,d,t,b,dim,start)::vs,e,se))
+	  
+  rule	make_algebraic(DAELOW(vs,e,se),state) => DAELOW(vs',e',se')
+	-----------------------------------------------------------
+	make_algebraic(DAELOW(v::vs,e,se),state)
+	  => (DAELOW(v::vs',e',se'))
+end	  
+
+(* replaces der(state) with the variable dummy der *)
+relation replace_dummy_der: (Exp.ComponentRef, (* state *)
+			     Exp.ComponentRef, (* dummy der name *)
+			     DAELow, 
+			     IncidenceMatrix, 
+			     IncidenceMatrixT,
+			     int list) 
+	  => ( DAELow, 
+	      IncidenceMatrix, 
+	      IncidenceMatrixT) =
+
+  axiom	replace_dummy_der(state,dummy,dae,m,mt,[]) => (dae,m,mt)
+
+  rule	int_sub(e,1) => e' &
+	list_nth(eqns,e') => eqn &
+	replace_dummy_der2(state,dummyder,eqn) => eqn' &
+	replace_dummy_der_others(v,eqn') => (eqn',v') &
+	Util.list_union_p(v,v',var_equal) => v'' &
+	Util.list_replaceat(eqn',e',eqns) => eqns' &
+	replace_dummy_der(state,dummyder,DAELOW(v'',eqns',seqns),m,mt,rest) 
+	  => (dae,m,mt) 
+	-------------------------------
+	replace_dummy_der(state,dummyder,DAELOW(v,eqns,seqns),m,mt,e::rest)
+	  => (dae,m,mt)
+
+  rule	print "-replace_dummy_der failed\n" 
+	-------------------
+	replace_dummy_der(_,_,_,_,_,_) => fail
+end
+
+(* replaces der(state) with dummy_der variable in equationlist_append *)
+relation replace_dummy_der2:(Exp.ComponentRef,
+			     Exp.ComponentRef,
+			     Equation) => Equation =
+
+  rule	let dercall = Exp.CALL(Absyn.IDENT("der"),
+			       [Exp.CREF(st,Exp.REAL)],
+			       false,
+			       false) &
+	Exp.replace_exp(e1,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e1',_) &
+	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e2',_)
+	---------------------------------------------------------------
+	replace_dummy_der2(st,dummyder,EQUATION(e1,e2)) => EQUATION(e1',e2')
+	
+  rule	print "-replace_dummy_der2 failed\n" 
+	---------------
+	replace_dummy_der2(_,_,_) => fail
+end
+(* Replaces der(der_s)  with der2_s and der(der(v)) with der2_v *)
+relation replace_dummy_der_others:( Var list ,Equation) => (Equation,Var list) =
+
+  axiom	replace_dummy_der_others([],eqn) => (eqn,[])
+
+  rule	(* der(der_c) => der_der_c *)
+	let dercall = Exp.CALL(Absyn.IDENT("der"),
+			       [Exp.CREF(cr,Exp.REAL)],
+			       false,
+			       false) &
+	create_dummy_var(cr) => dummyder &
+	
+	Exp.replace_exp(e1,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e1',c1) &
+	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e2',c2) &
+	int_add(c1,c2) => c &
+	int_gt(c,0) => cond &
+	Util.if(cond,[VAR(dummyder,DUMMY_DER,a,b,NONE,d,NONE)],[]) => varlst &
+	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
+	Util.list_union_p(allvars,varlst,var_equal) => allvars'
+	---------------------------------------------------------------
+	replace_dummy_der_others(VAR(cr,DUMMY_DER,a,b,c,d,e)::vs,EQUATION(e1,e2))
+	  => (res,allvars')
+
+  rule	(* der(der(s)) s is state => der_der_s) *)
+	let dercall = Exp.CALL(Absyn.IDENT("der"),
+			       [Exp.CALL(Absyn.IDENT("der"),
+					 [Exp.CREF(cr,Exp.REAL)],
+					  false,
+					  false)],
+			       false,
+			       false) &
+	create_dummy_var(cr) => dummyder & 
+	create_dummy_var(dummyder) => dummyder' &
+	Exp.replace_exp(e1,dercall, Exp.CREF(dummyder',Exp.REAL)) => (e1',c1) &
+	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder',Exp.REAL)) => (e2',c2) &
+	int_add(c1,c2) => c &
+	int_gt(c,0) => cond &
+	Util.if(cond,[VAR(dummyder',DUMMY_DER,a,b,NONE,d,NONE)],[]) => varlst &
+	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
+	Util.list_union_p(allvars,varlst,var_equal) => allvars'
+	---------------------------------------------------------------------------
+	replace_dummy_der_others(VAR(cr,STATE,a,b,c,d,e)::vs,EQUATION(e1,e2))
+	  => (res,allvars')
+
+  rule	replace_dummy_der_others(vs,EQUATION(e1,e2)) => (res,allvars)
+	----------------------------------------------------------
+	replace_dummy_der_others(_::vs,EQUATION(e1,e2))
+	  => (res,allvars)
+end
+
+relation var_equal: (Var,Var) => bool =
+
+  rule	Exp.cref_equal(cr1,cr2) => res 
+	------------------------------
+	var_equal(VAR(cr1,_,_,_,_,_,_),VAR(cr2,_,_,_,_,_,_)) => res
+end
+
+(* creates a new variable named "der_"+<varname> and adds it to the dae *) 
+relation new_dummy_var:(Exp.ComponentRef,DAELow) => (Exp.ComponentRef,DAELow) =
+
+  rule	get_var(var,vars) => (VAR(_,kind,dir,tp,bind,dim,start),_) &
+	create_dummy_var(var) => dummyvar &
+	list_append(vars,[VAR(dummyvar,DUMMY_DER,dir,tp,NONE,dim,NONE)]) 
+	  => vars'
+	-----------------------------------
+	new_dummy_var(var,DAELOW(vars,eqns,seqns)) 
+	  => (dummyvar, DAELOW(vars',eqns,seqns))
+end
+
+relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
+
+  rule	
+	string_append("der_",id) => id'
+	-------------------------------
+	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
+	  => Exp.CREF_IDENT(id',subs)
+	  
+  rule	create_dummy_var(cr) => cr'
+	------------------------
+	create_dummy_var(Exp.CREF_QUAL(id,subs,cr)) 
+	  => Exp.CREF_QUAL(id,subs,cr')
+
+end
+
+(* Heuristic to select among the states which one will be transformed into
+ an algebraic variable, a so called dummy state (dummy derivative) *)
+relation select_dummy_state: (Exp.ComponentRef list, (* variable names *)
+			      int list, (* variable numbers *)
+			      DAELow, 
+			      IncidenceMatrix,
+			      IncidenceMatrixT) 
+	  => (Exp.ComponentRef, int) =
+	  
+	  (* for now, select the first one... *)
+  axiom	select_dummy_state(s::_,sn::_,_,_,_) => (s,sn)
+
+  rule	print "Error, no state to select\n" 
+	------------------------------------
+	select_dummy_state([],_,_,_,_) => fail
+end
+	
+relation states_in_eqns: (int list (* eqns *),
+			  DAELow, 
+			  IncidenceMatrix,
+			  IncidenceMatrixT) 
+	  => (Exp.ComponentRef list, (* name for each state *)
+	      int list)  (* number for each state *)
+	=
+
+  axiom states_in_eqns([],_,_,_) => ([],[])
+
+  rule	states_in_eqns(rest,DAELOW(vars,eqns,seqns),m,mt) => (res1,res2) &
+	int_sub(e,1) => e' &
+	list_nth(eqns,e') => eqn &
+	states_in_eqn(eqn,vars) => vars2 &
+	states_in_vars(vars,vars2) => (res11,res22) &
+	list_append(res11,res1) => res1' &
+	list_append(res22,res2) => res2'
+	--------------------------------
+	states_in_eqns(e::rest,DAELOW(vars,eqns,seqns),m,mt) => (res1',res2')
+
+  rule	print "-states_in_eqns failed\n"
+	-------------------------
+	states_in_eqns(_,_,_,_) => fail
+	
+end
+
+relation states_in_vars: (Var list, int list) => 
+	(Exp.ComponentRef list, (* names of the states *)
+	 int list ) (* number for each state *)  =
+
+  axiom	states_in_vars (vars,[]) => ([],[])
+
+  rule	int_sub(v,1) => v' &
+	list_nth(vars,v') => VAR(cr,_,_,_,_,_,_) &
+	states_in_vars(vars,rest) => (res1,res2)  
+	---------------------------------
+	states_in_vars(vars,v::rest) => (cr::res1,v::res2)
+
+  rule	states_in_vars(vars,rest) => (res1,res2)
+	----------------------------------------
+	states_in_vars(vars,v::rest) => (res1,res2)
+end
+
+relation reassign_vars:(int list, (* variables *)
+		       int list, (* assignments *)
+		       int list) (* assignmentsT *)
+	=> (int list, int list) (*assignments, assignmentsT*) =
+
+  axiom	reassign_vars([],ass1,ass2) => (ass1,ass2)
+
+  rule	get_assigned(v,ass1,ass2) => vass &
+	DAEEXT.get_f(vass) => fassj &
+	assign(v,fassj,ass1,ass2) => (ass1,ass2) &
+	reassign_vars(vs,ass1,ass2) => (ass1,ass2) 
+	---------------------
+	reassign_vars(v::vs,ass1,ass2) => (ass1,ass2)
+end
+
+relation differentiate_eqns: (DAELow, 
+			      IncidenceMatrix, 
+			      IncidenceMatrixT,
+			      int, (* number of vars*)
+			      int, (* number of eqns*)
+			      int list) (* equations *)
+	=> (DAELow, 
+	    IncidenceMatrix, 
+	    IncidenceMatrixT,
+	    int, (* number of vars*)
+	    int, (* number of eqns*) 
+	    int list) (* differentiated equations *) =
+  axiom	differentiate_eqns(dae,m,mt,nv,nf,[]) => (dae,m,mt,nv,nf,[])
+
+  rule	int_sub(e,1) => e' &
+	list_nth(eqns,e') => eqn &
+	time_varying_vars(dae) => timevars &
+	Derive.differentiate_equation(eqn,timevars) => eqn' &
+	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
+	equation_str eqn => str & 
+	Debug.fprint("bltdump", str) &
+	Debug.fprint("bltdump", " to ") & 
+	equation_str eqn' => str &
+	Debug.fprint("bltdump",str) & 
+	Debug.fprint("bltdump", "\n") &
+	list_append(eqns,[eqn']) => eqns' &
+	list_length(eqns') => leneqns &
+	differentiate_eqns(DAELOW(v,eqns',seqns),m,mt,nv,nf,es) 
+	  => (dae,m,mt,nv,nf,reqns)
+	  ----------------------------
+	differentiate_eqns(dae as DAELOW(v,eqns,seqns),m,mt,nv,nf,e::es) 
+	  => (dae,m,mt,nv,nf,leneqns::reqns)
+
+  rule	print "-differentiate_eqns failed\n" 
+	----------------------------
+	differentiate_eqns(_,_,_,_,_,_) => fail
+end
+
+relation time_varying_vars:(DAELow) => Exp.ComponentRef list =
+
+  axiom	time_varying_vars(DAELOW([],_,_)) => []
+
+  rule	time_varying_vars(DAELOW(vs,e,se)) => res 
+	-----------------------------------------
+	time_varying_vars(DAELOW(VAR(cr,STATE,_,_,_,_,_)::vs,e,se)) => cr::res
+
+  rule	time_varying_vars(DAELOW(vs,e,se)) => res 
+	-----------------------------------------
+	time_varying_vars(DAELOW(VAR(cr,DUMMY_DER,_,_,_,_,_)::vs,e,se)) => cr::res
+
+  rule	time_varying_vars(DAELOW(vs,e,se)) => res 
+	-----------------------------------------
+	time_varying_vars(DAELOW(VAR(cr,VARIABLE,_,_,_,_,_)::vs,e,se)) => cr::res
+
+  rule	time_varying_vars(DAELOW(vs,e,se)) => res 
+	-----------------------------------------
+	time_varying_vars(DAELOW(VAR(cr,DUMMY_STATE,_,_,_,_,_)::vs,e,se)) => cr::res
+
+  rule	time_varying_vars(DAELOW(vs,e,se)) => res 
+	-----------------------------------------
+	time_varying_vars(DAELOW(_::vs,e,se)) => res
+end
+relation add_marked_vars:(DAELow, 
+			  IncidenceMatrix, 
+			  IncidenceMatrixT,
+			  int, (* number of vars*)
+			  int, (* number of eqns*)
+			  int list) (* marked vars *) 
+	=> (DAELow, 
+	    IncidenceMatrix, 
+	    IncidenceMatrixT,
+	    int, (* number of vars*)
+	    int) (* number of eqns*) =
+  axiom	add_marked_vars(dae,m,mt,nv,nf,[]) => (dae,m,mt,nv,nf)
+
+  rule	int_add(nv,1) => nv' &
+	DAEEXT.set_v(v,nv') &
+	(* TODO: remove var from dae and m,mt and add der(var) instead*)
+	add_marked_vars(dae,m,nt,nv',nf,vs) => (dae,m,mt,nv,nf)
+	-------------------------------------------------------
+	add_marked_vars(dae,m,nt,nv,nf,v::vs) => (dae,m,mt,nv,nf)
+end
+
+relation marked_vars: (int) => int list =
+
+  rule	marked_vars2(0,size) => res
+	----------------
+	marked_vars(size) => res
+end
+
+relation marked_vars2: (int,int) => int list =
+
+  rule	int_eq(size,pos) => true
+	------------------------
+	marked_vars2(pos,size) => []
+
+  rule	DAEEXT.get_v_mark(pos) => true &
+	int_add(pos,1) => v &
+	marked_vars2(v,size) => res
+	---------------------
+	marked_vars2(pos,size) => pos::res
+
+  rule	DAEEXT.get_v_mark(pos) => false &
+	int_add(pos,1) => v &
+	marked_vars2(v,size) => res
+	---------------------
+	marked_vars2(pos,size) => res
+end
+
+relation marked_eqns: (int) => int list  =
+
+  rule	marked_eqns2(1,size) => res
+	----------------
+	marked_eqns(size) => res
+
+  rule	print "-marked_eqns failed\n" 
+	-----------------
+	marked_eqns(_) => fail
+end
+
+relation marked_eqns2: (int,int) => int list =
+
+  rule	int_eq(size,pos) => true &
+	DAEEXT.get_e_mark(pos) => true 
+	------------------------
+	marked_eqns2(pos,size) => [pos]
+
+  rule	int_eq(size,pos) => true &
+	DAEEXT.get_e_mark(pos) => false
+	------------------------
+	marked_eqns2(pos,size) => []
+
+  rule	DAEEXT.get_e_mark(pos) => true &
+	int_add(pos,1) => v &
+	marked_eqns2(v,size) => res
+	---------------------
+	marked_eqns2(pos,size) => pos::res
+
+  rule	DAEEXT.get_e_mark(pos) => false &
+	int_add(pos,1) => v &
+	marked_eqns2(v,size) => res
+	---------------------
+	marked_eqns2(pos,size) => res
+end
+
+relation path_found: (IncidenceMatrix, IncidenceMatrixT, int, 
+		      int list, int list) 
+	=> (int list, int list) =
+
+
+  rule	int_string  i => is &
+	DAEEXT.e_mark(i) (*Sideeffect*) &
+	assign_one_in_eqn(m,mt,i,ass1,ass2) => (ass1',ass2')
+	------------
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')
+
+  rule	forall_unmarked_vars_in_eqn(m,mt,i,ass1,ass2) => (ass1',ass2')
+	-----------------------------------------------------------
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')
+end
+
+relation assign_one_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int, 
+		      int list, int list) => (int list, int list) =
+	
+  rule  vars_in_eqn(m,i) => vars &
+	assign_first_unassigned(i,vars,ass1,ass2) => (ass1',ass2') 
+	----------------------------------------------------------
+	assign_one_in_eqn(m,mt,i,ass1,ass2) => (ass1',ass2')
+
+(*  rule	print "assign_one_in_eqn failed\n" 
+	----------------------------------
+	assign_one_in_eqn(_,_,_,_,_) => fail*)
+end 
+
+relation states_in_eqn: (Equation, Var list) => int list =
+
+  rule	states_as_algebraic_vars(vars) => vars' &
+	incidence_row(vars',eqn) => res
+	-----------------
+	states_in_eqn(eqn,vars) => res
+end
+
+(* Return a sublist of all states, but changed varkind to variable *)
+relation states_as_algebraic_vars:( Var list) => Var list =
+	
+  axiom	states_as_algebraic_vars [] => []
+
+  rule	(* states treated as algebraic variables *)
+	states_as_algebraic_vars(vs) => res 
+	------------------------------------
+	states_as_algebraic_vars(VAR(cr,STATE,a,b,c,d,e)::vs) 
+	  => (VAR(cr,VARIABLE,a,b,c,d,e)::res)
+
+  rule	(* other variables treated as known *)
+	states_as_algebraic_vars(vs) => res 
+	------------------------------------
+	states_as_algebraic_vars(VAR(cr,_,a,b,c,d,e)::vs) 
+	  => (VAR(cr,CONST,a,b,c,d,e)::res)
+
+  rule	states_as_algebraic_vars(vs) => res 
+	----------------------
+	states_as_algebraic_vars(_::vs) 
+	  => res
+end
+
+relation vars_in_eqn: (IncidenceMatrix, int) => int list =
+
+  rule	int_sub(n,1) => n' &
+	list_nth(m,n') => res
+	--------------------
+	vars_in_eqn(m,n) => res 
+
+  rule	print "vars_in_eqn failed, indx="  &
+	int_string indx => s & print s & print "\n"
+	----------------------------
+	vars_in_eqn(_,indx) => fail
+end
+
+relation eqns_for_var: (IncidenceMatrixT, int) => int list =
+
+  rule	int_sub(n,1) => n' &
+	list_nth(mt,n') => res
+	--------------------
+	eqns_for_var(mt,n) => res 
+
+  rule	print "eqns_for_var failed, indx="  &
+	int_string indx => s & print s & print "\n"
+	----------------------------
+	eqns_for_var(_,indx) => fail
+end
+
+relation assign_first_unassigned: (int,int list, int list, int list) 
+	  => (int list, int list) =
+
+  rule	get_assigned(v,ass1,ass2) => 0 &
+	assign(v,i,ass1,ass2) => (ass1',ass2')
+	--------------------------------------
+	assign_first_unassigned(i,v::vs,ass1,ass2) => (ass1',ass2')
+ 
+  rule	assign_first_unassigned(i,vs,ass1,ass2) => (ass1',ass2')
+	--------------------------------------------------------
+	assign_first_unassigned(i,v::vs,ass1,ass2) => (ass1',ass2')
+end
+
+relation get_assigned: (int, int list, int list) => int =
+	
+  rule	int_sub(v,1) => v' &
+	list_nth(m,v') => res
+	-------------------
+	get_assigned(v,m,_) => res
+end
+
+relation assign: (int,int, int list, int list) => (int list, int list) =
+
+  rule	(*print "assign " & int_string v => vs &
+	int_string e => es & print vs & print " to eqn " &
+	print es & print "\n" &*)
+	int_sub(v,1) => v' &
+	int_sub(e,1) => e' &
+	Util.list_replaceat(e,v',ass1) => ass1' &
+	Util.list_replaceat(v,e',ass2) => ass2'
+	----------------------------------------
+	assign(v,e,ass1,ass2) => (ass1',ass2')
+end
+
+relation forall_unmarked_vars_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int, 
+		      int list, int list) 
+	  => (int list, int list)  =
+	
+  rule	vars_in_eqn(m,i) => vars &
+	Util.list_matching(vars,is_not_v_marked) => vars' &
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vars',ass1,ass2) 
+	  => (ass1',ass2')
+	-------------------------
+	forall_unmarked_vars_in_eqn (m,mt,i,ass1,ass2) => (ass1',ass2')
+end
+
+relation is_not_v_marked: int => () =
+
+  rule	DAEEXT.get_v_mark(i) => false
+	------------------
+	is_not_v_marked(i)
+end
+
+relation forall_unmarked_vars_in_eqn_body: (IncidenceMatrix, IncidenceMatrixT
+					    , int
+					    , int list (* var list*)
+					    , int list (* assignment*) 
+					    , int list (* assignment*) )  
+	  => (int list, int list)  =
+
+  rule	DAEEXT.v_mark(v) &
+	get_assigned(v,ass1,ass2) => assarg &
+	path_found(m,mt,assarg,ass1,ass2) => (ass1',ass2') &
+	assign(v,i,ass1',ass2') => (ass1'',ass2'')
+	----------------------------
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vars as (v::vs),ass1,ass2) 
+	  => (ass1'',ass2'')
+	
+  rule	DAEEXT.v_mark(v) &
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vs,ass1,ass2) => (ass1',ass2')
+	--------------------------------------------------------------------
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vars as (v::vs),ass1,ass2)
+	  => (ass1',ass2')
+end
+
+relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
+			     int vector, int vector) => 
+	(int list list ) (* list of components *) =
+
+  rule	list_length(m) => n &
+	DAEEXT.init_lowlink(n) &
+	DAEEXT.init_number(n) &
+	strong_connect_main(m,mt,ass1,ass2,n,0,1,[],[]) 
+	  => (i,stack,comps) 
+
+	-----------------------------------
+	strong_components(m,mt,ass1,ass2) => (comps)
+
+  rule	print "strong_components failed\n" 
+	----------------------------------
+	strong_components(_,_,_,_) => fail
+end
+
+relation strong_connect_main:(IncidenceMatrix,
+			 IncidenceMatrixT,
+			 int vector, (* Assignment *)
+			 int vector, (* Assignment *)
+			 int, (* n - number of equations *)
+			 int, (* i *)
+			 int, (* w *)
+			 int list, (* stack *)
+		         int list list) (* components *)
+	  => (int, (* i *)
+	      int list, (* stack *) 
+	      int list list) (* components *) =
+  rule	int_gt(w,n) => true
+	-------------------
+	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comp) 
+	  => (i,stack,comp)
+	
+  rule	DAEEXT.get_number(w) => 0 &
+	strong_connect(m,mt,a1,a2,i,w,stack,comps)
+	  =>(i,stack',comps) &
+	int_add(w,1) => w' &
+	strong_connect_main(m,mt,a1,a2,n,i,w',stack',comps)
+	  => (i,stack'',comps) 
+	-----------------------------
+	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comps)
+	  => (i,stack'',comps)
+
+  rule	DAEEXT.get_number(w) => num &
+	int_eq(num,0) => false &
+	int_add(w,1) => w' &
+	strong_connect_main(m,mt,a1,a2,n,i,w',stack,comps)
+	  => (i,stack',comps)
+	---------------------------------
+	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comps)
+	  =>(i,stack',comps)
+end
+
+relation strong_connect: (IncidenceMatrix,
+			  IncidenceMatrixT,
+			  int vector,
+			  int vector,
+			  int, (* i *)
+			  int, (* v *)
+			  int list, (* stack *)
+			  int list list) (* components *)
+	  => (int, (* i *)
+	      int list, (* stack *)
+	      int list list ) (* int list list*) =
+
+  rule	int_add(i,1) => i' &
+(*	set_number(number,v,i') => number' &
+	set_lowlink(lowlink,v,i') => lowlink' &*)
+	DAEEXT.set_number(v,i') &
+	DAEEXT.set_lowlink(v,i') &
+	let stack' = v::stack & 
+	reachable_nodes(v,m,mt,a1,a2) => eqns &
+	iterate_reachable_nodes(eqns,m,mt,a1,a2,i',v,stack',comps)
+	  => (i',stack'',comps') &
+	check_root(m,mt,a1,a2,i',v,stack'') 
+	  => (i',stack''',comp) &
+	cons_if_nonempty(comp,comps') => comps''
+	---------------------------------------------
+	strong_connect(m,mt,a1,a2,i,v,stack,comps) 
+	  => (i',stack''',comps'')
+end
+
+relation cons_if_nonempty: (int list, int list list) => int list list =
+  axiom	cons_if_nonempty ([],lst) => lst 
+
+  axiom	cons_if_nonempty (e,lst) => e::lst
+end 
+
+relation reachable_nodes: (int,
+			   IncidenceMatrix,
+			   IncidenceMatrixT,
+			   int vector,
+			   int vector) => int list =
+	
+  rule	int_sub(eqn,1) => eqn' &
+	vector_nth(a2,eqn') => var &
+	int_sub(var,1) => var' &
+	list_nth(mt,var') => reachable &
+	Util.list_position(eqn,reachable) => pos &
+	list_delete(reachable,pos) => reachable'
+	----------------------------------------
+	reachable_nodes(eqn,m,mt,a1,a2) => reachable'
+end			  
+
+relation iterate_reachable_nodes: (int list, 
+				   IncidenceMatrix,
+				   IncidenceMatrixT,
+				   int vector,
+				   int vector,
+				   int, (* i *)
+				   int, (* v *)
+				   int list, (* stack *)
+				   int list list) (* components *)
+	  => (int, (* i *)
+	      int list, (* stack *) 
+	      int list list) (* components *) =
+	
+  rule	DAEEXT.get_number(w) => 0 &
+	strong_connect(m,mt,a1,a2,i,w,stack,comps) 
+	  => (i,stack,comps') &
+	DAEEXT.get_lowlink(v) => lv &
+	DAEEXT.get_lowlink(w) => lw &
+	int_min(lv,lw) => minv &
+	DAEEXT.set_lowlink(v,minv) &
+	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps') 
+	  => (i,stack,comps'')
+	  ----------------------------
+	iterate_reachable_nodes(w::ws,m,mt,a1,a2,i,v,stack,comps) 
+	  => (i, stack,comps'')
+	  
+  rule	DAEEXT.get_number(w) => nw &
+	DAEEXT.get_number(v) => nv &
+	int_lt(nw,nv) => true &
+	list_member(w,stack) => true &
+	DAEEXT.get_lowlink(w) => lowlinkw &
+	int_min(nw,lowlinkw) => minv &
+	DAEEXT.set_lowlink(v,minv) &
+	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps) 
+	  => (i,stack,comps')
+	  -----------------------
+	iterate_reachable_nodes(w::ws,m,mt,a1,a2,i,v,stack,comps)
+	  => (i,stack,comps')
+	  
+  rule	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps) 
+	  => (i,stack,comps')
+	  -----------------------------
+	iterate_reachable_nodes(w::ws,m,mt,a1,a2,i,v,stack,comps)
+	  => (i,stack,comps')
+	  
+  axiom iterate_reachable_nodes([],m,mt,a1,a2,i,v,stack,comps)
+	  => (i,stack,comps)
+end
+
+relation dump_list: (int list, string) => () =
+
+  rule	Util.list_map(l,int_string) => s &
+	Util.string_delimit_list(s,", ") => sl &
+	print str & print sl & print "\n" 
+	-------------------
+	dump_list(l,str) => ()
+end
+	    
+relation check_root: (IncidenceMatrix,
+		      IncidenceMatrixT,
+		      int vector,
+		      int vector,
+		      int, (* i *)
+		      int, (* v *)
+		      int list) (* stack *)
+		     
+	  => (int, (* i *)
+	      int list, (* stack *) 
+	      int list) (* comps *) =
+
+  rule	DAEEXT.get_lowlink(v) => lv &
+	DAEEXT.get_number(v) => nv &
+	int_eq(lv,nv) => true &
+	check_stack(m,mt,a1,a2,i,v,stack,[])
+	=> (i,stack',comps) 
+	------------------------------------
+	check_root(m,mt,a1,a2,i,v,stack)
+	  => (i, stack',comps)
+
+  axiom	check_root(m,mt,a1,a2,i,v,stack) 
+	  => (i,stack,[])	
+end
+
+relation check_stack: (IncidenceMatrix,
+		       IncidenceMatrixT,
+		       int vector,
+		       int vector,
+		       int, (* i *)
+		       int, (* v *)
+		       int list, (* stack *)
+		       int list) (* component list*)
+		     
+	  => (int, (* i *) 
+	      int list, (* stack *) 
+	      int list) (* comps *) =
+
+  rule	DAEEXT.get_number(top) => topn &
+	DAEEXT.get_number(v) => vn &
+	int_ge(topn,vn) => true &
+	check_stack(m,mt,a1,a2,i,v,rest,comp) 
+	  => (i,stack',comp') 
+	  -----------------------------
+	check_stack(m,mt,a1,a2,i,v,top::rest,comp)
+	  => (i,stack',top::comp')
+	  
+  axiom	check_stack(m,mt,a1,a2,i,v,stack,comp) 
+	  => (i,stack,comp)
+end
+
+relation dump_components: (int list list) => () =
+
+  rule	print "Blocks\n" &
+	print "=======\n" &
+	Util.list_map_0(l,dump_components2)
+	---------------------
+	dump_components (l) => ()
+end
+
+
+relation dump_components2: (int list) => () =
+	
+  rule	print "{" & 
+	Util.list_map(l,int_string) => ls &
+	Util.string_delimit_list(ls,", ") =>  s &
+	print s & print "}\n" 
+	---------------------
+	dump_components2(l) 
+end

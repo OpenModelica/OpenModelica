@@ -141,7 +141,7 @@ relation equ_equations : Exp.ComponentRef list => DAE.Element list =
 
   axiom	equ_equations [_] => []
 
-  rule	equ_equations y::cs => eq
+  rule	equ_equations (y::cs) => eq
 	------------------------
 	equ_equations x::y::cs
 	  => DAE.EQUATION(Exp.CREF(x,Exp.OTHER), Exp.CREF(y,Exp.OTHER))::eq

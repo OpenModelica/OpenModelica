@@ -147,6 +147,9 @@ module Exp:
   relation print_list_str : ('a list, 'a => string, string) => string
   relation print_exp_str : Exp => string
   relation to_exp_cref : Absyn.ComponentRef => ComponentRef
+  relation exp_equal: (Exp,Exp) => bool
+  relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*)) 
+	  => (Exp,int)
 end
 
 
@@ -154,6 +157,7 @@ end
 with "rtopts.rml"
 with "util.rml"
 with "print.rml"
+with "modutil.rml"
 
 (** relation: path_string
  **
@@ -295,7 +299,10 @@ end
  ** This relation does some very basic simplification on expressions.
  ** It is not intended to be used to simplify expressions provided by
  ** the model, but to simplify unnecessarily complex expressions
- ** constructed during instantiation.
+ ** constructed during instantiation. 
+ ** PA. Added rules for binary, unary operations
+ ** and multiplication with zero, addition with zero, etc. Useful when deriving 
+ ** equations and then want to simplify
  **)
 
 relation simplify : Exp => Exp =
@@ -331,9 +338,69 @@ relation simplify : Exp => Exp =
 	-------------------------------------
 	simplify ASUB(e, i) => CREF(CREF_QUAL(n,s,c'),t)
 
+  rule	simplify (e1) => e1' &
+	simplify (e2) => e2' &
+	is_zero_constant(e2')  => true
+	---------------------
+	simplify BINARY(e1,ADD(REAL),e2) => e1'
+
+  rule	simplify (e1) => e1' &
+	simplify (e2) => e2' &
+	is_zero_constant(e1') => true
+	---------------------
+	simplify BINARY(e1,ADD(REAL),e2) => e2'
+
+  rule	simplify (e1) => RCONST(v) &
+	real_eq(v,0.0) => true
+	---------------------
+	simplify BINARY(e1,MUL(REAL),e2) => RCONST(0.0)
+
+  rule	simplify (e2) => RCONST(v) &
+	real_eq(v,0.0) => true
+	---------------------
+	simplify BINARY(e1,MUL(REAL),e2) => RCONST(0.0)
+
+  rule	simplify (e1) => ICONST(0)
+	---------------------
+	simplify BINARY(e1,MUL(INT),e2) => ICONST(0)
+
+  rule	simplify (e2) => ICONST(0)
+	---------------------
+	simplify BINARY(e1,MUL(INT),e2) => ICONST(0)
+
+  rule	simplify e1 => e1' &
+	simplify e2 => e2'
+	------------------------
+	simplify BINARY(e1,op,e2) => BINARY(e1,op,e2)
+
+  rule	simplify e1 => e1' &
+	simplify e2 => e2'
+	------------------------
+	simplify LBINARY(e1,op,e2) => LBINARY(e1,op,e2)
+
+  rule	simplify e => e' 
+	------------------------
+	simplify UNARY(op,e) => UNARY(op,e')
+
+  rule	simplify e => e' 
+	------------------------
+	simplify LUNARY(op,e) => LUNARY(op,e')
+
   axiom	simplify e => e
 
 end
+
+relation is_zero_constant:(Exp) => bool =
+
+  axiom	is_zero_constant(ICONST(0)) => true
+
+  rule	real_eq(v,0.0) => res
+	---------------------
+	is_zero_constant(RCONST(v)) => res
+
+  axiom	is_zero_constant(_) => false
+end
+
 (** relation: contain_functioncall
  ** Returns true if expression or subexpression is a functioncall.
  ** otherwise false 
@@ -1390,4 +1457,299 @@ relation print_rightpar_str : (int,int) => string =
 
   axiom	print_rightpar_str (_,_) => ""
 
+end
+relation exp_equal: (Exp,Exp) => bool =
+
+  rule  int_eq(c1,c2) => res
+	-------------------
+	exp_equal(ICONST(c1),ICONST(c2)) => res
+
+  rule  real_eq(c1,c2) => res
+	-------------------
+	exp_equal(RCONST(c1),RCONST(c2)) => res
+
+  rule  c1 = c2
+	-------------------
+	exp_equal(SCONST(c1),SCONST(c2)) => true
+
+  rule  bool_and(c1,c2) => b1 &
+	bool_not(c1) => c1' &
+	bool_not(c2) => c2' &
+	bool_and(c1',c2') => b2 &
+	bool_or(b1,b2) => res
+	-------------------
+	exp_equal(BCONST(c1),BCONST(c2)) => res
+
+  rule  cref_equal(c1,c2) => res
+	------------------------
+	exp_equal(CREF(c1,_),CREF(c2,_)) => res
+
+  rule  operator_equal(op1, op2) => b1 &
+	exp_equal(e11,e21) => b2 &
+	exp_equal(e12,e22) => b3 &
+	Util.bool_and_list([b1,b2,b3]) => res
+	------------------------
+	exp_equal(BINARY(e11,op1,e12),BINARY(e21,op2,e22)) => res
+
+  rule  operator_equal(op1, op2) => b1 &
+	exp_equal(e11,e21) => b2 &
+	exp_equal(e12,e22) => b3 &
+	Util.bool_and_list([b1,b2,b3]) => res
+	------------------------
+	exp_equal(LBINARY(e11,op1,e12),LBINARY(e21,op2,e22)) => res
+
+  rule  operator_equal(op1, op2) => b1 &
+	exp_equal(e1,e2) => b2 &
+	bool_and(b1,b2) => res
+	------------------------
+	exp_equal(UNARY(op1,e1),UNARY(op2,e2)) => res
+
+  rule  operator_equal(op1, op2) => b1 &
+	exp_equal(e1,e2) => b2 &
+	bool_and(b1,b2) => res
+	------------------------
+	exp_equal(LUNARY(op1,e1),LUNARY(op2,e2)) => res
+	
+  rule  operator_equal(op1, op2) => b1 &
+	exp_equal(e11,e21) => b2 &
+	exp_equal(e12,e22) => b3 &
+	Util.bool_and_list([b1,b2,b3]) => res
+	------------------------
+	exp_equal(RELATION(e11,op1,e12),RELATION(e21,op2,e22)) => res
+
+  rule  exp_equal(e13,e23) => b1 &
+	exp_equal(e11,e21) => b2 &
+	exp_equal(e12,e22) => b3 &
+	Util.bool_and_list([b1,b2,b3]) => res
+	------------------------
+	exp_equal(IFEXP(e11,e12,e13),IFEXP(e21,e22,e23)) => res
+
+  rule  ModUtil.path_equal(path1,path2) => b1 &
+	Util.list_thread_map(expl1,expl2,exp_equal) => bs &
+	Util.bool_and_list(b1::bs) => res 
+	--------------------------------------------------
+	exp_equal(CALL(path1,expl1,_,_),CALL(path2,expl2,_,_)) => res
+
+  rule	tp1 = tp2 &
+	Util.list_thread_map(expl1,expl2,exp_equal) => bs &
+	Util.bool_and_list(bs) => res 
+	--------------------------------------------------
+	exp_equal(ARRAY(tp1,_,expl1),ARRAY(tp2,_,expl2)) => res
+
+  rule	print "exp_equal for MATRIX not impl. yet.\n"
+	--------------------------------------------------
+	exp_equal(MATRIX(_,_,_),MATRIX(_,_,_)) => false
+
+  rule  exp_equal(e13,e23) => b1 &
+	exp_equal(e11,e21) => b2 &
+	Util.bool_and_list([b1,b2]) => res
+	------------------------
+	exp_equal(RANGE(tp1,e11,NONE,e13),RANGE(tp2,e21,NONE,e23)) => res
+
+  rule  exp_equal(e13,e23) => b1 &
+	exp_equal(e11,e21) => b2 &
+	exp_equal(e12,e22) => b3 &
+	Util.bool_and_list([b1,b2,b3]) => res
+	------------------------
+	exp_equal(RANGE(tp1,e11,SOME(e12),e13),RANGE(tp2,e21,SOME(e22),e23)) 
+	  => res
+
+  rule	Util.list_thread_map(expl1,expl2,exp_equal) => bs &
+	Util.bool_and_list(bs) => res 
+	--------------------------------------------------
+	exp_equal(TUPLE(expl1),TUPLE(expl2)) => res
+
+  rule	tp1 = tp2 &
+	exp_equal(e1,e2) => res
+	---------------------
+	exp_equal(CAST(tp1,e1),CAST(tp2,e2)) => res
+
+  rule	int_eq(i1,i2) => b1 &
+	exp_equal(e1,e2) => b2 &
+	bool_and(b1,b2) => res
+	-----------------------
+	exp_equal(ASUB(e1,i1),ASUB(e2,i2)) => res
+
+  rule	exp_equal(e1,e2) => res
+	-----------------------
+	exp_equal(SIZE(e1,NONE),SIZE(e2,NONE)) => res
+
+  rule	exp_equal(e1,e2) => b1 &
+	exp_equal(e11,e22) => b2 &
+	bool_and(b1,b2) => res
+	-----------------------
+	exp_equal(SIZE(e1,SOME(e11)),SIZE(e2,SOME(e22))) => res
+
+  rule	print "exp_equal on CODE not impl.\n" 
+	--------------------------------------
+	exp_equal(CODE(_,_),CODE(_,_)) => false
+
+  rule	id1=id2 &
+	ModUtil.path_equal(path1,path2) => b1 &
+	exp_equal(e1,e2) => b2 &
+	exp_equal(r1,r2) => b3 &
+	Util.bool_and_list([b1,b2,b3]) => res
+	--------------------------
+	exp_equal(REDUCTION(path1,e1,id1,r1),REDUCTION(path2,e2,id2,r2)) =>  res
+
+  axiom	exp_equal(END, END) => true
+
+  axiom	exp_equal(_,_) => false
+end
+
+relation operator_equal: (Operator,Operator) => bool =
+
+  axiom	operator_equal(ADD(_),ADD(_)) => true
+  axiom	operator_equal(SUB(_),SUB(_)) => true
+  axiom	operator_equal(MUL(_),MUL(_)) => true
+  axiom	operator_equal(DIV(_),DIV(_)) => true
+  axiom	operator_equal(POW(_),POW(_)) => true
+  axiom	operator_equal(UMINUS(_),UMINUS(_)) => true
+  axiom	operator_equal(UMINUS_ARR(_),UMINUS_ARR(_)) => true
+  axiom	operator_equal(UPLUS_ARR(_),UPLUS_ARR(_)) => true
+  axiom	operator_equal(ADD_ARR(_),ADD_ARR(_)) => true
+  axiom	operator_equal(SUB_ARR(_),SUB_ARR(_)) => true
+  axiom	operator_equal(MUL_SCALAR_ARRAY(_),MUL_SCALAR_ARRAY(_)) => true
+  axiom	operator_equal(MUL_ARRAY_SCALAR(_),MUL_ARRAY_SCALAR(_)) => true
+  axiom	operator_equal(MUL_SCALAR_PRODUCT(_),MUL_SCALAR_PRODUCT(_)) => true
+  axiom	operator_equal(MUL_MATRIX_PRODUCT(_),MUL_MATRIX_PRODUCT(_)) => true
+  axiom	operator_equal(DIV_ARRAY_SCALAR(_),DIV_ARRAY_SCALAR(_)) => true
+  axiom	operator_equal(POW_ARR(_),POW_ARR(_)) => true
+  axiom	operator_equal(AND,AND) => true
+  axiom	operator_equal(OR,OR) => true
+  axiom	operator_equal(NOT,NOT) => true
+  axiom	operator_equal(LESS(_),LESS(_)) => true
+  axiom	operator_equal(LESSEQ(_),LESSEQ(_)) => true
+  axiom	operator_equal(GREATER(_),GREATER(_)) => true
+  axiom	operator_equal(GREATEREQ(_),GREATEREQ(_)) => true
+  axiom	operator_equal(EQUAL(_),EQUAL(_)) => true
+  axiom	operator_equal(NEQUAL(_),NEQUAL(_)) => true
+  rule	ModUtil.path_equal(p1,p2) => res
+	--------------------------------
+  	operator_equal(USERDEFINED(p1),USERDEFINED(p2)) => res
+  axiom	operator_equal(_,_) => false
+end
+
+relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*)) 
+	  => (Exp,int) =
+
+  rule	exp_equal(expr,source) => true
+	------------------------------
+	replace_exp(expr,source,target) => (target,1)
+
+  rule	replace_exp(e1,source,target) => (e1',c1) &
+	replace_exp(e2,source,target) => (e2',c2) &
+	int_add(c1,c2) => c
+	------------------------------------
+	replace_exp(BINARY(e1,op,e2),source,target) 
+	  => (BINARY(e1',op,e2'),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c1) &
+	replace_exp(e2,source,target) => (e2',c2) &
+	int_add(c1,c2) => c
+	------------------------------------
+	replace_exp(LBINARY(e1,op,e2),source,target) 
+	  => (LBINARY(e1',op,e2'),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c)
+	------------------------------------
+	replace_exp(UNARY(op,e1),source,target) 
+	  => (UNARY(op,e1'),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c)
+	------------------------------------
+	replace_exp(LUNARY(op,e1),source,target) 
+	  => (LUNARY(op,e1'),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c1) &
+	replace_exp(e2,source,target) => (e2',c2) &
+	int_add(c1,c2) => c
+	------------------------------------
+	replace_exp(RELATION(e1,op,e2),source,target) 
+	  => (RELATION(e1',op,e2'),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c1) &
+	replace_exp(e2,source,target) => (e2',c2) &
+	replace_exp(e3,source,target) => (e3',c3) &
+	Util.list_reduce([c1,c2,c3],int_add) => c
+	------------------------------------
+	replace_exp(IFEXP(e1,e2,e3),source,target) 
+	  => (IFEXP(e1',e2',e3'),c)
+
+  rule  Util.list_map_2_2(expl,replace_exp,source,target) => expl' &
+	Util.split_tuple2_list(expl') => (expl',cnt) &
+	Util.list_reduce(cnt,int_add) => cnt'
+	-----------------------------------------------
+	replace_exp(CALL(path,expl,t,c),source,target) 
+	  => (CALL(path,expl',t,c),cnt')
+
+  rule	Util.list_map_2_2(expl,replace_exp,source,target) => expl' &
+	Util.split_tuple2_list(expl') => (expl',cnt) &
+	Util.list_reduce(cnt,int_add) => cnt'
+	-----------------------------------------------
+	replace_exp(ARRAY(tp,c,expl),source,target) 
+	  => (ARRAY(tp,c,expl'),cnt')
+
+  rule	print "replace_exp for matrix not impl." 
+	-----------------------------------------------
+	replace_exp(MATRIX(a,b,c),source,target) 
+	  => (MATRIX(a,b,c),0)
+
+  rule	replace_exp(e1,source,target) => (e1',c1) &
+	replace_exp(e2,source,target) => (e2',c2) &
+	int_add(c1,c2) => c
+	-----------------------------------------------
+	replace_exp(RANGE(tp,e1,NONE,e2),source,target) 
+	  => (RANGE(tp,e1',NONE,e2'),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c1) &
+	replace_exp(e2,source,target) => (e2',c2) &
+	replace_exp(e3,source,target) => (e3',c3) &
+	Util.list_reduce([c1,c2,c3],int_add) => c
+	-----------------------------------------------
+	replace_exp(RANGE(tp,e1,SOME(e3),e2),source,target) 
+	  => (RANGE(tp,e1',SOME(e3'),e2'),c)
+
+  rule	Util.list_map_2_2(expl,replace_exp,source,target) => expl' &
+	Util.split_tuple2_list(expl') => (expl',cnt) &
+	Util.list_reduce(cnt,int_add) => cnt'
+	-----------------------------------------------
+	replace_exp(TUPLE(expl),source,target) 
+	  => (TUPLE(expl'),cnt')
+
+  rule	replace_exp(e1,source,target) => (e1',c)
+	-----------------------------------------------
+	replace_exp(CAST(tp,e1),source,target) 
+	  => (CAST(tp,e1'),c)
+
+  rule	replace_exp(e1,source,target) => (e1' ,c)
+	-----------------------------------------------
+	replace_exp(ASUB(e1,i),source,target) 
+	  => (ASUB(e1',i),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c)
+	-----------------------------------------------
+	replace_exp(SIZE(e1,NONE),source,target) 
+	  => (SIZE(e1',NONE),c)
+
+  rule	replace_exp(e1,source,target) => (e1',c1) &
+	replace_exp(e2,source,target) => (e2',c2) &
+	int_add(c1,c2) => c
+	-----------------------------------------------
+	replace_exp(SIZE(e1,SOME(e2)),source,target) 
+	  => (SIZE(e1',SOME(e2')),c)
+
+  rule	print "replace_exp on CODE not impl.\n" 
+	-----------------------------------------------
+	replace_exp(CODE(a,b),source,target) 
+	  => (CODE(a,b),0)
+
+  rule	replace_exp(e,source,target) => (e',c1) &
+	replace_exp(r,source,target) => (r' ,c2) &
+	int_add(c1,c2) => c
+	-----------------------------------------------
+	replace_exp(REDUCTION(p,e,id,r),source,target) 
+	  => (REDUCTION(p,e',id,r'),c)
+
+  axiom	replace_exp(e,_,_) => (e,0)
 end

@@ -1,0 +1,63 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+(**
+ ** file:	 daelow.rml
+ ** module:      DAELow
+ ** description: DAELow a lower form of DAE including sparse matrises for
+ ** BLT decomposition, etc.
+ **
+ ** RCS: %W% %E%
+ ** 
+ **)
+
+(** - Module header *)
+
+module DAEEXT:
+  
+
+  relation init_marks: (int,int) => () (* sets v_mark(i), e_mark(i) to false *)
+  relation e_mark: (int) => () (* sets e_mark(i) to true *)
+  relation get_e_mark: (int) => bool (* returns e_mark(i) *) 
+  relation v_mark: (int) => () (* sets v_mark(i) to true *)
+  relation get_v_mark: (int) => bool (* returns e_mark(i) *)
+  relation dump_marked_equations: (int) => ()
+  relation dump_marked_variables: (int) => ()
+
+  relation init_lowlink: int => ()
+  relation init_number: int => ()
+  relation set_lowlink: (int,int) => ()
+  relation get_lowlink: (int) => int
+  relation set_number: (int,int) => ()
+  relation get_number: (int) => int
+
+  relation init_v: (int) => ()
+  relation init_f: (int) => ()	  
+  relation set_v: (int,int) => ()
+  relation get_v: (int) => (int) 
+
+  relation set_f: (int,int) => ()
+  relation get_f: (int) => (int) 
+
+  relation vector_setnth: (int vector,int,int) => ()
+	  
+end 
+
