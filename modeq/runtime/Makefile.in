@@ -6,17 +6,28 @@
 # $Id$
 #
 
+USE_CORBA = @USE_CORBA@
+CORBAHOME = @CORBAHOME@
+
 RMLINCLUDE = @rmlinc@
-CFLAGS = @DEFS@
+CFLAGS = @DEFS@ $(USE_CORBA)
+
+
+ifdef USE_CORBA
+  CORBASRC = modeq_communication.cc modeq_communication_impl.cpp corbaimpl.cpp
+  CORBAINCL = -I$(CORBAHOME)/include
+else
+  CORBASRC = corbaimpl_stub.cpp
+  CORBAINCL =  
+endif
 
 SHELL	= /bin/sh
 CC	= gcc
 IDL	= idl 
-CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime
+CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime $(CORBAINCL)
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
-CPPSRC  = cacheimpl.cpp ptolemyio.cpp modeq_communication.cc \
-          modeq_communication_impl.cpp corbaimpl.cpp
+CPPSRC  = cacheimpl.cpp ptolemyio.cpp $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 all: $(OBJ)

@@ -10,6 +10,8 @@ AC_SUBST(readlineinc)
 AC_SUBST(readlinelib)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
+AC_SUBST(USE_CORBA)
+AC_SUBST(CORBAHOME)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -170,6 +172,23 @@ AC_CHECK_FUNC(gethostbyname,
  [AC_MSG_RESULT([no]);
   AC_MSG_CHECKING([for libnsl]);
   AC_CHECK_LIB(nsl,gethostbyname, [AC_MSG_RESULT([yes]); LIBNSL="-lnsl"],[AC_MSG_ERROR([neither gethostbyname nor libnsl.a found])])
+])
+
+dnl should we use corba?
+
+AC_ARG_WITH(CORBA, [  --with-CORBA=DIR        use corba installed in DIR [/usr/local]],
+[
+if test "x$withval" = "xno" ; then 
+	AC_MSG_RESULT([disabling CORBA]); 
+	USE_CORBA=""; 
+	CORBAHOME="";
+else 
+	AC_MSG_RESULT([enabling CORBA... CORBAHOME="$withval"]); 
+	USE_CORBA="-DUSE_CORBA"; 
+	CORBAHOME="$withval";
+fi
+], [
+AC_MSG_RESULT([enabling CORBA (no CORBAHOME given, using /usr/local)]); USE_CORBA="-DUSE_CORBA"; CORBAHOME="/usr/local";
 ])
 
 AC_OUTPUT(Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile  modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile)

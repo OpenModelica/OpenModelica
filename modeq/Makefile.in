@@ -14,21 +14,30 @@ LIBSOCKET = @LIBSOCKET@
 
 SHELL	= /bin/sh
 CC	= gcc
-CFLAGS	= 
+CFLAGS	= $(USE_CORBA)
 RMLHOME	= @rmlhome@
 RML	= @rmlc_bin@ -Wc,-O3
 RMLINC  = -I$(RMLHOME)/include/plain
 MYRML	= ./myrmlc
 
+USE_CORBA = @USE_CORBA@
+CORBAHOME = @CORBAHOME@
+
+ifdef USE_CORBA
+ CORBAOBJ = runtime/corbaimpl.o runtime/modeq_communication_impl.o runtime/modeq_communication.o 
+ CORBALIB = -L$(CORBAHOME)/lib -lmico
+else
+ CORBAOBJ = runtime/corbaimpl_stub.o
+ CORBALIB =
+endif
 
 LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) \
-	 -lssl -lmico -lm -lpthread 
+	 -lssl $(CORBALIB) -lm -lpthread 
 
 PROG	= modeq
 AST	= absyn_builder/absyn_builder.a
 RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runtime/socketimpl.o \
-	  runtime/printimpl.o runtime/cacheimpl.o runtime/ptolemyio.o runtime/corbaimpl.o \
-	  runtime/modeq_communication_impl.o runtime/modeq_communication.o 
+	  runtime/printimpl.o runtime/cacheimpl.o runtime/ptolemyio.o $(CORBAOBJ)
 
 SRCRML= absyn.rml \
 	algorithm.rml \
