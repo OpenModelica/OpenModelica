@@ -14,11 +14,13 @@ end
 
 with "parse.rml"
 with "dump.rml"
+with "dumpgraphviz.rml"
 with "explode.rml"
 with "dae.rml"
 with "inst.rml"
 with "rtopts.rml"
 with "debug.rml"
+with "codegen.rml"
 
 (** relation: translate_file
  **
@@ -30,26 +32,30 @@ relation translate_file : string list => () =
 
   rule	(*print "Parsing\n" &
 *)	
-	Parser.parse f => p &
+	Parser.parse f => p
 
-	print "\n--------------- Parsed program ---------------\n" &
-	Debug.print "Some debug info testing.\n " &	
-	Dump.dump p &
+	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
+	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
+	& Debug.fcall ("dump", Dump.dump, p)
 
-(*	print "\n------------------------------------------------------------ \n" & *)
-(*	print "elaborating\n" &
-*)	
-	SCode.elaborate(p) => p' &
+	& Debug.fprint ("info", "\n------------------------------------------------------------ \n")
+	& Debug.fprint ("info", "---elaborating\n")
+	& SCode.elaborate(p) => p'
 
-	print "\n-------------------- elaborated program ---------------------- \n" &
-	(*Dump.dump p' & *)
-	
-(*	print "instantiating\n" &
-*)	Inst.instantiate(p') => d &
-(*Debug.	print "\nJust instantiated" & *)
-	DAE.dump d
+	(* & Dump.dump p' *)
 
-	----------
+	& Debug.fprint ("info", "---instantiating\n")
+	& Inst.instantiate(p') => d'
+	& Debug.fcall ("beforefixmodout", DAE.dump_debug, d')
+	& fix_modelica_output (d') => d
+(* & Debug.	print "\nJust instantiated" *)
+	& Debug.fprint ("info", "---dumping\n")
+	& Debug.fcall ("daedump", DAE.dump, d)
+	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
+	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
+	& Codegen.string_prefix_params d => d'
+	& Debug.fcall ("codegen", Codegen.generate_functions, d')
+	------------------------------
 	translate_file [f]
 	
   rule	print "# Too many arguments\n"
@@ -65,6 +71,23 @@ relation translate_file : string list => () =
 	translate_file _
 
 end
+
+
+relation fix_modelica_output : DAE.DAElist => DAE.DAElist =
+
+  rule	RTOpts.modelica_output => true &
+	Inst.init_vars_modelica_output dae => dae'
+	-------------------------------
+	fix_modelica_output DAE.DAE(dae) => DAE.DAE(dae')
+
+  rule	RTOpts.modelica_output => false
+	-------------------------------
+	fix_modelica_output (d as DAE.DAE(dae)) => d
+
+end
+
+
+
 
 (** relation: main
  **
