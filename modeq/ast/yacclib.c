@@ -153,6 +153,21 @@ void *mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
     return RML_TAGPTR(p);
 }
 
+void *mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
+	      void *x5, void *x6)
+{
+    struct rml_struct *p = alloc_words(8);
+    p->header = RML_STRUCTHDR(7, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    p->data[3] = x3;
+    p->data[4] = x4;
+    p->data[5] = x5;
+    p->data[6] = x6;
+    return RML_TAGPTR(p);
+}
+
 void *mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
 	      void *x5, void *x6, void *x7)
 {
