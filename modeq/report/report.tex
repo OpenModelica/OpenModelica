@@ -18,7 +18,8 @@
 \makeatletter
 
 \def\boxedverbatim{\begingroup%
-  %\setbox0=\vbox{\parskip=0pt\topsep=0pt\partopsep=0pt}%
+  %\setbox0=\vbox{}%
+  \parskip=0pt\topsep=0pt\partopsep=0pt%
   \def\verbatim@processline{%
     \setbox1=\hbox{\the\verbatim@line}%
     %\hsize=\linewidth
@@ -324,14 +325,15 @@ declared using the \code{class} keyword, the definition has to be
 scanned to see what restrictions it breaks.
 
 This is done for each variable as it is instantiated, using the state
-machine in the file \filename{classinf.rml}.  While instantiating a
-class the current state is kept in a variable of type
-\code{ClassInf.State}.  It is initialized with the keyword used to
-declare the class using the relation \code{ClassInf.start}.  If the
-keyword was one of the restricted forms, the state will be initialized
-to a state that directly corresponds to that form, and it will never
-change to another state.  If the keyword was \code{class}, the state
-is initialized to \code{ClassInf.UNKNOWN}.
+machine in the file \filename{classinf.rml} (see section
+\ref{src:classinf}).  While instantiating a class the current state is
+kept in a variable of type \code{ClassInf.State}.  It is initialized
+with the keyword used to declare the class using the relation
+\code{ClassInf.start}.  If the keyword was one of the restricted
+forms, the state will be initialized to a state that directly
+corresponds to that form, and it will never change to another state.
+If the keyword was \code{class}, the state is initialized to
+\code{ClassInf.UNKNOWN}.
 
 Transitions in the state machine are triggered by events signalled
 during instantiation indicating that some piece of information has been
@@ -357,11 +359,15 @@ are listed in table \ref{tab:classinfevents}.
 \chapter{Annotated formal semantics}
 \label{cha:formsem}
 
+This chapter contains the complete formal semantics of Modelica.  This
+includes the RML source files, but the comments in the files are
+converted to more readable text.
 
 \section{Overview}
 
 
 \input{exp.tex}
+\input{classinf.tex}
 \input{dae.tex}
 \input{types.tex}
 \input{absyn.tex}
@@ -373,7 +379,6 @@ are listed in table \ref{tab:classinfevents}.
 \input{lookup.tex}
 \input{builtin.tex}
 \input{connect.tex}
-\input{classinf.tex}
 \input{staticexp.tex}
 \input{inst.tex}
 \input{main.tex}

@@ -1,4 +1,4 @@
-#!/usr/local/bin/pike
+#!/home/x97davka/arch/sparc-sun-solaris5.5.1/bin/pike
 // -*- pike -*-
 
 object comstart = Regexp("^[ \t]*(\\(|)\\*\\*(.*)$");
@@ -28,12 +28,14 @@ string tex_escape(string s)
 void convert(string f)
 {
   array(string) lines = Stdio.read_file(f) / "\n";
-  string state = "start", buf = "";
+  string state = "start", buf = "", fn = (f/"/")[-1];
   array a;
 
-  write("\\section{File \\texttt{"+(f/"/")[-1]+"}}\n");
+  write("\\section{File \\texttt{"+fn+"}}\n"
+	"\\label{src:"+(fn/".")[0]+"}\n");
   foreach(lines, string line)
   {
+    int empty = Regexp("^[ \t]*$")->match(line);
     if(a = comstart->split(line))
     {
       string s, newstate;
@@ -42,19 +44,28 @@ void convert(string f)
       case "comment":
       case "itemize":
 	break;
-      case "code1":
       case "code2":
-	write("\\end{boxedverbatim}\n");
+	write("\\end{boxedverbatim}\n\n");
+	break;
+      case "code1":
+	write("\n");
 	break;
       }
       newstate = "comment";
+      // Remove extra stuff at the end of the line
       s = a[1];
       if(s[sizeof(s)-2..] == "*)")
 	s = s[..sizeof(s)-3];
       while(sizeof(s) && s[-1] == ' ') s = s[..sizeof(s)-2];
+      // Escape TeX special characters
       s = tex_escape(s);
+
       if(s==")")
 	;
+      else if(s[..2] == " - ")
+      {
+	write("\n\\subsection{"+s[3..]+"}\n\n");
+      }
       else if(s[..3] == "  o ")
       {
 	newstate = "itemize";
@@ -71,11 +82,11 @@ void convert(string f)
 	write("\\subsubsection{"+s[2..]+"}\n");
       else if(a = Regexp(" *file: *(.*)")->split(s))
       {
-	if(a[0] != (f/"/")[-1])
+	if(a[0] != fn)
 	  werror("Filename mismatch in file "+f+": claims to be '"+a[0]+"'\n");
       }
       else if(a = Regexp(" *relation: *(.*)")->split(s))
-	write("\\subsection{Relation \\texttt{"+a[0]+"}}\n");
+	write("\\subsubsection{Relation \\texttt{"+a[0]+"}}\n");
       else if(a = Regexp(" *purpose: *(.*)")->split(s))
 	write("\\textbf{Purpose:} "+a[0]+"\n\\vspace{1ex}\n");
       else
@@ -93,18 +104,21 @@ void convert(string f)
       case "start":
       case "comment":
 	// write("{\\small\\begin{verbatim}\n");
-	write("\\begin{boxedverbatim}\n");
 	buf = "";
 	break;
       }
-      line = tex_escape(untabify(line));
-      if(state=="code2" || line!="")
+      line = untabify(line);
+      if(!empty)
+      {
+	if(state!="code2")
+	  write("\\begin{boxedverbatim}\n");
 	state = "code2";
-      else
+      }
+      else if (state != "code2")
 	state = "code1";
       
       if(state == "code2")
-	if(line == "")
+	if(empty)
 	  buf += "\n";
 	else
 	{
@@ -114,9 +128,9 @@ void convert(string f)
     }
   }
 
-  if(state == "code1" || state == "code2")
+  if(state == "code2")
     // write("\\end{verbatim}}\n");
-    write("\\end{boxedverbatim}\n");
+    write("\\end{boxedverbatim}\n\n");
 }
 
 int main(int argc, array argv)
