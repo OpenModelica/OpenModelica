@@ -17,7 +17,7 @@ algorithm
   M := size(a,2)-1;
 
   for j in 0:N loop
-    for k in 1:M+1 loop
+    for k in 0:M loop
       if j<>p and k<>q then
 	a[j+1,k+1] := a[j+1,k+1]-a[p+1,k+1]*a[j+1,q+1]/a[p+1,q+1];
       end if;
@@ -30,7 +30,7 @@ algorithm
     end if;
   end for;
   
-  for k in 1:M+1 loop
+  for k in 0:M loop
     if k<>q then
       a[p+1,k+1]:=a[p+1,k+1]/a[p+1,q+1];
     end if;
