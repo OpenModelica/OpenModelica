@@ -23,18 +23,19 @@ ANTLR = $(BIN)/antlr
 DLG = $(BIN)/dlg
 #CFLAGS = -ggdb -I. -I$(ANTLR_H) #does not work in linux
 CFLAGS = -g -I. -I.. -I$(ANTLR_H)
-AFLAGS = -CC -gt 
+#AFLAGS = -CC -gt 
+AFLAGS =
 DFLAGS = -C2 -CC -cs
 GRM = modgram.g
 SRC = modgram.cpp \
       ModParse.cpp \
-	modAST.cpp codegen.cpp ModParseToken.cpp modAST.h ModParseToken.h codegen.h comments.cpp comments.h \
+	modAST.cpp ModParseToken.cpp modAST.h ModParseToken.h \
       $(ANTLR_H)/AParser.cpp $(ANTLR_H)/DLexerBase.cpp \
       $(ANTLR_H)/ASTBase.cpp $(ANTLR_H)/PCCTSAST.cpp \
        $(ANTLR_H)/ATokenBuffer.cpp $(SCAN).cpp
 OBJ = modgram.o \
       ModParse.o \
-	modAST.o codegen.o ModParseToken.o comments.o \
+	modAST.o ModParseToken.o \
        AParser.o DLexerBase.o \
       ASTBase.o PCCTSAST.o \
        ATokenBuffer.o $(SCAN).o
@@ -48,7 +49,7 @@ libast.a : $(OBJ)
 	ar -rc $@ $(OBJ)
 
 modgram.o : $(TOKENS) $(SCAN).h modgram.cpp parser.h
-	$(CCC) -c $(CFLAGS) -o modgram.o modgram.cpp
+	$(CC) -c $(CFLAGS) -o modgram.o modgram.c
 
 ModParse.o : $(TOKENS) $(SCAN).h ModParse.cpp ModParse.h
 	$(CCC) -c $(CFLAGS) -o ModParse.o ModParse.cpp
@@ -58,12 +59,6 @@ modAST.o : modAST.cpp modAST.h
 
 ModParseToken.o : ModParseToken.cpp ModParseToken.h
 	$(CCC) -c $(CFLAGS) -o ModParseToken.o ModParseToken.cpp	
-
-comments.o : comments.cpp comments.h
-	$(CCC) -c $(CFLAGS) -o comments.o comments.cpp
-
-codegen.o : codegen.cpp codegen.h comments.h
-	$(CCC) -c $(CFLAGS) -o codegen.o codegen.cpp	
 
 $(SCAN).o : $(SCAN).cpp $(TOKENS)
 	$(CCC) -c $(CFLAGS) -o $(SCAN).o $(SCAN).cpp
@@ -91,16 +86,4 @@ PCCTSAST.o : $(ANTLR_H)/PCCTSAST.cpp
 
 
 clean:
-	rm -f *.o core libast.a
-
-scrub:
-	rm -f *.o core $(ANTLR_SPAWN) $(DLG_SPAWN)
-
-install:
-	cp mod2om5 ../../System
-	cp mod2om5 $(HOME)/bin
-
-linux:
-	make PCCTS=$(HOME)/pccts
-
-
+	$(RM) -f *.o core libast.a $(ANTLR_SPAWN) $(DLG_SPAWN)

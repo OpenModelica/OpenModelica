@@ -1,3 +1,4 @@
+// -*- C++ -*-
 
 #header <<
 
@@ -10,24 +11,17 @@
 #endif
 
 #ifdef _WIN32
-extern "C" {
-  int getopt(int nargc, char **nargv, char *ostr);
-  extern int optind;
-  extern char *optarg;
-  char *__progname;
-}
+int getopt(int nargc, char **nargv, char *ostr);
+extern int optind;
+extern char *optarg;
+char *__progname;
 #endif
-
-
-extern Comment *newComment;
 
 >>
 
 <<
 
 #include <stdlib.h>		// getopt
-#include <iostream.h>
-#include <fstream.h>
 #include "DLexerBase.h"		// Base info for DLG-generated scanner
 #include "DLGLexer.h"
 #include "AToken.h"		// Base token definitions for ANTLR
@@ -45,125 +39,94 @@ static char *outputfilename=NULL;
 
 int main(int argc, char **argv)
 {
-
+  
 #ifdef _WIN32
   __progname = argv[0];
 #endif
-
-    bool nocode=false;
-    bool dump=false;
-    bool noprint=true;
-    bool showcom=false;
-    bool verbosemode=false;
-
-    FILE *source;
-    ofstream code;
-
-    int c;
-    extern char *optarg;
-    extern int optind;
-    int errflg = 0;
-
-    // Initialize RML
-    Exp_5finit();
-    DAE_5finit();
-    Class_5finit();
-
-    while ((c = getopt(argc, argv, "svxdr:o:D")) != EOF)
-      switch (c) {
-      case 'v':
-	verbosemode=true;
-	break;
-      case 'd':
-	noprint=false;
-	break;
-      case 'D':
-        dump=true;
-        break;
-      case 'o':
-	outputfilename = optarg;
-	//	cout << "ofile = " << ofile << "\n";
-	break;
-      case 'r':
-	rootcontextname=optarg;
-	//	cout << "context = " << rootcontextname << "\n";
-	break;
-      case '?':
-	errflg++;
-      }
-    if (errflg) {
-      cerr << "usage: mod2om5 [-v] [-x] [-d] [-D] [-r <contextname>] [-o <filename>] file\n";
-      exit (2);
+  
+  bool nocode=false;
+  bool dump=false;
+  bool noprint=true;
+  bool verbosemode=false;
+  
+  FILE *source;
+  
+  int c;
+  extern char *optarg;
+  extern int optind;
+  int errflg = 0;
+  
+  // Initialize RML
+  Exp_5finit();
+  DAE_5finit();
+  Class_5finit();
+  
+  while ((c = getopt(argc, argv, "svxdr:o:D")) != EOF)
+    switch (c) {
+    case 'v':
+      verbosemode=true;
+      break;
+    case 'd':
+      noprint=false;
+      break;
+    case 'D':
+      dump=true;
+      break;
+    case 'o':
+      outputfilename = optarg;
+      //	cout << "ofile = " << ofile << "\n";
+      break;
+    case '?':
+      errflg++;
     }
+  if (errflg) {
+    fprintf(stderr, "usage: modeq [-v] [-x] [-d] [-D] [-r <contextname>] [-o <filename>] file\n");
+    exit (2);
+  }
+  
+  if (verbosemode) {
+    fprintf(stderr, "Input filename: %s\n", ( filename? filename : "stdin" ));
+    fprintf(stderr, "Output filename: %s\n", ( outputfilename? outputfilename : "stdout" ));
+  }
 
-    filename=argv[optind];
-    if (!rootcontextname) {
-      if (filename) {
-	// get root context name from filename
-	char *p;
-	rootcontextname=strdup(filename);
-	// Strip everything after the first dot
-        if (p=strchr(rootcontextname,'.'))
-	  *p=0;
-      } else
-	rootcontextname="rootContext";
-    }
+  filename = argv[optind];
+  
+  if (filename) {
+    source=fopen(filename,"r");
+  } else {
+    source=stdin;
+  }
+  
+  // Declare the parser objects
+  DLGFileInput in(source);          // define the input file; in this case, source
+  DLGLexer scanner(&in);           // define an instance of your scanner
+  ANTLRTokenBuffer pipe(&scanner); // define a token buffer between scanner and parser
+  ANTLRToken tok;                  // create a token to use as a model
+  ASTBase *root=NULL;
+  AST *rootCopy;
+  ModParse parser(&pipe);        // create an instance of your parser
+  
+  scanner.setToken(&tok);          // tell the scanner what type the token is
+  
+  parser.init();                 // initialize your parser
+  parser.model_specification(&root);              // start first rule
+  
+  if (filename) fclose(source);
+  
+  rootCopy=(AST *) root;
+  if (!noprint) {
+    printf("Dump of tree:\n");
+    rootCopy->preorder();
+    printf("\n\n");
+  }
+  if (dump) {
+    printf("Dump of tree:\n");
+    rootCopy->dumpTree();
+  }
 
-    if (verbosemode) {
-      cout << "Root context name: " << rootcontextname << "\n";
-      cout << "Input filename: " << ( filename? filename : "stdin" ) << "\n";
-      cout << "Output filename: " << ( outputfilename? outputfilename : "stdout" ) << "\n";
-    }
-
-    if (filename) {
-      source=fopen(filename,"r");
-    } else {
-      source=stdin;
-    }
-
-    // Declare the parser objects
-    DLGFileInput in(source);          // define the input file; in this case, source
-    DLGLexer scanner(&in);           // define an instance of your scanner
-    ANTLRTokenBuffer pipe(&scanner); // define a token buffer between scanner and parser
-    ANTLRToken tok;                  // create a token to use as a model
-    ASTBase *root=NULL;
-    AST *rootCopy;
-    CodeGenerator codeGen;
-    ModParse parser(&pipe);        // create an instance of your parser
-
-    scanner.setToken(&tok);          // tell the scanner what type the token is
-
-    parser.init();                 // initialize your parser
-    parser.model_specification(&root);              // start first rule
-
-    if (filename) fclose(source);
-
-    rootCopy=(AST *) root;
-    if (!noprint) {
-      printf("Dump of tree:\n");
-      rootCopy->preorder();
-      printf("\n\n");
-    }
-    if (dump) {
-      printf("Dump of tree:\n");
-      rootCopy->dumpTree();
-    }
-    if (!nocode) {
-      codeGen.genCode(rootCopy);
-    } else {
-      cout << "Syntax check complete.\n";
-    }
-    if (showcom) {
-      newComment=getFirstComment();
-      while(newComment) {
-	cout << "Comment at line: " << newComment->getLine() << "\n";
-	cout << newComment->getText() << "\n";
-	newComment=newComment->getNext();
-      }
-    }
-    rootCopy->destroy();
-//    fprintf(stderr,"%d errors.\n",errors);
-    return 0;                        // it's over Johnnie... it's over
+  rootCopy->destroy();
+  //    fprintf(stderr,"%d errors.\n",errors);
+  return 0;                        // it's over Johnnie... it's over
 }
 
 
@@ -173,8 +136,7 @@ int main(int argc, char **argv)
 /* Token definitions for the the lexical analyzer. */
 
 #lexclass START
-#token "/\*"		<< skip(); mode(C_STYLE_COMMENT); 
-			   newComment=new Comment(line(),EOL); >>
+#token "/\*"		<< skip(); mode(C_STYLE_COMMENT); >>
 #token IMPORT		"import"
 #token CLASS_		"class"
 #token BOUNDARY		"boundary"
@@ -258,10 +220,7 @@ int main(int argc, char **argv)
 
 #token EXTRA_TOKEN	// used for synthetic nodes
 
-#token "//(~[\n])*"  << skip(); 
-			newComment=new Comment(line(),EOL);
-			newComment->addText(lextext()+2);
-			>> // skip C++-style comments
+#token "//(~[\n])*"  << skip(); >> // skip C++-style comments
 
 #token IDENT 		"([a-z]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*"
 
@@ -274,10 +233,10 @@ int main(int argc, char **argv)
 
 #lexclass C_STYLE_COMMENT
 
-#token	"[\n\r]"	<< skip(); newline(); newComment->addText("\n"); >>
+#token	"[\n\r]"	<< skip(); newline(); >>
 #token	"\*/"		<< skip(); mode(START); >>
-#token	"\*"		<< skip(); newComment->addText("*"); >>
-#token	"~[\*\n\r]+"	<< skip(); newComment->addText(lextext()); >>
+#token	"\*"		<< skip(); >>
+#token	"~[\*\n\r]+"	<< skip(); >>
 
 
 #lexclass START
@@ -773,10 +732,7 @@ function_arguments :
 comment : 
 	// several strings in a row is really one string continued on
 	// several lines.
-	( s:STRING! << newComment=new Comment(mytoken($s)->getLine(),OPTIONAL);
-		       newComment->addText(mytoken($s)->getText()); 
-		    >>
-	)*
+	( s:STRING! )*
 	// Why is this syntactic predicate necessary??
 	{ (annotation)? annotation! }
 	;
