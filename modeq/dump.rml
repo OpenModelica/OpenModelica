@@ -56,6 +56,7 @@ module Dump:
   relation print_exp: Absyn.Exp => ()
   relation print_exp_str: Absyn.Exp => string
   relation print_code_str: Absyn.Code => string 
+  relation print_component: Absyn.Component => () 
   relation print_component_ref: Absyn.ComponentRef => ()
   relation print_component_ref_str : Absyn.ComponentRef => string
   relation print_path : Absyn.Path => ()
