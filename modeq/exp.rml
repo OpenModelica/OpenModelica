@@ -152,11 +152,17 @@ module Exp:
   relation exp_equal: (Exp,Exp) => bool
   relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*)) 
 	  => (Exp,int)
+  relation replace_exp_list: (Exp (*expr*), Exp list (* source list*), Exp list (* target list*))
+	  => (Exp,int)
+  relation binop_symbol_1 : Operator => string 
+  relation unaryop_symbol : Operator => string 
+  relation lunaryop_symbol : Operator => string 
+  relation relop_symbol : Operator => string 
   relation dump_exp_graphviz : Exp => Graphviz.Node
   relation exp_contains : (Exp, Exp) => bool
-  relation solve : (Exp, Exp) => Exp
-end
+  relation solve : (Exp, Exp, Exp) => Exp
 
+end
 
 
 with "rtopts.rml"
@@ -1775,6 +1781,22 @@ relation operator_equal: (Operator,Operator) => bool =
   axiom	operator_equal(_,_) => false
 end
 
+(* Replaces an expression with a list of several expressions. 
+ NOTE: Not repreteadly applied, so the source and target lists must be disjunct
+ Useful for instance when replacing several variables at once in an expression. 
+ *)
+relation replace_exp_list: (Exp (*expr*), Exp list (* source list*), Exp list (* target list*))
+	  => (Exp,int) =
+
+  axiom	replace_exp_list(e,[],[]) => (e,0)
+
+  rule	replace_exp(e,s1,t1) => (e',c1) &
+	replace_exp_list(e',sr,tr) => (e'',c2) &
+	int_add(c1,c2) => c 
+	----------------------------------------
+	replace_exp_list(e,s1::sr,t1::tr) => (e'',c)
+end
+
 relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*)) 
 	  => (Exp,int) =
 
@@ -2026,17 +2048,31 @@ relation dump_exp_graphviz : Exp => Graphviz.Node =
 
 end
 
+(* Solves an equation consisting of a right hand side (rhs) and a left hand side (lhs),
+ with respect to the expression given as third argument, usually a variable. *)
+relation solve : (Exp, (* lhs *)
+		  Exp, (* rhs *)
+		  Exp) (* solve for *)
+	  => Exp =
 
+  rule	(* Special case when already solved, otherwise division by zero 
+	 when dividing with derivative *)
+	cref_equal(cr1,cr2) => true &
+	exp_contains (rhs,crexp) => false 
+	---------------------------------
+	solve (crexp as CREF(cr1,_), rhs, CREF(cr2,_)) => rhs
 
+  rule	(* Special case when already solved, otherwise division by zero 
+	 when dividing with derivative *)
+	cref_equal(cr1,cr2) => true &
+	exp_contains (lhs,crexp) => false 
+	---------------------------------
+	solve (lhs, crexp as CREF(cr1,_), CREF(cr2,_)) => lhs
 
-
-
-relation solve : (Exp, Exp) => Exp =
-
-  rule	solve2 (e1, e2, cr) => res &
+  rule	solve2 (lhs, rhs, cr) => res &
 	simplify res => res'
 	-------------------------------------
-	solve (rel as RELATION(e1, EQUAL(ty), e2), cr as CREF(_,_)) => res'
+	solve (lhs,rhs, cr as CREF(_,_)) => res'
 	
   rule	Print.print_buf "solve failed: Not an equation or trying to solve for\n" &
 	Print.print_buf "a non-component-reference, or a non-linear equation:\n" &
@@ -2045,10 +2081,8 @@ relation solve : (Exp, Exp) => Exp =
 	print_exp e2 &
 	Print.print_buf "\n"
         ----------------------------------
-	solve (e1, e2) => fail
-
+	solve (e1, e2, e3) => fail
 end
-
 
 relation solve2 : (Exp, Exp, Exp) => Exp =
 
@@ -2059,16 +2093,15 @@ relation solve2 : (Exp, Exp, Exp) => Exp =
 	replace_exp (lhs, crexp, RCONST(0.0)) => (lhszero,_) &
 	simplify (lhszero) => lhszero' &
 	let rhs = UNARY(UMINUS(REAL), BINARY(lhszero', DIV(REAL), lhsder')) &
-	simplify (rhs) => rhs' &
-	let res = RELATION(crexp, EQUAL(REAL), rhs')
-(*
+	simplify (rhs) => rhs' 
+	(*
 	& dump_exp_graphviz lhs => lhsnode 
 	& Print.print_buf "------------------ LHS -----------------\n"
 	& Graphviz.dump lhsnode
 	& Print.print_buf "------------------ /LHS -----------------\n"
-*)
+	 *)
 	---------------------------------------
-	solve2 (e1, e2, crexp as CREF(cr,_)) => res
+	solve2 (e1, e2, crexp as CREF(cr,_)) => rhs'
 
 
   rule	let lhs = BINARY(e1, SUB(REAL), e2) &

@@ -1090,7 +1090,7 @@ axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.S
 				    st)
 	  => (Values.BOOL(res), st)
 
-  rule	Exp.solve (Exp.RELATION(exp1, Exp.EQUAL(Exp.REAL), exp2), exp3) => res1 &
+  rule	Exp.solve (exp1, exp2, exp3) => res1 &
 	Exp.print_exp_str res1 => res
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("solve"),

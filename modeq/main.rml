@@ -51,6 +51,8 @@ with "print.rml"
 with "corba.rml"
 with "system.rml"
 with "util.rml"
+with "taskgraph.rml"
+with "taskgraphext.rml" 
 
 (** relation: server_loop
  **
@@ -274,10 +276,10 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	& ModUtil.string_prefix_params d => d'
 	& Debug.fcall ("codegen", Codegen.generate_functions, d') 
-
-	& Debug.fcall ("blt", optimize_dae,d') 
+	& run_backend_q() => runbe 
+	& Debug.bcall (runbe, optimize_dae,d) 
 	& Print.get_string () => str
-(*	& print str*)
+	& print str
 	------------------------------
 	translate_file [f]
 
@@ -304,7 +306,22 @@ relation translate_file : string list => () =
 	translate_file _ => fail
 
 end
+(* Determine if backend, i.e. BLT etc. should be run.
+It should be run if either "blt" flag is set or if 
+parallelization is enabled by giving flag -n=<no proc.>
+ *)
+relation run_backend_q: () => bool =
 
+  rule	RTOpts.debug_flag "blt" => bltflag &
+	RTOpts.no_proc() => n &
+	int_gt (n,0) => par &
+	bool_or (bltflag,par) => res
+	----------------------------
+	run_backend_q() => res
+end
+
+
+(* Used for both parallization and for normal execution.*)
 relation optimize_dae: (DAE.DAElist) => () =
 
   rule	DAELow.lower(d) => d' 
@@ -345,9 +362,54 @@ relation optimize_dae: (DAE.DAElist) => () =
 	& print "Strong Components took: " 
 	& print strongtimes
 	& print " seconds\n"
+	& modpar(d'',v1,v2,comps)
 	& DAELow.dump_components(comps) 
 	-----------------------
 	optimize_dae(d) => ()
+end
+
+(*  The automatic paralellzation module.*)
+relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
+
+  rule	(* If modpar not enabled, nproc = 0, return *) 
+	RTOpts.no_proc() => n &
+	int_eq(n,0) => true
+	----------------
+	modpar(_,_,_,_) => ()
+
+  rule	(* Otherwise, build task graph *)
+	print "old dae:" & DAELow.dump dae &
+	print "translating dae.\n" &
+	DAELow.translate_dae (dae) => indexed_dae &
+	print "new dae:" & DAELow.dump indexed_dae &
+	print "building task graph\n" &
+	TaskGraph.build_taskgraph(indexed_dae,ass1,ass2,comps) &
+	TaskGraphExt.dump_graph("model.viz") &
+	RTOpts.latency  => l &
+	RTOpts.bandwidth => b &
+	clock() => t1 &
+	TaskGraphExt.merge_tasks(l,b) &
+	clock() => t2 &
+	real_sub(t2,t1) => time &
+	real_string(time) => timestr &
+	print "task merging took " & print timestr & print " seconds\n" &
+	TaskGraphExt.dump_merged_graph("merged_model.viz") &
+	RTOpts.no_proc => n &
+	TaskGraphExt.schedule(n) &
+	DAELow.calculate_sizes(indexed_dae) => (nx,ny,np)  &
+	TaskGraphExt.generate_code(nx,ny,np) &
+
+	print "done\n" 
+	-----------------
+	modpar(dae,ass1,ass2,comps)
+end
+
+relation run_modpar_q: () => bool =
+	
+  rule	RTOpts.no_proc() => n &
+	int_gt(n,0) => res
+	------------------
+	run_modpar_q() => res
 end
 
 relation fix_modelica_output : DAE.DAElist => DAE.DAElist =

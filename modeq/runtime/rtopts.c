@@ -16,6 +16,9 @@ static char *debug_flagstr;
 static int debug_flagc;
 static int debug_all;
 static int debug_none;
+int nproc;
+double latency=0.0;
+double bandwidth=0.0;
 
 void RTOpts_5finit(void)
 {
@@ -26,6 +29,7 @@ void RTOpts_5finit(void)
   params_struct = 0;
   debug_all = 0;
   debug_none = 1;
+  nproc = 0;
 }
 
 static int set_debug_flags(char *flagstr)
@@ -148,9 +152,42 @@ RML_BEGIN_LABEL(RTOpts__args)
       case 'd':
 	if (arg[2]!='=' ||
 	    set_debug_flags(&(arg[3])) != 0) {
-	  fprintf(stderr, "# Flag Usage:  -d=flg1,flg2,...") ;
+	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...") ;
 	  RML_TAILCALLK(rmlFC);
 	}
+	break;
+      case 'n':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +n=<no. of proc>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	nproc = atoi(&arg[3]);
+	if (nproc == 0) {
+	  fprintf(stderr, "Error, integer value expected for number of processors.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	} 
+	break;
+      case 'l':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +l=<latency value>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	latency = (double)atoi(&arg[3],NULL);
+	if (latency == 0.0) {
+	  fprintf(stderr, "Error, integer expected for latency.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	} 
+	break;
+      case 'b':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +b=<bandwidth value>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	bandwidth = (double)atoi(&arg[3]);
+	if (bandwidth == 0.0) {
+	  fprintf(stderr, "Error, integer expected for bandwidth.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	} 
 	break;
       default:
 	fprintf(stderr, "# Unknown option: %s\n", arg);
@@ -237,4 +274,23 @@ RML_BEGIN_LABEL(RTOpts__debug_5fflag)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(RTOpts__no_5fproc)
+{
+  rmlA0 = mk_icon(nproc);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
+RML_BEGIN_LABEL(RTOpts__latency)
+{
+  rmlA0 = mk_rcon(latency);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__bandwidth)
+{
+  rmlA0 = mk_rcon(bandwidth);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

@@ -1,0 +1,43 @@
+BOOST_HOME = @BOOSTHOME@
+RMLINCLUDE = @rmlinc@
+
+USE_MODPAR = @USE_MODPAR@
+
+ifdef USE_MODPAR
+OBJECTS = TaskSymbolTable.o \
+	Codegen.o \
+	TaskMerging.o \
+	TaskGraph.o \
+	MergeRule.o \
+	SingleChildMerge.o \
+	DuplicateParentMerge.o \
+	MergeAllParents.o \
+	MergeSiblings.o \
+	Schedule.o \
+	TaskGraphExt.o 
+else
+OBJECTS = TaskGraphExt_stub.o
+endif
+all: libmodpar.a
+libmodpar.a: $(OBJECTS)
+	ar -r $@ $(OBJECTS)
+
+INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME)
+
+CFLAGS = $(INCFLAGS) -g -Wall -DUNIX=1
+CXXFLAGS = $(CFLAGS)
+LIBS = 
+
+
+TaskGraphExt.o: TaskGraphExt.cpp
+TaskGraphExt_stub.o: TaskGraphExt_stub.cpp
+TaskMerging.o: TaskMerging.cpp TaskMerging.hpp
+TaskGraph.o: TaskGraph.cpp TaskGraph.hpp
+MergeRule.o: MergeRule.cpp MergeRule.hpp
+SingleChildMerge.o: SingleChildMerge.cpp SingleChildMerge.hpp MergeRule.hpp
+DuplicateParentMerge.o: DuplicateParentMerge.cpp DuplicateParentMerge.hpp MergeRule.hpp
+MergeAllParents.o: MergeAllParents.cpp MergeAllParents.hpp MergeRule.hpp
+Schedule.o: Schedule.cpp Schedule.hpp 
+
+clean:
+	rm -rf $(OBJECTS)

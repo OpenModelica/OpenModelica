@@ -28,4 +28,7 @@ module RTOpts:
   relation modelica_output : () => bool
   relation debug_flag : string => bool
   relation debug_flag_info : () => bool
+  relation no_proc: () => int 	  
+  relation latency:() => real
+  relation bandwidth: () => real	  
 end

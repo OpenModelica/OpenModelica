@@ -30,6 +30,7 @@ module Util :
   relation list_flatten : 'a list list => 'a list
   relation list_map_0 : ('a list, 'a => ()) => ()
   relation list_map : ('a list, 'a => 'b) => 'b list
+  relation list_map__2 : ('a list, 'a => ('b,'c)) => ('b list,'c list)
   relation list_map_1: ('a list, ('a, 'b) => 'c, 'b) => 'c list
   relation list_map_2: ('a list, ('a, 'b,'c) => 'd, 'b,'c) => 'd list 
   relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list
@@ -113,6 +114,16 @@ relation list_map : ('a list, 'a => 'b) => 'b list =
 	-------------------
 	list_map (f::r,fn) => f'::r'
 
+end
+
+relation list_map__2 : ('a list, 'a => ('b,'c)) => ('b list,'c list) =
+
+  axiom	list_map__2 ([],_) => ([],[])
+
+  rule	fn f => (f1',f2') &
+	list_map__2(r,fn) => (r1',r2')
+	-------------------
+	list_map__2 (f::r,fn) => (f1'::r1',f2'::r2')
 end
 
 (* Same as list map, but for relations taking one extra argument *)

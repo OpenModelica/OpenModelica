@@ -1,0 +1,336 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+(**
+ ** file:	 taskgraph.rml
+ ** module:      TaskGraph
+ ** description: Building of task graphs from expressions, and equation systems.
+ **
+ ** RCS: %W% %E%
+ ** 
+ **)
+
+(** - Module header *)
+
+module TaskGraph:
+  with "exp.rml"
+  with "daelow.rml"
+
+  relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list) => ()
+
+end
+
+with "taskgraphext.rml"
+with "util.rml" 
+with "absyn.rml"
+
+relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list) => () =
+
+  rule	TaskGraphExt.new_task("start") => starttask &
+	TaskGraphExt.new_task("end") => endtask &
+	TaskGraphExt.register_startstop(starttask,endtask) &
+	add_variables(vars,starttask) &
+	add_variables(knvars,starttask) &
+	build_blocks(dae,ass1,ass2,blocks)
+	----------------------------------
+	build_taskgraph(dae as DAELow.DAELOW(vars,knvars,_,_),ass1,ass2,blocks)
+
+  rule	print "-build_taskgraph failed\n"
+	-----------------------
+	build_taskgraph(_,_,_,_) => fail
+end
+
+relation add_variables:(DAELow.Var list,int) => () =
+
+  axiom	add_variables([],start) => ()
+
+rule	add_variable(v,start) &
+	add_variables(vs,start) 
+	-------------------
+	add_variables(v::vs,start) => ()
+end
+
+relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => () =
+
+  axiom	build_blocks(_,_,_,[]) => ()
+
+  rule	(* For system of equations *)
+	build_system(dae,ass1,ass2,block) &
+	build_blocks(dae,ass1,ass2,blocks)
+	-------------------------------------
+	build_blocks(dae,ass1,ass2,(block as _::_::_)::blocks)
+	
+  rule	(* for single equations *)
+	build_equation(dae,ass1,ass2,eqn) &
+	build_blocks(dae,ass1,ass2,blocks)
+	-------------------------------------
+	build_blocks(dae,ass1,ass2,(block as [eqn])::blocks)
+
+  rule	print "-build_blocks failed\n" 
+	-----------------
+	build_blocks(_,_,_,_) => fail
+end
+
+(* Build task graph for a single equation.*)
+relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
+	
+  rule	(* Solving for non-states *)
+	int_sub(e,1) => e' &
+	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	list_nth(vars,v') => (v as DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_)) &  
+	print "Solving for non-states\n" &
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr &
+	Exp.print_exp_str e1 => e1s &
+	Exp.print_exp_str e2 => e2s &
+	print "Equation " & print e1s & print " = " & print e2s &
+	print " solved for " & Exp.print_exp_str varexp => s &
+	print s & print " giving " &
+	Exp.print_exp_str expr => s2 & print s2 & print "\n" &
+	build_assignment(cr,expr)  => ()
+	--------------------------------
+	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e)	
+
+  rule	(* Solving the state s means solving for der(s) *)
+	int_sub(e,1) => e' &
+	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	list_nth(vars,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,indx) &
+	print "solving for state\n" &
+	int_string(indx) => indxs &
+	Util.string_append_list(["xd[",indxs,"]"]) => id &
+	let cr' = Exp.CREF_IDENT(id,[]) &
+	let varexp = Exp.CREF(cr',Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr &
+	Exp.print_exp_str e1 => e1s &
+	Exp.print_exp_str e2 => e2s &
+	print "Equation " & print e1s & print " = " & print e2s &
+	print "solved for " & Exp.print_exp_str varexp => s &
+	print s & print "giving " &
+	Exp.print_exp_str expr => s2 & print s2 & print "\n" &
+	build_assignment(cr' ,expr)  => ()
+	--------------------------------
+	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e)	
+
+  rule	int_sub(e,1) => e' &
+	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	list_nth(vars,v') => DAELow.VAR(cr,_,_,_,_,_,_,_) &  
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	not Exp.solve(e1,e2,varexp) => _ &
+	print "nonlinear equation not implemented yet\n" 
+	--------------------------------
+	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e)	=> fail
+end
+
+(* Build task graph for a system of equations *)
+relation build_system:(DAELow.DAELow, int vector, int vector, int list) => () =
+
+  rule	print "system of equations\n" 
+	-----------------------------
+	build_system(dae,ass1,ass2,system) => fail
+end
+
+relation add_variable: (DAELow.Var,int) => () =
+
+  rule	Exp.cref_str(cf) => cfs &
+	print "adding variable " & print cfs & print "\n" &
+	TaskGraphExt.store_result(cfs,start,false)
+	------------------------------------
+	add_variable(DAELow.VAR(cf,_,_,_, _,_,_,_),start)
+end
+
+		     
+relation build_assignment: (Exp.ComponentRef, (* varname *)
+			    Exp.Exp) (*expression*) => () =
+	
+  rule	build_expression(exp) => (task,str) &
+	Exp.cref_str(cr) => crs &
+	TaskGraphExt.store_result(crs,task,true)
+	------------------------
+	build_assignment(cr,exp)
+
+  rule	print "-build_assignment failed\n" 
+	------------------------
+	build_assignment(cr,exp) => fail
+end
+
+(* Builds the task graph for the expression and
+ returns the task no that calculates the result of the expr *)
+relation build_expression:(Exp.Exp) => (int, string) =
+	
+  rule	int_string(i) => is &
+	TaskGraphExt.new_task(is) => tid &
+	TaskGraphExt.get_starttask() => st &
+	TaskGraphExt.add_edge(st,tid,"") &
+	TaskGraphExt.set_commcost(st,tid,0) 
+	--------------------------------
+	build_expression(Exp.ICONST(i)) => (tid,"")
+
+  rule	real_string(r) => rs &
+	TaskGraphExt.new_task(rs) => tid  &
+	TaskGraphExt.get_starttask() => st &
+	TaskGraphExt.add_edge(st,tid,"") &
+	TaskGraphExt.set_commcost(st,tid,0) 
+	--------------------------------
+	build_expression(Exp.RCONST(r)) => (tid,"")
+	
+  rule	Exp.cref_str(cr) => crs &
+	TaskGraphExt.get_task(crs) => tid
+	---------------------------------
+	build_expression(Exp.CREF(cr,_)) => (tid,crs)
+
+  rule	build_expression(e1) => (t1,s1) &
+	build_expression(e2) => (t2,s2) &
+	Exp.binop_symbol_1(op) => ops &
+	Util.string_append_list(["%s",ops,"%s"]) => ts &
+	TaskGraphExt.new_task(ts) => t &
+	TaskGraphExt.add_edge(t1,t,s1) &
+	TaskGraphExt.add_edge(t2,t,s2)
+	---------------------------
+	build_expression(Exp.BINARY(e1,op,e2)) => (t,"")
+
+  rule	build_expression(e1) => (t1,s1) &
+	build_expression(e2) => (t2,s2) &
+	Exp.binop_symbol_1(op) => ops &
+	Util.string_append_list(["%s",ops,"%s"]) => ts &
+	TaskGraphExt.new_task(ts) => t &
+	TaskGraphExt.add_edge(t1,t,s1) &
+	TaskGraphExt.add_edge(t2,t,s2)
+	---------------------------
+	build_expression(Exp.LBINARY(e1,op,e2)) => (t,"")
+
+  rule	build_expression(e1) => (t1,s1) &
+	Exp.unaryop_symbol(op) => ops &
+	Util.string_append_list([ops,"%s"]) => ts &
+	TaskGraphExt.new_task(ts) => t &
+	TaskGraphExt.add_edge(t1,t,s1) 
+	---------------------------
+	build_expression(Exp.UNARY(op,e1)) => (t,"")
+
+  rule	build_expression(e1) => (t1,s1) &
+	Exp.lunaryop_symbol(op) => ops &
+	Util.string_append_list([ops,"%s"]) => ts &
+	TaskGraphExt.new_task(ts) => t &
+	TaskGraphExt.add_edge(t1,t,s1) 
+	---------------------------
+	build_expression(Exp.LUNARY(op,e1)) => (t,"")
+	
+  rule	build_expression(e1) => (t1,s1) &
+	build_expression(e2) => (t2,s2) &
+	Exp.relop_symbol(relop) => ops &
+	Util.string_append_list(["%s",ops,"%s"]) => ts &
+	TaskGraphExt.new_task(ts) => t &
+	TaskGraphExt.add_edge(t1,t,s1) &
+	TaskGraphExt.add_edge(t2,t,s2)
+	-------------------------
+	build_expression(Exp.RELATION(e1,relop,e2)) => (t,"") 
+
+  rule	build_expression(e1) => (t1,s1) &
+	build_expression(e2) => (t2,s2) &
+	build_expression(e3) => (t3,s3) &
+	Util.string_append_list["%s ? %s : %s"] => ts &
+	TaskGraphExt.new_task(ts) => t &
+	TaskGraphExt.add_edge(t1,t,s1) &
+	TaskGraphExt.add_edge(t2,t,s2) &
+	TaskGraphExt.add_edge(t3,t,s3) 
+	----------------------------
+	build_expression(Exp.IFEXP(e1,e2,e3)) => (t,"")
+	
+  rule	Absyn.path_string func => funcstr &
+	list_length(expl) => numargs &
+	build_call_str(funcstr,numargs) => ts &
+	Util.list_map__2(expl,build_expression) => (tasks,strs) &
+	TaskGraphExt.new_task(ts) => t &
+	add_predecessors(t,tasks,strs) 
+	------------------------------
+	build_expression(Exp.CALL(func,expl,_,_)) => (t,"") 
+
+  rule	print "build_expression(ARRAY) not impl. yet\n"
+	-----------------------------------------------
+	build_expression(Exp.ARRAY(_,_,_)) => fail
+
+  rule	print "build_expression(MATRIX) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.ARRAY(_,_,_)) => fail
+
+  rule	print "build_expression(RANGE) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.RANGE(_,_,_,_)) => fail
+
+  rule	print "build_expression(TUPLE) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.TUPLE(_)) => fail
+
+  rule	build_expression(e) => (t,s)
+	------------------------------------------------
+	build_expression(Exp.CAST(t,e)) => (t,s)
+	
+  rule	print "build_expression(ASUB) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.ASUB(_,_)) => fail
+	
+  rule	print "build_expression(SIZE) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.SIZE(_,_)) => fail
+
+  rule	print "build_expression(CODE) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.CODE(_,_)) => fail
+
+  rule	print "build_expression(REDUCTION) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.REDUCTION(_,_,_,_)) => fail
+	
+  rule	print "build_expression(END) not impl. yet\n"
+	------------------------------------------------
+	build_expression(Exp.END) => fail
+
+  rule	print "-build_expression failed\n Exp = " &
+	Exp.print_exp_str e => es & print es & print "\n" 
+	-------------------------------------------------
+	build_expression(e) => fail
+end
+
+relation build_call_str:(string , int) => string =
+
+  rule	Util.list_fill("%s",n) => ns &
+	Util.string_delimit_list(ns,", ") => ns' &
+	Util.string_append_list([str,"(",ns',")"]) => res
+	-----------------
+	build_call_str(str,n) => res
+end
+
+relation add_predecessors: (int, int list,string list) => () =
+
+axiom add_predecessors(_,[],[]) 
+
+  rule	TaskGraphExt.add_edge(t,t1,s) &
+	add_predecessors(t,ts,strs)
+	---------------------
+	add_predecessors(t,t1::ts,s::strs)
+end
