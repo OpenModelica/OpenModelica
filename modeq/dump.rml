@@ -389,6 +389,11 @@ and dump_equation: Absyn.Equation => () =
 		-------------------------------------------
 		dump_equation(Absyn.EQ_EQUALS(e1,e2))
 
+	rule	print "EQ_CONNECT(" & dump_component_ref(e1) & print "," &
+		dump_component_ref(e2) & print ")"
+		-------------------------------------------
+		dump_equation(Absyn.EQ_CONNECT(e1,e2))
+
 	rule	print " ** UNKNOWN EQUATION ** "
 		--------------------------------
 		dump_equation(_)
