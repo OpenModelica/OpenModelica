@@ -196,11 +196,13 @@ end
 relation generate_functions: (DAE.DAElist, DAELow.DAELow, Absyn.Path, string) => () =
 
   rule	get_called_functions(dlow) => funcpaths &	
-	Util.list_map(funcpaths, Absyn.path_string) => funcstrs &
+(*	Util.list_map(funcpaths, Absyn.path_string) => funcstrs &
 	Util.string_delimit_list (funcstrs, "\n") => str &
 	print str &
+*)
 	Util.list_map_1(funcpaths, DAE.get_named_function, elements) => funcelems &
 	Util.list_flatten(funcelems) => funcelems &	
+	Print.clear_buf &
 	Codegen.generate_functions(DAE.DAE(funcelems)) &
 	Print.write_buf(filename)
 	--------------------------------------------------
