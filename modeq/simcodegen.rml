@@ -40,7 +40,14 @@ module SimCodegen:
   with "absyn.rml"
   with "exp.rml"
 
-relation generate_residual_code: (DAELow.DAELow, Absyn.Path, string) => ()
+relation generate_residual_code: (DAELow.DAELow, 		      
+				  int vector, (* ass1 *)
+				  int vector, (* ass2 *)
+				  DAELow.IncidenceMatrix,
+				  DAELow.IncidenceMatrixT,
+				  int list list, (* blocks*)
+				  Absyn.Path,  (* classname *)
+				  string) => ()
 
 relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => ()
 
@@ -54,29 +61,37 @@ end
 with "util.rml"
 with "rtopts.rml"
 with "debug.rml"
+with "system.rml"
 
 (** relation generate_residual_code
  ** Outputs simulation code from a DAELow suitable for connection to DASSL.
  ** The state calculations are generated on residual form.
  **)
-relation generate_residual_code: (DAELow.DAELow, Absyn.Path, string) => () =
+relation generate_residual_code: (DAELow.DAELow, 		      
+				  int vector, (* ass1 *)
+				  int vector, (* ass2 *)
+				  DAELow.IncidenceMatrix,
+				  DAELow.IncidenceMatrixT,
+				  int list list, (* blocks*)
+				  Absyn.Path,  (* classname *)
+				  string) => () =
 
   rule	Absyn.path_string(class) => cname &
-	DAELow.incidence_matrix(dae) => m &
-        DAELow.transpose_matrix(m) => mT &
-        DAELow.matching_algorithm(dae,m,mT) => (ass1,ass2,dae',m,mT) &
-        Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) &
-        (* & Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) *)
-        Debug.fcall("bltdump", DAELow.dump,dae') &
-        Debug.fcall("bltdump", DAELow.dump_matching, ass1) &
-        DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
-	DAELow.calculate_values(dae') => dae'' & 
-        DAELow.generate_state_partition(comps,dae,ass1,ass2) => (blt_states,blt_no_states) &
-        generate_compute_output(cname,dae',ass1,ass2,blt_no_states) => coutput &
-        generate_compute_state(cname,dae',ass1,ass2,blt_states) => cstate 
+        DAELow.generate_state_partition(comps,dae,ass1,ass2,m,mt) 
+	  => (blt_states,blt_no_states) &
+        generate_compute_output(cname,dae,ass1,ass2,blt_no_states) 
+	  => coutput &
+        generate_compute_residual_state(cname,dae,ass1,ass2,blt_states) 
+	  => cstate &
+	Util.string_append_list([coutput,cstate]) => res &
+	System.write_file(filename,res) 
 	---------------------------------------------------------------------
-	generate_residual_code(dae,class,filename) => ()
+	generate_residual_code(dae,ass1,ass2,m,mt,comps,class,filename) => ()
 
+
+  rule	print "-generate_residual_code failed\n" 
+	-----------------------
+	generate_residual_code(_,_,_,_,_,_,_,_) => fail
 end
 
 (** relation generate_ode_code
@@ -91,25 +106,27 @@ relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => () =
 
 end
 
-(** relation: generate_compute_state
+(** relation: generate_compute_residual_state
  ** This relation generates the code for the calculation of the state variables.
  **)
- relation generate_compute_state:(string,
-				  DAELow.DAELow,
-				  int vector, 
-				  int vector, 
-				  int list list) 
+relation generate_compute_residual_state:(string,
+					  DAELow.DAELow,
+					  int vector, 
+					  int vector, 
+					  int list list) 
 	  => string =
-         
+          
   rule  (*Util.string_append_list(["/* state code here*/\n"]) => cstate &*)
-         (*print("----------- START building block STATE---------------\n") &*)
-         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-         Util.string_append_list(eqn_str_list) => cstate 
-         (*print("----------- END building block STATE---------------\n") *)
-         
-         -------------------------------------------------------------
-         generate_compute_state(cname,dae,ass1,ass2,blocks) => cstate
- end
+        (*print("----------- START building block STATE---------------\n") &*)
+        build_residual_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
+        Util.string_append_list(eqn_str_list) => cstate &
+        (*print("----------- END building block STATE---------------\n") *)
+        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,"\n}\n"]) 
+	  => res
+	  
+          -------------------------------------------------------------
+        generate_compute_residual_state(cname,dae,ass1,ass2,blocks) => res
+end
 
 
 (** relation: generate_compute_output
@@ -122,13 +139,12 @@ end
                                    int list list) => string =
          
   rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
-         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-	 DAELow.equation_list(seqn) => seqnl &
-	 DAELow.vararray_list(knvars) => knvlst &
-	 list_array(knvlst) => knvars &
-         build_simple_equation(knvars,seqnl) => simple_eqn_str &
-         Util.string_append_list(eqn_str_list) => coutput2 &
-         Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
+	 
+	 let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xprime, double* y)\n{\n" &
+	 let func_footer = "\n}\n" &
+ 
+         Util.string_append_list([func_header,"//insert output code here\n",func_footer]) 
+	  => coutput 
          -------------------------------------------------------------
          generate_compute_output(cname,
                                  dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvars,_,_),eqn,seqn,_,_),
@@ -181,38 +197,38 @@ end
          build_simple_equation(_,_) => "// generating simple equation failed"
  end
 
-(** relation build_blocks
+(** relation build_residual_blocks
  ** this is copied from taskgraph.rml and constructs the blocks in the incident matrix
  ** for the equations.
  ** It is NOT done for system of equations!
  **)
- relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => string list =
+ relation build_residual_blocks:(DAELow.DAELow, int vector, int vector, int list list) => string list =
 
-  axiom	build_blocks(_,_,_,[]) => []
+  axiom	build_residual_blocks(_,_,_,[]) => []
 
          (* rule	(* For system of equations *) *)
 	 (* build_system(dae,ass1,ass2,block) &
-	  build_blocks(dae,ass1,ass2,blocks)
+	  build_residual_blocks(dae,ass1,ass2,blocks)
 	  -------------------------------------
-	  build_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)*)
+	  build_residual_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)*)
 	 
   rule	(* for single equations *)
-	 build_equation(dae,ass1,ass2,eqn) => eqn_str &
-	 build_blocks(dae,ass1,ass2,blocks) => res
+	 build_residual_equation(dae,ass1,ass2,eqn) => eqn_str &
+	 build_residual_blocks(dae,ass1,ass2,blocks) => res
 	 -------------------------------------
-	 build_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
+	 build_residual_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
 
-  rule	print "-build_blocks failed\n" 
+  rule	print "-build_residual_blocks failed\n" 
 	 -----------------
-	 build_blocks(_,_,_,_) => fail
+	 build_residual_blocks(_,_,_,_) => fail
  end
 
-(** relation build_equation 
+(** relation build_residual_equation 
  ** This returns the string for a specific equation in the 
  ** incidence matrix.
  ** It is used both for state variables and regular variables
  **)
- relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
+ relation build_residual_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	 
   rule  (* Solving for non-states *)
 	 int_sub(e,1) => e' &
@@ -231,49 +247,27 @@ end
 	 Exp.print_exp_str e2 => e2s &
          int_string(e) => eqn_nr &
          int_string(v) => var_nr &
-	 (*    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
-	  print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
-	  print s & print "\ngiving:\n " &
-          Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
-         
          Exp.simplify(expr) => simplify_exp &
 	 build_assignment(cr,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string	
+	 build_residual_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string	
          
 
-  rule  (* Solving the state s means solving for der(s) *)
+  rule  (* Solving the state s, caluate residual form. *) 
 	 int_sub(e,1) => e' &
 	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v &
-	 (* v == variable no solved in this equation *)
 	 int_sub(v,1) => v' &
-	 DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
-
-	 (*print "solving for state\n" &*)
-         cref_modelica_str(cr) => cr_str &
-
-
- 	 Util.string_append_list(["_D_",cr_str]) => new_id &
-	 let new_cr = Exp.CREF_IDENT(new_id,[]) &
-	 let new_varexp = Exp.CREF(new_cr,Exp.REAL) &
-
-
-	 Exp.solve(e1,e2,new_varexp) => expr &
-         
-         (*Exp.print_exp_str e1 => new_e1s &
-	  Exp.print_exp_str e2 => new_e2s &
-          int_string(e) => eqn_nr &
-          int_string(v) => var_nr &
-	  print "STATE Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print new_e1s & print " = " & print new_e2s &
-	  print " solved for " & Exp.print_exp_str new_varexp => s &
-	  print s & print " giving " &
-	  Exp.print_exp_str expr => s2 & print s2 & print "\n" & *)
-
-         Exp.simplify(expr) => simplify_exp &
-	 build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
+	 DAELow.vararray_nth(vararr,v') 
+	  => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+	 int_string(indx) => indx_str &
+	   let exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2) &
+	 Exp.simplify(exp) => simplify_exp &
+	 Util.string_append_list(["delta[",indx_str,"]"]) => cr_str &
+	 let new_cr = Exp.CREF_IDENT(cr_str,[]) &
+	 build_assignment(new_cr,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string 
+	 build_residual_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string 
 
   rule	int_sub(e,1) => e' &
 	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -284,11 +278,11 @@ end
 	 not Exp.solve(e1,e2,varexp) => _ &
 	 print "nonlinear equation not implemented yet\n" 
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
+	 build_residual_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
          
-  rule  print "-build_equation failed\n" 
+  rule  print "-build_residual_equation failed\n" 
 	 --------------------------------
-	 build_equation(_,_,_,_) => "//build_equation failed\n" 
+	 build_residual_equation(_,_,_,_) => "//build_residual_equation failed\n" 
  end
 
 (** relation build_assignment 

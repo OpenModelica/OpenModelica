@@ -57,6 +57,7 @@ with "util.rml"
 with "taskgraph.rml"
 with "taskgraphext.rml" 
 with "tornado.rml"
+with "simcodegen.rml"
 
 (** relation: server_loop
  **
@@ -335,8 +336,8 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	(*& ModUtil.string_prefix_params d => d'*)
 	& Debug.fcall ("codegen", Codegen.generate_functions, d) 
-	& run_backend_q() => runbe 
-	& Debug.bcall (runbe, optimize_dae,d) 
+	& Absyn.last_classname(p) => cname
+	& optimize_dae(d,cname)
 	& Print.get_string () => str
 	& RTOpts.silent() => silent 
 	& bool_not(silent) => notsilent
@@ -385,19 +386,21 @@ parallelization is enabled by giving flag -n=<no proc.>
 relation run_backend_q: () => bool =
 
   rule	RTOpts.debug_flag "blt" => bltflag &
+	RTOpts.simulation_cg => sim_cg &
 	RTOpts.no_proc() => n &
 	int_gt (n,0) => par &
-	bool_or (bltflag,par) => res
+	bool_or (bltflag,par) => res &
+	bool_or(res,sim_cg) => res'
 	----------------------------
-	run_backend_q() => res
+	run_backend_q() => res' 
 end
 
-
 (* Used for both parallization and for normal execution.*)
-relation optimize_dae: (DAE.DAElist) => () =
+relation optimize_dae: (DAE.DAElist, Absyn.Path) => () =
 
-  rule	print "entering optimize_dae" &
-	DAELow.lower(d) => d' 
+  rule	run_backend_q() => true
+	& print "entering optimize_dae" 
+	& DAELow.lower(d) => d' 
 	& print "lowered DAE\n" 
 	& Debug.fcall("dumpdaelow", DAELow.dump, d') 
 	& clock() => t1 
@@ -440,10 +443,14 @@ relation optimize_dae: (DAE.DAElist) => () =
 	& print "Strong Components took: " 
 	& print strongtimes
 	& print " seconds\n"
-	& modpar(d'',v1,v2,comps)
+	& modpar(d'',v1,v2,comps) 
+	& simcodegen(classname,d'',v1,v2,m,mT,comps)
 	& DAELow.dump_components(comps) 
 	-----------------------
-	optimize_dae(d) => ()
+	optimize_dae(d,classname) => ()
+
+	(* If not running backend. *)
+  axiom	optimize_dae(_,_) => ()
 end
 
 (*  The automatic paralellzation module.*)
@@ -488,6 +495,35 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 	modpar(_,_,_,_) => fail
 	
 end
+
+(** relation simcodegen
+ ** Genereates simulation code using the SimCodegen module
+ **)
+relation simcodegen: (Absyn.Path, (* classname *)
+		      DAELow.DAELow, 
+		      int vector, (* ass1 *)
+		      int vector, (* ass2 *)
+		      DAELow.IncidenceMatrix,
+		      DAELow.IncidenceMatrixT,
+		      int list list) (* blocks *)
+	  => () =
+
+  rule	RTOpts.simulation_cg() => true &
+	DAELow.translate_dae (dae) => indexed_dae &
+	DAELow.calculate_values(indexed_dae) => indexed_dae' &
+	print "Generating simulation code for " &
+	Absyn.path_string(classname) => cname_str &
+	print cname_str & print "\n" &
+	Util.string_append_list([cname_str,".cpp"]) => filename &
+	SimCodegen.generate_residual_code(indexed_dae',ass1,ass2,m,mt,comps,classname,filename)
+	--------------------
+	simcodegen(classname,dae,ass1,ass2,m,mt,comps)
+
+	(* If not generating simulation code*)
+  axiom	simcodegen(_,_,_,_,_,_,_) => ()
+
+end
+
 
 relation run_modpar_q: () => bool =
 	

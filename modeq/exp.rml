@@ -2643,21 +2643,30 @@ relation solve2 : ( Exp (*e1*), Exp (*e2*), Exp(*e3*)) => Exp =
 	print_exp e2 &
 	Print.print_buf "\nsolving for: " &
 	print_exp crexp &
-	Print.print_buf "\n"
+	Print.print_buf "\n" &
+       Print.print_buf "derivative: " &
+	print_exp lhsder & 
+	Print.print_buf "\n" 
 	---------------------------------------
 	solve2 (e1, e2, crexp as CREF(cr,_)) => fail
 
 
 
-  rule	Print.print_buf "solve2 failed: " &
+  rule	let lhs = BINARY(e1, SUB(REAL), e2) &
+	Derive.differentiate_exp (lhs, cr) => lhsder &
+	simplify lhsder => lhsder' &
+	Print.print_buf "solve2 failed: " &
 	print_exp e1 &
 	Print.print_buf " = " &
 	print_exp e2 &
 	Print.print_buf "\nsolving for: " &
-	print_exp cr &
+	print_exp crexp &
+	Print.print_buf "\nDerivative :" &
+	print_exp lhsder' & 
 	Print.print_buf "\n"
+	
         ----------------------------------
-	solve2 (e1, e2, cr) => fail
+	solve2 (e1, e2, crexp as CREF(cr,_)) => fail
 
 end
 

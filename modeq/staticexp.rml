@@ -1536,6 +1536,19 @@ relation elab_builtin_dymtabletimeini : (Env.Env, Absyn.Exp list)
 	    elab_builtin_dymtabletimeini (_,_) => fail
 end
      
+(** relation: elab_builtin_noevent
+ ** The builtin operator noevent makes sure that events are not generated
+ ** for the expression.
+ **)
+relation elab_builtin_noevent : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties)	=
+
+  rule	elab_exp(env,exp,false,NONE) => (exp',prop,_)
+	----------------------------------
+	elab_builtin_noevent(env,[exp]) 
+	  => (Exp.CALL(Absyn.IDENT("noEvent"),[exp'],false,true), prop)
+	
+end
+
 
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
 					  => (Exp.Exp, Types.Properties)) =
@@ -1561,6 +1574,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom elab_builtin_handler "mod" => elab_builtin_mod
   axiom elab_builtin_handler "rem" => elab_builtin_rem
   axiom	elab_builtin_handler "diagonal" => elab_builtin_diagonal
+  axiom	elab_builtin_handler "noEvent" => elab_builtin_noevent
 
   axiom	elab_builtin_handler "dymTableTimeIni" => elab_builtin_dymtabletimeini
 

@@ -293,20 +293,10 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-------------------------------------------------
 	differentiate_exp(Exp.CALL(a as Absyn.IDENT("der"),expl,b,c),tv) 
 	  => Exp.CALL(a,expl',b,c)
-
-  rule	print "Error. differentiating of function not impl. yet.\n" &
-	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
-	-------------------------------------------------
-	differentiate_exp(Exp.CALL(a,expl,b,c),tv) => Exp.CALL(a,expl',b,c)
 	
   rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
 	--------------------------------------------
 	differentiate_exp(Exp.ARRAY(tp,b,expl),tv) => Exp.ARRAY(tp,b,expl')
-
-  rule	Print.print_buf "differentiate_exp on MATRIX not impl.\n" &
-	print "differentiate_exp on MATRIX not impl.\n"
-	---------------------------------------
-	differentiate_exp(e as Exp.MATRIX(_,_,_),_) => e
 	
   rule	Util.list_map_1(expl,differentiate_exp,tv) => expl'
 	-----------------------
@@ -325,6 +315,15 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	------------------------------
 	differentiate_exp(Exp.REDUCTION(a,e1,b,e2),tv) 
 	  => Exp.REDUCTION(a,e1',b,e2')
+
+  rule	(* If the expression does not contain the variable,
+	 the derivative is zero. For efficiency reasons this rule
+	 is last. Otherwise expressions is allways traversed twice 
+	 when differentiating.*)
+	Exp.exp_contains(e,Exp.CREF(cr,Exp.REAL)) => false
+	--------------------------------
+	differentiate_exp(e,cr) => Exp.RCONST(0.0)
+	
 end
 
 

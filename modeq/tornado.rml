@@ -48,40 +48,40 @@ with "simcodegen.rml"
  ** can be BLT sorted and indexed, etc.
  **)
 
- relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
-	     
+relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
+	
   rule	DAELow.lower(dae) => dae' &
-         generate_blt(dae') => (dae'',blt,ass1,ass2) &
-	     DAELow.calculate_values(dae'') => dae''' & 
-	     Absyn.path_string(class) => cname &
-         add_dae_var_to_index_map(dae''') &
-         generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
-	     generate_header(cname) => header &
-	     generate_impl_header(cname) => implheader &
-	     generate_constructor(cname,p,dae''') => constr &
-	     generate_var_defines(dae''') => defines &
-	     generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
-         generate_dll_code(cname) => dll_code &
-         TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
-         Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
-         Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
-         Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
-	     string_append(cname,".h") => headerfile &
-	     string_append(cname,".cpp") => implfile &
-	     string_append(cname,"DLL.cpp") => dllfile &
-	     print "Generating: " & print headerfile & print "\n" &
-	     System.write_file(headerfile,header') &
-	     print "Generating: " & print implfile & print "\n" &
-	     System.write_file(implfile,impl) &
-	     print "Generating: " & print dllfile & print "\n" &
-	     System.write_file(dllfile,dll_code) 
-	     -------------------------------------------------------------------
-	     generate_code(p,dae,class) => 
-         
+        generate_blt(dae') => (dae'',blt,ass1,ass2,m,mt) &
+	DAELow.calculate_values(dae'') => dae''' & 
+	Absyn.path_string(class) => cname &
+        add_dae_var_to_index_map(dae''') &
+        generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
+	generate_header(cname) => header &
+	generate_impl_header(cname) => implheader &
+	generate_constructor(cname,p,dae''') => constr &
+	generate_var_defines(dae''') => defines &
+	generate_compute_methods(cname,dae''',p,blt,ass1,ass2,m,mt) => cmethods &
+        generate_dll_code(cname) => dll_code &
+        TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
+        Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
+        Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
+        Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
+	string_append(cname,".h") => headerfile &
+	string_append(cname,".cpp") => implfile &
+	string_append(cname,"DLL.cpp") => dllfile &
+	print "Generating: " & print headerfile & print "\n" &
+	System.write_file(headerfile,header') &
+	print "Generating: " & print implfile & print "\n" &
+	System.write_file(implfile,impl) &
+	print "Generating: " & print dllfile & print "\n" &
+	System.write_file(dllfile,dll_code) 
+	-------------------------------------------------------------------
+	generate_code(p,dae,class) => 
+        
   rule	print "generate_code failed\n" 
-	     ------------------------------
-	     generate_code(_,_,_) => fail
- end
+	------------------------------
+	generate_code(_,_,_) => fail
+end
 
 (** relation generate_dll_code 
  ** This relation generate the code that is needed in the file
@@ -1779,11 +1779,19 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
  ** - computing the initial conditions
  ** - computing the terminal conditions
  **)
- relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program, int list list, int vector, int vector) => string =
+ relation generate_compute_methods: (string,
+				     DAELow.DAELow,
+				     Absyn.Program, 
+				     int list list, 
+				     int vector, 
+				     int vector,
+				     DAELow.IncidenceMatrix,
+				     DAELow.IncidenceMatrixT) => string =
 
   rule	(** ass1 is what var is solved in what eqn **)
          (** ass2 is what eqn is solves what var **)
-         DAELow.generate_state_partition(blt,dae,ass1,ass2) => (blt_states,blt_no_states) &
+         DAELow.generate_state_partition(blt,dae,ass1,ass2,m,mt) 
+	  => (blt_states,blt_no_states) &
 	     
          translate_dae(dae) => dae' &
 
@@ -1817,11 +1825,11 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
                                   "}\n", 
                                   "\n"]) => methods
          ---------------------------
-         generate_compute_methods(cname,dae,p,blt,ass1,ass2) => methods
+         generate_compute_methods(cname,dae,p,blt,ass1,ass2,m,mt) => methods
          
   rule  print "-generate_compute_methods failed\n" 
          -----------------------------------------
-         generate_compute_methods(_,_,_,_,_,_) => fail
+         generate_compute_methods(_,_,_,_,_,_,_,_) => fail
  end 
 
 
@@ -1830,7 +1838,12 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
  ** system using a list of the DAEs. 
  **
  **)
- relation generate_blt:(DAELow.DAELow) => (DAELow.DAELow,int list list,int vector, int vector) =
+ relation generate_blt:(DAELow.DAELow) => (DAELow.DAELow,
+					   int list list,
+					   int vector, 
+					   int vector,
+					   DAELow.IncidenceMatrix,
+					   DAELow.IncidenceMatrixT) =
          
 	     
   rule  (*DAELow.lower(d) => d' *)
@@ -1845,7 +1858,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
          & DAELow.strong_components(m,mT,v1,v2) => (comps) 
          (*& DAELow.dump_components(comps) *)
          -------------------------------------------------------------
-         generate_blt(d') => (d'',comps,v1,v2)
+         generate_blt(d') => (d'',comps,v1,v2,m,mT)
          
   rule  print "-generate_blt failed\n" 
          -------------------------------------------------
