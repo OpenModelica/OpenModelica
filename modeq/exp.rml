@@ -39,6 +39,7 @@
 module Exp:
 
   with "absyn.rml"
+  with "graphviz.rml"
 
   (** - Identifiers *)
   type Ident = string
@@ -143,6 +144,7 @@ module Exp:
   relation print_list : ('a list, 'a => (), string) => ()
   relation cref_equal : (ComponentRef, ComponentRef) => bool
   relation cref_str : ComponentRef => string
+  relation cref_to_path : ComponentRef => Absyn.Path
   relation cref_modelica_str : ComponentRef => string
   relation print_list_str : ('a list, 'a => string, string) => string
   relation print_exp_str : Exp => string
@@ -150,6 +152,9 @@ module Exp:
   relation exp_equal: (Exp,Exp) => bool
   relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*)) 
 	  => (Exp,int)
+  relation dump_exp_graphviz : Exp => Graphviz.Node
+  relation exp_contains : (Exp, Exp) => bool
+  relation solve : (Exp, Exp) => Exp
 end
 
 
@@ -158,6 +163,28 @@ with "rtopts.rml"
 with "util.rml"
 with "print.rml"
 with "modutil.rml"
+with "derive.rml"
+
+val rconstone = RCONST(1.0)
+val rconstzero = RCONST(0.0)
+
+
+(** relation: cref_to_path
+ **
+ ** This relation converts a `ComponentRef' to a `Path', if possible.
+ ** If the component reference contains subscripts, it will silently
+ ** fail.
+ **)
+
+relation cref_to_path : ComponentRef => Absyn.Path =
+
+  axiom	cref_to_path CREF_IDENT(i,[]) => Absyn.IDENT(i)
+
+  rule	cref_to_path c => p
+	-------------------
+	cref_to_path CREF_QUAL(i,[],c) => Absyn.QUALIFIED(i,p)
+
+end
 
 (** relation: path_string
  **
@@ -307,12 +334,13 @@ end
 
 relation simplify : Exp => Exp =
 
+	(* Array and Matrix stuff *)
+
   rule	simplify e => ARRAY(t,b,exps) &
 	int_sub (i,1) => i' &
 	list_nth(exps,i') => exp
 	-----------------------
 	simplify ASUB(e, i) => exp
-
 
   rule	simplify e => MATRIX(t,n,exps) &
 	int_sub (i,1) => i' &
@@ -338,68 +366,160 @@ relation simplify : Exp => Exp =
 	-------------------------------------
 	simplify ASUB(e, i) => CREF(CREF_QUAL(n,s,c'),t)
 
-  rule	simplify (e1) => e1' &
-	simplify (e2) => e2' &
-	is_zero_constant(e2')  => true
-	---------------------
-	simplify BINARY(e1,ADD(REAL),e2) => e1'
 
-  rule	simplify (e1) => e1' &
-	simplify (e2) => e2' &
-	is_zero_constant(e1') => true
-	---------------------
-	simplify BINARY(e1,ADD(REAL),e2) => e2'
 
-  rule	simplify (e1) => RCONST(v) &
-	real_eq(v,0.0) => true
-	---------------------
-	simplify BINARY(e1,MUL(REAL),e2) => RCONST(0.0)
-
-  rule	simplify (e2) => RCONST(v) &
-	real_eq(v,0.0) => true
-	---------------------
-	simplify BINARY(e1,MUL(REAL),e2) => RCONST(0.0)
-
-  rule	simplify (e1) => ICONST(0)
-	---------------------
-	simplify BINARY(e1,MUL(INT),e2) => ICONST(0)
-
-  rule	simplify (e2) => ICONST(0)
-	---------------------
-	simplify BINARY(e1,MUL(INT),e2) => ICONST(0)
+	(* Operations *)
 
   rule	simplify e1 => e1' &
-	simplify e2 => e2'
-	------------------------
-	simplify BINARY(e1,op,e2) => BINARY(e1,op,e2)
+	let exp' = UNARY(op, e1') &
+	simplify_unary (exp', op, e1') => e
+	----------------------------------
+	simplify (exp as UNARY(op, e1)) => e
 
   rule	simplify e1 => e1' &
-	simplify e2 => e2'
-	------------------------
-	simplify LBINARY(e1,op,e2) => LBINARY(e1,op,e2)
+	simplify e2 => e2' &
+	let exp' = BINARY(e1', op, e2') &
+	simplify_binary (exp', op, e1', e2') => e
+	----------------------------------------
+	simplify (exp as BINARY(e1, op, e2)) => e
 
-  rule	simplify e => e' 
-	------------------------
-	simplify UNARY(op,e) => UNARY(op,e')
+  rule	simplify e1 => e1' &
+	simplify e2 => e2' &
+	let exp' = RELATION(e1', op, e2') &
+	simplify_binary (exp', op, e1', e2') => e
+	----------------------------------------
+	simplify (exp as RELATION(e1, op, e2)) => e
 
-  rule	simplify e => e' 
-	------------------------
-	simplify LUNARY(op,e) => LUNARY(op,e')
+  rule	simplify e1 => e1' &
+	let exp' = LUNARY(op, e1') &
+	simplify_unary (exp', op, e1') => e
+	----------------------------------
+	simplify (exp as LUNARY(op, e1)) => e
+
+  rule	simplify e1 => e1' &
+	simplify e2 => e2' &
+	let exp' = LBINARY(e1', op, e2') &
+	simplify_binary (exp', op, e1', e2') => e
+	----------------------------------------
+	simplify (exp as LBINARY(e1, op, e2)) => e
 
   axiom	simplify e => e
 
 end
 
-relation is_zero_constant:(Exp) => bool =
 
-  axiom	is_zero_constant(ICONST(0)) => true
+relation is_const_one : Exp => bool =
 
-  rule	real_eq(v,0.0) => res
-	---------------------
-	is_zero_constant(RCONST(v)) => res
+  rule	e = rconstone
+	--------------
+	is_const_one e => true
 
-  axiom	is_zero_constant(_) => false
+  axiom	is_const_one ICONST(1) => true
+  axiom is_const_one (_) => false
+
 end
+
+relation is_const_minus_one : Exp => bool =
+
+  rule	real_eq(v,-1.0) => true
+	-----------------------
+	is_const_minus_one RCONST(v) => true
+
+  axiom	is_const_minus_one ICONST(1) => true
+  axiom is_const_minus_one (_) => false
+
+end
+
+
+relation is_const_zero : Exp => bool =
+
+  rule	e = rconstzero
+	--------------
+	is_const_zero e => true
+
+  axiom	is_const_zero ICONST(0) => true
+  axiom is_const_zero (_) => false
+
+end
+
+relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
+
+  rule	is_const_zero (e1) => true 
+	---------------------------
+	simplify_binary (_, ADD(ty), e1, e2) => e2
+
+  rule	is_const_zero (e2) => true 
+	---------------------------
+	simplify_binary (_, ADD(ty), e1, e2) => e1
+
+  rule	is_const_zero (e1) => true &
+	let e = UNARY(UMINUS(ty), e2)
+	---------------------------
+	simplify_binary (_, SUB(ty), e1, e2) => e
+
+  rule	is_const_zero (e2) => true 
+	---------------------------
+	simplify_binary (_, SUB(ty), e1, e2) => e1
+
+  rule	is_const_zero (e2) => true 
+	---------------------------
+	simplify_binary (_, SUB(ty), e1, e2) => e1
+
+  axiom	simplify_binary (_, SUB(ty), e1, UNARY(UMINUS(ty2),e2)) => BINARY(e1,ADD(ty),e2)
+
+  rule	is_const_zero (e1) => true 
+	---------------------------
+	simplify_binary (_, MUL(ty), e1, e2) => e1
+
+  rule	is_const_zero (e2) => true 
+	---------------------------
+	simplify_binary (_, MUL(ty), e1, e2) => e2
+
+  rule	is_const_one (e1) => true 
+	---------------------------
+	simplify_binary (_, MUL(ty), e1, e2) => e2
+
+  rule	is_const_one (e2) => true 
+	---------------------------
+	simplify_binary (_, MUL(ty), e1, e2) => e1
+
+  rule	is_const_minus_one (e1) => true
+	---------------------------
+	simplify_binary (_, MUL(ty), e1, e2) => UNARY(UMINUS(ty),e2)
+
+  rule	is_const_minus_one (e2) => true
+	---------------------------
+	simplify_binary (_, MUL(ty), e1, e2) => UNARY(UMINUS(ty),e1)
+
+  rule	is_const_one (e2) => true 
+	---------------------------
+	simplify_binary (_, DIV(ty), e1, e2) => e1
+
+  rule	is_const_minus_one (e2) => true 
+	---------------------------
+	simplify_binary (_, DIV(ty), e1, e2) => UNARY(UMINUS(ty),e1)
+
+  axiom	simplify_binary (e, _, _, _) => e
+
+end
+
+relation simplify_unary : (Exp, Operator, Exp) => Exp =
+
+  axiom	simplify_unary (_, UPLUS(ty), e1) => e1
+
+  rule	is_const_zero e1 => true
+	-----------------------
+	simplify_unary (_, UMINUS(ty), e1) => e1
+
+	(* Should we check ty1 == ty2? *)
+  axiom	simplify_unary (_, UMINUS(ty1), UNARY(UMINUS(ty2),e1)) => e1
+
+  axiom	simplify_unary (e, _, _) => e
+
+end
+
+
+
 
 (** relation: contain_functioncall
  ** Returns true if expression or subexpression is a functioncall.
@@ -732,9 +852,18 @@ relation print_exp2 : (Exp,int) => () =
 	print_exp2(CREF(c,_),_)
 
   rule	binop_symbol(op) => sym &
+ 	binop_priority op => pri2' &
+	int_add (pri2', 1) => pri2 & (* binary minus have higher priority than itself *)
+	print_leftpar(pri1,pri2) => pri3 &
+	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri2) &
+	print_rightpar(pri1,pri2)
+	------------------------
+	print_exp2(BINARY(e1, op as SUB(ty), e2 as BINARY(e21, SUB(ty2), e22)),pri1)
+
+  rule	binop_symbol(op) => sym &
  	binop_priority op => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri3) &
+	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri2) &
 	print_rightpar(pri1,pri2)
 	------------------------
 	print_exp2(BINARY(e1, op, e2),pri1)
@@ -750,7 +879,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	lbinop_symbol(op) => sym &
 	lbinop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri3) &
+	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri2) &
 	print_rightpar(pri1,pri2)
 	----------------------------------------------------------------
 	print_exp2(LBINARY(e1, op, e2),pri1)
@@ -766,7 +895,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	relop_symbol(op) => sym &
  	relop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
- 	print_exp2(e1,pri3) & Print.print_buf sym & print_exp2(e2,pri3) &
+ 	print_exp2(e1,pri3) & Print.print_buf sym & print_exp2(e2,pri2) &
 	print_rightpar(pri1,pri2)
 	-----------------------------------------------------------------
 	print_exp2(RELATION(e1, op, e2),pri1)
@@ -886,47 +1015,48 @@ relation print_rightpar : (int,int) => () =
 
 end
 
+
+(* LS: Changed precedence for unary +-
+   which must be higher than binary operators but lower than power
+   according to e.g. matlab *)
+
+(* LS: Changed precedence for binary - , should be higher than + and also
+   itself, but this is specially handled in print_exp2 and print_exp2_str *)
+
 (* priorities:
  *
- *   and, or				10
- *   not				11
- *   <, >, =, != etc.			21
- *   unary +, unary -			31
- *   +, -				32
- *   *					33
- *   /					34
- *   ^					35
- *   :					41
- *   []					51
+ *   and, or		10
+ *   not		11
+ *   <, >, =, != etc.	21
+ *   bin +		32
+ *   bin -		33
+ *   *			35
+ *   /			36
+ *   unary +, unary -	37
+ *   ^			38
+ *   :			41
+ *   []			51
  *
  *)
 
-
-
-
-
-
-
-
-
 relation binop_priority : Operator => int =
   axiom	binop_priority(ADD(_))    	      	 => 32
-  axiom	binop_priority(SUB(_))    	      	 => 32
+  axiom	binop_priority(SUB(_))    	      	 => 33
   axiom	binop_priority(ADD_ARR(_))    	      	 => 32
-  axiom	binop_priority(SUB_ARR(_))    	      	 => 32
-  axiom	binop_priority(MUL(_))    	      	 => 33
-  axiom	binop_priority(MUL_SCALAR_ARRAY(_))   	 => 33
-  axiom	binop_priority(MUL_ARRAY_SCALAR(_))    	 => 33
-  axiom	binop_priority(MUL_SCALAR_PRODUCT(_))  	 => 33
-  axiom	binop_priority(MUL_MATRIX_PRODUCT(_))  	 => 33
-  axiom	binop_priority(DIV(_))   	      	 => 34
-  axiom	binop_priority(DIV_ARRAY_SCALAR(_))    	 => 34
-  axiom	binop_priority(POW(_))   	      	 => 35      
+  axiom	binop_priority(SUB_ARR(_))    	      	 => 33
+  axiom	binop_priority(MUL(_))    	      	 => 35
+  axiom	binop_priority(MUL_SCALAR_ARRAY(_))   	 => 35
+  axiom	binop_priority(MUL_ARRAY_SCALAR(_))    	 => 35
+  axiom	binop_priority(MUL_SCALAR_PRODUCT(_))  	 => 35
+  axiom	binop_priority(MUL_MATRIX_PRODUCT(_))  	 => 35
+  axiom	binop_priority(DIV(_))   	      	 => 36
+  axiom	binop_priority(DIV_ARRAY_SCALAR(_))    	 => 36
+  axiom	binop_priority(POW(_))   	      	 => 38
 end
 
 relation unaryop_priority : Operator => int =
-  axiom	unaryop_priority(UMINUS(_))   => 31
-  axiom	unaryop_priority(UPLUS(_))    => 31
+  axiom	unaryop_priority(UMINUS(_))   => 37
+  axiom	unaryop_priority(UPLUS(_))    => 37
 end
 
 relation lbinop_priority : Operator => int =
@@ -1242,10 +1372,24 @@ relation print_exp2_str : (Exp,int) => string =
 	print_exp2_str(CREF(c,_),_) => s
 
   rule	binop_symbol(op) => sym &
+ 	binop_priority op => pri2' &
+	int_add (pri2',1) => pri2 & (* binary minus have higher priority than itself *)
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e1,pri3) => s2 & 
+	print_exp2_str (e2,pri2) => s3 &
+	print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	------------------------
+	print_exp2_str (BINARY(e1, op as SUB(ty), e2 as BINARY(e21, SUB(ty2), e22)),pri1) => s'''
+
+  rule	binop_symbol(op) => sym &
  	binop_priority op => pri2 &
 	print_leftpar_str (pri1,pri2) => (s1, pri3) &
 	print_exp2_str (e1,pri3) => s2 & 
-	print_exp2_str (e2,pri3) => s3 &
+	print_exp2_str (e2,pri2) => s3 &
 	print_rightpar_str (pri1,pri2) => s4 &
 	string_append (s1, s2) => s &
 	string_append (s, sym) => s' &
@@ -1269,7 +1413,7 @@ relation print_exp2_str : (Exp,int) => string =
 	lbinop_priority(op) => pri2 &
 	print_leftpar_str (pri1,pri2) => (s1, pri3) &
 	print_exp2_str (e1,pri3) => s2 & 
-	print_exp2_str (e2,pri3) => s3 &
+	print_exp2_str (e2,pri2) => s3 &
 	print_rightpar_str (pri1,pri2) => s4 &
 	string_append (s1, s2) => s &
 	string_append (s, sym) => s' &
@@ -1293,7 +1437,7 @@ relation print_exp2_str : (Exp,int) => string =
  	relop_priority(op) => pri2 &
 	print_leftpar_str (pri1,pri2) => (s1, pri3) &
  	print_exp2_str(e1,pri3) => s2 & 
-	print_exp2_str(e2,pri3) => s3 &
+	print_exp2_str(e2,pri2) => s3 &
 	print_rightpar_str (pri1,pri2) => s4 &
 	string_append (s1, s2) => s &
 	string_append (s, sym) => s' &
@@ -1458,6 +1602,7 @@ relation print_rightpar_str : (int,int) => string =
   axiom	print_rightpar_str (_,_) => ""
 
 end
+
 relation exp_equal: (Exp,Exp) => bool =
 
   rule  int_eq(c1,c2) => res
@@ -1752,4 +1897,334 @@ relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*))
 	  => (REDUCTION(p,e',id,r'),c)
 
   axiom	replace_exp(e,_,_) => (e,0)
+end
+
+
+
+
+
+
+
+relation dump_exp_graphviz : Exp => Graphviz.Node =
+	
+  axiom dump_exp_graphviz(END) => Graphviz.NODE("END",[],[])
+  
+  rule	int_string(x) => s
+	----------------------------
+	dump_exp_graphviz(ICONST(x)) => Graphviz.LNODE("ICONST",[s],[],[])
+
+  rule	real_string(x) => s
+	-----------------------------
+	dump_exp_graphviz(RCONST(x)) => Graphviz.LNODE("RCONST",[s],[],[])
+
+  rule	string_append ("\"", s) => s' &
+	string_append (s', "\"") => s''
+	---------------------------------
+	dump_exp_graphviz(SCONST(s)) => Graphviz.LNODE("SCONST",[s''],[],[])
+
+  axiom	dump_exp_graphviz(BCONST(false)) => Graphviz.LNODE("BCONST",["false"],[],[])
+
+  axiom	dump_exp_graphviz(BCONST(true)) => Graphviz.LNODE("BCONST",["true"],[],[])
+
+  rule	print_component_ref_str (c) => s
+	--------------------------------
+	dump_exp_graphviz(CREF(c,_)) => Graphviz.LNODE("CREF",[s],[],[])
+
+  rule	binop_symbol(op) => sym &
+	dump_exp_graphviz (e1) => lt & 
+	dump_exp_graphviz (e2) => rt
+	----------------------------
+	dump_exp_graphviz (BINARY(e1, op, e2)) => Graphviz.LNODE("BINARY",[sym],[],[lt,rt])
+
+  rule	unaryop_symbol(op) => sym &
+	dump_exp_graphviz (e) => ct
+	----------------------------
+	dump_exp_graphviz(UNARY(op, e)) => Graphviz.LNODE("UNARY",[sym],[],[ct])
+
+  rule	lbinop_symbol(op) => sym &
+	dump_exp_graphviz (e1) => lt & 
+	dump_exp_graphviz (e2) => rt
+	----------------------------------------------------------------
+	dump_exp_graphviz(LBINARY(e1, op, e2)) => Graphviz.LNODE("LBINARY",[sym],[],[lt,rt])
+
+  rule	lunaryop_symbol(op) => sym &
+ 	dump_exp_graphviz (e) => ct
+	---------------------------------------------------
+	dump_exp_graphviz(LUNARY(op, e)) =>  Graphviz.LNODE("LUNARY",[sym],[],[ct])
+
+  rule	relop_symbol(op) => sym &
+ 	dump_exp_graphviz(e1) => lt & 
+	dump_exp_graphviz(e2) => rt
+	-----------------------------------------------------------------
+	dump_exp_graphviz(RELATION(e1, op, e2)) =>  Graphviz.LNODE("RELATION",[sym],[],[lt,rt])
+
+  rule	dump_exp_graphviz(c) => ct &
+	dump_exp_graphviz(t) => tt &
+	dump_exp_graphviz(f) => ft
+	----------------------------
+	dump_exp_graphviz(IFEXP(c,t,f)) =>  Graphviz.NODE("IFEXP",[],[ct,tt,ft])
+
+  rule	Absyn.path_string(fcn) => fs &
+	Util.list_map(args, dump_exp_graphviz) => argnodes
+	---------------------------------------------
+	dump_exp_graphviz(CALL(fcn, args,_,_)) => Graphviz.LNODE("CALL",[fs],[],argnodes)
+
+  rule	Util.list_map(es, dump_exp_graphviz) => nodes
+	-----------------------------
+	dump_exp_graphviz (ARRAY(_,_,es)) => Graphviz.NODE("ARRAY",[],nodes)
+
+  rule	Util.list_map(es, dump_exp_graphviz) => nodes
+	-----------------------------
+	dump_exp_graphviz (TUPLE(es)) => Graphviz.NODE("TUPLE",[],nodes)
+
+	
+  rule	print_list_str(es, print_row_str, "},{") => s &
+	string_append ("{{",s) => s' &
+	string_append (s',"}}") => s''
+	-----------------------------
+	dump_exp_graphviz (MATRIX(_,_,es)) => Graphviz.LNODE("MATRIX",[s''],[],[])
+
+  rule	dump_exp_graphviz (start) => t1 &
+	let t2 = Graphviz.NODE(":",[],[]) &
+	dump_exp_graphviz (stop) => t3
+	-------------------------------------------------------------
+	dump_exp_graphviz (RANGE(_,start,NONE,stop)) => Graphviz.NODE("RANGE",[],[t1,t2,t3])
+
+  rule	dump_exp_graphviz (start) => t1 &
+	dump_exp_graphviz (step) => t2 &
+ 	dump_exp_graphviz (stop) => t3
+	-------------------------------------
+	dump_exp_graphviz (RANGE(_,start,SOME(step),stop)) => Graphviz.NODE("RANGE",[],[t1,t2,t3])
+
+  rule	type_string ty => tystr &
+	dump_exp_graphviz e => ct
+	---------------------------------------
+	dump_exp_graphviz (CAST(ty,e)) => Graphviz.LNODE("CAST",[tystr],[],[ct])
+
+  rule	dump_exp_graphviz (e) => ct &
+ 	int_string i => istr &
+	Util.string_append_list(["[",istr,"]"]) => s
+	---------------------------------------
+	dump_exp_graphviz (ASUB(e,i)) => Graphviz.LNODE("ASUB",[s],[],[ct])
+
+  rule	dump_exp_graphviz (cr) => crt &
+ 	dump_exp_graphviz (dim) => dimt
+	------------------------
+	dump_exp_graphviz (SIZE(cr,SOME(dim))) => Graphviz.NODE("SIZE",[],[crt,dimt])
+
+  rule	dump_exp_graphviz (cr) => crt
+	------------------------
+	dump_exp_graphviz (SIZE(cr,NONE)) => Graphviz.NODE("SIZE",[],[crt])
+
+  rule	Absyn.path_string fcn => fs &
+	dump_exp_graphviz exp => expt &
+	dump_exp_graphviz iterexp => itert
+	-------------------------------------------------------
+	dump_exp_graphviz (REDUCTION(fcn,exp,id,iterexp)) =>  Graphviz.LNODE("REDUCTION",[fs],[],[expt,itert])
+
+  axiom	dump_exp_graphviz (_) => Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",[],[])
+
+end
+
+
+
+
+
+
+relation solve : (Exp, Exp) => Exp =
+
+  rule	solve2 (e1, e2, cr) => res &
+	simplify res => res'
+	-------------------------------------
+	solve (rel as RELATION(e1, EQUAL(ty), e2), cr as CREF(_,_)) => res'
+	
+  rule	Print.print_buf "solve failed: Not an equation or trying to solve for\n" &
+	Print.print_buf "a non-component-reference, or a non-linear equation:\n" &
+	print_exp e1 &
+	Print.print_buf "\n" &
+	print_exp e2 &
+	Print.print_buf "\n"
+        ----------------------------------
+	solve (e1, e2) => fail
+
+end
+
+
+relation solve2 : (Exp, Exp, Exp) => Exp =
+
+  rule	let lhs = BINARY(e1, SUB(REAL), e2) &
+	Derive.differentiate_exp (lhs, cr) => lhsder &
+	simplify (lhsder) => lhsder' &
+	exp_contains (lhsder', crexp) => false &
+	replace_exp (lhs, crexp, RCONST(0.0)) => (lhszero,_) &
+	simplify (lhszero) => lhszero' &
+	let rhs = UNARY(UMINUS(REAL), BINARY(lhszero', DIV(REAL), lhsder')) &
+	simplify (rhs) => rhs' &
+	let res = RELATION(crexp, EQUAL(REAL), rhs')
+(*
+	& dump_exp_graphviz lhs => lhsnode 
+	& Print.print_buf "------------------ LHS -----------------\n"
+	& Graphviz.dump lhsnode
+	& Print.print_buf "------------------ /LHS -----------------\n"
+*)
+	---------------------------------------
+	solve2 (e1, e2, crexp as CREF(cr,_)) => res
+
+
+  rule	let lhs = BINARY(e1, SUB(REAL), e2) &
+	Derive.differentiate_exp (lhs, cr) => lhsder &
+	simplify lhsder => lhsder' &
+	exp_contains (lhsder', crexp) => true &
+	Print.print_buf "solve2 failed: Not linear: " &
+	print_exp e1 &
+	Print.print_buf " = " &
+	print_exp e2 &
+	Print.print_buf "\nsolving for: " &
+	print_exp crexp &
+	Print.print_buf "\n"
+	---------------------------------------
+	solve2 (e1, e2, crexp as CREF(cr,_)) => fail
+
+
+
+  rule	Print.print_buf "solve2 failed: " &
+	print_exp e1 &
+	Print.print_buf " = " &
+	print_exp e2 &
+	Print.print_buf "\nsolving for: " &
+	print_exp cr &
+	Print.print_buf "\n"
+        ----------------------------------
+	solve2 (e1, e2, cr) => fail
+
+end
+
+relation get_terms_containing_x : (Exp, Exp) => (Exp, Exp) =
+
+  rule	get_terms_containing_x (e1, cr) => (xt1, nonxt1) &
+	get_terms_containing_x (e2, cr) => (xt2, nonxt2) &
+	let xt = BINARY(xt1, ADD(ty), xt2) &
+	let nonxt = BINARY(nonxt1, ADD(ty), nonxt2)
+	---------------------------------------
+	get_terms_containing_x (BINARY(e1, ADD(ty), e2), cr as CREF(_,_)) => (xt,nonxt)
+
+  rule	get_terms_containing_x (e1, cr) => (xt1, nonxt1) &
+	get_terms_containing_x (e2, cr) => (xt2, nonxt2) &
+	let xt = BINARY(xt1, SUB(ty), xt2) &
+	let nonxt = BINARY(nonxt1, SUB(ty), nonxt2)
+	---------------------------------------
+	get_terms_containing_x (BINARY(e1, SUB(ty), e2), cr as CREF(_,_)) => (xt,nonxt)
+
+  rule	get_terms_containing_x (e, cr) => (xt1, nonxt1) &
+	let xt = UNARY(UPLUS(ty), xt1) &
+	let nonxt = UNARY(UPLUS(ty), nonxt1)
+	---------------------------------------
+	get_terms_containing_x (UNARY(UPLUS(ty), e), cr as CREF(_,_)) => (xt,nonxt)
+
+  rule	get_terms_containing_x (e, cr) => (xt1, nonxt1) &
+	let xt = UNARY(UMINUS(ty), xt1) &
+	let nonxt = UNARY(UMINUS(ty), nonxt1)
+	---------------------------------------
+	get_terms_containing_x (UNARY(UMINUS(ty), e), cr as CREF(_,_)) => (xt,nonxt)
+
+  rule	exp_contains (e, cr) => res &
+	Util.if(res, e, RCONST(0.0)) => xt &
+	Util.if(res, RCONST(0.0), e) => nonxt
+	-----------------------------------
+	get_terms_containing_x (e, cr as CREF(_,_)) => (xt, nonxt)
+
+  rule	Print.print_buf "get_terms_containing_x failed: " &
+	print_exp e &
+	Print.print_buf "\nsolving for: " &
+	print_exp cr &
+	Print.print_buf "\n"
+        ----------------------------------
+	get_terms_containing_x (e, cr) => fail
+
+end
+
+relation print_bool : bool => () =
+
+  rule	Util.if (b, "true", "false") => str &
+	Print.print_buf str
+	-----------------------------------
+	print_bool b
+
+end	
+
+(* Only component references can be checked so far,
+   i.e. check whether an expression contains a given component reference *)
+
+relation exp_contains : (Exp, Exp) => bool =
+
+  axiom	exp_contains (ICONST(i), cr as CREF(_,_)) => false
+  axiom	exp_contains (RCONST(i), cr as CREF(_,_)) => false
+  axiom	exp_contains (SCONST(i), cr as CREF(_,_)) => false
+  axiom	exp_contains (BCONST(i), cr as CREF(_,_)) => false
+
+  rule	cref_equal (cr1, cr2) => res
+	---------------------------
+	exp_contains (c1 as CREF(cr1,_), c2 as CREF(cr2,_)) => res
+	
+  rule	exp_contains (e1, cr) => res1 &
+	exp_contains (e2, cr) => res2 &
+	bool_or (res1, res2) => res
+	------------------------
+	exp_contains (BINARY(e1, op, e2), cr as CREF(_,_)) => res
+
+  rule	exp_contains (e, cr) => res
+	----------------------------
+	exp_contains (UNARY(op, e), cr as CREF(_,_)) => res
+
+  rule	exp_contains (e1, cr) => res1 &
+	exp_contains (e2, cr) => res2 &
+	bool_or (res1, res2) => res
+	----------------------------------------------------------------
+	exp_contains (LBINARY(e1, op, e2), cr as CREF(_,_)) => res
+
+  rule	exp_contains (e, cr) => res
+	---------------------------------------------------
+	exp_contains (LUNARY(op, e), cr as CREF(_,_)) => res
+
+  rule	exp_contains (e1, cr) => res1 &
+	exp_contains (e2, cr) => res2 &
+	bool_or (res1, res2) => res
+	-----------------------------------------------------------------
+	exp_contains (RELATION(e1, op, e2), cr as CREF(_,_)) => res
+
+  rule	exp_contains (c, cr) => res1 &
+	exp_contains (t, cr) => res2 &
+	exp_contains (f, cr) => res3 &
+	Util.bool_or_list ([res1, res2, res3]) => res
+	---------------------------------------------
+	exp_contains (IFEXP(c,t,f), cr as CREF(_,_)) => res
+
+  rule	Util.list_map_1 (args, exp_contains, cr) => reslist &
+	Util.bool_or_list reslist => res
+	--------------------------------
+	exp_contains (CALL(fcn, args,_,_), cr as CREF(_,_)) => res
+
+
+  axiom	exp_contains (CAST(REAL,ICONST(i)), cr as CREF(_,_)) => false
+
+
+  rule	exp_contains (e, cr) => res
+	---------------------------------------
+	exp_contains (CAST(REAL,e), cr as CREF(_,_)) => res
+
+
+  rule	exp_contains (e, cr) => res
+	---------------------------------------
+	exp_contains (ASUB(e,i), cr as CREF(_,_)) => res
+
+
+  rule	Print.print_buf "exp_contains failed: When looking for \"" &
+	print_exp  cr &
+	Print.print_buf "\" in \"" &
+	print_exp  e &
+	Print.print_buf "\n"
+        ----------------------------------
+	exp_contains (e, cr) => fail
+
+
 end
