@@ -13,11 +13,18 @@ with "explode.rml"
 with "dae.rml"
 with "inst.rml"
 
+(** relation: main
+ **
+ ** The only relation in this module is the `main' relation, which is
+ ** the starting point in all RML specifications.  It is invoked with
+ ** a list containing the command-line arguments.
+ **)
+
 relation main =
 
   rule	(* print "\n = Parsing\n\n" & *)
 	Parser.parse f => p &
-	Dump.dump p &
+	(* Dump.dump p & *)
 	
 	(* print "\n = Exploding\n\n" & *)
 	SCode.elaborate(p) => p' &

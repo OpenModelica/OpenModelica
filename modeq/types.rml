@@ -28,12 +28,6 @@ module Types :
   (** FIXME: I wonder why this goes here? *)
 
   (** - Types *)
-  (* datatype Type = TYPE of ClassInf.State * Var list *)
-  (** The `Type' datatype stores information about the type of an *)
-  (** instantiated variable. The only information that is kept is the *)
-  (** class inference state, and the subcomponents. *)
-
-  (** - Basic types and arrays *)
   datatype Type = T_INTEGER
 		| T_REAL
 		| T_STRING
@@ -49,8 +43,6 @@ module Types :
 
   type FuncArg = Ident * Type
 
-  (* datatype Component = COMP of Ident * Type *)
-
   (** To generate the correct set of equations, the translator has to *)
   (** differentiate between the primitive types `Real', `Integer', *)
   (** `String', `Boolean' and types directly derived from then from *)
@@ -62,7 +54,6 @@ module Types :
   (** type, and whether a variable is of one of these types.  *)
 
   (** - Exported relations *)
-(*  relation simplify_type : Type => Type *)
   relation basic_type : Type => bool
   relation same_type : (Type, Type) => bool
   relation lookup_component : (Type, Ident) => Var
@@ -90,6 +81,8 @@ relation basic_type : Type => bool =
 end
 
 (** relation: same_type
+ **
+ ** FIXME: An half-hearted type equivalence relation.
  **)
 
 relation same_type : (Type, Type) => bool =
@@ -160,7 +153,10 @@ relation pick : (Var list, Ident)
 
 end
 
-(** relation: lookup_component *)
+(** relation: lookup_component
+ **
+ ** This relation finds a subcomponent by name.
+ **)
 
 relation lookup_component : (Type, Ident) => Var =
 
@@ -194,7 +190,15 @@ relation lookup_component2 : (Var list , Ident) => Var =
 
 end
 
-(** relation: known_type *)
+(** relation: known_type
+ **
+ ** When a class is instantiated, the restriction state machin will
+ ** have reached its final state.  Such a state is here used to
+ ** construct a `Types.Type' object.  If the state indicates that the
+ ** instantiated class was one of the primitive types, the
+ ** corresponding type constructor is used.  Otherwise, one of the
+ ** constructors `T_ARRAY' and `T_COMPLEX' is used.
+ **)
 
 relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type =
 
@@ -224,7 +228,7 @@ relation mk_arraydim : Absyn.ArrayDim => ArrayDim =
   axiom	mk_arraydim [] => NODIM
 
   rule	mk_arraydim ds => ds'
-	(* FIXME: calculate d *)
+	(** FIXME: calculate d *)
 	---------------------
 	mk_arraydim d::ds => DIM(NONE,ds')
 
@@ -259,8 +263,10 @@ end
  **
  ** This relation prints a textual description of a Modelica type.  If
  ** the type is not one of the primitive types, it simply prints
- ** `complex'.
+ ** `composite'.  The actual code is expluded from the report.
  **)
+
+(*!ignorecode*)
 
 relation print_type : Type => () =
 
@@ -331,8 +337,10 @@ relation print_params : FuncArg list => () =
 	print_params [(n,t)]
 
   rule	print n & print " :: " & print_type t &
-	print " × " & print_params params
+	print " * " & print_params params
 	---------------------------------
 	print_params ((n,t)::params)
 
 end
+
+(*!includecode*)
