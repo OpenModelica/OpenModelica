@@ -163,6 +163,10 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 end
 
 (** relation: lookup_class
+ ** Arg1: enviroment where to look
+ ** Arg2: the path for the class
+ ** Arg3: a bool to controll the output of error-messages. If it is true
+ **       then it outputs a error message if the class is not found.
  **)
 
 relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
