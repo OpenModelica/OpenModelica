@@ -828,9 +828,26 @@ relation print_element : Element => () =
 	----------------------------------------------------
 	print_element EXTENDS(path,mod)
 
-  rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & Print.print_buf ")"
+  rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & Print.print_buf ", from baseclass: " &
+	Absyn.path_string path => str & Print.print_buf str & 
+	Print.print_buf ")" 
 	---------------------------------------
-	print_element CLASSDEF(n,final,repl,cl,_)
+	print_element CLASSDEF(n,final,repl,cl,SOME(path))
+
+  rule	Print.print_buf "COMPONENT(" & Print.print_buf n &
+	Print.print_buf ",mod:" & print_mod mod & 
+	Print.print_buf ",tp:" & Absyn.path_string typath => s &
+	Print.print_buf s &
+	Print.print_buf ", from baseclass: " &
+	Absyn.path_string path => str & Print.print_buf str & 
+	Print.print_buf ")"
+	----------------------------------------
+	print_element COMPONENT(n,final,repl,prot,attr,typath,mod,SOME(path))
+
+  rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & 
+	Print.print_buf ")" 
+	---------------------------------------
+	print_element CLASSDEF(n,final,repl,cl,NONE)
 
   rule	Print.print_buf "COMPONENT(" & Print.print_buf n &
 	Print.print_buf ",mod:" & print_mod mod & 
@@ -838,7 +855,7 @@ relation print_element : Element => () =
 	Print.print_buf s &
 	Print.print_buf ")"
 	----------------------------------------
-	print_element COMPONENT(n,final,repl,prot,attr,typath,mod,_)
+	print_element COMPONENT(n,final,repl,prot,attr,typath,mod,NONE)
 
   rule	Print.print_buf "IMPORT(_)\n" 
 	-------------------------

@@ -547,7 +547,6 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	inst_extends_list(env1, mods, extendselts, ci_state,impl)
 	  => (env2, emods, extcomps, eqs2, initeqs2, alg2, initalg2) &
-	
 	  (* Problem. Modifiers on inherited components are unelabed, loosing their 
 	   type information. This will not work, since the modifier type can not always be found.
 	   for instance. 
@@ -810,20 +809,20 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	Mod.lookup_modification_p(mod, Absyn.IDENT(cn)) => outermod &
 	inst_derived_classes(cenv, outermod, c, impl) =>
 	  (cenv1, els, eq1, ieq1, alg1, ialg1) &
-	fully_qualified(tp,cenv) => tp' &
+	fully_qualified(tp,cenv1) => tp' &
 	add_inherit_scope(els,tp') => els' &
 	Env.open_scope(cenv1,encf,SOME(cn)) => cenv3 &
 	ClassInf.start(r, cn) => new_ci_state &
 	Mod.elab_untyped_mod(emod,cenv3,Prefix.NOPRE) => mod' &
 	Mod.merge(outermod,mod',cenv3,Prefix.NOPRE) => mod'' &
 
-	inst_extends_list(env, outermod, els', ci_state, impl) 
+	inst_extends_list(cenv1(*env*), outermod, els', ci_state, impl) 
 	  => (_,mods, compelts1, eq2, ieq2, alg2, ialg2) &  
 
 	inst_extends_list(env, mod, rest, ci_state,impl)
 	  => (env2, mods', compelts2, eq3, ieq3, alg3, ialg3) & 
-	(* Must merge(mod,emod) here and then apply the bindings to the *)
 	(* corresponding elements. But emod is Absyn.Mod and can not  *)
+	(* Must merge(mod,emod) here and then apply the bindings to the *)
 	(* be elaborated, because for instance extends A(x=y) can reference *)
 	(* a variable y defined in A and will thus not be found. *)
 	(* On the other hand: A(n=4), n might be a structural parameter that must be set to *)
@@ -2044,15 +2043,17 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	Mod.merge(classmod,mm,env2,Prefix.NOPRE) => mod &
 	Mod.merge(mod,m',env2,Prefix.NOPRE) => mod' &
 	Mod.merge(cmod,mod',env2,Prefix.NOPRE) => mod'' &
-	
-	Mod.mod_equation mod'' => eq &
 
+	Mod.update_mod(env2,Prefix.NOPRE,mod'') => mod''' &
+
+	Mod.mod_equation mod''' => eq &
+	
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 	elab_arraydim(env2,cref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var(cenv,ci_state, mod'', Prefix.NOPRE, [], n, cl, attr,
+	inst_var(cenv,ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
 		 dims, [], [], false)
 	  => (dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
@@ -2103,7 +2104,9 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	Mod.merge(classmod,mm,env2,Prefix.NOPRE) => mod &
 	Mod.merge(mod,m',env2,Prefix.NOPRE) => mod' &
 	Mod.merge(cmod,mod',env2,Prefix.NOPRE) => mod'' &
-	Mod.mod_equation mod'' => eq &
+
+	Mod.update_mod(env2,Prefix.NOPRE,mod'') => mod''' &
+	Mod.mod_equation mod''' => eq &
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
@@ -2111,7 +2114,7 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	elab_arraydim(env2,owncref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var(cenv, ci_state, mod'', Prefix.NOPRE, [], n, cl, attr,
+	inst_var(cenv, ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
 		 dims, [], [], false)
 	  => (dae1, csets', ty) &
 
@@ -2314,9 +2317,17 @@ relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Types.EqM
 
   rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
-	compatible_arraydim(dim1,dim2) => dim3
+	compatible_arraydim(dim1,dim2) => dim3 
 	---------------------------------
 	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,cf) => dim3
+
+  rule	Static.elab_exp(env,e,impl,cf) => (e',Types.PROP(t,c),_) &
+	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
+	elab_arraydim_type(t,ad) => dim2 &
+	compatible_arraydim(dim1,dim2) => dim3 
+	---------------------------------
+	elab_arraydim(env,cref,ad,SOME(Types.UNTYPED(e)),impl,cf) => dim3
+
 
   rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
@@ -2330,9 +2341,13 @@ relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Types.EqM
 	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
 
 
-  rule	Debug.fprint("failtrace", "- elab_arraydim failed\n")
+  rule	Debug.fprint("failtrace", "- elab_arraydim failed\n cref:") &
+	Debug.fcall("failtrace", Dump.print_component_ref, cref) &
+	Debug.fprint("failtrace", " dim: " )  &
+	Debug.fcall("failtrace", Dump.print_arraydim, ad) &
+	Debug.fprint("failtrace", "\n" ) 
 	-------------------------------------
-	elab_arraydim(_,_,_,_,_,_) => fail
+	elab_arraydim(_,cref,ad,_,_,_) => fail
 
 end
 
@@ -2550,7 +2565,8 @@ relation compatible_arraydim : ((DimExp option) list,(DimExp option) list)
 	compatible_arraydim (NONE::xs,NONE::ys) 
 	  => DIMEXP(Exp.WHOLEDIM,NONE)::l
 
-  rule	Debug.fprint("failtrace", "- compatible_arraydim failed\n")
+  rule	Print.print_buf "-compatible_arraydim failed\n" &
+	Debug.fprint("failtrace", "- compatible_arraydim failed\n")
 	--------------------------------------
 	compatible_arraydim (_,_) => fail
 
@@ -4656,14 +4672,6 @@ end
 relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  => DAE.Element list =
 
-(*  rule	Print.print_buf "inst_mod_equation\n" &
-	Exp.cref_str cr => str &
-	Print.print_buf "cref = " & Print.print_buf str &
-	Print.print_buf "\nmod=" &
-	Mod.print_mod mod &
-	int_eq(1,0) => true
-	----------
-	inst_mod_equation(cr,ty1,mod) => [] *)
 	  
   rule	Types.elab_type ty1 => t &
 (*
@@ -4683,9 +4691,15 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
   axiom inst_mod_equation(_,_,Types.NOMOD) => []
   axiom	inst_mod_equation(_,_,Types.REDECL(_,_)) => []
 
-  rule	Debug.fprint("failtrace", "- inst_mod_equation failed\n")
+  rule	Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ") &
+	Debug.fcall("failtrace", Types.print_type, t) &
+  	Debug.fprint("failtrace", "\n  cref: ") &
+	Debug.fcall("failtrace", Exp.print_component_ref, c) &
+	Debug.fprint("failtrace", "\n mod:") &
+	Debug.fcall("failtrace", Mod.print_mod, m) &
+	Debug.fprint("failtrace", "\n") 
 	------------------------------------
-  	inst_mod_equation (_,_,_) => fail
+  	inst_mod_equation (c,t,m) => fail
 
 end
 
