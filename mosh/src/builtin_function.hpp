@@ -167,6 +167,15 @@ protected:
   value do_apply(value args);
 };
 
+class gethrtime_t : public builtin_function
+{
+public:
+  gethrtime_t();
+  virtual ~gethrtime_t();
+protected:
+  value do_apply(value args);
+};
+
 template <class Fn>
 class unary_fcn : public builtin_function
 {

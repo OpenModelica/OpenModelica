@@ -23,6 +23,8 @@
 #include "builtin_function.hpp"
 
 #include "runtime/modelica_runtime_error.hpp"
+#include <sys/time.h>
+
 #include <cmath>
 #include <assert.h>
 #include <cstdlib>
@@ -181,7 +183,7 @@ value system_t::do_apply(value args)
 	      if (val.is_string())
 		{
 		  std::string cmd = val.get_string();
-		  ret = system(cmd.c_str());
+		  ret = (long)system(cmd.c_str());
 		}
 	      else
 		{
@@ -276,7 +278,7 @@ value write_t::do_apply(value args)
 		{
 		  std::string path = file.get_string();
 		  
-		  ret = write_input_file(val,path.c_str());
+		  ret = (long) write_input_file(val,path.c_str());
 
 		}
 	      else
@@ -301,6 +303,29 @@ value write_t::do_apply(value args)
   return ret;
 }
 
+gethrtime_t::gethrtime_t()
+{
+}
+
+gethrtime_t::~gethrtime_t()
+{
+}
+
+value gethrtime_t::do_apply(value args)
+{
+  value ret;
+  function_argument* fnarg = args.get_function_argument();
+  if (fnarg->size() !=0) {
+    std::cout << "Internal error: Wrong number of arguments. Usage gethrtime()\n";
+  } else {
+    std::cout << "calling gethrtime\n";
+    ret.set_value((long)gethrtime());
+  }
+  
+  return ret;
+}
+
+
 bt_div_t::bt_div_t()
 {
 
@@ -313,7 +338,7 @@ bt_div_t::~bt_div_t()
 
 value bt_div_t::do_apply(value args)
 {
-  return value(2);
+  return value((long)2);
 }
 
 mod_t::mod_t()
@@ -328,7 +353,7 @@ mod_t::~mod_t()
 
 value mod_t::do_apply(value args)
 {
-  return value(2);
+  return value((long)2);
 }
 
 rem_t::rem_t()
@@ -343,7 +368,7 @@ rem_t::~rem_t()
 
 value rem_t::do_apply(value args)
 {
-  return value(2);
+  return value((long)2);
 }
 
 sqrt_t::sqrt_t()
@@ -358,7 +383,7 @@ sqrt_t::~sqrt_t()
 
 value sqrt_t::do_apply(value args)
 {
-  return value(2);
+  return value((long)2);
 }
 
 sign_t::sign_t()
@@ -373,7 +398,7 @@ sign_t::~sign_t()
 
 value sign_t::do_apply(value args)
 {
-  return value(2);
+  return value((long)2);
 }
 
 ceil_t::ceil_t()
@@ -438,7 +463,7 @@ value integer_t::do_apply(value args)
 //     {
 //       cout << "function argument" << endl;
 //     }
-  return value(2);
+  return value((long)2);
 }
 
 //   value new_val;

@@ -54,6 +54,7 @@ symboltable::symboltable()
   m_symboltable["system"] = value(new system_t);
   m_symboltable["read"] = value(new read_t);
   m_symboltable["write"] = value(new write_t);
+  m_symboltable["gethrtime"] = value(new gethrtime_t);
 
 }
 

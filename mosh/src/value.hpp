@@ -46,7 +46,7 @@ public:
   value();
   value(double val);
   value(bool val);
-  value(int val);
+  value(long val);
   value(const std::string& val);
   value(const real_array& arr);
   value(const integer_array& arr);
@@ -63,7 +63,7 @@ public:
   void set_value(double val);
   void set_value(bool val);
   void set_value(std::string val);
-  void set_value(int val);
+  void set_value(long val);
 
 
 

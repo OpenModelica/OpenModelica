@@ -799,7 +799,7 @@ simple_expression returns [value val]
 		}
 		|#(RANGE2 log_expr1 = logical_expression log_expr2 = logical_expression)
 		{
-	  		val = create_range_array(log_expr1, value(1),log_expr2);
+	  		val = create_range_array(log_expr1, value((long)1),log_expr2);
 		}
 		|val = logical_expression
 		{
@@ -948,7 +948,7 @@ primary	returns [value val]
 		:
 		( ui:UNSIGNED_INTEGER   		
 			{
-				val.set_value(atoi(ui->getText().c_str()));
+				val.set_value((long)atoi(ui->getText().c_str()));
 	  		}
 		| ur:UNSIGNED_REAL {val.set_value(atof(ur->getText().c_str()));}
 		| s:STRING {val.set_value(s->getText());}
@@ -1130,7 +1130,7 @@ function_arguments[function_argument* args] //returns [value val]
 		:
 		( expression_list_fn_args[args]
 		| named_arguments[args]
-		)
+		)?
 		{
 			// Actions
 		}
@@ -1204,19 +1204,11 @@ expression_list_fn_args[function_argument* args] //returns [value val]
 			value expr_val;
 		}
 		:
-		#(EXPRESSION_LIST expr_val = expression 
+		#(EXPRESSION_LIST (expr_val = expression 
             {
                 args->push_back(expr_val);
 
-                //val.set_type(value::fcn_arg);
-                //val.append_to_function_arguments(expr_val);
-            }
-			(expr_val = expression 
-                {
-                    args->push_back(expr_val);
-                    //val.append_to_function_arguments(expr_val);
-                }
-            )*
+            } )*
         )
 		{
 			

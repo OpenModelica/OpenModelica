@@ -47,7 +47,7 @@ value::value(bool val)
   m_basic_type = create_boolean();
 }
 
-value::value(int val)
+value::value(long val)
 {
   m_integer = val;
   m_basic_type = create_integer();
@@ -182,7 +182,7 @@ void value::set_value(std::string val)
    m_basic_type = create_string();
 }
 
-void value::set_value(int val)
+void value::set_value(long val)
 {
   m_integer = val;
    m_basic_type = create_integer();
@@ -1423,7 +1423,7 @@ value read_result_file(const char* filename)
 		  break; 
 		}
 	      read_to_eol(fp);
-	      vals.push_back(value(i));
+	      vals.push_back(value((long)i));
 	    }
 	  else 
 	    {
