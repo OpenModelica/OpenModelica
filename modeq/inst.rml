@@ -59,7 +59,7 @@ module Inst:
   relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
 	
   relation inst_class: (Env.Env, Mod.Mod, Prefix.Prefix, 
-			Connect.Sets, SCode.Class, InstDims)
+			Connect.Sets, SCode.Class, InstDims,bool)
 	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State)
 
 
@@ -69,7 +69,7 @@ module Inst:
 
   relation inst_class_in: (Env.Env, Mod.Mod, Prefix.Prefix, 
 			   Connect.Sets, ClassInf.State,
-			   SCode.Class, bool, InstDims)
+			   SCode.Class, bool, InstDims, bool)
 	  => (DAE.Element list, Env.Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list)
   relation inst_record_constructor_elt : (Env.Env, SCode.Element) 
@@ -189,9 +189,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 	instantiate_class([],cr) => fail
 
   rule	Builtin.initial_env => env &
-	print "built initial env\n" &
 	inst_class_decls(env,cdecls,path) => (env',dae1) &
-	print "inst, class decls\n" &
 	inst_class_in_program(env',cdecls,path) => dae
 	-----------------------------
 	instantiate_class(cdecls, path as Absyn.IDENT(name2)) => DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))])
@@ -199,7 +197,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
   rule	Builtin.initial_env => env &
 	inst_class_decls(env,cdecls,path)=> (env',_) &
 	Lookup.lookup_class(env',path) => (cdef, env'') &
-	inst_class(env'',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) => (dae,_,_,_) &
+	inst_class(env'',Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) => (dae,_,_,_) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
 	instantiate_class(cdecls, path as Absyn.QUALIFIED(name,_)) 
@@ -215,7 +213,7 @@ end
 relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Element list) =
 	
   rule	name = name2 &
-	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (dae,_,_,_) 
+	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (dae,_,_,_) 
 	-------------------------------------------------------------
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) => dae
 
@@ -253,6 +251,12 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 	-----------------------------
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
 
+  rule	not name = name2 &      
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	inst_class_decls(env',cs,ref) => (env'', dae2) &
+	list_append(dae1,dae2) => dae  
+	-----------------------------
+	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
 
 axiom	inst_class_decls(env,[],_) => (env,[])
 	
@@ -298,7 +302,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 
   rule	Debug.fprintln ("insttr", "inst_program1") &
 	(* Env.extend_frame_c(env,c) => env' & *)
-	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (dae,csets,_,_) 
+	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (dae,csets,_,_) 
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
@@ -331,6 +335,10 @@ end
 
 (** relation: inst_class
  **
+ ** Instantiation of a class can be either implicit or "normal". This relation is 
+ ** used in both cases. When implicit instantiation is performed, the last argument 
+ ** is true, otherwise it is false.
+ **
  ** Instantiating a class consists of the following steps:
  **
  **  o Create a new frame on the environment
@@ -340,27 +348,27 @@ end
  **    instantiation
  **)
 
-relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims)
+relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,bool)
 	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State) =
 
   rule	Print.print_buf "# Can't instantiate partial class " & Print.print_buf n & Print.print_buf "\n"
 	------------------------------------------------------	
-	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_) => fail
+	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
 
   rule	Env.open_scope(env) => env' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env', mod, pre, csets, ci_state, c, false,inst_dims)
+	inst_class_in(env', mod, pre, csets, ci_state, c, false,inst_dims,impl)
 	  => (dae1,_,csets',ci_state', tys) &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
 	mktype(ci_state',tys) => ty
 	-------------------------------------------
-	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,_,r,_),inst_dims)
+	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,_,r,_),inst_dims,impl)
 	  => (dae, [], ty,ci_state')
 
   rule	Print.print_buf "- inst_class " & Print.print_buf n & Print.print_buf " failed\n"
 	-----------------------------------------------------
-	inst_class(_,_,_,_,SCode.CLASS(n,_,_,_,_),_) => fail
+	inst_class(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl) => fail
 	
 end
 
@@ -371,11 +379,11 @@ end
  **)
 
 relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.Class, bool, InstDims)
+			 SCode.Class, bool, InstDims, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
-  rule	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims)
+  rule	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims,impl)
 	  => (l,env', csets', ci_state', tys) &
 	Prefix.print_prefix_str pre => prestr &
 	string_append(prestr, " : ") => prestr' &
@@ -386,12 +394,12 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintl ("envprint", ["------------ /", prestr'', "\n"])
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
-		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims)
+		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims,impl)
 	  => (l,env', csets', ci_state', tys)
 
   rule  Print.print_buf "- inst_class_in failed\n"
 	----------------------------------
-	inst_class_in(_,_,_,csets,_,_,_,_) => fail
+	inst_class_in(_,_,_,csets,_,_,_,_,_) => fail
 
 end
 
@@ -409,7 +417,7 @@ end
  **)
 
 relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.ClassDef, Absyn.Restriction, bool,InstDims)
+			 SCode.ClassDef, Absyn.Restriction, bool,InstDims,bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -418,7 +426,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.print_prefix_str pre => prestr &
 	Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &       
 	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state' &
-	inst_element_list(env,mods,pre,csets,ci_state', els, inst_dims)
+	inst_element_list(env,mods,pre,csets,ci_state', els, inst_dims, impl)
 	  => (dae1,env', csets', ci_state'', tys) &
 	inst_list(env',mods,pre,csets',ci_state'',inst_equation, eqs)
 	  => (dae2,env'',csets'', ci_state''') &
@@ -428,7 +436,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(dae5,dae3) => dae 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      SCode.PARTS(els,eqs,als), re, prot, inst_dims)
+		      SCode.PARTS(els,eqs,als), re, prot, inst_dims, impl)
 	  => (dae,env''', csets''', ci_state'''', tys)
 
 	(** This rule describes how to instantiate a derived class *)
@@ -443,14 +451,14 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
-	inst_class_in(cenv, mods'', pre, csets, new_ci_state, c,prot,inst_dims)
+	inst_class_in(cenv, mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl)
 	  => (dae,env'', csets', ci_state', tys) &
 
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      SCode.DERIVED(cn,ad,mod), re, prot, inst_dims)
+		      SCode.DERIVED(cn,ad,mod), re, prot, inst_dims,impl)
 	  => (dae,env'', csets', ci_state', tys)
 
 	(** If the class is derived from a class that can not be *)
@@ -462,12 +470,12 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf "# unknown class: " & Print.print_buf cns & Print.print_buf "\n"
 	----------------------------------------
 	inst_classdef(env,mods,pre,csets,ci_state,
-		      SCode.DERIVED(cn,ad,mod), re, prot, inst_dims)
+		      SCode.DERIVED(cn,ad,mod), re, prot, inst_dims,impl)
 	  => fail
 
   rule	Print.print_buf "- inst_classdef failed\n"
 	----------------------------------
-	inst_classdef(_,_,_,_,_,_,_,_,_) => fail
+	inst_classdef(_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
 
@@ -486,7 +494,7 @@ end
  **)
 
 relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    SCode.Element list, InstDims)
+			    SCode.Element list, InstDims, bool)
 	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State, Types.Var list) =
 	    
 	    
@@ -494,26 +502,26 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	component_elts(elts) => compelts &
 	extends_elts(elts) => extendselts &
 	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
-	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims) => (_,env',csets',ci_state',tys) &
+	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims, impl) => (_,env',csets',ci_state',tys) &
 	
 	Debug.fprint ("decl", "calling extend_components_to_env, env=\n") &
 	Debug.fcall ("decl",Env.print_env, env') &
-	extend_components_to_env(env',mod,pre,csets,ci_state,compelts,inst_dims) => env'' &
+	extend_components_to_env(env',mod,pre,csets,ci_state,compelts,inst_dims,impl) => env'' &
 	Debug.fprint("decl"," extended components to env, env=") &
 	Debug.fcall ("decl",Env.print_env, env'') &
 	(*2. EXTENDS Nodes*)
-	inst_element_list2(env'',mod,pre,csets',ci_state',extendselts,inst_dims) => (dae2,env''',csets'',ci_state'',tys2) &
+	inst_element_list2(env'',mod,pre,csets',ci_state',extendselts,inst_dims,impl) => (dae2,env''',csets'',ci_state'',tys2) &
 
 	Debug.fprint("decl"," instantiated base classes, env, env=") &
 	Debug.fcall ("decl",Env.print_env, env''') &
 	
 	(*3. instantiate COMPONENT nodes*)
-	inst_element_list2(env''',mod,pre,csets'',ci_state'',compelts,inst_dims) => (dae3,env'''',csets''',ci_state''',tys3) &
+	inst_element_list2(env''',mod,pre,csets'',ci_state'',compelts,inst_dims,impl) => (dae3,env'''',csets''',ci_state''',tys3) &
 	list_append(dae2,dae3) => totdae &
 	list_append(tys,tys2) => ts1 &
 	list_append(ts1,tys3) => tottys
 	----------------------------------------------------------------------------------------------------
-	inst_element_list(env,mod,pre,csets,ci_state,elts,inst_dims) 
+	inst_element_list(env,mod,pre,csets,ci_state,elts,inst_dims, impl) 
 	    => (totdae,env'''',csets''',ci_state''',tottys)
 end
 
@@ -561,7 +569,7 @@ relation component_elts: (SCode.Element list) => (SCode.Element list) =
 end
 
 relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    SCode.Element list, InstDims)
+			    SCode.Element list, InstDims, bool)
 	    => (Env) =
 
   rule	Lookup.lookup_class(env,t) => (cl,cenv) & 
@@ -576,46 +584,46 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 	   **)	
 
 	Debug.fprint ("decl", "instantiating class to get type\n") &
-	inst_class(cenv,Mod.NOMOD,pre,csets,cl,inst_dims) => (_,_,ty,_) &
+	inst_class(cenv,Mod.NOMOD,pre,csets,cl,inst_dims,impl) => (_,_,ty,_) &
 	Debug.fprint ("decl", "got type:") &
 	Debug.fcall ("decl", Types.print_type, ty) &
 	Debug.fprint ("decl","\n") &
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 	    prot,ty,Types.UNBOUND),SOME(comp),false) => env' &
-	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims) => env'' &
+	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims,impl) => env'' &
 	Debug.fprint("decl", " updated env :") &
 	Debug.fcall ("decl", Env.print_env, env'') 
 	-----------------
 	extend_components_to_env(env,mods,pre,csets,ci_state,
 		     (comp as SCode.COMPONENT(n,final,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m))::xs,inst_dims) => env''
-  axiom	extend_components_to_env(env,_,_,_,_,[],_) => env
+				     t,m))::xs,inst_dims,impl) => env''
+  axiom	extend_components_to_env(env,_,_,_,_,[],_,_) => env
 end
 
 relation inst_element_list2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    SCode.Element list, InstDims)
+			    SCode.Element list, InstDims, bool)
 	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 		Types.Var list) =
 	
-  axiom	inst_element_list2(env,_,_,csets,ci_state,[],_)
+  axiom	inst_element_list2(env,_,_,csets,ci_state,[],_,_)
 	    => ([], env, csets, ci_state, [])
 	
-  rule  inst_element(env,mod,pre,csets,ci_state,el, inst_dims)
+  rule  inst_element(env,mod,pre,csets,ci_state,el,inst_dims,impl)
 	  => (dae1,env',csets',ci_state',tys1) &
-	inst_element_list2(env',mod,pre,csets',ci_state',els, inst_dims)
+	inst_element_list2(env',mod,pre,csets',ci_state',els,inst_dims,impl)
 	  => (dae2,env'',csets'',ci_state'',tys2) &
 	list_append(tys1, tys2) => tys &
 	list_append(dae1, dae2) => dae 
 	------------------------------
-	inst_element_list2(env,mod,pre,csets,ci_state,el::els, inst_dims)
+	inst_element_list2(env,mod,pre,csets,ci_state,el::els,inst_dims,impl)
 	  => (dae, env'', csets'', ci_state'', tys)
 
   rule	Print.print_buf "- inst_element_list2 failed\n" &
 	Dump.print_list (els, SCode.print_element, ", ") &
 	Print.print_buf "\n"
 	------------------------------------
-	inst_element_list2(_,_,_,_,_,els,_) => fail
+	inst_element_list2(_,_,_,_,_,els,_,_) => fail
 
 end
 
@@ -626,7 +634,7 @@ end
  **)
 
 relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.Element, InstDims)
+			 SCode.Element, InstDims, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -636,7 +644,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Env.extend_frame_i(env,imp) => env'
 	------------------------------------
-	inst_element(env,mod,pre,csets,ci_state,SCode.IMPORT(imp),instdims) => ([],env',csets,ci_state,[])
+	inst_element(env,mod,pre,csets,ci_state,SCode.IMPORT(imp),instdims,_) => ([],env',csets,ci_state,[])
 	
 
 	(**  extends
@@ -666,10 +674,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "Modifications merged again") &
 	
 	(* Can't use inst_class, as that creates a new frame *)
-	inst_class_in(cenv,mods'',pre,csets,ci_state,c,false,inst_dims)
+	inst_class_in(cenv,mods'',pre,csets,ci_state,c,false,inst_dims,impl)
 	  => (dae,env',csets',ci_state',vars)
 	  ----------------------------------
-	inst_element(env,mods,pre,csets,ci_state,SCode.EXTENDS(cn,m),inst_dims)
+	inst_element(env,mods,pre,csets,ci_state,SCode.EXTENDS(cn,m),inst_dims,impl)
 	  => (dae,env',csets',ci_state',vars)
 	  
   	  (**  Rules to catch redeclarations and name collsions
@@ -682,7 +690,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,prot,_,_,_),_)
+		     SCode.COMPONENT(n,final,prot,_,_,_),_,_)
 	  => ([],env,csets,ci_state,[]) 
 
   	  (* Illegal redeclarations *)
@@ -693,7 +701,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Env.print_env env
 	------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.CLASSDEF(n,_,_,_),_)
+		     SCode.CLASSDEF(n,_,_,_),_,_)
 	  => fail
 	  
   rule	Lookup.lookup_class(env,Absyn.IDENT(n)) => (_,_) &
@@ -701,7 +709,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf " as a class\n"
 	---------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,_,_,_,_,_),_)
+		     SCode.COMPONENT(n,_,_,_,_,_),_,_)
 	  => fail
 	  
           (**  A new class definition
@@ -718,7 +726,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_class_decl(env,classmod,pre,csets,cls2,inst_dims) => (env',dae)
 	-------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state, 
-		     SCode.CLASSDEF(n,_,_,c),inst_dims)
+		     SCode.CLASSDEF(n,_,_,c),inst_dims,impl)
 	  => (dae,env',csets,ci_state,[])
 
 	
@@ -730,7 +738,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_class_decl(env,classmod,pre,csets,c,inst_dims) => (env',dae)
 	-------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state, 
-		     SCode.CLASSDEF(n,_,_,c),inst_dims)
+		     SCode.CLASSDEF(n,_,_,c),inst_dims,impl)
 	  => (dae,env',csets,ci_state,[])
 	  
 	  (**  A component
@@ -802,11 +810,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
-	elab_arraydim(env2,ad,eq) => dims &
+	elab_arraydim(env2,ad,eq,impl) => dims &
 
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
-	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
+	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims,impl)
 	  => (dae,csets',ty) &
 	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &
 
@@ -828,7 +836,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m),inst_dims)
+				     t,m),inst_dims,impl)
           => (dae, env',csets',ci_state,
 	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
@@ -848,14 +856,14 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("instdb", Env.print_env, env)
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,prot,_,t,_),_)
+		     SCode.COMPONENT(n,final,prot,_,t,_),_,_)
          => ([],env,csets,ci_state,[])
 
   rule	Print.print_buf "- inst_element failed\n" &
 	SCode.print_element el &
 	Print.print_buf "\n"
 	-----------------------------------------------------------------
-	inst_element(_,_,_,_,_,el,_) => fail
+	inst_element(_,_,_,_,_,el,_,_) => fail
 
 end	
 
@@ -876,7 +884,8 @@ relation inst_var : (Env.Env,
 		     SCode.Attributes,
 		     DimExp list, 
 		     int list,
-		     InstDims)
+		     InstDims,
+		     bool)
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
 	(** The class is instantiated with the calculated *)
@@ -899,7 +908,7 @@ relation inst_var : (Env.Env,
 	(* This is where redeclare should be handled *)
 	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
 	Debug.fcall ("envprint", Env.print_env, env) & 
-	inst_class(env,mod,pre',csets,cl,inst_dims) => (dae1,csets',ty,st) &
+	inst_class(env,mod,pre',csets,cl,inst_dims,impl) => (dae1,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
@@ -912,24 +921,24 @@ relation inst_var : (Env.Env,
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
 	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
-		 [],idxs,inst_dims)
+		 [],idxs,inst_dims,impl)
           => (dae,csets',ty)
 
 
 
-  rule	inst_dim_exp dim => dime &
+  rule	inst_dim_exp (dim,impl) => dime &
 	list_append(inst_dims,[dime]) => inst_dims' &
-	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims')
+	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl)
 	  => (dae, csets', ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty'
 	-------------------------------
-	inst_var(env,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims)
+	inst_var(env,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl)
           => (dae,csets',ty')
 
   rule	Print.print_buf "- inst_var failed: " & Print.print_buf n & Print.print_buf "\n"
 	--------------------------------------------------
-	inst_var(_,_,_,_,n,_,_,_,_,_) => fail
+	inst_var(_,_,_,_,n,_,_,_,_,_,_) => fail
 	
 end
 
@@ -1115,11 +1124,11 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
-	elab_arraydim(env2,ad,eq) => dims &
+	elab_arraydim(env2,ad,eq,false) => dims &
 	print_dims dims &
 
 	(** Instantiate the component *)	
-	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[])
+	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[],false)
 	  => (dae1,csets',ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
@@ -1146,19 +1155,20 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	update_variable_in_env(_,cref,env) => env
 end
 
-relation inst_dim_exp : DimExp => Exp.Subscript =
+relation inst_dim_exp : (DimExp, bool) => Exp.Subscript =
 
   rule	Print.print_buf "# Error, can not determine size of array.\n"
 	-------------------------------------------
-	inst_dim_exp DIMEXP(Exp.WHOLEDIM,_) => fail
+	inst_dim_exp (DIMEXP(Exp.WHOLEDIM,_),false) => fail
 
   rule	Print.print_buf "# Error, can not determine size of array. SLICE\n"
 	-------------------------------------------
-	inst_dim_exp DIMEXP(Exp.SLICE(_),_) => fail
+	inst_dim_exp (DIMEXP(Exp.SLICE(_),_),false) => fail
 
-  axiom	inst_dim_exp DIMINT(i) => Exp.INDEX(Exp.ICONST(i))
+  axiom	inst_dim_exp (DIMEXP(e as Exp.WHOLEDIM,_),true) => e
+  axiom	inst_dim_exp (DIMINT(i),_) => Exp.INDEX(Exp.ICONST(i))
 
-  axiom	inst_dim_exp DIMEXP(e as Exp.INDEX(_),_) => e
+  axiom	inst_dim_exp (DIMEXP(e as Exp.INDEX(_),_),_) => e
 
 end
 
@@ -1212,36 +1222,37 @@ relation inst_array : (Env.Env,
 		       DimExp,
 		       DimExp list,
 		       int list,
-		       InstDims
+		       InstDims,
+		       bool
 		       )
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
-  rule	inst_var(env,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims)
+  rule	inst_var(env,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae,csets,ty)
 	-----------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims)
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
 	  => (dae,csets,ty)
 
   rule	int_gt(i,stop) => true
 	----------------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims)
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
 	  => ([], csets, Types.T_NOTYPE)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
-	inst_var(env,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims)
+	inst_var(env,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
-	inst_array(env,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims)
+	inst_array(env,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
 	  => (dae2, csets'',_) &
 
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims)
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
           => (dae,csets'',ty)
 
   rule	Print.print_buf "- inst_array failed: " & Print.print_buf n & Print.print_buf "\n"
 	--------------------------------------------------
-	inst_array(_,_,_,_,n,(_,_),_,_,_,_,_) => fail
+	inst_array(_,_,_,_,n,(_,_),_,_,_,_,_,_) => fail
 	
 end
 
@@ -1260,21 +1271,21 @@ end
  ** check that that the dimension sizes are compatible and complete.
  **)
 
-relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
+relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool)
 	  => DimExp list =
 
-  rule	elab_arraydim_decl(env,ad) => dim &
+  rule	elab_arraydim_decl(env,ad,impl) => dim &
 	complete_arraydim(dim) => dim'
 	------------------------------
-	elab_arraydim(env,ad,NONE) => dim'
+	elab_arraydim(env,ad,NONE,impl) => dim'
 
-  rule	elab_arraydim_decl(env,ad) => dim1 &
+  rule	elab_arraydim_decl(env,ad,impl) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c)))) => dim3
+	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl) => dim3
 
-  rule	elab_arraydim_decl(env,ad) => dim1 &
+  rule	elab_arraydim_decl(env,ad,impl) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	not compatible_arraydim(dim1,dim2) => dim3 &
 	Print.print_buf "# Array dimension mismatch\n" &
@@ -1283,12 +1294,12 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 	Print.print_buf "    expected array dimensions [" &
 	print_dim dim1 & Print.print_buf "]\n"
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c)))) => fail
+	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl) => fail
 
 
   rule	Print.print_buf "- elab_arraydim failed\n"
 	-------------------------------------
-	elab_arraydim(_,_,_) => fail
+	elab_arraydim(_,_,_,_) => fail
 
 end
 
@@ -1357,29 +1368,44 @@ end
  ** contain `NONE'.
  **)
 
-relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (DimExp option) list =
+relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool) => (DimExp option) list =
 
-  axiom	elab_arraydim_decl(_,[]) => []
+  axiom	elab_arraydim_decl(_,[],_) => []
 
   rule	(*Print.print_buf "NOSUB in elab_arraydim_decl\n" & *)
-	elab_arraydim_decl(env,ds) => l 	
+	elab_arraydim_decl(env,ds,impl) => l 	
 	-------------------------------
-	elab_arraydim_decl(env,Absyn.NOSUB::ds) => NONE::l
+	elab_arraydim_decl(env,Absyn.NOSUB::ds,impl) => NONE::l
 
   rule	Static.elab_exp(env, d)
 	    => (e,Static.PROP(Types.T_INTEGER,_)) &  
 	    (* _ Was true, but structural parameters must be given 
-	       the numerical value in order to instantiate successfully *)
+	       the numerical value in order to instantiate successfully.
+	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
+	       It is NOT true for functions, or other implicit instantiated models. 
+	     *)
 	Static.ceval(env,e,false) => Values.INTEGER(i) &
- 	elab_arraydim_decl(env,ds) => l
+ 	elab_arraydim_decl(env,ds,false) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => SOME(DIMINT(i))::l
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,false) => SOME(DIMINT(i))::l
 
-(*  rule	Static.elab_exp(env, d) => (e,Static.PROP(Types.T_INTEGER,false)) &
-	elab_arraydim_decl(env,ds) => l
+  rule	Static.elab_exp(env, d)
+	    => (e,Static.PROP(Types.T_INTEGER,true)) &  
+	    (* _ Was true, but structural parameters must be given 
+	       the numerical value in order to instantiate successfully.
+	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
+	       It is NOT true for functions, or other implicit instantiated models. 
+	     *)
+	Static.ceval(env,e,false) => Values.INTEGER(i) &
+ 	elab_arraydim_decl(env,ds,true) => l
+	-------------------------------------------
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,true) => SOME(DIMINT(i))::l
+
+  rule	Static.elab_exp(env, d) => (e,Static.PROP(Types.T_INTEGER,false)) &
+	elab_arraydim_decl(env,ds,impl) => l
 	-------------------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) 
-	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l *)
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl) 
+	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l 
 
   rule	Static.elab_exp(env, d)
 	  => (e,Static.PROP(t,_)) &
@@ -1387,12 +1413,11 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (DimExp option) list 
 	Print.print_buf "    expression: " & Exp.print_exp e &
  	Print.print_buf " (" & Types.print_type t & Print.print_buf ")\n"
 	-------------------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => fail
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl) => fail
 
   rule	Print.print_buf "- elab_arraydim_decl failed\n"
 	-------------------------------------
-	elab_arraydim_decl(_,_) => fail
-	
+	elab_arraydim_decl(_,_,_) => fail     
 end
 
 (** relation: complete_arraydim
@@ -1566,7 +1591,7 @@ correct?
   rule	Prefix.prefix_add(n,[],pre) => pre' &
 (*	let pre' = pre & *)
 	Debug.fprint ("insttr","implicit_instantiation called.\n") &
-	inst_class(env,mod,pre',csets,c,inst_dims) => (dae, csets', ty, st) &
+	inst_class(env,mod,pre',csets,c,inst_dims,true) => (dae, csets', ty, st) &
 	Debug.fprint ("insttr","implicit_instantiation inst class done.\n") &
 	Env.extend_frame_t(env, n, ty) => env' &
 (*	let env' = env & *)
@@ -1582,7 +1607,7 @@ correct?
    one. They will contain the elements locally *)
 
   rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
-	inst_class(env,mod,pre,csets,c,inst_dims) => (dae, csets', ty, st) &
+	inst_class(env,mod,pre,csets,c,inst_dims,true) => (dae, csets', ty, st) &
 	Env.extend_frame_t(env, n, ty) => env' &
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath
 	--------------------------------------
@@ -1592,7 +1617,7 @@ correct?
 	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
   rule	(*	Prefix.prefix_add(n,[],pre) => pre' & *)
-	inst_class(env,mod,pre,csets,c,inst_dims) => (dae, csets', ty, st) &
+	inst_class(env,mod,pre,csets,c,inst_dims,true) => (dae, csets', ty, st) &
 	Env.extend_frame_t(env, n, ty) => env' &
 	Prefix.prefix_to_path pre => fpath
 	--------------------------------------
@@ -2990,15 +3015,15 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Types.Var =
 	  
   rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
-	elab_arraydim(env,dim,NONE) => dimexp &
+	elab_arraydim(env,dim,NONE,true) => dimexp &
 	Debug.fprint ("recconst", "elaborated arraydim\n") &
 	Lookup.lookup_class(env,t) => (cl,cenv) &
 	Debug.fprint ("recconst", "looked up class\n") &
 	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
 	
-	elab_arraydim(env,dim,NONE) => dimexp &
+	elab_arraydim(env,dim,NONE,true) => dimexp &
 	Debug.fprint ("recconst", "calling inst_var\n") &
-	inst_var(cenv,mod',Prefix.NOPRE,[],id,cl,attr,dimexp,[],[]) => (_,_,tp') &
+	inst_var(cenv,mod',Prefix.NOPRE,[],id,cl,attr,dimexp,[],[],true) => (_,_,tp') &
 	Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &

@@ -80,6 +80,10 @@ relation charlistcompare: (char list, char list, int) => bool =
 	-------------------
 	charlistcompare(a::_,b::_,1) => true
 
+  rule	not a = b
+	------------
+	charlistcompare(a::_,b::_,1) => false
+
   rule	int_sub(n,1) => n1 &
 	a = b &
 	charlistcompare(l1,l2,n1) => true
@@ -103,6 +107,15 @@ relation strncmp: (string,string,int)=>bool =
 end
 
 relation check_classdef: string => bool =
+
+  rule	strncmp(" ",str,1) => true & 
+	string_list(str) => clst &
+	list_delete(clst,0) => clst' &
+	list_string(clst') => str' &
+	check_classdef(str')=> res
+	--------------------------
+	check_classdef(str) => res
+
   rule	strncmp ("type",str,4) => false &
 	strncmp ("class",str,5) => false &
 	strncmp ("model",str,5) => false &
@@ -110,8 +123,10 @@ relation check_classdef: string => bool =
 	strncmp ("within",str,6) => false &
 	strncmp ("record",str,6) => false &
  	strncmp ("package",str,7) => false &
+	strncmp ("partial",str,7) => false &
 	strncmp ("function",str,8) => false &
-	strncmp ("connector",str,9) => false 
+	strncmp ("connector",str,9) => false &
+	strncmp ("encapsulated",str,11) => false 
 	-------------------------------
 	check_classdef str => false
 
@@ -138,8 +153,8 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
 	Debug.fcall ("dump", Dump.dump, newprog) 
 	----------------------------------
-	handle_command (str, Interactive.SYMBOLTABLE(iprog,a,b,c)) => 
-	(true, "Ok\n",Interactive.SYMBOLTABLE(newprog,a,b,c))
+	handle_command (str, Interactive.SYMBOLTABLE(iprog,a,b,c,d)) => 
+	(true, "Ok\n",Interactive.SYMBOLTABLE(newprog,a,b,c,d))
 
   rule	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => exp &
@@ -228,7 +243,7 @@ end
 relation interactivemode: string list => () =
 
   rule	Socket.waitforconnect 29500  => shandle &
-	server_loop (shandle, Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[])) => _
+	server_loop (shandle, Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])) => _
 	-------------------
 	interactivemode _
 end

@@ -435,7 +435,7 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 
   rule	id = n & 
 	not lookup_type_in_frame(rest,env,id) => (_,_) &
-	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,ty,_)  &
+	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],true) =>(_,_,ty,_)  &
 	(* This rule is applied when a class definition, "below" in the code is a function and its type is 
 	   requested. We should really add the type `ty' to the environment in the future, but that means 
 	   a lot of changes......*)
@@ -591,7 +591,7 @@ end
 relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var list =
 
   rule	build_varlst_from_elts(elts,env) => inputvarlst &
-	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cl,[]) => (_,_,ty,_) 
+	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cl,[],false) => (_,_,ty,_) 
 	--------------------------------------
 	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_)),env) 
 	(* Add the return type of the record constructor *)

@@ -38,10 +38,15 @@ module Interactive:
 					 Values.Value *  (* The expression containing the value *)
 					 Types.Type  (* The type of the expression *)
 
+  datatype CompiledFunction = COMPILEDFUNC of Absyn.Path * (* The F.Q. name of the function *)
+					      Types.Type (* The type of the function *)		  
+
   datatype InteractiveSymbolTable = SYMBOLTABLE of Absyn.Program * (*The ast*)
 						   SCode.Program * (* The exploded ast *)
 						   InstantiatedClass list * (* List of instantiated classes*)
-						   InteractiveVariable	list (* List of variables with values*)  
+						   InteractiveVariable list * (*List of variables with values*)  
+  						   CompiledFunction list (* List of compiled functions*)
+
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) 
 
   relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program
@@ -82,21 +87,21 @@ val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot
 
 relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) =
 
-  rule	let newst = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[])
+  rule	let newst = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])
 	-------------------------------------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("clear",_),_))]),_) 
 	    => ("Clearing symbol table\n", newst)
 
   rule	Dump.unparse_str(p) => str
 	------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	    => (str,st)
 
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => class &
 	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str
 	------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	    => (str,st)
 
 
@@ -107,13 +112,13 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	Print.print_buf "dumped dae:\n" &
 	DAE.dump_str (dae) => str 
 	--------------------------------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	    => (str,st)
 	    
   rule	Print.get_string() => s1 &
 	string_append("#Error instanitating class\n",s1) => str
 	--------------------------------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	    => (str,st)
   rule	SCode.elaborate(p) => p' &
 	Absyn.cref_to_path(cr) => path &
@@ -132,25 +137,24 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	Print.write_buf(filename)&
 	System.compile_c_file(filename) 
 	--------------------------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("generateCode",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("generateCode",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	  => (errstr,st)
 	  
   rule	System.set_c_compiler(str)
 	--------------------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompiler",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompiler",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	  => ("Ok\n",st)
 
   rule	System.set_c_flags(str)
 	--------------------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompilerFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompilerFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	  => ("Ok\n",st)
 	    
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------
 	evaluate(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))]),st) => (str,newst)
 	
-  rule	Print.clear_buf &
-	evaluate_expr(exp,st) => (s1,newst) &
+  rule	evaluate_expr(exp,st) => (s1,newst) &
 	string_append(s1,"\n") => str
 	------------------------------------------------------
 	evaluate(stmts as ISTMTS([exp]),st) => (str,newst)
@@ -167,17 +171,12 @@ end
 relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	(string,InteractiveSymbolTable) =
 	
-  rule	build_env_from_symboltable(st) => env &
-	
+  rule	build_env_from_symboltable(st) => env &	
 	Static.elab_exp(env,exp) => (sexp,prop) &
-	Print.print_buf "elabed exp:" &
-	Exp.print_exp sexp &
 	Static.ceval (env,sexp,true) => value &
-	Print.print_buf "value:" & Values.print_val value &
-	Print.print_buf "\n" &
-	Values.val_string value =>  str 
-	--------------------
-	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_)) => (str,st)
+	Values.val_string value =>  str
+	-------------------------------
+	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st)
 	
   rule	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp) => (sexp,Static.PROP(t,_))  &
@@ -186,7 +185,9 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st) => ("",newst)
 	
-  axiom	evaluate_expr(stmt,st) => ("Error evaluating expr.",st)
+  rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str
+	-----------------------------
+	evaluate_expr(stmt,st) => (str,st)
 end
 	
 relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
@@ -194,18 +195,18 @@ relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,Interact
 	    
   rule	ident = id2
 	-----------
-	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,_,_)::rest)) 
-	    => SYMBOLTABLE(p,sp,ic,IVAR(ident,v,t)::rest)
+	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,_,_)::rest,cf)) 
+	    => SYMBOLTABLE(p,sp,ic,IVAR(ident,v,t)::rest,cf)
 
   rule	not ident = id2 &
-	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,rest))
-	    => SYMBOLTABLE(p',sp',ic',vars)
+	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,rest,cf))
+	    => SYMBOLTABLE(_,_,_,vars,_)
 	    ------------------------------------
-	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::rest))
-	    => SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::vars)
+	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::rest,cf))
+	    => SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::vars,cf)
 
-  axiom	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,[])) 
-	    => SYMBOLTABLE(p,sp,ic,[IVAR(ident,v,t)])
+  axiom	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,[],cf)) 
+	    => SYMBOLTABLE(p,sp,ic,[IVAR(ident,v,t)],cf)
 end
 
 relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
@@ -214,7 +215,7 @@ relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
 	add_vars_to_env(vars,env) => env'
 	------------------------------------------
-	build_env_from_symboltable(SYMBOLTABLE(p,sp,ic,vars)) => env'
+	build_env_from_symboltable(SYMBOLTABLE(p,sp,ic,vars,cf)) => env'
 end
 
 relation add_vars_to_env: (InteractiveVariable list, Env.Env) => Env.Env =
@@ -258,29 +259,29 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	
   rule	let resstr="GAPI function not implemented yet\n" & let newst = st
 	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,newst)
 	
   rule	Parser.parse(name) => p1 &
 	update_program(p1,p) => newp 
 	---------------------------------------------------
 	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadFile",_),
-	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))]),st as SYMBOLTABLE(p,s,ic,iv))
-	    => ("OK\n",SYMBOLTABLE(newp,s,ic,iv))
+	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))]),st as SYMBOLTABLE(p,s,ic,iv,cf))
+	    => ("OK\n",SYMBOLTABLE(newp,s,ic,iv,cf))
 	
   rule	not Parser.parse(name) => _
 	---------------------------------------------------
 	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadFile",_),
-	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))]),st as SYMBOLTABLE(p,s,ic,iv))
+	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))]),st as SYMBOLTABLE(p,s,ic,iv,cf))
 	    => ("File not found\n",st)
 
   rule	let resstr="GAPI function not implemented yet\n" & let newst = st
 	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("saveModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("saveModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,newst)
 	
   rule update_program(
       Absyn.PROGRAM([Absyn.CLASS(name,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.TOP),
       p) => newp &
-	let newst = SYMBOLTABLE(newp,s,ic,iv) &
+	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) &
 	string_append(name,"\n") => resstr
 	---------------------------------------------------
 	evaluate_graphical_api(
@@ -288,13 +289,13 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("createModel",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_))],[])))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,newst)
 	    
   rule	componentref_to_path(cr) => path &
 	update_program(
 	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.WITHIN(path)),
 	    p) => newp &
-	let newst = SYMBOLTABLE(newp,s,ic,iv) &
+	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) &
 	string_append(name,"\n") => resstr
 	---------------------------------------------------
 	evaluate_graphical_api(
@@ -302,7 +303,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("newModel",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(cr)],[])))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,newst)
 	
 	
   rule	add_component(name,tp,model,annlst,p) => (newp,resstr)
@@ -312,7 +313,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("addComponent",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,SYMBOLTABLE(newp,s,ic,iv))
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
   rule	get_component_count(cr,p) => count &
 	int_string count => str &
@@ -323,7 +324,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getComponentCount",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_nth_component(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
@@ -333,7 +334,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getNthComponent",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_nth_component_annotation(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
@@ -343,7 +344,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getNthComponentAnnotation",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_connection_count(cr,p) => s1 &
 	string_append(s1,"\n") => resstr
@@ -353,7 +354,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getConnectionCount",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_nth_connection(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
@@ -363,7 +364,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getNthConnection",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	add_connection(cr,c1,c2,p) => (s1,newp) &
 	string_append(s1,"\n") => resstr
@@ -373,7 +374,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("addConnection",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,SYMBOLTABLE(newp,s,ic,iv))
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
 
   rule	get_nth_connection_annotation(cr,p,n) => s1 &
@@ -384,7 +385,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getNthConnectionAnnotation",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_connector_count(cr,p) => s1 &
 	string_append(s1,"\n") => resstr
@@ -394,7 +395,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getConnectorCount",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_nth_connector(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
@@ -404,7 +405,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getNthConnector",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_nth_connector_icon_annotation(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
@@ -414,7 +415,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getNthConnectorIconAnnotation",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
 
   rule	Absyn.cref_to_path(cr) => path &
@@ -426,7 +427,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getIconAnnotation",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	Absyn.cref_to_path(cr) => path &
 	get_diagram_annotation(path,p) => s1 &
@@ -437,7 +438,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getDiagramAnnotation",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	Absyn.cref_to_path(cr) => path &
 	get_packages_in_path(path,p) => s1 &
@@ -448,7 +449,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getPackages",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_top_packages(p) => s1 &
 	string_append(s1,"\n") => resstr 
@@ -458,7 +459,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getPackages",_),
 		Absyn.FUNCTIONARGS([],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	Absyn.cref_to_path(cr) => path &
 	get_models_in_path(path,p) => s1 &
@@ -469,7 +470,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getModels",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_top_models(p) => s1 &
 	string_append(s1,"\n") => resstr 
@@ -479,7 +480,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("getModels",_),
 		Absyn.FUNCTIONARGS([],_)))]
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -1515,7 +1516,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
-	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
+	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[],false) => (dae,cs,t,state) &
 	Print.print_buf "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
@@ -1537,7 +1538,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program("Diagram",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
-	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
+	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[],false) => (dae,cs,t,state) &
 	Print.print_buf "Instantiated Diagram class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
@@ -1558,7 +1559,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program(anncname,p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
-	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
+	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[],false) => (dae,cs,t,state) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
 	Debug.fprint ("interactivedump","Annotation DAE = ") &

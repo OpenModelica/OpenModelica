@@ -762,7 +762,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	  => (exp, 
 	      prop)
 
- rule	elab_exp (env,arraycr) => (crefe as Exp.CREF(cr,crt), crprop) &
+  rule	elab_exp (env,arraycr) => (crefe as Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	Types.array_element_type ty => Types.T_REAL &
 	elab_exp (env,ind) => (indexp, PROP(indty, ind_const)) &
@@ -788,7 +788,7 @@ end
 
 relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Properties) =
 
-  rule	Print.print_buf "# Error non-constant dimension\n"
+  rule	(*Print.print_buf "# Error non-constant dimension\n" *)
 	---------------------------------------
 	elab_builtin_size_2(env, Types.T_ARRAY(Types.DIM(NONE),ty), 1) => fail
 
@@ -800,13 +800,6 @@ relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Propertie
 	--------------------------------------------------
 	elab_builtin_size_2 (env, Types.T_ARRAY(_, ty), ind) => (exp, prop)
 
-  rule	Print.print_buf "# elab_builtin_size_2 failed\n type:" &
-	Types.print_type tp &
-	Print.print_buf " ind:" &
-	int_string ind => indstr & Print.print_buf indstr &
-	Print.print_buf "\n"
-	--------------------------------------
-	elab_builtin_size_2(_,tp,ind) => fail
 end
 
 
@@ -1883,6 +1876,8 @@ end
  ** This relations is used when the value of a constant expression is
  ** needed.  It takes an environment and an expression and calculates
  ** its value.
+ ** The third argument indicates whether the evaluation is performed in the interactive environment, 
+ ** in which case function calls are evaluated.
  **)
 
 relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
@@ -1911,11 +1906,14 @@ relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
 	ceval (env, e as Exp.CALL(_,_,_,_),false) => fail
 
   rule	(* Call externally implemented functions, if present *)
+	print "external call\n" &
 	ceval_list(env,expl) => vallst &
+	print "cevaled list\n" &
 	Absyn.path_string(func) => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
 	Values.write_to_file_as_args(vallst,infilename)  &
+	print "written to file\n" &
 	System.execute_function(funcstr) &
 	System.read_values_from_file(outfilename) => newval
 	-------------------------------------------------------
@@ -2141,6 +2139,11 @@ relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
 	int_real i => r
 	---------------
 	ceval (env, Exp.CAST(Exp.REAL,e),i) => Values.REAL(r)
+
+  rule	type_convert_array(expl, Types.T_INTEGER, Types.T_REAL) => expl' &
+	ceval_list(env,expl) => vallst
+	--------------------------
+	ceval (env, Exp.CAST(Exp.REAL,Exp.ARRAY(Exp.INT,_,expl)),i) => Values.ARRAY(vallst)
 
   rule	Print.print_buf "- ceval " & Exp.print_exp e & Print.print_buf " failed\n"
 	-----------------------------------------------------
