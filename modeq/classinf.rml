@@ -4,7 +4,7 @@
  **
  ** RCS:	 $Id$
  **
- ** This module deals with class inference, that is determining if a
+ ** This module deals with class inference, i.e. determining if a
  ** class definition adhers to one of the class restrictions, and, if
  ** specifically declared in a restrictied form, if it breaks that
  ** restriction.
@@ -157,7 +157,8 @@ end
 (** - Transitions *)
 
 (** relation: start
- ** purpose:  State machine initialization
+ **
+ ** This is the  state machine initialization relation.
  **)
 
 relation start : (Absyn.Restriction, string) => State =
