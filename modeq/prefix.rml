@@ -10,7 +10,8 @@ module Prefix:
   with "absyn.rml"
   with "exp.rml"
   
-  type Prefix = (string * Exp.Subscript list) list
+  datatype Prefix = NOPRE
+		  | PRE of string * Exp.Subscript list * Prefix
 
   relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix
   relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
@@ -30,7 +31,7 @@ end
 
 relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix =
 
-  axiom prefix_add(i,s,p) => (((i,s)::p))
+  axiom prefix_add(i,s,p) => PRE(i,s,p)
 
 end
 
@@ -42,11 +43,11 @@ end
 
 relation prefix_path: (Absyn.Path,Prefix) => Absyn.Path =
 
-  axiom	prefix_path(p,[]) => p
+  axiom	prefix_path(p,NOPRE) => p
   
   rule	prefix_path(Absyn.QUALIFIED(s,p),ss) => p'
 	---------------------------
-	prefix_path(p,(s,_)::ss) => p'
+	prefix_path(p,PRE(s,_,ss)) => p'
 
 end
 
@@ -58,11 +59,11 @@ end
 
 relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
-  axiom	prefix_cref([], cref) => cref
+  axiom	prefix_cref (NOPRE, cref) => cref
 
   rule	prefix_cref(xs, Exp.CREF_QUAL(i,s,cref)) => cref'
 	---------------------------------
-	prefix_cref((i,s)::xs, cref) => cref'
+	prefix_cref (PRE(i,s,xs), cref) => cref'
 
 end
 
@@ -74,8 +75,8 @@ end
 
 relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
 
-  rule	list_reverse(p) => p' &
-	prefix_exp2(e,p') => e'
+  rule	(* list_reverse(p) => p' & *)
+	prefix_exp2(e,p(*'*)) => e'
 	-----------------------
 	prefix_exp(e,p) => e'
 
@@ -143,6 +144,10 @@ relation prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 	------------------------------
 	prefix_exp2 (Exp.RANGE(start,SOME(step),stop), p)
 	  => Exp.RANGE(start',SOME(step'),stop')
+
+  rule	prefix_exp2 (e,p) => e'
+	-----------------------
+	prefix_exp2 (Exp.CAST_TO_REAL(e), p) => Exp.CAST_TO_REAL(e')
 
 end
 

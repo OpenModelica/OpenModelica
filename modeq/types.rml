@@ -11,7 +11,7 @@ module Types :
   (** FIXME: This is declared in many places. *)
 
   (** - Variables *)
-  type Var = (Ident * Absyn.VarAttr * Type)
+  datatype Var = VAR of Ident * Absyn.VarAttr * Type * Absyn.Exp option
   (** I wonder why this goes here? *)
 
   (** - Types *)
@@ -65,7 +65,7 @@ relation same_type_c : (Var list, Var list) => () =
 	same_type(t1,t2) &
 	same_type_c(xs1,xs2')
 	---------------------
-	same_type_c((n,_,t1)::xs1, xs2)
+	same_type_c(VAR(n,_,t1,_)::xs1, xs2)
 
 end
 
@@ -76,7 +76,7 @@ relation pick : (Var list, Ident)
 
   rule  n1 = n2
 	-------
-	pick((n1,attr,ty)::xs,n2) => (xs,attr,ty)
+	pick(VAR(n1,attr,ty,_)::xs,n2) => (xs,attr,ty)
 
   rule  pick(xs,n) => (xs',attr,ty)
 	---------------------
@@ -100,7 +100,7 @@ relation lookup_component2 : (Var list , Ident) => Var =
 
   rule  n = m
 	-----
-	lookup_component2((v as (n,_,_))::_, m) => v
+	lookup_component2((v as VAR(n,_,_,_))::_, m) => v
 
   rule  lookup_component2(vs, n) => v
 	-----------------------------

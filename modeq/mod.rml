@@ -21,6 +21,7 @@ module Mod:
   val empty_mod : SCode.Mod
 
   relation lookup_modification: (SCode.Mod,Absyn.Ident) => SCode.Mod
+  relation lookup_modification_p: (SCode.Mod,Absyn.Path) => SCode.Mod
   relation merge : (SCode.Mod, SCode.Mod) => SCode.Mod
   relation mod_equation : SCode.Mod => Absyn.Exp option
 
@@ -58,6 +59,21 @@ end
 (**
  ** - Lookup
  **)
+
+(** relation: lookup_modification_p *)
+
+relation lookup_modification_p: (SCode.Mod,Absyn.Path) => SCode.Mod =
+
+  rule	lookup_modification (m,n) => mod
+	--------------------------------
+	lookup_modification_p (m,Absyn.IDENT(n)) => mod
+
+  rule	lookup_modification (m,n) => mod &
+	lookup_modification_p (mod,p) => mod'
+	-------------------------------------
+	lookup_modification_p (m,Absyn.QUALIFIED(n,p)) => mod'
+
+end
 
 (** relation: lookup_modification *)
 

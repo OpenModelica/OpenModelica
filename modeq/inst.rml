@@ -69,7 +69,7 @@ relation inst_program : (Env, SCode.Program) => DAE.DAEcomp list =
 	inst_program(env,[]) => fail
 
   rule	Env.extend_frame_c(env,c,SCode.NOMOD) => env' &
-	inst_class(env',SCode.NOMOD,[],[],c) => (dae,csets,_,_)
+	inst_class(env',SCode.NOMOD,Prefix.NOPRE,[],c) => (dae,csets,_,_)
 	-----------------------------
 	inst_program(env,[c]) => dae
 
@@ -185,7 +185,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** This rule describes how to instantiate a derived class *)
 	(** definition *)
 
-  rule	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,r,_),m) &
+  rule	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,r,_),_) &
+	Mod.lookup_modification_p(mods,cn) => m &
 	ClassInf.start(r, cn2) => new_ci_state &
 	(* FIXME order *)
 	Mod.merge(mods,m) => mods' &
@@ -265,16 +266,17 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	print "  extending class " & print cns & print "\n" &
 	
 	Lookup.lookup_class(env,cn)
-	  => (c as SCode.CLASS(cn2,_,restr,def), classmod) &
+	  => (c as SCode.CLASS(cn2,_,restr,def), _) &
+	Mod.lookup_modification_p(mods,cn) => classmod &
 
 	(* Build the combind set of modifications *)
 	(* classmod is the modifications stored with the class *)
 	(* mods     is the modifications passed to the relation *)
 	(* m        is the modification stored in the element *)
 	(* FIXME: verify order *)
-	print "  mod 1: " & print cns & SCode.print_mod classmod & print "\n" &
+	(* print "  mod 1: " & print cns & SCode.print_mod classmod & print "\n" &
 	print "  mod 2: " & print cns & SCode.print_mod mods & print "\n" &
-	print "  mod 3: " & print cns & SCode.print_mod m & print "\n" &
+	print "  mod 3: " & print cns & SCode.print_mod m & print "\n" & *)
 	Mod.merge(classmod,mods) => mods' &
 	Mod.merge(mods',m) => mods'' &
 	
@@ -329,7 +331,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(**  A variable
 	 **
-	 ** Lookup the class name, apply specializations and add the
+	 ** Lookup the class name, apply modifications and add the
 	 ** variable to the current frame in the environment. Then
 	 ** instantiate the class with an extended prefix.
 	 **)
@@ -337,26 +339,37 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
 
 	print " variable " & Exp.print_component_ref vn & print "\n" &
-
-	(* Find the set of modifications *)
 	(* FIXME: merge order *)
-	Lookup.lookup_class(env,t) => (cl,classmod) &
-	print "  modification 1: " & SCode.print_mod classmod & print "\n" &
 
+	(** The class definition is fetched from the environment. *)
+	(** Then the set of modifications is calculated.  The *)
+	(** modificions is the result of merging the modifications *)
+	(** from several sources.  The modification stored with the *)
+	(** class definition is put in the variable `classmod', the *)
+	(** modification passed to the relation is extracted and put *)
+	(** in the variable `mm', and the modification that is *)
+	(** included in the variable declaration is in the variable *)
+	(** `m'.  All of these are merged so that the correct *)
+	(** precedence rules are followed. *)
+
+	Lookup.lookup_class(env,t) => (cl,_) &
+	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_modification(mods,n) => mm &
-	print "  modification 2: " & SCode.print_mod mm & print "\n" &
-	print "  modification 3: " & SCode.print_mod m & print "\n" &
-
-	(* classmod is the modifications stored with the class *)
-	(* mm       is the modifications passed to the relation *)
-	(* m        is the modification stored in the element *)
-
-	(* Check for modifications to a protected element *)
-	check_prot(prot, mm, vn) &
+	print "  mod 1: " & SCode.print_mod classmod & print "\n" &
+	print "  mod 2: " & SCode.print_mod mm & print "\n" &
+	print "  mod 3: " & SCode.print_mod m & print "\n" &
 
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m) => mod' &
 	print "  modification: " & SCode.print_mod mod' & print "\n" &
+
+	(** If the element is `protected', and an external *)
+	(** modification is applied, it is an error. *)
+
+	check_prot(prot, mm, vn) &
+
+	(** The class is instantiated with the calculated *)
+	(** modification, and an extended prefix. *)
 
 	Prefix.prefix_add(n,[],pre) => pre' &
 
@@ -364,23 +377,24 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	
 	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
 
+	(** The environment is extended with the new variable *)
+	(** binding. *)
+
 	Mod.mod_equation mod' => eq &
-	make_binding (env,attr,eq) => binding &
+	make_binding (env,attr,eq,cl) => binding &
 	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,binding)) => env' &
 	print " extended frame with variable " & Exp.print_component_ref vn &
  	print "\n" &
 
-	(* If the modification includes an equation, add it. *)
-	(* FIXME: recursive equations? Should env or env' be used? *)
-	(*        Does it matter? *)
-	inst_mod_equation(env,pre,n,mod') => dae2 &
+	(** If the modification includes an equation, it is added. *)
+	inst_mod_equation(env',pre,n,mod') => dae2 &
 
 	list_append(dae1, dae2) => dae
 	--------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,attr,t,m))
          => ((*DAE.VAR(vn, DAE.LOCAL)::*)dae,
-	     env',csets',ci_state,[(n,attr,ty)])
+	     env',csets',ci_state,[Types.VAR(n,attr,ty,eq)])
 
 	(** If the class lookup in the previous rule fails, this
 	 ** rule catches
@@ -398,7 +412,11 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     SCode.COMPONENT(n,final,prot,_,t,_))
          => ([],env,csets,ci_state,[])
 
-end
+  rule	print "- inst_element failed\n"
+	-------------------------------
+	inst_element (_,_,_,_,_,_) => fail
+
+end	
 
 (** relation: inst_equation
  **)
@@ -671,10 +689,12 @@ relation connect_vars : (Connect.Sets,
 	 * Dump.dump_component_ref c1' & print " <-> " &
 	 * Dump.dump_component_ref c2' &
 	 * print "\n" & *)
-	connect_components(sets,[], c1',f1, c2',f2, ty, flow) => sets' &
+	connect_components(sets,Prefix.NOPRE, c1',f1, c2',f2, ty, flow)
+	  => sets' &
 	connect_vars(sets',c1,f1,c2,f2,xs) => sets''
 	--------------------------------------
-	connect_vars(sets,c1,f1,c2,f2,(n,Absyn.ATTR(_,flow,_,_),ty)::xs)
+	connect_vars(sets,c1,f1,c2,f2,
+		     Types.VAR(n,Absyn.ATTR(_,flow,_,_),ty,_)::xs)
 	  => sets''
 
 end
@@ -755,7 +775,15 @@ relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
 
   rule  print "  equation modification: " & print v & SCode.print_mod mod &
 	print "\n" &
-	
+
+	(*
+	StaticExp.elab_exp(env,
+			   Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(v,[])),
+					  Absyn.EQUAL,e))
+	  => (e', ty1, c1) &
+	Prefix.prefix_exp(e',pre) => e'' (* FIXME: remove *)
+	*)
+
 	StaticExp.elab_exp (env, e) => (e',t,_) &
 	(* FIXME: Check type *)
 	StaticExp.elab_relop (Absyn.EQUAL, t) => op &
@@ -765,8 +793,13 @@ relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
 	inst_mod_equation(env,pre,v,mod as SCode.MOD(_,_,SOME(e)))
 	  => [DAE.EQUATION(e''')]
 	  
-  axiom inst_mod_equation(_,_,_,_) => []
-  
+  axiom inst_mod_equation(_,_,_,SCode.MOD(_,_,NONE)) => []
+  axiom inst_mod_equation(_,_,_,SCode.NOMOD) => []
+
+  rule	print "- inst_mod_equation failed\n"
+	------------------------------------
+  	inst_mod_equation (_,_,_,_) => fail
+
 end
 
 (**)
@@ -788,34 +821,59 @@ end
 
 (**)
 
-relation make_binding : (Env.Env, Absyn.VarAttr, Absyn.Exp option)
+relation make_binding : (Env.Env, Absyn.VarAttr, Absyn.Exp option, SCode.Class)
 	  => Env.Binding =
 
-  axiom	make_binding (_,_,NONE) => Env.UNBOUND
+  axiom	make_binding (_,_,NONE,_) => Env.UNBOUND
 
-  rule	StaticExp.elab_exp (env, e) => (e', t, c) &
-	make_const_binding (env,e', t, c) => binding
+  rule	class_type cl => ct &
+	StaticExp.elab_exp (env, e) => (e', t, c) &
+	make_const_binding (env,e', t, ct, c) => binding
 	----------------------------------------
-	make_binding (env,Absyn.ATTR(_,_,Absyn.CONST,_),SOME(e))
+	make_binding (env,Absyn.ATTR(_,_,Absyn.CONST,_),SOME(e),cl)
 	  => binding
 
 	(* default *)
 
-  axiom make_binding (_,_, SOME(e)) => Env.EQBOUND(e)
+  axiom make_binding (_,_, SOME(e),_) => Env.EQBOUND(e)
 
 end
 
-relation make_const_binding : (Env.Env, Exp.Exp, Types.BasicType, bool)
+relation make_const_binding : (Env.Env, Exp.Exp,
+			       Types.BasicType, Types.BasicType, bool)
 	  => Env.Binding =
 
-  rule	StaticExp.ceval (env, e) => (v,_) &
+	(* Cast the value to real if necessary *)
+  rule	make_const_binding (env,Exp.CAST_TO_REAL(e),
+			    Types.T_REAL, Types.T_REAL,c) => b
+	------------------------------------------------------
+	make_const_binding (env,e,Types.T_INTEGER,Types.T_REAL,c) => b
+
+  rule	t = ct &
+	StaticExp.ceval (env, e) => (v,_) &
 	print "  constant expression " & Exp.print_exp e &
  	print " = " & Values.print_val v & print " detected\n"
 	---------------------------------
-	make_const_binding (env,e,t,true) => Env.VALBOUND(v)
+	make_const_binding (env,e,t,ct,true) => Env.VALBOUND(v)
+
+  rule	not t = ct &
+	print "# Different types in binding\n"
+	--------------------------------------
+	make_const_binding (env,e,t,ct,true) => fail
 
   rule	print "# Non-constant equation for constant\n"
 	---------------------------------
-	make_const_binding (env,e,t,false) => fail
+	make_const_binding (env,e,t,ct,false) => fail
+
+end
+
+relation class_type : SCode.Class => Types.BasicType =
+
+  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_INT,_) => Types.T_INTEGER
+  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_STRING,_)
+	  => Types.T_STRING
+  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_REAL,_) => Types.T_REAL
+  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_BOOL,_) => Types.T_BOOL
+  axiom	class_type _ => Types.T_OTHER
 
 end

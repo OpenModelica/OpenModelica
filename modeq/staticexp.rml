@@ -39,7 +39,12 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.BasicType, bool) =
 
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
+	print "  binary: " &
+ 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") x " &
+ 	Exp.print_exp e2' & print " (" & Types.print_type t2 & print ") => " &
 	elab_numtypes (e1',t1,e2',t2) => (e1'',e2'',t) &
+ 	Exp.print_exp e1'' & print " (" & Types.print_type t & print ") x " &
+ 	Exp.print_exp e2'' & print " (" & Types.print_type t & print ")\n" &
 	elab_binary (e1'', t, c1, op, e2'', t, c2) => (e, t', c)
 	-------------------------------------------------------
 	elab_exp (env,Absyn.BINARY(e1,op,e2)) => (e,t',c)
@@ -67,6 +72,11 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.BasicType, bool) =
 	  => (Exp.RANGE(start',NONE,stop'),
 	      Types.T_ARRAY(1, Types.T_INTEGER),
 	      const)
+
+  rule	elab_array (env, es) => (es', t, const)
+	---------------------------------------
+	elab_exp (env, Absyn.ARRAY(es))
+	  => (Exp.ARRAY(es'), Types.T_ARRAY(1, t), const)
 
   rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
 	elab_exp (env, step) => (step', Types.T_INTEGER, c_step) &
@@ -99,6 +109,36 @@ relation elab_exp_list : (Env.Env, Absyn.Exp list) => (Exp.Exp list, bool) =
 
 end
 
+(**)
+
+relation elab_array : (Env.Env, Absyn.Exp list)
+	  => (Exp.Exp list, Types.BasicType, bool) =
+
+	(* FIXME: Should we handle empty arrays? *)
+  rule	elab_exp (env,e) => (e',t,c)
+	-----------------------------
+	elab_array (env,[e]) => ([e'],t,c)
+
+  rule	elab_exp (env,e) => (e',t1,c1) &
+	elab_array (env,es) => (es',t2,c2) &
+	t1 = t2 &
+	bool_and (c1,c2) => c
+	---------------------------------
+	elab_array (env,e::es) => (e'::es',t1,c)
+
+  rule	elab_exp (env,e) => (e',t1,c1) &
+	elab_array (env,es) => (es',t2,c2) &
+	not t1 = t2 &
+	print "# Incompatible types in array expression\n" &
+	print "  " & Dump.print_exp e & print " is of type " &
+ 	Types.print_type t1 & print "\n  while the elements [" &
+        Dump.print_list (es, Dump.print_exp, ",") &
+	print "] are of type " & Types.print_type t2 & print "\n"
+	---------------------------------------------------------
+	elab_array (env,e::es) => fail
+
+end
+
 (** relation: elab_cref
  **
  ** Elaborate on a component reference.  Check the type of the
@@ -110,7 +150,8 @@ end
 relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.ComponentRef, Types.BasicType, bool) =
 
-  rule	elab_cref_subs (env,c) => (c', const) &
+  rule	print "    elab_cref " & Dump.print_component_ref c & print "\n" &
+	elab_cref_subs (env,c) => (c', const) &
 	Lookup.lookup_var (env,c') => (Absyn.ATTR(_,_,vartype,_),
 				       Types.TYPE(st, _),
 				       binding) &
@@ -145,6 +186,12 @@ relation elab_cref2 : (Env.Env,
 	(* t = t' *) (* FIXME: cast *)
 	------------------------
 	elab_cref2 (env,cr,_,t, Env.EQBOUND(exp)) => true
+
+  rule	print "# Constant or parameter with a non-constant initializer\n" &
+	print "# component: " & Exp.print_component_ref cr & print " = " &
+	Dump.print_exp exp & print "\n"
+	------------------------------
+	elab_cref2 (_,cr, _,_,Env.EQBOUND(exp)) => fail
 
   rule	print "# Constant or parameter without a value (I think)\n" &
 	print "# component: " & Exp.print_component_ref cr & print "\n"
@@ -216,10 +263,23 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
 end
 
-(**)
+(** relation: elab_numtypes
+ **
+ ** Elaborate on the types of numerical expression to unify their
+ ** types. If one of them is a real expression and the other an
+ ** integer expression, an explicit type promotion to `real' is added
+ ** to the second expression.  If either is an array of integers of
+ ** reals, it is treated as if it was simply a real or an integer.
+ **)
 
 relation elab_numtypes : (Exp.Exp, Types.BasicType, Exp.Exp, Types.BasicType)
 	  => (Exp.Exp, Exp.Exp, Types.BasicType) =
+
+  rule	elab_numtypes (e1, t1, e2, t2) => (e1,e2,t)
+	(* FIXME: what about the dimensions? *)
+	-------------------------------------------
+	elab_numtypes (e1, Types.T_ARRAY(dim1,t1), e2, Types.T_ARRAY(dim2,t2))
+	  => (e1, e2, t)
 
   axiom	elab_numtypes (e1, Types.T_INTEGER, e2, Types.T_INTEGER)
 	  => (e1, e2, Types.T_INTEGER)
@@ -269,6 +329,18 @@ relation elab_binary : (Exp.Exp, Types.BasicType, bool,
 	---------------------
 	elab_binary (e1,Types.T_REAL,c1,Absyn.SUB,e2,Types.T_REAL,c2)
 	  => (Exp.BINARY(e1,Exp.REAL_SUB,e2), Types.T_REAL, c)
+
+	(**  MUL *)
+
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,Types.T_INTEGER,c1,Absyn.MUL,e2,Types.T_INTEGER,c2)
+	  => (Exp.BINARY(e1,Exp.INT_MUL,e2), Types.T_INTEGER, c)
+
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,Types.T_REAL,c1,Absyn.MUL,e2,Types.T_REAL,c2)
+	  => (Exp.BINARY(e1,Exp.REAL_MUL,e2), Types.T_REAL, c)
 
 	(**  Failure *)
   rule	print "- elab_binary failed " (* &
@@ -320,6 +392,12 @@ relation elab_relop : (Absyn.RelOp, Types.BasicType) => Exp.RelOp =
   axiom	elab_relop (Absyn.NEQUAL,    Types.T_BOOL)    => Exp.BOOL_NEQUAL
   axiom	elab_relop (Absyn.NEQUAL,    Types.T_STRING)  => Exp.STRING_NEQUAL
 
+	(* What about arrays and = ? *)
+
+  rule	print "- elab_relop failed\n"
+	-----------------------------
+	elab_relop (_,_) => fail
+
 end
 
 (**)
@@ -365,7 +443,7 @@ relation ceval : (Env.Env, Exp.Exp) => (Values.Value, Types.BasicType) =
 	------------------------
 	ceval (env, Exp.BINARY(lh, INT_ADD, rh))
 	  => (Values.INTEGER(sum), Types.T_INTEGER)
-
+	(**)
   rule	ceval (env, lh) => (Values.REAL(lhv), Types.T_REAL) &
 	ceval (env, rh) => (Values.REAL(rhv), Types.T_REAL) &
 	real_sub(lhv, rhv) => sum
@@ -379,34 +457,24 @@ relation ceval : (Env.Env, Exp.Exp) => (Values.Value, Types.BasicType) =
 	------------------------
 	ceval (env, Exp.BINARY(lh, INT_SUB, rh))
 	  => (Values.INTEGER(sum), Types.T_INTEGER)
+	(**)
+  rule	ceval (env, lh) => (Values.REAL(lhv), Types.T_REAL) &
+	ceval (env, rh) => (Values.REAL(rhv), Types.T_REAL) &
+	real_mul(lhv, rhv) => sum
+	-------------------------
+	ceval (env, Exp.BINARY(lh, Exp.REAL_MUL, rh))
+	  => (Values.REAL(sum), Types.T_REAL)
+
+  rule	ceval (env, lh) => (Values.INTEGER(lhv), Types.T_INTEGER) &
+	ceval (env, rh) => (Values.INTEGER(rhv), Types.T_INTEGER) &
+	int_mul(lhv, rhv) => sum
+	------------------------
+	ceval (env, Exp.BINARY(lh, INT_MUL, rh))
+	  => (Values.INTEGER(sum), Types.T_INTEGER)
 
 	(**)
 
 (*
-  rule	ceval (lh, Types.T_REAL) => REAL(lhv) &
-	ceval (rh, Types.T_REAL) => REAL(rhv) &
-	real_sub(lhv, rhv) => sum
-	-------------------------
-	ceval (BINARY(lh, SUB, rh), Types.T_REAL) => REAL(sum)
-
-  rule	ceval (lh, Types.T_INTEGER) => INTEGER(lhv) &
-	ceval (rh, Types.T_INTEGER) => INTEGER(rhv) &
-	int_sub(lhv, rhv) => sum
-	------------------------
-	ceval (BINARY(lh, SUB, rh), Types.T_INTEGER) => INTEGER(sum)
-
-  rule	ceval lh => REAL(lhv) &
-	ceval rh => REAL(rhv) &
-	real_mul(lhv, rhv) => sum
-	-------------------------
-	ceval ((BINARY(lh, MUL, rh), Types.T_REAL)) => REAL(sum)
-
-  rule	ceval lh => INTEGER(lhv) &
-	ceval rh => INTEGER(rhv) &
-	int_mul(lhv, rhv) => sum
-	------------------------
-	ceval ((BINARY(lh, MUL, rh), Types.T_INTEGER)) => INTEGER(sum)
-
 	(**)
 
   rule	ceval lh => REAL(lhv) &
@@ -529,6 +597,11 @@ relation ceval : (Env.Env, Exp.Exp) => (Values.Value, Types.BasicType) =
 	ceval (env, Exp.RANGE(start, SOME(step), stop))
 	  => (Values.ARRAY(arr), Types.T_ARRAY(1, Types.T_INTEGER))
 
+  rule	ceval (env,e) => (Values.INTEGER(i), _) &
+	int_real i => r
+	---------------
+	ceval (env, Exp.CAST_TO_REAL(e)) => (Values.REAL(r), Types.T_REAL)
+
   rule	print "- ceval " & Exp.print_exp e & print " failed\n"
 	-----------------------------------------------------
 	ceval (_,e) => fail
@@ -580,8 +653,10 @@ end
 relation ceval_cref : (Env.Env, Exp.ComponentRef)
 	  => (Values.Value, Types.BasicType) =
 
-  rule	Lookup.lookup_var (env, c) => (_,_,binding) &
-	ceval_cref_binding binding => (v,t)
+  rule	print "    ceval_cref " & Exp.print_component_ref c & print " => " &
+	Lookup.lookup_var (env, c) => (_,_,binding) &
+	ceval_cref_binding binding => (v,t) &
+	Values.print_val v & print " (" & Types.print_type t & print ")\n"
 	-----------------------------------
 	ceval_cref (env,c) => (v,t)
 
@@ -600,6 +675,14 @@ relation ceval_cref_binding : Env.Binding => (Values.Value, Types.BasicType) =
 	-----------------
 	ceval_cref_binding Env.VALBOUND(v) => (v,t)
 
+  rule	print "- ceval_cref_binding failed (UNBOUND)\n"
+	-------------------------------------
+	ceval_cref_binding Env.UNBOUND => fail
+	
+  rule	print "- ceval_cref_binding failed (EQBOUND)\n"
+	-------------------------------------
+	ceval_cref_binding Env.EQBOUND(_) => fail
+	
 end
 
 (**)
