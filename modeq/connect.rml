@@ -25,7 +25,7 @@ module Connect :
 		       Exp.ComponentRef, Face,
 		       Exp.ComponentRef, Face) => Sets
   relation print_sets : Sets => ()
-  relation equations : Sets => DAE.DAEcomp list
+  relation equations : Sets => DAE.Element list
 
 end
 
@@ -125,7 +125,7 @@ end
  ** - Equation generation
  **)
 
-relation equations : Sets => DAE.DAEcomp list =
+relation equations : Sets => DAE.Element list =
 
   axiom	equations [] => []
 
@@ -145,7 +145,7 @@ end
 
 (**)
 
-relation equ_equations : Exp.ComponentRef list => DAE.DAEcomp list =
+relation equ_equations : Exp.ComponentRef list => DAE.Element list =
 
   axiom	equ_equations [_] => []
 
@@ -153,18 +153,14 @@ relation equ_equations : Exp.ComponentRef list => DAE.DAEcomp list =
 	equ_equations y::cs => eq
 	------------------------
 	equ_equations x::y::cs
-	  => DAE.EQUATION(Exp.RELATION(Exp.CREF(x),
-				       Exp.EQUAL(Exp.REAL),
-				       Exp.CREF(y)))::eq
+	  => DAE.EQUATION(Exp.CREF(x), Exp.CREF(y))::eq
 end
 (**)
-relation flow_equations : (Exp.ComponentRef * Face) list => DAE.DAEcomp list =
+relation flow_equations : (Exp.ComponentRef * Face) list => DAE.Element list =
 
   rule	flow_sum cs => sum
 	------------------
-	flow_equations cs => [DAE.EQUATION(Exp.RELATION(sum,
-							Exp.EQUAL(Exp.REAL),
-							Exp.RCONST(0.0)))]
+	flow_equations cs => [DAE.EQUATION(sum, Exp.RCONST(0.0))]
 
 end
 (**)
