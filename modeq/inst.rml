@@ -5034,20 +5034,20 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
         inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val))
 
-  rule (*  Print.print_error_buf "# unknown type for variable.\n" *)
+  rule  Print.print_error_buf "# unknown type for variable.\n" 
         -----------------------------------------
-        inst_dae_variable_attributes(_,_,_) => NONE
+        inst_dae_variable_attributes(_,_,_) => fail
 
 end
 (*  x02lucpo FIXME: check the type of variable for the fixed because there is a difference between *)
 (*  parameters and variables *)
 relation inst_bool_binding: (Types.Mod,int list,string) => bool option =
      
-  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.BCONST(result))
+  rule inst_binding(mod,(Types.T_BOOL([]),NONE),index_list,bind_name) => SOME(Exp.BCONST(result))
         -----------------------------------------
         inst_bool_binding(mod,index_list,bind_name) => SOME(result)
    
-  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
+  rule inst_binding(mod,(Types.T_BOOL([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
         inst_bool_binding(mod,index_list,bind_name) => NONE
 
@@ -5059,11 +5059,12 @@ end
 
 relation inst_real_binding: (Types.Mod,int list,string) => real option =
      
-  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.RCONST(result))
+  rule inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) => SOME(Exp.RCONST(result))
         -----------------------------------------
         inst_real_binding(mod,index_list,bind_name) => SOME(result)
    
-  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
+  rule 
+        inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
         inst_real_binding(mod,index_list,bind_name) => NONE
 
@@ -5075,11 +5076,11 @@ end
 
 relation inst_int_binding: (Types.Mod,int list,string) => int option =
      
-  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.ICONST(result))
+  rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) => SOME(Exp.ICONST(result))
         -----------------------------------------
         inst_int_binding(mod,index_list,bind_name) => SOME(result)
    
-  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
+  rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
         inst_int_binding(mod,index_list,bind_name) => NONE
 
