@@ -60,7 +60,13 @@ Codegen--------------------------------------------------------------------
 		cg							  
 		cgtr		tracing matching rules			  
 		codegen		code generation. Just functions right now
-
+Env------------------------------------------------------------------------
+		envprint	dump the environment at each class 
+				instantiation
+		envgraph	same as envprint, but using graphviz
+		expenvprint	dump environment at equation elaboration
+		expenvgraph	dump environment at equation elaboration
+---------------------------------------------------------------------------
 
 
 
