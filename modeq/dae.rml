@@ -127,11 +127,19 @@ end
 relation dump2: DAElist => () =
   rule	print "VAR(" &
 	Exp.print_component_ref cr &
+	print "=" &
+	Exp.print_exp e &
 	print ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,_,_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,SOME(e),_)::xs)
 
+  rule	print "VAR(" &
+	Exp.print_component_ref cr &
+	print ")\n" &
+	dump2 (DAE(xs))
+	-------------------
+	dump2 DAE(VAR(cr,_,_,_,NONE,_)::xs)
   rule	print "DEFINE(" &
 	Exp.print_component_ref cr &
 	print ")\n" &
@@ -1192,7 +1200,7 @@ relation get_bindings_str: Element list  => string =
 	-----------------
 	get_bindings_str((v as VAR(cr,_,_,_,SOME(e),_))::(lst as _::_)) => str
 
-  rule	let s1 = "," &
+  rule	let s1 = "-," &
 	get_bindings_str(lst) => s2 &
 	string_append(s1,s2) => str
 	-----------------

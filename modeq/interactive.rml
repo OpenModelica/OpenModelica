@@ -52,6 +52,12 @@ with "util.rml"
 with "parse.rml"
 with "prefix.rml"
 with "mod.rml"
+
+val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
+
+val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3;  Boolean smooth=false; end Line;"
+
+
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
 **)
@@ -375,7 +381,7 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int) => string 
 	
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_nth_connection_in_class(cdef,n) => eq &
+	get_nth_connectionitem_in_class(cdef,n) => Absyn.EQUATIONITEM(eq,_) &
 	get_connection_str eq => str
 	----------------------------
 	get_nth_connection (model,p,n) => str
@@ -391,46 +397,64 @@ relation get_nth_connection_annotation: (Absyn.ComponentRef, Absyn.Program, int)
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	let str = "Not finished" 
+	get_nth_connectionitem_in_class(cdef,n) => citem &
+	get_connection_annotation_str (citem) => s1 &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str
 	--------------
 	get_nth_connection_annotation(model,p,n) => str
 
   axiom	get_nth_connection_annotation(_,_,_) => "-1"
 end
 
-(**relation: get_nth_connection_in_class
- ** This relation takes a `Class' and  an int ane returns the nth connection
- ** in that class.
-**)
-relation get_nth_connection_in_class: (Absyn.Class, int) => Absyn.Equation =
-
-  rule	get_nth_connection_in_classparts(parts,n) => eq
-	-------------------------
-	get_nth_connection_in_class ( Absyn.CLASS(_,_,_,Absyn.PARTS(parts)),n) => eq
+(** relation: get_connection_annotation_str
+ ** This relation takes an `EquationItem' and returns a comma separated string of values 
+ ** from the flat record of a connection annotation that is found in the `EquationItem'.
+ **)
+relation get_connection_annotation_str: Absyn.EquationItem => string =
+	
+  rule	get_annotation_string(Line_records,ann) => annstr
+	-------------------------------------------------
+	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_), SOME(ann))) => annstr
+	
+	
+  axiom	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),NONE)) => fail
+      
 end
 
-(**relation: get_nth_connection_in_classparts
+(**relation: get_nth_connectionitem_in_class
+ ** This relation takes a `Class' and  an int ane returns the nth `EquationItem' containing a
+ ** connect statement in that class.
+**)
+relation get_nth_connectionitem_in_class: (Absyn.Class, int) => Absyn.EquationItem =
+
+  rule	get_nth_connectionitem_in_classparts(parts,n) => eq
+	-------------------------
+	get_nth_connectionitem_in_class ( Absyn.CLASS(_,_,_,Absyn.PARTS(parts)),n) => eq
+end
+
+(**relation: get_nth_connectionitem_in_classparts
  ** This relation takes a `ClassPart' list and an int and returns 
-** the nth connections as an `Equation'.
+** the nth connections as an `EquationItem'.
 **)
 
-relation get_nth_connection_in_classparts: (Absyn.ClassPart list, int) => Absyn.Equation =
+relation get_nth_connectionitem_in_classparts: (Absyn.ClassPart list, int) => Absyn.EquationItem =
 	
-  rule	get_nth_connection_in_equations(e,n) => eq
+  rule	get_nth_connectionitem_in_equations(e,n) => eq
 	-------------------------------------
-	get_nth_connection_in_classparts (Absyn.EQUATIONS(e)::xs,n) => eq
+	get_nth_connectionitem_in_classparts (Absyn.EQUATIONS(e)::xs,n) => eq
 
 	(* The rule above failed, subtract the number of connections in the first equation section *)
 	(* and try with the rest of the classparts*)
   rule	count_connections_in_equations(e) => c1 &
 	int_sub(n,c1)=> newn &
-	get_nth_connection_in_classparts(xs,newn) => eq
+	get_nth_connectionitem_in_classparts(xs,newn) => eq
 	-----------------------------------------------
-	get_nth_connection_in_classparts (Absyn.EQUATIONS(e)::xs,n) => eq
+	get_nth_connectionitem_in_classparts (Absyn.EQUATIONS(e)::xs,n) => eq
 
-  rule	get_nth_connection_in_classparts(xs,n) => eq
+  rule	get_nth_connectionitem_in_classparts(xs,n) => eq
 	--------------------------------------------
-	get_nth_connection_in_classparts(_::xs,n) => eq
+	get_nth_connectionitem_in_classparts(_::xs,n) => eq
 
 end
 
@@ -439,20 +463,20 @@ end
    ** returns the nth connection as an `Equation'. If the number is larger than the number of connections
  ** in the list, the relation fails.
 **)
-relation get_nth_connection_in_equations: (Absyn.EquationItem list, int) => Absyn.Equation =
+relation get_nth_connectionitem_in_equations: (Absyn.EquationItem list, int) => Absyn.EquationItem =
 
-axiom	get_nth_connection_in_equations ((Absyn.EQUATIONITEM((eq as Absyn.EQ_CONNECT(_,_)),_))::xs,1) => eq
+axiom	get_nth_connectionitem_in_equations ((eq as Absyn.EQUATIONITEM((Absyn.EQ_CONNECT(_,_)),_))::xs,1) => eq
 
   rule	int_sub (n,1) => newn &
-	get_nth_connection_in_equations (xs,newn) => eq
+	get_nth_connectionitem_in_equations (xs,newn) => eq
 	-----------------------------------------------
-	get_nth_connection_in_equations (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),_)::xs,n) => eq
+	get_nth_connectionitem_in_equations (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),_)::xs,n) => eq
 
-  rule	get_nth_connection_in_equations (xs,n) => eq
+  rule	get_nth_connectionitem_in_equations (xs,n) => eq
 	--------------------------------------------
-	get_nth_connection_in_equations (_::xs,n) => eq
+	get_nth_connectionitem_in_equations (_::xs,n) => eq
 
-  axiom get_nth_connection_in_equations([],_) => fail
+  axiom get_nth_connectionitem_in_equations([],_) => fail
 end
 
 (** relation: get_connection_str
@@ -532,7 +556,7 @@ end
 
 relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 	
-  rule	get_annotation_string ann => s1 &
+  rule	get_annotation_string(Placement_records, ann) => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"},") => s3 &
 	get_componentitems_annotation(rest) => str &
@@ -540,7 +564,7 @@ relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 	----------------------------
 	get_componentitems_annotation (Absyn.COMPONENTITEM(_,SOME(ann))::(rest as (_::_))) => res
 	
-  rule	get_annotation_string ann => s1 &
+  rule	get_annotation_string(Placement_records, ann) => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => res 
 	----------------------------
@@ -561,28 +585,28 @@ end
    representing the flat record of the specific annotation.
 **)
 
-relation get_annotation_string: Absyn.Annotation => string =
+relation get_annotation_string: (string,Absyn.Annotation) => string =
 
   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' & 
-	let pstring = "record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" &
-	let tstring = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation;" &
-	string_append(tstring,pstring) => totstring &	
+
         Parser.parsestring totstring => p &
 	SCode.elaborate(p) => p' &
-	Inst.make_env_from_program(p',Absyn.IDENT("Placement")) => env  & 
-	get_class_in_program("Placement",p) => placementc &
+	Inst.make_env_from_program(p',Absyn.IDENT(anncname)) => env  & 
+	get_class_in_program(anncname,p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
 	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
+	Debug.fprint ("interactivedump","Annotation DAE = ") &
+	Debug.fcall ("interactivedump", DAE.dump2, DAE.DAE(dae)) &
      	DAE.get_variable_bindings_str dae' => str 
 	---------------------------
-	get_annotation_string(Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Placement",_),Absyn.CLASSMOD(mod,_)))])) => str
+	get_annotation_string(totstring, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT(anncname,_),Absyn.CLASSMOD(mod,_)))])) => str
 
   rule	print "get_annotation_string failed!\n"
 	---------------------------------------
-	get_annotation_string(_) => fail
+	get_annotation_string(_,_) => fail
 end
 	
 relation get_nth_public_component_in_class:  (Absyn.Class,int) => Absyn.Element =
