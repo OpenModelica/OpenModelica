@@ -69,7 +69,6 @@ with "modsim.rml"
 with "classinf.rml"
 with "rtopts.rml"
 with "parse.rml"
-with "mod.rml"
 with "prefix.rml"
 with "codegen.rml"
 with "classloader.rml"
@@ -612,7 +611,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ModUtil.path_string2 (path,"_") => pathstr &
  (*	Inst.instantiate_implicit(p') => d & *)
 	Lookup.lookup_class(env, path, false) => (cls, env') &
-	Inst.implicit_function_instantiation(env', Mod.NOMOD,
+	Inst.implicit_function_instantiation(env', Types.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
 	  => (env'',d) &
 
@@ -781,7 +780,7 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 	  Env.open_scope(env',encflag) => env'' &
 	Env.name_scope(env'',n) => env3 &
 	ClassInf.start(r,n) => ci_state &
-	Inst.inst_class_in(env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+	Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, [], ci_state, 
 			   c, false, [], false, false)
 	  => (dae1, env4, csets', ci_state', tys) &
 	Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
@@ -810,7 +809,7 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 	  Env.open_scope(env',encflag) => env'' &
 	Env.name_scope(env'',n) => env3 &
 	ClassInf.start(r,n) => ci_state &
-	Inst.inst_class_in(env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+	Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, [], ci_state, 
 			   c, false, [], false, false)
 	  => (dae1, env4, csets', ci_state', tys) &
 	Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &

@@ -1813,7 +1813,7 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	SCode.elaborate(p) => p' &
 (*	Inst.instantiate_implicit(p') => d & *)
 	Lookup.lookup_class(env, path, false) => (cls, env') &
-	Inst.implicit_function_instantiation(env', Mod.NOMOD,
+	Inst.implicit_function_instantiation(env', Types.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
 	  => (env'',d) &
 	Print.clear_buf() &
@@ -2618,8 +2618,9 @@ relation elab_cref2 : (Env.Env,
 	Types.unparse_type tp => ts & print "type = " & print ts & print ", " &
 	Types.print_binding_str bind => binds & print "binding =" & print binds & print "\n" &
 	SCode.variability_string var => vs & print "var = " & print vs & print "\n" 
+	& Env.print_env env 
 	----------------------------------------
-	elab_cref2 (_,cr,acc,var,tp,bind) => fail
+	elab_cref2 (env,cr,acc,var,tp,bind) => fail
 
 end	
 

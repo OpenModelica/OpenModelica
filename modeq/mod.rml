@@ -34,50 +34,44 @@
 module Mod:
 
   with "absyn.rml"
-  with "dae.rml"
   with "env.rml"
   with "exp.rml"
   with "prefix.rml"
   with "explode.rml"
   with "types.rml"
-  with "staticexp.rml"
-  with "values.rml"
+
 
   type Ident = string
 
   (** - Modification datatype *)
-  datatype EqMod = TYPED of Exp.Exp * Types.Properties |
-		   UNTYPED of Absyn.Exp
-  datatype SubMod = NAMEMOD of Ident * Mod
-		  | IDXMOD of int list * Mod
-  and Mod = MOD of bool * (SubMod list) * EqMod option
-  	  | REDECL of bool * SCode.Element list
-	  | NOMOD
+  (** Moved to Exp to prevent circular dependencies *)
+
   (** This type is very similar to `SCode.Mod'.  The main difference is
    ** that it uses `Exp.Exp' for the expressions.  Expressions stored
    ** here are prefixed and typechecked.
    **)
 
-  relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod
-  relation unelab_mod : (Mod) => SCode.Mod
-  relation update_mod: (Env.Env, Prefix.Prefix, Mod) => Mod 
-  relation elab_untyped_mod : (SCode.Mod) => Mod
+  relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Types.Mod
+  relation unelab_mod : (Types.Mod) => SCode.Mod
+  relation update_mod: (Env.Env, Prefix.Prefix, Types.Mod) => Types.Mod 
+  relation elab_untyped_mod : (SCode.Mod) => Types.Mod
 
-  relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod
-  relation lookup_idx_modification: (Mod, int) => Mod
-  relation lookup_modification_p: (Mod,Absyn.Path) => Mod
-  relation merge : (Mod, Mod) => Mod
-  relation mod_equation : Mod => EqMod option
+  relation lookup_comp_modification: (Types.Mod, Absyn.Ident) => Types.Mod
+  relation lookup_idx_modification: (Types.Mod, int) => Types.Mod
+  relation lookup_modification_p: (Types.Mod,Absyn.Path) => Types.Mod
+  relation merge : (Types.Mod, Types.Mod) => Types.Mod
+  relation mod_equation : Types.Mod => Types.EqMod option
 
-  relation print_mod : Mod => ()
+  relation print_mod : Types.Mod => ()
 
 end
-
 
 with "dump.rml"
 with "debug.rml"
 with "print.rml"
 with "inst.rml"
+with "staticexp.rml"
+with "values.rml"
 
 (** relation: elab_mod
  **
@@ -87,24 +81,27 @@ with "inst.rml"
  ** they are provided in, and not the context they are used in.
  **)
  
-relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
+relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Types.Mod =
 
-  axiom	elab_mod (_,_,SCode.NOMOD) => NOMOD
+  axiom	elab_mod (_,_,SCode.NOMOD) => Types.NOMOD
 
   rule	elab_submods (env,pre,subs) => subs'
 	------------------------------------
 	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE))
-	  => MOD(final,subs',NONE)
+	  => Types.MOD(final,subs',NONE)
 	
   rule	elab_submods (env,pre,subs) => subs' &
 	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
+	(* Bug: will cause elaboration of parameters without value to fail,
+	 But this can be ok, since a modifier is present, giving it a value 
+	 from outer modifications.. *)
 	Prefix.prefix_exp(env,e',pre) => e''
 	------------------------------------
 	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)))
-	  => MOD(final,subs',SOME(TYPED(e'',prop)))
+	  => Types.MOD(final,subs',SOME(Types.TYPED(e'',prop)))
 
   axiom	elab_mod (env, pre, m as SCode.REDECL(final, elist)) 
-	  =>  REDECL(final, elist)
+	  =>  Types.REDECL(final, elist)
 
   rule	Debug.fprint("failtrace", "#-- elab_mod failed\n")
 	-------------------------------------------------
@@ -113,27 +110,27 @@ end
 
 
 
-relation unelab_mod: Mod => SCode.Mod =
+relation unelab_mod: Types.Mod => SCode.Mod =
 	
-  axiom	unelab_mod (NOMOD) => SCode.NOMOD
+  axiom	unelab_mod (Types.NOMOD) => SCode.NOMOD
 	
   rule	unelab_submods (subs) => subs'
 	------------------------------------
-	unelab_mod (m as MOD(final,subs,NONE))
+	unelab_mod (m as Types.MOD(final,subs,NONE))
 	  =>  SCode.MOD(final,subs',NONE)
 	  
   rule	unelab_submods (subs) => subs' 
 	------------------------------------
-	unelab_mod (m as MOD(final,subs,SOME(UNTYPED(e))))
+	unelab_mod (m as Types.MOD(final,subs,SOME(Types.UNTYPED(e))))
 	  => SCode.MOD(final,subs',SOME(e))
 	  
   rule	unelab_submods (subs) => subs' &
 	Exp.unelab_exp(e) => e'
 	------------------------------------
-	unelab_mod (m as MOD(final,subs,SOME(TYPED(e,p))))
+	unelab_mod (m as Types.MOD(final,subs,SOME(Types.TYPED(e,p))))
 	  => SCode.MOD(final,subs',SOME(e'))
 	  
-  axiom	unelab_mod (m as REDECL(final, elist)) 
+  axiom	unelab_mod (m as Types.REDECL(final, elist)) 
 	  =>  SCode.REDECL(final, elist)
 	  
   rule	Print.print_buf "#-- elab_untyped_mod failed:\n" &
@@ -143,7 +140,7 @@ relation unelab_mod: Mod => SCode.Mod =
 end
 
 
-relation unelab_submods : ( SubMod list)
+relation unelab_submods : ( Types.SubMod list)
 	  => SCode.SubMod list =
 	  
   axiom	unelab_submods ([]) => []
@@ -160,16 +157,16 @@ end
  ** This relation unelaborates on a submodification.
  **)
 		 
-relation unelab_submod : (SubMod) => SCode.SubMod list =
+relation unelab_submod : (Types.SubMod) => SCode.SubMod list =
 	
   rule	unelab_mod (m) => m'
 	--------------------------
-	unelab_submod (NAMEMOD(i,m)) => [SCode.NAMEMOD(i,m')]
+	unelab_submod (Types.NAMEMOD(i,m)) => [SCode.NAMEMOD(i,m')]
 	
   rule	unelab_subscript(ss) => ss' &
 	unelab_mod(m) => m'
 	---------------------------
-	unelab_submod (IDXMOD(ss,m)) => [SCode.IDXMOD(ss',m')]
+	unelab_submod (Types.IDXMOD(ss,m)) => [SCode.IDXMOD(ss',m')]
 end
 
 relation unelab_subscript: (int list) => SCode.Subscript list =
@@ -185,26 +182,28 @@ end
  ** This relation updates and untyped modification to a typed one, by looking
  ** up the type of the modifier in the environment and update it.
  **)
-relation update_mod: (Env.Env,Prefix.Prefix, Mod) => Mod =
+relation update_mod: (Env.Env,Prefix.Prefix, Types.Mod) => Types.Mod =
 
-  axiom	update_mod(_,_,NOMOD) => NOMOD
-  axiom	update_mod(_,_,m as REDECL(_,_)) => m
+  axiom	update_mod(_,_,Types.NOMOD) => Types.NOMOD
+  axiom	update_mod(_,_,m as Types.REDECL(_,_)) => m
 
   rule	update_submods (env,pre,subs) => subs' &
 	Static.elab_exp(env,e,false,NONE) => (e',prop,_)  &
-	Prefix.prefix_exp(env,e',pre) => e'' 
+	Prefix.prefix_exp(env,e',pre) => e'' &
+	Debug.fprint("updmod","Updated mod: ") &
+	Debug.fcall("updmod",print_mod ,Types.MOD(f, subs', SOME(Types.TYPED(e'', prop)))) 
 	-----------------
-	update_mod(env, pre, m as MOD(f, subs, SOME(UNTYPED(e))))
-	  => MOD(f, subs', SOME(TYPED(e'', prop)))
+	update_mod(env, pre, m as Types.MOD(f, subs, SOME(Types.UNTYPED(e))))
+	  => Types.MOD(f, subs', SOME(Types.TYPED(e'', prop)))
 
   rule	update_submods (env, pre, subs) => subs' 
 	---------------------------------------
-	update_mod(env, pre, MOD(f, subs, SOME(TYPED(e, p)))) 
-	  => MOD(f, subs', SOME(TYPED(e, p)))
+	update_mod(env, pre, Types.MOD(f, subs, SOME(Types.TYPED(e, p)))) 
+	  => Types.MOD(f, subs', SOME(Types.TYPED(e, p)))
 
   rule	update_submods (env,pre,subs) => subs' 	
 	-------------------------
-	update_mod(env, pre, MOD(f, subs, NONE)) => MOD(f,subs',NONE)
+	update_mod(env, pre, Types.MOD(f, subs, NONE)) => Types.MOD(f,subs',NONE)
 
   rule	Print.print_buf "- update_mod failed\n mod:" &
 	print_mod m & Print.print_buf "\n" 
@@ -212,8 +211,8 @@ relation update_mod: (Env.Env,Prefix.Prefix, Mod) => Mod =
 	update_mod(env,pre,m) => fail
 end
 
-relation update_submods: (Env.Env, Prefix.Prefix, SubMod list)
-	=> SubMod list =
+relation update_submods: (Env.Env, Prefix.Prefix, Types.SubMod list)
+	=> Types.SubMod list =
   axiom	update_submods (_,_,[]) => []
 
   rule	update_submod (env,pre,x) => x' &
@@ -224,12 +223,12 @@ relation update_submods: (Env.Env, Prefix.Prefix, SubMod list)
 end
 
 
-relation update_submod : (Env.Env, Prefix.Prefix, SubMod) 
-	  => SubMod list =
+relation update_submod : (Env.Env, Prefix.Prefix, Types.SubMod) 
+	  => Types.SubMod list =
 
   rule	update_mod (env,pre,m) => m'
 	--------------------------
-	update_submod (env,pre,NAMEMOD(i,m)) => [NAMEMOD(i,m')]
+	update_submod (env,pre,Types.NAMEMOD(i,m)) => [Types.NAMEMOD(i,m')]
 
   rule	(*Static.elab_subscripts (env,ss) => (ss',true) &*)
 	update_mod (env,pre,m) => m' &
@@ -238,7 +237,7 @@ relation update_submod : (Env.Env, Prefix.Prefix, SubMod)
 	(* Need to store untyped IDXMOD list in mods such that we can elab *)
 	(* the index here *)
 	---------------------------
-	update_submod (env,pre,IDXMOD(_,m)) => smods
+	update_submod (env,pre,Types.IDXMOD(_,m)) => smods
 end
 
 (** relation elab_untyped_mod
@@ -252,22 +251,22 @@ end
  ** Notice that the correct type information must be updated later on.
  **)
 
-relation elab_untyped_mod: (SCode.Mod) => Mod =
+relation elab_untyped_mod: (SCode.Mod) => Types.Mod =
 
-  axiom	elab_untyped_mod (SCode.NOMOD) => NOMOD
+  axiom	elab_untyped_mod (SCode.NOMOD) => Types.NOMOD
 
   rule	elab_untyped_submods (subs) => subs'
 	------------------------------------
 	elab_untyped_mod (m as SCode.MOD(final,subs,NONE))
-	  => MOD(final,subs',NONE)
+	  => Types.MOD(final,subs',NONE)
 	
   rule	elab_untyped_submods (subs) => subs' 
 	------------------------------------
 	elab_untyped_mod (m as SCode.MOD(final,subs,SOME(e)))
-	  => MOD(final,subs',SOME(UNTYPED(e)))
+	  => Types.MOD(final,subs',SOME(Types.UNTYPED(e)))
 
   axiom	elab_untyped_mod (m as SCode.REDECL(final, elist)) 
-	  =>  REDECL(final, elist)
+	  =>  Types.REDECL(final, elist)
 
   rule	Print.print_buf "#-- elab_untyped_mod failed:\n" &
 	SCode.print_mod mod &
@@ -283,7 +282,7 @@ end
  **)
 
 relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
-	  => SubMod list =
+	  => Types.SubMod list =
 
   axiom	elab_submods (_,_,[]) => []
 
@@ -298,14 +297,14 @@ end
 (** relation: elab_submod
  **
  ** This relation elaborates on a submodification, turning an
- ** `SCode.SubMod' into one or more `SubMod's.
+ ** `SCode.SubMod' into one or more `Types.SubMod's.
  **)
 
-relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod list =
+relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => Types.SubMod list =
 
   rule	elab_mod (env,pre,m) => m'
 	--------------------------
-	elab_submod (env,pre,SCode.NAMEMOD(i,m)) => [NAMEMOD(i,m')]
+	elab_submod (env,pre,SCode.NAMEMOD(i,m)) => [Types.NAMEMOD(i,m')]
 
   rule	Static.elab_subscripts (env,ss) => (ss',true) &
 	elab_mod (env,pre,m) => m' &
@@ -322,7 +321,7 @@ end
  **)
 
 relation elab_untyped_submods : (SCode.SubMod list)
-	  => SubMod list =
+	  => Types.SubMod list =
 
   axiom	elab_untyped_submods ([]) => []
 
@@ -336,19 +335,19 @@ end
 (** relation: elab_untyped_submod
  **
  ** This relation elaborates on a submodification, turning an
- ** `SCode.SubMod' into one or more `SubMod's, wihtout type information.
+ ** `SCode.SubMod' into one or more `Types.SubMod's, wihtout type information.
  **)
 
-relation elab_untyped_submod : (SCode.SubMod) => SubMod list =
+relation elab_untyped_submod : (SCode.SubMod) => Types.SubMod list =
 
   rule	elab_untyped_mod (m) => m'
 	--------------------------
-	elab_untyped_submod (SCode.NAMEMOD(i,m)) => [NAMEMOD(i,m')]
+	elab_untyped_submod (SCode.NAMEMOD(i,m)) => [Types.NAMEMOD(i,m')]
 
   rule	elab_untyped_mod (m) => m'
 	---------------------------
 	elab_untyped_submod (SCode.IDXMOD(subcr,m))
-	  => [IDXMOD([-1],m')]
+	  => [Types.IDXMOD([-1],m')]
 end
 
 (** relation: make_idxmods
@@ -357,9 +356,9 @@ end
  ** sub-modifications of the `IDXMOD' variety.
  **)
 
-relation make_idxmods : (Exp.Subscript list, Mod) => SubMod list =
+relation make_idxmods : (Exp.Subscript list, Types.Mod) => Types.SubMod list =
 
-  axiom	make_idxmods([Exp.INDEX(Exp.ICONST(x))],m) => [IDXMOD([x],m)]
+  axiom	make_idxmods([Exp.INDEX(Exp.ICONST(x))],m) => [Types.IDXMOD([x],m)]
 
   rule	make_idxmods(xs, m) => mods &
 	prefix_idxmods(mods, x) => mods'
@@ -379,17 +378,17 @@ end
 
 (** relation: prefix_idxmods
  **
- ** This relation adds a subscript to each `IDXMOD' in a list of
+ ** This relation adds a subscript to each `Types.IDXMOD' in a list of
  ** submodifications.
  **)
 
-relation prefix_idxmods : (SubMod list, int) => SubMod list =
+relation prefix_idxmods : (Types.SubMod list, int) => Types.SubMod list =
 
   axiom	prefix_idxmods([],_) => []
 
   rule	prefix_idxmods(mods, i) => mods'
 	--------------------------------
-	prefix_idxmods(IDXMOD(l,m)::mods, i) => IDXMOD(i::l,m)::mods'
+	prefix_idxmods(Types.IDXMOD(l,m)::mods, i) => Types.IDXMOD(i::l,m)::mods'
 
 end
 
@@ -401,8 +400,8 @@ end
  ** `x[3] = y[2]'.
  **)
 
-relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Mod)
-	  => SubMod list =
+relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Types.Mod)
+	  => Types.SubMod list =
 
   axiom	expand_slice([], _, _, _) => []
 
@@ -411,15 +410,15 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Mod)
   rule	Exp.simplify(Exp.ASUB(e,n)) => e' &
 	Types.unlift_array(t) => t' &
 	make_idxmods(Exp.INDEX(x)::ss,
-		     MOD(final, [],
-			 SOME(TYPED(e',Types.PROP(t',const))))) => mods1 &
+		     Types.MOD(final, [],
+			 SOME(Types.TYPED(e',Types.PROP(t',const))))) => mods1 &
 	int_add(n, 1) => n' &
 	expand_slice(xs, ss, n', m) => mods2 &
 	list_append(mods1, mods2) => mods
 	---------------------------------
 	expand_slice(x::xs, ss, n,
-		     m as MOD(final, [],
-			      SOME(TYPED(e,Types.PROP(t,const))))) => mods
+		     m as Types.MOD(final, [],
+			      SOME(Types.TYPED(e,Types.PROP(t,const))))) => mods
 
   rule	Print.print_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
 	--------------------------------
@@ -457,7 +456,7 @@ end
  ** insert several sub-modifications.
  **)
 
-relation insert_submods : (SubMod list, SubMod list) => SubMod list =
+relation insert_submods : (Types.SubMod list, Types.SubMod list) => Types.SubMod list =
 
   axiom	insert_submods ([],_) => []
 
@@ -475,21 +474,21 @@ end
  ** while keeping the uniqueness, merging the submod if necessary.
  **)
 
-relation insert_submod : (SubMod, SubMod list) => SubMod list =
+relation insert_submod : (Types.SubMod, Types.SubMod list) => Types.SubMod list =
 
   axiom	insert_submod (sub,[]) => [sub]
 
   rule	n1 = n2 &
 	merge (m1,m2) => m
 	----------------------
-	insert_submod (NAMEMOD(n1,m1),NAMEMOD(n2,m2)::tail)
-	  => (NAMEMOD(n1,m)::tail)
+	insert_submod (Types.NAMEMOD(n1,m1),Types.NAMEMOD(n2,m2)::tail)
+	  => (Types.NAMEMOD(n1,m)::tail)
 
   rule	i1 = i2 &
 	merge (m1,m2) => m
 	----------------------
-	insert_submod (IDXMOD(i1,m1),IDXMOD(i2,m2)::tail)
-	  => (IDXMOD(i1,m)::tail)
+	insert_submod (Types.IDXMOD(i1,m1),Types.IDXMOD(i2,m2)::tail)
+	  => (Types.IDXMOD(i1,m)::tail)
 
   axiom	insert_submod (sub1, sub2) => sub1::sub2
 
@@ -505,7 +504,7 @@ end
  ** modification, using a name to look up submodifications.
  **)
 
-relation lookup_modification_p: (Mod,Absyn.Path) => Mod =
+relation lookup_modification_p: (Types.Mod,Absyn.Path) => Types.Mod =
 
   rule	lookup_comp_modification (m,n) => mod
 	--------------------------------
@@ -526,15 +525,15 @@ end
  ** This relation is used to look up an identifier in a modification.
  **)
 
-relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod =
+relation lookup_comp_modification: (Types.Mod, Absyn.Ident) => Types.Mod =
 
-  axiom lookup_comp_modification(NOMOD,_) => NOMOD
+  axiom lookup_comp_modification(Types.NOMOD,_) => Types.NOMOD
 
-  axiom	lookup_comp_modification(REDECL(_,_),_) => NOMOD
+  axiom	lookup_comp_modification(Types.REDECL(_,_),_) => Types.NOMOD
 
   rule  lookup_comp_modification2(subs,n) => mod
 	-----------------------------------
-	lookup_comp_modification(MOD(_,subs,_),n) => mod
+	lookup_comp_modification(Types.MOD(_,subs,_),n) => mod
 	
   rule	Print.print_buf "# Mod.lookup_comp_modification(" &
 	print_mod mod & Print.print_buf "," & Print.print_buf i &
@@ -550,13 +549,13 @@ end
  ** This relation is just a helper to `lookup_comp_modification'.
  **)
 
-relation lookup_comp_modification2 : (SubMod list,Absyn.Ident) => Mod =
+relation lookup_comp_modification2 : (Types.SubMod list,Absyn.Ident) => Types.Mod =
 
-  axiom lookup_comp_modification2([],_) => NOMOD
+  axiom lookup_comp_modification2([],_) => Types.NOMOD
 
   rule  n = m
 	--------------------------------------
-	lookup_comp_modification2(NAMEMOD(n,mod)::_,m) => mod
+	lookup_comp_modification2(Types.NAMEMOD(n,mod)::_,m) => mod
 	
   rule  lookup_comp_modification2(xs,n) => mod
 	---------------------------------
@@ -574,19 +573,19 @@ end
  ** integer to index the modification.
  **)
 
-relation lookup_idx_modification: (Mod, int) => Mod =
+relation lookup_idx_modification: (Types.Mod, int) => Types.Mod =
 
-  axiom lookup_idx_modification(NOMOD,_) => NOMOD
+  axiom lookup_idx_modification(Types.NOMOD,_) => Types.NOMOD
 
-  axiom	lookup_idx_modification(REDECL(_,_),_) => NOMOD
+  axiom	lookup_idx_modification(Types.REDECL(_,_),_) => Types.NOMOD
 
   rule  lookup_idx_modification2(subs,NONE,idx) => (mod',subs') &
-	merge (MOD(f,subs',NONE),mod') => mod'' &
+	merge (Types.MOD(f,subs',NONE),mod') => mod'' &
 
 	index_eqmod (eq,[idx]) => eq' &
-	merge (mod'',MOD(false,[],eq')) => mod'''
+	merge (mod'',Types.MOD(false,[],eq')) => mod'''
 	-----------------------------------
-	lookup_idx_modification(MOD(f,subs,eq),idx) => mod'''
+	lookup_idx_modification(Types.MOD(f,subs,eq),idx) => mod'''
 	
   rule	Print.print_buf "# Mod.lookup_idx_modification(" &
 	print_mod mod & Print.print_buf "," & int_string idx => s & Print.print_buf s &
@@ -601,29 +600,29 @@ end
  ** This relation does part of the job for `lookup_idx_modification'.
  **)
 
-relation lookup_idx_modification2 : (SubMod list, EqMod option, int)
-	  => (Mod, SubMod list) =
+relation lookup_idx_modification2 : (Types.SubMod list, Types.EqMod option, int)
+	  => (Types.Mod, Types.SubMod list) =
 
-  axiom lookup_idx_modification2([],_,_) => (NOMOD, [])
+  axiom lookup_idx_modification2([],_,_) => (Types.NOMOD, [])
 
 	(* FIXME: Redeclaration *)
 
   rule  x = y &
-	lookup_idx_modification2(subs,eq,y) => (NOMOD,subs')
+	lookup_idx_modification2(subs,eq,y) => (Types.NOMOD,subs')
 	--------------------------------------
-	lookup_idx_modification2(IDXMOD([x],mod)::subs,eq,y)
+	lookup_idx_modification2(Types.IDXMOD([x],mod)::subs,eq,y)
 	  => (mod,subs')
 	
   rule  x = y &
 	lookup_idx_modification2(subs,eq,y) => (mod',subs')
 	---------------------------------
-	lookup_idx_modification2(IDXMOD(x::xs,mod)::subs,eq,y)
-	  => (mod',IDXMOD(xs,mod)::subs')
+	lookup_idx_modification2(Types.IDXMOD(x::xs,mod)::subs,eq,y)
+	  => (mod',Types.IDXMOD(xs,mod)::subs')
 
   rule  not x = y &
 	lookup_idx_modification2(subs,eq,y) => (mod',subs')
 	---------------------------------
-	lookup_idx_modification2(IDXMOD(x::xs,mod)::subs,eq,y)
+	lookup_idx_modification2(Types.IDXMOD(x::xs,mod)::subs,eq,y)
 	  => (mod',subs')
 
   rule  lookup_idx_modification2(xs,eq,idx) => (mod,xs')
@@ -645,7 +644,7 @@ end
  ** expression per array component.
  **)
 
-relation index_eqmod : (EqMod option, int list) => EqMod option =
+relation index_eqmod : (Types.EqMod option, int list) => Types.EqMod option =
 
   axiom	index_eqmod (NONE,_) => NONE
 
@@ -653,9 +652,9 @@ relation index_eqmod : (EqMod option, int list) => EqMod option =
 
   rule	Types.unlift_array t => t' &
 	Exp.simplify Exp.ASUB(e,x) => exp &
-	index_eqmod (SOME(TYPED(exp,Types.PROP(t',c))),xs) => e
+	index_eqmod (SOME(Types.TYPED(exp,Types.PROP(t',c))),xs) => e
 	------------------------------------------
-	index_eqmod (SOME(TYPED(e,Types.PROP(t,c))),x::xs) => e
+	index_eqmod (SOME(Types.TYPED(e,Types.PROP(t,c))),x::xs) => e
 
 end
 
@@ -675,32 +674,32 @@ end
  ** modifications takes precedence over the second.
  **)
 
-relation merge : (Mod, Mod) => Mod =
+relation merge : (Types.Mod, Types.Mod) => Types.Mod =
 
-  axiom merge(NOMOD,NOMOD) => NOMOD
+  axiom merge(Types.NOMOD,Types.NOMOD) => Types.NOMOD
 
-  axiom merge(NOMOD,m) => m
+  axiom merge(Types.NOMOD,m) => m
 
-  axiom merge(m,NOMOD) => m
+  axiom merge(m,Types.NOMOD) => m
 
   rule  Print.print_buf "- ignoring inner modification:\n" &
 	print_mod ignmod & Print.print_buf "\n" 
 	--------------------------------------
-	merge(m as REDECL(_,_),ignmod) => m
+	merge(m as Types.REDECL(_,_),ignmod) => m
 
   rule  Print.print_buf "# can't merge modification with a redeclaration\n"
 	---------------------------------------------------------
-	merge(_,REDECL(_,_)) => fail
+	merge(_,Types.REDECL(_,_)) => fail
 
   rule  Print.print_buf "# trying to modify final element\n"
 	------------------------------------------
-	merge(_,m as MOD(true,_,_)) => fail
+	merge(_,m as Types.MOD(true,_,_)) => fail
 
   rule  merge_subs(subs1, subs2) => subs &
 	merge_eq(ass1, ass2) => ass
 	----------------------------
-	merge(MOD(final,subs1,ass1), MOD(false,subs2,ass2))
-	  => MOD(final,subs,ass)
+	merge(Types.MOD(final,subs1,ass1), Types.MOD(false,subs2,ass2))
+	  => Types.MOD(final,subs,ass)
 
   rule	Print.print_buf "# incomplete handling of modification merging\n"
 	-----------------------------------------------------
@@ -710,11 +709,11 @@ end
 
 (** relation: merge_subs
  ** 
- ** This relation merges to list of `SubMod's.
+ ** This relation merges to list of `Types.SubMod's.
  **)
 
-relation merge_subs : (SubMod list, SubMod list)
-	  => SubMod list =
+relation merge_subs : (Types.SubMod list, Types.SubMod list)
+	  => Types.SubMod list =
 
   axiom merge_subs(s1,[]) => s1
 
@@ -727,14 +726,14 @@ end
 
 (** relation: merge_subs2
  ** 
- ** This relation helps in the merging of two lists of `SubMod's.  It
- ** compares one `SubMod' against a list of other `SubMod's, and if
- ** there is one with the same name,  it is kept and the one `SubMod'
+ ** This relation helps in the merging of two lists of `Types.SubMod's.  It
+ ** compares one `Types.SubMod' against a list of other `Types.SubMod's, and if
+ ** there is one with the same name,  it is kept and the one `Types.SubMod'
  ** given in the second argument is discarded.
  **)
 
-relation merge_subs2 : (SubMod list, SubMod)
-	  => (SubMod list, SubMod) =
+relation merge_subs2 : (Types.SubMod list, Types.SubMod)
+	  => (Types.SubMod list, Types.SubMod) =
 
   axiom merge_subs2([],m) => ([],m)
 
@@ -742,12 +741,12 @@ relation merge_subs2 : (SubMod list, SubMod)
 
   rule  n1 = n2 & merge(m1,m2) => m
 	---------------------------
-	merge_subs2(NAMEMOD(n1,m1)::ss, NAMEMOD(n2,m2))
-	  => (ss, NAMEMOD(n1,m))
+	merge_subs2(Types.NAMEMOD(n1,m1)::ss, Types.NAMEMOD(n2,m2))
+	  => (ss, Types.NAMEMOD(n1,m))
 
   rule  i1 = i2 & merge(m1,m2) => m
 	---------------------------
-	merge_subs2(IDXMOD(i1,m1)::ss, IDXMOD(i2,m2)) => (ss, IDXMOD(i1,m))
+	merge_subs2(Types.IDXMOD(i1,m1)::ss, Types.IDXMOD(i2,m2)) => (ss, Types.IDXMOD(i1,m))
 
   rule  merge_subs2(ss, s2) => (ss',s)
 	------------------------------
@@ -761,12 +760,12 @@ end
  ** precedence over the inner modifications.
  **)
 
-relation merge_eq : (EqMod option, EqMod option) => EqMod option =
+relation merge_eq : (Types.EqMod option, Types.EqMod option) => Types.EqMod option =
 
 	(* Outer assignments take precedence *)
 
-  axiom merge_eq(e as SOME(TYPED(_,_)), _) => e
-  axiom merge_eq(e as SOME(UNTYPED(_)), _) => e
+  axiom merge_eq(e as SOME(Types.TYPED(_,_)), _) => e
+  axiom merge_eq(e as SOME(Types.UNTYPED(_)), _) => e
   axiom merge_eq(NONE,e) => e
 
 end
@@ -776,11 +775,11 @@ end
  ** This relation simply extracts the equation part of a modification.
  **)
 
-relation mod_equation : Mod => EqMod option =
+relation mod_equation : Types.Mod => Types.EqMod option =
 
-  axiom mod_equation NOMOD => NONE
-  axiom mod_equation REDECL(_,_) => NONE
-  axiom mod_equation MOD(_,_,e) => e
+  axiom mod_equation Types.NOMOD => NONE
+  axiom mod_equation Types.REDECL(_,_) => NONE
+  axiom mod_equation Types.MOD(_,_,e) => e
 
 end
 
@@ -795,23 +794,23 @@ end
  ** The relations are excluded from the report for brevity.
  **)
 
-relation print_mod : Mod => () =
+relation print_mod : Types.Mod => () =
 
   rule	Print.print_buf "()"
 	----------
-	print_mod(NOMOD)
+	print_mod(Types.NOMOD)
 
   rule  Print.print_buf "(redeclare(" &
 	Dump.print_list(elist, SCode.print_element, ", ") &
 	Print.print_buf "))"
 	------------------------------
-	print_mod REDECL(final,elist)
+	print_mod Types.REDECL(final,elist)
 	
   rule	print_final final &
 	print_subs1 subs &
 	print_eqmod eq
 	--------------
-	print_mod MOD(final, subs, eq)
+	print_mod Types.MOD(final, subs, eq)
 
 end
 
@@ -829,7 +828,7 @@ end
 
 (**)
 
-relation print_subs1 : SubMod list => () =
+relation print_subs1 : Types.SubMod list => () =
 
   axiom print_subs1 [] => ()
 
@@ -841,7 +840,7 @@ end
 
 (**)
 
-relation print_subs2 : SubMod list => () =
+relation print_subs2 : Types.SubMod list => () =
 
   axiom print_subs2 []
 
@@ -853,15 +852,15 @@ end
 
 (**)
 
-relation print_sub : SubMod => () =
+relation print_sub : Types.SubMod => () =
 
   rule  Print.print_buf n & print_mod mod
 	------------------
-	print_sub NAMEMOD(n,mod)
+	print_sub Types.NAMEMOD(n,mod)
 
   rule  print_subscripts ss & print_mod mod
 	------------------
-	print_sub IDXMOD(ss,mod)
+	print_sub Types.IDXMOD(ss,mod)
 
 end
 
@@ -897,17 +896,17 @@ end
 
 (**)
 
-relation print_eqmod : EqMod option => () =
+relation print_eqmod : Types.EqMod option => () =
 
   axiom print_eqmod NONE
 
   rule  Print.print_buf " =(typed) " & Exp.print_exp e
 	-----------------------------
-	print_eqmod SOME(TYPED(e,prop))
+	print_eqmod SOME(Types.TYPED(e,prop))
 
   rule  Print.print_buf " =(untyped) " & Dump.print_exp e
 	-----------------------------
-	print_eqmod SOME(UNTYPED(e))
+	print_eqmod SOME(Types.UNTYPED(e))
 
 end
 	

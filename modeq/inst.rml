@@ -59,29 +59,29 @@ module Inst:
   relation instantiate: SCode.Program => DAE.DAElist
   relation instantiate_implicit: SCode.Program => DAE.DAElist
   
-  relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option)
+  relation make_binding : (Env.Env, SCode.Attributes, Types.EqMod option)
 	  => Types.Binding
 
   relation instantiate_class : (SCode.Program,SCode.Path) => (DAE.DAElist, Env.Env)
 
   relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
 	
-  relation inst_class: ( Env.Env, Mod.Mod, Prefix.Prefix, 
+  relation inst_class: ( Env.Env, Types.Mod, Prefix.Prefix, 
 			Connect.Sets, SCode.Class, InstDims,bool,CallingScope)
 	  => ( DAE.Element list, Env.Env, Connect.Sets, Types.Type, ClassInf.State)
 
 
-  relation inst_class_decl : ( Env.Env, Mod.Mod, Prefix.Prefix,
+  relation inst_class_decl : ( Env.Env, Types.Mod, Prefix.Prefix,
 			      Connect.Sets, SCode.Class, InstDims, bool)
 	  => ( Env.Env, DAE.Element list)
 
-  relation inst_class_in: ( Env.Env, Mod.Mod, Prefix.Prefix, 
+  relation inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
 			   Connect.Sets, ClassInf.State,
 			   SCode.Class, bool, InstDims, bool, bool)
 	  => ( DAE.Element list, Env.Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list)
 
-  relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
+  relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
 				     Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list)
 	    
@@ -92,7 +92,7 @@ module Inst:
   relation init_vars_modelica_output : DAE.Element list => DAE.Element list
 
   relation new_ident : () => Exp.ComponentRef
-  relation implicit_function_instantiation : ( Env.Env, Mod.Mod, 
+  relation implicit_function_instantiation : ( Env.Env, Types.Mod, 
 					      Prefix.Prefix, Connect.Sets, SCode.Class,
 					      InstDims, bool)
 	  => ( Env.Env, DAE.Element list)
@@ -119,7 +119,7 @@ with "ceval.rml"
  **)
 
 type Prefix = Prefix.Prefix
-type Mod = Mod.Mod
+type Mod = Types.Mod
 type Ident = Exp.Ident
 type Env = Env.Env
 
@@ -217,7 +217,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist, Env.En
 	inst_class_decls(env,cdecls,path)=> (env',_) &
 	Lookup.lookup_class(env',path,true) 
 	  => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
-	inst_class(env'', Mod.NOMOD, Prefix.NOPRE, [], cdef, [], false,TOP_CALL) 
+	inst_class(env'', Types.NOMOD, Prefix.NOPRE, [], cdef, [], false,TOP_CALL) 
 	  => (dae,env'', _, _, _) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
@@ -233,7 +233,7 @@ end
 relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Element list, Env.Env) =
 	
   rule	name = name2 &
-	inst_class(env, Mod.NOMOD, Prefix.NOPRE, [], c, [], false,TOP_CALL) 
+	inst_class(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false,TOP_CALL) 
 	  => (dae, env', _, _,_) 
 	-------------------------------------------------------------
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) 
@@ -255,7 +255,7 @@ end
 
 relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Element list) =
   rule	not name = name2 &
-	inst_class_decl(env, Mod.NOMOD, Prefix.NOPRE, [], c, [], false) 
+	inst_class_decl(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false) 
 	  => (env', dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae
@@ -269,7 +269,7 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 
   rule	name = name2 &      
 	(* How should be do here ??? *)
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
@@ -277,7 +277,7 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
 
   rule	not name = name2 &      
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
@@ -328,14 +328,14 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 
   rule	Debug.fprintln ("insttr", "inst_program1") &
 	(* Env.extend_frame_c(env,c) => env' & *)
-	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false,TOP_CALL) 
+	inst_class(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false,TOP_CALL) 
 	  => (dae,_,csets,_,_) 
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
   rule	Debug.fprintln ("insttr", "inst_program2") &
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_program(env',cs) => dae2 &
@@ -352,7 +352,7 @@ end
 relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
 	
   rule	Debug.fprintln ("insttr", "inst_program_implicit") &
-	implicit_instantiation(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) 
+	implicit_instantiation(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env', dae1) &
 	inst_program_implicit(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
@@ -433,7 +433,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	(*print "nomod &  nopre on class " & print cname & print "\n" &*)
 	int_eq(1,0) => true
 	------------
-	inst_class_in(env,Mod.NOMOD, Prefix.NOPRE,_,_,c as SCode.CLASS(cname,_,_,restr,d),
+	inst_class_in(env,Types.NOMOD, Prefix.NOPRE,_,_,c as SCode.CLASS(cname,_,_,restr,d),
 		       _,_,_,_) => ([],env,[], ClassInf.UNKNOWN("foo"), [])
 *)
 	
@@ -512,39 +512,63 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	classdef_elts(els) => cdefelts &
 	component_elts(els) => compelts &
 	extends_elts(els) => extendselts &
+
 	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
-(*	inst_element_list2(env,mods,pre,csets,ci_state,cdefelts,inst_dims, impl)
-	  => (_,env1,csets',ci_state',tys) &*)	
 	add_classdefs_to_env(env,cdefelts,impl) => env1 &
 
 	(*2. EXTENDS Nodes*)
 	(* inst_extends_list only flatten inhteritance structure. *)
 	(* It does not perform component instantiations. *)
-	inst_extends_list(env1, mods, extendselts, impl)
+
+	inst_extends_list(env1, mods, extendselts, ci_state,impl)
 	  => (env2, emods, extcomps, eqs2, initeqs2, alg2, initalg2) &
-		
-	Util.list_flatten([extcomps,compelts,cdefelts]) => compelts' &	
 	
+	  (* Problem. Modifiers on inherited components are unelabed, loosing their 
+	   type information. This will not work, since the modifier type can not always be found.
+	   for instance. 
+	   model B extends B2; end B; model B2 Integer ni=1; end B2;
+	   model test
+	     Integer n=2;
+	      B b(ni=n);
+	   end test;
+	   The modifier (n=n) will be untypes when B is instantiated and the variable n can not be 
+	   found, since the component b is instantiated in env of B.
+	   Solution:
+	   Redesign inst_extends_list to return (SCode.Element, Types.Mod) list and
+	   convert other component elements to the same format, such that inst_element can 
+	   handle the new format uniformely.
+	   *)
+	add_nomod(compelts) => compelts' &
+	add_nomod(cdefelts) => cdefelts' &
+	Util.list_flatten([extcomps,compelts',cdefelts']) => compelts' &	
+	
+
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
-	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',compelts',inst_dims,impl) => env3 &
+	add_components_to_env(env1,emods,pre,csets,ci_state,compelts',compelts',inst_dims,impl) 
+	  => env3 &
+	  (* Update the modifiers of elements to typed ones, needed for modifiers
+	   on components that are inherited. *)
+	update_compelts_mods(env3,pre,compelts',ci_state,impl)  
+	  => (compelts'',env4) &
+	print_compmods(compelts'') &
 	(* Add components from base classes to be instantiated in 3 as well. *)
 	list_append(eqs,eqs2) => eqs' &
 	list_append(initeqs,initeqs2) => initeqs' &
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
-	inst_element_list(env3, mods, pre, csets, ci_state1, compelts', 
+	inst_element_list(env4, mods, pre, csets, ci_state1, compelts'', 
 			  inst_dims, impl, false)
-	  => (dae1,env4, csets1, ci_state2, tys) &
-	inst_list(env4,mods,pre,csets1,ci_state2,inst_equation, eqs')
+	  => (dae1,env5, csets1, ci_state2, tys) &
+	inst_list(env5,mods,pre,csets1,ci_state2,inst_equation, eqs')
 	  => (dae2,_,csets2, ci_state3) &
-	inst_list(env4,mods,pre,csets2,ci_state3,inst_initialequation, initeqs')
+	inst_list(env5,mods,pre,csets2,ci_state3,inst_initialequation, initeqs')
 	  => (dae3,_,csets3, ci_state4) &
-	inst_list(env4,mods,pre,csets3,ci_state4, inst_algorithm, alg')
+	inst_list(env5,mods,pre,csets3,ci_state4, inst_algorithm, alg')
 	  => (dae4,_,csets4, ci_state5) &
-	inst_list(env4,mods,pre,csets4,ci_state5, inst_initialalgorithm, initalg')
+	inst_list(env5,mods,pre,csets4,ci_state5, inst_initialalgorithm, initalg')
 	  => (dae5,_,csets5, ci_state6) &
 	list_append(dae1,dae2) => dae6 &
 	list_append(dae6,dae3) => dae7 &
@@ -554,7 +578,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
 		      inst_dims, impl, false)
-	  => (dae, env4, csets5, ci_state6, tys)
+	  => (dae, env5, csets5, ci_state6, tys)
 
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
@@ -571,10 +595,12 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*2. EXTENDS Nodes*)
 	(* inst_extends_list only flatten inhteritance structure. *)
 	(* It does not perform component instantiations. *)
-	inst_extends_list(env1, mods, extendselts, impl)
+	inst_extends_list(env1, mods, extendselts, ci_state, impl)
 	  => (env2, emods, extcomps, eqs2, initeqs2, alg2, initalg2) &
 		
-	Util.list_flatten([extcomps,compelts,cdefelts]) => compelts' &	
+	add_nomod(compelts) => compelts' &
+	add_nomod(cdefelts) => cdefelts' &
+	Util.list_flatten([extcomps,compelts',cdefelts']) => compelts' &	
 	
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
@@ -640,6 +666,22 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end	
 
+relation update_compelts_mods: (Env.Env, Prefix.Prefix, (SCode.Element*Types.Mod) list,
+				ClassInf.State, bool) 
+	=> ((SCode.Element * Types.Mod) list, Env.Env) =
+
+  axiom	update_compelts_mods(env,pre,[],_,_) =>([],env)
+
+  rule	Mod.unelab_mod(cmod) => umod &
+	get_cref_from_mod(umod) => crefs &
+	update_variables_in_env(cmod,crefs,env,ci_state,impl) => env2 &
+	Mod.update_mod(env2,pre,cmod) => cmod' &
+	update_compelts_mods(env2,pre,xs,ci_state,impl) => (res,env3)
+	-------------------
+	update_compelts_mods(env,pre,(comp,cmod)::xs,ci_state,impl) 
+	  => ((comp,cmod')::res,env3)
+end
+
 relation get_option_arraydim: (Absyn.ArrayDim option) => Absyn.ArrayDim =
 
   axiom	get_option_arraydim (SOME(dim)) => dim
@@ -671,8 +713,8 @@ end
  ** of that list. The result is a list of components and lists of equations
  ** and algorithms.
 **)
-relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
-	  => (Env.Env, Mod.Mod, SCode.Element list, SCode.Equation list,
+relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.State, bool)
+	  => (Env.Env, Types.Mod, (SCode.Element * Types.Mod) list, SCode.Equation list,
 	      SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) 
 	=
   rule	Lookup.lookup_class(env, tp, true) 
@@ -687,12 +729,12 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
 	Mod.elab_untyped_mod(emod) => mod' &
 	Mod.merge(outermod,mod') => mod'' &
 
-	add_local_classes_to_env(cenv'',c) => env'' &
+	add_local_classes_to_env(cenv',c) => env'' &
 
 	make_complete_type_names(env'',els) => els' &
-	inst_extends_list(env'', outermod, els', impl) 
+	inst_extends_list(env'', outermod, els', ci_state, impl) 
 	  => (_,mods, compelts1, eq2, ieq2, alg2, ialg2) &  
-	inst_extends_list(env, mod, rest, impl)
+	inst_extends_list(env, mod, rest, ci_state,impl)
 	  => (env', mods', compelts2, eq3, ieq3, alg3, ialg3) & 
 	(* Must merge(mod,emod) here and then apply the bindings to the *)
 	(* corresponding elements. But emod is Absyn.Mod and can not  *)
@@ -708,39 +750,38 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
 	Mod.merge(mod,mods') => mod' &			      
 	Mod.merge(mod',emod') => mods' &
 	list_append(compelts1, compelts2) => compelts &	
-
+				      
 (*	  Print.print_buf "\n compelts list: " &
 	  SCode.print_element_list(compelts) &
 	Print.print_buf "mod =" & 
-	Mod.print_mod mods' &			      
+	Mod.print_mod mods' &	
 	Print.get_string() => str1 & print str1 &*)
-				      
 	update_components(compelts,mods') => compelts3 &
         Util.list_flatten([eq1, eq2, eq3]) => eq &
 	Util.list_flatten([ieq1, ieq2, ieq3]) => ieq &
 	Util.list_flatten([alg1, alg2, alg3]) => alg &
 	Util.list_flatten([ialg1, ialg2,ialg3]) => ialg 
 	-----------------------------------
-	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl)
+	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state,impl)
 	  => (env', mods',compelts3, eq, ieq, alg, ialg)
 
   rule	Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n")
 	------------------------------------------------
-	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl) 
+	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state, impl) 
 	  => fail
 
-  rule	inst_extends_list(env, mod, rest, impl)
+  rule	inst_extends_list(env, mod, rest, ci_state, impl)
 	  => (env', mods, compelts2, eq2, initeq2, alg2, ialg2) 
 	------------------------------------------------
-	inst_extends_list(env, mod, elt::rest, impl) 
-	  => (env',mods, elt::compelts2, eq2, initeq2, alg2, ialg2) 
+	inst_extends_list(env, mod, elt::rest, ci_state, impl) 
+	  => (env',mods, (elt,Types.NOMOD)::compelts2, eq2, initeq2, alg2, ialg2) 
 
-  axiom	inst_extends_list(env, mod, [], impl) 
+  axiom	inst_extends_list(env, mod, [], ci_state, impl) 
 	  => (env, mod, [], [], [], [], [])
 
   rule	Debug.fprint("failtrace",  "- inst_extends_list failed\n" )
 	---------------------
-	inst_extends_list(_,_,_,_) => fail
+	inst_extends_list(_,_,_,_,_) => fail
 end
 
 relation add_local_classes_to_env: (Env.Env, SCode.Class) => Env.Env =
@@ -771,43 +812,51 @@ relation add_local_classes_to_env2: (Env.Env, SCode.Element list) => Env.Env =
 	add_local_classes_to_env2(env,_::xs) => env'
 end
 
+(** relation: add_nomod 
+ ** This relation takes an SCode.Element list and tranforms it into a (SCode.Element* Types.Mod) list
+ ** by inserting Types.NOMOD for each element. Used to transform elements into a uniform list 
+ ** combined from inherited elements and ordinary elements.
+ **)
+relation add_nomod: SCode.Element list => (SCode.Element*Types.Mod) list =
+
+  axiom	add_nomod [] => []
+
+  rule	add_nomod(xs) => res 
+	--------------------
+	add_nomod(x::xs) => ((x,Types.NOMOD)::res)
+end
+
 (** relation: update_components
  ** This relation takes a list of components and a Mod and returns a list of components with the modifiers updated.
  ** The relation is used when flattening the inheritance structure, resulting in a list of components to insert into
  ** the class definition. For instance model A extends B(modifiers) end A; will result in a list of components from B 
  ** which 'modifiers' should be applied to.
 **)
-relation update_components: (SCode.Element list, Mod.Mod) => SCode.Element list =
+relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod) => (SCode.Element*Types.Mod)list =
 
   axiom	update_components([],_) => []
 
-  rule 	Mod.lookup_comp_modification(mod,id) => Mod.NOMOD &
+  rule 	Mod.lookup_comp_modification(mod,id) => cmod2 &
+	Mod.merge(cmod,cmod2) => mod' &
 	update_components(xs,mod) => res 
 	--------------------------------
-	update_components(SCode.COMPONENT(id,f,r,p,attr,tp,m)::xs,mod) 
-	  => SCode.COMPONENT(id,f,r,p,attr,tp,m)::res
-
-  rule	Mod.lookup_comp_modification(mod,id) => m1 &
-	Mod.unelab_mod(m1) => m2 &
-	update_components(xs,mod) => res 
-	--------------------------------
-	update_components(SCode.COMPONENT(id,f,r,p,attr,tp,m)::xs,mod) 
-	  => SCode.COMPONENT(id,f,r,p,attr,tp,m2)::res
+	update_components((comp as SCode.COMPONENT(id,_,_,_,_,_,_),cmod)::xs,mod) 
+	  => ((comp,mod')::res)
 
   rule	update_components(xs,mod) => res 
 	--------------------------------
-	update_components((c as SCode.EXTENDS(_,_))::xs,mod) 
-	  => c::res
+	update_components(((c as SCode.EXTENDS(_,_)),emod)::xs,mod) 
+	  => ((c,emod)::res)
 
   rule	update_components(xs,mod) => res 
 	--------------------------------
-	update_components((c as SCode.CLASSDEF(_,_,_,_))::xs,mod) 
-	  => c::res
+	update_components(((c as SCode.CLASSDEF(_,_,_,_)),cmod)::xs,mod) 
+	  => ((c,cmod)::res)
 
   rule	update_components(xs,mod) => res 
 	--------------------------------
-	update_components((c as SCode.IMPORT(_))::xs,mod) 
-	  => c::res
+	update_components(((c as SCode.IMPORT(_)),_)::xs,mod) 
+	  => ((c,Types.NOMOD)::res)
 
   rule	Debug.fprint("failtrace", "-update_components failed\n")
 	----------------------
@@ -830,7 +879,7 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	
   rule	make_complete_type_names(env, rest) => res &
 	Lookup.complete_path(env, path) => path' 
-	(*& print "completed to " & Absyn.path_string path' => s & print s & print "\n" *)
+(*& print "completed to " & Absyn.path_string path' => s & print s & print "\n" *)
 	------------------------------------
 	make_complete_type_names(env, SCode.EXTENDS(path, mod)::rest)
 	  => SCode.EXTENDS(path', mod)::res
@@ -847,7 +896,7 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	  
   rule	make_complete_type_names(env, rest) => res &
 	Lookup.complete_path(env, tp) => tp' 
-        (*& print "completed to " & Absyn.path_string tp' => s & print s & print "\n" *)
+(*      & print "completed to " & Absyn.path_string tp' => s & print s & print "\n" *)
 	--------------------------------------------------
 	make_complete_type_names(env, (SCode.COMPONENT(id,f,r,p,attr,tp,mod))::rest)
 	  => SCode.COMPONENT(id,f,r,p,attr,tp',mod)::res
@@ -866,7 +915,7 @@ end
  ** derived class parts are fetched.
  **)
 
-relation inst_derived_classes: 	(Env.Env, Mod.Mod, SCode.Class, bool) =>
+relation inst_derived_classes: 	(Env.Env, Types.Mod, SCode.Class, bool) =>
 	  (Env.Env, SCode.Element list, SCode.Equation list, 
 	   SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) =
 	
@@ -903,7 +952,7 @@ end
  **)
 
 relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    SCode.Element list, InstDims, bool, bool)
+			    (SCode.Element*Types.Mod) list, InstDims, bool, bool)
 	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 		Types.Var list) =
 	
@@ -920,7 +969,7 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element_list(env, mod, pre, csets, ci_state, el::els, inst_dims, impl, packimpl)
 	  => (dae, env'', csets'', ci_state'', tys)
 
-  rule	Debug.fprint("failtrace", "- inst_element_list2 failed\n")
+  rule	Debug.fprint("failtrace", "- inst_element_list failed\n")
 	------------------------------------
 	inst_element_list(_,_,_,_,_,els,_,_,_) => fail
 end
@@ -987,51 +1036,51 @@ end
  ** the number of variables or equations. For now by only looking at dimension sizes of components.
 **)
 relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-				  SCode.Element list, SCode.Element list,  InstDims, bool)
+				  (SCode.Element*Types.Mod) list, (SCode.Element*Types.Mod) list,  InstDims, bool)
 	=> (Env) =
 
   axiom	add_components_to_env(env,_,_,_,_,[],_,_,_) => env 
 
-  rule	(* ChecIf the component is a structural parameter, change it's
+  rule	(* Check if the component is a structural parameter, change it's
 	 attribute to STRUCTPARAM. *)
 	not ClassInf.is_function(cistate) &  (* Functions should not be considered *)
 	get_crefs_from_compdims(allcomps) => crefs &
 	member_crefs(Absyn.CREF_IDENT(n,[]),crefs) => true &
-	add_components_to_env2(env,mod,pre,csets,cistate,[SCode.COMPONENT(n,final,repl,prot,
-									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m)],instdims,impl) => env' &
+	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
+									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m),cmod)],instdims,impl) => env' &
 	
 	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
-			       (comp as SCode.COMPONENT(n,final,repl,prot,
+			       ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m))::xs, allcomps,instdims,impl) => env''
+				     t,m)),cmod)::xs, allcomps,instdims,impl) => env''
 
   rule	(* Not structural parameter. No Change.*)
-	add_components_to_env2(env,mod,pre,csets,cistate,[SCode.COMPONENT(n,final,repl,prot,
-									  SCode.ATTR(ad,flow,acc,param,dir),t,m)],instdims,impl) => env' &
+	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
+									  SCode.ATTR(ad,flow,acc,param,dir),t,m),cmod)],instdims,impl) => env' &
 	
 	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
-			       (comp as SCode.COMPONENT(n,final,repl,prot,
+			       ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m))::xs, allcomps,instdims,impl) => env''
+				     t,m)),cmod)::xs, allcomps,instdims,impl) => env''
 	
   rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------
 	add_components_to_env(env, mod, pre, csets, cistate, 
-			       (SCode.IMPORT(_))::xs, allcomps,instdims,impl) => env''
+			       ((SCode.IMPORT(_),_))::xs, allcomps,instdims,impl) => env''
 
   rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------
 	add_components_to_env(env, mod, pre, csets, cistate, 
-			       (SCode.EXTENDS(_,_))::xs, allcomps,instdims,impl) => env''
+			       ((SCode.EXTENDS(_,_),_))::xs, allcomps,instdims,impl) => env''
 
   rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------
 	add_components_to_env(env, mod, pre, csets, cistate, 
-			       (SCode.CLASSDEF(_,_,_,_))::xs, allcomps,instdims,impl) => env''
+			       ((SCode.CLASSDEF(_,_,_,_),_))::xs, allcomps,instdims,impl) => env''
 
 (*  rule	add_components_to_env(env,mods,pre,csets,ci_state,
 				 xs,allcomps,inst_dims,impl) => env' 
@@ -1039,16 +1088,14 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State
 	add_components_to_env(env,mods,pre,csets,ci_state,
 				 nocomp::xs,allcomps,inst_dims,impl) => env'*)
 	
-  rule	Debug.fprint("failtrace", "- add_components_to_env failed complist=\n" ) &
-	Debug.fcall("failtrace", SCode.print_element_list, comps) &
-	Debug.fprint("failtrace", "\n\n") 
+  rule	Debug.fprint("failtrace", "- add_components_to_env failed\n" ) 
 	-------------------------------------
 	add_components_to_env(_,_,_,_,_,comps,_,_,_) => fail
 end
 
 
 relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    SCode.Element list, InstDims, bool)
+			    (SCode.Element*Types.Mod) list, InstDims, bool)
 	    => (Env) =
 
   rule	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
@@ -1065,16 +1112,16 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 	(* Use type T_NOTYPE instead of as earier trying to instantiate, since instanitation might fail without having correct
 	 modifications (e.g. when instanitating a partial class that must be redeclared through a modification)*)
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-	    prot,(Types.T_NOTYPE,NONE),Types.UNBOUND),SOME(comp),false) => env' & 
+	    prot,(Types.T_NOTYPE,NONE),Types.UNBOUND),SOME((comp,cmod)),false) => env' & 
 	add_components_to_env2(env',mods,pre,csets,ci_state,xs,inst_dims,impl) 
 	  => env'' &
 	Debug.fprint("decl", " updated env :") &
 	Debug.fcall ("decl", Env.print_env, env'') 
 	-----------------
 	add_components_to_env2(env,mods,pre,csets,ci_state,
-		     (comp as SCode.COMPONENT(n,final,repl,prot,
+		     ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m))::xs,inst_dims,impl) => env''
+				     t,m),cmod))::xs,inst_dims,impl) => env''
 
 (*  rule	add_components_to_env2(env,mods,pre,csets,ci_state,
 				 xs,inst_dims,impl) => env' 
@@ -1086,14 +1133,12 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
   axiom	add_components_to_env2(env,_,_,_,_,[],_,_) => env
 
   rule	Debug.fprint("failtrace", "- add_components_to_env2 failed\n") &
-	Debug.fprint("failtrace", "\n components =\n") &
-	Debug.fcall("failtrace", SCode.print_element_list, comps) &
 	Debug.fprint("failtrace", "\n\n") 
 	--------------------
 	add_components_to_env2(env,_,_,_,_,comps,_,_) => fail 
 end
 
-relation get_crefs_from_compdims: (SCode.Element list) => Absyn.ComponentRef list =
+relation get_crefs_from_compdims: ((SCode.Element*Types.Mod) list) => Absyn.ComponentRef list =
 
   axiom	get_crefs_from_compdims([]) => []
 	
@@ -1103,7 +1148,8 @@ relation get_crefs_from_compdims: (SCode.Element list) => Absyn.ComponentRef lis
 	(*Util.list_map(crefs2,Absyn.cref_get_first) => crefs2' &*)
 	list_append(crefs1,crefs2) => crefs
 	------------------------------------
-	get_crefs_from_compdims(SCode.COMPONENT(_,_,_,_,SCode.ATTR(arraydim,_,_,_,_),_,_)::xs) => crefs
+	get_crefs_from_compdims((SCode.COMPONENT(_,_,_,_,SCode.ATTR(arraydim,_,_,_,_),_,_),_)::xs)
+	  => crefs
 
   rule	get_crefs_from_compdims(xs) => crefs
 	------------------------------------
@@ -1134,7 +1180,7 @@ end
  **)
 
 relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.Element, InstDims, bool, bool)
+			 (SCode.Element*Types.Mod), InstDims, bool, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -1144,7 +1190,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Env.extend_frame_i(env,imp) => env'
 	------------------------------------
-	inst_element(env, mod, pre, csets, ci_state, SCode.IMPORT(imp), instdims,_,_) 
+	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdims,_,_) 
 	  => ([], env', csets, ci_state, [])
 		 
 	(* If a variable is declared multiple times, the first is used *)
@@ -1153,7 +1199,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
 	inst_element(env, mods, pre, csets, ci_state,
-		     SCode.COMPONENT(n,final,repl,prot,_,_,_),_,_,_)
+		     (SCode.COMPONENT(n,final,repl,prot,_,_,_),_),_,_,_)
 	  => ([], env, csets, ci_state, []) 
 
   	  (* Illegal redeclarations *)
@@ -1163,7 +1209,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf " as a variable\n" 
 	------------------------
 	inst_element(env, mods, pre, csets, ci_state,
-		     SCode.CLASSDEF(n,_,_,_),_,_,_)
+		     (SCode.CLASSDEF(n,_,_,_),_),_,_,_)
  	  => fail 
 	  
  (* rule	Lookup.lookup_class(Cache.CACHE([],[]), env,Absyn.IDENT(n),false) => (_,_,_) &
@@ -1181,7 +1227,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	(* Redeclare of class definition, replaceable is true *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
-	  => (classmod as Mod.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
+	  => (classmod as Types.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
 	Debug.fprintln ("insttr", "*--*Classdef mods") &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "*--*All mods") &
@@ -1190,17 +1236,17 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (env', dae)
 	-------------------------------------------------
 	inst_element(env, mods, pre, csets, ci_state, 
-		     SCode.CLASSDEF(n,_,true,c), inst_dims, impl, packimpl)
+		     (SCode.CLASSDEF(n,_,true,c),_), inst_dims, impl, packimpl)
 	  => (dae, env', csets, ci_state, [])
 
   rule	(* Redeclare of class definition, replaceable is false *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
-	  => (classmod as Mod.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
+	  => (classmod as Types.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
 	Print.print_buf "# Trying to redeclare class " & Print.print_buf n &
 	Print.print_buf " but class not declared as replacable.\n" 
 	-------------------------------------------------
 	inst_element(env, mods, pre, csets, ci_state, 
-		     SCode.CLASSDEF(n,_,false,c),inst_dims,impl,packimpl)
+		     (SCode.CLASSDEF(n,_,false,c),_),inst_dims,impl,packimpl)
 	  => fail
 
   rule	(* Classdefinition without redeclaration *)
@@ -1213,7 +1259,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (env',dae)
 	-------------------------------------------------------
 	inst_element(env, mods, pre, csets, ci_state, 
-		     SCode.CLASSDEF(n,_,_,c),inst_dims,impl,packimpl)
+		     (SCode.CLASSDEF(n,_,_,c),_),inst_dims,impl,packimpl)
 	  => (dae, env', csets, ci_state, []) 
 	  
 	  (**  A component
@@ -1228,7 +1274,9 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	   ** instantiate the class with an extended prefix.
 	   **)
 	
-  rule	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
+  rule	Debug.fprint("insttr", "Instantiating component ") &
+	Debug.fprint("insttr", n) & Debug.fprint("insttr", "\n") &
+	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
 	
 	(** The class definition is fetched from the environment. *)
 	(** Then the set of modifications is calculated.  The *)
@@ -1240,40 +1288,50 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** included in the variable declaration is in the variable *)
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
-	Debug.fprintln ("insttr", "Looking up class modifications") &
+	Debug.fprint ("insttr", "Looking up class modifications") &
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
-	Debug.fprintln ("insttr", "Looking up component modifications") &
+	Debug.fprint ("insttr", "\nLooking up component modifications") &
 	Mod.lookup_comp_modification(mods,n) => mm &
-	Debug.fcall ("insttr", Mod.print_mod, mm) &
+	Debug.fcall ("insttr", Mod.print_mod, mm) & Debug.fprint ("insttr", "\n") &
 	(* The types in the environment does not have correct Binding.
 	   We must update those variables that is found in m into a new environment.*)
 	let owncref = Absyn.CREF_IDENT(n,[]) &
 
 	get_cref_from_mod(m) => crefs &
  	get_cref_from_dim(ad) => crefs2 &
-	list_append(crefs,crefs2) => crefs' &
+		
+	Util.list_flatten([crefs,crefs2]) => crefs' &
 	remove_cref_from_crefs(crefs',owncref) => crefs'' &
-	update_variables_in_env(mods,crefs'',env,ci_state,impl) => env2 &
 	
+	update_variables_in_env(mods,crefs'',env,ci_state,impl) => env2 &
+	Debug.fprint("insttr", "updated variables in env\n") &
 	(* Update the untyped modifiers to typed ones, and extract class *)
 	(* and component modifiers again.*)
 	Mod.update_mod(env2,pre,mods) => mods' &
+
+	Debug.fprint("insttr", "updated modifiers to typed ones: ") &
+	Debug.fcall("insttr", Mod.print_mod, mods') &
+	Debug.fprint("insttr", "\n") &	
 	Mod.lookup_modification_p(mods',t) => classmod' &
 	Mod.lookup_comp_modification(mods',n) => mm' &
 		
-	Debug.fprintln ("insttr", "Elaborating current modifications") &
+	Debug.fprintln ("insttr", "Elaborating current modifications\n env") &
+	Debug.fcall ("insttr", Env.print_env, env2)  &
+	Debug.fprintln ("insttr", "\n\n") &
 	Mod.elab_mod(env2,pre,m) => m' &
 	Debug.fcall ("insttr", Mod.print_mod, m') &
 
 	Mod.merge(classmod',mm') => mod &
 	Mod.merge(mod,m') => mod1 &
+	Mod.merge(cmod,mod1) => mod1' &
 
-	redeclare_type(mod1,comp,env2,pre,ci_state,impl) => (SCode.COMPONENT(n,final,repl,prot,
-				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m),mod',env2') &
-
-	Debug.fprint("insttr", "looking for type") &
+	redeclare_type(mod1',comp,env2,pre,ci_state,impl) 
+	  => (SCode.COMPONENT(n,final,repl,prot,
+			      attr as SCode.ATTR(ad,flow,acc,param,dir),
+			      t,m),mod',env2') &
+	
+	Debug.fprint("insttr", "looking for type ") &
 	Debug.fcall("insttr",Dump.print_path,t) &
 	Debug.fprint("insttr"," \n") &
 	
@@ -1289,7 +1347,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Mod.mod_equation mod' => eq &
 
-	Debug.fprintln ("insttr", "mod equation done") &
+	Debug.fprintln ("insttr", "mod equation done, from mod:") &
+	Debug.fcall("insttr",Mod.print_mod, mod') & Debug.fprintln ("insttr", "\n") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 	elab_arraydim(env2',owncref,ad,eq,impl,NONE) => dims &
@@ -1299,6 +1358,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** Instantiate the component *)	
 	(*Dump.select_string(impl,"IMPLICIT!!!\n","") => s &
 	print s &*)
+	Debug.fprint("peter","inst_var ") &
+	Debug.fprint("peter",n) & Debug.fprint("peter", " mod=") &
+	Debug.fcall("peter",Mod.print_mod, mod') &
+	Debug.fprint("peter","\n") &
 	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
 	  => (dae, csets', ty) &
 	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &
@@ -1319,9 +1382,9 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint("insttr","inst_element Component succeeded\n") 
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     comp as SCode.COMPONENT(n,final,repl,prot,
+		     (comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m),inst_dims,impl,packimpl)
+				     t,m),cmod),inst_dims,impl,packimpl)
           => (dae, env',csets',ci_state,
 	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
@@ -1341,14 +1404,14 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("instdb", Env.print_env, env)
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,repl,prot,_,t,_),_,_,_)
+		     (SCode.COMPONENT(n,final,repl,prot,_,t,_),_),_,_,_)
          => ([],env,csets,ci_state,[])
 
   rule	Debug.fprint("failtrace", "- inst_element failed\n") &
 	Debug.fcall("failtrace",SCode.print_element, el) &
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------------
-	inst_element(_,_,_,_,_,el,_,_,_) => fail 
+	inst_element(_,_,_,_,_,(el,_),_,_,_) => fail 
 
 end	
 
@@ -1376,37 +1439,37 @@ end
  ** This relation takes a 'Mod' and an SCode.Element and if the modification contain
  ** a redeclare of that element, the type is changed and an updated element is returned
 **)
-relation redeclare_type: (Mod.Mod, 
+relation redeclare_type: (Types.Mod, 
 			  SCode.Element,
 			  Env.Env,
 			  Prefix.Prefix,
 			  ClassInf.State,
 			  bool (* Implicit instantation *)) 
-	  => (SCode.Element,Mod.Mod,Env.Env) =
+	  => (SCode.Element,Types.Mod,Env.Env) =
 
   rule	n1=n2 &
 	get_cref_from_mod(mod) => crefs &
-	update_variables_in_env(Mod.NOMOD (* m *),crefs,env,ci_state,impl) => env' &
+	update_variables_in_env(Types.NOMOD (* m *),crefs,env,ci_state,impl) => env' &
 	Mod.elab_mod(env',pre,mod) => m' 
 	--------------------------------
-	redeclare_type (m as Mod.REDECL(_,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod))::rest),
+	redeclare_type (m as Types.REDECL(_,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod))::rest),
 			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre,ci_state,impl) => (redecl,m',env')
 
   rule	not n1=n2 &
-	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
+	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
 	  => (newcomp,mod,env')
 	-------------
-	redeclare_type (Mod.REDECL(redfin,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_))::rest),
+	redeclare_type (Types.REDECL(redfin,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_))::rest),
 			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre,ci_state,impl)
 	  => (newcomp,mod,env')
 
-  rule	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
+  rule	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
 	  => (newcomp,mod,env')
 	  ----------------------------
-	redeclare_type(Mod.REDECL(redfin,_::rest),comp,env,pre,ci_state,impl) 
+	redeclare_type(Types.REDECL(redfin,_::rest),comp,env,pre,ci_state,impl) 
 	  =>(newcomp,mod,env')
 
-  axiom	redeclare_type(Mod.REDECL(redfin,[]),comp,env,pre,ci_state,impl) => (comp,Mod.NOMOD,env)
+  axiom	redeclare_type(Types.REDECL(redfin,[]),comp,env,pre,ci_state,impl) => (comp,Types.NOMOD,env)
 
   axiom	redeclare_type(mod,comp,env,pre,ci_state,impl) => (comp,mod,env)
 
@@ -1429,7 +1492,7 @@ end
 
 relation inst_var : (Env.Env,
 		     ClassInf.State,
-		     Mod.Mod,
+		     Types.Mod,
 		     Prefix.Prefix,
 		     Connect.Sets,
 		     Ident,
@@ -1466,7 +1529,7 @@ end
 
 relation inst_var2 : (Env.Env,
 		      ClassInf.State,
-		      Mod.Mod,
+		      Types.Mod,
 		      Prefix.Prefix,
 		      Connect.Sets,
 		      Ident,
@@ -1513,7 +1576,7 @@ relation inst_var2 : (Env.Env,
 	list_append(dae1',dae3) => dae 
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
-	inst_var2(env,ci_state,mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
+	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
 		 [],idxs,inst_dims,impl (*as false*))
           => (dae,csets',ty)
 
@@ -1531,7 +1594,7 @@ relation inst_var2 : (Env.Env,
 	list_append(dae1',dae3) => dae
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
-	inst_var2(env,ci_state,mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
+	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
 		 [],idxs,inst_dims,impl (*as false*))
           => (dae,csets',ty)
 
@@ -1562,7 +1625,7 @@ relation inst_var2 : (Env.Env,
 
   rule	(* Array variables with binding in functions , e.g. input Real x[:]=Y *)
 	inst_dim_exp_lst (dims,true) => dims' &
-	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,p)) &  
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
 	make_array_type(dims,ty) => ty' &
@@ -1640,7 +1703,7 @@ relation make_array_type: (DimExp list, Types.Type)
 	make_array_type(_,_) => fail
 end
 
-relation get_usertype_dimensions:(Env.Env, Mod.Mod, Prefix.Prefix, SCode.Class,
+relation get_usertype_dimensions:(Env.Env, Types.Mod, Prefix.Prefix, SCode.Class,
 				  InstDims)
 	  => (DimExp list) =
   axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Real",_,_,_,_),_) => []
@@ -1735,34 +1798,34 @@ relation get_cref_from_submods: (SCode.SubMod list) => Absyn.ComponentRef list =
 	axiom get_cref_from_submods([]) => []
 end
 
-relation get_cref_from_elabed_mod: Mod.Mod => Absyn.ComponentRef list =
+relation get_cref_from_elabed_mod: Types.Mod => Absyn.ComponentRef list =
 
   rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
 	Print.print_buf "cref from redeclare, mod:" &
-	get_cref_from_elabed_mod(Mod.REDECL(b,xs)) => res1 &
+	get_cref_from_elabed_mod(Types.REDECL(b,xs)) => res1 &
 	get_cref_from_mod(m) => res2 &
 	list_append(res1,res2) => res
 	-----------------------------
-	get_cref_from_elabed_mod(Mod.REDECL(b, SCode.COMPONENT(n,_,_,_,_,_,m)::xs)) 
+	get_cref_from_elabed_mod(Types.REDECL(b, SCode.COMPONENT(n,_,_,_,_,_,m)::xs)) 
 	  => res
   rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
-	get_cref_from_elabed_mod(Mod.REDECL(b,xs)) => res
+	get_cref_from_elabed_mod(Types.REDECL(b,xs)) => res
 	-----------------------------
-	get_cref_from_elabed_mod(Mod.REDECL(b, _::xs)) 
+	get_cref_from_elabed_mod(Types.REDECL(b, _::xs)) 
 	  => res
 
-  axiom	get_cref_from_elabed_mod(Mod.REDECL(b,[])) => []
+  axiom	get_cref_from_elabed_mod(Types.REDECL(b,[])) => []
 
   rule	(* Find in sub modifications e.g A(B=3) find B *)
 	get_cref_from_elabed_submods(submods) => l1 &
 	get_cref_from_elabed_eqmod(e) => l2 &
 	list_append(l1,l2) => res
 	-------------------------
-	get_cref_from_elabed_mod(mod as Mod.MOD(_,submods,SOME(e))) => res
+	get_cref_from_elabed_mod(mod as Types.MOD(_,submods,SOME(e))) => res
 
   rule	get_cref_from_elabed_submods(submods) => res
 	-------------------------------------
-	get_cref_from_elabed_mod(Mod.MOD(_,submods,NONE)) => res 
+	get_cref_from_elabed_mod(Types.MOD(_,submods,NONE)) => res 
 	
   axiom	get_cref_from_elabed_mod(_) => []
 
@@ -1771,34 +1834,34 @@ relation get_cref_from_elabed_mod: Mod.Mod => Absyn.ComponentRef list =
 	get_cref_from_elabed_mod(_) => fail
 end
 
-relation get_cref_from_elabed_eqmod: (Mod.EqMod) => Absyn.ComponentRef list =
+relation get_cref_from_elabed_eqmod: (Types.EqMod) => Absyn.ComponentRef list =
 	
   rule	Absyn.get_cref_from_exp(exp) => res
 	---------------------------------
-	get_cref_from_elabed_eqmod(Mod.UNTYPED(exp)) => res
+	get_cref_from_elabed_eqmod(Types.UNTYPED(exp)) => res
 
 	(* Otherwise, empty list, since typed expressions does not need to be updated *)
   axiom	get_cref_from_elabed_eqmod(_) => []
 end
 
-relation get_cref_from_elabed_submods: (Mod.SubMod list) => Absyn.ComponentRef list =
+relation get_cref_from_elabed_submods: (Types.SubMod list) => Absyn.ComponentRef list =
 
   rule	get_cref_from_elabed_mod(mod) => res1 &
 	get_cref_from_elabed_submods(rest) => res2 &
 	list_append(res1,res2) => res
 	-------------------------------
-	get_cref_from_elabed_submods(Mod.NAMEMOD(_,mod)::rest) => res
+	get_cref_from_elabed_submods(Types.NAMEMOD(_,mod)::rest) => res
 	   
   rule	get_cref_from_elabed_mod(mod) => res1 &
 	get_cref_from_elabed_submods(rest) => res2 &
 	list_append(res1,res2) => res
 	-------------------------------
-	get_cref_from_elabed_submods(Mod.IDXMOD(_,mod)::rest) => res
+	get_cref_from_elabed_submods(Types.IDXMOD(_,mod)::rest) => res
 
 	axiom get_cref_from_elabed_submods([]) => []
 end
 
-relation update_variables_in_env:(Mod.Mod,
+relation update_variables_in_env:(Types.Mod,
 				  Absyn.ComponentRef list,
 				  Env.Env, 
 				  ClassInf.State, 
@@ -1815,14 +1878,14 @@ relation update_variables_in_env:(Mod.Mod,
 	update_variables_in_env(_,[],env,ci_state,impl) => env
 end
 
-relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.State, bool) 
+relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassInf.State, bool) 
 	  => Env.Env =
 	
   rule	Lookup.lookup_ident(env,id) 
 	  => (ty, 
-	      SOME(SCode.COMPONENT(n,final,repl,prot,
+	      SOME((SCode.COMPONENT(n,final,repl,prot,
 				   attr as SCode.ATTR(ad,flow,acc,param,dir),
-				   t,m)),_) &
+				   t,m),cmod)),_) &
 
 	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
 
@@ -1839,15 +1902,16 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.
 	Mod.lookup_comp_modification(mods,n) => mm &
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m') => mod' &
+	Mod.merge(cmod,mod') => mod'' &
 	
-	Mod.mod_equation mod' => eq &
+	Mod.mod_equation mod'' => eq &
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 	elab_arraydim(env2,cref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var(cenv,ci_state, mod', Prefix.NOPRE, [], n, cl, attr,
+	inst_var(cenv,ci_state, mod'', Prefix.NOPRE, [], n, cl, attr,
 		 dims, [], [], false)
 	  => (dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
@@ -1855,7 +1919,10 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.
 
 	make_binding (env2,attr,eq) => binding &
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),false) => env' 
+					 prot,ty,binding),false) => env' &
+	Debug.fprint("insttr","Updated variable ") &
+	Debug.fprint("insttr", id) &
+	Debug.fprint("insttr"," in env.\n ") 
 	----------------------------------
 	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,ci_state, impl) => env'
 
@@ -1876,9 +1943,9 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.
   rule	(* For qualified names, e.g. a.b.c, instanitate component a *)
 	Lookup.lookup_ident(env,id) 
 	  => (ty, 
-	      SOME(SCode.COMPONENT(n,final,repl,prot,
+	      SOME((SCode.COMPONENT(n,final,repl,prot,
 				   attr as SCode.ATTR(ad,flow,acc,param,dir),
-				   t,m)),_) &
+				   t,m),cmod)),_) &
 	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
 
 	get_cref_from_mod(m) => crefs &
@@ -1894,8 +1961,8 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.
 	Mod.lookup_comp_modification(mods,n) => mm &
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m') => mod' &
-	
-	Mod.mod_equation mod' => eq &
+	Mod.merge(cmod,mod') => mod'' &
+	Mod.mod_equation mod'' => eq &
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
@@ -1903,7 +1970,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.
 	elab_arraydim(env2,owncref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var(cenv, ci_state, mod', Prefix.NOPRE, [], n, cl, attr,
+	inst_var(cenv, ci_state, mod'', Prefix.NOPRE, [], n, cl, attr,
 		 dims, [], [], false)
 	  => (dae1, csets', ty) &
 
@@ -1920,7 +1987,9 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, ClassInf.
 
   rule	Debug.fprint("failtrace", "-update_variable_in_env failed, ident =") &
 	Debug.fcall("failtrace", Dump.print_component_ref, cref) &
-	Debug.fprint("failtrace", "\n" )
+	Debug.fprint("failtrace", "env:" ) &
+	Debug.fcall("failtrace", Env.print_env , env) &
+	Debug.fprint("failtrace","\n") 
 	---------------------------
 	update_variable_in_env(_,cref,env,ci_state,impl) => env
 end
@@ -1993,7 +2062,7 @@ end
 
 relation inst_array : (Env.Env,
 		       ClassInf.State,
-		       Mod.Mod,
+		       Types.Mod,
 		       Prefix.Prefix,
 		       Connect.Sets,
 		       Ident,
@@ -2009,7 +2078,7 @@ relation inst_array : (Env.Env,
 	  
 (*  rule	(* If is a function var.*)
 	Print.print_buf "inst_array, is function" &
-	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,p)) &  (* Which has an 
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  (* Which has an 
 							  expression binding *)
 	Print.print_buf "inst_array, calling inst_class\n" &
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
@@ -2041,12 +2110,12 @@ relation inst_array : (Env.Env,
 
   rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
 	(* Should only generate -one- functioncall *)
-	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,p)) &
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &
 	Exp.contain_functioncall(e) => true &
-	inst_var2(env,ci_state,Mod.NOMOD,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+	inst_var2(env,ci_state,Types.NOMOD,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
-	inst_array(env,ci_state,Mod.NOMOD,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state,Types.NOMOD,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
 	  => (dae2, csets'',arrty) &
 	(* Make the equation containing the functioncall *)
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
@@ -2079,7 +2148,7 @@ end
 
 (** relation: elab_arraydim
  **
- ** This relations examines both an `Absyn.ArrayDim' and an `Mod.EqMod
+ ** This relations examines both an `Absyn.ArrayDim' and an `Types.EqMod
  ** option' argument to find out the dimensions af a component.  If
  ** no equation modifications is given, only the declared dimension is
  ** used.
@@ -2092,7 +2161,7 @@ end
  ** check that that the dimension sizes are compatible and complete.
  **)
 
-relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Mod.EqMod option, bool,Interactive.InteractiveSymbolTable option)
+relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Types.EqMod option, bool,Interactive.InteractiveSymbolTable option)
 	  => DimExp list =
 
   rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim &
@@ -2104,7 +2173,7 @@ relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Mod.EqMod
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,cref,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => dim3
+	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,cf) => dim3
 
   rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
@@ -2115,7 +2184,7 @@ relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Mod.EqMod
 	Print.print_buf "    expected array dimensions [" &
 	print_dim dim1 & Print.print_buf "]\n"
 	---------------------------------
-	elab_arraydim(env,cref,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
+	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
 
 
   rule	Debug.fprint("failtrace", "- elab_arraydim failed\n")
@@ -2383,14 +2452,14 @@ end
  ** anything else.
  **)
 
-relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
+relation inst_class_decl : (Env.Env, Types.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
   rule	Debug.fprint("insttr","+\tinst_class_decl called\n") &
 	Env.extend_frame_c(env,c) => env' &
 	Debug.fprint("insttr","+\textended frame\n") &
-	implicit_instantiation(env',Mod.NOMOD,pre,csets,c,inst_dims,packimpl) 
+	implicit_instantiation(env',Types.NOMOD,pre,csets,c,inst_dims,packimpl) 
 	  => (env'',dae) &
 	Debug.fprint("insttr","+\timplicit instantiation of ") &
 	Debug.fprint("insttr",n) & Debug.fprint("insttr", " finshed\n\n") 
@@ -2411,7 +2480,7 @@ end
  ** same name as the class name.
  **)
 
-relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
+relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
@@ -2505,7 +2574,7 @@ relation package_prefix : (Env.Env, Absyn.Path) => Absyn.Path =
 end
 
 
-relation implicit_function_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
+relation implicit_function_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
@@ -2562,7 +2631,7 @@ relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
   rule	(* Instantiate each function, add its FQ name to the type, needed when deoverloading *)
 	Lookup.lookup_class(env,fn,true) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_FUNCTION,_),cenv) &
-	inst_class(cenv, Mod.NOMOD, Prefix.NOPRE, [], c, [], true,INNER_CALL) 
+	inst_class(cenv, Types.NOMOD, Prefix.NOPRE, [], c, [], true,INNER_CALL) 
 	  => (dae, _, _, (Types.T_FUNCTION(args,tp),_), st) &
         package_prefix (env, Absyn.IDENT(overloadname)) => fpath &
 	package_prefix (cenv, Absyn.IDENT(id)) => ovlfpath &
@@ -4371,16 +4440,16 @@ end
 (** relation: inst_start_binding
 ** This relation investigates a modification and extracts the start modification. E.g. Real x(start=1+3) => 1+3
 *)
-relation inst_start_binding: (Mod.Mod,Types.Type) => DAE.StartValue =
+relation inst_start_binding: (Types.Mod,Types.Type) => DAE.StartValue =
 
   rule	Mod.lookup_comp_modification(mod,"start") => mod &
-	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,Types.PROP(ty2,c))) &
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
 	Types.match_type(e,ty2,expected_type) => (e',ty') 
 	---------------------------------------------------
 	inst_start_binding (mod,expected_type) => SOME(e')
 
   rule	Mod.lookup_comp_modification(mod,"start") => mod &
-	Mod.mod_equation(mod) => SOME(Mod.TYPED(e,Types.PROP(ty2,c))) &
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
 	Print.print_buf "#Error, wrong type for start attribute.\n"
 	---------------------------------------------------
 	inst_start_binding (mod,etype) => fail
@@ -4424,12 +4493,12 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	inst_eq_equation(Exp.CREF(cr,t),
 			 Types.PROP(ty1,false(*FIXME*)), e,prop2,NON_INITIAL) => dae
 	-----------------------------------------------
-	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,prop2))))
+	inst_mod_equation(cr,ty1, mod as Types.MOD(_,_,SOME(Types.TYPED(e,prop2))))
 	  => dae
 
-  axiom inst_mod_equation(_,_,Mod.MOD(_,_,NONE)) => []
-  axiom inst_mod_equation(_,_,Mod.NOMOD) => []
-  axiom	inst_mod_equation(_,_,Mod.REDECL(_,_)) => []
+  axiom inst_mod_equation(_,_,Types.MOD(_,_,NONE)) => []
+  axiom inst_mod_equation(_,_,Types.NOMOD) => []
+  axiom	inst_mod_equation(_,_,Types.REDECL(_,_)) => []
 
   rule	Debug.fprint("failtrace", "- inst_mod_equation failed\n")
 	------------------------------------
@@ -4507,11 +4576,11 @@ end
  ** modified.
  **)
 
-relation check_prot : (bool, Mod.Mod, Exp.ComponentRef) => () =
+relation check_prot : (bool, Types.Mod, Exp.ComponentRef) => () =
 
   axiom	check_prot(false,_,cref)
 	
-  axiom check_prot(_,Mod.NOMOD,_)
+  axiom check_prot(_,Types.NOMOD,_)
 
   rule	Print.print_buf "# Trying to modify protected element " &
 	Exp.print_component_ref cref & Print.print_buf "\n"
@@ -4527,33 +4596,33 @@ end
  **
  **)
 
-relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option)
+relation make_binding : (Env.Env, SCode.Attributes, Types.EqMod option)
 	  => Types.Binding =
 
   axiom	make_binding (_,_,NONE) => Types.UNBOUND
 
 (* Numerical values becoms VALBOUND *)
-  axiom	make_binding (env, _, SOME(Mod.TYPED(Exp.ICONST(i),_))) 
+  axiom	make_binding (env, _, SOME(Types.TYPED(Exp.ICONST(i),_))) 
 	    => Types.VALBOUND(Values.INTEGER(i))
 	    
-  axiom make_binding (env, _, SOME(Mod.TYPED(Exp.RCONST(r),_)))
+  axiom make_binding (env, _, SOME(Types.TYPED(Exp.RCONST(r),_)))
 	    => Types.VALBOUND(Values.REAL(r))
 	    
-  axiom	make_binding (env, _, SOME(Mod.TYPED(Exp.SCONST(s),_)))
+  axiom	make_binding (env, _, SOME(Types.TYPED(Exp.SCONST(s),_)))
 	=> Types.VALBOUND(Values.STRING(s))
 	    
-  axiom	make_binding (env, _, SOME(Mod.TYPED(Exp.BCONST(b),_)))
+  axiom	make_binding (env, _, SOME(Types.TYPED(Exp.BCONST(b),_)))
 	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
-axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), SOME(Mod.TYPED(e,prop)))
+axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), SOME(Types.TYPED(e,prop)))
 	  => Types.EQBOUND(e,true)
 
 	(* default *)
 
   rule	Exp.simplify(e) => e' 
 	-------------------
-	make_binding (_,_, SOME(Mod.TYPED(e,Types.PROP(t,c)))) => Types.EQBOUND(e',c)
+	make_binding (_,_, SOME(Types.TYPED(e,Types.PROP(t,c)))) => Types.EQBOUND(e',c)
 
   rule	Debug.fprint("failtrace", "- make_binding failed\n")
 	-------------------------------
@@ -4696,4 +4765,18 @@ relation is_top_call: CallingScope => bool =
   axiom	is_top_call TOP_CALL => true
   axiom	is_top_call INNER_CALL => false
 
+end
+
+
+relation print_compmods:((SCode.Element * Types.Mod) list) => () =
+
+  axiom	print_compmods([]) => ()
+  rule	Print.print_buf "Component: " &
+	SCode.print_element el &
+	Print.print_buf "Modifier: " &
+	Mod.print_mod mod &
+	Print.print_buf "\n" &
+	print_compmods(xs) 
+	------------------
+	print_compmods((el,mod)::xs) => ()
 end

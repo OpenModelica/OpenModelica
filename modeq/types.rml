@@ -122,6 +122,18 @@ returns multiple arguments. *)
   (** information about whether a class is derived from a primitive *)
   (** type, and whether a variable is of one of these types.  *)
 
+
+  (** - Modification datatype, was originally in Mod *)
+
+  datatype EqMod = TYPED of Exp.Exp * Properties |
+		   UNTYPED of Absyn.Exp
+  datatype SubMod = NAMEMOD of Ident * Mod
+		  | IDXMOD of int list * Mod
+  and Mod = MOD of bool * (SubMod list) * EqMod option
+  	  | REDECL of bool * SCode.Element list
+	  | NOMOD
+
+
   (** - Exported relations *)
   relation basic_type : Type => bool
   relation equivtypes : (Type, Type) => bool
