@@ -644,7 +644,7 @@ end
          
   rule	array_list(vararr) => varlst &
          array_list(knvararr) => knvarlst &
-	     Util.list_select(knvarlst,is_not_param) => knvarlst' &
+	     Util.list_select(knvarlst,is_param) => knvarlst' &
          list_append(knvarlst',varlst) => all_vars &
          generate_indep_var(comp_name_list,0) => indep_var_list &
          generate_links2(all_vars,0,0,comp_name_list) => (vars_params_list_str,vars_lst,no_alg_values) &
@@ -1566,9 +1566,9 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 	      
 	      (* Varaibles in known variables are removed alg.vars, 
            they should not generate code.*)
-	      (* 	      Util.list_select(knvars,is_not_param) => knvars' & *)
+	      Util.list_select(knvars,is_param) => knvars' & 
           (* this is to generate the correct index for all the vars *)
-          list_append(knvars,vars) => all_vars &
+          list_append(knvars',vars) => all_vars &
           generate_var_defines2(all_vars,0,0,0,0) => vdefs1list &
           Util.string_append_list(vdefs1list) => vdefs1 &
           Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n\n",vdefs1,"\n"]) => vdefs
