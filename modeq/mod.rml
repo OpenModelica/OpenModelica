@@ -718,16 +718,26 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 			       ,env,pre) 
 	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc),m'')])
 	  
-  axiom	merge(Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_),_)]),
-	      Types.MOD(_,subs,_),env,pre) 
-	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
-		       NONE)
-	  
+  axiom	merge(mod as Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_),_)]),
+	      mods as Types.MOD(_,subs,_),env,pre) 
+	(*luc_pop : this shoud return the first mod because it have been merged in merge_subs*)
+	 (* => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
+		       NONE)*)
+	=> mod
+	(*end luc_pop*)
+		  
   axiom	merge(Types.MOD(_,subs,_),
 	      Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_),_)]),
 	      env,pre)
 	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
 		       NONE)
+
+	(*luc_pop: this is needed to catch it there are the same.*)
+	(* it matches a a dc-motor with RampVoltage *)
+  rule outer = inner
+	-----------------------------------------
+	merge(outer,inner,_,_) => outer
+	(* end luc_pop*)
 
   rule  Print.print_buf "# trying to modify final element\n"
 	------------------------------------------
@@ -739,11 +749,9 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	merge(Types.MOD(final,subs1,ass1), Types.MOD(false,subs2,ass2),env,pre)
 	  => Types.MOD(final,subs,ass)
 
-  rule	Print.print_buf "# incomplete handling of modification merging. Outer:" &
-	print_mod outer & Print.print_buf " inner:" &
-	print_mod inner 
-	-----------------------------------------------------
-	merge(outer,inner,_,_) => outer
+
+
+ axiom	merge(outer,inner,_,_) => outer
 
 end
 
@@ -860,7 +868,9 @@ end
 
 relation print_final : bool => () =
 
-  axiom print_final false
+  rule Print.print_buf " NOT final "
+       --------------
+       print_final false
 
   rule Print.print_buf " final "
        --------------
