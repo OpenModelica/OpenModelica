@@ -485,7 +485,7 @@ val array_array2int
 relation initial_env =
 
   rule	Debug.fprint ("insttr","Creating initial env.\n") &
-	Env.open_scope(Env.empty_env) => env1 &
+	Env.open_scope(Env.empty_env,false) => env1 &
 	Env.extend_frame_c(env1, rl_type) => env2 &
 	Env.extend_frame_c(env2, int_type) => env3 &
 	Env.extend_frame_c(env3, str_type) => env4 &

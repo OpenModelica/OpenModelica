@@ -198,7 +198,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 
   rule	Builtin.initial_env => env &
 	inst_class_decls(env,cdecls,path)=> (env',_) &
-	Lookup.lookup_class(env',path) => (cdef, env'') &
+	Lookup.lookup_class(env',path,true) => (cdef, env'') &
 	inst_class(env'',Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) => (dae,_,_,_) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
@@ -356,7 +356,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
 
-  rule	Env.open_scope(env) => env' &
+  rule	Env.open_scope(env,encflag) => env' &
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env', mod, pre, csets, ci_state, c, false,inst_dims,impl)
 	  => (dae1,_,csets',ci_state', tys) &
@@ -364,7 +364,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	list_append(dae1, dae2) => dae &
 	mktype(ci_state',tys) => ty
 	-------------------------------------------
-	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,_,r,_),inst_dims,impl)
+	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl)
 	  => (dae, [], ty,ci_state')
 
   rule	Print.print_buf "- inst_class " & Print.print_buf n & Print.print_buf " failed\n"
@@ -446,7 +446,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.print_prefix_str pre => prestr &
 	Absyn.path_string cn => cnstr &
 	Debug.fprintl ("insttr", ["inst_class derived: ", cnstr, ", pre=",prestr,"\n"]) &
-	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,_,r,_), cenv) &
+	Lookup.lookup_class(env,cn,true) => (c as SCode.CLASS(cn2,_,_,r,_), cenv) &
 	Mod.lookup_modification_p(mods,cn) => m &
 	Mod.elab_mod(env,pre,mod) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
@@ -466,7 +466,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** found in the environment, this rule prints an error *)
 	(** message. *)
 
-  rule	not Lookup.lookup_class(env,cn) => (_,_) &
+  rule	not Lookup.lookup_class(env,cn,false) => (_,_) &
 	Absyn.path_string(cn) => cns &
 	Print.print_buf "# unknown class: " & Print.print_buf cns & Print.print_buf "\n"
 	----------------------------------------
@@ -573,7 +573,7 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 			    SCode.Element list, InstDims, bool)
 	    => (Env) =
 
-  rule	Lookup.lookup_class(env,t) => (cl,cenv) & 
+  rule	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
 	Debug.fprint ("decl", "got class \n") &
 
 	(** PA: PROBLEM, Modifiers should be merged in this phase, but
@@ -659,7 +659,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 
   rule	Absyn.path_string(cn) => cns &
 	Debug.fprintln ("insttr", "Looking for base class") &
-	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,_,restr,def), cenv) &
+	Lookup.lookup_class(env,cn,true) => (c as SCode.CLASS(cn2,_,_,restr,def), cenv) &
 	Debug.fprintln ("insttr", "Base class found") &
 	Mod.lookup_modification_p(mods,cn) => classmod &
 	Debug.fprintln ("insttr", "Modifications fetched") &
@@ -705,7 +705,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     SCode.CLASSDEF(n,_,_,_),_,_)
 	  => fail
 	  
-  rule	Lookup.lookup_class(env,Absyn.IDENT(n)) => (_,_) &
+  rule	Lookup.lookup_class(env,Absyn.IDENT(n),false) => (_,_) &
 	Print.print_buf "# Trying to redeclare the variable " & Print.print_buf n &
 	Print.print_buf " as a class\n"
 	---------------------
@@ -772,7 +772,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall("insttr",Env.print_env,env) &
 	Debug.fprint("insttr"," \n") &
 	
-	Lookup.lookup_class(env,t) => (cl,cenv) & 
+	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
 	
 	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	Debug.fprintln ("insttr", "Looking up class modifications") &
@@ -848,7 +848,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
 	(**  Failure *)
-  rule	not Lookup.lookup_class(env,t) => (cl,cenv) &
+  rule	not Lookup.lookup_class(env,t,false) => (cl,cenv) &
 	Absyn.path_string(t) => s &
 	Print.print_buf "# unknown class '" & Print.print_buf s & Print.print_buf "' while instantiating " &
 	Prefix.prefix_add(n,[],pre) => pre' &
@@ -1105,7 +1105,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
 	    t,m)),_) &
 
-	Lookup.lookup_class(env,t) => (cl,cenv) & 
+	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
 
 	get_cref_from_mod(m) => crefs &
  	update_variables_in_env(mods,crefs,env,impl) => env2' &
@@ -2046,7 +2046,7 @@ end
 (** HJ: **)
 relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 
-  rule	Env.open_scope env => env' &
+  rule	Env.open_scope (env,false) => env' &
 	Env.extend_frame_v(env',
 			   Types.VAR(i,
 				     Types.ATTR(false,
@@ -2414,7 +2414,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_) => ([], csets)
 
-  rule	Env.open_scope env => env' &
+  rule	Env.open_scope (env,false) => env' &
 	Env.extend_frame_v (env',
 			    Types.VAR(i, Types.ATTR(false,
 						    SCode.RO,
@@ -3061,7 +3061,7 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
   rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
 	elab_arraydim(env,dim,NONE,true,NONE) => dimexp &
 	Debug.fprint ("recconst", "elaborated arraydim\n") &
-	Lookup.lookup_class(env,t) => (cl,cenv) &
+	Lookup.lookup_class(env,t,true) => (cl,cenv) &
 	Debug.fprint ("recconst", "looked up class\n") &
 	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
 	

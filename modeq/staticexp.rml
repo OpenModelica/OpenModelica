@@ -906,11 +906,11 @@ end
 
 relation make_env_from_cf: ((Absyn.Path * Types.Type) list) => Env.Env =
 
-  axiom	make_env_from_cf([]) => [Env.FRAME([])]
+  axiom	make_env_from_cf([]) => [Env.FRAME([],false)]
 
-  rule	make_env_from_cf(rest) => [Env.FRAME(lst)]
+  rule	make_env_from_cf(rest) => [Env.FRAME(lst,encflag)]
 	-----------------------------------
-	make_env_from_cf((Absyn.IDENT(id),t)::rest) =>[Env.FRAME((id,Env.TYPE(t))::lst)]
+	make_env_from_cf((Absyn.IDENT(id),t)::rest) =>[Env.FRAME((id,Env.TYPE(t))::lst,encflag)]
 end
 
 (** relation: elab_call_args
