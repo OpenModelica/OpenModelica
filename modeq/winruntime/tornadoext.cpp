@@ -20,7 +20,9 @@ extern "C"
   struct variable {
     string name;
     string type;
-    string direction;
+    string direction; // this either input/output/bidir or the name of class if the type is "class"
+    //used for generating SetSubModel(0, new CPopulation(L"Immune_Popul"));
+ 
     int index;
 
     string Unit;                // Unit of quantity
@@ -70,6 +72,15 @@ extern "C"
     return return_val;
   }
   
+  string & modelica_str_to_cpp(string & str)
+  {
+    size_t pos;
+    while((pos = str.find(".")) < str.size()-1) {
+      str.replace(pos,1,"_");
+    }
+    return str;
+
+  }
         
   void set_index_on_variable(string name, string class_name, int index)
   {
@@ -101,9 +112,9 @@ extern "C"
   {
     strstream output;
     string class_name_with_c = "C" + class_name;
-    map<string,variable>::const_iterator search2;    
-    output << class_name_with_c << "::\n";
-    output << class_name_with_c << "(const wchar_t* Name)\n";
+    map<string,variable>::iterator search2;    
+    output << modelica_str_to_cpp(class_name_with_c) << "::\n";
+    output << modelica_str_to_cpp(class_name_with_c) << "(const wchar_t* Name)\n";
     output << "{\n";
     output << "  SetName(Name);\n";
     output << "  SetDesc(L\" \");\n\n";
@@ -129,7 +140,7 @@ extern "C"
         ++search2)
       {
         if(search2->second.type == string("parameter")){
-          output << "  SetParam(" << search2->second.index << ", new CParam(L\"" << search2->second.name << "\"";
+          output << "  SetParam(" << search2->second.index << ", new CParam(L\"" << modelica_str_to_cpp(search2->second.name) << "\"";
           output << "," << search2->second.Unit; 
           output << "," << search2->second.DefaultValue;
           output << "," << search2->second.LowerBound;
@@ -153,7 +164,7 @@ extern "C"
       {
         if((search2->second.direction == string("input"))
            && (search2->second.type == string("variable"))){
-          output << "  SetInputVar(" << search2->second.index << ", new CInputVar(L\"" << search2->second.name << "\"";
+          output << "  SetInputVar(" << search2->second.index << ", new CInputVar(L\"" << modelica_str_to_cpp(search2->second.name) << "\"";
           output << "," << search2->second.Unit; 
           output << "," << search2->second.DefaultValue;
           output << "," << search2->second.LowerBound;
@@ -161,7 +172,7 @@ extern "C"
           output << "," << search2->second.Desc << "));\n";
         } else if((search2->second.direction == string("output"))
            && (search2->second.type == string("variable"))){
-          output << "  SetOutputVar(" << search2->second.index << ", new COutputVar(L\"" << search2->second.name << "\"";
+          output << "  SetOutputVar(" << search2->second.index << ", new COutputVar(L\"" << modelica_str_to_cpp(search2->second.name) << "\"";
           output << "," << search2->second.Unit; 
           output << "," << search2->second.DefaultValue;
           output << "," << search2->second.LowerBound;
@@ -186,7 +197,7 @@ extern "C"
         ++search2)
       {
         if(search2->second.type == string("state")){
-          output << "  SetDerStateVar(" << search2->second.index << ", new CDerStateVar(L\"" << search2->second.name << "\"";
+          output << "  SetDerStateVar(" << search2->second.index << ", new CDerStateVar(L\"" << modelica_str_to_cpp(search2->second.name) << "\"";
           output << "," << search2->second.Unit; 
           output << "," << search2->second.DefaultValue;
           output << "," << search2->second.LowerBound;
@@ -196,13 +207,13 @@ extern "C"
       }
    //fixme der state var
     output << "}\n\n";
-    output << "void " << class_name_with_c << "::\n";
+    output << "void " << modelica_str_to_cpp(class_name_with_c) << "::\n";
     output << "ComputeOutput()\n{\n}\n\n";
-    output << "void " << class_name_with_c << "::\n";
+    output << "void " << modelica_str_to_cpp(class_name_with_c) << "::\n";
     output << "ComputeTerminal()\n{\n}\n\n";
-    output << "void " << class_name_with_c << "::\n";
+    output << "void " << modelica_str_to_cpp(class_name_with_c) << "::\n";
     output << "ComputeState()\n{\n}\n\n";
-    output << "void " << class_name_with_c << "::\n";
+    output << "void " << modelica_str_to_cpp(class_name_with_c) << "::\n";
     output << "ComputeInitial()\n{\n}\n\n";
     output << ends;
     return string(output.str());
@@ -213,10 +224,10 @@ extern "C"
   {
     strstream output;
     string class_name_with_c = "C" + class_name;
-    output << "class " << class_name_with_c << " : public Tornado::CDAEModel\n";
+    output << "class " << modelica_str_to_cpp(class_name_with_c) << " : public Tornado::CDAEModel\n";
     output << "{\n";
     output << "  public:\n\n";
-    output << "    " << class_name_with_c << "(const wchar_t* Name);\n\n";
+    output << "    " << modelica_str_to_cpp(class_name_with_c) << "(const wchar_t* Name);\n\n";
     output << "  public:\n\n";
     output << "    void ComputeInitial();\n";
     output << "    void ComputeTerminal();\n";
@@ -247,7 +258,7 @@ extern "C"
             cout << search2->second.name << " : " << search2->second.direction << " = " << search2->second.type << " index: " << search2->second.index << endl;
           }
       }
-    cout << "-----------------------------------\n";
+    cout << "-----------------------------------------------------\n";
     for(search2 = all_var_and_params.begin();
         search2 != all_var_and_params.end();
         ++search2)
@@ -498,12 +509,101 @@ extern "C"
                                                        search->second);
     } 
 
-
+ 
     rmlA0 = (void*) mk_icon(ret_val);
  
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL 
 
+  RML_BEGIN_LABEL(TORNADOEXT__generate_5fconstructor_5fcomponent_5finitialization)
+  {
+    char* class_name = RML_STRINGDATA(rmlA0);
+    string class_str_key = string(class_name);
+    strstream output;
+    map<string, map<string,variable> >::iterator search;
+    search = generated_classes.find(class_str_key);
+    
+    if(search != generated_classes.end()){
+      map<string,variable>::iterator itr;
+      if(search->second.size() > 0){
+        output << "  SetNoSubModels(" << search->second.size() << ");\n";
+        int index = 0; 
+        for(itr = search->second.begin(); itr != search->second.end(); ++itr)
+          {
+            if(itr->second.type == string("class")){
+              output << "  SetSubModel(" << index++ << ", new C" << modelica_str_to_cpp(itr->second.direction) << "(\""<< modelica_str_to_cpp(itr->second.name) << "\"));\n";
+              //SetSubModel(0, new CPopulation(L"Immune_Popul"));
+              
+            }
+          }
+      }
+    }
+    output << endl << ends;
+      
+    rmlA0 = (void*) mk_scon(output.str());
+ 
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL 
+
+  RML_BEGIN_LABEL(TORNADOEXT__get_5fsubmodel_5findex_5fin_5fclass)
+  {
+    char* component_name = RML_STRINGDATA(rmlA0);
+    char* class_name = RML_STRINGDATA(rmlA1);
+    string class_str_key = string(class_name);
+    string component_str_key = string(component_name);
+    map<string, map<string,variable> >::iterator search;
+    search = generated_classes.find(class_str_key);
+    int ret_val = 0;//for error checking
+    
+    if(search != generated_classes.end()){
+      map<string,variable>::const_iterator itr;
+      if(search->second.size() > 0){
+        int index;
+        for(itr = search->second.begin(), index = 0; itr != search->second.end(); ++itr, ++index)
+          {
+            if(itr->second.type == string("class") && itr->second.name == component_str_key){
+              ret_val = index;
+            }
+          }
+      }
+    }
+      
+    rmlA0 = (void*) mk_icon(ret_val);
+ 
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL 
+
+  RML_BEGIN_LABEL(TORNADOEXT__generate_5findep_5fvar)
+  {
+    char* class_name = RML_STRINGDATA(rmlA0);
+    string class_str_key = string(class_name);
+    strstream output;
+    map<string, map<string,variable> >::iterator search;
+    search = generated_classes.find(class_str_key);
+    
+    if(search != generated_classes.end()){
+      map<string,variable>::const_iterator itr;
+      if(search->second.size() > 0){
+        int index = 0; 
+        for(itr = search->second.begin(); itr != search->second.end(); ++itr)
+          {
+            if(itr->second.type == string("class")){
+              output << "  GetSubModel(" << index++ << ")->GetIndepVar(0)->LinkValue(this, MSLE_INDEP_VAR, 0);\n";
+              //SetSubModel(0, new CPopulation(L"Immune_Popul"));
+              
+            }
+          }
+      }
+    }
+    output << endl << ends;
+      
+    rmlA0 = (void*) mk_scon(output.str());
+ 
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL 
 
 } // extern "C"
