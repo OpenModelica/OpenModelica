@@ -28,6 +28,7 @@ typedef struct {
 /* #include "AToken.h" */
 
 #include "rml.h"
+#include "yacclib.h"
 #include "dae.h"
 #include "exp.h"
 #include "class.h"
@@ -63,12 +64,9 @@ void zzd_attr(Attrib *attr)
 }
 
 #if 1
+/* Also see rml-1.3.6/examples/etc/ccall.c */
+
 static void *rml_ast = NULL;
-void *parse(struct rml_state *ignored)
-{
-  ANTLR(model_specification(), stdin);	/* start first rule */
-  return rml_ast;
-}
 
 void Parser_5finit(void)
 {
@@ -76,7 +74,10 @@ void Parser_5finit(void)
 
 RML_BEGIN_LABEL(Parser__parse)
 {
-  return parse(rmlState);
+  /* ANTLR(model_specification(), stdin);	/* start first rule */
+  rmlA0 = mk_cons(Class__CLASS(Class__CL_5fMODEL,mk_nil()), mk_nil());
+
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 #endif
