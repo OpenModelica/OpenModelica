@@ -6,6 +6,22 @@
 #include "Schedule.hpp"
 using namespace std;
 
+
+
+class EdgePrioCmp 
+{
+public:
+  EdgePrioCmp(TaskGraph*tg) : m_taskgraph(tg) {};
+  bool operator()(EdgeID &e1,EdgeID &e2)  
+  {
+    return getPriority(e1,m_taskgraph) > getPriority(e2,m_taskgraph);
+  };
+private:
+  TaskGraph * m_taskgraph;
+};
+
+typedef priority_queue<EdgeID,vector<EdgeID>,EdgePrioCmp> EdgePrioQueue;
+
 class Codegen
 {
 

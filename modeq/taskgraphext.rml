@@ -26,7 +26,10 @@ module TaskGraphExt:
 
 relation new_task: string => int
 
-relation add_edge: (int,int,string) => ()
+relation add_edge: (int (*from*),
+		    int (*to*),
+		    string (*communicated variable*), 
+		    int (*priority*)) => ()
 
 relation get_task: string => int 
 

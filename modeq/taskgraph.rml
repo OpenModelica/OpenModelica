@@ -258,7 +258,7 @@ relation build_system:(DAELow.DAELow, int vector, int vector, int list) => () =
 	TaskGraphExt.new_task("equation system") => tid &
 	build_system2(dae,ass1,ass2,system,tid) => predtasks &
 	Util.list_map(predtasks, TaskGraphExt.get_task) => predtaskids &
-	add_predecessors(tid,predtaskids,predtasks) 
+	add_predecessors(tid,predtaskids,predtasks,0) 
 	------------------------------------------
 	build_system(dae,ass1,ass2,system) => ()
 
@@ -313,7 +313,7 @@ relation build_assignment: (Exp.ComponentRef, (* varname *)
 	build_expression(exp) => (task,str) &
 	TaskGraphExt.new_task("copy") => tid &
 	Exp.cref_str(cr2) => cr2s &
-	TaskGraphExt.add_edge(task,tid,cr2s) &
+	TaskGraphExt.add_edge(task,tid,cr2s,0) &
 	Exp.cref_str(cr) => crs & 
 	TaskGraphExt.store_result(crs,tid,true,origname) &
 	TaskGraphExt.set_tasktype(tid,6) (* See TaskType in TaskGraph.hpp *)
@@ -373,8 +373,8 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	Exp.binop_symbol_1(op) => ops &
 	Util.string_append_list(["%s",ops,"%s"]) => ts &
 	TaskGraphExt.new_task(ts) => t &
-	TaskGraphExt.add_edge(t1,t,s1) &
-	TaskGraphExt.add_edge(t2,t,s2)
+	TaskGraphExt.add_edge(t1,t,s1,0) &
+	TaskGraphExt.add_edge(t2,t,s2,1)
 	---------------------------
 	build_expression(Exp.BINARY(e1,op,e2)) => (t,"")
 
@@ -383,8 +383,8 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	Exp.binop_symbol_1(op) => ops &
 	Util.string_append_list(["%s",ops,"%s"]) => ts &
 	TaskGraphExt.new_task(ts) => t &
-	TaskGraphExt.add_edge(t1,t,s1) &
-	TaskGraphExt.add_edge(t2,t,s2)
+	TaskGraphExt.add_edge(t1,t,s1,0) &
+	TaskGraphExt.add_edge(t2,t,s2,1)
 	---------------------------
 	build_expression(Exp.LBINARY(e1,op,e2)) => (t,"")
 
@@ -392,7 +392,7 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	Exp.unaryop_symbol(op) => ops &
 	Util.string_append_list([ops,"%s"]) => ts &
 	TaskGraphExt.new_task(ts) => t &
-	TaskGraphExt.add_edge(t1,t,s1) 
+	TaskGraphExt.add_edge(t1,t,s1,0) 
 	---------------------------
 	build_expression(Exp.UNARY(op,e1)) => (t,"")
 
@@ -400,7 +400,7 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	Exp.lunaryop_symbol(op) => ops &
 	Util.string_append_list([ops,"%s"]) => ts &
 	TaskGraphExt.new_task(ts) => t &
-	TaskGraphExt.add_edge(t1,t,s1) 
+	TaskGraphExt.add_edge(t1,t,s1,0) 
 	---------------------------
 	build_expression(Exp.LUNARY(op,e1)) => (t,"")
 	
@@ -409,8 +409,8 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	Exp.relop_symbol(relop) => ops &
 	Util.string_append_list(["%s",ops,"%s"]) => ts &
 	TaskGraphExt.new_task(ts) => t &
-	TaskGraphExt.add_edge(t1,t,s1) &
-	TaskGraphExt.add_edge(t2,t,s2)
+	TaskGraphExt.add_edge(t1,t,s1,0) &
+	TaskGraphExt.add_edge(t2,t,s2,1)
 	-------------------------
 	build_expression(Exp.RELATION(e1,relop,e2)) => (t,"") 
 
@@ -419,9 +419,9 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	build_expression(e3) => (t3,s3) &
 	Util.string_append_list["%s ? %s : %s"] => ts &
 	TaskGraphExt.new_task(ts) => t &
-	TaskGraphExt.add_edge(t1,t,s1) &
-	TaskGraphExt.add_edge(t2,t,s2) &
-	TaskGraphExt.add_edge(t3,t,s3) 
+	TaskGraphExt.add_edge(t1,t,s1,0) &
+	TaskGraphExt.add_edge(t2,t,s2,1) &
+	TaskGraphExt.add_edge(t3,t,s3,2) 
 	----------------------------
 	build_expression(Exp.IFEXP(e1,e2,e3)) => (t,"")
 	
@@ -430,7 +430,7 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	build_call_str(funcstr,numargs) => ts &
 	Util.list_map__2(expl,build_expression) => (tasks,strs) &
 	TaskGraphExt.new_task(ts) => t &
-	add_predecessors(t,tasks,strs) 
+	add_predecessors(t,tasks,strs,0) 
 	------------------------------
 	build_expression(Exp.CALL(func,expl,_,_)) => (t,"") 
 
@@ -489,12 +489,13 @@ relation build_call_str:(string , int) => string =
 	build_call_str(str,n) => res
 end
 
-relation add_predecessors: (int, int list,string list) => () =
+relation add_predecessors: (int, int list,string list,int (* prio*)) => () =
 
-axiom add_predecessors(_,[],[]) 
+axiom add_predecessors(_,[],[],_) 
 
-  rule	TaskGraphExt.add_edge(t,t1,s) &
-	add_predecessors(t,ts,strs)
+  rule	TaskGraphExt.add_edge(t,t1,s,prio) &
+	int_add(prio,1) => prio' &
+	add_predecessors(t,ts,strs,prio')
 	---------------------
-	add_predecessors(t,t1::ts,s::strs)
+	add_predecessors(t,t1::ts,s::strs,prio)
 end

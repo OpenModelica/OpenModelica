@@ -93,6 +93,7 @@ extern int nproc;
   {
     int parent = RML_UNTAGFIXNUM(rmlA0);
     int child = RML_UNTAGFIXNUM(rmlA1);
+    int prio = RML_UNTAGFIXNUM(rmlA3);
     map<int,VertexID>::iterator i;
     VertexID p,c;
     i = id_map.find(parent);
@@ -102,13 +103,19 @@ extern int nproc;
     i = id_map.find(child);
     if (i == id_map.end()) { RML_TAILCALLK(rmlFC);};
     c = i->second;
-    
+
     char * resVar = RML_STRINGDATA(rmlA2);
     if (strcmp(resVar,"")==0) {
       add_edge(p,c,&taskgraph);
     } else {
-      add_edge(p,c,&taskgraph,new string(resVar));
+      add_edge(p,c,&taskgraph,new string(resVar),prio);
     }
+    
+    EdgeID edgeID; bool tmp;
+    tie(edgeID,tmp) = edge(p,c,taskgraph);
+
+    setPriority(edgeID,prio,&taskgraph);
+
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL
@@ -150,7 +157,7 @@ extern int nproc;
     setOrigName(taskID,str3,&taskgraph);
  
     if (send_to_end) {
-      add_edge(taskID,stop_task,&taskgraph,new string(str));
+      add_edge(taskID,stop_task,&taskgraph,new string(str),0);
     }
 
     RML_TAILCALLK(rmlSC);

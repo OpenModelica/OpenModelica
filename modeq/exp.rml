@@ -123,7 +123,7 @@ module Exp:
    ** and the real addition operator (`ADD(REAL)') are two distinct
    ** operators. *)
 
-  (** - Component references *)
+  (** - Componebnt references *)
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
 		    	| CREF_IDENT of Ident * (Subscript list)
 

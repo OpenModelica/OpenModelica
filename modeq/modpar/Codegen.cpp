@@ -163,26 +163,36 @@ void Codegen::generateSendCommand(VertexID source,
 
   ResultSet &res=getResultSet(e,m_merged_tg);  
 
-  ResultSet::iterator vname; int i;
+   int i;
   
   if (sourceproc == 0) {
     if (!genQuit) {
       m_cstream << TAB << "sendbuf0[0]=1.0; // continue calculating" << endl;
     }
-    for( vname= res.begin(), i=1; vname != res.end(); vname++,i++) {
+    res.createQueue();
+    i=1;
+    while(!res.empty()) {
+      string vname =res.top();
+      res.pop();
       m_cstream << TAB << "sendbuf" << sourceproc << "[" << i << "]=" 
-		<< *vname << ";" << endl;
-    }  
+		<< vname << ";" << endl;
+      i++;
+    } 
     m_cstream << TAB << "MSEND(sendbuf" << sourceproc << "," 
-	      << res.size()+1 << "," << "MPI_REAL," << targetproc << "," 
+	      << res.size()+1 << "," << "MPI_DOUBLE," << targetproc << "," 
 	      << getTaskID(source,m_merged_tg) << ");" << endl;    
   } else {
-    for( vname= res.begin(), i=0; vname != res.end(); vname++,i++) {
+    res.createQueue();
+    i=0;
+    while(!res.empty()) {
+      string vname =res.top();
+      res.pop();
       m_cstream << TAB << "sendbuf" << sourceproc << "[" << i << "]=" 
-		<< *vname << ";" << endl;
+		<< vname << ";" << endl;
+      i++;
     }  
     m_cstream << TAB << "MSEND(sendbuf" << sourceproc << "," 
-	      << res.size() << "," << "MPI_REAL," << targetproc << "," 
+	      << res.size() << "," << "MPI_DOUBLE," << targetproc << "," 
 	      << getTaskID(source,m_merged_tg) << ");" << endl;    
   }
 }
@@ -201,25 +211,33 @@ void Codegen::generateRecvCommand(VertexID source,
  
   if (targetproc != 0) {
     m_cstream << TAB << "MRECV(recvbuf" << sourceproc << "," 
-	      << res.size() << "," << "MPI_REAL," << targetproc << "," 
+	      << res.size() << "," << "MPI_DOUBLE," << targetproc << "," 
 	      << getTaskID(source,m_merged_tg) << ");" << endl;  
 
-    ResultSet::iterator vname; int i;
-    for( vname= res.begin(), i=0; vname != res.end(); vname++,i++) {
-      m_cstream << TAB <<*vname << "=recvbuf" << sourceproc << "[" << i << "];" 
+    res.createQueue();
+    int  i=0;
+    while(!res.empty()) {
+      string vname =res.top();
+      res.pop();
+      m_cstream << TAB <<vname << "=recvbuf" << sourceproc << "[" << i << "];" 
 		<< endl;
+      i++;
     }  
   } else {
     m_cstream << TAB << "MRECV(recvbuf" << sourceproc << "," 
-	      << res.size()+1 << "," << "MPI_REAL," << targetproc << "," 
+	      << res.size()+1 << "," << "MPI_DOUBLE," << targetproc << "," 
 	      << getTaskID(source,m_merged_tg) << ");" << endl;      
     m_cstream << TAB << "if (recvbuf" << sourceproc<< "[0]==0.0) { MPI_Finalize(); exit(0); }" << endl;
 
-    ResultSet::iterator vname; int i;
-    for( vname= res.begin(), i=1; vname != res.end(); vname++,i++) {
-      m_cstream << TAB <<*vname << "=recvbuf" << sourceproc << "[" << i << "];" 
+    int i=1;
+    res.createQueue();
+    while(!res.empty()) {
+      string vname =res.top();
+      res.pop();
+      m_cstream << TAB << vname << "=recvbuf" << sourceproc << "[" << i << "];" 
 		<< endl;
-    }  
+      i++;
+    }
   }
 }
 
@@ -271,17 +289,36 @@ void Codegen::generateSubTaskCode(VertexID task)
   int i;
   int parentSize = getParentSize(task,m_tg);
   vector<string> parentnames(parentSize);
-  for (i=0,tie(e,e_end) = in_edges(task,*m_tg); e != e_end; e++) {
-    ResultSet &s = getResultSet(*e,m_tg);
+  vector<EdgeID> parentEdges(in_degree(task,*m_tg));
+  
+  // Edges must be sorted in priority order since e.g. a-b != b-a
+  EdgePrioQueue *queue = new EdgePrioQueue(EdgePrioCmp(m_tg));
+  for (tie(e,e_end) = in_edges(task,*m_tg); e != e_end; e++) {
+    cerr << " prio = " << getPriority(*e,m_tg) << " for " << getResultName(source(*e,*m_tg),m_tg) ;
+    queue->push(*e);
+  }
+  cerr << endl;
+
+  i=0;
+  while(!queue->empty()) {
+    EdgeID e = queue->top(); queue->pop();
+    ResultSet &s = getResultSet(e,m_tg);
     // empty resultset, use Resultname instead.
+    
     if (s.size() == 0) {
-      parentnames[i++]=getResultName(source(*e,*m_tg),m_tg);
+      parentnames[i++]=getResultName(source(e,*m_tg),m_tg);
     } else {
-      for (ResultSet::iterator j=s.begin(); j != s.end(); j++) {
-	parentnames[i++]= *j;
+      s.createQueue(); // Must create queue before iterating
+      
+      while(!s.empty()) {
+	cerr << " Resultsset indx "<< i << " =" << s.top();
+	parentnames[i++] = s.top();
+	s.pop();
       }
+      cerr << endl;
     }
   }
+  delete queue;
   switch(getTaskType(task,m_tg)) {
   case TempVar: 
     m_cstream << TAB << getResultName(task,m_tg) << "=" 

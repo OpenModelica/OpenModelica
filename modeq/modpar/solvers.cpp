@@ -134,6 +134,8 @@ void write_result_txt(char *filename, int nx, int ny, int numpts,double *data)
 {
 
   ofstream file(filename);
+  file.setf(ios_base::fixed,ios_base::floatfield);
+  file.precision(16);
   if (!file) { 
     cerr << "Error, can not write to file " << filename << endl;
     exit(-1);

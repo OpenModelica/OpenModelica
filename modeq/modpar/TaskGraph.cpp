@@ -76,6 +76,24 @@ EdgeResultSetMap::type EdgeResultSetProperty(TaskGraph* tg)
   return pmap; 
 };  
 
+EdgePriorityMap::type EdgePriorityProperty(TaskGraph* tg) 
+{ 
+  edge_priority_t pname;
+  EdgePriorityMap::type pmap = get(pname, *tg);
+  return pmap; 
+};  
+
+
+void setPriority(EdgeID edge, int p, TaskGraph *tg)
+{
+  put(EdgePriorityProperty(tg),edge,p);
+}
+
+int getPriority(EdgeID edge, TaskGraph *tg)
+{
+  return get(EdgePriorityProperty(tg),edge);
+}
+
 void setResultSet(EdgeID edge, ResultSet &set, TaskGraph *tg)
 {
   put(EdgeResultSetProperty(tg),edge,set);
@@ -252,7 +270,7 @@ EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
 }
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
-	      string * result)
+	      string * result,int prio)
 {
   EdgeID e;
   bool edge_exist;
@@ -262,14 +280,14 @@ EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
     setCommCost(e,getCommCost(e,tg)+1,tg);
     if (result) {
       ResultSet & s=getResultSet(e,tg);
-      s.insert(*result);
+      s.insert(pair<string,int>(*result,prio));
     }
   }
   else {
     bool succeed;
     tie(e,succeed) = boost::add_edge(parent,child,*tg);
     setCommCost(e,1,tg);
-    setResultSet(e,make_resultset(result),tg);
+    setResultSet(e,make_resultset(result,prio),tg);
   }
   return e;
 }
@@ -279,7 +297,7 @@ static int curNo=0;
 const int maxNo=200000;
 static ResultSet sets[maxNo];
 // Create a result_set given a first result entry.
-ResultSet& make_resultset(string *firstelt)
+ResultSet& make_resultset(string *firstelt, int prio)
 {
   ResultSet & set=sets[curNo++];
   if (curNo == maxNo) {
@@ -287,7 +305,7 @@ ResultSet& make_resultset(string *firstelt)
     exit(-1);
   }
   if (firstelt) { 
-    set.insert(*firstelt);
+    set.insert(pair<string,int>(*firstelt,prio));
     //cerr << "Creating resultset with elt: " << *firstelt << endl;
   }
   return set;
@@ -300,9 +318,15 @@ ResultSet& copy_resultset(ResultSet &s)
     cerr << "Error, ResultSet allocator reached maximum no :" << maxNo << endl;
     exit(-1);
   }
-  ResultSet::iterator vname; 
-  for( vname= s.begin(); vname != s.end(); vname++) {
-    set.insert(*vname);
+  std::set<string>::iterator vname;
+  for( vname= s.m_set.begin(); vname != s.m_set.end(); vname++) {
+    map<string,int>::iterator pit;
+    pit = s.m_map.find(*vname);
+    if (pit != s.m_map.end()) {
+      set.insert(pair<string,int>(*vname,pit->second));
+    } else {
+      assert(0);
+    }
   }
   return set;
 }

@@ -5,6 +5,7 @@
 #include <iostream>                      // for std::cout
 #include <utility>                       // for std::pair
 #include <algorithm>                     // for std::for_each
+#include <queue>			 // for priority_queue
 #include <boost/utility.hpp>             // for boost::tie
 #include <boost/graph/graph_traits.hpp>  // for boost::graph_traits
 #include <boost/graph/adjacency_list.hpp>
@@ -26,6 +27,10 @@ struct vertex_unique_id_t {
 };
 
 struct edge_result_set_t {
+  typedef boost::edge_property_tag kind;
+};
+
+struct edge_priority_t {
   typedef boost::edge_property_tag kind;
 };
 
@@ -59,7 +64,6 @@ typedef boost::property<boost::vertex_name_t,string,
          > 
         > VertexProperty;
 
-
 // A small extension of set to allow union of two sets.
 template <class T>
 class UnionSet : public std::set<T> {
@@ -72,11 +76,77 @@ public:
   };
 };  
 
-// The differet variables communicated over an edge
-typedef UnionSet<string> ResultSet;
+
+class PrioCmp
+{
+public:
+  PrioCmp(map<string,int> *map) :m_map(map) { };
+  bool operator()(string& s1 ,string &s2) {
+    map<string,int>::iterator it1,it2;
+    it1=m_map->find(s1); if (it1 == m_map->end()) return true;
+    it2=m_map->find(s1); if (it2 == m_map->end()) return true;
+    return it1->second < it2->second;
+  };
+private:
+  map<string,int> *m_map;
+};
+
+// An extension of set to allow union of sets where the elements are pairs and
+// the set is made on the first elt. in each pair.
+// Resultset represents the differet variables communicated over an edge
+typedef priority_queue<string,vector<string>,PrioCmp> PrioQueue;
+
+class ResultSet {
+public:
+  /*  ResultSet(ResultSet &s) : m_queue(PrioCmp(m_map)) {
+    m_set=s.m_set;
+    m_map=s.m_map;
+  };
+  ResultSet& operator=(ResultSet &s) {
+    m_map = s.m_map;
+    m_set = s.m_set;
+    m_queue = PrioQueue(PrioCmp(&m_map));
+    return *this;
+    };*/
+  void createQueue() {
+    std::set<string>::iterator it;
+    for (it=m_set.begin(); it != m_set.end(); it++) {
+      m_queue.push(*it);
+    }
+  };
+  ResultSet() : m_queue(PrioCmp(&m_map)) { };
+  void pop() { m_queue.pop(); };
+  string top() { return m_queue.top(); };
+  bool empty() { return m_queue.empty(); };
+  size_t size() { return m_set.size(); };
+  inline  void make_union (ResultSet *s) {
+    if (s == this) { return; }
+    std::set<string>::iterator it;
+    for (it=s->m_set.begin(); it != s->m_set.end(); it++) {
+      m_set.insert(*it);
+      map<string,int>::iterator pit = s->m_map.find(*it);
+      if (pit != s->m_map.end()) {
+	m_map[*it] = pit->second;
+      }
+    }
+  };
+  inline void insert(std::pair<string,int> pair) {
+    string t1; int t2;
+    tie(t1,t2) = pair;
+    m_set.insert(t1);
+    m_map[t1]=t2;
+  };
+
+  std::set<string> m_set;
+  std::map<string,int> m_map;
+  PrioQueue m_queue;  
+};  
   
 typedef boost::property<boost::edge_weight_t, int,
-	 boost::property<edge_result_set_t, ResultSet > > EdgeProperty;
+	 boost::property<edge_result_set_t, ResultSet,
+	  boost::property<edge_priority_t, int >
+         > 
+        > EdgeProperty; 
   
 typedef boost::adjacency_list<boost::listS, boost::listS, 
 			      boost::bidirectionalS,
@@ -93,7 +163,7 @@ typedef  boost::property_map<TaskGraph,boost::vertex_color_t> VertexColorMap;
 
 typedef  boost::property_map<TaskGraph,boost::edge_weight_t> EdgeCommCostMap;
 typedef  boost::property_map<TaskGraph,edge_result_set_t> EdgeResultSetMap;
-  
+typedef  boost::property_map<TaskGraph,edge_priority_t> EdgePriorityMap;
   
 typedef boost::graph_traits<TaskGraph>::vertex_descriptor VertexID;
 typedef boost::graph_traits<TaskGraph>::vertex_iterator VertexIterator;
@@ -132,6 +202,8 @@ EdgeCommCostMap::type EdgeCommCostProperty(TaskGraph* tg);
 
 EdgeResultSetMap::type EdgeResultSetProperty(TaskGraph* tg);
 
+EdgePriorityMap::type EdgePriorityProperty(TaskGraph* tg);
+
 boost::default_color_type getVertexColor(VertexID v, TaskGraph *tg);  
 
 void setVertexColor(VertexID v, boost::default_color_type  color, TaskGraph *tg);  
@@ -151,6 +223,10 @@ int getTaskID(VertexID v,const TaskGraph * tg);
 void setResultSet(EdgeID edge, ResultSet &set, TaskGraph *tg);
 
 ResultSet& getResultSet(EdgeID edge, TaskGraph *tg);
+
+void setPriority(EdgeID edge, int p, TaskGraph *tg);
+
+int getPriority(EdgeID edge, TaskGraph *tg);
 
 void setTaskType(VertexID task, TaskType t, TaskGraph *tg);
 
@@ -190,7 +266,7 @@ void initialize_index(TaskGraph *tg);
 string * genTemp();
   
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg, 
-	      string *result=0);
+	      string *result=0,int prio=0);
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
 		ResultSet &rset);
@@ -199,7 +275,7 @@ VertexID find_task(VertexID alientask,TaskGraph *alientg,TaskGraph *tg);
 
 VertexID find_task(int taskID,TaskGraph *tg);
 
-ResultSet& make_resultset(string *firstelt=0);
+ResultSet& make_resultset(string *firstelt=0,int prio =0);
 
 ResultSet& copy_resultset(ResultSet &);
 
