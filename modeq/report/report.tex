@@ -8,6 +8,8 @@
 %\usepackage{boxedminipage}
 %\usepackage{lscape}
 \usepackage{makeidx}
+\usepackage{palatino}
+\usepackage{euler}
 
 \author{David Kågedal}
 \title{Blahonga Blahonga}
@@ -194,7 +196,7 @@ the expression language:
 \end{gather}
 
 Then we give the rules for the evaluation of expressions to integer
-values. \fixme{Numreringen av pilarna används inte}
+values.
 
 \begin{gather}
   \label{eq:int}
@@ -221,10 +223,10 @@ following rule instance, where $3$ is substituted for $e_1$ and $(4 +
 5)$ is for $e_2$:
 
 $$
-  \dedu{ 3 \Rightarrow_2 n_1 \hspace{1em}
-         (4 + 5) \Rightarrow_3 n_2 \hspace{1em}
+  \dedu{ 3 \Rightarrow n_1 \hspace{1em}
+         (4 + 5) \Rightarrow n_2 \hspace{1em}
          n = n_1 \cdot n_2 }
-       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+       { 3 \cdot (4 + 5) \Rightarrow n }
 $$
 
 This is not a complete proof.  We need to prove the sequent $3
@@ -233,49 +235,49 @@ This is not a complete proof.  We need to prove the sequent $3
 substituted for $n_3$:
 
 $$
-  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
-         (4 + 5) \Rightarrow_3 n_2 \hspace{1em}
+  \dedu{ 3 \Rightarrow 3 \hspace{1em}
+         (4 + 5) \Rightarrow n_2 \hspace{1em}
          n = 3 \cdot n_2 }
-       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+       { 3 \cdot (4 + 5) \Rightarrow n }
 $$
 
 The sequent labeled with a $3$ also need to be proved, and this can be
 done by instantiating rule \ref{eq:add}.
 
 $$
-  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
-         \dedu{ 4 \Rightarrow_4 n_3 \hspace{1em}
-                5 \Rightarrow_5 n_4 \hspace{1em}
+  \dedu{ 3 \Rightarrow 3 \hspace{1em}
+         \dedu{ 4 \Rightarrow n_3 \hspace{1em}
+                5 \Rightarrow n_4 \hspace{1em}
                 n_2 = n_3 + n_4 }
-              { 4 + 5 \Rightarrow_3 n_2} \hspace{1em}
+              { 4 + 5 \Rightarrow n_2} \hspace{1em}
                 n = 3 \cdot n_2 }
-       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+       { 3 \cdot (4 + 5) \Rightarrow n }
 $$
 
 Instantiating rule \ref{eq:int} twice leads to the following proof
 tree:
 
 $$
-  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
-         \dedu{ 4 \Rightarrow_4 4 \hspace{1em}
-                5 \Rightarrow_5 5 \hspace{1em}
+  \dedu{ 3 \Rightarrow 3 \hspace{1em}
+         \dedu{ 4 \Rightarrow 4 \hspace{1em}
+                5 \Rightarrow 5 \hspace{1em}
                 n_2 = 4 + 5 }
-              { 4 + 5 \Rightarrow_3 n_2} \hspace{1em}
+              { 4 + 5 \Rightarrow n_2} \hspace{1em}
                 n = 3 \cdot n_2 }
-       { 3 \cdot (4 + 5) \Rightarrow_1 n }
+       { 3 \cdot (4 + 5) \Rightarrow n }
 $$
 
 Now we can substitute $9$ for $n_2$, and consequently $27$ for $n$,
 leading to the complete proof tree.
 
 $$
-  \dedu{ 3 \Rightarrow_2 3 \hspace{1em}
-         \dedu{ 4 \Rightarrow_4 4 \hspace{1em}
-                5 \Rightarrow_5 5 \hspace{1em}
+  \dedu{ 3 \Rightarrow 3 \hspace{1em}
+         \dedu{ 4 \Rightarrow 4 \hspace{1em}
+                5 \Rightarrow 5 \hspace{1em}
                 9 = 4 + 5 }
-              { 4 + 5 \Rightarrow_3 9} \hspace{1em}
+              { 4 + 5 \Rightarrow 9} \hspace{1em}
                 27 = 3 \cdot 9 }
-       { 3 \cdot (4 + 5) \Rightarrow_1 27 }
+       { 3 \cdot (4 + 5) \Rightarrow 27 }
 $$
 
 Not only does this prove that the initial expression $3 \cdot (4+5)$
@@ -422,11 +424,8 @@ e.g. in support systems for software specialists. Developing such
 tools is very important, since most of the rising cost of computer
 systems is due to development, debugging and maintenance of software.
 
-\chapter{Goals, scope, motivation and stuff}
+\chapter{Motivation and scope of the thesis}
 \label{cha:goals}
-
-\fixme{Fixa rubriken}
-
 
 This chapter describes the goals and the scope of this thesis.
 
@@ -440,11 +439,12 @@ least three important reasons for doing exactly this.
 
 The Modelica design process was, and still is, in dire need of a
 formalized description of the language.  The language specification
-available at the time (version 1.0 from September 1997)\fixme{ref} did
-not contain much about the semantics of the language.  This meant that
-nobody knew exactly how the language worked, and it was not certain
-that everybody in the design group agreed on the semantical details,
-since they were not clearly described anywhere.
+available at the time (version 1.0 from September
+1997)\cite{modelica10} did not contain much about the semantics of the
+language.  This meant that nobody knew exactly how the language
+worked, and it was not certain that everybody in the design group
+agreed on the semantical details, since they were not clearly
+described anywhere.
 
 Peter Fritzson is a member of the Modelica design group and there are
 several projects at PELAB that concerns Modelica.  This project would
@@ -463,7 +463,7 @@ shortcomings.
 Modelica is not a programming language, such as C or LISP.  Instead it
 is a modeling language, with basically only static semantics.  For
 this reason it was interesting to see how a formalism like Natural
-semantics, and more specificatlly RML, which is usually used to
+semantics, and more specifically RML, which is usually used to
 specify programming languages, could be applied to it.
 
 
@@ -550,13 +550,15 @@ have been done.  The limitations are listen in no particular order.
 \item Redeclarations are not implemented.
 
 \item The builtin type attributes are not completely implemented.
+
+\item Assertions are lost during translation.
   
 \item There are some remaining bugs with the parts that are
-  implemented.
+  implemented.  And some of the most recent design decisions and
+  clarifications of the Modelica semantics are not incorporated into
+  the design.
 
 \end{enumerate}
-
-\unfinished
 
 \chapter{Development environment}
 \label{cha:devenv}
@@ -578,7 +580,7 @@ modern C compilers should be usable.
 \section{Parser}
 \label{sec:parser}
 
-The Modelica parser was generated by the PCCTS\fixme{ref} compiler
+The Modelica parser was generated by the PCCTS\cite{pccts} compiler
 generation system.  It generates a parser in C, which is linked with
 the RML object files.  The glue between the languages is a special RML
 relation \code{parse}, which is implemented in C, rather than RML.
@@ -591,7 +593,7 @@ The parser generator in PCCTS is powerful, but it has a few problems,
 and is currently not maintained very actively.  Because of problems
 with error handlers, the translator does not deal very well with
 syntax errors.  If an error occurs while parsing, an error message
-will be printed, but the tranlator will try to translate the result of
+will be printed, but the translator will try to translate the result of
 parsing anyway.  Since the resulting AST will be severely broken, this
 will fail.
 
@@ -608,7 +610,7 @@ text. This program is a quick'n'dirty Pike\cite{pike} hack, and is
 provided in appendix \ref{cha:rmldoc}
 
 
-\chapter{Informal semantics of Modelica}
+\chapter{Some thoughts on the informal semantics of Modelica}
 \label{cha:semantics}
 
 
@@ -682,13 +684,13 @@ mean.
   element means different things depending of what kind of element is
   instantiated.  Basically it means to add the element to the
   partially instantiated parent (see the Modelica specification for an
-  explanation of this) \fixme{ugly!}.
+  explanation of this).
   \begin{itemize}
   \item Instantiating a class definition simply means adding the class
     definition to the partially instantiated parent.
   \item Instantiation a component declaration means instantiating the
     class of the component and add that object to the partially
-    instantiade parent.
+    instantiated parent.
   \item Instantiating an extends element means instantiating all the
     elements in the extended class.
   \end{itemize}
@@ -732,7 +734,28 @@ mean.
   \end{enumerate}
 \end{Def}
 
-\fixme{Example}
+\begin{example}
+  
+  Consider the following Modelica model:
+  
+  \begin{boxedverbatim}
+    model A
+      Real x;
+    end A;
+
+    model B
+      A a;
+      Real y;
+    end B;
+  \end{boxedverbatim}
+
+  If an instance of \code{B} is created under the name, \code{B} will
+  contain two subcomponents referred to as \code{B.a.x} and
+  \code{B.y}.  Only \code{B.y} will be an immediate subcomponent of
+  \code{B}.
+  
+\end{example}
+
 
 \section{Types}
 \label{sec:types}
@@ -791,7 +814,7 @@ this specification and the Modelica language definition.
 
 All components must have a complete type.  All expressions also have
 complete types.  Incomplete types only appear as the input argument
-types of function. \fixme{But nobody known how this actually works}
+types of function (see the discussion in section \ref{sec:functions}).
 
 \subsection{Type equivalence and subtypes}
 \label{sec:typeq}
@@ -908,17 +931,27 @@ absolute reference to what these operations should mean, but rather as
 a description of how the overloading of operators works.
 
 
-\subsection{Collapsing arrays}
-\label{sec:collaps}
-
-\fixme{This won't be implemented anyway}
-
-
-
 \section{Functions}
 \label{sec:functions}
 
-\fixme{Who knows how functions work?}
+The semantics of functions are yet to be defined.  What is cleared is
+that it should be possible to use positional arguments that depends on
+the order of the \code{input} components of the function definition.
+It should also be possible to use named arguments matching against the
+names of the components in the definition.  Furthermore, all uses of a
+function should be type-checked to some extent.
+
+How all this integrates into the type system and the general semantics
+of Modelica is yet to be determined.  For simple cases a very
+simplistic semantic description can be used, but for some cases, where
+the sizes of array dimensions are unknown and depend of each other,
+either an extended type system is needed, or the concept of implicit
+function instantiation probably needs to be introduced.
+
+For the purposes of this specification, a simplistic model where all
+formal parameter types needs to be fully determinable from the
+definition is used.  The algorithmic (runtime) semantics is left
+unspecified.
 
 
 \section{Connections}
@@ -933,9 +966,9 @@ connected to produce equation according to the rules below.  Each
 connector reference has either the syntactic form \code{c}, where
 \code{c} is a connector instance in the class containing the
 \code{connect} construct, or \code{m.c}, where \code{m} is the name of
-a component or an array of components \fixme{Stämmer det?} of the class
-containing the \code{connect} construct, and \code{c} is the name of a
-connector variable in the component \code{m}.
+a component or an array of components of the class containing the
+\code{connect} construct, and \code{c} is the name of a connector
+variable in the component \code{m}.
 
 
 \subsection{Connection sets}
@@ -979,7 +1012,7 @@ case of variables declared with the \code{flow} type modifier, the
 equation generated is a sum-to-zero equation, as in equation
 \ref{eq:flow}.  The coefficient $d_v$ is $1$ if the component $v$ was
 added to the connection set from an inner connector, and $-1$ if it
-was added from an outer connector. \fixme{Clear?}
+was added from an outer connector.
 
 \begin{equation}
   \label{eq:flow}
@@ -1187,27 +1220,10 @@ The following extensions are made:
   is shorter and introduces no ambiguities.
   
 \item Identifiers may contain dots (\code{.}) (resulting from
-  subcomponents in the originating Modelica code) and tilde signs
-  (\code{~}) (see below).  Identifiers may also contain subscripts, as
-  in \code{x[1]}.  This is a consequence of the fact that all array
-  components are declared separately.
+  subcomponents in the originating Modelica code).  Identifiers may
+  also contain subscripts, as in \code{x[1]}.  This is a consequence
+  of the fact that all array components are declared separately.
 
-%   * In order to be able to declare a local variable VAR of a function
-%     FUNCNAME, an identifier of the form
-%          FUNCNAME`~'N`.'VAR
-%     with N a number is introduced. In this way calls to internal
-%     functions (that are defined in Modelica) can be expanded, e.g. to
-%     express the semantics of assigning input and output variables.
-%     The number N should be incremented for each call to the same
-%     function from the same class.
-
-%     <Peter: The expansion is not possible for recursive functions.>
-
-%     <David: This is still experimental. It might be removed.>
-
-%     Calls to predefined and external functions remain in the flat
-%     representation as they are in the Modelica code.
-  
 \item Automatic type conversions defined in the Modelica semantics,
   e.g.  from an \code{Integer} \code{i} to \code{Real}, are stated
   using the target type name as conversion operator, i.e.
@@ -1217,7 +1233,15 @@ The following extensions are made:
   model, it is necessary to be able to subscript expression, so the
   syntax \code{expression[x]} is allowed.  This is not allowed in
   Modelica.
-  
+
+\item A a special kind of equation \codebox{ident ::= expression} is
+  used to indicate that \code{ident} is not equal to
+  \code{expression}, but rather \emph{defined as} \code{expression}.
+  This is used for splitting up equations between two expressions
+  which contain subcomponents.  If one of the expressions are not a
+  simple name, a temporary name is introduced for that expression, and
+  the name is used instead.
+
 \item Almost no overloading of operators occurs in the flat Modelica.
   If a model contains an array multiplied by a scalar, the flat model
   does not use the multiplication sign, but an operator that is
@@ -1490,7 +1514,21 @@ output language.
 
 Likewise, if two structured components are equated, the equation is
 expanded to one equation for each pair of public
-components. \fixme{not done yet}
+components.
+
+These two transformations causes problems in the output if either the
+left-hand side or the right-hand side of the equation is a complex
+expression and not a name of a component.  The Modelica syntax does
+not allow the concept of expression subscripting or of picking
+subcomponent from complex expressions.  In the flat Modelica output
+(see chapter \ref{cha:target}) this is solved in two different ways.
+For arrays, an expression subscripting operator is introduced, which
+allowd things like \codebox{(A*B)[3,4]}.  For expressions of a
+composite type, a new identifier is introduced, which is defined to be
+identical to the expression.  Then this name is used to look up
+subcomponents.  The name is constructed by concatenating the name
+\code{\_\_TMP\_\_} with a unique integer, forming a name that looks
+something like \code{\_\_TMP\_\_17}.
 
 \section{Class restriction inference}
 \label{sec:classinf}
@@ -1570,15 +1608,10 @@ data types that essentially does the same thing is more confusing than
 helpful, so they were reduced to only one.
 
 
-\section{Functions}
-\label{sec:functiondesign}
-
-\unfinished
-
 \section{DAE representation}
 \label{sec:dearep}
 
-The DAEs are collected in a datastructure defined in the module
+The DAEs are collected in a data structure defined in the module
 \code{DAE} (see section \ref{src:dae}).  This structure is basically a
 linear list where each element is either a variable declaration, an
 equation or an algorithm.
@@ -1683,15 +1716,6 @@ are expanded into their simple components.
     \label{fig:ex-eq}
   \end{center}
 \end{figure}
-
-\chapter{Design notes for the RML specification}
-\label{cha:design}
-
-
-This chapter contains some notes describing important parts of the RML
-specification.  It is intended to help understand the specification
-and to give motivation for the design decisions made.
-
 
 \chapter{Annotated formal semantics}
 \label{cha:formsem}
