@@ -75,6 +75,24 @@ tokens {
     
 //    SUM = "sum" ;
 //    ARRAY = "array";
+
+// Extra tokens for RML
+        ABSTYPE         = "abstype";
+//        AND             = "and";
+        AS              = "as";
+        AXIOM           = "axiom";
+        DATATYPE        = "datatype";
+        FAIL            = "fail";
+        LET             = "let";
+        INTERFACE       = "interface";
+        MODULE          = "module";
+        OF              = "of";
+        RELATION        = "relation";
+        RULE            = "rule";
+        VAL             = "val";
+        WILD            = "_";
+        WITH            = "with";
+        WITHTYPE        = "withtype";
 }
 
 
@@ -105,8 +123,11 @@ LESSGT		: "<>"	;
 COLON		: ':'	;
 SEMICOLON	: ';'	;
 POWER		: '^'	;
-
-
+YIELDS          : "=>"  ;
+AMPERSAND       : "&"   ;
+PIPEBAR         : "|"   ;
+COLONCOLON      : "::"  ;
+DASHES          : '-' '-' '-' ( '-' )* ;
 
 
 WS :
@@ -136,6 +157,10 @@ SL_COMMENT :
 
 IDENT options { testLiterals = true; paraphrase = "an identifier";} :
 		NONDIGIT (NONDIGIT | DIGIT)*
+		;
+
+TYVARIDENT options { testLiterals = true; paraphrase = "a type identifier";} :
+		     '\'' NONDIGIT (NONDIGIT | DIGIT)*
 		;
 
 protected
@@ -181,6 +206,8 @@ ESC :
 	|	'\\'
 	)
 	;
+
+
 
 
 
