@@ -15,7 +15,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Foobar; if not, write to the Free Software
+    along with OpenModelica; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 *)
@@ -28,8 +28,13 @@
  ** RCS: $Id$
  **
  ** This file contains data types and relations for managing
- ** algorithms.  The algorithms in the AST is analyzed by the `Inst'
- ** module which uses this module to represent the algorithms.
+ ** algorithm sections. The algorithms in the AST are analyzed by the `Inst'
+ ** module (inst.rml) which uses this module to represent the algorithms. No
+ ** processing of any kind, except for building the datastructure is 
+ ** done in this module.
+ ** 
+ ** 
+ ** 
  **)
 
 module Algorithm:

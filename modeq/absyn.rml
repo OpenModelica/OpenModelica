@@ -27,9 +27,22 @@
  **
  ** RCS: $Id$
  **
- ** This file defines the abstract syntax for Modelica.  It mainly
+ ** This file defines the abstract syntax for Modelica in RML.  It mainly
  ** contains datatypes for constructing the abstract syntax tree
- ** (AST), and a few relations for printing the AST.
+ ** (AST), relations for building and altering RML datatypes and a few relations 
+ ** for printing the AST.
+ **  
+ ** absyn.rml's constructors are primarily used by the walker 
+ ** (modeq/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
+ ** converts it into an RML abstract syntax tree.
+ **
+ ** When the AST has been built, it is normaly used by explode.rml in order to
+ ** build the scode (See explode.rml). It is also possile to send the AST do 
+ ** the dumper (dump.rml) in order to print it.
+ ** 
+ ** For details regarding the abstract syntax tree, check out the grammar in 
+ ** the Modelica language specification.
+ **  
  **)
 
 
