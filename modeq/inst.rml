@@ -1,0 +1,174 @@
+(* inst.rml *)
+
+module Inst:
+
+  with "exp.rml"
+  with "lform.rml"
+  with "dae.rml"
+
+  relation instantiate: Lform.Program => DAE.DAEform
+
+end
+
+type Prefix = string list
+
+(**********************************************************************)
+
+relation prefix_add: (Exp.Path,Prefix) => Exp.Path =
+
+  axiom	prefix_add(p,[]) => p
+
+  rule	prefix_add(Exp.QUALIFIED(s,p),ss) => p'
+	---------------------------
+	prefix_add(p,s::ss) => p'
+
+end
+
+relation prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
+
+  axiom	prefix_exp2(e as Exp.NUMBER(_),_) => e
+  axiom	prefix_exp2(e as Exp.STRING(_),_) => e
+  axiom	prefix_exp2(e as Exp.BOOL(_),_) => e
+  axiom	prefix_exp2(e as Exp.TIME,_) => e
+
+  rule	prefix_add(p,pre) => p'
+	--------------------------
+	prefix_exp2(Exp.PATH(p),pre) => Exp.PATH(p')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2'
+	-----------------------
+	prefix_exp2(Exp.BINARY(e1,o,e2),p) => Exp.BINARY(e1',o,e2')
+
+  rule	prefix_exp2(e1,p) => e1'
+	-----------------------
+	prefix_exp2(Exp.UNARY(o,e1),p) => Exp.UNARY(o,e1')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2'
+	-----------------------
+	prefix_exp2(Exp.LBINARY(e1,o,e2),p) => Exp.LBINARY(e1',o,e2')
+
+  rule	prefix_exp2(e1,p) => e1'
+	-----------------------
+	prefix_exp2(Exp.LUNARY(o,e1),p) => Exp.LUNARY(o,e1')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2'
+	-----------------------
+	prefix_exp2(Exp.RELATION(e1,o,e2),p) => Exp.RELATION(e1',o,e2')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2' &
+	prefix_exp2(e3,p) => e3'
+	-----------------------
+	prefix_exp2(Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
+
+  rule	prefix_exp2(e1,p) => e1'
+	-----------------------
+	prefix_exp2(Exp.CALL(f,e1),p) => Exp.CALL(f,e1')
+
+end
+
+relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
+
+  rule	list_reverse(p) => p' &
+	prefix_exp2(e,p') => e'
+	-----------------------
+	prefix_exp(e,p) => e'
+
+end
+
+(**********************************************************************)
+
+relation inst_list =
+
+  axiom	inst_list(_,[],_) => []
+
+  rule	r(x,p) => x' &
+	inst_list(r,xs,p) => xs' &
+	list_append(x',xs') => y
+	----------------------
+	inst_list(r,x::xs,p) => y
+
+end
+
+(**********************************************************************)
+
+relation inst_connect: (Exp.Exp,Exp,Exp) => DAE.DAEcomp list =
+
+  rule	print "No connect() yet\n" & fail
+	---------------------------------
+	inst_connect(_,_) => []
+
+end
+
+relation inst_equation: (Lform.Equation,Prefix) => DAE.DAEcomp list =
+
+  rule	inst_connect(o1,o2) => l
+	------------------------
+	inst_equation(Lform.EQ_EXPR(Exp.CALL(Exp.IDENT("connect"),[o1,o2]))) =>
+		l
+
+  rule	print "No expression equations yet\n" & fail
+	--------------------------------------------
+	inst_equation(Lform.EQ_EXPR(_),p) => []
+
+  rule	prefix_expr(e1,p) => e1' &
+	prefix_expr(e1,p) => e2'
+	------------------------
+	inst_equation(Lform.EQ_EQUALS(e1,e2),p) =>
+		[DAE.EQUATION(Exp.RELATION(e1',Exp.EQUAL,e2'))]
+      
+end
+
+relation inst_classpart: (Lform.ClassPart,Prefix) => DAE.DAEcomp list =
+
+  axiom	inst_classpart(Lform.PUBLIC(l),_) => []
+
+  axiom	inst_classpart(Lform.PROTECTED(l),_) => []
+
+  rule	print "No algorithms yet\n" & fail
+	----------------------------------
+	inst_classpart(Lform.ALGORITHMS(l),_) => []
+
+  rule	inst_list(inst_equation,el,p) => el'
+	------------------------------------
+	inst_classpart(Lform.EQUATIONS(el),p) => el'
+
+end
+
+relation inst_classdef: (Lform.ClassDef,Prefix) => DAE.DAEcomp list =
+
+  rule	inst_list(inst_classpart,pl) => pl'
+	-----------------------------------
+	inst_classdef(Lform.PARTS(pl),prefix) => pl'
+
+end
+
+relation inst_class: (Lform.Class,Prefix) => DAE.DAEcomp list =
+
+  rule	print "instantiating " & print n & print "\n" &
+	inst_classdef(d,n::p) => l
+	------------------------------------------------------	
+	inst_class(c as Lform.CLASS(n,p,r,d),p) => l
+
+  (* FIXME *)
+
+end
+
+relation instantiate: Lform.Program => DAE.DAEform =
+
+  rule	print "Empty program\n" & fail
+	------------------------------
+	instantiate([]) => DAE.DAE([])
+
+  rule	inst_class(c) => l'
+	-----------------------------
+	instantiate([c]) => DAE.DAE(l')
+
+  rule	instantiate(xs) => xs'
+	----------------------
+	instantiate(x::xs) => xs'
+
+end
