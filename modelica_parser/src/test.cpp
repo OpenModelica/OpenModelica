@@ -22,7 +22,14 @@ int main(int argc, char **argv) {
   }
 
   modelica_lexer lexer(is);
+  lexer.setFilename(argv[1]);
   modelica_parser parser(lexer);
+  parser.setFilename(argv[1]);
+
+  antlr::ASTFactory ast_factory;
+  parser.initializeASTFactory(ast_factory);
+  parser.setASTFactory(&ast_factory);
+
   parser.stored_definition();
   antlr::RefAST ast = parser.getAST();
   parse_tree_dumper dumper(cout);
