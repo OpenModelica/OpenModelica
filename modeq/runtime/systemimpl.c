@@ -548,12 +548,19 @@ RML_BEGIN_LABEL(System__directory_5fexist)
 {
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
-  char command[1000];
-  printf("Directory Test (%s) result: ",str); 
-  sprintf(command, "test -d %s", str);
-  ret_val = system(command);
-  printf("%d\n", ret_val);
-  rmlA0 = (void*) mk_icon(ret_val);
+  struct stat buf;
+  ret_val = stat(str, &buf);
+  if (ret_val != 0 ) {
+    rmlA0 = (void*) mk_icon(1);
+  }
+  else {
+    if (buf.st_mode & S_IFDIR) {
+      rmlA0 = (void*) mk_icon(0);
+    }
+    else {
+      rmlA0 = (void*) mk_icon(1);
+    }
+  }
   RML_TAILCALLK(rmlSC);
 
 }
@@ -563,12 +570,19 @@ RML_BEGIN_LABEL(System__regular_5ffile_5fexist)
 {
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
-  char command[1000];
-  printf("File Test (%s) result: ",str); 
-  sprintf(command, "test -f %s", str);
-  ret_val = system(command);
-  printf("%d\n", ret_val);
-  rmlA0 = (void*) mk_icon(ret_val);
+  struct stat buf;
+  ret_val = stat(str, &buf);
+  if (ret_val != 0 ) {
+    rmlA0 = (void*) mk_icon(1);
+  }
+  else {
+    if (buf.st_mode & S_IFREG ) {
+      rmlA0 = (void*) mk_icon(0);
+    }
+    else {
+      rmlA0 = (void*) mk_icon(1);
+    }
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
