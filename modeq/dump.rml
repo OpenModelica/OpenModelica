@@ -238,19 +238,33 @@ and dump_subscript: Absyn.Subscript => () =
 end
 and dump_modification: Absyn.Modification => () =
 
-	rule	print "(" &
-		dump_list(l,dump_element_arg,",") &
-		print ")"
-		------------------------------------
-		dump_modification(Absyn.CLASSMOD(l))
-
-	rule	print " = " & dump_exp(e)
-		------------------------------------
-		dump_modification(Absyn.EQUALMOD(e))
+	rule	dump_mod1 l & dump_mod2 e
+		-------------------------
+		dump_modification(Absyn.CLASSMOD(l, e))
 
 	rule	print "( ** MODIFICATION ** )"
 		-------------
 		dump_modification(_)
+
+end
+and dump_mod1: Absyn.ElementArg list => () =
+
+  axiom	dump_mod1 []
+
+  rule	print "(" &
+	dump_list(l,dump_element_arg,",") &
+	print ")"
+	------------------------------------
+	dump_mod1 l
+
+end
+and dump_mod2 : Exp.Exp option => () =
+
+  axiom	dump_mod2 NONE
+
+  rule	print " = " & dump_exp(e)
+	-------------------------
+	dump_mod2 SOME(e)
 
 end
 and dump_equation: Absyn.Equation => () =

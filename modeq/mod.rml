@@ -158,13 +158,11 @@ and build : (Absyn.Modification option, bool) => Mod =
 
   axiom build(NONE, _) => NOMOD
 
-  axiom build(SOME(Absyn.EQUALMOD(exp)),final) => MOD(final,[],SOME(exp))
-
-  axiom	build(SOME(Absyn.CLASSMOD([])),_) => NOMOD
+  axiom	build(SOME(Absyn.CLASSMOD([], e as SOME(_))),final) => MOD(final,[],e)
 
   rule  build_args(l) => subs
 	---------------------------
-	build(SOME(Absyn.CLASSMOD(l)),final) => MOD(final,subs,NONE)
+	build(SOME(Absyn.CLASSMOD(l,e)),final) => MOD(final,subs,e)
 
 end
 

@@ -14,8 +14,7 @@ module Absyn:
   datatype ElementArg = MODIFICATION of bool * Path * Modification
 		      | REDECLARATION of bool * ElementSpec
 
-  and	   Modification = CLASSMOD of ElementArg list
-			| EQUALMOD of Exp.Exp
+  and	   Modification = CLASSMOD of ElementArg list * Exp.Exp option
 
   and	   Component = COMPONENT of Ident	(* component name *)
 				  * ArrayDim
