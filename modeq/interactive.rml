@@ -168,6 +168,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_connection_count(cr,p) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getConnectionCount",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -321,6 +331,69 @@ relation get_nth_component_annotation: (Absyn.ComponentRef,Absyn.Program, int) =
 	axiom get_nth_component_annotation(_,_,_) => "-1"
 end
 
+(** relation: get_connection_count
+ ** This relation takes a `ComponentRef' and a `Program' and returns a string containing
+ ** the number of connections in the model identified by the `ComponentRef'.
+**)
+relation get_connection_count: (Absyn.ComponentRef, Absyn.Program) => string =
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	count_connections cdef => numconn &
+	int_string numconn => res
+	-------------------------
+	get_connection_count (model,p) => res
+	
+	axiom get_connection_count(_,_) => "-1"
+end
+
+(** relation: count_connections
+ ** This relation takes a `Class' and returns an int with the number of connections
+** in the `Class'.
+**)
+relation count_connections: Absyn.Class => int =
+	
+  rule	count_connections_in_classparts(parts) => count
+	-----------------------------------------------
+	count_connections Absyn.CLASS(_,_,_,Absyn.PARTS(parts)) => count
+end
+
+(** relation: count_connections_in_classparts
+ ** This relation takes a `ClassPart' list and returns an int with the number of connections in that list.
+**)
+relation count_connections_in_classparts: Absyn.ClassPart list => int =
+
+  rule	count_connections_in_equations(eqlist) => r1 &
+	count_connections_in_classparts(xs) => r2 &
+	int_add (r1,r2) => res
+	----------------------
+	count_connections_in_classparts( Absyn.EQUATIONS(eqlist)::xs) => res
+
+  rule	count_connections_in_classparts(xs) => res
+	------------------------------------------
+	count_connections_in_classparts( _::xs) => res
+	
+	axiom count_connections_in_classparts([]) => 0
+end
+
+(** relation: count_connections_in_equations
+ ** This relation takes an `Equation' list and returns  an int 
+ ** with the number of connect statements in that list.
+**)
+relation count_connections_in_equations: Absyn.Equation list => int =
+	
+  rule	count_connections_in_equations(xs) => r1 &
+	int_add(r1,1)  => res 
+	---------------------
+	count_connections_in_equations(Absyn.EQ_CONNECT(_,_)::xs) => res
+	
+  rule	count_connections_in_equations(xs) => res
+	-----------------------------------------
+	count_connections_in_equations(_::xs) => res
+	
+  axiom	count_connections_in_equations([]) => 0
+end
+
 (** relation: get_component_annotation
  ** This relation takes an `Element' and returns a comma separated string of values
  ** corresponding to the flat record for a component annotation. If several components are declared 
@@ -378,7 +451,6 @@ relation get_annotation_string: Absyn.Annotation => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
 	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
-	DAE.dump DAE.DAE([DAE.COMP("placement",DAE.DAE(dae))]) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str 

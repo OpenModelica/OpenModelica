@@ -13,6 +13,7 @@ by using scripts, but also by for instance a model editor who wants to
 interact with the symbol table for adding/changing/removing models and
 components, etc.
 
+When a function fails to perform its action the string "-1" is returned.
 
 
 Definitions:
@@ -49,12 +50,12 @@ updateComponent(<ident>,<cref>,		Updates an already existing component.
 	<cref>,annotate=<expr>)
 
 getComponentCount(<cref>)		Returns the number of
-					components of a class.
+					components in a class.
 
 getNthComponent(<cref>,<int>)		Returns the belonging class, 
 					component name and  type name
 					of the nth component of a class.
-					e.g. "A.B.C, R2, Resistor"
+					e.g. "A.B.C,R2,Resistor"
 
 
 getNthComponentAnnotation(<cref>,<int>) Returns the flattened
@@ -80,12 +81,12 @@ getConnectorCount(<cref>)		Returns the number of
 					connectors of a class.
 
 getNthConnector(<cref>,<int>)		Returns the name of the nth
-					connector, e.g "n"
+					connector, e.g "n".
 
 getNthConnectorAnnotation(<cref>,<int>	Returns the nth connector
 					annotation as comma separated
 					list of values of a flat
-					record, see Annotation below
+					record, see Annotation below.
 
 Error Handling
 ==============
