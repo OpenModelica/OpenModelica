@@ -157,6 +157,17 @@ RML_BEGIN_LABEL(System__toupper)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__strcmp)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  char *str2 = RML_STRINGDATA(rmlA1);
+  int res= strcmp(str,str2);
+
+  rmlA0 = (void*) mk_icon(res);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__strcmp)
 {

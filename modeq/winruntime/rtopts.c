@@ -246,12 +246,20 @@
     RML_END_LABEL
     
     RML_BEGIN_LABEL(RTOpts__modelica_5foutput)
+{
+  /*  this check is needed for not generating variable of the  */
+  /*  form a_b_c. The tornado implementation needs the variable */
+  /*  of the form a.b.c */
+  if(tornado_cg)
     {
+      rmlA0 = RML_PRIM_MKBOOL(0);
+    }else{
       rmlA0 = RML_PRIM_MKBOOL(modelica_output);
-      RML_TAILCALLK(rmlSC);
     }
-    RML_END_LABEL
-    
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
   RML_BEGIN_LABEL(RTOpts__debug_5fflag_5finfo)
   {
     rmlA0 = RML_PRIM_MKBOOL(debug_flag_info);
