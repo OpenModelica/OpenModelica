@@ -168,31 +168,31 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
   axiom	elab_exp(_, Absyn.BOOL(x),impl,st)
 	  => (Exp.BCONST(x), Types.PROP((Types.T_BOOL([]),NONE),   true),st)
 
-  rule	Debug.fprintln("setr", "elab_exp_cref") &
+  rule	(*Debug.fprintln("setr", "elab_exp_cref") &*)
 	elab_cref(env, cr) => (exp,prop,_)
 	---------------------------------------
 	elab_exp(env, Absyn.CREF(cr),impl,st) => (exp,prop,st) 
 
 	(**  Binary and unary operations *)
 
-  rule	Debug.fprintln("setr", "elab_exp_binary") &
+  rule	(*Debug.fprintln("setr", "elab_exp_binary") &*)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') &
-	Debug.fprintln("eexpbin","types of binary exp t1:") &
+	(*Debug.fprintln("eexpbin","types of binary exp t1:") &
 	Debug.fcall("eexpbin",Types.print_type,t1) & 
 	Debug.fprintln("eexpbin","\nt2:") &
-	Debug.fcall("eexpbin",Types.print_type,t2) & 
+	Debug.fcall("eexpbin",Types.print_type,t2) & *)
 	bool_and (c1,c2) => c &
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
-	replace_operator_with_fcall(Exp.BINARY(e1'',op',e2''),c) => exp' &
-	Debug.fprintln("eexpbin", "operator deoverloaded, resulting type:") &
-	Debug.fcall("eexpbin",Types.print_type,rtype) 
+	replace_operator_with_fcall(Exp.BINARY(e1'',op',e2''),c) => exp' 
+	(*& Debug.fprintln("eexpbin", "operator deoverloaded, resulting type:") &
+	Debug.fcall("eexpbin",Types.print_type,rtype) *)
 	---------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),impl,st)
 	  => (exp',Types.PROP(rtype,c),st'')
 
-  rule	Debug.fprintln("setr", "elab_exp_unary") &
+  rule	(*Debug.fprintln("setr", "elab_exp_unary") &*)
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
@@ -201,7 +201,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,exp as Absyn.UNARY(op,e),impl, st)
 	  => (exp', Types.PROP(rtype,c),st')
 	
-  rule	Debug.fprintln("setr", "elab_exp_lbinary") &
+  rule	(*Debug.fprintln("setr", "elab_exp_lbinary") &*)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') &
 	bool_and (c1,c2) => c &
@@ -212,7 +212,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2),impl,st)
 	  => (exp', Types.PROP(rtype,c),st'')
 
-  rule	Debug.fprintln("setr", "elab_exp_lunary") &
+  rule	(*Debug.fprintln("setr", "elab_exp_lunary") &*)
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
@@ -221,7 +221,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,exp as Absyn.LUNARY(op,e),impl,st)
 	  => (exp',Types.PROP(rtype,c),st')
 
-  rule	Debug.fprintln("setr", "elab_exp_relation") &
+  rule	(*Debug.fprintln("setr", "elab_exp_relation") &*)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') & 
 	bool_and (c1,c2) => c &
@@ -234,7 +234,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 
 	(**  Conditional expressions *)
 
-  rule	Debug.fprintln("setr", "elab_exp_ifexp") &
+  rule	(*Debug.fprintln("setr", "elab_exp_ifexp") &*)
 	elab_exp (env,e1,impl,st) => (e1', prop1,st') &
 	elab_exp (env,e2,impl,st') => (e2', prop2,st'') &
 	elab_exp (env,e3,impl,st'') => (e3', prop3,st''') &
@@ -248,7 +248,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	(** TODO: Implement elaboration of named arguments. *)
 
   rule	Dump.print_component_ref_str fn => fnstr &
-	Debug.fprintl("setr", ["elab_exp_call: ",fnstr,"\n"]) &
+	(*Debug.fprintl("setr", ["elab_exp_call: ",fnstr,"\n"]) &*)
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop,st') 
 	--------------------------------------
 	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs)),impl,st) 
@@ -260,14 +260,14 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	* Fix this!!
 	*)
 	
-  rule	Debug.fprintln("setr", "elab_exp_tuple") &
-	Debug.print "\n#####################elab_exp tuple.####################" &
+  rule	(*Debug.fprintln("setr", "elab_exp_tuple") &
+	Debug.print "\n#####################elab_exp tuple.####################" &*)
 (*	Dump.print_exp e1 &
 *)	Debug.print "\n ###################" &
 	elab_tuple(env,e) => (e', props) &
-	Debug.print "\nThe elaborated tuple." &
-	split_props(props) => (types, consts) &
-	Debug.print "\n split_props was just executed."
+(*	Debug.print "\nThe elaborated tuple." &*)
+	split_props(props) => (types, consts) 
+(*	& Debug.print "\n split_props was just executed."*)
 	-------------------------------------
 	elab_exp (env,Absyn.TUPLE(e as e1::rest),impl,st) 
 	  => (Exp.TUPLE(e'),Types.PROP_TUPLE((Types.T_TUPLE(types),NONE), Types.TUPLE_CONST(consts)),st)
@@ -275,7 +275,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 
 	(**  Array-related expressions *)
 
-  rule	Debug.fprintln("setr", "elab_exp_range1") &
+  rule	(*Debug.fprintln("setr", "elab_exp_range1") &*)
 	elab_exp (env, start,impl,st) => (start', Types.PROP(start_t, c_start),st') &
 	elab_exp (env, stop,impl,st') => (stop', Types.PROP(stop_t, c_stop),st'') &
 	deoverload_range((start',start_t),
@@ -287,7 +287,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env, Absyn.RANGE(start, NONE, stop),impl,st)
 	  => (Exp.RANGE(rt,start',NONE,stop'), Types.PROP(t, const),st'')
 
-  rule	Debug.fprintln("setr", "elab_exp_range2") &
+  rule	(*Debug.fprintln("setr", "elab_exp_range2") &*)
 	elab_exp (env,start,impl,st) => (start', Types.PROP(start_t, c_start),st') &
 	elab_exp (env,step,impl,st') => (step', Types.PROP(step_t, c_step),st'') &
 	elab_exp (env,stop,impl,st'') => (stop', Types.PROP(stop_t, c_stop),st''') &
@@ -301,7 +301,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop),impl,st)
 	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), Types.PROP(t, const),st''')
 
-  rule	Debug.fprintln("setr", "elab_exp_array") &
+  rule	(*Debug.fprintln("setr", "elab_exp_array") &*)
 	elab_array (env, es,impl,st) => (es', Types.PROP(t, const)) & list_length es' => l&
 	Types.elab_type t => at &
 	Types.is_array t => a
@@ -311,12 +311,12 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(l)), t),NONE),
 		   const),st)
 	
-  rule	Debug.fprintln("setr", "elab_exp_matrix") &
+  rule	(*Debug.fprintln("setr", "elab_exp_matrix") &*)
 	elab_exp_list_list(env,es,impl,st) => (_, tps, _) &
 	Util.list_list_map(tps,Types.get_prop_type) => tps' &
 	Util.list_flatten(tps') => tps'' &
 	Types.contain_real(tps'') => havereal &
-	Debug.fprintln("setr", "calculated havereal\n") &
+	(*Debug.fprintln("setr", "calculated havereal\n") &*)
 	elab_matrix_semi (env,es,impl,st,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
 	Types.elab_type t => at
 	------------------------------------------------------------
@@ -404,14 +404,14 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
   axiom	elab_graphics_exp(_, Absyn.BOOL(x))
 	  => (Exp.BCONST(x), Types.PROP((Types.T_BOOL([]),NONE),   true))
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_cref") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_cref") &*)
 	elab_cref(env, cr) => (exp,prop,_)
 	---------------------------------------
 	elab_graphics_exp(env, Absyn.CREF(cr)) => (exp,prop) 
 
 	(**  Binary and unary operations *)
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_binary") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_binary") &*)
 	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
@@ -421,7 +421,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,exp as Absyn.BINARY(e1,op,e2))
 	  => (Exp.BINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_unary") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_unary") &*)
 	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
@@ -429,7 +429,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,exp as Absyn.UNARY(op,e))
 	  => (Exp.UNARY(op',e''),Types.PROP(rtype,c))
 	
-  rule	Debug.fprintln("setr", "elab_graphics_exp_lbinary") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_lbinary") &*)
 	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
@@ -439,7 +439,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,exp as Absyn.LBINARY(e1,op,e2))
 	  => (Exp.LBINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_lunary") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_lunary") &*)
 	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
@@ -447,7 +447,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,exp as Absyn.LUNARY(op,e))
 	  => (Exp.LUNARY(op',e''),Types.PROP(rtype,c))
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_relation") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_relation") &*)
 	
 	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	
@@ -462,7 +462,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
 	(**  Conditional expressions *)
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_ifexp") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_ifexp") &*)
 	elab_graphics_exp (env,e1) => (e1', prop1) &
 	elab_graphics_exp (env,e2) => (e2', prop2) &
 	elab_graphics_exp (env,e3) => (e3', prop3) &
@@ -476,7 +476,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	(** TODO: Implement elaboration of named arguments. *)
 
   rule	Dump.print_component_ref_str fn => fnstr &
-	Debug.fprintl("setr", ["elab_graphics_exp_call: ",fnstr,"\n"]) &
+	(*Debug.fprintl("setr", ["elab_graphics_exp_call: ",fnstr,"\n"]) &*)
 	elab_call(env,fn,args,nargs,true,NONE) => (e,prop,_) 
 	--------------------------------------
 	elab_graphics_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) 
@@ -488,14 +488,14 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	* Fix this!!
 	*)
 	
-  rule	Debug.fprintln("setr", "elab_graphics_exp_tuple") &
-	Debug.print "\n#####################elab_graphics_exp tuple.####################" &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_tuple") &
+	Debug.print "\n#####################elab_graphics_exp tuple.####################" &*)
 (*	Dump.print_exp e1 &
 *)	Debug.print "\n ###################" &
 	elab_tuple(env,e) => (e', props) &
-	Debug.print "\nThe elaborated tuple." &
-	split_props(props) => (types, consts) &
-	Debug.print "\n split_props was just executed."
+(*	Debug.print "\nThe elaborated tuple." &*)
+	split_props(props) => (types, consts) 
+(*	Debug.print "\n split_props was just executed."*)
 	-------------------------------------
 	elab_graphics_exp (env,Absyn.TUPLE(e as e1::rest)) 
 	  => (Exp.TUPLE(e'),Types.PROP_TUPLE((Types.T_TUPLE(types),NONE), Types.TUPLE_CONST(consts)))
@@ -503,7 +503,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
 	(**  Array-related expressions *)
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_range1") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_range1") &*)
 	elab_graphics_exp (env, start) => (start', Types.PROP(start_t, c_start)) &
 	elab_graphics_exp (env, stop) => (stop', Types.PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
@@ -515,7 +515,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env, Absyn.RANGE(start, NONE, stop))
 	  => (Exp.RANGE(rt,start',NONE,stop'), Types.PROP(t, const))
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_range2") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_range2") &*)
 	elab_graphics_exp (env, start) => (start', Types.PROP(start_t, c_start)) &
 	elab_graphics_exp (env, step) => (step', Types.PROP(step_t, c_step)) &
 	elab_graphics_exp (env, stop) => (stop', Types.PROP(stop_t, c_stop)) &
@@ -529,7 +529,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env, Absyn.RANGE(start, SOME(step), stop))
 	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), Types.PROP(t, const))
 
-  rule	Debug.fprintln("setr", "elab_graphics_exp_array") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_array") &*)
 	elab_graphics_array (env, es) => (es', Types.PROP(t, const)) & list_length es' => l&
 (*	Ceval.ceval_list(env,es',false,NONE) => vl &
 	Util.list_map(vl, value_exp) => es'' &*)
@@ -541,7 +541,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(l)), t),NONE),
 		   const))
 	
-  rule	Debug.fprintln("setr", "elab_graphics_exp_matrix") &
+  rule	(*Debug.fprintln("setr", "elab_graphics_exp_matrix") &*)
 	elab_exp_list_list(env,es,false,NONE) => (_, tps, _) &
 	Util.list_list_map(tps,Types.get_prop_type) => tps' &
 	Util.list_flatten(tps') => tps'' &
@@ -640,11 +640,11 @@ end
 relation elab_tuple : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Types.Properties list) =
 
-  rule	Debug.print "\nEntered elab_tuple." &
+  rule	(*Debug.print "\nEntered elab_tuple." &*)
 	elab_exp (env,e,false,NONE) => (e',p,_) &
-	Debug.print "\nElaborated expression." &
-	elab_tuple(env,exps) => (exps',props) &
-	Debug.print "\nThe last element was just elaborated."
+(*	Debug.print "\nElaborated expression." &*)
+	elab_tuple(env,exps) => (exps',props) 
+(*	Debug.print "\nThe last element was just elaborated."*)
 	-----------------------------
 	elab_tuple(env,e::exps) => (e'::exps', p::props) 
 
@@ -652,7 +652,7 @@ relation elab_tuple : (Env.Env, Absyn.Exp list)
 	-----------------------------
 	elab_tuple(env,e::[]) => (e', p) 
 *)
-  rule 	Debug.print "elaborating last element."
+  rule 	(*Debug.print "elaborating last element."*)
 	----------------
 	elab_tuple(env,[]) => ([], []) 
 
@@ -1251,8 +1251,8 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 
   rule	Absyn.cref_to_path fn => fn' &
 	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
-	generate_compiled_function(env,fn,e,prop,st) => st' &
-	Debug.fprintln ("sei", "elab_call succeeded")
+	generate_compiled_function(env,fn,e,prop,st) => st' 
+	(*& Debug.fprintln ("sei", "elab_call succeeded")*)
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st')
 
@@ -1817,28 +1817,28 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 
 (*  axiom generate_compiled_function(_,_,_,_,NONE) => NONE *)
 	
-  rule	Debug.fprintln("sei", "generate_compiled_function: start1") &
+  rule	(*Debug.fprintln("sei", "generate_compiled_function: start1") &*)
 	Absyn.cref_to_path(fn) => pfn &
 	is_function_in_cflist (cflist,pfn) => true
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => SOME(st)
 
-  rule	Debug.fprintln("sei", "generate_compiled_function: start2") &
+  rule	(*Debug.fprintln("sei", "generate_compiled_function: start2") &*)
 	Absyn.cref_to_path(fn) => path &
 	is_function_in_cflist (cflist, path) => false &
 	SCode.elaborate(p) => p' &
-	Debug.fprintln("sei", "generate_compiled_function: elaborated") &
+	(*Debug.fprintln("sei", "generate_compiled_function: elaborated") &*)
 (*	Inst.instantiate_implicit(p') => d & *)
 	Lookup.lookup_class(env, path, false) => (cls, env') &
-	Debug.fprintln("sei", "generate_compiled_function: class looked up") &
+	(*Debug.fprintln("sei", "generate_compiled_function: class looked up") &*)
 	Inst.implicit_function_instantiation(env', Types.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
 	  => (env'',d) &
-	Debug.fprintln("sei", "generate_compiled_function: function instantiated") &
+	(*Debug.fprintln("sei", "generate_compiled_function: function instantiated") &*)
 	Print.clear_buf() &
 	ModUtil.string_prefix_params DAE.DAE(d) => d' &
 	Codegen.generate_functions(d') &
-	Debug.fprintln("sei", "generate_compiled_function: function generated") &
+	(*Debug.fprintln("sei", "generate_compiled_function: function generated") &*)
 	ModUtil.path_string2 (path,"_") => pathstr &	
 	string_append(pathstr,".c") => filename &
 	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
@@ -1846,14 +1846,14 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	Print.print_buf pathstr &
 	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
 	Print.write_buf(filename)& Print.clear_buf() &
-	System.compile_c_file(filename) &
-	Debug.fprintln("sei", "generate_compiled_function: compiled")
+	System.compile_c_file(filename) 
+(*	& Debug.fprintln("sei", "generate_compiled_function: compiled")*)
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,a,b,c,cflist))) => SOME(Interactive.SYMBOLTABLE(p,a,b,c,(path,t)::cflist))
 
 
 
-  rule	Debug.fprintln("sei", "generate_compiled_function: start3")
+  rule	(*Debug.fprintln("sei", "generate_compiled_function: start3")*)
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),NONE) => NONE
 
@@ -1902,25 +1902,25 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
   rule	(* This rule finds record constructors, user defined or implicit *)
 
 	Lookup.lookup_type(env,fn,true) => (t as (Types.T_FUNCTION(fargs,outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_),_)),_),env') &
-	Debug.fprintln ("sei", "function is record constructor\n") &
+	(*Debug.fprintln ("sei", "function is record constructor\n") &*)
 	
 	make_empty_slots(fargs) => slots &
 	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
-	Debug.fprintln ("sei", "Did elab_input_args") &
+	(*Debug.fprintln ("sei", "Did elab_input_args") &*)
 
 	elab_consts(outtype) => const &
 
-	Debug.fprintln ("sei", "Elaborated consts") &
+	(*Debug.fprintln ("sei", "Elaborated consts") &*)
 	get_properties(outtype, const) => prop &
 
 	Lookup.lookup_record_constructor_class(env',fn) => (cl,env'') &
-	Debug.fprintln ("sei", "got record constructor class") &
+	(*Debug.fprintln ("sei", "got record constructor class") &*)
 	
 	fill_default_slots(newslots,cl,env'') => newslots2 &
-	Debug.fprint ("sei", "filled slots:") &
-	Debug.fcall ("sei",print_slots,newslots2) &
-	exp_list_from_slots(newslots2) => args'' &
-	Debug.fprintln ("setr", "elab_call_args_succeeded")
+	(*Debug.fprint ("sei", "filled slots:") &
+	Debug.fcall ("sei",print_slots,newslots2) &*)
+	exp_list_from_slots(newslots2) => args'' 
+	(* &	Debug.fprintln ("setr", "elab_call_args_succeeded")*)
 	------------------------------------
 	elab_call_args(env,fn,args,nargs,st) => (Exp.CALL(fn,args'',false,false), prop )
 
@@ -1969,40 +1969,40 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	 in the funktion type of the user function and check both the
 	 funktion name and the function's type. 
 	 *)
-	Debug.fprint("sei", "elab_call_args, searching for types for ") &
+(*	Debug.fprint("sei", "elab_call_args, searching for types for ") &
 	Debug.fcall("sei",Dump.print_path, fn ) &
 	Debug.fprint("sei"," ... in env:\n" ) &
 	Debug.fcall("sei",Env.print_env, env ) &
-	Debug.fprint("sei","\n" ) &
+	Debug.fprint("sei","\n" ) &*)
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
-	Debug.fprintln("sei", "elab_call_args, found types: ") &
-	Debug.fprint_list("sei",typelist,Types.print_type,", ") &
+(*	Debug.fprintln("sei", "elab_call_args, found types: ") &
+	Debug.fprint_list("sei",typelist,Types.print_type,", ") &*)
 	elab_types (env, args, typelist) => (args', c, restype, functype) &
-	Debug.fprintln("sei", "elab_call_args, Resolved type: ") &
-	Debug.fcall("sei",Types.print_type,functype) &
+(*	Debug.fprintln("sei", "elab_call_args, Resolved type: ") &
+	Debug.fcall("sei",Types.print_type,functype) &*)
 	deoverload_funcname(fn,functype) => fn' &
-	Debug.fprintln("sei", "elab_call_args, Deoverloaded functionname\n") &
+(*	Debug.fprintln("sei", "elab_call_args, Deoverloaded functionname\n") &*)
 	is_tuple restype => tuple &
 	elab_consts(restype) => const &
-	get_properties(restype,const) => prop &
+	get_properties(restype,const) => prop 
 	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
 (*	Print.print_buf "Debug: We did a lookup T_FUNCTION " &
 *)
 (*PR.	elab_input_args(env, args, params) => (args',c)  *)
-	Debug.fprintln ("sei", "elab_call_args succeeded")
+(*	&Debug.fprintln ("sei", "elab_call_args succeeded")*)
 	-----------------------------------------------
 	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn',args',tuple,false), prop)
 
   rule	(* Rule above failed. Also consider koening lookup. *)
 	get_koening_function_types(env,fn,args,nargs) => ktypelist &
-	Debug.fprintln("sei", "elab_call_args, found koening types: ") &
-	Debug.fprint_list("sei",ktypelist,Types.print_type,", ") &
+	(*Debug.fprintln("sei", "elab_call_args, found koening types: ") &
+	Debug.fprint_list("sei",ktypelist,Types.print_type,", ") &*)
 	elab_types (env, args, ktypelist) => (args', c, restype, functype) &
 	deoverload_funcname(fn,functype) => fn' &
 	is_tuple restype => tuple &
 	elab_consts(restype) => const &
-	get_properties(restype,const) => prop &
-	Debug.fprintln ("sei", "elab_call_args succeeded in koening lookup.")
+	get_properties(restype,const) => prop 
+(*	& Debug.fprintln ("sei", "elab_call_args succeeded in koening lookup.")*)
 	-----------------------------------------------
 	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn',args',tuple,false), prop)
 
@@ -2054,18 +2054,18 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list)
 	 *)
 
 	(* We found a match.*)
-  rule	Debug.fprintln ("sei", "We try the elab_input") &
+  rule	(*Debug.fprintln ("sei", "We try the elab_input") &
 	Debug.fprintln ("sei", "testing type:") &
-	Debug.fcall ("sei", Types.print_type,t) &
+	Debug.fcall ("sei", Types.print_type,t) &*)
 	make_empty_slots(params) => slots &
-	elab_input_args(env, args, [], slots ) => (args',newslots, c) &
-        Debug.fprintln ("sei", "We found a match." )
+	elab_input_args(env, args, [], slots ) => (args',newslots, c) 
+ (*       & Debug.fprintln ("sei", "We found a match." )*)
 	------------------
         elab_types(env, args, (t as (Types.T_FUNCTION(params,restype),_))::trest)
 	  => (args', c, restype, t)
 
 	(* We did not found a match, try next. *)
-  rule 	Debug.fprintln ("sei", "The elab_input_args failed, try next.") &
+  rule 	(*Debug.fprintln ("sei", "The elab_input_args failed, try next.") &*)
 	elab_types(env, args, trest) => (args',c, restype,t) 
         ------------------
         elab_types(env, args, (Types.T_FUNCTION(params,restype),_)::trest) 
@@ -2224,19 +2224,19 @@ relation function_params : Types.Var list => (Types.FuncArg list,
   axiom	function_params [] => ([],[])
 
 	(* Ignore protected components *)
-  rule	Debug.print("protected") &
+  rule	(*Debug.print("protected") &*)
 	function_params vs => (in, out)
 	-------------------------------
 	function_params((Types.VAR(_,_,true,_,_))::vs) => (in, out)
 
-  rule	Debug.print("not protected. intput") &
+  rule	(*Debug.print("not protected. intput") &*)
 	function_params vs => (in, out)
 	------------------------------
 	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.INPUT),
 				   false,t,Types.UNBOUND)::vs)
 	  => ((n,t)::in, out)
 
-  rule	Debug.print("not protected. output") &
+  rule	(*Debug.print("not protected. output") &*)
 	function_params vs => (in, out)
 	------------------------------
 	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.OUTPUT),
@@ -2274,7 +2274,7 @@ end
 relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, Slot list)
 	=> (Exp.Exp list, Slot list, bool) =
 
-  rule	Debug.fprint ("sei","elab_input_args, positional arguments\n") &
+  rule	(*Debug.fprint ("sei","elab_input_args, positional arguments\n") &*)
 	funcarg_lst_from_slots(slots) => farg &
 	elab_positional_input_args(env,exp,farg,slots) => (slots',c) &
 	elab_input_args(env,[],narg,slots') => (_,newslots,c2) &
@@ -2283,13 +2283,13 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, Slot l
 	----------------------------------------------------------------
 	elab_input_args(env,exp as _::_,narg,slots) => (explst,newslots,c3)
 
-  rule	Debug.fprint ("sei","elab_input_args, named arguments\n") &
+  rule	(*Debug.fprint ("sei","elab_input_args, named arguments\n") &*)
 	funcarg_lst_from_slots(slots) => farg &
-	Debug.fprint ("sei","elab_input_args, got funcarg\n") &
+	(*Debug.fprint ("sei","elab_input_args, got funcarg\n") &*)
 	elab_named_input_args(env,narg,farg,slots) => (newslots,c) &
-	exp_list_from_slots(newslots) => newexp &
-	Debug.fprint ("sei","elab_input_args, got expressions: ") &
-	Debug.fprint_list ("sei",newexp,Exp.print_exp,", ")
+	exp_list_from_slots(newslots) => newexp 
+	(*& Debug.fprint ("sei","elab_input_args, got expressions: ") &
+	Debug.fprint_list ("sei",newexp,Exp.print_exp,", ")*)
 	------------------------------------------------------------
 	elab_input_args(env,[],narg as _::_,slots) => (newexp,newslots,c)
 	
@@ -2407,18 +2407,18 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 	elab_named_input_args(env,[],farg,slots) => ([],slots,true) *)
 
   rule	elab_exp(env, e,false,NONE) => (e',Types.PROP(t, c1),_) &
-	Debug.fprint("sei", "elab_named_input_arg, elaborated exp\n  id =") &
-	Debug.fprint("sei",id) &
+	(*Debug.fprint("sei", "elab_named_input_arg, elaborated exp\n  id =") &
+	Debug.fprint("sei",id) &*)
 	find_named_arg_type(id,farg) => vt &
-	Debug.fprint ("sei", "elab_named_input_arg, found type\n") &
+	(*Debug.fprint ("sei", "elab_named_input_arg, found type\n") &
 	Debug.fprint ("sei", "exp t = " ) &
 	Debug.fcall ("sei", Types.print_type,t ) &
 	Debug.fprint ("sei", "func t = " ) &
-	Debug.fcall ("sei", Types.print_type,vt ) &
+	Debug.fcall ("sei", Types.print_type,vt ) &*)
 	Types.match_type(e', t, vt) => (e'',_) &
-	Debug.fprint ("sei", "elab_named_input_arg, Types matched!\n") &
+	(*Debug.fprint ("sei", "elab_named_input_arg, Types matched!\n") &*)
 	fill_slot((id,vt), e'', slots) => slots' &
-	Debug.fprint ("sei", "elab_named_input_arg, filled slot\n") &
+	(*Debug.fprint ("sei", "elab_named_input_arg, filled slot\n") &*)
 	elab_named_input_args(env, nas, farg ,slots') => (newslots, c2) &
 	bool_and(c1, c2) => c 
 	---------------------
@@ -2427,11 +2427,11 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 
 axiom elab_named_input_args (_,[],_,slots) => (slots,true)
 
-  rule	Debug.fprint ("sei","elab_named_input_args failed, nargs = ") &
+  rule	(*Debug.fprint ("sei","elab_named_input_args failed, nargs = ") &
 	Debug.fprint_list ("sei", narg, Dump.print_named_arg," ,")&
 	Debug.fprint ("sei"," FuncArg=") &
 	Debug.fcall  ("sei",Types.print_params,farg) &
-	Debug.fprint ("sei", "\n")
+	Debug.fprint ("sei", "\n")*)
 	-----------------
 	elab_named_input_args(env,narg,farg,_) => fail
 end
@@ -2507,8 +2507,8 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	Lookup.lookup_var (env,c') => (Types.ATTR(_,acc,variability,_),
 				       t,
 				       binding) &
-	Debug.fprint("ecref","elab_cref, looked up type:\n") &
-	Debug.fcall("ecref",Types.print_type,t) &
+	(*Debug.fprint("ecref","elab_cref, looked up type:\n") &
+	Debug.fcall("ecref",Types.print_type,t) &*)
 
 	elab_cref2 (env, c', acc, variability, t, binding)
 	  => (exp,const,acc') 
@@ -3053,13 +3053,13 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 
   axiom	elab_arglist ([],[]) => ([],[])
 
-  rule	Debug.fprint("earg","Match: ") & 
+  rule	(*Debug.fprint("earg","Match: ") & 
 	Debug.fcall ("earg",Types.print_type, atype) & 
 	Debug.fprint("earg"," == ") & 
 	Debug.fcall ("earg",Types.print_type,pt) &
-	Debug.fprint("earg","\n") &
+	Debug.fprint("earg","\n") &*)
 	Types.match_type(arg, atype, pt) => (arg',atype') &
-	Debug.fprint("earg","Types matched\n") &
+	(*Debug.fprint("earg","Types matched\n") &*)
 	elab_arglist (pts, args) => (args',atypes')
 	---------------------------------
 	elab_arglist (pt::pts, (arg, atype)::args) => (arg'::args',atype'::atypes')
@@ -3102,8 +3102,8 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 		       Absyn.Exp)
 	  => (Exp.Operator, Exp.Exp list, Types.Type) =
 
-  rule	Debug.fprint_list("dovl",params,Types.print_type,"\n") & 
-	Debug.fprint("dovl","\n===\n") &
+  rule	(*Debug.fprint_list("dovl",params,Types.print_type,"\n") & 
+	Debug.fprint("dovl","\n===\n") &*)
 	elab_arglist (params, args) => (args',types') &
 	compute_return_type(op, types', rtype) => rtype'
 	------------------------------------

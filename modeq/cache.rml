@@ -44,6 +44,7 @@ module Cache:
 
 type Ident = string
 
+type CachedEnv = Env.Env option
 
 (** A cache has a handle, the rest is implemented in C++
  **)

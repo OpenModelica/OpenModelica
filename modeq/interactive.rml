@@ -418,6 +418,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  rule	get_components(cr,p) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getComponents",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
   rule	get_nth_component_annotation(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
 	-----------------------
@@ -1429,7 +1439,7 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	annotation_list_to_absyn_comment(nargs) => annotation &
 	modification_to_absyn(nargs) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
-	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[Absyn.NOSUB]),tppath,
+	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
 	------------------------------------------------
@@ -1442,7 +1452,7 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	annotation_list_to_absyn_comment(nargs) => annotation &
 	modification_to_absyn(nargs) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
-	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[Absyn.NOSUB]),tppath,
+	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)=> newp
 	------------------------------------------------
@@ -1660,13 +1670,8 @@ relation get_inheritance_count: (Absyn.ComponentRef,Absyn.Program) => int =
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	SCode.elaborate(p) => p' &
-	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
-	Lookup.lookup_class(env,modelpath,false) => (c,env') &
-	(*Inst.inst_class (env', Types.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
-	  => (_,env'',_,_,_) &*)
-	get_base_classes(cdef,env') => lst &
-	list_length(lst) => count
+
+	count_base_classes(cdef) => count
 	-------------------------------------------------
 	get_inheritance_count( model,p) => count
 	
@@ -1683,18 +1688,41 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program) => stri
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
-	Lookup.lookup_class(env,modelpath,false) => (c,env') &
-	(*Inst.inst_class (env', Types.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
-	  => (_,env'',_,_,_) &*)
-	get_base_classes(cdef,env') => lst &
-	int_sub(n,1) => n' &
-	list_nth(lst,n') => cref &
-	Absyn.cref_to_path(cref) => path &
-	Absyn.path_string(path) => str
+	Lookup.lookup_class(env,modelpath,false) 
+	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
+	  get_nth_inherited_class2(c,cdef,n,env') => str 
 	-------------------------------------------------
 	get_nth_inherited_class( model,n,p) => str
 	
   axiom	get_nth_inherited_class (_,_,_) => "-1"
+end
+relation get_nth_inherited_class2: (SCode.Class, Absyn.Class,int, Env.Env) 
+	  => string =
+
+  rule	(* First try without instantiating, if class is in parents*)
+	get_base_classes(cdef,env) => lst &  
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => cref &
+	Absyn.cref_to_path(cref) => path &
+	Absyn.path_string(path) => str
+	-----------------------
+	get_nth_inherited_class2(c as SCode.CLASS(_,_,_,_,_),cdef,n,env)
+	  => str
+
+  rule	(* If that fails, instantiate, which takes more time*)
+	Env.open_scope(env,encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
+	ClassInf.start(restr,id) => ci_state &
+	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
+	  => (_,env'',_,_,_) &
+	get_base_classes(cdef,env'') => lst &  
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => cref &
+	Absyn.cref_to_path(cref) => path &
+	Absyn.path_string(path) => str
+	--------------------------
+	get_nth_inherited_class2(c as SCode.CLASS(id,_,encflag,restr,_),cdef,n,env)
+	  => str
 end
 
 
@@ -1705,7 +1733,7 @@ end
 relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int = 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	count_public_components(cdef) => count
+	count_components(cdef) => count
 	-------------------------------------------------
 	get_component_count( model,p) => count
 end
@@ -1714,35 +1742,42 @@ end
  ** This relation takes a `Class' and returns the number of components in that class
 **)
 
-relation count_public_components: Absyn.Class => int =
+relation count_components: Absyn.Class => int =
 
-  rule	count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => c1 &
-	count_components(elt) => c2 &
+  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => c1 &
+	count_components_in_elts(elt) => c2 &
 	int_add(c1,c2) => res
 	---------------------
-	count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)) 
+	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)) 
 	    => res
 
-  rule	count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => res
+  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => c1 &
+	count_components_in_elts(elt) => c2 &
+	int_add(c1,c2) => res
+	---------------------
+	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)) 
+	    => res
+  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => res
 	-----------------------------------------------------
-	count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)) => res
+	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)) => res
 	
-  axiom count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],_)) => 0
-  axiom count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)) => -1
+  axiom count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],_)) => 0
+  axiom count_components Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)) => -1
 end
 
-relation count_components: Absyn.ElementItem list => int =
+relation count_components_in_elts: Absyn.ElementItem list => int =
 
-  rule	count_components(lst) => c1 &
-	int_add(c1,1) => res
+  rule	count_components_in_elts(lst) => c1 &
+	list_length(complst) => ncomps &
+	int_add(c1,ncomps) => res
 	--------------------------
-	count_components(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,_),NONE))::lst) => res
+	count_components_in_elts(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,complst),NONE))::lst) => res
 	
-  rule	count_components(lst) => res
+  rule	count_components_in_elts(lst) => res
 	----------------------------
-	count_components(_::lst) => res
+	count_components_in_elts(_::lst) => res
 
-  axiom	count_components([]) => 0
+  axiom	count_components_in_elts([]) => 0
 end
 
 
@@ -1754,16 +1789,71 @@ relation get_nth_component: (Absyn.ComponentRef,Absyn.Program, int) => string =
   rule	Absyn.cref_to_path(model) => modelpath &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
-	Lookup.lookup_class(env,modelpath,false) => (c,env') &
+	Lookup.lookup_class(env,modelpath,false) 
+	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_nth_public_component_in_class(cdef,n) => comp &
-	get_component_name_and_type_and_comment (comp,env') => s1 &
-	string_append("{",s1) => s2 &
-	string_append(s2,"}") => str
+	get_nth_component2(c,cdef,n,env') => str 
 	-------------------------------------------------
 	get_nth_component( model,p,n) => str
 
 	axiom get_nth_component(_,_,_) => "-1"
+end
+
+relation get_nth_component2: (SCode.Class,Absyn.Class, int, Env.Env) 
+	  => string =
+rule	(* First try without instantiating class, saves time *)
+	get_nth_component_in_class(cdef,n) => comp &
+	get_component_name_and_type_and_comment (comp,env) => [s1] &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str 
+	--------------------------
+	get_nth_component2 (c as SCode.CLASS(id,_,encflag,restr,_),cdef,n,env)
+	  => str
+
+rule	(* If fails, instantiate class and search... *)
+	 Env.open_scope(env,encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
+	ClassInf.start(restr,id) => ci_state &
+	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
+	  => (_,env'',_,_,_) &
+	get_nth_component_in_class(cdef,n) => comp &
+	get_component_name_and_type_and_comment (comp,env'') => [s1] &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str
+	--------------------------
+	get_nth_component2 (c as SCode.CLASS(id,_,encflag,restr,_),cdef,n,env)
+	  => str
+  rule	print "get_nth_component2 failed\n" 
+	-----------------------
+	get_nth_component2(_,_,_,_) => fail
+
+end
+
+(** relation: get_components
+ ** This relation takes a `ComponentRef', a `Program' and an int and  returns 
+ ** a list of all components, as returned by get_nth_component.
+ **)
+relation get_components: (Absyn.ComponentRef,Absyn.Program) => string = 
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
+	Lookup.lookup_class(env,modelpath,false) 
+	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
+	Env.open_scope(env,encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
+	ClassInf.start(restr,id) => ci_state &
+	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
+	  => (_,env'',_,_,_) &
+	get_components_in_class(cdef) => comps &
+	get_components_name_and_type_and_comment (comps,env'') => s1 &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str
+	-------------------------------------------------
+	get_components( model,p) => str
+
+	axiom get_components(_,_) => "-1"
 end
 
 (** relation: get_nth_component_annotation
@@ -1774,7 +1864,7 @@ relation get_nth_component_annotation: (Absyn.ComponentRef,Absyn.Program, int) =
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_nth_public_component_in_class(cdef,n) => comp &
+	get_nth_component_in_class(cdef,n) => comp &
 	get_component_annotation(comp) => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => str
@@ -1793,7 +1883,7 @@ relation get_nth_component_modification: (Absyn.ComponentRef,Absyn.Program, int)
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_nth_public_component_in_class(cdef,n) => comp &
+	get_nth_component_in_class(cdef,n) => comp &
 	get_component_modification(comp) => str &
 	Util.string_append_list(["{",str,"}"]) => str'
 	---------------------------------------------- 
@@ -2246,6 +2336,54 @@ relation get_base_classes_from_elts : (Absyn.ElementItem list, Env.Env)
   rule	get_base_classes_from_elts(rest, env) => cl
 	--------------------------------------
 	get_base_classes_from_elts (_::rest, env) => cl
+end
+
+(* Relation: count_base_classes
+ ** This relation counts the number of base classes of a class
+ **)
+
+relation count_base_classes : (Absyn.Class) 
+	  => int =
+
+  rule	count_base_classes_from_parts(parts) => res 
+	-----------------------------------------
+	count_base_classes (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) 
+	  => res
+
+  axiom	count_base_classes (_) => 0
+end
+
+relation count_base_classes_from_parts: (Absyn.ClassPart list) 
+	  => int =
+
+  rule	count_base_classes_from_elts(elts) => c1 &
+	count_base_classes_from_parts(rest) => c2 &
+	int_add(c1,c2) => res
+	----------------------------
+	count_base_classes_from_parts(Absyn.PUBLIC(elts)::rest) => res
+
+  rule	count_base_classes_from_parts(rest) => res
+	----------------------------------------
+	count_base_classes_from_parts(_::rest) => res
+
+  axiom	count_base_classes_from_parts([]) => 0
+end
+
+relation count_base_classes_from_elts : (Absyn.ElementItem list) 
+	  => int =
+
+  axiom	count_base_classes_from_elts([]) => 0
+
+  rule	(* Inherited class *)
+	count_base_classes_from_elts(rest) => cl &
+	int_add(cl,1) => res
+	------------------------
+	count_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_))::rest )
+	    => res
+
+  rule	count_base_classes_from_elts(rest) => cl
+	--------------------------------------
+	count_base_classes_from_elts (_::rest) => cl
 end
 
 relation get_icon_annotation_from_baseclasses :(Absyn.ComponentRef list, Absyn.Program) 
@@ -2825,27 +2963,73 @@ relation strip_graphics_modification: (Absyn.ElementArg list) => (Absyn.ElementA
   axiom	strip_graphics_modification([]) => ([],[])
 end
 	
-relation get_nth_public_component_in_class:  (Absyn.Class,int) => Absyn.Element =
+relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
+  axiom	 get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) 
+	  => []
+  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)))
+	  => lst1 &
+	get_components_in_elementitems(elts) => lst2 &
+	list_append(lst2,lst1) => res
+	------------------------------
+	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt))) 
+	  => res
+
+  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)))
+	  => lst1 &
+	get_components_in_elementitems(elts) => lst2 &
+	list_append(lst2,lst1) => res
+	------------------------------
+	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt))) 
+	  => res
+end
+
+relation get_components_in_elementitems: (Absyn.ElementItem list) 
+	  => Absyn.Element list =
+  axiom	get_components_in_elementitems([]) => []
+
+  rule	get_components_in_elementitems(rest) => res
+	-------------------------------------------
+	get_components_in_elementitems(Absyn.ELEMENTITEM(elt)::rest) => elt::res
+
+  rule	get_components_in_elementitems(rest) => res
+	-------------------------------------------
+	get_components_in_elementitems(_::rest) => res
+end
+
+relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	
   rule	get_nth_component_in_elementitems(elt,n) => res
 	-----------------------------------------------
-	get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),n) 
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),n) 
 	    => res
 	    
 	    (* The rule above failed, i.e the nth number is larger than # elements in first public list *)
 	    (* subtract and try next public list *)
-  rule	count_components(elt) => c1 &
+  rule	count_components_in_elts(elt) => c1 &
 	int_sub(n,c1) => newn &
-	get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt)),newn) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt)),newn) => res
 	------------------------------------------------------------------------------------
-	get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::rest,cmt)),n) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::rest,cmt)),n) => res
 
-  rule	get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)),n) => res
+  rule	get_nth_component_in_elementitems(elt,n) => res
+	-----------------------------------------------
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)),n) 
+	    => res
+	    
+	    (* The rule above failed, i.e the nth number is larger than # elements in first public list *)
+	    (* subtract and try next public list *)
+  rule	count_components_in_elts(elt) => c1 &
+	int_sub(n,c1) => newn &
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt)),newn) => res
+	------------------------------------------------------------------------------------
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::rest,cmt)),n) => res
+
+  rule	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)),n) => res
 	-----------------------------------------------------------------------
-	get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)),n) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)),n) => res
 	
-  axiom get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt)),_) => fail
-  axiom get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)),_) => fail
+  axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt)),_) => fail
+  axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)),_) => fail
 
 end
 
@@ -2855,18 +3039,25 @@ end
 **)
 relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) => Absyn.Element =
 	
-  axiom	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt as Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,_),_))::rest,1) => elt
+  rule	list_length(lst) => numcomps &
+	int_le(n,numcomps) => true &
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => elt
+	-----------------------------
+	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt as Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,lst),g))::rest,n) 
+	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g)
 
   rule	get_nth_component_in_elementitems(rest,1) => res
 	-----------------------------------------
 	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,1) 
 	  => res
 
-  rule	int_ge(n,1) => true &
-	int_sub(n,1) => newn &
+  rule	list_length(lst) => numcomps &
+	int_gt(n,numcomps) => true &
+	int_sub(n,numcomps) => newn &
 	get_nth_component_in_elementitems(rest,newn) => res
 	---------------------------------------------------
-	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,_),_))::rest,n) => res
+	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),_))::rest,n) => res
 
   rule	int_ge(n,1) => true &
 	get_nth_component_in_elementitems(rest,n) => res
@@ -2880,14 +3071,33 @@ relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) => Abs
   axiom	get_nth_component_in_elementitems([],_) => fail
 end
 
+relation get_components_name_and_type_and_comment: (Absyn.Element list, Env.Env) => string =
+
+rule	get_components_name_and_type_and_comment2(elts,env) => lst &
+	Util.string_delimit_list(lst,"},{") => lst' &
+	Util.string_append_list(["{",lst',"}"]) => res
+	-----------------------------------------------
+	get_components_name_and_type_and_comment(elts,env) => res
+end
+
+relation get_components_name_and_type_and_comment2: (Absyn.Element list, Env.Env) => string list =
+  axiom	get_components_name_and_type_and_comment2([],_) => []
+
+  rule	get_component_name_and_type_and_comment(elt,env) => lst1 &
+	get_components_name_and_type_and_comment2(rest,env) => lst2 &
+	list_append(lst1,lst2) => res
+	----------------------------------------------------------
+	get_components_name_and_type_and_comment2(elt::rest,env) => res
+end
+
 (** relation: get_component_name_and_type_and_comment
- ** This relation takes an `Element' and returns a string of comma separated values of the 
+ ** This relation takes an `Element' and returns a list of strings of comma separated values of the 
  **  type and name and comment of the component, e.g. 'Resistor,R1, "comment"' 
  ** or 'Resistor,R1,"comment1",R2,"comment2"'
  ** If Element is not a component, the empty string is returned
 **)
 relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env) 
-	  => string =
+	  => string list =
 
   rule	Lookup.lookup_class(env,p,true) => (c,env') &
 	Env.get_env_path(env') => SOME(envpath) &
@@ -2895,39 +3105,50 @@ relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env)
 	Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
 	Absyn.path_string(p') => typename &
 	get_componentitems_name(lst) => names &
-	string_append(typename,",") => s1 &
-	string_append(s1,names) => str
+	prefix_typename(typename,names) => lst
 	-------------------------------------------
-	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),NONE),env) => str
+	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_),env) => lst
 
   rule	Lookup.lookup_class(env,p,true) => (c,env') &
 	Env.get_env_path(env') => NONE &
 	Absyn.path_string(p) => typename &
 	get_componentitems_name(lst) => names &
-	string_append(typename,",") => s1 &
-	string_append(s1,names) => str
+	prefix_typename(typename,names) => lst
 	-------------------------------------------
-	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),NONE),env) => str
+	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_),env) => lst
 
+  rule	print "get_component_name_and_type_and_commend failed\n"
+	-------------------------------------------
+	get_component_name_and_type_and_comment(_,_) => fail
 end
+
+relation prefix_typename: (string, string list) => string list =
+  axiom	prefix_typename (_,[]) => []
+
+  rule	prefix_typename(tp,rest) => res &
+	Util.string_append_list([tp,",",str]) => str'
+	---------------------
+	prefix_typename(tp,str::rest) => str'::res
+end
+
 
 (** relation_get_componentitems_name
  ** This relation takes a `ComponentItems' list and returns a comma separated list of all
  ** component names and comments (if any).
 **)
-relation get_componentitems_name: Absyn.ComponentItem list => string =
+relation get_componentitems_name: Absyn.ComponentItem list => string list =
 	
   rule	string_append(c1,",") => s1 &
-	get_componentitems_name(c2::rest) => s3 &
-	Util.string_append_list([s1,"\"",s2,"\",",s3]) => str
+	get_componentitems_name(c2::rest) => lst &
+	Util.string_append_list([s1,"\"",s2,"\""]) => str
 	----------------------------
-	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))::(c2::rest)) => str
+	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))::(c2::rest)) => str::lst
 
   rule	string_append(c1,",") => s1 &
-	get_componentitems_name(c2::rest) => s3 &
-	Util.string_append_list([s1,"\"\",",s3]) => str
+	get_componentitems_name(c2::rest) => lst &
+	Util.string_append_list([s1,"\"\""]) => str
 	----------------------------
-	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),NONE)::(c2::rest)) => str
+	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),NONE)::(c2::rest)) => str::lst
 
   rule	get_componentitems_name(rest) => res
 	------------------------------------
@@ -2935,13 +3156,13 @@ relation get_componentitems_name: Absyn.ComponentItem list => string =
 
   rule	Util.string_append_list([c1,",\"",s2,"\""]) => res
 	----------------------
-	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))]) => res
+	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))]) => [res]
 
   rule  Util.string_append_list([c1,",\"\""]) => res
 	---------------------------------------
-	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) => res
+	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) => [res]
 
-  axiom	get_componentitems_name([_]) => ""
+  axiom	get_componentitems_name([_]) => []
 end
 (** relation: add_to_public
  ** This relation takes a 'Class' definition and adds an `ElementItem' to the first public list in the class.

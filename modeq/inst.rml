@@ -338,7 +338,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	inst_program(env,[]) => fail
 
 
-  rule	Debug.fprintln ("insttr", "inst_program1") &
+  rule	(*Debug.fprintln ("insttr", "inst_program1") &*)
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_class(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false,TOP_CALL) 
 	  => (dae,_,csets,_,_) 
@@ -346,7 +346,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
-  rule	Debug.fprintln ("insttr", "inst_program2") &
+  rule	(*Debug.fprintln ("insttr", "inst_program2") &*)
 	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
@@ -363,7 +363,7 @@ end
 
 relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
 	
-  rule	Debug.fprintln ("insttr", "inst_program_implicit") &
+  rule	(*Debug.fprintln ("insttr", "inst_program_implicit") &*)
 	implicit_instantiation(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env', dae1) &
 	inst_program_implicit(env',cs) => dae2 &
@@ -371,7 +371,7 @@ relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
 	-----------------------------
 	inst_program_implicit(env,(c as SCode.CLASS(n,_,_,restr,_))::cs) => dae
 
-  rule	Debug.fprintln ("insttr", "inst_program_implicit (end)")
+  rule	(*Debug.fprintln ("insttr", "inst_program_implicit (end)")*)
 	----------------------------------------------------
 	 inst_program_implicit(env,[]) => []
 
@@ -459,24 +459,24 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([] (* No DAE *), env, [], ci_state, [])
 
 
-  rule	clock() => t1 &
+  rule	(*clock() => t1 &*)
 	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims
 		      ,impl,packimpl)
-	  => (l,env', csets', ci_state', tys) &
-(*	clock() => t2 &
+	  => (l,env', csets', ci_state', tys) 
+(*	& clock() => t2 &
 	real_sub(t2,t1) => time &
 	real_gt(time,1.5) => b &
 	real_string time =>timestr &
 	Util.string_append_list(["inst_class_in ", n, ": ", timestr, "\n" ]) => s1 &
 	Dump.select_string(b,s1,"") => str &
 	print str &*)
-	Prefix.print_prefix_str pre => prestr &
+	(*Prefix.print_prefix_str pre => prestr &
 	string_append(prestr, " : ") => prestr' &
-	string_append(prestr', n) => prestr'' &
-	Debug.fcall ("envgraph", Env.print_env_graphviz, (env,prestr'')) &
+	string_append(prestr', n) => prestr'' *)
+	(*& Debug.fcall ("envgraph", Env.print_env_graphviz, (env,prestr'')) &
 	Debug.fprintl ("envprint", ["------------ ", prestr'', "\n"]) &
 	Debug.fcall ("envprint", Env.print_env, env') & 
-	Debug.fprintl ("envprint", ["------------ /", prestr'', "\n"])
+	Debug.fprintl ("envprint", ["------------ /", prestr'', "\n"])*)
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims,
@@ -513,7 +513,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
   rule	Prefix.print_prefix_str pre => prestr &
-	Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &       
+	(*Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &*)
 	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
 
 	classdef_elts(els) => cdefelts &
@@ -589,8 +589,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
-  rule	Prefix.print_prefix_str pre => prestr &
-	Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &       
+  rule	
+	(*Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) & *)
 	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
 
 	classdef_elts(els) => cdefelts &
@@ -634,7 +634,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Prefix.print_prefix_str pre => prestr &
 	Absyn.path_string cn => cnstr &
-	Debug.fprintl ("insttr", ["inst_class derived: ", cnstr, ", pre=",prestr,"\n"]) &
+	(*Debug.fprintl ("insttr", ["inst_class derived: ", cnstr, ", pre=",prestr,"\n"]) &*)
 	Lookup.lookup_class(env,cn,true) 
 	  => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
 	Env.open_scope(cenv,enc2) => cenv' &
@@ -1105,7 +1105,7 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 			    (SCode.Element*Types.Mod) list, InstDims, bool)
 	    => (Env) =
 
-  rule	Debug.fprint ("decl", "got class \n") &
+  rule	(*Debug.fprint ("decl", "got class \n") &*)
 
 	(** PA: PROBLEM, Modifiers should be merged in this phase, but
 	   since undeclared components can not be found (is done in this phase)
@@ -1120,9 +1120,9 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 	    prot,(Types.T_NOTYPE,NONE),Types.UNBOUND),SOME((comp,cmod)),false) => env' & 
 	add_components_to_env2(env',mods,pre,csets,ci_state,xs,inst_dims,impl) 
-	  => env'' &
-	Debug.fprint("decl", " updated env :") &
-	Debug.fcall ("decl", Env.print_env, env'') 
+	  => env'' 
+	(*& Debug.fprint("decl", " updated env :") &
+	Debug.fcall ("decl", Env.print_env, env'')*) 
 	-----------------
 	add_components_to_env2(env,mods,pre,csets,ci_state,
 		     ((comp as SCode.COMPONENT(n,final,repl,prot,
@@ -1201,8 +1201,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		 
 	(* If a variable is declared multiple times, the first is used *)
 
-  rule	Lookup.lookup_ident_local(env,n) => (_,NONE,true) &
-	Debug.fprint ("insttr", "variable already declared, using first def") 
+  rule	Lookup.lookup_ident_local(env,n) => (_,NONE,true) 
+	(*& Debug.fprint ("insttr", "variable already declared, using first def") *)
 	-------------------------------------
 	inst_element(env, mods, pre, csets, ci_state,
 		     (SCode.COMPONENT(n,final,repl,prot,_,_,_),_),_,_,_)
@@ -1234,10 +1234,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	(* Redeclare of class definition, replaceable is true *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
 	  => (classmod as Types.REDECL(final, [(SCode.CLASSDEF(n2,f2,repl2,cls2),_)])) &
-	Debug.fprintln ("insttr", "*--*Classdef mods") &
+	(*Debug.fprintln ("insttr", "*--*Classdef mods") &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "*--*All mods") &
-	Debug.fcall ("insttr", Mod.print_mod, mods) &
+	Debug.fcall ("insttr", Mod.print_mod, mods) &*)
 	inst_class_decl(env, classmod, pre, csets, cls2, inst_dims, packimpl)
 	  => (env', dae)
 	-------------------------------------------------
@@ -1257,10 +1257,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	(* Classdefinition without redeclaration *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) => classmod &
-	Debug.fprintln ("insttr", "**Classdef mods") &
+	(*Debug.fprintln ("insttr", "**Classdef mods") &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "**All mods") &
-	Debug.fcall ("insttr", Mod.print_mod, mods) &
+	Debug.fcall ("insttr", Mod.print_mod, mods) &*)
 	inst_class_decl(env,classmod,pre,csets,c,inst_dims,packimpl) 
 	  => (env',dae)
 	-------------------------------------------------------
@@ -1280,8 +1280,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	   ** instantiate the class with an extended prefix.
 	   **)
 	
-  rule	Debug.fprint("insttr", "Instantiating component ") &
-	Debug.fprint("insttr", n) & Debug.fprint("insttr", "\n") &
+  rule	(*Debug.fprint("insttr", "Instantiating component ") &
+	Debug.fprint("insttr", n) & Debug.fprint("insttr", "\n") &*)
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
 	
 	(** The class definition is fetched from the environment. *)
@@ -1294,12 +1294,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** included in the variable declaration is in the variable *)
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
-	Debug.fprint ("insttr", "Looking up class modifications") &
+	(*Debug.fprint ("insttr", "Looking up class modifications") &*)
 	Mod.lookup_modification_p(mods,t) => classmod &
-	Debug.fcall ("insttr", Mod.print_mod, classmod) &
-	Debug.fprint ("insttr", "\nLooking up component modifications") &
+	(*Debug.fcall ("insttr", Mod.print_mod, classmod) &*)
+	(*Debug.fprint ("insttr", "\nLooking up component modifications") &*)
 	Mod.lookup_comp_modification(mods,n) => mm &
-	Debug.fcall ("insttr", Mod.print_mod, mm) & Debug.fprint ("insttr", "\n") &
+	(*Debug.fcall ("insttr", Mod.print_mod, mm) & Debug.fprint ("insttr", "\n") &*)
 	(* The types in the environment does not have correct Binding.
 	   We must update those variables that is found in m into a new environment.*)
 	let owncref = Absyn.CREF_IDENT(n,[]) &
@@ -1310,25 +1310,25 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Util.list_flatten([crefs,crefs2]) => crefs' &
 	remove_cref_from_crefs(crefs',owncref) => crefs'' &
 	update_variables_in_env(mods,crefs'',env,ci_state,impl) => env2 &
-	Debug.fprint("insttr", "updated variables in env\n") &
+	(*Debug.fprint("insttr", "updated variables in env\n") &*)
 	(* Update the untyped modifiers to typed ones, and extract class *)
 	(* and component modifiers again.*)
 	Mod.update_mod(env2,pre,mods) => mods' &
 
-	Debug.fprint("insttr", "updated modifiers to typed ones: ") &
+	(*Debug.fprint("insttr", "updated modifiers to typed ones: ") &
 	Debug.fcall("insttr", Mod.print_mod, mods') &
-	Debug.fprint("insttr", "\n") &	
+	Debug.fprint("insttr", "\n") & *)
 	Mod.lookup_modification_p(mods',t) => classmod' &
 	Mod.lookup_comp_modification(mods',n) => mm' &
 		
-	Debug.fprintln ("insttr", "Elaborating current modifications\n env") &
+	(*Debug.fprintln ("insttr", "Elaborating current modifications\n env") &
 	Debug.fcall ("insttr", Env.print_env, env2)  &
-	Debug.fprintln ("insttr", "\n\n") &
+	Debug.fprintln ("insttr", "\n\n") &*)
 	Mod.elab_mod(env2,pre,m) => m' &
-	Debug.fcall ("insttr", Mod.print_mod, m') &
+	(*Debug.fcall ("insttr", Mod.print_mod, m') &*)
 
 	Mod.merge(classmod',mm',env2,pre) => mod &
-	Mod.merge(mod,m',env2,pre) => mod1 &
+ 	Mod.merge(mod,m',env2,pre) => mod1 &
 	Mod.merge(cmod,mod1,env2,pre) => mod1' &
 
 	
@@ -1337,53 +1337,49 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			      attr as SCode.ATTR(ad,flow,acc,param,dir),
 			      t,m),mod',env2') &
 	
-	Debug.fprint("insttr", "looking for type ") &
+(*	Debug.fprint("insttr", "looking for type ") &
 	Debug.fcall("insttr",Dump.print_path,t) &
-	Debug.fprint("insttr"," \n") &
+	Debug.fprint("insttr"," \n") &*)
 	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
-	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
+(*	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &*)
 	
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
 
 	check_prot(prot, mm', vn) &
-	Debug.fprintln ("insttr", "Protection checked") &
+(*	Debug.fprintln ("insttr", "Protection checked") &*)
 
 	Mod.mod_equation mod' => eq &
 
-	Debug.fprintln ("insttr", "mod equation done, from mod:") &
-	Debug.fcall("insttr",Mod.print_mod, mod') & Debug.fprintln ("insttr", "\n") &
+(*	Debug.fprintln ("insttr", "mod equation done, from mod:") &
+	Debug.fcall("insttr",Mod.print_mod, mod') & Debug.fprintln ("insttr", "\n") &*)
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 	elab_arraydim(env2',owncref,ad,eq,impl,NONE) => dims &
-	Debug.fprintln ("insttr", "arraydim elabed") &
+(*	Debug.fprintln ("insttr", "arraydim elabed") &
 	Debug.fprintln ("arraydim", "arraydim elabed :") &
-	Debug.fcall("arraydim",print_dim2, dims) &
+	Debug.fcall("arraydim",print_dim2, dims) &*)
 	(** Instantiate the component *)	
 	(*Dump.select_string(impl,"IMPLICIT!!!\n","") => s &
 	print s &*)
-	Debug.fprint("peter","inst_var ") &
-	Debug.fprint("peter",n) & Debug.fprint("peter", " mod=") &
-	Debug.fcall("peter",Mod.print_mod, mod') &
-	Debug.fprint("peter","\n") &
 	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
 	  => (dae, csets', ty) &
-	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &
+(*	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &*)
 
 	(** The environment is extended (updated) with the new variable *)
 	(** binding. *)
 
 	make_binding (env2',attr,eq) => binding &
-	Debug.fcall ("insttr", Types.print_binding, binding) &
-	Debug.fcall ("insttr", print, "\n") &
+(*	Debug.fcall ("insttr", Types.print_binding, binding) &
+	Debug.fcall ("insttr", print, "\n") &*)
 	(* true in update_frame means the variable is now instantiated. *)
 	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),true) => env' &
+					 prot,ty,binding),true) => env' 
 
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
 					       
-	Debug.fprint("insttr","inst_element Component succeeded\n") 
+	(* & Debug.fprint("insttr","inst_element Component succeeded\n") *)
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     (comp as SCode.COMPONENT(n,final,repl,prot,
@@ -1404,8 +1400,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf "# unknown class '" & Print.print_buf s & Print.print_buf "' while instantiating " &
 	Prefix.prefix_add(n,[],pre) => pre' &
 	Prefix.print_prefix_str pre' => ns &
-	Print.print_buf ns & Print.print_buf "\n" &
-	Debug.fcall ("instdb", Env.print_env, env)
+	Print.print_buf ns & Print.print_buf "\n" 
+(*	Debug.fcall ("instdb", Env.print_env, env) *)
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
 		     (SCode.COMPONENT(n,final,repl,prot,_,t,_),_),_,_,_)
@@ -1579,7 +1575,7 @@ relation inst_var2 : (Env.Env,
 		    inst_dims,NONE)
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
-	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
+(*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
 	--------------------------
 	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
 		 [],idxs,inst_dims,impl (*as false*))
@@ -1597,7 +1593,7 @@ relation inst_var2 : (Env.Env,
 	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE)
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
-	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
+(*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
 	--------------------------
 	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
 		 [],idxs,inst_dims,impl (*as false*))
@@ -1607,8 +1603,8 @@ relation inst_var2 : (Env.Env,
 	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
 	(* This is where redeclare should be handled *)
-	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
-	Debug.fcall ("envprint", Env.print_env, env) & 
+(*	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
+	Debug.fcall ("envprint", Env.print_env, env) & *)
 	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
 	  => (dae1,_,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
@@ -1620,8 +1616,8 @@ relation inst_var2 : (Env.Env,
 		    inst_dims, start) => dae3 &
 	list_append(dae1',dae2) => daex &
 	list_append(daex,dae3) => dae 
-	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
-	& Debug.fprint("instvartr", "\nEnd of inst_var variables\n")
+(*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
+	& Debug.fprint("instvartr", "\nEnd of inst_var variables\n")*)
 	--------------------------
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
 		 [],idxs,inst_dims,impl (*as false*))
@@ -1665,7 +1661,7 @@ relation inst_var2 : (Env.Env,
 	  => (dae, csets', ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty'
-	& Debug.fprint("instvartr", "\nEnd of inst_var variables array non-function\n")
+(*	& Debug.fprint("instvartr", "\nEnd of inst_var variables array non-function\n")*)
 	-------------------------------
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl (*as false*))
           => (dae,csets',ty')
@@ -1878,7 +1874,7 @@ relation update_variables_in_env:(Types.Mod,
 	-------------------------------------------
 	update_variables_in_env(mods,cr::rest,env,ci_state,impl) => env'' 
 
-  rule	Debug.fprint("decl", "update_variables_in_env finished\n")
+  rule (*	Debug.fprint("decl", "update_variables_in_env finished\n")*)
 	---------------
 	update_variables_in_env(_,[],env,ci_state,impl) => env
 end
@@ -1924,10 +1920,10 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 
 	make_binding (env2,attr,eq) => binding &
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),false) => env' &
-	Debug.fprint("insttr","Updated variable ") &
+					 prot,ty,binding),false) => env' 
+(*	& Debug.fprint("insttr","Updated variable ") &
 	Debug.fprint("insttr", id) &
-	Debug.fprint("insttr"," in env.\n ") 
+	Debug.fprint("insttr"," in env.\n ") *)
 	----------------------------------
 	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,ci_state, impl) => env'
 
@@ -2471,13 +2467,13 @@ relation inst_class_decl : (Env.Env, Types.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
-  rule	Debug.fprint("insttr","+\tinst_class_decl called\n") &
+  rule	(*Debug.fprint("insttr","+\tinst_class_decl called\n") &*)
 	Env.extend_frame_c(env,c) => env' &
-	Debug.fprint("insttr","+\textended frame\n") &
+(*	Debug.fprint("insttr","+\textended frame\n") &*)
 	implicit_instantiation(env',Types.NOMOD,pre,csets,c,inst_dims,packimpl) 
-	  => (env'',dae) &
-	Debug.fprint("insttr","+\timplicit instantiation of ") &
-	Debug.fprint("insttr",n) & Debug.fprint("insttr", " finshed\n\n") 
+	  => (env'',dae) 
+(*	Debug.fprint("insttr","+\timplicit instantiation of ") &
+	Debug.fprint("insttr",n) & Debug.fprint("insttr", " finshed\n\n") *)
 	----------------------------------
 	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,restr,_),inst_dims,packimpl)
 	  => (env'', dae)
@@ -2985,11 +2981,11 @@ relation dae_declare : (Exp.ComponentRef,
 			) 
 	  => DAE.Element list =
 
-  rule	Debug.fprint( "insttr", "dae_declare(") &
+  rule	(*Debug.fprint( "insttr", "dae_declare(") &
 	Debug.fcall ( "insttr", Exp.print_component_ref,vn) &
 	Debug.fprint ( "insttr", ",") &
 	Debug.fcall ( "insttr", Types.print_type,ty)  &
-	Debug.fprint ("insttr", "...)\n") &
+	Debug.fprint ("insttr", "...)\n") &*)
 	DAE.to_flow flow => flow' &
 	dae_declare2 (vn, ty, flow', par, dir, e, inst_dims, start) => dae
 	-----------------------------------
@@ -3221,15 +3217,15 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 resulting expression. But why are e1', e2' needed? They are
 	 used to generate the dae's. Probably their type may have been
 	 modified.  *)
-	Debug.print("\n Expressions matched in inst equation:") &
+(*	Debug.print("\n Expressions matched in inst equation:") &*)
 
 (*	Absyn.print_absyn_exp(e1) &
 *)	
-	Debug.print(", ") &
+(*	Debug.print(", ") &*)
 
 (*	Absyn.print_absyn_exp(e2) &
 *)	
-	Debug.print("\n") &
+(*	Debug.print("\n") &*)
 
 	(* 
 	 Do static analysis and constant evaluation of expressions. 
@@ -3245,18 +3241,18 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Static.elab_exp(env,e1,false,NONE) => (e1',prop1,_) &
 
-	Debug.print("\nDebug: did left elab.") &
+(*	Debug.print("\nDebug: did left elab.") &*)
 	Static.elab_exp(env,e2,false,NONE) => (e2',prop2,_) &
-	Debug.print("\nDebug: did right elab.") &
+(*	Debug.print("\nDebug: did right elab.") &*)
 	Exp.print_exp(e1') &
-	Debug.print(", ") &
+(*	Debug.print(", ") &*)
 	Exp.print_exp(e2') & 
-	Debug.print("\n") &
+(*	Debug.print("\n") &*)
 
 	
 	Prefix.prefix_exp(env,e1',pre) => e1'' &
 	Prefix.prefix_exp(env,e2',pre) => e2'' &
-	Debug.print("\nDebug: did prefixes.") &
+(*	Debug.print("\nDebug: did prefixes.") &*)
 (*
  put params-> in front of parameters
  doesn't work after prefix_exp, because of lookup failure
@@ -3266,20 +3262,20 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 *)
 	(*PR. Check that the lefthandside and the righthandside get along. *)
 	inst_eq_equation(e1'',prop1,e2'',prop2,initial) => dae &
-	Debug.print("\nDebug: did inst_eq_equation.") &
+(*	Debug.print("\nDebug: did inst_eq_equation.") &*)
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state' &
-	Debug.print("\nDebug: did ClassInf trans.") &
+(*	Debug.print("\nDebug: did ClassInf trans.") &*)
 	Prefix.print_prefix_str pre => prestr &
 	Exp.print_exp_str e1' => e1str &
 	Exp.print_exp_str e2' => e2str &
 	string_append (prestr, ": ") => debugstr &
 	string_append (debugstr, e1str) => debugstr2 &
 	string_append (debugstr2, " = ") => debugstr3 &
-	string_append (debugstr3, e2str) => debugstr4 &
-	Debug.fcall ("expenvgraph", Env.print_env_graphviz, (env,debugstr4)) &
+	string_append (debugstr3, e2str) => debugstr4 
+(*	& Debug.fcall ("expenvgraph", Env.print_env_graphviz, (env,debugstr4)) &
 	Debug.fprintl ("expenvprint", ["------------ ", debugstr4, "\n"]) &
 	Debug.fcall ("expenvprint", Env.print_env, env) &
-	Debug.fprintl ("expenvprint", ["------------ /", debugstr4, "\n"])
+	Debug.fprintl ("expenvprint", ["------------ /", debugstr4, "\n"])*)
 	--------------------------------------------------------------
 	inst_equation_common(env, mods, pre, csets, ci_state,
 			     SCode.EQ_EQUALS(e1,e2), 
@@ -3295,7 +3291,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
 	Ceval.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
-	Debug.print("\nEQ_IF: ") &
+(*	Debug.print("\nEQ_IF: ") &*)
 (*!!	print(cond) &
 *)
 (*	Dump.print_exp(cond) &
@@ -3310,7 +3306,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
 	Ceval.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
-	Debug.print("\nEQ_IF: ") &
+(*	Debug.print("\nEQ_IF: ") &*)
 (*!!	print(cond) &
 *)
 (*	Dump.print_exp(cond) &
@@ -3383,42 +3379,42 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **
 	 **)
 
-  rule	Debug.fprintln ("insttr", "inst_equation_common_eqfor_1") &
+  rule	(*Debug.fprintln ("insttr", "inst_equation_common_eqfor_1") &*)
 	Static.elab_exp (env,e,false,NONE)
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
 					   id_t),_),
 			     true),_) &
-	Debug.fprintln ("insti", "for expression elaborated") &
+	(*Debug.fprintln ("insti", "for expression elaborated") &*)
 	add_for_loop_scope(env,i,id_t) => env' &
-	Debug.fprintln ("insti", "loop-variable added to scope") &
+(*	Debug.fprintln ("insti", "loop-variable added to scope") &*)
 	
 	Lookup.lookup_var(env', Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
 	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
-	Debug.fprintln ("insti", "loop variable looked up") &
+(*	Debug.fprintln ("insti", "loop variable looked up") &*)
 	
 	(* FIXEM: Check bounds *)
 	Ceval.ceval (env,e',false,NONE) => (v,_) &
-	Debug.fprintln ("insti", "for expression evaluated") &
+(*	Debug.fprintln ("insti", "for expression evaluated") &*)
 	unroll(env',mod,pre,csets,ci_state,i,v,el,initial) => (dae, csets') &
-	Debug.fprintln ("insti", "for expression unrolled") &
-	inst_equation_common_ci_trans (ci_state, initial) => ci_state' &
-	Debug.fprintln ("insttr", "inst_equation_common_eqfor_1 succeeded")
+(*	Debug.fprintln ("insti", "for expression unrolled") &*)
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state' 
+(*	& Debug.fprintln ("insttr", "inst_equation_common_eqfor_1 succeeded")*)
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => (dae, env,csets', ci_state')
 
-  rule	Debug.fprintln ("insttr", "inst_equation_common_eqfor_2") &
+  rule	(*Debug.fprintln ("insttr", "inst_equation_common_eqfor_2") &*)
 	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
 	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
-	Debug.fprintln ("insti", "loop variable looked up") &
+	(*Debug.fprintln ("insti", "loop variable looked up") &*)
 	Static.elab_exp (env,e,false,NONE)
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
 					   (Types.T_INTEGER(_),_)),_),
 			     false),_) &
-	Print.print_buf "#-- Error: Non-constant iteration bounds not supported\n" &
-	Debug.fprintln ("insttr", "inst_equation_common_eqfor_2 succeeded")
+	Print.print_buf "#-- Error: Non-constant iteration bounds not supported\n" 
+	(*& Debug.fprintln ("insttr", "inst_equation_common_eqfor_2 succeeded")*)
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => fail
@@ -3523,7 +3519,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	
 	(* This rule is matched first, if it fail the next rule is matched.
 	 *)
-  rule	Debug.print("\ninst_eq_equation (match e1) PROP, PROP") &
+  rule	(*Debug.print("\ninst_eq_equation (match e1) PROP, PROP") &*)
 	Types.match_prop(e1, p1, p2) => e1' &
 	inst_eq_equation_2(e1', e2, t2, initial) => dae 
 
@@ -3533,11 +3529,11 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	  => dae
 
 	(* If it fails then this rule is matched. *)
-  rule	Debug.print("\ninst_eq_equation (match e2) PROP, PROP") &
+  rule	(*Debug.print("\ninst_eq_equation (match e2) PROP, PROP") &*)
 	Types.match_prop(e2, p2, p1) => e2'&
-	Debug.print("\n Second rule of relation_ inst_eq_equation ") &
-	inst_eq_equation_2(e1, e2', t1, initial) => dae &
-	Debug.print("\n Second rule complete. ") 
+(*	Debug.print("\n Second rule of relation_ inst_eq_equation ") &*)
+	inst_eq_equation_2(e1, e2', t1, initial) => dae 
+(*	& Debug.print("\n Second rule complete. ") *)
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
 			 e2,p2 as Types.PROP(t2,_), initial)
@@ -3545,7 +3541,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 
 
-  rule	Debug.print("\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE") &
+  rule	(* Debug.print("\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE") &*)
 	(*Exp.print_exp (e1) & *)
 	Types.match_prop(e1, p1, p2) => e1' &
 	(*Exp.print_exp (e1') & *)
@@ -3570,12 +3566,12 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 
 	(* PR. *)	
-  rule	Debug.print("\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE") &
-	Debug.print "\n About to do a static match e2. " &
+  rule	(*Debug.print("\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE") &
+	Debug.print "\n About to do a static match e2. " &*)
 	Types.match_prop(e2, p2, p1) => e2'&
-	Debug.print("\n Second rule of relation_ inst_eq_equation ") &
-	inst_eq_equation_2(e1, e2', t1, initial) => dae &
-	Debug.print("\n Second rule complete. ") 
+(*	Debug.print("\n Second rule of relation_ inst_eq_equation ") &*)
+	inst_eq_equation_2(e1, e2', t1, initial) => dae 
+(*	& Debug.print("\n Second rule complete. ") *)
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
 			 e2,p2 as Types.PROP_TUPLE(t2,_), initial)
@@ -3584,13 +3580,13 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	  (* An assignment to a varaible of T_ENUMERATION type is an explicit 
 	     assignment to the value componnent of the enumeration, i.e. having a type T_ENUM*)
 	
-  rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
+  rule	(*Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &*)
 	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
 	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP((Types.T_ENUMERATION(_,_),_),_),
 	    e2,Types.PROP(t as (Types.T_ENUM,_),_), initial) => dae
 
-  rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
+  rule	(*Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &*)
 	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
 	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP((Types.T_ENUMERATION(_,_),_),_),
@@ -3610,17 +3606,17 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 (* PR To debug*)
 
-  rule	Debug.print("\ne1 is PROP and e2 is PROP_TUPLE.  ")
+  rule	(*Debug.print("\ne1 is PROP and e2 is PROP_TUPLE.  ")*)
 	---------------------------------	
 	inst_eq_equation(e1,Types.PROP(t1,_),
 			 e2, Types.PROP_TUPLE(_,_), initial) => fail
 
-  rule	Debug.print("e2 is PROP")
+  rule	(*Debug.print("e2 is PROP")*)
 	---------------------------------
 	inst_eq_equation(e1,_,
 			 e2,Types.PROP(t2,_), initial) => fail
 
-  rule	Debug.print("e1 is PROP")
+  rule	(*Debug.print("e1 is PROP")*)
 	---------------------------------
 	inst_eq_equation(e1,Types.PROP(t1,_),
 			 e2, _, initial) => fail
@@ -4741,19 +4737,19 @@ end
 relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Types.Var =
 	  
-  rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
+  rule	(*Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &*)
 	Lookup.lookup_class(env,t,true) => (cl,cenv) &
-	Debug.fprint ("recconst", "looked up class\n") &
+	(*Debug.fprint ("recconst", "looked up class\n") &*)
 	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
 	let owncref = Absyn.CREF_IDENT(id,[]) &
 	elab_arraydim(env,owncref,dim,NONE,true,NONE) => dimexp &
-	Debug.fprint ("recconst", "calling inst_var\n") &
+	(*Debug.fprint ("recconst", "calling inst_var\n") &*)
 	inst_var(cenv, ClassInf.FUNCTION(""),mod', Prefix.NOPRE, [], id, cl, attr,
 		 dimexp, [], [], false) => (_, _, tp') &
-	Debug.fprint ("recconst", "Type of argument:") &
+	(*Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &
-	Debug.fcall ("recconst",Mod.print_mod,mod') &
+	Debug.fcall ("recconst",Mod.print_mod,mod') &*)
 	Mod.mod_equation mod' => eq &
 	make_binding(env,attr,eq) => bind
 	---------------------------------------

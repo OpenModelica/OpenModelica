@@ -349,6 +349,7 @@ module Absyn:
   relation opt_path_string: Path option => string
   relation path_string2 : (Path, string) => string
   relation path_last_ident : Path => Ident
+  relation path_first_ident : Path => Ident
   relation get_cref_from_exp : ( Exp ) => ComponentRef list 
   relation cref_get_first : ComponentRef => ComponentRef 
   relation join_paths: (Path, Path) => Path
@@ -427,6 +428,13 @@ relation path_last_ident : Path => Ident =
 	
   axiom	path_last_ident(IDENT(n)) => n
 
+end
+
+relation path_first_ident : Path => Ident =
+
+  axiom	path_first_ident(QUALIFIED(n,p)) => n
+	
+  axiom	path_first_ident(IDENT(n)) => n
 end
 
 relation get_cref_from_exp: ( Exp ) => ComponentRef list =
