@@ -124,5 +124,25 @@ extern "C"
   } 
   RML_END_LABEL  
 
+  RML_BEGIN_LABEL(TaskGraphExt__add_5finitstate)
+  {
+    errormsg();
+    RML_TAILCALLK(rmlFC);			  
+  } 
+  RML_END_LABEL  
+
+  RML_BEGIN_LABEL(TaskGraphExt__add_5finitparam)
+  {
+    errormsg();
+    RML_TAILCALLK(rmlFC);			  
+  } 
+  RML_END_LABEL  
+
+  RML_BEGIN_LABEL(TaskGraphExt__add_5finitvar)
+  {
+    errormsg();
+    RML_TAILCALLK(rmlFC);			  
+  } 
+  RML_END_LABEL  
 
 } // extern "C"
