@@ -1,0 +1,49 @@
+(* file exp1.rml *)
+
+module exp1:
+  datatype Exp   =  RCONST of  real
+                 |  ADDop    of  Exp * Exp
+                 |  SUBop    of  Exp * Exp
+                 |  MULop    of  Exp * Exp
+                 |  DIVop    of  Exp * Exp
+                 |  NEGop    of  Exp
+  relation eval:  Exp => real
+end
+
+(* Abstract syntax of the language Exp1 *)
+
+(* Evaluation semantics  of Exp1 *)
+
+relation eval: Exp => real  =
+  
+  rule  print "\n"
+	---------------------------
+	eval( RCONST(ival) ) => ival   (* eval of an integer node *)
+                                         (* is the integer itself *)
+
+  (* Evaluation of an addition node PLUSop is v3, if v3 is the result of
+   * adding the evaluated results of its children e1 and e2 
+   * Subtraction, multiplication, division operators have similar specs.
+   *)
+
+  rule  eval(e1) => v1  &  eval(e2) => v2  &  real_add(v1,v2) => v3
+        ----------------------------------------------------------
+        eval( ADDop(e1,e2) ) => v3
+
+  rule  eval(e1) => v1  &  eval(e2) => v2  &  real_sub(v1,v2) => v3
+        ----------------------------------------------------------
+        eval( SUBop(e1,e2) ) => v3
+
+  rule  eval(e1) => v1  &  eval(e2) => v2  &  real_mul(v1,v2) => v3
+        ----------------------------------------------------------
+        eval( MULop(e1,e2) ) => v3
+
+  rule  eval(e1) => v1  &  eval(e2) => v2  &  real_div(v1,v2) => v3
+        ----------------------------------------------------------
+        eval( DIVop(e1,e2) ) => v3
+
+  rule  eval(e) => v1  &  real_neg(v1) => v2
+        -----------------------------------
+        eval( NEGop(e) ) => v2
+
+end (* eval *)

@@ -1,0 +1,11 @@
+module exp1:
+  datatype Exp   =  RCONST of  real
+
+  relation eval:  Exp => real
+end
+
+relation eval: Exp => real  =
+  
+  axiom eval( RCONST(ival) ) => ival   
+
+end 
