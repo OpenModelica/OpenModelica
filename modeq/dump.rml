@@ -429,7 +429,7 @@ relation print_class_part: Absyn.ClassPart => () =
 	print_external_decl (edecl) &
 	Print.print_buf ")"
 	-------------------
-	print_class_part(Absyn.EXTERNAL(edecl))
+	print_class_part(Absyn.EXTERNAL(edecl,_))
 
 end
 
@@ -530,24 +530,28 @@ axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([]),_) => ""
 	print_list_str(expl,print_exp_str,",") => expstr &
 	string_append(langstr," ") => s1 &
 	indent_str(i) => is &
-	Util.string_append_list(["\n", is, "external ",langstr," ", outputstr, "=",ident,"(",expstr,");\n"]) => str
+	unparse_annotation_option (i,ann) => annstr &
+	Util.string_append_list(["\n", is, "external ",langstr," ", outputstr, "=",ident,"(",expstr,") ",annstr,";\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,SOME(output),expl)),_)
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,SOME(output),expl),ann),_)
 	    => str
 
   rule	get_extlang_str(lang) => langstr &
 	print_list_str(expl,print_exp_str,",") => expstr &
 	string_append(langstr," ") => s1 &
 	indent_str(i) => is &
-	Util.string_append_list(["\n", is, "external ", langstr," ",ident,"(",expstr,");\n"]) => str
+	unparse_annotation_option (i,ann) => annstr &
+	Util.string_append_list(["\n", is, "external ", langstr," ",ident,"(",expstr,") ",annstr,";\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,NONE,expl)),_) 
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,NONE,expl),ann),_) 
 	    => str
 
   rule	indent_str(i) => is &
-	Util.string_append_list(["\n",is,"external;\n"]) => res
+	get_extlang_str(lang) => langstr &
+	unparse_annotation_option (i,ann) => annstr &
+	Util.string_append_list(["\n",is,"external ",langstr," ",annstr,";\n"]) => res
 	-----------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,_,NONE,_)),_) 
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,lang,NONE,_),ann),_) 
 	    => res
 end
 
@@ -1739,36 +1743,36 @@ relation exp_priority: Absyn.Exp => int =
 
   axiom	exp_priority(Absyn.BINARY(_,Absyn.POW,_)) => 1 
 
-  axiom	exp_priority(Absyn.BINARY(_,Absyn.MUL,_)) => 2
   axiom	exp_priority(Absyn.BINARY(_,Absyn.DIV,_)) => 2
+  axiom	exp_priority(Absyn.BINARY(_,Absyn.MUL,_)) => 3
 
-  axiom	exp_priority(Absyn.UNARY(Absyn.UPLUS,_)) => 3
-  axiom	exp_priority(Absyn.UNARY(Absyn.UMINUS,_)) => 3
+  axiom	exp_priority(Absyn.UNARY(Absyn.UPLUS,_)) => 4
+  axiom	exp_priority(Absyn.UNARY(Absyn.UMINUS,_)) => 4
 
-  axiom	exp_priority(Absyn.BINARY(_,Absyn.ADD,_)) => 4
-  axiom	exp_priority(Absyn.BINARY(_,Absyn.SUB,_)) => 4
+  axiom	exp_priority(Absyn.BINARY(_,Absyn.ADD,_)) => 5
+  axiom	exp_priority(Absyn.BINARY(_,Absyn.SUB,_)) => 5
 
-  axiom	exp_priority(Absyn.RELATION(_,Absyn.LESS,_)) => 5
-  axiom	exp_priority(Absyn.RELATION(_,Absyn.LESSEQ,_)) => 5
-  axiom	exp_priority(Absyn.RELATION(_,Absyn.GREATER,_)) => 5
-  axiom	exp_priority(Absyn.RELATION(_,Absyn.GREATEREQ,_)) => 5
-  axiom	exp_priority(Absyn.RELATION(_,Absyn.EQUAL,_)) => 5
-  axiom	exp_priority(Absyn.RELATION(_,Absyn.NEQUAL,_)) => 5
+  axiom	exp_priority(Absyn.RELATION(_,Absyn.LESS,_)) => 6
+  axiom	exp_priority(Absyn.RELATION(_,Absyn.LESSEQ,_)) => 6
+  axiom	exp_priority(Absyn.RELATION(_,Absyn.GREATER,_)) => 6
+  axiom	exp_priority(Absyn.RELATION(_,Absyn.GREATEREQ,_)) => 6
+  axiom	exp_priority(Absyn.RELATION(_,Absyn.EQUAL,_)) => 6
+  axiom	exp_priority(Absyn.RELATION(_,Absyn.NEQUAL,_)) => 6
 
-  axiom	exp_priority(Absyn.LUNARY(Absyn.NOT,_)) => 6
+  axiom	exp_priority(Absyn.LUNARY(Absyn.NOT,_)) => 7
 
-  axiom	exp_priority(Absyn.LBINARY(_,Absyn.AND,_)) => 7
+  axiom	exp_priority(Absyn.LBINARY(_,Absyn.AND,_)) => 8
 
-  axiom	exp_priority(Absyn.LBINARY(_,Absyn.OR,_)) => 8
+  axiom	exp_priority(Absyn.LBINARY(_,Absyn.OR,_)) => 9
 
-  axiom	exp_priority(Absyn.RANGE(_,_,_)) => 9
+  axiom	exp_priority(Absyn.RANGE(_,_,_)) => 10
 
-  axiom	exp_priority(Absyn.IFEXP(_,_,_,_)) => 10
+  axiom	exp_priority(Absyn.IFEXP(_,_,_,_)) => 11
 
 	(* Not valid in inner expressions, only included here for completeness *)
-  axiom	exp_priority(Absyn.TUPLE(_)) => 11
+  axiom	exp_priority(Absyn.TUPLE(_)) => 12
 	
-  axiom	exp_priority(_) => 12
+  axiom	exp_priority(_) => 13
 end
 
 relation parenthesize: (string, 
