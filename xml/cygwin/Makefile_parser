@@ -1,0 +1,65 @@
+CC=gcc -Wall
+CXX=g++ -Wall
+AR=ar -r
+
+ANTLR_HOME="./antlr-2.7.2/lib/cpp"
+
+INCLUDES=-I"./antlr-2.7.2/lib/cpp"
+CP="./antlr-2.7.2/antlr.jar"
+LIBP=-L"./lib/"
+
+CFLAGS =-g -Wall $(INCLUDES) -D DEBUG
+CXXFLAGS = $(CFLAGS)
+
+ANTLRFLAGS=-traceTreeParser
+
+LIB = $(LIBP) -lantlr
+
+
+lexergen= modelica_lexer.cpp modelica_lexer.hpp \
+	  modelicaTokenTypes.hpp modelicaTokenTypes.txt
+
+parsergen= modelica_parser.cpp modelica_parser.hpp \
+	   modelica_parserTokenTypes.hpp modelica_parserTokenTypes.txt
+
+lexersrcs=$(filter %.cpp,$(lexergen))
+parsersrcs=$(filter %.cpp,$(parsergen))
+
+lexerobjs=$(lexersrcs:.cpp=.o)
+parserobjs=$(parsersrcs:.cpp=.o)
+
+helperobjs = token_names.o parse_tree_dumper.o
+
+OBJS += $(lexerobjs) $(parserobjs) $(helperobjs)
+
+all: libmodelica_parser.a
+
+libmodelica_parser.a: $(OBJS)
+	$(AR) $@ $(OBJS)
+
+$(lexergen): modelica_lexer.g
+	java -cp $(CP) antlr.Tool $(ANTLRFLAGS) $<
+
+$(parsergen): modelica_parser.g modelica_lexer.g
+	java -cp $(CP) antlr.Tool $(ANTLRFLAGS) $<
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c $<
+
+depend: $(DFILES)
+
+clean:
+	-rm -f *.o *~ core *.core libmodelica_parser.a
+
+reallyclean: clean
+	-rm -f $(lexergen) $(parsergen)
+
+modelica_lexer.o:modelica_lexer.cpp modelica_lexer.hpp
+modelica_parser.o:modelica_parser.cpp modelica_parser.hpp
+token_names.o:token_names.cpp
+parse_tree_dumper.o:parse_tree_dumper.cpp parse_tree_dumper.hpp
+#include $(DFILES)
+
