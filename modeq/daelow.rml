@@ -30,7 +30,8 @@
  **)
 
 (** 
- ** This module is a lowered form of a DAE including equations simple equations in
+ ** This module is a lowered form of a DAE including equations 
+ ** and simple equations in
  ** two separate lists. The variables are split into known variables
  ** parameters and constants, and unknown variables, 
  ** states and algebraic variables.
@@ -228,9 +229,10 @@ val empty_bintree = TREENODE(NONE,NONE,NONE)
  ** The DAELow representation splits the DAE into equations and variables
  ** and further divides variables into known and unknown variables and the 
  ** equations into simple and nonsimple equations.
- ** The variables are inserted into a vector and a binary search tree gives
- ** the index of each variable in the vector. This gives a lookup cost of 
- ** O(log(n)) for finding a variable in the tree.
+ ** The variables are inserted into a hash table. This gives a lookup cost of 
+ ** O(1) for finding a variable. The equations are put in an expandable
+ ** array. Where adding a new equation can be done in O(1) time if space 
+ ** is available.
  **)
 relation lower: (DAE.DAElist) => DAELow =
 
@@ -311,12 +313,20 @@ end
  ** This relation traverses the equations to find out which blocks needs to
  ** be solved by the numerical solver (Dynamic Section) and which blocks only 
  ** needs to be solved for output to file ( Accepted Section).
+ ** This is done by traversing the graph of strong components, where
+ ** equations/variable pairs correspond to nodes of the graph. The edges of 
+ ** this graph are the dependencies between blocks or components. 
+ ** The traversal is made in the backward direction of this graph.
  ** The result is a split of the blocks into two lists.
  **) 
-relation generate_state_partition:(int list list,DAELow,
-				   int vector,int vector,
+relation generate_state_partition:(int list list, (* blocks *)
+				   DAELow,
+				   int vector, (* assignments1 *)
+				   int vector, (* assignments2 *)
 				   IncidenceMatrix, IncidenceMatrixT) => 
- (int list list, int list list) =
+ (int list list, (* dynamic blocks *)
+  int list list) (* output blocks *)
+	=
         
   rule	equation_size(e) => size &
 	array_create(size,0) => arr &
@@ -409,7 +419,6 @@ end
  ** It performs marking for one equation and its transitive closure by 
  ** following edges in backward direction.
  **)
-
 relation mark_state_equation: (Var, (DAELow * 
 				     int array * 
 				     IncidenceMatrix* IncidenceMatrixT *
@@ -486,7 +495,13 @@ relation inv_reachable_nodes:(int, IncidenceMatrix, IncidenceMatrixT,
 	inv_reachable_nodes(eqn,_,_,_,_) => fail
 end
 
-relation inv_reachable_nodes2:(int list, int vector) => int list  =
+(** relation: inv_reachable_nodes2
+ ** Helper relation to inv_reachable_nodes
+ **)
+relation inv_reachable_nodes2:(int list (* variables *), 
+			       int vector (* assignments1*)
+			       ) => 
+	int list  =
 
   axiom	inv_reachable_nodes2([],_) => []
 
@@ -4551,6 +4566,11 @@ relation is_algebraic : (Exp.Exp) => bool =
 
  end
 
+(** relation: is_var_known
+ ** Returns true if the the variable is present in the variable list.
+ ** This is done by traversing the list, searching for a matching variable 
+ ** name.
+ **)
 relation is_var_known : (Var list, Exp.ComponentRef) => bool =
 	
   rule	
