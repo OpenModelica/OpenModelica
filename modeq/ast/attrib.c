@@ -82,6 +82,7 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(PARTIAL);
   tokprinter(EXTENDS);
   tokprinter(PUBLIC);
+  tokprinter(PROTECTED);
   tokprinter(INPUT);
   tokprinter(OUTPUT);
   tokprinter(FLOW);
@@ -96,6 +97,8 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(ASSIGN);
   tokprinter(PLUS);
   tokprinter(MINUS);
+  tokprinter(MULT);
+  tokprinter(DIV);
   tokprinter(COMPONENTS);
   tokprinter(TYPE_PREFIX);
   tokprinter(FUNCALL);
