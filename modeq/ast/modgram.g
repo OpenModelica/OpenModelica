@@ -62,7 +62,26 @@ void zzd_attr(Attrib *attr)
   }
 }
 
-int main(int argc, char **argv)
+#if 1
+static void *rml_ast = NULL;
+void *parse(struct rml_state *ignored)
+{
+  ANTLR(model_specification(), stdin);	/* start first rule */
+  return rml_ast;
+}
+
+void Parser_5finit(void)
+{
+}
+
+RML_BEGIN_LABEL(Parser__parse)
+{
+  return parse(rmlState);
+}
+RML_END_LABEL
+#endif
+
+int not_main(int argc, char **argv)
 {
   
 #ifdef _WIN32
@@ -82,8 +101,6 @@ int main(int argc, char **argv)
   int errflg = 0;
   
   /* Initialize RML */
-  Exp_5finit();
-  DAE_5finit();
   Class_5finit();
   
   while ((c = getopt(argc, argv, "svxdr:o:D")) != EOF)
