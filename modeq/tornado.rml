@@ -357,7 +357,7 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
   rule	int_add(param_index,1) => param_index' & int_string(param_index) => is &
         Exp.cref_str(cr) => crs &
         Util.string_split_at_char(crs,#".") => comp_name::_ &
-        TORNADOEXT.get_input_var_number(comp_name) => input_number &
+        TORNADOEXT.get_param_var_number(comp_name) => input_number &
         int_string(input_number) => input_number_str &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
