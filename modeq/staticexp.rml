@@ -3233,13 +3233,32 @@ relation elab_cref2 : (Env.Env,
 	----------------
   	elab_cref2 (env,cr,acc,SCode.STRUCTPARAM,tt, Types.VALBOUND(v)) => (e',true,acc)
 
-  rule	Types.elab_type tt => t &
+  rule	(* Constants with equal binings should be constant, i.e. true
+	 but const is passed on, allowing constants to have wrong bindings
+	 This must be caught later on.*)
+	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
-	cref_vectorize(Exp.CREF(cr',t),tt) => e'
+	cref_vectorize(Exp.CREF(cr',t),tt) => e' 
 	-----------------------------------
-	elab_cref2 (env,cr,acc,_,tt, Types.EQBOUND(exp,true))
-	  => (e',false,acc)
+	elab_cref2 (env,cr,acc,SCode.CONST,tt, Types.EQBOUND(exp,const))
+	  => (e',const,acc)
 
+  rule	(* ...the same goes for structural parameters.*)
+	Types.elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr' &
+	cref_vectorize(Exp.CREF(cr',t),tt) => e' 
+	-----------------------------------
+	elab_cref2 (env,cr,acc,SCode.STRUCTPARAM,tt, Types.EQBOUND(exp,const))
+	  => (e',const,acc)
+
+  rule	(* ..the rest should be non constant, even if they have a 
+	 constant binding.*)
+	Types.elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr' &
+	cref_vectorize(Exp.CREF(cr',t),tt) => e' 
+	-----------------------------------
+	elab_cref2 (env,cr,acc,_,tt, Types.EQBOUND(exp,const))
+	  => (e',false,acc)
 	  (* Enum constants does not have a value expression *)
   rule	Types.elab_type tt => t
 	-----------------
