@@ -3,7 +3,11 @@ module Main:
 	relation main: string list => ()
 end
 
+with "class.rml"
+with "absyn.rml"
 with "parse.rml"
+with "test.rml"
+with "dump.rml"
 
 (* with "modelica.rml" *)
 
@@ -17,7 +21,10 @@ relation main =
 *)
 
    rule print "Jahaja\n" &
-	Parser.parse f => p
+	Parser.parse "foo.mod" => p &
+	Dump.dump p
+	(* & Dump.dump Test.prog1 *)
+	& print "[slut]\n"
 	----------------
-	main f::argv
+	main _
 end
