@@ -55,6 +55,7 @@ end
 with "exp.rml"
 with "types.rml"
 with "classinf.rml"
+with "debug.rml"
 
 (** - The primitive types *)
 
@@ -65,6 +66,8 @@ val int_type = SCode.CLASS("IntegerType",false,Absyn.R_PREDEFINED_INT,
 val str_type = SCode.CLASS("StringType",false,Absyn.R_PREDEFINED_STRING,
 			   SCode.PARTS([],[],[]))
 val bool_type = SCode.CLASS("BooleanType",false,Absyn.R_PREDEFINED_BOOL,
+			    SCode.PARTS([],[],[]))
+val enum_type = SCode.CLASS("EnumType",false,Absyn.R_PREDEFINED_ENUM,
 			    SCode.PARTS([],[],[]))
 (** These are the primitive types that are used to build the types
  ** `Real', `Integer' etc. *)
@@ -480,12 +483,14 @@ val array_array2int
  
 relation initial_env =
 
-  rule	Env.open_scope(Env.empty_env) => env1 &
+  rule	Debug.fprint ("insttr","Creating initial env.\n") &
+	Env.open_scope(Env.empty_env) => env1 &
 	Env.extend_frame_c(env1, rl_type) => env2 &
 	Env.extend_frame_c(env2, int_type) => env3 &
 	Env.extend_frame_c(env3, str_type) => env4 &
 	Env.extend_frame_c(env4, bool_type) => env5 &
-	Env.extend_frame_c(env5, real_type) => env6 &
+	Env.extend_frame_c(env5, enum_type) => env5' &
+	Env.extend_frame_c(env5', real_type) => env6 &
 	Env.extend_frame_c(env6, integer_type) => env7 &
 	Env.extend_frame_c(env7, string_type) => env8 &
 	Env.extend_frame_c(env8, boolean_type) => env9 &

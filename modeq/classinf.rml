@@ -51,12 +51,14 @@ module ClassInf :
 		 | TYPE		 of string
 		 | PACKAGE	 of string
 		 | FUNCTION	 of string
+		 | ENUMERATION   of string
 		 | HAS_EQUATIONS of string
 		 | IS_NEW        of string
 		 | TYPE_INTEGER  of string
 		 | TYPE_REAL     of string
 		 | TYPE_STRING   of string
 		 | TYPE_BOOL     of string
+		 | TYPE_ENUM of string
 
   (** - Events *)
   datatype Event = FOUND_EQUATION     (* There are definitions inside *)
@@ -206,10 +208,12 @@ relation start : (Absyn.Restriction, string) => State =
   axiom	start (Absyn.R_TYPE, s)              => TYPE(s)
   axiom	start (Absyn.R_PACKAGE, s)           => PACKAGE(s)
   axiom	start (Absyn.R_FUNCTION, s)          => FUNCTION(s)
+  axiom start (Absyn.R_ENUMERATION,s)	     => ENUMERATION(s)
   axiom	start (Absyn.R_PREDEFINED_INT, s)    => TYPE_INTEGER(s)
   axiom	start (Absyn.R_PREDEFINED_REAL, s)   => TYPE_REAL(s)
   axiom	start (Absyn.R_PREDEFINED_STRING, s) => TYPE_STRING(s)
   axiom	start (Absyn.R_PREDEFINED_BOOL, s)   => TYPE_BOOL(s)
+  axiom	start (Absyn.R_PREDEFINED_ENUM, s)   => TYPE_ENUM(s)
 
 end
 
@@ -236,12 +240,13 @@ relation trans : (State, Event) => State =
 
   axiom	trans(PACKAGE(s),        NEWDEF) => PACKAGE(s)
   axiom	trans(FUNCTION(s),       NEWDEF) => FUNCTION(s)
+  axiom trans(ENUMERATION(s),	 NEWDEF) => ENUMERATION(s)
   axiom	trans(IS_NEW(s),         NEWDEF) => IS_NEW(s)
   axiom	trans(TYPE_INTEGER(s),   NEWDEF) => TYPE_INTEGER(s)
   axiom	trans(TYPE_REAL(s),      NEWDEF) => TYPE_REAL(s)
   axiom	trans(TYPE_STRING(s),    NEWDEF) => TYPE_STRING(s)
   axiom	trans(TYPE_BOOL(s),      NEWDEF) => TYPE_BOOL(s)
-
+  axiom trans(TYPE_ENUM(s),NEWDEF) => TYPE_ENUM(s)
 	(** Event `FOUND_EQUATION' *)
 
   axiom	trans(UNKNOWN(s),        FOUND_EQUATION) => HAS_EQUATIONS(s)

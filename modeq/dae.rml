@@ -46,7 +46,7 @@ module DAE:
 
   datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
 
-  datatype Type = REAL | INT | BOOL | STRING
+  datatype Type = REAL | INT | BOOL | STRING | ENUM | ENUMERATION of string list
 
 (* LS: Added for variables in functions *)
   datatype VarDirection = INPUT | OUTPUT | BIDIR
@@ -165,6 +165,7 @@ relation dump2: DAElist => () =
 	dump2 (DAE(xs))
 	--------------
 	dump2 (DAE(FUNCTION(_,_,_)::xs))
+
   axiom dump2 (DAE([]))
 
   rule	print "dump2 failed\n"
@@ -198,9 +199,7 @@ relation dump_list : ('a list, 'a => ()) => () =
 	dump_list (first::rest, r)
 	
 end
-	
-	
-	
+
 relation dump_comp_element : Element => () =
 	
   rule	RTOpts.modelica_output => false &
@@ -414,6 +413,15 @@ relation dump_type =
 	----------------
 	dump_type STRING
 
+  rule	print "Enum "
+	-------------
+	dump_type ENUM
+
+  rule	print "Enumeration(" &
+	Dump.print_list(l,print,",") &
+	print ") "
+	------------------
+	dump_type ENUMERATION(l)
 end
 
 relation dump_type_str =

@@ -182,6 +182,7 @@ relation translate_file : string list => () =
 (* & Debug.	print "\nJust instantiated" *)
 	& Debug.fprint ("info", "---dumping\n")
 	& Debug.fcall ("daedump", DAE.dump, d)
+	& Debug.fcall ("daedump2", DAE.dump2, d)
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	& ModUtil.string_prefix_params d => d'

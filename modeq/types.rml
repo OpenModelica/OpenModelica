@@ -68,6 +68,8 @@ module Types :
 		| T_REAL
 		| T_STRING
 		| T_BOOL
+		| T_ENUM
+		| T_ENUMERATION of string list
 		| T_ARRAY of ArrayDim * Type
 		| T_COMPLEX of ClassInf.State
 			     * Var list
@@ -102,6 +104,7 @@ module Types :
   relation print_var : Var => ()
   relation print_binding : Binding => ()
   relation make_function_type : (Var list) => Type
+  relation make_enumeration_type : (Var list) => Type
   relation is_parameter: Var => ()
   relation get_vars: (Var list, Var => () )  => Var list
   relation get_type_name: Type => string
@@ -554,6 +557,14 @@ relation make_function_type: (Var list) => Type =
 	---------------------------------
 	make_function_type vl => T_FUNCTION(fargs, rettype)
 
+end
+
+relation make_enumeration_type: (Var list) => Type =
+
+  rule	make_enumeration_type(xs) => T_ENUMERATION(strs)
+	---------------------------------
+	make_enumeration_type (VAR(name,_,_,_,_)::xs) =>T_ENUMERATION(name::strs) 
+  axiom	make_enumeration_type([]) => T_ENUMERATION([])
 end
 
 relation print_farg: FuncArg => () =

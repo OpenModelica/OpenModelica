@@ -49,6 +49,7 @@ end
 
 with "parse.rml"
 with "debug.rml"
+with "dump.rml"
 
 (**
  ** - Lookup relations
@@ -79,13 +80,22 @@ end
 
 relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
-  rule	lookup_class_in_env(env,path) => (c, env)
+  rule	Debug.fprint("lotr","lookup_class(") &
+	Debug.fcall("lotr",Dump.print_path,path) &
+	Debug.fprint("lotr",") called\n") &
+	
+	lookup_class_in_env(env,path) => (c, env') &
+	Debug.fprint("lotr", "lookup_class_in_env => ") &
+	Debug.fcall("lotr",Dump.print_path,path) &
+	Debug.fprint("lotr","\n")
 	--------------------------------------
-	lookup_class(env, path) => (c, env)
+	lookup_class(env, path) => (c, env')
 
-  rule	lookup_package_class (env,pack,path) => (c, env)
+  rule	lookup_package_class (env,pack,path) => (c, env')&
+	Debug.fprint("lotr", "lookup_package_class => ") &
+	Debug.fcall("lotr",Dump.print_path,path)
 	--------------------------------------
-	lookup_class(env, Absyn.QUALIFIED(pack,path)) => (c, env)
+	lookup_class(env, Absyn.QUALIFIED(pack,path)) => (c, env')
 
 end
 
@@ -297,13 +307,14 @@ end
 
 relation lookup_class_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
-  rule	lookup_class_in_frame(items,id) => (c, env)
+  rule	lookup_class_in_frame(items,id) => (c, _) 
 	---------------------
-	lookup_class_in_env(Env.FRAME(items)::fs,Absyn.IDENT(id)) => (c, env)
+	lookup_class_in_env(env as (Env.FRAME(items)::fs),Absyn.IDENT(id))
+	  => (c,env)
 
-  rule	lookup_class_in_env(fs,id) => (c, env)
+  rule	lookup_class_in_env(fs,id) => (c, _)
 	---------------------
-	lookup_class_in_env(f::fs,id) => (c, env)
+	lookup_class_in_env(f::fs,id) => (c, f::fs)
 
 end
 (**)
@@ -311,8 +322,9 @@ relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 				 SCode.Ident)
 	  => (SCode.Class, Env.Env) =
 
-  rule	(* print "  lookup_class_in_frame(" & print id & print "): " &
-	   print n & print "\n" & *)
+  rule	(*Debug.fprint("lotr", "  lookup_class_in_frame(") & 
+	Debug.fprint("lotr", id) & Debug.fprint ("lotr", "): ") &
+	Debug.fprint("lotr", n) & Debug.fprint("lotr", "\n") &*)
 	id = n
 	---------------------------------------------------------
 	lookup_class_in_frame((n,Env.CLASS(c, env))::_, id) => (c, env)
@@ -334,7 +346,7 @@ relation lookup_package_class : (Env.Env, string, Absyn.Path)
 	  => (SCode.Class, Env.Env) =
 
   rule	locate_package (env,packname) => pack &
-	lookup_class_in_package (pack, path) => (c, env)
+	lookup_class_in_package (pack, path) => (c, _)
 	-------------------------------------
 	lookup_package_class (env, packname, path) => (c, env)
 

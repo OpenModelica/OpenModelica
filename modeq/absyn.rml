@@ -262,10 +262,12 @@ module Absyn:
 		       | R_TYPE
 		       | R_PACKAGE
 		       | R_FUNCTION
+		       | R_ENUMERATION	
 		       | R_PREDEFINED_INT
 		       | R_PREDEFINED_REAL
 		       | R_PREDEFINED_STRING
 		       | R_PREDEFINED_BOOL
+		       | R_PREDEFINED_ENUM
   (** These constructors each correspond to a different kind of class *)
   (** declaration in Modelica, except the last four, which are used *)
   (** for the predefined types.  The parser assigns each class *)

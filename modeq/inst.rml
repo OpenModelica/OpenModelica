@@ -1,6 +1,6 @@
 (*
     Copyright PELAB, Linkoping University
-
+ 
     This file is part of Open Source Modelica (OSM).
 
     OSM is free software; you can redistribute it and/or modify
@@ -311,7 +311,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	string_append(prestr', n) => prestr'' &
 	Debug.fcall ("envgraph", Env.print_env_graphviz, (env,prestr'')) &
 	Debug.fprintl ("envprint", ["------------ ", prestr'', "\n"]) &
-	Debug.fcall ("envprint", Env.print_env, env) &
+	Debug.fcall ("envprint", Env.print_env, env') & 
 	Debug.fprintl ("envprint", ["------------ /", prestr'', "\n"])
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
@@ -373,14 +373,14 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
 	inst_class_in(cenv, mods'', pre, csets, new_ci_state, c,prot,inst_dims)
-	  => (dae,env, csets', ci_state', tys) &
+	  => (dae,env'', csets', ci_state', tys) &
 
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.DERIVED(cn,ad,mod), re, prot, inst_dims)
-	  => (dae,env, csets', ci_state', tys)
+	  => (dae,env'', csets', ci_state', tys)
 
 	(** If the class is derived from a class that can not be *)
 	(** found in the environment, this rule prints an error *)
@@ -557,7 +557,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
 
-	Lookup.lookup_class(env,t) => (cl,cenv) & (*	Env.print_env env & *)
+	Lookup.lookup_class(env,t) => (cl,cenv) & 
+	Debug.fprint ("insttr"," lookup_class returned env:") &
+	Debug.fcall ("insttr", Env.print_env, cenv ) &
+	Debug.fprint ("insttr","... when input env was:") &
+	Debug.fcall ("insttr", Env.print_env, env ) &
+
 	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	Debug.fprintln ("insttr", "Looking up class modifications") &
 	Mod.lookup_modification_p(mods,t) => classmod &
@@ -590,7 +595,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 					       
 	Debug.fprintln ("insttr", "arraydim elabed") &
 
-	(** Instantiate the component *)
+	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
 	  => (dae1,csets',ty) &
 	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &
@@ -606,11 +611,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
-
+					       
 (*	dae_declare (vn,cl,attr) => dae3 & *)
-	let dae = dae1 
+	let dae = dae1 &
 	(*list_append(dae1, dae2) => dae4 & *)
 (*	list_append(dae1, dae3) => dae *)
+	Debug.fprint("insttr","inst_element Component succeeded\n") 
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,
@@ -685,6 +691,7 @@ relation inst_var : (Env.Env,
 	Prefix.prefix_add(n,idxs',pre) => pre' &
 	(* This is where redeclare should be handled *)
 	Debug.fprintl ("insttr", ["instantiating var class: ", n, "\n"]) &
+	Debug.fcall ("envprint", Env.print_env, env) & 
 	inst_class(env,mod,pre',csets,cl,inst_dims) => (dae1,csets',ty,st) &
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
@@ -695,6 +702,7 @@ relation inst_var : (Env.Env,
 
 	list_append(dae1',dae2) => daex &
 	list_append(daex,dae3) => dae
+	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
 	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
 		 [],idxs,inst_dims)
@@ -1084,9 +1092,9 @@ end
 
 (** relation implicit_instantiation
  **
- ** If a class definition is a function or a package, it is implicitly
- ** instantiated and added as a type binding under the same name
- ** as the class name.
+ ** If a class definition is a function or a package or an enumeration , 
+ ** it is implicitly instantiated and added as a type binding under the
+ ** same name as the class name.
  **)
 
 relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
@@ -1134,8 +1142,40 @@ correct?
 			       inst_dims)
 	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
+  rule	(*let ty = Types.T_ENUMERATION(l) &
+	Env.extend_frame_t(env,n,ty) => env' & *)
+	inst_enumeration(n,l) => enumclass &
+	Env.extend_frame_c(env,enumclass) => env'' 
+	-----------------------------------
+	implicit_instantiation(env,mod,pre,csets,
+			       c as SCode.CLASS(n,_,Absyn.R_TYPE, SCode.ENUMERATION(l)),inst_dims)
+	=> (env'', [])
+
   axiom	implicit_instantiation(env,mod,pre,csets,c,_) => (env,[])
 
+end
+
+(** relation: inst_enumeration
+ ** This relation takes an 'Ident' and list of strings, and returns an enumeration class.
+**)
+relation inst_enumeration: (SCode.Ident, string list) => SCode.Class =
+  rule	make_enum_components(l) => comp
+	--------------------------------
+	inst_enumeration(n,l) => SCode.CLASS(n,false,Absyn.R_ENUMERATION,SCode.PARTS(comp,[],[]))
+end
+
+(** relation: make_enum_components
+ ** This relation takes a list of strings and returns the elements of 
+ ** type 'EnumType' each corresponding to one of the enumeration values.
+ **)
+relation make_enum_components: string list => SCode.Element list =
+  axiom make_enum_components ([str]) 
+	  =>  [SCode.COMPONENT(str,true,false,SCode.ATTR([],false,SCode.RO,Absyn.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD)]
+	  
+  rule	make_enum_components(x) => els
+	----------------------------
+	make_enum_components (str::(x as (_::_)))
+	  => SCode.COMPONENT(str,true,false,SCode.ATTR([],false,SCode.RO,Absyn.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD):: els
 end
 
 (** relation: dae_declare
@@ -1241,7 +1281,20 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
 	
   axiom	dae_declare4 (vn, Types.T_STRING, kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims)]
+axiom dae_declare4 (vn, Types.T_ENUM, kind, dir, e, inst_dims)
+	=> [DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]
 
+  axiom	dae_declare4 (vn, Types.T_ENUMERATION(l), kind, dir, e, inst_dims)
+	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims)]
+
+  rule	print "dae_declare4 complex arg.\n"
+	---------
+	dae_declare4(vn, Types.T_COMPLEX(_,_),kind,dir,e,inst_dims)
+	=> []
+
+  rule	print "dae_declare4 failed!\n"
+	------------------------------
+	dae_declare4 (_,_,_,_,_,_) => []
   axiom	dae_declare4 (c,ty,_,_,_,_) => []
 
 end
@@ -2170,8 +2223,7 @@ relation connect_vars : (Connect.Sets,
 
 end
 
-(** relation: mktype
- **
+(** relation: mktype **
  ** From a class inference state, and a list of subcomponents, this
  ** relation returns `Types.Type'.  If the class inference state
  ** indicates that the type should be a built-in type, one of the
@@ -2185,7 +2237,7 @@ relation mktype : (ClassInf.State,Types.Var list) => Types.Type =
   axiom	mktype(ClassInf.TYPE_REAL(_),_)    => Types.T_REAL
   axiom	mktype(ClassInf.TYPE_STRING(_),_)  => Types.T_STRING
   axiom	mktype(ClassInf.TYPE_BOOL(_),_)    => Types.T_BOOL
-
+  axiom	mktype(ClassInf.TYPE_ENUM(_),_)    => Types.T_ENUM
 
 	(* Insert function type construction here
 	   after checking input/output arguments? 
@@ -2195,6 +2247,9 @@ relation mktype : (ClassInf.State,Types.Var list) => Types.Type =
 	--------------------------
 	mktype(st as ClassInf.FUNCTION(name), vl) => functype
 
+  rule	Types.make_enumeration_type (v1) => enumtype
+	--------------------------------------------
+	mktype(ClassInf.ENUMERATION(name),v1) => enumtype
 (*
   rule	print " <function " & print name & print "> <" &
 	Dump.print_list (vl, Types.print_var, ", ") &
