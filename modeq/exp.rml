@@ -412,7 +412,13 @@ relation print_exp2: (Exp,int) => () =
 	-------------------------
 	print_exp2 (RANGE(start,SOME(step),stop),pri1)
 
-  rule	print "Real(" & print_exp e & print ")"
+  rule	RTOpts.modelica_output => false &
+	print "Real(" & print_exp e & print ")"
+	---------------------------------------
+	print_exp2 (CAST(REAL,e),_)
+
+  rule	RTOpts.modelica_output => true &
+	print_exp e
 	---------------------------------------
 	print_exp2 (CAST(REAL,e),_)
 
