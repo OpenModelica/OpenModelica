@@ -1,0 +1,439 @@
+(*
+   Copyright PELAB, Linkoping University
+   
+   This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+(**
+ ** file:	 absyn.rml
+ ** module:      Absyn
+ ** description: Abstract syntax
+ **
+ ** RCS: $Id$
+ **
+ ** This file defines the abstract syntax for Modelica in RML.  It mainly
+ ** contains datatypes for constructing the abstract syntax tree
+ ** (AST), relations for building and altering RML datatypes and a few relations 
+ ** for printing the AST.
+ **  
+ ** absyn.rml's constructors are primarily used by the walker 
+ ** (modeq/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
+ ** converts it into an RML abstract syntax tree.
+ **
+ ** When the AST has been built, it is normaly used by explode.rml in order to
+ ** build the scode (See explode.rml). It is also possile to send the AST do 
+ ** the dumper (dump.rml) in order to print it.
+ ** 
+ ** For details regarding the abstract syntax tree, check out the grammar in 
+ ** the Modelica language specification.
+ **  
+ **)
+
+module Absyn:
+							  
+  (** An identifier, for example a variable name *)
+  type Ident = string
+
+  (** - Programs, the top level construct *)
+  (** A program is simply a list of class definitions declared at top
+   ** level in the source file, combined with a within statement that
+   ** indicates the hieractical position of the program. 
+   **)
+  datatype Program = PROGRAM of Class list (* List of classes *)
+				* Within (* Within statement *)
+		   | BEGIN_DEFINITION   of Path  (* For split definitions*)
+				* Restriction (* Class restriction *)
+				* bool (* Partial *)
+				* bool (* Encapsulated *)
+   		   | END_DEFINITION of Ident (* For split definitions *)
+		   | COMP_DEFINITION of ElementSpec (* For split definitions*)
+					* Path option (* insert into. 
+						       Default, NONE *)
+		   | IMPORT_DEFINITION of ElementSpec(* For split definitions*)
+					* Path option (* insert into. 
+						       Default, NONE *)
+		   | RML_FILE of Ident * RMLInterface list * RMLDefs list
+
+
+  (** Within statements *)
+  datatype Within = WITHIN of Path | TOP
+
+  (** - Classes *)
+  (** A class definition consists of a name, a flag to indicate if this *)
+  (** class is declared as `partial', the declared class restriction, *)
+  (** and the body of the declaration. *)
+  datatype Class = CLASS of Ident		     (* Name *)
+			  * bool		     (* Partial *)
+			  * bool		     (* Final *)
+			  * bool		     (* Encapsulated *)
+			  * Restriction	             (* Restricion *)
+			  * ClassDef		     (* Body *)
+
+ 
+  (** The `ClassDef' type contains the definition part of a class *)
+  (** declaration.  The definition is either explicit, with a list of *)
+  (** parts (`public', `protected', `equationc' and `algorithm'), or it *)
+  (** is a definition derived from another class or an enumeration type. *)
+  (** For a derived type, the  type contains the name of the derived class and an optional *)
+  (** array dimension and a list of modifications. An enumeration type contains a list of *)
+  datatype ClassDef = PARTS of ClassPart list
+			       * string option	     (* string comment *)
+		    | DERIVED of Path
+			       * ArrayDim option     (* *)
+			       * ElementAttributes   
+			       * ElementArg list
+			       * Comment option	     (* comment *)
+		    | ENUMERATION of EnumLiteral list   
+				* Comment option     (* comment*)		
+	            | OVERLOAD of Path list (* function names *)
+				* Comment option
+
+  (** EnumLiteral, which is a name in an enumeration and an optional
+   Comment.*)
+  datatype EnumLiteral = ENUMLITERAL of Ident	     (* Literal *)
+			 * Comment option	     (* comment *)
+
+
+  (** A class definition contains several parts.  There are public and *)
+  (** protected component declarations, type definitions and `extends' *)
+  (** clauses, collectively called elements.  There are also equation *)
+  (** sections and algorithm sections. The EXTERNAL part is used only by functions *)
+  (** which can be declared as external C or FORTRAN functions. *)
+
+  datatype ClassPart = PUBLIC of ElementItem list
+		     | PROTECTED of ElementItem list
+		     | EQUATIONS of EquationItem list
+		     | INITIALEQUATIONS of EquationItem list	
+		     | ALGORITHMS of AlgorithmItem list
+		     | INITIALALGORITHMS of AlgorithmItem list
+		     | EXTERNAL of ExternalDecl * Annotation option
+
+  (** An element item is either an element or an annotation *)
+  datatype ElementItem = ELEMENTITEM of Element 
+		       | ANNOTATIONITEM of Annotation 
+  (** An element item is either an element or an annotation *)
+
+  (** - Elements *)
+  (* The basic element type in Modelica *)
+  datatype Element = ELEMENT of bool		      (* final *)
+			      * bool		      (* replaceable *)
+			      * InnerOuter	      (* inner/outer *)	     
+			      * Ident                 (* Element name *)
+			      * ElementSpec           (* Actual element specification*)
+			      * string                (* Source code file *)
+			      * int                   (* Line number *)
+			      * ConstrainClass option (* only valid for classdef and component*)
+
+  
+  (* Constraining type, must be extendes *)
+  type ConstrainClass = ElementSpec
+
+  (** An element is something that occurs in a public or protected
+   ** section in a class definition.  There is one constructor in the
+   ** `ElementSpec' type for each possible element type.  There are
+   ** class definitions (`CLASSDEF'), `extends' clauses (`EXTENDS')
+   ** and component declarations (`COMPONENTS').
+   ** 
+   ** As an example, if the element `extends TwoPin;' appears
+   ** in the source, it is represented in the AST as
+   ** `EXTENDS(IDENT("TwoPin"),[])'.
+   **)
+  datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
+				   * Class
+		       | EXTENDS of Path * ElementArg list
+		       | IMPORT of Import * Comment option
+		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
+				     * Path	     (* type name *)
+				     * ComponentItem list
+  (** One of the keyword inner and outer CAN be given to reference an inner or
+      outer component. Thus there are three disjoint possibilities. **)		     
+  datatype InnerOuter = INNER | OUTER | UNSPECIFIED
+
+  (* Import statements, different kinds  *) 				     
+  datatype Import = NAMED_IMPORT of Ident * Path
+		  | QUAL_IMPORT of Path
+		  | UNQUAL_IMPORT of Path
+
+  (* Collection of component and an optional comment *)
+  datatype ComponentItem = COMPONENTITEM of Component
+					  * Comment option
+
+  (* Some kind of Modelica entity (object or variable) *)
+  datatype Component = COMPONENT of Ident 	     (* component name *)
+				  * ArrayDim         (* Array dimensions, if any *) 
+				  * Modification option (* Optional modification *) 
+
+  (** Several component declarations can be grouped together in one *)
+  (** `ElementSpec' by writing them on the same line in the source. *)
+  (** This type contains the information specific to one component. *)
+  datatype EquationItem = EQUATIONITEM of Equation * Comment option
+			| EQUATIONITEMANN of Annotation 
+
+  (** Info specific for an algorithm item. *)
+  datatype AlgorithmItem = ALGORITHMITEM  of Algorithm * Comment option
+			 |  ALGORITHMITEMANN of Annotation 
+
+  (* Information on one (kind) of equation, different constructors for different
+     kinds of equations *)
+  datatype Equation = EQ_IF of Exp                     (* Conditional expression *)
+			     * EquationItem list	     (* true branch *)  
+			     * (Exp * EquationItem list) list (* elseif branches *)
+			     * EquationItem list	     (* else branch *)
+		    | EQ_EQUALS of Exp * Exp           (* Standard 2-side eqn*)
+		    | EQ_CONNECT of ComponentRef * ComponentRef (* Connect stmt *)
+		    | EQ_FOR of Ident * Exp * EquationItem list (* For-loops *)
+		    | EQ_WHEN_E of Exp  (* Condition *)
+				* EquationItem list (* Loop body *)
+				* (Exp * EquationItem list) list (* else when *)
+		    | EQ_NORETCALL of Ident * FunctionArgs	 (* fcalls without return value *)
+
+  (** The `Algorithm' type describes one algorithm statement in an *)
+  (** algorithm section.  It does not describe a whole algorithm.  The *)
+  (** reason this type is named like this is that the name of the *)
+  (** grammar rule for algorithm statements is `algorithm'. *)
+  datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp 
+		     | ALG_TUPLE_ASSIGN of Exp 		(*tuple*)  
+					* Exp 		(* value*) 	
+		     | ALG_IF of Exp
+			       * AlgorithmItem list	     (* true branch *)  
+			       * (Exp * AlgorithmItem list) list (* elseif *)
+			       * AlgorithmItem list	     (* else branch *)
+		     | ALG_FOR of Ident * Exp * AlgorithmItem list
+		     | ALG_WHILE of Exp * AlgorithmItem list
+		     | ALG_WHEN_A of Exp 
+					* AlgorithmItem list 
+					* (Exp * AlgorithmItem list) list (* elsewhen *)
+		     | ALG_NORETCALL of ComponentRef * FunctionArgs	   (* general fcalls without return value *)
+
+
+  (** - Modifications *)
+  (** Modifications are described by the `Modification' type.  There *)
+  (** are two forms of modifications: redeclarations and component *)
+  (** modifications. *)
+  datatype Modification = CLASSMOD of ElementArg list * Exp option
+
+  (* Wrapper for things that modify elements, modifications and redeclarations *)
+  datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification option * string option
+		      | REDECLARATION of bool * Each * ElementSpec * ConstrainClass option
+
+
+  (** - Each attribute *)
+  (** The each keyword can be present in both MODIFICATION's and REDECLARATION's. *)
+  datatype Each = EACH | NON_EACH
+
+  (** - Component attributes *)
+  datatype ElementAttributes = ATTR of bool	(* flow *)
+			     	     * Variability (* parameter, constant etc. *)
+			     	     * Direction
+				     * ArrayDim  (*1.1*)
+     
+  (* Dete *) 
+  datatype Variability = VAR | DISCRETE | PARAM | CONST
+
+
+  datatype Direction = INPUT | OUTPUT | BIDIR
+  (** Component attributes are *)
+  (** properties of components which are applied by type prefixes. *)
+  (** As an example, declaring a component as `input Real x;' will *)
+  (** give the attributes `ATTR([],false,VAR,INPUT)'. *)
+
+  (** - Array dimensions *)
+  type ArrayDim = Subscript list
+  (** Components in Modelica can be scalar or arrays with one or more *)
+  (** dimensions. This datatype is used to indicate the dimensionality *)
+  (** of a component or a type definition. *)
+
+  (** - Expressions *)
+
+  datatype Exp = INTEGER of int
+	       | REAL of real
+	       | CREF of ComponentRef
+	       | STRING of string
+	       | BOOL of bool
+	       | BINARY of Exp * Operator * Exp (* Binary operations, e.g. a*b *)
+	       | UNARY of Operator * Exp (* Unary operations, e.g. -(x) *)
+	       | LBINARY of Exp * Operator * Exp (* Logical binary operations: and, or *)
+	       | LUNARY of Operator * Exp (* Logical unary operations: not *)
+	       | RELATION of Exp * Operator * Exp (* Relations, e.g. a >= 0 *)
+	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list  (* If expressions *)
+	       | CALL of ComponentRef * FunctionArgs (* Function calls *)
+(*	       | ARRAY of Exp list *)
+
+(*P.R		ARRAY consists of an vector of the dimension sizes and an vector consiting of the vector data.*)	
+	       | ARRAY of Exp list
+
+	       | MATRIX of Exp list list
+	       | RANGE of Exp * Exp option * Exp (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
+	       | TUPLE of Exp list (*PR.*) (* Tuples used in function calls returning several values *)
+	       | END (* array access operator for last element, e.g. a[end]:=1; *)
+	       | CODE of Code (* Modelica AST Code constructors *)
+	       | RMLCALL of RMLIdent * Exp list
+               | RMLCONS of Exp * Exp
+               | RMLNIL
+               | RMLLIT of RMLLiteral (* FIXME in parser! *)
+
+  (** The `Exp' datatype is the container of a Modelica expression. *)
+
+  datatype Code = C_TYPENAME of Path 
+		| C_VARIABLENAME of ComponentRef 
+		| C_EQUATIONSECTION of bool * EquationItem list 
+		| C_ALGORITHMSECTION of bool * AlgorithmItem list 
+		| C_ELEMENT of Element 
+		| C_EXPRESSION of Exp 
+		| C_MODIFICATION of Modification
+  (** The 'Code' datatype is used for Meta-programming. It orgiginates from the Code quotation. *)
+
+  datatype FunctionArgs =  FUNCTIONARGS of Exp list * NamedArg list
+			| FOR_ITER_FARG of Exp * Ident * Exp
+  (** The `FunctionArgs' datatype consists of a list of positional arguments *)
+  (** followed by a list of named arguments (Modelica v2.0) *)
+							  
+  datatype NamedArg = NAMEDARG of Ident * Exp
+  (** The `NamedArg' datatype consist of an Identifier for the argument and an expression *)
+  (** giving the value of the argument *)
+
+  datatype Operator = ADD   | SUB    | MUL     | DIV       | POW
+		    | UPLUS | UMINUS
+		    | AND   | OR
+		    | NOT
+		    | LESS  | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
+  
+  (** - Subscripts *)
+  datatype Subscript = NOSUB
+		     | SUBSCRIPT of Exp
+  (** The `Subscript' datatype is used both in array declarations and *)
+  (** component references.  This might seem strange, but it is *)
+  (** inherited from the grammar.  The `NOSUB' constructor means that *)
+  (** the dimension size is undefined when used in a declaration, and *)
+  (** when it is used in a component reference it means a slice of the *)
+  (** whole dimension. *)
+
+  (** - Component references and paths *)
+  datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
+		    	| CREF_IDENT of Ident * (Subscript list)
+
+  datatype Path = QUALIFIED of Ident * Path
+	      	| IDENT of Ident
+  (** A component reference is the fully or partially qualified name of *)
+  (** a component.  It is represented as a list of *)
+  (** identifier--subscript pairs.  The type `Path', on the other hand, *)
+  (** is used to store references to class names, or names inside *)
+  (** class definitions. *)
+	      	
+  (** - Restrictions *)
+  datatype Restriction = R_CLASS
+		       | R_MODEL
+		       | R_RECORD
+		       | R_BLOCK
+		       | R_CONNECTOR
+		       | R_TYPE
+		       | R_PACKAGE
+		       | R_FUNCTION
+		       | R_ENUMERATION	
+		       | R_PREDEFINED_INT
+		       | R_PREDEFINED_REAL
+		       | R_PREDEFINED_STRING
+		       | R_PREDEFINED_BOOL
+		       | R_PREDEFINED_ENUM
+  (** These constructors each correspond to a different kind of class *)
+  (** declaration in Modelica, except the last four, which are used *)
+  (** for the predefined types.  The parser assigns each class *)
+  (** declaration one of the restrictions, and the actual class *)
+  (** definition is checked for conformance during translation.  The *)
+  (** predefined types are created in the `Builtin' module and are *)
+  (** assigned special restrictions. *)
+
+  (** Annotation *)
+  datatype Annotation = ANNOTATION of ElementArg list
+  (** An Annotation is a class_modification. *)
+
+  (** Comment *)	
+  datatype Comment = COMMENT of Annotation option 	
+				* string option
+
+  (* ExternalDecl *)
+  datatype ExternalDecl = EXTERNALDECL of 
+				  Ident option  * (* The name of the external function *)
+				  string option * (* Lanugage of the external function *)
+				  ComponentRef option * (* ouput parameter as return value*)
+				  Exp list (* only positional arguments, i.e. expression list*)						     
+
+
+  (* RML Stuff - work in progress *)
+  datatype RMLDatatype = DATATYPE of Ident * DTMember list
+
+  datatype RMLDecl = RELATION_INTERFACE of Ident * RMLSignature
+		   | DATATYPEDECL of RMLDatatype list
+		   | TYPE of Ident * RMLType
+		   | WITH of string
+                   | VALINTERFACE of Ident * RMLType
+                   | VALDEF of Ident * Exp
+                   | RELATION_DEFINITION of Ident * RMLSignature * RMLRule list
+                   | RMLDECLCOMMENT of string
+
+  type RMLInterface = RMLDecl
+  type RMLDefs      = RMLDecl
+
+  datatype RMLSignature = CALLSIGN of RMLType * RMLType
+
+  datatype RMLType = RMLTYPE_INT
+                   | RMLTYPE_STRING
+                   | RMLTYPE_REAL
+		   | RMLTYPE_LIST of RMLType
+                   | RMLTYPE_SIGNATURE of RMLSignature
+                   | RMLTYPE_TUPLE of RMLType list
+                   | RMLTYPE_TYVAR of RMLIdent
+                   | RMLTYPE_USERDEFINED of RMLIdent
+
+  datatype RMLRule = RMLRULE of Ident *
+                                RMLPattern list *
+                                RMLGoal *
+                                RMLResult
+
+  datatype RMLResult = RMLNoResult
+                     | RMLResultExp of Exp list
+                     | RMLResultFail
+
+  datatype RMLGoal = RMLGOAL_NOT of RMLGoal
+		   | RMLGOAL_AND of RMLGoal * RMLGoal
+                   | RMLGOAL_PAT of RMLPattern
+		   | RMLGOAL_LET of RMLPattern * Exp
+                   | RMLGOAL_EQUAL of Exp * Exp
+                   | RMLGOAL_RELATION of RMLIdent * Exp list * RMLPattern
+
+  datatype RMLPattern = RMLPAT_CALL of RMLIdent * RMLPattern list
+                      | RMLPAT_WILDCARD
+                      | RMLPAT_LITERAL of RMLLiteral
+                      | RMLPAT_IDENT of RMLIdent
+                      | RMLPAT_AS of Ident * RMLPattern
+                      | RMLPAT_CONS of RMLPattern * RMLPattern
+                      | RMLPAT_STRUCT of RMLPattern list
+                      | RMLPAT_NIL
+
+  datatype RMLIdent   = RMLSHORTID of Ident
+                      | RMLLONGID of Ident * Ident
+
+  datatype RMLLiteral = RMLLIT_INTEGER of int
+                      | RMLLIT_STRING of string
+                      | RMLLIT_REAL of real
+                      | RMLLIT_CHAR of int
+
+  datatype DTMember = DTCONS of Ident * RMLType list
+
+
+end
