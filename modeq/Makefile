@@ -21,12 +21,14 @@ SRCRML=	exp.rml \
 	prefix.rml \
 	mod.rml \
 	env.rml \
+	lookup.rml \
 	builtin.rml \
 	connect.rml \
 	classinf.rml \
 	staticexp.rml \
 	inst.rml \
 	main.rml
+
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
 SRCO=	$(SRCC:.c=.o)
@@ -42,6 +44,9 @@ SUBDIRS	= ast
 
 all : $(SRCO) subdirs $(PROG)
 
+test:
+	@(cd testsuite ; make)
+
 $(PROG): $(SRCO) ast/libast.a
 	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
 
@@ -53,6 +58,8 @@ inst.o:		inst.rml
 mod.o:		mod.rml exp.h absyn.h dae.h prefix.h
 main.o:		main.rml
 dump.o:		dump.rml
+package.o:	env.rml
+lookup.o:	env.rml
 
 #main.o:		main.rml absyn.rml parse.rml dump.rml \
 #		lform.rml dae.rml inst.rml
