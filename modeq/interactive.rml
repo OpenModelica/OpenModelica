@@ -1838,7 +1838,7 @@ end
 
 relation get_nth_component2: (SCode.Class,Absyn.Class, int, Env.Env) 
 	  => string =
-rule	(* First try without instantiating class, saves time *)
+(*rule	
 	get_nth_component_in_class(cdef,n) => comp &
 	get_component_name_and_type_and_comment (comp,env) => [s1] &
 	string_append("{",s1) => s2 &
@@ -1846,6 +1846,7 @@ rule	(* First try without instantiating class, saves time *)
 	--------------------------
 	get_nth_component2 (c as SCode.CLASS(id,_,encflag,restr,_),cdef,n,env)
 	  => str
+*)
 
 rule	(* If fails, instantiate class and search... *)
 	Env.open_scope(env,encflag,0) => env2 &
@@ -3133,7 +3134,9 @@ end
 
 relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	
-  rule	get_nth_component_in_elementitems(elt,n) => res
+  rule	count_components_in_elts(elt) => count &
+	int_le(n,count) => true &
+	get_nth_component_in_elementitems(elt,n) => res
 	-----------------------------------------------
 	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),n) 
 	    => res
@@ -3142,6 +3145,8 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	    (* subtract and try next public list *)
   rule	count_components_in_elts(elt) => c1 &
 	int_sub(n,c1) => newn &
+	int_string(newn) => newnstr &
+	int_gt(newn,0) =>  true &
 	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt)),newn) => res
 	------------------------------------------------------------------------------------
 	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::rest,cmt)),n) => res
@@ -3155,6 +3160,7 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	    (* subtract and try next public list *)
   rule	count_components_in_elts(elt) => c1 &
 	int_sub(n,c1) => newn &
+	int_gt(newn,0) => true &
 	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt)),newn) => res
 	------------------------------------------------------------------------------------
 	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::rest,cmt)),n) => res
@@ -3172,20 +3178,11 @@ end
  ** This relation takes an `ElementItem' list and and integer and returns the nth component 
  ** in the list
 **)
-relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) => Absyn.Element =
-	
-  rule	list_length(lst) => numcomps &
-	int_le(n,numcomps) => true &
-	int_sub(n,1) => n' &
-	list_nth(lst,n') => elt
-	-----------------------------
-	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt as Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,lst),g))::rest,n) 
-	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g)
+relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) 
+	  => Absyn.Element =
 
-  rule	get_nth_component_in_elementitems(rest,1) => res
-	-----------------------------------------
-	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,1) 
-	  => res
+  axiom	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,elt::_),g))::_,1) 
+	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g)
 
   rule	list_length(lst) => numcomps &
 	int_gt(n,numcomps) => true &
@@ -3194,10 +3191,19 @@ relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) => Abs
 	---------------------------------------------------
 	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),_))::rest,n) => res
 
-  rule	int_ge(n,1) => true &
+  rule	list_length(lst) => numcomps &
+	int_le(n,numcomps) => true &
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => elt
+	-----------------------------
+	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt as Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,lst),g))::rest,n) 
+	  => Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,[elt]),g)
+
+
+(*  rule	int_ge(n,1) => true &
 	get_nth_component_in_elementitems(rest,n) => res
 	---------------------------------------------------
-	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,n) => res
+	get_nth_component_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,n) => res*)
 
   rule	get_nth_component_in_elementitems(rest,n) => res
 	------------------------------------------------
