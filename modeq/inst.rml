@@ -402,7 +402,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist,Env.Env
 	inst_class_decls(env,cdecls,path) => (env',dae1) &
  	inst_class_in_program(env',cdecls,path) => (dae,env'')
 	-----------------------------
-	instantiate_class(cdecls, path as Absyn.IDENT(name2)) 
+	instantiate_class(cdecls as _::_, path as Absyn.IDENT(name2)) 
 	  => (DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))]),env'')
 
   rule	Builtin.initial_env => env &
@@ -413,7 +413,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist,Env.Env
 	  => (dae,env'', _, _, _) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
-	instantiate_class(cdecls, path as Absyn.QUALIFIED(name,_)) 
+	instantiate_class(cdecls as _::_, path as Absyn.QUALIFIED(name,_)) 
 	  => (DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))]),env'')
 	
 
