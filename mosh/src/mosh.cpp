@@ -38,11 +38,15 @@
 
 void read_and_evaluate(istream&instream);
 
+void check_moshhome(void);
+
 // The symbol table
  symboltable symtab;
 
 int main(int argc, char* argv[])
 {
+
+  check_moshhome();
   
       if (argc > 2)
       {
@@ -133,4 +137,16 @@ void read_and_evaluate(istream& instream)
       {
 	std::cerr << "Exception: " << e.what() << std::endl;
       }
+}
+
+
+void check_moshhome(void)
+{
+  char *str;
+  
+  str=getenv("MOSHHOME");
+  if (str == NULL) {
+    printf("Error, MOSHHOME not set. Set MOSHHOME to the directory where mosh resides (top dir)\n");
+    exit(1);
+  }
 }
