@@ -36,7 +36,7 @@
  **)
 
 module Values :
-
+with "exp.rml"
   datatype Value = INTEGER of int
 		 | REAL of real
 		 | STRING of string
@@ -53,9 +53,31 @@ module Values :
   relation mult_matrix: (Value list,Value list) => Value list
   relation is_array :Value => bool
   relation write_to_file_as_args: (Value list,string) => ()
-
+  relation type_convert: (Exp.Type, Exp.Type,Value list) => Value list
 end
 	
+relation type_convert: (Exp.Type, Exp.Type, Value list) => Value list =
+  axiom type_convert(_,_,[]) => []
+
+  rule	type_convert(from,to,vrest) => vallst &
+	int_real (i) => rval
+	------------------------------------
+	type_convert(from as Exp.INT, to as Exp.REAL, INTEGER(i)::vrest) 
+	  =>  REAL(rval)::vallst
+
+  rule	type_convert(from,to,vrest) => vallst &
+	real_int (r) => ival
+	------------------------------------
+	type_convert(from as Exp.REAL, to as Exp.INT, REAL(r)::vrest) 
+	  =>  INTEGER(ival)::vallst
+
+  rule	type_convert(from,to,vals) => vallst &
+        type_convert(from,to,vrest) => vallst2 
+	------------------------------------
+	type_convert(from, to, ARRAY(vals)::vrest) 
+	  =>  ARRAY(vallst)::vallst2
+end
+
 relation is_array: Value => bool = 
   axiom	is_array(INTEGER(_)) => false
   axiom	is_array(REAL(_)) => false
@@ -252,6 +274,18 @@ relation mult_scalar_arrayelt: (Value, Value list) => Value list =
 	mult_scalar_arrayelt(sval,rest) => r2
 	------------------------------------
 	mult_scalar_arrayelt (sval as INTEGER(v1),INTEGER(v2)::rest) => INTEGER(r1)::r2
+
+  rule	int_real(v2) => v2' &
+	real_mul(v1,v2') => r1 &
+	mult_scalar_arrayelt(sval,rest) => r2
+	------------------------------------
+	mult_scalar_arrayelt (sval as REAL(v1),INTEGER(v2)::rest) => REAL(r1)::r2
+
+  rule	int_real(v1) => v1' &
+	real_mul(v1',v2) => r1 &
+	mult_scalar_arrayelt(sval,rest) => r2
+	------------------------------------
+	mult_scalar_arrayelt (sval as INTEGER(v1),REAL(v2)::rest) => REAL(r1)::r2
 
   rule	real_mul(v1,v2) => r1 &
 	mult_scalar_arrayelt(sval,rest) => r2

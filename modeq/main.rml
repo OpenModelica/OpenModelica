@@ -115,18 +115,19 @@ relation check_classdef: string => bool =
 	check_classdef(str')=> res
 	--------------------------
 	check_classdef(str) => res
-
-  rule	strncmp ("type",str,4) => false &
-	strncmp ("class",str,5) => false &
-	strncmp ("model",str,5) => false &
-	strncmp ("block",str,5) => false &
-	strncmp ("within",str,6) => false &
-	strncmp ("record",str,6) => false &
- 	strncmp ("package",str,7) => false &
-	strncmp ("partial",str,7) => false &
-	strncmp ("function",str,8) => false &
-	strncmp ("connector",str,9) => false &
-	strncmp ("encapsulated",str,11) => false 
+	(* Need to check for a whitespace after as well to get the keyword,
+	e.g typeOf function would be taken as a type definition otherwise *)
+  rule	strncmp ("type ",str,5) => false &
+	strncmp ("class ",str,6) => false &
+	strncmp ("model ",str,6) => false &
+	strncmp ("block ",str,6) => false &
+	strncmp ("within ",str,7) => false &
+	strncmp ("record ",str,7) => false &
+ 	strncmp ("package ",str,8) => false &
+	strncmp ("partial ",str,8) => false &
+	strncmp ("function ",str,9) => false &
+	strncmp ("connector ",str,10) => false &
+	strncmp ("encapsulated ",str,12) => false 
 	-------------------------------
 	check_classdef str => false
 

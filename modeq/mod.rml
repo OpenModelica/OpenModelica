@@ -90,7 +90,7 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
 	  => MOD(final,subs',NONE)
 	
   rule	elab_submods (env,pre,subs) => subs' &
-	Static.elab_exp(env,e,NONE) => (e',prop,_) &
+	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
 	Prefix.prefix_exp(env,e',pre) => e''
 	------------------------------------
 	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)))

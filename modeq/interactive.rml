@@ -128,8 +128,10 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	DAE.dump d &
 	ModUtil.string_prefix_params d => d' &
 	Print.get_string() => errstr &
-	Print.clear_buf & 
+	Print.clear_buf &
+	print "Starting code generation\n" & 
 	Codegen.generate_functions(d') &
+	print "generated code\n" &
 	string_append(pathstr,".c") => filename &
 	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
 	Print.print_buf "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\n\");\n      return 1;\n    }\n" &
@@ -150,6 +152,21 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	--------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompilerFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	  => ("Ok\n",st)
+	  
+  rule	get_type_of_variable(varid,vars) => tp &
+	Print.clear_buf & 
+	Types.print_type tp & Print.get_string => str &
+	string_append(str,"\n") => str'
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("typeOf",_),Absyn.FUNCTIONARGS([ Absyn.CREF(Absyn.CREF_IDENT(varid,_))],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
+	  => (str',st)
+
+  rule	not get_type_of_variable(varid,vars) => tp &
+	string_append(varid, " is not defined\n") => str
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("typeOf",_),Absyn.FUNCTIONARGS([ Absyn.CREF(Absyn.CREF_IDENT(varid,_))],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
+	  => (str,st)
+
 	    
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------
@@ -173,15 +190,15 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	(string,InteractiveSymbolTable) =
 	
   rule	build_env_from_symboltable(st) => env &	
-	Static.elab_exp(env,exp,SOME(st)) => (sexp,prop,SOME(st')) &
-	Static.ceval (env,sexp,SOME(st')) => value &
+	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
+	Static.ceval (env,sexp,true,SOME(st')) => value &
 	Values.val_string value =>  str
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st')
 	
   rule	build_env_from_symboltable(st) => env &
-	Static.elab_exp(env,exp,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
-	Static.ceval(env,sexp,SOME(st')) => value &
+	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
+	Static.ceval(env,sexp,true,SOME(st')) => value &
 	add_var_to_symboltable(ident,value,t,st') => newst	
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st as SYMBOLTABLE(p,_,_,_,_)) 
@@ -192,6 +209,19 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	evaluate_expr(stmt,st) => (str,st)
 end
 	
+relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type =
+	axiom get_type_of_variable(id,[]) => fail
+	
+  rule	varid = id
+	----------------------------------------------
+	get_type_of_variable (varid,IVAR(id,_,tp)::rest) => tp 
+	
+  rule	not varid = id &
+	get_type_of_variable(varid,rest) => tp
+	----------------------------------------------
+	get_type_of_variable (varid,IVAR(id,_,_)::rest) => tp 
+end
+
 relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
 	    => InteractiveSymbolTable =
 	    

@@ -785,10 +785,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* The types in the environment does not have correct Binding.
 	   We must update those variables that is found in m into a new environment.*)
 	get_cref_from_mod(m) => crefs &
- 	update_variables_in_env(mods,crefs,env) => env2' &
+ 	update_variables_in_env(mods,crefs,env,impl) => env2' &
 	
 	get_cref_from_dim(ad) => crefs2 &
-	update_variables_in_env(mods,crefs2,env2') => env2 &
+	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
 
 
 	Debug.fprintln ("insttr", "Elaborating current modifications") &
@@ -811,9 +811,9 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "mod equation done") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-
+	Print.get_string () => errstr & Print.clear_buf() &
 	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
-
+	Print.clear_buf() & Print.print_buf errstr &
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims,impl)
@@ -1085,20 +1085,21 @@ relation get_cref_from_narg: (Absyn.NamedArg) => Absyn.ComponentRef list =
 	get_cref_from_narg(Absyn.NAMEDARG(_,exp)) => res
 end
 
-relation update_variables_in_env:(Mod.Mod,Absyn.ComponentRef list, Env.Env) => Env.Env =
+relation update_variables_in_env:(Mod.Mod,Absyn.ComponentRef list, Env.Env, bool) 
+	=> Env.Env =
 
-  rule	update_variable_in_env(mods,cr,env) => env' &
-	update_variables_in_env(mods,rest,env') => env''
+  rule	update_variable_in_env(mods,cr,env,impl) => env' &
+	update_variables_in_env(mods,rest,env',impl) => env''
 	-------------------------------------------
-	update_variables_in_env(mods,cr::rest,env) => env''
+	update_variables_in_env(mods,cr::rest,env,impl) => env''
 
   rule	Debug.fprint("decl", "update_variables_in_env finished\n")
 	---------------
-	update_variables_in_env(_,[],env) => env
+	update_variables_in_env(_,[],env,impl) => env
 end
 
-relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.Env =
-
+relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool) 
+	  => Env.Env =
 	
   rule	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
@@ -1107,10 +1108,10 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	Lookup.lookup_class(env,t) => (cl,cenv) & 
 
 	get_cref_from_mod(m) => crefs &
- 	update_variables_in_env(mods,crefs,env) => env2' &
+ 	update_variables_in_env(mods,crefs,env,impl) => env2' &
 	
 	get_cref_from_dim(ad) => crefs2 &
-	update_variables_in_env(mods,crefs2,env2') => env2 &
+	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
 
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
@@ -1125,8 +1126,9 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-
-	elab_arraydim(env2,ad,eq,false,NONE) => dims &
+	Print.get_string () => errstr & Print.clear_buf() &
+	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
+	Print.clear_buf() & Print.print_buf errstr &
 	print_dims dims &
 
 	(** Instantiate the component *)	
@@ -1140,21 +1142,21 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding),false) => env' 
 	----------------------------------
-	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env) => env'
+	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,impl) => env'
 
   rule	Lookup.lookup_ident(env,id) => (ty,NONE,_) 
 	----------------------------------
-	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env) => env
+	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,impl) => env
 	(* Qualified names should not be considered, because:
 	 FIXME: explanation...
 	 *)
-  axiom	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env) => env
+  axiom	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env,impl) => env
 
   rule	Print.print_buf "update_variable_in_env failed\n ident ="  &
 	Dump.print_component_ref cref &
 	Print.print_buf "\n" 
 	---------------------------
-	update_variable_in_env(_,cref,env) => env
+	update_variable_in_env(_,cref,env,impl) => env
 end
 
 relation inst_dim_exp : (DimExp, bool) => Exp.Subscript =
@@ -1276,18 +1278,18 @@ end
 relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,Interactive.InteractiveSymbolTable option)
 	  => DimExp list =
 
-  rule	elab_arraydim_decl(env,ad,cf) => dim &
+  rule	elab_arraydim_decl(env,ad,impl,cf) => dim &
 	complete_arraydim(dim) => dim'
 	------------------------------
 	elab_arraydim(env,ad,NONE,impl,cf) => dim'
 
-  rule	elab_arraydim_decl(env,ad,cf) => dim1 &
+  rule	elab_arraydim_decl(env,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
 	elab_arraydim(env,ad,SOME((e,Types.PROP(t,c))),impl,cf) => dim3
 
-  rule	elab_arraydim_decl(env,ad,cf) => dim1 &
+  rule	elab_arraydim_decl(env,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	not compatible_arraydim(dim1,dim2) => dim3 &
 	Print.print_buf "# Array dimension mismatch\n" &
@@ -1370,57 +1372,61 @@ end
  ** contain `NONE'.
  **)
 
-relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, Interactive.InteractiveSymbolTable option)
+relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.InteractiveSymbolTable option)
 	    => (DimExp option) list =
 
-  axiom	elab_arraydim_decl(_,[],_) => []
+  axiom	elab_arraydim_decl(_,[],_,_) => []
 
   rule	(*Print.print_buf "NOSUB in elab_arraydim_decl\n" & *)
-	elab_arraydim_decl(env,ds,impl) => l 	
+	elab_arraydim_decl(env,ds,impl,cf) => l 	
 	-------------------------------
-	elab_arraydim_decl(env,Absyn.NOSUB::ds,impl) => NONE::l
+	elab_arraydim_decl(env,Absyn.NOSUB::ds,impl,cf) => NONE::l
 
-  rule	Static.elab_exp(env, d,st)
+  rule	Static.elab_exp(env, d,impl,st)
 	    => (e,Types.PROP(Types.T_INTEGER,_),_) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	Static.ceval(env,e,st) => Values.INTEGER(i) &
- 	elab_arraydim_decl(env,ds,st) => l
+	print "ceval arraydim decl default .\n" &
+	Static.ceval(env,e,impl,st) => Values.INTEGER(i) &
+ 	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) => SOME(DIMINT(i))::l
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d,st)
+  rule	Static.elab_exp(env, d,impl,st)
 	    => (e,Types.PROP(Types.T_INTEGER,true),_) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	Static.ceval(env,e,st) => Values.INTEGER(i) &
- 	elab_arraydim_decl(env,ds,st) => l
+	print "ceval arraydim decl using implicit inst.\n" &
+	Static.ceval(env,e,impl,st) => Values.INTEGER(i) &
+ 	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st as SOME(_)) => SOME(DIMINT(i))::l
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d,st) => (e,Types.PROP(Types.T_INTEGER,false),_) &
-	elab_arraydim_decl(env,ds,st) => l
+  rule	print "ceval arraydim decl non-const \n" &
+	Static.elab_exp(env, d,impl,st) => (e,Types.PROP(Types.T_INTEGER,false),_) &
+	print "non-const elabed exp\n" &
+	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) 
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) 
 	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l 
 
-  rule	Static.elab_exp(env,d,st)
+  rule	Static.elab_exp(env,d,impl,st)
 	  => (e,Types.PROP(t,_),_) &
 	Print.print_buf "# Array dimensions must be integer\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e &
  	Print.print_buf " (" & Types.print_type t & Print.print_buf ")\n"
 	-------------------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) => fail
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) => fail
 
   rule	Print.print_buf "- elab_arraydim_decl failed\n"
 	-------------------------------------
-	elab_arraydim_decl(_,_,_) => fail     
+	elab_arraydim_decl(_,_,_,_) => fail     
 end
 
 (** relation: complete_arraydim
@@ -1816,7 +1822,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(**  assert
 	 **)
 
-  rule	Static.elab_exp(env,e,NONE) => (e', Types.PROP(t, c),_) &
+  rule	Static.elab_exp(env,e,false,NONE) => (e', Types.PROP(t, c),_) &
 	inst_assertion (env, e', t, c, d, pre) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
@@ -1871,10 +1877,10 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 Returns the output parameters from the funktion.
 	*)
 
-	Static.elab_exp(env,e1,NONE) => (e1',prop1,_) &
+	Static.elab_exp(env,e1,false,NONE) => (e1',prop1,_) &
 
 	Debug.print("\nDebug: did left elab.") &
-	Static.elab_exp(env,e2,NONE) => (e2',prop2,_) &
+	Static.elab_exp(env,e2,false,NONE) => (e2',prop2,_) &
 	Debug.print("\nDebug: did right elab.") &
 	(*Exp.print_exp(e1') &*)
 	Debug.print(", ") &
@@ -1919,8 +1925,8 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** should be used.
 	 **)
 
-  rule	Static.elab_exp(env,e,NONE) => (e',Types.PROP(Types.T_BOOL,true),_) &
-	Static.ceval(env,e',NONE) => Values.BOOL(cond) &
+  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP(Types.T_BOOL,true),_) &
+	Static.ceval(env,e',false,NONE) => Values.BOOL(cond) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
 *)
@@ -1946,12 +1952,12 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
 	      Types.T_INTEGER, Types.UNBOUND)  &  *)
 
- 	Static.elab_exp (env,e,NONE)
+ 	Static.elab_exp (env,e,false,NONE)
 	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
 			     true),_) &
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',NONE) => v &
+	Static.ceval (env,e',false,NONE) => v &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_equation, el)
 	  => (dae,env',csets', ci_state') (*&
@@ -1974,7 +1980,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	Debug.fprintln ("insttr", "inst_equation_eqfor_1") &
-	Static.elab_exp (env,e,NONE)
+	Static.elab_exp (env,e,false,NONE)
 	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   id_t),
 			     true),_) &
@@ -1988,7 +1994,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insti", "loop variable looked up") &
 	
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',NONE) => v &
+	Static.ceval (env,e',false,NONE) => v &
 	Debug.fprintln ("insti", "for expression evaluated") &
 	unroll(env',mod,pre,csets,ci_state,i,v,el) => (dae, csets') &
 	Debug.fprintln ("insti", "for expression unrolled") &
@@ -2003,7 +2009,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
 	      Types.T_INTEGER, Types.UNBOUND) &
 	Debug.fprintln ("insti", "loop variable looked up") &
-	Static.elab_exp (env,e,NONE)
+	Static.elab_exp (env,e,false,NONE)
 	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
 			     false),_) &
@@ -2467,12 +2473,12 @@ end
 relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 
   rule	Static.elab_cref (env,cr) => (ce, cprop, acc) &
-	Static.elab_exp (env,e,NONE) => (e', eprop,_) &
+	Static.elab_exp (env,e,false,NONE) => (e', eprop,_) &
 	Algorithm.make_assignment(ce,cprop,e',eprop,acc) => stmt
 	--------------------------------------------------------
 	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
 
-  rule	Static.elab_exp(env,e,NONE) => (e',prop,_) &
+  rule	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
 	inst_statements(env,tb) => tb' &
 	inst_elseifs(env,eib) => eib' &
 	inst_statements(env,fb) => fb' &
@@ -2480,7 +2486,7 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	--------------------------------------------
 	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
 
-  rule	Static.elab_exp (env,e,NONE)  =>
+  rule	Static.elab_exp (env,e,false,NONE)  =>
 	(e', prop as Types.PROP(Types.T_ARRAY(_,t),_),_) &
 	
 	add_for_loop_scope(env,i,t) => env' &
@@ -2490,21 +2496,21 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_FOR(i,e,sl)) => stmt
 
-  rule	Static.elab_exp (env,e,NONE) => (e',prop,_) &
+  rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
 	inst_statements(env,sl) => sl' &
 	Algorithm.make_while(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHILE(e,sl)) => stmt
 
 
-  rule	Static.elab_exp (env,e,NONE) => (e',prop,_) &
+  rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
 	inst_statements(env,sl) => sl' &
 	Algorithm.make_when_a(e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_WHEN_A(e,sl)) => stmt
 
 (* 1.0
- rule	Static.elab_exp (env,e,NONE) => (e',prop,_) &
+ rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
 	inst_statements(env,sl) => sl' &
 	Algorithm.make_when(e',prop,sl') => stmt
 	---------------------------------------
@@ -2526,7 +2532,7 @@ relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
 
   axiom	inst_elseifs (env,[]) => []
 
-  rule	Static.elab_exp(env,e,NONE) => (e',prop,_) &
+  rule	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
 	inst_statements(env,l) => stmts &
 	inst_elseifs(env,tail) => tail'
 	-------------------------------

@@ -43,6 +43,7 @@ end
 
 with "rtopts.rml"
 with "dump.rml"
+with "print.rml"
 
 
 (* PR 
@@ -55,7 +56,7 @@ relation print: string => () =
     LS: Reason: print means Debug.print, so recursive infinit loop.
         Correct version should call RML.print for the builtin print
 
-   rule print s
+   rule Print.print_buf s
 	------------
 	print s => ()
 
@@ -78,7 +79,7 @@ end
 relation fprint: (string, string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
-	RML.print str
+	Print.print_buf str
 	-------------------
 	fprint (flag, str)
 
@@ -89,8 +90,8 @@ end
 relation fprintln: (string, string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
-	RML.print str &
-	RML.print "\n"
+	Print.print_buf str &
+	Print.print_buf "\n"
 	-------------------
 	fprintln (flag, str)
 
@@ -102,7 +103,7 @@ relation fprintl: (string, string list) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
 	make_string strlist => str &
-	RML.print str
+	Print.print_buf str
 	-------------------
 	fprintl (flag, strlist)
 
