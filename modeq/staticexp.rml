@@ -71,7 +71,7 @@ module Static :
 
   (* Constant propagation *)
   relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option)
-	    => Values.Value
+	    => (Values.Value, Interactive.InteractiveSymbolTable option)
   relation ceval_list : (Env.Env, Exp.Exp list, bool,
 			 Interactive.InteractiveSymbolTable option) 
 	  => Values.Value list
@@ -101,7 +101,8 @@ with "codegen.rml"
 with "modutil.rml"
 with "dae.rml"
 with "util.rml"
-
+with "rtopts.rml"
+with "parse.rml"
 (** LS:
  ** - Expression elaboration
  **)
@@ -430,13 +431,13 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_array") &
 	elab_graphics_array (env, es) => (es', Types.PROP(t, const)) & list_length es' => l&
-	ceval_list(env,es',false,NONE) => vl &
-	Util.list_map(vl, value_exp) => es'' &
+(*	ceval_list(env,es',false,NONE) => vl &
+	Util.list_map(vl, value_exp) => es'' &*)
 	Types.elab_type t => at &
 	Types.is_array t => a
 	--------------------------------------------------------------
 	elab_graphics_exp (env, Absyn.ARRAY(es))
-	  => (Exp.ARRAY(at,a,es''),
+	  => (Exp.ARRAY(at,a,es'),
 	      Types.PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
 		   const))
 	
@@ -485,16 +486,16 @@ end
 relation elab_range_type : (Env.Env, Exp.Exp,
 			    Exp.Exp option, Exp.Exp, bool,Exp.Type) => Types.Type =
 
-  rule	ceval (env,start,false,NONE) => Values.INTEGER(startv) &
-	ceval (env,stop,false,NONE) => Values.INTEGER(stopv) &
+  rule	ceval (env,start,false,NONE) => (Values.INTEGER(startv),_) &
+	ceval (env,stop,false,NONE) => (Values.INTEGER(stopv),_) &
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_INTEGER)
 
-  rule	ceval (env,start,false,NONE) => Values.INTEGER(startv) &
-	ceval (env,step,false,NONE) => Values.INTEGER(stepv) &
-	ceval (env,stop,false,NONE) => Values.INTEGER(stopv) &
+  rule	ceval (env,start,false,NONE) => (Values.INTEGER(startv),_) &
+	ceval (env,step,false,NONE) => (Values.INTEGER(stepv),_) &
+	ceval (env,stop,false,NONE) => (Values.INTEGER(stopv),_) &
 	int_sub (stopv,startv) => n &
 	int_div (n,stepv) => n' &
  	int_add (n',1) => n''
@@ -502,8 +503,8 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,SOME(step),stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER)
 
-  rule	ceval (env,start,false,NONE) => Values.REAL(startv) &
-	ceval (env,stop,false,NONE) => Values.REAL(stopv) &
+  rule	ceval (env,start,false,NONE) => (Values.REAL(startv),_) &
+	ceval (env,stop,false,NONE) => (Values.REAL(stopv),_) &
 	real_sub (stopv,startv) => n &
 	real_floor n => n'' &
 	real_int n'' => n''' &
@@ -512,9 +513,9 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_REAL)
 
-  rule	ceval (env,start,false,NONE) => Values.REAL(startv) &
-	ceval (env,step,false,NONE) => Values.REAL(stepv) &
-	ceval (env,stop,false,NONE) => Values.REAL(stopv) &
+  rule	ceval (env,start,false,NONE) => (Values.REAL(startv),_) &
+	ceval (env,step,false,NONE) => (Values.REAL(stepv),_) &
+	ceval (env,stop,false,NONE) => (Values.REAL(stopv),_) &
 	real_sub (stopv,startv) => n &
 	real_div (n,stepv) => n' &
 	real_floor n' => n''' &
@@ -707,7 +708,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 *)
 
   rule	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, true),_) &
-	ceval (env, indexp,false,NONE) => Values.INTEGER(value) &
+	ceval (env, indexp,false,NONE) => (Values.INTEGER(value),_) &
 	int_string(value) => strval &
 	elab_exp (env,arraycr,false,NONE) => (Exp.CREF(cr,crt), crprop,_) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
@@ -717,7 +718,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
 
   rule	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, true),_) &
-	ceval (env, indexp,false,NONE) => Values.INTEGER(value) &
+	ceval (env, indexp,false,NONE) => (Values.INTEGER(value),_) &
 	int_string(value) => strval &
 	elab_exp (env,arraycr,false,NONE) 
 	  => (exp, Types.PROP(arrtp,_),_) &
@@ -841,14 +842,14 @@ end
 relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
 	-------------------------------------------------------
 	elab_builtin_max(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
 
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
 	-------------------------------------------------------
 	elab_builtin_max(env, [arrexp]) => (Exp.RCONST(r),Types.PROP(ty,true))
@@ -856,10 +857,10 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 	(* max(x,y) where x & y are scalars *)
   rule	elab_exp (env,s1,false,NONE) 
 	  => (s1', Types.PROP(arrty, arrconst),_) &
-	ceval(env,s1',false,NONE) => Values.INTEGER(i1) &
+	ceval(env,s1',false,NONE) => (Values.INTEGER(i1),_) &
 	elab_exp (env,s2,false,NONE) 
 	  => (s2', Types.PROP(arrty, arrconst),_) &
-	ceval(env,s2',false,NONE) => Values.INTEGER(i2) &
+	ceval(env,s2',false,NONE) => (Values.INTEGER(i2),_) &
 	int_max(i1,i2) => res
 	-------------------------------------------------------
 	elab_builtin_max(env, [s1, s2]) 
@@ -867,10 +868,10 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 
   rule	elab_exp (env,s1,false,NONE) 
 	  => (s1', Types.PROP(arrty, arrconst),_) &
-	ceval(env,s1',false,NONE) => Values.REAL(r1) &
+	ceval(env,s1',false,NONE) => (Values.REAL(r1),_) &
 	elab_exp (env,s2,false,NONE) 
 	  => (s2', Types.PROP(arrty, arrconst),_) &
-	ceval(env,s2',false,NONE) => Values.REAL(r2) &
+	ceval(env,s2',false,NONE) => (Values.REAL(r2),_) &
 	real_max(r1,r2) => res
 	-------------------------------------------------------
 	elab_builtin_max(env, [s1, s2]) 
@@ -908,14 +909,14 @@ end
 relation elab_builtin_min : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
 	-------------------------------------------------------
 	elab_builtin_min(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
 
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
 	-------------------------------------------------------
 	elab_builtin_min(env, [arrexp]) => (Exp.RCONST(r),Types.PROP(ty,true))
@@ -958,6 +959,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom	elab_builtin_handler "fill" => elab_builtin_fill
   axiom	elab_builtin_handler "max" => elab_builtin_max
   axiom	elab_builtin_handler "min" => elab_builtin_min
+
 end
 
 
@@ -972,8 +974,6 @@ relation elab_call_builtin : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
 	handler (env, args) => (exp,prop)
 	-------------------
 	elab_call_builtin (env, Absyn.CREF_IDENT(name,[]), args) => (exp, prop)
-
-
 end
 
 
@@ -995,6 +995,11 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	---------------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st)
 
+  rule	(* Elaborate interactive function calls *)
+	elab_call_interactive(env,fn,args,nargs,impl,st) => (e,prop,st)
+	-------------------------------------------------------
+	elab_call(env,fn,args,nargs,impl,st) => (e,prop,st)
+
   rule	Absyn.cref_to_path fn => fn' &
 	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
 	generate_compiled_function(fn,e,prop,st) => st' &
@@ -1006,6 +1011,205 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	----------------------------
 	elab_call (env,fn,args,nargs,impl,st) => fail
 
+end
+
+(** relation: elab_call_interactive
+ *
+ * This relation elaborates the functions defined in the interactive environment.
+ * Since some of these functions are meta-functions, they can not be described in the type 
+ * system, and is thus given the the type T_NOTYPE
+ *)
+relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list, bool, Interactive.InteractiveSymbolTable option)
+ 	  => (Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option) =
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("typeOf",_),
+			      [ Absyn.CREF(Absyn.CREF_IDENT(varid,[]))],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("typeOf"),
+		       [Exp.CREF(Exp.CREF_IDENT(varid,[]),Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clear",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("clear"), [], false, false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clearVariables",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("clearVariables"), [], false, false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("list",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("list"),
+		       [],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("list",_),
+			      [ Absyn.CREF(cr)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("list"),
+		       [Exp.CREF(cr',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("translateClass",_),
+			      [ Absyn.CREF(cr)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("translateClass"),
+		       [Exp.CREF(cr',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("generateCode",_),
+			      [ Absyn.CREF(cr)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("generateCode"),
+		       [Exp.CREF(cr',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setCompiler",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("setCompiler"),
+		       [Exp.SCONST(str)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setCompilerFlags",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("setCompilerFlags"),
+		       [Exp.SCONST(str)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setDebugFlags",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("setDebugFlags"),
+		       [Exp.SCONST(str)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("cd",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("cd"),
+		       [Exp.SCONST(str)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_BOOL,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("cd",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("cd"),
+		       [],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("system",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("system"),
+		       [Exp.SCONST(str)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_INTEGER,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("readFile",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("readFile"),
+		       [Exp.SCONST(str)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+
+	(* Returns an array of "component references" *)
+axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("listVariables"),
+		       [],
+		       false,
+		       false),
+	      Types.PROP(Types.T_ARRAY(Types.DIM(NONE),Types.T_NOTYPE),false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("getErrorString",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getErrorString"),
+		       [],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("runScript",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("runScript"),
+		       [Exp.SCONST(str)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
+end
+
+relation path_to_component_ref: Absyn.Path => Exp.ComponentRef =
+
+  axiom	path_to_component_ref(Absyn.IDENT(s)) => Exp.CREF_IDENT(s,[])
+
+  rule	path_to_component_ref(path) => cref
+	----------------
+	path_to_component_ref(Absyn.QUALIFIED(id,path)) => Exp.CREF_QUAL(id,[],cref)
+end
+
+relation component_ref_to_path: Exp.ComponentRef => Absyn.Path =
+
+  axiom	component_ref_to_path(Exp.CREF_IDENT(s,[])) => Absyn.IDENT(s)
+
+  rule	component_ref_to_path(cref) => path
+	----------------
+	component_ref_to_path(Exp.CREF_QUAL(id,_,cref)) => Absyn.QUALIFIED(id,path)
 end
 
 (* relation: generate_compiled_function 
@@ -2002,25 +2206,25 @@ end
  **)
 
 relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
-	    => Values.Value =
+	    => (Values.Value, Interactive.InteractiveSymbolTable option) =
 
-  axiom	ceval (_,Exp.ICONST(x),_,_) => Values.INTEGER(x)
-  axiom	ceval (_,Exp.RCONST(x),_,_) => Values.REAL(x)
-  axiom ceval (_,Exp.SCONST(x),_,_) => Values.STRING(x)
-  axiom ceval (_,Exp.BCONST(x),_,_) => Values.BOOL(x)
+  axiom	ceval (_,Exp.ICONST(x),_,st) => (Values.INTEGER(x),st)
+  axiom	ceval (_,Exp.RCONST(x),_,st) => (Values.REAL(x),st)
+  axiom ceval (_,Exp.SCONST(x),_,st) => (Values.STRING(x),st)
+  axiom ceval (_,Exp.BCONST(x),_,st) => (Values.BOOL(x),st)
 
   rule	ceval_list (env,es,impl,st) => es' &
 	list_length es' => l
 	------------------------------
-	ceval (env,Exp.ARRAY(_,_,es),impl,st) => Values.ARRAY(es')
+	ceval (env,Exp.ARRAY(_,_,es),impl,st) => (Values.ARRAY(es'),st)
 
   rule	ceval_matrixelt(env,expll) => elts
 	------------------------------
-	ceval (env, Exp.MATRIX(_,_,expll),_,_) => Values.ARRAY(elts)
+	ceval (env, Exp.MATRIX(_,_,expll),_,st) => (Values.ARRAY(elts),st)
 
   rule	ceval_cref (env,c) => v
 	---------------------------
-	ceval (env,Exp.CREF(c,_),_,_) => v 
+	ceval (env,Exp.CREF(c,_),_,st) => (v,st) 
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
@@ -2031,6 +2235,10 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-------------------------------------------
 	ceval(env, e as Exp.CALL(_,_,_,_),true,NONE) => fail
 
+  rule	ceval_interactive_functions(env,e,st) => (value,st)
+	-------------------------------------
+	ceval (env, e as Exp.CALL(_,_,_,_),true, SOME(st)) => (value,SOME(st))
+
   rule	(* Call externally implemented functions. *) 
 	ceval_list(env,expl,true,st) => vallst &
 	Absyn.path_string(func) => funcstr &
@@ -2040,257 +2248,347 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	System.execute_function(funcstr) &
 	System.read_values_from_file(outfilename) => newval
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(_)) => newval
+	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(_)) => (newval,st)
+
+	(** Strings **)
+	
+  rule  ceval (env, lh, impl,st) => (Values.STRING(lhv),_) &
+	ceval (env, rh, impl,st) => (Values.STRING(rhv),_) &
+	string_append(lhv,rhv) => str
+	-----------------------
+	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.STRING), rh),impl,st)
+	  => (Values.STRING(str),st)
 
 	(**  Numerical *)
 
-  rule	ceval (env, lh, impl,st) => Values.REAL(lhv) &
-	ceval (env, rh, impl,st) => Values.REAL(rhv) &
+  rule	ceval (env, lh, impl,st) => (Values.REAL(lhv),st') &
+	ceval (env, rh, impl,st') => (Values.REAL(rhv),st'') &
 	real_add(lhv, rhv) => sum
 	-------------------------
 	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh),impl,st)
-	  => Values.REAL(sum)
+	  => (Values.REAL(sum),st'')
 
-  rule	ceval (env,lh,impl,st) => Values.ARRAY(vlst1) &
-	ceval (env,rh,impl,st) => Values.ARRAY(vlst2) &
+  rule	ceval (env,lh,impl,st) => (Values.ARRAY(vlst1),st') &
+	ceval (env,rh,impl,st') => (Values.ARRAY(vlst2),st'') &
 	Values.add_elementwise_arrayelt(vlst1, vlst2) => reslst
 	-------------------------------------------------------
 	ceval (env, Exp.BINARY(lh, Exp.ADD_ARR(_),rh),impl,st) 
-	  => Values.ARRAY(reslst)
+	  => (Values.ARRAY(reslst),st'')
 
-  rule	ceval (env,lh,impl,st) => Values.ARRAY(vlst1) &
-	ceval (env,rh,impl,st) => Values.ARRAY(vlst2) &
+  rule	ceval (env,lh,impl,st) => (Values.ARRAY(vlst1),st') &
+	ceval (env,rh,impl,st') => (Values.ARRAY(vlst2),st'') &
 	Values.sub_elementwise_arrayelt(vlst1, vlst2) => reslst
 	-------------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh),impl,st) => Values.ARRAY(reslst)
+	ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh),impl,st) => (Values.ARRAY(reslst),st'')
 
-  rule	ceval (env,lh,impl,st) => sval &
-	ceval (env,rh,impl,st) => Values.ARRAY(aval) &
+  rule	ceval (env,lh,impl,st) => (sval,st') &
+	ceval (env,rh,impl,st') => (Values.ARRAY(aval),st'') &
 	Values.mult_scalar_arrayelt(sval,aval) => reslst
 	------------------------------------------------
 	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_ARRAY(_), rh),impl,st) 
-	  => Values.ARRAY(reslst)
+	  => (Values.ARRAY(reslst),st'')
 
-  rule	ceval (env,rh,impl,st) => sval &
-	ceval (env,lh,impl,st) => Values.ARRAY(aval) &
+  rule	ceval (env,rh,impl,st) => (sval,st') &
+	ceval (env,lh,impl,st') => (Values.ARRAY(aval),st'') &
 	Values.mult_scalar_arrayelt(sval,aval) => reslst
 	------------------------------------------------
 	ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st) 
-	  => Values.ARRAY(reslst)
+	  => (Values.ARRAY(reslst),st'')
 
-  rule	ceval (env,rh,impl,st) => Values.ARRAY(rhvals) &
-	ceval (env,lh,impl,st) => Values.ARRAY(lhvals) &
+  rule	ceval (env,rh,impl,st) => (Values.ARRAY(rhvals),st') &
+	ceval (env,lh,impl,st') => (Values.ARRAY(lhvals),st'') &
 	Values.mult_scalar_product(rhvals,lhvals) => res
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh),impl,st) => res
+	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh),impl,st) => (res,st'')
 	
   rule	(* {{..}..{..}} * {...} *)
-	ceval (env,lh,impl,st) => Values.ARRAY(lhvals as (elt1::_)) &
- 	ceval (env,rh,impl,st) => Values.ARRAY(rhvals as (elt2::_)) &
+	ceval (env,lh,impl,st) => (Values.ARRAY(lhvals as (elt1::_)),st') &
+ 	ceval (env,rh,impl,st') => (Values.ARRAY(rhvals as (elt2::_)),st'') &
 	Values.is_array(elt1) => true &
 	Values.is_array(elt2) => false &
 	Values.mult_scalar_product(lhvals,rhvals) => res
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) => res
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) => (res,st'')
 
  rule	(* {...} * {{..}..{..}} *)
-	ceval (env,rh,impl,st) => Values.ARRAY(rhvals as (elt1::_)) &
- 	ceval (env,lh,impl,st) => Values.ARRAY(lhvals as (elt2::_)) &
+	ceval (env,rh,impl,st) => (Values.ARRAY(rhvals as (elt1::_)),st') &
+ 	ceval (env,lh,impl,st') => (Values.ARRAY(lhvals as (elt2::_)),st'') &
 	Values.is_array(elt1) => true &
 	Values.is_array(elt2) => false &
 	Values.mult_scalar_product(lhvals,rhvals) => res
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) => res
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) => (res,st'')
 
  rule	(* {{..}..{..}} * {{..}..{..}} *)
-	ceval (env,rh,impl,st) => Values.ARRAY(rhvals as (elt1::_)) &
- 	ceval (env,lh,impl,st) => Values.ARRAY(lhvals as (elt2::_)) &
+	ceval (env,rh,impl,st) => (Values.ARRAY(rhvals as (elt1::_)),st') &
+ 	ceval (env,lh,impl,st') => (Values.ARRAY(lhvals as (elt2::_)),st'') &
 	Values.is_array(elt1) => true &
 	Values.is_array(elt2) => true &
 	Values.mult_matrix(lhvals,rhvals) => res
 	------------------------------------------------
 	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) 
-	  => Values.ARRAY(res)
+	  => (Values.ARRAY(res),st'')
 
-  rule	ceval (env,lh,impl,st) => Values.INTEGER(lhv) &
-	ceval (env,rh,impl,st) => Values.INTEGER(rhv) &
+  rule	ceval (env,lh,impl,st) => (Values.INTEGER(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.INTEGER(rhv),st'') &
 	int_add(lhv, rhv) => sum
 	------------------------
  	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh),impl,st) 
-	  => Values.INTEGER(sum)
+	  => (Values.INTEGER(sum),st'')
 	(**)
-  rule	ceval (env,lh,impl,st) => Values.REAL(lhv) &
-	ceval (env,rh,impl,st) => Values.REAL(rhv) &
+  rule	ceval (env,lh,impl,st) => (Values.REAL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.REAL(rhv),st'') &
 	real_sub(lhv, rhv) => sum
 	-------------------------
 	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.REAL), rh),impl,st) 
-	  => Values.REAL(sum)
+	  => (Values.REAL(sum),st'')
 
-  rule	ceval (env,lh,impl,st) => Values.INTEGER(lhv) &
-	ceval (env, rh,impl,st) => Values.INTEGER(rhv) &
+  rule	ceval (env,lh,impl,st) => (Values.INTEGER(lhv),st') &
+	ceval (env, rh,impl,st') => (Values.INTEGER(rhv),st'') &
 	int_sub(lhv, rhv) => sum
 	------------------------
 	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh),impl,st)
-	  => Values.INTEGER(sum)
+	  => (Values.INTEGER(sum),st'')
 	(**)
-  rule	ceval (env,lh,impl,st) => Values.REAL(lhv) &
-	ceval (env,rh,impl,st) => Values.REAL(rhv) &
+  rule	ceval (env,lh,impl,st) => (Values.REAL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.REAL(rhv),st'') &
 	real_mul(lhv, rhv) => sum
 	-------------------------
 	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh),impl,st) 
-	  => Values.REAL(sum)
+	  => (Values.REAL(sum),st'')
 
-  rule	ceval (env,lh,impl,st) => Values.INTEGER(lhv) &
-	ceval (env,rh,impl,st) => Values.INTEGER(rhv) &
+  rule	ceval (env,lh,impl,st) => (Values.INTEGER(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.INTEGER(rhv),st'') &
 	int_mul(lhv, rhv) => sum
 	------------------------
 	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh),impl,st)
-	  => Values.INTEGER(sum)
+	  => (Values.INTEGER(sum),st'')
 	(**)
-  rule	ceval (env,exp,impl,st) => Values.REAL(x) &
+  rule	ceval (env,exp,impl,st) => (Values.REAL(x),st') &
 	real_neg (x) => x'
 	---------------------
 	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp),impl,st)
-	  => Values.REAL(x')
+	  => (Values.REAL(x'),st')
 
-  rule	ceval (env,exp,impl,st) => Values.INTEGER(x) &
+  rule	ceval (env,exp,impl,st) => (Values.INTEGER(x),st') &
 	int_neg (x) => x'
 	---------------------
 	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp),impl,st)
-	  => Values.INTEGER(x')
+	  => (Values.INTEGER(x'),st')
 	(**)
-  rule	ceval (env,exp,impl,st) => Values.REAL(x) &
+  rule	ceval (env,exp,impl,st) => (Values.REAL(x),st') &
 	real_neg (x) => x'
 	---------------------
 	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp),impl,st)
-	  => Values.REAL(x')
+	  => (Values.REAL(x'),st')
 
-  rule	ceval (env,exp,impl,st) => Values.INTEGER(x) &
+  rule	ceval (env,exp,impl,st) => (Values.INTEGER(x),st') &
 	int_neg (x) => x'
 	---------------------
 	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp),impl,st)
-	  => Values.INTEGER(x')
+	  => (Values.INTEGER(x'),st')
 
 	(**  Logical *)
 
-  rule	ceval (env,lh,impl,st) => Values.BOOL(lhv) &
-	ceval (env,rh,impl,st) => Values.BOOL(rhv) &
+  rule	ceval (env,lh,impl,st) => (Values.BOOL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.BOOL(rhv),st'') &
 	bool_and(lhv, rhv) => x
 	------------------------
 	ceval (env, Exp.LBINARY(lh, Exp.AND, rh),impl,st)
-	  => Values.BOOL(x)
+	  => (Values.BOOL(x),st'')
 
-  rule	ceval (env,lh,impl,st) => Values.BOOL(lhv) &
-	ceval (env,rh,impl,st) => Values.BOOL(rhv) &
+  rule	ceval (env,lh,impl,st) => (Values.BOOL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.BOOL(rhv),st'') &
 	bool_or(lhv, rhv) => x
 	------------------------
 	ceval (env, Exp.LBINARY(lh, Exp.OR, rh),impl,st)
-	  => Values.BOOL(x)
+	  => (Values.BOOL(x),st'')
 
-  rule	ceval (env,e,impl,st) => Values.BOOL(b) &
+  rule	ceval (env,e,impl,st) => (Values.BOOL(b),st') &
 	bool_not(b) => b'
 	-----------------
-	ceval (env, Exp.LUNARY(Exp.NOT, e),impl,st) => Values.BOOL(b')
+	ceval (env, Exp.LUNARY(Exp.NOT, e),impl,st) => (Values.BOOL(b'),st')
 
 	(**  Relations *)
 
-  rule	ceval (env,lhs,impl,st) => lhs' &
-	ceval (env,rhs,impl,st) => rhs' &
+  rule	ceval (env,lhs,impl,st) => (lhs',st') &
+	ceval (env,rhs,impl,st') => (rhs',st'') &
 	ceval_relation (lhs',relop,rhs') => v
 	-------------------------------------
-	ceval (env, Exp.RELATION(lhs,relop,rhs),impl,st) => v
+	ceval (env, Exp.RELATION(lhs,relop,rhs),impl,st) => (v, st'')
 
 	(**)
 
-  rule	ceval (env,start,impl,st) => Values.INTEGER(start') &
-	ceval (env,stop,impl,st) => Values.INTEGER(stop') &
+  rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
+	ceval (env,stop,impl,st') => (Values.INTEGER(stop'),st'') &
 	int_gt(stop',start') => true &
 	ceval_range(start', 1, stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop),impl,st) 
-	  => Values.ARRAY(arr)
+	  => (Values.ARRAY(arr),st')
 
-  rule	ceval (env,start,impl,st) => Values.INTEGER(start') &
-	ceval (env,step,impl,st) => Values.INTEGER(step') &
-	ceval (env,stop,impl,st) => Values.INTEGER(stop') &
+  rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
+	ceval (env,step,impl,st') => (Values.INTEGER(step'),st'') &
+	ceval (env,stop,impl,st'') => (Values.INTEGER(stop'),st''') &
 	ceval_range(start', step', stop') => arr &
 	int_gt(stop',start') => true &
 	int_gt(step',0) => true
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),impl,st) 
-	  => Values.ARRAY(arr)
+	  => (Values.ARRAY(arr),st''')
 
-  rule	ceval (env,start,impl,st) => Values.INTEGER(start') &
-	ceval (env,step,impl,st) => Values.INTEGER(step') &
-	ceval (env,stop,impl,st) => Values.INTEGER(stop') &
+  rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
+	ceval (env,step,impl,st') => (Values.INTEGER(step'),st'') &
+	ceval (env,stop,impl,st'') => (Values.INTEGER(stop'),st''') &
 	ceval_range(start', step', stop') => arr &
 	int_gt(stop',start') => false &
 	int_gt(step',0) => false
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),impl,st) 
-	  => Values.ARRAY(arr)
+	  => (Values.ARRAY(arr),st''')
 
-  rule	ceval (env,start,impl,st) => Values.REAL(start') &
-	ceval (env,stop,impl,st) => Values.REAL(stop') &
+  rule	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
+	ceval (env,stop,impl,st') => (Values.REAL(stop'),st'') &
 	real_gt(stop',start') => true &
 	int_real 1 => step & (* Bug in rml 1.0 => 0.0 in cygwin impl *)
 	ceval_range_real(start', step, stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),impl,st) 
-	  => Values.ARRAY(arr)
+	  => (Values.ARRAY(arr),st'')
 
   rule	
-	ceval (env,start,impl,st) => Values.REAL(start') &
-	ceval (env,step,impl,st) => Values.REAL(step') &
-	ceval (env,stop,impl,st) => Values.REAL(stop') &
+	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
+	ceval (env,step,impl,st') => (Values.REAL(step'),st'') &
+	ceval (env,stop,impl,st'') => (Values.REAL(stop'),st''') &
 	real_gt(stop',start') => b1 &
 	real_gt(step',0.0) => b2 &
 	ceval_range_real(start', step', stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),impl,st) 
-	  => Values.ARRAY(arr)
+	  => (Values.ARRAY(arr),st''')
 
-  rule	ceval (env,start,impl,st) => Values.REAL(start') &
-	ceval (env,step,impl,st) => Values.REAL(step') &
-	ceval (env,stop,impl,st) => Values.REAL(stop') &
+  rule	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
+	ceval (env,step,impl,st') => (Values.REAL(step'),st'') &
+	ceval (env,stop,impl,st'') => (Values.REAL(stop'),st''') &
 	real_gt(stop',start') => false &
 	real_gt(step',0.0) => false &
 	ceval_range_real(start', step', stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),impl,st) 
-	  => Values.ARRAY(arr)
+	  => (Values.ARRAY(arr),st''')
 
-  rule	ceval (env,e,impl,st) => Values.INTEGER(i) &
+  rule	ceval (env,e,impl,st) => (Values.INTEGER(i),st') &
 	int_real i => r
 	---------------
-	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => Values.REAL(r)
+	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => (Values.REAL(r),st')
 
-  rule	ceval (env,e,impl,st) => Values.ARRAY(ivals) &
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(ivals),st') &
 	Values.type_convert(Exp.INT,Exp.REAL,ivals) => rvals
 	----------------------------------------------------
-	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => Values.ARRAY(rvals)
+	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => (Values.ARRAY(rvals),st')
 
-  rule	ceval (env,e,impl,st) => Values.ARRAY(vallst) &
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(vallst),st') &
 	Values.type_convert(Exp.INT, Exp.REAL, vallst) => vallst'
 	--------------------------
-	ceval (env, Exp.CAST(Exp.REAL,e as Exp.ARRAY(Exp.INT,_,expl)),impl,st) => Values.ARRAY(vallst')
+	ceval (env, Exp.CAST(Exp.REAL,e as Exp.ARRAY(Exp.INT,_,expl)),impl,st) 
+	       => (Values.ARRAY(vallst'),st')
 
-  rule	ceval (env,e,impl,st) => Values.ARRAY(vallst) &
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(vallst),st') &
 	Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
 	---------------------------------------
 	ceval (env, Exp.CAST(Exp.REAL,e as Exp.RANGE(Exp.INT,_,_,_)),impl,st) => 
-		Values.ARRAY(vallst')
+		(Values.ARRAY(vallst'),st')
 
-  rule	ceval (env,e,impl,st) => Values.ARRAY(vallst) &
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(vallst),st') &
 	Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
 	---------------------------------------
 	ceval (env, Exp.CAST(Exp.REAL,e as Exp.MATRIX(Exp.INT,_,_)),impl,st) => 
-		Values.ARRAY(vallst')
+		(Values.ARRAY(vallst'),st')
 
   rule	Print.print_buf "- ceval " & Exp.print_exp e & Print.print_buf " failed\n"
 	-----------------------------------------------------
 	ceval (_,e,_,_) => fail
 	
+end
+
+(* relation ceval_interactive_functions
+** This relation evaluates the functions defined in the interactive environment.
+*)
+relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable)
+	=> (Values.Value, Interactive.InteractiveSymbolTable) =
+
+  rule	Interactive.get_type_of_variable(varid, iv) => tp &
+	Types.unparse_type tp => str 
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("typeOf"),[Exp.CREF(Exp.CREF_IDENT(varid,_),_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	let newst = Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
+  rule	let newst = Interactive.SYMBOLTABLE(p,fp,ic,[],cf)
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearVariables"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
+  rule	Dump.unparse_str(p) => str
+	-------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	component_ref_to_path(cr) => path &
+	Interactive.get_pathed_class_in_program(path,p) => class &
+	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str
+	-------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	Inst.instantiate_class(p',path) => dae &
+	DAE.dump_str (dae) => str
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	
+  rule	System.set_c_compiler(str)
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompiler"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+
+  rule	System.set_c_flags(str)
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompilerFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+
+  rule	string_append("+d=",str) => str' &
+	RTOpts.args [str'] => args 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setDebugFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+
+  rule	System.cd(str) => res &
+	int_eq (res,0) => true &
+	System.pwd => str' 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+
+  rule	System.pwd() => str'
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+
+  rule	System.system_call(str) => res 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("system"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.INTEGER(res),st)
+
+
+  rule	System.read_file(str) => str'
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+
+  rule	Print.get_error_string() => str 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	System.read_file(str) => scriptstr &
+	Parser.parsestringexp(scriptstr) => istmts &
+	Interactive.evaluate(istmts,st) => (res,newst)
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
 end
 
 relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list) => Values.Value list =
@@ -2305,7 +2603,7 @@ end
 
 relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list ) => Values.Value =
 	
-  rule	ceval (env,e,false,NONE) => res &
+  rule	ceval (env,e,false,NONE) => (res,_) &
 	ceval_matrixeltrow(env,rest) => Values.ARRAY(resl)
 	-------------------
 	ceval_matrixeltrow(env, (e,_)::rest) => Values.ARRAY(res::resl)
@@ -2417,11 +2715,11 @@ end
 relation ceval_list : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	    => Values.Value list =
 	  
-  rule	ceval (env, exp,impl,st) => v
+  rule	ceval (env, exp,impl,st) => (v,_)
 	----------------------------
 	ceval_list (env, [exp],impl,st) => [v]
 
-  rule	ceval (env,exp,impl,st) => v &
+  rule	ceval (env,exp,impl,st) => (v,_) &
 	ceval_list (env, exps,impl,st) => vs
 	------------------------------
 	ceval_list (env, exp::exps,impl,st) => v::vs
@@ -2457,7 +2755,7 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding) => Value
 	-------------------------------------
 	ceval_cref_binding (env,_,Types.UNBOUND) => fail
 	
-  rule	ceval (env,exp,false,NONE) => v
+  rule	ceval (env,exp,false,NONE) => (v,_)
 	------------------------
 	ceval_cref_binding (env,Exp.CREF_IDENT(_,[]),Types.EQBOUND(exp,true)) => v
 
@@ -2471,7 +2769,7 @@ end
 relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value) 
 	  => Values.Value =
 
-  rule	ceval(env,exp,false,NONE) => Values.INTEGER(n) &
+  rule	ceval(env,exp,false,NONE) => (Values.INTEGER(n),_) &
 	int_sub(n,1) => n' &
 	list_nth(lst,n') => subval &
 	ceval_subscript_value(env,subs,subval) => res 
@@ -2572,12 +2870,12 @@ relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
 
   axiom	ceval_subscript (env, Exp.WHOLEDIM) => Exp.WHOLEDIM
 
-  rule	ceval (env, e1,false,NONE) => v1 &
+  rule	ceval (env, e1,false,NONE) => (v1,_) &
 	value_exp v1 => e1'
 	-----------------------------------------
 	ceval_subscript (env, Exp.INDEX(e1)) => Exp.INDEX(e1')
 	
-  rule	ceval (env, e1, false,NONE) => v1 &
+  rule	ceval (env, e1, false,NONE) => (v1,_) &
 	value_exp v1 => e1'
 	-----------------------------------------
 	ceval_subscript (env, Exp.SLICE(e1)) => Exp.SLICE(e1')
@@ -2910,6 +3208,7 @@ relation operators : Absyn.Operator
 
   rule	array_type_list(2 (*9*), Types.T_INTEGER) => intarrtypes &
 	array_type_list(2 (*9*), Types.T_REAL) => realarrtypes &
+	array_type_list(2 (*9*), Types.T_STRING) => stringarrtypes &
 	
 	operator_return(Exp.ADD_ARR(Exp.INT), 
 			intarrtypes, 
@@ -2920,6 +3219,11 @@ relation operators : Absyn.Operator
 			realarrtypes, 
 			realarrtypes, 
 			realarrtypes) => realarrs &
+
+	operator_return(Exp.ADD_ARR(Exp.STRING), 
+			stringarrtypes, 
+			stringarrtypes, 
+			stringarrtypes) => stringarrs &
 	
 	let scalars = [(Exp.ADD(Exp.INT),
 			[Types.T_INTEGER, Types.T_INTEGER],
@@ -2932,7 +3236,7 @@ relation operators : Absyn.Operator
 			Types.T_STRING)
 		       ] &
 	
-	list_append(intarrs,realarrs) => arrays &
+	Util.list_flatten([intarrs,realarrs,stringarrs]) => arrays &
 	list_append(scalars,arrays) => types
 	------------------------
 	operators Absyn.ADD => types

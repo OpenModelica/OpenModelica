@@ -399,6 +399,7 @@ relation matrix_strip_first_column: Value list => (Value,Value list) =
 end
 with "print.rml"
 with "system.rml"
+with "util.rml"
 
 (*!ignorecode*) 
 
@@ -417,10 +418,12 @@ relation val_string : Value => string =
 	------------------
 	val_string REAL(x) => s
 
-  axiom	val_string STRING(s) => s
+  rule	Util.string_append_list(["\"",s,"\""]) => s'
+	--------------------------
+	val_string STRING(s) => s'
 
-  axiom	val_string BOOL(FALSE) => "false"
-  axiom	val_string BOOL(TRUE) => "true"
+  axiom	val_string BOOL(false) => "false"
+  axiom	val_string BOOL(true) => "true"
 
   rule	val_list_string vs => s &
 	string_append("{",s) => s' &

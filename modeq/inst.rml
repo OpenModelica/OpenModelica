@@ -1601,7 +1601,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.Intera
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	Static.ceval(env,e,impl,st) => Values.INTEGER(i) &
+	Static.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
  	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) => SOME(DIMINT(i))::l
@@ -1613,7 +1613,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.Intera
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	Static.ceval(env,e,impl,st) => Values.INTEGER(i) &
+	Static.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
  	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
@@ -2470,7 +2470,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP(Types.T_BOOL,true),_) &
-	Static.ceval(env,e',false,NONE) => Values.BOOL(cond) &
+	Static.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
 *)
@@ -2485,7 +2485,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (dae,env',csets', ci_state')
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP(Types.T_BOOL,true),_) &
-	Static.ceval(env,e',false,NONE) => Values.BOOL(cond) &
+	Static.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
 *)
@@ -2517,7 +2517,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 					   Types.T_INTEGER),
 			     true),_) &
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',false,NONE) => v &
+	Static.ceval (env,e',false,NONE) => (v,_) &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_equation, el)
 	  => (dae,env',csets', ci_state') (*&
@@ -2538,7 +2538,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 					   Types.T_INTEGER),
 			     true),_) &
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',false,NONE) => v &
+	Static.ceval (env,e',false,NONE) => (v,_) &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_initialequation, el)
 	  => (dae,env',csets', ci_state') (*&
@@ -2574,7 +2574,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insti", "loop variable looked up") &
 	
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',false,NONE) => v &
+	Static.ceval (env,e',false,NONE) => (v,_) &
 	Debug.fprintln ("insti", "for expression evaluated") &
 	unroll(env',mod,pre,csets,ci_state,i,v,el,initial) => (dae, csets') &
 	Debug.fprintln ("insti", "for expression unrolled") &

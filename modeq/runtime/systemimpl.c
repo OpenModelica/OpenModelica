@@ -154,11 +154,11 @@ RML_BEGIN_LABEL(System__read_5ffile)
   file = fopen(filename,"rb");
   buf = malloc(statstr.st_size+1);
  
- if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size){
+  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size){
     rmlA0 = (void*) mk_scon("Failed while reading file");
     RML_TAILCALLK(rmlSC);
   }
-
+  buf[statstr.st_size] = '\0';
   fclose(file);
   rmlA0 = (void*) mk_scon(buf);
   RML_TAILCALLK(rmlSC);
