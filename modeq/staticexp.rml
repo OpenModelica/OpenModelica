@@ -2585,6 +2585,29 @@ relation type_convert : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Typ
 	  => (Exp.ARRAY(at,a,elist'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
 
   rule	int_eq (dim1, dim2) => true &
+	type_convert(begin,ty1,ty2) => (begin',_) &
+	type_convert(step,ty1,ty2) => (step',_) &
+	type_convert(stop,ty1,ty2) => (stop',_) &
+	elab_type ty2 => at &
+	Types.is_array ty2 => a
+	------------------------------------------
+	type_convert(Exp.RANGE(t,begin,SOME(step),stop), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
+	    => (Exp.RANGE(at,begin',SOME(step'),stop'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
+
+  rule	int_eq (dim1, dim2) => true &
+	type_convert(begin,ty1,ty2) => (begin',_) &
+	type_convert(stop,ty1,ty2) => (stop',_) &
+	elab_type ty2 => at &
+	Types.is_array ty2 => a
+	------------------------------------------
+	type_convert(Exp.RANGE(t,begin,NONE,stop), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
+	    => (Exp.RANGE(at,begin',NONE,stop'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
+
+  rule	int_eq (dim1, dim2) => true &
 	int_eq (dim11,dim22) => true &
 	type_convert_matrix (ell, t1, t2) => ell' &
 	elab_type t2 => at 

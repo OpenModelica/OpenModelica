@@ -77,6 +77,7 @@ end
 with "classinf.rml"
 with "rtopts.rml"
 with "print.rml"
+with "util.rml"
 
 (* Relations *)
 
@@ -351,6 +352,23 @@ relation unparse_class_part_str: Absyn.ClassPart => string =
 	string_append("public \n",s1) => str 
 	--------------------------------------
 	unparse_class_part_str(Absyn.ALGORITHMS(eqs)) => str
+
+  rule	get_option_str(lang,identity) => langstr &
+	print_component_ref_str output => outputstr &
+	print_list_str(expl,print_exp_str,",") => expstr &
+	string_append(langstr," ") => s1 &
+	Util.string_append_list(["\nexternal ",langstr," ", outputstr, "=",ident,"(",expstr,");\n"]) => str
+	--------------------------------------
+	unparse_class_part_str(Absyn.EXTERNAL(Absyn.EXTERNALDECL(ident,lang,SOME(output),expl)))
+	    => str
+
+  rule	get_option_str(lang,identity) => langstr &
+	print_list_str(expl,print_exp_str,",") => expstr &
+	string_append(langstr," ") => s1 &
+	Util.string_append_list(["\nexternal ", langstr," ",ident,"(",expstr,");\n"]) => str
+	--------------------------------------
+	unparse_class_part_str(Absyn.EXTERNAL(Absyn.EXTERNALDECL(ident,lang,NONE,expl))) 
+	    => str
 end
 
 (**)
@@ -1568,6 +1586,10 @@ relation get_option_str: ('a option, 'a => string) => string =
 	get_option_str (SOME(a),r) => str
 
   axiom	get_option_str(NONE,_) => ""
+end
+
+relation identity: ('a) => 'a =
+  axiom identity(x) => x
 end
 
 relation print_bool_str : bool => string =

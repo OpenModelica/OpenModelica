@@ -243,9 +243,12 @@ composition returns [void* ast]
                 el_stack.push(el);
             }
         )*
-        ( EXTERNAL ( language_specification )? 
-            ( external_function_call )?
+        ( EXTERNAL 
+            ( el = external_function_call )?
             ( ann = annotation)?
+        { 
+            el_stack.push(el);
+        }
         )?
         {
             ast = make_rml_list_from_stack(el_stack);
@@ -280,19 +283,31 @@ protected_element_list returns [void* ast]
         }
     ;
 
-language_specification :
-        s:STRING ;
-
-external_function_call :
+external_function_call returns [void* ast]
         {
-            void* temp;
-            void* temp2;
-            void* temp3;
+            void* temp=0;
+            void* temp2=0;
+            void* temp3=0;
+            void *lang;
         }
+        :
+        (s:STRING)?
         #(EXTERNAL_FUNCTION_CALL 
             (
                 (i:IDENT (temp = expression_list)?)
-            |#(e:EQUALS temp2 = component_reference i2:IDENT ( temp3 = expression_list)?)
+                {
+                    if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
+                    else { lang = mk_none(); }
+                    if (!temp) { temp = mk_nil(); }
+                    ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(to_rml_str(i),lang,mk_none(),temp));
+                }
+            | #(e:EQUALS temp2 = component_reference i2:IDENT ( temp3 = expression_list)?)
+                {
+                    if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
+                    else { lang = mk_none(); }
+                    if (!temp2) { temp2 = mk_nil(); }
+                    ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(to_rml_str(i2),lang,mk_some(temp2),temp3));
+                }
             )
         )
     ;

@@ -139,6 +139,12 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompilerFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_))
 	  => ("Ok\n",st)
 
+  rule	Print.get_string() => str &
+	Print.clear_buf() => () 
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("getErrorMsg",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	    => (str,st)
+	    
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------
 	evaluate(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))]),st) => (str,newst)

@@ -78,10 +78,12 @@ module Absyn:
 		     | PROTECTED of ElementItem list
 		     | EQUATIONS of EquationItem list
 		     | ALGORITHMS of Algorithm list
+		     | EXTERNAL of ExternalDecl
   (** A class definition contains several parts.  There are public and *)
   (** protected component declarations, type definitions and `extends' *)
   (** clauses, collectively called elements.  There are also equation *)
-  (** sections and algorithm sections. *)
+  (** sections and algorithm sections. The EXTERNAL part is used only by functions *)
+  (** which can be declared as external C or FORTRAN functions. *)
   (** - ElementList *)
 
   datatype ElementItem = ELEMENTITEM of Element 
@@ -280,7 +282,14 @@ module Absyn:
   (** Annotation *)
   datatype Annotation = ANNOTATION of ElementArg list
   (** An Annotation is a class_modification. *)
-  
+
+  (* ExternalDecl *)
+  datatype ExternalDecl = EXTERNALDECL of 
+				  Ident  * (* The name of the external function *)
+				  string option * (* Lanugage of the external function *)
+				  ComponentRef option * (* ouput parameter as return value*)
+				  Exp list (* only positional arguments, i.e. expression list*)						     
+				   		       
   relation element_spec_name : ElementSpec => Ident
   relation cref_to_path : ComponentRef => Path
   relation path_to_cref : Path => ComponentRef
