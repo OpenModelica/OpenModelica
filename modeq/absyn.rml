@@ -1,7 +1,7 @@
 (*
-    Copyright PELAB, Linkoping University
-
-    This file is part of Open Source Modelica (OSM).
+   Copyright PELAB, Linkoping University
+   
+   This file is part of Open Source Modelica (OSM).
 
     OSM is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,8 +34,8 @@
 
 
 module Absyn:
-  with "debug.rml"
-
+    with "debug.rml"
+							  
   type Ident = string
 
   (** - Programs *)
@@ -262,32 +262,220 @@ module Absyn:
   relation restr_string : Restriction => string
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
 end
-
+with "dump.rml"
+with "util.rml"
 (** relation: update_program
  **
- ** This relation takes an old program, i.e. the old symboltable, and a new program, i.e. a new set of classes and updates the old program with the definitions in the new one.
- **)
-
-relation update_program: (Program,Program) => Program = 
+ ** This relation takes an old program (second argument), i.e. the old symboltable, 
+ ** and a new program (first argument), i.e. a new set of classes and updates the old 
+ ** program with the definitions in the new one
+ **)     
+relation update_program: (Program,Program) => Program =
+(*   rule print "update_program, lstlen =" &
+         list_length(l) => len &
+         int_string(len) => lstr &
+         print lstr &
+         print "\n"&
+	 int_eq(1,2) => true 
+         -----------------
+         update_program(PROGRAM(l,_),prg) => prg  *)
+     
   axiom	update_program (PROGRAM([],_),prg) => prg
-
+     
   rule	class_in_program(name,p2) => false &
-	print "class not in program\n" &
 	update_program(PROGRAM(c2,w),PROGRAM((c1::c3),w)) => pnew
 	---------------------------------------------------------
 	update_program (PROGRAM((c1 as CLASS(name,_,_,_))::c2,w as TOP),p2 as PROGRAM(c3,_)) => pnew
 
   rule	class_in_program(name,p2) => true &
-	print "class in program\n" &
-	update_program(PROGRAM(c2,w),p2) => pnew
-	----------------------------------------
-	update_program (PROGRAM((c1 as CLASS(name,_,_,_))::c2,w as TOP),p2) => pnew
-
+	update_program(PROGRAM(c2,w),p2) => pnew &
+        replace_class_in_program(c1,pnew) => pnew' 
+	------------------------------------------
+	update_program (PROGRAM((c1 as CLASS(name,_,_,_))::c2,w as TOP),p2) => pnew'
+	
+  rule	insert_class_in_program(c1,w,p2) => pnew &
+	update_program(PROGRAM(c2,w),pnew) => pnew' 
+	---------------------------------------------
+	update_program(PROGRAM(c1::c2,w as WITHIN(path)),p2) => pnew'
+	
   rule	print "Further program merging not implemented yet\n"
 	------------------------
 	update_program (a,b) => b
 end
+	
+(** relation: replace_class_in_program
+ ** This relation takes a `Class' and a `Program' and replaces the class definition 
+ ** at the top level in the program by the class definition of the `Class'.
+ **)
+relation replace_class_in_program: (Class, Program) => Program =
+  axiom replace_class_in_program(c, PROGRAM([],w)) => PROGRAM([c],w)
+  rule	name1 = name2
+	-------------
+	replace_class_in_program(c as CLASS(name1,_,_,_),PROGRAM(CLASS(name2,_,_,_)::clst,w))
+	    => PROGRAM(c::clst,w)
+	    
+  rule	not name1 = name2 &
+	replace_class_in_program(c, PROGRAM(clst,w)) => PROGRAM(newclst,w)
+	-------------------------------------------------------
+	replace_class_in_program(c as CLASS(name1,_,_,_),PROGRAM((c1 as CLASS(name2,_,_,_))::clst,w)) => PROGRAM(c1::newclst,w)
 
+  rule	
+	print "replace_class_in_program failed \n class:" &
+	Debug.fcall ("dump", Dump.dump, PROGRAM([c],TOP)) &
+	print "\nprogram: \n" &
+	Debug.fcall ("dump", Dump.dump, p)
+	----------------------------
+	replace_class_in_program(c,p) => fail
+end
+	
+(** relation: insert_class_in_program 
+ ** This relation inserts the class into the Program at the scope given by the 
+ ** within argument. If the class referenced by the within argument is not 
+ **  defined, the relation prints an error message and fails.
+ **)
+	
+relation insert_class_in_program: (Class, Within, Program) => Program =
+
+  rule	get_class_in_program(n1,p) => c2 &
+	insert_class_in_class(c1,w,c2) => c3 &
+	update_program(PROGRAM([c3],TOP),p) => pnew
+	-------------------------------------------------
+	insert_class_in_program(c1,w as WITHIN(QUALIFIED(n1,_)),p) => pnew
+	
+  rule	get_class_in_program(n1,p) => c2 &
+	insert_class_in_class(c1,w,c2) => c3 &
+	update_program(PROGRAM([c3],TOP),p) => pnew
+	-------------------------------------------------
+	insert_class_in_program(c1, w as WITHIN(IDENT(n1)),p) => pnew
+	
+  rule	print "Error inserting in class, within name, where name is not defined\n" 
+	-------------------
+	insert_class_in_program(c1,_,p) => fail	
+end
+
+(** relation: insert_class_in_class
+ ** This relation takes a class to update (the first argument)  and an inner 
+ ** class (which is either replacing
+ ** an earlier class or is a new inner definition) and a within statement
+ ** pointing inside the class (including the class itself in the reference), and updates the class with the inner class.
+ **)
+relation insert_class_in_class: (Class, Within, Class) => Class =
+	
+  rule  replace_inner_class(c1,c2) => cnew  	
+	----------------------------------
+	insert_class_in_class(c1,WITHIN(IDENT(name)),c2) => cnew
+
+  rule  get_first_ident_from_path(path) => name2 &
+        get_inner_class(c2,name2) => cinner &
+	insert_class_in_class(c1,WITHIN(path),cinner) => cnew &
+        replace_inner_class(cnew,c2) => cnew'
+	---------------------------------------------
+	insert_class_in_class(c1,WITHIN(QUALIFIED(name,path)),c2) => cnew'
+	
+  rule print "insert_class_in_class failed\n"
+	-------------------------------------
+	insert_class_in_class(_,_,_) => fail
+end
+
+(** relation: get_first_ident_from_path
+ ** This relation takes a `Path` as argument and returns the first `Ident' of the path.
+ **)
+relation get_first_ident_from_path: Path => Ident =
+     axiom get_first_ident_from_path (IDENT(name)) => name
+     axiom get_first_ident_from_path (QUALIFIED(name,path)) => name
+end
+
+(** relation: replace_inner_class 
+ ** This relation takes two class definitions. The first one is inserted/replaced as a local class inside the second one.
+ **)
+relation replace_inner_class: (Class, Class) => Class =
+
+  rule	get_public_list(parts) => publst &
+	replace_class_in_elementlist(publst,c1) => publst2 &
+	replace_public_list(parts,publst2) => parts2
+	-----------------------------------------------
+	replace_inner_class (c1,CLASS(a,b,c,PARTS(parts))) => CLASS(a,b,c,PARTS(parts2))
+  rule	print "Failed in replace_inner_class\n"
+	---------------------------------------
+	replace_inner_class (_,_) => fail
+end
+
+(** relation: replace_class_in_elementlist
+ ** This relation takes an Element list and a Class and returns a modified element list
+ ** where the class definition of the class is updated or added.
+  **)
+relation replace_class_in_elementlist: (Element list, Class) => Element list =
+	
+  rule	name1 = name2
+	------------------------------
+	replace_class_in_elementlist([ELEMENT(a,b,c,CLASSDEF(d,c1 as CLASS(name1,_,_,_)))],c2 as CLASS(name2,_,_,_)) => [ELEMENT(a,b,c,CLASSDEF(d,c2))]
+
+  rule	not name1 = name &
+	replace_class_in_elementlist(xs,c1) => res
+	------------------------------------------
+	replace_class_in_elementlist(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))::xs,CLASS(name,_,_,_)) => res
+
+  axiom	 replace_class_in_elementlist([],c) => [ELEMENT(false,UNSPECIFIED,"",CLASSDEF(false,c))]
+end
+
+(** relation: get_inner_class
+ ** This relation takes a class name and a class and return the inner class definition 
+ ** having that name
+**)
+relation get_inner_class: (Class, Ident) => Class =
+  rule	get_public_list(parts) => publst &
+	get_class_from_elementlist(publst,name) => c1
+	-----------------------------------------------
+	get_inner_class (CLASS(_,_,_,PARTS(parts)), name) => c1
+end
+
+(** relation: replace_public_list
+ ** This relation takes a ClassPart List and returns the first public element list of the class.
+ **
+*)
+relation replace_public_list: (ClassPart list,Element list) => ClassPart list =
+
+  axiom replace_public_list ((lst as PUBLIC(_))::rest,newpublst) => PUBLIC(newpublst)::rest
+	
+  rule	replace_public_list(xs,new) => ys
+	---------------------------------
+	replace_public_list(x::xs,new) => x::ys
+
+  axiom replace_public_list([],_) => []
+end
+
+(** relation: get_public_list
+ ** This relation takes a ClassPart List and returns the first public element list of the class.
+ **
+*)
+relation get_public_list: ClassPart list => Element list =
+
+  axiom get_public_list PUBLIC(lst)::rest => lst
+	
+  rule	get_public_list(xs) => ys
+	---------------------------
+	get_public_list(x::xs) => ys
+
+  axiom get_public_list(_) => []
+end
+
+(** relation: get_class_from_elementlist
+ ** This relation takes an Element list and an Ident and returns the class definition
+ ** among the element list having that identifier
+  **)
+relation get_class_from_elementlist: (Element list, Ident) => Class =
+	
+  rule	name1 = name2
+	------------------------------
+	get_class_from_elementlist([ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))],name2) => c1
+
+  rule	not name1 = name &
+	get_class_from_elementlist(xs,name) => res
+	------------------------------------------
+	get_class_from_elementlist(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))::xs,name) => res
+
+  axiom	 get_class_from_elementlist([],_) => fail
+end
 
 (** relation: class_in_program
  ** This relation takes a name and a Program and returns true if the name exists as a top class in the program.
@@ -303,6 +491,25 @@ relation class_in_program:(string,Program) => bool =
 	class_in_program (str, PROGRAM(CLASS(c1,_,_,_)::p,w)) => res
 	
   axiom class_in_program (_,_) => true
+end
+
+(** relation: get_class_in_program
+ ** This relation takes a name and a Program and returns the class with the name `name'.
+ ** If that class does not exist, the relation fail
+**)
+
+relation get_class_in_program:(string,Program) => Class = 
+
+  axiom get_class_in_program (str,PROGRAM([],_)) => fail
+	
+  rule	not str = c1 &
+	get_class_in_program(str,PROGRAM(p,w)) => res
+	-----------------------------------------
+	get_class_in_program (str, PROGRAM(CLASS(c1,_,_,_)::p,w)) => res
+	
+  rule  str = c1name
+	------------
+	get_class_in_program (str, PROGRAM((c1 as CLASS(c1name,_,_,_))::p,w)) => c1
 end
 
 (** relation: path_string
@@ -412,6 +619,4 @@ relation print_absyn_exp : Exp => () =
   rule	Debug.print "\nNo tuple." 
 	---------
 	print_absyn_exp (_)
-
-	
 end

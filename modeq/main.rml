@@ -145,7 +145,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
 	Debug.fcall ("dump", Dump.dump_istmt, exp)
 	--------------------------------------------------
-	handle_command (str, isymb) => (true, "No evaluation yet", isymb)
+	handle_command (str, isymb) => (true, "No evaluation yet\n", isymb)
 
   rule  print "Error occured building AST\n"
 	----------------------------------

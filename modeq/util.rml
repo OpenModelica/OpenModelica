@@ -30,6 +30,10 @@ module Util :
   relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list
   relation list_list_thread_tuple : ('a list list, 'b list list) 
 	  => ('a * 'b) list list
+  relation list_position: (''a, ''a list)  => int
+  relation list_getmember: (''a, ''a list) => ''a
+  relation list_replaceat: (''a, int, ''a list) => ''a list 
+	      
 
   relation tuple2_1 : ('a * 'b) => 'a
   relation tuple2_2 : ('a * 'b) => 'b
@@ -104,6 +108,50 @@ relation list_list_thread_tuple : ('a list list, 'b list list)
 	-----------------------------
 	list_list_thread_tuple (fa::ra, fb::rb) => f::r
 
+end
+
+relation list_position =
+  rule	list_pos(x, ys, 0) => n
+	-----------------------
+	list_position(x, ys) => n
+end
+
+relation list_pos =
+  rule	x = y
+	-----
+	list_pos(x, y::ys, i) => i
+
+  rule	not x = y &
+	int_add(i, 1) => i' &
+	list_pos(x, ys, i') => n
+	------------------------
+	list_pos(x, y::ys, i) => n
+end
+
+relation list_getmember: (''a, ''a list) => ''a =
+
+  axiom list_getmember(_,[]) => fail
+
+  rule  x = y
+	-----
+	list_getmember(x,y::ys) => y 
+	
+  rule	not x = y & 
+	list_getmember(x,ys) => res 
+	----------------------
+	list_getmember(x,y::ys) => res
+end 
+
+relation list_replaceat: (''a, int, ''a list) => ''a list =
+
+  axiom list_replaceat(x,_,[]) => []
+
+  axiom	 list_replaceat (x,1,y::ys) => x::ys
+
+  rule	int_gt(n,1) => true & int_sub(n,1) => nn &
+	list_replaceat(x,nn,ys) => res
+	-----------------------------
+	list_replaceat(x,n,y::ys) => y::res
 end
 
 relation tuple2_1 : ('a * 'b) => 'a =
