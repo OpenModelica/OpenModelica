@@ -1669,6 +1669,10 @@ relation print_exp : Absyn.Exp => () =
 	-------------------------------------------------------------
 	print_exp Absyn.RANGE(start,SOME(step),stop)
 
+  rule Print.print_buf "end"
+    ----------------------------------
+    print_exp Absyn.END
+
   rule	Print.print_buf "#UNKNOWN EXPRESSION#"
 	----------------------------------
 	print_exp (_)
@@ -1958,6 +1962,8 @@ relation print_exp_str : Absyn.Exp => string =
 	Util.string_append_list(["Code(",res,")"]) => res'
 	--------------------------
 	print_exp_str ( Absyn.CODE(c)) => res'
+
+  axiom print_exp_str Absyn.END => "end"
 
   axiom	print_exp_str (_) =>  "#UNKNOWN EXPRESSION#"
 

@@ -73,6 +73,7 @@ module Exp:
 	       | ASUB of Exp * int
                | SIZE of Exp * Exp option
 	       | CODE of Absyn.Code * Type
+	       | END
   (** The `Exp' datatype closely corresponds to the `Absyn.Exp'
    ** datatype, but is used for statically analyzed expressions.  It
    ** includes explicit type promotions and typed (non-overloaded)
@@ -1144,6 +1145,8 @@ end
 
 relation print_exp2_str : (Exp,int) => string =
 	
+  axiom print_exp2_str(END,_) => "end"
+  
   rule	int_string(x) => s
 	----------------------------
 	print_exp2_str(ICONST(x),_) => s

@@ -53,20 +53,23 @@ with "dump.rml"
 relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 
 	(** Simple names: Just load the file if it can be found in $MODELICAPATH* *)
-  rule	System.strtok(mp,":") => mps &
+  rule System.group_delimiter => gd &	
+    System.strtok(mp,gd) => mps &
 	load_class_from_mps(classname,mps) => p
 	-------------------------------------
 	load_class(Absyn.IDENT(classname),mp) => p
 
   rule	(** Qualified names: First check if it is defined in a file pack.mo *)
-	System.strtok(mp,":") => mps &
+	System.group_delimiter => gd &	
+	System.strtok(mp,gd) => mps &
 	load_class_from_mps(pack,mps) => p
 	-------------------------------------
 	load_class(Absyn.QUALIFIED(pack,rest),mp) => p
 
 	(** Qualified names: Else, load the complete package and then check that **)
 	(** the package contains the file **) 
-  rule	System.strtok(mp,":") => mps &
+  rule	System.group_delimiter => gd &	
+    System.strtok(mp,gd) => mps &
 	load_complete_package_from_mps(pack,mps,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
 	Interactive.get_pathed_class_in_program(path,p)=> _
 	-------------------------------------
@@ -79,16 +82,14 @@ end
 
 relation exist_regular_file: (string) => () =
 
-  rule	string_append("test -f ",filename) => cmd &
-	System.system_call(cmd) => 0 
+  rule	System.regular_file_exist filename => 0 
 	----------------------------
 	exist_regular_file(filename) 
 end
 
 relation exist_directory_file: (string) => () =
 
-  rule	string_append("test -d ",filename) => cmd &
-	System.system_call(cmd) => 0 
+  rule	System.directory_exist filename => 0 
 	----------------------------
 	exist_directory_file(filename) 
 end
@@ -107,16 +108,18 @@ relation load_class_from_mps: (Absyn.Ident, string list) => Absyn.Program =
 end
 relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	
-  rule	string_append(class,".mo") => classfile &
-	Util.string_append_list([mp,"/",classfile])=> classfile' &
+  rule	System.path_delimiter => pd &
+	string_append(class,".mo") => classfile &
+	Util.string_append_list([mp,pd,classfile])=> classfile' &
 	exist_regular_file(classfile') &
 	print "parsing " & print classfile' & print "\n" &
 	Parser.parse(classfile') => p
 	---------------------------
 	load_class_from_mp(class,mp) => p
 
-  rule	Util.string_append_list([mp,"/",class]) => dirfile &
-	string_append(dirfile,"/package.mo") => packfile &
+  rule	System.path_delimiter => pd &
+	Util.string_append_list([mp,pd,class]) => dirfile &
+	Util.string_append_list([dirfile, pd, "package.mo"]) => packfile &
 	exist_directory_file dirfile &
 	exist_regular_file packfile &
 	Print.print_buf "Class is package stored in a directory, loading whole package(incl. subdir)\n" &
@@ -144,8 +147,9 @@ end
 
 relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absyn.Program) => Absyn.Program =
 	
-  rule	Util.string_append_list([mp,"/",pack]) => mp' &
-	string_append(mp',"/package.mo") => packagefile &
+  rule System.path_delimiter => pd &	
+	Util.string_append_list([mp,pd,pack]) => mp' &
+	Util.string_append_list([mp', pd, "package.mo"]) => packagefile &
 	exist_regular_file(packagefile) &
 	print "parsing " & print packagefile & print "\n" &
 	Parser.parse(packagefile) => Absyn.PROGRAM(p1,w1) &
@@ -159,8 +163,9 @@ relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absy
 	------------------------------
 	load_complete_package_from_mp(pack,mp,within as Absyn.TOP,Absyn.PROGRAM(oldc,_)) => p
 
-  rule	Util.string_append_list([mp,"/",pack]) => mp' &
-	string_append(mp',"/package.mo") => packagefile &
+  rule	System.path_delimiter => pd &
+	Util.string_append_list([mp,pd,pack]) => mp' &
+	Util.string_append_list([mp',pd, "package.mo"]) => packagefile &
 	exist_regular_file(packagefile) &
 	print "parsing " & print packagefile & print "\n" &
 	Parser.parse(packagefile) => Absyn.PROGRAM(p1,w1) &
@@ -233,7 +238,8 @@ relation load_subpackage_files: (string list, string, Absyn.Within, Absyn.Progra
 
   axiom	load_subpackage_files([],mp,within,Absyn.PROGRAM(cls,w)) => Absyn.PROGRAM(cls,w)
 
-  rule	Util.string_append_list([mp,"/",f]) => f' &
+  rule	System.path_delimiter => pd &
+	Util.string_append_list([mp,pd,f]) => f' &
 	print "parsing " & print f' & print "\n" &
 	Parser.parse(f') => Absyn.PROGRAM(cls,_) &
 	Print.print_buf("loading ") & Print.print_buf(f') & Print.print_buf "\n" &

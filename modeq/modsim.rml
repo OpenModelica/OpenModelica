@@ -41,19 +41,20 @@ with "util.rml"
 relation compile_flat_class: (string,string) => (string) =
 
   rule	System.read_env("MOSHHOME") => moshhome &
-	string_append(moshhome,"/../ModSimPack/") 
-	  => dirname &
+    System.path_delimiter => pd &
+    Util.string_append_list([moshhome,pd,"..",pd,"modeq",pd,"scripts",pd]) 
+      => dirname &
 	System.pwd() => pwd &
-	System.cd(dirname) => 0 &
-	Util.string_append_list(["bin/ModelicaOptimizer.exe ",
-				 "`cygpath -w \"",flatfile,"\"`"]) => call &
+	Util.string_append_list([dirname, "runModelicaOpt ",
+				 "\"",flatfile,"\""]) => call &
 	System.system_call(call) => 0 &
 	print "Compiled model to C-code, compiling C-code...\n" &
-	Util.string_append_list([pwd,"/",exefile]) => exefile' &
-	Util.string_append_list(["cd ",moshhome,"/../ModSimPack/simulator;export TARGET=",exefile',";make -f Makefile.cygwin"])=> compcall &
+	Util.string_append_list([pwd,pd,exefile, ".exe"]) => exefile' &
+	Util.string_append_list([moshhome,pd,"..",pd,"modeq",pd,
+	  "scripts",pd,"Compile ","\"",exefile',"\""])=> compcall &
 	System.system_call(compcall) => 0 &
 	print "Done.\n" &
-	Util.string_append_list([pwd,"/",exefile,".exe"])
+	Util.string_append_list([pwd,pd,exefile,".exe"])
 	  => res
 	-----------------------------
 	compile_flat_class(flatfile,exefile) => res
@@ -62,14 +63,16 @@ end
 relation run_simulation: (string,real,real,int,string) => int =
 
   rule	real_string(start) => t1 &
+    System.path_delimiter => pd &
 	real_string(stop) => t2 &
 	int_string(interval) => steps &
 	System.read_env("MOSHHOME") => moshhome &
-	string_append(moshhome,"/../ModSimPack/bin/") 
+	Util.string_append_list([moshhome,pd,"..",pd,"ModSimPack",pd,"bin",pd]) 
 	  => bindir &
-	Util.string_append_list(["cd ",bindir,";",exefile," ",t1," ",t2," ",steps, 
-				 " `cygpath -w \"",outfile,"\"`"]) 
-	  => call &
+	Util.string_append_list([moshhome,pd,"..",pd,"modeq",pd,"scripts",pd]) 
+	  => scriptsdir &
+	Util.string_append_list([scriptsdir,"runsim \"",bindir,"\" \"",exefile,
+	   "\" ",t1," ",t2," ",steps," \"",outfile,"\""]) => call &
 	print call &
 	System.system_call(call) => res 
 	-----------------------------------

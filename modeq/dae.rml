@@ -1561,13 +1561,13 @@ end
 relation dae_to_record_value: (Element list) => Values.Value =
   axiom	dae_to_record_value([]) => Values.RECORD([],[])
 
-(*  rule	Ceval.ceval([],e,true,NONE)  => (value,_) &
+(*  rule	Ceval.ceval([],e,true,NONE,NONE)  => (value,_) &
 	dae_to_record_value(rest) => Values.RECORD(vals,names)
 	--------------------------------------------------
 	dae_to_record_value(VAR(Exp.CREF_IDENT(id,_),_,_,_,SOME(e),_,_,_)::rest) 
 	  => Values.RECORD(value::vals,id::names)*)
 
-rule	Ceval.ceval([],rhs,false,NONE)  => (value,_) &
+rule	Ceval.ceval([],rhs,false,NONE,NONE)  => (value,_) &
 	dae_to_record_value(rest) => Values.RECORD(vals,names)
 	--------------------------------------------------
 	dae_to_record_value(EQUATION(Exp.CREF(Exp.CREF_IDENT(id,_),_),rhs)::rest) 

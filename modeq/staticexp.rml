@@ -75,7 +75,7 @@ module Static :
 	  => (Exp.Exp list, Types.Properties list, SCode.Accessibility list)
   relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 	  => (Exp.Subscript list, bool)
-
+	  
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
 
   relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
@@ -169,6 +169,10 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	  => (Exp.SCONST(x), Types.PROP((Types.T_STRING([]),NONE), true),st)
   axiom	elab_exp(_, Absyn.BOOL(x),impl,st)
 	  => (Exp.BCONST(x), Types.PROP((Types.T_BOOL([]),NONE),   true),st)
+
+  axiom elab_exp(_,Absyn.END,impl,st)
+	  => (Exp.END, Types.PROP((Types.T_INTEGER([]),NONE),true),st)
+
 
   rule	(*Debug.fprintln("setr", "elab_exp_cref") &*)
 	elab_cref(env, cr) => (exp,prop,_)
@@ -341,7 +345,15 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 *)
 
 end
+(* HL bort
+relation elab_exp_dim : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTable option,int)
+	    => (Exp.Exp, Types.Properties,Interactive.InteractiveSymbolTable option) =
 
+  axiom elab_exp_dim(_,Absyn.END,impl,st,dim)
+	  => (Exp.ICONST(dim), Types.PROP((Types.T_INTEGER([]),NONE),true),st)
+
+end
+*)
 (** relation: replace_operator_with_fcall
  ** Replaces a userdefined operator expression with a corresponding function call expression.
  ** Other expressions just passes through.
@@ -593,16 +605,16 @@ end
 relation elab_range_type : (Env.Env, Exp.Exp,
 			    Exp.Exp option, Exp.Exp, bool,Exp.Type) => Types.Type =
 
-  rule	Ceval.ceval (env,start,false,NONE) => (Values.INTEGER(startv),_) &
-	Ceval.ceval (env,stop,false,NONE) => (Values.INTEGER(stopv),_) &
+  rule	Ceval.ceval (env,start,false,NONE,NONE) => (Values.INTEGER(startv),_) &
+	Ceval.ceval (env,stop,false,NONE,NONE) => (Values.INTEGER(stopv),_) &
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => ((Types.T_ARRAY(Types.DIM(SOME(n')), (Types.T_INTEGER([]),NONE)),NONE))
 
-  rule	Ceval.ceval (env,start,false,NONE) => (Values.INTEGER(startv),_) &
-	Ceval.ceval (env,step,false,NONE) => (Values.INTEGER(stepv),_) &
-	Ceval.ceval (env,stop,false,NONE) => (Values.INTEGER(stopv),_) &
+  rule	Ceval.ceval (env,start,false,NONE,NONE) => (Values.INTEGER(startv),_) &
+	Ceval.ceval (env,step,false,NONE,NONE) => (Values.INTEGER(stepv),_) &
+	Ceval.ceval (env,stop,false,NONE,NONE) => (Values.INTEGER(stopv),_) &
 	int_sub (stopv,startv) => n &
 	int_div (n,stepv) => n' &
  	int_add (n',1) => n''
@@ -610,8 +622,8 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,SOME(step),stop,true,_)
 	  => ((Types.T_ARRAY(Types.DIM(SOME(n'')), (Types.T_INTEGER([]),NONE)),NONE))
 
-  rule	Ceval.ceval (env,start,false,NONE) => (Values.REAL(startv),_) &
-	Ceval.ceval (env,stop,false,NONE) => (Values.REAL(stopv),_) &
+  rule	Ceval.ceval (env,start,false,NONE,NONE) => (Values.REAL(startv),_) &
+	Ceval.ceval (env,stop,false,NONE,NONE) => (Values.REAL(stopv),_) &
 	real_sub (stopv,startv) => n &
 	real_floor n => n'' &
 	real_int n'' => n''' &
@@ -620,9 +632,9 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => ((Types.T_ARRAY(Types.DIM(SOME(n')), (Types.T_REAL([]),NONE)),NONE))
 
-  rule	Ceval.ceval (env,start,false,NONE) => (Values.REAL(startv),_) &
-	Ceval.ceval (env,step,false,NONE) => (Values.REAL(stepv),_) &
-	Ceval.ceval (env,stop,false,NONE) => (Values.REAL(stopv),_) &
+  rule	Ceval.ceval (env,start,false,NONE,NONE) => (Values.REAL(startv),_) &
+	Ceval.ceval (env,step,false,NONE,NONE) => (Values.REAL(stepv),_) &
+	Ceval.ceval (env,stop,false,NONE,NONE) => (Values.REAL(stopv),_) &
 	real_sub (stopv,startv) => n &
 	real_div (n,stepv) => n' &
 	real_floor n' => n''' &
@@ -920,7 +932,7 @@ relation elab_builtin_sum : (Env.Env, Absyn.Exp list)
   rule	(* For constant expressions *)
 	elab_exp(env,arrexp,false,NONE) 
 	      => (exp',Types.PROP((Types.T_ARRAY(dim,tp),_),c as true),_) &
-	Ceval.ceval(env, exp',false,NONE) => (Values.ARRAY(vals),_) &
+	Ceval.ceval(env, exp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	Values.sum_arrayelt(vals) => value &
 	value_exp value => exp''
 	----------------------
@@ -1086,14 +1098,14 @@ end
 relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
+	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
 	-------------------------------------------------------
 	elab_builtin_max(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
 
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
+	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
 	-------------------------------------------------------
 	elab_builtin_max(env, [arrexp]) => (Exp.RCONST(r),Types.PROP(ty,true))
@@ -1101,10 +1113,10 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 	(* max(x,y) where x & y are scalars *)
   rule	elab_exp (env,s1,false,NONE) 
 	  => (s1', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s1',false,NONE) => (Values.INTEGER(i1),_) &
+	Ceval.ceval(env,s1',false,NONE,NONE) => (Values.INTEGER(i1),_) &
 	elab_exp (env,s2,false,NONE) 
 	  => (s2', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s2',false,NONE) => (Values.INTEGER(i2),_) &
+	Ceval.ceval(env,s2',false,NONE,NONE) => (Values.INTEGER(i2),_) &
 	int_max(i1,i2) => res
 	-------------------------------------------------------
 	elab_builtin_max(env, [s1, s2]) 
@@ -1112,10 +1124,10 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 
   rule	elab_exp (env,s1,false,NONE) 
 	  => (s1', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s1',false,NONE) => (Values.REAL(r1),_) &
+	Ceval.ceval(env,s1',false,NONE,NONE) => (Values.REAL(r1),_) &
 	elab_exp (env,s2,false,NONE) 
 	  => (s2', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s2',false,NONE) => (Values.REAL(r2),_) &
+	Ceval.ceval(env,s2',false,NONE,NONE) => (Values.REAL(r2),_) &
 	real_max(r1,r2) => res
 	-------------------------------------------------------
 	elab_builtin_max(env, [s1, s2]) 
@@ -1155,14 +1167,14 @@ end
 relation elab_builtin_min : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
+	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
 	-------------------------------------------------------
 	elab_builtin_min(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
 
   rule	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',false,NONE) => (Values.ARRAY(vals),_) &
+	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
 	-------------------------------------------------------
 	elab_builtin_min(env, [arrexp]) => (Exp.RCONST(r),Types.PROP(ty,true))
@@ -2509,7 +2521,7 @@ end
 relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Types.Properties, SCode.Accessibility) =
 
-  rule	elab_cref_subs (env,c) => (c', const) &
+  rule elab_cref_subs (env,c) => (c', const) &
 	Lookup.lookup_var (env,c') => (Types.ATTR(_,acc,variability,_),
 				       t,
 				       binding) &
@@ -2679,7 +2691,17 @@ end
 relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.ComponentRef, bool) =
 
-  rule	elab_subscripts (env, ss) => (ss', const)
+  rule	
+	Lookup.lookup_var (env,Exp.CREF_IDENT(id,[])) => (_,t,_) &
+	Types.get_dimension_sizes t => sl &
+	elab_subscripts_dims(env,ss,sl) => (ss', const) 
+ (*   elab_subscripts (env, ss) => (ss', const) *)
+	----------------------------------------------
+	elab_cref_subs(env,Absyn.CREF_IDENT(id,ss))
+	  => (Exp.CREF_IDENT(id,ss'), const)
+
+  rule
+    elab_subscripts (env, ss) => (ss', const)
 	----------------------------------------------
 	elab_cref_subs(env,Absyn.CREF_IDENT(id,ss))
 	  => (Exp.CREF_IDENT(id,ss'), const)
@@ -2711,16 +2733,37 @@ relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 
   rule	elab_subscript (env,sub) => (sub',const1) &
 	elab_subscripts (env,subs) => (subs',const2) &
-	bool_and (const1, const2) => true &
-	Ceval.ceval_subscripts(env, sub'::subs') => ss
+	bool_and (const1, const2) => true (* HL &
+	Ceval.ceval_subscripts(env, sub'::subs') => ss *)
 	-----------------------------------
-	elab_subscripts (env,sub::subs) => (ss, true)
+	elab_subscripts (env,sub::subs) => (sub'::subs', true)
+(*	elab_subscripts (env,sub::subs) => (ss, true)*)
 
   rule	elab_subscript (env,sub) => (sub',const1) &
 	elab_subscripts (env,subs) => (subs',const2) &
 	bool_and (const1, const2) => false
 	-----------------------------------
 	elab_subscripts (env,sub::subs) => (sub'::subs', false)
+
+end
+
+relation elab_subscripts_dims : (Env.Env, Absyn.Subscript list, int list)
+	  => (Exp.Subscript list, bool) =
+
+  axiom	elab_subscripts_dims (_,[],_) => ([], true)
+
+  rule	elab_subscript (env,sub) => (sub',const1) &
+	elab_subscripts_dims (env,subs,restdims) => (subs',const2) &
+	bool_and (const1, const2) => true &
+	Ceval.ceval_subscripts(env, sub'::subs',dim::restdims) => ss
+	-----------------------------------
+	elab_subscripts_dims (env,sub::subs,dim::restdims) => (ss, true)
+
+  rule	elab_subscript (env,sub) => (sub',const1) &
+	elab_subscripts_dims (env,subs,restdims) => (subs',const2) &
+	bool_and (const1, const2) => false
+	-----------------------------------
+	elab_subscripts_dims (env,sub::subs,dim::restdims) => (sub'::subs', false)
 
 end
 
@@ -2735,13 +2778,25 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
   axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.WHOLEDIM, true)
 
-  rule	elab_exp (env,sub,false,NONE) => (sub', Types.PROP(ty, const),_) &
+  rule elab_exp (env,sub,false,NONE) => (sub', Types.PROP(ty, const),_) &
 	elab_subscript_type (ty, sub, sub') => sub''
 	--------------------------------------------
 	elab_subscript (env,Absyn.SUBSCRIPT(sub)) => (sub'', const)
 
 end
+(* HL bort
+relation elab_subscript_dim : (Env.Env, Absyn.Subscript, int)
+	  => (Exp.Subscript, bool) =
 
+  axiom	elab_subscript_dim (_,Absyn.NOSUB,_) => (Exp.WHOLEDIM, true)
+
+  rule elab_exp_dim (env,sub,false,NONE,dim) => (sub', Types.PROP(ty, const),_) &
+	elab_subscript_type (ty, sub, sub') => sub''
+	--------------------------------------------
+	elab_subscript_dim (env,Absyn.SUBSCRIPT(sub),dim) => (sub'', const)
+
+end
+*)
 (** relation: elab_subscript_type
  **
  ** This relation is used to find the correct constructor for
@@ -2956,14 +3011,28 @@ end
  ** this relation fails.
  **)
 
+relation canon_cref2  : (Env.Env, Exp.ComponentRef, int list) => Exp.ComponentRef =
+
+  rule
+    Ceval.ceval_subscripts (env,ss,sl) => ss'
+	--------------------------------
+	canon_cref2 (env, Exp.CREF_IDENT(n,ss),sl) => Exp.CREF_IDENT(n,ss')
+end
+
 relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef =
 
-  rule	Ceval.ceval_subscripts (env,ss) => ss'
+  rule	
+    Lookup.lookup_var (env,Exp.CREF_IDENT(n,[])) => (_,t,_) &
+	Types.get_dimension_sizes t => sl & 
+    Ceval.ceval_subscripts (env,ss,sl) => ss'
 	--------------------------------
 	canon_cref (env, Exp.CREF_IDENT(n,ss)) => Exp.CREF_IDENT(n,ss')
 
-  rule	Ceval.ceval_subscripts (env,ss) => ss' &
-	canon_cref (env,c) => c'
+  rule	
+    Lookup.lookup_var (env,Exp.CREF_QUAL(n,[],c)) => (_,t,_) &
+	Types.get_dimension_sizes t => sl &
+    Ceval.ceval_subscripts (env,ss,sl) => ss' &
+	canon_cref2 (env,c,sl) => c'
 	------------------------
 	canon_cref (env, Exp.CREF_QUAL(n,ss,c)) => Exp.CREF_QUAL(n,ss',c')
 

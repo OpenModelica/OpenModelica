@@ -67,4 +67,12 @@ relation time: () => real
 
 relation hash: string => int 
 
+relation path_delimiter: () => string
+
+relation group_delimiter: () => string
+
+relation regular_file_exist: (string) => int
+
+relation directory_exist: (string) => int
+
 end

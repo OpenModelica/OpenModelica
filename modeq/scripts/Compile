@@ -1,0 +1,3 @@
+cd ${MOSHHOME}/../ModSimPack/Simulator
+export TARGET=$1
+make -f Makefile.cygwin

@@ -1,91 +1,24 @@
 #include "rml.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <direct.h>
 #include <assert.h>
 #include <string.h>
-#include <sys/unistd.h>
 #include <sys/stat.h>
 #include "read_write.h"
 #include "../values.h"
-#include <dirent.h>
 #include <time.h>
-#include <sys/param.h> /* MAXPATHLEN */
+#include "../absyn_builder/yacclib.h"
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
-#ifndef _IFDIR
-# ifdef S_IFDIR
-#  define _IFDIR S_IFDIR
-# else
-#  error "Neither _IFDIR nor S_IFDIR is defined."
-# endif
-#endif
-
-#ifndef HAVE_SCANDIR
-
-typedef int _file_select_func_type(struct dirent *);
-typedef int _file_compar_func_type(struct dirent **, struct dirent **);
-
-void reallocdirents(struct dirent ***entries, 
-		    unsigned int oldsize, 
-		    unsigned int newsize) {
-  struct dirent **newentries;
-  if (newsize<=oldsize)
-    return;
-  newentries = (struct dirent**)malloc(newsize * sizeof(struct dirent *));
-  if (*entries != NULL) {
-    int i;
-    for (i=0; i<oldsize; i++)
-      newentries[i] = (*entries)[i];
-    for(; i<newsize; i++)
-      newentries[i] = NULL;
-    if (oldsize > 0)
-      free(*entries);
-  }
-  *entries = newentries;
-}
-
-/* 
- * compar function is ignored
- */
-int scandir(const char* dirname, 
-	    struct dirent ***entries, 
-	    _file_select_func_type select, 
-	    _file_compar_func_type compar)
-{
-  DIR *dir = opendir(dirname);
-  struct dirent *entry;
-  unsigned int count = 0;
-  unsigned int maxents = 100;
-  *entries = NULL;
-  reallocdirents(entries,0,maxents);
-  do {
-    entry = readdir(dir);
-    if (entry == NULL)
-      break;
-    if (select == NULL || select(entry)) {
-      struct dirent *entcopy = (struct dirent*)malloc(sizeof(struct dirent));
-      if (count >= maxents) {
-	unsigned int oldmaxents = maxents;
-	maxents = maxents * 2;
-	reallocdirents(entries, oldmaxents, maxents);
-      }	
-      (*entries)[count] = entcopy;
-      count++;
-    }
-  } while (count < maxents); /* shouldn't be needed */
-  /* 
-     write code for calling qsort using compar for sorting the
-     entries.
-  */
-  closedir(dir);
-  return count;
-}
-
-#endif /* 0 */
+#define MAXPATHLEN MAX_PATH
 
 char * cc=NULL;
 char * cflags=NULL;
 
+void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize);
 void * generate_array(char,int,type_description *,void *data);
 float next_realelt(float*);
 int next_intelt(int*);
@@ -112,8 +45,13 @@ void set_cflags(char *str)
 
 void System_5finit(void)
 {
-  set_cc("gcc");
-  set_cflags("-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
+	set_cc("gcc");
+	if (getenv("MODELICAUSERCFLAGS") != NULL) {
+		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\modeq\\win -lc_runtime_mingw %MODELICAUSERCFLAGS%");
+	}
+	else {
+		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\modeq\\win -lc_runtime_mingw");
+	}
 }
 
 RML_BEGIN_LABEL(System__vector_5fsetnth)
@@ -123,7 +61,6 @@ RML_BEGIN_LABEL(System__vector_5fsetnth)
   */
     rml_uint_t nelts = 0;
     void *vec = rmlA0;
-    void *data;
     rml_uint_t i = (rml_uint_t)RML_UNTAGFIXNUM(rmlA1);
     if( i >= RML_HDRSLOTS(RML_GETHDR(vec)) ) {
       RML_TAILCALLK(rmlFC);
@@ -163,15 +100,15 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
   char exename[255];
   assert(strlen(str) < 255);
   if (cc == NULL||cflags == NULL) {
-    /* RMLFAIL */
+    RML_TAILCALLK(rmlFC);
   }
   memcpy(exename,str,strlen(str)-2);
   exename[strlen(str)-2]='\0';
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   printf("compile using: %s\n",command);
- if (system(command) != 0) {
-    /* RMLFAIL */
+  if (system(command) != 0) {
+    RML_TAILCALLK(rmlFC);
   }
        
   RML_TAILCALLK(rmlSC);
@@ -200,7 +137,7 @@ RML_BEGIN_LABEL(System__execute_5ffunction)
   char* str = RML_STRINGDATA(rmlA0);
   char command[255];
   int ret_val;
-  sprintf(command,"./%s %s_in.txt %s_out.txt",str,str,str);
+  sprintf(command,".\\%s %s_in.txt %s_out.txt",str,str,str);
   ret_val = system(command);
   
   assert(ret_val == 0);
@@ -213,9 +150,26 @@ RML_BEGIN_LABEL(System__system_5fcall)
 {
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
+
   ret_val = system(str);
 
   rmlA0 = (void*) mk_icon(ret_val);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__path_5fdelimiter)
+{
+  rmlA0 = (void*) mk_scon("\\");
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__group_5fdelimiter)
+{
+  rmlA0 = (void*) mk_scon(";");
 
   RML_TAILCALLK(rmlSC);
 }
@@ -308,85 +262,68 @@ RML_BEGIN_LABEL(System__read_5fenv)
 }
 RML_END_LABEL
 
-char *select_from_dir;
-
-int file_select_directories(struct dirent *entry)
-{
-  char fileName[MAXPATHLEN];
-  int res;
-  struct stat fileStatus;
-  if ((strcmp(entry->d_name, ".") == 0) ||
-      (strcmp(entry->d_name, "..") == 0)) {
-    return (0);
-  } else {
-    sprintf(fileName,"%s/%s",select_from_dir,entry->d_name);
-    res = stat(fileName,&fileStatus);
-    if (res!=0) return 0;
-    if ((fileStatus.st_mode & _IFDIR))
-      return (1);
-    else
-      return (0);
-  }
-}
-
-
 RML_BEGIN_LABEL(System__sub_5fdirectories)
 {
-  int i,count;
-  void *res;
-  char* directory = RML_STRINGDATA(rmlA0);
-  struct dirent **files;
-  if (directory == NULL)
-    RML_TAILCALLK(rmlFC);
-  select_from_dir = directory;
-  count =
-    scandir(directory, &files, file_select_directories,NULL);
-  res = (void*)mk_nil();
-  for (i=0; i<count; i++) {
-    res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
-  }
-  rmlA0 = (void*) res;
-  RML_TAILCALLK(rmlSC);
+	void *res;
+	WIN32_FIND_DATA FileData;
+	BOOL more = TRUE;
+	char* directory = RML_STRINGDATA(rmlA0);
+	char pattern[1024];
+	HANDLE sh;
+	if (directory == NULL)
+		RML_TAILCALLK(rmlFC);
+
+
+	sprintf(pattern, "%s\\*.*", directory);
+
+	res = (void*)mk_nil();
+	sh = FindFirstFile(pattern, &FileData);
+	if (sh != INVALID_HANDLE_VALUE) {
+		while(more) {
+			if (strcmp(FileData.cFileName,"..") != 0 && 
+				strcmp(FileData.cFileName,".") != 0 &&
+				(FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) 
+			{
+			    res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+			}
+			more = FindNextFile(sh, &FileData);
+		}
+		CloseHandle(sh);
+	}
+	rmlA0 = (void*)res;
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-int file_select_mo(struct dirent *entry)
-{
-  char fileName[MAXPATHLEN];
-  int res; char* ptr;
-  struct stat fileStatus;
-  if ((strcmp(entry->d_name, ".") == 0) ||
-      (strcmp(entry->d_name, "..") == 0) ||
-      (strcmp(entry->d_name, "package.mo") == 0)) {
-    return (0);
-  } else {
-    ptr = (char*)rindex(entry->d_name, '.');
-    if ((ptr != NULL) &&
-	((strcmp(ptr, ".mo") == 0))) {
-      return (1);
-    } else {
-      return (0);
-    }
-  }
-}
 
 RML_BEGIN_LABEL(System__mo_5ffiles)
 {
-  int i,count;
-  void *res;
-  char* directory = RML_STRINGDATA(rmlA0);
-  struct dirent **files;
-  if (directory == NULL)
-    RML_TAILCALLK(rmlFC);
-  select_from_dir = directory;
-  count =
-    scandir(directory, &files, file_select_mo,NULL);
-  res = (void*)mk_nil();
-  for (i=0; i<count; i++) {
-    res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
-  }
-  rmlA0 = (void*) res;
-  RML_TAILCALLK(rmlSC);
+	void *res;
+	WIN32_FIND_DATA FileData;
+	BOOL more = TRUE;
+	char* directory = RML_STRINGDATA(rmlA0);
+	char pattern[1024];
+	HANDLE sh;
+	if (directory == NULL)
+		RML_TAILCALLK(rmlFC);
+
+
+	sprintf(pattern, "%s\\*.mo", directory);
+
+	res = (void*)mk_nil();
+	sh = FindFirstFile(pattern, &FileData);
+	if (sh != INVALID_HANDLE_VALUE) {
+		while(more) {
+			if (strcmp(FileData.cFileName,"package.mo") != 0)
+			{
+			    res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+			}
+			more = FindNextFile(sh, &FileData);
+		}
+		CloseHandle(sh);
+	}
+	rmlA0 = (void*)res;
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -394,7 +331,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
 {
   type_description desc;
-  void * res, *res2;
+  void * res;
   int ival;
   float rval;
   float *rval_arr;
@@ -420,7 +357,7 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
     } 
   else  /* Array value */
     {
-      int currdim,el,i;
+      int currdim,i;
       if (desc.type == 'r') {
 	/* Create array to hold inserted values, max dimension as size */
 	size = 1;
@@ -440,7 +377,7 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
       }
 	
       if (desc.type == 'i') {
-	int currdim,el,i;
+	int currdim,i;
 	/* Create array to hold inserted values, mult of dimensions as size */
 	size = 1;
 	for (currdim=0;currdim < desc.ndims; currdim++) {
@@ -528,50 +465,71 @@ RML_BEGIN_LABEL(System__hash)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__path_5fdelimiter)
+
+RML_BEGIN_LABEL(System__regular_5ffile_5fexist)
 {
-  rmlA0 = (void*) mk_scon("/");
+	char* str = RML_STRINGDATA(rmlA0);
+	int ret_val;
+	void *res;
+	WIN32_FIND_DATA FileData;
+	HANDLE sh;
 
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
+	if (str == NULL)
+		RML_TAILCALLK(rmlFC);
 
-RML_BEGIN_LABEL(System__group_5fdelimiter)
-{
-  rmlA0 = (void*) mk_scon(":");
+	sh = FindFirstFile(str, &FileData);
+	if (sh == INVALID_HANDLE_VALUE) {
+		ret_val = 1;
+	}
+	else {
+		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+			ret_val = 1;
+		}
+		else {
+			ret_val = 0;
+		}
+		FindClose(sh);
+	}
 
-  RML_TAILCALLK(rmlSC);
+	printf("Regular File Test (%s) result: %d\n", str, ret_val);
+	rmlA0 = (void*) mk_icon(ret_val);
+
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__directory_5fexist)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  int ret_val;
-  char command[1000];
-  printf("Directory Test (%s) result: ",str); 
-  sprintf(command, "test -d %s", str);
-  ret_val = system(command);
-  printf("%d\n", ret_val);
-  rmlA0 = (void*) mk_icon(ret_val);
-  RML_TAILCALLK(rmlSC);
+	char* str = RML_STRINGDATA(rmlA0);
+	int ret_val;
+	void *res;
+	WIN32_FIND_DATA FileData;
+	HANDLE sh;
 
+	if (str == NULL)
+		RML_TAILCALLK(rmlFC);
+
+	sh = FindFirstFile(str, &FileData);
+	if (sh == INVALID_HANDLE_VALUE) {
+		ret_val = 1;
+	}
+	else {
+		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+			ret_val = 1;
+		}
+		else {
+			ret_val = 0;
+		}
+		FindClose(sh);
+	}
+
+	rmlA0 = (void*) mk_icon(ret_val);
+	printf("Directory Test (%s) result: %d\n", str, ret_val);
+
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__regular_5ffile_5fexist)
-{
-  char* str = RML_STRINGDATA(rmlA0);
-  int ret_val;
-  char command[1000];
-  printf("File Test (%s) result: ",str); 
-  sprintf(command, "test -f %s", str);
-  ret_val = system(command);
-  printf("%d\n", ret_val);
-  rmlA0 = (void*) mk_icon(ret_val);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 
 float next_realelt(float *arr)
 {
@@ -592,7 +550,7 @@ int next_intelt(int *arr)
   
   if(arr == NULL) {
     curpos = 0;
-    return 0.0;
+    return 0;
   }
   else return arr[curpos++];
 }
