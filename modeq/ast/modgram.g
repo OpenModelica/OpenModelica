@@ -30,6 +30,7 @@ typedef int bool;
 #include "rml.h"
 #include "yacclib.h"
 #include "exp.h"
+#include "types.h"
 #include "absyn.h"
 #include "errno.h"
 
@@ -231,8 +232,8 @@ class_definition[bool is_replaceable,bool is_final] :
 				    restr,
 				    Absyn__DERIVED(#dp->rml,
 						   (has_array_dim
-						    ? mk_some(#da->rml)
-						    : mk_none()),
+						    ? #da->rml
+						    : Types__NODIM),
 						   (has_class_spec
 						    ? #ds->rml
 						    : mk_nil())));
@@ -313,11 +314,14 @@ component_clause!:
 	s:type_specifier
 	l:component_list
         << #0 = #(#[&a], #p, #s, #l);
-	   #0->rml = Absyn__COMPONENTS(RML_PRIM_MKBOOL(fl),
-				       RML_PRIM_MKBOOL(pa),
-				       RML_PRIM_MKBOOL(co),
-				       RML_PRIM_MKBOOL(in),
-				       RML_PRIM_MKBOOL(ou),
+	   #0->rml = Absyn__COMPONENTS(Types__ATTR(mk_none(),
+						   RML_PRIM_MKBOOL(fl),
+						   pa ? Types__PARAM :
+						   co ? Types__CONST :
+						   Types__VAR,
+						   in ? Types__INPUT :
+						   ou ? Types__OUTPUT:
+						   Types__BIDIR),
 				       #s->rml,
 				       sibling_list(#l));
 				       
@@ -350,7 +354,7 @@ declaration :
 	{ a:array_dimensions }
 	{ s:specialization }
 	<< #i->rml = Absyn__COMPONENT(mk_scon($i.u.stringval),
-				      #a ? mk_some(#a->rml) : mk_none(),
+				      #a ? #a->rml : Types__NODIM,
 				      #s ? mk_some(#s->rml) : mk_none()); >>
         ;
 
@@ -358,8 +362,8 @@ array_dimensions :
 	brak:LBRACK^
 	s1:subscript { ","! s2:subscript }
 	RBRACK!
-	<< if(#s2) #0->rml = Absyn__TWODIM(#s1->rml,#s2->rml);
-	   else #0->rml = Absyn__ONEDIM(#s1->rml); >>
+	<< if(#s2) #0->rml = Types__TWODIM(#s1->rml,#s2->rml);
+	   else #0->rml = Types__ONEDIM(#s1->rml); >>
 	;
 
 subscripts :
@@ -370,8 +374,7 @@ subscripts :
 	;
 
 subscript_list :
-	subscript 
- 	( "," subscript )*
+	subscript { ","! subscript { ","! subscript }}
 	;
 
 subscript :
@@ -689,7 +692,7 @@ primary : << bool is_matrix; >>
 	| t:TRU/*E*/         << #t->rml = Exp__BOOL(RML_TRUE); >>
 	| (name_path_function_arguments)?
 	| (member_list)?
-	| i:name_path        << #0->rml = Exp__PATH(#i->rml); >>
+	| i:component_reference << #0->rml = Exp__CREF(#i->rml); >>
 	| TIME               << #0->rml = Exp__TIME; >>
 	| s:STRING           << #s->rml = Exp__STRING(mk_scon($s.u.stringval)); >>
 	;
@@ -724,7 +727,7 @@ component_reference : << void *tail = NULL; >>
 	  i:IDENT^ { a:subscripts }
 	  << #i->rml = mk_box2(0,
 			       mk_scon($i.u.stringval),
-			       #a ? mk_some(#a->rml) : mk_nil()); >>
+			       #a ? #a->rml : mk_nil()); >>
 	  { dot:DOT^ c:component_reference << tail = #c->rml; >> }
 	  << #0->rml = mk_cons(#i->rml, tail != NULL ? tail : mk_nil()); >>
 	;
