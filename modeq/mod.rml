@@ -72,21 +72,17 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
 
   axiom	elab_mod (_,_,SCode.NOMOD) => NOMOD
 
-  rule	elab_submods (env,pre,subs) => subs' &
-	let res = MOD(final,subs',NONE) &
-	print "   elab_mod " & SCode.print_mod m &
-	print " => " & print_mod res & print "\n"
+  rule	elab_submods (env,pre,subs) => subs'
 	------------------------------------
-	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE)) => res
+	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE))
+	  => MOD(final,subs',NONE)
 	
   rule	elab_submods (env,pre,subs) => subs' &
 	Static.elab_exp(env,e) => (e',prop) &
-	Prefix.prefix_exp(env,e',pre) => e'' &
-	let res = MOD(final,subs',SOME((e'',prop))) &
-	print "   elab_mod " & SCode.print_mod m &
-	print " => " & print_mod res & print "\n"
+	Prefix.prefix_exp(env,e',pre) => e''
 	------------------------------------
-	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e))) => res
+	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)))
+	  => MOD(final,subs',SOME((e'',prop)))
 
 end
 
@@ -433,7 +429,7 @@ relation merge : (Mod, Mod) => Mod =
 
   axiom merge(m,NOMOD) => m
 
-  rule  print " ignoring inner modification\n"
+  rule  print "- ignoring inner modification\n"
 	--------------------------------------
 	merge(m as REDECL(_,_),_) => m
 
@@ -482,8 +478,8 @@ relation merge_subs2 : (SubMod list, SubMod)
 
 	(* Modifications in the list take precedence *)
 
-  rule  n1 = n2 & print "   merge clash in " & print n1 & print "\n"
-	------------------------------------------------------------
+  rule  n1 = n2
+	-------
 	merge_subs2((s1 as NAMEMOD(n1,m1))::ss,
 		    NAMEMOD(n2,m2)) => (ss, s1)
 
