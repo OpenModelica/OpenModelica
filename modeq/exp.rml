@@ -42,6 +42,7 @@ module Exp:
 		  
   relation path_string : Path => string
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
+  relation eq_cref : (ComponentRef, ComponentRef) => ()
   
 end
 
@@ -64,5 +65,40 @@ relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
   rule	extend_cref(xs, i, s) => xs'
 	----------------------------
 	extend_cref(x::xs, i, s) => x::xs'
+
+end
+
+relation eq_subscript : (Subscript, Subscript) => () =
+
+  axiom	eq_subscript(NOSUB,NOSUB)
+
+	(* FIXME *)
+  rule	print "# Subscript expression\n" &
+	fail
+	--------------------------------
+	eq_subscript(_,_)
+
+end
+
+relation eq_subscripts : (Subscript list, Subscript list) => () =
+
+  axiom	eq_subscripts([],[])
+
+  rule	eq_subscript(s1,s2) &
+	eq_subscripts(ss1,ss2)
+	----------------------
+	eq_subscripts(s1::ss1, s2::ss2)
+
+end
+
+relation eq_cref : (ComponentRef, ComponentRef) => () =
+
+  axiom	eq_cref([],[])
+
+  rule	n1 = n2 &
+	eq_subscripts(s1,s2) &
+	eq_cref(c1,c2)
+	-------------------
+	eq_cref((n1,s1)::c1, (n2,s2)::c2)
 
 end
