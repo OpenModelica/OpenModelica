@@ -146,6 +146,7 @@ returns multiple arguments. *)
   relation array_element_type : Type => Type
   relation print_type : Type => ()
   relation print_prop : Properties => ()
+  relation print_prop_str: Properties => string 
   relation unparse_type : Type => string
   relation print_var : Var => ()
   relation print_binding : Binding => ()
@@ -1572,21 +1573,27 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
 	  => PROP((T_REAL([]),p2),c)
 end
 
+relation print_prop_str: Properties => string =
+
+  rule	unparse_type ty => ty_str &
+	Util.if(const,"const","non_const")  => const_str &
+	Util.string_append_list(["PROP(",ty_str,const_str,")"]) => res
+	-------------------
+	print_prop_str PROP(ty,const) => res
+
+  rule	unparse_type ty => ty_str &
+	Util.string_append_list(["PROP_TUPLE(",ty_str,",<Type.Const>)"]) => res
+	---------------------------------
+	print_prop_str PROP_TUPLE(ty,const) => res
+end
+
+
 relation print_prop : Properties => () =
 
-  rule	Print.print_buf "PROP(" &
-	print_type ty &
-	Dump.print_select(const,"const","non_const") &
-	Print.print_buf ")"
-	-------------------
-	print_prop PROP(ty,const)
-
-  rule	Print.print_buf "PROP_TUPLE(" &
-	print_type ty &
-	Print.print_buf ",<Type.Const>)"
-	---------------------------------
-	print_prop PROP_TUPLE(ty,const)
-
+  rule	print_prop_str p => str &
+	Print.print_buf str 
+	----------------
+	print_prop (p) => ()
 end
 
 

@@ -948,7 +948,7 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	simplify_binary (_, DIV(ty), e1, e2) =>  RCONST(0.0)
 
   rule	is_const_zero (e2) => true &
-        Print.print_buf "# Error, division by zero.\n" 
+        Print.print_error_buf "# Error, division by zero.\n" 
 	---------------------------
 	simplify_binary (_, DIV(ty), e1, e2) =>  fail
 
@@ -1190,7 +1190,7 @@ relation to_exp_cref_subs: Absyn.Subscript list => Subscript list =
 	to_exp_cref_subs(Absyn.SUBSCRIPT(Absyn.INTEGER(i))::xs) 
 	  => INDEX(ICONST(i))::xs'
 
-  rule	Print.print_buf "#Error elaborating TypeName." &
+  rule	Print.print_error_buf "#Error elaborating TypeName." &
 	to_exp_cref_subs(xs) => xs' 
 	---------------------------
 	to_exp_cref_subs(_::xs)  => xs'

@@ -429,7 +429,7 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Types.Mod)
 		     m as Types.MOD(final, [],
 			      SOME(Types.TYPED(e,Types.PROP(t,const))))) => mods
 
-  rule	Print.print_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
+  rule	Print.print_error_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
 	--------------------------------
 	expand_slice(_,_,_,mod) => fail
 
@@ -843,123 +843,110 @@ end
  ** The relations are excluded from the report for brevity.
  **)
 
-relation print_mod : Types.Mod => () =
+relation print_mod_str : Types.Mod => string =
 
-  rule	Print.print_buf "()"
-	----------
-	print_mod(Types.NOMOD)
+  axiom	print_mod_str(Types.NOMOD) => "()"
 
   rule  Print.print_buf "(redeclare(" &
 	Util.list_map(elist,Util.tuple2_1)=> elist' &
-	Dump.print_list(elist', SCode.print_element, ", ") &
-	Print.print_buf "))"
+	Util.if(final,"final","") => final_str &
+	Util.list_map(elist',SCode.print_element_str) => str_lst &
+	Util.string_delimit_list(str_lst,", ") => str &
+	Print.print_buf "))" &
+	Util.string_append_list(["(redeclare(",final_str,str,"))"]) => res
 	------------------------------
-	print_mod Types.REDECL(final,elist)
+	print_mod_str Types.REDECL(final,elist) => res
 	
-  rule	print_final final &
-	print_subs1 subs &
-	print_eqmod eq
+  rule	Util.if(final,"final","") => final_str &
+	print_subs1_str subs => s1 &
+	Util.string_delimit_list(s1,",") => s1' &
+	print_eqmod_str eq => s2 &
+	Util.string_append_list([final_str,s1',s2]) => str
 	--------------
-	print_mod Types.MOD(final, subs, eq)
+	print_mod_str Types.MOD(final, subs, eq) => str 
+end
 
+relation print_mod : Types.Mod => () =
+
+rule	print_mod_str(m) => str &
+	Print.print_buf str 
+	-------------------
+	print_mod (m) => ()
 end
 
 (**)
 
-relation print_final : bool => () =
+relation print_subs1_str : Types.SubMod list => string list =
 
-  rule Print.print_buf " NOT final "
-       --------------
-       print_final false
+  axiom print_subs1_str [] => []
 
-  rule Print.print_buf " final "
-       --------------
-       print_final true
-
-end
-
-(**)
-
-relation print_subs1 : Types.SubMod list => () =
-
-  axiom print_subs1 [] => ()
-
-  rule	Print.print_buf "(" & print_sub x & print_subs2 xs & Print.print_buf ")"
+  rule	print_sub_str x => s1  & 
+	print_subs1_str xs => res
 	------------------------------------
-	print_subs1 x::xs
+	print_subs1_str x::xs => s1::res
 
 end
 
 (**)
 
-relation print_subs2 : Types.SubMod list => () =
+relation print_sub_str : Types.SubMod => string =
 
-  axiom print_subs2 []
-
-  rule  Print.print_buf "," & print_sub sub & print_subs2 subs
-	----------------------------------------------
-	print_subs2 sub::subs
-
-end
-
-(**)
-
-relation print_sub : Types.SubMod => () =
-
-  rule  Print.print_buf n & print_mod mod
+  rule  print_mod_str mod => mod_str &
+	string_append(n,mod_str) => res
 	------------------
-	print_sub Types.NAMEMOD(n,mod)
+	print_sub_str Types.NAMEMOD(n,mod) => res
 
-  rule  print_subscripts ss & print_mod mod
-	------------------
-	print_sub Types.IDXMOD(ss,mod)
+  rule  print_subscripts_str ss => str  & print_mod_str mod => mod_str &
+	string_append(str,mod_str) => res
+	-------------------------------
+	print_sub_str Types.IDXMOD(ss,mod) => res
 
 end
 
 (**)
 
-relation print_subscripts : int list => () =
+relation print_subscripts_str : int list => string =
 
-  rule	Print.print_buf "[]"
-  	---------------
-	print_subscripts []
+axiom	print_subscripts_str([]) => "[]"
 
   rule	Print.print_buf "[" &
-	int_string x => s & Print.print_buf s &
-	print_subscripts2 xs &
-	Print.print_buf "]"
+	int_string x => s & 
+	print_subscripts2_str xs => str  &
+	Util.string_append_list(["[",s,str,"]"]) => res
 	-----------------------------------------------------
-	print_subscripts x::xs
+	print_subscripts_str x::xs => res
+end
 
+
+(**)
+
+relation print_subscripts2_str : int list => string =
+
+  axiom	print_subscripts2_str([]) => ""
+
+  rule	Print.print_buf "," & int_string x => s &
+	print_subscripts2_str(xs) => str &
+	Util.string_append_list([",",s,str]) => res
+	-----------------------
+	print_subscripts2_str x::xs => res
 end
 
 (**)
 
-relation print_subscripts2 : int list => () =
+relation print_eqmod_str : Types.EqMod option => string =
 
-  axiom	print_subscripts2 []
+  axiom print_eqmod_str NONE => ""
 
-  rule	Print.print_buf "," & int_string x => s & Print.print_buf s &
-	print_subscripts2 xs
-	--------------------
-	print_subscripts2 x::xs
-
-end
-
-(**)
-
-relation print_eqmod : Types.EqMod option => () =
-
-  axiom print_eqmod NONE
-
-  rule  Print.print_buf " =(typed) " & Exp.print_exp e &
-	Types.print_prop prop
+  rule  Exp.print_exp_str e  => str &
+	Types.print_prop_str prop => str2 &
+	Util.string_append_list([" = (typed)",str, str2]) => res
 	-----------------------------
-	print_eqmod SOME(Types.TYPED(e,prop))
+	print_eqmod_str SOME(Types.TYPED(e,prop)) => res
 
-  rule  Print.print_buf " =(untyped) " & Dump.print_exp e
+  rule  Dump.print_exp_str e => str &
+	string_append(" =(untyped) ",str) => res
 	-----------------------------
-	print_eqmod SOME(Types.UNTYPED(e))
+	print_eqmod_str SOME(Types.UNTYPED(e)) => res
 
 end
 	

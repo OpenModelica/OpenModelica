@@ -157,7 +157,7 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 
   rule	Absyn.path_string path => s1 & 
 	Util.string_append_list(["# Error, type ", s1, " not found.\n"]) => s2 &
-	Print.print_buf s2
+	Print.print_error_buf s2
 	---------------------
 	lookup_type(_,path,true) => fail
 end
@@ -304,7 +304,10 @@ relation lookup_qualified_imported_class_in_frame: ( Env.Item list,Env.Env,
 	Absyn.strip_last(path) => strippath &
 	lookup_class([fr], strippath, true) =>  (c2,_) &
 	not assert_package(c2) &
-	Print.print_buf "# Error, " & Dump.print_path strippath & Print.print_buf " is not a package\n"  
+	Print.print_error_buf "# Error, " & 
+	Absyn.path_string strippath => str & 
+	Print.print_error_buf str &
+	Print.print_error_buf " is not a package\n"  
 	----------------------------------
 	lookup_qualified_imported_class_in_frame(Env.IMPORT(Absyn.QUAL_IMPORT(path))::fs,env,ident)
 	    => fail
@@ -329,8 +332,10 @@ relation lookup_qualified_imported_class_in_frame: ( Env.Item list,Env.Env,
 	Absyn.strip_last(path) => strippath &
 	lookup_class([fr], strippath, true) =>  (c2, _) &
 	not assert_package(c2) &
-	Print.print_buf "# Error, " & Dump.print_path strippath & Print.print_buf " is not a package\n"  
-	& print "# Error xxx is not a package\n" 
+	Print.print_error_buf "# Error, " & 
+	Absyn.path_string strippath => str & 
+	Print.print_error_buf str &
+	Print.print_error_buf " is not a package\n"  
 	---------------------------------- 
 	lookup_qualified_imported_class_in_frame(Env.IMPORT(Absyn.NAMED_IMPORT(id,path))::fs,env,ident)
 	    => fail
@@ -604,10 +609,9 @@ relation lookup_ident : (Env.Env, SCode.Ident)
 	---------------------------------
 	lookup_ident(_::rest,id) => (fv,c,i)
 
-  rule	Print.print_buf "# Error lookup_ident: " &
-	Print.print_buf id &
-	Print.print_buf " failed\n Env: " &
-	Env.print_env env 
+  rule	Print.print_error_buf "# Error lookup_ident: " &
+	Print.print_error_buf id &
+	Print.print_error_buf " failed\n"
 	--------------
 	lookup_ident(env,id) => fail	
 end
@@ -697,8 +701,8 @@ relation lookup_type_in_frame: (Env.BinTree, (* Classes and vars*)
 	lookup_type_in_frame(ht,httypes,env, id) => (t,env)
 
   rule	Env.tree_get(ht,id,Env.myhash) => Env.VAR(_,_,_) &
-	Print.print_buf "# Error while looking up type " &
-	Print.print_buf id & Print.print_buf ": found a component\n"
+	Print.print_error_buf "# Error while looking up type " &
+	Print.print_error_buf id & Print.print_error_buf ": found a component\n"
 	------------------------------------
 	lookup_type_in_frame(ht,httypes,env,id) => fail
 
@@ -745,8 +749,8 @@ relation lookup_functions_in_frame: (Env.BinTree, (*Classes and vars*)
 	lookup_functions_in_frame(ht,httypes, env, id) => tps
 
   rule	Env.tree_get(ht, id, Env.myhash) => Env.VAR(_,_,_) &
-	Print.print_buf "# Error while looking up type " &
-	Print.print_buf id & Print.print_buf ": found a component\n"
+	Print.print_error_buf "# Error while looking up type " &
+	Print.print_error_buf id & Print.print_error_buf ": found a component\n"
 	------------------------------------
 	lookup_functions_in_frame(ht,httypes,env,id) => fail
 
@@ -795,8 +799,8 @@ relation lookup_recconst_in_frame: (Env.BinTree, Env.Env, SCode.Ident)
 	  
 	  
   rule	Env.tree_get(ht,id,Env.myhash) => Env.VAR(_,_,_) &
-	Print.print_buf "# Error while looking up record constructor class " &
-	Print.print_buf id & Print.print_buf ": found a component\n"
+	Print.print_error_buf "# Error while looking up record constructor class " &
+	Print.print_error_buf id & Print.print_error_buf ": found a component\n"
 	------------------------------------
 	lookup_recconst_in_frame(ht,env,id) => fail
 
@@ -902,10 +906,9 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
 
   rule	Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
-        Print.print_buf "# Class " &
-        Print.print_buf id       &
-        Print.print_buf " not found and the lookup reached an encapsulated class\n"
-	&Env.print_env env 
+        Print.print_error_buf "# Class " &
+        Print.print_error_buf id       &
+        Print.print_error_buf " not found and the lookup reached an encapsulated class\n"
 	---------------------
 	lookup_class_in_env(env as Env.FRAME(sid,_,_,_,true)::fs, aid as Absyn.IDENT(id),true) => fail
 
@@ -957,8 +960,8 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
 
   rule	lookup_class_in_env(env,classname,false) => (c as SCode.CLASS(_,_,false,_,_) ,env') &
         (* false means here non-encapsulated *)
-        Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is already a simple name: ") &
-	Print.print_buf(id) & Print.print_buf(" )\n")
+        Print.print_error_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is already a simple name: ") &
+	Print.print_error_buf(id) & Print.print_error_buf(" )\n")
       	----------------------------------------------------
 	lookup_class_in_class (env, cdef, classname as Absyn.IDENT(id),true) => fail
 	
@@ -993,7 +996,7 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),false) 
 	  => (c as SCode.CLASS(id,_,encflag as false,restr,_) ,env) &
-        Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is still qualified)\n")
+        Print.print_error_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is still qualified)\n")
 	-------------------------------------------
 	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => fail
 
@@ -1072,7 +1075,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),false) => (c as SCode.CLASS(id,_,encflag as false,restr,_) ,env) &
-        Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is still qualified)\n")
+        Print.print_error_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is still qualified)\n")
 	-------------------------------------------
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => fail
 
@@ -1134,8 +1137,8 @@ relation lookup_class_in_frame: (Env.Frame,Env.Env,
 
 
   rule	Env.tree_get(ht,id,Env.myhash) => Env.VAR(_,_,_) &
-	Print.print_buf "# Error while looking up class " &
-	Print.print_buf id & Print.print_buf ": found a component\n"
+	Print.print_error_buf "# Error while looking up class " &
+	Print.print_error_buf id & Print.print_error_buf ": found a component\n"
 	------------------------------------
 	lookup_class_in_frame(Env.FRAME(sid,ht,_,_,_),_,id,true) => fail
 
@@ -1153,7 +1156,7 @@ relation lookup_class_in_frame: (Env.Frame,Env.Env,
 
   rule	lookup_unqualified_imported_class_in_frame(items, totenv, name) 
 	  => (c, env', false (*unique*) ) &
-	Print.print_buf "# Error, class found in several unqualified import statements\n"  
+	Print.print_error_buf "# Error, class found in several unqualified import statements\n"  
 	---------------------------------------------------------
 	lookup_class_in_frame(Env.FRAME(sid,_,_,items,_),totenv, name,_) 
 	  => fail
@@ -1254,7 +1257,7 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	(* Protected components *)
   rule  Types.lookup_component(ty, id)
 	  => (Types.VAR(_,_,true,_,_)) &
-	Print.print_buf "# Error, referencing protected elements not allowed.\n" 
+	Print.print_error_buf "# Error, referencing protected elements not allowed.\n" 
 	------------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
 	  => fail

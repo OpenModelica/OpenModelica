@@ -353,7 +353,7 @@ relation translate_file : string list => () =
 	------------------------------
 	translate_file [f]
 	
-  rule	Print.print_buf "# Too many arguments\n"
+  rule	Print.print_error_buf "# Too many arguments\n"
 	----------------------------
 	translate_file _::_::_ => fail
 
@@ -372,8 +372,8 @@ relation translate_file : string list => () =
  	----------------------------
  	translate_file [] => fail
 
-  rule	Print.print_buf "# An error occured. Perhaps this is not a Modelica file or does not end with .mo?\n" &
-	Print.get_string () => str 
+  rule	Print.print_error_buf "# An error occured. Perhaps this is not a Modelica file or does not end with .mo?\n" &
+	Print.get_error_string () => str 
 	& print str 
 	----------------------------
 	translate_file _ => fail
@@ -410,50 +410,18 @@ end
 relation optimize_dae: (DAE.DAElist, Absyn.Path) => () =
 
   rule	run_backend_q() => true
-	& print "entering optimize_dae" 
 	& DAELow.lower(dae) => dlow 
-	& print "lowered DAE\n" 
 	& Debug.fcall("dumpdaelow", DAELow.dump, dlow) 
-	& clock() => t1 
 	& DAELow.incidence_matrix(dlow) => m 
-	& print "computed incidence matrix\n" 
-	& clock() => t2 
 	& DAELow.transpose_matrix(m) => mT 
-	& print "transposed incidence matrix\n" 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
-	& clock() => t3
 	& DAELow.matching_algorithm(dlow,m,mT) => (v1,v2,dlow',m,mT) 
-	& clock() => t4
-	& real_sub(t4,t3) => t4' & real_string(t4') => tstr &
-	print "MATCHING look: " & print tstr & print "\n" 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
 	& Debug.fcall("bltdump", DAELow.dump,dlow')
-
 	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
 	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
-	& clock() => t5 
-	& real_sub(t2,t1) => mtime 
-	& real_sub(t3,t2) => trtime
-	& real_sub(t4,t3) => matchtime 
-	& real_sub(t5,t4) => strongtime
-	& real_string(mtime) => mtimes  
-	& real_string(trtime) => trtimes
-	& real_string(matchtime) => matchtimes
-	& real_string(strongtime) => strongtimes  
-	& print "Incidence Matrix took: " 
-	& print mtimes
-	& print " seconds\n"
-	& print "Inversing Matrix took: " 
-	& print trtimes
-	& print " seconds\n"
-	& print "Matching took: " 
-	& print matchtimes
-	& print " seconds\n"
-	& print "Strong Components took: " 
-	& print strongtimes
-	& print " seconds\n"
 	& modpar(dlow',v1,v2,comps) 
 	& simcodegen(classname,dae,dlow',v1,v2,m,mT,comps)
 	& DAELow.dump_components(comps) 

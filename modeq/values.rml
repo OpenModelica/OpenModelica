@@ -440,15 +440,15 @@ end
 relation div_arrayelt_scalar: (Value, Value list) => Value list =
 
   rule	v1 = 0.0 &
-		Print.print_buf "# Error, division by zero.\n" 
-		------------------------------------
-		div_arrayelt_scalar (sval as REAL(v1),_) => fail
-
+	Print.print_error_buf "# Error, division by zero.\n" 
+	------------------------------------
+	div_arrayelt_scalar (sval as REAL(v1),_) => fail
+	
   rule	v1 = 0 &
-		Print.print_buf "# Error, division by zero.\n" 
-		------------------------------------
-		div_arrayelt_scalar (sval as INTEGER(v1),_) => fail
-
+	Print.print_error_buf "# Error, division by zero.\n" 
+	------------------------------------
+	div_arrayelt_scalar (sval as INTEGER(v1),_) => fail
+	
   rule	div_arrayelt_scalar(sval,vals) => r1 &
 	div_arrayelt_scalar(sval,rest) => r2
 	------------------------------------

@@ -66,6 +66,8 @@ module Ceval :
 
 end
 
+with "daelow.rml"
+with "simcodegen.rml"
 with "staticexp.rml"
 with "print.rml" 
 with "types.rml"
@@ -109,9 +111,9 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
   axiom ceval (_,Exp.BCONST(x),_,st,_) => (Values.BOOL(x),st)
   axiom ceval (_,Exp.END,_,st,SOME(dim))  => (Values.INTEGER(dim), st)
 
-  rule Print.print_buf "# 'end' cannot be used outside array subscript\n"
-    --------------------------------------
-    ceval (_,Exp.END,_,st,NONE) => fail
+  rule	Print.print_error_buf "# 'end' cannot be used outside array subscript\n"
+	--------------------------------------
+	ceval (_,Exp.END,_,st,NONE) => fail
   
   rule	ceval_ast_exp(env,exp,impl,st) => exp'
 	--------------------------------------
@@ -424,7 +426,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
   rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') &
 	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
 	not real_div(lhv,rhv) => _ &
-	Print.print_buf "#Error, division by zero.\n" 
+	Print.print_error_buf "#Error, division by zero.\n" 
 	-------------------------
 	ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim) 
 	  => fail
@@ -961,9 +963,9 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
     System.read_env("MOSHHOME") => moshhome &
     Static.component_ref_to_path(cr) => path & 
 	Absyn.path_string path => pathstr &
-	Print.print_buf "Failed to instantiate " &
-	Print.print_buf pathstr & Print.print_buf " .\n" &
-	Print.get_string() => str 
+	Print.print_error_buf "#Failed to instantiate " &
+	Print.print_error_buf pathstr & Print.print_error_buf " .\n" &
+	Print.get_error_string() => str 
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 	
@@ -974,54 +976,65 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
   
 
   rule	(* Build and simulate model *)
-	Static.component_ref_to_path(cr) => path &
+	ceval(env,starttime,true,SOME(st),NONE) 
+	  => (Values.REAL(starttime_r),SOME(st)) &
+	ceval(env,stoptime,true,SOME(st),NONE) 
+	  => (Values.REAL(stoptime_r),SOME(st)) &
+	ceval(env,interval,true,SOME(st),NONE) 
+	  => (Values.INTEGER(interval_i),SOME(st)) &
+	real_sub(stoptime_r,starttime_r) => delta_time &
+	int_real(interval_i) => interval_r &
+	real_div(delta_time,interval_r) => stepsize_r &
+	Static.component_ref_to_path(cr) => classname &
 	SCode.elaborate(p) => p' &
-	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
-	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	DAE.dump_str (dae) => str &
-
-(* get rid of f in fclass so that old modsimpack works. 
-   Get rid of this when modsimpack understands fclass. *)
-	string_list(str) => charlist &
-	list_delete(charlist, 0) => charlist' &
-	list_string(charlist') => str' &
-
-	Print.get_string() => s2 &
-	Print.print_error_buf s2 &
-	Exp.cref_modelica_str(cr) => modelname &
-	string_append(modelname,".mof") => filename &
-	System.pwd => pwd &
-	System.path_delimiter => pd &
-	Util.string_append_list([pwd,pd,filename]) => filename' &
-	System.write_file(filename',str') &
-	ModSim.compile_flat_class(filename',modelname) => exefile &
-	ceval(env,starttime,true,SOME(st),NONE) => (Values.REAL(start),_) &
-	ceval(env,stoptime,true,SOME(st),NONE) => (Values.REAL(stop),_) &
-	ceval(env,interval,true,SOME(st),NONE) => (Values.INTEGER(interv),_) &
-	Util.string_append_list([pwd,pd,modelname,"_res.plt"]) => resultfile &
-	int_sub(interv,1) => interv' &
-	ModSim.run_simulation(exefile,start,stop,interv',resultfile) => 0 &
-	let simValue = Values.RECORD([Values.STRING(resultfile)],["resultFile"]) &
+	Inst.instantiate_class(p',classname) => (dae as DAE.DAE(dael),env) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
+	  => ic' &
+	DAELow.lower(dae) => dlow &
+	DAELow.incidence_matrix(dlow) => m &
+	DAELow.transpose_matrix(m) => mT &
+	DAELow.matching_algorithm(dlow,m,mT) => (ass1,ass2,dlow',m,mT) &
+	DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
+	DAELow.translate_dae (dlow) => indexed_dlow &
+	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
+	Absyn.path_string(classname) => cname_str &
+	Util.string_append_list([cname_str,".cpp"]) => filename &
+	Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
+	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
+	Util.string_append_list([cname_str,".makefile"]) => makefilename &
+	SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	SimCodegen.generate_residual_code(indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
+	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
+				      starttime_r,stoptime_r,stepsize_r) &
+	SimCodegen.generate_makefile(makefilename,classname) &
+	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
+	
+	System.system_call(s_call) => 0 &
+	Util.string_append_list([cname_str,".exe"]) => sim_call &
+	System.system_call(sim_call) => 0 &
+	Util.string_append_list([cname_str,"_res.plt"]) => result_file &
+	let simValue = Values.RECORD([Values.STRING(result_file)],["resultFile"]) &
 	let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
-			,[Types.VAR("resultFile",
-				    Types.ATTR(false, 
-					       SCode.RO, 
-					       SCode.VAR,
-					       Absyn.BIDIR),
+				       ,[Types.VAR("resultFile",
+						   Types.ATTR(false, 
+							      SCode.RO, 
+							      SCode.VAR,
+							      Absyn.BIDIR),
 				    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
-			  ]
-			),NONE) &
+					 ]
+				       ),NONE) &
 	Interactive.add_var_to_symboltable("currentSimulationResult",simValue,simType,st) 
-	  => newst &
-	  
-	  System.cd(pwd) => _
-	------------------------------------------------------------------
+	  => newst 
+	  ------------------------------------------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,newst)
 	  
-  rule	(* simulation fail for som other reason than MOSHOME not being set.*)
-    System.read_env("MOSHHOME") => moshhome &
-    let simValue = Values.RECORD([Values.STRING("Simulation Failed.")],["resultFile"])
+  rule	
+	(* simulation fail for som other reason than MOSHOME not being set.*)
+	System.read_env("MOSHHOME") => moshhome &
+	Print.get_error_string() => str &
+	Util.string_append_list(["Simulation failed.\n",str,"\n"]) => res &
+	let simValue = Values.RECORD([Values.STRING(res)],["resultFile"])
 	------------------------------------------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,st)
@@ -1041,6 +1054,17 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
+  rule	Static.component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	(* we do not want error msg twice.. *)
+	Print.get_error_string() => str &
+	not Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	Print.clear_error_buf() &
+	Print.print_error_buf(str) &
+	Print.get_error_string() => str
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
 
   rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
 	System.pwd() => pwd &
@@ -1051,30 +1075,28 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (value,st)
 
-  rule	Print.print_buf "#Error reading simulation result. Check that filename and variablenames are correct.\n" 
+  rule	Print.print_error_buf "#Error reading simulation result. Check that filename and variablenames are correct.\n" 
 	------------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => fail
 
-
-
-  rule	
-    System.read_env("PTII") => ptii &
-    string_length(ptii) => ptii_length &
-    int_gt(ptii_length,0) => true &
-    Util.list_map(vars,Exp.print_exp_str) => vars' &
+  rule	(* plot *)
+	System.read_env("PTII") => ptii &
+	string_length(ptii) => ptii_length &
+	int_gt(ptii_length,0) => true &
+	Util.list_map(vars,Exp.print_exp_str) => vars' &
 	Util.list_union_elt("time",vars') => vars'' &
 	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
 	  => (Values.RECORD([Values.STRING(filename)],_),_) &
 	System.read_ptolemyplot_dataset(filename,vars'',0) => value &
 	System.pwd() => pwd &
-    System.read_env("MOSHHOME") => moshhome &
-    System.path_delimiter => pd &
-    Util.string_append_list([moshhome,pd,"..",pd,"modeq",pd,"scripts",pd,"doPlot"]) => plotCmd &
+	System.read_env("MOSHHOME") => moshhome &
+	System.path_delimiter => pd &
+	Util.string_append_list([moshhome,pd,"..",pd,"modeq",pd,"scripts",pd,"doPlot"]) => plotCmd &
 	Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
-	Util.string_append_list([plotCmd, " \"", tmpPlotFile,"\""]) => call &			   
+	  Util.string_append_list([plotCmd, " \"", tmpPlotFile,"\""]) => call &			   
 	System.system_call(call) => _
 	------------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
@@ -1477,7 +1499,7 @@ relation ceval_builtin_sqrt : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSy
 	
   rule ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
         real_lt (rv,0.0) => true &
-        Print.print_buf "# sqrt - the input is negative\n" 
+        Print.print_error_buf "# sqrt - the input is negative\n" 
     --------------------------------------
     ceval_builtin_sqrt(env,exp,impl,st) => fail
  
@@ -1555,19 +1577,19 @@ relation ceval_builtin_div : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
         
   rule  ceval (env,exp1,impl,st,NONE) => (Values.INTEGER(ri1),_) &
         ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
-	    int_div(ri1,ri2) => ri' 
+	int_div(ri1,ri2) => ri' 
          --------------------------------------
         ceval_builtin_div(env,exp1,exp2,impl,st) => (Values.INTEGER(ri'),st)
         
   rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
- 	    Print.print_buf "#Error, division by zero.\n" 
+ 	Print.print_error_buf "#Error, division by zero.\n" 
         --------------------------------------
         ceval_builtin_div(env,exp1,exp2,impl,st) => fail
 
   rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
- 	    Print.print_buf "#Error, division by zero.\n" 
+ 	Print.print_error_buf "#Error, division by zero.\n" 
         --------------------------------------
         ceval_builtin_div(env,exp1,exp2,impl,st) => fail
         
@@ -1623,13 +1645,13 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
         
   rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
- 	    Print.print_buf "#Second argument in mod should be non-zero.\n" 
+ 	Print.print_error_buf "#Second argument in mod should be non-zero.\n" 
         --------------------------------------
         ceval_builtin_mod(env,exp1,exp2,impl,st) => fail
 
   rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
- 	    Print.print_buf "#Second argument in mod should be non-zero.\n" 
+ 	Print.print_error_buf "#Second argument in mod should be non-zero.\n" 
         --------------------------------------
         ceval_builtin_mod(env,exp1,exp2,impl,st) => fail
         
@@ -1681,13 +1703,13 @@ relation ceval_builtin_rem : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.Intera
         
   rule  ceval (env,exp2,impl,st,NONE) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
- 	    Print.print_buf "#Second argument in rem should be non-zero.\n" 
+ 	Print.print_error_buf "#Second argument in rem should be non-zero.\n" 
         --------------------------------------
         ceval_builtin_rem(env,exp1,exp2,impl,st) => fail
 
   rule  ceval (env,exp2,impl,st,NONE) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
- 	    Print.print_buf "#Second argument in rem should be non-zero.\n" 
+ 	Print.print_error_buf "#Second argument in rem should be non-zero.\n" 
         --------------------------------------
         ceval_builtin_rem(env,exp1,exp2,impl,st) => fail
         
@@ -1747,25 +1769,25 @@ relation ceval_builtin_diagonal : (Env.Env, Exp.Exp, bool, Interactive.Interacti
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
   rule  ceval (env,exp,impl,st,NONE) => (Values.ARRAY(rv2),_) &
-		list_length(rv2) => dimension &
-
-		int_add(dimension,1) => correctDimension &
-	    ceval_builtin_diagonal2(env,exp,impl,st,correctDimension,1, [] ) =>
+	list_length(rv2) => dimension &
+	
+	int_add(dimension,1) => correctDimension &
+	ceval_builtin_diagonal2(env,exp,impl,st,correctDimension,1, [] ) =>
         retExp &
-
-   	    int_string dimension => dimensionString &
-   	    Debug.fcall("failtrace", Print.print_buf, "== dimensionString ") & 
-   	    Debug.fcall("failtrace", Print.print_buf, dimensionString) & 
-   	    Debug.fcall("failtrace", Print.print_buf, "\n") 
-   	    
-		--------------------------------------
-		ceval_builtin_diagonal(env,exp,impl,st) => (Values.ARRAY(retExp),st)
-
-
- rule  print"#-- ceval_builtin_diagonal: Couldn't elaborate ceval_builtin_diagonal()\n" 
-	    ---------------------------------------------------------
-	    ceval_builtin_diagonal (_,_,_,_) => fail
-
+	
+   	int_string dimension => dimensionString &
+   	Debug.fcall("failtrace", Print.print_buf, "== dimensionString ") & 
+   	Debug.fcall("failtrace", Print.print_buf, dimensionString) & 
+   	Debug.fcall("failtrace", Print.print_buf, "\n") 
+   	
+	--------------------------------------
+	ceval_builtin_diagonal(env,exp,impl,st) => (Values.ARRAY(retExp),st)
+	
+	
+  rule  print"#-- ceval_builtin_diagonal: Couldn't elaborate ceval_builtin_diagonal()\n" 
+	---------------------------------------------------------
+	ceval_builtin_diagonal (_,_,_,_) => fail
+	
  
 end
 
@@ -2061,8 +2083,9 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 	-------------------------------------
 	ceval_cref (env,c) => fail
 
-  rule	Print.print_buf "# No constant binding for " &
-	Exp.print_component_ref c & Print.print_buf "\n"
+  rule	Print.print_error_buf "# No constant binding for " &
+	Exp.print_component_ref_str c => str &
+	Print.print_error_buf str & Print.print_error_buf "\n"
 	-------------------------------------
 	ceval_cref (_,c) => fail
 

@@ -453,14 +453,6 @@ relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool) => 
 	(* If not outermost call, only look at unconnected inner connectors *)
   rule	Env.local_inside_connector_flowvars(env) => vars &
  	get_all_flow_variables(csets) => vars2 &
- 	Print.print_buf "vars : " &
-	Util.list_map(vars,Exp.print_component_ref_str) => str &
-	Util.string_delimit_list(str, ",") => str'  &
- 	Print.print_buf "\nvars2 (to remove) : " &
-	Util.list_map(vars2,Exp.print_component_ref_str) => str &
-	Util.string_delimit_list(str, ",") => str'  &
-	Print.print_buf str' &
-	Print.print_buf "\n" &
 	remove_variables(vars,vars2) => unconnectedvars &
  	generate_zeroflow_equations(unconnectedvars) => dae'
 	----------------------------------

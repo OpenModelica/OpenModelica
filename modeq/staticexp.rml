@@ -775,11 +775,19 @@ relation elab_array : (Env.Env, Absyn.Exp list,bool,Interactive.InteractiveSymbo
   rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t1,c1),_) &
 	elab_array (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
 	not t1 = t2 &
-	Print.print_buf "# Incompatible types in array expression\n" &
-	Print.print_buf "  " & Dump.print_exp e & Print.print_buf " is of type " &
- 	Types.print_type t1 & Print.print_buf "\n  while the elements [" &
-        Dump.print_list (es, Dump.print_exp, ",") &
-	Print.print_buf "] are of type " & Types.print_type t2 & Print.print_buf "\n"
+	Print.print_error_buf "# Incompatible types in array expression\n" &
+	Print.print_error_buf "  " & Dump.print_exp_str e => str  & 
+	Print.print_error_buf str &
+	Print.print_error_buf " is of type " &
+ 	Types.unparse_type t1 => str  & 
+	Print.print_error_buf str &
+	Print.print_error_buf "\n  while the elements [" &
+        Util.list_map(es, Dump.print_exp_str)  => strs &
+	Util.string_delimit_list(strs,",") => str &	
+	Print.print_error_buf str &
+	Print.print_error_buf "] are of type " & Types.unparse_type t2 => str &
+	Print.print_error_buf str &
+	Print.print_error_buf "\n"
 	---------------------------------------------------------
 	elab_array (env,e::es,impl,st) => fail
 
@@ -1078,11 +1086,11 @@ relation elab_builtin_pre : (Env.Env, Absyn.Exp list)
 
   rule	elab_exp(env,exp,false,NONE) => (exp,Types.PROP(tp,c),_) &
 	Types.basic_type(tp) => false &
-	Print.print_buf "#Error, operand of pre must be of built-in type.\n"
+	Print.print_error_buf "#Error, operand of pre must be of built-in type.\n"
 	------------------------------------
 	elab_builtin_pre(env,[exp]) => fail
 
-  rule	Print.print_buf "#Error, wrong type or wrong number of arguments to pre operator.\n"
+  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to pre operator.\n"
 	------------------------------------
 	elab_builtin_pre(env,_) => fail
 end
@@ -1098,7 +1106,7 @@ relation elab_builtin_initial : (Env.Env, Absyn.Exp list)
 	  => (Exp.CALL(Absyn.IDENT("initial"),
 			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),false))
 
-  rule	Print.print_buf "#Error, initial takes no arguments.\n"
+  rule	Print.print_error_buf "#Error, initial takes no arguments.\n"
 	------------------
 	elab_builtin_initial(env,_) => fail
 end
@@ -1114,7 +1122,7 @@ relation elab_builtin_terminal : (Env.Env, Absyn.Exp list)
 	  => (Exp.CALL(Absyn.IDENT("terminal"),
 			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),false))
 
-  rule	Print.print_buf "#Error, terminal takes no arguments.\n"
+  rule	Print.print_error_buf "#Error, terminal takes no arguments.\n"
 	------------------
 	elab_builtin_terminal(env,_) => fail
 
@@ -1146,7 +1154,7 @@ relation elab_builtin_array2: (Exp.Exp list, Types.Properties list)
 	=> (Exp.Exp list, Types.Properties) =
 
   rule	same_dimensions(tpl) => false &
-	Print.print_buf "#Error, different dimension sizes in arguments to array.\n"
+	Print.print_error_buf "#Error, different dimension sizes in arguments to array.\n"
 	------------------------
 	elab_builtin_array2(expl,tpl) => fail
 
@@ -1876,12 +1884,14 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      SOME(st))
 
   rule	elab_untyped_cref(env,cr) => cr' &
-	get_optional_named_arg(env,SOME(st),"startTime",args,Exp.RCONST(0.0)) 
+	get_optional_named_arg(env,SOME(st),impl,"startTime",
+			       (Types.T_REAL([]),NONE),args,Exp.RCONST(0.0)) 
 	  => startTime &
-	  int_real(1) => realone &
-	get_optional_named_arg(env,SOME(st),"stopTime",args,Exp.RCONST(realone)) 
+	get_optional_named_arg(env,SOME(st),impl,"stopTime",
+			       (Types.T_REAL([]),NONE),args,Exp.RCONST(1.0))
 	  => stopTime &
-	get_optional_named_arg(env,SOME(st),"numberOfIntervals",args,Exp.ICONST(500)) 
+	get_optional_named_arg(env,SOME(st),impl,"numberOfIntervals",
+			       (Types.T_INTEGER([]),NONE),args,Exp.ICONST(500))
 	  => numberOfIntervals &
 	let recordtype = 
 	((Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
@@ -2290,20 +2300,26 @@ end
  **  This relation is used to "elaborate" interactive functions optional parameters, 
  ** e.g. simulate(A.b, startTime=1), startTime is an optional parameter 
  **)
-relation get_optional_named_arg: (Env.Env, Interactive.InteractiveSymbolTable option,
-				  Ident,Absyn.NamedArg list,Exp.Exp) 
+relation get_optional_named_arg: (Env.Env, 
+				  Interactive.InteractiveSymbolTable option,
+				  bool,
+				  Ident,
+				  Types.Type, (* The expected type *)
+				  Absyn.NamedArg list,
+				  Exp.Exp) 
 	=> Exp.Exp =
 
-  axiom	get_optional_named_arg(_,_,_,[],exp) => exp
+  axiom	get_optional_named_arg(_,_,_,_,_,[],exp) => exp
 
   rule	id = id2 &
-	elab_exp(env,exp,true,st) => (exp',_,_)
+	elab_exp(env,exp,impl,st) => (exp',Types.PROP(t,c1),_) &
+	Types.match_type(exp',t,tp) => (exp'',_) 
 	--------------------------------------------------
-	get_optional_named_arg(env,st,id,Absyn.NAMEDARG(id2,exp)::xs,dexp) => exp'
+	get_optional_named_arg(env,st,impl,id,tp,Absyn.NAMEDARG(id2,exp)::xs,dexp) => exp''
 
-  rule	get_optional_named_arg(env,st,id,xs,dexp) => exp'
+  rule	get_optional_named_arg(env,st,impl,id,tp,xs,dexp) => exp'
 	--------------------------------------------------
-	get_optional_named_arg(env,st,id,Absyn.NAMEDARG(id2,exp)::xs,dexp) => exp'
+	get_optional_named_arg(env,st,impl,id,tp,Absyn.NAMEDARG(id2,exp)::xs,dexp) => exp'
 end
 
 (** relation: elab_untyped_cref
@@ -2501,7 +2517,9 @@ relation elab_call_args : (Env.Env,
 
   rule	not Lookup.lookup_type(env,fn,false) => (_,_) &
 	
-	Print.print_buf "# Couldn't find function " & Dump.print_path fn & Print.print_buf "\n" 
+	Print.print_error_buf "# Couldn't find function " & 
+	Absyn.path_string fn => s & Print.print_error_buf s &
+	Print.print_error_buf "\n" 
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,_,_,_) => fail
 
@@ -2704,8 +2722,9 @@ relation function_params : Types.Var list => (Types.FuncArg list,
 					 false,t,Types.UNBOUND)::vs)
 	  => (in, (n,t)::out)
 
-  rule	Print.print_buf "# Components in functions must be INPUT or OUTPUT\n" &
-	Print.print_buf "    component: " & Print.print_buf n & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Components in functions must be INPUT or OUTPUT\n" &
+	Print.print_error_buf "    component: " & 
+	Print.print_error_buf n & Print.print_error_buf "\n"
 	----------------------------------------------
 	function_params((v as Types.VAR(n,Types.ATTR(_,_,_,Absyn.BIDIR),_,_,_))
 			::vs) => fail
@@ -2820,9 +2839,9 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
 	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,SOME(exp'))::res
 
   rule	fill_default_slots(xs,class,env) => res &
-	Print.print_buf "#Error filling slot, id =" &
-	Print.print_buf id &
-	Print.print_buf "\n"
+	Print.print_error_buf "#Error filling slot, id =" &
+	Print.print_error_buf id &
+	Print.print_error_buf "\n"
 	----------
 	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,e)::xs
 
@@ -2923,7 +2942,7 @@ relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
 	fill_slot((fa1,_), exp,SLOT((fa2,b),false,_)::xs) => SLOT((fa2,b),true,SOME(exp))::xs
 
   rule	fa1 = fa2 &
-	Print.print_buf "#Error, slot in functional argument allready filled.\b" 
+	Print.print_error_buf "#Error, slot in functional argument allready filled.\b" 
 	--------------------------------------------------------------
 	fill_slot((fa1,_),exp, SLOT((fa2,b),true,_)::xs) => fail
 
@@ -2932,7 +2951,7 @@ relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
 	------------------------------
 	fill_slot((farg as (fa1,_)), exp,(s1 as SLOT((fa2,_),_,_))::xs) => s1::newslots
 
-  rule  Print.print_buf "#Error, slot not found in function type.\n"
+  rule  Print.print_error_buf "#Error, slot not found in function type.\n"
 	---------------------------------------------------
 	fill_slot(_,_,_) => fail
 end
@@ -2960,8 +2979,10 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	elab_cref(env, c) => (exp, Types.PROP(t, const), acc')
 
   rule	elab_cref_subs (env,c) => (c', const) &
-	Print.print_buf "# Unknown component: " & Dump.print_component_ref c &
-	Print.print_buf "\n  ENV:   " & Env.print_env env 
+	Print.print_error_buf "# Unknown component: " & 
+	Dump.print_component_ref_str c => s & 
+	Print.print_error_buf s &
+	Print.print_error_buf "\n" 
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
@@ -3085,26 +3106,28 @@ relation elab_cref2 : (Env.Env,
 
 
 
-  rule	print "# Constant or parameter with a non-constant initializer\n" &
-	Print.print_buf "# Constant or parameter with a non-constant initializer\n" &
-	Print.print_buf "# component: " & Exp.print_component_ref cr & Print.print_buf " = " &
-	Exp.print_exp exp & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Constant or parameter with a non-constant initializer\n" &
+	Print.print_error_buf "# component: " & 
+	Exp.print_component_ref_str cr => s & 
+	Print.print_error_buf " = " &
+	Exp.print_exp_str exp => str &
+	Print.print_error_buf str & Print.print_error_buf "\n"
 	------------------------------
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,false)) => fail
 
-  rule	print "# Constant without a value :" &
-	Print.print_buf "# Constant  without a value\n" &
-	Print.print_buf "# component: " & Exp.print_component_ref cr &
-	Exp.print_component_ref_str cr => str & print str & print "\n" &
-	 Print.print_buf " env:\n" & Env.print_env env & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Constant  without a value\n" &
+	Print.print_error_buf "# component: " & 
+	Exp.print_component_ref_str cr => s & 
+	Print.print_error_buf s &
+	Print.print_error_buf "\n" 
 	----------------------------------------------
 	elab_cref2 (env,cr,_,SCode.CONST,_,Types.UNBOUND) => fail
 
-  rule	print "# Parameter without a value :" &
-	Print.print_buf "# Constant  without a value\n" &
-	Print.print_buf "# component: " & Exp.print_component_ref cr &
-	Exp.print_component_ref_str cr => str & print str & print "\n" &
-	 Print.print_buf " env:\n" & Env.print_env env & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Constant  without a value\n" &
+	Print.print_error_buf "# component: " & 
+	Exp.print_component_ref_str cr => s &
+	Print.print_error_buf s &
+	Print.print_error_buf "\n" 
 	----------------------------------------------
 	elab_cref2 (env,cr,_,SCode.PARAM,_,Types.UNBOUND) => fail
 
@@ -3280,9 +3303,12 @@ relation elab_subscript_type : (Types.Type, Absyn.Exp, Exp.Exp)
   axiom	elab_subscript_type ((Types.T_ARRAY(_,(Types.T_INTEGER(_),_)),_),_,sub)
 	  => Exp.SLICE(sub)
 
-  rule	Print.print_buf "# Subscript is not an integer or integer array\n" &
-	Print.print_buf "    expression: " & Dump.print_exp e &
- 	Print.print_buf " :: " & Types.print_type t & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Subscript is not an integer or integer array\n" &
+	Print.print_error_buf "    expression: " & Dump.print_exp_str e => s &
+	Print.print_error_buf s &
+ 	Print.print_error_buf " :: " & Types.unparse_type t => s & 
+	Print.print_error_buf s &
+	Print.print_error_buf "\n"
 	------------------------------------------------------
 	elab_subscript_type (t,e,_) => fail
 
@@ -3392,18 +3418,32 @@ relation elab_ifexp : (Exp.Exp, Types.Properties,
 		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3'), Types.PROP(t2, c))
 
   rule	not t1 = ((Types.T_BOOL([]),NONE)) &
-	Print.print_buf "# conditional in if expression has to be boolean\n" &
-	Print.print_buf "    got type: " & Types.print_type t1 & Print.print_buf "\n" &
-	Print.print_buf "    expression: " & Exp.print_exp e1 & Print.print_buf "\n"
+	Print.print_error_buf "# conditional in if expression has to be boolean\n" &
+	Print.print_error_buf "    got type: " & 
+	Types.unparse_type t1 => s &
+	Print.print_error_buf "\n" &
+	Print.print_error_buf "    expression: " & 
+	Exp.print_exp_str e1 => s &
+	Print.print_error_buf s & 
+	Print.print_error_buf "\n"
 	--------------------------------------------------------
 	elab_ifexp(e1,Types.PROP(t1,c1),e2,Types.PROP(t2,c2),e3,Types.PROP(t3,c3)) => fail
 
   rule	Types.equivtypes(t2,t3) => false &
-	Print.print_buf "# Type mismatch in if-expression\n" &
-	Print.print_buf "    true branch : " & Exp.print_exp e2 &
- 	Print.print_buf " :: " & Types.print_type t2 & Print.print_buf "\n" &
-	Print.print_buf "    false branch: " & Exp.print_exp e3 &
- 	Print.print_buf " :: " & Types.print_type t3 & Print.print_buf "\n"
+	Print.print_error_buf "# Type mismatch in if-expression\n" &
+	Print.print_error_buf "    true branch : " & 
+	Exp.print_exp_str e2  => s &
+	Print.print_error_buf s & 
+ 	Print.print_error_buf " :: " & 
+	Types.unparse_type t2 => s & 
+	Print.print_error_buf s & 
+	Print.print_error_buf "\n" &
+	Print.print_error_buf "    false branch: " & 
+	Exp.print_exp_str e3 => s &
+	Print.print_error_buf s & 
+ 	Print.print_error_buf " :: " & Types.unparse_type t3 => s &
+	Print.print_error_buf s & 
+	Print.print_buf "\n"
 	-----------------------------------------------
 	elab_ifexp(e1,Types.PROP((Types.T_BOOL(_),_),c1),
 		   e2,Types.PROP(t2,c2),e3,Types.PROP(t3,c3)) => fail
@@ -3635,8 +3675,10 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 	------------------------------
 	deoverload (_::xs, args, exp) => (op, args', rtype)
 
-  rule	Print.print_buf "# Can't resolve type of expression: " &
-	Dump.print_exp exp & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Can't resolve type of expression: " &
+	Dump.print_exp_str exp => s &
+	Print.print_error_buf s & 
+	Print.print_error_buf "\n"
 	------------------------------
 	deoverload([], args, exp) => fail
 
@@ -3657,9 +3699,12 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------------------------
 	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],rtype) => typ1
 
-  rule	Print.print_buf "# +: Incompatible argument types " &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
-	Print.print_buf "\n"
+  rule	Print.print_error_buf "# +: Incompatible argument types " &
+	Types.unparse_type typ1 => s  &
+	Print.print_error_buf s & 
+	Print.print_error_buf ", " & Types.unparse_type typ2 => s &	
+	Print.print_error_buf s & 
+	Print.print_error_buf "\n"
 	----------------------
 	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],_) => fail
 
@@ -3671,31 +3716,35 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------------------------
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],rtype) => typ1
 
-  rule	Print.print_buf "# -: Incompatible argument types " &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
-	Print.print_buf "\n"
+  rule	Print.print_error_buf "# -: Incompatible argument types " &
+	Types.unparse_type typ1 => s & 
+	Print.print_error_buf s & 
+	Print.print_error_buf ", " & Types.unparse_type typ2 => s &	
+	Print.print_error_buf s & 
+	Print.print_error_buf "\n"
 	----------------------
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],_) => fail
 
-  rule	Types.subtype(typ1,typ2) => true &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
-	Print.print_buf "\n"
+  rule	Types.subtype(typ1,typ2) => true 
 	-----------------------------
 	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),
 			     [typ1,typ2],
 			     rtype) => rtype
 
-  rule	Types.subtype(typ1,typ2) => true &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
-	Print.print_buf "\n"
+  rule	Types.subtype(typ1,typ2) => true 
 	-----------------------------
 	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),
 			     [typ1,typ2],
 			     rtype) => rtype
 
-  rule	Print.print_buf "# *-: Incompatible argument types " &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
-	Print.print_buf "\n"
+  rule	Print.print_error_buf "# *-: Incompatible argument types " &
+	Types.unparse_type typ1 => s & 	
+	Print.print_error_buf "ltype: " & 
+	Print.print_error_buf s & 
+	Types.unparse_type typ2 => s &
+	Print.print_error_buf "rtype: " & 
+	Print.print_error_buf s & 
+	Print.print_error_buf "\n"
 	----------------------
 	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),[typ1,typ2],rtype) => fail
 
@@ -3734,9 +3783,14 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
 
-  rule	Print.print_buf "# *-----: Incompatible argument types " &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
-	Print.print_buf "\n"
+  rule	Print.print_error_buf "# *-----: Incompatible argument types " &
+	Types.unparse_type typ1 => s & 	
+	Print.print_error_buf "ltype: " & 
+	Print.print_error_buf s & 
+	Types.unparse_type typ2 => s &
+	Print.print_error_buf "rtype: " & 
+	Print.print_error_buf s & 
+	Print.print_error_buf "\n"	
 	-----------------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],rtype) => fail
 
@@ -4190,9 +4244,9 @@ relation get_koening_function_types: (Env.Env, Absyn.Path, Absyn.Exp list, Absyn
 
   axiom	get_koening_function_types(env,fn as Absyn.IDENT(_),[],[]) => []
 	
-  rule	Print.print_buf "# Error, koening lookup of non-simple function name, " &
-	Absyn.path_string fn => fnstr & Print.print_buf fnstr & 
-	Print.print_buf "\n"
+  rule	Print.print_error_buf "# Error, koening lookup of non-simple function name, " &
+	Absyn.path_string fn => fnstr & Print.print_error_buf fnstr & 
+	Print.print_error_buf "\n"
 	-------------------
 	get_koening_function_types(env,fn as Absyn.QUALIFIED(_,_),_,_) => fail
 

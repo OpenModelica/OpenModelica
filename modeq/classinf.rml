@@ -257,8 +257,9 @@ relation trans : (State, Event) => State =
   axiom	trans(BLOCK(s),          NEWDEF) => BLOCK(s)
   axiom	trans(CONNECTOR(s),      NEWDEF) => CONNECTOR(s)
 
-  rule	Print.print_buf "# In class " & Print.print_buf s & Print.print_buf "\n" &
-	Print.print_buf "# 'type' can only be derived from predefined types\n"
+  rule	Print.print_error_buf "# In class " & Print.print_error_buf s &
+	Print.print_error_buf "\n" &
+	Print.print_error_buf "# 'type' can only be derived from predefined types\n"
 	-----------------------------------------------
 	trans(TYPE(s),           NEWDEF) => fail
 
@@ -277,15 +278,18 @@ relation trans : (State, Event) => State =
   axiom	trans(IS_NEW(s),         FOUND_EQUATION) => HAS_EQUATIONS(s)
   axiom	trans(MODEL(s),          FOUND_EQUATION) => MODEL(s)
 
-  rule	Print.print_buf "# In class " & Print.print_buf s & Print.print_buf "\n" &
-	Print.print_buf "# Equations not allowed in records\n"
+  rule	Print.print_error_buf "# In class " &
+	Print.print_error_buf s & Print.print_error_buf "\n" &
+	Print.print_error_buf "# Equations not allowed in records\n"
 	-----------------------------------------------
 	trans(RECORD(s),         FOUND_EQUATION) => fail
 
   axiom	trans(BLOCK(s),          FOUND_EQUATION) => BLOCK(s)
 
-  rule	Print.print_buf "#-- In class " & Print.print_buf s & Print.print_buf "\n" &
-	Print.print_buf "#-- Equations not allowed in connectors\n"
+  rule	Print.print_error_buf "# In class " &
+	Print.print_error_buf s &
+        Print.print_error_buf "\n" &
+	Print.print_error_buf "# Equations not allowed in connectors\n"
 	-----------------------------------------------
 	trans(CONNECTOR(s),      FOUND_EQUATION) => fail
 
@@ -361,8 +365,13 @@ relation assert_valid : (State, SCode.Restriction) => () =
 	------------
 	assert_valid(st,re)
 
-  rule	Print.print_buf "# Restriction violation: " & print_state st &
-	Print.print_buf " is not a " & SCode.print_restr re & Print.print_buf "\n" 
+  rule	Print.print_error_buf "# Restriction violation: " & 
+	get_state_name st => str &
+	Print.print_error_buf str &
+	Print.print_error_buf " is not a " &
+	SCode.restr_string re => str &
+	Print.print_error_buf str &
+	Print.print_error_buf "\n" 
 	-------------------------------------------
 	assert_valid(st,re) => fail
 

@@ -164,8 +164,10 @@ module SCode :
   relation get_element_named: (Ident, Class) => Element
   relation print_mod : Mod => ()
   relation print_element : Element => ()
+  relation print_element_str : Element => string 
   relation print_element_list : Element list => ()	  
   relation print_restr: Restriction => ()
+  relation restr_string : Restriction => string 
   relation variability_string: Variability => string
   relation count_parts: Class => int
   relation component_names: Class => string list	  
@@ -176,6 +178,7 @@ end
 with "dump.rml"
 with "debug.rml"
 with "print.rml"
+with "util.rml"
 
 (** relation: elaborate
  **
@@ -640,13 +643,17 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 
 	(* First some rules to prevent bad modifications *)
 
-  rule	Print.print_buf "# Illegal modification of " & Dump.print_component_ref c &
-	Dump.print_component_ref c & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Illegal modification of " & 
+	Dump.print_component_ref_str c  => str &
+	Print.print_error_buf str &
+	Print.print_error_buf "\n"
 	---------------------------------------
 	build_sub(c as Absyn.CREF_IDENT(_,_::_),MOD(_,_::_,_)) => fail
 
-  rule	Print.print_buf "# Illegal modification of " &
-	Dump.print_component_ref c & Print.print_buf "\n"
+  rule	Print.print_error_buf "# Illegal modification of " &
+	Dump.print_component_ref_str c => str &
+	Print.print_error_buf str &
+	Print.print_error_buf "\n"
 	---------------------------------------
 	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),MOD(_,_::_,_)) => fail
 	
@@ -710,6 +717,7 @@ relation get_element_named_from_elts: (Ident, Element list) => Element =
 	get_element_named_from_elts(id2,(cdef as CLASSDEF(id1,_,_,_,_))::_) => cdef
 
 end
+
 (** relation: print_mod
  **
  ** This relation prints a modification.  The code is excluded from
@@ -718,30 +726,39 @@ end
 
 (*!ignorecode*)
 
-relation print_mod : Mod => () =
+relation print_mod: Mod => () =
 
-  rule	Print.print_buf "NOMOD"
-	----------------
-	print_mod(NOMOD)
+  rule	print_mod_str m => s &
+	Print.print_buf s 
+	--------------
+	print_mod m => ()
+end 
+
+relation print_mod_str : Mod => string =
+
+  axiom	print_mod_str(NOMOD) => "NOMOD"
 
   rule	Print.print_buf "redeclare(" & 
-	Dump.print_bool b & Print.print_buf ", " &
-	Dump.print_list(elist, print_element, ", ") &
-	Print.print_buf ")"
+	Util.if(b,"final","") => final_str &
+	Util.list_map(elist,print_element_str) => strs &
+	Util.string_delimit_list(strs,",") => str &
+	Util.string_append_list(["redeclare(",final_str,str,")"]) => res
 	------------------------------
-	print_mod REDECL(b,elist)
+	print_mod_str REDECL(b,elist) => res
 	
-  rule	print_final final &
-	print_subs1 subs &
-	print_eqmod ass
+  rule	Util.if(final,"final","") => final_str &
+	print_subs1_str subs => subs_str &
+	print_eqmod_str ass => ass_str &
+	Util.string_append_list([final_str,subs_str,ass_str]) => res
 	------------
-	print_mod MOD(final, subs, ass)
+	print_mod_str MOD(final, subs, ass) => res
 
-  rule	Print.print_buf "#-- print_mod failed\n"
+  rule	Print.print_buf "#-- print_mod_str failed\n"
 	------------------------
-	print_mod _
+	print_mod_str _ => fail
 
 end
+
 
 (**)
 
@@ -783,49 +800,65 @@ relation print_final : bool => () =
 
 end
 
-relation print_subs : SubMod list => () =
+relation print_subs_str : SubMod list => string =
 
-  axiom print_subs []
+  axiom print_subs_str [] => ""
 
-  rule	Print.print_buf n & print_mod mod
+  rule	Print.print_buf n & print_mod_str mod => s &
+	string_append(n,s) => res
 	-----------------------
-	print_subs [NAMEMOD(n,mod)]
+	print_subs_str [NAMEMOD(n,mod)] => res
 
-  rule	Print.print_buf n & print_mod mod & Print.print_buf ", " &
-	print_subs subs
+  rule	print_mod_str mod => mod_str & 
+	print_subs_str subs => str &
+	Util.string_append_list(["n",mod_str,", ",str]) => res
 	---------------
-	print_subs NAMEMOD(n,mod)::subs
+	print_subs_str NAMEMOD(n,mod)::subs => res
 
-  rule	Dump.print_subscripts ss & print_mod mod
+  rule	Dump.print_subscripts_str ss => str  & 
+	print_mod_str mod => mod_str &
+	string_append(str,mod_str) => res 
 	------------------
-	print_subs [IDXMOD(ss,mod)]
+	print_subs_str [IDXMOD(ss,mod)] => res
 
-  rule	Dump.print_subscripts ss & print_mod mod & Print.print_buf ", " &
-	print_subs subs
+  rule	Dump.print_subscripts_str ss => str & 
+	print_mod_str mod => mod_str &
+	print_subs_str subs => sub_str &
+	Util.string_append_list([str,mod_str,", ",sub_str]) => res
 	--------------
-	print_subs IDXMOD(ss,mod)::subs
+	print_subs_str IDXMOD(ss,mod)::subs => res
 
 end
 
-relation print_subs1 : SubMod list => () =
+relation print_subs1_str : SubMod list => string =
 
-  axiom print_subs1 [] => ()
+  axiom print_subs1_str [] => ""
 
   rule	Print.print_buf "(" &
-	print_subs l &
-	Print.print_buf ")"
+	print_subs_str l => s &
+	Print.print_buf ")" &
+	Util.string_append_list(["(",s,")"]) => res
 	-----------
-	print_subs1 l
+	print_subs1_str l => res
 
 end
 
 relation print_eqmod : Absyn.Exp option => () =
 
-  axiom print_eqmod NONE
+  rule	print_eqmod_str m => s &
+	Print.print_buf s 
+	--------------------
+	print_eqmod(m) => ()
+end
 
-  rule	Print.print_buf " = " & Dump.print_exp e
+relation print_eqmod_str : Absyn.Exp option => string =
+
+  axiom print_eqmod_str NONE => ""
+
+  rule	Dump.print_exp_str e => str &
+	string_append(" = ",str) => res
 	-----------------------------
-	print_eqmod SOME(e)
+	print_eqmod_str SOME(e) => res
 
 end
 	
@@ -843,44 +876,49 @@ end
 
 relation print_element : Element => () =
 
-  rule	Print.print_buf "EXTENDS(" & Absyn.path_string path => str & Print.print_buf str & Print.print_buf ")"
+  rule	print_element_str elt => str &
+	Print.print_buf str
+	----------------
+	print_element(elt) => ()
+end
+	
+
+relation print_element_str : Element => string =
+
+  rule	Absyn.path_string path => str &
+	Util.string_append_list(["EXTENDS(", str, ")"]) => res
 	----------------------------------------------------
-	print_element EXTENDS(path,mod)
+	print_element_str EXTENDS(path,mod) => res
 
-  rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & Print.print_buf ", from baseclass: " &
-	Absyn.path_string path => str & Print.print_buf str & 
-	Print.print_buf ")" 
+  rule	Absyn.path_string path => str &
+	Util.string_append_list(["CLASSDEF(",n,", from basclass: ",str,")"]) 
+	  => res
 	---------------------------------------
-	print_element CLASSDEF(n,final,repl,cl,SOME(path))
+	print_element_str CLASSDEF(n,final,repl,cl,SOME(path)) => res
 
-  rule	Print.print_buf "COMPONENT(" & Print.print_buf n &
-	Print.print_buf ",mod:" & print_mod mod & 
-	Print.print_buf ",tp:" & Absyn.path_string typath => s &
-	Print.print_buf s &
+  rule	print_mod_str mod => mod_str & 
+	Absyn.path_string typath => s &
 	variability_string var => vs &
-	Print.print_buf ",var:" & Print.print_buf vs &
-	Print.print_buf ", from baseclass: " &
-	Absyn.path_string path => str & Print.print_buf str & 
-	Print.print_buf ")"
+	Absyn.path_string path => str & 
+	Util.string_append_list(["COMPONENT(",n,mod_str,s,
+				 "var :", vs, ", from baseclass: ",
+				 str,")"]) => res
 	----------------------------------------
-	print_element COMPONENT(n,final,repl,prot,ATTR(_,_,_,var,_),typath,mod,SOME(path))
+	print_element_str COMPONENT(n,final,repl,prot,ATTR(_,_,_,var,_),typath,mod,SOME(path)) => res
 
-  rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & 
-	Print.print_buf ")" 
+  rule	Util.string_append_list(["CLASSDEF(",n,")"]) => res
 	---------------------------------------
-	print_element CLASSDEF(n,final,repl,cl,NONE)
+	print_element_str CLASSDEF(n,final,repl,cl,NONE) => res
 
-  rule	Print.print_buf "COMPONENT(" & Print.print_buf n &
-	Print.print_buf ",mod:" & print_mod mod & 
-	Print.print_buf ",tp:" & Absyn.path_string typath => s &
-	Print.print_buf s &
-	Print.print_buf ")"
+  rule	print_mod_str mod => mod_str & 
+	Absyn.path_string typath => s &
+	Util.string_append_list(["COMPONENT(",n, " mod:",mod_str, ", tp: ",
+				 s, ")"])=> res 
 	----------------------------------------
-	print_element COMPONENT(n,final,repl,prot,attr,typath,mod,NONE)
+	print_element_str COMPONENT(n,final,repl,prot,attr,typath,mod,NONE) 
+	  => res
 
-  rule	Print.print_buf "IMPORT(_)\n" 
-	-------------------------
-	print_element(IMPORT(_))
+  axiom	print_element_str(IMPORT(_)) => "IMPORT(_)"
 end	
 
 relation variability_string: Variability => string =

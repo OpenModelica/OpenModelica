@@ -501,8 +501,7 @@ relation generate_ext_function_name : (string, string) => string =
 	----------------------------------
 	generate_ext_function_name (name, "FORTRAN 77") => name'
 
-  rule	Print.print_buf "#-- generate_ext_function_name failed\n" &
-	Print.print_buf "#-- Unknown language in external declaration\n"
+  rule	Print.print_error_buf "# Unknown language in external declaration\n"
 	---------------------------------------------------------
 	generate_ext_function_name (_,_) => fail
 
@@ -633,7 +632,7 @@ end
 relation is_array_or_string : DAE.Element => bool =
 
   rule	is_array var => true &
-	Print.print_buf "#-- array of strings is probably not supported yet\n"
+	Print.print_error_buf "# array of strings is probably not supported yet\n"
 	------------------------------------------------------------------
 	is_array_or_string (var as DAE.VAR(cr,vk,vd,DAE.STRING,_,_,st,fl,cl)) => fail
 
@@ -643,7 +642,7 @@ relation is_array_or_string : DAE.Element => bool =
 
   axiom	is_array_or_string (var as DAE.VAR(cr,vk,vd,DAE.STRING,_,_,st,fl,cl)) => true
 
-  rule	Print.print_buf "#-- is_array_or_string failed\n" &
+  rule	Print.print_buf "# is_array_or_string failed\n" &
 	DAE.dump2 DAE.DAE([el])
 	------------------------------------------------------------------
 	is_array_or_string el => fail

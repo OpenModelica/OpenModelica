@@ -189,15 +189,13 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
 
   rule	build_env_from_symboltable(st) => env &	
-	not Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	Print.print_buf "# Error determing type of expression." 
+	not Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) 
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => fail
 	
   rule	build_env_from_symboltable(st) => env &	
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	not Ceval.ceval (env,sexp,true,SOME(st'),NONE) => (_,_) &
-	Print.print_buf "# Constant evaluating of expression failed.\n" 
+	not Ceval.ceval (env,sexp,true,SOME(st'),NONE) => (_,_) 
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => fail
 
@@ -239,7 +237,7 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),rexp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
 	    => ("", newst)
 	
-  rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str &
+  rule	Print.get_error_string() => s1 & Print.clear_error_buf() & string_append("Error evaluating expr.\n",s1) => str &
 	Debug.fprint ("failtrace", "#-- evaluate_expr failed:") &
 	Debug.fcall ("failtrace", Dump.dump_istmt, ISTMTS([stmt], true)) &
 	Debug.fprintln ("failtrace", "\n")
@@ -251,10 +249,10 @@ relation get_ident_from_crefexp : Absyn.Exp => Absyn.Ident =
 
   axiom	get_ident_from_crefexp Absyn.CREF(Absyn.CREF_IDENT(id, _)) => id
 	
-  rule	Print.print_buf "#-- Not a component reference in tuple assignment:\n#-- " &
+  rule	Print.print_error_buf "# Not a component reference in tuple assignment:\n# " &
 	Dump.print_exp_str exp => str &
-	Print.print_buf str &
-	Print.print_buf "\n"
+	Print.print_error_buf str &
+	Print.print_error_buf "\n"
 	--------------------
 	get_ident_from_crefexp exp => fail
 end
@@ -1523,11 +1521,12 @@ relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Clas
 	(Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([],NONE)), 
 	 Absyn.IDENT("Boolean"))
 
-  rule	Print.print_buf "#Error, lookup_classdef failed\n" &
+  rule	Print.print_error_buf "#Error, lookup_classdef failed\n" &
 	Absyn.path_string path => s1 &
 	Absyn.path_string inpath => s2 &
-	Print.print_buf s1 & Print.print_buf " in " & Print.print_buf s2 &
-	Print.print_buf "\n" 
+	Print.print_error_buf s1 & Print.print_error_buf " in " & 
+	Print.print_error_buf s2 &
+	Print.print_error_buf "\n" 
 	---------------------
 	lookup_classdef(path,inpath,_) => fail
 end

@@ -61,6 +61,7 @@ module Dump:
   relation print_component_ref_str : Absyn.ComponentRef => string
   relation print_path : Absyn.Path => ()
   relation print_subscripts : Absyn.Subscript list => ()
+  relation print_subscripts_str : Absyn.Subscript list => string 
   relation print_arraydim: Absyn.ArrayDim => ()
   relation print_arraydim_str: Absyn.ArrayDim => string 
   relation print_equation: Absyn.Equation => ()
