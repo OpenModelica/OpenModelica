@@ -480,7 +480,7 @@ logical_factor :
 		;
 
 relation :
-		arithmetic_expression ( rel_op arithmetic_expression )?
+		arithmetic_expression ( ( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ ) arithmetic_expression )?
 		;
 
 rel_op :
