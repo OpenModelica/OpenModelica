@@ -30,6 +30,7 @@ typedef int bool;
 #include "rml.h"
 #include "yacclib.h"
 #include "exp.h"
+#include "classinf.h"
 #include "types.h"
 #include "absyn.h"
 #include "errno.h"
@@ -202,14 +203,14 @@ class_definition[bool is_replaceable,bool is_final] :
         << void *restr;
 	   bool partial=false, has_array_dim=false, has_class_spec=false; >>
 	{ PARTIAL << partial = true; >> }
-        ( CLASS_                  << restr = Absyn__CL_5fCLASS; >>
-	| MODEL			  << restr = Absyn__CL_5fMODEL; >>
-	| RECORD		  << restr = Absyn__CL_5fRECORD; >>
-	| BLOCK			  << restr = Absyn__CL_5fBLOCK; >>
-	| CONNECTOR		  << restr = Absyn__CL_5fCONNECTOR; >>
-	| TYPE			  << restr = Absyn__CL_5fTYPE; >>
-	| PACKAGE		  << restr = Absyn__CL_5fPACKAGE; >>
-	| { EXTERNAL } FUNCTION   << restr = Absyn__CL_5fFUNCTION; >>
+        ( CLASS_                  << restr = ClassInf__R_5fCLASS; >>
+	| MODEL			  << restr = ClassInf__R_5fMODEL; >>
+	| RECORD		  << restr = ClassInf__R_5fRECORD; >>
+	| BLOCK			  << restr = ClassInf__R_5fBLOCK; >>
+	| CONNECTOR		  << restr = ClassInf__R_5fCONNECTOR; >>
+	| TYPE			  << restr = ClassInf__R_5fTYPE; >>
+	| PACKAGE		  << restr = ClassInf__R_5fPACKAGE; >>
+	| { EXTERNAL } FUNCTION   << restr = ClassInf__R_5fFUNCTION; >>
 	)
         i:IDENT
 	comment
