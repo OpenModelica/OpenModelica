@@ -723,11 +723,11 @@ relation dump_var : Element => () =
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
 	dump_start_value start &
-	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+(*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, ", ") => classstr &
 	Print.print_buf " \"{" &
 	Print.print_buf classstr &
-	Print.print_buf "}\" " &
+	Print.print_buf "}\" " & *)
 	Print.print_buf ";\n"
 	--------------------------------------
 	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,classlst)
@@ -751,9 +751,9 @@ relation dump_var_str : Element => string =
 	dump_type_str typ => s3 &	
 	Exp.print_component_ref_str id => s4 & 
 	dump_start_value_str start => s5 &
-	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
-	Util.string_delimit_list(classstrlst, ", ") => classstr &
-	Util.string_append_list([s1,s2,s3,s4,s5," \"{",classstr,"}\";\n"]) => str
+(*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
+	Util.string_append_list([s1,s2,s3,s4,s5,";\n"]) => str
 	--------------------------------------
 	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow,classlst) => str
 	
@@ -763,9 +763,9 @@ relation dump_var_str : Element => string =
 	Exp.print_component_ref_str id => s4 & 
 	Exp.print_exp_str e => s5 & 
 	dump_start_value_str start => s6 &
-	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
-	Util.string_delimit_list(classstrlst, ", ") => classstr &
-	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6," \"{",classstr,"}\" ;\n"] )
+(*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
+	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6,";\n"] )
 	  => str
 	--------------------------------------
 	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,classlst) => str
