@@ -1,2 +1,3 @@
 @echo off
-start ptplot.exe %1
+start javaw -classpath "%PTII%" ptolemy.plot.plotml.EditablePlotMLApplication %1
+

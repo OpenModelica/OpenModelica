@@ -1,3 +1,8 @@
 @echo off
-cd "%MOSHHOME%\..\ModSimPack\Simulator"
-g++ -o %1 CModelicaSimulator.cpp -I./ ../bin/dasrt.lib ../bin/ddassldassl.lib ../bin/dgesvlapack.lib ../bin/libmat.lib ../bin/libmx.lib
+set GCC_EXEC_PREFIX=
+set OLDPATH=%PATH%
+pushd "%MOSHHOME%\..\MinGW\bin"
+set PATH=%CD%
+popd
+mingw32-make -f %1
+set PATH=%OLDPATH%
