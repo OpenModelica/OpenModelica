@@ -64,19 +64,71 @@ relation inst_list : (Env, Mod, Prefix, (Env, Mod, Prefix, 'a)
 
 end
 
-relation inst_connect: (Env, Explode.ComponentRef,Explode.ComponentRef)
+	(* FIXME flow variables. This needs to be totally reworked *)
+
+relation connect_vars : (Exp.ComponentRef, Exp.ComponentRef,
+			 Types.Var list) => DAE.DAEcomp list =
+
+  axiom	connect_vars(_,_,[]) => []
+
+  rule	Exp.extend_cref(c1, n, []) => c1' &
+	Exp.extend_cref(c2, n, []) => c2' &
+	print "connect_vars: " &
+	Dump.dump_component_ref c1' & print " <-> " &
+	Dump.dump_component_ref c2' &
+	print "\n" &
+	connect_components([], c1', c2', ty) => dae1 &
+	connect_vars(c1,c2,xs) => dae2 &
+	list_append(dae1, dae2) => dae
+	------------------------------
+	connect_vars(c1,c2,(n,Types.ATTR(_,flow,_,_),ty)::xs) => dae
+
+end
+
+relation connect_components: (Prefix,
+			      Explode.ComponentRef,
+			      Explode.ComponentRef,
+			      Types.Type) => DAE.DAEcomp list =
+	
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	print "connect_components 1: " &
+	Dump.dump_component_ref c1' & print " <-> " &
+	Dump.dump_component_ref c2' &
+	print "\n"
+	----------------------------------
+	connect_components(pre, c1, c2, Types.BUILTIN(_))
+	  => [DAE.EQUATION(Exp.RELATION(Exp.CREF(c1'),
+					Exp.EQUAL,Exp.CREF(c2')))]
+	
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	print "connect_components 2: " &
+	Dump.dump_component_ref c1' & print " <-> " &
+	Dump.dump_component_ref c2' &
+	print "\n" &
+	connect_vars(c1',c2', l) => dae
+	----------------------------------------
+	connect_components(pre,c1,c2,Types.COMPLEX(l)) => dae
+	
+end
+
+relation inst_connect: (Env, Prefix, Explode.ComponentRef,Explode.ComponentRef)
 	  => DAE.DAEcomp list =
-(*
-  rule	type_of(env, o1) => c1 &
-	type_of(env, o2) => c2 &
-	not Types.same_type(c1, c2) &
-	print "# Incompatible types in connect()\n" & fail
+
+  rule	print " trying to connect " &
+	Dump.dump_component_ref(o1) & print " with " &
+	Dump.dump_component_ref(o2) & print "\n" &
+	Env.lookup_var(env,o1) => (attr1,ty1) &
+	Env.lookup_var(env,o2) => (attr2,ty2) &
+	Types.same_type(ty1, ty2) &
+	connect_components(pre, o1, o2, ty1) => dae
 	---------------------------------
-	inst_connect(o1,o2) => []
-*)
-  rule	print "No connect() yet\n" & fail
+	inst_connect(env,pre,o1,o2) => dae
+
+  rule	print "# could not connect\n" & fail
 	---------------------------------
-	inst_connect(_,_,_) => []
+	inst_connect(_,_,_,_) => []
 
 end
 
@@ -88,7 +140,7 @@ relation inst_equation: (Env,Mod,Prefix,Explode.Equation)
    * Handle connct statements
    *)
 
-  rule	inst_connect(env,c1,c2) => l
+  rule	inst_connect(env,pre,c1,c2) => l
 	------------------------
 	inst_equation(env,mods,pre, Absyn.EQ_CONNECT(c1,c2))
 	 => (l,env)
@@ -111,105 +163,107 @@ relation inst_equation: (Env,Mod,Prefix,Explode.Equation)
 	--------------------------------------------
 	inst_equation(env,mods,pre,Absyn.EQ_EXPR(_)) => ([],env)
 
-  rule	Env.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,_,_,_,_,_,SOME(_)) &
+  rule	Env.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
 	print " shadowed equation for " & print n & print "\n"
 	------------------------------------------------------
 	inst_equation(env,mods,pre,
-	Absyn.EQ_EQUALS(Exp.PATH(Exp.IDENT(n)), e2))
+		      Absyn.EQ_EQUALS(Exp.CREF([(n,[])]), e2))
 	  => ([],env)
 
   rule	print " equation\n" &
 	Prefix.prefix_exp(e1,pre) => e1' &
 	Prefix.prefix_exp(e2,pre) => e2'
 	------------------------
-	inst_equation(env,mods,pre,Absyn.EQ_EQUALS(e1,e2)) =>
-		([DAE.EQUATION(Exp.RELATION(e1',Exp.EQUAL,e2'))],env)
+	inst_equation(env,mods,pre,Absyn.EQ_EQUALS(e1,e2))
+	  => ([DAE.EQUATION(Exp.RELATION(e1',Exp.EQUAL,e2'))],env)
 
 end
 
 relation inst_mod_assignment : (Prefix, Ident, Mod) => DAE.DAEcomp list =
 
-  rule  Prefix.prefix_path(Exp.IDENT(v), pre) => v' &
+  rule  Prefix.prefix_cref(pre, [(v,[])]) => v' &
 	
-	Exp.path_string(v') => vn &
-	print "  assignment modification: " & Mod.dump(mod, vn) &
+	print "  assignment modification: " &
+ 	Dump.dump_component_ref v' &
+ 	Mod.dump mod &
 	print "\n" &
-
+	
 	Prefix.prefix_exp(e, pre) => e'
 	-------------------------------
 	inst_mod_assignment(pre,v,mod as Mod.MOD(_,_,SOME(e)))
-	  => [DAE.EQUATION(Exp.RELATION(Exp.PATH(v'), Exp.EQUAL, e'))]
-
+	  => [DAE.EQUATION(Exp.RELATION(Exp.CREF(v'), Exp.EQUAL, e'))]
+	  
   axiom inst_mod_assignment(_,_,_) => []
-
+  
 end
 
-relation check_prot : (bool, Mod, string) => () =
+relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
 
-  rule  print "  public variable " & print ns & print "\n"
+  rule  print "  public variable " & Dump.dump_component_ref cref & print "\n"
 	--------------------------------------------------
-	check_prot(false,_,ns)
-
+	check_prot(false,_,cref)
+	
   axiom check_prot(_,Mod.NOMOD,_)
 
   rule  print "ERROR: Trying to modify protected element " &
-	print ns & print "\n" &	fail
+	Dump.dump_component_ref cref & print "\n" &
+	fail
 	----------------------------
-	check_prot(true,_,ns)
+	check_prot(true,_,cref)
 
 end
 
 relation inst_element: (Env, Mod, Prefix, Explode.Element)
-	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
+	  => (DAE.DAEcomp list, Env, Types.Var list) =
 
-  (* extends
-   *
-   * Handle "extends" elements by instantiating the class definition
-   * of the extended class.
-   *)
-
+	(* extends
+	 *
+	 * Handle "extends" elements by instantiating the class definition
+	 * of the extended class.
+	 *)
+	 
   rule	Env.lookup_class(env,cn)
 	  => (c as Explode.CLASS(_,partial,_,_),classmod) &
-
+	
 	Exp.path_string(cn) => cns &
 	print "  extending with class " & print cns & print "\n" &
-
+	
 	(* Can't extend partial classes *)
 	assert(partial,false,"Can't extend partial class") &
-
+	
 	(* Build the combind set of modifications *)
 	(* classmod is the modifications stored with the class *)
 	(* mods     is the modifications passed to the relation *)
 	(* m        is the modification stored in the element *)
 	(* FIXME: verify order *)
-	print "  modification 1: " & Mod.dump(classmod,cns) & print "\n" &
-	print "  modification 2: " & Mod.dump(mods,cns) & print "\n" &
-	print "  modification 3: " & Mod.dump(m,cns) & print "\n" &
+	print "  modification 1: " & print cns & Mod.dump classmod & print "\n" &
+	print "  modification 2: " & print cns & Mod.dump mods & print "\n" &
+	print "  modification 3: " & print cns & Mod.dump m & print "\n" &
 	Mod.merge(classmod,mods) => mods' &
 	Mod.merge(mods',m) => mods'' &
-
+	
 	(* Can't use inst_class, as that creates a new frame *)
 	inst_class_in(env,mods'',pre,c,prot) => (dae,env',tys)
 	----------------------------------
 	inst_element(env,mods,pre,
-		     Explode.ELEMENT(final,prot,_,Explode.EXTENDS(cn,m)))
+	Explode.ELEMENT(final,prot,_,Explode.EXTENDS(cn,m)))
 	  => (dae,env',tys)
-
-  (* components
-   *
-   * Rules for instantiating components.
-   *)
-
-  (* If a variable is declared multiple times, the first is used *)
+	
+  	(* components
+	 *
+	 * Rules for instantiating components.
+	 *)
+	 
+	 (* If a variable is declared multiple times, the first is used *)
   rule	Env.lookup_var_local(env,n) => _ &
 	print " ignoring shadowed variable " & print n & print "\n"
 	--------------------------
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,n,
-				     Explode.COMPONENT(_,_,_,_,_,_,_,_,_)))
+				     Explode.COMPONENT(_,_,_,_)))
 	  => ([],env,[])
-
-  (* Illegal redeclarations *)
+	
+  	(* Illegal redeclarations *)
   rule	Env.lookup_var_local(env,n) => _ &
 	print "Trying to redeclare the class " & print n &
 	print " as a variable\n" &
@@ -226,7 +280,7 @@ relation inst_element: (Env, Mod, Prefix, Explode.Element)
 	------------------------
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,n,
-				     Explode.COMPONENT(_,_,_,_,_,_,_,_,_)))
+				     Explode.COMPONENT(_,_,_,_)))
 	  => ([],env,[])
 
   (* A new class definition
@@ -236,14 +290,14 @@ relation inst_element: (Env, Mod, Prefix, Explode.Element)
    
   rule	(* Explode.convert(c) => c' & *)
 	Mod.lookup_modification(mods,n) => classmod &
-	print "  adding " & Mod.dump(classmod,n) & print "\n" &
+	print "  adding " & print n & Mod.dump classmod & print "\n" &
 	(* Mod.simple_maybe_modify_class(env,mm,pre,c') => (c'',dae) & *)
 	Env.extend_frame_c(env,c,classmod) => env'
 	----------------------------------------
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,n,
 				     Explode.CLASSDEF(_,c)))
-	 => ([],env',[])
+	  => ([],env',[])
 
   (* A variable
    *
@@ -252,42 +306,38 @@ relation inst_element: (Env, Mod, Prefix, Explode.Element)
    * with an extended prefix.
    *)
 
-  rule	Prefix.prefix_path(Exp.IDENT(n),pre) => vn &
+  rule	Prefix.prefix_cref(pre,[(n,[])]) => vn &
 
-	Exp.path_string(vn) => ns &
-	print " variable " & print ns & print "\n" &
+	print " variable " & Dump.dump_component_ref vn & print "\n" &
 
 	(* Find the set of modifications *)
 	(* FIXME: merge order *)
 	Env.lookup_class(env,t) => (cl,classmod) &
-	print "  modification 1: " & Mod.dump(classmod,ns) & print "\n" &
+	print "  modification 1: " & Mod.dump classmod & print "\n" &
 
 	Mod.lookup_modification(mods,n) => mm &
-	print "  modification 2: " & Mod.dump(mm,ns) & print "\n" &
-
-	print "  modification 3: " & Mod.dump(m,ns) & print "\n" &
+	print "  modification 2: " & Mod.dump mm & print "\n" &
+	print "  modification 3: " & Mod.dump m & print "\n" &
 
 	(* classmod is the modifications stored with the class *)
 	(* mm       is the modifications passed to the relation *)
 	(* m        is the modification stored in the element *)
 
 	(* Check for modifications to a protected element *)
-	check_prot(prot, mm, ns) &
+	check_prot(prot, mm, vn) &
 
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m) => mod' &
-	print "  modification: " & Mod.dump(mod',ns) & print "\n" &
+	print "  modification: " & Mod.dump mod' & print "\n" &
 
-	Prefix.prefix_add(n,pre) => pre' &
-
-	print "        added\n" &
+	Prefix.prefix_add(n,[],pre) => pre' &
 
 	inst_class(env,mod',pre',cl) => (dae1,ty) &
 
 	Mod.mod_assignment mod' => ass &
-	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,ty,f,p,c,i,o,ass)) => env' &
-
-	print "        instantiated\n" &
+	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,ass)) => env' &
+	print " extended frame with variable " & Dump.dump_component_ref vn &
+ 	print "\n" &
 
 	(* If the modification assigns a value to this variable, add an
 	   equation *)
@@ -297,8 +347,8 @@ relation inst_element: (Env, Mod, Prefix, Explode.Element)
 	--------------------------
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,_,
-				     Explode.COMPONENT(n,f,p,c,i,o,t,ad,m)))
-         => (dae,env',[(n,ty)])
+				     Explode.COMPONENT(n,attr,t,m)))
+         => (dae,env',[(n,attr,ty)])
 
   (*
    * If the class lookup in the previous rule fails, this rule catches
@@ -314,13 +364,13 @@ relation inst_element: (Env, Mod, Prefix, Explode.Element)
 	--------------------------
 	inst_element(env,_,pre,
 		     Explode.ELEMENT(final,prot,n,
-				     Explode.COMPONENT(_,_,_,_,_,_,t,_,_)))
+				     Explode.COMPONENT(_,_,t,_)))
          => ([],env,[])
 
 end
 
 and inst_element_list : (Env, Mod, Prefix, Explode.Element list)
-	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
+	  => (DAE.DAEcomp list, Env, Types.Var list) =
 
   axiom inst_element_list(env,_,_,[]) => ([], env, [])
 
@@ -343,7 +393,7 @@ and inst_algorithm : (Env, Mod, Prefix, Explode.Algorithm)
 end
 
 and inst_classdef: (Env, Mod, Prefix, Explode.ClassDef, bool)
-	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
+	  => (DAE.DAEcomp list, Env, Types.Var list) =
 
 	(* FIXME: propagate prot *)
   rule	inst_element_list(env,mods,pre,els) => (dae1,env', tys) &
@@ -374,7 +424,7 @@ and inst_classdef: (Env, Mod, Prefix, Explode.ClassDef, bool)
 end
 
 and inst_class_in: (Env, Mod, Prefix, Explode.Class, bool)
-	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
+	  => (DAE.DAEcomp list, Env, Types.Var list) =
 
   rule	print " instantiating " & print n & print "\n" &
 	inst_classdef(env,mods,pre,d,prot) => (l,env', tys)
@@ -395,13 +445,22 @@ and inst_class_in: (Env, Mod, Prefix, Explode.Class, bool)
 
 end
 
+and mktype : Types.Var list => Types.Type =
+
+  axiom	mktype [] => Types.BUILTIN("<unknown>")
+
+  axiom	mktype l => Types.COMPLEX(l)
+
+end
+
 and inst_class: (Env, Mod, Prefix, Explode.Class)
 	  => (DAE.DAEcomp list, Types.Type) =
 
   rule	Env.new_frame(env) => env' &
-	inst_class_in(env', mod, pre, c, false) => (dae,_,tys)
+	inst_class_in(env', mod, pre, c, false) => (dae,_,tys) &
+	mktype(tys) => ty
 	-------------------------------------------
-	inst_class(env, mod, pre, c) => (dae, Types.COMPLEX(tys))
+	inst_class(env, mod, pre, c) => (dae, ty)
 
 end
 
