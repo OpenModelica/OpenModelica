@@ -840,7 +840,9 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
                                   fixed_str,
                                   stateSel_str],", ") => res' &
  
-       Util.string_append_list(["(",res',")"]) => res
+        Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
         --------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_REAL(quant,
                                                         unit,
@@ -865,7 +867,9 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
                                   max_str,
                                   Initial_str,
                                   fixed_str],", ") => res' & 
-        Util.string_append_list(["(",res',")"]) => res
+         Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
          -----------------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_INT(quant, 
                                                   (min , max),
@@ -880,7 +884,9 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
         Util.string_delimit_list_no_empty([quantity,
                                  Initial_str,
                                  fixed_str],", ") => res' &
-      Util.string_append_list(["(",res',")"]) => res
+         Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
          -----------------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_BOOL(quant,
                                                    Initial,
@@ -890,7 +896,9 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
         Dump.get_option_with_concat_str(Initial,string_to_string,"start = ") => Initial_str &
         Util.string_delimit_list_no_empty([quantity,
                                  Initial_str],", ") => res' & 
-      Util.string_append_list(["(",res',")"]) => res
+        Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
          -----------------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_STRING(quant,
                                                           Initial))) => res
@@ -908,7 +916,9 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
                                   max_str,
                                   Initial_str,
                                   fixed_str],", ") => res' &
-      Util.string_append_list(["(",res',")"]) => res
+        Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
          -----------------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_ENUMERATION(quant,
                                                           (min,max),Initial,fixed))) 
