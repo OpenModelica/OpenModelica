@@ -109,6 +109,9 @@ val nil2real = Types.T_FUNCTION([],
 val real2real = Types.T_FUNCTION([("x",Types.T_REAL)],
 				 Types.T_REAL)
 
+val real2int = Types.T_FUNCTION([("x",Types.T_REAL)],
+				 Types.T_INTEGER)
+
 val real_real2real = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
 				      Types.T_REAL)
 
@@ -482,7 +485,8 @@ relation initial_env =
 	Env.extend_frame_t(env17, "div", real_real2real)             => env18 &
 	Env.extend_frame_t(env18, "rem", real_real2real)             => env19 &
 	Env.extend_frame_t(env19, "ceil", real2real)                 => env20 &
-	Env.extend_frame_t(env20, "floor", real2real)                => env21 &
+	Env.extend_frame_t(env20, "floor", real2real)                => env20b&
+	Env.extend_frame_t(env20b, "integer", real2int)              => env21 &
 
 	(* differentiable functions *)
 	Env.extend_frame_t(env21, "abs", real2real)                  => env22 &

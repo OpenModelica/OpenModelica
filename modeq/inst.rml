@@ -1192,7 +1192,9 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	Debug.fprintln ("insttr", "inst_equation_eqfor_1") &
-	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
+	add_for_loop_scope(env,i) => env' &
+	Debug.fprintln ("insti", "loop-variable added to scope") &
+	Lookup.lookup_var(env', Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
 	      Types.T_INTEGER, Types.UNBOUND) &
 	Debug.fprintln ("insti", "loop variable looked up") &
@@ -1204,7 +1206,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* FIXEM: Check bounds *)
 	Static.ceval (env,e') => v &
 	Debug.fprintln ("insti", "for expression evaluated") &
-	unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') &
+	unroll(env',mod,pre,csets,ci_state,i,v,el) => (dae, csets') &
 	Debug.fprintln ("insti", "for expression unrolled") &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state' &
 	Debug.fprintln ("insttr", "inst_equation_eqfor_1 succeeded")
@@ -1241,6 +1243,25 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end
 
+
+(** HJ: **)
+relation add_for_loop_scope : (Env.Env, Ident) => Env.Env =
+
+  rule	Env.open_scope env => env' &
+	Env.extend_frame_v(env',
+			   Types.VAR(i,
+				     Types.ATTR(false,
+						SCode.RW,
+						Absyn.VAR,
+						Absyn.BIDIR),
+				     false,
+				     Types.T_INTEGER, 
+				     Types.UNBOUND)
+			   ) => env''
+	---------------
+	add_for_loop_scope(env, i) => env''
+
+end
 
 (** LS: **)
 relation is_parameter : (Exp.ComponentRef, Env.Env) => () =

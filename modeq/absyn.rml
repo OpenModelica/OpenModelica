@@ -61,9 +61,16 @@ module Absyn:
   datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
 				   * Class
 		       | EXTENDS of Path * ElementArg list
+		       | IMPORT of Import
 		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
 				     * Path	     (* type name *)
 				     * Component list
+				     
+				     
+  datatype Import = NAMED_IMPORT of Ident * Path
+		  | QUAL_IMPORT of Path
+		  | UNQUAL_IMPORT of Path
+
   (** An element is something that occurs in a public or protected
    ** section in a class definition.  There is one constructor in the
    ** `ElementSpec' type for each possible element type.  There are
@@ -91,6 +98,7 @@ module Absyn:
 		    | EQ_CONNECT of ComponentRef * ComponentRef
 		    | EQ_FOR of Ident * Exp * Equation list
 		    | EQ_WHEN_E of Exp * Equation list (*1.1*) 
+		    | EQ_ASSERT of Assert
 
   (** The `Equation' type describes one equation in an equation *)
   (** section. *)
@@ -104,10 +112,14 @@ module Absyn:
 		    | ALG_WHILE of Exp * Algorithm list
 		(* Old 1.0     | ALG_WHEN of Exp * Algorithm list  *)
 		     | ALG_WHEN_A of Exp * Algorithm list (*1.1*)
+		     | ALG_ASSERT of Assert
   (** The `Algorithm' type describes one algorithm statement in an *)
   (** algorithm section.  It does not describe a whole algorithm.  The *)
   (** reason this type is named like this is that the name of the *)
   (** grammar rule for algorithm statements is `algorithm'. *)
+
+  datatype Assert = ASSERT of Exp * string list
+		  | TERMINATE of string list
 
   (** - Modifications *)
   datatype Modification = CLASSMOD of ElementArg list * Exp option

@@ -6,17 +6,24 @@
 # $Id$
 #
 
+
+ANTLR_HOME = /home/pelab/pub/pkg/antlr-2.7.1
+ANTLR_CPP = $(ANTLR_HOME)/lib/cpp/gcc-2.95.2
+
+ANTLR_INCP = -I$(ANTLR_CPP)/include
+ANTLR_LIBP = -L$(ANTLR_CPP)/lib
+
 SHELL	= /bin/sh
 CC	= gcc
 CFLAGS	= 
-LDFLAGS = -lrml -lm
+LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr
 #RML	= /net/senilix/files/senilix3/labs/pelab/pub/pkg/rml/rml-2.1/sparc-sol2-gcc/bin/rmlc -g
 RMLHOME	= /home/pelab/pub/pkg/rml/current/sparc-sol2-gcc
 RML	= $(RMLHOME)/bin/rmlc -g
 RMLINC  = -I$(RMLHOME)/include/plain
 #RML	= rmlc -g
 PROG	= modeq
-AST	= ast/libast.a
+AST	= absyn_builder/absyn_builder.a
 RTOBJ   = runtime/rtopts.o
 
 SRCRML=	debug.rml \
@@ -46,7 +53,8 @@ SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
 SRCO=	$(SRCC:.c=.o)
 
-SUBDIRS	= ast runtime
+#SUBDIRS= ast runtime
+SUBDIRS	= runtime absyn_builder
 
 .SUFFIXES:
 .SUFFIXES: .o .rml .h
@@ -64,7 +72,7 @@ test:
 	@(cd testsuite ; make)
 
 $(PROG): $(SRCO) $(AST) $(RTOBJ)
-	$(RML) -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
+	g++ -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
 
 #absyn.o:	absyn.rml
 #exp.o:		exp.rml

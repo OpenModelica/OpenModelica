@@ -73,6 +73,30 @@ static int set_debug_flags(char *flagstr)
   return 0;
 }
 
+int check_debug_flag(char const* strdata)
+{
+  int flg=0;
+  int i;
+  if (debug_all==1) {
+    flg=1;
+  }
+  for (i=0; i<debug_flagc; i++) {
+    if (strcmp(debug_flags[i], strdata)==0) {
+      flg=1;
+      break;
+    }
+    else if (debug_flags[i][0]=='-' &&
+	     strcmp(debug_flags[i]+1, strdata)==0) {
+      flg=0;
+      break;
+    }
+  }
+  if (flg==1 && debug_flag_info==1)
+    fprintf(stdout, "--------- %s ---------\n", strdata);	
+
+  return flg;
+}
+
 RML_BEGIN_LABEL(RTOpts__args)
 {
   void *args = rmlA0;

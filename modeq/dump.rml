@@ -203,12 +203,34 @@ relation print_elementspec: Absyn.ElementSpec => () =
 	------------------------------------------
 	print_elementspec(Absyn.COMPONENTS(attr,t,cs))
 	
+  rule	print "IMPORT(" &
+	print_import i &
+	print ")"
+	--------
+	print_elementspec(Absyn.IMPORT(i))
+
   rule	print " ##ERROR## "
 	-------------------
 	print_elementspec(_)
 
 end
 
+relation print_import : Absyn.Import => () =
+
+  rule	print i & print " = " &
+	print_path p
+	-----------------------
+	print_import(Absyn.NAMED_IMPORT(i,p))
+
+  rule	print_path p
+	-------------
+	print_import(Absyn.QUAL_IMPORT(p))
+
+  rule	print_path p & print ".*"
+	--------------------------
+	print_import(Absyn.UNQUAL_IMPORT(p))
+		     
+end
 
 relation print_elementattr: Absyn.ElementAttributes => () =
 
