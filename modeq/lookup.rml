@@ -671,12 +671,12 @@ end
 
 relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
 
-  rule	lookup_class_in_frame(items,id,msg) => (c, _) 
+  rule	lookup_class_in_frame(items,id,msg) => (c,_)  
 	---------------------
 	lookup_class_in_env(env as (Env.FRAME(items,_)::fs),Absyn.IDENT(id),msg)
 	    => (c,env)
 
-  rule	lookup_class_in_frame(items, id, msg) => (c,  _) &
+  rule	lookup_class_in_frame(items, id, msg) => (c, _) &
 	lookup_class_in_class(env, c, path,false) => (c2, _)
 	-------------------------------------------	
 	lookup_class_in_env(env as (Env.FRAME(items,_)::fs), Absyn.QUALIFIED(id,path),msg) 
@@ -689,9 +689,9 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
 	lookup_class_in_env(f::fs,id,msgflag) => (c, f::fs)
 *)
 
-  rule	lookup_class_in_env(fs,id,msgflag) => (c, _)
+  rule	lookup_class_in_env(fs,id,msgflag) => (c, env')
 	---------------------
-	lookup_class_in_env(f::fs,id as Absyn.QUALIFIED(_,_),msgflag) => (c, f::fs)
+	lookup_class_in_env(f::fs,id as Absyn.QUALIFIED(_,_),msgflag) => (c, env' (* PA: was f::fs*))
 	
 	
 	
@@ -707,23 +707,20 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
         not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
         Print.print_buf "No message in this case.\n" 
 	---------------------
-	lookup_class_in_env(Env.FRAME(items,true)::fs, aid as Absyn.IDENT(id),false) => fail
-
-
+	lookup_class_in_env(Env.FRAME(items,true)::fs, 
+			    aid as Absyn.IDENT(id),false) => fail
 
  rule	Builtin.initial_env() => i_env & 
-        lookup_class_in_env(  i_env, aid,msgflag)=> (c,env)
+        lookup_class_in_env(  i_env, aid,msgflag)=> (c,env')
        	---------------------
-	lookup_class_in_env(Env.FRAME(items,true)::fs, aid as Absyn.IDENT(id),msgflag ) => (c,env)
+	lookup_class_in_env(Env.FRAME(items,true)::fs, 
+			    aid as Absyn.IDENT(id),msgflag ) => (c,env')
 
-
-   
-
-  rule  lookup_class_in_env(fs,id,msgflag) => (c, _)
+  rule  lookup_class_in_env(fs,id,msgflag) => (c, env')
 	---------------------
-	lookup_class_in_env(  (f as Env.FRAME(items,false)) ::fs,id as Absyn.IDENT(_),msgflag ) => (c, f::fs)
-
-
+	lookup_class_in_env(  (f as Env.FRAME(items,false)) ::fs,
+			    id as Absyn.IDENT(_),msgflag ) 
+	  => (c, env')
 end
 
 (** relation: lookup_class_in_class

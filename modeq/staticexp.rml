@@ -705,6 +705,16 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) => (exp, prop)
 
+
+  rule	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, true),_) &
+	ceval (env, indexp,false,NONE) => Values.INTEGER(value) &
+	int_string(value) => strval &
+	elab_exp (env,arraycr,false,NONE) 
+	  => (exp, Types.PROP(arrtp,_),_) &
+	elab_builtin_size_2 (env, arrtp, value) => (exp, prop) 
+	------------------------------------------------------
+	elab_builtin_size (env, [arraycr,ind]) => (exp, prop)
+
   rule	elab_exp (env,arraycr,false,NONE) => (crefe as Exp.CREF(cr,crt), crprop,_) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	Types.array_element_type ty => Types.T_INTEGER &
@@ -818,6 +828,117 @@ relation elab_builtin_ones : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	elab_builtin_ones (env, args) => (e,p)
 end
 
+relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule	elab_exp (env,arrexp,false,NONE) 
+	  => (arrexp', Types.PROP(arrty, arrconst),_) &
+	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
+	-------------------------------------------------------
+	elab_builtin_max(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
+
+  rule	elab_exp (env,arrexp,false,NONE) 
+	  => (arrexp', Types.PROP(arrty, arrconst),_) &
+	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
+	-------------------------------------------------------
+	elab_builtin_max(env, [arrexp]) => (Exp.RCONST(r),Types.PROP(ty,true))
+
+	(* max(x,y) where x & y are scalars *)
+  rule	elab_exp (env,s1,false,NONE) 
+	  => (s1', Types.PROP(arrty, arrconst),_) &
+	ceval(env,s1',false,NONE) => Values.INTEGER(i1) &
+	elab_exp (env,s2,false,NONE) 
+	  => (s2', Types.PROP(arrty, arrconst),_) &
+	ceval(env,s2',false,NONE) => Values.INTEGER(i2) &
+	int_max(i1,i2) => res
+	-------------------------------------------------------
+	elab_builtin_max(env, [s1, s2]) 
+	  => (Exp.ICONST(res),Types.PROP(Types.T_INTEGER,true))
+
+  rule	elab_exp (env,s1,false,NONE) 
+	  => (s1', Types.PROP(arrty, arrconst),_) &
+	ceval(env,s1',false,NONE) => Values.REAL(r1) &
+	elab_exp (env,s2,false,NONE) 
+	  => (s2', Types.PROP(arrty, arrconst),_) &
+	ceval(env,s2',false,NONE) => Values.REAL(r2) &
+	real_max(r1,r2) => res
+	-------------------------------------------------------
+	elab_builtin_max(env, [s1, s2]) 
+	  => (Exp.RCONST(res),Types.PROP(Types.T_REAL,true))
+end
+
+relation elab_builtin_max_2 : (Values.Value) => (Values.Value, Types.Type) =
+
+  rule	elab_builtin_max_2(v1) => (Values.INTEGER(i1),Types.T_INTEGER) &
+	elab_builtin_max_2(Values.ARRAY(vls)) => (Values.INTEGER(i2),Types.T_INTEGER) &
+	int_max(i1,i2) => res
+	---------------------
+	elab_builtin_max_2(Values.ARRAY(v1::(vls as _::_))) 
+	  => (Values.INTEGER(res),Types.T_INTEGER)
+
+  rule	elab_builtin_max_2(v1) => (Values.REAL(i1),Types.T_REAL) &
+	elab_builtin_max_2(Values.ARRAY(vls)) => (Values.REAL(i2),Types.T_REAL) &
+	real_max(i1,i2) => res
+	---------------------
+	elab_builtin_max_2(Values.ARRAY(v1::(vls as _::_))) 
+	  => (Values.REAL(res),Types.T_REAL)
+
+  rule	elab_builtin_max_2(vl) => (v,t)
+	------------------
+	elab_builtin_max_2(Values.ARRAY([vl]))
+	  => (v,t)
+
+  axiom	elab_builtin_max_2(Values.INTEGER(i))
+	  => (Values.INTEGER(i),Types.T_INTEGER)
+
+  axiom	elab_builtin_max_2(Values.REAL(i))
+	  => (Values.REAL(i),Types.T_REAL)
+end
+
+relation elab_builtin_min : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
+  rule	elab_exp (env,arrexp,false,NONE) 
+	  => (arrexp', Types.PROP(arrty, arrconst),_) &
+	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
+	-------------------------------------------------------
+	elab_builtin_min(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
+
+  rule	elab_exp (env,arrexp,false,NONE) 
+	  => (arrexp', Types.PROP(arrty, arrconst),_) &
+	ceval(env,arrexp',false,NONE) => Values.ARRAY(vals) &
+	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
+	-------------------------------------------------------
+	elab_builtin_min(env, [arrexp]) => (Exp.RCONST(r),Types.PROP(ty,true))
+end
+
+relation elab_builtin_min_2 : (Values.Value) => (Values.Value, Types.Type) =
+
+  rule	elab_builtin_min_2(v1) => (Values.INTEGER(i1),Types.T_INTEGER) &
+	elab_builtin_min_2(Values.ARRAY(vls)) => (Values.INTEGER(i2),Types.T_INTEGER) &
+	int_min(i1,i2) => res
+	---------------------
+	elab_builtin_min_2(Values.ARRAY(v1::(vls as _::_))) 
+	  => (Values.INTEGER(res),Types.T_INTEGER)
+
+  rule	elab_builtin_min_2(v1) => (Values.REAL(i1),Types.T_REAL) &
+	elab_builtin_min_2(Values.ARRAY(vls)) => (Values.REAL(i2),Types.T_REAL) &
+	real_min(i1,i2) => res
+	---------------------
+	elab_builtin_min_2(Values.ARRAY(v1::(vls as _::_))) 
+	  => (Values.REAL(res),Types.T_REAL)
+
+  rule	elab_builtin_min_2(vl) => (v,t)
+	------------------
+	elab_builtin_min_2(Values.ARRAY([vl]))
+	  => (v,t)
+
+  axiom	elab_builtin_min_2(Values.INTEGER(i))
+	  => (Values.INTEGER(i),Types.T_INTEGER)
+
+  axiom	elab_builtin_min_2(Values.REAL(i))
+	  => (Values.REAL(i),Types.T_REAL)
+end
+
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
 					  => (Exp.Exp, Types.Properties)) =
 
@@ -825,7 +946,8 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom	elab_builtin_handler "zeros" => elab_builtin_zeros
   axiom	elab_builtin_handler "ones" => elab_builtin_ones
   axiom	elab_builtin_handler "fill" => elab_builtin_fill
-
+  axiom	elab_builtin_handler "max" => elab_builtin_max
+  axiom	elab_builtin_handler "min" => elab_builtin_min
 end
 
 
@@ -1532,7 +1654,6 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 
 end
 
-
 relation fill_cref_subscripts : (Exp.ComponentRef,Types.Type)
 	  => Exp.ComponentRef =
 
@@ -1595,9 +1716,10 @@ relation elab_cref2 : (Env.Env,
 	elab_cref2 (_,cr,_,Absyn.CONST,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
 
  rule	Types.elab_type tt => t &
-	fill_cref_subscripts (cr,tt) => cr'
+	fill_cref_subscripts (cr,tt) => cr' &
+	value_exp v => e'
 	----------------
- 	elab_cref2 (env,cr,acc,Absyn.PARAM,tt, Types.VALBOUND(v)) => (Exp.CREF(cr',t),false,acc)
+ 	elab_cref2 (env,cr,acc,Absyn.PARAM,tt, Types.VALBOUND(v)) => ((*Exp.CREF(cr',t)*)e',true,acc)
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
@@ -1610,6 +1732,17 @@ relation elab_cref2 : (Env.Env,
 	-----------------
 	elab_cref2(env,cr,acc,_,tt as Types.T_ENUM,_) => (Exp.CREF(cr,t),true,acc)
 
+  rule	(* If value not constant, but references another parameter, which has a value *)
+	(* We need to perform value propagation. *)
+	Lookup.lookup_var(env,cref) => (Types.ATTR(_,acc',variability',_),
+				       t',
+				       binding') &
+	elab_cref2(env,cref,acc',variability',t',binding') => (e,const,acc)
+	--------------------------------------------------
+	elab_cref2 (env,cr,acc, variability,tp,Types.EQBOUND( Exp.CREF(cref,t),false)) 
+	  => (e,const,acc)
+
+
   rule	Print.print_buf "# Constant or parameter with a non-constant initializer\n" &
 	Print.print_buf "# component: " & Exp.print_component_ref cr & Print.print_buf " = " &
 	Exp.print_exp exp & Print.print_buf "\n"
@@ -1617,9 +1750,10 @@ relation elab_cref2 : (Env.Env,
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,false)) => fail
 
   rule	Print.print_buf "# Constant or parameter without a value\n" &
-	Print.print_buf "# component: " & Exp.print_component_ref cr & Print.print_buf "\n"
+	Print.print_buf "# component: " & Exp.print_component_ref cr 
+	& Print.print_buf "env:\n" & Env.print_env env & Print.print_buf "\n"
 	----------------------------------------------
-	elab_cref2 (_,cr,_,_,_,Types.UNBOUND) => fail
+	elab_cref2 (env,cr,_,_,_,Types.UNBOUND) => fail
 
   rule	Print.print_buf "- elab_cref2 failed (component: " &
 	Exp.print_component_ref cr & Print.print_buf ")\n"

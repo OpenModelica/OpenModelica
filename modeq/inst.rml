@@ -357,7 +357,8 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
 
-  rule	Env.open_scope(env,encflag) => env' &
+  rule	print "inst_class " & print n & print "\n" &
+	Env.open_scope(env,encflag) => env' &
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env', mod, pre, csets, ci_state, c, false,inst_dims,impl)
 	  => (dae1,_,csets',ci_state', tys) &
@@ -617,6 +618,14 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 		     (comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m))::xs,inst_dims,impl) => env''
+
+  rule	extend_components_to_env(env,mods,pre,csets,ci_state,
+				 xs,inst_dims,impl) => env' 
+	-----------------
+	extend_components_to_env(env,mods,pre,csets,ci_state,
+				 nocomp::xs,inst_dims,impl) => env'
+
+
   axiom	extend_components_to_env(env,_,_,_,_,[],_,_) => env
 
   rule	Print.print_buf "- extend_components_to_env failed\n" &
@@ -701,8 +710,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* extended class, i.e. cenv. However, the  variables, classes and types inserted in this *)
 	(* environment (top frame of env'), by  inst_class_in, should be *)
 	(* copied into the resulting environment *)
-	 
-	inst_class_in(cenv,mods'',pre,csets,ci_state,c,false,inst_dims,impl)
+
+	(* Instantiation of the extended class is done in an environment *)
+	(* that is combined of the environment of the class itself and *)
+	(* the class it is instantiated in. *)
+	list_append(cenv,env) => newcenv &
+	inst_class_in(newcenv,mods'',pre,csets,ci_state,c,false,inst_dims,impl)
 	  => (dae,fr::env',csets',ci_state',vars) &
 	Env.merge_inherited_content(fr,env) => env''
 	  ----------------------------------
@@ -815,8 +828,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* The types in the environment does not have correct Binding.
 	   We must update those variables that is found in m into a new environment.*)
 	get_cref_from_mod(m) => crefs &
- 	update_variables_in_env(mods,crefs, env ,impl) => env2' &
-	
+ 	update_variables_in_env(mods,crefs, env ,impl) => env2' &	
 	get_cref_from_dim(ad) => crefs2 &
 	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
 
@@ -828,12 +840,15 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.merge(mod,m') => mod1 &
 	Debug.fprintln ("redecl", "Merged modifications") &
 	Debug.fcall ("redecl", Mod.print_mod, mod1) &
-
-	redeclare_type(mod1,comp,env2,pre) => (SCode.COMPONENT(n,final,repl,prot,
+	print "inst_element :" & print n & print "before redeclare\n" &
+	redeclare_type(mod1,comp,env2,pre,impl) => (SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m),mod') &
-	(* Merge in eventual modifications from redeclare *)
+				     t,m),mod',env2') &
+	print "inst_element :" & print n & print "after redeclare\n" &
+	Debug.fprintln ("redecl", "Merged modifications") &
+	Debug.fcall ("redecl", Mod.print_mod, mod') &
 
+	
 	Debug.fprint("insttr", "looking for type") &
 	Debug.fcall("insttr",Dump.print_path,t) &
 	Debug.fprint("insttr"," in env:") &
@@ -855,7 +870,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "mod equation done") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
+	elab_arraydim(env2',ad,eq,impl,NONE) => dims &
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims,impl)
@@ -865,11 +880,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** The environment is extended (updated) with the new variable *)
 	(** binding. *)
 
-	make_binding (env2,attr,eq) => binding &
+	make_binding (env2',attr,eq) => binding &
 	Debug.fcall ("insttr", Types.print_binding, binding) &
 	Debug.fcall ("insttr", print, "\n") &
 	(* true in update_frame means the variable is now instantiated. *)
-	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding),true) => env' &
 
 	(** If the type is one of the simple, predifined types a *)
@@ -915,32 +930,35 @@ end
  ** This relation takes a 'Mod' and an SCode.Element and if the modification contain
  ** a redeclare of that element, the type is changed and an updated element is returned
 **)
-relation redeclare_type: (Mod.Mod, SCode.Element,Env.Env,Prefix.Prefix) => (SCode.Element,Mod.Mod) =
+relation redeclare_type: (Mod.Mod, SCode.Element,Env.Env,Prefix.Prefix,bool) => (SCode.Element,Mod.Mod,Env.Env) =
 
   rule	n1=n2 &
-	Mod.elab_mod(env,pre,mod) => m'				   
-	-------------
-	redeclare_type (Mod.REDECL(_,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod))::rest),
-			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre) => (redecl,m')
+	get_cref_from_mod(mod) => crefs &
+	update_variables_in_env(Mod.NOMOD (* m *),crefs,env,impl) => env' &
+	Mod.elab_mod(env',pre,mod) => m' 
+	--------------------------------
+	redeclare_type (m as Mod.REDECL(_,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod))::rest),
+			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre,impl) => (redecl,m',env')
 
   rule	not n1=n2 &
-	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre) => (newcomp,mod)
+	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre,impl) => (newcomp,mod,env')
 	-------------
 	redeclare_type (Mod.REDECL(redfin,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_))::rest),
-			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre) => (newcomp,mod)
+			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre,impl) => (newcomp,mod,env')
 
-  rule	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre) => (newcomp,mod)
-	----------------------------
-	redeclare_type(Mod.REDECL(redfin,_::rest),comp,env,pre) =>(newcomp,mod)
+  rule	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre,impl) 
+	  => (newcomp,mod,env')
+	  ----------------------------
+	redeclare_type(Mod.REDECL(redfin,_::rest),comp,env,pre,impl) 
+	  =>(newcomp,mod,env')
 
-  axiom	redeclare_type(Mod.REDECL(redfin,[]),comp,env,pre) => (comp,Mod.NOMOD)
+  axiom	redeclare_type(Mod.REDECL(redfin,[]),comp,env,pre,impl) => (comp,Mod.NOMOD,env)
 
-  axiom	redeclare_type(mod,comp,env,pre) => (comp,mod)
-  axiom	redeclare_type(mod,comp,env,pre) => (comp,mod)
+  axiom	redeclare_type(mod,comp,env,pre,impl) => (comp,mod,env)
 
   rule	Print.print_buf "- redeclare_type failed\n" 
 	----------------
-	redeclare_type(_,_,_,_) => fail
+	redeclare_type(_,_,_,_,_) => fail
 end
 
 
@@ -1021,8 +1039,25 @@ end
 
 relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 
+  rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
+	Print.print_buf "cref from redeclare, mod:" &
+	SCode.print_mod m & Print.print_buf "\n" &
+	get_cref_from_mod(SCode.REDECL(b,xs)) => res1 &
+	get_cref_from_mod(m) => res2 &
+	list_append(res1,res2) => res
+	-----------------------------
+	get_cref_from_mod(SCode.REDECL(b, SCode.COMPONENT(n,_,_,_,_,_,m)::xs)) 
+	  => res
+  rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
+	get_cref_from_mod(SCode.REDECL(b,xs)) => res
+	-----------------------------
+	get_cref_from_mod(SCode.REDECL(b, _::xs)) 
+	  => res
 
-  rule	get_cref_from_submods(submods) => l1 &
+  axiom	get_cref_from_mod(SCode.REDECL(b,[])) => []
+
+  rule	(* Find in sub modifications e.g A(B=3) find B *)
+	get_cref_from_submods(submods) => l1 &
 	get_cref_from_exp(e) => l2 &
 	list_append(l1,l2) => res
 	-------------------------
@@ -1185,9 +1220,11 @@ end
 relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool) 
 	  => Env.Env =
 	
-  rule	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,repl,prot,
-	    attr as SCode.ATTR(ad,flow,acc,param,dir),
-	    t,m)),_) &
+  rule	Lookup.lookup_ident(env,id) 
+	  => (ty, 
+	      SOME(SCode.COMPONENT(n,final,repl,prot,
+				   attr as SCode.ATTR(ad,flow,acc,param,dir),
+				   t,m)),_) &
 
 	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
 
@@ -1213,7 +1250,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[],false)
+	inst_var((*PA:was env2*)cenv,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[],false)
 	  => (dae1,csets',ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
@@ -1231,7 +1268,9 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 	(* Qualified names should not be considered, because:
 	 FIXME: explanation...
 	 *)
-  axiom	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env,impl) => env
+  rule	Print.print_buf "update_variable_in_env QUAL \n" 
+	------------
+	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env,impl) => env
 
   rule	Print.print_buf "update_variable_in_env failed\n ident ="  &
 	Dump.print_component_ref cref &

@@ -782,7 +782,8 @@ relation print_element : Element => () =
 	---------------------------------------
 	print_element CLASSDEF(n,final,repl,cl)
 
-  rule	Print.print_buf "COMPONENT(" & Print.print_buf n & Print.print_buf ")"
+  rule	Print.print_buf "COMPONENT(" & Print.print_buf n &
+	Print.print_buf "mod:" & print_mod mod & Print.print_buf ")"
 	----------------------------------------
 	print_element COMPONENT(n,final,repl,prot,attr,typath,mod)
 

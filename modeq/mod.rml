@@ -477,9 +477,10 @@ relation merge : (Mod, Mod) => Mod =
 
   axiom merge(m,NOMOD) => m
 
-  rule  Print.print_buf "- ignoring inner modification\n"
+  rule  Print.print_buf "- ignoring inner modification:\n" &
+	print_mod ignmod & Print.print_buf "\n" 
 	--------------------------------------
-	merge(m as REDECL(_,_),_) => m
+	merge(m as REDECL(_,_),ignmod) => m
 
   rule  Print.print_buf "# can't merge modification with a redeclaration\n"
 	---------------------------------------------------------
