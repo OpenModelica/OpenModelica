@@ -63,7 +63,7 @@ tokens {
     
     int str_to_int(mstring const& str)
     {
-        return atoi(str.c_str());
+		return atoi(str.c_str());
     }
     
     double str_to_double(std::string const& str)
@@ -994,7 +994,7 @@ for_clause_e returns [void* ast]
 
 		#(FOR #(IN i:IDENT
 			e = expression )
-			eq = algorithm_list
+			eq = equation_list
 		)
 		{
 			id = to_rml_str(i);
@@ -1211,15 +1211,15 @@ if_expression returns [void* ast]
 	void* cond;
 	void* thenPart;
 	void* elsePart;
-	void* elseifPart=0;
+	void* e;
+	void* elseifPart;
+	l_stack el_stack;
 }
 	:
 		#(IF cond = expression
-			thenPart = expression (elseifPart=elseif_expression)* elsePart = expression
+			thenPart = expression (e=elseif_expression {el_stack.push(e);} )* elsePart = expression
 			{
-				if (elseifPart==NULL) {
-					elseifPart = mk_nil();
-				}
+				elseifPart = make_rml_list_from_stack(el_stack);
 				ast = Absyn__IFEXP(cond,thenPart,elsePart,elseifPart);
 			}
 		)
@@ -1385,7 +1385,7 @@ factor returns [void* ast]
 		(ast = primary
 		|#(POWER e1 = primary e2 = primary)
 			{
-				Absyn__BINARY(e1,Absyn__POW,e2);
+				ast = Absyn__BINARY(e1,Absyn__POW,e2);
 			}
 		)
 	;

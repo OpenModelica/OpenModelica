@@ -32,7 +32,7 @@ saveModel(<cref>,<string>)		Saves the model (A0) in a file
 
 loadFile(<string>)			Loads all models in the file.
 
-loadModel(<cref>)			Loads the model (A0) by looking up the 
+loadClass(<cref>)			Loads the model (A0) by looking up the 
 					correct file to load in $MODELICAPATH. 
 					Loads all models in that file into 
 					the symbol table.
