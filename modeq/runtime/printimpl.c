@@ -114,12 +114,14 @@ RML_BEGIN_LABEL(Print__write_5fbuf)
   
   if (file == NULL||buf == NULL || buf[0]=='\0') {
     /* HOWTO: RML fail */    
+    /* RML_TAILCALLK(rmlFC); */
   }
 
   fprintf(file,"%s",buf);
   
   if (fclose(file) != 0) {
     /* RMLFAIL */
+    /* RML_TAILCALLK(rmlFC); */
   }
   
   RML_TAILCALLK(rmlSC);

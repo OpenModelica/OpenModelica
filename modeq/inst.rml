@@ -515,7 +515,7 @@ end
 relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Class, bool (*Accesibility*), InstDims, 
 			 bool, (*implicit instantiation*)
-			 bool (* implicit function instantiation *)
+			 bool (* implicit function (ls:package?) instantiation *)
 			 )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
@@ -604,7 +604,7 @@ end
 
 relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.ClassDef, SCode.Restriction, bool,InstDims,
-			 bool, bool)
+			 bool (*implicit inst*), bool (* implicit package inst*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -2412,26 +2412,26 @@ end
 relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Types.EqMod option, bool,Interactive.InteractiveSymbolTable option)
 	  => DimExp list =
 
-  rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim &
+  rule	elab_arraydim_decl(env,cref,ad,impl,st) => dim &
 	complete_arraydim(dim) => dim'
 	------------------------------
-	elab_arraydim(env,cref,ad,NONE,impl,cf) => dim'
+	elab_arraydim(env,cref,ad,NONE,impl,st) => dim'
 
-  rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
+  rule	elab_arraydim_decl(env,cref,ad,impl,st) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3 
 	---------------------------------
-	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,cf) => dim3
+	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,st) => dim3
 
-  rule	Static.elab_exp(env,e,impl,cf) => (e',Types.PROP(t,c),_) &
-	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
+  rule	Static.elab_exp(env,e,impl,st) => (e',Types.PROP(t,c),_) &
+	elab_arraydim_decl(env,cref,ad,impl,st) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3 
 	---------------------------------
-	elab_arraydim(env,cref,ad,SOME(Types.UNTYPED(e)),impl,cf) => dim3
+	elab_arraydim(env,cref,ad,SOME(Types.UNTYPED(e)),impl,st) => dim3
 
 
-  rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
+  rule	elab_arraydim_decl(env,cref,ad,impl,st) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	not compatible_arraydim(dim1,dim2) => dim3 &
 	Print.print_buf "# Array dimension mismatch\n" &
@@ -2440,7 +2440,7 @@ relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Types.EqM
 	Print.print_buf "    expected array dimensions [" &
 	print_dim dim1 & Print.print_buf "]\n"
 	---------------------------------
-	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
+	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,st) => fail
 
 
   rule	Debug.fprint("failtrace", "- elab_arraydim failed\n cref:") &
@@ -2524,16 +2524,16 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
   axiom	elab_arraydim_decl(_,_,[],_,_) => []
 
   rule	(*Print.print_buf "NOSUB in elab_arraydim_decl\n" & *)
-	elab_arraydim_decl(env,cref,ds,impl,cf) => l 	
+	elab_arraydim_decl(env,cref,ds,impl,st) => l 	
 	-------------------------------
-	elab_arraydim_decl(env,cref,Absyn.NOSUB::ds,impl,cf) => NONE::l
+	elab_arraydim_decl(env,cref,Absyn.NOSUB::ds,impl,st) => NONE::l
 
   rule	(* For functions, this can occur: Real x[:,size(x,1)] ,i.e. referencing 
 	 the variable itself but a different dimension.*)
 	Absyn.cref_equal(cref,cr) => true &
-	elab_arraydim_decl(env,cref,ds,impl,cf) => l 	
+	elab_arraydim_decl(env,cref,ds,impl,st) => l 	
 	-------------------------------
-	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(Absyn.CALL(Absyn.CREF_IDENT("size",_),Absyn.FUNCTIONARGS([Absyn.CREF(cr),_],_)))::ds,impl,cf) => NONE::l
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(Absyn.CALL(Absyn.CREF_IDENT("size",_),Absyn.FUNCTIONARGS([Absyn.CREF(cr),_],_)))::ds,impl,st) => NONE::l
 
   rule	Static.elab_exp(env, d,impl,st)
 	    => (e,Types.PROP((Types.T_INTEGER(_),_),_),_) &  

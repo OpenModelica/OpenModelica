@@ -1,0 +1,49 @@
+
+
+* Functions in simulation code
+
+  - Functions are generated on the fly during constant evaluation, if they are
+  detected as constant (all arguments constants). Compiled functions should be
+  stored so that they don't need to be generated when called several times.
+  Checking of existing files with same names should be fixed. An existing file
+  function.c might be overwritten.
+  Relevant relations: Static.elab_call, Staticexp.generate_compiled_function,
+		      Ceval.ceval
+
+  - Go through exps in dae or daelow and find the functions to generate code
+    for, and generate those and put the code in the generated files. (Levon)
+
+
+
+absyn.rml:529:	(* TODO elseif's e4 *)
+ceval.rml:847:	  (**TODO: look through redeclarations for Eval(var) as well **)
+daelow.rml:3073:  rule	(* TODO remove variable from dae and m,mt and add der{variable} instead*)
+explode.rml:265:	(* TODO: attributes of derived classes *)
+inst.rml:4260:	(* TODO elsewhen *)
+staticexp.rml:278:	(*TODO elseif part *)
+staticexp.rml:284:	(** TODO: Implement elaboration of named arguments. *)
+staticexp.rml:560:	(* TODO elseif part*)
+staticexp.rml:566:	(** TODO: Implement elaboration of named arguments. *)
+staticexp.rml:2339: ** TODO: This currently only works for top level functions. For functions inside packages 
+staticexp.rml:4248:	(* TODO: Fix so lookup_functions_in_env also does instantiation to get type *)
+tornado.rml:2568: ** TODO: in future this should be GetSubModel(<value>)->GetSubmodel(<value2>)...
+
+
+ceval.rml:241:	(* FIXME: functions are always generated. Put back the check
+ceval.rml:259:        (* FIXME: Fix this in order to allow calling of constant-marked function
+ceval.rml:1281:(* FIXME: test code: remove *)
+ceval.rml:1296:(* /FIXME: test code: remove *)
+codegen.rml:955:(* FIXME : shouldn't it be "const <type> *" instead of
+inst.rml:1129: ** Moved to inst_classdef, FIXME: Move commments later
+inst.rml:3601:	(** FIXME: Why lookup after add_for_loop_scope ? **)
+inst.rml:3617:	(* FIXME: Check bounds *)
+inst.rml:4803:			 Types.PROP(ty1,false(*FIXME*)), e',prop2',NON_INITIAL)
+inst.rml:4807:			 Types.PROP(ty1,false(*FIXME*)), e,prop2,NON_INITIAL) => dae
+lookup.rml:1190:	(* FIXME: Check range *)
+lookup.rml:1296:	check_subscripts(ty,ss) => ty' & (* FIXME: Check for non-array *)
+mod.rml:621:	(* FIXME: Redeclaration *)
+staticexp.rml:616:	  (** FIXME: what is a below? Why true if is array? **)
+staticexp.rml:2225:(* FIXME: test code: remove *)
+staticexp.rml:2254:(* /FIXME: test code: remove *)
+staticexp.rml:2455:	(* FIXME: LS: How do we know that? Anyway, if true, I've changed false *)
+staticexp.rml:2944:	(* FIXME subscript_cref_type (exp,t) => t' &  *)

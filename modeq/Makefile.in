@@ -70,16 +70,19 @@ modeq_debug:
 	(cd modeq_debug && $(MAKE))
 
 
-#	@(cd modeq_release ; $(MAKE) vctarget)
+
+#vctarget:
+#	@(cd modeq_debug ; $(MAKE) vctarget)
 
 vctarget: 
-	@(cd modeq_debug ; $(MAKE) vctarget)
+	@(cd modeq_release ; $(MAKE) vctarget)
+
 
 
 
 
 test:
-	@(cd testsuite ; $(MAKE))
+	@(cd ../testsuite ; $(MAKE))
 
 
 #ast/libast.a:

@@ -282,8 +282,10 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
   rule	(**  Function calls *)
 	(** PA. Only positional arguments are elaborated for now.*)
 	(** TODO: Implement elaboration of named arguments. *)
+	Debug.fprintln("sei", "elab_exp CALL...") &
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop as Types.PROP(t,c),st') &
 	ceval_if_constant(e,c,env) => e'
+	& Debug.fprintln("sei", "elab_exp CALL done")
 	--------------------------------------
 	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs)),impl,st) 
 		=> (e',prop,st')
@@ -1701,6 +1703,7 @@ end
  ** This relation elaborates on a function call.  It converts the name
  ** to a `Path', and used the `elab_call_args' to do the rest of the
  ** work.
+ **
  **)
 
 relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list, bool, Interactive.InteractiveSymbolTable option)
@@ -1719,12 +1722,29 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	---------------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st)
 
-  rule	Absyn.cref_to_path fn => fn' &
+
+	(* Interactive mode *)
+  rule	Debug.fprintln ("sei", "elab_call 3") &
+	Absyn.cref_to_path fn => fn' &
 	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
 	generate_compiled_function(env,fn,e,prop,st) => st' 
-	(*& Debug.fprintln ("sei", "elab_call succeeded")*)
+	& Debug.fprint ("sei", "elab_call 3 succeeded: ")
+	& Debug.fcall("sei", Dump.print_component_ref,fn)
+	& Debug.fprintln ("sei", "")
 	------------------------------------
-	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st')
+	elab_call (env,fn,args,nargs,true,st) => (e,prop,st')
+
+
+	(* Non-interactive mode *)
+  rule	Debug.fprintln ("sei", "elab_call 4") &
+	Absyn.cref_to_path fn => fn' &
+	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
+	generate_compiled_function(env,fn,e,prop,st) => st' 
+	& Debug.fprint ("sei", "elab_call 4 succeeded: ")
+	& Debug.fcall("sei", Dump.print_component_ref,fn)
+	& Debug.fprintln ("sei", "")
+	------------------------------------
+	elab_call (env,fn,args,nargs,false,st) => (e,prop,st')
 
   rule	Debug.fprint("failtrace", "- elab_call failed\n") &
 	Debug.fprint("failtrace", " function: ") &
@@ -2362,7 +2382,7 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 
 
 
-  rule	(*Debug.fprintln("sei", "generate_compiled_function: start3")*)
+  rule	Debug.fprintln("sei", "generate_compiled_function: start3")
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),NONE) => NONE
 	(* PROP_TUPLE? *)
