@@ -221,7 +221,14 @@ relation bool_string: bool => string =
   axiom	bool_string false => "false"
 end
 
+relation string_equal: (string,string) => bool =
+  rule	a = b
+	-----
+	string_equal(a,b) => true
 
+  axiom	string_equal(_,_) => false
+
+end
 
 relation list_matching: ('a list, 'a => () )  => 'a list =
 
@@ -237,3 +244,12 @@ relation list_matching: ('a list, 'a => () )  => 'a list =
 	--------------------------
 	list_matching (v::vl, cond) => vl'
 end	
+
+
+
+
+
+
+
+
+

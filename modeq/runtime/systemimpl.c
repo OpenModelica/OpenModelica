@@ -247,6 +247,17 @@ RML_BEGIN_LABEL(System__modelicapath)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__read_5fenv)
+{
+  char* envname = RML_STRINGDATA(rmlA0);
+  char *envvalue = getenv(envname);
+  if (envvalue == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  rmlA0 = (void*) mk_scon(envvalue);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 char *select_from_dir;
 

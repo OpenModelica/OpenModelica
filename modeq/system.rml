@@ -47,6 +47,8 @@ relation pwd: () => string
 
 relation modelicapath: () => string
 
+relation read_env: (string) => string
+
 relation sub_directories: (string) => string list
 
 relation mo_files: (string) => string list

@@ -56,7 +56,7 @@ module Types :
 
   datatype Attributes = ATTR of bool	(* flow *)
 			      * SCode.Accessibility
-	  		      * Absyn.Variability	(* parameter *)
+	  		      * SCode.Variability	(* parameter *)
 			      * Absyn.Direction
 
   datatype Binding = UNBOUND
@@ -64,12 +64,12 @@ module Types :
 		   | VALBOUND of Values.Value
 
   (** - Types *)
-  datatype Type = T_INTEGER
-		| T_REAL
-		| T_STRING
-		| T_BOOL
-		| T_ENUM
-		| T_ENUMERATION of string list
+  datatype Type = T_INTEGER of Var list
+		| T_REAL of Var list
+		| T_STRING of Var list
+		| T_BOOL of Var list
+		| T_ENUM 
+		| T_ENUMERATION of string list * Var list
 		| T_ARRAY of ArrayDim * Type
 		| T_COMPLEX of ClassInf.State
 			     * Var list

@@ -137,9 +137,11 @@ module SCode :
   datatype Attributes = ATTR of Absyn.ArrayDim
 			      * bool	(* flow *)
 			      * Accessibility
-	  		      * Absyn.Variability	(* parameter *)
+	  		      * Variability	(* parameter *)
 			      * Absyn.Direction
-			   
+
+  datatype Variability = VAR | DISCRETE | PARAM | STRUCTPARAM | CONST
+
   datatype Accessibility = RW	(* read/write *)
 			 | RO	(* read-only *)
 			 | WO	(* write-only (not used) *)

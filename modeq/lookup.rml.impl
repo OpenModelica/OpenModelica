@@ -19,7 +19,6 @@
 
 *)
 
-
 with "parse.rml"
 with "debug.rml"
 with "dump.rml"
@@ -777,7 +776,7 @@ relation build_record_constructor_result_elt: (SCode.Element list, SCode.Ident, 
   rule	build_record_constructor_result_mod(elts) => submodlst
 	-------------------------------------------------
 	build_record_constructor_result_elt (elts,id,env) 
-	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE))
+	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,SCode.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE))
 end
 	
 (* This relation builds up the modification list for the output element of a record constructor.
@@ -809,7 +808,7 @@ relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var li
 	--------------------------------------
 	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_,_,_,_)),env) 
 	(* Add the return type of the record constructor *)
-	    => Types.VAR("result",Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
+	    => Types.VAR("result",Types.ATTR(false,SCode.RW,SCode.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
 end
 
 relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list =
@@ -1345,4 +1344,3 @@ relation lookup_class_in_elements : (SCode.Element list, Absyn.Path)
 	lookup_class_in_elements (_::es, path) => c
 
 end	
-

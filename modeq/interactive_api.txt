@@ -27,8 +27,8 @@ The following functions are provided:
 
 Function				Meaning
 ===========				=======
-saveModel(<cref>,<string>)		Saves the model (A0) in a file
-					given by a string (A1).
+saveModel(<string>,<cref>)		Saves the model (A1) in a file
+					given by a string (A0).
 
 loadFile(<string>)			Loads all models in the file.
 

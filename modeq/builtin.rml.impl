@@ -21,8 +21,6 @@
 
 
 (**)
-
-with "exp.rml"
 with "types.rml"
 with "classinf.rml"
 with "debug.rml"
@@ -48,19 +46,132 @@ val unit = SCode.COMPONENT("unit",true,false,false,
 			      SCode.ATTR([],
 					 false,
 					 SCode.RW,
-					 Absyn.VAR,
+					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
 			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
 (** This `unit' component is used in several places below, and it is
  ** declared once here to make the definitions below easier to read. *)
+val quantity = SCode.COMPONENT("quantity",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("StringType"),
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
+
+val display_unit = SCode.COMPONENT("displayUnit",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("StringType"),
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
+
+val min = SCode.COMPONENT("min",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("RealType"),
+			      SCode.MOD(false,[],SOME(Absyn.REAL(-1e99))))
+
+val max = SCode.COMPONENT("max",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("RealType"),
+			      SCode.MOD(false,[],SOME(Absyn.REAL(1e99))))
+
+val real_start = SCode.COMPONENT("start",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("RealType"),
+			      SCode.MOD(false,[],SOME(Absyn.REAL(0.0))))
+
+val integer_start = SCode.COMPONENT("start",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("IntegerType"),
+			      SCode.MOD(false,[],SOME(Absyn.INTEGER(0))))
+
+val string_start = SCode.COMPONENT("start",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("StringType"),
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
+
+val boolean_start = SCode.COMPONENT("start",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("BooleanType"),
+			      SCode.MOD(false,[],SOME(Absyn.BOOL(false))))
+
+val fixed = SCode.COMPONENT("fixed",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("BooleanType"),
+			      SCode.MOD(false,[],SOME(Absyn.BOOL(false)))) 
+					(* Should be true for variables*)
+
+val nominal = SCode.COMPONENT("nominal",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("RealType"),
+			      SCode.MOD(false,[],NONE))
+
+val state_select = SCode.COMPONENT("stateSelect",true,false,false,
+			      SCode.ATTR([],
+					 false,
+					 SCode.RW,
+					 SCode.PARAM,
+					 Absyn.BIDIR),
+			      Absyn.IDENT("StateSelect"),
+			      SCode.MOD(false,[],SOME(Absyn.CREF(Absyn.CREF_QUAL("StateSelect",[],Absyn.CREF_IDENT("default",[]))))))
+
+(* The StateSelect enumeration *)
+val state_select_comps = 
+[
+ SCode.COMPONENT("never",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD),
+ SCode.COMPONENT("avoid",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD),
+ SCode.COMPONENT("default",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD),
+ SCode.COMPONENT("prefer",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD),
+ SCode.COMPONENT("always",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD)
+]
+
+val state_select_type = 
+SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION,SCode.PARTS(state_select_comps,[],[],[],[],NONE))
+
 
 (** - The `Real' type *)
 
 val real_type =
 SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL,
 	    SCode.PARTS
-	    ([], (*[unit],*)
+	    ([unit,quantity,display_unit,min,max,real_start,fixed,nominal,state_select], 
 	     [],
 	     [],
 	     [],
@@ -71,7 +182,7 @@ SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL,
 val integer_type =
 SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT,
 	    SCode.PARTS
-	    ([], (*[unit],*)
+	    ([quantity,min,max,integer_start,fixed],
 	     [],
 	     [],
 	     [],
@@ -82,7 +193,7 @@ SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT,
 val string_type =
 SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING,
 	    SCode.PARTS
-	    ([],
+	    ([quantity, string_start],
 	     [],
 	     [],
 	     [],
@@ -93,7 +204,7 @@ SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING,
 val boolean_type =
 SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL,
 	    SCode.PARTS
-	    ([],
+	    ([quantity, boolean_start, fixed],
 	     [],
 	     [],
 	     [],
@@ -102,194 +213,152 @@ SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL,
 (** - The `time' variable *)
 
 val time_var =
-Types.VAR("time", Types.ATTR(false, SCode.RO, Absyn.VAR, Absyn.BIDIR),
-	  false, Types.T_REAL, Types.UNBOUND)
+Types.VAR("time", Types.ATTR(false, SCode.RO, SCode.VAR, Absyn.BIDIR),
+	  false, Types.T_REAL([]), Types.UNBOUND)
 
 (** - Some assorted function types *)
 
 val nil2real = Types.T_FUNCTION([],
-				Types.T_REAL)
+				Types.T_REAL([]))
 
-val real2real = Types.T_FUNCTION([("x",Types.T_REAL)],
-				 Types.T_REAL)
+val real2real = Types.T_FUNCTION([("x",Types.T_REAL([]))],
+				 Types.T_REAL([]))
 
-val real2int = Types.T_FUNCTION([("x",Types.T_REAL)],
-				 Types.T_INTEGER)
+val real2int = Types.T_FUNCTION([("x",Types.T_REAL([]))],
+				 Types.T_INTEGER([]))
 
-val real_real2real = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
-				      Types.T_REAL)
+val real_real2real = Types.T_FUNCTION([("x",Types.T_REAL([])),("y",Types.T_REAL([]))],
+				      Types.T_REAL([]))
 
-val bool2bool = Types.T_FUNCTION([("x",Types.T_BOOL)],
-				 Types.T_BOOL)
+val bool2bool = Types.T_FUNCTION([("x",Types.T_BOOL([]))],
+				 Types.T_BOOL([]))
 
-val real_real2bool = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
-				      Types.T_BOOL)
+val real_real2bool = Types.T_FUNCTION([("x",Types.T_REAL([])),("y",Types.T_REAL([]))],
+				      Types.T_BOOL([]))
 
-val array1dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_INTEGER)
-val array2dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_INTEGER)
-val array3dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_INTEGER)
-val array4dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_INTEGER)
-val array5dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_INTEGER)
-val array6dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_INTEGER)
-val array7dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_INTEGER)
-val array8dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_INTEGER)
+val array1dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val array2dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val array3dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val array4dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val array5dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val array6dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val array7dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val array8dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
 
-val array1dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_INTEGER)
-val array2dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_INTEGER)
-val array3dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_INTEGER)
-val array4dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_INTEGER)
-val array5dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_INTEGER)
-val array6dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_INTEGER)
-val array7dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_INTEGER)
-val array8dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_INTEGER)
+val array1dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_INTEGER([]))
+val array2dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))], Types.T_INTEGER([]))
+val array3dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))], Types.T_INTEGER([]))
+val array4dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([])))], Types.T_INTEGER([]))
+val array5dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([])))], Types.T_INTEGER([]))
+val array6dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([])))], Types.T_INTEGER([]))
+val array7dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([])))], Types.T_INTEGER([]))
+val array8dimreal2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([])))], Types.T_INTEGER([]))
 
-val array1dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_REAL)
-val array2dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_REAL)
-val array3dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_REAL)
-val array4dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_REAL)
-val array5dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_REAL)
-val array6dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_REAL)
-val array7dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_REAL)
-val array8dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_REAL)
+val array1dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_REAL([]))
+val array2dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))], Types.T_REAL([]))
+val array3dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))], Types.T_REAL([]))
+val array4dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([])))], Types.T_REAL([]))
+val array5dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([])))], Types.T_REAL([]))
+val array6dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([])))], Types.T_REAL([]))
+val array7dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([])))], Types.T_REAL([]))
+val array8dimreal2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([])))], Types.T_REAL([]))
 
-val array1dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_INTEGER)
-val array2dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_INTEGER)
-val array3dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_INTEGER)
-val array4dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_INTEGER)
-val array5dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_INTEGER)
-val array6dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_INTEGER)
-val array7dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_INTEGER)
-val array8dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_INTEGER)
+val array1dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))], Types.T_INTEGER([]))
+val array2dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))], Types.T_INTEGER([]))
+val array3dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([])))], Types.T_INTEGER([]))
+val array4dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([])))], Types.T_INTEGER([]))
+val array5dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([])))], Types.T_INTEGER([]))
+val array6dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([])))], Types.T_INTEGER([]))
+val array7dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([])))], Types.T_INTEGER([]))
+val array8dimstring2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([])))], Types.T_INTEGER([]))
 
-val array1dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_STRING)
-val array2dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_STRING)
-val array3dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_STRING)
-val array4dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_STRING)
-val array5dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_STRING)
-val array6dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_STRING)
-val array7dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_STRING)
-val array8dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_STRING)
+val array1dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))], Types.T_STRING([]))
+val array2dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))], Types.T_STRING([]))
+val array3dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([])))], Types.T_STRING([]))
+val array4dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([])))], Types.T_STRING([]))
+val array5dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([])))], Types.T_STRING([]))
+val array6dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([])))], Types.T_STRING([]))
+val array7dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([])))], Types.T_STRING([]))
+val array8dimstring2string= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([])))], Types.T_STRING([]))
 
-val array1dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_INTEGER)
-val array2dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_INTEGER)
-val array3dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_INTEGER)
-val array4dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_INTEGER)
-val array5dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_INTEGER)
-val array6dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_INTEGER)
-val array7dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_INTEGER)
-val array8dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_INTEGER)
+val array1dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))], Types.T_INTEGER([]))
+val array2dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))], Types.T_INTEGER([]))
+val array3dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([])))], Types.T_INTEGER([]))
+val array4dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([])))], Types.T_INTEGER([]))
+val array5dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([])))], Types.T_INTEGER([]))
+val array6dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([])))], Types.T_INTEGER([]))
+val array7dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([])))], Types.T_INTEGER([]))
+val array8dimbool2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([])))], Types.T_INTEGER([]))
 
-val array1dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_BOOL)
-val array2dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_BOOL)
-val array3dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_BOOL)
-val array4dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_BOOL)
-val array5dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_BOOL)
-val array6dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_BOOL)
-val array7dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_BOOL)
-val array8dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_BOOL)
-
-
-
-val array1dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array2dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array3dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array4dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array5dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array6dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array7dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array8dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-
-val array1dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array2dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array3dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array4dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array5dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array6dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array7dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array8dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-
-val array1dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array2dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array3dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array4dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array5dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array6dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array7dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array8dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-
-val array1dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array2dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array3dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array4dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array5dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array6dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array7dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array8dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL)), ("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array1dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))], Types.T_BOOL([]))
+val array2dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))], Types.T_BOOL([]))
+val array3dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([])))], Types.T_BOOL([]))
+val array4dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([])))], Types.T_BOOL([]))
+val array5dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([])))], Types.T_BOOL([]))
+val array6dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([])))], Types.T_BOOL([]))
+val array7dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([])))], Types.T_BOOL([]))
+val array8dimbool2bool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([])))], Types.T_BOOL([]))
 
 
 
+val array1dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array2dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array3dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array4dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array5dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array6dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array7dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array8dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
 
+val array1dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array2dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array3dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array4dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array5dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array6dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array7dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array8dimreal_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
 
-val array1dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array2dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array3dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array4dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array5dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array6dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array7dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array8dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array1dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array2dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array3dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array4dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array5dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array6dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array7dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array8dimstring_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
 
-
-val array1dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array2dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array3dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array4dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array5dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array6dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array7dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array8dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
+val array1dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array2dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array3dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array4dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array5dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array6dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array7dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array8dimbool_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([]))), ("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
 
 
 
 
 
+val array1dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array2dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array3dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array4dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array5dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array6dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array7dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array8dimint2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
 
 
-val array1dimint2array1dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array2dimint2array2dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val array3dimint2array3dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
-val array4dimint2array4dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))
-val array5dimint2array5dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))
-val array6dimint2array6dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))
-val array7dimint2array7dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))
-val array8dimint2array8dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))
-
-val array1dimreal2array1dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array2dimreal2array2dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array3dimreal2array3dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))
-val array4dimreal2array4dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))
-val array5dimreal2array5dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))
-val array6dimreal2array6dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))
-val array7dimreal2array7dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))
-val array8dimreal2array8dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))
-
-val array1dimstring2array1dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array2dimstring2array2dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array3dimstring2array3dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))
-val array4dimstring2array4dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))
-val array5dimstring2array5dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))
-val array6dimstring2array6dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))
-val array7dimstring2array7dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))
-val array8dimstring2array8dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))
-
-val array1dimbool2array1dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array2dimbool2array2dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array3dimbool2array3dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))
-val array4dimbool2array4dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))
-val array5dimbool2array5dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))
-val array6dimbool2array6dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))
-val array7dimbool2array7dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))
-val array8dimbool2array8dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))
+val array1dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array2dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array3dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array4dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array5dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array6dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array7dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array8dimint2matrixint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
 
 
 
@@ -297,148 +366,190 @@ val array8dimbool2array8dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(
 
 
 
+val array1dimint2array1dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array2dimint2array2dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val array3dimint2array3dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))
+val array4dimint2array4dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([])))
+val array5dimint2array5dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([])))
+val array6dimint2array6dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([])))
+val array7dimint2array7dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([])))
+val array8dimint2array8dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([])))
 
-val array1dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array2dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array3dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array4dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array5dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array6dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array7dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array8dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
+val array1dimreal2array1dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array2dimreal2array2dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array3dimreal2array3dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))
+val array4dimreal2array4dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([])))
+val array5dimreal2array5dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([])))
+val array6dimreal2array6dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([])))
+val array7dimreal2array7dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([])))
+val array8dimreal2array8dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([])))
 
-val array1dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array2dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array3dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array4dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array5dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array6dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array7dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
-val array8dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
+val array1dimstring2array1dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array2dimstring2array2dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array3dimstring2array3dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([])))
+val array4dimstring2array4dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([])))
+val array5dimstring2array5dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([])))
+val array6dimstring2array6dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([])))
+val array7dimstring2array7dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([])))
+val array8dimstring2array8dimstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([])))
 
-val array1dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array2dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array3dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array4dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array5dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array6dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array7dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val array8dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-
-val array1dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array2dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array3dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array4dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array5dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array6dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array7dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array8dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-
-val array1dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array2dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array3dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array4dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array5dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array6dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array7dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-val array8dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))
-
-val array1dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array2dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array3dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array4dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array5dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array6dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array7dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val array8dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-
-val array1dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array2dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array3dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array4dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array5dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array6dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array7dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val array8dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-
-val array1dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array2dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array3dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array4dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array5dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array6dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array7dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-val array8dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))
-
-val array1dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array2dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array3dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array4dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array5dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array6dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array7dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
-val array8dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
+val array1dimbool2array1dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array2dimbool2array2dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array3dimbool2array3dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([])))
+val array4dimbool2array4dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([])))
+val array5dimbool2array5dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([])))
+val array6dimbool2array6dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([])))
+val array7dimbool2array7dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([])))
+val array8dimbool2array8dimbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([])))
 
 
-val int2matrixint=       Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val real2matrixreal=     Types.T_FUNCTION([("x",Types.T_REAL)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL))
-val string2matrixstring= Types.T_FUNCTION([("x",Types.T_STRING)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING))
-val bool2matrixbool=     Types.T_FUNCTION([("x",Types.T_BOOL)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL))
 
 
-val vector_vector2int    = Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER)),("y",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_INTEGER)
-val vector_vector2real  = Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL)),("y",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_REAL)
 
-val int2array1dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val int2array2dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val int2array3dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
-val int2array4dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))
-val int2array5dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))
-val int2array6dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))
-val int2array7dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))
-val int2array8dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))
 
-val n1int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))
-val n2int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER))
-val n3int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
-val n4int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER))
-val n5int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER))
-val n6int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER),("x6",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER))
-val n7int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER),("x6",Types.T_INTEGER),("x7",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER))
-val n8int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER),("x2",Types.T_INTEGER),("x3",Types.T_INTEGER),("x4",Types.T_INTEGER),("x5",Types.T_INTEGER),("x6",Types.T_INTEGER),("x7",Types.T_INTEGER),("x8",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER))
 
-val int_int2vectorreal=	Types.T_FUNCTION([("x",Types.T_INTEGER),("y",Types.T_INTEGER)], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))
 
-val array1dimint2array3dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER))
-val array1dimreal2array3dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL))
+val array1dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array2dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array3dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array4dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array5dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array6dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array7dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array8dimreal2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+
+val array1dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array2dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array3dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array4dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array5dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array6dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array7dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+val array8dimreal2vectorreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+
+val array1dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array2dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array3dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array4dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array5dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array6dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array7dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val array8dimreal2matrixreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+
+val array1dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array2dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array3dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array4dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array5dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array6dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array7dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array8dimstring2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+
+val array1dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array2dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array3dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array4dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array5dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array6dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array7dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+val array8dimstring2vectorstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))
+
+val array1dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array2dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array3dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array4dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array5dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array6dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array7dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val array8dimstring2matrixstring= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_STRING([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+
+val array1dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array2dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array3dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array4dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array5dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array6dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array7dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val array8dimbool2vectorint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+
+val array1dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array2dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array3dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array4dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array5dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array6dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array7dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+val array8dimbool2vectorbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))
+
+val array1dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array2dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array3dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array4dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array5dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array6dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array7dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+val array8dimbool2matrixbool= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_BOOL([])))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+
+
+val int2matrixint=       Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val real2matrixreal=     Types.T_FUNCTION([("x",Types.T_REAL([]))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_REAL([])))
+val string2matrixstring= Types.T_FUNCTION([("x",Types.T_STRING([]))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_STRING([])))
+val bool2matrixbool=     Types.T_FUNCTION([("x",Types.T_BOOL([]))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_BOOL([])))
+
+
+val vector_vector2int    = Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([]))),("y",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
+val vector_vector2real  = Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([]))),("y",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_REAL([]))
+
+val int2array1dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val int2array2dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val int2array3dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))
+val int2array4dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([])))
+val int2array5dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([])))
+val int2array6dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([])))
+val int2array7dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([])))
+val int2array8dimint=     Types.T_FUNCTION([("x",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([])))
+
+val n1int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))
+val n2int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([])),("x2",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(2)),Types.T_INTEGER([])))
+val n3int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([])),("x2",Types.T_INTEGER([])),("x3",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))
+val n4int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([])),("x2",Types.T_INTEGER([])),("x3",Types.T_INTEGER([])),("x4",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(4)),Types.T_INTEGER([])))
+val n5int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([])),("x2",Types.T_INTEGER([])),("x3",Types.T_INTEGER([])),("x4",Types.T_INTEGER([])),("x5",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(5)),Types.T_INTEGER([])))
+val n6int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([])),("x2",Types.T_INTEGER([])),("x3",Types.T_INTEGER([])),("x4",Types.T_INTEGER([])),("x5",Types.T_INTEGER([])),("x6",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(6)),Types.T_INTEGER([])))
+val n7int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([])),("x2",Types.T_INTEGER([])),("x3",Types.T_INTEGER([])),("x4",Types.T_INTEGER([])),("x5",Types.T_INTEGER([])),("x6",Types.T_INTEGER([])),("x7",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(7)),Types.T_INTEGER([])))
+val n8int2arrayint=      Types.T_FUNCTION([("x1",Types.T_INTEGER([])),("x2",Types.T_INTEGER([])),("x3",Types.T_INTEGER([])),("x4",Types.T_INTEGER([])),("x5",Types.T_INTEGER([])),("x6",Types.T_INTEGER([])),("x7",Types.T_INTEGER([])),("x8",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(8)),Types.T_INTEGER([])))
+
+val int_int2vectorreal=	Types.T_FUNCTION([("x",Types.T_INTEGER([])),("y",Types.T_INTEGER([]))], Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))
+
+val array1dimint2array3dimint= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_INTEGER([])))
+val array1dimreal2array3dimreal= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_REAL([])))], Types.T_ARRAY(Types.DIM(SOME(3)),Types.T_REAL([])))
 
 
 (*
-val array1dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL))], Types.T_REAL)
-val array2dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_REAL))], Types.T_REAL)
-val array3dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_REAL))], Types.T_REAL)
-val array4dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_REAL))], Types.T_REAL)
+val array1dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL([])))], Types.T_REAL([]))
+val array2dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_REAL([])))], Types.T_REAL([]))
+val array3dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_REAL([])))], Types.T_REAL([]))
+val array4dimint2int= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_REAL([])))], Types.T_REAL([]))
 *)
 
 (*
-val array1dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array2dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array3dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
-val array4dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_INTEGER)),("y",Types.T_INTEGER)], Types.T_INTEGER)
+val array1dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_INTEGER([]))),("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array2dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_INTEGER([]))),("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array3dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_INTEGER([]))),("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
+val array4dimint_int2int= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_INTEGER([]))),("y",Types.T_INTEGER([]))], Types.T_INTEGER([]))
 
-val array1dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
-val array2dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
-val array3dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
-val array4Dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_REAL)),("y",Types.T_INTEGER)], Types.T_REAL)
+val array1dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL([]))),("y",Types.T_INTEGER([]))], Types.T_REAL([]))
+val array2dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(2,Types.T_REAL([]))),("y",Types.T_INTEGER([]))], Types.T_REAL([]))
+val array3dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(3,Types.T_REAL([]))),("y",Types.T_INTEGER([]))], Types.T_REAL([]))
+val array4Dimreal_int2real= Types.T_FUNCTION([("x",Types.T_ARRAY(4,Types.T_REAL([]))),("y",Types.T_INTEGER([]))], Types.T_REAL([]))
 *)
 
 (* etc...  *)
 
 
 (* T_ARRAY is apperantly not constant. To bad! *)
-val array2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER))], Types.T_INTEGER)
+val array2real= Types.T_FUNCTION([("x",Types.T_ARRAY(Types.DIM(SOME(1)),Types.T_INTEGER([])))], Types.T_INTEGER([]))
 		
-(* Legal syntax: val array2one= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL))], TYPES.T_INTEGER) *)
+(* Legal syntax: val array2one= Types.T_FUNCTION([("x",Types.T_ARRAY(1,Types.T_REAL([])))], TYPES.T_INTEGER) *)
 
 	(* For size(A) to transpose A *)
 (*
@@ -474,10 +585,8 @@ relation initial_env =
 	Env.extend_frame_c(env6, integer_type) => env7 &
 	Env.extend_frame_c(env7, string_type) => env8 &
 	Env.extend_frame_c(env8, boolean_type) => env9 &
-	(* LS: why twice? removing one *)
-(*	Env.extend_frame_c(env9, boolean_type) => env10 & *)
-
-	Env.extend_frame_v(env9, time_var,NONE,false) => env11 &
+	Env.extend_frame_c(env9, state_select_type) => env10 &
+	Env.extend_frame_v(env10, time_var,NONE,false) => env11 &
 
 	(* non-functions *)
 	Env.extend_frame_t(env11, "inital", nil2real)                => env12 &

@@ -98,10 +98,10 @@ end
 
 relation get_type_exp_type : Types.Type => Exp.Type =
 
-  axiom	get_type_exp_type Types.T_INTEGER => Exp.INT
-  axiom	get_type_exp_type Types.T_REAL => Exp.REAL
-  axiom	get_type_exp_type Types.T_STRING => Exp.STRING
-  axiom	get_type_exp_type Types.T_BOOL => Exp.BOOL
+  axiom	get_type_exp_type Types.T_INTEGER(_) => Exp.INT
+  axiom	get_type_exp_type Types.T_REAL(_) => Exp.REAL
+  axiom	get_type_exp_type Types.T_STRING(_) => Exp.STRING
+  axiom	get_type_exp_type Types.T_BOOL(_) => Exp.BOOL
 
   rule	get_type_exp_type t => t'
 	------------------------
@@ -125,7 +125,7 @@ relation make_if : (Exp.Exp,
 
   rule	make_else(eib,fb) => else
 	-------------------------
-	make_if(e,Types.PROP(Types.T_BOOL,_),tb,eib,fb) => IF(e,tb,else)
+	make_if(e,Types.PROP(Types.T_BOOL(_),_),tb,eib,fb) => IF(e,tb,else)
 
   rule	Print.print_buf "# Type error in if conditional (" &
 	Exp.print_exp e & Print.print_buf ")\n" &
@@ -151,7 +151,7 @@ relation make_else : ((Exp.Exp * Types.Properties * Statement list) list,
 
   rule	make_else (xs,fb) => else
 	-------------------------
-	make_else ((e,Types.PROP(Types.T_BOOL,_),b)::xs,fb)
+	make_else ((e,Types.PROP(Types.T_BOOL(_),_),b)::xs,fb)
 	  => ELSEIF(e,b,else)
 	
   rule	Print.print_buf "# Type error in elseif conditional (" &
@@ -186,7 +186,7 @@ end
 relation make_while : (Exp.Exp, Types.Properties,
 		       Statement list) => Statement =
 
-  axiom	make_while(e,Types.PROP(Types.T_BOOL,_),stmts) => WHILE(e,stmts)
+  axiom	make_while(e,Types.PROP(Types.T_BOOL(_),_),stmts) => WHILE(e,stmts)
 
   rule	Print.print_buf "# Type error in while conditional.\n" &
 	Print.print_buf "    Expected Boolean, got " &
@@ -201,7 +201,7 @@ end
 relation make_when_a : (Exp.Exp, Types.Properties,
 		      Statement list) => Statement =
 
-  axiom	make_when_a(e,Types.PROP(Types.T_BOOL,_),stmts) => WHEN(e,stmts)
+  axiom	make_when_a(e,Types.PROP(Types.T_BOOL(_),_),stmts) => WHEN(e,stmts)
 
   rule	Print.print_buf "# Type error in when conditional.\n" &
 	Print.print_buf "    Expected Boolean, got " &
@@ -213,13 +213,15 @@ end
 relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties) 
 	  => Statement =
 
-  axiom	make_assert(cond, msg, Types.PROP(T_BOOL,_),Types.PROP(T_STRING,_)) 
+  axiom	make_assert(cond, msg, Types.PROP(Types.T_BOOL(_),_),Types.PROP(T_STRING,_)) 
 	  => ASSERT(cond,msg)
- 
-  rule	not let T_BOOL = condt &
+
+(* RML does not handle the pattern below T_BOOL(_), hence we need to implement this differently.
+*) 
+(*  rule	not let T_BOOL(_) = condt &  
 	Print.print_buf "# Type error in assert condition.\n" &
 	Print.print_buf " Expected Boolean, got " &
 	Types.print_type condt & Print.print_buf "\n"
 	--------------------------------------------
-	make_assert(_,_,Types.PROP(condt,_),_) => fail
+	make_assert(_,_,Types.PROP(condt,_),_) => fail *)
 end 

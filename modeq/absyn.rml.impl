@@ -279,3 +279,19 @@ relation print_absyn_exp : Exp => () =
 	---------
 	print_absyn_exp (_)
 end
+
+
+relation cref_equal: (ComponentRef, ComponentRef) =>  bool =
+
+  rule	id = id2
+	-----------------------
+	cref_equal(CREF_IDENT(id,_),CREF_IDENT(id2,_)) => true
+
+  rule	id = id2 &
+	cref_equal(cr1,cr2) => true
+	---------------------------
+	cref_equal(CREF_QUAL(id,_,cr1),CREF_QUAL(id2,_,cr2)) => true
+
+  axiom	cref_equal(_,_) => false
+end
+	

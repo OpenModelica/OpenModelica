@@ -14,6 +14,7 @@
 #include "antlr/RecognitionException.hpp"
 #include "antlr/NoViableAltException.hpp"
 #include "antlr/MismatchedTokenException.hpp"
+#include "antlr/TokenStreamRecognitionException.hpp"
 
 extern "C"
 {
@@ -99,6 +100,9 @@ RML_BEGIN_LABEL(Parser__parse)
     } 
   catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) {
     std::cerr << "Lexical error. CharStreamException. "  << std::endl;    
+  }
+  catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e) {
+    std::cerr << "Parsing error. TokenStreamRecognitionException on line "  << lex->getLine() << "near :"<< lex->getText() << std::endl;    
   }
   catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) {
     std::cerr << "Parsing error. RecognitionException on line "  << lex->getLine() << "near :"<< lex->getText() << std::endl;    

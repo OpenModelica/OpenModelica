@@ -19,7 +19,6 @@
 
 *)
 
-
 with "dump.rml"
 with "debug.rml"
 with "rtopts.rml"
@@ -184,7 +183,7 @@ relation add_vars_to_env: (InteractiveVariable list, Env.Env) => Env.Env =
 	Env.update_frame_v(env,
 	    Types.VAR(
 		id,
-		Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.BIDIR),
+		Types.ATTR(false,SCode.RW,SCode.VAR,Absyn.BIDIR),
 		false,
 		tp,
 		Types.VALBOUND(v)
@@ -197,7 +196,7 @@ relation add_vars_to_env: (InteractiveVariable list, Env.Env) => Env.Env =
 	Env.extend_frame_v(env,
 	    Types.VAR(
 		id,
-		Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.BIDIR),
+		Types.ATTR(false,SCode.RW,SCode.VAR,Absyn.BIDIR),
 		false,
 		tp,
 		Types.VALBOUND(v)
@@ -2095,7 +2094,7 @@ relation get_connection_annotation_str: Absyn.EquationItem => string =
 	Static.elab_graphics_exp(env,Absyn.CALL(Absyn.CREF_IDENT("Line",[]),fargs)) => (newexp,_) &	
 	Exp.print_exp_str(newexp) => gexpstr 
 	-------------------------------------------------
-	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_), SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION([Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),Absyn.CLASSMOD(elts,NONE),_)])),_))))
+	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_), SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION([Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)])),_))))
 	  => gexpstr
 	
   axiom	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),NONE)) => fail
@@ -2112,7 +2111,7 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list => Absyn.Functi
 
   rule	create_funcargs_from_elementargs(xs) => Absyn.FUNCTIONARGS(expl,narg)
 	----------------
-	create_funcargs_from_elementargs(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),Absyn.CLASSMOD(_,SOME(exp)),_)::xs)
+	create_funcargs_from_elementargs(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),SOME(Absyn.CLASSMOD(_,SOME(exp))),_)::xs)
 	  => Absyn.FUNCTIONARGS(expl,Absyn.NAMEDARG(id,exp)::narg)
 
   rule	create_funcargs_from_elementargs(xs) => Absyn.FUNCTIONARGS(expl,narg)
@@ -2300,7 +2299,7 @@ end
 
 relation get_annotation_string: (string,Absyn.Annotation) => string =
 
-  rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,Absyn.CLASSMOD(_,SOME(graphicexp)),_)]) &
+  rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
 	
         Parser.parsestring totstring => p &
@@ -2325,9 +2324,9 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	string_append(str,",") => s1 &
 	string_append(s1,gexpstr) => totstr
 	-----------------------------------
-	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),Absyn.CLASSMOD(mod,_),_))])) => totstr
+	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => totstr
 
-  rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,Absyn.CLASSMOD(_,SOME(graphicexp)),_)]) &
+  rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
 	
         Parser.parsestring totstring => p &
@@ -2349,7 +2348,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	string_append(str,",") => s1 &
 	string_append(s1,gexpstr) => totstr
 	-----------------------------------
-	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Diagram",_),Absyn.CLASSMOD(mod,_),_))])) => totstr
+	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Diagram",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => totstr
 
   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' & 
 
@@ -2370,7 +2369,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Debug.fcall ("interactivedump",SCode.print_mod, mod') &
      	DAE.get_variable_bindings_str dae' => str 
 	-----------------------------------------
-	get_annotation_string(totstring, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(anncname,_),Absyn.CLASSMOD(mod,_),_))])) => str
+	get_annotation_string(totstring, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(anncname,_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => str
 
   rule	Print.print_buf "get_annotation_string failed!\n"
 	---------------------------------------
@@ -2945,7 +2944,7 @@ relation record_constructor_to_modification: (Absyn.Exp ) => Absyn.ElementArg =
 
   rule	(* Covers the case annotate=Diagram(x=1,y=2) *)
 	Util.list_map(nargs,namedarg_to_modification) => eltarglst &
-        let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,cr,Absyn.CLASSMOD(eltarglst,NONE),NONE)
+        let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,cr,SOME(Absyn.CLASSMOD(eltarglst,NONE)),NONE)
 	-----------------------------------
 	record_constructor_to_modification(Absyn.CALL(cr,Absyn.FUNCTIONARGS([],nargs))) => res	
 	
@@ -2953,7 +2952,7 @@ relation record_constructor_to_modification: (Absyn.Exp ) => Absyn.ElementArg =
 	Util.list_map(nargs,namedarg_to_modification) => eltarglst &
         record_constructor_to_modification(e) => emod &
 	let res = Absyn.MODIFICATION(false, Absyn.NON_EACH,
-				     cr, Absyn.CLASSMOD(emod::eltarglst, NONE), NONE)
+				     cr, SOME(Absyn.CLASSMOD(emod::eltarglst, NONE)), NONE)
 	-----------------------------------
 	record_constructor_to_modification(Absyn.CALL(cr,
 						      Absyn.FUNCTIONARGS([e as Absyn.CALL(_,_)],nargs))) => res	
@@ -2970,13 +2969,13 @@ end
  **)
 relation namedarg_to_modification: (Absyn.NamedArg) => Absyn.ElementArg = 
 
-  rule	record_constructor_to_modification(c) => Absyn.MODIFICATION(_,_,_,Absyn.CLASSMOD(elts,_),NONE) &
+  rule	record_constructor_to_modification(c) => Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(elts,_)),NONE) &
 	let cr' = Absyn.CREF_IDENT(id,[]) &
-	let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,cr',Absyn.CLASSMOD(elts,NONE),NONE)
+	let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,cr',SOME(Absyn.CLASSMOD(elts,NONE)),NONE)
 	----------------------------
 	namedarg_to_modification( Absyn.NAMEDARG(id,c as Absyn.CALL(cr,Absyn.FUNCTIONARGS([],nargs)))) => res
 
-  rule	let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(id,[]),Absyn.CLASSMOD([],SOME(e)),NONE)
+  rule	let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(id,[]),SOME(Absyn.CLASSMOD([],SOME(e))),NONE)
 	----------------------------------------------------------------
 	namedarg_to_modification( Absyn.NAMEDARG(id,e)) => res
 

@@ -191,7 +191,7 @@ module Absyn:
   (** - Modifications *)
   datatype Modification = CLASSMOD of ElementArg list * Exp option
 
-  datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification * string option
+  datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification option * string option
 		      | REDECLARATION of bool * Each * ElementSpec * ConstrainClass option
   (** Modifications are described by the `Modification' type.  There *)
   (** are two forms of modifications: redeclarations and component *)
@@ -333,6 +333,8 @@ module Absyn:
   relation strip_last: (Path) => Path 
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
+  relation cref_equal: (ComponentRef, ComponentRef) =>  bool
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
 
 end
+

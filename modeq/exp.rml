@@ -125,6 +125,7 @@ module Exp:
   relation is_range : Exp => bool
 
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
+  relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef
   relation int_subscripts : int list => Subscript list
   relation simplify : Exp => Exp
   relation unelab_exp : Exp => Absyn.Exp 	   

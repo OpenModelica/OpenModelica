@@ -19,7 +19,6 @@
 
 *)
 
-
 with "dump.rml"
 with "debug.rml"
 with "print.rml"
@@ -328,14 +327,23 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 	build_mod(m,false) => mod &
 	(* PR. This adds the arraydimension that may be specified together with
 	 the type of the component.  *)
+	elab_variability(pa) => pa' &
 	list_append(d,ad) => tot_dim
 	--------------------------------------------------
 	elab_elementspec(final,repl,prot,
 			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di,ad),t,
 					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_)::xs))
-	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa,di),t,mod)::xs'
+	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa',di),t,mod)::xs'
 
   axiom	elab_elementspec(final,repl,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
+
+end
+relation elab_variability: Absyn.Variability => Variability =
+
+  axiom elab_variability(Absyn.VAR) => VAR
+  axiom elab_variability(Absyn.DISCRETE) => DISCRETE
+  axiom elab_variability(Absyn.PARAM) => PARAM
+  axiom elab_variability(Absyn.CONST) => CONST
 
 end
 
@@ -422,7 +430,7 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
   axiom build_args [] => []
 
   rule	build_args xs => subs &
-	build_mod(SOME(mod),final) => mod' &
+	build_mod(mod,final) => mod' &
 	build_sub(cref,mod') => sub
 	----------------------
 	build_args((Absyn.MODIFICATION(final,each,cref,mod,cmt)::xs)) => (sub::subs)
@@ -671,3 +679,5 @@ relation print_element : Element => () =
 	-------------------------
 	print_element(IMPORT(_))
 end	
+
+

@@ -261,10 +261,10 @@ relation print_element_arg =
   rule	Print.print_buf "ARG(" &
 	print_select(f,"FINAL,",",") &
 	print_component_ref(r) &
-	print_modification(m) &
+	print_opt_modification(optm) &
 	Print.print_buf ")"
 	-------------------------------------------
-	print_element_arg(Absyn.MODIFICATION(f,each,r,m,optcmt))
+	print_element_arg(Absyn.MODIFICATION(f,each,r,optm,optcmt))
 
   rule	Print.print_buf "REDECLARATION(" &
 	print_select(f,"FINAL,",",") &
@@ -280,11 +280,11 @@ relation unparse_element_arg_str: (Absyn.ElementArg) => string =
   rule	unparse_each_str ( each ) => s1 &
 	select_string(f,"final ","") => s2 &
 	print_component_ref_str(r) => s3 &
-	unparse_modification_str(m) => s4 &
+	unparse_opt_modification_str(optm) => s4 &
 	unparse_string_comment_option(optstr) => s5 &
 	Util.string_append_list([s1, s2, s3, s4, s5]) => str
 	-------------------------------------------
-	unparse_element_arg_str(Absyn.MODIFICATION(f,each,r,m,optstr)) => str
+	unparse_element_arg_str(Absyn.MODIFICATION(f,each,r,optm,optstr)) => str
 	
   rule	unparse_each_str ( each ) => s1 &
 	select_string(f,"final ","")  => s2 &
@@ -869,6 +869,14 @@ relation print_subscript_str: Absyn.Subscript => string =
 end
 
 (* Modifications *)
+relation print_opt_modification: Absyn.Modification option => () =
+
+  rule	print_modification(m)
+	----------------------
+	print_opt_modification(SOME(m)) => ()
+
+  axiom	print_opt_modification(NONE) => ()
+end
 
 relation print_modification: Absyn.Modification => () =
 	
@@ -904,6 +912,14 @@ relation print_mod2 : Absyn.Exp option => () =
 
 end
 
+relation unparse_opt_modification_str: Absyn.Modification option => string =
+
+  rule	unparse_modification_str(opt) => str
+	-------------------
+	unparse_opt_modification_str(SOME(opt)) => str
+
+  axiom	unparse_opt_modification_str(NONE) => ""
+end
 relation unparse_modification_str: Absyn.Modification => string =
 	(* Special case for empty modifications *)
   axiom	unparse_modification_str(Absyn.CLASSMOD([],NONE)) => "()"
@@ -1945,7 +1961,6 @@ relation print_option = (* : ('a option)*('a => 'b) = *)
   rule	r( x )
 	------
 	print_option(SOME(x),r)
-	
 end
 
 relation print_list_debug : (string, 'a list, 'a => (), string) => () =

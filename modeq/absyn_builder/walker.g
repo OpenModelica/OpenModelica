@@ -705,7 +705,7 @@ argument returns [void* ast]
 element_modification returns [void* ast]
 {
 	void* cref;
-	void* mod;
+	void* mod=0;
 	void* final;
 	void* each;
 	void* cmt=0;
@@ -714,12 +714,12 @@ element_modification returns [void* ast]
 		(e:EACH)?
 		(f:FINAL)? 
 		cref = component_reference 
-		mod = modification 
+		(mod = modification)?
 		cmt = string_comment
 		{
 			final = f != NULL ? RML_TRUE : RML_FALSE;
 			each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;
-			ast = Absyn__MODIFICATION(final, each, cref, mod, cmt ? mk_some(cmt) : mk_none());
+			ast = Absyn__MODIFICATION(final, each, cref, mod ? mk_some(mod) : mk_none(), cmt ? mk_some(cmt) : mk_none());
 		}
 	;
 

@@ -19,8 +19,6 @@
 
 *)
 
-
-
 (** - Relations
  **
  ** The only relations in this module are for printing, and are not
@@ -331,7 +329,7 @@ relation dump_equations_str: Element list => string =
 	
   rule	Exp.print_component_ref_str c => s1 &
 	string_append("  ",s1) => s2 &
-	string_append(s2," := ") => s3 &
+	string_append(s2," = ") => s3 &
 	Exp.print_exp_str e  => s4 &
 	string_append(s3,s4) => s4' &
 	string_append(s4',";\n") => s5 &
@@ -429,9 +427,9 @@ end
 
 relation dump_kind_str: VarKind => string =
 
-  axiom	dump_kind_str CONST => "constant"
-  axiom	dump_kind_str PARAM => "parameter"
-  axiom	dump_kind_str DISCRETE => "discrete"
+  axiom	dump_kind_str CONST => "constant "
+  axiom	dump_kind_str PARAM => "parameter "
+  axiom	dump_kind_str DISCRETE => "discrete "
   axiom	dump_kind_str VARIABLE => ""
 
 end
@@ -455,11 +453,11 @@ end
 
 relation dump_direction_str: VarDirection => string =
 
-  axiom	dump_direction_str INPUT => " input  "
+  axiom	dump_direction_str INPUT => "input "
 	
-  axiom dump_direction_str OUTPUT => " output "
+  axiom dump_direction_str OUTPUT => "output "
 	
-  axiom	dump_direction_str BIDIR => "        "
+  axiom	dump_direction_str BIDIR => ""
 
 end
 
@@ -496,13 +494,13 @@ relation dump_type_str =
 
   axiom	dump_type_str INT => "Integer " 
 	
-  axiom	dump_type_str REAL => "Real    "
+  axiom	dump_type_str REAL => "Real "
 
   axiom	dump_type_str BOOL => "Boolean "
 
-  axiom	dump_type_str STRING => "String  "
+  axiom	dump_type_str STRING => "String "
 
-  axiom	dump_type_str ENUM => "Enum  "
+  axiom	dump_type_str ENUM => "Enum "
 	
   rule	Util.string_delimit_list(l,", ") => s1 &
 	string_append("enumeration(",s1) => s2 &
@@ -543,14 +541,10 @@ relation dump_var_str : Element => string =
 	
   rule	dump_kind_str kind => s1 & 
 	dump_direction_str dir => s2 &
-	string_append(s1,s2)=>s3 &
-	dump_type_str typ => s4 &	
-	string_append(s3,s4) => s5 &
-	Exp.print_component_ref_str id => s6 & 
-	string_append(s6," = ") => s7 &
-	Exp.print_exp_str e => s8 & 
-	string_append(s7,s8) => s9 &
-	string_append(s9,";\n") => str
+	dump_type_str typ => s3 &	
+	Exp.print_component_ref_str id => s4 & 
+	Exp.print_exp_str e => s5 & 
+	Util.string_append_list([s1, s2, s3, s4, " = ", s5, ";\n"] )=> str
 	--------------------------------------
 	dump_var_str VAR(id, kind, dir, typ, SOME(e),_) => str
 	

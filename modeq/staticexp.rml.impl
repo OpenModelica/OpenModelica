@@ -63,14 +63,18 @@ end
 relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTable option)
 	    => (Exp.Exp, Types.Properties,Interactive.InteractiveSymbolTable option) =
 
+(* The types below should contain the default values of the attributes of the builtin
+ * types. But since they are default, we can leave them out for now, unit="" is not 
+* that interesting to find out.
+*)
   axiom	elab_exp(_, Absyn.INTEGER(x),impl,st)
-	  => (Exp.ICONST(x), Types.PROP(Types.T_INTEGER,true),st)
+	  => (Exp.ICONST(x), Types.PROP(Types.T_INTEGER([]),true),st)
   axiom	elab_exp(_, Absyn.REAL(x),impl,st)
-	  => (Exp.RCONST(x), Types.PROP(Types.T_REAL,   true),st)
+	  => (Exp.RCONST(x), Types.PROP(Types.T_REAL([]),   true),st)
   axiom	elab_exp(_, Absyn.STRING(x),impl,st)
-	  => (Exp.SCONST(x), Types.PROP(Types.T_STRING, true),st)
+	  => (Exp.SCONST(x), Types.PROP(Types.T_STRING([]), true),st)
   axiom	elab_exp(_, Absyn.BOOL(x),impl,st)
-	  => (Exp.BCONST(x), Types.PROP(Types.T_BOOL,   true),st)
+	  => (Exp.BCONST(x), Types.PROP(Types.T_BOOL([]),   true),st)
 
   rule	Debug.fprintln("setr", "elab_exp_cref") &
 	elab_cref(env, cr) => (exp,prop,_)
@@ -229,13 +233,13 @@ end
 relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties) =
 
   axiom	elab_graphics_exp(_, Absyn.INTEGER(x))
-	  => (Exp.ICONST(x), Types.PROP(Types.T_INTEGER,true))
+	  => (Exp.ICONST(x), Types.PROP(Types.T_INTEGER([]),true))
   axiom	elab_graphics_exp(_, Absyn.REAL(x))
-	  => (Exp.RCONST(x), Types.PROP(Types.T_REAL,   true))
+	  => (Exp.RCONST(x), Types.PROP(Types.T_REAL([]),   true))
   axiom	elab_graphics_exp(_, Absyn.STRING(x))
-	  => (Exp.SCONST(x), Types.PROP(Types.T_STRING, true))
+	  => (Exp.SCONST(x), Types.PROP(Types.T_STRING([]), true))
   axiom	elab_graphics_exp(_, Absyn.BOOL(x))
-	  => (Exp.BCONST(x), Types.PROP(Types.T_BOOL,   true))
+	  => (Exp.BCONST(x), Types.PROP(Types.T_BOOL([]),   true))
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_cref") &
 	elab_cref(env, cr) => (exp,prop,_)
@@ -395,19 +399,19 @@ relation deoverload_range : ((Exp.Exp*Types.Type),
 			     (Exp.Exp*Types.Type)) 
 	  => (Exp.Exp, Exp.Exp option, Exp.Exp, Exp.Type) =
 	  
-  axiom	deoverload_range((e1,Types.T_INTEGER),
+  axiom	deoverload_range((e1,Types.T_INTEGER(_)),
 			 NONE,
-			 (e3,Types.T_INTEGER)) => (e1,NONE,e3,Exp.INT)
-  axiom	deoverload_range((e1,Types.T_INTEGER),
-			 SOME((e2,Types.T_INTEGER)),
-			 (e3,Types.T_INTEGER))  => (e1,SOME(e2),e3,Exp.INT)
+			 (e3,Types.T_INTEGER(_))) => (e1,NONE,e3,Exp.INT)
+  axiom	deoverload_range((e1,Types.T_INTEGER(_)),
+			 SOME((e2,Types.T_INTEGER(_))),
+			 (e3,Types.T_INTEGER(_)))  => (e1,SOME(e2),e3,Exp.INT)
 
-  rule	elab_arglist([Types.T_REAL,Types.T_REAL],
+  rule	elab_arglist([Types.T_REAL([]),Types.T_REAL([])],
 		     [(e1,t1),(e3,t3)]) => ([e1',e3'],_)
 	---------------------------------------------------
 	deoverload_range((e1,t1),NONE,(e3,t3)) => (e1',NONE,e3',Exp.REAL)
 
-  rule	elab_arglist([Types.T_REAL,Types.T_REAL,Types.T_REAL],
+  rule	elab_arglist([Types.T_REAL([]),Types.T_REAL([]),Types.T_REAL([])],
 		     [(e1,t1),(e2,t2),(e3,t3)]) => ([e1',e2',e3'],_)
 	---------------------------------------------------
 	deoverload_range((e1,t1),SOME((e2,t2)),(e3,t3)) 
@@ -424,7 +428,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
 	elab_range_type (env,start,NONE,stop,true,_)
-	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_INTEGER)
+	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_INTEGER([]))
 
   rule	ceval (env,start,false,NONE) => (Values.INTEGER(startv),_) &
 	ceval (env,step,false,NONE) => (Values.INTEGER(stepv),_) &
@@ -434,7 +438,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
  	int_add (n',1) => n''
 	-------------------------------------------------
 	elab_range_type (env,start,SOME(step),stop,true,_)
-	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER)
+	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER([]))
 
   rule	ceval (env,start,false,NONE) => (Values.REAL(startv),_) &
 	ceval (env,stop,false,NONE) => (Values.REAL(stopv),_) &
@@ -444,7 +448,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	int_add (n''',1) => n'
 	-------------------------------------------------
 	elab_range_type (env,start,NONE,stop,true,_)
-	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_REAL)
+	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_REAL([]))
 
   rule	ceval (env,start,false,NONE) => (Values.REAL(startv),_) &
 	ceval (env,step,false,NONE) => (Values.REAL(stepv),_) &
@@ -456,13 +460,13 @@ relation elab_range_type : (Env.Env, Exp.Exp,
  	int_add (n'''',1) => n''
 	-------------------------------------------------
 	elab_range_type (env,start,SOME(step),stop,true,_)
-	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_REAL)
+	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_REAL([]))
 
   axiom	elab_range_type (_,_,_,_,false,Exp.INT)
-	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_INTEGER)
+	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_INTEGER([]))
 
   axiom	elab_range_type (_,_,_,_,false,Exp.REAL)
-	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_REAL)
+	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_REAL([]))
 
 end
 
@@ -659,11 +663,11 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
   rule	elab_exp (env,arraycr,false,NONE) => (crefe as Exp.CREF(cr,crt), crprop,_) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
-	Types.array_element_type ty => Types.T_INTEGER &
+	Types.array_element_type ty => Types.T_INTEGER(_) &
 	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, ind_const),_) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_integer_array"),
 			   [crefe,indexp],false,true) &
-	let prop = Types.PROP(Types.T_INTEGER,false)
+	let prop = Types.PROP(Types.T_INTEGER([]),false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
 	  => (exp, 
@@ -671,11 +675,11 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
   rule	elab_exp (env,arraycr,false,NONE) => (crefe as Exp.CREF(cr,crt), crprop,_) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
-	Types.array_element_type ty => Types.T_REAL &
+	Types.array_element_type ty => Types.T_REAL(_) &
 	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, ind_const),_) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_real_array"),
 			   [crefe,indexp],false,true) &
-	let prop = Types.PROP(Types.T_INTEGER,false)
+	let prop = Types.PROP(Types.T_INTEGER([]),false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
 	  => (exp, prop)
@@ -694,7 +698,7 @@ relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Types.Pro
 	elab_builtin_size_2(env, Types.T_ARRAY(Types.DIM(NONE),ty), 1) => fail
 
  axiom	elab_builtin_size_2 (env, Types.T_ARRAY(Types.DIM(SOME(dim)),ty), 1) 
-	  => (Exp.ICONST(dim), Types.PROP(Types.T_INTEGER, true))
+	  => (Exp.ICONST(dim), Types.PROP(Types.T_INTEGER([]), true))
 
   rule	int_sub (ind, 1) => ind' &
 	elab_builtin_size_2 (env, ty, ind') => (exp, prop)
@@ -823,7 +827,7 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 	int_max(i1,i2) => res
 	-------------------------------------------------------
 	elab_builtin_max(env, [s1, s2]) 
-	  => (Exp.ICONST(res),Types.PROP(Types.T_INTEGER,true))
+	  => (Exp.ICONST(res),Types.PROP(Types.T_INTEGER([]),true))
 
   rule	elab_exp (env,s1,false,NONE) 
 	  => (s1', Types.PROP(arrty, arrconst),_) &
@@ -834,24 +838,24 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 	real_max(r1,r2) => res
 	-------------------------------------------------------
 	elab_builtin_max(env, [s1, s2]) 
-	  => (Exp.RCONST(res),Types.PROP(Types.T_REAL,true))
+	  => (Exp.RCONST(res),Types.PROP(Types.T_REAL([]),true))
 end
 
 relation elab_builtin_max_2 : (Values.Value) => (Values.Value, Types.Type) =
 
-  rule	elab_builtin_max_2(v1) => (Values.INTEGER(i1),Types.T_INTEGER) &
-	elab_builtin_max_2(Values.ARRAY(vls)) => (Values.INTEGER(i2),Types.T_INTEGER) &
+  rule	elab_builtin_max_2(v1) => (Values.INTEGER(i1),Types.T_INTEGER(_)) &
+	elab_builtin_max_2(Values.ARRAY(vls)) => (Values.INTEGER(i2),Types.T_INTEGER(_)) &
 	int_max(i1,i2) => res
 	---------------------
 	elab_builtin_max_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.INTEGER(res),Types.T_INTEGER)
+	  => (Values.INTEGER(res),Types.T_INTEGER([]))
 
-  rule	elab_builtin_max_2(v1) => (Values.REAL(i1),Types.T_REAL) &
-	elab_builtin_max_2(Values.ARRAY(vls)) => (Values.REAL(i2),Types.T_REAL) &
+  rule	elab_builtin_max_2(v1) => (Values.REAL(i1),Types.T_REAL(_)) &
+	elab_builtin_max_2(Values.ARRAY(vls)) => (Values.REAL(i2),Types.T_REAL(_)) &
 	real_max(i1,i2) => res
 	---------------------
 	elab_builtin_max_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.REAL(res),Types.T_REAL)
+	  => (Values.REAL(res),Types.T_REAL([]))
 
   rule	elab_builtin_max_2(vl) => (v,t)
 	------------------
@@ -859,10 +863,10 @@ relation elab_builtin_max_2 : (Values.Value) => (Values.Value, Types.Type) =
 	  => (v,t)
 
   axiom	elab_builtin_max_2(Values.INTEGER(i))
-	  => (Values.INTEGER(i),Types.T_INTEGER)
+	  => (Values.INTEGER(i),Types.T_INTEGER([]))
 
   axiom	elab_builtin_max_2(Values.REAL(i))
-	  => (Values.REAL(i),Types.T_REAL)
+	  => (Values.REAL(i),Types.T_REAL([]))
 end
 
 relation elab_builtin_min : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
@@ -883,19 +887,19 @@ end
 
 relation elab_builtin_min_2 : (Values.Value) => (Values.Value, Types.Type) =
 
-  rule	elab_builtin_min_2(v1) => (Values.INTEGER(i1),Types.T_INTEGER) &
-	elab_builtin_min_2(Values.ARRAY(vls)) => (Values.INTEGER(i2),Types.T_INTEGER) &
+  rule	elab_builtin_min_2(v1) => (Values.INTEGER(i1),Types.T_INTEGER(_)) &
+	elab_builtin_min_2(Values.ARRAY(vls)) => (Values.INTEGER(i2),Types.T_INTEGER(_)) &
 	int_min(i1,i2) => res
 	---------------------
 	elab_builtin_min_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.INTEGER(res),Types.T_INTEGER)
+	  => (Values.INTEGER(res),Types.T_INTEGER([]))
 
-  rule	elab_builtin_min_2(v1) => (Values.REAL(i1),Types.T_REAL) &
-	elab_builtin_min_2(Values.ARRAY(vls)) => (Values.REAL(i2),Types.T_REAL) &
+  rule	elab_builtin_min_2(v1) => (Values.REAL(i1),Types.T_REAL(_)) &
+	elab_builtin_min_2(Values.ARRAY(vls)) => (Values.REAL(i2),Types.T_REAL(_)) &
 	real_min(i1,i2) => res
 	---------------------
 	elab_builtin_min_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.REAL(res),Types.T_REAL)
+	  => (Values.REAL(res),Types.T_REAL([]))
 
   rule	elab_builtin_min_2(vl) => (v,t)
 	------------------
@@ -903,10 +907,10 @@ relation elab_builtin_min_2 : (Values.Value) => (Values.Value, Types.Type) =
 	  => (v,t)
 
   axiom	elab_builtin_min_2(Values.INTEGER(i))
-	  => (Values.INTEGER(i),Types.T_INTEGER)
+	  => (Values.INTEGER(i),Types.T_INTEGER([]))
 
   axiom	elab_builtin_min_2(Values.REAL(i))
-	  => (Values.REAL(i),Types.T_REAL)
+	  => (Values.REAL(i),Types.T_REAL([]))
 end
 
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
@@ -991,7 +995,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("typeOf",_),
@@ -1001,21 +1005,21 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.CREF(Exp.CREF_IDENT(varid,[]),Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clear",_),
 			      [],[],impl,
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("clear"), [], false, false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clearVariables",_),
 			      [],[],impl,
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("clearVariables"), [], false, false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("list",_),
@@ -1025,7 +1029,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
   rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
@@ -1037,7 +1041,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
   rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
@@ -1049,7 +1053,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   rule	elab_exp(env,exp,impl,SOME(st)) => (exp',prop,st')
@@ -1061,7 +1065,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [exp'],
 		       false,
 		       false),
-	      Types.PROP(Types.T_REAL,false),
+	      Types.PROP(Types.T_REAL([]),false),
 	      st')
 
 
@@ -1074,7 +1078,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setCompiler",_),
@@ -1084,7 +1088,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setCompilerFlags",_),
@@ -1094,7 +1098,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setDebugFlags",_),
@@ -1104,7 +1108,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("cd",_),
@@ -1114,7 +1118,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("cd",_),
@@ -1124,7 +1128,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("system",_),
@@ -1134,7 +1138,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_INTEGER,false),
+	      Types.PROP(Types.T_INTEGER([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("readFile",_),
@@ -1144,7 +1148,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
 	(* Returns an array of "component references" *)
@@ -1165,7 +1169,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 		       [],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("runScript",_),
@@ -1175,7 +1179,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
   rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
@@ -1187,7 +1191,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("loadFile",_),
@@ -1197,7 +1201,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 		       [Exp.SCONST(str)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
@@ -1209,7 +1213,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 		       [Exp.SCONST(str),Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL,false),
+	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("help",_),
@@ -1219,7 +1223,124 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 		       [],
 		       false,
 		       false),
-	      Types.PROP(Types.T_STRING,false),
+	      Types.PROP(Types.T_STRING([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getUnit",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getUnit"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getQuantity",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getQuantity"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getDisplayUnit",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getDisplayUnit"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getMin",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getMin"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_REAL([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getMax",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getMax"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_REAL([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getStart",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getStart"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_REAL([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getFixed",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getFixed"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_BOOL([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getNominal",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getNominal"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_REAL([]),false),
+	      SOME(st))
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
+	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("getStateSelect",_),
+			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getStateSelect"),
+		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_ENUMERATION(["never", "avoid", "default", "prefer", "always"],[]),false),
 	      SOME(st))
 
 end
@@ -1953,30 +2074,36 @@ end
 
 relation elab_cref2 : (Env.Env,
 		       Exp.ComponentRef,
-		       SCode.Accessibility, Absyn.Variability,
+		       SCode.Accessibility, SCode.Variability,
 		       Types.Type, Types.Binding)
 	  => (Exp.Exp,bool,SCode.Accessibility) =
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	-----------------
-	elab_cref2 (_,cr, acc, Absyn.VAR, tt,_) => (Exp.CREF(cr',t),false, acc)
+	elab_cref2 (_,cr, acc, SCode.VAR, tt,_) => (Exp.CREF(cr',t),false, acc)
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	------------------
-	elab_cref2 (_,cr, acc, Absyn.DISCRETE,tt,_)
+	elab_cref2 (_,cr, acc, SCode.DISCRETE,tt,_)
 	  =>(Exp.CREF(cr',t),false,acc)
 
   rule	value_exp v => e
 	----------------
-	elab_cref2 (_,cr,_,Absyn.CONST,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
+	elab_cref2 (_,cr,_,SCode.CONST,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
 
- rule	Types.elab_type tt => t &
+  rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
 	value_exp v => e'
 	----------------
- 	elab_cref2 (env,cr,acc,Absyn.PARAM,tt, Types.VALBOUND(v)) => ((*Exp.CREF(cr',t)*)e',true,acc)
+  	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) => ((*Exp.CREF(cr',t)*)e',true,acc) (* Change here when struct params work *)
+
+  rule	Types.elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr' &
+	value_exp v => e'
+	----------------
+  	elab_cref2 (env,cr,acc,SCode.STRUCTPARAM,tt, Types.VALBOUND(v)) => (e',true,acc)
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
@@ -2105,9 +2232,9 @@ end
 relation elab_subscript_type : (Types.Type, Absyn.Exp, Exp.Exp)
 	  => Exp.Subscript =
 
-  axiom	elab_subscript_type (Types.T_INTEGER,_,sub) => Exp.INDEX(sub)
+  axiom	elab_subscript_type (Types.T_INTEGER(_),_,sub) => Exp.INDEX(sub)
 
-  axiom	elab_subscript_type (Types.T_ARRAY(_,Types.T_INTEGER),_,sub)
+  axiom	elab_subscript_type (Types.T_ARRAY(_,Types.T_INTEGER(_)),_,sub)
 	  => Exp.SLICE(sub)
 
   rule	Print.print_buf "# Subscript is not an integer or integer array\n" &
@@ -2203,25 +2330,25 @@ relation elab_ifexp : (Exp.Exp, Types.Properties,
   rule	Types.equivtypes(t2,t3) => true &
 	const_ifexp(e1,c1,c2,c3) => c
 	-----------------------------
-	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL(_),c1),
 		   e2,Types.PROP(t2,c2),
 		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3), Types.PROP(t2, c))
 
   rule	Types.match_type(e2,t2,t3) => (e2',t2') & (* then-part type converted to match else-part *)
 	const_ifexp(e1,c1,c2,c3) => c
 	-----------------------------
-	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL(_),c1),
 		   e2,Types.PROP(t2,c2),
 		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2',e3), Types.PROP(t2', c))
 
   rule	Types.match_type(e3,t3,t2) => (e3',t3') & (* else-part type converted to match then-part *)
 	const_ifexp(e1,c1,c2,c3) => c
 	-----------------------------
-	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL(_),c1),
 		   e2,Types.PROP(t2,c2),
 		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3'), Types.PROP(t2, c))
 
-  rule	not t1 = Types.T_BOOL &
+  rule	not t1 = Types.T_BOOL([]) &
 	Print.print_buf "# conditional in if expression has to be boolean\n" &
 	Print.print_buf "    got type: " & Types.print_type t1 & Print.print_buf "\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e1 & Print.print_buf "\n"
@@ -2235,7 +2362,7 @@ relation elab_ifexp : (Exp.Exp, Types.Properties,
 	Print.print_buf "    false branch: " & Exp.print_exp e3 &
  	Print.print_buf " :: " & Types.print_type t3 & Print.print_buf "\n"
 	-----------------------------------------------
-	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL(_),c1),
 		   e2,Types.PROP(t2,c2),e3,Types.PROP(t3,c3)) => fail
 
   rule	Print.print_buf "- elab_ifexp failed\n"
@@ -2729,12 +2856,116 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveClass"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
-  rule	System.read_file("$MOSHHOME/../modeq/helptext.txt") => str 
+  rule	System.read_env("MOSHHOME") => moshhome &
+	string_append(moshhome,"/../modeq/helptext.txt") => filename &
+	print filename & 
+	System.read_file(filename) => str 
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("help"),[],_,_),
 				     st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(str),st)
+
+  rule	get_builtin_attribute(classname,cref,p,"unit") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getUnit"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"quantity") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getQuantity"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"displayUnit") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getDisplayUnit"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"min") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMin"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"max") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMax"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"start") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStart"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"fixed") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getFixed"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"nominal") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getNominal"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
+  rule	get_builtin_attribute(classname,cref,p,"stateSelect") => v
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStateSelect"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (v, st)
+
 end
+
+relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, Absyn.Program, string) 
+	  => Values.Value =
+
+  rule	component_ref_to_path(classname) => classname' &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	Lookup.lookup_class(Cache.CACHE([],[]),env,classname',true)
+	  => (_, c as SCode.CLASS(n, _, encflag, r, _), env') &
+	  Env.open_scope(env',encflag) => env'' &
+	Env.name_scope(env'',n) => env3 &
+	ClassInf.start(r,n) => ci_state &
+	Inst.inst_class_in(Cache.CACHE([],[]), env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+			   c, false, [], false, false)
+	  => (_, dae1, env4, csets', ci_state', tys) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
+	Lookup.lookup_var(env4,cref') => (attr,ty,Types.EQBOUND(exp,_)) &
+	Exp.print_exp_str exp => str
+	--------------------------------
+	get_builtin_attribute(classname,cref,p,"stateSelect") => Values.STRING(str)
+
+  rule	component_ref_to_path(classname) => classname' &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	Lookup.lookup_class(Cache.CACHE([],[]),env,classname',true)
+	  => (_, c as SCode.CLASS(n, _, encflag, r, _), env') &
+	  Env.open_scope(env',encflag) => env'' &
+	Env.name_scope(env'',n) => env3 &
+	ClassInf.start(r,n) => ci_state &
+	Inst.inst_class_in(Cache.CACHE([],[]), env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+			   c, false, [], false, false)
+	  => (_, dae1, env4, csets', ci_state', tys) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &
+	Lookup.lookup_var(env4,cref') => (attr,ty,Types.VALBOUND(v))
+	-----------------------------------------------
+	get_builtin_attribute(classname,cref,p,attribute) => v
+end 
 
 relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list) => Values.Value list =
 
@@ -2921,6 +3152,12 @@ end
 
 relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 
+(* Uncomment this when struct params work *)
+(*  rule	(* Parameters should not be evaluated. Exception: structural parameters *)
+	Lookup.lookup_var (env, c) => (Types.ATTR(_,_,SCode.PARAM,_),_,binding) 
+	-------------------------------------
+	ceval_cref (env,c) => fail *)
+
   rule	Lookup.lookup_var (env, c) => (_,_,binding) &
 	ceval_cref_binding (env,c,binding) => v
 	-------------------------------------
@@ -3000,10 +3237,10 @@ end
 
 relation value_type : Values.Value => Types.Type =
 
-  axiom	value_type Values.INTEGER(x) => Types.T_INTEGER
-  axiom	value_type Values.REAL(x)    => Types.T_REAL
-  axiom value_type Values.STRING(x)  => Types.T_STRING
-  axiom value_type Values.BOOL(x)    => Types.T_BOOL
+  axiom	value_type Values.INTEGER(x) => Types.T_INTEGER([])
+  axiom	value_type Values.REAL(x)    => Types.T_REAL([])
+  axiom value_type Values.STRING(x)  => Types.T_STRING([])
+  axiom value_type Values.BOOL(x)    => Types.T_BOOL([])
 
   rule	Print.print_buf "- value_type failed\n"
 	----------------------------
@@ -3344,10 +3581,10 @@ end
 
 relation n_dims : Types.Type => int =
 	
-  axiom	n_dims Types.T_INTEGER => 0
-  axiom	n_dims Types.T_REAL => 0
-  axiom	n_dims Types.T_STRING => 0
-  axiom	n_dims Types.T_BOOL => 0
+  axiom	n_dims Types.T_INTEGER(_) => 0
+  axiom	n_dims Types.T_REAL(_) => 0
+  axiom	n_dims Types.T_STRING(_) => 0
+  axiom	n_dims Types.T_BOOL(_) => 0
 
   rule	n_dims t => ns &
 	int_add(ns,1) => n
@@ -3372,10 +3609,10 @@ end
 
 relation element_type : Types.Type => Types.Type =
 	
-  axiom	element_type(t as Types.T_INTEGER) => t
-  axiom	element_type(t as Types.T_REAL) => t
-  axiom	element_type(t as Types.T_STRING) => t
-  axiom	element_type(t as Types.T_BOOL) => t
+  axiom	element_type(t as Types.T_INTEGER(_)) => t
+  axiom	element_type(t as Types.T_REAL(_)) => t
+  axiom	element_type(t as Types.T_STRING(_)) => t
+  axiom	element_type(t as Types.T_BOOL(_)) => t
 
   rule	element_type(t) => t'
 	---------------------------
@@ -3397,9 +3634,9 @@ relation operators : Absyn.Operator
 
 	(**  Arithmetical operators *)
 
-  rule	array_type_list(2 (*9*), Types.T_INTEGER) => intarrtypes &
-	array_type_list(2 (*9*), Types.T_REAL) => realarrtypes &
-	array_type_list(2 (*9*), Types.T_STRING) => stringarrtypes &
+  rule	array_type_list(2 (*9*), Types.T_INTEGER([])) => intarrtypes &
+	array_type_list(2 (*9*), Types.T_REAL([])) => realarrtypes &
+	array_type_list(2 (*9*), Types.T_STRING([])) => stringarrtypes &
 	
 	operator_return(Exp.ADD_ARR(Exp.INT), 
 			intarrtypes, 
@@ -3417,14 +3654,14 @@ relation operators : Absyn.Operator
 			stringarrtypes) => stringarrs &
 	
 	let scalars = [(Exp.ADD(Exp.INT),
-			[Types.T_INTEGER, Types.T_INTEGER],
-			Types.T_INTEGER),
+			[Types.T_INTEGER([]), Types.T_INTEGER([])],
+			Types.T_INTEGER([])),
 		       (Exp.ADD(Exp.REAL),
-			[Types.T_REAL, Types.T_REAL],
-			Types.T_REAL),
+			[Types.T_REAL([]), Types.T_REAL([])],
+			Types.T_REAL([])),
 		       (Exp.ADD(Exp.STRING),
-			[Types.T_STRING, Types.T_STRING],
-			Types.T_STRING)
+			[Types.T_STRING([]), Types.T_STRING([])],
+			Types.T_STRING([]))
 		       ] &
 	
 	Util.list_flatten([intarrs,realarrs,stringarrs]) => arrays &
@@ -3433,8 +3670,8 @@ relation operators : Absyn.Operator
 	operators Absyn.ADD => types
 
 
-  rule	array_type_list(2(*9*), Types.T_INTEGER) => intarrtypes &
-	array_type_list(2(*9*), Types.T_REAL) => realarrtypes &
+  rule	array_type_list(2(*9*), Types.T_INTEGER([])) => intarrtypes &
+	array_type_list(2(*9*), Types.T_REAL([])) => realarrtypes &
 	
 	operator_return(Exp.SUB_ARR(Exp.INT), 
 			intarrtypes, 
@@ -3447,11 +3684,11 @@ relation operators : Absyn.Operator
 			realarrtypes) => realarrs &
 	
 	let scalars = [(Exp.SUB(Exp.INT),
-			[Types.T_INTEGER, Types.T_INTEGER],
-			Types.T_INTEGER),
+			[Types.T_INTEGER([]), Types.T_INTEGER([])],
+			Types.T_INTEGER([])),
 		       (Exp.SUB(Exp.REAL),
-			[Types.T_REAL, Types.T_REAL],
-			Types.T_REAL)		  
+			[Types.T_REAL([]), Types.T_REAL([])],
+			Types.T_REAL([]))		  
 		       ] &
 	
 	list_append(intarrs,realarrs) => arrays &
@@ -3459,10 +3696,10 @@ relation operators : Absyn.Operator
 	---------------------------
 	operators Absyn.SUB => types
 
-  rule	array_type_list(2(*9*), Types.T_INTEGER) => intarrtypes &
-	array_type_list(2(*9*), Types.T_REAL) => realarrtypes &
-	n_types(2(*9*), Types.T_INTEGER) => inttypes &
-	n_types(2(*9*), Types.T_REAL) => realtypes &
+  rule	array_type_list(2(*9*), Types.T_INTEGER([])) => intarrtypes &
+	array_type_list(2(*9*), Types.T_REAL([])) => realarrtypes &
+	n_types(2(*9*), Types.T_INTEGER([])) => inttypes &
+	n_types(2(*9*), Types.T_REAL([])) => realtypes &
 	
 	let int_mul = Exp.MUL(Exp.INT) &
 	let real_mul = Exp.MUL(Exp.REAL) &
@@ -3471,10 +3708,10 @@ relation operators : Absyn.Operator
 	let int_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.INT) &
 	let real_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.REAL) &
 	
-	let int_scalar = Types.T_INTEGER &
+	let int_scalar = Types.T_INTEGER([]) &
 	let int_vector = Types.T_ARRAY(Types.DIM(NONE),int_scalar) &
 	let int_matrix = Types.T_ARRAY(Types.DIM(NONE), int_vector) &
-	let real_scalar = Types.T_REAL &
+	let real_scalar = Types.T_REAL([]) &
 	let real_vector = Types.T_ARRAY(Types.DIM(NONE),real_scalar) &
 	let real_matrix = Types.T_ARRAY(Types.DIM(NONE), real_vector) &
 
@@ -3533,10 +3770,10 @@ relation operators : Absyn.Operator
 	---------------------------
 	operators Absyn.MUL => types
 
-  rule	array_type_list(2(*9*), Types.T_REAL) => realarrtypes &
-	n_types(2(*9*), Types.T_REAL) => realtypes &
+  rule	array_type_list(2(*9*), Types.T_REAL([])) => realarrtypes &
+	n_types(2(*9*), Types.T_REAL([])) => realtypes &
 	let real_div = Exp.DIV(Exp.REAL) &
-	let real_scalar = Types.T_REAL &
+	let real_scalar = Types.T_REAL([]) &
 	let scalars = [(real_div,[real_scalar, real_scalar], real_scalar)] &
 
 	operator_return(Exp.DIV_ARRAY_SCALAR(Exp.REAL),
@@ -3548,8 +3785,8 @@ relation operators : Absyn.Operator
 	--------------------------------------------
 	operators Absyn.DIV => types
 
-  rule	let real_scalar = Types.T_REAL &
-	let int_scalar = Types.T_INTEGER &
+  rule	let real_scalar = Types.T_REAL([]) &
+	let int_scalar = Types.T_INTEGER([]) &
 	let real_vector = Types.T_ARRAY(Types.DIM(NONE),real_scalar) &
 	let real_matrix = Types.T_ARRAY(Types.DIM(NONE), real_vector) &
 	let real_pow = Exp.POW(Exp.REAL) &
@@ -3566,98 +3803,98 @@ relation operators : Absyn.Operator
 
   axiom	operators Absyn.UMINUS
 	  => [(Exp.UMINUS(Exp.INT),
-	       [Types.T_INTEGER],
-	       Types.T_INTEGER),
+	       [Types.T_INTEGER([])],
+	       Types.T_INTEGER([])),
 	      (Exp.UMINUS(Exp.REAL),
-	       [Types.T_REAL],
-	       Types.T_REAL)]
+	       [Types.T_REAL([])],
+	       Types.T_REAL([]))]
 
   axiom	operators Absyn.UPLUS
 	  => [(Exp.UPLUS(Exp.INT),
-	       [Types.T_INTEGER],
-	       Types.T_INTEGER),
+	       [Types.T_INTEGER([])],
+	       Types.T_INTEGER([])),
 	      (Exp.UPLUS(Exp.REAL),
-	       [Types.T_REAL],
-	       Types.T_REAL)]
+	       [Types.T_REAL([])],
+	       Types.T_REAL([]))]
 
 	(**  Logical operators *)
 
   axiom	operators Absyn.AND
 	  => [(Exp.AND,
-	       [Types.T_BOOL, Types.T_BOOL],
-	       Types.T_BOOL)]
+	       [Types.T_BOOL([]), Types.T_BOOL([])],
+	       Types.T_BOOL([]))]
 
   axiom	operators Absyn.OR
 	  => [(Exp.OR,
-	       [Types.T_BOOL, Types.T_BOOL],
-	       Types.T_BOOL)]
+	       [Types.T_BOOL([]), Types.T_BOOL([])],
+	       Types.T_BOOL([]))]
 
   axiom	operators Absyn.NOT
 	  => [(Exp.NOT,
-	       [Types.T_BOOL],
-	       Types.T_BOOL)]
+	       [Types.T_BOOL([])],
+	       Types.T_BOOL([]))]
 
 	(**  Relational operators *)
 
   axiom	operators Absyn.LESS
 	  => [(Exp.LESS(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_BOOL),
+	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
+	       Types.T_BOOL([])),
 	      (Exp.LESS(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_BOOL)]
+	       [Types.T_REAL([]), Types.T_REAL([])],
+	       Types.T_BOOL([]))]
 
   axiom	operators Absyn.LESSEQ
 	  => [(Exp.LESSEQ(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_BOOL),
+	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
+	       Types.T_BOOL([])),
 	      (Exp.LESSEQ(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_BOOL)]
+	       [Types.T_REAL([]), Types.T_REAL([])],
+	       Types.T_BOOL([]))]
 
   axiom	operators Absyn.GREATER
 	  => [(Exp.GREATER(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_BOOL),
+	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
+	       Types.T_BOOL([])),
 	      (Exp.GREATER(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_BOOL)]
+	       [Types.T_REAL([]), Types.T_REAL([])],
+	       Types.T_BOOL([]))]
 
   axiom	operators Absyn.GREATEREQ
 	  => [(Exp.GREATEREQ(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_BOOL),
+	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
+	       Types.T_BOOL([])),
 	      (Exp.GREATEREQ(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_BOOL)]
+	       [Types.T_REAL([]), Types.T_REAL([])],
+	       Types.T_BOOL([]))]
 
   axiom	operators Absyn.EQUAL
 	  => [(Exp.EQUAL(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_BOOL),
+	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
+	       Types.T_BOOL([])),
 	      (Exp.EQUAL(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_BOOL),
+	       [Types.T_REAL([]), Types.T_REAL([])],
+	       Types.T_BOOL([])),
 	      (Exp.EQUAL(Exp.STRING),
-	       [Types.T_STRING, Types.T_STRING],
-	       Types.T_BOOL),
+	       [Types.T_STRING([]), Types.T_STRING([])],
+	       Types.T_BOOL([])),
 	      (Exp.EQUAL(Exp.BOOL),
-	       [Types.T_BOOL, Types.T_BOOL],
-	       Types.T_BOOL)]
+	       [Types.T_BOOL([]), Types.T_BOOL([])],
+	       Types.T_BOOL([]))]
 
   axiom	operators Absyn.NEQUAL
 	  => [(Exp.NEQUAL(Exp.INT),
-	       [Types.T_INTEGER, Types.T_INTEGER],
-	       Types.T_BOOL),
+	       [Types.T_INTEGER([]), Types.T_INTEGER([])],
+	       Types.T_BOOL([])),
 	      (Exp.NEQUAL(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_BOOL),
+	       [Types.T_REAL([]), Types.T_REAL([])],
+	       Types.T_BOOL([])),
 	      (Exp.NEQUAL(Exp.STRING),
-	       [Types.T_STRING, Types.T_STRING],
-	       Types.T_BOOL),
+	       [Types.T_STRING([]), Types.T_STRING([])],
+	       Types.T_BOOL([])),
 	      (Exp.NEQUAL(Exp.BOOL),
-	       [Types.T_BOOL, Types.T_BOOL],
-	       Types.T_BOOL)]
+	       [Types.T_BOOL([]), Types.T_BOOL([])],
+	       Types.T_BOOL([]))]
 
 
   rule	Print.print_buf "- operators(" & Dump.op_symbol op => s &
@@ -3715,7 +3952,3 @@ relation array_type_list : (int, Types.Type) => Types.Type list =
 
 
 end
-
-
-
-

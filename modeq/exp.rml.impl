@@ -52,7 +52,14 @@ end
  ** working
  **)
 
+relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
 
+  axiom	join_crefs ( CREF_IDENT(id,sub),cr2) => CREF_QUAL(id,sub,cr2)
+	
+  rule	join_crefs(cr,cr2) => cr'
+	------------------------
+	join_crefs (CREF_QUAL(id,sub,cr),cr2) => CREF_QUAL(id,sub,cr')
+end 
 relation cref_equal : (ComponentRef, ComponentRef) => bool =
 
 	(** IGNORES subscript list (indexes) for now. Too complex **)

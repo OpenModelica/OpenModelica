@@ -626,10 +626,10 @@ relation generate_type : Types.Type => string =
 	generate_type (tys as Types.T_ARRAY(_,_)) => ty_str
 
 
-  axiom	generate_type Types.T_INTEGER => "modelica_integer"
-  axiom generate_type Types.T_REAL => "modelica_real"
-  axiom	generate_type Types.T_STRING => "modelica_string"
-  axiom	generate_type Types.T_BOOL => "modelica_boolean"
+  axiom	generate_type Types.T_INTEGER(_) => "modelica_integer"
+  axiom generate_type Types.T_REAL(_) => "modelica_real"
+  axiom	generate_type Types.T_STRING(_) => "modelica_string"
+  axiom	generate_type Types.T_BOOL(_) => "modelica_boolean"
 
 
   rule	Print.print_buf "#-- generate_type failed: " &
@@ -642,10 +642,10 @@ end
 
 relation generate_type_external : Types.Type => string =
 
-  axiom	generate_type_external Types.T_INTEGER  => "int"
-  axiom generate_type_external Types.T_REAL => "double"
-  axiom	generate_type_external Types.T_STRING => "const char*"
-  axiom	generate_type_external Types.T_BOOL => "int"
+  axiom	generate_type_external Types.T_INTEGER(_)  => "int"
+  axiom generate_type_external Types.T_REAL(_) => "double"
+  axiom	generate_type_external Types.T_STRING(_) => "const char*"
+  axiom	generate_type_external Types.T_BOOL(_) => "int"
 
   rule	generate_type_external ty => str
 	--------------------------------
@@ -684,10 +684,10 @@ end
 (* for the basic types, only those must match *)
 relation generate_type_internal_namepart : Types.Type => string =
 
-  axiom	generate_type_internal_namepart Types.T_INTEGER => "integer"
-  axiom generate_type_internal_namepart Types.T_REAL	=> "real"
-  axiom	generate_type_internal_namepart Types.T_STRING	=> "string"
-  axiom	generate_type_internal_namepart Types.T_BOOL	=> "boolean"
+  axiom	generate_type_internal_namepart Types.T_INTEGER(_) => "integer"
+  axiom generate_type_internal_namepart Types.T_REAL(_)	=> "real"
+  axiom	generate_type_internal_namepart Types.T_STRING(_)	=> "string"
+  axiom	generate_type_internal_namepart Types.T_BOOL(_)	=> "boolean"
   axiom	generate_type_internal_namepart Types.T_ENUM	=> "NOT_IMPLEMENTED"
 
 end
@@ -758,10 +758,10 @@ end
 
 relation generate_simple_type : Types.Type => string =
 
-  axiom	generate_simple_type Types.T_INTEGER => "modelica_integer"
-  axiom	generate_simple_type Types.T_REAL => "modelica_real"
-  axiom	generate_simple_type Types.T_STRING => "modelica_string"
-  axiom	generate_simple_type Types.T_BOOL => "modelica_boolean"
+  axiom	generate_simple_type Types.T_INTEGER(_) => "modelica_integer"
+  axiom	generate_simple_type Types.T_REAL(_) => "modelica_real"
+  axiom	generate_simple_type Types.T_STRING(_) => "modelica_string"
+  axiom	generate_simple_type Types.T_BOOL(_) => "modelica_boolean"
 
   rule	string_append ("const ", n) => n' &
 	string_append (n', "&") => n''
@@ -782,10 +782,10 @@ end
 
 relation array_type_string : Types.Type => string =
 
-  axiom	array_type_string Types.T_INTEGER => "integer_array"
-  axiom	array_type_string Types.T_REAL => "real_array"
-  axiom	array_type_string Types.T_STRING => "string_array"
-  axiom	array_type_string Types.T_BOOL => "boolean_array"
+  axiom	array_type_string Types.T_INTEGER(_) => "integer_array"
+  axiom	array_type_string Types.T_REAL(_) => "real_array"
+  axiom	array_type_string Types.T_STRING(_) => "string_array"
+  axiom	array_type_string Types.T_BOOL(_) => "boolean_array"
 
 end
 
@@ -3487,7 +3487,7 @@ end
 
 relation generate_array_size_call : DAE.ExtArg => string = 
 
-  rule	Types.array_element_type ty => Types.T_INTEGER &
+  rule	Types.array_element_type ty => Types.T_INTEGER(_) &
 	var_name_array (cr,attr) => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_integer_array(",crstr,", ",
@@ -3495,7 +3495,7 @@ relation generate_array_size_call : DAE.ExtArg => string =
 	-----------------------------
 	generate_array_size_call DAE.EXTARGSIZE(cr, attr, ty, dim) => str
 
-  rule	Types.array_element_type ty => Types.T_REAL &
+  rule	Types.array_element_type ty => Types.T_REAL(_) &
 	var_name_array (cr,attr) => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_real_array(",crstr,", ",
@@ -3511,7 +3511,7 @@ end
 
 relation generate_ext_array_size_call : DAE.ExtArg => string = 
 
-  rule	Types.array_element_type ty => Types.T_INTEGER &
+  rule	Types.array_element_type ty => Types.T_INTEGER(_) &
 	var_name_external cr => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_integer_array(",crstr,", ",
@@ -3519,7 +3519,7 @@ relation generate_ext_array_size_call : DAE.ExtArg => string =
 	-----------------------------
 	generate_ext_array_size_call DAE.EXTARGSIZE(cr, attr, ty, dim) => str
 
-  rule	Types.array_element_type ty => Types.T_REAL &
+  rule	Types.array_element_type ty => Types.T_REAL(_) &
 	var_name_external cr => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_real_array(",crstr,", ",
