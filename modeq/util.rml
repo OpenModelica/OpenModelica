@@ -152,6 +152,7 @@ module Util :
   relation list_list_thread_tuple : ('a list list, 'b list list) 
 	  => ('a * 'b) list list
   relation list_select:('a list, 'a => bool) => 'a list
+  relation list_select_1:('a list,'b, ('a,'b) => bool) => 'a list
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_deletemember: (''a list,''a) => ''a list
@@ -529,6 +530,24 @@ relation list_select: ('a list, 'a => bool) => 'a list =
 	list_select(xs,cond) => xs' 
 	---------------------------
 	list_select(x::xs,cond) => xs'
+end
+
+(** relation list_select_1
+ ** Same as list_select above, but with extra argument to testing relation.
+ **)
+relation list_select_1:('a list,'b, ('a,'b) => bool) => 'a list =
+
+  axiom	list_select_1([],arg,_) => []
+
+  rule	cond(x,arg) => true &
+	list_select_1(xs,arg,cond) => xs' 
+	---------------------------
+	list_select_1(x::xs,arg,cond) => x::xs'
+
+  rule	cond(x,arg) => false &
+	list_select_1(xs,arg,cond) => xs' 
+	---------------------------
+	list_select_1(x::xs,arg,cond) => xs'
 end
 
 (** relation: list_position

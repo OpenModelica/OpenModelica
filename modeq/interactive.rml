@@ -243,9 +243,10 @@ relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) => (string,Inter
 	evaluate2(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("listVariables",_),Absyn.FUNCTIONARGS([],[])))],_),st as SYMBOLTABLE(_,_,_,vars,_))
 	  => (str,st)
 
-  rule	evaluate_graphical_api(stmts,st) => (str,newst)
+  rule	evaluate_graphical_api(stmts,st) => (str,newst) &
+	string_append(str,"\n") => str'
 	----------------------------------------------------
-	evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str,newst)
+	evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str',newst)
 	
   rule	evaluate_expr(exp,st) => (s1,newst) &
 	string_append(s1,"\n") => str
@@ -459,18 +460,45 @@ end
 relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) => 
 	(string, InteractiveSymbolTable) = 			
 
+  rule	get_parameter_value(class,ident,p) => resstr 
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getParameterValue",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident)],[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	set_parameter_value(class,ident,exp,p) => (p',resstr)
+	---------------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("setParameterValue",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident),exp],[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
+
+
+  rule	get_parameter_names(cr,p) => resstr
+	-----------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getParameterNames",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
   rule update_program(
       Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE))],Absyn.TOP),
       p) => newp &
-	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) &
-	string_append(name,"\n") => resstr
-	---------------------------------------------------
+	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
+	----------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("createModel",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_))],[])))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
 	    
   rule	Absyn.cref_to_path(path) => path' &
 	Absyn.path_last_ident(path') => name &
@@ -484,9 +512,9 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("createModel",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(path as Absyn.CREF_QUAL(_,_,_))],[])))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
 
-  rule	componentref_to_path(cr) => path &
+  rule	Absyn.cref_to_path(cr) => path &
 	update_program(
 	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE))],Absyn.WITHIN(path)),
 	    p) => newp &
@@ -498,7 +526,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("newModel",_),
 		Absyn.FUNCTIONARGS( [Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(cr)] , [])))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
 
 
 	rule	delete_class(cr,p) => (resstr, newp)
@@ -519,7 +547,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("addComponent",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],nargs)))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp,s,ic,iv,cf))
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",SYMBOLTABLE(newp,s,ic,iv,cf))
 
   rule	(*delete_component(name,model,p) => (newp,resstr) &
 	add_component(name,tp,model,nargs,newp) => (newp2,resstr)*)
@@ -540,7 +568,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("deleteComponent",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(model)],nargs)))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp,s,ic,iv,cf))
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",SYMBOLTABLE(newp,s,ic,iv,cf))
 
   rule	add_class_annotation(cr,nargs,p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
@@ -550,11 +578,10 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("addClassAnnotation",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],nargs)))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
 
   rule	get_component_count(cr,p) => count &
-	int_string count => str &
-	string_append(str,"\n") => resstr
+	int_string count => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -563,8 +590,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_nth_component(cr,p,n) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_nth_component(cr,p,n) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -573,8 +599,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_components(cr,p) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_components(cr,p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -583,8 +608,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_component_annotations(cr,p) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_component_annotations(cr,p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -593,8 +617,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_nth_component_annotation(cr,p,n) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_nth_component_annotation(cr,p,n) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -603,8 +626,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_nth_component_modification(cr,p,n) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_nth_component_modification(cr,p,n) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -614,8 +636,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	get_inheritance_count(cr,p) => count &
-	int_string count => str &
-	string_append(str,"\n") => resstr
+	int_string count => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -624,8 +645,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_nth_inherited_class(cr,n,p) => str &
-	string_append(str,"\n") => resstr
+  rule	get_nth_inherited_class(cr,n,p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -634,8 +654,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_connection_count(cr,p) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_connection_count(cr,p) => resstr 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -644,8 +663,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_nth_connection(cr,p,n) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_nth_connection(cr,p,n) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -654,8 +672,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	add_connection(cr,c1,c2,nargs,p) => (s1,newp) &
-	string_append(s1,"\n") => resstr
+  rule	add_connection(cr,c1,c2,nargs,p) => (resstr,newp) 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -664,8 +681,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
-  rule	delete_connection(cr,c1,c2,p) => (s1,newp) &
-	string_append(s1,"\n") => resstr
+  rule	delete_connection(cr,c1,c2,p) => (resstr,newp) 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -675,8 +691,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
   rule	delete_connection(cr,c1,c2,p) => (s1,newp) &
-	add_connection(cr,c1,c2,nargs,newp) => (s2,newp') &
-	string_append(s2,"\n") => resstr
+	add_connection(cr,c1,c2,nargs,newp) => (resstr,newp') 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -685,8 +700,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp',s,ic,iv,cf))
 
-  rule	get_nth_connection_annotation(cr,p,n) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_nth_connection_annotation(cr,p,n) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -695,8 +709,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_connector_count(cr,p) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_connector_count(cr,p) => resstr 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -705,8 +718,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_nth_connector(cr,p,n) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_nth_connector(cr,p,n) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -715,8 +727,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_nth_connector_icon_annotation(cr,p,n) => s1 &
-	string_append(s1,"\n") => resstr
+  rule	get_nth_connector_icon_annotation(cr,p,n) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -727,8 +738,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 
 
   rule	Absyn.cref_to_path(cr) => path &
-	get_icon_annotation(path,p) => s1 &
-	string_append(s1,"\n") => resstr
+	get_icon_annotation(path,p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -738,8 +748,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	Absyn.cref_to_path(cr) => path &
-	get_diagram_annotation(path,p) => s1 &
-	string_append(s1,"\n") => resstr 
+	get_diagram_annotation(path,p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -749,8 +758,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	Absyn.cref_to_path(cr) => path &
-	get_packages_in_path(path,p) => s1 &
-	string_append(s1,"\n") => resstr 
+	get_packages_in_path(path,p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -770,8 +778,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	Absyn.cref_to_path(cr) => path &
-	get_classnames_in_path(path,p) => s1 &
-	string_append(s1,"\n") => resstr 
+	get_classnames_in_path(path,p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -780,8 +787,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	get_top_classnames(p) => s1 &
-	string_append(s1,"\n") => resstr 
+  rule	get_top_classnames(p) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -791,8 +797,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_primitive(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -802,8 +807,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_type(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -813,8 +817,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_connector(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -824,8 +827,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_model(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -835,8 +837,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_record(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -846,8 +847,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_block(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -857,8 +857,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_function(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -868,8 +867,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_package(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -879,8 +877,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_class(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -890,8 +887,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_parameter(cr,class,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -901,8 +897,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_protected(cr,class,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -912,8 +907,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	is_constant(cr,class,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -923,8 +917,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule	exist_class(cr,p) => b1 &
-	Util.bool_string(b1) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(b1) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -936,8 +929,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
   rule	exist_class(cr,p) => b1 &
 	is_model(cr,p) => b2 &
 	bool_and(b1,b2) => res &
-	Util.bool_string(res) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(res) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -949,8 +941,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
   rule	exist_class(cr,p) => b1 &
 	is_package(cr,p) => b2 &
 	bool_and(b1,b2) => res &
-	Util.bool_string(res) => s1 &
-	string_append(s1,"\n") => resstr 
+	Util.bool_string(res) => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -974,15 +965,239 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	  => ("OK",SYMBOLTABLE(p',s',[],[],[]))
 
 end
+(** relation: is_parameter_element
+ ** Returns true if Element is a component of variability parameter, false otherwise.
+**)
+relation is_parameter_element: (Absyn.Element) => bool =
 
-relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
+  axiom	is_parameter_element( Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.PARAM,_,_),_,_),_,_,_)) => true
 
-  axiom componentref_to_path(Absyn.CREF_IDENT(ident,_)) => Absyn.IDENT(ident)
+  axiom	is_parameter_element(_) => false
+end
+
+(** relation: get_parameter_names
+ ** Retrieves the names of all parameters in the class 
+ **)
+relation get_parameter_names: (Absyn.ComponentRef, (* class *)
+			       Absyn.Program) => string =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	get_components_in_class(cdef) => comps &
+	Util.list_select(comps,is_parameter_element) => comps' &
+	Util.list_map(comps',get_componentitems_in_element) => compelts &
+	Util.list_flatten(compelts) => compelts' & 
+	Util.list_map(compelts',get_componentitem_name) => names &
+	Util.string_delimit_list(names,", ") => res &
+	Util.string_append_list(["{",res,"}"]) => res'
+	-------------------------------------------
+	get_parameter_names(class,p) => res'
+
+axiom	get_parameter_names(_,_) => "Error"
+end
+
+(** relation: get_parameter_value
+ ** Returns the value of a parameter in a class.
+**)
+relation get_parameter_value: (Absyn.ComponentRef, (* class *)
+			      Absyn.ComponentRef, (* variable name *)
+			       Absyn.Program) => string =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	Absyn.cref_to_path(name) => Absyn.IDENT(name) &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	get_components_in_class(cdef) => comps &
+	Util.list_select(comps,is_parameter_element) => comps' &
+	Util.list_map(comps',get_componentitems_in_element) => compelts &
+	Util.list_flatten(compelts) => compelts' & 
+	Util.list_select_1(compelts',name,componentitem_named) => [compitem] &
+	get_variable_binding_in_componentitem(compitem) => exp &
+	Dump.print_exp_str(exp) => res 
+	----------------------------------------------------
+	get_parameter_value(class,name,p) => res
+
+  axiom	get_parameter_value(_,_,_) => "Error"
+end
+
+(** relation get_variable_binding_in_componenitem
+ ** Retrieve the variable binding from an ComponentItem
+ **)
+relation get_variable_binding_in_componentitem: (Absyn.ComponentItem) 
+	  => Absyn.Exp =
+
+  axiom	get_variable_binding_in_componentitem(Absyn.COMPONENTITEM(
+								  Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(_,SOME(e)))),_)) => e
+end
+
+(** relation set_parameter_value
+ ** Sets the parameter value of a class and returns the updated program.
+ **)
+relation set_parameter_value:(Absyn.ComponentRef, (*class*)
+			     Absyn.ComponentRef, (*ident*)
+			     Absyn.Exp,		 (* exp*)
+			     Absyn.Program) 
+	  => (Absyn.Program,string)	=
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	Absyn.cref_to_path(name) => Absyn.IDENT(varname) &
+	build_within(p_class) => within &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	set_variable_binding_in_class(cdef,varname,exp) => cdef' &
+	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
+	------------------------------------------------------
+	set_parameter_value(class,name,exp,p) => (newp,"Ok")
+
+  axiom	set_parameter_value(_,_,_,p) => (p,"Error")
+end
+
+(** relation: set_variable_binding_in_class
+ ** Takes a class and an identifier and value an sets the variable binding to 
+ ** the passed expression.
+ **)
+relation set_variable_binding_in_class:(Absyn.Class,Absyn.Ident,Absyn.Exp) 
+	  => (Absyn.Class) =
+
+  rule	set_variable_binding_in_classparts(parts,id2,exp) => parts'
+	---------------------------------------------------------
+	set_variable_binding_in_class(Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts,cmt)),
+				      id2,exp)
+	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt))
+end
+
+(** relation set_variable_binding_in_classparts
+ ** Sets a binding of a variable in a ClassPart list, named by the passed argument.
+ **)
+relation set_variable_binding_in_classparts: (Absyn.ClassPart list, Absyn.Ident, 
+					      Absyn.Exp)	
+	  => Absyn.ClassPart list =
+
+  axiom	set_variable_binding_in_classparts([],_,_) => []
+
+  rule	set_variable_binding_in_classparts(rest,id,exp) => res &
+	set_variable_binding_in_elementitems(elts,id,exp) => elts'
+	-------------------------------------
+	set_variable_binding_in_classparts(Absyn.PUBLIC(elts)::rest,id,exp)
+	  => (Absyn.PUBLIC(elts')::res)
+
+  rule	set_variable_binding_in_classparts(rest,id,exp) => res &
+	set_variable_binding_in_elementitems(elts,id,exp) => elts'
+	-------------------------------------
+	set_variable_binding_in_classparts(Absyn.PROTECTED(elts)::rest,id,exp)
+	  => (Absyn.PROTECTED(elts')::res)
+
+  rule	set_variable_binding_in_classparts(rest,id,exp) => res 
+	-------------------------------------
+	set_variable_binding_in_classparts(elt::rest,id,exp)
+	  => (elt::res)
+end
+
+(** relation: set_variable_binding_in_elementitems
+ ** Sets a variable binding in a list of ElementItems
+**)
+relation set_variable_binding_in_elementitems: (Absyn.ElementItem list, Absyn.Ident,
+						Absyn.Exp) 
+	  => Absyn.ElementItem list =
+
+  axiom	set_variable_binding_in_elementitems([],_,_) => [] 
+
+  rule	set_variable_binding_in_elementitems(rest,id,exp) => res &
+	set_variable_binding_in_element(elt,id,exp) => elt'
+	-------------------------------------------------
+	set_variable_binding_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,id,exp)
+	  => Absyn.ELEMENTITEM(elt')::res
 	
-  rule	componentref_to_path(x) => px
-	-----------------------------
-	componentref_to_path(Absyn.CREF_QUAL(id,_,x)) => Absyn.QUALIFIED(id,px)
-end	
+  rule	set_variable_binding_in_elementitems(rest,id,exp) => res 
+	-------------------------------------------------
+	set_variable_binding_in_elementitems(elt::rest,id,exp)
+	  => elt::res
+end
+
+(** relation: set_variable_binding_in_element
+ ** Sets a variable binding in an Element.
+ **)
+relation set_variable_binding_in_element: (Absyn.Element, Absyn.Ident, Absyn.Exp)
+	=> Absyn.Element =
+
+  rule	set_variable_binding_in_compitems(compitems,id,exp) => compitems'
+	--------------------------
+	set_variable_binding_in_element(Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems),s,l,constr),id,exp) 
+	  => Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems'),s,l,constr)
+
+  axiom	set_variable_binding_in_element(elt,id,exp) => elt
+end
+
+(**relation set_variable_binding_in_compitems
+ ** Sets a variable binding in a ComponentItem list
+ **)
+relation set_variable_binding_in_compitems: (Absyn.ComponentItem list, Absyn.Ident,
+					     Absyn.Exp) 
+	  => (Absyn.ComponentItem list) = 
+
+  axiom	set_variable_binding_in_compitems([],_,_) => []
+
+  rule	id = id2
+	-------------------------------
+	set_variable_binding_in_compitems(Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,
+							      SOME(Absyn.CLASSMOD(arg,_))),cmt)::rest,
+					  id2,exp)
+	  => Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD(arg,SOME(exp)))),cmt)::rest
+  rule	id = id2
+	-------------------------------
+	set_variable_binding_in_compitems(Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,
+							      NONE),cmt)::rest,
+					  id2,exp)
+	  => Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,
+						 SOME(Absyn.CLASSMOD([],SOME(exp)))),cmt)::rest
+
+  rule	set_variable_binding_in_compitems(rest,id,exp) => res
+	-------------------------------
+	set_variable_binding_in_compitems(item::rest,id,exp)
+	  => item::res							      
+end
+					      
+(** relation: build_within
+ ** From a fully qualified model name, build a suitable within clause
+**)
+relation build_within: Absyn.Path => Absyn.Within =
+
+  axiom	build_within(Absyn.IDENT(_)) => Absyn.TOP
+
+  rule	Absyn.strip_last(path) => w_path 	
+	-------------------------------------
+	build_within(path) => Absyn.WITHIN(w_path)
+end
+
+(** relation: componentitem_named
+ ** Returns true if the component item has the name matching the second argument.
+ **)
+relation componentitem_named: (Absyn.ComponentItem, Absyn.Ident) => bool =
+
+  rule	id = id2 
+	-------------------------
+	componentitem_named(Absyn.COMPONENTITEM(Absyn.COMPONENT(id,_,_),_),id2) => true
+
+  axiom	componentitem_named(_,_) => false
+end
+
+(**  relation: get_componentitem_name
+ ** Returns the name of a ComponentItem
+ **)
+relation get_componentitem_name: Absyn.ComponentItem => Absyn.Ident =
+
+  axiom	get_componentitem_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(id,_,_),_)) => id
+end
+
+(** relation: get_componentitems_in_element
+ ** Retrieves the ComponentItems of a component Element.
+ ** If Element is not a component, empty list is returned.
+ **)
+
+relation get_componentitems_in_element:(Absyn.Element) => Absyn.ComponentItem list =
+
+  axiom	get_componentitems_in_element(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,l),_,_,_)) 
+				      => l 
+  axiom	get_componentitems_in_element(_) => []
+end
 
 (** relation: rename_class
  ** This relation renames a class (given as a qualified path name) to a new name 
@@ -1929,7 +2144,7 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	------------------------------------------------
 	add_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
 
-  axiom	add_component (_,_,_,_,p) => (p,"-1")
+  axiom	add_component (_,_,_,_,p) => (p,"Error")
 	
 end
 
@@ -1962,7 +2177,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p) => newp
 	--------------------------
 	update_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) 
-	  => (newp, "true\n")
+	  => (newp, "true")
 
   rule	(* Updating a protected component to model that resides inside package*)
 	Absyn.cref_to_path(model) => modelpath &
@@ -2218,7 +2433,7 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program) => stri
 	-------------------------------------------------
 	get_nth_inherited_class( model,n,p) => str*)
 	
-  axiom	get_nth_inherited_class (_,_,_) => "-1"
+  axiom	get_nth_inherited_class (_,_,_) => "Error"
 end
 relation get_nth_inherited_class2: (SCode.Class, Absyn.Class,int, Env.Env) 
 	  => string =
@@ -2319,7 +2534,7 @@ relation get_nth_component: (Absyn.ComponentRef,Absyn.Program, int) => string =
 	-------------------------------------------------
 	get_nth_component( model,p,n) => str
 
-	axiom get_nth_component(_,_,_) => "-1"
+	axiom get_nth_component(_,_,_) => "Error"
 end
 
 relation get_nth_component2: (SCode.Class,Absyn.Class, int, Env.Env) 
@@ -2375,7 +2590,7 @@ relation get_components: (Absyn.ComponentRef,Absyn.Program) => string =
 	-------------------------------------------------
 	get_components(model,p) => str
 
-	axiom get_components(_,_) => "-1"
+	axiom get_components(_,_) => "Error"
 end
 
 
@@ -2397,7 +2612,7 @@ relation get_component_annotations: (Absyn.ComponentRef,
 	-------------------------------------------------
 	get_component_annotations( model,p) => str
 
-	axiom get_component_annotations(_,_) => "-1"
+	axiom get_component_annotations(_,_) => "Error"
 end
 
 (** relation: get_nth_component_annotation
@@ -2415,7 +2630,7 @@ relation get_nth_component_annotation: (Absyn.ComponentRef,Absyn.Program, int) =
 	---------------------------------------------- 
 	get_nth_component_annotation( model,p,n) => str
 
-	axiom get_nth_component_annotation(_,_,_) => "-1"
+	axiom get_nth_component_annotation(_,_,_) => "Error"
 end
 
 (** relation: get_nth_component_modification
@@ -2433,7 +2648,7 @@ relation get_nth_component_modification: (Absyn.ComponentRef,Absyn.Program, int)
 	---------------------------------------------- 
 	get_nth_component_modification( model,p,n) => str'
 
-	axiom get_nth_component_modification(_,_,_) => "-1"
+	axiom get_nth_component_modification(_,_,_) => "Error"
 end
 
 (** relation: get_connection_count
@@ -2449,7 +2664,7 @@ relation get_connection_count: (Absyn.ComponentRef, Absyn.Program) => string =
 	-------------------------
 	get_connection_count (model,p) => res
 	
-	axiom get_connection_count(_,_) => "-1"
+	axiom get_connection_count(_,_) => "Error"
 end
 
 (** relation: get_nth_connection
@@ -2465,7 +2680,7 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int) => string 
 	----------------------------
 	get_nth_connection (model,p,n) => str
 
-	axiom get_nth_connection(_,_,_) => "-1"
+	axiom get_nth_connection(_,_,_) => "Error"
 end
 
 relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef,
@@ -2527,7 +2742,7 @@ relation delete_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Compo
 	---------------------------------------------------
 	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
 
-  axiom	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("-1",p)	
+  axiom	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Error",p)	
 end
 
 relation delete_equation_in_class: (Absyn.Class, Absyn.ComponentRef, Absyn.ComponentRef)
@@ -2596,7 +2811,7 @@ relation get_connector_count: ((* Env.Env, *) Absyn.ComponentRef, Absyn.Program)
 	-------------------
 	get_connector_count (model,p) => countstr
 
-	axiom get_connector_count(_,_) => "-1"
+	axiom get_connector_count(_,_) => "Error"
 end
 
 (** relation: get_nth_connector
@@ -2613,7 +2828,7 @@ relation get_nth_connector: (Absyn.ComponentRef, Absyn.Program, int) => string =
 	-----------------
 	get_nth_connector(model,p,n)=> resstr
 
-  axiom get_nth_connector(_,_,_) => "-1"
+  axiom get_nth_connector(_,_,_) => "Error"
 end
 
 (** relation: get_nth_connector
@@ -2628,7 +2843,7 @@ relation get_nth_connector_icon_annotation: (Absyn.ComponentRef, Absyn.Program, 
 	--------------------------
 	get_nth_connector_icon_annotation(model,p,n)=> resstr
 
-  axiom get_nth_connector_icon_annotation(_,_,_) => "-1"	
+  axiom get_nth_connector_icon_annotation(_,_,_) => "Error"	
 end
 
 (** relation: get_diagram_annotation
@@ -2670,7 +2885,7 @@ relation get_packages_in_path: (Absyn.Path,Absyn.Program) => string =
 	string_append(s1,"}") => res
 	----------------------
 	get_packages_in_path (modelpath,p) => res
-  axiom	 get_packages_in_path(_,_) => "-1"
+  axiom	 get_packages_in_path(_,_) => "Error"
 end
 (** relation: get_top_packages
  ** This relation takes a Path and a Program and returns a list of the names of the packages found in the Path.
@@ -2684,7 +2899,7 @@ relation get_top_packages: (Absyn.Program) => string =
 	-------------------------
 	get_top_packages(p) => res
 
-  axiom	get_top_packages(_) => "-1"
+  axiom	get_top_packages(_) => "Error"
 end
 
 relation get_top_packages_in_program: Absyn.Program => string list =
@@ -2754,7 +2969,7 @@ relation get_classnames_in_path: (Absyn.Path,Absyn.Program) => string =
 	string_append(s1,"}") => res
 	----------------------
 	get_classnames_in_path (modelpath,p) => res
-  axiom	 get_classnames_in_path(_,_) => "-1"
+  axiom	 get_classnames_in_path(_,_) => "Error"
 end
 
 (** relation: get_top_classnames
@@ -2771,7 +2986,7 @@ relation get_top_classnames: (Absyn.Program) => string =
 	-------------------------
 	get_top_classnames(p) => res
 
-  axiom	get_top_classnames(_) => "-1"
+  axiom	get_top_classnames(_) => "Error"
 end
 
 relation get_top_classnames_in_program: Absyn.Program => string list =
