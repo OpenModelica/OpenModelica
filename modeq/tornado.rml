@@ -213,16 +213,6 @@ with "dump.rml"
            
   axiom generate_code_from_elements(_,[],_,_,_,_) => "" 
          
-         (*   rule  Interactive.get_component_name_and_type_and_comment(element,env)  *)
-         (*           => type_str::res & *)
-         (*         print "TYpe: " & print type_str & print "\n"  *)
-         (*         -------------------------------------- *)
-         (*         generate_code_from_elements(element::rest,dae,env) => "" *)
-         
-         (*   rule print "generate_code_from_elements failed"  *)
-         (*         -------------------------------------- *)
-         (*         generate_code_from_elements(_,_,_) => fail *)
-         
          
   rule  Lookup.lookup_class(env,p,true) => (c,env') &
 	     Env.get_env_path(env') => SOME(envpath) &
@@ -269,7 +259,7 @@ with "dump.rml"
                                      program,a_program,
                                      env) => ""
          
-  rule  print "lalalalalalalalalala" 
+  rule  (* print "lalalalalalalalalala"  *)
          ------------------------------------------
 	     generate_code_from_elements(class_path,_,dae,program,a_program,env) => ""
          
@@ -284,6 +274,8 @@ with "dump.rml"
 (** relation_get_componentitems_name
  ** This relation takes a `ComponentItems' list and returns a  list of all
  ** component names (if any).
+ ** it also checks for components with array-subscrips and generates the 
+ ** component-names: a[1],a[2] 
  **)
  relation get_componentitems_name: (Absyn.ComponentItem list,DAELow.DAELow) => string list =
 	     
@@ -312,7 +304,10 @@ with "dump.rml"
   axiom	get_componentitems_name([],dae) => []
  end
 
-
+(**
+ ** this searches the dae-vars for all the components of the form a[<number>] 
+ ** to generate the correct names.
+ **)
 relation generate_components_name_with_subscripts: (string,DAELow.DAELow) => string list =
 
   rule  generate_components_name_with_subscripts2(cr,0,vars,knvars) => res
