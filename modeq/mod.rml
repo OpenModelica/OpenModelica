@@ -38,7 +38,7 @@ module Mod:
   relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod
 
   relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod
-  relation lookup_idx_modification: (Mod, int list) => Mod
+  relation lookup_idx_modification: (Mod, int) => Mod
   relation lookup_modification_p: (Mod,Absyn.Path) => Mod
   relation merge : (Mod, Mod) => Mod
   relation mod_equation : Mod => EqMod option
@@ -99,7 +99,7 @@ relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
 
   rule	elab_submod (env,pre,x) => x' &
 	elab_submods (env,pre,xs) => xs' &
-	submod_insert (x',xs') => res
+	insert_submods (x',xs') => res
 	-----------------------------
 	elab_submods (env,pre,x::xs) => res
 
@@ -107,26 +107,42 @@ end
 
 (**)
 
-relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod =
+relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod  list =
 
   rule	elab_mod (env,pre,m) => m'
 	--------------------------
-	elab_submod (env,pre,SCode.NAMEMOD(i,m)) => NAMEMOD(i,m')
+	elab_submod (env,pre,SCode.NAMEMOD(i,m)) => [NAMEMOD(i,m')]
 
   rule	elab_subscripts (env,pre,ss) => ss' &
-	(* Prefix.prefix_add (i,ss',pre) => pre' & *)
-	elab_mod (env,pre(*'*),m) => m'
+	elab_mod (env,pre,m) => m' &
+	make_idxmods (ss',m') => smods
 	---------------------------
-	elab_submod (env,pre,SCode.IDXMOD(ss,m)) => IDXMOD(ss',m')
+	elab_submod (env,pre,SCode.IDXMOD(ss,m)) => smods
+
+end
+
+(** relation: make_idxmods
+ **
+ ** From a list of list of integers, this relation creates a list of
+ ** sub-modifications of the `IDXMOD' variety.
+ **)
+
+relation make_idxmods : (int list list, Mod) => SubMod list =
+
+  axiom	make_idxmods ([],_) => []
+
+  rule	make_idxmods (xs,m) => subs
+	---------------------------
+	make_idxmods (x::xs,m) => IDXMOD(x,m)::subs
 
 end
 
 (**)
 
 relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
-	=> int list =
+	=> int list list =
 
-  axiom	elab_subscripts (_,_,[]) => []
+  axiom	elab_subscripts (_,_,[]) => [[]]
 	
   rule	print "# Use of colon subscript subscripts is not allowed" &
 	print " in modifications\n"
@@ -134,27 +150,53 @@ relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
 	elab_subscripts (env,pre,Absyn.NOSUB::xs) => fail
 	
   rule	StaticExp.elab_exp(env,e) => (e',t,c) &
-	eval_subscript (env,e',t,c) => i &
-	elab_subscripts (env,pre,xs) => xs'
+	eval_subscript (env,e',t,c) => is &
+	elab_subscripts (env,pre,xs) => xs' &
+	expand_list (is,xs') => l
 	-----------------------------------
-	elab_subscripts (env,pre,Absyn.SUBSCRIPT(e)::xs) => i::xs'
+	elab_subscripts (env,pre,Absyn.SUBSCRIPT(e)::xs) => l
 	
+end
+
+(** relation: expand_int_list
+ **
+ ** This utility relation takes a list of integer values and a list of
+ ** list of integers, and for each integer in the first and each list
+ ** in the second list creates a
+ ** list with that integer as head and the second list as tail. All
+ ** resulting lists are collected in a list and returned.
+ **)
+
+relation expand_list : (Values.Value list, int list list) => int list list =
+
+  axiom	expand_list([],_) => []
+
+  axiom	expand_list(_,[]) => []
+
+  rule	expand_list(xx,ys) => l1 &
+	expand_list(xs,yy) => l2 &
+	list_append(l1,l2) => l
+	-----------------------
+	expand_list(xx as (Values.INTEGER(x)::xs),yy as (y::ys))
+		    => ((x::y)::l)
+
 end
 
 (**)
 
-relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool) => int =
+relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool)
+	  => Values.Value list =
 
-  rule	StaticExp.ceval (env,e) => Values.INTEGER(i)
+  rule	StaticExp.ceval (env,e) => i
 	--------------------------------------------
-	eval_subscript (env,e,Types.T_INTEGER,true) => i
+	eval_subscript (env,e,Types.T_INTEGER,true) => [i]
 
 	(* FIXME *)
-  rule	StaticExp.ceval (env,e) => Values.ARRAY(Values.INTEGER(i)::_) &
+  rule	StaticExp.ceval (env,e) => Values.ARRAY(xs) &
 	print "- Ignoring all but the first index in modification\n"
 	--------------------------------------------
 	eval_subscript (env,e,Types.T_ARRAY(Types.DIM(SOME(sz),Types.NODIM),
-					    Types.T_INTEGER),true) => i
+					    Types.T_INTEGER),true) => xs
 
   rule	not t = Types.T_INTEGER &
 	print "# Non-integer subscript " & Exp.print_exp e &
@@ -173,29 +215,47 @@ relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool) => int =
 
 end
 
-(** relation: submod_insert
+(** relation: insert_submods
+ **
+ ** This relation repeatedly calls `insert_submod' to incrementally
+ ** insert several sub-modifications.
+ **)
+
+relation insert_submods : (SubMod list, SubMod list) => SubMod list =
+
+  axiom	insert_submods ([],_) => []
+
+  rule	insert_submod (x,y) => x' &
+	insert_submods (xs,y) => xs' &
+	list_append(x', xs') => l
+	-------------------------
+	insert_submods (x::xs,y) => l
+
+end
+
+(** relation: insert_submod
  **
  ** This relation inserts a `SubMod' into a list of unique `SubMod's,
  ** while keeping the uniqueness, merging the submod if necessary.
  **)
 
-relation submod_insert : (SubMod, SubMod list) => SubMod list =
+relation insert_submod : (SubMod, SubMod list) => SubMod list =
 
-  axiom	submod_insert (sub,[]) => [sub]
+  axiom	insert_submod (sub,[]) => [sub]
 
   rule	n1 = n2 &
 	merge (m1,m2) => m
 	----------------------
-	submod_insert (NAMEMOD(n1,m1),NAMEMOD(n2,m2)::tail)
+	insert_submod (NAMEMOD(n1,m1),NAMEMOD(n2,m2)::tail)
 	  => (NAMEMOD(n1,m)::tail)
 
   rule	i1 = i2 &
 	merge (m1,m2) => m
 	----------------------
-	submod_insert (IDXMOD(i1,m1),IDXMOD(i2,m2)::tail)
+	insert_submod (IDXMOD(i1,m1),IDXMOD(i2,m2)::tail)
 	  => (IDXMOD(i1,m)::tail)
 
-  axiom	submod_insert (sub1, sub2) => sub1::sub2
+  axiom	insert_submod (sub1, sub2) => sub1::sub2
 
 end
 
@@ -268,45 +328,62 @@ end
  **
  **)
 
-relation lookup_idx_modification: (Mod, int list) => Mod =
+relation lookup_idx_modification: (Mod, int) => Mod =
 
   axiom lookup_idx_modification(NOMOD,_) => NOMOD
 
 	(* FIXME: Is this correct? *)
   axiom	lookup_idx_modification(REDECL(_,_),_) => NOMOD
 
-  rule  lookup_idx_modification2(subs,NONE,xs) => (mod',subs') &
+  rule  lookup_idx_modification2(subs,NONE,idx) => (mod',subs') &
 	merge (MOD(f,subs',NONE),mod') => mod'' &
 
-	index_eqmod (eq,xs) => eq' &
+	index_eqmod (eq,[idx]) => eq' & (* FIXME *)
 	merge (mod'',MOD(false,[],eq')) => mod''' (* FIXME: order *)
 	-----------------------------------
-	lookup_idx_modification(MOD(f,subs,eq),xs) => mod'''
+	lookup_idx_modification(MOD(f,subs,eq),idx) => mod'''
 	
   rule	print "# Mod.lookup_idx_modification(" &
-	print_mod mod & print "," & print "[...]" &
+	print_mod mod & print "," & int_string idx => s & print s &
 	print ") failed\n"
 	--------------------
-	lookup_idx_modification(mod,xs) => fail
+	lookup_idx_modification(mod,idx) => fail
 
 end	
 
-(**)
+(** relation: lookup_idx_modification2
+ **
+ ** FIXME: This relation depends heavily on the matrix/array typing
+ **)
 
-relation lookup_idx_modification2 : (SubMod list, EqMod option, int list)
+relation lookup_idx_modification2 : (SubMod list, EqMod option, int)
 	  => (Mod, SubMod list) =
 
   axiom lookup_idx_modification2([],_,_) => (NOMOD, [])
 
-  rule  xs = ys
-	--------------------------------------
-	lookup_idx_modification2(IDXMOD(xs,mod)::subs,eq,ys) => (mod,subs)
-	
 	(* FIXME: Redeclaration *)
 
-  rule  lookup_idx_modification2(xs,eq,idxs) => (mod,xs')
+  rule  x = y &
+	lookup_idx_modification2(subs,eq,y) => (NOMOD,subs')
+	--------------------------------------
+	lookup_idx_modification2(IDXMOD([x],mod)::subs,eq,y)
+	  => (mod,subs')
+	
+  rule  x = y &
+	lookup_idx_modification2(subs,eq,y) => (mod',subs')
 	---------------------------------
-	lookup_idx_modification2(x::xs,eq,idxs) => (mod,x::xs')
+	lookup_idx_modification2(IDXMOD(x::xs,mod)::subs,eq,y)
+	  => (mod',IDXMOD(xs,mod)::subs')
+
+  rule  not x = y &
+	lookup_idx_modification2(subs,eq,y) => (mod',subs')
+	---------------------------------
+	lookup_idx_modification2(IDXMOD(x::xs,mod)::subs,eq,y)
+	  => (mod',subs')
+
+  rule  lookup_idx_modification2(xs,eq,idx) => (mod,xs')
+	---------------------------------
+	lookup_idx_modification2(x::xs,eq,idx) => (mod,x::xs')
 
   rule	print "- lookup_idx_modification2 failed\n"
 	---------------------------------------
@@ -523,7 +600,9 @@ end
 
 relation print_subscripts : int list => () =
 
-  axiom	print_subscripts []
+  rule	print "[]"
+  	---------------
+	print_subscripts []
 
   rule	print "[" &
 	int_string x => s & print s &

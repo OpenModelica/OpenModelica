@@ -515,7 +515,7 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	inst_array(env,mod,pre,csets,n,(cl,attr),i,stop,dims,idxs)
 	  => ([], csets, Types.T_NOTYPE)
 
-  rule	Mod.lookup_idx_modification(mod,[i]) => mod' &
+  rule	Mod.lookup_idx_modification(mod,i) => mod' &
 	print "  modification[]: " & Mod.print_mod mod' & print "\n" &
 	inst_var(env,mod',pre,csets,n,cl,attr,NONE(*FIXME*),dims,i::idxs)
 	  => (dae1,csets',ty) &
