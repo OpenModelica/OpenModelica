@@ -1566,17 +1566,21 @@ relation dump_debug_element : Element => () =
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr & Print.print_buf ", " &
 	dump_kind vk &
+        dump_variable_attributes_str dae_var_attr => tmp_str &
+        Print.print_buf tmp_str &
 	Print.print_buf ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_,_,_)
+	    dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_,_,dae_var_attr)
 
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr & Print.print_buf ", " &
 	dump_kind vk & Print.print_buf ", " &
+        dump_variable_attributes_str dae_var_attr => tmp_str &
 	Exp.print_exp e &
+        Print.print_buf tmp_str &
 	Print.print_buf ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_,_,_)
+	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_,_,dae_var_attr)
 
   rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
