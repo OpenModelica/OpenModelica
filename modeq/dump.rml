@@ -48,6 +48,7 @@ with "debug.rml"
   relation dump: Absyn.Program => ()
   relation unparse_str: Absyn.Program => string
   relation dump_istmt: Interactive.InteractiveStmts => ()
+  relation direction_symbol: Absyn.Direction => string
   relation print_exp: Absyn.Exp => ()
   relation print_exp_str: Absyn.Exp => string
   relation print_component_ref: Absyn.ComponentRef => ()

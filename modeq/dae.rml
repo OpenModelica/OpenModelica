@@ -59,8 +59,15 @@ module DAE:
 		   | INITIALALGORITHM of Algorithm.Algorithm
 		   | COMP of Ident * DAElist
 		   | FUNCTION of Absyn.Path * DAElist * Types.Type
-		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * Absyn.ExternalDecl
+		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl
 
+  datatype ExtArg = EXTARG of Exp.ComponentRef * Types.Attributes * Types.Type
+                    | NOEXTARG
+
+  datatype ExternalDecl = EXTERNALDECL of Ident * (* external function name *)
+					  ExtArg list * (* parameters *)
+					  ExtArg (* return type *)
+	  
 
 (* 
  LS: Could have extended DAElist to have two lists, one with 
@@ -70,9 +77,9 @@ module DAE:
  FUNCTION could also consist of SCode.Class instead.
  *)
 
-
   datatype DAElist = DAE of Element list
-	  
+
+
   relation dump: DAElist => ()
   relation dump2: DAElist => ()
   relation dump_elements : Element list => () 
@@ -205,16 +212,40 @@ relation dump2: DAElist => () =
 	dump2 dae &
 	Print.print_buf ", " &
 	Types.print_type tp &
+	Print.print_buf ", " &
+	dump_ext_decl_str extdecl => extdeclstr &
+	Print.print_buf extdeclstr &
 	Print.print_buf ")\n" &	
 	dump2 (DAE(xs))
 	--------------
-	dump2 (DAE(EXTFUNCTION(path,dae,tp,_)::xs))
+	dump2 (DAE(EXTFUNCTION(path,dae,tp,extdecl)::xs))
 
   axiom dump2 (DAE([]))
 
   rule	Print.print_buf "dump2 failed\n"
 	---------------------
 	dump2 (_)
+end
+
+relation dump_ext_decl_str : ExternalDecl => string = 
+
+  rule	Dump.get_string_list (extargs, dump_ext_arg_str, ",") => extargsstr &
+	dump_ext_arg_str retty => rettystr &
+	Util.string_append_list(["EXTERNALDECL(",id,", (",extargsstr,"), ",rettystr]) => str
+	-----------------------------------------------------------------------
+	dump_ext_decl_str EXTERNALDECL(id,extargs,retty) => str
+end
+
+relation dump_ext_arg_str : ExtArg => string = 
+
+  axiom	dump_ext_arg_str NOEXTARG => "void"
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	Dump.direction_symbol dir => dirstr &
+	Types.get_type_name ty => tystr &
+	Util.string_append_list([dirstr," ",tystr," ",crstr]) => str
+	------------------------------------------------------------
+	dump_ext_arg_str EXTARG(cr,Types.ATTR(fl,acc,var,dir),ty) => str
 end
 
 (** relation: dump_str

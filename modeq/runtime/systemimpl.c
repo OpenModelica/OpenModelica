@@ -14,7 +14,7 @@
 #endif
 
 char * cc="/usr/bin/gcc";
-char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm";
+char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS";
 
 void * generate_array(char,int,type_description *,void *data);
 float next_realelt(float*);

@@ -44,6 +44,7 @@ module Util :
   relation bool_and_list: bool list => bool
   relation bool_string: bool => string 
 
+  relation list_matching : ('a list, 'a => ()) => 'a list
 end
 
 
@@ -227,3 +228,18 @@ relation bool_string: bool => string =
 end
 
 
+
+relation list_matching: ('a list, 'a => () )  => 'a list =
+
+  axiom	list_matching ([],_) => []
+
+  rule	cond(v) &
+	list_matching (vl, cond) => vl'
+	-------------------
+	list_matching (v::vl, cond) => v::vl'
+
+  rule	not cond(v) &
+	list_matching (vl, cond) => vl'
+	--------------------------
+	list_matching (v::vl, cond) => vl'
+end	

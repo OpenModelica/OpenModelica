@@ -1662,14 +1662,16 @@ Removed *)
 
 
   rule	(* External functions should also have their type in env, but no dae! *)
-
 	inst_class(env,mod,pre,csets,c,inst_dims,true) => (dae, csets', ty, st) &
+	
 	Env.extend_frame_t(env, n, ty) => env'	&
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
-	get_ext_decl(parts) => extdecl
+	inst_element_list (env,mod,pre,csets,ClassInf.UNKNOWN(n),els,inst_dims,false) =>
+	  (_,tempenv,_,_,_) &
+	inst_ext_decl(tempenv, n, parts) => extdecl
 	--------------------------------------
 	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,SCode.R_EXT_FUNCTION,parts),
+			       c as SCode.CLASS(n,_,_,SCode.R_EXT_FUNCTION,parts as SCode.PARTS(els,_,_,_,_,_)),
 			       inst_dims)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)])
 
@@ -1689,13 +1691,186 @@ Removed *)
 	implicit_instantiation(_,_,_,_,_,_) => fail
 end
 
-(** relation: get_ext_decl
- ** This relation extracts the Absyn.ExternalDecl from a Scode.ClassDef
-**)
+(** relation: inst_ext_decl
+ **
+ ** This relation handles the external declaration. If there is an explicit call
+ ** of the external function, the component references are looked up and
+ ** inserted in the argument list, otherwise the input and output parameters are
+ ** inserted in the argument list with their order. The return type is
+ ** determined according to the specification; if there is a explicit call and a
+ ** lhs, which must be an output parameter, the type of the function is that
+ ** type. If no explicit call and only one output parameter exists, then this
+ ** will be the return type of the function, otherwise the return type will be
+ ** void. 
+ **)
 
-relation get_ext_decl: (SCode.ClassDef) => Absyn.ExternalDecl =
+relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef) => DAE.ExternalDecl =
 	
-  axiom	get_ext_decl(SCode.PARTS(_,_,_,_,_,SOME(decl))) => decl
+  rule	is_ext_explicit_call (extdecl) &
+	inst_ext_get_fname (extdecl, n) => fname &
+	inst_ext_get_fargs (env, extdecl) => fargs &
+	inst_ext_get_rettype (env, extdecl) => rettype &
+	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype)
+	-------------------------------------
+	inst_ext_decl (env, n, SCode.PARTS(_,_,_,_,_,SOME(extdecl))) => daeextdecl
+
+  rule	not is_ext_explicit_call (orgextdecl) &
+	inst_ext_make_externaldecl (n, els, orgextdecl) => extdecl &
+	inst_ext_get_fname (extdecl, n) => fname &
+	inst_ext_get_fargs (env, extdecl) => fargs &
+	inst_ext_get_rettype (env, extdecl) => rettype &
+	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype)
+	-------------------------------------
+	inst_ext_decl (env, n, SCode.PARTS(els,_,_,_,_,SOME(orgextdecl))) => daeextdecl
+
+  rule	Print.print_buf "#-- inst_ext_decl failed" &
+	Env.print_env env
+	--------------------------
+	inst_ext_decl (env, _, _) => fail
+end
+
+
+(** relation: is_ext_explicit_call
+ ** 
+ ** If the external function id is present, then a function call must
+ ** exist, i.e. explicit call was written in the external clause.
+ **)
+
+relation is_ext_explicit_call : Absyn.ExternalDecl => () =
+
+  axiom is_ext_explicit_call Absyn.EXTERNALDECL(SOME(id),_,_,_)
+
+end
+
+(** relation: inst_ext_make_externaldecl
+ **
+ ** This relation generates a default explicit function call, 
+ ** when it is omitted. If only one output variable exists, the 
+ ** implicit call is equivalent to 
+ ** 
+ **    external "C" output_var=func(input_var1, input_var2,...)
+ **
+ ** with the input_vars in their declaration order. If several output 
+ ** variables exists, the implicit call is equivalent to
+ **
+ **    external "C" func(var1, var2, ...)
+ **
+ ** where each var can be input or output.
+ **)
+
+relation inst_ext_make_externaldecl: (Ident, SCode.Element list, Absyn.ExternalDecl) 
+	  => Absyn.ExternalDecl = 
+
+  (* the case with only one output var *)
+  rule	Util.list_matching (els, is_output_var) => outvar::[] &
+	Util.list_matching (els, is_input_var) => invars &
+	Util.list_map (invars, inst_ext_make_cref) => exps &
+	inst_ext_make_cref outvar => Absyn.CREF(retcref) &
+	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps)
+	------------------------------------------------
+	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_)) 
+	  => extdecl
+
+  rule	Util.list_matching (els, is_inout_var) => inoutvars &
+	Util.list_map (inoutvars, inst_ext_make_cref) => exps &
+	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE,exps)
+	------------------------------------------------
+	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_)) 
+	  => extdecl
+
+  rule	Print.print_buf "#-- inst_ext_make_externaldecl failed\n"
+	---------------------------------------------------------
+	inst_ext_make_externaldecl (_,_,_) => fail
+
+end	
+
+relation is_inout_var : SCode.Element => () =
+
+  rule is_output_var e
+       --------------
+       is_inout_var e
+
+  rule is_input_var e
+       --------------
+       is_inout_var e
+end
+
+relation is_output_var : SCode.Element => () =
+  axiom	is_output_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),_,_)
+end
+
+relation is_input_var : SCode.Element => () =
+  axiom	is_input_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.INPUT),_,_)
+end
+
+relation inst_ext_make_cref : SCode.Element => Absyn.Exp =
+  axiom	inst_ext_make_cref SCode.COMPONENT(id,_,_,_,_,_,_)
+	  => Absyn.CREF(Absyn.CREF_IDENT(id,[]))
+end
+
+relation inst_ext_get_fname : (Absyn.ExternalDecl, Ident) => Ident =
+
+  axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(SOME(id),_,_,_), fid) => id
+  axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(NONE,_,_,_), fid) => fid
+
+end
+
+relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg list =
+
+  rule	Static.elab_exp_list (env, absexps, false, NONE) => (exps,props,_) &
+	inst_ext_get_fargs2 (env, exps, props) => extargs	
+	---------------------------------------------------------
+	inst_ext_get_fargs (env, Absyn.EXTERNALDECL(id,lang,retcr,absexps)) => extargs
+
+  rule	Print.print_buf "#-- inst_ext_get_fargs failed\n"
+	-------------------------------------------------
+	inst_ext_get_fargs (_,_) => fail
+	
+end
+
+relation inst_ext_get_fargs2 : (Env.Env, Exp.Exp list, Types.Properties list) => DAE.ExtArg list =
+
+  axiom	inst_ext_get_fargs2 (_,[],_) => []
+
+  rule	inst_ext_get_fargs2 (env,exps,props) => extargs &
+	inst_ext_get_fargs_single (env,e,p) => extarg
+	-----------------------------------------
+	inst_ext_get_fargs2 (env, e::exps,p::props) => extarg::extargs
+end
+
+
+relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE.ExtArg =
+
+  rule	Lookup.lookup_var_local (env, cref) => (attr, ty, bnd)
+	--------------------------------------------------------
+	inst_ext_get_fargs_single (env, Exp.CREF(cref,crty), Types.PROP(ty,cnst)) => DAE.EXTARG(cref,attr,ty)
+
+  rule	not Lookup.lookup_var_local (env, cref) => (attr, ty, bnd) &
+	Exp.print_component_ref_str cref => crefstr &
+	Util.string_append_list (["#-- Unknown component ", crefstr, " in external clause\n"]) => str &
+	Print.print_buf str
+	--------------------------------------------------------
+	inst_ext_get_fargs_single (env, Exp.CREF(cref,crty), Types.PROP(ty,cnst)) => fail
+
+				   
+  rule	Print.print_buf "#-- inst_ext_get_fargs_single failed\n"
+	--------------------------------------------------------
+	inst_ext_get_fargs_single (_,_,_) => fail
+end
+
+
+relation inst_ext_get_rettype : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg =
+
+  axiom	inst_ext_get_rettype (_, Absyn.EXTERNALDECL(_,_,NONE,_)) => DAE.NOEXTARG
+
+  rule	Static.elab_cref (env,cref) => (exp,prop,acc) &
+	inst_ext_get_fargs_single (env, exp,prop) => extarg
+	-----------------------------------------
+	inst_ext_get_rettype (env,Absyn.EXTERNALDECL(n,lang,SOME(cref),args)) => extarg
+
+  rule	Print.print_buf "#-- inst_ext_rettype failed\n"
+	--------------------------------------------------------
+	inst_ext_get_rettype (_,_) => fail
 
 end
 

@@ -47,14 +47,19 @@ module Static :
 
 
   datatype Slot = SLOT of Types.FuncArg *  (* An argument to a function *)
-			bool *		   (* True if the slot has been filled, 
-					      i.e. argument has been given a value*)
-			Exp.Exp option		   (* Contain the elaborated expression for the actual argument *)							  
+			  bool *	   (* True if the slot has been filled, *)
+					   (* i.e. argument has been given a value*)
+			  Exp.Exp option   (* Contain the elaborated expression *)
+                                           (* for the actual argument *)
+
 
   (* Expression analysis *)
   relation elab_exp : (Env.Env, Absyn.Exp,bool,Interactive.InteractiveSymbolTable option)
 	    => (Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option)
-  relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties) (* Special relation for graphics annotations, because of inhomogenous array of graphics primitives *)
+  relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp,
+							Types.Properties) 
+	  (* Special relation for graphics annotations, because of inhomogenous *)
+	  (* array of graphics primitives *) 
   relation elab_exp_list : (Env.Env, Absyn.Exp list,bool, Interactive.InteractiveSymbolTable option) 
 	    => (Exp.Exp list, Types.Properties list, Interactive.InteractiveSymbolTable option)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
@@ -67,7 +72,9 @@ module Static :
   (* Constant propagation *)
   relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option)
 	    => Values.Value
-  relation ceval_list : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option)	  => Values.Value list
+  relation ceval_list : (Env.Env, Exp.Exp list, bool,
+			 Interactive.InteractiveSymbolTable option) 
+	  => Values.Value list
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
 
   (* Property matching (type conversions etc.) *)
