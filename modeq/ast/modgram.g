@@ -68,7 +68,6 @@ void unimpl(char *rule)
 #token "/\*"		<< zzskip(); zzmode(C_STYLE_COMMENT); >>
 #token IMPORT		"import"
 #token CLASS_		"class"
-#token BOUNDARY		"boundary"
 #token MODEL		"model"
 #token FUNCTION		"function"
 #token PACKAGE		"package"
@@ -805,6 +804,8 @@ primary : << bool is_tuple, is_matrix; void* parts;>>
 	 
 	/* Modelica 1.1. Meaning, see spec. page 19 */	
 	/* Mutiple return values from functions. */
+	/* LS: expressions are not allowed for LHS. should be component */
+	/* references */
 	| par:LPAR! e:expression_list> [is_tuple] RPAR! 
 	     <<
 	     /*	     Attrib a = $[TUPLE_,"---"];
