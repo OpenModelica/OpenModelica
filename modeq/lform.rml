@@ -8,6 +8,7 @@
 module Lform:
 
   with "exp.rml"
+  with "env.rml"
   with "absyn.rml"
 
   type Ident = Absyn.Ident
@@ -126,7 +127,7 @@ relation convert_class_restr: Absyn.ClassRestriction => ClassRestriction =
 	
 end
 	
-relation convert_modification: (Env,Absyn.Modification) => Modification =
+relation convert_modification: (Env.Env,Absyn.Modification) => Modification =
 	
   rule	convert_list(convert_element_arg,env,l) => l'
 	---------------------------------------------
@@ -135,7 +136,7 @@ relation convert_modification: (Env,Absyn.Modification) => Modification =
   axiom	convert_modification(env,Absyn.EQUALMOD(e)) => EQUALMOD(e)
 	
 end
-and convert_element_arg: (Env,Absyn.ElementArg) => ElementArg =
+and convert_element_arg: (Env.Env,Absyn.ElementArg) => ElementArg =
 	
   rule	convert_modification(env,m) => m'
 	-----------------------------
@@ -143,24 +144,26 @@ and convert_element_arg: (Env,Absyn.ElementArg) => ElementArg =
 	  => MODIFICATION(f,c,m')
 	
 end
-and convert_element_spec: (Env.Env,Absyn.ElementSpec) => ElementSpec =
+and convert_element_spec: (Env.Env,Absyn.ElementSpec)
+	  => (Env.Env,ElementSpec) =
 	
-  rule	convert_class(env,c) => c'
+  rule	convert_class(env,c) => (_,c')
 	-----------------------------------------------
-	convert_element_spec(env,Absyn.CLASSDEF(r,c)) => CLASSDEF(r,c')
+	convert_element_spec(env,Absyn.CLASSDEF(r,c)) => (env,CLASSDEF(r,c'))
 
-  rule	lookup_class(env,c) => c' &
-	convert_list(convert_element_arg,env,a) => a'
+  rule	Env.lookup_class(env,c) => c' &
+	convert_class(env,c') => (env',c'') &
+	convert_list(convert_element_arg,env',a) => a'
 	---------------------------------
-	convert_element_spec(env,Absyn.EXTENDS(c,a)) => (env,EXTENDS(c',a'))
-
+	convert_element_spec(env,Absyn.EXTENDS(c,a)) => (env',EXTENDS(c'',a'))
+(*
   rule	lookup_type(env,n) => t &
 	convert_option(convert_modification,env,cm) => cm'
 	------------------------------------------------------------------
 	convert_element_spec(env,
 		Absyn.COMPONENTS(f,p,c,i,o,n,[Absyn.COMPONENT(ci,cd,cm)]))
 	  => (env,COMPONENT(f,p,c,i,o,t,ci,cd,cm'))
-
+*)
 	(* FIXME *)
 
 end
@@ -172,13 +175,13 @@ and convert_element : Absyn.Element => Element =
 	  => ELEMENT(f,n,s')
 	
 end
-and convert_equation: (Env,Absyn.Equation) => Equation =
+and convert_equation: (Env.Env,Absyn.Equation) => Equation =
 	
   axiom	convert_equation(env,Absyn.EQ_EXPR(e)) => EQ_EXPR(e)
   axiom	convert_equation(env,Absyn.EQ_EQUALS(e1,e2)) => EQ_EQUALS(e1,e2)
 
 end
-and convert_class_part: (Env,Absyn.ClassPart) => (Env, ClassPart) =
+and convert_class_part: (Env.Env,Absyn.ClassPart) => (Env.Env, ClassPart) =
 	
   axiom	convert_class_part(env,Absyn.PUBLIC([])) => (env,PUBLIC([]))
 	
@@ -204,7 +207,7 @@ and convert_class_part: (Env,Absyn.ClassPart) => (Env, ClassPart) =
 	  => (env'',EQUATIONS(e'::es'))
 
 end
-and convert_class_def: (Env,Absyn.ClassDef) => ClassDef =
+and convert_class_def: (Env.Env,Absyn.ClassDef) => ClassDef =
 	
   axiom	convert_class_def(env,Absyn.PARTS([])) => PARTS([])
 	
@@ -221,7 +224,7 @@ and convert_class_def: (Env,Absyn.ClassDef) => ClassDef =
 	  => DERIVED(c,d',a')
 	
 end
-and convert_class: (Env,Absyn.Class) => (Env, Class) =
+and convert_class: (Env.Env,Absyn.Class) => (Env.Env, Class) =
 	
   rule	print "converting " & print i & print "\n" &
 	convert_class_restr(r) => r' &
@@ -233,13 +236,13 @@ and convert_class: (Env,Absyn.Class) => (Env, Class) =
 	
 end
 	
-and convert_e: (Env,Absyn.Class list) => (Env, Class) =
-	
-  rule	convert_class(env,c) => c'
+and convert_e: (Env.Env,Absyn.Class list) => (Env.Env, Class) =
+
+  rule	convert_class(env,c) => (_,c')
 	--------------------------
 	convert_e(env,[c]) => c'
-	
-  rule	convert_class(env,c) => c' &
+
+  rule	convert_class(env,c) => (_,c') &
 	Env.extend_frame_c(env,c') => env' &
 	convert_e(env',cs) => cc
 	--------------------------------
