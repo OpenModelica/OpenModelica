@@ -444,20 +444,29 @@ end
 relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
 
   rule  
-        generate_blt(dae) => (blt,ass1,ass2) &
+        generate_blt(dae) => (dae',blt,ass1,ass2) &
         
         (** ass1 is what var is solved in what eqn **)
         (** ass2 is what eqn is solves what var **)
-        generate_state_partition(blt,dae,ass1,ass2) => (blt_states,blt_no_states) &
+        generate_state_partition(blt,dae',ass1,ass2) => (blt_states,blt_no_states) &
+ 
+        print "---------- START DAE DUMP BEFORE TRANSLATE -----------------\n" &
+        DAELow.dump(dae') &
+        print "------------ END DAE DUMP BEFORE TRANSLATE ----------------\n" &
 
 
-        translate_dae(dae) => dae' &
 
-        generate_compute_output(cname,dae',p,ass1,ass2,blt_no_states) => coutput &
-        generate_compute_initial(cname,dae',p) => cinitial &
-        generate_compute_state(cname,dae',p,ass1,ass2,blt_states) => cstate &
+        translate_dae(dae') => dae'' &
+
+        print "---------- START DAE DUMP AFTER TRANSLATE -----------------\n" &
+        DAELow.dump(dae'') &
+        print "------------ END DAE DUMP AFTER TRANSLATE ----------------\n" &
+
+        generate_compute_output(cname,dae'',p,ass1,ass2,blt_no_states) => coutput &
+        generate_compute_initial(cname,dae'',p) => cinitial &
+        generate_compute_state(cname,dae'',p,ass1,ass2,blt_states) => cstate &
         (*generate_compute_terminal(cname,dae',p) => cterm &*)
-        generate_compute_terminal(cname,dae',p,ass1,ass2,blt) => cterm &
+        generate_compute_terminal(cname,dae'',p,ass1,ass2,blt) => cterm &
         Util.string_append_list(["void C",cname,"::\n",
                                  "ComputeOutput()\n",
                                  "{\n",
@@ -496,7 +505,7 @@ end
  ** system using a list of the DAEs. 
  **
  **)
- relation generate_blt:(DAELow.DAELow) => (int list list,int vector, int vector) =
+ relation generate_blt:(DAELow.DAELow) => (DAELow.DAELow,int list list,int vector, int vector) =
          
  
   rule  (*DAELow.lower(d) => d' *)
@@ -511,7 +520,7 @@ end
          & DAELow.strong_components(m,mT,v1,v2) => (comps) 
          & DAELow.dump_components(comps) 
          -------------------------------------------------------------
-         generate_blt(d') => (comps,v1,v2)
+         generate_blt(d') => (d'',comps,v1,v2)
          
   rule  print "-generate_blt failed\n" 
          -------------------------------------------------
@@ -757,8 +766,8 @@ relation build_simple_equation:(DAELow.Equation) => string =
         
   rule  Exp.print_exp_str(exp1) => exp1_str & 
         Exp.print_exp_str(exp2) => exp2_str & 
-        Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n"]) => eqn_str &
-        print "\n build_simple_equation: " & print(eqn_str) 
+        Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n"]) => eqn_str 
+        (*& print "\n build_simple_equation: " & print(eqn_str) *)
         --------------------------------
 	    build_simple_equation(DAELow.EQUATION(exp1,exp2)) => eqn_str
 
@@ -918,7 +927,9 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
         
         Exp.print_exp_str e1 => new_e1s &
 	    Exp.print_exp_str e2 => new_e2s &
-	    print " Equation " & print new_e1s & print " = " & print new_e2s &
+        int_string(e) => eqn_nr &
+        int_string(v) => var_nr &
+	    print "STATE Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print new_e1s & print " = " & print new_e2s &
 	    print " solved for " & Exp.print_exp_str new_varexp => s &
 	    print s & print " giving " &
 	    Exp.print_exp_str expr => s2 & print s2 & print "\n" & 
