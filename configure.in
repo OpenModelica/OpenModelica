@@ -129,7 +129,7 @@ AC_TYPE_SIZE_T
 
 dnl Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(getcwd select socket strdup strerror)
+AC_CHECK_FUNCS(getcwd select strdup strerror)
 
 
 dnl Check if scandir is available
