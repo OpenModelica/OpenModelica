@@ -64,6 +64,7 @@ module DAE:
   relation is_parameter: Element => ()
   relation is_comp: Element => ()
   relation find_element: (Element list, Element => ()) => Element option
+  relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list)
 end
 
 
@@ -607,27 +608,26 @@ relation build_gr_vars : Element list => Graphviz.Node list =
 
   axiom build_gr_vars [] => []
 
-  rule	build_gr_strlist (vars, build_gr_var_str, 10) => strlist
+  rule	build_gr_strlist (vars, build_gr_var_str, 10) => (strlist,_)
 	---------------------------
 	build_gr_vars vars => [Graphviz.LNODE("VARS",strlist,[Graphviz.box],[])]
 
 end
 
+relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list) =
 
-relation build_gr_strlist : (Element list, Element => string, int) => string list =
-
-  axiom	build_gr_strlist ([], _, _) => []
+  axiom	build_gr_strlist ([], _, _) => ([],[])
 
   rule	int_le (count, 0) => true	
 	-------------------------------------
-	build_gr_strlist (var::rest, printer, count) => ["..."]
+	build_gr_strlist (ignored, printer, count) => (["..."], ignored)
 
   rule	int_gt (count, 0) => true &
 	int_sub (count, 1) => count' &
-	build_gr_strlist (rest, printer, count') => strlist &
+	build_gr_strlist (rest, printer, count') => (strlist, ignored) &
 	printer (var) => str
 	-------------------------------------
-	build_gr_strlist (var::rest, printer, count) => str::strlist
+	build_gr_strlist (var::rest, printer, count) => (str::strlist, ignored)
 
 end
 
