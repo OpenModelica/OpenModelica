@@ -85,6 +85,7 @@ with "print.rml"
 with "system.rml"
 with "classloader.rml"
 with "cache.rml"
+with "ceval.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
@@ -147,14 +148,14 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	
   rule	build_env_from_symboltable(st) => env &	
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	Static.ceval (env,sexp,true,SOME(st')) => (value,SOME(st'')) &
+	Ceval.ceval (env,sexp,true,SOME(st')) => (value,SOME(st'')) &
 	Values.val_string value =>  str
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
 	
   rule	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
-	Static.ceval(env,sexp,true,SOME(st')) => (value,SOME(st'')) &
+	Ceval.ceval(env,sexp,true,SOME(st')) => (value,SOME(st'')) &
 	Values.val_string value =>  str &
 	add_var_to_symboltable(ident,value,t,st'') => newst	
 	-----------------------------------------------
@@ -166,7 +167,7 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	Static.elab_exp(env,rexp,true,SOME(st)) => (srexp,rprop,SOME(st'))	&
 	Types.get_prop_type rprop => ((Types.T_TUPLE(types),_)) &
 	Util.list_map(crefexps, get_ident_from_crefexp) => idents &
-	Static.ceval(env,srexp,true,SOME(st')) => (Values.TUPLE(values), SOME(st'')) &
+	Ceval.ceval(env,srexp,true,SOME(st')) => (Values.TUPLE(values), SOME(st'')) &
 	add_vars_to_symboltable(idents,values,types,st'') => newst
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),rexp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 

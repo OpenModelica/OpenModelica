@@ -5,3 +5,5 @@ manual.dvi: manual.tex
 manual.ps: manual.dvi
 	dvips manual.dvi -o manual.ps
 
+manual.pdf:	manual.tex
+	pdflatex manual.tex

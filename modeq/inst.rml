@@ -111,6 +111,8 @@ with "staticexp.rml"
 with "values.rml"
 with "print.rml"
 with "system.rml"
+with "ceval.rml"
+
 (**
  ** These type aliases are introduced to make the code a little more
  ** readable.
@@ -2211,7 +2213,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	Static.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
+	Ceval.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
  	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => SOME(DIMINT(i))::l
@@ -2223,7 +2225,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	Static.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
+	Ceval.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
  	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
@@ -2764,7 +2766,7 @@ relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbol
 (*	Static.elab_builtin_size(env,args) => (e,prop) & *)
 	Static.elab_exp(env,dim,impl,NONE) => (dimp, Types.PROP(dimty,dim_const),_) &
 	Static.elab_exp(env,arraycr,impl,NONE) => (arraycrefe, arraycrprop,_) &
-	let exp = Exp.SIZE(arraycrefe,dimp) 
+	let exp = Exp.SIZE(arraycrefe,SOME(dimp)) 
 	(*& Exp.print_exp exp &
 	Print.print_buf "\n" *)
 	----------------------------------------------------	
@@ -2829,7 +2831,7 @@ relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE
 
   rule	Lookup.lookup_var_local (env, cref) => (attr, varty, bnd)
 	------------------------------------------------------
-	inst_ext_get_fargs_single (env, Exp.SIZE(Exp.CREF(cref,crty), dim), Types.PROP(ty,cnst)) 
+	inst_ext_get_fargs_single (env, Exp.SIZE(Exp.CREF(cref,crty), SOME(dim)), Types.PROP(ty,cnst)) 
 	  => DAE.EXTARGSIZE(cref,attr,varty,dim)
 				   
   axiom	inst_ext_get_fargs_single (env, exp, Types.PROP(ty,cnst)) => DAE.EXTARGEXP(exp,ty)
@@ -3167,9 +3169,9 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.print("\nDebug: did left elab.") &
 	Static.elab_exp(env,e2,false,NONE) => (e2',prop2,_) &
 	Debug.print("\nDebug: did right elab.") &
-	(*Exp.print_exp(e1') &*)
+	Exp.print_exp(e1') &
 	Debug.print(", ") &
-	(*Exp.print_exp(e2') & *)
+	Exp.print_exp(e2') & 
 	Debug.print("\n") &
 
 	
@@ -3213,7 +3215,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
-	Static.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
+	Ceval.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
 *)
@@ -3228,7 +3230,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (dae,env',csets', ci_state')
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
-	Static.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
+	Ceval.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
 *)
@@ -3260,7 +3262,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 					   (Types.T_INTEGER(_),_)),_),
 			     true),_) &
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',false,NONE) => (v,_) &
+	Ceval.ceval (env,e',false,NONE) => (v,_) &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_equation, el)
 	  => (dae,env',csets', ci_state') (*&
@@ -3281,7 +3283,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 					   (Types.T_INTEGER(_),_)),_),
 			     true),_) &
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',false,NONE) => (v,_) &
+	Ceval.ceval (env,e',false,NONE) => (v,_) &
 	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
 	inst_list(env,mod,pre,csets,ci_state,inst_initialequation, el)
 	  => (dae,env',csets', ci_state') (*&
@@ -3317,7 +3319,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insti", "loop variable looked up") &
 	
 	(* FIXEM: Check bounds *)
-	Static.ceval (env,e',false,NONE) => (v,_) &
+	Ceval.ceval (env,e',false,NONE) => (v,_) &
 	Debug.fprintln ("insti", "for expression evaluated") &
 	unroll(env',mod,pre,csets,ci_state,i,v,el,initial) => (dae, csets') &
 	Debug.fprintln ("insti", "for expression unrolled") &
@@ -4549,7 +4551,7 @@ axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), SOME(Mod.TYPED(e,pro
 
 	(* default *)
 
-  rule	Exp.simplify(e) => e'
+  rule	Exp.simplify(e) => e' 
 	-------------------
 	make_binding (_,_, SOME(Mod.TYPED(e,Types.PROP(t,c)))) => Types.EQBOUND(e',c)
 

@@ -142,6 +142,7 @@ returns multiple arguments. *)
   relation make_enumeration_type: (Absyn.Path, Var list) => Type 
   relation is_parameter: Var => ()
   relation contain_real: Type list => bool
+  relation dimensions_known: Type => bool 
 	 
   relation get_vars: (Var list, Var => () )  => Var list
   relation get_classname: (Type) => Absyn.Path
@@ -154,6 +155,7 @@ returns multiple arguments. *)
   relation is_bidir_attr : Attributes => bool
   relation ndims : Type => int
   relation get_dimension_sizes: Type => int list
+  relation type_of_value: (Values.Value) => Type
   
   relation is_prop_const : Properties => bool
   relation get_prop_type : Properties => Type
@@ -215,19 +217,51 @@ relation ndims : Type => int =
   axiom ndims( (_,_) ) => 0
 
 end
+relation dimensions_known: Type => bool =
+	
+  rule	not get_dimension_sizes(tp) => _
+	-----------------------
+	dimensions_known(tp) => false
+
+  rule	get_dimension_sizes(tp) => _
+	-----------------------
+	dimensions_known(tp) => true
+end
+
 relation get_dimension_sizes: Type => int list =
 
   rule	get_dimension_sizes(tp) => res
 	----------------
 	get_dimension_sizes((T_ARRAY(DIM(SOME(i)),tp),_)) => i::res
 
-  rule	get_dimension_sizes(tp) => res
+(*  rule	get_dimension_sizes(tp) => res
 	------------------------------
-	get_dimension_sizes((T_ARRAY(DIM(NONE),tp),_)) => -1::res
+	get_dimension_sizes((T_ARRAY(DIM(NONE),tp),_)) => -1::res *)
 
   axiom	get_dimension_sizes((_,_)) => []
 
 end
+
+relation type_of_value: (Values.Value) => Type =
+
+  axiom	type_of_value(Values.INTEGER(_)) => ((T_INTEGER([]),NONE))
+  axiom	type_of_value(Values.REAL(_)) => ((T_REAL([]),NONE))
+  axiom	type_of_value(Values.STRING(_)) => ((T_STRING([]),NONE))
+  axiom	type_of_value(Values.BOOL(_)) => ((T_BOOL([]),NONE))
+
+  rule	type_of_value(v) => (tp as(T_ARRAY(_,_),_)) &
+	list_length(v::vs) => dim1 
+	--------------------
+	type_of_value(w as Values.ARRAY(v::vs)) 
+	  => ((T_ARRAY(DIM(SOME(dim1)),tp),NONE))
+
+  rule	type_of_value(v) => tp &
+	list_length(v::vs) => dim1 
+	--------------------
+	type_of_value(w as Values.ARRAY(v::vs)) 
+	  => ((T_ARRAY(DIM(SOME(dim1)),tp),NONE))
+end
+
 
 (** relation: basic_type
  **

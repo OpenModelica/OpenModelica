@@ -255,6 +255,14 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-----------------------
 	prefix_exp(env,Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
 
+  rule	prefix_exp(env,cref,p) => cref' &
+	prefix_exp(env,dim,p) => dim'
+	----------------------------
+	prefix_exp(env,Exp.SIZE(cref,SOME(dim)),p) => Exp.SIZE(cref',SOME(dim'))
+
+  rule	prefix_exp(env,cref,p) => cref'
+	-------------------------------
+	prefix_exp(env,Exp.SIZE(cref,NONE),p) => Exp.SIZE(cref',NONE)
 
   rule	prefix_exp_list(env,es,p) => es'
 	-----------------------

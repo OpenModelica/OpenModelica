@@ -29,6 +29,7 @@ RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runt
 SRCRML= absyn.rml \
 	algorithm.rml \
 	builtin.rml \
+	ceval.rml \
 	classinf.rml \
 	classloader.rml \
 	codegen.rml \
@@ -123,28 +124,30 @@ depend:
 
 ## dependencies
 absyn.o: absyn.rml debug.sig dump.sig util.sig print.sig
-algorithm.o: algorithm.rml exp.sig types.sig explode.sig print.sig
+algorithm.o: algorithm.rml exp.sig types.sig explode.sig util.sig print.sig dump.sig debug.sig
 builtin.o: builtin.rml absyn.sig explode.sig env.sig types.sig classinf.sig debug.sig print.sig
+ceval.o: ceval.rml env.sig exp.sig interactive.sig values.sig staticexp.sig
 classinf.o: classinf.rml explode.sig print.sig absyn.sig
 classloader.o: classloader.rml absyn.sig system.sig lookup.sig interactive.sig util.sig parse.sig print.sig env.sig dump.sig
 codegen.o: codegen.rml dae.sig print.sig dump.sig debug.sig absyn.sig algorithm.sig classinf.sig exp.sig modutil.sig types.sig util.sig inst.sig
-connect.o: connect.rml exp.sig staticexp.sig dae.sig dump.sig print.sig
+connect.o: connect.rml exp.sig staticexp.sig dae.sig env.sig dump.sig print.sig util.sig debug.sig
 dae.o: dae.rml absyn.sig exp.sig algorithm.sig types.sig rtopts.sig graphviz.sig dump.sig print.sig util.sig
 debug.o: debug.rml rtopts.sig dump.sig print.sig
 dump.o: dump.rml absyn.sig interactive.sig debug.sig classinf.sig rtopts.sig print.sig util.sig
 dumpgraphviz.o: dumpgraphviz.rml absyn.sig debug.sig graphviz.sig classinf.sig dump.sig
-env.o: env.rml absyn.sig values.sig explode.sig types.sig classinf.sig exp.sig dump.sig graphviz.sig dae.sig print.sig
+env.o: env.rml absyn.sig values.sig explode.sig types.sig classinf.sig exp.sig dump.sig graphviz.sig dae.sig print.sig util.sig system.sig
 exp.o: exp.rml absyn.sig rtopts.sig util.sig print.sig
 explode.o: explode.rml absyn.sig dump.sig debug.sig print.sig
 graphviz.o: graphviz.rml
 inst.o: inst.rml classinf.sig connect.sig dae.sig debug.sig env.sig exp.sig explode.sig mod.sig prefix.sig types.sig util.sig interactive.sig cache.sig absyn.sig algorithm.sig builtin.sig dump.sig lookup.sig modutil.sig rtopts.sig staticexp.sig values.sig print.sig system.sig
 interactive.o: interactive.rml absyn.sig explode.sig dae.sig types.sig values.sig env.sig dump.sig debug.sig rtopts.sig util.sig parse.sig prefix.sig mod.sig lookup.sig classinf.sig exp.sig inst.sig staticexp.sig modutil.sig codegen.sig print.sig system.sig classloader.sig cache.sig
-lookup.o: lookup.rml classinf.sig types.sig absyn.sig exp.sig env.sig explode.sig cache.sig parse.sig debug.sig dump.sig inst.sig mod.sig prefix.sig print.sig builtin.sig util.sig
+lookup.o: lookup.rml classinf.sig types.sig absyn.sig exp.sig env.sig explode.sig cache.sig parse.sig debug.sig dump.sig inst.sig mod.sig prefix.sig print.sig builtin.sig util.sig modutil.sig
 main.o: main.rml absyn.sig modutil.sig parse.sig dump.sig dumpgraphviz.sig explode.sig dae.sig inst.sig interactive.sig rtopts.sig debug.sig codegen.sig socket.sig print.sig
 mod.o: mod.rml absyn.sig dae.sig env.sig exp.sig prefix.sig explode.sig types.sig staticexp.sig values.sig dump.sig debug.sig print.sig inst.sig
+modsim.o: modsim.rml system.sig util.sig
 modutil.o: modutil.rml absyn.sig dae.sig exp.sig algorithm.sig rtopts.sig util.sig print.sig
 prefix.o: prefix.rml absyn.sig exp.sig env.sig lookup.sig util.sig print.sig
-staticexp.o: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig values.sig classinf.sig interactive.sig cache.sig dump.sig print.sig system.sig lookup.sig debug.sig inst.sig codegen.sig modutil.sig dae.sig util.sig rtopts.sig parse.sig classloader.sig mod.sig prefix.sig
+staticexp.o: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig values.sig classinf.sig interactive.sig cache.sig dump.sig print.sig system.sig lookup.sig debug.sig inst.sig codegen.sig modutil.sig dae.sig util.sig rtopts.sig parse.sig classloader.sig mod.sig prefix.sig modsim.sig
 types.o: types.rml classinf.sig absyn.sig exp.sig values.sig explode.sig dump.sig debug.sig print.sig util.sig
 util.o: util.rml
-values.o: values.rml exp.sig print.sig system.sig util.sig
+values.o: values.rml exp.sig absyn.sig print.sig system.sig util.sig dump.sig

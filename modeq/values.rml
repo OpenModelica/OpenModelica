@@ -57,7 +57,8 @@ with "absyn.rml"
   relation mult_scalar_arrayelt: (Value, Value list) => Value list
   relation mult_scalar_product: (Value list, Value list) => Value
   relation mult_matrix: (Value list,Value list) => Value list
-  relation is_array :Value => bool
+  relation intlist_to_value : int list => Value
+  relation is_array : Value => bool
   relation write_to_file_as_args: (Value list,string) => ()
   relation type_convert: (Exp.Type, Exp.Type,Value list) => Value list
   relation unparse_values: (Value list) => string
@@ -433,7 +434,6 @@ relation mult_matrix: (Value list,Value list) => Value list =
 	
   axiom	 mult_matrix([],_) => []
 	
-	
 end
 
 (** This relation takes a Value list representing a matrix and strips the first column of the matrix, i.e. for each sub list it removes the first element. Returning both the stripped column and the resulting matrix.**)
@@ -446,6 +446,17 @@ relation matrix_strip_first_column: Value list => (Value,Value list) =
 
   axiom	matrix_strip_first_column( []) => (ARRAY([]),[])
 end
+
+relation intlist_to_value : int list => Value =
+
+  axiom	intlist_to_value([]) => ARRAY([])
+
+  rule	intlist_to_value(lst) => ARRAY(res)
+	-----------------------------------
+	intlist_to_value(i::lst) => ARRAY(INTEGER(i)::res)
+end
+
+
 with "print.rml"
 with "system.rml"
 with "util.rml"
@@ -605,7 +616,6 @@ relation reverse_matrix: Value => Value =
   axiom	reverse_matrix(value) => value
 
 end
-
 
 (** relation: print_val
  **

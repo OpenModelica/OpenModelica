@@ -1,0 +1,1165 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+(**
+ ** file:	 ceval.rml
+ ** module:      Ceval
+ ** description: Constant propagation of expressions
+ **
+ ** RCS: %W%
+ ** 
+ ** This module handles constant propagation (or evaluation)
+ ** When elaborating expressions, in the Static module, expressions are checked to 
+ ** find out its type. It also checks wether the expressions are constant and the relation 
+ ** ceval in this module will then evaluate the expression to a constant value, defined
+ ** in the Values module.
+ **)
+
+
+module Ceval :
+  with "env.rml"
+  with "exp.rml"
+  with "interactive.rml"
+  with "values.rml"
+
+  relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option)
+	    => (Values.Value, Interactive.InteractiveSymbolTable option)
+
+  relation ceval_list : (Env.Env, Exp.Exp list, bool,
+			 Interactive.InteractiveSymbolTable option) 
+	  => Values.Value list
+
+  relation ceval_subscripts : (Env.Env, Exp.Subscript list)
+	  => Exp.Subscript list
+
+end
+
+with "staticexp.rml"
+with "print.rml" 
+with "types.rml"
+with "modutil.rml"
+with "system.rml"
+with "absyn.rml"
+with "explode.rml"
+with "inst.rml"
+with "lookup.rml"
+with "dump.rml"
+with "dae.rml"
+with "debug.rml"
+with "util.rml"
+with "modsim.rml"
+with "classinf.rml"
+with "rtopts.rml"
+with "parse.rml"
+with "mod.rml"
+with "prefix.rml"
+with "codegen.rml"
+with "classloader.rml"
+
+(** relation: ceval
+ **
+ ** This relations is used when the value of a constant expression is
+ ** needed.  It takes an environment and an expression and calculates
+ ** its value.
+ ** The third argument indicates whether the evaluation is performed in the interactive environment, 
+ ** in which case function calls are evaluated.
+ **)
+
+
+relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	    => (Values.Value, Interactive.InteractiveSymbolTable option) =
+
+  axiom	ceval (_,Exp.ICONST(x),_,st) => (Values.INTEGER(x),st)
+  axiom	ceval (_,Exp.RCONST(x),_,st) => (Values.REAL(x),st)
+  axiom ceval (_,Exp.SCONST(x),_,st) => (Values.STRING(x),st)
+  axiom ceval (_,Exp.BCONST(x),_,st) => (Values.BOOL(x),st)
+
+  axiom	ceval (_,Exp.CODE(c,_),_,st) => (Values.CODE(c),st)
+
+  rule	ceval_list (env,es,impl,st) => es' &
+	list_length es' => l
+	------------------------------
+	ceval (env,Exp.ARRAY(_,_,es),impl,st) => (Values.ARRAY(es'),st)
+
+  rule	ceval_matrixelt(env,expll) => elts
+	------------------------------
+	ceval (env, Exp.MATRIX(_,_,expll),_,st) => (Values.ARRAY(elts),st)
+
+  rule	ceval_cref (env,c) => v
+	---------------------------
+	ceval (env,Exp.CREF(c,_),_,st) => (v,st) 
+
+  rule	ceval_builtin_size(env,cref,dim,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.SIZE(cref,SOME(dim)),impl,st) => (v,st) 	
+
+  rule	ceval_builtin_size_matrix(env,cref,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.SIZE(cref,NONE),impl,st) => (v,st) 	
+
+
+  rule	Print.print_buf "# Can't call functions at compile time\n" &
+	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
+	-------------------------------------------------------
+	ceval (env, e as Exp.CALL(_,_,_,_),false,NONE) => fail
+
+  rule	(*Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
+	Exp.print_exp e & Print.print_buf "\n" *)
+	-------------------------------------------
+	ceval(env, e as Exp.CALL(_,_,_,_),true,NONE) => fail
+
+  rule	ceval_interactive_functions(env,e,st) => (value,st)
+	-------------------------------------
+	ceval (env, e as Exp.CALL(_,_,_,_),true, SOME(st)) => (value,SOME(st))
+
+  rule	(* Call externally implemented functions. *) 
+	ceval_list(env,expl,true,st) => vallst &
+	ModUtil.path_string2(func,"_") => funcstr &
+	string_append(funcstr,"_in.txt") => infilename &
+	string_append(funcstr,"_out.txt") => outfilename &
+	Values.write_to_file_as_args(vallst,infilename)  &
+	System.execute_function(funcstr) &
+	System.read_values_from_file(outfilename) => newval
+	-------------------------------------------------------
+	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(_)) => (newval,st)
+
+	(** Strings **)
+	
+  rule  ceval (env, lh, impl,st) => (Values.STRING(lhv),_) &
+	ceval (env, rh, impl,st) => (Values.STRING(rhv),_) &
+	string_append(lhv,rhv) => str
+	-----------------------
+	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.STRING), rh),impl,st)
+	  => (Values.STRING(str),st)
+
+	(**  Numerical *)
+
+  rule	ceval (env, lh, impl,st) => (Values.REAL(lhv),st') &
+	ceval (env, rh, impl,st') => (Values.REAL(rhv),st'') &
+	real_add(lhv, rhv) => sum
+	-------------------------
+	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh),impl,st)
+	  => (Values.REAL(sum),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.ARRAY(vlst1),st') &
+	ceval (env,rh,impl,st') => (Values.ARRAY(vlst2),st'') &
+	Values.add_elementwise_arrayelt(vlst1, vlst2) => reslst
+	-------------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.ADD_ARR(_),rh),impl,st) 
+	  => (Values.ARRAY(reslst),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.ARRAY(vlst1),st') &
+	ceval (env,rh,impl,st') => (Values.ARRAY(vlst2),st'') &
+	Values.sub_elementwise_arrayelt(vlst1, vlst2) => reslst
+	-------------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh),impl,st) => (Values.ARRAY(reslst),st'')
+
+  rule	ceval (env,lh,impl,st) => (sval,st') &
+	ceval (env,rh,impl,st') => (Values.ARRAY(aval),st'') &
+	Values.mult_scalar_arrayelt(sval,aval) => reslst
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_ARRAY(_), rh),impl,st) 
+	  => (Values.ARRAY(reslst),st'')
+
+  rule	ceval (env,rh,impl,st) => (sval,st') &
+	ceval (env,lh,impl,st') => (Values.ARRAY(aval),st'') &
+	Values.mult_scalar_arrayelt(sval,aval) => reslst
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st) 
+	  => (Values.ARRAY(reslst),st'')
+
+  rule	ceval (env,rh,impl,st) => (Values.ARRAY(rhvals),st') &
+	ceval (env,lh,impl,st') => (Values.ARRAY(lhvals),st'') &
+	Values.mult_scalar_product(rhvals,lhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh),impl,st) => (res,st'')
+	
+  rule	(* {{..}..{..}} * {...} *)
+	ceval (env,lh,impl,st) => (Values.ARRAY(lhvals as (elt1::_)),st') &
+ 	ceval (env,rh,impl,st') => (Values.ARRAY(rhvals as (elt2::_)),st'') &
+	Values.is_array(elt1) => true &
+	Values.is_array(elt2) => false &
+	Values.mult_scalar_product(lhvals,rhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) => (res,st'')
+
+ rule	(* {...} * {{..}..{..}} *)
+	ceval (env,rh,impl,st) => (Values.ARRAY(rhvals as (elt1::_)),st') &
+ 	ceval (env,lh,impl,st') => (Values.ARRAY(lhvals as (elt2::_)),st'') &
+	Values.is_array(elt1) => true &
+	Values.is_array(elt2) => false &
+	Values.mult_scalar_product(lhvals,rhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) => (res,st'')
+
+ rule	(* {{..}..{..}} * {{..}..{..}} *)
+	ceval (env,rh,impl,st) => (Values.ARRAY(rhvals as (elt1::_)),st') &
+ 	ceval (env,lh,impl,st') => (Values.ARRAY(lhvals as (elt2::_)),st'') &
+	Values.is_array(elt1) => true &
+	Values.is_array(elt2) => true &
+	Values.mult_matrix(lhvals,rhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st) 
+	  => (Values.ARRAY(res),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.INTEGER(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.INTEGER(rhv),st'') &
+	int_add(lhv, rhv) => sum
+	------------------------
+ 	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh),impl,st) 
+	  => (Values.INTEGER(sum),st'')
+	(**)
+  rule	ceval (env,lh,impl,st) => (Values.REAL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.REAL(rhv),st'') &
+	real_sub(lhv, rhv) => sum
+	-------------------------
+	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.REAL), rh),impl,st) 
+	  => (Values.REAL(sum),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.INTEGER(lhv),st') &
+	ceval (env, rh,impl,st') => (Values.INTEGER(rhv),st'') &
+	int_sub(lhv, rhv) => sum
+	------------------------
+	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh),impl,st)
+	  => (Values.INTEGER(sum),st'')
+	(**)
+  rule	ceval (env,lh,impl,st) => (Values.REAL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.REAL(rhv),st'') &
+	real_mul(lhv, rhv) => sum
+	-------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh),impl,st) 
+	  => (Values.REAL(sum),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.INTEGER(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.INTEGER(rhv),st'') &
+	int_mul(lhv, rhv) => sum
+	------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh),impl,st)
+	  => (Values.INTEGER(sum),st'')
+	(**)
+  rule	ceval (env,exp,impl,st) => (Values.REAL(x),st') &
+	real_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp),impl,st)
+	  => (Values.REAL(x'),st')
+
+  rule	ceval (env,exp,impl,st) => (Values.INTEGER(x),st') &
+	int_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp),impl,st)
+	  => (Values.INTEGER(x'),st')
+	(**)
+  rule	ceval (env,exp,impl,st) => (Values.REAL(x),st') &
+	real_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp),impl,st)
+	  => (Values.REAL(x'),st')
+
+  rule	ceval (env,exp,impl,st) => (Values.INTEGER(x),st') &
+	int_neg (x) => x'
+	---------------------
+	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp),impl,st)
+	  => (Values.INTEGER(x'),st')
+
+	(**  Logical *)
+
+  rule	ceval (env,lh,impl,st) => (Values.BOOL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.BOOL(rhv),st'') &
+	bool_and(lhv, rhv) => x
+	------------------------
+	ceval (env, Exp.LBINARY(lh, Exp.AND, rh),impl,st)
+	  => (Values.BOOL(x),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.BOOL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.BOOL(rhv),st'') &
+	bool_or(lhv, rhv) => x
+	------------------------
+	ceval (env, Exp.LBINARY(lh, Exp.OR, rh),impl,st)
+	  => (Values.BOOL(x),st'')
+
+  rule	ceval (env,e,impl,st) => (Values.BOOL(b),st') &
+	bool_not(b) => b'
+	-----------------
+	ceval (env, Exp.LUNARY(Exp.NOT, e),impl,st) => (Values.BOOL(b'),st')
+
+	(**  Relations *)
+
+  rule	ceval (env,lhs,impl,st) => (lhs',st') &
+	ceval (env,rhs,impl,st') => (rhs',st'') &
+	ceval_relation (lhs',relop,rhs') => v
+	-------------------------------------
+	ceval (env, Exp.RELATION(lhs,relop,rhs),impl,st) => (v, st'')
+
+	(**)
+
+  rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
+	ceval (env,stop,impl,st') => (Values.INTEGER(stop'),st'') &
+	ceval_range(start', 1, stop') => arr
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop),impl,st) 
+	  => (Values.ARRAY(arr),st')
+
+  rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
+	ceval (env,step,impl,st') => (Values.INTEGER(step'),st'') &
+	ceval (env,stop,impl,st'') => (Values.INTEGER(stop'),st''') &
+	ceval_range(start', step', stop') => arr 
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),impl,st) 
+	  => (Values.ARRAY(arr),st''')
+
+  rule	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
+	ceval (env,stop,impl,st') => (Values.REAL(stop'),st'') &
+	real_sub(stop',start') => diff &
+	int_real 1 => step & (* bug in rml, 1.0 => 0.0 in cygwin  *)
+	ceval_range_real(start', step, stop') => arr
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),impl,st) 
+	  => (Values.ARRAY(arr),st'')
+
+  rule	
+	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
+	ceval (env,step,impl,st') => (Values.REAL(step'),st'') &
+	ceval (env,stop,impl,st'') => (Values.REAL(stop'),st''') &
+	ceval_range_real(start', step', stop') => arr
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),impl,st) 
+	  => (Values.ARRAY(arr),st''')
+
+  rule	ceval (env,e,impl,st) => (Values.INTEGER(i),st') &
+	int_real i => r
+	---------------
+	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => (Values.REAL(r),st')
+
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(ivals),st') &
+	Values.type_convert(Exp.INT,Exp.REAL,ivals) => rvals
+	----------------------------------------------------
+	ceval (env, Exp.CAST(Exp.REAL,e),impl,st) => (Values.ARRAY(rvals),st')
+
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(vallst),st') &
+	Values.type_convert(Exp.INT, Exp.REAL, vallst) => vallst'
+	--------------------------
+	ceval (env, Exp.CAST(Exp.REAL,e as Exp.ARRAY(Exp.INT,_,expl)),impl,st) 
+	       => (Values.ARRAY(vallst'),st')
+
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(vallst),st') &
+	Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
+	---------------------------------------
+	ceval (env, Exp.CAST(Exp.REAL,e as Exp.RANGE(Exp.INT,_,_,_)),impl,st) => 
+		(Values.ARRAY(vallst'),st')
+
+  rule	ceval (env,e,impl,st) => (Values.ARRAY(vallst),st') &
+	Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
+	---------------------------------------
+	ceval (env, Exp.CAST(Exp.REAL,e as Exp.MATRIX(Exp.INT,_,_)),impl,st) => 
+		(Values.ARRAY(vallst'),st')
+
+  rule	(* Ifexp, true branch *)
+	ceval (env,b,impl,st) => (Values.BOOL(true),st') &
+	ceval (env,e1,impl,st') => (v,st'')
+	------------------------------------
+	ceval (env, Exp.IFEXP(b,e1,e2),impl,st) 
+	  => (v,st'')
+  rule	(* Ifexp, false branch *)
+	ceval (env,b,impl,st) => (Values.BOOL(false),st') &
+	ceval (env,e2,impl,st') => (v,st'')
+	------------------------------------
+	ceval (env, Exp.IFEXP(b,e1,e2),impl,st) 
+	  => (v,st'')
+
+(* ceval can apparently fail and that is ok, catched by other rules...
+  rule	Debug.fprint("failtrace", "- ceval ") &
+	Debug.fcall("failtrace",Exp.print_exp, e) &
+	Debug.fprint("failtrace", " failed\n") 
+	-----------------------------------------------------
+	ceval (_,e,_,_) => fail*)
+end
+
+(* relation ceval_interactive_functions
+** This relation evaluates the functions defined in the interactive environment.
+*)
+relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable)
+	=> (Values.Value, Interactive.InteractiveSymbolTable) =
+
+
+  rule	Static.component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	Lookup.lookup_class(env,path,true) => (c, env) &
+	Env.get_env_path(env) => SOME(p1) &
+	ModUtil.path_string(p1) => s1 &
+	Print.print_buf "Found class " &
+	Print.print_buf s1 & Print.print_buf "\n\n" &
+	Print.get_string() => str
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("lookupClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	Interactive.get_type_of_variable(varid, iv) => tp &
+	Types.unparse_type tp => str 
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("typeOf"),[Exp.CREF(Exp.CREF_IDENT(varid,_),_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	let newst = Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
+  rule	let newst = Interactive.SYMBOLTABLE(p,fp,ic,[],cf)
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearVariables"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
+  rule	let newst = Interactive.SYMBOLTABLE(p,fp,[],iv,cf)
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearCache"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
+  rule	Dump.unparse_str(p) => str
+	-------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	Static.component_ref_to_path(cr) => path &
+	Interactive.get_pathed_class_in_program(path,p) => class &
+	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str
+	-------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	Static.component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	DAE.dump_str (dae) => str &
+
+	Debug.fcall ("daedump", DAE.dump, dae) &
+	Debug.fcall ("daedump2", DAE.dump2, dae) &
+	Debug.fcall ("daedumpdebug", DAE.dump_debug, dae) &
+	Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, dae) &
+
+	Print.get_string() => s2 &
+	print s2 &
+	Print.print_error_buf s2 &
+	Exp.cref_modelica_str(cr) => modelname &
+	string_append(modelname,".mof") => filename &
+	System.pwd => pwd &
+	Util.string_append_list([pwd,"/",filename]) => filename' &
+	System.write_file(filename',str) &
+	print "wrote flat file: " & 
+	print str & print "\n" &
+	ModSim.compile_flat_class(filename',modelname) => exefile &
+	
+	let record = Values.RECORD([Values.STRING(str),Values.STRING(exefile)],["flatClass","exefile"])
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
+
+  rule	Static.component_ref_to_path(cr) => path & 
+	Absyn.path_string path => pathstr &
+	Print.print_buf "Failed to instantiate " &
+	Print.print_buf pathstr & Print.print_buf " .\n" &
+	Print.get_string() => str 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	
+  rule	(* Build and simulate model *)
+	Static.component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	DAE.dump_str (dae) => str &
+	Print.get_string() => s2 &
+	Print.print_error_buf s2 &
+	Exp.cref_modelica_str(cr) => modelname &
+	string_append(modelname,".mof") => filename &
+	System.pwd => pwd &
+	Util.string_append_list([pwd,"/",filename]) => filename' &
+	System.write_file(filename',str) &
+	ModSim.compile_flat_class(filename',modelname) => exefile &
+	ceval(env,starttime,true,SOME(st)) => (Values.REAL(start),_) &
+	ceval(env,stoptime,true,SOME(st)) => (Values.REAL(stop),_) &
+	ceval(env,interval,true,SOME(st)) => (Values.INTEGER(interv),_) &
+	Util.string_append_list([pwd,"/",modelname,"_res.plt"]) => resultfile &
+	int_sub(interv,1) => interv' &
+	ModSim.run_simulation(exefile,start,stop,interv',resultfile) => 0 &
+	let simValue = Values.RECORD([Values.STRING(resultfile)],["resultFile"]) &
+	let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
+			,[Types.VAR("resultFile",
+				    Types.ATTR(false, 
+					       SCode.RO, 
+					       SCode.VAR,
+					       Absyn.BIDIR),
+				    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
+			  ]
+			),NONE) &
+	Interactive.add_var_to_symboltable("currentSimulationResult",simValue,simType,st) 
+	  => newst &
+	  
+	  System.cd(pwd) => _
+	------------------------------------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (simValue,newst)
+	  
+  rule	let simValue = Values.RECORD([Values.STRING("Simulation Failed.")],["resultFile"])
+	------------------------------------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (simValue,st)
+
+  rule	Static.component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	DAE.dump_str (dae) => str 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
+
+
+  rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
+	System.pwd() => pwd &
+	Util.string_append_list([pwd,"/",filename]) => filename' &
+	System.read_ptolemyplot_dataset(filename',vars',size) => value
+	------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (value,st)
+
+  rule	Print.print_buf "#Error reading simulation result. Check that filename and variablenames are correct.\n" 
+	------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => fail
+
+  rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
+	Util.list_union_elt("time",vars') => vars'' &
+	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st)) 
+	  => (Values.RECORD([Values.STRING(filename)],_),_) &
+	System.read_ptolemyplot_dataset(filename,vars'',0) => value &
+	System.pwd() => pwd &
+	Util.string_append_list([pwd,"/","tmpPlot.plt"]) => tmpPlotFile &
+	Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
+	  => res &
+	  Util.string_append_list(["exec ptplot.exe `cygpath -w \"",
+				   tmpPlotFile,"\"` &"]) => call &
+	  System.system_call(call) => _
+	  ------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(true),st)
+
+  rule	System.time => t1 &
+	ceval(env,exp,true,SOME(st)) => (value,st') &
+	System.time => t2 &
+	real_sub(t2,t1) => time 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("timing"),[exp],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.REAL(time),st)
+
+  rule	System.set_c_compiler(str)
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompiler"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+
+  rule	System.set_c_flags(str)
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompilerFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+
+  rule	string_append("+d=",str) => str' &
+	RTOpts.args [str'] => args 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setDebugFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+
+  rule	System.cd(str) => res &
+	int_eq (res,0) => true &
+	System.pwd => str' 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+
+  rule	System.pwd() => str'
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+
+  rule	System.system_call(str) => res 
+	-------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("system"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.INTEGER(res),st)
+
+
+  rule	System.read_file(str) => str'
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+
+  rule	Print.get_error_string() => str &
+	Print.clear_error_buf()
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	System.read_file(str) => scriptstr &
+	Parser.parsestringexp(scriptstr) => istmts &
+	Interactive.evaluate(istmts,st) => (res,newst)
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
+
+  rule	SCode.elaborate(p) => p' &
+	Static.component_ref_to_path(cr) => path &
+	ModUtil.path_string2 (path,"_") => pathstr &
+ (*	Inst.instantiate_implicit(p') => d & *)
+	Lookup.lookup_class(env, path, false) => (cls, env') &
+	Inst.implicit_function_instantiation(env', Mod.NOMOD,
+					     Prefix.NOPRE, [], cls, [], false)
+	  => (env'',d) &
+
+	ModUtil.string_prefix_params DAE.DAE(d) => d' &
+	Print.clear_buf &
+	Codegen.generate_functions(d') &
+	string_append(pathstr,".c") => filename &
+	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
+	Print.print_buf "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\\n\");\n      return 1;\n    }\n" &
+	Print.print_buf pathstr &
+	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
+	Print.write_buf(filename)&
+	System.compile_c_file(filename) 
+	--------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("generateCode"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true), st)
+	(* add path to symboltable for compiled functions
+	 Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
+	 but where to get t? *)
+
+  rule	System.modelicapath => mp &	
+	Static.component_ref_to_path(cr) => path &
+	ClassLoader.load_class(path, mp) => pnew &
+	Interactive.update_program(pnew,p) => p' &
+	Print.get_string => str &
+	let newst = Interactive.SYMBOLTABLE(p', sp, [], iv, cf)
+	------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+	
+  rule	Static.component_ref_to_path(cr) => path &
+	ModUtil.path_string(path) => pathstr &
+	Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str &
+	Print.print_error_buf str
+	------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(false),st)
+
+  rule	Parser.parse(name) => p1 &
+	Interactive.update_program(p1,p) => newp
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf))
+
+  rule	not Parser.parse(name) => _
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(false),st)
+
+  rule	Static.component_ref_to_path(cr) => classpath &
+	Interactive.get_pathed_class_in_program(classpath,p) => class &
+	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str &
+	System.write_file(filename,str) 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(true),st)
+
+  rule	(*Error writing to file *)
+	Static.component_ref_to_path(cr) => classpath &
+	Interactive.get_pathed_class_in_program(classpath,p) => class &
+	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str &
+	Print.print_error_buf "Error writing to file.\n" 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(false),st)
+
+  rule	(*Error writing to file *)
+	Static.component_ref_to_path(cr) => classpath &
+	Print.print_error_buf "Error unknown class.\n" 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(false),st)
+
+  rule	System.read_env("MOSHHOME") => moshhome &
+	string_append(moshhome,"/../modeq/helptext.txt") => filename &
+	print filename & 
+	System.read_file(filename) => str 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("help"),[],_,_),
+				     st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(str),st)
+
+  rule	get_builtin_attribute(classname,cref,"unit",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getUnit"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st )
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"quantity",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getQuantity"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st )
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"displayUnit",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getDisplayUnit"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st )
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"min",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMin"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st )
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"max",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMax"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st )
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"start",st) => (v, st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStart"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st)
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"fixed",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getFixed"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st)
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"nominal",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getNominal"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st)
+	  => (v, st')
+
+  rule	get_builtin_attribute(classname,cref,"stateSelect",st) => (v,st')
+	----------------------------------------------
+	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStateSelect"),
+						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				    st)
+	  => (v, st')
+
+end
+
+
+relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
+				 Interactive.InteractiveSymbolTable) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable) =
+
+  rule	(* Check cached instantiated class *)
+	Static.component_ref_to_path(classname) => classname' &
+	Interactive.get_instantiated_class(ic,classname') => Interactive.INSTCLASS(_,dae,env) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
+	Lookup.lookup_var(env,cref') => (attr,ty,Types.EQBOUND(exp,_)) &
+	Exp.print_exp_str exp => str
+	--------------------------------
+	get_builtin_attribute(classname,cref,"stateSelect",
+			      st as Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (Values.STRING(str),st)
+
+  rule	Static.component_ref_to_path(classname) => classname' &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	Lookup.lookup_class(env,classname',true)
+	  => (c as SCode.CLASS(n, _, encflag, r, _), env') &
+	  Env.open_scope(env',encflag) => env'' &
+	Env.name_scope(env'',n) => env3 &
+	ClassInf.start(r,n) => ci_state &
+	Inst.inst_class_in(env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+			   c, false, [], false, false)
+	  => (dae1, env4, csets', ci_state', tys) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
+	Lookup.lookup_var(env4,cref') => (attr,ty,Types.EQBOUND(exp,_)) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname',dae1,env4)) => ic' &
+	Exp.print_exp_str exp => str
+	--------------------------------
+	get_builtin_attribute(classname,cref,"stateSelect",
+			      Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (Values.STRING(str), Interactive.SYMBOLTABLE(p,sp,ic',vars,cf))
+
+  rule	Static.component_ref_to_path(classname) => classname' &
+	Interactive.get_instantiated_class(ic,classname') => Interactive.INSTCLASS(_,dae,env) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &
+	Lookup.lookup_var(env,cref') => (attr,ty,Types.VALBOUND(v)) 
+	-----------------------------------------------
+	get_builtin_attribute(classname,cref,attribute,
+			      st as Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (v, st)
+
+  rule	Static.component_ref_to_path(classname) => classname' &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	Lookup.lookup_class(env,classname',true)
+	  => (c as SCode.CLASS(n, _, encflag, r, _), env') &
+	  Env.open_scope(env',encflag) => env'' &
+	Env.name_scope(env'',n) => env3 &
+	ClassInf.start(r,n) => ci_state &
+	Inst.inst_class_in(env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+			   c, false, [], false, false)
+	  => (dae1, env4, csets', ci_state', tys) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &
+	Lookup.lookup_var(env4,cref') => (attr,ty,Types.VALBOUND(v)) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname',dae1,env4)) => ic' 
+	-----------------------------------------------
+	get_builtin_attribute(classname,cref,attribute,
+			      st as Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (v, Interactive.SYMBOLTABLE(p,sp,ic',vars,cf)) 
+end 
+
+relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list) => Values.Value list =
+
+  rule	ceval_matrixeltrow(env,expl) => v &
+	ceval_matrixelt(env,expll) => vl
+	---------------------------
+	ceval_matrixelt(env,expl::expll) => v::vl
+	
+  axiom	ceval_matrixelt(_,[]) => []
+end
+
+relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list ) => Values.Value =
+	
+  rule	ceval (env,e,false,NONE) => (res,_) &
+	ceval_matrixeltrow(env,rest) => Values.ARRAY(resl)
+	-------------------
+	ceval_matrixeltrow(env, (e,_)::rest) => Values.ARRAY(res::resl)
+	
+  axiom	 ceval_matrixeltrow(env,[]) => Values.ARRAY([])
+
+end
+
+
+(* Builtin operators *)
+
+relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+	
+  rule	(* Crefs are looked up to find dimensional size*)
+	ceval(env,dim,impl,st) => (Values.INTEGER(dim),st') &
+	Lookup.lookup_var(env,cr) => (attr, tp, bind) &
+	Types.get_dimension_sizes(tp) => sizelst &
+	int_sub(dim,1) => dim' &
+	list_nth(sizelst,dim') => v
+	------------------------------------
+	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl,st) => (Values.INTEGER(v),st')
+
+  rule	ceval(env,dim,impl,st) => (Values.INTEGER(dim),st') &
+	ceval(env,cref,impl,st) => (v,st') &
+	ceval_builtin_size_2(v,dim) => v2
+	------------------------------------
+	ceval_builtin_size(env,cref,dim,impl,st) => (v2,st')
+end
+
+relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
+
+  rule	list_length(lst) => dim
+	---------------------------------------
+	ceval_builtin_size_2(Values.ARRAY(lst), 1) => Values.INTEGER(dim)
+
+  rule	int_sub (ind, 1) => ind' &
+	ceval_builtin_size_2 (l, ind') => dim
+	--------------------------------------------------
+	ceval_builtin_size_2 (Values.ARRAY(l::lst), ind) => dim
+
+  rule	Debug.fprint("failtrace","- ceval_builtin_size_2 failed\n")
+	-------------------------------------
+	ceval_builtin_size_2(_,_) => fail
+end
+
+(* For size(A) *)
+relation ceval_builtin_size_matrix : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+
+  rule	Lookup.lookup_var(env,cr) => (attr, tp, bind) &
+	Types.get_dimension_sizes(tp) => sizelst &
+	Values.intlist_to_value(sizelst) => v
+	-------------------------------------
+	ceval_builtin_size_matrix(env,Exp.CREF(cr,tp),impl,st) 
+	  => (v,st)
+
+  rule	ceval(env,exp,impl,st) => (v,st') &
+	Types.type_of_value(v) => tp &
+	Types.get_dimension_sizes(tp) => sizelst &
+	Values.intlist_to_value(sizelst) => v
+	-------------------------------------
+	ceval_builtin_size_matrix(env,exp,impl,st) 
+	  => (v,st)
+
+end
+
+(** relation: ceval_relation
+ **
+ ** Performs the relation check and gives a boolean result.
+ **)
+
+relation ceval_relation : (Values.Value, Exp.Operator, Values.Value)
+ 	  => Values.Value =
+
+  rule	ceval_relation (v2, Exp.LESS(t), v1) => v
+	-----------------------------------------
+	ceval_relation (v1, Exp.GREATER(t), v2) => v
+
+	(**  Integers *)
+
+  rule	int_lt (i1,i2) => b
+	-------------------
+	ceval_relation (Values.INTEGER(i1),
+			Exp.LESS(Exp.INT),
+			Values.INTEGER(i2)) => Values.BOOL(b)
+
+  rule	int_eq (i1,i2) => b
+	-------------------
+	ceval_relation (Values.INTEGER(i1),
+			Exp.EQUAL(Exp.INT),
+			Values.INTEGER(i2)) => Values.BOOL(b)
+
+  rule	int_ne (i1,i2) => b
+	-------------------
+	ceval_relation (Values.INTEGER(i1),
+			Exp.NEQUAL(Exp.INT),
+			Values.INTEGER(i2)) => Values.BOOL(b)
+
+	(**  Reals *)
+
+  rule	real_lt (i1,i2) => b
+	-------------------
+	ceval_relation (Values.REAL(i1),
+			Exp.LESS(Exp.REAL),
+			Values.REAL(i2)) => Values.BOOL(b)
+
+  rule	real_eq (i1,i2) => b
+	-------------------
+	ceval_relation (Values.REAL(i1),
+			Exp.EQUAL(Exp.REAL),
+			Values.REAL(i2)) => Values.BOOL(b)
+
+  rule	real_ne (i1,i2) => b
+	-------------------
+	ceval_relation (Values.REAL(i1),
+			Exp.NEQUAL(Exp.REAL),
+			Values.REAL(i2)) => Values.BOOL(b)
+
+  rule	Print.print_buf "- ceval_relation failed\n"
+	---------------------------------
+	ceval_relation (_,_,_) => fail
+
+end
+
+(** relation: ceval_range
+ **
+ ** This relation evaluates a range expression.  It only handles integers.
+ **)
+
+relation ceval_range : (int, int, int) => Values.Value list =
+
+  rule	int_eq(start,stop) => true (* e.g. 1:1 => {1} *)
+	------------------
+	ceval_range(start,_,stop) => [Values.INTEGER(start)]
+
+  rule	(*if d > 0 and j>k or if d < 0 and j<k *)
+	int_gt(j,k) => b1 &
+	int_gt(d,0) => b2 &
+	bool_and(b1,b2) => c1 &
+	int_lt(j,k) => b3 &
+	int_lt(d,0) => b4 &
+	bool_and(b3,b4) => c2 &
+	bool_or(c1,c1) => true
+	-----------------------------
+	ceval_range(j,d,k) => []
+
+rule	ceval_range2(start,step,stop) => res
+	-----------------------------------
+	ceval_range (start, step, stop) => res
+
+end
+
+relation ceval_range2: (int,int,int) => Values.Value list =
+
+  rule	int_gt(start,stop) => true
+	--------------------------
+	ceval_range2 (start,_,stop) => []	
+
+  rule	int_gt(start,stop) => false & (* redundant *)
+	int_add (start, step) => next &
+	ceval_range2 (next, step, stop) => l
+	-----------------------------------
+	ceval_range2 (start, step, stop) => Values.INTEGER(start)::l
+end
+	
+
+
+(** relation: ceval_range_real
+ **
+ ** This relation evaluates a range expression.  It only handles reals
+ **)
+
+relation ceval_range_real : (real, real, real) => Values.Value list =
+
+  rule	real_eq(start,stop) => true (* e.g. 1:1 => {1} *)
+	------------------
+	ceval_range_real(start,_,stop) => [Values.REAL(start)]
+
+  rule	(*if d > 0 and j>k or if d < 0 and j<k *)
+	real_gt(j,k) => b1 &
+	real_gt(d,0.0) => b2 &
+	bool_and(b1,b2) => c1 &
+	real_lt(j,k) => b3 &
+	real_lt(d,0.0) => b4 &
+	bool_and(b3,b4) => c2 &
+	bool_or(c1,c1) => true
+	-----------------------------
+	ceval_range_real(j,d,k) => []
+
+rule	ceval_range_real2(j,d,k)=> res
+	-----------------------------------
+	ceval_range_real (j,d,k) => res
+end
+
+relation ceval_range_real2 : (real, real, real) => Values.Value list =
+
+  rule	real_gt(start,stop) => true
+	--------------------------
+	ceval_range_real2 (start,_,stop) => []
+
+  rule	real_gt(start,stop) => false & (* redundant *)
+	real_add (start, step) => next &
+	ceval_range_real2 (next, step, stop) => l 	
+	-----------------------------------
+	ceval_range_real2 (start, step, stop) => Values.REAL(start)::l
+end
+
+(** relation: ceval_list
+ **
+ ** This relation does a constant evaluation on a number of expressions.
+ **)
+
+relation ceval_list : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
+	    => Values.Value list =
+	  
+  rule	ceval (env, exp,impl,st) => (v,_)
+	----------------------------
+	ceval_list (env, [exp],impl,st) => [v]
+
+  rule	ceval (env,exp,impl,st) => (v,_) &
+	ceval_list (env, exps,impl,st) => vs
+	------------------------------
+	ceval_list (env, exp::exps,impl,st) => v::vs
+
+end
+		      
+(**)
+
+relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
+
+(* Uncomment this when struct params work *)
+(*  rule	(* Parameters should not be evaluated. Exception: structural parameters *)
+	Lookup.lookup_var (env, c) => (Types.ATTR(_,_,SCode.PARAM,_),_,binding) 
+	-------------------------------------
+	ceval_cref (env,c) => fail *)
+
+  rule	Lookup.lookup_var (env, c) => (_,_,binding) &
+	ceval_cref_binding (env,c,binding) => v
+	-------------------------------------
+	ceval_cref (env,c) => v
+
+	(* default *)
+
+  rule	Print.print_buf "# No constant binding for " &
+	Exp.print_component_ref c & Print.print_buf "\n"
+	-------------------------------------
+	ceval_cref (_,c) => fail
+
+end
+
+relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding) => Values.Value =
+
+  rule	ceval_subscript_value(env,subsc,v) => res
+	-----------------------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(_,subsc),Types.VALBOUND(v))
+	  => res
+
+  rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
+	-------------------------------------
+	ceval_cref_binding (env,_,Types.UNBOUND) => fail
+	
+  rule	ceval (env,exp,false,NONE) => (v,_)
+	------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(_,[]),Types.EQBOUND(exp,true)) => v
+
+  rule	Print.print_buf "- ceval_cref__binding failed (nonconstant EQBOUND(" &
+	Exp.print_exp exp & Print.print_buf ")\n"
+	--------------------------------
+	ceval_cref_binding (env,_,Types.EQBOUND(exp,false)) => fail
+	
+end
+
+relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value) 
+	  => Values.Value =
+
+  rule	ceval(env,exp,false,NONE) => (Values.INTEGER(n),_) &
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => subval &
+	ceval_subscript_value(env,subs,subval) => res 
+	---------------------------------------------
+	ceval_subscript_value(env,Exp.INDEX(exp)::subs,Values.ARRAY(lst)) 
+	  => res
+	  
+  axiom	ceval_subscript_value(env,[],v) => v
+			      
+end
+
+(** relation: ceval_subscripts
+ **
+ ** This relation relates a list of subscripts to their canonical
+ ** forms, which is when all expressions are evaluated to constant
+ ** values.
+ **)
+
+relation ceval_subscripts : (Env.Env, Exp.Subscript list)
+	  => Exp.Subscript list =
+
+  axiom	ceval_subscripts (_,[]) => []
+
+  rule	ceval_subscript (env,sub) => sub' &
+	ceval_subscripts (env,subs) => subs'
+	------------------------------------
+	ceval_subscripts (env,sub::subs) => (sub'::subs')
+
+end
+
+(** relation: ceval_subscript
+ **
+ ** This relation relates a subscript to its canonical forms, which is
+ ** when all expressions are evaluated to constant values.
+ **)
+
+relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
+
+  axiom	ceval_subscript (env, Exp.WHOLEDIM) => Exp.WHOLEDIM
+
+  rule	ceval (env, e1,false,NONE) => (v1,_) &
+	Static.value_exp v1 => e1'
+	-----------------------------------------
+	ceval_subscript (env, Exp.INDEX(e1)) => Exp.INDEX(e1')
+	
+  rule	ceval (env, e1, false,NONE) => (v1,_) &
+	Static.value_exp v1 => e1'
+	-----------------------------------------
+	ceval_subscript (env, Exp.SLICE(e1)) => Exp.SLICE(e1')
+	
+end

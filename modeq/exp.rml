@@ -71,7 +71,7 @@ module Exp:
                  (* New constructors *)
 	       | CAST of Type * Exp
 	       | ASUB of Exp * int
-               | SIZE of Exp * Exp
+               | SIZE of Exp * Exp option
 	       | CODE of Absyn.Code * Type
   (** The `Exp' datatype closely corresponds to the `Absyn.Exp'
    ** datatype, but is used for statically analyzed expressions.  It
@@ -431,7 +431,7 @@ relation contain_functioncall : Exp => bool =
 
   rule	contain_functioncall(e2) => true
 	--------------------------------
-	contain_functioncall(SIZE(e1,e2)) => true
+	contain_functioncall(SIZE(e1,SOME(e2))) => true
 
   axiom	contain_functioncall(_) => false
 end
@@ -778,7 +778,12 @@ relation print_exp2 : (Exp,int) => () =
   rule	print_exp_str e => str &
 	Print.print_buf str
 	-------------
-	print_exp2 (e as SIZE(cr,dim),_)
+	print_exp2 (e as SIZE(cr,SOME(dim)),_)
+
+  rule	print_exp_str e => str &
+	Print.print_buf str
+	-------------
+	print_exp2 (e as SIZE(cr,NONE),_)
 	
   rule	Print.print_buf "#UNKNOWN EXPRESSION# ----eee "
         ----------------------------------
@@ -1325,9 +1330,14 @@ relation print_exp2_str : (Exp,int) => string =
 
   rule	print_exp_str cr => crstr &
 	print_exp_str dim => dimstr &
-	Util.string_append_list(["size(",crstr,",",dimstr]) => str
+	Util.string_append_list(["size(",crstr,",",dimstr,")"]) => str
 	------------------------
-	print_exp2_str (SIZE(cr,dim),_) => str
+	print_exp2_str (SIZE(cr,SOME(dim)),_) => str
+
+  rule	print_exp_str cr => crstr &
+	Util.string_append_list(["size(",crstr,")"]) => str
+	------------------------
+	print_exp2_str (SIZE(cr,NONE),_) => str
 
   axiom	print_exp2_str (_,_) => "#UNKNOWN EXPRESSION# ----eee "
 
