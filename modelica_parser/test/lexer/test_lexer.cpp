@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 	return 2;
     }
     
-    std::ifstream token_file("ModelicaTokenTypes.txt");
+    std::ifstream token_file("modelicaTokenTypes.txt");
     if (!token_file)
     {
 	std::cerr << "Could not open token file\n";
