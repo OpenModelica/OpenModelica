@@ -1,24 +1,3 @@
-/*
-    Copyright PELAB, Linkoping University
-
-    This file is part of Open Source Modelica (OSM).
-
-    OSM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    OSM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenModelica; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-*/
-
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -36,8 +15,11 @@ extern "C"
 #include "rml.h"
 #include "../absyn_builder/yacclib.h"
 
-  std::vector<bool> e_mark;
-  std::vector<bool> v_mark;
+
+  std::set<int> e_mark;
+  std::set<int> v_mark;
+
+
   std::vector<int> number;
   std::vector<int> lowlink;
   std::vector<int> v;
@@ -53,14 +35,8 @@ extern "C"
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     int neqns = RML_UNTAGFIXNUM(rmlA1);
     //cout << "init marks n= " << nvars << endl;
-    v_mark.reserve(nvars);
-    e_mark.reserve(neqns);
-    for (int i =0; i < nvars; i++) {
-      v_mark[i]=false;
-    }
-    for (int i =0; i < neqns; i++) {
-      e_mark[i]=false;
-    }
+    v_mark.clear();
+    e_mark.clear();
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL
@@ -68,8 +44,7 @@ extern "C"
   RML_BEGIN_LABEL(DAEEXT__e_5fmark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
-    e_mark[i-1]=true;
-    //cout << "e_mark[" << i << "] := true" << endl;
+    e_mark.insert(e_mark.begin(),i);
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
@@ -77,8 +52,7 @@ extern "C"
   RML_BEGIN_LABEL(DAEEXT__v_5fmark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
-    v_mark[i-1]=true;
-    //cout << "v_mark[" << i << "] := true" << endl;
+    v_mark.insert(v_mark.begin(),i);
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
@@ -86,8 +60,8 @@ extern "C"
   RML_BEGIN_LABEL(DAEEXT__get_5fv_5fmark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
-    //cout << "get_v_mark[" << i << "] == " << v_mark[i-1] << endl;
-    rmlA0 = v_mark[i-1] ? RML_TRUE : RML_FALSE;
+
+    rmlA0 = v_mark.find(i) != v_mark.end() ? RML_TRUE : RML_FALSE;
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
@@ -96,7 +70,29 @@ extern "C"
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     //cout << "get_e_mark[" << i << "] == " << e_mark[i-1] << endl;
-    rmlA0 = e_mark[i-1] ? RML_TRUE : RML_FALSE;
+    rmlA0 = e_mark.find(i) != e_mark.end() ? RML_TRUE : RML_FALSE;
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(DAEEXT__get_5fmarked_5feqns)
+  {
+    std::set<int>::iterator it;
+    rmlA0 = mk_nil();
+    for (it=e_mark.begin(); it != e_mark.end(); it++) {
+      rmlA0 = mk_cons(mk_icon(*it),rmlA0);
+    }
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(DAEEXT__get_5fmarked_5fvariables)
+  {
+    std::set<int>::iterator it;
+    rmlA0 = mk_nil();
+    for (it=v_mark.begin(); it != v_mark.end(); it++) {
+      rmlA0 = mk_cons(mk_icon(*it),rmlA0);
+    }
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
@@ -167,8 +163,8 @@ extern "C"
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     cout << "marked equations" << endl
 	 << "================" << endl;
-    for (int i =0 ; i < nvars; i++) {
-      if (e_mark[i]) cout << "eqn " << i+1 << endl;
+    for (std::set<int>::iterator i =e_mark.begin() ; i != e_mark.end(); i++) {
+      cout << "eqn " << *i << endl;
     }
     RML_TAILCALLK(rmlSC);
   }
@@ -179,8 +175,8 @@ extern "C"
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     cout << "marked variables" << endl
 	 << "================" << endl;
-    for (int i =0 ; i < nvars; i++) {
-      if (v_mark[i]) cout << "var " << i+1 << endl;
+    for (std::set<int>::iterator i =v_mark.begin() ; i != v_mark.end(); i++) {
+      cout << "var " << *i << endl;
     }
     RML_TAILCALLK(rmlSC);
   }
