@@ -6,7 +6,7 @@ module Inst:
   with "absyn.rml"
   with "dae.rml"
 
-(*  relation instantiate: Absyn.Program => DAE.DAEform *)
+  relation instantiate: Absyn.Program => DAE.DAEform
 
 end
 
@@ -15,6 +15,32 @@ with "env.rml"
 with "mod.rml"
 
 type Prefix = Prefix.Prefix
+
+val real_type = Absyn.CLASS("Real",false,Absyn.CL_TYPE,
+			    Absyn.PARTS(
+			    [Absyn.PUBLIC(
+			    [Absyn.ELEMENT(true,"quantity",
+			      Absyn.COMPONENTS(false, true, false,
+					       false, false,
+					       Exp.IDENT("StringType"),
+					       [Absyn.COMPONENT("quantity",
+								NONE,
+								NONE)])),
+			     Absyn.ELEMENT(true,"unit",
+			      Absyn.COMPONENTS(false, true, false,
+					       false, false,
+					       Exp.IDENT("StringType"),
+					       [Absyn.COMPONENT("unit",
+								NONE,
+								NONE)])),
+			     Absyn.ELEMENT(true,"displayUnit",
+			      Absyn.COMPONENTS(false, true, false,
+					       false, false,
+					       Exp.IDENT("StringType"),
+					       [Absyn.COMPONENT("displayUnit",
+								NONE,
+								NONE)]))])]))
+
 
 (**********************************************************************)
 
@@ -113,6 +139,18 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 					    [Absyn.COMPONENT(n,ad,m)])))
          => (([],env'))
 
+  rule	not Env.lookup_class(env,t) => cl &
+	Exp.path_string(t) => s &
+	print "Unknown class '" & print s & print "' while instantiating " &
+	Prefix.prefix_add(Exp.IDENT(n),pre) => n' &
+	Exp.path_string(n') => ns &
+	print ns & print "\n"
+	--------------------------
+	inst_element(env,_,pre,
+		     Absyn.ELEMENT(_,_,Absyn.COMPONENTS(_,_,_,_,_,t,
+					    [Absyn.COMPONENT(n,_,_)])))
+         => (([],env))
+
 end
 
 and inst_classpart: (Env.Env,Mod.Mod,Prefix,Absyn.ClassPart)
@@ -165,19 +203,30 @@ relation inst_class: (Env.Env,Mod.Mod,Prefix,Absyn.Class) => DAE.DAEcomp list =
 
 end
 
-relation instantiate: Absyn.Program => DAE.DAEform =
+relation inst_program : (Env.Env, Absyn.Program) => DAE.DAEcomp list =
 
   rule	print "Empty program\n" & fail
 	------------------------------
-	instantiate([]) => DAE.DAE([])
+	inst_program(env,[]) => []
 
-  rule	inst_class(Env.empty_env,Absyn.CLASSMOD([]),[],c) => l'
+  rule	inst_class(env,Absyn.CLASSMOD([]),[],c) => l
 	-----------------------------
-	instantiate([c]) => DAE.DAE(l')
+	inst_program(env,[c]) => l
 
-  rule	print "Ignoring class\n" &
-	instantiate(xs) => xs'
+  rule	print "Adding class\n" &
+	Env.extend_frame_c(env,c) => env' &
+	inst_program(env',cs) => l
 	----------------------
-	instantiate(x::xs) => xs'
+	inst_program(env,c::cs) => l
+
+end
+
+relation instantiate: Absyn.Program => DAE.DAEform =
+
+  rule	Env.new_frame(Env.empty_env) => env &
+	Env.extend_frame_c(env, real_type) => env' &
+	inst_program(env',p) => l
+	-----------------------------
+	instantiate(p) => DAE.DAE(l)
 
 end
