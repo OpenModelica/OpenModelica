@@ -72,6 +72,7 @@ module Exp:
 	       | CAST of Type * Exp
 	       | ASUB of Exp * int
                | SIZE of Exp * Exp
+	       | CODE of Absyn.Code * Type
   (** The `Exp' datatype closely corresponds to the `Absyn.Exp'
    ** datatype, but is used for statically analyzed expressions.  It
    ** includes explicit type promotions and typed (non-overloaded)

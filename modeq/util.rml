@@ -21,6 +21,7 @@
 
 module Util :
 
+  
   relation if : (bool,'a,'a) => 'a
 
   relation list_first: 'a list => 'a
@@ -35,6 +36,8 @@ module Util :
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_replaceat: (''a, int, ''a list) => ''a list 
+   
+  relation list_reduce: ('a list, ('a,'a) => 'a) => 'a
 	      
   relation tuple2_1 : ('a * 'b) => 'a
   relation tuple2_2 : ('a * 'b) => 'b
@@ -172,6 +175,20 @@ relation list_replaceat: (''a, int, ''a list) => ''a list =
 	-----------------------------
 	list_replaceat(x,n,y::ys) => y::res
 end
+relation list_reduce: ('a list, ('a,'a) => 'a) => 'a =
+  axiom	 list_reduce([e],r) => e
+
+  rule	r(a,b) => res
+	-------------
+	list_reduce([a,b],r) => res
+
+  rule	r(a,b) => res1 &
+	list_reduce(xs,r) => res2 &
+	r(res1,res2) => res
+	-------------------
+	list_reduce(a::b::(xs as _::_),r) => res
+end
+
 
 relation tuple2_1 : ('a * 'b) => 'a =
 	

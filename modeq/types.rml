@@ -672,6 +672,12 @@ relation unparse_type: Type => string =
 	--------------------
 	unparse_type (t as T_ARRAY(_,_)) => res
 
+  rule	Util.list_map(vs,unparse_var) => vars &
+	Util.string_append_list(vars) => vstr &
+	Util.string_append_list(["record ",name,"\n",vstr,"end record;"]) => res
+	---------------------------
+	unparse_type(t as T_COMPLEX(ClassInf.RECORD(name),vs))=> res
+
   axiom	unparse_type(_) => "not implemented yet\n" 
 end	
 
@@ -785,6 +791,14 @@ relation print_params : FuncArg list => () =
 end
 
 (*!includecode*)
+
+relation unparse_var: Var => string =
+
+  rule	unparse_type typ => t &
+	Util.string_append_list([t," ",n,";\n"]) => res
+	----------------------------
+	unparse_var VAR(n, attr, prot, typ, bind) => res
+end
 
 (* LS *)
 relation print_var : Var => () =

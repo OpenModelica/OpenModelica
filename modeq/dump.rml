@@ -51,6 +51,7 @@ module Dump:
   relation direction_symbol: Absyn.Direction => string
   relation print_exp: Absyn.Exp => ()
   relation print_exp_str: Absyn.Exp => string
+  relation print_code_str: Absyn.Code => string 
   relation print_component_ref: Absyn.ComponentRef => ()
   relation print_component_ref_str : Absyn.ComponentRef => string
   relation print_path : Absyn.Path => ()
@@ -1921,7 +1922,47 @@ relation print_exp_str : Absyn.Exp => string =
 	------------------------------------
 	print_exp_str (e as Absyn.RANGE(start,SOME(step),stop)) => s
 
+  rule	print_code_str(c) => res
+	--------------------------
+	print_exp_str ( Absyn.CODE(c)) => res
+
   axiom	print_exp_str (_) =>  "#UNKNOWN EXPRESSION#"
+
+end
+
+relation print_code_str: Absyn.Code => string =
+	
+  rule	print_path_str p => s
+	---------------------
+	print_code_str( Absyn.C_TYPENAME(p)) => s
+
+  rule	print_component_ref_str cr => s
+	---------------------
+	print_code_str( Absyn.C_VARIABLENAME(cr)) => s
+
+  rule	select_string(b,"initial ", "") => s1 &
+	unparse_equationitem_str_lst (1,eqitems,";\n") => s2 &
+	Util.string_append_list([s1, "equation ",s2]) => res
+	------------------------------------------------
+	print_code_str( Absyn.C_EQUATIONSECTION(b, eqitems)) => res
+
+  rule	select_string(b,"initial ", "") => s1 &
+	unparse_algorithm_str_lst (1,algitems,";\n") => s2 &
+	Util.string_append_list([s1,"algorithm ", s2]) => res
+	------------------------------------------------
+	print_code_str( Absyn.C_ALGORITHMSECTION(b, algitems)) => res
+
+  rule	unparse_element_str(1,elt) => res
+	------------------------------------------------
+	print_code_str( Absyn.C_ELEMENT(elt)) => res
+
+  rule	print_exp_str(exp) => res
+	------------------------------------------------
+	print_code_str( Absyn.C_EXPRESSION(exp)) => res
+
+  rule	unparse_modification_str(m) => res
+	------------------------------------------------
+	print_code_str( Absyn.C_MODIFICATION(m)) => res
 
 end
 			       

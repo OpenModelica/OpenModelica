@@ -37,6 +37,7 @@
 
 module Values :
 with "exp.rml"
+with "absyn.rml"
   datatype Value = INTEGER of int
 		 | REAL of real
 		 | STRING of string
@@ -44,6 +45,10 @@ with "exp.rml"
 		 | ENUM of string
 		 | ARRAY of Value list
 		 | TUPLE of Value list 
+		 | RECORD of Value list * Exp.Ident list
+		 | CODE of Absyn.Code
+		(* A record consist of value * Ident pairs *)
+
   relation val_string : Value => string
   relation print_val : Value => ()
   relation add_elementwise_arrayelt: (Value list, Value list) => Value list
@@ -428,6 +433,7 @@ end
 with "print.rml"
 with "system.rml"
 with "util.rml"
+with "dump.rml"
 
 (*!ignorecode*) 
 
@@ -465,10 +471,41 @@ relation val_string : Value => string =
 	----------------------------
 	val_string TUPLE(vs) => s''
 
+  rule	val_record_string(r) => s &
+	Util.string_append_list(["record\n",s,"\n end record"]) => res
+	---------------------------
+	val_string (r as RECORD(_,_)) => res
+
+  rule	Dump.print_code_str(c) => res &
+	Util.string_append_list(["Code(",res,")"]) => res'
+	-----------------------
+	val_string (CODE(c)) => res'
+
   rule	Print.print_buf "- val_string failed\n"
 	-----------------------------
 	val_string _ => fail
 
+end
+
+(** relation: val_record_string
+ **
+ ** This relation returns a textual representation of a record,
+ separating each value with a comma.
+ **)
+relation val_record_string: Value => string =
+  axiom	val_record_string(RECORD([],[])) => ""
+
+  rule	val_string(x) => s1 &
+	val_record_string(RECORD(xs,ids))=> s2 &
+	Util.string_append_list([id, " = ",s1,",\n",s2]) => res
+	------------------------------------
+	val_record_string(RECORD(x::(xs as _::_),id::(ids as _::_))) => res
+
+  rule	val_string(x) => s1 &
+	val_record_string(RECORD(xs,ids))=> s2 &
+	Util.string_append_list(["    ", id, " = ",s1,"\n",s2]) => res
+	------------------------------------
+	val_record_string(RECORD(x::xs,id::ids)) => res
 end
 
 (** relation: val_list_string

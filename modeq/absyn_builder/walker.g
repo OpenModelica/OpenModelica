@@ -1216,7 +1216,48 @@ expression returns [void* ast]
 	:
 		(	ast = simple_expression
 		|	ast = if_expression
+		|   ast = code_expression
 		)
+	;
+
+code_expression returns [void* ast]
+	:
+		#(CODE_MODIFICATION (ast = modification) )
+		{
+			ast = Absyn__CODE(Absyn__C_5fMODIFICATION(ast));
+		}
+
+	|	#(CODE_EXPRESSION (ast = expression) )
+		{
+			ast = Absyn__CODE(Absyn__C_5fEXPRESSION(ast));
+		}
+
+	|	#(CODE_ELEMENT (ast = element) )
+		{
+			ast = Absyn__CODE(Absyn__C_5fELEMENT(ast));
+		}
+		
+	|	#(CODE_EQUATION (ast = equation_clause) )
+		{
+			ast = Absyn__CODE(Absyn__C_5fEQUATIONSECTION(RML_FALSE, 
+					RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ast), 1))));
+		}
+		
+	|	#(CODE_INITIALEQUATION (ast = equation_clause) )
+		{
+			ast = Absyn__CODE(Absyn__C_5fEQUATIONSECTION(RML_TRUE, 
+					RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ast), 1))));
+		}
+	|	#(CODE_ALGORITHM (ast = algorithm_clause) )
+		{
+			ast = Absyn__CODE(Absyn__C_5fALGORITHMSECTION(RML_FALSE, 
+					RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ast), 1))));
+		}
+	|	#(CODE_INITIALALGORITHM (ast = algorithm_clause) )
+		{
+			ast = Absyn__CODE(Absyn__C_5fALGORITHMSECTION(RML_TRUE, 
+					RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ast), 1))));
+		}
 	;
 
 if_expression returns [void* ast]

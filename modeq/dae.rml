@@ -346,8 +346,7 @@ end
 
 
 relation dump_elements : Element list => () =
-
-  rule	dump_vars l &
+ rule	dump_vars l &
 	Print.print_buf "initial equation\n" &
 	dump_list (l, dump_initialequation) &
 	Print.print_buf "equation\n" &
@@ -367,7 +366,16 @@ relation dump_elements_str : Element list => string =
 	dump_equations_str(l) => s3 &
 	dump_initialalgorithms_str(l) => s4 &
 	dump_algorithms_str(l) => s5 &
-	Util.string_append_list([s1,"initial equation\n",s2,"initial algorithm\n",s4,"equation\n",s3,"algorithm\n",s5]) => str
+	Util.string_equal(s2,"") => noiniteq &
+	Util.string_equal(s4,"") => noinitalg &
+	Util.string_equal(s3,"") => noeq &
+	Util.string_equal(s5,"") => noalg &
+	Dump.select_string(noiniteq,"","initial equation\n") => initeqstr &
+	Dump.select_string(noinitalg,"","initial algorithm\n") => initalgstr &
+	Dump.select_string(noeq,"","equation\n") => eqstr &
+	Dump.select_string(noalg,"","algorithm\n") => algstr &
+
+	Util.string_append_list([s1,initeqstr,s2,initalgstr,s4,eqstr,s3,algstr,s5]) => str
 	---------------------------
 	dump_elements_str l => str
 

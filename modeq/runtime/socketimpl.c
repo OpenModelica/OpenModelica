@@ -75,7 +75,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Socket__handlerequest)
 {
-  char buf[4000]={0};
+  char buf[4000]={0}; // This buffer must be made dynamic.
   int len;
   int sock=(int) RML_UNTAGFIXNUM(rmlA0);
   len = recv(sock,buf,4000,0);

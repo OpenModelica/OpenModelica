@@ -320,11 +320,34 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
 		   c),st)
 
+  rule	elab_code_type(env,c) => tp &
+	Types.elab_type tp => tp'
+	-------------------
+	elab_exp (env, Absyn.CODE(c),impl,st) =>  (Exp.CODE(c,tp'),Types.PROP(tp,true),st)
+
   rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
 	Debug.fcall("failtrace", Dump.print_exp, e) & 
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
+
+end
+
+(** relation: elab_code_type
+ ** This relation will construct the correct type for the given Code expression.
+ ** The types are built-in classes of different types. E.g. the class TypeName is the type
+ ** of Code expressions corresponding to a type name Code expression. 
+**)
+relation elab_code_type: (Env.Env, Absyn.Code) => Types.Type =
+
+  axiom	elab_code_type(env, Absyn.C_TYPENAME(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[])
+  axiom	elab_code_type(env, Absyn.C_VARIABLENAME(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("VariableName"),[])
+  axiom	elab_code_type(env, Absyn.C_EQUATIONSECTION(_,_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("EquationSection"),[])
+  axiom	elab_code_type(env, Absyn.C_ALGORITHMSECTION(_,_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("AlgorithmSection"),[])
+  axiom	elab_code_type(env, Absyn.C_ELEMENT(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("Element"),[])
+  axiom	elab_code_type(env, Absyn.C_EXPRESSION(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("Expression"),[])
+
+  axiom	elab_code_type(env, Absyn.C_MODIFICATION(_)) => Types.T_COMPLEX(ClassInf.UNKNOWN("Modification"),[])
 
 end
 
@@ -1319,7 +1342,18 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	elab_untyped_cref(env,cr) => cr'
+  rule	elab_untyped_cref(env,cr) => cr' &
+	let recordtype = 
+	Types.T_COMPLEX(
+			ClassInf.RECORD("SimulationResult")
+			,[Types.VAR("exeFile",
+				    Types.ATTR(false, 
+					       SCode.RO, 
+					       SCode.VAR,
+					       Absyn.BIDIR),
+				    false, Types.T_STRING([]), Types.UNBOUND)
+			  ]
+			)
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("translateClass",_),
 			      [ Absyn.CREF(cr)],[],impl,
@@ -1328,7 +1362,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
-	      Types.PROP(Types.T_BOOL([]),false),
+	      Types.PROP(recordtype,false),
 	      SOME(st))
 
   rule	elab_exp(env,exp,impl,SOME(st)) => (exp',prop,st')
@@ -2695,6 +2729,8 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
   axiom ceval (_,Exp.SCONST(x),_,st) => (Values.STRING(x),st)
   axiom ceval (_,Exp.BCONST(x),_,st) => (Values.BOOL(x),st)
 
+  axiom	ceval (_,Exp.CODE(c,_),_,st) => (Values.CODE(c),st)
+
   rule	ceval_list (env,es,impl,st) => es' &
 	list_length es' => l
 	------------------------------
@@ -3020,10 +3056,17 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
 	DAE.dump_str (dae) => str &
 	Print.get_string() => s2 &
-	Print.print_error_buf s2 
+	Print.print_error_buf s2 &
+	
+(*	let filename = "flatclass.mof" &
+	System.write_file(filename,str) &
+	
+	ModSim.compile_flat_class(filename) => exefile &*)
+	
+	let record = Values.RECORD([Values.STRING(str),Values.INTEGER(1)],["flatClass","exefile"])
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
+	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
   rule	component_ref_to_path(cr) => path & 
 	Absyn.path_string path => pathstr &

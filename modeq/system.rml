@@ -25,9 +25,15 @@ module System:
  *)
 with "values.rml"
 
+relation vector_setnth: ('a vector,int,'a) => ('a vector)
+(* This relation is impure since it has side effects, but neccessary from a
+   performance point of view. *)
+
 relation strtok: (string,string) => string list
 
 relation compile_c_file: (string) => ()
+
+relation compile_flat_class: (string) => (string)
 
 relation set_c_compiler: (string) => ()
 

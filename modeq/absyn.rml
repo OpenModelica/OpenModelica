@@ -243,8 +243,18 @@ module Absyn:
 	       | RANGE of Exp * Exp option * Exp
 	       | TUPLE of Exp list (*PR.*)
 	       | END
+	       | CODE of Code
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
+
+  datatype Code = C_TYPENAME of Path 
+		| C_VARIABLENAME of ComponentRef 
+		| C_EQUATIONSECTION of bool * EquationItem list 
+		| C_ALGORITHMSECTION of bool * AlgorithmItem list 
+		| C_ELEMENT of Element 
+		| C_EXPRESSION of Exp 
+		| C_MODIFICATION of Modification
+  (** The 'Code' datatype is used for Meta-programming. It orgiginates from the Code quotation. *)
 
   datatype FunctionArgs =  FUNCTIONARGS of Exp list * NamedArg list
   (** The `FunctionArgs' datatype consists of a list of positional arguments *)
