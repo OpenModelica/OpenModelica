@@ -404,10 +404,11 @@ subscript :
  */
 
 specialization :
-	  c:class_specialization /* FIXME { EQUALS expression } */
-	  << #0->rml = Absyn__CLASSMOD(#0->rml); >>
-	| EQUALS^ e:expression
-	  << #0->rml = Absyn__EQUALMOD(#e->rml); >>
+	  c:class_specialization { EQUALS! e1:expression } /* FIXME */
+	  << #0->rml = Absyn__CLASSMOD(#0->rml,
+				       #e1 ? mk_some(#e1->rml) : mk_none()); >>
+	| EQUALS^ e2:expression
+	  << #0->rml = Absyn__CLASSMOD(mk_nil(), mk_some(#e2->rml)); >>
 	;
 
 class_specialization :
@@ -682,7 +683,7 @@ primary : << bool is_matrix; >>
 	  RBRACK!
 
 	| ni:UNSIGNED_INTEGER << #ni->rml = Exp__INTEGER(mk_icon($ni.u.ival)); >>
-	| nr:UNSIGNED_REAL   << #nr->rml = Exp__REAL(mk_rcon($nr.u.floatval)); >>
+	| nr:UNSIGNED_REAL   << #nr->rml = Exp__REAL(mk_rcon($nr.u.realval)); >>
 	| f:FALS/*E*/        << #f->rml = Exp__BOOL(RML_FALSE); >>
 	| t:TRU/*E*/         << #t->rml = Exp__BOOL(RML_TRUE); >>
 	| (name_path_function_arguments)?
