@@ -748,13 +748,14 @@ name_path : << bool qualified = false; >>
 /* 	name_path b:LBRACK^ subscript_list RBRACK! */
 /* 	; */
 
-component_reference : << void *tail = NULL; >>
+component_reference : << void *tail = NULL;>>
 	  i:IDENT^ { a:subscripts }
-	  << #i->rml = mk_box2(0,
-			       mk_scon($i.u.stringval),
-			       #a ? #a->rml : mk_nil()); >>
+	  << #i->rml = mk_scon($i.u.stringval); >>
 	  { dot:DOT^ c:component_reference << tail = #c->rml; >> }
-	  << #0->rml = mk_cons(#i->rml, tail != NULL ? tail : mk_nil()); >>
+	  << if(tail)
+	       #0->rml = Exp__CREF_5fQUAL(#i->rml, #a?#a->rml:mk_nil(), tail);
+             else
+	       #0->rml = Exp__CREF_5fIDENT(#i->rml, #a?#a->rml:mk_nil()); >>
 	;
 
 /* not in document's grammar */
