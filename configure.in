@@ -13,11 +13,11 @@ dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_MAKE_SET
-AC_PATH_PROG(rmlc_bin,rmlc, AC_MSG_ERROR([Error rmlc not found.]),${PATH}:/home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin)
+
 
 dnl check for environment variables
 
-AC_MSG_CHECKING([Checking for \$RMLHOME])
+AC_MSG_CHECKING([for \$RMLHOME])
 if test ! -z "$RMLHOME" ; then
   rmlhome=$RMLHOME
   AC_MSG_RESULT([yes])
@@ -26,7 +26,15 @@ else
   AC_MSG_ERROR([RMLHOME variable not set.])
 fi
 
-AC_MSG_CHECKING([Checking for \$ANTLRHOME])
+AC_MSG_CHECKING([for rmlc])
+if test -x $RMLHOME/bin/rmlc ; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin])
+  AC_MSG_RESULT([no])
+fi
+
+AC_MSG_CHECKING([for \$ANTLRHOME])
 if test ! -z "$ANTLRHOME" ; then
     antlrhome=$ANTLRHOME
   AC_MSG_RESULT([yes])
@@ -41,7 +49,7 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h)
 
-AC_MSG_CHECKING([Checking for rml includefiles in $RMLHOME])
+AC_MSG_CHECKING([for rml includefiles in $RMLHOME])
 rmlinc=`find $RMLHOME -follow -type d -name plain |grep include/plain`
 if test -z "$rmlinc" ; then
   AC_MSG_ERROR([rml headers not found])
@@ -50,7 +58,7 @@ else
   AC_MSG_RESULT([yes])
 fi
 
-AC_MSG_CHECKING([Checking for antlr header files])
+AC_MSG_CHECKING([for antlr header files])
 antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | grep include | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
 if test -z "$antlrinc" ; then 
   AC_MSG_ERROR([Could not find antlr include files])
@@ -58,7 +66,7 @@ else
   AC_MSG_RESULT([yes])
 fi
 
-AC_MSG_CHECKING([Checking for antlr libs])
+AC_MSG_CHECKING([for antlr libs])
 antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | grep lib | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
 if test -z "$antlrlib" ; then 
   AC_MSG_ERROR([Could not find antlr lib file])
@@ -66,7 +74,15 @@ else
   AC_MSG_RESULT([yes])
 fi
 
-AC_MSG_CHECKING([Checking for readline include])
+AC_MSG_CHECKING([for antlr.Tool in CLASSPATH])
+if java antlr.Tool /dev/null ; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_ERROR([no antlr.Tool in CLASSPATH])
+  AC_MSG_RESULT([no])
+fi
+
+AC_MSG_CHECKING([for readline include])
 dnl First check in special place for pelab
 if test -d /home/pelab/pkg/gnu/include ; then
   readlineinc="/home/pelab/pkg/gnu/include"
@@ -82,7 +98,7 @@ dnl Check in standard paths
   fi
 fi
 
-AC_MSG_CHECKING([Checking for readline libs])
+AC_MSG_CHECKING([for readline libs])
 dnl First check in special place for pelab
 if test -d /home/pelab/pkg/gnu/lib ; then
   readlinelib="/home/pelab/pkg/gnu/lib"

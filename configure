@@ -785,42 +785,11 @@ else
   SET_MAKE="MAKE=${MAKE-make}"
 fi
 
-# Extract the first word of "rmlc", so it can be a program name with args.
-set dummy rmlc; ac_word=$2
-echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:792: checking for $ac_word" >&5
-if eval "test \"`echo '$''{'ac_cv_path_rmlc_bin'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  case "$rmlc_bin" in
-  /*)
-  ac_cv_path_rmlc_bin="$rmlc_bin" # Let the user override the test with a path.
-  ;;
-  *)
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS="${IFS}:"
-  for ac_dir in ${PATH}:/home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin$ac_dummy; do
-    test -z "$ac_dir" && ac_dir=.
-    if test -f $ac_dir/$ac_word; then
-      ac_cv_path_rmlc_bin="$ac_dir/$ac_word"
-      break
-    fi
-  done
-  IFS="$ac_save_ifs"
-  test -z "$ac_cv_path_rmlc_bin" && ac_cv_path_rmlc_bin="{ echo "configure: error: Error rmlc not found." 1>&2; exit 1; }"
-  ;;
-esac
-fi
-rmlc_bin="$ac_cv_path_rmlc_bin"
-if test -n "$rmlc_bin"; then
-  echo "$ac_t""$rmlc_bin" 1>&6
-else
-  echo "$ac_t""no" 1>&6
-fi
 
 
 
-echo $ac_n "checking Checking for \$RMLHOME""... $ac_c" 1>&6
-echo "configure:824: checking Checking for \$RMLHOME" >&5
+echo $ac_n "checking for \$RMLHOME""... $ac_c" 1>&6
+echo "configure:793: checking for \$RMLHOME" >&5
 if test ! -z "$RMLHOME" ; then
   rmlhome=$RMLHOME
   echo "$ac_t""yes" 1>&6
@@ -829,8 +798,17 @@ else
   { echo "configure: error: RMLHOME variable not set." 1>&2; exit 1; }
 fi
 
-echo $ac_n "checking Checking for \$ANTLRHOME""... $ac_c" 1>&6
-echo "configure:834: checking Checking for \$ANTLRHOME" >&5
+echo $ac_n "checking for rmlc""... $ac_c" 1>&6
+echo "configure:803: checking for rmlc" >&5
+if test -x $RMLHOME/bin/rmlc ; then
+  echo "$ac_t""yes" 1>&6
+else
+  { echo "configure: error: rmlc not found in \$RMLHOME/bin" 1>&2; exit 1; }
+  echo "$ac_t""no" 1>&6
+fi
+
+echo $ac_n "checking for \$ANTLRHOME""... $ac_c" 1>&6
+echo "configure:812: checking for \$ANTLRHOME" >&5
 if test ! -z "$ANTLRHOME" ; then
     antlrhome=$ANTLRHOME
   echo "$ac_t""yes" 1>&6
@@ -841,12 +819,12 @@ fi
 
 
 echo $ac_n "checking for ANSI C header files""... $ac_c" 1>&6
-echo "configure:845: checking for ANSI C header files" >&5
+echo "configure:823: checking for ANSI C header files" >&5
 if eval "test \"`echo '$''{'ac_cv_header_stdc'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 850 "configure"
+#line 828 "configure"
 #include "confdefs.h"
 #include <stdlib.h>
 #include <stdarg.h>
@@ -854,7 +832,7 @@ else
 #include <float.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:858: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:836: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -871,7 +849,7 @@ rm -f conftest*
 if test $ac_cv_header_stdc = yes; then
   # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
 cat > conftest.$ac_ext <<EOF
-#line 875 "configure"
+#line 853 "configure"
 #include "confdefs.h"
 #include <string.h>
 EOF
@@ -889,7 +867,7 @@ fi
 if test $ac_cv_header_stdc = yes; then
   # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
 cat > conftest.$ac_ext <<EOF
-#line 893 "configure"
+#line 871 "configure"
 #include "confdefs.h"
 #include <stdlib.h>
 EOF
@@ -910,7 +888,7 @@ if test "$cross_compiling" = yes; then
   :
 else
   cat > conftest.$ac_ext <<EOF
-#line 914 "configure"
+#line 892 "configure"
 #include "confdefs.h"
 #include <ctype.h>
 #define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
@@ -921,7 +899,7 @@ if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
 exit (0); }
 
 EOF
-if { (eval echo configure:925: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:903: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   :
 else
@@ -948,17 +926,17 @@ for ac_hdr in sys/time.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:952: checking for $ac_hdr" >&5
+echo "configure:930: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 957 "configure"
+#line 935 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:962: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:940: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -985,8 +963,8 @@ fi
 done
 
 
-echo $ac_n "checking Checking for rml includefiles in $RMLHOME""... $ac_c" 1>&6
-echo "configure:990: checking Checking for rml includefiles in $RMLHOME" >&5
+echo $ac_n "checking for rml includefiles in $RMLHOME""... $ac_c" 1>&6
+echo "configure:968: checking for rml includefiles in $RMLHOME" >&5
 rmlinc=`find $RMLHOME -follow -type d -name plain |grep include/plain`
 if test -z "$rmlinc" ; then
   { echo "configure: error: rml headers not found" 1>&2; exit 1; }
@@ -995,8 +973,8 @@ else
   echo "$ac_t""yes" 1>&6
 fi
 
-echo $ac_n "checking Checking for antlr header files""... $ac_c" 1>&6
-echo "configure:1000: checking Checking for antlr header files" >&5
+echo $ac_n "checking for antlr header files""... $ac_c" 1>&6
+echo "configure:978: checking for antlr header files" >&5
 antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | grep include | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
 if test -z "$antlrinc" ; then 
   { echo "configure: error: Could not find antlr include files" 1>&2; exit 1; }
@@ -1004,8 +982,8 @@ else
   echo "$ac_t""yes" 1>&6
 fi
 
-echo $ac_n "checking Checking for antlr libs""... $ac_c" 1>&6
-echo "configure:1009: checking Checking for antlr libs" >&5
+echo $ac_n "checking for antlr libs""... $ac_c" 1>&6
+echo "configure:987: checking for antlr libs" >&5
 antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | grep lib | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
 if test -z "$antlrlib" ; then 
   { echo "configure: error: Could not find antlr lib file" 1>&2; exit 1; }
@@ -1013,8 +991,17 @@ else
   echo "$ac_t""yes" 1>&6
 fi
 
-echo $ac_n "checking Checking for readline include""... $ac_c" 1>&6
-echo "configure:1018: checking Checking for readline include" >&5
+echo $ac_n "checking for antlr.Tool in CLASSPATH""... $ac_c" 1>&6
+echo "configure:996: checking for antlr.Tool in CLASSPATH" >&5
+if java antlr.Tool /dev/null ; then
+  echo "$ac_t""yes" 1>&6
+else
+  { echo "configure: error: no antlr.Tool in CLASSPATH" 1>&2; exit 1; }
+  echo "$ac_t""no" 1>&6
+fi
+
+echo $ac_n "checking for readline include""... $ac_c" 1>&6
+echo "configure:1005: checking for readline include" >&5
 if test -d /home/pelab/pkg/gnu/include ; then
   readlineinc="/home/pelab/pkg/gnu/include"
   echo "$ac_t""yes" 1>&6
@@ -1028,8 +1015,8 @@ else
   fi
 fi
 
-echo $ac_n "checking Checking for readline libs""... $ac_c" 1>&6
-echo "configure:1033: checking Checking for readline libs" >&5
+echo $ac_n "checking for readline libs""... $ac_c" 1>&6
+echo "configure:1020: checking for readline libs" >&5
 if test -d /home/pelab/pkg/gnu/lib ; then
   readlinelib="/home/pelab/pkg/gnu/lib"
   echo "$ac_t""yes" 1>&6
@@ -1044,12 +1031,12 @@ else
 fi
 
 echo $ac_n "checking for working const""... $ac_c" 1>&6
-echo "configure:1048: checking for working const" >&5
+echo "configure:1035: checking for working const" >&5
 if eval "test \"`echo '$''{'ac_cv_c_const'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1053 "configure"
+#line 1040 "configure"
 #include "confdefs.h"
 
 int main() {
@@ -1098,7 +1085,7 @@ ccp = (char const *const *) p;
 
 ; return 0; }
 EOF
-if { (eval echo configure:1102: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1089: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_const=yes
 else
@@ -1119,12 +1106,12 @@ EOF
 fi
 
 echo $ac_n "checking for size_t""... $ac_c" 1>&6
-echo "configure:1123: checking for size_t" >&5
+echo "configure:1110: checking for size_t" >&5
 if eval "test \"`echo '$''{'ac_cv_type_size_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1128 "configure"
+#line 1115 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #if STDC_HEADERS
@@ -1155,12 +1142,12 @@ fi
 for ac_func in strdup strerror
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:1159: checking for $ac_func" >&5
+echo "configure:1146: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1164 "configure"
+#line 1151 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -1183,7 +1170,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:1187: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:1174: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
