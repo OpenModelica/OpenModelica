@@ -166,7 +166,6 @@ RML_BEGIN_LABEL(System__system_5fcall)
 {
 	int ret_val;
 	char* str = RML_STRINGDATA(rmlA0);
-	printf("call:%s\n",str);
 	if (str[0] == '\"') {
 		char longname[MAX_PATH];
 		char shortname[MAX_PATH];
@@ -183,12 +182,8 @@ RML_BEGIN_LABEL(System__system_5fcall)
 		sprintf(tmp,"%s%s",shortname,pathend);
 		mark = strstr(tmp, "\"");
 		if (mark) *mark = ' ';
-		strcpy(str, tmp);
-		printf("call:%s\n",tmp);
-		free(tmp);
 	}
 	ret_val	= system(str);
-	printf("result:%d\n",ret_val);
 	rmlA0	= (void*) mk_icon(ret_val);
 
 	RML_TAILCALLK(rmlSC);
@@ -527,7 +522,6 @@ RML_BEGIN_LABEL(System__regular_5ffile_5fexist)
 		FindClose(sh);
 	}
 
-	printf("Regular File Test (%s) result: %d\n", str, ret_val);
 	rmlA0 = (void*) mk_icon(ret_val);
 
 	RML_TAILCALLK(rmlSC);
@@ -560,7 +554,6 @@ RML_BEGIN_LABEL(System__directory_5fexist)
 	}
 
 	rmlA0 = (void*) mk_icon(ret_val);
-	printf("Directory Test (%s) result: %d\n", str, ret_val);
 
 	RML_TAILCALLK(rmlSC);
 }
