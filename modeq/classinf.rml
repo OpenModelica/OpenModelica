@@ -61,8 +61,7 @@ module ClassInf :
 		 | TYPE_ENUM of string
 
   (** - Events *)
-  datatype Event = FOUND_EQUATION     (* There are definitions inside *)
-				      (* the current definition *)
+  datatype Event = FOUND_EQUATION     (* There are definitions inside the current definition *)
 		 | NEWDEF	      (* This is not a derived class *)
   (** The `Event' type contains the different events during *)
   (** instantiation that signals a possible machine transition. *)
