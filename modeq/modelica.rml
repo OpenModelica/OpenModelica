@@ -6,41 +6,12 @@ module Modelica:
 
 with "exp.rml"
 with "dae.rml"
+with "class.rml"
 
 type Ident = string
 
-(* Declaration of classes and their contents *)
-(* Note: should have separate structure for modifiers *)
-
-datatype Definition = DEF of Ident * Element list
-
-and      Element = BASE of Definition
-                 | CL of Class
-                 | COMP of Definition * Definition
-                 | EQUATION of Exp.Exp
-
-and	 Class = CLASS of Definition
-
-(* Global environment *)
-
-type Env = Definition list
-
-(* Modifier list - not used? *)
-
-type Mod = Element list
-
-(* Lookup routines for global environment and modifiers *)
-
-relation lookup: (Env, Ident) => Definition
-
-(* Instantiation of Modelica model *)
-
-relation instantiate_class: (Env, Env, Class)
-	=> DAE.DAEform
-
 (* Dump routines for debugging of AST *)
 
-relation dump: Definition => ()
 relation dump_class: Class => ()
 relation dump_element: Element => ()
 relation DumpElementList: Element list => ()
@@ -51,42 +22,7 @@ relation test1: () => ()
 relation test2: () => ()
 relation test3: () => ()
 
-end
-
-(*************************************************************************)
-(* Lookup of names in global environment and modifier list *)
-
-relation lookup: (Env, Ident) => Definition =
-
-	rule	id1 = id
-		-----------------------
-		lookup(DEF(id1, elist) :: _, id) => DEF(id, elist)
-
-	rule	lookup(rest, id) => def
-		-----------------------
-		lookup(_ :: rest, id) => def
-end
-
-relation lookup_mod: (Mod, Ident) => Element list =
-
-	(* Match a modifier of the form "y = exp" *)
-
-	rule	id = y
-		& print "Found modifier " & print id
-		& print "=" & Exp.dump exp & print "\n"
-		--------------------------------
-		lookup_mod(EQUATION(Exp.EQU(Exp.IDENT(id), exp))::_, y) =>
-				[ EQUATION(exp) ]
-
-	(* Note: should handle modifier of type "y(exp)" too *)
-
-	(* If first modifier didn't match, check rest of modifiers *)
-	(* An empty modifier list means that the lookup failed     *)
-
-	rule	lookup_mod(rest, id) => result
-		------------------------
-		lookup_mod(_::rest, id) => result
-end
+end (* module Modelica *)
 
 (*************************************************************************)
 (* Instantiation of model *)
