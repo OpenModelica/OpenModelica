@@ -175,11 +175,13 @@ relation cref_equal : (ComponentRef, ComponentRef) => bool =
 	(** Another option is to call print_component_ref_str for both refs and *)
 	(** compare the resulting strings *)
 
-  rule	n1 = n2
+  rule	n1 = n2 &
+	subscript_equal(idx1,idx2) => true
 	-------
 	cref_equal (CREF_IDENT(n1, idx1), CREF_IDENT(n2, idx2)) => true
 
   rule	n1 = n2 &
+	subscript_equal(idx1,idx2) => true &
 	cref_equal (cr1, cr2) => true
 	-----------------------------
 	cref_equal (CREF_QUAL(n1, idx1, cr1), CREF_QUAL(n2, idx2, cr2))
@@ -189,6 +191,18 @@ relation cref_equal : (ComponentRef, ComponentRef) => bool =
 
 end
 
+relation subscript_equal: ( Subscript list, Subscript list) => bool =
+	(* P.A: Just compare constant integer values for now. Might need to lookup variables
+	   in environment for evaluating arbitrary expressions in future impl. *)
+  rule	i1 = i2 &
+	subscript_equal(xs1,xs2) => res 
+	-------------------------------
+	subscript_equal(INDEX(ICONST(i1))::xs1,INDEX(ICONST(i2))::xs2) => res
+
+  axiom	subscript_equal([],[]) => true
+
+  axiom	subscript_equal(_,_) => false
+end
 
 (** relation: extend_cref
  **
