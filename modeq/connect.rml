@@ -35,12 +35,9 @@ end
 
 relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 
-  rule	(* print "   add_equ: looking for sets\n" & *)
-	find_equ_set(ss,r1) => s1 &
+  rule	find_equ_set(ss,r1) => s1 &
 	find_equ_set(ss,r2) => s2 &
-	(* print "   add_equ: found, merging\n" & *)
-	merge(ss,s1,s2) => ss' (* &
-	print_sets ss' *)
+	merge(ss,s1,s2) => ss'
 	----------------------
 	add_equ(ss,r1,r2) => ss'
 	
@@ -49,12 +46,9 @@ end
 relation add_flow : (Sets, Exp.ComponentRef, Face, Exp.ComponentRef, Face)
 	  => Sets =
 
-  rule	(* print "   add_flow: looking for sets\n" & *)
-	find_flow_set(ss,r1,d1) => s1 &
+  rule	find_flow_set(ss,r1,d1) => s1 &
 	find_flow_set(ss,r2,d2) => s2 &
-	(* print "   add_flow: found, merging\n" & *)
-	merge(ss,s1,s2) => ss' (* &
-	print_sets ss' *)
+	merge(ss,s1,s2) => ss'
 	----------------------
 	add_flow(ss,r1,d1,r2,d2) => ss'
 	
