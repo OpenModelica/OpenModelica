@@ -112,8 +112,9 @@ int main(int argc, char* argv[])
   bool done=false;	
   while (!done) {
     char* line = readline(">>> ");
-    if (strcmp(line,"quit()") == 0) {
+    if ( line == 0 || strcmp(line,"quit()") == 0 ) {
       done =true;
+      if (line == 0)  line ="quit()";
     }
     add_history(line);
     int nbytes = write(sock,line,strlen(line)+1);
