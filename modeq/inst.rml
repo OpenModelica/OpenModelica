@@ -3422,9 +3422,9 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 (*	Debug.print("\nDebug: did left elab.") &*)
 	Static.elab_exp(env,e2,false,NONE) => (e2',prop2,_) &
 (*	Debug.print("\nDebug: did right elab.") &*)
-	Exp.print_exp(e1') &
+(*	Exp.print_exp(e1') & *)
 (*	Debug.print(", ") &*)
-	Exp.print_exp(e2') & 
+(*	Exp.print_exp(e2') & *)
 (*	Debug.print("\n") &*)
 
 	
