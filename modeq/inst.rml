@@ -436,6 +436,9 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("decl",Env.print_env, env'') &
 	(*2. EXTENDS Nodes*)
 	inst_element_list2(env'',mod,pre,csets',ci_state',extendselts,inst_dims) => (dae2,env''',csets'',ci_state'',tys2) &
+
+	Debug.fprint("decl"," instantiated base classes, env, env=") &
+	Debug.fcall ("decl",Env.print_env, env''') &
 	
 	(*3. instantiate COMPONENT nodes*)
 	inst_element_list2(env''',mod,pre,csets'',ci_state'',compelts,inst_dims) => (dae3,env'''',csets''',ci_state''',tys3) &
@@ -508,7 +511,9 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 	Debug.fprint ("decl","\n") &
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 	    prot,ty,Types.UNBOUND),SOME(comp),false) => env' &
-	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims) => env''
+	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims) => env'' &
+	Debug.fprint("decl", " updated env :") &
+	Debug.fcall ("decl", Env.print_env, env'') 
 	-----------------
 	extend_components_to_env(env,mods,pre,csets,ci_state,
 		     (comp as SCode.COMPONENT(n,final,prot,
