@@ -268,25 +268,30 @@ end
 (** - Equations *)
 
 relation dump_equation: Absyn.Equation => () =
-
-	rule	print "EQ_EXPR(" & dump_exp(e) & print ")"
-		-------------------------------------------
-		dump_equation(Absyn.EQ_EXPR(e))
-
-	rule	print "EQ_EQUALS(" & dump_exp(e1) & print "," &
-		dump_exp(e2) & print ")"
-		-------------------------------------------
-		dump_equation(Absyn.EQ_EQUALS(e1,e2))
-
-	rule	print "EQ_CONNECT(" & dump_component_ref(e1) & print "," &
-		dump_component_ref(e2) & print ")"
-		-------------------------------------------
-		dump_equation(Absyn.EQ_CONNECT(e1,e2))
-
-	rule	print " ** UNKNOWN EQUATION ** "
-		--------------------------------
-		dump_equation(_)
-
+	
+  rule	print "EQ_EXPR(" & dump_exp(e) & print ")"
+	-------------------------------------------
+	dump_equation(Absyn.EQ_EXPR(e))
+	
+  rule	print "EQ_EQUALS(" & dump_exp(e1) & print "," &
+	dump_exp(e2) & print ")"
+	-------------------------------------------
+	dump_equation(Absyn.EQ_EQUALS(e1,e2))
+	
+  rule	print "EQ_CONNECT(" & dump_component_ref(e1) & print "," &
+	dump_component_ref(e2) & print ")"
+	-------------------------------------------
+	dump_equation(Absyn.EQ_CONNECT(e1,e2))
+	
+  rule	print "FOR " & print i & print " in " & dump_exp(e) &
+	print " {" & dump_list(el, dump_equation, ";") & print "}"
+	----------------------------------------------------------
+	dump_equation Absyn.EQ_FOR(i,e,el)
+	
+  rule	print " ** UNKNOWN EQUATION ** "
+	--------------------------------
+	dump_equation(_)
+	
 end
 
 (** - Component references *)

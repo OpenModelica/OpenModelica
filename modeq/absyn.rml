@@ -71,6 +71,7 @@ module Absyn:
   datatype Equation = EQ_EXPR of Exp.Exp	     (* more later? *)
 		    | EQ_EQUALS of Exp.Exp * Exp.Exp
 		    | EQ_CONNECT of Exp.ComponentRef * Exp.ComponentRef
+		    | EQ_FOR of Ident * Exp.Exp * Equation list
 
   datatype Algorithm = ALGORITHM		     (* FIXME *)
 
