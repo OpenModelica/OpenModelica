@@ -1,0 +1,195 @@
+
+Model definition
+
+      model_definition:
+         { class_definition ";" | import STRING ";" }
+
+Class definition
+
+      class_definition :
+            [ partial | final ] 
+         ( class | model | record | block | connector | type |
+           package | function ) 
+         IDENT comment
+         ( composition end IDENT | 
+           "=" name [ array_dimensions ] [ class_modification ] )
+
+      composition  :
+         element_list 
+         { public element_list | 
+           protected element_list | 
+           equation_clause |
+           algorithm_clause
+         }
+         [ external ]
+
+      element_list :
+         { element ";" | annotation  ";" }
+
+      element :
+         [ final ] ( [ replaceable ] class_definition | extends_clause | 
+                     component_clause )
+
+Extends
+
+      extends_clause :
+         extends name [ class_modification ]
+
+Component clause
+
+      component_clause:
+         type_prefix type_specifier component_list
+
+      type_prefix :
+         [ flow ] [ parameter | constant ] [ input | output ]
+
+      type_specifier :
+         name
+
+      component_list :
+         component_declaration { "," component_declaration }
+
+      component_declaration :
+         declaration comment
+
+      declaration :
+         IDENT [ array_dimensions ] [ modification ]
+
+      array_dimensions :
+         "[" subscript { "," subscript } "]"
+
+Modification
+
+      modification :
+         class_modification [ "=" expression ]
+       | "=" expression
+
+       
+      class_modification :
+         "(" { argument_list } ")"
+
+      argument_list :
+         argument { "," argument }
+
+      argument :
+         element_modification
+       | element_redeclaration
+
+      element_modification :
+         [ final ] name modification
+
+      element_redeclaration :
+         redeclare [ final ]
+         ( [ replaceable ] class_definition | extends_clause | component_clause1 )
+
+      component_clause1 :
+         type_prefix type_specifier component_declaration
+
+Equations
+
+      equation_clause :
+        equation { equation ";" | annotation  ";" }
+
+      algorithm_clause :
+         algorithm { equation ";" | annotation  ";" }
+
+      equation :
+        ( "connect" "(" component_reference "," component_reference ")"
+	  simple_expression [ ( "=" | ":=" ) expression ] 
+          | conditional_equation
+          | for_clause
+          | while_clause )
+        comment
+
+      conditional_equation :
+         if expression then
+           { equation ";" }
+         { elseif expression then
+           { equation ";" }
+         }
+         [ else
+           { equation ";" }
+         ]
+         end if
+
+      for_clause :
+        for IDENT in expression ":" expression [ ":" expression ] loop
+           { equation ";" }
+        end for
+
+      while_clause :
+        while expression loop
+          { equation ";" }
+        end while
+
+Expressions
+
+      expression :
+         simple_expression
+       | if expression then simple_expression else expression
+
+      simple_expression :
+         logical_term { or logical_term }
+
+      logical_term :
+         logical_factor { and logical_factor }
+
+      logical_factor :
+         [ not ] relation
+
+      relation :
+         arithmetic_expression [ rel_op arithmetic_expression ]
+
+      rel_op :
+         "<" | "<=" | ">" | ">=" | "==" | "<>"
+
+      arithmetic_expression :
+         [ add_op ] term { add_op term }
+
+      add_op :
+         "+" | "-"
+
+      term :
+         factor { mul_op factor }
+
+      mul_op :
+         "*" | "/"
+
+      factor :
+         primary [ "^" primary ] 
+
+      primary :
+         UNSIGNED_NUMBER
+       | STRING
+       | time
+       | false
+       | true
+       | component_reference 
+       | name "(" { function_arguments } ")"
+       | "(" expression ")"
+       | "[" row_expression { ";" row_expression } "]"
+
+      name :
+         IDENT [ "." name ]
+
+      component_reference :
+         IDENT [ subscripts ] [ "." component_reference ]
+
+      row_expression :
+         expression { "," expression }
+
+      function_arguments :
+         expression { "," expression }
+       | IDENT "=" expression { "," IDENT "=" expression }
+
+      subscripts :
+         "[" subscript { "," subscript } "]"
+
+      subscript :
+         ":" | expression [ ":" expression [ ":" expression ] ]
+
+      comment :
+         [ STRING ] [ annotation ]
+
+      annotation :
+         annotation class_modification
