@@ -126,12 +126,12 @@ module Inst:
   relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
 
   relation inst_class: ( Env.Env, Types.Mod, Prefix.Prefix, 
-			Connect.Sets, SCode.Class, InstDims,bool,CallingScope)
+			Connect.Sets, SCode.Class, InstDims,bool (*impl*),CallingScope)
 	  => ( DAE.Element list, Env.Env, Connect.Sets, Types.Type, ClassInf.State)
 
 
   relation inst_class_decl : ( Env.Env, Types.Mod, Prefix.Prefix,
-			      Connect.Sets, SCode.Class, InstDims, bool)
+			      Connect.Sets, SCode.Class, InstDims, bool (*impl*))
 	  => ( Env.Env, DAE.Element list)
 
   relation inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
@@ -151,7 +151,7 @@ module Inst:
 				     Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list)
 	    
-  relation inst_record_constructor_elt : (Env.Env, SCode.Element) 
+  relation inst_record_constructor_elt : (Env.Env, SCode.Element, bool (*impl*)) 
 	 => (Types.Var)
   relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type
 
@@ -232,6 +232,16 @@ relation select : (bool, 'a, 'a) => 'a =
 
 end
 
+
+relation is_not_function : SCode.Class => bool =
+
+  rule	SCode.is_function cls => res &
+	bool_not(res) => res
+	------------------------------
+	is_not_function cls => res
+
+end
+
 (** relation: instantiate
  **
  ** To instantiate a Modelica program, an initial environment is
@@ -241,21 +251,50 @@ end
 
 relation instantiate: SCode.Program => DAE.DAElist =
 
-  rule	Builtin.initial_env => env &
-	inst_program(env,p) => l 
+  rule	Debug.fprintln("insttr", "instantiate") &
+	Util.list_select (p, is_not_function) => pnofunc &
+	Util.list_select (p, SCode.is_function) => pfunc &
+	Builtin.initial_env => env &
+	Debug.fprintln("insttr", "Instantiating functions") &
+	Util.list_map(pfunc, SCode.class_name) => pfuncnames &
+	Util.string_delimit_list(pfuncnames,", ") => str1 &
+	Debug.fprint("insttr", "Instantiating functions: ") &
+	Debug.fprintln("insttr", str1) &
+	Env.extend_frame_classes(env,pfunc) => envimpl &
+	inst_program_implicit(envimpl,pfunc) => (lfunc,envimpl')  &
+	Debug.fprint("insttr", "Instantiating other classes: ") &
+	Util.list_map(pnofunc, SCode.class_name) => pnofuncnames &
+	Util.string_delimit_list(pnofuncnames,", ") => str2 &
+	Debug.fprintln("insttr", str2) &
+	inst_program(envimpl',pnofunc) => lnofunc &
+	list_append(lfunc, lnofunc) => l
 	-----------------------------
 	instantiate(p) => DAE.DAE(l)
+
+  rule	Debug.fprintln("failtrace", "instantiate failed")
+	-----------------------------------------------
+	instantiate _ => fail
+
 end
+
 
 (** Implicit instantiation of a program can be used for e.g. code generation of functions, since a function must be implicitly instantiated in order to generate code from it. *)
 
 relation instantiate_implicit: SCode.Program => DAE.DAElist =
 
-  rule	Builtin.initial_env => env &
+  rule	Debug.fprintln("insttr", "instantiate_implicit") &
+	Builtin.initial_env => env &
 	Env.extend_frame_classes(env,p) => env' &
-	inst_program_implicit(env',p) => l 
+	inst_program_implicit(env',p) => (l,_) 
 	-----------------------------
 	instantiate_implicit(p) => DAE.DAE(l)
+
+
+
+  rule	Debug.fprintln("failtrace", "instantiate_implicit failed")
+	-----------------------------------------------
+	instantiate_implicit _ => fail
+
 end
 
 
@@ -409,7 +448,9 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	inst_program(env,[]) => fail
 
 
-  rule	(*Debug.fprintln ("insttr", "inst_program1") &*)
+  rule	Debug.fprint ("insttr", "inst_program1: ") &
+	Debug.fprint ("insttr", n) &
+	Debug.fprintln ("insttr", "") &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_class(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false,TOP_CALL) 
 	  => (dae,env',csets,_,_) 
@@ -417,7 +458,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
-  rule	(*Debug.fprintln ("insttr", "inst_program2") &*)
+  rule	Debug.fprintln ("insttr", "inst_program2") &
 	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
@@ -426,25 +467,27 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	----------------------
 	inst_program(env,c::(cs as (_::_))) => dae
 
-  rule	Print.print_buf "- inst_program failed\n" 
+  rule	Debug.fprintln("failtrace", "- inst_program failed")
 	------------
 	inst_program(_,_) => fail
 end
 
 
-relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
+relation inst_program_implicit : (Env, SCode.Program) => (DAE.Element list, Env) =
 	
-  rule	(*Debug.fprintln ("insttr", "inst_program_implicit") &*)
+  rule	Debug.fprint ("insttr", "inst_program_implicit: ") &
+	Debug.fprint ("insttr", n) &
+	Debug.fprintln("insttr", "") &
 	implicit_instantiation(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false) 
 	  => (env', dae1) &
-	inst_program_implicit(env',cs) => dae2 &
+	inst_program_implicit(env',cs) => (dae2, env'') &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	inst_program_implicit(env,(c as SCode.CLASS(n,_,_,restr,_))::cs) => dae
+	inst_program_implicit(env,(c as SCode.CLASS(n,_,_,restr,_))::cs) => (dae, env'')
 
-  rule	(*Debug.fprintln ("insttr", "inst_program_implicit (end)")*)
+  rule	Debug.fprintln ("insttr", "inst_program_implicit (end)")
 	----------------------------------------------------
-	 inst_program_implicit(env,[]) => []
+	 inst_program_implicit(env,[]) => ([], env)
 
 end
 
@@ -464,7 +507,7 @@ end
  **)
 
 relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, 
-		       InstDims,bool,CallingScope)
+		       InstDims,bool (*impl*) ,CallingScope)
 	  => (DAE.Element list, Env.Env, Connect.Sets, Types.Type, ClassInf.State) =
 	  
   rule	(* Classes with the keyword partial can not be instantiated.
@@ -472,7 +515,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 	Print.print_error_buf "# Can't instantiate partial class " & 
 	Print.print_error_buf n & Print.print_error_buf "\n"
 	------------------------------------------------------	
-	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false,_) => fail
+	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,impl as false,_) => fail
 
   rule	Env.open_scope(env,encflag,SOME(n)) => env' &
 	ClassInf.start(r,n) => ci_state &
@@ -536,9 +579,24 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
                      c as SCode.CLASS("Boolean",_,_,_,_),_,_, impl,packimpl)
          => ([] (* No DAE *), env, [], ci_state, [])
 
+	  (* Ignore functions if not implicit instantiation *)
+  rule	SCode.is_function cls => true
+	& Debug.fprint("insttr", "Ignoring function in explicit instantiation: ")
+	& SCode.class_name cls => clsname
+	& Debug.fprint("insttr", clsname) 
+	& Debug.fprint("insttr", "\n") 
+	-----------------------------
+	inst_class_in(env,mods,pre,cset,ci_state, cls,_,_,impl as false,packimpl)
+	=> ([] (* No DAE *), env, [], ci_state, [])
+
   rule	(*print "inst_class_in" & print n & print "\n" &*)
-	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims
-		      ,impl,packimpl)
+	SCode.class_name c => clsname
+	& Debug.fprint("insttr", "Instantiating class: ")
+	& Util.if(impl, " (implicit) ", " (explicit) ") => implstr
+	& Debug.fprint("insttr", implstr)
+	& Debug.fprint("insttr", clsname) 
+	& Debug.fprint("insttr", "\n") &
+	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims,impl,packimpl)
 	  => (l,env', csets', ci_state', tys)  
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
@@ -666,13 +724,13 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element_list(env4, mods, pre, csets, ci_state1, compelts'', 
 			  inst_dims, impl, false)
 	  => (dae1,env5, csets1, ci_state2, tys) &
-	inst_list(env5,mods,pre,csets1,ci_state2,inst_equation, eqs')
+	inst_list(env5,mods,pre,csets1,ci_state2,inst_equation, eqs',impl)
 	  => (dae2,_,csets2, ci_state3) &
-	inst_list(env5,mods,pre,csets2,ci_state3,inst_initialequation, initeqs')
+	inst_list(env5,mods,pre,csets2,ci_state3,inst_initialequation, initeqs',impl)
 	  => (dae3,_,csets3, ci_state4) &
-	inst_list(env5,mods,pre,csets3,ci_state4, inst_algorithm, alg')
+	inst_list(env5,mods,pre,csets3,ci_state4, inst_algorithm, alg',impl)
 	  => (dae4,_,csets4, ci_state5) &
-	inst_list(env5,mods,pre,csets4,ci_state5, inst_initialalgorithm, initalg')
+	inst_list(env5,mods,pre,csets4,ci_state5, inst_initialalgorithm, initalg',impl)
 	  => (dae5,_,csets5, ci_state6) &
 	list_append(dae1,dae2) => dae6 &
 	list_append(dae6,dae3) => dae7 &
@@ -736,7 +794,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
 	Env.open_scope(cenv,enc2,SOME(cn2)) => cenv'' &
 	Mod.lookup_modification_p(mods,cn) => m &
-	Mod.elab_mod(env,pre,mod) => mod' &
+	Mod.elab_mod(env,pre,mod,impl) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m,cenv'',pre) => mods' &
 	Mod.merge(mods',mod',cenv'',pre) => mods'' &
@@ -810,7 +868,7 @@ relation partial_inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
 	Env.open_scope(cenv,enc2,SOME(cn2)) => cenv'' &
 	Mod.lookup_modification_p(mods,cn) => m &
-	Mod.elab_mod(env,pre,mod) => mod' &
+	Mod.elab_mod(env,pre,mod,false(* FIXME: impl*)) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m,cenv'',pre) => mods' &
 	Mod.merge(mods',mod',cenv'',pre) => mods'' &
@@ -850,7 +908,7 @@ relation update_compelts_mods: (Env.Env, Prefix.Prefix, (SCode.Element*Types.Mod
   rule	Mod.unelab_mod(cmod) => umod &
 	get_cref_from_mod(umod) => crefs &
 	update_variables_in_env(cmod,crefs,env,ci_state,impl) => env2 &
-	Mod.update_mod(env2,pre,cmod) => cmod' &
+	Mod.update_mod(env2,pre,cmod,impl) => cmod' &
 	update_compelts_mods(env2,pre,xs,ci_state,impl) => (res,env3)
 	-------------------
 	update_compelts_mods(env,pre,(comp,cmod)::xs,ci_state,impl) 
@@ -1496,7 +1554,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*Debug.fprint("insttr", "updated variables in env\n") &*)
 	(* Update the untyped modifiers to typed ones, and extract class *)
 	(* and component modifiers again.*)
-	Mod.update_mod(env2,pre,mods) => mods' &
+	Mod.update_mod(env2,pre,mods,impl) => mods' &
 
 	(*Debug.fprint("insttr", "updated modifiers to typed ones: ") &
 	Debug.fcall("insttr", Mod.print_mod, mods') &
@@ -1507,7 +1565,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*Debug.fprintln ("insttr", "Elaborating current modifications\n env") &
 	Debug.fcall ("insttr", Env.print_env, env2)  &
 	Debug.fprintln ("insttr", "\n\n") &*)
-	Mod.elab_mod(env2,pre,m) => m' &
+	Mod.elab_mod(env2,pre,m,impl) => m' &
 	(*Debug.fcall ("insttr", Mod.print_mod, m') &*)
 
 	Mod.merge(classmod',mm',env2,pre) => mod &
@@ -1659,7 +1717,7 @@ relation redeclare_type: (Types.Mod,
   rule	n1=n2 &
 	get_cref_from_mod(mod) => crefs &
 	update_variables_in_env(Types.NOMOD (* m *),crefs,env,ci_state,impl) => env' &
-	Mod.elab_mod(env',pre,mod) => m' &
+	Mod.elab_mod(env',pre,mod,impl) => m' &
 	Mod.merge(rmod,m',env',pre) => m''
 	--------------------------------
 	redeclare_type ((m as Types.REDECL(_,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod,bc)),rmod)::rest)),
@@ -1711,7 +1769,7 @@ relation inst_var : (Env.Env,
 		     DimExp list, 
 		     int list,
 		     InstDims,
-		     bool)
+		     bool (*impl*) )
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
   rule	(* Variables of userdefined type, e.g. Point p => Real p[3]; *)
@@ -1720,22 +1778,18 @@ relation inst_var : (Env.Env,
 	 and call inst_var2 *)
 
 	(* Collect dimensions *)
-	get_usertype_dimensions(env,mod,pre,cl,inst_dims) => (dims' as _::_) &
+	get_usertype_dimensions(env,mod,pre,cl,inst_dims,impl) => (dims' as _::_) &
 	print_dims dims' &
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims',idxs,inst_dims,impl) 
 	  => (dae,csets',ty') &
-	  make_array_type(dims',ty') => ty 
-
-
-
+	  make_array_type(dims',ty') => ty
 	--------------------------
 	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,SCode.R_TYPE,_),attr,dims,idxs,inst_dims,impl)
           => (dae,csets',ty)
 	  
   rule	(* Generic case: fall trough *)
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl) 
-	  => (dae,csets',ty') 
-
+	  => (dae,csets',ty')
 	----------------------
 	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,_,_),attr,dims,idxs,inst_dims,impl)
           => (dae,csets',ty')
@@ -1830,7 +1884,7 @@ relation inst_var2 : (Env.Env,
 	
         Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
-	inst_mod_equation(cr,ty,mod) => dae2 &
+	inst_mod_equation(cr,ty,mod,impl) => dae2 &
         
         Util.list_map(idxs',int_string) => index_string &
 
@@ -1942,32 +1996,32 @@ relation make_array_type: (DimExp list, Types.Type)
 end
 
 relation get_usertype_dimensions:(Env.Env, Types.Mod, Prefix.Prefix, SCode.Class,
-				  InstDims)
+				  InstDims, bool (*impl*) )
 	  => (DimExp list) =
-  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Real",_,_,_,_),_) => []
-  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Integer",_,_,_,_),_) => []
-  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("String",_,_,_,_),_) => []
-  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Boolean",_,_,_,_),_) => []
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Real",_,_,_,_),_,_) => []
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Integer",_,_,_,_),_,_) => []
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("String",_,_,_,_),_,_) => []
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Boolean",_,_,_,_),_,_) => []
 	
   rule	Lookup.lookup_class(env,cn,true) => (cl,cenv) &
 	let owncref = Absyn.CREF_IDENT(id,[]) &
 	get_option_arraydim(ad) => ad' &
-	Mod.elab_mod(env,pre,mod) => mod' &
+	Mod.elab_mod(env,pre,mod,impl) => mod' &
 	Mod.merge(mods,mod',env,pre) => mods'' &
 	Mod.mod_equation mods'' => eq &
 	Mod.lookup_comp_modification(mods'',id) => mods''' &
-	get_usertype_dimensions(cenv,mods''',pre,cl,dims) => dim1 &
-	elab_arraydim(env,owncref,ad',eq,false,NONE) => dim2 &
+	get_usertype_dimensions(cenv,mods''',pre,cl,dims,impl) => dim1 &
+	elab_arraydim(env,owncref,ad',eq,impl,NONE) => dim2 &
 	list_append(dim2,dim1) => res
 	------------------------------
 	get_usertype_dimensions(env,mods,pre,
 				SCode.CLASS(id,_,_,SCode.R_TYPE,
-					    SCode.DERIVED(cn,ad,mod)),dims) 
+					    SCode.DERIVED(cn,ad,mod)),dims,impl) 
 	  => res
 
   rule	Debug.fprint("failtrace", "- get_usertype_dimensions failed\n")
 	--------------
-	get_usertype_dimensions(_,_,_,_,_) => fail
+	get_usertype_dimensions(_,_,_,_,_,_) => fail
 end
 
 relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
@@ -2133,7 +2187,7 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	update_variables_in_env(mods,crefs'',env,ci_state,impl) => env2 &
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
-	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
+	Mod.elab_mod(env2,Prefix.NOPRE,m,impl) => m' &
 
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
@@ -2141,7 +2195,7 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	Mod.merge(mod,m',env2,Prefix.NOPRE) => mod' &
 	Mod.merge(cmod,mod',env2,Prefix.NOPRE) => mod'' &
 
-	Mod.update_mod(env2,Prefix.NOPRE,mod'') => mod''' &
+	Mod.update_mod(env2,Prefix.NOPRE,mod'',impl) => mod''' &
 
 	Mod.mod_equation mod''' => eq &
 	
@@ -2194,7 +2248,7 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	update_variables_in_env(mods,crefs2,env2',ci_state,impl) => env2 &
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
-	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
+	Mod.elab_mod(env2,Prefix.NOPRE,m,impl) => m' &
 
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
@@ -2202,7 +2256,7 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	Mod.merge(mod,m',env2,Prefix.NOPRE) => mod' &
 	Mod.merge(cmod,mod',env2,Prefix.NOPRE) => mod'' &
 
-	Mod.update_mod(env2,Prefix.NOPRE,mod'') => mod''' &
+	Mod.update_mod(env2,Prefix.NOPRE,mod'',impl) => mod''' &
 	Mod.mod_equation mod''' => eq &
 
 	(** The variable declaration and the (optional) equation *)
@@ -2586,8 +2640,9 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	-------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(Absyn.CALL(Absyn.CREF_IDENT("size",_),Absyn.FUNCTIONARGS([Absyn.CREF(cr),_],_)))::ds,impl,st) => NONE::l
 
-  rule	Static.elab_exp(env, d,impl,st)
-	    => (e,Types.PROP((Types.T_INTEGER(_),_),_),_) &  
+  rule	Debug.fprintln("insttr", "elab_arraydim_decl5") &
+	Static.elab_exp(env, d,impl,st)
+	    => (e,Types.PROP((Types.T_INTEGER(_),_),cnst as true),_) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
@@ -2596,21 +2651,10 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	Ceval.ceval(env,e,impl,st,NONE) => (Values.INTEGER(i),_) &
  	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => SOME(DIMINT(i))::l
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl as false,st) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d,impl,st)
-	    => (e,Types.PROP((Types.T_INTEGER(_),_),true),_) &  
-	    (* _ Was true, but structural parameters must be given 
-	       the numerical value in order to instantiate successfully.
-	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
-	       It is NOT true for functions, or other implicit instantiated models. 
-	     *)
-	Ceval.ceval(env,e,impl,st,NONE) => (Values.INTEGER(i),_) &
- 	elab_arraydim_decl(env,cref,ds,impl,st) => l
-	-------------------------------------------
-	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
-
-  rule	Static.elab_exp(env, d,impl,st) => (e,Types.PROP((Types.T_INTEGER(_),_),false),_) &
+  rule	Debug.fprintln("insttr", "elab_arraydim_decl6") &
+	Static.elab_exp(env, d,impl,st) => (e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) &
 	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) 
@@ -2805,7 +2849,7 @@ end
  **)
 
 relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
-				   Connect.Sets, SCode.Class,InstDims, bool)
+				   Connect.Sets, SCode.Class,InstDims, bool (*packimpl*) )
 	  => (Env.Env, DAE.Element list) =
 
 (* LS:This rule extends the frame with the package as a type, but
@@ -2835,14 +2879,14 @@ correct?
 (* LS: removed prefix because function elements shouldn't have
    one. They will contain the elements locally *)
 
-  rule 	inst_class(env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
+  rule 	inst_class(env, mod, pre, csets, c, inst_dims, true (*impl*),INNER_CALL) 
  	  => (dae, _, csets', ty, st) &
  	Env.extend_frame_t(env, n, ty) => env' &
          package_prefix (env, Absyn.IDENT(n)) => fpath
  	--------------------------------------
  	implicit_instantiation(env, mod, pre, csets,
  			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
- 			       inst_dims, false)
+ 			       inst_dims, packimpl as false)
  	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
 
@@ -2853,15 +2897,15 @@ correct?
 	package_prefix (env, Absyn.IDENT(n)) => fpath &
 	let prot = false & 
 	inst_classdef (env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
-		       prot, inst_dims, true, false) 
+		       prot, inst_dims, true (*impl*), packimpl ) 
 	  =>(_, tempenv,_,_,_) &
 
-	inst_ext_decl(tempenv, n, parts) => extdecl
+	inst_ext_decl(tempenv, n, parts, true (*impl*) ) => extdecl
 	--------------------------------------
 	implicit_instantiation(env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
 			       parts as SCode.PARTS(els,_,_,_,_,_)),
-			       inst_dims, false)
+			       inst_dims, packimpl as false)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
 
 
@@ -2871,7 +2915,7 @@ correct?
 	Env.extend_frame_c(env,enumclass) => env'' 
 	-----------------------------------
 	implicit_instantiation(env, mod, pre, csets,
-			       c as SCode.CLASS(n,_,_,SCode.R_TYPE, SCode.ENUMERATION(l)),inst_dims,_)
+			       c as SCode.CLASS(n,_,_,SCode.R_TYPE, SCode.ENUMERATION(l)),inst_dims,packimpl)
 	=> (env'', [])
 
   axiom	implicit_instantiation(env, mod, pre, csets, c, _, _) => (env, [])
@@ -2908,7 +2952,7 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 	--------------------------------------
 	implicit_function_instantiation(env, mod, pre, csets,
 			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
-			       inst_dims, false)
+			       inst_dims, packimpl as false)
 	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
 
@@ -2919,24 +2963,23 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
         package_prefix (env, Absyn.IDENT(n)) => fpath &
         let prot = false & (* how to get this? *)
  	inst_classdef (env', mod, pre, csets, ClassInf.FUNCTION(n), parts, 
-		       restr, prot, inst_dims, true, false) 
+		       restr, prot, inst_dims, true (*impl*), packimpl) 
 	  =>(_, tempenv,_,_,_) &
-	inst_ext_decl(tempenv, n, parts) => extdecl 
+	inst_ext_decl(tempenv, n, parts, true (*impl*) ) => extdecl 
 	--------------------------------------
 	implicit_function_instantiation(env, mod, pre, csets,
 		       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
 			       parts as SCode.PARTS(els,_,_,_,_,_)),
-			       inst_dims, false)
+			       inst_dims, packimpl as false)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
 				
   rule        (* Overloaded functions *)
         inst_overloaded_functions(env,n,funcnames) => (env',daefuncs)
 	-----------------------------
          implicit_function_instantiation(env,mod,pre,csets,
-                              c as SCode.CLASS(n,_,_, restr as SCode.R_FUNCTION
-,
+                              c as SCode.CLASS(n,_,_, restr as SCode.R_FUNCTION,
                               SCode.OVERLOAD(funcnames)),
-                              inst_dims, false)
+                              inst_dims, packimpl as false)
          => (env', daefuncs)
 
   rule	(*Debug.fprint("failtrace", "#-- implicit_function_instantiation failed\n")*)
@@ -2988,30 +3031,30 @@ end
  ** void. 
  **)
 
-relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef) => DAE.ExternalDecl =
+relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef, bool (*impl*) ) => DAE.ExternalDecl =
 	
   rule	is_ext_explicit_call (extdecl) &
 	inst_ext_get_fname (extdecl, n) => fname &
-	inst_ext_get_fargs (env, extdecl) => fargs &
-	inst_ext_get_rettype (env, extdecl) => rettype &
+	inst_ext_get_fargs (env, extdecl,impl) => fargs &
+	inst_ext_get_rettype (env, extdecl,impl) => rettype &
 	inst_ext_get_lang (extdecl) => lang &
 	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang)
 	-------------------------------------
-	inst_ext_decl (env, n, SCode.PARTS(_,_,_,_,_,SOME(extdecl))) => daeextdecl
+	inst_ext_decl (env, n, SCode.PARTS(_,_,_,_,_,SOME(extdecl)),impl) => daeextdecl
 
   rule	not is_ext_explicit_call (orgextdecl) &
 	inst_ext_make_externaldecl (n, els, orgextdecl) => extdecl &
 	inst_ext_get_fname (extdecl, n) => fname &
-	inst_ext_get_fargs (env, extdecl) => fargs &
-	inst_ext_get_rettype (env, extdecl) => rettype &
+	inst_ext_get_fargs (env, extdecl,impl) => fargs &
+	inst_ext_get_rettype (env, extdecl, impl) => rettype &
 	inst_ext_get_lang (extdecl) => lang &
 	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang)
 	-------------------------------------
-	inst_ext_decl (env, n, SCode.PARTS(els,_,_,_,_,SOME(orgextdecl))) => daeextdecl
+	inst_ext_decl (env, n, SCode.PARTS(els,_,_,_,_,SOME(orgextdecl)),impl) => daeextdecl
 
   rule	Debug.fprint("failtrace",  "#-- inst_ext_decl failed" )
 	--------------------------
-	inst_ext_decl (env, _, _) => fail
+	inst_ext_decl (env, _, _, _) => fail
 end
 
 
@@ -3186,16 +3229,16 @@ relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbol
 	elab_exp_ext (env,exp,impl,st) => fail
 end
 
-relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg list =
+relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl, bool (*impl*) ) => DAE.ExtArg list =
 
-  rule	elab_exp_list_ext (env, absexps, false, NONE) => (exps,props,_) &
+  rule	elab_exp_list_ext (env, absexps, impl, NONE) => (exps,props,_) &
 	inst_ext_get_fargs2 (env, exps, props) => extargs	
 	---------------------------------------------------------
-	inst_ext_get_fargs (env, Absyn.EXTERNALDECL(id,lang,retcr,absexps)) => extargs
+	inst_ext_get_fargs (env, Absyn.EXTERNALDECL(id,lang,retcr,absexps),impl) => extargs
 
   rule	Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n")
 	-------------------------------------------------
-	inst_ext_get_fargs (_,_) => fail
+	inst_ext_get_fargs (_,_,impl) => fail
 	
 end
 
@@ -3240,18 +3283,18 @@ relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE
 end
 
 
-relation inst_ext_get_rettype : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg =
+relation inst_ext_get_rettype : (Env.Env, Absyn.ExternalDecl, bool (*impl*) ) => DAE.ExtArg =
 
-  axiom	inst_ext_get_rettype (_, Absyn.EXTERNALDECL(_,_,NONE,_)) => DAE.NOEXTARG
+  axiom	inst_ext_get_rettype (_, Absyn.EXTERNALDECL(_,_,NONE,_),_) => DAE.NOEXTARG
 
-  rule	Static.elab_cref (env,cref) => (exp,prop,acc) &
+  rule	Static.elab_cref (env,cref,impl) => (exp,prop,acc) &
 	inst_ext_get_fargs_single (env, exp,prop) => extarg
 	-----------------------------------------
-	inst_ext_get_rettype (env,Absyn.EXTERNALDECL(n,lang,SOME(cref),args)) => extarg
+	inst_ext_get_rettype (env,Absyn.EXTERNALDECL(n,lang,SOME(cref),args),impl) => extarg
 
   rule	Debug.fprint("failtrace", "#-- inst_ext_rettype failed\n")
 	--------------------------------------------------------
-	inst_ext_get_rettype (_,_) => fail
+	inst_ext_get_rettype (_,_,_) => fail
 
 end
 
@@ -3433,33 +3476,33 @@ end
  **)
 
 relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-			  SCode.Equation)
+			  SCode.Equation, bool (*impl*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
   rule	(* Equation inherited from base class *)
 	get_derived_env(env,bc) => env' &
-	inst_equation_common (env',mods,pre,csets,ci_state,eq,NON_INITIAL)
+	inst_equation_common (env',mods,pre,csets,ci_state,eq,NON_INITIAL,impl)
 	  => (dae,_,csets',ci_state')
 	----------------------------------------------------------
-	inst_equation (env,mods,pre,csets,ci_state,SCode.EQUATION(eq,bc))
+	inst_equation (env,mods,pre,csets,ci_state,SCode.EQUATION(eq,bc),impl)
 	  => (dae,env,csets',ci_state')
 
   rule	Debug.fprint("failtrace", "- inst_equation failed\n")
 	----------------------------------
-	inst_equation (_,_,_,_,_,_) => fail
+	inst_equation (_,_,_,_,_,_,impl) => fail
 
 end
 
 
 (* For EEquation, used in for loops and if-equations *)
 relation inst_e_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-			  SCode.EEquation)
+			  SCode.EEquation, bool (*impl*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
-  rule	inst_equation_common (env,mods,pre,csets,ci_state,eq,NON_INITIAL)
+  rule	inst_equation_common (env,mods,pre,csets,ci_state,eq,NON_INITIAL,impl)
 	  => (dae,_,csets',ci_state')
 	----------------------------------------------------------
-	inst_e_equation (env,mods,pre,csets,ci_state,eq)
+	inst_e_equation (env,mods,pre,csets,ci_state,eq,impl)
 	  => (dae,env,csets',ci_state')
 end
 
@@ -3469,32 +3512,32 @@ end
  **)
 
 relation inst_initialequation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-				 SCode.Equation)
+				 SCode.Equation, bool (*impl*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
   rule	(* Equation inherited from base class *)
 	get_derived_env(env,bc) => env' &
-	inst_equation_common (env',mods,pre,csets,ci_state,eq,INITIAL)
+	inst_equation_common (env',mods,pre,csets,ci_state,eq,INITIAL,impl)
 	  => (dae,_,csets',ci_state')
 	----------------------------------------------------------
-	inst_initialequation (env,mods,pre,csets,ci_state,SCode.EQUATION(eq,bc))
+	inst_initialequation (env,mods,pre,csets,ci_state,SCode.EQUATION(eq,bc),impl)
 	  => (dae,env,csets',ci_state')
 
   rule	Debug.fprint("failtrace", "- inst_initialequation failed\n")
 	----------------------------------
-	inst_initialequation (_,_,_,_,_,_) => fail
+	inst_initialequation (_,_,_,_,_,_,impl) => fail
 
 end
 
 (* For EEquation used in for loops and if equations *)
 relation inst_e_initialequation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-				 SCode.EEquation)
+				 SCode.EEquation, bool (*impl*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
-  rule	inst_equation_common (env,mods,pre,csets,ci_state,eq,INITIAL)
+  rule	inst_equation_common (env,mods,pre,csets,ci_state,eq,INITIAL,impl)
 	  => (dae,_,csets',ci_state')
 	----------------------------------------------------------
-	inst_e_initialequation (env,mods,pre,csets,ci_state,eq)
+	inst_e_initialequation (env,mods,pre,csets,ci_state,eq,impl)
 	  => (dae,env,csets',ci_state')
 end
 
@@ -3516,7 +3559,7 @@ end
  **)
 
 relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-				 SCode.EEquation, Initial)
+				 SCode.EEquation, Initial, bool (*impl*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
 	(**  connect
@@ -3524,12 +3567,12 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** Handle connct statements
 	 **)
 
-  rule	inst_connect(csets,env,pre,c1,c2) => (csets',dae) &
+  rule	inst_connect(csets,env,pre,c1,c2,impl) => (csets',dae) &
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 	------------------------------------------------------------
 	inst_equation_common(env,mods,pre, csets, ci_state, 
 			     SCode.EQ_CONNECT(c1,c2), 
-			     initial)
+			     initial,impl)
 	  => (dae,env,csets',ci_state')
 	  
 	(** The following rule handles shadowed (replaced) equations. *)
@@ -3542,7 +3585,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	------------------------------------------------------
 	inst_equation_common(env,mods,pre,csets,ci_state,
 			     SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2),
-			     initial)
+			     initial,impl)
 	  => ([],env,csets,ci_state')
 
   rule	(* 
@@ -3557,8 +3600,8 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 Returns the output parameters from the funktion.
 	*)
 
-	Static.elab_exp(env,e1,false,NONE) => (e1',prop1,c1) &
-	Static.elab_exp(env,e2,false,NONE) => (e2',prop2,c2) &
+	Static.elab_exp(env,e1,impl,NONE) => (e1',prop1,c1) &
+	Static.elab_exp(env,e2,impl,NONE) => (e2',prop2,c2) &
 
 	Prefix.prefix_exp(env,e1',pre) => e1'' &
 	Prefix.prefix_exp(env,e2',pre) => e2'' &
@@ -3571,12 +3614,12 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
  prefix_params (env, e2'') => e2''' & 
 *)
 	(*PR. Check that the lefthandside and the righthandside get along. *)
-	inst_eq_equation(e1'',prop1,e2'',prop2,initial) => dae &
+	inst_eq_equation(e1'',prop1,e2'',prop2,initial,impl) => dae &
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state' 
 	--------------------------------------------------------------
 	inst_equation_common(env, mods, pre, csets, ci_state,
 			     SCode.EQ_EQUALS(e1,e2), 
-			     initial)
+			     initial,impl)
 	  => (dae, env, csets, ci_state')
 
 	(**  `if' statements
@@ -3588,34 +3631,34 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
 
 	(* When the condition is constant evaluate it and select the correct branch *)
-  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
-	Ceval.ceval(env,e',false,NONE,NONE) => (Values.BOOL(cond),_) &
+  rule	Static.elab_exp(env,e,impl,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
+	Ceval.ceval(env,e',impl,NONE,NONE) => (Values.BOOL(cond),_) &
 	select(cond,tb,fb) => b &
-	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, b)
+	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, b,impl)
 	  => (dae,env',csets', ci_state')
 	--------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb),
-			     NON_INITIAL)
+			     NON_INITIAL,impl)
 	  => (dae,env',csets', ci_state')
 
-  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
-	Ceval.ceval(env,e',false,NONE,NONE) => (Values.BOOL(cond),_) &
+  rule	Static.elab_exp(env,e,impl,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
+	Ceval.ceval(env,e',impl,NONE,NONE) => (Values.BOOL(cond),_) &
 	select(cond,tb,fb) => b &
-	inst_list(env,mod,pre,csets,ci_state,inst_e_initialequation, b)
+	inst_list(env,mod,pre,csets,ci_state,inst_e_initialequation, b,impl)
 	  => (dae,env',csets', ci_state')
 	--------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb),
-			     INITIAL)
+			     INITIAL,impl)
 	  => (dae,env',csets', ci_state')
 
-  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),false),_) &
-	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, tb)
+  rule	Static.elab_exp(env,e,impl,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),false),_) &
+	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, tb,impl)
 	  => (dae1,env',_, ci_state') &  (* There are no connections inside if-clauses. *)
-	inst_list(env',mod,pre,csets,ci_state,inst_e_equation, fb)
+	inst_list(env',mod,pre,csets,ci_state,inst_e_equation, fb,impl)
 	  => (dae2,env'',_, ci_state'')
 	--------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb),
-			     NON_INITIAL)
+			     NON_INITIAL,impl)
 	=> ([DAE.IF_EQUATION(e',dae1,dae2)],env',csets, ci_state')
 
 
@@ -3625,22 +3668,22 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** conditional expression.
 	 **)
 
-rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
-	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el) => (dae1,env',_,_) &
-	inst_equation_common(env',mod,pre,csets,ci_state,SCode.EQ_WHEN(ee,eel,eex),initial) 
+rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
+	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el, impl) => (dae1,env',_,_) &
+	inst_equation_common(env',mod,pre,csets,ci_state,SCode.EQ_WHEN(ee,eel,eex),initial,impl) 
 	  => (dae2::_, env'',_,ci_state') &
          inst_equation_common_ci_trans (ci_state', initial) => ci_state''
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el, (ee,eel)::eex),   
-			     initial as NON_INITIAL)
+			     initial as NON_INITIAL,impl)
 	=> ([DAE.WHEN_EQUATION(e',dae1,SOME(dae2))], env'',csets, ci_state'')
 
-rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
-	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el) => (dae1,env',_,_) &
+rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
+	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el, impl) => (dae1,env',_,_) &
          inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el,[]),   
-			     initial as NON_INITIAL)
+			     initial as NON_INITIAL,impl)
 	  => ([DAE.WHEN_EQUATION(e',dae1,NONE)], env', csets, ci_state')
 
 (* seems unnecessary to handle when equations that are initial *) 
@@ -3656,7 +3699,7 @@ rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
 	(** FIXME: Why lookup after add_for_loop_scope ? **)
 
   rule	(*Debug.fprintln ("insttr", "inst_equation_common_eqfor_1") &*)
-	Static.elab_exp (env,e,false,NONE)
+	Static.elab_exp (env,e,impl,NONE)
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
 					   id_t),_),
 			     true),_) &
@@ -3670,14 +3713,14 @@ rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
 (*	Debug.fprintln ("insti", "loop variable looked up") &*)
 	
 	(* FIXME: Check bounds *)
-	Ceval.ceval (env,e',false,NONE,NONE) => (v,_) &
+	Ceval.ceval (env,e',impl,NONE,NONE) => (v,_) &
 (*	Debug.fprintln ("insti", "for expression evaluated") &*)
-	unroll(env',mod,pre,csets,ci_state,i,v,el,initial) => (dae, csets') &
+	unroll(env',mod,pre,csets,ci_state,i,v,el,initial,impl) => (dae, csets') &
 (*	Debug.fprintln ("insti", "for expression unrolled") &*)
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state' 
 (*	& Debug.fprintln ("insttr", "inst_equation_common_eqfor_1 succeeded")*)
 	-----------------------------------------------------------
-	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial,impl)
 	  => (dae, env,csets', ci_state')
 
   rule	(*Debug.fprintln ("insttr", "inst_equation_common_eqfor_2") &*)
@@ -3685,29 +3728,29 @@ rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
 	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
 	(*Debug.fprintln ("insti", "loop variable looked up") &*)
-	Static.elab_exp (env,e,false,NONE)
+	Static.elab_exp (env,e,impl,NONE)
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
 					   (Types.T_INTEGER(_),_)),_),
 			     false),_) &
 	Print.print_error_buf "# Error: Non-constant iteration bounds not supported\n" 
 	(*& Debug.fprintln ("insttr", "inst_equation_common_eqfor_2 succeeded")*)
 	-----------------------------------------------------------
-	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial,impl)
 	  => fail
 
-  rule	Static.elab_exp(env,e1,false,NONE) 
+  rule	Static.elab_exp(env,e1,impl,NONE) 
 	  => (e1', Types.PROP((Types.T_BOOL(_),_),_),_) &
-	Static.elab_exp(env,e2,false,NONE) 
+	Static.elab_exp(env,e2,impl,NONE) 
 	  => (e2', Types.PROP((Types.T_STRING(_),_),_),_)
 	-------------------------
-	inst_equation_common(env,mod,pre,csets,ci_state, SCode.EQ_ASSERT(e1,e2),initial)
+	inst_equation_common(env,mod,pre,csets,ci_state, SCode.EQ_ASSERT(e1,e2),initial,impl)
 	  => ([DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),
 				     [e1',e2'],false,false))], 
 	      env, csets, ci_state)
 
   rule	Debug.fprint("failtrace", "- inst_equation_common failed\n")
 	----------------------------------
-	inst_equation_common(_,_,_,_,_,_,_) => fail
+	inst_equation_common(_,_,_,_,_,_,_,impl) => fail
 end
 
 
@@ -3783,7 +3826,7 @@ end
  **)
 
 relation inst_eq_equation : (Exp.Exp, Types.Properties,
-			     Exp.Exp, Types.Properties, Initial) => DAE.Element list =
+			     Exp.Exp, Types.Properties, Initial, bool (*impl*) ) => DAE.Element list =
 	(*PR. e1= lefthandside, e2=righthandside
 	* This seem to be a strange relation. 
 	* wich rule is matched? or is both rules matched?
@@ -3802,7 +3845,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
-			 e2,p2 as Types.PROP(t2,_), initial)
+			 e2,p2 as Types.PROP(t2,_), initial,impl)
 	  => dae
 
 	(* If it fails then this rule is matched. *)
@@ -3813,7 +3856,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 (*	& Debug.print("\n Second rule complete. ") *)
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
-			 e2,p2 as Types.PROP(t2,_), initial)
+			 e2,p2 as Types.PROP(t2,_), initial,impl)
 	  => dae
 
 
@@ -3825,7 +3868,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	inst_eq_equation_2(e1', e2, t2, initial) => dae 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
-			 e2,p2 as Types.PROP_TUPLE(t2,_), initial)
+			 e2,p2 as Types.PROP_TUPLE(t2,_), initial,impl)
 	  => dae
 
 
@@ -3851,7 +3894,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 (*	& Debug.print("\n Second rule complete. ") *)
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
-			 e2,p2 as Types.PROP_TUPLE(t2,_), initial)
+			 e2,p2 as Types.PROP_TUPLE(t2,_), initial,impl)
 	  => dae
 
 	  (* An assignment to a varaible of T_ENUMERATION type is an explicit 
@@ -3861,13 +3904,13 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
 	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP((Types.T_ENUMERATION(_,_),_),_),
-	    e2,Types.PROP(t as (Types.T_ENUM,_),_), initial) => dae
+	    e2,Types.PROP(t as (Types.T_ENUM,_),_), initial,impl) => dae
 
   rule	(*Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &*)
 	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
 	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP((Types.T_ENUMERATION(_,_),_),_),
-	    e2,Types.PROP(t as (Types.T_ENUMERATION(_,_),_),_), initial) => dae
+	    e2,Types.PROP(t as (Types.T_ENUMERATION(_,_),_),_), initial,impl) => dae
 
 
   rule	(* Types.equivtypes(t1,t2) => false & *)
@@ -3884,7 +3927,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	Print.print_error_buf "\n"
 	----------
 	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2,Types.PROP(t2,_), initial) => fail
+			 e2,Types.PROP(t2,_), initial,impl) => fail
 
 
 (* PR To debug*)
@@ -3892,17 +3935,17 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
   rule	(*Debug.print("\ne1 is PROP and e2 is PROP_TUPLE.  ")*)
 	---------------------------------	
 	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2, Types.PROP_TUPLE(_,_), initial) => fail
+			 e2, Types.PROP_TUPLE(_,_), initial,impl) => fail
 
   rule	(*Debug.print("e2 is PROP")*)
 	---------------------------------
 	inst_eq_equation(e1,_,
-			 e2,Types.PROP(t2,_), initial) => fail
+			 e2,Types.PROP(t2,_), initial,impl) => fail
 
   rule	(*Debug.print("e1 is PROP")*)
 	---------------------------------
 	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2, _, initial) => fail
+			 e2, _, initial,impl) => fail
 
 
 
@@ -3910,7 +3953,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 (* No match. *)
   rule	Debug.fprint("failtrace", "\n No match in inst_eq_equation. ")
 	---------------------------------	
-	inst_eq_equation(_,_,_,_,_) => fail
+	inst_eq_equation(_,_,_,_,_,_) => fail
 
 end
 
@@ -4127,10 +4170,10 @@ end
  **)
 
 relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		   Ident, Values.Value, SCode.EEquation list, Initial)
+		   Ident, Values.Value, SCode.EEquation list, Initial, bool (*impl*) )
 	  => (DAE.Element list, Connect.Sets) =
 
-  axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_,_) => ([], csets)
+  axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_,_,_) => ([], csets)
 
   rule	Env.open_scope (env,false,SOME(for_scope_name)) => env' &
 	Env.extend_frame_v (env',
@@ -4141,13 +4184,14 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				      true,
 				      (Types.T_INTEGER([]),NONE),
 				      Types.VALBOUND(fst)),NONE,false) => env'' &
-	inst_list(env'',mods,pre,csets,ci_state,inst_e_equation, eqs)
+	inst_list(env'',mods,pre,csets,ci_state,inst_e_equation, eqs, impl)
 	  => (dae1,env''',csets', ci_state') &
-	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs, initial)
+	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs,
+		initial, impl)
 	  => (dae2, csets'') &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as NON_INITIAL)
+	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as NON_INITIAL,impl)
 	  => (dae, csets'')
 
   rule	Env.open_scope (env, false,SOME(for_scope_name)) => env' &
@@ -4159,20 +4203,21 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				      true,
 				      (Types.T_INTEGER([]),NONE),
 				      Types.VALBOUND(fst)),NONE,false) => env'' &
-	inst_list(env'',mods,pre,csets,ci_state,inst_e_initialequation, eqs)
+	inst_list(env'',mods,pre,csets,ci_state,inst_e_initialequation, eqs, impl)
 	  => (dae1,env''',csets', ci_state') &
-	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs, initial)
+	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs,
+		initial, impl)
 	  => (dae2, csets'') &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as INITIAL)
+	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as INITIAL, impl)
 	  => (dae, csets'')
 
   rule	Debug.fprint("failtrace",  "- unroll ") & 
 	Debug.fcall("failtrace", Values.print_val, v) &
 	Debug.fprint("failtrace", " failed\n")
 	-------------------------
-	unroll (_,_,_,_,_,_,v,_,_) => fail
+	unroll (_,_,_,_,_,_,v,_,_,_) => fail
 
 end
 
@@ -4185,20 +4230,20 @@ end
  **)
 
 relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			   SCode.Algorithm)
+			   SCode.Algorithm, bool (*impl*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
   rule	(* If algorithm is inherited, find base class environment*)
 	get_derived_env(env,bc) => env' &
-	inst_statements(env',statements) => statements'
+	inst_statements(env',statements,impl) => statements'
 	----------------------------------------------
-	inst_algorithm(env,_,_,csets,ci_state,SCode.ALGORITHM(statements,bc))
+	inst_algorithm(env,_,_,csets,ci_state,SCode.ALGORITHM(statements,bc),impl)
 	  => ([DAE.ALGORITHM(Algorithm.ALGORITHM(statements'))],
 	      env,csets,ci_state)
 
   rule	Debug.fprint("failtrace", "- inst_algorithm failed\n")
 	---------------------------------
-	inst_algorithm(_,_,_,_,_,_) => fail
+	inst_algorithm(_,_,_,_,_,_,_) => fail
 
 end
 
@@ -4211,19 +4256,19 @@ end
  **)
 
 relation inst_initialalgorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			   SCode.Algorithm)
+			   SCode.Algorithm, bool (*impl*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
   rule	get_derived_env(env,bc) => env' &
-	inst_statements(env,statements) => statements'
+	inst_statements(env,statements,impl) => statements'
 	----------------------------------------------
-	inst_initialalgorithm(env,_,_,csets,ci_state,SCode.ALGORITHM(statements,bc))
+	inst_initialalgorithm(env,_,_,csets,ci_state,SCode.ALGORITHM(statements,bc),impl)
 	  => ([DAE.INITIALALGORITHM(Algorithm.ALGORITHM(statements'))],
 	      env,csets,ci_state)
 
   rule	Debug.fprint("failtrace", "- inst_algorithm failed\n")
 	---------------------------------
-	inst_initialalgorithm(_,_,_,_,_,_) => fail
+	inst_initialalgorithm(_,_,_,_,_,_,_) => fail
 
 end
 
@@ -4232,30 +4277,30 @@ end
  ** This relation converts a list of algorithm statements.
  **)
 
-relation inst_statements : (Env, Absyn.Algorithm list)
+relation inst_statements : (Env, Absyn.Algorithm list, bool (*impl*) )
 	  => Algorithm.Statement list =
 
-  axiom	inst_statements(env,[]) => []
+  axiom	inst_statements(env,[],impl) => []
 
-  rule	inst_statement(env,x) => x' &
-	inst_statements(env,xs) => xs'
+  rule	inst_statement(env,x,impl) => x' &
+	inst_statements(env,xs,impl) => xs'
 	------------------------------
-	inst_statements(env,x::xs) => x'::xs'
+	inst_statements(env,x::xs,impl) => x'::xs'
 end
 
-relation inst_algorithmitems : (Env, Absyn.AlgorithmItem list)
+relation inst_algorithmitems : (Env, Absyn.AlgorithmItem list, bool (*impl*) )
 	  => Algorithm.Statement list =
 
-  axiom	inst_algorithmitems(env,[]) => []
+  axiom	inst_algorithmitems(env,[],impl) => []
 
-  rule	inst_statement(env,x) => x' &
-	inst_algorithmitems(env,xs) => xs'
+  rule	inst_statement(env,x,impl) => x' &
+	inst_algorithmitems(env,xs,impl) => xs'
 	------------------------------
-	inst_algorithmitems(env,Absyn.ALGORITHMITEM(x,_)::xs) => x'::xs'
+	inst_algorithmitems(env,Absyn.ALGORITHMITEM(x,_)::xs,impl) => x'::xs'
 
-  rule	inst_algorithmitems(env,xs) => xs'
+  rule	inst_algorithmitems(env,xs,impl) => xs'
 	------------------------------
-	inst_algorithmitems(env,Absyn.ALGORITHMITEMANN(_)::xs) => xs'
+	inst_algorithmitems(env,Absyn.ALGORITHMITEMANN(_)::xs,impl) => xs'
 
 end
 
@@ -4267,87 +4312,87 @@ end
  ** be used in the DAE output.
  **)
 
-relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
+relation inst_statement : (Env, Absyn.Algorithm, bool (*impl*) ) => Algorithm.Statement =
 
-  rule	Static.elab_cref (env,cr) => (Exp.CREF(ce,t), cprop, acc) &
-    Static.canon_cref (env,ce) => ce' & 
-	Static.elab_exp (env,e,false,NONE) => (e', eprop,_) &
+  rule	Static.elab_cref (env,cr,impl) => (Exp.CREF(ce,t), cprop, acc) &
+	Static.canon_cref (env,ce,impl) => ce' & 
+	Static.elab_exp (env,e,impl,NONE) => (e', eprop,_) &
 	Algorithm.make_assignment(Exp.CREF(ce',t),cprop,e',eprop,acc) => stmt
 	--------------------------------------------------------
-	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
+	inst_statement(env,Absyn.ALG_ASSIGN(cr,e),impl) => stmt
 
-  rule	Static.elab_cref (env,cr) => (ce, cprop, acc) &
-	Static.elab_exp (env,e,false,NONE) => (e', eprop,_) &
+  rule	Static.elab_cref (env,cr,impl) => (ce, cprop, acc) &
+	Static.elab_exp (env,e,impl,NONE) => (e', eprop,_) &
 	Algorithm.make_assignment(ce,cprop,e',eprop,acc) => stmt
 	--------------------------------------------------------
-	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
+	inst_statement(env,Absyn.ALG_ASSIGN(cr,e),impl) => stmt
 
-  rule	Static.elab_exp (env,e,false,NONE) => (e' as Exp.CALL(_,_,_,_), eprop, _) &
-	Static.elab_exp_list(env, expl, false, NONE) 
+  rule	Static.elab_exp (env,e,impl,NONE) => (e' as Exp.CALL(_,_,_,_), eprop, _) &
+	Static.elab_exp_list(env, expl, impl, NONE) 
 	  => (expl', cprops, _) &
 	Algorithm.make_tuple_assignment(expl',cprops,e',eprop) => stmt
 	--------------------------------------------------------
-	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e)) => stmt
+	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e),impl) => stmt
 
   rule	Print.print_error_buf "#Error, tuple assignment only allowed when rhs is function call.\n" 
 	--------------------------------------------------------
-	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e)) => fail
+	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e),impl) => fail
 
-  rule	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
-	inst_algorithmitems(env,tb) => tb' &
-	inst_elseifs(env,eib) => eib' &
-	inst_algorithmitems(env,fb) => fb' &
+  rule	Static.elab_exp(env,e,impl,NONE) => (e',prop,_) &
+	inst_algorithmitems(env,tb,impl) => tb' &
+	inst_elseifs(env,eib,impl) => eib' &
+	inst_algorithmitems(env,fb,impl) => fb' &
 	Algorithm.make_if(e',prop,tb',eib',fb') => stmt
 	--------------------------------------------
-	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
+	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb),impl) => stmt
 
-  rule	Static.elab_exp (env,e,false,NONE)  =>
+  rule	Static.elab_exp (env,e,impl,NONE)  =>
 	(e', prop as Types.PROP((Types.T_ARRAY(_,t),_),_),_) &
 	
 	add_for_loop_scope(env,i,t) => env' &
 	
-	inst_algorithmitems(env',sl) => sl' &
+	inst_algorithmitems(env',sl,impl) => sl' &
 	Algorithm.make_for(i,e',prop,sl') => stmt
 	---------------------------------------
-	inst_statement(env,Absyn.ALG_FOR(i,e,sl)) => stmt
+	inst_statement(env,Absyn.ALG_FOR(i,e,sl),impl) => stmt
 
-  rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
-	inst_algorithmitems(env,sl) => sl' &
+  rule	Static.elab_exp (env,e,impl,NONE) => (e',prop,_) &
+	inst_algorithmitems(env,sl,impl) => sl' &
 	Algorithm.make_while(e',prop,sl') => stmt
 	---------------------------------------
-	inst_statement(env,Absyn.ALG_WHILE(e,sl)) => stmt
+	inst_statement(env,Absyn.ALG_WHILE(e,sl),impl) => stmt
 
 
-  rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
-	inst_algorithmitems(env,sl) => sl' &
+  rule	Static.elab_exp (env,e,impl,NONE) => (e',prop,_) &
+	inst_algorithmitems(env,sl,impl) => sl' &
 	Algorithm.make_when_a(e',prop,sl') => stmt
 	(* TODO elsewhen *)
 	---------------------------------------
-	inst_statement(env,Absyn.ALG_WHEN_A(e,sl,el)) => stmt
+	inst_statement(env,Absyn.ALG_WHEN_A(e,sl,el),impl) => stmt
 
 (* 1.0
- rule	Static.elab_exp (env,e,false,NONE) => (e',prop,_) &
-	inst_algorithmitems(env,sl) => sl' &
+ rule	Static.elab_exp (env,e,impl,NONE) => (e',prop,_) &
+	inst_algorithmitems(env,sl,impl) => sl' &
 	Algorithm.make_when(e',prop,sl') => stmt
 	---------------------------------------
-	inst_statement(env,Absyn.ALG_WHEN(e,sl)) => stmt
+	inst_statement(env,Absyn.ALG_WHEN(e,sl),impl) => stmt
 *)
 
-  rule	Static.elab_exp (env,cond,false,NONE) 
+  rule	Static.elab_exp (env,cond,impl,NONE) 
 	  => (cond',cprop,_) &
-	Static.elab_exp (env,msg,false,NONE) 
+	Static.elab_exp (env,msg,impl,NONE) 
 	  => (msg',msgprop,_) &
 	Algorithm.make_assert(cond',msg',cprop,msgprop) => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),
-					       Absyn.FUNCTIONARGS([cond,msg],[])))
+					       Absyn.FUNCTIONARGS([cond,msg],[])),impl)
 	  => stmt
 
   rule  Debug.fprint("failtrace", "- inst_statement failed\n alg:") &
 	Debug.fcall("failtrace", Dump.print_algorithm, alg) &
 	Debug.fprint("failtrace", "\n") 
 	---------------------------------
-	inst_statement(env,alg) => fail
+	inst_statement(env,alg,impl) => fail
 end
 
 (** relation: inst_elseifs
@@ -4355,20 +4400,20 @@ end
  ** This relation helps `inst_statement' to handle `elseif' parts.
  **)
 
-relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.AlgorithmItem list) list)
+relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.AlgorithmItem list) list, bool (*impl*) )
 	=> (Exp.Exp * Types.Properties * Algorithm.Statement list) list =
 
-  axiom	inst_elseifs (env,[]) => []
+  axiom	inst_elseifs (env,[],impl) => []
 
-  rule	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
-	inst_algorithmitems(env,l) => stmts &
-	inst_elseifs(env,tail) => tail'
+  rule	Static.elab_exp(env,e,impl,NONE) => (e',prop,_) &
+	inst_algorithmitems(env,l,impl) => stmts &
+	inst_elseifs(env,tail,impl) => tail'
 	-------------------------------
-	inst_elseifs(env,(e,l)::tail) => ((e',prop,stmts)::tail')
+	inst_elseifs(env,(e,l)::tail,impl) => ((e',prop,stmts)::tail')
 
   rule	Debug.fprint("failtrace", "- inst_elseifs failed\n")
 	-------------------------------
-	inst_elseifs(_,_) => fail
+	inst_elseifs(_,_,_) => fail
 
 end
 
@@ -4380,13 +4425,13 @@ end
  **)
 
 relation inst_connect: (Connect.Sets, Env, Prefix,
-			Absyn.ComponentRef, Absyn.ComponentRef)
+			Absyn.ComponentRef, Absyn.ComponentRef, bool (*impl*) )
 	  => (Connect.Sets,DAE.Element list) =
 
-  rule	Static.elab_cref(env, c1) => (Exp.CREF(c1',t1),prop1,acc) &
-	Static.elab_cref(env, c2) => (Exp.CREF(c2',t2),prop2,acc) &
-	Static.canon_cref(env, c1') => c1'' &
-	Static.canon_cref(env, c2') => c2'' &
+  rule	Static.elab_cref(env, c1, impl) => (Exp.CREF(c1',t1),prop1,acc) &
+	Static.elab_cref(env, c2, impl) => (Exp.CREF(c2',t2),prop2,acc) &
+	Static.canon_cref(env, c1', impl) => c1'' &
+	Static.canon_cref(env, c2', impl) => c2'' &
 	Lookup.lookup_var_local(env,c1'')
 	  => (attr1 as Types.ATTR(flow1,_,_,_),ty1,_) &
 	Lookup.lookup_var(env,c2'') => (attr2,ty2,_) &
@@ -4399,11 +4444,11 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	connect_components(sets, env, pre, c1'', f1, ty1, c2'', f2, ty2, flow1)
 	  => (sets',dae)
 	---------------------------------
-	inst_connect(sets, env,pre,c1,c2) => (sets',dae)
+	inst_connect(sets, env,pre,c1,c2,impl) => (sets',dae)
 
   rule	Print.print_error_buf "# could not connect\n"
 	---------------------------------
-	inst_connect(sets,_,_,_,_) => fail
+	inst_connect(sets,_,_,_,_,impl) => fail
 
 end
 
@@ -4724,18 +4769,18 @@ end
 
 relation inst_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		       'a) => ('b list, Env, Connect.Sets, ClassInf.State),
-		      'a list)
+		       'a, bool (*impl*) ) => ('b list, Env, Connect.Sets, ClassInf.State),
+		      'a list, bool (*impl*) )
 	  => ('b list, Env, Connect.Sets, ClassInf.State) =
 
-  axiom inst_list(env,mod,pre,csets,ci_state,r,[]) => ([],env,csets,ci_state)
+  axiom inst_list(env,mod,pre,csets,ci_state,r,[],impl) => ([],env,csets,ci_state)
 
-  rule	r(env,mod,pre,csets,ci_state,e) => (l,env',csets',ci_state') &
-	inst_list(env',mod,pre,csets',ci_state',r,es)
+  rule	r(env,mod,pre,csets,ci_state,e,impl) => (l,env',csets',ci_state') &
+	inst_list(env',mod,pre,csets',ci_state',r,es,impl)
 	  => (l',env'',csets'',ci_state'') &
 	list_append(l,l') => l''
 	--------------------------------------------
-	inst_list(env,mod,pre,csets,ci_state,r,e::es)
+	inst_list(env,mod,pre,csets,ci_state,r,e::es,impl)
 	  => (l'',env'',csets'',ci_state'')
 
 end
@@ -4981,7 +5026,7 @@ end
  ** if such an equation exists.
  **)
 
-relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
+relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod, bool (*impl*) )
 	  => DAE.Element list =
 
 	  
@@ -4994,14 +5039,14 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
  => dae
 *)
 	inst_eq_equation(Exp.CREF(cr,t),
-			 Types.PROP(ty1,false(*FIXME*)), e,prop2,NON_INITIAL) => dae
+			 Types.PROP(ty1,false(*FIXME*)), e,prop2,NON_INITIAL,impl) => dae
 	-----------------------------------------------
-	inst_mod_equation(cr,ty1, mod as Types.MOD(_,_,SOME(Types.TYPED(e,prop2))))
+	inst_mod_equation(cr,ty1, mod as Types.MOD(_,_,SOME(Types.TYPED(e,prop2))),impl)
 	  => dae
 
-  axiom inst_mod_equation(_,_,Types.MOD(_,_,NONE)) => []
-  axiom inst_mod_equation(_,_,Types.NOMOD) => []
-  axiom	inst_mod_equation(_,_,Types.REDECL(_,_)) => []
+  axiom inst_mod_equation(_,_,Types.MOD(_,_,NONE),impl) => []
+  axiom inst_mod_equation(_,_,Types.NOMOD,impl) => []
+  axiom	inst_mod_equation(_,_,Types.REDECL(_,_),impl) => []
 
   rule	Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ") &
 	Debug.fcall("failtrace", Types.print_type, t) &
@@ -5011,7 +5056,7 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	Debug.fcall("failtrace", Mod.print_mod, m) &
 	Debug.fprint("failtrace", "\n") 
 	------------------------------------
-  	inst_mod_equation (c,t,m) => fail
+  	inst_mod_equation (c,t,m,impl) => fail
 
 end
 
@@ -5142,16 +5187,20 @@ axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), SOME(Types.TYPED(e,p
 end
 
 
-relation canon_cref_list : (Env, Exp.Exp list) => Exp.Exp list =
+(* Not used anywhere
 
-  axiom	canon_cref_list (_, []) => []
+relation canon_cref_list : (Env, Exp.Exp list, bool (*impl*) ) => Exp.Exp list =
 
-  rule	canon_cref_list (env, rest) => elist &
-	Static.canon_cref (env, cr) => cr'
+  axiom	canon_cref_list (_, [], impl) => []
+
+  rule	canon_cref_list (env, rest, impl) => elist &
+	Static.canon_cref (env, cr, impl) => cr'
 	---------------------------------
-	canon_cref_list (env, Exp.CREF(cr,t)::rest) => Exp.CREF(cr',t)::elist
+	canon_cref_list (env, Exp.CREF(cr,t)::rest,impl) => Exp.CREF(cr',t)::elist
 
 end
+
+*)
 
 (** LS:
  ** This rule goes through the elements and for each variable, searches the rest
@@ -5239,18 +5288,18 @@ end
  ** This relation takes an Env and an Element and builds a input argument to a record constructor.
    ** E.g if the element is Real x; the resulting Var is "input Real x;"
 **)
-relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
+relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
 	Types.Var =
 	  
   rule	(*Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &*)
 	Lookup.lookup_class(env,t,true) => (cl,cenv) &
 	(*Debug.fprint ("recconst", "looked up class\n") &*)
-	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
+	Mod.elab_mod(env,Prefix.NOPRE,mod,impl) => mod' &
 	let owncref = Absyn.CREF_IDENT(id,[]) &
 	elab_arraydim(env,owncref,dim,NONE,true,NONE) => dimexp &
 	(*Debug.fprint ("recconst", "calling inst_var\n") &*)
 	inst_var(cenv, ClassInf.FUNCTION(""),mod', Prefix.NOPRE, [], id, cl, attr,
-		 dimexp, [], [], false) => (_, _, tp') &
+		 dimexp, [], [], false (*impl*) ) => (_, _, tp') &
 	(*Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &
@@ -5261,12 +5310,12 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	inst_record_constructor_elt (env,
 				     SCode.COMPONENT(id,_,repl,prot,
 						     attr as
-						     SCode.ATTR(dim,f,acc,var,dir),t,mod,bc)) 
+						     SCode.ATTR(dim,f,acc,var,dir),t,mod,bc),impl) 
 	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp',bind)
 
   rule	Debug.fprint("failtrace", "- inst_record_constructor_elt failed.\n")
 	---------------------------------------
-	inst_record_constructor_elt(env,elt) => fail
+	inst_record_constructor_elt(env,elt,impl) => fail
 end
 
 relation is_top_call: CallingScope => bool =

@@ -90,7 +90,7 @@ clean:
 	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG) *~
 
 reallyclean: clean
-	$(RM) $(SRCSIG) $(ALLRML)
+	$(RM) $(ALLRML) $(ALLRML:.rml=.sig)  $(SRCRDB)
 
 # don't remove these files after intermediate build steps
 .PRECIOUS: Makefile $(ALLRML)

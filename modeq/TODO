@@ -153,6 +153,17 @@ List of things to implement:
 	- Only top level functions are checked in DAE.get_named_function
 	- External functions in DAE.get_named_function ? 
 
+	- inst_record_constructor_elt uses impl=false for inst_var, but
+	  build_record_constructor_varlst uses impl=true for inst_class. How should this be?
+	  Added impl argument for inst_record_constructor_elt. Needed
+	  for elab_mod. Lookup calls with true. 
+
+	- What should partial instantiation use? Putting impl=false for now.
+
+	- equation_funcall8 doesn't work: translation error.
+	- equation_funcall9 doesn't work: function generation of test3
+	- equation_funcall10 doesn't work: function generation of test3
+
 
 Specific adaptions:
 

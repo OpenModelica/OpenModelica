@@ -1,7 +1,6 @@
 function test2
-  input Integer n;
-  input Real a[n];
-  output Real b[n];
+  input Real a[:];
+  output Real b[size(a,1)];
 algorithm
   for i in 1:size(a,1) loop
     b[i] := a[i]*2;

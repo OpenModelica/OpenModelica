@@ -172,6 +172,9 @@ module SCode :
   relation count_parts: Class => int
   relation component_names: Class => string list	  
   relation is_parameter_or_const: Variability => bool
+  relation is_function : Class => bool
+  relation class_name : Class => string
+
 end
 
 
@@ -967,4 +970,19 @@ relation component_names_from_elts:(Element list) => string list =
   rule	component_names_from_elts(rest) => res 
 	--------------------------------------
 	component_names_from_elts(COMPONENT(id,_,_,_,_,_,_,_)::rest) => id::res
+end
+
+relation is_function : Class => bool =
+
+  axiom	is_function CLASS(n,_,_,R_FUNCTION,def) => true
+  axiom	is_function CLASS(n,_,_,R_EXT_FUNCTION,def) => true
+  axiom	is_function _ => false
+
+end
+
+relation class_name : Class => string =
+
+  axiom	class_name CLASS(n,_,_,_,_) => n
+  axiom	class_name _ => "Not a class"
+
 end

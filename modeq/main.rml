@@ -286,6 +286,38 @@ relation transform_if_flat: (string, DAE.DAElist) => DAE.DAElist =
 
 end
 
+relation is_not_function : SCode.Class => bool =
+
+  rule	SCode.is_function cls => res &
+	bool_not(res) => res
+	------------------------------
+	is_not_function cls => res
+
+end
+
+relation remove_functions : SCode.Program => SCode.Program =
+
+  rule	Util.list_select (classes, is_not_function) => classes'
+	------------------------------------------------------
+	remove_functions classes => classes'
+
+  rule	print "#-- remove_functions failed"
+	--------------------------------------
+	remove_functions _ => fail
+
+end
+
+relation keep_only_functions : SCode.Program => SCode.Program =
+
+  rule	Util.list_select (classes, SCode.is_function) => classes'
+	------------------------------------------------------
+	keep_only_functions classes => classes'
+
+  rule	print "#-- keep_only_functions failed"
+	--------------------------------------
+	keep_only_functions _ => fail
+
+end	
 
 (** relation: translate_file
  **
@@ -320,14 +352,33 @@ relation translate_file : string list => () =
 
 (*	 & Dump.dump p' *)
 
+(*	& Debug.fprint ("info", "---Removing functions\n")
+	& remove_functions p' => pnofunc'
+	& Debug.fprint ("info", "---Removed functions\n---Filtering functions\n")
+	& keep_only_functions p' => pfunc'
+	& Debug.fprint ("info", "---Filtered functions\n")
+	& Debug.fprint ("info", "---instantiating\n")
+*)
+	& Debug.fprint ("info", "\n------------------------------------------------------------ \n")
 	& Debug.fprint ("info", "---instantiating\n")
 	& Inst.instantiate(p') => d'
+	& Debug.fprint ("beforefixmodout", "Explicit part:\n")
 	& Debug.fcall ("beforefixmodout", DAE.dump_debug, d')
-	& fix_modelica_output (d') => d
+(*	& Inst.instantiate_implicit(pfunc') => dimpl'
+	& Debug.fprint ("beforefixmodout", "Implicit part:\n")
+	& Debug.fcall ("beforefixmodout", DAE.dump_debug, dimpl')
+*)	& fix_modelica_output (d') => d
+(*	& fix_modelica_output (dimpl') => dimpl
+*)
 (* & Debug.	print "\nJust instantiated" *)
+	& Print.clear_buf()
 	& Debug.fprint ("info", "---dumping\n")
 	& Debug.fcallret ("flatmodelica", DAE.dump_str, d, "") => s
 	& Debug.fcall ("flatmodelica", Print.print_buf, s)
+(*
+	& Debug.fprint ("flatmodelica", "Implicit:\n")
+	& Debug.fcall ("flatmodelica", DAE.dump, dimpl)
+*)
 	& Debug.fcallret ("none", DAE.dump_str, d, "") => s
 	& Debug.fcall ("none", Print.print_buf, s)
 	& Debug.fcall ("daedump", DAE.dump, d)
@@ -335,13 +386,16 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	(*& ModUtil.string_prefix_params d => d'*)
-	& Debug.fcall ("codegen", Codegen.generate_functions, d) 
+	(* & Debug.fcall ("codegen", Codegen.generate_functions, d)  *)
 	& Absyn.last_classname(p) => cname
-	& optimize_dae(d,cname)
+(*	& optimize_dae(d, dimpl, cname)
+*)
+
 	& Print.get_string () => str
 	& RTOpts.silent() => silent 
 	& bool_not(silent) => notsilent
 	& Debug.bcall(notsilent,print, str)
+	& optimize_dae(d, d, cname)
 	------------------------------
 	translate_file [f]
 
@@ -407,7 +461,7 @@ relation run_backend_q: () => bool =
 end
 
 (* Used for both parallization and for normal execution.*)
-relation optimize_dae: (DAE.DAElist, Absyn.Path) => () =
+relation optimize_dae: (DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 
   rule	run_backend_q() => true
 	& DAELow.lower(dae) => dlow 
@@ -423,13 +477,13 @@ relation optimize_dae: (DAE.DAElist, Absyn.Path) => () =
 	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
 	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
 	& modpar(dlow',v1,v2,comps) 
-	& simcodegen(classname,dae,dlow',v1,v2,m,mT,comps)
-	& DAELow.dump_components(comps) 
+	& simcodegen(classname,daeimpl,dlow',v1,v2,m,mT,comps)
+(*	& DAELow.dump_components(comps) *)
 	-----------------------
-	optimize_dae(dae,classname) => ()
+	optimize_dae(dae,daeimpl,classname) => ()
 
 	(* If not running backend. *)
-  axiom	optimize_dae(_,_) => ()
+  axiom	optimize_dae(_,_,_) => ()
 end
 
 (*  The automatic paralellzation module.*)
@@ -491,7 +545,6 @@ relation simcodegen: (Absyn.Path, (* classname *)
   rule	RTOpts.simulation_cg() => true &
 	DAELow.translate_dae (dlow) => indexed_dlow &
 	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
-	print "Generating simulation code for " &
 	Absyn.path_string(classname) => cname_str &
 	print cname_str & print "\n" &
 	Util.string_append_list([cname_str,".cpp"]) => filename &
@@ -558,7 +611,7 @@ end
 relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
 
   rule	Corba.wait_for_command() => str &
-    Print.clear_buf & 
+	Print.clear_buf & 
 	handle_command (str,isymb)  => (true,replystr,newsymb) &
 	Corba.sendreply(replystr) &
 	server_loop_corba (newsymb) => ressymb

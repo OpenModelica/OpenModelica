@@ -115,6 +115,7 @@ module Util :
   relation make_option: 'a => 'a option
 
   relation option_to_list: 'a option => 'a list
+  relation flatten_option: ('a option, 'a) => 'a
 
   relation list_split : ('a list, int) => ('a list, 'a list)
 
@@ -1230,5 +1231,16 @@ relation option_to_list: 'a option => 'a list =
 
   axiom	option_to_list NONE => []
   axiom	option_to_list SOME(e) => [e]
+
+end
+
+(** relation: flatten_option
+ ** Returns the second argument if NONE and
+ ** the contents of SOME if SOME
+ **)
+relation flatten_option: ('a option, 'a) => 'a =
+
+  axiom	flatten_option (NONE,n) => n
+  axiom	flatten_option (SOME(c),n) => c
 
 end

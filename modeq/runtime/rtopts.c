@@ -114,8 +114,12 @@ int check_debug_flag(char const* strdata)
       break;
     }
   }
-  if (flg==1 && debug_flag_info==1)
-    fprintf(stdout, "--------- %s ---------\n", strdata);	
+  if (debug_flag_info == 1) {
+    if (flg==1)
+      fprintf(stdout, "--------- %s = 1 ---------\n", strdata);	
+    else
+      fprintf(stdout, "--------- %s = 0 ---------\n", strdata);	
+  }
 
   return flg;
 }
@@ -163,9 +167,14 @@ RML_BEGIN_LABEL(RTOpts__args)
 	silent = 1;
 	break;
       case 'd':
+	if (arg[2]=='d') {
+	  debug_flag_info = 1;
+	  break;
+	}
 	if (arg[2]!='=' ||
 	    set_debug_flags(&(arg[3])) != 0) {
 	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...") ;
+	  fprintf(stderr, "#              +dd for debug flag info");
 	  RML_TAILCALLK(rmlFC);
 	}
 	break;

@@ -57,11 +57,11 @@ module Ceval :
 		    Interactive.InteractiveSymbolTable option, int option (* dimensions *) )
 	    => (Values.Value, Interactive.InteractiveSymbolTable option)
 
-  relation ceval_list : (Env.Env, Exp.Exp list, bool,
+  relation ceval_list : (Env.Env, Exp.Exp list, bool (*impl*),
 			 Interactive.InteractiveSymbolTable option) 
 	  => Values.Value list
 
-  relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list)
+  relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list, bool (*impl*) )
 	  => Exp.Subscript list
 
 end
@@ -102,7 +102,9 @@ with "classloader.rml"
  **
  ** The last argument is an optional dimension.
  **)
-relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option, int option) 
+relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
+		  Interactive.InteractiveSymbolTable option, 
+		  int option) 
 	    => (Values.Value, Interactive.InteractiveSymbolTable option) =
 
   axiom	ceval (_,Exp.ICONST(x),_,st,_) => (Values.INTEGER(x),st)
@@ -137,13 +139,13 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	------------------------------
 	ceval (env,Exp.ARRAY(_,_,es),impl,st,_) => (Values.ARRAY(es'),st)
 
-  rule	ceval_matrixelt(env,expll) => elts
+  rule	ceval_matrixelt(env,expll,impl) => elts
 	------------------------------
-	ceval (env, Exp.MATRIX(_,_,expll),_,st,_) => (Values.ARRAY(elts),st)
+	ceval (env, Exp.MATRIX(_,_,expll),impl,st,_) => (Values.ARRAY(elts),st)
 
-  rule	ceval_cref (env,c) => v
+  rule	ceval_cref (env,c,impl) => v
 	---------------------------
-	ceval (env,Exp.CREF(c,_),_,st,_) => (v,st) 
+	ceval (env,Exp.CREF(c,_),impl,st,_) => (v,st) 
 
   rule	ceval_builtin_size(env,cref,dim,impl,st) => (v,st)
 	-----------------------------------------
@@ -270,29 +272,29 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(_,_,_,_),false,NONE,_) => fail
+	ceval (env, e as Exp.CALL(_,_,_,_),impl as false,NONE,_) => fail
 *)
 
   rule	(* Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
 	   Exp.print_exp e & Print.print_buf "\n" *)
 	-------------------------------------------
-	ceval(env, e as Exp.CALL(_,_,_,_),true,NONE,_) => fail
+	ceval(env, e as Exp.CALL(_,_,_,_),impl as true,NONE,_) => fail
 
   rule	ceval_interactive_functions(env,e,st) => (value,st)
 	-------------------------------------
-	ceval (env, e as Exp.CALL(_,_,_,_),true, SOME(st),_) => (value,SOME(st))
+	ceval (env, e as Exp.CALL(_,_,_,_),impl as true, SOME(st),_) => (value,SOME(st))
 
   rule	(* Call of record constructors, etc., i.e. functions that can be 
 	   constant propagated. *)
-	ceval_list(env,expl,true,st) => vallst &
-	ceval_function(env,func,vallst) => newval
+	ceval_list(env,expl,impl,st) => vallst &
+	ceval_function(env,func,vallst,impl) => newval
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(_),_) 
+	ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(_),_) 
 	  => (newval,st)
 
   rule	(* Call externally implemented functions. *) 
 	Static.is_function_in_cflist(cflist,func) => true &
-	ceval_list(env,expl,true,st) => vallst &
+	ceval_list(env,expl,impl,st) => vallst &
 	ModUtil.path_string2(func,"_") => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
@@ -300,7 +302,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	System.execute_function(funcstr) &
 	System.read_values_from_file(outfilename) => newval
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist)),_) => (newval,st)
+	ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist)),_) => (newval,st)
 
 	(** Strings **)
 	
@@ -596,7 +598,7 @@ end
  ** For constant evaluation of functions returning a single value. For now only
  ** record constructors.
  **)
-relation ceval_function: (Env.Env, Absyn.Path, Values.Value list) 
+relation ceval_function: (Env.Env, Absyn.Path, Values.Value list, bool (*impl*) ) 
 	  => Values.Value =
 
 	(* For record constructors *)
@@ -604,13 +606,13 @@ relation ceval_function: (Env.Env, Absyn.Path, Values.Value list)
 	Lookup.lookup_class(env,funcname,false) => (c,env') &
 	SCode.component_names(c) => compnames &
 	Types.values_to_mods(vallst,compnames) => mod &
-	Inst.inst_class(env',mod,Prefix.NOPRE,[],c,[],false,Inst.TOP_CALL)
+	Inst.inst_class(env',mod,Prefix.NOPRE,[],c,[],impl,Inst.TOP_CALL)
 	  => (dae,_,_,_,_) &
 	DAE.dump_elements dae &
 	Print.get_string => s & print s & print "\n" &
-	DAE.dae_to_record_value(dae) => value  
+	DAE.dae_to_record_value(dae,impl) => value  
 	----------------------
-	ceval_function(env,funcname,vallst) => value
+	ceval_function(env,funcname,vallst,impl) => value
 
 end
 
@@ -626,7 +628,7 @@ end
  **          2 + 5 * ( x + Eval(y) )  =>   2 + 5 * ( x + 1 + x )
  **)
 relation ceval_ast_exp: (Env.Env, Absyn.Exp, 
-			 bool, Interactive.InteractiveSymbolTable option)
+			 bool (*impl*), Interactive.InteractiveSymbolTable option)
 	=> Absyn.Exp =
 
   axiom	ceval_ast_exp (_,e as Absyn.INTEGER(_),_,_) => e
@@ -718,7 +720,7 @@ end
  ** List version of ceval_ast_exp
  **)
 relation ceval_ast_exp_list: (Env.Env, Absyn.Exp list, 
-			      bool, Interactive.InteractiveSymbolTable option) 
+			      bool (*impl*) , Interactive.InteractiveSymbolTable option) 
 	  => (Absyn.Exp list) =
   axiom	ceval_ast_exp_list (env, [],_,_) => []
 
@@ -733,7 +735,7 @@ end
  ** 
  **)
 relation ceval_ast_exp_list_list: (Env.Env, Absyn.Exp list list, 
-			  bool, Interactive.InteractiveSymbolTable option)
+			  bool (*impl*), Interactive.InteractiveSymbolTable option)
 	  => (Absyn.Exp list list) =
 
   axiom	ceval_ast_exp_list_list(env, [], _,_) => []
@@ -770,7 +772,7 @@ end
  **
  **)
 relation ceval_ast_elt: (Env.Env, Absyn.Element, 
-			 bool, Interactive.InteractiveSymbolTable option)
+			 bool (*impl*), Interactive.InteractiveSymbolTable option)
 	  => (Absyn.Element) =
 
   rule	ceval_ast_citems(env,citems,impl,st) => citems'
@@ -784,7 +786,7 @@ end
  **
  **)
 relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list, 
-			 bool, Interactive.InteractiveSymbolTable option)
+			 bool (*impl*), Interactive.InteractiveSymbolTable option)
 	      => Absyn.ComponentItem list =
   axiom	ceval_ast_citems(_,[],_,_) => []
 
@@ -806,7 +808,7 @@ end
  **
  **)
 relation ceval_ast_modopt: (Env.Env, Absyn.Modification option,
-			    bool, Interactive.InteractiveSymbolTable option)
+			    bool (*impl*), Interactive.InteractiveSymbolTable option)
 	  => Absyn.Modification option	=
 
   rule	ceval_ast_modification(env,mod,st,impl) => res
@@ -823,7 +825,7 @@ end
  ** the Eval operator with the value of the variable if it has a type "Expression"
  **)
 relation ceval_ast_modification: (Env.Env, Absyn.Modification, 
-				  bool, Interactive.InteractiveSymbolTable option)
+				  bool (*impl*), Interactive.InteractiveSymbolTable option)
 	  => (Absyn.Modification) =
 
   rule	ceval_ast_exp(env,e,impl,st) => e' &
@@ -860,7 +862,7 @@ relation ceval_ast_eltargs: (Env.Env, Absyn.ElementArg list,
 end
 
 relation ceval_ast_arraydim: (Env.Env, Absyn.ArrayDim, 
-			      bool, Interactive.InteractiveSymbolTable option)
+			      bool (*impl*), Interactive.InteractiveSymbolTable option)
 	=> (Absyn.ArrayDim) =
   axiom	ceval_ast_arraydim (env,[],_,_) => []
 
@@ -1391,24 +1393,24 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 	  => (v, Interactive.SYMBOLTABLE(p,sp,ic',vars,cf)) 
 end 
 
-relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list) => Values.Value list =
+relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list, bool (*impl*) ) => Values.Value list =
 
-  rule	ceval_matrixeltrow(env,expl) => v &
-	ceval_matrixelt(env,expll) => vl
+  rule	ceval_matrixeltrow(env,expl,impl) => v &
+	ceval_matrixelt(env,expll,impl) => vl
 	---------------------------
-	ceval_matrixelt(env,expl::expll) => v::vl
+	ceval_matrixelt(env,expl::expll,impl) => v::vl
 	
-  axiom	ceval_matrixelt(_,[]) => []
+  axiom	ceval_matrixelt(_,[],_) => []
 end
 
-relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list ) => Values.Value =
+relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list, bool (*impl*) ) => Values.Value =
 	
-  rule	ceval (env,e,false,NONE,NONE) => (res,_) &
-	ceval_matrixeltrow(env,rest) => Values.ARRAY(resl)
+  rule	ceval (env,e,impl,NONE,NONE) => (res,_) &
+	ceval_matrixeltrow(env,rest,impl) => Values.ARRAY(resl)
 	-------------------
-	ceval_matrixeltrow(env, (e,_)::rest) => Values.ARRAY(res::resl)
+	ceval_matrixeltrow(env, (e,_)::rest,impl) => Values.ARRAY(res::resl)
 	
-  axiom	 ceval_matrixeltrow(env,[]) => Values.ARRAY([])
+  axiom	 ceval_matrixeltrow(env,[],_) => Values.ARRAY([])
 
 end
 
@@ -2067,7 +2069,7 @@ end
 		      
 (**)
 
-relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
+relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) ) => Values.Value =
 
 (* Uncomment this when struct params work *)
 (*  rule	(* Parameters should not be evaluated. Exception: structural parameters *)
@@ -2075,84 +2077,93 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
  -------------------------------------
  ceval_cref (env,c) => fail *)
 
+(* FIXME: For now, we don't try to check binding if implicit instantiation *)
+
+  rule	Debug.fprintln("ceval", "ceval_cref: Skipping ceval_cref_binding because implicit inst")
+	----------------------------------------------------------------------------
+	ceval_cref (env,c,impl as true) => fail
+
+
   rule	Lookup.lookup_var (env, c) => (_,_,binding) &
-	ceval_cref_binding (env,c,binding) => v
+	ceval_cref_binding (env,c,binding,impl) => v
 	-------------------------------------
-	ceval_cref (env,c) => v
+	ceval_cref (env,c,impl as false) => v
 
 	(* default *)
-
-  rule	print "# No constant binding for " &
-	Exp.print_component_ref_str c => str & print str &  print "\n" 
-	-------------------------------------
-	ceval_cref (env,c) => fail
 
   rule	Print.print_error_buf "# No constant binding for " &
 	Exp.print_component_ref_str c => str &
 	Print.print_error_buf str & Print.print_error_buf "\n"
 	-------------------------------------
-	ceval_cref (_,c) => fail
+	ceval_cref (_,c,impl as false ) => fail
 
 end
 
-relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding) => Values.Value =
+relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*impl*) ) => Values.Value =
+
+(* FIXME: For now, we don't try to check binding if implicit instantiation *)
+
+  rule	Debug.fprintln("ceval", "ceval_cref_binding: shouldn't have been called.") &
+	Debug.fprintln("ceval", "Skipping because implicit inst")
+	----------------------------------------------------------------------------
+	ceval_cref_binding (_,_,_,impl as true ) => fail
 
   rule  Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
 	Types.get_dimension_sizes(tp) => sizelst &
-	ceval_subscript_value(env,subsc,v, sizelst) => res
+	ceval_subscript_value(env,subsc,v, sizelst,impl) => res
 	-----------------------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v))
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl as false)
 	  => res
 
   rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
-	ceval_cref_binding (env,_,Types.UNBOUND) => fail
+	ceval_cref_binding (env,_,Types.UNBOUND,impl as false) => fail
 	
 
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
 	rfn = "array" &
 	Print.print_buf "#-- ceval_cref_binding Array evaluation\n"
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true))
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl as false)
 	  => fail
 
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
 	not rfn = "array" &
 	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
 	Types.get_dimension_sizes(tp) => sizelst &
-	ceval (env,exp,false,NONE,NONE) => (v,_) &
-	ceval_subscript_value (env,subsc,v,sizelst) => res
+	ceval (env,exp,impl,NONE,NONE) => (v,_) &
+	ceval_subscript_value (env,subsc,v,sizelst,impl) => res
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true))
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl as false)
 	  => res
 
   rule	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
 	Types.get_dimension_sizes(tp) => sizelst &
-	ceval (env,exp,false,NONE,NONE) => (v,_) &
-	ceval_subscript_value(env,subsc,v,sizelst) => res
+	ceval (env,exp,impl,NONE,NONE) => (v,_) &
+	ceval_subscript_value(env,subsc,v,sizelst,impl) => res
 	------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true)) 
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl as false) 
 	  => res
 
   rule	Print.print_buf "- ceval_cref__binding failed (nonconstant EQBOUND(" &
 	Exp.print_exp exp & Print.print_buf ")\n"
 	--------------------------------
-	ceval_cref_binding (env,_,Types.EQBOUND(exp,false)) => fail
+	ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl as false) => fail
 	
 end
 
-relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value, int list) 
+relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value, int list, bool (*impl*) ) 
 	  => Values.Value =
 
-  rule	ceval(env,exp,false,NONE,SOME(dim)) => (Values.INTEGER(n),_) &
+  rule	ceval(env,exp,impl,NONE,SOME(dim)) => (Values.INTEGER(n),_) &
 	int_sub(n,1) => n' &
 	list_nth(lst,n') => subval &
-	ceval_subscript_value(env,subs,subval,dims) => res
+	ceval_subscript_value(env,subs,subval,dims,impl) => res
 	---------------------------------------------
-	ceval_subscript_value(env,Exp.INDEX(exp)::subs,Values.ARRAY(lst), dim::dims) 
+	ceval_subscript_value(env,Exp.INDEX(exp)::subs,Values.ARRAY(lst), dim::dims,impl) 
 	  => res
 	  
-  axiom	ceval_subscript_value(env,[],v,_) => v
+  axiom	ceval_subscript_value(env,[],v,_,_) => v
 			      
 end
 
@@ -2163,15 +2174,15 @@ end
  ** values.
  **)
 
-relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list)
+relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list, bool (*impl*) )
 	  => Exp.Subscript list =
 
-  axiom	ceval_subscripts (_,[],_) => []
+  axiom	ceval_subscripts (_,[],_,_) => []
 
-  rule	ceval_subscript (env,sub,dim) => sub' &
-	ceval_subscripts (env,subs,dims) => subs'
+  rule	ceval_subscript (env,sub,dim,impl) => sub' &
+	ceval_subscripts (env,subs,dims,impl) => subs'
 	------------------------------------
-	ceval_subscripts (env,sub::subs,dim::dims) => (sub'::subs')
+	ceval_subscripts (env,sub::subs,dim::dims,impl) => (sub'::subs')
 
 end
 
@@ -2181,19 +2192,19 @@ end
  ** when all expressions are evaluated to constant values.
  **)
 
-relation ceval_subscript : (Env.Env, Exp.Subscript, int) => Exp.Subscript =
+relation ceval_subscript : (Env.Env, Exp.Subscript, int, bool (*impl*) ) => Exp.Subscript =
 
-  axiom	ceval_subscript (env, Exp.WHOLEDIM,_) => Exp.WHOLEDIM
+  axiom	ceval_subscript (env, Exp.WHOLEDIM,_,_) => Exp.WHOLEDIM
 
   rule 
-    ceval (env, e1,false,NONE,SOME(dim)) => (v1,_) &
+	ceval (env, e1,impl,NONE,SOME(dim)) => (v1,_) &
 	Static.value_exp v1 => e1'
 	-----------------------------------------
-	ceval_subscript (env, Exp.INDEX(e1),dim) => Exp.INDEX(e1')
+	ceval_subscript (env, Exp.INDEX(e1),dim,impl) => Exp.INDEX(e1')
 	
-  rule	ceval (env, e1, false,NONE,SOME(dim)) => (v1,_) &
+  rule	ceval (env, e1,impl,NONE,SOME(dim)) => (v1,_) &
 	Static.value_exp v1 => e1'
 	-----------------------------------------
-	ceval_subscript (env, Exp.SLICE(e1),dim) => Exp.SLICE(e1')
+	ceval_subscript (env, Exp.SLICE(e1),dim,impl) => Exp.SLICE(e1')
 	
 end

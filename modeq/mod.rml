@@ -51,9 +51,9 @@ module Mod:
   type Ident = string
 
 
-  relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Types.Mod
+  relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.Mod
   relation unelab_mod : (Types.Mod) => SCode.Mod
-  relation update_mod: (Env.Env, Prefix.Prefix, Types.Mod) => Types.Mod 
+  relation update_mod: (Env.Env, Prefix.Prefix, Types.Mod, bool (*impl*)) => Types.Mod 
   relation elab_untyped_mod : (SCode.Mod,Env.Env, Prefix.Prefix) => Types.Mod
 
   relation lookup_comp_modification: (Types.Mod, Absyn.Ident) => Types.Mod
@@ -82,33 +82,33 @@ with "util.rml"
  ** they are provided in, and not the context they are used in.
  **)
  
-relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Types.Mod =
+relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.Mod =
 
-  axiom	elab_mod (_,_,SCode.NOMOD) => Types.NOMOD
+  axiom	elab_mod (_,_,SCode.NOMOD,impl) => Types.NOMOD
 
-  rule	elab_submods (env,pre,subs) => subs'
+  rule	elab_submods (env,pre,subs,impl) => subs'
 	------------------------------------
-	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE))
+	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE),impl)
 	  => Types.MOD(final,subs',NONE)
 	
-  rule	elab_submods (env,pre,subs) => subs' &
-	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
+  rule	elab_submods (env,pre,subs,impl) => subs' &
+	Static.elab_exp(env,e,impl,NONE) => (e',prop,_) &
 	(* Bug: will cause elaboration of parameters without value to fail,
 	 But this can be ok, since a modifier is present, giving it a value 
 	 from outer modifications.. *)
 	Prefix.prefix_exp(env,e',pre) => e''
 	------------------------------------
-	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)))
+	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)),impl)
 	  => Types.MOD(final,subs',SOME(Types.TYPED(e'',prop)))
 
   rule	Inst.add_nomod(elist) => elist' 
 	-------------------------------
-	elab_mod (env, pre, m as SCode.REDECL(final, elist)) 
+	elab_mod (env, pre, m as SCode.REDECL(final, elist),impl) 
 	  =>  Types.REDECL(final, elist')
 
   rule	(*Debug.fprint("failtrace", "#-- elab_mod failed\n")*)
 	-------------------------------------------------
-	elab_mod (_,pre,mod) => fail 
+	elab_mod (_,pre,mod,impl) => fail 
 end
 
 
@@ -187,62 +187,62 @@ end
  ** This relation updates and untyped modification to a typed one, by looking
  ** up the type of the modifier in the environment and update it.
  **)
-relation update_mod: (Env.Env,Prefix.Prefix, Types.Mod) => Types.Mod =
+relation update_mod: (Env.Env,Prefix.Prefix, Types.Mod, bool (*impl*)) => Types.Mod =
 
-  axiom	update_mod(_,_,Types.NOMOD) => Types.NOMOD
-  axiom	update_mod(_,_,m as Types.REDECL(_,_)) => m
+  axiom	update_mod(_,_,Types.NOMOD,impl) => Types.NOMOD
+  axiom	update_mod(_,_,m as Types.REDECL(_,_),impl) => m
 
-  rule	update_submods (env,pre,subs) => subs' &
-	Static.elab_exp(env,e,false,NONE) => (e',prop,_)  &
+  rule	update_submods (env,pre,subs,impl) => subs' &
+	Static.elab_exp(env,e,impl,NONE) => (e',prop,_)  &
 	Prefix.prefix_exp(env,e',pre) => e'' &
 	Debug.fprint("updmod","Updated mod: ") &
 	Debug.fcall("updmod",print_mod ,Types.MOD(f, subs', SOME(Types.TYPED(e'', prop)))) 
 	-----------------
-	update_mod(env, pre, m as Types.MOD(f, subs, SOME(Types.UNTYPED(e))))
+	update_mod(env, pre, m as Types.MOD(f, subs, SOME(Types.UNTYPED(e))),impl)
 	  => Types.MOD(f, subs', SOME(Types.TYPED(e'', prop)))
 
-  rule	update_submods (env, pre, subs) => subs' 
+  rule	update_submods (env, pre, subs,impl) => subs' 
 	---------------------------------------
-	update_mod(env, pre, Types.MOD(f, subs, SOME(Types.TYPED(e, p)))) 
+	update_mod(env, pre, Types.MOD(f, subs, SOME(Types.TYPED(e, p))),impl) 
 	  => Types.MOD(f, subs', SOME(Types.TYPED(e, p)))
 
-  rule	update_submods (env,pre,subs) => subs' 	
+  rule	update_submods (env,pre,subs,impl) => subs' 	
 	-------------------------
-	update_mod(env, pre, Types.MOD(f, subs, NONE)) => Types.MOD(f,subs',NONE)
+	update_mod(env, pre, Types.MOD(f, subs, NONE),impl) => Types.MOD(f,subs',NONE)
 
   rule	Print.print_buf "- update_mod failed\n mod:" &
 	print_mod m & Print.print_buf "\n" 
 	--------------
-	update_mod(env,pre,m) => fail
+	update_mod(env,pre,m,impl) => fail
 end
 
-relation update_submods: (Env.Env, Prefix.Prefix, Types.SubMod list)
+relation update_submods: (Env.Env, Prefix.Prefix, Types.SubMod list, bool (*impl*))
 	=> Types.SubMod list =
-  axiom	update_submods (_,_,[]) => []
+  axiom	update_submods (_,_,[],impl) => []
 
-  rule	update_submod (env,pre,x) => x' &
-	update_submods (env,pre,xs) => xs' &
+  rule	update_submod (env,pre,x,impl) => x' &
+	update_submods (env,pre,xs,impl) => xs' &
 	insert_submods (x',xs',env,pre) => res
 	-----------------------------
-	update_submods (env,pre,x::xs) => res
+	update_submods (env,pre,x::xs,impl) => res
 end
 
 
-relation update_submod : (Env.Env, Prefix.Prefix, Types.SubMod) 
+relation update_submod : (Env.Env, Prefix.Prefix, Types.SubMod, bool (*impl*)) 
 	  => Types.SubMod list =
 
-  rule	update_mod (env,pre,m) => m'
+  rule	update_mod (env,pre,m,impl) => m'
 	--------------------------
-	update_submod (env,pre,Types.NAMEMOD(i,m)) => [Types.NAMEMOD(i,m')]
+	update_submod (env,pre,Types.NAMEMOD(i,m),impl) => [Types.NAMEMOD(i,m')]
 
   rule	(*Static.elab_subscripts (env,ss) => (ss',true) &*)
-	update_mod (env,pre,m) => m' &
+	update_mod (env,pre,m,impl) => m' &
 	make_idxmods ([],m') => smods &
 	Print.print_buf "#Error, not implemented updating of IDXMOD yet\n"
 	(* Need to store untyped IDXMOD list in mods such that we can elab *)
 	(* the index here *)
 	---------------------------
-	update_submod (env,pre,Types.IDXMOD(_,m)) => smods
+	update_submod (env,pre,Types.IDXMOD(_,m),impl) => smods
 end
 
 (** relation elab_untyped_mod
@@ -288,16 +288,16 @@ end
  ** of submodifications.
  **)
 
-relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
+relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list, bool (*impl*))
 	  => Types.SubMod list =
 
-  axiom	elab_submods (_,_,[]) => []
+  axiom	elab_submods (_,_,[],impl) => []
 
-  rule	elab_submod (env,pre,x) => x' &
-	elab_submods (env,pre,xs) => xs' &
+  rule	elab_submod (env,pre,x,impl) => x' &
+	elab_submods (env,pre,xs,impl) => xs' &
 	insert_submods (x',xs',env,pre) => res
 	-----------------------------
-	elab_submods (env,pre,x::xs) => res
+	elab_submods (env,pre,x::xs,impl) => res
 
 end
 
@@ -307,17 +307,17 @@ end
  ** `SCode.SubMod' into one or more `Types.SubMod's.
  **)
 
-relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => Types.SubMod list =
+relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod, bool (*impl*)) => Types.SubMod list =
 
-  rule	elab_mod (env,pre,m) => m'
+  rule	elab_mod (env,pre,m,impl) => m'
 	--------------------------
-	elab_submod (env,pre,SCode.NAMEMOD(i,m)) => [Types.NAMEMOD(i,m')]
+	elab_submod (env,pre,SCode.NAMEMOD(i,m),impl) => [Types.NAMEMOD(i,m')]
 
-  rule	Static.elab_subscripts (env,ss) => (ss',true) &
-	elab_mod (env,pre,m) => m' &
+  rule	Static.elab_subscripts (env,ss,impl) => (ss',true) &
+	elab_mod (env,pre,m,impl) => m' &
 	make_idxmods (ss',m') => smods
 	---------------------------
-	elab_submod (env,pre,SCode.IDXMOD(ss,m)) => smods
+	elab_submod (env,pre,SCode.IDXMOD(ss,m),impl) => smods
 
 end
 

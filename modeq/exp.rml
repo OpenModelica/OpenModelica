@@ -194,6 +194,7 @@ module Exp:
   relation typeof: (Exp) => Type 
   relation get_function_calls_list : Exp list => Exp list
   relation get_function_calls : Exp  => Exp list
+  relation type_string : Type => string
 
 end
 

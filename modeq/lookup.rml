@@ -953,7 +953,7 @@ end
 relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var list =
 
   rule	build_varlst_from_elts(elts,env) => inputvarlst &
-	Inst.inst_class(env, Types.NOMOD, Prefix.NOPRE, [], cl, [], true,Inst.TOP_CALL) 
+	Inst.inst_class(env, Types.NOMOD, Prefix.NOPRE, [], cl, [], true (* FIXME: impl*),Inst.TOP_CALL) 
 	  => (_,_,_,ty,_) 
 	--------------------------------------
 	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_,_,_,_)),env) 
@@ -970,7 +970,7 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
 
   rule	build_varlst_from_elts(rest,env) => vars &
   (*P.A Here we need to do a lookup of the type. Therefore we need the env passed along from lookup_xxxx function. *)
-	Inst.inst_record_constructor_elt(env,comp) => var
+	Inst.inst_record_constructor_elt(env,comp, true (* FIXME: impl*) ) => var
 	-------------------------------------
 	build_varlst_from_elts ((comp as SCode.COMPONENT(_,_,_,_ ,_,_,_,_))::rest,env) 
 	    => var::vars
