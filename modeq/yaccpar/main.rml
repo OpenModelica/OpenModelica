@@ -1,0 +1,18 @@
+module Main:
+  with "absyn.rml"
+  with "scanparse.rml"
+  with "rmldump.rml"
+  with "rmlrefactor.rml"
+ 
+  relation main: string list => ()
+end
+ 
+
+relation main = 
+rule	ScanParse.debug_on() &
+	ScanParse.scanparse(filename) => ast &
+	RML.debug_print("ast", ast) &
+        RMLDump.dump ast => ()
+        -------------------------------
+	main (filename::_)
+end
