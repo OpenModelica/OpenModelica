@@ -1744,8 +1744,7 @@ relation get_nth_inherited_class2: (SCode.Class, Absyn.Class,int, Env.Env)
 	  => str
 
   rule	(* If that fails, instantiate, which takes more time*)
-	SCode.count_parts(c) => size &
-	Env.open_scope(env,encflag,size) => env2 &
+	Env.open_scope(env,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
@@ -1846,8 +1845,7 @@ rule	(* First try without instantiating class, saves time *)
 	  => str
 
 rule	(* If fails, instantiate class and search... *)
-	SCode.count_parts(c) => size &
-	Env.open_scope(env,encflag,size) => env2 &
+	Env.open_scope(env,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
@@ -1877,8 +1875,7 @@ relation get_components: (Absyn.ComponentRef,Absyn.Program) => string =
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
-	SCode.count_parts(c) => size &
-	Env.open_scope(env,encflag,size) => env2 &
+	Env.open_scope(env',encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
@@ -2136,11 +2133,12 @@ end
  ** string of values for the icon annotation for the class named by the first argument. 	
  *)
 relation get_icon_annotation: (Absyn.Path, Absyn.Program) => string =
+
    rule	get_pathed_class_in_program(modelpath,p) => cdef &
 	get_icon_annotation_in_class(cdef) => str
 	-----------------------------------------
 	get_icon_annotation(modelpath,p) => str
-  axiom get_icon_annotation(_,_) => "get_icon_annotation failed!"
+  axiom get_icon_annotation(_,_) => ""
 end
 
 (** relation: get_packages_in_path
@@ -3089,6 +3087,7 @@ relation strip_graphics_modification: (Absyn.ElementArg list) => (Absyn.ElementA
 end
 	
 relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
+
   axiom	 get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) 
 	  => []
   rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)))
@@ -3106,15 +3105,19 @@ relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
 	------------------------------
 	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt))) 
 	  => res
+
+  axiom	get_components_in_class(_) => []
 end
 
 relation get_components_in_elementitems: (Absyn.ElementItem list) 
 	  => Absyn.Element list =
+
   axiom	get_components_in_elementitems([]) => []
 
   rule	get_components_in_elementitems(rest) => res
 	-------------------------------------------
-	get_components_in_elementitems(Absyn.ELEMENTITEM(elt)::rest) => elt::res
+	get_components_in_elementitems(Absyn.ELEMENTITEM(elt)::rest) 
+	  => elt::res
 
   rule	get_components_in_elementitems(rest) => res
 	-------------------------------------------
