@@ -24,7 +24,8 @@ module DAE:
   datatype Type = REAL | INT | BOOL | STRING
 
   datatype Element = VAR of Exp.ComponentRef * VarKind * Type
-		   | EQUATION of Exp.Exp
+		   | DEFINE of Exp.ComponentRef * Exp.Exp
+		   | EQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
 		   | COMP of Ident * DAElist
 
@@ -104,26 +105,32 @@ relation dump_type =
 
 end
 
-relation dump_comp: DAEcomp => () =
+relation dump_element: Element => () =
 	
   rule	dump_kind kind & dump_type typ &
  	Exp.print_component_ref id & print "\n"
 	--------------------------------------
-	dump_comp(VAR(id, kind, typ))
+	dump_element(VAR(id, kind, typ))
 	
-  rule	print "  " & Exp.print_exp eq & print "\n"
+  rule	print "  " & Exp.print_exp e1 &
+	print " = " & Exp.print_exp e2 & print ";\n"
 	--------------------------------------
-	dump_comp(EQUATION(eq))
+	dump_element(EQUATION(e1, e2))
+	
+  rule	print "  " & Exp.print_component_ref c &
+	print " ::= " & Exp.print_exp e & print ";\n"
+	--------------------------------------
+	dump_element(DEFINE(c, e))
 	
   rule	print "{ begin " & print id & print " }\n" &
 	dump contents &
 	print "{ end " & print id & print " }\n"
         --------------------------------------
-        dump_comp ( COMP(id, contents))
+        dump_element ( COMP(id, contents))
 
 end
 
-relation dump_var : DAEcomp => () =
+relation dump_var : Element => () =
 	
   rule	dump_kind kind & dump_type typ &
  	Exp.print_component_ref id & print ";\n"
@@ -134,17 +141,23 @@ relation dump_var : DAEcomp => () =
 
 end
 
-relation dump_equation : DAEcomp => () =
+relation dump_equation : Element => () =
 	
-  rule	print "  " & Exp.print_exp eq & print ";\n"
+  rule	print "  " & Exp.print_exp e1 &
+	print " = " & Exp.print_exp e2 & print ";\n"
 	--------------------------------------
-	dump_equation(EQUATION(eq))
+	dump_equation(EQUATION(e1, e2))
+	
+  rule	print "  " & Exp.print_component_ref c &
+	print " ::= " & Exp.print_exp e & print ";\n"
+	--------------------------------------
+	dump_equation(DEFINE(c, e))
 	
   axiom	dump_equation _
 
 end
 
-relation dump_algorithm : DAEcomp => () =
+relation dump_algorithm : Element => () =
 
   rule	print "algorithm\n" &
 	Dump.print_list(stmts, pp_statement, "")
@@ -155,7 +168,7 @@ relation dump_algorithm : DAEcomp => () =
 
 end
 
-relation dump_vars: DAEcomp list => () =
+relation dump_vars: Element list => () =
 	
   axiom	dump_vars []
 	
@@ -166,7 +179,7 @@ relation dump_vars: DAEcomp list => () =
 
 end
 
-relation dump_equations: DAEcomp list => () =
+relation dump_equations: Element list => () =
 	
   axiom	dump_equations []
 	
@@ -177,7 +190,7 @@ relation dump_equations: DAEcomp list => () =
 
 end
 
-relation dump_algorithms: DAEcomp list => () =
+relation dump_algorithms: Element list => () =
 	
   axiom	dump_algorithms []
 	
