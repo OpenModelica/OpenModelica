@@ -837,7 +837,7 @@ comment :
 		;
 
 string_comment :
-		( STRING (PLUS STRING) => ( PLUS^ STRING )* )?
+		( STRING ((PLUS STRING) => ( PLUS^ STRING )+ | ) )?
 		{
             if (#string_comment)
             {
