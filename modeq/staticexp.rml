@@ -3589,7 +3589,6 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],_) => fail
 
   rule	Types.subtype(typ1,typ2) => true &
-	Print.print_buf "# *: detta suger kuk " &
 	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
 	Print.print_buf "\n"
 	-----------------------------
@@ -3598,7 +3597,6 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 			     rtype) => rtype
 
   rule	Types.subtype(typ1,typ2) => true &
-	Print.print_buf "# *: detta suger pung " &
 	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
 	Print.print_buf "\n"
 	-----------------------------
