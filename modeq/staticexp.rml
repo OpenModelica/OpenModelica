@@ -228,7 +228,7 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
 			Exp.BinOp,
 			Exp.Exp, Exp.Type, bool) => (Exp.Exp, Exp.Type, bool) =
 
-	(* ADD *)
+	(**  ADD *)
 
   rule	int_add(i1,i2) => i
 	------------------------------------------------
@@ -246,7 +246,7 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
   axiom	elab_binary (e1,Exp.T_REAL,_,Exp.ADD,e2,Exp.T_REAL,_)
 	  => (Exp.BINARY(e1,Exp.ADD,e2), Exp.T_REAL, false)
 			
-	(* SUB *)
+	(**  SUB *)
 
   rule	int_sub(i1,i2) => i
 	------------------------------------------------
@@ -264,7 +264,7 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
   axiom	elab_binary (e1,Exp.T_REAL,_,Exp.SUB,e2,Exp.T_REAL,_)
 	  => (Exp.BINARY(e1,Exp.SUB,e2), Exp.T_REAL, false)
 
-	(* MUL *)
+	(**  MUL *)
 
   rule	int_mul(i1,i2) => i
 	------------------------------------------------
@@ -290,7 +290,7 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
 	elab_binary (e1,Exp.T_REAL,c1,Exp.MUL,e2,Exp.T_REAL,c2)
 	  => (Exp.BINARY(e1,Exp.MUL,e2), Exp.T_REAL, const)
 
-	(* failure *)
+	(**  Failure *)
   rule	print "- elab_binary failed " &
 	Exp.dump_exp e1 & print " (" & Exp.print_type t1 & print ") o " &
 	Exp.dump_exp e2 & print " (" & Exp.print_type t2 & print ")\n"
@@ -324,7 +324,7 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	-------------------
 	ceval (Exp.CREF(c), t) => exp
 
-	(* Numerical *)
+	(**  Numerical *)
 
   rule	ceval (lh, T_REAL) => REAL(lhv) &
 	ceval (rh, T_REAL) => REAL(rhv) &
@@ -338,6 +338,7 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	------------------------
 	ceval (BINARY(lh, ADD, rh), T_INTEGER) => INTEGER(sum)
 
+	(**)
 
   rule	ceval (lh, T_REAL) => REAL(lhv) &
 	ceval (rh, T_REAL) => REAL(rhv) &
@@ -363,6 +364,7 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	------------------------
 	ceval ((BINARY(lh, MUL, rh), T_INTEGER)) => INTEGER(sum)
 
+	(**)
 
   rule	ceval lh => REAL(lhv) &
 	ceval rh => REAL(rhv) &
@@ -376,6 +378,7 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	------------------------
 	ceval ((BINARY(lh, DIV, rh), T_INTEGER)) => INTEGER(sum)
 
+	(**)
 
   rule	ceval lh => REAL(lhv) &
 	ceval rh => REAL(rhv) &
@@ -389,6 +392,7 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	------------------------
 	ceval ((BINARY(lh, POW, rh), T_INTEGER)) => INTEGER(sum)
 
+	(**)
 
   rule	ceval rh => REAL(rhv) &
 	real_neg(rhv) => rhv'
@@ -409,8 +413,7 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	------------------------
 	ceval ((UNARY(UPLUS, rh), T_INTEGER)) => INTEGER(rhv)
 
-
-	(* Boolean *)
+	(**  Boolean *)
 
   rule	ceval lh => BOOL(lhv) &
 	ceval rh => BOOL(rhv) &
@@ -429,7 +432,7 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	--------------------
 	ceval LUNARY(NOT, rh) => BOOL(rhv')
 
-	(* Relations *)
+	(**  Relations *)
 
   rule	ceval lh => NUMBER(lhv) &
 	ceval rh => NUMBER(rhv) &
