@@ -31,6 +31,7 @@ with "connect.rml"
 with "classinf.rml"
 with "staticexp.rml"
 with "mod.rml"
+with "rtopts.rml"
 
 (** These type aliases are introduced to make the code a little more
  ** readable.
@@ -40,6 +41,21 @@ type Prefix = Prefix.Prefix
 type Mod = Mod.Mod
 type Ident = Exp.Ident
 type Env = Env.Env
+
+
+(** relation: new_ident
+ **
+ ** This relation creates a new, unique identifer.  The same name is
+ ** never returned twice.
+ **)
+
+relation new_ident : () => Exp.ComponentRef =
+
+  rule	tick => i & int_string i => is & string_append("__TMP__",is) => s
+	-----------------------------------------------------------------
+	new_ident => Exp.CREF_IDENT(s,[])
+
+end
 
 
 (** relation: select
@@ -535,7 +551,20 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	
 end
 
-(** relation: elab_arraydim *)
+(** relation: elab_arraydim
+ **
+ ** This relations examines both an `Absyn.ArrayDim' and an `Mod.EqMod
+ ** option' argument to find out the dimensions af a component.  If
+ ** no equation modifications is given, only the declared dimension is
+ ** used.
+ **
+ ** When the size of a dimension in the type is undefined, the
+ ** corresponding size in the type of the modification is used.
+ **
+ ** All this is accomplished by examining the two arguments separately
+ ** and then using `complete_arraydime' or `compatible_arraydim' to
+ ** check that that the dimension sizes are compatible and complete.
+ **)
 
 relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 	  => int list =
@@ -546,13 +575,13 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 	elab_arraydim(env,ad,NONE) => dim'
 
   rule	elab_arraydim_decl(env,ad) => dim1 &
-	elab_arraydim_type(t) => dim2 &
+	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
 	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c)))) => dim3
 
   rule	elab_arraydim_decl(env,ad) => dim1 &
-	elab_arraydim_type(t) => dim2 &
+	elab_arraydim_type(t,ad) => dim2 &
 	not compatible_arraydim(dim1,dim2) => dim3 &
 	print "# Array dimension mismatch\n" &
 	print "    expression " & Exp.print_exp e &
@@ -609,6 +638,21 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => SOME(i)::l
 
+  rule	Static.elab_exp(env, d)
+	  => (e,Static.PROP(Types.T_INTEGER,false)) &
+	print "# Variable array sizes are not allowed\n" &
+	print "    expression: " & Exp.print_exp e & print "\n"
+	-------------------------------------------------------
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => fail
+
+  rule	Static.elab_exp(env, d)
+	  => (e,Static.PROP(t,_)) &
+	print "# Array dimensions must be integer\n" &
+	print "    expression: " & Exp.print_exp e &
+ 	print " (" & Types.print_type t & print ")\n"
+	-------------------------------------------------------
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => fail
+
   rule	print "- elab_arraydim_decl failed\n"
 	-------------------------------------
 	elab_arraydim_decl(_,_) => fail
@@ -627,7 +671,7 @@ relation complete_arraydim : (int option) list => int list =
 
 end
 
-(** relation: elab_arraydim_type *)
+(** relation: elab_arraydim *)
 
 relation compatible_arraydim : ((int option) list,(int option) list)
 	  => int list =
@@ -653,28 +697,21 @@ relation compatible_arraydim : ((int option) list,(int option) list)
 
 end
 
-(** relation: elab_arraydim_type *)
+(** relation: elab_arraydim_type
+ **
+ ** Find out the dimension sizes of a type.  The second argument is
+ ** used to know how many dimensions should be extracted from the
+ ** type.
+ **)
 
-relation elab_arraydim_type : Types.Type => (int option) list =
+relation elab_arraydim_type : (Types.Type, Absyn.ArrayDim)
+	  => int option list =
 
-  rule	elab_arraydim_type2(d) => l
+  rule	elab_arraydim_type(t,ad) => l
 	---------------------------
-	elab_arraydim_type(Types.T_ARRAY(d,_)) => l
+	elab_arraydim_type(Types.T_ARRAY(Types.DIM(i),t), _::ad) => i::l
 	
-	(* default *)
-  axiom	elab_arraydim_type(_) => []
-
-end
-
-(**)
-
-relation elab_arraydim_type2 : Types.ArrayDim => (int option) list =
-
-  axiom	elab_arraydim_type2(Types.NODIM) => []
-
-  rule	elab_arraydim_type2(ds) => ds'
-	------------------------------
-	elab_arraydim_type2(Types.DIM(d,ds)) => d::ds'
+  axiom	elab_arraydim_type(_,[]) => []
 
 end
 
@@ -907,9 +944,10 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	Static.elab_exp (env,e)
-	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_,Types.NODIM),
+	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
 			     true)) &
+	(* FIXEM: Check bounds *)
 	Static.ceval (env,e') => v &
 	print "  Unrolling " & print i & print " in " &
  	Dump.print_exp e & print " = " &
@@ -930,19 +968,26 @@ end
  **
  ** Equations follow the same typing rules as equality expressions.
  ** This relation adds the equation to the DAE.
+ **
+ ** FIXME: type conversions (use Static.match_prop)
  **)
 
 relation inst_eq_equation : (Exp.Exp, Static.Properties,
 			     Exp.Exp, Static.Properties) => DAE.Element list =
 
-  rule	Static.operators Absyn.EQUAL => ops &
-	Static.deoverload (ops,[(e1,t1),(e2,t2)],
-			      Absyn.STRING("#EQUATION#")) (*FIXME*)
-	  => (op, [e1',e2'], t)
-	------------------------------------------------------------------
-	inst_eq_equation(e1,Static.PROP(t1,_),
-			 e2,Static.PROP(t2,_))
-	  => [DAE.EQUATION(Exp.RELATION(e1',op,e2'))]
+  rule	Static.match_prop(e1, p1, p2) => e1' &
+	inst_eq_equation_2(e1', e2, t2) => dae
+	------------------------------------------
+	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
+			 e2,p2 as Static.PROP(t2,_))
+	  => dae
+	
+  rule	Static.match_prop(e2, p2, p1) => e2'&
+	inst_eq_equation_2(e1, e2', t1) => dae
+	------------------------------------------
+	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
+			 e2,p2 as Static.PROP(t2,_))
+	  => dae
 	
   rule	(* Types.equivtypes(t1,t2) => false & *)
 	print "# Illegal types in equation\n"&
@@ -953,6 +998,141 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	----------
 	inst_eq_equation(e1,Static.PROP(t1,_),
 			 e2,Static.PROP(t2,_)) => fail
+
+end
+
+(** relation: inst_eq_equation_2
+ **
+ ** FIXME: doc
+ **)
+
+relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
+	=> DAE.Element list =
+
+  axiom	inst_eq_equation_2(e1,e2,Types.T_INTEGER)
+	=> [DAE.EQUATION(e1,e2)]
+
+  axiom	inst_eq_equation_2(e1,e2,Types.T_REAL)
+	=> [DAE.EQUATION(e1,e2)]
+
+  axiom	inst_eq_equation_2(e1,e2,Types.T_STRING)
+	=> [DAE.EQUATION(e1,e2)]
+
+  axiom	inst_eq_equation_2(e1,e2,Types.T_BOOL)
+	=> [DAE.EQUATION(e1,e2)]
+
+  rule	RTOpts.split_arrays => true &
+	inst_array_equation(e1,e2,ad,t) => dae
+	-----------------------------------------
+	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t)) => dae
+
+  rule	RTOpts.split_arrays => false
+	-----------------------------------------
+	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t))
+	  => [DAE.EQUATION(e1,e2)]
+
+  axiom	inst_eq_equation_2(e1, e2, Types.T_COMPLEX(_,[])) => []
+
+  rule	Exp.extend_cref(c1,n,[]) => c1' &
+	Exp.extend_cref(c2,n,[]) => c2' &
+	inst_eq_equation_2(Exp.CREF(c1'), Exp.CREF(c2'), t) => dae1 &
+	inst_eq_equation_2(Exp.CREF(c1), Exp.CREF(c2),
+			   Types.T_COMPLEX(cs,vs)) => dae2 &
+	list_append(dae1, dae2) => dae
+	------------------------------
+	inst_eq_equation_2(Exp.CREF(c1), Exp.CREF(c2),
+			   Types.T_COMPLEX(cs,Types.VAR(n,_,_,t,_)::vs)) => dae
+
+	(** When the type of the expressions is a complex type, and *)
+	(** the left-hand side of the equation is not a component *)
+	(** reference, a new variable is introduced to be able to *)
+	(** dereference components of the expression. *)
+	(** *)
+	(** This is rather ugly, since it doesn't really solve the *)
+	(** problem of describing the semantics.  Now the semantics of *)
+	(** composite equations are defined in terms of other *)
+	(** composite equations.  To make this a little cleaner, the *)
+	(** equation that equates the new name to the expression is *)
+	(** stored using DAE.DEFINE rather than DAE.EQUATION.  This *)
+	(** makes it a little clearer. *)
+  rule	new_ident => n &
+	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
+				     Absyn.VAR, Absyn.BIDIR))
+	  => decl &
+	inst_eq_equation_2(Exp.CREF(n), e2, t) => dae1 &
+	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
+	-------------------------------------------------------------
+	inst_eq_equation_2(e1, e2 as Exp.CREF(_),
+			   t as Types.T_COMPLEX(_,_)) => dae
+
+	(** When the right-hand siade is not a component reference a *)
+	(** similar trick is applied.  This also catched the case *)
+	(** where none of the sides is a component reference *)
+  rule	new_ident => n &
+	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
+				     Absyn.VAR, Absyn.BIDIR))
+	  => decl &
+	inst_eq_equation_2(e1, Exp.CREF(n), t) => dae1 &
+	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
+	-------------------------------------------------------------
+	inst_eq_equation_2(e1, e2, t as Types.T_COMPLEX(_,_)) => dae
+
+  rule	print "- inst_eq_equation_2 failed\n"
+	-------------------------------------
+	inst_eq_equation_2(_,_,_) => fail
+
+end
+
+(** relation: inst_array_equation
+ **
+ ** FIXME: doc
+ **)
+
+relation inst_array_equation : (Exp.Exp, Exp.Exp,
+				Types.ArrayDim, Types.Type)
+	  => DAE.Element list =
+
+  rule	print "# Cannot instantiate equations with arrays of unknown size\n" &
+	print "    " & Exp.print_exp e1 & print " = " & Exp.print_exp e2&
+	print "\n"
+	----------
+	inst_array_equation(e1, e2, Types.DIM(NONE), t) => fail
+
+  rule	inst_array_el_eq(e1, e2, t, 1, sz) => dae
+	---------------------------------------------
+	inst_array_equation(e1, e2, Types.DIM(SOME(sz)), t) => dae
+
+  rule	print "- inst_array_equation failed\n"
+	--------------------------------------
+	inst_array_equation (_,_,_,_) => fail
+
+end
+
+(** relation: inst_array_el_eq
+ **
+ ** FIXME: doc
+ **)
+
+relation inst_array_el_eq : (Exp.Exp, Exp.Exp, Types.Type, int, int)
+	  => DAE.Element list =
+
+  rule	int_le(i,sz) => true &
+	Exp.simplify(Exp.ASUB(e1,i)) => e1' &
+	Exp.simplify(Exp.ASUB(e2,i)) => e2' &
+	inst_eq_equation_2(e1',e2',t) => dae1 &
+	int_add(i,1) => i' &
+	inst_array_el_eq(e1,e2,t,i',sz) => dae2 &
+	list_append(dae1, dae2) => dae
+	------------------------------
+	inst_array_el_eq(e1, e2, t, i, sz) => dae
+
+  rule	int_le(i,sz) => false
+	---------------------
+	inst_array_el_eq(e1, e2, t, i, sz) => []
+
+  rule	print "- inst_array_el_eq failed\n"
+	-----------------------------------
+	inst_array_el_eq(_,_,_,_,_) => fail
 
 end
 
