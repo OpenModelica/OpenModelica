@@ -1102,7 +1102,7 @@ relation differentiate_eqns: (DAELow,
   rule	int_sub(e,1) => e' &
 	list_nth(eqns,e') => eqn &
 	time_varying_vars(dae) => timevars &
-	Derive.differentiate_equation(eqn,timevars) => eqn' &
+	Derive.differentiate_equation_time(eqn,timevars) => eqn' &
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
 	equation_str eqn => str & 
 	Debug.fprint("bltdump", str) &
