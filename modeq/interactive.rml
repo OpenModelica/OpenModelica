@@ -64,6 +64,7 @@ val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scal
 val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
 
 val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); GraphicItem graphics[:]; end Icon;"
+val Diagram_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Diagram CoordinateSystem coordinateSystem(extent ={{-100.0, -100.0}, {100.0, 100.0}}); GraphicItem graphics[:]; end Diagram;"
 
 (* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
 val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text;"
@@ -259,6 +260,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("getIconAnnotation",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	Absyn.cref_to_path(cr) => path &
+	get_diagram_annotation(path,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getDiagramAnnotation",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
@@ -588,16 +600,32 @@ relation get_nth_connector_icon_annotation: (Absyn.ComponentRef, Absyn.Program, 
   axiom get_nth_connector_icon_annotation(_,_,_) => "-1"	
 end
 
+(** relation: get_diagram_annotation
+ ** This relation takes a Path and a Program and returns a comma separated 
+   string of values for the diagram annotation for the class named by the first argument.
+**)
+relation get_diagram_annotation: (Absyn.Path, Absyn.Program) => string =
+
+  rule	get_pathed_class_in_program (modelpath,p) => cdef &
+	get_base_classes(cdef) => crefs &
+	get_diagram_annotation_from_baseclasses(crefs,p) => baseannlst &
+	get_diagram_annotation_in_class(cdef) => s1 &
+	Util.string_append_list(baseannlst) => s2 &
+	string_append(s1,s2) => str
+	---------------------------
+	get_diagram_annotation(modelpath,p) => str
+
+  axiom get_diagram_annotation(_,_) => "get_icon_annotation failed!"
+end
+
 (** relation: get_icon_annotation
  ** This relation takes a Path and a Program and returns a comma separated
  ** string of values for the icon annotation for the class named by the first argument. 	
-	FIXME:
-	Icon annotation is composed of several things:
-	1. Annotations in the class definition.
-	2. Annotations in base classes. This implies performing a partial instantiation removing inheritance (and applying modifications there)
-	3. Annotations found in connectors (components with type connector)
- QUESTION: 3. Should not be performed in this relation. Instead, the client should
- call other functions, like getNthConnectorIconAnnotation.
+ **  Icon annotation is composed of several things:
+ **   1. Annotations in the class definition.
+ **	2. Annotations in base classes. This implies performing a partial instantiation
+ ** removing inheritance (and applying modifications there, but we skip applying modifications 
+ ** for now, since dymola does not either.)
  *)
 relation get_icon_annotation: (Absyn.Path, Absyn.Program) => string =
    rule	get_pathed_class_in_program(modelpath,p) => cdef &
@@ -694,6 +722,51 @@ relation get_icon_annotation_str: (Absyn.ElementArg list) => string =
   rule	get_icon_annotation_str (xs) => str
 	-------------------------------
 	get_icon_annotation_str( _::xs) => str
+end
+
+relation get_diagram_annotation_from_baseclasses :(Absyn.ComponentRef list, Absyn.Program) 
+	=> string list =
+  axiom	get_diagram_annotation_from_baseclasses([],p) => []
+
+  rule	Absyn.cref_to_path cr => path &
+	get_diagram_annotation(path,p) => s1 &
+	get_diagram_annotation_from_baseclasses(rest,p) => s2
+	------------------------------------------------
+	get_diagram_annotation_from_baseclasses(cr::rest,p) => s1::s2
+end
+
+relation get_diagram_annotation_in_class : (Absyn.Class) => string =
+
+  rule	get_public_list(parts) => publst &
+	get_diagram_annotation_in_elementitemlist(publst) => str
+	----------------------------
+	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,Absyn.PARTS(parts))) => str	
+end
+
+relation get_diagram_annotation_in_elementitemlist: (Absyn.ElementItem list) => string =
+  axiom	get_diagram_annotation_in_elementitemlist [] => ""
+	
+  rule	get_diagram_annotation_str(annlst) => s1 &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str	
+	----------------------------
+	get_diagram_annotation_in_elementitemlist (Absyn.ANNOTATIONITEM(Absyn.ANNOTATION(annlst))::_) => str
+	
+  rule	get_diagram_annotation_in_elementitemlist(xs) => str
+	------------------------------------------------
+	get_diagram_annotation_in_elementitemlist(_::xs) => str
+end
+
+relation get_diagram_annotation_str: (Absyn.ElementArg list) => string =
+
+  rule	string_append(Diagram_records,Graphics_records) => records &
+	get_annotation_string (records,Absyn.ANNOTATION([ann])) => str 
+	-----------------------------------------------
+	get_diagram_annotation_str ( (ann as Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Diagram",_),mod))::_) => str
+
+  rule	get_diagram_annotation_str (xs) => str
+	-------------------------------
+	get_diagram_annotation_str( _::xs) => str
 end
 
 relation get_nth_public_connector_str: (Absyn.Path, Absyn.Class, Absyn.Program,  int) => (string,Absyn.Path) =
@@ -999,8 +1072,12 @@ relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 end
 
 (** relation_ get_annotation_string
-** This relation takes an annotation and returns a comma separates string of values
-   representing the flat record of the specific annotation.
+ ** This relation takes an annotation and returns a comma separates string of values
+ ** representing the flat record of the specific annotation.
+ ** The relation as two special rules for handling of Icon and Diagram annotations since these 
+ ** two contain graphic primitives, which must be handled specially because Modelica does not have 
+ ** the possibility to store polymorphic values (e.g. different record classes with the same base class)
+ ** in for instance an array.
 **)
 
 relation get_annotation_string: (string,Absyn.Annotation) => string =
@@ -1024,8 +1101,30 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Exp.print_exp_str(graphicexp2) => gexpstr &
 	string_append(str,",") => s1 &
 	string_append(s1,gexpstr) => totstr
-	---------------
+	-----------------------------------
 	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Icon",_),Absyn.CLASSMOD(mod,_)))])) => totstr
+
+  rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,Absyn.CLASSMOD(_,SOME(graphicexp)))]) &
+	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
+	
+        Parser.parsestring totstring => p &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("Diagram")) => env  & 
+	get_class_in_program("Diagram",p) => placementc &
+	SCode.elab_class(placementc) => placementclass &
+	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
+	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
+	print "Instantiated Diagram class, without graphics primitives\n" &
+	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
+	Inst.init_vars_modelica_output dae => dae' &
+     	DAE.get_variable_bindings_str dae' => str  &
+	
+	Static.elab_graphics_exp(env,graphicexp) => (graphicexp2,prop) &
+	Exp.print_exp_str(graphicexp2) => gexpstr &
+	string_append(str,",") => s1 &
+	string_append(s1,gexpstr) => totstr
+	-----------------------------------
+	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Diagram",_),Absyn.CLASSMOD(mod,_)))])) => totstr
 
   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' & 
 
