@@ -2,7 +2,9 @@
 
 #header <<
 
-typedef enum { false=0, true=1 } bool;
+typedef int bool;
+#define false 0
+#define true  1
 /* #include "bool.h" */
 
 #include "attrib.h"
@@ -12,6 +14,7 @@ typedef enum { false=0, true=1 } bool;
 #define AST_FIELDS Attrib *attr; void *rml;
 #define zzcr_ast(ast,atr,ttype,text) ast->attr=copy_attr(atr); ast->rml=NULL;
 
+/* typedef AST SORAST */
 
 >>
 
@@ -23,7 +26,10 @@ typedef enum { false=0, true=1 } bool;
 /* #include "scanner.h" */
 /* #include "AToken.h" */
 
+#include "rml.h"
 #include "yacclib.h"
+#include "exp.h"
+#include "class.h"
 #include "errno.h"
 
 static int errors=0;
@@ -41,6 +47,8 @@ AST *zzmk_ast(AST *ast, Attrib *at)
   ast->attr = copy_attr(at);
   return ast;
 }
+
+extern void *sibling_list(AST *ast);
 
 >>
 
@@ -67,7 +75,7 @@ AST *zzmk_ast(AST *ast, Attrib *at)
 #token EXTENDS		"extends"
 #token PARAMETER	"parameter"
 #token CONSTANT		"constant"
-#token VIRTUAL		"virtual"
+#token REPLACEABLE	"replaceable"
 #token PARTIAL		"partial"
 #token REDECLARE	"redeclare"
 #token INPUT		"input"
@@ -119,6 +127,11 @@ AST *zzmk_ast(AST *ast, Attrib *at)
 */
 
 #token EQUALS           "="
+#token PLUS             "\+"
+#token MINUS            "\-"
+#token MULT             "\*"
+#token DIV              "/"
+#token DOT		"."
 
 /* #tokclass COMP_BEGIN	{ LPAR RECORD_BEGIN } */
 /* #tokclass COMP_END	{ RPAR RECORD_END } */
@@ -127,8 +140,8 @@ AST *zzmk_ast(AST *ast, Attrib *at)
 /* #tokclass ARR_ARG_END   { RPAR RBRACK } */
 
 #tokclass REL_OP 	{ "<" "<=" ">" ">=" "==" "<>" }
-#tokclass ADD_OP	{ "\+" "\-" }
-#tokclass MUL_OP	{ "\*" "/" }
+#tokclass ADD_OP	{ PLUS MINUS }
+#tokclass MUL_OP	{ MULT DIV }
 
 #tokclass ASSIGN	{ "=" ":=" }
 
@@ -137,6 +150,7 @@ AST *zzmk_ast(AST *ast, Attrib *at)
 #token COMPONENTS
 #token TYPE_PREFIX
 #token FUNCALL
+#token ELEMENT
 
 #token "//(~[\n])*"  << zzskip(); >> /* skip C++-style comments */
 
@@ -174,22 +188,33 @@ import_statement :
 	im:IMPORT^ STRING ";"! << /* #im->ni.type=IMPORT_STATEMENT; */ >>
 	;
 
-class_definition[bool is_virtual,bool is_final] :
-	{ PARTIAL } 
-        ( CLASS_
-	| MODEL
-	| RECORD
-	| BLOCK
-	| CONNECTOR
-	| TYPE
-	| PACKAGE
-	| { EXTERNAL } FUNCTION )
-        IDENT
-	comment
-	( composition END! { IDENT! } |
-	  EQUALS IDENT { array_decl } { class_specialization } 	  
+class_definition[bool is_replaceable,bool is_final] :
+        << void *restr; bool partial = false; >>
+	{ PARTIAL << partial = true; >> }
+        ( CLASS_                  << restr = Class__CL_5fCLASS; >>
+	| MODEL			  << restr = Class__CL_5fMODEL; >>
+	| RECORD		  << restr = Class__CL_5fRECORD; >>
+	| BLOCK			  << restr = Class__CL_5fBLOCK; >>
+	| CONNECTOR		  << restr = Class__CL_5fCONNECTOR; >>
+	| TYPE			  << restr = Class__CL_5fTYPE; >>
+	| PACKAGE		  << restr = Class__CL_5fPACKAGE; >>
+	| { EXTERNAL } FUNCTION   << restr = Class__CL_5fFUNCTION; >>
 	)
-        << Attrib a = $[CLASS_,"---"]; #0 = #(#[&a], #0); >>
+        i:IDENT
+	comment
+	( c:composition END! { IDENT! }
+	  << 
+	     Attrib a = $[CLASS_,"---"];
+	     #0 = #(#[&a], #0);
+	     #0->rml = Class__CLASS(mk_scon($i.u.stringval),
+				    RML_PRIM_MKBOOL(partial),
+				    restr, sibling_list(#c)
+				    /*((#c->rml)
+				      ? sibling_list(#c)
+				      : mk_nil()) */);
+	  >>
+	| EQUALS IDENT { array_decl } { class_specialization } 
+	)
 	;
 
 composition :
@@ -203,23 +228,38 @@ composition :
 
 default_public:
 	element_list[false]
+	<< Attrib a = $[PUBLIC,"---"];
+	   void *els = sibling_list(#0);
+	   printf("default_public\n");
+	   #0 = #(#[&a],#0);
+	   #0->rml = Class__PUBLIC(els); >>
         ;
 
-public_elements: PUBLIC^ element_list[false];
-protected_elements: PROTECTED^ element_list[true];
-
+public_elements:
+	PUBLIC^ element_list[false]
+	<< #0->rml = Class__PUBLIC(mk_nil()); >>
+	;
+protected_elements:
+	PROTECTED^ element_list[true]
+	<< #0->rml = Class__PROTECTED(mk_nil()); >>
+	;
 
 element_list[bool is_protected] :
-	( el:element ";"! << /* if (is_protected) #el->ni.properties |= ELEMENT_PROTECTED; */ >>
-	  | annotation ";"! )*
-    ;
+	( el:element ";"!
+	| annotation! ";"! )*
+	;
 
 element :
-	<< bool is_virtual=false; bool is_final=false; >>
-	{ FINAL }
-	( { VIRTUAL << is_virtual=true; >> } class_definition[is_virtual,is_final]
-	| extends_clause
-	| component_clause[ET_COMPONENT] )
+	<< bool is_replaceable=false; bool is_final=false; void *spec; >>
+	{ FINAL << is_final = true; >> }
+	( { REPLACEABLE << is_replaceable=true; >> }
+	  c:class_definition[is_replaceable,is_final]
+	  << spec=Class__CLASSDEF(RML_PRIM_MKBOOL(is_replaceable), #c->rml); >>
+	| ec:extends_clause << spec = #ec->rml; >>
+	| cc:component_clause << spec = #cc->rml; >>  )
+	<< Attrib a = $[ELEMENT,"---"];
+	   #0 = #(#[&a],#0);
+	   #0->rml = Class__ELEMENT(RML_PRIM_MKBOOL(is_final), spec); >>
 	;
 
 /*
@@ -227,19 +267,38 @@ element :
  */
 
 extends_clause:
-	EXTENDS^ IDENT
+	EXTENDS^ i:IDENT
 	{ class_specialization }
+	<< #0->rml = Class__EXTENDS(mk_scon(i.u.stringval),
+				    mk_nil() /* FIXME */); >>
 	;
 
 /*
  * Component clause
  */
 
-component_clause![NodeType nt] : << Attrib a = $[COMPONENTS,"---"]; >>
+component_clause!: << Attrib a = $[COMPONENTS,"---"]; >>
 	p:type_prefix
 	s:type_specifier
 	l:component_list[NO_SPECIAL]
-        << #0 = #(#[&a], #p, #s, #l); >> 
+        << bool fl=false, pa=false, co=false, in=false, ou=false;
+	   #0 = #(#[&a], #p, #s, #l);
+	   /* FIXME: Split to several elements */
+
+	   #0->rml = Class__COMPONENT(RML_PRIM_MKBOOL(fl),
+				      RML_PRIM_MKBOOL(pa),
+				      RML_PRIM_MKBOOL(co),
+				      RML_PRIM_MKBOOL(in),
+				      RML_PRIM_MKBOOL(ou),
+				      #s->rml,
+				      #l->rml,
+				      mk_none(),
+				      mk_none());
+
+#if 0
+	   #0->rml = Class__EXTENDS(mk_scon("shit"),mk_nil());
+#endif
+	>> 
 	;
 
 type_prefix : << Attrib a = $[TYPE_PREFIX,"---"]; >>
@@ -267,6 +326,7 @@ declaration[NodeType nt] :
 	i:IDENT^ << /* #i->ni.type=nt; */ >>
 	{ array_decl  }
 	{ specialization }
+	<< #i->rml = mk_scon($i.u.stringval); >>
         ;
 
 array_decl :
@@ -312,7 +372,7 @@ subscript! :
  * Modification (here: specialization)
  */
 
-specialization : 
+specialization :
 	class_specialization { EQUALS expression }
 	| EQUALS^ expression
 	;
@@ -369,18 +429,26 @@ component_clause1[NodeType nt] :
 
 equation_clause	: 
 	EQUATION^ ( equation ";"! | annotation ";"! )*
+	<< #0->rml = Class__EQUATIONS(sibling_list(#0->down)); >>
 	;
 
 algorithm_clause :
 	ALGORITHM^ ( equation ";"! | annotation ";"! )*
+	<< #0->rml = Class__ALGORITHMS(mk_nil()); >>
 	;
 
-equation :
-	( simple_expression { ASSIGN^ expression }
+equation : << bool is_assign = false; >>
+	( lh:simple_expression { ASSIGN^ rh:expression << is_assign=true; >> }
+	  << 
+	     if(is_assign)
+	       #0->rml = Class__EQ_5fASSIGN(#lh->rml, #rh->rml);
+	     else
+	       #lh->rml = Class__EQ_5fEXPR(#lh->rml);
+	  >>
 	| conditional_equation
 	| for_clause
 	| while_clause )
-	comment
+	comment!
 	;
 
 /* conditional_equation : */
@@ -518,8 +586,8 @@ arithmetic_expression :
 
 unary_arithmetic_expression:
 
-	plus:"\+"^ term  << /* #plus->setOpType(OP_PREFIX); */ >>
-      | minus:"\-"^ term << /* #minus->setOpType(OP_PREFIX); */ >>
+	plus:PLUS^ term  << /* #plus->setOpType(OP_PREFIX); */ >>
+      | minus:MINUS^ term << /* #minus->setOpType(OP_PREFIX); */ >>
       | term 
 	;
 
@@ -542,40 +610,47 @@ factor :
 		>>
 	;
 
-primary :
-	<< bool is_matrix; >>
-	par:LPAR^  << /* #par->setOpType(OP_BALANCED,')'); */ >> 
-	expression RPAR!
-
+primary : << bool is_matrix; >>
+	  par:LPAR^
+	  e:expression RPAR!
+	  << #par->rml = #e->rml; >>
 	| op:LBRACK^ << /* #op->setOpType(OP_BALANCED,'}');
 			   #op->setTranslation("{"); */ >>
 	  column_expression > [is_matrix] 
-	<< if (!is_matrix) {
+	  << if (!is_matrix) {
 	        /* Probable memory leak! */
 /* 		elevate row expression to get rid of {{ }} */
 	  /* #0->setDown(#0->down()->down()); */
-		}
-	>>
+		  }
+	  >>
 	  RBRACK!
 
-	| nr:UNSIGNED_NUMBER /* << mytoken($nr)->convertFloat(); >> */
-	| FALS/*E*/
-	| TRU/*E*/
-	| (name_path_function_arguments)? name_path_function_arguments
+	| nr:UNSIGNED_NUMBER << #nr->rml = mk_rcon($nr.u.floatval); >>
+	| f:FALS/*E*/        << #f->rml = RML_FALSE; >>
+	| t:TRU/*E*/         << #t->rml = RML_TRUE; >>
+	| (name_path_function_arguments)? /* name_path_function_arguments */
 /* 	| new_component_reference */
 	| (member_list)?
-	| name_path
-	| TIME
-	| STRING
+	| i:name_path        << #0->rml = Exp__PATH(#i->rml); >>
+	| TIME               << #0->rml = Exp__TIME; >>
+	| s:STRING           << #s->rml = mk_scon($s.u.stringval); >>
 	;
 
 name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >>
 	n:name_path f:function_arguments
-	<< #0=#(#[&a],#n,#f); >>
+	<< 
+	   #0=#(#[&a],#n,#f);
+	   #0->rml = Exp__CALL(#n->rml, sibling_list(#f));
+	>>
 	;
 
-name_path :
-	IDENT^ { dot:"."^ name_path }
+name_path : << bool qualified = false; >>
+	i:IDENT^
+	{ dot:DOT^ n:name_path << qualified = true; >> }
+        << if(qualified)
+	     #0->rml = Exp__QUALIFIED(mk_scon($i.u.stringval),#n->rml);
+           else
+             #0->rml = Exp__IDENT(mk_scon($i.u.stringval)); >>
 	;
 
 new_component_reference :
@@ -616,10 +691,7 @@ row_expression :
 	;
 
 function_arguments :
-	p:LPAR^ expression ( ","! expression )* RPAR! 
-	<< /* #p->setOpType(OP_FUNCTION); 
-	      #p->setTranslation(""); */ /* don't output ( */
-	>>
+	p:LPAR! expression ( ","! expression )* RPAR! 
 	;
 
 comment : 
