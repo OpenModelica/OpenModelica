@@ -3,5 +3,6 @@ module RTOpts:
   relation args : string list => string list
   relation typeinfo : () => bool
   relation split_arrays : () => bool
+  relation modelica_output : () => bool
 
 end
