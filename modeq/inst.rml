@@ -2004,54 +2004,61 @@ relation inst_var2 : (Env.Env,
 
 
   rule	(* Array variables with binding in functions , e.g. input Real x[:]=Y *)
-	inst_dim_exp_lst (dims,true) => dims' &
+	(* Do not flatten because it is a function *)
+	inst_dim_exp_lst (dims,impl) => dims' &
+	(* get the equation modification *)
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  
-	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) => (_,_,_,ty,st) &
+	(* Instantiate type of the component *)
+	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) => (_,_,_,ty,st) &
+	(* Make it an array type since we are not flattening *)
 	make_array_type(dims,ty) => ty' &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty') => ty'' &
 	Types.match_prop(e,Types.PROP(ty',false),p) => e' &
+	(* Put the mod equation in the dae so that code will be generated *)
 	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
 
 	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE) => dae1 &
 	list_append (dae1, [daeeq]) => dae
 	-------------------------------
 	inst_var2(env,ci_state as
-		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl (*as false*))
+		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl)
           => (dae,csets,ty')
 
   rule	(* Array variables without binding in functions , e.g. input Real x[:] *)
-	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) => (_,_,_,ty,st) &
+	(* Do not flatten because it is a function *)
+	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) => (_,_,_,ty,st) &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
-	inst_dim_exp_lst(dims,true) => dims' &
-
-	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE) => dae &
+	inst_dim_exp_lst(dims,impl) => dims' &
+	dae_declare(cr,ty,attr,NONE,dims',NONE) => dae &
 	make_array_type(dims,ty) => arrty 
 	-------------------------------
-	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl (*as false*))
+	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl)
           => (dae,csets,arrty)
 	  
 
+	  (* FIXME: make a similar rule: if implicit=true and we fail to flatten, we should leave it unflattened *)
   rule	(* Array variables , e.g. Real x[3]*)
+	(* flatten *)
 	inst_dim_exp (dim,impl) => dime &
 	list_append(inst_dims,[dime]) => inst_dims' &
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl)
 	  => (dae, csets', ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty'
-(*	& Debug.fprint("instvartr", "\nEnd of inst_var variables array non-function\n")*)
 	-------------------------------
-	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl (*as false*))
+	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl)
           => (dae,csets',ty')
 
 (* Rules for instantation of function variables (e.g. input and output 
   parameters and protected variables) *)
 
+(*
 rule	Print.print_buf "!!! Error, implicit instantiation of variables\n"
 	-------------------------------
-	inst_var2(_,_,_,_,_,_,_,_,_,_,_,impl as true)
-          => fail
+	inst_var2(_,_,_,_,_,_,_,_,_,_,_,impl as true) => fail
+*)
 
   rule	Debug.fprint("failtrace", "- inst_var2 failed: ") & 
 	Debug.fprint("failtrace",  n) &
@@ -2387,6 +2394,7 @@ relation inst_dim_exp_lst : (DimExp list, bool (*impl*)) => Exp.Subscript list =
 	inst_dim_exp_lst(x::xs,b) => r::res
 end
 
+(* FIXME: Fix slicing, e.g. Exp.SLICE, for impl=true *)
 relation inst_dim_exp : (DimExp, bool (*impl*) ) => Exp.Subscript =
 
   rule	Print.print_error_buf "# Error, can not determine size of array.\n"
@@ -2507,8 +2515,7 @@ relation inst_array : (Env.Env,
 	  => (DAE.Element list, Connect.Sets, Types.Type) =
 	  
 (*  rule	(* If is a function var.*)
-	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  (* Which has an 
-							  expression binding *)
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  (* Which has an expression binding *)
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
 	(* Check their types... *)
@@ -2518,7 +2525,8 @@ relation inst_array : (Env.Env,
 	make_dae_equation(Exp.CREF(cr,ty'),e',NON_INITIAL) => dae 
 	---------------------------------------------------
 	inst_array(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
-	  => ([dae],[],ty)*)
+	  => ([dae],[],ty)
+*)
 
   rule	print "DIMEXP in inst_array\n" &
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
@@ -2532,7 +2540,8 @@ relation inst_array : (Env.Env,
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
 	  => ([], csets, (Types.T_NOTYPE,NONE))
 
-  (*rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
+  (*
+   rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
 	(* Should only generate -one- functioncall *)
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &
 	Exp.contain_functioncall(e) => true &
@@ -2548,7 +2557,8 @@ relation inst_array : (Env.Env,
 	Util.list_flatten([dae1,dae2,[dae3]]) => dae
 	-----------------------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
-          => (dae,csets',ty)*)
+          => (dae,csets',ty)
+   *)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
 	Mod.print_mod_str mod' => str &

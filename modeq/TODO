@@ -185,6 +185,13 @@ List of things to implement:
 	possible to evaluate a.x for an element x of the record instance a.
 	This does not work in the interactive environment.
 
+32. Fix slicing, e.g. Exp.SLICE, for impl=true, inst.rml:inst_dim_exp
+33. Fix slicing, e.g. Exp.SLICE, for impl=true, inst.rml:inst_dim_exp
+34. inst.rml:inst_var2. If impl=true and we cannot flatten the array variable, we 
+    should leave it unflattened, but with correct type and dimensions, e.g. similar to
+    functions.
+
+
 Specific adaptions:
 
 For SKF:	
