@@ -343,7 +343,8 @@ relation generate_state_partition:(int list list, (* blocks *)
   int list list) (* output blocks *)
 	=
         
-  rule	equation_size(e) => size &
+  rule	(*equation_size(e) => size &*)
+	vector_length(ass1) => size &
 	array_create(size,0) => arr &
 	mark_state_equations(dae,arr,m,mt,ass1,ass2) => arr' &
 	split_blocks(blt,arr) => (blt_states,blt_no_states)
@@ -455,6 +456,26 @@ relation mark_state_equation: (Var, (DAELow *
 			     arr,m,mt,a1,a2)
 			    ) 
 	  => ((dae,arr',m,mt,a1,a2))
+
+  rule	not get_var(cr,vars) => (_,_) &
+	print "mark_state_equation var " &
+	Exp.print_component_ref_str cr => s &
+	print s & print "not found\n" 
+	-----------------------
+	mark_state_equation(VAR(cr,_,_,_,_,_,_,_,_,_,_),
+			    (dae as DAELOW(vars,_,_,_,_,_),
+			     arr,m,mt,a1,a2)) => fail
+
+  rule	get_var(cr,vars) => (_,v_indx) &
+	int_sub(v_indx,1) => v_indx' &
+	not vector_nth(a1,v_indx') => eqn &
+	print "mark_state_equation index ="  &
+	int_string v_indx => str & print str & 
+	print ", failed\n" 
+	-----------------------
+	mark_state_equation(VAR(cr,_,_,_,_,_,_,_,_,_,_),
+			    (dae as DAELOW(vars,_,_,_,_,_),
+			     arr,m,mt,a1,a2)) => fail
 end
 
 (** relation: mark_state_equation2
@@ -486,6 +507,18 @@ relation mark_state_equation2: (int (* eqn*), ( int array * (* marks *)
 	int_ne(mark_value,0) => true
 	--------------------------
 	mark_state_equation2(eqn,(marks,m,mt,a1,a2)) => ((marks,m,mt,a1,a2))
+
+  rule	print "mark_state_equation2 failed, eqn:" &
+	int_string(eqn) => eqnstr &
+	print eqnstr & print "array length =" &
+	array_length(marks) => len & int_string(len) => lens &
+	print lens & print "\n" &
+	int_sub(eqn,1) => eqn' &
+	array_nth(marks,eqn') => mark_value &
+	int_string(mark_value) => ms & 
+	print "mark_value:" & print ms &print "\n" 
+	---------------------------
+	mark_state_equation2(eqn,(marks,m,mt,a1,a2)) => fail
 end
 
 (** relation: inv_reachable_nodes

@@ -995,7 +995,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	DAELow.transpose_matrix(m) => mT &
 	DAELow.matching_algorithm(dlow,m,mT) => (ass1,ass2,dlow',m,mT) &
 	DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
-	DAELow.translate_dae (dlow) => indexed_dlow &
+	DAELow.translate_dae (dlow') => indexed_dlow &
 	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
 	Absyn.path_string(classname) => cname_str &
 	Util.string_append_list([cname_str,".cpp"]) => filename &
@@ -1011,7 +1011,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	
 	System.system_call(s_call) => 0 &
 	Util.string_append_list([cname_str,".exe"]) => sim_call &
-	System.system_call(sim_call) => 0 &
+	System.system_call(sim_call) => _ & 
 	Util.string_append_list([cname_str,"_res.plt"]) => result_file &
 	let simValue = Values.RECORD([Values.STRING(result_file)],["resultFile"]) &
 	let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")

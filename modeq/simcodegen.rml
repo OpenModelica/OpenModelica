@@ -161,6 +161,7 @@ relation generate_global_data:(Absyn.Path,DAELow.DAELow) => string  =
 				 "\n",
 				 "double x[NX];\n",
 				 "double xd[NX];\n",
+				 "double dummy_delta[NX];\n",
 				 "double y[NY];\n",
 				 "double p[NP];\n",
 				 "double rwork[50+(MAXORD+4)*NX+NX*NX];\n",
