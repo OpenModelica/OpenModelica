@@ -784,6 +784,12 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
 	DAE.dump_str (dae) => str &
 
+(* get rid of f in fclass so that old modsimpack works. 
+   Get rid of this when modsimpack understands fclass. *)
+	string_list(str) => charlist &
+	list_delete(charlist, 0) => charlist' &
+	list_string(charlist') => str' &
+
 	Debug.fcall ("daedump", DAE.dump, dae) &
 	Debug.fcall ("daedump2", DAE.dump2, dae) &
 	Debug.fcall ("daedumpdebug", DAE.dump_debug, dae) &
@@ -797,7 +803,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	System.pwd => pwd &
 	System.path_delimiter => pd &
 	Util.string_append_list([pwd,pd,filename]) => filename' &
-	System.write_file(filename',str) &
+	System.write_file(filename',str') &
 	print "wrote flat file: " & 
 	print str & print "\n" &
 	ModSim.compile_flat_class(filename',modelname) => exefile &
@@ -821,6 +827,13 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
 	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
 	DAE.dump_str (dae) => str &
+
+(* get rid of f in fclass so that old modsimpack works. 
+   Get rid of this when modsimpack understands fclass. *)
+	string_list(str) => charlist &
+	list_delete(charlist, 0) => charlist' &
+	list_string(charlist') => str' &
+
 	Print.get_string() => s2 &
 	Print.print_error_buf s2 &
 	Exp.cref_modelica_str(cr) => modelname &
@@ -828,7 +841,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	System.pwd => pwd &
 	System.path_delimiter => pd &
 	Util.string_append_list([pwd,pd,filename]) => filename' &
-	System.write_file(filename',str) &
+	System.write_file(filename',str') &
 	ModSim.compile_flat_class(filename',modelname) => exefile &
 	ceval(env,starttime,true,SOME(st),NONE) => (Values.REAL(start),_) &
 	ceval(env,stoptime,true,SOME(st),NONE) => (Values.REAL(stop),_) &
