@@ -1159,8 +1159,8 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	var_name_external id => cref_str &
-	list_reverse inst_dims => inst_dims' &
-	generate_size_subscripts(inst_dims',tnr) => (cfn1,dim_strs,tnr1) &
+(*	list_reverse inst_dims => inst_dims' & *)
+	generate_size_subscripts(inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
 	c_move_statements_to_inits cfn1 => cfn1' &
 
 	list_length dim_strs => ndims &

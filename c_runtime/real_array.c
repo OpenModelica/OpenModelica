@@ -1322,14 +1322,26 @@ void clone_reverse_real_array_spec(real_array_t* source, real_array_t* dest)
 
 void convert_alloc_real_array_to_f77(real_array_t* a, real_array_t* dest) 
 {
+  int i;
   clone_reverse_real_array_spec(a,dest);
   alloc_real_array_data(dest);
   transpose_real_array (a,dest);
+  for (i = 0; i < dest->ndims; ++i)
+  {
+    dest->dim_size[i] = a->dim_size[i];
+  }
 }
 
 void convert_alloc_real_array_from_f77(real_array_t* a, real_array_t* dest)
 {
+  int i;
   clone_reverse_real_array_spec(a,dest);
   alloc_real_array_data(dest);
+  for (i = 0; i < dest->ndims; ++i)
+  {
+    size_t tmp = dest->dim_size[i];
+    dest->dim_size[i] = a->dim_size[i];
+    a->dim_size[i] = tmp;
+  }
   transpose_real_array (a,dest);
-}
+ }
