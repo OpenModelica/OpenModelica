@@ -23,19 +23,17 @@ DLG = $(BIN)/dlg
 #CFLAGS = -ggdb -I. -I$(ANTLR_H) #does not work in linux
 CFLAGS = -g -I. -I.. -I$(ANTLR_H)
 #AFLAGS = -CC -gt 
-AFLAGS = -gt -gl
+AFLAGS = -gt -gl -gh
 #DFLAGS = -C2 -CC -cs
 DFLAGS = -C2
 GRM = modgram.g
 SRC = modgram.c \
-      modAST.h \
       scanner.c \
-      err.c \
-      yacclib.c
-OBJ = modgram.o \
-      scanner.o \
-      err.o \
-      yacclib.o
+      err.c     \
+      yacclib.c \
+      attrib.c  \
+      parsemod.c
+OBJ = $(SRC:.c=.o)
 ANTLR_SPAWN = modgram.c \
               $(DLG_FILE) $(TOKENS)
 DLG_SPAWN = scanner.c mode.h
@@ -46,8 +44,15 @@ CC=cc
 libast.a : $(OBJ)
 	ar -rc $@ $(OBJ)
 
-modgram.o : $(TOKENS) mode.h modgram.c parser.h
-	$(CC) -c $(CFLAGS) -o modgram.o modgram.c
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+modgram.o: modgram.c attrib.h parser.h modAST.h tokens.h \
+ ../rml.h ../dae.h ../exp.h ../class.h mode.h
+scanner.o: scanner.c attrib.h parser.h modAST.h
+err.o: err.c attrib.h parser.h modAST.h tokens.h
+yacclib.o: yacclib.c ../rml.h yacclib.h
+attrib.o: attrib.c stdpccts.h attrib.h parser.h modAST.h tokens.h mode.h
 
 $(SCAN).o : $(SCAN).c $(TOKENS)
 	$(CC) -c $(CFLAGS) -o $(SCAN).o $(SCAN).c
@@ -73,6 +78,8 @@ ASTBase.o : $(ANTLR_H)/ASTBase.c
 PCCTSAST.o : $(ANTLR_H)/PCCTSAST.c
 	$(CC) -c $(CFLAGS) -o PCCTSAST.o $(ANTLR_H)/PCCTSAST.c
 
+depend:
+	gcc -MM $(CFLAGS) $(SRC)
 
 clean:
 	$(RM) -f *.o core libast.a $(ANTLR_SPAWN) $(DLG_SPAWN)
