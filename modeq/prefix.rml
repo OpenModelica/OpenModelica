@@ -129,7 +129,7 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
   rule	prefix_explist(env,es,p) => es'
 	-----------------------
 	prefix_exp(env,Exp.CALL(f,es),p) => Exp.CALL(f,es')
-
+	(**)
   axiom	prefix_exp(env,Exp.ARRAY([]),p) => Exp.ARRAY([])
 
   rule	prefix_explist(env,es,p) => es'
@@ -155,7 +155,7 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	------------------------------
 	prefix_exp(env,Exp.RANGE(start,SOME(step),stop), p)
 	  => Exp.RANGE(start',SOME(step'),stop')
-        (**)
+
   rule	prefix_exp(env,e,p) => e'
 	-----------------------
 	prefix_exp(env,Exp.CAST(Exp.REAL,e), p) => Exp.CAST(Exp.REAL,e')
