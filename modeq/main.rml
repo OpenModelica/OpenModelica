@@ -250,10 +250,9 @@ end
 
 relation translate_file : string list => () =
 
-  rule	(*Print.print_buf "Parsing\n" &
-	 *)	is_modelica_file(f) 
+  rule	(*Print.print_buf "Parsing\n" & *)
+	  is_modelica_file(f) 
 	& Parser.parse f => p
-	& print "1" 
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
 	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
 	& Debug.fcall ("dump", Dump.dump, p)
