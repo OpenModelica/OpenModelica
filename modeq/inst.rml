@@ -52,6 +52,8 @@ module Inst:
 
   relation instantiate_class : (SCode.Program,SCode.Path) => DAE.DAElist
 
+  relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
+	
   relation inst_class: (Env.Env, Mod.Mod, Prefix.Prefix, 
 			Connect.Sets, SCode.Class, InstDims)
 	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State)
@@ -202,6 +204,24 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 
   axiom	inst_class_decls(env,[],_) => (env,[])
 end
+
+(** relation: make_env_from_program
+ ** This relation takes a `SCode.Program' and builds an environment, excluding the class in A1.
+**)
+
+relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env = 
+  rule	Builtin.initial_env => env &
+	add_program_to_env(env,prog,c) => env'
+	--------------------------------
+	make_env_from_program (prog,c) => env'
+end
+
+relation add_program_to_env: (Env.Env,SCode.Program,SCode.Path) => Env.Env =
+  rule	inst_class_decls(env,p,path) => (env' ,_) 
+	-----------------------------------------
+	add_program_to_env (env,p,path) => env'
+end
+
 
 (** relation: inst_program
  **

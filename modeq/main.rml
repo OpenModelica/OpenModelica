@@ -132,7 +132,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
   rule	check_classdef str => true &
 	Debug.fprint ("dump","\nDetected class definition, parsing...\n") &
 	Parser.parsestring str => p &
-	Absyn.update_program (p,iprog) => newprog &
+	Interactive.update_program (p,iprog) => newprog &
  	Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n") &
 	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
 	Debug.fcall ("dump", Dump.dump, newprog) 

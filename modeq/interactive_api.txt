@@ -48,7 +48,7 @@ deleteComponent(<ident>,<cref>)		Deletes a component (A0)
 updateComponent(<ident>,<cref>,		Updates an already existing component.
 	<cref>,annotate=<expr>)
 
-getComponentsCount(<cref>)		Returns the number of
+getComponentCount(<cref>)		Returns the number of
 					components of a class.
 
 getNthComponent(<cref>,<int>)		Returns the belonging class, 
@@ -64,7 +64,7 @@ getNthComponentAnnotation(<cref>,<int>) Returns the flattened
 					string of 15 values, see
 					Annotations below, e.g "false,10,30,..."
 
-getConnectionsCount(<cref>)		Returns the number of
+getConnectionCount(<cref>)		Returns the number of
 					connections in the model.
 
 getNthConnection(<cref>,<int>)		Returns the nth connection,
@@ -87,6 +87,10 @@ getNthConnectorAnnotation(<cref>,<int>	Returns the nth connector
 					list of values of a flat
 					record, see Annotation below
 
+Error Handling
+==============
+When an error occur in any of the functions above, the string
+"-1" is returned.
 
 
 Annotations

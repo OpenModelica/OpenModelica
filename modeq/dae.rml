@@ -93,6 +93,7 @@ module DAE:
   relation is_comp: Element => ()
   relation find_element: (Element list, Element => ()) => Element option
   relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list)
+  relation get_variable_bindings_str: Element list => string
 end
 
 
@@ -1097,4 +1098,60 @@ relation build_gr_element : Element => Graphviz.Node =
 	build_gr_element FUNCTION(fpath,dae,ty) => Graphviz.LNODE("FUNCTION",[fstr],[],[node])
 
 
+end
+
+(** relation: get_variable_bindings_str
+ ** This relation takes a `DAE.Element' list and returns a comma separated string of variable bindings.
+ ** E.g. model A Real x=1; Real y=2; end A; => "x=1,y=2"
+ **)
+relation get_variable_bindings_str: Element list => string =
+	
+  rule	get_variable_list elts => varlst &
+	get_bindings_str varlst => str
+	------------------------------
+	get_variable_bindings_str elts => str
+end
+
+relation get_variable_list: Element list  => Element list =
+
+  rule	get_variable_list lst => res
+	-------------------------------------
+	get_variable_list  VAR(a,b,c,d,e,f)::lst => (VAR(a,b,c,d,e,f)::res)
+
+  rule	get_variable_list lst => res
+	----------------------------
+	get_variable_list _::lst => res
+
+  axiom	get_variable_list [] => []
+end
+
+relation get_bindings_str: Element list  => string =
+	
+  rule	Exp.cref_str cr => elstr &
+	Exp.print_exp_str e => expstr &
+	string_append(elstr,"=") => s1 &
+	string_append(s1,expstr) => s2 &
+	string_append(s2,",") => s3 &
+	get_bindings_str(lst) => s4 &
+	string_append(s3,s4) => str
+	-----------------
+	get_bindings_str((v as VAR(cr,_,_,_,SOME(e),_))::(lst as _::_)) => str
+
+  rule	Exp.cref_str cr => elstr &
+	string_append(elstr,",") => s1 &
+	get_bindings_str(lst) => s2 &
+	string_append(s1,s2) => str
+	-----------------
+	get_bindings_str((v as VAR(cr,_,_,_,NONE,_))::(lst as _::_)) => str	
+
+  rule	Exp.cref_str cr => elstr &
+	Exp.print_exp_str e => expstr &
+	string_append(elstr,"=") => s1 &
+	string_append(s1,expstr) => str
+	-----------------
+	get_bindings_str([v as VAR(cr,_,_,_,SOME(e),_)]) => str
+
+  rule	Exp.cref_str cr => str
+	-----------------------------------------------
+	get_bindings_str([v as VAR(cr,_,_,_,NONE,_)]) => str	
 end
