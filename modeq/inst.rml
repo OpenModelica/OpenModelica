@@ -16,11 +16,13 @@ with "env.rml"
 with "mod.rml"
 with "builtin.rml"
 with "dump.rml"
+with "types.rml"
 
 (* These make the code a little more readable *)
 type Prefix = Prefix.Prefix
 type Mod = Mod.Mod
 type Ident = Exp.Ident
+type Env = Env.Env
 
 
 (**********************************************************************)
@@ -38,10 +40,19 @@ relation assert : (bool, bool, string) => () =
 
 end
 
+relation optional_cons : ('a option, 'a list) => 'a list =
+
+  axiom optional_cons(NONE, l) => l
+
+  axiom optional_cons(SOME(x), l) => x::l
+
+end
+
 (**********************************************************************)
 
-relation inst_list (* : (Env.Env, Mod, Prefix, =>, foo list) *)
-	 =
+relation inst_list : (Env, Mod, Prefix, (Env, Mod, Prefix, 'a)
+	  				 => ('b list, Env), 'a list)
+	  => ('b list, Env) =
 
   axiom inst_list(env,mod,pre,r,[]) => ([],env)
 
@@ -53,26 +64,33 @@ relation inst_list (* : (Env.Env, Mod, Prefix, =>, foo list) *)
 
 end
 
-relation inst_connect: (Exp.Exp,Exp.Exp) => DAE.DAEcomp list =
-
+relation inst_connect: (Env, Explode.ComponentRef,Explode.ComponentRef)
+	  => DAE.DAEcomp list =
+(*
+  rule	type_of(env, o1) => c1 &
+	type_of(env, o2) => c2 &
+	not Types.same_type(c1, c2) &
+	print "# Incompatible types in connect()\n" & fail
+	---------------------------------
+	inst_connect(o1,o2) => []
+*)
   rule	print "No connect() yet\n" & fail
 	---------------------------------
-	inst_connect(_,_) => []
+	inst_connect(_,_,_) => []
 
 end
 
-relation inst_equation: (Env.Env,Mod,Prefix,Explode.Equation)
-	  => (DAE.DAEcomp list, Env.Env) =
+relation inst_equation: (Env,Mod,Prefix,Explode.Equation)
+	  => (DAE.DAEcomp list, Env) =
 
   (* connect
    *
    * Handle connct statements
    *)
 
-  rule	inst_connect(o1,o2) => l
+  rule	inst_connect(env,c1,c2) => l
 	------------------------
-	inst_equation(env,mods,pre,
-		      Absyn.EQ_EXPR(Exp.CALL(Exp.IDENT("connect"),[o1,o2])))
+	inst_equation(env,mods,pre, Absyn.EQ_CONNECT(c1,c2))
 	 => (l,env)
 
   (* assert
@@ -93,12 +111,11 @@ relation inst_equation: (Env.Env,Mod,Prefix,Explode.Equation)
 	--------------------------------------------
 	inst_equation(env,mods,pre,Absyn.EQ_EXPR(_)) => ([],env)
 
-  rule	Env.lookup_var(env,n) &
+  rule	Env.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,_,_,_,_,_,SOME(_)) &
 	print " shadowed equation for " & print n & print "\n"
 	------------------------------------------------------
 	inst_equation(env,mods,pre,
-		      Absyn.EQ_EQUALS(Exp.PATH(Exp.IDENT(n)),
-				      e2))
+	Absyn.EQ_EQUALS(Exp.PATH(Exp.IDENT(n)), e2))
 	  => ([],env)
 
   rule	print " equation\n" &
@@ -142,8 +159,8 @@ relation check_prot : (bool, Mod, string) => () =
 
 end
 
-relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
-	  => (DAE.DAEcomp list, Env.Env) =
+relation inst_element: (Env, Mod, Prefix, Explode.Element)
+	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
 
   (* extends
    *
@@ -172,11 +189,11 @@ relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
 	Mod.merge(mods',m) => mods'' &
 
 	(* Can't use inst_class, as that creates a new frame *)
-	inst_class_in(env,mods'',pre,c,prot) => (dae,env')
+	inst_class_in(env,mods'',pre,c,prot) => (dae,env',tys)
 	----------------------------------
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,_,Explode.EXTENDS(cn,m)))
-	  => (dae,env')
+	  => (dae,env',tys)
 
   (* components
    *
@@ -184,23 +201,23 @@ relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
    *)
 
   (* If a variable is declared multiple times, the first is used *)
-  rule	Env.lookup_var(env,n) &
+  rule	Env.lookup_var_local(env,n) => _ &
 	print " ignoring shadowed variable " & print n & print "\n"
 	--------------------------
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,n,
 				     Explode.COMPONENT(_,_,_,_,_,_,_,_,_)))
-	  => ([],env)
+	  => ([],env,[])
 
   (* Illegal redeclarations *)
-  rule	Env.lookup_var(env,n) &
+  rule	Env.lookup_var_local(env,n) => _ &
 	print "Trying to redeclare the class " & print n &
 	print " as a variable\n" &
 	fail
 	------------------------
 	inst_element(env,mods,pre, Explode.ELEMENT(final,prot,n,
 						   Explode.CLASSDEF(_,_)))
-	  => ([],env)
+	  => ([],env,[])
 
   rule	Env.lookup_class(env,Exp.IDENT(n)) => (v,_) &
 	print "Trying to redeclare the variable " & print n &
@@ -210,7 +227,7 @@ relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,n,
 				     Explode.COMPONENT(_,_,_,_,_,_,_,_,_)))
-	  => ([],env)
+	  => ([],env,[])
 
   (* A new class definition
    *
@@ -226,7 +243,7 @@ relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,n,
 				     Explode.CLASSDEF(_,c)))
-	 => ([],env')
+	 => ([],env',[])
 
   (* A variable
    *
@@ -263,12 +280,13 @@ relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
 
 	Prefix.prefix_add(n,pre) => pre' &
 
-	Mod.mod_assignment mod' => ass &
-	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,cl,f,p,c,i,o,ass)) => env' &
-
 	print "        added\n" &
 
-	inst_class(env,mod',pre',cl) => dae1 &
+	inst_class(env,mod',pre',cl) => (dae1,ty) &
+
+	Mod.mod_assignment mod' => ass &
+	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,ty,f,p,c,i,o,ass)) => env' &
+
 	print "        instantiated\n" &
 
 	(* If the modification assigns a value to this variable, add an
@@ -280,7 +298,7 @@ relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
 	inst_element(env,mods,pre,
 		     Explode.ELEMENT(final,prot,_,
 				     Explode.COMPONENT(n,f,p,c,i,o,t,ad,m)))
-         => (dae,env')
+         => (dae,env',[(n,ty)])
 
   (*
    * If the class lookup in the previous rule fails, this rule catches
@@ -297,12 +315,26 @@ relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
 	inst_element(env,_,pre,
 		     Explode.ELEMENT(final,prot,n,
 				     Explode.COMPONENT(_,_,_,_,_,_,t,_,_)))
-         => ([],env)
+         => ([],env,[])
 
 end
 
-and inst_algorithm : (Env.Env, Mod, Prefix, Explode.Algorithm)
-	  => (DAE.DAEcomp list, Env.Env) =
+and inst_element_list : (Env, Mod, Prefix, Explode.Element list)
+	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
+
+  axiom inst_element_list(env,_,_,[]) => ([], env, [])
+
+  rule  inst_element(env,mod,pre,el) => (dae1,env',tys1) &
+	inst_element_list(env',mod,pre,els) => (dae2,env'',tys2) &
+	list_append(tys1, tys2) => tys &
+	list_append(dae1, dae2) => dae
+	------------------------------
+	inst_element_list(env,mod,pre,el::els) => (dae, env'', tys)
+
+end
+
+and inst_algorithm : (Env, Mod, Prefix, Explode.Algorithm)
+	  => (DAE.DAEcomp list, Env) =
 
   rule  print "# no algorithms yet\n" & fail
 	------------------------------------
@@ -310,69 +342,77 @@ and inst_algorithm : (Env.Env, Mod, Prefix, Explode.Algorithm)
 
 end
 
-and inst_classdef: (Env.Env, Mod, Prefix, Explode.ClassDef, bool)
-	  => (DAE.DAEcomp list, Env.Env) =
+and inst_classdef: (Env, Mod, Prefix, Explode.ClassDef, bool)
+	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
 
 	(* FIXME: propagate prot *)
-  rule	inst_list(env,mods,pre,inst_element,els) => (dae1,env') &
+  rule	inst_element_list(env,mods,pre,els) => (dae1,env', tys) &
 	inst_list(env',mods,pre,inst_equation,eqs) => (dae2,env'') &
 	inst_list(env'',mods,pre,inst_algorithm,als) => (dae3,env''') &
 	list_append(dae1,dae2) => dae5 &
 	list_append(dae5,dae3) => dae
 	-----------------------------
 	inst_classdef(env,mods,pre, Explode.PARTS(els,eqs,als), prot)
-	  => (dae,env''')
+	  => (dae,env''', tys)
 
   rule	Env.lookup_class(env,cn) => (c,m) &
 	(* FIXME order *)
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod) => mods'' &
-	inst_class_in(env, mods'', pre, c, prot) => (dae,env)
+	inst_class_in(env, mods'', pre, c, prot) => (dae,env, tys)
 	----------------------------------------
 	inst_classdef(env,mods,pre, Explode.DERIVED(cn,ad,mod), prot)
-	  => (dae,env)
+	  => (dae,env, tys)
+
+  rule	not Env.lookup_class(env,cn) => (_,_) &
+	Exp.path_string(cn) => cns &
+	print "# unknown class: " & print cns & print "\n" & fail
+	----------------------------------------
+	inst_classdef(env,mods,pre, Explode.DERIVED(cn,ad,mod), prot)
+	  => ([], env, [])
 
 end
 
-and inst_class_in: (Env.Env, Mod, Prefix, Explode.Class, bool)
-	  => (DAE.DAEcomp list, Env.Env) =
+and inst_class_in: (Env, Mod, Prefix, Explode.Class, bool)
+	  => (DAE.DAEcomp list, Env, (Ident * Types.Type) list) =
 
   rule	print " instantiating " & print n & print "\n" &
-	inst_classdef(env,mods,pre,d,prot) => (l,env')
+	inst_classdef(env,mods,pre,d,prot) => (l,env', tys)
 	------------------------------------------------------	
 	inst_class_in(env,mods,pre,c as Explode.CLASS(n,false,r,d), prot)
-	  => (l,env')
+	  => (l,env', tys)
 
   rule	print "Can't instantiate partial class " & print n & print "\n" &
 	fail
 	------------------------------------------------------	
 	inst_class_in(env,mod,pre, Explode.CLASS(n,true,_,_), _)
-	  => ([],Env.empty_env)
+	  => ([], Env.empty_env, [])
 
 	(* FIXME *)
   rule  print "# Fallthru in inst_class_in\n" & fail
 	----------------------------------
-	inst_class_in(_,_,_,_,_) => ([],Env.empty_env)
+	inst_class_in(_,_,_,_,_) => ([],Env.empty_env,[])
 
 end
 
-and inst_class: (Env.Env, Mod, Prefix, Explode.Class) => DAE.DAEcomp list =
+and inst_class: (Env, Mod, Prefix, Explode.Class)
+	  => (DAE.DAEcomp list, Types.Type) =
 
   rule	Env.new_frame(env) => env' &
-	inst_class_in(env', mod, pre, c, false) => (dae,_)
+	inst_class_in(env', mod, pre, c, false) => (dae,_,tys)
 	-------------------------------------------
-	inst_class(env, mod, pre, c) => dae
+	inst_class(env, mod, pre, c) => (dae, Types.COMPLEX(tys))
 
 end
 
-relation inst_program : (Env.Env, Explode.Program) => DAE.DAEcomp list =
+relation inst_program : (Env, Explode.Program) => DAE.DAEcomp list =
 
   rule	print "Empty program\n" & fail
 	------------------------------
 	inst_program(env,[]) => []
 
   rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
-	inst_class(env',Mod.NOMOD,[],c) => l
+	inst_class(env',Mod.NOMOD,[],c) => (l,_)
 	-----------------------------
 	inst_program(env,[c]) => l
 
