@@ -1,0 +1,13 @@
+model t
+flow Real a;
+constant Real b;
+parameter Real c, d;
+Real e;
+
+equation
+a - b * x = 1 / 2.0;
+c + d / e = 2;
+f * 3^2 = g;
+
+
+end t;

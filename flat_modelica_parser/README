@@ -1,0 +1,13 @@
+The flat modelica parser is an adaption of the modelica parser in
+antlr for parsing flattened modelica. It is primarily intended for
+integration into ModSimPack, hence the modSimPackTest files.
+
+The Makefile is written to work on Solaris with antlr 2.7.1 and gcc
+2.95.2. You will probably have to adapt it to your environment.
+
+A current working testfile is testfiles/t.mof. It contains nothing
+that the parser does not handle yet.
+
+
+/Kaj Nyström
+x02kajny@ida.liu.se

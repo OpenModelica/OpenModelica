@@ -1,0 +1,64 @@
+model rlccircuit
+parameter Real Resistor1.R = 1 "Resistance";
+parameter Real Conductor1.G = 1 "Conductance";
+parameter Real Capacitor1.C = 1 "Capacitance";
+parameter Real ConstantVoltage1.V = 1 "Value of constant voltage";
+
+Real Resistor1.v "Voltage drop between the two pins (= p.v - n.v)";
+Real Resistor1.i "Current flowing from pin p to pin n";
+Real Resistor1.p.v "Potential at the pin";
+Real Resistor1.p.i "Current flowing into the pin";
+Real Resistor1.n.v "Potential at the pin";
+Real Resistor1.n.i "Current flowing into the pin";
+Real Conductor1.v "Voltage drop between the two pins (= p.v - n.v)";
+Real Conductor1.i "Current flowing from pin p to pin n";
+Real Conductor1.p.v "Potential at the pin";
+Real Conductor1.p.i "Current flowing into the pin";
+Real Conductor1.n.v "Potential at the pin";
+Real Conductor1.n.i "Current flowing into the pin";
+Real Capacitor1.v "Voltage drop between the two pins (= p.v - n.v)";
+Real Capacitor1.i "Current flowing from pin p to pin n";
+Real Capacitor1.p.v "Potential at the pin";
+Real Capacitor1.p.i "Current flowing into the pin";
+Real Capacitor1.n.v "Potential at the pin";
+Real Capacitor1.n.i "Current flowing into the pin";
+Real Ground1.p.v "Potential at the pin";
+Real Ground1.p.i "Current flowing into the pin";
+Real ConstantVoltage1.v "Voltage drop between the two pins (= p.v - n.v)";
+Real ConstantVoltage1.i "Current flowing from pin p to pin n";
+Real ConstantVoltage1.p.v "Potential at the pin";
+Real ConstantVoltage1.p.i "Current flowing into the pin";
+Real ConstantVoltage1.n.v "Potential at the pin";
+Real ConstantVoltage1.n.i "Current flowing into the pin";
+
+equation
+Resistor1.v = Resistor1.p.v-Resistor1.n.v;
+0 = Resistor1.p.i+Resistor1.n.i;
+Resistor1.i = Resistor1.p.i;
+Resistor1.R*Resistor1.i = Resistor1.v;
+Conductor1.v = Conductor1.p.v-Conductor1.n.v;
+0 = Conductor1.p.i+Conductor1.n.i;
+Conductor1.i = Conductor1.p.i;
+Conductor1.i = Conductor1.G*Conductor1.v;
+Capacitor1.v = Capacitor1.p.v-Capacitor1.n.v;
+0 = Capacitor1.p.i+Capacitor1.n.i;
+Capacitor1.i = Capacitor1.p.i;
+Capacitor1.i = Capacitor1.C*der(Capacitor1.v);
+Ground1.p.v = 0;
+ConstantVoltage1.v = ConstantVoltage1.p.v-ConstantVoltage1.n.v;
+0 = ConstantVoltage1.p.i+ConstantVoltage1.n.i;
+ConstantVoltage1.i = ConstantVoltage1.p.i;
+ConstantVoltage1.v = ConstantVoltage1.V;
+Capacitor1.n.i+ConstantVoltage1.p.i+Ground1.p.i = 0;
+ConstantVoltage1.p.v = Capacitor1.n.v;
+Ground1.p.v = Capacitor1.n.v;
+Capacitor1.p.i+Conductor1.n.i = 0;
+Conductor1.n.v = Capacitor1.p.v;
+Conductor1.p.i+Resistor1.n.i = 0;
+Resistor1.n.v = Conductor1.p.v;
+ConstantVoltage1.n.i+Resistor1.p.i = 0;
+Resistor1.p.v = ConstantVoltage1.n.v;
+end equation
+
+end rlccircuit;
+

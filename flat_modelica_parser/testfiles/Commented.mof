@@ -1,0 +1,27 @@
+model Pendulum
+constant Real PI = 3.14159265358979;
+constant Real g = 9.81;
+parameter Real m = 1;
+constant Real L = 0.5;
+
+Real F;
+Real x(start = 10);
+Real y(start = 0);
+Real vx;
+Real vy;
+
+// A comment
+
+equation
+m*der(vx) =  -x*F/L;
+m*der(vy) =  -(y*F/L+m*g);
+//A small comment
+x*x+y*y = L*L;
+/*Hi again*/
+der(x) = vx;
+/* Somewhat weird comment //* */
+der(y) = vy;
+/* Hi * */
+end equation
+
+end Pendulum;
