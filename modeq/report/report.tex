@@ -830,6 +830,11 @@ two related, but slightly different, meanings.
   
 \end{example}
 
+\begin{Def}{Atomic component}
+  A component that is not composed of subcomponent is called an
+  \term{atomic component}.
+\end{Def}
+
 
 \section{Types}
 \label{sec:types}
@@ -1335,6 +1340,11 @@ The following extensions are made:
   declared as \code{fclass} to differentiate it from Modelica's
   \code{class}.
 
+  There are plans for a modified version of the translator which
+  produces valid Modelica.  This will be less readable than the
+  current Flat Modelica, but will allow us to feed the output of the
+  translator to another Modelica system.
+
 \end{itemize}
 
 The output of the translator also has the following properties:
@@ -1514,6 +1524,8 @@ currently applicable to the class being instantiated.
 \label{sec:eleminst}
 
 Instantiation of a class is done by the relation \code{Inst.inst\_class}
+
+\unfinished
 
 
 \section{Static expression analysis}
@@ -1749,10 +1761,10 @@ representation.
 The main translation step does several things simultaneously.  One
 important part is the flattening of the hierarchical structure.  This
 means that all composite components are split up in subcomponents, and
-all ``atomic'' components \fixme{terminology} will receive a new name
-that identifies it with a unique identifier in the global name space.
-For instance, the voltage variable in the positive connector in the
-capacitor named \code{C2} will get the global name \code{C2.p.v}.
+all atomic components will receive a new name that identifies it with
+a unique identifier in the global name space.  For instance, the
+voltage variable in the positive connector in the capacitor named
+\code{C2} will get the global name \code{C2.p.v}.
 
 The set of all components is listen with their global name in figure
 \ref{fig:ex-flatname}.
