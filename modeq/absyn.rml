@@ -256,7 +256,6 @@ module Absyn:
 	       | TUPLE of Exp list (*PR.*)
 	       | END
 	       | CODE of Code
-	       | FOR_ITER_EXP of Exp * Ident * Exp
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
 

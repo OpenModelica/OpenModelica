@@ -58,8 +58,7 @@ List of things to implement:
 	implementing them. Some of them are added to the builtin.rml,
 	some of them not.  15 days.
 	
-14.	3.4.3.1 Reduction expressions (Not implemented at all, except
-	for in Absyn). (See also 3.4.4)  15 days.
+14.	3.4.3.1 Reduction expressions (Not implemented at all). (See also 3.4.4)  15 days.
 
 15.	Array access with end operator A[end]:=A[end-1];
 	Array access on the form A[{1,2,3}] (in ceval)
@@ -118,9 +117,16 @@ List of things to implement:
 
 25.	Array construction (3.4.4.1). Using array(... for ...)
 	syntax. Related to 14, should be done after or together with 14.
+	Partially implemented. Left to do:
+	* Constant evaluation and/or optimization. Could be implemented 
+	  as function calls with index as argument. Or array can be unrolled and indexed, or if 
+	  constant value can be calculated and indexed. Array should then be cached.
+	* Automatic type conversion of element type, e.g. (Real[]) a[5] = {(Integer)3 for ...} fails.
+	* Handle multiple iterators
 
 26.	Array constructors with iterators. Using {expr for i in ...}
 	syntax. Related to 14 and 25.
+	Implemented in walker which generates array() call (see 25.).
 
 27.	Deduction of ranges (3.3.3.1). It is allowed to leave out "in
 	range" in loops. e.g. 

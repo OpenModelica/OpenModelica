@@ -1525,6 +1525,11 @@ primary returns [void* ast]
 			}
 		| #(LBRACE ( (ast = expression_list) { ast = Absyn__ARRAY(ast); }
                    | #(FOR_ITERATOR ast = for_iterator)
+                    {
+                        /* create an array constructor as a reduction expression */
+                        /* for unified handling in compiler */
+                        ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),ast);
+                    }
                 ))
 		| END { ast = Absyn__END; }
 		)
