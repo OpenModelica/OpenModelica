@@ -391,7 +391,7 @@ void Schedule::tdsPass4()
 	temp = mergeTasks();
 	
 	if (temp == -1) {
-	  cerr << "temp == -1, problem?" << endl;
+	  //cerr << "temp == -1, problem?" << endl;
 	  
 	} else {
 	  numProc-= temp;

@@ -288,6 +288,7 @@ void Codegen::generateSubTaskCode(VertexID task)
   InEdgeIterator e,e_end;
   int i;
   int parentSize = getParentSize(task,m_tg);
+
   vector<string> parentnames(parentSize);
   vector<EdgeID> parentEdges(in_degree(task,*m_tg));
   
@@ -462,6 +463,8 @@ void  Codegen::generateParallelMPIHeaders()
 		<< endl;
   m_cstreamFunc << "#define BARRIER MPI_Barrier(MPI_COMM_WORLD)" << endl;
 
+  m_cstreamFunc << "#define abs(x) fabs(x)" << endl;
+
 }
 
 void  Codegen::generateParallelMPIGlobals()
@@ -483,6 +486,7 @@ void Codegen::generateGlobals()
 {
   int numsteps = 100;
   m_cstream << "#include <stdlib.h>" << endl;
+  m_cstream << "#include <math.h>" << endl;
   m_cstream << "#include \"" << m_fileNameFunc << "\"" << endl << endl;
   m_cstream << "#include \"solvers.hpp\"" << endl;
   m_cstream << "#ifdef TIMING" << endl;

@@ -104,7 +104,7 @@ void TaskMerging::merge(TaskGraph *taskgraph, TaskGraph* orig_tg,
 
   while (m_change) {
     m_change=false;
-   mergeRules();
+     mergeRules();
   }
   new_size = num_vertices(*m_taskgraph);
 
