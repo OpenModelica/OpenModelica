@@ -54,6 +54,7 @@ SRCRML= absyn.rml \
 	types.rml \
 	taskgraph.rml \
 	tornado.rml \
+	tornadocodegen.rml \
 	util.rml \
 	values.rml \
 	vartransform.rml

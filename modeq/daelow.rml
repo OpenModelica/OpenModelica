@@ -299,6 +299,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation is_state_var: (Var) => bool
   relation is_non_state: VarKind => ()
   relation is_var_known : (Var list, Exp.ComponentRef) => bool 
+  relation is_param: (Var ) => bool 
 
   relation get_all_exps : DAELow => Exp.Exp list
 
@@ -5043,4 +5044,11 @@ relation get_all_exps_eqn : Equation => Exp.Exp list =
 	get_all_exps_eqn ALGORITHM(ind,e1,e2) => exps
 			     
 end
+
+
+  relation is_param: (Var ) => bool =
+          
+  axiom	is_param(VAR(_,PARAM,_,_,_,_,_,_,_,_,_)) => true
+  axiom	is_param(_) => false
+  end
 

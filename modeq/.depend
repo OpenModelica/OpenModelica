@@ -28,7 +28,7 @@ staticexp.o: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig value
 simcodegen.o: simcodegen.rml dae.sig daelow.sig absyn.sig exp.sig util.sig rtopts.sig debug.sig system.sig values.sig codegen.sig print.sig modutil.sig
 types.o: types.rml classinf.sig absyn.sig exp.sig values.sig explode.sig dump.sig debug.sig print.sig util.sig
 taskgraph.o: taskgraph.rml exp.sig daelow.sig taskgraphext.sig util.sig absyn.sig dae.sig ceval.sig values.sig print.sig
-tornado.o: tornado.rml dae.sig absyn.sig interactive.sig util.sig system.sig daelow.sig exp.sig debug.sig rtopts.sig inst.sig values.sig tornadoext.sig explode.sig lookup.sig env.sig simcodegen.sig dump.sig
+tornado.o: tornado.rml dae.sig absyn.sig interactive.sig util.sig system.sig daelow.sig exp.sig debug.sig rtopts.sig inst.sig values.sig tornadoext.sig explode.sig lookup.sig env.sig simcodegen.sig dump.sig tornadocodegen.sig
 util.o: util.rml
 values.o: values.rml exp.sig absyn.sig print.sig system.sig util.sig dump.sig
 vartransform.o: vartransform.rml exp.sig daelow.sig system.sig util.sig algorithm.sig
