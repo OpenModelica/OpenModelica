@@ -32,6 +32,7 @@ tokens {
 	ELSEIF		= "elseif"		;
 	ELSEWHEN	= "elsewhen"	;
   	END			= "end"			;
+	ENUMERATION	= "enumeration"	;
 	EQUATION	= "equation"	;
 	ENCAPSULATED= "encapsulated";
 	EXTENDS		= "extends"		;

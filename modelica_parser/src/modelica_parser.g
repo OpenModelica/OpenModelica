@@ -91,9 +91,21 @@ class_type :
 class_specifier :
 		( string_comment composition END! IDENT!
 		| EQUALS name_path ( array_subscripts )? ( class_modification )? comment
+		| EQUALS ENUMERATION! enumeration 
 		)
 		;
-
+enumeration :
+		LPAR! enum_list RPAR! comment 
+		{
+			#enumeration = #([ENUMERATION, "ENUMERATION"], enumeration);
+		}
+		;
+enum_list :
+		enumeration_literal ( COMMA! enumeration_literal)*
+		;
+enumeration_literal :
+		IDENT comment
+		;
 composition :
 		element_list
 		(	public_element_list
