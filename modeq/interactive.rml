@@ -291,6 +291,55 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 	------------------------
 	update_program (a,b) => b
 end
+
+relation join_paths: (Absyn.Path, Absyn.Path) => (Absyn.Path) =
+
+  axiom	join_paths(Absyn.IDENT(str),p2) => Absyn.QUALIFIED(str,p2) 
+	
+  rule	join_paths(p,p2) => p'
+	-----------------------
+	join_paths(Absyn.QUALIFIED(str,p),p2) => Absyn.QUALIFIED(str,p')
+end
+
+relation strip_last: (Absyn.Path) => Absyn.Path =
+
+  axiom	strip_last(Absyn.IDENT(_)) => fail
+	
+  axiom	strip_last(Absyn.QUALIFIED(str,Absyn.IDENT(_))) => Absyn.IDENT(str)
+
+  rule	strip_last(p) => p'
+	-------------------
+	strip_last(Absyn.QUALIFIED(str,p)) => Absyn.QUALIFIED(str,p')	
+end
+
+(** relation: lookup_classdef
+ ** This relation takes a Path of a class to lookup and a Path as a starting point for the lookup rules and a Program.
+ ** It returns the Class definition and the complete Path to the class.
+**)
+relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Class, Absyn.Path) =
+	
+  rule	(* Look first inside 'inmodel' *)
+	get_pathed_class_in_program(inmodel,p) => inmodeldef &
+	get_pathed_class_in_program(path,Absyn.PROGRAM([inmodeldef])) => cdef &
+	join_paths(inmodel,path) => newpath
+	--------------------------------
+	lookup_classdef(path, inmodel,p) => (cdef,newpath)
+
+	(* Then look inside next level *)
+  rule	strip_last(inmodel) => innewpath &
+	lookup_classdef(path,innewpath) => (cdef,respath)
+	------------------------------
+	lookup_classdef(path,inmodel,p) => (cdef,respath)
+	
+  rule	(* Finally look in top level *)
+	get_pathed_class_in_program(path,p) => cdef
+	------------------------------------------
+	lookup_classdef(path,_,p) => (cdef,path)
+	
+  rule	print "#Error, lookup_classdef failed\n"
+	---------------------
+	lookup_classdef(_,_,_) => fail
+end
 	
 (** relation add_component
  ** This relation takes:  arg1 - string giving the instancename, arg2 - `ComponentRef' giving the component type
@@ -456,19 +505,18 @@ end
 (** relation: get_connector_count
  ** This relation takes a ComponentRef and a Program and returns the number
  ** of connector components in the class given by the classname in the 
- ** ComponentRef .
+ ** ComponentRef. A partial instantiation of the inheritance structure is performed in order 
+ ** to find all connectors of the class
  **)
 relation get_connector_count: ((* Env.Env, *) Absyn.ComponentRef, Absyn.Program) => string =
-	(** P.A. Eventually, a global env will be held in the symboltable, for lookup of classes, etc.
-	 ** For now, we build the environment when we need it. **)
+	(** A complete elaboration is far too expensive. Instead we only look through the components of
+	 ** the class for types declared using the "connector" restricted class keyword. We also look in
+	 ** base classes  (recursively)  
+	 **)
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	SCode.elaborate(p) => p' &
-	(* Since we will lookup types of components in model 'modelpath', we can exclude
-	 instantiate that class... *)
-	Inst.make_env_from_program(p', modelpath) => env &
-	count_public_connectors(env,cdef) => count &
+	count_public_connectors(modelpath,cdef,p) => count &
 	int_string(count) => countstr
 	-------------------
 	get_connector_count (model,p) => countstr
@@ -483,11 +531,7 @@ end
 relation get_nth_connector: (Absyn.ComponentRef, Absyn.Program, int) => string =
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	SCode.elaborate(p) => p' &
-	(* Since we will lookup types of components in model 'modelpath', we can exclude
-	 instantiate that class... *)
-	Inst.make_env_from_program(p', modelpath) => env &
-	get_nth_public_connector_str(env,cdef,n) => resstr
+	get_nth_public_connector_str(modelpath,cdef,p,n) => resstr
 	-----------------
 	get_nth_connector(model,p,n)=> resstr
 
@@ -601,23 +645,23 @@ relation get_icon_annotation_str: (Absyn.ElementArg list) => string =
 	get_icon_annotation_str( _::xs) => str
 end
 
-relation get_nth_public_connector_str: (Env.Env, Absyn.Class, int) => string =
+relation get_nth_public_connector_str: (Absyn.Path, Absyn.Class, Absyn.Program,  int) => string =
 	
-  rule	get_nth_connector_str (env, elt, n) => res 
+  rule	get_nth_connector_str (p, modelpath, elt, n) => res 
 	------------------------------------------
-	get_nth_public_connector_str (env, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), n)  => res
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), p, n)  => res
 	
 	(** The rule above failed, count the number of connectors in the first public list, subtract the number 
 	 ** and try the rest of the list **)
-  rule	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS([Absyn.PUBLIC(elt)]))) => c1 &
+  rule	count_public_connectors (modelpath,Absyn.CLASS(a,b,c,Absyn.PARTS([Absyn.PUBLIC(elt)])),p) => c1 &
 	int_sub(n,c1) => c2 &
-	get_nth_public_connector_str(env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)),c2) => resstr
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)),p,c2) => resstr
 	--------------------------------------------------
-	get_nth_public_connector_str(env, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)),n) => resstr
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst)), p, n) => resstr
 	
-  rule	get_nth_public_connector_str (env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)),n) => res
+  rule	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(lst)), p, n) => res
 	-----------------------------------------------------
-	get_nth_public_connector_str (env, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst)), n) => res
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst)), p, n) => res
 	
 end
 
@@ -626,30 +670,28 @@ end
  ** in that list. 
  **)
 
-relation get_nth_connector_str: (Env.Env, Absyn.ElementItem list, int) => string =
-  rule	Lookup.lookup_class(env, tp) => (cdef,env') &
-	Inst.inst_class(env',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,_,ClassInf.CONNECTOR(_)) &
+relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem list, int) => string =
+  rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	get_nth_compname(complst,n) => str 
-	--------------------
-	get_nth_connector_str(env, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n) 
+	----------------------------------
+	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n) 
 	  => str
 
   rule	(** Not so fast, since we lookup and instantiate two times just because this was not 
 	 ** the connector we were looking for. **)
-	Lookup.lookup_class(env, tp) => (cdef,env') &
-	Inst.inst_class(env',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,_,ClassInf.CONNECTOR(_)) &
+	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	list_length(complst) => c1 &
 	int_sub(n,c1) => newn &
-	get_nth_connector_str(env,lst,newn) => res
+	get_nth_connector_str(p,modelpath,lst,newn) => res
 	---------------------------------------
-	get_nth_connector_str(env, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n) 
+	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst, n)
 	  => res
 	
-  rule	get_nth_connector_str(env,lst,n) => res
+  rule	get_nth_connector_str(p,modelpath,lst,n) => res
 	---------------------------------------
-	get_nth_connector_str(env,_::lst,n) => res
+	get_nth_connector_str(p,modelpath,_::lst,n) => res
 
-  axiom	get_nth_connector_str(env,[],n) => fail
+  axiom	get_nth_connector_str(p,modelpath,[],n) => fail
 end
 
 relation get_nth_compname: (Absyn.ComponentItem list, int) => string =
@@ -663,46 +705,57 @@ relation get_nth_compname: (Absyn.ComponentItem list, int) => string =
   axiom	get_nth_compname ([],_) => fail
 end
 
-relation count_public_connectors: (Env.Env, Absyn.Class) => int =
-
-  rule	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst))) => c1 &
-	count_connectors(env,elt) => c2 &
+(* This relation takes a Class and counts the number of connector components in the class. 
+ * This also includes counting in inherited classes.
+ *)
+relation count_public_connectors: (Absyn.Path, Absyn.Program, Absyn.Class) => int =
+	
+  rule	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,Absyn.PARTS(lst))) => c1 &
+	count_connectors(modelpath,p,elt) => c2 &
 	int_add(c1,c2) => res
 	---------------------
-	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst))) 
+	count_public_connectors (modelpath, p,  Absyn.CLASS(a,b,c,Absyn.PARTS(Absyn.PUBLIC(elt)::lst))) 
 	    => res
-
-  rule	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(lst))) => res
+	    
+  rule	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,Absyn.PARTS(lst))) => res
 	-----------------------------------------------------
-	count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst))) => res
+	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,Absyn.PARTS(_::lst))) => res
 	
-  axiom count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.PARTS([]))) => 0
-  (* This is not entierly true, since a derived class can also contain connectors *)
-  axiom count_public_connectors (env, Absyn.CLASS(a,b,c,Absyn.DERIVED(_,_,_))) => -1
+  axiom count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,Absyn.PARTS([]))) => 0
+
+  rule	lookup_classdef(cname,modelpath,p) => (cdef,newmodelpath) &
+	count_public_connectors (newmodelpath,cdef) => res
+	--------------------------------------------------
+	count_public_connectors (modelpath,p, Absyn.CLASS(a,b,c,Absyn.DERIVED(cname,_,_))) => res
 end
 
 (** relation: count_connectors
- ** This relation takes an ElementItem list and returns the number of connector components
- ** in that list 
+ ** This relation takes a Path to the current model and a ElementItem list and returns the number 
+ ** of connector components in that list.
  **)
-relation count_connectors: (Env.Env, Absyn.ElementItem list) => int =
+relation count_connectors: (Absyn.Path, Absyn.Program, Absyn.ElementItem list) => int =
 
-  rule	(** In order to know if a component is a connector we have to look up the class defintion of the type 
-	 ** and instantiate the class to check the state of the statemachine ClassInfo which should be CONNECTOR. **)
-	Lookup.lookup_class(env, tp) => (cdef,env') &
-	Inst.inst_class(env',Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,_,ClassInf.CONNECTOR(_)) &
+  rule	lookup_classdef(tp, modelpath,p) => (cdef,newmodelpath) &
+	count_public_connectors(newmodelpath,cdef,p) => c1 &
+	count_connectors(modelpath, lst) => c2 &
+	int_add(c1,c2) => res
+	---------------------
+	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.EXTENDS(tp,_)))::lst) => res
+
+  rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
 	list_length(complst) => c1 &
-	count_connectors(env, lst) => c2 &
+	count_connectors(modelpath, lst) => c2 &
 	int_add(c1,c2) => res
 	--------------------
-	count_connectors(env, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst) => res
+	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,tp,complst)))::lst) => res
 
+	
 	(* Rule above didn't match => element not connector components, try rest of list*)
-  rule	count_connectors(env, lst) => res 
+  rule	count_connectors(modelpath, p, lst) => res 
 	---------------------
-	count_connectors(env, _::lst) => res
+	count_connectors(modelpath, p, _::lst) => res
 
-  axiom	count_connectors(emv, []) => 0
+  axiom	count_connectors(_, _, []) => 0
 end
 
 (** relation: get_connection_annotation_str

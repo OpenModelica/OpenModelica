@@ -110,14 +110,32 @@ deleteNthEquation(<cref>,<int>)		Deletes	the nth (A1) equation
 					
 getConnectorCount(<cref>)		Returns the number of
 					connectors of a class.
+					NOTE: partial instantiation of
+					inheritance performed
 
 getNthConnector(<cref>,<int>)		Returns the name of the nth
 					connector, e.g "n".
 
-getNthConnectorAnnotation(<cref>,<int>	Returns the nth connector
-					annotation as comma separated
+getNthConnectorIconAnnotation(<cref>,<int>)	
+					Returns the nth connector
+					icon layer annotation as comma separated
 					list of values of a flat
 					record, see Annotation below.
+					NOTE: Since connectors can be
+					inherited, a partial
+					instantiation of the
+					inheritance structure is performed.
+
+getNthConnectorDiagramAnnotation(<cref>,<int>)
+					Returns the nth connector
+					diagram layer annotation as comma separated
+					list of values of a flat
+					record, see Annotation below.
+					NOTE: Since connectors can be
+					inherited, a partial
+					instantiation of the
+					inheritance structure is
+					performed.
 
 getIconAnnotation(<cref>)		Returns the Icon Annotation of 
 					the class named by A0. 
