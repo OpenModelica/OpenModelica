@@ -863,7 +863,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
-	Util.string_append_list([plotCmd, " \"", tmpPlotFile,"\""]) => call &			   
+	Util.string_append_list(["\"", plotCmd, "\" \"", tmpPlotFile,"\""]) => call &			   
 	System.system_call(call) => _
 	------------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
