@@ -95,6 +95,8 @@ module Exp:
 
 end
 
+with "rtopts.rml"
+
 (** relation: extend_cref
  **
  ** The `extend_cref' relation extends a `ComponentRef' by appending
@@ -164,7 +166,16 @@ end
  **)
 
 (*!ignorecode*)
- 
+
+relation type_string : Type => string =
+
+  axiom	type_string INT => "INT"
+  axiom	type_string REAL => "REAL"
+  axiom	type_string BOOL => "BOOL"
+  axiom	type_string STRING => "STRING"
+
+end
+
 (** relation: print_component_ref
  **
  ** Print a `ComponentRef'.
@@ -423,11 +434,63 @@ end
 (**)
 
 relation binop_symbol : Operator => string =
-  axiom	binop_symbol(ADD(_)) => " + "
-  axiom	binop_symbol(SUB(_)) => " - "
-  axiom	binop_symbol(MUL(_)) => " * "
-  axiom	binop_symbol(DIV(_)) => " / "
-  axiom	binop_symbol(POW(_)) => " ^ "
+
+  rule	RTOpts.typeinfo => false &
+	binop_symbol_1 op => s
+	----------------------
+	binop_symbol op => s
+
+  rule	RTOpts.typeinfo => true &
+	binop_symbol_2 op => s
+	----------------------
+	binop_symbol op => s
+
+end
+
+(**)
+
+relation binop_symbol_1 : Operator => string =
+  axiom	binop_symbol_1(ADD(_)) => " + "
+  axiom	binop_symbol_1(SUB(_)) => " - "
+  axiom	binop_symbol_1(MUL(_)) => " * "
+  axiom	binop_symbol_1(DIV(_)) => " / "
+  axiom	binop_symbol_1(POW(_)) => " ^ "
+
+(*
+  rule	int_string dim => s1 &
+	string_append(" <int[",s1) => s2 &
+	string_append(s2,"] *> ") => s3
+	-------------------------------
+	binop_symbol(INT_ARRAY_SCALAR_MUL(dim)) => s3
+
+  rule	int_string dim => s1 &
+	string_append(" <real[",s1) => s2 &
+	string_append(s2,"] *> ") => s3
+	-------------------------------
+	binop_symbol(REAL_ARRAY_SCALAR_MUL(dim)) => s3
+
+  axiom	binop_symbol(_) => " <unknown binop> "
+*)
+
+end
+
+relation binop_symbol_2 : Operator => string =
+  rule	type_string t => ts &
+	string_append(" +<", ts) => s &
+	string_append(s, "> ") => s'
+	----------------------------
+	binop_symbol_2(ADD(t)) => s'
+
+  axiom	binop_symbol_2(SUB(t)) => " - "
+  axiom	binop_symbol_2(MUL(t)) => " * "
+
+  rule	type_string t => ts &
+	string_append(" /<", ts) => s &
+	string_append(s, "> ") => s'
+	----------------------------
+	binop_symbol_2(DIV(t)) => s'
+
+  axiom	binop_symbol_2(POW(t)) => " ^ "
 
 (*
   rule	int_string dim => s1 &
