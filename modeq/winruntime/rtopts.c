@@ -343,3 +343,10 @@ RML_END_LABEL
   }
   RML_END_LABEL
 
+  RML_BEGIN_LABEL(RTOpts__simulation_5fcg)
+{
+  rmlA0 = RML_PRIM_MKBOOL(simulation_cg);
+  RML_TAILCALLK(rmlSC);
+}
+}
+RML_END_LABEL
