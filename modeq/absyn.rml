@@ -4,17 +4,10 @@
  **
  ** RCS: $Id$
  **
- ** This file defines the abstract syntax for Modelica. It uses data
- ** types from the `Exp' and `Types' modules.  Each type is described
- ** below.
+ ** This file defines the abstract syntax for Modelica.
  **)
 
 module Absyn:
-
-  (** - Imported types *)
-  (** These types are imported from other modules and given unqualified *)
-  (** names to help the readibility, and for backwards compatibility *)
-  (** with older versions.  This should be changed. *)
 
   type Ident = string
 
@@ -50,7 +43,12 @@ module Absyn:
 		     | PROTECTED of Element list
 		     | EQUATIONS of Equation list
 		     | ALGORITHMS of Algorithm list
+  (** A class definition contains several parts.  There are public and *)
+  (** protected component declarations, type definitions and `extends' *)
+  (** clauses, collectively called elements.  There are also equation *)
+  (** sections and algorithm sections. *)
 
+  (** - Elements *)
   datatype Element = ELEMENT of bool		     (* final *)
 			      * Ident
 			      * ElementSpec
@@ -61,10 +59,18 @@ module Absyn:
 		       | COMPONENTS of VarAttr
 				     * Path	     (* type name *)
 				     * Component list
+  (** An element is something that occurs in a public or protected *)
+  (** section in a class definition.  There is one constructor in the *)
+  (** `ElementSpec' type for each possible element type.  There are *)
+  (** class definitions (`CLASSDEF'), `extends' clauses (`EXTENDS') *)
+  (** and component declarations (`COMPONENTS'). *)
 
   datatype Component = COMPONENT of Ident	     (* component name *)
 				  * ArrayDim
 				  * Modification option
+  (** Several component declarations can be grouped together in one *)
+  (** `ElementSpec' by writing them on the same line in the source. *)
+  (** This type contains the information specific to one component. *)
 
   datatype Equation = EQ_EXPR of Exp	     (* more later? *)
 		    | EQ_IF of Exp
@@ -74,6 +80,8 @@ module Absyn:
 		    | EQ_EQUALS of Exp * Exp
 		    | EQ_CONNECT of ComponentRef * ComponentRef
 		    | EQ_FOR of Ident * Exp * Equation list
+  (** The `Equation' type describes one equation in an equation *)
+  (** section. *)
 
   datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp
 		     | ALG_IF of Exp
@@ -83,11 +91,17 @@ module Absyn:
 		     | ALG_FOR of Ident * Exp * Algorithm list
 		     | ALG_WHILE of Exp * Algorithm list
 		     | ALG_WHEN of Exp * Algorithm list
+  (** The `Algorithm' type describes one algorithm statement in an *)
+  (** algorithm section.  It does not describe a whole algorithm.  The *)
+  (** reason this type is named like this is that the name of the *)
+  (** grammar rule for algorithm statements is `algorithm'. *)
 
+  (** - Modifications *)
   datatype Modification = CLASSMOD of ElementArg list * Exp option
 
   datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
 		      | REDECLARATION of bool * ElementSpec
+  (** Modifications are described by the `Modification' type. *)
 
   (** - Variable attributes *)
   datatype VarAttr = ATTR of ArrayDim
@@ -99,9 +113,9 @@ module Absyn:
 
   (** - Array dimensions *)
   type ArrayDim = Subscript list
-  (** Variables in Modelica can be scalar, one-dimensional arrays, or *)
-  (** two-dimensional matrices.  This datatype is used to indicate the *)
-  (** dimensionality of a variable or a type definition. *)
+  (** Variables in Modelica can be scalar or arrays with one or more *)
+  (** dimensions. This datatype is used to indicate the dimensionality *)
+  (** of a variable or a type definition. *)
 
   (** - Expressions *)
 
@@ -110,11 +124,11 @@ module Absyn:
 	       | CREF of ComponentRef
 	       | STRING of string
 	       | BOOL of bool
-	       | BINARY of Exp * BinOp * Exp
-	       | UNARY of UnaryOp * Exp
-	       | LBINARY of Exp * LBinOp * Exp
-	       | LUNARY of LUnaryOp * Exp
-	       | RELATION of Exp * RelOp * Exp
+	       | BINARY of Exp * Operator * Exp
+	       | UNARY of Operator * Exp
+	       | LBINARY of Exp * Operator * Exp
+	       | LUNARY of Operator * Exp
+	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
 	       | CALL of ComponentRef * Exp list
 	       | ARRAY of Exp list
@@ -122,18 +136,17 @@ module Absyn:
 	       | RANGE of Exp * Exp option * Exp
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
-  datatype BinOp = ADD | SUB | MUL | DIV | POW
-  datatype UnaryOp = UMINUS | UPLUS
-  datatype LBinOp = AND | OR
-  datatype LUnaryOp = NOT
-  datatype RelOp = LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
+  datatype Operator = ADD | SUB | MUL | DIV | POW
+		    | UMINUS | UPLUS
+		    | AND | OR
+		    | NOT
+		    | LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
   
   (** - Subscripts *)
   datatype Subscript = NOSUB
 		     | SUBSCRIPT of Exp
-  (** The `Subscript' datatype is used in variable references.  An *)
-  (** one-dimensional array variable `a' can be supscriptet as `a[1]', *)
-  (** `a[1:2]' or `a[1:2:3]'. *)
+  (** The `Subscript' datatype is used both in array declarations and *)
+  (** variable references. *)
 
   (** - Component references and paths *)
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
@@ -225,7 +238,13 @@ relation element_spec_name : ElementSpec => Ident =
 
 end
 
-(** relation: print_restr *)
+(** relation: print_restr
+ **
+ ** This is a utility relation for printing a `Restriction'.  The code
+ ** is excluded for brevity.
+ **)
+
+(*!ignorecode*)
 
 relation print_restr : Restriction => () =
 
