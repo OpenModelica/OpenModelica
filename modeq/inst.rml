@@ -1283,7 +1283,7 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,(Absyn
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl,cf) => dim3
+	elab_arraydim(env,ad,SOME((e,Types.PROP(t,c))),impl,cf) => dim3
 
   rule	elab_arraydim_decl(env,ad,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
@@ -1294,7 +1294,7 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,(Absyn
 	Print.print_buf "    expected array dimensions [" &
 	print_dim dim1 & Print.print_buf "]\n"
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Static.PROP(t,c))),impl,cf) => fail
+	elab_arraydim(env,ad,SOME((e,Types.PROP(t,c))),impl,cf) => fail
 
 
   rule	Print.print_buf "- elab_arraydim failed\n"
@@ -1379,7 +1379,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type
 	elab_arraydim_decl(env,Absyn.NOSUB::ds,impl) => NONE::l
 
   rule	Static.elab_exp(env, d,st)
-	    => (e,Static.PROP(Types.T_INTEGER,_)) &  
+	    => (e,Types.PROP(Types.T_INTEGER,_)) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
@@ -1391,7 +1391,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) => SOME(DIMINT(i))::l
 
   rule	Static.elab_exp(env, d,st)
-	    => (e,Static.PROP(Types.T_INTEGER,true)) &  
+	    => (e,Types.PROP(Types.T_INTEGER,true)) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
@@ -1402,14 +1402,14 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, (Absyn.Path * Types.Type
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st as SOME(_)) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d,st) => (e,Static.PROP(Types.T_INTEGER,false)) &
+  rule	Static.elab_exp(env, d,st) => (e,Types.PROP(Types.T_INTEGER,false)) &
 	elab_arraydim_decl(env,ds,st) => l
 	-------------------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,st) 
 	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l 
 
   rule	Static.elab_exp(env,d,st)
-	  => (e,Static.PROP(t,_)) &
+	  => (e,Types.PROP(t,_)) &
 	Print.print_buf "# Array dimensions must be integer\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e &
  	Print.print_buf " (" & Types.print_type t & Print.print_buf ")\n"
@@ -1814,7 +1814,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(**  assert
 	 **)
 
-  rule	Static.elab_exp(env,e,NONE) => (e', Static.PROP(t, c)) &
+  rule	Static.elab_exp(env,e,NONE) => (e', Types.PROP(t, c)) &
 	inst_assertion (env, e', t, c, d, pre) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
@@ -1917,7 +1917,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** should be used.
 	 **)
 
-  rule	Static.elab_exp(env,e,NONE) => (e',Static.PROP(Types.T_BOOL,true)) &
+  rule	Static.elab_exp(env,e,NONE) => (e',Types.PROP(Types.T_BOOL,true)) &
 	Static.ceval(env,e',NONE) => Values.BOOL(cond) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
@@ -1945,7 +1945,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	      Types.T_INTEGER, Types.UNBOUND)  &  *)
 
  	Static.elab_exp (env,e,NONE)
-	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
+	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
 			     true)) &
 	(* FIXEM: Check bounds *)
@@ -1973,7 +1973,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Debug.fprintln ("insttr", "inst_equation_eqfor_1") &
 	Static.elab_exp (env,e,NONE)
-	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
+	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   id_t),
 			     true)) &
 	Debug.fprintln ("insti", "for expression elaborated") &
@@ -2002,7 +2002,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	      Types.T_INTEGER, Types.UNBOUND) &
 	Debug.fprintln ("insti", "loop variable looked up") &
 	Static.elab_exp (env,e,NONE)
-	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
+	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
 			     false)) &
 	Print.print_buf "#-- Error: Non-constant iteration bounds not supported\n" &
@@ -2072,8 +2072,8 @@ end
  **
  **)
 
-relation inst_eq_equation : (Exp.Exp, Static.Properties,
-			     Exp.Exp, Static.Properties) => DAE.Element list =
+relation inst_eq_equation : (Exp.Exp, Types.Properties,
+			     Exp.Exp, Types.Properties) => DAE.Element list =
 	(*PR. e1= lefthandside, e2=righthandside
 	* This seem to be a strange relation. 
 	* wich rule is matched? or is both rules matched?
@@ -2087,35 +2087,35 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	(* This rule is matched first, if it fail the next rule is matched.
 	 *)
   rule	Debug.print("\ninst_eq_equation (match e1) PROP, PROP") &
-	Static.match_prop(e1, p1, p2) => e1' &
+	Types.match_prop(e1, p1, p2) => e1' &
 	inst_eq_equation_2(e1', e2, t2) => dae 
 
 	------------------------------------------
-	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
-			 e2,p2 as Static.PROP(t2,_))
+	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
+			 e2,p2 as Types.PROP(t2,_))
 	  => dae
 
 	(* If it fails then this rule is matched. *)
   rule	Debug.print("\ninst_eq_equation (match e2) PROP, PROP") &
-	Static.match_prop(e2, p2, p1) => e2'&
+	Types.match_prop(e2, p2, p1) => e2'&
 	Debug.print("\n Second rule of relation_ inst_eq_equation ") &
 	inst_eq_equation_2(e1, e2', t1) => dae &
 	Debug.print("\n Second rule complete. ") 
 	------------------------------------------
-	inst_eq_equation(e1,p1 as Static.PROP(t1,_),
-			 e2,p2 as Static.PROP(t2,_))
+	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
+			 e2,p2 as Types.PROP(t2,_))
 	  => dae
 
 
 
   rule	Debug.print("\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE") &
 	(*Exp.print_exp (e1) & *)
-	Static.match_prop(e1, p1, p2) => e1' &
+	Types.match_prop(e1, p1, p2) => e1' &
 	(*Exp.print_exp (e1') & *)
 	inst_eq_equation_2(e1', e2, t2) => dae 
 	------------------------------------------
-	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
-			 e2,p2 as Static.PROP_TUPLE(t2,_))
+	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
+			 e2,p2 as Types.PROP_TUPLE(t2,_))
 	  => dae
 
 
@@ -2125,8 +2125,8 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	
 	print("\n  ") 
 	------------------------------------------
-	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
-			 e2,Static.PROP_TUPLE(t2,_))
+	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
+			 e2,Types.PROP_TUPLE(t2,_))
 	  => fail
 *)
 
@@ -2135,13 +2135,13 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	(* PR. *)	
   rule	Debug.print("\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE") &
 	Debug.print "\n About to do a static match e2. " &
-	Static.match_prop(e2, p2, p1) => e2'&
+	Types.match_prop(e2, p2, p1) => e2'&
 	Debug.print("\n Second rule of relation_ inst_eq_equation ") &
 	inst_eq_equation_2(e1, e2', t1) => dae &
 	Debug.print("\n Second rule complete. ") 
 	------------------------------------------
-	inst_eq_equation(e1,p1 as Static.PROP_TUPLE(t1,_),
-			 e2,p2 as Static.PROP_TUPLE(t2,_))
+	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
+			 e2,p2 as Types.PROP_TUPLE(t2,_))
 	  => dae
 
 	  (* An assignment to a varaible of T_ENUMERATION type is an explicit 
@@ -2150,8 +2150,8 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
   rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM.\n") &
 	inst_eq_equation_2(e1,e2,t) => dae
 	----------------------
-	inst_eq_equation(e1 as Exp.CREF(_,_),Static.PROP(Types.T_ENUMERATION(_),_),
-	    e2,Static.PROP(t as Types.T_ENUM,_)) => dae
+	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP(Types.T_ENUMERATION(_),_),
+	    e2,Types.PROP(t as Types.T_ENUM,_)) => dae
 
   rule	(* Types.equivtypes(t1,t2) => false & *)
 	Print.print_buf "# Illegal types in equation\n"&
@@ -2160,25 +2160,25 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 	Print.print_buf "    rhs: " & Exp.print_exp e2 &
 	Print.print_buf " :: " & Types.print_type t2 & Print.print_buf "\n"
 	----------
-	inst_eq_equation(e1,Static.PROP(t1,_),
-			 e2,Static.PROP(t2,_)) => fail
+	inst_eq_equation(e1,Types.PROP(t1,_),
+			 e2,Types.PROP(t2,_)) => fail
 
 
 (* PR To debug*)
 
   rule	Debug.print("\ne1 is PROP and e2 is PROP_TUPLE.  ")
 	---------------------------------	
-	inst_eq_equation(e1,Static.PROP(t1,_),
-			 e2, Static.PROP_TUPLE(_,_)) => fail
+	inst_eq_equation(e1,Types.PROP(t1,_),
+			 e2, Types.PROP_TUPLE(_,_)) => fail
 
   rule	Debug.print("e2 is PROP")
 	---------------------------------
 	inst_eq_equation(e1,_,
-			 e2,Static.PROP(t2,_)) => fail
+			 e2,Types.PROP(t2,_)) => fail
 
   rule	Debug.print("e1 is PROP")
 	---------------------------------
-	inst_eq_equation(e1,Static.PROP(t1,_),
+	inst_eq_equation(e1,Types.PROP(t1,_),
 			 e2, _) => fail
 
 
@@ -2479,7 +2479,7 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
 
   rule	Static.elab_exp (env,e,NONE)  =>
-	(e', prop as Static.PROP(Types.T_ARRAY(_,t),_)) &
+	(e', prop as Types.PROP(Types.T_ARRAY(_,t),_)) &
 	
 	add_for_loop_scope(env,i,t) => env' &
 	
@@ -2520,7 +2520,7 @@ end
  **)
 
 relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
-	=> (Exp.Exp * Static.Properties * Algorithm.Statement list) list =
+	=> (Exp.Exp * Types.Properties * Algorithm.Statement list) list =
 
   axiom	inst_elseifs (env,[]) => []
 
@@ -2835,9 +2835,9 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	----------
 	inst_mod_equation(cr,ty1,mod) => [] *)
 	  
-  rule	Static.elab_type ty1 => t &
+  rule	Types.elab_type ty1 => t &
 	inst_eq_equation(Exp.CREF(cr,t),
-			 Static.PROP(ty1,false(*FIXME*)), e,prop2) => dae
+			 Types.PROP(ty1,false(*FIXME*)), e,prop2) => dae
 	-----------------------------------------------
 	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME((e,prop2))))
 	  => dae
@@ -2906,7 +2906,7 @@ relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option)
 
 	(* default *)
 
-  axiom	make_binding (_,_, SOME((e,Static.PROP(t,c)))) => Types.EQBOUND(e,c)
+  axiom	make_binding (_,_, SOME((e,Types.PROP(t,c)))) => Types.EQBOUND(e,c)
 
   rule	Print.print_buf "- make_binding failed\n"
 	-------------------------------

@@ -41,35 +41,10 @@ module Static :
   with "env.rml"
   with "values.rml"
   with "classinf.rml"
+  with "interactive.rml"
 
   type Ident = string
 
-  (** - Expression properties *)
-	(* A tuple is added to the Types. This is used by functions whom
-returns multiple arguments. *)
-
-(* Used by split_props  *)
-  datatype Const = CONST of bool |
-		   TUPLE_CONST  of Const list 
-
-  datatype Properties = PROP of Types.Type * (* type *)
-				 bool (* if the type is a tuple, each element 
-				          have a const flag. *)
-
-(* Types.Type is meant to be T_TUPLE *)
-			| PROP_TUPLE of Types.Type * Const (* The elements might be 
-							    tuple themselfs. *)
-	
-(*	* P.R 1.1 for multiple return arguments from functions, 
-	*  one constant flag for each return argument. 
-	*
-*)
-
-
-
-  (** The datatype `Properties' contain information about an
-   ** expression.  The properties are created by analyzing the
-   ** expressions. *)
 
   datatype Slot = SLOT of Types.FuncArg *  (* An argument to a function *)
 			bool *		   (* True if the slot has been filled, 
@@ -78,14 +53,14 @@ returns multiple arguments. *)
 
   (* Expression analysis *)
   relation elab_exp : (Env.Env, Absyn.Exp,(Absyn.Path * Types.Type) list option)
-	    => (Exp.Exp, Properties)
-  relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) (* Special relation for graphics annotations, because of inhomogenous array of graphics primitives *)
+	    => (Exp.Exp, Types.Properties)
+  relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties) (* Special relation for graphics annotations, because of inhomogenous array of graphics primitives *)
   relation elab_exp_list : (Env.Env, Absyn.Exp list, (Absyn.Path* Types.Type) list option) 
-	    => (Exp.Exp list, Properties list)
+	    => (Exp.Exp list, Types.Properties list)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.Exp, Properties, SCode.Accessibility)
+	  => (Exp.Exp, Types.Properties, SCode.Accessibility)
   relation elab_cref_list : (Env.Env, Absyn.ComponentRef list)
-	  => (Exp.Exp list, Properties list, SCode.Accessibility list)
+	  => (Exp.Exp list, Types.Properties list, SCode.Accessibility list)
   relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 	  => (Exp.Subscript list, bool)
 
@@ -96,7 +71,7 @@ returns multiple arguments. *)
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
 
   (* Property matching (type conversions etc.) *)
-  relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
+
   relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 			 (Exp.Exp * Types.Type) list,
 			 Absyn.Exp)
@@ -107,12 +82,6 @@ returns multiple arguments. *)
   (* Utility relations *)
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
   relation value_exp : Values.Value => Exp.Exp
-  relation get_prop_type : Properties => Types.Type
-  relation is_prop_const : Properties => bool
-  relation is_prop_array : Properties => bool
-
-  relation elab_type : Types.Type => Exp.Type
-
 end
 
 with "dump.rml"
@@ -126,7 +95,7 @@ with "debug.rml"
  **)
 
 relation elab_exp_list : (Env.Env, Absyn.Exp list, (Absyn.Path * Types.Type) list option)
-	  => (Exp.Exp list, Properties list) =
+	  => (Exp.Exp list, Types.Properties list) =
 
   axiom	elab_exp_list (_,[],_) => ([],[])
 
@@ -140,22 +109,22 @@ end
  **
  ** Static analysis of expressions means finding out the properties of
  ** the expression.  These properties are described by the
- ** `Properties' type, and include the type and the variability of the
+ ** `Types.Properties' type, and include the type and the variability of the
  ** expression.  This relation performs analysis, and returns an
  ** `Exp.Exp' and the properties.
  **)
 
 relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
-	    => (Exp.Exp, Properties) =
+	    => (Exp.Exp, Types.Properties) =
 
   axiom	elab_exp(_, Absyn.INTEGER(x),_)
-	  => (Exp.ICONST(x), PROP(Types.T_INTEGER,true))
+	  => (Exp.ICONST(x), Types.PROP(Types.T_INTEGER,true))
   axiom	elab_exp(_, Absyn.REAL(x),_)
-	  => (Exp.RCONST(x), PROP(Types.T_REAL,   true))
+	  => (Exp.RCONST(x), Types.PROP(Types.T_REAL,   true))
   axiom	elab_exp(_, Absyn.STRING(x),_)
-	  => (Exp.SCONST(x), PROP(Types.T_STRING, true))
+	  => (Exp.SCONST(x), Types.PROP(Types.T_STRING, true))
   axiom	elab_exp(_, Absyn.BOOL(x),_)
-	  => (Exp.BCONST(x), PROP(Types.T_BOOL,   true))
+	  => (Exp.BCONST(x), Types.PROP(Types.T_BOOL,   true))
 
   rule	Debug.fprintln("setr", "elab_exp_cref") &
 	elab_cref(env, cr) => (exp,prop,_)
@@ -165,50 +134,50 @@ relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
 	(**  Binary and unary operations *)
 
   rule	Debug.fprintln("setr", "elab_exp_binary") &
-	elab_exp (env,e1,st) => (e1', PROP(t1, c1)) &
-	elab_exp (env,e2,st) => (e2', PROP(t2, c2)) &
+	elab_exp (env,e1,st) => (e1', Types.PROP(t1, c1)) &
+	elab_exp (env,e2,st) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),st)
-	  => (Exp.BINARY(e1'',op',e2''),PROP(rtype,c))
+	  => (Exp.BINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_exp_unary") &
-	elab_exp (env,e,st) => (e',PROP(t,c)) &
+	elab_exp (env,e,st) => (e',Types.PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
 	elab_exp (env,exp as Absyn.UNARY(op,e),st)
-	  => (Exp.UNARY(op',e''),PROP(rtype,c))
+	  => (Exp.UNARY(op',e''),Types.PROP(rtype,c))
 	
   rule	Debug.fprintln("setr", "elab_exp_lbinary") &
-	elab_exp (env,e1,st) => (e1', PROP(t1, c1)) &
-	elab_exp (env,e2,st) => (e2', PROP(t2, c2)) &
+	elab_exp (env,e1,st) => (e1', Types.PROP(t1, c1)) &
+	elab_exp (env,e2,st) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2),st)
-	  => (Exp.LBINARY(e1'',op',e2''),PROP(rtype,c))
+	  => (Exp.LBINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_exp_lunary") &
-	elab_exp (env,e,st) => (e',PROP(t,c)) &
+	elab_exp (env,e,st) => (e',Types.PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
 	elab_exp (env,exp as Absyn.LUNARY(op,e),st)
-	  => (Exp.LUNARY(op',e''),PROP(rtype,c))
+	  => (Exp.LUNARY(op',e''),Types.PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_exp_relation") &
-	elab_exp (env,e1,st) => (e1', PROP(t1, c1)) &
-	elab_exp (env,e2,st) => (e2', PROP(t2, c2)) &
+	elab_exp (env,e1,st) => (e1', Types.PROP(t1, c1)) &
+	elab_exp (env,e2,st) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	----------------------------------------------
 	elab_exp (env,exp as Absyn.RELATION(e1,op,e2),st)
-	  => (Exp.RELATION(e1'',op',e2''),PROP(rtype,c))
+	  => (Exp.RELATION(e1'',op',e2''),Types.PROP(rtype,c))
 
 	(**  Conditional expressions *)
 
@@ -247,14 +216,14 @@ relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
 	Debug.print "\n split_props was just executed."
 	-------------------------------------
 	elab_exp (env,Absyn.TUPLE(e as e1::rest),st) 
-	  => (Exp.TUPLE(e'),PROP_TUPLE(Types.T_TUPLE(types), TUPLE_CONST(consts)))
+	  => (Exp.TUPLE(e'),Types.PROP_TUPLE(Types.T_TUPLE(types), Types.TUPLE_CONST(consts)))
 
 
 	(**  Array-related expressions *)
 
   rule	Debug.fprintln("setr", "elab_exp_range1") &
-	elab_exp (env, start,st) => (start', PROP(start_t, c_start)) &
-	elab_exp (env, stop,st) => (stop', PROP(stop_t, c_stop)) &
+	elab_exp (env, start,st) => (start', Types.PROP(start_t, c_start)) &
+	elab_exp (env, stop,st) => (stop', Types.PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
 			 NONE,
 			 (stop',stop_t)) => (start'',NONE,stop'',rt) &
@@ -262,12 +231,12 @@ relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
 	elab_range_type (env,start'',NONE,stop'',const,rt) => t
 	--------------------------------------------------
 	elab_exp (env, Absyn.RANGE(start, NONE, stop),st)
-	  => (Exp.RANGE(rt,start',NONE,stop'), PROP(t, const))
+	  => (Exp.RANGE(rt,start',NONE,stop'), Types.PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_exp_range2") &
-	elab_exp (env,start,st) => (start', PROP(start_t, c_start)) &
-	elab_exp (env,step,st) => (step', PROP(step_t, c_step)) &
-	elab_exp (env,stop,st) => (stop', PROP(stop_t, c_stop)) &
+	elab_exp (env,start,st) => (start', Types.PROP(start_t, c_start)) &
+	elab_exp (env,step,st) => (step', Types.PROP(step_t, c_step)) &
+	elab_exp (env,stop,st) => (stop', Types.PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
 			 SOME((step',step_t)),
 			 (stop',stop_t)) => (start'',SOME(step''),stop'',rt) &
@@ -276,25 +245,25 @@ relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
 	elab_range_type (env,start'',SOME(step''),stop'',const,rt) => t
 	---------------------
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop),st)
-	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), PROP(t, const))
+	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), Types.PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_exp_array") &
-	elab_array (env, es,st) => (es', PROP(t, const)) & list_length es' => l&
-	elab_type t => at &
+	elab_array (env, es,st) => (es', Types.PROP(t, const)) & list_length es' => l&
+	Types.elab_type t => at &
 	Types.is_array t => a
 	--------------------------------------------------------------
 	elab_exp (env, Absyn.ARRAY(es),st)
 	  => (Exp.ARRAY(at,a,es'),
-	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
+	      Types.PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
 		   const))
 	
   rule	Debug.fprintln("setr", "elab_exp_matrix") &
-	elab_matrix_semi (env,es,st) => (es', PROP(t,c), dim1,dim2,nmax) & 
-	elab_type t => at
+	elab_matrix_semi (env,es,st) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
+	Types.elab_type t => at
 	------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es),st)
 	  => (Exp.MATRIX(at,nmax,es'),
-	      PROP(Types.T_ARRAY(Types.DIM(SOME(dim1)),
+	      Types.PROP(Types.T_ARRAY(Types.DIM(SOME(dim1)),
 				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
 		   c))
 
@@ -304,16 +273,16 @@ relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
 
 end
 
-relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
+relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties) =
 
   axiom	elab_graphics_exp(_, Absyn.INTEGER(x))
-	  => (Exp.ICONST(x), PROP(Types.T_INTEGER,true))
+	  => (Exp.ICONST(x), Types.PROP(Types.T_INTEGER,true))
   axiom	elab_graphics_exp(_, Absyn.REAL(x))
-	  => (Exp.RCONST(x), PROP(Types.T_REAL,   true))
+	  => (Exp.RCONST(x), Types.PROP(Types.T_REAL,   true))
   axiom	elab_graphics_exp(_, Absyn.STRING(x))
-	  => (Exp.SCONST(x), PROP(Types.T_STRING, true))
+	  => (Exp.SCONST(x), Types.PROP(Types.T_STRING, true))
   axiom	elab_graphics_exp(_, Absyn.BOOL(x))
-	  => (Exp.BCONST(x), PROP(Types.T_BOOL,   true))
+	  => (Exp.BCONST(x), Types.PROP(Types.T_BOOL,   true))
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_cref") &
 	elab_cref(env, cr) => (exp,prop,_)
@@ -323,53 +292,53 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	(**  Binary and unary operations *)
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_binary") &
-	elab_graphics_exp (env,e1) => (e1', PROP(t1, c1)) &
-	elab_graphics_exp (env,e2) => (e2', PROP(t2, c2)) &
+	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
+	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.BINARY(e1,op,e2))
-	  => (Exp.BINARY(e1'',op',e2''),PROP(rtype,c))
+	  => (Exp.BINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_unary") &
-	elab_graphics_exp (env,e) => (e',PROP(t,c)) &
+	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.UNARY(op,e))
-	  => (Exp.UNARY(op',e''),PROP(rtype,c))
+	  => (Exp.UNARY(op',e''),Types.PROP(rtype,c))
 	
   rule	Debug.fprintln("setr", "elab_graphics_exp_lbinary") &
-	elab_graphics_exp (env,e1) => (e1', PROP(t1, c1)) &
-	elab_graphics_exp (env,e2) => (e2', PROP(t2, c2)) &
+	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
+	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.LBINARY(e1,op,e2))
-	  => (Exp.LBINARY(e1'',op',e2''),PROP(rtype,c))
+	  => (Exp.LBINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_lunary") &
-	elab_graphics_exp (env,e) => (e',PROP(t,c)) &
+	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.LUNARY(op,e))
-	  => (Exp.LUNARY(op',e''),PROP(rtype,c))
+	  => (Exp.LUNARY(op',e''),Types.PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_relation") &
 	
-	elab_graphics_exp (env,e1) => (e1', PROP(t1, c1)) &
+	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	
-	elab_graphics_exp (env,e2) => (e2', PROP(t2, c2)) &
+	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	----------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.RELATION(e1,op,e2))
-	  => (Exp.RELATION(e1'',op',e2''),PROP(rtype,c))
+	  => (Exp.RELATION(e1'',op',e2''),Types.PROP(rtype,c))
 
 	(**  Conditional expressions *)
 
@@ -408,14 +377,14 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	Debug.print "\n split_props was just executed."
 	-------------------------------------
 	elab_graphics_exp (env,Absyn.TUPLE(e as e1::rest)) 
-	  => (Exp.TUPLE(e'),PROP_TUPLE(Types.T_TUPLE(types), TUPLE_CONST(consts)))
+	  => (Exp.TUPLE(e'),Types.PROP_TUPLE(Types.T_TUPLE(types), Types.TUPLE_CONST(consts)))
 
 
 	(**  Array-related expressions *)
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_range1") &
-	elab_graphics_exp (env, start) => (start', PROP(start_t, c_start)) &
-	elab_graphics_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	elab_graphics_exp (env, start) => (start', Types.PROP(start_t, c_start)) &
+	elab_graphics_exp (env, stop) => (stop', Types.PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
 			 NONE,
 			 (stop',stop_t)) => (start'',NONE,stop'',rt) &
@@ -423,12 +392,12 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_range_type (env,start'',NONE,stop'',const,rt) => t
 	--------------------------------------------------
 	elab_graphics_exp (env, Absyn.RANGE(start, NONE, stop))
-	  => (Exp.RANGE(rt,start',NONE,stop'), PROP(t, const))
+	  => (Exp.RANGE(rt,start',NONE,stop'), Types.PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_range2") &
-	elab_graphics_exp (env, start) => (start', PROP(start_t, c_start)) &
-	elab_graphics_exp (env, step) => (step', PROP(step_t, c_step)) &
-	elab_graphics_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	elab_graphics_exp (env, start) => (start', Types.PROP(start_t, c_start)) &
+	elab_graphics_exp (env, step) => (step', Types.PROP(step_t, c_step)) &
+	elab_graphics_exp (env, stop) => (stop', Types.PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
 			 SOME((step',step_t)),
 			 (stop',stop_t)) => (start'',SOME(step''),stop'',rt) &
@@ -437,25 +406,25 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_range_type (env,start'',SOME(step''),stop'',const,rt) => t
 	---------------------
 	elab_graphics_exp (env, Absyn.RANGE(start, SOME(step), stop))
-	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), PROP(t, const))
+	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), Types.PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_graphics_exp_array") &
-	elab_graphics_array (env, es) => (es', PROP(t, const)) & list_length es' => l&
-	elab_type t => at &
+	elab_graphics_array (env, es) => (es', Types.PROP(t, const)) & list_length es' => l&
+	Types.elab_type t => at &
 	Types.is_array t => a
 	--------------------------------------------------------------
 	elab_graphics_exp (env, Absyn.ARRAY(es))
 	  => (Exp.ARRAY(at,a,es'),
-	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
+	      Types.PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
 		   const))
 	
   rule	Debug.fprintln("setr", "elab_graphics_exp_matrix") &
-	elab_matrix_semi (env,es,NONE) => (es', PROP(t,c), dim1,dim2,nmax) & 
-	elab_type t => at
+	elab_matrix_semi (env,es,NONE) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
+	Types.elab_type t => at
 	------------------------------------------------------------
 	elab_graphics_exp (env, Absyn.MATRIX(es))
 	  => (Exp.MATRIX(at,nmax,es'),
-	      PROP(Types.T_ARRAY(Types.DIM(SOME(dim1)),
+	      Types.PROP(Types.T_ARRAY(Types.DIM(SOME(dim1)),
 				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
 		   c))
 
@@ -542,7 +511,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 end
 
 relation elab_tuple : (Env.Env, Absyn.Exp list)
-	  => (Exp.Exp list, Properties list) =
+	  => (Exp.Exp list, Types.Properties list) =
 
   rule	Debug.print "\nEntered elab_tuple." &
 	elab_exp (env,e,NONE) => (e',p) &
@@ -568,21 +537,21 @@ end
 (** relation: elab_array *)
 
 relation elab_array : (Env.Env, Absyn.Exp list,(Absyn.Path * Types.Type) list option)
-	  => (Exp.Exp list, Properties) =
+	  => (Exp.Exp list, Types.Properties) =
 
   rule	elab_exp (env,e,st) => (e',prop)
 	-----------------------------
 	elab_array (env,[e],st) => ([e'],prop)
 
-  rule	elab_exp (env,e,st) => (e',PROP(t1,c1)) &
-	elab_array (env,es,st) => (es',PROP(t2,c2)) &
+  rule	elab_exp (env,e,st) => (e',Types.PROP(t1,c1)) &
+	elab_array (env,es,st) => (es',Types.PROP(t2,c2)) &
 	t1 = t2 &
 	bool_and (c1,c2) => c
 	---------------------------------
-	elab_array (env,e::es,st) => (e'::es',PROP(t1,c))
+	elab_array (env,e::es,st) => (e'::es',Types.PROP(t1,c))
 
-  rule	elab_exp (env,e,st) => (e',PROP(t1,c1)) &
-	elab_array (env,es,st) => (es',PROP(t2,c2)) &
+  rule	elab_exp (env,e,st) => (e',Types.PROP(t1,c1)) &
+	elab_array (env,es,st) => (es',Types.PROP(t2,c2)) &
 	not t1 = t2 &
 	Print.print_buf "# Incompatible types in array expression\n" &
 	Print.print_buf "  " & Dump.print_exp e & Print.print_buf " is of type " &
@@ -599,17 +568,17 @@ relation elab_array : (Env.Env, Absyn.Exp list,(Absyn.Path * Types.Type) list op
 end
 
 relation elab_graphics_array : (Env.Env, Absyn.Exp list)
-	  => (Exp.Exp list, Properties) =
+	  => (Exp.Exp list, Types.Properties) =
 
   rule	elab_exp (env,e,NONE) => (e',prop)
 	-----------------------------
 	elab_graphics_array (env,[e]) => ([e'],prop)
 
-  rule	elab_exp (env,e,NONE) => (e',PROP(t1,c1)) &
-	elab_graphics_array (env,es) => (es',PROP(t2,c2)) &
+  rule	elab_exp (env,e,NONE) => (e',Types.PROP(t1,c1)) &
+	elab_graphics_array (env,es) => (es',Types.PROP(t2,c2)) &
 	bool_and (c1,c2) => c
 	---------------------------------
-	elab_graphics_array (env,e::es) => (e'::es',PROP(t1,c))
+	elab_graphics_array (env,e::es) => (e'::es',Types.PROP(t1,c))
 
   rule	Print.print_buf "- elab_graphics_array failed\n"
 	-----------------------------
@@ -617,56 +586,22 @@ relation elab_graphics_array : (Env.Env, Absyn.Exp list)
 
 end
 
-relation match_with_promote : (Properties, Properties) => Properties =
-
-  rule	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c) &
-	let dim = dim1
-	-----
-	match_with_promote(PROP(Types.T_ARRAY(dim1,t1),c1),
-			   PROP(Types.T_ARRAY(dim2,t2),c2)) 
-	  => PROP(Types.T_ARRAY(dim,t),c)
-
-  rule	Types.is_array t1 => false &
-	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
-	---------------------------
-	match_with_promote(PROP(t1,c1),
-			   PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t2),c2)) 
-	  => PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t),c)
-
-  rule	Types.is_array t2 => false &
-	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
-	-----
-	match_with_promote(PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t1),c1),
-			   PROP(t2,c2)) 
-	  => PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t),c)
-
-
-  rule	Types.is_array t1 => false &
-	Types.is_array t2 => false &
-	t1 = t2 &
-	let t = t1 &
-	bool_and(c1,c2) => c
-	--------------
-	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
-
-end
-
 relation elab_matrix_comma : (Env.Env, Absyn.Exp list, (Absyn.Path * Types.Type) list option)
-	=> ((Exp.Exp*bool) list, Properties, int, int) =
+	=> ((Exp.Exp*bool) list, Types.Properties, int, int) =
 
 
-  rule	elab_exp (env,el,st) => (el', PROP(t,c)) &
+  rule	elab_exp (env,el,st) => (el', Types.PROP(t,c)) &
 	Types.ndims t => ndims &
 	int_max(2,ndims) => maxn &
 	int_gt(ndims,0) => array
 	----------------------------------------
-	elab_matrix_comma (env,[el],st) => ([(el',array)],PROP(t,c),1,maxn)
+	elab_matrix_comma (env,[el],st) => ([(el',array)],Types.PROP(t,c),1,maxn)
 
 
-  rule	elab_exp (env,el,st) => (el', PROP(t1,c1)) &
-	elab_matrix_comma(env,els,st) => (els', PROP(t2,c2), _,maxn2) &
+  rule	elab_exp (env,el,st) => (el', Types.PROP(t1,c1)) &
+	elab_matrix_comma(env,els,st) => (els', Types.PROP(t2,c2), _,maxn2) &
 
-	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => props &
+	Types.match_with_promote(Types.PROP(t1,c1),Types.PROP(t2,c2)) => props &
 
 	list_length el::els => dim &
 
@@ -682,7 +617,7 @@ end
 (** relation: elab_matrix_semi *)
 
 relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, (Absyn.Path * Types.Type) list option)
-	=> ((Exp.Exp*bool) list list, Properties, int, int, int) =
+	=> ((Exp.Exp*bool) list list, Types.Properties, int, int, int) =
 
   rule	elab_matrix_comma(env,el,st) => (el', props, dim, maxn)
 	---------------------------------
@@ -694,7 +629,7 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, (Absyn.Path * Types.T
 
 	dim1 = dim2 &
 			
-	match_with_promote(props1,props2) => props &
+	Types.match_with_promote(props1,props2) => props &
 
 	int_max(maxn1,maxn2) => maxn
 	--------------------
@@ -711,7 +646,7 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, (Absyn.Path * Types.T
 	-------------------------------------------------------
 	elab_matrix_semi(_,[]) => fail
 
-  rule	elab_array(env,el) => (el',PROP(t1,c1)) &
+  rule	elab_array(env,el) => (el',Types.PROP(t1,c1)) &
 	elab_matrix(env,els) => (els',t2,dim2,c2) &
 	not t1 = t2 &
 	Print.print_buf "# Incompatible types in matrix rows\n" &
@@ -737,12 +672,12 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, (Absyn.Path * Types.T
 end
 
 
-relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) =
+relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
 	(** LS: size(A) that returns an array of sizes for all dimensions is not *)
 	(** implemented, just size(A,x) that returns size of x:th dimension *)
 
-  rule	elab_exp (env,ind,NONE) => (indexp, PROP(indty, true)) &
+  rule	elab_exp (env,ind,NONE) => (indexp, Types.PROP(indty, true)) &
 	ceval (env, indexp,NONE) => Values.INTEGER(value) &
 	int_string(value) => strval &
 	elab_exp (env,arraycr,NONE) => (Exp.CREF(cr,crt), crprop) &
@@ -754,10 +689,10 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
   rule	elab_exp (env,arraycr,NONE) => (crefe as Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	Types.array_element_type ty => Types.T_INTEGER &
-	elab_exp (env,ind,NONE) => (indexp, PROP(indty, ind_const)) &
+	elab_exp (env,ind,NONE) => (indexp, Types.PROP(indty, ind_const)) &
 	let exp = Exp.CALL(Absyn.IDENT("size_integer_array"),
 			   [crefe,indexp],false,true) &
-	let prop = PROP(Types.T_INTEGER,false)
+	let prop = Types.PROP(Types.T_INTEGER,false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
 	  => (exp, 
@@ -766,10 +701,10 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
   rule	elab_exp (env,arraycr,NONE) => (crefe as Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	Types.array_element_type ty => Types.T_REAL &
-	elab_exp (env,ind,NONE) => (indexp, PROP(indty, ind_const)) &
+	elab_exp (env,ind,NONE) => (indexp, Types.PROP(indty, ind_const)) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_real_array"),
 			   [crefe,indexp],false,true) &
-	let prop = PROP(Types.T_INTEGER,false)
+	let prop = Types.PROP(Types.T_INTEGER,false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
 	  => (exp, prop)
@@ -787,14 +722,14 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 
 end
 
-relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Properties) =
+relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Types.Properties) =
 
   rule	(*Print.print_buf "# Error non-constant dimension\n" *)
 	---------------------------------------
 	elab_builtin_size_2(env, Types.T_ARRAY(Types.DIM(NONE),ty), 1) => fail
 
  axiom	elab_builtin_size_2 (env, Types.T_ARRAY(Types.DIM(SOME(dim)),ty), 1) 
-	  => (Exp.ICONST(dim), PROP(Types.T_INTEGER, true))
+	  => (Exp.ICONST(dim), Types.PROP(Types.T_INTEGER, true))
 
   rule	int_sub (ind, 1) => ind' &
 	elab_builtin_size_2 (env, ty, ind') => (exp, prop)
@@ -804,9 +739,9 @@ relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Propertie
 end
 
 
-relation elab_builtin_fill : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties)	=
+relation elab_builtin_fill : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties)	=
 
-  rule	elab_exp (env,s,NONE) => (s', PROP(sty, sconst)) &
+  rule	elab_exp (env,s,NONE) => (s', Types.PROP(sty, sconst)) &
 	elab_exp_list (env,dims,NONE) => (dims', dimprops) &
 	ceval_list (env, dims',NONE) => dimvals &
 	elab_builtin_fill_2 (env, s', sty, dimvals) => (exp, prop) 
@@ -821,23 +756,23 @@ end
 
 
 relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list) 
-	  => (Exp.Exp, Properties) =
+	  => (Exp.Exp, Types.Properties) =
 
   rule	build_exp_list (s, v) => arraylist &
-	elab_type sty => at &
+	Types.elab_type sty => at &
 	Types.is_array sty => a
 	----------------------------------
 	elab_builtin_fill_2 (env, s, sty, [Values.INTEGER(v)])
-	  => (Exp.ARRAY(at,a,arraylist), PROP(Types.T_ARRAY(Types.DIM(SOME(v)), sty), true))
+	  => (Exp.ARRAY(at,a,arraylist), Types.PROP(Types.T_ARRAY(Types.DIM(SOME(v)), sty), true))
 			     
   rule	elab_builtin_fill_2 (env, s, sty, rest) 
-	  => (exp, PROP(ty,con)) &
+	  => (exp, Types.PROP(ty,con)) &
         build_exp_list (exp, v) => arraylist &
-	elab_type ty => at &
+	Types.elab_type ty => at &
 	Types.is_array ty => a
 	----------------------------------------------------------
 	elab_builtin_fill_2 (env, s, sty, Values.INTEGER(v)::rest) 
-	  => (Exp.ARRAY(at,a,arraylist), PROP(Types.T_ARRAY(Types.DIM(SOME(v)), ty), true))
+	  => (Exp.ARRAY(at,a,arraylist), Types.PROP(Types.T_ARRAY(Types.DIM(SOME(v)), ty), true))
 	
   rule	Print.print_buf "#-- elab_builtin_fill_2: Failed to elaborate fill()\n"
 	-------------------------------------------------------------
@@ -856,14 +791,14 @@ relation build_exp_list : (Exp.Exp, int) => Exp.Exp list =
 
 end
 
-relation elab_builtin_zeros : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) =
+relation elab_builtin_zeros : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_fill (env, Absyn.INTEGER(0)::args) => (e,p)
 	--------------------------------------------------------
 	elab_builtin_zeros (env, args) => (e,p)
 end
 
-relation elab_builtin_ones : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) =
+relation elab_builtin_ones : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_fill (env, Absyn.INTEGER(1)::args) => (e,p)
 	--------------------------------------------------------
@@ -871,7 +806,7 @@ relation elab_builtin_ones : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 end
 
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
-					  => (Exp.Exp, Properties)) =
+					  => (Exp.Exp, Types.Properties)) =
 
   axiom	elab_builtin_handler "size" => elab_builtin_size
   axiom	elab_builtin_handler "zeros" => elab_builtin_zeros
@@ -886,7 +821,7 @@ end
  **)
 
 relation elab_call_builtin : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
-	=> (Exp.Exp, Properties) =
+	=> (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_handler name => handler &
 	handler (env, args) => (exp,prop)
@@ -905,7 +840,7 @@ end
  **)
 
 relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list,(Absyn.Path * Types.Type) list option)
-	=> (Exp.Exp, Properties) =
+	=> (Exp.Exp, Types.Properties) =
 
 	  (** LS: Check if a builtin function call, e.g. size()
 	      and calculate if so **)
@@ -937,7 +872,7 @@ end
  **)
 
 relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list, (Absyn.Path * Types.Type) list option)
-	=> (Exp.Exp, Properties) =
+	=> (Exp.Exp, Types.Properties) =
 
   rule	(* This rule finds record constructors, user defined or implicit *)
 
@@ -992,8 +927,8 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	 At the moment this just gives a false list.
 	*)
 	elab_consts(outtype) => const &
- 	(* Returns PROP_TUPLE if there is more than one element in the list. 
-	   If there is only one element then PROP is returned.
+ 	(* Returns Types.PROP_TUPLE if there is more than one element in the list. 
+	   If there is only one element then Types.PROP is returned.
 	 *)
 	is_tuple(outtype) => tuple &
 	Debug.fprintln ("sei", "Elaborated consts") &
@@ -1036,7 +971,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 (*PR.	elab_input_args(env, args, params) => (args',c)  *)
 	Debug.fprintln ("sei", "elab_call_args succeeded")
 	-----------------------------------------------
-	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn,args',tuple,false), PROP(restype, c))
+	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn,args',tuple,false), Types.PROP(restype, c))
 
   rule	not Lookup.lookup_type(env,fn) => (_,_) &
 	
@@ -1045,7 +980,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,_,_,_) => fail
 
-  rule	(*elab_exp(env, e) => (e',PROP(t,_)) &*)
+  rule	(*elab_exp(env, e) => (e',Types.PROP(t,_)) &*)
 	Print.print_buf "- elab_call_args failed\n"
 	---------------------------------
 	elab_call_args(_,_,_,_,_) => fail
@@ -1096,15 +1031,15 @@ end
 (* PR get_prop 
 *)
 (* LS: Changed type list to type, since T_TUPLE already fixed before *)
-relation get_properties : (Types.Type, Const)  => Properties =
+relation get_properties : (Types.Type, Types.Const)  => Types.Properties =
 
 	(* At least two elements in the type list, this is a tuple. *)
 	(* LS: Tuples are fixed before here *)
-  axiom	get_properties (tt as Types.T_TUPLE(_), const) => PROP_TUPLE(tt, const)
+  axiom	get_properties (tt as Types.T_TUPLE(_), const) => Types.PROP_TUPLE(tt, const)
 
 	(* One type, this is a tuple with one element. The resulting properties 
 	 * is then identical to that of a single expression. *)
-  axiom	get_properties(t, TUPLE_CONST(CONST(b)::[]))  => PROP(t, b)
+  axiom	get_properties(t, Types.TUPLE_CONST(Types.CONST(b)::[]))  => Types.PROP(t, b)
 
 end
 
@@ -1113,24 +1048,24 @@ end
  ** This just splits the properties list into a type list and a const list. 
  **)
 (* LS: Changed to take a Type, which is the functions return type *)
-relation elab_consts : Types.Type  => Const =
+relation elab_consts : Types.Type  => Types.Const =
 
   rule	check_consts tys => consts
 	-------------------------------
-	elab_consts Types.T_TUPLE(tys) => TUPLE_CONST(consts)
+	elab_consts Types.T_TUPLE(tys) => Types.TUPLE_CONST(consts)
 
   (* LS: If not a tuple then one normal type, T_INTEGER etc, but we make a list of types
-     with one element and call the same check_consts, so that we always have TUPLE_CONST as result
+     with one element and call the same check_consts, so that we always have Types.TUPLE_CONST as result
    *)
   rule	check_consts [ty] => consts
 	-----------------------
-	elab_consts ty => TUPLE_CONST(consts)
+	elab_consts ty => Types.TUPLE_CONST(consts)
 
 end
 
 (* LS: Changed to take a Type list, which is the functions return type. Only
    for functions returning a tuple *)
-relation check_consts : Types.Type list => Const list =	
+relation check_consts : Types.Type list => Types.Const list =	
 
   axiom	check_consts [] => []
 
@@ -1148,29 +1083,29 @@ end
 *)
 (* LS: but it says true? *)
 (* LS: Adapted to check one type instead of funcarg, since it just checks return type *)
-relation check_const : Types.Type => Const  =	
+relation check_const : Types.Type => Types.Const  =	
 	
   rule	print("\n Error. No support for tuples built by tuples. Yet.") 
 	-------------------------------
 	check_const (Types.T_TUPLE(_)) => fail
 
-  axiom	check_const (_) => CONST(true)
+  axiom	check_const (_) => Types.CONST(true)
 	
 end
 
 (* Splits the properties list into the separated types list and const list. *)
-relation split_props : (Properties list) => (Types.Type list, Const list) =
+relation split_props : (Types.Properties list) => (Types.Type list, Types.Const list) =
   rule 	(*list_append(ts,t::[]) => t1 &
-	list_append(cs,CONST(c)::[]) => t2 &
+	list_append(cs,Types.CONST(c)::[]) => t2 &
 *)	split_props(props) => (types, consts)
 	-------------------------------------
-	split_props (PROP(t,c)::props)=> (t::types,CONST(c)::consts)
+	split_props (Types.PROP(t,c)::props)=> (t::types,Types.CONST(c)::consts)
 
   rule 	(*list_append(ts,t::[]) => ts' & *)
 	(*list_append(cs, t_c::[]) => cs' & 
 *)	split_props(props) => (types, consts)
 	-------------------------------------
-	split_props (PROP_TUPLE(t,t_c)::props)=> (t::types,t_c::consts)
+	split_props (Types.PROP_TUPLE(t,t_c)::props)=> (t::types,t_c::consts)
   
   axiom	split_props([]) => ([], [])
 end
@@ -1185,18 +1120,18 @@ end
 
 
 (* obsolete LS: added space to inner comments, for emacs fontify to work
-relation split_props: (Properties list, Types.Type list, Const list) => (Types.Type list, Const list) =
+relation split_props: (Types.Properties list, Types.Type list, Types.Const list) => (Types.Type list, Types.Const list) =
   rule 	list_append(ts,t::[]) => t1 &
-	list_append(cs,CONST(c)::[]) => t2 &
+	list_append(cs,Types.CONST(c)::[]) => t2 &
 	split_props(props, t1, t2) => (types, consts)
 	-------------------------------------
-	split_props (PROP(t,c)::props, ts, cs)=> (types,consts)
+	split_props (Types.PROP(t,c)::props, ts, cs)=> (types,consts)
 
   rule 	( *  list_append(ts,t::[]) => ts' &   * )
 	list_append(cs, t_c::[]) => cs' & 
 	split_props(props, [], cs') => (types, consts)
 	-------------------------------------
-	split_props (PROP_TUPLE(t,t_c)::props, ts, cs)=> (types,consts)
+	split_props (Types.PROP_TUPLE(t,t_c)::props, ts, cs)=> (types,consts)
   
   axiom	split_props([],ts,cs) => (ts, cs)
 end
@@ -1360,8 +1295,8 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
 
   rule	fill_default_slots(xs,class,env) => res &
 	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,SCode.MOD(_,_,SOME(dexp))) &
-	elab_exp (env,dexp,NONE) => (exp,PROP(t,c1)) &
-	match_type(exp,t,tp) => (exp',_) 
+	elab_exp (env,dexp,NONE) => (exp,Types.PROP(t,c1)) &
+	Types.match_type(exp,t,tp) => (exp',_) 
 	---------------------------------------------------------------------------------
 	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,SOME(exp'))::res
 
@@ -1399,8 +1334,8 @@ relation elab_positional_input_args : (Env.Env, Absyn.Exp list, Types.FuncArg li
 	  
   axiom	elab_positional_input_args(_, [], _, slots) => (slots, true)
 	
-  rule	elab_exp(env, e,NONE) => (e',PROP(t, c1)) &
-	match_type(e', t, vt) => (e'',_) &
+  rule	elab_exp(env, e,NONE) => (e',Types.PROP(t, c1)) &
+	Types.match_type(e', t, vt) => (e'',_) &
 	elab_positional_input_args(env, es, vs,slots) => (slots',c2) &
 	bool_and(c1, c2) => c &
 	fill_slot(farg, e'',slots') => newslots
@@ -1422,7 +1357,7 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 	----------------------------
 	elab_named_input_args(env,[],farg,slots) => ([],slots,true) *)
 
-  rule	elab_exp(env, e,NONE) => (e',PROP(t, c1)) &
+  rule	elab_exp(env, e,NONE) => (e',Types.PROP(t, c1)) &
 	Debug.fprint("sei", "elab_named_input_arg, elaborated exp\n  id =") &
 	Debug.fprint("sei",id) &
 	find_named_arg_type(id,farg) => vt &
@@ -1431,7 +1366,7 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 	Debug.fcall ("sei", Types.print_type,t ) &
 	Debug.fprint ("sei", "func t = " ) &
 	Debug.fcall ("sei", Types.print_type,vt ) &
-	match_type(e', t, vt) => (e'',_) &
+	Types.match_type(e', t, vt) => (e'',_) &
 	Debug.fprint ("sei", "elab_named_input_arg, Types matched!\n") &
 	fill_slot((id,vt), e'', slots) => slots' &
 	Debug.fprint ("sei", "elab_named_input_arg, filled slot\n") &
@@ -1495,7 +1430,7 @@ end
 (* LS *)
 
 relation elab_cref_list : (Env.Env, Absyn.ComponentRef list)
-	=> (Exp.Exp list, Properties list, SCode.Accessibility list) =
+	=> (Exp.Exp list, Types.Properties list, SCode.Accessibility list) =
 
   axiom	elab_cref_list (_, []) => ([], [], [])
 
@@ -1517,7 +1452,7 @@ end
  **)
 
 relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.Exp, Properties, SCode.Accessibility) =
+	  => (Exp.Exp, Types.Properties, SCode.Accessibility) =
 
   rule	elab_cref_subs (env,c) => (c', const) &
 	Lookup.lookup_var (env,c') => (Types.ATTR(_,acc,variability,_),
@@ -1527,7 +1462,7 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (exp,const,acc')
 	(* FIXME subscript_cref_type (exp,t) => t' &  *)
 	---------------------------------
-	elab_cref(env, c) => (exp, PROP(t, const), acc')
+	elab_cref(env, c) => (exp, Types.PROP(t, const), acc')
 
   rule	elab_cref_subs (env,c) => (c', const) &
 	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\n" &
@@ -1541,22 +1476,7 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 
 end
 
-relation elab_type : Types.Type => Exp.Type =
 
-  axiom	elab_type Types.T_INTEGER => Exp.INT
-  axiom	elab_type Types.T_REAL => Exp.REAL
-  axiom	elab_type Types.T_BOOL => Exp.BOOL
-  axiom	elab_type Types.T_STRING => Exp.STRING
-  axiom elab_type Types.T_ENUM => Exp.ENUM
-
-  rule	Types.array_element_type t => et &
-	elab_type et => t'
-	----------------
-	elab_type (t as Types.T_ARRAY(_,_)) => t'
-
-  axiom	elab_type _ => Exp.OTHER
-
-end
 relation fill_cref_subscripts : (Exp.ComponentRef,Types.Type)
 	  => Exp.ComponentRef =
 
@@ -1603,12 +1523,12 @@ relation elab_cref2 : (Env.Env,
 		       Types.Type, Types.Binding)
 	  => (Exp.Exp,bool,SCode.Accessibility) =
 
-  rule	elab_type tt => t &
+  rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	-----------------
 	elab_cref2 (_,cr, acc, Absyn.VAR, tt,_) => (Exp.CREF(cr',t),false, acc)
 
-  rule	elab_type tt => t &
+  rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	------------------
 	elab_cref2 (_,cr, acc, Absyn.DISCRETE,tt,_)
@@ -1618,19 +1538,19 @@ relation elab_cref2 : (Env.Env,
 	----------------
 	elab_cref2 (_,cr,_,Absyn.CONST,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
 
- rule	elab_type tt => t &
+ rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	----------------
  	elab_cref2 (env,cr,acc,Absyn.PARAM,tt, Types.VALBOUND(v)) => (Exp.CREF(cr',t),false,acc)
 
-  rule	elab_type tt => t &
+  rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	----------------
 	elab_cref2 (env,cr,acc,_,tt, Types.EQBOUND(exp,true))
 	  => (Exp.CREF(cr',t),true,acc)
 
 	  (* Enum constants does not have a value expression *)
-  rule	elab_type tt => t
+  rule	Types.elab_type tt => t
 	-----------------
 	elab_cref2(env,cr,acc,_,tt as Types.T_ENUM,_) => (Exp.CREF(cr,t),true,acc)
 
@@ -1712,7 +1632,7 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
   axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.WHOLEDIM, true)
 
-  rule	elab_exp (env,sub,NONE) => (sub', PROP(ty, const)) &
+  rule	elab_exp (env,sub,NONE) => (sub', Types.PROP(ty, const)) &
 	elab_subscript_type (ty, sub, sub') => sub''
 	--------------------------------------------
 	elab_subscript (env,Absyn.SUBSCRIPT(sub)) => (sub'', const)
@@ -1820,24 +1740,24 @@ end
  ** This relation elaborates on the parts of an if expression.
  **)
 
-relation elab_ifexp : (Exp.Exp, Properties,
-		       Exp.Exp, Properties,
-		       Exp.Exp, Properties)
-	  => (Exp.Exp, Properties) =
+relation elab_ifexp : (Exp.Exp, Types.Properties,
+		       Exp.Exp, Types.Properties,
+		       Exp.Exp, Types.Properties)
+	  => (Exp.Exp, Types.Properties) =
 
   rule	Types.equivtypes(t2,t3) => true &
 	const_ifexp(e1,c1,c2,c3) => c
 	-----------------------------
-	elab_ifexp(e1,PROP(Types.T_BOOL,c1),
-		   e2,PROP(t2,c2),
-		   e3,PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3), PROP(t2, c))
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+		   e2,Types.PROP(t2,c2),
+		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3), Types.PROP(t2, c))
 
   rule	not t1 = Types.T_BOOL &
 	Print.print_buf "# conditional in if expression has to be boolean\n" &
 	Print.print_buf "    got type: " & Types.print_type t1 & Print.print_buf "\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e1 & Print.print_buf "\n"
 	--------------------------------------------------------
-	elab_ifexp(e1,PROP(t1,c1),e2,PROP(t2,c2),e3,PROP(t3,c3)) => fail
+	elab_ifexp(e1,Types.PROP(t1,c1),e2,Types.PROP(t2,c2),e3,Types.PROP(t3,c3)) => fail
 
   rule	Types.equivtypes(t2,t3) => false &
 	Print.print_buf "# Type mismatch in if-expression\n" &
@@ -1846,8 +1766,8 @@ relation elab_ifexp : (Exp.Exp, Properties,
 	Print.print_buf "    false branch: " & Exp.print_exp e3 &
  	Print.print_buf " :: " & Types.print_type t3 & Print.print_buf "\n"
 	-----------------------------------------------
-	elab_ifexp(e1,PROP(Types.T_BOOL,c1),
-		   e2,PROP(t2,c2),e3,PROP(t3,c3)) => fail
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+		   e2,Types.PROP(t2,c2),e3,Types.PROP(t3,c3)) => fail
 
   rule	Print.print_buf "- elab_ifexp failed\n"
 	-----------------------------
@@ -2140,7 +2060,7 @@ relation ceval : (Env.Env, Exp.Exp, (Absyn.Path * Types.Type) list option)
 	---------------
 	ceval (env, Exp.CAST(Exp.REAL,e),i) => Values.REAL(r)
 
-  rule	type_convert_array(expl, Types.T_INTEGER, Types.T_REAL) => expl' &
+  rule	Types.type_convert_array(expl, Types.T_INTEGER, Types.T_REAL) => expl' &
 	ceval_list(env,expl,i) => vallst
 	--------------------------
 	ceval (env, Exp.CAST(Exp.REAL,Exp.ARRAY(Exp.INT,_,expl)),i) => Values.ARRAY(vallst)
@@ -2354,7 +2274,7 @@ relation value_exp : Values.Value => Exp.Exp =
 
   rule	value_exp x => x' &
 	value_type x => vt &
-	elab_type vt => t &
+	Types.elab_type vt => t &
 	Types.is_array vt => a &
   	value_exp Values.ARRAY(xs) => Exp.ARRAY(_,_,xs')
 	--------------------------------------------
@@ -2539,7 +2459,7 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 	Debug.fprint("earg"," == ") & 
 	Debug.fcall ("earg",Types.print_type,pt) &
 	Debug.fprint("earg","\n") &
-	match_type(arg, atype, pt) => (arg',atype') &
+	Types.match_type(arg, atype, pt) => (arg',atype') &
 	elab_arglist (pts, args) => (args',atypes')
 	---------------------------------
 	elab_arglist (pt::pts, (arg, atype)::args) => (arg'::args',atype'::atypes')
@@ -2549,212 +2469,9 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 	elab_arglist (_,_) => fail
 end
 
-(** relation: match_prop
- **
- ** This is basically a wrapper aroune `match_type'.  It matches an
- ** expression with properties with another set of properties.  If
- ** necessary, the expression is modified to match.  The only relevant
- ** property is the type.
- **
- **)
 
-relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
 
-  rule	Debug.print "Debug: match prop." &
-	match_type(e, gt, et) => (e',_)
-	---------------------------
-	match_prop(e, PROP(gt,_), PROP(et,_)) => e'
 
-  rule	Debug.print "\nDebug: match prop (PROP TUPLE). " &
-	match_type(e, gt, et) => (e',_)
-	---------------------------
-	match_prop(e, PROP_TUPLE(gt,_), PROP_TUPLE(et,_)) => e'
-
-end
-
-(** relation: match_type
- **
- ** This relation matches an expression with an expected type, and
- ** converts the expression to the expected type if necessary.
- **)
-
-relation match_type : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Type) =
-
-  rule	Types.subtype(e_type, expected_type) => true
-	--------------------------------------------
-	match_type(e, e_type, expected_type) => (e, e_type)
-
-  rule	Types.subtype(e_type, expected_type) => false &
-	Debug.fprint("sei", "trying type convert\n") &
-	type_convert(e, e_type, expected_type) => (e',e_type') &
-	Debug.fprint("sei", "Type convert succeded\n") 
-	--------------------------------------------
-	match_type(e, e_type, expected_type) => (e',e_type')
-end
-
-(** relation: type_convert
- **
- ** This relations converts the expression in the first argument to
- ** the type specified in the third argument.  The current type of the
- ** expression is given in the second argument.
- **
- ** If no type conversion is possible, this relation fails.
- **)
-
-relation type_convert : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Type) =
-
-  axiom	type_convert(e, Types.T_INTEGER, Types.T_REAL) => (Exp.CAST(Exp.REAL,e),Types.T_REAL)
-
-  rule	int_eq (dim1, dim2) => true &
-	type_convert_array (elist, ty1, ty2) => elist' &
-	elab_type ty2 => at &
-	Types.is_array ty2 => a
-	------------------------------------------
-	type_convert(Exp.ARRAY(_,_,elist), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
-	  => (Exp.ARRAY(at,a,elist'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
-
-  rule	int_eq (dim1, dim2) => true &
-	type_convert(begin,ty1,ty2) => (begin',_) &
-	type_convert(step,ty1,ty2) => (step',_) &
-	type_convert(stop,ty1,ty2) => (stop',_) &
-	elab_type ty2 => at &
-	Types.is_array ty2 => a
-	------------------------------------------
-	type_convert(Exp.RANGE(t,begin,SOME(step),stop), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
-	    => (Exp.RANGE(at,begin',SOME(step'),stop'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
-
-  rule	int_eq (dim1, dim2) => true &
-	type_convert(begin,ty1,ty2) => (begin',_) &
-	type_convert(stop,ty1,ty2) => (stop',_) &
-	elab_type ty2 => at &
-	Types.is_array ty2 => a
-	------------------------------------------
-	type_convert(Exp.RANGE(t,begin,NONE,stop), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
-	    => (Exp.RANGE(at,begin',NONE,stop'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
-
-  rule	int_eq (dim1, dim2) => true &
-	int_eq (dim11,dim22) => true &
-	type_convert_matrix (ell, t1, t2) => ell' &
-	elab_type t2 => at 
-	------------------------------------------
-	type_convert(Exp.MATRIX(_,nmax,ell), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t1)), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim2)), Types.T_ARRAY(Types.DIM(SOME(dim22)),t2)))
-	    => (Exp.MATRIX(at,nmax,ell'),Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t2)))
-	    
-  rule	int_eq (dim11,dim22) => true &
-	type_convert_matrix (ell, t1, t2) => ell' &
-	elab_type t2 => at 
-	------------------------------------------
-	type_convert(Exp.MATRIX(_,nmax,ell), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t1)), 
-		     Types.T_ARRAY(Types.DIM(NONE), Types.T_ARRAY(Types.DIM(SOME(dim22)),t2)))
-	    => (Exp.MATRIX(at,nmax,ell'),Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t2)))
-
-  rule	type_convert (e, ty1, ty2) => (e',t') 
-	------------------------------------------
-	type_convert(e, 
-		     Types.T_ARRAY(Types.DIM(NONE), ty1), 
-		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
-	  => (e', Types.T_ARRAY(Types.DIM(NONE), t'))
-
-  rule	type_convert (e, ty1, ty2) => (e',t') 
-	------------------------------------------
-	type_convert(e, 
-		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
-		     Types.T_ARRAY(Types.DIM(NONE), ty2))
-	  => (e', Types.T_ARRAY(Types.DIM(SOME(dim1)), t'))
-
-  rule	type_convert_list (elist, tys1, tys2) => (elist',tys')
-	------------------------------------------
-	type_convert(Exp.TUPLE(elist), 
-		     Types.T_TUPLE(tys1), 
-		     Types.T_TUPLE(tys2))
-	  => (Exp.TUPLE(elist'), Types.T_TUPLE(tys'))
-
-  axiom	type_convert(exp, 
-	    Types.T_ENUM,
-	    Types.T_ENUMERATION(l))
-	    => (exp, Types.T_ENUMERATION(l))
-	    
-  rule	Debug.fprint("tcvt","- type conversion failed: ") &
-	Debug.fcall ("tcvt",Types.print_type,t1) & 
-	Debug.fprint("tcvt",", ") & 
-	Debug.fcall ("tcvt",Types.print_type,t2) &
-	Debug.fprint("tcvt","\n")
-	-------------------------------
-	type_convert (_,t1,t2) => fail
-end
-
-relation type_convert_array : (Exp.Exp list, Types.Type, Types.Type) => Exp.Exp list =
-
-  axiom type_convert_array ([], _, _) => []
-
-  rule	type_convert_array (rest, ty1, ty2) => rest' &
-	type_convert (first, ty1, ty2) => (first',_)
-	-------------------------------------------
-	type_convert_array (first::rest, ty1, ty2) => first'::rest'
-
-  rule	Print.print_buf "- type conversion of array failed exp=" &
-	Exp.print_exp e &
-	Print.print_buf "t1 = " &
-	Types.print_type t1 & 
-	Print.print_buf " t2 = " &
-	Types.print_type t2 &
-	Print.print_buf "\n" 
-	-------------------------------
-	type_convert_array (e::_,t1,t2) => fail
-
-end
-
-relation type_convert_matrix : ((Exp.Exp*bool) list list, Types.Type, Types.Type) => (Exp.Exp*bool) list list =
-
-  axiom type_convert_matrix ([], _, _) => []
-
-  rule	type_convert_matrix (rest, ty1, ty2) => rest' &
-	type_convert_matrix_row(first,ty1,ty2) => first'
-	-------------------------------------------
-	type_convert_matrix (first::rest, ty1, ty2) => first'::rest'
-
-  rule	Print.print_buf "- type conversion of matrix failed" &
-	Print.print_buf "t1 = " &
-	Types.print_type t1 & 
-	Print.print_buf " t2 = " &
-	Types.print_type t2 &
-	Print.print_buf "\n" 
-	-------------------------------
-	type_convert_matrix (e::_,t1,t2) => fail
-
-end
-
-relation type_convert_matrix_row: ((Exp.Exp*bool) list , Types.Type, Types.Type) 
-	    => ( Exp.Exp * bool) list =
-  axiom type_convert_matrix_row ([],_,_) => []
-
-  rule	type_convert_matrix_row(rest,t1,t2) => rest &
-	type_convert(exp,t1,t2) => (exp',newt) &
-	Types.is_array t2 => a
-	---------------------------------
-	type_convert_matrix_row((exp,_)::rest,t1,t2 )=> ((exp',a)::rest)
-end
-
-relation type_convert_list : (Exp.Exp list, Types.Type list, Types.Type list) 
-	  => (Exp.Exp list, Types.Type list) =
-
-  axiom type_convert_list ([], _, _) => ([],[])
-
-  rule	type_convert_list (rest, ty1rest, ty2rest) => (rest',tyrest') &
-	type_convert (first, ty1, ty2) => (first',ty')
-	-------------------------------------------
-	type_convert_list (first::rest, ty1::ty1rest, ty2::ty2rest) => (first'::rest',ty'::tyrest')
-
-end
 
 (** relation: deoverlooad
  **
@@ -3277,53 +2994,6 @@ relation array_type_list : (int, Types.Type) => Types.Type list =
 
 end
 
-(** LS: **)
-relation get_prop_type: Properties => Types.Type = 
 
-  axiom	get_prop_type PROP(ty,_) => ty
-  axiom	get_prop_type PROP_TUPLE(ty,_) => ty
 
-end
 
-(** LS: If PROP_TUPLE, returns true if any of the flags is true **)
-relation is_prop_const: Properties => bool =
-
-  axiom	is_prop_const PROP(_,constant) => constant
-
-  rule	is_prop_tuple_const constant => res
-	-----------------------------------
-	is_prop_const PROP_TUPLE(_,constant) => res
-
-end
-
-(** LS: **)
-relation is_prop_tuple_const: Const => bool =
-
-  axiom	is_prop_tuple_const CONST(f) => f
-
-  rule	is_prop_tuple_const first => true
-	---------------------------------
-	is_prop_tuple_const TUPLE_CONST(first::rest) => true
-
-  rule	is_prop_tuple_const first => false &
-	is_prop_tuple_const TUPLE_CONST(rest) => res
-	--------------------------------------------
-	is_prop_tuple_const TUPLE_CONST(first::rest) => res
-
-end
-
-relation is_prop_array : Properties => bool =
-
-  rule	get_prop_type p => t &
-	is_type_array t => b
-	----------------------
-	is_prop_array p => b
-
-end
-
-relation is_type_array : Types.Type => bool =
-	
-	axiom is_type_array Types.T_ARRAY(_,_) => true
-	axiom is_type_array _ => false
-
-end

@@ -82,6 +82,33 @@ module Types :
 
   type FuncArg = Ident * Type
 
+
+  (** - Expression properties *)
+	(* A tuple is added to the Types. This is used by functions whom
+returns multiple arguments. *)
+
+(* Used by split_props  *)
+  datatype Const = CONST of bool |
+		   TUPLE_CONST  of Const list 
+
+  datatype Properties = PROP of Type * (* type *)
+				 bool (* if the type is a tuple, each element 
+				          have a const flag. *)
+
+(* Type is meant to be T_TUPLE *)
+			| PROP_TUPLE of Type * Const (* The elements might be 
+							    tuple themselfs. *)
+	
+(*	* P.R 1.1 for multiple return arguments from functions, 
+	*  one constant flag for each return argument. 
+	*
+*)
+
+  (** The datatype `Properties' contain information about an
+   ** expression.  The properties are created by analyzing the
+   ** expressions. *)
+
+
   (** To generate the correct set of equations, the translator has to *)
   (** differentiate between the primitive types `Real', `Integer', *)
   (** `String', `Boolean' and types directly derived from then from *)
@@ -113,6 +140,17 @@ module Types :
   relation get_type_name: Type => string
   relation is_array : Type => bool
   relation ndims : Type => int
+  
+  relation is_prop_const : Properties => bool
+  relation get_prop_type : Properties => Type
+  relation is_prop_array : Properties => bool
+
+  relation elab_type : Type => Exp.Type
+  relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
+  relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
+  relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
+  relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list 
+  relation match_with_promote : (Properties, Properties) => Properties 
 end
 
 with "dump.rml"
@@ -325,7 +363,7 @@ end
  **
  ** This is not a complete solution.  The current way of mapping the
  ** both the Modelica type `Real' and the simple type `RealType' to
- ** `Types.T_REAL' is a bit problematic, since it doesn't make a
+ ** `T_REAL' is a bit problematic, since it doesn't make a
  ** difference between `Real' and `RealType', which makes the
  ** translator accept things like `x.start.start.start'.
  **)
@@ -728,3 +766,311 @@ relation get_type_name: Type => string =
 
 end
 
+(** LS: If PROP_TUPLE, returns true if any of the flags is true **)
+relation is_prop_const: Properties => bool =
+
+  axiom	is_prop_const PROP(_,constant) => constant
+
+  rule	is_prop_tuple_const constant => res
+	-----------------------------------
+	is_prop_const PROP_TUPLE(_,constant) => res
+
+end
+(** LS: **)
+relation is_prop_tuple_const: Const => bool =
+
+  axiom	is_prop_tuple_const CONST(f) => f
+
+  rule	is_prop_tuple_const first => true
+	---------------------------------
+	is_prop_tuple_const TUPLE_CONST(first::rest) => true
+
+  rule	is_prop_tuple_const first => false &
+	is_prop_tuple_const TUPLE_CONST(rest) => res
+	--------------------------------------------
+	is_prop_tuple_const TUPLE_CONST(first::rest) => res
+
+end
+
+relation is_prop_array : Properties => bool =
+
+  rule	get_prop_type p => t &
+	is_type_array t => b
+	----------------------
+	is_prop_array p => b
+
+end
+
+(** LS: **)
+relation get_prop_type: Properties => Type = 
+
+  axiom	get_prop_type PROP(ty,_) => ty
+  axiom	get_prop_type PROP_TUPLE(ty,_) => ty
+
+end
+
+relation is_type_array : Type => bool =
+	
+	axiom is_type_array T_ARRAY(_,_) => true
+	axiom is_type_array _ => false
+
+end
+
+relation elab_type : Type => Exp.Type =
+
+  axiom	elab_type T_INTEGER => Exp.INT
+  axiom	elab_type T_REAL => Exp.REAL
+  axiom	elab_type T_BOOL => Exp.BOOL
+  axiom	elab_type T_STRING => Exp.STRING
+  axiom elab_type T_ENUM => Exp.ENUM
+
+  rule	array_element_type t => et &
+	elab_type et => t'
+	----------------
+	elab_type (t as T_ARRAY(_,_)) => t'
+
+  axiom	elab_type _ => Exp.OTHER
+
+end
+
+(** relation: match_prop
+ **
+ ** This is basically a wrapper aroune `match_type'.  It matches an
+ ** expression with properties with another set of properties.  If
+ ** necessary, the expression is modified to match.  The only relevant
+ ** property is the type.
+ **
+ **)
+
+relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
+
+  rule	Debug.print "Debug: match prop." &
+	match_type(e, gt, et) => (e',_)
+	---------------------------
+	match_prop(e, PROP(gt,_), PROP(et,_)) => e'
+
+  rule	Debug.print "\nDebug: match prop (PROP TUPLE). " &
+	match_type(e, gt, et) => (e',_)
+	---------------------------
+	match_prop(e, PROP_TUPLE(gt,_), PROP_TUPLE(et,_)) => e'
+
+end
+
+
+(** relation: match_type
+ **
+ ** This relation matches an expression with an expected type, and
+ ** converts the expression to the expected type if necessary.
+ **)
+
+relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
+
+  rule	subtype(e_type, expected_type) => true
+	--------------------------------------------
+	match_type(e, e_type, expected_type) => (e, e_type)
+
+  rule	subtype(e_type, expected_type) => false &
+	Debug.fprint("sei", "trying type convert\n") &
+	type_convert(e, e_type, expected_type) => (e',e_type') &
+	Debug.fprint("sei", "Type convert succeded\n") 
+	--------------------------------------------
+	match_type(e, e_type, expected_type) => (e',e_type')
+end
+
+(** relation: type_convert
+ **
+ ** This relations converts the expression in the first argument to
+ ** the type specified in the third argument.  The current type of the
+ ** expression is given in the second argument.
+ **
+ ** If no type conversion is possible, this relation fails.
+ **)
+
+relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
+
+  axiom	type_convert(e, T_INTEGER, T_REAL) => (Exp.CAST(Exp.REAL,e),T_REAL)
+
+  rule	int_eq (dim1, dim2) => true &
+	type_convert_array (elist, ty1, ty2) => elist' &
+	elab_type ty2 => at &
+	is_array ty2 => a
+	------------------------------------------
+	type_convert(Exp.ARRAY(_,_,elist), 
+		     T_ARRAY(DIM(SOME(dim1)), ty1), 
+		     T_ARRAY(DIM(SOME(dim2)), ty2))
+	  => (Exp.ARRAY(at,a,elist'),T_ARRAY(DIM(SOME(dim1)),ty2))
+
+  rule	int_eq (dim1, dim2) => true &
+	type_convert(begin,ty1,ty2) => (begin',_) &
+	type_convert(step,ty1,ty2) => (step',_) &
+	type_convert(stop,ty1,ty2) => (stop',_) &
+	elab_type ty2 => at &
+	is_array ty2 => a
+	------------------------------------------
+	type_convert(Exp.RANGE(t,begin,SOME(step),stop), 
+		     T_ARRAY(DIM(SOME(dim1)), ty1), 
+		     T_ARRAY(DIM(SOME(dim2)), ty2))
+	    => (Exp.RANGE(at,begin',SOME(step'),stop'),T_ARRAY(DIM(SOME(dim1)),ty2))
+
+  rule	int_eq (dim1, dim2) => true &
+	type_convert(begin,ty1,ty2) => (begin',_) &
+	type_convert(stop,ty1,ty2) => (stop',_) &
+	elab_type ty2 => at &
+	is_array ty2 => a
+	------------------------------------------
+	type_convert(Exp.RANGE(t,begin,NONE,stop), 
+		     T_ARRAY(DIM(SOME(dim1)), ty1), 
+		     T_ARRAY(DIM(SOME(dim2)), ty2))
+	    => (Exp.RANGE(at,begin',NONE,stop'),T_ARRAY(DIM(SOME(dim1)),ty2))
+
+  rule	int_eq (dim1, dim2) => true &
+	int_eq (dim11,dim22) => true &
+	type_convert_matrix (ell, t1, t2) => ell' &
+	elab_type t2 => at 
+	------------------------------------------
+	type_convert(Exp.MATRIX(_,nmax,ell), 
+		     T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t1)), 
+		     T_ARRAY(DIM(SOME(dim2)), T_ARRAY(DIM(SOME(dim22)),t2)))
+	    => (Exp.MATRIX(at,nmax,ell'),T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t2)))
+	    
+  rule	int_eq (dim11,dim22) => true &
+	type_convert_matrix (ell, t1, t2) => ell' &
+	elab_type t2 => at 
+	------------------------------------------
+	type_convert(Exp.MATRIX(_,nmax,ell), 
+		     T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t1)), 
+		     T_ARRAY(DIM(NONE), T_ARRAY(DIM(SOME(dim22)),t2)))
+	    => (Exp.MATRIX(at,nmax,ell'),T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t2)))
+
+  rule	type_convert (e, ty1, ty2) => (e',t') 
+	------------------------------------------
+	type_convert(e, 
+		     T_ARRAY(DIM(NONE), ty1), 
+		     T_ARRAY(DIM(SOME(dim2)), ty2))
+	  => (e', T_ARRAY(DIM(NONE), t'))
+
+  rule	type_convert (e, ty1, ty2) => (e',t') 
+	------------------------------------------
+	type_convert(e, 
+		     T_ARRAY(DIM(SOME(dim1)), ty1), 
+		     T_ARRAY(DIM(NONE), ty2))
+	  => (e', T_ARRAY(DIM(SOME(dim1)), t'))
+
+  rule	type_convert_list (elist, tys1, tys2) => (elist',tys')
+	------------------------------------------
+	type_convert(Exp.TUPLE(elist), 
+		     T_TUPLE(tys1), 
+		     T_TUPLE(tys2))
+	  => (Exp.TUPLE(elist'), T_TUPLE(tys'))
+
+  axiom	type_convert(exp, 
+	    T_ENUM,
+	    T_ENUMERATION(l))
+	    => (exp, T_ENUMERATION(l))
+	    
+  rule	Debug.fprint("tcvt","- type conversion failed: ") &
+	Debug.fcall ("tcvt",print_type,t1) & 
+	Debug.fprint("tcvt",", ") & 
+	Debug.fcall ("tcvt",print_type,t2) &
+	Debug.fprint("tcvt","\n")
+	-------------------------------
+	type_convert (_,t1,t2) => fail
+end
+
+relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
+
+  axiom type_convert_array ([], _, _) => []
+
+  rule	type_convert_array (rest, ty1, ty2) => rest' &
+	type_convert (first, ty1, ty2) => (first',_)
+	-------------------------------------------
+	type_convert_array (first::rest, ty1, ty2) => first'::rest'
+
+  rule	Print.print_buf "- type conversion of array failed exp=" &
+	Exp.print_exp e &
+	Print.print_buf "t1 = " &
+	print_type t1 & 
+	Print.print_buf " t2 = " &
+	print_type t2 &
+	Print.print_buf "\n" 
+	-------------------------------
+	type_convert_array (e::_,t1,t2) => fail
+
+end
+
+relation type_convert_matrix : ((Exp.Exp*bool) list list, Type, Type) => (Exp.Exp*bool) list list =
+
+  axiom type_convert_matrix ([], _, _) => []
+
+  rule	type_convert_matrix (rest, ty1, ty2) => rest' &
+	type_convert_matrix_row(first,ty1,ty2) => first'
+	-------------------------------------------
+	type_convert_matrix (first::rest, ty1, ty2) => first'::rest'
+
+  rule	Print.print_buf "- type conversion of matrix failed" &
+	Print.print_buf "t1 = " &
+	print_type t1 & 
+	Print.print_buf " t2 = " &
+	print_type t2 &
+	Print.print_buf "\n" 
+	-------------------------------
+	type_convert_matrix (e::_,t1,t2) => fail
+
+end
+
+relation type_convert_matrix_row: ((Exp.Exp*bool) list , Type, Type) 
+	    => ( Exp.Exp * bool) list =
+  axiom type_convert_matrix_row ([],_,_) => []
+
+  rule	type_convert_matrix_row(rest,t1,t2) => rest &
+	type_convert(exp,t1,t2) => (exp',newt) &
+	is_array t2 => a
+	---------------------------------
+	type_convert_matrix_row((exp,_)::rest,t1,t2 )=> ((exp',a)::rest)
+end
+
+relation type_convert_list : (Exp.Exp list, Type list, Type list) 
+	  => (Exp.Exp list, Type list) =
+
+  axiom type_convert_list ([], _, _) => ([],[])
+
+  rule	type_convert_list (rest, ty1rest, ty2rest) => (rest',tyrest') &
+	type_convert (first, ty1, ty2) => (first',ty')
+	-------------------------------------------
+	type_convert_list (first::rest, ty1::ty1rest, ty2::ty2rest) => (first'::rest',ty'::tyrest')
+
+end
+
+relation match_with_promote : (Properties, Properties) => Properties =
+
+  rule	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c) &
+	let dim = dim1
+	-----
+	match_with_promote(PROP(T_ARRAY(dim1,t1),c1),
+			   PROP(T_ARRAY(dim2,t2),c2)) 
+	  => PROP(T_ARRAY(dim,t),c)
+
+  rule	is_array t1 => false &
+	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+	---------------------------
+	match_with_promote(PROP(t1,c1),
+			   PROP(T_ARRAY(DIM(SOME(1)),t2),c2)) 
+	  => PROP(T_ARRAY(DIM(SOME(1)),t),c)
+
+  rule	is_array t2 => false &
+	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+	-----
+	match_with_promote(PROP(T_ARRAY(DIM(SOME(1)),t1),c1),
+			   PROP(t2,c2)) 
+	  => PROP(T_ARRAY(DIM(SOME(1)),t),c)
+
+
+  rule	is_array t1 => false &
+	is_array t2 => false &
+	t1 = t2 &
+	let t = t1 &
+	bool_and(c1,c2) => c
+	--------------
+	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+
+end

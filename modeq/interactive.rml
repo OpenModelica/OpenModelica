@@ -177,7 +177,7 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,cf)) => (str,st)
 	
   rule	build_env_from_symboltable(st) => env &
-	Static.elab_exp(env,exp,SOME(cf)) => (sexp,Static.PROP(t,_))  &
+	Static.elab_exp(env,exp,SOME(cf)) => (sexp,Types.PROP(t,_))  &
 	Static.ceval(env,sexp,SOME(cf)) => value &
 	add_var_to_symboltable(ident,value,t,st) => newst
 	-----------------------------------------------

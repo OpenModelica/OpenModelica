@@ -46,7 +46,7 @@ module Mod:
   type Ident = string
 
   (** - Modification datatype *)
-  type EqMod = (Exp.Exp * Static.Properties)
+  type EqMod = (Exp.Exp * Types.Properties)
   datatype SubMod = NAMEMOD of Ident * Mod
 		  | IDXMOD of int list * Mod
   and Mod = MOD of bool * (SubMod list) * EqMod option
@@ -207,14 +207,14 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Mod)
 	Types.unlift_array(t) => t' &
 	make_idxmods(Exp.INDEX(x)::ss,
 		     MOD(final, [],
-			 SOME((e',Static.PROP(t',const))))) => mods1 &
+			 SOME((e',Types.PROP(t',const))))) => mods1 &
 	int_add(n, 1) => n' &
 	expand_slice(xs, ss, n', m) => mods2 &
 	list_append(mods1, mods2) => mods
 	---------------------------------
 	expand_slice(x::xs, ss, n,
 		     m as MOD(final, [],
-			      SOME((e,Static.PROP(t,const))))) => mods
+			      SOME((e,Types.PROP(t,const))))) => mods
 
   rule	Print.print_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
 	--------------------------------
@@ -444,9 +444,9 @@ relation index_eqmod : (EqMod option, int list) => EqMod option =
 
   rule	Types.unlift_array t => t' &
 	Exp.simplify Exp.ASUB(e,x) => exp &
-	index_eqmod (SOME((exp,Static.PROP(t',c))),xs) => e
+	index_eqmod (SOME((exp,Types.PROP(t',c))),xs) => e
 	------------------------------------------
-	index_eqmod (SOME((e,Static.PROP(t,c))),x::xs) => e
+	index_eqmod (SOME((e,Types.PROP(t,c))),x::xs) => e
 
 end
 
