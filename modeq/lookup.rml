@@ -98,6 +98,9 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 	Debug.fcall("lotr",Dump.print_path,path) &
 	Debug.fprint("lotr",") called\n") &
 	
+	Debug.fprint ("peter","env = ") &
+	Debug.fcall ("peter",Env.print_env, env) &
+	Debug.fprint ("peter","\n") &
 	lookup_class_in_env(env,path) => (c, env') &
 	Debug.fprint("lotr", "lookup_class_in_env => ") &
 	Debug.fcall("lotr",Dump.print_path,path) &
@@ -109,11 +112,21 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 	Debug.fprint("lotr","lookup_class(") &
 	Debug.fcall("lotr",Dump.print_path,p) &
  	Debug.fprint("lotr",")  qualified called\n") &
-	lookup_package_class (env,pack,path) => (c, env')&
+	lookup_class(env,Absyn.IDENT(pack)) => (c as SCode.CLASS(id,_,restr,_),env') &
+	Debug.fprint("lotr", "Found class for first part of qualified. instantiating.\n") &
+	Env.open_scope(env') => env2 &
+	ClassInf.start(restr,id) => ci_state &
+	Inst.inst_class_in(env',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) => (_,env'',_,_,_) &
+	Debug.fprint("lotr", "Instantiated class, env =") &
+	Debug.fcall ("lotr",Env.print_env, env'') &
+	Debug.fprint("lotr","\n. looking inside...\n") &
+	lookup_class_in_class(env'',c,path) => (c',env''') &
 	Debug.fprint("lotr", "lookup_package_class => ") &
-	Debug.fcall("lotr",Dump.print_path,path)
+	Debug.fcall("lotr",Dump.print_path,path) &
+	Debug.fprint ("lotr", " \n env =") &
+	Debug.fcall("lotr",Env.print_env,env''') 
 	--------------------------------------
-	lookup_class(env, p as Absyn.QUALIFIED(pack,path)) => (c, env')
+	lookup_class(env, p as Absyn.QUALIFIED(pack,path)) => (c', env''')
 
 end
 

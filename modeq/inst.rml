@@ -430,7 +430,7 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims) => (dae,env',csets',ci_state',tys) &
 	
 	Debug.fprint ("decl", "calling extend_components_to_env\n") &
-	extend_components_to_env(env,mod,pre,csets,ci_state,compelts,inst_dims) => env'' &
+	extend_components_to_env(env',mod,pre,csets,ci_state,compelts,inst_dims) => env'' &
 	Debug.fprint("decl"," extended components to env, env=") &
 	Debug.fcall ("decl",Env.print_env, env'') &
 	(*2. EXTENDS Nodes*)
@@ -666,6 +666,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** included in the variable declaration is in the variable *)
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
+	Debug.fprint("insttr", "looking for type") &
+	Debug.fcall("insttr",Types.print_type,t) &
+	Debug.fprint("insttr"," in env:") &
+	Debug.fcall("insttr",Env.print_env,env) &
+	Debug.fprint("insttr"," \n") &
 
 	Lookup.lookup_class(env,t) => (cl,cenv) & 
 
@@ -700,7 +705,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	elab_arraydim(env,ad,eq) => dims &
 					       
 	Debug.fprintln ("insttr", "arraydim elabed") &
-
+	Debug.fprint("peter2","inst_var, env =") &
+	Debug.fcall("peter2",Env.print_env, cenv) &
 	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
 	  => (dae1,csets',ty) &
@@ -1185,15 +1191,19 @@ relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class,InstDims)
 	  => (Env.Env, DAE.Element list) =
 
-  rule	Env.extend_frame_c(env,c) => env' &
-	implicit_instantiation(env',Mod.NOMOD,pre,csets,c,inst_dims) => (env'',dae)
+  rule	Debug.fprint("insttr","inst_class_decl called\n") &
+	Env.extend_frame_c(env,c) => env' &
+	Debug.fprint("insttr","extended frame\n") &
+	implicit_instantiation(env',Mod.NOMOD,pre,csets,c,inst_dims) => (env'',dae) &
+	Debug.fprint("insttr","inst_class_def finished\n") 
 	----------------------------------
 	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,restr,_),inst_dims)
 	  => (env'', dae)
 
-  rule	print "- inst_class_decl failed\n"
+  rule	print "- inst_class_decl failed\n Env=" &
+	Env.print_env env
 	----------------------------------
-	inst_class_decl(_,_,_,_,_,_) => fail
+	inst_class_decl(env,_,_,_,_,_) => fail
 end
 
 (** relation implicit_instantiation
@@ -1214,7 +1224,9 @@ correct?
 
   rule	Prefix.prefix_add(n,[],pre) => pre' &
 (*	let pre' = pre & *)
+	Debug.fprint ("insttr","implicit_instantiation called.\n") &
 	inst_class(env,mod,pre',csets,c,inst_dims) => (dae, csets', ty, st) &
+	Debug.fprint ("insttr","implicit_instantiation inst class done.\n") &
 	Env.extend_frame_t(env, n, ty) => env' &
 (*	let env' = env & *)
 	Debug.fprintl ("insttr", ["implicit_instantiation done:", n, "\n"])
@@ -1258,7 +1270,10 @@ correct?
 	=> (env'', [])
 
   axiom	implicit_instantiation(env,mod,pre,csets,c,_) => (env,[])
-
+	
+  rule	print "- implicit_instantiation failed\n" 
+	----------------
+	implicit_instantiation(_,_,_,_,_,_) => fail
 end
 
 (** relation: inst_enumeration
