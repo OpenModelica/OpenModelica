@@ -3,17 +3,12 @@
 module Absyn:
 
   with "exp.rml"
+  with "types.rml"
 
   type Ident = Exp.Ident
-
   type Path = Exp.Path
-
-  type Subscript = (Exp.Exp * ((Exp.Exp * (Exp.Exp option)) option)) option
-
-  type ComponentRef = (string * (Subscript list)) list
-
-  datatype ArrayDim = ONEDIM of Subscript
-		    | TWODIM of Subscript*Subscript
+  type Subscript = Exp.Subscript
+  type ArrayDim = Types.ArrayDim
 
   datatype ElementArg = MODIFICATION of bool * Path * Modification
 		      | REDECLARATION of bool * ElementSpec
@@ -22,17 +17,13 @@ module Absyn:
 			| EQUALMOD of Exp.Exp
 
   and	   Component = COMPONENT of Ident	(* component name *)
-				  * ArrayDim option
+				  * ArrayDim
 				  * Modification option
 
   and	   ElementSpec = CLASSDEF of bool		(* replaceable *)
 				   * Class
 		       | EXTENDS of Path * ElementArg list
-		       | COMPONENTS of bool	(* flow *)
-				     * bool	(* parameter *)
-				     * bool	(* constant *)
-				     * bool	(* input *)
-				     * bool	(* output *)
+		       | COMPONENTS of Types.VarAttr
 				     * Path	(* type name *)
 				     * Component list
 
@@ -66,7 +57,7 @@ module Absyn:
 
   and	   Equation = EQ_EXPR of Exp.Exp (* more later *)
 		    | EQ_EQUALS of Exp.Exp * Exp.Exp
-		    | EQ_CONNECT of ComponentRef * ComponentRef
+		    | EQ_CONNECT of Exp.ComponentRef * Exp.ComponentRef
 
   and	   Algorithm = ALGORITHM (* Fill in later *)
 
@@ -82,7 +73,7 @@ relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_)) => n
 
-  axiom element_spec_name COMPONENTS(_,_,_,_,_,_,[COMPONENT(n,_,_)]) => n
+  axiom element_spec_name COMPONENTS(_,_,[COMPONENT(n,_,_)]) => n
 
   rule  print "# element_spec_name EXTENDS\n" & fail
 	--------------------------------------------
