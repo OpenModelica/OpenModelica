@@ -18,7 +18,7 @@ module Lform:
 
   type ArrayDim = Absyn.ArrayDim
 
-  datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
+  datatype ElementArg = MODIFICATION of bool * Path * Modification
 		      | REDECLARATION of bool * ElementSpec
 
   and	   Modification = CLASSMOD of ElementArg list
