@@ -62,7 +62,7 @@ with "simcodegen.rml"
 	     generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
          generate_dll_code(cname) => dll_code &
          TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
-         TORNADOEXT.dump_testing() &  
+         (*TORNADOEXT.dump_testing() &  *)
          Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
          Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
 	     string_append(cname,".h") => headerfile &
@@ -418,7 +418,6 @@ relation find_dae_var:(string, string,DAELow.DAELow) => DAELow.Var =
         array_list(knvararr) => knvars &
         list_append(vars,knvars) => allvars &
         find_dae_var2(name,class_name,allvars) => var 
-        
         --------------------------------------
         find_dae_var(name,
                      class_name,
@@ -446,7 +445,7 @@ relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
         (* pick out the last of the names "a" in the name Temp3.a *)
         Util.string_split_at_char(cr_str,#".") => str_list &
         Util.list_last(str_list) => var_name &
-	    list_reverse(class_paths) => from_class::_ &
+	list_reverse(class_paths) => from_class::_ &
         Absyn.path_string(from_class) => from_class_str &
         Util.string_equal(class_name,from_class_str) => true &
         Util.string_equal(var_name,name) => true 
@@ -474,36 +473,34 @@ end
  ** This relation takes a `ComponentItems' list and returns a  list of all
  ** component names (if any).
  **)
- relation get_componentitems_name: Absyn.ComponentItem list => string list =
-	     
-  rule  get_componentitems_name(c2::rest) => lst 
-	     ----------------------------
-	     get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),
-                                                     SOME(Absyn.COMMENT(_,SOME(s2))))::(c2::rest)) 
+relation get_componentitems_name: Absyn.ComponentItem list => string list =
+	
+  rule	(* When component has array dimensions *)
+	get_componentitems_name(rest) => lst &
+	string_append(c1,"[1]") => c1'
+	----------------------------
+	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_::_,_),
+                                                    SOME(Absyn.COMMENT(_,SOME(s2))))::rest) 
+          => c1'::lst
+	  
+  rule  (* .. otherwise if no dimensions *)
+	get_componentitems_name(rest) => lst 
+	----------------------------
+	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),
+                                                    SOME(Absyn.COMMENT(_,SOME(s2))))::rest) 
           => c1::lst
-
-  rule  get_componentitems_name(c2::rest) => lst 
-	     ----------------------------
-	     get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),NONE)::(c2::rest)) 
+	  
+  rule  get_componentitems_name(rest) => lst 
+	----------------------------
+	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),NONE)::rest) 
           => c1::lst
-           
+          
   rule	get_componentitems_name(rest) => res
-	     ------------------------------------
-	     get_componentitems_name(_::rest) => res
+	------------------------------------
+	get_componentitems_name(_::rest) => res
          
-  rule  
-	     ----------------------
-	     get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),
-                                                      SOME(Absyn.COMMENT(_,SOME(s2))))]) 
-          => [c1]
-           
-  rule  
-	     ---------------------------------------
-	     get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) 
-          => [c1]
-
   axiom	get_componentitems_name([_]) => []
- end
+end
 (** relation: generate_header
  ** Generate the content of the header file. It only needs the name of the Modelica model.
  **)
@@ -697,13 +694,9 @@ relation generate_getsubmodel_code:(string list, Exp.ComponentRef) => string =
 	    generate_getsubmodel_code(comp_name_list,cr) => res
 
         (*this print is removed because the model does not need to have submodels*)
-  rule	print "-generate_getsubmodel_code failed:\n" &
- 	    Exp.cref_str(cr) => crs &
-        
-        print crs & print "\n" &
-	    Util.string_append_list(["  this"]) => res
-	    ----------------
-	    generate_getsubmodel_code(comp_name_list,cr) => res
+  rule	Util.string_append_list(["  this"]) => res
+	----------------
+	generate_getsubmodel_code(comp_name_list,cr) => res
 end
 
 relation generate_simple_equation_links2: (string list, 
