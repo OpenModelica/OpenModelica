@@ -11,7 +11,8 @@ You need:
 
 
 1. Set ANTLRHOME to antlr installation, e.g. c:\antlr-2.7.1
-   Set RMLHOME to rml installation, e.g. /cygdrive/c/rml-2.1.8 NOTE: must be cygwin path!
+   Set RMLHOME to rml installation, e.g. /cygdrive/c/rml-2.1.8/x86-cygwin-gcc
+	    NOTE: must be cygwin path, not DOS path.
 
   run ./configure in modelica
   Make sure that all makefiles are created. Check carefully for error messages.
