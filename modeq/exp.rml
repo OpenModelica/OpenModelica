@@ -1,52 +1,68 @@
 (*
-   Exp - Modelica expression module
-*)
+ * Exp - Modelica expression module
+ *)
 
 module Exp:
-
+  
   type Ident = string
-
+  
+  datatype Subscript = NOSUB
+		     | SUB1 of Exp
+		     | SUB2 of Exp * Exp
+		     | SUB3 of Exp * Exp * Exp
+		 
+  type ComponentRef = (Ident * (Subscript list)) list
+  
   datatype Path = QUALIFIED of string * Path
-		| IDENT of Ident
-
+	      	| IDENT of Ident
+	      	
   datatype BinOp = ADD | SUB | MUL | DIV | POW
   datatype UnaryOp = UMINUS | UPLUS
   datatype LBinOp = AND | OR
   datatype LUnaryOp = NOT
   datatype RelOp = LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
-
+  
   datatype Exp = NUMBER of real
-	       | PATH of Path
+	       | CREF of ComponentRef
 	       | STRING of string
 	       | BOOL of bool
-
+	       
 	       | BINARY of Exp * BinOp * Exp
 	       | UNARY of UnaryOp * Exp
-
+	       
 	       | LBINARY of Exp * LBinOp * Exp
 	       | LUNARY of LUnaryOp * Exp
-
+	       
 	       | RELATION of Exp * RelOp * Exp
-
+	       
 	       | IFEXP of Exp * Exp * Exp
-
+	       
 	       | CALL of Path * Exp list		(* Function call *)
-	       (* | EQU of Exp * Exp			( * Equation *)
 	       | TIME
-
+		  
   relation path_string : Path => string
-
+  relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
+  
 end
-
 
 relation path_string: Path => string =
 
-	axiom	path_string(IDENT(s)) => s
+  axiom	path_string(IDENT(s)) => s
+  
+  rule	path_string(n) => ns &
+	string_append(s,".") => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	path_string(QUALIFIED(s,n)) => ss
+	
+end
 
-	rule	path_string(n) => ns &
-		string_append(s,".") => s1 &
-		string_append(s1,ns) => ss
-		-------------------------------------
-		path_string(QUALIFIED(s,n)) => ss
+relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
+
+  axiom	extend_cref([], i, s) => [(i,s)]
+
+  rule	extend_cref(xs, i, s) => xs'
+	----------------------------
+	extend_cref(x::xs, i, s) => x::xs'
 
 end
