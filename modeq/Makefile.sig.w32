@@ -1,0 +1,12 @@
+!INCLUDE Makefile.common.w32
+
+.SUFFIXES :
+.SUFFIXES : .rml
+
+.PHONY : all
+
+all: 	$(ALLRML:.rml=.sig)
+
+
+.rml.sig:
+    rml2sig\rml2sig.bat $<

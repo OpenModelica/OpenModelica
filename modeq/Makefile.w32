@@ -1,56 +1,26 @@
+!IF [ nmake /$(MAKEFLAGS) /NOLOGO /f Makefile.sig.w32 ]
+!ERROR Could not build signature files.
+!ENDIF
+
+!INCLUDE Makefile.common.w32
+
 RML=$(RMLHOME)bin\run.x86-win32.exe @SMLquiet @SMLload=$(RMLHOME)bin\rml.x86-win32 
-OutDir=./VC7/Release
 CFLAGS=	/Od /I "./VC7/rmlRuntime/runtime/plain" /Fd"./VC7/Release/vc70.pdb" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /EHsc /MT /GS /W3 /nologo /c /Wp64 /Zi /TC /wd4311 /wd4312 
 
-SRCRML= absyn.rml \
-	algorithm.rml \
-	builtin.rml \
-	ceval.rml \
-	classinf.rml \
-	classloader.rml \
-	codegen.rml \
-	connect.rml \
-	dae.rml \
-	daelow.rml \
-	derive.rml \
-	debug.rml \
-	dump.rml \
-	dumpgraphviz.rml \
-	env.rml \
-	exp.rml \
-	explode.rml \
-	graphviz.rml \
-	inst.rml \
-	interactive.rml \
-	lookup.rml \
-	main.rml \
-	mod.rml \
-	modsim.rml \
-	modutil.rml \
-	prefix.rml \
-	staticexp.rml \
-	simcodegen.rml \
-	types.rml \
-	taskgraph.rml \
-	tornado.rml \
-	tornadocodegen.rml \
-	util.rml \
-	values.rml \
-	vartransform.rml
-
 SRCC=	$(SRCRML:.rml=.c)
-OBJS=   $(SRCRML:.rml=.obj)
+SRCH=	$(SRCRML:.rml=.h)
+OBJS=    $(SRCRML:.rml=.obj)
+SIGS=    $(ALLRML:.rml=.sig)
 
 .SUFFIXES :
-.SUFFIXES : .obj .rml .c
+.SUFFIXES : .obj .rml
+
+.PHONY : all
 
 all: VC7\Release\main.obj VC7\Release\modeqrml.lib
 
 VC7\Release\modeqrml.lib: $(OBJS)
 	lib /NOLOGO /OUT:VC7\Release\modeqrml.lib $(OBJS)
-
-.rml.sig:
-    rml2sig\rml2sig.bat $<
 
 .rml.obj:
 	$(RML) -Eplain $<
@@ -60,7 +30,7 @@ VC7\Release\main.obj: main.obj
 	copy /B /Y main.obj VC7\Release\main.obj
 
 clean:
-	del /Q /F $(OBJS) VC7\Release\main.obj VC7\Release\modeqrml.lib $(SRCC)
+	del /Q /F $(OBJS) $(SRCC) $(SRCH) $(SIGS) VC7\Release\main.obj VC7\Release\modeqrml.lib
 
 
 absyn.obj: absyn.rml debug.sig dump.sig util.sig print.sig
