@@ -129,7 +129,7 @@ ML_COMMENT_CHAR :
 		
 SL_COMMENT :
 		"//" (~('\n' | '\r'))* ('\n' | '\r')
-		{  $setType(antlr::Token::SKIP);/*newline();*/ }
+		{  $setType(antlr::Token::SKIP);newline(); }
   	;
 
 IDENT options { testLiterals = true;} :
@@ -156,7 +156,7 @@ UNSIGNED_INTEGER :
 			}
 	| 	(DIGIT)+
 	)
-	(EXPONENT)?
+	(EXPONENT { $setType(UNSIGNED_REAL); } )?
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;
