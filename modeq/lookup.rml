@@ -159,12 +159,12 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	Env.get_env_path(env) => envpath &
 	Absyn.opt_path_string(envpath) => envpathstr &
 	Absyn.path_string(path) => pathstr &
-	Cache.get_class(envpathstr,pathstr) => (c,env) (*&
-	print "Got cached class: " & print pathstr &
+	Cache.get_class(envpathstr,pathstr) => (c,env) 
+(*	& print "Got cached class: " & print pathstr &
 	print "\n"*)
 	----------------------------------------
-	lookup_class(env,path,_) => (c,env)*)
-
+	lookup_class(env,path,_) => (c,env)
+*)
   
   rule	Debug.fprint ("lotr","TRIES lookup_class(1)\n") &
         Debug.fcall ("lotr",Dump.print_path,path) &

@@ -95,6 +95,27 @@ void System_5finit(void)
 
 }
 
+RML_BEGIN_LABEL(System__strtok)
+{
+  char *s;
+  char *delimit = RML_STRINGDATA(rmlA1);
+  char *str = RML_STRINGDATA(rmlA0);
+
+  void * res = (void*)mk_nil();
+  s=strtok(str,delimit);
+  if (s == NULL) { rmlA0=res; RML_TAILCALLK(rmlFC); }
+  res = (void*)mk_cons(mk_scon(s),res);
+  while (s=strtok(NULL,delimit)) {
+    res = (void*)mk_cons(mk_scon(s),res);
+  }
+  rmlA0=res;
+
+  rml_prim_once(RML__list_5freverse);
+  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__compile_5fc_5ffile)
 {
   char* str = RML_STRINGDATA(rmlA0);

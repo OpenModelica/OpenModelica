@@ -416,6 +416,12 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
+  rule	(*print "nomod &  nopre on class " & print cname & print "\n" &*)
+	int_eq(1,0) => true
+	------------
+	inst_class_in(env,Mod.NOMOD, Prefix.NOPRE,_,_,c as SCode.CLASS(cname,_,_,restr,d),
+		       _,_,_,_) => ([],env,[], ClassInf.UNKNOWN("foo"), [])
+	
   rule	(*For the builtin classes. no DAE for elts. E.g. unit, quantity, ... *)
 	Util.string_equal(cname,"Real") => r &
 	Util.string_equal(cname,"Integer") => i &

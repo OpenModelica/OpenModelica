@@ -53,14 +53,15 @@ with "dump.rml"
 relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 
 	(** Simple names: Just load the file if it can be found in $MODELICAPATH* *)
-  rule	load_class_from_mp(classname,mp) => p
+  rule	System.strtok(mp,":") => mps &
+	load_class_from_mps(classname,mps) => p
 	-------------------------------------
 	load_class(Absyn.IDENT(classname),mp) => p
 
 	(** Qualified names: Load the complete package and then check that **)
 	(** the package contains the file **) 
-  rule	Print.print_buf "Qualified name, loading complete package\n" &
-	load_complete_package_from_mp(pack,mp,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
+  rule	System.strtok(mp,":") => mps &
+	load_complete_package_from_mps(pack,mps,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
 	Interactive.get_pathed_class_in_program(path,p)=> _
 	-------------------------------------
 	load_class(path as Absyn.QUALIFIED(pack,rest),mp) => p
@@ -86,6 +87,18 @@ relation exist_directory_file: (string) => () =
 	exist_directory_file(filename) 
 end
 
+
+relation load_class_from_mps: (Absyn.Ident, string list) => Absyn.Program =
+	
+  rule	load_class_from_mp(class,mp) => p
+	----------------------------------
+	load_class_from_mps(class,mp::mps) => p
+
+  rule	load_class_from_mps(class,mps) => p
+	----------------------------------
+	load_class_from_mps(class,_::mps) => p
+
+end
 relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	
   rule	string_append(class,".mo") => classfile &
@@ -109,6 +122,18 @@ relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
   rule	print "load_class_from_mp failed\n" 
 	--------------------
 	load_class_from_mp(_,_) => fail
+end
+
+relation load_complete_package_from_mps: (Absyn.Ident, string list, Absyn.Within, Absyn.Program) => Absyn.Program =
+
+  rule	load_complete_package_from_mp(pack,mp,within ,oldp) => p
+	-------------------------
+	load_complete_package_from_mps(pack,mp::_,within,oldp) => p
+
+  rule	load_complete_package_from_mps(pack,mps,within ,oldp) => p
+	-------------------------
+	load_complete_package_from_mps(pack,_::mps,within,oldp) => p
+
 end
 
 relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absyn.Program) => Absyn.Program =

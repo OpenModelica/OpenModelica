@@ -25,6 +25,8 @@ module System:
  *)
 with "values.rml"
 
+relation strtok: (string,string) => string list
+
 relation compile_c_file: (string) => ()
 
 relation set_c_compiler: (string) => ()
