@@ -638,6 +638,16 @@ void array_alloc_scalar_real_array(real_array_t* dest,int n,real first,...)
 
 }
 
+real* real_array_element_addr1(real_array_t* source,int ndims,int dim1)
+{
+  return source->data+dim1-1;
+}
+
+real* real_array_element_addr2(real_array_t* source,int ndims,int dim1,int dim2)
+{
+  return source->data+(dim1-1)*source->dim_size[1]+dim2-1;
+}
+
 real* real_array_element_addr(real_array_t* source,int ndims,...)
 {
   va_list ap;
