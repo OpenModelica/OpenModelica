@@ -15,7 +15,6 @@ TOKENS = tokens.h
 DLG_FILE = parser.dlg
 ERR = err
 HDR_FILE =
-SCAN = DLGLexer
 PCCTS = /home/pelab/pkg/pccts
 ANTLR_H = $(PCCTS)/h
 BIN = $(PCCTS)/bin
@@ -25,64 +24,51 @@ DLG = $(BIN)/dlg
 CFLAGS = -g -I. -I.. -I$(ANTLR_H)
 #AFLAGS = -CC -gt 
 AFLAGS =
-DFLAGS = -C2 -CC -cs
+#DFLAGS = -C2 -CC -cs
+DFLAGS = -C2
 GRM = modgram.g
-SRC = modgram.cpp \
-      ModParse.cpp \
-	modAST.cpp ModParseToken.cpp modAST.h ModParseToken.h \
-      $(ANTLR_H)/AParser.cpp $(ANTLR_H)/DLexerBase.cpp \
-      $(ANTLR_H)/ASTBase.cpp $(ANTLR_H)/PCCTSAST.cpp \
-       $(ANTLR_H)/ATokenBuffer.cpp $(SCAN).cpp
+SRC = modgram.c \
+      modAST.h \
+      scanner.c \
+      err.c
 OBJ = modgram.o \
-      ModParse.o \
-	modAST.o ModParseToken.o \
-       AParser.o DLexerBase.o \
-      ASTBase.o PCCTSAST.o \
-       ATokenBuffer.o $(SCAN).o
-ANTLR_SPAWN = modgram.cpp ModParse.cpp \
-              ModParse.h $(DLG_FILE) $(TOKENS)
-DLG_SPAWN = $(SCAN).cpp $(SCAN).h
+      scanner.o \
+      err.o
+ANTLR_SPAWN = modgram.c \
+              $(DLG_FILE) $(TOKENS)
+DLG_SPAWN = scanner.c mode.h
 CCC=g++
-CC=$(CCC)
+CC=gcc
 
 libast.a : $(OBJ)
 	ar -rc $@ $(OBJ)
 
-modgram.o : $(TOKENS) $(SCAN).h modgram.cpp parser.h
+modgram.o : $(TOKENS) mode.h modgram.c parser.h
 	$(CC) -c $(CFLAGS) -o modgram.o modgram.c
 
-ModParse.o : $(TOKENS) $(SCAN).h ModParse.cpp ModParse.h
-	$(CCC) -c $(CFLAGS) -o ModParse.o ModParse.cpp
-
-modAST.o : modAST.cpp modAST.h
-	$(CCC) -c $(CFLAGS) -o modAST.o modAST.cpp	
-
-ModParseToken.o : ModParseToken.cpp ModParseToken.h
-	$(CCC) -c $(CFLAGS) -o ModParseToken.o ModParseToken.cpp	
-
-$(SCAN).o : $(SCAN).cpp $(TOKENS)
-	$(CCC) -c $(CFLAGS) -o $(SCAN).o $(SCAN).cpp
+$(SCAN).o : $(SCAN).c $(TOKENS)
+	$(CC) -c $(CFLAGS) -o $(SCAN).o $(SCAN).c
 
 $(ANTLR_SPAWN) : $(GRM)
 	$(ANTLR) $(AFLAGS) $(GRM)
 
 $(DLG_SPAWN) : $(DLG_FILE)
-	$(DLG) $(DFLAGS) $(DLG_FILE)
+	$(DLG) $(DFLAGS) $(DLG_FILE) > scanner.c
 
-AParser.o : $(ANTLR_H)/AParser.cpp
-	$(CCC) -c $(CFLAGS) -o AParser.o $(ANTLR_H)/AParser.cpp
+AParser.o : $(ANTLR_H)/AParser.c
+	$(CC) -c $(CFLAGS) -o AParser.o $(ANTLR_H)/AParser.c
 
-ATokenBuffer.o : $(ANTLR_H)/ATokenBuffer.cpp
-	$(CCC) -c $(CFLAGS) -o ATokenBuffer.o $(ANTLR_H)/ATokenBuffer.cpp
+ATokenBuffer.o : $(ANTLR_H)/ATokenBuffer.c
+	$(CC) -c $(CFLAGS) -o ATokenBuffer.o $(ANTLR_H)/ATokenBuffer.c
 
-DLexerBase.o : $(ANTLR_H)/DLexerBase.cpp
-	$(CCC) -c $(CFLAGS) -o DLexerBase.o $(ANTLR_H)/DLexerBase.cpp
+DLexerBase.o : $(ANTLR_H)/DLexerBase.c
+	$(CC) -c $(CFLAGS) -o DLexerBase.o $(ANTLR_H)/DLexerBase.c
 
-ASTBase.o : $(ANTLR_H)/ASTBase.cpp
-	$(CCC) -c $(CFLAGS) -o ASTBase.o $(ANTLR_H)/ASTBase.cpp
+ASTBase.o : $(ANTLR_H)/ASTBase.c
+	$(CC) -c $(CFLAGS) -o ASTBase.o $(ANTLR_H)/ASTBase.c
 
-PCCTSAST.o : $(ANTLR_H)/PCCTSAST.cpp
-	$(CCC) -c $(CFLAGS) -o PCCTSAST.o $(ANTLR_H)/PCCTSAST.cpp
+PCCTSAST.o : $(ANTLR_H)/PCCTSAST.c
+	$(CC) -c $(CFLAGS) -o PCCTSAST.o $(ANTLR_H)/PCCTSAST.c
 
 
 clean:
