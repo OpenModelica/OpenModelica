@@ -1206,6 +1206,114 @@ last equation in the model \code{M} is shown in figure
   \end{center}
 \end{figure}
 
+
+\section{Parameters}
+\label{sec:param}
+
+The concept of \term{parameters} is important in simulation, but the
+semantics of parameters vs. constants in the modeling language is not
+so obvious.
+
+In principle, parameters are constants that the user may modify before
+a simulation run is started.  The value of a parameter is constant
+throughout the simulation, but it should be possible to change it
+before simulation is a simple way.  In description of parameters the
+notion of compile-time is often used, indicating that parameters are
+not constant during compilation, but constants are.
+
+All this means that it is unclear to what depth the semantic
+specification should go.  Should it try to describe the semantics of
+a model while the parameters are still unknown?  Or should it assume
+some default value for the parameters?
+
+I have chosen to regard all parameters as constants, using the default
+value given in the model definition.  In some cases, the parameters
+are still possible to change after translation, but in other cases it
+is not (see section \ref{sec:strucparam} below).  This means that
+parameters and constants are treated in the same way for most
+practical purposes.  The output still indicates whether they were
+declared as parameters or constants.
+
+\subsection{Structural parameters}
+\label{sec:strucparam}
+
+When a parameter is used to give variable values, such as the
+parameter \code{amplitude} in the example in figure
+\ref{fig:nonstrucparam}, there will be no problems changing its value
+after translating the model to simple equations.
+
+Howver, when the parameter is used for more complicated things, such
+as defining the size of an array, it is usually not possible to change
+its value after translation to simple equations.  Consider the
+exammple in figure \ref{fig:strucparam}.  The size of the array
+\code{v} is determined by the parameter \code{levels}.  The equation
+section first defines two equations, and then there is a loop which
+defines another $\code{levels} - 1$ equations.  This means that the
+number of equations in the result of the translation will depend on
+the value of the parameter \code{levels}.  Simply changing the value
+of \code{levels} after the translation is done will only change the
+value, but the number of equations will remain the same, creating an
+erroneous model.
+
+\begin{figure}[htbp]
+  \begin{center}
+    \begin{boxedverbatim}
+      model SinSource
+        parameter Real amplitude;
+        Real x;
+      equation
+        x = amplitude * sin(time);
+      end SinSource;
+    \end{boxedverbatim}
+    \caption{Non-structural parameter}
+    \label{fig:nonstrucparam}
+  \end{center}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{center}
+    \begin{boxedverbatim}
+      model Stack
+        parameter Integer levels;
+        Real v[levels];
+        Real x,y;
+      protected
+        Integer i;
+      equation
+        x = v[1];
+        y = v[levels];
+        for i in 2:levels loop
+          v[i-1] = v[i] * 0.8;
+        end for;
+      end Stack;
+    \end{boxedverbatim}
+    \caption{Structural parameter}
+    \label{fig:strucparam}
+  \end{center}
+\end{figure}
+
+Parameters which change the structure of the equations are called
+\term{structural parameters}.  A parameter is a structural parameter
+if at least one of the following conditions are fulfilled:
+
+\begin{enumerate}
+\item It appears in the dimension size of a array declaration.
+\item It is used to index an array in any expression.
+\item It is used in a range expression (\code{a:b} or \code{a:b:c}).
+\item A parameter could be said to be a structural parameter if its
+  value is defined in terms of another structural parameter.
+\end{enumerate}
+
+As this semanatic specification treats all parameters as constants,
+this distinction between structural and non-structural parameters is
+not important.  But for simulation environment implementors, it will
+be important.  Most implementations will include a compilation step
+before the user gets to set parameters and start the simulation.  The
+question is how well these implementations will handle the case when
+the user changes the value of a structural parameter.  This is
+currently regarded as quality-of-implementation issue, but it might be
+worthwhile to examine it further.
+
 \chapter{The Target language: Flat Modelica}
 \label{cha:target}
 
@@ -1814,6 +1922,59 @@ are expanded into their simple components.
   \end{center}
 \end{figure}
 
+
+\chapter{Conclusions}
+\label{cha:conclusions}
+
+In this chapter, some of the conclusions and experences from writing
+the semantic specification are given.  Also, some suggestions for
+future work are proposed.
+
+\section{Result}
+\label{sec:result}
+
+The result of this work is an RML semantic specification for Modelica
+which is incomplete, but works farily well for the part of the
+language it handles.
+
+Another result of working on the semantic specification is that many
+problems and unclear issues in the Modelica semantics have been
+cleared.  This has not always lead to progress in the formal
+specification, since it sometimes has meant that it had to be
+rewritten due to changes in the semantics.  But in a larger
+perspective, namely the progress of the Modelica language
+specifications, it has meant great progress.
+
+\section{Translator usability}
+
+Another goal was to produce a Modelica translator that could be used
+in real-world applications.  This has become somthing of a secondary
+goal, but there are some issues worth mentioning.
+
+Some properties of the formal semantic specification makes the output
+of the translator not so suitable for real use.  For instance, solving
+matrix eqations is often best done by keeping them as equations
+between matrices, but the translator translates them to one equation
+for each of the matrix elements.
+
+There are some hidden options in the translator which makes it
+possible to have it output something that is easier to pass on to
+existing solvers and simulation environments.  This is not complete,
+and relies on some ugly tricks with the RML system.  This code is not
+included in this report.
+
+As to the performance of the translator, this has not been evaluated,
+but it is clear that it is not overly inefficient.  It translates a
+reasonably sized model in a few seconds on a modern computer system.
+
+
+\section{Future work}
+\label{sec:future}
+
+\unfinished
+
+\appendix
+
 \chapter{Annotated formal semantics}
 \label{cha:formsem}
 
@@ -1856,9 +2017,7 @@ and with the suffex \code{.rml} appended.
 
 %\end{landscape}
 
-\chapter{Appendices}
-\appendix
-\section{rmldoc}
+\chapter{rmldoc}
 \label{app:rmldoc}
 
 {\codefont\verbatiminput{../tools/rmldoc}}
