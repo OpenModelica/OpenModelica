@@ -166,7 +166,19 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 
   rule	ceval_builtin_sqrt(env,exp,impl,st) => (v,st)
 	-----------------------------------------
-	ceval (env,Exp.CALL(Absyn.IDENT("sqrt"),[exp],_,_),impl,st,_) => (v,st) 	
+	ceval (env,Exp.CALL(Absyn.IDENT("sqrt"),[exp],_,_),impl,st,_) => (v,st)
+	
+  rule	ceval_builtin_sin(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("sin"),[exp],_,_),impl,st,_) => (v,st)
+
+  rule	ceval_builtin_cos(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("cos"),[exp],_,_),impl,st,_) => (v,st)
+
+  rule	ceval_builtin_tan(env,exp,impl,st) => (v,st)
+	-----------------------------------------
+	ceval (env,Exp.CALL(Absyn.IDENT("tan"),[exp],_,_),impl,st,_) => (v,st)
 
   rule	ceval_builtin_integer(env,exp,impl,st) => (v,st)
 	-----------------------------------------
@@ -1424,6 +1436,43 @@ relation ceval_builtin_sqrt : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSy
     --------------------------------------
     ceval_builtin_sqrt(env,exp,impl,st) => (Values.REAL(rv'),st)
  
+end
+
+relation ceval_builtin_sin : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+ 
+  rule	ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_sin rv => rv' 
+	--------------------------------------
+	ceval_builtin_sin(env,exp,impl,st) => (Values.REAL(rv'),st)
+  rule	print "ceval_builtin_sin failed\n" 
+	--------------
+	ceval_builtin_sin(_,_,_,_) => fail
+end
+
+relation ceval_builtin_cos : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+ 
+  rule	
+        ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_cos rv => rv' 
+	--------------------------------------
+	ceval_builtin_cos(env,exp,impl,st) => (Values.REAL(rv'),st)
+ 
+end
+
+relation ceval_builtin_tan : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
+	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
+ 
+  rule	(* tan is not implemented in RML for some strange reason...
+	 use the formula tan(x) = sin(x) / cos(x) and hope cos(x) != 0 
+	 *)
+        ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
+        real_sin rv => sv &
+	real_cos rv => cv &
+	real_div(sv,cv) => rv' 
+	--------------------------------------
+	ceval_builtin_tan(env,exp,impl,st) => (Values.REAL(rv'),st)
 end
 
 relation ceval_builtin_div : (Env.Env, Exp.Exp,Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 

@@ -718,6 +718,8 @@ relation initial_env =
 	(* Not in the report *)
 	Env.extend_frame_t(env, "sin", real2real) 		     => env &
 	Env.extend_frame_t(env, "cos", real2real) 		     => env &
+	Env.extend_frame_t(env, "tan", real2real) 		     => env &
+
 	(* PR. Add the built in array functions here.*)
 	(* Also do it for real, string and bool*)
 	Env.extend_frame_t(env, "ndims", array1dimint2int) 		     => env &
