@@ -1729,6 +1729,10 @@ relation is_builtin_func : Absyn.Path => bool =
 	----------------------------
 	is_builtin_func Absyn.IDENT(id) => true
 
+  rule	Lookup.is_in_builtin_env path => true
+	-------------------------------------
+	is_builtin_func path => true
+
   axiom	is_builtin_func _ => false
 
 end
@@ -1780,32 +1784,33 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	elab_call_args (env,fn',args,nargs,impl,st) => (e,prop) &
 	generate_compiled_function(env,fn,e,prop,st) => st' 
 	& Debug.fprint ("sei", "elab_call 3 succeeded: ")
-	& Debug.fcall("sei", Dump.print_component_ref,fn)
-	& Debug.fprintln ("sei", "")
+	& Dump.print_component_ref_str fn => fnstr
+	& Debug.fprintln("sei", fnstr)
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl as true,st) => (e,prop,st')
 
 
 	(* Non-interactive mode *)
-  rule	Debug.fprintln ("sei", "elab_call 4: ") &
-	Debug.fcall("sei", Dump.print_component_ref,fn) &
-	Debug.fprintln ("sei", "") &
+  rule	Debug.fprint ("sei", "elab_call 4: ") &
+	Dump.print_component_ref_str fn => fnstr &
+	Debug.fprintln("sei", fnstr) &
 	Absyn.cref_to_path fn => fn' &
 	elab_call_args (env,fn',args,nargs,impl, st) => (e,prop) &
 	generate_compiled_function(env,fn,e,prop,st) => st' 
 	& Debug.fprint ("sei", "elab_call 4 succeeded: ")
-	& Debug.fcall("sei", Dump.print_component_ref,fn)
-	& Debug.fprintln ("sei", "")
+	& Debug.fprintln ("sei", fnstr)
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl as false,st) => (e,prop,st')
 
   rule	Debug.fprint("failtrace", "- elab_call failed\n") &
 	Debug.fprint("failtrace", " function: ") &
-	Debug.fcall("failtrace", Dump.print_component_ref,fn) &
-	Debug.fprint("failtrace", " posargs: ") &
-	Debug.fprint_list("failtrace", args, Dump.print_exp,", ") &	
-	Debug.fprint("failtrace", "\n") 
-	----------------------------
+	Dump.print_component_ref_str fn => fnstr &
+	Debug.fprint("failtrace", fnstr) &
+	Debug.fprint("failtrace", "   posargs: ") &
+	Util.list_map(args, Dump.print_exp_str) => argstrs &
+	Util.string_delimit_list(argstrs, ", ") => argstr &
+	Debug.fprintln("failtrace", argstr)
+	-----------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => fail
 
 end
@@ -2408,28 +2413,28 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 
 (*  axiom generate_compiled_function(_,_,_,_,NONE) => NONE *)
 	
-  rule	(*Debug.fprintln("sei", "generate_compiled_function: start1") &*)
+  rule	Debug.fprintln("sei", "generate_compiled_function: start1") &
 	Absyn.cref_to_path(fn) => pfn &
 	is_function_in_cflist (cflist,pfn) => true
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => SOME(st)
 
-  rule	(*Debug.fprintln("sei", "generate_compiled_function: start2") &*)
+  rule	Debug.fprintln("sei", "generate_compiled_function: start2") &
 	Absyn.cref_to_path(fn) => path &
 	is_function_in_cflist (cflist, path) => false &
 	SCode.elaborate(p) => p' &
-	(*Debug.fprintln("sei", "generate_compiled_function: elaborated") &*)
+	Debug.fprintln("sei", "generate_compiled_function: elaborated") &
 (*	Inst.instantiate_implicit(p') => d & *)
 	Lookup.lookup_class(env, path, false (*message*)) => (cls, env') &
-	(*Debug.fprintln("sei", "generate_compiled_function: class looked up") &*)
+	Debug.fprintln("sei", "generate_compiled_function: class looked up") &
 	Inst.implicit_function_instantiation(env', Types.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
 	  => (env'',d) &
-	(*Debug.fprintln("sei", "generate_compiled_function: function instantiated") &*)
+	Debug.fprintln("sei", "generate_compiled_function: function instantiated") &
 	Print.clear_buf() &
 	ModUtil.string_prefix_params DAE.DAE(d) => d' &
 	Codegen.generate_functions(d') &
-	(*Debug.fprintln("sei", "generate_compiled_function: function generated") &*)
+	Debug.fprintln("sei", "generate_compiled_function: function generated") &
 	ModUtil.path_string2 (path,"_") => pathstr &	
 	string_append(pathstr,".c") => filename &
 	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
@@ -2449,10 +2454,11 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),NONE) => NONE
 	(* PROP_TUPLE? *)
 
+(*
   rule	(* If fails, skip it. *)
 	--------------------------------------------------
 	generate_compiled_function(_,_,_,_,st) => st
-
+*)
 
   rule	Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
 	Dump.print_component_ref_str cr => str1 &
@@ -2462,7 +2468,11 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	Print.print_buf str2 &
 	Print.print_buf "\n"
 	------------------------------------------------------------------
-	generate_compiled_function(env,cr,exp,_,_) => fail
+	generate_compiled_function(env,cr,exp,_,st) => st
+
+  rule	(* If fails, skip it. *)
+	--------------------------------------------------
+	generate_compiled_function(_,_,_,_,st) => st
 
 end
 

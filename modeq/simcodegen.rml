@@ -1028,9 +1028,15 @@ end
 
   rule	Absyn.path_string2(fcn,"_") => fs &
 	 Exp.print_list_str(args,print_exp_cpp_str,",") => argstr &
+	 Util.string_append_list([fs, "(", argstr, ")"]) => s
+	 ----------------------------------------------------------------------
+	 print_exp2_str(Exp.CALL(fcn, args,_,builtin as true),_) => s
+
+  rule	Absyn.path_string2(fcn,"_") => fs &
+	 Exp.print_list_str(args,print_exp_cpp_str,",") => argstr &
 	 Util.string_append_list([fs, "(", argstr, ").",fs,"_rettype_1"]) => s
 	 ----------------------------------------------------------------------
-	 print_exp2_str(Exp.CALL(fcn, args,_,_),_) => s
+	 print_exp2_str(Exp.CALL(fcn, args,_,builtin as false),_) => s
 
   rule	Exp.print_list_str(es, print_exp_cpp_str, ",") => s &
 	 string_append ("{",s) => s' &

@@ -61,6 +61,8 @@ module Lookup:
   relation lookup_ident : (Env.Env, SCode.Ident) 
 	  => (Types.Var,(SCode.Element*Types.Mod) option,bool)
   relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list)
+  relation is_in_builtin_env: Absyn.Path => bool
+
 end
 
 with "parse.rml"
@@ -725,6 +727,9 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 	---------------------
 	lookup_functions_in_env(f::fs,id) => c
 
+  rule	Debug.fprintln("failtrace", "lookup_functions_in_env failed")
+	-------------------------------------------------------------
+	lookup_functions_in_env (_,_) => fail
 end
 
 
@@ -983,6 +988,23 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
 end
 
 (**  Class lookup *)
+
+relation is_in_builtin_env: Absyn.Path => bool =
+
+  rule	Builtin.initial_env() => i_env &
+	lookup_functions_in_env(i_env, path) => []
+	-----------------------------------------------
+	is_in_builtin_env(path) => false
+
+  rule	Builtin.initial_env() => i_env &
+	lookup_functions_in_env(i_env, path) => _
+	------------------------------------------------
+	is_in_builtin_env(path) => true
+
+  rule	Debug.fprintln("failtrace", "is_in_builtin_env failed")
+	-------------------------------------------------------
+	is_in_builtin_env(path) => fail
+end
 
 (** relation: lookup_class_in_env
  ** 

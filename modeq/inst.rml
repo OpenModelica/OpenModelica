@@ -3931,21 +3931,21 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 (* PR To debug*)
 
-  rule	Debug.fprintln("failtrace", "\ne1 is PROP and e2 is PROP_TUPLE. ") &
+  rule	(* Debug.fprintln("failtrace", "\ne1 is PROP and e2 is PROP_TUPLE. ") &
         Types.print_type t1 &
-        Types.print_type t2
+        Types.print_type t2 *)
 	------------------------------------------------------------------
 	inst_eq_equation(e1,Types.PROP(t1,_), e2, Types.PROP_TUPLE(t2,_), initial,impl) => fail
 
-  rule	Debug.fprintln("failtrace", "\ne2 is PROP") &
+  rule	(*Debug.fprintln("failtrace", "\ne2 is PROP") &
         print "\n----- e2 is PROP: " &
-        Types.print_type t2 
+        Types.print_type t2  *)
 	-------------------------------------------
 	inst_eq_equation(e1,_, e2,Types.PROP(t2,_), initial,impl) => fail
 
-  rule	Debug.fprintln("failtrace", "e1 is PROP") &
+  rule	(*Debug.fprintln("failtrace", "e1 is PROP") &
         print "\n----- e2 is PROP: " &
-        Types.print_type t1
+        Types.print_type t1 *)
 	-----------------------------------------
 	inst_eq_equation(e1,Types.PROP(t1,_), e2, _, initial,impl) => fail
 
