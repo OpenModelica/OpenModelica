@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
   parser.setASTFactory(&ast_factory);
 
   parser.stored_definition();
-  antlr::RefAST ast = parser.getAST();
+  RefMyAST ast = RefMyAST(parser.getAST());
   parse_tree_dumper dumper(cout);
   dumper.dump(ast);
 }
