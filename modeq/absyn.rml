@@ -338,6 +338,7 @@ relation insert_class_in_program: (Class, Within, Program) => Program =
 
   rule	get_class_in_program(n1,p) => c2 &
 	insert_class_in_class(c1,w,c2) => c3 &
+
 	update_program(PROGRAM([c3],TOP),p) => pnew
 	-------------------------------------------------
 	insert_class_in_program(c1,w as WITHIN(QUALIFIED(n1,_)),p) => pnew
@@ -368,7 +369,7 @@ relation insert_class_in_class: (Class, Within, Class) => Class =
   rule  get_first_ident_from_path(path) => name2 &
         get_inner_class(c2,name2) => cinner &
 	insert_class_in_class(c1,WITHIN(path),cinner) => cnew &
-        replace_inner_class(cnew,c2) => cnew'
+        replace_inner_class(cnew,c2) => cnew' 
 	---------------------------------------------
 	insert_class_in_class(c1,WITHIN(QUALIFIED(name,path)),c2) => cnew'
 	
@@ -392,7 +393,7 @@ relation replace_inner_class: (Class, Class) => Class =
 
   rule	get_public_list(parts) => publst &
 	replace_class_in_elementlist(publst,c1) => publst2 &
-	replace_public_list(parts,publst2) => parts2
+	replace_public_list(parts,publst2) => parts2 
 	-----------------------------------------------
 	replace_inner_class (c1,CLASS(a,b,c,PARTS(parts))) => CLASS(a,b,c,PARTS(parts2))
   rule	print "Failed in replace_inner_class\n"
@@ -406,15 +407,19 @@ end
   **)
 relation replace_class_in_elementlist: (Element list, Class) => Element list =
 	
-  rule	name1 = name2
+(*  rule	name1 = name2
 	------------------------------
-	replace_class_in_elementlist([ELEMENT(a,b,c,CLASSDEF(d,c1 as CLASS(name1,_,_,_)))],c2 as CLASS(name2,_,_,_)) => [ELEMENT(a,b,c,CLASSDEF(d,c2))]
+	replace_class_in_elementlist([ELEMENT(a,b,c,CLASSDEF(d,c1 as CLASS(name1,_,_,_)))],c2 as CLASS(name2,_,_,_)) => [ELEMENT(a,b,c,CLASSDEF(d,c1))]*)
 
   rule	not name1 = name &
-	replace_class_in_elementlist(xs,c1) => res
+	replace_class_in_elementlist(xs,c) => res
 	------------------------------------------
-	replace_class_in_elementlist(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))::xs,CLASS(name,_,_,_)) => res
+	replace_class_in_elementlist((e1 as ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_))))::xs,c as CLASS(name,_,_,_)) => e1::res
 
+  rule name1 = name 
+	-----------------------------
+	replace_class_in_elementlist((e1 as ELEMENT(a,b,c,CLASSDEF(d, CLASS(name1,_,_,_))))::xs,c2 as CLASS(name,_,_,_)) => ELEMENT(a,b,c,CLASSDEF(d,c2))::xs
+	
   axiom	 replace_class_in_elementlist([],c) => [ELEMENT(false,UNSPECIFIED,"",CLASSDEF(false,c))]
 end
 
@@ -427,6 +432,12 @@ relation get_inner_class: (Class, Ident) => Class =
 	get_class_from_elementlist(publst,name) => c1
 	-----------------------------------------------
 	get_inner_class (CLASS(_,_,_,PARTS(parts)), name) => c1
+
+  rule	print "get_inner_class failed, c:" &
+	Debug.fcall ("dump", Dump.dump,PROGRAM([c],TOP)) &
+	print "name :" & print name 
+	--------------
+	get_inner_class (c,name) => fail
 end
 
 (** relation: replace_public_list
@@ -467,7 +478,7 @@ relation get_class_from_elementlist: (Element list, Ident) => Class =
 	
   rule	name1 = name2
 	------------------------------
-	get_class_from_elementlist([ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))],name2) => c1
+	get_class_from_elementlist(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))::xs,name2) => c1
 
   rule	not name1 = name &
 	get_class_from_elementlist(xs,name) => res
