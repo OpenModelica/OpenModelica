@@ -61,6 +61,7 @@ module SCode :
   (** - Classes *)
   datatype Class = CLASS of Ident		(* Name *)
 			  * bool		(* Partial *)
+			  * bool		(* Encapsulated *)
 			  * Restriction	        (* Restricion *)
 			  * ClassDef		(* Parts *)
 
@@ -164,7 +165,7 @@ relation elab_class: Absyn.Class => Class =
 
   rule	elab_classdef d => d'
 	---------------------
-	elab_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
+	elab_class(Absyn.CLASS(n,p,e,r,d)) => CLASS(n,p,e,r,d')
 
 end
 
@@ -359,8 +360,8 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 
   rule	elab_classdef(de) => de'
 	-----------------------
-	elab_elementspec(final,prot,Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,re,de)))
-	  => [CLASSDEF(n,final,rp,CLASS(n,pa,re,de'))]
+	elab_elementspec(final,prot,Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,e,re,de)))
+	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re,de'))]
 
   rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
 	Absyn.path_string(n) => ns
@@ -530,7 +531,7 @@ relation get_element_named: (Ident, Class) => Element =
 	
   rule	get_element_named_from_elts(id,elts) => elt
 	----------------------------------------
-	get_element_named(id,CLASS(_,_,_,PARTS(elts,_,_))) => elt
+	get_element_named(id,CLASS(_,_,_,_,PARTS(elts,_,_))) => elt
 end
 
 relation get_element_named_from_elts: (Ident, Element list) => Element =

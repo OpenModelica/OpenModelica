@@ -59,15 +59,15 @@ with "debug.rml"
 
 (** - The primitive types *)
 
-val rl_type = SCode.CLASS("RealType",false,Absyn.R_PREDEFINED_REAL,
+val rl_type = SCode.CLASS("RealType",false,false,Absyn.R_PREDEFINED_REAL,
 			  SCode.PARTS([],[],[]))
-val int_type = SCode.CLASS("IntegerType",false,Absyn.R_PREDEFINED_INT,
+val int_type = SCode.CLASS("IntegerType",false,false,Absyn.R_PREDEFINED_INT,
 			   SCode.PARTS([],[],[]))
-val str_type = SCode.CLASS("StringType",false,Absyn.R_PREDEFINED_STRING,
+val str_type = SCode.CLASS("StringType",false,false,Absyn.R_PREDEFINED_STRING,
 			   SCode.PARTS([],[],[]))
-val bool_type = SCode.CLASS("BooleanType",false,Absyn.R_PREDEFINED_BOOL,
+val bool_type = SCode.CLASS("BooleanType",false,false,Absyn.R_PREDEFINED_BOOL,
 			    SCode.PARTS([],[],[]))
-val enum_type = SCode.CLASS("EnumType",false,Absyn.R_PREDEFINED_ENUM,
+val enum_type = SCode.CLASS("EnumType",false,false,Absyn.R_PREDEFINED_ENUM,
 			    SCode.PARTS([],[],[]))
 (** These are the primitive types that are used to build the types
  ** `Real', `Integer' etc. *)
@@ -86,7 +86,7 @@ val unit = SCode.COMPONENT("unit",true,false,
 (** - The `Real' type *)
 
 val real_type =
-SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
+SCode.CLASS("Real",false,false,Absyn.R_PREDEFINED_REAL,
 	    SCode.PARTS
 	    ([], (*[unit],*)
 	     [],
@@ -95,7 +95,7 @@ SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
 (** - The `Integer' type *)
 
 val integer_type =
-SCode.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,
+SCode.CLASS("Integer",false,false,Absyn.R_PREDEFINED_INT,
 	    SCode.PARTS
 	    ([], (*[unit],*)
 	     [],
@@ -104,7 +104,7 @@ SCode.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,
 (** - The `String' type *)
 
 val string_type =
-SCode.CLASS("String",false,Absyn.R_PREDEFINED_STRING,
+SCode.CLASS("String",false,false,Absyn.R_PREDEFINED_STRING,
 	    SCode.PARTS
 	    ([],
 	     [],
@@ -113,7 +113,7 @@ SCode.CLASS("String",false,Absyn.R_PREDEFINED_STRING,
 (** - The `Boolean' type *)
 
 val boolean_type =
-SCode.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,
+SCode.CLASS("Boolean",false,false,Absyn.R_PREDEFINED_BOOL,
 	    SCode.PARTS
 	    ([],
 	     [],

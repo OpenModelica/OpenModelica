@@ -124,7 +124,7 @@ relation unparse_class_str: Absyn.Class => string =
         string_append(s9,n) => s10 &
 	string_append(s10,";\n") => str			     
 	-----------------------------
-	unparse_class_str(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => str
+	unparse_class_str(Absyn.CLASS(n,p,e,r,Absyn.PARTS(parts))) => str
 
   rule	select_string(p, "partial ", "") => s1 &
 	unparse_restriction_str (r)  => s2 &
@@ -139,7 +139,7 @@ relation unparse_class_str: Absyn.Class => string =
 	string_append(s10,s9) => s11 &
 	string_append(s11,";\n") => str
 	------------------------------
-	unparse_class_str(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,dim,m))) => str
+	unparse_class_str(Absyn.CLASS(n,p,e,r,Absyn.DERIVED(i,dim,m))) => str
 
   rule	select_string(p, "partial ", "") => s1 &
 	unparse_restriction_str (r)  => s2 &
@@ -151,7 +151,7 @@ relation unparse_class_str: Absyn.Class => string =
 	string_append(s6,s7) => s8 &
 	string_append(s8,");\n") => str				      
 	-------------------------------
-	unparse_class_str(Absyn.CLASS(n,p,r,Absyn.ENUMERATION(l))) => str    
+	unparse_class_str(Absyn.CLASS(n,p,e,r,Absyn.ENUMERATION(l))) => str    
 end 
 
 relation unparse_restriction_str : Absyn.Restriction => string =
@@ -208,14 +208,14 @@ relation print_class: Absyn.Class => () =
 	print n & print "," & print_select(p,"PARTIAL,","") &
 	print_list_debug("print_class1",parts,print_class_part,",") & print ")"
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => ()
+	print_class(Absyn.CLASS(n,p,e,r,Absyn.PARTS(parts))) => ()
 
   rule	print_class_restriction(r) & print "(" &
 	print n & print "," & print_select(p,"PARTIAL,","") &
 	print ") = " & print_path(i) &
 	print_class_modification(m)
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
+	print_class(Absyn.CLASS(n,p,e,r,Absyn.DERIVED(i,_,m))) => ()
 
   rule	print_class_restriction(r) & print "(" &
 	print n & print "," &
@@ -224,7 +224,7 @@ relation print_class: Absyn.Class => () =
 	print_list_debug("print_class",l,print, ",") &
 	print ")\n"
 	----------
-	print_class(Absyn.CLASS(n,p,r,Absyn.ENUMERATION(l))) => ()
+	print_class(Absyn.CLASS(n,p,e,r,Absyn.ENUMERATION(l))) => ()
 end
 
 (**)

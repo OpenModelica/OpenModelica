@@ -53,6 +53,7 @@ module Absyn:
   (** - Classes *)
   datatype Class = CLASS of Ident		     (* Name *)
 			  * bool		     (* Partial *)
+			  * bool		     (* Encapsulated *)							  
 			  * Restriction	             (* Restricion *)
 			  * ClassDef		     (* Body *)
   (** A class definition consists of a name, a flag to indicate if this *)
@@ -285,6 +286,8 @@ module Absyn:
   relation path_to_cref : Path => ComponentRef
   relation path_string : Path => string
   relation path_last_ident : Path => Ident
+  relation join_paths: (Path, Path) => Path
+  relation strip_last: (Path) => Path 
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
@@ -300,7 +303,7 @@ with "util.rml"
 
 relation element_spec_name : ElementSpec => Ident =
 
-  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_)) => n
+  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_)) => n
 
   axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
 
@@ -336,6 +339,28 @@ relation path_last_ident : Path => Ident =
   axiom	path_last_ident(IDENT(n)) => n
 
 end
+
+
+relation join_paths: (Path, Path) => (Path) =
+
+  axiom	join_paths(IDENT(str),p2) => QUALIFIED(str,p2) 
+	
+  rule	join_paths(p,p2) => p'
+	-----------------------
+	join_paths(QUALIFIED(str,p),p2) => QUALIFIED(str,p')
+end
+
+relation strip_last: (Path) => Path =
+
+  axiom	strip_last(IDENT(_)) => fail
+	
+  axiom	strip_last(QUALIFIED(str,IDENT(_))) => IDENT(str)
+
+  rule	strip_last(p) => p'
+	-------------------
+	strip_last(QUALIFIED(str,p)) => QUALIFIED(str,p')	
+end
+
 
 (** relation: cref_to_path
  **

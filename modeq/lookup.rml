@@ -107,7 +107,7 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 	----------------------------------------------------------
 	lookup_class(env,path as Absyn.IDENT(_)) => (c, env')
 
-  rule	lookup_class(env,Absyn.IDENT(pack)) => (c as SCode.CLASS(id,_,restr,_),env') &
+  rule	lookup_class(env,Absyn.IDENT(pack)) => (c as SCode.CLASS(id,_,_,restr,_),env') &
 	Env.open_scope(env') => env2 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) => (_,env'',_,_,_) &
@@ -134,18 +134,47 @@ relation lookup_qualified_imported_class_in_frame: ((SCode.Ident * Env.Item) lis
   rule	Absyn.path_last_ident(path) => id &
 	id = ident &
 	Env.top_frame(env) => fr & 
-	lookup_class([fr],path) => (c,env') 
+	lookup_class([fr],path) => (c,env') &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr],strippath) =>  (c2,_) &
+	assert_package(c2) 
 	----------------------------------
 	lookup_qualified_imported_class_in_frame((_,Env.IMPORT(Absyn.QUAL_IMPORT(path)))::fs,env,ident)
 	    => (c,env')
 
+  rule	Absyn.path_last_ident(path) => id &
+	id = ident &
+	Env.top_frame(env) => fr & 
+	lookup_class([fr],path) => (c,env') &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr],strippath) =>  (c2,_) &
+	not assert_package(c2) &
+	print "# Error, " & Dump.print_path strippath & print " is not a package\n"  
+	----------------------------------
+	lookup_qualified_imported_class_in_frame((_,Env.IMPORT(Absyn.QUAL_IMPORT(path)))::fs,env,ident)
+	    => fail
+
   rule	id = ident &
 	Env.top_frame(env) => fr & 
-	lookup_class([fr],path) => (c,env') 
-	----------------------------------
+	lookup_class([fr],path) => (c,env') &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr],strippath) =>  (c2,_) &
+	assert_package(c2) 
+	---------------------------------- 
 	lookup_qualified_imported_class_in_frame((_,Env.IMPORT(Absyn.NAMED_IMPORT(id,path)))::fs,env,ident)
 	    => (c,env')
 
+  rule	id = ident &
+	Env.top_frame(env) => fr & 
+	lookup_class([fr],path) => (c,env') &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr],strippath) =>  (c2,_) &
+	not assert_package(c2) &
+	print "# Error, " & Dump.print_path strippath & print " is not a package\n"  
+	---------------------------------- 
+	lookup_qualified_imported_class_in_frame((_,Env.IMPORT(Absyn.NAMED_IMPORT(id,path)))::fs,env,ident)
+	    => fail
+	    
   rule	lookup_qualified_imported_class_in_frame(fs,env,ident) => (c,env')
 	-----------------------
 	lookup_qualified_imported_class_in_frame((_,_)::fs,env,ident) => (c,env')
@@ -267,7 +296,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
   rule	
-	lookup_class_in_env(env, Absyn.IDENT(id)) => (c as SCode.CLASS(n,_,r,_), env) &
+	lookup_class_in_env(env, Absyn.IDENT(id)) => (c as SCode.CLASS(n,_,_,r,_), env) &
 	Debug.fprintl ("lotr", ["lookup_var_in_packages. instantiating class", n, "\n"]) &
 	Env.open_scope(env) => env' &
 	ClassInf.start(r,n) => ci_state &
@@ -396,7 +425,7 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 	build_record_constructor_varlst (cdef,env) => varlst &
 	Types.make_function_type(varlst) => ftype 
 	----------------------------------------
-	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype
+	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype
 
   rule	(* print "  lookup_type_in_frame(" & print id & print "): not " &
 	   print n & print "\n" & *)
@@ -438,7 +467,7 @@ relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
 	lookup_functions_in_frame(rest,env,id) => t2 &
 	Types.make_function_type(varlst) => ftype
 	----------------------------------------
-	lookup_functions_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype::t2
+	lookup_functions_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype::t2
 
   rule	 (* print "  lookup_type_in_frame(" & print id & print "): not " &
 	   print n & print "\n" & *)
@@ -484,7 +513,7 @@ relation lookup_recconst_in_frame: ((SCode.Ident * Env.Item) list,
   rule	id = n & print "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_class (cdef,env) => cdef 
 	----------------------------------------
-	lookup_recconst_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,Absyn.R_RECORD,_),_))::rest,env,id) => (cdef,env)
+	lookup_recconst_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => (cdef,env)
 
   rule	 (* print "  lookup_type_in_frame(" & print id & print "): not " &
 	   print n & print "\n" & *)
@@ -501,8 +530,8 @@ relation build_record_constructor_class :(SCode.Class, Env.Env) => SCode.Class =
   rule	build_record_constructor_elts(elts,env) => funcelts &
 	build_record_constructor_result_elt(elts,id,env) => reselt
 	---------------------------------------------------
-	build_record_constructor_class (cl as SCode.CLASS(id,_,restr,SCode.PARTS(elts,_,_)),env) 
-	    => SCode.CLASS(id,false,Absyn.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[]))
+	build_record_constructor_class (cl as SCode.CLASS(id,_,_,restr,SCode.PARTS(elts,_,_)),env) 
+	    => SCode.CLASS(id,false,false,Absyn.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[]))
 end
 	
 relation build_record_constructor_elts: (SCode.Element list, Env.Env) => SCode.Element list =
@@ -548,7 +577,7 @@ relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var li
   rule	build_varlst_from_elts(elts,env) => inputvarlst &
 	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cl,[]) => (_,_,ty,_) 
 	--------------------------------------
-	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,SCode.PARTS(elts,_,_)),env) 
+	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_)),env) 
 	(* Add the return type of the record constructor *)
 	    => Types.VAR("result",Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
 end
@@ -608,12 +637,12 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path) => (SCode.Cla
 
   rule	lookup_class_in_parts(env,classname,parts) => (c,env)
 	----------------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)),Absyn.IDENT(classname)) => (c,env)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_)),Absyn.IDENT(classname)) => (c,env)
 	    
   rule	lookup_class_in_parts (env, c1, parts) => (c,env) &
 	lookup_class_in_class (env,c,p1) => (c',env)
 	-------------------------------------------
-	lookup_class_in_class (env, SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)), Absyn.QUALIFIED(c1,p1)) => (c',env)
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_)), Absyn.QUALIFIED(c1,p1)) => (c',env)
 	
 end
 	
@@ -874,7 +903,7 @@ relation locate_package : (Env.Env, string) => SCode.Class =
 
   rule	string_append (pack, ".mo") => filename &
 	print "Loading " & print filename & print "...\n" &
-	Parser.parse filename => (Absyn.PROGRAM((c as Absyn.CLASS(classname,_,_,_))::_,w)) &
+	Parser.parse filename => (Absyn.PROGRAM((c as Absyn.CLASS(classname,_,_,_,_))::_,w)) &
 	pack = classname &
 	SCode.elaborate Absyn.PROGRAM([c],w) => [c'] &
 	assert_package c'
@@ -892,7 +921,7 @@ end
 relation assert_package : SCode.Class => () =
 
 	(* Break the generalize-to-class rule *)
-  axiom	assert_package SCode.CLASS(_,_,Absyn.R_PACKAGE,_)
+  axiom	assert_package SCode.CLASS(_,_,_,Absyn.R_PACKAGE,_)
 
 end
 
@@ -911,7 +940,7 @@ relation lookup_class_in_package : (SCode.Class, Absyn.Path)
 
   rule	lookup_class_in_elements (els, path) => c
 	-----------------------------------------
-	lookup_class_in_package (SCode.CLASS(_,_,_,
+	lookup_class_in_package (SCode.CLASS(_,_,_,_,
 					       SCode.PARTS(els,_,_)),
 				 path) => (c, Env.empty_env)
 

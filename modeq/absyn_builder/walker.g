@@ -151,6 +151,7 @@ class_definition [bool final] returns [ void* ast ]
             ast = Absyn__CLASS(
                 to_rml_str(i),
                 RML_PRIM_MKBOOL(p != 0),
+                RML_PRIM_MKBOOL(e != 0), 
                 restr,
                 class_spec
             );                

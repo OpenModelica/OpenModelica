@@ -220,10 +220,10 @@ and convert_class: (Env.Env,Absyn.Class) => (Env.Env, Class) =
   rule	print "converting " & print i & print "\n" &
 	convert_class_restr(r) => r' &
 	convert_class_def(env,d) => d' &
-	(* let *) c = CLASS(i,p,r',d') &
+	(* let *) c = CLASS(i,p,e,r',d') &
 	extend_env(env,c) => env'
 	------------------------------------------------------
-	convert_class(env, Absyn.CLASS(i,p,r,d)) => (env',c)
+	convert_class(env, Absyn.CLASS(i,p,e,r,d)) => (env',c)
 	
 end
 	
