@@ -1,4 +1,5 @@
-(* absyn.rml *)
+(** file: explode.rml
+ **)
 
 module Explode :
 
@@ -11,7 +12,6 @@ module Explode :
   type Path = Absyn.Path
   type Subscript = Absyn.Subscript
   type ComponentRef = Exp.ComponentRef
-  type ArrayDim = Absyn.ArrayDim
   type ClassRestriction = Absyn.ClassRestriction
   type Equation = Absyn.Equation
   type Algorithm = Absyn.Algorithm
@@ -40,7 +40,7 @@ module Explode :
 			     * Equation list
 			     * Algorithm list
 		    | DERIVED of Path
-			       * ArrayDim option
+			       * Types.ArrayDim option
 			       * Mod
 
   type Program = Class list
@@ -50,63 +50,33 @@ module Explode :
 
 end
 
-relation exp_elementspec: Absyn.ElementSpec => (Ident*ElementSpec) list =
+(** relation: explode
+ **)
 
-  rule	exp_classdef(de) => de'
-	-----------------------
-	exp_elementspec(Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,re,de)))
-	  => [(n,CLASSDEF(rp,CLASS(n,pa,re,de')))]
+relation explode: Absyn.Program => Program =
 
-  rule	Mod.build(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
+  axiom	explode([]) => []
 
-	Exp.path_string(n) => ns &
-	print "extends " & print ns & Mod.dump mod & print "\n"
-	---------------------------------------------------
-	exp_elementspec(Absyn.EXTENDS(n,args)) => [("",EXTENDS(n,mod))]
-
-  axiom	exp_elementspec(Absyn.COMPONENTS(_,_,[])) => []
-
-  rule	exp_elementspec(Absyn.COMPONENTS(attr,t,xs)) => xs' &
-	Mod.build(m,false) => mod
-	--------------------------------------------------
-	exp_elementspec(Absyn.COMPONENTS(attr as Types.ATTR(Types.NODIM,
-							    fl,pa,di),t,
-					 (Absyn.COMPONENT(n,d,m))::xs))
-	  => ((n,COMPONENT(n,Types.ATTR(d,fl,pa,di),t,mod))::xs')
+  rule	exp_class(c) => c' &
+	explode(cs) => cs'
+	-----------------------------
+	explode(c::cs) => (c'::cs')
 
 end
 
-relation mk_elements: (bool,(Ident*ElementSpec) list, bool)
-	  => Element list =
+(** relation: exp_class
+ **)
 
-  axiom	mk_elements(_,[],_) => []
+relation exp_class: Absyn.Class => Class =
 
-  rule	mk_elements(f,ss,prot) => ss'
-	------------------------
-	mk_elements(f,(n,s)::ss,prot) => ELEMENT(f,prot,n,s)::ss'
-
-end
-
-relation exp_element : (Absyn.Element, bool) => Element list =
-
-  rule	exp_elementspec(s) => ss &
-        mk_elements(f,ss,prot) => es
-	-------------------------------
-	exp_element(Absyn.ELEMENT(f,_,s), prot) => es
+  rule	exp_classdef d => d'
+	--------------------------------------------
+	exp_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
 
 end
 
-relation exp_elist : (Absyn.Element list, bool) => Element list =
-
-  axiom	exp_elist([],_) => []
-
-  rule	exp_element(e, prot) => e' &
-	exp_elist(es, prot) => es' &
-	list_append(e',es') => l
-	---------------------
-	exp_elist(e::es, prot) => l
-
-end
+(** relation: exp_classdef
+ **)
 
 relation exp_classdef: Absyn.ClassDef => ClassDef =
 
@@ -145,26 +115,78 @@ relation exp_classdef: Absyn.ClassDef => ClassDef =
 
 end
 
-relation exp_class: Absyn.Class => Class =
+(** relation: exp_elist
+ **)
 
-  rule	exp_classdef d => d'
-	--------------------------------------------
-	exp_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
+relation exp_elist : (Absyn.Element list, bool) => Element list =
 
-end
+  axiom	exp_elist([],_) => []
 
-relation explode: Absyn.Program => Program =
-
-  axiom	explode([]) => []
-
-  rule	exp_class(c) => c' &
-	explode(cs) => cs'
-	-----------------------------
-	explode(c::cs) => (c'::cs')
+  rule	exp_element(e, prot) => e' &
+	exp_elist(es, prot) => es' &
+	list_append(e',es') => l
+	---------------------
+	exp_elist(e::es, prot) => l
 
 end
 
-(**********************************************************************)
+(** relation: exp_element
+ **)
+
+relation exp_element : (Absyn.Element, bool) => Element list =
+
+  rule	exp_elementspec(s) => ss &
+        mk_elements(f,ss,prot) => es
+	-------------------------------
+	exp_element(Absyn.ELEMENT(f,_,s), prot) => es
+
+end
+
+(** relation: mk_elements
+ **)
+
+relation mk_elements: (bool,(Ident*ElementSpec) list, bool)
+	  => Element list =
+
+  axiom	mk_elements(_,[],_) => []
+
+  rule	mk_elements(f,ss,prot) => ss'
+	------------------------
+	mk_elements(f,(n,s)::ss,prot) => ELEMENT(f,prot,n,s)::ss'
+
+end
+
+(** relation: exp_elementspec
+ **)
+
+relation exp_elementspec: Absyn.ElementSpec => (Ident*ElementSpec) list =
+
+  rule	exp_classdef(de) => de'
+	-----------------------
+	exp_elementspec(Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,re,de)))
+	  => [(n,CLASSDEF(rp,CLASS(n,pa,re,de')))]
+
+  rule	Mod.build(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
+
+	Exp.path_string(n) => ns &
+	print "extends " & print ns & Mod.dump mod & print "\n"
+	---------------------------------------------------
+	exp_elementspec(Absyn.EXTENDS(n,args)) => [("",EXTENDS(n,mod))]
+
+  axiom	exp_elementspec(Absyn.COMPONENTS(_,_,[])) => []
+
+  rule	exp_elementspec(Absyn.COMPONENTS(attr,t,xs)) => xs' &
+	Mod.build(m,false) => mod
+	--------------------------------------------------
+	exp_elementspec(Absyn.COMPONENTS(attr as Types.ATTR(Types.NODIM,
+							    fl,pa,di),t,
+					 (Absyn.COMPONENT(n,d,m))::xs))
+	  => ((n,COMPONENT(n,Types.ATTR(d,fl,pa,di),t,mod))::xs')
+
+end
+
+(** relation: element_spec_name
+ **)
 
 relation element_spec_name : ElementSpec => Ident =
 

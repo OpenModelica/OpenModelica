@@ -1,26 +1,26 @@
 (**
- ** file: ClassInf.rml
+ ** file: classinf.rml
  **
- **  This file deals with class inference, that is determining if a
- **  class definition adhers to one of the class restrictions, and, if
- **  specifically declared in a restrictied form, if it breaks that
- **  restriction.
+ ** This file deals with class inference, that is determining if a
+ ** class definition adhers to one of the class restrictions, and, if
+ ** specifically declared in a restrictied form, if it breaks that
+ ** restriction.
  **
- **  The inference is implemented as a finite state machine.  The
- **  relation `start' initializes a new machine, and the relation
- **  `trans' signals transitions in the machine.  Finally, the state
- **  can be checked agains a restriction with the `valid' relation.
+ ** The inference is implemented as a finite state machine.  The
+ ** relation `start' initializes a new machine, and the relation
+ ** `trans' signals transitions in the machine.  Finally, the state
+ ** can be checked agains a restriction with the `valid' relation.
  **
- **  The restricted forms are ordered in a hierarchal fashion as
- **  described by the following diagram:
+ ** The restricted forms are ordered in a hierarchal fashion as
+ ** described by the following diagram:
  **
- **  CLASS -+- TYPE --- RECORD --- CONNECTOR
- **	    |
- **	    +- BLOCK --- FUNCTION
- **	    |
- **	    +- PACKAGE
- **	    |
- **	    +- MODEL
+ **| CLASS -+- TYPE --- RECORD --- CONNECTOR
+ **|	    |
+ **|	    +- BLOCK --- FUNCTION
+ **|	    |
+ **|	    +- PACKAGE
+ **|	    |
+ **|	    +- MODEL
  **
  **)
 
@@ -194,6 +194,22 @@ relation print_state : State => () =
 
 end
 
+(** relation: print_event
+ ** purpose:  Output for debugging and error messages
+ **)
+
+relation print_event : Event => () =
+
+  rule	print "FOUND_EQUATION"
+	----------------------
+	print_event FOUND_EQUATION
+
+  rule	print "NEWDEF"
+	--------------
+	print_event NEWDEF
+
+end
+
 (** relation: start
  ** purpose:  State machine initialization
  **)
@@ -235,6 +251,7 @@ relation trans : (State, Event) => State =
 
   axiom	trans(PACKAGE(s),        NEWDEF) => PACKAGE(s)
   axiom	trans(FUNCTION(s),       NEWDEF) => FUNCTION(s)
+  axiom	trans(IS_NEW(s),         NEWDEF) => IS_NEW(s)
   axiom	trans(TYPE_INTEGER(s),   NEWDEF) => TYPE_INTEGER(s)
   axiom	trans(TYPE_REAL(s),      NEWDEF) => TYPE_REAL(s)
   axiom	trans(TYPE_STRING(s),    NEWDEF) => TYPE_STRING(s)
@@ -263,7 +280,8 @@ relation trans : (State, Event) => State =
   axiom	trans(FUNCTION(s),       FOUND_EQUATION) => fail
   axiom	trans(HAS_EQUATIONS(s),  FOUND_EQUATION) => HAS_EQUATIONS(s)
 
-  rule	print "- trans fallthru: " & print_state st & print "\n"
+  rule	print "- trans fallthru: " & print_state st &
+ 	print ", " & print_event ev & print "\n"
 	--------------------------------------------------------
 	trans(st, ev) => fail
 

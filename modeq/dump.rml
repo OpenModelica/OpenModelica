@@ -1,4 +1,8 @@
-(* dump.rml *)
+(** file: dump.rml
+ **
+ ** Dump routines for debugging of AST
+ **)
+
 
 module Dump:
 
@@ -18,9 +22,6 @@ module Dump:
 end
 
 with "classinf.rml"
-
-(*************************************************************************)
-(* Dump routines for debugging of AST *)
 
 relation dump_select: (bool,string,string) => () =
 
@@ -209,7 +210,7 @@ and dump_component: Absyn.Component => () =
 
 
 end
-and dump_arraydim: Absyn.ArrayDim => () =
+and dump_arraydim: Types.ArrayDim => () =
 
   axiom dump_arraydim(Types.NODIM)
 

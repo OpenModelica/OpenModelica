@@ -37,7 +37,7 @@ SUBDIRS	= ast
 
 .SUFFIXES:
 .SUFFIXES: .o .rml
-.PHONY: all subdirs
+.PHONY: all subdirs report
 
 .rml.o:
 	$(RML) -c $<
@@ -80,3 +80,6 @@ clean:
 
 reallyclean: clean
 	$(RM) dae.h exp.h main.h modelica.h
+
+report:
+	@(cd report ; $(MAKE))

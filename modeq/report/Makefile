@@ -4,7 +4,22 @@ SHELL	= /bin/sh
 LATEX	= latex
 RMLDOC  = ../tools/rmldoc
 
-SOURCES = inst.tex classinf.tex mod.tex connect.tex
+SOURCES = exp.tex \
+	dae.tex \
+	types.tex \
+	absyn.tex \
+	explode.tex \
+	dump.tex \
+	prefix.tex \
+	mod.tex \
+	env.tex \
+	lookup.tex \
+	builtin.tex \
+	connect.tex \
+	classinf.tex \
+	staticexp.tex \
+	inst.tex \
+	main.tex
 
 .DEFAULT: report.dvi
 .SUFFIXES:

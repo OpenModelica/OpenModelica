@@ -1,64 +1,91 @@
-(* absyn.rml *)
+(** file: absyn.rml
+ **
+ ** This file defines the abstract syntax for Modelica. It uses data
+ ** types from the `Exp' and `Types' modules.  Each type is described
+ ** below.
+ **)
 
 module Absyn:
 
   with "exp.rml"
   with "types.rml"
 
+(** These types are imported from other modules and given unqualified *)
+(** names to help the readibility, and for backwards compatibility *)
+(** with older versions.  This should be changed. *)
+
   type Ident = Exp.Ident
   type Path = Exp.Path
   type Subscript = Exp.Subscript
-  type ArrayDim = Types.ArrayDim
   type ClassRestriction = Types.Restriction
 
-  datatype ElementArg = MODIFICATION of bool * Path * Modification
-		      | REDECLARATION of bool * ElementSpec
+(**  Types
+ **
+ ** A program is simply a list of class definitions declared at top
+ ** level in the source file.
+ **)
 
-  and	   Modification = CLASSMOD of ElementArg list * Exp.Exp option
+  type Program = Class list
 
-  and	   Component = COMPONENT of Ident	(* component name *)
-				  * ArrayDim
-				  * Modification option
+(** A class definition consists of a name, a flag to indicate if this *)
+(** class is declared as `partial', the declared class restriction, *)
+(** and the body of the declaration. *)
 
-  and	   ElementSpec = CLASSDEF of bool		(* replaceable *)
-				   * Class
-		       | EXTENDS of Path * ElementArg list
-		       | COMPONENTS of Types.VarAttr
-				     * Path	(* type name *)
-				     * Component list
+  datatype Class = CLASS of Ident		     (* Name *)
+			  * bool		     (* Partial *)
+			  (* FIXME: final *)
+			  * ClassRestriction	     (* Restricion *)
+			  * ClassDef		     (* Body *)
 
-  and	   Element = ELEMENT of bool		(* final *)
-			      * Ident
-			      * ElementSpec
+(** The `ClassDef' type contains the definition part of a class *)
+(** declaration.  The definition is either explicit, with a list of *)
+(** parts (`public', `protected', `equation' and `algorithm'), or it *)
+(** is a definition derived from another class.  In the latter case *)
+(** this types contains the name of the derived class and an optional *)
+(** array dimension and a list of modifications. *)
 
-  and	   Class = CLASS of Ident             (* Name *)
-			  * bool			(* Partial *)
-			  * ClassRestriction      (* Restricion *)
-			  * ClassDef		(* Parts *)
-
-  and	   ClassDef = PARTS of ClassPart list
+  datatype ClassDef = PARTS of ClassPart list
 		    | DERIVED of Path
-			       * ArrayDim option
+			       * Types.ArrayDim option
 			       * ElementArg list
 
-  and	   ClassPart = PUBLIC of Element list
+  datatype ClassPart = PUBLIC of Element list
 		     | PROTECTED of Element list
 		     | EQUATIONS of Equation list
 		     | ALGORITHMS of Algorithm list
 
-  and	   Equation = EQ_EXPR of Exp.Exp (* more later *)
+  datatype Element = ELEMENT of bool		     (* final *)
+			      * Ident
+			      * ElementSpec
+
+  datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
+				   * Class
+		       | EXTENDS of Path * ElementArg list
+		       | COMPONENTS of Types.VarAttr
+				     * Path	     (* type name *)
+				     * Component list
+
+  datatype Component = COMPONENT of Ident	     (* component name *)
+				  * Types.ArrayDim
+				  * Modification option
+
+  datatype Equation = EQ_EXPR of Exp.Exp	     (* more later? *)
 		    | EQ_EQUALS of Exp.Exp * Exp.Exp
 		    | EQ_CONNECT of Exp.ComponentRef * Exp.ComponentRef
 
-  and	   Algorithm = ALGORITHM (* Fill in later *)
+  datatype Algorithm = ALGORITHM		     (* FIXME *)
 
-  type Program = Class list
+  datatype Modification = CLASSMOD of ElementArg list * Exp.Exp option
+
+  datatype ElementArg = MODIFICATION of bool * Path * Modification
+		      | REDECLARATION of bool * ElementSpec
 
   relation element_spec_name : ElementSpec => Ident
 
 end
 
-(**********************************************************************)
+(** relation: element_spec_name
+ **)
 
 relation element_spec_name : ElementSpec => Ident =
 

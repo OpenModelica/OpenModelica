@@ -1,23 +1,51 @@
-(*
- * Exp - Modelica expression module
- *)
+(**
+ ** file:  exp.rml
+ **
+ ** This module contains data types for describing Modelica
+ ** expressions.  It is used throughout the semantic description, in
+ ** the abstract syntax tree and elsewhere.  All the other modules use
+ ** this module.
+ ** 
+ **)
 
 module Exp:
-  
+
+  (** Define `Ident' as an alias for `string' and use it for all *)
+  (** identifiers in Modelica. *)
+
   type Ident = string
 
+(** To generate the correct set of equations, the translator has to *)
+(** differentiate between the primitive types `Real', `Integer', *)
+(** `String', `Boolean' and types directly derived from then from *)
+(** other, complex types.  The `Type' type is used to store *)
+(** information about whether a class is derived from a primitive *)
+(** type, and whether a variable is of one of these types. *)
+
   datatype Type = T_INTEGER | T_REAL | T_STRING | T_BOOL | T_OTHER
-  
+
+(** The `Subscript' datatype is used in variable references.  An *)
+(** one-dimensional array variable `a' can be supscriptet as `a[1]', *)
+(** `a[1:2]' or `a[1:2:3]'. *)
+
   datatype Subscript = NOSUB
 		     | SUB1 of Exp
 		     | SUB2 of Exp * Exp
 		     | SUB3 of Exp * Exp * Exp
-		 
+
+(** A component reference is the fully or partially qualified name of *)
+(** a component (variable).  It is represented as a list of *)
+(** identifier--subscript pairs.  The type `Path', on the other hand, *)
+(** is used to store references to class names, or components inside *)
+(** class definitions. *)
+
   type ComponentRef = (Ident * (Subscript list)) list
   
   datatype Path = QUALIFIED of string * Path
 	      	| IDENT of Ident
 	      	
+(** The `Exp' datatype is the container of a Modelica expression. *)
+
   datatype BinOp = ADD | SUB | MUL | DIV | POW
   datatype UnaryOp = UMINUS | UPLUS
   datatype LBinOp = AND | OR
@@ -45,19 +73,22 @@ module Exp:
 
 	       | CAST_TO_REAL of Exp
 
-  type TypedExp = Exp * Type
-		  
+(** The exported relations are described later. *)
+
   relation path_string : Path => string
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
   relation eq_cref : (ComponentRef, ComponentRef) => ()
 
-  relation dump_component_ref : ComponentRef => ()
   relation dump_exp: Exp => ()
+  relation dump_component_ref : ComponentRef => ()
   relation print_type : Type => ()
   
 end
 
-(**********************************************************************)
+(** relation: path_string
+ **
+ ** This relation simply converts a `Path' to a `string'.
+ **)
 
 relation path_string: Path => string =
 
@@ -71,6 +102,14 @@ relation path_string: Path => string =
 	
 end
 
+(** relation: extend_cref
+ **
+ ** The `extend_cref' relation extends a `ComponentRef' by appending
+ ** an identifier and a (possibly empty) list of subscripts.  Adding
+ ** the identifier `a' to the component reference `x.y[10]' would
+ ** produce the component reference `x.y[10].a', for instance.
+ **)
+
 relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
 
   axiom	extend_cref([], i, s) => [(i,s)]
@@ -81,27 +120,13 @@ relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
 
 end
 
-relation eq_subscript : (Subscript, Subscript) => () =
-
-  axiom	eq_subscript(NOSUB,NOSUB)
-
-	(* FIXME *)
-  rule	s1 = s2
-	-------------------------------
-	eq_subscript(SUB1(s1),SUB1(s2))
-
-end
-
-relation eq_subscripts : (Subscript list, Subscript list) => () =
-
-  axiom	eq_subscripts([],[])
-
-  rule	eq_subscript(s1,s2) &
-	eq_subscripts(ss1,ss2)
-	----------------------
-	eq_subscripts(s1::ss1, s2::ss2)
-
-end
+(** relation: eq_cref
+ **
+ ** This relation checks if two component references can be considered
+ ** equal and fails if not.  Two component references are equal if all
+ ** corresponding identifiers are the same, and if the subscripts are
+ ** equal, according to the relation `eq_subscripts'.
+ **)
 
 relation eq_cref : (ComponentRef, ComponentRef) => () =
 
@@ -115,95 +140,58 @@ relation eq_cref : (ComponentRef, ComponentRef) => () =
 
 end
 
-(**********************************************************************
- * Dump
- **********************************************************************)
+(** relation: eq_subscripts
+ **
+ ** Two list of subscripts are equal if they are of equal length and
+ ** all their elements are pairwise equal according to the relation
+ ** `eq_subscript'.
+ **)
 
-relation dump_list : ('a list, 'a => (), string) => () =
+relation eq_subscripts : (Subscript list, Subscript list) => () =
 
-  axiom	dump_list([],_,_)
+  axiom	eq_subscripts([],[])
 
-  rule	r(h)
-	------------------
-	dump_list([h],r,_)
-
-  rule	r(h) & print sep & dump_list(t,r,sep)
-	-------------------------------------
-	dump_list(h::t,r,sep)
-end
-
-relation binop_symbol: BinOp => string =
-  axiom	binop_symbol(ADD) => " + "
-  axiom	binop_symbol(SUB) => " - "
-  axiom	binop_symbol(MUL) => "*"
-  axiom	binop_symbol(DIV) => "/"
-  axiom	binop_symbol(POW) => "^"
-end
-
-relation unaryop_symbol: UnaryOp => string =
-  axiom	unaryop_symbol(UMINUS) => "-"
-  axiom	unaryop_symbol(UPLUS) => "+"
-end
-
-relation lbinop_symbol: LBinOp => string =
-  axiom	lbinop_symbol(AND) => " AND "
-  axiom	lbinop_symbol(OR) => " OR "
-end
-
-relation lunaryop_symbol: LUnaryOp => string =
-  axiom	lunaryop_symbol(NOT) => "NOT "
-end
-
-relation relop_symbol: RelOp => string =
-  axiom	relop_symbol(LESS)      => " < "
-  axiom	relop_symbol(LESSEQ)    => " <= "
-  axiom	relop_symbol(GREATER)   => " > "
-  axiom	relop_symbol(GREATEREQ) => " >= "
-  axiom	relop_symbol(EQUAL)     => " == "
-  axiom	relop_symbol(NEQUAL)    => " <> "
-end
-
-relation dump_component_ref : ComponentRef => () =
-
-  rule	dump_list(cr,dump_component_ref2,".")
-	-------------------------------------
-	dump_component_ref(cr)
+  rule	eq_subscript(s1,s2) &
+	eq_subscripts(ss1,ss2)
+	----------------------
+	eq_subscripts(s1::ss1, s2::ss2)
 
 end
 
-and dump_component_ref2 =
+(** relation: eq_subscript
+ **
+ ** This relation test whether two subscripts are equal.  Two
+ ** subscripts are equal if they have the same constructor, and if all
+ ** corresponding expressions are either syntactically equal, or if
+ ** they have the same constant value.
+ **)
 
-  rule	print s
-	-------------------------
-	dump_component_ref2((s,[]))
+relation eq_subscript : (Subscript, Subscript) => () =
 
-  rule	print s &
-	print "[" & dump_list(l,dump_subscript,",") & print "]"
-	-------------------------------------------------------------
-	dump_component_ref2((s,l))
-
-end
-
-and dump_subscript: Subscript => () =
-
-  rule	print ":"
-	---------
-	dump_subscript(NOSUB)
-
-  rule	dump_exp(e1)
-	----------
-	dump_subscript(SUB1(e1))
-
-  rule	dump_exp(e1) & print ":" & dump_exp(e2)
-	-------------
-	dump_subscript(SUB2(e1,e2))
-
-  rule	dump_exp(e1) & print ":" &
-	dump_exp(e2) & print ":" & dump_exp(e3)
-	----------------------------------------------
-	dump_subscript(SUB3(e1,e2,e3))
+  axiom	eq_subscript(NOSUB,NOSUB)
+ 	
+ 	(* FIXME: this is not complete at all *)
+  rule	s1 = s2
+	-------------------------------
+	eq_subscript(SUB1(s1),SUB1(s2))
+	
+  rule	print "- eq_subscript failed\n"
+	-------------------------------
+	eq_subscript(_,_)
 
 end
+
+(**
+ **  Dump
+ **
+ ** This module provides some relations to print data to the standard
+ ** output.  This is used for error messages, and for debugging the
+ ** semantic description.
+ **
+ ** relation: dump_exp
+ **
+ ** This is the main relation, which prints a complete expression.
+ **)
 
 and dump_exp: Exp => () =
 	
@@ -288,6 +276,134 @@ and dump_exp: Exp => () =
 	dump_exp (_)
 end
 
+(** relation: dump_list
+ **
+ ** This is utility relation that prints a list of objects using a
+ ** provided relation that does the printing of each list element.
+ **)
+
+relation dump_list : ('a list, 'a => (), string) => () =
+
+  axiom	dump_list([],_,_)
+
+  rule	r(h)
+	------------------
+	dump_list([h],r,_)
+
+  rule	r(h) & print sep & dump_list(t,r,sep)
+	-------------------------------------
+	dump_list(h::t,r,sep)
+end
+
+(** relation: binop_symbol
+ **
+ ** Print a `BinOp'.
+ **)
+
+relation binop_symbol: BinOp => string =
+  axiom	binop_symbol(ADD) => " + "
+  axiom	binop_symbol(SUB) => " - "
+  axiom	binop_symbol(MUL) => "*"
+  axiom	binop_symbol(DIV) => "/"
+  axiom	binop_symbol(POW) => "^"
+end
+
+(** relation: unaryop_symbol
+ **
+ ** Print a `UnaryOp'.
+ **)
+
+relation unaryop_symbol: UnaryOp => string =
+  axiom	unaryop_symbol(UMINUS) => "-"
+  axiom	unaryop_symbol(UPLUS) => "+"
+end
+
+(** relation: lbinop_symbol
+ **
+ ** Print a `lBinOp.
+ **)
+
+relation lbinop_symbol: LBinOp => string =
+  axiom	lbinop_symbol(AND) => " AND "
+  axiom	lbinop_symbol(OR) => " OR "
+end
+
+(** relation: lunaryop_symbol
+ **
+ ** Print a `LUnaryOp'.
+ **)
+
+relation lunaryop_symbol: LUnaryOp => string =
+  axiom	lunaryop_symbol(NOT) => "NOT "
+end
+
+(** relation: relop_symbol
+ **
+ ** Print a `RelOp.
+ **)
+
+relation relop_symbol: RelOp => string =
+  axiom	relop_symbol(LESS)      => " < "
+  axiom	relop_symbol(LESSEQ)    => " <= "
+  axiom	relop_symbol(GREATER)   => " > "
+  axiom	relop_symbol(GREATEREQ) => " >= "
+  axiom	relop_symbol(EQUAL)     => " == "
+  axiom	relop_symbol(NEQUAL)    => " <> "
+end
+
+(** relation: dump_component_ref
+ **
+ ** Print a `ComponentRef'.
+ **)
+
+relation dump_component_ref : ComponentRef => () =
+
+  rule	dump_list(cr,dump_component_ref2,".")
+	-------------------------------------
+	dump_component_ref(cr)
+
+end
+
+and dump_component_ref2 =
+
+  rule	print s
+	-------------------------
+	dump_component_ref2((s,[]))
+
+  rule	print s &
+	print "[" & dump_list(l,dump_subscript,",") & print "]"
+	-------------------------------------------------------------
+	dump_component_ref2((s,l))
+
+end
+
+and dump_subscript: Subscript => () =
+
+  rule	print ":"
+	---------
+	dump_subscript(NOSUB)
+
+  rule	dump_exp(e1)
+	----------
+	dump_subscript(SUB1(e1))
+
+  rule	dump_exp(e1) & print ":" & dump_exp(e2)
+	-------------
+	dump_subscript(SUB2(e1,e2))
+
+  rule	dump_exp(e1) & print ":" &
+	dump_exp(e2) & print ":" & dump_exp(e3)
+	----------------------------------------------
+	dump_subscript(SUB3(e1,e2,e3))
+
+end
+
+(** relation: print_type
+ **
+ ** This relation prints a textual description of a Modelica type.  If
+ ** the type is not one of the primitive types, it simply prints
+ ** `complex'.
+ **)
 
 relation print_type : Type => () =
 

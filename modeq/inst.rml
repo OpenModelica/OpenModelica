@@ -63,7 +63,7 @@ end
 
 relation inst_program : (Env, Explode.Program) => DAE.DAEcomp list =
 
-  rule	print "Empty program\n"
+  rule	print "# Empty program\n"
 	------------------------------
 	inst_program(env,[]) => fail
 
@@ -75,7 +75,7 @@ relation inst_program : (Env, Explode.Program) => DAE.DAEcomp list =
   rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
 	inst_program(env',cs) => l
 	----------------------
-	inst_program(env,c::cs) => l
+	inst_program(env,c::(cs as (_::_))) => l
 
 end
 
@@ -364,8 +364,6 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	print "  modification: " & Mod.dump mod' & print "\n" &
 
 	Prefix.prefix_add(n,[],pre) => pre' &
-
-	
 
 	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
 

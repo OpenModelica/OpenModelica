@@ -14,9 +14,9 @@ module StaticExp :
 
 end
 
-(**********************************************************************
- * Constant evaluation
- **********************************************************************)
+(**
+ ** Constant evaluation
+ **)
 
 relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
 	  => (Exp.Exp, Exp.Type, bool) =
@@ -59,6 +59,8 @@ relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
 
 end
 
+(**)
+
 relation elab_exp_list : (Env.Env, Prefix.Prefix, Exp.Exp list)
 	  => Exp.Exp list =
 
@@ -70,6 +72,8 @@ relation elab_exp_list : (Env.Env, Prefix.Prefix, Exp.Exp list)
 	elab_exp_list (env,pre,e::es) => e'::es'
 
 end
+
+(**)
 
 relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 	  => (Exp.Exp, Exp.Type, bool) =
@@ -92,6 +96,8 @@ relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 
 end
 
+(**)
+
 relation elab_cref2 : (Env.Env, Prefix.Prefix,
 		       Exp.ComponentRef, Types.VarType,
 		       Exp.Type, Exp.Exp option) => (Exp.Exp, bool) =
@@ -112,6 +118,8 @@ relation elab_cref2 : (Env.Env, Prefix.Prefix,
 
 end	
 
+(**)
+
 relation elab_cref_subs : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 	  => (Exp.ComponentRef, bool) =
 
@@ -125,6 +133,8 @@ relation elab_cref_subs : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 
 end
 
+(**)
+
 relation elab_subscripts : (Env.Env, Prefix.Prefix, Exp.Subscript list)
 	  => (Exp.Subscript list, bool) =
 
@@ -137,6 +147,8 @@ relation elab_subscripts : (Env.Env, Prefix.Prefix, Exp.Subscript list)
 	elab_subscripts (env,pre,sub::subs) => (sub'::subs',const)
 
 end
+
+(**)
 
 relation elab_subscript : (Env.Env, Prefix.Prefix, Exp.Subscript)
 	  => (Exp.Subscript, bool) =
@@ -165,6 +177,8 @@ relation elab_subscript : (Env.Env, Prefix.Prefix, Exp.Subscript)
 
 end
 
+(**)
+
 relation elab_numtypes : (Exp.Exp, Exp.Type, Exp.Exp, Exp.Type)
 	  => (Exp.Exp, Exp.Exp, Exp.Type) =
 
@@ -188,6 +202,8 @@ relation elab_numtypes : (Exp.Exp, Exp.Type, Exp.Exp, Exp.Type)
 
 end
 
+(**)
+
 relation cast_to_real : Exp.Exp => Exp.Exp =
 
   rule	print "  casting " & int_string i => is & print is &
@@ -201,6 +217,8 @@ relation cast_to_real : Exp.Exp => Exp.Exp =
 	cast_to_real e => Exp.CAST_TO_REAL(e)
 
 end
+
+(**)
 
 relation elab_binary : (Exp.Exp, Exp.Type, bool,
 			Exp.BinOp,
@@ -254,14 +272,14 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
 	elab_binary (Exp.REAL(i1),_,true,Exp.MUL,Exp.REAL(i2),_,true)
 	  => (Exp.REAL(i), Exp.T_REAL, true)
 			
-  rule	print "elab_binary int " & Exp.dump_exp e1 & print " × " &
+  rule	print "elab_binary int " & Exp.dump_exp e1 & print " * " &
 	Exp.dump_exp e2 & print "\n" &
 	bool_and (c1,c2) => const
 	-------------------------
 	elab_binary (e1,Exp.T_INTEGER,c1,Exp.MUL,e2,Exp.T_INTEGER,c2)
 	  => (Exp.BINARY(e1,Exp.MUL,e2), Exp.T_INTEGER, false)
 			
-  rule	print "elab_binary real " & Exp.dump_exp e1 & print " × " &
+  rule	print "elab_binary real " & Exp.dump_exp e1 & print " * " &
 	Exp.dump_exp e2 & print "\n" &
 	bool_and (c1,c2) => const
 	-------------------------
@@ -270,12 +288,14 @@ relation elab_binary : (Exp.Exp, Exp.Type, bool,
 
 	(* failure *)
   rule	print "- elab_binary failed " &
-	Exp.dump_exp e1 & print " (" & Exp.print_type t1 & print ") · " &
+	Exp.dump_exp e1 & print " (" & Exp.print_type t1 & print ") o " &
 	Exp.dump_exp e2 & print " (" & Exp.print_type t2 & print ")\n"
 	---------------------------------------------
 	elab_binary(e1, t1, c1, op, e2, t2, c2) => fail
 			
 end
+
+(**)
 
 relation is_const : Exp.Exp => () =
 
@@ -285,6 +305,8 @@ relation is_const : Exp.Exp => () =
   axiom	is_const Exp.BOOL(_)
 
 end
+
+(**)
 
 relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 
@@ -442,6 +464,8 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	ceval RELATION(lh, NEQUAL, rh) => BOOL(b)
 *)
 end
+
+(**)
 
 and ceval_cref : Exp.ComponentRef => Exp.Exp =
 

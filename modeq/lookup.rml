@@ -1,3 +1,6 @@
+(** file: lookup.rml
+ **)
+
 module Lookup:
 
   with "classinf.rml"
@@ -19,16 +22,15 @@ end
 with "absyn.rml"
 with "parse.rml"
 
-(**********************************************************************
- *
- *   Lookup functions
- *
- * These relations look up class and variable names in the environment.
- * The names are supplied as a path, and if the path is qualified, a
- * variable named as the first part of the path is searched for, and the
- * nave is looked for in it.
- *
- **********************************************************************)
+(**
+ **  Lookup functions
+ **
+ ** These relations look up class and variable names in the environment.
+ ** The names are supplied as a path, and if the path is qualified, a
+ ** variable named as the first part of the path is searched for, and the
+ ** nave is looked for in it.
+ **)
+
 
 relation lookup_class_in_frame: ((Explode.Ident * Explode.Class *
 				  Mod.Mod) list,
@@ -169,9 +171,9 @@ relation lookup_var_local : (Env, Explode.Ident) => Env.FrameVar =
 end
 
 
-(**********************************************************************
- * Package handling
- **********************************************************************)
+(**
+ **  Package handling
+ **)
 
 relation locate_package : (Env.Env, string) => Explode.Class =
 

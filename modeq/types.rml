@@ -1,3 +1,5 @@
+(** file: types.rml
+ **)
 
 module Types :
 
@@ -26,18 +28,19 @@ module Types :
 
 end
 
-relation pick : (Var list, Ident)
-	  => (Var list, VarAttr, Type) =
+(** relation: same_type
+ **)
 
-  rule  n1 = n2
-	-------
-	pick((n1,attr,ty)::xs,n2) => (xs,attr,ty)
-
-  rule  pick(xs,n) => (xs',attr,ty)
-	---------------------
-	pick(_::xs,n) => (xs',attr,ty)
+relation same_type : (Type, Type) => () =
+	
+	(* FIXME: Check state? *)
+  rule	same_type_c(els1, els2)
+	-----------------------
+	same_type(TYPE(st1,els1), TYPE(st2,els2))
 
 end
+
+(**)
 
 relation same_type_c : (Var list, Var list) => () =
 
@@ -51,14 +54,32 @@ relation same_type_c : (Var list, Var list) => () =
 
 end
 
-and same_type : (Type, Type) => () =
+(**)
 
-	(* FIXME: Check state? *)
-  rule  same_type_c(els1, els2)
-	-----------------------
-	same_type(TYPE(st1,els1), TYPE(st2,els2))
+relation pick : (Var list, Ident)
+	  => (Var list, VarAttr, Type) =
+
+  rule  n1 = n2
+	-------
+	pick((n1,attr,ty)::xs,n2) => (xs,attr,ty)
+
+  rule  pick(xs,n) => (xs',attr,ty)
+	---------------------
+	pick(_::xs,n) => (xs',attr,ty)
 
 end
+
+(**)
+
+relation lookup_component : (Type, Ident) => Var =
+
+  rule  lookup_component2(cs, id) => v
+	------------------------------
+	lookup_component(TYPE(st,cs), id) => v
+
+end
+
+(**)
 
 relation lookup_component2 : (Var list , Ident) => Var =
 
@@ -72,14 +93,7 @@ relation lookup_component2 : (Var list , Ident) => Var =
 
 end
 
-relation lookup_component : (Type, Ident) => Var =
-
-  rule  lookup_component2(cs, id) => v
-	------------------------------
-	lookup_component(TYPE(st,cs), id) => v
-
-end
-
+(**)
 
 relation known_type : ClassInf.State => Exp.Type =
 

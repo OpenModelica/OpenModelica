@@ -1,75 +1,80 @@
-(* dae.rml
- *
- *)
+(** file: dae.rml
+ **
+ ** This file is not really mine.  It will be rewritten later.
+ **)
 
 module DAE:
+  
+  with "exp.rml"
+  with "dump.rml"
 
-with "exp.rml"
-with "dump.rml"
+  type Ident = string
 
-type Ident = string
+  datatype VarKind = LOCAL | PAR | CON
 
-datatype VarKind = LOCAL | PAR | CON
-
-datatype DAEcomp = VAR of Ident * VarKind
-		 | VARVAL of Ident * VarKind * Exp.Exp
-		 | EQUATION of Exp.Exp
-		 | COMP of Ident * DAEform
-and	 DAEform = DAE of DAEcomp list
-
-relation dump: DAEform => ()
-
+  datatype DAEcomp = VAR of Ident * VarKind
+		   | VARVAL of Ident * VarKind * Exp.Exp
+		   | EQUATION of Exp.Exp
+		   | COMP of Ident * DAEform
+  and	 DAEform = DAE of DAEcomp list
+	  
+  relation dump: DAEform => ()
+	  
 end
 
+(**)
+
 relation dump_kind =
-	rule	print "  constant "
-		--------------------
-		dump_kind CON => ()
 
-	rule	print "  parameter "
-		--------------------
-		dump_kind PAR => ()
-
-	rule	print "  local "
-		--------------------
-		dump_kind LOCAL => ()
+  rule	print "  constant "
+	--------------------
+	dump_kind CON => ()
+	
+  rule	print "  parameter "
+	--------------------
+	dump_kind PAR => ()
+	
+  rule	print "  local "
+	--------------------
+	dump_kind LOCAL => ()
 end
 
 relation dump_comp: DAEcomp => () =
-
-	rule	dump_kind kind & print id & print "\n"
-		--------------------------------------
-		dump_comp(VAR(id, kind)) => ()
-
-	rule	dump_kind kind & print id &
-		print "=" & Dump.dump_exp ex & print "\n"
-		--------------------------------------
-		dump_comp(VARVAL(id, kind, ex)) => ()
-
-	rule	print "  " & Dump.dump_exp eq & print "\n"
-		--------------------------------------
-		dump_comp(EQUATION(eq)) => ()
-
-	rule	print "{ begin " & print id & print " }\n" &
-		dump contents &
-		print "{ end " & print id & print " }\n"
-		--------------------------------------
-		dump_comp ( COMP(id, contents)) => ()
+	
+  rule	dump_kind kind & print id & print "\n"
+	--------------------------------------
+	dump_comp(VAR(id, kind)) => ()
+	
+  rule	dump_kind kind & print id &
+	print "=" & Dump.dump_exp ex & print "\n"
+	--------------------------------------
+	dump_comp(VARVAL(id, kind, ex)) => ()
+	
+  rule	print "  " & Dump.dump_exp eq & print "\n"
+	--------------------------------------
+	dump_comp(EQUATION(eq)) => ()
+	
+  rule	print "{ begin " & print id & print " }\n" &
+	dump contents &
+	print "{ end " & print id & print " }\n"
+        --------------------------------------
+        dump_comp ( COMP(id, contents)) => ()
 end
 
-and (* relation *) dump_list: DAEcomp list => () =
-
-	axiom	dump_list [] => ()
-
-	rule	dump_comp first &
-		dump_list rest
-		-------------------
-		dump_list first :: rest => ()
+relation dump_list: DAEcomp list => () =
+	
+  axiom	dump_list [] => ()
+	
+  rule	dump_comp first &
+	dump_list rest
+	-------------------
+	dump_list first :: rest => ()
 end
 
-and (* relation *) dump: DAEform => () =
+relation dump: DAEform => () =
+	
+  rule	dump_list l
+	-------------------
+	dump DAE(l) => ()
 
-	rule	dump_list l
-		-------------------
-		dump DAE(l) => ()
 end
