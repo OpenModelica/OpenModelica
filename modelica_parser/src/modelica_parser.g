@@ -600,9 +600,9 @@ function_call :
 
 function_arguments :
 //		( for_or_expression_list
-		( expression_list
+		( expression ( COMMA! function_arguments )* 
 		| named_arguments
-		)?
+		)
 		;
 
 //for_or_expression_list 
