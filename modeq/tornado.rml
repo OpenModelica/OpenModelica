@@ -453,13 +453,6 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
 
         translate_dae(dae) => dae' &
 
-        Debug.fprint("bltdump", "++++++++++++++++++++++++++++++++++blt_states\n") &
-        Debug.fcall("bltdump", DAELow.dump_components, blt_states) &
-        Debug.fprint("bltdump", "++++++++++++++++++++++++++++blt_no_states\n") &
-        Debug.fcall("bltdump", DAELow.dump_components, blt_no_states) &
-
-
-
         generate_compute_output(cname,dae',p,ass1,ass2,blt_no_states) => coutput &
         generate_compute_initial(cname,dae',p) => cinitial &
         generate_compute_state(cname,dae',p,ass1,ass2,blt_states) => cstate &
@@ -951,7 +944,7 @@ relation build_assignment: (Exp.ComponentRef, (* varname *)
         print_exp_cpp_str(exp) => exp_str & 
         (*Exp.print_exp_str(exp) => exp_str & *)
         Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str &
-        print "\n build_assigment: " & print(eqn_str) 
+        print "\n build_assigment: " & print(eqn_str) & print("-------------------------\n") 
         --------------------------------
 	    build_assignment(cr,exp,origname) => eqn_str
 
@@ -980,7 +973,7 @@ end
 
 relation print_exp2_str : (Exp.Exp,int) => string =
 	
-  axiom print_exp2_str(END,_) => "end"
+  axiom print_exp2_str(Exp.END,_) => "end"
   
   rule	int_string(x) => s
 	----------------------------
