@@ -4,9 +4,7 @@
  **
  ** RCS: $Id$
  **
- ** This is the main program in the Modelica specification.  It
- ** only contains the `main' relation which is invoked by the RML
- ** runtime system.
+ ** This is the main program in the Modelica specification.
  **)
 
 module Main:
@@ -30,6 +28,7 @@ with "rtopts.rml"
 relation translate_file : string list => () =
 
   rule	Parser.parse f => p &
+	(* Dump.dump p & *)
 	SCode.elaborate(p) => p' &
 	Inst.instantiate(p') => d &
 	DAE.dump d
@@ -49,6 +48,12 @@ relation translate_file : string list => () =
 	translate_file _
 
 end
+
+(** relation: main
+ **
+ ** This is the main relation that the RML runtime system calls to
+ ** start the translation.
+ **)
 
 relation main : string list => () =
 

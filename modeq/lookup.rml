@@ -18,10 +18,10 @@ module Lookup:
   relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type)
   relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class)
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
-	  => (SCode.Attributes,Types.Type,Types.Binding)
+	  => (Types.Attributes,Types.Type,Types.Binding)
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
-	  => (SCode.Attributes, Types.Type, Types.Binding)
-  relation lookup_ident_local : (Env.Env, Absyn.Ident) => Types.Var
+	  => (Types.Attributes, Types.Type, Types.Binding)
+  relation lookup_ident_local : (Env.Env, SCode.Ident) => Types.Var
 
 end
 
@@ -70,7 +70,7 @@ end
  **)
 
 relation lookup_var : (Env.Env,Exp.ComponentRef)
-	  => (SCode.Attributes, Types.Type, Types.Binding) =
+	  => (Types.Attributes, Types.Type, Types.Binding) =
 
   rule	(* print " lookup_var: looking in frame\n" & *)
 	lookup_var_f(items,ref) => (attr,ty,binding)
@@ -88,7 +88,7 @@ end
  **)
 
 relation lookup_var_local : (Env.Env,Exp.ComponentRef)
-	  => (SCode.Attributes, Types.Type, Types.Binding) =
+	  => (Types.Attributes, Types.Type, Types.Binding) =
 
   rule	lookup_var_f(items,ref) => (attr,ty,binding)
 	--------------------------------------------
@@ -207,18 +207,6 @@ relation lookup_var2: ((SCode.Ident * Env.Item) list,SCode.Ident)
 	--------------------------------------------
 	lookup_var2((n,Env.VAR(fv))::_,id) => fv
 
-(*
-  rule	id = n & print "# Error while looking up component " &
-	print id & print ": found a class\n"
-	------------------------------------
-	lookup_var2((n,Env.CLASS(_))::_,id) => fail
-
-  rule	id = n & print "# Error while looking up component " &
-	print id & print ": found a type\n"
-	------------------------------------
-	lookup_var2((n,Env.TYPE(_))::_,id) => fail
-*)
-
   rule	lookup_var2(fs,id) => fv
 	------------------------
 	lookup_var2(_::fs,id) => fv
@@ -231,32 +219,49 @@ end
  ** dimensions from the type according to the subscripting.
  **)
 
-relation check_subscripts : (Absyn.ArrayDim, Types.Type, Exp.Subscript list)
-	  => (Absyn.ArrayDim, Types.Type) =
+relation check_subscripts : (Types.Type, Exp.Subscript list)
+	  => Types.Type =
 
-  axiom check_subscripts(x, t, []) => (x, t)
+  axiom check_subscripts(t, []) => t
 
-  rule	check_subscripts(xs, t, ys) => (ad, t')
-	(* FIXME: Check range too? Yes! *)
+  rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(x::xs, Types.T_ARRAY(_,t), y::ys) => (ad, t')
+	check_subscripts(Types.T_ARRAY(dim,t),
+			 Exp.WHOLEDIM::ys)
+	  => Types.T_ARRAY(dim,t')
 
-  rule	print "- check_subscripts failed\n"
+  rule	check_subscripts(t, ys) => t' & 
+	list_length(se) => dim
+	(* FIXME: Check range *)
+	------------------------------
+	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+			 Exp.SLICE(Exp.ARRAY(se))::ys)
+	  => Types.T_ARRAY(Types.DIM(SOME(dim)),t')
+
+  rule	int_gt(ind, 0) => true  &  int_le(ind, sz) => true &
+	check_subscripts(t, ys) => t'
+	------------------------------
+	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+			 Exp.INDEX(Exp.ICONST(ind))::ys) => t'
+
+  rule	print "- check_subscripts failed (" &
+	Types.print_type t & print ", [" &
+ 	Exp.print_list(s,Exp.print_subscript,",") & print "])\n"
 	-----------------------------------
-	check_subscripts(_,_,_) => fail
+	check_subscripts(t,s) => fail
 
 end
 (**)
 relation lookup_in_var: (Types.Type, Exp.ComponentRef)
-	  => (SCode.Attributes,Types.Type,Types.Binding) =
+	  => (Types.Attributes,Types.Type,Types.Binding) =
 
 	(* Public components *)
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,SCode.ATTR(ad,fl,acc,vt,di),false,ty',binding)) &
-	check_subscripts(ad, ty', ss) => (dim, ty'')
+	  => (Types.VAR(_,Types.ATTR(fl,acc,vt,di),false,ty',binding)) &
+	check_subscripts(ty', ss) => ty''
 	--------------------------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
-	  => (SCode.ATTR(dim,fl,acc,vt,di),ty'',binding)
+	  => (Types.ATTR(fl,acc,vt,di),ty'',binding)
 
 	(* Protected components *)
   rule  Types.lookup_component(ty, id)
@@ -266,8 +271,8 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	  => fail
 
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,SCode.ATTR(ad,fl,acc,vt,di),_,ty',_)) &
-	check_subscripts(ad, ty', ss) => (_, ty'') &
+	  => (Types.VAR(_,Types.ATTR(fl,acc,vt,di),_,ty',_)) &
+	check_subscripts(ty', ss) => ty'' &
 	lookup_in_var(ty'', vs) => (attr, ty''',binding)
 	--------------------------------------
 	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty''',binding)
@@ -279,23 +284,26 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 end	
 
 (** relation lookup_var_f
+ **
+ ** This relation looks in a frame to find a declared variable.  If
+ ** the name being looked up is qualified, the first part of the name
+ ** is looked up, and `lookup_in_var' is used to for further lookup in
+ ** the result of that lookup.
  **)
 
 relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 			 Exp.ComponentRef)
-	  => (SCode.Attributes, Types.Type, Types.Binding) =
+	  => (Types.Attributes, Types.Type, Types.Binding) =
 
-  rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
-	lookup_var2(f, id)
-	  => Types.VAR(n,SCode.ATTR(ad,f,acc,vt,di),_,ty,bind) &
-	check_subscripts(ad,ty,ss) => (ad', ty')
+  rule  lookup_var2(f, id)
+	  => Types.VAR(n, Types.ATTR(f,acc,vt,di),_,ty,bind) &
+	check_subscripts(ty,ss) => ty'
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
-	  => (SCode.ATTR([],f,acc,vt,di),ty',bind)
+	  => (Types.ATTR(f,acc,vt,di),ty',bind)
 
-  rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Types.VAR(n,SCode.ATTR(ad,f,acc,vt,di),_,ty,_) &
-	check_subscripts(ad, ty,ss) => ([], ty') &
+  rule	lookup_var2(f, id) => Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,_) &
+	check_subscripts(ty,ss) => ty' & (* FIXME: Check for non-array *)
 	lookup_in_var(ty', ids) => (attr,ty'',binding)
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty'',binding)

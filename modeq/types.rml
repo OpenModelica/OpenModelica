@@ -4,7 +4,12 @@
  **
  ** RCS: $Id$
  **
- ** FIXME: Remove dependency on `Absyn'.
+ ** This file defines the type system.  It contains an RML type
+ ** called `Type' which defines types.  It also contains relations for
+ ** determining subtyping etc.
+ **
+ ** There are a few known problems with this.  It currently depends on
+ ** `SCode.Attributes', which in turn depends on `Absyn.ArrayDim'.
  **)
 
 module Types :
@@ -21,10 +26,15 @@ module Types :
 
   (** - Variables *)
   datatype Var = VAR of Ident			  (* name *)
-		      * SCode.Attributes	  (* attributes *)
+		      * Attributes	  (* attributes *)
 		      * bool	                  (* protected *)
 		      * Type			  (* type *)
 		      * Binding			  (* equation modification *)
+
+  datatype Attributes = ATTR of bool	(* flow *)
+			      * SCode.Accessibility
+	  		      * Absyn.Variability	(* parameter *)
+			      * Absyn.Direction
 
   datatype Binding = UNBOUND
 		   | EQBOUND of Exp.Exp * bool
@@ -42,8 +52,7 @@ module Types :
 		| T_FUNCTION of FuncArg list * Type (* Only single-result *)
 		| T_NOTYPE
 
-  datatype ArrayDim = (* NODIM
-		    | *) DIM of int option (* * ArrayDim *)
+  datatype ArrayDim = DIM of int option
 
   type FuncArg = Ident * Type
 
@@ -63,7 +72,6 @@ module Types :
   relation subtype : (Type, Type) => bool
   (* relation same_type : (Type, Type) => bool *)
   relation lookup_component : (Type, Ident) => Var
-  relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type
   relation lift_array : (Type,int option) => Type
   relation unlift_array : Type => Type
   relation print_type : Type => ()
@@ -270,7 +278,7 @@ end
 (** relation: pick *)
 
 relation pick : (Var list, Ident)
-	  => (Var list, SCode.Attributes, Type) =
+	  => (Var list, Attributes, Type) =
 
   rule  n1 = n2
 	-------
@@ -321,7 +329,7 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 
   axiom	lookup_in_builtin(t,"start")
 	  => VAR("start",
-		 SCode.ATTR([], false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
 		 false, t, UNBOUND)
 
 	(** FIXME: Add the others *)
@@ -339,51 +347,6 @@ relation lookup_component2 : (Var list , Ident) => Var =
   rule  lookup_component2(vs, n) => v
 	-----------------------------
 	lookup_component2(v::vs, n) => v
-
-end
-
-(** relation: known_type
- **
- ** When a class is instantiated, the restriction state machin will
- ** have reached its final state.  Such a state is here used to
- ** construct a `Types.Type' object.  If the state indicates that the
- ** instantiated class was one of the primitive types, the
- ** corresponding type constructor is used.  Otherwise, one of the
- ** constructors `T_ARRAY' and `T_COMPLEX' is used.
- **)
-
-relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type =
-
-  rule	known_type (st, []) => t &
-	mk_arraydim(dims,t) => t'
-	-------------------------
-	known_type (st, dims as (_::_)) => t'
-
-  axiom	known_type (ClassInf.TYPE_INTEGER(_),[]) => T_INTEGER
-  axiom	known_type (ClassInf.TYPE_REAL(_),[])    => T_REAL
-  axiom	known_type (ClassInf.TYPE_STRING(_),[])  => T_STRING
-  axiom	known_type (ClassInf.TYPE_BOOL(_),[])    => T_BOOL
-
-	(* FIXME *)
-  axiom	known_type (state,[])                    => T_COMPLEX(state,[])
-
-  rule	print "- known_type failed\n"
-	-----------------------------
-	known_type (_,_) => fail
-
-end
-
-(** relation: mk_arraydim *)
-
-relation mk_arraydim : (Absyn.ArrayDim, Type) => Type =
-
-  axiom	mk_arraydim([],t) => t
-
-  rule	mk_arraydim(ds,t) => t' &
-	lift_array(t',NONE) => t''
-	(** FIXME: calculate d *)
-	---------------------
-	mk_arraydim(d::ds, t) => t''
 
 end
 
@@ -461,7 +424,9 @@ end
 
 relation print_arraydim =
 
+(*
   axiom	print_arraydim NODIM
+*)
 
   rule	print ":"
 	---------

@@ -43,18 +43,20 @@ val bool_type = SCode.CLASS("BooleanType",false,Absyn.R_PREDEFINED_BOOL,
 
 (** - The `Real' type *)
 
-val real_type =
-SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
-	    SCode.PARTS
-	    ([(* quantity *)
-	      SCode.COMPONENT("unit",true,false,
+val unit = SCode.COMPONENT("unit",true,false,
 			      SCode.ATTR([],
 					 false,
 					 SCode.RW,
 					 Absyn.VAR,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
-			      SCode.NOMOD)],
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
+
+val real_type =
+SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
+	    SCode.PARTS
+	    ([(* quantity *)
+	      unit],
 	     (* displayUnit *)
 	     [],
 	     []))
@@ -65,14 +67,7 @@ val integer_type =
 SCode.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,
 	    SCode.PARTS
 	    ([(* quantity *)
-	      SCode.COMPONENT("unit",true,false,
-			      SCode.ATTR([],
-					 false,
-					 SCode.RW,
-					 Absyn.VAR,
-					 Absyn.BIDIR),
-			      Absyn.IDENT("StringType"),
-			      SCode.NOMOD)],
+	      unit],
 	     (* displayUnit *)
 	     [],
 	     []))
@@ -98,7 +93,7 @@ SCode.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,
 (** - The `time' variable *)
 
 val time_var =
-Types.VAR("time", SCode.ATTR([] , false, SCode.RO, Absyn.VAR, Absyn.BIDIR),
+Types.VAR("time", Types.ATTR(false, SCode.RO, Absyn.VAR, Absyn.BIDIR),
 	  false, Types.T_REAL, Types.UNBOUND)
 
 (** - Some assorted function types *)

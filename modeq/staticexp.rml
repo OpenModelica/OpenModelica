@@ -30,6 +30,8 @@ module Static :
   relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Properties, SCode.Accessibility)
+  relation elab_subscripts : (Env.Env, Absyn.Subscript list)
+	  => (Exp.Subscript list, bool)
 
   (* Constant propagation *)
   relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
@@ -368,20 +370,20 @@ relation function_params : Types.Var list => ((Ident * Types.Type) list,
 
   rule	function_params vs => (in, out)
 	------------------------------
-	function_params (Types.VAR(n,SCode.ATTR(_,_,_,_,Absyn.INPUT),
+	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.INPUT),
 				   false,t,Types.UNBOUND)::vs)
 	  => ((n,t)::in, out)
 
   rule	function_params vs => (in, out)
 	------------------------------
-	function_params (Types.VAR(n,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),
+	function_params (Types.VAR(n,Types.ATTR(_,_,_,Absyn.OUTPUT),
 					 false,t,Types.UNBOUND)::vs)
 	  => (in, (n,t)::out)
 
   rule	print "# Components in functions must be INPUT or OUTPUT\n" &
 	print "    component: " & print n & print "\n"
 	----------------------------------------------
-	function_params((v as Types.VAR(n,SCode.ATTR(_,_,_,_,Absyn.BIDIR),_,_,_))
+	function_params((v as Types.VAR(n,Types.ATTR(_,_,_,Absyn.BIDIR),_,_,_))
 			::vs) => fail
 
   rule	print "- function_params failed\n"
@@ -432,14 +434,14 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Properties, SCode.Accessibility) =
 
   rule	elab_cref_subs (env,c) => (c', const) &
-	Lookup.lookup_var (env,c') => (SCode.ATTR(ad,_,acc,variability,_),
+	Lookup.lookup_var (env,c') => (Types.ATTR(_,acc,variability,_),
 				       t,
 				       binding) &
 	elab_cref2 (env, c', acc, variability, t, binding)
-	  => (exp,const,acc') &
-	subscript_cref_type (exp,t) => t'
+	  => (exp,const,acc')
+	(* FIXME subscript_cref_type (exp,t) => t' &  *)
 	---------------------------------
-	elab_cref(env, c) => (exp, PROP(t', const), acc')
+	elab_cref(env, c) => (exp, PROP(t, const), acc')
 
   rule	print "- elab_cref failed\n"
 	------------------------------
@@ -489,6 +491,8 @@ relation elab_cref2 : (Env.Env,
 end	
 
 (** relation: elab_cref_subs
+ **
+ ** This relation elaborates on all subscripts in a component reference.
  **)
 
 relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
@@ -508,7 +512,13 @@ relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
 
 end
 
-(**)
+(** relation: elab_subscripts
+ **
+ ** This relation converts a list of `Absyn.Subscript' to a list of
+ ** `Exp.Subscript', and checks if all subscripts are constant.
+ **
+ ** FIXME: doc
+ **)
 
 relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 	  => (Exp.Subscript list, bool) =
@@ -517,18 +527,23 @@ relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 
   rule	elab_subscript (env,sub) => (sub',const1) &
 	elab_subscripts (env,subs) => (subs',const2) &
-	bool_and (const1, const2) => const
-	----------------------------------
-	elab_subscripts (env,sub::subs) => (sub'::subs',const)
+	bool_and (const1, const2) => true &
+	ceval_subscripts(env, sub'::subs') => ss
+	-----------------------------------
+	elab_subscripts (env,sub::subs) => (ss,true)
 
 end
 
-(**)
+(** relation elab_subscript
+ **
+ ** This relation converts an `Absyn.Subscript' to an
+ ** `Exp.Subscript'.
+ **)
 
 relation elab_subscript : (Env.Env, Absyn.Subscript)
 	  => (Exp.Subscript, bool) =
 
-  axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.NOSUB, true)
+  axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.WHOLEDIM, true)
 
   rule	elab_exp (env,sub) => (sub', PROP(ty, const)) &
 	elab_subscript_type (ty, sub, sub') => sub''
@@ -536,6 +551,14 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 	elab_subscript (env,Absyn.SUBSCRIPT(sub)) => (sub'', const)
 
 end
+
+(** relation: elab_subscript_type
+ **
+ ** This relation is used to find the correct constructor for
+ ** `Exp.Subscript' to use for an indexing expression.  If an integer
+ ** is given as index, `Exp.INDEX()' is used, and if an integer array
+ ** is given, `Exp.SLICE()' is used.
+ **)
 
 relation elab_subscript_type : (Types.Type, Absyn.Exp, Exp.Exp)
 	  => Exp.Subscript =
@@ -559,6 +582,8 @@ end
  ** component reference is of lower dimensionality than the
  ** component.  This relation shows the relation between the component
  ** type and the component reference expression type.
+ **
+ ** FIXME: oops this was unnecessary
  **)
 
 relation subscript_cref_type : (Exp.Exp, Types.Type) => Types.Type =
@@ -578,14 +603,6 @@ relation subscript_cref_type2 : (Exp.ComponentRef, Types.Type) => Types.Type =
   rule	subscript_type (t,subs) => t'
 	----------------------------------------
 	subscript_cref_type2 (Exp.CREF_IDENT(_,subs), t) => t'
-
-	(* double work *)
-(*
-  rule	subscript_type (dim,subs) => dim'
-	-----------------------------
-	subscript_cref_type2 (Exp.CREF_IDENT(_,subs),
-			      Types.T_ARRAY(dim,t)) => Types.T_ARRAY(dim',t)
-*)
 
   rule	subscript_cref_type2 (c, t) => t'
 	---------------------------------
@@ -618,9 +635,16 @@ relation subscript_type : (Types.Type, Exp.Subscript list)
 			Exp.SLICE(_)::subs)
 	  => Types.T_ARRAY(dim,t')
 
-  rule	print "- subscript_type failed\n"
-	---------------
-	subscript_type (_,_) => fail
+  rule	subscript_type (t, subs) => t'
+	------------------------------
+	subscript_type (Types.T_ARRAY(dim,t),
+			Exp.WHOLEDIM::subs)
+	  => Types.T_ARRAY(dim,t')
+
+  rule	print "- subscript_type failed (" & Types.print_type t &
+	print " , [...])\n"
+	-------------------
+	subscript_type (t,_) => fail
 
 end
 
@@ -977,6 +1001,12 @@ relation value_exp : Values.Value => Exp.Exp =
   axiom	value_exp (Values.REAL(x))    => Exp.RCONST(x)
   axiom value_exp (Values.STRING(x))  => Exp.SCONST(x)
   axiom value_exp (Values.BOOL(x))    => Exp.BCONST(x)
+  axiom	value_exp (Values.ARRAY([]))  => Exp.ARRAY([])
+
+  rule	value_exp x => x' &
+  	value_exp Values.ARRAY(xs) => Exp.ARRAY(xs')
+	--------------------------------------------
+	value_exp (Values.ARRAY(x::xs)) => Exp.ARRAY(x'::xs')
 
   rule	print "- value_exp failed\n"
 	----------------------------
@@ -1047,7 +1077,7 @@ end
 
 relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
 
-  axiom	ceval_subscript (env, Exp.NOSUB) => Exp.NOSUB
+  axiom	ceval_subscript (env, Exp.WHOLEDIM) => Exp.WHOLEDIM
 
   rule	ceval (env, e1) => v1 &
 	value_exp v1 => e1'
@@ -1114,7 +1144,7 @@ end
 
 relation eq_subscript : (Exp.Subscript, Exp.Subscript) => () =
 
-  axiom	eq_subscript(Exp.NOSUB,Exp.NOSUB)
+  axiom	eq_subscript(Exp.WHOLEDIM,Exp.WHOLEDIM)
  	
   rule	s1 = s2
 	-------------------------------

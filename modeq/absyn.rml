@@ -157,7 +157,11 @@ module Absyn:
   datatype Subscript = NOSUB
 		     | SUBSCRIPT of Exp
   (** The `Subscript' datatype is used both in array declarations and *)
-  (** component references. *)
+  (** component references.  This might seem strange, but it is *)
+  (** inherited from the grammar.  The `NOSUB' constructor means that *)
+  (** the dimension size is undefined when used in a declaration, and *)
+  (** when it is used in a component reference it means a slice of the *)
+  (** whole dimension. *)
 
   (** - Component references and paths *)
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef

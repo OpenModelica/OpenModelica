@@ -79,7 +79,7 @@ module Exp:
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
 		    	| CREF_IDENT of Ident * (Subscript list)
 
-  datatype Subscript = NOSUB
+  datatype Subscript = WHOLEDIM
 		     | SLICE of Exp
 		     | INDEX of Exp
   (** the `Subscript' and `ComponentRef' datatypes are simple *)
@@ -91,6 +91,7 @@ module Exp:
   relation simplify : Exp => Exp
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()
+  relation print_subscript: Subscript => ()
   relation print_list : ('a list, 'a => (), string) => ()
 
 end
@@ -166,7 +167,7 @@ relation simplify : Exp => Exp =
 	simplify ASUB(e, i) => IFEXP(c,t',f')
 
   rule	simplify e => CREF(CREF_IDENT(n,s)) &
-	list_append(s,[INDEX(ICONST(i))]) => s'
+	subscripts_append(s,i) => s'
 	------------------------
 	simplify ASUB(e, i) => CREF(CREF_IDENT(n,s'))
 
@@ -179,6 +180,31 @@ relation simplify : Exp => Exp =
 
 end
 
+(** relation: subscripts_append
+ **
+ ** This relation takes a subscript list and adds a new subscript.
+ ** But there are a few special cases.  When the last existing
+ ** subscript is a slice, it is replaced by the slice indexed by the
+ ** new subscript.
+ **)
+
+relation subscripts_append : (Subscript list, int) => Subscript list =
+
+  axiom	subscripts_append([], i) => [INDEX(ICONST(i))]
+
+  axiom	subscripts_append([WHOLEDIM], i) => [INDEX(ICONST(i))]
+
+  rule	simplify ASUB(e, i) => e'
+	-------------------------
+	subscripts_append([SLICE(e)], i) => [INDEX(e')]
+
+  axiom	subscripts_append([s as INDEX(_)], i) => [s, INDEX(ICONST(i))]
+
+  rule	subscripts_append(ss, i) => ss'
+	-------------------------------
+	subscripts_append(s::ss, i) => s::ss'
+
+end
 
 (**
  ** - Printing expressions
@@ -256,7 +282,7 @@ relation print_subscript: Subscript => () =
 	
   rule	print ":"
 	---------
-	print_subscript(NOSUB)
+	print_subscript(WHOLEDIM)
 	
   rule	print_exp(e1)
 	-------------

@@ -406,7 +406,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** binding. *)
 
 	make_binding (env,attr,eq,cl) => binding &
-	Env.extend_frame_v(env,Types.VAR(n,attr,prot,ty,binding)) => env' &
+	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+					 prot,ty,binding)) => env' &
 	
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
@@ -421,8 +422,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m))
           => (dae, env',csets',ci_state,
-	      [Types.VAR(n,SCode.ATTR([],flow,acc,param,dir),
-			 prot, ty, binding)])
+	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
 
 	(** If the class lookup in the previous rule fails, this
@@ -478,7 +478,8 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		 eq,[],idxs)
           => (dae,csets',ty)
 
-  rule	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs)
+  rule	print "= inst_array mod: " & print n & Mod.print_mod mod & print "\n" &
+	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs)
 	  => (dae, csets', ty) &
 	Types.lift_array(ty,SOME(dim)) => ty'
 	-------------------------------
@@ -754,8 +755,7 @@ relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
 
   rule	ClassInf.valid(st, Absyn.R_PACKAGE) &
 	Env.extend_frame_v(env,
-			   Types.VAR(n, SCode.ATTR([],
-						   false,SCode.RO,Absyn.CONST,
+			   Types.VAR(n, Types.ATTR(false,SCode.RO,Absyn.CONST,
 						   Absyn.BIDIR),
 				     false,
 				     ty,Types.UNBOUND)) => env'
@@ -909,9 +909,13 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **
 	 ** The loop expression is evaluated to a constant array of
 	 ** integers, and then the loop is unrolled.
+	 **
 	 **)
 
-  rule	Static.elab_exp (env,e)
+  rule	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
+	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
+	      Types.T_INTEGER, Types.UNBOUND) &
+	Static.elab_exp (env,e)
 	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
 					   Types.T_INTEGER),
 			     true)) &
@@ -922,6 +926,14 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	-----------------------------------------------------------
 	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el))
 	  => (dae, env,csets', ci_state')
+
+  rule	not Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
+	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
+	      Types.T_INTEGER, Types.UNBOUND) &
+	print "# Invalid loop variable: " & print i & print "\n"
+	-----------------------------------------------------------
+	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el))
+	  => fail
 
   rule	print "- inst_equation failed\n"
 	----------------------------------
@@ -987,6 +999,9 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	=> [DAE.EQUATION(e1,e2)]
 
   rule	RTOpts.split_arrays => true &
+	print "  Array equation: " &
+	Exp.print_exp e1 & print " = " &
+	Exp.print_exp e2 & print "\n" &
 	inst_array_equation(e1,e2,ad,t) => dae
 	-----------------------------------------
 	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t)) => dae
@@ -1142,8 +1157,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Env.open_scope env => env' &
 	Env.extend_frame_v (env',
-			    Types.VAR(i, SCode.ATTR([],
-						    false,
+			    Types.VAR(i, Types.ATTR(false,
 						    SCode.RO,
 						    Absyn.CONST,
 						    Absyn.BIDIR),
@@ -1270,7 +1284,7 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	Static.canon_cref(env, c1') => c1'' &
 	Static.canon_cref(env, c2') => c2'' &
 	Lookup.lookup_var_local(env,c1'')
-	  => (attr1 as SCode.ATTR(_,flow1,_,_,_),ty1,_) &
+	  => (attr1 as Types.ATTR(flow1,_,_,_),ty1,_) &
 	Lookup.lookup_var_local(env,c2'') => (attr2,ty2,_) &
 	
 	(** Check that the types of the connectors are good. *)
@@ -1320,45 +1334,45 @@ end
  **)
 
 relation check_connect_types : (Exp.ComponentRef, Types.Type,
-				SCode.Attributes,
+				Types.Attributes,
 			       	Exp.ComponentRef, Types.Type,
-				SCode.Attributes) => () =
+				Types.Attributes) => () =
 
   rule	print "# Can't connect two input variables\n" &
 	print "    while connecting " & Exp.print_component_ref c1 &
 	print " to " & Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Absyn.INPUT),
-			    c2,_,SCode.ATTR(_,_,_,_,Absyn.INPUT)) => fail
+	check_connect_types(c1,_,Types.ATTR(_,_,_,Absyn.INPUT),
+			    c2,_,Types.ATTR(_,_,_,Absyn.INPUT)) => fail
 
   rule	print "# Can't connect two output variables\n" &
 	print "    while connecting " & Exp.print_component_ref c1 &
 	print " to " & Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),
-			    c2,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT)) => fail
+	check_connect_types(c1,_,Types.ATTR(_,_,_,Absyn.OUTPUT),
+			    c2,_,Types.ATTR(_,_,_,Absyn.OUTPUT)) => fail
 
   rule	flow1 = flow2 &
 	Types.equivtypes(t1, t2) => true
 	-------------------------------
-	check_connect_types(_,t1,SCode.ATTR(_,flow1,_,_,_),
-			    _,t2,SCode.ATTR(_,flow2,_,_,_))
+	check_connect_types(_,t1,Types.ATTR(flow1,_,_,_),
+			    _,t2,Types.ATTR(flow2,_,_,_))
 
   rule	print "# Can't connect flow component " &
  	Exp.print_component_ref c1 &
 	print " to non-flow component " &
  	Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,SCode.ATTR(_,true,_,_,_),
-			    c2,_,SCode.ATTR(_,false,_,_,_)) => fail
+	check_connect_types(c1,_,Types.ATTR(true,_,_,_),
+			    c2,_,Types.ATTR(false,_,_,_)) => fail
 
   rule	print "# Can't connect non-flow component " &
  	Exp.print_component_ref c1 &
 	print " to flow component " &
  	Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,SCode.ATTR(_,false,_,_,_),
-			    c2,_,SCode.ATTR(_,true,_,_,_)) => fail
+	check_connect_types(c1,_,Types.ATTR(false,_,_,_),
+			    c2,_,Types.ATTR(true,_,_,_)) => fail
 
   rule	print "- check_connect_types(" & Exp.print_component_ref c1 &
 	print " <-> " & Exp.print_component_ref c2 & print ") failed\n"
@@ -1446,9 +1460,9 @@ relation connect_vars : (Connect.Sets,
 	connect_vars(sets',c1,f1,xs1,c2,f2,xs2) => sets''
 	--------------------------------------
 	connect_vars(sets,
-		     c1,f1, Types.VAR(n,attr1 as SCode.ATTR(_,flow1,_,vt1,_),
+		     c1,f1, Types.VAR(n,attr1 as Types.ATTR(flow1,_,vt1,_),
 				      _,ty1,_)::xs1,
-		     c2,f2, Types.VAR(_,attr2 as SCode.ATTR(_,flow2,_,vt2,_),
+		     c2,f2, Types.VAR(_,attr2 as Types.ATTR(flow2,_,vt2,_),
 				      _,ty2,_)::xs2)
 	  => sets''
 

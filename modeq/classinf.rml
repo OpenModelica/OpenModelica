@@ -14,17 +14,6 @@
  ** `trans' signals transitions in the machine.  Finally, the state
  ** can be checked agains a restriction with the `valid' relation.
  **
- ** The restricted forms are ordered in a hierarchal fashion as
- ** described by the following diagram:
- **
- **| CLASS -+- TYPE --- RECORD --- CONNECTOR
- **|	    |
- **|	    +- BLOCK --- FUNCTION
- **|	    |
- **|	    +- PACKAGE
- **|	    |
- **|	    +- MODEL
- **
  **)
 
 module ClassInf :
@@ -72,7 +61,10 @@ end
 (** - Printing *)
 (**)
 (** Some relations for printing error and debug information about the *)
-(** state machine. *)
+(** state machine.
+ **
+ ** The code is excluded from the report.
+ **)
 
 (*!ignorecode*)
 
@@ -238,6 +230,13 @@ relation trans : (State, Event) => State =
 end
 
 (** relation: valid
+ **
+ ** This is the validity relation which determines if a state is valid
+ ** according to one of the restrictions.  This means, that if a class
+ ** definition is to be used as, say, a connector, the state of the
+ ** state machine is checked against the `Absyn.R_CONNECTOR'
+ ** restriction using this relation to find out if it is an error to
+ ** use this class definition as a connector.
  **)
 
 relation valid : (State, Absyn.Restriction) => () =
@@ -279,6 +278,9 @@ relation valid : (State, Absyn.Restriction) => () =
 end
 
 (** relation: assert_valid
+ **
+ ** This relation has the same semantical meaning as the relation
+ ** `valid'.  However, it prints an error message when it faild.
  **)
 
 relation assert_valid : (State, Absyn.Restriction) => () =

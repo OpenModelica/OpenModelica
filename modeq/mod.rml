@@ -45,19 +45,6 @@ module Mod:
 
   relation print_mod : Mod => ()
 
-(*
-  relation modify_class: (Env.Env, Absyn.Path, Mod, Prefix.Prefix, Absyn.Class)
-	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
-	    => (Lform.Class, DAE.DAEcomp list)
-  relation maybe_modify_class: (Env.Env, Absyn.Path, Mod,
-				Prefix.Prefix, Absyn.Class)
-	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_maybe_modify_class : (Env.Env, Mod,
-				        Prefix.Prefix, Absyn.Class)
-	    => (Lform.Class, DAE.DAEcomp list)
-*)
-
 end
 
 (** relation: elab_mod
@@ -86,7 +73,11 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
 
 end
 
-(**)
+(** relation: elab_submods
+ **
+ ** This relation helps `elab_mod' by recusively elaborating on a list
+ ** of submodifications.
+ **)
 
 relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
 	  => SubMod list =
@@ -101,15 +92,21 @@ relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
 
 end
 
-(**)
+(** relation: elab_submod
+ **
+ ** This relation elaborates on a submodification, turning an
+ ** `SCode.SubMod' into one or more `SubMod's.
+ **
+ ** FIXME: when several?
+ **)
 
-relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod  list =
+relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod list =
 
   rule	elab_mod (env,pre,m) => m'
 	--------------------------
 	elab_submod (env,pre,SCode.NAMEMOD(i,m)) => [NAMEMOD(i,m')]
 
-  rule	elab_subscripts (env,pre,ss) => ss' &
+  rule	Static.elab_subscripts (env,ss) => (ss',true) &
 	elab_mod (env,pre,m) => m' &
 	make_idxmods (ss',m') => smods
 	---------------------------
@@ -123,27 +120,86 @@ end
  ** sub-modifications of the `IDXMOD' variety.
  **)
 
-relation make_idxmods : (int list list, Mod) => SubMod list =
+relation make_idxmods : (Exp.Subscript list, Mod) => SubMod list =
 
-  axiom	make_idxmods ([],_) => []
+  axiom	make_idxmods([Exp.INDEX(Exp.ICONST(x))],m) => [IDXMOD([x],m)]
 
-  rule	make_idxmods (xs,m) => subs
+  rule	make_idxmods(xs, m) => mods &
+	prefix_idxmods(mods, x) => mods'
+	--------------------------------
+	make_idxmods(Exp.INDEX(Exp.ICONST(x))::xs, m) => mods'
+
+  rule	print "= expand_slice\n" &
+	expand_slice(x, xs, 1, m) => mods
 	---------------------------
-	make_idxmods (x::xs,m) => IDXMOD(x,m)::subs
+	make_idxmods(Exp.SLICE(Exp.ARRAY(x))::xs, m) => mods
+
+  rule	print "# Sorry, [:] slices are not handled in modifications\n"
+	--------------------------------------------------------------
+	make_idxmods(Exp.WHOLEDIM::xs, m) => fail
+	
+end
+
+(** relation: prefix_idxmods
+ **
+ ** This relation adds a subscript to each `IDXMO' in a list of
+ ** submodifications.
+ **)
+
+relation prefix_idxmods : (SubMod list, int) => SubMod list =
+
+  axiom	prefix_idxmods([],_) => []
+
+  rule	prefix_idxmods(mods, i) => mods'
+	--------------------------------
+	prefix_idxmods(IDXMOD(l,m)::mods, i) => IDXMOD(i::l,m)::mods'
 
 end
 
-(**)
+(** relation: expand_slice
+ **
+ ** This relation goes through an array slice modification and creates
+ ** an singly indexed modification for each index in the slice.  For
+ ** example, `x[2:3] = y' is changed into `x[2] = y[1]' and 'x[3] =
+ ** y[2]'.
+ **)
 
+relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Mod)
+	  => SubMod list =
+
+  axiom	expand_slice([], _, _, _) => []
+
+  axiom	expand_slice([], _, _, _) => []
+
+  rule	Exp.simplify(Exp.ASUB(e,n)) => e' &
+	Types.unlift_array(t) => t' &
+	make_idxmods(Exp.INDEX(x)::ss,
+		     MOD(final, [],
+			 SOME((e',Static.PROP(t',const))))) => mods1 &
+	int_add(n, 1) => n' &
+	expand_slice(xs, ss, n', m) => mods2 &
+	list_append(mods1, mods2) => mods
+	---------------------------------
+	expand_slice(x::xs, ss, n,
+		     m as MOD(final, [],
+			      SOME((e,Static.PROP(t,const))))) => mods
+
+  rule	print "# Illegal modification (" & print_mod mod & print ")\n"
+	--------------------------------
+	expand_slice(_,_,_,mod) => fail
+
+end
+
+(** relation: elab_subscripts
+ **
+ ** FIXME: doc
+ **)
+
+(*
 relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
-	=> int list list =
+	=> Exp.Subscript list =
 
   axiom	elab_subscripts (_,_,[]) => [[]]
-	
-  rule	print "# Use of colon subscript subscripts is not allowed" &
-	print " in modifications\n"
-	--------------------------------
-	elab_subscripts (env,pre,Absyn.NOSUB::xs) => fail
 	
   rule	Static.elab_exp(env,e) => (e',prop) &
 	eval_subscript (env,e',prop) => is &
@@ -153,6 +209,7 @@ relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
 	elab_subscripts (env,pre,Absyn.SUBSCRIPT(e)::xs) => l
 	
 end
+*)
 
 (** relation: expand_list
  **
@@ -178,22 +235,24 @@ relation expand_list : (Values.Value list, int list list) => int list list =
 
 end
 
-(**)
+(** relation: eval_subscript
+ **
+ ** FIXME: doc
+ **)
 
 relation eval_subscript : (Env.Env, Exp.Exp, Static.Properties)
-	  => Values.Value list =
+	  => Values.Value =
 
   rule	Static.ceval (env,e) => i
 	--------------------------------------------
-	eval_subscript (env,e,Static.PROP(Types.T_INTEGER,true)) => [i]
+	eval_subscript (env,e,Static.PROP(Types.T_INTEGER,true)) => i
 
-  rule	Static.ceval (env,e) => Values.ARRAY(xs) &
-	print "- Ignoring all but the first index in modification\n"
-	--------------------------------------------
+  rule	Static.ceval (env,e) => a
+	----------------------------------------
 	eval_subscript (env,e,
 			Static.PROP(Types.T_ARRAY(Types.DIM(SOME(sz)),
 						  Types.T_INTEGER),true))
-	  => xs
+	  => a
 
   rule	not t = Types.T_INTEGER &
 	print "# Non-integer subscript " & Exp.print_exp e &
@@ -478,10 +537,14 @@ relation merge_subs2 : (SubMod list, SubMod)
 
 	(* Modifications in the list take precedence *)
 
-  rule  n1 = n2
-	-------
-	merge_subs2((s1 as NAMEMOD(n1,m1))::ss,
-		    NAMEMOD(n2,m2)) => (ss, s1)
+  rule  n1 = n2 & merge(m1,m2) => m
+	---------------------------
+	merge_subs2(NAMEMOD(n1,m1)::ss, NAMEMOD(n2,m2))
+	  => (ss, NAMEMOD(n1,m))
+
+  rule  i1 = i2 & merge(m1,m2) => m
+	---------------------------
+	merge_subs2(IDXMOD(i1,m1)::ss, IDXMOD(i2,m2)) => (ss, IDXMOD(i1,m))
 
   rule  merge_subs2(ss, s2) => (ss',s)
 	------------------------------
