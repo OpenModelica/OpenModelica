@@ -17,17 +17,17 @@ with "exp.rml"
 with "mod.rml"
 with "classinf.rml"
 
-val rl_type = Explode.CLASS("RealType",false,ClassInf.R_TYPE,
+val rl_type = Explode.CLASS("RealType",false,ClassInf.R_PREDEFINED,
 			    Explode.PARTS([],[],[]))
-val int_type = Explode.CLASS("IntegerType",false,ClassInf.R_TYPE,
+val int_type = Explode.CLASS("IntegerType",false,ClassInf.R_PREDEFINED,
 			     Explode.PARTS([],[],[]))
-val str_type = Explode.CLASS("StringType",false,ClassInf.R_TYPE,
+val str_type = Explode.CLASS("StringType",false,ClassInf.R_PREDEFINED,
 			     Explode.PARTS([],[],[]))
-val bool_type = Explode.CLASS("BooleanType",false,ClassInf.R_TYPE,
+val bool_type = Explode.CLASS("BooleanType",false,ClassInf.R_PREDEFINED,
 			      Explode.PARTS([],[],[]))
 
 (*
-val real_type = Absyn.CLASS("Real",false,ClassInf.R_TYPE,
+val real_type = Absyn.CLASS("Real",false,ClassInf.R_PREDEFINED,
 			    Absyn.PARTS(
 			    [Absyn.PUBLIC(
 			    [Absyn.ELEMENT(true,"value",
@@ -59,7 +59,7 @@ val real_type = Absyn.CLASS("Real",false,ClassInf.R_TYPE,
 								NONE,
 								NONE)]))])]))
 
-val integer_type = Absyn.CLASS("Integer",false,ClassInf.R_TYPE,
+val integer_type = Absyn.CLASS("Integer",false,ClassInf.R_PREDEFINED,
 			    Absyn.PARTS(
 			    [Absyn.PUBLIC(
 			    [Absyn.ELEMENT(true,"value",
@@ -91,7 +91,7 @@ val integer_type = Absyn.CLASS("Integer",false,ClassInf.R_TYPE,
 								NONE,
 								NONE)]))])]))
 
-val string_type = Absyn.CLASS("String",false,ClassInf.R_TYPE,
+val string_type = Absyn.CLASS("String",false,ClassInf.R_PREDEFINED,
 			    Absyn.PARTS(
 			    [Absyn.PUBLIC(
 			    [Absyn.ELEMENT(true,"value",
