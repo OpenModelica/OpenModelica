@@ -34,8 +34,10 @@ module Interactive:
   datatype InteractiveStmts = ISTMTS of InteractiveStmt list * 
 					bool (* true if output result == no semicolon*)
 							  
-  datatype InstantiatedClass =  INSTCLASS of Absyn.Path * (* The F.Q. name of the instantiated class*)
+  datatype InstantiatedClass =  INSTCLASS of Absyn.Path * (* The F.Q.name of the inst:ed class*)
 					     DAE.Element list (* The list of DAE elements *)
+						* Env.Env  (* The env of the inst:ed class*)
+
   datatype InteractiveVariable = IVAR of Absyn.Ident * (* The variable identifier *)
 					 Values.Value *  (* The expression containing the value *)
 					 Types.Type  (* The type of the expression *)
@@ -58,7 +60,8 @@ module Interactive:
   relation get_pathed_class_in_program: (Absyn.Path, Absyn.Program) => Absyn.Class 
 
   relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type 
-
+  relation add_instantiated_class: (InstantiatedClass list, InstantiatedClass) => InstantiatedClass list 
+  relation get_instantiated_class: (InstantiatedClass list, Absyn.Path) => InstantiatedClass 
 end
 
 
@@ -2353,9 +2356,9 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &	
-	Inst.inst_class(Cache.CACHE([],[]), env, mod'', Prefix.NOPRE, [], placementclass,
+	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false) 
-	  => (_, dae, cs, t, state) &
+	  => (dae, _, cs, t, state) &
 	Print.print_buf "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
@@ -2378,9 +2381,9 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program("Diagram",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
-	Inst.inst_class(Cache.CACHE([],[]), env, mod'', Prefix.NOPRE, [], placementclass,
+	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false) 
-	  => (_, dae, cs, t, state) &
+	  => (dae, _,cs, t, state) &
 	Print.print_buf "Instantiated Diagram class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
@@ -2401,9 +2404,9 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program(anncname,p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
-	Inst.inst_class(Cache.CACHE([],[]), env, mod'', Prefix.NOPRE, [], placementclass,
+	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false) 
-	  => (_, dae, cs, t, state) &
+	  => (dae, _, cs, t, state) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
 	Debug.fprint ("interactivedump","Annotation DAE = ") &
@@ -3025,4 +3028,42 @@ relation namedarg_to_modification: (Absyn.NamedArg) => Absyn.ElementArg =
   rule	Print.print_buf "- namedarg_to_modification failed\n" 
 	----------------
 	namedarg_to_modification(_) => fail
+end
+
+
+(** relation: add_instantiated_class
+ ** This relation adds an instantiated class to the list of instantiated classes.
+ ** If the class path already exists, the class is replaced. 
+ **)
+ relation add_instantiated_class: (InstantiatedClass list, InstantiatedClass) => InstantiatedClass list =
+	 
+  axiom	add_instantiated_class ([],cl) => [cl]
+
+  rule	ModUtil.path_equal(path,path2) => true
+	---------------------------
+	add_instantiated_class(INSTCLASS(path,dae,env)::xs, newc as INSTCLASS(path2,dae',env')) 
+	  => newc::xs
+
+  rule	ModUtil.path_equal(path,path2) => false &
+	add_instantiated_class(xs, newc) => res 
+	---------------------------
+	add_instantiated_class((x as INSTCLASS(path,_,_))::xs, newc as INSTCLASS(path2,_,_)) 
+	  => x::res
+end
+
+(** relation: get_instantiated_class
+ ** This relation get an instantiated class from the list of instantiated classes.
+ **)
+ relation get_instantiated_class: (InstantiatedClass list, Absyn.Path) => InstantiatedClass =
+	 
+  rule	ModUtil.path_equal(path,path2) => true
+	---------------------------
+	get_instantiated_class((x as INSTCLASS(path,dae,env))::xs, path2) 
+	  => x
+
+  rule	ModUtil.path_equal(path,path2) => false &
+	get_instantiated_class(xs, path2) => res 
+	---------------------------
+	get_instantiated_class((x as INSTCLASS(path,_,_))::xs, path2) 
+	  => res
 end

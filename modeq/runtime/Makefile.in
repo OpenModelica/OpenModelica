@@ -12,10 +12,10 @@ CFLAGS = @DEFS@
 SHELL	= /bin/sh
 CC	= gcc
 CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime
-
-SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c
-
-OBJ     = $(SRC:.c=.o)
+CXXFLAGS = $(CFLAGS)
+SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
+CPPSRC  = cacheimpl.cpp
+OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o)
 
 all: $(OBJ)
 

@@ -44,51 +44,32 @@ module Cache:
 
 type Ident = string
 
-datatype Cache = CACHE of PathItem list * EnvItem list
 
-(** A cache consists of a list of PathItems, for lookup of classes from inside other 
- ** classes and an EnvItem list, for lookup of classnames from the top scope.
+(** A cache has a handle, the rest is implemented in C++
  **)
 
-datatype PathItem = PATHITEM of Ident *
-				PathItem list *
-				EnvItem list 
-
-(** The PathItem datatype corresponds to one level in the absolute path where lookup is performed 
- ** from. I.e. a node in the list of partially instanitated partents of a class 
- **)
-
-datatype EnvItem = ENVITEM of Ident * (* The class/type/variable name *)
-			Env.Item option * (* The cached item, if present *)
-			EnvItem list (* A list of subclasses *)
-(** The EnvItem datatype holds the actual cached items. Togehter with the PathItem datatype it 
- ** forms a two-level tree, where the first level is built up from nodes of PathItem types, and 
- ** the second level is built from nodes of type EnvItem. Lookup in the cache then become a simple
- ** traversal of the tree. An alternative implementation to this would be to use a hash-table, but 
- ** this data structure is not available in RML. 
- **)
-
-relation add_class : (Cache, SCode.Class, Env.Env, Absyn.Path option, Absyn.Path) => Cache
+relation add_class : (SCode.Class, Env.Env, string, string) => ()
 	
-relation add_variable: (Cache,Types.Var, Absyn.Path option, Absyn.Path) => Cache
+relation add_variable: (Types.Var, string, string) => ()
 	
-relation add_type: (Cache, Types.Type, Absyn.Path option, Absyn.Path) => Cache
+relation add_type: (Types.Type, string, string) => ()
 
-relation get_class: (Cache, Absyn.Path option, Absyn.Path) => (SCode.Class, Env.Env)
+relation get_class: (string, string) => (SCode.Class, Env.Env)
 
-relation get_variable: (Cache, Absyn.Path option, Absyn.Path) => Types.Var
+relation get_variable: (string, string) => Types.Var
 
-relation get_type: (Cache, Absyn.Path option, Absyn.Path) => Types.Type
+relation get_type: (string, string) => Types.Type
 
-relation print_cache: (Cache) => ()
+relation init_cache: () => ()
 
-val empty_cache : Cache
+relation clear_cache: () => ()
+
+relation print_cache: () => ()
 
 end
 
-
 with "dump.rml"
-val empty_cache = CACHE([],[])
+
 
 
 (** - Relations *)

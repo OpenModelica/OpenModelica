@@ -1216,15 +1216,15 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	  (** LS: Check if a builtin function call, e.g. size()
 	      and calculate if so **)
 
-  rule	(* PA. Built in functions have only possitional arguments *)
-	elab_call_builtin (env, fn, args) => (e,prop)
-	---------------------------------------------
-	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st)
-
   rule	(* Elaborate interactive function calls *)
 	elab_call_interactive(env,fn,args,nargs,impl,st) => (e,prop,st)
 	-------------------------------------------------------
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop,st)
+
+  rule	(* PA. Built in functions have only possitional arguments *)
+	elab_call_builtin (env, fn, args) => (e,prop)
+	---------------------------------------------
+	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st)
 
   rule	Absyn.cref_to_path fn => fn' &
 	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
@@ -1299,7 +1299,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+  rule	elab_untyped_cref(env,cr) => cr'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("list",_),
 			      [ Absyn.CREF(cr)],[],impl,
@@ -1311,7 +1311,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+  rule	elab_untyped_cref(env,cr) => cr'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("translateClass",_),
 			      [ Absyn.CREF(cr)],[],impl,
@@ -1336,7 +1336,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      st')
 
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+  rule	elab_untyped_cref(env,cr) => cr'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("generateCode",_),
 			      [ Absyn.CREF(cr)],[],impl,
@@ -1449,7 +1449,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+  rule	elab_untyped_cref(env,cr) => cr'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("loadClass",_),
 			      [ Absyn.CREF(cr)],[],impl,
@@ -1471,7 +1471,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+  rule	elab_untyped_cref(env,cr) => cr'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("saveClass",_),
 			      [ Absyn.STRING(str),Absyn.CREF(cr)],[],impl,
@@ -1493,8 +1493,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getUnit",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1506,8 +1506,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getQuantity",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1519,8 +1519,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getDisplayUnit",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1532,8 +1532,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_STRING([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getMin",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1545,8 +1545,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_REAL([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getMax",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1558,8 +1558,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_REAL([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getStart",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1571,8 +1571,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_REAL([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getFixed",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1584,8 +1584,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getNominal",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1597,8 +1597,8 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_REAL([]),false),
 	      SOME(st))
 
-  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr' &
-	Absyn.cref_to_path(cr2) => path2 & path_to_component_ref(path2) => cr2' 
+  rule	elab_untyped_cref(env,cr) => cr' &
+	elab_untyped_cref(env,cr2) => cr2'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("getStateSelect",_),
 			      [ Absyn.CREF(cr),Absyn.CREF(cr2)],[],impl,
@@ -1610,6 +1610,21 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP(Types.T_ENUMERATION(["never", "avoid", "default", "prefer", "always"],[]),false),
 	      SOME(st))
 
+end
+
+(* This relation elaborates a ComponentRef without adding type information. *)
+(* Environment is passed along, such that constant subscripts can be elabed using existing
+ relations *)	
+relation elab_untyped_cref: (Env.Env, Absyn.ComponentRef) => Exp.ComponentRef =
+
+  rule	elab_subscripts(env, subs) => (subs',_)
+	----------------------------------
+	elab_untyped_cref(env, Absyn.CREF_IDENT(id,subs)) => Exp.CREF_IDENT(id,subs')
+
+  rule	elab_subscripts(env,subs) => (subs',_) &
+	elab_untyped_cref(env, cr) => cr'
+	-----------------------------
+	elab_untyped_cref(env, Absyn.CREF_QUAL(id,subs,cr)) => Exp.CREF_QUAL(id,subs',cr')
 end
 
 relation path_to_component_ref: Absyn.Path => Exp.ComponentRef =
@@ -1649,10 +1664,10 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	is_function_in_cflist (cflist, path) => false &
 	SCode.elaborate(p) => p' &
 (*	Inst.instantiate_implicit(p') => d & *)
-	Lookup.lookup_class(Cache.CACHE([],[]), env, path, false) => (cache, cls, env') &
-	Inst.implicit_function_instantiation(cache, env', Mod.NOMOD,
+	Lookup.lookup_class(env, path, false) => (cls, env') &
+	Inst.implicit_function_instantiation(env', Mod.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
-	  => (cache',env'',d) &
+	  => (env'',d) &
 	Print.clear_buf() &
 	ModUtil.string_prefix_params DAE.DAE(d) => d' &
 	Codegen.generate_functions(d') &
@@ -2955,7 +2970,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
   rule	component_ref_to_path(cr) => path &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
-	Lookup.lookup_class(Cache.CACHE([],[]),env,path,true) => (_,c, env) &
+	Lookup.lookup_class(env,path,true) => (c, env) &
 	Env.get_env_path(env) => SOME(p1) &
 	ModUtil.path_string(p1) => s1 &
 	Print.print_buf "Found class " &
@@ -2989,12 +3004,14 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 
   rule	component_ref_to_path(cr) => path &
 	SCode.elaborate(p) => p' &
-	Inst.instantiate_class(p',path) => dae &
+	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
 	DAE.dump_str (dae) => str &
 	Print.get_string() => s2 &
 	Print.print_error_buf s2 
 	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
   rule	component_ref_to_path(cr) => path & 
 	Absyn.path_string path => pathstr &
@@ -3059,10 +3076,10 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	component_ref_to_path(cr) => path &
 	ModUtil.path_string2 (path,"_") => pathstr &
  (*	Inst.instantiate_implicit(p') => d & *)
-	Lookup.lookup_class(Cache.CACHE([],[]), env, path, false) => (cache, cls, env') &
-	Inst.implicit_function_instantiation(cache, env', Mod.NOMOD,
+	Lookup.lookup_class(env, path, false) => (cls, env') &
+	Inst.implicit_function_instantiation(env', Mod.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
-	  => (cache',env'',d) &
+	  => (env'',d) &
 
 	ModUtil.string_prefix_params DAE.DAE(d) => d' &
 	Print.clear_buf &
@@ -3140,106 +3157,133 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 				     st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(str),st)
 
-  rule	get_builtin_attribute(classname,cref,p,"unit") => v
+  rule	get_builtin_attribute(classname,cref,"unit",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getUnit"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st )
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"quantity") => v
+  rule	get_builtin_attribute(classname,cref,"quantity",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getQuantity"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st )
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"displayUnit") => v
+  rule	get_builtin_attribute(classname,cref,"displayUnit",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getDisplayUnit"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st )
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"min") => v
+  rule	get_builtin_attribute(classname,cref,"min",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMin"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st )
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"max") => v
+  rule	get_builtin_attribute(classname,cref,"max",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMax"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st )
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"start") => v
+  rule	get_builtin_attribute(classname,cref,"start",st) => (v, st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStart"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st)
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"fixed") => v
+  rule	get_builtin_attribute(classname,cref,"fixed",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getFixed"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st)
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"nominal") => v
+  rule	get_builtin_attribute(classname,cref,"nominal",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getNominal"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st)
+	  => (v, st')
 
-  rule	get_builtin_attribute(classname,cref,p,"stateSelect") => v
+  rule	get_builtin_attribute(classname,cref,"stateSelect",st) => (v,st')
 	----------------------------------------------
 	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStateSelect"),
 						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
-	  => (v, st)
+				    st)
+	  => (v, st')
 
 end
 
-relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, Absyn.Program, string) 
-	  => Values.Value =
+relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
+				 Interactive.InteractiveSymbolTable) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable) =
 
-  rule	component_ref_to_path(classname) => classname' &
-	SCode.elaborate(p) => p' &
-	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
-	Lookup.lookup_class(Cache.CACHE([],[]),env,classname',true)
-	  => (_, c as SCode.CLASS(n, _, encflag, r, _), env') &
-	  Env.open_scope(env',encflag) => env'' &
-	Env.name_scope(env'',n) => env3 &
-	ClassInf.start(r,n) => ci_state &
-	Inst.inst_class_in(Cache.CACHE([],[]), env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
-			   c, false, [], false, false)
-	  => (_, dae1, env4, csets', ci_state', tys) &
+  rule	(* Check cached instantiated class *)
+	component_ref_to_path(classname) => classname' &
+	Interactive.get_instantiated_class(ic,classname') => Interactive.INSTCLASS(_,dae,env) &
 	Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
-	Lookup.lookup_var(env4,cref') => (attr,ty,Types.EQBOUND(exp,_)) &
+	Lookup.lookup_var(env,cref') => (attr,ty,Types.EQBOUND(exp,_)) &
 	Exp.print_exp_str exp => str
 	--------------------------------
-	get_builtin_attribute(classname,cref,p,"stateSelect") => Values.STRING(str)
+	get_builtin_attribute(classname,cref,"stateSelect",
+			      st as Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (Values.STRING(str),st)
 
   rule	component_ref_to_path(classname) => classname' &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
-	Lookup.lookup_class(Cache.CACHE([],[]),env,classname',true)
-	  => (_, c as SCode.CLASS(n, _, encflag, r, _), env') &
+	Lookup.lookup_class(env,classname',true)
+	  => (c as SCode.CLASS(n, _, encflag, r, _), env') &
 	  Env.open_scope(env',encflag) => env'' &
 	Env.name_scope(env'',n) => env3 &
 	ClassInf.start(r,n) => ci_state &
-	Inst.inst_class_in(Cache.CACHE([],[]), env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+	Inst.inst_class_in(env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
 			   c, false, [], false, false)
-	  => (_, dae1, env4, csets', ci_state', tys) &
+	  => (dae1, env4, csets', ci_state', tys) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
+	Lookup.lookup_var(env4,cref') => (attr,ty,Types.EQBOUND(exp,_)) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname',dae1,env4)) => ic' &
+	Exp.print_exp_str exp => str
+	--------------------------------
+	get_builtin_attribute(classname,cref,"stateSelect",
+			      Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (Values.STRING(str), Interactive.SYMBOLTABLE(p,sp,ic',vars,cf))
+
+  rule	component_ref_to_path(classname) => classname' &
+	Interactive.get_instantiated_class(ic,classname') => Interactive.INSTCLASS(_,dae,env) &
 	Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &
-	Lookup.lookup_var(env4,cref') => (attr,ty,Types.VALBOUND(v))
+	Lookup.lookup_var(env,cref') => (attr,ty,Types.VALBOUND(v)) 
 	-----------------------------------------------
-	get_builtin_attribute(classname,cref,p,attribute) => v
+	get_builtin_attribute(classname,cref,attribute,
+			      st as Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (v, st)
+
+  rule	component_ref_to_path(classname) => classname' &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	Lookup.lookup_class(env,classname',true)
+	  => (c as SCode.CLASS(n, _, encflag, r, _), env') &
+	  Env.open_scope(env',encflag) => env'' &
+	Env.name_scope(env'',n) => env3 &
+	ClassInf.start(r,n) => ci_state &
+	Inst.inst_class_in(env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, 
+			   c, false, [], false, false)
+	  => (dae1, env4, csets', ci_state', tys) &
+	Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &
+	Lookup.lookup_var(env4,cref') => (attr,ty,Types.VALBOUND(v)) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname',dae1,env4)) => ic' 
+	-----------------------------------------------
+	get_builtin_attribute(classname,cref,attribute,
+			      st as Interactive.SYMBOLTABLE(p,sp,ic,vars,cf)) 
+	  => (v, Interactive.SYMBOLTABLE(p,sp,ic',vars,cf)) 
 end 
 
 relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list) => Values.Value list =

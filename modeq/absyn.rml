@@ -326,6 +326,7 @@ module Absyn:
   relation cref_to_path : ComponentRef => Path
   relation path_to_cref : Path => ComponentRef
   relation path_string : Path => string
+  relation opt_path_string: Path option => string
   relation path_string2 : (Path, string) => string
   relation path_last_ident : Path => Ident
   relation get_cref_from_exp : ( Exp ) => ComponentRef list 
@@ -375,6 +376,16 @@ relation path_string: Path => string =
 	-----------------------------
 	path_string path => s
 end
+
+relation opt_path_string: Path option => string =
+
+  axiom	opt_path_string(NONE) => ""
+
+  rule	path_string(p) => str 
+	-----------------
+	opt_path_string(SOME(p)) => str
+end
+
 
 relation path_string2: (Path, string) => string =
 

@@ -26,6 +26,7 @@ module ModUtil :
   with "exp.rml"
 
   relation path_string: Absyn.Path => string
+  relation opt_path_string: Absyn.Path option => string
   relation path_string2: (Absyn.Path, string) => string
 
   relation string_prefix_component_refs : (string, 
@@ -333,6 +334,14 @@ relation print_exp_no_funcall : Exp.Exp => () =
 	
 end
 
+relation opt_path_string: Absyn.Path option => string =
+
+  axiom	opt_path_string(NONE) => ""
+
+  rule	path_string(p) => str 
+	-----------------
+	opt_path_string(SOME(p)) => str
+end
 
 relation path_string: Absyn.Path => string =
 
