@@ -4,6 +4,7 @@
 #include "integer_array.h"
 #include "index_spec.h"
 #include "memory_pool.h"
+#include <stdio.h>
 
 typedef double modelica_real;
 
@@ -79,6 +80,8 @@ void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest);
 void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 
 void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
+void sub_alloc_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
+
 
 void mul_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);
 void mul_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
@@ -116,6 +119,6 @@ void symmetric_real_array(real_array_t* a,real_array_t* dest);
 void cross_real_array(real_array_t* x,real_array_t* y, real_array_t* dest);
 void skew_real_array(real_array_t* x,real_array_t* dest);
 
-
 size_t real_array_nr_of_elements(real_array_t* a);
+
 #endif
