@@ -34,6 +34,8 @@ OBJS += $(lexerobjs) $(parserobjs) $(helperobjs)
 
 all: libmodelica_parser.a
 
+vctarget: $(lexergen) $(parsergen)
+
 libmodelica_parser.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 

@@ -45,6 +45,10 @@ ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
 
 all : parser absyn_builder.a
 
+vctarget: vcparser $(walkergen) $(exprparsegen)
+
+vcparser:
+	cd $(PARSE_HOME)/src; $(MAKE) -f Makefile vctarget
 
 parser:
 	cd $(PARSE_HOME)/src; $(MAKE) -f Makefile

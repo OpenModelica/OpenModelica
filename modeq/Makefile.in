@@ -70,13 +70,16 @@ SUBDIRS	= runtime absyn_builder
 
 .SUFFIXES:
 .SUFFIXES: .o .rml .h
-.PHONY: all subdirs report
+.PHONY: all subdirs report vctarget absyn_subdir
 
 #%.o %.h: %.rml %.rml.impl
 #	$(MYRML) "$(RML)" $*.rml
 
 %.o : %.rml
 	$(RML) -c $<
+
+%.c : %.rml
+	$(RML) +C $<
 
 %.h : %.rml
 	$(RML) -c $<
@@ -86,6 +89,11 @@ SUBDIRS	= runtime absyn_builder
 
 
 all : $(SRCO) subdirs $(PROG)
+
+vctarget: $(SRCC) absyn_subdir
+
+absyn_subdir:
+	@(cd absyn_builder ; $(MAKE) vctarget)
 
 test:
 	@(cd testsuite ; $(MAKE))
