@@ -49,6 +49,9 @@ $(parsergen): modelica_parser.g modelica_lexer.g
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
+test: test.o libmodelica_parser.a
+	$(CXX) -o test test.o libmodelica_parser.a  $(LIB)
+
 depend: $(DFILES)
 
 clean:
