@@ -278,11 +278,17 @@ relation unparse_class_modification_str: Absyn.Modification => string =
 
   axiom	unparse_class_modification_str(Absyn.CLASSMOD([],_)) => ""
 	
-  rule	get_string_list(l,unparse_element_arg_str,",") => s1 &
+  rule	get_string_list(l,unparse_element_arg_str,",") => s1 &	
 	string_append("(",s1) => s2 &
 	string_append(s2,")") => str 
 	---------------------------------------------------------
-	unparse_class_modification_str(Absyn.CLASSMOD(l,_)) => str
+	unparse_class_modification_str(Absyn.CLASSMOD(l,NONE)) => str
+
+  rule	print_exp_str e => s1 &
+	Util.string_append_list(["=",s1]) => str
+	---------------------------------------------------------
+	unparse_class_modification_str(Absyn.CLASSMOD(_,SOME(e))) => str
+
 	
 end
 (**)
@@ -495,8 +501,8 @@ end
 relation unparse_annotation_option: Absyn.Annotation option => string =	
 	
   rule	unparse_class_modification_str Absyn.CLASSMOD(mod,NONE) => s1 &
-	string_append(" annotation(",s1) => s2 &
-	string_append(s2,")") => str
+	string_append(" annotation",s1) => s2 &
+	string_append(s2,"") => str
 	----------------------------
 	unparse_annotation_option(SOME(Absyn.ANNOTATION(mod))) => str
 

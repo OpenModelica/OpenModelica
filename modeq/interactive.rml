@@ -1963,7 +1963,7 @@ relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 	string_append(s3,str) => res
 	----------------------------
 	get_componentitems_annotation (Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(
-		Absyn.ANNOTATION(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Diagram",_),Absyn.CLASSMOD(mod,_),_)::_)
+		Absyn.ANNOTATION(mod as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),_,_)::_)
 	),_)))::(rest as (_::_))) => res
 	
   rule	get_annotation_string(Placement_records, Absyn.ANNOTATION(mod)) => s1 &
@@ -1971,7 +1971,7 @@ relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 	string_append(s2,"}") => res 
 	----------------------------
 	get_componentitems_annotation ([Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(
-	Absyn.ANNOTATION(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Diagram",_),Absyn.CLASSMOD(mod,_),_)::_)
+	Absyn.ANNOTATION(mod as Absyn.MODIFICATION(_,_, Absyn.CREF_IDENT("Placement",_),_,_)::_)
 	),_)))]) => res
 
   rule	get_componentitems_annotation(rest) => str &
@@ -2585,14 +2585,26 @@ end
  **)
 relation record_constructor_to_modification: (Absyn.Exp ) => Absyn.ElementArg =
 
-  rule	Util.list_map(nargs,namedarg_to_modification) => eltarglst &
+  rule	(* Covers the case annotate=Diagram(x=1,y=2) *)
+	Util.list_map(nargs,namedarg_to_modification) => eltarglst &
         let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,cr,Absyn.CLASSMOD(eltarglst,NONE),NONE)
 	-----------------------------------
 	record_constructor_to_modification(Absyn.CALL(cr,Absyn.FUNCTIONARGS([],nargs))) => res	
+	
+  rule	(* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) *)
+	Util.list_map(nargs,namedarg_to_modification) => eltarglst &
+        record_constructor_to_modification(e) => emod &
+	let res = Absyn.MODIFICATION(false, Absyn.NON_EACH,
+				     cr, Absyn.CLASSMOD(emod::eltarglst, NONE), NONE)
+	-----------------------------------
+	record_constructor_to_modification(Absyn.CALL(cr,
+						      Absyn.FUNCTIONARGS([e as Absyn.CALL(_,_)],nargs))) => res	
 
-  rule	Print.print_buf "record_constructor_to_modification failed\n" 
+
+  rule	Print.print_buf "record_constructor_to_modification failed, exp=" & 
+	Absyn.print_absyn_exp e & Print.print_buf "\n" 
 	-------------------------
-	record_constructor_to_modification(_) => fail
+	record_constructor_to_modification(e) => fail
 end
 
 (** relation: namedarg_to_modification
@@ -2609,4 +2621,8 @@ relation namedarg_to_modification: (Absyn.NamedArg) => Absyn.ElementArg =
   rule	let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(id,[]),Absyn.CLASSMOD([],SOME(e)),NONE)
 	----------------------------------------------------------------
 	namedarg_to_modification( Absyn.NAMEDARG(id,e)) => res
+
+  rule	Print.print_buf "- namedarg_to_modification failed\n" 
+	----------------
+	namedarg_to_modification(_) => fail
 end

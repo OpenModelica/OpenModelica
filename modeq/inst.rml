@@ -935,27 +935,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Mod.merge(classmod',mm') => mod &
 	Mod.merge(mod,m') => mod1 &
-<<<<<<< inst.rml
-	Debug.fprintln ("redecl", "Merged modifications") &
-	Debug.fcall ("redecl", Mod.print_mod, mod1) &
-	print "inst_element :" & print n & print "before redeclare\n" &
-	redeclare_type(mod1,comp,env2,pre,impl) => (SCode.COMPONENT(n,final,repl,prot,
-=======
 
 	redeclare_type(mod1,comp,env2,pre,impl) => (SCode.COMPONENT(n,final,repl,prot,
->>>>>>> 1.127
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-<<<<<<< inst.rml
 				     t,m),mod',env2') &
-	print "inst_element :" & print n & print "after redeclare\n" &
-	Debug.fprintln ("redecl", "Merged modifications") &
-	Debug.fcall ("redecl", Mod.print_mod, mod') &
 
-	
-=======
-				     t,m),mod',env2') &
-	
->>>>>>> 1.127
 	Debug.fprint("insttr", "looking for type") &
 	Debug.fcall("insttr",Dump.print_path,t) &
 	Debug.fprint("insttr"," in env:") &
