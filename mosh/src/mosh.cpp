@@ -127,19 +127,22 @@ int main(int argc, char* argv[])
 
 void doCorbaCommunication(int argc, char **argv)
 {
-  CORBA::ORB_var orb = CORBA::ORB_init(argc,argv,"mico-local-orb");
-  CORBA::BOA_var boa = orb->BOA_init(argc,argv,"mico-local-boa");
+  cerr << "doCorbaCommunication" << endl;
+ CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);
+ cerr << "inited orb" << endl;
   
-  ifstream tmpFile ("/tmp/openmodelica.objid"); // Must match filename in 
-						// corbaimpl.cpp
+  char uri[300];
+  sprintf (uri, "file:///tmp/openmodelica.objid");
+
   
-  char ref[1000];
-  tmpFile >> ref;
-  tmpFile.close();
-  
-  CORBA::Object_var obj = orb->string_to_object(ref);
+  CORBA::Object_var obj = orb->string_to_object(uri);
+  cerr << "got obj" << endl;
   ModeqCommunication_var client = ModeqCommunication::_narrow(obj);
 
+  if (CORBA::is_nil(client)) {
+    cerr << "Could not locate modeq server." << endl;
+    exit(1);
+  }
   // initialize history usage
   using_history();
 
