@@ -53,10 +53,10 @@ private:
 			map<VertexID,double>& levelMap);
 
   void generateSubTaskCode(VertexID task);
-  void generateSendData(VertexID task, int proc);
+  void generateSendData(VertexID task, int proc,bool genQuit);
   void generateSendCommand(VertexID source, VertexID target,
 			   int sourceproc, 
-			   int targetproc);
+			   int targetproc, bool genQuit);
   void generateRecvCommand(VertexID source, VertexID target,
 			   int sourceproc, 
 			   int targetproc);

@@ -108,7 +108,7 @@ void Codegen::generateParallelFunctionBody(TaskList *tasks,
     t = tasks2->top(); 
     generateRecvData(t,proc);
     generateTaskCode(t,levelMap);
-    generateSendData(t,proc);
+    generateSendData(t,proc,false);
     tasks2->pop();
   }
 
@@ -136,7 +136,7 @@ void Codegen::generateRecvData(VertexID task, int proc)
   }  
 }
 
-void Codegen::generateSendData(VertexID task, int proc)
+void Codegen::generateSendData(VertexID task, int proc, bool genQuit)
 {
   ChildrenIterator c,c_end;
   for (tie(c,c_end) = children(task,*m_merged_tg); c != c_end; c++) {
@@ -145,16 +145,17 @@ void Codegen::generateSendData(VertexID task, int proc)
     for (i = s.begin(); i != s.end(); i++) {
       if (!m_schedule->isAssignedTo(*c,proc)) {
 	m_cstream << TAB << "/* Send to Task " << getTaskID(*c,m_tg) << "*/" << endl;
-	generateSendCommand(task,*c,proc,*i);
+	generateSendCommand(task,*c,proc,*i,genQuit);
       }
     }
   }    
 }
 
 void Codegen::generateSendCommand(VertexID source,
-						     VertexID target,
-						     int sourceproc,
-						     int targetproc)
+				  VertexID target,
+				  int sourceproc,
+				  int targetproc,
+				  bool genQuit)
 {
   EdgeID e; bool found;
   tie(e,found) = edge(source,target,*m_merged_tg);
@@ -165,7 +166,9 @@ void Codegen::generateSendCommand(VertexID source,
   ResultSet::iterator vname; int i;
   
   if (sourceproc == 0) {
-    m_cstream << TAB << "sendbuf0[0]=1.0; // continue calculating" << endl;
+    if (!genQuit) {
+      m_cstream << TAB << "sendbuf0[0]=1.0; // continue calculating" << endl;
+    }
     for( vname= res.begin(), i=1; vname != res.end(); vname++,i++) {
       m_cstream << TAB << "sendbuf" << sourceproc << "[" << i << "]=" 
 		<< *vname << ";" << endl;
@@ -458,7 +461,7 @@ void Codegen::generateKillCommand()
 
   m_cstream << TAB << "sendbuf0[0]=0.0; // stop calculating" << endl;
 
-  generateSendData(m_start,0);
+  generateSendData(m_start,0,true);
 
   m_cstream << "}" << endl << endl;
 }

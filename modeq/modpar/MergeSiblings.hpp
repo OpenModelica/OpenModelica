@@ -43,7 +43,6 @@ public:
 private:
   bool exist_edge(VertexID parent, VertexID child, TaskGraph *tg);
   bool try_merge(ExecCostQueue & queue);
-  bool try_merge2(ExecCostQueue & queue);
 };
 
 #endif
