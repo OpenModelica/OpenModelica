@@ -601,7 +601,7 @@ component_reference :
 		;
 
 function_call :
-		LPAR! function_arguments RPAR!
+		LPAR! (function_arguments)? RPAR!
 		{
 			#function_call=#([FUNCTION_ARGUMENTS,"FUNCTION_ARGUMENTS"],#function_call);
 		}
