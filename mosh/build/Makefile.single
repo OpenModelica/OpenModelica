@@ -30,7 +30,7 @@ all : $(CDIR) $(ODIR) $(BDIR) $(TARGETS)
 
 $(TARGETS) : $(BDIR)/% : $(ODIR)/%.main.o
 	rm -f $@
-	gcc -g -o $@ $(LDFLAGS) $< -lc_runtime
+	gcc -g -o $@ $(LDFLAGS) $< 
 
 $(OBJS) : $(ODIR)/%.main.o : $(CDIR)/%.c $(MOSHHOME)/build/main.c
 	rm -f $(TARGETS)
