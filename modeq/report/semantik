@@ -99,7 +99,28 @@ ekvationer. Så
 	  x = 17.0;
 	end Foo;
 
-* Ersättning av ekvationer
+** Equations in restricted classes
+
+Records, and other restricted class types can't contain equations. But
+assigment modifiers are equations, which contradicts this.
+
+	record Foo
+	  Real X = 17;
+	end Foo;
+
+should be equal to
+
+	record Foo
+	  Real x;
+	equation
+	  x = 17;
+	end Foo;
+
+except that that form is not valid. This probably means that the class
+restriction inference has to differentiate between explicit and
+implicit equations.
+
+** Ersättning av ekvationer
 
 Hilding tyckte visst att "x = 17" skulle ersättas av "x = 15" i N.
 
@@ -187,3 +208,9 @@ a little hard to generate connection sets.
 * Inconsistencies
 
 	constant input Real foo
+
+* Predefined types
+
+Can the types of the predefined types Real etc. really be described in
+Modelica without breaking the restrictions of the 'type' class form?
+Not to mention the 'value' mess.

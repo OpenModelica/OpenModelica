@@ -79,10 +79,20 @@ II. Change the modification rule to something like
 
 I think that the latter is preferrable
 
-* Syntaxfel i exempel och standardbiblioteket
+* final
 
-I B.6 står det "final type Real ...", vilket inte går enligt
-grammatiken.
+Appendix B.5 contains a note that says that a class declaration can be
+prefixed with "final", but that is not described by the grammar.
+
+Suggestion: Change the production rule for class_definition to
+
+      class_definition :
+            [ partial | final ] 
+         ( class | model | record | block | connector | type |
+           package | function ) 
+         IDENT comment
+         ( composition end IDENT | 
+           "=" IDENT [ array_dimensions ] [ class_modification ] )
 
 * connect
 
@@ -99,3 +109,7 @@ takes two component_references.
           | while_clause )
         comment
 
+* File name suffix
+
+The file name suffix should be standardized. I have seen both .mdc and
+.mo. I vote for .mdc.
