@@ -50,7 +50,9 @@ end
 with "parse.rml"
 with "debug.rml"
 with "dump.rml"
-
+with "inst.rml"
+with "mod.rml"
+with "prefix.rml"
 (**
  ** - Lookup relations
  **
@@ -152,36 +154,30 @@ relation lookup_var_internal : (Env.Env,Exp.ComponentRef)
 
 end
 
+(** relation: lookup_var_in_packages
+ ** This relation is called when a lookup of a variable with qualified names does 
+ ** not have the first element as a component, e.g. A.B.C is looked up where A is not a component.
+ ** This implies that A is a class, and this class should be temporary instantiated, and the lookup should ** be performed within that class.
+**)
+
 relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef) 
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
-  rule	lookup_class_in_env(env, Absyn.IDENT(id)) => (c, env) &
-	lookup_var_in_class(env, c, cref) => (attr,ty,bind) 
+  rule	
+	lookup_class_in_env(env, Absyn.IDENT(id)) => (c as SCode.CLASS(n,_,r,_), env) &
+	Debug.fprintl ("lotr", ["lookup_var_in_packages. instantiating class", n, "\n"]) &
+	Env.open_scope(env) => env' &
+	ClassInf.start(r,n) => ci_state &
+	Inst.inst_class_in (env',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) => (_,env'',_,_,types) &
+	lookup_var(env'',cref) => (attr,ty,bind) &
+	Debug.fprint ("lotr", "found var " ) &
+	Debug.fcall("lotr", Exp.print_component_ref, cref)  &
+	Debug.fprint ("lotr", " = ") &
+	Debug.fcall("lotr", Types.print_binding, bind) 
 	--------------------------------------------------
 	lookup_var_in_packages (env, Exp.CREF_QUAL(id, [], cref)) => (attr,ty,bind)
 end
 
-relation lookup_var_in_class: (Env.Env, SCode.Class, Exp.ComponentRef)
-	    => (Types.Attributes, Types.Type, Types.Binding) =
-
-  rule	lookup_var_in_parts(id,parts) => (attr,ty,bind)
-	-----------------------------------------------
-	lookup_var_in_class(env, SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)), Exp.CREF_IDENT(id,_))
-	    => (attr, ty, bind)
-
-  rule	lookup_class_in_class(env,c,Absyn.IDENT(id)) => (c2,env) &
-	lookup_var_in_class(env,c2,cref) => (attr, ty, bind) 
-	--------------
-	lookup_var_in_class(env, c as SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)), Exp.CREF_QUAL(id,_,cref))
-	    => (attr, ty, bind)
-end
-
-relation lookup_var_in_parts: (Absyn.Ident, SCode.Element list) 
-	    => (Types.Attributes, Types.Type, Types.Binding) =
-
-(* Fortsätt här...*)
-
-end
 
 (** relation: lookup_var_local
  ** 

@@ -1151,6 +1151,7 @@ relation elab_type : Types.Type => Exp.Type =
   axiom	elab_type Types.T_REAL => Exp.REAL
   axiom	elab_type Types.T_BOOL => Exp.BOOL
   axiom	elab_type Types.T_STRING => Exp.STRING
+  axiom elab_type Types.T_ENUM => Exp.ENUM
 
   rule	Types.array_element_type t => et &
 	elab_type et => t'
@@ -1223,9 +1224,14 @@ relation elab_cref2 : (Env.Env,
 
   rule	elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
-	-----------------
+	----------------
 	elab_cref2 (env,cr,acc,_,tt, Types.EQBOUND(exp,true))
 	  => (Exp.CREF(cr',t),true,acc)
+
+	  (* Enum constants does not have a value expression *)
+  rule	elab_type tt => t
+	-----------------
+	elab_cref2(env,cr,acc,_,tt as Types.T_ENUM,_) => (Exp.CREF(cr,t),true,acc)
 
   rule	print "# Constant or parameter with a non-constant initializer\n" &
 	print "# component: " & Exp.print_component_ref cr & print " = " &

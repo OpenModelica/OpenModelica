@@ -46,7 +46,7 @@ module Exp:
   (** identifiers in Modelica. *)
 
   (** - Basic types *)
-  datatype Type = INT | REAL | BOOL | STRING | OTHER 
+  datatype Type = INT | REAL | BOOL | STRING | ENUM | OTHER 
   (** These types are not used as expression types (see the `Types'
    ** module for expression types).  They are used to parameterize
    ** operators which may work on several simple types. *)

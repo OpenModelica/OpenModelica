@@ -1650,6 +1650,15 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 			 e2,p2 as Static.PROP_TUPLE(t2,_))
 	  => dae
 
+	  (* An assignment to a varaible of T_ENUMERATION type is an explicit 
+	     assignment to the value componnent of the enumeration, i.e. having a type T_ENUM*)
+	
+  rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM.\n") &
+	inst_eq_equation_2(e1,e2,t) => dae
+	----------------------
+	inst_eq_equation(e1 as Exp.CREF(_,_),Static.PROP(Types.T_ENUMERATION(_),_),
+	    e2,Static.PROP(t as Types.T_ENUM,_)) => dae
+
   rule	(* Types.equivtypes(t1,t2) => false & *)
 	print "# Illegal types in equation\n"&
 	print "    lhs: " & Exp.print_exp e1 &
@@ -1707,6 +1716,9 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
 	=> [DAE.EQUATION(e1,e2)]
 
   axiom	inst_eq_equation_2(e1,e2,Types.T_BOOL)
+	=> [DAE.EQUATION(e1,e2)]
+
+  axiom	inst_eq_equation_2(e1,e2,Types.T_ENUM)
 	=> [DAE.EQUATION(e1,e2)]
 
   rule	RTOpts.split_arrays => true &
@@ -2370,6 +2382,19 @@ relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option, SCode.Clas
 	  => Types.Binding =
 
   axiom	make_binding (_,_,NONE,_) => Types.UNBOUND
+
+(* Numerical values becoms VALBOUND *)
+  axiom	make_binding (env, _, SOME((Exp.ICONST(i),_)),_) 
+	    => Types.VALBOUND(Values.INTEGER(i))
+	    
+  axiom make_binding (env, _, SOME((Exp.RCONST(r),_)),_)
+	    => Types.VALBOUND(Values.REAL(r))
+	    
+  axiom	make_binding (env, _, SOME((Exp.SCONST(s),_)),_)
+	=> Types.VALBOUND(Values.STRING(s))
+	    
+  axiom	make_binding (env, _, SOME((Exp.BCONST(b),_)),_)
+	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
   axiom	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME((e,prop)), cl)

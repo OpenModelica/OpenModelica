@@ -181,6 +181,7 @@ relation subtype : (Type, Type) => bool =
   axiom	subtype (T_REAL,T_REAL)       => true
   axiom	subtype (T_STRING,T_STRING)   => true
   axiom	subtype (T_BOOL,T_BOOL)       => true
+  axiom	subtype (T_ENUM,T_ENUM)	      => true
 
   rule	subtype (t1,t2) => true
 	-----------------------
@@ -439,6 +440,16 @@ relation print_type : Type => () =
 	---------------
 	print_type T_BOOL
 
+  rule	print "EnumType"
+	---------------
+	print_type T_ENUM
+
+  rule	print "enumeration(" &
+	Dump.print_list(l,print, ", ") &
+	print ")"
+	-----------
+	print_type T_ENUMERATION(l)
+
   rule	print "composite(" &
 	ClassInf.print_state(st) &
 	print ", (" &
@@ -466,6 +477,10 @@ relation print_type : Type => () =
   rule	print "#NOTYPE#"
 	----------------
 	print_type T_NOTYPE
+
+  rule	print "print_type failed!\n"
+	---------------------------
+	print_type _
 
 end
 
