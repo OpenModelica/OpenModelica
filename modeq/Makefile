@@ -8,18 +8,18 @@ SHELL	= /bin/sh
 CC	= cc
 CFLAGS	= 
 LDFLAGS = -lrml
-RML	= rmlc
+RML	= rmlc -g
 PROG	= modeq
 AST	= ast/libast.a
 
 SRCRML=	exp.rml \
 	dae.rml \
+	types.rml \
 	absyn.rml \
 	explode.rml \
 	dump.rml \
 	prefix.rml \
 	mod.rml \
-	types.rml \
 	env.rml \
 	builtin.rml \
 	inst.rml \
@@ -33,17 +33,10 @@ RMLINCLUDE = $(RMLDIR)/include/plain
 SUBDIRS	= ast
 
 .SUFFIXES: .rml
-.PHONY: subdirs
+.PHONY: all subdirs
 
 .rml.o:
 	$(RML) -c $<
-
-#.c.o:
-#	$(CC) -c $(CFLAGS) -o $@ $<
-
-# .rml.o:
-# 	  $(RML) -c $<
-# 	  $(CC) -c $(CFLAGS) -o $@ $*.c
 
 all : $(SRCO) subdirs $(PROG)
 
@@ -53,6 +46,7 @@ $(PROG): $(SRCO) ast/libast.a
 # $(SRCO):	rml.h
 absyn.o:	absyn.rml
 exp.o:		exp.rml
+	$(RML) -c $<
 env.o:		env.rml
 	$(RML) -c $<
 explode.o:	explode.rml
