@@ -450,6 +450,7 @@ element_redeclaration :
 	  ( extends_clause
 	  | class_definition[false,is_final]
 	  | component_clause1 )
+          /* FIXME */
 	;
 
 component_clause1 :
@@ -599,20 +600,24 @@ expression :
 	  expression
 	  ;
 
-simple_expression :
-	logical_term
-	( o:OR^ logical_term << /* FIXME */ >>
+simple_expression : << void *l, *op; >>
+	logical_term << l = #0->rml; >>
+	( o:OR^ e2:logical_term
+	  << #0->rml = Exp__LBINARY(l, Exp__OR, #e2->rml);
+	     l = #0->rml; >>
 	)*
 	;
 
-logical_term :
-	logical_factor
-	( a:AND^ logical_factor << /* FIXME */ >>
+logical_term : << void *l, *op; >>
+	logical_factor << l = #0->rml; >>
+	( a:AND^ e2:logical_factor
+	  << #0->rml = Exp__LBINARY(l, Exp__AND, #e2->rml);
+	     l = #0->rml; >>
 	)*
 	;
 
 logical_factor :
-	not:NOT^ relation /* FIXME */
+	not:NOT^ r:relation << #0->rml = Exp__LUNARY(Exp__NOT,#r->rml); >>
 	| relation 
 	;
 
