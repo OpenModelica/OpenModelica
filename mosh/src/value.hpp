@@ -6,10 +6,14 @@
 #include <iostream>
 
 #include "runtime/modelica_array.hpp"
+#include "runtime/numerical_array.hpp"
+#include "modelica_type.hpp"
 
 // Forward declaration
 class modelica_function;
 class function_argument;
+
+
 
 class value
 {
@@ -22,6 +26,11 @@ public:
   value(bool val);
   value(int val);
   value(std::string val);
+  value(const real_array& arr);
+  value(const integer_array& arr);
+  value(const string_array& arr);
+  value(const boolean_array& arr);
+
   value(modelica_function* function);
 
   virtual ~value();
@@ -32,38 +41,47 @@ public:
   void set_value(bool val);
   void set_value(std::string val);
   void set_value(int val);
+  
+  void set_value(const real_array& arr);
+  void set_value(const integer_array& arr);
+  void set_value(const string_array& arr);
+  void set_value(const boolean_array& arr);
+
   void set_value(modelica_function* fcn);
-  //  void set_value(modelica_real_array* arr);
+  void set_value(function_argument* func_arg);
 
   double get_real() const;
   std::string get_string() const;
   int get_integer() const;
   bool get_boolean() const;
-  modelica_function* get_function();
-  
-  enum type_en {
-    str,
-    str_array,
-    integer,
-    integer_array,
-    real,
-    real_array,
-    boolean,
-    boolean_array,
-    function,
-    undefined
-  };
 
-  type_en type() const;
-  void set_type(type_en type);
+  real_array get_real_array() const;
+  integer_array get_integer_array() const;
+  string_array get_string_array() const;
+  boolean_array get_boolean_array() const;
+
+  modelica_function* get_function();
+  function_argument* get_function_argument();
+
+  modelica_type type() const;
+  void set_type(const modelica_type& tp);
+  //  type_en type() const;
+  // void set_type(type_en type);
 
   bool is_numeric() const;
   bool is_real() const;
   bool is_integer() const;
   bool is_boolean() const;
   bool is_string() const;
-  bool is_function() const;
+ 
   bool is_array() const;
+  bool is_real_array() const;
+  bool is_integer_array() const;
+  bool is_string_array() const;
+  bool is_boolean_array() const;
+
+  bool is_function() const;
+  bool is_function_argument() const;
 
 public:
   const value& operator+= (const value& val);
@@ -101,18 +119,26 @@ public:
 
 
 protected:
+
+  //  friend bool check_type(value v1, value v2);
   std::string m_string;
   int m_integer;
   double m_real;
   bool m_boolean;
-  type_en m_type;
-  modelica_function* m_function;    
-  //  modelica_array* m_array;
+  modelica_function* m_function;
+  function_argument* m_function_argument;
+
+  real_array m_real_array;
+  integer_array m_integer_array;
+  string_array m_string_array;
+  boolean_array m_boolean_array;
 
   double to_double() const;
-  
 
-
+  modelica_type m_basic_type; 
 };
+
+
+bool check_type(value v1,value v2);
 
 #endif

@@ -2,6 +2,7 @@
 #define BUILTIN_FUNCTION_HPP_
 
 #include "modelica_function.hpp"
+#include "modelica_type.hpp"
 #include "runtime/modelica_runtime_error.hpp"
 #include "value.hpp"
 #include <string>
@@ -13,7 +14,8 @@ public:
   virtual ~builtin_function();
 
 protected:
-  typedef std::set<value::type_en> type_s;
+  //  typedef std::set<value::type_en> type_s;
+  typedef std::set<modelica_type> type_s;
   typedef std::vector<type_s>::iterator formal_parameter_iterator;
 
 protected:

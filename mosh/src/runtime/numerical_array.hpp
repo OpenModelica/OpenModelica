@@ -27,7 +27,12 @@ public:
   /// Returns a square matrix with the elements of v on the diagonal and all other elements set to zero.
   friend numerical_array<Tp> diagonal<Tp>(const numerical_array<Tp>& arr);
 
+  // arithmetic operators
+  const numerical_array<Tp>& operator+= (const numerical_array<Tp>& arr);
+  numerical_array<Tp> operator+(const numerical_array<Tp>& arr) const;
 
+  const numerical_array<Tp>& operator-= (const numerical_array<Tp>& arr);
+  numerical_array<Tp> operator-(const numerical_array<Tp>& arr) const;
 
   numerical_array() {};
   numerical_array(std::vector<int> dims) : modelica_array<Tp>(dims) {};
@@ -79,7 +84,47 @@ numerical_array<Tp> diagonal(const numerical_array<Tp>& arr)
   return result;
 }
 
+template <typename Tp>
+const numerical_array<Tp>& numerical_array<Tp>::operator+= (const numerical_array<Tp>& arr)
+{
+  assert(m_dim_size == arr.m_dim_size);
 
+  for (int i = 0; i < m_data.size(); ++i)
+    {
+      m_data[i] += arr.m_data[i];
+    }
+  return *this;
+}
+
+template<typename Tp>
+numerical_array<Tp> numerical_array<Tp>::operator+(const numerical_array<Tp>& arr) const
+{
+  numerical_array tmp(*this);
+  
+  tmp += arr;
+  return tmp;
+}
+
+template <typename Tp>
+const numerical_array<Tp>& numerical_array<Tp>::operator-= (const numerical_array<Tp>& arr)
+{
+  assert(m_dim_size == arr.m_dim_size);
+
+  for (int i = 0; i < m_data.size(); ++i)
+    {
+      m_data[i] -= arr.m_data[i];
+    }
+  return *this;
+}
+
+template<typename Tp>
+numerical_array<Tp> numerical_array<Tp>::operator-(const numerical_array<Tp>& arr) const
+{
+  numerical_array tmp(*this);
+  
+  tmp -= arr;
+  return tmp;
+}
 // typedef numerical_array<double> real_array;
 // typedef numerical_array<int> integer_array;
 
@@ -113,59 +158,59 @@ public:
   integer_array(std::vector<int> dims,std::vector<int> scalars) : numerical_array<int>(dims,scalars) {};
   integer_array(const numerical_array<int>& arr) : numerical_array<int>(arr) {};
 
-  integer_array(const modelica_array<int>& arr) : modelica_array<int>(arr) {};
+  //integer_array(const modelica_array<int>& arr) : modelica_array<int>(arr) {};
   //  integer_array(const modelica_array<int>& arr) { m_dim_size = arr.m_dim_size;};
 
  ~integer_array() {};
 
   /// Returns the n x n identity matrix.
-  friend integer_array identity_matrix(int n);
+  //  friend integer_array identity_matrix(int n);
 
-  /// Returns an array filled with zeros with dimensions given by dim.
-  friend integer_array zeros(std::vector<int> dims);
+//   /// Returns an array filled with zeros with dimensions given by dim.
+//   friend integer_array zeros(std::vector<int> dims);
 
-  /// Returns an array filled with ones with dimensions given by dim.
-  friend integer_array ones(std::vector<int> dims);
+//   /// Returns an array filled with ones with dimensions given by dim.
+//   friend integer_array ones(std::vector<int> dims);
   
 };
 
-integer_array identity_matrix(int n)
-{
-  assert (n >= 1);
+// integer_array identity_matrix(int n)
+// {
+//   assert (n >= 1);
   
-  integer_array result(std::vector<int>(2,n));
+//   integer_array result(std::vector<int>(2,n));
 
-  for (int i = 0; i < n; ++i)
-    {
-      for (int j = 0; j < n; ++j)
-	{
-	  result.m_data[i*n + j] = (i==j) ? 1 : 0;
-	}
-    }
-  return result;
-}
+//   for (int i = 0; i < n; ++i)
+//     {
+//       for (int j = 0; j < n; ++j)
+// 	{
+// 	  result.m_data[i*n + j] = (i==j) ? 1 : 0;
+// 	}
+//     }
+//   return result;
+// }
 
-integer_array zeros(std::vector<int> dims)
-{
-  integer_array result(dims);
+// integer_array zeros(std::vector<int> dims)
+// {
+//   integer_array result(dims);
 
-  for (int i = 0; i < result.nr_of_elements(); ++i)
-    {
-      result.m_data[i] = 0;
-    }
-  return result;
-}
+//   for (int i = 0; i < result.nr_of_elements(); ++i)
+//     {
+//       result.m_data[i] = 0;
+//     }
+//   return result;
+// }
 
-integer_array ones(std::vector<int> dims)
-{
-  integer_array result(dims);
+// integer_array ones(std::vector<int> dims)
+// {
+//   integer_array result(dims);
 
-  for (int i = 0; i < result.nr_of_elements(); ++i)
-    {
-      result.m_data[i] = 1;
-    }
-  return result;
-}
+//   for (int i = 0; i < result.nr_of_elements(); ++i)
+//     {
+//       result.m_data[i] = 1;
+//     }
+//   return result;
+// }
 
 class boolean_array : public modelica_array<bool>
 {

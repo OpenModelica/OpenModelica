@@ -28,11 +28,11 @@ value modelica_function::apply(value args)
   if (args.is_array())
     {
       
-      cout << "an array " << args.type() <<  endl;
+      //     cout << "an array " << args.type() <<  endl;
     }
   else
     {
-      cout << "not an array " << args.type() <<  endl;
+      //cout << "not an array " << args.type() <<  endl;
     }
 }
 

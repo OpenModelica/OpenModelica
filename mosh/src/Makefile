@@ -25,7 +25,7 @@ LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap
 PARSER_OBJS = ../../modelica_parser/src/modelica_lexer.o ../../modelica_parser/src/token_names.o ../../modelica_parser/src/parse_tree_dumper.o
 
 HELPER_OBJS = value.o symboltable.o builtin_function.o \
-		modelica_function.o compiled_function.o function_argument.o
+		modelica_function.o compiled_function.o function_argument.o modelica_type.o
 
 parsergen= modelica_expression_parser.cpp modelica_expression_parser.hpp \
 	   modelica_expression_parserTokenTypes.hpp modelica_expression_parserTokenTypes.txt
@@ -57,7 +57,7 @@ mosh : $(OBJS)
 $(parsergen): expandedexpression_parser.g
 	java antlr.Tool $(ANTLRFLAGS) expandedexpression_parser.g
 
-$(walkergen): walker.g modelica_expression_parserTokenTypes.txt
+$(walkergen): walker.g modelica_expression_parserTokenTypes.txt runtime/modelica_array.hpp runtime/numerical_array.hpp
 	java antlr.Tool $(ANTLRFLAGS) walker.g
 #$<
 

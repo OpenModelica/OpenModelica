@@ -47,10 +47,10 @@ bool builtin_function::match_formal_parameters(value args)
 
 abs_t::abs_t()
 {
-  type_s t;
-  t.insert(value::real);
-  t.insert(value::integer);
-  m_formal_parameters.push_back(t);
+ //  type_s t;
+//   t.insert(create_real());
+//   t.insert(create_integer());
+//   m_formal_parameters.push_back(t);
 }
 
 
@@ -155,10 +155,10 @@ value sign_t::do_apply(value args)
 
 ceil_t::ceil_t()
 {
-  type_s t;
-  t.insert(value::real);
-  //  t.insert(value::integer);
-  m_formal_parameters.push_back(t);
+//   type_s t;
+//   t.insert(create_real());
+//   //  t.insert(value::integer);
+//   m_formal_parameters.push_back(t);
 }
 
 ceil_t::~ceil_t()
@@ -178,10 +178,10 @@ value ceil_t::do_apply(value args)
 
 floor_t::floor_t()
 {
-  type_s t;
-  t.insert(value::real);
-  //  t.insert(value::integer);
-  m_formal_parameters.push_back(t);
+//   type_s t;
+//   t.insert(create_real());
+//   //  t.insert(value::integer);
+//   m_formal_parameters.push_back(t);
 }
 
 floor_t::~floor_t()

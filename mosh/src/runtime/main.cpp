@@ -5,12 +5,41 @@ int main(int argc,char* argv[])
 {
   std::cout << "test" << endl;
 
-  integer_array arr1 = fill_array(10,std::vector<int>(1,3));
- //  real_array arr;
-//   real_array arr2(std::vector<int>(2,2));
-//   real_array arr3(std::vector<int>(2,2),std::vector<double>(4,1.1));
-//   real_array arr4(std::vector<int>(1,3),std::vector<double>(3,2));
+  //  integer_array arr1 = fill_array(10,std::vector<int>(1,3));
+  real_array arr;
+  real_array arr2(std::vector<int>(2,2));
 
+  arr2.fill_array(17.1);
+  cout << "Data after fill_array" << endl;
+  arr2.print_data();
+
+  real_array arr3(std::vector<int>(2,2),std::vector<double>(4,1.1));
+  real_array arr4(std::vector<int>(1,3),std::vector<double>(3,2));
+  
+  cout << "Printing arr4 " << arr4 << endl;
+  std::vector<int> dims;
+  dims.push_back(1);
+  dims.push_back(1);
+  dims.push_back(1);
+  
+  real_array arr5(dims);
+  arr5.print_dims();
+  arr5.set_element(std::vector<int>(3,0),3.0);
+  
+  cout << arr5.scalar() << endl;
+
+  cout << "Testing sum" << endl;
+  real_array a(std::vector<int>(2,2),std::vector<double>(4,2.0));
+  real_array b(std::vector<int>(2,2),std::vector<double>(4,1.0));
+  
+  cout << "a+b" << endl;
+  real_array c = a + b;
+  c.print_data();
+
+  cout << "a-b" << endl;
+  c = a - b;
+  c.print_data();
+  //  cout << c << endl;
 //   // arr.print_dims();
 //   //arr2.print_dims();
 //   //arr3.print_dims();

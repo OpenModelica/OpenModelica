@@ -6,8 +6,11 @@ header "post_include_hpp" {
 #include <cmath>
 #include "symboltable.hpp"
 #include "runtime/modelica_runtime_error.hpp"
+#include "runtime/modelica_array.hpp"
+#include "runtime/numerical_array.hpp"
 #include "builtin_function.hpp"
 #include "function_argument.hpp"
+#include "modelica_type.hpp"
 
 #include <string>
 #include <vector>
@@ -516,7 +519,7 @@ algorithm returns [value val]
                             }
                             else
                             {
-                                if (val.type() == lhs->type())
+                                if (check_type(val,lhs))
                                 {
                                     cout << "Overwriting value" << endl;
                                     if (val.is_real()) lhs->set_value(val.get_real());
@@ -962,7 +965,7 @@ primary	returns [value val]
 		| #(LBRACK exp_list = expression_list 
 			//{val = create_array(expr_val);}
             (exp_list = expression_list )*)
-		| #(LBRACE exp_list = expression_list_array)
+		| #(LBRACE val = expression_list_array )
 		)
 		{
 			// Actions
@@ -1159,9 +1162,10 @@ expression_list returns [std::vector<value> exp_list]
 		}
 		;
 
-expression_list_array returns [std::vector<value> exp_list]
+expression_list_array returns [value val]
 		{
 			value expr_val;
+            std::vector<value> exp_list;
 		}
 		:
 		#(EXPRESSION_LIST expr_val = expression 
@@ -1177,7 +1181,33 @@ expression_list_array returns [std::vector<value> exp_list]
 		{
 			// Check type. Create array
             
-		}
+            std::vector<double> tmp_real;
+            std::vector<int> tmp_integer;
+            
+            if (exp_list.size() > 0)
+            {
+                if (exp_list[0].is_real())
+                {
+                    for (int i=0; i < exp_list.size();++i)
+                    {
+                          tmp_real.push_back(exp_list[i].get_real());
+                    }
+                    real_array ra(std::vector<int>(1,tmp_real.size()),tmp_real);
+              //      cout << "Size of inserted vector " << tmp_real.size() << endl;
+                    val.set_value(ra);
+                }
+                else if (exp_list[0].is_integer())
+                {
+                    for (int i=0; i < exp_list.size();++i)
+                    {
+                          tmp_integer.push_back(exp_list[i].get_integer());
+                    }
+                    integer_array ia(std::vector<int>(1,tmp_integer.size()),tmp_integer);
+                    val.set_value(ia);
+            //        cout << "Size of inserted vector " << tmp_integer.size() << endl;
+                }
+            }
+         }
 		;
 
 expression_list_fn_args[function_argument* args] //returns [value val]

@@ -2,6 +2,7 @@
 #define MODELICA_ARRAY_HPP_
 
 #include <algorithm>
+#include <iostream>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -32,7 +33,8 @@ public:
 //   /// Converts a to a matrix.
 //   modelica_real_array matrix();
 
-  friend modelica_array<Tp> fill_array<Tp>(Tp s,std::vector<int> dims);
+  //void fill_array(Tp s,std::vector<int> dims);
+  void fill_array(Tp s);
 
   friend modelica_array<Tp> create_array<Tp>(std::vector<Tp> data);
   friend modelica_array<Tp> create_array<Tp>(std::vector<modelica_array<Tp> > arrays);
@@ -41,6 +43,9 @@ public:
   void print_data() const;
 //  void print();
   modelica_array<Tp> slice(std::vector<int> idx);
+  void set_element(std::vector<int> idx,Tp elem);
+
+  friend ostream& operator<< <Tp>(ostream&, const modelica_array<Tp> arr);
 
 protected:
   modelica_array() {};
@@ -49,6 +54,7 @@ protected:
 
   //   /// Returns the number of elements in the matrix.
   int nr_of_elements() const;
+  int compute_data_index(const std::vector<int>& idx) const;
 
   
 
@@ -71,8 +77,8 @@ modelica_array<Tp>::modelica_array(std::vector<int> dims)
 template <class Tp>
 modelica_array<Tp>::modelica_array(std::vector<int> dims,std::vector<Tp> scalars)
 {
-  assert(std::accumulate(dims.begin(),dims.end(),1,std::multiplies<size_t>()) 
-  			 == scalars.size());
+  assert(size_t(std::accumulate(dims.begin(),dims.end(),1,std::multiplies<size_t>()) 
+  			) == scalars.size());
   m_dim_size = dims;
   m_data = scalars;
 }
@@ -86,7 +92,7 @@ int modelica_array<Tp>::ndims() const
 template <class Tp>
 std::vector<int> modelica_array<Tp>::size() const
 {
-  returnm_dim_size;
+  return m_dim_size;
 }
 
 template <class Tp>
@@ -101,9 +107,12 @@ Tp modelica_array<Tp>::scalar() const
 {
   for (int i = 0; i < m_dim_size.size(); ++i)
     {
+      cout << m_dim_size[i] << endl;
       assert(m_dim_size[i] == 1);
     }
+    assert(m_data.size() > 0);
 
+  return m_data[0];
 }
 
 template <typename Tp>
@@ -117,25 +126,54 @@ template <typename Tp>
 modelica_array<Tp> create_array(std::vector<modelica_array<Tp> > arrays)
 {
   modelica_array<Tp> result;
+
   std::vector<int> dims(1,1);
-  dims = arrays[1].m_dim_size;
+  //dims = arrays[1].m_dim_size;
   dims.insert(dims.end(),result.m_dim_size.begin(),m_dim_size.end());
 
+  result(dims);
+  
+  //  result.m_data
+  
   return result;
   
 }
 
 template <class Tp>
-modelica_array<Tp> fill_array(Tp s,std::vector<int> dims)
+void modelica_array<Tp>::fill_array(Tp s)
 {
-  modelica_array<Tp> result(dims);
-
-  for (int i = 0; i < result.nr_of_elements(); ++i)
+  for (int i = 0; i < nr_of_elements(); ++i)
     {
-      result.m_data[i] = s;
+      m_data[i] = s;
     }
-  return result;
 }
+
+template <typename Tp>
+void modelica_array<Tp>::set_element(std::vector<int> idx,Tp elem)
+{
+  int data_index = compute_data_index(idx);
+  assert(data_index < m_data.size());
+
+  m_data[data_index] = elem;
+}
+
+template <typename Tp>
+ostream& operator<< (ostream& o, const modelica_array<Tp> arr)
+{
+  o << "{";
+  
+  assert (arr.ndims() == 1);
+
+  if (arr.m_data.size() > 0)
+    {
+      o << arr.m_data[0];
+      for (size_t i = 1; i < arr.m_data.size(); ++i)
+ 	{
+ 	  o << "," << arr.m_data[i] << flush;
+	}
+    }
+  o << "}"; 
+ }
 
 template <class Tp>
 void modelica_array<Tp>::print_dims() 
@@ -161,6 +199,20 @@ int modelica_array<Tp>::nr_of_elements() const
 {
   return std::accumulate(m_dim_size.begin(),m_dim_size.end(),1,std::multiplies<int>());
 }
+
+template <typename Tp>
+int modelica_array<Tp>::compute_data_index(const std::vector<int>& idx) const
+{
+  assert(idx.size() > 0);
+  int stride = idx[0];
+  for (int i = 1; i < idx.size(); ++i)
+    {
+      assert((idx[i] >= 0) && (idx[i] < m_dim_size[i]));
+      stride = idx[i] + m_dim_size[i]*stride;
+    }
+  return stride;
+}
+
 
 template <class Tp>
 void modelica_array<Tp>::print_data() const

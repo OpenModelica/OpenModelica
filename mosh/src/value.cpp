@@ -3,43 +3,67 @@
 #include "modelica_function.hpp"
 #include "function_argument.hpp"
 #include "runtime/modelica_runtime_error.hpp"
+#include "runtime/modelica_array.hpp"
+#include "runtime/numerical_array.hpp"
 
 #include <cmath>
 
-value::value() : m_function(0)//,m_function_args(0)
+value::value() : m_function(0)//,m_function_argument(0)
 {
-
-  m_type = undefined;
 }
 
 value::value(double val)
 {
   m_real = val;
-  m_type = real;
+  m_basic_type = create_real();
 }
 
 value::value(bool val)
 {
   m_boolean = val;
-  m_type = boolean;
+  m_basic_type = create_boolean();
 }
 
 value::value(int val)
 {
   m_integer = val;
-  m_type = integer;
+  m_basic_type = create_integer();
 }
 
 value::value(std::string val)
 {
   m_string = val;
-  m_type = str;
+  m_basic_type = create_string();
+}
+
+value::value(const real_array& arr)
+{
+  m_real_array = arr;
+  m_basic_type = create_real_array(arr.size());
+}
+
+value::value(const integer_array& arr)
+{
+  m_integer_array = arr;
+  m_basic_type = create_integer_array(arr.size());
+}
+
+value::value(const string_array& arr)
+{
+  m_string_array = arr;
+  m_basic_type = create_string_array(arr.size());
+}
+
+value::value(const boolean_array& arr)
+{
+  m_boolean_array = arr;
+  m_basic_type = create_boolean_array(arr.size());
 }
 
 value::value(modelica_function* fcn)
 {
   m_function = fcn;
-  m_type = function;
+  m_basic_type = create_function_type();
 }
 
 // value::value(function_argument* func_arg)
@@ -54,83 +78,129 @@ value::~value()
 
 value::value(const value& val)
 {
-  m_type = val.m_type;
-  switch (m_type)
-    {
-    case str:
-      m_string = val.m_string;
-      break;
-    case integer:
-      m_integer = val.m_integer;
-      break;
-    case real:
-      m_real = val.m_real;
-      break;
-    case boolean:
-      m_boolean = val.m_boolean;
-      break;
-    case real_array:
-      // Copy real array
-      // m_array = val.m_array;
-      break;
-    case function:
-      m_function = val.m_function;
-      break;
-//     case fcn_arg:
-//       //      m_function_arguments = val.m_function_arguments;
-//       m_function_args = val.m_function_args;
-//       //            m_is_function_argument = val.m_is_function_argument;
-//       break;
-    case undefined:
-      // do something here
-      break;
-      
-    }
- 
+  m_basic_type = val.m_basic_type;
   
+  if (m_basic_type.is_real())
+    {
+      m_real = val.m_real;
+      m_basic_type = create_real();
+      return;
+    }
+  else if (m_basic_type.is_integer())
+    {
+      m_integer = val.m_integer;
+      m_basic_type = create_integer();
+      return;
+    }
+  else if (m_basic_type.is_string())
+    {
+      m_string = val.m_string;
+      m_basic_type = create_string();
+      return;
+    }
+  else if (m_basic_type.is_boolean())
+    {
+      m_boolean = val.m_boolean;
+      m_basic_type = create_boolean();
+      return;
+    }
+  else if (m_basic_type.is_real_array())
+    {
+      m_real_array = val.m_real_array;
+      m_basic_type = create_real_array(val.m_real_array.size());
+      return;
+    }
+  else if (m_basic_type.is_integer_array())
+    {
+      m_integer_array = val.m_integer_array;
+      m_basic_type = create_integer_array(val.m_integer_array.size());
+      return;
+    }
+  else if (m_basic_type.is_string_array())
+    {
+      m_string_array = val.m_string_array;
+      m_basic_type = create_string_array(val.m_string_array.size());
+      return;
+    }
+  else if (m_basic_type.is_boolean_array())
+    {
+      m_boolean_array = val.m_boolean_array;
+      m_basic_type = create_boolean_array(val.m_boolean_array.size());
+      return;
+    }
+  else if (m_basic_type.is_function())
+    {
+      m_function = val.m_function;
+      m_basic_type = create_function_type();
+      return;
+    }
+  else if (m_basic_type.is_function_argument())
+    {
+      m_function_argument = val.m_function_argument;
+      m_basic_type = create_function_argument_type();
+      return;
+    }
 }
 
 void value::set_value(std::string val)
 {
   m_string = val;
-  m_type = str;
+   m_basic_type = create_string();
 }
 
 void value::set_value(int val)
 {
   m_integer = val;
-  m_type = integer;
+   m_basic_type = create_integer();
 }
 
 void value::set_value(double val)
 {
   m_real = val;
-  m_type = real;
+  m_basic_type = create_real();
 }
 
 void value::set_value(bool val)
 {
   m_boolean = val;
-  m_type = boolean;
+  m_basic_type = create_boolean();
 }
 
 void value::set_value(modelica_function* fcn)
 {
   m_function = fcn;
-  m_type = function;
+  m_basic_type = create_function_type();
 }
 
-// void value::set_value(function_argument* func_arg)
-// {
-//   m_function_args = func_arg;
-//   m_type = fcn_arg;
-// }
+void value::set_value(const real_array& arr)
+{
+  m_real_array = arr;
+  m_basic_type = create_real_array(arr.size());
+}
 
-// void value::set_value(modelica_real_array* arr)
-// {
-//   m_array = arr;
-//   m_type = real_array;
-// }
+void value::set_value(const string_array& arr)
+{
+  m_string_array = arr;
+  m_basic_type = create_string_array(arr.size());
+}
+
+void value::set_value(const boolean_array& arr)
+{
+  m_boolean_array = arr;
+  m_basic_type = create_boolean_array(arr.size());
+}
+
+void value::set_value(const integer_array& arr)
+{
+  m_integer_array = arr;
+  m_basic_type = create_integer_array(arr.size());
+}
+
+void value::set_value(function_argument* func_arg)
+{
+  m_function_argument = func_arg;
+  m_basic_type = create_function_argument_type();
+}
 
 std::string value::get_string() const
 {
@@ -160,63 +230,114 @@ modelica_function* value::get_function()
   return m_function;
 }
 
-// function_argument* value::get_function_arguments()
+real_array value::get_real_array() const
+{
+  return m_real_array;
+}
+
+integer_array value::get_integer_array() const
+{
+  return m_integer_array;
+}
+
+string_array value::get_string_array() const
+{
+  return m_string_array;
+}
+
+boolean_array value::get_boolean_array() const
+{
+  return m_boolean_array;
+}
+
+function_argument* value::get_function_argument()
+{
+  return m_function_argument;
+}
+
+modelica_type value::type() const
+{
+  return m_basic_type;
+}
+
+void value::set_type(const modelica_type& t)
+{
+  m_basic_type = t;
+}
+
+// value::type_en value::type() const
 // {
-//   return m_function_args;
+//   return m_type;
 // }
 
-value::type_en value::type() const
-{
-  return m_type;
-}
-
-void value::set_type(value::type_en type)
-{
-  m_type = type;
-}
+// void value::set_type(value::type_en type)
+// {
+//   m_type = type;
+// }
 
 bool value::is_numeric() const
 {
-  return (m_type == integer) || (m_type == real);
+  return m_basic_type.is_numeric();
 }
 
 bool value::is_real() const
 {
-  return m_type == real;
+  return m_basic_type.is_real();
 }
 
 bool value::is_integer() const
 {
-  return m_type == integer;
+  return m_basic_type.is_integer();
 }
 
 bool value::is_boolean() const
 {
-  return m_type == boolean;
+  return m_basic_type.is_boolean();
 }
 
 bool value::is_string() const
 {
-  return m_type == str;
+  return m_basic_type.is_string();
 }
 
 bool value::is_function() const
 {
-  return m_type == function;
+  return m_basic_type.is_function();
 }
 
 bool value::is_array() const
 {
+  return m_basic_type.is_array();
   //return m_type == array;
-  return (m_type == str_array) || (m_type == integer_array) 
-    || (m_type == real_array) || (m_type == boolean_array);
+  // return (m_type == str_array) || (m_type == integer_array_t) 
+//     || (m_type == real_array_t) || (m_type == boolean_array);
 }
 
-// bool value::is_function_argument() const
-// {
-//   //  return m_is_function_argument;
-//   return m_type == fcn_arg;
-// }
+bool value::is_real_array() const
+{
+  return m_basic_type.is_real_array();
+}
+
+bool value::is_integer_array() const
+{
+  return m_basic_type.is_integer_array();
+}
+
+bool value::is_string_array() const
+{
+  return m_basic_type.is_string_array();
+}
+
+bool value::is_boolean_array() const
+{
+  return m_basic_type.is_boolean_array();
+}
+
+bool value::is_function_argument() const
+{
+  //  return m_is_function_argument;
+  return m_basic_type.is_function_argument();
+}
 
 // void value::append_to_array(const value& val)
 // {
@@ -276,24 +397,24 @@ ostream& operator<< (ostream& o, const value& v)
       //      o << v.m_function->name();
     }
 
-  if (v.is_array())
+  if (v.is_real_array())
     {
-      o << "{";
+      o << v.get_real_array();
+    }
 
-//       for (int i = 0; i < ndims; ++i)
-// 	{
-	  
-// 	}
-      
-    //   vector<const value>::iterator pos = v.m_array.begin();
-      
-//       o << "{" << *pos;
-//       pos++;
-//       for (; pos < v.m_array.end(); ++pos)
-// 	{
-// 	  o << "," << *pos;
-// 	}
-//       o << "}";
+  if (v.is_integer_array())
+    {
+      o << v.get_integer_array();
+    }
+  
+  if (v.is_string_array())
+    {
+      o << v.get_string_array();
+    }
+
+  if (v.is_boolean_array())
+    {
+      o << v.get_boolean_array();
     }
 
   return o;
@@ -301,31 +422,43 @@ ostream& operator<< (ostream& o, const value& v)
 
 const value& value::operator+= (const value& val)
 {
-  //  cout << "type: m_type " << m_type << endl;
-  // cout << "val type: " << val.type() << endl;
   if (!is_numeric() || !val.is_numeric())
     {
       throw modelica_runtime_error("Adding non-numerical value\n");
     }
-
-
-  if (val.is_real() || is_real())
-  {
-    m_real = to_double()+val.to_double();
-    m_type = real;
-  }
-  else 
+  if (check_type(*this,val))
     {
-      m_integer += val.m_integer;
-      m_type = integer;
+      if (is_real_array())
+	{
+	  m_real_array += val.m_real_array;
+	}
+      else if (is_integer_array())
+	{
+	  m_integer_array += val.m_integer_array;
+	}
+      else if (is_real())
+	{
+	  m_real += val.m_real;
+	}
+      else if (is_integer())
+	{
+	  m_integer += val.m_integer;
+	}
+      else
+	{
+	  throw modelica_runtime_error("Internal error in value +=");
+	}
     }
-
+  else
+    {
+      throw modelica_runtime_error("Types does not match\n");
+    }
+    
   return *this;
 }
 
 value value::operator+(const value& v) const
 {
-  
   value tmp(*this);
 
   tmp += v;
@@ -334,22 +467,61 @@ value value::operator+(const value& v) const
 
 const value& value::operator-= (const value& val)
 {
-  if (!is_numeric() || !val.is_numeric())
+
+    if (!is_numeric() || !val.is_numeric())
     {
-      throw modelica_runtime_error("Subtracting non-numerical value\n");
+      throw modelica_runtime_error("Adding non-numerical value\n");
     }
 
-  if (val.is_real() || is_real())
-  {
-    m_real = to_double()-val.to_double();
-    m_type = real;
-  }
-  else 
+  if (check_type(*this,val))
     {
-      m_integer -= val.m_integer;
-      m_type = integer;
+      if (is_real_array())
+	{
+	  m_real_array -= val.m_real_array;
+	}
+      else if (is_integer_array())
+	{
+	  m_integer_array -= val.m_integer_array;
+	}
+      else if (is_real())
+	{
+	  m_real -= val.m_real;
+	}
+      else if (is_integer())
+	{
+	  m_integer -= val.m_integer;
+	}
+      else
+	{
+	  throw modelica_runtime_error("Internal error in value +=");
+	}
+    }
+  else
+    {
+      throw modelica_runtime_error("Adding non-numerical value\n");
     }
 
+//   if (val.is_array() || is_array())
+//     {
+//       m_real_array -= val.m_real_array;
+//       m_type = real_array_t;
+//     }
+//   else if (!is_numeric() || !val.is_numeric())
+//     {
+//       throw modelica_runtime_error("Subtracting non-numerical value\n");
+//     }
+  
+//   if (val.is_real() || is_real())
+//     {
+//       m_real = to_double()-val.to_double();
+//       m_type = real;
+//     }
+//   else 
+//     {
+//       m_integer -= val.m_integer;
+//       m_type = integer;
+//     }
+  
   return *this;
 }
 
@@ -362,21 +534,21 @@ value value::operator-(const value& v) const
 
 const value& value::operator*= (const value& val)
 {
-    if (!is_numeric() || !val.is_numeric())
-    {
-      throw modelica_runtime_error("Multiplying non-numerical value\n");
-    }
+ //    if (!is_numeric() || !val.is_numeric())
+//     {
+//       throw modelica_runtime_error("Multiplying non-numerical value\n");
+//     }
 
-  if (val.is_real() || is_real())
-  {
-    m_real = to_double()*val.to_double();
-    m_type = real;
-  }
-  else 
-    {
-      m_integer *= val.m_integer;
-      m_type = integer;
-    }
+//   if (val.is_real() || is_real())
+//   {
+//     m_real = to_double()*val.to_double();
+//     m_type = real;
+//   }
+//   else 
+//     {
+//       m_integer *= val.m_integer;
+//       m_type = integer;
+//     }
 
   return *this;
 }
@@ -390,21 +562,21 @@ value value::operator*(const value& v) const
 
 const value& value::operator/= (const value& val)
 {
-    if (!is_numeric() || !val.is_numeric())
-    {
-      throw modelica_runtime_error("Multiplying non-numerical value\n");
-    }
+//     if (!is_numeric() || !val.is_numeric())
+//     {
+//       throw modelica_runtime_error("Multiplying non-numerical value\n");
+//     }
 
-  if (val.is_real() || is_real())
-  {
-    m_real = to_double()/val.to_double();
-    m_type = real;
-  }
-  else 
-    {
-      m_real = m_integer / static_cast<double>(val.m_integer);
-      m_type = real;
-    }
+//   if (val.is_real() || is_real())
+//   {
+//     m_real = to_double()/val.to_double();
+//     m_type = real;
+//   }
+//   else 
+//     {
+//       m_real = m_integer / static_cast<double>(val.m_integer);
+//       m_type = real;
+//     }
 
   return *this;
 }
@@ -572,7 +744,7 @@ const value lessgt(const value& x, const value& y)
 const value create_array(const value& x)
 {
   value tmp;
-  tmp.set_type(value::real_array);
+  // tmp.set_type(value::real_array_t);
   
   //  tmp.append_to_array(x);
   
@@ -587,7 +759,7 @@ const value create_array(const value& x, const value& y, const value& z)
 	}
   
   value tmp;
-  tmp.set_type(value::real_array);
+  //tmp.set_type(value::real_array_t);
   
 
   if (x.is_integer() && y.is_integer() && z.is_integer())
@@ -620,3 +792,15 @@ const value create_array(const value& x, const value& y, const value& z)
 // {
 //   return create_array(x, value(1), y);
 // }
+
+bool check_type(value v1,value v2)
+{
+  if (v1.type().type_equal(v2.type()))
+    {
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
