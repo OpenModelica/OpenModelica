@@ -1779,24 +1779,24 @@ relation inst_var2 : (Env.Env,
           => (dae,csets',ty)
 
   rule	(* Scalar Variables *)
-	    list_reverse idxs => idxs' &
-	    Prefix.prefix_add(n,idxs',pre) => pre' &
-	    (* This is where redeclare should be handled *)
-	    
+	list_reverse idxs => idxs' &
+	Prefix.prefix_add(n,idxs',pre) => pre' &
+	(* This is where redeclare should be handled *)
+	
         Prefix.print_prefix_str(pre') => prefix_str &
         
-	    Debug.fprintl ("insttr", ["instantiating var class: ", n," prefix ",prefix_str, "\n"]) &
-	    (*Debug.fcall ("envprint", Env.print_env, env) & *)
-	    
-	    inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
-	      => (dae1,_,csets',ty,st) &
-	      fix_direction(dae1,dir) => dae1' &
-
- 	    (*& Debug.fcall ("insttr",DAE.dump2,DAE.DAE(dae'))*)
-
+	Debug.fprintl ("insttr", ["instantiating var class: ", n," prefix ",prefix_str, "\n"]) &
+	(*Debug.fcall ("envprint", Env.print_env, env) & *)
+	
+	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
+	  => (dae1,_,csets',ty,st) &
+	fix_direction(dae1,dir) => dae1' &
+	
+ 	(*& Debug.fcall ("insttr",DAE.dump2,DAE.DAE(dae'))*)
+	
         Exp.int_subscripts idxs' => subs &
-	    Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
-	    inst_mod_equation(cr,ty,mod) => dae2 &
+	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
+	inst_mod_equation(cr,ty,mod) => dae2 &
         
         Util.list_map(idxs',int_string) => index_string &
 
@@ -1804,18 +1804,18 @@ relation inst_var2 : (Env.Env,
         Debug.fprint ("insttr", "\n index_string ") &   Debug.fprintl ("insttr", index_string) &
         Debug.fprint ("insttr", "\n component ref ") &   Debug.fcall ("insttr", Exp.print_component_ref,cr) &
         Debug.fprint ("insttr", "\n ******************\n ") &
-	    Debug.fprint ("insttr", "\n ") &
-	    
+	Debug.fprint ("insttr", "\n ") &
+	
         inst_start_binding(mod,ty,idxs') => start & 
-	    dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
-		            inst_dims, start) => dae3 &
-	    list_append(dae1',dae2) => daex &
-	    list_append(daex,dae3) => dae 
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
+		    inst_dims, start) => dae3 &
+	list_append(dae1',dae2) => daex &
+	list_append(daex,dae3) => dae 
         (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
-	     & Debug.fprint("instvartr", "\nEnd of inst_var variables\n")*)
-	    --------------------------
-	    inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
-		          [],idxs,inst_dims,impl (*as false*))
+	 & Debug.fprint("instvartr", "\nEnd of inst_var variables\n")*)
+	--------------------------
+	inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
+		  [],idxs,inst_dims,impl (*as false*))
           => (dae,csets',ty)
 
 
@@ -2239,6 +2239,12 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 	-----
 	fix_direction (DAE.VAR(cr,vk,_,t,e,id,start,flow,class)::r,dir) 
 	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow,class)::r'
+
+  rule	fix_direction(lst,dir) => lst' &
+	fix_direction(r,dir) => r'
+	-------------------------------
+	fix_direction(DAE.COMP(id,DAE.DAE(lst))::r,dir) 
+	  => DAE.COMP(id,DAE.DAE(lst'))::r'
 
   rule	fix_direction(r,dir) => r'
 	---------------------------
