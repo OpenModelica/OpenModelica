@@ -125,6 +125,7 @@ module SCode :
   (** These are attributes that apply to a declared component. *)
 
   relation elaborate : Absyn.Program => Program
+  relation elab_class: Absyn.Class => Class	
   relation build_mod : (Absyn.Modification option, bool) => Mod
   relation print_mod : Mod => ()
   relation print_element : Element => ()
