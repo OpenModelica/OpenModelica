@@ -926,6 +926,7 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 	  => (Exp.Exp, Types.Properties) =
 
   rule	build_exp_list (s, v) => arraylist &
+	int_string v => dimension & Debug.fprint("failtrace", " 1 elab_builtin_fill_2 dimension: ") & Debug.fprint("failtrace", dimension) & Debug.fprint("failtrace", "\n") &
 	Types.elab_type sty => at &
 	Types.is_array sty => a
 	----------------------------------
@@ -936,6 +937,7 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
   rule	elab_builtin_fill_2 (env, s, sty, rest) 
 	  => (exp, Types.PROP(ty,con)) &
         build_exp_list (exp, v) => arraylist &
+	int_string v => dimension & Debug.fprint("failtrace", " 2 elab_builtin_fill_2 dimension: ") & Debug.fprint("failtrace", dimension) & Debug.fprint("failtrace", "\n") &
 	Types.elab_type ty => at &
 	Types.is_array ty => a
 	----------------------------------------------------------
@@ -1457,7 +1459,8 @@ relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Pr
 
   rule 	Debug.fprint("failtrace", "elab_builtin_diagonal\n") &
 		elab_exp (env,s1,false,NONE) 
-	      => (s1', Types.PROP((Types.T_ARRAY(dim as Types.DIM(SOME(dimension)),arrType),NONE),c),_)
+	      => (s1', Types.PROP((Types.T_ARRAY(dim as Types.DIM(SOME(dimension)),
+                                             arrType),NONE),c),_)
           (**print "# integer function not implemented yet REAL\n" **)
         --------------------------------------
         elab_builtin_diagonal(env,[s1]) 
@@ -1471,6 +1474,7 @@ relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Pr
 	    elab_builtin_diagonal (_,_) => fail
 
 end
+
 
      
 
@@ -3564,23 +3568,29 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	----------------------
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],_) => fail
 
-  rule	Types.subtype(typ1,typ2) => true
+  rule	Types.subtype(typ1,typ2) => true &
+	Print.print_buf "# *: detta suger kuk " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
+	Print.print_buf "\n"
 	-----------------------------
 	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),
 			     [typ1,typ2],
 			     rtype) => rtype
 
-  rule	Types.subtype(typ1,typ2) => true
+  rule	Types.subtype(typ1,typ2) => true &
+	Print.print_buf "# *: detta suger pung " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
+	Print.print_buf "\n"
 	-----------------------------
 	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),
 			     [typ1,typ2],
 			     rtype) => rtype
 
-  rule	Print.print_buf "# *: Incompatible argument types " &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
+  rule	Print.print_buf "# *-: Incompatible argument types " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
 	Print.print_buf "\n"
 	----------------------
-	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),[typ1,typ2],_) => fail
+	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),[typ1,typ2],rtype) => fail
 
   rule	n_dims typ1 => 1 &
 	n_dims typ2 => 2 &
@@ -3595,11 +3605,11 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 
   rule	n_dims typ1 => 2 &
 	n_dims typ2 => 1 &
-	dim_size(typ1,1) => n &
+	dim_size(typ1,1) => n & 
 	dim_size(typ1,2) => m1 &
 	dim_size(typ2,1) => m2 &
 	m1 = m2 &
-	element_type typ2 => etype &
+	element_type typ2 => etype & 
 	let rtype = ((Types.T_ARRAY(Types.DIM(SOME(n)),etype),NONE))
 	----------------------------------------------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
@@ -3617,15 +3627,22 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
 
-  rule	Print.print_buf "# *: Incompatible argument types " &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
+  rule	Print.print_buf "# *-----: Incompatible argument types " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
 	Print.print_buf "\n"
 	-----------------
-	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => fail
+	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],rtype) => fail
 
 	
-  axiom	compute_return_type (Exp.MUL_SCALAR_ARRAY(_),[typ1,typ2],rtype) => (*typ2*) rtype
-  axiom	compute_return_type (Exp.MUL_ARRAY_SCALAR(_),[typ1,typ2],rtype) => (*typ1*) rtype
+  rule Print.print_buf "PIGS PIGS " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
+	Print.print_buf "\n"
+  ----------------------------
+  	compute_return_type (Exp.MUL_SCALAR_ARRAY(_),[typ1,typ2],rtype) => typ2 (*rtype*)
+ 
+ 
+ 
+  axiom	compute_return_type (Exp.MUL_ARRAY_SCALAR(_),[typ1,typ2],rtype) => typ1(* rtype*)
 
 
   axiom	compute_return_type (Exp.ADD(_),_,typ) => typ
@@ -4144,7 +4161,7 @@ relation n_types : (int, Types.Type) => Types.Type list =
 
   axiom	n_types (0,_) => []
 
-  rule	int_sub(n,1) => n' &
+  rule	int_sub(n,1) => n' & 
 	n_types(n',t) => l
 	-----------------------
 	n_types (n, t) => t::l
@@ -4159,7 +4176,7 @@ relation operator_return : (Exp.Operator,
 
   axiom operator_return (_,[],[],[]) => []
 
-  rule	operator_return (op, lr, rr, rer) => rest &
+  rule	operator_return (op, lr, rr, rer) => rest & 
 	let t = (op,[l,r],re)
 	---------------------------------------
 	operator_return (op, l::lr, r::rr, re::rer) => t::rest
