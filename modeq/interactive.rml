@@ -1470,8 +1470,8 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	Absyn.strip_last(modelpath) => modelwithin &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
-	annotation_list_to_absyn_comment(nargs) => annotation &
-	modification_to_absyn(nargs) => modification &
+	annotation_list_to_absyn_comment(nargs,NONE) => annotation &
+	modification_to_absyn(nargs,NONE) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
@@ -1483,8 +1483,8 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
-	annotation_list_to_absyn_comment(nargs) => annotation &
-	modification_to_absyn(nargs) => modification &
+	annotation_list_to_absyn_comment(nargs,NONE) => annotation &
+	modification_to_absyn(nargs,NONE) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
@@ -1508,15 +1508,16 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
   rule	(* Updating component to model that resides inside package*)
 	Absyn.cref_to_path(model) => modelpath &
 	Absyn.strip_last(modelpath) => modelwithin &
-	annotation_list_to_absyn_comment(nargs) => annotation &
-	modification_to_absyn(nargs) => modification &
-	Absyn.cref_to_path(tp) => tppath &
 	delete_component(name,model,p) => (p',_) &
 	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
 	get_pathed_class_in_program(modelpath,p') => cdef &
 	get_public_list(parts) => publst &
 	get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
 	  => Absyn.COMPONENTS(attr,tp,items) &
+	get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
+	  => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),ann) &
+	annotation_list_to_absyn_comment(nargs,ann) => annotation &
+	modification_to_absyn(nargs,mod) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(attr,tp,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE)))
@@ -1530,14 +1531,16 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
-	annotation_list_to_absyn_comment(nargs) => annotation &
-	modification_to_absyn(nargs) => modification &
 	delete_component(name,model,p) => (p',_) &
 	get_pathed_class_in_program(modelpath,p') => cdef &
 	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
 	get_public_list(parts) => publst &
 	get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
 	  =>Absyn.COMPONENTS(attr,tp,items) &
+	get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
+	  => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),ann) &
+	annotation_list_to_absyn_comment(nargs,ann) => annotation &
+	modification_to_absyn(nargs,mod) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(attr,tppath,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) 
@@ -1925,7 +1928,6 @@ relation get_nth_component_modification: (Absyn.ComponentRef,Absyn.Program, int)
 
 	axiom get_nth_component_modification(_,_,_) => "-1"
 end
-
 
 (** relation: get_connection_count
  ** This relation takes a `ComponentRef' and a `Program' and returns a string containing
@@ -3714,43 +3716,65 @@ end
  **					 // new constructor operator ASTModification
  **)
 
-relation modification_to_absyn: (Absyn.NamedArg list) => Absyn.Modification option =
-  axiom	modification_to_absyn([]) => NONE
+relation modification_to_absyn: (Absyn.NamedArg list,
+				 Absyn.Modification option) 
+	  => Absyn.Modification option =
+
+  rule	modification_to_absyn2(nargs) => SOME(mod)
+	--------------------------------
+	modification_to_absyn(nargs,oldmod) => SOME(mod)
+
+  axiom	modification_to_absyn(nargs,oldmod) => oldmod
+end
+
+relation modification_to_absyn2: (Absyn.NamedArg list ) 
+	  => Absyn.Modification option =
+  axiom	modification_to_absyn2([]) => NONE
 	
-  axiom	modification_to_absyn(Absyn.NAMEDARG("binding",exp)::xs) 
+  axiom	modification_to_absyn2(Absyn.NAMEDARG("binding",exp)::xs) 
 	  => SOME(Absyn.CLASSMOD([],SOME(exp)))
 
-  axiom	modification_to_absyn(Absyn.NAMEDARG("modification",
+  axiom	modification_to_absyn2(Absyn.NAMEDARG("modification",
 					     Absyn.CODE(Absyn.C_MODIFICATION(mod)))::xs)
 	  => SOME(mod)
 
-  rule	modification_to_absyn(xs) => res
+  rule	modification_to_absyn2(xs) => res
 	--------------------------------
-	modification_to_absyn(x::xs) => res
+	modification_to_absyn2(x::xs) => res
 end
-
 (** relation: annotation_list_to_absyn_comment
  ** This relation takes a list of `NamedArg' and returns an absyn Comment.
  ** for instance [annotation = Placement( ...), comment="stringcomment" ] is converted to SOME(COMMENT(ANNOTATION(Placement(...),SOME("stringcomment")))) 
  **)
-relation annotation_list_to_absyn_comment: (Absyn.NamedArg list) => Absyn.Comment option =
+relation annotation_list_to_absyn_comment: (Absyn.NamedArg list,
+					     Absyn.Comment option) 
+	  => Absyn.Comment option =
+
+  rule	annotation_list_to_absyn_comment2(nargs) => SOME(ann)
+	----------------
+	annotation_list_to_absyn_comment(nargs,oldann) => SOME(ann)
+
+  axiom	annotation_list_to_absyn_comment(nargs,oldann) => oldann
+end
+
+relation annotation_list_to_absyn_comment2: (Absyn.NamedArg list) => Absyn.Comment option =
 
   rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
 	comment_to_absyn(nargs) => SOME(strcmt)
 	----------------------------------
-	annotation_list_to_absyn_comment(nargs) => SOME(Absyn.COMMENT(NONE,SOME(strcmt)))
+	annotation_list_to_absyn_comment2(nargs) => SOME(Absyn.COMMENT(NONE,SOME(strcmt)))
 
   rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
 	comment_to_absyn(nargs) => NONE
 	----------------------------------
-	annotation_list_to_absyn_comment(nargs) => NONE
+	annotation_list_to_absyn_comment2(nargs) => NONE
 
   rule	annotation_list_to_absyn(nargs) => annotation &
 	comment_to_absyn(nargs) => strcmt
 	----------------------------------
-	annotation_list_to_absyn_comment(nargs) => SOME(Absyn.COMMENT(SOME(annotation),strcmt))
+	annotation_list_to_absyn_comment2(nargs) => SOME(Absyn.COMMENT(SOME(annotation),strcmt))
 	
-  axiom	annotation_list_to_absyn_comment(_) => NONE
+  axiom	annotation_list_to_absyn_comment2(_) => NONE
 end
 
 relation comment_to_absyn: (Absyn.NamedArg list) => string option =
