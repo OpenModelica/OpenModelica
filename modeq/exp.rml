@@ -140,9 +140,10 @@ module Exp:
   relation print_list : ('a list, 'a => (), string) => ()
   relation cref_equal : (ComponentRef, ComponentRef) => bool
   relation cref_str : ComponentRef => string
+  relation cref_modelica_str : ComponentRef => string
   relation print_list_str : ('a list, 'a => string, string) => string
   relation print_exp_str : Exp => string
-
+  relation to_exp_cref : Absyn.ComponentRef => ComponentRef
 end
 
 
@@ -167,12 +168,24 @@ relation cref_str: ComponentRef => string =
 	cref_str(CREF_QUAL(s,_,n)) => ss
 end
 
+(* As above but uses '_' instead of '.' *)
+relation cref_modelica_str : ComponentRef => string =
+  axiom	cref_modelica_str(CREF_IDENT(s,_)) => s
+  
+  rule	cref_modelica_str(n) => ns &
+	string_append(s,"_") => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	cref_modelica_str(CREF_QUAL(s,_,n)) => ss
+end
+
 relation is_range : Exp => bool =
 
   axiom	is_range RANGE(_,_,_,_) => true
   axiom	is_range _ => false
 
 end
+
 (** LS:
  ** Replace this with a call to print_component_ref_str
  ** and comparison of the resulting strings, after the _str relations are 
@@ -452,6 +465,36 @@ relation unelab_subscripts: Subscript list => Absyn.Subscript list =
 	---------------------------
 	unelab_subscripts(INDEX(e)::xs) => Absyn.SUBSCRIPT(e')::xs'
 end
+
+
+(* Only support for indexed subscripts of integers*)
+relation to_exp_cref: Absyn.ComponentRef => ComponentRef =
+
+  rule	to_exp_cref_subs(subs) => subs'
+	-------------------------------
+	to_exp_cref(Absyn.CREF_IDENT(id,subs)) => CREF_IDENT(id,subs')
+	
+  rule	to_exp_cref(cr) => cr' &
+	to_exp_cref_subs(subs) => subs'
+	-------------------------------
+	to_exp_cref(Absyn.CREF_QUAL(id,subs,cr)) => CREF_QUAL(id,subs',cr')
+end
+
+relation to_exp_cref_subs: Absyn.Subscript list => Subscript list =
+	
+  axiom	to_exp_cref_subs([]) => []
+
+  rule	to_exp_cref_subs(xs) => xs' 
+	---------------------------
+	to_exp_cref_subs(Absyn.SUBSCRIPT(Absyn.INTEGER(i))::xs) 
+	  => INDEX(ICONST(i))::xs'
+
+  rule	Print.print_buf "#Error elaborating TypeName." &
+	to_exp_cref_subs(xs) => xs' 
+	---------------------------
+	to_exp_cref_subs(_::xs)  => xs'
+end
+
 
 (** relation: subscripts_append
  **

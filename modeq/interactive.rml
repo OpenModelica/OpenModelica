@@ -62,6 +62,8 @@ module Interactive:
   relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type 
   relation add_instantiated_class: (InstantiatedClass list, InstantiatedClass) => InstantiatedClass list 
   relation get_instantiated_class: (InstantiatedClass list, Absyn.Path) => InstantiatedClass 
+  relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
+	  => InteractiveSymbolTable
 end
 
 

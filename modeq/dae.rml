@@ -337,7 +337,7 @@ end
 relation dump_comp_element : Element => () =
 	
   rule	RTOpts.modelica_output => false &
-	Print.print_buf "fclass " & Print.print_buf n & Print.print_buf "\n" &
+	Print.print_buf "class " & Print.print_buf n & Print.print_buf "\n" &
 	dump_elements(l) &
 	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
 	-----------------------------------
@@ -358,7 +358,7 @@ end
 relation dump_comp_element_str : Element => string =
 	
   rule	RTOpts.modelica_output => false &
-	string_append("fclass ",n) => s1 &
+	string_append("class ",n) => s1 &
 	string_append(s1,"\n") => s2 &
 	dump_elements_str(l) => s3 &
 	string_append(s2,s3) => s4 &

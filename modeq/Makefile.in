@@ -24,7 +24,7 @@ LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET)
 
 PROG	= modeq
 AST	= absyn_builder/absyn_builder.a
-RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runtime/socketimpl.o runtime/printimpl.o runtime/cacheimpl.o
+RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runtime/socketimpl.o runtime/printimpl.o runtime/cacheimpl.o runtime/ptolemyio.o
 
 SRCRML= absyn.rml \
 	algorithm.rml \
@@ -46,6 +46,7 @@ SRCRML= absyn.rml \
 	lookup.rml \
 	main.rml \
 	mod.rml \
+	modsim.rml \
 	modutil.rml \
 	prefix.rml \
 	staticexp.rml \

@@ -29,6 +29,7 @@ module Util :
   relation list_flatten : 'a list list => 'a list
   relation list_map : ('a list, 'a => 'b) => 'b list
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list
+  relation list_list_reverse: ('a list list) => 'a list list
   relation list_thread : ('a list, 'a list) => 'a list
   relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list
   relation list_list_thread_tuple : ('a list list, 'b list list) 
@@ -36,7 +37,7 @@ module Util :
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_replaceat: (''a, int, ''a list) => ''a list 
-   
+  relation list_union: (''a list, ''a list) => ''a list 	  
   relation list_reduce: ('a list, ('a,'a) => 'a) => 'a
 	      
   relation tuple2_1 : ('a * 'b) => 'a
@@ -96,6 +97,14 @@ relation list_list_map : ('a list list, 'a => 'b) => 'b list list =
 	-------------------
 	list_list_map (f::r,fn) => f'::r'
 
+end
+
+relation list_list_reverse: ('a list list) => 'a list list =
+
+  rule	list_map(lsts, list_reverse) => lsts' &
+	list_reverse(lsts') => lsts''
+	-----------------------
+	list_list_reverse(lsts) => lsts''
 end
 
 relation list_thread : ('a list, 'a list) => 'a list =
@@ -163,6 +172,24 @@ relation list_getmember: (''a, ''a list) => ''a =
 	----------------------
 	list_getmember(x,y::ys) => res
 end 
+
+
+relation list_union: (''a list, ''a list) => ''a list =
+	
+  axiom	list_union(a,[]) => a
+
+  rule	list_union(a,xs) => res &
+	list_getmember(x,a) => _ & 
+	list_append(a,res) => res'
+	-----------------------
+	list_union(a,x::xs) => res'
+
+  rule	list_union(a,xs) => res &
+	not list_getmember(x,a) => _ & 
+	list_append(a,x::res) => res'
+	-----------------------
+	list_union(a,x::xs) => res'
+end
 
 relation list_replaceat: (''a, int, ''a list) => ''a list =
 

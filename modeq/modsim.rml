@@ -1,0 +1,77 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+(**
+ ** file:	 static.rml
+ ** module:      Static
+ ** description: Static analysis of expressions
+ **
+ ** RCS: %W %E
+ ** 
+ ** This module communicates with the backend (through files) for simulation
+ ** plotting etc.
+ **)
+
+module ModSim :
+  
+  relation compile_flat_class: (string,string) => (string)
+  relation run_simulation: (string,real,real,int) => (int,string)
+
+end
+with "system.rml"
+with "util.rml" 
+
+relation compile_flat_class: (string,string) => (string) =
+
+  rule	System.read_env("MOSHHOME") => moshhome &
+	string_append(moshhome,"/../ModSimPack/bin/") 
+	  => dirname &
+	System.pwd() => pwd &
+	System.cd(dirname) => 0 &
+	Util.string_append_list(["ModelicaOptimizer.exe ",
+				 "`cygpath -w \"",flatfile,"\"`"]) => call &
+	System.system_call(call) => 0 &
+	print "Compiled model to C-code, compiling C-code...\n" &
+	Util.string_append_list([pwd,"/",exefile]) => exefile' &
+	Util.string_append_list(["cd ",moshhome,"/../ModSimPack/simulator;export TARGET=",exefile',";make -f Makefile.cygwin"])=> compcall &
+	System.system_call(compcall) => 0 &
+	print "Done.\n" &
+	Util.string_append_list([pwd,"/",exefile,".exe"])
+	  => res
+	-----------------------------
+	compile_flat_class(flatfile,exefile) => res
+end
+
+relation run_simulation: (string,real,real,int) => (int,string) =
+
+  rule	real_string(start) => t1 &
+	real_string(stop) => t2 &
+	int_string(interval) => steps &
+	System.read_env("MOSHHOME") => moshhome &
+	string_append(moshhome,"/../ModSimPack/bin/") 
+	  => bindir &
+	Util.string_append_list(["cd ",bindir,";",exefile," ",t1," ",t2," ",steps]) => call &
+	print call &
+	System.system_call(call) => res 
+	-----------------------------------
+	run_simulation(exefile,start,stop,interval) 
+	  => (res,"simulationRes.plt")
+
+end

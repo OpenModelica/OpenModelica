@@ -114,6 +114,7 @@ with "parse.rml"
 with "classloader.rml"
 with "mod.rml"
 with "prefix.rml"
+with "modsim.rml"
 
 (** LS:
  ** - Expression elaboration
@@ -1393,8 +1394,14 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 
   rule	elab_untyped_cref(env,cr) => cr' &
 	let recordtype = 
-	((Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
-			,[Types.VAR("exeFile",
+	((Types.T_COMPLEX(ClassInf.RECORD("SimulationObject")
+			,[Types.VAR("flatClass",
+				    Types.ATTR(false, 
+					       SCode.RO, 
+					       SCode.VAR,
+					       Absyn.BIDIR),
+				    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
+,Types.VAR("exeFile",
 				    Types.ATTR(false, 
 					       SCode.RO, 
 					       SCode.VAR,
@@ -1412,6 +1419,66 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       true),
 	      Types.PROP(recordtype,false),
 	      SOME(st))
+
+  rule	elab_untyped_cref(env,cr) => cr' &
+	get_optional_named_arg(env,SOME(st),"startTime",args,Exp.RCONST(0.0)) 
+	  => startTime &
+	  int_real(1) => realone &
+	get_optional_named_arg(env,SOME(st),"stopTime",args,Exp.RCONST(realone)) 
+	  => stopTime &
+	get_optional_named_arg(env,SOME(st),"numberOfIntervals",args,Exp.ICONST(500)) 
+	  => numberOfIntervals &
+	let recordtype = 
+	((Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
+			,[Types.VAR("resultFile",
+				    Types.ATTR(false, 
+					       SCode.RO, 
+					       SCode.VAR,
+					       Absyn.BIDIR),
+				    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
+			  ]
+			),NONE)) 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("simulate",_),
+			      [ Absyn.CREF(cr)],args,impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("simulate"),
+		       [Exp.CREF(cr',Exp.OTHER),startTime,
+			stopTime,numberOfIntervals], (* Fill in rest of defaults here*)
+		       false,
+		       true),
+	      Types.PROP(recordtype,false),
+	      SOME(st))
+
+  rule	elab_variablenames(vars) => vars'
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("readSimulationResult",_),
+			      [ Absyn.STRING(filename),
+			       Absyn.ARRAY(vars),
+			       Absyn.INTEGER(size)
+			       ],args,impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("readSimulationResult"),
+		       [Exp.SCONST(filename),
+			Exp.ARRAY(Exp.OTHER,false,vars'),
+			Exp.ICONST(size)], 
+		       false,
+		       true),
+	      Types.PROP((Types.T_STRING([]),NONE),false),
+	      SOME(st))
+
+  rule	elab_variablenames(vars) => vars'
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("plot",_),
+			      [Absyn.ARRAY(vars)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("plot"),
+		       [Exp.ARRAY(Exp.OTHER,false,vars')],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),false),
+	      SOME(st))
+
 
   rule	elab_exp(env,exp,impl,SOME(st)) => (exp',prop,st')
 	------------------------------------------------------------------
@@ -1700,6 +1767,40 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP((Types.T_ENUMERATION(["never", "avoid", "default", "prefer", "always"],[]),NONE),false),
 	      SOME(st))
 
+end
+
+(* This relation elaborates variablenames to Exp.Exp. A variablename can
+ * be used in e.g. plot(model,{v1[3],v2.t}) It should only be used in interactive functions that uses variablenames as componentreferences.
+*)
+relation elab_variablenames: Absyn.Exp list => Exp.Exp list =
+
+  axiom	elab_variablenames [] => []
+
+  rule	(* Use simplified conversion, all indexes integer constants *)
+	Exp.to_exp_cref(cr) => cr' &
+	elab_variablenames(xs) => xs' 
+	-----------------------------
+	elab_variablenames(Absyn.CREF(cr)::xs) 
+	  => Exp.CREF(cr',Exp.OTHER)::xs'
+end
+
+
+(* This relation is used to "elaborate" interactive functions optional parameters, e.g. simulate(A.b, startTime=1), startTime is an optional parameter *)
+
+relation get_optional_named_arg: (Env.Env, Interactive.InteractiveSymbolTable option,
+				  Ident,Absyn.NamedArg list,Exp.Exp) 
+	=> Exp.Exp =
+
+  axiom	get_optional_named_arg(_,_,_,[],exp) => exp
+
+  rule	id = id2 &
+	elab_exp(env,exp,true,st) => (exp',_,_)
+	--------------------------------------------------
+	get_optional_named_arg(env,st,id,Absyn.NAMEDARG(id2,exp)::xs,dexp) => exp'
+
+  rule	get_optional_named_arg(env,st,id,xs,dexp) => exp'
+	--------------------------------------------------
+	get_optional_named_arg(env,st,id,Absyn.NAMEDARG(id2,exp)::xs,dexp) => exp'
 end
 
 (* This relation elaborates a ComponentRef without adding type information. *)
@@ -3147,6 +3248,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
 	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
 	DAE.dump_str (dae) => str &
+
 	Debug.fcall ("daedump", DAE.dump, dae) &
 	Debug.fcall ("daedump2", DAE.dump2, dae) &
 	Debug.fcall ("daedumpdebug", DAE.dump_debug, dae) &
@@ -3155,13 +3257,16 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Print.get_string() => s2 &
 	print s2 &
 	Print.print_error_buf s2 &
+	Exp.cref_modelica_str(cr) => modelname &
+	string_append(modelname,".mof") => filename &
+	System.pwd => pwd &
+	Util.string_append_list([pwd,"/",filename]) => filename' &
+	System.write_file(filename',str) &
+	print "wrote flat file: " & 
+	print str & print "\n" &
+	ModSim.compile_flat_class(filename',modelname) => exefile &
 	
-(*	let filename = "flatclass.mof" &
-	System.write_file(filename,str) &
-	
-	ModSim.compile_flat_class(filename) => exefile &*)
-	
-	let record = Values.RECORD([Values.STRING(str),Values.INTEGER(1)],["flatClass","exefile"])
+	let record = Values.RECORD([Values.STRING(str),Values.STRING(exefile)],["flatClass","exefile"])
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
@@ -3174,6 +3279,73 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 	
+  rule	(* Build and simulate model *)
+	component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	DAE.dump_str (dae) => str &
+	Print.get_string() => s2 &
+	Print.print_error_buf s2 &
+	Exp.cref_modelica_str(cr) => modelname &
+	string_append(modelname,".mof") => filename &
+	System.pwd => pwd &
+	Util.string_append_list([pwd,"/",filename]) => filename' &
+	System.write_file(filename',str) &
+	print "wrote flat file: " & 
+	print str & print "\n" &
+	ModSim.compile_flat_class(filename',modelname) => exefile &
+	ceval(env,starttime,true,SOME(st)) => (Values.REAL(start),_) &
+	ceval(env,stoptime,true,SOME(st)) => (Values.REAL(stop),_) &
+	ceval(env,interval,true,SOME(st)) => (Values.INTEGER(interv),_) &
+	ModSim.run_simulation(exefile,start,stop,interv) => (0,resultfile) &
+	let simValue = Values.RECORD([Values.STRING(resultfile)],["resultFile"]) &
+	let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
+			,[Types.VAR("resultFile",
+				    Types.ATTR(false, 
+					       SCode.RO, 
+					       SCode.VAR,
+					       Absyn.BIDIR),
+				    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
+			  ]
+			),NONE) &
+	Interactive.add_var_to_symboltable("currentSimulationResult",simValue,simType,st) 
+	  => newst &
+	  
+	  System.cd(pwd) => _
+	------------------------------------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (simValue,newst)
+
+  rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
+	System.pwd() => pwd &
+	Util.string_append_list([pwd,"/",filename]) => filename' &
+	System.read_ptolemyplot_dataset(filename',vars',size) => value
+	------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (value,st)
+
+  rule	Print.print_buf "#Error reading simulation result. Check that filename and variablenames are correct.\n" 
+	------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => fail
+
+  rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
+	Util.list_union(["time"],vars') => vars'' &
+	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st)) 
+	  => (Values.RECORD([Values.STRING(filename)],_),_) &
+	System.read_ptolemyplot_dataset(filename,vars'',100) => value &
+	System.pwd() => pwd &
+	Util.string_append_list([pwd,"/","tmpPlot.plt"]) => tmpPlotFile &
+	Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
+	  => res &
+	  Util.string_append_list(["exec /cygdrive/c/ptolemy/ptplot5.2/ptplot.exe `cygpath -w \"",
+				   tmpPlotFile,"\"` &"]) => call &
+	  System.system_call(call) => _
+	  ------------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(true),st)
+
   rule	System.time => t1 &
 	ceval(env,exp,true,SOME(st)) => (value,st') &
 	System.time => t2 &

@@ -452,6 +452,46 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
 }   
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset)
+{
+  int i,size;
+  char **vars;
+  char* filename = RML_STRINGDATA(rmlA0);
+  void * lst = rmlA1;
+  int datasize = RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  void* p;
+  rmlA0 = lst;
+  rml_prim_once(RML__list_5flength);
+  size = RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  
+  vars = (char**)malloc(sizeof(char*)*size);
+  for (i=0,p=lst;i<size;i++) {
+    vars[i]=RML_STRINGDATA(RML_CAR(p));
+    p=RML_CDR(p);
+  }
+  rmlA0 = read_ptolemy_dataset(filename,size,vars,datasize);
+  printf("done reading ptolemy\n");
+  if (rmlA0 == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  rml_prim_once(Values__reverse_5fmatrix);
+
+  RML_TAILCALLK(rmlSC);
+}   
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(System__write_5fptolemyplot_5fdataset)
+{
+  char *filename = RML_STRINGDATA(rmlA0);
+  void *value = rmlA1;
+  
+
+  RML_TAILCALLK(rmlSC);
+}   
+RML_END_LABEL
+
+
 RML_BEGIN_LABEL(System__time)
 {
   float time;

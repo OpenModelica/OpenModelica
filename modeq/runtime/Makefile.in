@@ -14,7 +14,7 @@ CC	= gcc
 CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
-CPPSRC  = cacheimpl.cpp
+CPPSRC  = cacheimpl.cpp ptolemyio.cpp
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o)
 
 all: $(OBJ)
