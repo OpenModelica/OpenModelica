@@ -1861,7 +1861,7 @@ relation get_flow_variables: Element list => Exp.ComponentRef list =
 	get_flow_variables(_::xs) => res
 end
 
-relation	get_flow_variables_2: (Exp.ComponentRef list ,Ident) 
+relation get_flow_variables_2: (Exp.ComponentRef list ,Ident) 
 	  => Exp.ComponentRef list =
 
   axiom	get_flow_variables_2([],id) => []

@@ -214,7 +214,7 @@ module Inst:
 
 
   relation inst_class_decl : ( Env.Env, Types.Mod, Prefix.Prefix,
-			      Connect.Sets, SCode.Class, InstDims, bool (*impl*))
+			      Connect.Sets, SCode.Class, InstDims, bool (*packimpl?*))
 	  => ( Env.Env, DAE.Element list)
 
   relation inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
@@ -602,7 +602,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 
   rule	Env.open_scope(env,encflag,SOME(n)) => env' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env', mod, pre, csets, ci_state, c, false, inst_dims, impl,false)
+	inst_class_in(env', mod, pre, csets, ci_state, c, false, inst_dims, impl,false (*packimpl*))
 	  => (dae1, env''', csets', ci_state', tys) &
 	  fully_qualified(Absyn.IDENT(n),env) => fq_class &
 	DAE.set_component_type(dae1,fq_class) => dae1' &
@@ -2902,7 +2902,7 @@ end
  **)
 
 relation inst_class_decl : (Env.Env, Types.Mod, Prefix.Prefix,
-			    Connect.Sets, SCode.Class,InstDims, bool)
+			    Connect.Sets, SCode.Class,InstDims, bool (*packimpl*) )
 	  => (Env.Env, DAE.Element list) =
 
   rule	(*Debug.fprint("insttr","+\tinst_class_decl called\n") &*)

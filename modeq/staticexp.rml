@@ -255,12 +255,17 @@ end
 relation ceval_if_constant: (Exp.Exp,bool (* constant *), bool (* impl *), Env.Env) => Exp.Exp =
 
   axiom	ceval_if_constant(e,cnst as false,_,_) => e 
+
   axiom	ceval_if_constant(e,cnst as true ,impl as true,_) => e 
- 
+	
+
   rule	Ceval.ceval(env,e,impl,NONE,NONE) => (v,_) &
 	value_exp(v) => e'
 	---------------------------------
-	ceval_if_constant(e,cnst as true,impl as false,env) => e'
+	ceval_if_constant(e,cnst as true,impl (*as false*),env) => e'
+
+  axiom	ceval_if_constant(e,_,_,_) => e
+
 end
 
 (** relation: elab_exp
@@ -772,7 +777,7 @@ relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, Exp.Exp, bool (*co
 	Ceval.ceval (env,stop,impl,NONE,NONE) => (Values.INTEGER(stopv),_) &
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
-	elab_range_type (env,start,NONE,stop,const as true,_,impl as false)
+	elab_range_type (env,start,NONE,stop,const as true,_,impl (*as false*))
 	  => ((Types.T_ARRAY(Types.DIM(SOME(n')), (Types.T_INTEGER([]),NONE)),NONE))
 
   rule	Ceval.ceval (env,start,impl,NONE,NONE) => (Values.INTEGER(startv),_) &
@@ -782,7 +787,7 @@ relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, Exp.Exp, bool (*co
 	int_div (n,stepv) => n' &
  	int_add (n',1) => n''
 	-------------------------------------------------
-	elab_range_type (env,start,SOME(step),stop,const as true,_,impl as false)
+	elab_range_type (env,start,SOME(step),stop,const as true,_,impl (*as false*))
 	  => ((Types.T_ARRAY(Types.DIM(SOME(n'')), (Types.T_INTEGER([]),NONE)),NONE))
 
   rule	Ceval.ceval (env,start,impl,NONE,NONE) => (Values.REAL(startv),_) &
@@ -792,7 +797,7 @@ relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, Exp.Exp, bool (*co
 	real_int n'' => n''' &
 	int_add (n''',1) => n'
 	-------------------------------------------------
-	elab_range_type (env,start,NONE,stop,const as true,_,impl as false)
+	elab_range_type (env,start,NONE,stop,const as true,_,impl (*as false*))
 	  => ((Types.T_ARRAY(Types.DIM(SOME(n')), (Types.T_REAL([]),NONE)),NONE))
 
   rule	Ceval.ceval (env,start,impl,NONE,NONE) => (Values.REAL(startv),_) &
@@ -804,19 +809,21 @@ relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, Exp.Exp, bool (*co
 	real_int n''' => n'''' &
  	int_add (n'''',1) => n''
 	-------------------------------------------------
-	elab_range_type (env,start,SOME(step),stop,const as true,_,impl as false)
+	elab_range_type (env,start,SOME(step),stop,const as true,_,impl (*as false*))
 	  => ((Types.T_ARRAY(Types.DIM(SOME(n'')), (Types.T_REAL([]),NONE)),NONE))
 
+(*
   axiom	elab_range_type (_,_,_,_,const,Exp.INT,impl as true)
 	  => ((Types.T_ARRAY(Types.DIM(NONE), (Types.T_INTEGER([]),NONE)),NONE))
 
   axiom	elab_range_type (_,_,_,_,const,Exp.REAL,impl as true)
 	  => ((Types.T_ARRAY(Types.DIM(NONE), (Types.T_REAL([]),NONE)),NONE))
+*)
 
-  axiom	elab_range_type (_,_,_,_,const as false,Exp.INT,impl)
+  axiom	elab_range_type (_,_,_,_,const as false,Exp.INT,impl as true)
 	  => ((Types.T_ARRAY(Types.DIM(NONE), (Types.T_INTEGER([]),NONE)),NONE))
 
-  axiom	elab_range_type (_,_,_,_,const as false,Exp.REAL,impl)
+  axiom	elab_range_type (_,_,_,_,const as false,Exp.REAL,impl as true)
 	  => ((Types.T_ARRAY(Types.DIM(NONE), (Types.T_REAL([]),NONE)),NONE))
 
   rule	Debug.fprint("failtrace", "- elab_range_type failed: ") &

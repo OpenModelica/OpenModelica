@@ -3594,13 +3594,33 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
-	Static.elab_graphics_exp(env,graphicexp,true (*impl*) ) => (graphicexp2,prop) &
+	Static.elab_graphics_exp(env,graphicexp,false (*impl*) ) => (graphicexp2,prop) &
 
 	Exp.print_exp_str(graphicexp2) => gexpstr &
 	string_append(str,",") => s1 &
 	string_append(s1,gexpstr) => totstr
 	-----------------------------------
 	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => totstr
+
+	(* First line in the first rule above fails if return value from strip_graphics_modification doesn't match the rhs of => *)
+  rule	strip_graphics_modification(mod) => (stripmod, gxmods) &
+	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
+	Parser.parsestring totstring => (p,parsestr) & (* Always succeeds, check parsestr for errors *)
+	parsestr = "Ok" &
+	SCode.elaborate(p) => p' &
+	Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
+	get_class_in_program("Icon",p) => placementc &
+	SCode.elab_class(placementc) => placementclass &
+	Mod.elab_mod (env,Prefix.NOPRE,mod',true) => mod'' &	
+	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
+			[], true,Inst.TOP_CALL) 
+	  => (dae, _, cs, t, state) &
+	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
+	Inst.init_vars_modelica_output dae => dae' &
+     	DAE.get_variable_bindings_str dae' => str 
+	-----------------------------------
+	get_annotation_string(totstring,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => str
+
 
   rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
@@ -3619,7 +3639,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
 	
-	Static.elab_graphics_exp(env,graphicexp,true(*impl*)) => (graphicexp2,prop) &
+	Static.elab_graphics_exp(env,graphicexp,false (*impl*)) => (graphicexp2,prop) &
 	Exp.print_exp_str(graphicexp2) => gexpstr &
 	string_append(str,",") => s1 &
 	string_append(s1,gexpstr) => totstr

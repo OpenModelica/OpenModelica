@@ -329,7 +329,7 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 
 
 	(* end luc_pop *)
-
+(*
 	(* FIXME: disabled calling of functions during ceval for now. Some
 	 * functions call other functions, which must be generated together in
 	 * order that compilation works  *)
@@ -358,18 +358,18 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 
 (*	ceval (env, e as Exp.CALL(funcpath,expl,_,_),false,st as SOME(Interactive.SYMBOLTABLE(_,_,_,_,cflist)),_) => (newval,st)
 *)
-
+*)
 
         (* FIXME: Fix this in order to allow calling of constant-marked function
 	 * calls. One should call the function as if we were in interactive
 	 * mode, and put the result instead of the function call *)
-(*	 
+	 
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(_,_,_,_),impl as false,NONE,_) => fail
-*)
+
 
   rule	(* Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
 	   Exp.print_exp e & Print.print_buf "\n" *)
@@ -709,8 +709,13 @@ relation ceval_function: (Env.Env, Absyn.Path, Values.Value list, bool (*impl*) 
 	Print.get_string => s & print s & print "\n" &
 	DAE.dae_to_record_value(funcname,dae,impl) => value  
 	----------------------
-	ceval_function(env,funcname,vallst,impl) => value
+	ceval_function(env,funcname,vallst,impl as false) => value
 
+  rule	Debug.fprint("failtrace", "ceval_function: Don't know what to do. impl was always false before:")
+	& Absyn.path_string funcname => s
+	& Debug.fprintln("failtrace", s)
+	--------------------------------------------------------------------------------------------------
+	ceval_function(env,funcname,vallst,impl as true) => fail
 end
 
 
@@ -1072,8 +1077,8 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING("The environment variable MOSHHOME was not set"),st)
   
-  
-
+	  
+	  (* FIXME: Should ceval be called with impl=true here? *)
   rule	(* Build and simulate model *)
 	ceval(env,starttime,true,SOME(st),NONE) 
 	  => (Values.REAL(starttime_r),SOME(st)) &
@@ -2237,15 +2242,17 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) ) => Values.Valu
 
 (* FIXME: For now, we don't try to check binding if implicit instantiation *)
 
+(*
   rule	Debug.fprintln("ceval", "ceval_cref: Skipping ceval_cref_binding because implicit inst")
 	----------------------------------------------------------------------------
 	ceval_cref (env,c,impl as true) => fail
+*)
 
 
   rule	Lookup.lookup_var (env, c) => (_,_,binding) &
 	ceval_cref_binding (env,c,binding,impl) => v
 	-------------------------------------
-	ceval_cref (env,c,impl as false) => v
+	ceval_cref (env,c,impl (*as false*)) => v
 
 	(* default *)
 
@@ -2253,7 +2260,7 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) ) => Values.Valu
 	Exp.print_component_ref_str c => str &
 	Print.print_error_buf str & Print.print_error_buf "\n"
 	-------------------------------------
-	ceval_cref (_,c,impl as false ) => fail
+	ceval_cref (_,c,impl (*as false*) ) => fail
 
 end
 
@@ -2261,28 +2268,30 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*i
 
 (* FIXME: For now, we don't try to check binding if implicit instantiation *)
 
+(*
   rule	Debug.fprintln("ceval", "ceval_cref_binding: shouldn't have been called.") &
 	Debug.fprintln("ceval", "Skipping because implicit inst")
 	----------------------------------------------------------------------------
 	ceval_cref_binding (_,_,_,impl as true ) => fail
+*)
 
   rule  Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
 	Types.get_dimension_sizes(tp) => sizelst &
 	ceval_subscript_value(env,subsc,v, sizelst,impl) => res
 	-----------------------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl as false)
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl (*as false*))
 	  => res
 
   rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
-	ceval_cref_binding (env,_,Types.UNBOUND,impl as false) => fail
+	ceval_cref_binding (env,_,Types.UNBOUND,impl (*as false*)) => fail
 	
 
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
 	rfn = "array" &
 	Print.print_buf "#-- ceval_cref_binding Array evaluation\n"
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl as false)
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl (*as false*))
 	  => fail
 
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
@@ -2292,7 +2301,7 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*i
 	ceval (env,exp,impl,NONE,NONE) => (v,_) &
 	ceval_subscript_value (env,subsc,v,sizelst,impl) => res
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl as false)
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl (*as false*))
 	  => res
 
   rule	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
@@ -2300,13 +2309,13 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*i
 	ceval (env,exp,impl,NONE,NONE) => (v,_) &
 	ceval_subscript_value(env,subsc,v,sizelst,impl) => res
 	------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl as false) 
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl (*as false*)) 
 	  => res
 
   rule	Print.print_buf "- ceval_cref__binding failed (nonconstant EQBOUND(" &
 	Exp.print_exp exp & Print.print_buf ")\n"
 	--------------------------------
-	ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl as false) => fail
+	ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl (*as false*)) => fail
 	
 end
 
