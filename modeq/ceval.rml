@@ -921,6 +921,12 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
+  rule	Dump.unparse_str(p) => str &
+	System.write_file(filename,str) 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveAll"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(true),st)
+
   rule	(*Error writing to file *)
 	Static.component_ref_to_path(cr) => classpath &
 	Interactive.get_pathed_class_in_program(classpath,p) => class &

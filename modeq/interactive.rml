@@ -52,6 +52,7 @@ module Interactive:
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) 
 
   relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program
+  relation update_scope: (Absyn.Program, InteractiveVariable list) => InteractiveVariable list
   relation add_component: (string,Absyn.ComponentRef,Absyn.ComponentRef,Absyn.NamedArg list, Absyn.Program) => (Absyn.Program,string)
   relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int
   relation remove_compiled_functions: (Absyn.Program, (Absyn.Path * Types.Type) list)
@@ -64,6 +65,7 @@ module Interactive:
   relation get_instantiated_class: (InstantiatedClass list, Absyn.Path) => InstantiatedClass 
   relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
 	  => InteractiveSymbolTable
+relation add_scope: (Absyn.Program, InteractiveVariable list) => Absyn.Program 
 end
 
 
@@ -213,7 +215,7 @@ relation get_variable_list_str: (InteractiveVariable list) => string list =
 end
 
 relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type =
-	axiom get_type_of_variable(id,[]) => fail
+  axiom get_type_of_variable(id,[]) => fail
 	
   rule	varid = id
 	----------------------------------------------
@@ -226,11 +228,11 @@ relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.
 end
 
 relation add_vars_to_symboltable: (Absyn.Ident list, Values.Value list,
-				  Types.Type list, InteractiveSymbolTable) 
-	    => InteractiveSymbolTable =
-
+				   Types.Type list, InteractiveSymbolTable) 
+	  => InteractiveSymbolTable =
+	  
   axiom	add_vars_to_symboltable ([],_,_,st) => st
-
+	
   rule	add_var_to_symboltable (id, v, t, st) => st' &
 	add_vars_to_symboltable(idrest, vrest, trest, st') => st''
 	-------------------------------------------------------------
@@ -239,22 +241,29 @@ end
 
 
 relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
-	    => InteractiveSymbolTable =
-	    
+	  => InteractiveSymbolTable =
+	  
+  rule	add_var_to_varlist(ident,v,t,vars) => vars'
+	----------------------------
+	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,id,vars,cf))
+	  => SYMBOLTABLE(p,sp,id,vars',cf)
+end
+
+relation add_var_to_varlist: (Absyn.Ident, Values.Value, Types.Type,
+			      InteractiveVariable list) 
+	  => InteractiveVariable list =
   rule	ident = id2
 	-----------
-	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,_,_)::rest,cf)) 
-	    => SYMBOLTABLE(p,sp,ic,IVAR(ident,v,t)::rest,cf)
+	add_var_to_varlist(ident,v,t,IVAR(id2,_,_)::rest) 
+	    => IVAR(ident,v,t)::rest
 
   rule	not ident = id2 &
-	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,rest,cf))
-	    => SYMBOLTABLE(_,_,_,vars,_)
-	    ------------------------------------
-	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::rest,cf))
-	    => SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::vars,cf)
+	add_var_to_varlist(ident,v,t,rest) => rest'
+	 ------------------------------------
+	add_var_to_varlist(ident,v,t,IVAR(id2,val2,t2)::rest)
+	    => IVAR(id2,val2,t2)::rest'
 
-  axiom	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,[],cf)) 
-	    => SYMBOLTABLE(p,sp,ic,[IVAR(ident,v,t)],cf)
+  axiom	add_var_to_varlist(ident,v,t,[]) => [IVAR(ident,v,t)]
 end
 
 relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
@@ -1040,6 +1049,22 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
      
   axiom	update_program (Absyn.PROGRAM([],_),prg) => prg
      
+  rule	(* For split definitions at top, when introducing new model, eg. "package A" *)
+	let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE)) &
+	update_program(Absyn.PROGRAM([newclass],Absyn.TOP),oldp) => newp
+	-------------------------------------------------------
+	update_program(Absyn.BEGIN_DEFINITION(Absyn.IDENT(name),restr,p,e),oldp) => newp
+
+  rule	(* For split definitions not at top,  eg. "package A.B" *)
+	Absyn.strip_last(path) => w &
+	Absyn.path_last_ident(path) => name &
+	let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE)) &
+	update_program(Absyn.PROGRAM([newclass],Absyn.WITHIN(w)),oldp) => newp
+	-------------------------------------------------------
+	update_program(Absyn.BEGIN_DEFINITION(path as Absyn.QUALIFIED(_,_),
+					      restr,p,e),oldp) 
+	  => newp
+
   rule	class_in_program(name,p2) => false &
 	update_program(Absyn.PROGRAM(c2,w),Absyn.PROGRAM((c1::c3),w2)) => pnew
 	---------------------------------------------------------
@@ -1055,11 +1080,222 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 	update_program(Absyn.PROGRAM(c2,w),pnew) => pnew' 
 	---------------------------------------------
 	update_program(Absyn.PROGRAM(c1::c2,w as Absyn.WITHIN(path)),p2) => pnew'
-	
+  rule	(* nested packages (of form A.B) *)
+	get_pathed_class_in_program(path,p) => cdef &
+	Absyn.strip_last(path) => modelwithin &
+	add_to_public(cdef,
+		      Absyn.ELEMENTITEM(
+					Absyn.ELEMENT(
+						      false, 
+						      false, 
+						      Absyn.UNSPECIFIED,
+						      "",
+						      elt,NONE)))
+	  => newcdef &	
+	 update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)
+	  => newp
+	--------------------------------
+	update_program(Absyn.COMP_DEFINITION(elt,SOME(path as Absyn.QUALIFIED(_,_))),p) 
+	  => newp
+
+  rule	(* top package *)
+	 get_pathed_class_in_program(path,p) => cdef &
+	add_to_public(cdef,
+		      Absyn.ELEMENTITEM(
+					Absyn.ELEMENT(
+						      false, 
+						      false, 
+						      Absyn.UNSPECIFIED,
+						      "",
+						      elt,NONE)))
+	  => newcdef &	
+	 update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)
+	  => newp
+	--------------------------------
+	update_program(Absyn.COMP_DEFINITION(elt,SOME(path as Absyn.IDENT(_))),p) 
+	  => newp
+
+  rule	(* nested packages ( e.g. A.B ) *)
+	get_pathed_class_in_program(path,p) => cdef &
+	Absyn.strip_last(path) => modelwithin &
+	add_to_public(cdef,
+	 	      Absyn.ELEMENTITEM(
+			 		Absyn.ELEMENT(
+						      false, 
+						      false, 
+						      Absyn.UNSPECIFIED,
+						      "",
+						      elt,NONE)))
+ 	  => newcdef &	
+	  update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)
+	  => newp
+ 	--------------------------------
+ 	update_program(Absyn.IMPORT_DEFINITION(elt,SOME(path as Absyn.QUALIFIED(_,_))),p) 
+ 	  => newp
+  rule	(* top level package e.g. A *)
+	get_pathed_class_in_program(path,p) => cdef &
+	add_to_public(cdef,
+	 	      Absyn.ELEMENTITEM(
+			 		Absyn.ELEMENT(
+						      false, 
+						      false, 
+						      Absyn.UNSPECIFIED,
+						      "",
+						      elt,NONE)))
+ 	  => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)
+	  => newp
+ 	--------------------------------
+ 	update_program(Absyn.IMPORT_DEFINITION(elt,SOME(path as Absyn.IDENT(_))),p) 
+ 	  => newp	
+
   rule	Print.print_buf "Further program merging not implemented yet\n"
 	------------------------
 	update_program (a,b) => b
 end
+
+
+(* This relation adds the scope of the scope variable to the program,
+ ** so it can be inserted at the correct place.
+ ** It also adds the scope to BEGIN_DEFINITION, COMP_DEFINITION and 
+ ** IMPORT_DEFINITION so an empty class definition
+ ** can be inserted at the correct place.
+ *)
+relation add_scope: (Absyn.Program, InteractiveVariable list) 
+	  => Absyn.Program =
+	
+  rule	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(path))
+	--------------------------------------
+	add_scope(Absyn.PROGRAM(cls,Absyn.TOP),vars) 
+	  => Absyn.PROGRAM(cls,Absyn.WITHIN(path))
+	
+  rule	not get_variable_value("scope",vars) => _
+	--------------------------------------
+	add_scope(Absyn.PROGRAM(cls,w),vars) 
+	  => Absyn.PROGRAM(cls,w)
+
+  rule	(* This should probably be forbidden. *)
+	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(path)) &
+	  Absyn.join_paths(path,path2) => newpath 
+	--------------------------------------
+	add_scope(Absyn.PROGRAM(cls,Absyn.WITHIN(path2)),vars)
+	  => Absyn.PROGRAM(cls,Absyn.WITHIN(newpath))
+
+  rule	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(path)) &
+	Absyn.join_paths(path,path2) => newpath  
+	--------------------
+	add_scope(Absyn.BEGIN_DEFINITION(path2,restr,p,e),vars)
+	=> Absyn.BEGIN_DEFINITION(newpath,restr,p,e)
+	  
+  rule	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(path)) 
+	  --------------------
+	add_scope(Absyn.COMP_DEFINITION(elt,NONE),vars)
+	  => Absyn.COMP_DEFINITION(elt,SOME(path))
+
+  rule	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(path)) 
+	  --------------------
+	add_scope(Absyn.IMPORT_DEFINITION(elt,NONE),vars)
+	  => Absyn.IMPORT_DEFINITION(elt,SOME(path))
+
+  axiom	add_scope(p,_) => p
+end
+
+(* This relation takes a PROGRAM and updates the variable scope to according
+ to the value of program:
+1. BEGIN_DEFINITION ident appends ident to scope
+2. END_DEFINITION ident removes ident from scope
+*)
+relation update_scope: (Absyn.Program, InteractiveVariable list) 
+	  => InteractiveVariable list =
+	  
+  rule	(* If not top scope *)
+	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(path)) &
+	Absyn.join_paths(path,Absyn.IDENT(id)) => newscope &
+	let newscope' = Values.CODE(Absyn.C_TYPENAME(newscope)) &
+	add_var_to_varlist(
+			   "scope",
+			   newscope',
+			   ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[]),NONE)),
+			   vars)
+	  => vars'
+	-------------------------------------------------------------
+	update_scope(Absyn.BEGIN_DEFINITION(Absyn.IDENT(id),_,_,_),vars) => vars'
+	
+  rule	(* If top scope *)
+	let newscope' = Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(id))) &
+	add_var_to_varlist(
+			   "scope",
+			   newscope',
+			   ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[]),NONE)),
+			   vars)
+	  => vars'
+	-----------
+	update_scope(Absyn.BEGIN_DEFINITION(Absyn.IDENT(id),_,_,_),vars) => vars'
+	
+  rule	(* If not top scope *)
+	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(path)) &
+	Absyn.path_last_ident(path) => id2 &
+	id1 = id2 &
+	Absyn.strip_last(path) => newscope &
+	let newscope' = Values.CODE(Absyn.C_TYPENAME(newscope)) &
+	Absyn.strip_last(path) => path' &
+	add_var_to_varlist(
+			   "scope",
+			   newscope',
+			   ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[]),NONE)),
+			   vars)
+	  => vars'
+	----------------------
+	update_scope(Absyn.END_DEFINITION(id1),vars) => vars'
+
+  rule	get_variable_value("scope",vars) 
+	  => Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(id2))) &
+	id1 = id2 &  
+	remove_var_from_varlist("scope",vars) => vars' 
+	------------------------
+	update_scope(Absyn.END_DEFINITION(id1),vars) => vars'
+
+axiom update_scope(_,vars) => vars
+
+
+end
+
+relation remove_var_from_varlist: (Absyn.Ident,InteractiveVariable list) 
+	=> InteractiveVariable list =
+
+  axiom	remove_var_from_varlist(_,[]) => []
+	  
+  rule	id1 = id2 
+	---------
+	remove_var_from_varlist(id1, IVAR(id2,_,_)::rest) => rest
+
+  rule	not id1 = id2 &
+	remove_var_from_varlist(id1,rest) => rest'
+	-----------------------------------------
+	remove_var_from_varlist(id1,(v as IVAR(id2,_,_))::rest)
+	  => v::rest'
+end
+
+relation get_variable_value: (Absyn.Ident, InteractiveVariable list) => 
+	(Values.Value) =
+
+  rule	id1 = id2
+	-------
+	get_variable_value(id1,IVAR(id2,v,_)::_) => v
+
+  rule	not id1 = id2 &
+	get_variable_value(id1,rest) => v
+	---------------------------------
+	get_variable_value(id1,IVAR(id2,v,_)::rest) => v
+end
+
 
 (** relation: lookup_classdef
  ** This relation takes a Path of a class to lookup and a Path as a starting point for the lookup rules and a Program.
@@ -2714,7 +2950,7 @@ end
 relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class = 
 
   rule	get_public_list(parts) => publst &
-	let publst2 = eitem::publst &
+	list_append(publst,[eitem]) => publst2 &
 	replace_public_list(parts,publst2) => parts2 
 	--------------------------------------------
 	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)), eitem) 

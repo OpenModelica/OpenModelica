@@ -141,7 +141,7 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	select_string(f, "final ","") => s2 &
 	unparse_restriction_str (r) => s3 &
 	int_add(i,1) => i' &
-	unparse_class_part_str_lst(i',parts) => s4 &
+	unparse_class_part_str_lst(i',parts,true) => s4 &
 	unparse_string_comment_option(optcmt) => s5 &
 	Util.string_append_list([is, s1, s2, re, io, s3, " ", n, s5, "\n", s4, is, "end ", n]) => str
 	-----------------------------
@@ -455,67 +455,75 @@ relation print_external_decl : Absyn.ExternalDecl => () =
 
 end
 
-relation unparse_class_part_str_lst: (int, Absyn.ClassPart list) => string =
+relation unparse_class_part_str_lst: (int, Absyn.ClassPart list,bool) 
+	  => string =
 
-  axiom	unparse_class_part_str_lst (_,[]) => ""
+  axiom	unparse_class_part_str_lst (_,[],false) => ""
 
-  rule	unparse_class_part_str(i,x) => s1 &
-	unparse_class_part_str_lst(i,xs) => s2 &
+  rule	unparse_class_part_str(i,x,skippublic) => s1 &
+	unparse_class_part_str_lst(i,xs,false) => s2 &
 	string_append(s1,s2) => res
 	----------------------
-	unparse_class_part_str_lst(i,x::xs) => res
+	unparse_class_part_str_lst(i,x::xs,skippublic) => res
 end
 
-relation unparse_class_part_str: (int, Absyn.ClassPart) => string =
+relation unparse_class_part_str: (int, Absyn.ClassPart,bool) => string =
 
-axiom	unparse_class_part_str(i, Absyn.PUBLIC([])) => ""
-axiom	unparse_class_part_str(i, Absyn.PROTECTED([])) => ""
-axiom	unparse_class_part_str(i, Absyn.EQUATIONS([])) => ""
-axiom	unparse_class_part_str(i, Absyn.INITIALEQUATIONS([])) => ""
-axiom	unparse_class_part_str(i, Absyn.ALGORITHMS([])) => ""
-axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([])) => ""
+axiom	unparse_class_part_str(i, Absyn.PUBLIC([]),_) => ""
+axiom	unparse_class_part_str(i, Absyn.PROTECTED([]),_) => ""
+axiom	unparse_class_part_str(i, Absyn.EQUATIONS([]),_) => ""
+axiom	unparse_class_part_str(i, Absyn.INITIALEQUATIONS([]),_) => ""
+axiom	unparse_class_part_str(i, Absyn.ALGORITHMS([]),_) => ""
+axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([]),_) => ""
 
+  rule	unparse_elementitem_str_lst(i,el) => s1 &
+	int_sub(i,1) => i' &
+	indent_str(i') => is &
+	Util.string_append_list([is,s1]) => str 
+	-----------------------------------------------
+	unparse_class_part_str(i, Absyn.PUBLIC(el),true) => str
+	
   rule	unparse_elementitem_str_lst(i,el) => s1 &
 	int_sub(i,1) => i' &
 	indent_str(i') => is &
 	Util.string_append_list([is,"public \n",s1]) => str 
 	-----------------------------------------------
-	unparse_class_part_str(i, Absyn.PUBLIC(el)) => str
-	
+	unparse_class_part_str(i, Absyn.PUBLIC(el),false) => str
+
   rule	unparse_elementitem_str_lst(i,el) => s1 &
 	int_sub(i,1) => i' &
 	indent_str(i') => is &
 	Util.string_append_list([is,"protected \n",s1]) => str 
 	---------------------------------------
-	unparse_class_part_str(i, Absyn.PROTECTED(el)) => str
+	unparse_class_part_str(i, Absyn.PROTECTED(el),_) => str
 	
   rule	unparse_equationitem_str_lst(i,eqs,";\n") => s1 &
 	int_sub(i,1) => i' &
 	indent_str(i') => is &
 	Util.string_append_list(["\n",is,"equation \n",s1]) => str 
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.EQUATIONS(eqs)) => str
+	unparse_class_part_str(i, Absyn.EQUATIONS(eqs),_) => str
 				
   rule	unparse_equationitem_str_lst(i,eqs,";\n") => s1 &
 	int_sub(i,1) => i' &
 	indent_str(i') => is &
 	Util.string_append_list(["\n",is,"initial equation \n",s1]) => str 
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.INITIALEQUATIONS(eqs)) => str
+	unparse_class_part_str(i, Absyn.INITIALEQUATIONS(eqs),_) => str
 
   rule	unparse_algorithm_str_lst(i,eqs,"\n") => s1 &
 	int_sub(i,1) => i' &
 	indent_str(i') => is &
 	Util.string_append_list([is,"algorithm \n",s1]) => str 
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.ALGORITHMS(eqs)) => str
+	unparse_class_part_str(i, Absyn.ALGORITHMS(eqs),_) => str
 
   rule	unparse_algorithm_str_lst(i,eqs,"\n") => s1 &
 	int_sub(i,1) => i' &
 	indent_str(i') => is &
 	Util.string_append_list([is,"initial algorithm \n",s1]) => str 
 	-----------------------------------------------
-	unparse_class_part_str(i, Absyn.INITIALALGORITHMS(eqs)) => str
+	unparse_class_part_str(i, Absyn.INITIALALGORITHMS(eqs),_) => str
 
   rule	get_extlang_str(lang) => langstr &
 	print_component_ref_str output => outputstr &
@@ -524,7 +532,7 @@ axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([])) => ""
 	indent_str(i) => is &
 	Util.string_append_list(["\n", is, "external ",langstr," ", outputstr, "=",ident,"(",expstr,");\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,SOME(output),expl)))
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,SOME(output),expl)),_)
 	    => str
 
   rule	get_extlang_str(lang) => langstr &
@@ -533,13 +541,13 @@ axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([])) => ""
 	indent_str(i) => is &
 	Util.string_append_list(["\n", is, "external ", langstr," ",ident,"(",expstr,");\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,NONE,expl))) 
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,NONE,expl)),_) 
 	    => str
 
   rule	indent_str(i) => is &
 	Util.string_append_list(["\n",is,"external;\n"]) => res
 	-----------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,_,NONE,_))) 
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,_,NONE,_)),_) 
 	    => res
 end
 

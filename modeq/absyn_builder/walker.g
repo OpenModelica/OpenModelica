@@ -100,10 +100,37 @@ tokens {
 stored_definition returns [void *ast]
 {
     void *within = 0;
+    void *restr = 0;
+    void *imp=0;
+    void *c=0;
     void *class_def = 0;
     l_stack el_stack;
 }
     :
+        #(BEGIN_DEFINITION (e:ENCAPSULATED)? (p:PARTIAL)? 
+            restr = class_restriction i:IDENT)
+        {
+        ast = Absyn__BEGIN_5fDEFINITION(Absyn__IDENT(to_rml_str(i)),
+            restr,
+            RML_PRIM_MKBOOL(p != 0),
+            RML_PRIM_MKBOOL(e != 0));
+        }
+        |
+        #(END_DEFINITION i2:IDENT) 
+        {
+            ast = Absyn__END_5fDEFINITION(to_rml_str(i2));
+        }
+        |
+        #(COMPONENT_DEFINITION c=component_clause)
+        {
+            ast = Absyn__COMP_5fDEFINITION(c,mk_none());
+        }
+        |
+        #(IMPORT_DEFINITION imp=import_clause)
+        {
+            ast = Absyn__IMPORT_5fDEFINITION(imp,mk_none());
+        }
+        |
         #(STORED_DEFINITION      
             ( within = within_clause )?
             ((f:FINAL )? 

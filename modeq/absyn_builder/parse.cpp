@@ -161,7 +161,7 @@ RML_BEGIN_LABEL(Parser__parsestring)
 	      parse_tree_dumper dumper(std::cout);
 	      //dumper.initializeASTFactory(factory);
 	      //dumper.setASTFactory(&factory);
-	      //dumper.dump(t);
+	      dumper.dump(t);
 	    }
 
 	  modelica_tree_parser build;

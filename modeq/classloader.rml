@@ -58,7 +58,13 @@ relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 	-------------------------------------
 	load_class(Absyn.IDENT(classname),mp) => p
 
-	(** Qualified names: Load the complete package and then check that **)
+  rule	(** Qualified names: First check if it is defined in a file pack.mo *)
+	System.strtok(mp,":") => mps &
+	load_class_from_mps(pack,mps) => p
+	-------------------------------------
+	load_class(Absyn.QUALIFIED(pack,rest),mp) => p
+
+	(** Qualified names: Else, load the complete package and then check that **)
 	(** the package contains the file **) 
   rule	System.strtok(mp,":") => mps &
 	load_complete_package_from_mps(pack,mps,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &

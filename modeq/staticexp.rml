@@ -1601,6 +1601,16 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("saveAll",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("saveAll"),
+		       [Exp.SCONST(str)],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),false),
+	      SOME(st))
+
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("help",_),
 			      [],[],impl,
 			      SOME(st)) 

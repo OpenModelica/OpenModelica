@@ -15,6 +15,8 @@ extern "C" {
 #include <iostream>
 #include <fstream>
 
+const char* objref_file="/tmp/openmodelica.objid";
+
 using namespace std;
 
 pthread_mutex_t lock;
@@ -65,7 +67,7 @@ RML_BEGIN_LABEL(Corba__initialize)
   PortableServer::ObjectId_var oid = poa->activate_object(server);
 
   /* Write reference to file */
-  ofstream of ("/tmp/openmodelica.objid");
+  ofstream of (objref_file);
   CORBA::Object_var ref = poa->id_to_reference (oid.in());
   CORBA::String_var str = orb->object_to_string (ref.in());
   of << str.in() << endl;
@@ -88,7 +90,12 @@ RML_END_LABEL
 
 void* runOrb(void* arg) 
 {
-  orb->run();
+  try {
+    orb->run();
+  } catch (CORBA::Exception) {
+    // run can throw exception when other side closes.
+  }
+
   poa->destroy(TRUE,TRUE);
   delete server;
   return NULL;
@@ -130,6 +137,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Corba__close)
 {
   orb->shutdown(TRUE);
+  remove(objref_file);
+
 #ifdef HAVE_PTHREAD_YIELD  
   pthread_yield(); // Allowing other thread to shutdown.
 #else

@@ -40,6 +40,17 @@ module Absyn:
   (** - Programs *)
   datatype Program = PROGRAM of Class list (* List of classes *)
 				* Within (* Within statement *)
+		   | BEGIN_DEFINITION   of Path  (* For split definitions*)
+				* Restriction (* Class restriction *)
+				* bool (* Partial *)
+				* bool (* Encapsulated *)
+   		   | END_DEFINITION of Ident (* For split definitions *)
+		   | COMP_DEFINITION of ElementSpec (* For split definitions*)
+					* Path option (* insert into. 
+						       Default, NONE *)
+		   | IMPORT_DEFINITION of ElementSpec(* For split definitions*)
+					* Path option (* insert into. 
+						       Default, NONE *)
 
   (** A program is simply a list of class definitions declared at top
    ** level in the source file, combined with a within statement that
