@@ -63,6 +63,8 @@ module DAELow:
   relation dump_vars: Var list => ()
 
   relation lower: (DAE.DAElist) => DAELow
+
+  relation lower_with_simple_equations: (DAE.DAElist) => DAELow
   
   relation incidence_matrix: (DAELow) => IncidenceMatrix
  
@@ -133,6 +135,35 @@ relation lower: (DAE.DAElist) => DAELow =
 	print es & print " equations\n" *)
 	--------------------
 	lower(lst) => low'
+end
+
+(** relation lower_with_simple_equations
+ ** this is the same as relation lower but it does not remove the simple equations
+ **)
+relation lower_with_simple_equations: (DAE.DAElist) => DAELow =
+
+  rule	states(lst) => s &
+	(*print "states:" &
+	Util.list_map(s,Exp.cref_str) => crefs &
+	Util.string_delimit_list(crefs,", " ) => st &
+	print st & print "\n" &*)
+	lower2(lst,s) => (low as DAELOW(vars,knvars,eqns,reqns))  &
+	print "states :" &
+	Util.list_map(s,Exp.print_component_ref_str) => sl &
+	Util.string_delimit_list(sl,", ") => str & print str & print "\n" &
+	(*remove_simple_equations(low,s) => low' &*)
+	print "removed simple equations, dae:" &
+	dump low 
+	(*list_length(vars) => varlen &
+	int_string(varlen) => vs &
+	list_length(eqns) => eqnlen &
+	int_string(eqnlen) => es &
+	print vs & print " variables\n========" &
+	dump_vars(vars) &
+	print st & print "\n" &
+	print es & print " equations\n" *)
+	--------------------
+	lower_with_simple_equations(lst) => low
 end
 
 relation dump: DAELow => () =
