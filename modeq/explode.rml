@@ -107,7 +107,8 @@ module SCode :
 		    | EQ_EQUALS of Absyn.Exp * Absyn.Exp
 		    | EQ_CONNECT of Absyn.ComponentRef * Absyn.ComponentRef
 		    | EQ_FOR of Ident * Absyn.Exp * EEquation list
-		    | EQ_WHEN of Absyn.Exp * EEquation list
+		    | EQ_WHEN of Absyn.Exp * EEquation list * (Absyn.Exp * EEquation list) list
+
   (** These are almost identical to the `Absyn' versions.  In `EQ_IF', *)
   (** the `elseif' branches are represented as normal `else' branches *)
   (** with a single `if' statement in them. *)
@@ -559,6 +560,17 @@ relation elab_equation : Absyn.Equation => EEquation =
 	------------------------------------------------------------------
 	elab_equation Absyn.EQ_IF(e,tb,(ee,ei)::eis,fb) => eq
 
+
+  rule	elab_e_equations tb => tb' &
+	elab_equation Absyn.EQ_WHEN_E(econd,eb,elsewhen) => EQ_WHEN(econd',eb',elsewhen')
+	--------------------------
+	elab_equation Absyn.EQ_WHEN_E(cond,tb,(econd,eb)::elsewhen) => 
+	EQ_WHEN(cond,tb',(econd',eb')::elsewhen')
+
+  rule	elab_e_equations tb => tb'
+	--------------------------
+	elab_equation Absyn.EQ_WHEN_E(cond,tb,[]) => EQ_WHEN(cond,tb',[])
+
   axiom	elab_equation Absyn.EQ_EQUALS(e1,e2) => EQ_EQUALS(e1,e2)
 
   axiom	elab_equation Absyn.EQ_CONNECT(c1,c2) => EQ_CONNECT(c1,c2)
@@ -568,7 +580,6 @@ relation elab_equation : Absyn.Equation => EEquation =
 	elab_equation Absyn.EQ_FOR(i,e,l) => EQ_FOR(i,e,l')
 
 end
-
 
 (** - Modification management *)
 
