@@ -24,6 +24,7 @@
 module Parser:
   with "absyn.rml"
   relation parse: string => Absyn.Program
+  relation parsestring: string => Absyn.Program
 end
 
 

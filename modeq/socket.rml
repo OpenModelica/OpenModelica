@@ -1,0 +1,53 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+(**
+ ** file:        socket.rml
+ ** module:      Socket
+ ** description: Modelica socket communication module
+ **
+ ** RCS: %W %M 
+ **
+ ** This is the socket connection module of the compiler
+ **)
+
+module Socket:
+(** relation: waitforconnect
+ ** Takes a port number and returns a socket id, for a connected client 
+ ** External implementation in C
+ **)						      
+          relation waitforconnect: int => int
+
+(** relation: handlerequest
+ ** Takes a socket id and returns a string id from it.
+ ** External implementation in C
+**)		  
+	  relation handlerequest: int => string
+	  
+(** relation: sendreply: 
+ ** Takes a socket id and a string, and sends the string as a reply to a given request on that socket id.
+ ** External implementation in C
+ **)
+	  relation sendreply: (int, string) => ()
+(** relation: close
+ ** Takes a socket id and closes the socket
+**)
+	  relation close: int => ()
+end

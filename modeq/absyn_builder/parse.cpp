@@ -67,5 +67,51 @@ RML_BEGIN_LABEL(Parser__parse)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(Parser__parsestring)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  bool debug = check_debug_flag("parsedump");
+  try 
+    {
+      std::istrstream stream(str);
+
+      modelica_lexer lex(stream);
+      modelica_parser parse(lex);
+      parse.stored_definition();
+      antlr::RefAST t = parse.getAST();
+      
+      if (t)
+	{
+	  if (debug)
+	    {
+	      parse_tree_dumper dumper(std::cout);
+	      dumper.dump(t);
+	    }
+
+	  modelica_tree_parser build;
+	  void* ast = build.stored_definition(t);
+	  
+	  if (debug)
+	    {
+	  std::cout << "Build done\n";
+	    }
+
+	  rmlA0 = ast ? ast : mk_nil();
+	  
+	  RML_TAILCALLK(rmlSC); 
+	}    
+    } 
+  catch (std::exception &e)
+    {
+      std::cerr << "Error while parsing:\n" << e.what() << "\n";
+    }
+  catch (...)
+    {
+      std::cerr << "Error while parsing\n";
+    }
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
 } // extern "C"
 

@@ -1091,8 +1091,8 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	Util.string_append_list(["simple_index_alloc_",ident_type_str,
 			    "1(&",evar,", ",tvar,", &",ivar,");"]) 
 	  => stmt_array &
-	Util.string_append_list([ivar," = *(",array_type_str,"_element_addr(&",
-			    evar,", 1, ",tvar,");"]) => stmt_scalar &
+	Util.string_append_list([ivar," = *(",array_type_str,"_element_addr1(&",
+			    evar,", 1, ",tvar,");"]) => stmt_scalar & (* Use fast implementation for 1 dim *)
 
 	Util.if(a,stmt_array,stmt_scalar) => stmt &
 	generate_algorithm_statements(stmts,tnr3) => (cfn4,tnr4) &
@@ -1987,6 +1987,32 @@ relation generate_scalar_lhs_cref : (Exp.Type, Exp.ComponentRef, int)
 	generate_scalar_lhs_cref(t,cref,tnr)
 	  => (cfn,var,tnr')
 
+	    (* two special cases rules for 1 and 2 dimensions for faster code (no vararg) *)
+  rule	Debug.fprintln("gcge","generating cref ccode") &
+	generate_indices(idx,tnr) => (cfn1,idxs1,tnr1) &
+	list_length idxs1 => 1 &  (* ndims == 1*)
+	int_string 1 => ndims_str &
+	Util.string_delimit_list(idxs1,", ") => idxs_str &
+	exp_type_str(t,true) => type_str &
+	Util.string_append_list(["(*",type_str,"_element_addr1(&",id,", ",ndims_str,
+			", ",idxs_str,"))"]) => cref1 
+	------------------------------------------------
+	generate_scalar_lhs_cref(t,Exp.CREF_IDENT(id,idx),tnr)
+	  => (cfn1,cref1,tnr1)
+ 
+  rule	Debug.fprintln("gcge","generating cref ccode") &
+	generate_indices(idx,tnr) => (cfn1,idxs1,tnr1) &
+	list_length idxs1 => 2 & (* ndims == 2 *)
+	int_string 2 => ndims_str &
+	Util.string_delimit_list(idxs1,", ") => idxs_str &
+	exp_type_str(t,true) => type_str &
+	Util.string_append_list(["(*",type_str,"_element_addr2(&",id,", ",ndims_str,
+			", ",idxs_str,"))"]) => cref1 
+	------------------------------------------------
+	generate_scalar_lhs_cref(t,Exp.CREF_IDENT(id,idx),tnr)
+	  => (cfn1,cref1,tnr1)
+
+
   rule	Debug.fprintln("gcge","generating cref ccode") &
 	generate_indices(idx,tnr) => (cfn1,idxs1,tnr1) &
 	list_length idxs1 => ndims &
@@ -2040,6 +2066,32 @@ end
 
 relation generate_scalar_rhs_cref : (string, Exp.Type,Exp.Subscript list, int) 
 	  => (CFunction, string, int) =
+
+	   (* Two special rules for faster code when ndims == 1 or 2 *)
+	
+  rule	generate_indices(subs,tnr) => (cfn1,idxs1,tnr1) &
+	list_length idxs1 => 1 & (* ndims == 1*)
+	int_string 1 => ndims_str &
+	Util.string_delimit_list(idxs1,", ") => idxs_str &
+	exp_type_str (crt,true) => array_type_str &
+	Util.string_append_list(["(*",array_type_str,"_element_addr1(&",
+				 cref_str,", ",ndims_str,
+				 ", ",idxs_str,"))"]) => cref1
+	--------------------
+	generate_scalar_rhs_cref (cref_str,crt,subs,tnr) 
+	  => (cfn1,cref1,tnr1)
+
+  rule	generate_indices(subs,tnr) => (cfn1,idxs1,tnr1) &
+	list_length idxs1 => 2 & (* ndims == 2*)
+	int_string 2 => ndims_str &
+	Util.string_delimit_list(idxs1,", ") => idxs_str &
+	exp_type_str (crt,true) => array_type_str &
+	Util.string_append_list(["(*",array_type_str,"_element_addr2(&",
+				 cref_str,", ",ndims_str,
+				 ", ",idxs_str,"))"]) => cref1
+	--------------------
+	generate_scalar_rhs_cref (cref_str,crt,subs,tnr) 
+	  => (cfn1,cref1,tnr1)
 
   rule	generate_indices(subs,tnr) => (cfn1,idxs1,tnr1) &
 	list_length idxs1 => ndims &

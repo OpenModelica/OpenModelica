@@ -38,6 +38,7 @@ module Debug:
  relation fprintl: (string, string list) => ()
  relation fprint_list: (string, 'a list, 'a => (), string) => ()
  relation fcall: (string, 'a => (), 'a) => ()
+ relation notfcall: (string, 'a => (), 'a) => ()
 end
 
 with "rtopts.rml"
@@ -134,6 +135,18 @@ relation fcall: (string, 'a => (), 'a) => () =
 
 end
 
+(* Call the given function (2nd arg) if the flag given in 1st arg is NOT set *)
+
+relation notfcall: (string, 'a => (), 'a) => () =
+
+  rule	RTOpts.debug_flag (flag) => false &
+	func(str)
+	------------
+	notfcall (flag, func, str)
+
+  axiom	notfcall (_,_,_)
+
+end
 
 relation fprint_list: (string, 'a list, 'a => (), string) => () =
 

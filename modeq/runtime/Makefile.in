@@ -12,7 +12,7 @@ SHELL	= /bin/sh
 CC	= gcc
 CFLAGS	= -I$(RMLINCLUDE)
 
-SRC	= rtopts.c
+SRC	= rtopts.c socketimpl.c
 
 OBJ     = $(SRC:.c=.o)
 
@@ -20,3 +20,5 @@ all: $(OBJ)
 
 clean:
 	$(RM) $(OBJ)
+
+
