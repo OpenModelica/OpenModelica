@@ -406,7 +406,21 @@ The work on the RML specification for Modelica began in November 1997.
 \section{PELAB}
 \label{sec:pela}
 
-\fixme{No access to \filename{/home/petfr/doc/pelab/pelab-abstract97.txt}}
+The Programming Environment Laboratory, PELAB, (Fritzson, professor)
+is concerned with research in software engineering, i.e. tools and
+methods for the specification, development and maintenance of computer
+programs. Some examples are: programming languages, debuggers,
+incremental programming environments and compilers, compiler
+generators, tools for debugging and maintenance of distributed and
+real-time systems, compilers and programming environments for parallel
+computers, high-level environments and mathematical modeling languages
+and systems for scientific computing, program transformation systems,
+etc.  The view of programming environment research is rather
+pragmatic, and the primary interest is in developing and investigating
+new methods and tools that have potential for practical applications,
+e.g. in support systems for software specialists. Developing such
+tools is very important, since most of the rising cost of computer
+systems is due to development, debugging and maintenance of software.
 
 \chapter{Goals, scope, motivation and stuff}
 \label{cha:goals}
@@ -1165,9 +1179,24 @@ the previous section.
 \end{enumerate}
 
 
-\chapter{System overview}
+\chapter{Translation overview}
 \label{cha:system}
 
+
+The semantic specification is written as a translation from Modelica
+to a target language called flag Modelica\ref{cha:target}.  The
+translation is performed in several steps, which are outlined in this
+chapter.
+
+\begin{figure}[htbp]
+  \begin{center}
+    
+    \caption{Translation steps}
+    \label{fig:transsteps}
+  \end{center}
+\end{figure}
+
+A schematic view of the translation steps are show in 
 
 \section{Lexical analysis and parsing}
 \label{sec:laxparse}
@@ -1310,8 +1339,6 @@ The output of the translator is shown in figure \ref{fig:ex-eq}, which
 is the Flat Modelica version of the source model.  All the components
 are expanded into their simple components.
 
-\unfinished{}
-
 \begin{figure}[htbp]
   \begin{center}
     \input{example-4}
@@ -1322,6 +1349,11 @@ are expanded into their simple components.
 
 \chapter{Design notes for the RML specification}
 \label{cha:design}
+
+
+This chapter contains some notes describing important parts of the RML
+specification.  It is intended to help understand the specification
+and to give motivation for the design decisions made.
 
 
 \section{Abstract syntax}
@@ -1554,22 +1586,23 @@ clearer.
 
 %\begin{landscape}
   
-%\input{main.tex}
-%\input{absyn.tex}
-%\input{exp.tex}
-%\input{classinf.tex}
-%\input{types.tex}
-%\input{explode.tex}
-%\input{inst.tex}
-%\input{prefix.tex}
-%\input{mod.tex}
-%\input{env.tex}
-%\input{lookup.tex}
-%\input{builtin.tex}
-%\input{connect.tex}
-%\input{staticexp.tex}
-%\input{dae.tex}
-%\input{dump.tex}
+\input{main.tex}
+\input{absyn.tex}
+\input{exp.tex}
+\input{classinf.tex}
+\input{types.tex}
+\input{explode.tex}
+\input{inst.tex}
+\input{prefix.tex}
+\input{mod.tex}
+\input{algorithm.tex}
+\input{env.tex}
+\input{lookup.tex}
+\input{builtin.tex}
+\input{connect.tex}
+\input{staticexp.tex}
+\input{dae.tex}
+\input{dump.tex}
 
 %\end{landscape}
 
