@@ -12,27 +12,38 @@ module Prefix:
 
   with "exp.rml"
   
-  type Prefix = string list
+  type Prefix = (string * Exp.Subscript list) list
 
-  relation prefix_add  : (Exp.Ident, Prefix) => Prefix
+  relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix
   relation prefix_exp  : (Exp.Exp,Prefix) => Exp.Exp
+  relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
   relation prefix_path : (Exp.Path,Prefix) => Exp.Path
 
 end
 
-relation prefix_add : (Exp.Ident, Prefix) => Prefix =
+relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix =
 
-  axiom prefix_add(s,p) => ((s::p))
+  axiom prefix_add(i,s,p) => (((i,s)::p))
 
 end
 
 relation prefix_path: (Exp.Path,Prefix) => Exp.Path =
 
   axiom	prefix_path(p,[]) => p
-
+  
   rule	prefix_path(Exp.QUALIFIED(s,p),ss) => p'
 	---------------------------
-	prefix_path(p,s::ss) => p'
+	prefix_path(p,(s,_)::ss) => p'
+
+end
+
+relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
+
+  axiom	prefix_cref([], cref) => cref
+
+  rule	prefix_cref(xs, x::cref) => cref'
+	---------------------------------
+	prefix_cref(x::xs, cref) => cref'
 
 end
 
@@ -53,9 +64,9 @@ and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
   axiom	prefix_exp2(e as Exp.BOOL(_),_) => e
   axiom	prefix_exp2(e as Exp.TIME,_) => e
 
-  rule	prefix_path(p,pre) => p'
+  rule	prefix_cref(pre,p) => p'
 	--------------------------
-	prefix_exp2(Exp.PATH(p),pre) => Exp.PATH(p')
+	prefix_exp2(Exp.CREF(p),pre) => Exp.CREF(p')
 
   rule	prefix_exp2(e1,p) => e1' &
 	prefix_exp2(e2,p) => e2'
