@@ -11,7 +11,7 @@ module Inst:
   with "explode.rml"
   with "dae.rml"
 
-  relation instantiate: SCode.Program => DAE.DAEform
+  relation instantiate: SCode.Program => DAE.DAElist
 
 end
 
@@ -62,7 +62,7 @@ end
  ** instantiated by the relation `inst_program'
  **)
 
-relation instantiate: SCode.Program => DAE.DAEform =
+relation instantiate: SCode.Program => DAE.DAElist =
 
   rule	Builtin.initial_env => env &
 	inst_program(env,p) => l
@@ -79,7 +79,7 @@ end
  ** then the last class is instantiated in the relation `inst_class'
  **)
 
-relation inst_program : (Env, SCode.Program) => DAE.DAEcomp list =
+relation inst_program : (Env, SCode.Program) => DAE.Element list =
 
   rule	print "# Empty program\n"
 	------------------------------
@@ -112,7 +112,7 @@ end
  **)
 
 relation inst_class: (Env, Mod, Prefix, Connect.Sets, SCode.Class)
-	  => (DAE.DAEcomp list, Connect.Sets, Types.Type, ClassInf.State) =
+	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State) =
 
   rule	print "# Can't instantiate partial class " & print n & print "\n"
 	------------------------------------------------------	
@@ -146,7 +146,7 @@ end
 
 relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Class, bool)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
   rule	print " instantiating " & print n & print "\n" &
@@ -181,7 +181,7 @@ end
 
 relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.ClassDef, Absyn.Restriction, bool)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
 	(** This rule describes how to instantiate an explicit
@@ -251,7 +251,7 @@ end
 
 relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			      SCode.Element list)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
   axiom inst_element_list(env,_,_,csets,ci_state,[])
@@ -281,7 +281,7 @@ end
 
 relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Element)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State,
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
 	(**  extends
@@ -432,10 +432,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,
-				     attr as SCode.ATTR(ad,flow,param,dir),
+				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m))
           => (dae, env',csets',ci_state,
-	      [Types.VAR(n,SCode.ATTR([(* FIXME: why? *)],flow,param,dir),
+	      [Types.VAR(n,SCode.ATTR([(* FIXME: why? *)],flow,acc,param,dir),
 			 prot, ty, binding)])
 	
 
@@ -470,7 +470,7 @@ end
 relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		     SCode.Class,SCode.Attributes,Mod.EqMod option,
 		     int list, int list)
-	  => (DAE.DAEcomp list,Connect.Sets,Types.Type) =
+	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
 	(** The class is instantiated with the calculated *)
 	(** modification, and an extended prefix. *)
@@ -483,12 +483,13 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	inst_mod_equation(cr,ty,mod) => dae2 &
-	dae_declare(cr,ty,SCode.ATTR([], flow, vt, dir)) => dae3 &
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir)) => dae3 &
 
 	list_append(dae1,dae2) => daex &
 	list_append(daex,dae3) => dae
 	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,vt,dir),eq,[],idxs)
+	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
+		 eq,[],idxs)
           => (dae,csets',ty)
 
   rule	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs)
@@ -508,7 +509,7 @@ end
 
 relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		       (SCode.Class*SCode.Attributes),int,int,int list,int list)
-	  => (DAE.DAEcomp list,Connect.Sets,Types.Type) =
+	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
   rule	int_gt(i,stop) => true
 	----------------------
@@ -691,7 +692,7 @@ end
 
 relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class)
-	  => (Env.Env, DAE.DAEcomp list) =
+	  => (Env.Env, DAE.Element list) =
 
   rule	print "  adding " & print n & print "\n" &
 	Env.extend_frame_c(env,c) => env' &
@@ -717,7 +718,7 @@ end
 
 relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
 				   Connect.Sets, SCode.Class)
-	  => (Env.Env, DAE.DAEcomp list) =
+	  => (Env.Env, DAE.Element list) =
 
   rule	Prefix.prefix_add(n,[],pre) => pre' &
 	inst_class(env,mod,pre',csets,c) => (dae, csets', ty, st) &
@@ -743,13 +744,13 @@ end
  **)
 
 relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
-			DAE.DAEcomp list)
-	  => (Env.Env, DAE.DAEcomp list) =
+			DAE.Element list)
+	  => (Env.Env, DAE.Element list) =
 
   rule	ClassInf.valid(st, Absyn.R_PACKAGE) &
 	Env.extend_frame_v(env,
 			   Types.VAR(n, SCode.ATTR([],
-						   false,Absyn.CONST,
+						   false,SCode.RO,Absyn.CONST,
 						   Absyn.BIDIR),
 				     false,
 				     ty,Types.UNBOUND)) => env' &
@@ -765,11 +766,11 @@ end
  **)
 
 relation dae_declare : (Exp.ComponentRef,
-			Types.Type, SCode.Attributes) => DAE.DAEcomp list =
+			Types.Type, SCode.Attributes) => DAE.Element list =
 
-  rule	dae_declare2 (vn, ty, par, ad) => dae
+  rule	dae_declare2 (vn, ty, par) => dae
 	-----------------------------------
-	dae_declare (vn, ty, SCode.ATTR(ad,_,par,_)) => dae
+	dae_declare (vn, ty, SCode.ATTR(_,_,_,par,_)) => dae
 
   rule	print "- dae_declare failed\n"
 	------------------------------
@@ -779,55 +780,53 @@ end
 
 (**)
 
-relation dae_declare2 : (Exp.ComponentRef, Types.Type, Absyn.Variability,
-			 Absyn.ArrayDim)
-	  => DAE.DAEcomp list =
+relation dae_declare2 : (Exp.ComponentRef, Types.Type, Absyn.Variability)
+	  => DAE.Element list =
 
-  rule	dae_declare3 (vn, ty, DAE.VARIABLE, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.VARIABLE) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, Absyn.VAR, ad) => dae
+	dae_declare2 (vn, ty, Absyn.VAR) => dae
 
-  rule	dae_declare3 (vn, ty, DAE.DISCRETE, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.DISCRETE) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, Absyn.DISCRETE, ad) => dae
+	dae_declare2 (vn, ty, Absyn.DISCRETE) => dae
 
-  rule	dae_declare3 (vn, ty, DAE.PARAM, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.PARAM) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, Absyn.PARAM, ad) => dae
+	dae_declare2 (vn, ty, Absyn.PARAM) => dae
 
-  rule	dae_declare3 (vn, ty, DAE.CONST, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.CONST) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, Absyn.CONST, ad) => dae
+	dae_declare2 (vn, ty, Absyn.CONST) => dae
 
   rule	print "- dae_declare2 failed\n"
 	------------------------------
-	dae_declare2(_,_,_,_) => fail
+	dae_declare2(_,_,_) => fail
 
 end
 
 (**)
 
-relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
-			 Absyn.ArrayDim)
-	  => DAE.DAEcomp list =
+relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.VarKind)
+	  => DAE.Element list =
 
-  axiom	dae_declare3 (vn, Types.T_INTEGER, kind, ad)
-	  => [DAE.VAR(vn, kind, DAE.INT, ad)]
+  axiom	dae_declare3 (vn, Types.T_INTEGER, kind)
+	  => [DAE.VAR(vn, kind, DAE.INT)]
 	
-  axiom	dae_declare3 (vn, Types.T_REAL, kind, ad)
-	  => [DAE.VAR(vn, kind, DAE.REAL, ad)]
+  axiom	dae_declare3 (vn, Types.T_REAL, kind)
+	  => [DAE.VAR(vn, kind, DAE.REAL)]
 	
-  axiom	dae_declare3 (vn, Types.T_BOOL, kind, ad)
-	  => [DAE.VAR(vn, kind, DAE.BOOL, ad)]
+  axiom	dae_declare3 (vn, Types.T_BOOL, kind)
+	  => [DAE.VAR(vn, kind, DAE.BOOL)]
 	
-  axiom	dae_declare3 (vn, Types.T_STRING, kind, ad)
-	  => [DAE.VAR(vn, kind, DAE.STRING, ad)]
+  axiom	dae_declare3 (vn, Types.T_STRING, kind)
+	  => [DAE.VAR(vn, kind, DAE.STRING)]
 
   rule	print "  not declaring variable " &
 	Exp.print_component_ref c & print " :: " &
 	Types.print_type ty & print "\n"
 	--------------------------------------
-	dae_declare3 (c,ty,_,_) => []
+	dae_declare3 (c,ty,_) => []
 
 end
 
@@ -836,7 +835,7 @@ end
 
 relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 			  SCode.Equation)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
 	(**  connect
 	 **
@@ -934,7 +933,7 @@ end
  **)
 
 relation inst_eq_equation : (Exp.Exp, Static.Properties,
-			     Exp.Exp, Static.Properties) => DAE.DAEcomp list =
+			     Exp.Exp, Static.Properties) => DAE.Element list =
 
   rule	Static.operators Absyn.EQUAL => ops &
 	Static.deoverload (ops,[(e1,t1),(e2,t2)],
@@ -964,7 +963,7 @@ end
 
 relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
 			   bool, string, Prefix)
-	  => DAE.DAEcomp list =
+	  => DAE.Element list =
 
   rule	Prefix.prefix_exp(env,e,pre) => e' &
 	print " (constant) ASSERTION(" & Exp.print_exp e' & print "): " &
@@ -996,7 +995,7 @@ end
 
 relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		   Ident, Values.Value, SCode.Equation list)
-	  => (DAE.DAEcomp list, Connect.Sets) =
+	  => (DAE.Element list, Connect.Sets) =
 
   axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_) => ([], csets)
 
@@ -1005,6 +1004,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Env.extend_frame_v (env',
 			    Types.VAR(i, SCode.ATTR([],
 						    false,
+						    SCode.RO,
 						    Absyn.CONST,
 						    Absyn.BIDIR),
 				      true,
@@ -1030,7 +1030,7 @@ end
 
 relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			   SCode.Algorithm)
-	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
+	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State) =
 
   rule	inst_statements(env,statements) => statements'
 	----------------------------------------------
@@ -1062,9 +1062,9 @@ end
 
 relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 
-  rule	Static.elab_cref (env,cr) => (ce, cprop) &
+  rule	Static.elab_cref (env,cr) => (ce, cprop, acc) &
 	Static.elab_exp (env,e) => (e', eprop) &
-	Algorithm.make_assignment(ce,cprop,e',eprop) => stmt
+	Algorithm.make_assignment(ce,cprop,e',eprop,acc) => stmt
 	--------------------------------------------------------
 	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
 
@@ -1128,14 +1128,14 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
   rule	print " connecting " &
 	Dump.print_component_ref(c1) & print " with " &
 	Dump.print_component_ref(c2) & print "\n" &
-	Static.elab_cref(env, c1) => (Exp.CREF(c1'),prop1) &
-	Static.elab_cref(env, c2) => (Exp.CREF(c2'),prop2) &
+	Static.elab_cref(env, c1) => (Exp.CREF(c1'),prop1,acc) &
+	Static.elab_cref(env, c2) => (Exp.CREF(c2'),prop2,acc) &
 	Static.canon_cref(env, c1') => c1'' &
 	Static.canon_cref(env, c2') => c2'' &
 	Lookup.lookup_var_local(env,c1'')
-	  => (SCode.ATTR(_,flow1,vt1,_),ty1,_) &
+	  => (SCode.ATTR(_,flow1,_,vt1,_),ty1,_) &
 	Lookup.lookup_var_local(env,c2'')
-	  => (SCode.ATTR(_,flow2,vt2,_),ty2,_) &
+	  => (SCode.ATTR(_,flow2,_,vt2,_),ty2,_) &
 	print "  looked up connectors\n" &
 
 	(** Check that the types of the connectors are good. *)
@@ -1313,9 +1313,9 @@ relation connect_vars : (Connect.Sets,
 	connect_vars(sets',c1,f1,xs1,c2,f2,xs2) => sets''
 	--------------------------------------
 	connect_vars(sets,
-		     c1,f1, Types.VAR(n,SCode.ATTR(_,flow1,vt1,_),
+		     c1,f1, Types.VAR(n,SCode.ATTR(_,flow1,_,vt1,_),
 				      _,ty1,_)::xs1,
-		     c2,f2, Types.VAR(_,SCode.ATTR(_,flow2,vt2,_),
+		     c2,f2, Types.VAR(_,SCode.ATTR(_,flow2,_,vt2,_),
 				      _,ty2,_)::xs2)
 	  => sets''
 
@@ -1403,7 +1403,7 @@ end
  ***)
 
 relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
-	  => DAE.DAEcomp list =
+	  => DAE.Element list =
 
   rule  print "  equation modification: " & Exp.print_component_ref cr &
  	Mod.print_mod mod & print "\n" &
@@ -1459,7 +1459,7 @@ relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option, SCode.Clas
 	make_const_binding (env,e, prop, ct) => binding
 	----------------------------------------
 	make_binding (env,
-		      SCode.ATTR(_,_,Absyn.CONST,_), (* a constant component *)
+		      SCode.ATTR(_,_,_,Absyn.CONST,_),
 		      SOME((e,prop)),
 		      cl)
 	  => (* binding *) Types.EQBOUND(e,true)
