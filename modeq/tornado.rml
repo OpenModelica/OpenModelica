@@ -49,26 +49,29 @@ with "simcodegen.rml"
  **)
  relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
-  rule	DAELow.lower(dae) => (dae' as DAELow.DAELOW(_,_,eqns,_,_)) &
-         generate_blt(dae') => (dae'',blt,ass1,ass2) &
-	 DAELow.calculate_values(dae'') => dae''' & 
-	 Absyn.path_string(class) => cname &
-         generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
-	 generate_header(cname) => header &
-	 generate_impl_header(cname) => implheader &
-	 generate_constructor(cname,p,dae''') => constr &
-	 generate_var_defines(dae''') => defines &
-	 generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
-	 Util.string_append_list([implheader,constr,defines,cmethods]) => impl &
-	 string_append(cname,".h") => headerfile &
-	 string_append(cname,".cpp") => implfile &
-	 print "Generating: " & print headerfile & print "\n" &
-	 System.write_file(headerfile,header) &
-	 print "Generating: " & print implfile & print "\n" &
-	 System.write_file(implfile,impl) 
-	 -------------------------------------------------------------------
-	 generate_code(p,dae,class) => 
-         
+  rule	DAELow.lower(dae) => dae' &
+        generate_blt(dae') => (dae'',blt,ass1,ass2) &
+	    DAELow.calculate_values(dae'') => dae''' & 
+	    Absyn.path_string(class) => cname &
+        generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
+	    generate_header(cname) => header &
+	    generate_impl_header(cname) => implheader &
+	    generate_constructor(cname,p,dae''') => constr &
+	    generate_var_defines(dae''') => defines &
+	    generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
+        TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
+(*  	    TORNADOEXT.dump_testing() &  *)
+        Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
+        Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
+	    string_append(cname,".h") => headerfile &
+	    string_append(cname,".cpp") => implfile &
+	    print "Generating: " & print headerfile & print "\n" &
+	    System.write_file(headerfile,header') &
+	    print "Generating: " & print implfile & print "\n" &
+	    System.write_file(implfile,impl) 
+	    -------------------------------------------------------------------
+	    generate_code(p,dae,class) => 
+        
   rule  print "generate_code failed\n" 
 	 ------------------------------
 	 generate_code(_,_,_) => fail
@@ -78,96 +81,352 @@ with "simcodegen.rml"
           => string =
 
   rule  SCode.elaborate(program) => p' &
- 	 Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
-         generate_code_from_class(class_path,dae,p',program,env) => res
-
-	 (*         list_length(elements) => tmp_int & int_string(tmp_int) => tmp_int_str &  *)
-	 (*         print "LIST LENGTH: " & print tmp_int_str  *)
-         (*Util.string_delimit_list(class_,"\n") => str & *)
-         
-         (*& Util.string_append_list(comp_name_list) => str_res &
-          print "COMPONENTS " & print str_res & print "\n" *)
-         --------------------------------------
-         generate_code_for_hierarhical_objects(class_path,dae,program) => res
-
- end
+ 	    Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
+        Absyn.path_string(class_path) => str &
+(*         TORNADOEXT.set_top_model(str) & *)
+        generate_code_from_class(class_path,dae,p',program,env) => res 
+        
+        (*         list_length(elements) => tmp_int & int_string(tmp_int) => tmp_int_str &  *)
+        (*         print "LIST LENGTH: " & print tmp_int_str  *)
+        (*Util.string_delimit_list(class_,"\n") => str & *)
+        
+        (*& Util.string_append_list(comp_name_list) => str_res &
+         print "COMPONENTS " & print str_res & print "\n" *)
+        --------------------------------------
+        generate_code_for_hierarhical_objects(class_path,dae,program) => res
+        
+end
 (*         Interactive.get_component_name_and_type_and_comment(elements)   *)
 
  relation generate_code_from_class:(Absyn.Path,DAELow.DAELow,
                                     SCode.Program,Absyn.Program,Env.Env) 
           => string =
+          
+  rule  Interactive.get_pathed_class_in_program(class_path,a_program) => cdef & 
+        Lookup.lookup_class(env,class_path,false) => (class,env') &
+        
+        Interactive.get_components_in_class(cdef) => elements &
+        Absyn.path_string(class_path) => str &
+        (*         print "\n--------------------------------\n" & print str & print ":\n" & *)
+        generate_code_from_elements(class_path,elements,dae,program,a_program,env') => res 
+        --------------------------------------
+        generate_code_from_class(class_path,dae,program,a_program,env) => res
+        
+  rule  Absyn.path_string(class_path) => str &
+        Interactive.is_primitive(Absyn.CREF_IDENT(str,[]),a_program) => true 
+        (*         print "\n-----------PRIMITIVE--------------\n" & print str & print ":\n" *)
+        --------------------------------------
+        generate_code_from_class(class_path,dae,program,a_program,env) => ""
+        
+  rule  Absyn.path_string(class_path) => str 
+        (*         print "\n-----------NO MATCH--------------\n" & print str & print ":\n" *)
+        --------------------------------------
+        generate_code_from_class(class_path,dae,program,a_program,env) => ""
+        
+        
+        
+end
 
-  rule  print "1\n" &
-         Interactive.get_pathed_class_in_program(class_path,a_program) => cdef & 
-
-         print "4\n" &
-	 Lookup.lookup_class(env,class_path,false) => (class,env') &
-
-         print "5\n" &
-         Interactive.get_components_in_class(cdef) => elements &
-         generate_code_from_elements(elements,dae,program,a_program,env') => res &
-         print "6\n"
-         --------------------------------------
-         generate_code_from_class(class_path,dae,program,a_program,env) => res
-         
- end
-
- relation generate_code_from_elements:(Absyn.Element list,  DAELow.DAELow,
-                                       SCode.Program,Absyn.Program, Env.Env) 
+relation generate_code_from_elements:(Absyn.Path,Absyn.Element list,  DAELow.DAELow,
+                                      SCode.Program,Absyn.Program, Env.Env) 
           => string =
-
-  axiom generate_code_from_elements([],_,_,_,_) => "" 
-
-	 (*   rule  Interactive.get_component_name_and_type_and_comment(element,env)  *)
-	 (*           => type_str::res & *)
-	 (*         print "TYpe: " & print type_str & print "\n"  *)
-	 (*         -------------------------------------- *)
-	 (*         generate_code_from_elements(element::rest,dae,env) => "" *)
-	 
-	 (*   rule print "generate_code_from_elements failed"  *)
-	 (*         -------------------------------------- *)
-	 (*         generate_code_from_elements(_,_,_) => fail *)
-
-
-  rule	Lookup.lookup_class(env,p,true) => (c,env') &
-	 Env.get_env_path(env') => SOME(envpath) &
-	 Absyn.path_last_ident(p) => tpname &
-	 Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
-	 Absyn.path_string(p') => typename &
-         print "TYpe: " & print typename & print "\n" &
-         generate_code_from_elements(rest,dae,program,a_program,env') => res &
-         generate_code_from_class(p,dae,program,a_program,env') => res'
-	 (* 	    get_componentitems_name(lst) => names & *)
-	 (* 	    prefix_typename(typename,names) => lst *)
-	 -------------------------------------------
-	 generate_code_from_elements(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_)::rest,
-                                     dae,
-                                     program,a_program,
-                                     env) => ""
-
+          
+  axiom generate_code_from_elements(_,[],_,_,_,_) => "" 
+        
+        (*   rule  Interactive.get_component_name_and_type_and_comment(element,env)  *)
+        (*           => type_str::res & *)
+        (*         print "TYpe: " & print type_str & print "\n"  *)
+        (*         -------------------------------------- *)
+        (*         generate_code_from_elements(element::rest,dae,env) => "" *)
+        
+        (*   rule print "generate_code_from_elements failed"  *)
+        (*         -------------------------------------- *)
+        (*         generate_code_from_elements(_,_,_) => fail *)
+        
+        
+  rule  Lookup.lookup_class(env,p,true) => (c,env') &
+	    Env.get_env_path(env') => SOME(envpath) &
+	    Absyn.path_last_ident(p) => tpname &
+        Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
+	    Absyn.path_string(p') => typename &
+        
+        Interactive.get_componentitems_name(lst) => str_lst &
+        Util.string_append_list(str_lst) => tml_str &
+        
+(*         print "TYPE: " & print typename & print " " & print tml_str & print "\n"  & *)
+        generate_code_from_elements(class_path,rest,dae,program,a_program,env') => res &
+        generate_code_from_class(p,dae,program,a_program,env') => res' & 
+        get_componentitems_name(lst) => name_list &
+        add_variable_to_list(class_path,p,name_list,dae,program,a_program,env') 
+        (* 	    get_componentitems_name(lst) => names & *)
+        (* 	    prefix_typename(typename,names) => lst *)
+	    -------------------------------------------
+	    generate_code_from_elements(class_path,
+                                    Absyn.ELEMENT(_,_,_,_,
+                                                  Absyn.COMPONENTS(_,p,lst),_,_,_)::rest,
+                                    dae,
+                                    program,a_program,
+                                    env) => ""
+        
+        
   rule  Absyn.path_string(p) => typename &
-         print "bape: " & print typename & print "\n"  &
-         generate_code_from_elements(rest,dae,program,a_program,env) => res &
-         generate_code_from_class(p,dae,program,a_program,env) => res'
-	 (* 	    get_componentitems_name(lst) => names & *)
-	 (* 	    prefix_typename(typename,names) => lst *)
-	 -------------------------------------------
-	 generate_code_from_elements(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_)::rest,
-                                     dae,
-                                     program,a_program,
-                                     env) => ""
+        
+        get_componentitems_name(lst) => str_lst &
+        Util.string_append_list(str_lst) => tml_str &
+        
+(*         print "bape: " & print typename & print " " & print tml_str & print "\n"  & *)
+        generate_code_from_elements(class_path,rest,dae,program,a_program,env) => res &
+        generate_code_from_class(p,dae,program,a_program,env) => res' &
+        get_componentitems_name(lst) => name_list &
+        add_variable_to_list(class_path,p,name_list,dae,program,a_program,env) 
+        
+        (* 	    get_componentitems_name(lst) => names & *)
+        (* 	    prefix_typename(typename,names) => lst *)
+        -------------------------------------------
+        generate_code_from_elements(class_path,
+                                    Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_)::rest,
+                                    dae,
+                                    program,a_program,
+                                    env) => ""
+        
+  rule  (*print "lalalalalalalalalala" *)
+        ------------------------------------------
+	    generate_code_from_elements(class_path,_,dae,program,a_program,env) => ""
+        
+  rule  print "generate_code_from_elements failed\n"
+	    -------------------------------------------
+	    generate_code_from_elements(_,_,_,_,_,_) => fail
+        
+        
+end
+
+(**
+ ** arg1 the name for the top class
+ ** arg2 the name for the class of type
+ ** arg3 the names of variables - this is a list because of the possibility of 
+ **      writing Real x,y,z;
+ **)
+ relation add_variable_to_list:(Absyn.Path,Absyn.Path,string list,DAELow.DAELow,
+                                SCode.Program,Absyn.Program,Env.Env) 
+          => () =
+
+  axiom add_variable_to_list(_,_,[],_,_,_,_) => ()
          
-  rule  print "lalalalalalalalalala" 
-         ------------------------------------------
-	 generate_code_from_elements(_,dae,program,a_program,env) => ""
+  rule  Interactive.get_pathed_class_in_program(variable_class_path,a_program) => 
+         (cdef as Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,_))) &
+         Absyn.path_string(variable_class_path) => str &
+         Absyn.path_string(class_path) => str' &
+         get_direction_for_variable(variable_name,str',dae) => (var_type,direction) &
+         TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction) &
+         add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
+(*          & print str' & print "\nA-----------derived-------------\n" *)
+         --------------------------------------
+         add_variable_to_list(class_path,
+                              variable_class_path,
+                              variable_name::rest,
+                              dae,program,a_program,env) => ()
+         
+  rule  Absyn.path_string(variable_class_path) => str &
+         Interactive.is_primitive(Absyn.CREF_IDENT(str,[]),a_program) => true & 
+         Absyn.path_string(variable_class_path) => str &
+         Absyn.path_string(class_path) => str' &
+         get_direction_for_variable(variable_name,str',dae) => (var_type,direction) &
+         TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction) &
+         add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
+(*           & print variable_name & print " " & print str'  & print "\nA-----------PRIMITIVE--------------\n"   *)
+         --------------------------------------
+         add_variable_to_list(class_path,
+                              variable_class_path,
+                              variable_name::rest,
+                              dae,program,a_program,env) => ()
 
-  rule	print "generate_code_from_elements failed\n"
-	 -------------------------------------------
-	 generate_code_from_elements(_,_,_,_,_) => fail
+  rule  Interactive.get_pathed_class_in_program(variable_class_path,a_program) => cdef & 
+         Lookup.lookup_class(env,variable_class_path,false) => (class,env') &
+         Absyn.path_string(class_path) => str' &
+         Absyn.path_string(variable_class_path) => var_str' &
+  
+        
+         Absyn.path_string(variable_class_path) => str &
+         add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) &
+         TORNADOEXT.add_variable_to_class(str',variable_name,"class",var_str') 
+(*          & print str' & print "\nA--------------------------------\n"   *)
+         --------------------------------------
+         add_variable_to_list(class_path,
+                              variable_class_path,
 
+                              variable_name::rest,
+                              dae,program,a_program,env) => ()
+         
+         
+         
+  rule  Absyn.path_string(variable_class_path) => str &
+         add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
+(*          & print str &  print "\nA-----------NO MATCH--------------\n"  *)
+         --------------------------------------
+         add_variable_to_list(class_path,
+                              variable_class_path,
+                              variable_name::rest,
+                              dae,program,a_program,env) => ()
+         
+         
+         
+ end
+
+(**
+ ** arg1 name of the variable
+ ** arg2 name of the class where the variable is
+ ** arg2 the DAELow.DAELow that contains all the varialbles
+ ** 
+ ** return (type,direction) as string 
+ **)
+
+ relation get_direction_for_variable:(string, string,DAELow.DAELow) 
+          => (string,string) = 
+           
+  rule  find_dae_var(name,class_name,dae)
+          => DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("variable","output")
+ 
+  rule  find_dae_var(name,class_name,dae)
+          => DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("variable","bidir")
+         
+  rule  find_dae_var(name,class_name,dae)
+          => DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("variable","input")
+         
+  rule  find_dae_var(name,class_name,dae)
+           => DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("parameter","")
+         
+  rule  find_dae_var(name,class_name,dae)
+          => DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("dummy_der","")
+  
+  rule  find_dae_var(name,class_name,dae)
+          => DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("dummy_state","")
+  
+  rule  find_dae_var(name,class_name,dae)
+          => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("state","")
+         
+  rule  find_dae_var(name,class_name,dae)
+          => var & DAELow.dump_vars([var]) &
+           print "unknown type adn direction on variable\n"
+         --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("<unknown>","<unknown>")
+         
+  rule  (*print "-get_direction_for_variable failed\n"*)
+         --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => fail
+         
+ end
+
+(** relation find_dae_var
+ ** arg1 name of the variable
+ ** arg2 name of the class where the variable is
+ ** arg2 the DAELow.DAELow that contains all the varialbles
+ **)
+            
+relation find_dae_var:(string, string,DAELow.DAELow) => DAELow.Var =  
+        
+  rule array_list(vararr) => vars &
+        array_list(knvararr) => knvars &
+        list_append(vars,knvars) => allvars &
+        find_dae_var2(name,class_name,allvars) => var 
+        
+        --------------------------------------
+        find_dae_var(name,
+                     class_name,
+                     DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
+                                   DAELow.VARIABLES(_,knvararr,_,_),
+                                   eqn,seqn,_))
+          => var
+ 
+  rule  (*print "find_dae_var failed\n " *)
+        --------------------------------------
+        find_dae_var(_,_,_) => fail
+        
+end
+
+
+relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
+
+        
+  rule  (*print "no such variable\n "*)
+        -------------------------------------
+        find_dae_var2(name,class_name,[]) => fail
+
+
+  rule  Exp.cref_str(cr) => cr_str &
+        (* pick out the last of the names "a" in the name Temp3.a *)
+        Util.string_split_at_char(cr_str,#".") => str_list &
+        Util.list_last(str_list) => var_name &
+        Absyn.path_string(from_class) => from_class_str &
+        Util.string_equal(class_name,from_class_str) => true &
+        Util.string_equal(var_name,name) => true 
+ 
+(*          & print var_name & print " = " & print name & print " " &  *)
+(*         print from_class_str & print " = " & print class_name & print "\n"  *)
+        -------------------------------------
+        find_dae_var2(name,
+                      class_name,
+                      (var as DAELow.VAR(cr,_,_,_,_,_,_,start,_,org_name,from_class))::rest) 
+          => var
+
+  rule  find_dae_var2(name,class_name,rest) => var 
+        -------------------------------------
+        find_dae_var2(name,
+                      class_name,
+                      DAELow.VAR(cr,_,_,_,_,_,_,start,_,org_name,from_class)::rest) 
+          => var
 
  end
 
+
+
+(** relation_get_componentitems_name
+ ** This relation takes a `ComponentItems' list and returns a  list of all
+ ** component names (if any).
+ **)
+relation get_componentitems_name: Absyn.ComponentItem list => string list =
+	
+  rule  get_componentitems_name(c2::rest) => lst 
+	    ----------------------------
+	    get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),
+                                                    SOME(Absyn.COMMENT(_,SOME(s2))))::(c2::rest)) 
+          => c1::lst
+
+  rule  get_componentitems_name(c2::rest) => lst 
+	    ----------------------------
+	    get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),NONE)::(c2::rest)) 
+          => c1::lst
+          
+  rule	get_componentitems_name(rest) => res
+	    ------------------------------------
+	    get_componentitems_name(_::rest) => res
+        
+  rule  
+	    ----------------------
+	    get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),
+                                                     SOME(Absyn.COMMENT(_,SOME(s2))))]) 
+          => [c1]
+        
+  rule  
+	    ---------------------------------------
+	    get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) 
+          => [c1]
+
+  axiom	get_componentitems_name([_]) => []
+end
 (** relation: generate_header
  ** Generate the content of the header file. It only needs the name of the Modelica model.
  **)
@@ -184,8 +443,8 @@ relation generate_header: string => string =
 				 "    void ComputeTerminal();\n",
 				 "    void ComputeState();\n",
 				 "    void ComputeOutput();\n",
-				 "};\n\n",
-				 "#endif\n"]) => r4 &
+				 "};\n\n"]) => r4 &
+(* 				 "#endif\n"]) => r4 & *)
 	Util.string_append_list([r1,r2,r3,r4]) => header
 	------------------------------------------------
 	generate_header(cname) => header
@@ -316,7 +575,9 @@ relation generate_links:(DAELow.DAELow,string list) => (string, int) =
         Util.string_append_list(indep_var_list) => indep_var_str &
         Util.string_append_list([params_list_str',"\n",indep_var_str,res']) => res''
         -------------------------------------------
-        generate_links(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_),
+        generate_links(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
+                                     DAELow.VARIABLES(_,knvararr,_,_),
+                                     eqn,seqn,_),
 		       comp_name_list) => (res'',no_alg_values)        
 
   axiom generate_links(_,_) => ("/* generation of variables linking has failed */",42)
@@ -386,26 +647,31 @@ end
                                    "  \"",
                                    crs,"\" );\n"]) => r1 &*)
 
-         Exp.cref_str(cr) => crs &
-         Util.string_split_at_char(crs,#".") => comp_name::_ &
-         TORNADOEXT.get_output_var_number(comp_name) => input_number &
-         int_string(input_number) => input_number_str &
-         Util.list_position(comp_name,comp_name_list) => index &
-         int_string(index) => index_str &
-         Util.string_append_list(["  GetSubModel(",
-                                  index_str,
-                                  ")->GetOutputVar(",
-                                  input_number_str,
-                                  ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
-                                  is,");", " // ",crs,"\n"]) => r1 &
+        Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_path_string_list &
+        Util.list_last(comp_path_string_list) => comp_name &
+        Absyn.path_string(class_path) => class_path_str &
+        TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
 
-         generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res,no_alg_vars) &
-         int_add(no_alg_vars,1) => no_alg_vars'
-         ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,
-                         var_index,
-                         param_index,
-                         comp_name_list) 
+       
+        int_string(input_number) => input_number_str &
+        Util.list_first(comp_path_string_list) => comp_name' &
+        Util.list_position(comp_name',comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetOutputVar(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
+                                 is,");", " // ",crs,"\n"]) => r1 &
+
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res,no_alg_vars) &
+        int_add(no_alg_vars,1) => no_alg_vars'
+          ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,class_path)::rest,
+                        var_index,
+                        param_index,
+                        comp_name_list) 
           => (params_str,(r1::res),no_alg_vars')
 	   
   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
@@ -424,80 +690,93 @@ end
           => (params_str,(r1::res),no_alg_vars)
 	   
   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
-         (*SimCodegen.cref_modelica_str(cr) => crs &
-          Util.string_append_list([" ",
-                                   is,
-                                   "  \"",
-                                   crs,"\" );\n"]) => r1 &*)
-         Exp.cref_str(cr) => crs &
-         Util.string_split_at_char(crs,#".") => comp_name::_ &
-         TORNADOEXT.get_output_var_number(comp_name) => input_number &
-         int_string(input_number) => input_number_str &
-         Util.list_position(comp_name,comp_name_list) => index &
-         int_string(index) => index_str &
-         Util.string_append_list(["  GetSubModel(",
-                                  index_str,
-                                  ")->GetInputVar(",
-                                  input_number_str,
-                                  ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
-                                  is,");", " // ",crs,"\n"]) => r1 &
-         generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res,no_alg_vars) &
-         int_add(no_alg_vars,1) => no_alg_vars'
-         ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)::rest,
-                         var_index,
-                         param_index,
-                         comp_name_list) 
+        (*cref_modelica_str(cr) => crs &
+        Util.string_append_list([" ",
+                                 is,
+                                 "  \"",
+                                 crs,"\" );\n"]) => r1 &*)
+        Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_path_string_list &
+        Util.list_last(comp_path_string_list) => comp_name &
+        Absyn.path_string(class_path) => class_path_str &
+        TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
+        int_string(input_number) => input_number_str &
+        Util.list_first(comp_path_string_list) => comp_name' &
+        Util.list_position(comp_name',comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetInputVar(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
+                                 is,");", " // ",crs,"\n"]) => r1 &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res,no_alg_vars) &
+        int_add(no_alg_vars,1) => no_alg_vars'
+          ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,org_name,class_path)::rest,
+                        var_index,
+                        param_index,
+                        comp_name_list) 
           => (params_str,(r1::res),no_alg_vars')
 
            (* this rule take care of BIDIR variables *)
   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
-	 (*       SimCodegen.cref_modelica_str(cr) => crs &
-          Util.string_append_list([" ",
-                                   is,
-                                   "  \"",
-                                   crs,"\" );\n"]) => r1 *)
+ (*       cref_modelica_str(cr) => crs &
+        Util.string_append_list([" ",
+                                 is,
+                                 "  \"",
+                                 crs,"\" );\n"]) => r1 *)
 
-         Exp.cref_str(cr) => crs &
-         Util.string_split_at_char(crs,#".") => comp_name::_ &
-         TORNADOEXT.get_input_var_number(comp_name) => input_number &
-         int_string(input_number) => input_number_str &
-         Util.list_position(comp_name,comp_name_list) => index &
-         int_string(index) => index_str &
-         Util.string_append_list(["  GetSubModel(",
-                                  index_str,
-                                  ")->GetAlgStateVar(",
-                                  input_number_str,
-                                  ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
-                                  is,");", " // ",crs,"\n"]) => r1 &
-         generate_links2(rest,var_index',param_index,comp_name_list) => (params,res,no_alg_vars) &
-         int_add(no_alg_vars,1) => no_alg_vars'
-         ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,
-                         var_index,
-                         param_index,
-                         comp_name_list) 
+        Exp.cref_str(cr) => crs &
+
+        Util.string_split_at_char(crs,#".") => comp_path_string_list &
+        Util.list_last(comp_path_string_list) => comp_name &
+        Absyn.path_string(class_path) => class_path_str &
+        TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
+
+        int_string(input_number) => input_number_str &
+        Util.list_first(comp_path_string_list) => comp_name' &
+        Util.list_position(comp_name',comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetAlgStateVar(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
+                                 is,");", " // ",crs,"\n"]) => r1 &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params,res,no_alg_vars) &
+        int_add(no_alg_vars,1) => no_alg_vars'
+        ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,class_path)::rest,
+                        var_index,
+                        param_index,
+                        comp_name_list) 
           => (params,(r1::res),no_alg_vars')
 
   rule	int_add(param_index,1) => param_index' & int_string(param_index) => is &
-         Exp.cref_str(cr) => crs &
-         Util.string_split_at_char(crs,#".") => comp_name::_ &
-         TORNADOEXT.get_param_var_number(comp_name) => input_number &
-         int_string(input_number) => input_number_str &
-         Util.list_position(comp_name,comp_name_list) => index &
-         int_string(index) => index_str &
-         Util.string_append_list(["  GetSubModel(",
-                                  index_str,
-                                  ")->GetParam(",
-                                  input_number_str,
-                                  ")->LinkValue(this, MSLE_PARAM, ",
-                                  is,");", " // ",crs,"\n"]) => r1 &
-	 generate_links2(rest,var_index,param_index',comp_name_list) => (params,res,no_alg_vars) 
-         ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,
-                         var_index,
-                         param_index,
-                         comp_name_list) 
+        Exp.cref_str(cr) => crs &
+
+        Util.string_split_at_char(crs,#".") => comp_path_string_list &
+        Util.list_last(comp_path_string_list) => comp_name &
+        Absyn.path_string(class_path) => class_path_str &
+        TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
+
+        int_string(input_number) => input_number_str &
+        Util.list_first(comp_path_string_list) => comp_name' &
+        Util.list_position(comp_name',comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetParam(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_PARAM, ",
+                                 is,");", " // ",crs,"\n"]) => r1 &
+	    generate_links2(rest,var_index,param_index',comp_name_list) => (params,res,no_alg_vars) 
+        ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,org_name,class_path)::rest,
+                        var_index,
+                        param_index,
+                        comp_name_list) 
           => (r1::params,res,no_alg_vars)
            
   rule  generate_links2(rest,var_index,param_index,comp_name_list) => (params, res,no_alg_vars)

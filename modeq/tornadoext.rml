@@ -34,10 +34,28 @@
 module TORNADOEXT:
   
 
-  relation dump_testing: (int) => ()
-  relation get_output_var_number: (string) => int
-  relation get_input_var_number: (string) => int
-  relation get_param_var_number: (string) => int
+  relation dump_testing: () => ()
+          (** 
+           ** arg1 the variable name i.e. "out_1" in "Temp_foo.out_1"
+           ** arg2 the class name where is instatiated i.e. "Temp" for Temp_foo
+           ** returns the index of variable depending on type and direction
+           ** 
+           **)
+  relation get_var_index: (string,string ) => int
+
+          (**
+           ** arg1 what class has this variable
+           ** arg2 the name of the variable
+           ** arg3 the type of the variable (variable, parameter)
+           ** arg4 the direction of the variable (output,input...)
+           **)
+  relation add_variable_to_class: (string,string,string,string) => ()
+          (**
+           ** arg1 is the top class because the top class is
+           **      genereation somwhere else
+           ** returns (header code, implementation code)
+           **)
+  relation get_hierachical_code: (string) => (string,string)
 (*   relation add_output_var_to_class: (string,string) => () *)
 	  
 end 

@@ -4,7 +4,7 @@
 #include <set>
 #include <string>
 #include <vector>
-
+#include <strstream>
 
 using namespace std;
 
@@ -15,98 +15,328 @@ extern "C"
 #include "rml.h"
 #include "../absyn_builder/yacclib.h"
 
-  map<string,int> output_var_number;
-  map<string,int> input_var_number;
-  map<string,int> param_var_number;
-
-
+  string top_class;
   
+  struct variable {
+    string name;
+    string type;
+    string direction;
+    int index;
+    variable(string n,string val, string t){name = n;type = val; direction = t; index = -1;};
+    variable(){name="";type="";direction=""; index = -1;};
+  };
+
+  map<string,map<string,variable> > generated_classes;
+
   void TORNADOEXT_5finit(void)
   {
   }
   
+  int get_no_of_direction_vars_with_type(string direction, string type, map<string,variable>& variables)
+  {
+
+    map<string,variable>::const_iterator search2;    
+    int return_val = 0;
+    
+    for(search2 = variables.begin();
+        search2 != variables.end();
+        ++search2)
+      {
+        //output << search2->second.name << " : " << search2->second.direction << " = " << search2->second.type << endl;
+        if((search2->second.direction == direction)
+           && (search2->second.type == type))
+          {
+            return_val++;
+          }
+      }
+    return return_val;
+  }
+  
+        
+  void set_index_on_variable(string name, string class_name, int index)
+  {
+
+    map<string, map<string,variable> >::iterator search;
+    search = generated_classes.find(class_name);
+    
+    if(search != generated_classes.end()){
+      map<string,variable>::iterator search2;
+      search2 = search->second.find(name);
+      if(search2 != search->second.end())
+        {
+          search2->second.index = index;
+          cout << "FOUND:" << name << " " << class_name << " " << index << endl;
+        }
+      else
+        {
+          cout << name << " var NAN " << class_name << " " << index << endl;
+        }
+            
+    }else{
+    cout << name << " class NAN " << class_name << " " << index << endl;
+    }
+
+  }
+
+  string generate_impl_code_from_class(const string& class_name, 
+                                map<string,variable>& variables)
+  {
+    strstream output;
+    string class_name_with_c = "C" + class_name;
+    map<string,variable>::const_iterator search2;    
+    output << class_name_with_c << "::\n";
+    output << class_name_with_c << "(const wchar_t* Name)\n";
+    output << "{\n";
+    output << "  SetName(Name);\n";
+    output << "  SetDesc(L\" \");\n\n";
+    int no_of_input_vars = get_no_of_direction_vars_with_type(string("input"), 
+                                                              string("variable"),
+                                                              variables);
+    if(no_of_input_vars > 0){
+      output << "  SetNoInputVars(" << no_of_input_vars << ");\n\n";
+    }
+
+    int no_of_params = get_no_of_direction_vars_with_type(string(""),
+                                                          string("parameter"),
+                                                          variables);
+    if(no_of_params > 0){
+      output << "  SetNoParam(" << no_of_params << ");\n\n";
+    }
+
+    for(search2 = variables.begin();
+        search2 != variables.end();
+        ++search2)
+      {
+        if(search2->second.type == string("parameter")){
+          output << "  SetParam(" << search2->second.index << ", new CParam(L\"" << search2->second.name;
+          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << search2->second.name << "\"));\n";
+        } 
+      }
+    
+
+
+    int no_of_output_vars = get_no_of_direction_vars_with_type(string("output"),
+                                                               string("variable"),
+                                                               variables);
+    if(no_of_output_vars > 0){
+      output << "  SetNoOutputVars(" << no_of_output_vars << ");\n\n";
+    }
+
+    for(search2 = variables.begin();
+        search2 != variables.end();
+        ++search2)
+      {
+        if((search2->second.direction == string("input"))
+           && (search2->second.type == string("variable"))){
+          output << "  SetInputVar(" << search2->second.index << ", new CInputVar(L\"" << search2->second.name;
+          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << search2->second.name << "\"));\n";
+        } else if((search2->second.direction == string("output"))
+           && (search2->second.type == string("variable"))){
+          output << "  SetOutputVar(" << search2->second.index << ", new COutputVar(L\"" << search2->second.name;
+          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << search2->second.name << "\"));\n";
+        }
+      }
+    output << "\n";
+    output << "  SetNoIndepVars(1);\n\n";
+    output << "  SetIndepVar(0, new CIndepVar(L\"t\",L\"d\", 0.000000, MSLE_PLUS_INF, L\"t\"));\n\n";
+
+    int no_of_state_vars = get_no_of_direction_vars_with_type(string(""),
+                                                              string("state"),
+                                                              variables);
+    if(no_of_state_vars > 0){
+      output << "  SetNoDerStateVars(" << no_of_state_vars << ");\n\n";
+    }
+
+    for(search2 = variables.begin();
+        search2 != variables.end();
+        ++search2)
+      {
+        if(search2->second.type == string("state")){
+          output << "  SetDerStateVar(" << search2->second.index << ", new CDerStateVar(L\"" << search2->second.name;
+          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << class_name << "\"));\n";
+        } 
+      }
+   //fixme der state var
+    output << "}\n\n";
+    output << class_name_with_c << "::\n";
+    output << "ComputeOutput()\n{\n}\n\n";
+    output << class_name_with_c << "::\n";
+    output << "ComputeTerminal()\n{\n}\n\n";
+    output << class_name_with_c << "::\n";
+    output << "ComputeState()\n{\n}\n\n";
+    output << class_name_with_c << "::\n";
+    output << "ComputeInitial()\n{\n}\n\n";
+    output << ends;
+    return string(output.str());
+    
+  }
+
+  string generate_header_code_from_class(const string& class_name)
+  {
+    strstream output;
+    string class_name_with_c = "C" + class_name;
+    output << "class " << class_name_with_c << " : public Tornado::CDAEModel\n";
+    output << "{\n";
+    output << "  public:\n\n";
+    output << "    " << class_name_with_c << "(const wchar_t* Name);\n\n";
+    output << "  public:\n\n";
+    output << "    ComputeInitial();\n";
+    output << "    ComputeTerminal();\n";
+    output << "    ComputeState();\n";
+    output << "    ComputeOutput();\n";
+    output << "};\n\n";
+    output << ends;
+    return string(output.str());
+    
+  }
+ 
 
   RML_BEGIN_LABEL(TORNADOEXT__dump_5ftesting)
   {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    cout << "testing tornadoext" << endl
-         << "================" << nvars << endl;
+    
+    map<string, map<string,variable> >::iterator search;
+    map<string,variable>::const_iterator search2;    
+    for(search = generated_classes.begin();
+        search != generated_classes.end();
+        ++search)
+      {
+        cout << "\n -------------- class: " << search->first << endl;
+        for(search2 = search->second.begin();
+            search2 != search->second.end();
+            ++search2)
+          {
+            cout << search2->second.name << " : " << search2->second.direction << " = " << search2->second.type << " index: " << search2->second.index << endl;
+          }
+      }
+        
     
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TORNADOEXT__get_5foutput_5fvar_5fnumber)
+  RML_BEGIN_LABEL(TORNADOEXT__get_5fvar_5findex)
   {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
     char* str = RML_STRINGDATA(rmlA0);
-    string str_key = string(str);
-    
-    map<string, int>::const_iterator search;
-    search = output_var_number.find(str_key);
+    string variable_name = string(str);
+    char* class_str = RML_STRINGDATA(rmlA1);
+    string class_str_key = string(class_str);
+//     char* direction_str = RML_STRINGDATA(rmlA2);
+//     string direction = string(direction_str);
+//     char* type_str = RML_STRINGDATA(rmlA3);
+//     string type = string(direction_str);
     int ret_val = 0;
-    if(search != output_var_number.end()){
-      ret_val = static_cast<int>(search->second);
-      ret_val += 1;
-//       cout << "\nSTATE_ALG:" << str_key << " " << ret_val << nvars << endl;
 
-    } // else {
-//        cout << "\nNO STATE_ALG:" << str_key << " " << ret_val << nvars << endl;
-//     }
+//     cout << variable_name << " in class  " << class_str_key << endl;
 
-    output_var_number[str_key] = ret_val;
+    map<string, map<string,variable> >::iterator search;
+    search = generated_classes.find(class_str_key);
+    
+    if(search != generated_classes.end()){
+      map<string,variable>::const_iterator search2;
+      search2 = search->second.find(variable_name);
+      if(search2 != search->second.end())
+        {
+          ret_val = search2->second.index;
+        }           
+
+    }
+
     rmlA0 = (void*) mk_icon(ret_val);
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TORNADOEXT__get_5finput_5fvar_5fnumber)
+
+
+
+
+  RML_BEGIN_LABEL(TORNADOEXT__add_5fvariable_5fto_5fclass)
   {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    char* str = RML_STRINGDATA(rmlA0);
-    string str_key = string(str);
+    char* class_name = RML_STRINGDATA(rmlA0);
+    char* variable_name = RML_STRINGDATA(rmlA1);
+    char* type = RML_STRINGDATA(rmlA2);
+    char* direction = RML_STRINGDATA(rmlA3);
+    string variable_name_str = string(variable_name);
+    variable var(variable_name_str,string(type),string(direction));
+
+    string str_key = string(class_name);
     
-    map<string, int>::const_iterator search;
-    search = input_var_number.find(str_key);
-    int ret_val = 0;
-    if(search != input_var_number.end()){
-      ret_val = static_cast<int>(search->second);
-      ret_val += 1;
-//       cout << "\nSTATE_ALG:" << str_key << " " << ret_val << nvars << endl;
+    map<string, map<string,variable> >::iterator search;
+    search = generated_classes.find(str_key);
+    
+    if(search == generated_classes.end()){
+      map<string,variable> var_list;
+      // no class exist so the index is 0
+      var.index = 0;
+      var_list[variable_name_str] = var;
+      generated_classes[str_key] = var_list;
+      //cout << "\nSTATE_ALG:" << str_key << " " << ret_val << nvars << endl;
 
-    } // else {
+    }  else {
+      map<string,variable>::const_iterator search2;
+      //count the already added variables with same type and direction
+      var.index = get_no_of_direction_vars_with_type(var.direction,var.type,search->second);
+      search2 = search->second.find(variable_name_str);
+      if(search2 == search->second.end())
+        {
+          
+          search->second[variable_name_str] = var;
+        }           
 //        cout << "\nNO STATE_ALG:" << str_key << " " << ret_val << nvars << endl;
-//     }
 
-    input_var_number[str_key] = ret_val;
-    rmlA0 = (void*) mk_icon(ret_val);
+    }
+
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
- 
-  RML_BEGIN_LABEL(TORNADOEXT__get_5fparam_5fvar_5fnumber)
+
+//   RML_BEGIN_LABEL(TORNADOEXT__set_5ftop_5fmodel)
+//   {
+//     char* class_name = RML_STRINGDATA(rmlA0);
+//     top_class = string(class_name);
+//     RML_TAILCALLK(rmlSC);
+//   }
+//   RML_END_LABEL
+
+  
+  RML_BEGIN_LABEL(TORNADOEXT__get_5fhierachical_5fcode)
   {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    char* str = RML_STRINGDATA(rmlA0);
-    string str_key = string(str);
+    char* class_name = RML_STRINGDATA(rmlA0);
+    top_class = string(class_name);
+    ostrstream output_impl;
+    ostrstream output_header;
     
-    map<string, int>::const_iterator search;
-    search = param_var_number.find(str_key);
-    int ret_val = 0;
-    if(search != param_var_number.end()){
-      ret_val = static_cast<int>(search->second);
-      ret_val += 1;
-//       cout << "\nSTATE_ALG:" << str_key << " " << ret_val << nvars << endl;
+    map<string, map<string,variable> >::iterator search;
+    map<string,variable>::const_iterator search2;    
 
-    } // else {
-//        cout << "\nNO STATE_ALG:" << str_key << " " << ret_val << nvars << endl;
-//     }
+    for(search = generated_classes.begin();
+        search != generated_classes.end();
+        ++search)
+      {
+        if(search->first != class_name){
+          output_impl << generate_impl_code_from_class(search->first, search->second);
+          output_header << generate_header_code_from_class(search->first);
+//           output_impl << "\n -------------- class: " << search->first << endl;
+//           for(search2 = search->second.begin();
+//               search2 != search->second.end();
+//               ++search2)
+//             {
+//               output_impl << search2->second.name << " : " << search2->second.direction << " = " << search2->second.type << endl;
+//             }
+        }
+      }
+        
+    output_impl << ends;
+    output_header << ends;
 
-    param_var_number[str_key] = ret_val;
-    rmlA0 = (void*) mk_icon(ret_val);
+    rmlA0 = (void*) mk_scon(output_header.str());
+    rmlA1 = (void*) mk_scon(output_impl.str());
+
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
+  
+
 
 
 } // extern "C"

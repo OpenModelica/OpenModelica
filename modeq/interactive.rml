@@ -86,6 +86,7 @@ module Interactive:
   relation get_classnames_in_elts: (Absyn.ElementItem list) => string list
   relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env) => string list
   relation get_components: (Absyn.ComponentRef,Absyn.Program) => string 
+  relation is_primitive_class: (Absyn.Class,Absyn.Program) => bool 
   relation get_componentitems_name: Absyn.ComponentItem list => string list 
 end
 

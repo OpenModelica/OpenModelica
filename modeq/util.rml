@@ -1017,7 +1017,8 @@ end
 
 relation string_split_at_char2 : (char list, char,char list) => string list  =
 
-  rule  list_string(chr_rest) => res
+  rule  list_reverse(chr_rest) => chr_rest' &
+        list_string(chr_rest') => res
         ---------------------------------
         string_split_at_char2([],_,chr_rest) => [res]
 
