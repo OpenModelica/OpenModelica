@@ -93,8 +93,6 @@ module DAELow:
 
   relation lower: (DAE.DAElist) => DAELow
 
-  relation lower_with_simple_equations: (DAE.DAElist) => DAELow
-  
   relation incidence_matrix: (DAELow) => IncidenceMatrix
  
   relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT
@@ -125,7 +123,7 @@ module DAELow:
 				       int, (* ny *)
 				       int) (* np *)
 
-  relation states: (DAE.DAElist) => Exp.ComponentRef list 
+  relation states: (DAE.DAElist,BinTree) => BinTree
 end (* End Module *)
 
 (* Implementation *)
@@ -143,18 +141,13 @@ with "explode.rml"
 with "dump.rml"
 with "system.rml"
 
+val empty_bintree = TREENODE(NONE,NONE,NONE)
+
 relation lower: (DAE.DAElist) => DAELow =
 
-  rule	states(lst) => s &
-	(*print "states:" &
-	Util.list_map(s,Exp.cref_str) => crefs &
-	Util.string_delimit_list(crefs,", " ) => st &
-	print st & print "\n" &*)
+  rule	states(lst,empty_bintree) => s &
 	lower2(lst,s) => (low as DAELOW(vars,knvars,eqns,reqns))  &
 (*	print "lowered dae:" & dump low &*)
-(*	print "states :" &
- 	Util.list_map(s,Exp.print_component_ref_str) => sl &
-	Util.string_delimit_list(sl,", ") => str & print str & print "\n" &*)
 	remove_simple_equations(low,s) => low' 
 (*	& print "removed simple equations, dae:" &
 	dump low' *)
@@ -170,34 +163,6 @@ relation lower: (DAE.DAElist) => DAELow =
 	lower(lst) => low'
 end
 
-(** relation lower_with_simple_equations
- ** this is the same as relation lower but it does not remove the simple equations
- **)
-relation lower_with_simple_equations: (DAE.DAElist) => DAELow =
-
-  rule	states(lst) => s &
-	(*print "states:" &
-	Util.list_map(s,Exp.cref_str) => crefs &
-	Util.string_delimit_list(crefs,", " ) => st &
-	print st & print "\n" &*)
-	lower2(lst,s) => (low as DAELOW(vars,knvars,eqns,reqns))  &
-	print "states :" &
-	Util.list_map(s,Exp.print_component_ref_str) => sl &
-	Util.string_delimit_list(sl,", ") => str & print str & print "\n" &
-	(*remove_simple_equations(low,s) => low' &*)
-	print "removed simple equations, dae:" &
-	dump low 
-	(*list_length(vars) => varlen &
-	int_string(varlen) => vs &
-	list_length(eqns) => eqnlen &
-	int_string(eqnlen) => es &
-	print vs & print " variables\n========" &
-	dump_vars(vars) &
-	print st & print "\n" &
-	print es & print " equations\n" *)
-	--------------------
-	lower_with_simple_equations(lst) => low
-end
 
 relation dump: DAELow => () =
 
@@ -237,9 +202,11 @@ relation equation_str: Equation => string =
 	equation_str(EQUATION(e1,e2)) => res
 end
 
-(* Move simple equations on the form a=b from equations 2nd in DAELow
- to simple equations 3rd in DAELow to speed up assignment alg. *)
-relation remove_simple_equations: (DAELow,Exp.ComponentRef list) 
+(** relation: remove_simple_equations
+ ** This relation moves simple equations on the form a=b from equations 2nd in DAELow
+ ** to simple equations 3rd in DAELow to speed up assignment alg. 
+ **)
+relation remove_simple_equations: (DAELow,BinTree) 
 	=> (DAELow) =
 
   rule	remove_simple_equations2(eqns,eqns,reqns,states,vars,knvars)
@@ -256,10 +223,13 @@ relation remove_simple_equations: (DAELow,Exp.ComponentRef list)
 	  => dae
 end
 
+(** relation remove_simple_equations2
+ ** helper relation to remove_simple_equations
+ **)
 relation remove_simple_equations2: (Equation list, (* all equations *)
 				    Equation list, (* eqns to iterate*)
 				    Equation list, (* removed eqns*)
-				    Exp.ComponentRef list,(* states *)
+				    BinTree,(* states *)
 				    Variables, (* variables states+alg *)
 				    Variables) (* known variables *)
 	  => (Equation list, (* all equations *)  
@@ -270,9 +240,9 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
   axiom	remove_simple_equations2(alleqns,[],reqns,states,vars,knvars) 
 	  => fail
 
-  rule	list_member(cr2,states) => false &
+  rule	not tree_get(states,cr2) => _ &		(* No state..*)
+	get_var(cr2,vars) => (_,_) &		(* .. but variable*)
 	Util.list_deletemember(alleqns,e) => alleqns' &
-	(*Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
 	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
 	remove_variable_named(vars,cr2) => (vars',var) &
 	add_var(var,knvars) => knvars'
@@ -281,9 +251,9 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
 	  => (alleqns'',e::reqns,vars',knvars')
 
   rule	(* as above but swapped args *)
-	list_member(cr2,states) => false &
+	not tree_get(states,cr2) => _ &		(* No state... *)
+	get_var(cr2,vars) => (_,_) &		(* .. but variable*)
 	Util.list_deletemember(alleqns,e) => alleqns' &
-	(*Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
 	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
 	remove_variable_named(vars,cr2) => (vars',var) 	&
 	add_var(var,knvars) => knvars'
@@ -293,7 +263,8 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
 	
 
   rule	Exp.is_zero(e2) => true &
-	list_member(cr2,states) => false &
+	not tree_get(states,cr2) => _ &		(* No state... *)
+	get_var(cr2,vars) => (_,_) &		(* .. but variable*)
 	Util.list_deletemember(alleqns,e) => alleqns' &	
 (*	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
 	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
@@ -305,9 +276,9 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
 
   rule	(* As above but swapped args *)
 	Exp.is_zero(e2) => true &
-	list_member(cr2,states) => false &
+	not tree_get(states,cr2) => _ &		(* No state... *)
+	get_var(cr2,vars) => (_,_) &		(* .. but variable*)
 	Util.list_deletemember(alleqns,e) => alleqns' &	
-	(*Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
 	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
 	remove_variable_named(vars,cr2) => (vars',var)  &
 	add_var(var,knvars) => knvars'
@@ -329,8 +300,8 @@ end
 relation remove_variable_named: (Variables,  Exp.ComponentRef) => (Variables, Var) =
 
   rule	not get_var(cr,vars) => (_,_) &
-	print "Error in remove_variable_named, variable " & Exp.print_component_ref_str cr => str &
-	print str & print " not found." 
+	print "-remove_variable_named failed. variable " & Exp.print_component_ref_str cr => str &
+	print str & print " not found.\n" 
 	---------------------
  	remove_variable_named(vars,cr)  => fail
 
@@ -635,109 +606,98 @@ relation dump_kind: VarKind => () =
 	dump_kind CONST
 end
 
-relation states: (DAE.DAElist) => Exp.ComponentRef list =
+relation states: (DAE.DAElist,BinTree) => BinTree =
 
-  axiom states DAE.DAE([]) => []
+  axiom states (DAE.DAE([]),bt) => bt
 
-  rule	states(DAE.DAE(xs)) => s &
-	states_exp(e1) => s1 &
-	states_exp(e2) => s2 &
-	Util.list_map(s,Exp.stringify_component_ref) => s' &
-	Util.list_map(s1,Exp.stringify_component_ref) => s1' &
-	Util.list_map(s2,Exp.stringify_component_ref) => s2' &
-	Util.list_list_union_p([s',s1',s2'],Exp.cref_equal) => res
+  rule	states(DAE.DAE(xs),bt) => bt &
+	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
 	-----------------------------------
-	states(DAE.DAE(DAE.EQUATION(e1,e2)::xs))  => res
+	states(DAE.DAE(DAE.EQUATION(e1,e2)::xs),bt)  => bt
 
-  rule	states(dae) => s1 &
-	states(DAE.DAE(xs)) => s2 &
-	Util.list_map(s1,Exp.stringify_component_ref) => s1' &
-	Util.list_map(s2,Exp.stringify_component_ref) => s2' &
-	Util.list_union_p(s1',s2',Exp.cref_equal) => res
+  rule	states(dae,bt) => bt &
+	states(DAE.DAE(xs),bt) => bt 
 	-------------------------
-	states(DAE.DAE(DAE.COMP(_,dae)::xs)) => res
+	states(DAE.DAE(DAE.COMP(_,dae)::xs),bt) => bt
 	
-  rule  states(DAE.DAE(xs)) => res
+  rule  states(DAE.DAE(xs),bt) => bt
 	-----------------
-	states(DAE.DAE(_::xs)) => res
+	states(DAE.DAE(_::xs),bt) => bt
 end
 
-relation states_exp: (Exp.Exp) => Exp.ComponentRef list =
+relation states_exp: (Exp.Exp,BinTree) => BinTree =
 
-  rule	states_exp(e1) => s1 &
-	states_exp(e2) => s2 &
-	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
 	-----------------------------
-	states_exp(Exp.BINARY(e1,_,e2)) => res
+	states_exp(Exp.BINARY(e1,_,e2),bt) => bt
 
-  rule	states_exp(e) => res
+  rule	states_exp(e,bt) => bt
 	-----------------------------
-	states_exp(Exp.UNARY(_,e)) => res
+	states_exp(Exp.UNARY(_,e),bt) => bt
 
-  rule	states_exp(e1) => s1 &
-	states_exp(e2) => s2 &
-	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
 	-----------------------------
-	states_exp(Exp.LBINARY(e1,_,e2)) => res
+	states_exp(Exp.LBINARY(e1,_,e2),bt) => bt
 	
-  rule	states_exp(e) => res
-	-----------------------------
-	states_exp(Exp.LUNARY(_,e)) => res
+  rule	states_exp(e,bt) => bt
+	----------------------
+	states_exp(Exp.LUNARY(_,e),bt) => bt
 
-  rule	states_exp(e1) => s1 &
-	states_exp(e2) => s2 &
-	Util.list_union_p(s1,s2,Exp.cref_equal) => res
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
 	-------------------------
-	states_exp(Exp.RELATION(e1,_,e2)) => res
+	states_exp(Exp.RELATION(e1,_,e2),bt) => bt
 	
-  rule	states_exp(e1) => s1 &
-	states_exp(e2) => s2 &
-	states_exp(e3) => s3 &
-	Util.list_list_union_p([s1,s2,s3],Exp.cref_equal) => res
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt &
+	states_exp(e3,bt) => bt 
 	-------------------------
-	states_exp(Exp.IFEXP(e1,e2,e3)) => res
+	states_exp(Exp.IFEXP(e1,e2,e3),bt) => bt
 
-  axiom	states_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_)) => [cr]
-
-  rule	Util.list_map(expl,states_exp) => lst &
-	Util.list_list_union_p(lst,Exp.cref_equal) => res
-	------------------------
-	states_exp(Exp.CALL(_,expl,_,_)) => res
-	
-  rule	Util.list_map(expl,states_exp) => lst &
-	Util.list_list_union_p(lst,Exp.cref_equal) => res
+  rule	(* value irrelevant, give zero *)
+	Exp.stringify_component_ref(cr) => cr' &
+	tree_add(bt,cr',0) => bt
 	-----------------------
-	states_exp(Exp.ARRAY(_,_,expl)) => res
+	states_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),bt) => bt
+
+  rule	Util.list_fold(expl,states_exp,bt) => bt 
+	----------------------------------------
+	states_exp(Exp.CALL(_,expl,_,_),bt) => bt
+	
+  rule	Util.list_fold(expl,states_exp,bt) => bt 
+	----------------------------------------
+	states_exp(Exp.ARRAY(_,_,expl),bt) => bt
 
   rule	Print.print_buf "states_exp on MATRIX not impl.\n" &
 	print "states_exp on MATRIX not impl.\n"
 	---------------------------------------
-	states_exp(Exp.MATRIX(_,_,_)) => []
+	states_exp(Exp.MATRIX(_,_,_),bt) => bt
 	
-  rule	Util.list_map(expl,states_exp) => lst &
-	Util.list_list_union_p(lst,Exp.cref_equal) => res
+  rule	Util.list_fold(expl,states_exp,bt) => bt 
+	----------------------------------------
+	states_exp(Exp.TUPLE(expl),bt) => bt
+
+  rule	states_exp(e,bt) => bt
 	-----------------------
-	states_exp(Exp.TUPLE(expl)) => res
+	states_exp(Exp.CAST(_,e),bt) => bt
 
-  rule	states_exp(e) => res
+  rule	states_exp(e,bt) => bt
 	-----------------------
-	states_exp(Exp.CAST(_,e)) => res
+	states_exp(Exp.ASUB(e,_),bt) => bt
 
-  rule	states_exp(e) => res
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
 	-----------------------
-	states_exp(Exp.ASUB(e,_)) => res
+	states_exp(Exp.REDUCTION(_,e1,_,e2),bt) => bt
 
-  rule	states_exp(e1) => s1 &
-	states_exp(e2) => s2 &
-	Util.list_union_p(s1,s2,Exp.cref_equal) => res
-	-------------------------
-	states_exp(Exp.REDUCTION(_,e1,_,e2)) => res
-
-  axiom	states_exp(_) => []
+  axiom	states_exp(_,bt) => bt
 end
 
 
-relation lower2: (DAE.DAElist, Exp.ComponentRef list) => DAELow =
+relation lower2: (DAE.DAElist, BinTree (* states *)) => DAELow =
 	
   rule	empty_vars() => v1 &
 	empty_vars() => v2
@@ -798,7 +758,7 @@ end
  ** Includes changing the ComponentRef name to a simpler form 'a'.'b'.'c' becomes
  ** 'a.b.c' (as CREF_IDENT("a.b.c",[]) )
  **)
-relation lower_var: (DAE.Element, Exp.ComponentRef list) => Var =
+relation lower_var: (DAE.Element, BinTree(* states*)) => Var =
 
   rule	Exp.print_component_ref_str name => origname &
 	let newname = Exp.CREF_IDENT(origname,[]) &
@@ -835,12 +795,12 @@ relation lower_known_var: (DAE.Element) => Var =
 	  => VAR(Exp.CREF_IDENT(origname,[]),kind',dir,tp,bind',NONE,dims,start',-1,origname)
 end
 
-relation lower_varkind: (DAE.VarKind, Exp.ComponentRef, Exp.ComponentRef list) 
+relation lower_varkind: (DAE.VarKind, Exp.ComponentRef, BinTree (* states *)) 
 	=> VarKind =
 	(* Fails for not states that are not algebraic variables, e.g.
 	 parameters and constants *)
 
-  rule	list_member(v,states) => true
+  rule	tree_get(states,v) => _
 	-----------------------------
 	lower_varkind(DAE.VARIABLE,v,states) => STATE
 
@@ -993,7 +953,7 @@ relation empty_vars: () => Variables =
 
   rule	list_vector([]) => emptyvec
 	------------------------
-	empty_vars() => VARIABLES(emptyvec, TREENODE(NONE,NONE,NONE))
+	empty_vars() => VARIABLES(emptyvec, empty_bintree)
 end
 
 (** relation: merge_vars
@@ -1048,7 +1008,7 @@ end
 relation update_vars_bt: (Variables) => Variables =
 
   rule	vector_length(varvec) => veclen & 
-	update_vars_bt2(veclen,varvec,TREENODE(NONE,NONE,NONE)) => bt'
+	update_vars_bt2(veclen,varvec,empty_bintree) => bt'
 	---------------------------------
 	update_vars_bt(VARIABLES(varvec,bt)) 
 	  => VARIABLES(varvec,bt')
@@ -1091,21 +1051,19 @@ end
 
 (** relation: delete_var
  ** Deletes a variable from 'Variables'. This is an expensive operation since we need to create a new 
- ** binary tree with indexes.
+ ** binary tree with new indexes as well as a new compacted vector of variables.
  **)
 relation delete_var: (Variables,Exp.ComponentRef) => Variables =
 
   rule	tree_get(bt,cr) => index &
 	int_sub(index,1) => index' &
-	vector_nth(varvec,index')=> v &
 	vector_list(varvec) => varlst &
-	Util.list_deletemember(varlst,v) => newvars &
+	list_delete(varlst,index') => newvars &
 	list_vector(newvars) => varvec' &
-	update_vars_bt(VARIABLES(varvec',TREENODE(NONE,NONE,NONE))) => vars'
+	update_vars_bt(VARIABLES(varvec',empty_bintree)) => vars'
 	--------------------------------------------------
-	delete_var(VARIABLES(varvec,bt),cr) => vars'
+	delete_var(VARIABLES(varvec,bt),cr) =>  vars'
 end
-
 
 relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
 
@@ -1130,22 +1088,30 @@ relation transpose_matrix2: (IncidenceMatrix,int,int,IncidenceMatrixT)
 	transpose_matrix2(m,neq,eqno,mt) => row::mt'
 end
 
-
-relation transpose_row: (IncidenceMatrix,int,int) => int list =
+(* relation: transpose_row
+ ** Input: IncidenceMatrix (eqn => var)
+ ** Input: row number (variable)
+ ** Input: iterator (start with one)
+**)
+relation transpose_row: (IncidenceMatrix,int(*row*),int(*iter*)) => int list =
 
   axiom	transpose_row([],_,_) => []
 	
-  rule	list_member(eqn,m) => true &
-	int_add(varno,1) => varno' &
-	transpose_row(ms,eqn,varno') => res
+  rule	list_member(varno,m) => true &
+	int_add(eqn,1) => eqn' &
+	transpose_row(ms,varno,eqn') => res
 	---------------------------
-	transpose_row(m::ms,eqn,varno) => varno::res
+	transpose_row(m::ms,varno,eqn) => eqn::res
 
-  rule	list_member(eqn,m) => false &
-	int_add(varno,1) => varno' &
-	transpose_row(ms,eqn,varno') => res
+  rule	list_member(varno,m) => false &
+	int_add(eqn,1) => eqn' &
+	transpose_row(ms,varno,eqn') => res
 	---------------------------
-	transpose_row(m::ms,eqn,varno) => res
+	transpose_row(m::ms,varno,eqn) => res
+
+  rule	print "-transpose_row failed\n" 
+	-------------------------------
+	transpose_row(_,_,_) => fail
 end
 
 relation dump_incidence_matrix: IncidenceMatrix => () =
@@ -1358,6 +1324,10 @@ end
 (** relation: update_incidence_matrix
  ** Takes a daelow and the incidence matrix and its transposed represenation and a list of 
  ** equation indexes that needs to be updated.
+ ** First the IncidenceMatrix is updated, i.e. the mapping from equations to variables.
+ ** Then, by collecting all variables in the list of equations to update, a list of changed variables
+ ** are retrieved. This is used to update the IncidenceMatrixT (transpose) mapping from variables to 
+ ** equations.
  ** The relation returns an updated incidence matrix.
  **)
 relation update_incidence_matrix:(DAELow,
@@ -1366,24 +1336,59 @@ relation update_incidence_matrix:(DAELow,
 				  int list) (* list of equations to update*)
 	  => (IncidenceMatrix, 
 	      IncidenceMatrixT) =
-  axiom	update_incidence_matrix(dae,m,mt,[]) => (m,mt)
+ 
+ rule	update_incidence_matrix2(dae,m,eqns) => (m',changedvars) &
+	Util.list_flatten(changedvars) => changedvars' &
+	update_transposed_matrix(changedvars',m',mt) => mt' 
+	------------------------------
+	update_incidence_matrix(dae,m,mt,eqns) => (m',mt')
+end
+
+relation update_incidence_matrix2: (DAELow,
+				    IncidenceMatrix,
+				    int list) (* list of equations to update *)
+	  => (IncidenceMatrix, 
+	      int list list ) (* changed vars *) =
+
+  axiom	update_incidence_matrix2(dae,m,[]) => (m,[[]])
 
   rule	int_sub(e,1) => e' &
 	list_nth(daeeqns,e') => eqn &
 	incidence_row(vars,eqn) => row &
 	Util.list_replaceat_with_fill(row,e',m,[]) => m' &
-	transpose_matrix(m') => mt' &
-	update_incidence_matrix(dae,m',mt',eqns) => (m'',mt'') 
+	vars_in_eqn(m',e) => changedvars1 &
+	update_incidence_matrix2(dae,m',eqns) => (m'',changedvars2) 
 	---------------------------------------------------
-	update_incidence_matrix(dae as DAELOW(vars,knvars,daeeqns,daeseqns),m,mt,e::eqns) => (m'',mt'')
+	update_incidence_matrix2(dae as DAELOW(vars,knvars,daeeqns,daeseqns),m,e::eqns) => (m'',changedvars1::changedvars2)
 
   rule	print "-update_incididence_matrix failed\n" 
-	----------------
-	update_incidence_matrix(_,_,_,_) => fail
+	-------------------------------------------
+	update_incidence_matrix2(_,_,_) => fail
 
 end
 
-(** relation make_algebraic
+(* relation: update_transposed_matrix
+ ** Takes a list of variables and the transposed IncidenceMatrix, and updates the
+ ** variable rows.
+**)
+relation update_transposed_matrix: (int list(*var list*), IncidenceMatrix,IncidenceMatrixT) 
+	  => IncidenceMatrixT =
+
+  axiom	update_transposed_matrix([],m,mt) => mt
+
+  rule	transpose_row(m,v,1) => row' &
+	int_sub(v,1) => v' &
+	Util.list_replaceat_with_fill(row',v',mt,[]) => mt' &
+	update_transposed_matrix(vars,m,mt') => mt''
+	-------------------------
+	update_transposed_matrix(v::vars,m,mt) => mt''
+
+  rule	print "-update_transposed_matrix failed\n" 
+	------------------
+	update_transposed_matrix(_,_,_) => fail
+end
+
+(** relation: make_algebraic
  Make the variable a dummy derivative, i.e. change varkind from STATE to DUMMY_STATE 
  **)
 relation make_algebraic: (DAELow, 
@@ -2272,7 +2277,7 @@ end
  The equations are updated with the new variable names.
 *)
 relation translate_dae: DAELow => DAELow =
-
+	
   rule	vector_list(varsvec) => vars &
 	vector_list(kvvec) => kv &
 	calculate_indexes(vars) => vars' &
@@ -2280,10 +2285,10 @@ relation translate_dae: DAELow => DAELow =
 	list_append(vars',kv') => totvars &
 	variable_replacements(totvars,eqns) => (s,t) &
 	(*Util.list_map(s,Exp.print_exp_str) => sl &
-	Util.string_delimit_list(sl,", ") => sstr &
-	Util.list_map(t,Exp.print_exp_str) => tl &
-	Util.string_delimit_list(tl,", ") => tstr &
-	print "replace " & print sstr & print " with " & print tstr & print "\n" &*)
+	 Util.string_delimit_list(sl,", ") => sstr &
+	 Util.list_map(t,Exp.print_exp_str) => tl &
+	 Util.string_delimit_list(tl,", ") => tstr &
+	 print "replace " & print sstr & print " with " & print tstr & print "\n" &*)
 	replace_variables(eqns,s,t) => eqns' &
 	transform_variables(vars',s,t) => vars'' &
 	transform_variables(kv',s,t) => kv''  &
@@ -2358,9 +2363,9 @@ end
 
 (* Transforms the equations, given two lists with source and target expressions*)
 relation replace_variables: (Equation list, Exp.Exp list, Exp.Exp list) => (Equation list) =
-
+	
   axiom	replace_variables ([],_,_) => []
-
+	
   rule	Exp.replace_exp_list(e1,s,t) => (e1',_) &
 	Exp.replace_exp_list(e2,s,t) => (e2',_) &
 	replace_variables(es,s,t) => es'
@@ -2386,7 +2391,7 @@ relation calculate_values: (DAELow) => DAELow =
 	vector_list(knvarsvec) => knvars &
 	add_variables_to_env(knvars,env) => env' &
 	update_variables(knvars,env') => knvars' &
-	 list_vector(knvars') => knvarsvec'
+	list_vector(knvars') => knvarsvec'
 	--------------------------------------
 	calculate_values(DAELOW(vars,VARIABLES(knvarsvec,bt),eqns,seqns)) 
 	  => DAELOW(vars,VARIABLES(knvarsvec',bt),eqns,seqns)
@@ -2452,24 +2457,25 @@ relation update_variables:(Var list, Env.Env) => Var list =
 end
 
 (* Returns a two list of replacement expressions for variable transformations.
- For instance, replacing state 's' with 'x[3]' and 'der(s)' with 'xd[3]',
+ For instance, replacing state s with x[3] and der(s) with xd[3],
  NOTE: The derivative expressions must be first, so they are replaced first
- i.e 'der(s)' is replaced before 's' is replaced which gives a wrong 
- variable like 'der(x[5)'
+ i.e der(s) is replaced before s is replaced which gives a wrong 
+ variable like der(x[5])
  *)
-relation variable_replacements: (Var list, Equation list) => (Exp.Exp list, Exp.Exp list) =
+ relation variable_replacements: (Var list, Equation list) => (Exp.Exp list, Exp.Exp list) =
 	 
-  rule	states_eqns(eqns) => states  &
-	derivative_replacements(states,vars) => (s1,t1) &
-	alg_variable_replacements(vars) => (s2,t2) &
-	list_append(s1,s2) => s &
-	list_append(t1,t2) => t
-	---------------------
-	variable_replacements(vars,eqns) =>  (s,t)
-
+  rule	states_eqns(eqns,empty_bintree) => bt  &
+	 bintree_to_list(bt) => (states,_) &
+	 derivative_replacements(states,vars) => (s1,t1) &
+	 alg_variable_replacements(vars) => (s2,t2) &
+	 list_append(s1,s2) => s &
+	 list_append(t1,t2) => t
+	 ---------------------
+	 variable_replacements(vars,eqns) =>  (s,t)
+	 
   rule	print "-variable_replacements failed\n" 
-	---------------------------------------
-	variable_replacements(vars,eqns) =>  fail
+	 ---------------------------------------
+	 variable_replacements(vars,eqns) =>  fail
 end
 
 (* Build replacement "rules" for the variables, eg. states, algebraic variables, parameters, etc. *)
@@ -2538,17 +2544,19 @@ relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 	alg_variable_replacements(_) => fail
 end
 
-
-relation states_eqns: Equation list => Exp.ComponentRef list =
+(** relation: states_eqns
+ ** Takes a list of equations and an (empty) BinTree and 
+ ** fills the tree with the state variables present in the equations
+ **)
+relation states_eqns: (Equation list,BinTree) => BinTree =
 	
-axiom	states_eqns [] => []
-
-  rule	states_eqns(es) => s &
-	states_exp(e1) => s1 &
-	states_exp(e2) => s2 &
-	Util.list_list_union_p([s,s1,s2],Exp.cref_equal) => res
-	-----------------
-	states_eqns(EQUATION(e1,e2)::es) => res
+ axiom	states_eqns([],bt) => bt
+ 
+ rule	states_eqns(es,bt) => bt &
+	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
+	-----------------------
+	states_eqns(EQUATION(e1,e2)::es,bt) => bt
 end
 
 relation derivative_replacements: (Exp.ComponentRef list, Var list) 
@@ -2835,4 +2843,162 @@ relation tree_add: (BinTree, Key, Value) => (BinTree) =
   rule	print "tree_add failed\n"
 	-----------------------
 	tree_add(_,_,_) => fail
-end 
+ end 
+
+(** relation: tree_delete
+ ** This relation deletes an entry from the BinTree.
+ **)
+relation tree_delete: (BinTree, Key) => (BinTree) =
+
+  axiom	tree_delete(bt as TREENODE(NONE,NONE,NONE),key) => bt
+
+  rule	(* delete this node, when existing right node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0 &
+	tree_delete_rightmost_value(right) => (rightmost,right') &
+	tree_prune_empty_nodes(right') => optright'
+	-------------------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),
+			      left,
+			      SOME(right)),
+		     key)
+	  => (TREENODE(SOME(rightmost),left,optright'))
+	  
+  rule	(* delete this node, when no right node, but left node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0 
+	-------------------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),
+			      SOME(TREENODE(leftval,lleft,lright)),
+			      NONE),
+		     key)
+	  => (TREENODE(leftval,lleft,lright))
+	  
+  rule	(* delete this node, when no left or right node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0 
+	-------------------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),
+			      NONE,
+			      NONE),
+
+		     key)
+	  => (TREENODE(NONE,NONE,NONE))
+	  
+  rule	(* delete in right subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_delete(t,key) => t' &
+	tree_prune_empty_nodes(t') => topt'
+	------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right as SOME(t)),key) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),left,topt'))
+	  
+  rule	(* delete in left subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_delete(t,key) => t' &
+	tree_prune_empty_nodes(t') => topt'
+	------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),left as SOME(t),right),key) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),topt',right))
+
+  rule	print "tree_delete failed\n" 
+	----------------------------
+	tree_delete(_,_) => fail
+end
+
+(** relation: tree_delete_rightmost_value
+ ** This relation takes a BinTree and deletes the rightmost value of the tree.
+ ** Tt returns this value and the updated BinTree. This relation is used in 
+ ** the binary tree deletion relation 'tree_delete'.
+ **)
+ relation tree_delete_rightmost_value: (BinTree) 
+		     => (TreeValue,	(* deleted value*)  
+			 BinTree) =	(* updated bintree*) 
+
+  axiom	tree_delete_rightmost_value(TREENODE(SOME(treevalue),NONE,NONE)) 
+	  => (treevalue,TREENODE(NONE,NONE,NONE))
+
+  axiom	tree_delete_rightmost_value(TREENODE(SOME(treevalue),SOME(left),NONE))
+	 => (treevalue,left)
+
+  rule tree_delete_rightmost_value(right) => (value, right') &
+	tree_prune_empty_nodes(right') => rightopt'
+	--------------------------------------------
+	tree_delete_rightmost_value(TREENODE(treeval,left,SOME(right)))
+	  => (value,TREENODE(treeval,left,rightopt'))
+
+  rule	not tree_delete_rightmost_value(right) => (_,_) &
+	 print "right value was empty , left NONE\n" 
+	--------------------------------------------
+	tree_delete_rightmost_value(TREENODE(SOME(treeval),NONE,SOME(right))) 
+	  => (treeval,TREENODE(NONE,NONE,NONE))
+
+
+  rule	print "-tree_delete_rightmost_value failed\n" 
+	 --------------------------------------------
+	 tree_delete_rightmost_value(bt) => fail
+end
+
+(** relation: tree_prune_emtpy_nodes
+ ** This relation is a helper relation to tree_delete
+ ** It is used to delete empty nodes of the BinTree representation, that might be introduced
+ ** when deleting nodes.
+ **)
+relation tree_prune_empty_nodes: (BinTree) => BinTree option =
+  axiom	tree_prune_empty_nodes TREENODE(NONE,NONE,NONE) => NONE
+  axiom	tree_prune_empty_nodes bt => SOME(bt)
+end
+
+(** relation: bintree_to_list
+ ** This relation takes a BinTree and transform it into a list
+ ** representation, i.e. two lists of keys and values
+ **)
+ relation bintree_to_list: (BinTree) => (Key list, Value list) =
+
+  rule	bintree_to_list2(bt,[],[]) => (klst,vlst) 
+	------------------------------------------
+	bintree_to_list(bt) => (klst,vlst)
+end
+
+(** relation: bintree_to_list2
+ ** helper relation to bintree_to_list
+ **)
+relation bintree_to_list2: (BinTree,Key list,Value list ) 
+	  => (Key list, Value list) =
+
+ axiom	bintree_to_list2( TREENODE(NONE,NONE,NONE),klst,vlst) => (klst,vlst)
+ 
+  rule	bintree_to_list_opt(left,klst,vlst) => (klst,vlst) &
+	bintree_to_list_opt(right,klst,vlst) => (klst,vlst) 
+	------------------
+	bintree_to_list2(TREENODE(SOME(TREEVALUE(key,value)),left,right),klst,vlst)
+	  => (key::klst,value::vlst) 
+	  
+  rule	bintree_to_list_opt(left,klst,vlst) => (klst,vlst) &
+	bintree_to_list_opt(left,klst,vlst) => (klst,vlst) 
+	--------------------------------------------------
+	bintree_to_list2(TREENODE(NONE,left,right),klst,vlst) => (klst,vlst)
+end
+
+(** relation: bintree_to_list_opt
+ ** helper relation to bintree_to_list
+ **)
+relation bintree_to_list_opt: (BinTree option, Key list, Value list) 
+	  => (Key list, Value list) =
+
+  axiom	bintree_to_list_opt(NONE,klst,vlst) => (klst,vlst)
+
+  rule	bintree_to_list2(bt,klst,vlst) => (klst,vlst) 
+	---------------------------------------------
+	bintree_to_list_opt(SOME(bt),klst,vlst) => (klst,vlst)
+end
+	
