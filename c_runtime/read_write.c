@@ -33,6 +33,6 @@ void write_real_array(FILE* file, real_array_t* arr)
   nr_elements = real_array_nr_of_elements(arr);
   for (i = 0; i < nr_elements; ++i)
     {
-      fprintf(file,"%e",arr->data[i]);
+      fprintf(file,"%e\n",arr->data[i]);
     }
 }
