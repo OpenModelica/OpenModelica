@@ -168,6 +168,23 @@ List of things to implement:
 	  send dae for function lookup. Needed for tuple variable name
 	  lookup in function return values.
 
+30. Constant evaluation of record constructors for hierachical records
+	Constant evaluation of record constructors is done by converting
+	the arguements of the constructor call to modifiers, instantiate
+	the record with these modifiers and transform the resulting dae into 
+	Values. The problem is in the last part when a dae is translated into
+	values, specially if the record contain other records. It is then not
+	possible to walk through the equations and find a value for each 
+	element. Instead an environment must be built and all bindings of 
+	variables must be added. Then the conversion can iterate over the dae 
+	variables and lookup each value to produce the Values. This also 
+	requires that the dot ('.') operator can be evaluated.
+
+31. Constant evaluation of dot ('.') operator.
+	Is required to complete 30. For a record instance a, it should be 
+	possible to evaluate a.x for an element x of the record instance a.
+	This does not work in the interactive environment.
+
 Specific adaptions:
 
 For SKF:	
