@@ -224,20 +224,26 @@ relation lookup_var2: ((SCode.Ident * Env.Item) list,SCode.Ident)
 	lookup_var2(_::fs,id) => fv
 
 end
-(**)
-relation check_subscripts : (Absyn.ArrayDim, Exp.Subscript list)
-	  => (Absyn.ArrayDim) =
 
-  axiom check_subscripts(x, []) => []
+(** relation check_subscripts
+ **
+ ** This relation checks a list of subscripts agains type, and removes
+ ** dimensions from the type according to the subscripting.
+ **)
 
-  rule	check_subscripts(xs, ys) => ad
+relation check_subscripts : (Absyn.ArrayDim, Types.Type, Exp.Subscript list)
+	  => (Absyn.ArrayDim, Types.Type) =
+
+  axiom check_subscripts(x, t, []) => (x, t)
+
+  rule	check_subscripts(xs, t, ys) => (ad, t')
 	(* FIXME: Check range too? Yes! *)
 	------------------------------
-	check_subscripts(x::xs,y::ys) => ad
+	check_subscripts(x::xs, Types.T_ARRAY(_,t), y::ys) => (ad, t')
 
   rule	print "- check_subscripts failed\n"
 	-----------------------------------
-	check_subscripts(_,_) => fail
+	check_subscripts(_,_,_) => fail
 
 end
 (**)
@@ -249,17 +255,21 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	(* FIXME: Should I really strip the ArrayDim? *)
   rule  Types.lookup_component(ty, id)
 	  => (Types.VAR(_,SCode.ATTR(ad,fl,acc,vt,di),_,ty',binding)) &
-	check_subscripts(ad, ss) => dim
-	------------------------
+	check_subscripts(ad, ty', ss) => (dim, ty'')
+	--------------------------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
-	  => (SCode.ATTR(dim,fl,acc,vt,di),ty',binding)
+	  => (SCode.ATTR(dim,fl,acc,vt,di),ty'',binding)
 
   rule  Types.lookup_component(ty, id)
 	  => (Types.VAR(_,SCode.ATTR(ad,fl,acc,vt,di),_,ty',_)) &
-	check_subscripts(ad, ss) => _ &
-	lookup_in_var(ty', vs) => (attr, ty'',binding)
+	check_subscripts(ad, ty', ss) => (_, ty'') &
+	lookup_in_var(ty'', vs) => (attr, ty''',binding)
 	--------------------------------------
-	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty'',binding)
+	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty''',binding)
+
+  rule	print "- lookup_in_var failed\n"
+	--------------------------------
+	lookup_in_var(_,_) => fail
 
 end	
 (**)
@@ -270,17 +280,17 @@ relation lookup_var_f : ((SCode.Ident * Env.Item) list,
   rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
 	lookup_var2(f, id)
 	  => Types.VAR(n,SCode.ATTR(ad,f,acc,vt,di),_,ty,bind) &
-	check_subscripts(ad,ss) => dim
+	check_subscripts(ad,ty,ss) => (ad', ty')
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
-	  => (SCode.ATTR(dim,f,acc,vt,di),ty,bind)
+	  => (SCode.ATTR([(*FIXME*)],f,acc,vt,di),ty',bind)
 
   rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
 	lookup_var2(f, id) => Types.VAR(n,SCode.ATTR(ad,f,acc,vt,di),_,ty,_) &
-	check_subscripts(ad,ss) => [] & (* FIXME: error message *)
-	lookup_in_var(ty, ids) => (attr,ty,binding)
+	check_subscripts(ad, ty,ss) => ([], ty') & (* FIXME: error message *)
+	lookup_in_var(ty', ids) => (attr,ty'',binding)
 	----------------------------------
-	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty,binding)
+	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty'',binding)
 
 end
 
