@@ -13,6 +13,7 @@ module Dump:
   relation dump: Absyn.Program => ()
   relation dump_exp: Exp.Exp => ()
   relation dump_component_ref: Exp.ComponentRef => ()
+  relation dump_list : ('a list, 'a => (), string) => ()
 
 end
 
@@ -41,7 +42,7 @@ relation dump_option = (* : ('a option)*('a => 'b) = *)
 
 end
 
-relation dump_list =
+relation dump_list : ('a list, 'a => (), string) => () =
 
 	axiom	dump_list([],_,_)
 
