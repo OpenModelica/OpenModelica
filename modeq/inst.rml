@@ -1527,7 +1527,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
 	  => (dae, csets', ty) &
-
+	  DAE.set_component_type(dae,t) => dae' &
+	  
 (*	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &*)
 
 	(** The environment is extended (updated) with the new variable *)
@@ -1551,7 +1552,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     (comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m,bc),cmod),inst_dims,impl,packimpl)
-          => (dae, env',csets',ci_state,
+          => (dae', env',csets',ci_state,
 	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
 
@@ -2236,8 +2237,8 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
   rule	absyn_dir_to_dae_dir dir => dir' &
 	fix_direction (r,dir) => r'
 	-----
-	fix_direction (DAE.VAR(cr,vk,_,t,e,id,start,flow)::r,dir) 
-	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow)::r'
+	fix_direction (DAE.VAR(cr,vk,_,t,e,id,start,flow,class)::r,dir) 
+	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow,class)::r'
 
   rule	fix_direction(r,dir) => r'
 	---------------------------
@@ -3288,19 +3289,19 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 
   axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), fl, kind, dir, e,  
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl)]
+	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl,Absyn.IDENT(""))]
 	
   axiom	dae_declare4 (vn, (Types.T_REAL(_),_), fl, kind, dir, e, 
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl)]
+	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl,Absyn.IDENT(""))]
 
   axiom	dae_declare4 (vn, (Types.T_BOOL(_),_), fl, kind, dir, e, 
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl)]
+	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl,Absyn.IDENT(""))]
 	
   axiom	dae_declare4 (vn, (Types.T_STRING(_),_), fl, kind, dir, e, 
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl)]
+	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl,Absyn.IDENT(""))]
 
 axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start)
 	=> []
@@ -3309,7 +3310,7 @@ axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start)
 
   axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), fl, kind, dir, e,
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl)]
+	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,Absyn.IDENT(""))]
 
   axiom	dae_declare4 (c,ty,_,_,_,_,_,_) => []
 
@@ -5002,10 +5003,10 @@ relation init_vars_modelica_output_1 : (DAE.Element list, DAE.Element list)
 
   rule	init_vars_modelica_output_2 (cr, exp, done) => (exp', done') &
 	init_vars_modelica_output_2 (cr, exp', todorest) => (exp'', todorest') &
-	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims,start,flow)]) => done'' &
+	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims,start,flow,class)]) => done'' &
 	init_vars_modelica_output_1 (done'', todorest') => done'''
 	--------------------------------------------------------
-	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims,start,flow)) :: todorest)
+	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims,start,flow,class)) :: todorest)
 	  => done'''
 
 

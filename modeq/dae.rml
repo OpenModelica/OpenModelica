@@ -66,8 +66,9 @@ module DAE:
 			Exp.Exp option * (* Binding expression e.g. for parameters*)
 			InstDims *
 			StartValue * (* value of start attribute *)
-			Flow (* Flow of connector variable. Needed for 
+			Flow * (* Flow of connector variable. Needed for 
 			      unconnected flow variables *)
+			Absyn.Path (* The class the variable is instantiated from *)
 
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | INITIALDEFINE of Exp.ComponentRef * Exp.Exp
@@ -121,6 +122,7 @@ module DAE:
   relation get_bidir_vars: Element list  => Element list
   relation get_input_vars: Element list  => Element list
   relation generate_dae_type: Type => Types.Type
+  relation set_component_type: (Element list,Absyn.Path) => Element list
   relation is_algorithm : Element => ()
   relation is_function : Element => ()
   relation is_var: Element => ()
@@ -176,7 +178,7 @@ relation dump2: DAElist => () =
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_,_)::xs)
 
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr &
@@ -184,7 +186,7 @@ relation dump2: DAElist => () =
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_,_)::xs)
 
   rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
@@ -689,9 +691,13 @@ relation dump_var : Element => () =
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
 	dump_start_value start &
+	Absyn.path_string(class) => classstr &
+	Print.print_buf " \"" &
+	Print.print_buf classstr &
+	Print.print_buf "\" " &
 	Print.print_buf ";\n"
 	--------------------------------------
-	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow)
+	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,class)
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
@@ -699,7 +705,7 @@ relation dump_var : Element => () =
 	Print.print_buf " = " &
 	Exp.print_exp e & Print.print_buf ";\n"
 	--------------------------------------
-	dump_var VAR(id, kind, dir, typ, SOME(e),_,start,flow)
+	dump_var VAR(id, kind, dir, typ, SOME(e),_,start,flow,class)
 	
   axiom	dump_var (_)
 
@@ -712,9 +718,10 @@ relation dump_var_str : Element => string =
 	dump_type_str typ => s3 &	
 	Exp.print_component_ref_str id => s4 & 
 	dump_start_value_str start => s5 &
-	Util.string_append_list([s1,s2,s3,s4,s5,";\n"]) => str
+	Absyn.path_string(class) => classstr &
+	Util.string_append_list([s1,s2,s3,s4,s5," \"",classstr,"\";\n"]) => str
 	--------------------------------------
-	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow) => str
+	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow,class) => str
 	
   rule	dump_kind_str kind => s1 & 
 	dump_direction_str dir => s2 &
@@ -722,10 +729,11 @@ relation dump_var_str : Element => string =
 	Exp.print_component_ref_str id => s4 & 
 	Exp.print_exp_str e => s5 & 
 	dump_start_value_str start => s6 &
-	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6, ";\n"] )
+	Absyn.path_string(class) => classstr &
+	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6," \"",classstr,"\" ;\n"] )
 	  => str
 	--------------------------------------
-	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow) => str
+	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,class) => str
 	
   axiom	dump_var_str (_) => ""
 
@@ -1166,7 +1174,7 @@ end
 relation is_parameter: Element => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
-  axiom	is_parameter VAR(_, PARAM, _, _, _,  _,_,_)
+  axiom	is_parameter VAR(_, PARAM, _, _, _,  _,_,_,_)
 
 end
 
@@ -1214,24 +1222,44 @@ relation generate_dae_type: Type => Types.Type =
   axiom	generate_dae_type(STRING) => ((Types.T_STRING([]),NONE))
 end
 
+(**  relation: set_component_type
+ ** This relation takes a dae element list and a type name and inserts the type name 
+ ** into each Var  (variable) of the dae. This type name is the origin of the variable.
+ **)
+relation set_component_type: (Element list,Absyn.Path) => Element list =
+
+  axiom	set_component_type ([],_) => []
+	
+  rule	set_component_type(xs,newtype) => xs'
+	-------------------------------------
+	set_component_type(VAR(cr,kind,dir,tp,bind,dim,start,flow,_)::xs,newtype) 
+	  => VAR(cr,kind,dir,tp,bind,dim,start,flow,newtype)::xs'
+	  
+  rule	set_component_type(xs,newtype) => xs'
+	-------------------------------------
+	set_component_type(x::xs,newtype) 
+	  => x::xs'
+end
+
+
 (* LS *)
 relation is_output_var: Element => () =
 
-  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _, _, _)
+  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _, _, _,_)
 
 end
 
 (* LS *)
 relation is_bidir_var: Element => () =
 
-  axiom	is_bidir_var VAR(n, VARIABLE, BIDIR, ty, _, _, _, _)
+  axiom	is_bidir_var VAR(n, VARIABLE, BIDIR, ty, _, _, _, _,_)
 
 end
 
 (* HJ *)
 relation is_input_var: Element => () =
 
-  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _)
+  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _,_)
 
 end
 
@@ -1247,7 +1275,7 @@ end
 (* LS *)
 relation is_var: Element => () =
 
-  axiom	is_var VAR(_,_,_,_,_,_,_,_)
+  axiom	is_var VAR(_,_,_,_,_,_,_,_,_)
 
 end
 
@@ -1298,7 +1326,7 @@ relation dump_debug_element : Element => () =
 	dump_kind vk &
 	Print.print_buf ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_)
+	dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_,_)
 
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr & Print.print_buf ", " &
@@ -1306,7 +1334,7 @@ relation dump_debug_element : Element => () =
 	Exp.print_exp e &
 	Print.print_buf ")"
 	-------------
-	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_)
+	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_,_)
 
   rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
@@ -1455,14 +1483,14 @@ relation build_gr_var_str : Element => string =
 
   rule	Exp.print_component_ref_str cr => str
 	-------------------------------------
-	build_gr_var_str VAR(cr,_,_,_,NONE,_,_,_) => str
+	build_gr_var_str VAR(cr,_,_,_,NONE,_,_,_,_) => str
 
   rule	Exp.print_component_ref_str cr => str &
 	print_exp_str_special exp => expstr &
 	string_append (str, " = ") => str' &
 	string_append (str', expstr) => str''
 	-------------------------------------
-	build_gr_var_str VAR(cr,_,_,_,SOME(exp),_,_,_) => str''
+	build_gr_var_str VAR(cr,_,_,_,SOME(exp),_,_,_,_) => str''
 
 end
 
@@ -1487,7 +1515,7 @@ relation build_gr_element : Element => Graphviz.Node =
   rule	Exp.print_component_ref_str cr => crstr &
 	dump_kind_str vk => vkstr
 	--------------------------
-	build_gr_element VAR(cr,vk,vd,ty,NONE,_,_,_) 
+	build_gr_element VAR(cr,vk,vd,ty,NONE,_,_,_,_) 
 	  => Graphviz.LNODE("VAR",[crstr,vkstr],[],[])
 
   rule	Exp.print_component_ref_str cr => crstr &
@@ -1495,7 +1523,7 @@ relation build_gr_element : Element => Graphviz.Node =
 	print_exp_str_special exp => expstr &
 	string_append ("= ", expstr) => expstr'
 	-------------------------------
-	build_gr_element VAR(cr,vk,vd,ty,SOME(exp),_,_,_) 
+	build_gr_element VAR(cr,vk,vd,ty,SOME(exp),_,_,_,_) 
 	  => Graphviz.LNODE("VAR",[crstr,vkstr,expstr'],[],[])
 
 
@@ -1553,8 +1581,8 @@ relation get_variable_list: Element list  => Element list =
 
   rule	get_variable_list lst => res
 	-------------------------------------
-	get_variable_list  VAR(a,b,c,d,e,f,g,h)::lst 
-	  => (VAR(a,b,c,d,e,f,g,h)::res)
+	get_variable_list  VAR(a,b,c,d,e,f,g,h,i)::lst 
+	  => (VAR(a,b,c,d,e,f,g,h,i)::res)
 
   rule	get_variable_list lst => res
 	----------------------------
@@ -1570,19 +1598,19 @@ relation get_bindings_str: Element list  => string =
 	get_bindings_str(lst) => s4 &
 	string_append(s3,s4) => str
 	-----------------
-	get_bindings_str((v as VAR(cr,_,_,_,SOME(e),_,_,_))::(lst as _::_)) => str
+	get_bindings_str((v as VAR(cr,_,_,_,SOME(e),_,_,_,_))::(lst as _::_)) => str
 
   rule	let s1 = "-," &
 	get_bindings_str(lst) => s2 &
 	string_append(s1,s2) => str
 	-----------------
-	get_bindings_str((v as VAR(cr,_,_,_,NONE,_,_,_))::(lst as _::_)) => str	
+	get_bindings_str((v as VAR(cr,_,_,_,NONE,_,_,_,_))::(lst as _::_)) => str	
 
   rule	Exp.print_exp_str e => str 
 	-----------------
-	get_bindings_str([v as VAR(cr,_,_,_,SOME(e),_,_,_)]) => str
+	get_bindings_str([v as VAR(cr,_,_,_,SOME(e),_,_,_,_)]) => str
 
-  axiom	get_bindings_str([v as VAR(cr,_,_,_,NONE,_,_,_)]) => ""	
+  axiom	get_bindings_str([v as VAR(cr,_,_,_,NONE,_,_,_,_)]) => ""	
 end
 
 
@@ -1599,7 +1627,7 @@ relation get_flow_variables: Element list => Exp.ComponentRef list =
 
   rule	get_flow_variables(xs) => res
 	-----------------------------
-	get_flow_variables(VAR(cr,_,_,_,_,_,_,FLOW)::xs) => cr::res
+	get_flow_variables(VAR(cr,_,_,_,_,_,_,FLOW,_)::xs) => cr::res
 
   rule	get_flow_variables(lst) => res1 &
 	get_flow_variables_2(res1,id) => res1' &
@@ -1630,7 +1658,7 @@ relation dae_to_record_value: (Element list) => Values.Value =
 (*  rule	Ceval.ceval([],e,true,NONE,NONE)  => (value,_) &
 	dae_to_record_value(rest) => Values.RECORD(vals,names)
 	--------------------------------------------------
-	dae_to_record_value(VAR(Exp.CREF_IDENT(id,_),_,_,_,SOME(e),_,_,_)::rest) 
+	dae_to_record_value(VAR(Exp.CREF_IDENT(id,_),_,_,_,SOME(e),_,_,_,_)::rest) 
 	  => Values.RECORD(value::vals,id::names)*)
 
 rule	Ceval.ceval([],rhs,false,NONE,NONE)  => (value,_) &
