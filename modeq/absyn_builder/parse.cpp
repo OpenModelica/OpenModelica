@@ -192,7 +192,7 @@ extern "C"
 				if (flat_parse) delete parse;
 				if (lex) delete lex;
 				ast = mk_nil();
-				RML_TAILCALLK(rmlFC);
+				RML_TAILCALLK(rmlSC); // rmlFC
 			}
 
 			if (debug) 
@@ -219,7 +219,7 @@ extern "C"
 			ast = mk_nil();
 			std::cerr << "Error building AST" << std::endl;
 		}
-		RML_TAILCALLK(rmlFC);
+		RML_TAILCALLK(rmlSC); // rmlFC
 	}
 	RML_END_LABEL
 

@@ -280,7 +280,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
  	Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n") &
 	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
 	Debug.fcall ("dump", Dump.dump, newprog) &
-	make_debug_result("dump", "Ok\n") => res' &
+	make_debug_result("dump", msg) => res' &
 	make_debug_result("dumpgraphviz", res') => res
 	----------------------------------------------
 	handle_command (str, Interactive.SYMBOLTABLE(iprog,a,b,vars,cf)) => 
@@ -307,7 +307,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	Debug.fprint ("failtrace", "\nBoth parser and expression parser failed: \n") &
 	Debug.fprintl ("failtrace", ["parser: \n", msg, "\n"]) &
 	Debug.fprintl ("failtrace", ["expparser: \n", expmsg, "\n"]) &
-	make_debug_result("failtrace", "Syntax error\n") => res
+	make_debug_result("failtrace", msg) => res
 	-----------------------------------------------------
 	handle_command (str,isymb) => (true, res, isymb)
 
