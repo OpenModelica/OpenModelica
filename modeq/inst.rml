@@ -1078,6 +1078,21 @@ relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod,Env.Env)
 	update_components(_,_,_) => fail
 end
 
+
+relation no_import_elements: SCode.Element list => SCode.Element list =
+
+  axiom no_import_elements [] => []
+
+  rule  no_import_elements rest => elt 
+        ------------------------------
+        no_import_elements SCode.IMPORT(_)::rest => elt
+
+  rule  no_import_elements rest => elt
+        ------------------------------
+        no_import_elements e::rest => e::elt
+
+end
+
 (** relation: inst_derived_classes
  ** 
  ** This relation takes a class definition and returns the
@@ -1090,7 +1105,9 @@ relation inst_derived_classes: 	(Env.Env, Types.Mod, SCode.Class, bool) =>
 	  (Env.Env, SCode.Element list, SCode.Equation list, 
 	   SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) =
 	
-  axiom	inst_derived_classes(env,mod,SCode.CLASS(_,_,_,_,SCode.PARTS(elt,eq,ieq,alg,ialg,_)),_) => (env,elt,eq,ieq,alg,ialg)
+  rule   no_import_elements elt => elt' 
+         ------------------------------
+         inst_derived_classes(env,mod,SCode.CLASS(_,_,_,_,SCode.PARTS(elt,eq,ieq,alg,ialg,_)),_) => (env,elt',eq,ieq,alg,ialg)
 
   rule	Lookup.lookup_class(env,tp,true) => (c,cenv) &
 	(* Mod.lookup_modification_p(mod, c) => innermod & *)
@@ -1574,7 +1591,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
 		     (SCode.COMPONENT(n,final,repl,prot,_,t,_,_),_),_,_,_)
-         => ([],env,csets,ci_state,[])
+(*         => ([],env,csets,ci_state,[]) *) => fail
 
   rule	Debug.fprint("failtrace", "- inst_element failed\n") &
 	Debug.fcall("failtrace",SCode.print_element, el) &
