@@ -1,0 +1,141 @@
+List of things to implement:
+
+	
+1. Inner/Outer	testcases: InnerOuter1.mo InnerOuter2.mo InnerClass1.mo
+	12 days.
+
+2. Modifications not completely implemented. Especically with redeclare.
+  testcases: DisturbedResistance3.mo DisturbedResistance4.mo ModificationXX.mo
+	ModifyConstantX.mo ModifyUnknownX.mo OverWritingX.mo
+	10 days.
+
+3. Each modifier not implemented. Invent testcases.
+	12 days.
+
+4.  Final element modification not checked against.
+	testcases: ModifyConstant5.mo ModifyConstant6.mo
+	8 days.
+
+5.  Lookup not completely fixed. Import statements are not inherited. Invent test cases.
+	5 day.
+
+6.  Constraining type on redeclarations not implemented + other redeclaration limitations.
+    Invent testcases.
+	10 days.
+
+7. Restrictions on redeclarations not implemented (subtype etc.)
+	10 days
+
+8. Derivatives of functions. How to specify in flat modelica.
+	3 days
+
+9. Components of function type not implemented.
+	10 days
+
+10. When clauses not present in equations, not checked. Also check pre operator.
+	10 days
+
+11. Restrictions on connections (3.3.6.2) Check that they are fullfilled.
+	3 days
+
+12. The following operators in 3.4.2 have not been implemented:
+	smooth
+	noEvent
+	sample
+	edge
+	change
+	reinit
+	terminate (check how assert is implemented)
+	mod
+	delay
+	cardinality (Must be able to evaluate during compile time)	
+	
+	Also check that the other operators in this table are correct.
+	15 days.
+
+13.	All builtin functions in 3.4.3 (except size) have not been
+	correctly implemented. Look at how size is implemented when
+	implementing them. Some of them are added to the builtin.rml,
+	some of them not.  15 days.
+	
+14.	3.4.3.1 Reduction expressions (Not implemented at all, except
+	for in Absyn). (See also 3.4.4)  15 days.
+
+15.	Array access with end operator A[end]:=A[end-1];
+	Array access on the form A[{1,2,3}] (in ceval)
+	+ many more under that section in the spec.
+	10 days work.
+
+16.	Slice operation. Works but the resulting component names are sometimes
+	messed up. Check this.
+	5 days
+
+17.	Vectorized call of functions not implemented. Should be inserted in the lookup rules for functions. (Lookup)
+	5 days.
+
+18.	3.4.8.2 Output parameters of functions. Check that it works.
+	enable attribute, etc.
+	10 days
+
+19.	Code generation
+	A lot of stuff missing here, Levon: Fill in.
+	External functions.
+	30 days?
+
+20.	Flat modelica.
+	For now, only the start attribute is visible in the DAE.
+	Things to add:
+		* declaration comment, e.g. Real x "the comment";
+		* unit
+		* quantity
+		* stateSelect
+		* annotation (for Peter B:s debugging info=)
+	For the equations:
+		defineRoot, etc. for new MultiBody
+		other operators that control behaviour of equation opt.
+
+	Flattening of arrays: Option to flatten arrays or not should also
+	expand/not expand for loops, etc.
+	20 days			
+
+21. 	SaveTotalModel.
+	To be able to save a total model we need a dependency analysis.
+	This means that we have to traverse the AST to search for models
+	15 days	
+
+22.	Line number information in parser
+	The parser should return good error messages including line numbers and code fragment
+	that is erroneous.
+	25 days (To write -good- error messages)
+
+23.	Line number and file information in instantiation.
+	Line numbers should also be present in the Absyn and SCode ASTs, such that instantiation 
+	errors can be given a line number in a given file.
+	25 days (includes detecting errors correctly)
+
+24. 	Updating the testsuite to Modelica2.1, writing new tests.
+	12 days
+
+Specific adaptions:
+
+For SKF:	
+	1.	Allow for not expanding classes annotated with
+		class bBody 
+		   annotation(SKF(dontExpand=true));
+		end bBody;
+		
+		class test
+			bBody body1(p1=val1,p2=val2);
+			bBody body2;
+		end test;
+		will produce the flat class.	
+		fclass test
+			bBody body1(p1=val1,p2=val2);
+			bBody body2
+		end test;
+
+		4 days work.
+
+	2.	Allow for not expanding connections through option to compiler.
+		1 days work.
+
