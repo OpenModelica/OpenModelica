@@ -2173,7 +2173,7 @@ if test -d /home/pelab/pkg/gnu/include ; then
   echo "$as_me:2173: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 else
-  readlineinc=`find /usr/include /usr/local/include -name readline.h | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+  readlineinc=`find /usr/include /usr/local/include -name readline.h | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
   if test -z "$readlineinc" ; then
      echo "$as_me:2178: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -2193,7 +2193,7 @@ if test -d /home/pelab/pkg/gnu/lib ; then
   echo "$as_me:2193: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 else
-  readlinelib=`find /usr/lib /usr/local/lib -name libreadline.a | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+  readlinelib=`find /usr/lib /usr/local/lib -name libreadline.a | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
   if test -z "$readlinelib" ; then
      echo "$as_me:2198: result: no" >&5
 echo "${ECHO_T}no" >&6
