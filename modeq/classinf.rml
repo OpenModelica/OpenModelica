@@ -1,14 +1,28 @@
-(*
- *  CLASS -+- TYPE --- RECORD --- CONNECTOR
- *         |
- *         +- BLOCK --- FUNCTION
- *         |
- *         +- PACKAGE
- *         |
- *         +- MODEL
- *
- *)
- 
+(**
+ ** file: ClassInf.rml
+ **
+ **  This file deals with class inference, that is determining if a
+ **  class definition adhers to one of the class restrictions, and, if
+ **  specifically declared in a restrictied form, if it breaks that
+ **  restriction.
+ **
+ **  The inference is implemented as a finite state machine.  The
+ **  relation `start' initializes a new machine, and the relation
+ **  `trans' signals transitions in the machine.  Finally, the state
+ **  can be checked agains a restriction with the `valid' relation.
+ **
+ **  The restricted forms are ordered in a hierarchal fashion as
+ **  described by the following diagram:
+ **
+ **  CLASS -+- TYPE --- RECORD --- CONNECTOR
+ **	    |
+ **	    +- BLOCK --- FUNCTION
+ **	    |
+ **	    +- PACKAGE
+ **	    |
+ **	    +- MODEL
+ **
+ **)
 
 module ClassInf :
 
@@ -40,17 +54,29 @@ module ClassInf :
 		 | TYPE_STRING   of string
 		 | TYPE_BOOL     of string
 
-  datatype Event = FOUND_EQUATION     (* There are definitions *)
+  (** The `Event' type contains the different events during *)
+  (** instantiation that signals a possible machine transition. *)
+  datatype Event = FOUND_EQUATION     (* There are definitions inside *)
+				      (* the current definition *)
 		 | NEWDEF	      (* This is not a derived class *)
 
-  relation print_restr : Restriction => ()
-  relation print_state : State => ()
   relation start : (Restriction, string) => State
   relation trans : (State, Event) => State
+
   relation valid : (State, Restriction) => ()
+  (* `assert_valid' is identical to 'valid'.  The only difference is *)
+  (* that it prints an error message when it fails. *)
   relation assert_valid : (State, Restriction) => ()
 
+  (* Debug relation *)
+  relation print_restr : Restriction => ()
+  relation print_state : State => ()
+
 end
+
+(** relation: print_restr
+ ** purpose:  Output for debugging and error messages
+ **)
 
 relation print_restr : Restriction => () =
 
@@ -103,6 +129,10 @@ relation print_restr : Restriction => () =
 	print_restr R_PREDEFINED_BOOL
 
 end
+
+(** relation: print_state
+ ** purpose:  Output for debugging and error messages
+ **)
 
 relation print_state : State => () =
 
@@ -164,6 +194,10 @@ relation print_state : State => () =
 
 end
 
+(** relation: start
+ ** purpose:  State machine initialization
+ **)
+
 relation start : (Restriction, string) => State =
 
   axiom	start (R_CLASS, s) => UNKNOWN(s)
@@ -180,6 +214,9 @@ relation start : (Restriction, string) => State =
   axiom	start (R_PREDEFINED_BOOL, s) => TYPE_BOOL(s)
 
 end
+
+(** relation: trans
+ **)
 
 relation trans : (State, Event) => State =
 
@@ -232,6 +269,9 @@ relation trans : (State, Event) => State =
 
 end
 
+(** relation: valid
+ **)
+
 relation valid : (State, Restriction) => () =
 
   axiom	valid(UNKNOWN(s), _)
@@ -265,6 +305,9 @@ relation valid : (State, Restriction) => () =
   axiom	valid(FUNCTION(s),      R_FUNCTION)
 
 end
+
+(** relation: assert_valid
+ **)
 
 relation assert_valid : (State, Restriction) => () =
 
