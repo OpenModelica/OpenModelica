@@ -274,6 +274,48 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	Absyn.cref_to_path(cr) => path &
+	get_packages_in_path(path,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getPackages",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_top_packages(p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getPackages",_),
+		Absyn.FUNCTIONARGS([],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	Absyn.cref_to_path(cr) => path &
+	get_models_in_path(path,p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getModels",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_top_models(p) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getModels",_),
+		Absyn.FUNCTIONARGS([],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -637,6 +679,221 @@ relation get_icon_annotation: (Absyn.Path, Absyn.Program) => string =
 	-----------------------------------------
 	get_icon_annotation(modelpath,p) => str
   axiom get_icon_annotation(_,_) => "get_icon_annotation failed!"
+end
+
+(** relation: get_packages_in_path
+ ** This relation takes a Path and a Program and returns a list of the names of the packages found in the Path.
+**)
+
+relation get_packages_in_path: (Absyn.Path,Absyn.Program) => string =
+
+  rule	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_packages_in_class(modelpath,p,cdef) => str &
+	string_append("{",str) => s1 &
+	string_append(s1,"}") => res
+	----------------------
+	get_packages_in_path (modelpath,p) => res
+  axiom	 get_packages_in_path(_,_) => "-1"
+end
+(** relation: get_top_packages
+ ** This relation takes a Path and a Program and returns a list of the names of the packages found in the Path.
+ **)
+relation get_top_packages: (Absyn.Program) => string =
+
+  rule	get_top_packages_in_program(p) => strlist &
+	Util.string_delimit_list(strlist,",") => str &
+	string_append("{",str) => s1 &
+	string_append(s1,"}") => res
+	-------------------------
+	get_top_packages(p) => res
+
+  axiom	get_top_packages(_) => "-1"
+end
+
+relation get_top_packages_in_program: Absyn.Program => string list =
+	
+  axiom	get_top_packages_in_program Absyn.PROGRAM([],_) => []
+	
+  rule	get_top_packages_in_program (Absyn.PROGRAM(rest,w)) => res
+	-----------------------------------------
+	get_top_packages_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,Absyn.R_PACKAGE,_)::rest,w)) => id::res
+
+  rule	get_top_packages_in_program (Absyn.PROGRAM(rest,w)) => res
+	------------------------------------------
+	get_top_packages_in_program (Absyn.PROGRAM(_::rest,w)) => res
+end
+
+(** relation: get_packages_in_class
+ ** This relation takes a `Class' definition and a Path identifying th elcass. 
+ ** It returns a string containing comma separated package names found 
+ ** in the class definition.
+ **)
+relation get_packages_in_class:(Absyn.Path, Absyn.Program, Absyn.Class) => string =
+
+  rule	get_packages_in_parts(parts) => strlist &
+	Util.string_delimit_list(strlist,",") => res
+	-------------------------------------
+	get_packages_in_class(_,_,Absyn.CLASS(_,_,_,Absyn.PARTS(parts))) => res
+
+  rule	lookup_classdef(path,inmodel,p) => (cdef,newpath) &
+	get_packages_in_class(newpath,p,cdef) => res 
+	--------------------------------------------
+	get_packages_in_class(inmodel,p,Absyn.CLASS(_,_,_,Absyn.DERIVED(path,_,_))) => res
+end
+
+
+relation get_packages_in_parts:(Absyn.ClassPart list ) => string list =
+
+  axiom	get_packages_in_parts [] => []
+
+  rule	get_packages_in_elts(elts) => l1 &
+	get_packages_in_parts(rest) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_packages_in_parts(Absyn.PUBLIC(elts)::rest) => res	
+	
+  rule	get_packages_in_parts(rest) => res
+	-----------------------------------
+	get_packages_in_parts(_::rest) => res
+end
+
+relation get_packages_in_elts: (Absyn.ElementItem list) => string list =
+  axiom	 get_packages_in_elts [] => []
+	
+  rule	get_packages_in_elts(rest) => res
+	--------------------------------
+	get_packages_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,Absyn.R_PACKAGE,_))))::rest) => id::res
+
+  rule	get_packages_in_elts(rest) => res
+	--------------------------------
+	get_packages_in_elts (_::rest) => res
+end
+
+relation get_models_in_path: (Absyn.Path,Absyn.Program) => string =
+
+  rule	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_models_in_class(modelpath,p,cdef) => str &
+	string_append("{",str) => s1 &
+	string_append(s1,"}") => res
+	----------------------
+	get_models_in_path (modelpath,p) => res
+  axiom	 get_models_in_path(_,_) => "-1"
+end
+(** relation: get_top_models
+ ** This relation takes a Path and a Program and returns a list of the names of the packages found in the Path.
+ **)
+relation get_top_models: (Absyn.Program) => string =
+
+  rule	get_top_models_in_program(p) => strlist &
+	print "program =" &
+	Dump.dump p & print "\n" &
+	Util.string_delimit_list(strlist,",") => str &
+	string_append("{",str) => s1 &
+	string_append(s1,"}") => res
+	-------------------------
+	get_top_models(p) => res
+
+  axiom	get_top_models(_) => "-1"
+end
+
+relation get_top_models_in_program: Absyn.Program => string list =
+	
+  axiom	get_top_models_in_program Absyn.PROGRAM([],_) => []
+	
+  rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res &
+	print "R_CLASS succeded\n"
+	-----------------------------------------
+	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,Absyn.R_CLASS,_)::rest,w)) => id::res
+
+  rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
+	& print "R_MODEL succeded\n"
+	-----------------------------------------
+	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,Absyn.R_MODEL,_)::rest,w)) => id::res
+
+  rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
+	& print "R_CONNECTOR succeded\n"
+	-----------------------------------------
+	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,Absyn.R_CONNECTOR,_)::rest,w)) => id::res
+
+  rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
+	& print "R_BLOCK succeded\n"
+	-----------------------------------------
+	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,Absyn.R_BLOCK,_)::rest,w)) => id::res
+
+  rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
+	& print "R_RECORD succeded\n"
+	-----------------------------------------
+	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,Absyn.R_RECORD,_)::rest,w)) => id::res
+
+  rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
+	& print "R_FUNCTION succeded\n"
+	-----------------------------------------
+	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,Absyn.R_FUNCTION,_)::rest,w)) => id::res
+
+  rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
+	------------------------------------------
+	get_top_models_in_program (Absyn.PROGRAM(_::rest,w)) => res
+end
+
+(** relation: get_models_in_class
+ ** This relation takes a `Class' definition and a Path identifying th elcass. 
+ ** It returns a string containing comma separated package names found 
+ ** in the class definition.
+ **)
+relation get_models_in_class:(Absyn.Path, Absyn.Program, Absyn.Class) => string =
+
+  rule	get_models_in_parts(parts) => strlist &
+	Util.string_delimit_list(strlist,",") => res
+	-------------------------------------
+	get_models_in_class(_,_,Absyn.CLASS(_,_,_,Absyn.PARTS(parts))) => res
+
+  rule	lookup_classdef(path,inmodel,p) => (cdef,newpath) &
+	get_models_in_class(newpath,p,cdef) => res 
+	--------------------------------------------
+	get_models_in_class(inmodel,p,Absyn.CLASS(_,_,_,Absyn.DERIVED(path,_,_))) => res
+end
+
+
+relation get_models_in_parts:(Absyn.ClassPart list ) => string list =
+
+  axiom	get_models_in_parts [] => []
+
+  rule	get_models_in_elts(elts) => l1 &
+	get_models_in_parts(rest) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_models_in_parts(Absyn.PUBLIC(elts)::rest) => res	
+	
+  rule	get_models_in_parts(rest) => res
+	-----------------------------------
+	get_models_in_parts(_::rest) => res
+end
+
+relation get_models_in_elts: (Absyn.ElementItem list) => string list =
+  axiom	 get_models_in_elts [] => []
+	
+  rule	get_models_in_elts(rest) => res
+	--------------------------------
+	get_models_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,Absyn.R_CLASS,_))))::rest) => id::res
+  rule	get_models_in_elts(rest) => res
+	--------------------------------
+	get_models_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,Absyn.R_MODEL,_))))::rest) => id::res
+  rule	get_models_in_elts(rest) => res
+	--------------------------------
+	get_models_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,Absyn.R_RECORD,_))))::rest) => id::res
+  rule	get_models_in_elts(rest) => res
+	--------------------------------
+	get_models_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,Absyn.R_BLOCK,_))))::rest) => id::res
+  rule	get_models_in_elts(rest) => res
+	--------------------------------
+	get_models_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,Absyn.R_CONNECTOR,_))))::rest) => id::res
+
+  rule	get_models_in_elts(rest) => res
+	--------------------------------
+	get_models_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,Absyn.R_FUNCTION,_))))::rest) => id::res
+  rule	get_models_in_elts(rest) => res
+	--------------------------------
+	get_models_in_elts (_::rest) => res
 end
 
 (* This relation gets all base classes of a class, NOT Recursive.*)
@@ -1505,9 +1762,52 @@ relation get_pathed_class_in_program: (Absyn.Path, Absyn.Program) => Absyn.Class
 	get_pathed_class_in_program (Absyn.IDENT(str),p) => c1
 	
   rule	get_class_in_program(c1,p) => c1def &
-	get_pathed_class_in_program(prest,Absyn.PROGRAM([c1def],w)) => res
+	get_classes_in_class(Absyn.IDENT(c1),p,c1def) => classes &
+	get_pathed_class_in_program(prest,Absyn.PROGRAM(classes,w)) => res
 	------------------------------------------------------------
 	get_pathed_class_in_program (path as Absyn.QUALIFIED(c1,prest),p as Absyn.PROGRAM(_,w)) => res
+end
+
+(** relation: get_classes_in_class
+ ** This relation takes a `Class' definition and returns a list of local `Class' definitions of that class.-
+ **)
+relation get_classes_in_class: (Absyn.Path, Absyn.Program,Absyn.Class) => Absyn.Class list =
+
+  rule	get_classes_in_parts(parts)  => res
+	--------------------------
+	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,Absyn.PARTS(parts))) => res
+
+  rule	lookup_classdef(path, modelpath,p) => (cdef,newpath) &
+	get_classes_in_class(newpath,p,cdef) => res
+	--------------------------------------------
+	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,Absyn.DERIVED(path,_,_))) => res
+end
+
+relation get_classes_in_parts: Absyn.ClassPart list => Absyn.Class list =
+
+  axiom	 get_classes_in_parts [] => []	
+
+  rule	get_classes_in_parts(rest) => l1 &
+	get_classes_in_elts(elts) => l2 &
+	list_append(l1,l2) => res
+	------------------------
+	get_classes_in_parts (Absyn.PUBLIC(elts)::rest) => res
+
+  rule	get_classes_in_parts(rest) => res
+	---------------------------------
+	get_classes_in_parts(_::rest) => res
+end
+
+relation get_classes_in_elts: Absyn.ElementItem list => Absyn.Class list =
+  axiom	get_classes_in_elts [] => []
+  rule	get_classes_in_elts (rest) => res
+	---------------------------------
+	get_classes_in_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.CLASSDEF(_,class)))::rest)
+	    => class::res
+  rule	get_classes_in_elts (rest) => res
+	---------------------------------
+	get_classes_in_elts (_::rest)
+	    => res
 end
 
 (** relation: get_class_in_program
@@ -1518,7 +1818,7 @@ end
 relation get_class_in_program:(string, Absyn.Program) => Absyn.Class = 
 
   axiom get_class_in_program (str,Absyn.PROGRAM([],_)) => fail
-	
+
   rule	not str = c1 &
 	get_class_in_program(str,Absyn.PROGRAM(p,w)) => res
 	-----------------------------------------

@@ -148,6 +148,24 @@ getDiagramAnnotation(<cref>)		Returns the Diagram annotation of
 					performed that flattens the inheritance 
 					hierarchy in order to find all annotations.
 
+getPackages(<cref>)			Returns the names of all Packages in class
+					named by A0 as a list,
+					e.g. getPackages(Modelica) =>
+					{Electrical,Blocks,Mechanics,Constants,Math,SIunits}
+getPackages()				Returns the names of all
+					Packages reachable from
+					MODELICAPATH. (global scope)
+
+getModels(<cref>)			Returns the names of all model
+					defintions in a class
+					(package),
+					e.g.
+					getModels(Modelica.Electrical.Analog.Sensors)
+					=>
+					{PotentialSensor,VoltageSensor,CurrentSensor}
+getModels()				Returns the names of all model
+					definitions in the global scope.
+
 ERROR Handling
 ==============
 When an error occur in any of the functions above, the string
