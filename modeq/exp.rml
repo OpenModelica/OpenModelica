@@ -210,11 +210,21 @@ relation print_component_ref : ComponentRef => () =
 	----------------------------
 	print_component_ref CREF_IDENT(s,subs)
 
-  rule	print_component_ref2 (s,subs) &
+	(* Does not handle names with underscores *)
+  rule	RTOpts.modelica_output => true &
+	print_component_ref2 (s,subs) &
+	print "__" &
+	print_component_ref cr
+	---------------------
+	print_component_ref CREF_QUAL(s,subs,cr)
+
+  rule	RTOpts.modelica_output => false &
+	print_component_ref2 (s,subs) &
 	print "." &
 	print_component_ref cr
 	---------------------
 	print_component_ref CREF_QUAL(s,subs,cr)
+
 end
 
 relation print_component_ref2 =
@@ -223,7 +233,14 @@ relation print_component_ref2 =
 	-------
 	print_component_ref2 (s,[])
 
-  rule	print s &
+  rule	RTOpts.modelica_output => true &
+	print s &
+	print "_L" & print_list(l,print_subscript,",") & print "_R"
+	-------------------------------------------------------
+	print_component_ref2 (s,l)
+
+  rule	RTOpts.modelica_output => false &
+	print s &
 	print "[" & print_list(l,print_subscript,",") & print "]"
 	-------------------------------------------------------
 	print_component_ref2 (s,l)
