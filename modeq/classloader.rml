@@ -48,30 +48,31 @@ with "parse.rml"
 with "print.rml"
 with "env.rml"
 with "dump.rml"
+
 (** relation: load_class
  ** This relation takes a 'Path' and the $MODELICAPATH as a string
  ** and tries to load the class from the path.
  ** If the classname is qualified, the complete package is loaded. 
  ** E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded.
-**)
+ **)
 relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 
-	(** Simple names: Just load the file if it can be found in $MODELICAPATH* *)
+	(* Simple names: Just load the file if it can be found in $MODELICAPATH *)
   rule System.group_delimiter => gd &	
 	System.strtok(mp,gd) => mps &
 	load_class_from_mps(classname,mps) => p
 	-------------------------------------
 	load_class(Absyn.IDENT(classname),mp) => p
 
-  rule	(** Qualified names: First check if it is defined in a file pack.mo *)
-	System.group_delimiter => gd &	
+	(* Qualified names: First check if it is defined in a file pack.mo *)
+  rule	System.group_delimiter => gd &	
 	System.strtok(mp,gd) => mps &
 	load_class_from_mps(pack,mps) => p
 	-------------------------------------
 	load_class(Absyn.QUALIFIED(pack,rest),mp) => p
 
-	(** Qualified names: Else, load the complete package and then check that **)
-	(** the package contains the file **) 
+	(* Qualified names: Else, load the complete package and then check that *)
+	(* the package contains the file *) 
   rule	System.group_delimiter => gd &	
 	System.strtok(mp,gd) => mps &
 	load_complete_package_from_mps(pack,mps,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
@@ -110,6 +111,12 @@ relation load_class_from_mps: (Absyn.Ident, string list) => Absyn.Program =
 	load_class_from_mps(class,_::mps) => p
 
 end
+
+(** relation: load_class_from_mp
+ ** 
+ ** This relation loads a modelica class "className" from the file path "<mp>/className.mo"
+ ** or it loads complete package from "<mp>/className/package.mo"
+ **)
 relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	
   rule	System.path_delimiter => pd &
