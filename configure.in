@@ -89,7 +89,7 @@ if test -d /home/pelab/pkg/gnu/lib ; then
   AC_MSG_RESULT([yes])
 else
 dnl Check in standard paths
-  readlinelib = find /usr/lib /usr/local/lib -name libreadline.a | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'  
+  readlinelib = `find /usr/lib /usr/local/lib -name libreadline.a | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
   if test -z "$readlinelib" ; then
      AC_MSG_RESULT([no])
      AC_MSG_ERROR([Could not find readline lib file])
