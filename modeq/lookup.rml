@@ -1,0 +1,236 @@
+module Lookup:
+
+  with "classinf.rml"
+  with "types.rml"
+  with "exp.rml"
+  with "env.rml"
+  with "mod.rml"
+  with "explode.rml"
+
+  type Env = Env.Env
+
+  relation lookup_class     : (Env, Exp.Path) => (Explode.Class, Mod.Mod)
+  relation lookup_var       : (Env,Explode.ComponentRef)
+	  			=> (Types.VarAttr,Types.Type,Exp.Exp option)
+  relation lookup_var_local : (Env, Explode.Ident) => Env.FrameVar
+
+end
+
+with "absyn.rml"
+with "parse.rml"
+
+(**********************************************************************
+ *
+ *   Lookup functions
+ *
+ * These relations look up class and variable names in the environment.
+ * The names are supplied as a path, and if the path is qualified, a
+ * variable named as the first part of the path is searched for, and the
+ * nave is looked for in it.
+ *
+ **********************************************************************)
+
+relation lookup_class_in_frame: ((Explode.Ident * Explode.Class *
+				  Mod.Mod) list,
+				 Explode.Ident)
+	  => (Explode.Class,Mod.Mod) =
+
+  rule	(* print "  lookup_class_in_frame(" & print id & print "): " &
+	print n & print "\n" & *)
+	id = n
+	---------------------------------------------------------
+	lookup_class_in_frame((n,c,m)::_, id) => (c,m)
+
+  rule	lookup_class_in_frame(fs,id) => (c,m)
+	------------------------------
+	lookup_class_in_frame(_::fs,id) => (c,m)
+
+end
+
+relation lookup_class_in_env: (Env,Exp.Path) => (Explode.Class,Mod.Mod) =
+
+  rule	lookup_class_in_frame(cs,id) => (c,m)
+	---------------------
+	lookup_class_in_env(Env.FRAME(_,cs)::fs,Exp.IDENT(id)) => (c,m)
+
+  rule	lookup_class_in_env(fs,id) => (c,m)
+	---------------------
+	lookup_class_in_env(f::fs,id) => (c,m)
+
+end
+
+relation lookup_package_class : (Env, string, Exp.Path)
+	  => (Explode.Class, Mod.Mod) =
+
+  rule	locate_package (env,packname) => pack &
+	(* FIXME: modifications? *)
+	lookup_class_in_package (pack, path) => c
+	-------------------------------------
+	lookup_package_class (env, packname, path) => (c, Mod.NOMOD)
+
+end
+
+relation lookup_class: (Env,Exp.Path) => (Explode.Class,Mod.Mod) =
+
+  rule	lookup_class_in_env(env,path) => (c,m)
+	--------------------------------------
+	lookup_class(env, path) => (c,m)
+
+  rule	lookup_package_class (env,pack,path) => (c,m)
+	--------------------------------------
+	lookup_class(env, Exp.QUALIFIED(pack,path)) => (c,m)
+
+end
+
+relation lookup_var2: ((Explode.Ident * Env.FrameVar) list,Explode.Ident)
+	  => Env.FrameVar =
+
+  rule	id = n
+	--------------------------------------------
+	lookup_var2((n,fv)::_,id) => fv
+
+  rule	lookup_var2(fs,id) => fv
+	------------------------
+	lookup_var2(_::fs,id) => fv
+
+end
+
+relation check_subscripts : (Types.ArrayDim, Exp.Subscript list) => () =
+
+	(* FIXME: Check range too? *)
+  axiom check_subscripts(Types.NODIM, [])
+  axiom check_subscripts(Types.ONEDIM(_), [_])
+  axiom check_subscripts(Types.TWODIM(_,_), [_,_])
+
+end
+
+relation lookup_in_var: (Types.Type, Explode.ComponentRef)
+	  => (Types.VarAttr,Types.Type) =
+
+	(* FIXME: Check protected flag *)
+
+	(* FIXME: Should I really strip the ArrayDim? *)
+  rule  Types.lookup_component(ty, id)
+	  => ((_,Types.ATTR(ad,fl,vt,di),ty')) &
+	check_subscripts(ad, ss)
+	------------------------
+	lookup_in_var(ty, [(id,ss)])
+	  => (Types.ATTR(Types.NODIM,fl,vt,di),ty')
+
+  rule  Types.lookup_component(ty, id)
+	  => ((_,Types.ATTR(ad,fl,vt,di),ty')) &
+	check_subscripts(ad, ss) &
+	lookup_in_var(ty', vs) => (attr, ty'')
+	--------------------------------------
+	lookup_in_var(ty, (id,ss)::vs) => (attr,ty'')
+
+end	
+
+relation lookup_var_f : ((Explode.Ident * Env.FrameVar) list,
+			 Explode.ComponentRef)
+	  => (Types.VarAttr, Types.Type, Exp.Exp option) =
+
+  rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
+	lookup_var2(f, id) => Env.FRAMEVAR(n,Types.ATTR(ad,f,vt,di),ty,ass) &
+	check_subscripts(ad,ss)
+	----------------------------------
+	lookup_var_f(f,[(id,ss)]) => (Types.ATTR(Types.NODIM,f,vt,di),ty,ass)
+
+  rule  (* print " lookup_var_f 2: " & print id & print "\n" & *)
+	lookup_var2(f, id) => Env.FRAMEVAR(n,Types.ATTR(ad,_,_,_),ty,ass) &
+	check_subscripts(ad,ss) &
+	lookup_in_var(ty, ids) => (attr,ty)
+	----------------------------------
+	lookup_var_f(f,(id,ss)::ids) => (attr,ty,ass)
+
+end
+
+relation lookup_var: (Env,Explode.ComponentRef)
+	  => (Types.VarAttr, Types.Type, Exp.Exp option) =
+
+  rule	(* print " lookup_var: looking in frame\n" & *)
+	lookup_var_f(vs,ref) => (attr,ty,ass)
+	-------------------------
+	lookup_var(Env.FRAME(vs,_)::fs,ref) => (attr,ty,ass)
+
+  rule	(* print " lookup_var: next frame\n" & *)
+	lookup_var(fs,ref) => (attr,ty,ass)
+	--------------------
+	lookup_var(_::fs,ref) => (attr,ty,ass)
+
+end
+
+relation lookup_var_local : (Env, Explode.Ident) => Env.FrameVar =
+
+  rule  lookup_var2(vs, id) => fv
+	-------------------------
+	lookup_var_local(Env.FRAME(vs,_)::_, id) => fv
+
+end
+
+
+(**********************************************************************
+ * Package handling
+ **********************************************************************)
+
+relation locate_package : (Env.Env, string) => Explode.Class =
+
+  rule	lookup_class(env, Exp.IDENT(pack)) => (c,_) &
+	(* FIXME: modifications? *)
+	assert_package c
+	----------------
+	locate_package (env, pack) => c
+
+  rule	string_append (pack, ".mdc") => filename &
+	print "Loading " & print filename & print "...\n" &
+	Parser.parse filename => ((c as Absyn.CLASS(classname,_,_,_))::_) &
+	pack = classname &
+	Explode.explode [c] => [c'] &
+	assert_package c'
+	--------------------------------------------
+	locate_package(env, pack) => c'
+
+end
+
+relation assert_package : Explode.Class => () =
+
+	(* Break the generalize-to-class rule *)
+  axiom	assert_package Explode.CLASS(_,_,ClassInf.R_PACKAGE,_)
+
+end
+
+relation lookup_class_in_package : (Explode.Class, Exp.Path) => Explode.Class =
+
+  rule	lookup_class_in_elements (els, path) => c
+	-----------------------------------------
+	lookup_class_in_package (Explode.CLASS(_,_,_,
+					       Explode.PARTS(els,_,_)),
+				 path) => c
+
+end
+
+relation lookup_class_in_elements : (Explode.Element list, Exp.Path)
+	  => Explode.Class =
+
+	(* FIXME: Doesn't complain about an identifier being used for *)
+	(* both a variable and a class *)
+  rule	n1 = n2
+        -------
+        lookup_class_in_elements (Explode.ELEMENT(_,false,n1,
+						  Explode.CLASSDEF(_,c))::_,
+				  Exp.IDENT(n2)) => c
+				   
+  rule	n1 = n2 &
+	assert_package c &
+	lookup_class_in_package (c, path) => c'
+	----------------------------
+	lookup_class_in_elements (Explode.ELEMENT(_,false,n1,
+						  Explode.CLASSDEF(_,c))::_,
+				  Exp.QUALIFIED(n2, path)) => c'
+
+  rule	lookup_class_in_elements (es, path) => c
+	-------------------------------------
+	lookup_class_in_elements (_::es, path) => c
+
+end	
+
