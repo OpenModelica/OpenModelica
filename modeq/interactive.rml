@@ -1578,22 +1578,26 @@ end
 
 relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 	
-  rule	get_annotation_string(Placement_records, ann) => s1 &
+  rule	get_annotation_string(Placement_records, Absyn.ANNOTATION(mod)) => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"},") => s3 &
 	get_componentitems_annotation(rest) => str &
 	string_append(s3,str) => res
 	----------------------------
-	get_componentitems_annotation (Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(ann),_)))::(rest as (_::_))) => res
+	get_componentitems_annotation (Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(
+		Absyn.ANNOTATION(Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Diagram",_),Absyn.CLASSMOD(mod,_),_)::_)
+	),_)))::(rest as (_::_))) => res
 	
-  rule	get_annotation_string(Placement_records, ann) => s1 &
+  rule	get_annotation_string(Placement_records, Absyn.ANNOTATION(mod)) => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => res 
 	----------------------------
-	get_componentitems_annotation ([Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(ann),_)))]) => res
+	get_componentitems_annotation ([Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(
+	Absyn.ANNOTATION(Absyn.MODIFICATION(_,Absyn.CREF_IDENT("Diagram",_),Absyn.CLASSMOD(mod,_),_)::_)
+	),_)))]) => res
 
   rule	get_componentitems_annotation(rest) => str &
-	string_append("{},",str) => res
+	string_append("{nada},",str) => res
 	-----------------------
 	get_componentitems_annotation (Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(NONE,_)))::(rest as (_::_))) => res
 

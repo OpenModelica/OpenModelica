@@ -68,6 +68,7 @@ with "debug.rml"
   relation select_string: (bool,string,string) => string
   relation get_string_list : ('a list, 'a => string, string) => string
   relation get_option_str: ('a option, 'a => string) => string 
+  relation unparse_annotation_option: Absyn.Annotation option => string 	
   end
 
 
