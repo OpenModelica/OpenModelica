@@ -75,7 +75,9 @@ void simple_index_real_array2(real_array_t* source,
 
 void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B);
 
+void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest);
 void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
+
 void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 
 void mul_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);
@@ -84,7 +86,7 @@ double mul_real_scalar_product(real_array_t* a, real_array_t* b);
 void mul_real_matrix_product(real_array_t*a,real_array_t*b,real_array_t*dest);
 void mul_real_matrix_vector(real_array_t* a, real_array_t* b,real_array_t* dest);
 void mul_real_vector_matrix(real_array_t* a, real_array_t* b,real_array_t* dest);
-
+void mul_alloc_real_matrix_product_smart(real_array_t* a, real_array_t* b, real_array_t* dest);
 void div_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
 
 void exp_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
@@ -114,4 +116,6 @@ void symmetric_real_array(real_array_t* a,real_array_t* dest);
 void cross_real_array(real_array_t* x,real_array_t* y, real_array_t* dest);
 void skew_real_array(real_array_t* x,real_array_t* dest);
 
+
+size_t real_array_nr_of_elements(real_array_t* a);
 #endif
