@@ -1,6 +1,94 @@
+How to compile
+==============
 
+You need: 
+	cygwin (cygwin.com) make sure to install gcc, make, readline lib.
+	antlr (tested on >v2.7.1)
+	rml (tested on v>2.1.8) (unpack and follow instructions)
+	rml needs smlnj (smlnj.org)
+	java
+	gcc
+
+
+1. Set ANTLRHOME to antlr installation, e.g. c:\antlr-2.7.1
+   Set RMLHOME to rml installation, e.g. /cygdrive/c/rml-2.1.8 NOTE: must be cygwin path!
+
+  run ./configure in modelica
+  Make sure that all makefiles are created. Check carefully for error messages.
+
+  cd c_runtime;make
+
+  cd modeq;make
+
+  cd mosh;make
+
+How to run
+==========
 To be able to use mosh (osm) you must
 set the MOSHHOME environment variable
 to point to the mosh directory e.g
 setenv MOSHHOME ~/cvs/modelica/mosh
 
+For debugging purposes it can be useful to start mosh and modeq in two different termnials.
+For this use:
+modelica/modeq/modeq +d=interactive
+
+modelica/mosh/src/mosh -noserv
+
+( The -noserv argument will prevent mosh from starting its own modeq in the background )
+
+If you want to change the port number of the socket connection you
+will have to do it manually in mosh.cpp and modeq/main.rml.
+
+
+Example Session
+===============
+Here is a short example session. A limitation is that MODELICAPATH can
+only point to a single directory, not a coloned list of directories.
+
+$ cd modelica/mosh/src/
+$ export MODELICAPATH=/cygdrive/c/home/petar/ModelicaLibrary
+$ ./mosh.exe
+Started server using:/cygdrive/c/home/petar/modelica/mosh/../modeq/modeq +d=inte
+ractive > /cygdrive/c/home/petar/modelica/mosh/error.log 2>&1 &
+ res = 0
+Open Source Modelica 0.1
+Copyright 2002, PELAB, Linkoping University
+>>> loadClass(Modelica)
+true
+>>> translateClass(Modelica.Electrical.Analog.Basic.Resistor)
+"fclass Modelica.Electrical.Analog.Basic.Resistor
+        Real    v;
+        Real    i;
+        Real    p.v;
+        Real    p.i;
+        Real    n.v;
+        Real    n.i;
+parameter        Real    R;
+initial equation
+initial algorithm
+equation
+  R = 1.0;
+  1 * i = v;
+  v = p.v - n.v;
+  0.0 = p.i + n.i;
+  i = p.i;
+algorithm
+end Modelica.Electrical.Analog.Basic.Resistor;
+"
+>>> a:=1:5;
+>>> b:=3:8
+{3,4,5,6,7,8}
+>>> a*b
+Error evaluating expr.
+# *: Incompatible argument types array[5] of Integer, array[6] of Integer
+# *: Incompatible argument types array[5] of Real, array[6] of Real
+# Can't resolve type of expression: a*b
+- elab_exp failed: a*b
+
+>>> b:=3:7;
+>>> a*b
+85
+>>> listVariables()
+{a, b}
+>>>
