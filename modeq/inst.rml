@@ -3430,29 +3430,13 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Lookup.lookup_ident_local(env,n)
 	  => (Types.VAR(_,_,_,_,Types.EQBOUND(_,_)),_,_) &
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
-	& print "discarding equation\n" 
 	------------------------------------------------------
 	inst_equation_common(env,mods,pre,csets,ci_state,
 			     SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2),
 			     initial)
 	  => ([],env,csets,ci_state')
 
-(* PR. This is probably where type checking of functions happen.*)
-  rule	(*PR. propx contains the type/types(for functions) of the
-	 resulting expression. But why are e1', e2' needed? They are
-	 used to generate the dae's. Probably their type may have been
-	 modified.  *)
-(*	Debug.print("\n Expressions matched in inst equation:") &*)
-
-(*	Absyn.print_absyn_exp(e1) &
-*)	
-(*	Debug.print(", ") &*)
-
-(*	Absyn.print_absyn_exp(e2) &
-*)	
-(*	Debug.print("\n") &*)
-
-	(* 
+  rule	(* 
 	 Do static analysis and constant evaluation of expressions. 
 	 Gives expression and properties 
 	 (Type * bool | (Type * Const as (bool | Const list))).
@@ -3464,17 +3448,9 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 Returns the output parameters from the funktion.
 	*)
 
-	Static.elab_exp(env,e1,false,NONE) => (e1',prop1,_) &
+	Static.elab_exp(env,e1,false,NONE) => (e1',prop1,c1) &
+	Static.elab_exp(env,e2,false,NONE) => (e2',prop2,c2) &
 
-(*	Debug.print("\nDebug: did left elab.") &*)
-	Static.elab_exp(env,e2,false,NONE) => (e2',prop2,_) &
-(*	Debug.print("\nDebug: did right elab.") &*)
-(*	Exp.print_exp(e1') & *)
-(*	Debug.print(", ") &*)
-(*	Exp.print_exp(e2') & *)
-(*	Debug.print("\n") &*)
-
-	
 	Prefix.prefix_exp(env,e1',pre) => e1'' &
 	Prefix.prefix_exp(env,e2',pre) => e2'' &
 (*	Debug.print("\nDebug: did prefixes.") &*)
@@ -3487,20 +3463,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 *)
 	(*PR. Check that the lefthandside and the righthandside get along. *)
 	inst_eq_equation(e1'',prop1,e2'',prop2,initial) => dae &
-(*	Debug.print("\nDebug: did inst_eq_equation.") &*)
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state' 
-(*	& Debug.print("\nDebug: did ClassInf trans.") &*)
-(*	Prefix.print_prefix_str pre => prestr &
-	Exp.print_exp_str e1' => e1str &
-	Exp.print_exp_str e2' => e2str &
-	string_append (prestr, ": ") => debugstr &
-	string_append (debugstr, e1str) => debugstr2 &
-	string_append (debugstr2, " = ") => debugstr3 &
-	string_append (debugstr3, e2str) => debugstr4 *)
-(*	& Debug.fcall ("expenvgraph", Env.print_env_graphviz, (env,debugstr4)) &
-	Debug.fprintl ("expenvprint", ["------------ ", debugstr4, "\n"]) &
-	Debug.fcall ("expenvprint", Env.print_env, env) &
-	Debug.fprintl ("expenvprint", ["------------ /", debugstr4, "\n"])*)
 	--------------------------------------------------------------
 	inst_equation_common(env, mods, pre, csets, ci_state,
 			     SCode.EQ_EQUALS(e1,e2), 
@@ -3650,6 +3613,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	----------------------------------
 	inst_equation_common(_,_,_,_,_,_,_) => fail
 end
+
 
 (** LS & ELN **)
 relation inst_equation_common_ci_trans : (ClassInf.State, Initial)

@@ -163,6 +163,20 @@ relation elab_exp_list_list : (Env.Env, Absyn.Exp list list, bool
 	elab_exp_list_list (env, e::rest,impl,st) => (exp::exps, p::props,st'') 
 end
 
+(** relation: ceval_if_constant
+ ** This relation calls Ceval.ceval if the boolean parameter is true
+ ** on the expression.
+ **)
+relation ceval_if_constant: (Exp.Exp,bool (* constant *),Env.Env) => Exp.Exp =
+
+  axiom	ceval_if_constant(e,false,_) => e 
+ 
+  rule	Ceval.ceval(env,e,false,NONE,NONE) => (v,_) &
+	value_exp(v) => e'
+	---------------------------------
+	ceval_if_constant(e,true,env) => e'
+end
+
 (** relation: elab_exp
  **
  ** Static analysis of expressions means finding out the properties of
@@ -199,31 +213,26 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 
 	(**  Binary and unary operations *)
 
-  rule	(*Debug.fprintln("setr", "elab_exp_binary") &*)
-	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
+  rule	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') &
-	(*Debug.fprintln("eexpbin","types of binary exp t1:") &
-	Debug.fcall("eexpbin",Types.print_type,t1) & 
-	Debug.fprintln("eexpbin","\nt2:") &
-	Debug.fcall("eexpbin",Types.print_type,t2) & *)
 	bool_and (c1,c2) => c &
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
-	replace_operator_with_fcall(Exp.BINARY(e1'',op',e2''),c) => exp' 
-	(*& Debug.fprintln("eexpbin", "operator deoverloaded, resulting type:") &
-	Debug.fcall("eexpbin",Types.print_type,rtype) *)
+	replace_operator_with_fcall(Exp.BINARY(e1'',op',e2''),c) => exp' &
+	ceval_if_constant(exp',c,env) => exp''
 	---------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),impl,st)
-	  => (exp',Types.PROP(rtype,c),st'')
+	  => (exp'',Types.PROP(rtype,c),st'')
 
   rule	(*Debug.fprintln("setr", "elab_exp_unary") &*)
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
-	replace_operator_with_fcall(Exp.UNARY(op',e''),c) => exp'
+	replace_operator_with_fcall(Exp.UNARY(op',e''),c) => exp' &
+	ceval_if_constant(exp',c,env) => exp''
 	---------------------------------------------------------
 	elab_exp (env,exp as Absyn.UNARY(op,e),impl, st)
-	  => (exp', Types.PROP(rtype,c),st')
+	  => (exp'', Types.PROP(rtype,c),st')
 	
   rule	(*Debug.fprintln("setr", "elab_exp_lbinary") &*)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
@@ -231,19 +240,21 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	bool_and (c1,c2) => c &
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
-	replace_operator_with_fcall(Exp.LBINARY(e1'',op',e2''),c) => exp'
+	replace_operator_with_fcall(Exp.LBINARY(e1'',op',e2''),c) => exp' &
+	ceval_if_constant(exp',c,env) => exp''
 	-----------------------------------------------------------------
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2),impl,st)
-	  => (exp', Types.PROP(rtype,c),st'')
+	  => (exp'', Types.PROP(rtype,c),st'')
 
   rule	(*Debug.fprintln("setr", "elab_exp_lunary") &*)
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
-	replace_operator_with_fcall(Exp.LUNARY(op',e''),c) => exp'
+	replace_operator_with_fcall(Exp.LUNARY(op',e''),c) => exp' &
+	ceval_if_constant(exp',c,env) => exp''
 	----------------------------------------------------------
 	elab_exp (env,exp as Absyn.LUNARY(op,e),impl,st)
-	  => (exp',Types.PROP(rtype,c),st')
+	  => (exp'',Types.PROP(rtype,c),st')
 
   rule	(*Debug.fprintln("setr", "elab_exp_relation") &*)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
@@ -251,10 +262,11 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	bool_and (c1,c2) => c &
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
-	replace_operator_with_fcall(Exp.RELATION(e1'',op',e2''),c) => exp'
+	replace_operator_with_fcall(Exp.RELATION(e1'',op',e2''),c) => exp' &
+	ceval_if_constant(exp',c,env) => exp''
 	-----------------------------------------------------------------
 	elab_exp (env,exp as Absyn.RELATION(e1,op,e2),impl,st)
-	  => (exp', Types.PROP(rtype,c),st'')
+	  => (exp'', Types.PROP(rtype,c),st'')
 
 	(**  Conditional expressions *)
 
@@ -2915,6 +2927,10 @@ end
  ** This relation check whether the component reference found in
  ** `elab_cref' has a binding, and if that binding is constant.  If
  ** the binding is a `VALBOUND' binding, the value is substituted.
+ ** Constant values are e.g.: 1+5, c1+c2, ps1*2   ,where c1 and c2 are modelica constants,
+ **						    ps1 and ps2 are structural parameters.
+ ** Non Constant values are e.g. : p1+p2, x1*x2  ,where p1,p2 are modelica parameters, 
+ **						  x1,x2 modelica variables.
  **)
 
 relation elab_cref2 : (Env.Env,
@@ -2925,12 +2941,12 @@ relation elab_cref2 : (Env.Env,
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
-	-----------------
+	-----------------------------------
 	elab_cref2 (_,cr, acc, SCode.VAR, tt,_) => (Exp.CREF(cr',t),false, acc)
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
-	------------------
+	-----------------------------------
 	elab_cref2 (_,cr, acc, SCode.DISCRETE,tt,_)
 	  =>(Exp.CREF(cr',t),false,acc)
 
@@ -2941,8 +2957,8 @@ relation elab_cref2 : (Env.Env,
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
 	cref_vectorize(Exp.CREF(cr',t),tt) => e'
-	----------------
-  	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) => (e',true,acc)
+	---------------
+  	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) => (e',false,acc)
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
