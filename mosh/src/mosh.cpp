@@ -40,6 +40,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include <sys/param.h> /* MAXPATHLEN */
+
 void open_socket(char* hostname, int port);
 
 char * check_moshhome(void);
