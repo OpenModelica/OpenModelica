@@ -29,7 +29,7 @@ module Mod:
   datatype SubMod = NAMEMOD of Ident * Mod
 		  | IDXMOD of int list * Mod
   and Mod = MOD of bool * (SubMod list) * EqMod option
-  	  | REDECL of bool * Absyn.ElementSpec
+  	  | REDECL of bool * SCode.Element list
 	  | NOMOD
   (** This type is very similar to `SCode.Mod'.  The main difference is
    ** that it uses `Exp.Exp' for the expressions.  Expressions stored
@@ -47,6 +47,8 @@ module Mod:
   relation print_mod : Mod => ()
 
 end
+
+with "dump.rml"
 
 (** relation: elab_mod
  **
@@ -71,6 +73,15 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
 	------------------------------------
 	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)))
 	  => MOD(final,subs',SOME((e'',prop)))
+
+  axiom	elab_mod (env, pre, m as SCode.REDECL(final, elist)) 
+	  =>  REDECL(final, elist)
+
+  rule	print "#-- elab_mod failed:\n" &
+	SCode.print_mod mod &
+	print "\n"
+	----------
+	elab_mod (_,pre,mod) => fail
 
 end
 
@@ -554,11 +565,15 @@ end
 
 relation print_mod : Mod => () =
 
-  axiom	print_mod(NOMOD)
+  rule	print "()"
+	----------
+	print_mod(NOMOD)
 
-  rule  print "(redeclared)"
+  rule  print "(redeclare(" &
+	Dump.print_list(elist, SCode.print_element, ", ") &
+	print "))"
 	------------------------------
-	print_mod REDECL(_,_)
+	print_mod REDECL(final,elist)
 	
   rule	print_final final &
 	print_subs1 subs &
