@@ -9,6 +9,7 @@ module Absyn:
   type Path = Exp.Path
   type Subscript = Exp.Subscript
   type ArrayDim = Types.ArrayDim
+  type ClassRestriction = Types.Restriction
 
   datatype ElementArg = MODIFICATION of bool * Path * Modification
 		      | REDECLARATION of bool * ElementSpec
@@ -30,15 +31,6 @@ module Absyn:
   and	   Element = ELEMENT of bool		(* final *)
 			      * Ident
 			      * ElementSpec
-
-  and	   ClassRestriction = CL_CLASS
-			    | CL_MODEL
-			    | CL_RECORD
-			    | CL_BLOCK
-			    | CL_CONNECTOR
-			    | CL_TYPE
-			    | CL_PACKAGE
-			    | CL_FUNCTION
 
   and	   Class = CLASS of Ident             (* Name *)
 			  * bool			(* Partial *)
