@@ -456,6 +456,14 @@ relation list_getmember_p: (''a, ''a list,(''a,''a) => bool) => ''a =
 	list_getmember_p(x,y::ys,p) => res
 end 
 
+(** relation: list_union_elt
+ ** Takes a value and a list of values and inserts the value into the list if 
+ ** it is not already in the list.
+ ** If it is in the list it is not inserted.
+ ** For example,
+ ** list_union_elt(1,[2,3]) => [1,2,3]
+ ** list_union_elt(0,[0,1,2]) => [0,1,2]
+**)
 relation list_union_elt: (''a , ''a list) => ''a list =
 
   rule	list_getmember(x,lst) => _ 
@@ -467,6 +475,12 @@ relation list_union_elt: (''a , ''a list) => ''a list =
 	list_union_elt(x,lst) => x::lst	
 end
 
+(** relation list_union
+ ** Takes two lists and returns the union of the two lists, i.e. a list of all elements combined
+ ** without duplicates.
+ ** For example,
+ ** list_union([0,1],[2,1]) => [0,1,2]
+**)
 relation list_union:  (''a list, ''a list) => ''a list =
 	
   axiom	list_union([],res) => res
@@ -477,6 +491,11 @@ relation list_union:  (''a list, ''a list) => ''a list =
 	list_union(x::xs,lst2) => res
 end
 
+(** relation: list_list_union
+ ** Takes a list of lists and returns the union of the sublists
+ ** For example,
+ ** list_list_union([[1],[1,2],[3,4],[5]]) => [1,2,3,4,5]
+ **)
 relation list_list_union:  (''a list list) => ''a list =
   
   axiom	list_list_union([]) => []
@@ -489,6 +508,13 @@ relation list_list_union:  (''a list list) => ''a list =
 	list_list_union(x1::x2::rest) => res
 end
 
+(** relation: list_union_elt_p
+ ** Takes an elemement and a list and a comparison relation over the two values.
+ ** It returns the list with the element inserted if not already present in the
+ ** list, according to the comparison relation.
+ ** For example,
+ ** list_union_elt_p(1,[2,3],int_eq) => [1,2,3]
+ **)
 relation list_union_elt_p: (''a , ''a list , (''a, ''a) => bool) => ''a list =
 
   rule	list_getmember_p(x,lst,p) => _ 
@@ -500,6 +526,14 @@ relation list_union_elt_p: (''a , ''a list , (''a, ''a) => bool) => ''a list =
 	list_union_elt_p(x,lst,p) => x::lst	
 end
 
+(** relation: list_union_p
+ ** Takes two lists and a comparison relation over two elements of the list.
+ ** It returns the union of the two lists, using the comparison relation passed as argument
+ ** to determine identity between two elements.
+ ** For example
+ ** given the relation equal_lenght(string,string) returning true if the strings are of same length
+ ** list_union_p(["a","aa"],["b","bbb"],equal_length) => ["a","aa","bbb"]
+ **)
 relation list_union_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list =
 	
   axiom	list_union_p([],res,p) => res
@@ -510,6 +544,12 @@ relation list_union_p:  (''a list, ''a list, (''a,''a) => bool) => ''a list =
 	list_union_p(x::xs,lst2,p) => res
 end
 
+(** relation: list_list_union_p
+ ** Takes a list of lists and a comparison relation over two elements of the lists.
+ ** It returns the union of all sublists using the comparison relation for identity.
+ ** For example,
+ ** list_list_union_p([[1],[1,2],[3,4]],int_eq) => [1,2,3,4]
+ **)
 relation list_list_union_p:  (''a list list, (''a,''a) => bool) => ''a list =
   
   axiom	list_list_union_p([],p) => []
@@ -522,6 +562,11 @@ relation list_list_union_p:  (''a list list, (''a,''a) => bool) => ''a list =
 	list_list_union_p(x1::x2::rest,p) => res
 end
 
+(** relation: list_replaceat
+ ** Takes an element, a position and a list and replaces the value at the given position in the list.
+ ** For example,
+ ** list_replaceat("A", 2, ["a","b","c"]) => ["a","b","A"]
+ **)
 relation list_replaceat: (''a, int, ''a list) => ''a list =
 
   axiom list_replaceat(x,_,[]) => []
@@ -533,6 +578,13 @@ relation list_replaceat: (''a, int, ''a list) => ''a list =
 	-----------------------------
 	list_replaceat(x,n,y::ys) => y::res
 end
+
+(** relation: list_reduce
+ ** Takes a list and a relation operating on two elements of the list.
+ ** The relation performs a reduction of the lists to a single value using the relation.
+ ** For example,
+ ** list_reduce([1,2,3],int_add) => 6
+ **)
 relation list_reduce: ('a list, ('a,'a) => 'a) => 'a =
   axiom	 list_reduce([e],r) => e
 
@@ -547,19 +599,33 @@ relation list_reduce: ('a list, ('a,'a) => 'a) => 'a =
 	list_reduce(a::b::(xs as _::_),r) => res
 end
 
-
+(** relation: tuple2_1
+ ** Takes a tuple of two values and returns the first value.
+ ** For example,
+ ** tuple2_1(("a",1)) => "a"
+ **)
 relation tuple2_1 : ('a * 'b) => 'a =
 	
   axiom	tuple2_1 ((a,_)) => a
 
 end
 
+(** relation: tuple2_2
+ ** Takes a tuple of two values and returns the second value.
+ ** For example,
+ ** tuple2_2(("a",1)) => 1
+ **)
 relation tuple2_2 : ('a * 'b) => 'b =
 	
   axiom	tuple2_2 ((_,b)) => b
 
 end
 
+(** relation: split_tuple2_list
+ ** Takes a list of two-tuples and splits it into two lists.
+ ** For example,
+ ** split_tuple2_list([("a",1),("b",2),("c",3)]) => (["a","b","c"], [1,2,3])
+ **)
 relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list) =
   axiom	split_tuple2_list([]) => ([],[])
 
@@ -568,6 +634,13 @@ relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list) =
 	split_tuple2_list((x,y)::rest) => (x::xs, y::ys)
 end
 
+(** relation: if
+ ** Takes a boolean and two values.
+ ** Returns the first value (second argument) if the boolean value is true, otherwise 
+ ** the second value (third argument) is returned.
+ ** For example,
+ ** if(true,"a","b") => "a"
+ **)
 relation if : (bool,'a,'a) => 'a =
 	
   axiom	if (true,r,_) => r
@@ -575,7 +648,11 @@ relation if : (bool,'a,'a) => 'a =
 
 end
 
-
+(** relation string_append_list
+ ** Takes a list of strings and appends them.
+ ** For example,
+ ** string_append_list(["foo", " ", "bar"]) => "foo bar"
+ **)
 relation string_append_list : string list => string =
 	
   axiom string_append_list [] => ""
@@ -586,9 +663,14 @@ relation string_append_list : string list => string =
 	string_append(f,r') => str
 	---------------------------
 	string_append_list f::r => str
-
 end
 
+(** relation string_delimit_list
+ ** Takes a list of strings and a string delimiter and appends all list elements with
+ ** the string delimiter inserted between elements.
+ ** For example,
+ ** string_delimit_list(["x","y","z"], ", ") => "x, y, z"
+ **)
 relation string_delimit_list : (string list, string) => string =
 	
   axiom string_delimit_list([],_) => ""
@@ -602,7 +684,12 @@ relation string_delimit_list : (string list, string) => string =
 	string_delimit_list(f::r,delim) => str
 end
 
-
+(** relation bool_or_list
+ ** Takes a list of boolean values and applies the boolean 'or' operator  to the list elements
+ ** For example
+ ** bool_or_list([true,false,false]) => true
+ ** bool_or_list([false,false,false]) => false
+ **)
 relation bool_or_list: bool list => bool =
 
   axiom	bool_or_list([b]) => b
@@ -617,6 +704,12 @@ relation bool_or_list: bool list => bool =
   	bool_or_list(b::rest) => res
 end
 
+(** relation: bool_and_list
+ ** Takes a list of boolean values and applies the boolean 'and' operator on the elements
+ ** For example,
+ ** bool_and_list([true, true]) => true
+ ** bool_and_list([false,false,true]) => false
+ **)
 relation bool_and_list: bool list => bool =
 
   axiom	bool_and_list([b]) => b
@@ -633,11 +726,22 @@ end
 
 
 
+(** relation: bool_string
+ ** Takes a boolean value and returns a string representation of the boolean value.
+ ** For example,
+ ** bool_string(true) => "true"
+ **)
 relation bool_string: bool => string =
   axiom	bool_string true => "true"
   axiom	bool_string false => "false"
 end
 
+
+(** relation: string_equal
+ ** Takes two strings and returns true if the strings are equal
+ ** For example,
+ ** string_equal("a","a") => true
+ **)
 relation string_equal: (string,string) => bool =
   rule	a = b
 	-----
@@ -647,6 +751,14 @@ relation string_equal: (string,string) => bool =
 
 end
 
+(** relation: list_matching
+ ** For example,
+ ** Takes a list of values and a matching relation over the values and returns a
+ ** sub list of values for which the matching relation succeeds.
+ ** For example,
+ ** given relation is_numeric(string) => ()  which succeeds if the string is numeric.
+ ** list_matching(["foo","1","bar","4"],is_numeric) => ["1","4"]
+ **)
 relation list_matching: ('a list, 'a => () )  => 'a list =
 
   axiom	list_matching ([],_) => []
@@ -662,6 +774,13 @@ relation list_matching: ('a list, 'a => () )  => 'a list =
 	list_matching (v::vl, cond) => vl'
 end	
 
+(** relation: apply_option
+ ** Takes an option value and a relation over the value. It returns in another option value, resulting 
+ ** from the application of the relation on the value.
+ ** For example,
+ ** apply_option(SOME(1), int_string) => SOME("1")
+ ** apply_option(NONE, int_string) => NONE
+ **)
 relation apply_option : ('a option,'a => 'b) => 'b option =
 
   axiom	apply_option(NONE,_) => NONE 
@@ -671,7 +790,12 @@ relation apply_option : ('a option,'a => 'b) => 'b option =
 	apply_option( SOME(a),rel) => SOME(b)
 end
 
-
+(** relation: list_split
+ ** Takes a list of values and an position value.
+ ** The relation returns the list splitted into two lists at the position given as argument.
+ ** For example,
+ ** list_split([1,2,5,7],2) => ([1,2],[5,7])
+ **)
 relation list_split : ('a list, int) => ('a list, 'a list) =
 
 
@@ -696,7 +820,8 @@ relation list_split : ('a list, int) => ('a list, 'a list) =
 	list_split(a,index) => (c,b) 
 end
 
-
+(** helper relation to list_split
+ **)
 relation list_split2 : ('a list, 'a list, int) => ('a list, 'a list) =
 	
   rule	int_eq(index,0) => true
