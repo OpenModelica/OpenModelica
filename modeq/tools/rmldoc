@@ -113,6 +113,9 @@ void convert(string f)
 	    module = fn - ".rml";
 	  }
 	  break;
+	case "module":
+	  module = a[1];
+	  break;
 	case "description":
 	  desc = a[1];
 	  break;
