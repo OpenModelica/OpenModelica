@@ -2,32 +2,15 @@
 
 #header <<
 
-#undef STRING_AST
-
 typedef enum { false=0, true=1 } bool;
 /* #include "bool.h" */
 
+#include "attrib.h"
 #include "parser.h"
 #include "modAST.h"
 
-typedef struct {
-  int type;
-  union {
-    int ival;
-    float floatval;
-    char *stringval;
-  } u;
-} Attrib;
-
-Attrib *copy_attr(Attrib *);
-
-#ifdef STRING_AST
-# define AST_FIELDS char *t;
-# define zzcr_ast(ast,atr,ttype,text) fprintf(stderr,"%s\n",text); ast->t = strdup(text);
-#else
-# define AST_FIELDS Attrib *attr;
-# define zzcr_ast(ast,atr,ttype,text) ast->attr = copy_attr(atr);
-#endif
+#define AST_FIELDS Attrib *attr; void *rml;
+#define zzcr_ast(ast,atr,ttype,text) ast->attr=copy_attr(atr); ast->rml=NULL;
 
 
 >>
@@ -40,11 +23,7 @@ Attrib *copy_attr(Attrib *);
 /* #include "scanner.h" */
 /* #include "AToken.h" */
 
-#include "rml.h"
 #include "yacclib.h"
-#include "dae.h"
-#include "exp.h"
-#include "class.h"
 #include "errno.h"
 
 static int errors=0;
@@ -57,123 +36,11 @@ void newline()
   zzline++;
 }
 
-int zzcr_attr(Attrib *attr, int type, char *text)
+AST *zzmk_ast(AST *ast, Attrib *at)
 {
-  attr->type = type;
-  switch (type)
-  {
-  case UNSIGNED_NUMBER:
-    attr->u.floatval = atof(text); break;
-  case IDENT:
-  case STRING:
-    attr->u.stringval = strdup(text); break;
-  case MODEL:
-  case END:
-  case PARTIAL:
-  case zzEOF_TOKEN:
-    break;
-  default:
-    fprintf(stderr, "zzcr_attr: unknown type: %d\n", type);
-  }
+  ast->attr = copy_attr(at);
+  return ast;
 }
-
-void zzd_attr(Attrib *attr)
-{
-  switch(attr->type)
-  {
-  case IDENT:
-  case STRING:
-    free(attr->u.stringval); break;
-  }
-}
-
-Attrib *copy_attr(Attrib *attr)
-{
-  int l;
-  Attrib *a = (Attrib*)malloc(sizeof(Attrib));
-  if(!a)
-  {
-    fprintf(stderr, "Out of memory!\n");
-    abort();
-  }
-  memcpy(a, attr, sizeof(Attrib));
-  switch(attr->type)
-  {
-  case IDENT:
-    a->u.stringval = strdup(attr->u.stringval); break;
-  case STRING:
-    l = strlen(attr->u.stringval);
-    a->u.stringval = (char *)malloc(l-1);
-    memcpy(a->u.stringval, attr->u.stringval+1, l-2);
-    a->u.stringval[l-2] = 0;
-    break;
-  }
-  return a;
-}
-
-void print_attr(Attrib *attr, FILE *f)
-{
-  switch (attr->type)
-  {
-  case UNSIGNED_NUMBER:
-    fprintf(f, "%d", attr->u.floatval); break;
-  case IDENT:
-  case STRING:
-    fprintf(f, "\"%s\"", attr->u.stringval); break;
-  case MODEL: fprintf(f, "MODEL"); break;
-  case IMPORT: fprintf(f, "IMPORT"); break;
-  case END: fprintf(f, "END"); break;
-  case PARTIAL: fprintf(f, "PARTIAL"); break;
-  case zzEOF_TOKEN:
-  default:
-    fprintf(f, "TOKEN_%d", attr->type); break;
-  }
-}
-
-/* Also see rml-1.3.6/examples/etc/ccall.c */
-
-static void *rml_ast = NULL;
-
-void Parser_5finit(void)
-{
-}
-
-void print_token(AST *ast)
-{
-#ifdef STRING_AST
-  fprintf(stderr, "%s", ast->t);
-#else
-  print_attr(ast->attr, stderr);
-#endif
-  fprintf(stderr, ",");
-}
-void print_lpar(AST *ast)  { fprintf(stderr, "("); }
-void print_rpar(AST *ast)  { fprintf(stderr, ")"); }
-
-RML_BEGIN_LABEL(Parser__parse)
-{
-  AST *root;
-  void *a0, *a0hdr;
-  RML_INSPECTBOX(a0, a0hdr, rmlA0);
-  if( a0hdr == RML_IMMEDIATE(RML_UNBOUNDHDR) )
-    RML_TAILCALLK(rmlFC);
-  if( !freopen(RML_STRINGDATA(a0), "r", stdin) ) {
-    fprintf(stderr, "freopen %s failed: %s\n",
-	    RML_STRINGDATA(a0), strerror(errno));
-    RML_TAILCALLK(rmlFC);
-  }
-  
-  rmlA0 = mk_cons(Class__CLASS(Class__CL_5fMODEL,mk_nil()), mk_nil());
-  
-  ANTLR(model_specification(&root), stdin);	/* start first rule */
-  fprintf(stderr, "root = %p\n", root);
-  fprintf(stderr, "\n");
-  zzpre_ast(root, &print_token, &print_lpar, &print_rpar);
-  fprintf(stderr, "\n\n");
-  
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 
 >>
 
@@ -251,6 +118,8 @@ RML_END_LABEL
 #token RESIDUE		"residue"
 */
 
+#token EQUALS           "="
+
 /* #tokclass COMP_BEGIN	{ LPAR RECORD_BEGIN } */
 /* #tokclass COMP_END	{ RPAR RECORD_END } */
 
@@ -263,7 +132,11 @@ RML_END_LABEL
 
 #tokclass ASSIGN	{ "=" ":=" }
 
+/* synthetic nodes */
 #token EXTRA_TOKEN	/* used for synthetic nodes */
+#token COMPONENTS
+#token TYPE_PREFIX
+#token FUNCALL
 
 #token "//(~[\n])*"  << zzskip(); >> /* skip C++-style comments */
 
@@ -303,19 +176,20 @@ import_statement :
 
 class_definition[bool is_virtual,bool is_final] :
 	{ PARTIAL } 
-        ( CLASS_^
-	| MODEL^
-	| RECORD^
-	| BLOCK^
-	| CONNECTOR^
-	| TYPE^
-	| PACKAGE^
-	| { EXTERNAL } FUNCTION^ )
-	id:IDENT
+        ( CLASS_
+	| MODEL
+	| RECORD
+	| BLOCK
+	| CONNECTOR
+	| TYPE
+	| PACKAGE
+	| { EXTERNAL } FUNCTION )
+        IDENT
 	comment
 	( composition END! { IDENT! } |
-	  "=" IDENT { array_decl } { class_specialization } 	  
+	  EQUALS IDENT { array_decl } { class_specialization } 	  
 	)
+        << Attrib a = $[CLASS_,"---"]; #0 = #(#[&a], #0); >>
 	;
 
 composition :
@@ -327,8 +201,9 @@ composition :
 	)*
 	;
 
-default_public!:
-	el:element_list[false] << /* #0=#(#[EXTRA_TOKEN],#el); */ >> ;
+default_public:
+	element_list[false]
+        ;
 
 public_elements: PUBLIC^ element_list[false];
 protected_elements: PROTECTED^ element_list[true];
@@ -341,8 +216,8 @@ element_list[bool is_protected] :
 
 element :
 	<< bool is_virtual=false; bool is_final=false; >>
-	{ FINAL! << is_final=true; >> }
-	( { VIRTUAL! << is_virtual=true; >> } class_definition[is_virtual,is_final]
+	{ FINAL }
+	( { VIRTUAL << is_virtual=true; >> } class_definition[is_virtual,is_final]
 	| extends_clause
 	| component_clause[ET_COMPONENT] )
 	;
@@ -352,7 +227,7 @@ element :
  */
 
 extends_clause:
-	EXTENDS! i:IDENT^ << /* #i->ni.type=ET_INHERIT; */ >>
+	EXTENDS^ IDENT
 	{ class_specialization }
 	;
 
@@ -360,19 +235,20 @@ extends_clause:
  * Component clause
  */
 
-component_clause![NodeType nt] :
+component_clause![NodeType nt] : << Attrib a = $[COMPONENTS,"---"]; >>
 	p:type_prefix
-	t:type_specifier << /* #t->ni.type=nt; */ >>
-	c:component_list[NO_SPECIAL]
-	<< /* #0=#(#t,#(#[EXTRA_TOKEN],#p),#c); */ >>
+	s:type_specifier
+	l:component_list[NO_SPECIAL]
+        << #0 = #(#[&a], #p, #s, #l); >> 
 	;
 
-type_prefix :
-	{ f1:FLOW      << /* #f1->setTranslation("Flow "); */      >> } 
-	{ f2:PARAMETER << /* #f2->setTranslation("Parameter "); */ >> 
-	| f3:CONSTANT  << /* #f3->setTranslation("Constant "); */  >> }
-	{ f4:INPUT     << /* #f4->setTranslation("Input "); */     >>
-	| f5:OUTPUT    << /* #f5->setTranslation("Output "); */    >> }
+type_prefix : << Attrib a = $[TYPE_PREFIX,"---"]; >>
+	{ f:FLOW      } 
+	{ p:PARAMETER
+	| c:CONSTANT  }
+	{ i:INPUT     
+	| o:OUTPUT    }
+        << #0 = #(#[&a],#0); >>
 	;
 
 type_specifier :
@@ -390,7 +266,7 @@ component_declaration[NodeType nt] :
 declaration[NodeType nt] :
 	i:IDENT^ << /* #i->ni.type=nt; */ >>
 	{ array_decl  }
-	{ specialization["="] }
+	{ specialization }
         ;
 
 array_decl :
@@ -436,9 +312,9 @@ subscript! :
  * Modification (here: specialization)
  */
 
-specialization[char *tr] : 
-	class_specialization { "=" expression }
-	| eq:"=" expression << /* #eq->setTranslation(tr); */ >>
+specialization : 
+	class_specialization { EQUALS expression }
+	| EQUALS^ expression
 	;
 
 class_specialization :
@@ -458,23 +334,22 @@ element_modification :
 	{ FINAL } 
 	id:IDENT^ << /* #id->ni.type=ELEMENT_MOD; */ >> 
 	{ array_decl } 
-	specialization["->"]
+	specialization
 	;
 
 element_redeclaration :
 	<< bool is_final=false; >>
-	REDECLARE!
-	{ FINAL! << is_final=true; >> }
+	REDECLARE
+	{ FINAL << is_final=true; >> }
 	( extends_clause
 	  | class_definition[false,is_final]
 	  | component_clause1[ET_COMPONENT] )
 	;
 
-component_clause1![NodeType nt] :
-	p:type_prefix
-	t:type_specifier << /* #t->ni.type=nt; */ >>
-	c:component_declaration[ET_COMPONENT]
-	<< /* #0=#(#t,#(#[EXTRA_TOKEN],#p),#c); */ >>
+component_clause1[NodeType nt] :
+	type_prefix
+	type_specifier
+	component_declaration[ET_COMPONENT]
 	;
 
 /* component_clause1![NodeType nt] : */
@@ -493,25 +368,18 @@ component_clause1![NodeType nt] :
 
 
 equation_clause	: 
-	EQUATION^
-	( eq:equation ";"! << /* #eq->ni.type=ET_EQUATION; */ >>
-	  | an:annotation ";"! << /* #an->ni.type=ET_ANNOTATION; */ >>
-	)*
+	EQUATION^ ( equation ";"! | annotation ";"! )*
 	;
 
 algorithm_clause :
-	ALGORITHM^
-	( eq:equation ";"! << /* #eq->ni.type=ET_ALGORITHM; */ >> 
-	  | an:annotation ";"! << /* #an->ni.type=ET_ANNOTATION; */ >>
-	)*
+	ALGORITHM^ ( equation ";"! | annotation ";"! )*
 	;
 
 equation :
-	( 
-	  simple_expression { op:ASSIGN^ << /* #op->setTranslation("=="); */ >> expression }
-	  | conditional_equation
-	  | for_clause
-	  | while_clause )
+	( simple_expression { ASSIGN^ expression }
+	| conditional_equation
+	| for_clause
+	| while_clause )
 	comment
 	;
 
@@ -627,8 +495,7 @@ logical_term :
 	;
 
 logical_factor :
-	not:NOT^ << /* #not->setOpType(OP_PREFIX); #not->setTranslation("!"); */ >> 
-	relation
+	not:NOT^ relation
 	| relation 
 	;
 
@@ -702,13 +569,13 @@ primary :
 	| STRING
 	;
 
-name_path_function_arguments ! :
+name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >>
 	n:name_path f:function_arguments
-	<< /* #0=#(#[EXTRA_TOKEN],#n,#f); */ >>
+	<< #0=#(#[&a],#n,#f); >>
 	;
 
 name_path :
-	IDENT { dot:"."^ << /* #dot->setTranslation("`"); */ >> name_path }
+	IDENT^ { dot:"."^ name_path }
 	;
 
 new_component_reference :
