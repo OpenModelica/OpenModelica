@@ -34,6 +34,14 @@
  ** checked to see if they are slices.  All expressions are also type
  ** consistent, and all implicit type conversions in the AST are made
  ** explicit here.
+ **
+ ** Some expression simplification and solving is also done here. This is used
+ ** for symbolic transformations before simulation, in order to rearrange
+ ** equations into a form needed by simulation tools. simplify, solve,
+ ** exp_contains, exp_equal are part of this code.
+ **
+ ** This module also contains relations for printing expressions, to io or to
+ ** strings. Also graphviz output is somewhat supported.
  **)
 
 module Exp:
