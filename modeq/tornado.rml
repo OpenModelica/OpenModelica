@@ -450,16 +450,7 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
         (** ass2 is what eqn is solves what var **)
         generate_state_partition(blt,dae',ass1,ass2) => (blt_states,blt_no_states) &
  
-        print "---------- START DAE DUMP BEFORE TRANSLATE -----------------\n" &
-        DAELow.dump(dae') &
-        print "------------ END DAE DUMP BEFORE TRANSLATE ----------------\n" &
-
-
         translate_dae(dae') => dae'' &
-
-        print "---------- START DAE DUMP AFTER TRANSLATE -----------------\n" &
-        DAELow.dump(dae'') &
-        print "------------ END DAE DUMP AFTER TRANSLATE ----------------\n" &
 
         generate_compute_output(cname,dae'',p,ass1,ass2,blt_no_states) => coutput &
         generate_compute_initial(cname,dae'',p) => cinitial &
@@ -813,17 +804,6 @@ end
  *)
 relation generate_compute_terminal:(string,DAELow.DAELow,Absyn.Program,int vector, int vector, int list list) => string =
         
-  rule  (*Util.string_append_list(["/* state code here*/\n"]) => cstate &*)
-        print("----------- START building block TERMINAL---------------\n") &
-        build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-        Util.string_append_list(eqn_str_list) => cterminal &
-        print("----------- END building block TERMINAL---------------\n") 
-        
-        -------------------------------------------------------------
-        generate_compute_terminal(cname,dae,p,ass1,ass2,blocks) => cterminal
-
-
-
   rule Util.string_append_list(["/* terminal code here*/\n"]) => cterm
      -------------------------------------------------------------
      generate_compute_terminal(cname,dae,p,_,_,_) => cterm
@@ -899,7 +879,8 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    print s & print "\ngiving:\n " &
 	    Exp.print_exp_str expr => s2 & print s2 & print "\n" &
         
-	    build_assignment(cr,expr,origname)  => assigment_string
+        Exp.simplify(expr) => simplify_exp &
+	    build_assignment(cr,simplify_exp,origname)  => assigment_string
 	    --------------------------------
 	    build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e) => assigment_string	
         
@@ -933,8 +914,8 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    print s & print " giving " &
 	    Exp.print_exp_str expr => s2 & print s2 & print "\n" & 
 
-
-	    build_assignment(new_cr ,expr,origname)  => assigment_string
+        Exp.simplify(expr) => simplify_exp &
+	    build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
 	    --------------------------------
 	    build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e) => assigment_string 
 

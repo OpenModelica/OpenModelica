@@ -548,7 +548,7 @@ relation dump_vars: Var list => ()=
 	Exp.print_component_ref_str(cr) => str &
 	print str & print ":" & dump_kind kind &
 
-	print "= " & Exp.print_exp_str e => s & print s & print ", " &
+	print "= " & Exp.print_exp_str e => s & print s & print ",\n " &
 	dump_vars(xs) 
 	-------------
 	dump_vars(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,_)::xs)
@@ -556,7 +556,7 @@ relation dump_vars: Var list => ()=
   rule  DAE.dump_direction_str dir => dirstr & print dirstr & print " " &
 	Exp.print_component_ref_str(cr) => str &
 	print str & print ":" & dump_kind kind &
-	print ", " &
+	print ",\n " &
 	dump_vars(xs) 
 	-------------
 	dump_vars(VAR(cr,kind,dir,_,NONE,_,_,_,_,_)::xs)
