@@ -57,6 +57,8 @@ module Inst:
   with "types.rml"
   with "absyn.rml"
 
+  (* Calling scope is used to determine when unconnected flow variables 
+   * should be set to zero. *)
   datatype CallingScope = TOP_CALL | INNER_CALL
 
   type InstDims = Exp.Subscript list
@@ -66,6 +68,52 @@ module Inst:
   datatype DimExp = DIMINT of int
 		  | DIMEXP of Exp.Subscript * Exp.Exp option
 
+(* Instantiation *)
+
+(** There are basically four different ways/granularities of instantiation.
+ ** 1. Using partial_inst_class_in which only instantiates class definitions.
+ **    This relation is used for looking up class definitions in e.g. packages.
+ **    For example, if looking up the class A.B.C, a new scope is opened and 
+ **    A is partially instantiated in that scope using partial_inst_class_in.
+ **
+ ** 2. Function implicit instantiation. is the last argument of type bool to 
+ **    inst_class_in. It is needed since instantiation of functions is needed to 
+ **    generate code for functions and there are cases where such instantiations differ 
+ **    from standard function instantiation. For example
+ **    function foo
+ **      input Real x[:];
+ **      ...
+ **    end foo;
+ **    should be possible to instantiate even though the dimension size of x is not
+ **    known.
+ **
+ ** 3. Implicit instantiation controlled by the next last argument to inst_class_in. 
+ **    This is also needed, when a DAE should not be generated. 
+ **    It is not clear when this is needed, perhaps it can be removed in the future.
+
+ ** 4. Full instantiation, which is used for standard model instantiation, when equations
+ **    variables, etc., are generated. This is enabled by setting the last two booleans
+ **    of inst_class_in to false.
+
+ **
+ ** Instantiation steps
+ ** ===================
+ ** The instantiation is done in several steps, see relation inst_classdef.
+ ** 1. All local class definitions are added to the environment.
+ ** 2. The inheritance structure is flattened out annotating each inherited 
+ **    component with the base class it originates from (for correct lookup later on)
+ ** 3. All components are added (untyped) to the environment
+ ** 4. Instantiation of components occur.
+ **    When a component is instantiated in inst_element it first collects all other
+ **    component references from array dimensions and modifiers and recursively 
+ **    (i.e. backpatching) instantiates these first. This is performed to allow using a
+ **    variable before it has been declared. This is done in the update_variable_in_env 
+ **    function.
+**)
+ 
+
+
+  (* Exported Relations *)
   relation instantiate: SCode.Program => DAE.DAElist
   relation instantiate_implicit: SCode.Program => DAE.DAElist
   
@@ -88,7 +136,9 @@ module Inst:
 
   relation inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
 			   Connect.Sets, ClassInf.State,
-			   SCode.Class, bool, InstDims, bool, bool)
+			   SCode.Class, bool, InstDims, 
+			   bool(*implicit inst*),
+			   bool(* function implicit inst*))
 	  => ( DAE.Element list, Env.Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list)
 
@@ -273,6 +323,10 @@ relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Elemen
 
 end
 
+(** relation: inst_class_decls
+ ** This relation instantiated class definitions, i.e. adding the class definitions to the
+ ** environment. See also partial_inst_class_in.
+ **)
 relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Element list) =
   rule	not name = name2 &
 	inst_class_decl(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false) 
@@ -338,15 +392,14 @@ relation add_program_to_env: (Env.Env,SCode.Program,SCode.Path) => Env.Env =
 end
 
 
-
-
-
 (** relation: inst_program
  **
  ** Instantiating a Modelica program is the same as instantiating the
  ** last class definition in the source file. First all the class
  ** definitions is added to the environment without modifications, and
- ** then the last class is instantiated in the relation `inst_class'
+ ** then the last class is instantiated in the relation `inst_class'.
+ ** This is used when calling the compiler with a Modelica source code file.
+ ** It is not used in the interactive environment when instantiating a class.
  **)
 
 relation inst_program : (Env, SCode.Program) => DAE.Element list =
@@ -410,10 +463,14 @@ end
  **    instantiation
  **)
 
-relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,bool,CallingScope)
+relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, 
+		       InstDims,bool,CallingScope)
 	  => (DAE.Element list, Env.Env, Connect.Sets, Types.Type, ClassInf.State) =
 	  
-  rule	Print.print_buf "# Can't instantiate partial class " & Print.print_buf n & Print.print_buf "\n"
+  rule	(* Classes with the keyword partial can not be instantiated.
+	 They can only be inherited *)
+	Print.print_buf "# Can't instantiate partial class " & 
+	Print.print_buf n & Print.print_buf "\n"
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false,_) => fail
 
@@ -455,7 +512,10 @@ end
  **)
 
 relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.Class, bool, InstDims, bool, bool)
+			 SCode.Class, bool (*Accesibility*), InstDims, 
+			 bool, (*implicit instantiation*)
+			 bool (* implicit function instantiation *)
+			 )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -491,6 +551,12 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end
 
+(** relation: partial_inst_class_in
+**
+** This relation is used when instantiating classes in lookup of other classes.
+** The only work performed by this relation is to instantiate local classes and 
+** inherited classes.
+**)
 relation partial_inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.Class, bool, InstDims)
 	  => (Env, ClassInf.State) =
@@ -513,7 +579,7 @@ relation partial_inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	partial_inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims)
 	  => (env',ci_state') 
-	  (*	&  Env.print_env env' & Print.get_string => s & print "env: " & print s*)
+	(*& Env.print_env env' & Print.get_string => s & print "env: " & print s*)
 	-------------------------------------
 	partial_inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims)
@@ -532,7 +598,7 @@ end
  ** and `inst_algorithm', respectively. The resulting lists of
  ** equations are concatenated to produce the result.
  ** The last two arguments are the same as for inst_class_in: 
- ** implicit instantiation and implicit package instantiation
+ ** implicit instantiation and implicit package/function instantiation
  **)
 
 relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -689,9 +755,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	not Lookup.lookup_class(env,cn,false) => (_,_) &
 	Absyn.path_string(cn) => cns &
-	Print.print_buf "# unknown class: " & Print.print_buf cns & Print.print_buf "\n"
- & Env.print_env env
-
+	Print.print_buf "# unknown class: " & Print.print_buf cns & 
+	Print.print_buf "\n" & Env.print_env env
 	----------------------------------------
 	inst_classdef(env,mods,pre,csets,ci_state,
 		      SCode.DERIVED(cn,ad,mod), re, prot, 
@@ -706,8 +771,9 @@ end
 
 (** relation: partial_inst_classdef
  **
+ ** This relation is used by partial_inst_class_in for instantiating local class
+ ** definitons and inherited class definitions only.
  **)
-
 relation partial_inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.ClassDef, SCode.Restriction, bool,InstDims)
 	  => ( Env, ClassInf.State ) =
@@ -1009,49 +1075,6 @@ relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod,Env.Env)
   rule	Debug.fprint("failtrace", "-update_components failed\n")
 	----------------------
 	update_components(_,_,_) => fail
-end
-
-
-(** relation: make_complete_type_names 
- **
- ** This relation takes an environment and an Element list and makes all references to types
- ** in the elements fully qualified, such that they can be looked up from a different env.
- ** This is needed when flattening the inheritance structure and inserting elements into the flattened
- ** class. The lookup of elements in the flattenend class is performed in that environment and thus 
- ** must the type names be expanded such that a lookup from this environment gives the same class as
-** if the lookup was performed from the scope of the base class.
- **)
-relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Element list =
-	
-  axiom	make_complete_type_names(env, []) => []
-	
-  rule	make_complete_type_names(env, rest) => res &
-	Lookup.complete_path(env, path) => path' 
-(*& print "completed to " & Absyn.path_string path' => s & print s & print "\n" *)
-	------------------------------------
-	make_complete_type_names(env, SCode.EXTENDS(path, mod)::rest)
-	  => SCode.EXTENDS(path', mod)::res
-	  
-  rule	make_complete_type_names(env, rest) => res 
-	-------------------------------------
-	make_complete_type_names(env, (elt as SCode.CLASSDEF(_,_,_,_,_))::rest)
-	  => elt::res
-
-  rule	make_complete_type_names(env, rest) => res 
-	--------------------------------------------------
-	make_complete_type_names(env, (elt as SCode.IMPORT(_))::rest)
-	  => elt::res
-	  
-  rule	make_complete_type_names(env, rest) => res &
-	Lookup.complete_path(env, tp) => tp' 
-(*      & print "completed to " & Absyn.path_string tp' => s & print s & print "\n" *)
-	--------------------------------------------------
-	make_complete_type_names(env, (SCode.COMPONENT(id,f,r,p,attr,tp,mod,bc))::rest)
-	  => SCode.COMPONENT(id,f,r,p,attr,tp',mod,bc)::res
-
-  rule	Debug.fprint("failtrace","-make_complete_type_names failed\n") 
-	--------------------------------------
-	make_complete_type_names(_, _) => fail
 end
 
 (** relation: inst_derived_classes
@@ -1531,7 +1554,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(**  Failure *)
   rule	not Lookup.lookup_class(env,t,false) => (cl,cenv) &
 	Absyn.path_string(t) => s &
-	Print.print_buf "# unknown class '" & Print.print_buf s & Print.print_buf "' while instantiating " &
+	Print.print_buf "# unknown class '" & Print.print_buf s &
+	Print.print_buf "' while instantiating " &
 	Prefix.prefix_add(n,[],pre) => pre' &
 	Prefix.print_prefix_str pre' => ns &
 	Print.print_buf ns & Print.print_buf "\nenv:" &
