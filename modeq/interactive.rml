@@ -80,7 +80,7 @@ val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; re
 val Diagram_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Diagram CoordinateSystem coordinateSystem(extent ={{-100.0, -100.0}, {100.0, 100.0}}); /*GraphicItem graphics[:];*/ end Diagram;"
 
 (* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
-val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text;"
+val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:,2]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text;"
 
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
@@ -571,7 +571,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_primitive(cr,p) => s1 &
+  rule	is_primitive(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -581,7 +582,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_type(cr,p) => s1 &
+  rule	is_type(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -591,7 +593,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_connector(cr,p) => s1 &
+  rule	is_connector(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -601,7 +604,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_model(cr,p) => s1 &
+  rule	is_model(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -611,7 +615,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_record(cr,p) => s1 &
+  rule	is_record(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -621,7 +626,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_block(cr,p) => s1 &
+  rule	is_block(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -631,7 +637,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_function(cr,p) => s1 &
+  rule	is_function(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -641,7 +648,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	is_package(cr,p) => s1 &
+  rule	is_package(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -651,7 +659,8 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	exist_class(cr,p) => s1 &
+  rule	exist_class(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
 	-----------------------
 	evaluate_graphical_api(
@@ -660,6 +669,33 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	exist_class(cr,p) => b1 &
+	is_model(cr,p) => b2 &
+	bool_and(b1,b2) => res &
+	Util.bool_string(res) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("existModel",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	exist_class(cr,p) => b1 &
+	is_package(cr,p) => b2 &
+	bool_and(b1,b2) => res &
+	Util.bool_string(res) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("existPackage",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -673,144 +709,143 @@ end
 
 (** relation: is_primitive 
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced type is a primitive type, otherwise it returns the 
- ** string "false".
+ ** It returns the true if the refrenced type is a primitive type, otherwise it returns 
+ ** false.
 **)
-relation is_primitive: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_primitive: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => class &
-	is_primitive_class(class,p) => bval &
-	Util.bool_string bval => res 
+	is_primitive_class(class,p) => res
 	----------------------------
 	is_primitive(cr,p) => res
 
-(* Instead of elaborating and lookup these in env, we optimize a bit and just return "true" for these *)
-  axiom	is_primitive(Absyn.CREF_IDENT("Real",_),_) => "true"
-  axiom	is_primitive(Absyn.CREF_IDENT("Integer",_),_) => "true"
-  axiom	is_primitive(Absyn.CREF_IDENT("String",_),_) => "true"
-  axiom	is_primitive(Absyn.CREF_IDENT("Boolean",_),_) => "true"
-  axiom	is_primitive(_,_) => "false"
+(* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these *)
+  axiom	is_primitive(Absyn.CREF_IDENT("Real",_),_) => true
+  axiom	is_primitive(Absyn.CREF_IDENT("Integer",_),_) => true
+  axiom	is_primitive(Absyn.CREF_IDENT("String",_),_) => true
+  axiom	is_primitive(Absyn.CREF_IDENT("Boolean",_),_) => true
+  axiom	is_primitive(_,_) => false
 end
 
 (** relation: is_type 
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class has the restriction "type", otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class has the restriction "type", otherwise it returns 
+ ** false.
 **)
-relation is_type: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_type: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_TYPE,_) 
 	----------------------------
-	is_type(cr,p) => "true"
+	is_type(cr,p) => true
 
-  axiom	is_type(cr,p) => "false"
+  axiom	is_type(cr,p) => false
 end
 
 (** relation: is_connector
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class has the restriction "connector", otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class has the restriction "connector", otherwise it returns  
+ ** false.
 **)
-relation is_connector: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_connector: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_) 
 	----------------------------
-	is_connector(cr,p) => "true"
+	is_connector(cr,p) => true
 
-  axiom	is_connector(cr,p) => "false"
+  axiom	is_connector(cr,p) => false
 end
 
 (** relation: is_model
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class has the restriction "model", otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class has the restriction "model", otherwise it returns 
+ ** false.
 **)
-relation is_model: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_model: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_MODEL,_) 
 	----------------------------
-	is_model(cr,p) => "true"
+	is_model(cr,p) => true
 
-  axiom	is_model(cr,p) => "false"
+  axiom	is_model(cr,p) => false
 end
 
 (** relation: is_record
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class has the restriction "record", otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class has the restriction "record", otherwise it returns 
+ ** false.
 **)
-relation is_record: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_record: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_RECORD,_) 
 	----------------------------
-	is_record(cr,p) => "true"
+	is_record(cr,p) => true
 
-  axiom	is_record(cr,p) => "false"
+  axiom	is_record(cr,p) => false
 end
 
 (** relation: is_block
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class has the restriction "block", otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class has the restriction "block", otherwise it returns 
+ ** false.
 **)
-relation is_block: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_block: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK,_) 
 	----------------------------
-	is_block(cr,p) => "true"
+	is_block(cr,p) => true
 
-  axiom	is_block(cr,p) => "false"
+  axiom	is_block(cr,p) => false
 end
 
 (** relation: is_function
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class has the restriction "function", otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class has the restriction "function", otherwise it returns
+ ** false.
 **)
-relation is_function: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_function: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION,_) 
 	----------------------------
-	is_function(cr,p) => "true"
+	is_function(cr,p) => true
 
-  axiom	is_function(cr,p) => "false"
+  axiom	is_function(cr,p) => false
 end
 
 (** relation: is_package
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class has the restriction "package", otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class has the restriction "package", otherwise it returns 
+ ** false.
 **)
-relation is_package: (Absyn.ComponentRef, Absyn.Program) => string =
+relation is_package: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE,_) 
 	----------------------------
-	is_package(cr,p) => "true"
+	is_package(cr,p) => true
 
-  axiom	is_package(cr,p) => "false"
+  axiom	is_package(cr,p) => false
 end
 
 (** relation: exist_class
  ** This relation takes a component reference and a program. 
- ** It returns the string "true" if the refrenced class exists in the symbol table, otherwise it returns the 
- ** string "false".
+ ** It returns true if the refrenced class exists in the symbol table, otherwise it returns
+ ** false.
 **)
-relation exist_class: (Absyn.ComponentRef, Absyn.Program) => string =
+relation exist_class: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
 	get_pathed_class_in_program(path,p) => _
 	----------------------------
-	exist_class(cr,p) => "true"
+	exist_class(cr,p) => true
 
-  axiom	exist_class(cr,p) => "false"
+  axiom	exist_class(cr,p) => false
 end
 
 

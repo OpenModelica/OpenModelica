@@ -183,6 +183,14 @@ isFunction(<cref>)			Returns true if class is a function, otherwise false.
 
 isPackage(<cref>)			Returns true if class is a package, otherwise false.
 
+existClass(<cref)			Returns true if class exist in symbolTable, otherwise false.
+
+existModel(<cref>)			Returns true if class exist in symbol table and has restriction
+					model, otherwise false.
+
+existPackage(<cref>)			Returns true if class exist in symbol table and has restriction
+					package, otherwise false.
+
 ERROR Handling
 ==============
 When an error occur in any of the functions above, the string

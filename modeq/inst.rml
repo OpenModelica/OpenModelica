@@ -916,8 +916,8 @@ relation inst_var : (Env.Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	inst_mod_equation(cr,ty,mod) => dae2 &
 	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,inst_dims)
-	  => dae3 &
-
+	  => dae3 & 
+ 
 	list_append(dae1',dae2) => daex &
 	list_append(daex,dae3) => dae
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
