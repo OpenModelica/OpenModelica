@@ -15,6 +15,7 @@ module Connect :
 
   relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets
   relation add_flow : (Sets, Exp.ComponentRef, Dir) => Sets
+  relation dump_sets : Sets => ()
 
 end
 
@@ -143,13 +144,18 @@ relation merge : (Sets, Set, Set) => Sets =
 
 end
 
-(* Braindead *)
+(**********************************************************************
+ * Add
+ **********************************************************************)
 
 relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 
-  rule	find_equ_set(ss,r1) => s1 &
+  rule	(* print "   add_equ: looking for sets\n" & *)
+	find_equ_set(ss,r1) => s1 &
 	find_equ_set(ss,r2) => s2 &
-	merge(ss,s1,s2) => ss'
+	(* print "   add_equ: found, merging\n" & *)
+	merge(ss,s1,s2) => ss' (* &
+	dump_sets ss' *)
 	----------------------
 	add_equ(ss,r1,r2) => ss'
 	
@@ -158,5 +164,52 @@ end
 relation add_flow : (Sets, Exp.ComponentRef, Dir) => Sets =
 
   axiom	add_flow(s,r,d) => FLOW([(r,d)])::s
+
+end
+
+(**********************************************************************
+ * Dump
+ **********************************************************************)
+
+with "dump.rml"
+
+relation dump_flow_ref : (Exp.ComponentRef * Dir) => () =
+
+  rule	Dump.dump_component_ref c &
+	print " IN"
+	-----------
+	dump_flow_ref((c,IN))
+
+  rule	Dump.dump_component_ref c &
+	print " OUT"
+	-----------
+	dump_flow_ref((c,OUT))
+
+end
+
+relation dump_set : Set => () =
+
+  rule	print " non-flow set: { " &
+	Dump.dump_list(cs, Dump.dump_component_ref, ", ") &
+	print " }\n"
+	----------------------------------------------------
+	dump_set EQU(cs)
+
+  rule	print " flow set: { " &
+	Dump.dump_list(cs, dump_flow_ref, ", ") &
+	print " }\n"
+	----------------------------------------------------
+	dump_set FLOW(cs)
+
+end
+
+relation dump_sets : Sets => () =
+
+  axiom	dump_sets []
+
+  rule	dump_set x &
+	dump_sets xs
+	------------
+	dump_sets x::xs
 
 end
