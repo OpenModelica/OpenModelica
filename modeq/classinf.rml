@@ -281,7 +281,7 @@ end
 (** relation: assert_valid
  **
  ** This relation has the same semantical meaning as the relation
- ** `valid'.  However, it prints an error message when it faild.
+ ** `valid'.  However, it prints an error message when it fails.
  **)
 
 relation assert_valid : (State, Absyn.Restriction) => () =
