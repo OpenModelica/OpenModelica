@@ -39,27 +39,11 @@ module Codegen :
   
 
   relation generate_functions : DAE.DAElist => ()
-
-  relation string_prefix_component_refs : (string, 
-					   (Exp.ComponentRef, 'b) => (), 
-					   'b, 
-					   Exp.Exp list) => Exp.Exp list
-
-  relation string_prefix_component_ref : (string, 
-					  (Exp.ComponentRef, 'b) => (), 
-					  'b, 
-					  Exp.Exp) => Exp.Exp
-
-  relation string_prefix_elements : (string, 
-				     DAE.Element list, 
-				     DAE.Element list) => DAE.Element list
-
-  relation string_prefix_params : DAE.DAElist => DAE.DAElist
-
 	  
 end
 
-
+with "util.rml"
+with "modutil.rml"
 with "dump.rml"
 with "debug.rml"
 with "staticexp.rml"
@@ -67,37 +51,6 @@ with "inst.rml"
 with "rtopts.rml"
 with "absyn.rml"
 with "classinf.rml"
-
-
-
-relation list_flatten : 'a list list => 'a list =
-
-  axiom	list_flatten [] => []
-
-  rule	list_flatten r => r' &
-	list_append(f,r') => l
-	-----------------------
-	list_flatten f::r => l
-
-end
-
-relation list_map : ('a list, 'a => 'b) => 'b list =
-	
-  axiom	list_map ([],_) => []
-
-  rule	fn f => f' &
-	list_map(r,fn) => r'
-	-------------------
-	list_map (f::r,fn) => f'::r'
-
-end
-
-relation if : (bool,'a,'a) => 'a =
-	
-  axiom	if (true,r,_) => r
-  axiom	if (false,_,r) => r
-
-end
 
 val c_empty_function = CFUNCTION("","",[],[],[],[],[],[])
 
@@ -241,38 +194,15 @@ end
 
 relation generate_function : DAE.Element => CFunction list =
 
-  (* rule	path_string fpath => fstr & *)
-(* 	Debug.fprintl ("cg", ["generating function ", fstr, "\n"]) & *)
-
-(* 	DAE.get_output_vars dae => [outvar] & *)
-(* 	generate_simple_type   restype => retstr & *)
-(* 	generate_function_name fpath   => fn_name_str &  *)
-(* 	list_map(args, generate_function_arg) => arg_strs & *)
-	
-(* 	c_make_function (retstr, fn_name_str, arg_strs) => cfn & *)
-
-(* 	append_strings([retstr," ",fn_name_str,"(",args_str,")"],"")  *)
-(* 	  => decl_str & *)
-
-(* 	generate_function_body (fpath, dae, outvar, restype) => body_strs & *)
-
-(* 	list_flatten([[decl_str],body_strs]) => fn_strs *)
-(* 	----------------------------------------------------------------- *)
-(* 	generate_function DAE.FUNCTION(fpath,  *)
-(* 				       DAE.DAE(dae),  *)
-(* 				       Types.T_FUNCTION(args,restype)) *)
-(* 	  => fn_strs *)
-
-  rule	path_string fpath => fstr &
-	Debug.fprintl ("cg", ["generating function ", fstr, "\n"]) &
+  rule	generate_function_name fpath => fn_name_str &
+	Debug.fprintl ("cg", ["generating function ", fn_name_str, "\n"]) &
 
 
 	DAE.get_output_vars dae => outvars &
 	DAE.get_input_vars dae => invars &
 	generate_result_struct (outvars,fpath) => struct_strs &
 	generate_return_type   fpath           => retstr &
-	generate_function_name fpath           => fn_name_str & 
-	list_map(args, generate_function_arg)  => arg_strs &
+	Util.list_map(args, generate_function_arg)  => arg_strs &
 
 	c_make_function(retstr, fn_name_str, struct_strs,arg_strs)=> head_cfn &
 
@@ -299,143 +229,16 @@ relation generate_function : DAE.Element => CFunction list =
 end
 
 
-relation generate_params_struct : (DAE.Element list, Ident) => () =
-
-  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
-	(* list_length params => nbrparams &
-	int_gt (nbrparams, 0) => true & *) (* if we do this we have to modify the function 
-					    * declaration as well *)
-	generate_params_type n => ptname &
-	print "typedef struct " & print ptname & print "_s {\n" &
-	generate_param_decls params &
-	print "} " & print ptname & print ";\n"
-	-----------------------------------------
-	generate_params_struct (daelist, n)
-
-(*
-  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
-	list_length params => nbrparams &
-	int_le (nbrparams, 0) => true &
-	print "#-- no params in " &
-	print n &
-	print "\n"
-	-----------------------------------------
-	generate_params_struct (daelist, n)
-*)
-
-end
-
-
-relation generate_param_decls : DAE.Element list => () =
-
-  axiom	generate_param_decls []
-
-  rule	Debug.fprintln ("cgtr", "generate_param_decls-1") &
-	generate_param_decl first &
-	generate_param_decls rest
-	------------------
-	generate_param_decls first :: rest
-
-end
-
-
-relation generate_param_decl: DAE.Element => () =
-
-  rule	Debug.fprintln ("cgtr", "generate_param_decl-1") &
-	indent 2 &
-	DAE.dump_type typ &
-	Exp.print_component_ref id &
-	print ";\n"
-	-----------
-	generate_param_decl DAE.VAR(id, DAE.PARAM, _, typ, _,_)
-
-  rule	print "#-- generate_param_decl didn't match" &
-	DAE.dump_debug DAE.DAE([d])
-	---------------------------
-	generate_param_decl d
-
-end
-
-relation generate_params_init_fkn : (DAE.Element list, Ident) => () =
-
-  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
-	generate_params_type n => ptname &
-	print "void " & print ptname & print "_init (" & 
-	print ptname & print " *params) {\n" &
-	generate_param_inits ("params->", params) &
-	print "}\n"
-	-----------------------------------------
-	generate_params_init_fkn (daelist, n)
-
-end
-
-relation generate_params_init_fkn_decl : (DAE.Element list, Ident) => () =
-
-  rule	DAE.get_matching_elements ( daelist, DAE.is_parameter ) => params &
-	generate_params_type n => ptname &
-	print "void " & print ptname & print "_init (" & 
-	print ptname & print " *params);\n"
-	-----------------------------------------
-	generate_params_init_fkn_decl (daelist, n)
-
-end
-
-
-relation generate_param_inits : (string, DAE.Element list) => () =
-
-  axiom	generate_param_inits (_, [])
-
-  rule	Debug.fprintln ("cgtr", "generate_param_inits-1") &
-	generate_param_init (str, first) &
-	generate_param_inits (str, rest)
-	------------------
-	generate_param_inits (str, first :: rest)
-
-end
-
-relation generate_param_init: (string, DAE.Element) => () =
-
-  rule	Debug.fprintln ("cgtr", "generate_param_init-1") &
-	indent 2 &
-	print str &
-	Exp.print_component_ref id &
-	print " = " &
-	print_exp_no_funcall e &
-	print ";\n"
-	-----------
-	generate_param_init (str, DAE.VAR(id, DAE.PARAM, _, _, SOME(e),_))
-
-
-	(** What to do if there is no value for the parameter?
-	 set to zero, or don't generate initialization at all? **)
-
-  rule	Debug.fprintln ("cgtr", "generate_param_init-2") &
-	indent 2 &
-	print str &
-	Exp.print_component_ref id &
-	print " = 0" &
-	print ";\t\t/* uninitialized, set to zero by modeq */\n"
-	-----------
-	generate_param_init (str, DAE.VAR(id, DAE.PARAM, _, typ, NONE,_))
-
-
-  rule	print "#-- generate_param_decl didn't match" &
-	DAE.dump_debug DAE.DAE([d])
-	---------------------------
-	generate_param_init (_, d)
-
-end
-
-
 relation generate_result_struct : (DAE.Element list, Absyn.Path) 
 	  => string list =
 
   rule	generate_return_type fpath => ptname &
-	generate_return_decls outvars => var_strs &
+	generate_return_decls outvars => (var_strs,var_names) &
+	generate_return_defs (ptname,var_names,1) => defs &
 	indent_strings var_strs => var_strs' &
-	append_strings(["typedef struct ",ptname,"_s"],"") => first_row &
-	append_strings(["} ",ptname,";"],"") => last_row &
-	list_flatten([[first_row,"{"],var_strs',[last_row]]) => strs
+	Util.string_append_list(["typedef struct ",ptname,"_s"]) => first_row &
+	Util.string_append_list(["} ",ptname,";"]) => last_row &
+	Util.list_flatten([defs,[first_row,"{"],var_strs',[last_row]]) => strs
 	-----------------------------------------
 	generate_result_struct (outvars, fpath) => strs
 
@@ -452,44 +255,57 @@ relation generate_result_struct : (DAE.Element list, Absyn.Path)
 
 end
 
+relation generate_return_defs : (string, string list, int) => string list =
 
+  axiom generate_return_defs (_,[],_) => []
+	
+  rule	int_string i => i_str &
+	Util.string_append_list(["#define ",tn,"_",i_str," ",f]) => f' &
+	int_add(i,1) => i' &
+	generate_return_defs (tn,r,i') => r'
+	----
+	generate_return_defs (tn,f::r,i) => f'::r'
 
-relation generate_return_decls : DAE.Element list => string list =
+end
 
-  axiom	generate_return_decls [] => []
+relation generate_return_decls : DAE.Element list => (string list, 
+						      string list) =
 
-  rule	generate_return_decl first => "" &
-	generate_return_decls rest => rs
+  axiom	generate_return_decls [] => ([],[])
+
+  rule	generate_return_decl first => ("",_) &
+	generate_return_decls rest => (rs,rd)
 	------------------
-	generate_return_decls first :: rest => rs
+	generate_return_decls first :: rest => (rs,rd)
 
-  rule	generate_return_decl first => fs &
-	generate_return_decls rest => rs
+  rule	generate_return_decl first => (fs,fd) &
+	generate_return_decls rest => (rs,rd)
 	------------------
-	generate_return_decls first :: rest => fs::rs
+	generate_return_decls first :: rest => (fs::rs,fd::rd)
 
 end
 
 
-relation generate_return_decl: DAE.Element => string =
+relation generate_return_decl: DAE.Element => (string, string) =
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (id_str,_) &
-	list_map(inst_dims,int_string) => dim_strs &
-	append_strings(dim_strs," * ") => dims_str &
-	append_strings([typ_str," ",id_str,";"," /* [",dims_str,"] */"],"") 
+	Util.list_map(inst_dims,int_string) => dim_strs &
+	Util.string_delimit_list(dim_strs,", ") => dims_str &
+	Util.string_append_list([typ_str," ",id_str,";",
+				 " /* [",dims_str,"] */"]) 
 	  => decl_str
 	---------------------------------------------------
 	generate_return_decl (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, NONE,inst_dims))
-	  => decl_str
+	  => (decl_str,id_str)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (id_str,_) &
-	append_strings([typ_str," ",id_str,";"],"") => decl_str &
+	Util.string_append_list([typ_str," ",id_str,";"]) => decl_str &
 	print "# default/init values not implemented yet: " &
 	Exp.print_exp e &
 	print "\n"
@@ -500,10 +316,10 @@ relation generate_return_decl: DAE.Element => string =
 				      typ, 
 				      SOME(e),
 				      _))
-	=> decl_str
+	=> (decl_str,id_str)
 
 
-  axiom	generate_return_decl (_) => ""
+  axiom	generate_return_decl (_) => ("","")
 
 end
 
@@ -613,7 +429,7 @@ end
 
 relation generate_return_type : Absyn.Path => string =
 
-  rule	path_string fpath => fstr &
+  rule	generate_function_name fpath => fstr &
 	string_append (fstr, "_rettype" ) => res
 	--------------------------
 	generate_return_type fpath => res
@@ -757,7 +573,7 @@ end
 
 relation generate_function_name : Absyn.Path => string =
 
-  rule	path_string fpath => fstr 
+  rule	ModUtil.path_string fpath => fstr 
 	----------
 	generate_function_name fpath => fstr
 
@@ -789,7 +605,7 @@ relation generate_function_body_tuple : (Absyn.Path,
 
 	generate_return_type fpath => ret_type_str &
 	generate_temp_decl(ret_type_str,tnr) => (ret_decl, ret_var, tnr_ret') &
-	append_strings(["return ",ret_var,";"],"") => ret_stmt &
+	Util.string_append_list(["return ",ret_var,";"]) => ret_stmt &
 
 	DAE.get_output_vars dae => outvars &
 	generate_alloc_outvars(outvars,ret_decl,ret_var,tnr_ret')
@@ -797,8 +613,10 @@ relation generate_function_body_tuple : (Absyn.Path,
 
 	generate_temp_decl("state",tnr_ret) 
 	      => (mem_decl, mem_var, tnr_mem) &
-	append_strings([mem_var," = get_memory_state();"],"") => mem_stmt1 &
-	append_strings(["restore_memory_state(",mem_var,");"],"") =>mem_stmt2 &
+	Util.string_append_list([mem_var," = get_memory_state();"]) 
+	  => mem_stmt1 &
+	Util.string_append_list(["restore_memory_state(",mem_var,");"]) 
+	  => mem_stmt2 &
 
 	c_add_variables (out_fn, [mem_decl])  => mem_fn' &
 	c_add_inits     (mem_fn',[mem_stmt1]) => mem_fn &
@@ -845,17 +663,17 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	list_map(inst_dims,int_string) => dim_strs &
+	Util.list_map(inst_dims,int_string) => dim_strs &
 	list_length dim_strs => ndims &
 	int_string ndims => ndims_str &
-	append_strings(dim_strs,", ") => dims_str &
-	append_strings(["alloc_",typ_str,
+	Util.string_delimit_list(dim_strs,", ") => dims_str &
+	Util.string_append_list(["alloc_",typ_str,
 			"(&",prefix,".",cref_str,", ",
-			ndims_str,", ",dims_str,");"],"")
+			ndims_str,", ",dims_str,");"])
 	  => alloc_str &
 	  
 	  c_add_inits(c_empty_function,[alloc_str]) => cfn' &
-	if (is_a,cfn',c_empty_function) => cfn
+	Util.if (is_a,cfn',c_empty_function) => cfn
 	-----------
 	generate_alloc_outvar(DAE.VAR(id, vk, vd, typ, e,inst_dims),
 			      prefix,
@@ -912,15 +730,15 @@ relation generate_algorithm_statements : (Algorithm.Statement list, int)
 	-----------
 	generate_algorithm_statements (f::r, tnr) => (cfn,tnr2)
 end
+
+
 (*
  relation : generate_algorithm_statement
 
  returns:
-   string list  | Constructing code, variables, defines
-   string list  | Executing code
-   string list  | Destructing code, undefines 
-   string       | expression result: variable name, or 'c' expression
-   int          | next temporary number 
+   CFunction | Code
+   string    | expression result: variable name, or 'c' expression
+   int       | next temporary number 
  *)
 
 relation generate_algorithm_statement : (Algorithm.Statement, int)
@@ -930,7 +748,7 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_expression(exp,tnr) => (cfn1,var1,tnr1) &
 	generate_scalar_lhs_cref(typ,cref,tnr1)
 	  => (cfn2,var2,tnr2) &
-	append_strings([var2," = ",var1,";"],"") => stmt &
+	Util.string_append_list([var2," = ",var1,";"]) => stmt &
 
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_statements(cfn',[stmt]) => cfn
@@ -941,8 +759,8 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
   rule	comp_ref_cstr cref => (cref_str,[]) &
 	generate_expression(exp,tnr) => (cfn1,var1,tnr1) &
 	exp_type_str(typ,true) => type_str &
-	append_strings(["copy_",type_str,"_data(&",
-			var1,", &",cref_str,");"],"") => stmt &
+	Util.string_append_list(["copy_",type_str,"_data(&",
+			var1,", &",cref_str,");"]) => stmt &
 	  c_add_statements(cfn1,[stmt]) => cfn2
 	-------------------------
 	generate_algorithm_statement (Algorithm.ASSIGN_ARR(typ,cref,exp),tnr) 
@@ -953,8 +771,8 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_expression(exp,tnr) => (cfn1,var1,tnr1) &
 	generate_index_spec(subs,tnr1) => (cfn2,var2,tnr2) &
 	exp_type_str(typ,true) => type_str &
-	append_strings(["indexed_assign_",type_str,"(&",
-			var1,", &",cref_str,", ",var2,");"],"") => stmt &
+	Util.string_append_list(["indexed_assign_",type_str,"(&",
+			var1,", &",cref_str,", ",var2,");"]) => stmt &
 
 	c_add_statements(cfn2,[stmt]) => cfn2' &
 	c_merge_fn(cfn1,cfn2') => cfn
@@ -962,17 +780,34 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_algorithm_statement (Algorithm.ASSIGN_ARR(typ,cref,exp),tnr) 
 	  => (cfn,tnr2)
 
-  rule	print "# if statement not implemented\n"
+  rule	generate_expression(e,tnr) => (cfn1,var1,tnr1) &
+	
+	Util.string_append_list(["if (",var1,") {"]) => if_begin &
+	c_add_statements(cfn1,[if_begin]) => cfn1' &
+	generate_algorithm_statements(then,tnr1) => (cfn2,tnr2) &
+	c_add_statements(cfn2,["}"]) => cfn2' &
+	generate_else (else,tnr2) => (cfn3,tnr3) &
+	c_merge_fns([cfn1',cfn2',cfn3]) => cfn
 	-------------------------
-	generate_algorithm_statement (Algorithm.IF(_,_,_),_) => fail
+	generate_algorithm_statement (Algorithm.IF(e,then,else),tnr) 
+	  => (cfn,tnr3)
 
   rule	print "# for statement not implemented\n"
 	-------------------------
 	generate_algorithm_statement (Algorithm.FOR(_,_,_),_) => fail
 
-  rule	print "# while statement not implemented\n"
+  rule	c_add_statements(c_empty_function,["while (1) {"]) => cfn1 &
+	generate_expression(e,tnr) => (cfn2,var2,tnr2) &
+	Util.string_append_list(["if (!",var2,") break;"]) => crit_stmt &
+	c_add_statements(cfn2,[crit_stmt]) => cfn2' &
+
+	generate_algorithm_statements(stmts,tnr2) => (cfn3,tnr3) &
+	c_add_statements(cfn3,["}"]) => cfn3' &
+
+	c_merge_fns([cfn1,cfn2',cfn3']) => cfn
 	-------------------------
-	generate_algorithm_statement (Algorithm.WHILE(_,_),_) => fail
+	generate_algorithm_statement (Algorithm.WHILE(e,stmts),tnr) 
+	  => (cfn,tnr3)
 
   rule	print "# when statement not implemented\n"
 	-------------------------
@@ -984,7 +819,36 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 
 end
 
-relation generate_vars : (DAE.Element list,DAE.Element => (),int) => (CFunction,int) =
+relation generate_else : (Algorithm.Else, int) => (CFunction, int) =
+
+  axiom	generate_else (Algorithm.NOELSE,tnr) => (c_empty_function,tnr)
+
+  rule	c_add_statements(c_empty_function,["else {"]) => cfn1 &
+	generate_expression(e,tnr) => (cfn2,var2,tnr2) &
+	Util.string_append_list(["if (",var2,") {"]) => if_begin &
+	c_add_statements(cfn2,[if_begin]) => cfn2' &
+	generate_algorithm_statements(stmts,tnr2) => (cfn3,tnr3) &
+	c_add_statements(cfn3,["}"]) => cfn3' &
+	generate_else(else,tnr3) => (cfn4,tnr4) &
+	c_add_statements(cfn4,["}"]) => cfn4' &
+	c_merge_fns([cfn1,cfn2',cfn3',cfn4']) => cfn
+	-------
+	generate_else (Algorithm.ELSEIF(e,stmts,else),tnr) => (cfn,tnr4)
+
+  rule	c_add_statements(c_empty_function,["else {"]) => cfn1 &
+	generate_algorithm_statements(stmts,tnr) => (cfn2,tnr2) &
+	c_add_statements(cfn2,["}"]) => cfn2' &
+	c_merge_fn(cfn1,cfn2') => cfn
+	--------
+	generate_else (Algorithm.ELSE(stmts),tnr) => (cfn,tnr)
+
+  rule	print "# generate_else failed\n"
+	---------------
+	generate_else (_,_) => fail
+end
+
+relation generate_vars : (DAE.Element list,DAE.Element => (),int) 
+	  => (CFunction,int) =
 
   axiom	generate_vars ([],_,tnr) => (c_empty_function,tnr)
 	
@@ -1028,18 +892,18 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	list_map(inst_dims,int_string) => dim_strs &
-	append_strings(dim_strs,", ") => dims_str &
-	append_strings([" /* [",dims_str,"] */"],"") => dim_comment &
-	if (is_a,dim_comment,"") => dim_comment' &
+	Util.list_map(inst_dims,int_string) => dim_strs &
+	Util.string_delimit_list(dim_strs,", ") => dims_str &
+	Util.string_append_list([" /* [",dims_str,"] */"]) => dim_comment &
+	Util.if (is_a,dim_comment,"") => dim_comment' &
 	list_length dim_strs => ndims &
 	int_string ndims => ndims_str &
-	append_strings([typ_str," ",cref_str,";",dim_comment'],"")=> decl_str &
-	append_strings(["alloc_",typ_str,"(&",cref_str,", ",
-			ndims_str,", ",dims_str,");"],"") => alloc_str &
+	Util.string_append_list([typ_str," ",cref_str,";",dim_comment'])=> decl_str &
+	Util.string_append_list(["alloc_",typ_str,"(&",cref_str,", ",
+			ndims_str,", ",dims_str,");"]) => alloc_str &
 	c_add_variables(c_empty_function,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
-	if (is_a,cfn'',cfn') => cfn
+	Util.if (is_a,cfn'',cfn') => cfn
 	----------------------------------------------------
 	generate_var(DAE.VAR(id, vk, vd, typ, NONE,inst_dims),tnr) => (cfn,tnr)
 
@@ -1047,18 +911,19 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	list_map(inst_dims,int_string) => dim_strs &
-	append_strings(dim_strs,", ") => dims_str &
-	append_strings([" /* [",dims_str,"] */"],"") => dim_comment &
-	if (is_a,dim_comment,"") => dim_comment' &
+	Util.list_map(inst_dims,int_string) => dim_strs &
+	Util.string_delimit_list(dim_strs,", ") => dims_str &
+	Util.string_append_list([" /* [",dims_str,"] */"]) => dim_comment &
+	Util.if (is_a,dim_comment,"") => dim_comment' &
 	list_length dim_strs => ndims &
 	int_string ndims => ndims_str &
-	append_strings([typ_str," ",cref_str,";",dim_comment'],"")=> decl_str &
-	append_strings(["alloc_",typ_str,"(&",cref_str,", ",
-			ndims_str,", ",dims_str,");"],"") => alloc_str &
+	Util.string_append_list([typ_str," ",cref_str,";",dim_comment'])
+	  => decl_str &
+	Util.string_append_list(["alloc_",typ_str,"(&",cref_str,", ",
+			ndims_str,", ",dims_str,");"]) => alloc_str &
 	c_add_variables(c_empty_function,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
-	if (is_a,cfn'',cfn') => cfn &
+	Util.if (is_a,cfn'',cfn') => cfn &
 	print "# default value not implemented yet: " &
 	Exp.print_exp e & print "\n"
 	-----------
@@ -1070,10 +935,10 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	append_strings([typ_str," ",cref_str,";"],"") => decl_str &
+	Util.string_append_list([typ_str," ",cref_str,";"]) => decl_str &
 	generate_expression(e,tnr) => (cfn,var,tnr1) &
 	c_add_variables(cfn,[decl_str]) => cfn' &
-	append_strings([cref_str," = ",var,";"],"") => init_stmt &
+	Util.string_append_list([cref_str," = ",var,";"]) => init_stmt &
 	c_add_inits(cfn',[init_stmt]) => cfn'' &
 	print "# default value not implemented yet: " &
 	Exp.print_exp e & print "\n"
@@ -1129,7 +994,8 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
   rule	is_array id => false &
 	comp_ref_cstr id => (cref_str1,_) &
 	comp_ref_cstr id => (cref_str2,_) &
-	append_strings([varname,".",cref_str1," = ",cref_str2,";"],"") =>stmt &
+	Util.string_append_list([varname,".",cref_str1," = ",cref_str2,";"])
+	  =>stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
 	-----------
 	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_),
@@ -1142,8 +1008,8 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
 	dae_type_str (typ, true) => typ_str &
 	comp_ref_cstr id => (cref_str1,_) &
 	comp_ref_cstr id => (cref_str2,_) &
-	append_strings(["copy_",typ_str,"_data(&",
-			cref_str1,", &",varname,".",cref_str2,");"],"") 
+	Util.string_append_list(["copy_",typ_str,"_data(&",
+			cref_str1,", &",varname,".",cref_str2,");"]) 
 	  => stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
 	-----------
@@ -1319,20 +1185,6 @@ end
 
 
 
-relation find_var : (DAE.Element list, Exp.ComponentRef) => DAE.Element option =
-
-  axiom	find_var ([], _) => NONE
-
-  rule	Exp.cref_equal (cr1, cr2) => true
-	--------------------
-	find_var ((e as DAE.VAR(cr1, vk, vd, ty, value,_))::rest, cr2) => SOME(e)
-
-  rule	find_var (rest, cr) => e'
-	----------------------------
-	find_var (_::rest, cr) => e'
-
-end
-
 
 
 relation generate_exp : Exp.Exp => () =
@@ -1360,298 +1212,20 @@ relation get_array_dim : Types.Type => int =
 end
 
 
-relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list) 
-	  => Exp.Exp list =
-
-  axiom	string_prefix_component_refs (_, _, _, []) => []
-	
-  rule	string_prefix_component_refs (str, r, rarg, rest) => res &
-	string_prefix_component_ref (str, r, rarg, e) => e'
-	----------------------------------------------
-	string_prefix_component_refs (str, r, rarg, e::rest) => e'::res
-end
 
 
-relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp) 
-	  => Exp.Exp =
+relation generate_expressions : (Exp.Exp list, int) 
+	  => (CFunction, string list, int) =
 
-  rule	r(cr, rarg) &
-	string_prefix_cref (str, cr) => cr'
-	----------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.CREF(cr,t)) 
-	  => Exp.CREF(cr',t)
+  axiom	generate_expressions ([],tnr) => (c_empty_function,[],tnr)
 
-  rule	not r(cr, rarg)
-	----------------------------------------------
-	string_prefix_component_ref (_, r, rarg, Exp.CREF(cr,t)) 
-	  => Exp.CREF(cr,t)
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
-	string_prefix_component_ref (str, r, rarg, e2) => e2'
-	----------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.BINARY(e1,op,e2)) 
-	  => Exp.BINARY(e1',op,e2')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
-	----------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.UNARY(op,e1)) 
-	  => Exp.UNARY(op,e1')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
-	string_prefix_component_ref (str, r, rarg, e2) => e2'
-	----------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.LBINARY(e1,op,e2)) 
-	  => Exp.LBINARY(e1',op,e2')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
-	----------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.LUNARY(op,e1)) 
-	  => Exp.LUNARY(op,e1')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
-	string_prefix_component_ref (str, r, rarg, e2) => e2'
-	----------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.RELATION(e1,op,e2)) 
-	  => Exp.RELATION(e1',op,e2')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
-	string_prefix_component_ref (str, r, rarg, e2) => e2' &
-	string_prefix_component_ref (str, r, rarg, e3) => e3'
-	----------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.IFEXP(e1,e2,e3)) 
-	  => Exp.IFEXP(e1',e2',e3')
-
-  rule	string_prefix_component_refs (str, r, rarg, el) => el'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.CALL(p, el)) 
-	  => Exp.CALL(p, el')
-
-  rule	string_prefix_component_refs (str, r, rarg, el) => el'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.ARRAY(el)) 
-	  => Exp.ARRAY(el')
-
-  rule	string_prefix_component_refs_list (str, r, rarg, ell) => ell'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.MATRIX(ell)) 
-	  => Exp.MATRIX(ell')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
-	string_prefix_component_ref (str, r, rarg, e2) => e2'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.RANGE(e1, NONE, e2))
-	  => Exp.RANGE(e1', NONE, e2')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
-	string_prefix_component_ref (str, r, rarg, e2) => e2' &
-	string_prefix_component_ref (str, r, rarg, e3) => e3'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.RANGE(e1, SOME(e2), e3))
-	  => Exp.RANGE(e1', SOME(e2'), e3')
-
-  rule	string_prefix_component_refs (str, r, rarg, el) => el'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.TUPLE(el)) 
-	  => Exp.TUPLE(el')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.CAST(ty, e1)) 
-	  => Exp.CAST(ty, e1')
-
-  rule	string_prefix_component_ref (str, r, rarg, e1) => e1'
-	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.ASUB(e1, i)) 
-	  => Exp.ASUB(e1', i)
-
-  axiom	string_prefix_component_ref (str, r, rarg, e) => e
+  rule	generate_expression (f,tnr) => (cfn1,var1,tnr1) &
+	generate_expressions(r,tnr1) => (cfn2,vars2,tnr2) &
+	c_merge_fn(cfn1,cfn2) => cfn 
+	----
+	generate_expressions (f::r,tnr) => (cfn,var1::vars2,tnr2)
 
 end
-
-relation string_prefix_component_refs_list : 
-	(string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list list) => Exp.Exp list list =
-
-  axiom string_prefix_component_refs_list (_, _, _, []) => []
-
-  rule	string_prefix_component_refs (str, r, rarg, el) => el' &
-	string_prefix_component_refs_list (str, r, rarg, rest) => res
-	----------------------------------------------------
-	string_prefix_component_refs_list (str, r, rarg, el::rest) => el'::res
-
-end
-
-relation string_prefix_cref : (string, Exp.ComponentRef) 
-	  => Exp.ComponentRef =
-
-  rule	string_append (str, s) => s'
-	-----------------------
-	string_prefix_cref (str, Exp.CREF_IDENT(s, si)) => Exp.CREF_IDENT(s', si)
-
-  rule	string_append (str, s) => s'
-	-----------------------
-	string_prefix_cref (str, Exp.CREF_QUAL(s, si, cr)) 
-	  => Exp.CREF_QUAL(s', si, cr)
-
-end
-
-
-relation string_prefix_elements : (string, DAE.Element list, DAE.Element list) 
-	  => DAE.Element list =
-
-  axiom	string_prefix_elements (_, _, []) => []
-
-  rule	string_prefix_element (str, dae, el) => el' &
-	string_prefix_elements (str, dae, rest) => res
-	-----------------------------------------
-	string_prefix_elements (str, dae, el::rest) => el'::res
-
-end
-
-relation string_prefix_element : (string, DAE.Element list, DAE.Element) 
-	  => DAE.Element =
-
-
-  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
-	-----------------------------------------------------------------
-	string_prefix_element (str, dae, DAE.VAR(cr,vk,vd,ty,SOME(exp),inst_dims)) 
-	  => DAE.VAR(cr,vk,vd,ty,SOME(exp'),inst_dims)
-
-  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
-	-----------------------------------------------------------------
-	string_prefix_element (str, dae, DAE.DEFINE(cr,exp)) 
-	  => DAE.DEFINE(cr,exp')
-
-  rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp1) 
-	  => exp1' &
-	string_prefix_component_ref (str, is_parameter_daelist, dae, exp2) 
-	  => exp2'
-	-----------------------------------------------------------------
-	string_prefix_element (str, dae, DAE.EQUATION(exp1,exp2)) 
-	  => DAE.EQUATION(exp1',exp2')
-
-  rule	string_prefix_algorithm (str, dae, alg) => alg'
-	-----------------------------------------------------------------
-	string_prefix_element (str, dae, DAE.ALGORITHM(alg)) 
-	  => DAE.ALGORITHM(alg')
-
-
-(** What happens if a variable is not found among dae, should we check dae1,
-    i.e. where the COMP and FUNCTION was found? **)
-  rule	string_prefix_elements (str, dae, dae) => dae'
-	----------------------------------------------
-	string_prefix_element (str, dae1, DAE.COMP(n, DAE.DAE(dae))) 
-	  => DAE.COMP(n, DAE.DAE(dae'))
-
-  rule	string_prefix_elements (str, dae, dae) => dae'
-	----------------------------------------------
-	string_prefix_element (str, dae1, DAE.FUNCTION(n, DAE.DAE(dae), ty)) 
-	  => DAE.FUNCTION(n, DAE.DAE(dae'), ty)
-
-  axiom	string_prefix_element (str, dae, e) => e
-
-end
-
-
-relation string_prefix_algorithm : (string, DAE.Element list, Algorithm.Algorithm) 
-	  => Algorithm.Algorithm =
-
-  axiom	string_prefix_algorithm (str, dae, alg) => alg
-
-end
-
-
-relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
-
-  rule	Exp.cref_equal (cr, crv) => true
-	------------------------
-	is_parameter_daelist (cr, DAE.VAR(crv,DAE.PARAM,vd,ty,e,_)::rest)
-
-  rule	Exp.cref_equal (cr, crv) => true
-	------------------------
-	is_parameter_daelist (cr, DAE.VAR(crv,vk,vd,ty,e,_)::rest) => fail
-
-  rule	is_parameter_daelist (cr, rest)
-	-------------------------------
-	is_parameter_daelist (cr, e::rest)
-
-end
-
-relation string_prefix_params : DAE.DAElist => DAE.DAElist =
-
-  rule	string_prefix_elements ("params->", dae, dae) => dae'
-	-----------------------------------------------------
-	string_prefix_params DAE.DAE(dae) => DAE.DAE(dae')
-
-end
-
-
-relation get_component_ref_next : Exp.ComponentRef => Exp.ComponentRef =
-
-  axiom	get_component_ref_next Exp.CREF_QUAL(n, sl, cr) => cr
-  rule	print "#-- Cannot get subname of an unqualified component reference\n" &
-	Exp.print_component_ref cr
-	----------------------------------------------------------------------
-	get_component_ref_next (cr as Exp.CREF_IDENT(n, sl)) => fail
-
-end
-
-relation get_var_value_expr : (DAE.Element list, Exp.ComponentRef) 
-	  => Exp.Exp =
-
-  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, NONE,_)) &
-	print "#-- get_var_value_expr: Warning: Variable is not initialized\n" &
-	Exp.print_component_ref cr & print "\n"
-	---------------------------------------------------------
-	get_var_value_expr (dae, cr) => Exp.SCONST("UNDEF")
-
-
-  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, SOME(value),_))
-	---------------------------------------------------------
-	get_var_value_expr (dae, cr) => value
-
-  rule	print "#-- get_var_value_expr: Error: Variable not found\n" &
-	Exp.print_component_ref cr & print "\n"
-	---------------------------------------
-	get_var_value_expr (dae, cr) => fail
-
-end
-
-
-relation print_exp_no_funcall : Exp.Exp => () =
-
-  rule	path_string(fcn) => fs &
-	print fs
-	--------
-	print_exp_no_funcall Exp.CALL(fcn, args)
-
-  rule	Exp.print_exp e
-	---------------
-	print_exp_no_funcall e
-	
-end
-
-
-relation path_string: Absyn.Path => string =
-
-  axiom	path_string(Absyn.IDENT(s)) => s
-  
-  rule	RTOpts.modelica_output => true &
-	path_string(n) => ns &
-	string_append(s,"__") => s1 &
-	string_append(s1,ns) => ss
-	-------------------------------------
-	path_string(Absyn.QUALIFIED(s,n)) => ss
-
-  rule	RTOpts.modelica_output => false &
-	path_string(n) => ns &
-	string_append(s,".") => s1 &
-	string_append(s1,ns) => ss
-	-------------------------------------
-	path_string(Absyn.QUALIFIED(s,n)) => ss
-	
-end
-
-
 
 
 
@@ -1680,15 +1254,9 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	-------------------------
 	generate_expression(Exp.SCONST(_),_) => fail
 
-  rule	print "# bconst not implemented\n"
+  rule	Util.if(b,"(1)","(0)") => var
 	-------------------------
-	generate_expression(Exp.BCONST(_),_) => fail
-
-(*  rule	Debug.fprintln("gcge","generating cref ccode")
-	------------------------------------------------
-	generate_expression(Exp.CREF(Exp.CREF_IDENT(id,[]),t),tnr)
-	  => ([],[],[],id,tnr)
-*)
+	generate_expression(Exp.BCONST(b),tnr) => (c_empty_function,var,tnr)
 
   rule	generate_rhs_cref(cref, t, tnr) => (cfn,var,tnr')
 	-------------------------------------------------
@@ -1702,25 +1270,66 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	-------------------------
 	generate_expression(Exp.UNARY(_,_),_) => fail
 
-  rule	print "# lbinary not implemented\n"
+  rule	generate_lbinary(e1,op,e2,tnr) => (cfn,var,tnr')
 	-------------------------
-	generate_expression(Exp.LBINARY(_,_,_),_) => fail
+	generate_expression(Exp.LBINARY(e1,op,e2),tnr) => (cfn,var,tnr')
 
-  rule	print "# lunary not implemented\n"
+  rule	generate_lunary(op,e,tnr) => (cfn,var,tnr')
 	-------------------------
-	generate_expression(Exp.LUNARY(_,_),_) => fail
+	generate_expression(Exp.LUNARY(op,e),tnr) => (cfn,var,tnr')
 
-  rule	print "# relation not implemented\n"
+  rule	generate_relation(e1,op,e2,tnr) => (cfn,var,tnr')
 	-------------------------
-	generate_expression(Exp.RELATION(_,_,_),_) => fail
+	generate_expression(Exp.RELATION(e1,op,e2),tnr) => (cfn,var,tnr')
 
-  rule	print "# if not implemented\n"
-	-------------------------
-	generate_expression(Exp.IFEXP(_,_,_),_) => fail
+  rule	generate_expression(e,tnr) => (cfn1,var1,tnr1) &
+	generate_temp_decl("modelica_boolean",tnr1) => (decl,tvar,tnr1') &
+	Util.string_append_list([tvar," = ",var1,";"]) => b_stmt &
+	Util.string_append_list(["if (",tvar,") {"]) => if_begin &
+	c_add_statements(cfn1,[b_stmt,if_begin]) => cfn1'' &
+	c_add_variables(cfn1'',[decl]) => cfn1' &	
 
-  rule	print "# call not implemented\n"
+	generate_expression(then,tnr1') => (cfn2,var2,tnr2) &
+	c_add_statements(cfn2,["}","else {"]) => cfn2' &
+
+	generate_expression(else,tnr2) => (cfn3,var3,tnr3) &
+	c_add_statements(cfn3,["}"]) => cfn3' &
+
+	c_merge_fns([cfn1',cfn2',cfn3']) => cfn &
+
+	Util.string_append_list(["((",tvar,")?",var2,":",var3,")"]) => var	
 	-------------------------
-	generate_expression(Exp.CALL(_,_),_) => fail
+	generate_expression(Exp.IFEXP(e,then,else),tnr) 
+	  => (cfn,var,tnr3)
+
+  rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
+	generate_return_type fn => ret_type &
+	generate_function_name fn => fn_name &
+	generate_temp_decl(ret_type,tnr1) => (tdecl,tvar,tnr2) &
+	c_add_variables(cfn1,[tdecl]) => cfn2 &
+		
+	Util.string_delimit_list(vars1,", ") => args_str &
+	Util.string_append_list([tvar," = ",fn_name,"(", args_str,");"])
+	  => stmt &
+
+	c_add_statements(cfn2,[stmt]) => cfn &
+
+	Util.string_append_list([tvar,".",ret_type,"_1"]) => var
+	-------------------------
+	generate_expression(Exp.CALL(fn,args,false),tnr) => (cfn,var,tnr2)
+
+rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
+	generate_return_type fn => ret_type &
+	generate_function_name fn => fn_name &
+	generate_temp_decl(ret_type,tnr1) => (tdecl,tvar,tnr2) &
+	c_add_variables(cfn1,[tdecl]) => cfn2 &
+		
+	Util.string_delimit_list(vars1,", ") => args_str &
+	Util.string_append_list([tvar," = ",fn_name,"(", args_str,");"]) => stmt &
+
+	c_add_statements(cfn2,[stmt]) => cfn
+	-------------------------
+	generate_expression(Exp.CALL(fn,args,true),tnr) => (cfn,tvar,tnr2)
 
   rule	print "# array not implemented\n"
 	-------------------------
@@ -1730,21 +1339,22 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	-------------------------
 	generate_expression(Exp.MATRIX(_),_) => fail
 
-  rule	print "# range not implemented\n"
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) 	
 	-------------------------
-	generate_expression(Exp.RANGE(_,_,_),_) => fail
+	generate_expression(Exp.RANGE(t,e1,NONE,e2),tnr) => fail
 
   rule	print "# tuple not implemented\n"
 	-------------------------
 	generate_expression(Exp.TUPLE(_),_) => fail
 
   rule	generate_expression(e,tnr) => (cfn,var,tnr') &
-	append_strings(["((modelica_int)",var,")"],"") => var'
+	Util.string_append_list(["((modelica_int)",var,")"]) => var'
 	-------------------------------------
 	generate_expression(Exp.CAST(Exp.INT,e),tnr) => (cfn,var',tnr')
 
   rule	generate_expression(e,tnr) => (cfn,var,tnr') &
-	append_strings(["((modelica_real)",var,")"],"") => var'
+	Util.string_append_list(["((modelica_real)",var,")"]) => var'
 	-------------------------------------
 	generate_expression(Exp.CAST(Exp.REAL,e),tnr) => (cfn,var',tnr')
 
@@ -1775,21 +1385,21 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	  
   rule	generate_expression(e1,tnr ) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) => (cfn2,var2,tnr2) &
-	append_strings(["(",var1," + ",var2,")"],"") => var &
+	Util.string_append_list(["(",var1," + ",var2,")"]) => var &
 	c_merge_fn(cfn1,cfn2) => cfn
 	------------------------------------
 	generate_binary(e1,Exp.ADD(_),e2,tnr) => (cfn,var,tnr2)
 
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
-	append_strings(["(",var1," - ",var2,")"],"") => var &
+	Util.string_append_list(["(",var1," - ",var2,")"]) => var &
 	c_merge_fn(cfn1,cfn2) => cfn
 	------------------------------------
 	generate_binary(e1,Exp.SUB(_),e2,tnr) => (cfn,var,tnr2)
 
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
-	append_strings(["(",var1," * ",var2,")"],"") => var &
+	Util.string_append_list(["(",var1," * ",var2,")"]) => var &
 	c_merge_fn(cfn1,cfn2) => cfn
 	------------------------------------
 	generate_binary(e1,Exp.MUL(_),e2,tnr) => (cfn,var,tnr2)
@@ -1797,7 +1407,7 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
-	append_strings(["(",var1," / ",var2,")"],"") => var &
+	Util.string_append_list(["(",var1," / ",var2,")"]) => var &
 	c_merge_fn(cfn1,cfn2) => cfn
 	------------------------------------
 	generate_binary(e1,Exp.DIV(_),e2,tnr) => (cfn,var,tnr2)
@@ -1817,8 +1427,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("real_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["add_alloc_real_array(&",var1,
-			", &",var2,", &",var,");"],"") => stmt &
+	Util.string_append_list(["add_alloc_real_array(&",var1,
+			", &",var2,", &",var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1828,8 +1438,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("integer_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["add_alloc_integer_array(&",var1,
-			", &",var2,", &", var,");"],"") => stmt &
+	Util.string_append_list(["add_alloc_integer_array(&",var1,
+			", &",var2,", &", var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1841,8 +1451,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("real_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["sub_alloc_real_array(&",var1,", &",
-			var2,", &", var,");"],"") => stmt &
+	Util.string_append_list(["sub_alloc_real_array(&",var1,", &",
+			var2,", &", var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1853,8 +1463,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("integer_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["sub_alloc_integer_array(&",var1,
-			", &",var2,", &", var,");"],"") => stmt &
+	Util.string_append_list(["sub_alloc_integer_array(&",var1,
+			", &",var2,", &", var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1865,8 +1475,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2, tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("real_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["mul_alloc_scalar_real_array(",var1,
-			", &",var2,", &",var,");"],"") => stmt &
+	Util.string_append_list(["mul_alloc_scalar_real_array(",var1,
+			", &",var2,", &",var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1877,8 +1487,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2, tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("integer_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["mul_alloc_scalar_integer_array(",var1,
-		       ", &",var2,", &",var,");"],"") => stmt &
+	Util.string_append_list(["mul_alloc_scalar_integer_array(",var1,
+		       ", &",var2,", &",var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1889,8 +1499,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2, tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("real_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["mul_alloc_real_array_scalar(&",var1,
-			", ",var2,", &", var,");"],"") => stmt &
+	Util.string_append_list(["mul_alloc_real_array_scalar(&",var1,
+			", ",var2,", &", var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1901,8 +1511,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2, tnr1) =>(cfn2,var2, tnr2) &
 	generate_temp_decl("integer_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["mul_alloc_integer_array_scalar(&",var1,
-			", ",var2,", &",var,");"],"") => stmt &
+	Util.string_append_list(["mul_alloc_integer_array_scalar(&",var1,
+			", ",var2,", &",var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1912,8 +1522,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 
   rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2, tnr1) =>(cfn2,var2,tnr2) &
-	append_strings(["mul_real_scalar_product(&",var1,
-			", &",var2,")"],"") => var &
+	Util.string_append_list(["mul_real_scalar_product(&",var1,
+			", &",var2,")"]) => var &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------------------
 	generate_binary(e1,Exp.MUL_SCALAR_PRODUCT(Exp.REAL),e2, tnr)
@@ -1921,8 +1531,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 
   rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2, tnr1) =>(cfn2,var2,tnr2) &
-	append_strings(["mul_integer_scalar_product(&",var1,
-		       ", &",var2,")"],"") => var &
+	Util.string_append_list(["mul_integer_scalar_product(&",var1,
+		       ", &",var2,")"]) => var &
 	c_merge_fn(cfn1,cfn2) => cfn
 	----------------------
 	generate_binary(e1,Exp.MUL_SCALAR_PRODUCT(Exp.INT),e2, tnr) 
@@ -1931,8 +1541,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("real_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["mul_alloc_real_matrix_product(&",var1,
-			", &",var2,", &", var,");"],"") => stmt &
+	Util.string_append_list(["mul_alloc_real_matrix_product_smart(&",var1,
+			", &",var2,", &", var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1943,8 +1553,8 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
 	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
 	generate_temp_decl("integer_array",tnr2) => (decl, var, tnr3) &
-	append_strings(["mul_alloc_integer_matrix_product_smart(&",var1,
-			", &",var2,", &", var,");"],"") => stmt &
+	Util.string_append_list(["mul_alloc_integer_matrix_product_smart(&",
+				 var1,", &",var2,", &", var,");"]) => stmt &
 	c_merge_fn(cfn1,cfn2) => cfn' &
 	c_add_variables(cfn',[decl]) => cfn'' &
 	c_add_statements(cfn'',[stmt]) => cfn
@@ -1960,46 +1570,9 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------------------------
 	generate_binary(_,Exp.POW_ARR(_),_,_) => fail
 
-  rule	print "# and not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.AND,_,_) => fail
-  
-  rule	print "# or not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.OR,_,_) => fail
-	
-  rule	print "# not not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.NOT,_,_) => fail
-
   rule	print "# div_array_scalar not implemented\n"
 	-------------------------
 	generate_binary(_,Exp.DIV_ARRAY_SCALAR(_),_,_) => fail
-
-  rule	print "# less not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.LESS(_),_,_) => fail
-
-  rule	print "# lesseq not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.LESSEQ(_),_,_) => fail
-
-  rule	print "# greater not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.GREATER(_),_,_) => fail
-
-  rule	print "# greatereq not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.GREATEREQ(_),_,_) => fail
-
-  rule	print "# equal not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.EQUAL(_),_,_) => fail
-
-  rule	print "# nequal not implemented\n"
-	-------------------------
-	generate_binary(_,Exp.NEQUAL(_),_,_) => fail
-
 
   rule	print "# generate_binary failed\n"
 	-------------------------
@@ -2014,7 +1587,7 @@ relation generate_temp_decl : (string, int) => (string, string, int) =
   rule	int_string(tnr) => tnr_str &
 	int_add(tnr,1) => tnr' &
 	string_append("tmp",tnr_str) => tmp_name &
-	append_strings([t," ",tmp_name,";"],"") => t' 
+	Util.string_append_list([t," ",tmp_name,";"]) => t' 
 	------------------------------	
 	generate_temp_decl(t, tnr) => (t', tmp_name, tnr')
 
@@ -2031,10 +1604,12 @@ relation generate_scalar_lhs_cref : (Exp.Type, Exp.ComponentRef, int)
 
   rule	Debug.fprintln("gcge","generating cref ccode") &
 	generate_indices(idx,tnr) => (cfn1,idxs1,tnr1) &
-	append_strings(idxs1,", ") => idxs_str &
+	list_length idxs1 => ndims &
+	int_string ndims => ndims_str &
+	Util.string_delimit_list(idxs1,", ") => idxs_str &
 	exp_type_str(t,true) => type_str &
-	append_strings(["(*",type_str,"_element_addr(&",id,
-			", ",idxs_str,"))"],"") => cref1 
+	Util.string_append_list(["(*",type_str,"_element_addr(&",id,", ",ndims_str,
+			", ",idxs_str,"))"]) => cref1 
 	------------------------------------------------
 	generate_scalar_lhs_cref(t,Exp.CREF_IDENT(id,idx),tnr)
 	  => (cfn1,cref1,tnr1)
@@ -2082,10 +1657,13 @@ relation generate_scalar_rhs_cref : (string, Exp.Type,Exp.Subscript list, int)
 	  => (CFunction, string, int) =
 
   rule	generate_indices(subs,tnr) => (cfn1,idxs1,tnr1) &
-	append_strings(idxs1,", ") => idxs_str &
+	list_length idxs1 => ndims &
+	int_string ndims => ndims_str &
+	Util.string_delimit_list(idxs1,", ") => idxs_str &
 	exp_type_str (crt,true) => array_type_str &
-	append_strings(["(*",array_type_str,"_element_addr(&",cref_str,
-			", ",idxs_str,"))"],"") => cref1
+	Util.string_append_list(["(*",array_type_str,"_element_addr(&",
+				 cref_str,", ",ndims_str,
+				 ", ",idxs_str,"))"]) => cref1
 	--------------------
 	generate_scalar_rhs_cref (cref_str,crt,subs,tnr) 
 	  => (cfn1,cref1,tnr1)
@@ -2097,8 +1675,8 @@ relation generate_array_rhs_cref : (string, Exp.Type,Exp.Subscript list, int)
   rule	generate_index_spec(subs,tnr) => (cfn1,spec1,tnr1) &
 	exp_type_str(crt,true) => array_type_str &
 	generate_temp_decl(array_type_str,tnr1) => (decl,temp,tnr2) &
-	append_strings(["index_alloc_",array_type_str,"(&",cref_str,
-			", ",spec1,", ",temp,");"],"") => stmt &
+	Util.string_append_list(["index_alloc_",array_type_str,"(&",cref_str,
+				 ", ",spec1,", ",temp,");"]) => stmt &
 	c_add_variables(cfn1,[decl]) => cfn'&
 	c_add_statements(cfn',[stmt]) => cfn
 	-------------------------------------------
@@ -2111,11 +1689,11 @@ relation generate_index_spec : (Exp.Subscript list, int)
 
   rule	generate_indices_array(subs,tnr) => (cfn1,idxs1,tnr1) &
 	generate_temp_decl("index_spec_t",tnr1) => (decl,spec,tnr2) &
-	append_strings(idxs1,", ") => idxs_str &
-	append_strings(["create_index_spec(&",spec,", ",idxs_str,");"],"")
-	  => stmt &
+	Util.string_delimit_list(idxs1,", ") => idxs_str &
+	Util.string_append_list(["create_index_spec(&",
+				 spec,", ",idxs_str,");"]) => stmt &
   
-	  c_add_variables(cfn1,[decl]) => cfn' &
+	c_add_variables(cfn1,[decl]) => cfn' &
 	c_add_statements(cfn',[stmt]) => cfn
 	
 	---------------------------------------------
@@ -2169,12 +1747,12 @@ relation generate_index_array : (Exp.Subscript, int)
 	  => (CFunction, string, int) =
 
   rule	generate_expression(e,tnr) => (cfn,var1,tnr1) &
-	append_strings(["make_index_array(",var1,")"],"") => idx1
+	Util.string_append_list(["make_index_array(",var1,")"]) => idx1
 	------------------------------------
 	generate_index_array(Exp.INDEX(e), tnr) 
 	  => (cfn,idx1,tnr1)
 
-  rule	append_strings(["(0)"],"") => idx1
+  rule	let idx1 = "(0)"
 	------------------------------------
 	generate_index_array(Exp.WHOLEDIM, tnr) 
 	  => (c_empty_function,idx1,tnr)
@@ -2196,20 +1774,6 @@ relation generate_index : (Exp.Subscript, int)
   rule	print "# generate_index failed\n"
 	-----------------------------
 	generate_index(_,_) => fail
-
-end
-
-relation append_strings : (string list, string) => string =
-	
-  axiom append_strings([],_) => ""
-
-  axiom	append_strings([f],delim) => f
-
-  rule	append_strings(r,delim) => str1 &
-	string_append(f,delim) => str2 &
-	string_append(str2,str1) => str
-	---------------------------
-	append_strings(f::r,delim) => str
 
 end
 
@@ -2236,10 +1800,236 @@ relation comp_ref_cstr : Exp.ComponentRef => (string, Exp.Subscript list) =
 
   rule	ident_cstr id => id_str &
 	comp_ref_cstr cref => (cref_str,cref_subs) &
-	append_strings([id,"__",cref_str],"") => cref_str' &
-	list_flatten([subs,cref_subs]) => subs'
+	Util.string_append_list([id,"__",cref_str]) => cref_str' &
+	Util.list_flatten([subs,cref_subs]) => subs'
 	------------------------------
 	comp_ref_cstr Exp.CREF_QUAL(id,subs,cref) => (cref_str',subs')
+
+end
+
+
+(*
+
+ generate_lbinary
+
+ returns:
+  CFunction | the generated code
+  string    | expression result 
+  int       | next temporary number 
+*)
+relation generate_lbinary : (Exp.Exp, Exp.Operator, Exp.Exp, int) 
+	  => (CFunction, string, int) =
+
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," && ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_lbinary (e1,Exp.AND,e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," || ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_lbinary (e1,Exp.OR,e2,tnr) => (cfn, var, tnr2)
+
+
+  rule	print "# generate_lbinary failed\n"
+	-----------------------------
+	generate_lbinary (_,_,_,_) => fail
+
+end
+
+(*
+
+ generate_lunary
+
+ returns:
+  CFunction | the generated code
+  string    | expression result 
+  int       | next temporary number 
+*)
+relation generate_lunary : (Exp.Operator, Exp.Exp, int) 
+	  => (CFunction, string, int) =
+
+
+  rule	generate_expression(e,tnr) => (cfn1,var1,tnr1) &
+	Util.string_append_list(["(!",var1,")"]) => var
+	-------
+	generate_lunary (Exp.NOT,e,tnr) => (cfn1, var, tnr1)
+
+
+  rule	print "# generate_lbinary failed\n"
+	-----------------------------
+	generate_lunary (_,_,_) => fail
+
+end
+
+(*
+
+ generate_relation
+
+ returns:
+  CFunction | the generated code
+  string    | expression result 
+  int       | next temporary number 
+*)
+relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int) 
+	  => (CFunction, string, int) =
+
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(!",var1," && ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.LESS(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# string comparison not supported\n"
+	-------
+	generate_relation (e1,Exp.LESS(Exp.STRING),e2,tnr) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," < ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.LESS(Exp.INT),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," < ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.LESS(Exp.REAL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," && !",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.GREATER(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# string comparison not supported\n"
+	-------
+	generate_relation (e1,Exp.GREATER(Exp.STRING),e2,tnr) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," > ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.GREATER(Exp.INT),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," > ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.GREATER(Exp.REAL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(!",var1," || ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.LESSEQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# string comparison not supported\n"
+	-------
+	generate_relation (e1,Exp.LESSEQ(Exp.STRING),e2,tnr) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," <= ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.LESSEQ(Exp.INT),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," <= ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.LESSEQ(Exp.REAL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," || !",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.GREATEREQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# string comparison not supported\n"
+	-------
+	generate_relation (e1,Exp.GREATEREQ(Exp.STRING),e2,tnr) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," >= ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.GREATEREQ(Exp.INT),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," >= ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.GREATEREQ(Exp.REAL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["((!",var1," && !",var2,") || (",
+			var1," && ",var2,"))"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.EQUAL(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# string comparison not supported\n"
+	-------
+	generate_relation (e1,Exp.EQUAL(Exp.STRING),e2,tnr) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," == ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.EQUAL(Exp.INT),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# Reals can't be compared with ==\n"
+	-------
+	generate_relation (e1,Exp.EQUAL(Exp.REAL),e2,tnr) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["((!",var1," && ",var2,") || (",
+			var1," && !",var2,"))"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.NEQUAL(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# string comparison not supported\n"
+	-------
+	generate_relation (e1,Exp.NEQUAL(Exp.STRING),e2,tnr) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	Util.string_append_list(["(",var1," != ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_relation (e1,Exp.NEQUAL(Exp.INT),e2,tnr) => (cfn, var, tnr2)
+
+  rule	print "# Reals can't be compared with <>\n"
+	-------
+	generate_relation (e1,Exp.NEQUAL(Exp.REAL),e2,tnr) => fail
+
+
+  rule	print "# generate_relation failed\n"
+	-----------------------------
+	generate_relation (_,_,_,_) => fail
 
 end
 
@@ -2256,17 +2046,17 @@ relation generate_read_call_write : (string,
 			["char const* in_filename",
 			 "char const* out_filename"]) => cfn1 &
 
-	append_strings([retstr," out;"],"") => out_decl&
+	Util.string_append_list([retstr," out;"]) => out_decl&
 	c_add_inits(cfn1,["PRE_VARIABLES",
 			       out_decl]) => cfn1' &
 	(*generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &*)
 	generate_vars(invars,is_rcw_input,1) => (cfn3,tnr2) &
 	c_add_statements(cfn3,["PRE_OPEN_INFILE"]) => cfn3' &
 	invar_names invars => in_names &
-	append_strings(in_names,", ") => in_args &
+	Util.string_delimit_list(in_names,", ") => in_args &
 	
 	generate_read(invars) => cfn4 &
-	append_strings(["out = ",fnname,"(",in_args,");"],"") => fn_call &
+	Util.string_append_list(["out = ",fnname,"(",in_args,");"]) => fn_call &
 	c_add_statements(cfn4,["PRE_READ_DONE",
 			       fn_call,
 			       "PRE_OPEN_OUTFILE"]) => cfn4' &
@@ -2306,7 +2096,7 @@ relation generate_read : DAE.Element list => CFunction =
 
   rule	comp_ref_cstr id => (cref_str,_) &
 	dae_type_str(t, false) => type_string &
-	append_strings(["read_",type_string,"(in_file, &",cref_str,");"],"")
+	Util.string_append_list(["read_",type_string,"(in_file, &",cref_str,");"])
 	  => stmt &
 	  
 	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
@@ -2318,7 +2108,7 @@ relation generate_read : DAE.Element list => CFunction =
   rule	comp_ref_cstr id => (cref_str,_) &
 	is_first_in_array id => true &
 	dae_type_str(t, true) => type_string &
-	append_strings(["read_",type_string,"(in_file, &",cref_str,");"],"")
+	Util.string_append_list(["read_",type_string,"(in_file, &",cref_str,");"])
 	  => stmt &
 	  
 	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
@@ -2343,7 +2133,7 @@ relation generate_write : DAE.Element list => CFunction =
 
   rule	comp_ref_cstr id => (cref_str,_) &
 	dae_type_str(t, false) => type_string &
-	append_strings(["write_",type_string,"(out_file, &out.",cref_str,");"],"")
+	Util.string_append_list(["write_",type_string,"(out_file, &out.",cref_str,");"])
 	  => stmt &
 	  
 	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
@@ -2355,7 +2145,7 @@ relation generate_write : DAE.Element list => CFunction =
   rule	comp_ref_cstr id => (cref_str,_) &
 	is_first_in_array id => true &
 	dae_type_str(t, true) => type_string &
-	append_strings(["write_",type_string,"(out_file, &out.",cref_str,");"],"")
+	Util.string_append_list(["write_",type_string,"(out_file, &out.",cref_str,");"])
 	  => stmt &
 	  
 	  c_add_statements(c_empty_function,[stmt]) => cfn1 &

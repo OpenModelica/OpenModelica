@@ -30,13 +30,13 @@ module Static :
 returns multiple arguments. *)
 
 (* Used by split_props  *)
- datatype Const = CONST of bool |
+  datatype Const = CONST of bool |
 		   TUPLE_CONST  of Const list 
 
-  datatype Properties = PROP of Types.Type (* type *)
-			      * bool (* if the type is a tuple, each element 
-				      have a const flag. *)
-(*			      * bool *)       (* constant *)
+  datatype Properties = PROP of Types.Type * (* type *)
+				 bool (* if the type is a tuple, each element 
+				          have a const flag. *)
+				 
 (* Types.Type is meant to be T_TUPLE *)
 			| PROP_TUPLE of Types.Type * Const (* The elements might be 
 							    tuple themselfs. *)
@@ -223,24 +223,30 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	(**  Array-related expressions *)
 
   rule	Debug.fprintln("setr", "elab_exp_range1") &
-	elab_exp (env, start) => (start', PROP(Types.T_INTEGER, c_start)) &
-	elab_exp (env, stop) => (stop', PROP(Types.T_INTEGER, c_stop)) &
+	elab_exp (env, start) => (start', PROP(start_t, c_start)) &
+	elab_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	deoverload_range((start',start_t),
+			 NONE,
+			 (stop',stop_t)) => (start'',NONE,stop'',rt) &
 	bool_and (c_start, c_stop) => const &
-	elab_range_type (env,start',NONE,stop',const) => t
+	elab_range_type (env,start'',NONE,stop'',const) => t
 	--------------------------------------------------
 	elab_exp (env, Absyn.RANGE(start, NONE, stop))
-	  => (Exp.RANGE(start',NONE,stop'), PROP(t, const))
+	  => (Exp.RANGE(rt,start',NONE,stop'), PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_exp_range2") &
-	elab_exp (env, start) => (start', PROP(Types.T_INTEGER, c_start)) &
-	elab_exp (env, step) => (step', PROP(Types.T_INTEGER, c_step)) &
-	elab_exp (env, stop) => (stop', PROP(Types.T_INTEGER, c_stop)) &
+	elab_exp (env, start) => (start', PROP(start_t, c_start)) &
+	elab_exp (env, step) => (step', PROP(step_t, c_step)) &
+	elab_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	deoverload_range((start',start_t),
+			 SOME((step',step_t)),
+			 (stop',stop_t)) => (start'',SOME(step''),stop'',rt) &
 	bool_and (c_start, c_step) => c1 &
 	bool_and (c1, c_stop) => const &
-	elab_range_type (env,start',SOME(step'),stop',const) => t
+	elab_range_type (env,start'',SOME(step''),stop'',const) => t
 	---------------------
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
-	  => (Exp.RANGE(start',SOME(step'),stop'), PROP(t, const))
+	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_exp_array") &
 	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l
@@ -265,6 +271,30 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
 end
 
+relation deoverload_range : ((Exp.Exp*Types.Type), 
+			     (Exp.Exp*Types.Type) option,
+			     (Exp.Exp*Types.Type)) 
+	  => (Exp.Exp, Exp.Exp option, Exp.Exp, Exp.Type) =
+	  
+  axiom	deoverload_range((e1,Types.T_INTEGER),
+			 NONE,
+			 (e3,Types.T_INTEGER)) => (e1,NONE,e3,Exp.INT)
+  axiom	deoverload_range((e1,Types.T_INTEGER),
+			 SOME((e2,Types.T_INTEGER)),
+			 (e3,Types.T_INTEGER))  => (e1,SOME(e2),e3,Exp.INT)
+
+  rule	elab_arglist([Types.T_REAL,Types.T_REAL],
+		     [(e1,t1),(e3,t3)]) => ([e1',e3'],_)
+	---------------------------------------------------
+	deoverload_range((e1,t1),NONE,(e3,t3)) => (e1',NONE,e3',Exp.REAL)
+
+  rule	elab_arglist([Types.T_REAL,Types.T_REAL,Types.T_REAL],
+		     [(e1,t1),(e2,t2),(e3,t3)]) => ([e1',e2',e3'],_)
+	---------------------------------------------------
+	deoverload_range((e1,t1),SOME((e2,t2)),(e3,t3)) 
+	  => (e1',SOME(e2'),e3',Exp.REAL)
+
+end
 (** relation: elab_range_type *)
 
 relation elab_range_type : (Env.Env, Exp.Exp,
@@ -286,6 +316,28 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	-------------------------------------------------
 	elab_range_type (env,start,SOME(step),stop,true)
 	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER)
+
+  rule	ceval (env,start) => Values.REAL(startv) &
+	ceval (env,stop) => Values.REAL(stopv) &
+	real_sub (stopv,startv) => n &
+	real_floor n => n'' &
+	real_int n'' => n''' &
+	int_add (n''',1) => n'
+	-------------------------------------------------
+	elab_range_type (env,start,NONE,stop,true)
+	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_REAL)
+
+  rule	ceval (env,start) => Values.REAL(startv) &
+	ceval (env,step) => Values.REAL(stepv) &
+	ceval (env,stop) => Values.REAL(stopv) &
+	real_sub (stopv,startv) => n &
+	real_div (n,stepv) => n' &
+	real_floor n' => n''' &
+	real_int n''' => n'''' &
+ 	int_add (n'''',1) => n''
+	-------------------------------------------------
+	elab_range_type (env,start,SOME(step),stop,true)
+	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_REAL)
 
   axiom	elab_range_type (_,_,_,_,false)
 	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_INTEGER)
@@ -594,6 +646,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
  	(* Returns PROP_TUPLE if there is more than one element in the list. 
 	   If there is only one element then PROP is returned.
 	 *)
+	is_tuple(outtype) => tuple &
 	Debug.fprintln ("sei", "Elaborated consts") &
 	get_properties(outtype, const) => prop &
 	
@@ -603,7 +656,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 	elab_call_args(env,fn,args) 
 	  => (Exp.CALL(fn,args'), PROP_TUPLE(Types.T_TUPLE(types), const)) 
  *)
-	elab_call_args(env,fn,args) => (Exp.CALL(fn,args'), prop )
+	elab_call_args(env,fn,args) => (Exp.CALL(fn,args',tuple), prop )
 
 	(* 
 	 Functions that returns just one argument should not return a
@@ -630,14 +683,14 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 (*	print "We got the type list\n" & *)
 	elab_types (env, args, typelist) => (args', c, restype) &
 (*	& print "We just elaborated the types\n"  *)
-
+	is_tuple restype => tuple &
 	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
 (*	print "Debug: We did a lookup T_FUNCTION " &
 *)
 (*PR.	elab_input_args(env, args, params) => (args',c)  *)
 	Debug.fprintln ("sei", "elab_call_args succeeded")
 	-----------------------------------------------
-	elab_call_args (env,fn,args) => (Exp.CALL(fn,args'), PROP(restype, c))
+	elab_call_args (env,fn,args) => (Exp.CALL(fn,args',tuple), PROP(restype, c))
 
 
 (*  rule	not Lookup.lookup_type(env,fn) => _ &
@@ -659,6 +712,12 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 
 end
 
+relation is_tuple : Types.Type => bool =
+
+  axiom is_tuple Types.T_TUPLE(_) => true
+  axiom	is_tuple _ => false
+
+end
 (*PR.*)
 relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list) 
 	  => (Exp.Exp list, bool, Types.Type) =
@@ -1308,7 +1367,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
   rule	print "# Can't call functions at compile time\n" &
 	print "    expression: " & Exp.print_exp e & print "\n"
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(_,_)) => fail
+	ceval (env, e as Exp.CALL(_,_,_)) => fail
 
 	(**  Numerical *)
 
@@ -1410,14 +1469,14 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	ceval (env, stop) => Values.INTEGER(stop') &
 	ceval_range(start', 1, stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(start, NONE, stop)) => Values.ARRAY(arr)
+	ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop)) => Values.ARRAY(arr)
 
   rule	ceval (env, start) => Values.INTEGER(start') &
 	ceval (env, step) => Values.INTEGER(step') &
 	ceval (env, stop) => Values.INTEGER(stop') &
 	ceval_range(start', step', stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(start, SOME(step), stop)) => Values.ARRAY(arr)
+	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop)) => Values.ARRAY(arr)
 
   rule	ceval (env,e) => Values.INTEGER(i) &
 	int_real i => r

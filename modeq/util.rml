@@ -1,0 +1,68 @@
+module Util :
+
+  relation if : (bool,'a,'a) => 'a
+
+  relation list_flatten : 'a list list => 'a list
+  relation list_map : ('a list, 'a => 'b) => 'b list
+	  
+  relation string_append_list : string list => string
+  relation string_delimit_list : (string list, string) => string
+end
+
+
+relation list_flatten : 'a list list => 'a list =
+
+  axiom	list_flatten [] => []
+
+  rule	list_flatten r => r' &
+	list_append(f,r') => l
+	-----------------------
+	list_flatten f::r => l
+
+end
+
+relation list_map : ('a list, 'a => 'b) => 'b list =
+	
+  axiom	list_map ([],_) => []
+
+  rule	fn f => f' &
+	list_map(r,fn) => r'
+	-------------------
+	list_map (f::r,fn) => f'::r'
+
+end
+
+relation if : (bool,'a,'a) => 'a =
+	
+  axiom	if (true,r,_) => r
+  axiom	if (false,_,r) => r
+
+end
+
+
+relation string_append_list : string list => string =
+	
+  axiom string_append_list [] => ""
+
+  axiom	string_append_list [f] => f
+
+  rule	string_append_list r => r' &
+	string_append(f,r') => str
+	---------------------------
+	string_append_list f::r => str
+
+end
+
+relation string_delimit_list : (string list, string) => string =
+	
+  axiom string_delimit_list([],_) => ""
+
+  axiom	string_delimit_list([f],delim) => f
+
+  rule	string_delimit_list(r,delim) => str1 &
+	string_append(f,delim) => str2 &
+	string_append(str2,str1) => str
+	---------------------------
+	string_delimit_list(f::r,delim) => str
+
+end

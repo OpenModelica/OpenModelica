@@ -12,6 +12,7 @@ module Main:
 	relation main: string list => ()
 end
 
+with "modutil.rml"
 with "parse.rml"
 with "dump.rml"
 with "dumpgraphviz.rml"
@@ -53,7 +54,7 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedump", DAE.dump, d)
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
-	& Codegen.string_prefix_params d => d'
+	& ModUtil.string_prefix_params d => d'
 	& Debug.fcall ("codegen", Codegen.generate_functions, d')
 	------------------------------
 	translate_file [f]

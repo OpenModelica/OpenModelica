@@ -42,10 +42,10 @@ module Exp:
 	       | LUNARY of Operator * Exp
 	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
-	       | CALL of Absyn.Path * Exp list		(* Function call *)
+	       | CALL of Absyn.Path * Exp list * bool (* Function call *)
 	       | ARRAY of Exp list
 	       | MATRIX of Exp list list
-	       | RANGE of Exp * Exp option * Exp
+	       | RANGE of Type * Exp * Exp option * Exp
 	       | TUPLE of Exp list (*PR.*)
                  (* New constructors *)
 	       | CAST of Type * Exp
@@ -425,7 +425,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	Absyn.path_string(fcn) => fs &
 	print fs & print "(" & print_list(args,print_exp,",") & print ")"
 	---------------------------------------------
-	print_exp2(CALL(fcn, args),_)
+	print_exp2(CALL(fcn, args,_),_)
 
   rule	(* print "This an array: " & *)
 	print "[" &
@@ -452,7 +452,7 @@ relation print_exp2 : (Exp,int) => () =
 	print_exp2 (start,pri3) & print ":" & print_exp2 (stop,pri3) &
  	print_rightpar(pri1,pri2)
 	-------------------------------------------------------------
-	print_exp2 (RANGE(start,NONE,stop),pri1)
+	print_exp2 (RANGE(_,start,NONE,stop),pri1)
 
   rule	let pri2 = 41 &
 	print_leftpar(pri1,pri2) => pri3 &
@@ -461,7 +461,7 @@ relation print_exp2 : (Exp,int) => () =
  	print_exp2 (stop,pri3) &
  	print_rightpar(pri1,pri2)
 	-------------------------
-	print_exp2 (RANGE(start,SOME(step),stop),pri1)
+	print_exp2 (RANGE(_,start,SOME(step),stop),pri1)
 
   rule	RTOpts.modelica_output => false &
 	print "Real(" & print_exp e & print ")"
@@ -939,7 +939,7 @@ relation print_exp2_str : (Exp,int) => string =
 	string_append(s, argstr) => s' &
 	string_append(s', ")") => s''
 	---------------------------------------------
-	print_exp2_str(CALL(fcn, args),_) => s''
+	print_exp2_str(CALL(fcn, args,_),_) => s''
 
   rule	print_list_str(es, print_exp_str, ",") => s &
 	string_append ("[",s) => s' &
@@ -969,7 +969,7 @@ relation print_exp2_str : (Exp,int) => string =
 	string_append (s', s3) => s'' &
 	string_append (s'', s4) => s'''
 	-------------------------------------------------------------
-	print_exp2_str (RANGE(start,NONE,stop),pri1) => s'''
+	print_exp2_str (RANGE(_,start,NONE,stop),pri1) => s'''
 
   rule	let pri2 = 41 &
 	print_leftpar_str (pri1,pri2) => (s1,pri3) &
@@ -984,7 +984,7 @@ relation print_exp2_str : (Exp,int) => string =
 	string_append (s''', s4) => s'''' &
 	string_append (s'''', s5) => s'''''
 	-------------------------------------
-	print_exp2_str (RANGE(start,SOME(step),stop),pri1) => s'''''
+	print_exp2_str (RANGE(_,start,SOME(step),stop),pri1) => s'''''
 
 
   rule	RTOpts.modelica_output => false &

@@ -5,20 +5,24 @@ CFLAGS= -Wall -ansi -pedantic -I../../c_runtime
 
 LDFLAGS= -L../../c_runtime 
 
-MOFILES = test.mo matrix_vector_product.mo
+MOFILES = \
+	test.mo \
+	matrix_vector_product.mo \
+	if_algorithm.mo \
+	while_algorithm.mo
+
+TARGETS = $(MOFILES:.mo=)
+OBJS = $(MOFILES:%.mo=%.main.o)
+GENC = $(MOFILES:%.mo=%.c)
 
 all : $(MOFILES:.mo=) 
 
 
-test : test.main.o
-	gcc -o test  $(LDFLAGS) test.main.o -lc_runtime
+$(TARGETS) : % : %.main.o
+	gcc -o $@ $(LDFLAGS) $< -lc_runtime
 
-matrix_vector_product : matrix_vector_product.main.o
-	gcc -o matrix_vector_product  $(LDFLAGS) matrix_vector_product.main.o -lc_runtime
+$(OBJS) : %.main.o : %.main.c %.c
 
-
-test.main.o : test.main.c test.c
-matrix_vector_product.main.o : matrix_vector_product.main.c matrix_vector_product.c
 
 .SUFFIXES: .mo
 
@@ -27,6 +31,6 @@ matrix_vector_product.main.o : matrix_vector_product.main.c matrix_vector_produc
 	$(MODEQ) $< +d=codegen > $(<:.mo=.c)
 
 clean :
-	rm -f $(MOFILES:.mo=)
-	rm -f $(MOFILES:.mo=.main.o)
-	rm -f $(MOFILES:.mo=.c)
+	rm -f $(TARGETS)
+	rm -f $(OBJS)
+	rm -f $(GENC)

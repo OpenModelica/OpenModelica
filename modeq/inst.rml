@@ -48,6 +48,7 @@ end
 
 (** Other modules used by this module *)
 
+with "modutil.rml"
 with "algorithm.rml"
 with "values.rml"
 with "absyn.rml"
@@ -56,7 +57,7 @@ with "builtin.rml"
 with "dump.rml"
 with "staticexp.rml"
 with "rtopts.rml"
-with "codegen.rml"
+
 
 (**
  ** These type aliases are introduced to make the code a little more
@@ -1335,7 +1336,7 @@ end
 (** LS: **)
 relation prefix_params : (Env.Env, Exp.Exp) => Exp.Exp =
 
-  rule	Codegen.string_prefix_component_ref ("params->", is_parameter, env, e) => e'
+  rule	ModUtil.string_prefix_component_ref ("params->", is_parameter, env, e) => e'
 	-----------------------------------------------------------------------
 	prefix_params (env, e) => e'
 

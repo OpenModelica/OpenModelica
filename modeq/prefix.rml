@@ -230,9 +230,11 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-----------------------
 	prefix_exp(env,Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
 
+
   rule	prefix_exp_list(env,es,p) => es'
 	-----------------------
-	prefix_exp(env,Exp.CALL(f,es),p) => Exp.CALL(f,es')
+	prefix_exp(env,Exp.CALL(f,es,b),p) => Exp.CALL(f,es',b)
+
 	(**)
   axiom	prefix_exp(env,Exp.ARRAY([]),p) => Exp.ARRAY([])
 
@@ -256,15 +258,15 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
   rule	prefix_exp(env,start, p) => start' &
 	prefix_exp(env,stop, p) => stop'
 	------------------------------
-	prefix_exp(env,Exp.RANGE(start,NONE,stop), p)
-	  => Exp.RANGE(start',NONE,stop')
+	prefix_exp(env,Exp.RANGE(t,start,NONE,stop), p)
+	  => Exp.RANGE(t,start',NONE,stop')
 
   rule	prefix_exp(env,start, p) => start' &
 	prefix_exp(env,step, p) => step' &
 	prefix_exp(env,stop, p) => stop'
 	------------------------------
-	prefix_exp(env,Exp.RANGE(start,SOME(step),stop), p)
-	  => Exp.RANGE(start',SOME(step'),stop')
+	prefix_exp(env,Exp.RANGE(t,start,SOME(step),stop), p)
+	  => Exp.RANGE(t,start',SOME(step'),stop')
 
   rule	prefix_exp(env,e,p) => e'
 	-----------------------
