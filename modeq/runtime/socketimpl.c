@@ -88,11 +88,10 @@ RML_BEGIN_LABEL(Socket__handlerequest)
     RML_TAILCALLK(rmlFC);
   }
   len = recv(sock,buf,bufSize,0);
-
   FD_ZERO(&sockSet);
   FD_SET(sock,&sockSet); // create fd set of 
   if (len == bufSize) { // If we filled the buffer, check for more
-    while ( select(1,&sockSet,NULL,NULL,&timeout) > 0) {
+    while ( select(sock+1,&sockSet,NULL,NULL,&timeout) > 0) {
       tmpBufSize*=(int)(bufSize*1.4);
       nAdditionalElts = tmpBufSize-bufSize;
       tmpBuf=(char*)malloc(tmpBufSize);
