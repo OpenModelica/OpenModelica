@@ -21,15 +21,13 @@ with "rtopts.rml"
 
 (** relation: translate_file
  **
- ** The only relation in this module is the `main' relation, which is
- ** the starting point in all RML specifications.  It is invoked with
- ** a list containing the command-line arguments.
+ ** This relation invokes the translator on a source file.  The
+ ** argument should be a list with a single file name.
  **)
 
 relation translate_file : string list => () =
 
   rule	Parser.parse f => p &
-	(* Dump.dump p & *)
 	SCode.elaborate(p) => p' &
 	Inst.instantiate(p') => d &
 	DAE.dump d
