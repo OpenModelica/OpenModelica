@@ -38,6 +38,7 @@
 module Dump:
 
   with "absyn.rml"
+  with "interactive.rml"							  
   with "debug.rml"
 
   type Ident = string
@@ -45,6 +46,7 @@ module Dump:
   (* Dump routines for debugging of AST *)
 
   relation dump: Absyn.Program => ()
+  relation dump_istmt: Interactive.InteractiveStmts => ()
   relation print_exp: Absyn.Exp => ()
   relation print_exp_str: Absyn.Exp => string
   relation print_component_ref: Absyn.ComponentRef => ()
@@ -85,7 +87,36 @@ relation dump : Absyn.Program => () =
 
 end
 
-(**)
+relation dump_istmt : Interactive.InteractiveStmts => () =
+  rule	print ("IALG(") &
+	print_algorithm(alg) => () &
+	print ")\n" 
+	--------------------------
+	dump_istmt(Interactive.ISTMTS([Interactive.IALG(alg)])) => ()
+	    
+  rule  print ("IEXP(") &
+	print_exp(expr) &
+	print ")\n" 
+	----------------------
+	dump_istmt(Interactive.ISTMTS([Interactive.IEXP(expr)])) => ()
+	
+  rule print "IALG(" &
+	print_algorithm(alg) => () &
+	print "," &
+	dump_istmt(Interactive.ISTMTS(l)) => ()
+	--------------------------
+	dump_istmt(Interactive.ISTMTS(Interactive.IALG(alg)::l)) => ()
+
+  rule print "IEXP(" &
+	print_exp(expr) => () &
+	print "," &
+	dump_istmt(Interactive.ISTMTS(l)) => ()
+	--------------------------
+	dump_istmt(Interactive.ISTMTS(Interactive.IEXP(expr)::l)) => ()
+
+  axiom	dump_istmt(_) => ()
+end
+	(**)
 
 relation print_class: Absyn.Class => () =
 

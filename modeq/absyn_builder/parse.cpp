@@ -6,6 +6,7 @@
 #include "modelica_lexer.hpp"
 #include "modelica_parser.hpp"
 #include "modelica_tree_parser.hpp"
+#include "modelica_expression_parser.hpp"
 #include "parse_tree_dumper.hpp"
 
 extern "C"
@@ -108,6 +109,54 @@ RML_BEGIN_LABEL(Parser__parsestring)
   catch (...)
     {
       std::cerr << "Error while parsing\n";
+    }
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(Parser__parsestringexp)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  bool debug = check_debug_flag("parsedump");
+  try 
+    {
+      std::istrstream stream(str);
+
+      modelica_lexer lex(stream);
+      modelica_expression_parser parse(lex);
+      parse.interactiveStmt();
+      antlr::RefAST t = parse.getAST();
+      
+      if (t)
+	{
+	  if (debug)
+	    {
+	      //std::cout << "parsedump not implemented for interactiveStmt yet"<<endl;
+	      parse_tree_dumper dumper(std::cout);
+	      dumper.dump(t);
+	    }
+
+	  modelica_tree_parser build;
+	  void* ast = build.interactive_stmt(t);
+	  
+	  if (debug)
+	    {
+	  std::cout << "Build done\n";
+	    }
+
+	  rmlA0 = ast ? ast : mk_nil();
+	  
+	  RML_TAILCALLK(rmlSC); 
+	}    
+    } 
+  catch (std::exception &e)
+    {
+      std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
+    }
+  catch (...)
+    {
+      std::cerr << "Error while parsing expression\n";
     }
   RML_TAILCALLK(rmlFC);
 }

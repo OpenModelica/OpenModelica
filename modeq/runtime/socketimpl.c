@@ -39,7 +39,7 @@ void Socket_5finit(void)
 }
 
 extern int errno;
-
+int serversocket;
 int fromlen;
 struct sockaddr_in clientAddr;
 
@@ -47,23 +47,23 @@ struct sockaddr_in clientAddr;
 RML_BEGIN_LABEL(Socket__waitforconnect)
 {
   int port=(int) RML_UNTAGFIXNUM(rmlA0);
-  int s,ns;
+  int ns;
  
-  s = make_socket(port);
+  serversocket = make_socket(port);
   
-  if (listen(s,5)==-1) { /* Listen, pending client list length = 1 */ 
+  if (listen(serversocket,5)==-1) { /* Listen, pending client list length = 1 */ 
     perror("listen:");
     exit(1);
   }
 
-  ns = accept(s,(struct sockaddr *)&clientAddr,&fromlen);
+  ns = accept(serversocket,(struct sockaddr *)&clientAddr,&fromlen);
 
   if (ns < 0) {
     perror("accept:");
     exit(1);
   }
   
-  close(s); /* For now, only allow one client connecting, thus we can close the listen socket */
+
   rmlA0=mk_icon(ns);
   RML_TAILCALLK(rmlSC);
 }
@@ -109,4 +109,12 @@ RML_BEGIN_LABEL(Socket__sendreply)
 }
 RML_END_LABEL
 
-
+RML_BEGIN_LABEL(Socket__cleanup)
+{
+  int clerr;
+  if ((clerr=close(serversocket))< 0 ) {
+    perror("close:");
+  }  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

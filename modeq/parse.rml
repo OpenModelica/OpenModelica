@@ -23,8 +23,10 @@
 
 module Parser:
   with "absyn.rml"
+  with "interactive.rml"							
   relation parse: string => Absyn.Program
   relation parsestring: string => Absyn.Program
+  relation parsestringexp: string => Interactive.InteractiveStmts
 end
 
 

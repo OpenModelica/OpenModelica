@@ -13,6 +13,7 @@ extern "C" {
 
 #include "rml.h"
 #include "../absyn.h"
+#include "../interactive.h"
 #include <stack>
 #include <string>
 
@@ -21,6 +22,8 @@ extern "C" {
 options {
 	language = "Cpp";
 }
+
+
 
 class modelica_tree_parser extends TreeParser;
 
@@ -31,6 +34,9 @@ options {
     defaultErrorHandler = false;
 }
 
+tokens {
+	INTERACTIVE_STMT;
+}
 {
     
     typedef std::string mstring;
@@ -99,6 +105,23 @@ stored_definition returns [void *ast]
             ast = make_rml_list_from_stack(el_stack);
         }
     ;
+
+interactive_stmt returns [void *ast]
+{
+  void *a1=0;
+  void *e1=0;
+}
+    :
+	#(INTERACTIVE_STMT
+	   (a1 = algorithm | e1 = expression ))
+	{
+	if (a1 != 0 ) 
+	  ast = Interactive__ISTMTS(mk_cons(Interactive__IALG(a1),mk_nil()));
+	else
+	  ast = Interactive__ISTMTS(mk_cons(Interactive__IEXP(e1),mk_nil()));
+	assert(ast != 0);
+	}
+	;
 
 within_clause returns [void *ast]
 {

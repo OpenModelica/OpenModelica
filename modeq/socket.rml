@@ -50,4 +50,10 @@ module Socket:
  ** Takes a socket id and closes the socket
 **)
 	  relation close: int => ()
+
+(** relation: cleanup
+ ** Disconnects the serversocket, initialized in waitforconnect. Not the socket no return by waitforconnect, but an INTERNAL STATE
+  
+ **)
+	  relation cleanup: () => ()
 end
