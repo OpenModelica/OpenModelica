@@ -14,7 +14,7 @@ module Lookup:
 
   relation lookup_class     : (Env, Exp.Path) => (Explode.Class, Mod.Mod)
   relation lookup_var       : (Env,Explode.ComponentRef)
-	  			=> (Types.VarAttr,Types.Type,Exp.Exp option)
+	  			=> (Types.VarAttr,Types.Type,Env.Binding)
   relation lookup_var_local : (Env, Explode.Ident) => Env.FrameVar
 
 end
@@ -50,17 +50,17 @@ end
  **)
 
 relation lookup_var: (Env,Explode.ComponentRef)
-	  => (Types.VarAttr, Types.Type, Exp.Exp option) =
+	  => (Types.VarAttr, Types.Type, Env.Binding) =
 
   rule	(* print " lookup_var: looking in frame\n" & *)
-	lookup_var_f(vs,ref) => (attr,ty,ass)
+	lookup_var_f(vs,ref) => (attr,ty,binding)
 	-------------------------
-	lookup_var(Env.FRAME(vs,_)::fs,ref) => (attr,ty,ass)
+	lookup_var(Env.FRAME(vs,_)::fs,ref) => (attr,ty,binding)
 
   rule	(* print " lookup_var: next frame\n" & *)
-	lookup_var(fs,ref) => (attr,ty,ass)
+	lookup_var(fs,ref) => (attr,ty,binding)
 	--------------------
-	lookup_var(_::fs,ref) => (attr,ty,ass)
+	lookup_var(_::fs,ref) => (attr,ty,binding)
 
 end
 
@@ -163,14 +163,14 @@ end
 (**)
 relation lookup_var_f : ((Explode.Ident * Env.FrameVar) list,
 			 Explode.ComponentRef)
-	  => (Types.VarAttr, Types.Type, Exp.Exp option) =
+	  => (Types.VarAttr, Types.Type, Env.Binding) =
 
   rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Env.FRAMEVAR(n,Types.ATTR(ad,f,vt,di),ty,ass) &
+	lookup_var2(f, id) => Env.FRAMEVAR(n,Types.ATTR(ad,f,vt,di),ty,bind) &
 	check_subscripts(ad,ss)
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
-	  => (Types.ATTR(Types.NODIM,f,vt,di),ty,ass)
+	  => (Types.ATTR(Types.NODIM,f,vt,di),ty,bind)
 
   rule  (* print " lookup_var_f 2: " & print id & print "\n" & *)
 	lookup_var2(f, id) => Env.FRAMEVAR(n,Types.ATTR(ad,_,_,_),ty,ass) &
