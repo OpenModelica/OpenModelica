@@ -149,6 +149,13 @@ relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool) => int =
 	--------------------------------------------
 	eval_subscript (env,e,Types.T_INTEGER,true) => i
 
+	(* FIXME *)
+  rule	StaticExp.ceval (env,e) => Values.ARRAY(Values.INTEGER(i)::_) &
+	print "- Ignoring all but the first index in modification\n"
+	--------------------------------------------
+	eval_subscript (env,e,Types.T_ARRAY(Types.DIM(SOME(sz),Types.NODIM),
+					    Types.T_INTEGER),true) => i
+
   rule	not t = Types.T_INTEGER &
 	print "# Non-integer subscript " & Exp.print_exp e &
 	print " in modification\n"
