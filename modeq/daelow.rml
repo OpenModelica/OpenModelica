@@ -45,7 +45,7 @@ module DAELow:
 			DAE.InstDims *
 			DAE.StartValue *  (* value of start attribute *)
 			int * (* index in impl. vector *)
-		        string *(* original variable name *)
+		    string *(* original variable name *)
 			Absyn.Path (* classname variable belongs to *)
 
 
@@ -92,7 +92,8 @@ module DAELow:
 
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
-
+  relation dump_eqns: Equation list => () 
+        
   relation lower: (DAE.DAElist) => DAELow
 
   relation incidence_matrix: (DAELow) => IncidenceMatrix
@@ -141,6 +142,7 @@ with "types.rml"
 with "explode.rml"
 with "dump.rml"
 with "system.rml"
+with "rtopts.rml"
 
 val empty_bintree = TREENODE(NONE,NONE,NONE)
 
@@ -149,7 +151,8 @@ relation lower: (DAE.DAElist) => DAELow =
   rule	states(lst,empty_bintree) => s &
 	lower2(lst,s) => (low as DAELOW(vars,knvars,eqns,reqns))  &
 (*	print "lowered dae:" & dump low &*)
-	remove_simple_equations(low,s) => low' 
+	remove_simple_equations(low,s) => daeUnsorted & 
+    sort_eqn(daeUnsorted) => low'
 (*	& print "removed simple equations, dae:" &
 	dump low' *)
 	(*list_length(vars) => varlen &
@@ -162,6 +165,53 @@ relation lower: (DAE.DAElist) => DAELow =
 	print es & print " equations\n" *)
 	--------------------
 	lower(lst) => low'
+end
+
+
+
+(** relation sort_eqn 
+ ** This relation sorts the equation. It puts first the algebraic eqns
+ ** and last the differentiated eqns
+ **
+ **
+ **)
+relation sort_eqn :  DAELow =>  DAELow =
+
+  rule  extract_algebraic_and_differential_eqn(eqns) => (algEqns,diffEqns) &
+        (*print "ALGEBRAIC EQUATIONS\n" &
+        dump_eqns(algEqns) &
+        print "\n\nDIFFERENTIATED EQUATIONS\n" &
+        dump_eqns(diffEqns) &*)
+        list_append(algEqns,diffEqns) => res
+        ---------------------------------------
+        sort_eqn(dae as DAELOW(vars,varKnList,eqns,simpleEqns)) 
+          => DAELOW(vars,varKnList,res,simpleEqns)
+
+
+  rule  print "sort_eqn failed \n"
+        ---------------------------------------
+        sort_eqn(dae) => fail
+end
+
+relation extract_algebraic_and_differential_eqn: (Equation list) => (Equation list,Equation list) =
+
+  rule 
+        ---------------------------------------
+        extract_algebraic_and_differential_eqn([]) => ([],[]) 
+
+  rule  is_algebraic(exp1) => true &
+        is_algebraic(exp2) => true &
+        extract_algebraic_and_differential_eqn(rest) => (resAlgEqn,resDiffEqn)
+        ---------------------------------------
+        extract_algebraic_and_differential_eqn((eqn as EQUATION(exp1,exp2))::rest) 
+          => (eqn::resAlgEqn,resDiffEqn)
+
+  rule
+        extract_algebraic_and_differential_eqn(rest) => (resAlgEqn,resDiffEqn)
+        ---------------------------------------
+        extract_algebraic_and_differential_eqn((eqn as EQUATION(exp1,exp2))::rest)
+          => (resAlgEqn,eqn::resDiffEqn)
+
 end
 
 
@@ -1603,11 +1653,17 @@ end
 
 relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
 	
-  rule	string_append("der_",id) => id'
+  rule	RTOpts.tornado_cg => true &
+        string_append("_D_",id) => id'
 	-------------------------------
 	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
 	  => Exp.CREF_IDENT(id',subs)
 	  
+  rule  string_append("der_",id) => id'
+	-------------------------------
+	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
+	  => Exp.CREF_IDENT(id',subs)
+
   rule	create_dummy_var(cr) => cr'
 	------------------------
 	create_dummy_var(Exp.CREF_QUAL(id,subs,cr)) 
@@ -1710,7 +1766,7 @@ relation differentiate_eqns: (DAELow,
 	Derive.differentiate_equation_time(eqn,timevars) => eqn' &
 	(* update equation row in IncidenceMatrix *)	
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
-	print "differentiated equation " &
+	(*print "differentiated equation " &
 	equation_str eqn => str & 
 	print str & print "\n" &
 	Debug.fprint("bltdump", str) &
@@ -1718,7 +1774,7 @@ relation differentiate_eqns: (DAELow,
 	equation_str eqn' => str &
 	print " to " & print str &  print "\n" &
 	Debug.fprint("bltdump",str) & 
-	Debug.fprint("bltdump", "\n") &
+	Debug.fprint("bltdump", "\n") &*)
 	list_append(eqns,[eqn']) => eqns' &
 	list_length(eqns') => leneqns & (* length gives index of new equation *)
 	differentiate_eqns(DAELOW(v,kv,eqns',seqns),m,mt,nv,nf,es) 
@@ -3006,3 +3062,101 @@ relation bintree_to_list_opt: (BinTree option, Key list, Value list)
 	bintree_to_list_opt(SOME(bt),klst,vlst) => (klst,vlst)
 end
 	
+
+relation is_algebraic : (Exp.Exp) => bool =
+        
+  axiom is_algebraic(Exp.END) => true
+        
+  axiom is_algebraic(Exp.ICONST(x))  => true
+
+  axiom is_algebraic(Exp.RCONST(x)) => true
+
+  axiom is_algebraic(Exp.SCONST(s))  => true
+
+  axiom	is_algebraic(Exp.BCONST(false))  => true
+
+  axiom	is_algebraic(Exp.BCONST(true)) => true
+
+  axiom is_algebraic(Exp.CREF(c,_)) => true
+
+  rule  is_algebraic (e1)  => true & 
+        is_algebraic (e2) => true
+        ------------------------
+        is_algebraic (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22))) => true
+
+  rule  is_algebraic (e1) => true & 
+        is_algebraic (e2) => true
+        ------------------------
+        is_algebraic (Exp.BINARY(e1, op, e2)) => true
+
+  rule  is_algebraic (e) => true 
+        ----------------------------
+        is_algebraic(Exp.UNARY(op, e)) => true
+        
+  rule  is_algebraic (e1) => true &
+        is_algebraic (e2) => true 
+        ----------------------------------------------------------------
+        is_algebraic(Exp.LBINARY(e1, op, e2)) => true
+
+  rule  is_algebraic (e) => true
+        ---------------------------------------------------
+        is_algebraic(Exp.LUNARY(op, e)) => true
+        
+  rule  is_algebraic(e1) => true & 
+        is_algebraic(e2) => true
+        -----------------------------------------------------------------
+        is_algebraic(Exp.RELATION(e1, op, e2)) => true 
+
+  rule	is_algebraic(c) => true &
+        is_algebraic(t) => true &
+        is_algebraic(f) => true
+        ----------------------------
+        is_algebraic(Exp.IFEXP(c,t,f)) => true
+
+  axiom is_algebraic(Exp.CALL(Absyn.IDENT("der"), args,_,_)) => false
+
+  axiom is_algebraic(Exp.CALL(fcn, args,_,_))  => true
+
+
+  axiom is_algebraic (Exp.ARRAY(_,_,es)) => true
+
+  axiom is_algebraic (Exp.TUPLE(es)) => true
+
+  axiom is_algebraic (Exp.MATRIX(_,_,es)) => true
+
+  rule  is_algebraic (start) => true &
+        is_algebraic (stop) => true
+        -------------------------------------------------------------
+        is_algebraic (Exp.RANGE(_,start,NONE,stop)) => true
+
+  rule  is_algebraic (start) => true &
+        is_algebraic (step) => true &
+        is_algebraic (stop) => true 
+        -------------------------------------
+        is_algebraic (Exp.RANGE(_,start,SOME(step),stop)) => true 
+        
+  axiom is_algebraic (Exp.CAST(REAL,Exp.ICONST(ival))) => true
+
+  axiom is_algebraic (Exp.CAST(REAL,Exp.UNARY(Exp.UMINUS(_),Exp.ICONST(ival)))) => true
+
+  axiom is_algebraic (Exp.CAST(Exp.REAL,e)) => true
+
+  axiom is_algebraic (Exp.CAST(Exp.REAL,e)) => true
+
+  rule  is_algebraic (e) => true 
+        ---------------------------------------
+        is_algebraic (Exp.ASUB(e,i)) => true
+
+  axiom is_algebraic (Exp.SIZE(cr,SOME(dim))) => true
+
+  axiom is_algebraic (Exp.SIZE(cr,NONE)) => true
+
+  axiom is_algebraic (Exp.REDUCTION(fcn,exp,id,iterexp)) => true
+
+  axiom	is_algebraic (_) => true
+
+ end
+
+
+
+ 
