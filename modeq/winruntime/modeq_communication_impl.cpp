@@ -27,6 +27,7 @@ extern "C" {
 
 #include <windows.h>
 
+HANDLE clientlock;
 
 extern HANDLE modeq_client_request_event;
 extern HANDLE modeq_return_value_ready;
@@ -38,29 +39,40 @@ using namespace std;
 
 ModeqCommunication_impl::ModeqCommunication_impl()
 {
+	clientlock = CreateMutex(NULL, FALSE, "clientlock");
 }
 
 char* ModeqCommunication_impl::sendExpression( const char* expr )
 {
-  // Signal to modeq that message has arrived. 
+  char* retval;
+  WaitForSingleObject(clientlock,INFINITE); // Lock so no other tread can talk to modeq.
+
+	
+	// Signal to modeq that message has arrived. 
+
   modeq_message = (char*)expr;
   SetEvent(modeq_client_request_event);
 
   // Wait for modeq to process message
   while(WAIT_OBJECT_0 != WaitForSingleObject(modeq_return_value_ready, INFINITE));
+  retval = modeq_message;
+  ReleaseMutex(clientlock);
   
-  return modeq_message; // Has already been string_dup (prepared for CORBA)
+  return retval; // Has already been string_dup (prepared for CORBA)
 } 
 
 char* ModeqCommunication_impl::sendClass( const char* expr )
 {
+  char* retval;
+  WaitForSingleObject(clientlock,INFINITE); // Lock so no other tread can talk to modeq.
   // Signal to modeq that message has arrived. 
   modeq_message = (char*)expr;
   SetEvent(modeq_client_request_event);
 
   // Wait for modeq to process message
   while(WAIT_OBJECT_0 != WaitForSingleObject(modeq_return_value_ready, INFINITE));
+  retval = modeq_message;
+  ReleaseMutex(clientlock);
   
-  return modeq_message; // Has already been string_dup (prepared for CORBA)
-
+  return retval; // Has already been string_dup (prepared for CORBA)
 }

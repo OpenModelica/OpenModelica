@@ -71,10 +71,8 @@ RML_BEGIN_LABEL(Corba__initialize)
   dummyArgv[0] = "modeq";
   dummyArgv[1] = "-ORBNoResolve";
   dummyArgv[2] = "-ORBIIOPAddr";
-//  dummyArgv[3] = "inet:S04093:7777";
   dummyArgv[3] = "inet:127.0.0.1:0";
   int argc=4;
-//  int argc=1;
 
   modeq_client_request_event = CreateEvent(NULL,FALSE,FALSE,"modeq_client_request_event");
   if (modeq_client_request_event == NULL) {
