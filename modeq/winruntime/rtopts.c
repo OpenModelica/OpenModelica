@@ -4,8 +4,6 @@
 #include "../ast/yacclib.h"
 #include <errno.h>
 #include <assert.h>
-#include <string.h>
-#include <stdlib.h>
 
 static int type_info;
 static int split_arrays;
@@ -17,6 +15,10 @@ static char **debug_flags;
 static char *debug_flagstr;
 static int debug_flagc;
 static int debug_all;
+static int debug_none;
+int nproc;
+double latency=0.0;
+double bandwidth=0.0;
 
 void RTOpts_5finit(void)
 {
@@ -26,6 +28,8 @@ void RTOpts_5finit(void)
   debug_flag_info = 0;
   params_struct = 0;
   debug_all = 0;
+  debug_none = 1;
+  nproc = 0;
 }
 
 static int set_debug_flags(char *flagstr)
@@ -34,6 +38,8 @@ static int set_debug_flags(char *flagstr)
   int len=strlen(flagstr);
   int flagc=1;
   int flag;
+
+  debug_none = 0; /* -d was given, hence turn off the virtual flag "none". */
 
   if (len==0) {
     debug_flagc = 0;
@@ -85,6 +91,9 @@ int check_debug_flag(char const* strdata)
 {
   int flg=0;
   int i;
+  if (strcmp(strdata,"none")==0 && debug_none == 1) {
+    flg=1;
+  }
   if (debug_all==1) {
     flg=1;
   }
@@ -105,10 +114,13 @@ int check_debug_flag(char const* strdata)
   return flg;
 }
 
+
 RML_BEGIN_LABEL(RTOpts__args)
 {
   void *args = rmlA0;
   void *res = mk_nil();
+
+  debug_none = 1;
   
   while (RML_GETHDR(args) != RML_NILHDR)
   {
@@ -140,9 +152,42 @@ RML_BEGIN_LABEL(RTOpts__args)
       case 'd':
 	if (arg[2]!='=' ||
 	    set_debug_flags(&(arg[3])) != 0) {
-	  fprintf(stderr, "# Flag Usage:  -d=flg1,flg2,...") ;
+	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...") ;
 	  RML_TAILCALLK(rmlFC);
 	}
+	break;
+      case 'n':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +n=<no. of proc>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	nproc = atoi(&arg[3]);
+	if (nproc == 0) {
+	  fprintf(stderr, "Error, integer value expected for number of processors.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	} 
+	break;
+      case 'l':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +l=<latency value>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	latency = (double)atoi(&arg[3],NULL);
+	if (latency == 0.0) {
+	  fprintf(stderr, "Error, integer expected for latency.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	} 
+	break;
+      case 'b':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +b=<bandwidth value>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	bandwidth = (double)atoi(&arg[3]);
+	if (bandwidth == 0.0) {
+	  fprintf(stderr, "Error, integer expected for bandwidth.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	} 
 	break;
       default:
 	fprintf(stderr, "# Unknown option: %s\n", arg);
@@ -198,8 +243,14 @@ RML_BEGIN_LABEL(RTOpts__debug_5fflag)
 {
     void *str = rmlA0;
     char *strdata = RML_STRINGDATA(str);
+    int flg = check_debug_flag(strdata);
+
+    /*
     int flg=0;
     int i;
+    if (strcmp(strdata,"none")==0 && debug_none == 1) {
+      flg=1;
+    }
     if (debug_all==1) {
       flg=1;
     }
@@ -216,10 +267,30 @@ RML_BEGIN_LABEL(RTOpts__debug_5fflag)
     }
     if (flg==1 && debug_flag_info==1)
       fprintf(stdout, "--------- %s ---------\n", strdata);	
+    */
 
     rmlA0 = RML_PRIM_MKBOOL(flg);
     RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(RTOpts__no_5fproc)
+{
+  rmlA0 = mk_icon(nproc);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
+RML_BEGIN_LABEL(RTOpts__latency)
+{
+  rmlA0 = mk_rcon(latency);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__bandwidth)
+{
+  rmlA0 = mk_rcon(bandwidth);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
