@@ -1,0 +1,2 @@
+showmesh('MyGenericBoundaryPoissonTest.mat','pde.ddomain')
+showfield('MyGenericBoundaryPoissonTest.mat','pde.fd')
