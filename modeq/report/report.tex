@@ -7,19 +7,25 @@
 \usepackage{verbatim}
 %\usepackage{boxedminipage}
 %\usepackage{lscape}
+\usepackage{makeidx}
 
 \author{David Kågedal}
 \title{Blahonga Blahonga}
 
+\makeindex
+
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\codebox}[1]{\fbox{\code{#1}}}
 \newcommand{\filename}[1]{\texttt{#1}}
-\newcommand{\firstref}[1]{\textit{#1}}
+\newcommand{\term}[1]{\textit{\bfseries#1}}
+\newcommand{\firstref}[1]{\term{#1}\index{#1}}
 \newcommand{\note}[1]{[\textsc{#1}]}
 \newcommand{\fixme}[1]{\mbox{}\marginpar{$\blacktriangleleft$}\note{#1}}
 \newcommand{\unfinished}{\fixme{\ldots}}
 
-\newtheorem{Def}{Definition}[chapter]
+\newtheorem{defth}{Definition}[chapter]
+
+\newenvironment{Def}[1]{\begin{defth}[#1]\index{#1|textbf}}{\end{defth}}
 
 \newcommand{\codefont}{\normalfont\ttfamily\fontsize{8}{9}\selectfont}
 
@@ -37,8 +43,8 @@
   }
 
 % Some magic from Tommy Pettersson
-\def\dedu#1#2{{\setbox0=\hbox{$#1$}\dimen0=\wd0\setbox1=\hbox
-    to\dimen0{\hss$#2$\hss}\vbox{\box0\vspace{1mm}\hrule
+\def\dedu#1#2{{\setbox0=\hbox{\ensuremath{#1}}\dimen0=\wd0\setbox1=\hbox
+    to\dimen0{\hss\ensuremath{#2}\hss}\vbox{\box0\vspace{1mm}\hrule
       width\dimen0\vspace{1mm}\box1}}}
 
 % See the verbatim package for info about this
@@ -67,6 +73,8 @@
 
 \begin{abstract}
 \label{abs}
+
+\fixme{Skriv mer om Modelica}
 
 Formal descriptions of the syntax of programming languages has long
 been accepted as a natural way of describing the syntacical form of
@@ -136,6 +144,7 @@ various approaches.
 
 \section{Natural semantics}
 \label{sec:natsem}
+\index{foobar}
 
 The formatlism that RML is based on is called \firstref{Natural
   Semantics}.  The ``natural'' in Natural semantics is intended to
@@ -281,7 +290,7 @@ or translate any file in the described language.
 \subsection{RML syntax}
 \label{sec:rmlsyn}
 
-The RML syntax borrows elements from languages like SML\fixme{ref} to
+The RML syntax borrows elements from languages like SML\cite{sml} to
 introduce a strict type system and a module system.  The sytax for
 rules looks like the normal Natural semantics rule layout, adjusted
 for ASCII text.
@@ -392,6 +401,39 @@ The work on the RML specification for Modelica began in November 1997.
 \chapter{Goals, motivation and stuff}
 \label{cha:goals}
 
+\fixme{Fixa rubriken}
+
+The initial assignment was very simple in its formulation: ``Write a
+formal semantic specification for Modelica using RML.''
+
+The two important words in this instructions are ``Modelica'' and
+``RML'', and the main reasons for writing this specifications are
+threefold.
+
+
+\section{A Modelica specification is needed}
+
+The Modelica design process was, and still is, in dire need of a
+formalized description of the language.  The language specification
+available at the time (version 1.0 from September 1997)\fixme{ref} did
+not contain much about the semantics of the language.  This meant that
+nobody knew exactly how the language worked, and it was not certain
+that everbody in the design group agreed on the semantical details,
+since they were not clearly described anywhere.
+
+\section{Gaining experience with RML}
+
+The RML language and compiler were new, and only a few language
+specifications had been written using it.  More experience with
+various language specificatiosn was desired.
+
+\section{Natural semantics an equation-based languages}
+
+Modelica is not a programming language, such as C or LISP.  Instead it
+is a modeling language, with basically only static semantics.  For
+this reason it was intresting to see how a formalism like Natural
+semantics, which is usually used to specify programming languages,
+could be applied to it.
 
 \chapter{Development environment}
 \label{cha:devenv}
@@ -405,6 +447,11 @@ Modeclia semantics began, the RML version was at 1.5.  The new
 compiler provided much improved error messages and freedom in writing
 source files.
 
+The RML compiler first translates the RML specification to a C
+program.  The RML compiler driver \code{rmlc} then compiles this,
+using a C compiler.  We have used the GNU C compiler (GCC), but most
+modern C compilers should be usable.
+
 \section{Parser}
 \label{sec:parser}
 
@@ -417,10 +464,16 @@ The parser only builds an abstract syntax tree, and leaves the rest of
 the transformation logic to the RML code.  Therefore, the parser
 itself is not further described in this report.
 
+The parser generator in PCCTS is powerful, but it has a few problems,
+and is curretly not maintained very actively.  Because of problems
+with error handlers, the translator does not deal very well with
+syntax errors.
+
 \section{The report}
 \label{sec:report}
 
-This report was writting using the \LaTeX{} text formatting system.
+This report was writting using the \LaTeX{}\cite{Lamport86} text
+formatting system.
 
 To produce the annotated semantics in chapter \ref{cha:formsem} a
 small program was written to convert the RML source files with
@@ -521,16 +574,16 @@ strict on this point.  This will hopefully improve, but for now it is
 necessary to include a short list of terms here to specify what they
 mean.
 
-\begin{Def}[Element]
-  The term \firstref{element} corresponds closely to the non-terminal
+\begin{Def}{Element}
+  The term \term{element} corresponds closely to the non-terminal
   \texttt{element} in the grammar in the Modelica specification, which
   is a part of a class declaration.  It can be either a class
   definition, a component declaration or an extends clause, that
   appears inside a class definition.
 \end{Def}
 
-\begin{Def}[Instantiation]
-  The word \firstref{instantiate} is used in many language
+\begin{Def}{Instantiation}
+  The word \term{instantiate} is used in many language
   descriptions, with slightly different meaning.  I choose to use a
   definition that actually differs from the one used in the Modelica
   specification, but conforms more closely to what I consider normal
@@ -543,21 +596,21 @@ mean.
   object-oriented languages, but the principle is the same.
 \end{Def}
 
-\begin{Def}[Component]
-  The term \firstref{Component} refers to an class instance.  Many
+\begin{Def}{Component}
+  The term \term{Component} refers to an class instance.  Many
   components are composed of several other components.  \fixme{But it
   is also used to refer to component declarations in class
   definitions, right?}
 \end{Def}
 
-\begin{Def}[Immediate Subcomponent]
+\begin{Def}{Immediate Subcomponent}
   If component $A$ is a structure which is composed from other
-  components, each of these components is an \firstref{immediate
+  components, each of these components is an \term{immediate
   subcomponent} of $A$.
 \end{Def}
 
-\begin{Def}[Subcomponent]
-  This is a recursive definition of \firstref{subcomponent}.  A
+\begin{Def}{Subcomponent}
+  This is a recursive definition of \term{subcomponent}.  A
   subcomponent of a component $A$ is either
 
   \begin{enumerate}
@@ -575,13 +628,14 @@ mean.
 
 The type system is based on \firstref{classes}. A class is the basic
 unit of modelling. It is used to modularize the model description and
-to \unfinished
+to give the models a hierarchical structure.  Another important
+concept in the type system is that of \firstref{arrays}.
 
 The definition of what a type is has been the subject of discussion in
 the Modelica group, but the following definition is used in this
 specification.
 
-\begin{Def}[Type]
+\begin{Def}{Type}
   A type is a property of components and expressions.  It is defined
   as one of the following:
 
@@ -602,7 +656,14 @@ Note that there is no special provision for multi-dimensional arrays.
 They are regarded as equal to arrays of arrays.  A Modelica
 implementation might do it the other way around, regard arrays of
 arrays as multidimensional arrays.  The important thing is that they
-are the same.
+are the same.  Synonyms for two classes of arrays are used both in
+this specification and the Modelica language definition.
+
+\begin{Def}{Array synonyms}
+  The term \term{vector}\index{vector} is a synonym for a
+  one-dimensional array.  The term \term{matrix}\index{matrix} is a
+  synonym for a two-dimensional array.
+\end{Def}
 
 \fixme{Should we make a difference between incompete and complete
   types?}
@@ -615,8 +676,8 @@ are the same.
 The concepts of equivalent types and subtypes appears in several
 places in the specification.
 
-\begin{Def}[Subtype]
-  A type $T_1$ is a \firstref{subtype} of another type $T_2$ if and
+\begin{Def}{Subtype}
+  A type $T_1$ is a \term{subtype} of another type $T_2$ if and
   only if one of the following hold:
   \begin{enumerate}
   \item $T_1$ and $T_2$ are the same built-in type
@@ -631,13 +692,13 @@ places in the specification.
   \end{enumerate}
 \end{Def}
 
-\begin{Def}[Supertype]
-  If $T_1$ is a subtype of $T_2$, then $T_2$ is a \firstref{supertype}
+\begin{Def}{Supertype}
+  If $T_1$ is a subtype of $T_2$, then $T_2$ is a \term{supertype}
   of $T_1$.
 \end{Def}
 
-\begin{Def}[Equivalent types]
-  Two types $T_1$ and $T_2$ are said to be \firstref{equivalent types}
+\begin{Def}{Equivalent types}
+  Two types $T_1$ and $T_2$ are said to be \term{equivalent types}
   if and only if $T_1$ is a subtype of $T_2$ and $T_2$ is a subtype of
   $T_1$.
 \end{Def}
@@ -729,13 +790,13 @@ connector variable in the component \code{m}.
 To create equations from the \code{connect} constructs, the connected
 variables are collected in \firstref{connection sets}.
 
-\begin{Def}[Connection sets]
+\begin{Def}{Connection sets}
   A connection set is a set $C$ of variables connected by means of
   \code{connect} constructs. A connection set contains either flow or
   non-flow variables, but never both.
 \end{Def}
 
-\begin{Def}[Inner and outer connectors]
+\begin{Def}{Inner and outer connectors}
   In an object $M$, each connector element of that class is called an
   \emph{outer connector} with respect to $M$. Each connector element of
   elements of $M$ is called an \emph{inner connector} with respect to
@@ -1294,22 +1355,22 @@ clearer.
 
 %\begin{landscape}
   
-\input{main.tex}
-\input{absyn.tex}
-\input{exp.tex}
-\input{classinf.tex}
-\input{types.tex}
-\input{explode.tex}
-\input{inst.tex}
-\input{prefix.tex}
-\input{mod.tex}
-\input{env.tex}
-\input{lookup.tex}
-\input{builtin.tex}
-\input{connect.tex}
-\input{staticexp.tex}
-\input{dae.tex}
-\input{dump.tex}
+%\input{main.tex}
+%\input{absyn.tex}
+%\input{exp.tex}
+%\input{classinf.tex}
+%\input{types.tex}
+%\input{explode.tex}
+%\input{inst.tex}
+%\input{prefix.tex}
+%\input{mod.tex}
+%\input{env.tex}
+%\input{lookup.tex}
+%\input{builtin.tex}
+%\input{connect.tex}
+%\input{staticexp.tex}
+%\input{dae.tex}
+%\input{dump.tex}
 
 %\end{landscape}
 
@@ -1317,6 +1378,9 @@ clearer.
 \label{cha:rmldoc}
 
 {\codefont\verbatiminput{../tools/rmldoc}}
+
+\bibliographystyle{plain}
+\bibliography{report}
 
 \begin{thebibliography}{blah}
  
@@ -1330,42 +1394,10 @@ A. V. Aho, R. Sethi, and J. D. Ullman,
 {\em Compilers -- Principles, Techniques, and Tools,}
 Addison-Wesley, 1986.
  
-\bibitem{mml}
-D. Clément, J. Despeyroux, T. Despeyroux, and G. Khan,
-``A simple applicative language: Mini-ML,''
-{\em Proceedings of the 1986 ACM Conference on Lisp and Functional
-Programming, LFP'86,} pp. 13-27,
-ACM Press, 1986.
- 
 \bibitem{pf}
 Peter Fritzson,
 {\em Generating Practical Compilers from Natural Semantics,}
 Draft, 1996.
- 
-\bibitem{kahn}
-Gilles Kahn,
-``Natural Semantics,''
-{\em Proceedings of the Symposium on Theoretical Aspects of Computer Science,
-STACS'87}, Vol. 247 of {\em LNCS}, pp. 22-39,
-Springer-Verlag, 1987.
- 
-\bibitem{sml}
-Robin Milner, Mads Tofte, and Robert Harper.
-{\em The Definition of Standard ML,}
-MIT Press, 1991.
- 
-\bibitem{pagan}
-Frank G. Pagan,
-{\em Formal Specification of Programming Languages: A Panoramic Primer,}
-Prentice-Hall, 1981.
- 
-\bibitem{rml}
-Mikael Pettersson,
-``RML -- a new language and implementation for natural semantics,''
-{\em Proceedings of the 6th International Symposium on Programming
-Language Implementation and Logic Programming, PLILP'94,} Vol. 844
-of {\em LNCS}, pp. 117-131.
-Springer-Verlag, 1994.
  
 \bibitem{pi}
 Mikael Pettersson,
@@ -1384,5 +1416,7 @@ Idonex AB,
 Modelica, {\tt http://www.dynasim.se/Modelica/}
 
 \end{thebibliography}
+
+\printindex
 
 \end{document}
