@@ -12,32 +12,35 @@
 
 module Inst:
 
-  with "explode.rml"
+  with "classinf.rml"
+  with "connect.rml"
   with "dae.rml"
   with "debug.rml"
   with "env.rml"
-  with "prefix.rml"
-  with "mod.rml"
-  with "connect.rml"
-  with "types.rml"
-  with "classinf.rml"
   with "exp.rml"
+  with "explode.rml"
+  with "mod.rml"
+  with "prefix.rml"
+  with "types.rml"
 
   type InstDims = int list
 
   relation instantiate: SCode.Program => DAE.DAElist
 
-  relation inst_class: (Env.Env, Mod.Mod, Prefix.Prefix, Connect.Sets, SCode.Class, InstDims)
+  relation inst_class: (Env.Env, Mod.Mod, Prefix.Prefix, 
+			Connect.Sets, SCode.Class, InstDims)
 	  => (DAE.Element list, Connect.Sets, Types.Type, ClassInf.State)
 
   relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 			      Connect.Sets, SCode.Class, InstDims)
 	  => (Env.Env, DAE.Element list)
 
-  relation inst_class_in: (Env.Env, Mod.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State,
+  relation inst_class_in: (Env.Env, Mod.Mod, Prefix.Prefix, 
+			   Connect.Sets, ClassInf.State,
 			   SCode.Class, bool, InstDims)
-	  => (DAE.Element list, Env.Env, Connect.Sets, ClassInf.State,
-	      Types.Var list)
+	  => (DAE.Element list, Env.Env, Connect.Sets, 
+	      ClassInf.State, Types.Var list)
+
   relation mktype : (ClassInf.State,Types.Var list) => Types.Type
 
   relation init_vars_modelica_output : DAE.Element list => DAE.Element list
@@ -48,15 +51,15 @@ end
 
 (** Other modules used by this module *)
 
-with "modutil.rml"
-with "algorithm.rml"
-with "values.rml"
 with "absyn.rml"
-with "lookup.rml"
+with "algorithm.rml"
 with "builtin.rml"
 with "dump.rml"
-with "staticexp.rml"
+with "lookup.rml"
+with "modutil.rml"
 with "rtopts.rml"
+with "staticexp.rml"
+with "values.rml"
 
 
 (**
@@ -1251,17 +1254,19 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	Debug.fprintln ("insttr", "inst_equation_eqfor_1") &
-	add_for_loop_scope(env,i) => env' &
+	Static.elab_exp (env,e)
+	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
+					   id_t),
+			     true)) &
+	Debug.fprintln ("insti", "for expression elaborated") &
+	add_for_loop_scope(env,i,id_t) => env' &
 	Debug.fprintln ("insti", "loop-variable added to scope") &
+	
 	Lookup.lookup_var(env', Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
 	      Types.T_INTEGER, Types.UNBOUND) &
 	Debug.fprintln ("insti", "loop variable looked up") &
-	Static.elab_exp (env,e)
-	  => (e',Static.PROP(Types.T_ARRAY(Types.DIM(_),
-					   Types.T_INTEGER),
-			     true)) &
-	Debug.fprintln ("insti", "for expression elaborated") &
+	
 	(* FIXEM: Check bounds *)
 	Static.ceval (env,e') => v &
 	Debug.fprintln ("insti", "for expression evaluated") &
@@ -1304,7 +1309,7 @@ end
 
 
 (** HJ: **)
-relation add_for_loop_scope : (Env.Env, Ident) => Env.Env =
+relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 
   rule	Env.open_scope env => env' &
 	Env.extend_frame_v(env',
@@ -1314,11 +1319,11 @@ relation add_for_loop_scope : (Env.Env, Ident) => Env.Env =
 						Absyn.VAR,
 						Absyn.BIDIR),
 				     false,
-				     Types.T_INTEGER, 
+				     typ, 
 				     Types.UNBOUND)
 			   ) => env''
 	---------------
-	add_for_loop_scope(env, i) => env''
+	add_for_loop_scope(env, i,typ) => env''
 
 end
 
@@ -1733,8 +1738,12 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	--------------------------------------------
 	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
 
-  rule	Static.elab_exp (env,e) => (e',prop) &
-	inst_statements(env,sl) => sl' &
+  rule	Static.elab_exp (env,e)  =>
+	(e', prop as Static.PROP(Types.T_ARRAY(_,t),_)) &
+	
+	add_for_loop_scope(env,i,t) => env' &
+	
+	inst_statements(env',sl) => sl' &
 	Algorithm.make_for(i,e',prop,sl') => stmt
 	---------------------------------------
 	inst_statement(env,Absyn.ALG_FOR(i,e,sl)) => stmt

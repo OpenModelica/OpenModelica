@@ -43,8 +43,8 @@ module Exp:
 	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
 	       | CALL of Absyn.Path * Exp list * bool (* Function call *)
-	       | ARRAY of Exp list
-	       | MATRIX of Exp list list
+	       | ARRAY of Type * bool * Exp list
+	       | MATRIX of Type * int * (Exp*bool) list list
 	       | RANGE of Type * Exp * Exp option * Exp
 	       | TUPLE of Exp list (*PR.*)
                  (* New constructors *)
@@ -64,6 +64,8 @@ module Exp:
 		    | POW    	  of Type
 		    | UMINUS 	  of Type
 		    | UPLUS  	  of Type
+		    | UMINUS_ARR  of Type
+		    | UPLUS_ARR   of Type
 		    | ADD_ARR     of Type
 		    | SUB_ARR     of Type
 		    | MUL_SCALAR_ARRAY of Type   (* a * { b, c }            *)
@@ -96,6 +98,9 @@ module Exp:
   (** translations of the corresponding types in the `Absyn' module. *)
 
   (** - Exported relations *)
+
+  relation is_range : Exp => bool
+
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
   relation int_subscripts : int list => Subscript list
   relation simplify : Exp => Exp
@@ -112,13 +117,21 @@ module Exp:
 end
 
 with "rtopts.rml"
+with "util.rml"
 
 
+relation is_range : Exp => bool =
+
+  axiom	is_range RANGE(_,_,_,_) => true
+  axiom	is_range _ => false
+
+end
 (** LS:
  ** Replace this with a call to print_component_ref_str
  ** and comparison of the resulting strings, after the _str relations are 
  ** working
  **)
+
 
 relation cref_equal : (ComponentRef, ComponentRef) => bool =
 
@@ -191,17 +204,19 @@ end
 
 relation simplify : Exp => Exp =
 
-  rule	simplify e => ARRAY(exps) &
+  rule	simplify e => ARRAY(t,b,exps) &
 	int_sub (i,1) => i' &
 	list_nth(exps,i') => exp
 	-----------------------
 	simplify ASUB(e, i) => exp
 
-  rule	simplify e => MATRIX(exps) &
+(*
+  rule	simplify e => MATRIX(t,n,exps) &
 	int_sub (i,1) => i' &
 	list_nth(exps,i') => exp
 	-----------------------
-	simplify ASUB(e, i) => ARRAY(exp)
+	simplify ASUB(e, i) => ARRAY(t,b,exp)
+*)
 
   rule	simplify e => IFEXP(c,t,f) &
 	simplify ASUB(t,i) => t' &
@@ -432,7 +447,7 @@ relation print_exp2 : (Exp,int) => () =
 	print_list(es, print_exp, ",") &
 	print "]"
 	---------
-	print_exp2 (ARRAY(es),_)
+	print_exp2 (ARRAY(_,_,es),_)
 
 	(*PR.*)
   rule	print "(" &
@@ -445,7 +460,7 @@ relation print_exp2 : (Exp,int) => () =
 	print_list(es, print_row, ";") &
 	print "]"
 	---------
-	print_exp2 (MATRIX(es),_)
+	print_exp2 (MATRIX(_,_,es),_)
 
   rule	let pri2 = 41 &
 	print_leftpar(pri1,pri2) => pri3 &
@@ -703,9 +718,10 @@ end
 
 (**)
 
-relation print_row : Exp list =>() =
+relation print_row : (Exp*bool) list =>() =
 
-  rule	print_list(es,print_exp,",")
+  rule	Util.list_map(es,Util.tuple2_1) => es' &
+	print_list(es',print_exp,",")
 	----------------------------
 	print_row es
 
@@ -945,7 +961,7 @@ relation print_exp2_str : (Exp,int) => string =
 	string_append ("[",s) => s' &
 	string_append (s',"]") => s''
 	-----------------------------
-	print_exp2_str (ARRAY(es),_) => s''
+	print_exp2_str (ARRAY(_,_,es),_) => s''
 
   rule	print_list_str(es, print_exp_str, ",") => s &
 	string_append ("(",s) => s' &
@@ -957,7 +973,7 @@ relation print_exp2_str : (Exp,int) => string =
 	string_append ("[",s) => s' &
 	string_append (s',"]") => s''
 	-----------------------------
-	print_exp2_str (MATRIX(es),_) => s''
+	print_exp2_str (MATRIX(_,_,es),_) => s''
 
   rule	let pri2 = 41 &
 	print_leftpar_str (pri1,pri2) => (s1, pri3) &
@@ -1016,9 +1032,10 @@ relation print_exp2_str : (Exp,int) => string =
 
 end
 
-relation print_row_str : Exp list => string =
+relation print_row_str : (Exp*bool) list => string =
 
-  rule	print_list_str (es, print_exp_str, ",") => s
+  rule	Util.list_map (es,Util.tuple2_1) => es' &
+	print_list_str (es', print_exp_str, ",") => s
 	----------------------------
 	print_row_str es => s
 

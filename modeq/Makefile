@@ -107,27 +107,27 @@ depend:
 	$(RM) .dep Makefile.save
 
 ## dependencies
-debug.o: debug.rml rtopts.rml dump.rml
-util.o: util.rml
-types.o: types.rml classinf.rml absyn.rml exp.rml values.rml explode.rml dump.rml debug.rml
 absyn.o: absyn.rml debug.rml
-explode.o: explode.rml absyn.rml dump.rml debug.rml
+algorithm.o: algorithm.rml exp.rml types.rml staticexp.rml explode.rml
+builtin.o: builtin.rml absyn.rml explode.rml env.rml exp.rml types.rml classinf.rml
+classinf.o: classinf.rml absyn.rml
+codegen.o: codegen.rml dae.rml dump.rml debug.rml absyn.rml algorithm.rml classinf.rml exp.rml modutil.rml types.rml util.rml
+connect.o: connect.rml exp.rml staticexp.rml dae.rml dump.rml
+dae.o: dae.rml absyn.rml dump.rml exp.rml explode.rml algorithm.rml types.rml staticexp.rml rtopts.rml graphviz.rml
+debug.o: debug.rml rtopts.rml dump.rml
 dump.o: dump.rml absyn.rml debug.rml classinf.rml rtopts.rml
 dumpgraphviz.o: dumpgraphviz.rml absyn.rml debug.rml graphviz.rml classinf.rml dump.rml
-graphviz.o: graphviz.rml
-prefix.o: prefix.rml absyn.rml exp.rml env.rml lookup.rml
 env.o: env.rml absyn.rml values.rml explode.rml types.rml classinf.rml exp.rml dump.rml graphviz.rml dae.rml
-lookup.o: lookup.rml classinf.rml types.rml absyn.rml exp.rml env.rml explode.rml parse.rml debug.rml
-builtin.o: builtin.rml absyn.rml explode.rml env.rml exp.rml types.rml classinf.rml
-connect.o: connect.rml exp.rml staticexp.rml dae.rml dump.rml
-classinf.o: classinf.rml absyn.rml
 exp.o: exp.rml absyn.rml rtopts.rml
-algorithm.o: algorithm.rml exp.rml types.rml staticexp.rml explode.rml
-staticexp.o: staticexp.rml absyn.rml exp.rml explode.rml types.rml env.rml values.rml classinf.rml lookup.rml debug.rml dump.rml
-values.o: values.rml
-dae.o: dae.rml absyn.rml dump.rml exp.rml explode.rml algorithm.rml types.rml staticexp.rml rtopts.rml graphviz.rml
+explode.o: explode.rml absyn.rml dump.rml debug.rml
+graphviz.o: graphviz.rml
+inst.o: inst.rml classinf.rml connect.rml dae.rml debug.rml env.rml exp.rml explode.rml mod.rml prefix.rml types.rml absyn.rml algorithm.rml builtin.rml dump.rml lookup.rml modutil.rml rtopts.rml staticexp.rml values.rml
+lookup.o: lookup.rml classinf.rml types.rml absyn.rml exp.rml env.rml explode.rml parse.rml debug.rml
+main.o: main.rml modutil.rml parse.rml dump.rml dumpgraphviz.rml explode.rml dae.rml inst.rml rtopts.rml debug.rml codegen.rml
 mod.o: mod.rml absyn.rml dae.rml env.rml exp.rml prefix.rml explode.rml types.rml staticexp.rml values.rml dump.rml
 modutil.o: modutil.rml absyn.rml dae.rml exp.rml rtopts.rml algorithm.rml
-inst.o: inst.rml explode.rml dae.rml debug.rml env.rml prefix.rml mod.rml connect.rml types.rml classinf.rml exp.rml modutil.rml algorithm.rml values.rml absyn.rml lookup.rml builtin.rml dump.rml staticexp.rml rtopts.rml
-codegen.o: codegen.rml dae.rml exp.rml types.rml algorithm.rml util.rml modutil.rml dump.rml debug.rml staticexp.rml inst.rml rtopts.rml absyn.rml classinf.rml
-main.o: main.rml modutil.rml parse.rml dump.rml dumpgraphviz.rml explode.rml dae.rml inst.rml rtopts.rml debug.rml codegen.rml
+prefix.o: prefix.rml absyn.rml exp.rml env.rml lookup.rml
+staticexp.o: staticexp.rml absyn.rml exp.rml explode.rml types.rml env.rml values.rml classinf.rml lookup.rml debug.rml dump.rml
+types.o: types.rml classinf.rml absyn.rml exp.rml values.rml explode.rml dump.rml debug.rml
+util.o: util.rml
+values.o: values.rml

@@ -229,7 +229,7 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 			 NONE,
 			 (stop',stop_t)) => (start'',NONE,stop'',rt) &
 	bool_and (c_start, c_stop) => const &
-	elab_range_type (env,start'',NONE,stop'',const) => t
+	elab_range_type (env,start'',NONE,stop'',const,rt) => t
 	--------------------------------------------------
 	elab_exp (env, Absyn.RANGE(start, NONE, stop))
 	  => (Exp.RANGE(rt,start',NONE,stop'), PROP(t, const))
@@ -243,30 +243,33 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 			 (stop',stop_t)) => (start'',SOME(step''),stop'',rt) &
 	bool_and (c_start, c_step) => c1 &
 	bool_and (c1, c_stop) => const &
-	elab_range_type (env,start'',SOME(step''),stop'',const) => t
+	elab_range_type (env,start'',SOME(step''),stop'',const,rt) => t
 	---------------------
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
 	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_exp_array") &
-	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l
+	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l&
+	elab_type t => at &
+	Types.is_array t => a
 	--------------------------------------------------------------
 	elab_exp (env, Absyn.ARRAY(es))
-	  => (Exp.ARRAY(es'),
+	  => (Exp.ARRAY(at,a,es'),
 	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
 		   const))
 	
   rule	Debug.fprintln("setr", "elab_exp_matrix") &
-	elab_matrix (env, es) => (es', t, dim, const) & list_length es' => l
-	--------------------------------------------------------------------
+	elab_matrix_semi (env, es) => (es', PROP(t,c), dim1,dim2,nmax) & 
+	elab_type t => at
+	------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es))
-	  => (Exp.MATRIX(es'),
-	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)),
-				 Types.T_ARRAY(Types.DIM(SOME(dim)), t)),
-		   const))
+	  => (Exp.MATRIX(at,nmax,es'),
+	      PROP(Types.T_ARRAY(Types.DIM(SOME(dim1)),
+				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
+		   c))
 
   rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
-	---------------------------------------------------------
+	-----------------------------------------------------------
 	elab_exp(_,e) => fail
 
 end
@@ -298,13 +301,13 @@ end
 (** relation: elab_range_type *)
 
 relation elab_range_type : (Env.Env, Exp.Exp,
-			    Exp.Exp option, Exp.Exp, bool) => Types.Type =
+			    Exp.Exp option, Exp.Exp, bool,Exp.Type) => Types.Type =
 
   rule	ceval (env,start) => Values.INTEGER(startv) &
 	ceval (env,stop) => Values.INTEGER(stopv) &
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
-	elab_range_type (env,start,NONE,stop,true)
+	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_INTEGER)
 
   rule	ceval (env,start) => Values.INTEGER(startv) &
@@ -314,7 +317,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	int_div (n,stepv) => n' &
  	int_add (n',1) => n''
 	-------------------------------------------------
-	elab_range_type (env,start,SOME(step),stop,true)
+	elab_range_type (env,start,SOME(step),stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER)
 
   rule	ceval (env,start) => Values.REAL(startv) &
@@ -324,7 +327,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	real_int n'' => n''' &
 	int_add (n''',1) => n'
 	-------------------------------------------------
-	elab_range_type (env,start,NONE,stop,true)
+	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_REAL)
 
   rule	ceval (env,start) => Values.REAL(startv) &
@@ -336,11 +339,14 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	real_int n''' => n'''' &
  	int_add (n'''',1) => n''
 	-------------------------------------------------
-	elab_range_type (env,start,SOME(step),stop,true)
+	elab_range_type (env,start,SOME(step),stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_REAL)
 
-  axiom	elab_range_type (_,_,_,_,false)
+  axiom	elab_range_type (_,_,_,_,false,Exp.INT)
 	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_INTEGER)
+
+  axiom	elab_range_type (_,_,_,_,false,Exp.REAL)
+	  => Types.T_ARRAY(Types.DIM(NONE), Types.T_REAL)
 
 end
 
@@ -401,29 +407,99 @@ relation elab_array : (Env.Env, Absyn.Exp list)
 
 end
 
-(** relation: elab_matrix *)
+relation match_with_promote : (Properties, Properties) => Properties =
 
-relation elab_matrix : (Env.Env, Absyn.Exp list list)
-	=> (Exp.Exp list list, Types.Type, int, bool) =
+  rule	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c) &
+	let dim = dim1
+	-----
+	match_with_promote(PROP(Types.T_ARRAY(dim1,t1),c1),
+			   PROP(Types.T_ARRAY(dim2,t2),c2)) 
+	  => PROP(Types.T_ARRAY(dim,t),c)
+
+  rule	Types.is_array t1 => false &
+	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+	---------------------------
+	match_with_promote(PROP(t1,c1),
+			   PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t2),c2)) 
+	  => PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t),c)
+
+  rule	Types.is_array t2 => false &
+	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+	-----
+	match_with_promote(PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t1),c1),
+			   PROP(t2,c2)) 
+	  => PROP(Types.T_ARRAY(Types.DIM(SOME(1)),t),c)
+
+
+  rule	Types.is_array t1 => false &
+	Types.is_array t2 => false &
+	t1 = t2 &
+	let t = t1 &
+	bool_and(c1,c2) => c
+	--------------
+	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+
+end
+
+relation elab_matrix_comma : (Env.Env, Absyn.Exp list)
+	=> ((Exp.Exp*bool) list, Properties, int, int) =
+
+
+  rule	elab_exp (env,el) => (el', PROP(t,c)) &
+	Types.ndims t => ndims &
+	int_max(2,ndims) => maxn &
+	int_gt(ndims,0) => array
+	----------------------------------------
+	elab_matrix_comma (env,[el]) => ([(el',array)],PROP(t,c),1,maxn)
+
+
+  rule	elab_exp (env,el) => (el', PROP(t1,c1)) &
+	elab_matrix_comma(env,els) => (els', PROP(t2,c2), _,maxn2) &
+
+	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => props &
+
+	list_length el::els => dim &
+
+	Types.ndims t1 => maxn1 &
+	int_max (maxn1,maxn2) => maxn &
+	int_gt(maxn1,0) => array
+	-------------------------------------
+	elab_matrix_comma (env,el::els) 
+	  => ((el',array)::els',props,dim,maxn)
+
+end
+
+(** relation: elab_matrix_semi *)
+
+relation elab_matrix_semi : (Env.Env, Absyn.Exp list list)
+	=> ((Exp.Exp*bool) list list, Properties, int, int, int) =
+
+  rule	elab_matrix_comma(env,el) => (el', props, dim, maxn)
+	---------------------------------
+	elab_matrix_semi(env,[el]) => ([el'], props, 1, dim, maxn)
 
   rule	list_length(el) => dim &
-	elab_array(env,el) => (el', PROP(t, c))
-	---------------------------------
-	elab_matrix(env,[el]) => ([el'], t, dim, c)
+	elab_matrix_comma(env,el) => (el',props1,dim1,maxn1) &
+	elab_matrix_semi(env,els) => (els',props2,_,dim2,maxn2) &
 
-  rule	list_length(el) => dim1 &
-	elab_array(env,el) => (el',PROP(t1,c1)) &
-	elab_matrix(env,els) => (els',t2,dim2,c2) &
-	t1 = t2 & dim1 = dim2 &
-	bool_and(c1,c2) => c
+	dim1 = dim2 &
+			
+	match_with_promote(props1,props2) => props &
+
+	int_max(maxn1,maxn2) => maxn
 	--------------------
-	elab_matrix(env,el::els) => (el'::els',t1,dim1,c)
+	elab_matrix_semi(env,el::els) => (el'::els',props,dim,dim1,maxn)
+
+
+
+
+
 
 	(**  Error messages *)
-
+(*
   rule	print "- How the f*ck did you write an empty matrix?\n"
 	-------------------------------------------------------
-	elab_matrix(_,[]) => fail
+	elab_matrix_semi(_,[]) => fail
 
   rule	elab_array(env,el) => (el',PROP(t1,c1)) &
 	elab_matrix(env,els) => (els',t2,dim2,c2) &
@@ -434,7 +510,7 @@ relation elab_matrix : (Env.Env, Absyn.Exp list list)
 	print "    the rest of the matrix is of " &
 	Types.print_type t2 & print "\n"
 	--------------------------------
-	elab_matrix(env,el::els) => fail
+	elab_matrix_semi(env,el::els) => fail
 
   rule	list_length(el) => dim1 &
 	elab_matrix(env,els) => (els',t2,dim2,c2) &
@@ -446,9 +522,10 @@ relation elab_matrix : (Env.Env, Absyn.Exp list list)
 	print "    the rest of the matrix rows are of size " &
 	int_string dim2 => s & print s & print "\n"
 	--------------------------------------------
-	elab_matrix(env,el::els) => fail
-
+	elab_matrix_semi(env,el::els) => fail
+*)
 end
+
 
 relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) =
 
@@ -506,17 +583,21 @@ end
 relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list) 
 	  => (Exp.Exp, Properties) =
 
-  rule	build_exp_list (s, v) => arraylist
+  rule	build_exp_list (s, v) => arraylist &
+	elab_type sty => at &
+	Types.is_array sty => a
 	----------------------------------
 	elab_builtin_fill_2 (env, s, sty, [Values.INTEGER(v)])
-	  => (Exp.ARRAY(arraylist), PROP(Types.T_ARRAY(Types.DIM(SOME(v)), sty), true))
+	  => (Exp.ARRAY(at,a,arraylist), PROP(Types.T_ARRAY(Types.DIM(SOME(v)), sty), true))
 			     
   rule	elab_builtin_fill_2 (env, s, sty, rest) 
 	  => (exp, PROP(ty,con)) &
-        build_exp_list (exp, v) => arraylist
+        build_exp_list (exp, v) => arraylist &
+	elab_type ty => at &
+	Types.is_array ty => a
 	----------------------------------------------------------
 	elab_builtin_fill_2 (env, s, sty, Values.INTEGER(v)::rest) 
-	  => (Exp.ARRAY(arraylist), PROP(Types.T_ARRAY(Types.DIM(SOME(v)), ty), true))
+	  => (Exp.ARRAY(at,a,arraylist), PROP(Types.T_ARRAY(Types.DIM(SOME(v)), ty), true))
 	
   rule	print "#-- elab_builtin_fill_2: Failed to elaborate fill()\n"
 	-------------------------------------------------------------
@@ -1358,7 +1439,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
   rule	ceval_list (env,es) => es' &
 	list_length es' => l
 	------------------------------
-	ceval (env,Exp.ARRAY(es)) => Values.ARRAY(es')
+	ceval (env,Exp.ARRAY(_,_,es)) => Values.ARRAY(es')
 
   rule	ceval_cref (env,c) => v
 	---------------------------
@@ -1629,12 +1710,15 @@ relation value_exp : Values.Value => Exp.Exp =
   axiom	value_exp (Values.REAL(x))    => Exp.RCONST(x)
   axiom value_exp (Values.STRING(x))  => Exp.SCONST(x)
   axiom value_exp (Values.BOOL(x))    => Exp.BCONST(x)
-  axiom	value_exp (Values.ARRAY([]))  => Exp.ARRAY([])
+  axiom	value_exp (Values.ARRAY([]))  => Exp.ARRAY(Exp.OTHER,false,[])
 
   rule	value_exp x => x' &
-  	value_exp Values.ARRAY(xs) => Exp.ARRAY(xs')
+	value_type x => vt &
+	elab_type vt => t &
+	Types.is_array vt => a &
+  	value_exp Values.ARRAY(xs) => Exp.ARRAY(_,_,xs')
 	--------------------------------------------
-	value_exp (Values.ARRAY(x::xs)) => Exp.ARRAY(x'::xs')
+	value_exp (Values.ARRAY(x::xs)) => Exp.ARRAY(t,a,x'::xs')
 
   rule	print "- value_exp failed\n"
 	----------------------------
@@ -1881,12 +1965,14 @@ relation type_convert : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Typ
   axiom	type_convert(e, Types.T_INTEGER, Types.T_REAL) => (Exp.CAST(Exp.REAL,e),Types.T_REAL)
 
   rule	int_eq (dim1, dim2) => true &
-	type_convert_array (elist, ty1, ty2) => elist'
+	type_convert_array (elist, ty1, ty2) => elist' &
+	elab_type ty2 => at &
+	Types.is_array ty2 => a
 	------------------------------------------
-	type_convert(Exp.ARRAY(elist), 
+	type_convert(Exp.ARRAY(_,_,elist), 
 		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
 		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
-	  => (Exp.ARRAY(elist'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
+	  => (Exp.ARRAY(at,a,elist'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
 
   rule	type_convert (e, ty1, ty2) => (e',t') 
 	------------------------------------------
@@ -2286,16 +2372,36 @@ relation operators : Absyn.Operator
 	---------------------------
 	operators Absyn.MUL => types
 
-  axiom	operators Absyn.DIV
-	  => [(Exp.DIV(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_REAL)]
+  rule	array_type_list(9, Types.T_REAL) => realarrtypes &
+	n_types(9, Types.T_REAL) => realtypes &
+	let real_div = Exp.DIV(Exp.REAL) &
+	let real_scalar = Types.T_REAL &
+	let scalars = [(real_div,[real_scalar, real_scalar], real_scalar)] &
 
-  axiom	operators Absyn.POW
-	  => [(Exp.POW(Exp.REAL),
-	       [Types.T_REAL, Types.T_REAL],
-	       Types.T_REAL)]
+	operator_return(Exp.DIV_ARRAY_SCALAR(Exp.REAL),
+			realarrtypes,
+			realtypes,
+			realarrtypes) => realarrscalar &
 
+	list_append(scalars,realarrscalar) => types
+	--------------------------------------------
+	operators Absyn.DIV => types
+
+  rule	let real_scalar = Types.T_REAL &
+	let int_scalar = Types.T_INTEGER &
+	let real_vector = Types.T_ARRAY(Types.DIM(NONE),real_scalar) &
+	let real_matrix = Types.T_ARRAY(Types.DIM(NONE), real_vector) &
+	let real_pow = Exp.POW(Exp.REAL) &
+
+	let scalars = [(real_pow,[real_scalar, real_scalar], real_scalar)] &
+
+	let arrscalar = [(Exp.POW_ARR(Exp.REAL),
+			  [real_matrix,int_scalar],
+			  real_matrix)] &
+	
+	list_append(scalars,arrscalar) => types
+	-------------------
+	operators Absyn.POW => types
 
   axiom	operators Absyn.UMINUS
 	  => [(Exp.UMINUS(Exp.INT),

@@ -25,8 +25,10 @@ module ModUtil :
 
 end
 
-with "rtopts.rml"
 with "algorithm.rml"
+with "rtopts.rml"
+with "util.rml"
+
 
 relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b) 
 					 => (), 'b, Exp.Exp list) 
@@ -98,13 +100,16 @@ relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b)
 
   rule	string_prefix_component_refs (str, r, rarg, el) => el'
 	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.ARRAY(el)) 
-	  => Exp.ARRAY(el')
+	string_prefix_component_ref (str, r, rarg, Exp.ARRAY(t,a,el)) 
+	  => Exp.ARRAY(t,a,el')
 
-  rule	string_prefix_component_refs_list (str, r, rarg, ell) => ell'
+  rule	Util.list_list_map(ell,Util.tuple2_1) => el &
+	Util.list_list_map(ell,Util.tuple2_2)=> bl &
+	string_prefix_component_refs_list (str, r, rarg, el) => el' &
+	Util.list_list_thread_tuple(el',bl) => ell'
 	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.MATRIX(ell)) 
-	  => Exp.MATRIX(ell')
+	string_prefix_component_ref (str, r, rarg, Exp.MATRIX(t,a,ell)) 
+	  => Exp.MATRIX(t,a,ell')
 
   rule	string_prefix_component_ref (str, r, rarg, e1) => e1' &
 	string_prefix_component_ref (str, r, rarg, e2) => e2'

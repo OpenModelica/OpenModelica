@@ -34,6 +34,8 @@ module Prefix:
 
 end
 
+with "util.rml"
+
 relation print_prefix_str : Prefix => string =
 
   axiom	print_prefix_str NOPRE => "<NOPRE>"
@@ -236,11 +238,11 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	prefix_exp(env,Exp.CALL(f,es,b),p) => Exp.CALL(f,es',b)
 
 	(**)
-  axiom	prefix_exp(env,Exp.ARRAY([]),p) => Exp.ARRAY([])
+  axiom	prefix_exp(env,Exp.ARRAY(t,a,[]),p) => Exp.ARRAY(t,a,[])
 
   rule	prefix_exp_list(env,es,p) => es'
 	-------------------------------
-	prefix_exp(env,Exp.ARRAY(es),p) => Exp.ARRAY(es')
+	prefix_exp(env,Exp.ARRAY(t,a,es),p) => Exp.ARRAY(t,a,es')
 
 
 (* PR. *)
@@ -248,12 +250,15 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-------------------------------
 	prefix_exp(env,Exp.TUPLE(es),p) => Exp.TUPLE(es')
 
-  axiom	prefix_exp(env,Exp.MATRIX([]),p) => Exp.MATRIX([])
+  axiom	prefix_exp(env,Exp.MATRIX(t,a,[]),p) => Exp.MATRIX(t,a,[])
 
-  rule	prefix_exp_list(env,x,p) => x' &
-	prefix_exp(env,Exp.MATRIX(xs),p) => Exp.MATRIX(xs')
+  rule	Util.list_map(x,Util.tuple2_1) => el &
+	Util.list_map(x,Util.tuple2_2) => bl &
+	prefix_exp_list(env,el,p) => el' &
+	Util.list_thread_tuple(el',bl) => x' &
+	prefix_exp(env,Exp.MATRIX(t,a,xs),p) => Exp.MATRIX(t,b,xs')
 	----------------------------------------
-	prefix_exp(env,Exp.MATRIX(x::xs),p) => Exp.MATRIX((x'::xs'))
+	prefix_exp(env,Exp.MATRIX(t,a,x::xs),p) => Exp.MATRIX(t,a,(x'::xs'))
 
   rule	prefix_exp(env,start, p) => start' &
 	prefix_exp(env,stop, p) => stop'

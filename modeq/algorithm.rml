@@ -26,7 +26,7 @@ module Algorithm:
   datatype Statement = ASSIGN of Exp.Type * Exp.ComponentRef * Exp.Exp
 		     | ASSIGN_ARR of Exp.Type * Exp.ComponentRef * Exp.Exp
 		     | IF of Exp.Exp * Statement list * Else
-		     | FOR of Ident * Exp.Exp * Statement list
+		     | FOR of Exp.Type * bool * Ident * Exp.Exp * Statement list
 		     | WHILE of Exp.Exp * Statement list
 		     | WHEN of Exp.Exp * Statement list
   (** There are four kinds of statements.  Assignments (`a := b;'),
@@ -207,7 +207,10 @@ end
 relation make_for : (Ident, Exp.Exp, Static.Properties,
 		     Statement list) => Statement =
 
-  axiom	make_for(i,e,Static.PROP(Types.T_ARRAY(_,_),_),stmts) => FOR(i,e,stmts)
+  rule	Types.is_array t => array &
+	Static.elab_type t => et
+	-----------------------
+	make_for(i,e,Static.PROP(Types.T_ARRAY(_,t),_),stmts) => FOR(et,array,i,e,stmts)
 
   rule	print "# Type error in for conditional.\n" &
 	print "    Expected array, got " &

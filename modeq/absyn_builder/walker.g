@@ -1139,8 +1139,8 @@ arithmetic_expression returns [void* ast]
 
 unary_arithmetic_expression returns [void* ast]
     :
-		(#(UNARY_PLUS ast = term) { ast = Absyn__UNARY(Absyn__ADD,ast); }
-		|#(UNARY_MINUS ast = term) { ast = Absyn__UNARY(Absyn__SUB,ast); }
+		(#(UNARY_PLUS ast = term) { ast = Absyn__UNARY(Absyn__UPLUS,ast); }
+		|#(UNARY_MINUS ast = term) { ast = Absyn__UNARY(Absyn__UMINUS,ast); }
 		| ast = term
         )
     ;

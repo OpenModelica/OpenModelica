@@ -62,6 +62,8 @@ module DAE:
   relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
   relation get_input_vars: Element list  => Element list
+  relation is_algorithm : Element => ()
+  relation is_function : Element => ()
   relation is_var: Element => ()
   relation is_output_var: Element => ()
   relation is_input_var: Element => ()
@@ -339,7 +341,7 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 	indent i &
 	print "end for;\n"
         -------------------
-	pp_stmt (Algorithm.FOR(id,e,stmts), i)
+	pp_stmt (Algorithm.FOR(_,_,id,e,stmts), i)
 	
   rule	indent i &
 	print "while " & Exp.print_exp e & print " loop\n" &
@@ -492,6 +494,18 @@ end
 relation is_var: Element => () =
 
   axiom	is_var VAR(_,_,_,_,_,_)
+
+end
+
+relation is_algorithm : Element => () =
+
+  axiom is_algorithm ALGORITHM(_)
+
+end
+
+relation is_function : Element => () =
+
+  axiom is_function FUNCTION(_,_,_)
 
 end
 

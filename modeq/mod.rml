@@ -142,7 +142,7 @@ relation make_idxmods : (Exp.Subscript list, Mod) => SubMod list =
   rule	print "= expand_slice\n" &
 	expand_slice(x, xs, 1, m) => mods
 	---------------------------
-	make_idxmods(Exp.SLICE(Exp.ARRAY(x))::xs, m) => mods
+	make_idxmods(Exp.SLICE(Exp.ARRAY(_,_,x))::xs, m) => mods
 
   rule	print "# Sorry, [:] slices are not handled in modifications\n"
 	--------------------------------------------------------------

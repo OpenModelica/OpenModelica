@@ -355,7 +355,7 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 	(* FIXME: Check range *)
 	------------------------------
 	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
-			 Exp.SLICE(Exp.ARRAY(se))::ys)
+			 Exp.SLICE(Exp.ARRAY(_,_,se))::ys)
 	  => Types.T_ARRAY(Types.DIM(SOME(dim)),t')
 
   rule	int_gt(ind, 0) => true  &  int_le(ind, sz) => true &

@@ -7,13 +7,12 @@
  **
  **)
 
+(* ------------------------------------------------------------------------- *)
 
 module Codegen :
 
   with "dae.rml"
-  with "exp.rml"
-  with "types.rml"
-  with "algorithm.rml"
+
 
   type Ident = string
 
@@ -42,15 +41,20 @@ module Codegen :
 	  
 end
 
-with "util.rml"
-with "modutil.rml"
+(* ------------------------------------------------------------------------- *)
+
 with "dump.rml"
 with "debug.rml"
-with "staticexp.rml"
-with "inst.rml"
-with "rtopts.rml"
+
 with "absyn.rml"
+with "algorithm.rml"
 with "classinf.rml"
+with "exp.rml"
+with "modutil.rml"
+with "types.rml"
+with "util.rml"
+
+(* ------------------------------------------------------------------------- *)
 
 val c_empty_function = CFUNCTION("","",[],[],[],[],[],[])
 
@@ -137,18 +141,179 @@ end
 
 relation c_print_function : CFunction => () =
 
-  rule	Dump.print_list(rts,print,"\n") & print "\n" &
-	Dump.print_list([rt," ",fn,"("],print,"") &
-	Dump.print_list(ad,print,", ") & print ")\n{\n  " &
-	Dump.print_list(vd,print,"\n  ") & print "\n  " &
-	Dump.print_list(is,print,"\n  ") & print "\n  " &
-	Dump.print_list(st,print,"\n  ") & print "\n  " &
-	Dump.print_list(cl,print,"\n  ") & print "\n" &
-	print "}\n"
+  rule	Util.string_delimit_list(ad,", ") => args_str &
+	Util.string_append_list [rt," ",fn,"(",args_str,") {"] => stmt_str &
+	
+	let i0 = 0 &
+	c_print_indented_list (rts,i0) => i1 & print "\n" &
+	c_print_indented (stmt_str,i1) => i2 & print "\n" &
+	c_print_indented_list (vd,i2)  => i3 & print "\n" &
+	c_print_indented_list (is,i3)  => i4 & print "\n" &
+	c_print_indented_list (st,i4)  => i5 & print "\n" &
+	c_print_indented_list (cl,i5)  => i6 & print "\n" &
+	c_print_indented      ("}",i6) => i7 & print "\n"
 	-----------
 	c_print_function CFUNCTION(rt,fn,rts,ad,vd,is,st,cl)
 
+  rule	print "# c_print_function_failed\n"
+	-----------
+	c_print_function _
 end
+
+relation c_print_indented_list : (string list, int) => int =
+	
+  axiom c_print_indented_list ([],i) => i
+
+  rule	c_print_indented(f,i) => i' & print "\n" &
+	c_print_indented_list(r,i') => i''
+	-----------------
+	c_print_indented_list(f::r,i) => i''
+
+end
+
+relation c_print_indented : (string, int) => int =
+
+  rule	string_list str => strl &
+	c_next_level(strl,i) => i' &
+	c_this_level(strl,i) => it &
+	c_print_indent it &
+	print str 
+	-----------
+	c_print_indented (str,i) => i'
+end
+
+relation c_next_level : (char list, int) => int =
+
+  axiom	c_next_level ([],i) => i
+
+  rule	list_string [f] => "{" &
+	int_add(i,2) => i' &
+	c_next_level(r,i') => i''
+	-----
+	c_next_level (f::r,i) => i'' (* { *)
+
+  rule	list_string [f] => "}" &
+	int_sub(i,2) => i' &
+	c_next_level(r,i') => i''
+	-----
+	c_next_level (f::r,i) => i'' (* } *)
+
+  rule	c_next_level(r,i) => i'
+	-----
+	c_next_level (_::r,i) => i'
+
+end
+
+relation c_this_level : (char list, int) => int =
+
+
+  rule	list_string [f] => "#"
+	----
+	c_this_level(f::_,_) => 0
+
+rule	list_string [f] => "}" &
+	int_sub(i,2) => i'
+	----
+	c_this_level(f::_,i) => i'
+
+  axiom	c_this_level(_,i) => i
+
+end
+
+relation c_print_indent : int => () =
+
+  axiom c_print_indent 0
+
+  rule	print " " &
+	int_sub(i,1) => i' &
+	c_print_indent i'
+	----------------
+	c_print_indent i
+
+end
+
+(* ------------------------------------------------------------------------- *)
+(*
+ generate_functions
+ generate_functions_elist
+ generate_functions_elist2
+ generate_params_type
+ generate_function
+ generate_result_struct
+ generate_return_defs
+ generate_return_decls
+ generate_return_decl
+ is_array
+ is_first_in_array
+ subs_is_one
+ dae_exp_type
+ dae_type_str
+ dae_short_type_str
+ exp_short_type_str
+ exp_type_str
+ generate_type
+ generate_return_type
+ flatten_array_type
+ generate_array_type
+ generate_array_return_type
+ print_int
+ print_star
+ generate_tuple_type
+ generate_simple_type
+ array_type_string
+ generate_function_name
+ generate_function_arg
+ generate_function_body_tuple
+ generate_alloc_outvars
+ generate_alloc_outvar
+ prefix_cr
+ generate_algorithms
+ generate_algorithms2
+ generate_algorithm
+ generate_algorithm_statements
+ generate_algorithm_statement
+ generate_range_expressions
+ generate_else
+ generate_vars
+ generate_var
+ is_var_q
+ generate_var_q
+ generate_var_q2
+ generate_result_vars
+ generate_result_var
+ generate_equations
+ generate_exp
+ get_array_dim
+ generate_expressions
+ generate_expression
+ generate_binary
+ generate_temp_decl
+ generate_scalar_lhs_cref
+ generate_rhs_cref
+ subs_to_scalar
+ generate_scalar_rhs_cref
+ generate_array_rhs_cref
+ generate_index_spec
+ generate_indices_array
+ generate_indices
+ generate_index_array
+ generate_index
+ indent_strings
+ ident_cstr
+ comp_ref_cstr
+ generate_lbinary
+ generate_lunary
+ generate_relation
+ generate_matrix
+ generate_read_call_write
+ invar_names
+ generate_read
+ generate_write
+ is_rcw_output
+ is_rcw_input
+
+*)
+(* ------------------------------------------------------------------------- *)
 
 relation generate_functions : DAE.DAElist => () =
 
@@ -160,7 +325,7 @@ relation generate_functions : DAE.DAElist => () =
 	------------------------------
 	generate_functions DAE.DAE(elist)
 
-  rule	print "#--- generate_functions failed\n"
+  rule	print "# generate_functions failed\n"
 	--------------------------------------
 	generate_functions _ 
 
@@ -170,16 +335,26 @@ end
 
 relation generate_functions_elist : DAE.Element list => CFunction list =
 
-  rule	Debug.fprintln ("cgtr", "generate_functions_elist") 
-	----------------------------------------------------
-	generate_functions_elist [] => []
-
   rule	Debug.fprintln ("cgtr", "generate_functions_elist") &
+	DAE.get_matching(els,DAE.is_function) => fns &
+	generate_functions_elist2 fns => cfns
+	----------------------------
+	generate_functions_elist els => cfns
+	
+end
+
+relation generate_functions_elist2 : DAE.Element list => CFunction list =
+
+  rule	Debug.fprintln ("cgtr", "generate_functions_elist2") 
+	----------------------------------------------------
+	generate_functions_elist2 [] => []
+
+  rule	Debug.fprintln ("cgtr", "generate_functions_elist2") &
 	generate_function f => cfns1 &
-	generate_functions_elist rest => cfns2 &
+	generate_functions_elist2 rest => cfns2 &
 	list_append(cfns1,cfns2) => cfns
 	----------------------------
-	generate_functions_elist f :: rest => cfns
+	generate_functions_elist2 f :: rest => cfns
 	
 end
 
@@ -222,9 +397,10 @@ relation generate_function : DAE.Element => CFunction list =
 	----------------------
 	generate_function DAE.COMP(n, DAE.DAE(daelist)) => cfns
 
-	(* for non-function elements *)
 
-  axiom	generate_function _ => []
+  rule	print "# generate_function failed\n"
+	------------------------------------
+	generate_function _ => fail
 	
 end
 
@@ -367,33 +543,54 @@ relation subs_is_one : Exp.Subscript list => bool =
 end
 
 
+relation dae_exp_type : DAE.Type => Exp.Type =
+
+  axiom	dae_exp_type DAE.INT    => Exp.INT
+  axiom	dae_exp_type DAE.REAL   => Exp.REAL
+  axiom	dae_exp_type DAE.STRING => Exp.STRING
+  axiom	dae_exp_type DAE.BOOL   => Exp.BOOL
+
+end
+
 relation dae_type_str : (DAE.Type, bool) => string =
 
-  axiom	dae_type_str (DAE.INT, false) => "modelica_integer"
-  axiom	dae_type_str (DAE.REAL, false) => "modelica_real"
-  axiom	dae_type_str (DAE.STRING, false) => "modelica_string"
-  axiom	dae_type_str (DAE.BOOL, false) => "modelica_boolean"
+  rule	dae_exp_type t => t' &
+	exp_type_str (t',a) => str
+	--------------------------
+	dae_type_str (t,a) => str
 
-  axiom	dae_type_str (DAE.INT, true) => "integer_array"
-  axiom	dae_type_str (DAE.REAL, true) => "real_array"
-  axiom	dae_type_str (DAE.STRING, true) => "string_array"
-  axiom	dae_type_str (DAE.BOOL, true) => "boolean_array"
+end
+
+relation dae_short_type_str : DAE.Type => string =
+
+  rule	dae_exp_type t => t' &
+	exp_short_type_str t' => str
+	--------------------------
+	dae_short_type_str t => str
+
+end
+
+relation exp_short_type_str : Exp.Type => string =
+
+  axiom	exp_short_type_str Exp.INT    => "integer"
+  axiom	exp_short_type_str Exp.REAL   => "real"
+  axiom	exp_short_type_str Exp.STRING => "string"
+  axiom	exp_short_type_str Exp.BOOL   => "boolean"
+  axiom	exp_short_type_str Exp.OTHER  => "other"
 
 end
 
 relation exp_type_str : (Exp.Type, bool) => string =
 
-  axiom	exp_type_str (Exp.INT, false) => "modelica_integer"
-  axiom	exp_type_str (Exp.REAL, false) => "modelica_real"
-  axiom	exp_type_str (Exp.STRING, false) => "modelica_string"
-  axiom	exp_type_str (Exp.BOOL, false) => "modelica_boolean"
-  axiom	exp_type_str (Exp.OTHER, false) => "modelica_other"
+  rule	exp_short_type_str t => tstr &
+	string_append("modelica_",tstr) => str
+	-----------
+	exp_type_str (t, false) => str
 
-  axiom	exp_type_str (Exp.INT, true) => "integer_array"
-  axiom	exp_type_str (Exp.REAL, true) => "real_array"
-  axiom	exp_type_str (Exp.STRING, true) => "string_array"
-  axiom	exp_type_str (Exp.BOOL, true) => "boolean_array"
-  axiom	exp_type_str (Exp.OTHER, true) => "other_array"
+  rule	exp_short_type_str t => tstr &
+	string_append(tstr,"_array") => str
+	-----------
+	exp_type_str (t, true) => str
 
 end
 
@@ -435,44 +632,20 @@ relation generate_return_type : Absyn.Path => string =
 	generate_return_type fpath => res
 end
 
-(*
-relation generate_return_type : Types.Type => () =
-
-
-  rule	Debug.fprintln ("cgtr", "generate_type") &
-	generate_tuple_type tys => str &
-	print str
-	---------------------------
-	generate_return_type Types.T_TUPLE(tys)
-
-
-  rule	Debug.fprintln ("cgtr", "generate_type") &
-	flatten_array_type tys => (arrayty, dims) &
-	generate_array_return_type (arrayty, dims)
-	-----------------------------------
-	generate_return_type (tys as Types.T_ARRAY(_,_))
-
-
-  rule	print "#-- generate_type failed\n" &
-	Types.print_type ty & print "\n"
-	--------------------------------
-	generate_return_type ty => fail
-
-end
-*)
-
 relation flatten_array_type : Types.Type => (Types.Type, int list) =
 
   rule	Debug.fprintln ("cgtr", "flatten_array_type1") &
 	flatten_array_type ty => (ty', dimlist')
 	--------------------------------------
-  	flatten_array_type Types.T_ARRAY(Types.DIM(NONE), ty) => (ty', dimlist')
+  	flatten_array_type Types.T_ARRAY(Types.DIM(NONE), ty) 
+	  => (ty', dimlist')
 
   rule	Debug.fprintln ("cgtr", "flatten_array_type2") &
 	flatten_array_type ty => (ty', dimlist) &
 	list_append (dimlist,[dim]) => dimlist'
 	--------------------------------------
-  	flatten_array_type Types.T_ARRAY(Types.DIM(SOME(dim)), ty) => (ty', dimlist')
+  	flatten_array_type Types.T_ARRAY(Types.DIM(SOME(dim)), ty) 
+	  => (ty', dimlist')
 
   axiom	flatten_array_type ty => (ty, [])
 
@@ -480,12 +653,6 @@ end
 
 relation generate_array_type : (Types.Type, int list) => string =
 
-(*
-  rule	Types.print_type ty &
-	print "[" & Dump.print_list (dims, print_int, ",") & print "]" 
-	-------------------------------------------------------------
-	generate_array_type (ty, dims)
-*)
   rule	array_type_string ty => str 
 	--------------------------
 	generate_array_type (ty, dims) => str
@@ -496,8 +663,8 @@ relation generate_array_return_type : (Types.Type, int list) => string =
   rule	array_type_string ty => ty_str
 	-------------------------------
 	generate_array_return_type (ty, dims) => ty_str
-
 end
+
 
 relation print_int : int => () =
 
@@ -694,13 +861,23 @@ end
 relation generate_algorithms: (DAE.Element list, int)
 	  => (CFunction, int) =
 
-  axiom	generate_algorithms ([],tnr) => (c_empty_function,tnr)
+  rule	DAE.get_matching(els,DAE.is_algorithm) => algs &
+	generate_algorithms2(algs,tnr) => (cfn,tnr') 
+	------------------------
+	generate_algorithms (els, tnr) => (cfn,tnr')
+
+end
+
+relation generate_algorithms2: (DAE.Element list, int)
+	  => (CFunction, int) =
+
+  axiom	generate_algorithms2 ([],tnr) => (c_empty_function,tnr)
 
   rule	generate_algorithm (first,tnr) => (cfn1,tnr1) &
-	generate_algorithms (rest,tnr1) => (cfn2,tnr2) &
+	generate_algorithms2 (rest,tnr1) => (cfn2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
 	------------------------
-	generate_algorithms (first::rest, tnr) => (cfn,tnr2)
+	generate_algorithms2 (first::rest, tnr) => (cfn,tnr2)
 
 end
 
@@ -714,7 +891,9 @@ relation generate_algorithm: (DAE.Element, int)
 	generate_algorithm (DAE.ALGORITHM(Algorithm.ALGORITHM(stmts)),tnr)
 	  => (cfn,tnr')
 
-  axiom	generate_algorithm (_,tnr) => (c_empty_function,tnr)
+  rule	print "# generate_algorithm failed\n"
+	------------------------------------
+  	generate_algorithm (_,_) => fail
 
 end
 
@@ -792,9 +971,103 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_algorithm_statement (Algorithm.IF(e,then,else),tnr) 
 	  => (cfn,tnr3)
 
-  rule	print "# for statement not implemented\n"
+  rule	Exp.is_range e => true &
+	generate_temp_decl("state",tnr) => (sdecl,svar,tnr') &
+	generate_temp_decl("",tnr') => (_,dvar,tnr1) &
+	exp_type_str (t,a) => ident_type_str &
+	exp_short_type_str t => short_type &
+	generate_temp_decl(ident_type_str,tnr1) => (idecl,ivar,tnr2') &
+	generate_temp_decl(ident_type_str,tnr2') => (rdecl1,rvar1,tnr2'') &
+	generate_temp_decl(ident_type_str,tnr2'') => (rdecl2,rvar2,tnr2''') &
+	generate_temp_decl(ident_type_str,tnr2''') => (rdecl3,rvar3,tnr2) &
+
+	generate_range_expressions(e,tnr2) => (cfn3,e1var,e2var,e3var,tnr3) &
+	Util.string_append_list([rvar1," = ",e1var,"; ",
+				 rvar2," = ",e2var,"; ",
+				 rvar3," = ",e3var,";"]) => r_stmt &
+	Util.string_append_list(["for (",ivar," = ",rvar1,"; ",
+			    "in_range_",short_type,"(",ivar,", ",rvar1,", ",rvar3,"); ",
+			    ivar," += ",rvar2,") {"]) => for_begin &
+	Util.string_append_list(["#ifdef ",i]) => def_beg1 &
+	Util.string_append_list(["#define ",dvar," ",i]) => def_beg2 &
+	Util.string_append_list(["#undef ",i]) => def_beg3 &
+	Util.string_append_list(["#endif"]) => def_beg4 &
+	Util.string_append_list(["#define ",i," ",ivar]) => def_beg5 &
+	Util.string_append_list([svar," = get_memory_state();"]) => mem_begin &
+
+	generate_algorithm_statements(stmts,tnr3) => (cfn4,tnr4) &
+	Util.string_append_list(["restore_memory_state(",svar,");"]) 
+	  => mem_end &
+	  Util.string_append_list(["#ifdef ",dvar]) => def_end1 &
+	Util.string_append_list(["#undef ",i]) => def_end2 &
+	Util.string_append_list(["#define ",i," ",dvar]) => def_end3 &
+	Util.string_append_list(["#undef ",dvar]) => def_end4 &
+	Util.string_append_list(["#endif"]) => def_end5 &
+	let for_end = "}" &
+
+	c_add_variables(cfn3,[sdecl,idecl,rdecl1,rdecl2,rdecl3]) => cfn3' &
+	c_add_statements(cfn3',[r_stmt,
+				for_begin,
+				def_beg1,def_beg2,def_beg3,def_beg4,def_beg5,
+				mem_begin]) => cfn3'' &
+	
+	c_add_statements(cfn4,[mem_end,
+			       def_end1,def_end2,def_end3,def_end4,def_end5,
+			       for_end]) => cfn4' &
+
+	c_merge_fns([cfn3'',cfn4']) => cfn
+	
 	-------------------------
-	generate_algorithm_statement (Algorithm.FOR(_,_,_),_) => fail
+	generate_algorithm_statement (Algorithm.FOR(t,a,i,e,stmts),tnr)
+	  => (cfn,tnr4)
+
+  rule	generate_temp_decl("state",tnr) => (sdecl,svar,tnr') &
+	generate_temp_decl("",tnr') => (_,dvar,tnr'') &
+	generate_temp_decl("int",tnr'') => (tdecl,tvar,tnr1) &
+	exp_type_str (t,a) => ident_type_str &
+	generate_temp_decl(ident_type_str,tnr1) => (idecl,ivar,tnr2) &
+	exp_type_str (t,true) => array_type_str &
+	generate_expression(e,tnr2) => (cfn3,evar,tnr3) &
+	Util.string_append_list(["for (",tvar," = 1; ",
+			    tvar," < size_of_dimension_",array_type_str,"(&",ivar,", 1); ",
+			    "++",tvar,") {"]) => for_begin &
+	Util.string_append_list(["#ifdef ",i]) => def_beg1 &
+	Util.string_append_list(["#define ",dvar," ",i]) => def_beg2 &
+	Util.string_append_list(["#undef ",i]) => def_beg3 &
+	Util.string_append_list(["#endif"]) => def_beg4 &
+	Util.string_append_list(["#define ",i," ",ivar]) => def_beg5 &
+	Util.string_append_list([svar," = get_memory_state();"]) => mem_begin &
+	Util.string_append_list(["simple_index_alloc_",ident_type_str,
+			    "1(&",evar,", ",tvar,", &",ivar,");"]) 
+	  => stmt_array &
+	Util.string_append_list([ivar," = *(",array_type_str,"_element_addr(&",
+			    evar,", 1, ",tvar,");"]) => stmt_scalar &
+
+	Util.if(a,stmt_array,stmt_scalar) => stmt &
+	generate_algorithm_statements(stmts,tnr3) => (cfn4,tnr4) &
+	Util.string_append_list(["restore_memory_state(",svar,");"]) 
+	  => mem_end &
+	  Util.string_append_list(["#ifdef ",dvar]) => def_end1 &
+	Util.string_append_list(["#define ",i," ",dvar]) => def_end2 &
+	Util.string_append_list(["#undef ",dvar]) => def_end3 &
+	Util.string_append_list(["#endif"]) => def_end4 &
+	let for_end = "}" &
+
+	c_add_variables(cfn3,[sdecl,tdecl,idecl]) => cfn3' &
+	c_add_statements(cfn3',[for_begin,
+				def_beg1,def_beg2,def_beg3,def_beg4,def_beg5,
+				mem_begin,stmt]) => cfn3'' &
+	
+	c_add_statements(cfn4,[mem_end,
+			       def_end1,def_end2,def_end3,def_end4,
+			       for_end]) => cfn4' &
+
+	c_merge_fns([cfn3'',cfn4']) => cfn
+	
+	
+	-------------------------
+	generate_algorithm_statement (Algorithm.FOR(t,a,i,e,stmts),tnr)
+	  => (cfn,tnr4)
 
   rule	c_add_statements(c_empty_function,["while (1) {"]) => cfn1 &
 	generate_expression(e,tnr) => (cfn2,var2,tnr2) &
@@ -816,6 +1089,34 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
   rule	print "# generate_algorithm_statement failed\n"
 	-------------------------
 	generate_algorithm_statement (_,_) => fail
+
+end
+
+relation generate_range_expressions : (Exp.Exp, int)
+	  => (CFunction, string, string, string, int) =
+
+
+  rule	generate_expression (e1,tnr) => (cfn1,var1,tnr1) &
+	let var2 = "(1)" &
+	generate_expression (e3,tnr1) => (cfn3,var3,tnr3) &
+	
+	c_merge_fn(cfn1,cfn3) => cfn 
+	-----------------------
+	generate_range_expressions(Exp.RANGE(t,e1,NONE,e3),tnr) 
+	  => (cfn,var1,var2,var3,tnr3)
+
+  rule	generate_expression (e1,tnr)  => (cfn1,var1,tnr1) &
+	generate_expression (e2,tnr1) => (cfn2,var2,tnr2) &
+	generate_expression (e3,tnr2) => (cfn3,var3,tnr3) &
+	
+	c_merge_fns([cfn1,cfn2,cfn3]) => cfn 
+	-----------------------
+	generate_range_expressions(Exp.RANGE(t,e1,SOME(e2),e3),tnr) 
+	  => (cfn,var1,var2,var3,tnr3)
+
+  rule	print "# generate_range_expressions failed\n"
+	-----------------------
+	generate_range_expressions(_,_) => fail
 
 end
 
@@ -1038,8 +1339,7 @@ relation generate_equations : DAE.Element list => () =
 
   axiom	generate_equations []
 
-  rule	indent 2 & 
-	Exp.print_exp e1 &
+  rule	Exp.print_exp e1 &
 	print " = " &
 	Exp.print_exp e2 &
 	print ";\n" &
@@ -1053,147 +1353,13 @@ relation generate_equations : DAE.Element list => () =
 
 end
 
-
-
-
-
-
-(*******************************)
-(* LS: Copied from dae.rml     *)
-(* and maybe modified slightly *)
-(*******************************)
-
-
-
-(** relation: pp_statement
- **
- ** Prettyprint an algorithm statement
- **)
-
-relation pp_statement : Algorithm.Statement => () =
-
-  rule	pp_stmt (alg,2)
-	--------------
-	pp_statement alg
-
-end
-
-relation pp_stmt : (Algorithm.Statement, int) => () =
-
-  rule	indent i &
-	Exp.print_component_ref c &
-	print " = " &
-	Exp.print_exp e &
-	print ";\n"
-	----------
-	pp_stmt (Algorithm.ASSIGN(_,c,e), i)
-
-  rule	indent i &
-	Exp.print_component_ref c &
-	print " = " &
-	Exp.print_exp e &
-	print ";\n"
-	----------
-	pp_stmt (Algorithm.ASSIGN_ARR(_,c,e), i)
-
-  rule	indent i &
- 	print "if " & Exp.print_exp e & print " then\n" &
-	int_add(i,2) => i' &
-	pp_stmt_list (then, i') &
-	pp_else (else, i) &
-	indent i & print "end if;\n"
-        -------------------
-	pp_stmt (Algorithm.IF(e,then,else), i)
-	
-  rule	indent i &
-	print "for " & print id & print " in " &
- 	Exp.print_exp e & print " loop\n" &
-	int_add(i,2) => i' &
-	pp_stmt_list (stmts, i') &
-	indent i &
-	print "end for;\n"
-        -------------------
-	pp_stmt (Algorithm.FOR(id,e,stmts), i)
-	
-  rule	indent i &
-	print "while " & Exp.print_exp e & print " loop\n" &
-	int_add(i,2) => i' &
-	pp_stmt_list (stmts, i') &
-	indent i &
-	print "end while;\n"
-        -------------------
-	pp_stmt (Algorithm.WHILE(e,stmts), i)
-	
-  rule	indent i &
-	print "when " & Exp.print_exp e & print " do\n" &
-	int_add(i,2) => i' &
-	pp_stmt_list (stmts, i') &
-	indent i &
-	print "end when;\n"
-        -------------------
-	pp_stmt (Algorithm.WHEN(e,stmts), i)
-	
-  rule	indent i & print "**ALGORITHM**;\n"
-	----------------------------------
-	pp_stmt (_,i)
-
-end
-
-relation pp_stmt_list : (Algorithm.Statement list, int) => () =
-
-  axiom	pp_stmt_list ([],_)
-
-  rule	pp_stmt (stmt,i) & pp_stmt_list(stmts,i)
-	--------------------------------
-	pp_stmt_list (stmt::stmts,i)
-
-end
-
-relation pp_else : (Algorithm.Else, int) => () =
-
-  axiom	pp_else (Algorithm.NOELSE, _)
-
-  rule	indent i &
- 	print "elseif " & Exp.print_exp e & print " then\n" &
-	int_add(i,2) => i' &
-	pp_stmt_list (then, i') &
-	pp_else (else, i)
-        -----------------
-	pp_else (Algorithm.ELSEIF(e,then,else), i)
-
-  rule	indent i &
- 	print "else\n" &
-	int_add(i,2) => i' &
-	pp_stmt_list (stmts, i')
-        ------------------------
-	pp_else (Algorithm.ELSE(stmts), i)
-
-end
-
-relation indent : int => () =
-
-  axiom indent 0
-
-  rule	print " " & int_sub(i,1) => i' & indent i'
-	------------------------------------------
-	indent i
-end
-
-(***********************************)
-(* / LS: End of copy from dae.rml  *)
-(***********************************)
-
-
-
-
-
 relation generate_exp : Exp.Exp => () =
 
   rule	print "{" &
 	Exp.print_list (es, generate_exp, ", ") &
 	print "}"
 	---------------------------------------
-	generate_exp Exp.ARRAY(es)
+	generate_exp Exp.ARRAY(_,_,es)
 
   rule	Exp.print_exp e
 	---------------
@@ -1240,7 +1406,6 @@ end
 *)
  
 relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
-(*	  => (string list, string list, string list, string, int) =*)
 	  
   rule	int_string i => istr
 	-----------------------------------------------------
@@ -1266,9 +1431,9 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	-------------------------------------------------
 	generate_expression(Exp.BINARY(e1,op,e2),tnr) => (cfn, var, tnr')
 
-  rule	print "# unary not implemented\n"
+  rule	generate_unary(op,e,tnr) => (cfn,var,tnr')
 	-------------------------
-	generate_expression(Exp.UNARY(_,_),_) => fail
+	generate_expression(Exp.UNARY(op,e),tnr) => (cfn,var,tnr')
 
   rule	generate_lbinary(e1,op,e2,tnr) => (cfn,var,tnr')
 	-------------------------
@@ -1297,7 +1462,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 
 	c_merge_fns([cfn1',cfn2',cfn3']) => cfn &
 
-	Util.string_append_list(["((",tvar,")?",var2,":",var3,")"]) => var	
+	Util.string_append_list(["((",tvar,")?",var2,":",var3,")"]) => var
 	-------------------------
 	generate_expression(Exp.IFEXP(e,then,else),tnr) 
 	  => (cfn,var,tnr3)
@@ -1331,18 +1496,53 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	-------------------------
 	generate_expression(Exp.CALL(fn,args,true),tnr) => (cfn,tvar,tnr2)
 
-  rule	print "# array not implemented\n"
+  rule	generate_expressions(elist,tnr) => (cfn1,vars1,tnr1) &
+	list_length vars1 => nvars &
+	int_string nvars => nvars_str &
+	exp_type_str (t,true) => array_type_str &
+	exp_short_type_str t => short_type_str &
+	generate_temp_decl(array_type_str,tnr1) => (tdecl,tvar,tnr2) &
+	Util.if(a,"","scalar_") => scalar &
+	Util.string_delimit_list (vars1, ", ") => args_str &
+	Util.string_append_list ["array_",scalar,array_type_str,"(&",
+				 tvar,", ",nvars_str,", ",args_str,");"
+				 ] => stmt &
+	c_add_variables(cfn1,[tdecl]) => cfn' &
+	c_add_statements(cfn',[stmt]) => cfn
 	-------------------------
-	generate_expression(Exp.ARRAY(_),_) => fail
+	generate_expression(Exp.ARRAY(t,a,elist),tnr) => (cfn,tvar,tnr2)
 
-  rule	print "# matrix not implemented\n"
+  rule	generate_matrix(t,maxn,ell,tnr) => (cfn,var,tnr')
 	-------------------------
-	generate_expression(Exp.MATRIX(_),_) => fail
+	generate_expression(Exp.MATRIX(t,maxn,ell),tnr) => (cfn,var,tnr')
 
   rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
-	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) 	
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	exp_type_str (t,true) => type_string &
+	generate_temp_decl(type_string,tnr2) => (tdecl,tvar,tnr3) &
+	Util.string_append_list(["range_alloc_",type_string,"(",
+				 var1,", ",var2,", 1, &",tvar,");"]) => stmt &
+
+	c_add_variables(cfn1,[tdecl]) => cfn1' &
+	c_add_statements(cfn2,[stmt]) => cfn2' &
+	c_merge_fns([cfn1',cfn2']) => cfn
 	-------------------------
-	generate_expression(Exp.RANGE(t,e1,NONE,e2),tnr) => fail
+	generate_expression(Exp.RANGE(t,e1,NONE,e2),tnr) => (cfn,tvar,tnr3)
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1)=> (cfn2,var2,tnr2) &
+	generate_expression(e3,tnr1)=> (cfn3,var3,tnr3) &
+	exp_type_str (t,true) => type_string &
+	generate_temp_decl(type_string,tnr3) => (tdecl,tvar,tnr4) &
+	Util.string_append_list(["range_alloc_",type_string,"(",
+				 var1,", ",var3,", ",var2,", &",tvar,");"]) 
+	  => stmt &
+
+	c_add_variables(cfn1,[tdecl]) => cfn1' &
+	c_add_statements(cfn2,[stmt]) => cfn2' &
+	c_merge_fns([cfn1',cfn2']) => cfn
+	-------------------------
+	generate_expression(Exp.RANGE(t,e1,SOME(e2),e3),tnr) => (cfn,tvar,tnr4)
 
   rule	print "# tuple not implemented\n"
 	-------------------------
@@ -1370,6 +1570,42 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	generate_expression(e,_) => fail
 end
 
+relation generate_unary : (Exp.Operator, Exp.Exp, int)
+	  => (CFunction, string, int) =
+
+  rule	generate_expression(e,tnr) => (cfn,var,tnr')
+	------------------------
+	generate_unary (Exp.UPLUS(Exp.REAL), e, tnr) => (cfn, var, tnr')
+
+  rule	generate_expression(e,tnr) => (cfn,var,tnr')
+	------------------------
+	generate_unary (Exp.UPLUS(Exp.INT), e, tnr) => (cfn, var, tnr')
+
+  rule	generate_expression(e,tnr) => (cfn,var,tnr') &
+	Util.string_append_list ["(-",var,")"] => var'
+	------------------------
+	generate_unary (Exp.UMINUS(Exp.REAL), e, tnr) => (cfn, var', tnr')
+
+  rule	generate_expression(e,tnr) => (cfn,var,tnr') &
+	Util.string_append_list ["(-",var,")"] => var'
+	------------------------
+	generate_unary (Exp.UMINUS(Exp.INT), e, tnr) => (cfn, var', tnr')
+
+  rule	generate_expression(e,tnr) => (cfn,var,tnr')
+	------------------------
+	generate_unary (Exp.UPLUS_ARR(Exp.REAL), e, tnr) => (cfn, var, tnr')
+
+  rule	generate_expression(e,tnr) => (cfn,var,tnr')
+	------------------------
+	generate_unary (Exp.UPLUS_ARR(Exp.INT), e, tnr) => (cfn, var, tnr')
+
+  rule	print "# unary minus for arrays not implemented\n"
+	------------------------
+	generate_unary (Exp.UMINUS_ARR(_), _, _) => fail
+
+
+
+end
 
 (*
 
@@ -2033,6 +2269,118 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 
 end
 
+relation generate_matrix : (Exp.Type, int, (Exp.Exp*bool) list list, int) 
+	  => (CFunction, string, int) =
+
+
+  rule	generate_matrix_expressions(typ,exps,maxn,tnr) => (cfn1,vars1,tnr1) &
+	concatenate_matrix_rows(typ,vars1,tnr1) => (cfn2,vars2,tnr2) &
+	
+	exp_type_str(typ,true) => array_type_str &
+	Util.string_delimit_list(vars2,", &") => args_str &
+	list_length(vars2) => n &
+	int_string n => n_str &
+	generate_temp_decl(array_type_str,tnr2) => (tdecl,tvar,tnr3) &
+	Util.string_append_list(["concatenate_",array_type_str,"(1, &",
+				 tvar,", ",n_str,
+				 ", &",args_str,");"]) => stmt &
+
+	c_add_variables(cfn2,[tdecl]) => cfn' &
+	c_add_statements(cfn',[stmt]) => cfn'' &
+	c_merge_fn(cfn1,cfn'') => cfn
+	
+	(*
+
+	 Generate code for every expression and
+	 promote it to maxn dimensions
+	 for every row create cat(2,rowvar1,....)
+	 for every column create cat(1,row1,....)
+
+	 *)
+	---------------------
+	generate_matrix(typ,maxn,exps,tnr) => (cfn,tvar,tnr3)
+
+end
+
+relation concatenate_matrix_rows : (Exp.Type, string list list, int)
+	=> (CFunction, string list, int) =
+
+  axiom	concatenate_matrix_rows (_,[],tnr) => (c_empty_function, [], tnr)
+
+  rule	concatenate_matrix_row(typ,f,tnr) => (cfn1,var1,tnr1) &
+	concatenate_matrix_rows(typ,r,tnr1) => (cfn2,vars2,tnr2) &
+	c_merge_fn(cfn1,cfn2) => cfn
+	------
+	concatenate_matrix_rows (typ,f::r,tnr) => (cfn,var1::vars2,tnr2)
+
+end
+
+relation concatenate_matrix_row : (Exp.Type, string list, int) 
+	  => (CFunction, string, int) =
+
+  rule	exp_type_str(typ,true) => array_type_str &
+	Util.string_delimit_list(vars,", &") => args_str &
+	list_length(vars) => n &
+	int_string n => n_str &
+	generate_temp_decl(array_type_str,tnr) => (tdecl,tvar,tnr1) &
+	Util.string_append_list(["concatenate_",array_type_str,"(2, &",
+				 tvar,", ",n_str,
+				 ", &",args_str,");"]) => stmt &
+
+	c_add_variables(c_empty_function,[tdecl]) => cfn' &
+	c_add_statements(cfn',[stmt]) => cfn
+	---------
+	concatenate_matrix_row (typ,vars,tnr) => (cfn,tvar, tnr1)
+end
+
+relation generate_matrix_expressions : (Exp.Type,(Exp.Exp*bool) list list, int, int) =>
+	(CFunction, string list list, int) =
+
+  axiom	generate_matrix_expressions(_,[],_,tnr) => (c_empty_function,[],tnr)
+
+
+  rule	generate_matrix_expr_row (typ,fr,maxn,tnr) => (cfn1,vars1,tnr1) &
+	generate_matrix_expressions(typ,rr,maxn,tnr1) => (cfn2,vars2,tnr2) &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_matrix_expressions(typ,fr::rr,maxn,tnr) 
+	  => (cfn,vars1::vars2,tnr2)
+
+
+end
+
+relation generate_matrix_expr_row : (Exp.Type,(Exp.Exp*bool) list, int, int)
+	  => (CFunction,string list, int) =
+
+  axiom	generate_matrix_expr_row (_,[],_,tnr) => (c_empty_function,[],tnr)
+
+  rule	generate_matrix_expression(t,f,maxn,tnr) => (cfn1,var1,tnr1) &
+	generate_matrix_expr_row(t,r,maxn,tnr1) => (cfn2,vars2,tnr2) &
+	c_merge_fn(cfn1,cfn2) => cfn
+	------
+	generate_matrix_expr_row(t,f::r,maxn,tnr) => (cfn,var1::vars2,tnr2)
+
+
+end
+	
+relation generate_matrix_expression : (Exp.Type,(Exp.Exp*bool), int, int) 
+	=> (CFunction, string, int) =
+
+  rule	generate_expression(e,tnr) => (cfn1,var1,tnr1) &
+	exp_type_str(t,true) => array_type_str &
+	int_string maxn => maxn_str &
+	generate_temp_decl(array_type_str,tnr1) => (tdecl,tvar,tnr2) &
+	Util.if(b,"","scalar_") => scalar &
+	Util.if(b,"&","") => sc_ref &
+	Util.string_append_list(["promote_",scalar,array_type_str,"(",
+				 sc_ref,var1,
+				 ", ",maxn_str,", &",tvar,");"]) => stmt &
+	c_add_variables(cfn1,[tdecl]) => cfn' &
+	c_add_statements(cfn',[stmt]) => cfn
+	---------------------------------
+	generate_matrix_expression(t,(e,b),maxn,tnr) => (cfn,tvar,tnr2)
+
+end
 (* generate_read_call_write(fpath,outvars,retstr,args) => rcw_fn *)
 relation generate_read_call_write : (string,
 				     DAE.Element list,
@@ -2088,6 +2436,7 @@ relation invar_names : DAE.Element list => string list =
 
 
 end
+
 
 relation generate_read : DAE.Element list => CFunction =
 
