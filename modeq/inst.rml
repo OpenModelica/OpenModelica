@@ -193,7 +193,14 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
   rule	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
-	  => (l,env', csets', ci_state', tys)
+	  => (l,env', csets', ci_state', tys) &
+	Prefix.print_prefix_str pre => prestr &
+	string_append(prestr, " : ") => prestr' &
+	string_append(prestr', n) => prestr'' &
+	Debug.fcall ("envgraph", Env.print_env_graphviz, (env,prestr'')) &
+	Debug.fprintl ("envprint", ["------------ ", prestr'', "\n"]) &
+	Debug.fcall ("envprint", Env.print_env, env) &
+	Debug.fprintl ("envprint", ["------------ /", prestr'', "\n"])
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,r,d), prot)
@@ -236,7 +243,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (dae3,env''',csets''', ci_state'''') &
 	list_append(dae1,dae2) => dae5 &
 	list_append(dae5,dae3) => dae
-	-----------------------------
+	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,als), re, prot)
 	  => (dae,env''', csets''', ci_state'''', tys)
@@ -1108,6 +1115,17 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.print("\nDebug: did inst_eq_equation.") &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'  &
 	Debug.print("\nDebug: did ClassInf trans.")
+	& Prefix.print_prefix_str pre => prestr &
+	Exp.print_exp_str e1' => e1str &
+	Exp.print_exp_str e2' => e2str &
+	string_append (prestr, ": ") => debugstr &
+	string_append (debugstr, e1str) => debugstr2 &
+	string_append (debugstr2, " = ") => debugstr3 &
+	string_append (debugstr3, e2str) => debugstr4 &
+	Debug.fcall ("expenvgraph", Env.print_env_graphviz, (env,debugstr4)) &
+	Debug.fprintl ("expenvprint", ["------------ ", debugstr4, "\n"]) &
+	Debug.fcall ("expenvprint", Env.print_env, env) &
+	Debug.fprintl ("expenvprint", ["------------ /", debugstr4, "\n"])
 	--------------------------------------------------------------
 	inst_equation(env, mods, pre, csets, ci_state, SCode.EQ_EQUALS(e1,e2))
 	  => (dae, env, csets, ci_state')
