@@ -416,8 +416,8 @@ with "simcodegen.rml"
             
 relation find_dae_var:(string, string,DAELow.DAELow) => DAELow.Var =  
         
-  rule array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         list_append(vars,knvars) => allvars &
         find_dae_var2(name,class_name,allvars) => var 
         --------------------------------------
@@ -641,8 +641,8 @@ end
  relation add_dae_var_to_index_map:(DAELow.DAELow) => () = 
          
          
-  rule	array_list(vararr) => varlst &
-         array_list(knvararr) => knvarlst &
+  rule	DAELow.vararray_list(vararr) => varlst &
+         DAELow.vararray_list(knvararr) => knvarlst &
 	     Util.list_select(knvarlst,is_param) => knvarlst' &
          list_append(knvarlst',varlst) => all_vars &
          add_dae_var_to_index_map2(all_vars)
@@ -790,8 +790,8 @@ end
  relation generate_links:(DAELow.DAELow,string list) => (string) = 
          
          
-  rule	array_list(vararr) => varlst &
-         array_list(knvararr) => knvarlst &
+  rule	DAELow.vararray_list(vararr) => varlst &
+         DAELow.vararray_list(knvararr) => knvarlst &
 	     Util.list_select(knvarlst,is_param) => knvarlst' &
          list_append(knvarlst',varlst) => all_vars &
          generate_indep_var(comp_name_list,0) => indep_var_list &
@@ -1283,8 +1283,8 @@ end
  *)
 relation generate_constructor_inputvars:(DAELow.DAELow) => (string, string) = 
         
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         list_append(vars,knvars) => all_vars &
         generate_constructor_inputvars2(all_vars,0) => (lst,no_of_vars) &
         no_of_vars = 0
@@ -1294,8 +1294,8 @@ relation generate_constructor_inputvars:(DAELow.DAELow) => (string, string) =
                                                      DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) => 
         ("","")
 
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         list_append(vars,knvars) => all_vars &
         generate_constructor_inputvars2(all_vars,0) => (lst,no_of_vars) &
         
@@ -1360,8 +1360,8 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
  *)
 relation generate_constructor_algvars:(DAELow.DAELow) => (string, string,int) = 
         
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         list_append(knvars,vars) => all_vars &       
         generate_constructor_algvars2(all_vars,0) => (lst,no_of_vars) &
         
@@ -1371,8 +1371,8 @@ relation generate_constructor_algvars:(DAELow.DAELow) => (string, string,int) =
                                                    DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
           => ("","",0)
 
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         list_append(knvars,vars) => all_vars &       
         generate_constructor_algvars2(all_vars,0) => (lst,no_of_vars) &
         
@@ -1439,8 +1439,8 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
  *)
 relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) = 
         
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         generate_constructor_outputvars2(vars,0) => (lst,no_of_vars') &
         generate_constructor_outputvars2(knvars,0) => (knlst,no_of_vars'') &
         
@@ -1451,8 +1451,8 @@ relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) =
                                                       DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
           => ("","")
 
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         generate_constructor_outputvars2(vars,0) => (lst,no_of_vars') &
         generate_constructor_outputvars2(knvars,0) => (knlst,no_of_vars'') &
         
@@ -1535,8 +1535,8 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
  *)
  relation generate_constructor_statevars:(DAELow.DAELow) => (string,string) = 
 	     
-  rule	array_list(vararr) => vars &
-         array_list(knvararr) => knvars &
+  rule	DAELow.vararray_list(vararr) => vars &
+         DAELow.vararray_list(knvararr) => knvars &
          list_append(vars,knvars) => all_vars &
          generate_constructor_statevars2(all_vars,0,0) => (lst, no_of_vars',no_of_var_values') &
          int_eq(no_of_vars',0) => true &
@@ -1547,9 +1547,8 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
                                                       eqn,seqn,_,_)) 
 	      => ("","")
 
-
-  rule	array_list(vararr) => vars &
-         array_list(knvararr) => knvars &
+  rule	DAELow.vararray_list(vararr) => vars &
+         DAELow.vararray_list(knvararr) => knvars &
          list_append(vars,knvars) => all_vars &
          generate_constructor_statevars2(all_vars,0,0) => (lst, no_of_vars',no_of_var_values') &
          int_eq(no_of_vars',0)  => true &
@@ -1561,8 +1560,8 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
          generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
 	      => (res',prefix2)
  
- rule	array_list(vararr) => vars &
-         array_list(knvararr) => knvars &
+ rule	DAELow.vararray_list(vararr) => vars &
+         DAELow.vararray_list(knvararr) => knvars &
          list_append(vars,knvars) => all_vars &
          generate_constructor_statevars2(all_vars,0,0) => (lst, no_of_vars',no_of_var_values') &
          Util.string_delimit_list(lst,"\n")=> res & 
@@ -1646,8 +1645,8 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
  *)
 relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) = 
         
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         list_append(vars,knvars) => all_vars &
         generate_constructor_parameters2(all_vars,0) => (lst,no_of_vars) &
 
@@ -1657,8 +1656,8 @@ relation generate_constructor_parameters:(DAELow.DAELow) => (string, string) =
                                                       DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
           => ("","")
 
-  rule  array_list(vararr) => vars &
-        array_list(knvararr) => knvars &
+  rule  DAELow.vararray_list(vararr) => vars &
+        DAELow.vararray_list(knvararr) => knvars &
         list_append(vars,knvars) => all_vars &
         generate_constructor_parameters2(all_vars,0) => (lst,no_of_vars) &
         
@@ -1731,8 +1730,8 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 
   relation generate_var_defines: (DAELow.DAELow) => string =
 	      
-  rule	array_list(vararr) => vars &
-          array_list(knvararr) => knvars &
+  rule	DAELow.vararray_list(vararr) => vars &
+          DAELow.vararray_list(knvararr) => knvars &
 	      
 	      (* Varaibles in known variables are removed alg.vars, 
            they should not generate code.*)
@@ -2063,7 +2062,7 @@ end
  **)    
  relation translate_dae: DAELow.DAELow => DAELow.DAELow =
          
-  rule  array_list(vararr) => var_list &
+  rule  DAELow.vararray_list(vararr) => var_list &
          extract_der_from_var_list(var_list) => (from_list,to_list) &
 	     DAELow.equation_list(eqns) => eqn_list &
          replace_exp_in_eqns(eqn_list,from_list,to_list) => res_eqns &
@@ -2335,7 +2334,7 @@ end
 	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	     vector_nth(ass2,e') => v &
 	     int_sub(v,1) => v' &
-	     array_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	     DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	     DAELow.is_non_state kind &
 	     (*print "Solving for non-states\n" &*)
 
@@ -2364,7 +2363,7 @@ end
 	     vector_nth(ass2,e') => v &
 	     (* v == variable no solved in this equation *)
 	     int_sub(v,1) => v' &
-	     array_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+	     DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
 
 	     (*print "solving for state\n" &*)
          SimCodegen.cref_modelica_str(cr) => cr_str &
@@ -2395,7 +2394,7 @@ end
 	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	     vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	     int_sub(v,1) => v' &
-	     array_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	     DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
 	     let varexp = Exp.CREF(cr,Exp.REAL) &
 	     not Exp.solve(e1,e2,varexp) => _ &
 	     print "nonlinear equation not implemented yet\n" 

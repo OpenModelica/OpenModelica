@@ -70,14 +70,21 @@ module DAELow:
 		  * Algorithm.Algorithm array (* Algorithms *)
 
  datatype Variables = VARIABLES of CrefIndex list array (* HashTB, cref->indx*)
-				   * Var array (* Array of variables *)	
+				   * VariableArray (* Array of variables *)    
 				   * int (* bucket size *)
 				   * int (* no. of vars *)
+
 datatype CrefIndex = CREFINDEX of Exp.ComponentRef * int
 
 (* array of Equations are expandable, to amortize the cost of adding 
  ** equations in a more efficient manner
  *)
+
+
+datatype VariableArray = VARIABLE_ARRAY of int * (* no. elements *)
+					   int * (* array size *)
+					   Var option array	
+
 datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 					   int * (* array size *)
 					   Equation option array 
@@ -169,6 +176,12 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation equation_list:(EquationArray) => Equation list 
   relation list_equation:(Equation list ) => EquationArray
 
+
+  relation vararray_nth:(VariableArray, int) => Var 
+  relation vararray_setnth:(VariableArray, int, Var) => VariableArray 
+  relation vararray_add:(VariableArray,Var) => VariableArray 
+  relation vararray_length: (VariableArray) => int
+  relation vararray_list:(VariableArray) => Var list
 
   relation is_non_state: VarKind => ()
   relation is_var_known : (Var list, Exp.ComponentRef) => bool 
@@ -453,11 +466,46 @@ end
  **)
 relation var_list: (Variables) => Var list =
 
-  rule	array_list(vararr) => varlst 
+  rule	vararray_list(vararr) => varlst 
 	--------------------------------------
 	var_list(VARIABLES(_,vararr,_,_)) => varlst
 end
 
+(** relation vararray_list
+ ** Transforms a VariableArray to a Var list
+ **)
+
+relation vararray_list:(VariableArray) => Var list =
+
+  axiom	vararray_list(VARIABLE_ARRAY(0,_,arr)) => []
+
+  rule	array_nth(arr,0) => SOME(elt) 
+	------------------
+	vararray_list(VARIABLE_ARRAY(1,_,arr)) => [elt]
+
+  rule	n  - 1 => lastpos &
+	vararray_list2(arr,0,lastpos) => lst 
+	---------------
+	vararray_list(VARIABLE_ARRAY(n,size,arr)) => lst
+end
+
+(** relation: vararray_list2
+ ** Helper relation to vararray_list
+**)
+
+relation vararray_list2:(Var option array,int,int) => Var list =
+	
+  rule	int_eq (pos,lastpos) => true &
+	array_nth(arr,pos) => SOME(v) 
+	--------------------
+	vararray_list2(arr,pos,lastpos) => [v]
+
+  rule	pos + 1 => pos' &
+	array_nth(arr,pos) => SOME(v) &
+	vararray_list2(arr,pos',lastpos) => res
+	---------------------------------------
+	vararray_list2(arr,pos,lastpos) => v::res
+end
 
 (** relation: dump_eqns
  ** Helper relation to dump.
@@ -1560,14 +1608,15 @@ end
 
 (**relation empty_vars
  ** Returns a Variable datastructure that is empty.
- ** Using the bucketsize 100.
+ ** Using the bucketsize 10000 and array size 1000.
  **)
 relation empty_vars: () => Variables =
 
   rule	array_create(10000,[]) => arr &
-	list_array([]) => emptyarr 
+	Util.list_fill(NONE,1000) => lst &
+	list_array(lst) => emptyarr
 	------------------------
-	empty_vars() => VARIABLES(arr,emptyarr, 10000,0)
+	empty_vars() => VARIABLES(arr,VARIABLE_ARRAY(0,1000,emptyarr), 10000,0)
 end
 
 (** relation: merge_vars
@@ -1597,19 +1646,19 @@ relation add_var: (Var, Variables) => Variables =
 	not get_var(cr,vars) => (_,_) &
 	hash_component_ref(cr) => hval &
 	int_mod(hval,bsize) => indx & 
-	array_length(varr) => newpos &
-	array_add(varr,v) => varr' &
+	vararray_length(varr) => newpos &
+	vararray_add(varr,v) => varr' &
 	array_nth(hashvec,indx)=> indexes &
 	array_setnth(hashvec,indx,CREFINDEX(cr,newpos)::indexes) => hashvec' &
-	array_length(varr') => n'
+	vararray_length(varr') => n'
 	-----------------------------
 	add_var(v as VAR(cr,_,_,_,_,_,_,_,_,_,_),vars as VARIABLES(hashvec,varr,bsize,n)) 
 	  => VARIABLES(hashvec',varr',bsize,n')
 
-  rule	(* adding when allready present => Updating value *)
+  rule	(* adding when allready present => Updating value *) 
 	get_var(cr,vars) => (v,indx) &
 	int_sub(indx,1) => indx' &
-	array_setnth(varr,indx',newv) => varr'
+	vararray_setnth(varr,indx',newv) => varr'
 	-----------------------------------
 	add_var( newv as VAR(cr,_,_,_,_,_,_,_,_,_,_),vars as VARIABLES(hashvec,varr,bsize,n))
 	  => VARIABLES(hashvec,varr',bsize,n)
@@ -1617,6 +1666,95 @@ relation add_var: (Var, Variables) => Variables =
   rule	print "-add_var failed\n"
 	--------------------------
 	add_var(_,_) => fail
+end
+
+(** relation vararray_length
+ ** Returns the number of variable in the VariableArray
+ **)
+relation vararray_length: (VariableArray) => int =
+
+  axiom	vararray_length(VARIABLE_ARRAY(n,_,_)) => n
+
+end
+
+(** relation vararray_add
+ ** Adds a variable last to the VariableArray, increasing array size
+ ** if no space left by factor 1.4
+**)
+relation vararray_add:(VariableArray,Var) => VariableArray =
+
+  rule	(* Have space to add array elt. *)
+	int_lt(n,size) => true &
+	n +1 => n' &
+	array_setnth(arr,n,SOME(v)) => arr' 
+	-------------------------
+	vararray_add(VARIABLE_ARRAY(n,size,arr),v) 
+	  => VARIABLE_ARRAY(n',size,arr')
+
+  rule	(* Do NOT have splace to add array elt. Expand with factor 1.4 *)
+	int_lt(n,size) => false &
+	int_real(size) => rsize &
+	real_mul(rsize,0.4) => rexpandsize &
+	real_int(rexpandsize) => expandsize &
+	int_add(expandsize,size) => newsize &
+	Util.array_expand(expandsize,arr,NONE) => arr' &
+	n + 1 => n' &
+	array_setnth(arr',n,SOME(v)) => arr''
+	---------------------------------
+	vararray_add(VARIABLE_ARRAY(n,size,arr),v)
+	  => VARIABLE_ARRAY(n',newsize,arr'')
+
+  rule	print "-vararray_add failed\n"
+	--------------------
+	vararray_add(_,_) => fail
+end
+
+(** relation vararray_setnth
+ ** Set the n:th variable in the VariableArray to v.
+ **)
+
+relation vararray_setnth:(VariableArray,
+			  int, (* n *)
+			  Var) (* v *)
+	  => VariableArray =
+
+  rule	int_lt(pos,size) => true &
+	array_setnth(arr,pos,SOME(v)) => arr'
+	-------------------------
+	vararray_setnth(VARIABLE_ARRAY(n,size,arr),pos,v)
+	=> VARIABLE_ARRAY(n,size,arr')
+
+  rule	print "-vararray_setnth failed\n"
+	-------------------------
+	vararray_setnth(_,_,_)
+	=> fail
+end
+
+(** relation vararray_nth
+ ** Retrieve the n:th Var from VariableArray
+**)
+relation vararray_nth:(VariableArray,
+		       int (* n *)) 
+	  => Var =
+
+  rule	int_lt(pos,n) => true &
+	array_nth(arr,pos) => SOME(v)
+	--------------
+	vararray_nth(VARIABLE_ARRAY(n,_,arr),pos) => v
+
+  rule	int_lt(pos,n) => true &
+	array_nth(arr,pos) => NONE & 
+	print "vararray_nth has NONE!!!\n" 
+	--------------
+	vararray_nth(VARIABLE_ARRAY(n,_,arr),pos) => fail
+
+  rule	print "-vararray_nth , pos : " & int_string(pos) => ps & print ps &
+	print "\n  array_length:" & vararray_length(arr) => len & 
+	int_string(len) => lens & print lens & print "\n" &
+	int_string(n) => ns &
+	print "n :" & print ns & print "\n" 
+	--------------
+	vararray_nth(arr as VARIABLE_ARRAY(n,_,_),pos) => fail
 end
 
 (** relation replace_var
@@ -1681,21 +1819,21 @@ relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
 	int_mod(hval,bsize) => hashindx &
 	array_nth(hashvec,hashindx) => indexes &
 	get_var2(cr, indexes) => indx &
-	array_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_)) &
+	vararray_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_)) &
 	Exp.cref_equal(cr,cr2) => true &
 	int_add(indx,1) => indx'
 	-----------------------------
 	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => (v,indx')
 
-  rule	
-	hash_component_ref(cr) => hval &
+  rule	hash_component_ref(cr) => hval &
 	int_mod(hval,bsize) => hashindx &
 	array_nth(hashvec,hashindx) => indexes &
 	get_var2(cr, indexes) => indx &
-	array_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_)) &
-	Exp.cref_equal(cr,cr2) => true &
-	print "-get_var failed\n"
-	--------------------
+	not vararray_nth(varr,indx) => (_) &
+	print "get var failed because vararray_nth failed, cr:" &
+	Exp.print_component_ref_str cr => str &
+	print str  & print "\n" 
+	-----------------
 	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => fail
 end
 (** relation get_var2
@@ -1710,7 +1848,6 @@ relation get_var2:(Exp.ComponentRef, CrefIndex list) => int =
   rule	get_var2(cr,vs) => res
 	----------------------
 	get_var2(cr,v::vs) => res
-
 end
 
 (** relation: delete_var
@@ -1719,10 +1856,10 @@ end
  **)
 relation delete_var: (Variables,Exp.ComponentRef) => Variables =
 
-  rule	array_list(varr) => varlst &
+  rule	vararray_list(varr) => varlst &
 	delete_var2(cr,varlst) => varlst' &
 	empty_vars() => newvars &
-	add_vars(varlst,newvars) => newvars'
+	add_vars(varlst',newvars) => newvars'
 	--------------------------------------------------
 	delete_var(VARIABLES(hashvec,varr,bsize,n),cr) 
 	  =>  newvars'
@@ -2357,31 +2494,11 @@ end
  ** is a dummy variable, etc.
  **)
 relation replace_dummy_der_others:(Equation, Variables) => (Equation, Variables) =
-	
-	
   rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars') &
 	replace_dummy_der_others_exp(e2,vars') => (e2', vars'')
 	---------------------------------------------------------------
 	replace_dummy_der_others(EQUATION(e1,e2),vars)
 	  => (EQUATION(e1',e2'),vars'')
-
-  rule	not replace_dummy_der_others_exp(e1,vars) => (_,_) &
-	replace_dummy_der_others_exp(e2,vars) => (e2', vars')
-	----------------------
-	replace_dummy_der_others(EQUATION(e1,e2),vars)
-	  => (EQUATION(e1,e2'),vars')
-
-  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars') &
-	not replace_dummy_der_others_exp(e2,vars) => (_, _)
-	----------------------
-	replace_dummy_der_others(EQUATION(e1,e2),vars)
-	  => (EQUATION(e1',e2),vars')
-
-  rule	not replace_dummy_der_others_exp(e1,vars) => (_,_) &
-	not replace_dummy_der_others_exp(e2,vars) => (_, _)
-	----------------------
-	replace_dummy_der_others(EQUATION(e1,e2),vars)
-	  => (EQUATION(e1,e2),vars)
 
   rule	print "-replace_dummy_der_others failed\n" 
 	---------------------
@@ -2472,6 +2589,7 @@ relation replace_dummy_der_others_exp: (Exp.Exp, Variables) => (Exp.Exp,Variable
 					      _),vars)
 	  => (Exp.CREF(dummyder,Exp.REAL),vars')
 	  
+  axiom	replace_dummy_der_others_exp(e,vars) => (e,vars)
 end
 
 relation var_equal: (Var,Var) => bool =
