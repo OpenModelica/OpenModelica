@@ -353,5 +353,5 @@ RML_END_LABEL
   rmlA0 = RML_PRIM_MKBOOL(simulation_cg);
   RML_TAILCALLK(rmlSC);
 }
-}
+
 RML_END_LABEL
