@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+</head>
+<body>
+<h1>Things that does not work</h1>
+OpenModelica v.1.2.1<br>
+<br>
+<h2>&nbsp;In simulation code: <br>
+</h2>
+<ul>
+  <li>&nbsp;Event handling, only continuous subset of Modelica works<br>
+  </li>
+  <li>&nbsp;Limited error checking in numerical solver. <br>
+  </li>
+  <li>&nbsp;Limited support for initial values. <br>
+  </li>
+  <li>&nbsp;No dynamic selection of states (in index reduction) <br>
+  </li>
+  <li>Only possible to run with DASSL numerical solver. <br>
+  </li>
+  <li>initial equation can not be used. Set initial values using the
+start attribute instead, e.g. Real x(start=1);</li>
+  <li>All initial values must be consistent, i.e. no initial value
+calculation is performed. This can be done by hand and filled in into
+the &lt;modelname&gt;_init.txt file.<br>
+  </li>
+</ul>
+<h2>In translation to flat Modelica:
+<br>
+</h2>
+<ul>
+  <li>Inner/Outer&nbsp; </li>
+  <li>Some excotic cases with Modifications, especially with redeclare.
+  </li>
+  <li>Each modifier</li>
+  <li>Final element modification not checked against.</li>
+  <li>Constraining type on redeclarations</li>
+  <li>Restrictions on redeclarations (subtype etc.)</li>
+  <li>Derivatives of functions, using annotations. </li>
+  <li>Components of function type not implemented.</li>
+  <li>When clauses. </li>
+  <li>Restrictions on connections. </li>
+  <li>The following operators in 3.4.2 have not been implemented: <br>
+smooth noEvent sample edge change reinit terminate mod delay
+cardinality&nbsp;<br>
+  </li>
+  <li>Reduction expressions, </li>
+  <li>Slice operation. Partly works but the resulting component names
+are sometimes messed up. </li>
+  <li>Vectorized call of functions not implemented. </li>
+  <li>Output parameters of functions, enable attribute, etc.</li>
+</ul>
+<ul>
+  <li>Matrices and vectors in equations (only works if can be fully
+converted to scalar values.)</li>
+  <li>Array construction (3.4.4.1). Using array(... for ...) syntax.
+Partially implemented. Left to do: <br>
+- Constant evaluation and/or optimization. Could be implemented as
+function calls with index as argument. Or array can be unrolled and
+indexed, or if constant value can be calculated and indexed. Array
+should then be cached. <br>
+- Automatic type conversion of element type, e.g. (Real[]) a[5] =
+{(Integer)3 for ...} fails. <br>
+- Handle multiple iterators <br>
+  </li>
+  <li>Array constructors with iterators. Using {expr for i in ...}
+syntax. <br>
+  </li>
+  <li>Deduction of ranges (3.3.3.1). It is allowed to leave out "in
+range" in loops. e.g. for i loop ... end for; according to
+specification.</li>
+  <li>Multiple loop ranges, e.g.: for i in 1:5, j in 1:3 loop
+a[i,j]=i*j; end for; <br>
+  </li>
+  <li>Constant evaluation of record constructors for hierachical
+records. <br>
+  </li>
+  <li>Constant evaluation of dot ('.') operator. </li>
+</ul>
+</body>
+</html>
