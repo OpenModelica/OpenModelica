@@ -1511,14 +1511,23 @@ end
 relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef,
 			  Absyn.NamedArg list, Absyn.Program) => 
 	(string, Absyn.Program) =
-	
+
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE)) 
 	  => newcdef &
 	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
 	---------------------------------------------------
-	add_connection(model,c1,c2,[],p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
+	add_connection(model as Absyn.CREF_IDENT(_,_),c1,c2,[],p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
+	
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	Absyn.strip_last(modelpath) => package &
+	add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE)) 
+	  => newcdef &
+	update_program(Absyn.PROGRAM([newcdef],Absyn.WITHIN(package)),p)=> newp
+	---------------------------------------------------
+	add_connection(model as Absyn.CREF_QUAL(_,_,_),c1,c2,[],p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
@@ -1527,7 +1536,17 @@ relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Componen
 	  => newcdef &
 	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
 	---------------------------------------------------
-	add_connection(model,c1,c2,nargs,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)	
+	add_connection(model as Absyn.CREF_IDENT(_,_),c1,c2,nargs,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	Absyn.strip_last(modelpath) => package &
+	annotation_list_to_absyn(nargs) => annotation &
+	add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),SOME(Absyn.COMMENT(SOME(annotation),NONE)))) 
+	  => newcdef &
+	update_program(Absyn.PROGRAM([newcdef],Absyn.WITHIN(package)),p)=> newp
+	---------------------------------------------------
+	add_connection(model as Absyn.CREF_QUAL(_,_,_),c1,c2,nargs,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)	
 end
 
 relation delete_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program)
