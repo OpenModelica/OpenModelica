@@ -1,6 +1,9 @@
 \documentclass[a4paper]{report}
 \usepackage[english]{babel}
 \usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\usepackage{boxedminipage}
 
 \author{David Kågedal}
 \title{Blahonga Blahonga}
@@ -11,6 +14,36 @@
 \newcommand{\note}[1]{[\textsc{#1}]}
 
 \newtheorem{Def}{Definition}[chapter]
+
+% The following is stolen from Marcus Comstedt..
+
+\def\srcextfont{}
+ 
+% Define \srcext{} and \abscon{} using heavy TeX magic...
+\begingroup
+\catcode`[=1\catcode`]=2\catcode`\{=12\catcode`\}=12
+\gdef\xsrcext{#1}[\hbox[\vrule\vbox[\hrule\vskip\fboxsep%
+\hbox[\srcextfont\hskip\fboxsep\vbox[#1]\hskip\fboxsep]%
+\vskip\fboxsep\hrule]\vrule]\endgroup]
+\gdef\xabscon{#1}[\begin[minipage][\mainw]\vrule\vbox[\hrule\vskip\fboxsep%
+\hbox[\hskip\fboxsep\vbox[#1]\hskip\fboxsep]%
+\vskip\fboxsep\hrule]\vrule\end[minipage]\endgroup\hspace[3mm]%
+\begin[minipage][\sidew]\obeycr\csyn]
+\endgroup
+{
+ \gdef\mydotab{\hskip 4em}
+ \makeatletter\catcode`\^^I=\active
+ \gdef\srcext{\begingroup\@verbatim \frenchspacing\@vobeyspaces
+   \catcode`\^^I=\active\let^^I=\mydotab\xsrcext}
+ \gdef\abscon{\begingroup\@verbatim \frenchspacing\@vobeyspaces
+   \catcode`\^^I=\active\let^^I=\mydotab\xabscon}
+}
+
+
+\font\tenmy=cmtt8 scaled 980
+\newfam\myfam \def\mytt{\fam\myfam\tenmy}
+\textfont\myfam=\tenmy
+\def\srcextfont{\mytt}
 
 \begin{document}
 
@@ -71,6 +104,23 @@ translator.
 \chapter{Development environment}
 \label{cha:devenv}
 
+
+\section{Compiling RML}
+\label{sec:rmlc}
+
+
+\section{The report}
+\label{sec:report}
+
+This report was writting using the \LaTeX text formatting system.
+Some heavy-duty \TeX magic was borrowed from Marcus Comstedt's report
+\note{referens}.
+
+To produce the annotated semantics in chapter \ref{cha:formsem} a
+small program was written to convert the RML source files with
+comments to \LaTeX source with the comments converted to ordinary
+text. This program is a quick'n'dirty Pike\note{ref} hack, and is
+provided in appendix\note{ref}.
 
 \chapter{Informal semantics}
 \label{cha:semantics}
@@ -205,17 +255,44 @@ variables are collected in \firstref{connection sets}.
   $M$.
 \end{Def}
 
-When a \code{connect(a,b)} construct is encountered, the component
-names \code{a} and \code{b} are checked to be of the same type
-(see section \ref{sec:typeq}).
+When a \code{connect(a,b)} construct is encountered while
+instantiating a class \code{C}, the component names \code{a} and
+\code{b} are checked to be of the same type (see section
+\ref{sec:typeq}). Then \code{a} and \code{b} are decomposed into their
+public primitive components. Each subcomponent of \code{a} forms a
+connection set with its corresponding subcomponent of \code{b}.
 
+If several \code{connect(a,b)} constructs are encountered during
+instantiation of a class, the resulting connection sets are merged to
+a collection of connection sets $C$ so that if a component $x$ is
+in two different connection sets $S_1$ and $S_2$, they the union $S_1
+\cup S_2$ is a subset of one of the sets in $C$. Each component is in
+exactly one of the sets in $C$.
 
 \subsection{Equations}
 \label{sec:coneq}
 
-In the case of variables declared with the \code{flow} type modifier,
-the equation generated is a sum-to-zero equation. \[\sum_{v \in C} d_v
-v = 0\]
+Each connection set is used to generate one or more equations. In the
+case of variables declared with the \code{flow} type modifier, the
+equation generated is a sum-to-zero equation.
+
+\begin{equation}
+  \label{eq:flow}
+  \sum_{v \in C} d_v v = 0
+\end{equation}
+
+In the case of non-flow components a number of simple equations is
+generated. If the connection set contains $n$ components $c_1 \ldots
+c_n$, equations to the effect of $c_1=c_2=\cdots=c_n$ are generated,
+as in (\ref{eqn:nonflow}).
+
+\begin{eqnarray}
+  \label{eqn:nonflow}
+  c_1     & =      & c_2 \notag\\
+  c_2     & =      & c_3 \notag\\
+          & \vdots & \notag\\
+  c_{n-1} & =      & c_n  
+\end{eqnarray}
 
 
 \chapter{Design}
@@ -282,7 +359,15 @@ are listed in table \ref{tab:classinfevents}.
 \chapter{Annotated formal semantics}
 \label{cha:formsem}
 
+\input{inst.tex}
+\input{classinf.tex}
+\input{mod.tex}
+%\input{connect.tex}
 
+
+\chapter{rmldoc \note{Ska vara ett appendix}}
+
+{\small\verbatiminput[8]{../tools/rmldoc}}
 
 \begin{thebibliography}{99}
 \bibitem[FOO]{Hm}
