@@ -7,7 +7,7 @@
 SHELL	= /bin/sh
 CC	= cc
 CFLAGS	= 
-LDFLAGS = -lrml
+LDFLAGS = -lrml -lm
 RML	= rmlc -g
 PROG	= modeq
 AST	= ast/libast.a
