@@ -3,7 +3,6 @@
 #include "rml.h"
 #include "dae.h"
 #include "exp.h"
-#include "class.h"
 #include "yacclib.h"
 #include <errno.h>
 
@@ -56,10 +55,7 @@ void *sibling_list(AST *ast)
 RML_BEGIN_LABEL(Parser__parse)
 {
   AST *root = NULL;
-  void *a0, *a0hdr;
-  RML_INSPECTBOX(a0, a0hdr, rmlA0);
-  if( a0hdr == RML_IMMEDIATE(RML_UNBOUNDHDR) )
-    RML_TAILCALLK(rmlFC);
+  void *a0 = rmlA0;
   if( !freopen(RML_STRINGDATA(a0), "r", stdin) ) {
     fprintf(stderr, "freopen %s failed: %s\n",
 	    RML_STRINGDATA(a0), strerror(errno));
@@ -72,15 +68,10 @@ RML_BEGIN_LABEL(Parser__parse)
   zzpre_ast(root, &print_token, &print_lpar, &print_rpar);
   fprintf(stderr, "\n\n");
   
-#if 0
-  rmlA0 = mk_cons(Class__CLASS(Exp__IDENT(mk_scon("foobar")),
-			       RML_TRUE,
-			       Class__CL_5fMODEL,
-			       mk_nil()),
-		  mk_nil());
-#else
+  /* if( !root )
+   *   RML_TAILCALLK(rmlFC); */
+
   rmlA0 = sibling_list(root);
-#endif
   
   RML_TAILCALLK(rmlSC);
 }
