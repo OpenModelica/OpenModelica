@@ -27,3 +27,6 @@ Patologiskt:
     Bar z(y[5](redeclare Real x));
   end;
 
+--
+I B.6 står det "final type Real ...", vilket inte går enligt
+grammatiken.
