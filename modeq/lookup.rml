@@ -44,7 +44,7 @@ module Lookup:
 	  => (Types.Attributes,Types.Type,Types.Binding)
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding)
-  relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,bool)
+  relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element option)
   relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) 
 end
 
@@ -239,7 +239,7 @@ relation lookup_var_local : (Env.Env,Exp.ComponentRef)
 
 end
 
-relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,bool) =
+relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element option) =
 
   rule  lookup_var2(items, id) => (fv,b)
 	----------------------------
@@ -592,7 +592,7 @@ relation lookup_package_class : (Env.Env, string, Absyn.Path)
 end
 (**)
 relation lookup_var2 : ((SCode.Ident * Env.Item) list,SCode.Ident)
-	  => (Types.Var,bool) =
+	  => (Types.Var,SCode.Element option) =
 
   rule	Debug.fprintl ("locom", ["Comparing: ", n, " <=> ", id, "\n"]) &
 	id = n

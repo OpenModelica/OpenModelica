@@ -42,7 +42,7 @@ module Inst:
   with "mod.rml"
   with "prefix.rml"
   with "types.rml"
-
+  with "util.rml"
   type InstDims = Exp.Subscript list
 
   datatype DimExp = DIMINT of int
@@ -497,21 +497,20 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 	   since undeclared components can not be found (is done in this phase)
 	   the modifiers can not be elaborated to get a variable binding.
 	   Thus, we need to store the merged modifier for elaboration in the 
-	   next stage. Where should modifiers be stored????
-	   Temporary solution. Postpone modifier merge to later phase. 
-	   What impact does this have?
-	   **)
+	   next stage. 
+	   Save all modifiers in environment...
+	   **)	
 
 	Debug.fprint ("decl", "instantiating class to get type\n") &
-	inst_class(env,Mod.NOMOD,pre,csets,cl,inst_dims) => (_,_,ty,_) &
-	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-	    prot,ty,Types.UNBOUND),false) => env' &
+	inst_class(cenv,Mod.NOMOD,pre,csets,cl,inst_dims) => (_,_,ty,_) &
+	Env.extend_frame_v(cenv,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+	    prot,ty,Types.UNBOUND),SOME(comp)) => env' &
 	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims) => env''
 	-----------------
 	extend_components_to_env(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,prot,
+		     (comp as SCode.COMPONENT(n,final,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m)::xs,inst_dims) => env''
+				     t,m))::xs,inst_dims) => env''
   axiom	extend_components_to_env(env,_,_,_,_,[],_) => env
 end
 
@@ -562,6 +561,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
  (** put into classmod, than classmod and mods are merged ??? **)
 	 
   rule	Absyn.path_string(cn) => cns &
+	Debug.fprintln ("insttr", "Looking for base class") &
 	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,restr,def), cenv) &
 	Debug.fprintln ("insttr", "Base class found") &
 	Mod.lookup_modification_p(mods,cn) => classmod &
@@ -586,15 +586,16 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  
   	  (**  Rules to catch redeclarations and name collsions
 	   **)
+
 	 
 	(* If a variable is declared multiple times, the first is used *)
-  rule	Lookup.lookup_ident_local(env,n) => (_,true) &
+  rule	Lookup.lookup_ident_local(env,n) => (_,NONE) &
 	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,_,_,_),_)
 	  => ([],env,csets,ci_state,[])
-	  
+
   	  (* Illegal redeclarations *)
 
   rule	Lookup.lookup_ident_local(env,n) => (_,_) &
@@ -667,13 +668,13 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
 	Debug.fprint("insttr", "looking for type") &
-	Debug.fcall("insttr",Types.print_type,t) &
+	Debug.fcall("insttr",Dump.print_path,t) &
 	Debug.fprint("insttr"," in env:") &
 	Debug.fcall("insttr",Env.print_env,env) &
 	Debug.fprint("insttr"," \n") &
-
+	
 	Lookup.lookup_class(env,t) => (cl,cenv) & 
-
+	
 	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	Debug.fprintln ("insttr", "Looking up class modifications") &
 	Mod.lookup_modification_p(mods,t) => classmod &
@@ -681,8 +682,13 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "Looking up component modifications") &
 	Mod.lookup_comp_modification(mods,n) => mm &
 	Debug.fcall ("insttr", Mod.print_mod, mm) &
+	(* The types in the environment does not have correct Binding.
+	   We must update those variables that is found in m into a new environment.*)
+	get_cref_from_mod(m) => crefs &
+ 	update_variables_in_env(mods,crefs,env) => env2 &
+	
 	Debug.fprintln ("insttr", "Elaborating current modifications") &
-	Mod.elab_mod(env,pre,m) => m' &
+	Mod.elab_mod(env2,pre,m) => m' &
 	Debug.fcall ("insttr", Mod.print_mod, m') &
 
 	Mod.merge(classmod,mm) => mod &
@@ -702,7 +708,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
-	elab_arraydim(env,ad,eq) => dims &
+	elab_arraydim(env2,ad,eq) => dims &
 					       
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	Debug.fprint("peter2","inst_var, env =") &
@@ -715,11 +721,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
-	make_binding (env,attr,eq) => binding &
+	make_binding (env2,attr,eq) => binding &
 	Debug.fcall ("insttr", Types.print_binding, binding) &
 	Debug.fcall ("insttr", print, "\n") &
-	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),true) => env' &
+	Env.extend_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+					 prot,ty,binding),NONE) => env' &
 
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
@@ -836,6 +842,170 @@ relation inst_var : (Env.Env,
 	--------------------------------------------------
 	inst_var(_,_,_,_,n,_,_,_,_,_) => fail
 	
+end
+
+relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
+
+
+  rule	get_cref_from_submods(submods) => l1 &
+	get_cref_from_exp(e) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_mod(mod as SCode.MOD(_,submods,SOME(e))) => res
+
+  rule	get_cref_from_submods(submods) => res
+	-------------------------------------
+	get_cref_from_mod(SCode.MOD(_,submods,NONE)) => res 
+	
+  axiom	get_cref_from_mod(_) => []
+end
+
+relation get_cref_from_submods: (SCode.SubMod list) => Absyn.ComponentRef list =
+
+  rule	get_cref_from_mod(mod) => res1 &
+	get_cref_from_submods(rest) => res2 &
+	list_append(res1,res2) => res
+	-------------------------------
+	get_cref_from_submods(SCode.NAMEMOD(_,mod)::rest) => res
+	   
+	axiom get_cref_from_submods([]) => []
+end
+
+relation get_cref_from_exp: ( Absyn.Exp ) => Absyn.ComponentRef list =
+
+  axiom	get_cref_from_exp(Absyn.INTEGER(_)) => []
+  axiom	get_cref_from_exp(Absyn.REAL(_)) => []
+  axiom	get_cref_from_exp(Absyn.STRING(_)) => []
+  axiom	get_cref_from_exp(Absyn.BOOL(_)) => []
+  axiom	get_cref_from_exp(Absyn.CREF(cr)) => [cr]
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(Absyn.BINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(Absyn.UNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(Absyn.LBINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(Absyn.LUNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(Absyn.RELATION(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	---------------------------
+	get_cref_from_exp(Absyn.IFEXP(e1,e2,e3)) => res
+	
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	print "Not implemented yet\n"
+	--------------------------------------------
+	get_cref_from_exp(Absyn.CALL(_,_)) => []
+
+
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	print "Not implemented yet\n"
+	--------------------------------------------
+	get_cref_from_exp(Absyn.ARRAY(_)) => []
+
+  rule	print "# get_Cref_from_exp(MATRIX) not implemented yet\n"
+	----------------
+	get_cref_from_exp(Absyn.MATRIX(_)) => []
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	---------------------------
+	get_cref_from_exp(Absyn.RANGE(e1,SOME(e3),e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res 
+	---------------------------
+	get_cref_from_exp(Absyn.RANGE(e1,NONE,e2)) => res
+	    
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	print "Not implemented yet\n" 
+	------------------
+	get_cref_from_exp(Absyn.TUPLE(expl)) => []
+
+end
+
+
+relation update_variables_in_env:(Mod.Mod,Absyn.ComponentRef list, Env.Env) => Env.Env =
+
+  rule	update_variable_in_env(mods,cr,env) => env' &
+	update_variables_in_env(mods,rest,env') => env''
+	-------------------------------------------
+	update_variables_in_env(mods,cr::rest,env) => env''
+
+  rule	Debug.fprint("decl", "update_variables_in_env finished\n")
+	---------------
+	update_variables_in_env(_,[],env) => env
+end
+
+relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.Env =
+
+	
+  rule	Debug.fprint ("decl", "update_variable_in_env called\n") &
+	Lookup.lookup_ident_local(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
+	    attr as SCode.ATTR(ad,flow,acc,param,dir),
+	    t,m))) &
+
+	Mod.lookup_modification_p(mods,t) => classmod &
+	Mod.lookup_comp_modification(mods,n) => mm &
+	Mod.merge(classmod,mm) => mod &
+	Mod.merge(mod,m') => mod' &
+	
+	(** If the element is `protected', and an external *)
+	(** modification is applied, it is an error. *)
+
+	Mod.mod_equation mod' => eq &
+
+	Debug.fprintln ("insttr", "mod equation done") &
+	(** The variable declaration and the (optional) equation *)
+	(** modification are inspected for array dimensions. *)
+
+	elab_arraydim(env2,ad,eq) => dims &
+					       
+	Debug.fprintln ("insttr", "arraydim elabed") &
+	Debug.fprint("peter2","inst_var, env =") &
+	Debug.fcall("peter2",Env.print_env, cenv) &
+	(** Instantiate the component *)	
+	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
+	  => (dae1,csets',ty) &
+	(** The environment is extended with the new variable *)
+	(** binding. *)
+
+	make_binding (env2,attr,eq) => binding &
+
+	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+					 prot,ty,binding)) => env' 
+
+	----------------------------------
+	update_variable_in_env (mods,Absyn.CREF_IDENT(id,subscr),env) => env'
+
+  rule	print "update_variable_in_env failed\n" 
+	---------------------------
+	update_variable_in_env(_,_,env) => env
 end
 
 relation inst_dim_exp : DimExp => Exp.Subscript =
@@ -1671,7 +1841,7 @@ relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 						Absyn.BIDIR),
 				     false,
 				     typ, 
-				     Types.UNBOUND),true
+				     Types.UNBOUND),NONE
 			   ) => env''
 	---------------
 	add_for_loop_scope(env, i,typ) => env''
@@ -2031,7 +2201,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						    Absyn.BIDIR),
 				      true,
 				      Types.T_INTEGER,
-				      Types.VALBOUND(fst)),true) => env'' &
+				      Types.VALBOUND(fst)),NONE) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
 	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs)

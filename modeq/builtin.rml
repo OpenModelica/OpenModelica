@@ -497,7 +497,7 @@ relation initial_env =
 	(* LS: why twice? removing one *)
 (*	Env.extend_frame_c(env9, boolean_type) => env10 & *)
 
-	Env.extend_frame_v(env9, time_var,true) => env11 &
+	Env.extend_frame_v(env9, time_var,NONE) => env11 &
 
 	(* non-functions *)
 	Env.extend_frame_t(env11, "inital", nil2real)                => env12 &
