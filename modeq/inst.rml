@@ -1174,7 +1174,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	(* Redeclare of class definition, replaceable is true *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
 	  => (classmod as Mod.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
-	  print "replacable classdef\n" &
 	Debug.fprintln ("insttr", "*--*Classdef mods") &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "*--*All mods") &
@@ -1440,15 +1439,11 @@ relation inst_var : (Env.Env,
 	 and call inst_var2 *)
 
 	(* Collect dimensions *)
-	get_usertype_dimensions(env,mod,pre,cl,inst_dims) => dims' &
-	  Print.print_buf "Got usertype dimensions: " &
+	get_usertype_dimensions(env,mod,pre,cl,inst_dims) => (dims' as _::_) &
 	print_dims dims' &
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims',idxs,inst_dims,impl) 
 	  => (dae,csets',ty') &
-	  Print.print_buf "Instantiated vars\n" &
-	  make_array_type(dims',ty') => ty &
-	Print.print_buf "array type:" & 
-	Types.print_type (ty) 
+	  make_array_type(dims',ty') => ty
 	--------------------------
 	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,SCode.R_TYPE,_),attr,dims,idxs,inst_dims,impl)
           => (dae,csets',ty)
@@ -1561,8 +1556,6 @@ relation inst_var2 : (Env.Env,
 	inst_class(env,mod,pre,csets,cl,inst_dims,true) 
 	  => (_,_,_,ty,st) &
 	make_array_type(dim::dims,ty) => ty' &
-	Print.print_buf "inst_var2 functionvar, type :" & 
-	Types.print_type ty' & Print.print_buf "\n" &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty') => ty'' &
 	Types.match_prop(e,Types.PROP(ty',false),p) => e' &
@@ -2527,15 +2520,13 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
   rule	(* External functions should also have their type in env, but no dae! *)
 	inst_class(env, mod, pre, csets, c, inst_dims, true) 
 	  => (dae, _, csets', ty, st) &
-	
 	Env.extend_frame_t(env, n, ty) => env'	&
         package_prefix (env, Absyn.IDENT(n)) => fpath &
         let prot = false & (* how to get this? *)
-	inst_classdef (env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
-		       prot, inst_dims, true, false) 
+ 	inst_classdef (env', mod, pre, csets, ClassInf.FUNCTION(n), parts, 
+		       restr, prot, inst_dims, true, false) 
 	  =>(_, tempenv,_,_,_) &
-
-	inst_ext_decl(tempenv, n, parts) => extdecl
+	inst_ext_decl(tempenv, n, parts) => extdecl 
 	--------------------------------------
 	implicit_function_instantiation(env, mod, pre, csets,
 		       c as SCode.CLASS(n,_,_, restr as SCode.R_EXT_FUNCTION, 
@@ -2569,8 +2560,7 @@ relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
 	inst_overloaded_functions(env,overloadname,fn::fns) 
 	  => (env'', DAE.FUNCTION(fpath, DAE.DAE(dae), ty)::dae1 )
 
-  rule	print "inst_overloaded_functions failed\n" &
-	Debug.fprint("failtrace",  "#-- inst_ext_decl failed" )
+  rule	Debug.fprint("failtrace", "inst_overloaded_functions failed\n" )
 	--------------------------
 	inst_overloaded_functions(env,_,_) => fail
 end
@@ -2781,6 +2771,10 @@ relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbol
 	---------------------------------------------------
 	elab_exp_ext (env,exp,impl,st) => (e,prop,st)
 
+
+  rule	Debug.fprint("failtrace", "-elab_exp_ext failed\n")
+	-------------------
+	elab_exp_ext (env,exp,impl,st) => fail
 end
 
 relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg list =

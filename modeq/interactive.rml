@@ -2181,7 +2181,8 @@ relation get_connection_annotation_str: Absyn.EquationItem => string =
   axiom	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),NONE)) => fail
 
   rule	Print.get_string() => str &
-	print str 
+	print "-get_connectoin_annotation_str failed, str = " & print str &
+	print "\n" 
 	----------------
 	get_connection_annotation_str(_) => fail
 end

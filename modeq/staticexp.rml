@@ -1871,12 +1871,19 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	 in the funktion type of the user function and check both the
 	 funktion name and the function's type. 
 	 *)
-	Debug.fprintln("sei", "elab_call_args, searching for types...\n") &
+	Debug.fprint("sei", "elab_call_args, searching for types for ") &
+	Debug.fcall("sei",Dump.print_path, fn ) &
+	Debug.fprint("sei"," ... in env:\n" ) &
+	Debug.fcall("sei",Env.print_env, env ) &
+	Debug.fprint("sei","\n" ) &
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
 	Debug.fprintln("sei", "elab_call_args, found types: ") &
 	Debug.fprint_list("sei",typelist,Types.print_type,", ") &
 	elab_types (env, args, typelist) => (args', c, restype, functype) &
+	Debug.fprintln("sei", "elab_call_args, Resolved type: ") &
+	Debug.fcall("sei",Types.print_type,functype) &
 	deoverload_funcname(fn,functype) => fn' &
+	Debug.fprintln("sei", "elab_call_args, Deoverloaded functionname\n") &
 	is_tuple restype => tuple &
 	elab_consts(restype) => const &
 	get_properties(restype,const) => prop &
@@ -2509,8 +2516,7 @@ relation elab_cref2 : (Env.Env,
 	-----------------
 	elab_cref2(env,cr,acc,_,tt as (Types.T_ENUM,_),_) => (Exp.CREF(cr,t),true,acc)
 
-  rule	print "elab_cref2 nonconstant\n"&
-	(* If value not constant, but references another parameter, which has a value *)
+  rule	(* If value not constant, but references another parameter, which has a value *)
 	(* We need to perform value propagation. *)
 	Lookup.lookup_var(env,cref) => (Types.ATTR(_,acc',variability',_),
 				       t',
@@ -3082,12 +3088,12 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, Exp.CAST(Exp.REAL,e as Exp.MATRIX(Exp.INT,_,_)),impl,st) => 
 		(Values.ARRAY(vallst'),st')
 
+(* ceval can apparently fail and that is ok, catched by other rules...
   rule	Debug.fprint("failtrace", "- ceval ") &
 	Debug.fcall("failtrace",Exp.print_exp, e) &
 	Debug.fprint("failtrace", " failed\n") 
 	-----------------------------------------------------
-	ceval (_,e,_,_) => fail
-	
+	ceval (_,e,_,_) => fail*)
 end
 
 (* relation ceval_interactive_functions
@@ -4489,11 +4495,8 @@ relation get_koening_operator_types: (string, Env.Env, Types.Type, Types.Type)
 	--------------------------------
 	get_koening_operator_types(op,env,t1,t2) => []
 
-  rule	print "Should not happen\n" 
-	-------------------------------
-	get_koening_operator_types(op,env,t1,t2) => fail
+  axiom	get_koening_operator_types(op,env,t1,t2) => []
 
-	
 end
 
 (** relation: get_koening_operator_types_in_scope

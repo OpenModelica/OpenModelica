@@ -477,6 +477,13 @@ end
 
 relation unparse_class_part_str: (int, Absyn.ClassPart) => string =
 
+axiom	unparse_class_part_str(i, Absyn.PUBLIC([])) => ""
+axiom	unparse_class_part_str(i, Absyn.PROTECTED([])) => ""
+axiom	unparse_class_part_str(i, Absyn.EQUATIONS([])) => ""
+axiom	unparse_class_part_str(i, Absyn.INITIALEQUATIONS([])) => ""
+axiom	unparse_class_part_str(i, Absyn.ALGORITHMS([])) => ""
+axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([])) => ""
+
   rule	unparse_elementitem_str_lst(i,el) => s1 &
 	int_sub(i,1) => i' &
 	indent_str(i') => is &

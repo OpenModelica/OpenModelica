@@ -274,7 +274,8 @@ rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
 	  => (c', env5)
 
   rule	Absyn.path_string path => s & 
-	Print.print_buf "#Error, class " & print s & print " not found.\n" &
+	Print.print_buf "#Error, class " & Print.print_buf s & 
+	Print.print_buf " not found.\n" &
 	Debug.fprint("failtrace", "- lookup_class failed\n  - looked for ") &
  	Debug.fprint("failtrace",  s) &
 	Debug.fprint("failtrace", "\n env:") &
@@ -751,7 +752,16 @@ relation lookup_type_in_frame: (Env.HashTable, (* Classes and vars*)
 	lookup_type_in_frame(ht,httypes,env,id) 
 	    => (ftype,env)
 
-  rule	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),cenv) &
+  rule	(* If we found class that is function *)
+	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),cenv) &
+	Inst.implicit_function_instantiation(cenv,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
+	  => (env',_) &
+	lookup_type_in_env(env',Absyn.IDENT(id)) => (ty,env'')
+	----------------------------------------
+	lookup_type_in_frame(ht,httypes,env,id) => (ty,env'')
+
+  rule	(* If we found class that is external function *)
+	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION,_),cenv) &
 	Inst.implicit_function_instantiation(cenv,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
 	  => (env',_) &
 	lookup_type_in_env(env',Absyn.IDENT(id)) => (ty,env'')
@@ -787,7 +797,16 @@ relation lookup_functions_in_frame: (Env.HashTable, (*Classes and vars*)
 	----------------------------------------
 	lookup_functions_in_frame(ht,httypes,env,id) => [ftype]
 
-  rule	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),cenv) &
+  rule	(* If found class that is function.*)
+	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),cenv) &
+	Inst.implicit_function_instantiation(cenv,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
+	  => (env',_) &
+	lookup_functions_in_env(env',Absyn.IDENT(id)) => tps
+	----------------------------------------------------
+	lookup_functions_in_frame(ht,httypes,env,id) => tps
+
+  rule	(* If found class that is external function.*)
+	Env.hash_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION,_),cenv) &
 	Inst.implicit_function_instantiation(cenv,Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
 	  => (env',_) &
 	lookup_functions_in_env(env',Absyn.IDENT(id)) => tps
