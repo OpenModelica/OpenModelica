@@ -2833,13 +2833,29 @@ end
 *)
 relation replace_public_list: (Absyn.ClassPart list,Absyn.ElementItem list) => Absyn.ClassPart list =
 
-  axiom replace_public_list ((lst as Absyn.PUBLIC(_))::rest,newpublst) => Absyn.PUBLIC(newpublst)::rest
+  rule	delete_public_list(rest) => rest'
+	---------------------------------
+	replace_public_list ((lst as Absyn.PUBLIC(_))::rest,newpublst) 
+	  => Absyn.PUBLIC(newpublst)::rest'
 	
   rule	replace_public_list(xs,new) => ys
 	---------------------------------
 	replace_public_list(x::xs,new) => x::ys
 
   axiom replace_public_list([],_) => []
+end
+
+relation delete_public_list:(Absyn.ClassPart list) 
+	  => Absyn.ClassPart list =
+  axiom	delete_public_list([]) => []
+
+  rule	delete_public_list(xs) => res
+	-----------------------------
+	delete_public_list(Absyn.PUBLIC(_)::xs) => res
+
+  rule	delete_public_list(xs) => res
+	-----------------------------
+	delete_public_list(x::xs) => x::res
 end
 
 (** relation: replace_equation_list
