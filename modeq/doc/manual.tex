@@ -16,12 +16,27 @@
 \maketitle
 \chapter{Introduction}
 This is the manual for the Open Source Modelica compiler and
-interactive environment. The compiler consists of the binary file
-\emph{modeq}. It can either be executed as a standard compiler if it
-is given a filename as argument. But the compiler can also be started
-in an interactive mode, where it listens on port no 29500 on the
-localhost for a (one) incomming connection. This is how the compiler
-is used togheter with the mosh (Modelica shell) binary.
+interactive environment. This documentation assumes you know at least
+the basics of the \emph{Modelica} language. Information on Modelica
+can be found at http://www.modelica.org or in the book
+``Principles of Object-Oriented Modeling and Simulation with Modelica
+2.1'' by Peter Fritzon (Wiley IEEE-press).
+
+For installation instructions, please refer to the README-file in the
+Modelica root directory.
+
+The compiler is written in RML - Relational Meta Language. Information
+on RML including downloadable packages can be found at
+http://www.ida.liu.se/~pelab/rml/. If you would like to
+contribute to the development of OpenModelica or if you have any
+questions, please contact petar@ida.liu.se.
+
+The compiler consists of the binary file \emph{modeq}. It can either
+be executed as a standard compiler if it is given a filename as
+argument. But the compiler can also be started in an interactive mode,
+where it listens on port no 29500 on the localhost for a (one)
+incomming connection. This is how the compiler is used togheter with
+the mosh (Modelica shell) binary.
 
 When the program has been installed some environment variables have to
 be set.
@@ -54,6 +69,23 @@ cd modelica/modeq/; ./modeq +d=interactive
 
 In the following chapters we describe the builtin functions that are
 available for use when running the interactive session using mosh.
+
+
+\chapter{Documentation todo-list}
+
+\begin{itemize} 
+\item{Special types} - Explanation of variable types used, i.e.
+  SimulationObject, SimulationResult.
+\item{Examples} - At least one example, input and output should be
+  provided for each function described.
+\item{General concepts} - The functionality of the cache should be described
+  separately. Not in a function (getUnit). Perhaps a special chapter
+  for general concepts?
+\item{Architecture} - The compiler architecture should be described,
+  at least briefly.
+
+\end{itemize}
+
 
 \chapter{Functions for Interactive use}
 This section describes a set of functions to be used in the
@@ -105,7 +137,7 @@ containing the flat class definition.
 
 The function header is defined as:
 \begin{verbatim}
-function translateModel
+function instantiateModel
     input TypeName className;
     output String flatclass;
 ...
@@ -528,7 +560,7 @@ addComponent(C1,Capacitor,test,
 \end{itemize}
 
 \func{updateComponent(\emph{compName, typeName, className, options})}
-Updates the already existing component with e.g.\ a new annotation or
+Updates the already existing component with e.g.\ a new annotation,
 comment or binding.  
 
 \func{deleteComponent(\emph{compName, className})}
@@ -557,7 +589,7 @@ Language Specification.
 Returns the number of inherited classes of the class named
 \emph{className}.
 
-\func{getNthInheritedClass(\emph{className, n}}
+\func{getNthInheritedClass(\emph{className, n})}
 Returns the type name of the \emph{n}:th inhertited class.
 
 \func{getConnectionCount(\emph{className})}
