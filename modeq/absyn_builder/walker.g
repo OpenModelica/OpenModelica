@@ -36,6 +36,8 @@ options {
 
 tokens {
     INTERACTIVE_STMT;
+	INTERACTIVE_ALG;
+	INTERACTIVE_EXP;
 }
 {
     
@@ -126,16 +128,17 @@ interactive_stmt returns [void *ast]
     void *e1=0;
 }
     :
-        #(INTERACTIVE_STMT
-            (a1 = algorithm | e1 = expression ))
-        {
-            if (a1 != 0 ) 
-            ast = Interactive__ISTMTS(mk_cons(Interactive__IALG(a1),mk_nil()));
-            else 
-            ast = Interactive__ISTMTS(mk_cons(Interactive__IEXP(e1),mk_nil()));
-            assert(ast != 0);
-        }
-    ;
+        #(INTERACTIVE_ALG
+            a1 = algorithm) 
+		{
+			ast = Interactive__ISTMTS(mk_cons(Interactive__IALG(a1),mk_nil()));				
+		}	
+	|	
+		#(INTERACTIVE_EXP e1 = expression )
+		{
+			ast = Interactive__ISTMTS(mk_cons(Interactive__IEXP(e1),mk_nil()));
+		}
+	;
 
 within_clause returns [void *ast]
 {
@@ -691,16 +694,19 @@ element_modification returns [void* ast]
 	void* cref;
 	void* mod;
 	void* final;
+	void* each;
 	void* cmt=0;
 }
 	:
+		(e:EACH)?
 		(f:FINAL)? 
 		cref = component_reference 
 		mod = modification 
 		cmt = string_comment
 		{
 			final = f != NULL ? RML_TRUE : RML_FALSE;
-			ast = Absyn__MODIFICATION(final, cref, mod, cmt ? mk_some(cmt) : mk_none());
+			each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;
+			ast = Absyn__MODIFICATION(final, each, cref, mod, cmt ? mk_some(cmt) : mk_none());
 		}
 	;
 
@@ -709,18 +715,24 @@ element_redeclaration returns [void* ast]
 	void* class_def = 0;
 	void* e_spec; 
 	void* constr = 0;
+	void* final;
+	void* each;
 }
 	:
-		(#(r:REDECLARE 
+		(#(r:REDECLARE (e:EACH)? (f:FINAL)?
                 (	
 					(class_def = class_definition[false] 
 						{
 							e_spec = Absyn__CLASSDEF(RML_FALSE,class_def);
-							ast = Absyn__REDECLARATION(RML_FALSE,e_spec,mk_none());
+							final = f != NULL ? RML_TRUE : RML_FALSE;
+							each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;				
+							ast = Absyn__REDECLARATION(final, each, e_spec, mk_none());
 						}
 					| e_spec = component_clause1
 						{
-							ast = Absyn__REDECLARATION(RML_FALSE, e_spec,mk_none());
+							final = f != NULL ? RML_TRUE : RML_FALSE;
+							each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;				
+							ast = Absyn__REDECLARATION(final, each, e_spec, mk_none());
 						}
 					)
 				|
@@ -733,10 +745,12 @@ element_redeclaration returns [void* ast]
 							if (class_def) 
 							{	
 								e_spec = Absyn__CLASSDEF(RML_TRUE, class_def);
-								ast = Absyn__REDECLARATION(RML_TRUE, e_spec,
+								final = f != NULL ? RML_TRUE : RML_FALSE;
+								each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;				
+								ast = Absyn__REDECLARATION(final, each, e_spec,
 									constr ? mk_some(constr) : mk_none());
 							} else {
-								ast = Absyn__REDECLARATION(RML_TRUE, e_spec,
+								ast = Absyn__REDECLARATION(final, each, e_spec,
 									constr ? mk_some(constr) : mk_none());
 							}
 						}
@@ -994,8 +1008,8 @@ for_clause_a returns [void* ast]
 	void* id;
 }
 	:
-		#(FOR i:IDENT
-			e = expression
+		#(FOR #(IN i:IDENT
+			e = expression )
 			eq = algorithm_list
 		)
 		{
@@ -1196,14 +1210,17 @@ if_expression returns [void* ast]
 	void* cond;
 	void* thenPart;
 	void* elsePart;
-	void* elseifPart;
+	void* elseifPart=0;
 }
 	:
 		#(IF cond = expression
-			thenPart = expression elseifPart=elseif_expression elsePart = expression
-		{
-			ast = Absyn__IFEXP(cond,thenPart,elsePart,elseifPart);
-		}
+			thenPart = expression (elseifPart=elseif_expression)* elsePart = expression
+			{
+				if (elseifPart==NULL) {
+					elseifPart = mk_nil();
+				}
+				ast = Absyn__IFEXP(cond,thenPart,elsePart,elseifPart);
+			}
 		)
 	;
 

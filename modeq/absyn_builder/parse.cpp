@@ -9,6 +9,11 @@
 #include "modelica_expression_parser.hpp"
 #include "parse_tree_dumper.hpp"
 #include "antlr/ANTLRException.hpp"
+#include "antlr/CharStreamException.hpp"
+#include "antlr/TokenStreamException.hpp"
+#include "antlr/RecognitionException.hpp"
+#include "antlr/NoViableAltException.hpp"
+#include "antlr/MismatchedTokenException.hpp"
 
 extern "C"
 {
@@ -27,19 +32,28 @@ RML_BEGIN_LABEL(Parser__parse)
 {
   char* filename = RML_STRINGDATA(rmlA0);
   bool debug = check_debug_flag("parsedump");
+  modelica_lexer *lex;
+  modelica_parser *parse;
   try 
     {
       std::ifstream stream(filename);
       
       if (!stream) {
+	std::cerr << "Error opening file" << std::endl;
 	RML_TAILCALLK(rmlFC);
       }
-
-      modelica_lexer lex(stream);
-      modelica_parser parse(lex);
-      parse.stored_definition();
-      antlr::RefAST t = parse.getAST();
       
+      lex = new modelica_lexer(stream);
+      //modelica_lexer lex(stream);
+      parse = new modelica_parser(*lex);
+      //modelica_parser parse(lex);
+      parse->stored_definition();
+      antlr::RefAST t = parse->getAST();
+
+      if (debug) {
+	std::cerr << "Parsing complete. Starting to traverse ast." << std::endl;
+      }
+	
       if (t)
 	{
 	  if (debug)
@@ -47,10 +61,29 @@ RML_BEGIN_LABEL(Parser__parse)
 	      parse_tree_dumper dumper(std::cout);
 	      dumper.dump(t);
 	    }
-
-	  modelica_tree_parser build;
-	  void* ast = build.stored_definition(t);
-	  
+	  modelica_tree_parser build;      
+	  void* ast;
+	  try {
+	    ast = build.stored_definition(t);
+	  }
+	  catch (ANTLR_USE_NAMESPACE(antlr)NoViableAltException &e)
+	    {
+	      parse_tree_dumper dumper(std::cout);
+	      std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
+	      dumper.dump(e.node);	      
+	    }
+	  catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e)
+	    {
+	      parse_tree_dumper dumper(std::cout);
+	      if (e.node) {
+		std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
+		dumper.dump(e.node);	      
+	      } else {
+		std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST: == NULL" << std::endl;
+	      }
+	      throw e;
+	    }
+	      
 	  if (debug)
 	    {
 	  std::cout << "Build done\n";
@@ -60,7 +93,20 @@ RML_BEGIN_LABEL(Parser__parse)
 	  
 	  RML_TAILCALLK(rmlSC); 
 	}    
+      else {
+	std::cerr << "Error building AST" << std::endl;
+      }
     } 
+  catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) {
+    std::cerr << "Lexical error. CharStreamException. "  << std::endl;    
+  }
+  catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) {
+    std::cerr << "Parsing error. RecognitionException on line "  << lex->getLine() << "near :"<< lex->getText() << std::endl;    
+  }
+  catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) {
+    std::cerr << "Lexical error. Illegal Token on line "  << lex->getLine() << "near :"<< lex->getText() << std::endl;    
+  }
+
   catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
     {
       std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
@@ -73,6 +119,7 @@ RML_BEGIN_LABEL(Parser__parse)
     {
       std::cerr << "Error while parsing\n";
     }
+  std::cerr << "Exiting Parse" << std::endl;
   RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL
@@ -111,6 +158,9 @@ RML_BEGIN_LABEL(Parser__parsestring)
 	  RML_TAILCALLK(rmlSC); 
 	}    
     } 
+  catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) {
+    std::cerr << "Lexical error. CharStreamException. "  << std::endl;
+  }
   catch (std::exception &e)
     {
       std::cerr << "Error while parsing:\n" << e.what() << "\n";

@@ -38,12 +38,18 @@ class modelica_expression_parser extends modelica_parser;
 
 tokens {
 	INTERACTIVE_STMT;
+	INTERACTIVE_ALG;
+	INTERACTIVE_EXP;
 }
 
-interactiveStmt returns [void *ast]
-                : ( (component_reference ASSIGN) => algorithm | expression ) (SEMICOLON)? 
-                {
-		#interactiveStmt = #([INTERACTIVE_STMT,"INTERACTIVE_STMT"],#interactiveStmt);
-                }
-                ; 
+interactiveStmt! returns [void *ast] 
+	: 
+		(expression) => e:expression (SEMICOLON!)? EOF! {
+			#interactiveStmt = #([INTERACTIVE_EXP,"INTERACTIVE_EXP"],#e);
+			}
+	| ( a:algorithm (SEMICOLON!)? EOF! )  
+		{	
+			#interactiveStmt = #([INTERACTIVE_ALG,"INTERACTIVE_ALG"],#a);
+		}
+	; 
 

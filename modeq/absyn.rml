@@ -189,11 +189,15 @@ module Absyn:
   (** - Modifications *)
   datatype Modification = CLASSMOD of ElementArg list * Exp option
 
-  datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification * string option
-		      | REDECLARATION of bool * ElementSpec * ConstrainClass option
+  datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification * string option
+		      | REDECLARATION of bool * Each * ElementSpec * ConstrainClass option
   (** Modifications are described by the `Modification' type.  There *)
   (** are two forms of modifications: redeclarations and component *)
   (** modifications. *)
+
+  (** - Each attribute *)
+  (** The each keyword can be present in both MODIFICATION's and REDECLARATION's. *)
+  datatype Each = EACH | NON_EACH
 
   (** - Component attributes *)
   datatype ElementAttributes = ATTR of bool	(* flow *)

@@ -559,7 +559,7 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
 	build_mod(SOME(mod),final) => mod' &
 	build_sub(cref,mod') => sub
 	----------------------
-	build_args((Absyn.MODIFICATION(final,cref,mod,cmt)::xs)) => (sub::subs)
+	build_args((Absyn.MODIFICATION(final,each,cref,mod,cmt)::xs)) => (sub::subs)
 
   rule	build_args xs => subs &
 	Absyn.element_spec_name spec => n &
@@ -567,7 +567,7 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
 	(** LS:: don't know what to use for "replaceable", so using false **)
 	elab_elementspec(final,false,false,spec) => elist
 	---------------------------
-	build_args((Absyn.REDECLARATION(final,spec,constropt)::xs))
+	build_args((Absyn.REDECLARATION(final,each,spec,constropt)::xs))
 	  => (NAMEMOD(n,REDECL(final,elist))::subs)
 
 end

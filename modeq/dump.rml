@@ -293,38 +293,45 @@ relation print_element_arg =
 	print_modification(m) &
 	Print.print_buf ")"
 	-------------------------------------------
-	print_element_arg(Absyn.MODIFICATION(f,r,m,optcmt))
+	print_element_arg(Absyn.MODIFICATION(f,each,r,m,optcmt))
 
   rule	Print.print_buf "REDECLARATION(" &
 	print_select(f,"FINAL,",",") &
 	print_elementspec spec &
 	Print.print_buf ",_)"
 	-------------------------------------------
-	print_element_arg(Absyn.REDECLARATION(f,spec,_))
+	print_element_arg(Absyn.REDECLARATION(f,each,spec,_))
 
 end
 
 relation unparse_element_arg_str: (Absyn.ElementArg) => string =
 	
-  rule	select_string(f,"final ","") => s1 &
-	print_component_ref_str(r) => s2 &
-	unparse_modification_str(m) => s3 &
-	unparse_string_comment_option(optstr) => s4 &
-	Util.string_append_list([s1, s2, s3, s4]) => str
+  rule	unparse_each_str ( each ) => s1 &
+	select_string(f,"final ","") => s2 &
+	print_component_ref_str(r) => s3 &
+	unparse_modification_str(m) => s4 &
+	unparse_string_comment_option(optstr) => s5 &
+	Util.string_append_list([s1, s2, s3, s4, s5]) => str
 	-------------------------------------------
-	unparse_element_arg_str(Absyn.MODIFICATION(f,r,m,optstr)) => str
+	unparse_element_arg_str(Absyn.MODIFICATION(f,each,r,m,optstr)) => str
 	
-  rule	select_string(f,"final ","")  => s1 &
-	unparse_elementspec_str spec => s2 &
-	get_option_str(constropt,unparse_elementspec_str) => s3 &
-	Util.string_append_list([s1,"redeclare ",s2," ",s3]) => str
+  rule	unparse_each_str ( each ) => s1 &
+	select_string(f,"final ","")  => s2 &
+	unparse_elementspec_str spec => s3 &
+	get_option_str(constropt,unparse_elementspec_str) => s4 &
+	Util.string_append_list([s1,s2,"redeclare ",s3," ",s4]) => str
 	-----------------------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,spec,constropt)) => str
+	unparse_element_arg_str(Absyn.REDECLARATION(f,each, spec,constropt)) => str
 end
 
 (**)
 
+relation unparse_each_str: (Absyn.Each) => string =
 
+  axiom	unparse_each_str(Absyn.EACH) => "each "
+
+  axiom	unparse_each_str(Absyn.NON_EACH) => ""
+end
 				
 relation print_class_part: Absyn.ClassPart => () =
 
