@@ -1,14 +1,20 @@
 (* main.rml - Modelica main program *)
 module Main:
-    relation main: string list => ()
+	relation main: string list => ()
 end
 
-with "modelica.rml"
+(* with "modelica.rml" *)
 
 relation main =
-	rule	Modelica.test1 &
+(*
+		rule	Modelica.test1 &
 		Modelica.test2 &
 		Modelica.test3
 		------------------------
 		main _
+*)
+
+   rule print "Fel\n"
+	----------------
+	main _
 end
