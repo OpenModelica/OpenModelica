@@ -765,18 +765,20 @@ for_or_expression_list
 		|
 			(
 				e:expression
-				( COMMA! for_or_expression_list2 
-                    {
-                        #for_or_expression_list = 
-                            #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
-                    }
-				| FOR^ for_indices
-                    {
-                        #for_or_expression_list = 
-                            #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
-                    }
+				( COMMA! explist:for_or_expression_list2                     
+				| FOR^ forind:for_indices
 				)?
 			)
+            {
+                if (#forind != null) {
+                    #for_or_expression_list = 
+                        #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
+                }
+                else {
+                    #for_or_expression_list = 
+                        #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
+                }
+            }
 		)
 		;
 

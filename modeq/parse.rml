@@ -26,6 +26,6 @@ module Parser:
   with "interactive.rml"							
   relation parse: string => Absyn.Program
   relation parseexp: string => Interactive.InteractiveStmts
-  relation parsestring: string => (Absyn.Program, string)
-  relation parsestringexp: string => Interactive.InteractiveStmts
+  relation parsestring: string => (Absyn.Program, string) (* Always succeeds, string contains "Ok" or error message *)
+  relation parsestringexp: string => (Interactive.InteractiveStmts, string)  (* Always succeeds, string contains "Ok" or error message *)
 end

@@ -131,7 +131,7 @@ RML_BEGIN_LABEL(Parser__parsestring)
 	std::ostringstream stringStream;
 
 	char* str = RML_STRINGDATA(rmlA0);
-  bool debug = check_debug_flag("parsedump");
+	bool debug = check_debug_flag("parsedump");
 	std::istringstream stream(str);
 	modelica_lexer lex(stream);
 	modelica_parser parse(lex);
@@ -206,7 +206,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Parser__parsestringexp)
 {
-	char* str = RML_STRINGDATA(rmlA0);
+  char* str = RML_STRINGDATA(rmlA0);
+  std::ostringstream stringStream;
   bool debug = check_debug_flag("parsedump");
   try 
     {
@@ -240,20 +241,29 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
 	    }
 
 	  rmlA0 = ast ? ast : mk_nil();
-	  rmlA1 = ast ? ast : mk_nil();
+	  rmlA1 = mk_scon("Ok");
 	  
 	  RML_TAILCALLK(rmlSC); 
 	}    
     } 
-  catch (std::exception &e)
-    {
-      std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
-    }
-  catch (...)
-    {
-      //std::cerr << "Error while parsing expression\n";
-    }
-  RML_TAILCALLK(rmlFC);
+  catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) {
+    std::cerr << "Error while parsing expression:\n" << e.getMessage() << "\n";
+    stringStream << "[-,-]: internal error: " << e.getMessage() << std::endl;
+    rmlA0 = mk_nil();
+    rmlA1 = mk_scon((char*)stringStream.str().c_str());
+  }
+  catch (std::exception &e) {
+    std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
+    stringStream << "[-,-]: internal error: " << e.what() << std::endl;
+    rmlA0 = mk_nil();
+    rmlA1 = mk_scon((char*)stringStream.str().c_str());
+  }
+  catch (...) {
+    std::cerr << "Error while parsing expression\n";
+    rmlA0 = mk_nil();
+    rmlA1 = mk_scon("Error while parsing expression. Unknown exception in parse.cpp.");
+  }
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -279,8 +289,8 @@ RML_BEGIN_LABEL(Parser__parseexp)
 	  if (debug)
 	    {
 	      //std::cerr << "parsedump not implemented for interactiveStmt yet"<<endl;
-	      //parse_tree_dumper dumper(std::cerr);
-	      //dumper.dump(t);
+	      parse_tree_dumper dumper(std::cerr);
+	      dumper.dump(t);
 	    }
 
 	  modelica_tree_parser build;
