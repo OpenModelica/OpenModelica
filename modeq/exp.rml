@@ -139,6 +139,7 @@ module Exp:
 
   relation is_range : Exp => bool
   relation is_zero: Exp => bool 
+  relation is_const: Exp => bool 
 
   relation prepend_string_cref : (string, ComponentRef) => ComponentRef
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
@@ -282,6 +283,30 @@ relation is_zero: Exp => bool =
 
 end
 
+(** relation: is_const
+ **
+ ** Returns true íf an expression is constant 
+ ** otherwise false
+ **)
+relation is_const: Exp => bool =
+
+  rule	
+	----------------------
+	is_const(ICONST(ival)) => true
+
+  rule	(* Due to bug in rml, go trough a cast from int *)
+	
+	---------------------------
+	is_const(RCONST(rval)) => true
+
+  rule	(* Casting to zero is still zero *)
+	is_const(e) => res 
+	------------------
+	is_const(CAST(t,e)) => res
+
+  axiom	is_const(_) => false
+
+end
 (** LS:
  ** Replace this with a call to print_component_ref_str
  ** and comparison of the resulting strings, after the _str relations are 

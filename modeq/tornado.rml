@@ -350,11 +350,11 @@ end
          
          
  end
-
+ 
 
  (** ret1 Unit;                // Unit of quantity
   ** ret2 DefaultValue;        // Default value (in Modelica lingo this is "start" I think)
-  ** ret3 LowerBound;          // Lower bound
+  ** ret3 LowerBound;          // Lower bound 
   ** ret4 UpperBound;          // Upper bound
   ** ret5 Desc;                // Description
   **)
@@ -365,14 +365,15 @@ end
 
 relation get_start_value: (DAE.StartValue) => string =
 
-  rule  SimCodegen.print_exp_cpp_str(e) => res 
-(*         & print res & print " <- \n"   *)
+  rule  SimCodegen.print_exp_cpp_str(e) => res &
+(*         print res & print " <- \n"   & *)
+        Exp.is_const(e) => true 
         --------------------------------------
         get_start_value(SOME(e)) => res
 
   axiom get_start_value(_) => "0.000000"
         
-end
+end 
 
 (**
  ** arg1 name of the variable
@@ -381,7 +382,7 @@ end
  ** 
  ** ret1 type
  ** ret2 direction
-
+ 
  ** ret3 Unit;                // Unit of quantity
  ** ret4 DefaultValue;        // Default value (in Modelica lingo this is "start" I think)
  ** ret5 LowerBound;          // Lower bound
@@ -391,7 +392,7 @@ end
 
  relation get_direction_for_variable:(string, string,DAELow.DAELow) 
           => (string,string,
-              string,string,string,string,string) = 
+              string,string,string,string,string) =  
            
 (*     rule  print "-get_direction_for_variable: " & print name *)
 (*          & print " in class " & print class_name  & print "\n" & *)
@@ -1546,7 +1547,8 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
          Util.string_append_list(["  SetNoDerStateVarValues(",lenstr',");\n"]) => prefix2 &
          Util.string_append_list([res,"\n"]) => res' 
          ----------------------
-         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
+         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
+                                                      DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
 	      => (res',prefix2)
  
  rule	DAELow.vararray_list(vararr) => vars &
@@ -1561,7 +1563,8 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
          Util.string_append_list(["  SetNoDerStateVarValues(",lenstr',");\n"]) => prefix2 &
          Util.string_append_list([prefix1,res,"\n"]) => res' 
          ----------------------
-         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
+         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
+                                                      DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) 
 	      => (res',prefix2)
  end
 
@@ -1579,32 +1582,33 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
          int_add(no_of_var_values,1) => no_of_var_values' &
          SimCodegen.cref_modelica_str(cr) => crs & 
          (*Exp.print_exp_str start => startstr &*)
-         SimCodegen.print_exp_cpp_str(start) => startstr &
+(*          SimCodegen.print_exp_cpp_str(start) => startstr & *)
+         get_start_value(start) => startstr &
          Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",",
                                   startstr,"));"]) 
           => r1 
            --------------------
-         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_,_)::rest,
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)::rest,
                                          i,
                                          var_values) 
           => (r1::res,no_of_vars',no_of_var_values')
 
-  rule (* If no start value is present*)
-         int_add(i,1) => i' & int_string(i) => is &
-         int_add(j,1) => var_values' & 
-         is_var_on_top_model(cr) => true &
-         generate_constructor_statevars2(rest,i',var_values') => (res,no_of_vars,no_of_var_values) &
-         int_add(no_of_vars,1) => no_of_vars' &
-         int_add(no_of_var_values,1) => no_of_var_values' &
-         SimCodegen.cref_modelica_str(cr) => crs & 
+(*   rule (\* If no start value is present*\) *)
+(*          int_add(i,1) => i' & int_string(i) => is & *)
+(*          int_add(j,1) => var_values' &  *)
+(*          is_var_on_top_model(cr) => true & *)
+(*          generate_constructor_statevars2(rest,i',var_values') => (res,no_of_vars,no_of_var_values) & *)
+(*          int_add(no_of_vars,1) => no_of_vars' & *)
+(*          int_add(no_of_var_values,1) => no_of_var_values' & *)
+(*          SimCodegen.cref_modelica_str(cr) => crs &  *)
          
-         Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0));"]) 
-          => r1 
-           --------------------
-         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest,
-                                         i,
-                                         j) 
-          => (r1::res, no_of_vars',no_of_var_values')
+(*          Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0));"])  *)
+(*           => r1  *)
+(*            -------------------- *)
+(*          generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest, *)
+(*                                          i, *)
+(*                                          j)  *)
+(*           => (r1::res, no_of_vars',no_of_var_values') *)
 
   rule  generate_constructor_statevars2(rest,i,j) => (res,no_of_vars,no_of_var_values) &
          int_add(no_of_var_values,1) => no_of_var_values'
@@ -2205,41 +2209,80 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 (** relation: generate_compute_initial
  ** This relation generates the code for the calculation of the initial conditions.
  **)
-relation generate_compute_initial:(string,
-				   DAELow.DAELow,
-				   Absyn.Program) 
-	  => string =
+ relation generate_compute_initial:(string,
+				                    DAELow.DAELow,
+				                    Absyn.Program) 
+	      => string =
 
-  rule	DAELow.equation_list(ieqnarr) => eqn_lst &
-	list_length(eqn_lst) => lst_len &
-	generate_compute_initial2(vars,eqn_lst) => str_lst &
-	Util.string_delimit_list(str_lst,"\n") => cinit 
-        -------------------------------------------------------------
-        generate_compute_initial(cname,dae as DAELow.DAELOW(vars,knvars,_,_,ieqnarr,_),p) => cinit
+  rule	DAELow.vararray_list(vararr) => vars &
+         DAELow.vararray_list(knvararr) => knvars &
+         list_append(vars,knvars) => allvars &
+         
+         DAELow.equation_list(ieqnarr) => eqn_lst &
+	     list_length(eqn_lst) => lst_len &
+	     generate_compute_initial2(vars',eqn_lst) => str_lst1 &
+         
+         generate_compute_initial_from_start_values(allvars) => str_lst2 &
+         
+         list_append(str_lst1,str_lst2) => str_lst &
+
+	     Util.string_delimit_list(str_lst,"\n") => cinit 
+         -------------------------------------------------------------
+         generate_compute_initial(cname,
+                                  dae as DAELow.DAELOW(
+                                                       (vars' as DAELow.VARIABLES(_,vararr,_,_)),
+                                                       DAELow.VARIABLES(_,knvararr,_,_)
+                                                       ,_,_,ieqnarr,_),p) => cinit
          
  end
 
 
 (** relation: generate_compute_initial2
  ** Helper relation to generate_compute_initial
-**)
-relation generate_compute_initial2:(DAELow.Variables,
-				    DAELow.Equation list) => string list =
+ **)
+ relation generate_compute_initial2:(DAELow.Variables,
+				                     DAELow.Equation list) => string list =
   axiom	generate_compute_initial2(_,[]) => ["\n"]
-	
+	     
   rule	generate_compute_initial2(vars,es) => str_lst &
-	DAELow.get_var(cr,vars) 
-	  => (DAELow.VAR(cr',_,_,_,_,_,_,_,_,_,_),_) &
-          SimCodegen.cref_modelica_str(cr') => crstr &
-	SimCodegen.print_exp_cpp_str(e2) => rhs_str &
-	Util.string_append_list(["  ",crstr, " = ",rhs_str, ";"]) => str 
-	------------------------------
-	generate_compute_initial2(vars,DAELow.EQUATION(Exp.CREF(cr,_),e2)::es) 
-	  => str::str_lst
+	     DAELow.get_var(cr,vars) 
+	      => (DAELow.VAR(cr',_,_,_,_,_,_,_,_,_,_),_) &
+           SimCodegen.cref_modelica_str(cr') => crstr &
+	     SimCodegen.print_exp_cpp_str(e2) => rhs_str &
+	     Util.string_append_list(["  ",crstr, " = ",rhs_str, ";"]) => str 
+	     ------------------------------
+	     generate_compute_initial2(vars,DAELow.EQUATION(Exp.CREF(cr,_),e2)::es) 
+	      => str::str_lst
 
   rule	print "Error, intial equation not on form x = <expr> for variable x.\n"
-	---------------------------
-	generate_compute_initial2(_,_) => fail
+	     ---------------------------
+	     generate_compute_initial2(_,_) => fail
+ end
+
+
+relation generate_compute_initial_from_start_values:(DAELow.Var list) 
+          => string list =
+          
+  axiom generate_compute_initial_from_start_values([]) => ["\n"]
+        
+  rule  Exp.is_const(start) => false &
+        SimCodegen.cref_modelica_str(cr) => crs &
+        SimCodegen.print_exp_cpp_str(start) => exp_str &
+        Util.string_append_list(["  ",crs, " = ", exp_str,";\n"]) => eqn_str &
+        generate_compute_initial_from_start_values(rest) => res
+        -------------------------------------------
+        generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,SOME(start),_,_,_)::rest) => eqn_str::res
+
+  rule  Exp.is_const(start) => true &
+        generate_compute_initial_from_start_values(rest) => res
+        -------------------------------------------
+        generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,SOME(start),_,_,_)::rest) => res
+
+  rule  generate_compute_initial_from_start_values(rest) => res
+        -------------------------------------------
+        generate_compute_initial_from_start_values(DAELow.VAR(cr,_,_,_,_,_,_,NONE,_,_,_)::rest) => res
+          
+
 end
 
 (** relation: generate_compute_state
