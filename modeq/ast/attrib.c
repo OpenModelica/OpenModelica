@@ -69,40 +69,43 @@ void print_attr(Attrib *attr, FILE *f)
   case STRING:
     fprintf(f, "\"%s\"", attr->u.stringval); break;
 
-  tokprinter(IMPORT);
-  tokprinter(CLASS_);
-  tokprinter(BOUNDARY);
-  tokprinter(MODEL);
-  tokprinter(FUNCTION);
-  tokprinter(PACKAGE);
-  tokprinter(RECORD);
-  tokprinter(BLOCK);
-  tokprinter(CONNECTOR);
-  tokprinter(TYPE);
-  tokprinter(PARTIAL);
-  tokprinter(EXTENDS);
-  tokprinter(PUBLIC);
-  tokprinter(PROTECTED);
-  tokprinter(INPUT);
-  tokprinter(OUTPUT);
-  tokprinter(FLOW);
-  tokprinter(PARAMETER);
-  tokprinter(CONSTANT);
-  tokprinter(EQUATION);
-  tokprinter(FINAL);
-  tokprinter(LPAR);
-  tokprinter(RPAR);
-  tokprinter(DOT);
-  tokprinter(EQUALS);
-  tokprinter(ASSIGN);
-  tokprinter(PLUS);
-  tokprinter(MINUS);
-  tokprinter(MULT);
-  tokprinter(DIV);
-  tokprinter(COMPONENTS);
-  tokprinter(TYPE_PREFIX);
-  tokprinter(FUNCALL);
-  tokprinter(ELEMENT);
+  tokprinter(IMPORT);		/* 3 */
+  tokprinter(CLASS_);		/* 4 */
+  tokprinter(BOUNDARY);		/* 5 */
+  tokprinter(MODEL);		/* 6 */
+  tokprinter(FUNCTION);		/* 7 */
+  tokprinter(PACKAGE);		/* 8 */
+  tokprinter(RECORD);		/* 9 */
+  tokprinter(BLOCK);		/* 10 */
+  tokprinter(CONNECTOR);	/* 11 */
+  tokprinter(TYPE);		/* 12 */
+  tokprinter(EXTENDS);		/* 16 */
+  tokprinter(PARAMETER);	/* 17 */
+  tokprinter(CONSTANT);		/* 18 */
+  tokprinter(PARTIAL);		/* 20 */
+  tokprinter(INPUT);		/* 22 */
+  tokprinter(OUTPUT);		/* 23 */
+  tokprinter(FLOW);		/* 24 */
+  tokprinter(EQUATION);		/* 25 */
+  tokprinter(FINAL);		/* 28 */
+  tokprinter(PUBLIC);		/* 29 */
+  tokprinter(PROTECTED);	/* 30 */
+  tokprinter(LPAR);		/* 31 */
+  tokprinter(RPAR);		/* 32 */
+  tokprinter(AND);		/* 40 */
+  tokprinter(EQUALS);		/* 49 */
+  tokprinter(ASSIGN);		/* 50 */
+  tokprinter(PLUS);		/* 51 */
+  tokprinter(MINUS);		/* 52 */
+  tokprinter(MULT);		/* 53 */
+  tokprinter(DIV);		/* 54 */
+  tokprinter(DOT);		/* 55 */
+  tokprinter(LESSEQ);		/* 57 */
+  tokprinter(GREATEREQ);	/* 59 */
+  tokprinter(COMPONENTS);	/* 66 */
+  tokprinter(TYPE_PREFIX);	/* 67 */
+  tokprinter(FUNCALL);		/* 68 */
+  tokprinter(ELEMENT);		/* 69 */
 
   case zzEOF_TOKEN:
   default:
