@@ -1046,6 +1046,10 @@ relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var li
 	build_record_constructor_varlst (cl as SCode.CLASS(_,_,_,_,SCode.PARTS(elts,_,_,_,_,_)),env) 
 	(* Add the return type of the record constructor *)
 	    => Types.VAR("result",Types.ATTR(false,SCode.RW,SCode.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
+
+  rule	Debug.fprint("failtrace","build_record_constructor_varlst failed\n")
+	-----------------------
+	build_record_constructor_varlst(_,_) => fail
 end
 
 (** relation: build_varlst_from_elts

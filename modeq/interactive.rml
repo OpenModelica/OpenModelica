@@ -3613,7 +3613,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod',true) => mod'' &	
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
-			[], true,Inst.TOP_CALL) 
+			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &

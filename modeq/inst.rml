@@ -2520,8 +2520,9 @@ relation inst_array : (Env.Env,
 	inst_array(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
 	  => ([dae],[],ty)*)
 
-  rule	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
-	  => (dae,csets,ty)
+  rule	print "DIMEXP in inst_array\n" &
+	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+	  => (dae,csets,ty) 
 	-----------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
 	  => (dae,csets,ty)
@@ -2531,7 +2532,7 @@ relation inst_array : (Env.Env,
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
 	  => ([], csets, (Types.T_NOTYPE,NONE))
 
-  rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
+  (*rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
 	(* Should only generate -one- functioncall *)
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &
 	Exp.contain_functioncall(e) => true &
@@ -2547,9 +2548,13 @@ relation inst_array : (Env.Env,
 	Util.list_flatten([dae1,dae2,[dae3]]) => dae
 	-----------------------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
-          => (dae,csets',ty)
+          => (dae,csets',ty)*)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
+	Mod.print_mod_str mod' => str &
+        Debug.fprint("failtrace", "inst array, mod' =") & 
+	Debug.fprint("failtrace", str) & 
+	Debug.fprint("failtrace", "\n") &
 	inst_var2(env,ci_state,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
@@ -2739,7 +2744,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	Ceval.ceval(env,e,impl,st,NONE) => (Values.INTEGER(i),_) &
  	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl as false,st) => SOME(DIMINT(i))::l
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl (* as false*),st) => SOME(DIMINT(i))::l
 
   rule	Debug.fprintln("insttr", "elab_arraydim_decl6") &
 	Static.elab_exp(env, d,impl,st) => (e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) &

@@ -709,7 +709,7 @@ relation ceval_function: (Env.Env, Absyn.Path, Values.Value list, bool (*impl*) 
 	Print.get_string => s & print s & print "\n" &
 	DAE.dae_to_record_value(funcname,dae,impl) => value  
 	----------------------
-	ceval_function(env,funcname,vallst,impl as false) => value
+	ceval_function(env,funcname,vallst,impl) => value
 
   rule	Debug.fprint("failtrace", "ceval_function: Don't know what to do. impl was always false before:")
 	& Absyn.path_string funcname => s

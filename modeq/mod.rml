@@ -146,6 +146,7 @@ module Mod:
   relation mod_equation : Types.Mod => Types.EqMod option
 
   relation print_mod : Types.Mod => ()
+  relation print_mod_str : Types.Mod => string 
 
 end
 
@@ -683,9 +684,13 @@ relation lookup_idx_modification: (Types.Mod, int) => Types.Mod =
 	-----------------------------------
 	lookup_idx_modification(Types.MOD(f,subs,eq),idx) => mod'''
 	
-  rule	Print.print_buf "# Mod.lookup_idx_modification(" &
-	print_mod mod & Print.print_buf "," & int_string idx => s & Print.print_buf s &
-	Print.print_buf ") failed\n"
+  rule	Debug.fprint("failtrace","-lookup_idx_modification(") &
+	print_mod_str mod => str &
+	Debug.fprint("failtrace",str) &
+	Debug.fprint("failtrace",",") &
+	int_string idx => s & 
+	Debug.fprint("failtrace",s) &
+	Debug.fprint("failtrace",") failed\n") 
 	--------------------
 	lookup_idx_modification(mod,idx) => fail
 
