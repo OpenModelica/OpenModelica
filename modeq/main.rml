@@ -142,10 +142,11 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 
   rule	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => exp &
+	Interactive.evaluate(exp,isymb) => (resultstr,newisymb) &
 	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
 	Debug.fcall ("dump", Dump.dump_istmt, exp)
 	--------------------------------------------------
-	handle_command (str, isymb) => (true, "No evaluation yet\n", isymb)
+	handle_command (str, isymb) => (true, resultstr, newisymb)
 
   rule  print "Error occured building AST\n"
 	----------------------------------

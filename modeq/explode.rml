@@ -199,13 +199,13 @@ relation elab_classdef_elements: Absyn.ClassPart list => Element list =
   axiom	elab_classdef_elements [] => []
 
   rule	elab_classdef_elements rest => els &
-	elab_elist (es, false) => es' &
+	elab_eitemlist (es, false) => es' &
 	list_append (es',els) => els'
 	------------------------------
 	elab_classdef_elements (Absyn.PUBLIC(es)::rest) => els'
 
   rule	elab_classdef_elements rest => els &
-	elab_elist (es, true) => es' &
+	elab_eitemlist (es, true) => es' &
 	list_append (es',els) => els'
 	------------------------------
 	elab_classdef_elements (Absyn.PROTECTED(es)::rest) => els'
@@ -282,14 +282,14 @@ end
 	  => PARTS(els,eqs,als')
 
   rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-  	elab_elist(es,false) => es' &
+  	elab_eitemlist(es,false) => es' &
 	list_append(els,es') => els'
 	------------------------------
 	elab_classdef(Absyn.PARTS(Absyn.PUBLIC(es)::ps))
 	  => PARTS(els',eqs,als)
 
   rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-  	elab_elist(es,true) => es' &
+  	elab_eitemlist(es,true) => es' &
 	list_append(els,es') => els'
 	------------------------------
 	elab_classdef(Absyn.PARTS(Absyn.PROTECTED(es)::ps))
@@ -305,23 +305,26 @@ end
 
 
 
-(** relation: elab_elist
+(** relation: elab_eitemlist
  **
- ** This relation converts a list of `Absyn.Element' to a list of
+ ** This relation converts a list of `Absyn.ElementItem' to a list of
  ** `Element'.  The boolean argument flags whether the elements are
- ** pretected.
+ ** pretected. Annotations are not elaborated, i.e. they are removed when converting to SCode.
  **)
 
-relation elab_elist : (Absyn.Element list, bool) => Element list =
+relation elab_eitemlist : (Absyn.ElementItem list, bool) => Element list =
 
-  axiom	elab_elist([],_) => []
+  axiom	elab_eitemlist([],_) => []
+
+  rule	elab_eitemlist(es,prot) => l
+	----------------------------
+	elab_eitemlist(Absyn.ANNOTATIONITEM(_)::es,prot) => l
 
   rule	elab_element(e, prot) => e' &
-	elab_elist(es, prot) => es' &
+	elab_eitemlist(es, prot) => es' &
 	list_append(e',es') => l
 	---------------------
-	elab_elist(e::es, prot) => l
-
+	elab_eitemlist(Absyn.ELEMENTITEM(e)::es, prot) => l
 end
 
 (** relation: elab_element
@@ -370,7 +373,7 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 	--------------------------------------------------
 	elab_elementspec(final,prot,
 			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di,ad),t,
-					  (Absyn.COMPONENT(n,d,m))::xs))
+					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_)::xs))
 	  => COMPONENT(n,final,prot,ATTR(tot_dim,fl,RW,pa,di),t,mod)::xs'
 
 end

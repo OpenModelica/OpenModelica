@@ -38,5 +38,19 @@ module Interactive:
 						   SCode.Program * (* The exploded ast *)
 						   InstantiatedClass list * (* List of instantiated classes*)
 						   InteractiveVariable	list (* List of variables with values*)  
+  relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) 
 end
+with "dump.rml"
 
+relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) =
+
+  rule	let newst = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[])
+	-------------------------------------------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("clear",_),_))]),_) 
+	    => ("Clearing symbol table\n", newst)
+  rule	Dump.dump(p)
+	------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),_))]),st as SYMBOLTABLE(p,_,_,_))
+	    => (" symboltable :",st)
+  axiom	evaluate(_,st) => ("Not implemented yet\n",st)
+end

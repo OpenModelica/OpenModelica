@@ -181,11 +181,11 @@ end
 
 relation print_class_part: Absyn.ClassPart => () =
 
-  rule	print "PUBLIC(" & print_elements(el) & print ")"
+  rule	print "PUBLIC(" & print_elementitems(el) & print ")"
 	-----------------------------------------------
 	print_class_part(Absyn.PUBLIC(el))
 	
-  rule	print "PROTECTED(" & print_elements(el) & print ")"
+  rule	print "PROTECTED(" & print_elementitems(el) & print ")"
 	---------------------------------------
 	print_class_part(Absyn.PROTECTED(el))
 	
@@ -205,6 +205,41 @@ end
 
 
 (**)
+
+relation print_elementitems: Absyn.ElementItem list => () =
+  axiom print_elementitems [] => ()
+
+  rule  print_element e
+	---------------
+	print_elementitems[ Absyn.ELEMENTITEM(e)]
+
+  rule	print_annotation a
+	------------------
+	print_elementitems([Absyn.ANNOTATIONITEM(a)])
+	
+  rule	print_element e &
+	print_elementitems els
+	---------------
+	print_elementitems Absyn.ELEMENTITEM(e)::els 
+
+  rule	print_annotation a &
+	print_elementitems els
+	------------------
+	print_elementitems Absyn.ANNOTATIONITEM(a)::els
+
+  rule	print "Error print_elementitems\n"
+	--------------
+	print_elementitems _ 
+end
+
+relation print_annotation: Absyn.Annotation => () =	
+  rule	print "ANNOTATION(" &
+	print_modification Absyn.CLASSMOD(mod,NONE) &
+	print ")"
+	---------
+	print_annotation(Absyn.ANNOTATION(mod))
+end
+	
 
 relation print_elements: Absyn.Element list => () =
 
@@ -265,7 +300,7 @@ relation print_elementspec: Absyn.ElementSpec => () =
   rule	print "COMPONENTS(" &
 	print_elementattr(attr) & print "," &
 	print_path(t) & print "," &
-	print_list_debug("print_elementspec",cs, print_component, ",") &
+	print_list_debug("print_elementspec",cs, print_componentitem, ",") &
 	print ")"
 	------------------------------------------
 	print_elementspec(Absyn.COMPONENTS(attr,t,cs))
@@ -340,9 +375,21 @@ relation print_component: Absyn.Component => () =
 
   rule	print n &
 	print_arraydim a &
-	print_option(m,print_modification)
+	print_option(m,print_modification) 
 	------------------------------------------
 	print_component(Absyn.COMPONENT(n,a,m))
+
+end
+
+relation print_componentitem: Absyn.ComponentItem => () =
+
+  rule	print "COMPONENTITEM(" &
+	print_component c &
+	print ", " &
+	print_option(a, print_annotation) &
+	print ")"
+	------------------------------------------
+	print_componentitem(Absyn.COMPONENTITEM(c,a))
 
 end
 

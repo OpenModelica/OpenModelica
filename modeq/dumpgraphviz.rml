@@ -123,14 +123,14 @@ end
 relation print_class_part: Absyn.ClassPart => Node =
 
   rule	(* print "> Beginning of rule print_class_part\n" & *)
-	print_elements el => nl
+	print_elementitems el => nl
 	(* & print "> End of rule print_class_part\n" *)
 	-----------------------
 	print_class_part(Absyn.PUBLIC(el)) => Graphviz.NODE("PUBLIC",[],nl)
 
 
   rule	(* print "> Beginning of rule print_class_part\n" & *)
-	print_elements el => nl
+	print_elementitems el => nl
 	(* & print "> End of rule print_class_part\n" *)
 	-----------------------
 	print_class_part(Absyn.PROTECTED(el)) => Graphviz.NODE("PROTECTED",[],nl)
@@ -161,17 +161,20 @@ end
 (**)
 
 
-relation print_elements: Absyn.Element list => Node list =
+relation print_elementitems: Absyn.ElementItem list => Node list =
 
-  axiom	print_elements [] => []
+  axiom	print_elementitems [] => []
+
+  rule	print_elementitems el => nl
+	-----------------------------
+	print_elementitems (Absyn.ANNOTATIONITEM(_)::el) => nl
 
   rule	(* print "> Beginning of rule print_elements\n" & *)
 	print_element e => node &
-	print_elements el => nl
+	print_elementitems el => nl
 	(* & print "> End of rule print_elements\n" *)
 	--------------------------
-	print_elements e::el => node::nl
-	
+	print_elementitems (Absyn.ELEMENTITEM(e)::el) => node::nl
 end
 
 (**)
@@ -233,11 +236,11 @@ relation print_elementspec: Absyn.ElementSpec => Node =
 	print_elementspec(_) => Graphviz.NODE("ELSPEC_ERROR",[],[])
 end
 
-relation print_components: Absyn.Component list => Node list =
+relation print_components: Absyn.ComponentItem list => Node list =
 
   axiom	print_components [] => []
 
-  rule	print_component c => n &
+  rule	print_componentitem c => n &
 	print_components cs => nl
 	-------------------------
 	print_components c::cs => n::nl
@@ -245,12 +248,12 @@ relation print_components: Absyn.Component list => Node list =
 end
 
 
-relation print_component: Absyn.Component => Node =
+relation print_componentitem: Absyn.ComponentItem => Node =
 
   rule	print "" &
 	let nn = Graphviz.NODE(n,[],[]) 
 	--------
-	print_component(Absyn.COMPONENT(n,a,m)) => Graphviz.LNODE("COMPONENT",[n],[],[nn])
+	print_componentitem(Absyn.COMPONENTITEM(Absyn.COMPONENT(n,a,m),_)) => Graphviz.LNODE("COMPONENT",[n],[],[nn])
 end
 
 

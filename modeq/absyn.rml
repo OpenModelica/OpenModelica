@@ -71,14 +71,19 @@ module Absyn:
   (** this type contains the name of the derived class and an optional *)
   (** array dimension and a list of modifications. *)
 
-  datatype ClassPart = PUBLIC of Element list
-		     | PROTECTED of Element list
+  datatype ClassPart = PUBLIC of ElementItem list
+		     | PROTECTED of ElementItem list
 		     | EQUATIONS of Equation list
 		     | ALGORITHMS of Algorithm list
   (** A class definition contains several parts.  There are public and *)
   (** protected component declarations, type definitions and `extends' *)
   (** clauses, collectively called elements.  There are also equation *)
   (** sections and algorithm sections. *)
+  (** - ElementList *)
+
+  datatype ElementItem = ELEMENTITEM of Element 
+		       | ANNOTATIONITEM of Annotation 
+  (** An element item is either an element or an annotation *)
 
   (** - Elements *)
   datatype Element = ELEMENT of bool		     (* final *)
@@ -92,7 +97,7 @@ module Absyn:
 		       | IMPORT of Import
 		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
 				     * Path	     (* type name *)
-				     * Component list
+				     * ComponentItem list
   (** One of the keyword inner and outer CAN be given to reference an inner or
       outer component. Thus there are three disjoint possibilities. **)		     
   datatype InnerOuter = INNER | OUTER | UNSPECIFIED
@@ -111,6 +116,9 @@ module Absyn:
    ** in the source, it is represented in the AST as
    ** `EXTENDS(IDENT("TwoPin"),[])'.
    **)
+							  
+  datatype ComponentItem = COMPONENTITEM of Component
+					  * Annotation option
 
   datatype Component = COMPONENT of Ident 	     (* component name *)
 				  * ArrayDim
@@ -253,6 +261,10 @@ module Absyn:
   (** predefined types are created in the `Builtin' module and are *)
   (** assigned special restrictions. *)
 
+  (** Annotation *)
+  datatype Annotation = ANNOTATION of ElementArg list
+  (** An Annotation is a class_modification. *)
+
 
   relation update_program: (Program,Program) => Program
   relation path_string : Path => string
@@ -392,7 +404,7 @@ end
 relation replace_inner_class: (Class, Class) => Class =
 
   rule	get_public_list(parts) => publst &
-	replace_class_in_elementlist(publst,c1) => publst2 &
+	replace_class_in_elementitemlist(publst,c1) => publst2 &
 	replace_public_list(parts,publst2) => parts2 
 	-----------------------------------------------
 	replace_inner_class (c1,CLASS(a,b,c,PARTS(parts))) => CLASS(a,b,c,PARTS(parts2))
@@ -401,26 +413,27 @@ relation replace_inner_class: (Class, Class) => Class =
 	replace_inner_class (_,_) => fail
 end
 
-(** relation: replace_class_in_elementlist
+(** relation: replace_class_in_elementitemlist
  ** This relation takes an Element list and a Class and returns a modified element list
  ** where the class definition of the class is updated or added.
   **)
-relation replace_class_in_elementlist: (Element list, Class) => Element list =
+relation replace_class_in_elementitemlist: (ElementItem list, Class) => ElementItem list =
 	
-(*  rule	name1 = name2
-	------------------------------
-	replace_class_in_elementlist([ELEMENT(a,b,c,CLASSDEF(d,c1 as CLASS(name1,_,_,_)))],c2 as CLASS(name2,_,_,_)) => [ELEMENT(a,b,c,CLASSDEF(d,c1))]*)
+  rule	replace_class_in_elementitemlist(xs,c) => res
+	-----------------------------------------
+	replace_class_in_elementitemlist((a1 as ANNOTATIONITEM(_))::xs,c) => a1::res
 
   rule	not name1 = name &
-	replace_class_in_elementlist(xs,c) => res
+	replace_class_in_elementitemlist(xs,c) => res
 	------------------------------------------
-	replace_class_in_elementlist((e1 as ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_))))::xs,c as CLASS(name,_,_,_)) => e1::res
+	replace_class_in_elementitemlist((e1 as ELEMENTITEM(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))))::xs,c as CLASS(name,_,_,_)) => e1::res
+	
 
   rule name1 = name 
 	-----------------------------
-	replace_class_in_elementlist((e1 as ELEMENT(a,b,c,CLASSDEF(d, CLASS(name1,_,_,_))))::xs,c2 as CLASS(name,_,_,_)) => ELEMENT(a,b,c,CLASSDEF(d,c2))::xs
+	replace_class_in_elementitemlist((e1 as ELEMENTITEM(ELEMENT(a,b,c,CLASSDEF(d, CLASS(name1,_,_,_)))))::xs,c2 as CLASS(name,_,_,_)) => ELEMENTITEM(ELEMENT(a,b,c,CLASSDEF(d,c2)))::xs
 	
-  axiom	 replace_class_in_elementlist([],c) => [ELEMENT(false,UNSPECIFIED,"",CLASSDEF(false,c))]
+  axiom	 replace_class_in_elementitemlist([],c) => [ELEMENTITEM(ELEMENT(false,UNSPECIFIED,"",CLASSDEF(false,c)))]
 end
 
 (** relation: get_inner_class
@@ -429,7 +442,7 @@ end
 **)
 relation get_inner_class: (Class, Ident) => Class =
   rule	get_public_list(parts) => publst &
-	get_class_from_elementlist(publst,name) => c1
+	get_class_from_elementitemlist(publst,name) => c1
 	-----------------------------------------------
 	get_inner_class (CLASS(_,_,_,PARTS(parts)), name) => c1
 
@@ -441,10 +454,10 @@ relation get_inner_class: (Class, Ident) => Class =
 end
 
 (** relation: replace_public_list
- ** This relation takes a ClassPart List and returns the first public element list of the class.
- **
+ ** This relation replaces the `ElementItem' list in the `ClassPart' list, and returns the updated
+ ** list.
 *)
-relation replace_public_list: (ClassPart list,Element list) => ClassPart list =
+relation replace_public_list: (ClassPart list,ElementItem list) => ClassPart list =
 
   axiom replace_public_list ((lst as PUBLIC(_))::rest,newpublst) => PUBLIC(newpublst)::rest
 	
@@ -456,10 +469,10 @@ relation replace_public_list: (ClassPart list,Element list) => ClassPart list =
 end
 
 (** relation: get_public_list
- ** This relation takes a ClassPart List and returns the first public element list of the class.
+ ** This relation takes a ClassPart List and returns the first public ElementItem list of the class.
  **
 *)
-relation get_public_list: ClassPart list => Element list =
+relation get_public_list: ClassPart list => ElementItem list =
 
   axiom get_public_list PUBLIC(lst)::rest => lst
 	
@@ -470,22 +483,26 @@ relation get_public_list: ClassPart list => Element list =
   axiom get_public_list(_) => []
 end
 
-(** relation: get_class_from_elementlist
- ** This relation takes an Element list and an Ident and returns the class definition
+(** relation: get_class_from_elementitemlist
+ ** This relation takes an ElementItem list and an Ident and returns the class definition
  ** among the element list having that identifier
   **)
-relation get_class_from_elementlist: (Element list, Ident) => Class =
+relation get_class_from_elementitemlist: (ElementItem list, Ident) => Class =
 	
+  rule	get_class_from_elementitemlist(xs,name) => res
+	----------------------------------------------
+	get_class_from_elementitemlist(ANNOTATIONITEM(_)::xs,name) => res
+
   rule	name1 = name2
 	------------------------------
-	get_class_from_elementlist(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))::xs,name2) => c1
+	get_class_from_elementitemlist(ELEMENTITEM(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_))))::xs,name2) => c1
 
   rule	not name1 = name &
-	get_class_from_elementlist(xs,name) => res
+	get_class_from_elementitemlist(xs,name) => res
 	------------------------------------------
-	get_class_from_elementlist(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_)))::xs,name) => res
+	get_class_from_elementitemlist(ELEMENTITEM(ELEMENT(_,_,_,CLASSDEF(_,c1 as CLASS(name1,_,_,_))))::xs,name) => res
 
-  axiom	 get_class_from_elementlist([],_) => fail
+  axiom	 get_class_from_elementitemlist([],_) => fail
 end
 
 (** relation: class_in_program
@@ -567,7 +584,7 @@ relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_)) => n
 
-  axiom element_spec_name COMPONENTS(_,_,[COMPONENT(n,_,_)]) => n
+  axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
 
   rule  print "# element_spec_name EXTENDS\n"
 	-------------------------------------

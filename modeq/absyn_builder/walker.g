@@ -102,7 +102,7 @@ stored_definition returns [void *ast]
             )*
         )
         {
-	    if (within == 0) { printf("Within ==0\n"); within=Absyn__TOP;}
+	    if (within == 0) { within=Absyn__TOP; }
 	    ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within);
         }
     ;
@@ -203,6 +203,7 @@ composition returns [void* ast]
 {
     void* el = 0;
     l_stack el_stack;
+    void * ann;	
 }
         :
 		el = element_list
@@ -222,7 +223,7 @@ composition returns [void* ast]
 		)*
 		( EXTERNAL ( language_specification )? 
 			( external_function_call )?
-			( annotation)?
+			( ann = annotation)?
 		)?
         {
             ast = make_rml_list_from_stack(el_stack);
@@ -261,10 +262,15 @@ language_specification :
 		s:STRING ;
 
 external_function_call :
+{
+   void* temp;
+   void* temp2;
+   void* temp3;
+}
 		#(EXTERNAL_FUNCTION_CALL 
 			(
-				(i:IDENT (expression_list)?)
-				|#(e:EQUALS component_reference i2:IDENT (expression_list)?)
+				(i:IDENT (temp = expression_list)?)
+				|#(e:EQUALS temp2 = component_reference i2:IDENT ( temp3 = expression_list)?)
 			)
 		)
 		;
@@ -273,15 +279,20 @@ element_list returns [void* ast]
 {
     void* e = 0;
     l_stack el_stack;
+    void *ann = 0;
 }
     :
-		((e = element
-                {
-                    el_stack.push(e);
-                }
-            | annotation)
-              
-        )*
+		(
+		  (e = element
+                  {
+                      el_stack.push(Absyn__ELEMENTITEM(e));
+                  })
+                | (ann = annotation 
+		  {
+		      el_stack.push(Absyn__ANNOTATIONITEM(ann));
+		  }
+		  )              
+        	)*
         {
             ast = make_rml_list_from_stack(el_stack);
         }
@@ -436,7 +447,10 @@ extends_clause returns [void* ast]
     ;
 
 constraining_clause :
-		extends_clause;
+{
+   void* temp;
+}
+		(temp = extends_clause);
 
 // returns datatype ElementSpec
 component_clause returns [void* ast]
@@ -516,8 +530,20 @@ component_list returns [void* ast]
 
 // returns datatype Component
 component_declaration returns [void* ast]
+{
+    void* ann = 0;
+    void* dec = 0;
+	
+}
     :
-		ast = declaration comment;
+		dec = declaration ann = comment
+		{
+			if (!ann) ann = mk_none();
+			else ann = mk_some(ann);
+			ast = Absyn__COMPONENTITEM(dec,ann);
+		}
+		;
+	
 
 // returns datatype Component
 declaration returns [void* ast]
@@ -681,11 +707,12 @@ equation_clause returns [void* ast]
 {
     l_stack el_stack;
     void* e;
+    void* ann;
 }
     :
 		#(EQUATION
             (e = equation { el_stack.push(e); }
-			|annotation
+			| ann = annotation
             )*
         )
         {
@@ -698,11 +725,12 @@ algorithm_clause returns [void* ast]
 {
     l_stack el_stack;
     void* e;
+    void* ann;
 }
     :
 		#(ALGORITHM 
             (e = algorithm { el_stack.push(e); }
-			| annotation 
+			| ann = annotation 
             )*
         )
         {
@@ -728,6 +756,9 @@ algorithm returns [void* ast]
 {
     void* cref;
     void* expr;
+    void* temp;
+    void* temp2;
+    void* temp3;
 }
     :
         #(ALGORITHM_STATEMENT 
@@ -736,7 +767,7 @@ algorithm returns [void* ast]
                         {
                             ast = Absyn__ALG_5fASSIGN(cref,expr);
                         }
-                    |	(expression_list component_reference function_call)
+                    |	(temp=expression_list temp2=component_reference temp3= function_call)
                         {
                             // TODO: fix Absyn to handle tuple assign
                             ast = 0;
@@ -755,8 +786,12 @@ algorithm returns [void* ast]
         )
 		;
 algorithm_function_call returns [void* ast]
+{
+  void* temp;
+  void* temp2;
+}
     :
-        component_reference function_call
+        temp = component_reference temp2 = function_call
         {
             // TODO: fix Absyn to handle function calls w/o assign
             ast = 0;
@@ -902,8 +937,13 @@ when_clause_a returns [void* ast]
 
 		;
 
-else_when_a :
-		#(e:ELSEWHEN expression algorithm_list)
+else_when_a
+{ 
+  void * temp;
+  void * temp2;
+}
+    :
+		#(e:ELSEWHEN temp = expression  temp2 = algorithm_list)
 		;
 
 equation_elseif returns [void* ast]
@@ -1330,8 +1370,12 @@ function_arguments 	returns [void* ast]
 named_arguments :
 		named_argument (named_argument)*;
 
-named_argument :
-		#(eq:EQUALS i:IDENT expression);
+named_argument
+{
+  void* temp;
+}
+     :
+		#(eq:EQUALS i:IDENT temp = expression);
 
 expression_list returns [void* ast]
 {
@@ -1409,8 +1453,15 @@ subscript returns [void* ast]
         )
     ;
 
-comment :
-		#(COMMENT string_comment (annotation)?)|
+comment returns [void* ast]
+{
+void* ann=0;
+}		:
+		#(COMMENT string_comment (ann = annotation)?)
+		{
+			ast = ann;
+		}
+		|
 		;
 
 string_comment :
@@ -1423,6 +1474,15 @@ string_concatenation :
         |#(p:PLUS string_concatenation s2:STRING)
         ;
 
-annotation 
+annotation returns [ void *ast]
+{
+	void *cmod=0;
+}
     :
-		#(a:ANNOTATION class_modification);
+		#(a:ANNOTATION cmod = class_modification)
+		{
+			ast = Absyn__ANNOTATION(cmod);
+		}
+		;		
+
+
