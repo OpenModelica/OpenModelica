@@ -4294,7 +4294,7 @@ echo "${ECHO_T}Not compiling with BOOST" >&6; USE_MODPAR=""; BOOSTHOME=""
 
 fi;
 
-                                                                                                                                                      ac_config_files="$ac_config_files Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile modeq/modpar/Makefile"
+                                                                                                                                                                ac_config_files="$ac_config_files Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile modeq/modpar/Makefile flat_modelica_parser/src/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -4860,6 +4860,7 @@ do
   "modeq/runtime/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/runtime/Makefile" ;;
   "modelica_parser/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/src/Makefile" ;;
   "modeq/modpar/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/modpar/Makefile" ;;
+  "flat_modelica_parser/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES flat_modelica_parser/src/Makefile" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
