@@ -64,6 +64,15 @@ relation differentiate_equation_time: (DAELow.Equation,
 	----------------------
 	differentiate_equation_time(DAELow.EQUATION(e1,e2),timevars) 
 	  => DAELow.EQUATION(e1'',e2'')
+
+
+  rule	print "-differentiate_equation_time on algorithm not impl yet.\n" 
+	-----------------------
+	differentiate_equation_time(DAELow.ALGORITHM(_,_,_),_) => fail
+
+  rule	print "-differentiate_equation_time faile\n" 
+	-----------------------
+	differentiate_equation_time(_,_) => fail
 end
 
 (** relation: differentiate_exp_time
@@ -195,6 +204,11 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	------------------------------
 	differentiate_exp_time(Exp.REDUCTION(a,e1,b,e2),tv) 
 	  => Exp.REDUCTION(a,e1',b,e2')
+
+  rule	Exp.print_exp_str e => str &
+	print "-differentiate_exp_time on " & print str & print " failed\n" 
+	--------------------
+	differentiate_exp_time(e,tv) => fail
 end
 
 (** relation: differenatiate_exp

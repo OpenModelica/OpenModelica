@@ -40,19 +40,22 @@ with "print.rml"
 
 relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list) => () =
 
-  rule	TaskGraphExt.new_task("start") => starttask &
+  rule	print "starting buildtaskgraph\n" &
+	TaskGraphExt.new_task("start") => starttask &
 	TaskGraphExt.new_task("end") => endtask &
 	TaskGraphExt.set_execcost(starttask,1.0) &
 	TaskGraphExt.set_execcost(starttask,1.0) &
 	TaskGraphExt.register_startstop(starttask,endtask) &
-	vector_list(varvec) =>  vars &
-	vector_list(knvarvec) => knvars &
+	array_list(vararr) =>  vars &
+	array_list(knvararr) => knvars &
 	add_variables(vars,starttask) &
 	add_variables([DAELow.VAR(Exp.CREF_IDENT("sim_time",[]),DAELow.VARIABLE,DAE.INPUT,DAE.REAL,NONE,NONE,[],NONE,0,"time",Absyn.IDENT("$noclass$"))],starttask) &
 	build_blocks(dae,ass1,ass2,blocks) &
+	print "done building taskgraph, about to build inits.\n" &
 	build_inits(dae) 
+	& print "leaving build_taskgraph\n" 
 	----------------------------------
-	build_taskgraph(dae as DAELow.DAELOW(DAELow.VARIABLES(varvec,_),DAELow.VARIABLES(knvarvec,_),_,_,_),ass1,ass2,blocks)
+	build_taskgraph(dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvararr,_,_),_,_,_),ass1,ass2,blocks)
 
   rule	print "-build_taskgraph failed\n"
 	-----------------------
@@ -66,12 +69,12 @@ end
 **)
 relation build_inits:(DAELow.DAELow) => () =
 
-  rule	vector_list(varvec) => vars &
-	vector_list(kvarvec) => kvars &
+  rule	array_list(vararr) => vars &
+	array_list(kvararr) => kvars &
 	build_inits2(vars) &
 	build_inits2(kvars)
 	--------------------
-	build_inits(DAELow.DAELOW(DAELow.VARIABLES(varvec,bt1),DAELow.VARIABLES(kvarvec,bt2),_,_,_)) => ()
+	build_inits(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,kvararr,_,_),_,_,_)) => ()
 end
 
 
@@ -200,7 +203,8 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	DAELow.var_list(vars) => varlst &
+	list_nth(varlst,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	is_non_state kind &
 	(*print "Solving for non-states\n" &*)
 	let varexp = Exp.CREF(cr,Exp.REAL) &
@@ -213,7 +217,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
 	build_assignment(cr,expr,origname)  => ()
 	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(varvec,_),_,eqns,_,_),ass1,ass2,e)	
+	build_equation(DAELow.DAELOW(vars,_,eqns,_,_),ass1,ass2,e)	
 
 
   rule	(* Solving the state s means solving for der(s) *)
@@ -222,7 +226,8 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_) &
+	DAELow.var_list(vars) => varlst &
+	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_) &
 (*	print "solving for state\n" &*)
 	int_string(indx) => indxs &
 	Util.string_append_list(["xd[",indxs,"]"]) => id &
@@ -237,18 +242,18 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
 	build_assignment(cr' ,expr,origname)  => ()
 	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(varvec,_),_,eqns,_,_),ass1,ass2,e)	
+	build_equation(DAELow.DAELOW(vars,_,eqns,_,_),ass1,ass2,e)	
 
   rule	int_sub(e,1) => e' &
 	array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	array_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(varvec,_),_,eqns,_,_),ass1,ass2,e) => fail
+	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => fail
 
   rule	print "-build_equation failed\n" 
 	--------------------------------
@@ -280,7 +285,7 @@ relation build_system2: (DAELow.DAELow, int vector, int vector, int list,int) =>
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (v as DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_,_,origname,_)) &  
+	array_nth(vararr,v') => (v as DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_,_,origname,_)) &  
 	Exp.get_cref_from_exp(e1) => cr1 &
 	Exp.get_cref_from_exp(e2) => cr2 &
 	list_append(cr1,cr2) => crs &
@@ -291,7 +296,7 @@ relation build_system2: (DAELow.DAELow, int vector, int vector, int list,int) =>
 	build_system2(dae,ass1,ass2,rest,tid) => crs2 &
 	Util.list_union(crs'',crs2) => res
 	-------------------------------------
-	build_system2(dae as DAELow.DAELOW(DAELow.VARIABLES(varvec,_),_,eqns,_,_),ass1,ass2,e::rest,tid) => res
+	build_system2(dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e::rest,tid) => res
 
   rule	print "build_system2 failed\n" 
 	------------------

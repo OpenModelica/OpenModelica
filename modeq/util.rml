@@ -91,6 +91,9 @@ module Util :
 	      
   relation array_replaceat_with_fill: (''a, int, ''a array,''a) => ''a array 
   relation array_expand: (int, ''a array,''a) => ''a array 
+  relation array_copy:(''a array (*src*), ''a array (*dst*)) => ''a array
+  relation array_n_copy:(''a array (*src*), ''a array (*dst*), int (*n*)) 
+	  => ''a array
 
   relation tuple2_1 : ('a * 'b) => 'a
   relation tuple2_2 : ('a * 'b) => 'b
@@ -821,6 +824,19 @@ relation array_expand: (int (*n*), ''a array,''a (* v*)) => ''a array =
 	array_copy(arr,newarr) => newarr'
 	--------------------------------
 	array_expand(n,arr,v) => newarr'
+end
+
+(** relation array_n_copy
+ ** Copeis n elements in src array into dest array
+ ** The relation fails if all elements can not be fit into dest array.
+**)
+relation array_n_copy:(''a array (*src*), ''a array (*dst*), int (*n*)) 
+	  => ''a array =
+
+  rule	int_sub(n, 1) => n' &
+	array_copy2(src,dst,n') => dst'
+	-------------------------
+	array_n_copy(src,dst,n) => dst'
 end
 
 (** relation: array_copy

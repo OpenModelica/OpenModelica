@@ -122,7 +122,7 @@ extern int nproc;
 
   RML_BEGIN_LABEL(TaskGraphExt__get_5ftask)
   {
-    char *str = RML_STRINGDATA(rmlA0); 
+    char *str = strdup(RML_STRINGDATA(rmlA0)); 
     
     map<string,int>::iterator i;
     i = symboltable.find(string(str));
@@ -138,10 +138,10 @@ extern int nproc;
 
   RML_BEGIN_LABEL(TaskGraphExt__store_5fresult)
   {
-    char *str = RML_STRINGDATA(rmlA0); 
+    char *str = strdup(RML_STRINGDATA(rmlA0)); 
     int task = RML_UNTAGFIXNUM(rmlA1);
     int send_to_end = (rml_sint_t)(rmlA2);
-    char *orig_name = RML_STRINGDATA(rmlA3);
+    char *orig_name = strdup(RML_STRINGDATA(rmlA3));
     VertexID taskID;
     map<int,VertexID>::iterator i;
     string str2=string(str);
