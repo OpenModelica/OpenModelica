@@ -14,6 +14,7 @@ with "prefix.rml"
 with "env.rml"
 with "mod.rml"
 with "builtin.rml"
+with "dump.rml"
 
 type Prefix = Prefix.Prefix
 
@@ -45,9 +46,30 @@ end
 relation inst_equation: (Env.Env,Mod.Mod,Prefix,Absyn.Equation)
 	  => (DAE.DAEcomp list*Env.Env) =
 
+  (* connect
+   *
+   * Handle connct statements
+   *)
+
   rule	inst_connect(o1,o2) => l
 	------------------------
-	inst_equation(env,mods,pre,Absyn.EQ_EXPR(Exp.CALL(Exp.IDENT("connect"),[o1,o2]))) => ((l,env))
+	inst_equation(env,mods,pre,
+		      Absyn.EQ_EXPR(Exp.CALL(Exp.IDENT("connect"),[o1,o2])))
+	 => ((l,env))
+
+  (* assert
+   *
+   * FIXME: Handle assertions
+   *)
+
+  rule	Prefix.prefix_exp(e,pre) => e' &
+	print " ASSERTION(" & Dump.dump_exp(e') & print "): " &
+	print d & print "\n"
+	------------------------
+	inst_equation(env,mods,pre,
+		      Absyn.EQ_EXPR(Exp.CALL(Exp.IDENT("assert"),
+					     [e,Exp.STRING(d)])))
+         => (([],env))
 
   rule	print "No expression equations yet\n" & fail
 	--------------------------------------------
@@ -65,6 +87,12 @@ end
 relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 	  => (DAE.DAEcomp list*Env.Env) =
 
+  (* extends
+   *
+   * Handle "extends" elements by instantiating the class definition
+   * of the extended class.
+   *)
+
   rule	Env.lookup_class(env,cn) => c &
 	Mod.modify_class(env,Absyn.CLASSMOD(m),c) => c' &
 	Mod.modify_class(env,mods,c') => Absyn.CLASS(n,_,r,d) &
@@ -74,13 +102,21 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 	inst_element(env,mods,pre,Absyn.ELEMENT(_,_,Absyn.EXTENDS(cn,m)))
 	 => x
 
-  	(* If a variable is declared multiple times, the first is used *)
-  rule	Env.lookup_var(env,n)
+
+  (* components
+   *
+   * Rules for instantiating components.
+   *)
+
+  (* If a variable is declared multiple times, the first is used *)
+  rule	Env.lookup_var(env,n) &
+	print " ignoring shadowed variable " & print n & print "\n"
 	--------------------------
 	inst_element(env,mods,pre,
 		     Absyn.ELEMENT(_,n,Absyn.COMPONENTS(_,_,_,_,_,_,_)))
 	 => (([],env))
 
+  (* Illegal redeclarations *)
   rule	Env.lookup_var(env,n) &
 	print "Trying to redeclare the class " & print n &
 	print " as a variable\n" &
@@ -98,6 +134,11 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 		     Absyn.ELEMENT(_,n,Absyn.COMPONENTS(_,_,_,_,_,_,_)))
 	 => (([],env))
 
+  (* A new class definition
+   *
+   * Put it in the current frame in the environment
+   *)
+   
   rule	Mod.lookup_modification(mods,n) => mm &
 	Mod.maybe_modify_class(env,mm,c) => c' &
 	Env.extend_frame_c(env,c') => env'
@@ -106,12 +147,31 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 		     Absyn.ELEMENT(_,n,Absyn.CLASSDEF(_,c)))
 	 => (([],env'))
 
-  rule	print " variable " & print n & print "\n" &
+  (* A variable
+   *
+   * Lookup the class name, apply specializations and add the variable
+   * to the current frame in the environment. Then instantiate the class
+   * with an extended prefix.
+   *)
+
+  rule	Prefix.prefix_path(Exp.IDENT(n),pre) => n' &
+	Exp.path_string(n') => ns &
+	print " variable " & print ns & print "\n" &
 	Env.lookup_class(env,t) => cl &
+
+	Exp.path_string(t) => ts &
+	print "  class " & print ts & print " found\n" &
+
 	Mod.maybe_modify_class(env,m,cl) => cl' &
 	Mod.lookup_modification(mods,n) => mm &
 	Mod.maybe_modify_class(env,mm,cl') => cl'' &
+
+	(* print ", modified" & *)
+
 	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,cl'',f,p,c,i,o)) => env' &
+
+	(* print " and added\n" & *)
+
 	Prefix.prefix_add(n,pre) => pre' &
 	inst_class(env,Mod.empty_mod,pre',cl'') => l
 	--------------------------
@@ -119,6 +179,11 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 		     Absyn.ELEMENT(_,_,Absyn.COMPONENTS(f,p,c,i,o,t,
 					    [Absyn.COMPONENT(n,ad,m)])))
          => ((l,env'))
+
+  (*
+   * If the class lookup in the previous rule fails, this rule catches
+   * the error and prints an error message about the unknown class.
+   *)
 
   rule	not Env.lookup_class(env,t) => cl &
 	Exp.path_string(t) => s &
@@ -169,7 +234,7 @@ end
 
 and inst_class: (Env.Env,Mod.Mod,Prefix,Absyn.Class) => DAE.DAEcomp list =
 
-  rule	print " instantiating " & print n & print "\n" &
+  rule	(* print " instantiating " & print n & print "\n" & *)
 	Env.new_frame(env) => env' &
 	inst_classdef(env',mods,pre,d) => ((l,_))
 	------------------------------------------------------	
