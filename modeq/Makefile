@@ -17,6 +17,7 @@ AST	= ast/libast.a
 SRCRML=	exp.rml \
 	dae.rml \
 	absyn.rml \
+	explode.rml \
 	dump.rml \
 	prefix.rml \
 	mod.rml \
@@ -51,6 +52,8 @@ $(PROG): $(SRCO) ast/libast.a
 	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
 
 # $(SRCO):	rml.h
+explode.o:	explode.rml
+	$(RML) -c $<
 inst.o:		inst.rml
 	$(RML) -c $<
 mod.o:		mod.rml exp.h absyn.h dae.h prefix.h

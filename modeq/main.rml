@@ -15,11 +15,11 @@ relation main =
 
   rule	print "\n = Parsing\n\n" &
 	Parser.parse f => p &
-	Dump.dump p &
+	(* Dump.dump p & *)
 	
 	print "\n = Exploding\n\n" &
 	Absyn.explode_components(p) => p' &
-	Dump.dump p' &
+	(* Dump.dump p' & *)
 (*	
 	print "\n = Elaborating\n\n" &
 	Lform.elaborate(p') => p'' &
