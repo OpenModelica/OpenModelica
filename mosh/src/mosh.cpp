@@ -58,17 +58,20 @@ int main(int argc, char* argv[])
       sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log &",
 	      moshhome,moshhome);
       int res = system(systemstr);
-      cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+      std::cout << "Started server using:"<< systemstr << "\n res = " << res << std::endl;
     }
   
-  if (argc > 2)
+  else if (argc == 2 && strcmp(argv[1],"-noserv")==0)
     {
-      std::cerr << "Incorrect number of arguments\n";
-      return EXIT_FAILURE;
+      std::cout << "Skip starting server, assumed to be running" << std::endl;
     }
+  else {
+      std::cerr << "Incorrect number of arguments\n";
+      return EXIT_FAILURE;    
+  }
   
-  std::cout << "Open Source Modelica 0.1" << endl;
-  std::cout << "Copyright 2002, PELAB, Linkoping University" << endl;
+  std::cout << "Open Source Modelica 0.1" << std::endl;
+  std::cout << "Copyright 2002, PELAB, Linkoping University" << std::endl;
       
   int port=29500;
   
@@ -115,17 +118,17 @@ int main(int argc, char* argv[])
     add_history(line);
     int nbytes = write(sock,line,strlen(line)+1);
     if (nbytes == 0) {
-      cout << "Error writing to server" << endl;
+      std::cout << "Error writing to server" << std::endl;
       done = true;
       break;
     }
     int recvbytes = read(sock,buf,40000);
     if (recvbytes == 0) {
-      cout << "Recieved 0 bytes, exiting" << endl;
+      std::cout << "Recieved 0 bytes, exiting" << std::endl;
       done = true;
       break;
     }
-    cout << buf;
+    std::cout << buf;
     free(line);
   }
   close (sock);  
