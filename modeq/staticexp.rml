@@ -26,10 +26,14 @@
  **
  ** RCS: $Id$
  ** 
- ** This module does static analysis.
+ ** This module does static analysis on expressions.
  ** The analyzed expressions are built using the
- ** constructors in the `Exp' module.  Also, a set of properties of
- ** the expressions is calculated during analysis.
+ ** constructors in the `Exp' module from expressions defined in 'Absyn'.  
+ ** Also, a set of properties of the expressions is calculated during analysis.
+ ** Properties of expressions include type information and a boolean indicating if the
+ ** expression is constant or not.
+ ** If the expression is constant, the 'Ceval' module is used to evaluate the expression
+ ** value. A value of an expression is described using the 'Values' module.
  **)
 
 module Static :
@@ -40,9 +44,7 @@ module Static :
   with "types.rml"
   with "env.rml"
   with "values.rml"
-  with "classinf.rml"
   with "interactive.rml"
-  with "cache.rml"
 
   type Ident = string
 
@@ -99,7 +101,7 @@ relation is_function_in_cflist : ((Absyn.Path * Types.Type) list, Absyn.Path)
 	  => bool
 end
 
-
+with "classinf.rml"
 with "dump.rml"
 with "print.rml"
 with "system.rml"
@@ -1581,13 +1583,6 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 			      [],[],impl,
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("clearVariables"), [], false, true),
-	      Types.PROP((Types.T_BOOL([]),NONE),false),
-	      SOME(st))
-
-  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clearCache",_),
-			      [],[],impl,
-			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("clearCache"), [], false, true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
