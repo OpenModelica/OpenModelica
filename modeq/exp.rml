@@ -93,12 +93,45 @@ module Exp:
   relation simplify : Exp => Exp
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()
+  relation print_component_ref_str : ComponentRef => string
   relation print_subscript: Subscript => ()
   relation print_list : ('a list, 'a => (), string) => ()
+  relation cref_equal : (ComponentRef, ComponentRef) => bool
+
+  relation print_list_str : ('a list, 'a => string, string) => string
+  relation print_exp_str : Exp => string
 
 end
 
 with "rtopts.rml"
+
+
+(** LS:
+ ** Replace this with a call to print_component_ref_str
+ ** and comparison of the resulting strings, after the _str relations are 
+ ** working
+ **)
+
+relation cref_equal : (ComponentRef, ComponentRef) => bool =
+
+	(** IGNORES subscript list (indexes) for now. Too complex **)
+	(** Another option is to call print_component_ref_str for both refs and *)
+	(** compare the resulting strings *)
+
+  rule	n1 = n2
+	-------
+	cref_equal (CREF_IDENT(n1, idx1), CREF_IDENT(n2, idx2)) => true
+
+  rule	n1 = n2 &
+	cref_equal (cr1, cr2) => true
+	-----------------------------
+	cref_equal (CREF_QUAL(n1, idx1, cr1), CREF_QUAL(n2, idx2, cr2))
+	  => true
+
+  axiom	cref_equal (_, _) => false
+
+end
+
 
 (** relation: extend_cref
  **
@@ -386,7 +419,7 @@ relation print_exp2 : (Exp,int) => () =
 	---------------------------------------------
 	print_exp2(CALL(fcn, args),_)
 
-  rule	print "This an array: " &
+  rule	(* print "This an array: " & *)
 	print "[" &
 	print_list(es, print_exp, ",") &
 	print "]"
@@ -447,6 +480,7 @@ relation print_exp2 : (Exp,int) => () =
 
 end
 
+
 relation print_leftpar : (int,int) => int =
 
   rule	int_gt(x,y) => true & print "("
@@ -481,6 +515,14 @@ end
  *   []					51
  *
  *)
+
+
+
+
+
+
+
+
 
 relation binop_priority : Operator => int =
   axiom	binop_priority(ADD(_))    	      	 => 32
@@ -640,3 +682,335 @@ relation print_row : Exp list =>() =
 end
 
 (*!includecode*)
+
+
+
+(******************************************************************)
+(** LS: print relations that return a string instead of printing **)
+(** Had to duplicate the huge print_exp2 and modify              **)
+(** An alternative would be to implement "sprint" somehow        **)
+(** which would need internal state, with reset and              **)
+(** get_string methods                                           **)
+(**                                                              **)
+(** Once these are tested and ok, the print_exp* above can be    **)
+(** replaced by a call to these _str relations and printing      **)
+(** the result.                                                  **)
+(******************************************************************)
+
+(** relation: print_component_ref
+ **
+ ** Print a `ComponentRef'.
+ **)
+
+relation print_component_ref_str : ComponentRef => string =
+
+  rule	print_component_ref2_str (s,subs) => str
+	----------------------------
+	print_component_ref_str CREF_IDENT(s,subs) => str
+
+	(* Does not handle names with underscores *)
+  rule	RTOpts.modelica_output => true &
+	print_component_ref2_str (s,subs) => str &
+	print_component_ref_str cr => strrest &
+	string_append (str, "__") => str' &
+	string_append (str', strrest) => str''
+	---------------------
+	print_component_ref_str CREF_QUAL(s,subs,cr) => str''
+
+  rule	RTOpts.modelica_output => false &
+	print_component_ref2_str (s,subs) => str &
+	print_component_ref_str cr => strrest &
+	string_append (str, ".") => str' &
+	string_append (str', strrest) => str''
+	---------------------
+	print_component_ref_str CREF_QUAL(s,subs,cr) => str''
+
+end
+
+relation print_component_ref2_str : (Ident, Subscript list) => string =
+
+  axiom	print_component_ref2_str (s,[]) => s
+
+  rule	RTOpts.modelica_output => true &
+	print_list_str (l, print_subscript_str, ",") => str &
+	string_append (s, "_L") => str' &
+	string_append (str', str) => str'' &
+	string_append (str'', "_R") => str'''
+	-------------------------------------------------------
+	print_component_ref2_str (s,l) => str'''
+
+  rule	RTOpts.modelica_output => false &
+	print_list_str (l, print_subscript_str, ",") => str &
+	string_append (s, "[") => str' &
+	string_append (str', str) => str'' &
+	string_append (str'', "]") => str'''
+	-------------------------------------------------------
+	print_component_ref2_str (s,l) => str'''
+
+end
+
+(** relation: print_list_str
+ **
+ ** Same as print_list, except it returns a string
+ ** instead of printing
+ **)
+
+relation print_list_str : ('a list, 'a => string, string) => string =
+
+  axiom	print_list_str ([],_,_) => ""
+	
+  rule	r(h) => s
+	------------------
+	print_list_str ([h],r,_) => s
+
+  rule	r(h) => s & 
+	print_list_str (t,r,sep) => srest &
+	string_append (s, sep) => s' & 
+	string_append (s', srest) => s''
+	-------------------------------------
+	print_list_str (h::t,r,sep) => s''
+
+end
+
+
+
+(** relation: print_subscript_str
+ **
+ ** Print a `Subscript'.
+ **)
+
+relation print_subscript_str: Subscript => string =
+	
+  axiom	print_subscript_str (WHOLEDIM) => ":"
+	
+  rule	print_exp_str (e1) => s
+	-------------
+	print_subscript_str (INDEX(e1)) => s
+	
+  rule	print_exp_str (e1) => s
+	-------------
+	print_subscript_str (SLICE(e1)) => s
+	
+end
+
+
+(** relation: print_exp_str
+ **
+ ** This relation prints a complete expression.
+ **)
+
+relation print_exp_str : Exp => string =
+
+  rule	print_exp2_str (e,0) => s
+	--------------------
+	print_exp_str e => s
+
+end
+
+
+relation print_exp2_str : (Exp,int) => string =
+	
+  rule	int_string(x) => s
+	----------------------------
+	print_exp2_str(ICONST(x),_) => s
+
+  rule	real_string(x) => s
+	-----------------------------
+	print_exp2_str(RCONST(x),_) => s
+
+  rule	string_append ("\"", s) => s' &
+	string_append (s', "\"") => s''
+	---------------------------------
+	print_exp2_str(SCONST(s),_) => s''
+
+  axiom	print_exp2_str(BCONST(false),_) => "false"
+
+  axiom	print_exp2_str(BCONST(true),_) => "true"
+
+  rule	print_component_ref_str (c) => s
+	--------------------------------
+	print_exp2_str(CREF(c),_) => s
+
+  rule	binop_symbol(op) => sym &
+ 	binop_priority op => pri2 &
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e1,pri3) => s2 & 
+	print_exp2_str (e2,pri3) => s3 &
+	print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	------------------------
+	print_exp2_str (BINARY(e1, op, e2),pri1) => s'''
+
+  rule	unaryop_symbol(op) => sym &
+	unaryop_priority(op) => pri2 &
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e,pri3) => s2 &
+	print_rightpar_str (pri1,pri2) => s3 &
+	string_append (s1, sym) => s &
+	string_append (s, s2) => s' &
+	string_append (s', s3) => s''
+	----------------------------
+	print_exp2_str(UNARY(op, e),pri1) => s''
+
+  rule	lbinop_symbol(op) => sym &
+	lbinop_priority(op) => pri2 &
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e1,pri3) => s2 & 
+	print_exp2_str (e2,pri3) => s3 &
+	print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	----------------------------------------------------------------
+	print_exp2_str(LBINARY(e1, op, e2),pri1) => s'''
+
+  rule	lunaryop_symbol(op) => sym &
+ 	lunaryop_priority(op) => pri2 &
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	print_exp2_str (e,pri3) => s2 &
+	print_rightpar_str (pri1,pri2) => s3 &
+	string_append (s1, sym) => s &
+	string_append (s, s2) => s' &
+	string_append (s', s3) => s''
+	---------------------------------------------------
+	print_exp2_str(LUNARY(op, e),pri1) => s''
+
+  rule	relop_symbol(op) => sym &
+ 	relop_priority(op) => pri2 &
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	print_exp2_str(e1,pri3) => s2 & 
+	print_exp2_str(e2,pri3) => s3 &
+	print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, sym) => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	-----------------------------------------------------------------
+	print_exp2_str(RELATION(e1, op, e2),pri1) => s'''
+
+  rule	print_exp2_str(c,0) => ifstr &
+	print_exp2_str(t,0) => thenstr &
+	print_exp2_str(f,0) => elsestr &
+	string_append ("if ", ifstr) => s &
+	string_append (s, " then ") => s' &
+	string_append (s', thenstr) => s'' &
+	string_append (s'', " else ") => s''' &
+	string_append (s''', elsestr) => s''''
+	----------------------------
+	print_exp2_str(IFEXP(c,t,f),_) => s''''
+
+  rule	Absyn.path_string(fcn) => fs &
+	print_list_str(args,print_exp_str,",") => argstr &
+	string_append(fs, "(") => s &
+	string_append(s, argstr) => s' &
+	string_append(s', ")") => s''
+	---------------------------------------------
+	print_exp2_str(CALL(fcn, args),_) => s''
+
+  rule	print_list_str(es, print_exp_str, ",") => s &
+	string_append ("[",s) => s' &
+	string_append (s',"]") => s''
+	-----------------------------
+	print_exp2_str (ARRAY(es),_) => s''
+
+  rule	print_list_str(es, print_exp_str, ",") => s &
+	string_append ("(",s) => s' &
+	string_append (s',")") => s''
+	-----------------------------
+	print_exp2_str (TUPLE(es),_) => s''
+	
+  rule	print_list_str(es, print_row_str, ";") => s &
+	string_append ("[",s) => s' &
+	string_append (s',"]") => s''
+	-----------------------------
+	print_exp2_str (MATRIX(es),_) => s''
+
+  rule	let pri2 = 41 &
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (start,pri3) => s2 &
+	print_exp2_str (stop,pri3) => s3 &
+ 	print_rightpar_str (pri1,pri2) => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, ":") => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', s4) => s'''
+	-------------------------------------------------------------
+	print_exp2_str (RANGE(start,NONE,stop),pri1) => s'''
+
+  rule	let pri2 = 41 &
+	print_leftpar_str (pri1,pri2) => (s1,pri3) &
+	print_exp2_str (start,pri3) => s2 &
+	print_exp2_str (step,pri3) => s3 &
+ 	print_exp2_str (stop,pri3) => s4 &
+ 	print_rightpar_str (pri1,pri2) => s5 &
+	string_append (s1, s2) => s &
+	string_append (s, ":") => s' &
+	string_append (s', s3) => s'' &
+	string_append (s'', ":") => s''' &
+	string_append (s''', s4) => s'''' &
+	string_append (s'''', s5) => s'''''
+	-------------------------------------
+	print_exp2_str (RANGE(start,SOME(step),stop),pri1) => s'''''
+
+
+  rule	RTOpts.modelica_output => false &
+	print_exp_str e => s & 
+	string_append ("Real(", s) => s' &
+	string_append (s', ")") => s''
+	---------------------------------------
+	print_exp2_str (CAST(REAL,e),_) => s''
+
+  rule	RTOpts.modelica_output => true &
+	print_exp_str e => s
+	---------------------------------------
+	print_exp2_str (CAST(REAL,e),_) => s
+
+  rule	let pri2 = 51 &
+	print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	print_exp2_str (e,pri3) => s2 &
+ 	print_rightpar_str (pri1,pri2) => s3 &
+ 	int_string i => s4 &
+	string_append (s1, s2) => s &
+	string_append (s, s3) => s' &
+	string_append (s', "[") => s'' &
+	string_append (s'', s4) => s''' &
+	string_append (s''', "]") => s''''
+	---------------------------------------
+	print_exp2_str (ASUB(e,i),pri1) => s''''
+	
+  axiom	print_exp2_str (_,_) => "#UNKNOWN EXPRESSION# ----eee "
+
+end
+
+relation print_row_str : Exp list => string =
+
+  rule	print_list_str (es, print_exp_str, ",") => s
+	----------------------------
+	print_row_str es => s
+
+end
+
+
+relation print_leftpar_str : (int,int) => (string, int) =
+
+  rule	int_gt(x,y) => true
+	-----------------------
+	print_leftpar_str (x,y) => ("(", 0)
+
+  axiom	print_leftpar_str (pri1,pri2) => ("", pri2)
+
+end
+
+relation print_rightpar_str : (int,int) => string =
+
+  rule	int_gt(x,y) => true
+	-----------------------
+	print_rightpar_str (x,y) => ")"
+
+  axiom	print_rightpar_str (_,_) => ""
+
+end
