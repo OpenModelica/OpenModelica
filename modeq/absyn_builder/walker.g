@@ -233,8 +233,32 @@ class_specifier returns [void* ast]
 				ast = Absyn__PARTS(comp,cmt ? mk_some(cmt) : mk_none());
 			}
 		)
-	| #(EQUALS ( ast = derived_class | ast = enumeration)) 
+	| #(EQUALS ( ast = derived_class | ast = enumeration | ast = overloading)) 
 	;
+
+overloading returns [void *ast]
+{
+	l_stack el_stack;
+	void *el = 0;
+	void *cmt = 0;
+}
+	:
+		#(OVERLOAD
+			el = name_path
+			{ el_stack.push(el); }
+			(
+				el = name_path
+				{ el_stack.push(el); }
+				
+			)*
+			(cmt=comment)?
+               )
+		{
+			ast = Absyn__OVERLOAD(make_rml_list_from_stack(el_stack),		
+				cmt ? mk_some(cmt) : mk_none());
+		}
+	;
+
 
 derived_class returns [void *ast]
 {
@@ -365,40 +389,41 @@ protected_element_list returns [void* ast]
 
 external_function_call returns [void* ast]
 {
-	void* temp=0;
-	void* temp2=0;
-	void* temp3=0;
-	void *lang;
+	void* expl=0;
+	void* retexp=0;
+	void *lang=0;
+    void *funcname=0;
+	void *ann=0;
 	ast = 0;
 }
 	:
-        (s:STRING)?
+        (s:STRING {lang=mk_some(to_rml_str(s)); } )?
         (#(EXTERNAL_FUNCTION_CALL 
 				(
-					(i:IDENT (temp = expression_list)?)
+					(i:IDENT (expl = expression_list)?)
 					{
-						if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
-						else { lang = mk_none(); }
-						if (!temp) { temp = mk_nil(); }
-						ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(mk_some(to_rml_str(i)),lang,mk_none(),temp));
+						if (i != NULL) {
+							funcname = mk_some(to_rml_str(i));
+						}
 					}
-				| #(e:EQUALS temp2 = component_reference i2:IDENT ( temp3 = expression_list)?)
+				| #(e:EQUALS retexp = component_reference i2:IDENT ( expl = expression_list)?)
 					{
-						if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
-						else { lang = mk_none(); }
-						if (!temp2) { temp2 = mk_nil(); }
-						ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(mk_some(to_rml_str(i2)),lang,mk_some(temp2),temp3));
+						if (retexp) { retexp = mk_some(retexp); }
+						if (i2 != NULL) {
+							funcname = mk_some(to_rml_str(i2));
+						}
 					}
 				)
-			))?                            
+			))? (ann=annotation)?                            
 		{
-			if (!ast) { 
-				if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
-				else { lang = mk_none(); }
-				ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(mk_none(),lang,mk_none(),mk_nil()));
-			}
+			if (!expl) { expl = mk_nil(); }
+			if (!retexp) { retexp = mk_none(); } 
+			if (!lang) { lang = mk_none(); }
+			if (!ann) { ann = mk_none(); } else { ann = mk_some(ann); }
+			if (!funcname) { funcname = mk_none(); }
+			ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(funcname,
+					lang, retexp, expl), ann);
         }
-
     ;
 
 element_list returns [void* ast]
