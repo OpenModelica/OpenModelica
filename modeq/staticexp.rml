@@ -1455,20 +1455,23 @@ end
 
 relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties)	=
 
-   rule 
+   rule 	Debug.fprint("failtrace", "elab_builtin_diagonal\n") &
 		elab_exp (env,s1,false,NONE) 
-	      => (s1', Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dimension)),_),NONE),c),_)
+	      => (s1', Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dimension)),arrType),NONE),c),_)
           (**print "# integer function not implemented yet REAL\n" **)
      --------------------------------------
      elab_builtin_diagonal(env,[s1]) 
         => (Exp.CALL(Absyn.IDENT("diagonal"),[s1'],false,false),
-            Types.PROP((Types.T_INTEGER([]),NONE),c))
+                 Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dimension)),arrType),NONE),c))
+
        
   rule  print"#-- elab_builtin_diagonal: Couldn't elaborate diagonal()\n"
 	    ---------------------------------------------------------
 	    elab_builtin_diagonal (_,_) => fail
 
 end
+
+     
 
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
 					  => (Exp.Exp, Types.Properties)) =

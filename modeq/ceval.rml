@@ -1578,10 +1578,15 @@ relation ceval_builtin_diagonal : (Env.Env, Exp.Exp, bool, Interactive.Interacti
   rule  ceval (env,exp,impl,st,NONE) => (Values.ARRAY(rv2),_) &
 		list_length(rv2) => dimension &
 
-	    ceval_builtin_diagonal2(env,exp,impl,st,dimension,0, [] ) =>
+		int_add(dimension,1) => correctDimension &
+	    ceval_builtin_diagonal2(env,exp,impl,st,correctDimension,1, [] ) =>
         retExp &
 
-   	    int_string dimension => dimensionString 
+   	    int_string dimension => dimensionString &
+   	    Debug.fcall("failtrace", Print.print_buf, "== dimensionString ") & 
+   	    Debug.fcall("failtrace", Print.print_buf, dimensionString) & 
+   	    Debug.fcall("failtrace", Print.print_buf, "\n") 
+   	    
 		--------------------------------------
 		ceval_builtin_diagonal(env,exp,impl,st) => (Values.ARRAY(retExp),st)
 
@@ -1597,12 +1602,13 @@ end
 relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option, int, int,  Values.Value list  ) 
 		=>  Values.Value list =
 
- rule	Util.list_fill(Values.REAL(0.0),matrixDimension) => zeroList &
+ rule	ceval (env,Exp.ASUB(s1,row),impl,st,NONE) => (Values.REAL(rv2),_) &
+
+		int_sub(matrixDimension , 1) => correctDim &
+		Util.list_fill(Values.REAL(0.0),correctDim) => zeroList &
 	
-		int_add(row,1) => correctElement &
-		ceval (env,Exp.ASUB(s1,correctElement),impl,st,NONE) => (rv2,_) &
 	
-		Util.list_replaceat(rv2, row, zeroList) => listWithElement &
+		Util.list_replaceat(Values.REAL(rv2), row, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
 	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp &
@@ -1612,14 +1618,14 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  [] ) =>  retExp
 
    
- rule	not matrixDimension = row &
+ rule	ceval (env,Exp.ASUB(s1,row),impl,st,NONE) => (Values.REAL(rv2),_) &
 
-		Util.list_fill(Values.REAL(0.0),matrixDimension) => zeroList &
+		not matrixDimension = row &
+		int_sub(matrixDimension, 1) => correctDim &
+		Util.list_fill(Values.REAL(0.0),correctDim) => zeroList &
 	
-		int_add(row,1) => correctElement &
-		ceval (env,Exp.ASUB(s1,correctElement),impl,st,NONE) => (rv2,_) &
 		
-		Util.list_replaceat(rv2, row, zeroList) => listWithElement &
+		Util.list_replaceat(Values.REAL(rv2), row, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
 		list_append(listIN,[Values.ARRAY(listWithElement)]) => appendedList &
@@ -1629,6 +1635,39 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 	    --------------------------------------------------
 	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  listIN ) => retExp
 	    
+  rule	ceval (env,Exp.ASUB(s1,row),impl,st,NONE) => (Values.INTEGER(rv2),_) &
+
+		int_sub(matrixDimension , 1) => correctDim &
+		Util.list_fill(Values.INTEGER(0),correctDim) => zeroList &
+	
+	
+		Util.list_replaceat(Values.INTEGER(rv2), row, zeroList) => listWithElement &
+
+		int_add(row,1) => newRow &
+	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp &
+	    
+	    int_string row => RowString 
+	    --------------------------------------------------
+	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  [] ) =>  retExp
+
+   
+ rule	ceval (env,Exp.ASUB(s1,row),impl,st,NONE) => (Values.INTEGER(rv2),_) &
+
+		not matrixDimension = row &
+		int_sub(matrixDimension, 1) => correctDim &
+		Util.list_fill(Values.INTEGER(0),correctDim) => zeroList &
+	
+		
+		Util.list_replaceat(Values.INTEGER(rv2), row, zeroList) => listWithElement &
+
+		int_add(row,1) => newRow &
+		list_append(listIN,[Values.ARRAY(listWithElement)]) => appendedList &
+	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow, appendedList ) => retExp &
+	     
+	    int_string newRow => RowString 
+	    --------------------------------------------------
+	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  listIN ) => retExp
+
  
   rule	matrixDimension = row &
      
