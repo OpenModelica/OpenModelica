@@ -1982,15 +1982,15 @@ relation inst_var2 : (Env.Env,
 	
         inst_start_binding_exp(mod,ty,idxs') => start &
 
-        inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr &
-  	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
-        Debug.fprint("failtrace", str_tmp) &
-  	    Debug.fprint("failtrace", " <------------\n") &
-        dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
- 		            inst_dims, start, dae_var_attr) => dae3 & 
-
+(*         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr & *)
+(*   	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp & *)
+(*         Debug.fprint("failtrace", str_tmp) & *)
+(*   	    Debug.fprint("failtrace", " <------------\n") & *)
 (*         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE, *)
-(* 		            inst_dims, start, NONE) => dae3 & *)
+(*  		            inst_dims, start, dae_var_attr) => dae3 &  *)
+
+         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE, 
+ 		            inst_dims, start, NONE) => dae3 & 
         
         
 	list_append(dae1',dae2) => daex &
@@ -5007,9 +5007,11 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
         inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val))
 
-  rule  (* Print.print_error_buf "# unknown type for variable.\n"  *)
+  rule  (*  Print.print_error_buf "# unknown type for variable.\n"  & *)
+(*         Mod.print_mod_str(mod) => str & *)
+(*         print str & print "<- mod \n"  *)
         -----------------------------------------
-        inst_dae_variable_attributes(_,_,_) => NONE
+        inst_dae_variable_attributes(mod,_,_) => NONE
 
 end
 (*  x02lucpo FIXME: check the type of variable for the fixed because there is a difference between *)
