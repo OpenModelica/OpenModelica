@@ -80,7 +80,7 @@ with "classloader.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
-val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
+val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
 
 val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); /*GraphicItem graphics[:];*/ end Icon;"
 val Diagram_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Diagram CoordinateSystem coordinateSystem(extent ={{-100.0, -100.0}, {100.0, 100.0}}); /*GraphicItem graphics[:];*/ end Diagram;"
@@ -109,30 +109,6 @@ relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,Interac
 end
 
 relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) =
-
-  rule	SCode.elaborate(p) => p' &
-	Absyn.cref_to_path(cr) => path &
-	Absyn.path_string path => pathstr &
-	Inst.instantiate_implicit(p') => d &
-	ModUtil.string_prefix_params d => d' &
-	Print.clear_buf &
-	print "Starting code generation\n" & 
-	Codegen.generate_functions(d') &
-	print "generated code\n" &
-	string_append(pathstr,".c") => filename &
-	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
-	Print.print_buf "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\\n\");\n      return 1;\n    }\n" &
-	Print.print_buf pathstr &
-	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
-	Print.write_buf(filename)&
-	System.compile_c_file(filename) 
-	--------------------------------
-	evaluate2(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("generateCode",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))],_),st as SYMBOLTABLE(p,_,_,_,_))
-	 => ("true\n",st)
-				 
-axiom	evaluate2(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("generateCode",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))],_),st as SYMBOLTABLE(p,_,_,_,_))
-	  => ("false\n",st)
-	  
 
   rule	get_variable_names(vars) => vars &
 	string_append(vars,"\n") => str
@@ -278,70 +254,7 @@ end
  **)
 
 relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) => 
-	(string, InteractiveSymbolTable) = 
-
-  rule	let ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("buildEnv",_),arg))],_) = stmt &
-	let Absyn.FUNCTIONARGS([],[]) = arg &
-	SCode.elaborate(p) => p' &
-	Inst.instantiate_implicit(p') => dae &
-	let newst = SYMBOLTABLE(p, s, ic, iv, cf)
-	---------------------------------------------------
-	evaluate_graphical_api(stmt, st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
-
-	
-  rule	let ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadClass",_),arg))],_) = stmt &
-	let Absyn.FUNCTIONARGS([ Absyn.CREF(cref) ],[]) = arg &
-	System.modelicapath => mp &	
-	componentref_to_path(cref) => path &
-	ClassLoader.load_class(path, mp) => pnew &
-	update_program(pnew,p) => p' &
-	Print.get_string => str &
-	let newst = SYMBOLTABLE(p', s, ic, iv, cf)
-	---------------------------------------------------
-	evaluate_graphical_api(stmt, st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
-
-  rule	let ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadClass",_),arg))],_) = stmt &
-	let Absyn.FUNCTIONARGS([ Absyn.CREF(cref) ],[]) = arg &
-	componentref_to_path(cref) => path &
-	Absyn.path_string(path) => pathstr &
-	Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str
-	---------------------------------------------------
-	evaluate_graphical_api(stmt, st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("false\n",st)
-
-  rule	Parser.parse(name) => p1 &
-	update_program(p1,p) => newp 
-	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadFile",_),
-	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))],_),st as SYMBOLTABLE(p,s,ic,iv,cf))
-	    => ("true\n",SYMBOLTABLE(newp,s,ic,iv,cf))
-	
-  rule	not Parser.parse(name) => _
-	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadFile",_),
-	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))],_),st as SYMBOLTABLE(p,s,ic,iv,cf))
-	    => ("false\n",st)
-
-  rule	Absyn.cref_to_path(classname) => classpath &
-	get_pathed_class_in_program(classpath,p) => class &
-	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str &
-	System.write_file(filename,str) 
-	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("saveClass",_),Absyn.FUNCTIONARGS([Absyn.STRING(filename),Absyn.CREF(classname)],_)))],_),st as SYMBOLTABLE(p,s,ic,iv,cf)) 
-	  => ("true\n",st)
-
-  rule	(*Error writing to file *)
-	Absyn.cref_to_path(classname) => classpath &
-	get_pathed_class_in_program(classpath,p) => class &
-	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str 
-	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("saveClass",_),Absyn.FUNCTIONARGS([Absyn.STRING(filename),Absyn.CREF(classname)],_)))],_),st as SYMBOLTABLE(p,s,ic,iv,cf)) 
-	  => ("false\n",st)
-	
-  rule	(*Error finding class *)
-	Absyn.cref_to_path(classname) => classpath 
-	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("saveClass",_),Absyn.FUNCTIONARGS([Absyn.STRING(filename),Absyn.CREF(classname)],_)))],_),st as SYMBOLTABLE(p,s,ic,iv,cf)) 
-	  => ("false\n",st)
+	(string, InteractiveSymbolTable) = 			
 
   rule update_program(
       Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE))],Absyn.TOP),
@@ -1873,15 +1786,39 @@ end
  **)
 relation get_connection_annotation_str: Absyn.EquationItem => string =
 	
-  rule	get_annotation_string(Line_records,ann) => annstr
+  rule	create_funcargs_from_elementargs(elts) => fargs &
+        Parser.parsestring Line_records => p &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
+	Static.elab_graphics_exp(env,Absyn.CALL(Absyn.CREF_IDENT("Line",[]),fargs)) => (newexp,_) &	
+	Exp.print_exp_str(newexp) => gexpstr 
 	-------------------------------------------------
-	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_), SOME(Absyn.COMMENT(SOME(ann),_)))) 
-	  => annstr
-	
+	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_), SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION([Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),Absyn.CLASSMOD(elts,NONE),_)])),_))))
+	  => gexpstr
 	
   axiom	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),NONE)) => fail
-      
+
+  rule	Print.get_string() => str &
+	print str 
+	----------------
+	get_connection_annotation_str(_) => fail
 end
+
+relation create_funcargs_from_elementargs: Absyn.ElementArg list => Absyn.FunctionArgs =
+
+  axiom	create_funcargs_from_elementargs([]) => Absyn.FUNCTIONARGS([],[])
+
+  rule	create_funcargs_from_elementargs(xs) => Absyn.FUNCTIONARGS(expl,narg)
+	----------------
+	create_funcargs_from_elementargs(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),Absyn.CLASSMOD(_,SOME(exp)),_)::xs)
+	  => Absyn.FUNCTIONARGS(expl,Absyn.NAMEDARG(id,exp)::narg)
+
+  rule	create_funcargs_from_elementargs(xs) => Absyn.FUNCTIONARGS(expl,narg)
+	----------------
+	create_funcargs_from_elementargs(_::xs)
+	  => Absyn.FUNCTIONARGS(expl,narg)
+end
+
 
 (**relation: get_nth_connectionitem_in_class
  ** This relation takes a `Class' and  an int ane returns the nth `EquationItem' containing a
