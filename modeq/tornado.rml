@@ -42,7 +42,7 @@ with "debug.rml"
  **)
 relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
-  rule	DAELow.lower_with_simple_equations(dae) => dae' &
+  rule	DAELow.lower(dae) => dae' &
 	    Absyn.path_string(class) => cname &
 	    generate_header(cname) => header &
 	    generate_impl_header(cname) => implheader &
@@ -441,22 +441,27 @@ end
  **)
 relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
 
-  rule  generate_blt(dae) => (blt,ass1,ass2) &
+  rule  
+        generate_blt(dae) => (blt,ass1,ass2) &
         
         (** ass1 is what var is solved in what eqn **)
         (** ass2 is what eqn is solves what var **)
         generate_state_partition(blt,dae,ass1,ass2) => (blt_states,blt_no_states) &
 
 
+        translate_dae(dae) => dae' &
+
         Debug.fprint("bltdump", "++++++++++++++++++++++++++++++++++blt_states\n") &
         Debug.fcall("bltdump", DAELow.dump_components, blt_states) &
         Debug.fprint("bltdump", "++++++++++++++++++++++++++++blt_no_states\n") &
         Debug.fcall("bltdump", DAELow.dump_components, blt_no_states) &
 
-        generate_compute_output(cname,dae,p,ass1,ass2,blt_no_states) => coutput &
-        generate_compute_initial(cname,dae,p) => cinitial &
-        generate_compute_state(cname,dae,p,ass1,ass2,blt_states) => cstate &
-        generate_compute_terminal(cname,dae,p) => cterm &
+
+
+        generate_compute_output(cname,dae',p,ass1,ass2,blt_no_states) => coutput &
+        generate_compute_initial(cname,dae',p) => cinitial &
+        generate_compute_state(cname,dae',p,ass1,ass2,blt_states) => cstate &
+        generate_compute_terminal(cname,dae',p) => cterm &
         Util.string_append_list(["void C",cname,"::\n",
                                  "ComputeOutput()\n",
                                  "{\n",
@@ -479,7 +484,7 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
                                  "ComputeTerminal()\n",
                                  "{\n",
                                  cterm,
-                                 "}\n",
+                                 "}\n", 
                                  "\n"]) => methods
         ---------------------------
         generate_compute_methods(cname,dae,p) => methods
@@ -629,26 +634,144 @@ relation check_component_for_statevars:(int, int list, DAELow.DAELow,int vector,
         
 end 
 
+(** relation translate_dae 
+ ** This relation translates the DAE so that all the der(x) is _D_X in the equations
+ **
+ **)    
+relation translate_dae: DAELow.DAELow => DAELow.DAELow =
+
+  rule  extract_der_from_var_list(var_list) => (from_list,to_list) &
+        replace_exp_in_eqns(eqn_list,from_list,to_list) => res_eqns
+        -------------------------------------------------------------
+        translate_dae(dae as DAELow.DAELOW(var_list,a,eqn_list,b)) 
+          => DAELow.DAELOW(var_list,a,res_eqns,b)
+
+
+
+  rule  print "-translate_dae failed\n"
+        -------------------------------------------------------------
+        translate_dae(dae) => fail
+
+
+
+end
+
+(** relation extract_der_from_var_list 
+ ** This relation generates to Exp.Exp list of the form:
+ ** [Exp.CALL("der,Exp.Exp("x")...)] and [Exp.cref("x")]
+ **
+ **)
+relation extract_der_from_var_list: DAELow.Var list => (Exp.Exp list, Exp.Exp list) =
+  
+  rule  
+        -------------------------------------------------------------
+        extract_der_from_var_list([]) => ([],[])
+   
+  rule  is_non_state kind &
+        (*print "extract_der_from_var_list Is not state\n" &*)
+        extract_der_from_var_list(var_list) => (res1,res2)
+        -------------------------------------------------------------
+        extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname))::var_list)  
+          => (res1,res2)
+
+  rule  (*print "extract_der_from_var_list Is state" &*)
+
+        Exp.print_component_ref_str(cr) => cr_str &
+
+	    let old_varexp = Exp.CREF(cr,Exp.REAL) &
+
+        let dercall = Exp.CALL(Absyn.IDENT("der"),
+			                   [old_varexp], 
+			                   false,
+			                   false) &
+	
+        Util.string_append_list(["_D_",cr_str]) => new_id &
+	    let new_cr = Exp.CREF_IDENT(new_id,[]) &
+	    let new_varexp = Exp.CREF(new_cr,Exp.REAL) &
+
+
+	   (* print " from \"" & print cr_str & print "\" to \"" & print new_id  & print "\"\n" & *)
+
+        extract_der_from_var_list(var_list) => (res1,res2)
+        -------------------------------------------------------------
+        extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname))::var_list)  
+          => (dercall::res1, new_varexp::res2)
+
+
+  rule  print "-extract_der_from_var_list failed\n"
+        -------------------------------------------------------------
+        extract_der_from_var_list(_) => fail
+end
+
+(** relation replace_exp_in_eqns
+ ** This takes a DAELow.Equation list and two Exp.Exp lists: ("from","to") and does
+ ** a "replace" all on the equations;
+ **
+ **)
+
+relation replace_exp_in_eqns:(DAELow.Equation list, Exp.Exp list, Exp.Exp list) => DAELow.Equation list =
+        
+  rule  
+        -------------------------------------------------------------
+        replace_exp_in_eqns([],from_exp,to_exp) => []
+
+  rule  (*print "replace_exp_in_eqns not list" &*)
+        Exp.replace_exp_list(exp1,from_exp,to_exp) => (res_exp1,nr_of_times1) &
+        Exp.replace_exp_list(exp2,from_exp,to_exp) => (res_exp2,nr_of_times2) & 
+        replace_exp_in_eqns(eqns_rest,from_exp,to_exp) => res_eqns
+        -------------------------------------------------------------
+        replace_exp_in_eqns(DAELow.EQUATION(exp1,exp2)::eqns_rest,from_exp,to_exp) => (DAELow.EQUATION(res_exp1,res_exp2)::res_eqns)
+
+
+  rule  print "-replace_exp_in_eqns failed\n"
+        -------------------------------------------------------------
+        replace_exp_in_eqns(_,_,_) => fail
+end
+
 
 
 (** relation: generate_compute_output
  ** This relation generates the code for the calculation of the output variables.
  **)
-relation generate_compute_output:(string,DAELow.DAELow,Absyn.Program,int vector, int vector, int list list) => string =
+relation generate_compute_output:(string,
+                                  DAELow.DAELow,
+                                  Absyn.Program,
+                                  int vector, 
+                                  int vector, 
+                                  int list list) => string =
 
   rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
-        (*print("----------- START building block OUTPUT---------------\n") &*)
+        print("----------- START building block OUTPUT---------------\n") &
         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-        Util.string_append_list(eqn_str_list) => coutput 
-        (*print("----------- END building block OUTPUT---------------\n") *)
-
+        Util.list_map(seqn,build_simple_equation) => simple_eqn_list &
+        Util.string_append_list(simple_eqn_list) => coutput1 &
+        Util.string_append_list(eqn_str_list) => coutput2 &
+        Util.string_append_list([coutput1,coutput2]) => coutput &
+        print("----------- END building block OUTPUT---------------\n") 
+        
         -------------------------------------------------------------
         generate_compute_output(cname,
-                                dae,
+                                dae as DAELow.DAELOW(vars,knvars,eqn,seqn),
                                 p,ass1,ass2,blocks) => coutput
-
+        
 end
 
+
+relation build_simple_equation:(DAELow.Equation) => string =
+        
+  rule  Exp.print_exp_str(exp1) => exp1_str & 
+        Exp.print_exp_str(exp2) => exp2_str & 
+        Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n"]) => eqn_str &
+        print "\n build_simple_equation: " & print(eqn_str) 
+        --------------------------------
+	    build_simple_equation(DAELow.EQUATION(exp1,exp2)) => eqn_str
+
+        
+  rule  
+        -------------------------------------------------------------
+        build_simple_equation(DAELow.EQUATION(exp1,exp2)) => "// generating simple equation failed"
+
+end
 (** relation: generate_compute_initial
  ** This relation generates the code for the calculation of the initial conditions.
  **)
@@ -740,7 +863,7 @@ end
 relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	
   rule  (* Solving for non-states *)
-	    int_sub(e,1) => e' &
+        int_sub(e,1) => e' &
 	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	    vector_nth(ass2,e') => v &
 	    int_sub(v,1) => v' &
@@ -776,30 +899,16 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 
         Exp.print_component_ref_str(cr) => cr_str &
 
-	    let old_varexp = Exp.CREF(cr,Exp.REAL) &
-
-        let dercall = Exp.CALL(Absyn.IDENT("der"),
-			                   [old_varexp],
-			                   false,
-			                   false) &
 
  	    Util.string_append_list(["_D_",cr_str]) => new_id &
 	    let new_cr = Exp.CREF_IDENT(new_id,[]) &
 	    let new_varexp = Exp.CREF(new_cr,Exp.REAL) &
 
-        (* this replace the der(x) with _D_x in the expressions *)
-        Exp.replace_exp(e1,dercall,new_varexp) => (new_e1,a) &
-        Exp.replace_exp(e2,dercall,new_varexp) => (new_e2,b) &
 
-	    Exp.solve(new_e1,new_e2,new_varexp) => expr &
+	    Exp.solve(e1,e2,new_varexp) => expr &
         
-        (* build the component ref from "x" to the form: "_D_x_" *)
- 	    (*Util.string_append_list(["_D_",origname]) => id_ass &
-	    let cr_ass = Exp.CREF_IDENT(id_ass,[]) &*)
-        
-
-        Exp.print_exp_str new_e1 => new_e1s &
-	    Exp.print_exp_str new_e2 => new_e2s &
+        Exp.print_exp_str e1 => new_e1s &
+	    Exp.print_exp_str e2 => new_e2s &
 	    print " Equation " & print new_e1s & print " = " & print new_e2s &
 	    print " solved for " & Exp.print_exp_str new_varexp => s &
 	    print s & print " giving " &
@@ -823,7 +932,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
         
   rule  print "-build_equation failed\n" 
 	    --------------------------------
-	    build_equation(_,_,_,_) => fail
+	    build_equation(_,_,_,_) => "//build_equation failed\n" 
 end
 
 (** relation build_assignment 
