@@ -32,6 +32,11 @@ saveModel(<cref>,<string>)		Saves the model (A0) in a file
 
 loadFile(<string>)			Loads all models in the file.
 
+loadModel(<cref>)			Loads the model (A0) by looking up the 
+					correct file to load in $MODELICAPATH. 
+					Loads all models in that file into 
+					the symbol table.
+
 createModel(<cref>)			Creates an empty model.
 
 deleteModel(<cref>)			Deletes the model from the
@@ -144,3 +149,99 @@ record Line
   Boolean smooth=false;
 end Line;
 
+This is the Flat record Icon, used for Icon layer annotations
+record Icon 
+  Real  coordinateSystem.extent[2,2] = {{-10, -10}, {10, 10}});
+  GraphicItem[:] graphics;
+end Icon;
+The textual representation of this flat record is somewhat more
+complicated, since the graphics vector can conceptually contain
+different subclasses, like Line, Text, Rectangle, etc. To solve this,
+we will use record constructor functions as the expressions of these.
+For instance, the following annotation
+annotation (
+Icon(coordinateSystem={{-10,-10}, {10,10}},
+graphics={Rectangle(extent={{-10,-10}, {10,10}}),
+Text({{-10,-10}, {10,10}}, textString=”Icon”)}));
+
+will produce the following string representation of the flat record
+Icon:
+{{{-10,-10},{10,10}},{Rectangle(true,extent={{-10,-10},{10,10}}),Text({{-10,-10},{10,10}},textString="Icon")}}
+
+This is the flat record for the Diagram annotation:
+
+record Diagram
+  Real  coordinateSystem.extent[2,2] = {{-10, -10}, {10, 10}});
+  GraphicItem[:] graphics;
+end Diagram;
+
+The flat records string representation is identical to the flat record 
+of the Icon annotation.
+
+Flat records for Graphic Primitives.
+====================================
+record Line
+  Boolean visible = true;
+  Real points[2,:];
+  Integer color[3] = {0,0,0};
+  LinePattern pattern = LinePattern.Solid;
+  Real thickness = 0.25;
+  Arrow arrow[2] = {Arrow.None, Arrow.None};
+  Real arrowSize = 3.0;
+  Boolean smooth = false;
+end Line;
+
+record Polygon
+  Boolean visible = true;
+  Integer lineColor[3]={0,0,0};
+  Integer fillColor[3]={0,0,0};
+  LinePattern pattern = LinePattern.Solid;
+  FillPattern fillPattern = FillPattern.None;
+  Real lineThickness = 0.25;
+  Real points[2,:];
+  Boolean smooth = false;
+end Polygon;
+  
+record Rectangle
+  Boolean visible=true;
+  Integer lineColor[3]={0,0,0};
+  Integer fillColor[3]={0,0,0};
+  LinePattern pattern = LinePattern.Solid;
+  FillPattern fillPattern = FillPattern.None;
+  Real lineThickness = 0.25;
+  BorderPattern borderPattern = BorderPattern.None;
+  Real extent[2,2];
+  Real radius;
+end Rectangle;
+
+record Ellipse
+  Boolean visible = true;
+  Integer lineColor[3]={0,0,0};
+  Integer fillColor[3]={0,0,0};
+  LinePattern pattern = LinePattern.Solid;
+  FillPattern fillPattern = FillPattern.None;
+  Real lineThickness = 0.25;
+  Real extent[2,2];
+end Ellipse;
+
+record Text
+  Boolean visible = true;
+  Integer lineColor[3]={0,0,0};
+  Integer fillColor[3]={0,0,0};
+  LinePattern pattern = LinePattern.Solid;
+  FillPattern fillPattern = FillPattern.None;
+  Real lineThickness = 0.25;
+  Real extent[2,2];
+  String textString;
+  Real fontSize;
+  String fontName;
+  TextStyle textStyle[:];  //Problem, fails to instantiate if 
+			   // styles are given as modification
+end Text;
+  
+record BitMap
+  Boolean visible = true;
+  Real extent[2,2];
+  String fileName;
+  String imageSource;
+end BitMap;
