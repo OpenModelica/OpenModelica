@@ -44,6 +44,9 @@ with "inst.rml"
 relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
   rule	DAELow.lower(dae) => (dae' as DAELow.DAELOW(_,_,eqns,_)) &
+        generate_blt(dae') => (dae'',blt,ass1,ass2) &
+
+
  (*       print("   unsorted equations------------------\n") &
         DAELow.dump_eqns(eqns) &*)
         
@@ -54,14 +57,14 @@ relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	    Absyn.path_string(class) => cname &
 	    generate_header(cname) => header &
 	    generate_impl_header(cname) => implheader &
-	    generate_constructor(cname,p,dae') => constr &
-	    generate_var_defines(dae') => defines &
-	    generate_compute_methods(cname,dae',p) => cmethods &
+	    generate_constructor(cname,p,dae'') => constr &
+	    generate_var_defines(dae'') => defines &
+	    generate_compute_methods(cname,dae'',p,blt,ass1,ass2) => cmethods &
 	    Util.string_append_list([implheader,constr,defines,cmethods]) => impl &
 	    string_append(cname,".h") => headerfile &
 	    string_append(cname,".cpp") => implfile &
 	    print "Generating: " & print headerfile & print "\n" &
-        System.write_file(headerfile,header) &
+	    System.write_file(headerfile,header) &
 	    print "Generating: " & print implfile & print "\n" &
 	    System.write_file(implfile,impl) 
 	    -------------------------------------------------------------------
@@ -444,7 +447,7 @@ end
          vector_list(knvars_vec) => knvars &
          (* this is to generate the correct index for all the vars *)
          list_append(knvars,vars) => all_vars &
-         generate_var_defines2(all_vars,0,0,0) => vdefs1list &
+         generate_var_defines2(all_vars,0,0,0,0) => vdefs1list &
          Util.string_append_list(vdefs1list) => vdefs1 &
          Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n\n",vdefs1,"\n"]) => vdefs
          ---------------------
@@ -464,30 +467,72 @@ end
  ** Arg3 is the counter for DerState and derivative variables
  ** Arg4 is the counter for parameters
 **)
-relation generate_var_defines2: (DAELow.Var list,int,int,int) => string list =
-
-  axiom generate_var_defines2([],_,_,_) => []
+relation generate_var_defines2: (DAELow.Var list,int,int,int,int) 
+	  => string list =
+  axiom generate_var_defines2([],_,_,_,_) => []
         
   rule int_string(outputCounter) => outputCounterString &
         Exp.cref_str(cr) => modelicaStr &
         cref_modelica_str(cr) => crs &
         Util.string_append_list(["#define ",crs," m_OutputVarValues[",outputCounterString,"]\n"]) => r1 &
         int_add(outputCounter,1) => outputCounter' & 
-        generate_var_defines2(rest,outputCounter',derStateCounter,paramCounter) => res
+        generate_var_defines2(rest,outputCounter', inputCounter,
+			      derStateCounter,algVarCounter) => res
         ----------------------------------------------
-        generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,dir,_,_,_,_,_,_,_,_)::rest,
-                              outputCounter,derStateCounter,paramCounter) 
+        generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,_,_,_,_)::rest,
+                              outputCounter,inputCounter,
+			      derStateCounter,algVarCounter) 
+          => r1::res
+
+  rule int_string(inputCounter) => inputCounterString &
+        Exp.cref_str(cr) => modelicaStr &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["#define ",crs," m_InputVarValues[",inputCounterString,"]\n"]) => r1 &
+        int_add(inputCounter,1) => inputCounter' & 
+        generate_var_defines2(rest,outputCounter,inputCounter',derStateCounter,algVarCounter) => res
+        ----------------------------------------------
+        generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,_,_,_,_)::rest,
+                              outputCounter,inputCounter,
+			      derStateCounter,algVarCounter) 
+          => r1::res
+
+  rule int_string(algVarCounter) => algVarCounterString &
+        Exp.cref_str(cr) => modelicaStr &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["#define ",crs," m_AlgStateVarValues[",algVarCounterString,"]\n"]) => r1 &
+        int_add(algVarCounter,1) => algVarCounter' & 
+        generate_var_defines2(rest,outputCounter,inputCounter,
+			      derStateCounter,algVarCounter') => res
+        ----------------------------------------------
+        generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,_,_,_,_)::rest,
+                              outputCounter,inputCounter,
+			      derStateCounter,algVarCounter) 
           => r1::res
           
+  rule int_string(algVarCounter) => algVarCounterString &
+        Exp.cref_str(cr) => modelicaStr &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["#define ",crs," m_AlgStateVarValues[",algVarCounterString,"]\n"]) => r1 &
+        int_add(algVarCounter,1) => algVarCounter' & 
+        generate_var_defines2(rest,outputCounter,inputCounter,
+			      derStateCounter,algVarCounter') => res
+        ----------------------------------------------
+        generate_var_defines2(DAELow.VAR(cr,DAELow.DUMMY_DER,dir,_,_,_,_,_,_,_,_)::rest,
+                              outputCounter,inputCounter,
+			      derStateCounter,algVarCounter) 
+          => r1::res
+
   rule int_string(derStateCounter) => derStateCounterString &
         cref_modelica_str(cr) => crs &
         Util.string_append_list(["#define ",crs," m_DerStateVarValues[",derStateCounterString,"]\n",
                                  "#define _D_",crs,"_ m_Derivatives[",derStateCounterString,"]\n"]) => r1 &
         int_add(derStateCounter,1) => derStateCounter' & 
-        generate_var_defines2(rest,outputCounter,derStateCounter',paramCounter) => res
+        generate_var_defines2(rest,outputCounter,inputCounter,
+			      derStateCounter',algVarCounter) => res
         ----------------------------------------------
         generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_,_)::rest,
-                              outputCounter,derStateCounter,paramCounter) 
+                              outputCounter,inputCounter,
+			      derStateCounter,algVarCounter) 
           => r1::res
 
    rule int_string(paramCounter) => paramCounterString &
@@ -495,19 +540,23 @@ relation generate_var_defines2: (DAELow.Var list,int,int,int) => string list =
         cref_modelica_str(cr) => crs &
         Util.string_append_list(["\n#define ",crs," m_ParamValues[",paramCounterString,"]\n"]) => r1 &
         int_add(paramCounter,1) => paramCounter' & 
-        generate_var_defines2(rest,outputCounter,derStateCounter,paramCounter') => res
+        generate_var_defines2(rest,outputCounter,inputCounter,derStateCounter,paramCounter') => res
         ----------------------------------------------
         generate_var_defines2(DAELow.VAR(cr,DAELow.PARAM,dir,_,_,_,_,_,_,_,_)::rest,
-                              outputCounter,derStateCounter,paramCounter) 
+                              outputCounter,inputCounter,
+			      derStateCounter,paramCounter) 
           => r1::res
-         
-  rule generate_var_defines2(rest,outputCounter,derStateCounter,paramCounter) => res 
+          
+  rule generate_var_defines2(rest,outputCounter,inputCounter,
+			     derStateCounter,algVarCounter) => res 
         -----------------------------------------------
-        generate_var_defines2(_::rest,outputCounter,derStateCounter,paramCounter) => res
+        generate_var_defines2(_::rest,outputCounter,inputCounter,
+			      derStateCounter,algVarCounter) => res
         
   rule print "-generate_var_defines2 failed\n"
         --------------------------------------
-        generate_var_defines2(_,_,_,_) => fail
+        generate_var_defines2(_,_,_,_,_) => fail
+
 end
 
 (** relation: generate_constructor_component_initialization
@@ -664,22 +713,19 @@ end
  ** - computing the initial conditions
  ** - computing the terminal conditions
  **)
-relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
+relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program, int list list, int vector, int vector) => string =
 
-  rule  
-        generate_blt(dae) => (dae',blt,ass1,ass2) &
-        
-        (** ass1 is what var is solved in what eqn **)
+  rule	(** ass1 is what var is solved in what eqn **)
         (** ass2 is what eqn is solves what var **)
-        generate_state_partition(blt,dae',ass1,ass2) => (blt_states,blt_no_states) &
+        generate_state_partition(blt,dae,ass1,ass2) => (blt_states,blt_no_states) &
  
-        translate_dae(dae') => dae'' &
+        translate_dae(dae) => dae' &
 
-        generate_compute_output(cname,dae'',p,ass1,ass2,blt_no_states) => coutput &
-        generate_compute_initial(cname,dae'',p) => cinitial &
-        generate_compute_state(cname,dae'',p,ass1,ass2,blt_states) => cstate &
+        generate_compute_output(cname,dae',p,ass1,ass2,blt_no_states) => coutput &
+        generate_compute_initial(cname,dae',p) => cinitial &
+        generate_compute_state(cname,dae',p,ass1,ass2,blt_states) => cstate &
         (*generate_compute_terminal(cname,dae',p) => cterm &*)
-        generate_compute_terminal(cname,dae'',p,ass1,ass2,blt) => cterm &
+        generate_compute_terminal(cname,dae',p,ass1,ass2,blt) => cterm &
         Util.string_append_list(["void C",cname,"::\n",
                                  "ComputeOutput()\n",
                                  "{\n",
@@ -705,11 +751,11 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
                                  "}\n", 
                                  "\n"]) => methods
         ---------------------------
-        generate_compute_methods(cname,dae,p) => methods
+        generate_compute_methods(cname,dae,p,blt,ass1,ass2) => methods
         
   rule  print "-generate_compute_methods failed\n" 
         -----------------------------------------
-        generate_compute_methods(_,_,_) => fail
+        generate_compute_methods(_,_,_,_,_,_) => fail
 end 
 
 
@@ -1142,14 +1188,14 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    Exp.solve(e1,e2,varexp) => expr &
 	    
         (* start debug output *)
-        (*Exp.print_exp_str e1 => e1s &
+        Exp.print_exp_str e1 => e1s &
 	    Exp.print_exp_str e2 => e2s &
         int_string(e) => eqn_nr &
         int_string(v) => var_nr &
 	    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
 	    print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
 	    print s & print "\ngiving:\n " &
-        Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
+        Exp.print_exp_str expr => s2 & print s2 & print "\n" &
         
         Exp.simplify(expr) => simplify_exp &
 	    build_assignment(cr,simplify_exp,origname)  => assigment_string
