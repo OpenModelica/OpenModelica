@@ -3,10 +3,15 @@
  ** description: Expressions
  **
  ** This file contains the module `Exp', which contains data types for
- ** describing Modelica expressions.  It is used throughout the
- ** semantic description, in the abstract syntax tree and elsewhere.
- ** All the other modules use this module.
- ** 
+ ** describing expressions, after they have been examined by the
+ ** static analyzer in the module `StaticExp'.  There are of course
+ ** great similarities with the expression types in the `Absyn'
+ ** module, but there are also several important differences.
+ **
+ ** No overloading of operators occur, and subscripts have been
+ ** checked to see if they are slices.  All expressions are also type
+ ** consistent, and all implicit type conversions in the AST are made
+ ** explicit here.
  **)
 
 module Exp:
@@ -18,63 +23,75 @@ module Exp:
   (** Define `Ident' as an alias for `string' and use it for all *)
   (** identifiers in Modelica. *)
 
-  datatype BinOp = INT_ADD | REAL_ADD | STRING_ADD
-		 | INT_SUB | REAL_SUB
-		 | INT_MUL | REAL_MUL
-		 | INT_ARRAY_SCALAR_MUL of int
-		 | REAL_ARRAY_SCALAR_MUL of int
-		 | REAL_DIV
-		 | REAL_POW
-  datatype UnaryOp = UMINUS | UPLUS
-  datatype LBinOp = AND | OR
-  datatype LUnaryOp = NOT
-  datatype RelOp = INT_LESS      | REAL_LESS
-		 | INT_LESSEQ    | REAL_LESSEQ
-		 | INT_GREATER   | REAL_GREATER
-		 | INT_GREATEREQ | REAL_GREATEREQ
-		 | INT_EQUAL     | REAL_EQUAL  | BOOL_EQUAL  | STRING_EQUAL
-		 | INT_NEQUAL    | REAL_NEQUAL | BOOL_NEQUAL | STRING_NEQUAL
-  
+  (** - Basic types *)
+  datatype Type = INT | REAL | BOOL | STRING
+  (** These types are not used as expression types (see the `Types'
+   ** module for expression types).  They are used to parameterize
+   ** operators which may work on several simple types. *)
+
   (** - Expressions *)
   datatype Exp = ICONST of int
 	       | RCONST of real
 	       | SCONST of string
 	       | BCONST of bool
 	       | CREF of ComponentRef
-	       | BINARY of Exp * BinOp * Exp
-	       | UNARY of UnaryOp * Exp
-	       | LBINARY of Exp * LBinOp * Exp
-	       | LUNARY of LUnaryOp * Exp
-	       | RELATION of Exp * RelOp * Exp
+	       | BINARY of Exp * Operator * Exp
+	       | UNARY of Operator * Exp
+	       | LBINARY of Exp * Operator * Exp
+	       | LUNARY of Operator * Exp
+	       | RELATION of Exp * Operator * Exp
 	       | IFEXP of Exp * Exp * Exp
 	       | CALL of Absyn.Path * Exp list		(* Function call *)
 	       | ARRAY of Exp list
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp
                  (* New constructors *)
-	       | CAST_TO_REAL of Exp
+	       | CAST of Type * Exp
 	       | ASUB of Exp * int
-  (** The `Exp' datatype closely corresponds to the `Absyn.Exp' *)
-  (** datatype, but is used for statically analyzed expressions.  It *)
-  (** includes explicit type promotions and typed (non-overloaded) *)
-  (** operators. *)
+  (** The `Exp' datatype closely corresponds to the `Absyn.Exp'
+   ** datatype, but is used for statically analyzed expressions.  It
+   ** includes explicit type promotions and typed (non-overloaded)
+   ** operators. It also contains expression indexing with the `ASUB'
+   ** constructor.  Indexing arbitrary array expressions is currently
+   ** not supported in Modelica, but it is needed here. *)
+
+  datatype Operator = ADD    	of Type
+		    | SUB    	of Type
+		    | MUL    	of Type
+		    | DIV    	of Type
+		    | POW    	of Type
+		    | UMINUS 	of Type
+		    | UPLUS  	of Type
+		    | AND | OR
+		    | NOT
+		    | LESS      of Type
+		    | LESSEQ    of Type
+		    | GREATER   of Type
+		    | GREATEREQ of Type
+		    | EQUAL     of Type
+		    | NEQUAL    of Type
+  (** Operators which are overloaded in the abstract syntax are here
+   ** made type-specific.  The integer addition operator (`ADD(INT)')
+   ** and the real addition operator (`ADD(REAL)') are two distinct
+   ** operators. *)
 
   (** - Component references *)
+  datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
+		    	| CREF_IDENT of Ident * (Subscript list)
+
   datatype Subscript = NOSUB
 		     | SLICE of Exp
 		     | INDEX of Exp
-
-  datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
-		    	| CREF_IDENT of Ident * (Subscript list)
   (** the `Subscript' and `ComponentRef' datatypes are simple *)
-  (** translations of the corresponding types in the `Exp' module. *)
+  (** translations of the corresponding types in the `Absyn' module. *)
 
+  (** - Exported relations *)
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
+  relation int_subscripts : int list => Subscript list
+  relation simplify : Exp => Exp
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()
   relation print_list : ('a list, 'a => (), string) => ()
-  relation int_subscripts : int list => Subscript list
-  relation simplify : Exp => Exp
 
 end
 
@@ -95,6 +112,48 @@ relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
 	extend_cref (CREF_QUAL(i1,s1,c), i, s) => CREF_QUAL(i1,s1,c')
 
 end
+
+(** - Utility relations
+ **
+ ** These are utility relations used in some of the other
+ ** relations. *)
+
+(** relation: int_subscripts
+ **
+ ** This relation describes the relation between a list of integers
+ ** and a list of `Exp.Subscript' where each integer is converted to
+ ** an integer indexing expression.
+ **)
+
+relation int_subscripts : int list => Subscript list =
+
+  axiom	int_subscripts [] => []
+
+  rule	int_subscripts xs => xs'
+	------------------------
+	int_subscripts x::xs => INDEX(ICONST(x))::xs'
+
+end
+
+(** relation: simplify
+ **
+ ** This relation does some very basic simplification on expressions.
+ ** It is not intended to be used to simplify expressions provided by
+ ** the model, but to simplify unnecessarily complex expressions
+ ** constructed during instantiation.
+ **)
+
+relation simplify : Exp => Exp =
+
+  rule	int_sub (i,1) => i' &
+	list_nth(exps,i') => exp
+	-----------------------
+	simplify ASUB(ARRAY(exps),i) => exp
+
+  axiom	simplify e => e
+
+end
+
 
 (**
  ** - Printing expressions
@@ -278,7 +337,7 @@ relation print_exp2: (Exp,int) => () =
 
   rule	print "Real(" & print_exp e & print ")"
 	---------------------------------------
-	print_exp2 (CAST_TO_REAL(e),_)
+	print_exp2 (CAST(REAL,e),_)
 
   rule	let pri2 = 51 &
 	print_leftpar(pri1,pri2) => pri3 &
@@ -330,66 +389,47 @@ end
  *
  *)
 
-relation binop_priority : BinOp => int =
-  axiom	binop_priority(INT_ADD)    	      	 => 32
-  axiom	binop_priority(REAL_ADD)   	      	 => 32
-  axiom	binop_priority(STRING_ADD) 	      	 => 32
-  axiom	binop_priority(INT_SUB)    	      	 => 32
-  axiom	binop_priority(REAL_SUB)   	      	 => 32
-  axiom	binop_priority(INT_MUL)    	      	 => 32
-  axiom	binop_priority(REAL_MUL)   	      	 => 33 
-  axiom	binop_priority(INT_ARRAY_SCALAR_MUL(_))  => 33
-  axiom	binop_priority(REAL_ARRAY_SCALAR_MUL(_)) => 33
-  axiom	binop_priority(REAL_DIV)   	      	 => 34
-  axiom	binop_priority(REAL_POW)   	      	 => 35      
+relation binop_priority : Operator => int =
+  axiom	binop_priority(ADD(_))    	      	 => 32
+  axiom	binop_priority(SUB(_))    	      	 => 32
+  axiom	binop_priority(MUL(_))    	      	 => 33
+  axiom	binop_priority(DIV(_))   	      	 => 34
+  axiom	binop_priority(POW(_))   	      	 => 35      
 end
 
-relation unaryop_priority : UnaryOp => int =
-  axiom	unaryop_priority(UMINUS)   => 31
-  axiom	unaryop_priority(UPLUS)    => 31
+relation unaryop_priority : Operator => int =
+  axiom	unaryop_priority(UMINUS(_))   => 31
+  axiom	unaryop_priority(UPLUS(_))    => 31
 end
 
-relation lbinop_priority : LBinOp => int =
+relation lbinop_priority : Operator => int =
   axiom	lbinop_priority(AND) => 10
   axiom	lbinop_priority(OR) => 10
 end
 
-relation lunaryop_priority : LUnaryOp => int =
+relation lunaryop_priority : Operator => int =
   axiom	lunaryop_priority(NOT) => 11
 end
 
-relation relop_priority : RelOp => int =
-  axiom	relop_priority(INT_LESS)       => 21
-  axiom	relop_priority(REAL_LESS)      => 21
-  axiom	relop_priority(INT_LESSEQ)     => 21
-  axiom	relop_priority(REAL_LESSEQ)    => 21
-  axiom	relop_priority(INT_GREATER)    => 21
-  axiom	relop_priority(REAL_GREATER)   => 21
-  axiom	relop_priority(INT_GREATEREQ)  => 21
-  axiom	relop_priority(REAL_GREATEREQ) => 21
-  axiom	relop_priority(INT_EQUAL)      => 21
-  axiom	relop_priority(REAL_EQUAL)     => 21
-  axiom	relop_priority(STRING_EQUAL)   => 21
-  axiom	relop_priority(BOOL_EQUAL)     => 21
-  axiom	relop_priority(INT_NEQUAL)     => 21
-  axiom	relop_priority(REAL_NEQUAL)    => 21
-  axiom	relop_priority(STRING_NEQUAL)  => 21
-  axiom	relop_priority(BOOL_NEQUAL)    => 21
+relation relop_priority : Operator => int =
+  axiom	relop_priority(LESS(_))       => 21
+  axiom	relop_priority(LESSEQ(_))     => 21
+  axiom	relop_priority(GREATER(_))    => 21
+  axiom	relop_priority(GREATEREQ(_))  => 21
+  axiom	relop_priority(EQUAL(_))      => 21
+  axiom	relop_priority(NEQUAL(_))     => 21
 end
 
 (**)
 
-relation binop_symbol : BinOp => string =
-  axiom	binop_symbol(INT_ADD) => " + "
-  axiom	binop_symbol(REAL_ADD) => " + "
-  axiom	binop_symbol(STRING_ADD) => " + "
-  axiom	binop_symbol(INT_SUB) => " - "
-  axiom	binop_symbol(REAL_SUB) => " - "
-  axiom	binop_symbol(INT_MUL) => " * "
-  axiom	binop_symbol(REAL_MUL) => " * "
-  axiom	binop_symbol(REAL_DIV) => " / "
-  axiom	binop_symbol(REAL_POW) => " ^ "
+relation binop_symbol : Operator => string =
+  axiom	binop_symbol(ADD(_)) => " + "
+  axiom	binop_symbol(SUB(_)) => " - "
+  axiom	binop_symbol(MUL(_)) => " * "
+  axiom	binop_symbol(DIV(_)) => " / "
+  axiom	binop_symbol(POW(_)) => " ^ "
 
+(*
   rule	int_string dim => s1 &
 	string_append(" <int[",s1) => s2 &
 	string_append(s2,"] *> ") => s3
@@ -403,46 +443,32 @@ relation binop_symbol : BinOp => string =
 	binop_symbol(REAL_ARRAY_SCALAR_MUL(dim)) => s3
 
   axiom	binop_symbol(_) => " <unknown binop> "
+*)
 
 end
 
-relation unaryop_symbol : UnaryOp => string =
-  axiom	unaryop_symbol(UMINUS) => "-"
-  axiom	unaryop_symbol(UPLUS) => "+"
+relation unaryop_symbol : Operator => string =
+  axiom	unaryop_symbol(UMINUS(_)) => "-"
+  axiom	unaryop_symbol(UPLUS(_)) => "+"
 end
 
-relation lbinop_symbol : LBinOp => string =
+relation lbinop_symbol : Operator => string =
   axiom	lbinop_symbol(AND) => " AND "
   axiom	lbinop_symbol(OR) => " OR "
 end
 
-relation lunaryop_symbol : LUnaryOp => string =
-  axiom	lunaryop_symbol(NOT) => "NOT "
+relation lunaryop_symbol : Operator => string =
+  axiom	lunaryop_symbol(NOT) => " NOT "
 end
 
-relation relop_symbol : RelOp => string =
-  axiom	relop_symbol(INT_LESS)       => " < "
-  axiom	relop_symbol(REAL_LESS)      => " < "
-  axiom	relop_symbol(INT_LESSEQ)     => " <= "
-  axiom	relop_symbol(REAL_LESSEQ)    => " <= "
-  axiom	relop_symbol(INT_GREATER)    => " > "
-  axiom	relop_symbol(REAL_GREATER)   => " > "
-  axiom	relop_symbol(INT_GREATEREQ)  => " >= "
-  axiom	relop_symbol(REAL_GREATEREQ) => " >= "
-  axiom	relop_symbol(INT_EQUAL)      => " = "
-  axiom	relop_symbol(REAL_EQUAL)     => " = "
-  axiom	relop_symbol(STRING_EQUAL)   => " = "
-  axiom	relop_symbol(BOOL_EQUAL)     => " = "
-  axiom	relop_symbol(INT_NEQUAL)     => " <> "
-  axiom	relop_symbol(REAL_NEQUAL)    => " <> "
-  axiom	relop_symbol(STRING_NEQUAL)  => " <> "
-  axiom	relop_symbol(BOOL_NEQUAL)    => " <> "
+relation relop_symbol : Operator => string =
+  axiom	relop_symbol(LESS(_))       => " < "
+  axiom	relop_symbol(LESSEQ(_))     => " <= "
+  axiom	relop_symbol(GREATER(_))    => " > "
+  axiom	relop_symbol(GREATEREQ(_))  => " >= "
+  axiom	relop_symbol(EQUAL(_))      => " = "
+  axiom	relop_symbol(NEQUAL(_))     => " <> "
 end
-
-(** - Utility relations
- **
- ** These are utility relations used in some of the other
- ** relations. *)
 
 relation print_list : ('a list, 'a => (), string) => () =
 
@@ -468,38 +494,4 @@ relation print_row : Exp list =>() =
 
 end
 
-(** relation: int_subscripts
- **
- ** This relation describes the relation between a list of integers
- ** and a list of `Exp.Subscript' where each integer is converted to
- ** an integer indexing expression.
- **)
-
-relation int_subscripts : int list => Subscript list =
-
-  axiom	int_subscripts [] => []
-
-  rule	int_subscripts xs => xs'
-	------------------------
-	int_subscripts x::xs => INDEX(ICONST(x))::xs'
-
-end
-
-(** relation: simplify
- **
- ** This relation does some very basic simplification on expressions.
- ** It is not intended to be used to simplify expressions provided by
- ** the model, but to simplify unnecessarily complex expressions
- ** constructed during instantiation.
- **)
-
-relation simplify : Exp => Exp =
-
-  rule	int_sub (i,1) => i' &
-	list_nth(exps,i') => exp
-	-----------------------
-	simplify ASUB(ARRAY(exps),i) => exp
-
-  axiom	simplify e => e
-
-end
+(*!includecode*)
