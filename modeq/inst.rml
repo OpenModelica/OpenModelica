@@ -954,8 +954,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						       false,
 						       Absyn.CONST,
 						       Absyn.BIDIR),
-					 Types.T_COMPLEX(ClassInf.TYPE_INTEGER
-						    ("<for loop>"),[]),
+					 Types.T_INTEGER,
 					 Types.VALBOUND(fst))) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
