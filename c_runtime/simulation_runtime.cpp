@@ -20,6 +20,7 @@
 */
 
 #include <iostream>
+#include <limits>
 #include "simulation_runtime.h"
 #include "options.h"
 
@@ -130,17 +131,51 @@ int main(int argc, char **argv)
 
 void store_result(char * filename, double*data,long numpoints, long nx, long ny)
 {
-  int num_vars = 1+nx*2+ny;
-  for(int i=0; i < num_vars; i++) { // forall variables
-    cerr << "Value " << i << endl;
-    for (int k = 0 ; k < numpoints; k++) {
-      cerr << data[k*num_vars+i] << ", ";
-    }
-    cerr << endl;
-
+  ofstream f(filename);
+  if (!f)
+  {
+    cerr << "Error, couldn't create output file " << filename << endl;
+    exit(-1);
   }
 
+  // Rather ugly numbers than unneccessary rounding.
+  f.precision(numeric_limits<double>::digits10 + 1);
+  
+  f << "TitleText: OpenModelica simulation plot" << endl;
+  f << "XLabel: t" << endl << endl;
 
+  int num_vars = 1+nx*2+ny;
+  
+  for(int var = 0; var < nx; ++var)
+  {
+    f << "DataSet: x" << var << endl;
+    for(int i = 0; i < numpoints; ++i)
+      f << data[i*num_vars] << ", " << data[i*num_vars + 1+var] << endl;
+    f << endl;
+  }
+  
+  for(int var = 0; var < nx; ++var)
+  {
+    f << "DataSet: dx" << var << endl;
+    for(int i = 0; i < numpoints; ++i)
+      f << data[i*num_vars] << ", " << data[i*num_vars + 1+nx+var] << endl;
+    f << endl;
+  }
+  
+  for(int var = 0; var < ny; ++var)
+  {
+    f << "DataSet: y" << var << endl;
+    for(int i = 0; i < numpoints; ++i)
+      f << data[i*num_vars] << ", " << data[i*num_vars + 1+2*nx+var] << endl;
+    f << endl;
+  }
+
+  f.close();
+  if (!f)
+  {
+    cerr << "Error, couldn't write to output file " << filename << endl;
+    exit(-1);
+  }
 }
 
 /* add_result
@@ -154,9 +189,9 @@ void add_result(double *data, double time,double *x, double *xd, double *y,
   static long current_pos = 0;
   
   //save time first
-  cerr << "adding result for time: " << time;
+  //cerr << "adding result for time: " << time;
+  //cerr.flush();
   data[current_pos++] = time;
-  cerr.flush();
   // .. then states..
   for (int i = 0; i < nx; i++, current_pos++) {
     data[current_pos] = x[i];
@@ -169,7 +204,7 @@ void add_result(double *data, double time,double *x, double *xd, double *y,
   for (int i = 0; i < ny; i++, current_pos++) {
     data[current_pos] = y[i];
   }
-  cerr << "  ... done" << endl;
+  //cerr << "  ... done" << endl;
   
 }
 
