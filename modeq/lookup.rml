@@ -61,6 +61,7 @@ with "prefix.rml"
 with "print.rml"
 with "builtin.rml"
 with "util.rml"
+with "modutil.rml"
 
 (**
  ** - Lookup relations
@@ -153,6 +154,7 @@ end
  **)
 
 relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
+
 
 (*
  rule	(* Try to find the class in the cache *)

@@ -4,9 +4,9 @@ Open Source Modelica functions
 translateClass(classname) - Instantiates a class and return a string
 containing the flat class definition.
 
-list() - Returns a string containing all classdefinitions.
+list() - Returns a string containing all class definitions.
 
-list(classname) - Returns a string containing the classdefinition of
+list(classname) - Returns a string containing the class definition of
 the named class.
 
 typeOf(variable) - Returns the type of the variable as a string.
@@ -14,6 +14,8 @@ typeOf(variable) - Returns the type of the variable as a string.
 clear() - Clears everything.
 
 clearVariables() - Clears the variables.
+
+clearCache() - Clears cached flat Modelica classes.
 
 timing(expr) - Evaluates expression and returns the number of seconds
 the evaluation took.
@@ -39,7 +41,4 @@ loadFile(str) - Load modelica file (.mo) given as string argument.
 saveClass(str,classname) - Save the class with name classname in the
 file given by the string argument.
 
-help() - print this helptext
-(returned as a string).
-
-
+help() - print this helptext (returned as a string).

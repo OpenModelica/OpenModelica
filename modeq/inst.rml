@@ -439,7 +439,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	real_sub(t2,t1) => time &
 	real_gt(time,1.5) => b &
 	real_string time =>timestr &
-	Util.string_append_list(["inst_class_in", n, ": ", timestr, "\n" ]) => s1 &
+	Util.string_append_list(["inst_class_in ", n, ": ", timestr, "\n" ]) => s1 &
 	Dump.select_string(b,s1,"") => str &
 	print str &
 	Prefix.print_prefix_str pre => prestr &

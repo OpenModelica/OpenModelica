@@ -1289,6 +1289,13 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP(Types.T_BOOL([]),false),
 	      SOME(st))
 
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clearCache",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("clearCache"), [], false, false),
+	      Types.PROP(Types.T_BOOL([]),false),
+	      SOME(st))
+
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("list",_),
 			      [],[],impl,
 			      SOME(st)) 
@@ -2992,6 +2999,10 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	-------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearVariables"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
 
+  rule	let newst = Interactive.SYMBOLTABLE(p,fp,[],iv,cf)
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearCache"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
+
   rule	Dump.unparse_str(p) => str
 	-------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
@@ -3102,7 +3113,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ClassLoader.load_class(path, mp) => pnew &
 	Interactive.update_program(pnew,p) => p' &
 	Print.get_string => str &
-	let newst = Interactive.SYMBOLTABLE(p', sp, ic, iv, cf)
+	let newst = Interactive.SYMBOLTABLE(p', sp, [], iv, cf)
 	------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
 	
@@ -3117,7 +3128,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Interactive.update_program(p1,p) => newp
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,ic,iv,cf))
+	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf))
 
   rule	not Parser.parse(name) => _
 	--------------------------

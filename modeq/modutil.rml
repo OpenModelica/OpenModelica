@@ -46,7 +46,7 @@ module ModUtil :
   relation string_prefix_params : DAE.DAElist => DAE.DAElist
 
   relation path_equal : (Absyn.Path, Absyn.Path) => bool
-
+  relation path_subsuffix_equal : (Absyn.Path, Absyn.Path) => bool
 end
 
 with "algorithm.rml"
@@ -409,4 +409,28 @@ relation path_equal : (Absyn.Path, Absyn.Path) => bool =
 
   axiom	path_equal (_,_) => false
 
+end
+
+(* This relation returns true if the first argument is a sub suffix of the second argument.*)
+(* Examples:
+ path_subsuffix_equal(A.B, X.Y.A.B) => true
+ path_subsuffix_equal(A.B.C, X.Y.A.B) => false
+*)
+relation path_subsuffix_equal : (Absyn.Path, Absyn.Path) => bool =
+
+  rule	Absyn.path_last_ident(p1) => p1str &
+	Absyn.path_last_ident(p2) => p2str &
+	p1str = p2str &
+	Absyn.strip_last(p1) => p1' &
+	Absyn.strip_last(p2) => p2' &
+	path_subsuffix_equal(p1',p2') => res
+	------------------------------------
+	path_subsuffix_equal(p1 as Absyn.QUALIFIED(_,_), p2 as Absyn.QUALIFIED(_,_)) => res
+
+  rule	Absyn.path_last_ident(p2) => p2str &
+	id1 = p2str 
+	-------------
+	path_subsuffix_equal(p1 as Absyn.IDENT(id1), p2) => true
+
+  axiom	path_subsuffix_equal(_,_) => false
 end
