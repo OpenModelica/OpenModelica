@@ -21,10 +21,10 @@ relation main =
 
 	print "\n = Instantiating\n\n" &
 	Inst.instantiate(p') => d &
-	print "\nResult:\n\n" &
+	print "\n[result]\n\n" &
 	DAE.dump d &
 	
-	print "\n[slut]\n"
+	print "\n[end result]\n"
 	----------------
 	main [f]
 	

@@ -15,23 +15,24 @@ module Types :
   (** I wonder why this goes here? *)
 
   (** - Types *)
-  datatype Type = TYPE of ClassInf.State * Var list
+  (* datatype Type = TYPE of ClassInf.State * Var list *)
   (** The `Type' datatype stores information about the type of an *)
   (** instantiated variable. The only information that is kept is the *)
   (** class inference state, and the subcomponents. *)
 
   (** - Basic types and arrays *)
-  datatype BasicType = T_INTEGER
-		     | T_REAL
-		     | T_STRING
-		     | T_BOOL
-		     | T_ARRAY of ArrayDim * BasicType
-		     | T_COMPLEX of Component list (* really a set *)
+  datatype Type = T_INTEGER
+		| T_REAL
+		| T_STRING
+		| T_BOOL
+		| T_ARRAY of ArrayDim * Type
+		| T_COMPLEX of ClassInf.State
+			     * Var list
 
   datatype ArrayDim = NODIM
 		    | DIM of int option * ArrayDim
 
-  datatype Component = COMP of Ident * BasicType
+  (* datatype Component = COMP of Ident * Type *)
 
   (** To generate the correct set of equations, the translator has to *)
   (** differentiate between the primitive types `Real', `Integer', *)
@@ -39,22 +40,23 @@ module Types :
   (** other, complex types.  For arrays and matrices the type *)
   (** `T_ARRAY' is used, with the first argument being the number of *)
   (** dimensions, and the second being the type of the objects in the *)
-  (** array.  The `BasicType' type is used to store *)
+  (** array.  The `Type' type is used to store *)
   (** information about whether a class is derived from a primitive *)
   (** type, and whether a variable is of one of these types.  *)
 
   (** - Exported relations *)
-  relation simplify_type : Type => BasicType
-  relation same_type : (BasicType, BasicType) => bool
+(*  relation simplify_type : Type => Type *)
+  relation same_type : (Type, Type) => bool
   relation lookup_component : (Type, Ident) => Var
-  relation known_type : (ClassInf.State, Absyn.ArrayDim) => BasicType
-  relation print_type : BasicType => ()
+  relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type
+  relation print_type : Type => ()
 
 end
 
 (** relation: simplify_type *)
 
-relation simplify_type : Type => BasicType =
+(*
+relation simplify_type : Type => Type =
 
   rule	known_type(st,[]) => t
 	----------------------
@@ -65,9 +67,11 @@ relation simplify_type : Type => BasicType =
 	simplify_type(TYPE(_,v)) => T_COMPLEX(cl)
 
 end
+*)
 
 (** relation: simplify_vars *)
 
+(*
 relation simplify_vars : Var list => Component list =
 
 	(* FIXME: What about array dimensions? *)
@@ -79,11 +83,12 @@ relation simplify_vars : Var list => Component list =
 	simplify_vars(VAR(n,_,t,_)::vs) => COMP(n,t')::cs
 
 end
+*)
 
 (** relation: same_type
  **)
 
-relation same_type : (BasicType, BasicType) => bool =
+(*relation same_type : (Type, Type) => bool =
 	
   axiom	same_type (T_INTEGER,T_INTEGER) => true
   axiom	same_type (T_REAL,T_REAL)       => true
@@ -102,6 +107,7 @@ relation same_type : (BasicType, BasicType) => bool =
   axiom	same_type (_,_) => false
 
 end
+*)
 
 relation same_arraydim : (ArrayDim, ArrayDim) => bool =
 
@@ -116,6 +122,7 @@ relation same_arraydim : (ArrayDim, ArrayDim) => bool =
 
 end
 
+(*
 relation same_type_comp : (Component list, Component list) => bool =
 
   axiom same_type_comp([], []) => true
@@ -130,40 +137,41 @@ relation same_type_comp : (Component list, Component list) => bool =
   axiom	same_type_comp (_,_) => false
 
 end
+*)
 
-(** relation: pick *)
+relation same_type : (Type, Type) => bool =
+	
+  axiom	same_type (T_INTEGER,T_INTEGER) => true
+  axiom	same_type (T_REAL,T_REAL)       => true
+  axiom	same_type (T_STRING,T_STRING)   => true
+  axiom	same_type (T_BOOL,T_BOOL)       => true
 
-relation pick : (Component list, Ident) => (Component list, BasicType) =
-
-  rule  n1 = n2
-	-------
-	pick(COMP(n1,ty)::xs,n2) => (xs,ty)
-
-  rule  pick(xs,n) => (xs',ty)
-	---------------------
-	pick(_::xs,n) => (xs',ty)
-
-end
-
-(*
-relation same_type : (Type, Type) => () =
+  rule	same_arraydim (d1,d2) => true & same_type (t1,t2) => true
+	---------------------------------------------------------
+	same_type (T_ARRAY(d1,t1),T_ARRAY(d2,t2)) => true
 	
 	(* FIXME: Check state? *)
-  rule	same_type_c(els1, els2)
-	-----------------------
-	same_type(TYPE(st1,els1), TYPE(st2,els2))
+  rule	same_type_c(els1, els2) => true
+	-------------------------------
+	same_type(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
+
+	(* default *)
+  axiom	same_type (_,_) => false
 
 end
 
-relation same_type_c : (Var list, Var list) => () =
+relation same_type_c : (Var list, Var list) => bool =
 
-  axiom same_type_c([], [])
+  axiom same_type_c([], []) => true
 
   rule  pick(xs2,n) => (xs2',attr,t2) &
-	same_type(t1,t2) &
-	same_type_c(xs1,xs2')
+	same_type(t1,t2) => true &
+	same_type_c(xs1,xs2') => true
 	---------------------
-	same_type_c(VAR(n,_,t1,_)::xs1, xs2)
+	same_type_c(VAR(n,_,t1,_)::xs1, xs2) => true
+
+	(* default *)
+  axiom	same_type_c(_,_) => false
 
 end
 
@@ -181,7 +189,6 @@ relation pick : (Var list, Ident)
 	pick(_::xs,n) => (xs',attr,ty)
 
 end
-*)
 
 (** relation: lookup_component *)
 
@@ -189,7 +196,17 @@ relation lookup_component : (Type, Ident) => Var =
 
   rule  lookup_component2(cs, id) => v
 	------------------------------
-	lookup_component(TYPE(st,cs), id) => v
+	lookup_component(T_COMPLEX(st,cs), id) => v
+
+  rule	print "# Can't lookup components in arrays\n"
+	------------------------------
+	lookup_component(T_ARRAY(dim,t), id) => fail
+
+  rule	print "- Looking up " &
+	print id &
+	print " in noncomplex type\n"
+	-----------------------------------------
+	lookup_component(_, id) => fail
 
 end
 
@@ -209,7 +226,7 @@ end
 
 (** relation: known_type *)
 
-relation known_type : (ClassInf.State, Absyn.ArrayDim) => BasicType =
+relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type =
 
   rule	known_type (st, []) => t &
 	mk_arraydim dims => dims'
@@ -222,7 +239,7 @@ relation known_type : (ClassInf.State, Absyn.ArrayDim) => BasicType =
   axiom	known_type (ClassInf.TYPE_BOOL(_),[])    => T_BOOL
 
 	(* FIXME *)
-  axiom	known_type (_,[])                        => T_COMPLEX([])
+  axiom	known_type (state,[])                    => T_COMPLEX(state,[])
 
   rule	print "- known_type failed\n"
 	-----------------------------
@@ -250,7 +267,7 @@ end
  ** `complex'.
  **)
 
-relation print_type : BasicType => () =
+relation print_type : Type => () =
 
   rule	print "integer"
 	---------------
@@ -270,7 +287,7 @@ relation print_type : BasicType => () =
 
   rule	print "complex"
 	------------
-	print_type T_OTHER
+	print_type T_COMPLEX(_,_)
 
   rule	print "array(" & print_arraydim dim & print ") of " &
 	print_type t

@@ -353,7 +353,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Lookup.lookup_class(env,t) => cl &
 	Mod.lookup_modification_p(mods,t) => classmod &
-	Mod.lookup_modification(mods,n) => mm &
+	Mod.lookup_modification(mods,n,[(*FIXME*)]) => mm &
 	print "  mod 1: " & SCode.print_mod classmod & print "\n" &
 	print "  mod 2: " & SCode.print_mod mm & print "\n" &
 	print "  mod 3: " & SCode.print_mod m & print "\n" &
@@ -374,7 +374,8 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	elab_arraydim(env,ad,eq) => dims &
 
 	(** Instantiate the component *)
-	inst_var(env,mod',pre,csets,cl,eq,dims) => (dae1,env',csets',vs,bty) &
+	inst_var(env,mod',pre,csets,n,cl,eq,dims,[])
+	  => (dae1,csets',[ty]) &
 
 	(** The environment is extended with the new variable *)
 	(** binding. *)
@@ -397,8 +398,10 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,
-				     attr as Absyn.ATTR(ad,_,_,_),t,m))
-          => (dae, env',csets',ci_state,[v])
+				     attr as Absyn.ATTR(ad,flow,param,dir),
+				     t,m))
+          => (dae, env',csets',ci_state,
+	      [Types.VAR(n,Absyn.ATTR([],flow,param,dir), ty,eq)])
 	
 
 	(** If the class lookup in the previous rule fails, this
@@ -424,75 +427,72 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 end	
 
 relation inst_var : (Env.Env,SCode.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		     SCode.Class,Absyn.Exp option,int list,
-		     bool,Absyn.VarType,Absyn.Direction,int list)
-	  => (DAE.DAEcomp list,Connect.Sets,Types.Var list) =
+		     SCode.Class,Absyn.Exp option,int list, int list)
+	  => (DAE.DAEcomp list,Connect.Sets,Types.Type list) =
 
   rule	(** The class is instantiated with the calculated *)
 	(** modification, and an extended prefix. *)
 
 	list_reverse idxs => idxs' &
-	(* Prefix.prefix_add(n,idxs,pre) => pre' & *)
-	let pre' = pre &
+	Prefix.prefix_add(n,idxs,pre) => pre' &
+	(* let pre' = pre & *)
 
 	(* FIXME: Redeclarations! *)
 	
 	inst_class(env,mod,pre',csets,cl) => (dae,csets',ty,st)
 	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,eq,[],flow,param,dir,idxs)
-          => (dae,csets',[Types.VAR(n,Absyn.ATTR(Absyn.NODIM,flow,param,dir),
-				    ty,eq)])
+	inst_var(env,mod,pre,csets,n,cl,eq,[],idxs)
+          => (dae,csets',[ty])
 
-  rule	inst_array(env,mod,pre,csets,n,cl,flow,param,dir,1,dim,dims,idxs)
-	  => (dae, csets', vs)
+  rule	inst_array(env,mod,pre,csets,n,cl,1,dim,dims,idxs)
+	  => (dae, csets', tys)
 	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,eq,dim::dims,flow,param,dir,idxs)
-          => (dae,csets',vs)
+	inst_var(env,mod,pre,csets,n,cl,eq,dim::dims,idxs)
+          => (dae,csets',tys)
 
 
 end
 
 relation inst_array : (Env.Env,SCode.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		       SCode.Class,bool,Absyn.VarType,Absyn.Direction,
-		       int,int,int list,int list)
-	  => (DAE.DAEcomp list,Connect.Sets,Types.Var list) =
+		       SCode.Class,int,int,int list,int list)
+	  => (DAE.DAEcomp list,Connect.Sets,Types.Type list) =
 
   rule	int_gt(i,stop) => true
 	----------------------
-	inst_array(env,mod,pre,csets,n,cl,f,p,d,i,stop,dims,idxs)
+	inst_array(env,mod,pre,csets,n,cl,i,stop,dims,idxs)
 	  => ([], csets, [])
 
-  rule	inst_var(env,mod,pre,csets,n,cl,NONE(*FIXME*),dims,f,p,d,i::idxs)
+  rule	inst_var(env,mod,pre,csets,n,cl,NONE(*FIXME*),dims,i::idxs)
 	  => (dae1,csets',v1) &
 	int_add(i,1) => i' &
-	inst_array(env,mod,pre,csets',n,cl,f,p,d,i',stop,dims,idxs)
+	inst_array(env,mod,pre,csets',n,cl,i',stop,dims,idxs)
 	  => (dae2, csets'',v2) &
 	list_append(dae1,dae2) => dae &
-	list_append(v1,v2) => vs
+	list_append(v1,v2) => tys
 	-----------------------------
-	inst_array(env,mod,pre,csets,n,cl,f,p,d,i,stop,dims,idxs)
-          => (dae,csets'',vs)
+	inst_array(env,mod,pre,csets,n,cl,i,stop,dims,idxs)
+          => (dae,csets'',tys)
 
 end
 
 relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Absyn.Exp option)
 	  => int list =
 
-  rule	elab_arraydim_decl(env,ad) => dim1 &
-	complete_arraydim(dim1)
+  rule	elab_arraydim_decl(env,ad) => dim &
+	complete_arraydim(dim) => dim'
 	---------------------------------
-	elab_arraydim(env,ad,NONE) => dim1
+	elab_arraydim(env,ad,NONE) => dim'
 
   rule	elab_arraydim_decl(env,ad) => dim1 &
-	StaticExp.elab_exp(env, d) => (e,t,c) &
+	StaticExp.elab_exp(env, exp) => (e,t,c) &
 	elab_arraydim_type(t) => dim2 &
-	compatible_dim(dim1,dim2) => dim3
+	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
 	elab_arraydim(env,ad,SOME(exp)) => dim3
 
   rule	print "- elab_arraydim failed\n"
 	-------------------------------------
-	elab_arraydim_decl(_,_,_) => fail
+	elab_arraydim(_,_,_) => fail
 
 end
 
@@ -516,7 +516,37 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 	
 end
 
-relation elab_arraydim_type : Types.BasicType => (int option) list =
+relation complete_arraydim : (int option) list => int list =
+
+  axiom	complete_arraydim [] => []
+
+  rule	complete_arraydim xs => xs'
+	---------------------------
+	complete_arraydim SOME(x)::xs => x::xs'
+
+end
+
+relation compatible_arraydim : ((int option) list,(int option) list)
+	  => int list =
+
+  axiom	compatible_arraydim([],[]) => []
+
+  rule	compatible_arraydim(xs,ys) => l
+	-------------------------------
+	compatible_arraydim(SOME(x)::xs,NONE::ys) => x::l
+
+  rule	compatible_arraydim(xs,ys) => l
+	-------------------------------
+	compatible_arraydim(NONE::xs,SOME(y)::ys) => y::l
+
+  rule	x = y &
+	compatible_arraydim(xs,ys) => l
+	-------------------------------
+	compatible_arraydim (SOME(x)::xs,SOME(y)::ys) => x::l
+
+end
+
+relation elab_arraydim_type : Types.Type => (int option) list =
 
   rule	elab_arraydim_type2(d) => l
 	---------------------------
@@ -740,7 +770,7 @@ end
  ** Instantiate an assertion.
  **)
 
-relation inst_assertion : (Env.Env, Exp.Exp, Types.BasicType,
+relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
 			   bool, string, Prefix)
 	  => DAE.DAEcomp list =
 
@@ -785,7 +815,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						       false,
 						       Absyn.CONST,
 						       Absyn.BIDIR),
-					 Types.TYPE(ClassInf.TYPE_INTEGER
+					 Types.T_COMPLEX(ClassInf.TYPE_INTEGER
 						    ("<for loop>"),[]),
 					 Env.VALBOUND(fst))) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
@@ -835,9 +865,9 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	StaticExp.canon_cref(env, c1') => c1'' &
 	StaticExp.canon_cref(env, c2') => c2'' &
 	Lookup.lookup_var_local(env,c1'')
-	  => (Absyn.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_),_) &
+	  => (Absyn.ATTR(_,_,_,_),ty1 as Types.T_COMPLEX(st1,_),_) &
 	Lookup.lookup_var_local(env,c2'')
-	  => (Absyn.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_),_) &
+	  => (Absyn.ATTR(_,_,_,_),ty2 as Types.T_COMPLEX(st2,_),_) &
 	check_connect_vars(c1'',ty1,con1,c2'',ty2,con2) &
 	ClassInf.assert_valid(st1,Absyn.R_CONNECTOR) &
 	ClassInf.assert_valid(st2,Absyn.R_CONNECTOR) &
@@ -856,10 +886,8 @@ end
 relation check_connect_vars : (Exp.ComponentRef, Types.Type, bool,
 			       Exp.ComponentRef, Types.Type, bool) => () =
 
-  rule	Types.simplify_type t1 => t1' &
-	Types.simplify_type t2 => t2' &
-	Types.same_type(t1', t2') => true
-	-----------------------
+  rule	Types.same_type(t1, t2) => true
+	-------------------------------
 	check_connect_vars(_,t1,false,_,t2,false)
 
   rule	print "# Can't connect " & Exp.print_component_ref c1 &
@@ -889,7 +917,7 @@ relation connect_components: (Connect.Sets,
 	   print "\n" & *)
 	Connect.add_flow(sets, c1', f1, c2', f2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, f1, c2, f2, Types.TYPE(st,_), true)
+	connect_components(sets, pre, c1, f1, c2, f2, Types.T_COMPLEX(st,_), true)
 	  => sets'
 	
 	(* non-flow type *)
@@ -903,7 +931,7 @@ relation connect_components: (Connect.Sets,
 	   print "\n" & *)
 	Connect.add_equ(sets, c1', c2') => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, _, c2, _, Types.TYPE(st,_), false)
+	connect_components(sets, pre, c1, _, c2, _, Types.T_COMPLEX(st,_), false)
 	  => sets'
 
 	(* Not a TYPE *)
@@ -916,7 +944,7 @@ relation connect_components: (Connect.Sets,
 	   print "\n" & *)
 	connect_vars(sets,c1',f1,c2',f2, l) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1,c2,f2,Types.TYPE(_,l),_) => sets'
+	connect_components(sets,pre,c1,f1,c2,f2,Types.T_COMPLEX(_,l),_) => sets'
 	
 end
 
@@ -949,7 +977,12 @@ end
 
 relation mktype : (ClassInf.State,Types.Var list) => Types.Type =
 
-  axiom	mktype(st,l) => Types.TYPE(st,l)
+  axiom	mktype(ClassInf.TYPE_INTEGER(_),_) => Types.T_INTEGER
+  axiom	mktype(ClassInf.TYPE_REAL(_),_)    => Types.T_REAL
+  axiom	mktype(ClassInf.TYPE_STRING(_),_)  => Types.T_STRING
+  axiom	mktype(ClassInf.TYPE_BOOL(_),_)    => Types.T_BOOL
+
+  axiom	mktype(st,l) => Types.T_COMPLEX(st,l)
 
 end
 
@@ -1095,7 +1128,7 @@ relation make_binding : (Env.Env, Absyn.VarAttr, Absyn.Exp option, SCode.Class)
 end
 
 relation make_const_binding : (Env.Env, Exp.Exp,
-			       Types.BasicType, Types.BasicType, bool)
+			       Types.Type, Types.Type, bool)
 	  => Env.Binding =
 
 	(* Cast the value to real if necessary *)
@@ -1122,13 +1155,15 @@ relation make_const_binding : (Env.Env, Exp.Exp,
 
 end
 
-relation class_type : SCode.Class => Types.BasicType =
+relation class_type : SCode.Class => Types.Type =
 
   axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_INT,_) => Types.T_INTEGER
   axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_STRING,_)
 	  => Types.T_STRING
   axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_REAL,_) => Types.T_REAL
   axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_BOOL,_) => Types.T_BOOL
-  axiom	class_type _ => Types.T_COMPLEX([(* FIXME *)])
+
+	(* FIXME: Should instantiate the class *)
+  axiom	class_type _ => Types.T_COMPLEX(ClassInf.UNKNOWN("---"),[(* FIXME *)])
 
 end

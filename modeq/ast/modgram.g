@@ -232,7 +232,8 @@ class_definition[bool is_replaceable,bool is_final] :
 				    restr, Absyn__PARTS(sibling_list(#c)));
 	  >>
 	| EQUALS dp:name_path
-	  { da:array_dimensions << has_array_dim=true; >> }
+	    /* FIXME: grammar says array_dimensions */
+	  { da:array_subscripts << has_array_dim=true; >> }
 	  { ds:class_modification << has_class_spec=true; >> } 
 	  << 
 	     Attrib a = $[CLASS_,"---"];
@@ -243,7 +244,7 @@ class_definition[bool is_replaceable,bool is_final] :
 				    Absyn__DERIVED(#dp->rml,
 						   (has_array_dim
 						    ? #da->rml
-						    : Absyn__NODIM),
+						    : mk_nil()),
 						   (has_class_spec
 						    ? #ds->rml
 						    : mk_nil())));
@@ -364,7 +365,7 @@ declaration :
 	{ a:array_subscripts }
 	{ m:modification }
 	<< #i->rml = Absyn__COMPONENT(mk_scon($i.u.stringval),
-				      #a ? #a->rml : Absyn__NODIM,
+				      #a ? #a->rml : mk_nil(),
 				      #m ? mk_some(#m->rml) : mk_none()); >>
         ;
 

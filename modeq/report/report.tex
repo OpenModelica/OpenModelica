@@ -543,6 +543,36 @@ are listed in table \ref{tab:classinfevents}.
 
 \note{Unrolling}
 
+\section{Representation of types}
+\label{sec:typerep}
+
+When instantiating, each component is assigned a type descriptor which
+is constructed from the type used in the component declaration
+combined with all applicable modifications.
+
+The type descriptors are used in several places in the semantic
+specification, but two distinct types of usage can be noted.
+
+\begin{description}
+\item[Subcomponent lookup] To look up components inside a component, a
+  description of all its subcomponents are needed.  This description
+  must contain information about which components are protected.  This
+  kind of lookup is usually done in places where all type and
+  component attributes are needed to determine such things as what
+  components can be connected to each other.
+\item[Type checking of expressions] Expressions are checked for type
+  errors, which means that information about the types of components
+  has to be known.  In this context less information is needed.
+  Either a component is of one of the built-in types, or it is a
+  complex type, but then only the names and types of the public
+  subcomponents need to be known.
+\end{description}
+
+These two needs could be met by two different datatypes, and a
+previous version of the specification did it this way.  But having two
+datatypes that essentially does the same thing is more confusing than
+helpful, so they were reduced to only one.
+
 \chapter{Target language}
 \label{cha:target}
 

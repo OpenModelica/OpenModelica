@@ -96,7 +96,7 @@ SCode.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,
 (* FIXME: Shuold contain components (attributes) from the real Real type *)
 val time_var =
 Env.FRAMEVAR("time", Absyn.ATTR([] , false, Absyn.VAR, Absyn.BIDIR),
-	     Types.TYPE(ClassInf.TYPE_REAL("time"), []), Env.UNBOUND)
+	     Types.T_COMPLEX(ClassInf.TYPE_REAL("time"), []), Env.UNBOUND)
 
 (** - Initial environment *)
 

@@ -8,14 +8,13 @@ module StaticExp :
   with "classinf.rml"
   with "lookup.rml"
 
-  type Type = Types.BasicType
   type Ident = string
 
   relation elab_exp : (Env.Env,
-		       Absyn.Exp)           => (Exp.Exp, Types.BasicType, bool)
+		       Absyn.Exp)           => (Exp.Exp, Types.Type, bool)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.Exp, Types.BasicType, bool)
-  relation elab_relop : (Absyn.RelOp, Types.BasicType) => Exp.RelOp
+	  => (Exp.Exp, Types.Type, bool)
+  relation elab_relop : (Absyn.RelOp, Types.Type) => Exp.RelOp
   relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
@@ -28,7 +27,7 @@ with "dump.rml"
  ** - Expression elaboration
  **)
 
-relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.BasicType, bool) =
+relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
 
   axiom	elab_exp(_, Absyn.INTEGER(x)) => (Exp.ICONST(x), Types.T_INTEGER,true)
   axiom	elab_exp(_, Absyn.REAL(x))    => (Exp.RCONST(x), Types.T_REAL,   true)
@@ -122,7 +121,7 @@ end
 (**)
 
 relation elab_array : (Env.Env, Absyn.Exp list)
-	  => (Exp.Exp list, Types.BasicType, bool) =
+	  => (Exp.Exp list, Types.Type, bool) =
 
 	(* FIXME: Should we handle empty arrays? *)
   rule	elab_exp (env,e) => (e',t,c)
@@ -157,7 +156,7 @@ end
  **)
 
 relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
-	=> (Exp.Exp, Types.BasicType, bool) =
+	=> (Exp.Exp, Types.Type, bool) =
 
   rule	Absyn.cref_to_path fn => fn' &
 	elab_call2 (env,fn',args) => (e,t,c)
@@ -172,7 +171,7 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
 end
 
 relation elab_call2 : (Env.Env, Absyn.Path, Absyn.Exp list)
-	=> (Exp.Exp, Types.BasicType, bool) =
+	=> (Exp.Exp, Types.Type, bool) =
 
   rule	(* FIXME: lookup function *)
 	elab_exp_list (env,args) => (args',c)
@@ -192,16 +191,15 @@ end
  **)
 
 relation elab_cref : (Env.Env, Absyn.ComponentRef)
-	  => (Exp.Exp, Types.BasicType, bool) =
+	  => (Exp.Exp, Types.Type, bool) =
 
   rule	print "    elab_cref " & Dump.print_component_ref c & print "\n" &
 	elab_cref_subs (env,c) => (c', const) &
 	print "     subs\n" &
 	Lookup.lookup_var (env,c') => (Absyn.ATTR(ad,_,vartype,_),
-				       Types.TYPE(st, _),
+				       t,
 				       binding) &
 	print "     looked it up\n" &
-	Types.known_type (st,ad) => t &
 	elab_cref2 (env, c', vartype, t, binding) => (exp,const) &
 	print "    elab_cref " & Dump.print_component_ref c &
 	print " => " & print " (" & Types.print_type t & print ")\n"
@@ -223,7 +221,7 @@ end
 
 relation elab_cref2 : (Env.Env,
 		       Exp.ComponentRef, Absyn.VarType,
-		       Types.BasicType, Env.Binding) => (Exp.Exp,bool) =
+		       Types.Type, Env.Binding) => (Exp.Exp,bool) =
 
 	(* FIXME: Check type of expression anyway? *)
   axiom	elab_cref2 (_,cr, Absyn.VAR, _, _) => (Exp.CREF(cr),false)
@@ -300,7 +298,7 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
 end
 
-relation assert_subscript_type : (Types.BasicType, Absyn.Exp) => () =
+relation assert_subscript_type : (Types.Type, Absyn.Exp) => () =
 
   axiom	assert_subscript_type (Types.T_INTEGER,_)
 
@@ -322,8 +320,8 @@ end
  ** reals, it is treated as if it was simply a real or an integer.
  **)
 
-relation elab_numtypes : (Exp.Exp, Types.BasicType, Exp.Exp, Types.BasicType)
-	  => (Exp.Exp, Exp.Exp, Types.BasicType) =
+relation elab_numtypes : (Exp.Exp, Types.Type, Exp.Exp, Types.Type)
+	  => (Exp.Exp, Exp.Exp, Types.Type) =
 
   rule	elab_numtypes (e1, t1, e2, t2) => (e1,e2,t)
 	(* FIXME: what about the dimensions? *)
@@ -360,10 +358,10 @@ end
 
 (** relation: elab_binary *)
 
-relation elab_binary : (Exp.Exp, Types.BasicType, bool,
+relation elab_binary : (Exp.Exp, Types.Type, bool,
 			Absyn.BinOp,
-			Exp.Exp, Types.BasicType, bool)
-	  => (Exp.Exp, Types.BasicType, bool) =
+			Exp.Exp, Types.Type, bool)
+	  => (Exp.Exp, Types.Type, bool) =
 
 	(**  ADD *)
 
@@ -430,9 +428,9 @@ end
 (** relation: elab_relation *)
 
 relation elab_relation : (Exp.Exp, bool,
-			  Types.BasicType, Absyn.RelOp,
+			  Types.Type, Absyn.RelOp,
 			  Exp.Exp, bool)
-	  => (Exp.Exp, Types.BasicType, bool) =
+	  => (Exp.Exp, Types.Type, bool) =
 
   rule	bool_and (c1,c2) => c &
 	elab_relop (op,t) => op'
@@ -449,7 +447,7 @@ end
 
 (** relation: elab_relop *)
 
-relation elab_relop : (Absyn.RelOp, Types.BasicType) => Exp.RelOp =
+relation elab_relop : (Absyn.RelOp, Types.Type) => Exp.RelOp =
 
   axiom	elab_relop (Absyn.LESS,      Types.T_INTEGER) => Exp.INT_LESS
   axiom	elab_relop (Absyn.LESS,      Types.T_REAL)    => Exp.REAL_LESS
@@ -667,7 +665,7 @@ end
 
 (**)
 
-relation value_type : Values.Value => Type =
+relation value_type : Values.Value => Types.Type =
 
   axiom	value_type Values.INTEGER(x) => Types.T_INTEGER
   axiom	value_type Values.REAL(x)    => Types.T_REAL

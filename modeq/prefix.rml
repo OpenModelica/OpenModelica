@@ -13,9 +13,9 @@ module Prefix:
   with "lookup.rml"
   
   datatype Prefix = NOPRE
-		  | PRE of string * Exp.Subscript list * Prefix
+		  | PRE of string * int list * Prefix
 
-  relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix
+  relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix
   relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
   relation prefix_exp  : (Env.Env,Exp.Exp,Prefix) => Exp.Exp
   relation prefix_path : (Absyn.Path,Prefix) => Absyn.Path
@@ -31,7 +31,7 @@ end
  ** normal order used when displaying them.
  **)
 
-relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix =
+relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix =
 
   axiom prefix_add(i,s,p) => PRE(i,s,p)
 
@@ -63,9 +63,27 @@ relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
   axiom	prefix_cref (NOPRE, cref) => cref
 
-  rule	prefix_cref(xs, Exp.CREF_QUAL(i,s,cref)) => cref'
+  rule	subscript_list s => s' &
+	prefix_cref(xs, Exp.CREF_QUAL(i,s',cref)) => cref'
 	---------------------------------
 	prefix_cref (PRE(i,s,xs), cref) => cref'
+
+end
+
+(** relation: subscript_list
+ **
+ ** This relations describes the relation between a list of integers
+ ** and a list of `Exp.Subscript' where each integer is converted to
+ ** an integer constant expression.
+ **)
+
+relation subscript_list : int list => Exp.Subscript list =
+
+  axiom	subscript_list [] => []
+
+  rule	subscript_list xs => xs'
+	------------------------
+	subscript_list x::xs => Exp.SUB1(Exp.ICONST(x))::xs'
 
 end
 
