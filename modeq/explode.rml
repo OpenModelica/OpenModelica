@@ -81,7 +81,9 @@ module SCode :
 
   datatype ClassDef = PARTS of Element list
 			     * Equation list
+			     * Equation list    (* InitialEquation *)
 			     * Algorithm list
+			     * Algorithm list   (* InitialAlgorithm *)
                              * Absyn.ExternalDecl option  (* Used by external functions*)
 		    | DERIVED of Path
 			       * Absyn.ArrayDim option
@@ -121,6 +123,7 @@ module SCode :
 		   | IMPORT    of Absyn.Import
 		   | COMPONENT of Ident		(* component name *)
 				* bool		(* final *)
+				* bool		(* replaceable *)
 				* bool		(* protected *)
 				* Attributes
 				* Path		(* type name *)
@@ -247,10 +250,12 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 
   rule	elab_classdef_elements parts => els &
 	elab_classdef_equations parts => eqs &
+	elab_classdef_initialequations parts => initeqs &
 	elab_classdef_algorithms parts => als &
+	elab_classdef_initialalgorithms parts => initals &
 	elab_classdef_externaldecls parts => decl
 	-------------------------------------
-	elab_classdef (Absyn.PARTS(parts,cmt)) => PARTS(els,eqs,als,decl)
+	elab_classdef (Absyn.PARTS(parts,cmt)) => PARTS(els,eqs,initeqs,als,initals,decl)
 
   rule	elab_enumlist(lst) => lst'
 	--------------------------
@@ -310,6 +315,24 @@ relation elab_classdef_equations: Absyn.ClassPart list => Equation list =
 end
 
 
+relation elab_classdef_initialequations: Absyn.ClassPart list => Equation list = 
+
+  axiom	elab_classdef_initialequations [] => []
+
+  rule	elab_classdef_initialequations rest => eqs &
+	elab_equations(eql) => eql' &
+	list_append (eqs, eql') => eqs'
+	------------------------------
+	elab_classdef_initialequations (Absyn.INITIALEQUATIONS(eql)::rest) => eqs'
+
+(** ignore everthing other than equations **)
+  rule	elab_classdef_initialequations rest => eqs
+	-----------------------------------
+	elab_classdef_initialequations _::rest => eqs
+
+end
+
+
 
 relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
 
@@ -329,6 +352,26 @@ relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
 	elab_classdef_algorithms _::rest => als
 
 end
+
+relation elab_classdef_initialalgorithms: Absyn.ClassPart list => Algorithm list =
+
+  axiom	elab_classdef_initialalgorithms [] => []
+
+  rule	elab_classdef_initialalgorithms rest => als &
+	elab_classdef_algorithmitems al => al' &
+	let als' = ALGORITHM(al')::als
+	-----------------------------
+	elab_classdef_initialalgorithms (Absyn.INITIALALGORITHMS(al)::rest) => als'
+
+
+(** ignore everthing other than algorithms **)
+
+  rule	elab_classdef_initialalgorithms rest => als
+	------------------------------------
+	elab_classdef_initialalgorithms _::rest => als
+
+end
+
 
 relation elab_classdef_algorithmitems: Absyn.AlgorithmItem list => Absyn.Algorithm list =
 
@@ -386,9 +429,9 @@ end
 
 relation elab_element : (Absyn.Element, bool) => Element list =
 
-  rule	elab_elementspec(f,prot,s) => es
+  rule	elab_elementspec(f,repl,prot,s) => es
 	--------------------------------
-	elab_element(Absyn.ELEMENT(f,_,_,_,s,_), prot) => es
+	elab_element(Absyn.ELEMENT(f,repl,_,_,s,_), prot) => es
 
 end
 
@@ -399,34 +442,35 @@ end
  ** protected, respectively.
  **)
 
-relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
+relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 
   rule	elab_classdef(de) => de' &
 	elab_restriction(cl,re) => re'
 	-----------------------
-	elab_elementspec(final,prot,Absyn.CLASSDEF(rp,cl as Absyn.CLASS(n,pa,fi,e,re,de)))
+	elab_elementspec(final,repl,prot,Absyn.CLASSDEF(rp,cl as Absyn.CLASS(n,pa,fi,e,re,de)))
 	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re',de'))]
 
   rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
 	Absyn.path_string(n) => ns
 	--------------------------
-	elab_elementspec(final,prot,Absyn.EXTENDS(n,args))
+	elab_elementspec(final,repl,prot,Absyn.EXTENDS(n,args))
 	  => [EXTENDS(n,mod)]
 
-  axiom	elab_elementspec(_,_,Absyn.COMPONENTS(_,_,[])) => []
+  axiom	elab_elementspec(_,_,_,Absyn.COMPONENTS(_,_,[])) => []
 
-  rule	elab_elementspec(final,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
+  rule	elab_elementspec(final,repl,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
 	build_mod(m,false) => mod &
 	(* PR. This adds the arraydimension that may be specified together with
 	 the type of the component.  *)
 	list_append(d,ad) => tot_dim
 	--------------------------------------------------
-	elab_elementspec(final,prot,
+	elab_elementspec(final,repl,prot,
 			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di,ad),t,
 					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_)::xs))
-	  => COMPONENT(n,final,prot,ATTR(tot_dim,fl,RW,pa,di),t,mod)::xs'
+	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa,di),t,mod)::xs'
 
-  axiom	elab_elementspec(final,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
+  axiom	elab_elementspec(final,repl,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
+
 end
 
 (** relation: elab_equations
@@ -520,7 +564,8 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
   rule	build_args xs => subs &
 	Absyn.element_spec_name spec => n &
 	(** LS:: don't know what to use for "protected", so using false **)
-	elab_elementspec(final,false,spec) => elist
+	(** LS:: don't know what to use for "replaceable", so using false **)
+	elab_elementspec(final,false,false,spec) => elist
 	---------------------------
 	build_args((Absyn.REDECLARATION(final,spec,constropt)::xs))
 	  => (NAMEMOD(n,REDECL(final,elist))::subs)
@@ -579,7 +624,7 @@ relation get_element_named: (Ident, Class) => Element =
 	
   rule	get_element_named_from_elts(id,elts) => elt
 	----------------------------------------
-	get_element_named(id,CLASS(_,_,_,_,PARTS(elts,_,_,_))) => elt
+	get_element_named(id,CLASS(_,_,_,_,PARTS(elts,_,_,_,_,_))) => elt
 end
 
 relation get_element_named_from_elts: (Ident, Element list) => Element =
@@ -587,7 +632,7 @@ relation get_element_named_from_elts: (Ident, Element list) => Element =
   rule	not id1 = id2 &
 	get_element_named_from_elts(id2,xs) => elt
 	---------------------------
-	get_element_named_from_elts(id2,COMPONENT(id1,_,_,_,_,_)::xs) => elt
+	get_element_named_from_elts(id2,COMPONENT(id1,_,_,_,_,_,_)::xs) => elt
 	
   rule	not id1 = id2 &
 	get_element_named_from_elts(id2,xs) => elt
@@ -600,7 +645,7 @@ relation get_element_named_from_elts: (Ident, Element list) => Element =
 
   rule	id1 = id2
 	--------------------
-	get_element_named_from_elts(id2,(comp as COMPONENT(id1,_,_,_,_,_))::_) => comp
+	get_element_named_from_elts(id2,(comp as COMPONENT(id1,_,_,_,_,_,_))::_) => comp
 
   rule	id1 = id2
 	--------------------
@@ -739,6 +784,6 @@ relation print_element : Element => () =
 
   rule	Print.print_buf "COMPONENT(" & Print.print_buf n & Print.print_buf ")"
 	----------------------------------------
-	print_element COMPONENT(n,final,prot,attr,typath,mod)
+	print_element COMPONENT(n,final,repl,prot,attr,typath,mod)
 
 end	
