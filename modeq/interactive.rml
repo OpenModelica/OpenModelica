@@ -50,6 +50,9 @@ module Interactive:
   relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program
   relation add_component: (string,Absyn.ComponentRef,Absyn.ComponentRef,Absyn.NamedArg list, Absyn.Program) => (Absyn.Program,string)
   relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int
+  relation remove_compiled_functions: (Absyn.Program, (Absyn.Path * Types.Type) list)
+	    => (Absyn.Path * Types.Type) list
+
 end
 with "dump.rml"
 with "debug.rml"
@@ -179,10 +182,10 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
   rule	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
 	Static.ceval(env,sexp,SOME(st')) => value &
-	add_var_to_symboltable(ident,value,t,st) => newst
+	add_var_to_symboltable(ident,value,t,st') => newst	
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st as SYMBOLTABLE(p,_,_,_,_)) 
-	    => ("",st')
+	    => ("",newst)
 	
   rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str
 	-----------------------------
@@ -491,6 +494,32 @@ relation componentref_to_path: Absyn.ComponentRef => Absyn.Path =
 	-----------------------------
 	componentref_to_path(Absyn.CREF_QUAL(id,_,x)) => Absyn.QUALIFIED(id,px)
 end	
+
+(** relation: remove_compiled_functions
+**
+**)
+relation remove_compiled_functions: (Absyn.Program, (Absyn.Path * Types.Type) list)
+	    => (Absyn.Path * Types.Type) list =
+  rule	remove_cf(id,cfs) => cfs'
+	-----------------
+	remove_compiled_functions(Absyn.PROGRAM([Absyn.CLASS(id,_,_,Absyn.R_FUNCTION,_)],_),cfs) => cfs'
+  axiom	remove_compiled_functions(_,cfs) => cfs
+end
+
+relation remove_cf: (Absyn.Ident, (Absyn.Path * Types.Type) list)
+	    => (Absyn.Path * Types.Type) list =
+
+  axiom	remove_cf(_,[]) => []
+
+  rule	id1 = id2 &
+	remove_cf(id1,rest) => res
+	--------------------------
+	remove_cf(id1,(Absyn.IDENT(id2),t)::rest) => res 
+  rule	not id1 = id2 &
+	remove_cf(id1,rest) => res
+	--------------------------
+	remove_cf(id1,(Absyn.IDENT(id2),t)::rest) => ((Absyn.IDENT(id2),t)::res)
+end
 
 (** relation: update_program
  **

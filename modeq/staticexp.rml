@@ -89,6 +89,9 @@ with "print.rml"
 with "system.rml"
 with "lookup.rml"
 with "debug.rml"
+with "inst.rml"
+with "codegen.rml"
+with "modutil.rml"
 
 (** LS:
  ** - Expression elaboration
@@ -710,13 +713,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	  => (exp, prop)
 
   rule	Print.print_buf "#-- elab_builtin_size: Couldn't elaborate size()\n" &
-	Print.print_buf "#-- Wrong args or non-constant dimension\n" &
-	Print.print_buf "#env: " &
-	Env.print_env env &
-	Print.print_buf "\n" &
-	Print.print_buf "expl = " &
-	Debug.fprint_list ("peter6",expl,Dump.print_exp,", ") &
-	Print.print_buf "\n" 
+	Print.print_buf "#-- Wrong args or non-constant dimension\n" 
 	----------------------------------------------------------
 	elab_builtin_size (env,expl) => fail
 
@@ -852,7 +849,7 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 
   rule	Absyn.cref_to_path fn => fn' &
 	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
-	generate_compiled_function(e,prop,st) => st' &
+	generate_compiled_function(fn,e,prop,st) => st' &
 	Debug.fprintln ("sei", "elab_call succeeded")
 	------------------------------------
 	elab_call (env,fn,args,nargs,st) => (e,prop,st')
@@ -863,13 +860,48 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 
 end
 
-relation generate_compiled_function: (Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option) =>
+(* relation: generate_compiled_function 
+ ** TODO: This currently only works for top level functions. For functions inside packages 
+ ** we need to reimplement without using lookup functions, since we can not build
+ ** correct env for packages containing functions.   
+   *)
+relation generate_compiled_function: (Absyn.ComponentRef, Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option) =>
 	(Interactive.InteractiveSymbolTable option) =
-  axiom generate_compiled_function(_,_,NONE) => NONE
+  axiom generate_compiled_function(_,_,_,NONE) => NONE
 	
-  rule	(* Cont here *)
-	---------
-	generate_compiled_function(_,_,st) => st
+  rule	make_env_from_cf(cf) => env &
+	Absyn.cref_to_path(fn) => pfn &
+	Lookup.lookup_functions_in_env(env,pfn) => _::_ 
+	-----------------------------------------------
+	generate_compiled_function(fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cf))) => SOME(st)
+
+  rule	make_env_from_cf(cf) => env &
+	Absyn.cref_to_path(fn) => path &
+	Lookup.lookup_functions_in_env(env,path) => [] &
+	SCode.elaborate(p) => p' &
+	Inst.instantiate_implicit(p') => d &
+	Print.clear_buf() &
+	ModUtil.string_prefix_params d => d' &
+	Codegen.generate_functions(d') &
+	Absyn.path_string path => pathstr &
+	string_append(pathstr,".c") => filename &
+	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
+	Print.print_buf "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\n\");\n      return 1;\n    }\n" &
+	Print.print_buf pathstr &
+	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
+	Print.write_buf(filename)& Print.clear_buf() &
+	System.compile_c_file(filename) 
+	-----------------------------------------------
+	generate_compiled_function(fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,a,b,c,cf))) => SOME(Interactive.SYMBOLTABLE(p,a,b,c,(path,t)::cf))
+end
+
+relation make_env_from_cf: ((Absyn.Path * Types.Type) list) => Env.Env =
+
+  axiom	make_env_from_cf([]) => [Env.FRAME([])]
+
+  rule	make_env_from_cf(rest) => [Env.FRAME(lst)]
+	-----------------------------------
+	make_env_from_cf((Absyn.IDENT(id),t)::rest) =>[Env.FRAME((id,Env.TYPE(t))::lst)]
 end
 
 (** relation: elab_call_args
@@ -969,11 +1001,8 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	 funktion name and the function's type. 
 	 *)
 
-(*	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) & *)
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
-	Print.print_buf "We got the type list\n" & 
 	elab_types (env, args, typelist) => (args', c, restype) &
-(*	& Print.print_buf "We just elaborated the types\n"  *)
 	is_tuple restype => tuple &
 	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
 (*	Print.print_buf "Debug: We did a lookup T_FUNCTION " &
@@ -985,8 +1014,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
   rule	not Lookup.lookup_type(env,fn) => (_,_) &
 	
-	Print.print_buf "# Couldn't find function " & Dump.print_path fn & Print.print_buf "\n" &
-	Env.print_env env 
+	Print.print_buf "# Couldn't find function " & Dump.print_path fn & Print.print_buf "\n" 
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,_,_,_) => fail
 
@@ -1475,8 +1503,7 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	elab_cref(env, c) => (exp, Types.PROP(t, const), acc')
 
   rule	elab_cref_subs (env,c) => (c', const) &
-	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\n" &
-	Env.print_env env
+	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\n"
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
