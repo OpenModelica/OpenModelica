@@ -15,6 +15,7 @@ static char **debug_flags;
 static char *debug_flagstr;
 static int debug_flagc;
 static int debug_all;
+static int debug_none;
 
 void RTOpts_5finit(void)
 {
@@ -24,6 +25,7 @@ void RTOpts_5finit(void)
   debug_flag_info = 0;
   params_struct = 0;
   debug_all = 0;
+  debug_none = 1;
 }
 
 static int set_debug_flags(char *flagstr)
@@ -32,6 +34,8 @@ static int set_debug_flags(char *flagstr)
   int len=strlen(flagstr);
   int flagc=1;
   int flag;
+
+  debug_none = 0; /* -d was given, hence turn off the virtual flag "none". */
 
   if (len==0) {
     debug_flagc = 0;
@@ -83,6 +87,9 @@ int check_debug_flag(char const* strdata)
 {
   int flg=0;
   int i;
+  if (strcmp(strdata,"none")==0 && debug_none == 1) {
+    flg=1;
+  }
   if (debug_all==1) {
     flg=1;
   }
@@ -103,10 +110,13 @@ int check_debug_flag(char const* strdata)
   return flg;
 }
 
+
 RML_BEGIN_LABEL(RTOpts__args)
 {
   void *args = rmlA0;
   void *res = mk_nil();
+
+  debug_none = 1;
   
   while (RML_GETHDR(args) != RML_NILHDR)
   {
@@ -196,8 +206,14 @@ RML_BEGIN_LABEL(RTOpts__debug_5fflag)
 {
     void *str = rmlA0;
     char *strdata = RML_STRINGDATA(str);
+    int flg = check_debug_flag(strdata);
+
+    /*
     int flg=0;
     int i;
+    if (strcmp(strdata,"none")==0 && debug_none == 1) {
+      flg=1;
+    }
     if (debug_all==1) {
       flg=1;
     }
@@ -214,6 +230,7 @@ RML_BEGIN_LABEL(RTOpts__debug_5fflag)
     }
     if (flg==1 && debug_flag_info==1)
       fprintf(stdout, "--------- %s ---------\n", strdata);	
+    */
 
     rmlA0 = RML_PRIM_MKBOOL(flg);
     RML_TAILCALLK(rmlSC);
