@@ -512,11 +512,48 @@ preventing things like instantiation of partial classes.  But this is
 something that should not be done before the overall structure is
 fixed.
 
-Below is a list of things that is not covered by the semantic
-specification.
+Below is a list of issues that is not covered by the semantic
+specification, or were implemented before it was decided how it should
+have been done.  The limitations are listen in no particular order.
 
 \begin{enumerate}
-\item 
+
+\item Class names can only denote classes, which means that it is not
+  possible to define a ``type synonym'' for an array type, as in
+  \codebox{type Point Real[3]}.
+  
+\item Modifying array slices does not work, as in \codebox{AModel
+    a(x[3:5] = [1.0,2.0,3.0])}.
+
+\item Array slices are note expanded in array equations.
+
+\item The built-in pseudo-functions (size etc.) are not implemented.
+
+\item Actually no evaluation of function calls are performed during
+  translation.  This would be needed when the value of a constant (or
+  parameter) is defined in terms of a function call.
+
+\item Functions are implemented in a pretty brain-damaged way.  There
+  is a proposal where function calls are defined in terms of
+  ``implicit instantiation'', but this is hard to implement because of
+  RML limitations.
+
+\item The checking of component attributes is severely lacking.  For
+  instance, it is currently possible to use a variable in an outer
+  scope.  This should only be possible with constants, if at all.
+
+\item Modifying class names is done even for non-local class names.
+
+\item Unused modifications are simply discarded.  They should produce
+  an error.
+
+\item Redeclarations are not implemented.
+
+\item The builtin type attributes are not completely implemented.
+  
+\item There are some remaining bugs with the parts that are
+  implemented.
+
 \end{enumerate}
 
 \unfinished
