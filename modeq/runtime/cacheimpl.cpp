@@ -28,23 +28,10 @@ extern "C"
       for (it = classCache->begin(); it != classCache->end(); ++it) {
 	for (it2 = it->second->begin(); it2 != it->second->end(); ++it2) {
 	  size+=2;
-	  refSet.insert((int*)it2->second->cl);  // A set, because references should only be given once 
-	  refSet.insert((int*)it2->second->env); // to the callback function
+	  rml_user_gc_callback(state,(void**)&it2->second->cl,1);
+	  rml_user_gc_callback(state,(void**)&it2->second->env,1);
 	}
       }
-      set<int*>::iterator it3;
-      int refSize=0;
-      int** refVector = new int*[refSet.size()];
-      for (it3=refSet.begin(); it3 != refSet.end(); it3++) {
-	if (!RML_HDRISFORWARD(RML_GETHDR(*it3))) {
-	  refVector[refSize++]=(int*)RML_UNTAGPTR((void*)*it3); // references should be untagged when calling gc.
-	} else {
-	  //cerr << "Ignoring HDRFORWARD root" << endl;
-	}
-      }
-      // std::cerr <<  "making callback" << endl;
-      rml_user_gc_callback(state,(void**)refVector,refSet.size());
-      delete refVector;
     }
     // std::cerr <<  "leaving user_gc" << endl;
   }
@@ -68,16 +55,22 @@ extern "C"
       cerr << "Cache is not initialized\n";
       RML_TAILCALLK(rmlFC);
     }
-    if (classCache->find(className) == classCache->end()) {
+    Cache::iterator it = classCache->find(className);
+    if (it == classCache->end()) {
       //cerr << "Did not find " << className << "hash table.\n";
       (*classCache)[className] = new CacheItem();
     }
-    ClassItem *newItem = new ClassItem;
-    newItem->cl = cl;
-    newItem->env = env;
-    //cerr << "Adding refs:      " << cl << "  " << env << endl;
-    (*(*classCache)[className])[scope] = newItem;
-    //  cerr << "Added class " << className << " to cache.\n" << endl ;
+    else if (it->second->size() == 1 && it->second->begin()->second->cl != cl) 
+      // Only add class if different. 
+      {
+	cerr << "Different, adding second class." << endl;
+	ClassItem *newItem = new ClassItem;
+	newItem->cl = cl;
+	newItem->env = env;
+	//cerr << "Adding refs:      " << cl << "  " << env << endl;
+	(*(*classCache)[className])[scope] = newItem;
+	//  cerr << "Added class " << className << " to cache.\n" << endl ;
+      }
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL
@@ -108,6 +101,12 @@ extern "C"
       //cerr << "class " << className << " not found in cache\n";
       RML_TAILCALLK(rmlFC);
     } else {
+      if (it->second->size() == 1) {
+	ClassItem *item=it2->second;
+	rmlA0=item->cl;
+	rmlA1=item->env;
+	RML_TAILCALLK(rmlSC);
+      }
       it2=(it->second->find(scope));
       if (it2 == it->second->end()) {
 	RML_TAILCALLK(rmlFC);
@@ -116,7 +115,7 @@ extern "C"
       ClassItem *item=it2->second;
       rmlA0=item->cl;
       rmlA1=item->env;
-      cerr << "Found class " << className << " in cache.\n";
+      // cerr << "Found class " << className << " in cache.\n";
       RML_TAILCALLK(rmlSC);
     }
   }

@@ -16,7 +16,7 @@ SHELL	= /bin/sh
 CC	= gcc
 CFLAGS	= 
 RMLHOME	= @rmlhome@
-RML	= @rmlc_bin@ -g
+RML	= @rmlc_bin@ -Wc,-O3
 RMLINC  = -I$(RMLHOME)/include/plain
 MYRML	= ./myrmlc
 

@@ -155,18 +155,16 @@ end
 
 relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 
-
-(*
- rule	(* Try to find the class in the cache *)
+(* rule	(* Try to find the class in the cache *)
 	Env.get_env_path(env) => envpath &
 	Absyn.opt_path_string(envpath) => envpathstr &
 	Absyn.path_string(path) => pathstr &
-	Cache.get_class(envpathstr,pathstr) => (c,env) &
+	Cache.get_class(envpathstr,pathstr) => (c,env) (*&
 	print "Got cached class: " & print pathstr &
-	print "\n"
+	print "\n"*)
 	----------------------------------------
-	lookup_class(env,path,_) => (c,env)
-*)
+	lookup_class(env,path,_) => (c,env)*)
+
   
   rule	Debug.fprint ("lotr","TRIES lookup_class(1)\n") &
         Debug.fcall ("lotr",Dump.print_path,path) &
@@ -180,8 +178,8 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	Print.print_buf "in envpath:" &
 	Env.print_env_path env' &
 	Print.print_buf "\n:" *)
-(*
-	& Env.get_env_path(env') => envpath &
+
+(* 	& Env.get_env_path(env') => envpath &
 	Absyn.opt_path_string(envpath) => envpathstr &
 	Absyn.path_string(path) => pathstr &
 	Cache.add_class(c,env',envpathstr,pathstr) => ()*)
@@ -193,8 +191,8 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	  => (c, env') &
         Debug.fprint ("lotr","IN lookup_class(2)\n") &
         Debug.fcall ("lotr",Dump.print_path,path) &
-	Debug.fprint ("lotr",")\n")  (*&
- 	Env.get_env_path(env') => envpath &
+	Debug.fprint ("lotr",")\n")  
+(* 	& Env.get_env_path(env') => envpath &
  	Absyn.opt_path_string(envpath) => envpathstr &
  	Absyn.path_string(path) => pathstr &
 	Cache.add_class(c,env',envpathstr,pathstr) => ()*)
@@ -206,12 +204,11 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	  => (c, env') &
         Debug.fprint ("lotr","IN lookup_class(3)\n") &
         Debug.fcall ("lotr",Dump.print_path,path) &
-	Debug.fprint ("lotr",")\n") (*&
-	Env.get_env_path(env') => envpath &
+	Debug.fprint ("lotr",")\n") 
+(*	& Env.get_env_path(env') => envpath &
 	Absyn.opt_path_string(envpath) => envpathstr &
 	Absyn.path_string(path) => pathstr &
-	Cache.add_class(c,env',envpathstr,pathstr) => ()
-*)
+	Cache.add_class(c,env',envpathstr,pathstr) => ()*)
 	----------------------------------------------------------
 	lookup_class(env, path, _) => (c, env')
 
@@ -228,11 +225,11 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 
 	Debug.fprint ("lotr","IN lookup_class(4)\n") &
         Debug.fcall  ("lotr",Dump.print_path,path) &
-	Debug.fprint ("lotr",")\n") (*&
-	Env.get_env_path(env') => envpath &
+	Debug.fprint ("lotr",")\n") 
+(*	& Env.get_env_path(env') => envpath &
  	Absyn.opt_path_string(envpath) => envpathstr &
 	Absyn.path_string(path) => pathstr &
-	Cache.add_class(c,env',envpathstr,pathstr) => ()*)
+	Cache.add_class(c,env',envpathstr,pathstr) => () *)
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path),msgflag) 
 	  => (c', env''')
@@ -257,8 +254,8 @@ rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
 
 	Debug.fprint ("lotr","IN lookup_class(5)\n") &
         Debug.fcall  ("lotr",Dump.print_path,path) &
-	Debug.fprint ("lotr",")\n") (*&
-	Env.get_env_path(env5) => envpath &
+	Debug.fprint ("lotr",")\n") 
+(*	& Env.get_env_path(env5) => envpath &
 	Absyn.opt_path_string(envpath) => envpathstr &
 	Absyn.path_string(path) => pathstr &
 	Cache.add_class(c',env5,envpathstr,pathstr) => ()*)
@@ -975,6 +972,14 @@ end
  **)
 relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) 
 	  => (SCode.Class, Env.Env) =
+	  
+	  (* Look in cache *)
+(*rule	Env.get_env_path(env) => envpath &
+	Absyn.opt_path_string(envpath) => envpathstr &
+	Absyn.path_string(path) => pathstr &
+	Cache.get_class(envpathstr,pathstr) => (c,env) 
+	----------------------------------------------
+	lookup_class_in_class (env, _,path,_) => (c, env)*)
 
   rule	lookup_class_in_env(env,classname,true) => (c as SCode.CLASS(_,_,true,_,_) ,env') 
         (* true means here encapsulated *)
