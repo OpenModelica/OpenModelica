@@ -2906,7 +2906,7 @@ if test -d /home/pelab/pkg/gnu/lib ; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 else
-  readlinelib=`find /usr/lib /usr/local/lib -name libreadline.a | tail - 1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+  readlinelib=`find /usr/lib /usr/local/lib -name libreadline.a | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
   if test -z "$readlinelib" ; then
      echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
