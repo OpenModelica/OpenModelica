@@ -216,6 +216,7 @@ with "tornadocodegen.rml"
  relation get_componentitems_name: (Absyn.ComponentItem list,DAELow.DAELow) => string list =
 	     
   rule  (* .. otherwise if no dimensions *)
+(*          print c1 & print " GET_COMPONENTITEMS_NAMe\n" & *)
 	     get_componentitems_name(rest,dae) => lst 
 	     ----------------------------
 	     get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,[],_),
@@ -223,6 +224,9 @@ with "tornadocodegen.rml"
                                  dae) 
           => c1::lst
    rule	(* When component has array dimensions *)
+(*          Dump.print_subscripts_str(subs) => tmp_str &(\*  & str_lst & Util.string_append_list(str_lst) => tmp_str &  *\) *)
+(*          print tmp_str & print "<- subs\n" & *)
+
 	     get_componentitems_name(rest,dae) => lst &
          generate_components_name_with_subscripts(c1,dae) => comps_name_w_subs &
          list_append(lst,comps_name_w_subs) => res 
@@ -516,7 +520,7 @@ end
 relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
 
         
-  rule  print "no such variable\n "
+  rule  print "no such variable: " & print name & print "\n "
         -------------------------------------
         find_dae_var2(name,class_name,[]) => fail
 
