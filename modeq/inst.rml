@@ -3016,13 +3016,13 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Types.Var =
 	  
   rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
-	elab_arraydim(env,dim,NONE,true) => dimexp &
+	elab_arraydim(env,dim,NONE,true,NONE) => dimexp &
 	Debug.fprint ("recconst", "elaborated arraydim\n") &
 	Lookup.lookup_class(env,t) => (cl,cenv) &
 	Debug.fprint ("recconst", "looked up class\n") &
 	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
 	
-	elab_arraydim(env,dim,NONE,true) => dimexp &
+	elab_arraydim(env,dim,NONE,true,NONE) => dimexp &
 	Debug.fprint ("recconst", "calling inst_var\n") &
 	inst_var(cenv,mod',Prefix.NOPRE,[],id,cl,attr,dimexp,[],[],true) => (_,_,tp') &
 	Debug.fprint ("recconst", "Type of argument:") &

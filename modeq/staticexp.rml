@@ -175,7 +175,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, (Absyn.Path * Types.Type) list option)
 	  => (Exp.BINARY(e1'',op',e2''),PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_exp_unary") &
-	elab_exp (env,em,st) => (e',PROP(t,c)) &
+	elab_exp (env,e,st) => (e',PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
@@ -387,7 +387,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
   rule	Dump.print_component_ref_str fn => fnstr &
 	Debug.fprintl("setr", ["elab_graphics_exp_call: ",fnstr,"\n"]) &
-	elab_call(env,fn,args,nargs) => (e,prop) 
+	elab_call(env,fn,args,nargs,NONE) => (e,prop) 
 	--------------------------------------
 	elab_graphics_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) 
 		=> (e,prop)
@@ -450,7 +450,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 		   const))
 	
   rule	Debug.fprintln("setr", "elab_graphics_exp_matrix") &
-	elab_matrix_semi (env, es) => (es', PROP(t,c), dim1,dim2,nmax) & 
+	elab_matrix_semi (env,es,NONE) => (es', PROP(t,c), dim1,dim2,nmax) & 
 	elab_type t => at
 	------------------------------------------------------------
 	elab_graphics_exp (env, Absyn.MATRIX(es))
@@ -545,7 +545,7 @@ relation elab_tuple : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Properties list) =
 
   rule	Debug.print "\nEntered elab_tuple." &
-	elab_exp (env,e) => (e',p) &
+	elab_exp (env,e,NONE) => (e',p) &
 	Debug.print "\nElaborated expression." &
 	elab_tuple(env,exps) => (exps',props) &
 	Debug.print "\nThe last element was just elaborated."
@@ -601,11 +601,11 @@ end
 relation elab_graphics_array : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Properties) =
 
-  rule	elab_exp (env,e) => (e',prop)
+  rule	elab_exp (env,e,NONE) => (e',prop)
 	-----------------------------
 	elab_graphics_array (env,[e]) => ([e'],prop)
 
-  rule	elab_exp (env,e) => (e',PROP(t1,c1)) &
+  rule	elab_exp (env,e,NONE) => (e',PROP(t1,c1)) &
 	elab_graphics_array (env,es) => (es',PROP(t2,c2)) &
 	bool_and (c1,c2) => c
 	---------------------------------
@@ -742,19 +742,19 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	(** LS: size(A) that returns an array of sizes for all dimensions is not *)
 	(** implemented, just size(A,x) that returns size of x:th dimension *)
 
-  rule	elab_exp (env,ind) => (indexp, PROP(indty, true)) &
+  rule	elab_exp (env,ind,NONE) => (indexp, PROP(indty, true)) &
 	ceval (env, indexp,NONE) => Values.INTEGER(value) &
 	int_string(value) => strval &
-	elab_exp (env,arraycr) => (Exp.CREF(cr,crt), crprop) &
+	elab_exp (env,arraycr,NONE) => (Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	elab_builtin_size_2 (env, ty, value) => (exp, prop) 
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) => (exp, prop)
 
-  rule	elab_exp (env,arraycr) => (crefe as Exp.CREF(cr,crt), crprop) &
+  rule	elab_exp (env,arraycr,NONE) => (crefe as Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	Types.array_element_type ty => Types.T_INTEGER &
-	elab_exp (env,ind) => (indexp, PROP(indty, ind_const)) &
+	elab_exp (env,ind,NONE) => (indexp, PROP(indty, ind_const)) &
 	let exp = Exp.CALL(Absyn.IDENT("size_integer_array"),
 			   [crefe,indexp],false,true) &
 	let prop = PROP(Types.T_INTEGER,false)
@@ -763,10 +763,10 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	  => (exp, 
 	      prop)
 
-  rule	elab_exp (env,arraycr) => (crefe as Exp.CREF(cr,crt), crprop) &
+  rule	elab_exp (env,arraycr,NONE) => (crefe as Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	Types.array_element_type ty => Types.T_REAL &
-	elab_exp (env,ind) => (indexp, PROP(indty, ind_const)) &
+	elab_exp (env,ind,NONE) => (indexp, PROP(indty, ind_const)) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_real_array"),
 			   [crefe,indexp],false,true) &
 	let prop = PROP(Types.T_INTEGER,false)
@@ -806,8 +806,8 @@ end
 
 relation elab_builtin_fill : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties)	=
 
-  rule	elab_exp (env,s) => (s', PROP(sty, sconst)) &
-	elab_exp_list (env,dims) => (dims', dimprops) &
+  rule	elab_exp (env,s,NONE) => (s', PROP(sty, sconst)) &
+	elab_exp_list (env,dims,NONE) => (dims', dimprops) &
 	ceval_list (env, dims',NONE) => dimvals &
 	elab_builtin_fill_2 (env, s', sty, dimvals) => (exp, prop) 
 	--------------------------------------------------
@@ -1360,7 +1360,7 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
 
   rule	fill_default_slots(xs,class,env) => res &
 	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,SCode.MOD(_,_,SOME(dexp))) &
-	elab_exp (env,dexp) => (exp,PROP(t,c1)) &
+	elab_exp (env,dexp,NONE) => (exp,PROP(t,c1)) &
 	match_type(exp,t,tp) => (exp',_) 
 	---------------------------------------------------------------------------------
 	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,SOME(exp'))::res
@@ -1399,7 +1399,7 @@ relation elab_positional_input_args : (Env.Env, Absyn.Exp list, Types.FuncArg li
 	  
   axiom	elab_positional_input_args(_, [], _, slots) => (slots, true)
 	
-  rule	elab_exp(env, e) => (e',PROP(t, c1)) &
+  rule	elab_exp(env, e,NONE) => (e',PROP(t, c1)) &
 	match_type(e', t, vt) => (e'',_) &
 	elab_positional_input_args(env, es, vs,slots) => (slots',c2) &
 	bool_and(c1, c2) => c &
@@ -1422,7 +1422,7 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 	----------------------------
 	elab_named_input_args(env,[],farg,slots) => ([],slots,true) *)
 
-  rule	elab_exp(env, e) => (e',PROP(t, c1)) &
+  rule	elab_exp(env, e,NONE) => (e',PROP(t, c1)) &
 	Debug.fprint("sei", "elab_named_input_arg, elaborated exp\n  id =") &
 	Debug.fprint("sei",id) &
 	find_named_arg_type(id,farg) => vt &
@@ -1712,7 +1712,7 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
   axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.WHOLEDIM, true)
 
-  rule	elab_exp (env,sub) => (sub', PROP(ty, const)) &
+  rule	elab_exp (env,sub,NONE) => (sub', PROP(ty, const)) &
 	elab_subscript_type (ty, sub, sub') => sub''
 	--------------------------------------------
 	elab_subscript (env,Absyn.SUBSCRIPT(sub)) => (sub'', const)
@@ -2141,7 +2141,7 @@ relation ceval : (Env.Env, Exp.Exp, (Absyn.Path * Types.Type) list option)
 	ceval (env, Exp.CAST(Exp.REAL,e),i) => Values.REAL(r)
 
   rule	type_convert_array(expl, Types.T_INTEGER, Types.T_REAL) => expl' &
-	ceval_list(env,expl,st) => vallst
+	ceval_list(env,expl,i) => vallst
 	--------------------------
 	ceval (env, Exp.CAST(Exp.REAL,Exp.ARRAY(Exp.INT,_,expl)),i) => Values.ARRAY(vallst)
 
@@ -2163,7 +2163,7 @@ end
 
 relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list ) => Values.Value =
 	
-  rule	ceval (env,e,false) => res &
+  rule	ceval (env,e,NONE) => res &
 	ceval_matrixeltrow(env,rest) => Values.ARRAY(resl)
 	-------------------
 	ceval_matrixeltrow(env, (e,_)::rest) => Values.ARRAY(res::resl)
@@ -2316,7 +2316,7 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding) => Value
 	-------------------------------------
 	ceval_cref_binding (env,_,Types.UNBOUND) => fail
 	
-  rule	ceval (env,exp,false) => v
+  rule	ceval (env,exp,NONE) => v
 	------------------------
 	ceval_cref_binding (env,Exp.CREF_IDENT(_,[]),Types.EQBOUND(exp,true)) => v
 
@@ -2330,7 +2330,7 @@ end
 relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value) 
 	  => Values.Value =
 
-  rule	ceval(env,exp,false) => Values.INTEGER(n) &
+  rule	ceval(env,exp,NONE) => Values.INTEGER(n) &
 	int_sub(n,1) => n' &
 	list_nth(lst,n') => subval &
 	ceval_subscript_value(env,subs,subval) => res 
@@ -2431,12 +2431,12 @@ relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
 
   axiom	ceval_subscript (env, Exp.WHOLEDIM) => Exp.WHOLEDIM
 
-  rule	ceval (env, e1,false) => v1 &
+  rule	ceval (env, e1,NONE) => v1 &
 	value_exp v1 => e1'
 	-----------------------------------------
 	ceval_subscript (env, Exp.INDEX(e1)) => Exp.INDEX(e1')
 	
-  rule	ceval (env, e1, false) => v1 &
+  rule	ceval (env, e1, NONE) => v1 &
 	value_exp v1 => e1'
 	-----------------------------------------
 	ceval_subscript (env, Exp.SLICE(e1)) => Exp.SLICE(e1')
