@@ -20,16 +20,16 @@
 *)
 
 (**
- ** file:	 daelow.rml
- ** module:      DAELow
- ** description: DAELow a lower form of DAE including sparse matrises for
- ** BLT decomposition, etc.
- **
- ** RCS: %W% %E%
- ** 
+ ** file:	 daeext.rml
+ ** module:      DAEEXT
  **)
 
-(** - Module header *)
+(** 
+ ** The DAEEXT module is an externally implemented module (in file runtime/daeext.cpp) 
+ ** used for the BLT and index reduction algorithms in 'DAELow'. The implementation 
+ ** mainly consists of several bitvectors implemented using std::vector<bool> since 
+ ** such functionality is not available in RML.
+ *)
 
 module DAEEXT:
   
