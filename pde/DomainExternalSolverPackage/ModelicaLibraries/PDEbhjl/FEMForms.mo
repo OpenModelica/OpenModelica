@@ -80,13 +80,13 @@ package FEMForms
         parameter Real laplace_uu[formsize.nu, formsize.nu]=getForm_gradgrad_uu(
             fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
             .nb, nbc, bc);
-        parameter Real laplace_ub[formsize.nu, formsize.nu]=getForm_gradgrad_ub(
+        parameter Real laplace_ub[formsize.nu, formsize.nb]=getForm_gradgrad_ub(
             fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
             .nb, nbc, bc);
         parameter Real mass_uu[formsize.nu, formsize.nu]=getForm_mass_uu(fd.
             ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb, 
             nbc, bc);
-        parameter Real mass_ub[formsize.nu, formsize.nu]=getForm_mass_ub(fd.
+        parameter Real mass_ub[formsize.nu, formsize.nb]=getForm_mass_ub(fd.
             ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb, 
             nbc, bc);
         parameter Real bvals[formsize.nb]=getBlockedValues(fd.ddomain.mesh.
@@ -668,7 +668,7 @@ together with specific boundary conditions.
       
       //parameter Integer s[3] = get_s(mesh, status);
       // Necessary for dependency! Currently not supported by Dymola (BUG?)
-      parameter Integer s[3]=get_s(filename, 1);
+      parameter Integer s[3]=get_s(filename);
       
       parameter Integer nv=s[1] "Number of vertices";
       parameter Integer ne=s[2] "Number of edges on boundary";
@@ -759,7 +759,7 @@ algorithm
     end intervals1D;
     
     function generate2D "Generates 2D triangular mesh" 
-      
+      annotation (Include="#include <bamg.h>", Library="bamg");
       input Real xPolygon[:, 2];
       input Integer bc[size(xPolygon, 1)];
       input String outputfile;
@@ -767,8 +767,7 @@ algorithm
       // h in (0,1) controls the refinement of triangles, less is finer
       output Integer status;
     external "C" bamg_generate_mesh("bamgrun.bat", outputfile, status, xPolygon, 
-        size(xPolygon, 1), size(xPolygon, 2), bc, size(bc, 1), refine)
-        annotation (Include="#include <bamg_generate_mesh.c>");
+        size(xPolygon, 1), size(xPolygon, 2), bc, size(bc, 1), refine);
       /*  
 //for test:  
 algorithm 
@@ -777,12 +776,10 @@ algorithm
     end generate2D;
     
     function sizes2D "Reads sizes mesh-data 2D" 
-      
-      input String mesh;
-      input Integer status;
+      annotation (Include="#include <bamg.h>", Library="bamg");
+      input String meshfile;
       output Integer s[3] "Sizes of mesh-data {vertices, edges, triangles}";
-    external "C" bamg_read_sizes(mesh, s, size(s, 1))
-        annotation (Include="#include <bamg_read_sizes.c>");
+    external "C" bamg_read_sizes(meshfile, s, size(s, 1));
       /*  
 //for test:
 algorithm 
@@ -791,12 +788,11 @@ algorithm
     end sizes2D;
     
     function vertices2D "Reads vertex coordinates 2D" 
-      
+      annotation (Include="#include <bamg.h>", Library="bamg");
       input String mesh;
       input Integer n "Number of vertices";
       output Real v[n, 3];
-    external "C" bamg_read_vertices(mesh, v, size(v, 1), size(v, 2))
-        annotation (Include="#include <bamg_read_vertices.c>");
+    external "C" bamg_read_vertices(mesh, v, size(v, 1), size(v, 2));
       /*  
 //for test:
 algorithm 
@@ -805,12 +801,12 @@ algorithm
     end vertices2D;
     
     function edges2D "Reads sequence of edges on boundary 2D" 
+      annotation (Include="#include <bamg.h>", Library="bamg");
       
       input String mesh;
       input Integer n "Number of edges";
       output Integer e[n, 3];
-    external "C" bamg_read_edges(mesh, e, size(e, 1), size(e, 2))
-        annotation (Include="#include <bamg_read_edges.c>");
+    external "C" bamg_read_edges(mesh, e, size(e, 1), size(e, 2));
       /*  
 //for test:
 algorithm 
@@ -819,12 +815,12 @@ algorithm
     end edges2D;
     
     function triangles2D "Reads sequence of triangles 2D" 
+      annotation (Include="#include <bamg.h>", Library="bamg");
       
       input String mesh;
       input Integer n "Number of triangles";
       output Integer t[n, 4];
-    external "C" bamg_read_triangles(mesh, t, size(t, 1), size(t, 2))
-        annotation (Include="#include <bamg_read_triangles.c>");
+    external "C" bamg_read_triangles(mesh, t, size(t, 1), size(t, 2));
       /*  
 //for test:
 algorithm 
@@ -946,7 +942,8 @@ algorithm
     end getForm_gradgrad;
     
     function getUnknownIndices 
-      annotation (Include="#include <poisson_rheolef.h>", Library="rheolef");
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
       //input Mesh.Data mesh;
       input String meshfilename;
       input Integer meshnv;
@@ -959,7 +956,8 @@ algorithm
     end getUnknownIndices;
     
     function getForm_gradgrad_internal 
-      annotation (Include="#include <poisson_rheolef.h>", Library="rheolef");
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
       //input Mesh.Data mesh;
       input String meshfilename;
       input Integer meshnv;
@@ -977,7 +975,7 @@ algorithm
     /* For debugging */
     
     function writeMatrix 
-      annotation (Include="#include <read_matrix.h>", Library="rheolef");
+      annotation (Include="#include <read_matrix.h>", Library="poisson_rheolef");
       input String filename="foomatrix.txt";
       input Integer n;
       input Integer m;
@@ -986,7 +984,7 @@ algorithm
     end writeMatrix;
     
     function writeVector 
-      annotation (Include="#include <read_matrix.h>", Library="rheolef");
+      annotation (Include="#include <read_matrix.h>", Library="poisson_rheolef");
       input String filename="foovector.txt";
       input Integer nv;
       input Real v[nv];
@@ -1014,7 +1012,8 @@ algorithm
     end getForm_gradgrad_uu;
     
     function getFormSize_internal 
-      annotation (Include="#include <poisson_rheolef.h>", Library="rheolef");
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
       //input Mesh.Data mesh;
       input String meshfilename;
       input Integer meshnv;
@@ -1027,7 +1026,8 @@ algorithm
     end getFormSize_internal;
     
     function getBlockedIndices 
-      annotation (Include="#include <poisson_rheolef.h>", Library="rheolef");
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
       //input Mesh.Data mesh;
       input String meshfilename;
       input Integer meshnv;
@@ -1040,7 +1040,8 @@ algorithm
     end getBlockedIndices;
     
     function getForm_mass_internal 
-      annotation (Include="#include <poisson_rheolef.h>", Library="rheolef");
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
       //input Mesh.Data mesh;
       input String meshfilename;
       input Integer meshnv;
@@ -1141,15 +1142,16 @@ algorithm
     end getForm_gradgrad_ub;
     
     function writeSquareMatrix 
-      annotation (Include="#include <read_matrix.h>", Library="rheolef");
+      annotation (Include="#include <read_matrix.h>", Library="poisson_rheolef");
       input String filename="foomatrix.txt";
       input Integer nv;
       input Real M[nv, nv];
     external "C" write_square_matrix(filename, nv, M);
     end writeSquareMatrix;
-
+    
     function getBlockedValues 
-      annotation (Include="#include <poisson_rheolef.h>", Library="rheolef");
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
       //input Mesh.Data mesh;
       input String meshfilename;
       input Integer meshnv;
