@@ -2283,7 +2283,7 @@ relation get_option_str: ('a option, 'a => string) => string =
 	------------
 	get_option_str (SOME(a),r) => str
 
-  axiom	get_option_str(NONE,_) => "NONE"
+  axiom	get_option_str(NONE,_) => ""
 end
 
 relation unparse_string_comment_option: string option => string =

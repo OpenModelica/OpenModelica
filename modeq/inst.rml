@@ -2031,7 +2031,7 @@ relation inst_var2 : (Env.Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
 	inst_dim_exp_lst(dims,impl) => dims' &
-	dae_declare(cr,ty,attr,NONE,dims',NONE) => dae &
+	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE) => dae &
 	make_array_type(dims,ty) => arrty 
 	-------------------------------
 	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl)
@@ -2514,8 +2514,9 @@ relation inst_array : (Env.Env,
 		       )
 	  => (DAE.Element list, Connect.Sets, Types.Type) =
 	  
-(*  rule	(* If is a function var.*)
-	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  (* Which has an expression binding *)
+  rule	(* If is a function var.*)
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &  (* Which has an 
+							  expression binding *)
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
 	  => (_,_,_,ty,st) &
 	(* Check their types... *)
@@ -2526,10 +2527,8 @@ relation inst_array : (Env.Env,
 	---------------------------------------------------
 	inst_array(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
 	  => ([dae],[],ty)
-*)
 
-  rule	print "DIMEXP in inst_array\n" &
-	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+  rule	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae,csets,ty) 
 	-----------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
@@ -2540,8 +2539,7 @@ relation inst_array : (Env.Env,
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
 	  => ([], csets, (Types.T_NOTYPE,NONE))
 
-  (*
-   rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
+  rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
 	(* Should only generate -one- functioncall *)
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &
 	Exp.contain_functioncall(e) => true &
@@ -2558,13 +2556,8 @@ relation inst_array : (Env.Env,
 	-----------------------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
           => (dae,csets',ty)
-   *)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
-	Mod.print_mod_str mod' => str &
-        Debug.fprint("failtrace", "inst array, mod' =") & 
-	Debug.fprint("failtrace", str) & 
-	Debug.fprint("failtrace", "\n") &
 	inst_var2(env,ci_state,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
@@ -3976,20 +3969,6 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 			 e2,p2 as Types.PROP_TUPLE(t2,_), initial,impl)
 	  => dae
 
-
-(*
-  rule
-	print("\n So far so good.") &
-	
-	print("\n  ") 
-	------------------------------------------
-	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
-			 e2,Types.PROP_TUPLE(t2,_))
-	  => fail
-*)
-
-
-
 	(* PR. *)	
   rule	(*Debug.print("\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE") &
 	Debug.print "\n About to do a static match e2. " &*)
@@ -4032,27 +4011,6 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	Print.print_error_buf "\n"
 	----------
 	inst_eq_equation(e1,Types.PROP(t1,_), e2,Types.PROP(t2,_), initial,impl) => fail
-
-
-(* PR To debug*)
-
-  rule	(* Debug.fprintln("failtrace", "\ne1 is PROP and e2 is PROP_TUPLE. ") &
-        Types.print_type t1 &
-        Types.print_type t2 *)
-	------------------------------------------------------------------
-	inst_eq_equation(e1,Types.PROP(t1,_), e2, Types.PROP_TUPLE(t2,_), initial,impl) => fail
-
-  rule	(*Debug.fprintln("failtrace", "\ne2 is PROP") &
-        print "\n----- e2 is PROP: " &
-        Types.print_type t2  *)
-	-------------------------------------------
-	inst_eq_equation(e1,_, e2,Types.PROP(t2,_), initial,impl) => fail
-
-  rule	(*Debug.fprintln("failtrace", "e1 is PROP") &
-        print "\n----- e2 is PROP: " &
-        Types.print_type t1 *)
-	-----------------------------------------
-	inst_eq_equation(e1,Types.PROP(t1,_), e2, _, initial,impl) => fail
 
 (* No match. *)
   rule	Debug.fprintln("failtrace", "\n No match in inst_eq_equation. ")
@@ -5425,7 +5383,7 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
 	elab_arraydim(env,owncref,dim,NONE,false,NONE) => dimexp &
 	Debug.fprint ("recconst", "calling inst_var\n") &
 	inst_var(cenv, ClassInf.FUNCTION(""),mod', Prefix.NOPRE, [], id, cl, attr,
-		 dimexp, [], [], false (*impl*) ) => (_, _, tp') &
+		 dimexp, [], [], impl ) => (_, _, tp') &
 	Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &

@@ -3259,7 +3259,7 @@ relation get_connection_annotation_str: Absyn.EquationItem => string =
  	parsestr = "Ok" &
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
-	Static.elab_graphics_exp(env,Absyn.CALL(Absyn.CREF_IDENT("Line",[]),fargs), true (*impl*)) => (newexp,_) &	
+	Static.elab_graphics_exp(env,Absyn.CALL(Absyn.CREF_IDENT("Line",[]),fargs), false (*impl*)) => (newexp,_) &	
 	Exp.print_exp_str(newexp) => gexpstr 
 	-------------------------------------------------
 	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_), SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION([Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)])),_))))
@@ -3574,11 +3574,8 @@ end
 
 relation get_annotation_string: (string,Absyn.Annotation) => string =
 
-  rule	print "get_annotation_string. \n" &
-	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
-	print "stripped graphics mod\n" &
+  rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
-	print "built mod\n" &
 	Parser.parsestring totstring => (p,parsestr) & (* Always succeeds, check parsestr for errors *)
 	parsestr = "Ok" &
 	SCode.elaborate(p) => p' &
@@ -3586,11 +3583,10 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod',false) => mod'' &	
-	print "elabed mod\n" &
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &
-	  print "insted class\n" &
+
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
