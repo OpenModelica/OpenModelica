@@ -28,7 +28,7 @@ module Types :
 
   (** - Variables *)
   datatype Var = VAR of Ident			  (* name *)
-		      * Attributes	  (* attributes *)
+		      * Attributes		  (* attributes *)
 		      * bool	                  (* protected *)
 		      * Type			  (* type *)
 		      * Binding			  (* equation modification *)
@@ -39,7 +39,7 @@ module Types :
 			      * Absyn.Direction
 
   datatype Binding = UNBOUND
-		   | EQBOUND of Exp.Exp * bool
+		   | EQBOUND of Exp.Exp * bool (* LS: bool for constant? *)
 		   | VALBOUND of Values.Value
 
   (** - Types *)
@@ -77,8 +77,17 @@ module Types :
   relation lift_array : (Type,int option) => Type
   relation unlift_array : Type => Type
   relation print_type : Type => ()
+  relation print_var : Var => ()
+  relation print_binding : Binding => ()
+  relation make_function_type : (Var list) => Type
+  relation is_parameter: Var => ()
+  relation get_vars: (Var list, Var => () )  => Var list
+  relation get_type_name: Type => string
 
 end
+
+with "dump.rml"
+with "debug.rml"
 
 (** relation: basic_type
  **
@@ -141,20 +150,25 @@ relation subtype : (Type, Type) => bool =
 	-----------------------------------
 	subtype(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
 
-	(* PR. Check of tuples, similar to complex. Just that identifier name do not have to be checked. Only types are checked. *)	
- rule 	(*print("\nDebug: subtype t_tuple") &
-*)	subtype_typelist(type_list1,type_list2) => true (* &
-	print("\nDebug: subtype t_tuple finished.") 
-*)	-----------------------------------
+	(* PR. Check of tuples, similar to complex. Just that
+	 identifier name do not have to be checked. Only types are
+	 checked. *)
+  rule	subtype_typelist(type_list1,type_list2) => true
+	-----------------------------------
 	subtype(T_TUPLE(type_list1), T_TUPLE(type_list2)) => true
 
-  rule	(*print "\nDebug: no matching subtype rule." 
-*)	-----------------------------------
-	subtype(_,_) => false
+  axiom subtype(t1,t2) => false
 
-	(* default *)
+(* What? If not subtye should return false. Doesn't mean no matching rule
 
-  axiom	subtype(_,_) => false
+  rule	Debug.fprint ("tytr", "subtype: no matching subtype rule.\n") &
+	Debug.fcall ("tytr", print_type, t1) &
+	Debug.fprint ("tytr", " <> ") &
+	Debug.fcall ("tytr", print_type, t2) &
+	Debug.fprint ("tytr", "\n")
+	-----------------------------------
+	subtype(t1,t2) => false
+*)
 
 end
 
@@ -360,9 +374,13 @@ relation print_type : Type => () =
 	---------------
 	print_type T_BOOL
 
-  rule	print "composite"
+  rule	print "composite(" &
+	ClassInf.print_state(st) &
+	print ", (" &
+	Dump.print_list(vars, print_var, ", ") &
+	print "))"
 	-----------------
-	print_type T_COMPLEX(_,_)
+	print_type T_COMPLEX(st,vars)
 
   rule	print "array[" & print_arraydim dim & print "] of " &
 	print_type t
@@ -374,27 +392,40 @@ relation print_type : Type => () =
 	------------------------------
 	print_type T_FUNCTION(params,restype)
 
+  rule	print "(" & 
+	Dump.print_list(tys, print_type, ", ") &
+	print ")"
+	---------
+	print_type T_TUPLE(tys)
+
   rule	print "#NOTYPE#"
 	----------------
 	print_type T_NOTYPE
 
 end
 
-relation print_arraydim =
+relation print_arraydim: ArrayDim => () =
 
-  rule	print ":"
-	---------
-	print_arraydim DIM(NONE)
-
-  rule	int_string i => s & print s
-	---------------------------
-	print_arraydim DIM(SOME(i))
-
-  rule	print "#STRANGE#"
-	-----------------
-	print_arraydim _
+  rule	get_arraydim_str ad => s &
+	print s
+	-------
+	print_arraydim ad
 
 end
+
+
+relation get_arraydim_str: ArrayDim => string =
+
+  axiom	get_arraydim_str DIM(NONE) => ":"
+
+  rule	int_string i => s
+	---------------------------
+	get_arraydim_str DIM(SOME(i)) => s
+
+  axiom	get_arraydim_str _ =>  "#STRANGE#"
+
+end
+
 
 relation print_params : FuncArg list => () =
 
@@ -412,3 +443,185 @@ relation print_params : FuncArg list => () =
 end
 
 (*!includecode*)
+
+(* LS *)
+relation print_var : Var => () =
+
+  rule	print_type typ &
+	print n
+	-------
+	print_var VAR(n, attr, prot, typ, bind)
+
+end
+
+(* LS *)
+relation print_binding : Binding => () =
+
+  rule	print "UNBOUND"
+	---------------
+	print_binding UNBOUND
+
+  rule	print "EQBOUND: " &
+	Exp.print_exp exp &
+	Dump.print_select (f, " true", " false")
+	----------------------------------------
+	print_binding EQBOUND (exp,f)
+
+  rule	print "VALBOUND: " &
+	Values.print_val v
+	--------------------
+	print_binding VALBOUND (v)
+
+end
+
+(* LS *)
+relation make_function_type: (Var list) => Type =
+
+  rule	get_input_vars vl => invl &
+	get_output_vars vl => outvl &
+	make_fargs_list invl => fargs &
+	make_return_type outvl => rettype &
+
+	Debug.fprint ("ft", " <fargs: ") & 
+	Debug.fprint_list ("ft", fargs, print_farg, ", ") &
+	Debug.fprint ("ft", " >") &
+
+	Debug.fprint ("ft", " <rettype: ") & 
+	Debug.fcall ("ft", print_type, rettype) &
+	Debug.fprint ("ft", " >")
+	---------------------------------
+	make_function_type vl => T_FUNCTION(fargs, rettype)
+
+end
+
+relation print_farg: FuncArg => () =
+
+  rule	print_type ty & print " " & print n
+	-----------------------------------
+	print_farg ((n,ty))
+
+end
+
+(* LS *)
+relation get_input_vars: Var list  => Var list =
+	
+  rule	get_vars(vl, is_input_var) => vl'
+	---------------------------------
+	get_input_vars vl => vl'
+end
+
+(* LS *)
+relation get_output_vars: Var list  => Var list =
+	
+  rule	get_vars(vl, is_output_var) => vl'
+	---------------------------------
+	get_output_vars vl => vl'
+end
+
+
+(* LS *)
+relation get_vars: (Var list, Var => () )  => Var list =
+
+  axiom	get_vars ([],_) => []
+
+  rule	cond(v) &
+	get_vars (vl, cond) => vl'
+	-------------------
+	get_vars (v::vl, cond) => v::vl'
+
+  rule	not cond(v) &
+	get_vars (vl, cond) => vl'
+	--------------------------
+	get_vars (v::vl, cond) => vl'
+
+end	
+
+
+(* LS *)
+relation is_input_var: Var => () =
+
+  (* LS: false means not protected, hence we ignore protected variables *)
+  axiom	is_input_var VAR(n, ATTR(fl,ac,var,Absyn.INPUT), false, ty, bnd)
+
+end
+
+relation is_output_var: Var => () =
+
+  (* LS: false means not protected, hence we ignore protected variables *)
+  axiom	is_output_var VAR(n, ATTR(fl,ac,var,Absyn.OUTPUT), false, ty, bnd)
+
+end
+
+(* LS *)
+relation make_fargs_list: Var list => FuncArg list =
+
+  axiom	make_fargs_list [] => []
+
+  rule	(*is_input_var v &*)
+	make_fargs_list vl => fargl
+	------------------
+	make_fargs_list (VAR(n,attr,pr,ty,bnd) :: vl) => ((n,ty)::fargl)
+
+  rule	print "#-- Not an input var:" & print n
+	---------------------------------------
+	make_fargs_list (VAR(n,attr,pr,ty,bnd)::vl) => fail
+
+end
+
+(* LS *)
+relation make_return_type: Var list => Type =
+
+  axiom	make_return_type [] => T_NOTYPE
+
+  rule	make_return_type_single var => ty
+	---------------------------------
+	make_return_type [var] => ty
+
+  rule	make_return_type_tuple vl => tys
+	--------------------------------
+	make_return_type vl => T_TUPLE(tys)
+
+end
+
+(* LS *)
+relation make_return_type_single: Var => Type =
+
+  axiom	make_return_type_single VAR(n,attr,pr,ty,bnd) => ty
+
+end
+
+(* LS *)
+relation make_return_type_tuple: (Var list) => Type list =
+
+  axiom	make_return_type_tuple [] => []
+
+  rule	make_return_type_tuple vl => tys
+	--------------------------------
+	make_return_type_tuple VAR(n,attr,pr,ty,bnd)::vl => ty::tys
+
+end
+
+(* LS *)
+relation is_parameter: Var => () =
+
+  (* LS: false means not protected, hence we ignore protected variables *)
+  axiom	is_parameter VAR(n, ATTR(fl, ac, Absyn.PARAM, dir), false, ty, bnd)
+
+end
+
+relation get_type_name: Type => string =
+
+  axiom	get_type_name T_INTEGER	=> "Integer"
+  axiom	get_type_name T_REAL	=> "Real"
+  axiom	get_type_name T_STRING	=> "String"
+  axiom	get_type_name T_BOOL	=> "Boolean"
+
+  rule	ClassInf.get_state_name st => n
+	-------------------------------
+	get_type_name T_COMPLEX(st, _) => n
+
+  axiom	get_type_name _ => "Not nameable type or no type"
+
+
+end
+
