@@ -112,6 +112,7 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 
   rule	SCode.elaborate(p) => p' &
 	Absyn.cref_to_path(cr) => path &
+	print "instanitating class\n" &
 	Inst.instantiate_class(p',path) => dae &
 	DAE.dump_debug dae &
 	Print.print_buf "dumped dae:\n" &
@@ -266,7 +267,11 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
 	
   rule	Parser.parse(name) => p1 &
-	update_program(p1,p) => newp 
+	update_program(p1,p) => newp &
+	print "loaded file\n" &
+	Dump.dump newp &
+	Print.get_string()  => str &
+	print str 
 	---------------------------------------------------
 	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadFile",_),
 	    Absyn.FUNCTIONARGS([Absyn.STRING(name)],_)))]),st as SYMBOLTABLE(p,s,ic,iv))

@@ -189,12 +189,30 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 	instantiate_class([],cr) => fail
 
   rule	Builtin.initial_env => env &
+	print "built initial env\n" &
 	inst_class_decls(env,cdecls,path) => (env',dae1) &
+	print "inst, class decls\n" &
 	inst_class_in_program(env',cdecls,path) => dae
 	-----------------------------
-	instantiate_class(cdecls, path as Absyn.IDENT(name2)) => DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))]) 
+	instantiate_class(cdecls, path as Absyn.IDENT(name2)) => DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))])
 
-  rule	Print.print_buf "- inst_program failed\n" 
+  rule	Builtin.initial_env => env &
+	print "initial env built\n" &
+	inst_class_decls(env,cdecls,path)=> (env',_) &
+	print "class decls instanitated\n" &
+	Env.print_env env' &
+	Print.get_string() => str &
+	print str &
+	Lookup.lookup_class(env',path) => (cdef, env'') &
+	print "class looked up\n" &
+	inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) => (dae,_,_,_) 
+	--------------------------------------------
+	instantiate_class(cdecls, path as Absyn.QUALIFIED(name,_)) 
+	  => DAE.DAE([DAE.COMP(name,DAE.DAE(dae))])
+	
+
+  rule	Print.print_buf "- instantiate_class failed\n" &
+	print "instantiate_class failed\n" 
 	------------
 	instantiate_class(_,_) => fail
 end
@@ -211,6 +229,11 @@ relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Elemen
 	-------------------------------------------------------------
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs, path as Absyn.IDENT(name2)) => dae
   axiom	inst_class_in_program(env,[],_) => []
+	
+  rule	Print.print_buf "inst_class_in_program failed\n env:\n" &
+	Env.print_env env
+	-------------------------------
+	inst_class_in_program(env,_,_) => fail
 
 end
 
@@ -227,7 +250,13 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 	-----------------------------
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.IDENT(name2)) => (env',dae2)
 
-  axiom	inst_class_decls(env,[],_) => (env,[])
+  rule	print "empty program\n" 
+	------------------------
+	inst_class_decls(env,[],_) => (env,[])
+	
+  rule	print "inst_class_decls failed\n" 
+	--------------------
+	inst_class_decls(_,_,_) => fail
 end
 
 (** relation: make_env_from_program
