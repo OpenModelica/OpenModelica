@@ -1,0 +1,353 @@
+(**
+ ** file:	 dump.rml
+ ** module:      Dump
+ ** description: debug printing
+ **
+ ** RCS: $Id$
+ **
+ ** Printing routines for debugging of the AST.  These relations do
+ ** nothing but print the data structures to the standard output.
+ **
+ ** The implementation of the relations are excluded from the report,
+ ** as they occupy a lot of space and do not convey any useful
+ ** semantic information.
+ **)
+
+
+module DumpGraphviz:
+
+  with "absyn.rml"
+  with "debug.rml"
+  with "graphviz.rml"
+
+  type Ident = string
+  type Node = Graphviz.Node
+
+  (* Dump routines for debugging of AST *)
+
+  relation dump: Absyn.Program => ()
+end
+
+
+
+
+(*!ignorecode*)
+
+with "classinf.rml"
+with "dump.rml"
+
+(* Relations *)
+
+relation dump : Absyn.Program => () =
+	
+  rule	(* print "> Beginning of rule dump\n" & *)
+	build_graphviz(p) => r &
+	Graphviz.dump(r)
+	(* & print "> End of rule dump\n" *)
+	----------------------
+	dump p 
+end
+
+
+relation build_graphviz : Absyn.Program => Node =
+
+  rule	(* print "> Beginning of rule build_graphviz\n" & *)
+	print_classes cs => nl
+	(* & print "> End of rule build_graphviz\n" *)
+	----------------------
+	build_graphviz(cs) => Graphviz.NODE("ROOT",[],nl)
+
+end
+
+
+relation print_classes : Absyn.Class list => Node list =
+
+  axiom	print_classes [] => []
+
+  rule	(* print "> Beginning of rule print_classes\n" & *)
+	print_class c => node &
+	print_classes cs => nl
+	(* & print "> End of rule print_classes\n" *)
+	-----------------------
+	print_classes c::cs => node::nl
+
+end
+
+relation print_class: Absyn.Class => Node =
+
+  rule	(* print "> Beginning of rule print_class\n" & *)
+	Absyn.restr_string r => rs &
+	print_parts parts => nl
+	(* & print "> End of rule print_class\n" *)
+	-----------------------
+	print_class(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => Graphviz.NODE(rs,[],nl)
+
+end
+
+
+relation print_parts : Absyn.ClassPart list => Node list =
+
+  axiom print_parts [] => []
+	
+  rule	(* print "> Beginning of rule print_parts\n" & *)
+	print_class_part(c) => node &
+	print_parts cs => nl
+	(* & print "> End of rule print_parts\n" *)
+	-----------------------------
+	print_parts c::cs => node::nl
+end
+
+(**)
+
+relation print_class_part: Absyn.ClassPart => Node =
+
+  rule	(* print "> Beginning of rule print_class_part\n" & *)
+	print_elements el => nl
+	(* & print "> End of rule print_class_part\n" *)
+	-----------------------
+	print_class_part(Absyn.PUBLIC(el)) => Graphviz.NODE("PUBLIC",[],nl)
+
+
+  rule	(* print "> Beginning of rule print_class_part\n" & *)
+	print_elements el => nl
+	(* & print "> End of rule print_class_part\n" *)
+	-----------------------
+	print_class_part(Absyn.PROTECTED(el)) => Graphviz.NODE("PROTECTED",[],nl)
+
+
+  rule	print_equations eqs => nl
+	------------------------
+	print_class_part(Absyn.EQUATIONS(eqs)) => Graphviz.NODE("EQUATIONS",[],nl)
+
+  rule	print_algorithms eqs => nl
+	------------------------
+	print_class_part(Absyn.ALGORITHMS(eqs)) => Graphviz.NODE("ALGORITHMS",[],nl)
+
+(*
+  rule	print_constraints eqs => nl
+	------------------------
+	print_class_part(Absyn.CONSTRAINTS(eqs)) => Graphviz.NODE("CONSTRAINTS",[],nl)
+*)
+
+
+  rule	(* print "> Error in print_class_part\n" *)
+	print ""
+	---------------------------------
+	print_class_part(_) => Graphviz.NODE("PART_ERROR",[],[])
+end
+
+
+(**)
+
+
+relation print_elements: Absyn.Element list => Node list =
+
+  axiom	print_elements [] => []
+
+  rule	(* print "> Beginning of rule print_elements\n" & *)
+	print_element e => node &
+	print_elements el => nl
+	(* & print "> End of rule print_elements\n" *)
+	--------------------------
+	print_elements e::el => node::nl
+	
+end
+
+(**)
+
+relation make_bool_attr: (string,bool) => Graphviz.Attribute =
+
+  rule	select_string(flag,"true","false") => s
+	---------------------------------------
+	make_bool_attr (str,flag) => Graphviz.ATTR(str,s)
+
+end
+
+relation make_leaf: (string, Graphviz.Attribute list) => Node =
+
+  axiom	make_leaf (str, al) => Graphviz.NODE(str,al,[])
+
+end
+
+
+relation print_element: Absyn.Element => Node =
+
+  rule	(* print "> Beginning of rule print_element\n" & *)
+	make_bool_attr("final",final) => fa &
+	print_elementspec spec => elsp
+	(* & print "> End of rule print_element\n" *)
+	------------------
+	print_element (Absyn.ELEMENT(final,_,spec)) => Graphviz.NODE("ELEMENT",[fa],[elsp])
+
+end
+
+
+relation print_path: Absyn.Path => Node =
+
+  rule	Absyn.path_string p => s &
+	make_leaf(s,[]) => pn
+	--------------------
+	print_path p => pn
+end
+
+
+relation print_elementspec: Absyn.ElementSpec => Node =
+
+  rule	print_class cl => nl &
+	make_bool_attr("replaceable",repl) => ra
+	--------------------
+	print_elementspec(Absyn.CLASSDEF(repl, cl)) => Graphviz.NODE("CLASSDEF",[ra],[])
+
+  rule	print_path p => en
+	---------------------------------
+	print_elementspec(Absyn.EXTENDS(p, l)) => Graphviz.NODE("EXTENDS",[],[en])
+
+  rule	print_path(p) => pn &
+	print_components(cs) => cns
+	--------------------------
+	print_elementspec(Absyn.COMPONENTS(attr,p,cs)) => Graphviz.NODE("COMPONENTS",[],pn::cns)
+
+  rule	print ""
+	--------
+	print_elementspec(_) => Graphviz.NODE("ELSPEC_ERROR",[],[])
+end
+
+relation print_components: Absyn.Component list => Node list =
+
+  axiom	print_components [] => []
+
+  rule	print_component c => n &
+	print_components cs => nl
+	-------------------------
+	print_components c::cs => n::nl
+
+end
+
+
+relation print_component: Absyn.Component => Node =
+
+  rule	print "" &
+	let nn = Graphviz.NODE(n,[],[]) 
+	--------
+	print_component(Absyn.COMPONENT(n,a,m)) => Graphviz.LNODE("COMPONENT",[n],[],[nn])
+end
+
+
+relation print_equations: Absyn.Equation list => Node list =
+
+  axiom	print_equations [] => []
+
+  rule	print_equation e => node &
+	print_equations el => nl
+	--------------------------
+	print_equations e::el => node::nl
+	
+end
+
+
+relation print_equation: Absyn.Equation => Node =
+
+  rule	Dump.print_exp_str e => s
+	------------------
+	print_equation (Absyn.EQ_EXPR(e)) => Graphviz.LNODE("EQ_EXPR",[s],[],[])
+
+  rule	Dump.print_exp_str e1 => s1 &
+	Dump.print_exp_str e2 => s2 &
+	string_append (s1, " = ") => s &
+	string_append (s, s2) => s'
+	---------------------------
+	print_equation (Absyn.EQ_EQUALS(e1,e2)) => Graphviz.LNODE("EQ_EQUALS",[s'],[],[])
+
+  rule	Dump.print_component_ref_str c1 => s1 &
+	Dump.print_component_ref_str c2 => s2 &
+	string_append ("connect(", s1) => s &
+	string_append (s, s2) => s' &
+	string_append (s', ")") => s''
+	---------------------------
+	print_equation (Absyn.EQ_CONNECT(c1,c2)) => Graphviz.LNODE("EQ_CONNECT",[s''],[],[])
+
+  rule	print_equations eqs => eqn &
+	Dump.print_exp_str e => es
+	------------------------
+	print_equation (Absyn.EQ_FOR(n,e,eqs)) => Graphviz.LNODE("EQ_FOR",[n,es],[],eqn)
+
+  axiom	print_equation (_) => Graphviz.NODE("EQ_ERROR",[],[])
+
+end
+
+
+relation print_algorithms: Absyn.Algorithm list => Node list =
+
+  axiom	print_algorithms [] => []
+
+  rule	print_algorithm e => node &
+	print_algorithms el => nl
+	--------------------------
+	print_algorithms e::el => node::nl
+	
+end
+
+
+relation print_algorithm: Absyn.Algorithm => Node =
+
+  rule	print "" 
+	------------------
+	print_algorithm (Absyn.ALG_ASSIGN(cr,e)) => Graphviz.NODE("ALG_ASSIGN",[],[])
+
+  rule	print ""
+	--------
+	print_algorithm (_) => Graphviz.NODE("ALG_ERROR",[],[])
+end
+
+
+(*
+relation print_constraints: Absyn.Constraint list => Node list =
+
+  axiom	print_constraints [] => []
+
+  rule	print_constraint e => node &
+	print_constraints el => nl
+	--------------------------
+	print_constraints e::el => node::nl
+	
+end
+
+
+relation print_constraint: Absyn.Constraint => Node =
+
+  rule	print "" 
+	------------------
+	print_constraint (Absyn.INEQ_EXPR(e)) => Graphviz.NODE("INEQ_EXPR",[],[])
+
+  rule	print ""
+	--------
+	print_constraint (_) => Graphviz.NODE("ALG_ERROR",[],[])
+end
+*)
+
+
+
+
+relation variability_symbol: Absyn.Variability => string =
+
+  axiom variability_symbol(Absyn.VAR) => ""
+  axiom	variability_symbol(Absyn.DISCRETE) => "DISCRETE"
+  axiom	variability_symbol(Absyn.PARAM) => "PARAM"
+  axiom	variability_symbol(Absyn.CONST) => "CONST"
+
+end
+
+relation direction_symbol: Absyn.Direction => string =
+
+  axiom direction_symbol(Absyn.BIDIR) => ""
+  axiom	direction_symbol(Absyn.INPUT) => "INPUT"
+  axiom	direction_symbol(Absyn.OUTPUT) => "OUTPUT"
+
+end
+
+relation select_string: (bool,string,string) => string =
+
+  axiom	select_string(true,a,b) => a
+  axiom	select_string(false,a,b) => b
+
+end
