@@ -31,7 +31,7 @@
 (* This module is responsible for the lookup mechanism in Modelica.
  ** It is responsible for looking up classes, variables, etc. in the
  ** environment 'Env' by following the lookup rules.
- ** The importand relations are:
+ ** The most important relations are:
  ** lookup_class - to find a class 
  ** lookup_type - to find types (e.g. functions, types, etc.)
  ** lookup_var - to find a variable in the instance hierarchy.
@@ -46,7 +46,7 @@ module Lookup:
   with "env.rml"
   with "explode.rml"
 
-  relation lookup_type       : (Env.Env, Absyn.Path, bool (*msg flag *)) 
+  relation lookup_type       : (Env.Env, Absyn.Path, bool (* msg flag *)) 
 	  => (Types.Type,Env.Env)
   relation lookup_class      : (Env.Env, Absyn.Path,bool) 
 	  => (SCode.Class, Env.Env)
@@ -85,14 +85,20 @@ with "staticexp.rml"
  **)
 
 (** relation: lookup_type
+ ** 
+ ** This relation finds a specified type in the environment. 
+ ** If it finds a function instead, this will be implicitly instantiated 
+ ** and lookup will start over. 
+ **
+ ** Arg1: Env.Env is the environment which to perform the lookup in
+ ** Arg2: Absyn.Path is the type to look for
  **)
-
 relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *)) 
 	  => (Types.Type, Env.Env) =
 
 	(* Lookup of simple names *)
   rule	
-(*Debug.fprint ("lotype","lookup_type(")	&
+	(*Debug.fprint ("lotype","lookup_type(") &
 	Debug.fcall ("lotype",Env.print_env, env) &
 	Debug.fprint ("lotype",", ") & 
 	Debug.fcall ("lotype",Dump.print_path,path) &
@@ -163,12 +169,14 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 end
 
 (** relation: lookup_class
- ** Arg1: enviroment where to look
- ** Arg2: the path for the class
- ** Arg3: a bool to controll the output of error-messages. If it is true
+ ** 
+ ** Tries to find a specified class in an environment
+ ** 
+ ** Arg1: The enviroment where to look
+ ** Arg2: The path for the class
+ ** Arg3: A Bool to control the output of error-messages. If it is true
  **       then it outputs a error message if the class is not found.
  **)
-
 relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
   
   rule	(*print "searching for " & print name & print "\n" & *)
@@ -240,9 +248,9 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 end
 
 (** relation: lookup_qualified_imported_class_in_env
+ ** 
  ** This relation looks up imported names on the qualified form: import A.B;
-**)
-
+ **)
 relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 						 Absyn.Path) 
 	  => (SCode.Class, Env.Env) =
@@ -272,6 +280,11 @@ relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 	lookup_qualified_imported_class_in_env(f::fs, env, id) => (c, env')
 end
 
+(** relation: lookup_qualified_imported_class_in_frame
+ ** 
+ ** 
+ **
+ **)
 relation lookup_qualified_imported_class_in_frame: ( Env.Item list,Env.Env,
     SCode.Ident)
 	    => (SCode.Class, Env.Env) =
@@ -348,7 +361,11 @@ relation lookup_qualified_imported_class_in_frame: ( Env.Item list,Env.Env,
 end
 
 
-
+(** relation: more_lookup_unqualified_imported_class_in_frame
+ ** 
+ ** Helper relation for lookup_unqualified_imported_class_in_frame
+ ** 
+ **)
 relation more_lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.Env, SCode.Ident)
 	    => bool =
 
@@ -370,6 +387,11 @@ relation more_lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.En
   axiom  more_lookup_unqualified_imported_class_in_frame([],_,_) => false
 end
 
+(** relation: lookup_unqualified_imported_class_in_frame
+ ** 
+ ** Finds a class from an unqualified import locally in a frame
+ **
+ **)
 relation lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.Env, SCode.Ident)
 	    => (SCode.Class, Env.Env, bool (*unique*) ) =
 	    
@@ -395,6 +417,11 @@ relation lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.Env, SC
 	  => (c, env', unique)
 end
 
+(** relation: lookup_record_constructor_class
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
   rule	lookup_recconst_in_env(env,path) => (c, env') 
@@ -407,9 +434,8 @@ end
  **
  ** This relation takes a type name and an env and looks up the class.
  ** Then it determines the full path for the type, such that it can be looked up
-** from any environment.
-**)
-
+ ** from any environment.
+ **)
 relation complete_path: (Env.Env, Absyn.Path) => Absyn.Path =
 
   rule	(* Class found on top level. Nothing to complete. *)
@@ -479,8 +505,12 @@ looks in the types
  *)
 
 (** relation: lookup_var
+ **
+ ** This relation tries to finds a variable in the environment
+ ** 
+ ** Arg1: The environment to search in
+ ** Arg2: The variable to search for
  **)
-
 relation lookup_var : (Env.Env, Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
@@ -500,6 +530,13 @@ relation lookup_var : (Env.Env, Exp.ComponentRef)
 	lookup_var(_,_) => fail
 end
 
+(** relation: lookup_var_internal
+ **
+ ** 
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_var_internal : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
@@ -514,12 +551,16 @@ relation lookup_var_internal : (Env.Env,Exp.ComponentRef)
 end
 
 (** relation: lookup_var_in_packages
+ **
  ** This relation is called when a lookup of a variable with qualified names does 
- ** not have the first element as a component, e.g. A.B.C is looked up where A is not a component.
- ** This implies that A is a class, and this class should be temporary instantiated, and the lookup should 
+ ** not have the first element as a component, e.g. A.B.C is looked up where A is 
+ ** not a component. This implies that A is a class, and this class should be 
+ ** temporary instantiated, and the lookup should 
  ** be performed within that class.
-**)
-
+ **
+ ** Arg1: The environment to search in
+ ** Arg2: The variable to search for
+ **)
 relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef) 
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
@@ -534,7 +575,6 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	lookup_var_in_packages(env5,id2) => (attr,ty,bind) 
 	--------------------------------------------------
 	lookup_var_in_packages (env, Exp.CREF_QUAL(id1, [], id2 as Exp.CREF_IDENT(_,_))) => (attr,ty,bind)
-	
 
   rule	lookup_class(env, Absyn.IDENT(id),false) => (c as SCode.CLASS(n,_,encflag,r,_), env2) &
 	Env.open_scope(env2,encflag,SOME(n)) => env3 &
@@ -545,7 +585,6 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	lookup_var_in_packages(env5,cref) => (attr,ty,bind) 
 	--------------------------------------------------
 	lookup_var_in_packages (env, Exp.CREF_QUAL(id, [], cref)) => (attr,ty,bind)
-
 
   rule	lookup_var_local(env,cr) => (attr,ty,bind)
 	--------------------------------------------------
@@ -570,11 +609,14 @@ end
  ** This relation is very similar to `lookup_var', but it only looks
  ** in the topmost environment frame, which means that it only finds
  ** names defined in the local scope.
+ **
  ** ----EXCEPTION---: When the topmost scope is the scope of a for loop, the lookup
  ** continues on the next scope. This to allow variables in the local scope to 
  ** also be found even if inside a for scope.
+ **
+ ** Arg1: The environment to search in
+ ** Arg2: The variable to search for
  **)
-
 relation lookup_var_local : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
@@ -589,6 +631,12 @@ relation lookup_var_local : (Env.Env,Exp.ComponentRef)
 	  => (attr,ty,binding)
 end
 
+
+(** relation: lookup_ident_local
+ **
+ **
+ **
+ **)
 relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,(SCode.Element*Types.Mod) option,bool) =
 
   rule  lookup_var2(ht, id) => (fv,c,i)
@@ -597,7 +645,11 @@ relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,(SCode.Elemen
 
 end
 
-(* Same as lookup_ident_local, except check all frames *)
+(** relation: lookup_ident
+ **
+ ** Same as lookup_ident_local, except check all frames 
+ **
+ **)
 relation lookup_ident : (Env.Env, SCode.Ident) 
 	  => (Types.Var,(SCode.Element*Types.Mod) option,bool) =
 
@@ -619,7 +671,11 @@ end
 
 (**  Function lookup *)
 
-(* PR. Returns a list of types that the function has. *)
+(** relation: lookup_functions_in_env
+ **
+ ** Returns a list of types that the function has. 
+ **
+ **)
 relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 
         (* PR. Do nothing, could have used a axiom. But this led to an
@@ -674,9 +730,12 @@ end
 
 (** - Internal relations *)
 
+(** Type lookup *)
 
-(**  Type lookup *)
-
+(** relation: lookup_type_in_env
+ ** 
+ **
+ **)
 relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type,Env.Env) =
 
   rule	lookup_type_in_frame(ht,httypes,env,id) => (c,env')
@@ -688,8 +747,12 @@ relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type,Env.Env) =
 	lookup_type_in_env(f::fs,id) => (c,f::env')
 
 end
-(**)
 
+(** relation: lookup_type_in_frame
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_type_in_frame: (Env.BinTree, (* Classes and vars*)
 				Env.BinTree, (* types *)
 				 Env.Env,
@@ -735,14 +798,18 @@ relation lookup_type_in_frame: (Env.BinTree, (* Classes and vars*)
 end
 (**)
 
-(*PR. This actually only looks up the function name and find all
- corresponding types that have this function name.  *)
+
+(** relation: lookup_functions_in_frame
+ ** 
+ ** This actually only looks up the function name and find all
+ ** corresponding types that have this function name.
+ ** 
+ **)
 relation lookup_functions_in_frame: (Env.BinTree, (*Classes and vars*)
 				     Env.BinTree, (*Types *)
 				     Env.Env,
 				     SCode.Ident)
 	  => Types.Type list =
-
 
   rule	Env.tree_get(httypes, id, Env.myhash) => Env.TYPE(tps)
 	---------------------------------------------------------
@@ -778,6 +845,11 @@ relation lookup_functions_in_frame: (Env.BinTree, (*Classes and vars*)
 	lookup_functions_in_frame(ht,httypes,env,id) => tps
 end
 
+(** relation: lookup_recconst_in_env
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_recconst_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
   rule	lookup_recconst_in_frame(ht,env,id) => (c, _) 
@@ -791,8 +863,9 @@ relation lookup_recconst_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) 
 end
 
 (** relation: lookup_recconst_in_frame
- **This relation lookups the implicit record constructor class (function) of a record in a frame
-**)
+ **
+ ** This relation lookups the implicit record constructor class (function) of a record in a frame
+ **)
 relation lookup_recconst_in_frame: (Env.BinTree, Env.Env, SCode.Ident)
 	  => (SCode.Class, Env.Env) =
 
@@ -811,8 +884,11 @@ relation lookup_recconst_in_frame: (Env.BinTree, Env.Env, SCode.Ident)
 	lookup_recconst_in_frame(ht,env,id) => (cdef,env)
 end
 
-(**)
-
+(** relation: build_record_constructor_class
+ ** 
+ ** 
+ ** 
+ **)
 relation build_record_constructor_class :(SCode.Class, Env.Env) => SCode.Class =
 
   rule	build_record_constructor_elts(elts,env) => funcelts &
@@ -822,6 +898,11 @@ relation build_record_constructor_class :(SCode.Class, Env.Env) => SCode.Class =
 	    => SCode.CLASS(id,false,false,SCode.R_FUNCTION,SCode.PARTS(reselt::funcelts,[],[],[],[],NONE))
 end
 	
+(** relation: build_record_constructor_elts
+ ** 
+ ** 
+ ** 
+ **)
 relation build_record_constructor_elts: (SCode.Element list, Env.Env) => SCode.Element list =
   rule	build_record_constructor_elts (rest,env) => res
 	-------------------------------------------
@@ -830,7 +911,12 @@ relation build_record_constructor_elts: (SCode.Element list, Env.Env) => SCode.E
   axiom	build_record_constructor_elts([],_) => []
 end
 	
-(** This relation builds the result element of a record constructor function, i.e. the returned variable *)
+(** relation: build_record_constructor_result_elt
+ ** 
+ ** This relation builds the result element of a record constructor function, 
+ ** i.e. the returned variable
+ ** 
+ **)
 relation build_record_constructor_result_elt: (SCode.Element list, SCode.Ident, Env.Env) => SCode.Element =
 	
   rule	build_record_constructor_result_mod(elts) => submodlst
@@ -839,14 +925,16 @@ relation build_record_constructor_result_elt: (SCode.Element list, SCode.Ident, 
 	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,SCode.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE),NONE)
 end
 	
-(* This relation builds up the modification list for the output element of a record constructor.
+(** relation: build_record_constructor_result_mod
+ **
+ ** This relation builds up the modification list for the output element of a record constructor.
  ** Example: 
  **   record foo
  **      Real x;
  **      String y;
  **      end foo;
  **  => modifier list become 'result.x=x, result.y=y'
- *)
+ **)
 relation build_record_constructor_result_mod: (SCode.Element list) => SCode.SubMod list =
 	
   rule	build_record_constructor_result_mod(rest) => restmod
@@ -856,10 +944,12 @@ relation build_record_constructor_result_mod: (SCode.Element list) => SCode.SubM
 
   axiom	build_record_constructor_result_mod([]) => []
 end
-(** 
+
+(** relation: build_record_constructor_varlst
+ **
  ** This relation takes a class  (`SCode.Class') which holds a definition of a record
-   ** and builds a list of variables of the record used for constructing a record constructor function.
-*)
+ ** and builds a list of variables of the record used for constructing a record constructor function.
+ **)
 relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var list =
 
   rule	build_varlst_from_elts(elts,env) => inputvarlst &
@@ -871,6 +961,11 @@ relation build_record_constructor_varlst : (SCode.Class,Env.Env) => Types.Var li
 	    => Types.VAR("result",Types.ATTR(false,SCode.RW,SCode.VAR,Absyn.OUTPUT),false,ty,Types.UNBOUND)::inputvarlst
 end
 
+(** relation: build_varlst_from_elts
+ ** 
+ ** 
+ ** 
+ **)
 relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list =
 
   rule	build_varlst_from_elts(rest,env) => vars &
@@ -889,6 +984,11 @@ end
 
 (**  Class lookup *)
 
+(** relation: lookup_class_in_env
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
 
   rule	(*print "looking in env for " & print id &*)
@@ -932,6 +1032,7 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
 end
 
 (** relation: lookup_class_in_class
+ **
  ** This relation looks up an inner class of a class (The outer class can be a package)
  ** Environment is passed along in case it needs to be modified...
  ** bool determines whether we restrict lookup for encapsulated class (true).
@@ -1122,7 +1223,11 @@ relation lookup_class_in_parts: (Env.Env, SCode.Ident, SCode.Element list) => (S
   axiom	lookup_class_in_parts(env, name, []) => fail
 end
 
-(**)
+(** relation: lookup_class_in_frame
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_class_in_frame: (Env.Frame,Env.Env,
 				 SCode.Ident,bool)
 	  => (SCode.Class, Env.Env) =
@@ -1162,7 +1267,11 @@ relation lookup_class_in_frame: (Env.Frame,Env.Env,
 	  => fail
 end
 
-(**)
+(** relation: lookup_var2
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_var2 : (Env.BinTree, SCode.Ident)
 	  => (Types.Var, (SCode.Element*Types.Mod) option, bool) =
 
@@ -1176,7 +1285,6 @@ end
  ** This relation checks a list of subscripts agains type, and removes
  ** dimensions from the type according to the subscripting.
  **)
-
 relation check_subscripts : (Types.Type, Exp.Subscript list)
 	  => Types.Type =
 
@@ -1242,7 +1350,12 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 	check_subscripts(t,s) => fail
 
 end
-(**)
+
+(** relation: lookup_in_var
+ ** 
+ ** 
+ ** 
+ **)
 relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	  => (Types.Attributes,Types.Type,Types.Binding) =
 
@@ -1282,7 +1395,6 @@ end
  ** is looked up, and `lookup_in_var' is used to for further lookup in
  ** the result of that lookup.
  **)
-
 relation lookup_var_f : (Env.BinTree,
 			 Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
@@ -1325,7 +1437,6 @@ end
  ** might cause problems.  This should be solved using implicit
  ** instantiation, but that is future work.
  **)
- 
 relation lookup_class_in_package : (SCode.Class, Absyn.Path)
 	  => (SCode.Class, Env.Env) =
 
@@ -1336,11 +1447,11 @@ relation lookup_class_in_package : (SCode.Class, Absyn.Path)
 				 path) => (c, Env.empty_env)
 
 end
+
 (** relation: lookup_class_in_elements
  ** 
  ** This relation helps `lookup_class_in_package' to do its thing.
  **)
-
 relation lookup_class_in_elements : (SCode.Element list, Absyn.Path)
 	  => SCode.Class =
 
