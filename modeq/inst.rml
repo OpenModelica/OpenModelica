@@ -5049,9 +5049,9 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
         inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val))
 
-  rule  Print.print_error_buf "# unknown type for variable.\n" 
+  rule  (* Print.print_error_buf "# unknown type for variable.\n"  *)
         -----------------------------------------
-        inst_dae_variable_attributes(_,_,_) => fail
+        inst_dae_variable_attributes(_,_,_) => NONE
 
 end
 (*  x02lucpo FIXME: check the type of variable for the fixed because there is a difference between *)
