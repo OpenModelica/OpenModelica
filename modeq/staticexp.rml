@@ -26,6 +26,7 @@ module StaticExp :
   relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
+  relation value_exp : Values.Value => Exp.Exp
 
 end
 
@@ -57,6 +58,17 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
 	elab_binary (e1'', t, c1, op, e2'', t, c2) => (e, t', c)
 	-------------------------------------------------------
 	elab_exp (env,Absyn.BINARY(e1,op,e2)) => (e,t',c)
+
+	(** FIXME: UNARY *)
+	(** FIXME: LBINARY *)
+
+  rule	elab_exp (env,e) => (e',t,c) &
+	elab_lunaryop op => op' &
+	print "  lunary: " &
+ 	Exp.print_exp e' & print " (" & Types.print_type t & print ")\n" &
+	t = Types.T_BOOL
+	-----------------------
+	elab_exp (env,Absyn.LUNARY(op,e)) => (Exp.LUNARY(op',e'),t,c)
 
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
@@ -237,28 +249,30 @@ relation elab_cref2 : (Env.Env,
 
   rule	value_exp v => e
 	----------------
-	elab_cref2 (_,cr,_,t, Env.VALBOUND(v)) => (e,true)
+	elab_cref2 (_,cr,_,t, Types.VALBOUND(v)) => (e,true)
 
-  rule	elab_exp (env,exp) => (exp', t', c) &
-	c = true (* & *)
-	(* t = t' *) (* FIXME: cast *)
-	------------------------
-	elab_cref2 (env,cr,_,t, Env.EQBOUND(exp)) => (Exp.CREF(cr),true)
+  axiom	elab_cref2 (env,cr,_,t, Types.EQBOUND(exp,true)) => (Exp.CREF(cr),true)
 
   rule	print "# Constant or parameter with a non-constant initializer\n" &
 	print "# component: " & Exp.print_component_ref cr & print " = " &
-	Dump.print_exp exp & print "\n"
+	Exp.print_exp exp & print "\n"
 	------------------------------
-	elab_cref2 (_,cr, _,_,Env.EQBOUND(exp)) => fail
+	elab_cref2 (_,cr, _,_,Types.EQBOUND(exp,false)) => fail
 
-  rule	print "# Constant or parameter without a value (I think)\n" &
+  rule	print "# Constant or parameter without a value\n" &
 	print "# component: " & Exp.print_component_ref cr & print "\n"
 	----------------------------------------------
+	elab_cref2 (_,cr, _,_,Types.UNBOUND) => fail
+
+  rule	print "- elab_cref2 failed (component: " &
+	Exp.print_component_ref cr & print ")\n"
+	----------------------------------------
 	elab_cref2 (_,cr, _,_,_) => fail
 
 end	
 
-(**)
+(** relation: elab_cref_subs
+ **)
 
 relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.ComponentRef, bool) =
@@ -440,6 +454,19 @@ relation elab_relation : (Exp.Exp, bool,
 			  Exp.Exp, bool)
 	  => (Exp.Exp, Types.Type, bool) =
 
+	(** First some rules to reduce the number of operators to just *)
+	(** four: `<' `<=' `=' `!='. *)
+
+  rule	elab_relation (e2,c2,t,Absyn.LESS,e1,c1) => (e,t,c)
+	----------------------------------------
+	elab_relation (e1,c1,t,Absyn.GREATER,e2,c2) => (e,t,c)
+
+  rule	elab_relation (e2,c2,t,Absyn.LESSEQ,e1,c1) => (e,t,c)
+	----------------------------------------
+	elab_relation (e1,c1,t,Absyn.GREATEREQ,e2,c2) => (e,t,c)
+
+	(** Then the real rules *)
+
   rule	bool_and (c1,c2) => c &
 	elab_relop (op,t) => op'
 	---------------------
@@ -474,11 +501,25 @@ relation elab_relop : (Absyn.RelOp, Types.Type) => Exp.RelOp =
   axiom	elab_relop (Absyn.NEQUAL,    Types.T_BOOL)    => Exp.BOOL_NEQUAL
   axiom	elab_relop (Absyn.NEQUAL,    Types.T_STRING)  => Exp.STRING_NEQUAL
 
-	(* What about arrays and = ? *)
+	(* FIXME: What about arrays and = ? Fake it for now *)
+  axiom	elab_relop (Absyn.LESS,      Types.T_ARRAY(_,_)) => Exp.INT_LESS
+  axiom	elab_relop (Absyn.LESSEQ,    Types.T_ARRAY(_,_)) => Exp.INT_LESSEQ
+  axiom	elab_relop (Absyn.GREATER,   Types.T_ARRAY(_,_)) => Exp.INT_GREATER
+  axiom	elab_relop (Absyn.GREATEREQ, Types.T_ARRAY(_,_)) => Exp.INT_GREATEREQ
+  axiom	elab_relop (Absyn.EQUAL,     Types.T_ARRAY(_,_)) => Exp.INT_EQUAL
+  axiom	elab_relop (Absyn.NEQUAL,    Types.T_ARRAY(_,_)) => Exp.INT_NEQUAL
 
   rule	print "- elab_relop failed\n"
 	-----------------------------
 	elab_relop (_,_) => fail
+
+end
+
+(** relation: elab_lunaryop *)
+
+relation elab_lunaryop : Absyn.LUnaryOp => Exp.LUnaryOp =
+
+  axiom	elab_lunaryop Absyn.NOT => Exp.NOT
 
 end
 
@@ -552,6 +593,21 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	ceval (env, Exp.BINARY(lh, Exp.INT_MUL, rh))
 	  => Values.INTEGER(sum)
 
+	(**  Logical *)
+
+  rule	ceval (env,e) => Values.BOOL(b) &
+	bool_not(b) => b'
+	-----------------
+	ceval (env, Exp.LUNARY(Exp.NOT, e)) => Values.BOOL(b')
+
+	(**  Relations *)
+
+  rule	ceval (env, lhs) => lhs' &
+	ceval (env, rhs) => rhs' &
+	ceval_relation (lhs',relop,rhs') => v
+	-------------------------------------
+	ceval (env, Exp.RELATION(lhs,relop,rhs)) => v
+
 	(**)
 
   rule	ceval (env, start) => Values.INTEGER(start') &
@@ -576,6 +632,56 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	-----------------------------------------------------
 	ceval (_,e) => fail
 	
+end
+
+(** relation: ceval_relation
+ **
+ ** Performs the relation check and gives a boolean result.
+ **)
+
+relation ceval_relation : (Values.Value, Exp.RelOp, Values.Value)
+ 	  => Values.Value =
+
+	(**  Integers *)
+
+  rule	int_lt (i1,i2) => b
+	-------------------
+	ceval_relation (Values.INTEGER(i1),
+			Exp.INT_LESS,
+			Values.INTEGER(i2)) => Values.BOOL(b)
+
+  rule	int_eq (i1,i2) => b
+	-------------------
+	ceval_relation (Values.INTEGER(i1),
+			Exp.INT_EQUAL,
+			Values.INTEGER(i2)) => Values.BOOL(b)
+
+  rule	int_ne (i1,i2) => b
+	-------------------
+	ceval_relation (Values.INTEGER(i1),
+			Exp.INT_EQUAL,
+			Values.INTEGER(i2)) => Values.BOOL(b)
+
+	(**  Reals *)
+
+  rule	real_lt (i1,i2) => b
+	-------------------
+	ceval_relation (Values.REAL(i1),
+			Exp.REAL_LESS,
+			Values.REAL(i2)) => Values.BOOL(b)
+
+  rule	real_eq (i1,i2) => b
+	-------------------
+	ceval_relation (Values.REAL(i1),
+			Exp.REAL_EQUAL,
+			Values.REAL(i2)) => Values.BOOL(b)
+
+  rule	real_ne (i1,i2) => b
+	-------------------
+	ceval_relation (Values.REAL(i1),
+			Exp.REAL_EQUAL,
+			Values.REAL(i2)) => Values.BOOL(b)
+
 end
 
 (** relation: ceval_range
@@ -638,21 +744,20 @@ end
 
 relation ceval_cref_binding : (Env.Env, Env.Binding) => Values.Value =
 
-  axiom	ceval_cref_binding (env,Env.VALBOUND(v)) => v
+  axiom	ceval_cref_binding (env,Types.VALBOUND(v)) => v
 
   rule	print "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
-	ceval_cref_binding (env,Env.UNBOUND) => fail
+	ceval_cref_binding (env,Types.UNBOUND) => fail
 	
-  rule	elab_exp (env,exp) => (exp',t,true) &
-	ceval (env,exp') => v
+  rule	ceval (env,exp) => v
 	------------------------
-	ceval_cref_binding (env,Env.EQBOUND(exp)) => v
+	ceval_cref_binding (env,Types.EQBOUND(exp,true)) => v
 
   rule	print "- ceval_cref__binding failed (nonconstant EQBOUND(" &
-	Dump.print_exp exp & print ")\n"
+	Exp.print_exp exp & print ")\n"
 	--------------------------------
-	ceval_cref_binding (env,Env.EQBOUND(exp)) => fail
+	ceval_cref_binding (env,Types.EQBOUND(exp,false)) => fail
 	
 end
 
