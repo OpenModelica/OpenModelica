@@ -4216,7 +4216,7 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	let int_pow = Exp.POW(Exp.INT) &
 
 	let scalars = [(int_pow, [int_scalar, int_scalar], int_scalar),
-		       (real_pow,[real_scalar, int_scalar], real_scalar)] &
+		       (real_pow,[real_scalar, real_scalar], real_scalar)] &
 		       
 
 	let arrscalar = [(Exp.POW_ARR(Exp.REAL),
