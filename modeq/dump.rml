@@ -297,7 +297,7 @@ and dump_element: Absyn.Element => () =
 	rule	print "ELEMENT(" & dump_select(final,"FINAL,","") &
 		dump_elementspec spec & print ")"
 		----------------
-		dump_element (Absyn.ELEMENT(final,spec))
+		dump_element (Absyn.ELEMENT(final,_,spec))
 
 end
 and dump_elementspec: Absyn.ElementSpec => () =

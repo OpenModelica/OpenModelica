@@ -37,6 +37,7 @@ module Absyn:
 				     * Component list
 
   and	   Element = ELEMENT of bool		(* final *)
+			      * Ident
 			      * ElementSpec
 
   and	   ClassRestriction = CL_CLASS
@@ -84,27 +85,27 @@ relation append =
 
 end
 
-relation exp_elementspec: ElementSpec => ElementSpec list =
+relation exp_elementspec: ElementSpec => (Ident*ElementSpec) list =
 
-  axiom	exp_elementspec(x as CLASSDEF(_,_)) => [x]
-  axiom	exp_elementspec(x as EXTENDS(_,_)) => [x]
+  axiom	exp_elementspec(x as CLASSDEF(_,CLASS(n,_,_,_))) => [(n,x)]
+  axiom	exp_elementspec(x as EXTENDS(_,_)) => [("",x)]
 
   axiom	exp_elementspec(COMPONENTS(_,_,_,_,_,_,[])) => []
 
   rule	exp_elementspec(COMPONENTS(f,p,c,i,o,t,xs)) => xs'
 	--------------------------------------------------
-	exp_elementspec(COMPONENTS(f,p,c,i,o,t,x::xs)) =>
-		COMPONENTS(f,p,c,i,o,t,[x])::xs'
+	exp_elementspec(COMPONENTS(f,p,c,i,o,t,(x as COMPONENT(n,_,_))::xs)) =>
+		((n,COMPONENTS(f,p,c,i,o,t,[x]))::xs')
 
 end
 
-relation mk_elements: (bool,ElementSpec list) => Element list =
+relation mk_elements: (bool,(Ident*ElementSpec) list) => Element list =
 
   axiom	mk_elements(_,[]) => []
 
   rule	mk_elements(f,ss) => ss'
 	------------------------
-	mk_elements(f,s::ss) => ELEMENT(f,s)::ss'
+	mk_elements(f,(n,s)::ss) => ELEMENT(f,n,s)::ss'
 
 end
 
@@ -113,7 +114,7 @@ relation exp_element: Element => Element list =
   rule	exp_elementspec(s) => ss &
         mk_elements(f,ss) => es
 	-------------------------------
-	exp_element(ELEMENT(f,s)) => es
+	exp_element(ELEMENT(f,_,s)) => es
 
 end
 

@@ -283,7 +283,8 @@ element :
 	| cc:component_clause << spec = #cc->rml; >>  )
 	<< Attrib a = $[ELEMENT,"---"];
 	   #0 = #(#[&a],#0);
-	   #0->rml = Absyn__ELEMENT(RML_PRIM_MKBOOL(is_final), spec); >>
+	   #0->rml = Absyn__ELEMENT(RML_PRIM_MKBOOL(is_final),
+				    mk_scon(""), spec); >>
 	;
 
 /*
