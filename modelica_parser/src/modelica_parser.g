@@ -95,9 +95,13 @@ class_type :
 
 class_specifier :
 		( string_comment composition END! IDENT!
-		| EQUALS^  name_path ( array_subscripts )? ( class_modification )? comment
+		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
 		| EQUALS^ enumeration 
 		)
+		;
+
+base_prefix:
+		type_prefix
 		;
 enumeration :
 		ENUMERATION^ LPAR! enum_list RPAR! comment 

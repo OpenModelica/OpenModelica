@@ -128,8 +128,8 @@ ML_COMMENT_CHAR :
 		;
 		
 SL_COMMENT :
-		"//" (~('\n' | '\r'))* ('\n' | '\r')
-		{  $setType(antlr::Token::SKIP);newline(); }
+		"//" (~('\n' | '\r'))* 
+		{  $setType(antlr::Token::SKIP); }
   	;
 
 IDENT options { testLiterals = true;} :
