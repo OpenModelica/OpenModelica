@@ -298,25 +298,26 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
 	
 	
-  rule	add_component(name,tp,model,annlst,p) => (newp,resstr)
+  rule	add_component(name,tp,model,nargs,p) => (newp,resstr)
 	& Print.get_string() => str & string_append(resstr,str) => resstr'
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("addComponent",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],nargs)))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp,s,ic,iv,cf))
 
-  rule	delete_component(name,model,p) => (newp,resstr) &
-	add_component(name,tp,model,annlst,newp) => (newp2,resstr)
+  rule	(*delete_component(name,model,p) => (newp,resstr) &
+	add_component(name,tp,model,nargs,newp) => (newp2,resstr)*)
+	update_component(name,tp,model,nargs,p) =>( newp, res)
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("updateComponent",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],nargs)))],_
 	    ),
-	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp2,s,ic,iv,cf))
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (res, SYMBOLTABLE(newp,s,ic,iv,cf))
 
   rule	delete_component(name,model,p) => (newp,resstr)
 	& Print.get_string() => str & string_append(resstr,str) => resstr'
@@ -324,17 +325,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("deleteComponent",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(model)],annlst)))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(model)],nargs)))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",SYMBOLTABLE(newp,s,ic,iv,cf))
 
-  rule	add_class_annotation(cr,annlst,p) => newp &
+  rule	add_class_annotation(cr,nargs,p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("addClassAnnotation",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],annlst)))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],nargs)))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true\n",newst)
 
@@ -410,13 +411,13 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	add_connection(cr,c1,c2,annlst,p) => (s1,newp) &
+  rule	add_connection(cr,c1,c2,nargs,p) => (s1,newp) &
 	string_append(s1,"\n") => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("addConnection",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],annlst)))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],nargs)))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
@@ -431,13 +432,13 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
   rule	delete_connection(cr,c1,c2,p) => (s1,newp) &
-	add_connection(cr,c1,c2,annlst,newp) => (s2,newp') &
+	add_connection(cr,c1,c2,nargs,newp) => (s2,newp') &
 	string_append(s2,"\n") => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("updateConnection",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],annlst)))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],nargs)))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp',s,ic,iv,cf))
 
@@ -645,6 +646,28 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  rule	is_parameter(cr,class,p) => b1 &
+	Util.bool_string(b1) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isParameter",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.CREF(class)],_)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	is_constant(cr,class,p) => b1 &
+	Util.bool_string(b1) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isConstant",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.CREF(class)],_)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
   rule	exist_class(cr,p) => b1 &
 	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
@@ -835,6 +858,61 @@ relation is_class: (Absyn.ComponentRef, Absyn.Program) => bool =
 end
 
 
+(** relation: is_parameter
+ ** This relation takes a class and a component reference and a program
+ ** and returns true if the component referenced is a parameter.
+**)
+relation is_parameter: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program) => bool =
+
+  rule	Absyn.cref_to_path(classname) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_public_list(parts) => publst &
+	get_components_contains_name(cr,publst) => Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.PARAM,_,_),_,_) 
+	------------------------
+	is_parameter (cr,classname,p) => true
+
+  axiom	is_parameter (_,_,_) => false
+end
+
+(** relation: is_constant
+ ** This relation takes a class and a component reference and a program
+ ** and returns true if the component referenced is a constant.
+**)
+relation is_constant: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program) => bool =
+
+  rule	Absyn.cref_to_path(classname) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_public_list(parts) => publst &
+	get_components_contains_name(cr,publst) => Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.CONST,_,_),_,_) 
+	------------------------
+	is_constant (cr,classname,p) => true
+
+  axiom	is_constant (_,_,_) => false
+end
+
+relation get_components_contains_name: (Absyn.ComponentRef, Absyn.ElementItem list) 
+	  => Absyn.ElementSpec =
+
+  rule	get_compitem_named(cr,ellst) => _
+	-------------------
+	get_components_contains_name (cr,Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,res as Absyn.COMPONENTS(_,_,ellst),_))::xs) => res
+
+  rule	get_components_contains_name(cr,xs) => res
+	-----------------------------------------
+	get_components_contains_name (cr,x::xs) => res
+end
+
+relation get_compitem_named: (Absyn.ComponentRef, Absyn.ComponentItem list)
+	  => Absyn.ComponentItem =
+
+  rule	id1 = id2 
+	---------
+	get_compitem_named(Absyn.CREF_IDENT(id1,_), (x as Absyn.COMPONENTITEM(Absyn.COMPONENT(id2,_,_),_))::xs) => x
+	
+  rule	get_compitem_named(cr,xs) => res
+	--------------------------------
+	get_compitem_named(cr, x::xs) => res
+end
 (** relation: exist_class
  ** This relation takes a component reference and a program. 
  ** It returns true if the refrenced class exists in the symbol table, otherwise it returns
@@ -1045,62 +1123,90 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
   rule	Absyn.cref_to_path(model) => modelpath &
 	not get_pathed_class_in_program(modelpath,p) => _
 	---------------------------------
-	add_component (name,tp,model,annlst,p) => (p,"false\n") 
+	add_component (name,tp,model,nargs,p) => (p,"false\n") 
 	
+
 	(* Adding component to model that resides inside package *)
-	(* Without annotation*)
   rule	Absyn.cref_to_path(model) => modelpath &
 	Absyn.strip_last(modelpath) => modelwithin &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
-	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
-	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),NONE)]),NONE))) => newcdef &	
-	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
-	------------------------------------------------
-	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),[],p as Absyn.PROGRAM(_,w)) => (newp,"true\n")
-
-	(* Adding component to model that resides inside package *)
-	(* With annotation*)
-  rule	Absyn.cref_to_path(model) => modelpath &
-	Absyn.strip_last(modelpath) => modelwithin &
-	get_pathed_class_in_program(modelpath,p) => cdef &
-	Absyn.cref_to_path(tp) => tppath &
-	annotation_list_to_absyn(annlst) => annotation &
+	annotation_list_to_absyn_comment(nargs) => annotation &
+	modification_to_absyn(nargs) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[Absyn.NOSUB]),tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),SOME(Absyn.COMMENT(SOME(annotation),NONE)))]),NONE))) => newcdef &	
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
 	------------------------------------------------
-	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),annlst,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
 	
 	(* Adding component to model that resides on top level *)
-	(* Without annotation*)
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
-	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
-	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),NONE)]),NONE))) => newcdef &	
-	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
-	------------------------------------------------
-	add_component( name,tp,model as Absyn.CREF_IDENT(_,_),[],p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
-
-	(* Adding component to model that resides on top level *)
-	(* With annotation*)
-  rule	Absyn.cref_to_path(model) => modelpath &
-	get_pathed_class_in_program(modelpath,p) => cdef &
-	Absyn.cref_to_path(tp) => tppath &
-	annotation_list_to_absyn(annlst) => annotation &
+	annotation_list_to_absyn_comment(nargs) => annotation &
+	modification_to_absyn(nargs) => modification &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[Absyn.NOSUB]),tppath,
-		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),SOME(Absyn.COMMENT(SOME(annotation),NONE)))]),NONE))) => newcdef &	
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) => newcdef &	
 	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)=> newp
 	------------------------------------------------
-	add_component( name,tp,model as Absyn.CREF_IDENT(_,_),annlst,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+	add_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
 
-  axiom	add_component (_,_,_,_,p) => (p,"add component Not implemented yet\n")
+  axiom	add_component (_,_,_,_,p) => (p,"-1")
 	
+end
+
+(** relation: update_component
+ ** This relation updates a component in a class. The reason for having this relation 
+ ** is that a deletion followed by an addition would mean that all optional arguments must be
+ ** resent to the add_component relation in order to get the same component attributes,etc. 
+ ** as previous. 
+ **) 
+relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.NamedArg list,
+			    Absyn.Program) => (Absyn.Program ,string) =
+
+  rule	(* Updating component to model that resides inside package*)
+	Absyn.cref_to_path(model) => modelpath &
+	Absyn.strip_last(modelpath) => modelwithin &
+	annotation_list_to_absyn_comment(nargs) => annotation &
+	modification_to_absyn(nargs) => modification &
+	Absyn.cref_to_path(tp) => tppath &
+	delete_component(name,model,p) => (p',_) &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(modelpath,p') => cdef &
+	get_public_list(parts) => publst &
+	get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
+	  => Absyn.COMPONENTS(attr,tp,items) &
+	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
+	    Absyn.COMPONENTS(attr,tp,
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE)))
+	  => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
+	--------------------------
+	update_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) 
+	  => (newp, "true\n")
+
+  rule	(* Updating component to model that resides on top level *)
+	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	Absyn.cref_to_path(tp) => tppath &
+	annotation_list_to_absyn_comment(nargs) => annotation &
+	modification_to_absyn(nargs) => modification &
+	delete_component(name,model,p) => (p',_) &
+	get_pathed_class_in_program(modelpath,p') => cdef &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_public_list(parts) => publst &
+	get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
+	  =>Absyn.COMPONENTS(attr,tp,items) &
+	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
+	    Absyn.COMPONENTS(attr,tppath,
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) 
+	  => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
+	------------------------------------------------
+	update_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) 
+	  => (newp,"true\n")
 end
 
 (** relation:add_class_annotation 
@@ -1113,18 +1219,18 @@ relation add_class_annotation:(Absyn.ComponentRef,Absyn.NamedArg list,Absyn.Prog
 	Absyn.cref_to_path(model) => modelpath &
 	Absyn.strip_last(modelpath) => modelwithin &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	add_class_annotation_to_class(cdef,annlst) => cdef' &
+	add_class_annotation_to_class(cdef,nargs) => cdef' &
 	update_program(Absyn.PROGRAM([cdef'], Absyn.WITHIN(modelwithin)),p) => newp
 	-----------------------------
-	add_class_annotation(model as Absyn.CREF_QUAL(_,_,_),annlst,p) => newp
+	add_class_annotation(model as Absyn.CREF_QUAL(_,_,_),nargs,p) => newp
 
   rule	(* Class on top level *)
 	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	add_class_annotation_to_class(cdef,annlst) => cdef' &
+	add_class_annotation_to_class(cdef,nargs) => cdef' &
 	update_program(Absyn.PROGRAM([cdef'], Absyn.TOP),p) => newp
 	-----------------------------
-	add_class_annotation(model as Absyn.CREF_IDENT(_,_),annlst,p) => newp
+	add_class_annotation(model as Absyn.CREF_IDENT(_,_),nargs,p) => newp
 end
 
 (** relation: add_class_annotation_to_class
@@ -1137,19 +1243,19 @@ relation add_class_annotation_to_class: ( Absyn.Class, Absyn.NamedArg list)
   rule	(* No annotation element found in class *)
 	get_public_list(parts) => publst &
 	not get_element_annotation_in_elements(publst) => _ &
-	annotation_list_to_absyn(annlst) => annotation &
+	annotation_list_to_absyn(nargs) => annotation &
 	add_to_public(cdef,Absyn.ANNOTATIONITEM(annotation)) => cdef' 
 	------------------------------------------------------------
-	add_class_annotation_to_class(cdef as Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)),annlst) => cdef'
+	add_class_annotation_to_class(cdef as Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)),nargs) => cdef'
 
   rule	get_public_list(parts) => publst &
 	get_element_annotation_in_elements(publst) => Absyn.ANNOTATIONITEM(oldann) &
-	annotation_list_to_absyn(annlst) => newann &
+	annotation_list_to_absyn(nargs) => newann &
 	merge_annotations(oldann,newann) => newann' &
 	replace_element_annotation_in_elements(publst,newann') => publst2 &
 	replace_public_list(parts,publst2) => parts2 
 	--------------------------------
-	add_class_annotation_to_class(cdef as Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),annlst)
+	add_class_annotation_to_class(cdef as Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),nargs)
 	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
 end
 
@@ -1336,13 +1442,13 @@ end
 
 (** relation: get_nth_component
  ** This relation takes a `ComponentRef', a `Program' and an int and  returns a comma separated string of names
- ** containing the name, and type of that component.
+ ** containing the name, type and comment of that component.
  **)
 relation get_nth_component: (Absyn.ComponentRef,Absyn.Program, int) => string = 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	get_nth_public_component_in_class(cdef,n) => comp &
-	get_component_name_and_type (comp) => s1 &
+	get_component_name_and_type_and_comment (comp) => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => str
 	-------------------------------------------------
@@ -1415,12 +1521,12 @@ relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Componen
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	annotation_list_to_absyn(annlst) => annotation &
+	annotation_list_to_absyn(nargs) => annotation &
 	add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),SOME(Absyn.COMMENT(SOME(annotation),NONE)))) 
 	  => newcdef &
 	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
 	---------------------------------------------------
-	add_connection(model,c1,c2,annlst,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)	
+	add_connection(model,c1,c2,nargs,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)	
 end
 
 relation delete_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program)
@@ -2355,19 +2461,20 @@ relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) => Abs
   axiom	get_nth_component_in_elementitems([],_) => fail
 end
 
-(** relation: get_component_name_and_type
+(** relation: get_component_name_and_type_and_comment
  ** This relation takes an `Element' and returns a string of comma separated values of the 
- **  type and name of the component, e.g. "Resistor,R1" or "Resistor,R1,R2"
+ **  type and name and comment of the component, e.g. 'Resistor,R1, "comment"' 
+ ** or 'Resistor,R1,R2,"comment1","comment2"'
  ** If Element is not a component, the empty string is returned
 **)
-relation get_component_name_and_type: Absyn.Element => string =
+relation get_component_name_and_type_and_comment: Absyn.Element => string =
 
   rule	Absyn.path_string(p) => typename &
 	get_componentitems_name(lst) => names &
 	string_append(typename,",") => s1 &
 	string_append(s1,names) => str
 	-------------------------------------------
-	get_component_name_and_type(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),NONE)) => str
+	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),NONE)) => str
 end
 
 (** relation_get_componentitems_name
@@ -2379,16 +2486,25 @@ end
 relation get_componentitems_name: Absyn.ComponentItem list => string =
 	
   rule	string_append(c1,",") => s1 &
-	get_componentitems_name(c2::rest) => s2 &
-	string_append(s1,s2) => str
+	get_componentitems_name(c2::rest) => s3 &
+	Util.string_append_list([s1,"\"",s2,"\", ",s3]) => str
 	----------------------------
-	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)::(c2::rest)) => str
+	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))::(c2::rest)) => str
+
+  rule	string_append(c1,",") => s1 &
+	get_componentitems_name(c2::rest) => s3 &
+	Util.string_append_list([s1, s3]) => str
+	----------------------------
+	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),NONE)::(c2::rest)) => str
+
   rule	get_componentitems_name(rest) => res
 	------------------------------------
 	get_componentitems_name(_::rest) => res
 
+  rule	Util.string_append_list([c1,", \"",s2,"\""]) => res
+	----------------------
+	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))]) => res
   axiom	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) => c1
-
   axiom	get_componentitems_name([_]) => ""
 end
 (** relation: add_to_public
@@ -2767,6 +2883,56 @@ relation get_class_in_program:(string, Absyn.Program) => Absyn.Class =
   rule  str = c1name
 	------------
 	get_class_in_program (str, Absyn.PROGRAM((c1 as Absyn.CLASS(c1name,_,_,_,_,_))::p,w)) => c1
+end
+
+(** relation: modification_to_absyn
+ ** This relation takes a list of `NamedArg' and returns an absyn `Modification option'.
+ ** It collects binding equation from the named argument binding=<expr> and creates
+ ** corresponding Modification option Absyn node.
+ ** Future extension: add general modifiers. Problem: how to express this using named 
+ ** arguments. This is not possible. Instead we need a new data type for storing AST, 
+ ** and a constructor function for AST, 
+ ** e.g. AST x = ASTModification(redeclare R2 r, x=4.2); // new datatype AST
+ **					 // new constructor operator ASTModification
+ **)
+
+relation modification_to_absyn: (Absyn.NamedArg list) => Absyn.Modification option =
+  axiom	modification_to_absyn([]) => NONE
+	
+  axiom	modification_to_absyn(Absyn.NAMEDARG("binding",exp)::xs) => SOME(Absyn.CLASSMOD([],SOME(exp)))
+  rule	modification_to_absyn(xs) => res
+	--------------------------------
+	modification_to_absyn(x::xs) => res
+end
+
+(** relation: annotation_list_to_absyn_comment
+ ** This relation takes a list of `NamedArg' and returns an absyn Comment.
+ ** for instance [annotation = Placement( ...), comment="stringcomment" ] is converted to SOME(COMMENT(ANNOTATION(Placement(...),SOME("stringcomment")))) 
+ **)
+relation annotation_list_to_absyn_comment: (Absyn.NamedArg list) => Absyn.Comment option =
+
+  rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
+	comment_to_absyn(nargs) => SOME(strcmt)
+	----------------------------------
+	annotation_list_to_absyn_comment(nargs) => SOME(Absyn.COMMENT(NONE,SOME(strcmt)))
+  rule	annotation_list_to_absyn(nargs) => annotation &
+	comment_to_absyn(nargs) => strcmt
+	----------------------------------
+	annotation_list_to_absyn_comment(nargs) => SOME(Absyn.COMMENT(SOME(annotation),strcmt))
+	
+  axiom	annotation_list_to_absyn_comment(_) => NONE
+end
+
+relation comment_to_absyn: (Absyn.NamedArg list) => string option =
+
+  axiom	comment_to_absyn(Absyn.NAMEDARG("comment",Absyn.STRING(str))::_) 
+	  => SOME(str)
+
+  rule	comment_to_absyn(rest) => res
+	--------------------
+	comment_to_absyn(_::rest) => res
+
+  axiom	comment_to_absyn(_) => NONE
 end
 
 (** relation: annotation_list_to_absyn
