@@ -164,8 +164,7 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 
 	(* FIXME: Should I really strip the ArrayDim? *)
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),ty',eqexp)) &
-	mkbinding eqexp => binding &
+	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),ty',binding)) &
 	check_subscripts(ad, ss) => dim
 	------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
@@ -197,13 +196,6 @@ relation lookup_var_f : ((SCode.Ident * Env.FrameVar) list,
 	lookup_in_var(ty, ids) => (attr,ty,binding)
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty,binding)
-
-end
-(**)
-relation mkbinding : Absyn.Exp option => Env.Binding =
-
-  axiom	mkbinding NONE => Env.UNBOUND
-  axiom	mkbinding SOME(e) => Env.EQBOUND(e)
 
 end
 
