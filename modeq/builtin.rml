@@ -81,18 +81,39 @@ Explode.CLASS("Integer",false,ClassInf.R_PREDEFINED_INT,
 	       [],
 	       []))
 
-(*
-val string_type = Absyn.CLASS("String",false,ClassInf.R_PREDEFINED,
-			    Absyn.PARTS(
-			    [Absyn.PUBLIC(
-			    [Absyn.ELEMENT(true,"value",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("StringType"),
-					       [Absyn.COMPONENT("value",
-								NONE,
-								NONE)]))])]))
-*)
+val string_type =
+Explode.CLASS("String",false,ClassInf.R_PREDEFINED_STRING,
+	      Explode.PARTS
+	      ([Explode.ELEMENT(true,
+				false,
+				"value",
+			      	Explode.COMPONENT("value",
+						  Types.ATTR(Types.NODIM,
+							     false,
+							     Types.VAR,
+							     Types.BIDIR),
+						  Exp.IDENT("StringType"),
+						  Mod.NOMOD))],
+	       [],
+	       []))
+
+val boolean_type =
+Explode.CLASS("Boolean",false,ClassInf.R_PREDEFINED_BOOL,
+	      Explode.PARTS
+	      ([Explode.ELEMENT(true,
+				false,
+				"value",
+			      	Explode.COMPONENT("value",
+						  Types.ATTR(Types.NODIM,
+							     false,
+							     Types.VAR,
+							     Types.BIDIR),
+						  Exp.IDENT("BooleanType"),
+						  Mod.NOMOD))],
+	       [],
+	       []))
+
+
 relation initial_env =
 
   rule	Env.new_frame(Env.empty_env) => env &
@@ -101,9 +122,10 @@ relation initial_env =
 	Env.extend_frame_c(env'', str_type, Mod.NOMOD) => env''' &
 	Env.extend_frame_c(env''', bool_type, Mod.NOMOD) => env'''' &
 	Env.extend_frame_c(env'''', real_type, Mod.NOMOD) => env''''' &
-	Env.extend_frame_c(env''''', integer_type, Mod.NOMOD) => env''''''
-(*	Env.extend_frame_c(env, string_type) => env'''''' *)
+	Env.extend_frame_c(env''''', integer_type, Mod.NOMOD) => env'''''' &
+	Env.extend_frame_c(env'''''', string_type, Mod.NOMOD) => env''''''' &
+	Env.extend_frame_c(env''''''', boolean_type, Mod.NOMOD) => env''''''''
 	----------------------------------------------
-	initial_env () => env''''''
+	initial_env () => env''''''''
 
 end
