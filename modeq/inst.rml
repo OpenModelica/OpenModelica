@@ -140,7 +140,6 @@ relation inst_class: (Env, Mod, Prefix, Connect.Sets, SCode.Class)
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env', mod, pre, csets, ci_state, c, false)
 	  => (dae1,_,csets',ci_state', tys) &
-	Connect.print_sets csets' &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
 	mktype(ci_state',tys) => ty
@@ -1270,9 +1269,9 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	Static.elab_cref(env, c2) => (Exp.CREF(c2'),prop2,acc) &
 	Static.canon_cref(env, c1') => c1'' &
 	Static.canon_cref(env, c2') => c2'' &
-	Lookup.lookup_var_local(env,c1'') => (attr1,ty1,_) &
-	Lookup.lookup_var_local(env,c2'')
-	  => (attr2,ty2,_) &
+	Lookup.lookup_var_local(env,c1'')
+	  => (attr1 as SCode.ATTR(_,flow1,_,_,_),ty1,_) &
+	Lookup.lookup_var_local(env,c2'') => (attr2,ty2,_) &
 	
 	(** Check that the types of the connectors are good. *)
 	valid_connector(ty1) &
@@ -1329,21 +1328,21 @@ relation check_connect_types : (Exp.ComponentRef, Types.Type,
 	print "    while connecting " & Exp.print_component_ref c1 &
 	print " to " & Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Sbsyn.INPUT),
-			    c2,_,SCode.ATTR(_,_,_,_,Sbsyn.INPUT)) => fail
+	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Absyn.INPUT),
+			    c2,_,SCode.ATTR(_,_,_,_,Absyn.INPUT)) => fail
 
   rule	print "# Can't connect two output variables\n" &
 	print "    while connecting " & Exp.print_component_ref c1 &
 	print " to " & Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Sbsyn.OUTPUT),
-			    c2,_,SCode.ATTR(_,_,_,_,Sbsyn.OUTPUT)) => fail
+	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),
+			    c2,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT)) => fail
 
   rule	flow1 = flow2 &
 	Types.equivtypes(t1, t2) => true
 	-------------------------------
 	check_connect_types(_,t1,SCode.ATTR(_,flow1,_,_,_),
-			    _,t2,SCode.ATTR(_,flow2,_,_;_))
+			    _,t2,SCode.ATTR(_,flow2,_,_,_))
 
   rule	print "# Can't connect flow component " &
  	Exp.print_component_ref c1 &
@@ -1364,7 +1363,7 @@ relation check_connect_types : (Exp.ComponentRef, Types.Type,
   rule	print "- check_connect_types(" & Exp.print_component_ref c1 &
 	print " <-> " & Exp.print_component_ref c2 & print ") failed\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,_,_,c2,_,_,_) => fail
+	check_connect_types(c1,_,_,c2,_,_) => fail
 
 end
 
