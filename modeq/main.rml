@@ -20,11 +20,16 @@ relation main =
 		main _
 *)
 
-   rule print "Jahaja\n" &
-	Parser.parse f => p &
-	Dump.dump p
-	(* & Dump.dump Test.prog1 *)
-	& print "[slut]\n"
-	----------------
-	main f::_
+	rule	print "Jahaja\n" &
+		Parser.parse f => p &
+		Dump.dump p
+		(* & Dump.dump Test.prog1 *)
+		& print "[slut]\n"
+		----------------
+		main [f]
+
+	rule	print "Supply a file name\n"
+		----------------------------
+		main []
+
 end
