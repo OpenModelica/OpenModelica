@@ -383,25 +383,17 @@ subscript :
 	<<
 	   #0 = #(#[&a],#0);
 	   if(#ex3)
-	     #0->rml = mk_some(mk_box2(0,
-				       #ex1->rml,
-				       mk_some(mk_box2(0,
-						       #ex2->rml,
-						       mk_some(#ex3->rml)))));
+	     #0->rml = Exp__SUB3(#ex1->rml, #ex2->rml, #ex3->rml);
 	   else if(#ex2)
-	     #0->rml = mk_some(mk_box2(0,
-				       #ex1->rml,
-				       mk_some(mk_box2(0,
-						       #ex2->rml,
-						       mk_none()))));
+	     #0->rml = Exp__SUB2(#ex1->rml, #ex2->rml);
 	   else
-	     #0->rml = mk_some(mk_box2(0,#ex1->rml,mk_none()));
+	     #0->rml = Exp__SUB1(#ex1->rml);
 	>>
 
         | ":"!
 	<<
 	   #0 = #(#[&a],#0);
-	   #0->rml = mk_none();
+	   #0->rml = Exp__NOSUB;
 	>>
   ;
 
