@@ -69,6 +69,7 @@ SRCRML= absyn.rml \
 	staticexp.rml \
 	types.rml \
 	taskgraph.rml \
+	tornado.rml \
 	util.rml \
 	values.rml
 

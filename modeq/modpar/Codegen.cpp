@@ -386,6 +386,10 @@ void Codegen::generateParallelFunctionEpilogue(int procno)
 
 void Codegen::generateParallelCalls()
 {
+  m_cstream << "#ifdef TIMING" << endl;
+  m_cstream << TAB << "struct timeval t_start,t_stop;" << endl;
+  m_cstream << TAB << "if (rank == 0) gettimeofday(&t_start,NULL);" << endl;
+  m_cstream << "#endif" << endl;
   m_cstream << TAB << "switch (rank) {" << endl;
   m_cstream << TAB << "    case 0 : solver(&x[0],&xd[0],&y[0],&p[0],&res[0],nx,ny,np,numsteps,start,stop,step,&f);" << endl;
   m_cstream << TAB << "             send_quit_command();" << endl;
@@ -395,6 +399,12 @@ void Codegen::generateParallelCalls()
 	      << TAB << TAB << "break;" << endl;
   }
   m_cstream << TAB << "}" << endl << endl; 
+  m_cstream << "#ifdef TIMING" << endl;
+  m_cstream << TAB << "if (rank == 0) gettimeofday(&t_stop,NULL);" << endl;
+  m_cstream << TAB << "cerr << \"time spent: \" " 
+	    << "<< (t_stop.tv_sec-t_start.tv_sec)+0.000001*(t_stop.tv_usec-t_start.tv_usec) "
+	    << "<< \" seconds.\" << endl;" << endl; 
+  m_cstream << "#endif" << endl;
 }
  
 
@@ -471,11 +481,15 @@ void  Codegen::generateParallelMPIGlobals()
 
 void Codegen::generateGlobals()
 {
-  int numsteps = 10;
+  int numsteps = 100;
   m_cstream << "#include <stdlib.h>" << endl;
   m_cstream << "#include \"" << m_fileNameFunc << "\"" << endl << endl;
   m_cstream << "#include \"solvers.hpp\"" << endl;
-  
+  m_cstream << "#ifdef TIMING" << endl;
+  m_cstream << "#include <sys/time.h>" << endl;
+  m_cstream << "#include <iostream>" << endl;
+  m_cstream << "using namespace std;" << endl;
+  m_cstream << "#endif" << endl;
   m_cstream << "/* Global variables */" << endl;
   m_cstream << "const int nx = " << m_nx << ";" << endl;
   m_cstream << "const int ny = " << m_ny << ";" << endl;

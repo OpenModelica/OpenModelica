@@ -45,6 +45,7 @@ module Util :
   relation list_fill: ('a ,int) => 'a list
   relation list_first: 'a list => 'a
   relation list_rest: 'a list => 'a list
+  relation list_last: 'a list => 'a	  
   relation list_flatten : 'a list list => 'a list
   relation list_map_0 : ('a list, 'a => ()) => ()
   relation list_map : ('a list, 'a => 'b) => 'b list
@@ -110,6 +111,15 @@ end
 relation list_rest: 'a list => 'a list =
 	
   axiom	list_rest (_::x) => x
+end
+
+relation list_last: 'a list => 'a =
+
+  axiom	list_last [a] => a
+	
+  rule	list_last(rest) => a
+	-----------------
+	list_last(_::rest) => a
 end
 
 relation list_flatten : 'a list list => 'a list =

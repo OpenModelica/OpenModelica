@@ -1,0 +1,315 @@
+(* 
+ Copyright MathCore Engineering 2004-10-21
+ This source is non-free and should not be included in OpenModelica
+*)
+
+(**
+**
+  ** file:	 tornado.rml
+ ** module:      Tornado
+ ** description: Code generation of Nodelica models including equation
+ ** code and symbolic information to the Tornado-1 format.
+ ** Part of the Hemmis project at MathCore Engineering AB.
+ **
+ ** RCS: $Id$
+ ** 
+ **)
+module Tornado:
+  
+  with "dae.rml"
+  with "absyn.rml"
+
+(* Generates code according to the Tornado-1 format *)
+  relation generate_code: (Absyn.Program, DAE.DAElist, Absyn.Path) => ()
+	  
+	  
+	  
+  end
+with "interactive.rml"
+with "util.rml"
+with "system.rml"
+with "daelow.rml"
+with "exp.rml"
+
+relation generate_code:  (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
+
+  rule	DAELow.lower(dae) => dae' &
+	Absyn.path_string(class) => cname &
+	generate_header(cname) => header &
+	generate_impl_header(cname) => implheader &
+	generate_constructor(cname,p,dae') => constr &
+	generate_var_defines(dae') => defines &
+	generate_compute_methods(cname,dae',p) => cmethods &
+	Util.string_append_list([implheader,constr,defines,cmethods]) => impl &
+	string_append(cname,".hpp") => headerfile &
+	string_append(cname,".cpp") => implfile &
+	System.write_file(headerfile,header) &
+	System.write_file(implfile,impl) 
+	-------------------------------------------------------------------
+	generate_code(p,dae,class) => 
+
+  rule	print "generate_code failed\n" 
+	------------------------------
+	generate_code(_,_,_) => fail
+end
+
+(* Generate the content of the header file *)
+relation generate_header: string => string =
+
+  rule	System.toupper cname => CNAME &
+	Util.string_append_list(["#ifndef __",CNAME,"_H__\n"]) => r1 &
+	Util.string_append_list(["#define __",CNAME,"_H__\n"]) => r2 &
+	Util.string_append_list(["\n#include \"Tornado/EE/MSLE/MSLE.h\"\n",
+				 "\n\nclass C",cname," : public Tornado::CDAEModel\n"]) => r3 &
+	Util.string_append_list(["{\n  public:\n\n    C",cname,"(const wchar_t* Name);\n",
+				 "\n  public:\n\n",
+				 "    void ComputeInitial();\n",
+				 "    void ComputeTerminal();\n",
+				 "    void ComputeState();\n",
+				 "    void ComputeOutput();\n",
+				 "};\n\n",
+				 "#endif\n"]) => r4 &
+	Util.string_append_list([r1,r2,r3,r4]) => header
+	------------------------------------------------
+	generate_header(cname) => header
+
+
+  rule	print "-generate_header failed\n" 
+	---------------------------------
+	generate_header(_) => fail
+end
+
+(* generate the "header" of the implementation file, includes, etc. *)
+relation generate_impl_header: string => string =
+
+
+  rule	Util.string_append_list(["#ifdef _MSC_VER\n",
+				 "#pragma warning(disable:4250)\n",
+				 "#pragma warning(diable:4786)\n",
+				 "#endif\n",
+				 "\n",
+				 "#include \"",cname,".h\"\n",
+				 "\n",
+				 "#include <math.h>\n",
+				 "\n",
+				 "using namespace Common;\n",
+				 "using namespace Tornado;\n",
+				 "\n"]) => implheader
+	----------------------
+	generate_impl_header(cname) => implheader
+	
+  rule	print "-generate_impl_header failed\n" 
+	-------------------
+	generate_impl_header(_) => fail
+end
+
+(* Generates the implementation for the constructor*)
+relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string =
+	
+	
+  rule	
+	generate_constructor_outputvars(dae) => outputvars &
+	generate_constructor_statevars(dae) => statevars &
+	Util.string_append_list(["C",cname,"::\n",
+				 "C",cname,"(const wchar_t* Name)\n",
+				 "{\n",
+				 "  SetName(Name);\n",
+				 "  SetDesc(L\"",cname," test.\");\n",
+				 "\n",
+				 "  SetNoIndepVars(1);\n",
+				 "  SetIndepVar(0, new CIndepVar(L\"t\",L\"s\"));\n",
+				 "\n",
+				 outputvars,
+				 "\n",
+				 "\n",
+				 statevars,
+				 "\n",
+				 "\n",
+				 "  Link();\n",
+				 "  Reset();\n",
+				 "}\n",
+				 "\n"]) => constr
+	-----------------------------------------
+	generate_constructor(cname,p,dae) => constr
+
+
+  rule	print "-generate_constructor failed\n" 
+	-------------------------------------
+	generate_constructor(_,_,_) => fail
+
+end
+
+(* Generates the outputvars methodcalls in the constructor *)
+relation generate_constructor_outputvars:(DAELow.DAELow) => string = 
+
+  rule	generate_constructor_outputvars2(vars,0) => lst1 &
+	list_length(lst1) => len &
+	int_sub(len,1) => len' &
+	generate_constructor_outputvars2(knvars,len') => lst2 &
+	list_append(lst1,lst2) => lst &
+	Util.string_delimit_list(lst,"\n") => res &
+	list_length(lst) => len &
+	int_string len => lenstr &
+	Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix &
+	string_append(prefix,res) => res'
+	-------------------------------------------
+	generate_constructor_outputvars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
+end
+
+relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list = 
+
+  rule	(* special case for when called second time and first time gave 
+	 list length zero *)
+	generate_constructor_outputvars2(lst,0) => res
+	----------------------------------------------
+	generate_constructor_outputvars2(lst,-1) => res
+
+  axiom	generate_constructor_outputvars2([],_) => []
+
+  rule	int_add(i,1) => i' & int_string(i) => is &
+	generate_constructor_outputvars2(rest,i') => res &
+	Exp.cref_modelica_str(cr) => crs &
+	Util.string_append_list(["  SetOutputVar(",is,", new COutputVar(L\"",crs,"\", L\"\",0);"]) 
+	  => r1 
+	--------------------
+	generate_constructor_outputvars2(DAELow.VAR(cr,VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_)::rest,i) 
+	  => r1::res
+  rule	generate_constructor_outputvars2(rest,i) => res 
+	-----------------------------------------------
+	generate_constructor_outputvars2(_::rest,i) 
+	  => res
+
+  rule	print "-generate_constructor_outputvars2 failed\n" 
+	----------------------
+	generate_constructor_outputvars2(_,_) => fail
+end
+
+
+relation generate_constructor_statevars:(DAELow.DAELow) => string = 
+
+  rule	generate_constructor_statevars2(vars,0) => lst &
+	Util.string_delimit_list(lst,"\n")=> res & 
+	list_length(lst) => len &
+	int_string len => lenstr &
+	Util.string_append_list(["  SetNoDerStateVars(",lenstr,");\n"]) => prefix &
+	string_append(prefix,res) => res'
+	----------------------
+	generate_constructor_statevars(DAELow.DAELOW(vars,knvars,eqn,seqn)) => res'
+end
+
+relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
+
+  axiom	generate_constructor_statevars2([],_) => []
+
+  rule	int_add(i,1) => i' & int_string(i) => is &
+	generate_constructor_statevars2(rest,i') => res &
+	Exp.cref_modelica_str(cr) => crs & 
+	Exp.print_exp_str start => startstr &
+	Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",",
+				 startstr,");"]) 
+	  => r1 
+	--------------------
+	generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_)::rest,i) 
+	  => r1::res
+
+  rule	int_add(i,1) => i' & int_string(i) => is &
+	generate_constructor_statevars2(rest,i') => res &
+	Exp.cref_modelica_str(cr) => crs & 
+	
+	Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0);"]) 
+	  => r1 
+	--------------------
+	generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_)::rest,i) 
+	  => r1::res
+
+  rule	generate_constructor_statevars2(rest,i) => res 
+	-----------------------------------------------
+	generate_constructor_statevars2(_::rest,i) 
+	  => res
+
+  rule	print "-generate_constructor_statevars2 failed\n" 
+	----------------------
+	generate_constructor_statevars2(_,_) => fail
+end
+
+relation generate_var_defines: (DAELow.DAELow) => string =
+
+  rule	Util.string_append_list(["/*generate var defines here*/\n"]) => vdefs
+	---------------------
+	generate_var_defines(dae) => vdefs
+
+  rule	print "-generate_var_defines failed\n"
+	--------------------------------------
+	generate_var_defines(_) => fail
+end
+
+relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
+
+  rule	generate_compute_output(cname,dae,p) => coutput &
+	generate_compute_initial(cname,dae,p) => cinitial &
+	generate_compute_state(cname,dae,p) => cstate &
+	generate_compute_terminal(cname,dae,p) => cterm &
+	Util.string_append_list(["void C",cname,"::\n",
+				 "ComputeOutput()\n",
+				 "{\n",
+				 coutput,
+				 "}\n",
+				 "\n",
+				 "void C",cname,"::\n",
+				 "ComputeInitial()\n",
+				 "{\n",
+				 cinitial,
+				 "}\n",
+				 "\n",
+				 "void C",cname,"::\n",
+				 "ComputeState()\n",
+				 "{\n",
+				 cstate,
+				 "}\n",
+				 "\n",
+				 "void C",cname,"::\n",
+				 "ComputeTerminal()\n",
+				 "{\n",
+				 cstate,
+				 "}\n",
+				 "\n"]) => methods
+	---------------------------
+	generate_compute_methods(cname,dae,p) => methods
+
+  rule	print "-generate_compute_methods failed\n" 
+	-----------------------------------------
+	generate_compute_methods(_,_,_) => fail
+end 
+
+relation generate_compute_output:(string,DAELow.DAELow,Absyn.Program) => string =
+
+  rule	Util.string_append_list(["/* output code here*/\n"]) => coutput
+	-------------------------------------------------------------
+	generate_compute_output(cname,dae,p) => coutput
+
+end
+
+
+relation generate_compute_initial:(string,DAELow.DAELow,Absyn.Program) => string =
+
+  rule	Util.string_append_list(["/* initial code here*/\n"]) => cinit
+	-------------------------------------------------------------
+	generate_compute_initial(cname,dae,p) => cinit
+
+end
+
+relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program) => string =
+
+  rule	Util.string_append_list(["/* state code here*/\n"]) => cstate
+	-------------------------------------------------------------
+	generate_compute_state(cname,dae,p) => cstate
+
+end
+
+relation generate_compute_terminal:(string,DAELow.DAELow,Absyn.Program) => string =
+
+  rule	Util.string_append_list(["/* terminal code here*/\n"]) => cterm
+	-------------------------------------------------------------
+	generate_compute_terminal(cname,dae,p) => cterm
+
+end

@@ -56,6 +56,7 @@ with "system.rml"
 with "util.rml"
 with "taskgraph.rml"
 with "taskgraphext.rml" 
+with "tornado.rml"
 
 (** relation: server_loop
  **
@@ -251,8 +252,19 @@ end
 
 relation translate_file : string list => () =
 
-  rule	(*Print.print_buf "Parsing\n" & *)
-	  is_modelica_file(f) 
+  rule	(* for tornado code generation, MathCode project*)
+	is_modelica_file(f) &
+	run_tornado_cg_q() => true 
+	& Parser.parse f => p
+	& SCode.elaborate(p) => p'
+	& Inst.instantiate(p') => d
+	& Absyn.last_classname(p) => cname
+	& Tornado.generate_code(p,d,cname) 
+	----------------------------
+	translate_file [f] 
+
+  rule	(*Print.print_buf "Parsing\n" &
+	 *)	is_modelica_file(f) 
 	& Parser.parse f => p
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
 	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
@@ -310,6 +322,17 @@ relation translate_file : string list => () =
 	translate_file _ => fail
 
 end
+
+
+(* Determine if tornado code generation should be used*)
+relation run_tornado_cg_q:() => bool =
+
+  rule	RTOpts.tornado_cg => res
+	------------------------
+	run_tornado_cg_q() => res
+end
+
+
 (* Determine if backend, i.e. BLT etc. should be run.
 It should be run if either "blt" flag is set or if 
 parallelization is enabled by giving flag -n=<no proc.>

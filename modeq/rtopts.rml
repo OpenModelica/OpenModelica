@@ -47,4 +47,5 @@ module RTOpts:
   relation no_proc: () => int 	  
   relation latency:() => real
   relation bandwidth: () => real	  
+  relation tornado_cg: () => bool	  
 end

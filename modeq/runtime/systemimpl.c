@@ -156,6 +156,19 @@ RML_BEGIN_LABEL(System__strtok)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__toupper)
+{
+  char *str = strdup(RML_STRINGDATA(rmlA0));
+  char *res=str;
+  while (*str!= '\0') {
+    *str=toupper(*str++);
+  }
+  rmlA0 = (void*) mk_scon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
 RML_BEGIN_LABEL(System__compile_5fc_5ffile)
 {
   char* str = RML_STRINGDATA(rmlA0);

@@ -387,7 +387,7 @@ module Absyn:
   relation restr_string : Restriction => string
   relation cref_equal: (ComponentRef, ComponentRef) =>  bool
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
-
+  relation last_classname: Program => Path
 end
 
 
@@ -656,6 +656,12 @@ relation print_restr : Restriction => () =
 
 end
 
+relation last_classname: Program => Path =
+
+  rule	Util.list_last(lst) => CLASS(id,_,_,_,_,_) 
+	-------------------------
+	last_classname(PROGRAM(lst,_)) => IDENT(id)
+end
 
 (* PR. To debug. *)
 relation print_absyn_exp : Exp => () =

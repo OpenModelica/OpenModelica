@@ -106,6 +106,7 @@ with "builtin.rml"
 with "ceval.rml" 
 with "types.rml"
 with "explode.rml"
+with "dump.rml"
 
 relation lower: (DAE.DAElist) => DAELow =
 
@@ -350,19 +351,22 @@ relation dump_vars: Var list => ()=
 
   axiom	dump_vars [] => ()
 
-  rule	Exp.print_component_ref_str(cr) => str &
+  rule	DAE.dump_direction_str dir => dirstr & print dirstr & print " " &
+	Exp.print_component_ref_str(cr) => str &
 	print str & print ":" & dump_kind kind &
+
 	print "= " & Exp.print_exp_str e => s & print s & print ", " &
 	dump_vars(xs) 
 	-------------
-	dump_vars(VAR(cr,kind,_,_,SOME(e),_,_,_,_,_)::xs)
+	dump_vars(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,_)::xs)
 
-  rule	Exp.print_component_ref_str(cr) => str &
+  rule  DAE.dump_direction_str dir => dirstr & print dirstr & print " " &
+	Exp.print_component_ref_str(cr) => str &
 	print str & print ":" & dump_kind kind &
 	print ", " &
 	dump_vars(xs) 
 	-------------
-	dump_vars(VAR(cr,kind,_,_,NONE,_,_,_,_,_)::xs)
+	dump_vars(VAR(cr,kind,dir,_,NONE,_,_,_,_,_)::xs)
 end 
 relation dump_kind: VarKind => () =
 
