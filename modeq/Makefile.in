@@ -21,7 +21,7 @@ CC	= gcc
 CFLAGS	= $(USE_CORBA)
 RMLHOME	= @rmlhome@
 #RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
-RML	= @rmlc_bin@ -Wc,-O3
+#RML	= @rmlc_bin@ -Wc,-O3
 RMLINC  = -I$(RMLHOME)/include/plain
 
 USE_CORBA = @USE_CORBA@
@@ -42,13 +42,14 @@ SUBDIRS	= runtime absyn_builder modpar
 .SUFFIXES: .o .rml .h
 .PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean modeq_release modeq_debug
 
-all : debug #release
+#all : debug 
+all : release
 
 debug:	$(PROGD) $(SRCRDB)
 
 release: $(PROG)
 
-%.rdb:	modeq_debug/%.rdb 
+$(SRCRDB): %.rdb: modeq_debug/%.rdb 
 	cp $< $@
 
 #	@for x in $(SRCRDB); do \

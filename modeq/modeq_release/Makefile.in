@@ -39,8 +39,7 @@ LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
-
-all : subdirs $(PROG)
+all : $(ALLRML) subdirs $(PROG)
 
 
 .SUFFIXES:
@@ -53,22 +52,24 @@ SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 $(ALLRML): %.rml : $(srcdir)/%.rml
 	cp $< $@
 
-%.o : %.rml
+$(SRCO): %.o : %.c %.h
 	$(RML) -c $<
 
-%.c : %.rml
+$(SRCC): %.c : %.rml
 	$(RML) +C $<
 
 $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	cp $< $@
 
-%.h : %.rml
+$(SRCH): %.h : %.rml
 	$(RML) -c $<
 
 %.sig : %.rml
 	$(srcdir)/rml2sig/rmldep.sh $<
 
+
 vctarget: $(SRCC) absyn_subdir
+
 
 absyn_subdir:
 	@(cd $(srcdir)/absyn_builder ; $(MAKE) vctarget)
