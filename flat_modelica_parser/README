@@ -1,3 +1,11 @@
+2004-10-19
+This flat modelica parser is since long time deprecated. You probably want to use another modelica parser instead.
+
+/Kaj
+
+-----------------
+
+
 The flat modelica parser is an adaption of the modelica parser in
 antlr for parsing flattened modelica. It is primarily intended for
 integration into ModSimPack, hence the modSimPackTest files.
