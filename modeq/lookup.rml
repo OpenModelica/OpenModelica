@@ -37,7 +37,7 @@ module Lookup:
   with "env.rml"
   with "explode.rml"
 
-  relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type)
+  relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type,Env.Env)
   relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class, Env.Env)
   relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) 
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
@@ -69,23 +69,23 @@ with "print.rml"
 (** relation: lookup_type
  **)
 
-relation lookup_type: (Env.Env,Absyn.Path) => Types.Type =
+relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 
   rule	Debug.fprint ("lotr","lookup_type(")	&
 	Debug.fcall ("lotr",Env.print_env, env) &
 	Debug.fprint ("lotr",", ") & 
 	Debug.fcall ("lotr",Dump.print_path,path) &
 	Debug.fprint ("lotr",")\n") &
-	lookup_type_in_env(env,path) => t &
+	lookup_type_in_env(env,path) => (t,env') &
 
 	Debug.fprint ("lotr", "found type:") &
 	Debug.fcall ("lotr",Types.print_type, t) 
 	--------------------------------------
-	lookup_type(env, path) => t
+	lookup_type(env, path) => (t,env')
 
-  rule	lookup_package_type (env,pack,path) => t
+  rule	lookup_package_type (env,pack,path) => (t,env')
 	--------------------------------------
-	lookup_type(env, Absyn.QUALIFIED(pack,path)) => t
+	lookup_type(env, Absyn.QUALIFIED(pack,path)) => (t,env')
 	
   rule	Print.print_buf "lookup_type failed!\n" 
 	---------------------
@@ -113,6 +113,8 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 	Env.open_scope(env') => env2 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) => (_,env'',_,_,_) &
+	Print.print_buf "instantiated package, env:" &
+	Env.print_env env'' &
 	lookup_class_in_class(env'',c,path) => (c',env''') 
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path)) => (c', env''')
@@ -394,15 +396,15 @@ end
 
 (**  Type lookup *)
 
-relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type) =
+relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type,Env.Env) =
 
-  rule	lookup_type_in_frame(items,env,id) => c
+  rule	lookup_type_in_frame(items,env,id) => (c,env')
 	---------------------
-	lookup_type_in_env(env as (Env.FRAME(items)::fs),Absyn.IDENT(id)) => c
+	lookup_type_in_env(env as (Env.FRAME(items)::fs),Absyn.IDENT(id)) => (c,env')
 
-  rule	lookup_type_in_env(fs,id) => c
-	---------------------
-	lookup_type_in_env(f::fs,id) => c
+  rule	lookup_type_in_env(fs,id) => (c,env')
+	-------------------------------------
+	lookup_type_in_env(f::fs,id) => (c,f::env')
 
 end
 (**)
@@ -410,30 +412,44 @@ end
 relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 				 Env.Env,
 				 SCode.Ident)
-	  => Types.Type =
+	  => (Types.Type, Env.Env) =
 
   rule	(* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): " &
 	   Print.print_buf n & Print.print_buf "\n" & *)
 	id = n
 	---------------------------------------------------------
-	lookup_type_in_frame((n,Env.TYPE(t))::_,env, id) => t
+	lookup_type_in_frame((n,Env.TYPE(t))::_,env, id) => (t,env)
 
   rule	id = n & Print.print_buf "# Error while looking up type " &
 	Print.print_buf id & Print.print_buf ": found a component\n"
 	------------------------------------
 	lookup_type_in_frame((n,Env.VAR(_,_,_))::_,env,id) => fail
 
-  rule	id = n & 
+  rule	(* Each time a record constructor function is looked up, this rule will create the function.*)
+	(* An improvement (perhaps needing lot of code) is to add the function to the environment, which is *)
+	(* returned from this relation.*)
+	id = n & 
 	build_record_constructor_varlst (cdef,env) => varlst &
 	Types.make_function_type(varlst) => ftype 
 	----------------------------------------
-	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype
+	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) 
+	    => (ftype,env)
+
+  rule	id = n & 
+	not lookup_type_in_frame(rest,env,id) => (_,_) &
+	Inst.inst_class(env,Mod.NOMOD,Prefix.NOPRE,[],cdef,[]) =>(_,_,ty,_)  &
+	(* This rule is applied when a class definition, "below" in the code is a function and its type is 
+	   requested. We should really add the type `ty' to the environment in the future, but that means 
+	   a lot of changes......*)
+	Env.extend_frame_t(env,id,ty) => (env')
+	----------------------------------------
+	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_FUNCTION,_),_))::rest,env,id) => (ty,env')
 
   rule	(* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): not " &
 	   Print.print_buf n & Print.print_buf "\n" & *)
-	lookup_type_in_frame(fs,env,id) => t
+	lookup_type_in_frame(fs,env,id) => (t,env')
 	------------------------------
-	lookup_type_in_frame((n,_)::fs,env,id) => t
+	lookup_type_in_frame((n,_)::fs,env,id) => (t,env')
 end
 (**)
 
@@ -600,7 +616,7 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
 	build_varlst_from_elts(_,_) => fail
 end
 
-relation lookup_package_type : (Env.Env, string, Absyn.Path) => Types.Type =
+relation lookup_package_type : (Env.Env, string, Absyn.Path) => (Types.Type,Env.Env) =
 	
   rule	locate_package (env,packname) => pack &
  	Print.print_buf "- package lookup of types not implemented\n"

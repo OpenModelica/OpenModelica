@@ -67,8 +67,8 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	server_loop (shandle,isymb) => ressymb
 
   rule  Print.print_buf "Exiting\n" &
-	Socket.sendreply(shandle, "quit requested, shutting server down") &
-	Socket.close shandle &
+	Socket.sendreply(shandle, "quit requested, shutting server down\n") &
+ 	Socket.close shandle &
 	Socket.cleanup 
 	---------------------
 	server_loop (shandle,isymb) => isymb
@@ -187,7 +187,9 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	& ModUtil.string_prefix_params d => d'
-	& Debug.fcall ("codegen", Codegen.generate_functions, d')
+	& Debug.fcall ("codegen", Codegen.generate_functions, d') &
+	Print.get_string() => str &
+	print str 
 	------------------------------
 	translate_file [f]
 	
@@ -199,7 +201,9 @@ relation translate_file : string list => () =
 	----------------------------
 	translate_file [] => fail
 
-  rule	Print.print_buf "# An error occured\n"
+  rule	Print.print_buf "# An error occured\n" &
+	Print.get_string () => str &
+	print str 
 	----------------------------
 	translate_file _ => fail
 

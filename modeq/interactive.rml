@@ -82,6 +82,16 @@ val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot
 
 relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) =
 
+  rule	Print.get_string() => str &
+	Print.clear_buf() => () 
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("getErrorMsg",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	    => (str,st)
+
+  rule	Print.clear_buf() => () 
+	--------------------
+	evaluate(_,_) => fail
+
   rule	let newst = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[])
 	-------------------------------------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("clear",_),_))]),_) 
@@ -114,7 +124,7 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	Absyn.cref_to_path(cr) => path &
 	Absyn.path_string path => pathstr &
 	Inst.instantiate_implicit(p') => d &
-	DAE.dump2 d &
+	DAE.dump d &
 	ModUtil.string_prefix_params d => d' &
 	Print.get_string() => errstr &
 	Print.clear_buf & 
@@ -139,12 +149,6 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	--------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompilerFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_))
 	  => ("Ok\n",st)
-
-  rule	Print.get_string() => str &
-	Print.clear_buf() => () 
-	--------------------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("getErrorMsg",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_))
-	    => (str,st)
 	    
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------

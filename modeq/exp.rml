@@ -129,6 +129,7 @@ module Exp:
   relation print_component_ref : ComponentRef => ()
   relation print_component_ref_str : ComponentRef => string
   relation print_subscript: Subscript => ()
+  relation print_subscript_str: Subscript => string
   relation print_list : ('a list, 'a => (), string) => ()
   relation cref_equal : (ComponentRef, ComponentRef) => bool
   relation cref_str : ComponentRef => string

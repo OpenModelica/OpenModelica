@@ -1028,8 +1028,7 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_temp_decl("",tnr') => (_,dvar,tnr1) &
 	exp_type_str (t,a) => ident_type_str &
 	exp_short_type_str t => short_type &
-	generate_temp_decl(ident_type_str,tnr1) => (idecl,ivar,tnr2') &
-	generate_temp_decl(ident_type_str,tnr2') => (rdecl1,rvar1,tnr2'') &
+	generate_temp_decl(ident_type_str,tnr1) => (rdecl1,rvar1,tnr2'') &
 	generate_temp_decl(ident_type_str,tnr2'') => (rdecl2,rvar2,tnr2''') &
 	generate_temp_decl(ident_type_str,tnr2''') => (rdecl3,rvar3,tnr2) &
 
@@ -1037,35 +1036,30 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	Util.string_append_list([rvar1," = ",e1var,"; ",
 				 rvar2," = ",e2var,"; ",
 				 rvar3," = ",e3var,";"]) => r_stmt &
-	Util.string_append_list(["for (",ivar," = ",rvar1,"; ",
-			    "in_range_",short_type,"(",ivar,", ",rvar1,", ",rvar3,"); ",
-			    ivar," += ",rvar2,") {"]) => for_begin &
-	Util.string_append_list(["#ifdef ",i]) => def_beg1 &
-	Util.string_append_list(["#define ",dvar," ",i]) => def_beg2 &
-	Util.string_append_list(["#undef ",i]) => def_beg3 &
-	Util.string_append_list(["#endif"]) => def_beg4 &
-	Util.string_append_list(["#define ",i," ",ivar]) => def_beg5 &
+	Util.string_append_list(["for (",i," = ",rvar1,"; ",
+			    "in_range_",short_type,"(",i,", ",rvar1,", ",rvar3,"); ",
+			    i," += ",rvar2,") {"]) => for_begin &
+
+	Util.string_append_list(["{\n  ",ident_type_str," ",i,";\n"]) => def_beg1 &
+
 	Util.string_append_list([svar," = get_memory_state();"]) => mem_begin &
 
 	generate_algorithm_statements(stmts,tnr3) => (cfn4,tnr4) &
 	Util.string_append_list(["restore_memory_state(",svar,");"]) 
 	  => mem_end &
-	  Util.string_append_list(["#ifdef ",dvar]) => def_end1 &
-	Util.string_append_list(["#undef ",i]) => def_end2 &
-	Util.string_append_list(["#define ",i," ",dvar]) => def_end3 &
-	Util.string_append_list(["#undef ",dvar]) => def_end4 &
-	Util.string_append_list(["#endif"]) => def_end5 &
-	let for_end = "}" &
 
-	c_add_variables(cfn3,[sdecl,idecl,rdecl1,rdecl2,rdecl3]) => cfn3' &
+	let for_end = "}" &
+	let def_end1 = "} /* end for*/\n" &
+
+	c_add_variables(cfn3,[sdecl,rdecl1,rdecl2,rdecl3]) => cfn3' &
 	c_add_statements(cfn3',[r_stmt,
+				def_beg1,
 				for_begin,
-				def_beg1,def_beg2,def_beg3,def_beg4,def_beg5,
 				mem_begin]) => cfn3'' &
 	
 	c_add_statements(cfn4,[mem_end,
-			       def_end1,def_end2,def_end3,def_end4,def_end5,
-			       for_end]) => cfn4' &
+			       for_end,
+			       def_end1]) => cfn4' &
 
 	c_merge_fns([cfn3'',cfn4']) => cfn
 	
@@ -1080,43 +1074,33 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_temp_decl(ident_type_str,tnr1) => (idecl,ivar,tnr2) &
 	exp_type_str (t,true) => array_type_str &
 	generate_expression(e,tnr2) => (cfn3,evar,tnr3) &
-	Util.string_append_list(["for (",tvar," = 1; ",
-			    tvar," < size_of_dimension_",array_type_str,"(",ivar,", 1); ",
+	Util.string_append_list(["for (",tvar," = 0; ",
+			    tvar," < size_of_dimension_",array_type_str,"(",evar,", 1); ",
 			    "++",tvar,") {"]) => for_begin &
-	Util.string_append_list(["#ifdef ",i]) => def_beg1 &
-	Util.string_append_list(["#define ",dvar," ",i]) => def_beg2 &
-	Util.string_append_list(["#undef ",i]) => def_beg3 &
-	Util.string_append_list(["#endif"]) => def_beg4 &
-	Util.string_append_list(["#define ",i," ",ivar]) => def_beg5 &
+	Util.string_append_list(["{\n  ",ident_type_str," ",i,";\n"]) => def_beg1 &
 	Util.string_append_list([svar," = get_memory_state();"]) => mem_begin &
 	Util.string_append_list(["simple_index_alloc_",ident_type_str,
-			    "1(&",evar,", ",tvar,", &",ivar,");"]) 
+			    "1(&",evar,", ",tvar,", &",ivar,"));"]) 
 	  => stmt_array &
-	Util.string_append_list([ivar," = *(",array_type_str,"_element_addr1(&",
-			    evar,", 1, ",tvar,");"]) => stmt_scalar & (* Use fast implementation for 1 dim *)
+	Util.string_append_list([i," = *(",array_type_str,"_element_addr1(&",
+			    evar,", 1, ",tvar,"));"]) => stmt_scalar & (* Use fast implementation for 1 dim *)
 
 	Util.if(a,stmt_array,stmt_scalar) => stmt &
 	generate_algorithm_statements(stmts,tnr3) => (cfn4,tnr4) &
 	Util.string_append_list(["restore_memory_state(",svar,");"]) 
 	  => mem_end &
-	  Util.string_append_list(["#ifdef ",dvar]) => def_end1 &
-	Util.string_append_list(["#undef ",i]) => def_end2 &
-	Util.string_append_list(["#define ",i," ",dvar]) => def_end3 &
-	Util.string_append_list(["#undef ",dvar]) => def_end4 &
-	Util.string_append_list(["#endif"]) => def_end5 &
 	let for_end = "}" &
-
+	let def_end1 = "} /* end for*/\n" &
 	c_add_variables(cfn3,[sdecl,tdecl,idecl]) => cfn3' &
-	c_add_statements(cfn3',[for_begin,
-				def_beg1,def_beg2,def_beg3,def_beg4,def_beg5,
+	c_add_statements(cfn3',[def_beg1,
+				for_begin,
 				mem_begin,stmt]) => cfn3'' &
 	
 	c_add_statements(cfn4,[mem_end,
-			       def_end1,def_end2,def_end3,def_end4,def_end5,
-			       for_end]) => cfn4' &
+			       for_end,
+			       def_end1]) => cfn4' &
 
-	c_merge_fns([cfn3'',cfn4']) => cfn
-	
+	c_merge_fns([cfn3'',cfn4']) => cfn	
 	
 	-------------------------
 	generate_algorithm_statement (Algorithm.FOR(t,a,i,e,stmts),tnr)

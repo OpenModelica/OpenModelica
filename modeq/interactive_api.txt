@@ -304,3 +304,87 @@ record BitMap
   String fileName;
   String imageSource;
 end BitMap;
+
+
+
+Issues for Redesign
+===================
+
+An interactive function interface could be part of the Modelica
+specification or Rationale. In order to add this, the different
+implementations (OSM and Dymola and perhaps existing proposals) needs
+to be merged. This section presents some naming conventions and other api
+design issues that needs to be taken into consideration when deciding
+on the standard api.
+
+
+1. Naming conventions.
+   Proposal: function names should begin with a Non-capital letters
+   and have a Capital character for each new word in the name, 
+   e.g. 
+	loadModel
+	openModelFile
+
+2. Return type
+   There is a difference between the current implementations. OSM
+   returns strings, "OK" or "-1", while Dymola returns Boolean, e.g
+   true or false.
+   Proposal: All functions, not returning information, like for instance
+   getModelName, should return a Boolean value.
+
+3. Argument types.
+   There is also a difference between implementations for the
+   arguments of a function. For instance, Dymola uses strings as model
+   and component references, while OSM uses component references.
+   E.g loadModel("Resistor") in Dymola, but loadModel(Resistor) in
+   OSM.
+   One could also use both alternatives, since Modelica will probably
+   have function overloading in the near future.
+
+4. Function set
+   The major issue is of course which subset of functions to include,
+   and what they should do.
+   
+   Below is a table of Dymola and OSM functions merged together. The
+   table also contains a proposal for the standard.
+
+    <s> == string
+    <cr> == component reference
+    [] == list constructor, e.g. [<s>] == vector of strings
+
+   Dymola		OSM			Description         Proposal
+====================================================================
+   list()		-			list variables      list
+
+   listfunctions()	-			list function name  listfunctions
+						+ description	    
+
+   -			list(<cr>)		print model def.    list(<cr>), list(<s>)
+
+   classDirectory()	-			current directory   currentDirectory()
+
+   eraseClasses()	clear()			removes models      clearClasses()
+
+			clear()			removes all (models clearAll()
+						& variables)					
+
+   -			-			clear variables	    clearVariables()
+
+   openModel(<s>)	loadFile(<s>)		load models in file loadFile(<s>)
+
+   openModelFile(<s>)	loadModel(<cr>)		open file that	    loadModel(<cr>),loadModel(<s>)
+						contain the model
+
+   saveTotalModel(<s>,<s>)  -			save total modeldef. saveTotalModel(<s>,<s>) 
+								     or saveTotalModel(<s>,<cr>)
+
+   -			saveModel(<cr>,<s>)	save model	    saveModel(<s>,<s>) or saveModel(<s>,<cr>)
+
+
+   -			createModel(<cr>)	create new empty    createModel(<cr>),createModel(<s>)
+						model
+   eraseClasses([<s>])   deleteModel(<cr>)	remove model from   deleteModel(<cr>),deleteModel(<s>)
+						symboltable
+   
+   instantiateModel(<s>) instantiateClass(<cr>)  instantiate model  instantiateClass(<cr>)
+  

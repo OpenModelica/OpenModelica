@@ -55,6 +55,7 @@ module Dump:
   relation print_path : Absyn.Path => ()
   relation print_subscripts : Absyn.Subscript list => ()
   relation print_arraydim: Absyn.ArrayDim => ()
+  relation print_arraydim_str: Absyn.ArrayDim => string 
   relation print_equation: Absyn.Equation => ()
   relation print_algorithm: Absyn.Algorithm => ()
   relation print_list_debug : (string, 'a list, 'a => (), string) => ()

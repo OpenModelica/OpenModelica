@@ -947,11 +947,11 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
   rule	(* This rule finds record constructors, user defined or implicit *)
 
-	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype as Types.T_COMPLEX(ClassInf.RECORD(_),_))) &
+	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype as Types.T_COMPLEX(ClassInf.RECORD(_),_)),env') &
 	Debug.fprintln ("sei", "function is record constructor\n") &
 	
 	make_empty_slots(fargs) => slots &
-	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
+	elab_input_args(env', args,nargs,slots) => (args',newslots, c) &
 	Debug.fprintln ("sei", "Did elab_input_args") &
 
 	elab_consts(outtype) => const &
@@ -959,10 +959,10 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	Debug.fprintln ("sei", "Elaborated consts") &
 	get_properties(outtype, const) => prop &
 
-	Lookup.lookup_record_constructor_class(env,fn) => (cl,env') &
+	Lookup.lookup_record_constructor_class(env',fn) => (cl,env'') &
 	Debug.fprintln ("sei", "got record constructor class") &
 	
-	fill_default_slots(newslots,cl,env') => newslots2 &
+	fill_default_slots(newslots,cl,env'') => newslots2 &
 	Debug.fprint ("sei", "filled slots:") &
 	Debug.fcall ("sei",print_slots,newslots2) &
 	exp_list_from_slots(newslots2) => args'' &
@@ -975,7 +975,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
   rule	
 	(* PR. We found a function definition of fn. *)
 	Debug.fprintln ("sei", "Looking up function in elab_call_args.") &
-	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype)) &
+	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(fargs,outtype),env') &
 	(* ClassInf.valid(st, Absyn.R_FUNCTION) & *)
 	Debug.fprint("setr", "Did lookup in elab_call_args.\n") &
 	(*PR. Find function parameters in the function definition.*)
@@ -991,7 +991,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	* c is true if all input arguments are constant.
 	*)
 	make_empty_slots(fargs) => slots &
-	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
+	elab_input_args(env', args,nargs,slots) => (args',newslots, c) &
 	Debug.fprintln ("sei", "Did elab_input_args, constant=") &
 	(*PR. !! Fix this. The function body is examined to determine the 
 	* constness of each output argument.
@@ -1044,9 +1044,10 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	-----------------------------------------------
 	elab_call_args (env,fn,args,nargs) => (Exp.CALL(fn,args',tuple,false), PROP(restype, c))
 
-  rule	not Lookup.lookup_type(env,fn) => _ &
+  rule	not Lookup.lookup_type(env,fn) => (_,_) &
 	
-	Print.print_buf "# Couldn't find function " & Dump.print_path fn & Print.print_buf "\n"
+	Print.print_buf "# Couldn't find function " & Dump.print_path fn & Print.print_buf "\n" &
+	Env.print_env env 
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,_,_) => fail
 
@@ -2082,6 +2083,7 @@ relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
 
   rule	ceval (env,start,i) => Values.INTEGER(start') &
 	ceval (env,stop,i) => Values.INTEGER(stop') &
+	int_gt(stop',start') => true &
 	ceval_range(start', 1, stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop),i) 
@@ -2090,13 +2092,26 @@ relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
   rule	ceval (env,start,i) => Values.INTEGER(start') &
 	ceval (env,step,i) => Values.INTEGER(step') &
 	ceval (env,stop,i) => Values.INTEGER(stop') &
-	ceval_range(start', step', stop') => arr
+	ceval_range(start', step', stop') => arr &
+	int_gt(stop',start') => true &
+	int_gt(step',0) => true
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),i) 
+	  => Values.ARRAY(arr)
+
+  rule	ceval (env,start,i) => Values.INTEGER(start') &
+	ceval (env,step,i) => Values.INTEGER(step') &
+	ceval (env,stop,i) => Values.INTEGER(stop') &
+	ceval_range(start', step', stop') => arr &
+	int_gt(stop',start') => false &
+	int_gt(step',0) => false
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),i) 
 	  => Values.ARRAY(arr)
 
   rule	ceval (env,start,i) => Values.REAL(start') &
 	ceval (env,stop,i) => Values.REAL(stop') &
+	real_gt(stop',start') => true &
 	ceval_range_real(start', 1.0, stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),i) 
@@ -2105,6 +2120,18 @@ relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
   rule	ceval (env,start,i) => Values.REAL(start') &
 	ceval (env,step,i) => Values.REAL(step') &
 	ceval (env,stop,i) => Values.REAL(stop') &
+	real_gt(stop',start') => b1 &
+	real_gt(step',0.0) => b2 &
+	ceval_range_real(start', step', stop') => arr
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),i) 
+	  => Values.ARRAY(arr)
+
+  rule	ceval (env,start,i) => Values.REAL(start') &
+	ceval (env,step,i) => Values.REAL(step') &
+	ceval (env,stop,i) => Values.REAL(stop') &
+	real_gt(stop',start') => false &
+	real_gt(step',0.0) => false &
 	ceval_range_real(start', step', stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),i) 

@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
-
+#include <assert.h>
 #include <netinet/in.h>
 
 int 
@@ -10,6 +10,8 @@ make_socket (unsigned short int port)
 {
   int sock;
   struct sockaddr_in name;
+  socklen_t optlen;
+  int one=1;
   
   /* Create the socket. */
   sock = socket (PF_INET, SOCK_STREAM, 0);
@@ -23,6 +25,8 @@ make_socket (unsigned short int port)
   name.sin_family = PF_INET;
   name.sin_port = htons (port);
   name.sin_addr.s_addr = htonl (INADDR_ANY);
+  assert(setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&one,sizeof(int)) == 0);
+
   if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0)
     {
       perror ("bind");

@@ -106,6 +106,16 @@ type Ident = Exp.Ident
 type Env = Env.Env
 
 
+relation print_dims: DimExp list => () =
+  rule	print_dim([SOME(x)]) => () &
+	print_dims(xs) => ()
+	-------------------
+	print_dims(x::xs) => ()
+
+  axiom	print_dims([]) => ()
+end
+
+
 (** relation: new_ident
  **
  ** This relation creates a new, unique identifer.  The same name is
@@ -154,7 +164,8 @@ end
 relation instantiate_implicit: SCode.Program => DAE.DAElist =
 
   rule	Builtin.initial_env => env &
-	inst_program_implicit(env,p) => l 
+	Env.extend_frame_classes(env,p) => env' &
+	inst_program_implicit(env',p) => l 
 	-----------------------------
 	instantiate_implicit(p) => DAE.DAE(l)
 end
@@ -275,11 +286,11 @@ end
 
 relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
 	
-  rule	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+  rule	implicit_instantiation(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
 	inst_program_implicit(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	inst_program_implicit(env,c::cs) => dae
+	inst_program_implicit(env,(c as SCode.CLASS(n,_,_,restr,_))::cs) => dae
 
   axiom	 inst_program_implicit(env,[]) => []
 
@@ -759,7 +770,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** modification are inspected for array dimensions. *)
 
 	elab_arraydim(env2,ad,eq) => dims &
-					       
+
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
@@ -1072,7 +1083,8 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	(** modification are inspected for array dimensions. *)
 
 	elab_arraydim(env2,ad,eq) => dims &
-	
+	print_dims dims &
+
 	(** Instantiate the component *)	
 	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[])
 	  => (dae1,csets',ty) &
@@ -1103,8 +1115,17 @@ end
 
 relation inst_dim_exp : DimExp => Exp.Subscript =
 
+  rule	Print.print_buf "# Error, can not determine size of array.\n"
+	-------------------------------------------
+	inst_dim_exp DIMEXP(Exp.WHOLEDIM,_) => fail
+
+  rule	Print.print_buf "# Error, can not determine size of array. SLICE\n"
+	-------------------------------------------
+	inst_dim_exp DIMEXP(Exp.SLICE(_),_) => fail
+
   axiom	inst_dim_exp DIMINT(i) => Exp.INDEX(Exp.ICONST(i))
-  axiom	inst_dim_exp DIMEXP(e,_) => e
+
+  axiom	inst_dim_exp DIMEXP(e as Exp.INDEX(_),_) => e
 
 end
 
