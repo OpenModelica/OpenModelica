@@ -155,13 +155,14 @@ language_specification
 
 external_function_call 
 		{
-			// Initialization
+			std::vector<value> exp_list; // This is just to nuke a compiler warning.
+            value val;
 		}
 		:
 		#(EXTERNAL_FUNCTION_CALL 
 			(
-				(IDENT (expression_list)?)
-				|#(EQUALS component_reference IDENT (expression_list)?)
+				(IDENT (exp_list = expression_list)?)
+				|#(EQUALS val = component_reference IDENT (exp_list = expression_list)?)
 			)
 		)
 		{
@@ -359,12 +360,12 @@ declaration
 
 modification 
 		{
-			// Initialization
+			value val;
 		}
 		:
-		(	class_modification ( expression )?
-		|#(EQUALS expression)
-		|#(ASSIGN expression)
+		(	class_modification ( val = expression )?
+		|#(EQUALS val = expression)
+		|#(ASSIGN val = expression)
 		)
 		{
 			// Actions
@@ -411,10 +412,10 @@ argument
 
 element_modification 
 		{
-			// Initialization
+			value val;
 		}
 		:
-		(FINAL)? component_reference modification string_comment
+		(FINAL)? val = component_reference modification string_comment
 		{
 			// Actions
 		}
@@ -595,10 +596,10 @@ conditional_equation_a
 
 for_clause_e 
 		{
-			// Initialization
+			value val;
 		}
 		:
-		#(FOR IDENT expression equation_list)
+		#(FOR IDENT val = expression equation_list)
 		{
 			// Actions
 		}
@@ -650,10 +651,10 @@ when_clause_a
 
 else_when_a
 		{
-			// Initializations
+            value val;
 		}
 		:
-		#(ELSEWHEN expression algorithm_list)
+		#(ELSEWHEN val = expression algorithm_list)
 		{
 			// Actions
 		}
@@ -661,10 +662,10 @@ else_when_a
 
 equation_elseif 
 		{
-			// Initialization
+			value val;
 		}
 		:
-		#(ELSEIF expression equation_list)
+		#(ELSEIF val = expression equation_list)
 		{
 			// Actions
 		}
@@ -672,10 +673,10 @@ equation_elseif
 
 algorithm_elseif
 		{
-			// Initialization
+			value val;
 		}
 		:
-		#(ELSEIF expression	algorithm_list)
+		#(ELSEIF val = expression	algorithm_list)
 		{
 			// Actions
 		}
@@ -913,7 +914,7 @@ term returns [value val]
 		|#(STAR val_term = term val_factor = factor) 
 			{
 	  			val = val_term * val_factor;
-                cout << "Finished walking plus" << endl;
+              //  cout << "Finished walking plus" << endl;
 			}
 		|#(SLASH val_term = term val_factor = factor)
 		{
@@ -1069,7 +1070,7 @@ component_reference_assign returns [value* val]
 
 component_reference_function_call returns [value val] 
 		{
-		
+            value val2;
 		}
 		:
 		#(i:IDENT (array_subscripts )? 
@@ -1088,7 +1089,7 @@ component_reference_function_call returns [value val]
                 
             }
             ) 
-		|#(DOT #(IDENT (array_subscripts)?) component_reference)
+		|#(DOT #(IDENT (array_subscripts)?) val2 = component_reference)
 		{
 			// Actions
 		}
@@ -1220,10 +1221,10 @@ array_subscripts
 
 subscript 
 		{
-			// Initialization
+			value val;
 		}
 		:
-		expression | COLON
+        val = expression | COLON
 		{
 			// Actions
 		}

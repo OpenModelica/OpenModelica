@@ -747,11 +747,59 @@ value value::operator-(const value& v) const
 
 const value& value::operator*= (const value& val)
 {
- //    if (!is_numeric() || !val.is_numeric())
-//     {
-//       throw modelica_runtime_error("Multiplying non-numerical value\n");
-//     }
+  if (!is_numeric() || !val.is_numeric())
+    {
+      throw modelica_runtime_error("Multiplying non-numerical value\n");
+    }
 
+  if (is_real() && val.is_real())
+    {
+      m_real *= val.m_real;
+    }
+  else if (is_real() && val.is_integer())
+    {
+      m_real *= val.m_integer;
+    }
+  else if (is_integer() && val.is_real())
+    {
+      m_real = m_integer;
+      m_real *= val.m_real;
+      m_basic_type = create_real();
+    }
+  else if (is_integer() && val.is_integer())
+    {
+      m_integer *= val.m_integer;
+    }
+  else if (is_real_array() && val.is_real())
+    {
+      m_real_array *= val.m_real;
+    }
+  else if (is_real_array() && val.is_integer())
+    {
+      m_real_array *= double(val.m_integer);
+    }
+  else if (is_real() && val.is_real_array())
+    {
+      m_real_array = val.m_real_array;
+      m_real_array *= m_real;
+      m_basic_type = create_real_array(val.m_real_array.size());
+    }
+  else if (is_integer() && val.is_real_array())
+    {
+      m_real_array = val.m_real_array;
+      m_real_array *= double(m_integer);
+      m_basic_type = create_real_array(val.m_real_array.size());
+    }
+  else if (is_integer() && val.is_integer_array())
+    {
+      m_integer_array = val.m_integer_array;
+      m_integer_array *= m_integer;
+      m_basic_type = create_integer_array(val.m_integer_array.size());
+    }
+  else
+    {
+      throw modelica_runtime_error("This multiplication is not defined\n");
+    }
 //   if (val.is_real() || is_real())
 //   {
 //     m_real = to_double()*val.to_double();
@@ -769,8 +817,68 @@ const value& value::operator*= (const value& val)
 value value::operator*(const value& v) const
 {
   value tmp(*this);
-  tmp *= v;
-  return tmp;
+
+  if (is_real_array() && v.is_real_array())
+    {
+      std::vector<int> s1 = m_real_array.size();
+      std::vector<int> s2 = v.m_real_array.size();
+      
+      if ((m_real_array.ndims() == 1) && (v.m_real_array.ndims() == 1))
+	{
+	  // vector x vector
+	  if (s1[0] != s2[0])
+	    {
+	      throw modelica_runtime_error("Vector should be of the same length");
+	    }
+	  else
+	    {
+	      tmp.m_real = mul_vector_vector(m_real_array,v.m_real_array);
+	      tmp.m_basic_type = create_real();
+	    }
+	}
+      // else if (m_real_array.ndims() == 1)
+// 	{
+// 	  // vector x matrix
+// 	  if(s1[0] != s2[0])
+// 	    {
+// 	      throw modelica_runtime_error("Invalid dimension in vector matrix product\n");
+// 	    }
+// 	  else
+// 	    {
+// 	      m_real_array = mul_vector_matrix(m_real_array,val.m_real_array);
+// 	    }
+	  
+//     }
+//       else if (val.m_real_array.ndims() == 1)
+// 	{
+// 	  // matrix x vector
+// 	  if (s1[1] != s2[0])
+// 	    {
+// 	      throw modelica_runtime_error("Invalid dimension in matrix vector product\n");
+// 	    }
+// 	  else
+// 	    {
+
+// 	    }
+// 	}
+//       else if (s1[1] != s2[0])
+// 	{
+// 	  throw modelica_runtime_error("Invalid dimension sizes\n");
+// 	}
+      
+//       real_array result;
+//       result = m_real_array * val.m_real_array;
+ 
+//       m_real_array = result;
+//     } 
+    }
+  else
+    {
+  
+      tmp *= v;
+    
+    }
+    return tmp;
 }
 
 const value& value::operator/= (const value& val)

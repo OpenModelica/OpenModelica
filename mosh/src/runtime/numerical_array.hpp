@@ -36,6 +36,16 @@ public:
 
   numerical_array<Tp> operator- () const;
 
+  numerical_array<Tp>& operator*= (const numerical_array<Tp>& arr);
+  
+  //numerical_array<Tp> operator* (const numerical_array<Tp>& arr) const;
+  numerical_array<Tp> operator* (const numerical_array<Tp>& arr) const;
+  numerical_array<Tp>& operator*= (const Tp& s);
+  numerical_array<Tp> operator* (const Tp& s);
+
+  friend Tp mul_vector_vector<Tp>(const numerical_array<Tp>& v1,const numerical_array<Tp>& v2);
+  friend numerical_array<Tp> mul_vector_matrix<Tp>(const numerical_array<Tp>& v1, const numerical_array<Tp>& v2);
+
   numerical_array() {};
   numerical_array(std::vector<int> dims) : modelica_array<Tp>(dims) {};
   numerical_array(std::vector<int> dims,std::vector<Tp> scalars) : modelica_array<Tp>(dims,scalars) {};
@@ -141,8 +151,107 @@ numerical_array<Tp> numerical_array<Tp>::operator- () const
   return tmp;
 }
 
-// typedef numerical_array<double> real_array;
-// typedef numerical_array<int> integer_array;
+template<typename Tp>
+numerical_array<Tp> numerical_array<Tp>::operator* (const numerical_array<Tp>& arr) const
+{
+  assert(ndims() == 2);
+  assert(arr.ndims() ==2);
+  assert(m_dim_size[1] == arr.m_dim_size[0]);
+
+  int i_size = m_dim_size[0];
+  int j_size = m_dim_size[1];
+  int k_size = arr.m_dim_size[1];
+
+  std::vector<int> result_dims;
+  result_dims.push_back(i_size);
+  result_dims.push_back(k_size);
+
+  numerical_array<Tp> result(result_dims);
+  for (int i = 0; i < i_size; ++i)
+    {
+      for (int j = 0; j < j_size; ++j)
+	{
+	  Tp tmp = static_cast<Tp>(0);
+	  for (int k = 0; k < k_size; ++k)
+	    {
+	      tmp += m_data[i*k_size+k]*arr.m_data[k*j_size+j];
+	    }
+	  result.m_data[i*j_size+j] = tmp;
+	}
+    }
+  return result;
+}
+
+template<typename Tp>
+Tp mul_vector_vector(const numerical_array<Tp>& v1,const numerical_array<Tp>& v2)
+{
+  assert(v1.ndims() == 1);
+  assert(v2.ndims() == 1);
+  assert(v1.m_dim_size[0] == v2.m_dim_size[0]);
+
+  return std::inner_product(v1.m_data.begin(),v1.m_data.end(),v2.m_data.begin(),static_cast<Tp>(0));
+}
+
+template<typename Tp>
+numerical_array<Tp> mul_vector_matrix(const numerical_array<Tp>& v1, const numerical_array<Tp>& v2)
+{
+  assert(v1.ndims() == 1);
+  assert(v2.ndims() == 2);
+  assert(v1.m_dim_size[0] == v2.m_dim_size[0]);
+
+  std::vector<Tp>::const_iterator it = v2.m_data.begin();
+
+  numerical_array<Tp> result(std::vector<int>(1,v2.m_dim_size[1]));
+  for (; it != v2.m_data.end();++it)
+    {
+      Tp element = std::inner_product(v1.m_data.begin(),v1.m_data.end(),it,static_cast<Tp>(0));
+      result.m_data.push_back(element);
+    }
+
+  assert(result.m_data.size() == v2.m_dim_size[1]);
+  return result;
+}
+
+// template<typename Tp>
+// numerical_array<Tp>& numerical_array<Tp>::operator*= (const numerical_array<Tp>& arr)
+// {
+
+//   if ( (m_dims_size.size() == 1 ) && (arr.m_dim_size.size() == 1))
+//     {
+//       if (m_dims_size[0] == val.m_dim_size[0])
+// 	{
+// 	  std::inner_product(m_data.begin(),m_data.end(),arr.m_data.begin(),0);
+// 	}
+//       else
+// 	{
+// 	  throw modelica_runtime_error("Incompatible vector dimensions\n");
+// 	}
+//     }
+//   for (size_t i = 0; i < m_data.size(); ++i)
+//     {
+//       m_data[i] *= s;
+//     }
+//   return *this;
+// }
+
+template<typename Tp>
+numerical_array<Tp>& numerical_array<Tp>::operator*= (const Tp& s)
+{
+  for (size_t i = 0; i < m_data.size(); ++i)
+    {
+      m_data[i] *= s;
+    }
+  return *this;
+}
+
+template<typename Tp>
+numerical_array<Tp> numerical_array<Tp>::operator * (const Tp& s)
+{
+  numerical_array tmp(*this);
+  
+  tmp *= s;
+  return tmp;
+}
 
 class real_array : public numerical_array<double>
 {

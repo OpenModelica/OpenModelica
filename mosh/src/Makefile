@@ -83,4 +83,4 @@ reallyclean: clean
 
 mosh.o : mosh.cpp ../../modelica_parser/src/modelica_lexer.hpp ../../modelica_parser/src/modelica_parser.hpp
 
-include Makefile.depend
+#include Makefile.depend
