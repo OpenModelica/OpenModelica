@@ -155,17 +155,19 @@ classloader.o: classloader.rml absyn.sig system.sig lookup.sig interactive.sig u
 codegen.o: codegen.rml dae.sig print.sig dump.sig debug.sig absyn.sig algorithm.sig classinf.sig exp.sig modutil.sig types.sig util.sig inst.sig
 connect.o: connect.rml exp.sig staticexp.sig dae.sig env.sig dump.sig print.sig util.sig debug.sig
 dae.o: dae.rml absyn.sig exp.sig algorithm.sig types.sig values.sig rtopts.sig graphviz.sig dump.sig print.sig util.sig ceval.sig
+daelow.o: daelow.rml dae.sig exp.sig util.sig daeext.sig absyn.sig print.sig derive.sig debug.sig
+derive.o: derive.rml daelow.sig exp.sig absyn.sig util.sig print.sig
 debug.o: debug.rml rtopts.sig dump.sig print.sig
 dump.o: dump.rml absyn.sig interactive.sig debug.sig classinf.sig rtopts.sig print.sig util.sig
 dumpgraphviz.o: dumpgraphviz.rml absyn.sig debug.sig graphviz.sig classinf.sig dump.sig
 env.o: env.rml absyn.sig values.sig explode.sig types.sig classinf.sig exp.sig dump.sig graphviz.sig dae.sig print.sig util.sig system.sig
-exp.o: exp.rml absyn.sig rtopts.sig util.sig print.sig
+exp.o: exp.rml absyn.sig graphviz.sig rtopts.sig util.sig print.sig modutil.sig derive.sig
 explode.o: explode.rml absyn.sig dump.sig debug.sig print.sig
 graphviz.o: graphviz.rml
 inst.o: inst.rml classinf.sig connect.sig dae.sig debug.sig env.sig exp.sig explode.sig mod.sig prefix.sig types.sig util.sig interactive.sig cache.sig absyn.sig algorithm.sig builtin.sig dump.sig lookup.sig modutil.sig rtopts.sig staticexp.sig values.sig print.sig system.sig ceval.sig
 interactive.o: interactive.rml absyn.sig explode.sig dae.sig types.sig values.sig env.sig dump.sig debug.sig rtopts.sig util.sig parse.sig prefix.sig mod.sig lookup.sig classinf.sig exp.sig inst.sig staticexp.sig modutil.sig codegen.sig print.sig system.sig classloader.sig cache.sig ceval.sig
 lookup.o: lookup.rml classinf.sig types.sig absyn.sig exp.sig env.sig explode.sig cache.sig parse.sig debug.sig dump.sig inst.sig mod.sig prefix.sig print.sig builtin.sig util.sig modutil.sig staticexp.sig
-main.o: main.rml absyn.sig modutil.sig parse.sig dump.sig dumpgraphviz.sig explode.sig dae.sig inst.sig interactive.sig rtopts.sig debug.sig codegen.sig socket.sig print.sig corba.sig system.sig util.sig
+main.o: main.rml absyn.sig modutil.sig parse.sig dump.sig dumpgraphviz.sig explode.sig dae.sig daelow.sig inst.sig interactive.sig rtopts.sig debug.sig codegen.sig socket.sig print.sig corba.sig system.sig util.sig
 mod.o: mod.rml absyn.sig env.sig exp.sig prefix.sig explode.sig types.sig dump.sig debug.sig print.sig inst.sig staticexp.sig values.sig util.sig
 modsim.o: modsim.rml system.sig util.sig
 modutil.o: modutil.rml absyn.sig dae.sig exp.sig algorithm.sig rtopts.sig util.sig print.sig
