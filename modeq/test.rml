@@ -17,13 +17,12 @@ val component = Class.COMPONENT(false,
 				false,
 				false,
 				false,
-				"Real",
+				Exp.IDENT("Real"),
 				"par1", 
 				SOME(Class.ONEDIM(SOME((one,NONE)))),
 				NONE)
 
-val ellist =
-	(Class.PUBLIC,[ Class.ELEMENT(true, component) ])
+val parts =
+	[ (Class.PUBLIC([ Class.ELEMENT(true, component) ])) ]
 
-val prog1 = [ Class.CLASS(Class.CL_MODEL,
-		          [ ellist ]) ]
+val prog1 = [ Class.CLASS("class1", false, Class.CL_MODEL, parts) ]

@@ -11,7 +11,8 @@ int zzcr_attr(Attrib *attr, int type, char *text)
     attr->u.floatval = atof(text); break;
   case IDENT:
   case STRING:
-    attr->u.stringval = strdup(text); break;
+    attr->u.stringval = strdup(text);
+    break;
   default:
     break;
   }
@@ -23,7 +24,9 @@ void zzd_attr(Attrib *attr)
   {
   case IDENT:
   case STRING:
-    free(attr->u.stringval); break;
+    /* MEMORY LEAK! */
+/*     free(attr->u.stringval); */
+    break;
   }
 }
 
@@ -60,7 +63,7 @@ void print_attr(Attrib *attr, FILE *f)
   case UNSIGNED_NUMBER:
     fprintf(f, "%.2f", attr->u.floatval); break;
   case IDENT:
-    fprintf(f, "%s", attr->u.stringval); break;
+    fprintf(f, "'%s'", attr->u.stringval); break;
   case STRING:
     fprintf(f, "\"%s\"", attr->u.stringval); break;
 
@@ -69,6 +72,8 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(BOUNDARY);
   tokprinter(MODEL);
   tokprinter(PARTIAL);
+  tokprinter(EXTENDS);
+  tokprinter(PUBLIC);
   tokprinter(INPUT);
   tokprinter(OUTPUT);
   tokprinter(FLOW);
@@ -77,10 +82,12 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(EQUATION);
   tokprinter(LPAR);
   tokprinter(RPAR);
+  tokprinter(DOT);
   tokprinter(COMPONENTS);
   tokprinter(TYPE_PREFIX);
   tokprinter(FUNCALL);
   tokprinter(EQUALS);
+  tokprinter(ELEMENT);
 
   case zzEOF_TOKEN:
   default:
