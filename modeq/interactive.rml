@@ -73,10 +73,10 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	-------------------------------------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("clear",_),_))]),_) 
 	    => ("Clearing symbol table\n", newst)
-  rule	Dump.dump(p)
+  rule	Dump.unparse_str(p) => str
 	------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),_))]),st as SYMBOLTABLE(p,_,_,_))
-	    => (" symboltable :",st)
+	    => (str,st)
 
   rule	SCode.elaborate(p) => p' &
 	Absyn.cref_to_path(cr) => path &
