@@ -45,4 +45,10 @@ relation cd: (string) => int
 
 relation pwd: () => string
 
+relation modelicapath: () => string
+
+relation sub_directories: (string) => string list
+
+relation mo_files: (string) => string list
+
 end

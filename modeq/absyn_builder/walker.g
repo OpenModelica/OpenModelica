@@ -991,9 +991,10 @@ for_clause_e returns [void* ast]
 	void* id;
 }
 	:
-		#(FOR i:IDENT
-			e = expression
-			eq = equation_list
+
+		#(FOR #(IN i:IDENT
+			e = expression )
+			eq = algorithm_list
 		)
 		{
 			id = to_rml_str(i);
@@ -1437,8 +1438,13 @@ component_reference__function_call returns [void* ast]
 				ast = Absyn__CREF(cref);
 			}
 		)
-	;
-
+		|
+		#(INITIAL_FUNCTION_CALL INITIAL )
+			{
+				ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("initial"), mk_nil()),Absyn__FUNCTIONARGS(mk_nil(),mk_nil()));
+			}
+		;
+	
 name_path returns [void* ast]
 {
 	void* str;

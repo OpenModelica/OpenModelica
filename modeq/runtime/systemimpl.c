@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #include <sys/unistd.h>
 #include <sys/stat.h>
 #include "read_write.h"
 #include "../values.h"
+#include <sys/dirent.h>
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 255
@@ -163,6 +165,98 @@ RML_BEGIN_LABEL(System__read_5ffile)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__modelicapath)
+{
+  char *path = getenv("MODELICAPATH");
+  if (path == NULL) 
+      RML_TAILCALLK(rmlFC);
+  
+  rmlA0 = (void*) mk_scon(path);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+char *select_from_dir;
+
+int file_select_directories(struct dirent *entry)
+{
+  char fileName[MAXPATHLEN];
+  int res;
+  struct stat fileStatus;
+  if ((strcmp(entry->d_name, ".") == 0) ||
+      (strcmp(entry->d_name, "..") == 0)) {
+    return (0);
+  } else {
+    sprintf(fileName,"%s/%s",select_from_dir,entry->d_name);
+    res = stat(fileName,&fileStatus);
+    if (res!=0) return 0;
+    if ((fileStatus.st_mode & _IFDIR))
+      return (1);
+    else
+      return (0);
+  }
+}
+
+RML_BEGIN_LABEL(System__sub_5fdirectories)
+{
+  int i,count;
+  void *res;
+  char* directory = RML_STRINGDATA(rmlA0);
+  if (directory == NULL)
+    RML_TAILCALLK(rmlFC);
+  struct dirent **files;
+  select_from_dir = directory;
+  count =
+    scandir(directory, &files, file_select_directories,NULL);
+  res = mk_nil();
+  for (i=0; i<count; i++) {
+    res = mk_cons(mk_scon(files[i]->d_name),res);
+  }
+  rmlA0 = (void*) res;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+int file_select_mo(struct dirent *entry)
+{
+  char fileName[MAXPATHLEN];
+  int res; char* ptr;
+  struct stat fileStatus;
+  if ((strcmp(entry->d_name, ".") == 0) ||
+      (strcmp(entry->d_name, "..") == 0) ||
+      (strcmp(entry->d_name, "package.mo") == 0)) {
+    return (0);
+  } else {
+    ptr = rindex(entry->d_name, '.');
+    if ((ptr != NULL) &&
+	((strcmp(ptr, ".mo") == 0))) {
+      return (1);
+    } else {
+      return (0);
+    }
+  }
+}
+
+RML_BEGIN_LABEL(System__mo_5ffiles)
+{
+  int i,count;
+  void *res;
+  char* directory = RML_STRINGDATA(rmlA0);
+  if (directory == NULL)
+    RML_TAILCALLK(rmlFC);
+  struct dirent **files;
+  select_from_dir = directory;
+  count =
+    scandir(directory, &files, file_select_mo,NULL);
+  res = mk_nil();
+  for (i=0; i<count; i++) {
+    res = mk_cons(mk_scon(files[i]->d_name),res);
+  }
+  rmlA0 = (void*) res;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 
 RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)

@@ -26,7 +26,8 @@ module Interactive:
   with "explode.rml" 
   with "dae.rml" 							  
   with "types.rml"
-  with "values.rml"							  
+  with "values.rml"
+  with "env.rml"
 
   datatype InteractiveStmt = IALG of Absyn.AlgorithmItem
 			   | IEXP of Absyn.Exp
@@ -52,6 +53,8 @@ module Interactive:
   relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int
   relation remove_compiled_functions: (Absyn.Program, (Absyn.Path * Types.Type) list)
 	    => (Absyn.Path * Types.Type) list
+  relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env 
+  relation get_pathed_class_in_program: (Absyn.Path, Absyn.Program) => Absyn.Class 
 
 end
 with "dump.rml"
@@ -61,7 +64,6 @@ with "util.rml"
 with "parse.rml"
 with "prefix.rml"
 with "mod.rml"
-with "env.rml"
 with "lookup.rml"
 with "classinf.rml"
 with "exp.rml"
@@ -71,6 +73,7 @@ with "modutil.rml"
 with "codegen.rml"
 with "print.rml"
 with "system.rml"
+with "classloader.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
@@ -113,6 +116,7 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 
   rule	SCode.elaborate(p) => p' &
 	Absyn.cref_to_path(cr) => path &
+	print "elaborated\n" &
 	Inst.instantiate_class(p',path) => dae &
 	DAE.dump_debug dae &
 	Print.print_buf "dumped dae:\n" &
@@ -363,10 +367,25 @@ end
 relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) => 
 	(string, InteractiveSymbolTable) = 
 	
-  rule	let resstr="GAPI function not implemented yet\n" & let newst = st
+  rule	let ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadClass",_),arg))]) = stmt &
+	let Absyn.FUNCTIONARGS([ Absyn.CREF(cref) ],[]) = arg &
+	System.modelicapath => mp &	
+	componentref_to_path(cref) => path &
+	ClassLoader.load_class(path, mp) => pnew &
+	update_program(pnew,p) => p' &
+	Print.get_string => str &
+	let newst = SYMBOLTABLE(p', s, ic, iv, cf)
 	---------------------------------------------------
-	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,newst)
-	
+	evaluate_graphical_api(stmt, st as SYMBOLTABLE(p,s,ic,iv,cf)) => (str,newst)
+
+  rule	let ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadClass",_),arg))]) = stmt &
+	let Absyn.FUNCTIONARGS([ Absyn.CREF(cref) ],[]) = arg &
+	componentref_to_path(cref) => path &
+	Absyn.path_string(path) => pathstr &
+	Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str
+	---------------------------------------------------
+	evaluate_graphical_api(stmt, st as SYMBOLTABLE(p,s,ic,iv,cf)) => (str,st)
+
   rule	Parser.parse(name) => p1 &
 	print "Parsed program\n" &
 	update_program(p1,p) => newp 
@@ -763,6 +782,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 
 end
 
+
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
 
   axiom componentref_to_path(Absyn.CREF_IDENT(ident,_)) => Absyn.IDENT(ident)
@@ -967,9 +987,9 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
   axiom	update_program (Absyn.PROGRAM([],_),prg) => prg
      
   rule	class_in_program(name,p2) => false &
-	update_program(Absyn.PROGRAM(c2,w),Absyn.PROGRAM((c1::c3),w)) => pnew
+	update_program(Absyn.PROGRAM(c2,w),Absyn.PROGRAM((c1::c3),w2)) => pnew
 	---------------------------------------------------------
-	update_program (Absyn.PROGRAM((c1 as Absyn.CLASS(name,_,_,_,_,_))::c2,w as Absyn.TOP),p2 as Absyn.PROGRAM(c3,_)) => pnew
+	update_program (Absyn.PROGRAM((c1 as Absyn.CLASS(name,_,_,_,_,_))::c2,w as Absyn.TOP),p2 as Absyn.PROGRAM(c3,w2)) => pnew
 
   rule	class_in_program(name,p2) => true &
 	update_program(Absyn.PROGRAM(c2,w),p2) => pnew &
@@ -2221,7 +2241,6 @@ relation insert_class_in_program: (Absyn.Class, Absyn.Within, Absyn.Program) => 
 
   rule	get_class_in_program(n1,p) => c2 &
 	insert_class_in_class(c1,w,c2) => c3 &
-
 	update_program(Absyn.PROGRAM([c3],Absyn.TOP),p) => pnew
 	-------------------------------------------------
 	insert_class_in_program(c1,w as Absyn.WITHIN(Absyn.QUALIFIED(n1,_)),p) => pnew
@@ -2232,9 +2251,10 @@ relation insert_class_in_program: (Absyn.Class, Absyn.Within, Absyn.Program) => 
 	-------------------------------------------------
 	insert_class_in_program(c1, w as Absyn.WITHIN(Absyn.IDENT(n1)),p) => pnew
 	
-  rule	Print.print_buf "Error inserting in class, within name, where name is not defined\n" 
+  rule	print "Error inserting in class. (" & Dump.unparse_within w => s1 & print s1 
+	& print ") program = \n" (*& Dump.unparse_str p => pstr & print pstr & print "\n"  *)
 	-------------------
-	insert_class_in_program(c1,_,p) => fail	
+	insert_class_in_program(c1 as Absyn.CLASS(name,_,_,_,_,_),w,p) => fail	
 end
 
 (** relation: insert_class_in_class
@@ -2245,7 +2265,7 @@ end
  **)
 relation insert_class_in_class: (Absyn.Class, Absyn.Within, Absyn.Class) => Absyn.Class =
 	
-  rule  replace_inner_class(c1,c2) => cnew  	
+  rule	replace_inner_class(c1,c2) => cnew  
 	----------------------------------
 	insert_class_in_class(c1,Absyn.WITHIN(Absyn.IDENT(name)),c2) => cnew
 
@@ -2256,7 +2276,7 @@ relation insert_class_in_class: (Absyn.Class, Absyn.Within, Absyn.Class) => Absy
 	---------------------------------------------
 	insert_class_in_class(c1,Absyn.WITHIN(Absyn.QUALIFIED(name,path)),c2) => cnew'
 	
-  rule Print.print_buf "insert_class_in_class failed\n"
+  rule	Print.print_buf "insert_class_in_class failed\n" 
 	-------------------------------------
 	insert_class_in_class(_,_,_) => fail
 end
@@ -2300,7 +2320,6 @@ relation replace_class_in_elementitemlist: (Absyn.ElementItem list, Absyn.Class)
 	------------------------------------------
 	replace_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_)) => e1::res
 	
-
   rule name1 = name 
 	-----------------------------
 	replace_class_in_elementitemlist(
@@ -2308,6 +2327,10 @@ relation replace_class_in_elementitemlist: (Absyn.ElementItem list, Absyn.Class)
 	    c2 as Absyn.CLASS(name,_,_,_,_,_))
 	    => Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e,c2),f))::xs
 	
+  rule	replace_class_in_elementitemlist(xs,c) => res
+	-----------------------------------------
+	replace_class_in_elementitemlist(c1::xs,c) => c1::res
+
   axiom	 replace_class_in_elementitemlist([],c) => [Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",Absyn.CLASSDEF(false,c),NONE))]
 end
 
@@ -2321,9 +2344,12 @@ relation get_inner_class: (Absyn.Class, Absyn.Ident) => Absyn.Class =
 	-----------------------------------------------
 	get_inner_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)), name) => c1
 
-  rule	Print.print_buf "get_inner_class failed, c:" &
-	Debug.fcall ("dump", Dump.dump,Absyn.PROGRAM([c],Absyn.TOP)) &
-	Print.print_buf "name :" & Print.print_buf name 
+  rule	Print.get_string => str &
+	Print.clear_buf &
+	Print.print_buf "get_inner_class failed, c:" &
+	Dump.dump Absyn.PROGRAM([c],Absyn.TOP) &
+	Print.print_buf "name :" & Print.print_buf name & 
+	Print.get_string => s1 & (*print s1 &*) Print.clear_buf & Print.print_buf str 
 	--------------
 	get_inner_class (c,name) => fail
 end
@@ -2361,18 +2387,21 @@ end
 
 
 (** relation: get_public_list
- ** This relation takes a ClassPart List and returns the first public ElementItem list of the class.
+ ** This relation takes a ClassPart List and returns an appended list of all public lists.
  **
 *)
 relation get_public_list: Absyn.ClassPart list => Absyn.ElementItem list =
-
-  axiom get_public_list Absyn.PUBLIC(lst)::rest => lst
+  axiom	get_public_list([]) => []
+	
+  rule	get_public_list(rest) => res2 &
+	list_append(res1,res2) => res
+	-----------------------------
+	get_public_list Absyn.PUBLIC(res1)::rest => res
 	
   rule	get_public_list(xs) => ys
 	---------------------------
 	get_public_list(x::xs) => ys
 
-  axiom get_public_list(_) => fail
 end
 
 (** relation: get_equation_list
@@ -2409,6 +2438,10 @@ relation get_class_from_elementitemlist: (Absyn.ElementItem list, Absyn.Ident) =
 	get_class_from_elementitemlist(xs,name) => res
 	------------------------------------------
 	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),NONE))::xs,name) => res
+
+  rule	get_class_from_elementitemlist(xs,name) => res
+	----------------------------------------------
+	get_class_from_elementitemlist(_::xs,name) => res
 
   axiom	 get_class_from_elementitemlist([],_) => fail
 end

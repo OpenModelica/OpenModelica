@@ -199,7 +199,9 @@ relation instantiate_class : (SCode.Program, SCode.Path) => DAE.DAElist =
 	instantiate_class(cdecls, path as Absyn.IDENT(name2)) => DAE.DAE([DAE.COMP(name2,DAE.DAE(dae))])
 
   rule	Builtin.initial_env => env &
+	print "calling inst_class_decls..  \n" &
 	inst_class_decls(env,cdecls,path)=> (env',_) &
+	print "done \n" &
 	Lookup.lookup_class(env',path,true) => (cdef, env'') &
 	inst_class(env'',Mod.NOMOD,Prefix.NOPRE,[],cdef,[],false) => (dae,_,_,_) &
 	Absyn.path_string path => pathstr
