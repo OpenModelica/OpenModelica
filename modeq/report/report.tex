@@ -30,7 +30,7 @@
 
 \newenvironment{Def}[1]{\begin{defth}[#1]\index{#1|textbf}}{\end{defth}}
 
-\newcommand{\codefont}{\normalfont\ttfamily\fontsize{8}{9}\selectfont}
+\newcommand{\codefont}{\normalfont\ttfamily\fontsize{7}{8}\selectfont}
 
 \makeatletter
 
@@ -401,6 +401,11 @@ simulation world, partly because the mathematical description using
 hybrid DAEs\cite{dae} is not very familiar to the engineers who do the
 modeling.
 
+\subsection{The class concept}
+
+In Modelica, the basic means of structuring models is the
+\firstref{class} concept.  Everthing in Modelica is declared as a class
+
 \fixme{More stuff}
 
 \section{The Modelica design group}
@@ -555,8 +560,11 @@ have been done.  The limitations are listen in no particular order.
   the semantic problems of this has not fully been brought to the
   attention of the design group.
   
-\item Modifying array slices does not work, as in \codebox{AModel
-    a(x[3:5] = [1.0,2.0,3.0])}.
+\item Modifying whole array dimensions does not work, as in
+  \codebox{AModel a(x[:,2] = [1.0,2.0,3.0])}.  This is simply a
+  limitation in the implementation.  When the modifications are
+  examined, it is unknown what the size of the component being
+  modified is.
 
 \item Array slices are not expanded in array equations.
   
@@ -602,11 +610,14 @@ have been done.  The limitations are listen in no particular order.
 \item Modifying class names is done even for non-local class names.
 
 \item Unused modifications are simply discarded.  They should produce
-  an error.
-
-\item Redeclarations are not implemented.
+  an error.  This is also true for out-of-bounds array modifications.
+  
+\item Redeclarations are not implemented.  This is simply because of
+  time restrictions.  It could probably be added without too much
+  trouble.
 
 \item The builtin type attributes are not completely implemented.
+  This includes things like \code{final}, \code{partial}.
 
 \item Assertions are lost during translation.
   
@@ -1809,22 +1820,22 @@ clearer.
 %\begin{landscape}
   
 \input{main.tex}
-%\input{absyn.tex}
-%\input{exp.tex}
-%\input{classinf.tex}
-%\input{types.tex}
-%\input{explode.tex}
-%\input{inst.tex}
-%\input{prefix.tex}
-%\input{mod.tex}
-%\input{algorithm.tex}
-%\input{env.tex}
-%\input{lookup.tex}
-%\input{builtin.tex}
-%\input{connect.tex}
-%\input{staticexp.tex}
-%\input{dae.tex}
-%\input{dump.tex}
+\input{absyn.tex}
+\input{exp.tex}
+\input{classinf.tex}
+\input{types.tex}
+\input{explode.tex}
+\input{inst.tex}
+\input{prefix.tex}
+\input{mod.tex}
+\input{algorithm.tex}
+\input{env.tex}
+\input{lookup.tex}
+\input{builtin.tex}
+\input{connect.tex}
+\input{staticexp.tex}
+\input{dae.tex}
+\input{dump.tex}
 
 %\end{landscape}
 
