@@ -85,6 +85,10 @@ relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 	load_class(_,_) => fail
 end
 
+(** relation: exist_regular_file
+ **
+ ** Checks if a file exists
+ **)
 relation exist_regular_file: (string) => () =
 
   rule	System.regular_file_exist filename => 0 
@@ -92,6 +96,10 @@ relation exist_regular_file: (string) => () =
 	exist_regular_file(filename) 
 end
 
+(** relation: exist_directory_file
+ **
+ ** Checks if a directory exist
+ **)
 relation exist_directory_file: (string) => () =
 
   rule	System.directory_exist filename => 0 
@@ -100,6 +108,10 @@ relation exist_directory_file: (string) => () =
 end
 
 
+(** relation: load_class_from_mps
+ **
+ ** Loads a class or classes from a set of paths in modelicapath
+ **)
 relation load_class_from_mps: (Absyn.Ident, string list) => Absyn.Program =
 	
   rule	load_class_from_mp(class,mp) => p
@@ -114,8 +126,9 @@ end
 
 (** relation: load_class_from_mp
  ** 
- ** This relation loads a modelica class "className" from the file path "<mp>/className.mo"
- ** or it loads complete package from "<mp>/className/package.mo"
+ ** This relation loads a modelica class "className" from the file path 
+ ** "<mp>/className.mo" or it loads complete package from 
+ ** "<mp>/className/package.mo"
  **)
 relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	
@@ -144,6 +157,10 @@ relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	load_class_from_mp(_,_) => fail
 end
 
+(** relation: load_complete_package_from_mps
+ **
+ ** Loads a whole package from the ModelicaPaths defined in MODELICAPATH
+ **)
 relation load_complete_package_from_mps: (Absyn.Ident, string list, Absyn.Within, Absyn.Program) => Absyn.Program =
 
   rule	load_complete_package_from_mp(pack,mp,within ,oldp) => p
@@ -156,6 +173,10 @@ relation load_complete_package_from_mps: (Absyn.Ident, string list, Absyn.Within
 
 end
 
+(** relation: load_complete_package_from_mp
+ ** 
+ ** Loads a whole package from the ModelicaPaths defined in MODELICAPATH
+ **)
 relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absyn.Program) => Absyn.Program =
 	
   rule System.path_delimiter => pd &	
@@ -194,6 +215,10 @@ relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absy
   axiom	load_complete_package_from_mp(_,_,_,_) => fail
 end
 
+(** relation: load_complete_subdirs
+ ** 
+ ** Loads all classes present in a subdirectory
+ **)
 relation load_complete_subdirs: (string list, Absyn.Ident, string, 
 				 Absyn.Within, Absyn.Program) 
 	  => Absyn.Program =
@@ -222,6 +247,10 @@ relation load_complete_subdirs: (string list, Absyn.Ident, string,
 	load_complete_subdirs(_,_,_,_,_) => fail
 end
 
+(** relation: load_complete_subfiles
+ ** 
+ ** This relation loads all modelicafiles (.mo) from a subdir package.
+ **)
 relation load_complete_subfiles: (Absyn.Ident, string, Absyn.Within, Absyn.Program) 
 	  => Absyn.Program =
 
@@ -244,6 +273,10 @@ relation load_complete_subfiles: (Absyn.Ident, string, Absyn.Within, Absyn.Progr
 
 end
 
+(** relation: load_subpackage_files
+ **
+ ** Loads all classes from a subpackage
+ **)
 relation load_subpackage_files: (string list, string, Absyn.Within, Absyn.Program) 
 	  => Absyn.Program =
 
