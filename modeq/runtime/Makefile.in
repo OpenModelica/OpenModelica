@@ -24,7 +24,7 @@ endif
 SHELL	= /bin/sh
 CC	= gcc
 IDL	= idl 
-CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime $(CORBAINCL)
+CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime -I../ $(CORBAINCL)
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
 CPPSRC  = ptolemyio.cpp daeext.cpp tornadoext.cpp $(CORBASRC)
