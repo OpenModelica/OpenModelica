@@ -75,8 +75,8 @@ relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name COMPONENTS(_,_,[COMPONENT(n,_,_)]) => n
 
-  rule  print "# element_spec_name EXTENDS\n" & fail
-	--------------------------------------------
-	element_spec_name EXTENDS(_,_) => "#error#"
+  rule  print "# element_spec_name EXTENDS\n"
+	-------------------------------------
+	element_spec_name EXTENDS(_,_) => fail
 
 end

@@ -73,11 +73,9 @@ end
 
 relation lookup_component : (Type, Ident) => Var =
 
-  rule  print "# trying to lookup in builtin type " & print n & print "\n" &
-	fail
-	----
-	lookup_component(BUILTIN(n),_)
-	  => (("", ATTR(NODIM,false,VAR,BIDIR), BUILTIN("error")))
+  rule  print "# trying to lookup in builtin type " & print n & print "\n"
+	------------------------------------------------------------------
+	lookup_component(BUILTIN(n),_) => fail
 
   rule  lookup_component2(cs, id) => v
 	------------------------------

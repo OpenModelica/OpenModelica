@@ -80,7 +80,7 @@ relation connect_vars : (Connect.Sets, Exp.ComponentRef, Exp.ComponentRef,
 	Dump.dump_component_ref c1' & print " <-> " &
 	Dump.dump_component_ref c2' &
 	print "\n" &
-	connect_components(sets,[], c1', c2', ty) => sets' &
+	connect_components(sets,[], c1', c2', ty, flow) => sets' &
 	connect_vars(sets',c1,c2,xs) => sets''
 	--------------------------------------
 	connect_vars(sets,c1,c2,(n,Types.ATTR(_,flow,_,_),ty)::xs) => sets''
@@ -91,17 +91,27 @@ relation connect_components: (Connect.Sets,
 			      Prefix,
 			      Explode.ComponentRef,
 			      Explode.ComponentRef,
-			      Types.Type) => Connect.Sets =
+			      Types.Type, bool) => Connect.Sets =
 	
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	print "  connect_components 1: " &
+	print "  connect_components flow: " &
+	Dump.dump_component_ref c1' & print " <-> " &
+	Dump.dump_component_ref c2' &
+	print "\n" &
+	Connect.add_flow(sets, c1, Connect.IN, c2, Connect.IN) => sets'
+	-----------------------------------------
+	connect_components(sets, pre, c1, c2, Types.BUILTIN(_), true) => sets'
+	
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	print "  connect_components non-flow: " &
 	Dump.dump_component_ref c1' & print " <-> " &
 	Dump.dump_component_ref c2' &
 	print "\n" &
 	Connect.add_equ(sets, c1, c2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, c2, Types.BUILTIN(_)) => sets'
+	connect_components(sets, pre, c1, c2, Types.BUILTIN(_), false) => sets'
 	
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
@@ -111,8 +121,15 @@ relation connect_components: (Connect.Sets,
 	print "\n" &
 	connect_vars(sets,c1',c2', l) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,c2,Types.COMPLEX(l)) => sets'
+	connect_components(sets,pre,c1,c2,Types.COMPLEX(l),_) => sets'
 	
+end
+
+relation check_flow : (bool, bool) => () =
+
+  axiom	check_flow(false,false)
+  axiom	check_flow(true,true)
+
 end
 
 relation inst_connect: (Connect.Sets, Env, Prefix,
@@ -122,16 +139,17 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
   rule	print " trying to connect " &
 	Dump.dump_component_ref(o1) & print " with " &
 	Dump.dump_component_ref(o2) & print "\n" &
-	Env.lookup_var(env,o1) => (attr1,ty1) &
-	Env.lookup_var(env,o2) => (attr2,ty2) &
+	Env.lookup_var(env,o1) => (Types.ATTR(_,flow1,_,dir1),ty1) &
+	Env.lookup_var(env,o2) => (Types.ATTR(_,flow2,_,dir2),ty2) &
 	Types.same_type(ty1, ty2) &
-	connect_components(sets, pre, o1, o2, ty1) => sets'
+	check_flow(flow1, flow2) &
+	connect_components(sets, pre, o1, o2, ty1, flow1) => sets'
 	---------------------------------
 	inst_connect(sets, env,pre,o1,o2) => sets'
 
-  rule	print "# could not connect\n" & fail
+  rule	print "# could not connect\n"
 	---------------------------------
-	inst_connect(sets,_,_,_,_) => sets
+	inst_connect(sets,_,_,_,_) => fail
 
 end
 
@@ -162,9 +180,9 @@ relation inst_equation: (Env,Mod,Prefix,Connect.Sets,Explode.Equation)
 					     [e,Exp.STRING(d)])))
 	  => ([],env,csets)
 
-  rule	print "No expression equations yet\n" & fail
-	--------------------------------------------
-	inst_equation(env,mods,pre,csets,Absyn.EQ_EXPR(_)) => ([],env,csets)
+  rule	print "No expression equations yet\n"
+	-------------------------------------
+	inst_equation(env,mods,pre,csets,Absyn.EQ_EXPR(_)) => fail
 
   rule	Env.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
 	print " shadowed equation for " & print n & print "\n"
@@ -209,10 +227,9 @@ relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
   axiom check_prot(_,Mod.NOMOD,_)
 
   rule  print "ERROR: Trying to modify protected element " &
-	Dump.dump_component_ref cref & print "\n" &
-	fail
-	----------------------------
-	check_prot(true,_,cref)
+	Dump.dump_component_ref cref & print "\n"
+	-----------------------------------------
+	check_prot(true,_,cref) => fail
 
 end
 
@@ -269,22 +286,20 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, Explode.Element)
   	(* Illegal redeclarations *)
   rule	Env.lookup_var_local(env,n) => _ &
 	print "Trying to redeclare the class " & print n &
-	print " as a variable\n" &
-	fail
+	print " as a variable\n"
 	------------------------
 	inst_element(env,mods,pre,csets,
 		     Explode.ELEMENT(final,prot,n, Explode.CLASSDEF(_,_)))
-	  => ([],env,csets,[])
+	  => fail
 
   rule	Env.lookup_class(env,Exp.IDENT(n)) => (v,_) &
 	print "Trying to redeclare the variable " & print n &
-	print " as a class\n" &
-	fail
-	------------------------
+	print " as a class\n"
+	---------------------
 	inst_element(env,mods,pre,csets,
 		     Explode.ELEMENT(final,prot,n,
 				     Explode.COMPONENT(_,_,_,_)))
-	  => ([],env,csets,[])
+	  => fail
 
   (* A new class definition
    *
@@ -391,8 +406,8 @@ end
 and inst_algorithm : (Env, Mod, Prefix, Connect.Sets, Explode.Algorithm)
 	  => (DAE.DAEcomp list, Env, Connect.Sets) =
 
-  rule  print "# no algorithms yet\n" & fail
-	------------------------------------
+  rule  print "# no algorithms yet\n"
+	-----------------------------
 	inst_algorithm(env,_,_,csets,_) => ([],env,csets)
 
 end
@@ -424,10 +439,10 @@ and inst_classdef: (Env, Mod, Prefix, Connect.Sets, Explode.ClassDef, bool)
 
   rule	not Env.lookup_class(env,cn) => (_,_) &
 	Exp.path_string(cn) => cns &
-	print "# unknown class: " & print cns & print "\n" & fail
+	print "# unknown class: " & print cns & print "\n"
 	----------------------------------------
 	inst_classdef(env,mods,pre,csets, Explode.DERIVED(cn,ad,mod), prot)
-	  => ([], env, csets, [])
+	  => fail
 
 end
 
@@ -440,16 +455,15 @@ and inst_class_in: (Env, Mod, Prefix, Connect.Sets, Explode.Class, bool)
 	inst_class_in(env,mods,pre,csets,c as Explode.CLASS(n,false,r,d), prot)
 	  => (l,env', csets', tys)
 
-  rule	print "Can't instantiate partial class " & print n & print "\n" &
-	fail
+  rule	print "Can't instantiate partial class " & print n & print "\n"
 	------------------------------------------------------	
 	inst_class_in(env,mod,pre, csets, Explode.CLASS(n,true,_,_), _)
-	  => ([], Env.empty_env, csets, [])
+	  => fail
 
 	(* FIXME *)
-  rule  print "# Fallthru in inst_class_in\n" & fail
+  rule  print "# Fallthru in inst_class_in\n"
 	----------------------------------
-	inst_class_in(_,_,_,csets,_,_) => ([],Env.empty_env,csets,[])
+	inst_class_in(_,_,_,csets,_,_) => fail
 
 end
 
@@ -474,15 +488,17 @@ end
 
 relation inst_program : (Env, Explode.Program) => DAE.DAEcomp list =
 
-  rule	print "Empty program\n" & fail
+  rule	print "Empty program\n"
 	------------------------------
-	inst_program(env,[]) => []
+	inst_program(env,[]) => fail
 
   rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
-	inst_class(env',Mod.NOMOD,[],[],c) => (l,csets,_) &
-	Connect.dump_sets csets
+	inst_class(env',Mod.NOMOD,[],[],c) => (dae1,csets,_) &
+	Connect.dump_sets csets &
+	Connect.equations csets => dae2 &
+	list_append(dae1, dae2) => dae
 	-----------------------------
-	inst_program(env,[c]) => l
+	inst_program(env,[c]) => dae
 
   rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
 	inst_program(env',cs) => l

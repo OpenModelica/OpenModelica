@@ -256,13 +256,13 @@ relation merge : (Mod, Mod) => Mod =
 	--------------------------------------
 	merge(m as REDECL(_,_),_) => m
 
-  rule  print "# can't merge modification with a redeclaration\n" & fail
-	----------------------------------------------------------------
-	merge(_,REDECL(_,_)) => NOMOD
+  rule  print "# can't merge modification with a redeclaration\n"
+	---------------------------------------------------------
+	merge(_,REDECL(_,_)) => fail
 
-  rule  print "# trying to modify final element\n" & fail
-	-------------------------------------------------
-	merge(_,m as MOD(true,_,_)) => m
+  rule  print "# trying to modify final element\n"
+	------------------------------------------
+	merge(_,m as MOD(true,_,_)) => fail
 
   rule  merge_subs(subs1, subs2) => subs &
 	merge_ass(ass1, ass2) => ass

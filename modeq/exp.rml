@@ -73,10 +73,9 @@ relation eq_subscript : (Subscript, Subscript) => () =
   axiom	eq_subscript(NOSUB,NOSUB)
 
 	(* FIXME *)
-  rule	print "# Subscript expression\n" &
-	fail
+  rule	print "# Subscript expression\n"
 	--------------------------------
-	eq_subscript(_,_)
+	eq_subscript(_,_) => fail
 
 end
 

@@ -5,6 +5,7 @@
 module Connect :
 
   with "exp.rml"
+  with "dae.rml"
 
   datatype Dir = IN | OUT
 
@@ -14,8 +15,11 @@ module Connect :
   type Sets = Set list
 
   relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets
-  relation add_flow : (Sets, Exp.ComponentRef, Dir) => Sets
+  relation add_flow : (Sets,
+		       Exp.ComponentRef, Dir,
+		       Exp.ComponentRef, Dir) => Sets
   relation dump_sets : Sets => ()
+  relation equations : Sets => DAE.DAEcomp list
 
 end
 
@@ -85,6 +89,22 @@ relation find_equ_set : (Sets, Exp.ComponentRef) => Set =
   rule	find_equ_set(ss,c) => s
 	-------------------
 	find_equ_set(_::ss,c) => s
+
+end	
+
+relation find_flow_set : (Sets, Exp.ComponentRef, Dir) => Set =
+
+  rule	new_flow_set(c,d) => s
+	------------------
+	find_flow_set([],c,d) => s
+
+  rule	find_in_set(s,c)
+	----------------
+	find_flow_set(s::_,c,d) => s
+
+  rule	find_flow_set(ss,c,d) => s
+	-------------------
+	find_flow_set(_::ss,c,d) => s
 
 end	
 
@@ -161,10 +181,18 @@ relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 	
 end
 
-relation add_flow : (Sets, Exp.ComponentRef, Dir) => Sets =
+relation add_flow : (Sets, Exp.ComponentRef, Dir, Exp.ComponentRef, Dir)
+	  => Sets =
 
-  axiom	add_flow(s,r,d) => FLOW([(r,d)])::s
-
+  rule	(* print "   add_flow: looking for sets\n" & *)
+	find_flow_set(ss,r1,d1) => s1 &
+	find_flow_set(ss,r2,d2) => s2 &
+	(* print "   add_flow: found, merging\n" & *)
+	merge(ss,s1,s2) => ss' (* &
+	dump_sets ss' *)
+	----------------------
+	add_flow(ss,r1,d1,r2,d2) => ss'
+	
 end
 
 (**********************************************************************
@@ -211,5 +239,58 @@ relation dump_sets : Sets => () =
 	dump_sets xs
 	------------
 	dump_sets x::xs
+
+end
+
+(**********************************************************************
+ * Equations
+ **********************************************************************)
+
+relation equ_equations : Exp.ComponentRef list => DAE.DAEcomp list =
+
+  axiom	equ_equations [_] => []
+
+  rule	equ_equations y::cs => eq
+	------------------------
+	equ_equations x::y::cs => DAE.EQUATION(Exp.RELATION(Exp.CREF(x),
+							    Exp.EQUAL,
+							    Exp.CREF(y)))::eq
+end
+
+relation flow_sum : (Exp.ComponentRef * Dir) list => Exp.Exp =
+
+  axiom	flow_sum [(c,_)] => Exp.CREF(c)
+
+  rule	flow_sum cs => exp
+	------------------
+	flow_sum ((c,_)::cs) => Exp.BINARY(Exp.CREF(c), Exp.ADD, exp)
+
+end
+
+relation flow_equations : (Exp.ComponentRef * Dir) list => DAE.DAEcomp list =
+
+  rule	flow_sum cs => sum
+	------------------
+	flow_equations cs => [DAE.EQUATION(Exp.RELATION(sum,
+							Exp.EQUAL,
+							Exp.NUMBER(0.0)))]
+
+end
+
+relation equations : Sets => DAE.DAEcomp list =
+
+  axiom	equations [] => []
+
+  rule	equ_equations cs => dae1 &
+	equations ss => dae2 &
+	list_append(dae1,dae2) => dae
+	-----------------------------
+	equations EQU(cs)::ss => dae
+
+  rule	flow_equations cs => dae1 &
+	equations ss => dae2 &
+	list_append(dae1,dae2) => dae
+	-----------------------------
+	equations FLOW(cs)::ss => dae
 
 end
