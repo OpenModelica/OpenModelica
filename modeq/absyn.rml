@@ -216,6 +216,7 @@ module Absyn:
   relation cref_to_path : ComponentRef => Path
   relation element_spec_name : ElementSpec => Ident
   relation print_restr : Restriction => ()
+  relation restr_string : Restriction => string
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
 end
 
@@ -279,55 +280,29 @@ end
 
 (*!ignorecode*)
 
+relation restr_string : Restriction => string =
+
+  axiom restr_string R_CLASS			=> "CLASS"
+  axiom	restr_string R_MODEL			=> "MODEL"
+  axiom	restr_string R_RECORD			=> "RECORD"
+  axiom restr_string R_BLOCK			=> "BLOCK"
+  axiom restr_string R_CONNECTOR		=> "CONNECTOR"
+  axiom restr_string R_TYPE			=> "TYPE"
+  axiom restr_string R_PACKAGE			=> "PACKAGE"
+  axiom restr_string R_FUNCTION			=> "FUNCTION"
+  axiom restr_string R_PREDEFINED_INT		=> "PREDEFINED_INT"
+  axiom restr_string R_PREDEFINED_REAL		=> "PREDEFINED_REAL"
+  axiom restr_string R_PREDEFINED_STRING	=> "PREDEFINED_STRING"
+  axiom restr_string R_PREDEFINED_BOOL		=> "PREDEFINED_BOOL"
+
+end
+
 relation print_restr : Restriction => () =
 
-  rule	print "CLASS"
-	-------------
-	print_restr R_CLASS
-	
-  rule	print "MODEL"
-	-------------
-	print_restr R_MODEL
-	
-  rule	print "RECORD"
-	--------------
-	print_restr R_RECORD
-	
-  rule	print "BLOCK"
-	-------------
-	print_restr R_BLOCK
-	
-  rule	print "CONNECTOR"
-	-----------------
-	print_restr R_CONNECTOR
-	
-  rule	print "TYPE"
-	------------
-	print_restr R_TYPE
-	
-  rule	print "PACKAGE"
-	---------------
-	print_restr R_PACKAGE
-	
-  rule	print "FUNCTION"
+  rule	restr_string restr => str &
+	print str
 	----------------
-	print_restr R_FUNCTION
-
-  rule	print "PREDEFINED_INT"
-	----------------
-	print_restr R_PREDEFINED_INT
-
-  rule	print "PREDEFINED_REAL"
-	----------------
-	print_restr R_PREDEFINED_REAL
-
-  rule	print "PREDEFINED_STRING"
-	----------------
-	print_restr R_PREDEFINED_STRING
-
-  rule	print "PREDEFINED_BOOL"
-	----------------
-	print_restr R_PREDEFINED_BOOL
+	print_restr restr
 
 end
 
