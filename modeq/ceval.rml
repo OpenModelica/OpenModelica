@@ -200,6 +200,41 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-----------------------------------------
 	ceval (env,Exp.CALL(Absyn.IDENT("diagonal"),[exp1],_,_),impl,st,_) => (v,st) 	
 
+
+  rule	 ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') & 
+ 	ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') & 
+        int_real(lhv) => lhvr &
+        int_real(rhv) => rhvr &
+        real_pow(lhvr,rhvr) => resr &
+        real_int(resr) => res 
+	    ------------------------
+ 	    ceval (env, Exp.BINARY(lh, Exp.POW(Exp.INT), rh),impl,st,dim) 
+	  => (Values.INTEGER(res),st'')
+
+  rule	 ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') & 
+ 	ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') & 
+        int_real(rhv) => rhvr &
+        real_pow(lhv,rhvr) => resr
+	    ------------------------
+ 	    ceval (env, Exp.BINARY(lh, Exp.POW(Exp.REAL), rh),impl,st,dim) 
+	  => (Values.REAL(resr),st'')
+
+  rule	 ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') & 
+ 	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') & 
+        int_real(lhv) => lhvr &
+        real_pow(lhvr,rhv) => resr 
+	    ------------------------
+ 	    ceval (env, Exp.BINARY(lh, Exp.POW(Exp.REAL), rh),impl,st,dim) 
+	  => (Values.REAL(resr),st'')
+
+  rule	 ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') & 
+ 	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') & 
+        real_pow(lhv,rhv) => resr 
+	    ------------------------
+ 	    ceval (env, Exp.BINARY(lh, Exp.POW(Exp.REAL), rh),impl,st,dim) 
+	  => (Values.REAL(resr),st'')
+
+
 	(* end luc_pop *)
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
