@@ -15,7 +15,7 @@ AST	= ast/libast.a
 SRCRML=	class.rml exp.rml dae.rml main.rml absyn.rml dump.rml test.rml
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
-SRCO=	$(SRCRML:.rml=.o)
+SRCO=	$(SRCC:.c=.o)
 
 SUBDIRS	= ast
 
@@ -28,6 +28,9 @@ SUBDIRS	= ast
 .rml.o:
 	$(RML) -c $<
 #	$(CC) -c $*.c
+
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(PROG): $(SRCO) libast
 	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) $(AST)
