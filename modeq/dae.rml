@@ -356,7 +356,7 @@ relation dump_comp_element : Element => () =
 	dump_comp_element COMP(n,DAE(l))
 
   rule	RTOpts.modelica_output => true &
-	Print.print_buf "fclass " & Print.print_buf n & Print.print_buf "\n" &
+	Print.print_buf "class " & Print.print_buf n & Print.print_buf "\n" &
 	dump_elements(l) &
 	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
 	-----------------------------------
