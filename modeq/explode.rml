@@ -68,8 +68,13 @@ module SCode :
 
   datatype Attributes = ATTR of Absyn.ArrayDim
 			      * bool	(* flow *)
+			      * Accessibility
 	  		      * Absyn.Variability	(* parameter *)
 			      * Absyn.Direction
+
+  datatype Accessibility = RW	(* read/write *)
+			 | RO	(* read-only *)
+			 | WO	(* write-only (not used) *)
 
   relation elaborate : Absyn.Program => Program
 
@@ -198,7 +203,7 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 	elab_elementspec(final,prot,
 			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di),t,
 					  (Absyn.COMPONENT(n,d,m))::xs))
-	  => COMPONENT(n,final,prot,ATTR(d,fl,pa,di),t,mod)::xs'
+	  => COMPONENT(n,final,prot,ATTR(d,fl,RW,pa,di),t,mod)::xs'
 
 end
 
