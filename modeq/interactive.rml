@@ -19,7 +19,18 @@
 
 *)
 
-(* $Name$ *)
+(* $Id$ *)
+
+(**
+ ** This module contain functionality for model management, expression evaluation, etc. 
+ ** in the interactive environment.
+ ** The module defines a symboltable used in the interactive environment containing:
+ ** - Modelica models (described using Absyn AST)
+ ** - Variable bindings
+ ** - Compiled functions (so they do not need to be recompiled)
+ ** - Instantiated classes (that can be reused, not impl. yet)
+ ** - Modelica models in SCode form (to speed up instantiation. not impl. yet)
+ **)
 
 module Interactive:
   with "absyn.rml"
