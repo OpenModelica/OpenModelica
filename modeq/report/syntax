@@ -1,0 +1,26 @@
+Noteringar om syntaxen:   -*- outline -*-
+
+* Grammatiken: class_definition
+
+ Borde väl vara
+
+     "=" name [ array_dimensions ] [ class_modification ] )
+
+ och inte
+
+     "=" IDENT [ array_dimensions ] [ class_modification ] )
+
+* Redeclare på array-element
+
+  class Foo
+    Int x;
+  end;
+
+  class Bar
+    Foo y[10];
+  end;
+
+  class Weird
+    Bar z(y[5](redeclare Real x));
+  end;
+
