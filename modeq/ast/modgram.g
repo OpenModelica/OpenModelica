@@ -118,7 +118,7 @@ extern void *sibling_list(AST *ast);
 #token WHILE		"while"
 #token LOOP		"loop"
 
-#token DER		"der"
+/* #token DER		"der" */
 
 /*
 #token NEW		"new"
@@ -311,23 +311,17 @@ component_clause!:
 	{ i:INPUT     << in = true; >>
 	| o:OUTPUT    << ou = true; >> }
 	s:type_specifier
-	l:component_list[NO_SPECIAL]
+	l:component_list
         << #0 = #(#[&a], #p, #s, #l);
 	   /* FIXME: Split to several elements */
 
-	   #0->rml = Absyn__COMPONENT(RML_PRIM_MKBOOL(fl),
-				      RML_PRIM_MKBOOL(pa),
-				      RML_PRIM_MKBOOL(co),
-				      RML_PRIM_MKBOOL(in),
-				      RML_PRIM_MKBOOL(ou),
-				      #s->rml,
-				      #l->rml,
-				      (#l->aux[0]
-				       ? mk_some(#l->aux[0])
-				       : mk_none()),
-				      (#l->aux[1]
-				       ? mk_some(#l->aux[1])
-				       : mk_none()));
+	   #0->rml = Absyn__COMPONENTS(RML_PRIM_MKBOOL(fl),
+				       RML_PRIM_MKBOOL(pa),
+				       RML_PRIM_MKBOOL(co),
+				       RML_PRIM_MKBOOL(in),
+				       RML_PRIM_MKBOOL(ou),
+				       #s->rml,
+				       sibling_list(#l));
 				       
 	>> 
 	;
@@ -345,21 +339,21 @@ type_specifier :
 	name_path
 	;
 
-component_list[NodeType nt] :
-    component_declaration[nt] ( ","! component_declaration[nt] )*
+component_list :
+        component_declaration ( ","! component_declaration )*
 	;
 
-component_declaration[NodeType nt] :
-        declaration[nt] comment!
+component_declaration :
+        declaration comment!
 	;
 
-declaration[NodeType nt] :
-	i:IDENT^ << /* #i->ni.type=nt; */ >>
+declaration :
+	i:IDENT^
 	{ a:array_dimensions }
 	{ s:specialization }
-	<< #i->rml = mk_scon($i.u.stringval);
-	   #i->aux[0] = #a ? #a->rml : NULL;
-	   #i->aux[1] = #s ? #s->rml : NULL; >>
+	<< #i->rml = Absyn__COMPONENT(mk_scon($i.u.stringval),
+				      #a ? mk_some(#a->rml) : mk_none(),
+				      #s ? mk_some(#s->rml) : mk_none()); >>
         ;
 
 array_dimensions :
@@ -454,13 +448,13 @@ element_redeclaration :
 	  { FINAL << is_final=true; >> }
 	  ( extends_clause
 	  | class_definition[false,is_final]
-	  | component_clause1[ET_COMPONENT] )
+	  | component_clause1 )
 	;
 
-component_clause1[NodeType nt] :
+component_clause1 :
 	type_prefix
 	type_specifier
-	component_declaration[ET_COMPONENT]
+	component_declaration
 	;
 
 /* component_clause1![NodeType nt] : */
@@ -596,7 +590,7 @@ equation_list :
 expression :
 
 	simple_expression 
-	| ifpart:IF^ << /* #ifpart->setOpType(OP_FUNCTION); #ifpart->setTranslation("If"); */ >>
+	| ifpart:IF^ << /* FIXME */ >>
 	  expression 
 	  THEN!
 	  simple_expression
@@ -606,18 +600,18 @@ expression :
 
 simple_expression :
 	logical_term
-	( o:OR^ logical_term << /* #o->setTranslation("||"); */ >>
+	( o:OR^ logical_term << /* FIXME */ >>
 	)*
 	;
 
 logical_term :
 	logical_factor
-	( a:AND^ logical_factor << /* #a->setTranslation("&&"); */ >>
+	( a:AND^ logical_factor << /* FIXME */ >>
 	)*
 	;
 
 logical_factor :
-	not:NOT^ relation
+	not:NOT^ relation /* FIXME */
 	| relation 
 	;
 
@@ -646,28 +640,27 @@ arithmetic_expression : << void *op; >>
 
 unary_arithmetic_expression:
 
-	PLUS^ t1:term   << #0->rml = Exp__UNARY(Exp__UPLUS,#t1->rml); >>
+	PLUS^ t1:term  << #0->rml = Exp__UNARY(Exp__UPLUS,#t1->rml); >>
       | MINUS^ t2:term << #0->rml = Exp__UNARY(Exp__UMINUS,#t2->rml); >>
       | term
 	;
 
-term :
+term : << void *op; >>
 
 	factor
 	(
-	  MUL_OP^  factor
+	  ( MULT^ << op = Exp__MUL; >>
+	  | DIV^  << op = Exp__DIV; >> )
+	  f:factor
+	  << #0->rml = Exp__BINARY(#0->down->rml,op,#f->rml); >>
 	)*
 	;
 
 factor :
-	primary 
-	{ "^"^ primary}
-
-/* 	Easy translation of der() function by me. */
- 	| op:DER^ LPAR! primary RPAR! 
-		<< /* #op->setOpType(OP_POSTFIX);
-		      #op->setTranslation("'"); */
-		>>
+	  e1:primary 
+	  { "^"^ e2:primary << #0->rml = Exp__BINARY(#e1->rml,
+						     Exp__POW,
+						     #e2->rml); >> }
 	;
 
 primary : << bool is_matrix; >>
