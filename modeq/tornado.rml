@@ -39,6 +39,7 @@ with "explode.rml"
 with "lookup.rml"
 with "env.rml"
 with "simcodegen.rml"
+with "dump.rml"
 
 (** relation: generate_code
  ** This is the main relation that generates Tornado1 C++ code from the flat Modelica model
@@ -232,12 +233,12 @@ with "simcodegen.rml"
          Interactive.get_componentitems_name(lst) => str_lst &
          Util.string_append_list(str_lst) => tml_str &
          
-         (*         print "TYPE: " & print typename & print " " & print tml_str & print "\n"  & *)
+(*          print "TYPE: " & print typename & print " " & print tml_str & print "\n"  &  *)
          generate_code_from_elements(class_path,rest,dae,program,a_program,env') => res &
          generate_code_from_class(p,dae,program,a_program,env') => res' & 
-         get_componentitems_name(lst) => name_list &
+         get_componentitems_name(lst,dae) => name_list &
          add_variable_to_list(class_path,p,name_list,dae,program,a_program,env') 
-         (* 	    get_componentitems_name(lst) => names & *)
+         (* 	    get_componentitems_name(lst,dae) => names & *)
          (* 	    prefix_typename(typename,names) => lst *)
 	     -------------------------------------------
 	     generate_code_from_elements(class_path,
@@ -250,13 +251,13 @@ with "simcodegen.rml"
          
   rule  Absyn.path_string(p) => typename &
          
-         get_componentitems_name(lst) => str_lst &
+         get_componentitems_name(lst,dae) => str_lst &
          Util.string_append_list(str_lst) => tml_str &
          
-         (*         print "bape: " & print typename & print " " & print tml_str & print "\n"  & *)
+(*          print "bape: " & print typename & print " " & print tml_str & print "\n"  &  *)
          generate_code_from_elements(class_path,rest,dae,program,a_program,env) => res &
          generate_code_from_class(p,dae,program,a_program,env) => res' &
-         get_componentitems_name(lst) => name_list &
+         get_componentitems_name(lst,dae) => name_list &
          add_variable_to_list(class_path,p,name_list,dae,program,a_program,env) 
          
          (* 	    get_componentitems_name(lst) => names & *)
@@ -278,6 +279,90 @@ with "simcodegen.rml"
          
          
  end
+
+
+(** relation_get_componentitems_name
+ ** This relation takes a `ComponentItems' list and returns a  list of all
+ ** component names (if any).
+ **)
+ relation get_componentitems_name: (Absyn.ComponentItem list,DAELow.DAELow) => string list =
+	     
+  rule  (* .. otherwise if no dimensions *)
+	     get_componentitems_name(rest,dae) => lst 
+	     ----------------------------
+	     get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,[],_),
+                                                     _)::rest,
+                                 dae) 
+          => c1::lst
+   rule	(* When component has array dimensions *)
+	     get_componentitems_name(rest,dae) => lst &
+         generate_components_name_with_subscripts(c1,dae) => comps_name_w_subs &
+         list_append(lst,comps_name_w_subs) => res 
+	     ----------------------------
+	     get_componentitems_name(Absyn.COMPONENTITEM((comp as Absyn.COMPONENT(c1,subs,_)),
+                                                     _)::rest,
+                                 dae)
+          => res
+	       
+           
+  rule	get_componentitems_name(rest,dae) => res
+	     ------------------------------------
+	     get_componentitems_name(_::rest,dae) => res
+         
+  axiom	get_componentitems_name([],dae) => []
+ end
+
+
+relation generate_components_name_with_subscripts: (string,DAELow.DAELow) => string list =
+
+  rule  generate_components_name_with_subscripts2(cr,0,vars,knvars) => res
+
+        --------------------------------------
+        generate_components_name_with_subscripts(cr,
+                                                 DAELow.DAELOW(vars, 
+                                                               knvars,
+                                                               _,_,_,_)) 
+          => res
+
+        (*         DAELow.get_var(cr,knvars) => (var1 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
+        (*         DAELow.get_var(cr2,vars) => (var2 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
+
+(*         generate_constructor_inputvars2(all_vars,0) => (lst,no_of_vars) & *)
+(*         no_of_vars = 0 *)
+        
+(*         ------------------------------------------- *)
+(*         generate_constructor_inputvars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_), *)
+(*                                                      DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_)) =>  *)
+(*         ("","") *)
+
+end
+
+relation generate_components_name_with_subscripts2:(string,
+                                                   int,
+                                                   DAELow.Variables,
+					                               DAELow.Variables) => string list =
+
+  rule  int_add(index,1) => index_inc &
+        int_string(index_inc) => index_str &
+        Util.string_append_list([cr,"[",index_str,"]"]) => cr_w_index &
+        DAELow.exists_var(Exp.CREF_IDENT(cr_w_index,[]),vars) => true &
+        generate_components_name_with_subscripts2(cr,index_inc,vars,knvars) => res
+        -------------------------------------------
+        generate_components_name_with_subscripts2(cr,index,vars,knvars) => cr_w_index::res
+ 
+  rule  int_add(index,1) => index_inc &
+        int_string(index_inc) => index_str &
+        Util.string_append_list([cr,"[",index_str,"]"]) => cr_w_index &
+        DAELow.exists_var(Exp.CREF_IDENT(cr_w_index,[]),knvars) => true &
+        generate_components_name_with_subscripts2(cr,index_inc,vars,knvars) => res
+        -------------------------------------------
+        generate_components_name_with_subscripts2(cr,index,vars,knvars) => cr_w_index::res
+
+  rule  -------------------------------------------
+        generate_components_name_with_subscripts2(cr,index,vars,knvars) => []
+
+
+end
 
 (**
  ** arg1 the name for the top class
@@ -554,33 +639,6 @@ relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
 end
 
 
-
-(** relation_get_componentitems_name
- ** This relation takes a `ComponentItems' list and returns a  list of all
- ** component names (if any).
- **)
- relation get_componentitems_name: Absyn.ComponentItem list => string list =
-	     
-  rule	(* When component has array dimensions *)
-	     get_componentitems_name(rest) => lst &
-	     string_append(c1,"[1]") => c1'
-	     ----------------------------
-	     get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_::_,_),_)::rest)
-          => c1'::lst
-	       
-  rule  (* .. otherwise if no dimensions *)
-	     get_componentitems_name(rest) => lst 
-	     ----------------------------
-	     get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),
-                                                     _)::rest) 
-          => c1::lst
-           
-  rule	get_componentitems_name(rest) => res
-	     ------------------------------------
-	     get_componentitems_name(_::rest) => res
-         
-  axiom	get_componentitems_name([]) => []
- end
 (** relation: generate_header
  ** Generate the content of the header file. It only needs the name of the Modelica model.
  **)
@@ -2061,8 +2119,8 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
          & DAELow.matching_algorithm(d',m,mT) => (v1,v2,d'',m,mT) 
          & Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
          (* & Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) *)
-         & Debug.fcall("bltdump", DAELow.dump,d'')
-         & Debug.fcall("bltdump", DAELow.dump_matching, v1)
+(*          & Debug.fcall("bltdump", DAELow.dump,d'') *)
+(*          & Debug.fcall("bltdump", DAELow.dump_matching, v1) *)
          & DAELow.strong_components(m,mT,v1,v2) => (comps) 
          (*& DAELow.dump_components(comps) *)
          -------------------------------------------------------------
