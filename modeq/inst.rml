@@ -13,6 +13,7 @@ end
 
 with "prefix.rml"
 with "env.rml"
+with "lookup.rml"
 with "mod.rml"
 with "builtin.rml"
 with "dump.rml"
@@ -162,9 +163,9 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	Dump.dump_component_ref(c2) & print "\n" &
 	StaticExp.elab_cref(env, pre, c1) => (Exp.CREF(c1'),_,_) &
 	StaticExp.elab_cref(env, pre, c2) => (Exp.CREF(c2'),_,_) &
-	Env.lookup_var(env,c1')
+	Lookup.lookup_var(env,c1')
 	  => (Types.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_),_) &
-	Env.lookup_var(env,c2')
+	Lookup.lookup_var(env,c2')
 	  => (Types.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_),_) &
 	ClassInf.assert_valid(st1,ClassInf.R_CONNECTOR) &
 	ClassInf.assert_valid(st2,ClassInf.R_CONNECTOR) &
@@ -216,7 +217,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	-------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,Absyn.EQ_EXPR(_)) => fail
 
-  rule	Env.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
+  rule	Lookup.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
 	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
@@ -227,11 +228,17 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	print " equation\n" &
 	StaticExp.elab_exp(env,pre,Exp.RELATION(e1,Exp.EQUAL,e2))
 	  => (e, ty1, c1) &
+	print " - equation\n" &
 	Prefix.prefix_exp(e,pre) => e' & (* FIXME: remove *)
+	print " -- equation\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------
 	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
 	  => ([DAE.EQUATION(e')], env, csets, ci_state')
+
+  rule	print "- inst_equation fallthru\n"
+	----------------------------------
+	inst_equation(_,_,_,_,_,_) => fail
 
 end
 
@@ -282,7 +289,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Exp.path_string(cn) => cns &
 	print "  extending class " & print cns & print "\n" &
 	
-	Env.lookup_class(env,cn)
+	Lookup.lookup_class(env,cn)
 	  => (c as Explode.CLASS(cn2,_,restr,def), classmod) &
 
 	(* Make sure that the 'partial' flag is off *)
@@ -313,7 +320,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 *)
 	 
 	 (* If a variable is declared multiple times, the first is used *)
-  rule	Env.lookup_var_local(env,n) => _ &
+  rule	Lookup.lookup_var_local(env,n) => _ &
 	print " ignoring shadowed variable " & print n & print "\n"
 	--------------------------
 	inst_element(env,mods,pre,csets,ci_state,
@@ -322,7 +329,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([],env,csets,ci_state,[])
 	
   	(* Illegal redeclarations *)
-  rule	Env.lookup_var_local(env,n) => _ &
+  rule	Lookup.lookup_var_local(env,n) => _ &
 	print "Trying to redeclare the class " & print n &
 	print " as a variable\n"
 	------------------------
@@ -330,7 +337,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     Explode.ELEMENT(final,prot,n, Explode.CLASSDEF(_,_)))
 	  => fail
 
-  rule	Env.lookup_class(env,Exp.IDENT(n)) => (v,_) &
+  rule	Lookup.lookup_class(env,Exp.IDENT(n)) => (v,_) &
 	print "Trying to redeclare the variable " & print n &
 	print " as a class\n"
 	---------------------
@@ -368,7 +375,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(* Find the set of modifications *)
 	(* FIXME: merge order *)
-	Env.lookup_class(env,t) => (cl,classmod) &
+	Lookup.lookup_class(env,t) => (cl,classmod) &
 	print "  modification 1: " & Mod.dump classmod & print "\n" &
 
 	Mod.lookup_modification(mods,n) => mm &
@@ -411,7 +418,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
    * the error and prints an error message about the unknown class.
    *)
 
-  rule	not Env.lookup_class(env,t) => (cl,_) &
+  rule	not Lookup.lookup_class(env,t) => (cl,_) &
 	Exp.path_string(t) => s &
 	print "# unknown class '" & print s & print "' while instantiating " &
 	Prefix.prefix_path(Exp.IDENT(n),pre) => n' &
@@ -475,7 +482,7 @@ and inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      Explode.PARTS(els,eqs,als), re, prot)
 	  => (dae,env''', csets''', ci_state'''', tys)
 
-  rule	Env.lookup_class(env,cn) => (c as Explode.CLASS(cn2,_,r,_),m) &
+  rule	Lookup.lookup_class(env,cn) => (c as Explode.CLASS(cn2,_,r,_),m) &
 
 	ClassInf.start(r, cn2) => new_ci_state &
 
@@ -492,7 +499,7 @@ and inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      Explode.DERIVED(cn,ad,mod), re, prot)
 	  => (dae,env, csets', ci_state', tys)
 
-  rule	not Env.lookup_class(env,cn) => (_,_) &
+  rule	not Lookup.lookup_class(env,cn) => (_,_) &
 	Exp.path_string(cn) => cns &
 	print "# unknown class: " & print cns & print "\n"
 	----------------------------------------
@@ -500,7 +507,11 @@ and inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      Explode.DERIVED(cn,ad,mod), re, prot)
 	  => fail
 
-end
+  rule	print "- inst_classdef fallthru\n"
+	----------------------------------
+	inst_classdef(_,_,_,_,_,_,_,_) => fail
+
+end	
 
 and inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		    Explode.Class, bool)
