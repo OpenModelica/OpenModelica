@@ -2,5 +2,6 @@ module RTOpts:
 
   relation args : string list => string list
   relation typeinfo : () => bool
+  relation split_arrays : () => bool
 
 end
