@@ -439,20 +439,49 @@ element_modification : << bool is_final=false; >>
 	;
 
 element_redeclaration :
-	  << bool is_final=false; >>
-	  REDECLARE
+	  << bool is_final=false; void *spec = NULL; >>
+	  REDECLARE ^
 	  { FINAL << is_final=true; >> }
-	  ( extends_clause
-	  | class_definition[false,is_final]
-	  | component_clause1 )
-          /* FIXME */
+	  ( ec:extends_clause                   << spec = #ec->rml; >>
+	  | cd:class_definition[false,is_final]
+	    << spec = Absyn__CLASSDEF(RML_PRIM_MKBOOL(false), #cd->rml); >>
+	  | cc:component_clause1
+	    << spec = #cc->rml; >> )
+          << #0->rml = Absyn__REDECLARATION(RML_PRIM_MKBOOL(is_final), spec);
+	  >>
 	;
 
-component_clause1 :
-	type_prefix
-	type_specifier
-	component_declaration
+component_clause1!:
+	<< bool fl=false, pa=false, co=false, in=false, ou=false;
+	   Attrib a = $[COMPONENTS,"---"]; >>
+        /* inline type_prefix for easy access to the flags */
+	{ f:FLOW      << fl = true; >> } 
+	{ p:PARAMETER << pa = true; >>
+	| c:CONSTANT  << co = true; >> }
+	{ i:INPUT     << in = true; >>
+	| o:OUTPUT    << ou = true; >> }
+	s:type_specifier
+	d:component_declaration
+        << #0 = #(#[&a], #p, #s, #d);
+	   #0->rml = Absyn__COMPONENTS(Types__ATTR(mk_none(),
+						   RML_PRIM_MKBOOL(fl),
+						   pa ? Types__PARAM :
+						   co ? Types__CONST :
+						   Types__VAR,
+						   in ? Types__INPUT :
+						   ou ? Types__OUTPUT:
+						   Types__BIDIR),
+				       #s->rml,
+				       mk_cons(#d->rml, mk_nil()));
+				       
+	>> 
 	;
+
+/* component_clause1 : */
+/* 	type_prefix */
+/* 	type_specifier */
+/* 	component_declaration */
+/* 	; */
 
 /* component_clause1![NodeType nt] : */
 /* 	  type_prefix  */
