@@ -25,9 +25,9 @@
 #include <assert.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 #include "read_write.h"
 #include "../values.h"
-#include <time.h>
 #include "../absyn_builder/yacclib.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -177,6 +177,9 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
   char command[255];
   char exename[255];
   assert(strlen(str) < 255);
+  if (strlen(str) >= 255) {
+    RML_TAILCALLK(rmlFC);    
+  }
   if (cc == NULL||cflags == NULL) {
     RML_TAILCALLK(rmlFC);
   }
@@ -219,7 +222,9 @@ RML_BEGIN_LABEL(System__execute_5ffunction)
   sprintf(command,".\\%s %s_in.txt %s_out.txt",str,str,str);
   ret_val = system(command);
   
-  assert(ret_val == 0);
+  if (ret_val != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
 
   RML_TAILCALLK(rmlSC);
 }
@@ -430,11 +435,10 @@ RML_BEGIN_LABEL(System__mo_5ffiles)
 }
 RML_END_LABEL
 
-
 RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
 {
   type_description desc;
-  void * res;
+  void * res, *res2;
   int ival;
   float rval;
   float *rval_arr;
@@ -444,7 +448,9 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file=NULL;
   file = fopen(filename,"r");
-  assert(file != NULL);
+  if (file == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
   
   read_type_description(file,&desc);
   
@@ -460,7 +466,7 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
     } 
   else  /* Array value */
     {
-      int currdim,i;
+      int currdim,el,i;
       if (desc.type == 'r') {
 	/* Create array to hold inserted values, max dimension as size */
 	size = 1;
@@ -468,7 +474,9 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
 	  size *= desc.dim_size[currdim];
 	}
 	rval_arr = (float*)malloc(sizeof(float)*size);
-	assert(rval_arr);
+	if(rval_arr == NULL) {
+	  RML_TAILCALLK(rmlFC);
+	}
 	/* Fill the array in reversed order */
 	for(i=size-1;i>=0;i--) {
 	  fscanf(file,"%e",&rval_arr[i]);
@@ -480,14 +488,16 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
       }
 	
       if (desc.type == 'i') {
-	int currdim,i;
+	int currdim,el,i;
 	/* Create array to hold inserted values, mult of dimensions as size */
 	size = 1;
 	for (currdim=0;currdim < desc.ndims; currdim++) {
 	  size *= desc.dim_size[currdim];
 	}
 	ival_arr = (int*)malloc(sizeof(int)*size);
-	assert(rval_arr);
+	if(rval_arr==NULL) {
+	  RML_TAILCALLK(rmlFC);
+	}
 	/* Fill the array in reversed order */
 	for(i=size-1;i>=0;i--) {
 	  fscanf(file,"%f",&ival_arr[i]);
@@ -501,6 +511,7 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
   RML_TAILCALLK(rmlSC);
 }   
 RML_END_LABEL
+
 
 RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset)
 {
@@ -543,15 +554,15 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__time)
 {
-  float time;
+  float _time;
   clock_t cl;
   
   cl=clock();
   
-  time = (float)cl / (float)CLOCKS_PER_SEC;
+  _time = (float)cl / (float)CLOCKS_PER_SEC;
   /*  printf("clock : %d\n",cl); */
   /* printf("returning time: %f\n",time);  */
-  rmlA0 = (void*) mk_rcon(time);
+  rmlA0 = (void*) mk_rcon(_time);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
