@@ -1508,11 +1508,9 @@ relation get_nth_component: (Absyn.ComponentRef,Absyn.Program, int) => string =
 	SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) => (c,env') &
-	Inst.inst_class (env', Types.NOMOD, Prefix.NOPRE,[],c,[],true,Inst.TOP_CALL) 
-	  => (_,env'',_,_,_) &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	get_nth_public_component_in_class(cdef,n) => comp &
-	get_component_name_and_type_and_comment (comp,env'') => s1 &
+	get_component_name_and_type_and_comment (comp,env') => s1 &
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => str
 	-------------------------------------------------
