@@ -123,7 +123,7 @@ end
          
   rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
          build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-	 array_list(seqn) => seqnl &
+	 DAELow.equation_list(seqn) => seqnl &
          build_simple_equation(knvars,seqnl) => simple_eqn_str &
          Util.string_append_list(eqn_str_list) => coutput2 &
          Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
@@ -214,7 +214,7 @@ end
 	 
   rule  (* Solving for non-states *)
 	 int_sub(e,1) => e' &
-	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v &
 	 int_sub(v,1) => v' &
 	 array_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
@@ -242,7 +242,7 @@ end
 
   rule  (* Solving the state s means solving for der(s) *)
 	 int_sub(e,1) => e' &
-	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v &
 	 (* v == variable no solved in this equation *)
 	 int_sub(v,1) => v' &
@@ -274,7 +274,7 @@ end
 	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => assigment_string 
 
   rule	int_sub(e,1) => e' &
-	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	 int_sub(v,1) => v' &
 	 array_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  

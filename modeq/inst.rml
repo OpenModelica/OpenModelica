@@ -478,12 +478,13 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env', mod, pre, csets, ci_state, c, false, inst_dims, impl,false)
 	  => (dae1, env''', csets', ci_state', tys) &
-	
+	  fully_qualified(Absyn.IDENT(n),env) => fq_class &
+	DAE.set_component_type(dae1,fq_class) => dae1' &
 	is_top_call(callscope) => callscope' &  
 	Connect.equations csets' => dae2 &
 	
 	Connect.unconnected_flow_equations (csets',dae1,env''', callscope') => dae3 &
-	Util.list_flatten([dae1, dae2, dae3]) => dae &
+	Util.list_flatten([dae1', dae2, dae3]) => dae &
 	package_prefix(env, Absyn.IDENT(n)) => typename &
 	mktype(typename,ci_state',tys) => ty
 	-------------------------------------------
@@ -538,7 +539,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	(*print "inst_class_in" & print n & print "\n" &*)
 	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims
 		      ,impl,packimpl)
-	  => (l,env', csets', ci_state', tys) 
+	  => (l,env', csets', ci_state', tys)  
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims,
@@ -1527,7 +1528,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
 	  => (dae, csets', ty) &
-	  DAE.set_component_type(dae,t) => dae' &
 	  
 (*	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &*)
 
@@ -1552,7 +1552,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     (comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m,bc),cmod),inst_dims,impl,packimpl)
-          => (dae', env',csets',ci_state,
+          => (dae, env',csets',ci_state,
 	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
 
@@ -2172,7 +2172,6 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	inst_var(cenv, ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
 		 dims, [], [], false)
 	  => (dae1, csets', ty) &
-
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
@@ -3327,19 +3326,19 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 
   axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), fl, kind, dir, e,  
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl,Absyn.IDENT(""))]
+	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl,[])]
 	
   axiom	dae_declare4 (vn, (Types.T_REAL(_),_), fl, kind, dir, e, 
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl,Absyn.IDENT(""))]
+	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl,[])]
 
   axiom	dae_declare4 (vn, (Types.T_BOOL(_),_), fl, kind, dir, e, 
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl,Absyn.IDENT(""))]
+	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl,[])]
 	
   axiom	dae_declare4 (vn, (Types.T_STRING(_),_), fl, kind, dir, e, 
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl,Absyn.IDENT(""))]
+	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl,[])]
 
 axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start)
 	=> []
@@ -3348,7 +3347,7 @@ axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start)
 
   axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), fl, kind, dir, e,
 		      inst_dims,start)
-	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,Absyn.IDENT(""))]
+	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,[])]
 
   axiom	dae_declare4 (c,ty,_,_,_,_,_,_) => []
 

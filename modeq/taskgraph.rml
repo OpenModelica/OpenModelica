@@ -49,7 +49,7 @@ relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list
 	array_list(vararr) =>  vars &
 	array_list(knvararr) => knvars &
 	add_variables(vars,starttask) &
-	add_variables([DAELow.VAR(Exp.CREF_IDENT("sim_time",[]),DAELow.VARIABLE,DAE.INPUT,DAE.REAL,NONE,NONE,[],NONE,0,"time",Absyn.IDENT("$noclass$"))],starttask) &
+	add_variables([DAELow.VAR(Exp.CREF_IDENT("sim_time",[]),DAELow.VARIABLE,DAE.INPUT,DAE.REAL,NONE,NONE,[],NONE,0,"time",[])],starttask) &
 	build_blocks(dae,ass1,ass2,blocks) &
 	print "done building taskgraph, about to build inits.\n" &
 	build_inits(dae) 
@@ -199,7 +199,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	
   rule	(* Solving for non-states *)
 	int_sub(e,1) => e' &
-	array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
@@ -222,7 +222,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 
   rule	(* Solving the state s means solving for der(s) *)
 	int_sub(e,1) => e' &
-	array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
@@ -245,7 +245,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	build_equation(DAELow.DAELOW(vars,_,eqns,_,_),ass1,ass2,e)	
 
   rule	int_sub(e,1) => e' &
-	array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
 	array_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
@@ -281,7 +281,7 @@ relation build_system2: (DAELow.DAELow, int vector, int vector, int list,int) =>
   axiom	build_system2(dae,ass1,ass2,[],tid) => []
 
   rule	int_sub(e,1) => e' &
-	array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &

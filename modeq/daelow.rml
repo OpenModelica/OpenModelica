@@ -46,7 +46,7 @@ module DAELow:
 			DAE.StartValue *  (* value of start attribute *)
 			int * (* index in impl. vector *)
 		    string *(* original variable name *)
-			Absyn.Path (* classname variable belongs to *)
+			Absyn.Path list (* classname variable belongs to *)
 
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp
@@ -64,8 +64,8 @@ module DAELow:
  *)
  datatype DAELow = DAELOW of Variables (* ordered Variables, only states and alg. vars*)		    
 		  * Variables (* Known variables, i.e. constants and parameters*)
-	          * Equation array (* ordered Equations *)
-	          * Equation array (* Removed equations a=b*)
+	          * EquationArray (* ordered Equations *)
+	          * EquationArray (* Removed equations a=b*)
 		  * Algorithm.Algorithm array (* Algorithms *)
 
  datatype Variables = VARIABLES of CrefIndex list array (* HashTB, cref->indx*)
@@ -73,6 +73,13 @@ module DAELow:
 				   * int (* bucket size *)
 				   * int (* no. of vars *)
 datatype CrefIndex = CREFINDEX of Exp.ComponentRef * int
+
+(* array of Equations are expandable, to amortize the cost of adding 
+ ** equations in a more efficient manner
+ *)
+datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
+					   int * (* array size *)
+					   Equation option array 
 
  (** Assignments of variables to equations and vice versa are implemented by a
   ** expandable array to amortize addition of array elements more efficient *)
@@ -154,6 +161,14 @@ datatype CrefIndex = CREFINDEX of Exp.ComponentRef * int
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
   relation var_list: (Variables) => Var list 
+
+  relation equation_add: (EquationArray,Equation) => EquationArray 
+  relation equation_nth:(EquationArray,int) => Equation 
+  relation equation_setnth: (EquationArray,int,Equation) => EquationArray
+  relation equation_list:(EquationArray) => Equation list 
+  relation list_equation:(Equation list ) => EquationArray
+
+
   relation is_non_state: VarKind => ()
   relation is_var_known : (Var list, Exp.ComponentRef) => bool 
 end (* End Module *)
@@ -196,8 +211,8 @@ relation lower: (DAE.DAElist) => DAELow =
 	remove_simple_equations(vars,knvars,eqns,reqns,s) 
 	  => (vars,knvars,eqns,reqns) & 
 	sort_eqn(eqns) => eqns' &
-	list_array(eqns') => eqnarr &
-	list_array(reqns) => reqnarr &
+	list_equation(eqns') => eqnarr &
+	list_equation(reqns) => reqnarr &
 	list_array(algs) => algarr
 (*	& print "removed simple equations, dae:" &
 	dump low' *)
@@ -400,11 +415,11 @@ relation dump: DAELow => () =
 	dump_vars knvars &
 	print "\nEquations\n" &
 	print "=========\n" &
-	array_list(eqns) => eqnsl &
+	equation_list(eqns) => eqnsl &
 	dump_eqns eqnsl &
 	print "Simple Equations\n" &
 	print "=========\n" &
-	array_list(reqns) => reqnsl &
+	equation_list(reqns) => reqnsl &
 	dump_eqns reqnsl 
 	-----------------
 	dump(DAELOW(vars1,vars2,eqns,reqns,algs))
@@ -737,20 +752,22 @@ relation dump_vars: Var list => ()=
   rule	DAE.dump_direction_str dir => dirstr & print dirstr & print " " &
 	Exp.print_component_ref_str(cr) => str &
 	print str & print ":" & dump_kind kind &
-        Absyn.path_string(path) => path_str &
+	Util.list_map(paths,Absyn.path_string) => paths_lst &
+	Util.string_delimit_list(paths_lst,", ") => path_str &
 	print "= " & Exp.print_exp_str e => s & print s & print(" ") & print(path_str) & print ",\n " &
 	dump_vars(xs) 
 	-------------
-	dump_vars(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,_,path)::xs)
+	dump_vars(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,_,paths)::xs)
 
   rule  DAE.dump_direction_str dir => dirstr & print dirstr & print " " &
 	Exp.print_component_ref_str(cr) => str &
-        Absyn.path_string(path) => path_str &
+	Util.list_map(paths,Absyn.path_string) => path_strs &
+	Util.string_delimit_list(path_strs, ", ") => path_str &
 	print str & print ":" & dump_kind kind & print(" ") & print(path_str) & 
 	print ",\n " &
 	dump_vars(xs) 
 	-------------
-	dump_vars(VAR(cr,kind,dir,_,NONE,_,_,_,_,_,path)::xs)
+	dump_vars(VAR(cr,kind,dir,_,NONE,_,_,_,_,_,paths)::xs)
 end 
 
 (** relation: dump_kind
@@ -1252,7 +1269,7 @@ end
 relation incidence_matrix: (DAELow)
 	  => IncidenceMatrix =
 
-  rule	array_list(eqns) => eqnsl &
+  rule	equation_list(eqns) => eqnsl &
 	incidence_matrix2(vars,eqnsl) => lstlst &
 	list_array(lstlst) => arr
 	-------------------
@@ -1482,10 +1499,10 @@ end
  **)
 relation empty_vars: () => Variables =
 
-  rule	array_create(100,[]) => arr &
+  rule	array_create(10000,[]) => arr &
 	list_array([]) => emptyarr 
 	------------------------
-	empty_vars() => VARIABLES(arr,emptyarr, 100,0)
+	empty_vars() => VARIABLES(arr,emptyarr, 10000,0)
 end
 
 (** relation: merge_vars
@@ -2008,7 +2025,7 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	   of the system in order to work. SO: Matching is not needed to be restarted from 
 	   scratch.
 	   *)
- 	array_length(eqns) => nf' &
+ 	equation_size(eqns) => nf' &
 	int_sub(nv',nv) => nvd &
 	assignments_expand(ass1,nvd) => ass1' &
 	assignments_expand(ass2,nvd) => ass2' &
@@ -2122,7 +2139,7 @@ relation update_incidence_matrix2: (DAELow,
   axiom	update_incidence_matrix2(dae,m,[]) => (m,[[]])
 
   rule	int_sub(e,1) => e' &
-	array_nth(daeeqns,e') => eqn &
+	equation_nth(daeeqns,e') => eqn &
 	incidence_row(vars,eqn) => row &
 	Util.array_replaceat_with_fill(row,e',m,[]) => m' &
 	vars_in_eqn(m',e) => changedvars1 &
@@ -2194,13 +2211,13 @@ relation replace_dummy_der: (Exp.ComponentRef, (* state *)
   axiom	replace_dummy_der(state,dummy,dae,m,mt,[]) => (dae,m,mt)
 	
   rule	int_sub(e,1) => e' &
-	array_nth(eqns,e') => eqn &
+	equation_nth(eqns,e') => eqn &
 	replace_dummy_der2(state,dummyder,eqn) => eqn' &
 	replace_dummy_der_others(eqn',v) => (eqn',v') &
 	(*incidence_row(v'',eqn') => row' &
 	 Util.list_replaceat(row',e',m) => m' &
 	 transpose_matrix(m') => mt' &*)
-	array_setnth(eqns,e',eqn') => eqns' &
+	equation_setnth(eqns,e',eqn') => eqns' &
 	replace_dummy_der(state,dummyder,DAELOW(v',kv,eqns',seqns,al),m,mt,rest) 
 	  => (dae,m,mt) 
 	  -------------------------------
@@ -2441,7 +2458,7 @@ relation states_in_eqns: (int list (* eqns *),
 	
   rule	states_in_eqns(rest,DAELOW(vars,kv,eqns,seqns,al),m,mt) => (res1,res2) &
 	int_sub(e,1) => e' &
-	array_nth(eqns,e') => eqn &
+	equation_nth(eqns,e') => eqn &
 	states_in_eqn(eqn,vars) => vars2 &
 	var_list(vars) => varlst &
 	states_in_vars(varlst,vars2) => (res11,res22) &
@@ -2502,7 +2519,7 @@ relation differentiate_eqns: (DAELow,
   axiom	differentiate_eqns(dae,m,mt,nv,nf,[]) => (dae,m,mt,nv,nf,[])
 	
   rule	int_sub(e,1) => e' &
-	array_nth(eqns,e') => eqn &
+	equation_nth(eqns,e') => eqn &
 	Derive.differentiate_equation_time(eqn,v) => eqn' &
 	(* update equation row in IncidenceMatrix *)	
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
@@ -2515,8 +2532,8 @@ relation differentiate_eqns: (DAELow,
 	(*print " to " & print str &  print "\n" &*)
 	Debug.fprint("bltdump",str) & 
 	Debug.fprint("bltdump", "\n") &
-	array_add(eqns,eqn') => eqns' &
-	array_length(eqns') => leneqns & (* length gives index of new equation *)
+	equation_add(eqns,eqn') => eqns' &
+	equation_size(eqns') => leneqns & (* length gives index of new equation *)
 	differentiate_eqns(DAELOW(v,kv,eqns',seqns,al),m,mt,nv,nf,es) 
 	  => (dae,m,mt,nv,nf,reqns)
 	  ----------------------------
@@ -2526,6 +2543,123 @@ relation differentiate_eqns: (DAELow,
   rule	print "-differentiate_eqns failed\n" 
 	----------------------------
 	differentiate_eqns(_,_,_,_,_,_) => fail
+end
+
+relation equation_add: (EquationArray,Equation) => EquationArray =
+	
+  rule	(* Have space to add array elt. *)
+	int_lt(n,size) => true &
+	n + 1 => n' &
+	array_setnth(arr,n,SOME(e)) => arr'
+	-------------------------------
+	equation_add(EQUATION_ARRAY(n,size,arr),e) 
+	  =>  EQUATION_ARRAY(n',size,arr')
+
+  rule	(* Do NOT Have space to add array elt. Expand array with factor 1.4 *)
+	int_lt(n,size) => false &
+	int_real(size) => rsize &
+	real_mul(rsize,0.4) => rexpandsize &
+	real_int(rexpandsize) => expandsize &
+	int_add(expandsize,size) => newsize &
+	Util.array_expand(expandsize,arr,NONE) => arr' &
+	n + 1 => n' &
+	array_setnth(arr',n,SOME(e)) => arr''
+	-------------------------------
+	equation_add(EQUATION_ARRAY(n,size,arr),e) 
+	  =>  EQUATION_ARRAY(n',newsize,arr'')
+
+  rule	print "-equation_add failed\n" 
+	---------------------
+	equation_add(eqn,e) => fail
+end
+
+(** relation: equation_list
+ ** Transform the expandable Equation array to a list of Equations.
+ **)
+relation equation_list:(EquationArray) => Equation list =
+	
+  rule	n - 1 => lastpos &
+	equation_list2(arr,0,lastpos) => lst 
+	-----------------------
+	equation_list(EQUATION_ARRAY(n,size,arr)) => lst
+
+  rule	print "equation_list failed\n"
+	----------------------
+	equation_list(_) => fail
+end
+
+
+(** relation: list_equation
+ ** Transform the a list of Equations into an expandable Equation array.
+ **)
+relation list_equation:(Equation list ) => EquationArray =
+	
+  rule	list_length(lst) => len &
+	int_real(len) => rlen &
+	rlen *. 1.4 => rlen' &
+	real_int(rlen') => size &
+	array_create(size,NONE) => optarr &
+	Util.list_map(lst,Util.make_option) => eqn_optlst &
+	list_array(eqn_optlst) => eqnarr &
+	Util.array_copy(eqnarr,optarr) => newarr
+	----------------------------------
+	list_equation(lst) => EQUATION_ARRAY(len,size,newarr)
+end
+
+(** relation: equation_list2
+ ** Helper relation to equation_list
+ **)
+relation equation_list2:(Equation option array,
+			int(*pos*),
+			int(*lastpos*)) 
+	  => Equation list =
+
+  rule	int_eq(pos,lastpos) => true &
+	array_nth(arr,pos) => SOME(e) 
+	-----------------------------
+	equation_list2(arr,pos,lastpos) => [e]
+
+  rule	pos + 1 => pos' &
+	array_nth(arr,pos) => SOME(e) &
+	equation_list2(arr,pos',lastpos) => res
+	---------------------------------------
+	equation_list2(arr,pos,lastpos) => e::res
+end
+
+(** relation: equation_size
+ ** Returns the number of equations
+ **)
+relation equation_size:(EquationArray) => int =
+
+  axiom	equation_size(EQUATION_ARRAY(n,_,_)) => n
+end
+
+(** relation equation_nth
+ ** Return the n:th equation from the expandable equation array 
+**)
+relation equation_nth:(EquationArray,
+		       int (*n*)) 
+	  => Equation =
+
+  rule	int_lt(pos,n) => true &
+	array_nth(arr,pos) => SOME(e) 
+	---------------------
+	equation_nth(EQUATION_ARRAY(n,_,arr),pos) => e
+
+  rule	print "equation_nth failed\n" 
+	-----------------------------
+	equation_nth(_,_) => fail
+end
+
+(** relation equation_setnth
+ ** Sets the nth array element of an EquationArray.
+ **)
+relation equation_setnth: (EquationArray,int,Equation) => EquationArray =
+
+  rule	array_setnth(arr,pos,SOME(eqn)) => arr'
+	---------------------------------------
+	equation_setnth(EQUATION_ARRAY(n,size,arr),pos,eqn) 
+	  => EQUATION_ARRAY(n,size,arr')
 end
 
 (** relation: add_marked_vars
@@ -3105,7 +3239,7 @@ relation translate_dae: DAELow => DAELow =
 	calculate_indexes(varlst) => varlst' &
 	calculate_indexes(knvarlst) => knvarlst' &
 	list_append(varlst',knvarlst') => totvars &
-	array_list(eqns) => eqnsl &
+	equation_list(eqns) => eqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
 	(*Util.list_map(s,Exp.print_exp_str) => sl &
 	 Util.string_delimit_list(sl,", ") => sstr &
@@ -3119,7 +3253,7 @@ relation translate_dae: DAELow => DAELow =
 	empty_vars() => knvars' &
 	add_vars(varlst'',vars') => vars'' &
 	add_vars(knvarlst'',knvars') => knvars'' &
-	list_array(eqnsl') => eqns'
+	list_equation(eqnsl') => eqns'
 	------------------------------------
 	translate_dae(DAELOW(vars,knvars,eqns,seqns,al)) 
 	  => DAELOW(vars'',knvars'',eqns',seqns,al)
@@ -3614,7 +3748,7 @@ end
 relation print_equation_no: (int, DAELow) => () =
 
   rule	int_sub(eqno,1) => eqno' &
-	array_nth(eqns,eqno') => eq &
+	equation_nth(eqns,eqno') => eq &
 	print_equation eq => ()
 	----------------
 	print_equation_no(eqno,DAELOW(_,_,eqns,_,_)) => ()

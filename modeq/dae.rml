@@ -68,7 +68,7 @@ module DAE:
 			StartValue * (* value of start attribute *)
 			Flow * (* Flow of connector variable. Needed for 
 			      unconnected flow variables *)
-			Absyn.Path (* The class the variable is instantiated from *)
+			Absyn.Path list (* The class the variable is instantiated from *)
 
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | INITIALDEFINE of Exp.ComponentRef * Exp.Exp
@@ -722,13 +722,14 @@ relation dump_var : Element => () =
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
 	dump_start_value start &
-	Absyn.path_string(class) => classstr &
-	Print.print_buf " \"" &
+	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr &
+	Print.print_buf " \"{" &
 	Print.print_buf classstr &
-	Print.print_buf "\" " &
+	Print.print_buf "}\" " &
 	Print.print_buf ";\n"
 	--------------------------------------
-	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,class)
+	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,classlst)
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
@@ -749,10 +750,11 @@ relation dump_var_str : Element => string =
 	dump_type_str typ => s3 &	
 	Exp.print_component_ref_str id => s4 & 
 	dump_start_value_str start => s5 &
-	Absyn.path_string(class) => classstr &
-	Util.string_append_list([s1,s2,s3,s4,s5," \"",classstr,"\";\n"]) => str
+	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr &
+	Util.string_append_list([s1,s2,s3,s4,s5," \"{",classstr,"}\";\n"]) => str
 	--------------------------------------
-	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow,class) => str
+	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow,classlst) => str
 	
   rule	dump_kind_str kind => s1 & 
 	dump_direction_str dir => s2 &
@@ -760,11 +762,12 @@ relation dump_var_str : Element => string =
 	Exp.print_component_ref_str id => s4 & 
 	Exp.print_exp_str e => s5 & 
 	dump_start_value_str start => s6 &
-	Absyn.path_string(class) => classstr &
-	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6," \"",classstr,"\" ;\n"] )
+	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr &
+	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6," \"{",classstr,"}\" ;\n"] )
 	  => str
 	--------------------------------------
-	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,class) => str
+	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,classlst) => str
 	
   axiom	dump_var_str (_) => ""
 
@@ -1263,8 +1266,8 @@ relation set_component_type: (Element list,Absyn.Path) => Element list =
 	
   rule	set_component_type(xs,newtype) => xs'
 	-------------------------------------
-	set_component_type(VAR(cr,kind,dir,tp,bind,dim,start,flow,_)::xs,newtype) 
-	  => VAR(cr,kind,dir,tp,bind,dim,start,flow,newtype)::xs'
+	set_component_type(VAR(cr,kind,dir,tp,bind,dim,start,flow,lst)::xs,newtype) 
+	  => VAR(cr,kind,dir,tp,bind,dim,start,flow,newtype::lst)::xs'
 	  
   rule	set_component_type(xs,newtype) => xs'
 	-------------------------------------

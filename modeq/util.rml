@@ -111,6 +111,9 @@ module Util :
   relation list_matching : ('a list, 'a => ()) => 'a list
 
   relation apply_option : ('a option,'a => 'b) => 'b option
+
+  relation make_option: 'a => 'a option
+
   relation list_split : ('a list, int) => ('a list, 'a list)
 
   relation int_positive: int => bool
@@ -1145,6 +1148,14 @@ relation apply_option : ('a option,'a => 'b) => 'b option =
   rule	rel(a) => b
 	-----------
 	apply_option( SOME(a),rel) => SOME(b)
+end
+
+(* relation make_option
+ ** Makes a value into value option, using SOME(value) 
+**)
+relation make_option: 'a => 'a option =
+
+	axiom make_option(v) => SOME(v)
 end
 
 (** relation: list_split

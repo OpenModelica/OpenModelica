@@ -960,7 +960,7 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 	  => (Exp.Exp, Types.Properties) =
 
   rule	build_exp_list (s, v) => arraylist &
-	int_string v => dimension & Debug.fprint("failtrace", " 1 elab_builtin_fill_2 dimension: ") & Debug.fprint("failtrace", dimension) & Debug.fprint("failtrace", "\n") &
+	int_string v => dimension & 
 	Types.elab_type sty => at &
 	Types.is_array sty => a
 	----------------------------------
@@ -971,7 +971,7 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
   rule	elab_builtin_fill_2 (env, s, sty, rest) 
 	  => (exp, Types.PROP(ty,con)) &
         build_exp_list (exp, v) => arraylist &
-	int_string v => dimension & Debug.fprint("failtrace", " 2 elab_builtin_fill_2 dimension: ") & Debug.fprint("failtrace", dimension) & Debug.fprint("failtrace", "\n") &
+	int_string v => dimension &
 	Types.elab_type ty => at &
 	Types.is_array ty => a
 	----------------------------------------------------------
@@ -1491,25 +1491,50 @@ end
 
 relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties)	=
 
-  rule 	Debug.fprint("failtrace", "elab_builtin_diagonal\n") &
-		elab_exp (env,s1,false,NONE) 
-	      => (s1', Types.PROP((Types.T_ARRAY(dim as Types.DIM(SOME(dimension)),
+  rule	elab_exp (env,s1,false,NONE) 
+	  => (s1', Types.PROP((Types.T_ARRAY(dim as Types.DIM(SOME(dimension)),
                                              arrType),NONE),c),_)
-          (**print "# integer function not implemented yet REAL\n" **)
+        (**print "# integer function not implemented yet REAL\n" **)
         --------------------------------------
         elab_builtin_diagonal(env,[s1]) 
           => (
               Exp.CALL(Absyn.IDENT("diagonal"),[s1'],false,false),
               Types.PROP((Types.T_ARRAY(dim,(Types.T_ARRAY(dim,arrType),NONE)),NONE),c))
-
-      
-  rule  print"#-- elab_builtin_diagonal: Couldn't elaborate diagonal()\n"
-	    ---------------------------------------------------------
-	    elab_builtin_diagonal (_,_) => fail
-
+	
+  rule	print"#-- elab_builtin_diagonal: Couldn't elaborate diagonal()\n"
+	---------------------------------------------------------
+	elab_builtin_diagonal (_,_) => fail
+	
 end
 
+relation elab_builtin_dymtabletimeini : (Env.Env, Absyn.Exp list) 
+	  => (Exp.Exp, Types.Properties)	=
+	
+  rule	elab_exp (env,e1,false,NONE) 
+	      => (e1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
+	elab_exp (env,e2,false,NONE) 
+	      => (e2', Types.PROP((Types.T_INTEGER([]),NONE),c),_) &
+	elab_exp (env,e3,false,NONE) 
+	      => (e3', Types.PROP((Types.T_STRING([]),NONE),c),_) &
+	elab_exp (env,e4,false,NONE) 
+	      => (e4', Types.PROP((Types.T_STRING([]),NONE),c),_) &
+	elab_exp (env,e5,false,NONE) 
+	      => (e5', Types.PROP((Types.T_ARRAY(dim,arrType),NONE),c),_) &
+	elab_exp (env,e6,false,NONE) 
+	      => (e6', Types.PROP((Types.T_INTEGER([]),NONE),c),_) 
+          (**print "# integer function not implemented yet REAL\n" **)
+        --------------------------------------
+        elab_builtin_dymtabletimeini(env,[e1,e2,e3,e4,e5,e6]) 
+          => (
+              Exp.CALL(Absyn.IDENT("dymTableTimeIni"),
+		       [e1',e2',e3',e4',e5',e6'],false,false),
+              Types.PROP((Types.T_REAL([]),NONE),false))
 
+      
+  rule  print"#-- elab_builtin_dymtabletimeini: Couldn't elaborate diagonal()\n"
+	    ---------------------------------------------------------
+	    elab_builtin_dymtabletimeini (_,_) => fail
+end
      
 
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
@@ -1536,6 +1561,8 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom elab_builtin_handler "mod" => elab_builtin_mod
   axiom elab_builtin_handler "rem" => elab_builtin_rem
   axiom	elab_builtin_handler "diagonal" => elab_builtin_diagonal
+
+  axiom	elab_builtin_handler "dymTableTimeIni" => elab_builtin_dymtabletimeini
 
 end
 

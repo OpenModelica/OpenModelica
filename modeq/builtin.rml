@@ -633,6 +633,18 @@ val array2real= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types
  val array8dimbool2array1dimint = (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL([]),NONE)),NONE))], (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE)),NONE)
  val array9dimbool2array1dimint = (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_BOOL([]),NONE)),NONE))], (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE)),NONE)
 
+val dymTableTimeIni_type = (Types.T_FUNCTION([("time",(Types.T_REAL([]),NONE)),
+					     ("ipoType",(Types.T_INTEGER([]),NONE)),
+					     ("tableName",(Types.T_STRING([]),NONE)),
+					     ("fileName",(Types.T_STRING([]),NONE)),
+					     ("tableIn",(Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL([]),NONE)),NONE)),
+					     ("colWiseIn",(Types.T_INTEGER([]),NONE)) 
+], 
+(Types.T_REAL([]),NONE) (* return type *)
+),NONE)
+					     
+					     
+
 (*
 val array2array=  (Types.T_FUNCTION([("x",(Types.T_ARRAY)],
 				      (Types.T_ARRAY),NONE)
@@ -719,7 +731,7 @@ relation initial_env =
 	Env.extend_frame_t(env, "sin", real2real) 		     => env &
 	Env.extend_frame_t(env, "cos", real2real) 		     => env &
 	Env.extend_frame_t(env, "tan", real2real) 		     => env &
-
+	Env.extend_frame_t(env, "exp", real2real)		     => env &
 	(* PR. Add the built in array functions here.*)
 	(* Also do it for real, string and bool*)
 	Env.extend_frame_t(env, "ndims", array1dimint2int) 		     => env &
@@ -1221,7 +1233,13 @@ relation initial_env =
 	Env.extend_frame_t(env, "skew", array1dimreal2array3dimreal)		      => env &
 	
 	Env.extend_frame_t(env, "sqrt", int2real)			              => env & 
-	Env.extend_frame_t(env, "sqrt", real2real)			              => env 
+	Env.extend_frame_t(env, "sqrt", real2real)			              => env &
+
+
+	(* Dymola specific external functions. Needed to generaete tornado code *)			    
+	Env.extend_frame_t(env, "dymTableTimeIni",dymTableTimeIni_type) => env			    
+
+				    
 (*Debug.	Print.print_buf "\n Just AFTER the built in array functions part." *)
 	----------------------------------------------
 	initial_env () => env
