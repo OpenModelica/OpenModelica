@@ -20,6 +20,7 @@ int nproc;
 double latency=0.0;
 double bandwidth=0.0;
 int tornado_cg;
+int simulation_cg;
 int silent;
 
 void RTOpts_5finit(void)
@@ -33,6 +34,7 @@ void RTOpts_5finit(void)
   debug_none = 1;
   nproc = 0;
   tornado_cg = 0;
+  simulation_cg = 0;
   silent = 0;
 }
 
@@ -147,6 +149,9 @@ RML_BEGIN_LABEL(RTOpts__args)
       case 'c':
 	tornado_cg = 1;
 	/*modelica_output = 1;*/
+	break;
+      case 's':
+	simulation_cg = 1;
 	break;
       case 'm':
 	modelica_output = 1;
@@ -314,6 +319,13 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__tornado_5fcg)
 {
   rmlA0 = RML_PRIM_MKBOOL(tornado_cg);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__simulation_5fcg)
+{
+  rmlA0 = RML_PRIM_MKBOOL(simulation_cg);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -68,6 +68,7 @@ SRCRML= absyn.rml \
 	modutil.rml \
 	prefix.rml \
 	staticexp.rml \
+	simcodegen.rml \
 	types.rml \
 	taskgraph.rml \
 	tornado.rml \

@@ -1,0 +1,573 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+(**
+ ** file:	 simcodegen.rml
+ ** module:      SimCodegen
+ ** description: Generate Simulation code for connecting to solver. 
+ ** Outputs the simulation code to a given filename.
+ ** Input: DAELow
+ ** Output: To file
+ ** Uses: 
+ **
+ **
+ ** RCS: $Id$
+ **
+ **)
+
+
+module SimCodegen:
+
+  with "daelow.rml"
+  with "absyn.rml"
+  with "exp.rml"
+
+relation generate_residual_code: (DAELow.DAELow, Absyn.Path, string) => ()
+
+relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => ()
+
+relation print_exp_cpp_str : Exp.Exp => string 
+
+relation cref_modelica_str : Exp.ComponentRef => string 
+
+
+end
+
+with "util.rml"
+with "rtopts.rml"
+with "debug.rml"
+
+(** relation generate_residual_code
+ ** Outputs simulation code from a DAELow suitable for connection to DASSL.
+ ** The state calculations are generated on residual form.
+ **)
+relation generate_residual_code: (DAELow.DAELow, Absyn.Path, string) => () =
+
+  rule	Absyn.path_string(class) => cname &
+	DAELow.incidence_matrix(dae) => m &
+        DAELow.transpose_matrix(m) => mT &
+        DAELow.matching_algorithm(dae,m,mT) => (ass1,ass2,dae',m,mT) &
+        Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) &
+        (* & Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) *)
+        Debug.fcall("bltdump", DAELow.dump,dae') &
+        Debug.fcall("bltdump", DAELow.dump_matching, ass1) &
+        DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
+	DAELow.calculate_values(dae') => dae'' & 
+        DAELow.generate_state_partition(comps,dae,ass1,ass2) => (blt_states,blt_no_states) &
+        generate_compute_output(cname,dae',ass1,ass2,blt_no_states) => coutput &
+        generate_compute_state(cname,dae',ass1,ass2,blt_states) => cstate 
+	---------------------------------------------------------------------
+	generate_residual_code(dae,class,filename) => ()
+
+end
+
+(** relation generate_ode_code
+ ** Outputs simulation code from a DAELow. 
+ ** The state calculations are generated on explicit ode form: x_dot = f(x,y,t)
+**)
+relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => () =
+
+  rule	
+	-------------------------------------------
+	generate_ode_code(dae,class,filename) => ()
+
+end
+
+(** relation: generate_compute_state
+ ** This relation generates the code for the calculation of the state variables.
+ **)
+ relation generate_compute_state:(string,
+				  DAELow.DAELow,
+				  int vector, 
+				  int vector, 
+				  int list list) 
+	  => string =
+         
+  rule  (*Util.string_append_list(["/* state code here*/\n"]) => cstate &*)
+         (*print("----------- START building block STATE---------------\n") &*)
+         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
+         Util.string_append_list(eqn_str_list) => cstate 
+         (*print("----------- END building block STATE---------------\n") *)
+         
+         -------------------------------------------------------------
+         generate_compute_state(cname,dae,ass1,ass2,blocks) => cstate
+ end
+
+
+(** relation: generate_compute_output
+ ** This relation generates the code for the calculation of the output variables.
+ **)
+ relation generate_compute_output:(string,
+                                   DAELow.DAELow,
+                                   int vector, 
+                                   int vector, 
+                                   int list list) => string =
+         
+  rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
+         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
+	 array_list(seqn) => seqnl &
+         build_simple_equation(knvars,seqnl) => simple_eqn_str &
+         Util.string_append_list(eqn_str_list) => coutput2 &
+         Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
+         -------------------------------------------------------------
+         generate_compute_output(cname,
+                                 dae as DAELow.DAELOW(DAELow.VARIABLES(vars,_),DAELow.VARIABLES(knvars,_),eqn,seqn,_),
+                                 ass1,ass2,blocks) => coutput
+         
+ end
+
+
+ relation build_simple_equation:(DAELow.Var vector, DAELow.Equation list) 
+	  => string =
+           
+	   
+           
+  rule  
+         --------------------------------
+	 build_simple_equation(knvars,[]) => ""
+
+  rule  build_simple_equation(knvars,rest) => rest_res &
+         print_exp_cpp_str(exp1) => exp1_str & 
+         print_exp_cpp_str(exp2) => exp2_str &
+         vector_list(knvars) => knvarslist &
+         DAELow.is_var_known(knvarslist,cr1) => true &
+         DAELow.is_var_known(knvarslist,cr2) => true &
+         Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n",rest_res]) => eqn_str 
+         (*& print "\n build_simple_equation: " & print(eqn_str) *)
+         --------------------------------
+	 build_simple_equation(knvars,DAELow.EQUATION(exp1 as Exp.CREF(cr1,_),exp2 as Exp.CREF(cr2,_))::rest) => eqn_str
+
+  rule  build_simple_equation(knvars,rest) => rest_res &
+         print_exp_cpp_str(exp1) => exp1_str & 
+         print_exp_cpp_str(exp2) => exp2_str &
+         vector_list(knvars) => knvarslist &
+         DAELow.is_var_known(knvarslist,cr1) => true &
+         Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n",rest_res]) => eqn_str 
+         (*& print "\n build_simple_equation: " & print(eqn_str) *)
+         --------------------------------
+	 build_simple_equation(knvars,DAELow.EQUATION(exp1 as Exp.CREF(cr1,_),exp2 as Exp.CREF(cr2,_))::rest) => eqn_str
+
+  rule  build_simple_equation(knvars,rest) => rest_res &
+         print_exp_cpp_str(exp1) => exp1_str & 
+         print_exp_cpp_str(exp2) => exp2_str &
+         vector_list(knvars) => knvarslist &
+         DAELow.is_var_known(knvarslist,cr2) => true &
+         Util.string_append_list(["  ",exp2_str, " = ", exp1_str, ";\n",rest_res]) => eqn_str 
+         (*& print "\n build_simple_equation: " & print(eqn_str) *)
+         --------------------------------
+	 build_simple_equation(knvars,DAELow.EQUATION(exp1 as Exp.CREF(cr1,_),exp2 as Exp.CREF(cr2,_))::rest) => eqn_str
+         
+  rule  
+         -------------------------------------------------------------
+         build_simple_equation(_,_) => "// generating simple equation failed"
+ end
+
+(** relation build_blocks
+ ** this is copied from taskgraph.rml and constructs the blocks in the incident matrix
+ ** for the equations.
+ ** It is NOT done for system of equations!
+ **)
+ relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => string list =
+
+  axiom	build_blocks(_,_,_,[]) => []
+
+         (* rule	(* For system of equations *) *)
+	 (* build_system(dae,ass1,ass2,block) &
+	  build_blocks(dae,ass1,ass2,blocks)
+	  -------------------------------------
+	  build_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)*)
+	 
+  rule	(* for single equations *)
+	 build_equation(dae,ass1,ass2,eqn) => eqn_str &
+	 build_blocks(dae,ass1,ass2,blocks) => res
+	 -------------------------------------
+	 build_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
+
+  rule	print "-build_blocks failed\n" 
+	 -----------------
+	 build_blocks(_,_,_,_) => fail
+ end
+
+(** relation build_equation 
+ ** This returns the string for a specific equation in the 
+ ** incidence matrix.
+ ** It is used both for state variables and regular variables
+ **)
+ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
+	 
+  rule  (* Solving for non-states *)
+	 int_sub(e,1) => e' &
+	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	 vector_nth(ass2,e') => v &
+	 int_sub(v,1) => v' &
+	 vector_nth(vars,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	 DAELow.is_non_state kind &
+	 (*print "Solving for non-states\n" &*)
+
+	 let varexp = Exp.CREF(cr,Exp.REAL) &
+	 Exp.solve(e1,e2,varexp) => expr &
+	 
+         (* start debug output *)
+         Exp.print_exp_str e1 => e1s &
+	 Exp.print_exp_str e2 => e2s &
+         int_string(e) => eqn_nr &
+         int_string(v) => var_nr &
+	 (*    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
+	  print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
+	  print s & print "\ngiving:\n " &
+          Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
+         
+         Exp.simplify(expr) => simplify_exp &
+	 build_assignment(cr,simplify_exp,origname)  => assigment_string
+	 --------------------------------
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => assigment_string	
+         
+
+  rule  (* Solving the state s means solving for der(s) *)
+	 int_sub(e,1) => e' &
+	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	 vector_nth(ass2,e') => v &
+	 (* v == variable no solved in this equation *)
+	 int_sub(v,1) => v' &
+	 vector_nth(vars,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+
+	 (*print "solving for state\n" &*)
+         cref_modelica_str(cr) => cr_str &
+
+
+ 	 Util.string_append_list(["_D_",cr_str]) => new_id &
+	 let new_cr = Exp.CREF_IDENT(new_id,[]) &
+	 let new_varexp = Exp.CREF(new_cr,Exp.REAL) &
+
+
+	 Exp.solve(e1,e2,new_varexp) => expr &
+         
+         (*Exp.print_exp_str e1 => new_e1s &
+	  Exp.print_exp_str e2 => new_e2s &
+          int_string(e) => eqn_nr &
+          int_string(v) => var_nr &
+	  print "STATE Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print new_e1s & print " = " & print new_e2s &
+	  print " solved for " & Exp.print_exp_str new_varexp => s &
+	  print s & print " giving " &
+	  Exp.print_exp_str expr => s2 & print s2 & print "\n" & *)
+
+         Exp.simplify(expr) => simplify_exp &
+	 build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
+	 --------------------------------
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => assigment_string 
+
+  rule	int_sub(e,1) => e' &
+	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	 vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
+	 int_sub(v,1) => v' &
+	 vector_nth(vars,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	 let varexp = Exp.CREF(cr,Exp.REAL) &
+	 not Exp.solve(e1,e2,varexp) => _ &
+	 print "nonlinear equation not implemented yet\n" 
+	 --------------------------------
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => fail
+         
+  rule  print "-build_equation failed\n" 
+	 --------------------------------
+	 build_equation(_,_,_,_) => "//build_equation failed\n" 
+ end
+
+(** relation build_assignment 
+ ** This relation takes a ComponentRef(cr) and an expression(exp)
+ ** and makes a C++ assignment: cr = exp;
+ **)
+
+ relation build_assignment: (Exp.ComponentRef, (* varname *)
+			     Exp.Exp, (*expression*) 
+			     string) (* orig. name*) 
+	  => string =
+	   
+  rule  cref_modelica_str(cr) => cr_str & 
+         print_exp_cpp_str(exp) => exp_str & 
+         (*Exp.print_exp_str(exp) => exp_str & *)
+         Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str 
+         --------------------------------
+	 build_assignment(cr,exp,origname) => eqn_str
+         
+  rule	print "-build_assignment failed\n" 
+	 ------------------------
+	 build_assignment(cr,exp,origname) => fail
+         
+	 
+ end
+
+
+(** relation: print_exp_cpp_str
+ **
+ ** This relation prints a complete expression on a C/C++ format.
+ **)
+ relation print_exp_cpp_str : Exp.Exp => string =
+         
+  rule  print_exp2_str (e,0) => s
+	 --------------------
+	 print_exp_cpp_str e => s
+         
+ end
+
+
+ relation print_exp2_str : (Exp.Exp,int) => string =
+
+  rule  print "# equation contain undefined symbols"
+         --------------------------
+         print_exp2_str(Exp.END,_) => fail
+         
+         
+  rule  int_string(x) => s
+	 ----------------------------
+         print_exp2_str(Exp.ICONST(x),_) => s
+         
+  rule  real_string(x) => s
+	 -----------------------------
+         print_exp2_str(Exp.RCONST(x),_) => s
+
+  rule  string_append ("\"", s) => s' &
+	 string_append (s', "\"") => s''
+         ---------------------------------
+         print_exp2_str(Exp.SCONST(s),_) => s''
+         
+  axiom print_exp2_str(Exp.BCONST(false),_) => "false"
+
+  axiom	print_exp2_str(Exp.BCONST(true),_) => "true"
+
+  rule  cref_modelica_str(c) => res 
+         --------------------------------
+         print_exp2_str(Exp.CREF(c,_),_) => res
+
+  rule  Exp.binop_symbol(op) => sym &
+ 	 Exp.binop_priority(op) => pri2' &
+         int_add(pri2',1) => pri2 & (* binary minus have higher priority than itself *)
+         Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+         print_exp2_str (e1,pri3) => s2 & 
+         print_exp2_str (e2,pri2) => s3 &
+         Exp.print_rightpar_str (pri1,pri2) => s4 &
+         string_append (s1, s2) => s &
+	 string_append (s, sym) => s' &
+	 string_append (s', s3) => s'' &
+	 string_append (s'', s4) => s'''
+	 ------------------------
+	 print_exp2_str (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22)),pri1) => s'''
+
+  rule	Exp.binop_symbol(op) => sym &
+ 	 Exp.binop_priority op => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e1,pri3) => s2 & 
+	 print_exp2_str (e2,pri2) => s3 &
+	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 string_append (s1, s2) => s &
+	 string_append (s, sym) => s' &
+	 string_append (s', s3) => s'' &
+	 string_append (s'', s4) => s'''
+	 ------------------------
+	 print_exp2_str (Exp.BINARY(e1, op, e2),pri1) => s'''
+
+  rule	Exp.unaryop_symbol(op) => sym &
+	 Exp.unaryop_priority(op) => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e,pri3) => s2 &
+	 Exp.print_rightpar_str (pri1,pri2) => s3 &
+	 string_append (s1, sym) => s &
+	 string_append (s, s2) => s' &
+	 string_append (s', s3) => s''
+	 ----------------------------
+	 print_exp2_str(Exp.UNARY(op, e),pri1) => s''
+
+  rule	Exp.lbinop_symbol(op) => sym &
+	 Exp.lbinop_priority(op) => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e1,pri3) => s2 & 
+	 print_exp2_str (e2,pri2) => s3 &
+	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 string_append (s1, s2) => s &
+	 string_append (s, sym) => s' &
+	 string_append (s', s3) => s'' &
+	 string_append (s'', s4) => s'''
+	 ----------------------------------------------------------------
+	 print_exp2_str(Exp.LBINARY(e1, op, e2),pri1) => s'''
+
+  rule	Exp.lunaryop_symbol(op) => sym &
+ 	 Exp.lunaryop_priority(op) => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	 print_exp2_str (e,pri3) => s2 &
+	 Exp.print_rightpar_str (pri1,pri2) => s3 &
+	 string_append (s1, sym) => s &
+	 string_append (s, s2) => s' &
+	 string_append (s', s3) => s''
+	 ---------------------------------------------------
+	 print_exp2_str(Exp.LUNARY(op, e),pri1) => s''
+
+  rule	Exp.relop_symbol(op) => sym &
+ 	 Exp.relop_priority(op) => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	 print_exp2_str(e1,pri3) => s2 & 
+	 print_exp2_str(e2,pri2) => s3 &
+	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 string_append (s1, s2) => s &
+	 string_append (s, sym) => s' &
+	 string_append (s', s3) => s'' &
+	 string_append (s'', s4) => s'''
+	 -----------------------------------------------------------------
+	 print_exp2_str(Exp.RELATION(e1, op, e2),pri1) => s'''
+
+  rule	print_exp2_str(c,0) => ifstr &
+	 print_exp2_str(t,0) => thenstr &
+	 print_exp2_str(f,0) => elsestr &
+	 string_append ("( ", ifstr) => s &
+	 string_append (s, " ) ? ( ") => s' &
+	 string_append (s', thenstr) => s'' &
+	 string_append (s'', " ) : ( ") => s''' &
+	 string_append (s''', elsestr) => s'''' &
+	 string_append (s'''', " ) ") => slast 
+	 ----------------------------
+	 print_exp2_str(Exp.IFEXP(c,t,f),_) => slast
+
+  rule	Absyn.path_string(fcn) => fs &
+	 Exp.print_list_str(args,print_exp_cpp_str,",") => argstr &
+	 string_append(fs, "(") => s &
+	 string_append(s, argstr) => s' &
+	 string_append(s', ")") => s''
+	 ---------------------------------------------
+	 print_exp2_str(Exp.CALL(fcn, args,_,_),_) => s''
+
+  rule	Exp.print_list_str(es, print_exp_cpp_str, ",") => s &
+	 string_append ("{",s) => s' &
+	 string_append (s',"}") => s''
+	 -----------------------------
+	 print_exp2_str (Exp.ARRAY(_,_,es),_) => s''
+
+  rule	Exp.print_list_str(es, print_exp_cpp_str, ",") => s &
+	 string_append ("(",s) => s' &
+	 string_append (s',")") => s''
+	 -----------------------------
+	 print_exp2_str (Exp.TUPLE(es),_) => s''
+	 
+  rule	Exp.print_list_str(es, Exp.print_row_str, "},{") => s &
+	 string_append ("{{",s) => s' &
+	 string_append (s',"}}") => s''
+	 -----------------------------
+	 print_exp2_str (Exp.MATRIX(_,_,es),_) => s''
+
+  rule	let pri2 = 41 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (start,pri3) => s2 &
+	 print_exp2_str (stop,pri3) => s3 &
+ 	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 string_append (s1, s2) => s &
+	 string_append (s, ":") => s' &
+	 string_append (s', s3) => s'' &
+	 string_append (s'', s4) => s'''
+	 -------------------------------------------------------------
+	 print_exp2_str (Exp.RANGE(_,start,NONE,stop),pri1) => s'''
+
+  rule	let pri2 = 41 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1,pri3) &
+	 print_exp2_str (start,pri3) => s2 &
+	 print_exp2_str (step,pri3) => s3 &
+ 	 print_exp2_str (stop,pri3) => s4 &
+ 	 Exp.print_rightpar_str (pri1,pri2) => s5 &
+	 string_append (s1, s2) => s &
+	 string_append (s, ":") => s' &
+	 string_append (s', s3) => s'' &
+	 string_append (s'', ":") => s''' &
+	 string_append (s''', s4) => s'''' &
+	 string_append (s'''', s5) => s'''''
+	 -------------------------------------
+	 print_exp2_str (Exp.RANGE(_,start,SOME(step),stop),pri1) => s'''''
+
+  rule	RTOpts.modelica_output => false &
+	 int_real ival => rval &
+	 real_string rval => res
+	 ---------------------------------------
+	 print_exp2_str (Exp.CAST(REAL,Exp.ICONST(ival)),_) => res
+
+  rule	RTOpts.modelica_output => false &
+	 int_real ival => rval &
+	 real_string rval => res &
+	 string_append("-",res) => res2
+	 ---------------------------------------
+	 print_exp2_str (Exp.CAST(REAL,Exp.UNARY(Exp.UMINUS(_),Exp.ICONST(ival))),_) => res2
+
+  rule	RTOpts.modelica_output => false &
+	 print_exp_cpp_str e => s & 
+	 string_append ("(float)(", s) => s' &
+	 string_append (s', ")") => s''
+	 ---------------------------------------
+	 print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s''
+
+  rule	RTOpts.modelica_output => true &
+	 print_exp_cpp_str e => s
+	 ---------------------------------------
+	 print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s
+
+  rule	let pri2 = 51 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e,pri3) => s2 &
+ 	 Exp.print_rightpar_str (pri1,pri2) => s3 &
+ 	 int_string i => s4 &
+	 string_append (s1, s2) => s &
+	 string_append (s, s3) => s' &
+	 string_append (s', "[") => s'' &
+	 string_append (s'', s4) => s''' &
+	 string_append (s''', "]") => s''''
+	 ---------------------------------------
+	 print_exp2_str (Exp.ASUB(e,i),pri1) => s''''
+
+  rule	print_exp_cpp_str cr => crstr &
+	 print_exp_cpp_str dim => dimstr &
+	 Util.string_append_list(["size(",crstr,",",dimstr,")"]) => str
+	 ------------------------
+	 print_exp2_str (Exp.SIZE(cr,SOME(dim)),_) => str
+
+  rule	print_exp_cpp_str cr => crstr &
+	 Util.string_append_list(["size(",crstr,")"]) => str
+	 ------------------------
+	 print_exp2_str (Exp.SIZE(cr,NONE),_) => str
+
+
+  rule	Absyn.path_string fcn => fs &
+	 print_exp_cpp_str exp => expstr &
+	 print_exp_cpp_str iterexp => iterstr &
+	 Util.string_append_list(["<reduction>",
+				  fs,"(",expstr," for ",
+				  id," in ",iterstr,")"]) => str
+	 -------------------------------------------------------
+	 print_exp2_str (Exp.REDUCTION(fcn,exp,id,iterexp),_) => str
+
+  axiom	print_exp2_str (_,_) => "#UNKNOWN EXPRESSION# ----eee "
+
+ end
+
+relation cref_modelica_str : Exp.ComponentRef => string =
+  rule  Util.string_replace_char(s,#".",#"_") => res'
+        (* & Util.string_append_list(["_",res,"_"]) => res'*)
+        ------------------------------
+        cref_modelica_str(Exp.CREF_IDENT(s,_)) => res'
+        
+  rule	cref_modelica_str(n) => ns &
+	string_append(s,"_") => s1 &
+	string_append(s1,ns) => ss
+	-------------------------------------
+	 cref_modelica_str(Exp.CREF_QUAL(s,_,n)) => ss
+end

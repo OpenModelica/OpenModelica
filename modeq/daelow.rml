@@ -132,6 +132,9 @@ module DAELow:
 			       int vector, int vector) => 
 	  (int list list )
 
+  relation generate_state_partition:(int list list,DAELow,int vector,int vector) 
+	  => (int list list, int list list) 
+
   relation dump_components: (int list list) => ()
 
   relation translate_dae: DAELow => DAELow 
@@ -144,6 +147,8 @@ module DAELow:
   relation states: (DAE.DAElist,BinTree) => BinTree
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
+  relation is_non_state: VarKind => ()
+  relation is_var_known : (Var list, Exp.ComponentRef) => bool 
 end (* End Module *)
 
 (* Implementation *)
@@ -246,6 +251,128 @@ relation extract_algebraic_and_differential_eqn: (Equation list) => (Equation li
         ---------------------------------------
         extract_algebraic_and_differential_eqn((alg)::rest) 
           => (alg::resAlgEqn,resDiffEqn)
+end
+
+(** relation:generate_state_partition
+ ** this relation extracts the rightmost part 
+ **
+ ** returns two incidencematrices, the first one including blocks with 
+ ** all state variables (and of course some other variables as well) 
+ ** and the second one including no state variables. No reordering
+ ** of blocks is performed.
+ **) 
+relation generate_state_partition:(int list list,DAELow,int vector,int vector) => 
+ (int list list, int list list) =
+        
+  rule  list_reverse(blt) => reversed_blt &
+        has_state_var(0,reversed_blt,dae,ass1,ass2) => state_component_number &
+        list_length(blt) => nr_of_components &
+        int_sub(nr_of_components,state_component_number) => component_offset & 
+        
+        (*print "(non-reversed): " &
+        int_string(component_offset) => component_offset_string &
+        print component_offset_string &
+        print "\n" &*)
+        
+        Util.list_split(blt,component_offset) => (blt_states,blt_no_states) 
+        -----------------------------------------
+        generate_state_partition(blt,dae,ass1,ass2) => (blt_states,blt_no_states)
+        
+  rule  print "-generate_state_partition failed\n" 
+        -----------------------------------------
+        generate_state_partition(_,_,_,_) => fail
+        
+end
+
+(** Helper relation for generate state partition
+ ** Determines which list of coefficients contains the first 
+ ** statevariable
+ ** 
+ ** Returns the first component number (counted from the end of the list)
+ ** which contais a state variable.
+ **) 
+relation has_state_var:(int, int list list, DAELow,int vector, int vector) => int =
+        
+  rule  (*if this component contains a statevar, return index *)
+        check_component_for_statevars(0,element,dae,ass1,ass2) => true
+        -----------------------------------------
+        has_state_var(index,element::reversed_blt,dae,ass1,ass2) => index
+
+        (* If we have no more components return 0 *)
+  axiom has_state_var(_,[],_,_,_) => 0
+        
+  rule  (* If no statevars found in this component, continue with the next one*)
+        int_add(1,index) => next_index &
+        has_state_var(next_index,reversed_blt,dae,ass1,ass2) => ret_value
+        -----------------------------------------
+        has_state_var(index,element::reversed_blt,dae,ass1,ass2) => ret_value
+        
+  rule  print "-generate_state_partition2 failed\n" 
+        -----------------------------------------
+        has_state_var(_,_,_,_,_) => fail
+end
+
+(** relation:check_component_for_statevars
+ ** Arg 1 is the index in the component to the current variable to check
+ ** Arg 2 is the component itself
+ ** Arg 3 is the DAEs
+ ** Returns true if this component contains a statevar
+ **)
+relation check_component_for_statevars:(int, int list, DAELow,int vector, int vector) => bool =
+        
+  rule  print "check_component_for_statevars failed: Empty component\n" 
+        -------------------------------------------------------------
+        check_component_for_statevars(_,[],_,_,_) => fail
+        
+        
+  rule  (* Termination condition. variables checked.
+         This means that the component did not contain any state vars *)
+        list_length(component) => nr_of_variables &
+        int_eq(nr_of_variables,i) => true
+        -------------------------------------------------------------
+        check_component_for_statevars(i,component,_,ass1,ass2) => false
+        
+  rule  (* If this variable is a state variable, return true *)
+        list_nth(component,i) => variable_index_to_check &
+        (* Variable indexing starts from 1 but lists start from 0.
+         Thus decrease index by one*) 
+        int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
+	vector_nth(ass2,adjusted_variable_index_to_check) => v &
+	int_sub(v,1) => v' &
+	vector_nth(var_list,v') => (v as VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	not is_non_state(kind)
+        -------------------------------------------------------------
+        check_component_for_statevars(i,component,dae as DAELOW(VARIABLES(var_list,_),_,_,_,_),ass1,ass2) => true
+
+  rule  (* If this variable is nt state variable, try the next one *)
+        list_nth(component,i) => variable_index_to_check &
+        (* Variable indexing starts from 1 but lists start from 0.
+         Thus decrease index by one*) 
+        int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
+	vector_nth(ass2,adjusted_variable_index_to_check) => v &
+	int_sub(v,1) => v' &
+	vector_nth(var_list,v') => (v as VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+        int_add(i,1) => next_i &
+        check_component_for_statevars(next_i,component,dae,ass1,ass2) => result
+        -------------------------------------------------------------
+        check_component_for_statevars(i,component,dae as DAELOW(VARIABLES(var_list,_),_,_,_,_),ass1,ass2) 
+          => result
+
+  rule  print "check_component_for_statevars failed" 
+        -------------------------------------------------------------
+        check_component_for_statevars(_,_,_,_,_) => fail
+        
+end 
+
+(** relation is_non_state 
+ ** this equation checks if the the varkind is state of variable
+ ** used both in build_equation and generate_compute_state
+ **)
+relation is_non_state: VarKind => () =
+                                                 
+  axiom	is_non_state (VARIABLE) => ()
+  axiom	is_non_state (DUMMY_DER) => ()
+  axiom	is_non_state (DUMMY_STATE) => ()
 end
 
 (** relation: dump
@@ -3701,3 +3828,20 @@ relation is_algebraic : (Exp.Exp) => bool =
   axiom	is_algebraic (_) => true
 
  end
+
+relation is_var_known : (Var list, Exp.ComponentRef) => bool =
+	
+  rule	
+        --------------------------------
+        is_var_known([],var_name) => false
+	
+  rule	Exp.cref_equal(cr,var_name) => true
+        -------------------------------
+        is_var_known((variable as VAR(cr,_,_,_,_,_,_,_, indx,origname,_))::rest,
+                     var_name) => true
+	
+  rule	is_var_known(rest,var_name) => res
+        -------------------------------
+        is_var_known((variable as VAR(cr,_,_,_,_,_,_,_,indx,origname,_))::rest,
+                     var_name) => res
+end 
