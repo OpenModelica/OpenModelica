@@ -82,6 +82,7 @@ module ClassInf :
   relation get_state_name : State => string
 
 end
+with "print.rml"
 
 (** - Printing *)
 (**)
@@ -97,59 +98,59 @@ end
 
 relation print_state : State => () =
 
-  rule	print "UNKNOWN " & print s
+  rule	Print.print_buf "UNKNOWN " & Print.print_buf s
 	----------------------------
 	print_state UNKNOWN(s)
 
-  rule	print "MODEL " & print s
+  rule	Print.print_buf "MODEL " & Print.print_buf s
 	----------------------------
 	print_state MODEL(s)
 
-  rule	print "RECORD " & print s
+  rule	Print.print_buf "RECORD " & Print.print_buf s
 	----------------------------
 	print_state RECORD(s)
 
-  rule	print "BLOCK " & print s
+  rule	Print.print_buf "BLOCK " & Print.print_buf s
 	----------------------------
 	print_state BLOCK(s)
 
-  rule	print "CONNECTOR " & print s
+  rule	Print.print_buf "CONNECTOR " & Print.print_buf s
 	----------------------------
 	print_state CONNECTOR(s)
 
-  rule	print "TYPE " & print s
+  rule	Print.print_buf "TYPE " & Print.print_buf s
 	----------------------------
 	print_state TYPE(s)
 
-  rule	print "PACKAGE " & print s
+  rule	Print.print_buf "PACKAGE " & Print.print_buf s
 	----------------------------
 	print_state PACKAGE(s)
 
-  rule	print "FUNCTION " & print s
+  rule	Print.print_buf "FUNCTION " & Print.print_buf s
 	----------------------------
 	print_state FUNCTION(s)
 
-  rule	print "TYPE_INTEGER " & print s
+  rule	Print.print_buf "TYPE_INTEGER " & Print.print_buf s
 	----------------------------
 	print_state TYPE_INTEGER(s)
 
-  rule	print "TYPE_REAL " & print s
+  rule	Print.print_buf "TYPE_REAL " & Print.print_buf s
 	----------------------------
 	print_state TYPE_REAL(s)
 
-  rule	print "TYPE_STRING " & print s
+  rule	Print.print_buf "TYPE_STRING " & Print.print_buf s
 	----------------------------
 	print_state TYPE_STRING(s)
 
-  rule	print "TYPE_BOOL " & print s
+  rule	Print.print_buf "TYPE_BOOL " & Print.print_buf s
 	----------------------------
 	print_state TYPE_BOOL(s)
 
-  rule	print "IS_NEW " & print s
+  rule	Print.print_buf "IS_NEW " & Print.print_buf s
 	----------------------------
 	print_state IS_NEW(s)
 
-  rule	print "HAS_EQUATIONS " & print s
+  rule	Print.print_buf "HAS_EQUATIONS " & Print.print_buf s
 	----------------------------
 	print_state HAS_EQUATIONS(s)
 
@@ -179,11 +180,11 @@ end
 
 relation print_event : Event => () =
 
-  rule	print "FOUND_EQUATION"
+  rule	Print.print_buf "FOUND_EQUATION"
 	----------------------
 	print_event FOUND_EQUATION
 
-  rule	print "NEWDEF"
+  rule	Print.print_buf "NEWDEF"
 	--------------
 	print_event NEWDEF
 
@@ -233,8 +234,8 @@ relation trans : (State, Event) => State =
   axiom	trans(BLOCK(s),          NEWDEF) => BLOCK(s)
   axiom	trans(CONNECTOR(s),      NEWDEF) => CONNECTOR(s)
 
-  rule	print "# In class " & print s & print "\n" &
-	print "# 'type' can only be derived from predefined types\n"
+  rule	Print.print_buf "# In class " & Print.print_buf s & Print.print_buf "\n" &
+	Print.print_buf "# 'type' can only be derived from predefined types\n"
 	-----------------------------------------------
 	trans(TYPE(s),           NEWDEF) => fail
 
@@ -253,15 +254,15 @@ relation trans : (State, Event) => State =
   axiom	trans(IS_NEW(s),         FOUND_EQUATION) => HAS_EQUATIONS(s)
   axiom	trans(MODEL(s),          FOUND_EQUATION) => MODEL(s)
 
-  rule	print "# In class " & print s & print "\n" &
-	print "# Equations not allowed in records\n"
+  rule	Print.print_buf "# In class " & Print.print_buf s & Print.print_buf "\n" &
+	Print.print_buf "# Equations not allowed in records\n"
 	-----------------------------------------------
 	trans(RECORD(s),         FOUND_EQUATION) => fail
 
   axiom	trans(BLOCK(s),          FOUND_EQUATION) => BLOCK(s)
 
-  rule	print "#-- In class " & print s & print "\n" &
-	print "#-- Equations not allowed in connectors\n"
+  rule	Print.print_buf "#-- In class " & Print.print_buf s & Print.print_buf "\n" &
+	Print.print_buf "#-- Equations not allowed in connectors\n"
 	-----------------------------------------------
 	trans(CONNECTOR(s),      FOUND_EQUATION) => fail
 
@@ -270,8 +271,8 @@ relation trans : (State, Event) => State =
   axiom	trans(FUNCTION(s),       FOUND_EQUATION) => fail
   axiom	trans(HAS_EQUATIONS(s),  FOUND_EQUATION) => HAS_EQUATIONS(s)
 
-  rule	print "- trans failed: " & print_state st &
- 	print ", " & print_event ev & print "\n"
+  rule	Print.print_buf "- trans failed: " & print_state st &
+ 	Print.print_buf ", " & print_event ev & Print.print_buf "\n"
 	--------------------------------------------------------
 	trans(st, ev) => fail
 
@@ -337,8 +338,8 @@ relation assert_valid : (State, Absyn.Restriction) => () =
 	------------
 	assert_valid(st,re)
 
-  rule	print "# Restriction violation: " & print_state st &
-	print " is not a " & Absyn.print_restr re & print "\n" 
+  rule	Print.print_buf "# Restriction violation: " & print_state st &
+	Print.print_buf " is not a " & Absyn.print_restr re & Print.print_buf "\n" 
 	-------------------------------------------
 	assert_valid(st,re) => fail
 

@@ -56,6 +56,7 @@ module Prefix:
 end
 
 with "util.rml"
+with "print.rml"
 
 relation print_prefix_str : Prefix => string =
 
@@ -86,7 +87,7 @@ relation print_prefix : Prefix => () =
 
 
   rule	print_prefix_str p => s &
-	print s
+	Print.print_buf s
 	------------------------------
 	print_prefix p
 
@@ -131,7 +132,7 @@ end
 
 relation prefix_to_path: Prefix => Absyn.Path =
 
-  rule	print "#-- Error: Cannot convert empty prefix to a path\n"
+  rule	Print.print_buf "#-- Error: Cannot convert empty prefix to a path\n"
 	---------------------------------------------------------
 	prefix_to_path NOPRE => fail
 
@@ -183,7 +184,7 @@ end
 
 relation prefix_to_cref2 : (Prefix, Exp.ComponentRef option) => Exp.ComponentRef =
 
-  rule	print "#-- Cannot convert empty prefix to component reference\n"
+  rule	Print.print_buf "#-- Cannot convert empty prefix to component reference\n"
 	----------------------------------------------------------------
 	prefix_to_cref2 (NOPRE, NONE) => fail
 
@@ -298,8 +299,8 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-----------------------
 	prefix_exp(env,Exp.CAST(Exp.REAL,e), p) => Exp.CAST(Exp.REAL,e')
 
-  rule	print "- prefix_exp failed\n" &
-	print "  expression: " & Exp.print_exp e & print "\n"
+  rule	Print.print_buf "- prefix_exp failed\n" &
+	Print.print_buf "  expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-----------------------------------------------------
 	prefix_exp(_,e,_) => fail
 

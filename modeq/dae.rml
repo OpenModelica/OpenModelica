@@ -108,6 +108,7 @@ end
 with "rtopts.rml"
 with "graphviz.rml"
 with "dump.rml"
+with "print.rml"
 
 (** relation: dump
  **
@@ -123,58 +124,58 @@ relation dump : DAElist => () =
 end
 
 relation dump2: DAElist => () =
-  rule	print "VAR(" &
+  rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr &
-	print "=" &
+	Print.print_buf "=" &
 	Exp.print_exp e &
-	print ")\n" &
+	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
 	dump2 DAE(VAR(cr,_,_,_,SOME(e),_)::xs)
 
-  rule	print "VAR(" &
+  rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr &
-	print ")\n" &
+	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
 	dump2 DAE(VAR(cr,_,_,_,NONE,_)::xs)
-  rule	print "DEFINE(" &
+  rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
-	print ")\n" &
+	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	---------
 	dump2 DAE(DEFINE(cr,_)::xs)
 	
-  rule	print "EQUATION(" &
+  rule	Print.print_buf "EQUATION(" &
 	Exp.print_exp e1 &
-	print " = " &
+	Print.print_buf " = " &
 	Exp.print_exp e2 &
-	print ")\n" &
+	Print.print_buf ")\n" &
 	dump2( DAE(xs))
 	---------
 	dump2 DAE(EQUATION(e1,e2)::xs)
 
-  rule	print "ALGORITHM(...)" &
+  rule	Print.print_buf "ALGORITHM(...)" &
 	dump2 (DAE(xs))
 	------------
 	dump2 (DAE(ALGORITHM(_)::xs))
 
-  rule	print "COMP(" &
-	print ident &
+  rule	Print.print_buf "COMP(" &
+	Print.print_buf ident &
 	dump2 (lst) &
-	print ")\n" &
+	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	----------
 	dump2 (DAE(COMP(ident,lst)::xs))
 
-  rule	print "FUNCTION(...)\n" &
+  rule	Print.print_buf "FUNCTION(...)\n" &
 	dump2 (DAE(xs))
 	--------------
 	dump2 (DAE(FUNCTION(_,_,_)::xs))
 
   axiom dump2 (DAE([]))
 
-  rule	print "dump2 failed\n"
+  rule	Print.print_buf "dump2 failed\n"
 	---------------------
 	dump2 (_)
 end
@@ -209,16 +210,16 @@ end
 relation dump_comp_element : Element => () =
 	
   rule	RTOpts.modelica_output => false &
-	print "fclass " & print n & print "\n" &
+	Print.print_buf "fclass " & Print.print_buf n & Print.print_buf "\n" &
 	dump_elements(l) &
-	print "end " & print n & print ";\n"
+	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
 	-----------------------------------
 	dump_comp_element COMP(n,DAE(l))
 
   rule	RTOpts.modelica_output => true &
-	print "class " & print n & print "\n" &
+	Print.print_buf "class " & Print.print_buf n & Print.print_buf "\n" &
 	dump_elements(l) &
-	print "end " & print n & print ";\n"
+	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
 	-----------------------------------
 	dump_comp_element COMP(n,DAE(l))
 
@@ -261,7 +262,7 @@ end
 relation dump_elements : Element list => () =
 
   rule	dump_vars l &
-	print "equation\n" &
+	Print.print_buf "equation\n" &
 	dump_list (l, dump_equation) &
 	dump_list (l, dump_algorithm) & 
 	dump_list (l, dump_comp_element)
@@ -359,19 +360,19 @@ end
 
 relation dump_kind =
 
-  rule	print " constant  "
+  rule	Print.print_buf " constant  "
 	--------------------
 	dump_kind CONST
 	
-  rule	print " parameter "
+  rule	Print.print_buf " parameter "
 	--------------------
 	dump_kind PARAM
 	
-  rule	print " discrete  "
+  rule	Print.print_buf " discrete  "
 	--------------------
 	dump_kind DISCRETE
 
-  rule	print "           "
+  rule	Print.print_buf "           "
 	--------------------
 	dump_kind VARIABLE
 
@@ -389,15 +390,15 @@ end
 
 relation dump_direction =
 
-  rule	print " input  "
+  rule	Print.print_buf " input  "
 	--------------------
 	dump_direction INPUT
 
-  rule	print " output "
+  rule	Print.print_buf " output "
 	--------------------
 	dump_direction OUTPUT
 	
-  rule	print "        "
+  rule	Print.print_buf "        "
 	--------------------
 	dump_direction BIDIR
 
@@ -415,29 +416,29 @@ end
 
 relation dump_type =
 
-  rule	print "Integer "
+  rule	Print.print_buf "Integer "
 	----------------
 	dump_type INT
 
-  rule	print "Real    "
+  rule	Print.print_buf "Real    "
 	----------------
 	dump_type REAL
 
-  rule	print "Boolean "
+  rule	Print.print_buf "Boolean "
 	----------------
 	dump_type BOOL
 
-  rule	print "String  "
+  rule	Print.print_buf "String  "
 	----------------
 	dump_type STRING
 
-  rule	print "Enum "
+  rule	Print.print_buf "Enum "
 	-------------
 	dump_type ENUM
 
-  rule	print "Enumeration(" &
+  rule	Print.print_buf "Enumeration(" &
 	Dump.print_list(l,print,",") &
-	print ") "
+	Print.print_buf ") "
 	------------------
 	dump_type ENUMERATION(l)
 end
@@ -457,13 +458,13 @@ end
 relation dump_var : Element => () =
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
- 	Exp.print_component_ref id & print ";\n"
+ 	Exp.print_component_ref id & Print.print_buf ";\n"
 	--------------------------------------
 	dump_var VAR(id, kind, dir, typ, NONE,_)
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
- 	Exp.print_component_ref id & print " = " &
-	Exp.print_exp e & print ";\n"
+ 	Exp.print_component_ref id & Print.print_buf " = " &
+	Exp.print_exp e & Print.print_buf ";\n"
 	--------------------------------------
 	dump_var VAR(id, kind, dir, typ, SOME(e),_)
 	
@@ -503,13 +504,13 @@ end
 
 relation dump_equation : Element => () =
 	
-  rule	print "  " & Exp.print_exp e1 &
-	print " = " & Exp.print_exp e2 & print ";\n"
+  rule	Print.print_buf "  " & Exp.print_exp e1 &
+	Print.print_buf " = " & Exp.print_exp e2 & Print.print_buf ";\n"
 	--------------------------------------
 	dump_equation(EQUATION(e1, e2))
 	
-  rule	print "  " & Exp.print_component_ref c &
-	print " ::= " & Exp.print_exp e & print ";\n"
+  rule	Print.print_buf "  " & Exp.print_component_ref c &
+	Print.print_buf " ::= " & Exp.print_exp e & Print.print_buf ";\n"
 	--------------------------------------
 	dump_equation(DEFINE(c, e))
 	
@@ -544,7 +545,7 @@ end
 
 relation dump_algorithm : Element => () =
 
-  rule	print "algorithm\n" &
+  rule	Print.print_buf "algorithm\n" &
 	Dump.print_list(stmts, pp_statement, "")
 	----------------------------------------------
 	dump_algorithm ALGORITHM(Algorithm.ALGORITHM(stmts))
@@ -568,11 +569,11 @@ end
 relation dump_function: Element => () =
 
 
-  rule	print "function " &
+  rule	Print.print_buf "function " &
 	Absyn.path_string fpath => fstr &
-	print fstr & print "\n" &
+	Print.print_buf fstr & Print.print_buf "\n" &
 	dump_elements(dae) &
-	print "end " & print fstr & print ";\n\n\n"
+	Print.print_buf "end " & Print.print_buf fstr & Print.print_buf ";\n\n\n"
 	------------------------------------
 	dump_function FUNCTION(fpath,DAE(dae),t)
 	
@@ -607,58 +608,58 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 
   rule	indent i &
 	Exp.print_component_ref c &
-	print " := " &
+	Print.print_buf " := " &
 	Exp.print_exp e &
-	print ";\n"
+	Print.print_buf ";\n"
 	----------
 	pp_stmt (Algorithm.ASSIGN(_,c,e), i)
 
   rule	indent i &
 	Exp.print_component_ref c &
-	print " := " &
+	Print.print_buf " := " &
 	Exp.print_exp e &
-	print ";\n"
+	Print.print_buf ";\n"
 	----------
 	pp_stmt (Algorithm.ASSIGN_ARR(_,c,e), i)
 
   rule	indent i &
- 	print "if " & Exp.print_exp e & print " then\n" &
+ 	Print.print_buf "if " & Exp.print_exp e & Print.print_buf " then\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (then, i') &
 	pp_else (else, i) &
-	indent i & print "end if;\n"
+	indent i & Print.print_buf "end if;\n"
         -------------------
 	pp_stmt (Algorithm.IF(e,then,else), i)
 	
   rule	indent i &
-	print "for " & print id & print " in " &
- 	Exp.print_exp e & print " loop\n" &
+	Print.print_buf "for " & Print.print_buf id & Print.print_buf " in " &
+ 	Exp.print_exp e & Print.print_buf " loop\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i') &
 	indent i &
-	print "end for;\n"
+	Print.print_buf "end for;\n"
         -------------------
 	pp_stmt (Algorithm.FOR(_,_,id,e,stmts), i)
 	
   rule	indent i &
-	print "while " & Exp.print_exp e & print " loop\n" &
+	Print.print_buf "while " & Exp.print_exp e & Print.print_buf " loop\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i') &
 	indent i &
-	print "end while;\n"
+	Print.print_buf "end while;\n"
         -------------------
 	pp_stmt (Algorithm.WHILE(e,stmts), i)
 	
   rule	indent i &
-	print "when " & Exp.print_exp e & print " do\n" &
+	Print.print_buf "when " & Exp.print_exp e & Print.print_buf " do\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i') &
 	indent i &
-	print "end when;\n"
+	Print.print_buf "end when;\n"
         -------------------
 	pp_stmt (Algorithm.WHEN(e,stmts), i)
 	
-  rule	indent i & print "**ALGORITHM**;\n"
+  rule	indent i & Print.print_buf "**ALGORITHM**;\n"
 	----------------------------------
 	pp_stmt (_,i)
 
@@ -778,7 +779,7 @@ relation pp_else : (Algorithm.Else, int) => () =
   axiom	pp_else (Algorithm.NOELSE, _)
 
   rule	indent i &
- 	print "elseif " & Exp.print_exp e & print " then\n" &
+ 	Print.print_buf "elseif " & Exp.print_exp e & Print.print_buf " then\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (then, i') &
 	pp_else (else, i)
@@ -786,7 +787,7 @@ relation pp_else : (Algorithm.Else, int) => () =
 	pp_else (Algorithm.ELSEIF(e,then,else), i)
 
   rule	indent i &
- 	print "else\n" &
+ 	Print.print_buf "else\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i')
         ------------------------
@@ -825,7 +826,7 @@ relation indent : int => () =
 
   axiom indent 0
 
-  rule	print " " & int_sub(i,1) => i' & indent i'
+  rule	Print.print_buf " " & int_sub(i,1) => i' & indent i'
 	------------------------------------------
 	indent i
 
@@ -952,7 +953,7 @@ end
 
 relation dump_debug : DAElist => () =
 
-  rule	print "DAE(" & dump_debug_elist elist & print ")"
+  rule	Print.print_buf "DAE(" & dump_debug_elist elist & Print.print_buf ")"
 	-------------------------------------------------
 	dump_debug DAE(elist)
 
@@ -962,7 +963,7 @@ relation dump_debug_elist : Element list => () =
 
   axiom dump_debug_elist []
 
-  rule	dump_debug_element first & print "\n" &
+  rule	dump_debug_element first & Print.print_buf "\n" &
 	dump_debug_elist rest
 	---------------------
 	dump_debug_elist first :: rest
@@ -971,53 +972,53 @@ end
 
 relation dump_debug_element : Element => () =
 
-  rule	print "VAR(" &
-	Exp.print_component_ref cr & print ", " &
+  rule	Print.print_buf "VAR(" &
+	Exp.print_component_ref cr & Print.print_buf ", " &
 	dump_kind vk &
-	print ")"
+	Print.print_buf ")"
 	-------------
 	dump_debug_element VAR(cr,vk,vd,ty,NONE,_)
 
-  rule	print "VAR(" &
-	Exp.print_component_ref cr & print ", " &
-	dump_kind vk & print ", " &
+  rule	Print.print_buf "VAR(" &
+	Exp.print_component_ref cr & Print.print_buf ", " &
+	dump_kind vk & Print.print_buf ", " &
 	Exp.print_exp e &
-	print ")"
+	Print.print_buf ")"
 	-------------
 	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_)
 
-  rule	print "DEFINE(" &
+  rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
-	print ", " &
+	Print.print_buf ", " &
 	Exp.print_exp exp &
-	print ")"
+	Print.print_buf ")"
 	----------------
 	dump_debug_element DEFINE(cr,exp)
 
-  rule	print "EQUATION(" &
+  rule	Print.print_buf "EQUATION(" &
 	Exp.print_exp e1 &
-	print "," &
+	Print.print_buf "," &
 	Exp.print_exp e2 &
-	print ")"
+	Print.print_buf ")"
 	------------------
 	dump_debug_element EQUATION(e1,e2)
 
-  rule	print "ALGORITHM()"
+  rule	Print.print_buf "ALGORITHM()"
 	-------------------
 	dump_debug_element ALGORITHM(_)
 
-  rule	print "COMP(" & print n & print "," &
+  rule	Print.print_buf "COMP(" & Print.print_buf n & Print.print_buf "," &
 	dump_debug (l) &
-	print ")"
+	Print.print_buf ")"
 	--------------------------------------
 	dump_debug_element COMP(n,l)
 
-  rule	print "FUNCTION(" &
+  rule	Print.print_buf "FUNCTION(" &
 	Absyn.path_string fpath => fstr &
-	print fstr & print "," &
-	Types.print_type t & print "," &
+	Print.print_buf fstr & Print.print_buf "," &
+	Types.print_type t & Print.print_buf "," &
 	dump_debug (l) &
-	print ")"
+	Print.print_buf ")"
 	--------------------------------------
 	dump_debug_element FUNCTION(fpath,l,t)
 

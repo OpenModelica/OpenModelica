@@ -294,6 +294,7 @@ module Absyn:
 end
 with "dump.rml"
 with "util.rml"
+with "print.rml"
 
 (** relation: element_spec_name
  **
@@ -307,7 +308,7 @@ relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
 
-  rule  print "# element_spec_name EXTENDS\n"
+  rule  Print.print_buf "# element_spec_name EXTENDS\n"
 	-------------------------------------
 	element_spec_name EXTENDS(_,_) => fail
 
@@ -415,7 +416,7 @@ end
 relation print_restr : Restriction => () =
 
   rule	restr_string restr => str &
-	print str
+	Print.print_buf str
 	----------------
 	print_restr restr
 

@@ -48,7 +48,7 @@ end
 with "algorithm.rml"
 with "rtopts.rml"
 with "util.rml"
-
+with "print.rml"
 
 relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b) 
 					 => (), 'b, Exp.Exp list) 
@@ -283,7 +283,7 @@ end
 relation get_component_ref_next : Exp.ComponentRef => Exp.ComponentRef =
 
   axiom	get_component_ref_next Exp.CREF_QUAL(n, sl, cr) => cr
-  rule	print "#-- Cannot get subname of an unqualified component reference\n" &
+  rule	Print.print_buf "#-- Cannot get subname of an unqualified component reference\n" &
 	Exp.print_component_ref cr
 	----------------------------------------------------------------------
 	get_component_ref_next (cr as Exp.CREF_IDENT(n, sl)) => fail
@@ -294,8 +294,8 @@ relation get_var_value_expr : (DAE.Element list, Exp.ComponentRef)
 	  => Exp.Exp =
 
   rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, NONE,_)) &
-	print "#-- get_var_value_expr: Warning: Variable is not initialized\n" &
-	Exp.print_component_ref cr & print "\n"
+	Print.print_buf "#-- get_var_value_expr: Warning: Variable is not initialized\n" &
+	Exp.print_component_ref cr & Print.print_buf "\n"
 	---------------------------------------------------------
 	get_var_value_expr (dae, cr) => Exp.SCONST("UNDEF")
 
@@ -304,8 +304,8 @@ relation get_var_value_expr : (DAE.Element list, Exp.ComponentRef)
 	---------------------------------------------------------
 	get_var_value_expr (dae, cr) => value
 
-  rule	print "#-- get_var_value_expr: Error: Variable not found\n" &
-	Exp.print_component_ref cr & print "\n"
+  rule	Print.print_buf "#-- get_var_value_expr: Error: Variable not found\n" &
+	Exp.print_component_ref cr & Print.print_buf "\n"
 	---------------------------------------
 	get_var_value_expr (dae, cr) => fail
 
@@ -315,7 +315,7 @@ end
 relation print_exp_no_funcall : Exp.Exp => () =
 
   rule	path_string(fcn) => fs &
-	print fs
+	Print.print_buf fs
 	--------
 	print_exp_no_funcall Exp.CALL(fcn, args,_,_)
 

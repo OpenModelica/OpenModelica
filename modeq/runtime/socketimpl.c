@@ -64,7 +64,7 @@ RML_BEGIN_LABEL(Socket__waitforconnect)
   }
   
 
-  rmlA0=mk_icon(ns);
+  rmlA0=(void*)mk_icon(ns);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -76,7 +76,7 @@ RML_BEGIN_LABEL(Socket__handlerequest)
   int sock=(int) RML_UNTAGFIXNUM(rmlA0);
   len = recv(sock,buf,400,0);
 
-  rmlA0=mk_scon(buf);
+  rmlA0=(void*)mk_scon(buf);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -412,6 +412,7 @@ end
 (*!ignorecode*)
 
 with "dump.rml"
+with "print.rml"
 
 (** relation: print_sets
  **
@@ -432,15 +433,15 @@ end
 (**)
 relation print_set : Set => () =
 
-  rule	print " non-flow set: { " &
+  rule	Print.print_buf " non-flow set: { " &
 	Exp.print_list(cs, Exp.print_component_ref, ", ") &
-	print " }\n"
+	Print.print_buf " }\n"
 	----------------------------------------------------
 	print_set EQU(cs)
 
-  rule	print " flow set: { " &
+  rule	Print.print_buf " flow set: { " &
 	Exp.print_list(cs, print_flow_ref, ", ") &
-	print " }\n"
+	Print.print_buf " }\n"
 	----------------------------------------------------
 	print_set FLOW(cs)
 
@@ -449,12 +450,12 @@ end
 relation print_flow_ref : (Exp.ComponentRef * Face) => () =
 
   rule	Exp.print_component_ref c &
-	print " INNER"
+	Print.print_buf " INNER"
 	-----------
 	print_flow_ref((c,INNER))
 
   rule	Exp.print_component_ref c &
-	print " OUTER"
+	Print.print_buf " OUTER"
 	-----------
 	print_flow_ref((c,OUTER))
 

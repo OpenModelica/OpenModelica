@@ -82,6 +82,7 @@ module Algorithm:
 			Statement list) => Statement
 	
 end
+with "print.rml"
 
 (** relation: make_assignment
  **
@@ -100,13 +101,13 @@ relation make_assignment : (Exp.Exp, Static.Properties,
 			    SCode.Accessibility) => Statement =
 
   rule	Static.is_prop_const (lprop) => true &
-	print "# Trying to assign to constant component\n" &
-	print "    " & Exp.print_exp lhs &
- 	print " := " & Exp.print_exp rhs & print "\n"
+	Print.print_buf "# Trying to assign to constant component\n" &
+	Print.print_buf "    " & Exp.print_exp lhs &
+ 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
 	-------------------------------------------
 	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
-  rule	print "# Can't assign to (readonly) " & Exp.print_exp e & print "\n"
+  rule	Print.print_buf "# Can't assign to (readonly) " & Exp.print_exp e & Print.print_buf "\n"
 	---------------------------------------------------------
 	make_assignment(e,_,_,_, SCode.RO) => fail
 
@@ -132,17 +133,17 @@ rule	Static.is_prop_const (lhprop) => false &
   rule	Static.get_prop_type lprop => lt &
 	Static.get_prop_type rprop => rt &
 	Types.equivtypes (lt,rt) => false &
-	print "# Type mismatch in assignment\n" &
-	print "    " & Exp.print_exp lhs &
- 	print " := " & Exp.print_exp rhs & print "\n" &
-	print "    " & Types.print_type lt &
- 	print " := " & Types.print_type rt & print "\n"
+	Print.print_buf "# Type mismatch in assignment\n" &
+	Print.print_buf "    " & Exp.print_exp lhs &
+ 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n" &
+	Print.print_buf "    " & Types.print_type lt &
+ 	Print.print_buf " := " & Types.print_type rt & Print.print_buf "\n"
 	-------------------------------------------
 	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
-  rule	print "- Algorithm.make_assignment failed\n" &
-	print "    " & Exp.print_exp lhs &
- 	print " := " & Exp.print_exp rhs & print "\n" 
+  rule	Print.print_buf "- Algorithm.make_assignment failed\n" &
+	Print.print_buf "    " & Exp.print_exp lhs &
+ 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n" 
 	---------------------------------------------
 	make_assignment (lhs, lprop, rhs, rprop, _) => fail
 
@@ -188,10 +189,10 @@ relation make_if : (Exp.Exp,
 	-------------------------
 	make_if(e,Static.PROP(Types.T_BOOL,_),tb,eib,fb) => IF(e,tb,else)
 
-  rule	print "# Type error in if conditional (" &
-	Exp.print_exp e & print ")\n" &
-	print "    Expected Boolean, got " &
-	Types.print_type t & print "\n"
+  rule	Print.print_buf "# Type error in if conditional (" &
+	Exp.print_exp e & Print.print_buf ")\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
 	-------------------------------
 	make_if(e,Static.PROP(t,_),_,_,_) => fail
 
@@ -215,10 +216,10 @@ relation make_else : ((Exp.Exp * Static.Properties * Statement list) list,
 	make_else ((e,Static.PROP(Types.T_BOOL,_),b)::xs,fb)
 	  => ELSEIF(e,b,else)
 	
-  rule	print "# Type error in elseif conditional (" &
-	Exp.print_exp e & print ")\n" &
-	print "    Expected Boolean, got " &
-	Types.print_type t & print "\n"
+  rule	Print.print_buf "# Type error in elseif conditional (" &
+	Exp.print_exp e & Print.print_buf ")\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
 	-------------------------------
 	make_else((e,Static.PROP(t,_),_)::_,_) => fail
 
@@ -234,9 +235,9 @@ relation make_for : (Ident, Exp.Exp, Static.Properties,
 	-----------------------
 	make_for(i,e,Static.PROP(Types.T_ARRAY(_,t),_),stmts) => FOR(et,array,i,e,stmts)
 
-  rule	print "# Type error in for conditional.\n" &
-	print "    Expected array, got " &
-	Types.print_type t & print "\n"
+  rule	Print.print_buf "# Type error in for conditional.\n" &
+	Print.print_buf "    Expected array, got " &
+	Types.print_type t & Print.print_buf "\n"
 	-------------------------------
 	make_for(_,_,Static.PROP(t,_),_) => fail
 
@@ -249,9 +250,9 @@ relation make_while : (Exp.Exp, Static.Properties,
 
   axiom	make_while(e,Static.PROP(Types.T_BOOL,_),stmts) => WHILE(e,stmts)
 
-  rule	print "# Type error in while conditional.\n" &
-	print "    Expected Boolean, got " &
-	Types.print_type t & print "\n"
+  rule	Print.print_buf "# Type error in while conditional.\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
 	-------------------------------
 	make_while(_,Static.PROP(t,_),_) => fail
 
@@ -264,9 +265,9 @@ relation make_when_a : (Exp.Exp, Static.Properties,
 
   axiom	make_when_a(e,Static.PROP(Types.T_BOOL,_),stmts) => WHEN(e,stmts)
 
-  rule	print "# Type error in when conditional.\n" &
-	print "    Expected Boolean, got " &
-	Types.print_type t & print "\n"
+  rule	Print.print_buf "# Type error in when conditional.\n" &
+	Print.print_buf "    Expected Boolean, got " &
+	Types.print_type t & Print.print_buf "\n"
 	-------------------------------
 	make_when_a(_,Static.PROP(t,_),_) => fail
 

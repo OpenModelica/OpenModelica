@@ -56,6 +56,7 @@ with "exp.rml"
 with "types.rml"
 with "classinf.rml"
 with "debug.rml"
+with "print.rml"
 
 (** - The primitive types *)
 
@@ -557,7 +558,7 @@ relation initial_env =
 	Env.extend_frame_t(env54, "ndims", array6dimbool2int) 		     => env55 &
 	Env.extend_frame_t(env55, "ndims", array7dimbool2int) 		     => env56 &
 	Env.extend_frame_t(env56, "ndims", array8dimbool2int) 		     => env57 &
-(* Debug. print "\n Just before the built in built in size." &	*)
+(* Debug. Print.print_buf "\n Just before the built in built in size." &	*)
 
 	Env.extend_frame_t(env57, "size", array1dimint_int2int)	      => env58 & 
 	Env.extend_frame_t(env58, "size", array2dimint_int2int)	      => env59 &
@@ -945,7 +946,7 @@ Env.extend_frame_t(env121, "scalar", array1dimint2int)	      => env122 &
 	Env.extend_frame_t(env370, "skew", array1dimint2array3dimint) 		     => env371 & 
 	Env.extend_frame_t(env371, "skew", array1dimreal2array3dimreal)              => env372  
 
-(*Debug.	print "\n Just AFTER the built in array functions part." *)
+(*Debug.	Print.print_buf "\n Just AFTER the built in array functions part." *)
 	----------------------------------------------
 	initial_env () => env372
 

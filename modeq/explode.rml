@@ -138,6 +138,7 @@ end
 
 with "dump.rml"
 with "debug.rml"
+with "print.rml"
 
 (** relation: elaborate
  **
@@ -301,7 +302,7 @@ end
 	elab_classdef(Absyn.PARTS(Absyn.PROTECTED(es)::ps))
 	  => PARTS(els',eqs,als)
 
-  rule	print "#-- elab_classdef failed\n"
+  rule	Print.print_buf "#-- elab_classdef failed\n"
 	----------------------------------
 	elab_classdef _ => fail
 
@@ -489,13 +490,13 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 
 	(* First some rules to prevent bad modifications *)
 
-  rule	print "# Illegal modification of " & Dump.print_component_ref c &
-	Dump.print_component_ref c & print "\n"
+  rule	Print.print_buf "# Illegal modification of " & Dump.print_component_ref c &
+	Dump.print_component_ref c & Print.print_buf "\n"
 	---------------------------------------
 	build_sub(c as Absyn.CREF_IDENT(_,_::_),MOD(_,_::_,_)) => fail
 
-  rule	print "# Illegal modification of " &
-	Dump.print_component_ref c & print "\n"
+  rule	Print.print_buf "# Illegal modification of " &
+	Dump.print_component_ref c & Print.print_buf "\n"
 	---------------------------------------
 	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),MOD(_,_::_,_)) => fail
 	
@@ -571,10 +572,10 @@ relation print_mod : Mod => () =
 
   axiom	print_mod(NOMOD)
 
-  rule	print "redeclare(" & 
-	Dump.print_bool b & print ", " &
+  rule	Print.print_buf "redeclare(" & 
+	Dump.print_bool b & Print.print_buf ", " &
 	Dump.print_list(elist, print_element, ", ") &
-	print ")"
+	Print.print_buf ")"
 	------------------------------
 	print_mod REDECL(b,elist)
 	
@@ -584,7 +585,7 @@ relation print_mod : Mod => () =
 	------------
 	print_mod MOD(final, subs, ass)
 
-  rule	print "#-- print_mod failed\n"
+  rule	Print.print_buf "#-- print_mod failed\n"
 	------------------------
 	print_mod _
 
@@ -596,7 +597,7 @@ relation print_final : bool => () =
 
   axiom print_final false
 
-  rule	print " final "
+  rule	Print.print_buf " final "
 	--------------
        print_final true
 
@@ -606,11 +607,11 @@ relation print_subs : SubMod list => () =
 
   axiom print_subs []
 
-  rule	print n & print_mod mod
+  rule	Print.print_buf n & print_mod mod
 	-----------------------
 	print_subs [NAMEMOD(n,mod)]
 
-  rule	print n & print_mod mod & print ", " &
+  rule	Print.print_buf n & print_mod mod & Print.print_buf ", " &
 	print_subs subs
 	---------------
 	print_subs NAMEMOD(n,mod)::subs
@@ -619,7 +620,7 @@ relation print_subs : SubMod list => () =
 	------------------
 	print_subs [IDXMOD(ss,mod)]
 
-  rule	Dump.print_subscripts ss & print_mod mod & print ", " &
+  rule	Dump.print_subscripts ss & print_mod mod & Print.print_buf ", " &
 	print_subs subs
 	--------------
 	print_subs IDXMOD(ss,mod)::subs
@@ -630,9 +631,9 @@ relation print_subs1 : SubMod list => () =
 
   axiom print_subs1 [] => ()
 
-  rule	print "(" &
+  rule	Print.print_buf "(" &
 	print_subs l &
-	print ")"
+	Print.print_buf ")"
 	-----------
 	print_subs1 l
 
@@ -642,7 +643,7 @@ relation print_eqmod : Absyn.Exp option => () =
 
   axiom print_eqmod NONE
 
-  rule	print " = " & Dump.print_exp e
+  rule	Print.print_buf " = " & Dump.print_exp e
 	-----------------------------
 	print_eqmod SOME(e)
 
@@ -653,15 +654,15 @@ end
 
 relation print_element : Element => () =
 
-  rule	print "EXTENDS(" & Absyn.path_string path => str & print str & print ")"
+  rule	Print.print_buf "EXTENDS(" & Absyn.path_string path => str & Print.print_buf str & Print.print_buf ")"
 	----------------------------------------------------
 	print_element EXTENDS(path,mod)
 
-  rule	print "CLASSDEF(" & print n & print ")"
+  rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & Print.print_buf ")"
 	---------------------------------------
 	print_element CLASSDEF(n,final,repl,cl)
 
-  rule	print "COMPONENT(" & print n & print ")"
+  rule	Print.print_buf "COMPONENT(" & Print.print_buf n & Print.print_buf ")"
 	----------------------------------------
 	print_element COMPONENT(n,final,prot,attr,typath,mod)
 

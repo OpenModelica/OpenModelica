@@ -80,6 +80,7 @@ module Lform:
   relation convert_element : Absyn.Element => Element
 
 end
+with "print.rml"
 
 (**********************************************************************
  *  Conversions
@@ -217,7 +218,7 @@ and convert_class_def: (Env.Env,Absyn.ClassDef) => ClassDef =
 end
 and convert_class: (Env.Env,Absyn.Class) => (Env.Env, Class) =
 	
-  rule	print "converting " & print i & print "\n" &
+  rule	Print.print_buf "converting " & Print.print_buf i & Print.print_buf "\n" &
 	convert_class_restr(r) => r' &
 	convert_class_def(env,d) => d' &
 	(* let *) c = CLASS(i,p,e,r',d') &

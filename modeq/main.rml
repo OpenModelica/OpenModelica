@@ -46,6 +46,7 @@ with "rtopts.rml"
 with "debug.rml"
 with "codegen.rml"
 with "socket.rml"
+with "print.rml"
 
 (** relation: server_loop
  **
@@ -65,7 +66,7 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	-----------------------------
 	server_loop (shandle,isymb) => ressymb
 
-  rule  print "Exiting\n" &
+  rule  Print.print_buf "Exiting\n" &
 	Socket.sendreply(shandle, "quit requested, shutting server down") &
 	Socket.close shandle &
 	Socket.cleanup 
@@ -148,7 +149,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	--------------------------------------------------
 	handle_command (str, isymb) => (true, resultstr, newisymb)
 
-  rule  print "Error occured building AST\n"
+  rule  Print.print_buf "Error occured building AST\n"
 	----------------------------------
 	handle_command (_,isymb) => (true,"Syntax Error\n", isymb)
 end
@@ -161,7 +162,7 @@ end
 
 relation translate_file : string list => () =
 
-  rule	(*print "Parsing\n" &
+  rule	(*Print.print_buf "Parsing\n" &
 *)	
 	Parser.parse f => p
 
@@ -190,15 +191,15 @@ relation translate_file : string list => () =
 	------------------------------
 	translate_file [f]
 	
-  rule	print "# Too many arguments\n"
+  rule	Print.print_buf "# Too many arguments\n"
 	----------------------------
 	translate_file _::_::_ => fail
 
-  rule	print "# Supply a file name\n"
+  rule	Print.print_buf "# Supply a file name\n"
 	----------------------------
 	translate_file [] => fail
 
-  rule	print "# An error occured\n"
+  rule	Print.print_buf "# An error occured\n"
 	----------------------------
 	translate_file _ => fail
 

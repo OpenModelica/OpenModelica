@@ -1,0 +1,42 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+
+module System:
+
+(* This module contain a set of system calls, for e.g. compiling and executing stuff	 
+ *)
+with "values.rml"
+
+relation compile_c_file: (string) => ()
+
+relation set_c_compiler: (string) => ()
+
+relation set_c_flags: (string) => ()
+
+relation execute_function: (string) => ()
+
+relation write_file: (string,string) => ()
+
+relation read_file: (string) => string
+
+relation read_values_from_file: (string) => Values.Value
+
+end

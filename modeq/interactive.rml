@@ -61,6 +61,10 @@ with "classinf.rml"
 with "exp.rml"
 with "inst.rml"
 with "staticexp.rml"							  
+with "modutil.rml"
+with "codegen.rml"
+with "print.rml"
+with "system.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
@@ -82,27 +86,65 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	-------------------------------------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("clear",_),_))]),_) 
 	    => ("Clearing symbol table\n", newst)
+
   rule	Dump.unparse_str(p) => str
 	------------
-	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),_))]),st as SYMBOLTABLE(p,_,_,_))
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_))
 	    => (str,st)
+
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => class &
+	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str
+	------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	    => (str,st)
+
 
   rule	SCode.elaborate(p) => p' &
 	Absyn.cref_to_path(cr) => path &
 	Inst.instantiate_class(p',path) => dae &
 	DAE.dump_debug dae &
-	print "dumped dae:\n" &
+	Print.print_buf "dumped dae:\n" &
 	DAE.dump_str (dae) => str 
 	--------------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
 	    => (str,st)
 	    
+  rule	SCode.elaborate(p) => p' &
+	Absyn.cref_to_path(cr) => path &
+	Absyn.path_string path => pathstr &
+	Inst.instantiate_implicit(p') => d &
+	DAE.dump2 d &
+	ModUtil.string_prefix_params d => d' &
+	Print.clear_buf & 
+	Codegen.generate_functions(d') &
+	string_append(pathstr,".c") => filename &
+	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
+	Print.print_buf "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\n\");\n      return 1;\n    }\n  " &
+	Print.print_buf pathstr &
+	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}" &
+	Print.write_buf(filename)&
+	System.compile_c_file(filename) 
+	--------------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("generateCode",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	  => ("Ok\n",st)
+	  
+  rule	System.set_c_compiler(str)
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompiler",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	  => ("Ok\n",st)
+
+  rule	System.set_c_flags(str)
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("setCompilerFlags",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,_))
+	  => ("Ok\n",st)
 
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------
 	evaluate(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))]),st) => (str,newst)
 	
-  rule	evaluate_expr(exp,st) => (s1,newst) &
+  rule	Print.clear_buf &
+	evaluate_expr(exp,st) => (s1,newst) &
 	string_append(s1,"\n") => str
 	------------------------------------------------------
 	evaluate(stmts as ISTMTS([exp]),st) => (str,newst)
@@ -122,18 +164,18 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
   rule	build_env_from_symboltable(st) => env &
 	
 	Static.elab_exp(env,exp) => (sexp,prop) &
-	print "elabed exp:" &
+	Print.print_buf "elabed exp:" &
 	Exp.print_exp sexp &
-	Static.ceval (env,sexp) => value &
-	print "value:" & Values.print_val value &
-	print "\n" &
+	Static.ceval (env,sexp,true) => value &
+	Print.print_buf "value:" & Values.print_val value &
+	Print.print_buf "\n" &
 	Values.val_string value =>  str 
 	--------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_)) => (str,st)
 	
   rule	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp) => (sexp,Static.PROP(t,_))  &
-	Static.ceval(env,sexp) => value &
+	Static.ceval(env,sexp,true) => value &
 	add_var_to_symboltable(ident,value,t,st) => newst
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st) => ("",newst)
@@ -311,6 +353,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
 
+  rule	add_connection(cr,c1,c2,p) => (s1,newp) &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("addConnection",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(c1),Absyn.CREF(c2),Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,SYMBOLTABLE(newp,s,ic,iv))
+
+
   rule	get_nth_connection_annotation(cr,p,n) => s1 &
 	string_append(s1,"\n") => resstr
 	-----------------------
@@ -452,7 +505,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 	---------------------------------------------
 	update_program(Absyn.PROGRAM(c1::c2,w as Absyn.WITHIN(path)),p2) => pnew'
 	
-  rule	print "Further program merging not implemented yet\n"
+  rule	Print.print_buf "Further program merging not implemented yet\n"
 	------------------------
 	update_program (a,b) => b
 end
@@ -497,11 +550,11 @@ relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Clas
 	(Absyn.CLASS("Boolean",false,false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([])), 
 	 Absyn.IDENT("Boolean"))
 
-  rule	print "#Error, lookup_classdef failed\n" &
+  rule	Print.print_buf "#Error, lookup_classdef failed\n" &
 	Absyn.path_string path => s1 &
 	Absyn.path_string inpath => s2 &
-	print s1 & print " in " & print s2 &
-	print "\n" 
+	Print.print_buf s1 & Print.print_buf " in " & Print.print_buf s2 &
+	Print.print_buf "\n" 
 	---------------------
 	lookup_classdef(path,inpath,_) => fail
 end
@@ -519,6 +572,16 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	---------------------------------
 	add_component (name,tp,model,annlst,p) => (p,"Error, No such model\n")
 	
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	Absyn.cref_to_path(tp) => tppath &
+	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,Absyn.UNSPECIFIED,"",
+	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),NONE)])))) => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
+	------------------------------------------------
+	add_component( name,tp,model,[],p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
@@ -647,6 +710,19 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int) => string 
 	get_nth_connection (model,p,n) => str
 
 	axiom get_nth_connection(_,_,_) => "-1"
+end
+
+relation add_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.ComponentRef,Absyn.Program) => 
+	(string,Absyn.Program) =
+	
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE)) 
+	  => newcdef &
+	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
+	---------------------------------------------------
+	add_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
+
 end
 
 (** relation: get_nth_connection_annotation
@@ -864,8 +940,8 @@ end
 relation get_top_models: (Absyn.Program) => string =
 
   rule	get_top_models_in_program(p) => strlist &
-	print "program =" &
-	Dump.dump p & print "\n" &
+	Print.print_buf "program =" &
+	Dump.dump p & Print.print_buf "\n" &
 	Util.string_delimit_list(strlist,",") => str &
 	string_append("{",str) => s1 &
 	string_append(s1,"}") => res
@@ -880,32 +956,32 @@ relation get_top_models_in_program: Absyn.Program => string list =
   axiom	get_top_models_in_program Absyn.PROGRAM([],_) => []
 	
   rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res &
-	print "R_CLASS succeded\n"
+	Print.print_buf "R_CLASS succeded\n"
 	-----------------------------------------
 	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,Absyn.R_CLASS,_)::rest,w)) => id::res
 
   rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
-	& print "R_MODEL succeded\n"
+	& Print.print_buf "R_MODEL succeded\n"
 	-----------------------------------------
 	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,Absyn.R_MODEL,_)::rest,w)) => id::res
 
   rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
-	& print "R_CONNECTOR succeded\n"
+	& Print.print_buf "R_CONNECTOR succeded\n"
 	-----------------------------------------
 	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,Absyn.R_CONNECTOR,_)::rest,w)) => id::res
 
   rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
-	& print "R_BLOCK succeded\n"
+	& Print.print_buf "R_BLOCK succeded\n"
 	-----------------------------------------
 	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,Absyn.R_BLOCK,_)::rest,w)) => id::res
 
   rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
-	& print "R_RECORD succeded\n"
+	& Print.print_buf "R_RECORD succeded\n"
 	-----------------------------------------
 	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,Absyn.R_RECORD,_)::rest,w)) => id::res
 
   rule	get_top_models_in_program (Absyn.PROGRAM(rest,w)) => res
-	& print "R_FUNCTION succeded\n"
+	& Print.print_buf "R_FUNCTION succeded\n"
 	-----------------------------------------
 	get_top_models_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,Absyn.R_FUNCTION,_)::rest,w)) => id::res
 
@@ -1428,7 +1504,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
 	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
-	print "Instantiated Icon class, without graphics primitives\n" &
+	Print.print_buf "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
@@ -1450,7 +1526,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
 	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[]) => (dae,cs,t,state) &
-	print "Instantiated Diagram class, without graphics primitives\n" &
+	Print.print_buf "Instantiated Diagram class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
@@ -1481,7 +1557,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	-----------------------------------------
 	get_annotation_string(totstring, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,Absyn.CREF_IDENT(anncname,_),Absyn.CLASSMOD(mod,_)))])) => str
 
-  rule	print "get_annotation_string failed!\n"
+  rule	Print.print_buf "get_annotation_string failed!\n"
 	---------------------------------------
 	get_annotation_string(_,_) => fail
 end
@@ -1601,6 +1677,30 @@ relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class =
 	    => Absyn.CLASS(i,p,e,r,Absyn.PARTS(Absyn.PUBLIC([eitem])::parts))
 
 end
+
+(** relation: add_to_equation
+ ** This relation takes a 'Class' definition and adds an `EquationItem' to the first equation list in the class.
+ ** If no public list is available in the class one is created.
+ **)
+relation add_to_equation: (Absyn.Class, Absyn.EquationItem) => Absyn.Class = 
+
+  rule	get_equation_list(parts) => eqlst &
+	let eqlst2 = eitem::eqlst &
+	replace_equation_list(parts,eqlst2) => parts2 
+	--------------------------------------------
+	add_to_equation ( Absyn.CLASS(i,p,e,r,Absyn.PARTS(parts)), eitem) 
+	    => Absyn.CLASS(i,p,e,r,Absyn.PARTS(parts2))
+
+  axiom	add_to_equation ( Absyn.CLASS(i,p,e,r,Absyn.DERIVED(_,_,_)),eitem) => fail
+
+  rule	(* Add the equations last, to make nicer output if public section present *)
+	list_append(parts,[Absyn.EQUATIONS([eitem])]) => newparts
+	------------------
+	add_to_equation(Absyn.CLASS(i,p,e,r,Absyn.PARTS(parts)),eitem)
+	    => Absyn.CLASS(i,p,e,r,Absyn.PARTS(newparts))
+end
+
+
 (** relation: replace_class_in_program
  ** This relation takes a `Class' and a `Program' and replaces the class definition 
  ** at the top level in the program by the class definition of the `Class'.
@@ -1619,9 +1719,9 @@ relation replace_class_in_program: (Absyn.Class, Absyn.Program) => Absyn.Program
 	    Absyn.PROGRAM((c1 as Absyn.CLASS(name2,_,_,_,_))::clst,w)) 
 	    => Absyn.PROGRAM(c1::newclst,w)
 
-  rule	print "replace_class_in_program failed \n class:" &
+  rule	Print.print_buf "replace_class_in_program failed \n class:" &
 	Debug.fcall ("dump", Dump.dump, Absyn.PROGRAM([c],Absyn.TOP)) &
-	print "\nprogram: \n" &
+	Print.print_buf "\nprogram: \n" &
 	Debug.fcall ("dump", Dump.dump, p)
 	----------------------------
 	replace_class_in_program(c,p) => fail
@@ -1648,7 +1748,7 @@ relation insert_class_in_program: (Absyn.Class, Absyn.Within, Absyn.Program) => 
 	-------------------------------------------------
 	insert_class_in_program(c1, w as Absyn.WITHIN(Absyn.IDENT(n1)),p) => pnew
 	
-  rule	print "Error inserting in class, within name, where name is not defined\n" 
+  rule	Print.print_buf "Error inserting in class, within name, where name is not defined\n" 
 	-------------------
 	insert_class_in_program(c1,_,p) => fail	
 end
@@ -1672,7 +1772,7 @@ relation insert_class_in_class: (Absyn.Class, Absyn.Within, Absyn.Class) => Absy
 	---------------------------------------------
 	insert_class_in_class(c1,Absyn.WITHIN(Absyn.QUALIFIED(name,path)),c2) => cnew'
 	
-  rule print "insert_class_in_class failed\n"
+  rule Print.print_buf "insert_class_in_class failed\n"
 	-------------------------------------
 	insert_class_in_class(_,_,_) => fail
 end
@@ -1696,7 +1796,7 @@ relation replace_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
 	-----------------------------------------------
 	replace_inner_class (c1,Absyn.CLASS(a,b,c,d,Absyn.PARTS(parts))) 
 	    => Absyn.CLASS(a,b,c,d,Absyn.PARTS(parts2))
-  rule	print "Failed in replace_inner_class\n"
+  rule	Print.print_buf "Failed in replace_inner_class\n"
 	---------------------------------------
 	replace_inner_class (_,_) => fail
 end
@@ -1737,9 +1837,9 @@ relation get_inner_class: (Absyn.Class, Absyn.Ident) => Absyn.Class =
 	-----------------------------------------------
 	get_inner_class (Absyn.CLASS(_,_,_,_,Absyn.PARTS(parts)), name) => c1
 
-  rule	print "get_inner_class failed, c:" &
+  rule	Print.print_buf "get_inner_class failed, c:" &
 	Debug.fcall ("dump", Dump.dump,Absyn.PROGRAM([c],Absyn.TOP)) &
-	print "name :" & print name 
+	Print.print_buf "name :" & Print.print_buf name 
 	--------------
 	get_inner_class (c,name) => fail
 end
@@ -1759,6 +1859,23 @@ relation replace_public_list: (Absyn.ClassPart list,Absyn.ElementItem list) => A
   axiom replace_public_list([],_) => []
 end
 
+(** relation: replace_equation_list
+ ** This relation replaces the `EquationItem' list in the `ClassPart' list, and returns the updated
+ ** list.
+*)
+relation replace_equation_list: (Absyn.ClassPart list,Absyn.EquationItem list) => Absyn.ClassPart list =
+
+  axiom replace_equation_list ((lst as Absyn.EQUATIONS(_))::rest,newpublst) 
+	  => Absyn.EQUATIONS(newpublst)::rest
+	
+  rule	replace_equation_list(xs,new) => ys
+	---------------------------------
+	replace_equation_list(x::xs,new) => x::ys
+
+  axiom replace_equation_list([],_) => []
+end
+
+
 (** relation: get_public_list
  ** This relation takes a ClassPart List and returns the first public ElementItem list of the class.
  **
@@ -1773,6 +1890,22 @@ relation get_public_list: Absyn.ClassPart list => Absyn.ElementItem list =
 
   axiom get_public_list(_) => fail
 end
+
+(** relation: get_equation_list
+ ** This relation takes a ClassPart List and returns the first EquationItem list of the class.
+ **
+*)
+relation get_equation_list: Absyn.ClassPart list => Absyn.EquationItem list =
+
+  axiom get_equation_list Absyn.EQUATIONS(lst)::rest => lst
+	
+  rule	get_equation_list(xs) => ys
+	---------------------------
+	get_equation_list(x::xs) => ys
+
+  axiom get_equation_list(_) => fail
+end
+
 
 (** relation: get_class_from_elementitemlist
  ** This relation takes an ElementItem list and an Ident and returns the class definition

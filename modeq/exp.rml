@@ -139,6 +139,7 @@ end
 
 with "rtopts.rml"
 with "util.rml"
+with "print.rml"
 
 (** relation: path_string
  **
@@ -347,14 +348,14 @@ relation print_component_ref : ComponentRef => () =
 	(* Does not handle names with underscores *)
   rule	RTOpts.modelica_output => true &
 	print_component_ref2 (s,subs) &
-	print "__" &
+	Print.print_buf "__" &
 	print_component_ref cr
 	---------------------
 	print_component_ref CREF_QUAL(s,subs,cr)
 
   rule	RTOpts.modelica_output => false &
 	print_component_ref2 (s,subs) &
-	print "." &
+	Print.print_buf "." &
 	print_component_ref cr
 	---------------------
 	print_component_ref CREF_QUAL(s,subs,cr)
@@ -363,19 +364,19 @@ end
 
 relation print_component_ref2 =
 
-  rule	print s
+  rule	Print.print_buf s
 	-------
 	print_component_ref2 (s,[])
 
   rule	RTOpts.modelica_output => true &
-	print s &
-	print "_L" & print_list(l,print_subscript,",") & print "_R"
+	Print.print_buf s &
+	Print.print_buf "_L" & print_list(l,print_subscript,",") & Print.print_buf "_R"
 	-------------------------------------------------------
 	print_component_ref2 (s,l)
 
   rule	RTOpts.modelica_output => false &
-	print s &
-	print "[" & print_list(l,print_subscript,",") & print "]"
+	Print.print_buf s &
+	Print.print_buf "[" & print_list(l,print_subscript,",") & Print.print_buf "]"
 	-------------------------------------------------------
 	print_component_ref2 (s,l)
 
@@ -388,7 +389,7 @@ end
 
 relation print_subscript: Subscript => () =
 	
-  rule	print ":"
+  rule	Print.print_buf ":"
 	---------
 	print_subscript(WHOLEDIM)
 	
@@ -417,23 +418,23 @@ end
 
 relation print_exp2 : (Exp,int) => () =
 	
-  rule	int_string(x) => s & print s
+  rule	int_string(x) => s & Print.print_buf s
 	----------------------------
 	print_exp2(ICONST(x),_)
 
-  rule	real_string(x) => s & print s
+  rule	real_string(x) => s & Print.print_buf s
 	-----------------------------
 	print_exp2(RCONST(x),_)
 
-  rule	print "\"" & print s & print "\""
+  rule	Print.print_buf "\"" & Print.print_buf s & Print.print_buf "\""
 	---------------------------------
 	print_exp2(SCONST(s),_)
 
-  rule	print "false"
+  rule	Print.print_buf "false"
 	-------------
 	print_exp2(BCONST(false),_)
 
-  rule	print "true"
+  rule	Print.print_buf "true"
 	-------------
 	print_exp2(BCONST(true),_)
 
@@ -444,7 +445,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	binop_symbol(op) => sym &
  	binop_priority op => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (e1,pri3) & print sym & print_exp2 (e2,pri3) &
+	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri3) &
 	print_rightpar(pri1,pri2)
 	------------------------
 	print_exp2(BINARY(e1, op, e2),pri1)
@@ -452,7 +453,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	unaryop_symbol(op) => sym &
 	unaryop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print sym & print_exp2 (e,pri3) &
+	Print.print_buf sym & print_exp2 (e,pri3) &
 	print_rightpar(pri1,pri2)
 	----------------------------
 	print_exp2(UNARY(op, e),pri1)
@@ -460,7 +461,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	lbinop_symbol(op) => sym &
 	lbinop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (e1,pri3) & print sym & print_exp2 (e2,pri3) &
+	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri3) &
 	print_rightpar(pri1,pri2)
 	----------------------------------------------------------------
 	print_exp2(LBINARY(e1, op, e2),pri1)
@@ -468,7 +469,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	lunaryop_symbol(op) => sym &
  	lunaryop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
- 	print sym & print_exp2 (e,pri3) &
+ 	Print.print_buf sym & print_exp2 (e,pri3) &
 	print_rightpar(pri1,pri2)
 	---------------------------------------------------
 	print_exp2(LUNARY(op, e),pri1)
@@ -476,60 +477,60 @@ relation print_exp2 : (Exp,int) => () =
   rule	relop_symbol(op) => sym &
  	relop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
- 	print_exp2(e1,pri3) & print sym & print_exp2(e2,pri3) &
+ 	print_exp2(e1,pri3) & Print.print_buf sym & print_exp2(e2,pri3) &
 	print_rightpar(pri1,pri2)
 	-----------------------------------------------------------------
 	print_exp2(RELATION(e1, op, e2),pri1)
 
-  rule	print "if " & print_exp2(c,0) &
-	print " then " & print_exp2(t,0) &
-	print " else " & print_exp2(f,0)
+  rule	Print.print_buf "if " & print_exp2(c,0) &
+	Print.print_buf " then " & print_exp2(t,0) &
+	Print.print_buf " else " & print_exp2(f,0)
 	----------------------------
 	print_exp2(IFEXP(c,t,f),_)
 
   rule	Absyn.path_string(fcn) => fs &
-	print fs & print "(" & print_list(args,print_exp,",") & print ")"
+	Print.print_buf fs & Print.print_buf "(" & print_list(args,print_exp,",") & Print.print_buf ")"
 	---------------------------------------------
 	print_exp2(CALL(fcn, args,_,_),_)
 
-  rule	(* print "This an array: " & *)
-	print "{" &
+  rule	(* Print.print_buf "This an array: " & *)
+	Print.print_buf "{" &
 	print_list(es, print_exp, ",") &
-	print "}"
+	Print.print_buf "}"
 	---------
 	print_exp2 (ARRAY(_,_,es),_)
 
 	(*PR.*)
-  rule	print "(" &
+  rule	Print.print_buf "(" &
 	print_list(es, print_exp, ",") &
-	print ")"
+	Print.print_buf ")"
 	---------
 	print_exp2 (TUPLE(es),_)
 	
-  rule	print "[" &
+  rule	Print.print_buf "[" &
 	print_list(es, print_row, ";") &
-	print "]"
+	Print.print_buf "]"
 	---------
 	print_exp2 (MATRIX(_,_,es),_)
 
   rule	let pri2 = 41 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (start,pri3) & print ":" & print_exp2 (stop,pri3) &
+	print_exp2 (start,pri3) & Print.print_buf ":" & print_exp2 (stop,pri3) &
  	print_rightpar(pri1,pri2)
 	-------------------------------------------------------------
 	print_exp2 (RANGE(_,start,NONE,stop),pri1)
 
   rule	let pri2 = 41 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (start,pri3) & print ":" &
-	print_exp2 (step,pri3) & print ":" &
+	print_exp2 (start,pri3) & Print.print_buf ":" &
+	print_exp2 (step,pri3) & Print.print_buf ":" &
  	print_exp2 (stop,pri3) &
  	print_rightpar(pri1,pri2)
 	-------------------------
 	print_exp2 (RANGE(_,start,SOME(step),stop),pri1)
 
   rule	RTOpts.modelica_output => false &
-	print "Real(" & print_exp e & print ")"
+	Print.print_buf "Real(" & print_exp e & Print.print_buf ")"
 	---------------------------------------
 	print_exp2 (CAST(REAL,e),_)
 
@@ -542,12 +543,12 @@ relation print_exp2 : (Exp,int) => () =
 	print_leftpar(pri1,pri2) => pri3 &
 	print_exp2 (e,pri3) &
  	print_rightpar(pri1,pri2) &
- 	print "[" &
- 	int_string i => s & print s & print "]"
+ 	Print.print_buf "[" &
+ 	int_string i => s & Print.print_buf s & Print.print_buf "]"
 	---------------------------------------
 	print_exp2 (ASUB(e,i),pri1)
 	
-  rule	print "#UNKNOWN EXPRESSION# ----eee "
+  rule	Print.print_buf "#UNKNOWN EXPRESSION# ----eee "
         ----------------------------------
 	print_exp2 (_,_)
 
@@ -556,7 +557,7 @@ end
 
 relation print_leftpar : (int,int) => int =
 
-  rule	int_gt(x,y) => true & print "("
+  rule	int_gt(x,y) => true & Print.print_buf "("
 	-----------------------
 	print_leftpar(x,y) => 0
 
@@ -566,7 +567,7 @@ end
 
 relation print_rightpar : (int,int) => () =
 
-  rule	int_gt(x,y) => true & print ")"
+  rule	int_gt(x,y) => true & Print.print_buf ")"
 	-----------------------
 	print_rightpar(x,y)
 
@@ -760,7 +761,7 @@ relation print_list : ('a list, 'a => (), string) => () =
 	------------------
 	print_list([h],r,_)
 
-  rule	r(h) & print sep & print_list(t,r,sep)
+  rule	r(h) & Print.print_buf sep & print_list(t,r,sep)
 	-------------------------------------
 	print_list(h::t,r,sep)
 

@@ -42,6 +42,7 @@ module Values :
 		 | STRING of string
 		 | BOOL of bool
 		 | ARRAY of Value list
+		 | TUPLE of Value list 
 
   relation val_string : Value => string
   relation print_val : Value => ()
@@ -51,6 +52,8 @@ module Values :
   relation mult_scalar_product: (Value list, Value list) => Value
   relation mult_matrix: (Value list,Value list) => Value list
   relation is_array :Value => bool
+  relation write_to_file_as_args: (Value list,string) => ()
+
 end
 	
 relation is_array: Value => bool = 
@@ -58,7 +61,112 @@ relation is_array: Value => bool =
   axiom	is_array(REAL(_)) => false
   axiom	is_array(STRING(_)) => false
   axiom	is_array(BOOL(_)) => false
+  axiom is_array(TUPLE(_)) => false
   axiom	is_array(ARRAY(_)) => true	
+end
+
+relation unparse_values: (Value list) => string =
+
+  rule	unparse_description(vallst) => s1 &
+	unparse_value_numbers(vallst) => s2 &
+	string_append(s1,s2) => str
+	-----------------------------
+	unparse_values(vallst) => str
+
+  axiom	unparse_values(_) => "Unparse values failed\n"
+end
+
+relation unparse_value_numbers: (Value list) => string =
+	
+  rule	unparse_value_numbers(lst) => s1 &
+	unparse_value_numbers(xs) => s2 &
+	string_append(s1,s2) => res 
+	---------------------------
+	unparse_value_numbers (ARRAY(lst)::xs)=> res
+	
+  rule	unparse_value_numbers(xs) => s1 &
+	int_string(i) => istr &
+	string_append(istr," ") => s2 &
+	string_append(s2,s1) => res
+	---------------------------
+	unparse_value_numbers(INTEGER(i)::xs) => res
+
+  rule	unparse_value_numbers(xs) => s1 &
+	real_string(i) => istr &
+	string_append(istr," ") => s2 &
+	string_append(s2,s1) => res
+	---------------------------
+	unparse_value_numbers(REAL(i)::xs) => res
+
+	axiom unparse_value_numbers([]) => ""
+end
+
+relation unparse_description:(Value list) => string =
+
+  rule	unparse_description(xs) => s1 &
+	string_append("# i!\n",s1) => str
+	-------------------------------
+	unparse_description(INTEGER(_)::xs)=> str
+
+  rule	unparse_description(xs) => s1 &
+	string_append("# r!\n",s1) => str
+	-------------------------------
+	unparse_description(REAL(_)::xs)=> str
+	
+  rule	unparse_description(xs) => s1 &
+	unparse_array_description(vallst) => s2 &
+	string_append("# [ ",s2) => s3 &
+	string_append(s3,s1) => str 
+	-------------------------------
+	unparse_description(ARRAY(vallst)::xs)=> str
+
+  axiom unparse_description([]) => ""
+end
+
+relation unparse_array_description:(Value list) => string  =
+
+  rule	unparse_num_dims(lst) => i1 &
+	int_string(i1) => s1 &
+	string_append(s1," ") => s2 &
+	unparse_dim_sizes(lst) => s3 &
+	string_append(s2,s3) => str
+	------------------
+	unparse_array_description(lst) => str
+end
+
+relation unparse_num_dims: (Value list) => int =
+	
+  rule	unparse_num_dims(vals) => i1 &
+	int_add(i1,1) => res
+	--------------------
+	unparse_num_dims(ARRAY(vals)::_) => res
+
+  axiom	unparse_num_dims(_) => 1
+end
+
+relation unparse_dim_sizes: (Value list) => string =
+
+  rule	list_length(lst) => i1 &
+	int_string(i1) => s1 &
+	string_append(s1, " ") => s2 &
+	unparse_dim_sizes(vals) => s3 &
+	string_append(s2,s3) => res
+	-------------------
+	unparse_dim_sizes (lst as (ARRAY(vals)::_)) => res
+
+  rule	list_length(lst) => len &
+	int_string(len) => res 
+	----------------------
+	unparse_dim_sizes(lst) => res
+end
+
+
+relation write_to_file_as_args: (Value list,string) => () =
+	
+  rule	unparse_values(vallst) => str &
+	System.write_file(filename,str) 
+	-------------------------------
+	write_to_file_as_args(vallst,filename)
 end
 
 relation add_elementwise_arrayelt: (Value list, Value list) => Value list =
@@ -203,13 +311,13 @@ relation mult_scalar_product: (Value list, Value list) => Value =
 	mult_scalar_product(vlst  as (REAL(_)::_), mat as (ARRAY([_])::_)) 
 	    => ARRAY([REAL(v)])
 
-  rule	print "mult_scalar_product failed\n lst1 len:" &
+  rule	Print.print_buf "mult_scalar_product failed\n lst1 len:" &
 	list_length(lst1) => len &
 	int_string(len) => lenstr &
-	print lenstr & print "lst2 len:" &
+	Print.print_buf lenstr & Print.print_buf "lst2 len:" &
 	list_length(lst2) => len2 &
 	int_string(len2) => len2str & 
-	print len2str & print "\n" 
+	Print.print_buf len2str & Print.print_buf "\n" 
 	--------------------------
 	mult_scalar_product(lst1,lst2) => fail
 end
@@ -236,6 +344,8 @@ relation matrix_strip_first_column: Value list => (Value,Value list) =
 
   axiom	matrix_strip_first_column( []) => (ARRAY([]),[])
 end
+with "print.rml"
+with "system.rml"
 
 (*!ignorecode*) 
 
@@ -265,7 +375,13 @@ relation val_string : Value => string =
 	----------------------------
 	val_string ARRAY(vs) => s''
 
-  rule	print "- val_string failed\n"
+  rule	val_list_string vs => s &
+	string_append("(",s) => s' &
+	string_append(s',")") => s''
+	----------------------------
+	val_string TUPLE(vs) => s''
+
+  rule	Print.print_buf "- val_string failed\n"
 	-----------------------------
 	val_string _ => fail
 
@@ -292,7 +408,7 @@ relation val_list_string : Value list => string =
 	------------------------------
 	val_list_string v::vs => s'''
 
-  rule	print "- val_list_string failed\n"
+  rule	Print.print_buf "- val_list_string failed\n"
 	----------------------------------
 	val_list_string _ => fail
 
@@ -306,7 +422,7 @@ end
 relation print_val : Value => () =
 
   rule	val_string v => s &
-	print s
+	Print.print_buf s
 	-------
 	print_val v
 

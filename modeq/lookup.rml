@@ -55,6 +55,8 @@ with "dump.rml"
 with "inst.rml"
 with "mod.rml"
 with "prefix.rml"
+with "print.rml"
+
 (**
  ** - Lookup relations
  **
@@ -85,7 +87,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => Types.Type =
 	--------------------------------------
 	lookup_type(env, Absyn.QUALIFIED(pack,path)) => t
 	
-  rule	print "lookup_type failed!\n" 
+  rule	Print.print_buf "lookup_type failed!\n" 
 	---------------------
 	lookup_type(_,_) => fail
 end
@@ -149,7 +151,7 @@ relation lookup_qualified_imported_class_in_frame: ((SCode.Ident * Env.Item) lis
 	Absyn.strip_last(path) => strippath &
 	lookup_class([fr],strippath) =>  (c2,_) &
 	not assert_package(c2) &
-	print "# Error, " & Dump.print_path strippath & print " is not a package\n"  
+	Print.print_buf "# Error, " & Dump.print_path strippath & Print.print_buf " is not a package\n"  
 	----------------------------------
 	lookup_qualified_imported_class_in_frame((_,Env.IMPORT(Absyn.QUAL_IMPORT(path)))::fs,env,ident)
 	    => fail
@@ -170,7 +172,7 @@ relation lookup_qualified_imported_class_in_frame: ((SCode.Ident * Env.Item) lis
 	Absyn.strip_last(path) => strippath &
 	lookup_class([fr],strippath) =>  (c2,_) &
 	not assert_package(c2) &
-	print "# Error, " & Dump.print_path strippath & print " is not a package\n"  
+	Print.print_buf "# Error, " & Dump.print_path strippath & Print.print_buf " is not a package\n"  
 	---------------------------------- 
 	lookup_qualified_imported_class_in_frame((_,Env.IMPORT(Absyn.NAMED_IMPORT(id,path)))::fs,env,ident)
 	    => fail
@@ -208,7 +210,7 @@ relation lookup_unqualified_imported_class_in_frame: ((SCode.Ident * Env.Item) l
 	lookup_class_in_env([fr],path) => (c,env') &
 	lookup_class_in_class(env,c,Absyn.IDENT(ident)) => (c',env'') &
 	lookup_unqualified_imported_class_in_frame(fs,env,ident) => (_,_) &
-	print "# Error, class found in several unqualified import statements\n"
+	Print.print_buf "# Error, class found in several unqualified import statements\n"
 	-------------------------------------------
 	lookup_unqualified_imported_class_in_frame((_,Env.IMPORT(Absyn.UNQUAL_IMPORT(path)))::fs,env,ident)
 	    => fail
@@ -348,9 +350,9 @@ relation lookup_ident : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element optio
 	---------------------------------
 	lookup_ident(_::rest,id) => (fv,c,i)
 
-  rule	print "# Error lookup_ident: " &
-	print id &
-	print " failed\n"
+  rule	Print.print_buf "# Error lookup_ident: " &
+	Print.print_buf id &
+	Print.print_buf " failed\n"
 	--------------
 	lookup_ident(_,id) => fail	
 end
@@ -373,7 +375,7 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
 	Debug.fcall ("lotr", print_frame, items) &
 	lookup_functions_in_frame(items,env,id) => c1 &
-(*	print "\n Found type." & *)
+(*	Print.print_buf "\n Found type." & *)
 	lookup_functions_in_env(fs,iid) => c2 &
 	list_append (c1,c2) => reslist
 	---------------------
@@ -410,14 +412,14 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 				 SCode.Ident)
 	  => Types.Type =
 
-  rule	(* print "  lookup_type_in_frame(" & print id & print "): " &
-	   print n & print "\n" & *)
+  rule	(* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): " &
+	   Print.print_buf n & Print.print_buf "\n" & *)
 	id = n
 	---------------------------------------------------------
 	lookup_type_in_frame((n,Env.TYPE(t))::_,env, id) => t
 
-  rule	id = n & print "# Error while looking up type " &
-	print id & print ": found a component\n"
+  rule	id = n & Print.print_buf "# Error while looking up type " &
+	Print.print_buf id & Print.print_buf ": found a component\n"
 	------------------------------------
 	lookup_type_in_frame((n,Env.VAR(_,_,_))::_,env,id) => fail
 
@@ -427,8 +429,8 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
 	----------------------------------------
 	lookup_type_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype
 
-  rule	(* print "  lookup_type_in_frame(" & print id & print "): not " &
-	   print n & print "\n" & *)
+  rule	(* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): not " &
+	   Print.print_buf n & Print.print_buf "\n" & *)
 	lookup_type_in_frame(fs,env,id) => t
 	------------------------------
 	lookup_type_in_frame((n,_)::fs,env,id) => t
@@ -443,34 +445,34 @@ relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
 	  => Types.Type list =
 
 (*
-  rule  print "\n FRAME IS FINSHED"
+  rule  Print.print_buf "\n FRAME IS FINSHED"
 	------------------------------------
 	lookup_functions_in_frame([],id) => []
 *)
   axiom	lookup_functions_in_frame([],env,id) => []
 
-  rule	(* print "  lookup_type_in_frame(" & print id & print "): " &
-	   print n & print "\n" & *)
-(*	print ("\n found id in frame.") & *)
+  rule	(* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): " &
+	   Print.print_buf n & Print.print_buf "\n" & *)
+(*	Print.print_buf ("\n found id in frame.") & *)
 	id = n &
 	lookup_functions_in_frame(rest, env, id) => t2
 	---------------------------------------------------------
 	lookup_functions_in_frame((n,Env.TYPE(t))::rest, env, id) => t::t2
 
-  rule	id = n & print "# Error while looking up type " &
-	print id & print ": found a component\n"
+  rule	id = n & Print.print_buf "# Error while looking up type " &
+	Print.print_buf id & Print.print_buf ": found a component\n"
 	------------------------------------
 	lookup_functions_in_frame((n,Env.VAR(_,_,_))::_,env,id) => fail
 
-  rule	id = n & print "Found record when looking for function. Assuming implicit record constructor\n" &
+  rule	id = n & Print.print_buf "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_varlst (cdef,env) => varlst &
 	lookup_functions_in_frame(rest,env,id) => t2 &
 	Types.make_function_type(varlst) => ftype
 	----------------------------------------
 	lookup_functions_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => ftype::t2
 
-  rule	 (* print "  lookup_type_in_frame(" & print id & print "): not " &
-	   print n & print "\n" & *)
+  rule	 (* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): not " &
+	   Print.print_buf n & Print.print_buf "\n" & *)
 	lookup_functions_in_frame(fs,env,id) => t
 	------------------------------
 	lookup_functions_in_frame((n,_)::fs,env,id) => t
@@ -505,18 +507,18 @@ relation lookup_recconst_in_frame: ((SCode.Ident * Env.Item) list,
 	---------------------------------------------------------
 	lookup_recconst_in_frame((n,Env.TYPE(t))::rest, env, id) => (c2,env')
 
-  rule	id = n & print "# Error while looking up record constructor class " &
-	print id & print ": found a component\n"
+  rule	id = n & Print.print_buf "# Error while looking up record constructor class " &
+	Print.print_buf id & Print.print_buf ": found a component\n"
 	------------------------------------
 	lookup_recconst_in_frame((n,Env.VAR(_,_,_))::_,env,id) => fail
 
-  rule	id = n & print "Found record when looking for function. Assuming implicit record constructor\n" &
+  rule	id = n & Print.print_buf "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_class (cdef,env) => cdef 
 	----------------------------------------
 	lookup_recconst_in_frame((n,Env.CLASS(cdef as SCode.CLASS(_,_,_,Absyn.R_RECORD,_),_))::rest,env,id) => (cdef,env)
 
-  rule	 (* print "  lookup_type_in_frame(" & print id & print "): not " &
-	   print n & print "\n" & *)
+  rule	 (* Print.print_buf "  lookup_type_in_frame(" & Print.print_buf id & Print.print_buf "): not " &
+	   Print.print_buf n & Print.print_buf "\n" & *)
 	lookup_recconst_in_frame(fs,env,id) => (c,env)
 	------------------------------
 	lookup_recconst_in_frame((n,_)::fs,env,id) => (c,env)
@@ -593,7 +595,7 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
 
   axiom	build_varlst_from_elts ([],_) => []
 
-  rule	print "ERROR build_varlst_from_elts failed!\n"
+  rule	Print.print_buf "ERROR build_varlst_from_elts failed!\n"
 	----------------------------------------------
 	build_varlst_from_elts(_,_) => fail
 end
@@ -601,7 +603,7 @@ end
 relation lookup_package_type : (Env.Env, string, Absyn.Path) => Types.Type =
 	
   rule	locate_package (env,packname) => pack &
- 	print "- package lookup of types not implemented\n"
+ 	Print.print_buf "- package lookup of types not implemented\n"
 	(* lookup_type_in_package (pack, path) => t *)
 	-------------------------------------
 	lookup_package_type (env, packname, path) => (* t *) fail
@@ -677,8 +679,8 @@ relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 	lookup_class_in_frame((n,Env.CLASS(c, env))::_, id) => (c, env)
 
 (*
-  rule	id = n & print "# Error while looking up class " &
-	print id & print ": found a component\n"
+  rule	id = n & Print.print_buf "# Error while looking up class " &
+	Print.print_buf id & Print.print_buf ": found a component\n"
 	------------------------------------
 	lookup_class_in_frame((n,Env.VAR(_))::_,id) => fail
 *)
@@ -757,9 +759,9 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
 			 Exp.INDEX(_)::ys) => t'
 
-  rule	print "- check_subscripts failed (" &
-	Types.print_type t & print ", [" &
- 	Exp.print_list(s,Exp.print_subscript,",") & print "])\n"
+  rule	Print.print_buf "- check_subscripts failed (" &
+	Types.print_type t & Print.print_buf ", [" &
+ 	Exp.print_list(s,Exp.print_subscript,",") & Print.print_buf "])\n"
 	-----------------------------------
 	check_subscripts(t,s) => fail
 
@@ -790,7 +792,7 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	--------------------------------------
 	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty''',binding)
 
-  rule	print "- lookup_in_var failed\n"
+  rule	Print.print_buf "- lookup_in_var failed\n"
 	--------------------------------
 	lookup_in_var(_,_) => fail
 
@@ -839,9 +841,9 @@ end
 
 relation print_frame : ((SCode.Ident * Env.Item) list) => () =
 
-  rule	print "FRAME: " &
+  rule	Print.print_buf "FRAME: " &
 	print_frame_contents cont &
-	print "\n"
+	Print.print_buf "\n"
 	--------------------------------------------
 	print_frame cont
 
@@ -856,7 +858,7 @@ relation print_frame_contents: ((SCode.Ident * Env.Item) list) => () =
 	-------------------------
 	print_frame_contents [e as (n,i)]
 
-  rule	print_frame_element e & print "," & print_frame_contents rst
+  rule	print_frame_element e & Print.print_buf "," & print_frame_contents rst
 	------------------------------------------------
 	print_frame_contents ((e as (n,i))::rst)
 end
@@ -864,15 +866,15 @@ end
 
 relation print_frame_element: (SCode.Ident * Env.Item) => () =
 
-  rule	print "v:" & print n
+  rule	Print.print_buf "v:" & Print.print_buf n
 	-------
 	print_frame_element ((n,Env.VAR(_,_,_)))
 
-  rule	print "c:" & print n
+  rule	Print.print_buf "c:" & Print.print_buf n
 	-------
 	print_frame_element ((n,Env.CLASS(_,_)))
 
-  rule	print "t:" & print n
+  rule	Print.print_buf "t:" & Print.print_buf n
 	-------
 	print_frame_element ((n,Env.TYPE(_)))
 
@@ -902,7 +904,7 @@ relation locate_package : (Env.Env, string) => SCode.Class =
 	locate_package (env, pack) => c
 
   rule	string_append (pack, ".mo") => filename &
-	print "Loading " & print filename & print "...\n" &
+	Print.print_buf "Loading " & Print.print_buf filename & Print.print_buf "...\n" &
 	Parser.parse filename => (Absyn.PROGRAM((c as Absyn.CLASS(classname,_,_,_,_))::_,w)) &
 	pack = classname &
 	SCode.elaborate Absyn.PROGRAM([c],w) => [c'] &

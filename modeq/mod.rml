@@ -70,6 +70,7 @@ module Mod:
 end
 
 with "dump.rml"
+with "print.rml"
 
 (** relation: elab_mod
  **
@@ -98,9 +99,9 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
   axiom	elab_mod (env, pre, m as SCode.REDECL(final, elist)) 
 	  =>  REDECL(final, elist)
 
-  rule	print "#-- elab_mod failed:\n" &
+  rule	Print.print_buf "#-- elab_mod failed:\n" &
 	SCode.print_mod mod &
-	print "\n"
+	Print.print_buf "\n"
 	----------
 	elab_mod (_,pre,mod) => fail
 
@@ -160,12 +161,12 @@ relation make_idxmods : (Exp.Subscript list, Mod) => SubMod list =
 	--------------------------------
 	make_idxmods(Exp.INDEX(Exp.ICONST(x))::xs, m) => mods'
 
-  rule	print "= expand_slice\n" &
+  rule	Print.print_buf "= expand_slice\n" &
 	expand_slice(x, xs, 1, m) => mods
 	---------------------------
 	make_idxmods(Exp.SLICE(Exp.ARRAY(_,_,x))::xs, m) => mods
 
-  rule	print "# Sorry, [:] slices are not handled in modifications\n"
+  rule	Print.print_buf "# Sorry, [:] slices are not handled in modifications\n"
 	--------------------------------------------------------------
 	make_idxmods(Exp.WHOLEDIM::xs, m) => fail
 	
@@ -215,7 +216,7 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Mod)
 		     m as MOD(final, [],
 			      SOME((e,Static.PROP(t,const))))) => mods
 
-  rule	print "# Illegal modification (" & print_mod mod & print ")\n"
+  rule	Print.print_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
 	--------------------------------
 	expand_slice(_,_,_,mod) => fail
 
@@ -327,9 +328,9 @@ relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod =
 	-----------------------------------
 	lookup_comp_modification(MOD(_,subs,_),n) => mod
 	
-  rule	print "# Mod.lookup_comp_modification(" &
-	print_mod mod & print "," & print i &
-	print ") failed\n"
+  rule	Print.print_buf "# Mod.lookup_comp_modification(" &
+	print_mod mod & Print.print_buf "," & Print.print_buf i &
+	Print.print_buf ") failed\n"
 	--------------------
 	lookup_comp_modification(mod,i) => fail
 
@@ -352,7 +353,7 @@ relation lookup_comp_modification2 : (SubMod list,Absyn.Ident) => Mod =
 	---------------------------------
 	lookup_comp_modification2(x::xs,n) => mod
 
-  rule	print "- lookup_comp_modification2 failed\n"
+  rule	Print.print_buf "- lookup_comp_modification2 failed\n"
 	---------------------------------------
 	lookup_comp_modification2 (_,_) => fail
 
@@ -378,9 +379,9 @@ relation lookup_idx_modification: (Mod, int) => Mod =
 	-----------------------------------
 	lookup_idx_modification(MOD(f,subs,eq),idx) => mod'''
 	
-  rule	print "# Mod.lookup_idx_modification(" &
-	print_mod mod & print "," & int_string idx => s & print s &
-	print ") failed\n"
+  rule	Print.print_buf "# Mod.lookup_idx_modification(" &
+	print_mod mod & Print.print_buf "," & int_string idx => s & Print.print_buf s &
+	Print.print_buf ") failed\n"
 	--------------------
 	lookup_idx_modification(mod,idx) => fail
 
@@ -420,7 +421,7 @@ relation lookup_idx_modification2 : (SubMod list, EqMod option, int)
 	---------------------------------
 	lookup_idx_modification2(x::xs,eq,idx) => (mod,x::xs')
 
-  rule	print "- lookup_idx_modification2 failed\n"
+  rule	Print.print_buf "- lookup_idx_modification2 failed\n"
 	---------------------------------------
 	lookup_idx_modification2 (_,_,_) => fail
 
@@ -473,15 +474,15 @@ relation merge : (Mod, Mod) => Mod =
 
   axiom merge(m,NOMOD) => m
 
-  rule  print "- ignoring inner modification\n"
+  rule  Print.print_buf "- ignoring inner modification\n"
 	--------------------------------------
 	merge(m as REDECL(_,_),_) => m
 
-  rule  print "# can't merge modification with a redeclaration\n"
+  rule  Print.print_buf "# can't merge modification with a redeclaration\n"
 	---------------------------------------------------------
 	merge(_,REDECL(_,_)) => fail
 
-  rule  print "# trying to modify final element\n"
+  rule  Print.print_buf "# trying to modify final element\n"
 	------------------------------------------
 	merge(_,m as MOD(true,_,_)) => fail
 
@@ -491,7 +492,7 @@ relation merge : (Mod, Mod) => Mod =
 	merge(MOD(final,subs1,ass1), MOD(false,subs2,ass2))
 	  => MOD(final,subs,ass)
 
-  rule	print "# incomplete handling of modification merging\n"
+  rule	Print.print_buf "# incomplete handling of modification merging\n"
 	-----------------------------------------------------
 	merge(outer,inner) => outer
 
@@ -586,13 +587,13 @@ end
 
 relation print_mod : Mod => () =
 
-  rule	print "()"
+  rule	Print.print_buf "()"
 	----------
 	print_mod(NOMOD)
 
-  rule  print "(redeclare(" &
+  rule  Print.print_buf "(redeclare(" &
 	Dump.print_list(elist, SCode.print_element, ", ") &
-	print "))"
+	Print.print_buf "))"
 	------------------------------
 	print_mod REDECL(final,elist)
 	
@@ -610,7 +611,7 @@ relation print_final : bool => () =
 
   axiom print_final false
 
-  rule print " final "
+  rule Print.print_buf " final "
        --------------
        print_final true
 
@@ -622,7 +623,7 @@ relation print_subs1 : SubMod list => () =
 
   axiom print_subs1 [] => ()
 
-  rule	print "(" & print_sub x & print_subs2 xs & print ")"
+  rule	Print.print_buf "(" & print_sub x & print_subs2 xs & Print.print_buf ")"
 	------------------------------------
 	print_subs1 x::xs
 
@@ -634,7 +635,7 @@ relation print_subs2 : SubMod list => () =
 
   axiom print_subs2 []
 
-  rule  print "," & print_sub sub & print_subs2 subs
+  rule  Print.print_buf "," & print_sub sub & print_subs2 subs
 	----------------------------------------------
 	print_subs2 sub::subs
 
@@ -644,7 +645,7 @@ end
 
 relation print_sub : SubMod => () =
 
-  rule  print n & print_mod mod
+  rule  Print.print_buf n & print_mod mod
 	------------------
 	print_sub NAMEMOD(n,mod)
 
@@ -658,14 +659,14 @@ end
 
 relation print_subscripts : int list => () =
 
-  rule	print "[]"
+  rule	Print.print_buf "[]"
   	---------------
 	print_subscripts []
 
-  rule	print "[" &
-	int_string x => s & print s &
+  rule	Print.print_buf "[" &
+	int_string x => s & Print.print_buf s &
 	print_subscripts2 xs &
-	print "]"
+	Print.print_buf "]"
 	-----------------------------------------------------
 	print_subscripts x::xs
 
@@ -677,7 +678,7 @@ relation print_subscripts2 : int list => () =
 
   axiom	print_subscripts2 []
 
-  rule	print "," & int_string x => s & print s &
+  rule	Print.print_buf "," & int_string x => s & Print.print_buf s &
 	print_subscripts2 xs
 	--------------------
 	print_subscripts2 x::xs
@@ -690,7 +691,7 @@ relation print_eqmod : EqMod option => () =
 
   axiom print_eqmod NONE
 
-  rule  print " = " & Exp.print_exp e
+  rule  Print.print_buf " = " & Exp.print_exp e
 	-----------------------------
 	print_eqmod SOME((e,prop))
 

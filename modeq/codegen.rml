@@ -33,6 +33,7 @@
 module Codegen :
 
   with "dae.rml"
+  with "print.rml"
 
 
   type Ident = string
@@ -174,17 +175,17 @@ relation c_print_function : CFunction => () =
 	Util.string_append_list [rt," ",fn,"(",args_str,") {"] => stmt_str &
 	
 	let i0 = 0 &
-	c_print_indented_list (rts,i0) => i1 & print "\n" &
-	c_print_indented (stmt_str,i1) => i2 & print "\n" &
-	c_print_indented_list (vd,i2)  => i3 & print "\n" &
-	c_print_indented_list (is,i3)  => i4 & print "\n" &
-	c_print_indented_list (st,i4)  => i5 & print "\n" &
-	c_print_indented_list (cl,i5)  => i6 & print "\n" &
-	c_print_indented      ("}",i6) => i7 & print "\n"
+	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
+	c_print_indented (stmt_str,i1) => i2 & Print.print_buf "\n" &
+	c_print_indented_list (vd,i2)  => i3 & Print.print_buf "\n" &
+	c_print_indented_list (is,i3)  => i4 & Print.print_buf "\n" &
+	c_print_indented_list (st,i4)  => i5 & Print.print_buf "\n" &
+	c_print_indented_list (cl,i5)  => i6 & Print.print_buf "\n" &
+	c_print_indented      ("}",i6) => i7 & Print.print_buf "\n"
 	-----------
 	c_print_function CFUNCTION(rt,fn,rts,ad,vd,is,st,cl)
 
-  rule	print "# c_print_function_failed\n"
+  rule	Print.print_buf "# c_print_function_failed\n"
 	-----------
 	c_print_function _
 end
@@ -193,7 +194,7 @@ relation c_print_indented_list : (string list, int) => int =
 	
   axiom c_print_indented_list ([],i) => i
 
-  rule	c_print_indented(f,i) => i' & print "\n" &
+  rule	c_print_indented(f,i) => i' & Print.print_buf "\n" &
 	c_print_indented_list(r,i') => i''
 	-----------------
 	c_print_indented_list(f::r,i) => i''
@@ -206,7 +207,7 @@ relation c_print_indented : (string, int) => int =
 	c_next_level(strl,i) => i' &
 	c_this_level(strl,i) => it &
 	c_print_indent it &
-	print str 
+	Print.print_buf str 
 	-----------
 	c_print_indented (str,i) => i'
 end
@@ -253,7 +254,7 @@ relation c_print_indent : int => () =
 
   axiom c_print_indent 0
 
-  rule	print " " &
+  rule	Print.print_buf " " &
 	int_sub(i,1) => i' &
 	c_print_indent i'
 	----------------
@@ -348,13 +349,13 @@ relation generate_functions : DAE.DAElist => () =
 
   rule	Debug.fprintln ("cgtr", "generate_functions") &
 	generate_functions_elist elist => cfns &
-	print "#include \"modelica.h\"\n" &
+	Print.print_buf "#include \"modelica.h\"\n" &
 	c_print_functions cfns &
-	print "\n"
+	Print.print_buf "\n"
 	------------------------------
 	generate_functions DAE.DAE(elist)
 
-  rule	print "# generate_functions failed\n"
+  rule	Print.print_buf "# generate_functions failed\n"
 	--------------------------------------
 	generate_functions _ 
 
@@ -427,7 +428,7 @@ relation generate_function : DAE.Element => CFunction list =
 	generate_function DAE.COMP(n, DAE.DAE(daelist)) => cfns
 
 
-  rule	print "# generate_function failed\n"
+  rule	Print.print_buf "# generate_function failed\n"
 	------------------------------------
 	generate_function _ => fail
 	
@@ -451,9 +452,9 @@ relation generate_result_struct : (DAE.Element list, Absyn.Path)
   rule	DAE.get_vars ( daelist, DAE.is_parameter ) => params &
 	list_length params => nbrparams &
 	int_le (nbrparams, 0) => true &
-	print "#-- no params in " &
-	print n &
-	print "\n"
+	Print.print_buf "#-- no params in " &
+	Print.print_buf n &
+	Print.print_buf "\n"
 	-----------------------------------------
 	generate_params_struct (daelist, n)
 *)
@@ -511,9 +512,9 @@ relation generate_return_decl: DAE.Element => (string, string) =
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (id_str,_) &
 	Util.string_append_list([typ_str," ",id_str,";"]) => decl_str &
-	print "# default/init values not implemented yet: " &
-	Exp.print_exp e &
-	print "\n"
+	Print.print_buf "# default/init values not implemented yet: " &
+	Exp.print_exp_str e => str & Print.print_buf str &
+	Print.print_buf "\n"
 	-----------
 	generate_return_decl (DAE.VAR(id, 
 				      DAE.VARIABLE, 
@@ -645,8 +646,8 @@ relation generate_type : Types.Type => string =
   axiom	generate_type Types.T_BOOL => "modelica_boolean"
 
 
-  rule	print "#-- generate_type failed: " &
-	Types.print_type ty & print "\n"
+  rule	Print.print_buf "#-- generate_type failed: " &
+	Types.print_type ty & Print.print_buf "\n"
 	--------------------------------
 	generate_type ty => fail
 
@@ -698,14 +699,14 @@ end
 relation print_int : int => () =
 
   rule	int_string i => str &
-	print str
+	Print.print_buf str
 	---------
 	print_int i
 end
 
 relation print_star : int => () =
 
-  rule	print "*"
+  rule	Print.print_buf "*"
 	---------
 	print_star i
 
@@ -751,9 +752,9 @@ relation generate_simple_type : Types.Type => string =
 	-----------------------
 	generate_simple_type (t as Types.T_ARRAY(_,_)) => t_str
 
-  rule	print "#--generate_simple_type failed " &
+  rule	Print.print_buf "#--generate_simple_type failed " &
 	Types.print_type ty & 
-	print "\n"
+	Print.print_buf "\n"
 	--------------------------------------
 	generate_simple_type ty => fail
 end
@@ -896,8 +897,8 @@ relation generate_size_subscripts : (Exp.Subscript list,int)
 	generate_size_subscripts (Exp.INDEX(e)::r,tnr)
 	  => (cfn,var1::vars2,tnr2)
 
-  rule	print "# generate_size_subscripts failed\n" & print " - [" &
-	Dump.print_list(subs,Exp.print_subscript,", ") & print "]\n"
+  rule	Print.print_buf "# generate_size_subscripts failed\n" & Print.print_buf " - [" &
+	Dump.print_list(subs,Exp.print_subscript,", ") & Print.print_buf "]\n"
 	-----------
 	generate_size_subscripts(subs,_) => fail
 
@@ -942,7 +943,7 @@ relation generate_algorithm: (DAE.Element, int)
 	generate_algorithm (DAE.ALGORITHM(Algorithm.ALGORITHM(stmts)),tnr)
 	  => (cfn,tnr')
 
-  rule	print "# generate_algorithm failed\n"
+  rule	Print.print_buf "# generate_algorithm failed\n"
 	------------------------------------
   	generate_algorithm (_,_) => fail
 
@@ -1134,11 +1135,11 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_algorithm_statement (Algorithm.WHILE(e,stmts),tnr) 
 	  => (cfn,tnr3)
 
-  rule	print "# when statement not implemented\n"
+  rule	Print.print_buf "# when statement not implemented\n"
 	-------------------------
 	generate_algorithm_statement (Algorithm.WHEN(_,_),_) => fail
 
-  rule	print "# generate_algorithm_statement failed\n"
+  rule	Print.print_buf "# generate_algorithm_statement failed\n"
 	-------------------------
 	generate_algorithm_statement (_,_) => fail
 
@@ -1166,7 +1167,7 @@ relation generate_range_expressions : (Exp.Exp, int)
 	generate_range_expressions(Exp.RANGE(t,e1,SOME(e2),e3),tnr) 
 	  => (cfn,var1,var2,var3,tnr3)
 
-  rule	print "# generate_range_expressions failed\n"
+  rule	Print.print_buf "# generate_range_expressions failed\n"
 	-----------------------
 	generate_range_expressions(_,_) => fail
 
@@ -1195,7 +1196,7 @@ relation generate_else : (Algorithm.Else, int) => (CFunction, int) =
 	--------
 	generate_else (Algorithm.ELSE(stmts),tnr) => (cfn,tnr)
 
-  rule	print "# generate_else failed\n"
+  rule	Print.print_buf "# generate_else failed\n"
 	---------------
 	generate_else (_,_) => fail
 end
@@ -1217,7 +1218,7 @@ relation generate_vars : (DAE.Element list,DAE.Element => (),int)
 	--------------------
 	generate_vars (first :: rest,verify,tnr)  => (cfn,tnr2) 
 
-  rule	print "# generate_vars failed\n"
+  rule	Print.print_buf "# generate_vars failed\n"
 	---------------------------------
 	generate_vars (_,_,_) => fail
 	
@@ -1240,7 +1241,7 @@ relation generate_var_decls : (DAE.Element list,DAE.Element => (),int)
 	--------------------
 	generate_var_decls (first :: rest,verify,tnr)  => (cfn,tnr2) 
 
-  rule	print "# generate_var_decls failed\n"
+  rule	Print.print_buf "# generate_var_decls failed\n"
 	---------------------------------
 	generate_var_decls (_,_,_) => fail
 	
@@ -1256,7 +1257,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	indent 2 &
 	DAE.dump_type typ &
 	Exp.print_component_ref id &
-	print " = 0;  /* Warning: without value, set to zero */\n"
+	Print.print_buf " = 0;  /* Warning: without value, set to zero */\n"
 	-----------
 	generate_var(DAE.VAR(id, DAE.PARAM, vd, typ, NONE,_))
 *)
@@ -1307,8 +1308,8 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	c_add_variables(cfn1,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	Util.if (is_a,cfn'',cfn') => cfn &
-	print "# default value not implemented yet: " &
-	Exp.print_exp e & print "\n"
+	Print.print_buf "# default value not implemented yet: " &
+	Exp.print_exp e & Print.print_buf "\n"
 	-----------
 	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) 
 	  => (cfn,tnr1)
@@ -1323,13 +1324,13 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	c_add_variables(cfn,[decl_str]) => cfn' &
 	Util.string_append_list([cref_str," = ",var,";"]) => init_stmt &
 	c_add_inits(cfn',[init_stmt]) => cfn'' &
-	print "# default value not implemented yet: " &
-	Exp.print_exp e & print "\n"
+	Print.print_buf "# default value not implemented yet: " &
+	Exp.print_exp e & Print.print_buf "\n"
 	-----------
 	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) => (cfn'',tnr1)
 	
-  rule	print "# generate_var failed\n  " &
-	DAE.dump_debug_element e & print "\n"
+  rule	Print.print_buf "# generate_var failed\n  " &
+	DAE.dump_debug_element e & Print.print_buf "\n"
 	-----------------------------------
 	generate_var (e,_) => fail
 end
@@ -1369,15 +1370,15 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 	Util.string_append_list([typ_str," ",cref_str,";",dim_comment'])
 	  => decl_str &
 	c_add_variables(c_empty_function,[decl_str]) => cfn &
-	print "# default value not implemented yet: " &
-	Exp.print_exp e & print "\n"
+	Print.print_buf "# default value not implemented yet: " &
+	Exp.print_exp e & Print.print_buf "\n"
 	-----------
 	generate_var_decl(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) 
 	  => (cfn,tnr)
 
 	
-  rule	print "# generate_var failed\n  " &
-	DAE.dump_debug_element e & print "\n"
+  rule	Print.print_buf "# generate_var failed\n  " &
+	DAE.dump_debug_element e & Print.print_buf "\n"
 	-----------------------------------
 	generate_var_decl (e,_) => fail
 end
@@ -1478,9 +1479,9 @@ relation generate_equations : DAE.Element list => () =
   axiom	generate_equations []
 
   rule	Exp.print_exp e1 &
-	print " = " &
+	Print.print_buf " = " &
 	Exp.print_exp e2 &
-	print ";\n" &
+	Print.print_buf ";\n" &
 	generate_equations rest
 	------------------
 	generate_equations DAE.EQUATION(e1,e2) :: rest
@@ -1493,9 +1494,9 @@ end
 
 relation generate_exp : Exp.Exp => () =
 
-  rule	print "{" &
+  rule	Print.print_buf "{" &
 	Exp.print_list (es, generate_exp, ", ") &
-	print "}"
+	Print.print_buf "}"
 	---------------------------------------
 	generate_exp Exp.ARRAY(_,_,es)
 
@@ -1553,7 +1554,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	------------------
 	generate_expression(Exp.RCONST(r),tnr) => (c_empty_function,rstr,tnr)
 	
-  rule	print "# sconst not implemented\n"
+  rule	Print.print_buf "# sconst not implemented\n"
 	-------------------------
 	generate_expression(Exp.SCONST(_),_) => fail
 
@@ -1688,7 +1689,7 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	-------------------------
 	generate_expression(Exp.RANGE(t,e1,SOME(e2),e3),tnr) => (cfn,tvar,tnr4)
 
-  rule	print "# tuple not implemented\n"
+  rule	Print.print_buf "# tuple not implemented\n"
 	-------------------------
 	generate_expression(Exp.TUPLE(_),_) => fail
 
@@ -1702,7 +1703,7 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	-------------------------------------
 	generate_expression(Exp.CAST(Exp.REAL,e),tnr) => (cfn,var',tnr')
 
-  rule	print "# asub not implemented\n"
+  rule	Print.print_buf "# asub not implemented\n"
 	-------------------------
 	generate_expression(Exp.ASUB(_,_),_) => fail
 
@@ -1743,7 +1744,7 @@ relation generate_unary : (Exp.Operator, Exp.Exp, int)
 	------------------------
 	generate_unary (Exp.UPLUS_ARR(Exp.INT), e, tnr) => (cfn, var, tnr')
 
-  rule	print "# unary minus for arrays not implemented\n"
+  rule	Print.print_buf "# unary minus for arrays not implemented\n"
 	------------------------
 	generate_unary (Exp.UMINUS_ARR(_), _, _) => fail
 
@@ -1792,15 +1793,15 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	------------------------------------
 	generate_binary(e1,Exp.DIV(_),e2,tnr) => (cfn,var,tnr2)
 
-  rule	print "# pow not implemented yet"
+  rule	Print.print_buf "# pow not implemented yet"
 	-------------------------------
 	generate_binary(e1,Exp.POW(_),e2,tnr) => fail
 
-  rule	print "# Unary minus in binary expression (internal error)"
+  rule	Print.print_buf "# Unary minus in binary expression (internal error)"
 	-------------------------
 	generate_binary(_,Exp.UMINUS(_),_,_) => fail
 	
-  rule	print "# Unary plus in binary expression (internal error)"
+  rule	Print.print_buf "# Unary plus in binary expression (internal error)"
 	-------------------------
 	generate_binary(_,Exp.UPLUS(_),_,_) => fail
 		
@@ -1942,19 +1943,19 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	generate_binary(e1,Exp.MUL_MATRIX_PRODUCT(Exp.INT),e2, tnr) 
 	  => (cfn,var,tnr3)
 
-  rule	print "# div_array_scalar not implemented\n"
+  rule	Print.print_buf "# div_array_scalar not implemented\n"
 	-------------------------
 	generate_binary(_,Exp.DIV_ARRAY_SCALAR(_),_,_) => fail
 
-  rule	print "# pow_array not implemented\n"
+  rule	Print.print_buf "# pow_array not implemented\n"
 	-------------------------
 	generate_binary(_,Exp.POW_ARR(_),_,_) => fail
 
-  rule	print "# div_array_scalar not implemented\n"
+  rule	Print.print_buf "# div_array_scalar not implemented\n"
 	-------------------------
 	generate_binary(_,Exp.DIV_ARRAY_SCALAR(_),_,_) => fail
 
-  rule	print "# generate_binary failed\n"
+  rule	Print.print_buf "# generate_binary failed\n"
 	-------------------------
 	generate_binary(_,_,_,_) => fail
 
@@ -2025,7 +2026,7 @@ relation generate_scalar_lhs_cref : (Exp.Type, Exp.ComponentRef, int)
 	generate_scalar_lhs_cref(t,Exp.CREF_IDENT(id,idx),tnr)
 	  => (cfn1,cref1,tnr1)
   
-  rule	print "# generate_scalar_lhs_cref failed\n"
+  rule	Print.print_buf "# generate_scalar_lhs_cref failed\n"
 	-----------------------------
 	generate_scalar_lhs_cref(_,_,_) => fail
 
@@ -2140,7 +2141,7 @@ relation generate_index_spec : (Exp.Subscript list, int)
 	---------------------------------------------
 	generate_index_spec (subs, tnr) => (cfn,spec,tnr2)
 
-  rule	print "# generate_index_spec failed\n"
+  rule	Print.print_buf "# generate_index_spec failed\n"
 	-----------------------------
 	generate_index_spec(_,_) => fail
 
@@ -2160,7 +2161,7 @@ relation generate_indices_array : (Exp.Subscript list, int)
 	---------
 	generate_indices_array (f::r, tnr) => (cfn,idxs,idxsizes,tnr2)
 
-  rule	print "# generate_indices_array failed\n"
+  rule	Print.print_buf "# generate_indices_array failed\n"
 	-----------------------------
 	generate_indices_array(_,_) => fail
 
@@ -2179,7 +2180,7 @@ relation generate_indices : (Exp.Subscript list, int)
 	---------
 	generate_indices (f::r, tnr) => (cfn,idxs,tnr2)
 
-  rule	print "# generate_indices failed\n"
+  rule	Print.print_buf "# generate_indices failed\n"
 	-----------------------------
 	generate_indices(_,_) => fail
 
@@ -2202,7 +2203,7 @@ relation generate_index_array : (Exp.Subscript, int)
 	  => (c_empty_function,idx,idxsize,tnr)
 
 	  
-  rule	print "# generate_index_array failed\n"
+  rule	Print.print_buf "# generate_index_array failed\n"
 	-----------------------------
 	generate_index_array(_,_) => fail
 
@@ -2215,7 +2216,7 @@ relation generate_index : (Exp.Subscript, int)
 	------------------------------------
 	generate_index(Exp.INDEX(e), tnr) => (cfn,var1,tnr1)
 
-  rule	print "# generate_index failed\n"
+  rule	Print.print_buf "# generate_index failed\n"
 	-----------------------------
 	generate_index(_,_) => fail
 
@@ -2280,7 +2281,7 @@ relation generate_lbinary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	generate_lbinary (e1,Exp.OR,e2,tnr) => (cfn, var, tnr2)
 
 
-  rule	print "# generate_lbinary failed\n"
+  rule	Print.print_buf "# generate_lbinary failed\n"
 	-----------------------------
 	generate_lbinary (_,_,_,_) => fail
 
@@ -2305,7 +2306,7 @@ relation generate_lunary : (Exp.Operator, Exp.Exp, int)
 	generate_lunary (Exp.NOT,e,tnr) => (cfn1, var, tnr1)
 
 
-  rule	print "# generate_lbinary failed\n"
+  rule	Print.print_buf "# generate_lbinary failed\n"
 	-----------------------------
 	generate_lunary (_,_,_) => fail
 
@@ -2331,7 +2332,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.LESS(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# string comparison not supported\n"
+  rule	Print.print_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.LESS(Exp.STRING),e2,tnr) => fail
 
@@ -2356,7 +2357,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.GREATER(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# string comparison not supported\n"
+  rule	Print.print_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.GREATER(Exp.STRING),e2,tnr) => fail
 
@@ -2381,7 +2382,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.LESSEQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# string comparison not supported\n"
+  rule	Print.print_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.LESSEQ(Exp.STRING),e2,tnr) => fail
 
@@ -2406,7 +2407,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.GREATEREQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# string comparison not supported\n"
+  rule	Print.print_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.GREATEREQ(Exp.STRING),e2,tnr) => fail
 
@@ -2432,7 +2433,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# string comparison not supported\n"
+  rule	Print.print_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.STRING),e2,tnr) => fail
 
@@ -2443,7 +2444,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.INT),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# Reals can't be compared with ==\n"
+  rule	Print.print_buf "# Reals can't be compared with ==\n"
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.REAL),e2,tnr) => fail
 
@@ -2455,7 +2456,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# string comparison not supported\n"
+  rule	Print.print_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.STRING),e2,tnr) => fail
 
@@ -2466,12 +2467,12 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.INT),e2,tnr) => (cfn, var, tnr2)
 
-  rule	print "# Reals can't be compared with <>\n"
+  rule	Print.print_buf "# Reals can't be compared with <>\n"
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.REAL),e2,tnr) => fail
 
 
-  rule	print "# generate_relation failed\n"
+  rule	Print.print_buf "# generate_relation failed\n"
 	-----------------------------
 	generate_relation (_,_,_,_) => fail
 

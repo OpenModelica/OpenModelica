@@ -90,7 +90,7 @@ returns multiple arguments. *)
 	  => (Exp.Subscript list, bool)
 
   (* Constant propagation *)
-  relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
+  relation ceval : (Env.Env, Exp.Exp, bool)	  => Values.Value
   relation ceval_list : (Env.Env, Exp.Exp list)	  => Values.Value list
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
 
@@ -115,6 +115,8 @@ returns multiple arguments. *)
 end
 
 with "dump.rml"
+with "print.rml"
+with "system.rml"
 
 (** LS:
  ** - Expression elaboration
@@ -295,7 +297,7 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
 		   c))
 
-  rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
+  rule	Print.print_buf "- elab_exp failed: " & Dump.print_exp e & Print.print_buf "\n"
 	-----------------------------------------------------------
 	elab_exp(_,e) => fail
 
@@ -456,7 +458,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
 		   c))
 
-  rule	print "- elab_graphics_exp failed: " & Dump.print_exp e & print "\n"
+  rule	Print.print_buf "- elab_graphics_exp failed: " & Dump.print_exp e & Print.print_buf "\n"
 	-----------------------------------------------------------
 	elab_graphics_exp(_,e) => fail
 
@@ -491,16 +493,16 @@ end
 relation elab_range_type : (Env.Env, Exp.Exp,
 			    Exp.Exp option, Exp.Exp, bool,Exp.Type) => Types.Type =
 
-  rule	ceval (env,start) => Values.INTEGER(startv) &
-	ceval (env,stop) => Values.INTEGER(stopv) &
+  rule	ceval (env,start,false) => Values.INTEGER(startv) &
+	ceval (env,stop,false) => Values.INTEGER(stopv) &
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_INTEGER)
 
-  rule	ceval (env,start) => Values.INTEGER(startv) &
-	ceval (env,step) => Values.INTEGER(stepv) &
-	ceval (env,stop) => Values.INTEGER(stopv) &
+  rule	ceval (env,start,false) => Values.INTEGER(startv) &
+	ceval (env,step,false) => Values.INTEGER(stepv) &
+	ceval (env,stop,false) => Values.INTEGER(stopv) &
 	int_sub (stopv,startv) => n &
 	int_div (n,stepv) => n' &
  	int_add (n',1) => n''
@@ -508,8 +510,8 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,SOME(step),stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER)
 
-  rule	ceval (env,start) => Values.REAL(startv) &
-	ceval (env,stop) => Values.REAL(stopv) &
+  rule	ceval (env,start,false) => Values.REAL(startv) &
+	ceval (env,stop,false) => Values.REAL(stopv) &
 	real_sub (stopv,startv) => n &
 	real_floor n => n'' &
 	real_int n'' => n''' &
@@ -518,9 +520,9 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_REAL)
 
-  rule	ceval (env,start) => Values.REAL(startv) &
-	ceval (env,step) => Values.REAL(stepv) &
-	ceval (env,stop) => Values.REAL(stopv) &
+  rule	ceval (env,start,false) => Values.REAL(startv) &
+	ceval (env,step,false) => Values.REAL(stepv) &
+	ceval (env,stop,false) => Values.REAL(stopv) &
 	real_sub (stopv,startv) => n &
 	real_div (n,stepv) => n' &
 	real_floor n' => n''' &
@@ -581,15 +583,15 @@ relation elab_array : (Env.Env, Absyn.Exp list)
   rule	elab_exp (env,e) => (e',PROP(t1,c1)) &
 	elab_array (env,es) => (es',PROP(t2,c2)) &
 	not t1 = t2 &
-	print "# Incompatible types in array expression\n" &
-	print "  " & Dump.print_exp e & print " is of type " &
- 	Types.print_type t1 & print "\n  while the elements [" &
+	Print.print_buf "# Incompatible types in array expression\n" &
+	Print.print_buf "  " & Dump.print_exp e & Print.print_buf " is of type " &
+ 	Types.print_type t1 & Print.print_buf "\n  while the elements [" &
         Dump.print_list (es, Dump.print_exp, ",") &
-	print "] are of type " & Types.print_type t2 & print "\n"
+	Print.print_buf "] are of type " & Types.print_type t2 & Print.print_buf "\n"
 	---------------------------------------------------------
 	elab_array (env,e::es) => fail
 
-  rule	print "- elab_array failed\n"
+  rule	Print.print_buf "- elab_array failed\n"
 	-----------------------------
 	elab_array (_,_) => fail
 
@@ -608,7 +610,7 @@ relation elab_graphics_array : (Env.Env, Absyn.Exp list)
 	---------------------------------
 	elab_graphics_array (env,e::es) => (e'::es',PROP(t1,c))
 
-  rule	print "- elab_graphics_array failed\n"
+  rule	Print.print_buf "- elab_graphics_array failed\n"
 	-----------------------------
 	elab_graphics_array (_,_) => fail
 
@@ -704,30 +706,30 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list)
 
 	(**  Error messages *)
 (*
-  rule	print "- How the f*ck did you write an empty matrix?\n"
+  rule	Print.print_buf "- How the f*ck did you write an empty matrix?\n"
 	-------------------------------------------------------
 	elab_matrix_semi(_,[]) => fail
 
   rule	elab_array(env,el) => (el',PROP(t1,c1)) &
 	elab_matrix(env,els) => (els',t2,dim2,c2) &
 	not t1 = t2 &
-	print "# Incompatible types in matrix rows\n" &
-	print "    [" & Dump.print_list(el,Dump.print_exp,",") &
-	print "] is a row of " & Types.print_type t1 & print "\n" &
-	print "    the rest of the matrix is of " &
-	Types.print_type t2 & print "\n"
+	Print.print_buf "# Incompatible types in matrix rows\n" &
+	Print.print_buf "    [" & Dump.print_list(el,Dump.print_exp,",") &
+	Print.print_buf "] is a row of " & Types.print_type t1 & Print.print_buf "\n" &
+	Print.print_buf "    the rest of the matrix is of " &
+	Types.print_type t2 & Print.print_buf "\n"
 	--------------------------------
 	elab_matrix_semi(env,el::els) => fail
 
   rule	list_length(el) => dim1 &
 	elab_matrix(env,els) => (els',t2,dim2,c2) &
 	not dim1 = dim2 &
-	print "# Incompatible row length in matrix expression\n" &
-	print "    [" & Dump.print_list(el,Dump.print_exp,",") &
-	print "] is a row of size " &
-	int_string dim1 => s & print s & print "\n" &
-	print "    the rest of the matrix rows are of size " &
-	int_string dim2 => s & print s & print "\n"
+	Print.print_buf "# Incompatible row length in matrix expression\n" &
+	Print.print_buf "    [" & Dump.print_list(el,Dump.print_exp,",") &
+	Print.print_buf "] is a row of size " &
+	int_string dim1 => s & Print.print_buf s & Print.print_buf "\n" &
+	Print.print_buf "    the rest of the matrix rows are of size " &
+	int_string dim2 => s & Print.print_buf s & Print.print_buf "\n"
 	--------------------------------------------
 	elab_matrix_semi(env,el::els) => fail
 *)
@@ -740,7 +742,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	(** implemented, just size(A,x) that returns size of x:th dimension *)
 
   rule	elab_exp (env,ind) => (indexp, PROP(indty, true)) &
-	ceval (env, indexp) => Values.INTEGER(value) &
+	ceval (env, indexp,false) => Values.INTEGER(value) &
 	int_string(value) => strval &
 	elab_exp (env,arraycr) => (Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
@@ -771,14 +773,14 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	elab_builtin_size (env, [arraycr,ind]) 
 	  => (exp, prop)
 
-  rule	print "#-- elab_builtin_size: Couldn't elaborate size()\n" &
-	print "#-- Wrong args or non-constant dimension\n" &
-	print "#env: " &
+  rule	Print.print_buf "#-- elab_builtin_size: Couldn't elaborate size()\n" &
+	Print.print_buf "#-- Wrong args or non-constant dimension\n" &
+	Print.print_buf "#env: " &
 	Env.print_env env &
-	print "\n" &
-	print "expl = " &
+	Print.print_buf "\n" &
+	Print.print_buf "expl = " &
 	Debug.fprint_list ("peter6",expl,Dump.print_exp,", ") &
-	print "\n" 
+	Print.print_buf "\n" 
 	----------------------------------------------------------
 	elab_builtin_size (env,expl) => fail
 
@@ -786,7 +788,7 @@ end
 
 relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Properties) =
 
-  rule	print "# Error non-constant dimension\n"
+  rule	Print.print_buf "# Error non-constant dimension\n"
 	---------------------------------------
 	elab_builtin_size_2(env, Types.T_ARRAY(Types.DIM(NONE),ty), 1) => fail
 
@@ -798,11 +800,11 @@ relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Propertie
 	--------------------------------------------------
 	elab_builtin_size_2 (env, Types.T_ARRAY(_, ty), ind) => (exp, prop)
 
-  rule	print "# elab_builtin_size_2 failed\n type:" &
+  rule	Print.print_buf "# elab_builtin_size_2 failed\n type:" &
 	Types.print_type tp &
-	print " ind:" &
-	int_string ind => indstr & print indstr &
-	print "\n"
+	Print.print_buf " ind:" &
+	int_string ind => indstr & Print.print_buf indstr &
+	Print.print_buf "\n"
 	--------------------------------------
 	elab_builtin_size_2(_,tp,ind) => fail
 end
@@ -843,7 +845,7 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 	elab_builtin_fill_2 (env, s, sty, Values.INTEGER(v)::rest) 
 	  => (Exp.ARRAY(at,a,arraylist), PROP(Types.T_ARRAY(Types.DIM(SOME(v)), ty), true))
 	
-  rule	print "#-- elab_builtin_fill_2: Failed to elaborate fill()\n"
+  rule	Print.print_buf "#-- elab_builtin_fill_2: Failed to elaborate fill()\n"
 	-------------------------------------------------------------
 	elab_builtin_fill_2 (_,_,_,_) => fail
 
@@ -925,7 +927,7 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	------------------------------------
 	elab_call (env,fn,args,nargs) => (e,prop)
 
-  rule	print "- elab_call failed\n"
+  rule	Print.print_buf "- elab_call failed\n"
 	----------------------------
 	elab_call (env,fn,args,nargs) => fail
 
@@ -1030,12 +1032,12 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
 (*	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) & *)
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
-	print "We got the type list\n" & 
+	Print.print_buf "We got the type list\n" & 
 	elab_types (env, args, typelist) => (args', c, restype) &
-(*	& print "We just elaborated the types\n"  *)
+(*	& Print.print_buf "We just elaborated the types\n"  *)
 	is_tuple restype => tuple &
 	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
-(*	print "Debug: We did a lookup T_FUNCTION " &
+(*	Print.print_buf "Debug: We did a lookup T_FUNCTION " &
 *)
 (*PR.	elab_input_args(env, args, params) => (args',c)  *)
 	Debug.fprintln ("sei", "elab_call_args succeeded")
@@ -1044,12 +1046,12 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 
   rule	not Lookup.lookup_type(env,fn) => _ &
 	
-	print "# Couldn't find function " & Dump.print_path fn & print "\n"
+	Print.print_buf "# Couldn't find function " & Dump.print_path fn & Print.print_buf "\n"
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,_,_) => fail
 
   rule	(*elab_exp(env, e) => (e',PROP(t,_)) &*)
-	print "- elab_call_args failed\n"
+	Print.print_buf "- elab_call_args failed\n"
 	---------------------------------
 	elab_call_args(_,_,_,_) => fail
 
@@ -1262,13 +1264,13 @@ relation function_params : Types.Var list => (Types.FuncArg list,
 					 false,t,Types.UNBOUND)::vs)
 	  => (in, (n,t)::out)
 
-  rule	print "# Components in functions must be INPUT or OUTPUT\n" &
-	print "    component: " & print n & print "\n"
+  rule	Print.print_buf "# Components in functions must be INPUT or OUTPUT\n" &
+	Print.print_buf "    component: " & Print.print_buf n & Print.print_buf "\n"
 	----------------------------------------------
 	function_params((v as Types.VAR(n,Types.ATTR(_,_,_,Absyn.BIDIR),_,_,_))
 			::vs) => fail
 
-  rule	print "- function_params failed\n"
+  rule	Print.print_buf "- function_params failed\n"
 	----------------------------------
 	function_params _ => fail
 
@@ -1314,7 +1316,7 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, Slot l
 	
   axiom	elab_input_args(env,[],[],slots) => ([],slots,true)
 	
-  rule	print "#Error, elab_input_args failed.\n"
+  rule	Print.print_buf "#Error, elab_input_args failed.\n"
 	-----------------------------------------
 	elab_input_args(_,_,_,_) => fail
 end
@@ -1369,9 +1371,9 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
 	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,SOME(exp'))::res
 
   rule	fill_default_slots(xs,class,env) => res &
-	print "#Error filling slot, id =" &
-	print id &
-	print "\n"
+	Print.print_buf "#Error filling slot, id =" &
+	Print.print_buf id &
+	Print.print_buf "\n"
 	----------
 	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env) => SLOT((id,tp),true,e)::xs
 
@@ -1379,14 +1381,14 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
 end
 
 relation print_slots: Slot list => () =
-  rule	print "SLOT(" &
+  rule	Print.print_buf "SLOT(" &
 	Types.print_farg farg &
-	print  ", " &
+	Print.print_buf  ", " &
 	Dump.print_select(filled,"filled","not filled") &
-	print ", " &
+	Print.print_buf ", " &
 	Dump.get_option_str(exp,Exp.print_exp_str) => str &
-	print str &
-	print ")\n" &
+	Print.print_buf str &
+	Print.print_buf ")\n" &
 	print_slots(xs)
 	---------------
 	print_slots (SLOT(farg,filled,exp)::xs) => ()
@@ -1481,7 +1483,7 @@ relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
 	fill_slot((fa1,_), exp,SLOT((fa2,b),false,_)::xs) => SLOT((fa2,b),true,SOME(exp))::xs
 
   rule	fa1 = fa2 &
-	print "#Error, slot in functional argument allready filled.\b" 
+	Print.print_buf "#Error, slot in functional argument allready filled.\b" 
 	--------------------------------------------------------------
 	fill_slot((fa1,_),exp, SLOT((fa2,b),true,_)::xs) => fail
 
@@ -1490,7 +1492,7 @@ relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
 	------------------------------
 	fill_slot((farg as (fa1,_)), exp,(s1 as SLOT((fa2,_),_,_))::xs) => s1::newslots
 
-  rule  print "#Error, slot not found in function type.\n"
+  rule  Print.print_buf "#Error, slot not found in function type.\n"
 	---------------------------------------------------
 	fill_slot(_,_,_) => fail
 end
@@ -1533,12 +1535,12 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	elab_cref(env, c) => (exp, PROP(t, const), acc')
 
   rule	elab_cref_subs (env,c) => (c', const) &
-	print "# Unknown component: " & Dump.print_component_ref c & print "\n" &
+	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\n" &
 	Env.print_env env
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
-  rule	print "- elab_cref failed: " & Dump.print_component_ref c & print "\n"
+  rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n"
 	------------------------------
 	elab_cref (_,c) => fail
 
@@ -1637,19 +1639,19 @@ relation elab_cref2 : (Env.Env,
 	-----------------
 	elab_cref2(env,cr,acc,_,tt as Types.T_ENUM,_) => (Exp.CREF(cr,t),true,acc)
 
-  rule	print "# Constant or parameter with a non-constant initializer\n" &
-	print "# component: " & Exp.print_component_ref cr & print " = " &
-	Exp.print_exp exp & print "\n"
+  rule	Print.print_buf "# Constant or parameter with a non-constant initializer\n" &
+	Print.print_buf "# component: " & Exp.print_component_ref cr & Print.print_buf " = " &
+	Exp.print_exp exp & Print.print_buf "\n"
 	------------------------------
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,false)) => fail
 
-  rule	print "# Constant or parameter without a value\n" &
-	print "# component: " & Exp.print_component_ref cr & print "\n"
+  rule	Print.print_buf "# Constant or parameter without a value\n" &
+	Print.print_buf "# component: " & Exp.print_component_ref cr & Print.print_buf "\n"
 	----------------------------------------------
 	elab_cref2 (_,cr,_,_,_,Types.UNBOUND) => fail
 
-  rule	print "- elab_cref2 failed (component: " &
-	Exp.print_component_ref cr & print ")\n"
+  rule	Print.print_buf "- elab_cref2 failed (component: " &
+	Exp.print_component_ref cr & Print.print_buf ")\n"
 	----------------------------------------
 	elab_cref2 (_,cr,_,_,_,_) => fail
 
@@ -1738,9 +1740,9 @@ relation elab_subscript_type : (Types.Type, Absyn.Exp, Exp.Exp)
   axiom	elab_subscript_type (Types.T_ARRAY(_,Types.T_INTEGER),_,sub)
 	  => Exp.SLICE(sub)
 
-  rule	print "# Subscript is not an integer or integer array\n" &
-	print "    expression: " & Dump.print_exp e &
- 	print " :: " & Types.print_type t & print "\n"
+  rule	Print.print_buf "# Subscript is not an integer or integer array\n" &
+	Print.print_buf "    expression: " & Dump.print_exp e &
+ 	Print.print_buf " :: " & Types.print_type t & Print.print_buf "\n"
 	------------------------------------------------------
 	elab_subscript_type (t,e,_) => fail
 
@@ -1811,8 +1813,8 @@ relation subscript_type : (Types.Type, Exp.Subscript list)
 			Exp.WHOLEDIM::subs)
 	  => Types.T_ARRAY(dim,t')
 
-  rule	print "- subscript_type failed (" & Types.print_type t &
-	print " , [...])\n"
+  rule	Print.print_buf "- subscript_type failed (" & Types.print_type t &
+	Print.print_buf " , [...])\n"
 	-------------------
 	subscript_type (t,_) => fail
 
@@ -1836,23 +1838,23 @@ relation elab_ifexp : (Exp.Exp, Properties,
 		   e3,PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3), PROP(t2, c))
 
   rule	not t1 = Types.T_BOOL &
-	print "# conditional in if expression has to be boolean\n" &
-	print "    got type: " & Types.print_type t1 & print "\n" &
-	print "    expression: " & Exp.print_exp e1 & print "\n"
+	Print.print_buf "# conditional in if expression has to be boolean\n" &
+	Print.print_buf "    got type: " & Types.print_type t1 & Print.print_buf "\n" &
+	Print.print_buf "    expression: " & Exp.print_exp e1 & Print.print_buf "\n"
 	--------------------------------------------------------
 	elab_ifexp(e1,PROP(t1,c1),e2,PROP(t2,c2),e3,PROP(t3,c3)) => fail
 
   rule	Types.equivtypes(t2,t3) => false &
-	print "# Type mismatch in if-expression\n" &
-	print "    true branch : " & Exp.print_exp e2 &
- 	print " :: " & Types.print_type t2 & print "\n" &
-	print "    false branch: " & Exp.print_exp e3 &
- 	print " :: " & Types.print_type t3 & print "\n"
+	Print.print_buf "# Type mismatch in if-expression\n" &
+	Print.print_buf "    true branch : " & Exp.print_exp e2 &
+ 	Print.print_buf " :: " & Types.print_type t2 & Print.print_buf "\n" &
+	Print.print_buf "    false branch: " & Exp.print_exp e3 &
+ 	Print.print_buf " :: " & Types.print_type t3 & Print.print_buf "\n"
 	-----------------------------------------------
 	elab_ifexp(e1,PROP(Types.T_BOOL,c1),
 		   e2,PROP(t2,c2),e3,PROP(t3,c3)) => fail
 
-  rule	print "- elab_ifexp failed\n"
+  rule	Print.print_buf "- elab_ifexp failed\n"
 	-----------------------------
 	elab_ifexp(_,_,_,_,_,_) => fail
 
@@ -1882,218 +1884,240 @@ end
  ** its value.
  **)
 
-relation ceval : (Env.Env, Exp.Exp) => Values.Value =
+relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
 
-  axiom	ceval (_,Exp.ICONST(x)) => Values.INTEGER(x)
-  axiom	ceval (_,Exp.RCONST(x)) => Values.REAL(x)
-  axiom ceval (_,Exp.SCONST(x)) => Values.STRING(x)
-  axiom ceval (_,Exp.BCONST(x)) => Values.BOOL(x)
+  axiom	ceval (_,Exp.ICONST(x),_) => Values.INTEGER(x)
+  axiom	ceval (_,Exp.RCONST(x),_) => Values.REAL(x)
+  axiom ceval (_,Exp.SCONST(x),_) => Values.STRING(x)
+  axiom ceval (_,Exp.BCONST(x),_) => Values.BOOL(x)
 
   rule	ceval_list (env,es) => es' &
 	list_length es' => l
 	------------------------------
-	ceval (env,Exp.ARRAY(_,_,es)) => Values.ARRAY(es')
+	ceval (env,Exp.ARRAY(_,_,es),_) => Values.ARRAY(es')
 
   rule	ceval_matrixelt(env,expll) => elts
 	------------------------------
-	ceval (env, Exp.MATRIX(_,_,expll)) => Values.ARRAY(elts)
+	ceval (env, Exp.MATRIX(_,_,expll),_) => Values.ARRAY(elts)
 
   rule	ceval_cref (env,c) => v
 	---------------------------
-	ceval (env,Exp.CREF(c,_)) => v 
+	ceval (env,Exp.CREF(c,_),_) => v 
 
-  rule	print "# Can't call functions at compile time\n" &
-	print "    expression: " & Exp.print_exp e & print "\n"
+  rule	Print.print_buf "# Can't call functions at compile time\n" &
+	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(_,_,_,_)) => fail
+	ceval (env, e as Exp.CALL(_,_,_,_),false) => fail
+
+  rule	(* Call externally implemented functions, if present *)
+	ceval_list(env,expl) => vallst &
+	Absyn.path_string(func) => funcstr &
+	string_append(funcstr,"_in.txt") => infilename &
+	string_append(funcstr,"_out.txt") => outfilename &
+	Values.write_to_file_as_args(vallst,infilename)  &
+	System.execute_function(funcstr) &
+	System.read_values_from_file(outfilename) => newval
+	-------------------------------------------------------
+	ceval (env, e as Exp.CALL(func,expl,_,_),true) => newval
 
 	(**  Numerical *)
 
-  rule	ceval (env, lh) => Values.REAL(lhv) &
-	ceval (env, rh) => Values.REAL(rhv) &
+  rule	ceval (env, lh, i) => Values.REAL(lhv) &
+	ceval (env, rh, i) => Values.REAL(rhv) &
 	real_add(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh))
+	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh),i)
 	  => Values.REAL(sum)
 
-  rule	ceval (env,lh) => Values.ARRAY(vlst1) &
-	ceval (env,rh) => Values.ARRAY(vlst2) &
+  rule	ceval (env,lh,i) => Values.ARRAY(vlst1) &
+	ceval (env,rh,i) => Values.ARRAY(vlst2) &
 	Values.add_elementwise_arrayelt(vlst1, vlst2) => reslst
 	-------------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.ADD_ARR(_),rh)) => Values.ARRAY(reslst)
+	ceval (env, Exp.BINARY(lh, Exp.ADD_ARR(_),rh),i) 
+	  => Values.ARRAY(reslst)
 
-  rule	ceval (env,lh) => Values.ARRAY(vlst1) &
-	ceval (env,rh) => Values.ARRAY(vlst2) &
+  rule	ceval (env,lh,i) => Values.ARRAY(vlst1) &
+	ceval (env,rh,i) => Values.ARRAY(vlst2) &
 	Values.sub_elementwise_arrayelt(vlst1, vlst2) => reslst
 	-------------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh)) => Values.ARRAY(reslst)
+	ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh),i) => Values.ARRAY(reslst)
 
-  rule	ceval (env,lh) => sval &
-	ceval (env,rh) => Values.ARRAY(aval) &
+  rule	ceval (env,lh,i) => sval &
+	ceval (env,rh,i) => Values.ARRAY(aval) &
 	Values.mult_scalar_arrayelt(sval,aval) => reslst
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_ARRAY(_), rh)) => Values.ARRAY(reslst)
+	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_ARRAY(_), rh),i) 
+	  => Values.ARRAY(reslst)
 
-  rule	ceval (env,rh) => sval &
-	ceval (env,lh) => Values.ARRAY(aval) &
+  rule	ceval (env,rh,i) => sval &
+	ceval (env,lh,i) => Values.ARRAY(aval) &
 	Values.mult_scalar_arrayelt(sval,aval) => reslst
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh)) => Values.ARRAY(reslst)
+	ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),i) 
+	  => Values.ARRAY(reslst)
 
-  rule	ceval (env,rh) => Values.ARRAY(rhvals) &
-	ceval (env,lh) => Values.ARRAY(lhvals) &
+  rule	ceval (env,rh,i) => Values.ARRAY(rhvals) &
+	ceval (env,lh,i) => Values.ARRAY(lhvals) &
 	Values.mult_scalar_product(rhvals,lhvals) => res
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh)) => res
+	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh),i) => res
 	
   rule	(* {{..}..{..}} * {...} *)
-	ceval (env,lh) => Values.ARRAY(lhvals as (elt1::_)) &
- 	ceval (env,rh) => Values.ARRAY(rhvals as (elt2::_)) &
+	ceval (env,lh,i) => Values.ARRAY(lhvals as (elt1::_)) &
+ 	ceval (env,rh,i) => Values.ARRAY(rhvals as (elt2::_)) &
 	Values.is_array(elt1) => true &
 	Values.is_array(elt2) => false &
 	Values.mult_scalar_product(lhvals,rhvals) => res
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh)) => res
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),i) => res
 
  rule	(* {...} * {{..}..{..}} *)
-	ceval (env,rh) => Values.ARRAY(rhvals as (elt1::_)) &
- 	ceval (env,lh) => Values.ARRAY(lhvals as (elt2::_)) &
+	ceval (env,rh,i) => Values.ARRAY(rhvals as (elt1::_)) &
+ 	ceval (env,lh,i) => Values.ARRAY(lhvals as (elt2::_)) &
 	Values.is_array(elt1) => true &
 	Values.is_array(elt2) => false &
 	Values.mult_scalar_product(lhvals,rhvals) => res
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh)) => res
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),i) => res
 
  rule	(* {{..}..{..}} * {{..}..{..}} *)
-	ceval (env,rh) => Values.ARRAY(rhvals as (elt1::_)) &
- 	ceval (env,lh) => Values.ARRAY(lhvals as (elt2::_)) &
+	ceval (env,rh,i) => Values.ARRAY(rhvals as (elt1::_)) &
+ 	ceval (env,lh,i) => Values.ARRAY(lhvals as (elt2::_)) &
 	Values.is_array(elt1) => true &
 	Values.is_array(elt2) => true &
 	Values.mult_matrix(lhvals,rhvals) => res
 	------------------------------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh)) => Values.ARRAY(res)
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),i) 
+	  => Values.ARRAY(res)
 
-  rule	ceval (env, lh) => Values.INTEGER(lhv) &
-	ceval (env, rh) => Values.INTEGER(rhv) &
+  rule	ceval (env,lh,i) => Values.INTEGER(lhv) &
+	ceval (env,rh,i) => Values.INTEGER(rhv) &
 	int_add(lhv, rhv) => sum
 	------------------------
- 	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh)) => Values.INTEGER(sum)
+ 	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh),i) 
+	  => Values.INTEGER(sum)
 	(**)
-  rule	ceval (env, lh) => Values.REAL(lhv) &
-	ceval (env, rh) => Values.REAL(rhv) &
+  rule	ceval (env,lh,i) => Values.REAL(lhv) &
+	ceval (env,rh,i) => Values.REAL(rhv) &
 	real_sub(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.REAL), rh)) => Values.REAL(sum)
+	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.REAL), rh),i) 
+	  => Values.REAL(sum)
 
-  rule	ceval (env, lh) => Values.INTEGER(lhv) &
-	ceval (env, rh) => Values.INTEGER(rhv) &
+  rule	ceval (env,lh,i) => Values.INTEGER(lhv) &
+	ceval (env, rh,i) => Values.INTEGER(rhv) &
 	int_sub(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh))
+	ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh),i)
 	  => Values.INTEGER(sum)
 	(**)
-  rule	ceval (env, lh) => Values.REAL(lhv) &
-	ceval (env, rh) => Values.REAL(rhv) &
+  rule	ceval (env,lh,i) => Values.REAL(lhv) &
+	ceval (env,rh,i) => Values.REAL(rhv) &
 	real_mul(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh)) => Values.REAL(sum)
+	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh),i) 
+	  => Values.REAL(sum)
 
-  rule	ceval (env, lh) => Values.INTEGER(lhv) &
-	ceval (env, rh) => Values.INTEGER(rhv) &
+  rule	ceval (env,lh,i) => Values.INTEGER(lhv) &
+	ceval (env,rh,i) => Values.INTEGER(rhv) &
 	int_mul(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh))
+	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh),i)
 	  => Values.INTEGER(sum)
 	(**)
-  rule	ceval (env, exp) => Values.REAL(x) &
+  rule	ceval (env,exp,i) => Values.REAL(x) &
 	real_neg (x) => x'
 	---------------------
-	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp))
+	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp),i)
 	  => Values.REAL(x')
 
-  rule	ceval (env, exp) => Values.INTEGER(x) &
+  rule	ceval (env,exp,i) => Values.INTEGER(x) &
 	int_neg (x) => x'
 	---------------------
-	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp))
+	ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp),i)
 	  => Values.INTEGER(x')
 	(**)
-  rule	ceval (env, exp) => Values.REAL(x) &
+  rule	ceval (env,exp,i) => Values.REAL(x) &
 	real_neg (x) => x'
 	---------------------
-	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp))
+	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp),i)
 	  => Values.REAL(x')
 
-  rule	ceval (env, exp) => Values.INTEGER(x) &
+  rule	ceval (env,exp,i) => Values.INTEGER(x) &
 	int_neg (x) => x'
 	---------------------
-	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp))
+	ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp),i)
 	  => Values.INTEGER(x')
 
 	(**  Logical *)
 
-  rule	ceval (env, lh) => Values.BOOL(lhv) &
-	ceval (env, rh) => Values.BOOL(rhv) &
+  rule	ceval (env,lh,i) => Values.BOOL(lhv) &
+	ceval (env,rh,i) => Values.BOOL(rhv) &
 	bool_and(lhv, rhv) => x
 	------------------------
-	ceval (env, Exp.LBINARY(lh, Exp.AND, rh))
+	ceval (env, Exp.LBINARY(lh, Exp.AND, rh),i)
 	  => Values.BOOL(x)
 
-  rule	ceval (env, lh) => Values.BOOL(lhv) &
-	ceval (env, rh) => Values.BOOL(rhv) &
+  rule	ceval (env,lh,i) => Values.BOOL(lhv) &
+	ceval (env,rh,i) => Values.BOOL(rhv) &
 	bool_or(lhv, rhv) => x
 	------------------------
-	ceval (env, Exp.LBINARY(lh, Exp.OR, rh))
+	ceval (env, Exp.LBINARY(lh, Exp.OR, rh),i)
 	  => Values.BOOL(x)
 
-  rule	ceval (env,e) => Values.BOOL(b) &
+  rule	ceval (env,e,i) => Values.BOOL(b) &
 	bool_not(b) => b'
 	-----------------
-	ceval (env, Exp.LUNARY(Exp.NOT, e)) => Values.BOOL(b')
+	ceval (env, Exp.LUNARY(Exp.NOT, e),i) => Values.BOOL(b')
 
 	(**  Relations *)
 
-  rule	ceval (env, lhs) => lhs' &
-	ceval (env, rhs) => rhs' &
+  rule	ceval (env,lhs,i) => lhs' &
+	ceval (env,rhs,i) => rhs' &
 	ceval_relation (lhs',relop,rhs') => v
 	-------------------------------------
-	ceval (env, Exp.RELATION(lhs,relop,rhs)) => v
+	ceval (env, Exp.RELATION(lhs,relop,rhs),i) => v
 
 	(**)
 
-  rule	ceval (env, start) => Values.INTEGER(start') &
-	ceval (env, stop) => Values.INTEGER(stop') &
+  rule	ceval (env,start,i) => Values.INTEGER(start') &
+	ceval (env,stop,i) => Values.INTEGER(stop') &
 	ceval_range(start', 1, stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop)) => Values.ARRAY(arr)
+	ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop),i) 
+	  => Values.ARRAY(arr)
 
-  rule	ceval (env, start) => Values.INTEGER(start') &
-	ceval (env, step) => Values.INTEGER(step') &
-	ceval (env, stop) => Values.INTEGER(stop') &
+  rule	ceval (env,start,i) => Values.INTEGER(start') &
+	ceval (env,step,i) => Values.INTEGER(step') &
+	ceval (env,stop,i) => Values.INTEGER(stop') &
 	ceval_range(start', step', stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop)) => Values.ARRAY(arr)
+	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),i) 
+	  => Values.ARRAY(arr)
 
-  rule	ceval (env, start) => Values.REAL(start') &
-	ceval (env, stop) => Values.REAL(stop') &
+  rule	ceval (env,start,i) => Values.REAL(start') &
+	ceval (env,stop,i) => Values.REAL(stop') &
 	ceval_range_real(start', 1.0, stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop)) => Values.ARRAY(arr)
+	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),i) 
+	  => Values.ARRAY(arr)
 
-  rule	ceval (env, start) => Values.REAL(start') &
-	ceval (env, step) => Values.REAL(step') &
-	ceval (env, stop) => Values.REAL(stop') &
+  rule	ceval (env,start,i) => Values.REAL(start') &
+	ceval (env,step,i) => Values.REAL(step') &
+	ceval (env,stop,i) => Values.REAL(stop') &
 	ceval_range_real(start', step', stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop)) => Values.ARRAY(arr)
+	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),i) 
+	  => Values.ARRAY(arr)
 
-  rule	ceval (env,e) => Values.INTEGER(i) &
+  rule	ceval (env,e,i) => Values.INTEGER(i) &
 	int_real i => r
 	---------------
-	ceval (env, Exp.CAST(Exp.REAL,e)) => Values.REAL(r)
+	ceval (env, Exp.CAST(Exp.REAL,e),i) => Values.REAL(r)
 
-  rule	print "- ceval " & Exp.print_exp e & print " failed\n"
+  rule	Print.print_buf "- ceval " & Exp.print_exp e & Print.print_buf " failed\n"
 	-----------------------------------------------------
-	ceval (_,e) => fail
+	ceval (_,e,_) => fail
 	
 end
 
@@ -2109,7 +2133,7 @@ end
 
 relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list ) => Values.Value =
 	
-  rule	ceval (env,e) => res &
+  rule	ceval (env,e,false) => res &
 	ceval_matrixeltrow(env,rest) => Values.ARRAY(resl)
 	-------------------
 	ceval_matrixeltrow(env, (e,_)::rest) => Values.ARRAY(res::resl)
@@ -2170,7 +2194,7 @@ relation ceval_relation : (Values.Value, Exp.Operator, Values.Value)
 			Exp.NEQUAL(Exp.REAL),
 			Values.REAL(i2)) => Values.BOOL(b)
 
-  rule	print "- ceval_relation failed\n"
+  rule	Print.print_buf "- ceval_relation failed\n"
 	---------------------------------
 	ceval_relation (_,_,_) => fail
 
@@ -2221,11 +2245,11 @@ end
 
 relation ceval_list : (Env.Env, Exp.Exp list) => Values.Value list =
 	  
-  rule	ceval (env, exp) => v
+  rule	ceval (env, exp,false) => v
 	----------------------------
 	ceval_list (env, [exp]) => [v]
 
-  rule	ceval (env,exp) => v &
+  rule	ceval (env,exp,false) => v &
 	ceval_list (env, exps) => vs
 	------------------------------
 	ceval_list (env, exp::exps) => v::vs
@@ -2237,36 +2261,54 @@ end
 relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 
   rule	Lookup.lookup_var (env, c) => (_,_,binding) &
-	ceval_cref_binding (env,binding) => v
+	ceval_cref_binding (env,c,binding) => v
 	-------------------------------------
 	ceval_cref (env,c) => v
 
 	(* default *)
 
-  rule	print "# No constant binding for " &
-	Exp.print_component_ref c & print "\n"
+  rule	Print.print_buf "# No constant binding for " &
+	Exp.print_component_ref c & Print.print_buf "\n"
 	-------------------------------------
 	ceval_cref (_,c) => fail
 
 end
 
-relation ceval_cref_binding : (Env.Env, Types.Binding) => Values.Value =
+relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding) => Values.Value =
 
-  axiom	ceval_cref_binding (env,Types.VALBOUND(v)) => v
+  rule	ceval_subscript_value(env,subsc,v) => res
+	-----------------------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(_,subsc),Types.VALBOUND(v))
+	  => res
 
-  rule	print "- ceval_cref_binding failed (UNBOUND)\n"
+  rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
-	ceval_cref_binding (env,Types.UNBOUND) => fail
+	ceval_cref_binding (env,_,Types.UNBOUND) => fail
 	
-  rule	ceval (env,exp) => v
+  rule	ceval (env,exp,false) => v
 	------------------------
-	ceval_cref_binding (env,Types.EQBOUND(exp,true)) => v
+	ceval_cref_binding (env,Exp.CREF_IDENT(_,[]),Types.EQBOUND(exp,true)) => v
 
-  rule	print "- ceval_cref__binding failed (nonconstant EQBOUND(" &
-	Exp.print_exp exp & print ")\n"
+  rule	Print.print_buf "- ceval_cref__binding failed (nonconstant EQBOUND(" &
+	Exp.print_exp exp & Print.print_buf ")\n"
 	--------------------------------
-	ceval_cref_binding (env,Types.EQBOUND(exp,false)) => fail
+	ceval_cref_binding (env,_,Types.EQBOUND(exp,false)) => fail
 	
+end
+
+relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value) 
+	  => Values.Value =
+
+  rule	ceval(env,exp,false) => Values.INTEGER(n) &
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => subval &
+	ceval_subscript_value(env,subs,subval) => res 
+	---------------------------------------------
+	ceval_subscript_value(env,Exp.INDEX(exp)::subs,Values.ARRAY(lst)) 
+	  => res
+	  
+  axiom	ceval_subscript_value(env,[],v) => v
+			      
 end
 
 (**)
@@ -2287,7 +2329,7 @@ relation value_exp : Values.Value => Exp.Exp =
 	--------------------------------------------
 	value_exp (Values.ARRAY(x::xs)) => Exp.ARRAY(t,a,x'::xs')
 
-  rule	print "- value_exp failed\n"
+  rule	Print.print_buf "- value_exp failed\n"
 	----------------------------
 	value_exp _ => fail
 
@@ -2302,7 +2344,7 @@ relation value_type : Values.Value => Types.Type =
   axiom value_type Values.STRING(x)  => Types.T_STRING
   axiom value_type Values.BOOL(x)    => Types.T_BOOL
 
-  rule	print "- value_type failed\n"
+  rule	Print.print_buf "- value_type failed\n"
 	----------------------------
 	value_type _ => fail
 
@@ -2358,12 +2400,12 @@ relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
 
   axiom	ceval_subscript (env, Exp.WHOLEDIM) => Exp.WHOLEDIM
 
-  rule	ceval (env, e1) => v1 &
+  rule	ceval (env, e1,false) => v1 &
 	value_exp v1 => e1'
 	-----------------------------------------
 	ceval_subscript (env, Exp.INDEX(e1)) => Exp.INDEX(e1')
 	
-  rule	ceval (env, e1) => v1 &
+  rule	ceval (env, e1, false) => v1 &
 	value_exp v1 => e1'
 	-----------------------------------------
 	ceval_subscript (env, Exp.SLICE(e1)) => Exp.SLICE(e1')
@@ -2429,7 +2471,7 @@ relation eq_subscript : (Exp.Subscript, Exp.Subscript) => () =
 	-------------------------------
 	eq_subscript(Exp.INDEX(s1),Exp.INDEX(s2))
 	
-  rule	print "- eq_subscript failed\n"
+  rule	Print.print_buf "- eq_subscript failed\n"
 	-------------------------------
 	eq_subscript(_,_)
 
@@ -2605,13 +2647,13 @@ relation type_convert_array : (Exp.Exp list, Types.Type, Types.Type) => Exp.Exp 
 	-------------------------------------------
 	type_convert_array (first::rest, ty1, ty2) => first'::rest'
 
-  rule	print "- type conversion of array failed exp=" &
+  rule	Print.print_buf "- type conversion of array failed exp=" &
 	Exp.print_exp e &
-	print "t1 = " &
+	Print.print_buf "t1 = " &
 	Types.print_type t1 & 
-	print " t2 = " &
+	Print.print_buf " t2 = " &
 	Types.print_type t2 &
-	print "\n" 
+	Print.print_buf "\n" 
 	-------------------------------
 	type_convert_array (e::_,t1,t2) => fail
 
@@ -2626,12 +2668,12 @@ relation type_convert_matrix : ((Exp.Exp*bool) list list, Types.Type, Types.Type
 	-------------------------------------------
 	type_convert_matrix (first::rest, ty1, ty2) => first'::rest'
 
-  rule	print "- type conversion of matrix failed" &
-	print "t1 = " &
+  rule	Print.print_buf "- type conversion of matrix failed" &
+	Print.print_buf "t1 = " &
 	Types.print_type t1 & 
-	print " t2 = " &
+	Print.print_buf " t2 = " &
 	Types.print_type t2 &
-	print "\n" 
+	Print.print_buf "\n" 
 	-------------------------------
 	type_convert_matrix (e::_,t1,t2) => fail
 
@@ -2693,8 +2735,8 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 	------------------------------
 	deoverload (_::xs, args, exp) => (op, args', rtype)
 
-  rule	print "# Can't resolve type of expression: " &
-	Dump.print_exp exp & print "\n"
+  rule	Print.print_buf "# Can't resolve type of expression: " &
+	Dump.print_exp exp & Print.print_buf "\n"
 	------------------------------
 	deoverload([], args, exp) => fail
 
@@ -2710,9 +2752,9 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------------------------
 	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],rtype) => typ1
 
-  rule	print "# +: Incompatible argument types " &
-	Types.print_type typ1 & print ", " & Types.print_type typ2 &
-	print "\n"
+  rule	Print.print_buf "# +: Incompatible argument types " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
+	Print.print_buf "\n"
 	----------------------
 	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],_) => fail
 
@@ -2724,9 +2766,9 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------------------------
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],rtype) => typ1
 
-  rule	print "# -: Incompatible argument types " &
-	Types.print_type typ1 & print ", " & Types.print_type typ2 &
-	print "\n"
+  rule	Print.print_buf "# -: Incompatible argument types " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
+	Print.print_buf "\n"
 	----------------------
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],_) => fail
 
@@ -2742,9 +2784,9 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 			     [typ1,typ2],
 			     rtype) => rtype
 
-  rule	print "# *: Incompatible argument types " &
-	Types.print_type typ1 & print ", " & Types.print_type typ2 &
-	print "\n"
+  rule	Print.print_buf "# *: Incompatible argument types " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
+	Print.print_buf "\n"
 	----------------------
 	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),[typ1,typ2],_) => fail
 
@@ -2783,9 +2825,9 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
 
-  rule	print "# *: Incompatible argument types " &
-	Types.print_type typ1 & print ", " & Types.print_type typ2 &
-	print "\n"
+  rule	Print.print_buf "# *: Incompatible argument types " &
+	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 &
+	Print.print_buf "\n"
 	-----------------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => fail
 
@@ -3125,8 +3167,8 @@ relation operators : Absyn.Operator
 	       Types.T_BOOL)]
 
 
-  rule	print "- operators(" & Dump.op_symbol op => s &
- 	print s & print ") failed\n"
+  rule	Print.print_buf "- operators(" & Dump.op_symbol op => s &
+ 	Print.print_buf s & Print.print_buf ") failed\n"
 	----------------------------
 	operators op => fail
 
