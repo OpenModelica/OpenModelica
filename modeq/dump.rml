@@ -1051,7 +1051,7 @@ relation unparse_equation_str: (int, Absyn.Equation) => string =
 
   rule	print_exp_str(e) => s1 &
 	int_add(i,1) => i' &
-	unparse_equationitem_str_lst(i',tb,";") => s2 &
+	unparse_equationitem_str_lst(i',tb,";\n") => s2 &
 	indent_str(i) => is &
 	Util.string_append_list(["if ", s1, " then\n",is, s2,is,"end if"]) => str
 	----------------------------------------------------
@@ -1059,11 +1059,11 @@ relation unparse_equation_str: (int, Absyn.Equation) => string =
 	
   rule	print_exp_str(e) => s1 &
 	int_add(i,1) => i' &
-	unparse_equationitem_str_lst(i',tb,";") => s2 &
-	unparse_eq_elseif_str_lst(i',eb, ";") => s3 &
-	unparse_equationitem_str_lst(i',fb,";") => s4 &
+	unparse_equationitem_str_lst(i',tb,";\n") => s2 &
+	unparse_eq_elseif_str_lst(i',eb, "\n") => s3 &
+	unparse_equationitem_str_lst(i',fb,";\n") => s4 &
 	indent_str(i) => is &
-	Util.string_append_list(["if ", s1, " then\n",is, s2, s3, "\n",is,"else\n", s4,"\n", is, "end if"]) => str
+	Util.string_append_list([is,"if ", s1, " then\n",s2, s3, "\n",is,"else\n", s4,"\n", is, "end if"]) => str
 	----------------------------------------------------
 	unparse_equation_str(i, Absyn.EQ_IF(e,tb,eb,fb)) => str
 	
@@ -1147,6 +1147,11 @@ relation unparse_eq_elseif_str_lst: (int, (Absyn.Exp * Absyn.EquationItem list) 
 	
   axiom	 unparse_eq_elseif_str_lst(_,[],_) => ""
 
+  rule	unparse_eq_elseif_str(i,x1) => s1 &
+	Util.string_append_list([s1,sep]) => res
+	-------------------------------------
+	unparse_eq_elseif_str_lst(i,[x1],sep) => res
+
   rule	unparse_eq_elseif_str_lst(i,xs,sep) => s2 &
 	unparse_eq_elseif_str(i,x) => s1 &
 	Util.string_append_list([s1,sep,s2]) => res
@@ -1163,10 +1168,10 @@ end
 relation unparse_eq_elseif_str : (int, (Absyn.Exp * Absyn.EquationItem list)) => string =
 	    
   rule	print_exp_str e => s1 &
-	int_add(i,1) => i' &
-	unparse_equationitem_str_lst(i',el,";") => s2 &
-	indent_str(i) => is &
-	Util.string_append_list([s1,"\n",is,"then\n",s2]) => res
+	unparse_equationitem_str_lst(i,el,";\n") => s2 &
+	int_sub(i,1) => i' &
+	indent_str(i') => is &
+	Util.string_append_list(["\n",is,"elseif ",s1," then\n",s2]) => res
 	-----------------------------------
 	unparse_eq_elseif_str(i,(e,el)) => res
 end
@@ -1261,9 +1266,9 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	
   rule	print_exp_str(e) => s1 &
 	int_add(i,1) => i' &
-	unparse_algorithm_str_lst(i',tb,"\n") => s2 &
+	unparse_algorithm_str_lst(i,tb,"\n") => s2 &
 	unparse_alg_elseif_str_lst(i',eb,"\n") => s3 &
-	unparse_algorithm_str_lst(i',fb,"\n") => s4 &
+	unparse_algorithm_str_lst(i,fb,"\n") => s4 &
 	unparse_comment_option(optcmt) => s5 &
 	indent_str(i) => is &
 	Util.string_append_list([is,"if ",s1," then \n",is, s2, s3, "\n",is, "else ", s4, "\n", is, "end if" , s5, ";"]) => str
@@ -1306,9 +1311,11 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	-----------------------------------------------
 	unparse_algorithm_str(i, Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(cr,fargs),optcmt)) => str
 
-  rule	unparse_annotation_option(i, SOME(ann)) => str
+  rule	unparse_annotation_option(i, SOME(ann)) => str &
+	string_append(str,";") => str'
 	------------------------------------------
-	unparse_algorithm_str (i,Absyn.ALGORITHMITEMANN(ann)) => str			       
+	unparse_algorithm_str (i,Absyn.ALGORITHMITEMANN(ann)) => str'
+  
   rule	Print.print_buf " *Failure! UNKNOWN ALGORITHM CLAUSE ** "
 	--------------------------------
 	unparse_algorithm_str(_,_) => ""
@@ -1408,9 +1415,10 @@ end
 relation unparse_alg_elseif_str : (int,(Absyn.Exp * Absyn.AlgorithmItem list)) => string =
 
   rule  print_exp_str e => s1 &
-	int_add(i,1) => i' &
-	unparse_algorithm_str_lst(i',el,";\n") => s2 &
-	Util.string_append_list([" elseif ", s1, " then\n", s2]) => str
+	unparse_algorithm_str_lst(i,el,"\n") => s2 &
+	int_sub(i,1) => i' &
+	indent_str(i') => is &
+	Util.string_append_list([is,"elseif ", s1, " then\n", s2]) => str
 	-----------------------------------
 	unparse_alg_elseif_str(i,(e,el)) => str
 end
