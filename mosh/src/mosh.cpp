@@ -80,7 +80,9 @@ int main(int argc, char* argv[])
   
   char* hostname ="localhost";
   // TODO: add port nr. and host as command line option
-  
+
+  char* historyfile = "mosh_history";
+  int maxhistoryfileentries = 3000;
   
  /* Create the socket. */
   int sock = socket (PF_INET, SOCK_STREAM, 0);
@@ -121,6 +123,13 @@ int main(int argc, char* argv[])
   int cd_nbytes = write(sock,cd_cmd,strlen(cd_cmd)+1);
   int cd_recvbytes = read(sock,buf,40000);
 
+  // initialize history usage
+  using_history();
+
+  // Read the history file
+  read_history(historyfile);
+
+
   bool done=false;	
   while (!done) {
     char* line = readline(">>> ");
@@ -146,7 +155,12 @@ int main(int argc, char* argv[])
     }
     free(line);
   }
-  close (sock);  
+  close (sock);
+
+  // write history file
+  write_history(historyfile);
+  history_truncate_file(historyfile, maxhistoryfileentries);
+
   return EXIT_SUCCESS;
 }
 
