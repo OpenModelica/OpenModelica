@@ -430,7 +430,7 @@ relation generate_constructor_parameters:(DAELow.DAELow) => (string) =
 	top_level_parameters(knvars') => (knvars'' as _::_) &
         generate_constructor_parameters2(knvars'',0) => lst &
         Util.string_delimit_list(lst,"\n")=> res & 
-        list_length(lst) => len &
+        list_length(knvars') => len &
         int_string len => lenstr &
         Util.string_append_list(["  SetNoParams(",lenstr,");\n"]) => prefix1 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
