@@ -1,6 +1,7 @@
 module Builtin:
 
   with "absyn.rml"
+  with "explode.rml"
   with "env.rml"
 
   relation initial_env : () => Env.Env
@@ -10,9 +11,12 @@ end
 with "exp.rml"
 with "mod.rml"
 
-val rl_type = Absyn.CLASS("RealType",false,Absyn.CL_TYPE,Absyn.PARTS([]))
-val int_type = Absyn.CLASS("IntegerType",false,Absyn.CL_TYPE,Absyn.PARTS([]))
-val str_type = Absyn.CLASS("StringType",false,Absyn.CL_TYPE,Absyn.PARTS([]))
+val rl_type = Explode.CLASS("RealType",false,Absyn.CL_TYPE,
+			    Explode.PARTS([],[],[]))
+val int_type = Explode.CLASS("IntegerType",false,Absyn.CL_TYPE,
+			     Explode.PARTS([],[],[]))
+val str_type = Explode.CLASS("StringType",false,Absyn.CL_TYPE,
+			     Explode.PARTS([],[],[]))
 
 (*
 val real_type = Absyn.CLASS("Real",false,Absyn.CL_TYPE,

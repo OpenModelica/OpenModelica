@@ -4,6 +4,7 @@ module Main:
 end
 
 with "absyn.rml"
+with "explode.rml"
 with "parse.rml"
 with "dump.rml"
 with "dae.rml"
@@ -18,16 +19,11 @@ relation main =
 	(* Dump.dump p & *)
 	
 	print "\n = Exploding\n\n" &
-	Absyn.explode_components(p) => p' &
+	Explode.explode(p) => p' &
 	(* Dump.dump p' & *)
-(*	
-	print "\n = Elaborating\n\n" &
-	Lform.elaborate(p') => p'' &
-*)	
-	let p'' = p' &
 
 	print "\n = Instantiating\n\n" &
-	Inst.instantiate(p'') => d &
+	Inst.instantiate(p') => d &
 	print "\n" &
 	DAE.dump d &
 	
