@@ -17,10 +17,10 @@
 #  define _IFDIR S_IFDIR
 # else
 #  error "Neither _IFDIR nor S_IFDIR is defined."
+# endif
 #endif
 
-#ifdef 0
-
+#ifndef HAVE_SCANDIR
 
 typedef int _file_select_func_type(struct dirent *);
 typedef int _file_compar_func_type(struct dirent **, struct dirent **);
