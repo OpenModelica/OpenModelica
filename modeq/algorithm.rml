@@ -4,6 +4,9 @@
  **
  ** RCS: $Id$
  **
+ ** This file contains data types and relations for managing
+ ** algorithms.  The algorithms in the AST is analyzed by the `Inst'
+ ** module which uses this module to represent the algorithms.
  **)
 
 module Algorithm:
@@ -15,16 +18,24 @@ module Algorithm:
   type Ident = string
 
   datatype Algorithm = ALGORITHM of Statement list
+  (** The `Algorithm' type corresponds to a whole algorithm secion. *)
+  (** It is simple a list of algorithm statements. *)
 
   datatype Statement = ASSIGN of Exp.ComponentRef * Exp.Exp
 		     | IF of Exp.Exp * Statement list * Else
 		     | FOR of Ident * Exp.Exp * Statement list
 		     | WHILE of Exp.Exp * Statement list
 		     | WHEN of Exp.Exp * Statement list
+  (** There are four kinds of statements.  Assignments (`a := b;'), *)
+  (** if statements (`if A then B; elseif C; else D;'), for loops *)
+  (** (`for i in 1:10 loop ...; end for;') and when statements (`when *)
+  (** E do S; end when;'). *)
 
   datatype Else = NOELSE
 		| ELSEIF of Exp.Exp * Statement list * Else
 		| ELSE of Statement list
+  (** An if statements can one or more `elseif' branches and an *)
+  (** optional `else' branch. *)
 
   relation make_assignment : (Exp.Exp, Static.Properties,
 			      Exp.Exp, Static.Properties) => Statement
@@ -46,7 +57,12 @@ module Algorithm:
 	
 end
 
-(** relation: make_assignment *)
+(** relation: make_assignment
+ **
+ ** This relation creates an `ASSIGN' construct, and checks that the
+ ** assignment is semantically valid, which means that the component
+ ** being assigned is not constant, and that the types match.
+ **)
 
 relation make_assignment : (Exp.Exp, Static.Properties,
 			    Exp.Exp, Static.Properties) => Statement =
@@ -80,7 +96,11 @@ relation make_assignment : (Exp.Exp, Static.Properties,
 
 end
 
-(** relation: make_if *)
+(** relation: make_if
+ **
+ ** This relation creates an `IF' construct, checking that the types
+ ** of the parts are correct.
+ **)
 
 relation make_if : (Exp.Exp,
 		    Static.Properties,
@@ -101,7 +121,10 @@ relation make_if : (Exp.Exp,
 
 end
 
-(** relation: make_else *)
+(** relation: make_else
+ **
+ ** 
+ **)
 
 relation make_else : ((Exp.Exp * Static.Properties * Statement list) list,
 		      Statement list) => Else =
