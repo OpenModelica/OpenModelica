@@ -312,23 +312,31 @@ and dump_elementspec: Absyn.ElementSpec => () =
 		------------------------------------------
 		dump_elementspec(Absyn.EXTENDS(s,l))
 
-	rule	print "COMPONENT(" &
+	rule	print "COMPONENTS(" &
 		dump_select(f,"FLOW,","") &
 		dump_select(p,"PARAMETER,","") &
 		dump_select(c,"CONSTANT,","") &
 		dump_select(i,"INPUT,","") &
 		dump_select(o,"OUTPUT,","") &
 		path_string t => ts & print ts & print "," &
-		print n &
-		dump_option(a,dump_arraydim) &
-		dump_option(m,dump_modification) &
+		dump_list(cs, dump_component, ",") &
 		print ")"
 		------------------------------------------
-		dump_elementspec(Absyn.COMPONENT(f,p,c,i,o,t,n,a,m))
+		dump_elementspec(Absyn.COMPONENTS(f,p,c,i,o,t,cs))
 
 	rule	print " ##ERROR## "
 		-------------------
 		dump_elementspec(_)
+
+end
+and dump_component: Absyn.Component => () =
+
+	rule	print n &
+		dump_option(a,dump_arraydim) &
+		dump_option(m,dump_modification)
+		------------------------------------------
+		dump_component(Absyn.COMPONENT(n,a,m))
+
 
 end
 and dump_arraydim: Absyn.ArrayDim => () =
