@@ -62,7 +62,7 @@ with "simcodegen.rml"
 	     generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
          generate_dll_code(cname) => dll_code &
          TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
-         (*TORNADOEXT.dump_testing() &  *)
+         Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
          Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
          Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
 	     string_append(cname,".h") => headerfile &
@@ -177,19 +177,19 @@ with "simcodegen.rml"
          
          Interactive.get_components_in_class(cdef) => elements &
          Absyn.path_string(class_path) => str &
-         (*         print "\n--------------------------------\n" & print str & print ":\n" & *)
+(*                   print "\n--------------------------------\n" & print str & print ":\n" &  *)
          generate_code_from_elements(class_path,elements,dae,program,a_program,env') => res 
          --------------------------------------
          generate_code_from_class(class_path,dae,program,a_program,env) => res
          
   rule  Absyn.path_string(class_path) => str &
          Interactive.is_primitive(Absyn.CREF_IDENT(str,[]),a_program) => true 
-         (*         print "\n-----------PRIMITIVE--------------\n" & print str & print ":\n" *)
+(*          &        print "\n-----------PRIMITIVE--------------\n" & print str & print ":\n"  *)
          --------------------------------------
          generate_code_from_class(class_path,dae,program,a_program,env) => ""
          
   rule  Absyn.path_string(class_path) => str 
-         (*         print "\n-----------NO MATCH--------------\n" & print str & print ":\n" *)
+(*          &       print "\n-----------NO MATCH--------------\n" & print str & print ":\n"  *)
          --------------------------------------
          generate_code_from_class(class_path,dae,program,a_program,env) => ""
          
@@ -289,7 +289,7 @@ with "simcodegen.rml"
          get_direction_for_variable(variable_name,str',dae) => (var_type,direction) &
          TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction) &
          add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
-         (*          & print str' & print "\nA-----------derived-------------\n" *)
+ (*                  & print str' & print "\nA-----------derived-------------\n" *)
          --------------------------------------
          add_variable_to_list(class_path,
                               variable_class_path,
@@ -303,7 +303,7 @@ with "simcodegen.rml"
          get_direction_for_variable(variable_name,str',dae) => (var_type,direction) &
          TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction) &
          add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
-         (*           & print variable_name & print " " & print str'  & print "\nA-----------PRIMITIVE--------------\n"   *)
+(*                    & print variable_name & print " " & print str'  & print "\nA-----------PRIMITIVE--------------\n" *)
          --------------------------------------
          add_variable_to_list(class_path,
                               variable_class_path,
@@ -319,7 +319,7 @@ with "simcodegen.rml"
          Absyn.path_string(variable_class_path) => str &
          add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) &
          TORNADOEXT.add_variable_to_class(str',variable_name,"class",var_str') 
-         (*          & print str' & print "\nA--------------------------------\n"   *)
+(*                   & print str' & print "\nA--------------------------------\n" *)
          --------------------------------------
          add_variable_to_list(class_path,
                               variable_class_path,
@@ -331,7 +331,7 @@ with "simcodegen.rml"
          
   rule  Absyn.path_string(variable_class_path) => str &
          add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
-         (*          & print str &  print "\nA-----------NO MATCH--------------\n"  *)
+(*                   & print str &  print "\nA-----------NO MATCH--------------\n" *)
          --------------------------------------
          add_variable_to_list(class_path,
                               variable_class_path,
@@ -426,7 +426,7 @@ relation find_dae_var:(string, string,DAELow.DAELow) => DAELow.Var =
                                    eqn,seqn,_,_))
           => var
           
-  rule  (*print "find_dae_var failed\n " *)
+  rule   print "find_dae_var failed\n " 
         --------------------------------------
         find_dae_var(_,_,_) => fail
         
@@ -436,7 +436,7 @@ end
 relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
 
         
-  rule  (*print "no such variable\n "*)
+  rule  print "no such variable\n "
         -------------------------------------
         find_dae_var2(name,class_name,[]) => fail
 
@@ -445,7 +445,7 @@ relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
         (* pick out the last of the names "a" in the name Temp3.a *)
         Util.string_split_at_char(cr_str,#".") => str_list &
         Util.list_last(str_list) => var_name &
-	list_reverse(class_paths) => from_class::_ &
+	    list_reverse(class_paths) => from_class::_ &
         Absyn.path_string(from_class) => from_class_str &
         Util.string_equal(class_name,from_class_str) => true &
         Util.string_equal(var_name,name) => true 
@@ -595,7 +595,6 @@ end
 				                  "  Link();\n",
 				                  initializationvars,
 				                  "\n",
-                                  "std::cout << \"linking\" << std::endl;\n",
                                   links,
                                   "\n",
                                   "  Reset();\n",
@@ -758,7 +757,7 @@ relation generate_simple_equation_links2: (string list,
           => (DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_path),_) &
 	      DAELow.get_var(cr2,vars)
  	      => (to_var as DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_paths),varindx) &
-	      list_reverse(class_paths) => _::class_path::_ & 
+	      list_reverse(class_paths) => class_path::_ & 
         Absyn.path_string(class_path) => class_path_str &
         print "1 \n" &
         TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
@@ -846,17 +845,17 @@ end
          Exp.cref_str(cr) => crs &
          Util.string_append_list(["  this->GetDerStateVar(",index_str,")",
                                   "->LinkInitialValue(this, ",
-                                  index_str,");\n",
-                                  "// simple eqn rem: ",crs,
+                                  index_str,");",
+                                  "// simple eqn rem: ",crs, "\n",
                                   "  this->GetDerStateVar(",index_str,")",
                                   "->LinkDerivative(this, ",
-                                  index_str,");\n",
-                                  "// simple eqn rem: ",crs,
+                                  index_str,");",
+                                  "// simple eqn rem: ",crs, "\n",
                                   "  this->GetDerStateVar(",index_str,")",
                                   "->LinkValue(this, ",
                                   "MSLE_DER_STATE_VAR, ",
-                                  index_str,");\n\n",
-                                  "// simple eqn rem: ",crs,
+                                  index_str,");",
+                                  "// simple eqn rem: ",crs, "\n\n",
                                   prefix,
                                   "->LinkValue(this, MSLE_DER_STATE_VAR, ",
                                   index_str,");\n\n"
@@ -1386,6 +1385,17 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => (string list,
  *)
  relation generate_constructor_statevars:(DAELow.DAELow) => (string,string) = 
 	     
+  rule	array_list(vararr) => vars &
+         array_list(knvararr) => knvars &
+         list_append(vars,knvars) => all_vars &
+         generate_constructor_statevars2(all_vars,0) => (lst, no_of_vars') &
+         int_eq(no_of_vars',0) => true
+         ----------------------
+         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
+                                                      DAELow.VARIABLES(_,knvararr,_,_),
+                                                      eqn,seqn,_,_)) 
+	      => ("","")
+
   rule	array_list(vararr) => vars &
          array_list(knvararr) => knvars &
          list_append(vars,knvars) => all_vars &

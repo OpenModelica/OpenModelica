@@ -3173,27 +3173,27 @@ relation reachable_nodes: (int,
 	----------------------------------------
 	reachable_nodes(eqn,m,mt,a1,a2) => reachable''
 
-  rule	print "-reachable_nodes, eqn :" &
+  rule	(*print "-reachable_nodes, eqn :" &*)
 	array_length(m) => mlen &
 	int_string(mlen) => mlen_str &
-	print "Incidence_matrix len:" & print mlen_str & print "\n" &
+(* 	print "Incidence_matrix len:" & print mlen_str & print "\n" & *)
 	int_string(eqn) => eqn_str &
-	print eqn_str &
+(* 	print eqn_str & *)
 	int_sub(eqn,1) => eqn' &
 	vector_nth(a2,eqn') => var &
 	int_string(var) => var_str &
 	int_abs(var) => var' &
 	int_sub(var',1) => var'' &
-	print "\n var:" & print var_str & print "\n" &
+(* 	print "\n var:" & print var_str & print "\n" & *)
 	array_nth(mt,var'') => reachable &
 	Util.list_map(reachable,int_abs) => reachable' &
-	print "reachable':" & 
+(* 	print "reachable':" &  *)
 	Util.list_map(reachable',int_string) => r_strlst &
 	Util.string_delimit_list(r_strlst,", ") => str &
-	print str & print "\n" &
+(* 	print str & print "\n" & *)
 	Util.list_position(eqn,reachable') => pos &
-	int_string(pos) => pos_str & 
-	print "pos :" & print pos_str & print "\n" 
+	int_string(pos) => pos_str 
+(* 	& print "pos :" & print pos_str & print "\n"  *)
 	----------------------------
 	reachable_nodes(eqn,m,mt,_,a2) => fail
 end			  
