@@ -17,7 +17,7 @@ module Lookup:
   with "explode.rml"
 
   relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type)
-  relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class)
+  relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class, Env.Env)
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes,Types.Type,Types.Binding)
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
@@ -55,15 +55,15 @@ end
 (** relation: lookup_class
  **)
 
-relation lookup_class: (Env.Env,Absyn.Path) => SCode.Class =
+relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
-  rule	lookup_class_in_env(env,path) => c
+  rule	lookup_class_in_env(env,path) => (c, env)
 	--------------------------------------
-	lookup_class(env, path) => c
+	lookup_class(env, path) => (c, env)
 
-  rule	lookup_package_class (env,pack,path) => c
+  rule	lookup_package_class (env,pack,path) => (c, env)
 	--------------------------------------
-	lookup_class(env, Absyn.QUALIFIED(pack,path)) => c
+	lookup_class(env, Absyn.QUALIFIED(pack,path)) => (c, env)
 
 end
 
@@ -160,27 +160,27 @@ end
 
 (**  Class lookup *)
 
-relation lookup_class_in_env: (Env.Env,Absyn.Path) => (SCode.Class) =
+relation lookup_class_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
-  rule	lookup_class_in_frame(items,id) => c
+  rule	lookup_class_in_frame(items,id) => (c, env)
 	---------------------
-	lookup_class_in_env(Env.FRAME(items)::fs,Absyn.IDENT(id)) => c
+	lookup_class_in_env(Env.FRAME(items)::fs,Absyn.IDENT(id)) => (c, env)
 
-  rule	lookup_class_in_env(fs,id) => c
+  rule	lookup_class_in_env(fs,id) => (c, env)
 	---------------------
-	lookup_class_in_env(f::fs,id) => c
+	lookup_class_in_env(f::fs,id) => (c, env)
 
 end
 (**)
 relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 				 SCode.Ident)
-	  => SCode.Class =
+	  => (SCode.Class, Env.Env) =
 
   rule	(* print "  lookup_class_in_frame(" & print id & print "): " &
 	   print n & print "\n" & *)
 	id = n
 	---------------------------------------------------------
-	lookup_class_in_frame((n,Env.CLASS(c))::_, id) => c
+	lookup_class_in_frame((n,Env.CLASS(c, env))::_, id) => (c, env)
 
 (*
   rule	id = n & print "# Error while looking up class " &
@@ -189,19 +189,19 @@ relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 	lookup_class_in_frame((n,Env.VAR(_))::_,id) => fail
 *)
 
-  rule	lookup_class_in_frame(fs,id) => c
+  rule	lookup_class_in_frame(fs,id) => (c, env)
 	------------------------------
-	lookup_class_in_frame(_::fs,id) => c
+	lookup_class_in_frame(_::fs,id) => (c, env)
 
 end
 (**)
 relation lookup_package_class : (Env.Env, string, Absyn.Path)
-	  => SCode.Class =
+	  => (SCode.Class, Env.Env) =
 
   rule	locate_package (env,packname) => pack &
-	lookup_class_in_package (pack, path) => c
+	lookup_class_in_package (pack, path) => (c, env)
 	-------------------------------------
-	lookup_package_class (env, packname, path) => c
+	lookup_package_class (env, packname, path) => (c, env)
 
 end
 (**)
@@ -330,7 +330,7 @@ end
 
 relation locate_package : (Env.Env, string) => SCode.Class =
 
-  rule	lookup_class(env, Absyn.IDENT(pack)) => c &
+  rule	lookup_class(env, Absyn.IDENT(pack)) => (c, env) &
 	assert_package c
 	----------------
 	locate_package (env, pack) => c
@@ -363,15 +363,20 @@ end
  ** 
  ** This relation searches a class definition for a named class
  ** definition.
+ **
+ ** The class is returned together with an empty environment, which
+ ** might cause problems.  This should be solved using implicit
+ ** instantiation, but that is future work.
  **)
  
-relation lookup_class_in_package : (SCode.Class, Absyn.Path) => SCode.Class =
+relation lookup_class_in_package : (SCode.Class, Absyn.Path)
+	  => (SCode.Class, Env.Env) =
 
   rule	lookup_class_in_elements (els, path) => c
 	-----------------------------------------
 	lookup_class_in_package (SCode.CLASS(_,_,_,
 					       SCode.PARTS(els,_,_)),
-				 path) => c
+				 path) => (c, Env.empty_env)
 
 end
 (** relation: lookup_class_in_elements
@@ -390,7 +395,7 @@ relation lookup_class_in_elements : (SCode.Element list, Absyn.Path)
 				   
   rule	n1 = n2 &
 	assert_package c &
-	lookup_class_in_package (c, path) => c'
+	lookup_class_in_package (c, path) => (c', env)
 	----------------------------
 	lookup_class_in_elements (SCode.CLASSDEF(n1,_,_,c)::_,
 				  Absyn.QUALIFIED(n2, path))

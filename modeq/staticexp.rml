@@ -448,6 +448,11 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	---------------------------------
 	elab_cref(env, c) => (exp, PROP(t, const), acc')
 
+  rule	elab_cref_subs (env,c) => (c', const) &
+	print "# Unknown component: " & Dump.print_component_ref c & print "\n"
+	-----------------------------------------------------
+	elab_cref(env, c) => fail
+
   rule	print "- elab_cref failed\n"
 	------------------------------
 	elab_cref (_,_) => fail

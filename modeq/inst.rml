@@ -216,13 +216,13 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** This rule describes how to instantiate a derived class *)
 	(** definition *)
 
-  rule	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,r,_)) &
+  rule	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,r,_), cenv) &
 	Mod.lookup_modification_p(mods,cn) => m &
 	Mod.elab_mod(env,pre,mod) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
-	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
+	inst_class_in(cenv, mods'', pre, csets, new_ci_state, c, prot)
 	  => (dae,env, csets', ci_state', tys) &
 
 	(* Check for restriction violations *)
@@ -236,7 +236,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** found in the environment, this rule prints an error *)
 	(** message. *)
 
-  rule	not Lookup.lookup_class(env,cn) => _ &
+  rule	not Lookup.lookup_class(env,cn) => (_,_) &
 	Absyn.path_string(cn) => cns &
 	print "# unknown class: " & print cns & print "\n"
 	----------------------------------------
@@ -299,7 +299,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 
   rule	Absyn.path_string(cn) => cns &
 	
-	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,restr,def)) &
+	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,restr,def),
+					cenv) &
 	Mod.lookup_modification_p(mods,cn) => classmod &
 	Mod.elab_mod(env,pre,m) => m' &
 
@@ -311,7 +312,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.merge(mods',m') => mods'' &
 	
 	(* Can't use inst_class, as that creates a new frame *)
-	inst_class_in(env,mods'',pre,csets,ci_state,c,false)
+	inst_class_in(cenv,mods'',pre,csets,ci_state,c,false)
 	  => (dae,env',csets',ci_state',vars)
 	----------------------------------
 	inst_element(env,mods,pre,csets, ci_state, SCode.EXTENDS(cn,m))
@@ -336,7 +337,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     SCode.CLASSDEF(n,_,_,_))
 	  => fail
 
-  rule	Lookup.lookup_class(env,Absyn.IDENT(n)) => v &
+  rule	Lookup.lookup_class(env,Absyn.IDENT(n)) => (_,_) &
 	print "# Trying to redeclare the variable " & print n &
 	print " as a class\n"
 	---------------------
@@ -380,7 +381,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
 
-	Lookup.lookup_class(env,t) => cl &
+	Lookup.lookup_class(env,t) => (cl,cenv) &
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
 	Mod.elab_mod(env,pre,m) => m' &
@@ -400,7 +401,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	elab_arraydim(env,ad,eq) => dims &
 
 	(** Instantiate the component *)
-	inst_var(env,mod',pre,csets,n,cl,attr,dims,[])
+	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[])
 	  => (dae1,csets',ty) &
 
 	(** The environment is extended with the new variable *)
@@ -432,7 +433,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
 	(**  Failure *)
-  rule	not Lookup.lookup_class(env,t) => cl &
+  rule	not Lookup.lookup_class(env,t) => (cl,cenv) &
 	Absyn.path_string(t) => s &
 	print "# unknown class '" & print s & print "' while instantiating " &
 	Prefix.prefix_path(Absyn.IDENT(n),pre) => n' &
