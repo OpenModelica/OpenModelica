@@ -993,15 +993,17 @@ fi
 
 echo $ac_n "checking for antlr.Tool in CLASSPATH""... $ac_c" 1>&6
 echo "configure:996: checking for antlr.Tool in CLASSPATH" >&5
-if java antlr.Tool /dev/null ; then
+echo "" > $$grammar.g
+if java antlr.Tool $$grammar.g ; then
   echo "$ac_t""yes" 1>&6
 else
   { echo "configure: error: no antlr.Tool in CLASSPATH" 1>&2; exit 1; }
   echo "$ac_t""no" 1>&6
 fi
+rm -f $$grammar.g
 
 echo $ac_n "checking for readline include""... $ac_c" 1>&6
-echo "configure:1005: checking for readline include" >&5
+echo "configure:1007: checking for readline include" >&5
 if test -d /home/pelab/pkg/gnu/include ; then
   readlineinc="/home/pelab/pkg/gnu/include"
   echo "$ac_t""yes" 1>&6
@@ -1016,7 +1018,7 @@ else
 fi
 
 echo $ac_n "checking for readline libs""... $ac_c" 1>&6
-echo "configure:1020: checking for readline libs" >&5
+echo "configure:1022: checking for readline libs" >&5
 if test -d /home/pelab/pkg/gnu/lib ; then
   readlinelib="/home/pelab/pkg/gnu/lib"
   echo "$ac_t""yes" 1>&6
@@ -1031,12 +1033,12 @@ else
 fi
 
 echo $ac_n "checking for working const""... $ac_c" 1>&6
-echo "configure:1035: checking for working const" >&5
+echo "configure:1037: checking for working const" >&5
 if eval "test \"`echo '$''{'ac_cv_c_const'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1040 "configure"
+#line 1042 "configure"
 #include "confdefs.h"
 
 int main() {
@@ -1085,7 +1087,7 @@ ccp = (char const *const *) p;
 
 ; return 0; }
 EOF
-if { (eval echo configure:1089: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1091: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_const=yes
 else
@@ -1106,12 +1108,12 @@ EOF
 fi
 
 echo $ac_n "checking for size_t""... $ac_c" 1>&6
-echo "configure:1110: checking for size_t" >&5
+echo "configure:1112: checking for size_t" >&5
 if eval "test \"`echo '$''{'ac_cv_type_size_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1115 "configure"
+#line 1117 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #if STDC_HEADERS
@@ -1142,12 +1144,12 @@ fi
 for ac_func in strdup strerror
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:1146: checking for $ac_func" >&5
+echo "configure:1148: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1151 "configure"
+#line 1153 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -1170,7 +1172,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:1174: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:1176: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else

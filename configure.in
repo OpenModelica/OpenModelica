@@ -75,12 +75,14 @@ else
 fi
 
 AC_MSG_CHECKING([for antlr.Tool in CLASSPATH])
-if java antlr.Tool /dev/null ; then
+echo "" > $$grammar.g
+if java antlr.Tool $$grammar.g ; then
   AC_MSG_RESULT([yes])
 else
   AC_MSG_ERROR([no antlr.Tool in CLASSPATH])
   AC_MSG_RESULT([no])
 fi
+rm -f $$grammar.g
 
 AC_MSG_CHECKING([for readline include])
 dnl First check in special place for pelab
