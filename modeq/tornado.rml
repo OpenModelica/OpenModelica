@@ -48,7 +48,7 @@ with "simcodegen.rml"
  ** can be BLT sorted and indexed, etc.
  **)
  relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
-
+         
   rule	DAELow.lower(dae) => dae' &
          generate_blt(dae') => (dae'',blt,ass1,ass2) &
 	     DAELow.calculate_values(dae'') => dae''' & 
@@ -81,57 +81,60 @@ with "simcodegen.rml"
 	     generate_code(_,_,_) => fail
  end
 
-
+(** relation generate_dll_code 
+ ** This relation generate the code that is needed in the file
+ ** used for generation of the dll. 
+ **)
 relation generate_dll_code: (string) => string =
 
   rule  Util.string_append_list(["#ifdef _MSC_VER\n",
-                                "#pragma warning(disable:4250)\n",
-                                "#pragma warning(disable:4786)\n",
-                                "#endif\n",
-                                "\n",
-                                "#include \"Tornado/EE/Common/DLL.h\"\n",
-                                "\n",
-                                "#include \"",cname,".h\"\n",
-                                "\n",
-                                "using  namespace std;\n",
-                                "using namespace Common;\n",
-                                "using namespace Tornado;\n",
-                                "\n",
-                                "#ifdef _WIN32\n",
-                                "#include <windows.h>\n",
-                                
-                                "BOOL APIENTRY\n",
-                                "DllMain(HANDLE hModule,\n",
-                                "        DWORD ul_reason_for_call,\n",
-                                "        LPVOID lpReserved)\n",
-                                "{\n",
-                                "  switch (ul_reason_for_call)\n",
-                                "  {\n",
-                                "    case DLL_PROCESS_ATTACH:\n",
-                                "    case DLL_THREAD_ATTACH:\n",
-                                "    case DLL_THREAD_DETACH:\n",
-                                "    case DLL_PROCESS_DETACH:\n",
-                                "      break;\n",
-                                "  }\n",
-                                "  return TRUE;\n",
-                                "}\n",
-                                "#endif\n",
-                                "\n",
-                                "static wstring g_ID = L\"Tornado.MSLE.DAEModel.",cname,"\";\n",
-                                "\n",
-                                "void*\n",
-                                "GetID()\n",
-                                "{\n",
-                                "  return (void*)g_ID.c_str();\n",
-                                "}\n",
-                                "\n",
-                                "void*\n",
-                                "Create()\n",
-                                "{\n",
-                                "  CDAEModel* pDAEModel = new C",cname,"(L\"\");\n",
-                                "\n",
-                                "  return (void*)pDAEModel;\n",
-                                "}\n"]) => res
+                                 "#pragma warning(disable:4250)\n",
+                                 "#pragma warning(disable:4786)\n",
+                                 "#endif\n",
+                                 "\n",
+                                 "#include \"Tornado/EE/Common/DLL.h\"\n",
+                                 "\n",
+                                 "#include \"",cname,".h\"\n",
+                                 "\n",
+                                 "using  namespace std;\n",
+                                 "using namespace Common;\n",
+                                 "using namespace Tornado;\n",
+                                 "\n",
+                                 "#ifdef _WIN32\n",
+                                 "#include <windows.h>\n",
+                                 
+                                 "BOOL APIENTRY\n",
+                                 "DllMain(HANDLE hModule,\n",
+                                 "        DWORD ul_reason_for_call,\n",
+                                 "        LPVOID lpReserved)\n",
+                                 "{\n",
+                                 "  switch (ul_reason_for_call)\n",
+                                 "  {\n",
+                                 "    case DLL_PROCESS_ATTACH:\n",
+                                 "    case DLL_THREAD_ATTACH:\n",
+                                 "    case DLL_THREAD_DETACH:\n",
+                                 "    case DLL_PROCESS_DETACH:\n",
+                                 "      break;\n",
+                                 "  }\n",
+                                 "  return TRUE;\n",
+                                 "}\n",
+                                 "#endif\n",
+                                 "\n",
+                                 "static wstring g_ID = L\"Tornado.MSLE.DAEModel.",cname,"\";\n",
+                                 "\n",
+                                 "void*\n",
+                                 "GetID()\n",
+                                 "{\n",
+                                 "  return (void*)g_ID.c_str();\n",
+                                 "}\n",
+                                 "\n",
+                                 "void*\n",
+                                 "Create()\n",
+                                 "{\n",
+                                 "  CDAEModel* pDAEModel = new C",cname,"(L\"\");\n",
+                                 "\n",
+                                 "  return (void*)pDAEModel;\n",
+                                 "}\n"]) => res
         ------------------------------
         generate_dll_code(cname) => res
   
@@ -637,12 +640,13 @@ end
          list_append(knvarlst',varlst) => all_vars &
          generate_indep_var(comp_name_list,0) => indep_var_list &
          generate_links2(all_vars,0,0,comp_name_list) => (vars_params_list_str,vars_lst,no_alg_values) &
-	     generate_simple_equation_links(comp_name_list,seqn,vars) => simple_equation_links &
+	     generate_simple_equation_links(comp_name_list,seqn,vars,vars2) => simple_equation_links &
 	     Util.list_flatten([vars_params_list_str, ["\n"],indep_var_list,vars_lst, 
 			                simple_equation_links]) => res_lst &
 	     Util.string_append_list(res_lst) => res
          -------------------------------------------
-         generate_links(DAELow.DAELOW(vars as DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_),
+         generate_links(DAELow.DAELOW(vars as DAELow.VARIABLES(_,vararr,_,_),
+                                      vars2 as DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_),
 		                comp_name_list) => (res,no_alg_values)        
 
   axiom generate_links(_,_) => ("/* generation of variables linking has failed */",42)
@@ -652,13 +656,14 @@ end
  ** Generates links for those variables that are eliminated from the equations.
  ** For instance, a=b with 'b'ä eliminated will generate a link to 'a'.
  **)
-relation generate_simple_equation_links: (string list, DAELow.Equation array, DAELow.Variables) 
+relation generate_simple_equation_links: (string list, DAELow.Equation array, 
+                                          DAELow.Variables,DAELow.Variables) 
 	      => string list =
 	      
   rule	array_list(seqns) => eqn_lst  &
-	    generate_simple_equation_links2(comp_name_list,eqn_lst,vars) => res 
+	    generate_simple_equation_links2(comp_name_list,eqn_lst,vars,knvars) => res 
 	    -----------------------------------------------
-	    generate_simple_equation_links(comp_name_list,seqns,vars) => res
+	    generate_simple_equation_links(comp_name_list,seqns,vars,knvars) => res
 end 
 
 
@@ -678,70 +683,102 @@ relation generate_getsubmodel_code:(string list, Exp.ComponentRef) => string =
 	    generate_getsubmodel_code(comp_name_list,cr) => res
 
         (*this print is removed because the model does not need to have submodels*)
-  rule	(*print "-generate_getsubmodel_code failed\n" *)
+  rule	print "-generate_getsubmodel_code failed:\n" &
+ 	    Exp.cref_str(cr) => crs &
+        
+        print crs & print "\n" &
+	    Util.string_append_list(["  this"]) => res
 	    ----------------
-	    generate_getsubmodel_code(comp_name_list,cr) => fail
+	    generate_getsubmodel_code(comp_name_list,cr) => res
 end
 
 relation generate_simple_equation_links2: (string list, 
 					                       DAELow.Equation list,
+					                       DAELow.Variables,
 					                       DAELow.Variables)
 	      => string list =
 
-  axiom	generate_simple_equation_links2(_,[],_) => []
+  rule  print "----------------------\n" &
+        DAELow.get_var(cr2,vars) => (var1 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) &
+        DAELow.get_var(cr,knvars) => (var2 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) &
+        DAELow.dump_vars([var1,var2]) &
+        int_eq(1,0) => true
+
+        --------------------------------
+	    generate_simple_equation_links2(comp_name_list,
+                                        DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,
+                                        vars,
+                                        knvars) => [""] 
+
+  axiom	generate_simple_equation_links2(_,[],_,_) => []
 	    
+
         (* this checks if the the var is a DAELow.Variable *)
         (*if it is then it must decide the direction*)
   rule	generate_getsubmodel_code(comp_name_list,cr) => sub_model_code  &
 	    Exp.cref_str(cr) => crs &
+	    Exp.cref_str(cr2) => crs2 &
         Util.string_split_at_char(crs,#".") => comp_path_string_list &
         Util.list_last(comp_path_string_list) => comp_name &
-	    DAELow.get_var(cr2,vars) => (DAELow.VAR(_,DAELow.VARIABLE,dir,_,_,_,_,_,_,_,class_path),varindx) &
+	    DAELow.get_var(cr2,vars) => (DAELow.VAR(_,_(*DAELow.VARIABLE*),dir',_,_,_,_,_,_,_,class_path),varindx) &
+	    DAELow.get_var(cr,knvars) => (DAELow.VAR(_,DAELow.VARIABLE,dir,_,_,_,_,_,_,_,class_path),_) &
         Absyn.path_string(class_path) => class_path_str &
         TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
         int_string(input_number) => input_number_str &
 	    tornado_direction(dir) => dir_kind &
-	    int_string(varindx) => varindxstr &
+	    int_sub(varindx,1) => varindx' &
+        int_string(varindx') => varindxstr &
 	    Util.string_append_list([sub_model_code,"->Get",dir_kind,"Var(",input_number_str,
-				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ", varindxstr,");\n"]) => linkstr &
-	    generate_simple_equation_links2(comp_name_list,eqns,vars) => rest
+				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ", 
+                                 varindxstr,"); //", crs," -> ",crs2,"\n"]) => linkstr &
+	    generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
 	    --------------------------------
-	    generate_simple_equation_links2(comp_name_list,DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,vars) 
+	    generate_simple_equation_links2(comp_name_list,
+                                        DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,
+                                        vars,
+                                        knvars) 
 	      =>  linkstr::rest
 
   rule	generate_getsubmodel_code(comp_name_list,cr) => sub_model_code  &
 	    Exp.cref_str(cr) => crs &
+	    Exp.cref_str(cr2) => crs2 &
         Util.string_split_at_char(crs,#".") => comp_path_string_list &
         Util.list_last(comp_path_string_list) => comp_name &
-	    DAELow.get_var(cr2,vars) => (DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_path),varindx) &
+	    DAELow.get_var(cr2,vars) => (DAELow.VAR(_,kind',dir',_,_,_,_,_,_,_,class_path),varindx) &
+	    DAELow.get_var(cr,knvars) => (DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_path),_) &
         Absyn.path_string(class_path) => class_path_str &
         TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
         int_string(input_number) => input_number_str &
 	    tornado_kind(kind) => tkind &
-	    int_string(varindx) => varindxstr &
+	    int_sub(varindx,1) => varindx' &
+        int_string(varindx') => varindxstr &
 	    Util.string_append_list([sub_model_code,"->Get",tkind,"Var(",input_number_str,
-				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ", varindxstr,");\n"]) => linkstr &
-	    generate_simple_equation_links2(comp_name_list,eqns,vars) => rest
+				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ", 
+                                 varindxstr,"); //--" , crs," -> ",crs2,"\n"]) => linkstr &
+	    generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
 	    --------------------------------
-	    generate_simple_equation_links2(comp_name_list,DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,vars) 
+	    generate_simple_equation_links2(comp_name_list,
+                                        DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,
+                                        vars,
+                                        knvars) 
 	      =>  linkstr::rest
 
-  rule	generate_simple_equation_links2(comp_name_list,eqns,vars) => rest
+  rule	generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
 	    --------------------------------
-	    generate_simple_equation_links2(comp_name_list,_::eqns,vars) 
+	    generate_simple_equation_links2(comp_name_list,_::eqns,vars,knvars) 
 	      =>  rest
 
   rule	print "ERROR, EQUATION in simple equations\n" 
 	    --------------------------
-	    generate_simple_equation_links2(_,DAELow.EQUATION(_,_)::_,_) => fail
+	    generate_simple_equation_links2(_,DAELow.EQUATION(_,_)::_,_,_) => fail
 
   rule	print "ERROR, ALGORITHM in simple equations\n" 
 	    --------------------------
-	    generate_simple_equation_links2(_,DAELow.ALGORITHM(_,_,_)::_,_) => fail
+	    generate_simple_equation_links2(_,DAELow.ALGORITHM(_,_,_)::_,_,_) => fail
 
   rule	print "-generate_simple_equation_links2 failed\n" 
 	    --------------------------
-	    generate_simple_equation_links2(_,_,_) => fail
+	    generate_simple_equation_links2(_,_,_,_) => fail
 end
 
 relation tornado_kind: (DAELow.VarKind) => string =
