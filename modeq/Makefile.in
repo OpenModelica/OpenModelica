@@ -25,14 +25,14 @@ CORBAHOME = @CORBAHOME@
 
 ifdef USE_CORBA
  CORBAOBJ = runtime/corbaimpl.o runtime/modeq_communication_impl.o runtime/modeq_communication.o 
- CORBALIB = -L$(CORBAHOME)/lib -lmico
+ CORBALIB = -L$(CORBAHOME)/lib -lmico -lcrypto -lssl
 else
  CORBAOBJ = runtime/corbaimpl_stub.o
  CORBALIB =
 endif
 
 LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) \
-	 -lssl $(CORBALIB) -lm -lpthread 
+	 $(CORBALIB) -lm -lpthread 
 
 PROG	= modeq
 AST	= absyn_builder/absyn_builder.a
