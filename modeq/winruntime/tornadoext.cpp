@@ -523,11 +523,10 @@ extern "C"
     strstream output;
     map<string, map<string,variable> >::iterator search;
     search = generated_classes.find(class_str_key);
-    
+    strstream output_str;
     if(search != generated_classes.end()){
       map<string,variable>::iterator itr;
       if(search->second.size() > 0){
-        output << "  SetNoSubModels(" << search->second.size() << ");\n";
         int index = 0; 
         for(itr = search->second.begin(); itr != search->second.end(); ++itr)
           {
@@ -537,11 +536,13 @@ extern "C"
               
             }
           }
+        if(index > 0) {
+          output_str << "  SetNoSubModels(" << index << ");" << output;
+        }
       }
     }
-    output << endl << ends;
-      
-    rmlA0 = (void*) mk_scon(output.str());
+    output_str << endl << ends;
+    rmlA0 = (void*) mk_scon(output_str.str());
  
     RML_TAILCALLK(rmlSC);
   }
@@ -561,18 +562,21 @@ extern "C"
       map<string,variable>::const_iterator itr;
       if(search->second.size() > 0){
         int index;
-        for(itr = search->second.begin(), index = 0; itr != search->second.end(); ++itr, ++index)
+        for(itr = search->second.begin(), index = 0; itr != search->second.end(); ++itr)
           {
             if(itr->second.type == string("class") && itr->second.name == component_str_key){
-              ret_val = index;
+              ret_val = index++;
             }
           }
       }
     }
-      
+    
     rmlA0 = (void*) mk_icon(ret_val);
- 
-    RML_TAILCALLK(rmlSC);
+    
+    if(ret_val == 0)
+      RML_TAILCALLK(rmlFC);
+    else
+      RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL 
 
