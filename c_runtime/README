@@ -1,0 +1,47 @@
+OpenModelica runtime libraries
+==============================
+
+This directory contains files for the Modelica runtime
+environment. The runtime consists of two libraries, libc_runtime.a and
+libsim.a. 
+
+libc_runtime.a
+==============
+c_runtime is used for executing Modelica functions that has been
+generated C code for. It consists of the following files.
+
+boolean_array.*  - how arrays of booleans are represented in C.
+integer_array.*  - how arrays of integers are represented in C.
+real_array.*	 - how arrays of reals are represented in C.
+string_array.*   - how arrays of strings are represented in C.
+index_spec.c     - keep track of dimensionsizes of arrays.
+memory_pool.c	 - memory allocation for local variables.
+read_write.*	 - reading and writing of data to file.
+utility.c	 - utility functions
+
+
+libsim.a
+========
+libsim.a is the runtime for simulations, it contains solvers and a
+main function for the simulation. The following files are included:
+
+simulation_runtime.* 	- Includes the main function, solver wrappers,etc.
+daux.f 			- auxilary Fortran functions
+ddasrt.f		- DDASRT solver
+ddassl.f		- DASSL solver
+dlamch.f		- determine machine parameters for solvers
+dlinpk.f		- gaussian elimination routines, used by solvers.
+lsame.f			- LAPACK axuiliary routine LSAME.
+
+(non-linear solver)
+hybrd1.f		- non-linear solver with approximate jacobian
+hybrj.f			- non-linear solver with analythical jacobian.
+r1updt.f		- helper routines 
+r1mpyq.f		- helper routines 
+qrfac.f			- helper routines 
+qform.f			- helper routines 
+hybrd.f			- alternative for non-linear solver..
+fdjac1.f		- helper routines 
+enorm.f			- helper routines 
+dpmpar.f		- helper routines 
+dogleg.f		- helper routines 
