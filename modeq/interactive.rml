@@ -2187,7 +2187,7 @@ relation get_nth_connection_annotation: (Absyn.ComponentRef, Absyn.Program, int)
 	--------------
 	get_nth_connection_annotation(model,p,n) => str
 
-  axiom	get_nth_connection_annotation(_,_,_) => "-1"
+  axiom	get_nth_connection_annotation(_,_,_) => "{}"
 end
 
 (** relation: get_connector_count
@@ -2879,11 +2879,6 @@ relation get_connection_annotation_str: Absyn.EquationItem => string =
 	
   axiom	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),NONE)) => fail
 
-  rule	Print.get_string() => str &
-	print "-get_connectoin_annotation_str failed, str = " & print str &
-	print "\n" 
-	----------------
-	get_connection_annotation_str(_) => fail
 end
 
 relation create_funcargs_from_elementargs: Absyn.ElementArg list => Absyn.FunctionArgs =
@@ -3078,7 +3073,7 @@ relation get_componentitems_annotations_from_items: (Absyn.ComponentItem list,
 	get_componentitems_annotations_from_items(rest,env) => res
 	-----------------------------------------------
 	get_componentitems_annotations_from_items(Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(
-		Absyn.ANNOTATION(mod as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)::_)
+		Absyn.ANNOTATION(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),SOME(Absyn.CLASSMOD(mod,NONE)),_)::_)
 	),_)))::rest,env)
 	  => gexpstr'::res
 
@@ -3912,6 +3907,12 @@ relation get_classes_in_parts: Absyn.ClassPart list => Absyn.Class list =
 	list_append(l1,l2) => res
 	------------------------
 	get_classes_in_parts (Absyn.PUBLIC(elts)::rest) => res
+
+  rule	get_classes_in_parts(rest) => l1 &
+	get_classes_in_elts(elts) => l2 &
+	list_append(l1,l2) => res
+	------------------------
+	get_classes_in_parts (Absyn.PROTECTED(elts)::rest) => res
 
   rule	get_classes_in_parts(rest) => res
 	---------------------------------
