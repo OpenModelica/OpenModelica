@@ -17,6 +17,8 @@
 
 \makeindex
 
+\renewcommand{\bottomfraction}{0.5}
+
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\codebox}[1]{\fbox{\code{#1}}}
 \newcommand{\filename}[1]{\texttt{#1}}
@@ -80,16 +82,16 @@
 
 Modelica is a new modeling language.  It is an object-oriented,
 equation-based languages that is designed to incorporate features from
-several previous modeling languages and form a common ground for
-modeling and simulation implementors.  As a part of the design
-process, the exact semantics of the language needs to be defined.
+several previous modeling languages and to form a common ground for
+modeling and simulation.  As a part of the design process, the exact
+semantics of the language needs to be defined.
 
 Formal descriptions of the syntax of programming languages has long
-been accepted as a natural way of describing the syntactical form of
-the language. Today everybody expects a BNF-like grammar for a new
+been accepted as a natural way of describing the syntactical form of a
+language. Today everybody expects a BNF-like grammar for a new
 language. But that is not the case when it comes to describing the
 semantics of languages. Formalisms for the specifications of semantics
-has been available for many years, but are not often used by other
+have been available for many years, but are not often used by others
 than researchers.
 
 One advantage of using a formal description of the semantics is of
@@ -145,9 +147,9 @@ specification in the same way.  This implies that the specification
 must be exact and unambiguous.
 
 For this reason formalisms for writing formal specifications of
-languages have been invented\cite{pagan}.  These formalisms
-allow for a mathematical semantic description, which as a consequence
-is exact, unambiguous and easier to verify.
+languages have been invented\cite{pagan}.  These formalisms allow for
+a mathematical semantic description, which as a consequence is exact,
+unambiguous and easy to verify.
 
 Several approaches has been explored as to how the semantics should be
 described formally.  See \cite{pi} for a good introduction to the
@@ -222,7 +224,7 @@ called a \firstref{sequent}.
 
 The only rule that matches is rule \ref{eq:mul}, leading to the
 following rule instance, where $3$ is substituted for $e_1$ and $(4 +
-5)$ is for $e_2$:
+5)$ is substituted for $e_2$:
 
 $$
   \dedu{ 3 \Rightarrow n_1 \hspace{1em}
@@ -243,8 +245,8 @@ $$
        { 3 \cdot (4 + 5) \Rightarrow n }
 $$
 
-The sequent labeled with a $3$ also need to be proved, and this can be
-done by instantiating rule \ref{eq:add}.
+The sequent labeled with a $3$ also needs to be proved, and this can
+be done by instantiating rule \ref{eq:add}.
 
 $$
   \dedu{ 3 \Rightarrow 3 \hspace{1em}
@@ -310,7 +312,7 @@ for ASCII text.
 
 The rules are grouped in \firstref{relations}.  A relation is a set of
 rules that have the same \firstref{signature}, meaning that they
-perform the same operation, but are applicable at different times.
+perform the same operation, but are applicable at different occasions.
 
 The type system includes basic types, such as \code{int}, \code{real}
 and \code{bool}.  User-defined algebraic types may be declared in a
@@ -410,8 +412,9 @@ connectors used for connecting the ``pins'' of the components.
 This is a principle that has become very popular in the programming
 community, but it is still not very common in the modeling and
 simulation world, partly because the mathematical description using
-hybrid DAEs\cite{dae} is not very familiar to the engineers who do the
-modeling.
+\firstref{hybrid differential algebraic equations}\cite{dae}
+(\firstref{hybrid DAE}s) is not very familiar to the engineers who do
+the modeling.
 
 \subsection{The class concept}
 
@@ -495,7 +498,7 @@ implementation existed yet, and there was actually a lot more work
 needed to make the specification comprehensive enough to be able to
 build a implementation for it.
 
-The work on the RML specification for Modelica began in November 1997.
+The work on the RML specification of Modelica began in November 1997.
 
 
 \section{PELAB}
@@ -510,13 +513,16 @@ compilers, compiler generators, tools for debugging and maintenance of
 distributed and real-time systems, compilers and programming
 environments for parallel computers, high-level environments and
 mathematical modeling languages and systems for scientific computing,
-program transformation systems, etc.  The view of programming
+program transformation systems, etc.  The groups view of programming
 environment research is rather pragmatic, and the primary interest is
 in developing and investigating new methods and tools that have
 potential for practical applications, e.g. in support systems for
 software specialists. Developing such tools is very important, since
 most of the rising cost of computer systems is due to development,
 debugging and maintenance of software.
+
+The Modelica language and development tools for Modelica are concrete
+examples of research done at PELAB.
 
 \chapter{Motivation and scope of the thesis}
 \label{cha:goals}
@@ -555,10 +561,11 @@ shortcomings.
 \subsection{Natural semantics and equation-based\\ languages}
 
 Modelica is not a programming language, such as C or LISP.  Instead it
-is a modeling language, with basically only static semantics.  For
-this reason it was interesting to see how a formalism like Natural
-semantics, and more specifically RML, which is usually used to
-specify programming languages, could be applied to it.
+is a modeling language, with a different distinction between static
+and dynamic semantics.  For this reason it was interesting to see how
+a formalism like Natural semantics, and more specifically RML, which
+is usually used to specify programming languages, could be applied to
+it.
 
 
 \section{Scope of the thesis}
@@ -573,7 +580,7 @@ semantics were.  This has been done by taking part of the Modelica
 design effort, including participation in design meetings and
 electronic discussions.
 
-These discussions lay outside the scope of the thesis, and was not
+These discussions lay outside the scope of the thesis, and were not
 directly part of the work.  However, it was needed to be able to write
 the formal semantics.  Unfortunately, this lead to a chicken-and-egg
 problem, because until I had tried to write the specification I didn't
@@ -585,9 +592,9 @@ place.
 Another goal of the formal specification was to build a usable
 Modelica translator, which could be used for real-world applications.
 Since this partly conflicts with the desire to produce a clear
-semantical description, which not necessarily gives translation
+semantic description, which not necessarily gives translation
 efficiency high priority, a decision needed to be made on what to
-focus on.  I chose to concentrate on the semantical description, which
+focus on.  I chose to concentrate on the semantic description, which
 shows in things like describing the semantics of equations between two
 matrices as a number of simple equations between the individual
 elements of the two matrices.
@@ -596,19 +603,22 @@ elements of the two matrices.
 \label{sec:limitations}
 
 For the reasons outlined above, the semantic specification is far from
-complete.  Even the language Modelica itself is still very incomplete.
+complete.  Even the language Modelica itself is still incomplete, but
+much effort is currently being put into making a new and complete
+specification of the language.
 
 Most of the work has been put into describing the most important
 aspects of instantiation and expression analysis, while other things,
-like functions and other algorithmic aspects needs more attention.
-Also more work is needed to add the polish to fix all the details with
+like functions and other algorithmic aspects need more attention.
+Also more work is needed to add the polish to fix all details
 preventing things like instantiation of partial classes.  But this is
 something that should not be done before the overall structure is
 fixed.
 
-Below is a list of issues that is not covered by the semantic
-specification, or were implemented before it was decided how it should
-have been done.  The limitations are listed in no particular order.
+Below is a list of issues that are currently not covered by the
+semantic specification, or were implemented before it was decided how
+it should have been done.  The limitations are listed in no particular
+order.
 
 \begin{enumerate}
 
@@ -650,39 +660,41 @@ have been done.  The limitations are listed in no particular order.
   translation.  This would be needed when the value of a constant (or
   parameter) is defined in terms of a function call.
   
-\item Functions are implemented in a too simplistic way.  A simple
+\item Functions are implemented in a too simplistic way.  Simple
   type-checking of arguments and a single return value is performed,
   but it only allows complete types, meaning that the sizes of array
   dimensions in input or output arguments must by fully specified, and
   can not depend on the actual arguments given in each function call.
   
-  The function semantics are still uncertain.  There have been
-  thoughts about a proposal where function calls are defined in terms
-  of ``implicit instantiation'', where each function definition would
-  be instantiated once for each function call in the model.  This
-  would make it possible to determine the full type of the arguments
-  for each function call.
+  The function semantics is still uncertain.  There have been
+  discussions about a proposal where function calls are defined in
+  terms of ``implicit instantiation'', where each function definition
+  would be instantiated once for each function call in the model.
+  This would make it possible to determine the full type of the
+  arguments for each function call.
   
-  However, this is currently hard to implement in this semantic
-  specification due to RML limitations.  The RML module which does the
-  instantiation is called \code{Inst} (see section \ref{src:Inst}).
-  It needs to do static analysis of expressions, and for that purpose
-  it uses the relations in the module \code{Static}.  But if the
-  \code{Static} module encounters a function call it would need to do
-  an implicit instantiation, which would require the use of the
-  \code{Inst} module.  Unfortunately, circular dependencies between
-  modules are not allowed in RML.  This can be worked around in
-  several ways, but all of them would make the specification less
+  However, this is currently hard to specify in this semantic
+  specification due to RML limitations.  The RML module which performs
+  the instantiation is called \code{Inst} (see section
+  \ref{src:Inst}).  It needs to do static analysis of expressions, and
+  for that purpose it uses the relations in the module \code{Static}.
+  But if the \code{Static} module encounters a function call it would
+  need to do an implicit instantiation, which would require the use of
+  the \code{Inst} module.  Unfortunately, circular dependencies
+  between modules are not allowed in RML.  This can be worked around
+  in several ways, but all of them would make the specification less
   structured or harder to understand.
 
-\item The checking of component attributes is severely lacking.  For
+\item The checking of component attributes is lacking severely.  For
   instance, it is currently possible to use a variable in an outer
   scope.  This should only be possible with constants, if at all.
 
 \item Modifying class names is done even for non-local class names.
-
-\item Unused modifications are simply discarded.  They should produce
-  an error.  This is also true for out-of-bounds array modifications.
+  
+\item Unused modifications are simply discarded.  They should probably
+  produce an error, although this is not yet clearly defined in the
+  language specification.  This is also true for out-of-bounds array
+  modifications.
   
 \item Redeclarations are not implemented.  This is simply because of
   time restrictions.  It could probably be added without too much
@@ -693,16 +705,16 @@ have been done.  The limitations are listed in no particular order.
 
 \item Assertions are lost during translation.
   
-\item When instantiation an \code{extends} element, the extended class
+\item When instantiating an \code{extends} element, the extended class
   definition is instantiated in the scope where the \code{extends}
   element appears.  This means that the extended class may refer to
   elements defined in the extending class, as long as it appears above
   the \code{extends} element.
-
-\item There are some remaining bugs with the parts that are
-  implemented.  And some of the most recent design decisions and
-  clarifications of the Modelica semantics are not incorporated into
-  the design.
+  
+\item There are some remaining bugs with the parts that are specified.
+  And some of the most recent design decisions and clarifications of
+  the Modelica semantics, such as array constructors, are not
+  incorporated into the design.
 
 \end{enumerate}
 
@@ -718,10 +730,11 @@ Modelica semantics began, the RML version was at 1.5.  The new
 compiler provided much improved error messages and freedom in writing
 source files.
 
-The RML compiler first translates the RML specification to a C
-program.  The RML compiler driver \code{rmlc} then compiles this,
-using a C compiler.  We have used the GNU C compiler (GCC), but most
-modern C compilers should be usable.
+Compilation of an RML file is done using the RML compiler driver
+\code{rmlc}. The driver first translates the RML specification to a C
+program using the \code{rml2c} compiler.  Then it compiles the
+generated C file using a C compiler.  We have used the GNU C compiler
+(GCC), but most modern C compilers should be usable.
 
 \section{Parser}
 \label{sec:parser}
@@ -763,13 +776,13 @@ provided in appendix \ref{app:rmldoc}
 \section{Introduction}
 \label{sec:semintro}
 
-The Modelica specification\cite{modelica1f} contains an informal
+The Modelica 1f specification\cite{modelica1f} contains an informal
 description of the intended semantics of the language. Unfortunately,
 the description lacks considerably in detail, which means that this
-work needs to formalize things not covered by the specification. In
+work needed to formalize things not covered by the specification. In
 some cases, the semantics was easy to guess, but in other cases,
 discussions with the authors and reading of design meeting minutes was
-the needed to find out what was really intended.
+needed to find out what was really intended.
 
 This chapter complements the Modelica specification by filling in some
 of the larger holes in the informal language semantics.  It is
@@ -971,8 +984,8 @@ types of function (see the discussion in section \ref{sec:functions}).
 \subsection{Type equivalence and subtypes}
 \label{sec:typeq}
 
-The concepts of equivalent types and subtypes appears in several
-places in the specification.
+The concepts of equivalent types and subtypes appear in several places
+in the specification.
 
 \begin{Def}{Subtype}
   A type $T_1$ is a \term{subtype} of another type $T_2$ if and
@@ -1010,7 +1023,7 @@ used to indicate the intended use of the class, and to impose certain
 restrictions on what the class definition can contain, and how it can
 be used.
 
-\begin{table}[htbp]
+\begin{table}[tbp]
   \begin{center}
     \begin{tabular}{lp{8cm}}
       \hline
@@ -1019,7 +1032,7 @@ be used.
       connections. \\
       \hline
       \code{type}   & May only be declared as derived from one of the
-      predefined types, or as a matrix of a \code{type}. \\
+      predefined types, or as a array of a \code{type}. \\
       \hline
       \code{connector} & No equations are allowed in the definition or
       in any of its components. \\
@@ -1062,8 +1075,8 @@ allowed in connections, but \code{class} is, as long as it fulfills
 the restrictions.
 
 It is currently not known if this goal will be fully met.  In most
-cases it could be done, but things like \code{package} and
-\code{function} might be problematic.
+cases it could be done, but things like \code{package},
+\code{function} and \code{type} might be problematic.
 
 \section{Arrays and matrices}
 \label{sec:arrays}
@@ -1086,8 +1099,8 @@ a description of how the overloading of operators works.
 \section{Functions}
 \label{sec:functions}
 
-The semantics of functions are yet to be defined.  What is clear is
-that it should be possible to use positional arguments that depends on
+The semantics of functions is yet to be defined.  What is clear is
+that it should be possible to use positional arguments that depend on
 the order of the \code{input} components of the function definition.
 It should also be possible to use named arguments matching against the
 names of the components in the definition.  Furthermore, all uses of a
@@ -1101,7 +1114,7 @@ either an extended type system is needed, or other extensions, such as
 that of implicit function instantiation, needs to be introduced.
 
 For the purposes of this specification, a simplistic model where all
-formal parameter types needs to be fully determinable from the
+formal parameter types need to be fully determinable from the
 definition is used.  The algorithmic (runtime) semantics is left
 unspecified.
 
@@ -1111,10 +1124,17 @@ unspecified.
 
 Connections between objects are introduced by the \code{connect}
 construct in the equation part of a class declaration.  The
-\code{connect} construct takes two references to connectors, each of
-which is either an element of the same class as the \code{connect}
+connections are between components called \firstref{connectors}
+
+\begin{Def}{Connector}
+  A \term{connector} is an instance of a class defined using the
+  \code{connector} keyword.
+\end{Def}
+
+The \code{connect} construct takes two references to connectors, each
+of which is either an element of the same class as the \code{connect}
 construct or an element of one of its components. The connectors are
-connected to produce equation according to the rules below.  Each
+connected to produce equations according to the rules below.  Each
 connector reference has either the syntactic form \code{c}, where
 \code{c} is a connector instance in the class containing the
 \code{connect} construct, or \code{m.c}, where \code{m} is the name of
@@ -1127,7 +1147,13 @@ variable in the component \code{m}.
 \label{sec:connectsets}
 
 To create equations from the \code{connect} constructs, the connected
-variables are collected in \firstref{connection sets}.
+variables are collected into \firstref{connection sets}.
+
+\begin{Def}{flow variables}
+  A variable can be declared as a \firstref{flow variable}, using the
+  prefix \code{flow} in the declaration.  Variables not declared as
+  flow variables are called \firstref{non-flow variables}.
+\end{Def}
 
 \begin{Def}{Connection sets}
   A connection set is a set $C$ of variables connected by means of
@@ -1151,9 +1177,9 @@ connection set with its corresponding subcomponent of \code{b}.
 
 If several \code{connect(a,b)} constructs are encountered during
 instantiation of a class, the resulting connection sets are merged to
-a collection of connection sets $C$ so that if a component $x$ is
-in two different connection sets $S_1$ and $S_2$, they the union $S_1
-\cup S_2$ is a subset of one of the sets in $C$. Each component is in
+a collection of connection sets $C$ so that if a component $x$ is in
+two different connection sets $S_1$ and $S_2$, the union $S_1 \cup
+S_2$ is a subset of one of the sets in $C$. Each component is in
 exactly one of the sets in $C$.
 
 \subsection{Equations}
@@ -1195,7 +1221,7 @@ and declares a connector \code{C} and models \code{A} and \code{M}.
 The model that is instantiated at the top level is \code{M}, as it is
 the last model in the file.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \begin{boxedverbatim}
   connector C
     Real x;
@@ -1204,6 +1230,8 @@ the last model in the file.
 
   model A
     C con1, con2;
+  equation
+    connect(con1,con2);
   end A;
 
   model M
@@ -1227,16 +1255,16 @@ statements creates the connection sets described in figure
 \ref{fig:csetex2}, and the two instances of the model \code{A}
 (components \code{a1} and \code{a2} in model \code{M}) create the
 connection sets in figure \ref{fig:csetex3}.  Each component in the
-sets are marked with a label indicating whether they were added from
-an inner or an outer connector.
+sets is marked with a label indicating whether they were added from an
+inner or an outer connector.
 
 \newcommand{\couter}[1]{\code{#1}^{\text{outer}}}
 \newcommand{\cinner}[1]{\code{#1}^{\text{inner}}}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
     $\left\{ \couter{con.x}, \cinner{a1.con1.x}, \cinner{a2.con1.x} \right\}$
-    $\left\{ \cinner{con.y}, \cinner{a1.con1.y}, \cinner{a2.con1.y} \right\}$
+    $\left\{ \couter{con.y}, \cinner{a1.con1.y}, \cinner{a2.con1.y} \right\}$
     $\left\{ \cinner{a1.con2.x}, \cinner{a2.con2.x} \right\}$
     $\left\{ \cinner{a1.con2.y}, \cinner{a2.con2.y} \right\}$
     \caption{Connection sets from \code{M}}
@@ -1244,7 +1272,7 @@ an inner or an outer connector.
   \end{center}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
     $\left\{ \couter{a1.con1.x}, \couter{a1.con2.x} \right\}$
     $\left\{ \couter{a1.con1.y}, \couter{a1.con2.y} \right\}$
@@ -1256,10 +1284,12 @@ an inner or an outer connector.
 \end{figure}
 
 The equations generated from these connection sets, together with the
-last equation in the model \code{M} is shown in figure
-\ref{fig:csetex4}.
+last equation in the model \code{M} are shown in figure
+\ref{fig:csetex4}.  Since the model connects the same two connectors
+several times, the resulting set of equations will of course be
+overdetermined.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
     \begin{eqnarray*}
       \code{con.x}     &=& \code{a1.con1.x} \\
@@ -1297,13 +1327,13 @@ specification should go.  Should it try to describe the semantics of
 a model while the parameters are still unknown?  Or should it assume
 some default value for the parameters?
 
-I have chosen to regard all parameters as constants, using the default
-value given in the model definition.  In some cases, the parameters
-are still possible to change after translation, but in other cases it
-is not (see section \ref{sec:strucparam} below).  This means that
-parameters and constants are treated in the same way for most
-practical purposes.  The output still indicates whether they were
-declared as parameters or constants.
+In this work, all parameters are regarded as constants, using the
+default value given in the model definition.  In some cases, the
+parameters are still possible to change after translation, but in
+other cases they are not (see section \ref{sec:strucparam} below).
+This means that parameters and constants are treated in the same way
+for most practical purposes.  The output still indicates whether they
+were declared as parameters or constants.
 
 \subsection{Structural parameters}
 \label{sec:strucparam}
@@ -1326,7 +1356,7 @@ of \code{levels} after the translation is done will only change the
 value, but the number of equations will remain the same, creating an
 erroneous model.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
 \begin{boxedverbatim}
   model SinSource
@@ -1341,7 +1371,7 @@ erroneous model.
   \end{center}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
 \begin{boxedverbatim}
   model Stack
@@ -1369,14 +1399,17 @@ if at least one of the following conditions are fulfilled:
 
 \begin{enumerate}
 \item It appears in the dimension size of a array declaration.
-\item It is used to index an array in any expression.
+\item It is used to index an array in any expression.  
 \item It is used in a range expression (\code{a:b} or \code{a:b:c}).
 \item Its value is defined in terms of another structural parameter.
 \end{enumerate}
 
+The conditions above are not verified to be absolutely correct.  For
+instance, the second condition is probably too restrictive.
+
 As this semantic specification treats all parameters as constants,
 this distinction between structural and non-structural parameters is
-not important.  But for simulation environment implementors, it will
+not important.  But for simulation environment implementors, this will
 be important.  Most implementations will include a compilation step
 before the user gets to set parameters and start the simulation.  The
 question is how well these implementations will handle the case when
@@ -1489,7 +1522,7 @@ The following extensions are made:
   \code{Real(i)}.
   
 \item A new postfix subscripting operator is introduced.  In the flat
-  model, it is necessary to be able to subscript expression, so the
+  model, it is necessary to be able to subscript expressions, so the
   syntax \code{expression[x]} is allowed.  This is not allowed in
   Modelica.
   
@@ -1520,11 +1553,6 @@ The following extensions are made:
   Modelica.  Therefore, the class definition in the flat code is
   declared as \code{fclass} to differentiate it from Modelica's
   \code{class}.
-
-  There are plans for a modified version of the translator which
-  produces valid Modelica.  This will be less readable than the
-  current Flat Modelica, but will allow us to feed the output of the
-  translator to another Modelica system.
 
 \end{itemize}
 
@@ -1559,9 +1587,11 @@ the previous section.
   possible to write a parser that will accept and understand flat
   Modelica.  One thing that may cause trouble is the extension where
   array subscripting may be allowed on arbitrary expressions.
-
-  An extension of the translator is currently being developed which
-  will allow it to produce valid Modelica.
+  
+  A modified version of the translator which produces valid Modelica
+  is currently being developed.  The output of this version will be
+  less readable than the current Flat Modelica, but will allow us to
+  feed the output of the translator to another Modelica system.
 
 \item Feeding the output to an equation solver needs either a special
   parser for the solver or a filtering step to rewrite the flat
@@ -1573,6 +1603,7 @@ the previous section.
 
 \end{enumerate}
 
+An example of Flat Modelica can be seen in figure \ref{fig:ex-eq}.
 
 \chapter{Translation overview}
 \label{cha:system}
@@ -1583,7 +1614,7 @@ to a target language called flat Modelica (see chapter \ref{cha:target}).  The
 translation is performed in several steps, which are outlined in this
 chapter.
 
-\begin{figure}[htbp]
+\begin{figure}[btp]
   \begin{center}
     \input{transfig.tex}
     \centerline{\box\graph}
@@ -1757,12 +1788,12 @@ highlights.
 
 An equation in the equation section of a Modelica model can take
 several forms, and to describe the semantics of an equation, different
-transformations are applied to them.
+transformations are applied.
 
 
 \subsection{Subcomponent equation expansion}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
 \begin{boxedverbatim}
   model M
@@ -1776,7 +1807,7 @@ transformations are applied to them.
   \end{center}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
 \begin{boxedverbatim}
   model M
@@ -1797,13 +1828,8 @@ equation has the same meaning as if all the array elements were
 equated.  Thus, in the output the equation is split into one equation
 for each pair of array elements, as in figure \ref{fig:arreqexp}.
 
-To be able to accomplish this, the possibility to index arbitrary
-array expressions, and not only components, needed to be added to the
-output language.
-
 Likewise, if two structured components are equated, the equation is
-expanded to one equation for each pair of public
-components.
+expanded to one equation for each pair of public components.
 
 These two transformations causes problems in the output if either the
 left-hand side or the right-hand side of the equation is a complex
@@ -1846,7 +1872,7 @@ during instantiation indicating that some piece of information has been
 encountered which affects the class restriction. The defined events
 are listed in table \ref{tab:classinfevents}.
 
-\begin{table}[htbp]
+\begin{table}[tbp]
   \begin{center}
     \begin{tabular}{lp{8cm}}
       \hline
@@ -1901,7 +1927,7 @@ helpful, so they were reduced to only one.
 \label{sec:dearep}
 
 The DAEs are collected in a data structure defined in the module
-\code{DAE} (see section \ref{src:DAE}).  This structure is basically a
+\code{DAE} (section \ref{src:DAE}).  This structure is basically a
 linear list where each element is either a variable declaration, an
 equation or an algorithm.
 
@@ -1925,10 +1951,10 @@ it is translated to a flat representation.
 \subsection{The model}
 
 The source model is given in figure \ref{fig:modelsource}.  It is a
-very simple electrical circuit, with a AC voltage source and two
+very simple electrical circuit, with an AC voltage source and two
 capacitors.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \input{example-1.tex}
   \caption{Model source}
   \label{fig:modelsource}
@@ -1937,13 +1963,13 @@ capacitors.
 
 \subsection{First transformation}
 
-Th first this the translator does it to transform the abstract syntax
-tree representing the model into an SCode representation.  This mainly
-effects the \code{Circuit} model definition, giving something that is
-described in figure \ref{fig:ex-scode}, using a pseudo-Modelica
-representation.
+The first thing the translator does it to transform the abstract
+syntax tree representing the model into an SCode representation.  This
+mainly effects the \code{Circuit} model definition, giving something
+that is described in figure \ref{fig:ex-scode}, using a
+pseudo-Modelica representation.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \input{example-2.tex}
   \caption{SCode for \code{Circuit}}
   \label{fig:ex-scode}
@@ -1963,7 +1989,7 @@ voltage variable in the positive connector in the capacitor named
 The set of all components is listed with their global names in figure
 \ref{fig:ex-flatname}.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \input{example-3}
   \caption{Global component names}
   \label{fig:ex-flatname}
@@ -1981,7 +2007,7 @@ current variables, giving the connection sets in figure
 that the connection sets will generate the equations given in figure
 \ref{fig:ex-eq}.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
     $\left\{ \code{AC.p.v}, \code{C1.p.v}, \code{C2.p.v} \right\}$
     $\left\{ \code{AC.p.i}, \code{C1.p.i}, \code{C2.p.i} \right\}$
@@ -1998,7 +2024,7 @@ The output of the translator is shown in figure \ref{fig:ex-eq}, which
 is the Flat Modelica version of the source model.  All the components
 are expanded into their simple components.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
   \begin{center}
     \input{example-4}
     \caption{Flat Modelica output}
@@ -2023,11 +2049,11 @@ language it handles.
 
 Another result of working on the semantic specification is that many
 problems and unclear issues in the Modelica semantics have been
-cleared.  This has not always lead to progress in the formal
+resolved.  This has not always lead to progress in the formal
 specification, since it sometimes has meant that it had to be
 rewritten due to changes in the semantics.  But in a larger
 perspective, namely the progress of the Modelica language
-specifications, it has meant great progress.
+specifications, it has implied substantial progress.
 
 \section{Translator usability}
 
@@ -2041,11 +2067,14 @@ matrix equations is often best done by keeping them as equations
 between matrices, but the translator translates them to one equation
 for each of the matrix elements.
 
-There are some hidden options in the translator which makes it
-possible to have it output something that is easier to pass on to
-existing solvers and simulation environments.  This is not complete,
-and relies on some ugly tricks with the RML system.  This code is not
-included in this report.
+There are some hidden options\footnote{The command-line option
+  \code{+m} makes the translator produce valid Modelica, \code{+a}
+  prevents it from splitting arrays, and \code{+t} excludes type
+  information in overloaded operators and implicit type conversions}
+in the translator which makes it possible to have it output something
+that is easier to pass on to existing solvers and simulation
+environments.  This is not complete, and relies on some ugly tricks
+with the RML system.  This code is not included in this report.
 
 The performance of the translator has not been fully evaluated,
 although a simple performance test was done using a 1049--line
@@ -2098,16 +2127,16 @@ contains over 160 cases, but it needs to be expanded
 \label{app:formsem}
 
 This chapter contains the complete formal semantics of Modelica.  This
-includes the RML source files, but the comments in the files are
+includes the RML source files, but the comments in the files have been
 converted to more readable text.
 
 \section{Overview}
 
 The specification is separated into a number of files, to modularize
-it and to make it easier to maintain and to make the structure
-clearer.  Each file contains one module.  The names of the files are
-the names of the module it contains, with all letters in lower case,
-and with the suffix \code{.rml} appended.
+it and to make it easier to maintain and to make the structure more
+clear.  Each file contains one module.  The names of the files are the
+names of the module it contains, with all letters in lower case, and
+with the suffix \code{.rml} appended.
 
 \subsection*{Source modules}
 
