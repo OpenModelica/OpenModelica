@@ -914,8 +914,7 @@ term returns [value val]
 		|#(STAR val_term = term val_factor = factor) 
 			{
 	  			val = val_term * val_factor;
-              //  cout << "Finished walking plus" << endl;
-			}
+  			}
 		|#(SLASH val_term = term val_factor = factor)
 		{
 			val = val_term / val_factor;

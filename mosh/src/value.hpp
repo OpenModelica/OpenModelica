@@ -83,6 +83,7 @@ public:
   //  type_en type() const;
   // void set_type(type_en type);
 
+  bool is_scalar() const;
   bool is_numeric() const;
   bool is_real() const;
   bool is_integer() const;
@@ -149,6 +150,9 @@ protected:
   boolean_array m_boolean_array;
   tuple_type m_tuple;
   double to_double() const;
+
+  friend value multiply_real_array(const real_array& a, const real_array& b);
+  friend value multiply_integer_array(const integer_array& a, const integer_array& b);
 
   modelica_type m_basic_type; 
 };

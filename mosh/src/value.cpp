@@ -439,15 +439,10 @@ void value::set_type(const modelica_type& t)
   m_basic_type = t;
 }
 
-// value::type_en value::type() const
-// {
-//   return m_type;
-// }
-
-// void value::set_type(value::type_en type)
-// {
-//   m_type = type;
-// }
+bool value::is_scalar() const
+{
+  return m_basic_type.is_scalar();
+}
 
 bool value::is_numeric() const
 {
@@ -482,9 +477,6 @@ bool value::is_function() const
 bool value::is_array() const
 {
   return m_basic_type.is_array();
-  //return m_type == array;
-  // return (m_type == str_array) || (m_type == integer_array_t) 
-//     || (m_type == real_array_t) || (m_type == boolean_array);
 }
 
 bool value::is_real_array() const
@@ -514,38 +506,12 @@ bool value::is_tuple() const
 
 bool value::is_function_argument() const
 {
-  //  return m_is_function_argument;
   return m_basic_type.is_function_argument();
 }
-
-// void value::append_to_array(const value& val)
-// {
-//   m_array.push_back(val);
-// }
 
 // void value::append_to_function_arguments(const value& val)
 // {
 //   //   m_function_arguments.push_back(val);
-// }
-
-// value::array_iterator value::array_begin()
-// {
-//   return m_array.begin();
-// }
-
-// value::array_iterator value::array_end()
-// {
-//   return m_array.end();
-// }
-
-// int value::array_size()
-// {
-//   return m_array.size();
-// }
-
-// int value::function_arguments_size()
-// {
-  
 // }
 
 ostream& operator<< (ostream& o, const value& v)
@@ -639,34 +605,58 @@ const value& value::operator+= (const value& val)
     {
       throw modelica_runtime_error("Adding non-numerical value\n");
     }
-  if (check_type(*this,val))
+
+  if (is_real() && val.is_real())
     {
-      if (is_real_array())
+      m_real += val.m_real;
+    }
+  else if (is_real() && val.is_integer())
+    {
+      m_real += val.m_integer;
+    }
+  else if (is_integer() && val.is_real())
+    {
+      m_real = m_integer;
+      m_real += val.m_real;
+      m_basic_type = create_real();
+    }
+  else if (is_integer() && val.is_integer())
+    {
+      m_integer += val.m_integer;
+    }
+  else if (is_array() && val.is_array())
+    {
+      if ( m_basic_type.dimensions() == val.m_basic_type.dimensions() )
 	{
-	  m_real_array += val.m_real_array;
-	}
-      else if (is_integer_array())
-	{
-	  m_integer_array += val.m_integer_array;
-	}
-      else if (is_real())
-	{
-	  m_real += val.m_real;
-	}
-      else if (is_integer())
-	{
-	  m_integer += val.m_integer;
+	  if (is_real_array() && val.is_real_array())
+	    {
+	      m_real_array += val.m_real_array;
+	    }
+	  else if (is_real_array() && val.is_integer_array())
+	    {
+	      m_real_array += real_array(val.m_integer_array);
+	    }
+	  else if (is_integer_array() && val.is_real_array())
+	    {
+	      m_real_array = real_array(m_integer_array);
+	      m_real_array += val.m_real_array;
+	      m_basic_type = create_real_array(m_integer_array.size());
+	    }
+	  else if (is_integer_array() && val.is_integer_array())
+	    {
+	      m_integer_array = val.m_integer_array;
+	    }
+	  else
+	    {
+	      throw modelica_runtime_error("Internal error in +=");
+	    }
 	}
       else
 	{
-	  throw modelica_runtime_error("Internal error in value +=");
+	  throw modelica_runtime_error("The arrays should have the same dimension sizes");
 	}
     }
-  else
-    {
-      throw modelica_runtime_error("Types do not match\n");
-    }
-    
+
   return *this;
 }
 
@@ -681,60 +671,61 @@ value value::operator+(const value& v) const
 const value& value::operator-= (const value& val)
 {
 
-    if (!is_numeric() || !val.is_numeric())
+  if (!is_numeric() || !val.is_numeric())
     {
       throw modelica_runtime_error("Adding non-numerical value\n");
     }
 
-  if (check_type(*this,val))
+  if (is_real() && val.is_real())
     {
-      if (is_real_array())
+      m_real -= val.m_real;
+    }
+  else if (is_real() && val.is_integer())
+    {
+      m_real -= val.m_integer;
+    }
+  else if (is_integer() && val.is_real())
+    {
+      m_real = m_integer;
+      m_real -= val.m_real;
+      m_basic_type = create_real();
+    }
+  else if (is_integer() && val.is_integer())
+    {
+      m_integer -= val.m_integer;
+    }
+  else if (is_array() && val.is_array())
+    {
+      if ( m_basic_type.dimensions() == val.m_basic_type.dimensions() )
 	{
-	  m_real_array -= val.m_real_array;
-	}
-      else if (is_integer_array())
-	{
-	  m_integer_array -= val.m_integer_array;
-	}
-      else if (is_real())
-	{
-	  m_real -= val.m_real;
-	}
-      else if (is_integer())
-	{
-	  m_integer -= val.m_integer;
+	  if (is_real_array() && val.is_real_array())
+	    {
+	      m_real_array -= val.m_real_array;
+	    }
+	  else if (is_real_array() && val.is_integer_array())
+	    {
+	      m_real_array -= real_array(val.m_integer_array);
+	    }
+	  else if (is_integer_array() && val.is_real_array())
+	    {
+	      m_real_array = real_array(m_integer_array);
+	      m_real_array -= val.m_real_array;
+	      m_basic_type = create_real_array(m_integer_array.size());
+	    }
+	  else if (is_integer_array() && val.is_integer_array())
+	    {
+	      m_integer_array = val.m_integer_array;
+	    }
+	  else
+	    {
+	      throw modelica_runtime_error("Internal error in -=");
+	    }
 	}
       else
 	{
-	  throw modelica_runtime_error("Internal error in value +=");
+	  throw modelica_runtime_error("The arrays should have the same dimension sizes");
 	}
     }
-  else
-    {
-      throw modelica_runtime_error("Types do not match\n");
-    }
-
-//   if (val.is_array() || is_array())
-//     {
-//       m_real_array -= val.m_real_array;
-//       m_type = real_array_t;
-//     }
-//   else if (!is_numeric() || !val.is_numeric())
-//     {
-//       throw modelica_runtime_error("Subtracting non-numerical value\n");
-//     }
-  
-//   if (val.is_real() || is_real())
-//     {
-//       m_real = to_double()-val.to_double();
-//       m_type = real;
-//     }
-//   else 
-//     {
-//       m_integer -= val.m_integer;
-//       m_type = integer;
-//     }
-  
   return *this;
 }
 
@@ -776,7 +767,7 @@ const value& value::operator*= (const value& val)
     }
   else if (is_real_array() && val.is_integer())
     {
-      m_real_array *= double(val.m_integer);
+      m_real_array *= static_cast<double>(val.m_integer);
     }
   else if (is_real() && val.is_real_array())
     {
@@ -796,108 +787,231 @@ const value& value::operator*= (const value& val)
       m_integer_array *= m_integer;
       m_basic_type = create_integer_array(val.m_integer_array.size());
     }
+  else if (is_real() && val.is_integer_array())
+    {
+      m_real_array = real_array(val.m_integer_array);
+      m_real_array *= m_real;
+      m_basic_type = create_real_array(val.m_integer_array.size());
+    }
   else
     {
       throw modelica_runtime_error("This multiplication is not defined\n");
     }
-//   if (val.is_real() || is_real())
-//   {
-//     m_real = to_double()*val.to_double();
-//     m_type = real;
-//   }
-//   else 
-//     {
-//       m_integer *= val.m_integer;
-//       m_type = integer;
-//     }
 
   return *this;
 }
 
 value value::operator*(const value& v) const
 {
+  if (!is_numeric() || !v.is_numeric())
+    {
+      throw modelica_runtime_error("Adding non-numerical value\n");
+    }
+
+
   value tmp(*this);
 
-  if (is_real_array() && v.is_real_array())
+  if (is_scalar() || v.is_scalar())
     {
-      std::vector<int> s1 = m_real_array.size();
-      std::vector<int> s2 = v.m_real_array.size();
-      
-      if ((m_real_array.ndims() == 1) && (v.m_real_array.ndims() == 1))
-	{
-	  // vector x vector
-	  if (s1[0] != s2[0])
-	    {
-	      throw modelica_runtime_error("Vector should be of the same length");
-	    }
-	  else
-	    {
-	      tmp.m_real = mul_vector_vector(m_real_array,v.m_real_array);
-	      tmp.m_basic_type = create_real();
-	    }
-	}
-      // else if (m_real_array.ndims() == 1)
-// 	{
-// 	  // vector x matrix
-// 	  if(s1[0] != s2[0])
-// 	    {
-// 	      throw modelica_runtime_error("Invalid dimension in vector matrix product\n");
-// 	    }
-// 	  else
-// 	    {
-// 	      m_real_array = mul_vector_matrix(m_real_array,val.m_real_array);
-// 	    }
-	  
-//     }
-//       else if (val.m_real_array.ndims() == 1)
-// 	{
-// 	  // matrix x vector
-// 	  if (s1[1] != s2[0])
-// 	    {
-// 	      throw modelica_runtime_error("Invalid dimension in matrix vector product\n");
-// 	    }
-// 	  else
-// 	    {
-
-// 	    }
-// 	}
-//       else if (s1[1] != s2[0])
-// 	{
-// 	  throw modelica_runtime_error("Invalid dimension sizes\n");
-// 	}
-      
-//       real_array result;
-//       result = m_real_array * val.m_real_array;
- 
-//       m_real_array = result;
-//     } 
+       tmp *= v;
+    }
+  else if (is_real_array() && v.is_real_array())
+    {
+      tmp = multiply_real_array(m_real_array, v.m_real_array);
+    }
+  else if (is_integer_array() && v.is_integer_array())
+    {
+      tmp = multiply_integer_array(m_integer_array,v.m_integer_array);
+    }
+  else if (is_integer_array() && v.is_real_array())
+    {
+      tmp = multiply_real_array(real_array(m_integer_array), v.m_real_array);
+    }
+  else if (is_real_array() && v.is_integer_array())
+    {
+      tmp = multiply_real_array(m_real_array, real_array(v.m_integer_array));
     }
   else
     {
-  
-      tmp *= v;
-    
+      throw modelica_runtime_error("Internal error: This multiplication is not defined");
     }
+
     return tmp;
+}
+
+value multiply_real_array(const real_array& a, const real_array& b)
+{
+  value tmp;
+
+  std::vector<int> size1 = a.size();
+  std::vector<int> size2 = b.size();
+     
+  if ((a.ndims() == 1) && (b.ndims() == 1))
+    {
+      // vector x vector
+      if (size1[0] != size2[0])
+	{
+	  throw modelica_runtime_error("Vector should be of equal length");
+	}
+      else
+	{
+	  tmp.m_real = mul_vector_vector(a,b);
+	  tmp.m_basic_type = create_real();
+	}
+    }
+  else if (a.ndims() == 1)
+    {
+      // vector x matrix
+      if(size1[0] != size2[0])
+	{
+	  throw modelica_runtime_error("Invalid dimension in vector matrix product\n");
+	}
+      else
+	{
+	  tmp.m_real_array = mul_vector_matrix(a,b);
+	  tmp.m_basic_type = create_real_array(std::vector<int>(1,size2[1]));
+	}
+    }
+  else if (b.ndims() == 1)
+    {
+      // matrix x vector
+      if (size1[1] != size2[0])
+	{
+	  throw modelica_runtime_error("Invalid dimension in matrix vector product\n");
+	}
+      else
+	{
+	  tmp.m_real_array = mul_matrix_vector(a,b);
+	  tmp.m_basic_type = create_real_array(std::vector<int>(1,size1[0]));
+	}
+    }
+  else if (size1[1] == size2[0])
+    {
+      tmp.m_real_array = a * b;
+      std::vector<int> sz(2);
+      sz[0] = size1[0]; // Number of rows in result.
+      sz[1] = size2[1]; // Number of cols in result;
+      tmp.m_basic_type = create_real_array(sz);
+    }
+  else
+    {
+      throw modelica_runtime_error("Invalid dimension sizes");
+    }
+  return tmp;
+}
+
+value multiply_integer_array(const integer_array& a, const integer_array& b)
+{
+  value tmp;
+
+  std::vector<int> size1 = a.size();
+  std::vector<int> size2 = b.size();
+     
+  if ((a.ndims() == 1) && (b.ndims() == 1))
+    {
+      // vector x vector
+      if (size1[0] != size2[0])
+	{
+	  throw modelica_runtime_error("Vector should be of equal length");
+	}
+      else
+	{
+	  tmp.m_integer = mul_vector_vector(a,b);
+	  tmp.m_basic_type = create_integer();
+	}
+    }
+  else if (a.ndims() == 1)
+    {
+      // vector x matrix
+      if(size1[0] != size2[0])
+	{
+	  throw modelica_runtime_error("Invalid dimension in vector matrix product\n");
+	}
+      else
+	{
+	  tmp.m_integer_array = mul_vector_matrix(a,b);
+	  tmp.m_basic_type = create_integer_array(std::vector<int>(1,size2[1]));
+	}
+    }
+  else if (b.ndims() == 1)
+    {
+      // matrix x vector
+      if (size1[1] != size2[0])
+	{
+	  throw modelica_runtime_error("Invalid dimension in matrix vector product\n");
+	}
+      else
+	{
+	  tmp.m_integer_array = mul_matrix_vector(a,b);
+	  tmp.m_basic_type = create_integer_array(std::vector<int>(1,size1[0]));
+	}
+    }
+  else if (size1[1] == size2[0])
+    {
+      tmp.m_integer_array = a * b;
+      std::vector<int> sz(2);
+      sz[0] = size1[0]; // Number of rows in result.
+      sz[1] = size2[1]; // Number of cols in result;
+      tmp.m_basic_type = create_integer_array(sz);
+    }
+  else
+    {
+      throw modelica_runtime_error("Invalid dimension sizes");
+    }
+  return tmp;
 }
 
 const value& value::operator/= (const value& val)
 {
-//     if (!is_numeric() || !val.is_numeric())
-//     {
-//       throw modelica_runtime_error("Multiplying non-numerical value\n");
-//     }
+  if (!is_numeric() || !val.is_numeric())
+    {
+      throw modelica_runtime_error("Multiplying non-numerical value");
+    }
 
-//   if (val.is_real() || is_real())
-//   {
-//     m_real = to_double()/val.to_double();
-//     m_type = real;
-//   }
-//   else 
-//     {
-//       m_real = m_integer / static_cast<double>(val.m_integer);
-//       m_type = real;
-//     }
+  if (is_real() && val.is_real())
+    {
+      m_real /= val.m_real;
+    }
+  else if (is_integer() && val.is_real())
+    {
+      m_real = m_integer;
+      m_real /= val.m_real;
+      m_basic_type = create_real();
+    }
+  else if (is_real() && val.is_integer())
+    {
+      m_real /= val.m_integer;
+    }
+  else if (is_integer() && val.is_integer())
+    {
+      m_real = m_integer;
+      m_real /= val.m_integer;
+      m_basic_type = create_real();
+    }
+  else if (is_real_array() && val.is_real())
+    {
+      m_real_array /= val.m_real;
+    }
+  else if (is_real_array() && val.is_integer())
+    {
+      m_real_array /= val.m_integer;
+    }
+  else if (is_integer_array() && val.is_real())
+    {
+      m_real_array = m_integer_array;
+      m_real_array /= val.m_real;
+      m_basic_type = create_real_array(m_integer_array.size());
+    }
+  else if (is_integer_array() && val.is_integer())
+    {
+      m_real_array = m_integer_array;
+      m_real_array /= val.m_integer;
+      m_basic_type = create_real_array(m_integer_array.size());
+    }
+  else
+    {
+      throw modelica_runtime_error("Division not defined");
+    }
 
   return *this;
 }
@@ -1161,3 +1275,5 @@ bool check_type(value v1,value v2)
       return false;
     }
 }
+
+

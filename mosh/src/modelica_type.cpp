@@ -184,6 +184,11 @@ void modelica_type::set_function_argument()
   m_type = function_argument_t;
 }
 
+std::vector<int> modelica_type::dimensions() const
+{
+  return m_dimensions;
+}
+
 bool modelica_type::type_equal(modelica_type t)
 {
   if (m_type == t.m_type)

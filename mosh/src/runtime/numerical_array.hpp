@@ -38,13 +38,16 @@ public:
 
   numerical_array<Tp>& operator*= (const numerical_array<Tp>& arr);
   
-  //numerical_array<Tp> operator* (const numerical_array<Tp>& arr) const;
   numerical_array<Tp> operator* (const numerical_array<Tp>& arr) const;
   numerical_array<Tp>& operator*= (const Tp& s);
   numerical_array<Tp> operator* (const Tp& s);
 
+  numerical_array<Tp>& operator/= (const Tp& s);
+  numerical_array<Tp> operator/ (const Tp& s);
+
   friend Tp mul_vector_vector<Tp>(const numerical_array<Tp>& v1,const numerical_array<Tp>& v2);
   friend numerical_array<Tp> mul_vector_matrix<Tp>(const numerical_array<Tp>& v1, const numerical_array<Tp>& v2);
+  friend numerical_array<Tp> mul_matrix_vector<Tp>(const numerical_array<Tp>& v1, const numerical_array<Tp>& v2);
 
   numerical_array() {};
   numerical_array(std::vector<int> dims) : modelica_array<Tp>(dims) {};
@@ -159,12 +162,12 @@ numerical_array<Tp> numerical_array<Tp>::operator* (const numerical_array<Tp>& a
   assert(m_dim_size[1] == arr.m_dim_size[0]);
 
   int i_size = m_dim_size[0];
-  int j_size = m_dim_size[1];
-  int k_size = arr.m_dim_size[1];
+  int j_size = arr.m_dim_size[1];
+  int k_size = m_dim_size[1];
 
-  std::vector<int> result_dims;
-  result_dims.push_back(i_size);
-  result_dims.push_back(k_size);
+  std::vector<int> result_dims(2);
+  result_dims[0] = i_size; // Number of rows in result
+  result_dims[1] = j_size; // Number of cols in result
 
   numerical_array<Tp> result(result_dims);
   for (int i = 0; i < i_size; ++i)
@@ -199,16 +202,46 @@ numerical_array<Tp> mul_vector_matrix(const numerical_array<Tp>& v1, const numer
   assert(v2.ndims() == 2);
   assert(v1.m_dim_size[0] == v2.m_dim_size[0]);
 
-  std::vector<Tp>::const_iterator it = v2.m_data.begin();
-
+  int i_size = v2.m_dim_size[1];
+  int j_size = v2.m_dim_size[0];
+  
   numerical_array<Tp> result(std::vector<int>(1,v2.m_dim_size[1]));
-  for (; it != v2.m_data.end();++it)
+
+  for (int i = 0; i < i_size; ++i)
     {
-      Tp element = std::inner_product(v1.m_data.begin(),v1.m_data.end(),it,static_cast<Tp>(0));
-      result.m_data.push_back(element);
+      Tp tmp = static_cast<Tp>(0);
+      for (int j = 0; j < j_size; ++j)
+	{
+	  tmp += v1.m_data[j]*v2.m_data[j*i_size+i];
+	}
+      result.m_data[i] = tmp;
     }
 
-  assert(result.m_data.size() == v2.m_dim_size[1]);
+  return result;
+}
+
+template<typename Tp>
+numerical_array<Tp> mul_matrix_vector(const numerical_array<Tp>& v1, const numerical_array<Tp>& v2)
+{
+  assert(v1.ndims() == 2);
+  assert(v2.ndims() == 1);
+  assert(v1.m_dim_size[1] == v2.m_dim_size[0]);
+
+  int i_size = v1.m_dim_size[0];
+  int j_size = v1.m_dim_size[1];
+  
+  numerical_array<Tp> result(std::vector<int>(1,v1.m_dim_size[0]));
+
+  for (int i = 0; i < i_size; ++i)
+    {
+      Tp tmp = static_cast<Tp>(0);
+      for (int j = 0; j < j_size; ++j)
+	{
+	  tmp += v1.m_data[i*j_size+j]*v2.m_data[j];
+	}
+      result.m_data[i] = tmp;
+    }
+
   return result;
 }
 
@@ -249,6 +282,25 @@ numerical_array<Tp> numerical_array<Tp>::operator * (const Tp& s)
 {
   numerical_array tmp(*this);
   
+  tmp *= s;
+  return tmp;
+}
+
+template<typename Tp>
+numerical_array<Tp>& numerical_array<Tp>::operator/= (const Tp& s)
+{
+  for (size_t i = 0; i < m_data.size(); ++i)
+    {
+      m_data[i] /= s;
+    }
+  return *this;
+}
+
+template<typename Tp>
+numerical_array<Tp> numerical_array<Tp>::operator/ (const Tp& s)
+{
+  numerical_array tmp(*this);
+
   tmp *= s;
   return tmp;
 }

@@ -49,6 +49,8 @@ public:
 
   bool type_equal(modelica_type t);
 
+  std::vector<int> dimensions() const;
+
   friend modelica_type create_real();
   friend modelica_type create_integer();
   friend modelica_type create_string();
