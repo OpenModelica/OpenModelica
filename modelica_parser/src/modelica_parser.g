@@ -339,7 +339,9 @@ algorithm :
 		;
 
 assign_clause_a : component_reference	( ASSIGN^ expression | function_call );
-multi_assign_clause_a : LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
+
+multi_assign_clause_a :
+        LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
 
 equality_equation :
 		simple_expression EQUALS^ expression
