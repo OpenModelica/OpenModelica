@@ -151,6 +151,7 @@ module SCode :
   relation get_element_named: (Ident, Class) => Element
   relation print_mod : Mod => ()
   relation print_element : Element => ()
+  relation print_element_list : Element list => ()	  
   relation print_restr: Restriction => ()
 	  
 end
@@ -771,6 +772,15 @@ end
 	
 (*!includecode*)
 
+relation print_element_list : Element list => () =
+
+  axiom	print_element_list([]) => ()
+
+  rule	print_element x &
+	print_element_list(xs) => ()
+	----------------------
+	print_element_list(x::xs) => ()
+end
 
 relation print_element : Element => () =
 

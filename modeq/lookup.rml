@@ -39,6 +39,7 @@ module Lookup:
 
   relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type,Env.Env)
   relation lookup_class      : (Env.Env, Absyn.Path,bool) => (SCode.Class, Env.Env)
+  relation complete_path     : (Env.Env, Absyn.Path) => Absyn.Path
   relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) 
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes,Types.Type,Types.Binding)
@@ -89,9 +90,10 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
   rule	lookup_class(env, Absyn.IDENT(pack), true) 
 	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
 	Env.open_scope(env', encflag) => env2 &
+	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
 	(* Instantiate implicit (last argument = true) *)
-	Inst.inst_class_in(env2, Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
+	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
 	  => (_,env'',_,cistate1,_) &
         not ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
 	(* Has to do additional check for encapsulated classes, see rule below *)
@@ -103,8 +105,9 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
   rule	lookup_class(env, Absyn.IDENT(pack), true) 
 	  => (c as SCode.CLASS(id, _, encflag, restr, _), env') &
 	Env.open_scope(env', encflag) => env2 &
+	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
-	Inst.inst_class_in(env2, Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true)
+	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true)
 	  => (_, env'', _, cistate1, _) &
         ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
 	(* Has NOT to do additional check for encapsulated classes, see rule above *)
@@ -132,6 +135,10 @@ relation lookup_class: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
         Debug.fprint ("lotr","IN lookup_class(1)\n") &
         Debug.fcall ("lotr",Dump.print_path,path) &
 	Debug.fprint ("lotr",")\n")  
+(*	&Print.print_buf "Found class " & Print.print_buf name &
+	Print.print_buf "in envpath:" &
+	Env.print_env_path env' &
+	Print.print_buf "\n:" *)
 	--------------------------------------
 	lookup_class(env, path as Absyn.IDENT(name),msgflag) => (c, env')
 
@@ -154,8 +161,9 @@ relation lookup_class: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
   rule	Debug.fprint ("lotr","TRIES lookup_class(4)\n") &
         lookup_class(env,Absyn.IDENT(pack),msgflag) => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
 	Env.open_scope(env',encflag) => env2 &
+	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,cistate1,_) &
+	Inst.inst_class_in(env2',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,cistate1,_) &
         not ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has to do additional check for encapsulated classes, see rule below *)
 
 	lookup_class_in_class(env'',c,path,true) => (c',env''') &
@@ -168,17 +176,37 @@ relation lookup_class: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
 
 
 rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
-        lookup_class(env,Absyn.IDENT(pack),msgflag) => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
-	Env.open_scope(env',encflag) => env2 &
+        lookup_class(env,Absyn.IDENT(pack),msgflag) 
+	  => (c as SCode.CLASS(id,_,encflag,restr,_),env1) &
+	Env.open_scope(env1,encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,cistate1,_) &
+(*	Print.print_buf "instanitating class " &
+	Print.print_buf id &
+	Print.print_buf " in envpath:\n" &
+	Env.print_env_path(env3) &
+	Print.print_buf "\n" &*)
+
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) 
+	  => (_,env4,_,cistate1,_) &
         ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has NOT to do additional check for encapsulated classes, see rule above *)
-	lookup_class_in_class(env'',c,path,false) => (c',env''') &
+	lookup_class_in_class(env4,c,path,false) => (c',env5) &
+(*	Env.get_env_path env5 => envpath &
+	Env.get_env_path env4 => envpath2 &
+	Print.print_buf "\n lookup qualified, pack= " &
+ 	Print.print_buf pack &
+ 	Print.print_buf "\nlookupq qual. env5 _path = " &
+ 	Absyn.path_string envpath => s1 &
+ 	Print.print_buf s1 &
+ 	Print.print_buf "\nlookupq qual. env4 _path = " &
+ 	Absyn.path_string envpath2 => s2 &
+	Print.print_buf s2 & *)
+
 	Debug.fprint ("lotr","IN lookup_class(5)\n") &
         Debug.fcall  ("lotr",Dump.print_path,path) &
 	Debug.fprint ("lotr",")\n")
 	--------------------------------------
-	lookup_class(env, p as Absyn.QUALIFIED(pack,path),msgflag) => (c', env''')
+	lookup_class(env, p as Absyn.QUALIFIED(pack,path),msgflag) => (c', env5)
 
 (*  rule	Print.print_buf "- lookup_class failed\n" &
 	Print.print_buf "  - looked for " & Absyn.path_string path => s & 
@@ -191,7 +219,7 @@ relation lookup_qualified_imported_class_in_env:(Env.Env,Env.Env,Absyn.Path) => 
 
   rule	lookup_qualified_imported_class_in_frame(items,totenv,name) => (c,_)
 	-----------------------------------------------------------------
-	lookup_qualified_imported_class_in_env(env as (Env.FRAME(items,_)::fs),totenv,Absyn.IDENT(name)) => (c,env)
+	lookup_qualified_imported_class_in_env(env as (Env.FRAME(sid,items,_)::fs),totenv,Absyn.IDENT(name)) => (c,env)
 
   rule	lookup_qualified_imported_class_in_env(fs,env,id) => (c, _)
 	---------------------------------------------
@@ -256,7 +284,7 @@ relation lookup_unqualified_imported_class_in_env:(Env.Env,Env.Env,Absyn.Path) =
 
   rule	lookup_unqualified_imported_class_in_frame(items,totenv,name) => (c,_)
 	-----------------------------------------------------------------
-	lookup_unqualified_imported_class_in_env(env as (Env.FRAME(items,_)::fs),totenv,Absyn.IDENT(name)) => (c,env)
+	lookup_unqualified_imported_class_in_env(env as (Env.FRAME(sid,items,_)::fs),totenv,Absyn.IDENT(name)) => (c,env)
 
   rule	lookup_unqualified_imported_class_in_env(fs,env,id) => (c, _)
 	---------------------------------------------
@@ -304,6 +332,60 @@ relation lookup_record_constructor_class: (Env.Env,Absyn.Path) => (SCode.Class, 
 
 end
 
+(** relation: complete_path
+ **
+ ** This relation takes a type name and an env and looks up the class.
+ ** Then it determines the full path for the type, such that it can be looked up
+** from any environment.
+**)
+
+relation complete_path: (Env.Env, Absyn.Path) => Absyn.Path =
+
+  rule	(* Class found on top level. Nothing to complete. *)
+	lookup_class(env,path,true) => (_,Env.FRAME(NONE,_,_)::_)
+	----------------------------------------------
+	complete_path(env,path) => path
+
+  rule	lookup_class(env,path,true) => (SCode.CLASS(id,_,_,_,_),env') &	
+	Env.get_env_path(env') => path1 &
+	Absyn.join_paths(path1,path) => path' 
+(*	& Print.print_buf "completed to " &
+	Absyn.path_string path' => s1 & Print.print_buf s1 &
+	Print.print_buf " class = " & Print.print_buf id & 
+	Print.print_buf "\nenv =" &
+	Env.print_env env'  *)
+	------------------
+	complete_path(env,path as Absyn.IDENT(_)) => path'
+
+  rule	lookup_class(env,Absyn.IDENT(pack),true) 
+	  => (_,Env.FRAME(NONE,_,_)::_)
+	------------------
+	complete_path(env,path as Absyn.QUALIFIED(pack,_)) => path 
+
+  rule	lookup_class(env,(*Absyn.IDENT(pack)*)path,true) 
+	  => (SCode.CLASS(id,_,_,_,_),env') &	
+	Env.get_env_path(env') => path1 &
+	Absyn.join_paths(path1,path) => path' 
+	
+(*	& Print.print_buf "Qualified completed to " 
+	& Absyn.path_string path' => s1 & Print.print_buf s1 &
+	Print.print_buf " class = " & Print.print_buf id & 
+	Print.print_buf "\n" &
+	Print.print_buf "\nenv =" &
+	Env.print_env env'  *)
+
+	------------------
+	complete_path(env,path as Absyn.QUALIFIED(pack,_)) => path'
+
+  rule	Print.print_buf "-complete_path failed\n env=" &
+	Env.print_env env & Print.print_buf "\ntype: " &
+	Absyn.path_string path => str & Print.print_buf str &
+	Print.print_buf "\n" 
+	--------------------
+	complete_path(env,path) => fail
+
+end
+
 (* LS: when looking up qualified component reference, lookup_var only
 checks variables when looking for the prefix, i.e. for Constants.PI
 where Constants is a package and is implicitly instantiated, PI is not
@@ -348,7 +430,7 @@ relation lookup_var_internal : (Env.Env,Exp.ComponentRef)
 	lookup_var_f(items,ref) => (attr,ty,binding) &
 	Debug.fprint ("lotr", "lookup_var: Done frame\n") 
 	--------------------------------------------
-	lookup_var_internal (Env.FRAME(items,_)::fs,ref) => (attr,ty,binding)
+	lookup_var_internal (Env.FRAME(sid,items,_)::fs,ref) => (attr,ty,binding)
 
   rule	Debug.fprint ("lotr", "lookup_var: next frame\n") &
 	lookup_var_internal (fs,ref) => (attr,ty,binding)
@@ -370,6 +452,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	lookup_class_in_env(env, Absyn.IDENT(id),true) => (c as SCode.CLASS(n,_,encflag,r,_), env) &
 	Debug.fprintl ("lotr", ["lookup_var_in_packages. instantiating class", n, "\n"]) &
 	Env.open_scope(env,encflag) => env' &
+	Env.name_scope (env',n) => env2' &
 	ClassInf.start(r,n) => ci_state &
 	Inst.inst_class_in (env',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,types) &
 	lookup_var(env'',cref) => (attr,ty,bind) &
@@ -394,7 +477,7 @@ relation lookup_var_local : (Env.Env,Exp.ComponentRef)
 
   rule	lookup_var_f(items,ref) => (attr,ty,binding)
 	--------------------------------------------
-	lookup_var_local(Env.FRAME(items,_)::fs,ref) => (attr,ty,binding)
+	lookup_var_local(Env.FRAME(sid,items,_)::fs,ref) => (attr,ty,binding)
 
 end
 
@@ -402,7 +485,7 @@ relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element
 
   rule  lookup_var2(items, id) => (fv,c,i)
 	----------------------------
-	lookup_ident_local(Env.FRAME(items,_)::_, id) => (fv,c,i)
+	lookup_ident_local(Env.FRAME(sid,items,_)::_, id) => (fv,c,i)
 
 end
 
@@ -413,7 +496,7 @@ relation lookup_ident : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element optio
 
   rule	lookup_var2(items, id) => (fv,c,i) 
 	----------------------------
-	lookup_ident(Env.FRAME(items,_)::_, id) => (fv,c,i)
+	lookup_ident(Env.FRAME(sid,items,_)::_, id) => (fv,c,i)
 
   rule	lookup_ident(rest,id) => (fv,c,i)
 	---------------------------------
@@ -448,7 +531,7 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 	lookup_functions_in_env(fs,iid) => c2 &
 	list_append (c1,c2) => reslist
 	---------------------
-	lookup_functions_in_env(env as (Env.FRAME(items,_)::fs), iid as Absyn.IDENT(id)) => reslist
+	lookup_functions_in_env(env as (Env.FRAME(sid,items,_)::fs), iid as Absyn.IDENT(id)) => reslist
 
 	(* Did not match. Continue*)
   rule	lookup_functions_in_env(fs,id) => c
@@ -467,7 +550,7 @@ relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type,Env.Env) =
 
   rule	lookup_type_in_frame(items,env,id) => (c,env')
 	---------------------
-	lookup_type_in_env(env as (Env.FRAME(items,_)::fs),Absyn.IDENT(id)) => (c,env')
+	lookup_type_in_env(env as (Env.FRAME(sid,items,_)::fs),Absyn.IDENT(id)) => (c,env')
 
   rule	lookup_type_in_env(fs,id) => (c,env')
 	-------------------------------------
@@ -566,7 +649,7 @@ relation lookup_recconst_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) 
 
   rule	lookup_recconst_in_frame(items,env,id) => (c, _) 
 	---------------------
-	lookup_recconst_in_env(env as (Env.FRAME(items,_)::fs),Absyn.IDENT(id))
+	lookup_recconst_in_env(env as (Env.FRAME(sid,items,_)::fs),Absyn.IDENT(id))
 	    => (c,env)
 
   rule	lookup_recconst_in_env(fs,id) => (c, _)
@@ -689,14 +772,14 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
 
   rule	lookup_class_in_frame(items,id,msg) => (c,_)  
 	---------------------
-	lookup_class_in_env(env as (Env.FRAME(items,_)::fs),Absyn.IDENT(id),msg)
+	lookup_class_in_env(env as (Env.FRAME(sid,items,_)::fs),Absyn.IDENT(id),msg)
 	    => (c,env)
 
-  rule	lookup_class_in_frame(items, id, msg) => (c, _) &
-	lookup_class_in_class(env, c, path,false) => (c2, _)
+(*  rule	lookup_class_in_frame(items, id, msg) => (c, _) &
+	lookup_class_in_class(env, c, path,false) => (c2, env')
 	-------------------------------------------	
-	lookup_class_in_env(env as (Env.FRAME(items,_)::fs), Absyn.QUALIFIED(id,path),msg) 
-	    => (c2,env)
+	lookup_class_in_env(env as (Env.FRAME(sid,items,_)::fs), Absyn.QUALIFIED(id,path),msg) 
+	    => (c2,env')*)
 (*
   NOW THIS RULES IS SEPARATED INTO TWO CASES
 
@@ -705,36 +788,35 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
 	lookup_class_in_env(f::fs,id,msgflag) => (c, f::fs)
 *)
 
-  rule	lookup_class_in_env(fs,id,msgflag) => (c, env')
+(*  rule	lookup_class_in_env(fs,id,msgflag) => (c, env')
 	---------------------
-	lookup_class_in_env(f::fs,id as Absyn.QUALIFIED(_,_),msgflag) => (c, env' (* PA: was f::fs*))
+	lookup_class_in_env(f::fs,id as Absyn.QUALIFIED(_,_),msgflag) => (c, env')*)
 	
-	
-	
+
   rule	Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
         Print.print_buf "Class " &
         Print.print_buf id       &
         Print.print_buf " not found and the lookup reached an encapsulated class\n"
 	---------------------
-	lookup_class_in_env(Env.FRAME(items,true)::fs, aid as Absyn.IDENT(id),true) => fail
+	lookup_class_in_env(Env.FRAME(sid,items,true)::fs, aid as Absyn.IDENT(id),true) => fail
 
   rule	Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
         Print.print_buf "No message in this case.\n" 
 	---------------------
-	lookup_class_in_env(Env.FRAME(items,true)::fs, 
+	lookup_class_in_env(Env.FRAME(sid,items,true)::fs, 
 			    aid as Absyn.IDENT(id),false) => fail
 
  rule	Builtin.initial_env() => i_env & 
         lookup_class_in_env(  i_env, aid,msgflag)=> (c,env')
        	---------------------
-	lookup_class_in_env(Env.FRAME(items,true)::fs, 
+	lookup_class_in_env(Env.FRAME(sid,items,true)::fs, 
 			    aid as Absyn.IDENT(id),msgflag ) => (c,env')
 
   rule  lookup_class_in_env(fs,id,msgflag) => (c, env')
 	---------------------
-	lookup_class_in_env(  (f as Env.FRAME(items,false)) ::fs,
+	lookup_class_in_env(  (f as Env.FRAME(sid,items,false)) ::fs,
 			    id as Absyn.IDENT(_),msgflag ) 
 	  => (c, env')
 end
@@ -752,7 +834,7 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (SCo
       	----------------------------------------------------
 	lookup_class_in_class (env, cdef,classname as Absyn.IDENT(_),true) => (c,env')
 
-  rule	lookup_class_in_env(env,classname,true) => (c as SCode.CLASS(_,_,false,_,_) ,env) &
+  rule	lookup_class_in_env(env,classname,true) => (c as SCode.CLASS(_,_,false,_,_) ,env') &
         (* false means here non-encapsulated *)
         Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is already a simple name)\n")
       	----------------------------------------------------
@@ -760,17 +842,28 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (SCo
 	
   rule	lookup_class_in_env(env,classname,true) => (c ,env') 
         (* false means that we do not restrict lookup to encapsulated classes *)
+(*	&Print.print_buf " (class in class) Found class " & Print.print_buf name &
+	Print.print_buf "in envh:" &
+	Env.print_env env' &
+	Print.print_buf "\n:" *)
+
       	----------------------------------------------------
-	lookup_class_in_class (env, cdef, classname as Absyn.IDENT(_) ,false) => (c,env')
+	lookup_class_in_class (env, cdef, classname as Absyn.IDENT(name) ,false) => (c,env')
 
   rule	(* Restrict lookup to encapsulated elements only *)
-	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env) &
-       	Env.open_scope(env,encflag) => env2 &
+	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env1) &
+       	Env.open_scope(env1,encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
-  	lookup_class_in_class (env'',c,p1,false) => (c',env3)
+(*	Print.print_buf "instanitating class " &
+	Print.print_buf id &
+	Print.print_buf " in envpath:\n" &
+	Env.print_env_path(env3) &
+	Print.print_buf "\n" &*)
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env4,_,_,_) &
+  	lookup_class_in_class (env4,c,p1,false) => (c',env5)
 	-------------------------------------------
-	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => (c',env3)
+	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => (c',env5)
 
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as false,restr,_) ,env) &
@@ -779,13 +872,21 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (SCo
 	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => fail
 
   rule	(* Lookup not restricted to encapsulated elts. only *)
-	lookup_class_in_env (env, Absyn.IDENT(c1), true) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env') &
-       	Env.open_scope(env',encflag) => env2 &
+	lookup_class_in_env (env, Absyn.IDENT(c1), true) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env1) &
+       	Env.open_scope(env1,encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
-  	lookup_class_in_class (env'',c,p1,false) => (c',env3)
+(*	Print.print_buf "instanitating class " &
+	Print.print_buf id &
+	Print.print_buf " in envpath:\n" &
+	Env.print_env_path(env3) &
+	Print.print_buf "\n" &*)
+
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) 
+	  => (_,env4,_,_,_) &
+  	lookup_class_in_class (env4,c,p1,false) => (c',env5)
 	-------------------------------------------
-	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (c',env3)
+	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (c',env5)
 
   rule	Print.print_buf "- lookup_class_in_class failed\n" &
 	Print.print_buf "  - class = " & Print.print_buf cname &
@@ -817,8 +918,9 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env) &
        	Env.open_scope(env, encflag) => env2 &
+	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
-	Inst.inst_class_in(env2, Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
+	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
 	  => (_,env'',_,_,_) &
   	lookup_type_in_class (env'', c, p1, false) => (t, env3)
 	-------------------------------------------
@@ -833,8 +935,15 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
   rule	(* Lookup not restricted to encapsulated elts. only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1), true) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env') &
        	Env.open_scope(env',encflag) => env2 &
+	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
+(*	Print.print_buf "instanitating class " &
+	Print.print_buf id &
+	Print.print_buf " in envpath:\n" &
+	Env.print_env_path(env2') &
+	Print.print_buf "\n" &*)
+
+	Inst.inst_class_in(env2',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
   	lookup_type_in_class (env'',c,p1,false) => (t, env3)
 	-------------------------------------------
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env3)

@@ -361,8 +361,9 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
 
   rule	Env.open_scope(env,encflag) => env' &
+	Env.name_scope(env',n) => env'' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env', mod, pre, csets, ci_state, c, false, inst_dims, impl)
+	inst_class_in(env'', mod, pre, csets, ci_state, c, false, inst_dims, impl)
 	  => (dae1, _, csets', ci_state', tys) &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
@@ -444,20 +445,19 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* It does not perform component instantiations. *)
 	inst_extends_list(env1,mods,extendselts,impl)
 	  => (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) &
+	  
 	list_append(extcomps,compelts) => compelts' &
-		
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
 	extend_components_to_env(env2,emods,pre,csets,ci_state,compelts',inst_dims,impl) => env3 &
-
 	(* Add components from base classes to be instantiated in 3 as well. *)
 	list_append(eqs,eqs2) => eqs' &
 	list_append(initeqs,initeqs2) => initeqs' &
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
-	inst_element_list(env3,emods,pre,csets,ci_state1, compelts', inst_dims, impl)
+	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', inst_dims, impl)
 	  => (dae1,env4, csets1, ci_state2, tys) &
 	inst_list(env4,mods,pre,csets1,ci_state2,inst_equation, eqs')
 	  => (dae2,_,csets2, ci_state3) &
@@ -482,13 +482,15 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.print_prefix_str pre => prestr &
 	Absyn.path_string cn => cnstr &
 	Debug.fprintl ("insttr", ["inst_class derived: ", cnstr, ", pre=",prestr,"\n"]) &
-	Lookup.lookup_class(env,cn,true) => (c as SCode.CLASS(cn2,_,_,r,_), cenv) &
+	Lookup.lookup_class(env,cn,true) => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
+	Env.open_scope(cenv,enc2) => cenv' &
+	Env.name_scope(cenv',cn2) => cenv'' &
 	Mod.lookup_modification_p(mods,cn) => m &
 	Mod.elab_mod(env,pre,mod) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
-	inst_class_in(cenv, mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl)
+	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl)
 	  => (dae,env'', csets', ci_state', tys) &
 
 	(* Check for restriction violations *)
@@ -529,14 +531,15 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
 	      SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) 
 	=
   rule	Lookup.lookup_class(env, tp, true) 
-	  => (c as SCode.CLASS(cn,_,_,_,_), cenv) &
+	  => (c as SCode.CLASS(cn,_,encf,r,_), cenv) &
 	Mod.lookup_modification_p(mod, Absyn.IDENT(cn)) => innermod &
 	inst_derived_classes(cenv, innermod, c, impl) =>
-	  (cenv', els, eq1, ieq1, alg1, ialg1) &
-	inst_extends_list(env, innermod, els, impl) 
-	  => (env',mods, compelts1, eq2, ieq2, alg2, ialg2) &  
-	inst_extends_list(env', mod, rest, impl)
-	  => (env'', mods', compelts2, eq2, initeq2, alg2, ialg2)& 
+	  (cenv1, els, eq1, ieq1, alg1, ialg1) &
+	make_complete_type_names(cenv1,els) => els' &
+	inst_extends_list(cenv1, innermod, els', impl) 
+	  => (_,mods, compelts1, eq2, ieq2, alg2, ialg2) &  
+	inst_extends_list(env, mod, rest, impl)
+	  => (env', mods', compelts2, eq3, ieq3, alg3, ialg3) & 
 	(* Must merge(mod,emod) here and then apply the bindings to the *)
 	(* corresponding elements. But emod is Absyn.Mod and can not  *)
 	(* be elaborated, because for instance extends A(x=y) can reference *)
@@ -546,16 +549,17 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
 	(* We can then perform the merge, and update untyped modifications *)
 	(* later (using update_mod), when we are instantiating the components. *)
 	Mod.elab_untyped_mod(emod) => emod' &
-	Mod.merge(mods',mod) => mod' &			      
-	Mod.merge(mod',emod') => mods' &			      
+	Mod.merge(mod,mods') => mod' &			      
+	Mod.merge(mod',emod') => mods' &
 	list_append(compelts1, compelts2) => compelts &
-	list_append(eq1, eq2) => eq &
-	list_append(ieq1, ieq2) => ieq &
-	list_append(alg1, alg2) => alg &
-	list_append(ialg1, ialg2) => ialg 
+	update_components(compelts,mods') => compelts3 &
+        Util.list_flatten([eq1, eq2, eq3]) => eq &
+	Util.list_flatten([ieq1, ieq2, ieq3]) => ieq &
+	Util.list_flatten([alg1, alg2, alg3]) => alg &
+	Util.list_flatten([ialg1, ialg2,ialg3]) => ialg 
 	-----------------------------------
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl)
-	  => (env'', mods',compelts, eq, ieq, alg, ialg)
+	  => (env', mods',compelts3, eq, ieq, alg, ialg)
 
   rule	inst_extends_list(env, mod, rest, impl)
 	  => (env', mods, compelts2, eq2, initeq2, alg2, ialg2) 
@@ -568,6 +572,66 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
   rule	Print.print_buf "- inst_extends_list failed\n" 
 	---------------------
 	inst_extends_list(_,_,_,_) => fail
+end
+
+(** relation: update_components
+ ** This relation takes a list of components and a Mod and returns a list of components with the modifiers updated.
+ ** The relation is used when flattening the inheritance structure, resulting in a list of components to insert into
+ ** the class definition. For instance model A extends B(modifiers) end A; will result in a list of components from B 
+ ** which 'modifiers' should be applied to.
+**)
+relation update_components: (SCode.Element list, Mod.Mod) => SCode.Element list =
+
+  axiom	update_components([],_) => []
+
+  rule	Mod.lookup_comp_modification(mod,id) => m1 &
+	Mod.unelab_mod(m1) => m2 &
+	update_components(xs,mod) => res 
+	--------------------------------
+	update_components(SCode.COMPONENT(id,f,r,p,attr,tp,m)::xs,mod) 
+	  => SCode.COMPONENT(id,f,r,p,attr,tp,m2)::res
+
+  rule	update_components(xs,mod) => res 
+	--------------------------------
+	update_components(c::xs,mod) 
+	  => c::res
+end
+
+
+(** relation: make_complete_type_names 
+ **
+ ** This relation takes an environment and an Element list and makes all references to types
+ ** in the elements fully qualified, such that they can be looked up from a different env.
+ ** This is needed when flattening the inheritance structure and inserting elements into the flattened
+ ** class. The lookup of elements in the flattenend class is performed in that environment and thus 
+ ** must the type names be expanded such that a lookup from this environment gives the same class as
+** if the lookup was performed from the scope of the base class.
+ **)
+relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Element list =
+	
+  axiom	make_complete_type_names(env, []) => []
+	
+  rule	make_complete_type_names(env, rest) => res &
+	Lookup.complete_path(env, path) => path'
+	------------------------------------
+	make_complete_type_names(env, SCode.EXTENDS(path, mod)::rest)
+	  => SCode.EXTENDS(path', mod)::res
+	  
+  rule	make_complete_type_names(env, rest) => res 
+	-------------------------------------
+	make_complete_type_names(env, (elt as SCode.CLASSDEF(_,_,_,_))::rest)
+	  => elt::res
+
+  rule	make_complete_type_names(env, rest) => res 
+	--------------------------------------------------
+	make_complete_type_names(env, (elt as SCode.IMPORT(_))::rest)
+	  => elt::res
+	  
+  rule	make_complete_type_names(env, rest) => res &
+	Lookup.complete_path(env, tp) => tp' 
+	--------------------------------------------------
+	make_complete_type_names(env, (elt as SCode.COMPONENT(id,f,r,p,attr,tp,mod))::rest)
+	  => SCode.COMPONENT(id,f,r,p,attr,tp',mod)::res
 end
 
 
@@ -693,13 +757,10 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 	   Save all modifiers in environment...
 	   **)	
 
-	Debug.fprint ("decl", "instantiating class to get type\n") &
-	inst_class(cenv,Mod.NOMOD,pre,csets,cl,inst_dims,impl) => (_,_,ty,_) &
-	Debug.fprint ("decl", "got type:") &
-	Debug.fcall ("decl", Types.print_type, ty) &
-	Debug.fprint ("decl","\n") &
+	(* Use type T_NOTYPE instead of as earier trying to instantiate, since instanitation might fail without having correct
+	 modifications (e.g. when instanitating a partial class that must be redeclared through a modification)*)
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-	    prot,ty,Types.UNBOUND),SOME(comp),false) => env' &
+	    prot,Types.T_NOTYPE,Types.UNBOUND),SOME(comp),false) => env' & 
 	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims,impl) => env'' &
 	Debug.fprint("decl", " updated env :") &
 	Debug.fcall ("decl", Env.print_env, env'') 
@@ -768,58 +829,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Env.extend_frame_i(env,imp) => env'
 	------------------------------------
 	inst_element(env,mod,pre,csets,ci_state,SCode.IMPORT(imp),instdims,_) => ([],env',csets,ci_state,[])
-	
-
-	(**  extends
-	 **
-	 ** Handle "extends" elements by instantiating the class definition
-	 ** of the extended class.
-	 **)
-
- (** LS: Is this really correct? First modifications are lookuped from mods and *)
- (** put into classmod, than classmod and mods are merged ??? **)
-	 
-  rule	Debug.fprintln ("insttr", "Looking for base class") &
-	Lookup.lookup_class(env,cn,true) => (c as SCode.CLASS(cn2,_,_,restr,def), cenv) &
-	Debug.fprintln ("insttr", "Base class found") &
-	Mod.lookup_modification_p(mods,cn) => classmod &
-	Debug.fprintln ("insttr", "Modifications fetched") &
-	(* Instantiation of the extended class is done in an environment *)
-	(* that is combined of the environment of the class itself and *)
-	(* the class it is instantiated in. *)
-	list_append(cenv,env) => newcenv &
-	Mod.elab_mod(newcenv,pre,m) => m' &
-	Debug.fprintln ("insttr", "Modifications elaborated") &
-	(* Build the combind set of modifications *)
-	(* classmod is the modifications stored with the class *)
-	(* mods     is the modifications passed to the relatio *)
-	(* m        is the modification stored in the element *)
-	Mod.merge(classmod,mods) => mods' &
-	Debug.fprintln ("insttr", "Modifications merged") &
-	Mod.merge(mods',m') => mods'' &
-	Debug.fprintln ("insttr", "Modifications merged again") &
-	
-	(* Can't use inst_class, as that creates a new frame *)
-	(* The extends node is instantiated in the environment beloning to *)
-	(* extended class, i.e. cenv. However, the  variables, classes and types inserted in this *)
-	(* environment (top frame of env'), by  inst_class_in, should be *)
-	(* copied into the resulting environment *)
-
-	(* Instantiation of the extended class is done in an environment *)
-	(* that is combined of the environment of the class itself and *)
-	(* the class it is instantiated in. *)
-
-	inst_class_in(newcenv,mods'',pre,csets,ci_state,c,false,inst_dims,impl)
-	  => (dae,fr::env',csets',ci_state',vars) &
-	Env.merge_inherited_content(fr,env) => env''
-	  ----------------------------------
-	inst_element(env,mods,pre,csets,ci_state,extends as SCode.EXTENDS(cn,m),inst_dims,impl)
-	  => (dae,env'',csets',ci_state',vars)
-	  
-  	  (**  Rules to catch redeclarations and name collsions
-	   **)
-
-	 
+		 
 	(* If a variable is declared multiple times, the first is used *)
 
   rule	Lookup.lookup_ident_local(env,n) => (_,NONE,true) &
@@ -928,10 +938,9 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	get_cref_from_dim(ad) => crefs2' &
 	remove_cref_from_crefs (crefs2', owncref) => crefs2 &
 	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
-
 	(* Update the untyped modifiers to typed ones, and extract class *)
 	(* and component modifiers again.*)
-	Mod.update_mod(env2,pre,mods) => mods' &	
+	Mod.update_mod(env2,pre,mods) => mods' &
 	Mod.lookup_modification_p(mods',t) => classmod' &
 	Mod.lookup_comp_modification(mods',n) => mm' &
 		
@@ -1157,8 +1166,6 @@ end
 relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 
   rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
-	Print.print_buf "cref from redeclare, mod:" &
-	SCode.print_mod m & Print.print_buf "\n" &
 	get_cref_from_mod(SCode.REDECL(b,xs)) => res1 &
 	get_cref_from_mod(m) => res2 &
 	list_append(res1,res2) => res
@@ -1175,7 +1182,7 @@ relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 
   rule	(* Find in sub modifications e.g A(B=3) find B *)
 	get_cref_from_submods(submods) => l1 &
-	get_cref_from_exp(e) => l2 &
+	Absyn.get_cref_from_exp(e) => l2 &
 	list_append(l1,l2) => res
 	-------------------------
 	get_cref_from_mod(mod as SCode.MOD(_,submods,SOME(e))) => res
@@ -1194,7 +1201,7 @@ end
 relation get_cref_from_dim: Absyn.ArrayDim => Absyn.ComponentRef list =
 	
   rule	get_cref_from_dim(rest) => l1 &
-	get_cref_from_exp(exp) => l2 &
+	Absyn.get_cref_from_exp(exp) => l2 &
 	list_append(l1,l2) => res
 	----------------------
 	get_cref_from_dim(Absyn.SUBSCRIPT(exp)::rest) => res
@@ -1221,106 +1228,68 @@ relation get_cref_from_submods: (SCode.SubMod list) => Absyn.ComponentRef list =
 	axiom get_cref_from_submods([]) => []
 end
 
-relation get_cref_from_exp: ( Absyn.Exp ) => Absyn.ComponentRef list =
+relation get_cref_from_elabed_mod: Mod.Mod => Absyn.ComponentRef list =
 
-  axiom	get_cref_from_exp(Absyn.INTEGER(_)) => []
-  axiom	get_cref_from_exp(Absyn.REAL(_)) => []
-  axiom	get_cref_from_exp(Absyn.STRING(_)) => []
-  axiom	get_cref_from_exp(Absyn.BOOL(_)) => []
-  axiom	get_cref_from_exp(Absyn.CREF(cr)) => [cr]
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res
-	-------------------------
-	get_cref_from_exp(Absyn.BINARY(e1,op,e2)) => res
-
-  rule	get_cref_from_exp(e1) => res
-	----------------------------
-	get_cref_from_exp(Absyn.UNARY(op,e1)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res
-	-------------------------
-	get_cref_from_exp(Absyn.LBINARY(e1,op,e2)) => res
-
-  rule	get_cref_from_exp(e1) => res
-	----------------------------
-	get_cref_from_exp(Absyn.LUNARY(op,e1)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res
-	-------------------------
-	get_cref_from_exp(Absyn.RELATION(e1,op,e2)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res1 &
-	get_cref_from_exp(e3) => l3 &
-	list_append(res1,l3) => res
-	(* TODO elseif's e4 *)
-	---------------------------
-	get_cref_from_exp(Absyn.IFEXP(e1,e2,e3,e4)) => res
-	
-  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	get_cref_from_farg(farg) => res
-	--------------------------------------------
-	get_cref_from_exp(Absyn.CALL(_,farg)) => res
-
-
-  rule	Util.list_map(expl,get_cref_from_exp) => res1 &
-	Util.list_flatten(res1) => res
-	--------------------------------------------
-	get_cref_from_exp(Absyn.ARRAY(expl)) => res
-
-  rule	Util.list_list_map(expll,get_cref_from_exp) => res1 & 
-	Util.list_flatten(res1) => res2 &
-	Util.list_flatten(res2) => res
-	----------------
-	get_cref_from_exp(Absyn.MATRIX(expll)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res1 &
-	get_cref_from_exp(e3) => l3 &
-	list_append(res1,l3) => res
-	---------------------------
-	get_cref_from_exp(Absyn.RANGE(e1,SOME(e3),e2)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res 
-	---------------------------
-	get_cref_from_exp(Absyn.RANGE(e1,NONE,e2)) => res
-	    
-  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	Print.print_buf "Not implemented yet\n" 
-	------------------
-	get_cref_from_exp(Absyn.TUPLE(expl)) => []
-
-end
-
-relation get_cref_from_farg: (Absyn.FunctionArgs) => Absyn.ComponentRef list =
-	
-  rule	Util.list_map(expl, get_cref_from_exp) => l1 &
-	Util.list_flatten(l1) => fl1 &
-	Util.list_map(nargl,get_cref_from_narg) => l2 &
-	Util.list_flatten(l2) => fl2 &
-	list_append(fl1,fl2) => res
-	--------------------------------------------
-	get_cref_from_farg (Absyn.FUNCTIONARGS(expl,nargl)) => res
-
-end
-
-relation get_cref_from_narg: (Absyn.NamedArg) => Absyn.ComponentRef list =
-	
-  rule	get_cref_from_exp(exp) => res
+  rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
+	Print.print_buf "cref from redeclare, mod:" &
+	get_cref_from_elabed_mod(Mod.REDECL(b,xs)) => res1 &
+	get_cref_from_mod(m) => res2 &
+	list_append(res1,res2) => res
 	-----------------------------
-	get_cref_from_narg(Absyn.NAMEDARG(_,exp)) => res
+	get_cref_from_elabed_mod(Mod.REDECL(b, SCode.COMPONENT(n,_,_,_,_,_,m)::xs)) 
+	  => res
+  rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
+	get_cref_from_elabed_mod(Mod.REDECL(b,xs)) => res
+	-----------------------------
+	get_cref_from_elabed_mod(Mod.REDECL(b, _::xs)) 
+	  => res
+
+  axiom	get_cref_from_elabed_mod(Mod.REDECL(b,[])) => []
+
+  rule	(* Find in sub modifications e.g A(B=3) find B *)
+	get_cref_from_elabed_submods(submods) => l1 &
+	get_cref_from_elabed_eqmod(e) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_elabed_mod(mod as Mod.MOD(_,submods,SOME(e))) => res
+
+  rule	get_cref_from_elabed_submods(submods) => res
+	-------------------------------------
+	get_cref_from_elabed_mod(Mod.MOD(_,submods,NONE)) => res 
+	
+  axiom	get_cref_from_elabed_mod(_) => []
+
+  rule	Print.print_buf "- get_cref_from_mod failed\n" 
+	----------
+	get_cref_from_elabed_mod(_) => fail
 end
 
+relation get_cref_from_elabed_eqmod: (Mod.EqMod) => Absyn.ComponentRef list =
+	
+  rule	Absyn.get_cref_from_exp(exp) => res
+	---------------------------------
+	get_cref_from_elabed_eqmod(Mod.UNTYPED(exp)) => res
+
+	(* Otherwise, empty list, since typed expressions does not need to be updated *)
+  axiom	get_cref_from_elabed_eqmod(_) => []
+end
+
+relation get_cref_from_elabed_submods: (Mod.SubMod list) => Absyn.ComponentRef list =
+
+  rule	get_cref_from_elabed_mod(mod) => res1 &
+	get_cref_from_elabed_submods(rest) => res2 &
+	list_append(res1,res2) => res
+	-------------------------------
+	get_cref_from_elabed_submods(Mod.NAMEMOD(_,mod)::rest) => res
+	   
+  rule	get_cref_from_elabed_mod(mod) => res1 &
+	get_cref_from_elabed_submods(rest) => res2 &
+	list_append(res1,res2) => res
+	-------------------------------
+	get_cref_from_elabed_submods(Mod.IDXMOD(_,mod)::rest) => res
+
+	axiom get_cref_from_elabed_submods([]) => []
+end
 
 relation update_variables_in_env:(Mod.Mod,Absyn.ComponentRef list, Env.Env, bool) 
 	=> Env.Env =
@@ -1386,7 +1355,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 	(* Qualified names should not be considered, because:
 	 FIXME: explanation...
 	 *)
-  rule	Print.print_buf "update_variable_in_env QUAL \n" 
+  rule	(*Print.print_buf "update_variable_in_env QUAL \n" *)
 	------------
 	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env,impl) => env
 
@@ -2082,25 +2051,25 @@ end
 relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTable option)
 	    => (Exp.Exp, Types.Properties,Interactive.InteractiveSymbolTable option) =
 
-  rule	Print.print_buf "// elab_exp_ext success for " &
+  rule	(*Print.print_buf "// elab_exp_ext success for " &*)
 (*	Static.elab_builtin_size(env,args) => (e,prop) & *)
 	Static.elab_exp(env,dim,impl,NONE) => (dimp, Types.PROP(dimty,dim_const),_) &
 	Static.elab_exp(env,arraycr,impl,NONE) => (arraycrefe, arraycrprop,_) &
-	let exp = Exp.SIZE(arraycrefe,dimp) &
-	Exp.print_exp exp &
-	Print.print_buf "\n"
+	let exp = Exp.SIZE(arraycrefe,dimp) 
+	(*& Exp.print_exp exp &
+	Print.print_buf "\n" *)
 	----------------------------------------------------	
 	elab_exp_ext (env,
 		      call as Absyn.CALL(Absyn.CREF_IDENT("size",_),
 					 Absyn.FUNCTIONARGS(args as [arraycr,dim],nargs)),impl,st) 
 	  => (exp,Types.PROP(Types.T_INTEGER,false),st)
 
-  rule	Print.print_buf "// elab_exp_ext failed for " &
+  rule	(*Print.print_buf "// elab_exp_ext failed for " & 
 	Absyn.print_absyn_exp exp &
-	Print.print_buf " calling Static.elab_exp: " &
-	Static.elab_exp (env,exp,impl,st) => (e,prop,st) &
-	Exp.print_exp e &
-	Print.print_buf "\n"
+	Print.print_buf " calling Static.elab_exp: " & *)
+	Static.elab_exp (env,exp,impl,st) => (e,prop,st) 
+(*	& Exp.print_exp e &
+	Print.print_buf "\n"*)
 	---------------------------------------------------
 	elab_exp_ext (env,exp,impl,st) => (e,prop,st)
 
@@ -2671,7 +2640,8 @@ end
 relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 
   rule	Env.open_scope (env,false) => env' &
-	Env.extend_frame_v(env',
+	Env.name_scope (env',"$for loop scope$") => env'' &
+	Env.extend_frame_v(env'',
 			   Types.VAR(i,
 				     Types.ATTR(false,
 						SCode.RW,
@@ -3084,7 +3054,8 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_,_) => ([], csets)
 
   rule	Env.open_scope (env,false) => env' &
-	Env.extend_frame_v (env',
+	Env.name_scope (env',"$for loop scope$") => env'' &
+	Env.extend_frame_v (env'',
 			    Types.VAR(i, Types.ATTR(false,
 						    SCode.RO,
 						    Absyn.CONST,
@@ -3102,7 +3073,8 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (dae, csets'')
 
   rule	Env.open_scope (env, false) => env' &
-	Env.extend_frame_v (env',
+	Env.name_scope (env',"$for loop scope$") => env'' &
+	Env.extend_frame_v (env'',
 			    Types.VAR(i, Types.ATTR(false,
 						    SCode.RO,
 						    Absyn.CONST,

@@ -451,7 +451,7 @@ end
 
 relation val_list_string : Value list => string =
 
-  axiom	val_list_string [] => "## EMPTY LIST ##"
+  axiom	val_list_string [] => ""
 
   rule	val_string v => s
 	-----------------

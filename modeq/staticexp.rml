@@ -711,7 +711,6 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
   rule	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, true),_) &
 	ceval (env, indexp,false,NONE) => (Values.INTEGER(value),_) &
-	int_string(value) => strval &
 	elab_exp (env,arraycr,false,NONE) => (Exp.CREF(cr,crt), crprop,_) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
 	elab_builtin_size_2 (env, ty, value) => (exp, prop) 
@@ -721,7 +720,6 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
   rule	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, true),_) &
 	ceval (env, indexp,false,NONE) => (Values.INTEGER(value),_) &
-	int_string(value) => strval &
 	elab_exp (env,arraycr,false,NONE) 
 	  => (exp, Types.PROP(arrtp,_),_) &
 	elab_builtin_size_2 (env, arrtp, value) => (exp, prop) 
@@ -818,6 +816,7 @@ end
 
 relation build_exp_list : (Exp.Exp, int) => Exp.Exp list =
 
+  axiom	build_exp_list(e,0) => []
   axiom	build_exp_list (e,1) => [e]
 
   rule	int_sub (c,1) => c' &
@@ -1023,6 +1022,18 @@ end
  *)
 relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list, bool, Interactive.InteractiveSymbolTable option)
  	  => (Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option) =
+
+  rule	Absyn.cref_to_path(cr) => path & path_to_component_ref(path) => cr'
+	-------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("lookupClass",_),
+			      [ Absyn.CREF(cr)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("lookupClass"),
+		       [Exp.CREF(cr',Exp.OTHER)],
+		       false,
+		       false),
+	      Types.PROP(Types.T_STRING,false),
+	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("typeOf",_),
 			      [ Absyn.CREF(Absyn.CREF_IDENT(varid,[]))],[],impl,
@@ -1285,11 +1296,11 @@ end
 
 relation make_env_from_cf: ((Absyn.Path * Types.Type) list) => Env.Env =
 
-  axiom	make_env_from_cf([]) => [Env.FRAME([],false)]
+  axiom	make_env_from_cf([]) => [Env.FRAME(NONE,[],false)]
 
-  rule	make_env_from_cf(rest) => [Env.FRAME(lst,encflag)]
+  rule	make_env_from_cf(rest) => [Env.FRAME(NONE,lst,encflag)]
 	-----------------------------------
-	make_env_from_cf((Absyn.IDENT(id),t)::rest) =>[Env.FRAME((id,Env.TYPE(t))::lst,encflag)]
+	make_env_from_cf((Absyn.IDENT(id),t)::rest) =>[Env.FRAME(NONE,(id,Env.TYPE(t))::lst,encflag)]
 end
 
 (** relation: elab_call_args
@@ -1310,7 +1321,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	Debug.fprintln ("sei", "function is record constructor\n") &
 	
 	make_empty_slots(fargs) => slots &
-	elab_input_args(env', args,nargs,slots) => (args',newslots, c) &
+	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
 	Debug.fprintln ("sei", "Did elab_input_args") &
 
 	elab_consts(outtype) => const &
@@ -1351,7 +1362,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	* c is true if all input arguments are constant.
 	*)
 	make_empty_slots(fargs) => slots &
-	elab_input_args(env', args,nargs,slots) => (args',newslots, c) &
+	elab_input_args(env, args,nargs,slots) => (args',newslots, c) &
 	Debug.fprintln ("sei", "Did elab_input_args, constant=") &
 	(*PR. !! Fix this. The function body is examined to determine the 
 	* constness of each output argument.
@@ -1887,18 +1898,20 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 				       binding) &
 	Debug.fprint("ecref","elab_cref, looked up type:\n") &
 	Debug.fcall("ecref",Types.print_type,t) &
+
 	elab_cref2 (env, c', acc, variability, t, binding)
-	  => (exp,const,acc')
+	  => (exp,const,acc') 
 	(* FIXME subscript_cref_type (exp,t) => t' &  *)
 	---------------------------------
 	elab_cref(env, c) => (exp, Types.PROP(t, const), acc')
 
   rule	elab_cref_subs (env,c) => (c', const) &
-	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\n"
+	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\nenv:" &
+	Env.print_env env 
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
-  rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n"
+  rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n" & print "- elab_cref_failed\n" 
 	------------------------------
 	elab_cref (_,c) => fail
 
@@ -1982,7 +1995,8 @@ relation elab_cref2 : (Env.Env,
 	-----------------
 	elab_cref2(env,cr,acc,_,tt as Types.T_ENUM,_) => (Exp.CREF(cr,t),true,acc)
 
-  rule	(* If value not constant, but references another parameter, which has a value *)
+  rule	print "elab_cref2 nonconstant\n"&
+	(* If value not constant, but references another parameter, which has a value *)
 	(* We need to perform value propagation. *)
 	Lookup.lookup_var(env,cref) => (Types.ATTR(_,acc',variability',_),
 				       t',
@@ -1993,19 +2007,22 @@ relation elab_cref2 : (Env.Env,
 	  => (e,const,acc)
 
 
-  rule	Print.print_buf "# Constant or parameter with a non-constant initializer\n" &
+  rule	print "# Constant or parameter with a non-constant initializer\n" &
+	Print.print_buf "# Constant or parameter with a non-constant initializer\n" &
 	Print.print_buf "# component: " & Exp.print_component_ref cr & Print.print_buf " = " &
 	Exp.print_exp exp & Print.print_buf "\n"
 	------------------------------
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,false)) => fail
 
-  rule	Print.print_buf "# Constant or parameter without a value\n" &
+  rule	print "# Constant or parameter without a value\n" &
+	Print.print_buf "# Constant or parameter without a value\n" &
 	Print.print_buf "# component: " & Exp.print_component_ref cr 
-	& Print.print_buf "env:\n" & Env.print_env env & Print.print_buf "\n"
+	& Print.print_buf " env:\n" & Env.print_env env & Print.print_buf "\n"
 	----------------------------------------------
 	elab_cref2 (env,cr,_,_,_,Types.UNBOUND) => fail
 
-  rule	Print.print_buf "- elab_cref2 failed (component: " &
+  rule	print "- elab_cref2 failed (component: " &
+	Print.print_buf "- elab_cref2 failed (component: " &
 	Exp.print_component_ref cr & Print.print_buf ")\n"
 	----------------------------------------
 	elab_cref2 (_,cr,_,_,_,_) => fail
@@ -2191,6 +2208,20 @@ relation elab_ifexp : (Exp.Exp, Types.Properties,
 	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
 		   e2,Types.PROP(t2,c2),
 		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3), Types.PROP(t2, c))
+
+  rule	Types.match_type(e2,t2,t3) => (e2',t2') & (* then-part type converted to match else-part *)
+	const_ifexp(e1,c1,c2,c3) => c
+	-----------------------------
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+		   e2,Types.PROP(t2,c2),
+		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2',e3), Types.PROP(t2', c))
+
+  rule	Types.match_type(e3,t3,t2) => (e3',t3') & (* else-part type converted to match then-part *)
+	const_ifexp(e1,c1,c2,c3) => c
+	-----------------------------
+	elab_ifexp(e1,Types.PROP(Types.T_BOOL,c1),
+		   e2,Types.PROP(t2,c2),
+		   e3,Types.PROP(t3,c3)) => (Exp.IFEXP(e1,e2,e3'), Types.PROP(t2, c))
 
   rule	not t1 = Types.T_BOOL &
 	Print.print_buf "# conditional in if expression has to be boolean\n" &
@@ -2457,7 +2488,6 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 
   rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
 	ceval (env,stop,impl,st') => (Values.INTEGER(stop'),st'') &
-	int_gt(stop',start') => true &
 	ceval_range(start', 1, stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop),impl,st) 
@@ -2466,27 +2496,15 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
   rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
 	ceval (env,step,impl,st') => (Values.INTEGER(step'),st'') &
 	ceval (env,stop,impl,st'') => (Values.INTEGER(stop'),st''') &
-	ceval_range(start', step', stop') => arr &
-	int_gt(stop',start') => true &
-	int_gt(step',0) => true
-	-------------------------------------------
-	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),impl,st) 
-	  => (Values.ARRAY(arr),st''')
-
-  rule	ceval (env,start,impl,st) => (Values.INTEGER(start'),st') &
-	ceval (env,step,impl,st') => (Values.INTEGER(step'),st'') &
-	ceval (env,stop,impl,st'') => (Values.INTEGER(stop'),st''') &
-	ceval_range(start', step', stop') => arr &
-	int_gt(stop',start') => false &
-	int_gt(step',0) => false
+	ceval_range(start', step', stop') => arr 
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),impl,st) 
 	  => (Values.ARRAY(arr),st''')
 
   rule	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
 	ceval (env,stop,impl,st') => (Values.REAL(stop'),st'') &
-	real_gt(stop',start') => true &
-	int_real 1 => step & (* Bug in rml 1.0 => 0.0 in cygwin impl *)
+	real_sub(stop',start') => diff &
+	int_real 1 => step & (* bug in rml, 1.0 => 0.0 in cygwin  *)
 	ceval_range_real(start', step, stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),impl,st) 
@@ -2496,18 +2514,6 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
 	ceval (env,step,impl,st') => (Values.REAL(step'),st'') &
 	ceval (env,stop,impl,st'') => (Values.REAL(stop'),st''') &
-	real_gt(stop',start') => b1 &
-	real_gt(step',0.0) => b2 &
-	ceval_range_real(start', step', stop') => arr
-	-------------------------------------------
-	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),impl,st) 
-	  => (Values.ARRAY(arr),st''')
-
-  rule	ceval (env,start,impl,st) => (Values.REAL(start'),st') &
-	ceval (env,step,impl,st') => (Values.REAL(step'),st'') &
-	ceval (env,stop,impl,st'') => (Values.REAL(stop'),st''') &
-	real_gt(stop',start') => false &
-	real_gt(step',0.0) => false &
 	ceval_range_real(start', step', stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),impl,st) 
@@ -2553,6 +2559,19 @@ end
 relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable)
 	=> (Values.Value, Interactive.InteractiveSymbolTable) =
 
+
+  rule	component_ref_to_path(cr) => path &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	Lookup.lookup_class(env,path,true) => (c, env) &
+	Env.get_env_path(env) => p1 &
+	Absyn.path_string(p1) => s1 &
+	Print.print_buf "Found class " &
+	Print.print_buf s1 & Print.print_buf "\n\n" &
+	Print.get_string() => str
+	-------------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("lookupClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
   rule	Interactive.get_type_of_variable(varid, iv) => tp &
 	Types.unparse_type tp => str 
 	-------------------------------
@@ -2579,7 +2598,9 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
   rule	component_ref_to_path(cr) => path &
 	SCode.elaborate(p) => p' &
 	Inst.instantiate_class(p',path) => dae &
-	DAE.dump_str (dae) => str
+	DAE.dump_str (dae) => str &
+	Print.get_string() => s2 &
+	Print.print_error_buf s2 
 	-------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 	
@@ -2615,7 +2636,8 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
 
-  rule	Print.get_error_string() => str 
+  rule	Print.get_error_string() => str &
+	Print.clear_error_buf()
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
@@ -2782,17 +2804,41 @@ end
 
 relation ceval_range : (int, int, int) => Values.Value list =
 
+  rule	int_eq(start,stop) => true (* e.g. 1:1 => {1} *)
+	------------------
+	ceval_range(start,_,stop) => [Values.INTEGER(start)]
+
+  rule	(*if d > 0 and j>k or if d < 0 and j<k *)
+	int_gt(j,k) => b1 &
+	int_gt(d,0) => b2 &
+	bool_and(b1,b2) => c1 &
+	int_lt(j,k) => b3 &
+	int_lt(d,0) => b4 &
+	bool_and(b3,b4) => c2 &
+	bool_or(c1,c1) => true
+	-----------------------------
+	ceval_range(j,d,k) => []
+
+rule	ceval_range2(start,step,stop) => res
+	-----------------------------------
+	ceval_range (start, step, stop) => res
+
+end
+
+relation ceval_range2: (int,int,int) => Values.Value list =
+
   rule	int_gt(start,stop) => true
 	--------------------------
-	ceval_range (start,_,stop) => []
+	ceval_range2 (start,_,stop) => []	
 
   rule	int_gt(start,stop) => false & (* redundant *)
 	int_add (start, step) => next &
-	ceval_range (next, step, stop) => l
+	ceval_range2 (next, step, stop) => l
 	-----------------------------------
-	ceval_range (start, step, stop) => Values.INTEGER(start)::l
-
+	ceval_range2 (start, step, stop) => Values.INTEGER(start)::l
 end
+	
+
 
 (** relation: ceval_range_real
  **
@@ -2801,15 +2847,37 @@ end
 
 relation ceval_range_real : (real, real, real) => Values.Value list =
 
+  rule	real_eq(start,stop) => true (* e.g. 1:1 => {1} *)
+	------------------
+	ceval_range_real(start,_,stop) => [Values.REAL(start)]
+
+  rule	(*if d > 0 and j>k or if d < 0 and j<k *)
+	real_gt(j,k) => b1 &
+	real_gt(d,0.0) => b2 &
+	bool_and(b1,b2) => c1 &
+	real_lt(j,k) => b3 &
+	real_lt(d,0.0) => b4 &
+	bool_and(b3,b4) => c2 &
+	bool_or(c1,c1) => true
+	-----------------------------
+	ceval_range_real(j,d,k) => []
+
+rule	ceval_range_real2(j,d,k)=> res
+	-----------------------------------
+	ceval_range_real (j,d,k) => res
+end
+
+relation ceval_range_real2 : (real, real, real) => Values.Value list =
+
   rule	real_gt(start,stop) => true
 	--------------------------
-	ceval_range_real (start,_,stop) => []
+	ceval_range_real2 (start,_,stop) => []
 
   rule	real_gt(start,stop) => false & (* redundant *)
 	real_add (start, step) => next &
-	ceval_range_real (next, step, stop) => l 	
+	ceval_range_real2 (next, step, stop) => l 	
 	-----------------------------------
-	ceval_range_real (start, step, stop) => Values.REAL(start)::l
+	ceval_range_real2 (start, step, stop) => Values.REAL(start)::l
 end
 
 (** relation: ceval_list

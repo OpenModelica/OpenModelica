@@ -325,11 +325,13 @@ module Absyn:
   relation path_to_cref : Path => ComponentRef
   relation path_string : Path => string
   relation path_last_ident : Path => Ident
+  relation get_cref_from_exp : ( Exp ) => ComponentRef list 
   relation join_paths: (Path, Path) => Path
   relation strip_last: (Path) => Path 
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
+
 end
 with "debug.rml"
 with "dump.rml"
@@ -379,6 +381,106 @@ relation path_last_ident : Path => Ident =
 	
   axiom	path_last_ident(IDENT(n)) => n
 
+end
+
+relation get_cref_from_exp: ( Exp ) => ComponentRef list =
+
+  axiom	get_cref_from_exp(INTEGER(_)) => []
+  axiom	get_cref_from_exp(REAL(_)) => []
+  axiom	get_cref_from_exp(STRING(_)) => []
+  axiom	get_cref_from_exp(BOOL(_)) => []
+  axiom	get_cref_from_exp(CREF(cr)) => [cr]
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(BINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(UNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(LBINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(LUNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(RELATION(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	(* TODO elseif's e4 *)
+	---------------------------
+	get_cref_from_exp(IFEXP(e1,e2,e3,e4)) => res
+	
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	get_cref_from_farg(farg) => res
+	--------------------------------------------
+	get_cref_from_exp(CALL(_,farg)) => res
+
+
+  rule	Util.list_map(expl,get_cref_from_exp) => res1 &
+	Util.list_flatten(res1) => res
+	--------------------------------------------
+	get_cref_from_exp(ARRAY(expl)) => res
+
+  rule	Util.list_list_map(expll,get_cref_from_exp) => res1 & 
+	Util.list_flatten(res1) => res2 &
+	Util.list_flatten(res2) => res
+	----------------
+	get_cref_from_exp(MATRIX(expll)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	---------------------------
+	get_cref_from_exp(RANGE(e1,SOME(e3),e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res 
+	---------------------------
+	get_cref_from_exp(RANGE(e1,NONE,e2)) => res
+	    
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	Print.print_buf "Not implemented yet\n" 
+	------------------
+	get_cref_from_exp(TUPLE(expl)) => []
+
+end
+
+relation get_cref_from_farg: (FunctionArgs) => ComponentRef list =
+	
+  rule	Util.list_map(expl, get_cref_from_exp) => l1 &
+	Util.list_flatten(l1) => fl1 &
+	Util.list_map(nargl,get_cref_from_narg) => l2 &
+	Util.list_flatten(l2) => fl2 &
+	list_append(fl1,fl2) => res
+	--------------------------------------------
+	get_cref_from_farg (FUNCTIONARGS(expl,nargl)) => res
+
+end
+
+relation get_cref_from_narg: (NamedArg) => ComponentRef list =
+	
+  rule	get_cref_from_exp(exp) => res
+	-----------------------------
+	get_cref_from_narg(NAMEDARG(_,exp)) => res
 end
 
 

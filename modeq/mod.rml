@@ -59,6 +59,7 @@ module Mod:
    **)
 
   relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod
+  relation unelab_mod : (Mod) => SCode.Mod
   relation update_mod: (Env.Env, Prefix.Prefix, Mod) => Mod 
   relation elab_untyped_mod : (SCode.Mod) => Mod
 
@@ -74,6 +75,7 @@ end
 
 with "dump.rml"
 with "print.rml"
+with "inst.rml"
 
 (** relation: elab_mod
  **
@@ -110,6 +112,72 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
 end
 
 
+
+relation unelab_mod: Mod => SCode.Mod =
+	
+  axiom	unelab_mod (NOMOD) => SCode.NOMOD
+	
+  rule	unelab_submods (subs) => subs'
+	------------------------------------
+	unelab_mod (m as MOD(final,subs,NONE))
+	  =>  SCode.MOD(final,subs',NONE)
+	  
+  rule	unelab_submods (subs) => subs' 
+	------------------------------------
+	unelab_mod (m as MOD(final,subs,SOME(UNTYPED(e))))
+	  => SCode.MOD(final,subs',SOME(e))
+	  
+  rule	Print.print_buf "NOT IMPLEMENTED YET. NEED Exp.Exp->Absyn.Exp\n"  
+	------------------------------------
+	unelab_mod (m as MOD(final,subs,SOME(TYPED(e,p))))
+	  => fail
+	  
+  axiom	unelab_mod (m as REDECL(final, elist)) 
+	  =>  SCode.REDECL(final, elist)
+	  
+  rule	Print.print_buf "#-- elab_untyped_mod failed:\n" 
+	----------
+	unelab_mod (mod) => fail
+end
+
+
+relation unelab_submods : ( SubMod list)
+	  => SCode.SubMod list =
+	  
+  axiom	unelab_submods ([]) => []
+	
+  rule	unelab_submod (x) => x' &
+	unelab_submods (xs) => xs' &
+	list_append(x',xs') => res	    
+	-----------------------------
+	unelab_submods (x::xs) => res
+end
+
+(** relation: unelab_submod
+ **
+ ** This relation unelaborates on a submodification.
+ **)
+		 
+relation unelab_submod : (SubMod) => SCode.SubMod list =
+	
+  rule	unelab_mod (m) => m'
+	--------------------------
+	unelab_submod (NAMEMOD(i,m)) => [SCode.NAMEMOD(i,m')]
+	
+  rule	unelab_subscript(ss) => ss' &
+	unelab_mod(m) => m'
+	---------------------------
+	unelab_submod (IDXMOD(ss,m)) => [SCode.IDXMOD(ss',m')]
+end
+
+relation unelab_subscript: (int list) => SCode.Subscript list =
+		    
+   axiom unelab_subscript ([]) => []
+
+   rule	unelab_subscript(is) => xs 
+	--------------------------
+	unelab_subscript (i::is) => Absyn.SUBSCRIPT(Absyn.INTEGER(i))::xs	    
+end
 (** relation: update_mod
  **
  ** This relation updates and untyped modification to a typed one, by looking

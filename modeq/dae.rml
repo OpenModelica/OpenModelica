@@ -357,16 +357,11 @@ end
 relation dump_elements_str : Element list => string =
 
   rule	dump_vars_str l => s1 &
-	string_append(s1,"initial equation\n") => s2 &
-	dump_initialequations_str(l) => s3 &
-	string_append(s2,s3) => s4 &
-	string_append(s4,"equation\n") => s5 &
-	dump_equations_str(l) => s6 &
-	string_append(s5,s6) => s7 &
-	dump_initialalgorithms_str(l) => s8 &
-	string_append(s7,s8) => s9 &
-	dump_algorithms_str(l) => s10 &
-	string_append(s9,s10) => str
+	dump_initialequations_str(l) => s2 &
+	dump_equations_str(l) => s3 &
+	dump_initialalgorithms_str(l) => s4 &
+	dump_algorithms_str(l) => s5 &
+	Util.string_append_list([s1,"initial equation\n",s2,"initial algorithm\n",s4,"equation\n",s3,"algorithm\n",s5]) => str
 	---------------------------
 	dump_elements_str l => str
 
