@@ -191,7 +191,9 @@ List of things to implement:
     should leave it unflattened, but with correct type and dimensions, e.g. similar to
     functions.
 35. values_to_mods doesn't handle all value types, e.g. arrays.
-
+36. Some builtin functions are not handled. I.e. asin, acos etc, which are not supported in RML. 
+    Fix so that they are treated as external functions and called like that with a -lm flag.
+    Maybe not needed when imports of Modelica.Math work?
 
 Specific adaptions:
 
