@@ -84,9 +84,22 @@ module DAELow:
 
   type Value = int
 
-  type IncidenceMatrix = int list list (* a list of variable indexes, one for each equation*)
+  type IncidenceMatrix = int list list (* a list of variable indexes (1..n), 
+					one for each equation. For state variables
+					the index is negated, since when sorting to 
+					retrieve underlying ODE, the states are considered 
+					known. The system is solved for the derivatives and
+					the algebraic variables: \dot{x},y.
+					But the states must be located when debugging and
+					when a state is transformed to an algebraic varialbe
+					in index reduction using dummy derivatives.
+					*)
 
-  type IncidenceMatrixT = IncidenceMatrix (* a list of equation indexes, one for each variable*)
+  type IncidenceMatrixT = IncidenceMatrix (* a list of equation indexes (1..n), 
+					   one for each variable*. Equations that -only- 
+					   contain the state variable and not the derivative
+					   has a negative index.
+					   *)
 
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
@@ -191,7 +204,7 @@ relation sort_eqn :  DAELow =>  DAELow =
         dump_eqns(algEqns) &
         print "\n\nDIFFERENTIATED EQUATIONS\n" &
         dump_eqns(diffEqns) &*)
-        list_append(algEqns,diffEqns) => res
+        list_append(diffEqns,algEqns) => res
         ---------------------------------------
         sort_eqn(dae as DAELOW(vars,varKnList,eqns,simpleEqns)) 
           => DAELOW(vars,varKnList,res,simpleEqns)
@@ -849,10 +862,12 @@ relation incidence_row_exp: (Exp.Exp, Variables )
 	  => int list =
 
   rule	(* If variable x is a state, der(x) is a variable in incidence matrix,
-	 but not x itself, it is considered known.*)
-	get_var(cr,vars) => (VAR(_,STATE,_,_,_ ,_,_,_,_,_,_),_)
+	 x is inserted as negative value, since it is needed by debugging and index
+	 reduction using dummy derivatives*)
+	get_var(cr,vars) => (VAR(_,STATE,_,_,_ ,_,_,_,_,_,_),p) &
+	int_sub(0,p) => p' 
  	-----------------------------
-	incidence_row_exp(Exp.CREF(cr,_),vars) => []
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p']
 	
   rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_,_, _,_,_,_,_,_),p) 
 	-----------------------------
@@ -1009,6 +1024,10 @@ end
  **)
 relation update_vars_bt: (Variables) => Variables =
 
+  rule	vector_length(varvec) => 0
+	-------------------------
+	update_vars_bt(v as VARIABLES(varvec,bt)) => v
+
   rule	vector_length(varvec) => veclen & 
 	update_vars_bt2(veclen,varvec,empty_bintree) => bt'
 	---------------------------------
@@ -1110,7 +1129,17 @@ relation transpose_row: (IncidenceMatrix,int(*row*),int(*iter*)) => int list =
 	---------------------------
 	transpose_row(m::ms,varno,eqn) => eqn::res
 
-  rule	list_member(varno,m) => false &
+  rule	(* Negative index present, state variable. *)
+	(*list_member(varno,m) => false &*)
+	int_sub(0,varno) => varno' &
+	list_member(varno',m) => true &
+	int_sub(0,eqn) => eqnneg &
+	int_add(eqn,1) => eqn' &
+	transpose_row(ms,varno,eqn') => res
+	---------------------------
+	transpose_row(m::ms,varno,eqn) => eqnneg::res
+
+  rule	(* not present at all *)
 	int_add(eqn,1) => eqn' &
 	transpose_row(ms,varno,eqn') => res
 	---------------------------
@@ -1357,7 +1386,7 @@ relation reduce_index_dummy_der: (DAELow,
 (*	Exp.print_component_ref_str state => statestr &
 	print "Choosen dummy state: " & print statestr & print "\n" &*)
 	new_dummy_var(state,dae) => (dummy_der,dae) &
-	eqns_for_var(mt,stateno) => reqns &
+	eqns_for_var_with_states(mt,stateno) => reqns &
 	Util.list_union_p(deqns,reqns,int_eq) => changedeqns &
 	(* We need to change variables in the differentiated equations and in the 
 	  equations having the dummy derivative *)
@@ -1677,7 +1706,7 @@ end
 relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
 	
   rule	RTOpts.tornado_cg => true &
-        string_append("_D_",id) => id'
+        string_append("_DUMMYDER_",id) => id'
 	-------------------------------
 	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
 	  => Exp.CREF_IDENT(id',subs)
@@ -1793,15 +1822,15 @@ relation differentiate_eqns: (DAELow,
 	Derive.differentiate_equation_time(eqn,v) => eqn' &
 	(* update equation row in IncidenceMatrix *)	
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
-	(*print "differentiated equation " &
+	(*print "differentiated equation " &*)
 	equation_str eqn => str & 
-	print str & print "\n" &
+(*	print str & print "\n" &*)
 	Debug.fprint("bltdump", str) &
 	Debug.fprint("bltdump", " to ") & 
 	equation_str eqn' => str &
-	print " to " & print str &  print "\n" &
+(*	print " to " & print str &  print "\n" &*)
 	Debug.fprint("bltdump",str) & 
-	Debug.fprint("bltdump", "\n") &*)
+	Debug.fprint("bltdump", "\n") &
 	list_append(eqns,[eqn']) => eqns' &
 	list_length(eqns') => leneqns & (* length gives index of new equation *)
 	differentiate_eqns(DAELOW(v,kv,eqns',seqns),m,mt,nv,nf,es) 
@@ -2005,19 +2034,31 @@ end
 (** relation: vars_in_eqn
  ** This relation returns all variable indices as a list for a given
  ** equation, given as an equation index.
+ ** Negative indexes are removed.
 **)
 relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
 	  => int list (* variables *) =
 
   rule	int_sub(n,1) => n' &
-	list_nth(m,n') => res
+	list_nth(m,n') => res &
+	remove_negative(res) => res'
 	--------------------
-	vars_in_eqn(m,n) => res 
+	vars_in_eqn(m,n) => res' 
 
   rule	print "vars_in_eqn failed, indx="  &
 	int_string indx => s & print s & print "\n"
 	----------------------------
 	vars_in_eqn(_,indx) => fail
+end
+
+(** relation: remove_negative
+ ** Removes all negative integers.
+**)
+relation remove_negative:(int list) => int list =
+
+  rule	Util.list_select(lst,Util.int_positive) => lst'
+	----------------------
+	remove_negative(lst) => lst'
 end
 
 (** relation: eqns_for_var
@@ -2028,14 +2069,38 @@ relation eqns_for_var: (IncidenceMatrixT, int (* variable *))
 	  => int list (* equations *) =
 
   rule	int_sub(n,1) => n' &
-	list_nth(mt,n') => res
+	list_nth(mt,n') => res &
+	remove_negative(res) => res'
 	--------------------
-	eqns_for_var(mt,n) => res 
+	eqns_for_var(mt,n) => res'
 
   rule	print "eqns_for_var failed, indx="  &
 	int_string indx => s & print s & print "\n"
 	----------------------------
 	eqns_for_var(_,indx) => fail
+end
+
+(** relation: eqns_for_var_with_states
+ ** This relation returns all equations as a list of equation indices
+ ** given a variable as a variable index, including the equations containing the 
+ ** state variable but not its derivative. This must be used to update equations
+ ** when a state is changed to algebraic variable in index reduction using dummy derivatives.
+ ** These equation indices are represented with negative index, thus all indices are mapped
+ ** trough int_abs (absolute value).
+**)
+relation eqns_for_var_with_states: (IncidenceMatrixT, int (* variable *)) 
+	  => int list (* equations *) =
+
+  rule	int_sub(n,1) => n' &
+	list_nth(mt,n') => res &
+	Util.list_map(res,int_abs) => res'
+	----------------------------------
+	eqns_for_var_with_states(mt,n) => res'
+
+  rule	print "eqns_for_var failed, indx="  &
+	int_string indx => s & print s & print "\n"
+	----------------------------
+	eqns_for_var_with_states(_,indx) => fail
 end
 
 (** relation: assign_first_unassigned

@@ -59,6 +59,8 @@ relation differentiate_equation_time: (DAELow.Equation,
 	differentiate_exp_time(e2,timevars) => e2' &
 	Exp.simplify(e1') => e1'' &
 	Exp.simplify(e2') => e2'' 
+	(*& Exp.simplify(e1'') => e1'' &
+	Exp.simplify(e2'') => e2'' *)
 	----------------------
 	differentiate_equation_time(DAELow.EQUATION(e1,e2),timevars) 
 	  => DAELow.EQUATION(e1'',e2'')

@@ -70,6 +70,7 @@ module Util :
   relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list
   relation list_list_thread_tuple : ('a list list, 'b list list) 
 	  => ('a * 'b) list list
+  relation list_select:('a list, 'a => bool) => 'a list
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_deletemember: (''a list,''a) => ''a list
@@ -105,6 +106,8 @@ module Util :
 
   relation apply_option : ('a option,'a => 'b) => 'b option
   relation list_split : ('a list, int) => ('a list, 'a list)
+
+  relation int_positive: int => bool
 
 end
 
@@ -408,6 +411,27 @@ relation list_list_thread_tuple : ('a list list, 'b list list)
 	-----------------------------
 	list_list_thread_tuple (fa::ra, fb::rb) => f::r
 
+end
+
+(** relation: list_select
+ ** This relation retrieves all elements of a list for which
+ ** the passed relation evaluates to true. The elements that evaluates to false 
+ ** are thus removed from the list.
+**)
+relation list_select: ('a list, 'a => bool) => 'a list =
+
+
+  axiom	list_select([],_) => []
+
+  rule	cond(x) => true &
+	list_select(xs,cond) => xs' 
+	---------------------------
+	list_select(x::xs,cond) => x::xs'
+
+  rule	cond(x) => false &
+	list_select(xs,cond) => xs' 
+	---------------------------
+	list_select(x::xs,cond) => xs'
 end
 
 (** relation: list_position
@@ -1068,4 +1092,15 @@ relation list_split2 : ('a list, 'a list, int) => ('a list, 'a list) =
 	----------------
 	list_split2(_,_,_) => fail 
 
+end
+
+(** relation: int_positive
+ ** Returns true if integer value is positive (>= 0)
+ **
+ **)
+relation int_positive: int => bool =
+
+  rule	int_ge(v,0) => res
+	--------------
+	int_positive(v) => res
 end

@@ -46,33 +46,25 @@ relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
   rule	DAELow.lower(dae) => (dae' as DAELow.DAELOW(_,_,eqns,_)) &
         generate_blt(dae') => (dae'',blt,ass1,ass2) &
 
-
- (*       print("   unsorted equations------------------\n") &
-        DAELow.dump_eqns(eqns) &*)
+	Absyn.path_string(class) => cname &
+	generate_header(cname) => header &
+	generate_impl_header(cname) => implheader &
+	generate_constructor(cname,p,dae'') => constr &
+	generate_var_defines(dae'') => defines &
+	generate_compute_methods(cname,dae'',p,blt,ass1,ass2) => cmethods &
+	Util.string_append_list([implheader,constr,defines,cmethods]) => impl &
+	string_append(cname,".h") => headerfile &
+	string_append(cname,".cpp") => implfile &
+	print "Generating: " & print headerfile & print "\n" &
+	System.write_file(headerfile,header) &
+	print "Generating: " & print implfile & print "\n" &
+	System.write_file(implfile,impl) 
+	-------------------------------------------------------------------
+	generate_code(p,dae,class) => 
         
-        (*sort_eqn(daeUnsorted) => (dae' as DAELow.DAELOW(_,_,eqns2,_)) &*)
-
-        (*print("   SORTED equations------------------\n") &
-        DAELow.dump_eqns(eqns2) &*)
-	    Absyn.path_string(class) => cname &
-	    generate_header(cname) => header &
-	    generate_impl_header(cname) => implheader &
-	    generate_constructor(cname,p,dae'') => constr &
-	    generate_var_defines(dae'') => defines &
-	    generate_compute_methods(cname,dae'',p,blt,ass1,ass2) => cmethods &
-	    Util.string_append_list([implheader,constr,defines,cmethods]) => impl &
-	    string_append(cname,".h") => headerfile &
-	    string_append(cname,".cpp") => implfile &
-	    print "Generating: " & print headerfile & print "\n" &
-	    System.write_file(headerfile,header) &
-	    print "Generating: " & print implfile & print "\n" &
-	    System.write_file(implfile,impl) 
-	    -------------------------------------------------------------------
-	    generate_code(p,dae,class) => 
-        
-  rule  print "generate_code failed\n" 
-	    ------------------------------
-	    generate_code(_,_,_) => fail
+  rule	print "generate_code failed\n" 
+	------------------------------
+	generate_code(_,_,_) => fail
 end
 
 (** relation: generate_header
@@ -183,10 +175,7 @@ relation generate_links:(DAELow.DAELow,string list) => string =
         vector_list(knvars_vec) => knvars &
         list_append(knvars,vars) => all_vars &
         generate_indep_var(comp_name_list,1) => indep_var_list &
-
         generate_links2(all_vars,0,0,comp_name_list) => (vars_params_list_str,vars_lst) &
-
-
         Util.string_append_list(vars_params_list_str) => params_list_str' &
         Util.string_append_list(vars_lst) => res' &
         Util.string_append_list(indep_var_list) => indep_var_str &
@@ -231,27 +220,16 @@ end
 
 relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, string list) = 
   
-  rule (* special case for when called second time and first time gave 
-        list length zero *)
-        generate_links2(lst,0,param_index,comp_name_list) => (param_res,res)
-        ----------------------------------------------
-        generate_links2(lst,-1,param_index,comp_name_list) => (param_res,res)
- 
-  rule (* special case for when called second time and first time gave 
-        list length zero *)
-        generate_links2(lst,var_index,0,comp_name_list) => (param_res,res)
-        ----------------------------------------------
-        generate_links2(lst,var_index,-1,comp_name_list) => (param_res,res)
        
   axiom generate_links2([],_,_,_) => ([],[])
         
   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
-        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) &
         cref_modelica_str(cr) => crs &
         Util.string_append_list([" ",
                                  is,
                                  "  \"",
-                                 crs,"\" );\n"]) => r1 
+                                 crs,"\" );\n"]) => r1 &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) 
           ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,
                         var_index,
@@ -259,9 +237,8 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
                         comp_name_list) 
           => (params_str,(r1::res))
  
-          (* this rule take car of BIDIR variables *)
+          (* this rule take care of BIDIR variables *)
   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
-        generate_links2(rest,var_index',param_index,comp_name_list) => (params,res) &
  (*       cref_modelica_str(cr) => crs &
         Util.string_append_list([" ",
                                  is,
@@ -269,14 +246,14 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
                                  crs,"\" );\n"]) => r1 *)
 
         Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::rest &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
         Util.string_append_list(["  GetSubModel(",
                                  index_str,
                                  ")->GetInputVar(0)->LinkValue(this, < unknown >, ",
-                                 is,");", " // ",crs,"\n"]) => r1 
-        
+                                 is,");", " // ",crs,"\n"]) => r1 &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params,res) 
         ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,
                         var_index,
@@ -284,18 +261,17 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
                         comp_name_list) 
           => (params,(r1::res))
 
-  rule  
-        int_add(param_index,1) => param_index' & int_string(param_index) => is &
-        generate_links2(rest,var_index,param_index',comp_name_list) => (params,res) &
+  rule	int_add(param_index,1) => param_index' & int_string(param_index) => is &
         Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::rest &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
         Util.string_append_list(["  GetSubModel(",
                                  index_str,
                                  ")->GetParam(0)->LinkValue(this, MSLE_PARAM, ",
-                                 is,");", " // ",crs,"\n"]) => r1 
-          ---------------------------------------------
+                                 is,");", " // ",crs,"\n"]) => r1 &
+	generate_links2(rest,var_index,param_index',comp_name_list) => (params,res) 
+        ---------------------------------------------
         generate_links2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)::rest,
                         var_index,
                         param_index,
@@ -1192,10 +1168,10 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    Exp.print_exp_str e2 => e2s &
         int_string(e) => eqn_nr &
         int_string(v) => var_nr &
-	    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
+	(*    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
 	    print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
 	    print s & print "\ngiving:\n " &
-        Exp.print_exp_str expr => s2 & print s2 & print "\n" &
+        Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
         
         Exp.simplify(expr) => simplify_exp &
 	    build_assignment(cr,simplify_exp,origname)  => assigment_string

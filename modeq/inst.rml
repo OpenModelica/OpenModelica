@@ -3907,7 +3907,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	inst_eq_equation_2 (e1,e2,(Types.T_TUPLE(_),_),initial) => [dae]
 
 
-  rule	RTOpts.split_arrays => false &
+  rule	(*RTOpts.split_arrays => false &*)
 	make_dae_equation (e1, e2, initial) => dae
 	-----------------------------------------
 	inst_eq_equation_2(e1,e2,(Types.T_ARRAY(ad,t),_),initial) => [dae]

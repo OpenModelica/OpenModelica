@@ -421,15 +421,13 @@ end
 relation simplify : Exp => Exp =
 
 	(* a+(-b) and (-b)+a *)
-  rule	simplify(e1) => e1' &
-	simplify(e2) => e2' 
+  rule	simplify(BINARY(e1,SUB(tp),e2)) => e
 	-------------------
-	simplify (BINARY(e1,ADD(tp),UNARY(UMINUS(tp2),e2))) => BINARY(e1',SUB(tp),e2')
+	simplify (BINARY(e1,ADD(tp),UNARY(UMINUS(tp2),e2))) => e
 
-  rule	simplify(e1) => e1' &
-	simplify(e2) => e2' 
+  rule	simplify(BINARY(e1,SUB(tp),e2)) => e
 	-------------------
-	simplify (BINARY(UNARY(UMINUS(tp2),e2),ADD(tp),e1)) => BINARY(e1',SUB(tp),e2')
+	simplify (BINARY(UNARY(UMINUS(tp2),e2),ADD(tp),e1)) => e
 
   rule	(* a/b/c => (a*c)/b) *)
 	simplify(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2)) => e
@@ -443,13 +441,22 @@ relation simplify : Exp => Exp =
 
   rule	(* e1 / e2 where e1 and e2 can be factorized with common factor
 	 e.g  a*b/c*a => b/c *)
-	gcd(e1,e2) => factor &
- 	remove_factor(factor,e1) => e1' &
-	simplify(e1') => e1'' &
-	remove_factor(factor,e2) => e2' &
-	simplify(e2') => e2'' 
+	simplify(e1) => e1' &
+	simplify(e2) => e2' &
+	gcd(e1',e2') => factor &
+ 	remove_factor(factor,e1') => e1'' &
+	simplify(e1'') => e1''' &
+	remove_factor(factor,e2') => e2'' &
+	simplify(e2'') => e2''' 
 	---------------------------------------
-	simplify (BINARY(e1,DIV(tp),e2)) => BINARY(e1'',DIV(tp),e2'')
+	simplify (BINARY(e1,DIV(tp),e2)) => BINARY(e1''',DIV(tp),e2''')
+
+
+  axiom	simplify (CAST(REAL,RCONST(v))) => RCONST(v)
+
+  rule	int_real(v) => rv 
+	-----------------
+	simplify (CAST(REAL,ICONST(v))) => RCONST(rv)
 
 	(* Array and Matrix stuff *)
 
@@ -571,10 +578,51 @@ relation factors: Exp => Exp list =
 	-------------------------
 	factors (BINARY(e1,MUL(_),e2)) => res
 
+  rule	factors e1 => f1 &
+	factors e2 => f2 &
+	inverse_factors f2 => f2' &
+	list_append(f1,f2) => res
+	-------------------------
+	factors(BINARY(e1,DIV(REAL),e2)) => res
+	
   axiom	factors (e as CREF(cr,_)) => [e]
+	
+  axiom	factors (e as ICONST(_)) => [e]
+  axiom	factors (e as RCONST(_)) => [e]
+  axiom	factors (e as SCONST(_)) => [e]
+  axiom	factors (e as UNARY(_,_)) => [e]
+  axiom	factors (e as IFEXP(_,_,_)) => [e]
+  axiom	factors (e as CALL(_,_,_,_)) => [e]
+  axiom	factors (e as ARRAY(_,_,_)) => [e]
+  axiom	factors (e as MATRIX(_,_,_)) => [e]
+  axiom	factors (e as RANGE(_,_,_,_)) => [e]
+  axiom	factors (e as CAST(_,_)) => [e]
+  axiom	factors (e as ASUB(_,_)) => [e]
+  axiom	factors (e as SIZE(_,_)) => [e]
+  axiom	factors (e as REDUCTION(_,_,_,_)) => [e]
+
 
   axiom	factors (_) => []
 end
+
+(** relation inverse_factors
+ ** Takes a list of expressions and returns each expression in the list inversed.
+ ** For example inverse_factors [a,3+b] => [1/a, 1/3+b]
+ **)
+relation inverse_factors: Exp list => Exp list =
+  axiom	inverse_factors ([]) => []
+
+  rule	typeof(e) => REAL &
+	inverse_factors(es) => es'
+	--------------------
+	inverse_factors (e::es) => BINARY(RCONST(1.0),DIV(REAL),e)::es'
+
+  rule	typeof(e) => INT &
+	inverse_factors(es) => es'
+	--------------------
+	inverse_factors (e::es) => BINARY(ICONST(1),DIV(INT),e)::es'
+end
+
 (** relation: make_product
  ** Takes a list of expressions an makes a product expression multiplying all 
  ** elements in the list.
@@ -768,7 +816,7 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
   rule	is_const_one (e2) => true &
 	simplify e1 => e1'
 	---------------------------
-	simplify_binary (_, MUL(ty), e1, e2) => e1
+	simplify_binary (_, MUL(ty), e1, e2) => e1'
 
   rule	is_const_minus_one (e1) => true &
 	simplify UNARY(UMINUS(ty),e2) => e
@@ -778,7 +826,7 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
   rule	is_const_minus_one (e2) => true &
 	simplify e1 => e1'
 	---------------------------
-	simplify_binary (_, MUL(ty), e1, e2) => UNARY(UMINUS(ty),e1)
+	simplify_binary (_, MUL(ty), e1, e2) => UNARY(UMINUS(ty),e1')
 
   rule	simplify BINARY(e1,MUL(ty),e2) => e
 	---------------------------
@@ -804,7 +852,7 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
   rule	is_const_one (e2) => true &
 	simplify e1 => e1'
 	---------------------------
-	simplify_binary (_, DIV(ty), e1, e2) => e1
+	simplify_binary (_, DIV(ty), e1, e2) => e1'
 
   rule	is_const_minus_one (e2) => true &
 	simplify e1 => e1'
