@@ -1,3 +1,5 @@
+** This file is not up to date **
+
 TODO: Add comments and modifications to appropriate functinons, such
 as addComponent, newModel, etc. (Low priority)
 TODO: Add functions for retrieval of icon information. (High Priority)

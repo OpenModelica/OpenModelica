@@ -69,12 +69,7 @@ void System_5finit(void)
 	char* moshhome;
 	char* mingwpath;
 	set_cc("gcc");
-	if (getenv("MODELICAUSERCFLAGS") != NULL) {
-		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\c_runtime -lc_runtime %MODELICAUSERCFLAGS%");
-	}
-	else {
-		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\c_runtime -lc_runtime");
-	}
+	set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\c_runtime -lc_runtime %MODELICAUSERCFLAGS%");
 	path = getenv("PATH");
 	moshhome = getenv("MOSHHOME");
 	if (moshhome) {
@@ -176,6 +171,8 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
   char* str = RML_STRINGDATA(rmlA0);
   char command[255];
   char exename[255];
+  char *tmp;
+
   assert(strlen(str) < 255);
   if (strlen(str) >= 255) {
     RML_TAILCALLK(rmlFC);    
@@ -189,6 +186,11 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   printf("compile using: %s\n",command);
   _putenv("GCC_EXEC_PREFIX="); 
+//  _putenv("MODELICAUSERCFLAGS=-Dfoo"); 
+  tmp = getenv("MODELICAUSERCFLAGS");
+  if (tmp == NULL || tmp[0] == '\0'  ) {
+	  _putenv("MODELICAUSERCFLAGS=  ");
+  }
   if (system(command) != 0) {
     RML_TAILCALLK(rmlFC);
   }
@@ -234,7 +236,6 @@ RML_BEGIN_LABEL(System__system_5fcall)
 {
 	int ret_val;
 	char* str = RML_STRINGDATA(rmlA0);
-	fprintf(stderr, "%s\n", str);
 	if (0 && str[0] == '\"') {
 		char longname[MAX_PATH];
 		char shortname[MAX_PATH];
@@ -435,16 +436,76 @@ RML_BEGIN_LABEL(System__mo_5ffiles)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
+void* read_one_value_from_file(FILE* file, type_description* desc)
 {
-  type_description desc;
-  void * res, *res2;
+  void *res=NULL;
   int ival;
   float rval;
   float *rval_arr;
   int *ival_arr;
   int size;
+  if (desc->ndims == 0) /* Scalar value */ 
+  {
+    if (desc->type == 'i') {
+      fscanf(file,"%d",&ival);
+      res =(void*) Values__INTEGER(mk_icon(ival));
+    } else if (desc->type == 'r') {
+      fscanf(file,"%e",&rval);
+      res = (void*) Values__REAL(mk_rcon(rval));
+    } 
+  } 
+  else  /* Array value */
+  {
+    int currdim,el,i;
+    if (desc->type == 'r') {
+      /* Create array to hold inserted values, max dimension as size */
+      size = 1;
+      for (currdim=0;currdim < desc->ndims; currdim++) {
+	size *= desc->dim_size[currdim];
+      }
+      rval_arr = (float*)malloc(sizeof(float)*size);
+      if(rval_arr == NULL) {
+	return NULL;
+      }
+      /* Fill the array in reversed order */
+      for(i=size-1;i>=0;i--) {
+	fscanf(file,"%e",&rval_arr[i]);
+      }
 
+      next_realelt(NULL);
+      /* 1 is current dimension (start value) */
+      res =(void*) Values__ARRAY(generate_array('r',1,desc,(void*)rval_arr)); 
+    }
+	
+    if (desc->type == 'i') {
+      int currdim,el,i;
+      /* Create array to hold inserted values, mult of dimensions as size */
+      size = 1;
+      for (currdim=0;currdim < desc->ndims; currdim++) {
+	size *= desc->dim_size[currdim];
+      }
+      ival_arr = (int*)malloc(sizeof(int)*size);
+      if(rval_arr==NULL) {
+	return NULL;
+      }
+      /* Fill the array in reversed order */
+      for(i=size-1;i>=0;i--) {
+	fscanf(file,"%f",&ival_arr[i]);
+      }
+      next_intelt(NULL);
+      res = (void*) Values__ARRAY(generate_array('i',1,desc,(void*)ival_arr));	
+    }      
+  }
+  return res;
+}
+
+RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
+{
+  int stat=0;
+  int varcount=0;
+  type_description desc;
+  void *lst = (void*)mk_nil();
+  void *res = NULL;
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file=NULL;
   file = fopen(filename,"r");
@@ -452,62 +513,34 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
     RML_TAILCALLK(rmlFC);
   }
   
-  read_type_description(file,&desc);
-  
-  if (desc.ndims == 0) /* Scalar value */ 
-    {
-      if (desc.type == 'i') {
-	fscanf(file,"%d",&ival);
-	res =(void*) Values__INTEGER(mk_icon(ival));
-      } else if (desc.type == 'r') {
-	fscanf(file,"%e",&rval);
-	res = (void*) Values__REAL(mk_rcon(rval));
-      } 
-    } 
-  else  /* Array value */
-    {
-      int currdim,el,i;
-      if (desc.type == 'r') {
-	/* Create array to hold inserted values, max dimension as size */
-	size = 1;
-	for (currdim=0;currdim < desc.ndims; currdim++) {
-	  size *= desc.dim_size[currdim];
-	}
-	rval_arr = (float*)malloc(sizeof(float)*size);
-	if(rval_arr == NULL) {
-	  RML_TAILCALLK(rmlFC);
-	}
-	/* Fill the array in reversed order */
-	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%e",&rval_arr[i]);
-	}
+  /* Read the first value */
+  stat = read_type_description(file,&desc);
+  if (stat != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
 
-	next_realelt(NULL);
-	/* 1 is current dimension (start value) */
-	res =(void*) Values__ARRAY(generate_array('r',1,&desc,(void*)rval_arr)); 
-      }
-	
-      if (desc.type == 'i') {
-	int currdim,el,i;
-	/* Create array to hold inserted values, mult of dimensions as size */
-	size = 1;
-	for (currdim=0;currdim < desc.ndims; currdim++) {
-	  size *= desc.dim_size[currdim];
-	}
-	ival_arr = (int*)malloc(sizeof(int)*size);
-	if(rval_arr==NULL) {
-	  RML_TAILCALLK(rmlFC);
-	}
-	/* Fill the array in reversed order */
-	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%f",&ival_arr[i]);
-	}
-	next_intelt(NULL);
-	res = (void*) Values__ARRAY(generate_array('i',1,&desc,(void*)ival_arr));
-	
-      }      
+  while (stat == 0) { /* Loop for tuples. At the end of while, we try to read another description */
+    res = read_one_value_from_file(file, &desc);
+    if (res == NULL) {
+      RML_TAILCALLK(rmlFC);
     }
-  rmlA0 = (void*)res;
+    lst = (void*)mk_cons(res, lst);
+    varcount++;
+    read_to_eol(file);
+    stat = read_type_description(file,&desc);
+    /*
+    printf("varcount is : %d\n", varcount);
+    printf("stat is : %d\n", stat);
+    */
+  }
+  if (varcount > 1) { /* if tuple */
+    rmlA0 = lst;
+    rml_prim_once(RML__list_5freverse);
+    rmlA0 = (void*) Values__TUPLE(rmlA0);
+  }
+  else {
+    rmlA0 = (void*)res;
+  }
   RML_TAILCALLK(rmlSC);
 }   
 RML_END_LABEL
