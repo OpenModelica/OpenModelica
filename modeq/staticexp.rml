@@ -363,7 +363,7 @@ relation add_for_loop_scope_const : (Env.Env, Ident, Types.Type) => Env.Env =
 			   Types.VAR(i,
 				     Types.ATTR(false,
 						SCode.RW,
-						SCode.VAR,
+						SCode.PARAM,
 						Absyn.BIDIR),
 				     false,
 				     typ, 

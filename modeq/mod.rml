@@ -943,9 +943,9 @@ relation print_eqmod : Types.EqMod option => () =
   axiom print_eqmod NONE
 
   rule  Print.print_buf " =(typed) " & Exp.print_exp e &
-	Dump.print_select (const, "const", "non-const")
+	Types.print_prop prop
 	-----------------------------
-	print_eqmod SOME(Types.TYPED(e,Types.PROP(ty,const)))
+	print_eqmod SOME(Types.TYPED(e,prop))
 
   rule  Print.print_buf " =(untyped) " & Dump.print_exp e
 	-----------------------------

@@ -144,6 +144,7 @@ returns multiple arguments. *)
   relation make_array: (Type, Absyn.ArrayDim) => Type
   relation array_element_type : Type => Type
   relation print_type : Type => ()
+  relation print_prop : Properties => ()
   relation unparse_type : Type => string
   relation print_var : Var => ()
   relation print_binding : Binding => ()
@@ -1565,4 +1566,21 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
 	--------------
 	match_with_promote(PROP((T_INTEGER(_),_),c1),PROP((T_INTEGER(_),p2),c2), true) 
 	  => PROP((T_REAL([]),p2),c)
+end
+
+relation print_prop : Properties => () =
+
+  rule	Print.print_buf "PROP(" &
+	print_type ty &
+	Dump.print_select(const,"const","non_const") &
+	Print.print_buf ")"
+	-------------------
+	print_prop PROP(ty,const)
+
+  rule	Print.print_buf "PROP_TUPLE(" &
+	print_type ty &
+	Print.print_buf ",<Type.Const>)"
+	---------------------------------
+	print_prop PROP_TUPLE(ty,const)
+
 end
