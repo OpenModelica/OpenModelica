@@ -746,9 +746,10 @@ relation unparse_elementspec_str: (int, Absyn.ElementSpec,string,string,string) 
 
   rule	Absyn.path_string(t) => s1 &
 	unparse_elementattr_str(attr) => s2 &
+	unparse_arraydim_in_attr(attr) => ad &
 	get_string_list(cs, unparse_componentitem_str, ",") => s3 &
 	indent_str(i) => is &
-	Util.string_append_list([is, f,r,io,s2, s1, " ",  s3]) => str
+	Util.string_append_list([is, f,r,io,s2, s1,ad, " ",  s3]) => str
 	------------------------------------------
 	unparse_elementspec_str(i, Absyn.COMPONENTS(attr,t,cs),f,r,io) => str
 	
@@ -833,6 +834,15 @@ relation unparse_elementattr_str: Absyn.ElementAttributes => string =
 	unparse_elementattr_str(_) => ""
 
 end
+
+relation unparse_arraydim_in_attr: Absyn.ElementAttributes => string =
+
+  rule	print_arraydim_str(adim) => str
+	-----------------------------------
+	unparse_arraydim_in_attr(Absyn.ATTR(_,_,_,adim)) => str
+  axiom	unparse_arraydim_in_attr(_) => ""
+end
+
 
 relation variability_symbol: Absyn.Variability => string =
 
