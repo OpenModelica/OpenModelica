@@ -22,7 +22,7 @@ MYRML	= ./myrmlc
 
 
 LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) \
-	 -lssl -lmico -lcrypto -ldl -lm -lpthread 
+	 -lssl -lmico -lcrypto -lm -lpthread 
 
 PROG	= modeq
 AST	= absyn_builder/absyn_builder.a

@@ -11,6 +11,7 @@ CFLAGS = @DEFS@
 
 SHELL	= /bin/sh
 CC	= gcc
+IDL	= idl --boa --no-poa
 CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
@@ -19,6 +20,11 @@ CPPSRC  = cacheimpl.cpp ptolemyio.cpp modeq_communication_impl.cpp \
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 all: $(OBJ)
+
+modeq_communication.cc modeq_communication.h : modeq_communication.idl
+	$(IDL) modeq_communication.idl
+
+modeq_communication.h: modeq_communication_impl.cpp corbaimpl.cpp
 
 clean:
 	$(RM) -rf *.o 

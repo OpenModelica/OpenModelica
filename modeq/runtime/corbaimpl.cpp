@@ -126,7 +126,11 @@ RML_BEGIN_LABEL(Corba__close)
 {
   boa->deactivate_impl(CORBA::ImplementationDef::_nil());
   orb->shutdown(TRUE);
+#ifdef HAVE_PTHREAD_YIELD  
   pthread_yield(); // Allowing other thread to shutdown.
+#else
+  sched_yield(); // use as backup (in cygwin)
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
