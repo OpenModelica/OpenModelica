@@ -250,6 +250,15 @@ relation is_modelica_file: string => () =
 
 end
 
+relation is_flat_modelica_file: string => () =
+
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mof"
+	------------
+	is_flat_modelica_file(filename)
+end
+
 relation is_modelica_script_file: string => () =
 
   rule	System.strtok(filename,".") => lst &
@@ -258,6 +267,24 @@ relation is_modelica_script_file: string => () =
 	------------
 	is_modelica_script_file(filename)
 end
+
+(** relation: transform_if_flat
+ ** Checks is a modelica file is a flat modelica file
+ ** and if so, translates all variables on the form a.b.c to a_b_c
+ ** This is needed to prevent tornado code generation from beliving
+ ** that those variables belong to subcomponents.
+ **)
+relation transform_if_flat: (string, DAE.DAElist) => DAE.DAElist =
+
+  rule	is_flat_modelica_file(f) &
+	DAE.to_modelica_form(dae) => d 
+	---------------------
+	transform_if_flat(f,dae) => d
+
+  axiom	transform_if_flat(_,d) => d
+
+end
+
 
 (** relation: translate_file
  **
@@ -272,13 +299,10 @@ relation translate_file : string list => () =
 	run_tornado_cg_q() => true 
 	& Parser.parse f => p
 	& SCode.elaborate(p) => p'
-	& print "scode elab done"
 	& Inst.instantiate(p') => d
-	& print "inst done"
+	& transform_if_flat(f,d) => d 
 	& Absyn.last_classname(p) => cname
-	& print "absynfippel done"
 	& Tornado.generate_code(p,d,cname) 
-	& print "tornadogen done\n"
 	----------------------------
 	translate_file [f] 
 

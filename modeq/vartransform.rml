@@ -154,7 +154,10 @@ relation dump_replacements: (VariableReplacements) => () =
 	Util.list_map_1(dststrs,string_append,"\n") => dststrs' &
 	Util.list_thread(srcstrs,dststrs') => strs &
 	Util.string_delimit_list(strs," -> ") => str &
-	print "Replacements:\n" &
+	print "Replacements: (" &
+	list_length(srcs) => len &
+	int_string(len) => len_str &
+	print len_str & print ")\n" &
 	print "=============\n" &
 	print str & print "\n" 
 	-------------------------------
@@ -167,9 +170,10 @@ end
  ** If a replacement rule a->b already exists and we add a new rule b->c then
  ** the rule a->b is updated to a->c. This is done using the make_transitive relation.
  **)
-relation add_replacement: (VariableReplacements,Exp.ComponentRef, Exp.ComponentRef) 
+relation add_replacement: (VariableReplacements,
+			   Exp.ComponentRef, (* source *) 
+			   Exp.ComponentRef) (* dest *)
 	  => VariableReplacements =
-
 	  
   rule	(* No previous elt for dst -> src *)
 	not tree_get2(invbt,dst) => _ &  

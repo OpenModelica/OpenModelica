@@ -108,6 +108,9 @@ module SCode :
 		    | EQ_CONNECT of Absyn.ComponentRef * Absyn.ComponentRef
 		    | EQ_FOR of Ident * Absyn.Exp * EEquation list
 		    | EQ_WHEN of Absyn.Exp * EEquation list * (Absyn.Exp * EEquation list) list
+		    | EQ_ASSERT of Absyn.Exp * (* condition*) 
+				   Absyn.Exp (* message string *)	 
+
 
   (** These are almost identical to the `Absyn' versions.  In `EQ_IF', *)
   (** the `elseif' branches are represented as normal `else' branches *)
@@ -579,6 +582,8 @@ relation elab_equation : Absyn.Equation => EEquation =
 	----------------------
 	elab_equation Absyn.EQ_FOR(i,e,l) => EQ_FOR(i,e,l')
 
+  axiom	elab_equation Absyn.EQ_NORETCALL("assert",Absyn.FUNCTIONARGS([e1,e2],[]))
+	  => EQ_ASSERT(e1,e2) 
 end
 
 (** - Modification management *)

@@ -3623,6 +3623,16 @@ rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => fail
 
+  rule	Static.elab_exp(env,e1,false,NONE) 
+	  => (e1', Types.PROP((Types.T_BOOL(_),_),_),_) &
+	Static.elab_exp(env,e2,false,NONE) 
+	  => (e2', Types.PROP((Types.T_STRING(_),_),_),_)
+	-------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state, SCode.EQ_ASSERT(e1,e2),initial)
+	  => ([DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),
+				     [e1',e2'],false,false))], 
+	      env, csets, ci_state)
+
   rule	Debug.fprint("failtrace", "- inst_equation_common failed\n")
 	----------------------------------
 	inst_equation_common(_,_,_,_,_,_,_) => fail
@@ -4021,30 +4031,6 @@ relation inst_array_el_eq : (Exp.Exp, Exp.Exp, Types.Type, int, int, Initial)
 	-----------------------------------
 	inst_array_el_eq(_,_,_,_,_,_) => fail
 
-end
-
-(** relation: inst_assertion
- **
- ** Instantiate an assertion.  There are not assertions in the output
- ** currently.
- **)
-
-relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
-			   bool, string, Prefix)
-	  => DAE.Element list =
-
-	(* Constant assertions *)
-  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), true, d, pre) => [DAE.ASSERT(e)]
-
-  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), _, d, pre) => [DAE.ASSERT(e)]
-
-  rule	Print.print_buf "# Assertions have to be of type Boolean\n" &
-	Print.print_buf "  assertion: (" &
-	Prefix.prefix_exp(env,e,pre) => e' & Exp.print_exp e' & Print.print_buf "): " &
- 	Print.print_buf d & Print.print_buf "\n"
-	-----------------------------
-	inst_assertion (env, e, _, _, d, pre) => fail
-	
 end
 
 (** LS & ELN

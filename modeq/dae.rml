@@ -144,6 +144,7 @@ module DAE:
   relation to_flow: bool => Flow
   relation get_flow_variables: Element list => Exp.ComponentRef list
   relation dae_to_record_value: Element list => Values.Value
+  relation to_modelica_form: (DAElist) => DAElist
 end
 
 (** - Relations
@@ -1706,3 +1707,198 @@ rule	Ceval.ceval([],rhs,false,NONE,NONE)  => (value,_) &
 	dae_to_record_value(_::rest) => res
 
 end
+
+(* Transforms all variables from a.b.c to a_b_c, etc*)
+relation to_modelica_form: (DAElist) => DAElist =
+
+  rule	to_modelica_form_elts(elts) => elts'
+	-------------------------------
+	to_modelica_form(DAE(elts)) => DAE(elts')
+end
+
+relation to_modelica_form_elts: (Element list) => Element list =
+
+	axiom to_modelica_form_elts([]) => []
+
+  rule	Exp.print_component_ref_str cr => str &
+	Util.string_replace_char(str,#".",#"_") => str' &
+	to_modelica_form_elts(elts) => elts' &
+	to_modelica_form_exp_opt(d) => d' 
+	------------------------------
+	to_modelica_form_elts(VAR(cr,a,b,c,d,e,f,g,h)::elts)
+	  => (VAR(Exp.CREF_IDENT(str',[]),a,b,c,d',e,f,g,h)::elts')
+
+  rule	to_modelica_form_exp(e) => e' &
+	to_modelica_form_cref(cr) => cr' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(DEFINE(cr,e)::elts)
+	  => (DEFINE(cr',e')::elts')
+
+  rule	to_modelica_form_exp(e) => e' &
+	to_modelica_form_cref(cr) => cr' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(INITIALDEFINE(cr,e)::elts)
+	  => (INITIALDEFINE(cr',e')::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(EQUATION(e1,e2)::elts)
+	  => (EQUATION(e1',e2')::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_elts(welts) => welts' &
+	to_modelica_form_elts([elt]) => [elt'] &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(WHEN_EQUATION(e1,welts,SOME(elt))::elts)
+	  => (WHEN_EQUATION(e1',welts',SOME(elt'))::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_elts(welts) => welts' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(WHEN_EQUATION(e1,welts,NONE)::elts)
+	  => (WHEN_EQUATION(e1',welts',NONE)::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_elts(telts) => telts' &
+	to_modelica_form_elts(eelts) => eelts' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(IF_EQUATION(e1,telts,eelts)::elts)
+	  => (IF_EQUATION(e1',telts',eelts')::elts')
+
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(INITIALEQUATION(e1,e2)::elts)
+	  => (INITIALEQUATION(e1',e2')::elts')
+
+  rule	print "to_modelica_form_elts(ALGORITHM) not impl. yet\n" &
+	to_modelica_form_elts(elts) => elts' 
+	------------------------------------
+ 	to_modelica_form_elts(ALGORITHM(a)::elts) 
+	  => ALGORITHM(a)::elts'
+	
+  rule	print "to_modelica_form_elts(INITIALALGORITHM) not impl. yet\n" &
+	to_modelica_form_elts(elts) => elts' 
+	------------------------------------
+ 	to_modelica_form_elts(INITIALALGORITHM(a)::elts) 
+	  => INITIALALGORITHM(a)::elts'
+
+  rule	to_modelica_form(dae) => dae' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------
+	to_modelica_form_elts(COMP(id,dae)::elts) 
+	  => COMP(id,dae')::elts'
+
+  rule	to_modelica_form(dae) => dae' &
+	to_modelica_form_elts(elts) => elts' 
+	-------------------------
+	to_modelica_form_elts(FUNCTION(p,dae,t)::elts) 
+	  => FUNCTION(p,dae',t)::elts'
+
+  rule	to_modelica_form_elts(elts) => elts'  &
+	to_modelica_form(dae) => dae'
+	-------------------------
+	to_modelica_form_elts(EXTFUNCTION(p,dae,t,d)::elts) 
+	  => EXTFUNCTION(p,dae,t,d)::elts'
+
+  rule	to_modelica_form_elts(elts) => elts' &
+	to_modelica_form_exp(e) => e' 
+	-----------------------------
+	to_modelica_form_elts(ASSERT(e)::elts) 
+	  => ASSERT(e')::elts'
+end
+
+relation to_modelica_form_exp_opt: Exp.Exp option => Exp.Exp option =
+
+  rule	to_modelica_form_exp(e) => e'
+	--------------------
+	to_modelica_form_exp_opt(SOME(e)) => SOME(e')
+
+  axiom	to_modelica_form_exp_opt(NONE) => NONE
+end
+
+relation to_modelica_form_cref: Exp.ComponentRef => Exp.ComponentRef =
+
+  rule	Exp.print_component_ref_str(cr) => str &
+	Util.string_replace_char(str,#".",#"_") => str' 
+	------------------------
+	to_modelica_form_cref(cr) => Exp.CREF_IDENT(str',[])
+end
+
+relation to_modelica_form_exp: (Exp.Exp) => Exp.Exp =
+
+  rule	to_modelica_form_cref(cr) => cr'
+	--------------------------------
+	to_modelica_form_exp(Exp.CREF(cr,t)) => Exp.CREF(cr',t)
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2'
+	--------------------
+	to_modelica_form_exp(Exp.BINARY(e1,op,e2)) => Exp.BINARY(e1',op,e2')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2'
+	--------------------
+	to_modelica_form_exp(Exp.LBINARY(e1,op,e2)) => Exp.LBINARY(e1',op,e2')
+
+rule	to_modelica_form_exp(e) => e'
+	--------------------
+	to_modelica_form_exp(Exp.UNARY(op,e)) => Exp.UNARY(op,e')
+
+rule	to_modelica_form_exp(e) => e'
+	--------------------
+	to_modelica_form_exp(Exp.LUNARY(op,e)) => Exp.LUNARY(op,e')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2'
+	--------------------
+	to_modelica_form_exp(Exp.RELATION(e1,op,e2)) 
+	  => Exp.RELATION(e1',op,e2')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2' &
+	to_modelica_form_exp(e3) => e3'
+	------------------
+	to_modelica_form_exp(Exp.IFEXP(e1,e2,e3)) 
+	  => Exp.IFEXP(e1',e2',e3')
+
+  rule	Util.list_map(expl,to_modelica_form_exp) => expl'
+	------------------------------
+	to_modelica_form_exp(Exp.CALL(f,expl,t,b))
+	  => Exp.CALL(f,expl',t,b)
+
+  rule	Util.list_map(expl,to_modelica_form_exp) => expl'
+	---------------------
+	to_modelica_form_exp (Exp.ARRAY(t,b,expl)) 
+	  => (Exp.ARRAY(t,b,expl'))
+
+  rule	Util.list_map(expl,to_modelica_form_exp) => expl'
+	---------------------
+	to_modelica_form_exp (Exp.TUPLE(expl)) 
+	  => (Exp.TUPLE(expl'))
+
+  rule	to_modelica_form_exp(e) => e'
+	-------------------
+	to_modelica_form_exp(Exp.CAST(t,e)) => Exp.CAST(t,e')
+
+  rule	to_modelica_form_exp(e) => e'
+	------------------
+	to_modelica_form_exp(Exp.ASUB(e,i)) => Exp.ASUB(e',i)
+
+  rule	to_modelica_form_exp(e) => e' &
+	to_modelica_form_exp_opt(eopt) => eopt'
+	------------------
+	to_modelica_form_exp(Exp.SIZE(e,eopt)) => Exp.SIZE(e',eopt')
+	
+  axiom	to_modelica_form_exp(e) => e
+end
+

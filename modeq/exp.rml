@@ -546,11 +546,15 @@ relation remove_factor: (Exp, (* factor *)
 	----------------------
 	remove_factor(factor,expr) => exp
 
-  (*rule	print_exp_str factor => fs & 
+rule	print_exp_str factor => fs & 
 	print_exp_str expr => es & print "remove_factor failed, factor:" &
-	print fs & print " expr:" & print es & print "\n" 
+	print fs & print " expr:" & print es & print "\n" &
+	factors(expr) => e2s &
+	Util.list_map(e2s,print_exp_str) => elst &
+	Util.string_delimit_list(elst,", ") => factorsstr &
+	print " factors:" & print factorsstr & print "\n" 
 	--------------------
-	remove_factor(factor,expr) => fail*)
+	remove_factor(factor,expr) => fail
 end
 
 (** relation: gcd
@@ -568,21 +572,37 @@ relation gcd: (Exp, Exp) => Exp =
 	gcd(e1,e2) => product
 end
 
+(** relation no_factors
+ ** Helper relation to factors.
+ ** If a factor list is empty, the expression has no subfactors.
+ ** But the complete expression is then a factor for larger expressions,
+ ** returned by this relation.
+ **)
+relation no_factors: (Exp list, Exp) => Exp list =
+  axiom no_factors ([],e) => [e]
+  axiom	no_factors(lst,_) => lst
+end
+
 (** relation: factors
  ** Returns the factors of the expression if any as a list of expressions
  **)
 relation factors: Exp => Exp list =
 
-  rule	factors(e1) => f1 &
+  rule	(* Both subexpression has factors*)
+	factors(e1) => f1 &
 	factors(e2) => f2 &
-	list_append(f1,f2) => res
+	no_factors(f1,e1) => f1' &
+	no_factors(f2,e2) => f2' &
+	list_append(f1',f2') => res
 	-------------------------
 	factors (BINARY(e1,MUL(_),e2)) => res
 
   rule	factors e1 => f1 &
 	factors e2 => f2 &
-	inverse_factors f2 => f2' &
-	list_append(f1,f2) => res
+	no_factors(f1,e1) => f1' &
+	no_factors(f2,e2) => f2' &
+	inverse_factors f2' => f2'' &
+	list_append(f1',f2'') => res
 	-------------------------
 	factors(BINARY(e1,DIV(REAL),e2)) => res
 	
@@ -642,7 +662,10 @@ relation make_product: (Exp list) => Exp =
 	------------------
 	make_product(e1::rest) => BINARY(e1,MUL(tp),e2)
 
-  rule	print "-make_product failed\n" 
+  rule	print "-make_product failed, exp lst:" &
+	Util.list_map(lst,print_exp_str) => explst &
+	Util.string_delimit_list(explst,", ") => str &
+	print str & print "\n" 
 	------------------------------
 	make_product(lst) => fail
 end

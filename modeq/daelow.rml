@@ -404,22 +404,36 @@ end
  **)
 relation dump: DAELow => () =
 
-  rule	print "Variables\n" &
-	print "=========\n" &
+  rule	print "Variables (" & 
 	var_list(vars1) => vars &
+	list_length(vars) => varlen &
+	int_string(varlen) => varlen_str &
+	print varlen_str & print ")\n" &
+	print "=========\n" &
+
 	dump_vars vars &
 	print "\n" &
-	print "Known Variables (constants)\n" &
-	print "=============================\n" &
+	print "Known Variables (constants) (" &
 	var_list(vars2) => knvars &
+	list_length(knvars) => varlen &
+	int_string(varlen) => varlen_str &
+	print varlen_str & print ")\n" &
+	print "=============================\n" &
 	dump_vars knvars &
-	print "\nEquations\n" &
-	print "=========\n" &
+	print "\nEquations (" &
 	equation_list(eqns) => eqnsl &
-	dump_eqns eqnsl &
-	print "Simple Equations\n" &
+	list_length(eqnsl) => eqnlen &
+	int_string(eqnlen) => eqnlen_str &
+	print eqnlen_str & print ")\n" &
 	print "=========\n" &
+
+	dump_eqns eqnsl &
+	print "Simple Equations (" &
 	equation_list(reqns) => reqnsl &
+	list_length(reqnsl) => eqnlen &
+	int_string(eqnlen) => eqnlen_str &
+	print eqnlen_str & print ")\n" &
+	print "=========\n" &
 	dump_eqns reqnsl 
 	-----------------
 	dump(DAELOW(vars1,vars2,eqns,reqns,algs))
@@ -441,11 +455,22 @@ end
  **)
 relation dump_eqns: Equation list => () =
 
-  rule	Util.list_map(eqns,equation_str) => lst &
-	Util.string_delimit_list(lst,"\n") => s &
-	print s & print "\n" 
-	----------------
+  rule	dump_eqns2(eqns,1) 
+	------------------
 	dump_eqns(eqns)
+end
+
+relation dump_eqns2: (Equation list,int) => () =
+
+  axiom	dump_eqns2([],_) => ()
+
+  rule	equation_str eqn => es &
+	int_string(index) => is &
+	print is & print " : " & print es & print "\n" &
+	index +1 => index' &
+	dump_eqns2(eqns,index') 
+	----------------
+	dump_eqns2(eqn::eqns,index) => ()
 end
 
 (** relation: equation_str
@@ -530,82 +555,97 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
 	  => (e::eqns',seqns',mvars',repl)
 	  
-  rule	(* cr1 is state and cr2 not, remove equation and cr2*)
+  rule	(* cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
-	tree_get(states,cr1) => _ &
 	not VarTransform.get_replacement(repl,cr2) => _ &
-	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
-	get_var(cr2,vars) => (v as VAR(cr,_,_,_,_,_,_,_,_,_,_),_) &
-	tree_add(mvars,cr,0) => mvars' &
-	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
-	  => (eqns',seqns',mvars'',repl'')
-	--------------------------------------------------
-	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',SOLVED_EQUATION(cr2,Exp.CREF(cr1,t))::seqns',mvars'',repl'')
-
-  rule	(* as above but swapped args.*)
-	simple_equation(e) => (cr2,cr1) &
-	typeof_equation(e) => t &
-	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	tree_get(states,cr1) => _ &
 	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
-	get_var(cr2,vars) => (v as VAR(cr,_,_,_,_,_,_,_,_,_,_),_) &
-	tree_add(mvars,cr,0) => mvars' &
+	tree_add(mvars,cr2,0) => mvars' &
 	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
 	  => (eqns',SOLVED_EQUATION(cr2,Exp.CREF(cr1,t))::seqns',mvars'',repl'')
 
-  rule	(* cr1 variable, cr2 constant, remove equation and cr1 *)
-	simple_equation(e) => (cr1,cr2) &
-	typeof_equation(e) => t &
-	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
-	is_variable(cr1,vars,knvars) &
-	not is_variable(cr2,vars,knvars) &
-	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
-	get_var(cr1,vars) => (v as VAR(cr,_,_,_,_,_,_,_,_,_,_),_) &
-	tree_add(mvars,cr,0) => mvars' &
-	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
-	  => (eqns',seqns',mvars'',repl'')
-	--------------------------------------------------
-	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')	  
-
-  rule	(* same as above but swapped args *)
+  rule	(* as above but swapped args: cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr2,cr1) &
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
-	is_variable(cr1,vars,knvars) &
-	not is_variable(cr2,vars,knvars) &
-	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
-	get_var(cr1,vars) => (v as VAR(cr,_,_,_,_,_,_,_,_,_,_),_) &
-	tree_add(mvars,cr,0) => mvars' &
+	not VarTransform.get_replacement(repl,cr2) => _ &
+	tree_get(states,cr1) => _ &
+	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
+	tree_add(mvars,cr2,0) => mvars' &
 	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')	  
+	  => (eqns',SOLVED_EQUATION(cr2,Exp.CREF(cr1,t))::seqns',mvars'',repl'')
 
-
-  rule	(* None are states, but  variables, remove equation *)
+  rule	(* cr1 variable, cr2 constant, remove cr1 *)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
+	is_variable(cr1,vars,knvars) &
+	not is_variable(cr2,vars,knvars) &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
+	tree_add(mvars,cr1,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
+
+  rule	(* same as above but swapped args: remove cr1 *)
+	simple_equation(e) => (cr2,cr1) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
+	is_variable(cr1,vars,knvars) &
+	not is_variable(cr2,vars,knvars) &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
+	tree_add(mvars,cr1,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
+
+  rule	(* None are states, but  variables, remove cr1 *)
+	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
 	not tree_get(states,cr1) => _ &
 	not tree_get(states,cr2) => _ &
 	is_variable(cr1,vars,knvars) &
 	is_variable(cr2,vars,knvars) &
-	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
-	get_var(cr1,vars) => (v as VAR(cr,_,_,_,_,_,_,_,_,_,_),_) &
-	tree_add(mvars,cr,0) => mvars' &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' & 
+	tree_add(mvars,cr1,0) => mvars' &
 	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')	  
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
+
+  rule	(* same as above but swapped args, remove cr1 *)
+	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
+	not tree_get(states,cr1) => _ &
+	not tree_get(states,cr2) => _ &
+	is_variable(cr1,vars,knvars) &
+	is_variable(cr2,vars,knvars) &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' & 
+	tree_add(mvars,cr1,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
 
   rule	(* Not a simple variable, check rest*)
 	remove_simple_equations2(eqns,vars,knvars,mvars,states,repl) 
@@ -1533,7 +1573,6 @@ relation add_var: (Var, Variables) => Variables =
 	hash_component_ref(cr) => hval &
 	int_mod(hval,bsize) => indx & 
 	array_length(varr) => newpos &
-	int_string(newpos) => str &
 	array_add(varr,v) => varr' &
 	array_nth(hashvec,indx)=> indexes &
 	array_setnth(hashvec,indx,CREFINDEX(cr,newpos)::indexes) => hashvec' &
@@ -1617,23 +1656,36 @@ relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
 	int_mod(hval,bsize) => hashindx &
 	array_nth(hashvec,hashindx) => indexes &
 	get_var2(cr, indexes) => indx &
-	array_nth(varr,indx) => v &
+	array_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_)) &
+	Exp.cref_equal(cr,cr2) => true &
 	int_add(indx,1) => indx'
 	-----------------------------
 	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => (v,indx')
+
+  rule	
+	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(hashvec,hashindx) => indexes &
+	get_var2(cr, indexes) => indx &
+	array_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_)) &
+	Exp.cref_equal(cr,cr2) => true &
+	print "-get_var failed\n"
+	--------------------
+	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => fail
 end
 (** relation get_var2
  ** Helper relation to get_var
  **)
 relation get_var2:(Exp.ComponentRef, CrefIndex list) => int =
 
-  rule	Exp.cref_equal(cr,cr2) => true
+  rule	Exp.cref_equal(cr,cr2) => true 
 	------------------------------
 	get_var2(cr,CREFINDEX(cr2,v)::_) => v
 
   rule	get_var2(cr,vs) => res
 	----------------------
 	get_var2(cr,v::vs) => res
+
 end
 
 (** relation: delete_var
@@ -1750,6 +1802,9 @@ relation dump_incidence_matrix: IncidenceMatrix => () =
 
   rule	print "Incidence Matrix\n (row == equation)" &
 	print "====================================\n" &
+	array_length(m) => mlen &
+	int_string(mlen) => mlen_str &
+	print "number of rows: " & print mlen_str & print "\n" &
 	array_list(m) => m' &
 	dump_incidence_matrix2(m') 
 	-------------------------
@@ -1763,6 +1818,9 @@ relation dump_incidence_matrix_t: IncidenceMatrix => () =
 
   rule	print "Transpose Incidence Matrix (row == var)\n" &
 	print "=====================================\n" &
+	array_length(m) => mlen &
+	int_string(mlen) => mlen_str &
+	print "number of rows: " & print mlen_str & print "\n" &
 	array_list(m) => m' &
 	dump_incidence_matrix2(m') 
 	-------------------------
@@ -1805,6 +1863,9 @@ relation dump_matching: (int vector) => () =
 	
   rule	print "Matching\n" &
 	print "========\n" &
+	vector_length(v) => len &
+	int_string(len) => len_str &
+	print len_str & print " variables and equations\n" &
 	dump_matching2(v,0) 
 	-------------------
 	dump_matching(v) 
@@ -1943,7 +2004,6 @@ relation assignments_add:(Assignments,int (*value*))
 
   rule	(* Out of bounds, increase and copy. *)
 	int_eq(s,ms) => true &
-	print "MATCHING increasing array\n" &
 	int_real(ms) => msr &
 	real_mul(msr,0.2) => msr' &
 	real_int(msr') => ms' &
@@ -2014,6 +2074,7 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	 *)
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae as DAELOW(VARIABLES(_,_,_,nv'),VARIABLES(_,_,_,nkv),eqns,_,_),m,mt) &
+	  print "Reduced index by differentiating equation\n" &
 
 	  (* and try again, restarting. This could be optimized later. It should not
 	   be necessary to restart the matching, according to Bernard Bachmann. Instead one 
@@ -3045,6 +3106,10 @@ relation strong_connect: (IncidenceMatrix,
 	---------------------------------------------
 	strong_connect(m,mt,a1,a2,i,v,stack,comps) 
 	  => (i',stack''',comps'')
+
+  rule	print "-strong_connect failed\n" 
+	--------------------
+	strong_connect(_,_,_,_,_,_,_,_) => fail
 end
 
 (** relation: cons_if_nonempty
@@ -3070,10 +3135,35 @@ relation reachable_nodes: (int,
 	vector_nth(a2,eqn') => var &
 	int_sub(var,1) => var' &
 	array_nth(mt,var') => reachable &
-	Util.list_position(eqn,reachable) => pos &
-	list_delete(reachable,pos) => reachable'
+	remove_negative(reachable) => reachable' &
+	Util.list_position(eqn,reachable') => pos &
+	list_delete(reachable',pos) => reachable''
 	----------------------------------------
-	reachable_nodes(eqn,m,mt,a1,a2) => reachable'
+	reachable_nodes(eqn,m,mt,a1,a2) => reachable''
+
+  rule	print "-reachable_nodes, eqn :" &
+	array_length(m) => mlen &
+	int_string(mlen) => mlen_str &
+	print "Incidence_matrix len:" & print mlen_str & print "\n" &
+	int_string(eqn) => eqn_str &
+	print eqn_str &
+	int_sub(eqn,1) => eqn' &
+	vector_nth(a2,eqn') => var &
+	int_string(var) => var_str &
+	int_abs(var) => var' &
+	int_sub(var',1) => var'' &
+	print "\n var:" & print var_str & print "\n" &
+	array_nth(mt,var'') => reachable &
+	Util.list_map(reachable,int_abs) => reachable' &
+	print "reachable':" & 
+	Util.list_map(reachable',int_string) => r_strlst &
+	Util.string_delimit_list(r_strlst,", ") => str &
+	print str & print "\n" &
+	Util.list_position(eqn,reachable') => pos &
+	int_string(pos) => pos_str & 
+	print "pos :" & print pos_str & print "\n" 
+	----------------------------
+	reachable_nodes(eqn,m,mt,_,a2) => fail
 end			  
 
 (** relation: iterate_reachable_nodes
