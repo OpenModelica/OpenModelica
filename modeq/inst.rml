@@ -5100,13 +5100,28 @@ relation inst_string_binding: (Types.Mod,int list,string) => string option =
         -----------------------------------------
         inst_string_binding(mod,index_list,bind_name) => NONE
 
-  rule  Print.print_error_buf "# Wrong type on predefined type string.\n"
+  rule  Print.print_error_buf "# Wrong type on predefined.\n"
         -----------------------------------------
         inst_string_binding(mod,index_list,_) => fail
    
 end
 
 
+(* relation inst_enumeration_binding: (Types.Mod,int list,string) => enumeration option = *)
+     
+(*   rule inst_binding(mod,(Types.T_ENUMERATION([]),NONE),index_list,bind_name) => SOME(Exp.SCONST(result)) *)
+(*         ----------------------------------------- *)
+(*         inst_enumeration_binding(mod,index_list,bind_name) => SOME(result) *)
+   
+(*   rule inst_binding(mod,(Types.T_ENUMERATION([]),NONE),index_list,bind_name) => NONE *)
+(*         ----------------------------------------- *)
+(*         inst_enumeration_binding(mod,index_list,bind_name) => NONE *)
+
+(*   rule  Print.print_error_buf "# Wrong type on predefined.\n" *)
+(*         ----------------------------------------- *)
+(*         inst_enumeration_binding(mod,index_list,_) => fail *)
+   
+(* end *)
 
 
 
