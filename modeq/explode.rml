@@ -58,13 +58,18 @@ module SCode :
 		   | COMPONENT of Ident		(* component name *)
 				* bool		(* final *)
 				* bool		(* protected *)
-				* Absyn.VarAttr
+				* Attributes
 				* Path		(* type name *)
 				* Mod
   (** There are three types of elements in a declaration, represented *)
   (** by the constructors `EXTENDS' (for `extends' clauses), *)
   (** `CLASSDEF' (for local class definitions) and `COMPONENT' (for *)
   (** local variables). *)
+
+  datatype Attributes = ATTR of Absyn.ArrayDim
+			      * bool	(* flow *)
+	  		      * Absyn.Variability	(* parameter *)
+			      * Absyn.Direction
 
   relation elaborate : Absyn.Program => Program
 
@@ -191,9 +196,9 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 	build_mod(m,false) => mod
 	--------------------------------------------------
 	elab_elementspec(final,prot,
-			 Absyn.COMPONENTS(attr as Absyn.ATTR([],fl,pa,di),t,
+			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di),t,
 					  (Absyn.COMPONENT(n,d,m))::xs))
-	  => COMPONENT(n,final,prot,Absyn.ATTR(d,fl,pa,di),t,mod)::xs'
+	  => COMPONENT(n,final,prot,ATTR(d,fl,pa,di),t,mod)::xs'
 
 end
 
