@@ -116,6 +116,11 @@ axiom replace_equations([],_) => []
 	---------------------------------
 	replace_equations((a as DAELow.ALGORITHM(_,_,_))::es,repl) 
 	  => a::es'
+  rule	replace_exp(e,repl) => e' &
+	replace_equations(es,repl) => es'
+	-----------------------
+	replace_equations(DAELow.SOLVED_EQUATION(cr,e)::es,repl) 
+	  => DAELow.SOLVED_EQUATION(cr,e')::es'
 end
 
 relation replace_equations_stmts: (Algorithm.Statement list, VariableReplacements) 

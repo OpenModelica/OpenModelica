@@ -189,7 +189,8 @@ module Exp:
   relation dump_exp_graphviz : Exp => Graphviz.Node
   relation exp_contains : (Exp, Exp) => bool
   relation solve : (Exp, Exp, Exp) => Exp
-  relation get_cref_from_exp: (Exp) => ComponentRef list	  
+  relation get_cref_from_exp: (Exp) => ComponentRef list	 
+  relation typeof: (Exp) => Type 
 end
 
 

@@ -50,6 +50,7 @@ module DAELow:
 
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp
+		      | SOLVED_EQUATION of Exp.ComponentRef * Exp.Exp
 		      | ALGORITHM of int (* index in algorithms*) *
 				     Exp.Exp list *(*inputs CREF or der(CREF)*)
 				     Exp.Exp list(*outputs CREF or der(CREF)*)
@@ -439,9 +440,15 @@ relation equation_str: Equation => string =
 
   rule	Exp.print_exp_str e1 => s1 &
 	Exp.print_exp_str e2 => s2 &
-	Util.string_append_list([s1,"=",s2]) => res
+	Util.string_append_list([s1," = ",s2]) => res
 	--------------------
 	equation_str(EQUATION(e1,e2)) => res
+
+  rule	Exp.print_component_ref_str cr => s1 &
+	Exp.print_exp_str e2 => s2 &
+	Util.string_append_list([s1," := ",s2]) => res
+	--------------------
+	equation_str(SOLVED_EQUATION(cr,e2)) => res
 
   rule	int_string(i) => is &
 	Util.string_append_list(["Algorithm no: ",is,"\n"]) => res
@@ -468,11 +475,12 @@ relation remove_simple_equations: (Variables, (* vars *)
 	  => (eqns',seqns,movedvars',vartransf) &
 	(*VarTransform.dump_replacements(vartransf) => () &*)
 	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
+	VarTransform.replace_equations(seqns,vartransf) => seqns' &
 	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
 	(*& print_vars_statistics(vars',knvars')*)
 	-------------------------------------
 	remove_simple_equations(vars,knvars,eqns,reqns,states) 
-	  => (vars',knvars',eqns'',seqns)
+	  => (vars',knvars',eqns'',seqns')
 
   rule	print "-remove_simple_equations failed\n"  
 	------------------------
@@ -509,6 +517,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  
   rule	(* cr1 is state and cr2 not, remove equation and cr2*)
 	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	tree_get(states,cr1) => _ &
 	not VarTransform.get_replacement(repl,cr2) => _ &
@@ -519,10 +528,11 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',e::seqns',mvars'',repl'')
+	  => (eqns',SOLVED_EQUATION(cr2,Exp.CREF(cr1,t))::seqns',mvars'',repl'')
 
   rule	(* as above but swapped args.*)
 	simple_equation(e) => (cr2,cr1) &
+	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	tree_get(states,cr1) => _ &
 	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
@@ -532,10 +542,11 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',e::seqns',mvars'',repl'')
+	  => (eqns',SOLVED_EQUATION(cr2,Exp.CREF(cr1,t))::seqns',mvars'',repl'')
 
   rule	(* cr1 variable, cr2 constant, remove equation and cr1 *)
 	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	is_variable(cr1,vars,knvars) &
 	not is_variable(cr2,vars,knvars) &
@@ -546,10 +557,11 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',e::seqns',mvars'',repl'')	  
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')	  
 
   rule	(* same as above but swapped args *)
 	simple_equation(e) => (cr2,cr1) &
+	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	is_variable(cr1,vars,knvars) &
 	not is_variable(cr2,vars,knvars) &
@@ -560,11 +572,12 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',e::seqns',mvars'',repl'')	  
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')	  
 
 
   rule	(* None are states, but  variables, remove equation *)
 	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not tree_get(states,cr1) => _ &
 	not tree_get(states,cr2) => _ &
@@ -577,7 +590,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',e::seqns',mvars'',repl'')	  
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')	  
 
   rule	(* Not a simple variable, check rest*)
 	remove_simple_equations2(eqns,vars,knvars,mvars,states,repl) 
@@ -586,6 +599,21 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
 	  => (e::eqns',seqns',mvars',repl')
 end 
+
+(** relation typeof_equation
+ ** Returns the Exp.Type of an equation
+**)
+relation typeof_equation: (Equation) => Exp.Type =
+
+  rule	Exp.typeof(e) => t
+	-------------------
+	typeof_equation(EQUATION(e,_)) => t
+	
+  rule	Exp.typeof(e) => t 
+	-------------------
+	typeof_equation(SOLVED_EQUATION(_,e)) => t
+end
+
 
 (** relation: move_variables
  ** This relation takes the two variable lists of a dae (states+alg) and known vars
