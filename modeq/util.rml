@@ -89,6 +89,8 @@ module Util :
   relation list_matching : ('a list, 'a => ()) => 'a list
 
   relation apply_option : ('a option,'a => 'b) => 'b option
+  relation list_split : ('a list, int) => ('a list, 'a list)
+
 end
 
 
@@ -531,4 +533,49 @@ relation apply_option : ('a option,'a => 'b) => 'b option =
   rule	rel(a) => b
 	-----------
 	apply_option( SOME(a),rel) => SOME(b)
+end
+
+
+relation list_split : ('a list, int) => ('a list, 'a list) =
+
+
+  axiom list_split(a,0) => ([],a)
+  
+  rule	list_length(a) => length &
+	int_gt(index,length) => true &
+	print "Index out of bounds (greater than list length) in relation list_split\n"
+	----------------
+	list_split(a,index) => fail  
+
+  rule	int_lt(index,0) => true &
+	print "Index out of bounds (less than zero) in relation list_split\n"
+	----------------
+	list_split(a,index) => fail
+	
+  rule	int_ge(index,0) => true &
+        list_length(a) => length &
+	int_le(index,length) => true &	
+	list_split2(a,[],index) => (b,c)
+	----------------
+	list_split(a,index) => (c,b) 
+end
+
+
+relation list_split2 : ('a list, 'a list, int) => ('a list, 'a list) =
+	
+  rule	int_eq(index,0) => true
+	------------------
+	list_split2(a,b,index) => (a,b)
+
+
+  rule	int_sub(index,1) => new_index &
+	list_append(b,[a]) => c &
+	list_split2(rest,c,new_index) =>(c,d)
+	------------------
+	list_split2(a::rest,b,index) => (c,d)
+	
+  rule	print "list_split2 failed\n"
+	----------------
+	list_split2(_,_,_) => fail 
+
 end

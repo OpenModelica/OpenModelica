@@ -285,7 +285,9 @@ end
 relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => string =
 
   rule	generate_blt(dae) => blt &
-	generate_state_partition(blt,dae) => a &
+	generate_state_partition(blt,dae) => (blt_states,blt_no_states) &
+	Debug.fcall("bltdump", DAELow.dump_components, blt_states) &
+	Debug.fcall("bltdump", DAELow.dump_components, blt_no_states) &
 	generate_compute_output(cname,dae,p) => coutput &
 	generate_compute_initial(cname,dae,p) => cinitial &
 	generate_compute_state(cname,dae,p) => cstate &
@@ -355,17 +357,31 @@ end
 (** relation:generate_state_partition
  ** this relation extracts the rightmost part 
  **
+ ** returns two incidencematrices, the first one including blocks with 
+ ** all state variables (and of course some other variables as well) 
+ ** and the second one including no state variables. No reordering
+ ** of blocks is performed.
  **) 
-relation generate_state_partition:(int list list,DAELow.DAELow) => (int list list) =
+relation generate_state_partition:(int list list,DAELow.DAELow) => 
+	(int list list, int list list) =
 
-  rule	list_reverse(blt) => reversed_blt &
-	has_state_var(0,reversed_blt,dae) => component_number &
-	print "First state component found in component (reversed)" &
-	int_string(component_number) => component_number_string &
-	print component_number_string &
-	print "\n\n"
+  rule	
+	
+	list_reverse(blt) => reversed_blt &
+	has_state_var(0,reversed_blt,dae) => state_component_number &
+	print "First state component found in component (reversed): " &
+	int_string(state_component_number) => state_component_number_string &
+	print state_component_number_string &
+	print "\n" &
+ 	list_length(blt) => nr_of_components &
+	int_sub(nr_of_components,state_component_number) => component_offset &	
+	print "(non-reversed): " &
+	int_string(component_offset) => component_offset_string &
+	print component_offset_string &
+	print "\n" &
+	Util.list_split(blt,component_offset) => (blt_states,blt_no_states)
 	-----------------------------------------
-	generate_state_partition(blt,dae) => blt (* not correct *)
+	generate_state_partition(blt,dae) => (blt_states,blt_no_states)  
 
   rule	print "-generate_state_partition failed\n" 
 	-----------------------------------------
@@ -377,6 +393,8 @@ end
  ** Determines which list of coefficients contains the first 
  ** statevariable
  ** 
+ ** Returns the first component number (counted from the end of the list)
+ ** which contais a state variable.
  **) 
 relation has_state_var:(int, int list list, DAELow.DAELow) => int =
 	  
@@ -405,49 +423,39 @@ end
  ** Arg 1 is the index in the component to the current variable to check
  ** Arg 2 is the component itself
  ** Arg 3 is the DAEs
+ ** Returns true if this component contains a statevar
  **)
 relation check_component_for_statevars:(int, int list, DAELow.DAELow) => bool =
 
-  rule	print "check_component_for_statevars failed: Empty component" 
+  rule	print "check_component_for_statevars failed: Empty component\n" 
 	-------------------------------------------------------------
 	check_component_for_statevars(_,[],_) => fail
 
 
   rule	(* Termination condition. variables checked.
 	   This means that the component did not contain any state vars *)
-	print " PIGS: 2 1\n" &
-	print " index: " &
-	int_string i => s &
-	print s &
 	list_length(component) => nr_of_variables &
-	print " list_length: " &
-	int_string nr_of_variables => s &
-	print s &
-	int_eq(nr_of_variables,i) => true &
-	print " PIGS: 2\n"
+	int_eq(nr_of_variables,i) => true
 	-------------------------------------------------------------
 	check_component_for_statevars(i,component,_) => false
 
   rule	(* If this variable is a state variable, return true *)
 	list_nth(component,i) => variable_index_to_check &
-	print " variable_index_to_check  : " &
-	int_string variable_index_to_check => s &
-	print s &
-        list_nth(var_list,variable_index_to_check) => DAELow.VAR(_,STATE,_,_,_,_,_,_,_,_) &
-	print " State variable found: " &
-	int_string i => s &
-	print s &
-	print "\n"
+	(* Variable indexing starts from 1 but lists start from 0.
+	 Thus decrease index by one*) 
+	int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
+        list_nth(var_list,adjusted_variable_index_to_check) => 
+	  (hej as DAELow.VAR(cref,DAELow.STATE,_,_,_,_,_,_,_,_))
 	-------------------------------------------------------------
 	check_component_for_statevars(i,component,dae as DAELow.DAELOW(var_list,_,_,_)) => true
 
-  rule	(* If this variable is not state variable, try the next one *)
+  rule	(* If this variable is nt state variable, try the next one *)
 	list_nth(component,i) => variable_index_to_check &
-        list_nth(var_list,variable_index_to_check) => DAELow.VAR(_,_,_,_,_,_,_,_,_,_) &
-	print " Non State variable found: " &
-	int_string i => s &
-	print s &
-	print "\n" &
+	(* Variable indexing starts from 1 but lists start from 0.
+	 Thus decrease index by one*) 
+	int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
+        list_nth(var_list,adjusted_variable_index_to_check) => 
+	  DAELow.VAR(cref,_,_,_,_,_,_,_,_,_) &
 	int_add(i,1) => next_i &
 	check_component_for_statevars(next_i,component,dae) => result
 	-------------------------------------------------------------

@@ -32,6 +32,7 @@ module DAELow:
   with "values.rml"
 
 
+
   datatype VarKind = VARIABLE | STATE | DUMMY_DER | DUMMY_STATE | DISCRETE | PARAM | CONST
 
   datatype Var = VAR of Exp.ComponentRef * 
