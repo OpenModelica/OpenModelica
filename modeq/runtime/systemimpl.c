@@ -159,9 +159,11 @@ RML_BEGIN_LABEL(System__strtok)
   /* adrpo added 2004-10-27 */
   free(str);	  
 
+  /* adrpo changed 2004-10-29 
   rml_prim_once(RML__list_5freverse);
-  
   RML_TAILCALLK(rmlSC);
+  */
+  RML_TAILCALLQ(RML__list_5freverse,1);
 }
 RML_END_LABEL
 
@@ -511,7 +513,7 @@ RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset)
   int i,size;
   char **vars;
   char* filename = RML_STRINGDATA(rmlA0);
-  void * lst = rmlA1;
+  void *lst = rmlA1;
   int datasize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
   void* p;
   rmlA0 = lst;
