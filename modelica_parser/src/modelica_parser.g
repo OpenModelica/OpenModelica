@@ -141,8 +141,13 @@ class_specifier :
 		( string_comment composition END! IDENT!
 		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
 		| EQUALS^ enumeration
+		| EQUALS^ overloading	
 		)
 		;
+
+overloading:
+		OVERLOAD^ LPAR! name_list RPAR! comment
+	;
 
 base_prefix:
 		type_prefix
