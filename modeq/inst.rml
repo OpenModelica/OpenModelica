@@ -14,6 +14,7 @@ end
 (** Other modules used by this module *)
 
 with "exp.rml"
+with "values.rml"
 with "absyn.rml"
 with "prefix.rml"
 with "env.rml"
@@ -369,8 +370,9 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	
 	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
 
-	Mod.mod_assignment mod' => ass &
-	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,ass)) => env' &
+	Mod.mod_equation mod' => eq &
+	Env.make_binding eq => binding &
+	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,binding)) => env' &
 	print " extended frame with variable " & Dump.dump_component_ref vn &
  	print "\n" &
 
@@ -442,7 +444,8 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	-------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,Absyn.EQ_EXPR(_)) => fail
 
-  rule	Lookup.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
+  rule	Lookup.lookup_var_local(env,n)
+	  => Env.FRAMEVAR(_,_,_,Env.EQBOUND(_)) &
 	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
@@ -461,9 +464,58 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
 	  => ([DAE.EQUATION(e')], env, csets, ci_state')
 
-  rule	print "- inst_equation fallthru\n"
+	(**  `for' loops
+	 **
+	 ** The loop expression is evaluated to a constant array of
+	 ** integers, and then the loop is unrolled.
+	 **)
+
+  rule	StaticExp.ceval (env,e) => (v,Exp.T_ARRAY(1,Exp.T_INTEGER)) &
+	print "  Unrolling " & print i & print " in " &
+ 	Exp.dump_exp e & print "\n" &
+	unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') &
+	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
+	-----------------------------------------------------------
+	inst_equation(env,mod,pre,csets,ci_state,Absyn.EQ_FOR(i,e,el))
+	  => (dae, env,csets', ci_state')
+
+  rule	print "- inst_equation failed\n"
 	----------------------------------
 	inst_equation(_,_,_,_,_,_) => fail
+
+end
+
+(** relation: unroll
+ **
+ ** Unrolling a loop is way of removing the non-linear structure of
+ ** the `for' clause by explicitly repeating the body of the loop once
+ ** for each iteration.
+ **)
+
+relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+		   Ident, Values.Value, Explode.Equation list)
+	  => (DAE.DAEcomp list, Connect.Sets) =
+
+  axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_) => ([], csets)
+
+  rule	print "   unroll: " & Values.print_val fst & print "\n" &
+	Env.open_scope env => env' &
+	Env.extend_frame_v (env',
+			    Env.FRAMEVAR(i, Types.ATTR(Types.NODIM,
+						       false,
+						       Types.CONST,
+						       Types.BIDIR),
+					 Types.TYPE(ClassInf.TYPE_INTEGER
+						    ("<for loop>"),[]),
+					 Env.VALBOUND(fst))) => env'' &
+	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
+	  => (dae1,env''',csets', ci_state') &
+	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs)
+	  => (dae2, csets'') &
+	list_append(dae1,dae2) => dae
+	-----------------------------
+	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs)
+	  => (dae, csets'')
 
 end
 
