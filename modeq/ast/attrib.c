@@ -11,7 +11,7 @@ int zzcr_attr(Attrib *attr, int type, char *text)
   case UNSIGNED_INTEGER:
     attr->u.ival = atoi(text); break;
   case UNSIGNED_REAL:
-    attr->u.floatval = atof(text); break;
+    attr->u.realval = atof(text); break;
   case IDENT:
     attr->u.stringval = strdup(text);
     break;
@@ -67,7 +67,7 @@ void print_attr(Attrib *attr, FILE *f)
   case UNSIGNED_INTEGER:
     fprintf(f, "%d", attr->u.ival); break;
   case UNSIGNED_REAL:
-    fprintf(f, "%.2f", attr->u.floatval); break;
+    fprintf(f, "%.2f", attr->u.realval); break;
   case IDENT:
     fprintf(f, "'%s'", attr->u.stringval); break;
   case STRING:
@@ -112,7 +112,8 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(COMPONENTS);	/* 66 */
   tokprinter(TYPE_PREFIX);	/* 67 */
   tokprinter(FUNCALL);		/* 68 */
-  tokprinter(ELEMENT);		/* 69 */
+  tokprinter(ELEMENT);		/* 70 */
+  tokprinter(MODIFICATION);	/* 71 */
   tokprinter(SUBSCRIPT);	/* 72 */
 
   case zzEOF_TOKEN:

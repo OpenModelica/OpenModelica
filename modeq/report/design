@@ -24,3 +24,8 @@ uppslagning, åtminstone inte av typer.
 Det går inte att dela upp det första passet som jag från början hade
 tänkt. Man måste hålla reda på alla modifikationer innan man kan börja
 slå upp namn. Man måste också expandera all "extends".
+
+* Constants and parameters
+
+Treat parameters as constants? Handle constants without turning them
+into literals?
