@@ -38,6 +38,7 @@ module Debug:
  relation fprintl: (string, string list) => ()
  relation fprint_list: (string, 'a list, 'a => (), string) => ()
  relation fcall: (string, 'a => (), 'a) => ()
+ relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b
  relation bcall: (bool, 'a => (), 'a) => () 
  relation notfcall: (string, 'a => (), 'a) => ()
 end
@@ -135,6 +136,20 @@ relation fcall: (string, 'a => (), 'a) => () =
 	fcall (flag, func, str)
 
   axiom	fcall (_,_,_)
+
+end
+
+(* Call the given function (2nd arg) if the flag given in 1st arg is set, and *)
+(* return its return value *)
+
+relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	func(arg) => res
+	----------------
+	fcallret (flag, func, arg, def) => res
+
+  axiom	fcallret (_,_,_,def) => def
 
 end
 
