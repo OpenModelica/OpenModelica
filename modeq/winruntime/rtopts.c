@@ -39,6 +39,7 @@
     double latency=0.0;
     double bandwidth=0.0;
   int tornado_cg;
+int simulation_cg;
   int silent;
     
     void RTOpts_5finit(void)
@@ -52,7 +53,8 @@
       debug_none = 1;
       nproc = 0;
     tornado_cg = 0;
-    silent = 0;
+   simulation_cg = 0;
+   silent = 0;
     }
     
     static int set_debug_flags(char *flagstr)
@@ -164,9 +166,12 @@
     	type_info = 0;
     	break;
         case 'c':
-  	tornado_cg = 1;
-  	break;
-          case 'm':
+          tornado_cg = 1;
+          break;
+          case 's':
+            simulation_cg = 1;
+            break;
+         case 'm':
     	modelica_output = 1;
     	break;
           case 'p':
