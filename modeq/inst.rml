@@ -2416,14 +2416,14 @@ relation init_vars_modelica_output_2 : (Exp.ComponentRef, Exp.Exp option, DAE.El
   rule	Exp.cref_equal (cr, e1cr) => true &
 	init_vars_modelica_output_2 (cr, SOME(exp'), rest) => (exp'', rest')
 	-----------------------------------------------------------------
-	init_vars_modelica_output_2 (cr, exp, DAE.EQUATION(Exp.CREF(e1cr,Exp.OTHER), exp') :: rest)
+	init_vars_modelica_output_2 (cr, exp, DAE.EQUATION(Exp.CREF(e1cr,_ (*Exp.OTHER*)), exp') :: rest)
 	  => (exp'', rest')
 
 
   rule	Exp.cref_equal (cr, e1cr) => false &
 	init_vars_modelica_output_2 (cr, exp, rest) => (exp'', rest')
 	-----------------------------------------------------------------
-	init_vars_modelica_output_2 (cr, exp, (e1 as DAE.EQUATION(Exp.CREF(e1cr,Exp.OTHER), exp')) :: rest)
+	init_vars_modelica_output_2 (cr, exp, (e1 as DAE.EQUATION(Exp.CREF(e1cr,_(* Exp.OTHER*)), exp')) :: rest)
 	  => (exp'', e1 :: rest')
 
   rule	init_vars_modelica_output_2 (excr, exp, rest) => (exp', rest')
