@@ -27,6 +27,7 @@ module Mod:
   relation build : (Absyn.Modification option, bool) => Mod
   relation lookup_modification: (Mod,Absyn.Ident) => Mod
   relation merge : (Mod, Mod) => Mod
+  relation mod_assignment : Mod => Exp.Exp option
 
 (*
   relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
@@ -275,5 +276,17 @@ relation merge : (Mod, Mod) => Mod =
   rule	print "# incomplete handling of modification merging\n"
 	-----------------------------------------------------
 	merge(outer,inner) => outer
+
+end
+
+(**********************************************************************)
+
+relation mod_assignment : Mod => Exp.Exp option =
+
+  axiom mod_assignment NOMOD => NONE
+
+  axiom mod_assignment REDECL(_,_) => NONE
+
+  axiom mod_assignment MOD(_,_,e) => e
 
 end
