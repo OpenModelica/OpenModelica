@@ -32,6 +32,7 @@ with "daelow.rml"
 with "exp.rml"
 with "debug.rml"
 with "rtopts.rml"
+with "inst.rml"
 
 (** relation: generate_code
  ** This is the main relation that generates Tornado1 C++ code from the flat Modelica model
@@ -42,7 +43,14 @@ with "rtopts.rml"
  **)
 relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
-  rule	DAELow.lower(dae) => dae' &
+  rule	DAELow.lower(dae) => (dae' as DAELow.DAELOW(_,_,eqns,_)) &
+ (*       print("   unsorted equations------------------\n") &
+        DAELow.dump_eqns(eqns) &*)
+        
+        (*sort_eqn(daeUnsorted) => (dae' as DAELow.DAELOW(_,_,eqns2,_)) &*)
+
+        (*print("   SORTED equations------------------\n") &
+        DAELow.dump_eqns(eqns2) &*)
 	    Absyn.path_string(class) => cname &
 	    generate_header(cname) => header &
 	    generate_impl_header(cname) => implheader &
@@ -52,7 +60,9 @@ relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	    Util.string_append_list([implheader,constr,defines,cmethods]) => impl &
 	    string_append(cname,".h") => headerfile &
 	    string_append(cname,".cpp") => implfile &
-	    System.write_file(headerfile,header) &
+	    print "Generating: " & print headerfile & print "\n" &
+        System.write_file(headerfile,header) &
+	    print "Generating: " & print implfile & print "\n" &
 	    System.write_file(implfile,impl) 
 	    -------------------------------------------------------------------
 	    generate_code(p,dae,class) => 
@@ -67,7 +77,7 @@ end
  **)
 relation generate_header: string => string =
 
-  rule	System.toupper cname => CNAME &
+  rule  System.toupper cname => CNAME &
 	Util.string_append_list(["#ifndef __",CNAME,"_H__\n"]) => r1 &
 	Util.string_append_list(["#define __",CNAME,"_H__\n"]) => r2 &
 	Util.string_append_list(["\n#include \"Tornado/EE/MSLE/MSLE.h\"\n",
@@ -98,7 +108,7 @@ relation generate_impl_header: string => string =
 
   rule	Util.string_append_list(["#ifdef _MSC_VER\n",
 				 "#pragma warning(disable:4250)\n",
-				 "#pragma warning(diable:4786)\n",
+				 "#pragma warning(disable:4786)\n",
 				 "#endif\n",
 				 "\n",
 				 "#include \"",cname,".h\"\n",
@@ -116,6 +126,7 @@ relation generate_impl_header: string => string =
 	generate_impl_header(_) => fail
 end
 
+
 (** relation generate_constructor:
  ** Generates the implementation for the constructor which sets up the variables (names)
  ** and their initial values.
@@ -123,91 +134,228 @@ end
 relation generate_constructor: (string, Absyn.Program, DAELow.DAELow) => string =
 	
 	
-  rule  generate_constructor_outputvars(dae) => outputvars &
-		generate_constructor_statevars(dae) => statevars &
-		generate_constructor_component_initialization(cname,p) => initializationvars &
+  rule	generate_constructor_component_initialization(cname,p) => (initializationvars,comp_name_list) &
+        (*generate_links(dae,comp_name_list) => links &*)
+        generate_constructor_outputvars(dae) => (outputvars,noOutputVar_str) &
+		generate_constructor_statevars(dae) => (statevars,noStateVar_str) &
 		Util.string_append_list(["C",cname,"::\n",
-				 "C",cname,"(const wchar_t* Name)\n",
-				 "{\n",
-				 "  SetName(Name);\n",
-				 "  SetDesc(L\"",cname," test.\");\n",
-				 "\n",
-				 "  SetNoIndepVars(1);\n",
-				 "  SetIndepVar(0, new CIndepVar(L\"t\",L\"s\"));\n",
-				 "\n",
-				 outputvars,
-				 "\n",
-				 "\n",
-				 statevars,
-				 "\n",
-				 "  SetNoIndepVarValues(1);\n",
-				 "\n",
-				 "  Link();\n",
-				 initializationvars,
-				 "  Reset();\n",
-				 "}\n",
-				 "\n"]) => constr
-	-----------------------------------------
-	generate_constructor(cname,p,dae) => constr
-
-
-  rule	print "-generate_constructor failed\n" 
-	-------------------------------------
-	generate_constructor(_,_,_) => fail
-
+				                 "C",cname,"(const wchar_t* Name)\n",
+				                 "{\n",
+				                 "  SetName(Name);\n",
+				                 "  SetDesc(L\"",cname," test.\");\n",
+				                 "\n",
+				                 "  SetNoIndepVars(1);\n",
+				                 "  SetIndepVar(0, new CIndepVar(L\"t\",L\"s\"));\n",
+				                 "\n",
+				                 outputvars,
+				                 "\n",
+				                 "\n",
+				                 statevars,
+				                 "\n",
+				                 "  SetNoIndepVarValues(1);\n",
+                                 noOutputVar_str,
+                                 noStateVar_str,
+				                 "\n",
+				                 "  Link();\n",
+				                 initializationvars,
+				                 "\n",
+				                 "\n",
+                                 (*links,*)
+                                 "  Reset();\n",
+		                         "}\n",
+				                 "\n"]) => constr
+	    -----------------------------------------
+	    generate_constructor(cname,p,dae) => constr
+        
+        
+  rule  print "-generate_constructor failed\n" 
+	    -------------------------------------
+	    generate_constructor(_,_,_) => fail
+        
 end
+relation generate_links:(DAELow.DAELow,string list) => string = 
+        
+        
+  rule  vector_list(vars_vec) => vars &
+        vector_list(knvars_vec) => knvars &
+        generate_indep_var(comp_name_list,1) => indep_var_list &
+
+        generate_links2(vars,0,comp_name_list) => (vars_params_list_str,lst1) &
+	    list_length(lst1) => len &
+	    int_sub(len,1) => len' &
+	    generate_links2(knvars,len',comp_name_list) => (knvars_params_list_str,lst2) &
+	    list_append(lst1,lst2) => lst &
+
+
+        list_append(knvars_params_list_str,vars_params_list_str) => params_list_str &
+        Util.string_append_list(params_list_str) => params_list_str' &
+        Util.string_append_list(lst) => res' &
+        Util.string_append_list(indep_var_list) => indep_var_str &
+        Util.string_append_list([params_list_str',indep_var_str,res']) => res''
+        -------------------------------------------
+        generate_links(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn),
+                       comp_name_list) => res''
+        
+
+  axiom generate_links(_,_) => "/* generation of variables linking has failed */"
+end
+
+
+(** relation generate_indep_var 
+ ** This return the string list for each component index:
+ ** GetSubModel(<index>)->GetIndepVar(0)->LinkValue(this, MSLE_INDEP_VAR, 0);
+ **)
+relation generate_indep_var:(string list,int) => string list =
+
+  axiom generate_indep_var([],_) => [""]
+        
+  rule  int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                index_str,
+                                ")->GetIndepVar(0)->LinkValue(this, MSLE_INDEP_VAR, 0);\n"]) => comp_str &
+        int_add(index,1) => index_inc &
+        generate_indep_var(rest,index_inc) => res
+        ---------------------------------------------
+        generate_indep_var(component_name::rest,index) => comp_str::res
+end
+
+(** relation generate_links2
+ ** this return the string list for the parameters and the string list for the 
+ ** variables.
+ ** [GetSubModel(<component index>)->GetParam(0)->LinkValue(this, MSLE_PARAM, <param index>);,...]
+ ** [GetSubModel(<component index>)->Get___Var(0)->LinkValue(this, MSLE_INDEP_VAR, <variable index>);]
+ **)
+
+relation generate_links2:(DAELow.Var list,int,string list) => (string list, string list) = 
+  
+  rule (* special case for when called second time and first time gave 
+        list length zero *)
+        generate_links2(lst,0,comp_name_list) => (param_res,res)
+        ----------------------------------------------
+        generate_links2(lst,-1,comp_name_list) => (param_res,res)
+        
+  axiom generate_links2([],_,_) => ([],[])
+        
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        generate_links2(rest,i',comp_name_list) => (params_str,res) &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list([" ",
+                                 is,
+                                 "  \"",
+                                 crs,"\" );\n"]) => r1 
+          ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,
+                        i,
+                        comp_name_list) 
+          => (params_str,(r1::res))
+ 
+          (* this rule take car of BIDIR variables *)
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        generate_links2(rest,i',comp_name_list) => (params,res) &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list([" ",
+                                 is,
+                                 "  \"",
+                                 crs,"\" );\n"]) => r1 
+        
+        ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,
+                        i
+                        ,comp_name_list) 
+          => (params,(r1::res))
+
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        generate_links2(rest,i',comp_name_list) => (params,res) &
+        cref_modelica_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::rest &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+        Util.string_append_list(["  GetSubModel(",
+                                 index_str,
+                                 ")->GetParam(0)->LinkValue(this, MSLE_PARAM, ",
+                                 index_str,"\"\n"]) => r1 
+          ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.PARAM,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,
+                        i,
+                        comp_name_list) 
+          => (r1::params,res)
+          
+  rule  generate_links2(rest,i,comp_name_list) => (params, res)
+        -----------------------------------------------
+        generate_links2(_::rest,i,comp_name_list) 
+          => (params,res)
+
+  rule  print "-generate_links2 failed\n" 
+        ----------------------
+        generate_links2(_,_,_) => (["TEST"],["/* not yet implemented */"])
+end
+
 
 (* relation generate_constructor_outputvars
  ** Generates the outputvars methodcalls in the constructor.
  ** The variables are indexed in the order they appear in the DAELow representation.
  ** The first output variable has the index 0. 
  *)
-relation generate_constructor_outputvars:(DAELow.DAELow) => string= 
+relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) = 
         
-  rule	vector_list(varvec) => vars &
-	generate_constructor_outputvars2(vars,0) => lst1 &
-	list_length(lst1) => len &
-	int_sub(len,1) => len' &
-	vector_list(knvarvec) => knvars &
-	generate_constructor_outputvars2(knvars,len') => lst2 &
-	list_append(lst1,lst2) => lst &
-	Util.string_delimit_list(lst,"\n") => res &
-	list_length(lst) => len &
-	int_string len => lenstr &
-        Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix &
-        Util.string_append_list(["  SetNoOutputVarValues(",lenstr,");\n"]) => prefix &
-        string_append(prefix,res) => res'
+  rule  vector_list(vars_vec) => vars &
+        vector_list(knvars_vec) => knvars &
+        generate_constructor_outputvars2(vars,0) => lst1 &
+	    list_length(lst1) => len &
+	    int_sub(len,1) => len' &
+	    generate_constructor_outputvars2(knvars,len') => lst2 &
+	    list_append(lst1,lst2) => lst &
+	    Util.string_delimit_list(lst,"\n") => res &
+	    list_length(lst) => len &
+	    int_string len => lenstr &
+        Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix1 &
+        Util.string_append_list(["  SetNoOutputVarValues(",lenstr,");\n"]) => prefix2 &
+        Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
-        generate_constructor_outputvars(DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),DAELow.VARIABLES(knvarvec,bt2),eqn,seqn)) => res'
+        generate_constructor_outputvars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
 end
 
 relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list = 
-
+        
   rule (* special case for when called second time and first time gave 
-  list length zero *)
- generate_constructor_outputvars2(lst,0) => res
- ----------------------------------------------
- generate_constructor_outputvars2(lst,-1) => res
-
+        list length zero *)
+        generate_constructor_outputvars2(lst,0) => res
+        ----------------------------------------------
+        generate_constructor_outputvars2(lst,-1) => res
+        
   axiom generate_constructor_outputvars2([],_) => []
+        
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        generate_constructor_outputvars2(rest,i') => res &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["  SetOutputVar(",
+                                 is,
+                                 ", new COutputVar(L\"",
+                                 crs,"\", L\"\",0));"]) => r1 
+          ---------------------------------------------
+        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
+          => r1::res
+ 
+          (* this rule take car of BIDIR variables *)
+  rule  int_add(i,1) => i' & int_string(i) => is &
+        generate_constructor_outputvars2(rest,i') => res &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list(["  SetOutputVar(",
+                                 is,
+                                 ", new COutputVar(L\"",
+                                 crs,"\", L\"\",0));"]) => r1 
+          ---------------------------------------------
+        generate_constructor_outputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
+          => r1::res
+          
+  rule  generate_constructor_outputvars2(rest,i) => res 
+        -----------------------------------------------
+        generate_constructor_outputvars2(_::rest,i) 
+          => res
 
-  rule int_add(i,1) => i' & int_string(i) => is &
- generate_constructor_outputvars2(rest,i') => res &
- Exp.cref_modelica_str(cr) => crs &
- Util.string_append_list([" SetOutputVar(",is,", new COutputVar(L\"",crs,"\", L\"\",0);"]) 
-   => r1 
- --------------------
- generate_constructor_outputvars2(DAELow.VAR(cr,VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
-   => r1::res
-
-  rule generate_constructor_outputvars2(rest,i) => res 
- -----------------------------------------------
- generate_constructor_outputvars2(_::rest,i) 
-   => res
-
-  rule print "-generate_constructor_outputvars2 failed\n" 
- ----------------------
- generate_constructor_outputvars2(_,_) => fail
+  rule  print "-generate_constructor_outputvars2 failed\n" 
+        ----------------------
+        generate_constructor_outputvars2(_,_) => fail
 end
 
 
@@ -217,75 +365,77 @@ end
  ** They are also indexed in the order they appear in the DAELow representation, starting
  ** with index 0.
  *)
-relation generate_constructor_statevars:(DAELow.DAELow) => string = 
-	 
-  rule  vector_list(varvec) => vars &
-	generate_constructor_statevars2(vars,0) => lst &
-	Util.string_delimit_list(lst,"\n")=> res & 
-	list_length(lst) => len &
-	int_string len => lenstr &
-	Util.string_append_list(["  SetNoDerStateVars(",lenstr,");\n"]) => prefix &
-	Util.string_append_list(["  SetNoDerStateVarValues(",lenstr,");\n"]) => prefix &
-	string_append(prefix,res) => res'
-	----------------------
-	generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),knvars,eqn,seqn)) => res'
-end
+ relation generate_constructor_statevars:(DAELow.DAELow) => (string,string) = 
 
-relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
+  rule  vector_list(vars_vec) => vars &
+         vector_list(knvars_vec) => knvars &
+         generate_constructor_statevars2(vars,0) => lst &
+         Util.string_delimit_list(lst,"\n")=> res & 
+         list_length(lst) => len &
+         int_string len => lenstr &
+         Util.string_append_list(["  SetNoDerStateVars(",lenstr,");\n"]) => prefix1 &
+         Util.string_append_list(["  SetNoDerStateVarValues(",lenstr,");\n"]) => prefix2 &
+         Util.string_append_list([prefix1,res,"\n"]) => res' 
+         ----------------------
+         generate_constructor_statevars(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => (res',prefix2)
+ end
+
+ relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
 
   axiom generate_constructor_statevars2([],_) => []
 
   rule (* When start value is present*)
- int_add(i,1) => i' & int_string(i) => is &
- generate_constructor_statevars2(rest,i') => res &
- Exp.cref_modelica_str(cr) => crs & 
- Exp.print_exp_str start => startstr &
- Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",",
-     startstr,");"]) 
-   => r1 
- --------------------
- generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_,_)::rest,i) 
-   => r1::res
+         int_add(i,1) => i' & int_string(i) => is &
+         generate_constructor_statevars2(rest,i') => res &
+         cref_modelica_str(cr) => crs & 
+         (*Exp.print_exp_str start => startstr &*)
+         print_exp_cpp_str(start) => startstr &
+         Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",",
+                                  startstr,"));"]) 
+          => r1 
+           --------------------
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_,_)::rest,i) 
+          => r1::res
 
   rule (* If no start value is present*)
- int_add(i,1) => i' & int_string(i) => is &
- generate_constructor_statevars2(rest,i') => res &
- Exp.cref_modelica_str(cr) => crs & 
- 
- Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0);"]) 
-   => r1 
- --------------------
- generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest,i) 
-   => r1::res
+         int_add(i,1) => i' & int_string(i) => is &
+         generate_constructor_statevars2(rest,i') => res &
+         cref_modelica_str(cr) => crs & 
+         
+         Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0));"]) 
+          => r1 
+           --------------------
+         generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest,i) 
+          => r1::res
 
   rule generate_constructor_statevars2(rest,i) => res 
- -----------------------------------------------
- generate_constructor_statevars2(_::rest,i) 
-   => res
+         -----------------------------------------------
+         generate_constructor_statevars2(_::rest,i) 
+          => res
 
   rule print "-generate_constructor_statevars2 failed\n" 
- ----------------------
- generate_constructor_statevars2(_,_) => fail
-end
+         ----------------------
+         generate_constructor_statevars2(_,_) => fail
+ end
 
-relation generate_var_defines: (DAELow.DAELow) => string =
+ relation generate_var_defines: (DAELow.DAELow) => string =
 
-  rule  vector_list(varvec) => vars &
-	generate_var_defines2(vars,0,0) => vdefs1list &
-        list_length(vdefs1list) => len &
-        int_sub(len,1) => len' &
-        Util.string_append_list(vdefs1list) => vdefs1 &
-	vector_list(knvarvec) => knvars &
-        generate_var_defines2(knvars,0,0) => vdefs2list &
-        Util.string_append_list(vdefs2list) => vdefs2 &
-        Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n",vdefs1,vdefs2,"\n"]) => vdefs
-        ---------------------
-        generate_var_defines(DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),DAELow.VARIABLES(knvarvec,bt2),eqn,seqn)) => vdefs
-        
+  rule  vector_list(vars_vec) => vars &
+         generate_var_defines2(vars,0,0) => vdefs1list &
+         list_length(vdefs1list) => len &
+         int_sub(len,1) => len' &
+         Util.string_append_list(vdefs1list) => vdefs1 &
+         vector_list(knvars_vec) => knvars &
+         generate_var_defines2(knvars,0,0) => vdefs2list &
+         Util.string_append_list(vdefs2list) => vdefs2 &
+         Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n",vdefs1,vdefs2,"\n"]) => vdefs
+         ---------------------
+         generate_var_defines(DAELow.DAELOW(DAELow.VARIABLES(vars_vec,_),DAELow.VARIABLES(knvars_vec,_),eqn,seqn)) => vdefs
+         
   rule  print "-generate_var_defines failed\n"
-        --------------------------------------
-        generate_var_defines(_) => fail
-end
+         --------------------------------------
+         generate_var_defines(_) => fail
+ end
 
 
 (** Helper function for generate_var_defines
@@ -300,7 +450,8 @@ relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
   axiom generate_var_defines2([],_,_) => []
         
   rule int_string(outputCounter) => outputCounterString &
-        Exp.cref_modelica_str(cr) => crs &
+        Exp.cref_str(cr) => modelicaStr &
+        cref_modelica_str(cr) => crs &
         Util.string_append_list(["#define ",crs," m_OutputVarValues[",outputCounterString,"]\n"]) => r1 &
         int_add(outputCounter,1) => outputCounter' & 
         generate_var_defines2(rest,outputCounter',derStateCounter) => res
@@ -310,7 +461,7 @@ relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
           => r1::res
           
   rule int_string(derStateCounter) => derStateCounterString &
-        Exp.cref_modelica_str(cr) => crs &
+        cref_modelica_str(cr) => crs &
         Util.string_append_list(["#define ",crs," m_DerStateVarValues[",derStateCounterString,"]\n",
                                  "#define _D_",crs,"_ m_Derivatives[",derStateCounterString,"]\n"]) => r1 &
         int_add(derStateCounter,1) => derStateCounter' & 
@@ -332,29 +483,35 @@ end
 (** relation: generate_constructor_component_initialization
  ** this relation generates the code for initialization of internal
  ** components for a model. The components are non-primitive types.
+ ** The string list that is return is a list of the names of the components 
+ ** in the main model. This is needed for extracting the index of the components.
  ** 
  **)
- relation generate_constructor_component_initialization: (string,Absyn.Program) => string =
+ relation generate_constructor_component_initialization: (string,Absyn.Program) => (string,string list) =
   
  
   rule  Interactive.get_pathed_class_in_program(Absyn.IDENT(cname),program) => cdef &
 	 (* call to helper function *)
-         count_and_generate_initializations(cdef,program,0) => (ini_str_list,nr_of_comp) &         
+         count_and_generate_initializations(cdef,program,0,[]) => (ini_str_list,nr_of_comp,comp_name_list) &         
          (* if there are no components then it will not generate constructors *)
          int_eq(nr_of_comp,0) => true
+         (*& Util.string_append_list(comp_name_list) => str_res &
+         print "COMPONENTS " & print str_res & print "\n" *)
          --------------------------------------
-         generate_constructor_component_initialization(cname,program) => ""
+         generate_constructor_component_initialization(cname,program) => ("", comp_name_list)
          
          
   rule  Interactive.get_pathed_class_in_program(Absyn.IDENT(cname),program) => cdef &
 	 (* call to helper function *)
-         count_and_generate_initializations(cdef,program,0) => (ini_str_list,nr_of_comp) &         
+         count_and_generate_initializations(cdef,program,0,[]) => (ini_str_list,nr_of_comp,comp_name_list) &         
          int_string(nr_of_comp) => res &
 	 (* Generate the nr of submodels declaration *)
          Util.string_append_list(["  SetNoSubModels(",res,");\n"]) => res1 &
          Util.string_append_list(res1::ini_str_list) => res2 
+         (*& Util.string_append_list(comp_name_list) => str_res &
+         print "COMPONENTS " & print str_res & print "\n" *)
          --------------------------------------
-         generate_constructor_component_initialization(cname,program) => res2
+         generate_constructor_component_initialization(cname,program) => (res2,comp_name_list)
          
   rule  print "generate_constructor_component_initialization failed\n"
          --------------------------------------
@@ -362,78 +519,109 @@ end
          
  end
 
- relation count_and_generate_initializations: (Absyn.Class,Absyn.Program,int) => (string list, int) =
+ relation count_and_generate_initializations: (Absyn.Class,Absyn.Program,int,string list) => (string list, int,string list) =
          
-  rule	 (* For public declarations *)
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program, nr_of_found_components) => (str,c1) & 
-	 count_and_generate_initializations_in_elts(elt,program,nr_of_found_components) => (strlist,c2) &
-	 int_add(c1,c2) => res &
-         list_append(str,strlist) => string_list
+  rule  (* For public declarations *)
+	     count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),
+                                            program, 
+                                            nr_of_found_components,
+                                            comp_name_list) => (str,c1,comp_name_list1) & 
+	     count_and_generate_initializations_in_elts(elt,program,nr_of_found_components,comp_name_list1) => (strlist,c2,comp_name_list2) &
+	     int_add(c1,c2) => res &
+         list_append(str,strlist) => string_list 
          --------------------------------------
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),program, nr_of_found_components)
-	      => (string_list,res)
+	     count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),
+                                            program, 
+                                            nr_of_found_components,
+                                            comp_name_list)
+	      => (string_list,res,comp_name_list2)
            
   rule	(* For protected declarations *)
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program, nr_of_found_components) => (str,c1) &
-	 count_and_generate_initializations_in_elts(elt,program,nr_of_found_components) => (strlist,c2) &
-	 int_add(c1,c2) => res &
+	     count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),
+                                            program, 
+                                            nr_of_found_components,
+                                            comp_name_list) => (str,c1,comp_name_list1) &
+	     count_and_generate_initializations_in_elts(elt,program,nr_of_found_components,comp_name_list1) => (strlist,c2,comp_name_list2) &
+	     int_add(c1,c2) => res &
          list_append(str,strlist) => string_list
-	 -------------------------------------
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)),program, nr_of_found_components)
-	  => (string_list,res)
+	     -------------------------------------
+	     count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)),
+                                            program, 
+                                            nr_of_found_components,
+                                            comp_name_list)
+	      => (string_list,res,comp_name_list2)
 
   rule	(* Non-public, non protected, -> Throw it away*)
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),program, nr_of_found_components) => (str,c1)
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(lst,cmt)),
+                                        program,
+                                        nr_of_found_components,
+                                        comp_name_list) => (str,c1,comp_name_list1)
 	 -----------------------------------------------------
-	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(_::lst,cmt)),program, nr_of_found_components) => (str,c1)
+	 count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS(_::lst,cmt)),
+                                        program,
+                                        nr_of_found_components,
+                                        comp_name_list) => (str,c1,comp_name_list1)
 	     
-  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS([],_)),_,_) => ([" "],0)
-  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.DERIVED(_,_,_,_,_)),_,_) => ([" "],-1)
+  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.PARTS([],_)),_,_,comp_name_list) => ([""],0,comp_name_list)
+  axiom count_and_generate_initializations(Absyn.CLASS(a,b,c,d,Absyn.R_MODEL,Absyn.DERIVED(_,_,_,_,_)),_,_,comp_name_list) => ([""],-1,comp_name_list)
          
   rule print "count_and_generate_initializations failed\n"
          --------------------------------------
-         count_and_generate_initializations(_,_,_) => fail
+         count_and_generate_initializations(_,_,_,_) => fail
          
  end
 
- relation count_and_generate_initializations_in_elts: (Absyn.ElementItem list,Absyn.Program,int) => (string list, int) =         
+ relation count_and_generate_initializations_in_elts: (Absyn.ElementItem list,Absyn.Program,int, string list) => (string list, int,string list) =         
 
-  rule	Interactive.is_primitive(Absyn.CREF_IDENT(ident,[]),program) => false & 
-         generate_components_initializations(ident,componentItemList,index) => (comp_str_list,nrOfComponents) &
-	 int_add(index,nrOfComponents) => inc_index1 &
-
- 	 int_add(index,1) => inc_index2 &
-	 count_and_generate_initializations_in_elts(lst,program,inc_index2) => (strlist,c1) &
-	 list_append(comp_str_list,strlist) => str_list_res 
-	 --------------------------
-	 count_and_generate_initializations_in_elts(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,
-            Absyn.COMPONENTS(_,Absyn.IDENT(ident),componentItemList),_,_,NONE))::lst,program,index) => (str_list_res,c1)
-	     
-  rule	count_and_generate_initializations_in_elts(lst,program,index) => (strlist,res)
-	 ----------------------------
-	 count_and_generate_initializations_in_elts(_::lst,program,index) => (strlist,res)
+  rule  Interactive.is_primitive(Absyn.CREF_IDENT(ident,[]),program) => false & 
+         generate_components_initializations(ident,componentItemList,index,[]) => (comp_str_list,nrOfComponents,comp_name_list1) &
+	     int_add(index,nrOfComponents) => inc_index1 &
          
-  axiom	count_and_generate_initializations_in_elts([],_,index) => ([""],index)
-
+ 	     int_add(index,1) => inc_index2 &
+	     count_and_generate_initializations_in_elts(lst,program,inc_index2,comp_name_list) => (strlist,c1,comp_name_list2) &
+	     list_append(comp_str_list,strlist) => str_list_res &
+         list_append(comp_name_list1,comp_name_list2) => comp_name_res 
+	     --------------------------
+	     count_and_generate_initializations_in_elts(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,
+                                                                                    Absyn.COMPONENTS(_,
+                                                                                                     Absyn.IDENT(ident),
+                                                                                                     componentItemList)
+                                                                                    ,_,_,NONE))::lst,
+                                                    program,
+                                                    index,
+                                                    comp_name_list) => (str_list_res,c1,comp_name_res)
+	     
+  rule  count_and_generate_initializations_in_elts(lst,program,index,comp_name_list) => (strlist,res,comp_name_res)
+	     ----------------------------
+	     count_and_generate_initializations_in_elts(_::lst,program,index,comp_name_list) => (strlist,res,comp_name_res)
+         
+  axiom	count_and_generate_initializations_in_elts([],_,index,comp_name_res) => ([""],index,comp_name_res)
+         
   rule	print "count_and_generate_initializations_in_elts failed\n"
 	     ----------------------------
-	     count_and_generate_initializations_in_elts(_,_,_) => fail
+	     count_and_generate_initializations_in_elts(_,_,_,_) => fail
 
 end
 
-relation generate_components_initializations: (Absyn.Ident, Absyn.ComponentItem list, int) => (string list, int) =
+relation generate_components_initializations: (Absyn.Ident, Absyn.ComponentItem list, int,string list) => (string list, int, string list) =
   
   rule  int_string(index) => current_index_string &
         int_add(index,1) => inc_index &	
-        generate_components_initializations(componentType,rest,inc_index) => (res,ret_index) &
+        generate_components_initializations(componentType,
+                                            rest,
+                                            inc_index,
+                                            comp_name_list) => (res,ret_index,comp_name_res) &
         Util.string_append_list(["  SetSubModel(",current_index_string,
                                  ", new C",componentType,"(L\"",componentIdent,"\"));\n"]) => gen_string
         -------------------------------------
         generate_components_initializations(componentType,
                                             Absyn.COMPONENTITEM(Absyn.COMPONENT(componentIdent,_,_),_)::rest, 
-                                            index) => (gen_string::res, ret_index)
+                                            index,
+                                            comp_name_list) => (gen_string::res, 
+                                                                ret_index,
+                                                                componentIdent::comp_name_res)
 
-  axiom	generate_components_initializations(componentType,[],index) => ([""],index)
+  axiom	generate_components_initializations(componentType,[],index,comp_name_list) => ([""],index,comp_name_list)
 
 end
 
@@ -513,7 +701,7 @@ end
          & Debug.fcall("bltdump", DAELow.dump,d'')
          & Debug.fcall("bltdump", DAELow.dump_matching, v1)
          & DAELow.strong_components(m,mT,v1,v2) => (comps) 
-         & DAELow.dump_components(comps) 
+         (*& DAELow.dump_components(comps) *)
          -------------------------------------------------------------
          generate_blt(d') => (d'',comps,v1,v2)
          
@@ -539,10 +727,11 @@ relation generate_state_partition:(int list list,DAELow.DAELow,int vector,int ve
         has_state_var(0,reversed_blt,dae,ass1,ass2) => state_component_number &
         list_length(blt) => nr_of_components &
         int_sub(nr_of_components,state_component_number) => component_offset & 
-        print "(non-reversed): " &
+        
+        (*print "(non-reversed): " &
         int_string(component_offset) => component_offset_string &
         print component_offset_string &
-        print "\n" &
+        print "\n" &*)
         
         Util.list_split(blt,component_offset) => (blt_states,blt_no_states) 
         -----------------------------------------
@@ -562,7 +751,7 @@ end
  ** which contais a state variable.
  **) 
 relation has_state_var:(int, int list list, DAELow.DAELow,int vector, int vector) => int =
-   
+        
   rule  (*if this component contains a statevar, return index *)
         check_component_for_statevars(0,element,dae,ass1,ass2) => true
         -----------------------------------------
@@ -607,25 +796,25 @@ relation check_component_for_statevars:(int, int list, DAELow.DAELow,int vector,
         (* Variable indexing starts from 1 but lists start from 0.
          Thus decrease index by one*) 
         int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
-	vector_nth(ass2,adjusted_variable_index_to_check) => v &
-	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
-	not is_non_state(kind)
+	    vector_nth(ass2,adjusted_variable_index_to_check) => v &
+	    int_sub(v,1) => v' &
+	    vector_nth(var_list,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	    not is_non_state(kind)
         -------------------------------------------------------------
-        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),_,_,_),ass1,ass2) => true
+        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(var_list,_),_,_,_),ass1,ass2) => true
 
   rule  (* If this variable is nt state variable, try the next one *)
         list_nth(component,i) => variable_index_to_check &
         (* Variable indexing starts from 1 but lists start from 0.
          Thus decrease index by one*) 
         int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
-	vector_nth(ass2,adjusted_variable_index_to_check) => v &
-	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	    vector_nth(ass2,adjusted_variable_index_to_check) => v &
+	    int_sub(v,1) => v' &
+	    vector_nth(var_list,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
         int_add(i,1) => next_i &
         check_component_for_statevars(next_i,component,dae,ass1,ass2) => result
         -------------------------------------------------------------
-        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),_,_,_),ass1,ass2) 
+        check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(var_list,_),_,_,_),ass1,ass2) 
           => result
 
   rule  print "check_component_for_statevars failed" 
@@ -639,12 +828,12 @@ end
  **
  **)    
 relation translate_dae: DAELow.DAELow => DAELow.DAELow =
-
-  rule  vector_list(varvec) => var_list &
-	extract_der_from_var_list(var_list) => (from_list,to_list) &
+        
+  rule  vector_list(var_vec) => var_list &
+        extract_der_from_var_list(var_list) => (from_list,to_list) &
         replace_exp_in_eqns(eqn_list,from_list,to_list) => res_eqns
         -------------------------------------------------------------
-        translate_dae(dae as DAELow.DAELOW(vars as DAELow.VARIABLES(varvec,_),a,eqn_list,b)) 
+        translate_dae(dae as DAELow.DAELOW(vars as DAELow.VARIABLES(var_vec,_),a,eqn_list,b)) 
           => DAELow.DAELOW(vars,a,res_eqns,b)
 
 
@@ -659,11 +848,11 @@ end
 
 (** relation extract_der_from_var_list 
  ** This relation generates to Exp.Exp list of the form:
- ** [Exp.CALL("der,Exp.Exp("x")...)] and [Exp.cref("x")]
- **
+ ** [Exp.CALL("der",Exp.Exp("x")...)] and [Exp.cref("x")]
+ ** 
  **)
 relation extract_der_from_var_list: DAELow.Var list => (Exp.Exp list, Exp.Exp list) =
-  
+         
   rule  
         -------------------------------------------------------------
         extract_der_from_var_list([]) => ([],[])
@@ -677,7 +866,8 @@ relation extract_der_from_var_list: DAELow.Var list => (Exp.Exp list, Exp.Exp li
 
   rule  (*print "extract_der_from_var_list Is state" &*)
 
-        Exp.print_component_ref_str(cr) => cr_str &
+        (*Exp.print_component_ref_str(cr) => cr_str &*)
+        cref_modelica_str(cr) => cr_str &
 
 	    let old_varexp = Exp.CREF(cr,Exp.REAL) &
 
@@ -740,39 +930,85 @@ relation generate_compute_output:(string,
                                   int vector, 
                                   int vector, 
                                   int list list) => string =
-
+                                                 
   rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
-        print("----------- START building block OUTPUT---------------\n") &
         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-        Util.list_map(seqn,build_simple_equation) => simple_eqn_list &
-        Util.string_append_list(simple_eqn_list) => coutput1 &
+        build_simple_equation(knvars,seqn) => simple_eqn_str &
         Util.string_append_list(eqn_str_list) => coutput2 &
-        Util.string_append_list([coutput1,coutput2]) => coutput &
-        print("----------- END building block OUTPUT---------------\n") 
-        
+        Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
         -------------------------------------------------------------
         generate_compute_output(cname,
-                                dae as DAELow.DAELOW(vars,knvars,eqn,seqn),
+                                dae as DAELow.DAELOW(DAELow.VARIABLES(vars,_),DAELow.VARIABLES(knvars,_),eqn,seqn),
                                 p,ass1,ass2,blocks) => coutput
         
 end
 
 
-relation build_simple_equation:(DAELow.Equation) => string =
+relation build_simple_equation:(DAELow.Var vector, DAELow.Equation list) => string =
         
-  rule  Exp.print_exp_str(exp1) => exp1_str & 
-        Exp.print_exp_str(exp2) => exp2_str & 
-        Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n"]) => eqn_str 
+  
+        
+  rule  
+        --------------------------------
+	    build_simple_equation(knvars,[]) => ""
+
+  rule  build_simple_equation(knvars,rest) => rest_res &
+        print_exp_cpp_str(exp1) => exp1_str & 
+        print_exp_cpp_str(exp2) => exp2_str &
+        vector_list(knvars) => knvarslist &
+        is_var_known(knvarslist,cr1) => true &
+        is_var_known(knvarslist,cr2) => true &
+        Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n",rest_res]) => eqn_str 
         (*& print "\n build_simple_equation: " & print(eqn_str) *)
         --------------------------------
-	    build_simple_equation(DAELow.EQUATION(exp1,exp2)) => eqn_str
+	    build_simple_equation(knvars,DAELow.EQUATION(exp1 as Exp.CREF(cr1,_),exp2 as Exp.CREF(cr2,_))::rest) => eqn_str
 
+  rule  build_simple_equation(knvars,rest) => rest_res &
+        print_exp_cpp_str(exp1) => exp1_str & 
+        print_exp_cpp_str(exp2) => exp2_str &
+        vector_list(knvars) => knvarslist &
+        is_var_known(knvarslist,cr1) => true &
+        Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n",rest_res]) => eqn_str 
+        (*& print "\n build_simple_equation: " & print(eqn_str) *)
+        --------------------------------
+	    build_simple_equation(knvars,DAELow.EQUATION(exp1 as Exp.CREF(cr1,_),exp2 as Exp.CREF(cr2,_))::rest) => eqn_str
+
+  rule  build_simple_equation(knvars,rest) => rest_res &
+        print_exp_cpp_str(exp1) => exp1_str & 
+        print_exp_cpp_str(exp2) => exp2_str &
+        vector_list(knvars) => knvarslist &
+        is_var_known(knvarslist,cr2) => true &
+        Util.string_append_list(["  ",exp2_str, " = ", exp1_str, ";\n",rest_res]) => eqn_str 
+        (*& print "\n build_simple_equation: " & print(eqn_str) *)
+        --------------------------------
+	    build_simple_equation(knvars,DAELow.EQUATION(exp1 as Exp.CREF(cr1,_),exp2 as Exp.CREF(cr2,_))::rest) => eqn_str
         
   rule  
         -------------------------------------------------------------
-        build_simple_equation(DAELow.EQUATION(exp1,exp2)) => "// generating simple equation failed"
+        build_simple_equation(_,_) => "// generating simple equation failed"
 
 end
+
+
+
+relation is_var_known : (DAELow.Var list, Exp.ComponentRef) => bool =
+  
+  rule  
+        --------------------------------
+        is_var_known([],var_name) => false
+
+  rule  Exp.cref_equal(cr,var_name) => true
+        -------------------------------
+        is_var_known((variable as DAELow.VAR(cr,_,_,_,_,_,_,_, indx,origname,_))::rest,
+                     var_name) => true
+
+  rule  is_var_known(rest,var_name) => res
+        -------------------------------
+        is_var_known((variable as DAELow.VAR(cr,_,_,_,_,_,_,_,indx,origname,_))::rest,
+                     var_name) => res
+end 
+
+
 (** relation: generate_compute_initial
  ** This relation generates the code for the calculation of the initial conditions.
  **)
@@ -788,7 +1024,7 @@ end
  ** This relation generates the code for the calculation of the state variables.
  **)
 relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program,int vector, int vector, int list list) => string =
-
+                                                 
   rule  (*Util.string_append_list(["/* state code here*/\n"]) => cstate &*)
         (*print("----------- START building block STATE---------------\n") &*)
         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
@@ -806,13 +1042,13 @@ end
  ** This can be expressed in Modelica using when statements:
  ** when terminal() then
  **   x:=do_calc(x,y);
- ** ed when
+ ** end when
  *)
 relation generate_compute_terminal:(string,DAELow.DAELow,Absyn.Program,int vector, int vector, int list list) => string =
         
   rule Util.string_append_list(["/* terminal code here*/\n"]) => cterm
-	-------------------------------------------------------------
-	generate_compute_terminal(cname,dae,p,_,_,_) => cterm
+     -------------------------------------------------------------
+     generate_compute_terminal(cname,dae,p,_,_,_) => cterm
 end
 
 
@@ -822,21 +1058,21 @@ end
  ** It is NOT done for system of equations!
  **)
 relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => string list =
-	 
+
   axiom	build_blocks(_,_,_,[]) => []
-	
+
         (* rule	(* For system of equations *)*)
-        (* build_system(dae,ass1,ass2,block) &
-	 build_blocks(dae,ass1,ass2,blocks)
-	 -------------------------------------
-	 build_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)*)
-	
+         (* build_system(dae,ass1,ass2,block) &
+	      build_blocks(dae,ass1,ass2,blocks)
+	      -------------------------------------
+	      build_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)*)
+	     
   rule	(* for single equations *)
 	build_equation(dae,ass1,ass2,eqn) => eqn_str &
 	build_blocks(dae,ass1,ass2,blocks) => res
 	-------------------------------------
 	build_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
-	
+
   rule	print "-build_blocks failed\n" 
 	-----------------
 	build_blocks(_,_,_,_) => fail
@@ -849,7 +1085,7 @@ end
  ** used both in build_equation and generate_compute_state
  **)
 relation is_non_state: DAELow.VarKind => () =
-
+                                                 
   axiom	is_non_state (DAELow.VARIABLE) => ()
   axiom	is_non_state (DAELow.DUMMY_DER) => ()
   axiom	is_non_state (DAELow.DUMMY_STATE) => ()
@@ -862,83 +1098,82 @@ end
  ** It is used both for state variables and regular variables
  **)
 relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
-	 
+	
   rule  (* Solving for non-states *)
         int_sub(e,1) => e' &
-	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
-	vector_nth(ass2,e') => v &
-	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
-	is_non_state kind &
-	print "Solving for non-states\n" &
-	
-	let varexp = Exp.CREF(cr,Exp.REAL) &
-	Exp.solve(e1,e2,varexp) => expr &
-	
+	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	    vector_nth(ass2,e') => v &
+	    int_sub(v,1) => v' &
+	    vector_nth(vars,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	    is_non_state kind &
+	    (*print "Solving for non-states\n" &*)
+
+	    let varexp = Exp.CREF(cr,Exp.REAL) &
+	    Exp.solve(e1,e2,varexp) => expr &
+	    
         (* start debug output *)
-        Exp.print_exp_str e1 => e1s &
-	Exp.print_exp_str e2 => e2s &
+        (*Exp.print_exp_str e1 => e1s &
+	    Exp.print_exp_str e2 => e2s &
         int_string(e) => eqn_nr &
         int_string(v) => var_nr &
-	print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
-	print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
-	print s & print "\ngiving:\n " &
-	Exp.print_exp_str expr => s2 & print s2 & print "\n" &
+	    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
+	    print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
+	    print s & print "\ngiving:\n " &
+        Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
         
         Exp.simplify(expr) => simplify_exp &
-	build_assignment(cr,simplify_exp,origname)  => assigment_string
-	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),_,eqns,_),ass1,ass2,e) => assigment_string	
+	    build_assignment(cr,simplify_exp,origname)  => assigment_string
+	    --------------------------------
+	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_),ass1,ass2,e) => assigment_string	
         
-	
-  rule	(* Solving the state s means solving for der(s) *)
-	int_sub(e,1) => e' &
-	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
-	vector_nth(ass2,e') => v &
-	(* v == variable no solved in this equation *)
-	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_) &
-	print "solving for state\n" &
-	int_string(indx) => indxs &
-	
-        Exp.print_component_ref_str(cr) => cr_str &
-	
-	
- 	Util.string_append_list(["_D_",cr_str]) => new_id &
-	let new_cr = Exp.CREF_IDENT(new_id,[]) &
-	let new_varexp = Exp.CREF(new_cr,Exp.REAL) &
-	
-	
-	Exp.solve(e1,e2,new_varexp) => expr &
+
+  rule  (* Solving the state s means solving for der(s) *)
+	    int_sub(e,1) => e' &
+	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	    vector_nth(ass2,e') => v &
+	    (* v == variable no solved in this equation *)
+	    int_sub(v,1) => v' &
+	    vector_nth(vars,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+
+	    (*print "solving for state\n" &*)
+        cref_modelica_str(cr) => cr_str &
+
+
+ 	    Util.string_append_list(["_D_",cr_str]) => new_id &
+	    let new_cr = Exp.CREF_IDENT(new_id,[]) &
+	    let new_varexp = Exp.CREF(new_cr,Exp.REAL) &
+
+
+	    Exp.solve(e1,e2,new_varexp) => expr &
         
-        Exp.print_exp_str e1 => new_e1s &
-	Exp.print_exp_str e2 => new_e2s &
+        (*Exp.print_exp_str e1 => new_e1s &
+	    Exp.print_exp_str e2 => new_e2s &
         int_string(e) => eqn_nr &
         int_string(v) => var_nr &
-	print "STATE Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print new_e1s & print " = " & print new_e2s &
-	print " solved for " & Exp.print_exp_str new_varexp => s &
-	print s & print " giving " &
-	Exp.print_exp_str expr => s2 & print s2 & print "\n" & 
-	
+	    print "STATE Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print new_e1s & print " = " & print new_e2s &
+	    print " solved for " & Exp.print_exp_str new_varexp => s &
+	    print s & print " giving " &
+	    Exp.print_exp_str expr => s2 & print s2 & print "\n" & *)
+
         Exp.simplify(expr) => simplify_exp &
-	build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
-	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),_,eqns,_),ass1,ass2,e) => assigment_string 
-	
+	    build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
+	    --------------------------------
+	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_),ass1,ass2,e) => assigment_string 
+
   rule	int_sub(e,1) => e' &
-	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
-	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
-	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
-	let varexp = Exp.CREF(cr,Exp.REAL) &
-	not Exp.solve(e1,e2,varexp) => _ &
-	print "nonlinear equation not implemented yet\n" 
-	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),_,eqns,_),ass1,ass2,e) => fail
+	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	    vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
+	    int_sub(v,1) => v' &
+	    vector_nth(vars,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	    let varexp = Exp.CREF(cr,Exp.REAL) &
+	    not Exp.solve(e1,e2,varexp) => _ &
+	    print "nonlinear equation not implemented yet\n" 
+	    --------------------------------
+	    build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_),ass1,ass2,e) => fail
         
-  rule	print "-build_equation failed\n" 
-	--------------------------------
-	build_equation(_,_,_,_) => "//build_equation failed\n" 
+  rule  print "-build_equation failed\n" 
+	    --------------------------------
+	    build_equation(_,_,_,_) => "//build_equation failed\n" 
 end
 
 (** relation build_assignment 
@@ -951,14 +1186,13 @@ relation build_assignment: (Exp.ComponentRef, (* varname *)
 			                string) (* orig. name*) 
 	      => string =
    
-  rule  Exp.print_component_ref_str(cr) => cr_str & 
+  rule  cref_modelica_str(cr) => cr_str & 
         print_exp_cpp_str(exp) => exp_str & 
         (*Exp.print_exp_str(exp) => exp_str & *)
-        Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str &
-        print "\n build_assigment: " & print(eqn_str) & print("-------------------------\n") 
+        Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str 
         --------------------------------
 	    build_assignment(cr,exp,origname) => eqn_str
-
+        
   rule	print "-build_assignment failed\n" 
 	    ------------------------
 	    build_assignment(cr,exp,origname) => fail
@@ -968,248 +1202,262 @@ end
 
 
 
-(** relation: print_exp_str
+(** relation: print_exp_cpp_str
  **
  ** This relation prints a complete expression.
  **)
 
 relation print_exp_cpp_str : Exp.Exp => string =
-
-  rule	print_exp2_str (e,0) => s
-	--------------------
-	print_exp_cpp_str e => s
-
+        
+  rule  print_exp2_str (e,0) => s
+	    --------------------
+	    print_exp_cpp_str e => s
+        
 end
 
 
 relation print_exp2_str : (Exp.Exp,int) => string =
-	
-  rule	string_append("en","d") => estr
-	-------------
-	print_exp2_str(Exp.END,_) => estr
-  
-  rule	int_string(x) => s
-	----------------------------
-	print_exp2_str(Exp.ICONST(x),_) => s
-	
-  rule	real_string(x) => s
-	-----------------------------
-	print_exp2_str(Exp.RCONST(x),_) => s
-	
-  rule	string_append ("\"", s) => s' &
-	string_append (s', "\"") => s''
-	---------------------------------
-	print_exp2_str(Exp.SCONST(s),_) => s''
 
-  axiom	print_exp2_str(Exp.BCONST(false),_) => "false"
+  rule  print "# equation contain undefined symbols"
+        --------------------------
+        print_exp2_str(Exp.END,_) => fail
+        
+        
+  rule  int_string(x) => s
+	    ----------------------------
+        print_exp2_str(Exp.ICONST(x),_) => s
+        
+  rule  real_string(x) => s
+	    -----------------------------
+        print_exp2_str(Exp.RCONST(x),_) => s
+
+  rule  string_append ("\"", s) => s' &
+	    string_append (s', "\"") => s''
+        ---------------------------------
+        print_exp2_str(Exp.SCONST(s),_) => s''
+        
+  axiom print_exp2_str(Exp.BCONST(false),_) => "false"
 
   axiom	print_exp2_str(Exp.BCONST(true),_) => "true"
 
-  rule	Exp.print_component_ref_str (c) => s
-	--------------------------------
-	print_exp2_str(Exp.CREF(c,_),_) => s
+  rule  cref_modelica_str(c) => res 
+        --------------------------------
+        print_exp2_str(Exp.CREF(c,_),_) => res
+
+  rule  Exp.binop_symbol(op) => sym &
+ 	    Exp.binop_priority(op) => pri2' &
+        int_add(pri2',1) => pri2 & (* binary minus have higher priority than itself *)
+        Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+        print_exp2_str (e1,pri3) => s2 & 
+        print_exp2_str (e2,pri2) => s3 &
+        Exp.print_rightpar_str (pri1,pri2) => s4 &
+        string_append (s1, s2) => s &
+	    string_append (s, sym) => s' &
+	    string_append (s', s3) => s'' &
+	    string_append (s'', s4) => s'''
+	    ------------------------
+	    print_exp2_str (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22)),pri1) => s'''
 
   rule	Exp.binop_symbol(op) => sym &
- 	Exp.binop_priority op => pri2' &
-	int_add (pri2',1) => pri2 & (* binary minus have higher priority than itself *)
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
-	print_exp2_str (e1,pri3) => s2 & 
-	print_exp2_str (e2,pri2) => s3 &
-	Exp.print_rightpar_str (pri1,pri2) => s4 &
-	string_append (s1, s2) => s &
-	string_append (s, sym) => s' &
-	string_append (s', s3) => s'' &
-	string_append (s'', s4) => s'''
-	------------------------
-	print_exp2_str (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22)),pri1) => s'''
-
-  rule	Exp.binop_symbol(op) => sym &
- 	Exp.binop_priority op => pri2 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
-	print_exp2_str (e1,pri3) => s2 & 
-	print_exp2_str (e2,pri2) => s3 &
-	Exp.print_rightpar_str (pri1,pri2) => s4 &
-	string_append (s1, s2) => s &
-	string_append (s, sym) => s' &
-	string_append (s', s3) => s'' &
-	string_append (s'', s4) => s'''
-	------------------------
-	print_exp2_str (Exp.BINARY(e1, op, e2),pri1) => s'''
+ 	    Exp.binop_priority op => pri2 &
+	    Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	    print_exp2_str (e1,pri3) => s2 & 
+	    print_exp2_str (e2,pri2) => s3 &
+	    Exp.print_rightpar_str (pri1,pri2) => s4 &
+	    string_append (s1, s2) => s &
+	    string_append (s, sym) => s' &
+	    string_append (s', s3) => s'' &
+	    string_append (s'', s4) => s'''
+	    ------------------------
+	    print_exp2_str (Exp.BINARY(e1, op, e2),pri1) => s'''
 
   rule	Exp.unaryop_symbol(op) => sym &
-	Exp.unaryop_priority(op) => pri2 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
-	print_exp2_str (e,pri3) => s2 &
-	Exp.print_rightpar_str (pri1,pri2) => s3 &
-	string_append (s1, sym) => s &
-	string_append (s, s2) => s' &
-	string_append (s', s3) => s''
-	----------------------------
-	print_exp2_str(Exp.UNARY(op, e),pri1) => s''
+	    Exp.unaryop_priority(op) => pri2 &
+	    Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	    print_exp2_str (e,pri3) => s2 &
+	    Exp.print_rightpar_str (pri1,pri2) => s3 &
+	    string_append (s1, sym) => s &
+	    string_append (s, s2) => s' &
+	    string_append (s', s3) => s''
+	    ----------------------------
+	    print_exp2_str(Exp.UNARY(op, e),pri1) => s''
 
   rule	Exp.lbinop_symbol(op) => sym &
-	Exp.lbinop_priority(op) => pri2 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
-	print_exp2_str (e1,pri3) => s2 & 
-	print_exp2_str (e2,pri2) => s3 &
-	Exp.print_rightpar_str (pri1,pri2) => s4 &
-	string_append (s1, s2) => s &
-	string_append (s, sym) => s' &
-	string_append (s', s3) => s'' &
-	string_append (s'', s4) => s'''
-	----------------------------------------------------------------
-	print_exp2_str(Exp.LBINARY(e1, op, e2),pri1) => s'''
+	    Exp.lbinop_priority(op) => pri2 &
+	    Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	    print_exp2_str (e1,pri3) => s2 & 
+	    print_exp2_str (e2,pri2) => s3 &
+	    Exp.print_rightpar_str (pri1,pri2) => s4 &
+	    string_append (s1, s2) => s &
+	    string_append (s, sym) => s' &
+	    string_append (s', s3) => s'' &
+	    string_append (s'', s4) => s'''
+	    ----------------------------------------------------------------
+	    print_exp2_str(Exp.LBINARY(e1, op, e2),pri1) => s'''
 
   rule	Exp.lunaryop_symbol(op) => sym &
- 	Exp.lunaryop_priority(op) => pri2 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
- 	print_exp2_str (e,pri3) => s2 &
-	Exp.print_rightpar_str (pri1,pri2) => s3 &
-	string_append (s1, sym) => s &
-	string_append (s, s2) => s' &
-	string_append (s', s3) => s''
-	---------------------------------------------------
-	print_exp2_str(Exp.LUNARY(op, e),pri1) => s''
+ 	    Exp.lunaryop_priority(op) => pri2 &
+	    Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	    print_exp2_str (e,pri3) => s2 &
+	    Exp.print_rightpar_str (pri1,pri2) => s3 &
+	    string_append (s1, sym) => s &
+	    string_append (s, s2) => s' &
+	    string_append (s', s3) => s''
+	    ---------------------------------------------------
+	    print_exp2_str(Exp.LUNARY(op, e),pri1) => s''
 
   rule	Exp.relop_symbol(op) => sym &
- 	Exp.relop_priority(op) => pri2 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
- 	print_exp2_str(e1,pri3) => s2 & 
-	print_exp2_str(e2,pri2) => s3 &
-	Exp.print_rightpar_str (pri1,pri2) => s4 &
-	string_append (s1, s2) => s &
-	string_append (s, sym) => s' &
-	string_append (s', s3) => s'' &
-	string_append (s'', s4) => s'''
-	-----------------------------------------------------------------
-	print_exp2_str(Exp.RELATION(e1, op, e2),pri1) => s'''
+ 	    Exp.relop_priority(op) => pri2 &
+	    Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+ 	    print_exp2_str(e1,pri3) => s2 & 
+	    print_exp2_str(e2,pri2) => s3 &
+	    Exp.print_rightpar_str (pri1,pri2) => s4 &
+	    string_append (s1, s2) => s &
+	    string_append (s, sym) => s' &
+	    string_append (s', s3) => s'' &
+	    string_append (s'', s4) => s'''
+	    -----------------------------------------------------------------
+	    print_exp2_str(Exp.RELATION(e1, op, e2),pri1) => s'''
 
   rule	print_exp2_str(c,0) => ifstr &
-	print_exp2_str(t,0) => thenstr &
-	print_exp2_str(f,0) => elsestr &
-	string_append ("( ", ifstr) => s &
-	string_append (s, " ) ? ( ") => s' &
-	string_append (s', thenstr) => s'' &
-	string_append (s'', " ) : ( ") => s''' &
-	string_append (s''', elsestr) => s'''' &
-	string_append (s'''', " ) ") => slast 
-	----------------------------
-	print_exp2_str(Exp.IFEXP(c,t,f),_) => slast
+	    print_exp2_str(t,0) => thenstr &
+	    print_exp2_str(f,0) => elsestr &
+	    string_append ("( ", ifstr) => s &
+	    string_append (s, " ) ? ( ") => s' &
+	    string_append (s', thenstr) => s'' &
+	    string_append (s'', " ) : ( ") => s''' &
+	    string_append (s''', elsestr) => s'''' &
+	    string_append (s'''', " ) ") => slast 
+	    ----------------------------
+	    print_exp2_str(Exp.IFEXP(c,t,f),_) => slast
 
   rule	Absyn.path_string(fcn) => fs &
-	Exp.print_list_str(args,print_exp_cpp_str,",") => argstr &
-	string_append(fs, "(") => s &
-	string_append(s, argstr) => s' &
-	string_append(s', ")") => s''
-	---------------------------------------------
-	print_exp2_str(Exp.CALL(fcn, args,_,_),_) => s''
+	    Exp.print_list_str(args,print_exp_cpp_str,",") => argstr &
+	    string_append(fs, "(") => s &
+	    string_append(s, argstr) => s' &
+	    string_append(s', ")") => s''
+	    ---------------------------------------------
+	    print_exp2_str(Exp.CALL(fcn, args,_,_),_) => s''
 
   rule	Exp.print_list_str(es, print_exp_cpp_str, ",") => s &
-	string_append ("{",s) => s' &
-	string_append (s',"}") => s''
-	-----------------------------
-	print_exp2_str (Exp.ARRAY(_,_,es),_) => s''
+	    string_append ("{",s) => s' &
+	    string_append (s',"}") => s''
+	    -----------------------------
+	    print_exp2_str (Exp.ARRAY(_,_,es),_) => s''
 
   rule	Exp.print_list_str(es, print_exp_cpp_str, ",") => s &
-	string_append ("(",s) => s' &
-	string_append (s',")") => s''
-	-----------------------------
-	print_exp2_str (Exp.TUPLE(es),_) => s''
-	
+	    string_append ("(",s) => s' &
+	    string_append (s',")") => s''
+	    -----------------------------
+	    print_exp2_str (Exp.TUPLE(es),_) => s''
+	    
   rule	Exp.print_list_str(es, Exp.print_row_str, "},{") => s &
-	string_append ("{{",s) => s' &
-	string_append (s',"}}") => s''
-	-----------------------------
-	print_exp2_str (Exp.MATRIX(_,_,es),_) => s''
+	    string_append ("{{",s) => s' &
+	    string_append (s',"}}") => s''
+	    -----------------------------
+	    print_exp2_str (Exp.MATRIX(_,_,es),_) => s''
 
   rule	let pri2 = 41 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
-	print_exp2_str (start,pri3) => s2 &
-	print_exp2_str (stop,pri3) => s3 &
- 	Exp.print_rightpar_str (pri1,pri2) => s4 &
-	string_append (s1, s2) => s &
-	string_append (s, ":") => s' &
-	string_append (s', s3) => s'' &
-	string_append (s'', s4) => s'''
-	-------------------------------------------------------------
-	print_exp2_str (Exp.RANGE(_,start,NONE,stop),pri1) => s'''
+	    Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	    print_exp2_str (start,pri3) => s2 &
+	    print_exp2_str (stop,pri3) => s3 &
+ 	    Exp.print_rightpar_str (pri1,pri2) => s4 &
+	    string_append (s1, s2) => s &
+	    string_append (s, ":") => s' &
+	    string_append (s', s3) => s'' &
+	    string_append (s'', s4) => s'''
+	    -------------------------------------------------------------
+	    print_exp2_str (Exp.RANGE(_,start,NONE,stop),pri1) => s'''
 
   rule	let pri2 = 41 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1,pri3) &
-	print_exp2_str (start,pri3) => s2 &
-	print_exp2_str (step,pri3) => s3 &
- 	print_exp2_str (stop,pri3) => s4 &
- 	Exp.print_rightpar_str (pri1,pri2) => s5 &
-	string_append (s1, s2) => s &
-	string_append (s, ":") => s' &
-	string_append (s', s3) => s'' &
-	string_append (s'', ":") => s''' &
-	string_append (s''', s4) => s'''' &
-	string_append (s'''', s5) => s'''''
-	-------------------------------------
-	print_exp2_str (Exp.RANGE(_,start,SOME(step),stop),pri1) => s'''''
+	    Exp.print_leftpar_str (pri1,pri2) => (s1,pri3) &
+	    print_exp2_str (start,pri3) => s2 &
+	    print_exp2_str (step,pri3) => s3 &
+ 	    print_exp2_str (stop,pri3) => s4 &
+ 	    Exp.print_rightpar_str (pri1,pri2) => s5 &
+	    string_append (s1, s2) => s &
+	    string_append (s, ":") => s' &
+	    string_append (s', s3) => s'' &
+	    string_append (s'', ":") => s''' &
+	    string_append (s''', s4) => s'''' &
+	    string_append (s'''', s5) => s'''''
+	    -------------------------------------
+	    print_exp2_str (Exp.RANGE(_,start,SOME(step),stop),pri1) => s'''''
 
   rule	RTOpts.modelica_output => false &
-	int_real ival => rval &
-	real_string rval => res
-	---------------------------------------
-	print_exp2_str (Exp.CAST(REAL,Exp.ICONST(ival)),_) => res
+	    int_real ival => rval &
+	    real_string rval => res
+	    ---------------------------------------
+	    print_exp2_str (Exp.CAST(REAL,Exp.ICONST(ival)),_) => res
 
   rule	RTOpts.modelica_output => false &
-	int_real ival => rval &
-	real_string rval => res &
-	string_append("-",res) => res2
-	---------------------------------------
-	print_exp2_str (Exp.CAST(REAL,Exp.UNARY(Exp.UMINUS(_),Exp.ICONST(ival))),_) => res2
+	    int_real ival => rval &
+	    real_string rval => res &
+	    string_append("-",res) => res2
+	    ---------------------------------------
+	    print_exp2_str (Exp.CAST(REAL,Exp.UNARY(Exp.UMINUS(_),Exp.ICONST(ival))),_) => res2
 
   rule	RTOpts.modelica_output => false &
-	print_exp_cpp_str e => s & 
-	string_append ("Real(", s) => s' &
-	string_append (s', ")") => s''
-	---------------------------------------
-	print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s''
+	    print_exp_cpp_str e => s & 
+	    string_append ("(float)(", s) => s' &
+	    string_append (s', ")") => s''
+	    ---------------------------------------
+	    print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s''
 
   rule	RTOpts.modelica_output => true &
-	print_exp_cpp_str e => s
-	---------------------------------------
-	print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s
+	    print_exp_cpp_str e => s
+	    ---------------------------------------
+	    print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s
 
   rule	let pri2 = 51 &
-	Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
-	print_exp2_str (e,pri3) => s2 &
- 	Exp.print_rightpar_str (pri1,pri2) => s3 &
- 	int_string i => s4 &
-	string_append (s1, s2) => s &
-	string_append (s, s3) => s' &
-	string_append (s', "[") => s'' &
-	string_append (s'', s4) => s''' &
-	string_append (s''', "]") => s''''
-	---------------------------------------
-	print_exp2_str (Exp.ASUB(e,i),pri1) => s''''
+	    Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	    print_exp2_str (e,pri3) => s2 &
+ 	    Exp.print_rightpar_str (pri1,pri2) => s3 &
+ 	    int_string i => s4 &
+	    string_append (s1, s2) => s &
+	    string_append (s, s3) => s' &
+	    string_append (s', "[") => s'' &
+	    string_append (s'', s4) => s''' &
+	    string_append (s''', "]") => s''''
+	    ---------------------------------------
+	    print_exp2_str (Exp.ASUB(e,i),pri1) => s''''
 
   rule	print_exp_cpp_str cr => crstr &
-	print_exp_cpp_str dim => dimstr &
-	Util.string_append_list(["size(",crstr,",",dimstr,")"]) => str
-	------------------------
-	print_exp2_str (Exp.SIZE(cr,SOME(dim)),_) => str
+	    print_exp_cpp_str dim => dimstr &
+	    Util.string_append_list(["size(",crstr,",",dimstr,")"]) => str
+	    ------------------------
+	    print_exp2_str (Exp.SIZE(cr,SOME(dim)),_) => str
 
   rule	print_exp_cpp_str cr => crstr &
-	Util.string_append_list(["size(",crstr,")"]) => str
-	------------------------
-	print_exp2_str (Exp.SIZE(cr,NONE),_) => str
+	    Util.string_append_list(["size(",crstr,")"]) => str
+	    ------------------------
+	    print_exp2_str (Exp.SIZE(cr,NONE),_) => str
 
 
   rule	Absyn.path_string fcn => fs &
-	print_exp_cpp_str exp => expstr &
-	print_exp_cpp_str iterexp => iterstr &
-	Util.string_append_list(["<reduction>",
-				 fs,"(",expstr," for ",
-				 id," in ",iterstr,")"]) => str
-	-------------------------------------------------------
-	print_exp2_str (Exp.REDUCTION(fcn,exp,id,iterexp),_) => str
+	    print_exp_cpp_str exp => expstr &
+	    print_exp_cpp_str iterexp => iterstr &
+	    Util.string_append_list(["<reduction>",
+				                 fs,"(",expstr," for ",
+				                 id," in ",iterstr,")"]) => str
+	    -------------------------------------------------------
+	    print_exp2_str (Exp.REDUCTION(fcn,exp,id,iterexp),_) => str
 
   axiom	print_exp2_str (_,_) => "#UNKNOWN EXPRESSION# ----eee "
 
 end
 
 
+
+relation cref_modelica_str : Exp.ComponentRef => string =
+  rule  Util.string_replace_char(s,#".",#"_") => res'
+        (* & Util.string_append_list(["_",res,"_"]) => res'*)
+        ------------------------------
+        cref_modelica_str(Exp.CREF_IDENT(s,_)) => res'
+        
+  rule  cref_modelica_str(n) => ns &
+	    string_append(s,"_") => s1 &
+	    string_append(s1,ns) => ss
+	    -------------------------------------
+	    cref_modelica_str(Exp.CREF_QUAL(s,_,n)) => ss
+end
