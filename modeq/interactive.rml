@@ -492,6 +492,11 @@ end
 (** relation: get_icon_annotation
  ** This relation takes a ComponentRef and a Program and returns a comma separated
  ** string of values for the icon annotation for the class named by the first argument. 	
+	FIXME:
+	Icon annotation is composed of several things:
+	1. Annotations in the class definition.
+	2. Annotations in base classes. This implies performing a partial instantiation removing inheritance and applying modifications there..
+	3. Annotations found in connectors (components with type connector)
  *)
 relation get_icon_annotation: (Absyn.ComponentRef, Absyn.Program) => string =
   rule	Absyn.cref_to_path(model) => modelpath &
