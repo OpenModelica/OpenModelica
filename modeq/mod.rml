@@ -24,7 +24,7 @@ module Mod:
   type Ident = string
 
   (** - Modification datatype *)
-  type EqMod = (Exp.Exp * Types.Type * bool)
+  type EqMod = (Exp.Exp * Static.Properties)
   datatype SubMod = NAMEMOD of Ident * Mod
 		  | IDXMOD of int list * Mod
   and Mod = MOD of bool * (SubMod list) * EqMod option
@@ -80,9 +80,9 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
 	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE)) => res
 	
   rule	elab_submods (env,pre,subs) => subs' &
-	StaticExp.elab_exp(env,e) => (e',t,c) &
+	Static.elab_exp(env,e) => (e',prop) &
 	Prefix.prefix_exp(env,e',pre) => e'' &
-	let res = MOD(final,subs',SOME((e'',t,c))) &
+	let res = MOD(final,subs',SOME((e'',prop))) &
 	print "   elab_mod " & SCode.print_mod m &
 	print " => " & print_mod res & print "\n"
 	------------------------------------
@@ -149,8 +149,8 @@ relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
 	--------------------------------
 	elab_subscripts (env,pre,Absyn.NOSUB::xs) => fail
 	
-  rule	StaticExp.elab_exp(env,e) => (e',t,c) &
-	eval_subscript (env,e',t,c) => is &
+  rule	Static.elab_exp(env,e) => (e',prop) &
+	eval_subscript (env,e',prop) => is &
 	elab_subscripts (env,pre,xs) => xs' &
 	expand_list (is,xs') => l
 	-----------------------------------
@@ -184,34 +184,37 @@ end
 
 (**)
 
-relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool)
+relation eval_subscript : (Env.Env, Exp.Exp, Static.Properties)
 	  => Values.Value list =
 
-  rule	StaticExp.ceval (env,e) => i
+  rule	Static.ceval (env,e) => i
 	--------------------------------------------
-	eval_subscript (env,e,Types.T_INTEGER,true) => [i]
+	eval_subscript (env,e,Static.PROP(Types.T_INTEGER,true)) => [i]
 
 	(* FIXME *)
-  rule	StaticExp.ceval (env,e) => Values.ARRAY(xs) &
+  rule	Static.ceval (env,e) => Values.ARRAY(xs) &
 	print "- Ignoring all but the first index in modification\n"
 	--------------------------------------------
-	eval_subscript (env,e,Types.T_ARRAY(Types.DIM(SOME(sz),Types.NODIM),
-					    Types.T_INTEGER),true) => xs
+	eval_subscript (env,e,
+			Static.PROP(Types.T_ARRAY(Types.DIM(SOME(sz),
+							       Types.NODIM),
+						     Types.T_INTEGER),true))
+	  => xs
 
   rule	not t = Types.T_INTEGER &
 	print "# Non-integer subscript " & Exp.print_exp e &
 	print " in modification\n"
 	--------------------------
-	eval_subscript (_,e,t,_) => fail
+	eval_subscript (_,e,Static.PROP(t,_)) => fail
 
   rule	print "# Non-constant subscript " & Exp.print_exp e &
 	print " in modification\n"
 	--------------------------
-	eval_subscript (_,e,_,false) => fail
+	eval_subscript (_,e,Static.PROP(_,false)) => fail
 
   rule	print "- Mod.eval_subscript failed\n"
 	-------------------------------------
-	eval_subscript(_,_,_,_) => fail
+	eval_subscript(_,_,_) => fail
 
 end
 
@@ -408,9 +411,9 @@ relation index_eqmod : (EqMod option, int list) => EqMod option =
 
   rule	Types.unlift_array t => t' &
 	Exp.simplify Exp.ASUB(e,x) => exp &
-	index_eqmod (SOME((exp,t',c)),xs) => e
+	index_eqmod (SOME((exp,Static.PROP(t',c))),xs) => e
 	------------------------------------------
-	index_eqmod (SOME((e,t,c)),x::xs) => e
+	index_eqmod (SOME((e,Static.PROP(t,c))),x::xs) => e
 
 end
 
@@ -502,7 +505,7 @@ relation merge_eq : (EqMod option, EqMod option) => EqMod option =
 
 	(* Outer assignments take precedence *)
 
-  axiom merge_eq(e as SOME((_,_,_)), _) => e
+  axiom merge_eq(e as SOME((_,_)), _) => e
 
   axiom merge_eq(NONE,e) => e
 
@@ -634,7 +637,7 @@ relation print_eqmod : EqMod option => () =
 
   rule  print " = " & Exp.print_exp e
 	-----------------------------
-	print_eqmod SOME((e,t,c))
+	print_eqmod SOME((e,prop))
 
 end
 	
