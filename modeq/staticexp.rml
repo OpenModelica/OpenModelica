@@ -4079,7 +4079,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	-----------------------------------------------------------
 	operators(Absyn.DIV,env,t1,t2) => types
 
-  rule	(* The POW operator *)
+  rule	(* The POW operator. a^b is only defined for integer exponents, i.e. b must
+	 * be of type Integer *)
 	let real_scalar = (Types.T_REAL([]),NONE) &
 	let int_scalar = (Types.T_INTEGER([]),NONE) &
 	let real_vector = (Types.T_ARRAY(Types.DIM(NONE),real_scalar),NONE) &
@@ -4088,7 +4089,7 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	let int_pow = Exp.POW(Exp.INT) &
 
 	let scalars = [(int_pow, [int_scalar, int_scalar], int_scalar),
-		       (real_pow,[real_scalar, real_scalar], real_scalar)] &
+		       (real_pow,[real_scalar, int_scalar], real_scalar)] &
 		       
 
 	let arrscalar = [(Exp.POW_ARR(Exp.REAL),
