@@ -42,7 +42,7 @@ SUBDIRS	= runtime absyn_builder modpar
 .SUFFIXES: .o .rml .h
 .PHONY: all subdirs report vctarget absyn_subdir debug release depend clean dclean test reallyclean modeq_release modeq_debug
 
-all : debug subdirs #release
+all : debug #release
 
 debug:	$(PROGD) $(SRCRDB)
 
@@ -81,10 +81,10 @@ test:
 #ast/libast.a:
 #	@(cd ast ; $(MAKE) libast.a)
 
-subdirs:
-	@for d in $(SUBDIRS); do \
-		(cd $$d ; $(MAKE)) \
-	done
+#subdirs:
+#	@for d in $(SUBDIRS); do \
+#		(cd $$d ; $(MAKE)) \
+#	done
 
 clean:
 	@for d in $(SUBDIRS); do \
