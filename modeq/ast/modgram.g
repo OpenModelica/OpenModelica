@@ -312,8 +312,6 @@ component_clause!:
 	s:type_specifier
 	l:component_list
         << #0 = #(#[&a], #p, #s, #l);
-	   /* FIXME: Split to several elements */
-
 	   #0->rml = Absyn__COMPONENTS(RML_PRIM_MKBOOL(fl),
 				       RML_PRIM_MKBOOL(pa),
 				       RML_PRIM_MKBOOL(co),
@@ -590,13 +588,14 @@ equation_list :
 expression :
 
 	simple_expression 
-	| ifpart:IF^ << /* FIXME */ >>
-	  expression 
+	| ifpart:IF^
+	  e1:expression 
 	  THEN!
-	  simple_expression
+	  e2:simple_expression
 	  ELSE!
-	  expression
-	  ;
+	  e3:expression
+	  << #0->rml = Exp__IFEXP(#e1->rml, #e2->rml, #e3->rml); >>
+	;
 
 simple_expression : << void *l, *op; >>
 	logical_term << l = #0->rml; >>
