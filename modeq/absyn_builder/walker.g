@@ -124,19 +124,25 @@ stored_definition returns [void *ast]
 
 interactive_stmt returns [void *ast]
 { 
-    void *a1=0; 
-    void *e1=0;
+    void *al=0; 
+    void *el=0;
+	l_stack el_stack;	
 }
     :
-        #(INTERACTIVE_ALG
-            a1 = algorithm) 
+		(
+			#(INTERACTIVE_ALG (al = algorithm) )
+			{
+				el_stack.push(Interactive__IALG(al));
+			}	
+		|	
+			#(INTERACTIVE_EXP (el = expression ))
+			{
+				el_stack.push(Interactive__IEXP(el));
+			}
+			
+		)* (s:SEMICOLON)?
 		{
-			ast = Interactive__ISTMTS(mk_cons(Interactive__IALG(a1),mk_nil()));				
-		}	
-	|	
-		#(INTERACTIVE_EXP e1 = expression )
-		{
-			ast = Interactive__ISTMTS(mk_cons(Interactive__IEXP(e1),mk_nil()));
+			ast = Interactive__ISTMTS(make_rml_list_from_stack(el_stack), RML_PRIM_MKBOOL(s != 0));
 		}
 	;
 

@@ -221,27 +221,27 @@ relation dump_istmt : Interactive.InteractiveStmts => () =
 	print_algorithmitem(alg) => () &
 	Print.print_buf ")\n" 
 	--------------------------
-	dump_istmt(Interactive.ISTMTS([Interactive.IALG(alg)])) => ()
+	dump_istmt(Interactive.ISTMTS([Interactive.IALG(alg)],_)) => ()
 	
   rule	Print.print_buf ("IEXP(") &
 	print_exp(expr) &
 	Print.print_buf ")\n" 
 	----------------------
-	dump_istmt(Interactive.ISTMTS([Interactive.IEXP(expr)])) => ()
+	dump_istmt(Interactive.ISTMTS([Interactive.IEXP(expr)],_)) => ()
 	
   rule Print.print_buf "IALG(" &
 	print_algorithmitem(alg) => () &
 	Print.print_buf "," &
-	dump_istmt(Interactive.ISTMTS(l)) => ()
+	dump_istmt(Interactive.ISTMTS(l,sc)) => ()
 	--------------------------
-	dump_istmt(Interactive.ISTMTS(Interactive.IALG(alg)::l)) => ()
+	dump_istmt(Interactive.ISTMTS(Interactive.IALG(alg)::l,sc)) => ()
 	
   rule Print.print_buf "IEXP(" &
 	print_exp(expr) => () &
 	Print.print_buf "," &
-	dump_istmt(Interactive.ISTMTS(l)) => ()
+	dump_istmt(Interactive.ISTMTS(l,sc)) => ()
 	--------------------------
-	dump_istmt(Interactive.ISTMTS(Interactive.IEXP(expr)::l)) => ()
+	dump_istmt(Interactive.ISTMTS(Interactive.IEXP(expr)::l,sc)) => ()
 	
   axiom	dump_istmt(_) => ()
 end

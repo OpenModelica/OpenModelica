@@ -184,7 +184,7 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
 
       modelica_lexer lex(stream);
       modelica_expression_parser parse(lex);
-      parse.interactiveStmt();
+      parse.interactiveStmts();
       antlr::RefAST t = parse.getAST();
       
       if (t)

@@ -42,13 +42,20 @@ tokens {
 	INTERACTIVE_EXP;
 }
 
-interactiveStmt! returns [void *ast] 
+interactiveStmts 
+	:
+		(interactiveStmt (SEMICOLON)? EOF!) => interactiveStmt (SEMICOLON)? EOF!
+	|
+		interactiveStmt SEMICOLON! interactiveStmts 
+		
+		;
+
+interactiveStmt! 
 	: 
-		(expression) => e:expression (SEMICOLON!)? EOF! {
+		(expression) => e:expression {
 			#interactiveStmt = #([INTERACTIVE_EXP,"INTERACTIVE_EXP"],#e);
-			}
-	| ( a:algorithm (SEMICOLON!)? EOF! )  
-		{	
+		}
+	| ( a:algorithm)		{	
 			#interactiveStmt = #([INTERACTIVE_ALG,"INTERACTIVE_ALG"],#a);
 		}
 	; 

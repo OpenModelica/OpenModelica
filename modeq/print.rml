@@ -23,8 +23,15 @@ module Print:
 
 (* This module contain a buffered print relation to be used instead of 
  * the built in print relation, when the output should be redirected to 
- * some other place. 
+ * some other place. It also contain print relations for error messages, to be used in 
+ * interactive mode.
  *)
+
+relation print_error_buf: string => ()
+
+relation clear_error_buf: () => ()
+
+relation get_error_string: () => string
 
 relation print_buf: string => ()
 

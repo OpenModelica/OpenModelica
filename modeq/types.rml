@@ -129,6 +129,7 @@ returns multiple arguments. *)
   relation make_array: (Type, Absyn.ArrayDim) => Type
   relation array_element_type : Type => Type
   relation print_type : Type => ()
+  relation unparse_type : Type => string
   relation print_var : Var => ()
   relation print_binding : Binding => ()
   relation print_params : FuncArg list => () 
@@ -609,6 +610,34 @@ relation array_element_type : Type => Type =
   axiom	array_element_type t => t
 
 end
+
+(** relation: unparse_type
+ **
+ ** This relation prints a Modelica type as a piece of Modelica code.
+**)
+relation unparse_type: Type => string =
+
+  axiom	unparse_type T_INTEGER =>  "Integer"
+  axiom	unparse_type T_REAL =>  "Real"
+  axiom	unparse_type T_STRING =>  "String"
+  axiom	unparse_type T_BOOL =>  "Boolean"
+
+  rule	Util.string_delimit_list(l,",") => s1 &
+	Util.string_append_list(["enumeration(",s1,")"]) => str
+	-----------------
+	unparse_type T_ENUMERATION(l) =>  str
+
+  rule  flatten_array_type t => (ty, dimlst) &
+	Util.list_map(dimlst,int_string) => dimlststr &
+	list_reverse(dimlststr) => dimlststr' &
+	unparse_type ty => tys &
+	Util.string_delimit_list(dimlststr',", ") => dims &
+	Util.string_append_list([tys,"[",dims,"]"]) => res
+	--------------------
+	unparse_type (t as T_ARRAY(_,_)) => res
+
+  axiom	unparse_type(_) => "not implemented yet\n" 
+end	
 
 (** relation: print_type
  **
