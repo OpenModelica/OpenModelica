@@ -48,8 +48,15 @@ module TORNADOEXT:
            ** arg2 the name of the variable
            ** arg3 the type of the variable (variable, parameter)
            ** arg4 the direction of the variable (output,input...)
+
+           ** arg5 Unit;                // Unit of quantity
+           ** arg6 DefaultValue;        // Default value (in Modelica lingo this is "start" I think)
+           ** arg7 LowerBound;          // Lower bound
+           ** arg8 UpperBound;          // Upper bound
+           ** arg9 Desc;                // Description
            **)
-  relation add_variable_to_class: (string,string,string,string) => ()
+  relation add_variable_to_class: (string,string,string,string,
+                                   string,string,string,string,string) => ()
           (**
            ** arg1 is the top class because the top class is
            **      genereation somwhere else

@@ -22,8 +22,24 @@ extern "C"
     string type;
     string direction;
     int index;
-    variable(string n,string val, string t){name = n;type = val; direction = t; index = -1;};
-    variable(){name="";type="";direction=""; index = -1;};
+
+    string Unit;                // Unit of quantity
+    string DefaultValue;        // Default value (in Modelica lingo this is "start" I think)
+    string LowerBound;          // Lower bound
+    string UpperBound;          // Upper bound
+    string Desc;                // Description
+
+    variable(string n,string val, string t)
+    {name = n;type = val; direction = t; index = -1;
+    Unit = "L\"c\""; DefaultValue = "0.000000"; 
+    LowerBound="MSLE_MIN_INF"; UpperBound="MSLE_PLUS_INF";
+    Unit = "L\"c\"";
+    };
+
+    variable(){name="";type="";direction=""; index = -1;
+    Unit = "L\"c\""; DefaultValue = "0.000000"; 
+    LowerBound="MSLE_MIN_INF"; UpperBound="MSLE_PLUS_INF";
+    Unit = "L\"c\"";};
   };
 
   map<string,map<string,variable> > generated_classes;
@@ -113,8 +129,12 @@ extern "C"
         ++search2)
       {
         if(search2->second.type == string("parameter")){
-          output << "  SetParam(" << search2->second.index << ", new CParam(L\"" << search2->second.name;
-          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << search2->second.name << "\"));\n";
+          output << "  SetParam(" << search2->second.index << ", new CParam(L\"" << search2->second.name << "\"";
+          output << "," << search2->second.Unit; 
+          output << "," << search2->second.DefaultValue;
+          output << "," << search2->second.LowerBound;
+          output << "," << search2->second.UpperBound;
+          output << "," << search2->second.Desc  << "));\n";
         } 
       }
     
@@ -133,12 +153,21 @@ extern "C"
       {
         if((search2->second.direction == string("input"))
            && (search2->second.type == string("variable"))){
-          output << "  SetInputVar(" << search2->second.index << ", new CInputVar(L\"" << search2->second.name;
-          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << search2->second.name << "\"));\n";
+          output << "  SetInputVar(" << search2->second.index << ", new CInputVar(L\"" << search2->second.name << "\"";
+          output << "," << search2->second.Unit; 
+          output << "," << search2->second.DefaultValue;
+          output << "," << search2->second.LowerBound;
+          output << "," << search2->second.UpperBound;
+          output << "," << search2->second.Desc << "));\n";
         } else if((search2->second.direction == string("output"))
            && (search2->second.type == string("variable"))){
-          output << "  SetOutputVar(" << search2->second.index << ", new COutputVar(L\"" << search2->second.name;
-          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << search2->second.name << "\"));\n";
+          output << "  SetOutputVar(" << search2->second.index << ", new COutputVar(L\"" << search2->second.name << "\"";
+          output << "," << search2->second.Unit; 
+          output << "," << search2->second.DefaultValue;
+          output << "," << search2->second.LowerBound;
+          output << "," << search2->second.UpperBound;
+          output << "," << search2->second.Desc << "));\n";
+ 
         }
       }
     output << "\n";
@@ -157,8 +186,12 @@ extern "C"
         ++search2)
       {
         if(search2->second.type == string("state")){
-          output << "  SetDerStateVar(" << search2->second.index << ", new CDerStateVar(L\"" << search2->second.name;
-          output << "\", L\"\", 0.000000, MSLE_MIN_INF, MSLE_PLUS_INF, L\"" << class_name << "\"));\n";
+          output << "  SetDerStateVar(" << search2->second.index << ", new CDerStateVar(L\"" << search2->second.name << "\"";
+          output << "," << search2->second.Unit; 
+          output << "," << search2->second.DefaultValue;
+          output << "," << search2->second.LowerBound;
+          output << "," << search2->second.UpperBound;
+          output << "," << search2->second.Desc << "));\n";
         } 
       }
    //fixme der state var
@@ -272,7 +305,21 @@ extern "C"
     char* type = RML_STRINGDATA(rmlA2);
     char* direction = RML_STRINGDATA(rmlA3);
     string variable_name_str = string(variable_name);
+
+    string Unit = string(RML_STRINGDATA(rmlA4));                // Unit of quantity
+    string DefaultValue = string(RML_STRINGDATA(rmlA5));        // Default value (in Modelica lingo this is "start" I think)
+    string LowerBound = string(RML_STRINGDATA(rmlA6));          // Lower bound
+    string UpperBound = string(RML_STRINGDATA(rmlA7));          // Upper bound
+    string Desc = string(RML_STRINGDATA(rmlA8));                // Description
+
+
     variable var(variable_name_str,string(type),string(direction));
+
+    var.Unit = Unit;
+    var.DefaultValue = DefaultValue;
+    var.LowerBound = LowerBound;
+    var.UpperBound = UpperBound;
+    var.Desc = Desc;
 
     string str_key = string(class_name);
     

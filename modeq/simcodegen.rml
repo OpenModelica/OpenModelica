@@ -397,8 +397,8 @@ end
  relation print_exp_cpp_str : Exp.Exp => string =
          
   rule  print_exp2_str (e,0) => s
-	 --------------------
-	 print_exp_cpp_str e => s
+	     --------------------
+	     print_exp_cpp_str e => s
          
  end
 
@@ -612,6 +612,7 @@ end
 	 print_exp2_str (Exp.CAST(Exp.REAL,e),_) => s
 
   rule	let pri2 = 51 &
+         Exp.get_cref_from_exp(e) => cref_list &
 	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
 	 print_exp2_str (e,pri3) => s2 &
  	 Exp.print_rightpar_str (pri1,pri2) => s3 &
@@ -664,3 +665,4 @@ relation cref_modelica_str : Exp.ComponentRef => string =
 	-------------------------------------
 	 cref_modelica_str(Exp.CREF_QUAL(s,_,n)) => ss
 end
+

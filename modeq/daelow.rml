@@ -968,10 +968,12 @@ relation dump_vars2: (Var list,int) => () =
 	Util.list_map(paths,Absyn.path_string) => paths_lst &
 	Util.string_delimit_list(paths_lst,", ") => path_str &
 	print "= " & Exp.print_exp_str e => s & print s & print(" ") & print(path_str) & print ",\n " &
+        
+        print " former: " & print old_name &
 	int_add(varno,1) => varno' &
 	dump_vars2(xs,varno') 
 	-------------
-	dump_vars2(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,_,paths)::xs,varno)
+	dump_vars2(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,old_name,paths)::xs,varno)
 
   rule  int_string (varno) => varnostr &
 	print varnostr & print ": " &
@@ -980,11 +982,12 @@ relation dump_vars2: (Var list,int) => () =
 	Util.list_map(paths,Absyn.path_string) => path_strs &
 	Util.string_delimit_list(path_strs, ", ") => path_str &
 	print str & print ":" & dump_kind kind & print(" ") & print(path_str) & 
+        print " former: " & print old_name &
 	print ",\n " &
 	int_add(varno,1) => varno' &
 	dump_vars2(xs,varno') 
 	-------------
-	dump_vars2(VAR(cr,kind,dir,_,NONE,_,_,_,_,_,paths)::xs,varno)
+	dump_vars2(VAR(cr,kind,dir,_,NONE,_,_,_,_,old_name,paths)::xs,varno)
 end 
 
 (** relation: dump_kind

@@ -50,34 +50,40 @@ with "simcodegen.rml"
 
 relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	
-  rule	DAELow.lower(dae) => dae' &
+  rule  DAELow.lower(dae) => dae' &
         generate_blt(dae') => (dae'',blt,ass1,ass2,m,mt) &
-	DAELow.calculate_values(dae'') => dae''' & 
-	Absyn.path_string(class) => cname &
+        
+        (*          print "translating dae.\n" & *)
+        (* 	     DAELow.translate_dae (dae'') => indexed_dae & *)
+         
+        (* 	     DAELow.calculate_values(indexed_dae) => dae''' & *)
+	    DAELow.calculate_values(dae'') => dae''' &
+	    Absyn.path_string(class) => cname &
         add_dae_var_to_index_map(dae''') &
         generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
-	generate_header(cname) => header &
-	generate_impl_header(cname) => implheader &
-	generate_constructor(cname,p,dae''') => constr &
-	generate_var_defines(dae''') => defines &
-	generate_compute_methods(cname,dae''',p,blt,ass1,ass2,m,mt) => cmethods &
+	    generate_header(cname) => header &
+	    generate_impl_header(cname) => implheader &
+	    generate_constructor(cname,p,dae''') => constr &
+	    generate_var_defines(dae''') => defines &
+	    generate_compute_methods(cname,dae''',p,blt,ass1,ass2,m,mt) => cmethods &
         generate_dll_code(cname) => dll_code &
         TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
-        Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
-        Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
-        Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
-	string_append(cname,".h") => headerfile &
-	string_append(cname,".cpp") => implfile &
-	string_append(cname,"DLL.cpp") => dllfile &
-	print "Generating: " & print headerfile & print "\n" &
-	System.write_file(headerfile,header') &
-	print "Generating: " & print implfile & print "\n" &
-	System.write_file(implfile,impl) &
-	print "Generating: " & print dllfile & print "\n" &
-	System.write_file(dllfile,dll_code) 
-	-------------------------------------------------------------------
-	generate_code(p,dae,class) => 
-        
+         Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
+         Debug.fcall("bltdump", DAELow.dump,dae''') &
+         Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
+         Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
+	     string_append(cname,".h") => headerfile &
+	     string_append(cname,".cpp") => implfile &
+	     string_append(cname,"DLL.cpp") => dllfile &
+	     print "Generating: " & print headerfile & print "\n" &
+	     System.write_file(headerfile,header') &
+	     print "Generating: " & print implfile & print "\n" &
+	     System.write_file(implfile,impl) &
+	     print "Generating: " & print dllfile & print "\n" &
+	     System.write_file(dllfile,dll_code) 
+	     -------------------------------------------------------------------
+	     generate_code(p,dae,class) => 
+         
   rule	print "generate_code failed\n" 
 	------------------------------
 	generate_code(_,_,_) => fail
@@ -288,8 +294,8 @@ end
          (cdef as Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,_))) &
          Absyn.path_string(variable_class_path) => str &
          Absyn.path_string(class_path) => str' &
-         get_direction_for_variable(variable_name,str',dae) => (var_type,direction) &
-         TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction) &
+         get_direction_for_variable(variable_name,str',dae) => (var_type,direction,unit,default_value,lower_bound,upper_bound,Desc) &
+         TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction,unit,default_value,lower_bound,upper_bound,Desc) &
          add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
  (*                  & print str' & print "\nA-----------derived-------------\n" *)
          --------------------------------------
@@ -298,12 +304,12 @@ end
                               variable_name::rest,
                               dae,program,a_program,env) => ()
          
-  rule  Absyn.path_string(variable_class_path) => str &
-         Interactive.is_primitive(Absyn.CREF_IDENT(str,[]),a_program) => true & 
+  rule  (* Interactive.get_pathed_class_in_program(variable_class_path,a_program) => cdef & *)
          Absyn.path_string(variable_class_path) => str &
+         Interactive.is_primitive(Absyn.CREF_IDENT(str,[]),a_program) => true & 
          Absyn.path_string(class_path) => str' &
-         get_direction_for_variable(variable_name,str',dae) => (var_type,direction) &
-         TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction) &
+         get_direction_for_variable(variable_name,str',dae) => (var_type,direction,unit,default_value,lower_bound,upper_bound,Desc) &
+         TORNADOEXT.add_variable_to_class(str',variable_name,var_type,direction,unit,default_value,lower_bound,upper_bound,Desc) &
          add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) 
 (*                    & print variable_name & print " " & print str'  & print "\nA-----------PRIMITIVE--------------\n" *)
          --------------------------------------
@@ -320,7 +326,7 @@ end
          
          Absyn.path_string(variable_class_path) => str &
          add_variable_to_list(class_path,variable_class_path, rest, dae,program,a_program,env) &
-         TORNADOEXT.add_variable_to_class(str',variable_name,"class",var_str') 
+         TORNADOEXT.add_variable_to_class(str',variable_name,"class",var_str',"","","","","") 
 (*                   & print str' & print "\nA--------------------------------\n" *)
          --------------------------------------
          add_variable_to_list(class_path,
@@ -344,62 +350,131 @@ end
          
  end
 
+
+ (** ret1 Unit;                // Unit of quantity
+  ** ret2 DefaultValue;        // Default value (in Modelica lingo this is "start" I think)
+  ** ret3 LowerBound;          // Lower bound
+  ** ret4 UpperBound;          // Upper bound
+  ** ret5 Desc;                // Description
+  **)
+relation get_default_values: () =>  (string,string,string,string,string) = 
+
+  axiom get_default_values => ("L\"c\"","0.000000","MSLE_MIN_INF","MSLE_PLUS_INF","L\"c\"")
+end
+
+relation get_start_value: (DAE.StartValue) => string =
+
+  rule  SimCodegen.print_exp_cpp_str(e) => res 
+(*         & print res & print " <- \n"  *)
+        --------------------------------------
+        get_start_value(SOME(e)) => res
+
+  axiom get_start_value(_) => "+++0.000000"
+        
+end
+
 (**
  ** arg1 name of the variable
  ** arg2 name of the class where the variable is
  ** arg2 the DAELow.DAELow that contains all the varialbles
  ** 
- ** return (type,direction) as string 
+ ** ret1 type
+ ** ret2 direction
+
+ ** ret3 Unit;                // Unit of quantity
+ ** ret4 DefaultValue;        // Default value (in Modelica lingo this is "start" I think)
+ ** ret5 LowerBound;          // Lower bound
+ ** ret6 UpperBound;          // Upper bound
+ ** ret7 Desc;                // Description
  **)
 
  relation get_direction_for_variable:(string, string,DAELow.DAELow) 
-          => (string,string) = 
+          => (string,string,
+              string,string,string,string,string) = 
            
+(*     rule  print "-get_direction_for_variable: " & print name    *)
+(*          & print " in class " & print class_name  & print "\n" & *)
+(*          int_eq(1,0) => true *)
+(*          --------------------------------- *)
+(*         get_direction_for_variable(name,class_name,dae) => fail *)
+ 
   rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)
+          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc) &
+         get_start_value(start) => default_value' 
            --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("variable","output")
+         get_direction_for_variable(name,class_name,dae) => ("variable","output",
+                                                             unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)
-           --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("variable","bidir")
+          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc) &
+         get_start_value(start) => default_value' 
+         --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("variable","bidir",
+                                                             unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)
+          => (var as DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc) &
+         get_start_value(start) => default_value'
            --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("variable","input")
+         get_direction_for_variable(name,class_name,dae) => ("variable","input",
+                                                             unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_)
+          => (var as DAELow.VAR(cr,DAELow.PARAM,_,_,_,SOME(value),_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc)
+           & Values.val_string value => val_str
+(*            & print "with value_: "  & print val_str & print "\n"  *)
            --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("parameter","")
-         
-  rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.CONST,_,_,_,_,_,start,_,_,_)
-           --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("parameter","")
+         get_direction_for_variable(name,class_name,dae) => ("parameter","",
+                                                             unit,val_str,lower_bound,upper_bound,Desc)
 
   rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)
+          => (var as DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,_))&
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc)
+(*            & print "without value\n"  *)
            --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("dummy_der","")
+         get_direction_for_variable(name,class_name,dae) => ("parameter","",
+                                                             unit,default_value,lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)
+          => (var as DAELow.VAR(cr,DAELow.CONST,_,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc)
            --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("dummy_state","")
+         get_direction_for_variable(name,class_name,dae) => ("parameter","",
+                                                             unit,default_value,lower_bound,upper_bound,Desc)
+
+  rule  find_dae_var(name,class_name,dae)
+          => (var as DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc)
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("dummy_der","",
+                                                             unit,default_value,lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
-          => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)
+          => (var as DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc)
            --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("state","")
+         get_direction_for_variable(name,class_name,dae) => ("dummy_state","",
+                                                             unit,default_value,lower_bound,upper_bound,Desc)
+         
+  rule  find_dae_var(name,class_name,dae)
+          => (var as DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,_)) &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc) &
+         get_start_value(start) => default_value'
+           --------------------------------------
+         get_direction_for_variable(name,class_name,dae) => ("state","",
+                                                             unit,default_value',lower_bound,upper_bound,Desc)
          
   rule  find_dae_var(name,class_name,dae)
           => var & DAELow.dump_vars([var]) &
-           print "unknown type adn direction on variable\n"
+           print "unknown type and direction on variable\n" &
+           get_default_values => (unit,default_value,lower_bound,upper_bound,Desc)
          --------------------------------------
-         get_direction_for_variable(name,class_name,dae) => ("<unknown>","<unknown>")
+         get_direction_for_variable(name,class_name,dae) => ("<unknown>","<unknown>",
+                                                             unit,default_value,lower_bound,upper_bound,Desc)
          
   rule  print "-get_direction_for_variable failed: " & print name  
          & print " in class " & print class_name  & print "\n" 
@@ -452,8 +527,8 @@ relation find_dae_var2:(string,string,DAELow.Var list) => DAELow.Var =
         Util.string_equal(class_name,from_class_str) => true &
         Util.string_equal(var_name,name) => true 
         
-        (*          & print var_name & print " = " & print name & print " " &  *)
-        (*         print from_class_str & print " = " & print class_name & print "\n"  *)
+(*                  & print var_name & print " = " & print name & print " " & *)
+(*                 print from_class_str & print " = " & print class_name & print "\n" *)
         -------------------------------------
         find_dae_var2(name,
                       class_name,
@@ -513,7 +588,30 @@ relation generate_header: string => string =
 				                 "    void ComputeTerminal();\n",
 				                 "    void ComputeState();\n",
 				                 "    void ComputeOutput();\n",
-				                 "};\n\n"]) => r4 &
+				                 "};\n\n",
+                                 
+                                 "class CDummy : public Tornado::CDAEModel\n",
+                                 "{\n",
+                                 "public:\n",
+                                 "\n",
+                                 "CDummy()\n",
+                                 "{\n",
+                                 "    SetNoDerStateVarValues(1);\n",
+                                 "}\n",
+                                 "\n",
+                                 "  public:\n",
+                                 "\n",
+                                 "    void ComputeInitial()\n",
+                                 "    {}\n",
+                                 "    void ComputeTerminal()\n",
+                                 "    {}\n",
+                                 "    void ComputeState()\n",
+                                 "    {}\n",
+                                 "    void ComputeOutput()\n",
+                                 "    {}\n",
+                                 "};\n",
+                                 "\n\n"
+                                 ]) => r4 &
         (* 				 "#endif\n"]) => r4 & *)
 	    Util.string_append_list([r1,r2,r3,r4]) => header
 	    ------------------------------------------------
@@ -578,6 +676,7 @@ end
 				                  "  SetName(Name);\n",
 				                  "  SetDesc(L\"",cname," test.\");\n",
 				                  "\n",
+                                  "CDummy m_Dummy;\n\n",
 				                  parameters,
 				                  "\n",
 				                  "  SetNoIndepVars(1);\n",
@@ -761,11 +860,21 @@ end
 relation generate_getsubmodel_code:(string list, Exp.ComponentRef,
                                     DAELow.VarKind,DAE.VarDirection) => string =
 
+(*   rule  Exp.cref_str(cr) => crs & *)
+(*         print "generate_getsubmodel_code: " & print crs & print "\n" & *)
+(*         int_eq(1,0) => true *)
+(* 	    ------------------------- *)
+(* 	    generate_getsubmodel_code(comp_name_list,cr,_,_) => "" *)
+
   rule  Exp.cref_str(cr) => crs &
         Util.string_split_at_char(crs,#".") => comp_name::_ &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
-	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    Util.string_append_list(["  //((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_DER,_) => res
+
+  rule	Util.string_append_list(["  //((CDAEModel*)this)"]) => res
 	    -------------------------
 	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_DER,_) => res
 
@@ -1026,10 +1135,12 @@ end
          Exp.cref_str(cr) => crs & 
          Util.string_append_list([sub_model_str,"->",
                                   call_str,"(",var_index_str,")",
-                                  "->LinkInitialValue(this, ",var_flat_index_str,");  ","\n"]) => link_str1 &
+(*                                   "->LinkInitialValue(&m_Dummy, ",var_flat_index_str,");  ","\n"]) => link_str1 & *)
+                                  "->LinkInitialValue(&m_Dummy, 0);\n"]) => link_str1 &
          Util.string_append_list([sub_model_str,"->",
                                   call_str,"(",var_index_str,")",
-                                  "->LinkDerivative(this, ",var_flat_index_str,");  ","\n"]) => link_str2 &
+                                  (*                                   "->LinkDerivative(&m_Dummy, ",var_flat_index_str,");  ","\n"]) => link_str2 & *)
+         "->LinkDerivative(&m_Dummy, 0);\n"]) => link_str2 &
          Util.string_append_list([sub_model_str,"->",
                                   call_str,"(",var_index_str,")",
                                   "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ", 
