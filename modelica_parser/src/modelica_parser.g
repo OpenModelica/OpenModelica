@@ -16,7 +16,7 @@ options {
     codeGenMakeSwitchThreshold = 3;
     codeGenBitsetTestThreshold = 4;
 	importVocab = modelica;
-//    defaultErrorHandler = false;
+    defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
     ASTLabelType = "RefMyAST";

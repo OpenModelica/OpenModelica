@@ -38,6 +38,7 @@ class modelica_expression_parser extends modelica_parser;
 
 options {
     ASTLabelType = "RefMyAST";
+    defaultErrorHandler=false;
 }
 
 
