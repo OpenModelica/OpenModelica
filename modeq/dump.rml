@@ -238,11 +238,11 @@ and dump_class: Absyn.Class => () =
 end
 and dump_class_modification =
 
-	axiom	dump_class_modification(NONE)
+	axiom	dump_class_modification([])
 
 	rule	print "(" & dump_list(l,dump_element_arg,",") & print ")"
 		---------------------------------------------------------
-		dump_class_modification(SOME(l))
+		dump_class_modification(l)
 
 end
 and dump_element_arg =
@@ -307,10 +307,11 @@ and dump_elementspec: Absyn.ElementSpec => () =
 		dump_elementspec(Absyn.CLASSDEF(repl,cl))
 
 
-	rule	print "EXTENDS(" & print s & print "," &
+	rule	path_string(p) => s &
+		print "EXTENDS(" & print s & print "," &
 		dump_list(l,dump_element_arg,",") & print ")"
 		------------------------------------------
-		dump_elementspec(Absyn.EXTENDS(s,l))
+		dump_elementspec(Absyn.EXTENDS(p,l))
 
 	rule	print "COMPONENTS(" &
 		dump_select(f,"FLOW,","") &
