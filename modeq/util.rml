@@ -91,6 +91,7 @@ module Util :
   relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list)
   relation string_append_list : string list => string
   relation string_delimit_list : (string list, string) => string
+  relation string_replace_char : (string, char, char) => string
 
   relation bool_and_list: bool list => bool
   relation bool_or_list: bool list => bool
@@ -746,6 +747,47 @@ relation string_delimit_list : (string list, string) => string =
 	string_append(str2,str1) => str
 	---------------------------
 	string_delimit_list(f::r,delim) => str
+end
+
+(** relation string_replace_char
+ ** Takes a string and two chars and replaces the first char to 
+ ** second char:
+ ** example: string_replace_char("hej.b.c",#".",#"_") => "hej_b_c"
+ **)
+relation string_replace_char : (string, char, char) => string =
+
+  rule  string_list(str) => strList &
+        string_replace_char2(strList,fromChar,toChar) => resList &
+        list_string(resList) => res
+        -------------------------------
+        string_replace_char(str, fromChar, toChar) => res
+
+  rule  print "string_replace_char failed\n"
+        ---------------------------------
+        string_replace_char(strList,_,_) => strList
+  
+end
+
+relation string_replace_char2 : (char list, char, char) => char list =
+
+  rule  
+        ---------------------------------
+        string_replace_char2([],_,_) => []
+
+  rule  firstChar = fromChar &
+        string_replace_char2(rest,fromChar,toChar) => res
+        ---------------------------------
+        string_replace_char2(firstChar::rest,fromChar,toChar) => toChar::res
+
+  rule  not firstChar = fromChar &
+        string_replace_char2(rest,fromChar,toChar) => res
+        ---------------------------------
+        string_replace_char2(firstChar::rest,fromChar,toChar) => firstChar::res
+
+  rule  print "string_replace_char2 failed\n"
+        ---------------------------------
+        string_replace_char2(strList,_,_) => strList
+
 end
 
 (** relation bool_or_list
