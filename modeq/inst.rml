@@ -4,10 +4,10 @@ module Inst:
 
   with "exp.rml"
   with "absyn.rml"
-  (* with "lform.rml" *)
+  with "explode.rml"
   with "dae.rml"
 
-  relation instantiate: Absyn.Program => DAE.DAEform
+  relation instantiate: Explode.Program => DAE.DAEform
 
 end
 
@@ -22,6 +22,21 @@ type Prefix = Prefix.Prefix
 type Mod = Mod.Mod
 type Ident = Exp.Ident
 
+
+(**********************************************************************)
+
+relation assert : (bool, bool, string) => () =
+
+  rule  x = y
+	-----
+	assert(x,y,_)
+
+  rule  not x = y &
+	print "ERROR: " & print m & print "\n"
+	--------------------------------------
+	assert(x,y,m)
+
+end
 
 (**********************************************************************)
 
@@ -46,7 +61,7 @@ relation inst_connect: (Exp.Exp,Exp.Exp) => DAE.DAEcomp list =
 
 end
 
-relation inst_equation: (Env.Env,Mod,Prefix,Absyn.Equation)
+relation inst_equation: (Env.Env,Mod,Prefix,Explode.Equation)
 	  => (DAE.DAEcomp list, Env.Env) =
 
   (* connect
@@ -104,7 +119,22 @@ relation inst_mod_assignment : (Prefix, Ident, Mod) => DAE.DAEcomp list =
 
 end
 
-relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
+relation check_prot : (bool, Mod, string) => () =
+
+  rule  print "  public variable " & print ns & print "\n"
+	--------------------------------------------------
+	check_prot(false,_,ns)
+
+  axiom check_prot(_,Mod.NOMOD,_)
+
+  rule  print "ERROR: Trying to modify protected element " &
+	print ns & print "\n" &	fail
+	----------------------------
+	check_prot(true,_,ns)
+
+end
+
+relation inst_element: (Env.Env, Mod, Prefix, Explode.Element)
 	  => (DAE.DAEcomp list, Env.Env) =
 
   (* extends
@@ -113,24 +143,31 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
    * of the extended class.
    *)
 
-  rule	Env.lookup_class(env,cn) => (Absyn.CLASS(_,partial,restr,d),classmod) &
+  rule	Env.lookup_class(env,cn)
+	  => (c as Explode.CLASS(_,partial,_,_),classmod) &
+
+	Exp.path_string(cn) => cns &
+	print "  extending with class " & print cns & print "\n" &
 
 	(* Can't extend partial classes *)
-	partial = false &
+	assert(partial,false,"Can't extend partial class") &
 
 	(* Build the combind set of modifications *)
+	(* classmod is the modifications stored with the class *)
+	(* mods     is the modifications passed to the relation *)
+	(* m        is the modification stored in the element *)
 	(* FIXME: verify order *)
-	Mod.build(SOME(Absyn.CLASSMOD(m)), false) => mod2 &
-	Mod.merge(mods,mod2) => mods' &
-	Mod.merge(mods',classmod) => mods'' &
-
-	(*Mod.simple_maybe_modify_class(env,mods',pre,c) *)
-	(*  => (Absyn.CLASS(n,_,r,d), dae1) & *)
+	print "  modification 1: " & Mod.dump(classmod,cns) & print "\n" &
+	print "  modification 2: " & Mod.dump(mods,cns) & print "\n" &
+	print "  modification 3: " & Mod.dump(m,cns) & print "\n" &
+	Mod.merge(classmod,mods) => mods' &
+	Mod.merge(mods',m) => mods'' &
 
 	(* Can't use inst_class, as that creates a new frame *)
-	inst_classdef(env,mods'',pre,d) => (dae,env')
+	inst_class_in(env,mods'',pre,c,prot) => (dae,env')
 	----------------------------------
-	inst_element(env,mods,pre,Absyn.ELEMENT(_,_,Absyn.EXTENDS(cn,m)))
+	inst_element(env,mods,pre,
+		     Explode.ELEMENT(final,prot,_,Explode.EXTENDS(cn,m)))
 	  => (dae,env')
 
   (* components
@@ -143,7 +180,8 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
 	print " ignoring shadowed variable " & print n & print "\n"
 	--------------------------
 	inst_element(env,mods,pre,
-		     Absyn.ELEMENT(_,n,Absyn.COMPONENTS(_,_,_,_,_,_,_)))
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.COMPONENT(_,_,_,_,_,_,_,_,_)))
 	  => ([],env)
 
   (* Illegal redeclarations *)
@@ -152,7 +190,8 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
 	print " as a variable\n" &
 	fail
 	------------------------
-	inst_element(env,mods,pre, Absyn.ELEMENT(_,n,Absyn.CLASSDEF(_,_)))
+	inst_element(env,mods,pre, Explode.ELEMENT(final,prot,n,
+						   Explode.CLASSDEF(_,_)))
 	  => ([],env)
 
   rule	Env.lookup_class(env,Exp.IDENT(n)) => (v,_) &
@@ -161,7 +200,8 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
 	fail
 	------------------------
 	inst_element(env,mods,pre,
-		     Absyn.ELEMENT(_,n,Absyn.COMPONENTS(_,_,_,_,_,_,_)))
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.COMPONENT(_,_,_,_,_,_,_,_,_)))
 	  => ([],env)
 
   (* A new class definition
@@ -169,14 +209,15 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
    * Put it in the current frame in the environment
    *)
    
-  rule	(* Absyn.convert(c) => c' & *)
+  rule	(* Explode.convert(c) => c' & *)
 	Mod.lookup_modification(mods,n) => classmod &
 	print "  adding " & Mod.dump(classmod,n) & print "\n" &
 	(* Mod.simple_maybe_modify_class(env,mm,pre,c') => (c'',dae) & *)
 	Env.extend_frame_c(env,c,classmod) => env'
 	----------------------------------------
 	inst_element(env,mods,pre,
-		     Absyn.ELEMENT(_,n,Absyn.CLASSDEF(_,c)))
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.CLASSDEF(_,c)))
 	 => ([],env')
 
   (* A variable
@@ -199,21 +240,20 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
 	Mod.lookup_modification(mods,n) => mm &
 	print "  modification 2: " & Mod.dump(mm,ns) & print "\n" &
 
-	Mod.build(m,final) => m' &
-	print "  modification 3: " & Mod.dump(m',ns) & print "\n" &
+	print "  modification 3: " & Mod.dump(m,ns) & print "\n" &
 
 	(* classmod is the modifications stored with the class *)
 	(* mm       is the modifications passed to the relation *)
-	(* m'       is the modification stored in the element *)
+	(* m        is the modification stored in the element *)
+
+	(* Check for modifications to a protected element *)
+	check_prot(prot, mm, ns) &
+
 	Mod.merge(classmod,mm) => mod &
-	Mod.merge(mod,m') => mod' &
+	Mod.merge(mod,m) => mod' &
 	print "  modification: " & Mod.dump(mod',ns) & print "\n" &
 
 	Prefix.prefix_add(n,pre) => pre' &
-
-	(* Mod.maybe_modify_class(env,vn,m'',pre',cl) => (cl',dae1) & *)
-
-	(* print "        modified\n" & *)
 
 	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,cl,f,p,c,i,o)) => env' &
 
@@ -230,8 +270,8 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
 	list_append(dae1, dae2) => dae
 	--------------------------
 	inst_element(env,mods,pre,
-		     Absyn.ELEMENT(final,_,Absyn.COMPONENTS(f,p,c,i,o,t,
-						[Absyn.COMPONENT(n,ad,m)])))
+		     Explode.ELEMENT(final,prot,_,
+				     Explode.COMPONENT(n,f,p,c,i,o,t,ad,m)))
          => (dae,env')
 
   (*
@@ -247,81 +287,77 @@ relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
 	print ns & print "\n"
 	--------------------------
 	inst_element(env,_,pre,
-		     Absyn.ELEMENT(_,n,Absyn.COMPONENTS(_,_,_,_,_,t,_)))
+		     Explode.ELEMENT(final,prot,n,
+				     Explode.COMPONENT(_,_,_,_,_,_,t,_,_)))
          => ([],env)
 
 end
 
-and inst_classpart: (Env.Env,Mod,Prefix,Absyn.ClassPart)
-	  => (DAE.DAEcomp list,Env.Env) =
+and inst_algorithm : (Env.Env, Mod, Prefix, Explode.Algorithm)
+	  => (DAE.DAEcomp list, Env.Env) =
 
-  rule	inst_list(env,mods,pre,inst_element,l) => (dae,env')
-	-------------------------------------------
-	inst_classpart(env,mods,pre,Absyn.PUBLIC(l)) => (dae,env')
-
-  rule	print "FOO\n" & inst_list(env,mods,pre,inst_element,l) => (dae,env') & print "BAR\n"
-	-------------------------------------------
-	inst_classpart(env,mods,pre,Absyn.PROTECTED(l)) => (dae,env')
-
-  rule	print "No algorithms yet\n" & fail
-	----------------------------------
-	inst_classpart(env,mods,pre,Absyn.ALGORITHMS(l)) => ([],env)
-
-  rule	inst_list(env,mods,pre,inst_equation,el) => (dae,el')
+  rule  print "# no algorithms yet\n" & fail
 	------------------------------------
-	inst_classpart(env,mods,pre,Absyn.EQUATIONS(el)) => (dae,el')
+	inst_algorithm(_,_,_,_) => ([],[])
 
 end
 
-and inst_classdef: (Env.Env, Mod, Prefix, Absyn.ClassDef)
+and inst_classdef: (Env.Env, Mod, Prefix, Explode.ClassDef, bool)
 	  => (DAE.DAEcomp list, Env.Env) =
 
-  rule	inst_list(env,mods,pre,inst_classpart,pl) => (dae,env')
-	------------------------------------------------
-	inst_classdef(env,mods,pre, Absyn.PARTS(pl)) => (dae,env')
+	(* FIXME: propagate prot *)
+  rule	inst_list(env,mods,pre,inst_element,els) => (dae1,env') &
+	inst_list(env',mods,pre,inst_equation,eqs) => (dae2,env'') &
+	inst_list(env'',mods,pre,inst_algorithm,als) => (dae3,env''') &
+	list_append(dae1,dae2) => dae4 &
+	list_append(dae4,dae3) => dae
+	-----------------------------
+	inst_classdef(env,mods,pre, Explode.PARTS(els,eqs,als), prot)
+	  => (dae,env''')
 
-  rule	Mod.build(SOME(Absyn.CLASSMOD(m)), false) => mod &
-	Env.lookup_class(env,cn) => (c,m) &
+  rule	Env.lookup_class(env,cn) => (c,m) &
 	(* FIXME order *)
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod) => mods'' &
-	inst_class_in(env, mods'', pre, c) => (dae,env)
+	inst_class_in(env, mods'', pre, c, prot) => (dae,env)
 	----------------------------------------
-	inst_classdef(env,mods,pre, Absyn.DERIVED(cn,ad,m)) => (dae,env)
+	inst_classdef(env,mods,pre, Explode.DERIVED(cn,ad,mod), prot)
+	  => (dae,env)
 
 end
 
-and inst_class_in: (Env.Env, Mod, Prefix, Absyn.Class)
+and inst_class_in: (Env.Env, Mod, Prefix, Explode.Class, bool)
 	  => (DAE.DAEcomp list, Env.Env) =
 
   rule	print " instantiating " & print n & print "\n" &
-	inst_classdef(env,mods,pre,d) => (l,env')
+	inst_classdef(env,mods,pre,d,prot) => (l,env')
 	------------------------------------------------------	
-	inst_class_in(env,mods,pre,c as Absyn.CLASS(n,false,r,d)) => (l,env')
+	inst_class_in(env,mods,pre,c as Explode.CLASS(n,false,r,d), prot)
+	  => (l,env')
 
   rule	print "Can't instantiate partial class " & print n & print "\n" &
 	fail
 	------------------------------------------------------	
-	inst_class_in(env,mod,pre, Absyn.CLASS(n,true,_,_))
+	inst_class_in(env,mod,pre, Explode.CLASS(n,true,_,_), _)
 	  => ([],Env.empty_env)
 
 	(* FIXME *)
-  rule  print "# Fallthru in inst_class_in\n"
+  rule  print "# Fallthru in inst_class_in\n" & fail
 	----------------------------------
-	inst_class_in(_,_,_,_) => ([],Env.empty_env)
+	inst_class_in(_,_,_,_,_) => ([],Env.empty_env)
 
 end
 
-and inst_class: (Env.Env, Mod, Prefix, Absyn.Class) => DAE.DAEcomp list =
+and inst_class: (Env.Env, Mod, Prefix, Explode.Class) => DAE.DAEcomp list =
 
   rule	Env.new_frame(env) => env' &
-	inst_class_in(env', mod, pre, c) => (dae,_)
+	inst_class_in(env', mod, pre, c, false) => (dae,_)
 	-------------------------------------------
 	inst_class(env, mod, pre, c) => dae
 
 end
 
-relation inst_program : (Env.Env, Absyn.Program) => DAE.DAEcomp list =
+relation inst_program : (Env.Env, Explode.Program) => DAE.DAEcomp list =
 
   rule	print "Empty program\n" & fail
 	------------------------------
@@ -339,7 +375,7 @@ relation inst_program : (Env.Env, Absyn.Program) => DAE.DAEcomp list =
 
 end
 
-relation instantiate: Absyn.Program => DAE.DAEform =
+relation instantiate: Explode.Program => DAE.DAEform =
 
   rule	Builtin.initial_env => env &
 	inst_program(env,p) => l
