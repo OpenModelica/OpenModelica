@@ -800,7 +800,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 
 (*	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) & *)
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
-(*	print "We got the type list\n" & *)
+	print "We got the type list\n" & 
 	elab_types (env, args, typelist) => (args', c, restype) &
 (*	& print "We just elaborated the types\n"  *)
 	is_tuple restype => tuple &
@@ -854,10 +854,12 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list)
 
 	(* We found a match.*)
   rule	Debug.fprintln ("sei", "We try the elab_input") &
+	Debug.fprintln ("sei", "testing type:") &
+	Debug.fcall ("sei", Types.print_type,t) &
 	elab_input_args(env, args, params ) => (args',c) &
         Debug.fprintln ("sei", "We found a match." )
 	------------------
-        elab_types(env, args, Types.T_FUNCTION(params,restype)::trest)
+        elab_types(env, args, (t as Types.T_FUNCTION(params,restype))::trest)
 	  => (args', c, restype)
 
 	(* We did not found a match, try next. *)
@@ -1062,6 +1064,19 @@ end
 relation elab_input_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
 	  => (Exp.Exp list, bool) =
 
+  rule	Debug.fprint("sei","elab_input_args called\n") &
+	list_length(explst) => elen &
+	int_string(elen) => elenstr &
+	Debug.fprint("sei","explen = ") &
+	Debug.fprint("sei",elenstr) &
+	Debug.fprint("sei", ", ") &
+	list_length(funcarglst) => farglen &
+	int_string(farglen) => farglenlst &
+	Debug.fprint("sei","farg len = ") &
+	Debug.fprint("sei",farglenlst) 
+	---------------------
+	elab_input_args(env,explst,funcarglst) => fail
+
   axiom	elab_input_args(_, [], []) => ([], true)
 	(*PR. What is the c for. If all input arguments from the function 
 	* call are constants then the result is a constant. 
@@ -1077,7 +1092,7 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
 	 Which is not done at all now??
 	*)
 
-  rule	Debug.fprintln ("sei", "Entering elab_input_args-2") &
+  rule	Debug.fprintln ("sei", "Entering elab_input_args-2\n") &
 	elab_exp(env, e) => (e',PROP(t, c1)) &
 	match_type(e', t, vt) => (e'',_) &
 	elab_input_args(env, es, vs) => (args', c2) &

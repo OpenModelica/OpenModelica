@@ -63,6 +63,11 @@ val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,Das
 
 val Icon_records = "record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); end Icon;"
 
+(* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
+(* PA. Only Line for now... *)
+val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
+
+
 (** relation: evaluate
  ** This relation evaluates expressions feeded interactively to the compiler.
 **)
@@ -522,7 +527,8 @@ end
 
 relation get_icon_annotation_str: (Absyn.ElementArg list) => string =
 
-  rule	get_annotation_string (Icon_records,Absyn.ANNOTATION([ann])) => s1 &
+  rule	string_append(Icon_records,Graphics_records) => records &
+	get_annotation_string (records,Absyn.ANNOTATION([ann])) => s1 &
 	get_graphics_constructors_str(mod) => s2 &
 	string_append(s1,",") => s3 &
 	string_append(s3,s2) => str

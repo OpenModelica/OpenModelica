@@ -538,7 +538,7 @@ element returns [void* ast]
  component_list returns [void* ast]
  {
      l_stack el_stack;
-     void* e;
+     void* e=0;
  }
      :
          e = component_declaration { el_stack.push(e); }
