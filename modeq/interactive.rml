@@ -23,12 +23,11 @@
 
 module Interactive:
   with "absyn.rml"
-  with "inst.rml"
   with "explode.rml" 
   with "dae.rml" 							  
-  with "staticexp.rml"							  
-  with "exp.rml"
-  with "values.rml"
+  with "types.rml"
+  with "values.rml"							  
+
   datatype InteractiveStmt = IALG of Absyn.Algorithm
 			   | IEXP of Absyn.Exp
   datatype InteractiveStmts = ISTMTS of InteractiveStmt list
@@ -36,7 +35,8 @@ module Interactive:
   datatype InstantiatedClass =  INSTCLASS of Absyn.Path * (* The F.Q. name of the instantiated class*)
 					     DAE.Element list (* The list of DAE elements *)
   datatype InteractiveVariable = IVAR of Absyn.Ident * (* The variable identifier *)
-					 Absyn.Exp (* The expression containing the value *)
+					 Values.Value *  (* The expression containing the value *)
+					 Types.Type  (* The type of the expression *)
 
   datatype InteractiveSymbolTable = SYMBOLTABLE of Absyn.Program * (*The ast*)
 						   SCode.Program * (* The exploded ast *)
@@ -57,8 +57,10 @@ with "prefix.rml"
 with "mod.rml"
 with "env.rml"
 with "lookup.rml"
-with "types.rml"
 with "classinf.rml"
+with "exp.rml"
+with "inst.rml"
+with "staticexp.rml"							  
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
@@ -100,7 +102,8 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	----------------------------------------------------
 	evaluate(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))]),st) => (str,newst)
 	
-  rule	evaluate_expr(exp,st) => (str,newst)
+  rule	evaluate_expr(exp,st) => (s1,newst) &
+	string_append(s1,"\n") => str
 	------------------------------------------------------
 	evaluate(stmts as ISTMTS([exp]),st) => (str,newst)
 	
@@ -113,25 +116,83 @@ end
  ** evaluates the expression using Staticexp.
  **)
 		 
- relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
-	 (string,InteractiveSymbolTable) =
-	 
-  rule	 build_env_from_symboltable(st) => env &
-	 Static.elab_exp(env,exp) => (sexp,prop) &
-	 Static.ceval (env,sexp) => value &
-	 Values.val_string value =>  str 
-	 --------------------
-	 evaluate_expr(IEXP(exp),st) => (str,st)
-
+relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
+	(string,InteractiveSymbolTable) =
+	
+  rule	build_env_from_symboltable(st) => env &
+	Static.elab_exp(env,exp) => (sexp,prop) &
+	Static.ceval (env,sexp) => value &
+	Values.val_string value =>  str 
+	--------------------
+	evaluate_expr(IEXP(exp),st) => (str,st)
+	
+  rule	build_env_from_symboltable(st) => env &
+	Static.elab_exp(env,exp) => (sexp,Static.PROP(t,_))  &
+	Static.ceval(env,sexp) => value &
+	add_var_to_symboltable(ident,value,t,st) => newst
+	-----------------------------------------------
+	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st) => ("",newst)
+	
   axiom	evaluate_expr(stmt,st) => ("Error evaluating expr.",st)
 end
+	
+relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
+	    => InteractiveSymbolTable =
+	    
+  rule	ident = id2
+	-----------
+	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,_,_)::rest)) 
+	    => SYMBOLTABLE(p,sp,ic,IVAR(ident,v,t)::rest)
 
+  rule	not ident = id2 &
+	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,rest))
+	    => SYMBOLTABLE(p',sp',ic',vars)
+	    ------------------------------------
+	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::rest))
+	    => SYMBOLTABLE(p,sp,ic,IVAR(id2,val2,t2)::vars)
+
+  axiom	add_var_to_symboltable(ident,v,t,SYMBOLTABLE(p,sp,ic,[])) 
+	    => SYMBOLTABLE(p,sp,ic,[IVAR(ident,v,t)])
+end
 
 relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
 	
-  rule	
-	------------------------
-	build_env_from_symboltable(s) => Env.empty_env
+  rule	Env.open_scope Env.empty_env => env &
+	add_vars_to_env(vars,env) => env'
+	------------------------------------------
+	build_env_from_symboltable(SYMBOLTABLE(p,sp,ic,vars)) => env'
+end
+
+relation add_vars_to_env: (InteractiveVariable list, Env.Env) => Env.Env =
+
+  rule	Lookup.lookup_var (env,Exp.CREF_IDENT(id,[])) => (_,_,_) &
+	Env.update_frame_v(env,
+	    Types.VAR(
+		id,
+		Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.BIDIR),
+		false,
+		tp,
+		Types.VALBOUND(v)
+	    ),false) => env' &
+	add_vars_to_env(rest,env') => env''
+	---------------------------------------
+	add_vars_to_env (IVAR(id,v,tp)::rest,env) => env''
+	
+  rule	not Lookup.lookup_var (env,Exp.CREF_IDENT(id,[])) => (_,_,_) &
+	Env.extend_frame_v(env,
+	    Types.VAR(
+		id,
+		Types.ATTR(false,SCode.RW,Absyn.VAR,Absyn.BIDIR),
+		false,
+		tp,
+		Types.VALBOUND(v)
+	    ),NONE,false) => env' &
+	add_vars_to_env(rest,env') => env''
+	---------------------------------------
+	add_vars_to_env (IVAR(id,v,tp)::rest,env) => env''
+
+  axiom	 add_vars_to_env([],env) => env
+
 end
 
 (** relation: evaluate_graphical_api

@@ -1894,6 +1894,10 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	------------------------------
 	ceval (env,Exp.ARRAY(_,_,es)) => Values.ARRAY(es')
 
+  rule	ceval_matrixelt(env,expll) => elts
+	------------------------------
+	ceval (env, Exp.MATRIX(_,_,expll)) => Values.ARRAY(elts)
+
   rule	ceval_cref (env,c) => v
 	---------------------------
 	ceval (env,Exp.CREF(c,_)) => v 
@@ -1912,11 +1916,59 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh))
 	  => Values.REAL(sum)
 
+  rule	ceval (env,lh) => Values.ARRAY(vlst1) &
+	ceval (env,rh) => Values.ARRAY(vlst2) &
+	Values.add_elementwise_arrayelt(vlst1, vlst2) => reslst
+	-------------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.ADD_ARR(_),rh)) => Values.ARRAY(reslst)
+
+  rule	ceval (env,lh) => Values.ARRAY(vlst1) &
+	ceval (env,rh) => Values.ARRAY(vlst2) &
+	Values.sub_elementwise_arrayelt(vlst1, vlst2) => reslst
+	-------------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh)) => Values.ARRAY(reslst)
+
+  rule	ceval (env,lh) => sval &
+	ceval (env,rh) => Values.ARRAY(aval) &
+	Values.mult_scalar_arrayelt(sval,aval) => reslst
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_ARRAY(_), rh)) => Values.ARRAY(reslst)
+
+  rule	ceval (env,rh) => sval &
+	ceval (env,lh) => Values.ARRAY(aval) &
+	Values.mult_scalar_arrayelt(sval,aval) => reslst
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh)) => Values.ARRAY(reslst)
+
+  rule	ceval (env,rh) => Values.ARRAY(rhvals) &
+	ceval (env,lh) => Values.ARRAY(lhvals) &
+	Values.mult_scalar_product(rhvals,lhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh)) => res
+	
+  rule	(* {{..}..{..}} * {...} *)
+	ceval (env,lh) => Values.ARRAY(lhvals as (elt1::_)) &
+ 	ceval (env,rh) => Values.ARRAY(rhvals as (elt2::_)) &
+	Values.is_array(elt1) => true &
+	Values.is_array(elt2) => false &
+	Values.mult_scalar_product(lhvals,rhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh)) => res
+
+ rule	(* {...} * {{..}..{..}} *)
+	ceval (env,rh) => Values.ARRAY(rhvals as (elt1::_)) &
+ 	ceval (env,lh) => Values.ARRAY(lhvals as (elt2::_)) &
+	Values.is_array(elt1) => true &
+	Values.is_array(elt2) => false &
+	Values.mult_scalar_product(lhvals,rhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh)) => res
+
   rule	ceval (env, lh) => Values.INTEGER(lhv) &
 	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_add(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh)) => Values.INTEGER(sum)
+ 	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh)) => Values.INTEGER(sum)
 	(**)
   rule	ceval (env, lh) => Values.REAL(lhv) &
 	ceval (env, rh) => Values.REAL(rhv) &
@@ -2021,6 +2073,27 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	-----------------------------------------------------
 	ceval (_,e) => fail
 	
+end
+
+relation ceval_matrixelt:(Env.Env,(Exp.Exp*bool) list list) => Values.Value list =
+
+  rule	ceval_matrixeltrow(env,expl) => v &
+	ceval_matrixelt(env,expll) => vl
+	---------------------------
+	ceval_matrixelt(env,expl::expll) => v::vl
+	
+  axiom	ceval_matrixelt(_,[]) => []
+end
+
+relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list ) => Values.Value =
+	
+  rule	ceval (env,e) => res &
+	ceval_matrixeltrow(env,rest) => Values.ARRAY(resl)
+	-------------------
+	ceval_matrixeltrow(env, (e,_)::rest) => Values.ARRAY(res::resl)
+	
+  axiom	 ceval_matrixeltrow(env,[]) => Values.ARRAY([])
+
 end
 
 (** relation: ceval_relation

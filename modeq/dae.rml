@@ -36,10 +36,8 @@ module DAE:
   
   with "absyn.rml"
   with "exp.rml"
-  with "explode.rml"
   with "algorithm.rml"
   with "types.rml"
-  with "staticexp.rml"
 
   type Ident = string
   type InstDims = Exp.Subscript list

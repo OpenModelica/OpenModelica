@@ -493,9 +493,9 @@ relation print_exp2 : (Exp,int) => () =
 	print_exp2(CALL(fcn, args,_,_),_)
 
   rule	(* print "This an array: " & *)
-	print "[" &
+	print "{" &
 	print_list(es, print_exp, ",") &
-	print "]"
+	print "}"
 	---------
 	print_exp2 (ARRAY(_,_,es),_)
 

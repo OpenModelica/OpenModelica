@@ -45,7 +45,163 @@ module Values :
 
   relation val_string : Value => string
   relation print_val : Value => ()
+  relation add_elementwise_arrayelt: (Value list, Value list) => Value list
+  relation sub_elementwise_arrayelt: (Value list, Value list) => Value list
+  relation mult_scalar_arrayelt: (Value, Value list) => Value list
+  relation mult_scalar_product: (Value list, Value list) => Value
+  relation is_array :Value => bool
+end
+	
+relation is_array: Value => bool = 
+  axiom	is_array(INTEGER(_)) => false
+  axiom	is_array(REAL(_)) => false
+  axiom	is_array(STRING(_)) => false
+  axiom	is_array(BOOL(_)) => false
+  axiom	is_array(ARRAY(_)) => true	
+end
 
+relation add_elementwise_arrayelt: (Value list, Value list) => Value list =
+	
+  rule	add_elementwise_arrayelt(v1lst,v2lst) => reslst &
+	add_elementwise_arrayelt(rest1,rest2) => res2 
+	----------------------------------------------
+	add_elementwise_arrayelt(ARRAY(v1lst)::rest1, ARRAY(v2lst)::rest2) 
+	    => ARRAY(reslst)::res2
+	    
+  rule	int_add(v1,v2) => res &
+	add_elementwise_arrayelt(rest1,rest2) => res2
+	---------------------
+	add_elementwise_arrayelt(INTEGER(v1)::rest1,INTEGER(v2)::rest2) 
+	    => INTEGER(res)::res2
+
+  rule	real_add(v1,v2) => res &
+	add_elementwise_arrayelt(rest1,rest2) => res2
+	---------------------
+	add_elementwise_arrayelt(REAL(v1)::rest1,REAL(v2)::rest2) 
+	    => REAL(res)::res2
+
+  rule	string_append(v1,v2) => res & (* Addition of strings is string concatenation *)
+	add_elementwise_arrayelt(rest1,rest2) => res2
+	---------------------
+ 	add_elementwise_arrayelt(STRING(v1)::rest1,STRING(v2)::rest2) 
+	    => STRING(res)::res2
+
+  axiom	add_elementwise_arrayelt([],[]) => []
+
+end
+
+relation sub_elementwise_arrayelt: (Value list, Value list) => Value list =
+	
+  rule	sub_elementwise_arrayelt(v1lst,v2lst) => reslst &
+	sub_elementwise_arrayelt(rest1,rest2) => res2 
+	----------------------------------------------
+	sub_elementwise_arrayelt(ARRAY(v1lst)::rest1, ARRAY(v2lst)::rest2) 
+	    => ARRAY(reslst)::res2
+	    
+  rule	int_sub(v1,v2) => res &
+	sub_elementwise_arrayelt(rest1,rest2) => res2
+	---------------------
+	sub_elementwise_arrayelt(INTEGER(v1)::rest1,INTEGER(v2)::rest2) 
+	    => INTEGER(res)::res2
+
+  rule	real_sub(v1,v2) => res &
+	sub_elementwise_arrayelt(rest1,rest2) => res2
+	---------------------
+	sub_elementwise_arrayelt(REAL(v1)::rest1,REAL(v2)::rest2) 
+	    => REAL(res)::res2
+
+  axiom	sub_elementwise_arrayelt([],[]) => []
+end
+
+relation mult_scalar_arrayelt: (Value, Value list) => Value list =
+
+  rule	mult_scalar_arrayelt(sval,vals) => r1 &
+	mult_scalar_arrayelt(sval,rest) => r2
+	------------------------------------
+	mult_scalar_arrayelt (sval,ARRAY(vals)::rest) => ARRAY(r1)::r2
+ 
+  rule	int_mul(v1,v2) => r1 &
+	mult_scalar_arrayelt(sval,rest) => r2
+	------------------------------------
+	mult_scalar_arrayelt (sval as INTEGER(v1),INTEGER(v2)::rest) => INTEGER(r1)::r2
+
+  rule	real_mul(v1,v2) => r1 &
+	mult_scalar_arrayelt(sval,rest) => r2
+	------------------------------------
+	mult_scalar_arrayelt (sval as REAL(v1),REAL(v2)::rest) => REAL(r1)::r2
+
+	axiom mult_scalar_arrayelt(_,[]) => []
+end
+
+relation mult_scalar_product: (Value list, Value list) => Value =
+	
+  rule	int_mul(v1,v2) => r1 &
+	mult_scalar_product(v1lst,v2lst) => INTEGER(r2) & 
+	int_add(r1,r2) => res	
+	------------------------------------
+	mult_scalar_product (INTEGER(v1)::(v1lst as (_::_)),INTEGER(v2)::(v2lst as (_::_)))
+	    => INTEGER(res)
+
+  rule	int_mul(v1,v2) => res 
+	------------------------------------
+	mult_scalar_product ([INTEGER(v1)],[INTEGER(v2)]) 
+	    => INTEGER(res)
+
+  rule	real_mul(v1,v2) => r1 &
+	mult_scalar_product(v1lst,v2lst) => REAL(r2) &
+	real_add(r1,r2) => res	
+	------------------------------------
+	mult_scalar_product (REAL(v1)::(v1lst as (_::_)),REAL(v2)::(v2lst as (_::_)))
+	    => REAL(res)
+
+  rule	real_mul(v1,v2) => res 
+	------------------------------------
+	mult_scalar_product ([REAL(v1)],[REAL(v2)]) 
+	    => REAL(res)
+
+  rule	mult_scalar_product (v2lst,vlst) => sres &
+	mult_scalar_product (rest,vlst) => ARRAY(vres) 
+	---------------------------------------------
+	mult_scalar_product (ARRAY(v2lst)::rest, vlst as (INTEGER(_)::_)) 
+	    => ARRAY(sres::vres)
+
+  axiom	mult_scalar_product([],INTEGER(_)::_) => ARRAY([])
+
+
+  rule	matrix_strip_first_column (mat) => (ARRAY(col),mat') &
+	print_val ARRAY(col) &
+	print_val ARRAY(mat') & 
+	mult_scalar_product(vlst,col) => v &
+	mult_scalar_product(vlst,mat') => ARRAY(vals)
+	---------------------------------------------
+	mult_scalar_product(vlst  as (INTEGER(_)::_), mat as (ARRAY(_::_::_)::_)) 
+	    => ARRAY(v::vals)
+
+  rule	matrix_strip_first_column (mat) => (ARRAY(col),mat') &
+	mult_scalar_product(vlst,col) => INTEGER(v) 
+	---------------------------------------------
+	mult_scalar_product(vlst  as (INTEGER(_)::_), mat as (ARRAY([_])::_)) 
+	    => ARRAY([INTEGER(v)])
+
+  rule	print "mult_scalar_product failed\n lst1 len:" &
+	list_length(lst1) => len &
+	int_string(len) => lenstr &
+	print lenstr & print "lst2 len:" &
+	list_length(lst2) => len2 &
+	int_string(len2) => len2str & 
+	print len2str & print "\n" 
+	--------------------------
+	mult_scalar_product(lst1,lst2) => fail
+end
+(** This relation takes a Value list representing a matrix and strips the first column of the matrix, i.e. for each sub list it removes the first element. Returning both the stripped column and the resulting matrix.**)
+relation matrix_strip_first_column: Value list => (Value,Value list) =
+
+  rule	matrix_strip_first_column(rest) => (ARRAY(resl),resl2)
+	---------------------------------------------------
+	matrix_strip_first_column (ARRAY(v1::vrest)::rest) 
+	    => (ARRAY(v1::resl),ARRAY(vrest)::resl2)
+
+  axiom	matrix_strip_first_column( []) => (ARRAY([]),[])
 end
 
 (*!ignorecode*) 
@@ -71,8 +227,8 @@ relation val_string : Value => string =
   axiom	val_string BOOL(TRUE) => "true"
 
   rule	val_list_string vs => s &
-	string_append("[",s) => s' &
-	string_append(s',"]") => s''
+	string_append("{",s) => s' &
+	string_append(s',"}") => s''
 	----------------------------
 	val_string ARRAY(vs) => s''
 
