@@ -61,15 +61,15 @@ relation translate_file : string list => () =
 	
   rule	print "# Too many arguments\n"
 	----------------------------
-	translate_file _::_::_
+	translate_file _::_::_ => fail
 
   rule	print "# Supply a file name\n"
 	----------------------------
-	translate_file []
+	translate_file [] => fail
 
   rule	print "# An error occured\n"
 	----------------------------
-	translate_file _
+	translate_file _ => fail
 
 end
 

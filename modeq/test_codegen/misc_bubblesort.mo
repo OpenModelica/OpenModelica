@@ -1,6 +1,6 @@
 
 function misc_bubblesort
-  input Real[10] x;
+  input Real[:] x;
   output Real[size(x,1)] y;
 protected
   Real t;
