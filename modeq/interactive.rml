@@ -774,6 +774,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  rule	is_class(cr,p) => b1 &
+	Util.bool_string(b1) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isClass",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
   rule	exist_class(cr,p) => b1 &
 	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
@@ -947,6 +958,22 @@ relation is_package: (Absyn.ComponentRef, Absyn.Program) => bool =
 
   axiom	is_package(cr,p) => false
 end
+
+(** relation: is_class
+ ** This relation takes a component reference and a program. 
+ ** It returns true if the refrenced class has the restriction "class", otherwise it returns 
+ ** false.
+**)
+relation is_class: (Absyn.ComponentRef, Absyn.Program) => bool =
+	
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_CLASS,_) 
+	----------------------------
+	is_class(cr,p) => true
+
+  axiom	is_class(cr,p) => false
+end
+
 
 (** relation: exist_class
  ** This relation takes a component reference and a program. 
