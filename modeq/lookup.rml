@@ -93,7 +93,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
 	(* Instantiate implicit (last argument = true) *)
-	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
+	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,false) 
 	  => (_,env'',_,cistate1,_) &
         not ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
 	(* Has to do additional check for encapsulated classes, see rule below *)
@@ -107,7 +107,7 @@ relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 	Env.open_scope(env', encflag) => env2 &
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
-	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true)
+	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,false)
 	  => (_, env'', _, cistate1, _) &
         ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
 	(* Has NOT to do additional check for encapsulated classes, see rule above *)
@@ -163,7 +163,7 @@ relation lookup_class: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
 	Env.open_scope(env',encflag) => env2 &
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr,id) => ci_state &
-	Inst.inst_class_in(env2',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,cistate1,_) &
+	Inst.inst_class_in(env2',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) => (_,env'',_,cistate1,_) &
         not ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has to do additional check for encapsulated classes, see rule below *)
 
 	lookup_class_in_class(env'',c,path,true) => (c',env''') &
@@ -187,7 +187,7 @@ rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
 	Env.print_env_path(env3) &
 	Print.print_buf "\n" &*)
 
-	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) 
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
 	  => (_,env4,_,cistate1,_) &
         ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has NOT to do additional check for encapsulated classes, see rule above *)
 	lookup_class_in_class(env4,c,path,false) => (c',env5) &
@@ -212,9 +212,7 @@ rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
 	Print.print_buf "  - looked for " & Absyn.path_string path => s & 
  	Print.print_buf s & Print.print_buf "\n"  &
 	print "- lookup_class failed looked for " & print s & 
-	print "envpath =" & Env.get_env_path env => p1 & 
-	Absyn.path_string p1 => s1 &
-	print s1 & print "\nenv:" & Print.get_string() => str &
+	print "\nenv:" & Print.get_string() => str &
 	Print.clear_buf & Env.print_env env & Print.get_string() => envstr &
 	Print.clear_buf & Print.print_buf str &
 	print envstr 
@@ -277,6 +275,7 @@ relation lookup_qualified_imported_class_in_frame: ((SCode.Ident * Env.Item) lis
 	lookup_class([fr],strippath,true) =>  (c2,_) &
 	not assert_package(c2) &
 	Print.print_buf "# Error, " & Dump.print_path strippath & Print.print_buf " is not a package\n"  
+	& print "# Error xxx is not a package\n" 
 	---------------------------------- 
 	lookup_qualified_imported_class_in_frame((_,Env.IMPORT(Absyn.NAMED_IMPORT(id,path)))::fs,env,ident)
 	    => fail
@@ -428,6 +427,9 @@ relation lookup_var : (Env.Env, Exp.ComponentRef)
 	------------------------------------------------------
 	lookup_var (env, cref) => (attr,ty,binding)
 
+  rule	print "- lookup_var failed\n"
+	--------------------
+	lookup_var(_,_) => fail
 end
 
 relation lookup_var_internal : (Env.Env,Exp.ComponentRef)
@@ -455,20 +457,32 @@ end
 relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef) 
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
-  rule	
-	lookup_class_in_env(env, Absyn.IDENT(id),true) => (c as SCode.CLASS(n,_,encflag,r,_), env) &
+  rule	lookup_class_in_env(env, Absyn.IDENT(id),true) => (c as SCode.CLASS(n,_,encflag,r,_), env2) &
 	Debug.fprintl ("lotr", ["lookup_var_in_packages. instantiating class", n, "\n"]) &
-	Env.open_scope(env,encflag) => env' &
-	Env.name_scope (env',n) => env2' &
+	Env.open_scope(env2,encflag) => env3 &
+	Env.name_scope (env3,n) => env4 &
 	ClassInf.start(r,n) => ci_state &
-	Inst.inst_class_in (env',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,types) &
-	lookup_var(env'',cref) => (attr,ty,bind) &
+	Inst.inst_class_in (env4,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],
+			    true,true) 
+	  => (_,env5,_,_,types) &
+	lookup_var_in_packages(env5,cref) => (attr,ty,bind) &
 	Debug.fprint ("lotr", "found var " ) &
 	Debug.fcall("lotr", Exp.print_component_ref, cref)  &
 	Debug.fprint ("lotr", " = ") &
 	Debug.fcall("lotr", Types.print_binding, bind) 
 	--------------------------------------------------
 	lookup_var_in_packages (env, Exp.CREF_QUAL(id, [], cref)) => (attr,ty,bind)
+
+
+  rule	lookup_var_local(env,cr) => (attr,ty,bind)
+	--------------------------------------------------
+	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
+
+  rule	not lookup_var_local(env,cr) => (attr,ty,bind) &
+	print "lookup_var_in_packages failed\n" 
+	--------------------------------------------------
+	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => fail
+
 end
 
 
@@ -867,7 +881,7 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (SCo
 	Print.print_buf " in envpath:\n" &
 	Env.print_env_path(env3) &
 	Print.print_buf "\n" &*)
-	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env4,_,_,_) &
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) => (_,env4,_,_,_) &
   	lookup_class_in_class (env4,c,p1,false) => (c',env5)
 	-------------------------------------------
 	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => (c',env5)
@@ -889,7 +903,7 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (SCo
 	Env.print_env_path(env3) &
 	Print.print_buf "\n" &*)
 
-	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) 
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
 	  => (_,env4,_,_,_) &
   	lookup_class_in_class (env4,c,p1,false) => (c',env5)
 	-------------------------------------------
@@ -925,13 +939,13 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env) &
        	Env.open_scope(env, encflag) => env2 &
-	Env.name_scope (env2,id) => env2' &
+	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr, id) => ci_state &
-	Inst.inst_class_in(env2', Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
-	  => (_,env'',_,_,_) &
-  	lookup_type_in_class (env'', c, p1, false) => (t, env3)
+	Inst.inst_class_in(env3, Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,false) 
+	  => (_,env4,_,_,_) &
+  	lookup_type_in_class (env4, c, p1, false) => (t, env5)
 	-------------------------------------------
-	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => (t, env3)
+	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => (t, env5)
 
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as false,restr,_) ,env) &
@@ -940,9 +954,9 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => fail
 
   rule	(* Lookup not restricted to encapsulated elts. only *)
-	lookup_class_in_env (env, Absyn.IDENT(c1), true) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env') &
-       	Env.open_scope(env',encflag) => env2 &
-	Env.name_scope (env2,id) => env2' &
+	lookup_class_in_env (env, Absyn.IDENT(c1), true) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env1) &
+       	Env.open_scope(env1,encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 (*	Print.print_buf "instanitating class " &
 	Print.print_buf id &
@@ -950,10 +964,10 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 	Env.print_env_path(env2') &
 	Print.print_buf "\n" &*)
 
-	Inst.inst_class_in(env2',Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
-  	lookup_type_in_class (env'',c,p1,false) => (t, env3)
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,false) => (_,env4,_,_,_) &
+  	lookup_type_in_class (env4,c,p1,false) => (t, env5)
 	-------------------------------------------
-	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env3)
+	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env5)
 
   rule	Print.print_buf "- lookup_type_in_class failed\n" &
 	Print.print_buf "  - class = " & Print.print_buf cname &
@@ -1017,7 +1031,6 @@ relation lookup_var2 : ((SCode.Ident * Env.Item) list,SCode.Ident)
   rule	lookup_var2(fs,id) => (fv,c,i)
 	------------------------
 	lookup_var2(_::fs,id) => (fv,c,i)
-
 end
 
 (** relation: check_subscripts
@@ -1064,9 +1077,30 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
 			 Exp.INDEX(_)::ys) => t'
 
+  rule	check_subscripts(t, ys) => t'
+	------------------------------
+	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+			 Exp.WHOLEDIM::ys) => t'
+
+  rule	check_subscripts(t, ys) => t'
+	------------------------------
+	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
+			 Exp.WHOLEDIM::ys) => t'
+
+  rule	check_subscripts(t, ys) => t'
+	------------------------------
+	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+			 Exp.SLICE(_)::ys) => t'
+
+  rule	check_subscripts(t, ys) => t'
+	------------------------------
+	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
+			 Exp.SLICE(_)::ys) => t'
+
   rule	Print.print_buf "- check_subscripts failed (" &
 	Types.print_type t & Print.print_buf ", [" &
  	Exp.print_list(s,Exp.print_subscript,",") & Print.print_buf "])\n"
+	& print "- check_subscripts failed\n"
 	-----------------------------------
 	check_subscripts(t,s) => fail
 

@@ -68,14 +68,15 @@ module Inst:
 
 
   relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
-			      Connect.Sets, SCode.Class, InstDims)
+			      Connect.Sets, SCode.Class, InstDims, bool)
 	  => (Env.Env, DAE.Element list)
 
   relation inst_class_in: (Env.Env, Mod.Mod, Prefix.Prefix, 
 			   Connect.Sets, ClassInf.State,
-			   SCode.Class, bool, InstDims, bool)
+			   SCode.Class, bool, InstDims, bool, bool)
 	  => (DAE.Element list, Env.Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list)
+
   relation inst_record_constructor_elt : (Env.Env, SCode.Element) 
 	 => (Types.Var)
   relation mktype : (ClassInf.State,Types.Var list) => Types.Type
@@ -234,7 +235,7 @@ end
 
 relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Element list) =
   rule	not name = name2 &
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae
 	-----------------------------
@@ -247,14 +248,14 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path) => ( Env.Env, DAE.Ele
 
   rule	name = name2 &      
 	(* How should be do here ??? *)
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
 	-----------------------------
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
 
   rule	not name = name2 &      
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
 	-----------------------------
@@ -310,7 +311,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
   rule	Debug.fprintln ("insttr", "inst_program2") &
-	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	inst_class_decl(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_program(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
@@ -326,7 +327,7 @@ end
 relation inst_program_implicit : (Env, SCode.Program) => DAE.Element list =
 	
   rule	Debug.fprintln ("insttr", "inst_program_implicit") &
-	implicit_instantiation(env,Mod.NOMOD,Prefix.NOPRE,[],c,[]) => (env',dae1) &
+	implicit_instantiation(env,Mod.NOMOD,Prefix.NOPRE,[],c,[],false) => (env',dae1) &
 	inst_program_implicit(env',cs) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
@@ -363,7 +364,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
   rule	Env.open_scope(env,encflag) => env' &
 	Env.name_scope(env',n) => env'' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env'', mod, pre, csets, ci_state, c, false, inst_dims, impl)
+	inst_class_in(env'', mod, pre, csets, ci_state, c, false, inst_dims, impl,false)
 	  => (dae1, _, csets', ci_state', tys) &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
@@ -382,14 +383,23 @@ end
  **
  ** This rule instantiates the contents of a class definition, with a
  ** new environment already setup.
+ ** The next last boolean indicates if the class should be instantiated 
+ ** implicit, i.e. without generating DAE.
+ ** The last boolean is a even stronger indication of implicit instantiation,
+ ** used when looking up variables in packages. This must be used because 
+ ** generation of functions in implicit instanitation (according to next last 
+ ** boolean) can cause circular dependencies (e.g. if a function uses a
+ ** constant in its body) 
  **)
 
 relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.Class, bool, InstDims, bool)
+			 SCode.Class, bool, InstDims, bool, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
-  rule	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims,impl)
+  rule	(*print "inst_class_in " & print n & print "\n" &*)
+	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims
+		      ,impl,packimpl)
 	  => (l,env', csets', ci_state', tys) &
 	Prefix.print_prefix_str pre => prestr &
 	string_append(prestr, " : ") => prestr' &
@@ -400,12 +410,13 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintl ("envprint", ["------------ /", prestr'', "\n"])
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
-		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims,impl)
+		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims,
+		      impl,packimpl)
 	  => (l,env', csets', ci_state', tys)
 
   rule  Print.print_buf "- inst_class_in failed\n"
 	----------------------------------
-	inst_class_in(_,_,_,csets,_,_,_,_,_) => fail
+	inst_class_in(_,_,_,csets,_,_,_,_,_,_) => fail
 
 end
 
@@ -420,10 +431,13 @@ end
  ** and finally the algorithms are instantiated using `inst_equation'
  ** and `inst_algorithm', respectively. The resulting lists of
  ** equations are concatenated to produce the result.
+ ** The last two arguments are the same as for inst_class_in: 
+ ** implicit instantiation and implicit package instantiation
  **)
 
 relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.ClassDef, SCode.Restriction, bool,InstDims,bool)
+			 SCode.ClassDef, SCode.Restriction, bool,InstDims,
+			 bool, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -446,9 +460,9 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* It does not perform component instantiations. *)
 	inst_extends_list(env1,mods,extendselts,impl)
 	  => (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) &
-	  
-
+		
 	Util.list_flatten([extcomps,compelts,cdefelts]) => compelts' &	
+	
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
@@ -459,7 +473,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
-	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', inst_dims, impl)
+	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', 
+			  inst_dims, impl, false)
 	  => (dae1,env4, csets1, ci_state2, tys) &
 	inst_list(env4,mods,pre,csets1,ci_state2,inst_equation, eqs')
 	  => (dae2,_,csets2, ci_state3) &
@@ -475,8 +490,51 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(dae8,dae5) => dae 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, inst_dims, impl)
+		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
+		      inst_dims, impl, false)
 	  => (dae, env4, csets5, ci_state6, tys)
+
+	(** This rule describes how to instantiate an explicit
+	 ** class definition *)
+  rule	Prefix.print_prefix_str pre => prestr &
+	Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &       
+	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
+
+	classdef_elts(els) => cdefelts &
+	component_elts(els) => compelts &
+	extends_elts(els) => extendselts &
+	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
+(*	inst_element_list2(env,mods,pre,csets,ci_state,cdefelts,inst_dims, impl)
+	  => (_,env1,csets',ci_state',tys) &*)	
+	add_classdefs_to_env(env,cdefelts,impl) => env1 &
+
+	(*2. EXTENDS Nodes*)
+	(* inst_extends_list only flatten inhteritance structure. *)
+	(* It does not perform component instantiations. *)
+	inst_extends_list(env1,mods,extendselts,impl)
+	  => (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) &
+		
+	Util.list_flatten([extcomps,compelts,cdefelts]) => compelts' &	
+	
+	(* Add variables to env, wihtout type and binding, *)
+	(* which will be added later in inst_element_list  *)
+	(* (where update_variable is called) *)
+	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',inst_dims,impl) => env3 &
+	(* Add components from base classes to be instantiated in 3 as well. *)
+	list_append(eqs,eqs2) => eqs' &
+	list_append(initeqs,initeqs2) => initeqs' &
+	list_append(alg,alg2) => alg' &
+	list_append(initalg,initalg2) => initalg' &
+	(*3. Instantiate components *)
+	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', 
+			  inst_dims, impl, true)
+	  => (dae1,env4, csets1, ci_state2, tys) 
+	------------------------------------------------------
+	inst_classdef(env,mods,pre, csets, ci_state,
+		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
+		      inst_dims, impl, true)
+	  => (dae1, env4, csets1, ci_state2, tys)
+
 
 	(** This rule describes how to instantiate a derived class *)
 	(** definition *)
@@ -492,14 +550,15 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.start(r, cn2) => new_ci_state &
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
-	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl)
+	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false)
 	  => (dae,env'', csets', ci_state', tys) &
 
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      SCode.DERIVED(cn,ad,mod), re, prot, inst_dims,impl)
+		      SCode.DERIVED(cn,ad,mod), re, prot, 
+		      inst_dims, impl, packimpl)
 	  => (dae,env'', csets', ci_state', tys)
 
 	(** If the class is derived from a class that can not be *)
@@ -511,15 +570,15 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf "# unknown class: " & Print.print_buf cns & Print.print_buf "\n"
 	----------------------------------------
 	inst_classdef(env,mods,pre,csets,ci_state,
-		      SCode.DERIVED(cn,ad,mod), re, prot, inst_dims,impl)
+		      SCode.DERIVED(cn,ad,mod), re, prot, 
+		      inst_dims, impl, packimpl)
 	  => fail
 
   rule	Print.print_buf "- inst_classdef failed\n"
 	----------------------------------
-	inst_classdef(_,_,_,_,_,_,_,_,_,_) => fail
+	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
-
 
 (** relation: inst_extends_list 
  ** 
@@ -553,8 +612,16 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
 	Mod.elab_untyped_mod(emod) => emod' &
 	Mod.merge(mod,mods') => mod' &			      
 	Mod.merge(mod',emod') => mods' &
-	list_append(compelts1, compelts2) => compelts &
+	list_append(compelts1, compelts2) => compelts &	
+
+(*	  Print.print_buf "\n compelts list: " &
+	  SCode.print_element_list(compelts) &
+	Print.print_buf "mod =" & 
+	Mod.print_mod mods' &			      
+	Print.get_string() => str1 & print str1 &*)
+				      
 	update_components(compelts,mods') => compelts3 &
+
         Util.list_flatten([eq1, eq2, eq3]) => eq &
 	Util.list_flatten([ieq1, ieq2, ieq3]) => ieq &
 	Util.list_flatten([alg1, alg2, alg3]) => alg &
@@ -591,6 +658,12 @@ relation update_components: (SCode.Element list, Mod.Mod) => SCode.Element list 
 
   axiom	update_components([],_) => []
 
+  rule 	Mod.lookup_comp_modification(mod,id) => Mod.NOMOD &
+	update_components(xs,mod) => res 
+	--------------------------------
+	update_components(SCode.COMPONENT(id,f,r,p,attr,tp,m)::xs,mod) 
+	  => SCode.COMPONENT(id,f,r,p,attr,tp,m)::res
+
   rule	Mod.lookup_comp_modification(mod,id) => m1 &
 	Mod.unelab_mod(m1) => m2 &
 	update_components(xs,mod) => res 
@@ -600,7 +673,17 @@ relation update_components: (SCode.Element list, Mod.Mod) => SCode.Element list 
 
   rule	update_components(xs,mod) => res 
 	--------------------------------
-	update_components(c::xs,mod) 
+	update_components((c as SCode.EXTENDS(_,_))::xs,mod) 
+	  => c::res
+
+  rule	update_components(xs,mod) => res 
+	--------------------------------
+	update_components((c as SCode.CLASSDEF(_,_,_,_))::xs,mod) 
+	  => c::res
+
+  rule	update_components(xs,mod) => res 
+	--------------------------------
+	update_components((c as SCode.IMPORT(_))::xs,mod) 
 	  => c::res
 
   rule	print "-update_components failed\n"
@@ -623,7 +706,8 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
   axiom	make_complete_type_names(env, []) => []
 	
   rule	make_complete_type_names(env, rest) => res &
-	Lookup.complete_path(env, path) => path'
+	Lookup.complete_path(env, path) => path' 
+	& print "completed to " & Absyn.path_string path' => s & print s & print "\n" 
 	------------------------------------
 	make_complete_type_names(env, SCode.EXTENDS(path, mod)::rest)
 	  => SCode.EXTENDS(path', mod)::res
@@ -640,8 +724,9 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	  
   rule	make_complete_type_names(env, rest) => res &
 	Lookup.complete_path(env, tp) => tp' 
+        & print "completed to " & Absyn.path_string tp' => s & print s & print "\n" 
 	--------------------------------------------------
-	make_complete_type_names(env, (elt as SCode.COMPONENT(id,f,r,p,attr,tp,mod))::rest)
+	make_complete_type_names(env, (SCode.COMPONENT(id,f,r,p,attr,tp,mod))::rest)
 	  => SCode.COMPONENT(id,f,r,p,attr,tp',mod)::res
 end
 
@@ -677,7 +762,6 @@ end
 
 (** relation: inst_element_list
  **
-
  ** Moved to inst_classdef, FIXME: Move commments later
  ** Instantiate elements one at a time, and concatenate the resulting
  ** lists of equations.
@@ -692,24 +776,29 @@ end
  **)
 
 relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    SCode.Element list, InstDims, bool)
-	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State, Types.Var list) =
-	    
-	    
-  rule	Debug.fprint("decl"," instantiated base classes, env, env=") &
-	Debug.fcall ("decl",Env.print_env, env) &
+			    SCode.Element list, InstDims, bool, bool)
+	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
+		Types.Var list) =
 	
-	inst_element_list2(env,mod,pre,csets,ci_state,elts,inst_dims,impl) 
-	  => (dae, env', csets', ci_state', tys) 
-	---------------------------------------------
-	inst_element_list(env,mod,pre,csets,ci_state,elts,inst_dims, impl) 
-	    => (dae, env', csets', ci_state', tys)
+  axiom	inst_element_list(env,_,_,csets,ci_state,[],_,_,_)
+	    => ([], env, csets, ci_state, [])
+	
+  rule  inst_element(env,mod,pre,csets,ci_state,el,inst_dims,impl, packimpl)
+	  => (dae1,env',csets',ci_state',tys1) &
+	inst_element_list(env',mod,pre,csets',ci_state',els,inst_dims,impl,packimpl)
+	  => (dae2,env'',csets'',ci_state'',tys2) &
+	list_append(tys1, tys2) => tys &
+	list_append(dae1, dae2) => dae 
+	------------------------------
+	inst_element_list(env,mod,pre,csets,ci_state,el::els,inst_dims,impl,packimpl)
+	  => (dae, env'', csets'', ci_state'', tys)
 
-  rule	Print.print_buf "- inst_element_list failed\n" 
-	---------------------
-	inst_element_list(_,_,_,_,_,_,_,_) => fail
+  rule	Print.print_buf "- inst_element_list2 failed\n" &
+	Dump.print_list (els, SCode.print_element, ", ") &
+	Print.print_buf "\n"
+	------------------------------------
+	inst_element_list(_,_,_,_,_,els,_,_,_) => fail
 end
-
 
 relation classdef_elts: (SCode.Element list) => (SCode.Element list) =
 
@@ -740,6 +829,7 @@ relation extends_elts: (SCode.Element list) => (SCode.Element list) =
 	------------------------
 	extends_elts(_::xs) => res
 end
+
 relation component_elts: (SCode.Element list) => (SCode.Element list) =
 
   axiom component_elts ([]) => []
@@ -765,7 +855,7 @@ relation add_classdefs_to_env : (Env, SCode.Element list, bool) => (Env) =
   rule	Env.extend_frame_i(env,imp) => env' &
 	add_classdefs_to_env(env',xs,impl) => env''
 	-------------------------
-	add_classdefs_to_env(env,(SCode.IMPORT(imp))::xs,impl) => env 
+	add_classdefs_to_env(env,(SCode.IMPORT(imp))::xs,impl) => env''
 end  
 
 relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -811,40 +901,15 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State
 	add_components_to_env(env,_,_,_,_,_,_,_) => fail
 end
 
-relation inst_element_list2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    SCode.Element list, InstDims, bool)
-	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
-		Types.Var list) =
-	
-  axiom	inst_element_list2(env,_,_,csets,ci_state,[],_,_)
-	    => ([], env, csets, ci_state, [])
-	
-  rule  inst_element(env,mod,pre,csets,ci_state,el,inst_dims,impl)
-	  => (dae1,env',csets',ci_state',tys1) &
-	inst_element_list2(env',mod,pre,csets',ci_state',els,inst_dims,impl)
-	  => (dae2,env'',csets'',ci_state'',tys2) &
-	list_append(tys1, tys2) => tys &
-	list_append(dae1, dae2) => dae 
-	------------------------------
-	inst_element_list2(env,mod,pre,csets,ci_state,el::els,inst_dims,impl)
-	  => (dae, env'', csets'', ci_state'', tys)
-
-  rule	Print.print_buf "- inst_element_list2 failed\n" &
-	Dump.print_list (els, SCode.print_element, ", ") &
-	Print.print_buf "\n"
-	------------------------------------
-	inst_element_list2(_,_,_,_,_,els,_,_) => fail
-
-end
-
 (** relation: inst_element
  ** This monster relation instantiates an element of a class
  ** definition.  An element is either a class definition, a variable,
  ** or an `extends' clause.
+ ** Last two bools are implicit instanitation and implicit package instantiation
  **)
 
 relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 SCode.Element, InstDims, bool)
+			 SCode.Element, InstDims, bool, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -854,7 +919,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Env.extend_frame_i(env,imp) => env'
 	------------------------------------
-	inst_element(env,mod,pre,csets,ci_state,SCode.IMPORT(imp),instdims,_) => ([],env',csets,ci_state,[])
+	inst_element(env,mod,pre,csets,ci_state,SCode.IMPORT(imp),instdims,_,_) => ([],env',csets,ci_state,[])
 		 
 	(* If a variable is declared multiple times, the first is used *)
 
@@ -862,7 +927,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,repl,prot,_,_,_),_,_)
+		     SCode.COMPONENT(n,final,repl,prot,_,_,_),_,_,_)
 	  => ([],env,csets,ci_state,[]) 
 
   	  (* Illegal redeclarations *)
@@ -873,7 +938,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Env.print_env env
 	------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.CLASSDEF(n,_,_,_),_,_)
+		     SCode.CLASSDEF(n,_,_,_),_,_,_)
 	  => fail
 	  
   rule	Lookup.lookup_class(env,Absyn.IDENT(n),false) => (_,_) &
@@ -881,7 +946,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf " as a class\n"
 	---------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,_,_,_,_,_,_),_,_)
+		     SCode.COMPONENT(n,_,_,_,_,_,_),_,_,_)
 	  => fail
 	  
           (**  A new class definition
@@ -897,10 +962,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "*--*All mods") &
 	Debug.fcall ("insttr", Mod.print_mod, mods) &
-	inst_class_decl(env,classmod,pre,csets,cls2,inst_dims) => (env',dae)
+	inst_class_decl(env,classmod,pre,csets,cls2,inst_dims,packimpl) => (env',dae)
 	-------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state, 
-		     SCode.CLASSDEF(n,_,true,c),inst_dims,impl)
+		     SCode.CLASSDEF(n,_,true,c),inst_dims,impl,packimpl)
 	  => (dae,env',csets,ci_state,[])
 
   rule	(* Redeclare of class definition, replaceable is false *)
@@ -910,7 +975,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Print.print_buf " but class not declared as replacable.\n" 
 	-------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state, 
-		     SCode.CLASSDEF(n,_,false,c),inst_dims,impl)
+		     SCode.CLASSDEF(n,_,false,c),inst_dims,impl,packimpl)
 	  => fail
 
   rule	(* Classdefinition without redeclaration *)
@@ -919,11 +984,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "**All mods") &
 	Debug.fcall ("insttr", Mod.print_mod, mods) &
-	inst_class_decl(env,classmod,pre,csets,c,inst_dims) => (env',dae)
+	inst_class_decl(env,classmod,pre,csets,c,inst_dims,packimpl) => (env',dae)
 	-------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state, 
-		     SCode.CLASSDEF(n,_,_,c),inst_dims,impl)
-	  => (dae,env',csets,ci_state,[])
+		     SCode.CLASSDEF(n,_,_,c),inst_dims,impl,packimpl)
+	  => (dae,env',csets,ci_state,[]) 
 	  
 	  (**  A component
 	   **
@@ -1027,7 +1092,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(env,mods,pre,csets,ci_state,
 		     comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m),inst_dims,impl)
+				     t,m),inst_dims,impl,packimpl)
           => (dae, env',csets',ci_state,
 	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
@@ -1047,14 +1112,14 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("instdb", Env.print_env, env)
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,repl,prot,_,t,_),_,_)
+		     SCode.COMPONENT(n,final,repl,prot,_,t,_),_,_,_)
          => ([],env,csets,ci_state,[])
 
   rule	Print.print_buf "- inst_element failed\n" &
 	SCode.print_element el &
 	Print.print_buf "\n"
 	-----------------------------------------------------------------
-	inst_element(_,_,_,_,_,el,_,_) => fail
+	inst_element(_,_,_,_,_,el,_,_,_) => fail
 
 end	
 
@@ -1792,23 +1857,23 @@ end
  **)
 
 relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
-			    Connect.Sets, SCode.Class,InstDims)
+			    Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
   rule	Debug.fprint("insttr","+\tinst_class_decl called\n") &
 	Env.extend_frame_c(env,c) => env' &
 	Debug.fprint("insttr","+\textended frame\n") &
-	implicit_instantiation(env',Mod.NOMOD,pre,csets,c,inst_dims) => (env'',dae) &
+	implicit_instantiation(env',Mod.NOMOD,pre,csets,c,inst_dims,packimpl) => (env'',dae) &
 	Debug.fprint("insttr","+\timplicit instantiation of ") &
 	Debug.fprint("insttr",n) & Debug.fprint("insttr", " finshed\n\n") 
 	----------------------------------
-	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,restr,_),inst_dims)
+	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,restr,_),inst_dims,packimpl)
 	  => (env'', dae)
 
   rule	Print.print_buf "- inst_class_decl failed\n Env=" &
 	Env.print_env env
 	----------------------------------
-	inst_class_decl(env,_,_,_,_,_) => fail
+	inst_class_decl(env,_,_,_,_,_,_) => fail
 end
 
 (** relation implicit_instantiation
@@ -1820,7 +1885,7 @@ end
  **)
 
 relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
-				   Connect.Sets, SCode.Class,InstDims)
+				   Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
 (* LS:This rule extends the frame with the package as a type, but
@@ -1858,7 +1923,7 @@ Removed *)
 	--------------------------------------
 	implicit_instantiation(env,mod,pre,csets,
 			       c as SCode.CLASS(n,_,_,SCode.R_FUNCTION,_),
-			       inst_dims)
+			       inst_dims,false)
 	  => (env', [DAE.FUNCTION(fpath, DAE.DAE(dae), ty)])
 
 
@@ -1868,13 +1933,13 @@ Removed *)
 	Env.extend_frame_t(env, n, ty) => env'	&
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
         let prot = false & (* how to get this? *)
-	inst_classdef (env,mod,pre,csets,ClassInf.UNKNOWN(n),parts,restr,prot,inst_dims,true) =>
+	inst_classdef (env,mod,pre,csets,ClassInf.UNKNOWN(n),parts,restr,prot,inst_dims,true,false) =>
 	  (_,tempenv,_,_,_) &
 	inst_ext_decl(tempenv, n, parts) => extdecl
 	--------------------------------------
 	implicit_instantiation(env,mod,pre,csets,
 			       c as SCode.CLASS(n,_,_,restr as SCode.R_EXT_FUNCTION,parts as SCode.PARTS(els,_,_,_,_,_)),
-			       inst_dims)
+			       inst_dims,false)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)])
 
   rule	(*let ty = Types.T_ENUMERATION(l) &
@@ -1883,14 +1948,14 @@ Removed *)
 	Env.extend_frame_c(env,enumclass) => env'' 
 	-----------------------------------
 	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,SCode.R_TYPE, SCode.ENUMERATION(l)),inst_dims)
+			       c as SCode.CLASS(n,_,_,SCode.R_TYPE, SCode.ENUMERATION(l)),inst_dims,_)
 	=> (env'', [])
 
-  axiom	implicit_instantiation(env,mod,pre,csets,c,_) => (env,[])
+  axiom	implicit_instantiation(env,mod,pre,csets,c,_,_) => (env,[])
 	
   rule	Print.print_buf "- implicit_instantiation failed\n" 
 	----------------
-	implicit_instantiation(_,_,_,_,_,_) => fail
+	implicit_instantiation(_,_,_,_,_,_,_) => fail
 end
 
 (** relation: inst_ext_decl

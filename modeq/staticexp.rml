@@ -1907,13 +1907,14 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 
   rule	elab_cref_subs (env,c) => (c', const) &
 	Print.print_buf "# Unknown component: " & Dump.print_component_ref c & Print.print_buf "\nenv:" &
-	Env.print_env env 
+	Env.print_env env & print "# Unknown component." 
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
-  rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n" & print "- elab_cref_failed\n" 
+  rule	Print.print_buf "- elab_cref failed: " & Dump.print_component_ref c & Print.print_buf "\n" & print "- elab_cref_failed , cr= " & Dump.print_component_ref_str c => s1 & print s1 & print " envpath =" &
+	Env.get_env_path env => envpath & Absyn.path_string(envpath) => s2 & print s2 & print "\n"
 	------------------------------
-	elab_cref (_,c) => fail
+	elab_cref (env,c) => fail
 
 end
 
@@ -2049,6 +2050,10 @@ relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
 	elab_cref_subs(env,Absyn.CREF_QUAL(id,ss,subs))
 	  => (Exp.CREF_QUAL(id,ss',cr), const)
 
+
+  rule	print "- elab_cref_subs failed\n" 
+	---------------------
+	elab_cref_subs(_,_) => fail
 end
 
 (** relation: elab_subscripts

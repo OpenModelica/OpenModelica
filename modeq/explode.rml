@@ -664,7 +664,9 @@ end
 
 relation print_mod : Mod => () =
 
-  axiom	print_mod(NOMOD)
+  rule	Print.print_buf "NOMOD"
+	----------------
+	print_mod(NOMOD)
 
   rule	Print.print_buf "redeclare(" & 
 	Dump.print_bool b & Print.print_buf ", " &
@@ -801,4 +803,7 @@ relation print_element : Element => () =
 	----------------------------------------
 	print_element COMPONENT(n,final,repl,prot,attr,typath,mod)
 
+  rule	Print.print_buf "IMPORT(_)\n" 
+	-------------------------
+	print_element(IMPORT(_))
 end	

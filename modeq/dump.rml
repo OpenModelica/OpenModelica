@@ -63,6 +63,7 @@ with "debug.rml"
   relation print_list : ('a list, 'a => (), string) => ()
   relation print_elementspec: Absyn.ElementSpec => ()
   relation print_named_arg: Absyn.NamedArg => () 
+  relation print_import : Absyn.Import => () 
   relation op_symbol : Absyn.Operator => string
   relation print_bool : bool => ()
   relation print_select: (bool,string,string) => ()
