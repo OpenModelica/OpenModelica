@@ -935,15 +935,16 @@ relation make_function_type: (Absyn.Path, Var list) => Type =
   rule	get_input_vars vl => invl &
 	get_output_vars vl => outvl &
 	make_fargs_list invl => fargs &
-	make_return_type outvl => rettype &
+	make_return_type outvl => rettype 
 
-	Debug.fprint ("ft", " <fargs: ") & 
+(*	& Debug.fprint ("ft", " <fargs: ") & 
 	Debug.fprint_list ("ft", fargs, print_farg, ", ") &
 	Debug.fprint ("ft", " >") &
 
 	Debug.fprint ("ft", " <rettype: ") & 
 	Debug.fcall ("ft", print_type, rettype) &
 	Debug.fprint ("ft", " >")
+*)
 	---------------------------------
 	make_function_type(p,vl) => ((T_FUNCTION(fargs, rettype),SOME(p)))
 
@@ -1263,9 +1264,9 @@ relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	match_type(e, e_type, expected_type) => (e, e_type)
 
   rule	subtype(e_type, expected_type) => false &
-	Debug.fprint("sei", "trying type convert\n") &
-	type_convert(e, e_type, expected_type) => (e',e_type') &
-	Debug.fprint("sei", "Type convert succeded\n") 
+(*	Debug.fprint("sei", "trying type convert\n") &*)
+	type_convert(e, e_type, expected_type) => (e',e_type') 
+(*	& Debug.fprint("sei", "Type convert succeded\n") *)
 	--------------------------------------------
 	match_type(e, e_type, expected_type) => (e',e_type')
 end
@@ -1286,9 +1287,9 @@ relation match_type_list : (Exp.Exp, Type list, Type list ) => (Exp.Exp, Type li
 	--------------------------------------
 	match_type_list(e, t1::ts1, t2::ts2) => (e',tp::res)
 
-  rule	Debug.fprint("failtrace","- match_type_list failed\n") 
+(*  rule	Debug.fprint("failtrace","- match_type_list failed\n") 
 	-----------------------------------------------------
-	match_type_list(e, t1::ts1, t2::ts2) => fail
+	match_type_list(e, t1::ts1, t2::ts2) => fail*)
 end
 
 (** relation: type_convert

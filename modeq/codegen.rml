@@ -2215,9 +2215,9 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(Exp.ASUB(_,_),_) => fail
 
   
-  rule	Debug.fprintln("failtrace","# generate_expression failed") &
+  rule	(*Debug.fprintln("failtrace","# generate_expression failed") &
 	Debug.fcall("failtrace",Exp.print_exp,e) &
-	Debug.fprintln("failtrace","")
+	Debug.fprintln("failtrace","")*)
 	----------------
 	generate_expression(e,_) => fail
 end

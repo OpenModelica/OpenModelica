@@ -227,7 +227,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist, Env.En
 	  => (DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))]), env'')
 	
 
-  rule	Debug.fprint("failtrace", "- instantiate_class failed\n")
+  rule	(*Debug.fprint("failtrace", "- instantiate_class failed\n")*)
 	------------
 	instantiate_class(_,_) => fail
 end
@@ -249,7 +249,7 @@ relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Elemen
 
   axiom	inst_class_in_program(env,[],_) => ([],env)
 	
-  rule	Debug.fprint("failtrace", "inst_class_in_program failed\n")
+  rule	(*Debug.fprint("failtrace", "inst_class_in_program failed\n")*)
 	-------------------------------
 	inst_class_in_program(env,_,_) => fail
 
@@ -399,7 +399,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false,_) => fail
 
-  rule	Env.open_scope(env,encflag) => env' &
+  rule	Env.open_scope(env,encflag,0) => env' &
 	Env.name_scope(env',n) => env'' &
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env'', mod, pre, csets, ci_state, c, false, inst_dims, impl,false)
@@ -416,9 +416,9 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl,callscope)
 	  => (dae, env''', [], ty, ci_state')
 
-  rule	Debug.fprint("failtrace", "- inst_class ") & 
+  rule	(*Debug.fprint("failtrace", "- inst_class ") & 
 	Debug.fprint("failtrace",  n) &
-	Debug.fprint("failtrace", " failed\n") 
+	Debug.fprint("failtrace", " failed\n") *)
 	-----------------------------------------------------
 	inst_class(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl,_) => fail
 	
@@ -483,7 +483,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      impl,packimpl)
 	  => (l,env', csets', ci_state', tys)
 
-  rule  Debug.fprint("failtrace", "- inst_class_in failed\n")
+  rule  (*Debug.fprint("failtrace", "- inst_class_in failed\n")*)
 	----------------------------------
 	inst_class_in(_,_,_,csets,_,_,_,_,_,_) => fail
 
@@ -512,7 +512,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
-  rule	Prefix.print_prefix_str pre => prestr &
+  rule	(*Prefix.print_prefix_str pre => prestr &*)
 	(*Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &*)
 	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
 
@@ -632,12 +632,12 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** This rule describes how to instantiate a derived class *)
 	(** definition *)
 
-  rule	Prefix.print_prefix_str pre => prestr &
-	Absyn.path_string cn => cnstr &
+  rule	(*Prefix.print_prefix_str pre => prestr &
+	Absyn.path_string cn => cnstr &*)
 	(*Debug.fprintl ("insttr", ["inst_class derived: ", cnstr, ", pre=",prestr,"\n"]) &*)
 	Lookup.lookup_class(env,cn,true) 
 	  => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
-	Env.open_scope(cenv,enc2) => cenv' &
+	Env.open_scope(cenv,enc2,0) => cenv' &
 	Env.name_scope(cenv',cn2) => cenv'' &
 	Mod.lookup_modification_p(mods,cn) => m &
 	Mod.elab_mod(env,pre,mod) => mod' &
@@ -667,7 +667,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      inst_dims, impl, packimpl)
 	  => fail
 	
-  rule	Debug.fprint("failtrace", "- inst_classdef failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_classdef failed\n")*)
 	----------------------------------
 	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
 
@@ -708,7 +708,7 @@ relation convert_to_instdims: (DimExp list) => InstDims =
 	------------------------------
 	convert_to_instdims(DIMEXP(sub,exp)::xs) => sub::res	
 
-  rule	Debug.fprint("failtrace","- convert_to_instdims failed\n")
+  rule	(*Debug.fprint("failtrace","- convert_to_instdims failed\n")*)
 	------------------------
 	convert_to_instdims(_) => fail
 end
@@ -729,8 +729,7 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	Mod.lookup_modification_p(mod, Absyn.IDENT(cn)) => outermod &
 	inst_derived_classes(cenv, outermod, c, impl) =>
 	  (cenv1, els, eq1, ieq1, alg1, ialg1) &
-	
-	Env.open_scope(cenv1,encf) => cenv2 &
+	Env.open_scope(cenv1,encf,0) => cenv2 &
 	Env.name_scope(cenv2,cn) => cenv3 &
 	ClassInf.start(r, cn) => new_ci_state &
 	Mod.elab_untyped_mod(emod,cenv3,Prefix.NOPRE) => mod' &
@@ -772,7 +771,7 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state,impl)
 	  => (env2, mods',compelts3, eq, ieq, alg, ialg)
 
-  rule	Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n")
+  rule	(*Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n")*)
 	------------------------------------------------
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state, impl) 
 	  => fail
@@ -786,7 +785,7 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
   axiom	inst_extends_list(env, mod, [], ci_state, impl) 
 	  => (env, mod, [], [], [], [], [])
 
-  rule	Debug.fprint("failtrace",  "- inst_extends_list failed\n" )
+  rule	(*Debug.fprint("failtrace",  "- inst_extends_list failed\n" )*)
 	---------------------
 	inst_extends_list(_,_,_,_,_) => fail
 end
@@ -866,7 +865,7 @@ relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod,Env.Env)
 	update_components(((c as SCode.IMPORT(_)),_)::xs,mod,env) 
 	  => ((c,Types.NOMOD)::res)
 
-  rule	Debug.fprint("failtrace", "-update_components failed\n")
+  rule	(*Debug.fprint("failtrace", "-update_components failed\n")*)
 	----------------------
 	update_components(_,_,_) => fail
 end
@@ -909,7 +908,7 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	make_complete_type_names(env, (SCode.COMPONENT(id,f,r,p,attr,tp,mod))::rest)
 	  => SCode.COMPONENT(id,f,r,p,attr,tp',mod)::res
 
-  rule	Debug.fprint("failtrace","-make_complete_type_names failed\n") 
+  rule	(*Debug.fprint("failtrace","-make_complete_type_names failed\n") *)
 	--------------------------------------
 	make_complete_type_names(_, _) => fail
 end
@@ -937,7 +936,7 @@ relation inst_derived_classes: 	(Env.Env, Types.Mod, SCode.Class, bool) =>
 	inst_derived_classes(env, mod, SCode.CLASS(_,_,_,_,SCode.DERIVED(tp,_,dmod)),impl) 
 	  => (env, elt, eq, ieq, alg, ialg) 
 
-  rule	Debug.fprint("failtrace", "- inst_derived_classes failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_derived_classes failed\n")*)
 	----------------------
 	inst_derived_classes(_,_,_,_) => fail
 end
@@ -976,7 +975,7 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element_list(env, mod, pre, csets, ci_state, el::els, inst_dims, impl, packimpl)
 	  => (dae, env'', csets'', ci_state'', tys)
 
-  rule	Debug.fprint("failtrace", "- inst_element_list failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_element_list failed\n")*)
 	------------------------------------
 	inst_element_list(_,_,_,_,_,els,_,_,_) => fail
 end
@@ -1095,7 +1094,7 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State
 	add_components_to_env(env,mods,pre,csets,ci_state,
 				 nocomp::xs,allcomps,inst_dims,impl) => env'*)
 	
-  rule	Debug.fprint("failtrace", "- add_components_to_env failed\n" ) 
+  rule	(*Debug.fprint("failtrace", "- add_components_to_env failed\n" ) *)
 	-------------------------------------
 	add_components_to_env(_,_,_,_,_,comps,_,_,_) => fail
 end
@@ -1138,8 +1137,8 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 
   axiom	add_components_to_env2(env,_,_,_,_,[],_,_) => env
 
-  rule	Debug.fprint("failtrace", "- add_components_to_env2 failed\n") &
-	Debug.fprint("failtrace", "\n\n") 
+  rule	(*Debug.fprint("failtrace", "- add_components_to_env2 failed\n") &
+	Debug.fprint("failtrace", "\n\n") *)
 	--------------------
 	add_components_to_env2(env,_,_,_,_,comps,_,_) => fail 
 end
@@ -1407,9 +1406,9 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     (SCode.COMPONENT(n,final,repl,prot,_,t,_),_),_,_,_)
          => ([],env,csets,ci_state,[])
 
-  rule	Debug.fprint("failtrace", "- inst_element failed\n") &
+  rule	(*Debug.fprint("failtrace", "- inst_element failed\n") &
 	Debug.fcall("failtrace",SCode.print_element, el) &
-	Debug.fprint("failtrace", "\n") 
+	Debug.fprint("failtrace", "\n") *)
 	-----------------------------------------------------------------
 	inst_element(_,_,_,_,_,(el,_),_,_,_) => fail 
 
@@ -1474,7 +1473,7 @@ relation redeclare_type: (Types.Mod,
 
   axiom	redeclare_type(mod,comp,env,pre,ci_state,impl) => (comp,mod,env)
 
-  rule	Debug.fprint("failtrace", "- redeclare_type failed\n")
+  rule	(*Debug.fprint("failtrace", "- redeclare_type failed\n")*)
 	------------------------------------------------------
 	redeclare_type(_,_,_,_,_,_) => fail
 end
@@ -1674,9 +1673,9 @@ rule	Print.print_buf "!!! Error, implicit instantiation of variables\n"
 	inst_var2(_,_,_,_,_,_,_,_,_,_,_,impl as true)
           => fail
 
-  rule	Debug.fprint("failtrace", "- inst_var2 failed: ") & 
+  rule	(*Debug.fprint("failtrace", "- inst_var2 failed: ") & 
 	Debug.fprint("failtrace",  n) &
-	Debug.fprint("failtrace", "\n")
+	Debug.fprint("failtrace", "\n")*)
 	--------------------------------------------------
 	inst_var2(_,_,_,_,_,n,_,_,_,_,_,_) => fail
 	
@@ -1699,7 +1698,7 @@ relation make_array_type: (DimExp list, Types.Type)
 	make_array_type(DIMEXP(_,_)::xs,(ty,p)) 
 	  => ((Types.T_ARRAY(Types.DIM(NONE),ty'),p))
 
-  rule	Debug.fprint("failtrace", "- make_array_type failed\n")
+  rule	(*Debug.fprint("failtrace", "- make_array_type failed\n")*)
 	-------------------------------------------------------
 	make_array_type(_,_) => fail
 end
@@ -1728,7 +1727,7 @@ relation get_usertype_dimensions:(Env.Env, Types.Mod, Prefix.Prefix, SCode.Class
 					    SCode.DERIVED(cn,ad,mod)),dims) 
 	  => res
 
-  rule	Debug.fprint("failtrace", "- get_usertype_dimensions failed\n")
+  rule	(*Debug.fprint("failtrace", "- get_usertype_dimensions failed\n")*)
 	--------------
 	get_usertype_dimensions(_,_,_,_,_) => fail
 end
@@ -1764,7 +1763,7 @@ relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 	
   axiom	get_cref_from_mod(_) => []
 
-  rule	Debug.fprint("failtrace", "- get_cref_from_mod failed\n")
+  rule	(*Debug.fprint("failtrace", "- get_cref_from_mod failed\n")*)
 	----------
 	get_cref_from_mod(_) => fail
 end
@@ -1783,7 +1782,7 @@ relation get_cref_from_dim: Absyn.ArrayDim => Absyn.ComponentRef list =
 
   axiom	 get_cref_from_dim([]) => []
 
-  rule	Debug.fprint("failtrace", "- get_cref_from_dim failed\n")
+  rule	(*Debug.fprint("failtrace", "- get_cref_from_dim failed\n")*)
 	------------
 	get_cref_from_dim(_) => fail
 end
@@ -1830,7 +1829,7 @@ relation get_cref_from_elabed_mod: Types.Mod => Absyn.ComponentRef list =
 	
   axiom	get_cref_from_elabed_mod(_) => []
 
-  rule	Debug.fprint("failtrace", "- get_cref_from_mod failed\n")
+  rule	(*Debug.fprint("failtrace", "- get_cref_from_mod failed\n")*)
 	----------
 	get_cref_from_elabed_mod(_) => fail
 end
@@ -1986,13 +1985,13 @@ relation update_variable_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassIn
 	update_variable_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, impl) 
 	  => env'
 
-  rule	Debug.fprint("failtrace", "-update_variable_in_env failed, ident = ") &
+  rule	(*Debug.fprint("failtrace", "-update_variable_in_env failed, ident = ") &
 	Debug.fcall("failtrace", Dump.print_component_ref, cref) &
 	Debug.fprint("failtrace","\n mods:") &
 	Debug.fcall("failtrace", Mod.print_mod , mod) &
 	Debug.fprint("failtrace", "\n   env:   " ) &
 	Debug.fcall("failtrace", Env.print_env , env) &
-	Debug.fprint("failtrace","\n") 
+	Debug.fprint("failtrace","\n") *)
 	---------------------------
 	update_variable_in_env(mod,cref,env,ci_state,impl) => env
 end
@@ -2141,9 +2140,9 @@ relation inst_array : (Env.Env,
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
           => (dae,csets'',ty)
 
-  rule	Debug.fprint("failtrace", "- inst_array failed: ") &
+  rule	(*Debug.fprint("failtrace", "- inst_array failed: ") &
 	Debug.fcall("failtrace", Print.print_buf,  n) &
-	Debug.fprint("failtrace", "\n") 
+	Debug.fprint("failtrace", "\n") *)
 	--------------------------------------------------
 	inst_array(_,_,_,_,_,n,(_,_),_,_,_,_,_,_) => fail
 	
@@ -2190,7 +2189,7 @@ relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Types.EqM
 	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
 
 
-  rule	Debug.fprint("failtrace", "- elab_arraydim failed\n")
+  rule	(*Debug.fprint("failtrace", "- elab_arraydim failed\n")*)
 	-------------------------------------
 	elab_arraydim(_,_,_,_,_,_) => fail
 
@@ -2324,8 +2323,8 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	-------------------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => fail
 
-  rule	print "elab_arraydim_decl failed\n" &
-	Debug.fprint("failtrace", "- elab_arraydim_decl failed\n")
+  rule	(*print "elab_arraydim_decl failed\n" &
+	Debug.fprint("failtrace", "- elab_arraydim_decl failed\n")*)
 	-------------------------------------
 	elab_arraydim_decl(_,_,_,_,_) => fail     
 end
@@ -2410,7 +2409,7 @@ relation compatible_arraydim : ((DimExp option) list,(DimExp option) list)
 	compatible_arraydim (NONE::xs,NONE::ys) 
 	  => DIMEXP(Exp.WHOLEDIM,NONE)::l
 
-  rule	Debug.fprint("failtrace", "- compatible_arraydim failed\n")
+  rule	(*Debug.fprint("failtrace", "- compatible_arraydim failed\n")*)
 	--------------------------------------
 	compatible_arraydim (_,_) => fail
 
@@ -2444,9 +2443,9 @@ relation elab_arraydim_type : (Types.Type, Absyn.ArrayDim)
  axiom elab_arraydim_type(_,[]) => []
 
  (* PR, for debugging *)
-  rule 	Debug.fprint("failtrace", "Undefined!") &
+  rule 	(*Debug.fprint("failtrace", "Undefined!") &
 	Debug.fprint("failtrace", " The type detected: ") &
-  	Debug.fcall("failtrace", Types.print_type, t)
+  	Debug.fcall("failtrace", Types.print_type, t)*)
        --------------------
 	elab_arraydim_type(t,_::ad) => fail
 end
@@ -2478,7 +2477,7 @@ relation inst_class_decl : (Env.Env, Types.Mod, Prefix.Prefix,
 	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,restr,_),inst_dims,packimpl)
 	  => (env'', dae)
 
-  rule	Debug.fprint("failtrace",  "- inst_class_decl failed\n") 
+  rule	(*Debug.fprint("failtrace",  "- inst_class_decl failed\n") *)
 	----------------------------------
 	inst_class_decl(env,_,_,_,_,_,_) => fail
 end
@@ -2565,7 +2564,7 @@ correct?
 
   axiom	implicit_instantiation(env, mod, pre, csets, c, _, _) => (env, [])
 	
-  rule	Debug.fprint("failtrace", "- implicit_instantiation failed\n")
+  rule	(*Debug.fprint("failtrace", "- implicit_instantiation failed\n")*)
 	----------------
 	implicit_instantiation(_,_,_,_,_,_,_) => fail
 end
@@ -2618,7 +2617,7 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 			       inst_dims, false)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
 				
-  rule	Debug.fprint("failtrace", "#-- implicit_function_instantiation failed\n")
+  rule	(*Debug.fprint("failtrace", "#-- implicit_function_instantiation failed\n")*)
 	------------------------------------------------------------------------
 	implicit_function_instantiation(_,_,_,_,_,_,_) => fail 
 
@@ -2648,7 +2647,7 @@ relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
 	inst_overloaded_functions(env,overloadname,fn::fns) 
 	  => (env'', DAE.FUNCTION(fpath, DAE.DAE(dae), ty)::dae1 )
 
-  rule	Debug.fprint("failtrace", "inst_overloaded_functions failed\n" )
+  rule	(*Debug.fprint("failtrace", "inst_overloaded_functions failed\n" )*)
 	--------------------------
 	inst_overloaded_functions(env,_,_) => fail
 end
@@ -2688,7 +2687,7 @@ relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef) => DAE.ExternalDecl =
 	-------------------------------------
 	inst_ext_decl (env, n, SCode.PARTS(els,_,_,_,_,SOME(orgextdecl))) => daeextdecl
 
-  rule	Debug.fprint("failtrace",  "#-- inst_ext_decl failed" )
+  rule	(*Debug.fprint("failtrace",  "#-- inst_ext_decl failed" )*)
 	--------------------------
 	inst_ext_decl (env, _, _) => fail
 end
@@ -2746,7 +2745,7 @@ relation inst_ext_make_externaldecl: (Ident, SCode.Element list, Absyn.ExternalD
 	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_)) 
 	  => extdecl
 
-  rule	Debug.fprint("failtrace", "#-- inst_ext_make_externaldecl failed\n")
+  rule	(*Debug.fprint("failtrace", "#-- inst_ext_make_externaldecl failed\n")*)
 	---------------------------------------------------------
 	inst_ext_make_externaldecl (_,_,_) => fail
 
@@ -2860,7 +2859,7 @@ relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbol
 	elab_exp_ext (env,exp,impl,st) => (e,prop,st)
 
 
-  rule	Debug.fprint("failtrace", "-elab_exp_ext failed\n")
+  rule	(*Debug.fprint("failtrace", "-elab_exp_ext failed\n")*)
 	-------------------
 	elab_exp_ext (env,exp,impl,st) => fail
 end
@@ -2872,7 +2871,7 @@ relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg list =
 	---------------------------------------------------------
 	inst_ext_get_fargs (env, Absyn.EXTERNALDECL(id,lang,retcr,absexps)) => extargs
 
-  rule	Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n")*)
 	-------------------------------------------------
 	inst_ext_get_fargs (_,_) => fail
 	
@@ -2911,9 +2910,9 @@ relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE
 				   
   axiom	inst_ext_get_fargs_single (env, exp, Types.PROP(ty,cnst)) => DAE.EXTARGEXP(exp,ty)
 
-  rule	Debug.fprint("failtrace", "#-- inst_ext_get_fargs_single failed\n") &
+  rule	(*Debug.fprint("failtrace", "#-- inst_ext_get_fargs_single failed\n") &
 	Debug.fcall("failtrace", Exp.print_exp, exp) &
-	Debug.fprint("failtrace", "\n")
+	Debug.fprint("failtrace", "\n")*)
 	--------------------------------------------------------
 	inst_ext_get_fargs_single (_,exp,prop) => fail
 end
@@ -2928,7 +2927,7 @@ relation inst_ext_get_rettype : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg =
 	-----------------------------------------
 	inst_ext_get_rettype (env,Absyn.EXTERNALDECL(n,lang,SOME(cref),args)) => extarg
 
-  rule	Debug.fprint("failtrace", "#-- inst_ext_rettype failed\n")
+  rule	(*Debug.fprint("failtrace", "#-- inst_ext_rettype failed\n")*)
 	--------------------------------------------------------
 	inst_ext_get_rettype (_,_) => fail
 
@@ -2992,7 +2991,7 @@ relation dae_declare : (Exp.ComponentRef,
 	dae_declare (vn, ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start) 
 	  => dae
 
-  rule	Debug.fprint("failtrace", "- dae_declare failed\n")
+  rule	(*Debug.fprint("failtrace", "- dae_declare failed\n")*)
 	------------------------------
 	dae_declare(_,_,_,_,_,_) => fail
 
@@ -3033,7 +3032,7 @@ relation dae_declare2 : (Exp.ComponentRef, Types.Type, DAE.Flow, SCode.Variabili
 	dae_declare2 (vn, ty, flow, SCode.STRUCTPARAM, dir, e, inst_dims,start) 
 	  => dae
 
-  rule	Debug.fprint("failtrace", "- dae_declare2 failed\n")
+  rule	(*Debug.fprint("failtrace", "- dae_declare2 failed\n")*)
 	------------------------------
 	dae_declare2(_,_,_,_,_,_,_,_) => fail
 
@@ -3058,7 +3057,7 @@ relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 	-----------------------------------------
 	dae_declare3 (vn, ty, fl, vk, Absyn.BIDIR, e, inst_dims,start) => dae
 
-  rule	Debug.fprint("failtrace", "#- dae_declare3 failed\n")
+  rule	(*Debug.fprint("failtrace", "#- dae_declare3 failed\n")*)
 	------------------------------
 	dae_declare3(_,_,_,_,_,_,_,_) => fail
 
@@ -3118,7 +3117,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation (env,mods,pre,csets,ci_state,eq)
 	  => (dae,env,csets',ci_state')
 
-  rule	Debug.fprint("failtrace", "- inst_equation failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_equation failed\n")*)
 	----------------------------------
 	inst_equation (_,_,_,_,_,_) => fail
 
@@ -3139,7 +3138,7 @@ relation inst_initialequation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_initialequation (env,mods,pre,csets,ci_state,eq)
 	  => (dae,env,csets',ci_state')
 
-  rule	Debug.fprint("failtrace", "- inst_initialequation failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_initialequation failed\n")*)
 	----------------------------------
 	inst_initialequation (_,_,_,_,_,_) => fail
 
@@ -3263,15 +3262,15 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*PR. Check that the lefthandside and the righthandside get along. *)
 	inst_eq_equation(e1'',prop1,e2'',prop2,initial) => dae &
 (*	Debug.print("\nDebug: did inst_eq_equation.") &*)
-	inst_equation_common_ci_trans (ci_state, initial) => ci_state' &
-(*	Debug.print("\nDebug: did ClassInf trans.") &*)
-	Prefix.print_prefix_str pre => prestr &
+	inst_equation_common_ci_trans (ci_state, initial) => ci_state' 
+(*	& Debug.print("\nDebug: did ClassInf trans.") &*)
+(*	Prefix.print_prefix_str pre => prestr &
 	Exp.print_exp_str e1' => e1str &
 	Exp.print_exp_str e2' => e2str &
 	string_append (prestr, ": ") => debugstr &
 	string_append (debugstr, e1str) => debugstr2 &
 	string_append (debugstr2, " = ") => debugstr3 &
-	string_append (debugstr3, e2str) => debugstr4 
+	string_append (debugstr3, e2str) => debugstr4 *)
 (*	& Debug.fcall ("expenvgraph", Env.print_env_graphviz, (env,debugstr4)) &
 	Debug.fprintl ("expenvprint", ["------------ ", debugstr4, "\n"]) &
 	Debug.fcall ("expenvprint", Env.print_env, env) &
@@ -3427,7 +3426,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => fail
 
-  rule	Debug.fprint("failtrace", "- inst_equation_common failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_equation_common failed\n")*)
 	----------------------------------
 	inst_equation_common(_,_,_,_,_,_,_) => fail
 
@@ -3454,7 +3453,7 @@ end
 (** HJ: **)
 relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 
-  rule	Env.open_scope (env,false) => env' &
+  rule	Env.open_scope (env,false,0) => env' &
 	Env.name_scope (env',"$for loop scope$") => env'' &
 	Env.extend_frame_v(env'',
 			   Types.VAR(i,
@@ -3625,7 +3624,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 
 (* No match. *)
-  rule	Debug.fprint("failtrace", "\n No match in inst_eq_equation. ")
+  rule	(*Debug.fprint("failtrace", "\n No match in inst_eq_equation. ")*)
 	---------------------------------	
 	inst_eq_equation(_,_,_,_,_) => fail
 
@@ -3741,13 +3740,13 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2, t as (Types.T_COMPLEX(_,_),_), initial) => dae
 
-  rule	Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=") &
+  rule	(*Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=") &
 	Debug.fcall("failtrace",Exp.print_exp, e1) &
 	Debug.fprint("failtrace", " exp2=" ) &
 	Debug.fcall("failtrace",Exp.print_exp, e2) &
 	Debug.fprint("failtrace", " type =") &
 	Debug.fcall("failtrace",Types.print_type, t) &
-	Debug.fprint("failtrace", "\n")
+	Debug.fprint("failtrace", "\n")*)
 	-------------------------------------
 	inst_eq_equation_2(e1,e2,t,initial) => fail
 
@@ -3793,7 +3792,7 @@ relation inst_array_equation : (Exp.Exp, Exp.Exp,
 	---------------------------------------------
 	inst_array_equation(e1, e2, Types.DIM(SOME(sz)), t, initial) => dae
 
-  rule	Debug.fprint("failtrace", "- inst_array_equation failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_array_equation failed\n")*)
 	--------------------------------------
 	inst_array_equation (_,_,_,_,_) => fail
 
@@ -3822,7 +3821,7 @@ relation inst_array_el_eq : (Exp.Exp, Exp.Exp, Types.Type, int, int, Initial)
 	---------------------
 	inst_array_el_eq(e1, e2, t, i, sz, initial) => []
 
-  rule	Debug.fprint("failtrace", "- inst_array_el_eq failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_array_el_eq failed\n")*)
 	-----------------------------------
 	inst_array_el_eq(_,_,_,_,_,_) => fail
 
@@ -3870,7 +3869,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_,_) => ([], csets)
 
-  rule	Env.open_scope (env,false) => env' &
+  rule	Env.open_scope (env,false,0) => env' &
 	Env.name_scope (env',"$for loop scope$") => env'' &
 	Env.extend_frame_v (env'',
 			    Types.VAR(i, Types.ATTR(false,
@@ -3889,7 +3888,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as NON_INITIAL)
 	  => (dae, csets'')
 
-  rule	Env.open_scope (env, false) => env' &
+  rule	Env.open_scope (env, false,0) => env' &
 	Env.name_scope (env',"$for loop scope$") => env'' &
 	Env.extend_frame_v (env'',
 			    Types.VAR(i, Types.ATTR(false,
@@ -3908,9 +3907,9 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as INITIAL)
 	  => (dae, csets'')
 
-  rule	Debug.fprint("failtrace",  "- unroll ") & 
+  rule	(*Debug.fprint("failtrace",  "- unroll ") & 
 	Debug.fcall("failtrace", Values.print_val, v) &
-	Debug.fprint("failtrace", " failed\n")
+	Debug.fprint("failtrace", " failed\n")*)
 	-------------------------
 	unroll (_,_,_,_,_,_,v,_,_) => fail
 
@@ -3934,7 +3933,7 @@ relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([DAE.ALGORITHM(Algorithm.ALGORITHM(statements'))],
 	      env,csets,ci_state)
 
-  rule	Debug.fprint("failtrace", "- inst_algorithm failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_algorithm failed\n")*)
 	---------------------------------
 	inst_algorithm(_,_,_,_,_,_) => fail
 
@@ -3958,7 +3957,7 @@ relation inst_initialalgorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State
 	  => ([DAE.INITIALALGORITHM(Algorithm.ALGORITHM(statements'))],
 	      env,csets,ci_state)
 
-  rule	Debug.fprint("failtrace", "- inst_algorithm failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_algorithm failed\n")*)
 	---------------------------------
 	inst_initialalgorithm(_,_,_,_,_,_) => fail
 
@@ -4073,9 +4072,9 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 					       Absyn.FUNCTIONARGS([cond,msg],[])))
 	  => stmt
 
-  rule  Debug.fprint("failtrace", "- inst_statement failed\n alg:") &
+  rule  (*Debug.fprint("failtrace", "- inst_statement failed\n alg:") &
 	Debug.fcall("failtrace", Dump.print_algorithm, alg) &
-	Debug.fprint("failtrace", "\n") 
+	Debug.fprint("failtrace", "\n") *)
 	---------------------------------
 	inst_statement(env,alg) => fail
 end
@@ -4096,7 +4095,7 @@ relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.AlgorithmItem list) list)
 	-------------------------------
 	inst_elseifs(env,(e,l)::tail) => ((e',prop,stmts)::tail')
 
-  rule	Debug.fprint("failtrace", "- inst_elseifs failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_elseifs failed\n")*)
 	-------------------------------
 	inst_elseifs(_,_) => fail
 
@@ -4208,11 +4207,11 @@ relation check_connect_types : (Exp.ComponentRef, Types.Type,
 	check_connect_types(c1,_,Types.ATTR(false,_,_,_),
 			    c2,_,Types.ATTR(true,_,_,_)) => fail
 
-  rule	Debug.fprint("failtrace", "- check_connect_types(") & 
+  rule	(*Debug.fprint("failtrace", "- check_connect_types(") & 
 	Debug.fcall("failtrace", Exp.print_component_ref, c1) &
 	Debug.fprint("failtrace", " <-> ") & 
         Debug.fcall("failtrace", Exp.print_component_ref, c2) & 
-	Debug.fprint("failtrace", ") failed\n")
+	Debug.fprint("failtrace", ") failed\n")*)
 	------------------------------------------------------
 	check_connect_types(c1,_,_,c2,_,_) => fail
 
@@ -4506,7 +4505,7 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
   axiom inst_mod_equation(_,_,Types.NOMOD) => []
   axiom	inst_mod_equation(_,_,Types.REDECL(_,_)) => []
 
-  rule	Debug.fprint("failtrace", "- inst_mod_equation failed\n")
+  rule	(*Debug.fprint("failtrace", "- inst_mod_equation failed\n")*)
 	------------------------------------
   	inst_mod_equation (_,_,_) => fail
 
@@ -4630,7 +4629,7 @@ axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), SOME(Types.TYPED(e,p
 	-------------------
 	make_binding (_,_, SOME(Types.TYPED(e,Types.PROP(t,c)))) => Types.EQBOUND(e',c)
 
-  rule	Debug.fprint("failtrace", "- make_binding failed\n")
+  rule	(*Debug.fprint("failtrace", "- make_binding failed\n")*)
 	-------------------------------
 	make_binding(_,_,_) => fail
 

@@ -1744,7 +1744,8 @@ relation get_nth_inherited_class2: (SCode.Class, Absyn.Class,int, Env.Env)
 	  => str
 
   rule	(* If that fails, instantiate, which takes more time*)
-	Env.open_scope(env,encflag) => env2 &
+	SCode.count_parts(c) => size &
+	Env.open_scope(env,encflag,size) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
@@ -1845,7 +1846,8 @@ rule	(* First try without instantiating class, saves time *)
 	  => str
 
 rule	(* If fails, instantiate class and search... *)
-	 Env.open_scope(env,encflag) => env2 &
+	SCode.count_parts(c) => size &
+	Env.open_scope(env,encflag,size) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
@@ -1875,7 +1877,8 @@ relation get_components: (Absyn.ComponentRef,Absyn.Program) => string =
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	Lookup.lookup_class(env,modelpath,false) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
-	Env.open_scope(env,encflag) => env2 &
+	SCode.count_parts(c) => size &
+	Env.open_scope(env,encflag,size) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env3,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
@@ -2434,14 +2437,103 @@ end
 
 relation get_icon_annotation_in_class : (Absyn.Class) => string =
 
-  rule	get_public_list(parts) => publst &
-	get_protected_list(parts) => protlst &
-	list_append(publst,protlst) => lst &
-	get_icon_annotation_in_elementitemlist(lst) => str
-	----------------------------
-	get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) => str	
+  rule	get_annotations_from_parts(parts) => annlst &
+	get_icon_annotation_str(annlst) => s1 &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str 
+	------------------------
+	get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) 
+	  => str	
 end
 
+relation get_annotations_from_parts: Absyn.ClassPart list 
+	  => Absyn.ElementArg list =
+	
+  axiom	get_annotations_from_parts [] => []
+	
+  rule	get_annotations_from_elts(elts) => lst1 &
+	get_annotations_from_parts(rest) => lst2 &
+	list_append(lst1,lst2) => res
+	-----------------------------------------
+	get_annotations_from_parts(Absyn.PUBLIC(elts)::rest) => res
+
+  rule	get_annotations_from_elts(elts) => lst1 &
+	get_annotations_from_parts(rest) => lst2 &
+	list_append(lst1,lst2) => res
+	-----------------------------------------
+	get_annotations_from_parts(Absyn.PROTECTED(elts)::rest) => res
+
+  rule	get_annotations_from_eqns(eqns) => lst1 &
+	get_annotations_from_parts(rest) => lst2 &
+	list_append(lst1,lst2) => res
+	-----------------------------------------
+	get_annotations_from_parts(Absyn.EQUATIONS(eqns)::rest) => res
+
+  rule	get_annotations_from_eqns(eqns) => lst1 &
+	get_annotations_from_parts(rest) => lst2 &
+	list_append(lst1,lst2) => res
+	-----------------------------------------
+	get_annotations_from_parts(Absyn.INITIALEQUATIONS(eqns)::rest) => res
+
+  rule	get_annotations_from_algs(algs) => lst1 &
+	get_annotations_from_parts(rest) => lst2 &
+	list_append(lst1,lst2) => res
+	-----------------------------------------
+	get_annotations_from_parts(Absyn.ALGORITHMS(algs)::rest) => res
+
+  rule	get_annotations_from_algs(algs) => lst1 &
+	get_annotations_from_parts(rest) => lst2 &
+	list_append(lst1,lst2) => res
+	-----------------------------------------
+	get_annotations_from_parts(Absyn.INITIALALGORITHMS(algs)::rest) => res
+end
+
+relation get_annotations_from_elts: (Absyn.ElementItem list) 
+	  => Absyn.ElementArg list =
+  axiom get_annotations_from_elts [] => []
+
+  rule	get_annotations_from_elts(rest) => lst1 &
+	list_append(lst1,lst2) => res
+	-----------------------------
+	get_annotations_from_elts(Absyn.ANNOTATIONITEM(Absyn.ANNOTATION(lst2))::rest)
+	  => res
+
+  rule	get_annotations_from_elts(rest) => res
+	-----------------------------
+	get_annotations_from_elts(_::rest)
+	  => res
+end
+
+relation get_annotations_from_eqns: (Absyn.EquationItem list) 
+	  => Absyn.ElementArg list =
+
+  axiom	get_annotations_from_eqns [] => []
+
+  rule	get_annotations_from_eqns(rest) => lst1 &
+	list_append(lst1,lst2) => res
+	--------------------------------------
+	get_annotations_from_eqns(Absyn.EQUATIONITEMANN(Absyn.ANNOTATION(lst2))::rest)
+	  => res
+
+  rule	get_annotations_from_eqns(rest) => res
+	--------------------------------------
+	get_annotations_from_eqns(_::rest) => res
+end
+
+relation get_annotations_from_algs: Absyn.AlgorithmItem list 
+	  => Absyn.ElementArg list =
+
+  axiom	get_annotations_from_algs [] => []
+
+  rule	get_annotations_from_algs(rest) => lst1 &
+	list_append(lst1,lst2) => res
+	-----------------------------
+	get_annotations_from_algs(Absyn.ALGORITHMITEMANN(Absyn.ANNOTATION(lst2))::rest) 
+	=> res
+  rule	get_annotations_from_algs(rest) => res
+	-----------------------------
+	get_annotations_from_algs(_::rest) => res
+end
 
 relation get_icon_annotation_in_elementitemlist: (Absyn.ElementItem list) => string =
   axiom	get_icon_annotation_in_elementitemlist [] => ""
@@ -2869,12 +2961,11 @@ relation get_componentitems_modification: Absyn.ComponentItem list => string =
 	
   rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => s1 &
 	get_componentitems_modification(rest) => s2 &
-	Util.string_append_list(["Code(",s1,"),",s2]) => res
+	Util.string_append_list([s1,",",s2]) => res
 	-------------------------------------------
 	get_componentitems_modification (Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(mod)),_)::(rest as (_::_))) => res
 	
-  rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => s1 &
-	Util.string_append_list(["Code(",s1,")"]) => res
+  rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => res
 	-------------------------------------------------------------
 	get_componentitems_modification ([Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(mod)),_)]) => res
 
@@ -3151,7 +3242,9 @@ relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env)
 	-------------------------------------------
 	get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_),env) => lst
 
-  rule	print "get_component_name_and_type_and_commend failed\n"
+	axiom	get_component_name_and_type_and_comment(_,env) => []
+
+  rule	print "get_component_name_and_type_and_comment failed\n"
 	-------------------------------------------
 	get_component_name_and_type_and_comment(_,_) => fail
 end

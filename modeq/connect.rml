@@ -427,7 +427,7 @@ relation unconnected_flow_equations : (Sets, DAE.Element list, bool) => DAE.Elem
 	(* If not all variables, do none... *)
   axiom	unconnected_flow_equations(csets,dae,false) => []
 
-  rule	Debug.fprint("failtrace","-unconnected_flow_equations failed\n") 
+  rule	(*Debug.fprint("failtrace","-unconnected_flow_equations failed\n") *)
 	----------------------------------
 	unconnected_flow_equations(csets,dae,_) => []
 end
@@ -495,7 +495,7 @@ relation get_inner_flow_variables: Sets => Exp.ComponentRef list =
 	---------------------------------- 
 	get_inner_flow_variables(EQU(_)::xs) => res 
 
-  rule	Debug.fprint("failtrace","-get_inner_flow_variables failed\n")
+  rule	(*Debug.fprint("failtrace","-get_inner_flow_variables failed\n")*)
 	----------------------------------
 	get_inner_flow_variables(_) => fail 
 end
@@ -513,7 +513,7 @@ relation get_inner_flow_variables_2: (Exp.ComponentRef * Face) list
 	-------------------------------------
 	get_inner_flow_variables_2( _::xs) => res
 
-  rule	Debug.fprint("failtrace","-get_inner_flow_variables_2 failed\n")
+  rule	(*Debug.fprint("failtrace","-get_inner_flow_variables_2 failed\n")*)
 	----------------------------------
 	get_inner_flow_variables_2(_) => fail 
 end

@@ -122,7 +122,7 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 	(* Lookup of qualified name *)
   rule	lookup_class(env, Absyn.IDENT(pack), false) 
 	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
-	Env.open_scope(env', encflag) => env2 &
+	Env.open_scope(env', encflag,0) => env2 &
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
 	(* Instantiate implicit (last argument = true) *)
@@ -136,8 +136,8 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 
 
   rule	lookup_class(env, Absyn.IDENT(pack), msg) 
-	  => (c as SCode.CLASS(id, _, encflag, restr, _), env') &
-	Env.open_scope(env', encflag) => env2 &
+	  => (c as SCode.CLASS(id, _, encflag, restr, _), env') &	
+	Env.open_scope(env', encflag,0) => env2 &
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
 	Inst.inst_class_in(env2', Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,true)
@@ -185,6 +185,7 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	----------------------------------------------------------
 	lookup_class(env, path, _) => (c, env')
 
+
   rule	(* If we search for A1.A2....An.x while in scope A1.A2...An
 	 , just search for x. Must do like this to ensure finite recursion *)
 	Env.get_env_path(env) => SOME(ep) &
@@ -198,7 +199,7 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 
   rule	lookup_class(env,Absyn.IDENT(pack),msgflag) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
-	Env.open_scope(env',encflag) => env2 &
+	Env.open_scope(env',encflag,0) => env2 &
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env2',Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
@@ -212,7 +213,7 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 
   rule	lookup_class(env,Absyn.IDENT(pack),msgflag) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_),env1) &
-	Env.open_scope(env1,encflag) => env2 &
+	Env.open_scope(env1,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 
@@ -225,15 +226,15 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path), msgflag) 
 	  => (c', env5)
 
-  rule	print "-lookup_class failed\n" &
+  rule	(*print "-lookup_class failed\n" &
 	Absyn.path_string path => s & 
 	Print.print_buf "#Error, class " & Print.print_buf s & 
 	Print.print_buf " not found.\n" &
-	Debug.fprint("failtrace", "- lookup_class failed\n  - looked for ") &
+(*	Debug.fprint("failtrace", "- lookup_class failed\n  - looked for ") &
  	Debug.fprint("failtrace",  s) &
 	Debug.fprint("failtrace", "\n env:") &
 	Debug.fcall("failtrace", Env.print_env, env) &
-	Debug.fprint("failtrace", "\n") 
+	Debug.fprint("failtrace", "\n") *)*)
 	--------------
 	lookup_class(env,path,true)=> fail 
 end
@@ -245,7 +246,7 @@ end
 relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 						 Absyn.Path) 
 	  => (SCode.Class, Env.Env) =
-
+	
   rule	lookup_qualified_imported_class_in_frame(items,totenv,name) 
 	  => (c,env') 
 	-----------------------------------------------------------------
@@ -254,7 +255,7 @@ relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 
   rule	lookup_qualified_imported_class_in_frame(imps, totenv, pack) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_), env') &
-       	Env.open_scope(env',encflag) => env2 &
+       	Env.open_scope(env',encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 	Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, [], ci_state,
@@ -343,6 +344,7 @@ relation lookup_unqualified_imported_class_in_env:(Env.Env,
 						   Env.Env, Absyn.Path)
 	  => (SCode.Class, Env.Env) =
 
+	
   rule	lookup_unqualified_imported_class_in_frame(items, totenv, name) 
 	  => (c, env')
 	-----------------------------------------------------------------
@@ -360,7 +362,7 @@ relation lookup_unqualified_imported_class_in_frame: (Env.Item list, Env.Env, SC
   rule	Env.top_frame(env) => fr & 
 	lookup_class([fr],path,false) 
 	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
-	Env.open_scope(env', encflag) => env2 &
+	Env.open_scope(env', encflag,0) => env2 &
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
 	Inst.inst_class_in(env2', Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,true) 
@@ -444,12 +446,12 @@ relation complete_path: (Env.Env, Absyn.Path) => Absyn.Path =
 	------------------
 	complete_path(env,path as Absyn.QUALIFIED(pack,_)) => path'
 
-  rule	Debug.fprint("failtrace", "-complete_path failed\n env=") &
+  rule	(*Debug.fprint("failtrace", "-complete_path failed\n env=") &
 	Debug.fcall("failtrace", Env.print_env, env) & 
 	Debug.fprint("failtrace", "\ntype: ")  &
 	Absyn.path_string path => str & 
 	Debug.fprint("failtrace", str )&
-	Debug.fprint("failtrace", "\n" )
+	Debug.fprint("failtrace", "\n" )*)
 	--------------------
 	complete_path(env,path) => fail
 
@@ -490,7 +492,7 @@ relation lookup_var : (Env.Env, Exp.ComponentRef)
 	------------------------------------------------------
 	lookup_var (env, cref) => (attr,ty,binding)
 
-  rule	Debug.fprint("failtrace",  "- lookup_var failed\n")
+  rule	(*Debug.fprint("failtrace",  "- lookup_var failed\n")*)
 	--------------------
 	lookup_var(_,_) => fail
 end
@@ -521,7 +523,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
   rule	(* Special case for looking up enumerations *)
 	lookup_class(env, Absyn.IDENT(id1),false) 
 	  => (c as SCode.CLASS(n,_,encflag,r as SCode.R_ENUMERATION,_), env2) &
-	Env.open_scope(env2,encflag) => env3 &
+	Env.open_scope(env2,encflag,0) => env3 &
 	Env.name_scope (env3,n) => env4 &
 	ClassInf.start(r,n) => ci_state &
 	Inst.inst_class_in (env4,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],
@@ -533,7 +535,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	
 
   rule	lookup_class(env, Absyn.IDENT(id),false) => (c as SCode.CLASS(n,_,encflag,r,_), env2) &
-	Env.open_scope(env2,encflag) => env3 &
+	Env.open_scope(env2,encflag,0) => env3 &
 	Env.name_scope (env3,n) => env4 &
 	ClassInf.start(r,n) => ci_state &
 	Inst.inst_class_in (env4,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],
@@ -548,14 +550,14 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	--------------------------------------------------
 	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
 
-  rule	not lookup_var_local(env,cr) => (attr,ty,bind) &
-	Debug.fprint("failtrace",  "- lookup_var_in_packages failed\n" )
+  rule	not lookup_var_local(env,cr) => (attr,ty,bind) 
+	(* &Debug.fprint("failtrace",  "- lookup_var_in_packages failed\n" )*)
 	--------------------------------------------------
 	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => fail
 
-  rule	Debug.fprint("failtrace",  "lookup_var_in_packages failed\n exp:" ) &
+  rule	(*Debug.fprint("failtrace",  "lookup_var_in_packages failed\n exp:" ) &
 	Debug.fcall("failtrace", Exp.print_component_ref, cr) &
-	Debug.fprint("failtrace", "\n")
+	Debug.fprint("failtrace", "\n")*)
 	--------------------------------------------------
 	lookup_var_in_packages (env, cr) => fail
 
@@ -634,7 +636,7 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
   rule	(* For qualified function names, e.g. Modelica.Math.sin *)
 	lookup_class(env, Absyn.IDENT(pack), false) 
 	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
-	Env.open_scope(env', encflag) => env2 &
+	Env.open_scope(env', encflag,0) => env2 &
 	Env.name_scope (env2,id) => env2' &
 	ClassInf.start(restr, id) => ci_state &
 	(* Instantiate implicit (last argument = true) *)
@@ -882,7 +884,7 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
 
   axiom	build_varlst_from_elts ([],_) => []
 
-  rule	Debug.fprint("failtrace", "- build_varlst_from_elts failed!\n")
+  rule	(*Debug.fprint("failtrace", "- build_varlst_from_elts failed!\n")*)
 	----------------------------------------------
 	build_varlst_from_elts(_,_) => fail
 end
@@ -995,7 +997,7 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),false) 
 	  => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env1) &
-       	Env.open_scope(env1,encflag) => env2 &
+       	Env.open_scope(env1,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 (*	Print.print_buf "instanitating class " &
@@ -1020,7 +1022,7 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
   rule	(* Lookup not restricted to encapsulated elts. only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1), false) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_) ,env1) &
-       	Env.open_scope(env1,encflag) => env2 &
+       	Env.open_scope(env1,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 (*	Print.print_buf "instanitating class " &
@@ -1048,11 +1050,11 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
 	lookup_class_in_class (env, cdef, path ,_) 
 	  => (c, env')
 
-  rule	Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
+  rule	(*Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
 	Debug.fprint("failtrace",cname) &
 	Debug.fprint("failtrace", "\n  - looked for: ") & Absyn.path_string path => s & 
 	Debug.fprint("failtrace", s) & 
-	Debug.fprint("failtrace", "\n")
+	Debug.fprint("failtrace", "\n")*)
 	-----------------
 	lookup_class_in_class(env, SCode.CLASS(cname,_,_,_,_), path, _) => fail
 end
@@ -1094,7 +1096,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 
   rule	(* Restrict lookup to encapsulated elements only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1),false) => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env) &
-       	Env.open_scope(env, encflag) => env2 &
+       	Env.open_scope(env, encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr, id) => ci_state &
 	Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true,false) 
@@ -1111,7 +1113,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 
   rule	(* Lookup not restricted to encapsulated elts. only *)
 	lookup_class_in_env (env, Absyn.IDENT(c1), false) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env1) &
-       	Env.open_scope(env1,encflag) => env2 &
+       	Env.open_scope(env1,encflag,0) => env2 &
 	Env.name_scope (env2,id) => env3 &
 	ClassInf.start(restr,id) => ci_state &
 (*	Print.print_buf "instanitating class " &
@@ -1126,11 +1128,11 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 	-------------------------------------------
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env5)
 
-  rule	Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
+  rule	(*Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
 	Debug.fprint("failtrace",cname) &
 	Debug.fprint("failtrace", "\n  - looked for: ") & Absyn.path_string path => s & 
 	Debug.fprint("failtrace", s) & 
-	Debug.fprint("failtrace", "\n")
+	Debug.fprint("failtrace", "\n")*)
 	-------------------------------
 	lookup_type_in_class(_, SCode.CLASS(cname,_,_,_,_), path, _) => fail
 end
@@ -1243,9 +1245,9 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 	check_subscripts((Types.T_ARRAY(Types.DIM(NONE),t),_),
 			 Exp.SLICE(_)::ys) => t'
 
-  rule	Debug.fprint("failtrace", "- check_subscripts failed ( ") &
+  rule	(*Debug.fprint("failtrace", "- check_subscripts failed ( ") &
 	Debug.fcall("failtrace", Types.print_type, t) & 
-	Debug.fprint("failtrace", ")\n")
+	Debug.fprint("failtrace", ")\n")*)
 	-----------------------------------
 	check_subscripts(t,s) => fail
 
@@ -1277,7 +1279,7 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	--------------------------------------
 	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty''',binding)
 
-  rule	Debug.fprint("failtrace", "- lookup_in_var failed\n")
+  rule	(*Debug.fprint("failtrace", "- lookup_in_var failed\n")*)
 	--------------------------------
 	lookup_in_var(_,_) => fail
 

@@ -516,6 +516,18 @@ RML_BEGIN_LABEL(System__time)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__hash)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  int res=0,i=0;
+  while( str[i])
+    res+=(int)str[i++];
+      
+  rmlA0 = (void*) mk_icon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 float next_realelt(float *arr)
 {
   static int curpos;

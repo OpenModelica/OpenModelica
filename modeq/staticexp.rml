@@ -331,11 +331,12 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	-------------------
 	elab_exp (env, Absyn.CODE(c),impl,st) =>  (Exp.CODE(c,tp'),Types.PROP(tp,true),st)
 
-  rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
+(*  rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
 	Debug.fcall("failtrace", Dump.print_exp, e) & 
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
+*)
 
 end
 
@@ -740,7 +741,7 @@ relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
 	elab_matrix_comma (env,el::els,impl,st,havereal) 
 	  => ((el',array)::els',props,dim,maxn)
 	  
-  rule	Debug.fprint("failtrace","- elab_matrix_comma failed\n")
+  rule	(*Debug.fprint("failtrace","- elab_matrix_comma failed\n")*)
 	-------------------------------------
 	elab_matrix_comma (_,_,_,_,_) => fail
 end
@@ -767,7 +768,7 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*
 	--------------------
 	elab_matrix_semi(env,el::els,impl,st,havereal) => (el'::els',props,dim,dim1,maxn)
 
-  rule	Debug.fprint("failtrace", "- elab_matrix_semi failed\n" )
+  rule	(*Debug.fprint("failtrace", "- elab_matrix_semi failed\n" )*)
 	-------------------
 	elab_matrix_semi(_,_,_,_,_) => fail
 
@@ -823,7 +824,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	  => (exp,Types.PROP((Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE),c))
 
 
-  rule	Debug.fprint("failtrace", "- elab_builtin_size failed\n")
+  rule	(*Debug.fprint("failtrace", "- elab_builtin_size failed\n")*)
 	----------------------------------------------------------
 	elab_builtin_size (env,expl) => fail
 end
@@ -1256,12 +1257,12 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st')
 
-  rule	Debug.fprint("failtrace", "- elab_call failed\n") &
+  rule	(*Debug.fprint("failtrace", "- elab_call failed\n") &
 	Debug.fprint("failtrace", " function: ") &
 	Debug.fcall("failtrace", Dump.print_component_ref,fn) &
 	Debug.fprint("failtrace", " posargs: ") &
 	Debug.fprint_list("failtrace", args, Dump.print_exp,", ") &	
-	Debug.fprint("failtrace", "\n") 
+	Debug.fprint("failtrace", "\n") *)
 	----------------------------
 	elab_call (env,fn,args,nargs,impl,st) => fail
 
@@ -1860,13 +1861,13 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 
 
 
-  rule	Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
+  rule	(*Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
 	Dump.print_component_ref_str cr => str1 &
 	Exp.print_exp_str exp => str2 &
 	Print.print_buf str1 &
 	Print.print_buf " -- " &
 	Print.print_buf str2 &
-	Print.print_buf "\n"
+	Print.print_buf "\n"*)
 	------------------------------------------------------------------
 	generate_compiled_function(env,cr,exp,_,_) => fail
 
@@ -2013,7 +2014,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	elab_call_args(env,fn,_,_,_) => fail
 
   rule	(*elab_exp(env, e) => (e',Types.PROP(t,_)) &*)
-	Debug.fprint("failtrace", "- elab_call_args failed\n")
+	(*Debug.fprint("failtrace", "- elab_call_args failed\n")*)
 	---------------------------------
 	elab_call_args(_,_,_,_,_) => fail
 
@@ -2071,9 +2072,10 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list)
         elab_types(env, args, (Types.T_FUNCTION(params,restype),_)::trest) 
 	  => (args', c, restype,t)
 
-  rule	Debug.fprint("failtrace","- elab_types failed.") 
+(*  rule	Debug.fprint("failtrace","- elab_types failed.") 
 	--------------
 	elab_types(env,_,_) => fail
+*)
 end
 
 
@@ -2289,7 +2291,7 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, Slot l
 	elab_named_input_args(env,narg,farg,slots) => (newslots,c) &
 	exp_list_from_slots(newslots) => newexp 
 	(*& Debug.fprint ("sei","elab_input_args, got expressions: ") &
-	Debug.fprint_list ("sei",newexp,Exp.print_exp,", ")*)
+ 	Debug.fprint_list ("sei",newexp,Exp.print_exp,", ")*)
 	------------------------------------------------------------
 	elab_input_args(env,[],narg as _::_,slots) => (newexp,newslots,c)
 	
@@ -2522,11 +2524,12 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	-----------------------------------------------------
 	elab_cref(env, c) => fail
 
-  rule	Debug.fprint("failtrace", "- elab_cref failed: ") & 
+(*  rule	Debug.fprint("failtrace", "- elab_cref failed: ") & 
 	Debug.fcall("failtrace",Dump.print_component_ref, c) & 
 	Debug.fprint("failtrace", "\n")
 	------------------------------
 	elab_cref (env,c) => fail
+*)
 
 end
 
@@ -3628,10 +3631,10 @@ relation get_koening_function_types: (Env.Env, Absyn.Path, Absyn.Exp list, Absyn
 	-------------------
 	get_koening_function_types(env,fn as Absyn.QUALIFIED(_,_),_,_) => fail
 
-  rule	Debug.fprint("failtrace", "- get_koening_function_types failed\n") 
+(*  rule	Debug.fprint("failtrace", "- get_koening_function_types failed\n") 
 	------------------------------------------------------------------
 	get_koening_function_types(env,fn as Absyn.QUALIFIED(_,_),_,_) => fail
-	
+*)
 end
 (** relation: get_koening_operator_types
  ** Used for userdefined operator overloads.

@@ -156,7 +156,7 @@ module SCode :
   relation print_element_list : Element list => ()	  
   relation print_restr: Restriction => ()
   relation variability_string: Variability => string
-	  
+  relation count_parts: Class => int
 end
 
 
@@ -828,4 +828,14 @@ relation variability_string: Variability => string =
   axiom	variability_string(PARAM) => "PARAM" 
   axiom	variability_string(STRUCTPARAM) => "STRUCTPARAM"
   axiom	variability_string(CONST) => "CONST" 
+end
+
+relation count_parts: Class => int =
+
+  rule	list_length(elts) => res
+	--------------------
+	count_parts CLASS(_,_,_,_,PARTS(elts,_,_,_,_,_)) => res
+
+  axiom	count_parts _ => 0
+
 end
