@@ -64,23 +64,19 @@ module Types :
 		   | VALBOUND of Values.Value
 
   (** - Types *)
-  datatype Type = T_INTEGER of Var list
+  type Type = (TType * Absyn.Path option)
+
+  datatype TType = T_INTEGER of Var list
 		| T_REAL of Var list
 		| T_STRING of Var list
 		| T_BOOL of Var list
 		| T_ENUM 
 		| T_ENUMERATION of string list * Var list
 		| T_ARRAY of ArrayDim * Type
-		| T_COMPLEX of Absyn.Path (* The fully qualified path 
-					   to the classdef. of the type
-					   Used in Koening lookup of overloaded func.*)
-			     * ClassInf.State
+		| T_COMPLEX of ClassInf.State
 			     * Var list
 		| T_FUNCTION of FuncArg list 
 			     * Type (* Only single-result *)
-			     * Absyn.Path option (* The fully qualified class name of the function 
-					   definition, used so deoverloading of functions can 
-					   be performed *)
 		| T_TUPLE of Type list (*PR. Used by functions who return multiple values. *)
 		| T_NOTYPE
 
@@ -142,7 +138,7 @@ returns multiple arguments. *)
   relation print_params : FuncArg list => () 
   relation print_farg: FuncArg => () 
   relation make_function_type : (Absyn.Path, Var list) => Type
-  relation make_enumeration_type : (Var list) => Type
+  relation make_enumeration_type: (Absyn.Path, Var list) => Type 
   relation is_parameter: Var => ()
   relation contain_real: Type list => bool
 	 
@@ -180,8 +176,8 @@ with "util.rml"
 
 relation is_array : Type => bool =
 
-  axiom	is_array T_ARRAY(_,_) => true
-  axiom	is_array _ => false
+  axiom	is_array((T_ARRAY(_,_),_)) => true
+  axiom	is_array((_,_)) => false
 
 end
 
@@ -190,22 +186,22 @@ relation ndims : Type => int =
   rule	ndims t => n &
 	int_add(n,1) => n'
 	---
-	ndims T_ARRAY(_,t) => n'
+	ndims( (T_ARRAY(_,t),_) ) => n'
 
-  axiom ndims _ => 0
+  axiom ndims( (_,_) ) => 0
 
 end
 relation get_dimension_sizes: Type => int list =
 
   rule	get_dimension_sizes(tp) => res
 	----------------
-	get_dimension_sizes(T_ARRAY(DIM(SOME(i)),tp)) => i::res
+	get_dimension_sizes((T_ARRAY(DIM(SOME(i)),tp),_)) => i::res
 
   rule	get_dimension_sizes(tp) => res
 	------------------------------
-	get_dimension_sizes(T_ARRAY(DIM(NONE),tp)) => -1::res
+	get_dimension_sizes((T_ARRAY(DIM(NONE),tp),_)) => -1::res
 
-  axiom	get_dimension_sizes(_) => []
+  axiom	get_dimension_sizes((_,_)) => []
 
 end
 
@@ -216,14 +212,14 @@ end
 
 relation basic_type : Type => bool =
 
-  axiom	basic_type T_INTEGER(_) => true
-  axiom	basic_type T_REAL(_) => true
-  axiom	basic_type T_STRING(_) => true
-  axiom	basic_type T_BOOL(_) => true
-  axiom	basic_type T_ENUM => true
-  axiom	basic_type T_ARRAY(_,_) => false
-  axiom	basic_type T_COMPLEX(_,_,_) => false
-  axiom	basic_type T_ENUMERATION(_,_) => false
+  axiom	basic_type( (T_INTEGER(_),_) ) => true
+  axiom	basic_type( (T_REAL(_),_) ) => true
+  axiom	basic_type( (T_STRING(_),_) ) => true
+  axiom	basic_type( (T_BOOL(_),_) ) => true
+  axiom	basic_type( (T_ENUM,_) ) => true
+  axiom	basic_type( (T_ARRAY(_,_),_) ) => false
+  axiom	basic_type( (T_COMPLEX(_,_),_) ) => false
+  axiom	basic_type( (T_ENUMERATION(_,_),_) ) => false
 end
 
 (** relation: equivtypes
@@ -253,42 +249,43 @@ end
 
 relation subtype : (Type, Type) => bool =
 	
-  axiom	subtype (T_INTEGER(_),T_INTEGER(_)) => true
-  axiom	subtype (T_REAL(_),T_REAL(_))       => true
-  axiom	subtype (T_STRING(_),T_STRING(_))   => true
-  axiom	subtype (T_BOOL(_),T_BOOL(_))       => true
-  axiom	subtype (T_ENUM,T_ENUM)	      => true
+  axiom	subtype ( (T_INTEGER(_),_),(T_INTEGER(_),_)) => true
+  axiom	subtype ((T_REAL(_),_),(T_REAL(_),_))       => true
+  axiom	subtype ((T_STRING(_),_),(T_STRING(_),_))   => true
+  axiom	subtype ((T_BOOL(_),_),(T_BOOL(_),_))       => true
+  axiom	subtype ((T_ENUM,_),(T_ENUM,_))	      => true
 
   rule	l2 = l1 &
-	subtype(T_ENUMERATION(rest1,vl1),T_ENUMERATION(rest2,vl2))=> res
+	subtype((T_ENUMERATION(rest1,vl1),p1),(T_ENUMERATION(rest2,vl2),p2))=> res
 	----------------------------------------------------------
-	subtype (T_ENUMERATION(l1::rest1,vl1),T_ENUMERATION(l2::rest2,vl2))=> res
+	subtype ((T_ENUMERATION(l1::rest1,vl1),p1),(T_ENUMERATION(l2::rest2,vl2),p2))
+	  => res
 
-  axiom	subtype (T_ENUMERATION([],_),T_ENUMERATION(_,_))=> true
+  axiom	subtype ((T_ENUMERATION([],_),_),(T_ENUMERATION(_,_),_))=> true
 	
   rule	subtype (t1,t2) => true
 	-----------------------
-	subtype(T_ARRAY(_,t1),T_ARRAY(DIM(NONE),t2)) => true
+	subtype((T_ARRAY(_,t1),_),(T_ARRAY(DIM(NONE),t2),_)) => true
 	
   rule	subtype (t1,t2) => true
 	-----------------------
-	subtype(T_ARRAY(DIM(NONE),t1),T_ARRAY(_,t2)) => true
+	subtype((T_ARRAY(DIM(NONE),t1),_),(T_ARRAY(_,t2),_)) => true
 	
   rule	i1 = i2 &
  	subtype (t1,t2) => true
 	---------------------------------------------------------
-	subtype(T_ARRAY(DIM(SOME(i1)),t1),T_ARRAY(DIM(SOME(i2)),t2)) => true
+	subtype((T_ARRAY(DIM(SOME(i1)),t1),_),(T_ARRAY(DIM(SOME(i2)),t2),_)) => true
 	
   rule	subtype_varlist(els1, els2) => true
 	-----------------------------------
-	subtype(T_COMPLEX(_,st1,els1), T_COMPLEX(_,st2,els2)) => true
+	subtype((T_COMPLEX(st1,els1),_), (T_COMPLEX(st2,els2),_)) => true
 
 	(* PR. Check of tuples, similar to complex. Just that
 	 identifier name do not have to be checked. Only types are
 	 checked. *)
   rule	subtype_typelist(type_list1,type_list2) => true
 	-----------------------------------
-	subtype(T_TUPLE(type_list1), T_TUPLE(type_list2)) => true
+	subtype((T_TUPLE(type_list1),_), (T_TUPLE(type_list2),_)) => true
 
   axiom subtype(t1,t2) => false
 
@@ -383,12 +380,13 @@ relation lookup_component : (Type, Ident) => Var =
 
   rule  lookup_component2(cs, id) => v
 	------------------------------
-	lookup_component(T_COMPLEX(p,st,cs), id) => v
+	lookup_component((T_COMPLEX(st,cs),_), id) => v
 
   rule	lookup_component2(cs,id) => VAR(n,attr,prot,ty,bnd) &
-	let ty' = T_ARRAY(dim,ty)
+	let ty' = ((T_ARRAY(dim,ty),NONE))
 	-----------------------------
-	lookup_component(T_ARRAY(dim,T_COMPLEX(p,st,cs)), id) => VAR(n,attr,prot,ty',bnd)
+	lookup_component((T_ARRAY(dim,(T_COMPLEX(st,cs),_)),_), id) 
+	  => VAR(n,attr,prot,ty',bnd)
 
   rule	Print.print_buf "- Looking up " &
 	Print.print_buf id &
@@ -416,19 +414,19 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 	(* Real *)	
   rule	lookup_component2(cs, id) => v
 	-------------------------------
-	lookup_in_builtin(T_REAL(cs),id) => v
+	lookup_in_builtin((T_REAL(cs),_),id) => v
 
   rule	lookup_component2(cs, id) => v
 	-------------------------------
-	lookup_in_builtin(T_INTEGER(cs),id) => v
+	lookup_in_builtin((T_INTEGER(cs),_),id) => v
 
   rule	lookup_component2(cs, id) => v
 	-------------------------------
-	lookup_in_builtin(T_STRING(cs),id) => v
+	lookup_in_builtin((T_STRING(cs),_),id) => v
 
   rule	lookup_component2(cs, id) => v
 	-------------------------------
-	lookup_in_builtin(T_BOOL(cs),id) => v
+	lookup_in_builtin((T_BOOL(cs),_),id) => v
 
 (*	
   axiom	lookup_in_builtin(T_REAL,"quantity")
@@ -466,122 +464,122 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
 					  depending on variability of instance*)
-  axiom	lookup_in_builtin(T_REAL,"enable")
+  axiom	lookup_in_builtin((T_REAL(_),_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+		 false, (T_BOOL([]),NONE), VALBOUND(Values.BOOL(true)))
 
-  axiom	lookup_in_builtin(T_REAL,"nominal")
+  axiom	lookup_in_builtin((T_REAL(_),_),"nominal")
 	  => VAR("nominal",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_REAL, UNBOUND)
+		 false, (T_REAL([]),NONE), UNBOUND)
 
-  axiom	lookup_in_builtin(T_REAL,"stateSelect")
+  axiom	lookup_in_builtin((T_REAL(_),_),"stateSelect")
 	  => VAR("stateSelect",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_ENUMERATION(["never","avoid","default","prefer","always"]),
+		 false, (T_ENUMERATION(["never","avoid","default","prefer","always"]),NONE),
 		 VALBOUND(Values.ENUM("default")))
 		 (* optimized away looking up the builtin enumeration type 'stateSelect' *)
 
 	(* Integer *)
-  axiom	lookup_in_builtin(T_INTEGER,"quantity")
+  axiom	lookup_in_builtin((T_INTEGER(_),_),"quantity")
 	  => VAR("quantity",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_STRING, VALBOUND(Values.STRING("")))
+		 false, (T_STRING([]),NONE), VALBOUND(Values.STRING("")))
 
-  axiom	lookup_in_builtin(T_INTEGER,"min")
+  axiom	lookup_in_builtin((T_INTEGER(_),_),"min")
 	  => VAR("min",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_INTEGER, UNBOUND)
+		 false, (T_INTEGER([]),NONE), UNBOUND)
 
-  axiom	lookup_in_builtin(T_INTEGER,"max")
+  axiom	lookup_in_builtin((T_INTEGER(_),_),"max")
 	  => VAR("max",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_INTEGER, UNBOUND)
+		 false, (T_INTEGER([]),NONE), UNBOUND)
 
-  axiom	lookup_in_builtin(T_INTEGER,"start")
+  axiom	lookup_in_builtin((T_INTEGER(_),_),"start")
 	  => VAR("start",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_REAL, VALBOUND(Values.INTEGER(0)))
+		 false, (T_REAL([]),NONE), VALBOUND(Values.INTEGER(0)))
 
-  axiom	lookup_in_builtin(T_INTEGER,"fixed")
+  axiom	lookup_in_builtin((T_INTEGER(_),_),"fixed")
 	  => VAR("fixed",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
+		 false, (T_BOOL([]),NONE), UNBOUND) (* Needs to be set to true/false higher up the call chain
 					  depending on variability of instance*)
-  axiom	lookup_in_builtin(T_INTEGER,"enable")
+  axiom	lookup_in_builtin((T_INTEGER(_),_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+		 false, (T_BOOL([]),NONE), VALBOUND(Values.BOOL(true)))
 
 	(* Boolean *)
-  axiom	lookup_in_builtin(T_BOOL,"quantity")
+  axiom	lookup_in_builtin((T_BOOL(_),_),"quantity")
 	  => VAR("quantity",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_STRING, VALBOUND(Values.STRING("")))
+		 false, (T_STRING([]),NONE), VALBOUND(Values.STRING("")))
 
-  axiom	lookup_in_builtin(T_BOOL,"start")
+  axiom	lookup_in_builtin((T_BOOL(_),_),"start")
 	  => VAR("start",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL, VALBOUND(Values.BOOL(false)))
+		 false, (T_BOOL([]),NONE), VALBOUND(Values.BOOL(false)))
 
-  axiom	lookup_in_builtin(T_BOOL,"fixed")
+  axiom	lookup_in_builtin((T_BOOL(_),_),"fixed")
 	  => VAR("fixed",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
+		 false, (T_BOOL([]),NONE), UNBOUND) (* Needs to be set to true/false higher up the call chain
 					  depending on variability of instance*)
-  axiom	lookup_in_builtin(T_BOOL,"enable")
+  axiom	lookup_in_builtin((T_BOOL(_),_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+		 false, (T_BOOL([]),NONE), VALBOUND(Values.BOOL(true)))
 
 	(* String *)
-  axiom	lookup_in_builtin(T_STRING,"quantity")
+  axiom	lookup_in_builtin((T_BOOL(_),_),"quantity")
 	  => VAR("quantity",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_STRING, VALBOUND(Values.STRING("")))
+		 false, (T_STRING([]),NONE), VALBOUND(Values.STRING("")))
 
-  axiom	lookup_in_builtin(T_STRING,"start")
+  axiom	lookup_in_builtin((T_BOOL(_),_),"start")
 	  => VAR("start",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_STRING, VALBOUND(Values.STRING("")))
+		 false, (T_STRING([]),NONE), VALBOUND(Values.STRING("")))
 
-  axiom	lookup_in_builtin(T_STRING,"enable")
+  axiom	lookup_in_builtin((T_BOOL(_),_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+		 false, (T_BOOL([]),NONE), VALBOUND(Values.BOOL(true)))
 *)
 	(* Enumeration ( type E in spec) *)
-  axiom	lookup_in_builtin(T_ENUM,"quantity")
+  axiom	lookup_in_builtin((T_ENUM,_),"quantity")
 	  => VAR("quantity",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_STRING([]),VALBOUND(Values.STRING("")))
+		 false, (T_STRING([]),NONE),VALBOUND(Values.STRING("")))
 
-  axiom	lookup_in_builtin(T_ENUM,"min")
+  axiom	lookup_in_builtin((T_ENUM,_),"min")
 	  => VAR("min",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_ENUM, UNBOUND) (* Should be bound to the first element of
+		 false, (T_ENUM,NONE), UNBOUND) (* Should be bound to the first element of
 					  T_ENUMERATION list higher up in the call chain *)
-  axiom	lookup_in_builtin(T_ENUM,"max")
+  axiom	lookup_in_builtin((T_ENUM,_),"max")
 	  => VAR("max",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_ENUM, UNBOUND) (* Should be bound to the last element of 
+		 false, (T_ENUM,NONE), UNBOUND) (* Should be bound to the last element of 
 					  T_ENUMERATION list higher up in the call chain *)
-  axiom	lookup_in_builtin(T_ENUM,"start")
+  axiom	lookup_in_builtin((T_ENUM,_),"start")
 	  => VAR("start",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL([]), UNBOUND) (* Should be bound to the last element of 
+		 false, (T_BOOL([]),NONE), UNBOUND) (* Should be bound to the last element of 
 					  T_ENUMERATION list higher up in the call chain *)
 
-  axiom	lookup_in_builtin(T_ENUM,"fixed")
+  axiom	lookup_in_builtin((T_ENUM,_),"fixed")
 	  => VAR("fixed",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL([]), UNBOUND) (* Needs to be set to true/false higher up the call chain
+		 false, (T_BOOL([]),NONE), UNBOUND) (* Needs to be set to true/false higher up the call chain
 					  depending on variability of instance*)
-  axiom	lookup_in_builtin(T_ENUM,"enable")
+  axiom	lookup_in_builtin((T_ENUM,_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, T_BOOL([]), VALBOUND(Values.BOOL(true)))		 
+		 false, (T_BOOL([]),NONE), VALBOUND(Values.BOOL(true)))		 
 end
 
 (** relation: lookup_component2
@@ -610,7 +608,7 @@ relation make_array: (Type, Absyn.ArrayDim) => Type =
 
   rule	list_length(l) => len
 	--------------------
-	make_array(t,l) => T_ARRAY(DIM(SOME(len)),t)
+	make_array(t,l) => ((T_ARRAY(DIM(SOME(len)),t),NONE))
 end
 
 (** relation: lift_array
@@ -623,7 +621,7 @@ relation lift_array : (Type,int option) => Type =
 
   rule	(*print("\nDebug: lifts the array.") 
 *)	-------------------
-	lift_array (ty,i) => T_ARRAY(DIM(i),ty)
+	lift_array (ty,i) => ((T_ARRAY(DIM(i),ty),NONE))
 (* PR  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty) *)
 
 end
@@ -635,7 +633,7 @@ end
 
 relation unlift_array : Type => Type =
 
-  axiom	unlift_array T_ARRAY(DIM(_),ty) => ty
+  axiom	unlift_array((T_ARRAY(DIM(_),ty),_)) => ty
 
 end
 
@@ -649,7 +647,7 @@ relation array_element_type : Type => Type =
 
   rule	array_element_type(ty) => ty'
 	------------------------------
-	array_element_type T_ARRAY(DIM(_),ty) => ty'
+	array_element_type( (T_ARRAY(DIM(_),ty),_)) => ty'
 
   axiom	array_element_type t => t
 
@@ -661,15 +659,15 @@ end
 **)
 relation unparse_type: Type => string =
 
-  axiom	unparse_type T_INTEGER(_) =>  "Integer"
-  axiom	unparse_type T_REAL(_) =>  "Real"
-  axiom	unparse_type T_STRING(_) =>  "String"
-  axiom	unparse_type T_BOOL(_) =>  "Boolean"
+  axiom	unparse_type((T_INTEGER(_),_)) =>  "Integer"
+  axiom	unparse_type((T_REAL(_),_)) =>  "Real"
+  axiom	unparse_type((T_STRING(_),_)) =>  "String"
+  axiom	unparse_type((T_BOOL(_),_)) =>  "Boolean"
 
   rule	Util.string_delimit_list(l,",") => s1 &
 	Util.string_append_list(["enumeration(",s1,")"]) => str
 	-----------------
-	unparse_type T_ENUMERATION(l,_) =>  str
+	unparse_type((T_ENUMERATION(l,_),_)) =>  str
 
   rule  flatten_array_type t => (ty, dimlst) &
 	Util.list_map(dimlst,int_string) => dimlststr &
@@ -678,13 +676,13 @@ relation unparse_type: Type => string =
 	Util.string_delimit_list(dimlststr',", ") => dims &
 	Util.string_append_list([tys,"[",dims,"]"]) => res
 	--------------------
-	unparse_type (t as T_ARRAY(_,_)) => res
+	unparse_type(t as (T_ARRAY(_,_),_) ) => res
 
   rule	Util.list_map(vs,unparse_var) => vars &
 	Util.string_append_list(vars) => vstr &
 	Util.string_append_list(["record ",name,"\n",vstr,"end record;"]) => res
 	---------------------------
-	unparse_type(t as T_COMPLEX(p,ClassInf.RECORD(name),vs))=> res
+	unparse_type((t as T_COMPLEX(ClassInf.RECORD(name),vs),_))=> res
 
   axiom	unparse_type(_) => "not implemented yet\n" 
 end	
@@ -700,71 +698,64 @@ end
 
 relation print_type : Type => () =
 
-  rule	Print.print_buf "Integer"
+  rule	Print.print_buf "Integer" 
 	---------------
-	print_type T_INTEGER(_)
+	print_type((T_INTEGER(_),_))
 
-  rule	Print.print_buf "Real"
+  rule	Print.print_buf "Real" 
 	------------
-	print_type T_REAL(_)
+	print_type((T_REAL(_),_))
 
   rule	Print.print_buf "String"
 	--------------
-	print_type T_STRING(_)
+	print_type((T_STRING(_),_))
 
-  rule	Print.print_buf "Boolean"
+  rule	Print.print_buf "Boolean" 
 	---------------
-	print_type T_BOOL(_)
+	print_type((T_BOOL(_),_))
 
-  rule	Print.print_buf "EnumType"
+  rule	Print.print_buf "EnumType" 
 	---------------
-	print_type T_ENUM
+	print_type((T_ENUM,_))
 
   rule	Print.print_buf "enumeration(" &
 	Dump.print_list(l,print, ", ") &
-	Print.print_buf ")"
-	-----------
-	print_type T_ENUMERATION(l,_)
+	Print.print_buf ") "  
+	---------------------
+	print_type((T_ENUMERATION(l,_),_))
 
   rule	Print.print_buf "composite(" &
-	Dump.print_path p &
 	Print.print_buf ", (" &
 	ClassInf.print_state(st) &
 	Print.print_buf ", (" &
 	Dump.print_list(vars, print_var, ", ") &
-	Print.print_buf "))"
+	Print.print_buf ")" 
 	-----------------
-	print_type T_COMPLEX(p,st,vars)
+	print_type((T_COMPLEX(st,vars),_))
 
   rule	Print.print_buf "array[" & print_arraydim dim & Print.print_buf "] of " &
-	print_type t
+	print_type t & Print.print_buf ")" 
 	------------
-	print_type T_ARRAY(dim,t)
+	print_type((T_ARRAY(dim,t),_))
 
   rule	Print.print_buf "function(" & print_params params & Print.print_buf " => " &
-	print_type restype & Absyn.path_string p => str & Print.print_buf " ," &
-	Print.print_buf str & Print.print_buf ")"
+	print_type restype &  Print.print_buf ")"
 	------------------------------
-	print_type T_FUNCTION(params,restype,SOME(p))
-
-  rule	Print.print_buf "function(" & print_params params & Print.print_buf " => " &
-	print_type restype & Print.print_buf ")"
-	------------------------------
-	print_type T_FUNCTION(params,restype,NONE)
+	print_type((T_FUNCTION(params,restype),_))
 
   rule	Print.print_buf "(" & 
 	Dump.print_list(tys, print_type, ", ") &
-	Print.print_buf ")"
+	Print.print_buf ")"  
 	---------
-	print_type T_TUPLE(tys)
+	print_type((T_TUPLE(tys),_))
 
   rule	Print.print_buf "#NOTYPE#"
 	----------------
-	print_type T_NOTYPE
+	print_type((T_NOTYPE,_))
 
   rule	Print.print_buf "print_type failed!\n"
 	---------------------------
-	print_type _
+	print_type( (_,_) )
 
 end
 
@@ -863,16 +854,18 @@ relation make_function_type: (Absyn.Path, Var list) => Type =
 	Debug.fcall ("ft", print_type, rettype) &
 	Debug.fprint ("ft", " >")
 	---------------------------------
-	make_function_type(p,vl) => T_FUNCTION(fargs, rettype,SOME(p))
+	make_function_type(p,vl) => ((T_FUNCTION(fargs, rettype),SOME(p)))
 
 end
 
-relation make_enumeration_type: (Var list) => Type =
+relation make_enumeration_type: (Absyn.Path, Var list) => Type =
 
-  rule	make_enumeration_type(xs) => T_ENUMERATION(strs,[])
+  rule	make_enumeration_type(p,xs) => ((T_ENUMERATION(strs,[]),_))
 	---------------------------------
-	make_enumeration_type (VAR(name,_,_,_,_)::xs) =>T_ENUMERATION(name::strs,[]) 
-  axiom	make_enumeration_type([]) => T_ENUMERATION([],[])
+	make_enumeration_type (p,VAR(name,_,_,_,_)::xs) 
+	  => ((T_ENUMERATION(name::strs,[]),SOME(p)))
+
+  axiom	make_enumeration_type(p,[]) => ((T_ENUMERATION([],[]),SOME(p)))
 end
 
 relation print_farg: FuncArg => () =
@@ -902,7 +895,7 @@ end
 
 relation get_classname: (Type) => Absyn.Path =
 
-  axiom	get_classname(T_COMPLEX(p,_,_)) => p
+  axiom	get_classname((_,SOME(p))) => p
 
 end
 
@@ -980,7 +973,7 @@ end
 (* LS *)
 relation make_return_type: Var list => Type =
 
-  axiom	make_return_type [] => T_NOTYPE
+  axiom	make_return_type [] => ((T_NOTYPE,NONE))
 
   rule	make_return_type_single var => ty
 	---------------------------------
@@ -988,7 +981,7 @@ relation make_return_type: Var list => Type =
 
   rule	make_return_type_tuple vl => tys
 	--------------------------------
-	make_return_type vl => T_TUPLE(tys)
+	make_return_type vl => ((T_TUPLE(tys),NONE))
 
 end
 
@@ -1025,9 +1018,9 @@ relation contain_real: Type list => bool =
 	contain_real(xs) => r2 &
 	bool_or(r1,r2) => res 
 	---------------
-	contain_real (T_ARRAY(d,tp)::xs) => res 
+	contain_real ((T_ARRAY(d,tp),_)::xs) => res 
 
-  axiom	contain_real (T_REAL(_)::_) => true
+  axiom	contain_real ((T_REAL(_),_)::_) => true
 
   rule	contain_real(xs) => res
 	--------------
@@ -1040,12 +1033,12 @@ relation flatten_array_type : Type => (Type, int list) =
 
   rule	flatten_array_type ty => (ty', dimlist')
 	--------------------------------------
-  	flatten_array_type T_ARRAY(DIM(NONE), ty) => (ty', dimlist')
+  	flatten_array_type((T_ARRAY(DIM(NONE),ty), _)) => (ty', dimlist')
 
   rule	flatten_array_type ty => (ty', dimlist) &
 	list_append (dimlist,[dim]) => dimlist'
 	--------------------------------------
-  	flatten_array_type T_ARRAY(DIM(SOME(dim)), ty) => (ty', dimlist')
+  	flatten_array_type((T_ARRAY(DIM(SOME(dim)), ty),_)) => (ty', dimlist')
 
   axiom	flatten_array_type ty => (ty, [])
 
@@ -1053,14 +1046,14 @@ end
 
 relation get_type_name: Type => string =
 
-  axiom	get_type_name T_INTEGER(_)=> "Integer"
-  axiom	get_type_name T_REAL(_)	=> "Real"
-  axiom	get_type_name T_STRING(_)=> "String"
-  axiom	get_type_name T_BOOL(_)	=> "Boolean"
+  axiom	get_type_name((T_INTEGER(_),_))=> "Integer"
+  axiom	get_type_name((T_REAL(_),_))	=> "Real"
+  axiom	get_type_name((T_STRING(_),_))=> "String"
+  axiom	get_type_name((T_BOOL(_),_))	=> "Boolean"
 
   rule	ClassInf.get_state_name st => n
 	-------------------------------
-	get_type_name T_COMPLEX(p,st, _) => n
+	get_type_name((T_COMPLEX(st, _),_)) => n
 
   rule	flatten_array_type arrayty => (ty, dims) &
 	Util.list_map(dims, int_string) => dimstrs &
@@ -1068,9 +1061,9 @@ relation get_type_name: Type => string =
 	get_type_name ty => tystr &
 	Util.string_append_list([tystr,"[",dimstr,"]"]) => str
 	------------------------------------------------------
-	get_type_name (arrayty as T_ARRAY(_,_)) => str
+	get_type_name(arrayty as (T_ARRAY(_,_),_) ) => str
 
-  axiom	get_type_name _ => "Not nameable type or no type"
+  axiom	get_type_name( (_,_)) => "Not nameable type or no type"
 
 
 end
@@ -1120,25 +1113,25 @@ end
 
 relation is_type_array : Type => bool =
 	
-	axiom is_type_array T_ARRAY(_,_) => true
-	axiom is_type_array _ => false
+	axiom is_type_array((T_ARRAY(_,_),_)) => true
+	axiom is_type_array((_,_)) => false
 
 end
 
 relation elab_type : Type => Exp.Type =
 
-  axiom	elab_type T_INTEGER(_) => Exp.INT
-  axiom	elab_type T_REAL(_) => Exp.REAL
-  axiom	elab_type T_BOOL(_) => Exp.BOOL
-  axiom	elab_type T_STRING(_) => Exp.STRING
-  axiom elab_type T_ENUM => Exp.ENUM
+  axiom	elab_type((T_INTEGER(_),_)) => Exp.INT
+  axiom	elab_type((T_REAL(_),_)) => Exp.REAL
+  axiom	elab_type((T_BOOL(_),_)) => Exp.BOOL
+  axiom	elab_type((T_STRING(_),_)) => Exp.STRING
+  axiom elab_type((T_ENUM,_)) => Exp.ENUM
 
   rule	array_element_type t => et &
 	elab_type et => t'
 	----------------
-	elab_type (t as T_ARRAY(_,_)) => t'
+	elab_type(t as (T_ARRAY(_,_),_)) => t'
 
-  axiom	elab_type _ => Exp.OTHER
+  axiom	elab_type((_,_)) => Exp.OTHER
 
 end
 
@@ -1224,9 +1217,9 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	is_array ty2 => a
 	------------------------------------------
 	type_convert(Exp.ARRAY(_,_,elist), 
-		     T_ARRAY(DIM(SOME(dim1)), ty1), 
-		     T_ARRAY(DIM(SOME(dim2)), ty2))
-	  => (Exp.ARRAY(at,a,elist'),T_ARRAY(DIM(SOME(dim1)),ty2))
+		     (T_ARRAY(DIM(SOME(dim1)), ty1),_), 
+		     (T_ARRAY(DIM(SOME(dim2)), ty2),p))
+	  => (Exp.ARRAY(at,a,elist'),(T_ARRAY(DIM(SOME(dim1)),ty2),p))
 
   rule	int_eq (dim1, dim2) => true &
 	type_convert(begin,ty1,ty2) => (begin',_) &
@@ -1236,9 +1229,9 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	is_array ty2 => a
 	------------------------------------------
 	type_convert(Exp.RANGE(t,begin,SOME(step),stop), 
-		     T_ARRAY(DIM(SOME(dim1)), ty1), 
-		     T_ARRAY(DIM(SOME(dim2)), ty2))
-	    => (Exp.RANGE(at,begin',SOME(step'),stop'),T_ARRAY(DIM(SOME(dim1)),ty2))
+		     (T_ARRAY(DIM(SOME(dim1)), ty1),_), 
+		     (T_ARRAY(DIM(SOME(dim2)), ty2),p))
+	    => (Exp.RANGE(at,begin',SOME(step'),stop'),(T_ARRAY(DIM(SOME(dim1)),ty2),p))
 
   rule	int_eq (dim1, dim2) => true &
 	type_convert(begin,ty1,ty2) => (begin',_) &
@@ -1247,9 +1240,9 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	is_array ty2 => a
 	------------------------------------------
 	type_convert(Exp.RANGE(t,begin,NONE,stop), 
-		     T_ARRAY(DIM(SOME(dim1)), ty1), 
-		     T_ARRAY(DIM(SOME(dim2)), ty2))
-	    => (Exp.RANGE(at,begin',NONE,stop'),T_ARRAY(DIM(SOME(dim1)),ty2))
+		     (T_ARRAY(DIM(SOME(dim1)), ty1),_), 
+		     (T_ARRAY(DIM(SOME(dim2)), ty2),p))
+	    => (Exp.RANGE(at,begin',NONE,stop'),(T_ARRAY(DIM(SOME(dim1)),ty2),p))
 
   rule	int_eq (dim1, dim2) => true &
 	int_eq (dim11,dim22) => true &
@@ -1257,18 +1250,18 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	elab_type t2 => at 
 	------------------------------------------
 	type_convert(Exp.MATRIX(_,nmax,ell), 
-		     T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t1)), 
-		     T_ARRAY(DIM(SOME(dim2)), T_ARRAY(DIM(SOME(dim22)),t2)))
-	    => (Exp.MATRIX(at,nmax,ell'),T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t2)))
+		     (T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t1),_)),_), 
+		     (T_ARRAY(DIM(SOME(dim2)), (T_ARRAY(DIM(SOME(dim22)),t2),p1)),p2))
+	    => (Exp.MATRIX(at,nmax,ell'),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),p2))
 	    
   rule	int_eq (dim11,dim22) => true &
 	type_convert_matrix (ell, t1, t2) => ell' &
 	elab_type t2 => at 
 	------------------------------------------
 	type_convert(Exp.MATRIX(_,nmax,ell), 
-		     T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t1)), 
-		     T_ARRAY(DIM(NONE), T_ARRAY(DIM(SOME(dim22)),t2)))
-	    => (Exp.MATRIX(at,nmax,ell'),T_ARRAY(DIM(SOME(dim1)),T_ARRAY(DIM(SOME(dim11)),t2)))
+		     (T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t1),_)),_), 
+		     (T_ARRAY(DIM(NONE), (T_ARRAY(DIM(SOME(dim22)),t2),p1)),p2))
+	    => (Exp.MATRIX(at,nmax,ell'),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),p2))
 
   rule	(* This rule is used to ensure that casts are made on each *)
 	(* element, instead of on the whole array *)
@@ -1277,9 +1270,9 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	is_array ty2 => a
 	------------------------------------------
 	type_convert(Exp.ARRAY(_,_,elist), 
-		     T_ARRAY(DIM(NONE), ty1), 
-		     T_ARRAY(DIM(SOME(dim2)), ty2))
-	  => (Exp.ARRAY(at,a,elist'), T_ARRAY(DIM(NONE), ty2))
+		     (T_ARRAY(DIM(NONE), ty1),_), 
+		     (T_ARRAY(DIM(SOME(dim2)), ty2),p2))
+	  => (Exp.ARRAY(at,a,elist'), (T_ARRAY(DIM(NONE), ty2),p2))
 
 	    
   rule	(* This rule is used to ensure that casts are made on each *)
@@ -1289,44 +1282,45 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	is_array ty2 => a
 	------------------------------------------
 	type_convert(Exp.ARRAY(_,_,elist), 
-		     T_ARRAY(DIM(SOME(dim1)), ty1), 
-		     T_ARRAY(DIM(NONE), ty2))
-	  => (Exp.ARRAY(at,a,elist'), T_ARRAY(DIM(SOME(dim1)), ty2))
+		     (T_ARRAY(DIM(SOME(dim1)), ty1),_), 
+		     (T_ARRAY(DIM(NONE), ty2),p2))
+	  => (Exp.ARRAY(at,a,elist'), (T_ARRAY(DIM(SOME(dim1)), ty2),p2))
 
   rule	type_convert (e, ty1, ty2) => (e',t') 
 	------------------------------------------
 	type_convert(e, 
-		     T_ARRAY(DIM(NONE), ty1), 
-		     T_ARRAY(DIM(SOME(dim2)), ty2))
-	  => (e', T_ARRAY(DIM(NONE), t'))
+		     (T_ARRAY(DIM(NONE), ty1),_), 
+		     (T_ARRAY(DIM(SOME(dim2)), ty2),p2))
+	  => (e', (T_ARRAY(DIM(NONE), t'),p2))
 
   rule	type_convert (e, ty1, ty2) => (e',t') 
 	--------------------
 	type_convert(e,
-	    T_ARRAY(DIM(NONE), ty1), 
-	    T_ARRAY(DIM(NONE), ty2))
-	    => (e', T_ARRAY(DIM(NONE), t'))
+	    (T_ARRAY(DIM(NONE), ty1),_), 
+	    (T_ARRAY(DIM(NONE), ty2),p2))
+	    => (e', (T_ARRAY(DIM(NONE), t'),p2))
 	    
   rule	type_convert (e, ty1, ty2) => (e',t') 
 	------------------------------------------
 	type_convert(e, 
-		     T_ARRAY(DIM(SOME(dim1)), ty1), 
-		     T_ARRAY(DIM(NONE), ty2))
-	  => (e', T_ARRAY(DIM(SOME(dim1)), t'))
+		     (T_ARRAY(DIM(SOME(dim1)), ty1),_), 
+		     (T_ARRAY(DIM(NONE), ty2),p2))
+	  => (e', (T_ARRAY(DIM(SOME(dim1)), t'),p2))
 
   rule	type_convert_list (elist, tys1, tys2) => (elist',tys')
 	------------------------------------------
 	type_convert(Exp.TUPLE(elist), 
-		     T_TUPLE(tys1), 
-		     T_TUPLE(tys2))
-	  => (Exp.TUPLE(elist'), T_TUPLE(tys'))
+		     (T_TUPLE(tys1),_), 
+		     (T_TUPLE(tys2),p2))
+	  => (Exp.TUPLE(elist'), (T_TUPLE(tys'),p2))
 
   axiom	type_convert(exp, 
-	    T_ENUM,
-	    T_ENUMERATION(l,v))
-	    => (exp, T_ENUMERATION(l,v))
+	    (T_ENUM,_),
+	    (T_ENUMERATION(l,v),p2))
+	    => (exp, (T_ENUMERATION(l,v),p2))
 	    
-  axiom	type_convert(e, T_INTEGER(v), T_REAL(_))=> (Exp.CAST(Exp.REAL,e),T_REAL(v))
+  axiom	type_convert(e, (T_INTEGER(v),_), (T_REAL(_),p)) 
+	  => (Exp.CAST(Exp.REAL,e),(T_REAL(v),p))
 
 (*  rule	Debug.fprint("tcvt","- type conversion failed: ") &
 	Debug.fcall ("tcvt",print_type,t1) & 
@@ -1407,23 +1401,23 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
   rule	match_with_promote(PROP(t1,c1),PROP(t2,c2),havereal) => PROP(t,c) &
 	let dim = dim1
 	-----
-	match_with_promote(PROP(T_ARRAY(dim1,t1),c1),
-			   PROP(T_ARRAY(dim2,t2),c2), havereal) 
-	  => PROP(T_ARRAY(dim,t),c)
+	match_with_promote(PROP((T_ARRAY(dim1,t1),_),c1),
+			   PROP((T_ARRAY(dim2,t2),p2),c2), havereal) 
+	  => PROP((T_ARRAY(dim,t),p2),c)
 
   rule	is_array t1 => false &
 	match_with_promote(PROP(t1,c1),PROP(t2,c2), havereal) => PROP(t,c)
 	---------------------------
 	match_with_promote(PROP(t1,c1),
-			   PROP(T_ARRAY(DIM(SOME(1)),t2),c2), havereal) 
-	  => PROP(T_ARRAY(DIM(SOME(1)),t),c)
+			   PROP((T_ARRAY(DIM(SOME(1)),t2),p2),c2), havereal) 
+	  => PROP((T_ARRAY(DIM(SOME(1)),t),p2),c)
 
   rule	is_array t2 => false &
 	match_with_promote(PROP(t1,c1),PROP(t2,c2), havereal) => PROP(t,c)
 	-----
-	match_with_promote(PROP(T_ARRAY(DIM(SOME(1)),t1),c1),
-			   PROP(t2,c2), havereal) 
-	  => PROP(T_ARRAY(DIM(SOME(1)),t),c)
+	match_with_promote(PROP((T_ARRAY(DIM(SOME(1)),t1),p),c1),
+			   PROP(t2,c2), havereal)
+	  => PROP( (T_ARRAY(DIM(SOME(1)),t),p) ,c)
 
 
   rule	is_array t1 => false &
@@ -1438,20 +1432,22 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
   rule	(* Have real and both Real *)
 	bool_and(c1,c2) => c
 	--------------
-	match_with_promote(PROP(T_REAL(v),c1),PROP(T_REAL(_),c2), true) => PROP(T_REAL(v),c)
+	match_with_promote(PROP((T_REAL(v),_),c1),PROP((T_REAL(_),p2),c2), true) => PROP((T_REAL(v),p2),c)
 
   rule	(* Have real and first Integer *)
 	bool_and(c1,c2) => c
 	--------------
-	match_with_promote(PROP(T_INTEGER(_),c1),PROP(T_REAL(v),c2), true) => PROP(T_REAL(v),c)
+	match_with_promote(PROP((T_INTEGER(_),_),c1),PROP((T_REAL(v),p2),c2), true) 
+	  => PROP((T_REAL(v),p2),c)
 
   rule	(* Have real and second Integer *)
 	bool_and(c1,c2) => c
 	--------------
-	match_with_promote(PROP(T_REAL(v),c1),PROP(T_INTEGER(_),c2), true) => PROP(T_REAL(v),c)
+	match_with_promote(PROP((T_REAL(v),_),c1),PROP((T_INTEGER(_),p2),c2), true) => PROP((T_REAL(v),p2),c)
 
   rule	(* Have real and both Integer *)
 	bool_and(c1,c2) => c
 	--------------
-	match_with_promote(PROP(T_INTEGER(_),c1),PROP(T_INTEGER(_),c2), true) => PROP(T_REAL([]),c)
+	match_with_promote(PROP((T_INTEGER(_),_),c1),PROP((T_INTEGER(_),p2),c2), true) 
+	  => PROP((T_REAL([]),p2),c)
 end

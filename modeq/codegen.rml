@@ -438,7 +438,7 @@ relation generate_function : DAE.Element => CFunction list =
 	---------------------------
 	generate_function DAE.FUNCTION(fpath, 
 				       DAE.DAE(dae), 
-				       Types.T_FUNCTION(args,restype,ffpath)) 
+				       (Types.T_FUNCTION(args,restype),_)) 
 	  => [cfn,rcw_fn]
 
   rule	generate_function_name fpath => fn_name_str &
@@ -466,7 +466,7 @@ relation generate_function : DAE.Element => CFunction list =
 	---------------------------------------------------------------------------------------------
 	generate_function DAE.EXTFUNCTION(fpath, 
 				       DAE.DAE(orgdae), 
-				       Types.T_FUNCTION(args,restype,ffpath),
+				       (Types.T_FUNCTION(args,restype),_),
 					  extdecl) 
 	  => [func_decl,rcw_fn]
 
@@ -681,20 +681,20 @@ relation generate_type : Types.Type => string =
   rule	Debug.fprintln ("cgtr", "generate_type") &
 	generate_tuple_type tys => ty_str 
 	---------------------------
-	generate_type Types.T_TUPLE(tys) => ty_str
+	generate_type((Types.T_TUPLE(tys),_)) => ty_str
 
 
   rule	Debug.fprintln ("cgtr", "generate_type") &
 	Types.flatten_array_type tys => (arrayty, dims) &
 	generate_array_type (arrayty, dims) => ty_str
 	-----------------------------------
-	generate_type (tys as Types.T_ARRAY(_,_)) => ty_str
+	generate_type (tys as (Types.T_ARRAY(_,_),_)) => ty_str
 
 
-  axiom	generate_type Types.T_INTEGER(_) => "modelica_integer"
-  axiom generate_type Types.T_REAL(_) => "modelica_real"
-  axiom	generate_type Types.T_STRING(_) => "modelica_string"
-  axiom	generate_type Types.T_BOOL(_) => "modelica_boolean"
+  axiom	generate_type((Types.T_INTEGER(_),_)) => "modelica_integer"
+  axiom generate_type((Types.T_REAL(_),_)) => "modelica_real"
+  axiom	generate_type((Types.T_STRING(_),_)) => "modelica_string"
+  axiom	generate_type((Types.T_BOOL(_),_)) => "modelica_boolean"
 
 
   rule	Print.print_buf "#-- generate_type failed: " &
@@ -707,14 +707,14 @@ end
 
 relation generate_type_external : Types.Type => string =
 
-  axiom	generate_type_external Types.T_INTEGER(_)  => "int"
-  axiom generate_type_external Types.T_REAL(_) => "double"
-  axiom	generate_type_external Types.T_STRING(_) => "const char*"
-  axiom	generate_type_external Types.T_BOOL(_) => "int"
+  axiom	generate_type_external((Types.T_INTEGER(_),_))  => "int"
+  axiom generate_type_external((Types.T_REAL(_),_)) => "double"
+  axiom	generate_type_external((Types.T_STRING(_),_)) => "const char*"
+  axiom	generate_type_external((Types.T_BOOL(_),_)) => "int"
 
   rule	generate_type_external ty => str
 	--------------------------------
-	generate_type_external Types.T_ARRAY(dim,ty) => str
+	generate_type_external((Types.T_ARRAY(dim,ty),_)) => str
 
   rule	Print.print_buf "#-- generate_type_external failed: " &
 	Types.print_type ty & Print.print_buf "\n"
@@ -749,11 +749,11 @@ end
 (* for the basic types, only those must match *)
 relation generate_type_internal_namepart : Types.Type => string =
 
-  axiom	generate_type_internal_namepart Types.T_INTEGER(_) => "integer"
-  axiom generate_type_internal_namepart Types.T_REAL(_)	=> "real"
-  axiom	generate_type_internal_namepart Types.T_STRING(_)	=> "string"
-  axiom	generate_type_internal_namepart Types.T_BOOL(_)	=> "boolean"
-  axiom	generate_type_internal_namepart Types.T_ENUM	=> "NOT_IMPLEMENTED"
+  axiom	generate_type_internal_namepart((Types.T_INTEGER(_),_)) => "integer"
+  axiom generate_type_internal_namepart((Types.T_REAL(_),_))	=> "real"
+  axiom	generate_type_internal_namepart((Types.T_STRING(_),_))	=> "string"
+  axiom	generate_type_internal_namepart((Types.T_BOOL(_),_))	=> "boolean"
+  axiom	generate_type_internal_namepart((Types.T_ENUM,_))	=> "NOT_IMPLEMENTED"
 
 end
 
@@ -823,20 +823,20 @@ end
 
 relation generate_simple_type : Types.Type => string =
 
-  axiom	generate_simple_type Types.T_INTEGER(_) => "modelica_integer"
-  axiom	generate_simple_type Types.T_REAL(_) => "modelica_real"
-  axiom	generate_simple_type Types.T_STRING(_) => "modelica_string"
-  axiom	generate_simple_type Types.T_BOOL(_) => "modelica_boolean"
+  axiom	generate_simple_type((Types.T_INTEGER(_),_))=> "modelica_integer"
+  axiom	generate_simple_type((Types.T_REAL(_),_)) => "modelica_real"
+  axiom	generate_simple_type((Types.T_STRING(_),_)) => "modelica_string"
+  axiom	generate_simple_type((Types.T_BOOL(_),_)) => "modelica_boolean"
 
   rule	string_append ("const ", n) => n' &
 	string_append (n', "&") => n''
 	------------------------------
-	generate_simple_type Types.T_COMPLEX (p, ClassInf.RECORD(n),_) => n''
+	generate_simple_type((Types.T_COMPLEX (ClassInf.RECORD(n),_),_)) => n''
 
   rule	Types.array_element_type t => t' &
 	array_type_string t' => t_str
 	-----------------------
-	generate_simple_type (t as Types.T_ARRAY(_,_)) => t_str
+	generate_simple_type (t as (Types.T_ARRAY(_,_),_)) => t_str
 
   rule	Print.print_buf "#--generate_simple_type failed " &
 	Types.print_type ty & 
@@ -847,10 +847,10 @@ end
 
 relation array_type_string : Types.Type => string =
 
-  axiom	array_type_string Types.T_INTEGER(_) => "integer_array"
-  axiom	array_type_string Types.T_REAL(_) => "real_array"
-  axiom	array_type_string Types.T_STRING(_) => "string_array"
-  axiom	array_type_string Types.T_BOOL(_) => "boolean_array"
+  axiom	array_type_string((Types.T_INTEGER(_),_)) => "integer_array"
+  axiom	array_type_string((Types.T_REAL(_),_)) => "real_array"
+  axiom	array_type_string((Types.T_STRING(_),_)) => "string_array"
+  axiom	array_type_string((Types.T_BOOL(_),_)) => "boolean_array"
 
 end
 
@@ -1867,7 +1867,7 @@ end
 
 relation get_array_dim : Types.Type => int =
 
-  axiom	get_array_dim Types.T_ARRAY(Types.DIM(SOME(ad)), ty2) => ad
+  axiom	get_array_dim((Types.T_ARRAY(Types.DIM(SOME(ad)), ty2),_)) => ad
 
 	(** LS: Fail if not array, or if there is no dim value **)
 
@@ -3230,7 +3230,7 @@ relation generate_c_to_f77_converter : Types.Type => string =
 	generate_type_internal_namepart elty => eltystr &
 	Util.string_append_list (["convert_alloc_",eltystr,"_array_to_f77"]) => str
 	---------------------------------------------------------------------
-	generate_c_to_f77_converter Types.T_ARRAY(_,Types.T_ARRAY(_,ty)) => str
+	generate_c_to_f77_converter((Types.T_ARRAY(_,(Types.T_ARRAY(_,ty),_)),_)) => str
 
   rule	Print.print_buf "#-- generate_c_to_f77_converter failed\n" &
 	Print.print_buf "#-- Not an array?\n"
@@ -3245,7 +3245,7 @@ relation generate_f77_to_c_converter : Types.Type => string =
 	generate_type_internal_namepart elty => eltystr &
 	Util.string_append_list (["convert_alloc_",eltystr,"_array_from_f77"]) => str
 	---------------------------------------------------------------------
-	generate_f77_to_c_converter (ty as Types.T_ARRAY(_,_)) => str
+	generate_f77_to_c_converter (ty as (Types.T_ARRAY(_,_),_)) => str
 
   rule	Print.print_buf "#-- generate_f77_to_c_converter failed\n" &
 	Print.print_buf "#-- Not an array?\n"
@@ -3555,7 +3555,7 @@ end
 
 relation generate_array_size_call : DAE.ExtArg => string = 
 
-  rule	Types.array_element_type ty => Types.T_INTEGER(_) &
+  rule	Types.array_element_type ty => ((Types.T_INTEGER(_),_)) &
 	var_name_array (cr,attr) => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_integer_array(",crstr,", ",
@@ -3563,7 +3563,7 @@ relation generate_array_size_call : DAE.ExtArg => string =
 	-----------------------------
 	generate_array_size_call DAE.EXTARGSIZE(cr, attr, ty, dim) => str
 
-  rule	Types.array_element_type ty => Types.T_REAL(_) &
+  rule	Types.array_element_type ty => ((Types.T_REAL(_),_)) &
 	var_name_array (cr,attr) => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_real_array(",crstr,", ",
@@ -3579,7 +3579,7 @@ end
 
 relation generate_ext_array_size_call : DAE.ExtArg => string = 
 
-  rule	Types.array_element_type ty => Types.T_INTEGER(_) &
+  rule	Types.array_element_type ty => ((Types.T_INTEGER(_),_)) &
 	var_name_external cr => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_integer_array(",crstr,", ",
@@ -3587,7 +3587,7 @@ relation generate_ext_array_size_call : DAE.ExtArg => string =
 	-----------------------------
 	generate_ext_array_size_call DAE.EXTARGSIZE(cr, attr, ty, dim) => str
 
-  rule	Types.array_element_type ty => Types.T_REAL(_) &
+  rule	Types.array_element_type ty => ((Types.T_REAL(_),_)) &
 	var_name_external cr => crstr &
 	Exp.print_exp_str dim => dimstr &
 	Util.string_append_list(["size_of_dimension_real_array(",crstr,", ",

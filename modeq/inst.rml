@@ -386,7 +386,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	  => (dae1, env''', csets', ci_state', tys) &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
-	package_prefix(env''', Absyn.IDENT(n)) => typename &
+	package_prefix(env, Absyn.IDENT(n)) => typename &
 	mktype(typename,ci_state',tys) => ty
 	-------------------------------------------
 	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl)
@@ -600,7 +600,6 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.merge(mods',mod') => mods'' &
 	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false)
 	  => (dae, env'', csets', ci_state', tys) &
-
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
@@ -627,6 +626,30 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
+
+relation get_option_arraydim: (Absyn.ArrayDim option) => Absyn.ArrayDim =
+
+  axiom	get_option_arraydim (SOME(dim)) => dim
+
+  axiom	get_option_arraydim (NONE) => []
+end
+
+relation convert_to_instdims: (DimExp list) => InstDims =
+
+  axiom convert_to_instdims [] => []
+
+  rule	convert_to_instdims(xs) => res 
+	-----------------------
+	convert_to_instdims(DIMINT(i)::xs) => Exp.INDEX(Exp.ICONST(i))::res
+
+  rule	convert_to_instdims(xs) => res 
+	------------------------------
+	convert_to_instdims(DIMEXP(sub,exp)::xs) => sub::res	
+
+  rule	Debug.fprint("failtrace","- convert_to_instdims failed\n")
+	------------------------
+	convert_to_instdims(_) => fail
+end
 
 (** relation: inst_extends_list 
  ** 
@@ -1004,9 +1027,11 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State
 	add_components_to_env(env,mods,pre,csets,ci_state,
 				 nocomp::xs,allcomps,inst_dims,impl) => env'*)
 	
-  rule	Debug.fprint("failtrace", "- add_components_to_env failed\n" )
+  rule	Debug.fprint("failtrace", "- add_components_to_env failed complist=\n" ) &
+	Debug.fcall("failtrace", SCode.print_element_list, comps) &
+	Debug.fprint("failtrace", "\n\n") 
 	-------------------------------------
-	add_components_to_env(_,_,_,_,_,_,_,_,_) => fail
+	add_components_to_env(_,_,_,_,_,comps,_,_,_) => fail
 end
 
 
@@ -1028,7 +1053,7 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 	(* Use type T_NOTYPE instead of as earier trying to instantiate, since instanitation might fail without having correct
 	 modifications (e.g. when instanitating a partial class that must be redeclared through a modification)*)
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-	    prot,Types.T_NOTYPE,Types.UNBOUND),SOME(comp),false) => env' & 
+	    prot,(Types.T_NOTYPE,NONE),Types.UNBOUND),SOME(comp),false) => env' & 
 	add_components_to_env2(env',mods,pre,csets,ci_state,xs,inst_dims,impl) 
 	  => env'' &
 	Debug.fprint("decl", " updated env :") &
@@ -1051,9 +1076,11 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
   rule	Debug.fprint("failtrace", "- add_components_to_env2 failed\n") &
 	Debug.fprint("failtrace", "  - env: \n") & 
 	Debug.fcall("failtrace", Env.print_env, env) & 
-	Debug.fprint("failtrace", "\n")
+	Debug.fprint("failtrace", "\n components =\n") &
+	Debug.fcall("failtrace", SCode.print_element_list, comps) &
+	Debug.fprint("failtrace", "\n\n") 
 	--------------------
-	add_components_to_env2(env,_,_,_,_,_,_,_) => fail 
+	add_components_to_env2(env,_,_,_,_,comps,_,_) => fail 
 end
 
 relation get_crefs_from_compdims: (SCode.Element list) => Absyn.ComponentRef list =
@@ -1260,6 +1287,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** modification are inspected for array dimensions. *)
 	elab_arraydim(env2',owncref,ad,eq,impl,NONE) => dims &
 	Debug.fprintln ("insttr", "arraydim elabed") &
+	Debug.fprintln ("arraydim", "arraydim elabed :") &
+	Debug.fcall("arraydim",print_dim2, dims) &
 	(** Instantiate the component *)	
 	inst_var(cenv, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
 	  => (dae, csets', ty) &
@@ -1376,9 +1405,53 @@ end
  ** or array elements.  This relation is used to instantiate a
  ** component, instantiating all subcomponents and array elements
  ** separately.
+ ** P.A: Most of the implementation is moved to inst_var2. inst_var collects 
+ ** dimensions for userdefined types, such that these can be correctly 
+ ** handled by inst_var2 (using inst_array)
  **)
 
 relation inst_var : (Env.Env,
+		     Mod.Mod,
+		     Prefix.Prefix,
+		     Connect.Sets,
+		     Ident,
+		     SCode.Class,
+		     SCode.Attributes,
+		     DimExp list, 
+		     int list,
+		     InstDims,
+		     bool)
+	  => (DAE.Element list,Connect.Sets,Types.Type) =
+
+  rule	(* Variables of userdefined type, e.g. Point p => Real p[3]; *)
+	(* These must be handled separately since even if they do not appear to 
+	 be an array, they can. Therefore we need to collect the full dimensionality
+	 and call inst_var2 *)
+
+	(* Collect dimensions *)
+	get_usertype_dimensions(env,mod,pre,cl,inst_dims) => dims' &
+	  Print.print_buf "Got usertype dimensions: " &
+	print_dims dims' &
+	inst_var2(env,mod,pre,csets,n,cl,attr,dims',idxs,inst_dims,impl) 
+	  => (dae,csets',(ty',_)) &
+	  Print.print_buf "Instantiated vars\n" &
+	  make_array_type(dims',ty') => ty &
+	Print.print_buf "array type:" & 
+	Types.print_type ((ty,NONE)) &
+	  package_prefix(env,Absyn.IDENT(id)) => p
+	--------------------------
+	inst_var(env,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,SCode.R_TYPE,_),attr,dims,idxs,inst_dims,impl)
+          => (dae,csets',(ty,SOME(p)))
+	  
+  rule	(* Generic case: fall trough *)
+	inst_var2(env,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl) 
+	  => (dae,csets',ty')
+	----------------------
+	inst_var(env,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl)
+          => (dae,csets',ty')
+end
+
+relation inst_var2 : (Env.Env,
 		     Mod.Mod,
 		     Prefix.Prefix,
 		     Connect.Sets,
@@ -1419,7 +1492,7 @@ relation inst_var : (Env.Env,
 	list_append(dae1',dae3) => dae 
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
-	inst_var(env,mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
+	inst_var2(env,mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
 		 [],idxs,inst_dims,impl)
           => (dae,csets',ty)
 
@@ -1437,11 +1510,11 @@ relation inst_var : (Env.Env,
 	list_append(dae1',dae3) => dae
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
-	inst_var(env,mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
+	inst_var2(env,mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
 		 [],idxs,inst_dims,impl)
           => (dae,csets',ty)
 
-  rule	(* Variables *)
+  rule	(* Scalar Variables *)
 	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
 	(* This is where redeclare should be handled *)
@@ -1460,26 +1533,76 @@ relation inst_var : (Env.Env,
 	list_append(daex,dae3) => dae
 	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))
 	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
+	inst_var2(env,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
 		 [],idxs,inst_dims,impl)
           => (dae,csets',ty)
-
-  rule	inst_dim_exp (dim,impl) => dime &
+	  
+  rule	(* Array variables , e.g. Real x[3]*)
+	inst_dim_exp (dim,impl) => dime &
 	list_append(inst_dims,[dime]) => inst_dims' &
 	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl)
 	  => (dae, csets', ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty'
 	-------------------------------
-	inst_var(env,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl)
+	inst_var2(env,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl)
           => (dae,csets',ty')
 
-  rule	Debug.fprint("failtrace", "- inst_var failed: ") & 
+  rule	Debug.fprint("failtrace", "- inst_var2 failed: ") & 
 	Debug.fprint("failtrace",  n) &
 	Debug.fprint("failtrace", "\n")
 	--------------------------------------------------
-	inst_var(_,_,_,_,n,_,_,_,_,_,_) => fail
+	inst_var2(_,_,_,_,n,_,_,_,_,_,_) => fail
 	
+end
+
+(* Creates an array type from the element type given as argument and a list of 
+ ** dimensional sizes*)
+relation make_array_type: (DimExp list,Types.TType) 
+	  => (Types.TType) =
+
+  axiom	make_array_type ([],ty) => ty
+
+  rule	make_array_type(xs,ty) => ty'
+	-------------------------
+	make_array_type(DIMINT(i)::xs,ty) => Types.T_ARRAY(Types.DIM(SOME(i)),(ty',NONE))
+
+  rule	make_array_type(xs,ty) => ty'
+	-------------------------
+	make_array_type(DIMEXP(_,_)::xs,ty) => Types.T_ARRAY(Types.DIM(NONE),(ty',NONE))
+
+  rule	Debug.fprint("failtrace", "- make_array_type failed\n")
+	------------------
+	make_array_type(_,_) => fail
+end
+
+relation get_usertype_dimensions:(Env.Env, Mod.Mod, Prefix.Prefix, SCode.Class,
+				  InstDims)
+	  => (DimExp list) =
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Real",_,_,_,_),_) => []
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Integer",_,_,_,_),_) => []
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("String",_,_,_,_),_) => []
+  axiom	get_usertype_dimensions(_,_,_,SCode.CLASS("Boolean",_,_,_,_),_) => []
+	
+  rule	Lookup.lookup_class(env,cn,true) => (cl,cenv) &
+	let owncref = Absyn.CREF_IDENT(id,[]) &
+	get_option_arraydim(ad) => ad' &
+	Mod.elab_mod(env,pre,mod) => mod' &
+	Mod.merge(mods,mod') => mods'' &
+	Mod.mod_equation mods'' => eq &
+	Mod.lookup_comp_modification(mods'',id) => mods''' &
+	get_usertype_dimensions(cenv,mods''',pre,cl,dims) => dim1 &
+	elab_arraydim(env,owncref,ad',eq,false,NONE) => dim2 &
+	list_append(dim2,dim1) => res
+	------------------------------
+	get_usertype_dimensions(env,mods,pre,
+				SCode.CLASS(id,_,_,SCode.R_TYPE,
+					    SCode.DERIVED(cn,ad,mod)),dims) 
+	  => res
+
+  rule	Debug.fprint("failtrace", "- get_usertype_dimensions failed\n")
+	--------------
+	get_usertype_dimensions(_,_,_,_,_) => fail
 end
 
 relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
@@ -1806,7 +1929,7 @@ relation inst_array : (Env.Env,
 		       )
 	  => (DAE.Element list, Connect.Sets, Types.Type) =
 
-  rule	inst_var(env,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+  rule	inst_var2(env,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae,csets,ty)
 	-----------------
 	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
@@ -1815,10 +1938,10 @@ relation inst_array : (Env.Env,
   rule	int_gt(i,stop) => true
 	----------------------
 	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
-	  => ([], csets, Types.T_NOTYPE)
+	  => ([], csets, (Types.T_NOTYPE,NONE))
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
-	inst_var(env,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+	inst_var2(env,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
 	inst_array(env,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
@@ -1967,7 +2090,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(Absyn.CALL(Absyn.CREF_IDENT("size",_),Absyn.FUNCTIONARGS([Absyn.CREF(cr),_],_)))::ds,impl,cf) => NONE::l
 
   rule	Static.elab_exp(env, d,impl,st)
-	    => (e,Types.PROP(Types.T_INTEGER(_),_),_) &  
+	    => (e,Types.PROP((Types.T_INTEGER(_),_),_),_) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
@@ -1979,7 +2102,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => SOME(DIMINT(i))::l
 
   rule	Static.elab_exp(env, d,impl,st)
-	    => (e,Types.PROP(Types.T_INTEGER(_),true),_) &  
+	    => (e,Types.PROP((Types.T_INTEGER(_),_),true),_) &  
 	    (* _ Was true, but structural parameters must be given 
 	       the numerical value in order to instantiate successfully.
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
@@ -1990,7 +2113,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	-------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d,impl,st) => (e,Types.PROP(Types.T_INTEGER(_),false),_) &
+  rule	Static.elab_exp(env, d,impl,st) => (e,Types.PROP((Types.T_INTEGER(_),_),false),_) &
 	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) 
@@ -2113,12 +2236,12 @@ relation elab_arraydim_type : (Types.Type, Absyn.ArrayDim)
 
   rule	elab_arraydim_type(t,ad) => l
 	---------------------------
-	elab_arraydim_type(Types.T_ARRAY(Types.DIM(NONE),t), _::ad) 
+	elab_arraydim_type((Types.T_ARRAY(Types.DIM(NONE),t),_), _::ad) 
 	  => NONE::l
 	
   rule	elab_arraydim_type(t,ad) => l
 	---------------------------
-	elab_arraydim_type(Types.T_ARRAY(Types.DIM(SOME(i)),t), _::ad) 
+	elab_arraydim_type((Types.T_ARRAY(Types.DIM(SOME(i)),t),_), _::ad) 
 	  => SOME(DIMINT(i))::l
 	
  axiom elab_arraydim_type(_,[]) => []
@@ -2326,10 +2449,10 @@ relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
 	Lookup.lookup_class(env,fn,true) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_FUNCTION,_),cenv) &
 	inst_class(cenv, Mod.NOMOD, Prefix.NOPRE, [], c, [], true) 
-	  => (dae, _, _, Types.T_FUNCTION(args,tp,_), st) &
+	  => (dae, _, _, (Types.T_FUNCTION(args,tp),_), st) &
         package_prefix (env, Absyn.IDENT(overloadname)) => fpath &
 	package_prefix (cenv, Absyn.IDENT(id)) => ovlfpath &
-	let ty = Types.T_FUNCTION(args,tp,SOME(ovlfpath)) &
+	let ty = ((Types.T_FUNCTION(args,tp),SOME(ovlfpath))) &
 	Env.extend_frame_t(env, overloadname, ty) => env' &
 	inst_overloaded_functions(env',overloadname,fns) => (env'', dae1) 	
 	-----------------------------------------------------------------
@@ -2539,7 +2662,7 @@ relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbol
 	elab_exp_ext (env,
 		      call as Absyn.CALL(Absyn.CREF_IDENT("size",_),
 					 Absyn.FUNCTIONARGS(args as [arraycr,dim],nargs)),impl,st) 
-	  => (exp,Types.PROP(Types.T_INTEGER([]),false),st)
+	  => (exp,Types.PROP((Types.T_INTEGER([]),NONE),false),st)
 
   rule	(*Print.print_buf "// elab_exp_ext failed for " & 
 	Absyn.print_absyn_exp exp &
@@ -2747,23 +2870,23 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
 			 DAE.VarDirection, Exp.Exp option, InstDims)
 	  => DAE.Element list =
 
-  axiom	dae_declare4 (vn, Types.T_INTEGER(_), kind, dir, e, inst_dims)
+  axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.INT, e, inst_dims)]
 	
-  axiom	dae_declare4 (vn, Types.T_REAL(_), kind, dir, e, inst_dims)
+  axiom	dae_declare4 (vn, (Types.T_REAL(_),_), kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims)]
 
-  axiom	dae_declare4 (vn, Types.T_BOOL(_), kind, dir, e, inst_dims)
+  axiom	dae_declare4 (vn, (Types.T_BOOL(_),_), kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims)]
 	
-  axiom	dae_declare4 (vn, Types.T_STRING(_), kind, dir, e, inst_dims)
+  axiom	dae_declare4 (vn, (Types.T_STRING(_),_), kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims)]
-axiom dae_declare4 (vn, Types.T_ENUM, kind, dir, e, inst_dims)
+axiom dae_declare4 (vn, (Types.T_ENUM,_), kind, dir, e, inst_dims)
 	=> []
 	(* We should not declare each enumeration value of an enumeration when instantiating,e.g Myenum my !=> constant EnumType my.enum1,... *)
 	(*[DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]*)
 
-  axiom	dae_declare4 (vn, Types.T_ENUMERATION(l,_), kind, dir, e, inst_dims)
+  axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims)]
 
   axiom	dae_declare4 (c,ty,_,_,_,_) => []
@@ -2958,7 +3081,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** should be used.
 	 **)
 
-  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP(Types.T_BOOL(_),true),_) &
+  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
 	Static.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
@@ -2973,7 +3096,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 			     NON_INITIAL)
 	  => (dae,env',csets', ci_state')
 
-  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP(Types.T_BOOL(_),true),_) &
+  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
 	Static.ceval(env,e',false,NONE) => (Values.BOOL(cond),_) &
 	Debug.print("\nEQ_IF: ") &
 (*!!	print(cond) &
@@ -3002,8 +3125,8 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	      Types.T_INTEGER, Types.UNBOUND)  &  *)
 
  	Static.elab_exp (env,e,false,NONE)
-	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
-					   Types.T_INTEGER(_)),
+	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
+					   (Types.T_INTEGER(_),_)),_),
 			     true),_) &
 	(* FIXEM: Check bounds *)
 	Static.ceval (env,e',false,NONE) => (v,_) &
@@ -3023,8 +3146,8 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	      Types.T_INTEGER, Types.UNBOUND)  &  *)
 
  	Static.elab_exp (env,e,false,NONE)
-	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
-					   Types.T_INTEGER(_)),
+	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
+					   (Types.T_INTEGER(_),_)),_),
 			     true),_) &
 	(* FIXEM: Check bounds *)
 	Static.ceval (env,e',false,NONE) => (v,_) &
@@ -3050,8 +3173,8 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Debug.fprintln ("insttr", "inst_equation_common_eqfor_1") &
 	Static.elab_exp (env,e,false,NONE)
-	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
-					   id_t),
+	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
+					   id_t),_),
 			     true),_) &
 	Debug.fprintln ("insti", "for expression elaborated") &
 	add_for_loop_scope(env,i,id_t) => env' &
@@ -3059,7 +3182,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	
 	Lookup.lookup_var(env', Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
-	      Types.T_INTEGER(_), Types.UNBOUND) &
+	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
 	Debug.fprintln ("insti", "loop variable looked up") &
 	
 	(* FIXEM: Check bounds *)
@@ -3076,11 +3199,11 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Debug.fprintln ("insttr", "inst_equation_common_eqfor_2") &
 	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
-	      Types.T_INTEGER(_), Types.UNBOUND) &
+	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
 	Debug.fprintln ("insti", "loop variable looked up") &
 	Static.elab_exp (env,e,false,NONE)
-	  => (e',Types.PROP(Types.T_ARRAY(Types.DIM(_),
-					   Types.T_INTEGER(_)),
+	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
+					   (Types.T_INTEGER(_),_)),_),
 			     false),_) &
 	Print.print_buf "#-- Error: Non-constant iteration bounds not supported\n" &
 	Debug.fprintln ("insttr", "inst_equation_common_eqfor_2 succeeded")
@@ -3090,7 +3213,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	not Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
-	      Types.T_INTEGER(_), Types.UNBOUND) &
+	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
 	Print.print_buf "# Invalid loop variable: " & Print.print_buf i & Print.print_buf "\n"
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
@@ -3252,14 +3375,14 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
   rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
 	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
-	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP(Types.T_ENUMERATION(_,_),_),
-	    e2,Types.PROP(t as Types.T_ENUM,_), initial) => dae
+	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP((Types.T_ENUMERATION(_,_),_),_),
+	    e2,Types.PROP(t as (Types.T_ENUM,_),_), initial) => dae
 
   rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
 	inst_eq_equation_2(e1,e2,t,initial) => dae
 	----------------------
-	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP(Types.T_ENUMERATION(_,_),_),
-	    e2,Types.PROP(t as Types.T_ENUMERATION(_,_),_), initial) => dae
+	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP((Types.T_ENUMERATION(_,_),_),_),
+	    e2,Types.PROP(t as (Types.T_ENUMERATION(_,_),_),_), initial) => dae
 
 
   rule	(* Types.equivtypes(t1,t2) => false & *)
@@ -3317,27 +3440,27 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 
   rule	make_dae_equation (e1,e2,initial) => dae
 	---------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_INTEGER(_),initial) => [dae]
+	inst_eq_equation_2(e1,e2,(Types.T_INTEGER(_),_),initial) => [dae]
 
   rule	make_dae_equation (e1,e2,initial) => dae
 	---------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_REAL(_),initial) => [dae]
+	inst_eq_equation_2(e1,e2,(Types.T_REAL(_),_),initial) => [dae]
 
   rule	make_dae_equation (e1,e2,initial) => dae
 	---------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_STRING(_),initial) => [dae]
+	inst_eq_equation_2(e1,e2,(Types.T_STRING(_),_),initial) => [dae]
 
   rule	make_dae_equation (e1,e2,initial) => dae
 	---------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_BOOL(_),initial) => [dae]
+	inst_eq_equation_2(e1,e2,(Types.T_BOOL(_),_),initial) => [dae]
 
   rule	make_dae_define (cr,e2,initial) => dae
 	---------------------------------------
-	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUM,initial) => [dae]
+	inst_eq_equation_2(Exp.CREF(cr,t),e2,(Types.T_ENUM,_),initial) => [dae]
 
   rule	make_dae_define (cr,e2,initial) => dae
 	---------------------------------------
-	inst_eq_equation_2(Exp.CREF(cr,t),e2,Types.T_ENUMERATION(_,_),initial) => [dae]
+	inst_eq_equation_2(Exp.CREF(cr,t),e2,(Types.T_ENUMERATION(_,_),_),initial) => [dae]
 
 
   rule	RTOpts.split_arrays => true &
@@ -3347,32 +3470,32 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	Exp.print_exp e2 & Print.print_buf "\n" & *)
 	inst_array_equation(e1,e2,ad,t,initial) => dae
 	-----------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t),initial) => dae
+	inst_eq_equation_2(e1,e2,(Types.T_ARRAY(ad,t),_),initial) => dae
 
 
 	(* PR. The muliple outputs from functions is outputed as is. *)
 
   rule	make_dae_equation (e1,e2,initial) => dae
 	----------------------------------------
-	inst_eq_equation_2 (e1,e2,Types.T_TUPLE(_),initial) => [dae]
+	inst_eq_equation_2 (e1,e2,(Types.T_TUPLE(_),_),initial) => [dae]
 
 
   rule	RTOpts.split_arrays => false &
 	make_dae_equation (e1, e2, initial) => dae
 	-----------------------------------------
-	inst_eq_equation_2(e1,e2,Types.T_ARRAY(ad,t),initial) => [dae]
+	inst_eq_equation_2(e1,e2,(Types.T_ARRAY(ad,t),_),initial) => [dae]
 
-  axiom	inst_eq_equation_2(e1, e2, Types.T_COMPLEX(p,_,[]), initial) => []
+  axiom	inst_eq_equation_2(e1, e2, (Types.T_COMPLEX(_,[]),_), initial) => []
 
   rule	Exp.extend_cref(c1,n,[]) => c1' &
 	Exp.extend_cref(c2,n,[]) => c2' &
 	inst_eq_equation_2(Exp.CREF(c1',t1), Exp.CREF(c2',t2), t, initial) => dae1 &
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   Types.T_COMPLEX(p,cs,vs), initial) => dae2 &
+			   (Types.T_COMPLEX(cs,vs),p), initial) => dae2 &
 	list_append(dae1, dae2) => dae
 	------------------------------
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   Types.T_COMPLEX(p,cs,Types.VAR(n,_,_,t,_)::vs), initial) => dae
+			   (Types.T_COMPLEX(cs,Types.VAR(n,_,_,t,_)::vs),p), initial) => dae
 
 	(** When the type of the expressions is a complex type, and *)
 	(** the left-hand side of the equation is not a component *)
@@ -3394,7 +3517,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2 as Exp.CREF(_,_),
-			   t as Types.T_COMPLEX(_,_,_), initial) => dae
+			   t as (Types.T_COMPLEX(_,_),_), initial) => dae
 
 	(** When the right-hand side is not a component reference a *)
 	(** similar trick is applied.  This also catched the case *)
@@ -3406,7 +3529,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
 	-------------------------------------------------------------
-	inst_eq_equation_2(e1, e2, t as Types.T_COMPLEX(_,_,_), initial) => dae
+	inst_eq_equation_2(e1, e2, t as (Types.T_COMPLEX(_,_),_), initial) => dae
 
   rule	Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=") &
 	Debug.fcall("failtrace",Exp.print_exp, e1) &
@@ -3506,9 +3629,9 @@ relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
 	  => DAE.Element list =
 
 	(* Constant assertions *)
-  axiom	inst_assertion (env, e, Types.T_BOOL(_), true, d, pre) => [(* lost *)]
+  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), true, d, pre) => [(* lost *)]
 
-  axiom	inst_assertion (env, e, Types.T_BOOL(_), _, d, pre) => [(* lost *)]
+  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), _, d, pre) => [(* lost *)]
 
   rule	Print.print_buf "# Assertions have to be of type Boolean\n" &
 	Print.print_buf "  assertion: (" &
@@ -3545,7 +3668,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						    SCode.CONST,
 						    Absyn.BIDIR),
 				      true,
-				      Types.T_INTEGER([]),
+				      (Types.T_INTEGER([]),NONE),
 				      Types.VALBOUND(fst)),NONE,false) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
@@ -3564,7 +3687,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						    SCode.CONST,
 						    Absyn.BIDIR),
 				      true,
-				      Types.T_INTEGER([]),
+				      (Types.T_INTEGER([]),NONE),
 				      Types.VALBOUND(fst)),NONE,false) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_initialequation, eqs)
 	  => (dae1,env''',csets', ci_state') &
@@ -3699,7 +3822,7 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
 
   rule	Static.elab_exp (env,e,false,NONE)  =>
-	(e', prop as Types.PROP(Types.T_ARRAY(_,t),_),_) &
+	(e', prop as Types.PROP((Types.T_ARRAY(_,t),_),_),_) &
 	
 	add_for_loop_scope(env,i,t) => env' &
 	
@@ -3811,11 +3934,11 @@ end
 
 relation valid_connector : Types.Type => () =
 
-  axiom	valid_connector Types.T_REAL(_)
+  axiom	valid_connector((Types.T_REAL(_),_))
 
   rule	ClassInf.valid(state,SCode.R_CONNECTOR)
 	---------------------------------------
-	valid_connector Types.T_COMPLEX(p,state,_)
+	valid_connector((Types.T_COMPLEX(state,_),_))
 
   rule	Print.print_buf "# Can't connect objects of type " &
 	Types.print_type t & Print.print_buf "\n"
@@ -3919,17 +4042,17 @@ relation connect_components: (Connect.Sets,
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_flow(sets, c1', f1, c2', f2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, f1, Types.T_REAL(_),
-			   c2, f2, Types.T_REAL(_), true) => sets'
+	connect_components(sets, pre, c1, f1, (Types.T_REAL(_),_),
+			   c2, f2, (Types.T_REAL(_),_), true) => sets'
 
-  rule	Types.array_element_type(t1) => Types.T_REAL(_) &
-	Types.array_element_type(t2) => Types.T_REAL(_) &
+  rule	Types.array_element_type(t1) => ((Types.T_REAL(_),_)) &
+	Types.array_element_type(t2) => ((Types.T_REAL(_),_)) &
 	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_equ(sets, c1', c2') => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1, Types.T_ARRAY(_,t1),
-			   c2,f2, Types.T_ARRAY(_,t2),true) => sets'
+	connect_components(sets,pre,c1,f1, (Types.T_ARRAY(_,t1),_),
+			   c2,f2, (Types.T_ARRAY(_,t2),_),true) => sets'
 	
 	(**  Non-flow type *)
 
@@ -3937,22 +4060,22 @@ relation connect_components: (Connect.Sets,
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_equ(sets, c1', c2') => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, _, Types.T_REAL(_),
-			   c2, _, Types.T_REAL(_), false) => sets'
+	connect_components(sets, pre, c1, _, (Types.T_REAL(_),_),
+			   c2, _, (Types.T_REAL(_),_), false) => sets'
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_equ(sets, c1', c2') => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, _, Types.T_INTEGER(_),
-			   c2, _, Types.T_INTEGER(_), false) => sets'
+	connect_components(sets, pre, c1, _, (Types.T_INTEGER(_),_),
+			   c2, _, (Types.T_INTEGER(_),_), false) => sets'
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_equ(sets, c1', c2') => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1, Types.T_ARRAY(_,_),
-			   c2,f2, Types.T_ARRAY(_,_),false) => sets'
+	connect_components(sets,pre,c1,f1, (Types.T_ARRAY(_,_),_),
+			   c2,f2, (Types.T_ARRAY(_,_),_),false) => sets'
 
 	(**  Complex types *)
 
@@ -3960,8 +4083,8 @@ relation connect_components: (Connect.Sets,
 	Prefix.prefix_cref(pre, c2) => c2' &
 	connect_vars(sets,c1',f1,l1,c2',f2,l2) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1, Types.T_COMPLEX(_,_,l1),
-			   c2,f2, Types.T_COMPLEX(_,_,l2),_) => sets'
+	connect_components(sets,pre,c1,f1, (Types.T_COMPLEX(_,l1),_),
+			   c2,f2, (Types.T_COMPLEX(_,l2),_),_) => sets'
 	
 	(**  Error *)
 	
@@ -4018,12 +4141,26 @@ end
  **)
 
 relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type =
+	
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype(p,ClassInf.TYPE_INTEGER(_),v) => ((Types.T_INTEGER(v),somep))
 
-  axiom	mktype(_,ClassInf.TYPE_INTEGER(_),v) => Types.T_INTEGER(v)
-  axiom	mktype(_,ClassInf.TYPE_REAL(_),v)    => Types.T_REAL(v)
-  axiom	mktype(_,ClassInf.TYPE_STRING(_),v)  => Types.T_STRING(v)
-  axiom	mktype(_,ClassInf.TYPE_BOOL(_),v)    => Types.T_BOOL(v)
-  axiom	mktype(_,ClassInf.TYPE_ENUM(_),_)    => Types.T_ENUM
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype(p,ClassInf.TYPE_REAL(_),v)    => ((Types.T_REAL(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype(p,ClassInf.TYPE_STRING(_),v)  => ((Types.T_STRING(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype(p,ClassInf.TYPE_BOOL(_),v)    => ((Types.T_BOOL(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype(p,ClassInf.TYPE_ENUM(_),_)    => ((Types.T_ENUM,somep))
 
 	(* Insert function type construction here
 	   after checking input/output arguments? 
@@ -4033,7 +4170,7 @@ relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type =
 	--------------------------
 	mktype(p,st as ClassInf.FUNCTION(name), vl) => functype
 
-  rule	Types.make_enumeration_type (v1) => enumtype
+  rule	Types.make_enumeration_type (p,v1) => enumtype
 	--------------------------------------------
 	mktype(p,ClassInf.ENUMERATION(name),v1) => enumtype
 (*
@@ -4041,13 +4178,19 @@ relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type =
 	Dump.print_list (vl, Types.print_var, ", ") &
 	Print.print_buf " >"
 	--------------------------
-	mktype(st as ClassInf.FUNCTION(name), vl) => Types.T_COMPLEX(p,st,vl)
+	mktype(st as ClassInf.FUNCTION(name), vl) => Types.T_COMPLEX(st,vl)
 *)
 
-  axiom	mktype(p,st,l) => Types.T_COMPLEX(p,st,l)
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype(p,st,l) => ((Types.T_COMPLEX(st,l),somep))
 
 end
 
+relation get_opt_path: Absyn.Path => Absyn.Path option =
+  axiom	get_opt_path Absyn.IDENT("") => NONE
+  axiom	get_opt_path p => SOME(p)
+end
 (** relation: inst_list
  **
  ** This is a utility used to do instantiation of list of things,

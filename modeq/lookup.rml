@@ -966,9 +966,10 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
 
   rule	lookup_class_in_env(env,classname,false) => (c as SCode.CLASS(_,_,false,_,_) ,env') &
         (* false means here non-encapsulated *)
-        Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is already a simple name)\n")
+        Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is already a simple name: ") &
+	Print.print_buf(id) & Print.print_buf(" )\n")
       	----------------------------------------------------
-	lookup_class_in_class (env, cdef, classname as Absyn.IDENT(_),true) => fail
+	lookup_class_in_class (env, cdef, classname as Absyn.IDENT(id),true) => fail
 	
   rule	lookup_class_in_env(env,classname,false) => (c ,env') 
         (* false means that we do not restrict lookup to encapsulated classes *)
@@ -1180,22 +1181,22 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 
   rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(dim,t),
+	check_subscripts((Types.T_ARRAY(dim,t),p),
 			 Exp.WHOLEDIM::ys)
-	  => Types.T_ARRAY(dim,t')
+	  => ((Types.T_ARRAY(dim,t'),p))
 
   rule	check_subscripts(t, ys) => t' & 
 	list_length(se) => dim
 	(* FIXME: Check range *)
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(SOME(sz)),t),p),
 			 Exp.SLICE(Exp.ARRAY(_,_,se))::ys)
-	  => Types.T_ARRAY(Types.DIM(SOME(dim)),t')
+	  => ((Types.T_ARRAY(Types.DIM(SOME(dim)),t'),p))
 
   rule	int_gt(ind, 0) => true  &  int_le(ind, sz) => true &
 	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(SOME(sz)),t),_),
 			 Exp.INDEX(Exp.ICONST(ind))::ys) => t'
 
 	(* HJ: Subscrits needn't be constant. No range-checking can
@@ -1203,32 +1204,32 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 
   rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(SOME(sz)),t),_),
 			 Exp.INDEX(_)::ys) => t'
 
   rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(NONE),t),_),
 			 Exp.INDEX(_)::ys) => t'
 
   rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(SOME(sz)),t),_),
 			 Exp.WHOLEDIM::ys) => t'
 
   rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(NONE),t),_),
 			 Exp.WHOLEDIM::ys) => t'
 
   rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(SOME(sz)),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(SOME(sz)),t),_),
 			 Exp.SLICE(_)::ys) => t'
 
   rule	check_subscripts(t, ys) => t'
 	------------------------------
-	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
+	check_subscripts((Types.T_ARRAY(Types.DIM(NONE),t),_),
 			 Exp.SLICE(_)::ys) => t'
 
   rule	Debug.fprint("failtrace", "- check_subscripts failed ( ") &
