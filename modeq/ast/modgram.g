@@ -219,7 +219,7 @@ class_definition[bool is_replaceable,bool is_final] :
 				    RML_PRIM_MKBOOL(partial),
 				    restr, Absyn__PARTS(sibling_list(#c)));
 	  >>
-	| EQUALS di:IDENT
+	| EQUALS dp:name_path
 	  { da:array_dimensions << has_array_dim=true; >> }
 	  { ds:class_specialization << has_class_spec=true; >> } 
 	  << 
@@ -228,13 +228,13 @@ class_definition[bool is_replaceable,bool is_final] :
 	     #0->rml = Absyn__CLASS(mk_scon($i.u.stringval),
 				    RML_PRIM_MKBOOL(partial),
 				    restr,
-				    Absyn__DERIVED(mk_scon($di.u.stringval),
+				    Absyn__DERIVED(#dp->rml,
 						   (has_array_dim
 						    ? mk_some(#da->rml)
 						    : mk_none()),
 						   (has_class_spec
-						    ? mk_some(#ds->rml)
-						    : mk_none())));
+						    ? #ds->rml
+						    : mk_nil())));
 	  >>
 	)
 	;
@@ -291,9 +291,9 @@ element :
  */
 
 extends_clause:
-	EXTENDS^ i:IDENT
+	EXTENDS^ i:name_path
 	{ class_specialization }
-	<< #0->rml = Absyn__EXTENDS(mk_scon(i.u.stringval),
+	<< #0->rml = Absyn__EXTENDS(#i->rml,
 				    mk_nil() /* FIXME */); >>
 	;
 
