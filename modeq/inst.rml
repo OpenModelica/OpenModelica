@@ -671,12 +671,17 @@ end
  **)
 
 relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			   Absyn.Algorithm)
+			   SCode.Algorithm)
 	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
 
-  rule  print "# no algorithms yet\n"
+  rule  print " algorithm\n" (* FIXME *)
 	-----------------------------
-	inst_algorithm(env,_,_,csets,ci_state,_) => ([],env,csets,ci_state)
+	inst_algorithm(env,_,_,csets,ci_state,al)
+	  => ([DAE.ALGORITHM(al)],env,csets,ci_state)
+
+  rule	print "- inst_algorithm failed\n"
+	---------------------------------
+	inst_algorithm(_,_,_,_,_,_) => fail
 
 end
 

@@ -63,15 +63,20 @@ module Absyn:
 				  * Modification option
 
   datatype Equation = EQ_EXPR of Exp	     (* more later? *)
+		    | EQ_COND (* FIXME *)
 		    | EQ_EQUALS of Exp * Exp
 		    | EQ_CONNECT of ComponentRef * ComponentRef
 		    | EQ_FOR of Ident * Exp * Equation list
 
-  datatype Algorithm = ALGORITHM		     (* FIXME *)
+  datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp
+		     | ALG_COND (* FIXME *)
+		     | ALG_FOR of Ident * Exp * Algorithm list
+		     | ALG_WHILE of Exp * Algorithm list
+		     | ALG_WHEN of Exp * Algorithm list
 
   datatype Modification = CLASSMOD of ElementArg list * Exp option
 
-  datatype ElementArg = MODIFICATION of bool * Path * Modification
+  datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
 		      | REDECLARATION of bool * ElementSpec
 
   (** - Variable attributes *)
@@ -79,7 +84,7 @@ module Absyn:
 			   * bool	(* flow *)
 			   * VarType	(* parameter *)
 			   * Direction
-  datatype VarType = VAR | PARAM | CONST
+  datatype VarType = VAR | DISCRETE | PARAM | CONST
   datatype Direction = INPUT | OUTPUT | BIDIR
 
   (** - Array dimensions *)

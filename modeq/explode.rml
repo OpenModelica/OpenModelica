@@ -12,7 +12,6 @@ module SCode :
   type Subscript = Absyn.Subscript
   type Restriction = Absyn.Restriction
   type Equation = Absyn.Equation
-  type Algorithm = Absyn.Algorithm
 
   datatype SubMod = SUBMOD of Ident * Mod
   and Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
@@ -34,6 +33,9 @@ module SCode :
 		    | DERIVED of Path
 			       * Absyn.ArrayDim option
 			       * Mod
+
+  (** - Algorithms *)
+  datatype Algorithm = ALGORITHM of Absyn.Algorithm list
 
   (** - Elements *)
   datatype Element = EXTENDS of Path * Mod
@@ -106,7 +108,7 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	  => PARTS(els,eqs',als)
 
   rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-	list_append(als,l) => als'
+	list_append(als,[ALGORITHM(l)]) => als'
 	------------------------------
 	elab_classdef(Absyn.PARTS(Absyn.ALGORITHMS(l)::ps))
 	  => PARTS(els,eqs,als')
@@ -216,13 +218,14 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
 
 end
 
-relation build_sub : (Absyn.Path,Mod) => SubMod =
+relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 
-  axiom build_sub(Absyn.IDENT(i),mod) => SUBMOD(i,mod)
+	(* FIXME: ignores subscripts *)
+  axiom build_sub(Absyn.CREF_IDENT(i,ss),mod) => SUBMOD(i,mod)
 
   rule  build_sub(path,mod) => sub
 	--------------------------
-	build_sub(Absyn.QUALIFIED(i,path),mod)
+	build_sub(Absyn.CREF_QUAL(i,ss,path),mod)
 	  => SUBMOD(i,MOD(false,[sub],NONE))
 
 end

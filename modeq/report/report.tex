@@ -549,11 +549,29 @@ chapter describes the format of the output of the translator.
 
 \section{Requirements}
 
+There are different requirements that can be placed on the output
+format, all of which are not possible to meet simultaneously.
+
+\begin{enumerate}
+\item The output should contain all the information gathered from the
+  analysis of the Modelica source.
+\item The output should be easily read by a human.
+\item The output should be easily parsed by a computer.
+\item The output should be able to be fed to an existing equation
+  solver.
+\item The target language needs to be able to express everything that
+  can be expressed by the Modelica language
+\end{enumerate}
+
+
+
 The target language needs to be able to express everything that can be
 expressed by the Modelica language, but it may do so in a much less
 structured way.  The major part of the translator output consists of a
 flat list of equations which are the result of instantiating the main
-model of the source file and its subcomponents.  Thus 
+model of the source file and its subcomponents.
+
+\note{structural parameters}
 
 
 \chapter{Annotated formal semantics}

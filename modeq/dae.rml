@@ -7,7 +7,9 @@
 
 module DAE:
   
+  with "dump.rml"
   with "exp.rml"
+  with "explode.rml"
 
   type Ident = string
 
@@ -18,6 +20,7 @@ module DAE:
   datatype DAEcomp = VAR of Exp.ComponentRef * VarKind * Type
 		   | VARVAL of Ident * VarKind * Exp.Exp
 		   | EQUATION of Exp.Exp
+		   | ALGORITHM of SCode.Algorithm
 		   | COMP of Ident * DAEform
   and	 DAEform = DAE of DAEcomp list
 	  
@@ -108,6 +111,18 @@ relation dump_equation : DAEcomp => () =
 
 end
 
+relation dump_algorithm : DAEcomp => () =
+
+  rule	print "algorithm\n\n" &
+	Dump.print_list(alg, Dump.print_algorithm, "\n  ") &
+	print "\n"
+	----------------------------------------------
+	dump_algorithm ALGORITHM(SCode.ALGORITHM(alg))
+
+  axiom	dump_algorithm _
+
+end
+
 relation dump_vars: DAEcomp list => () =
 	
   axiom	dump_vars []
@@ -130,12 +145,24 @@ relation dump_equations: DAEcomp list => () =
 
 end
 
+relation dump_algorithms: DAEcomp list => () =
+	
+  axiom	dump_algorithms []
+	
+  rule	dump_algorithm first &
+	dump_algorithms rest
+	-------------------
+	dump_algorithms first :: rest
+
+end
+
 relation dump: DAEform => () =
 	
   rule	dump_vars l &
 	print "\nequations\n\n" &
-	dump_equations l
-	----------------
+	dump_equations l &
+	dump_algorithms l
+	-----------------
 	dump DAE(l)
 
 end

@@ -261,6 +261,15 @@ convert them to reals and do a real division.
 More could be said about types. The grammar doesn't even differentiate
 between real and integer literals.
 
+** Integer division
+
+The division operator `/' always produces a Real result.
+
+The operators div() and rem() are defined.
+
+The operator div() is defined in the report as returning a Real, which
+can't possible be sensible.
+
 * Arrays
 
 Arrays are indexed from 1 and up. This is not mentioned in the

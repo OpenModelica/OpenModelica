@@ -243,25 +243,42 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
   axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.NOSUB, true)
 
-  rule	elab_exp (env,sub1) => (sub1', Types.T_INTEGER, const)
-	----------------------------------------------------
+  rule	elab_exp (env,sub1) => (sub1', ty, const) &
+	assert_integer_subscript (ty, sub1)
+	-----------------------------------
 	elab_subscript (env,Absyn.SUB1(sub1)) => (Exp.SUB1(sub1'), const)
 
-  rule	elab_exp (env,sub1) => (sub1', Types.T_INTEGER, const1) &
-	elab_exp (env,sub2) => (sub2', Types.T_INTEGER, const2) &
+  rule	elab_exp (env,sub1) => (sub1', ty1, const1) &
+	assert_integer_subscript (ty1, sub1) &
+	elab_exp (env,sub2) => (sub2', ty2, const2) &
+	assert_integer_subscript (ty2, sub2) &
 	bool_and(const1, const2) => const
 	---------------------------------
 	elab_subscript (env,Absyn.SUB2(sub1,sub2))
 	  => (Exp.SUB2(sub1',sub2'), const)
 
-  rule	elab_exp (env,sub1) => (sub1', Types.T_INTEGER, const1) &
-	elab_exp (env,sub2) => (sub2', Types.T_INTEGER, const2) &
-	elab_exp (env,sub3) => (sub3', Types.T_INTEGER, const3) &
+  rule	elab_exp (env,sub1) => (sub1', ty1, const1) &
+	assert_integer_subscript (ty1, sub1) &
+	elab_exp (env,sub2) => (sub2', ty2, const2) &
+	assert_integer_subscript (ty2, sub2) &
+	elab_exp (env,sub3) => (sub3', ty3, const3) &
+	assert_integer_subscript (ty3, sub3) &
 	bool_and(const1, const2) => const3 &
 	bool_and(const3, const2) => const
 	---------------------------------
 	elab_subscript (env,Absyn.SUB3(sub1,sub2,sub3))
 	  => (Exp.SUB3(sub1',sub2',sub3'), const)
+
+end
+
+relation assert_integer_subscript : (Types.BasicType, Absyn.Exp) => () =
+
+  axiom	assert_integer_subscript (Types.T_INTEGER,_)
+
+  rule	print "# Subscript is not an integer\n" &
+	print "#  expression: " & Dump.print_exp e & print "\n"
+	------------------------------------------------------
+	assert_integer_subscript (_,e) => fail
 
 end
 
@@ -343,6 +360,23 @@ relation elab_binary : (Exp.Exp, Types.BasicType, bool,
 	---------------------
 	elab_binary (e1,Types.T_REAL,c1,Absyn.MUL,e2,Types.T_REAL,c2)
 	  => (Exp.BINARY(e1,Exp.REAL_MUL,e2), Types.T_REAL, c)
+
+	(**  DIV
+	 **
+	 ** Division is always real division. Integers are always
+	 ** promoted to reals before the division is made. *)
+	
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,Types.T_INTEGER,c1,Absyn.DIV,e2,Types.T_INTEGER,c2)
+	  => (Exp.BINARY(Exp.CAST_TO_REAL(e1),
+			 Exp.REAL_DIV,
+			 Exp.CAST_TO_REAL(e2)), Types.T_REAL, c)
+
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,_,c1,Absyn.DIV,e2,_,c2)
+	  => (Exp.BINARY(e1,Exp.REAL_DIV,e2), Types.T_REAL, c)
 
 	(**  Failure *)
   rule	print "- elab_binary failed " (* &

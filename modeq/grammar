@@ -1,194 +1,256 @@
+Appendix B.1. Modelica Syntax
+
+The following syntactic meta symbols are used (extended BNF):
+
+     [ ]  optional
+     { }  repeat zero or more times
+
+The following lexical units are defined:
+
+     IDENT = // Identifiers have the same definition as in Java
+
+     STRING = // String constant as in C, except note below.
+
+     UNSIGNED_NUMBER = // Decimal number notation
+
+String constant concatenation "a" "b" becoming "ab" is replaced by the "+"
+operator in Modelica.
+
+Modelica uses the same comment syntax as C++ and Java. Inside a comment, the
+sequence <HTML> .... </HTML> indicates HTML code which may be used by tools
+to facilitate model documentation.
+
+Keywords and built-in operators of the Modelica language are written in bold
+face.
+
 
 Model definition
 
-      model_definition:
-         { class_definition ";" | import STRING ";" }
+     model_definition:
+        {  [ final ] class_definition ";" | import STRING ";" }
 
 Class definition
 
-      class_definition :
-            [ partial ] 
-         ( class | model | record | block | connector | type |
-           package | function ) 
-         IDENT comment
-         ( composition end IDENT | 
-           "=" IDENT [ array_dimensions ] [ class_modification ] )
+     class_definition :
+        [ partial ]
+        ( class | model | record | block | connector | type |
+          package | function )
+        IDENT comment
+        ( composition end IDENT |
+          "=" name [ array_dimensions ] [ class_modification ] )
 
-      composition  :
-         element_list 
-         { public element_list | 
-           protected element_list | 
-           equation_clause |
-           algorithm_clause
-         }
-         [ external ]
+     composition  :
+        element_list
+        { public element_list |
+          protected element_list |
+          equation_clause |
+          algorithm_clause
+        }
+        [ external ]
 
-      element_list :
-         { element ";" | annotation  ";" }
+     element_list :
+        { element ";" | annotation  ";" }
 
-      element :
-         [ final ] ( [ replaceable ] class_definition | extends_clause | 
-                     component_clause )
+     element :
+        [ final ] ( [ replaceable ] class_definition | extends_clause |
+                    component_clause )
 
 Extends
 
-      extends_clause :
-         extends name [ class_modification ]
+     extends_clause :
+        extends name [ array_subscripts ] [ class_modification ]
 
 Component clause
 
-      component_clause:
-         type_prefix type_specifier component_list
+     component_clause:
+        type_prefix type_specifier component_list
 
-      type_prefix :
-         [ flow ] [ parameter | constant ] [ input | output ]
+     type_prefix :
+        [ flow ] [ discrete | parameter | constant ] [ input | output ]
 
-      type_specifier :
-         name
+     type_specifier :
+        name
 
-      component_list :
-         component_declaration { "," component_declaration }
+     component_list :
+        component_declaration { "," component_declaration }
 
-      component_declaration :
-         declaration comment
+     component_declaration :
+        declaration comment
 
-      declaration :
-         IDENT [ array_dimensions ] [ modification ]
-
-      array_dimensions :
-         "[" subscript { "," subscript } "]"
+     declaration :
+        IDENT [ array_subscripts ] [ modification ]
 
 Modification
 
-      modification :
-         class_modification
-       | "=" expression
+     modification :
+        class_modification [ "=" expression ]
+      | "=" expression
 
-       
-      class_modification :
-         "(" { argument_list } ")"
 
-      argument_list :
-         argument { "," argument }
+     class_modification :
+        "(" { argument_list } ")"
 
-      argument :
-         element_modification
-       | element_redeclaration
+     argument_list :
+        argument { "," argument }
 
-      element_modification :
-         [ final ] component_reference modification
+     argument :
+        element_modification
+      | element_redeclaration
 
-      element_redeclaration :
-         redeclare [ final ]
-         ( [ replaceable ] class_definition | extends_clause | component_clause1 )
+     element_modification :
+        [ final ] component_reference modification
 
-      component_clause1 :
-         type_prefix type_specifier component_declaration
+     element_redeclaration :
+        redeclare [ final ]
+        ( [ replaceable ] class_definition | extends_clause | component_clause1 )
+
+     component_clause1 :
+        type_prefix type_specifier component_declaration
 
 Equations
 
-      equation_clause :
-        equation { equation ";" | annotation  ";" }
+     equation_clause :
+       equation { equation ";" | annotation  ";" }
 
-      algorithm_clause :
-         algorithm { equation ";" | annotation  ";" }
+     algorithm_clause :
+        algorithm { algorithm ";" | annotation  ";" }
 
-      equation :
-        ( simple_expression [ ( "=" | ":=" ) expression ] 
-          | conditional_equation
-          | for_clause
-          | while_clause )
-        comment
+     equation :
+       ( range_expression "=" expression
+         | conditional_equation_e
+         | for_clause_e
+         | connect_clause )
+       comment
 
-      conditional_equation :
-         if expression then
-           { equation ";" }
-         { elseif expression then
-           { equation ";" }
-         }
-         [ else
-           { equation ";" }
-         ]
-         end if
+     algorithm :
+       ( component_reference ( ":=" expression | function_call )
+         | conditional_equation_a
+         | for_clause_a
+         | while_clause
+         | when_clause )
+       comment
 
-      for_clause :
-        for IDENT in expression ":" expression [ ":" expression ] loop
-           { equation ";" }
-        end for
-
-      while_clause :
-        while expression loop
+     conditional_equation_e :
+        if expression then
           { equation ";" }
-        end while
+        { elseif expression then
+          { equation ";" }
+        }
+        [ else
+          { equation ";" }
+        ]
+        end if
+
+     conditional_equation_a :
+        if expression then
+          { algorithm ";" }
+        { elseif expression then
+          { algorithm ";" }
+        }
+        [ else
+          { algorithm ";" }
+        ]
+        end if
+
+     for_clause_e :
+       for IDENT in expression loop
+          { equation ";" }
+       end for
+
+     for_clause_a :
+       for IDENT in expression loop
+          { algorithm ";" }
+       end for
+
+     while_clause :
+       while expression loop
+         { algorithm ";" }
+       end while
+
+     when_clause :
+       when expression do
+         { algorithm ";" }
+       end when
+
+     connect_clause :
+       connect "(" connector_ref "," connector_ref ")"
+
+     connector_ref :
+       IDENT [ subscripts ] [ "." IDENT [ subscripts ] ]
 
 Expressions
 
-      expression :
-         simple_expression
-       | if expression then simple_expression else expression
+     expression :
+        range_expression
+      | if expression then expression else expression
 
-      simple_expression :
-         logical_term { or logical_term }
+     range_expression :
+        simple_expression [ ":" simple_expression [ ":" simple_expression ] ]
 
-      logical_term :
-         logical_factor { and logical_factor }
+     simple_expression :
+        logical_term { or logical_term }
 
-      logical_factor :
-         [ not ] relation
+     logical_term :
+        logical_factor { and logical_factor }
 
-      relation :
-         arithmetic_expression [ rel_op arithmetic_expression ]
+     logical_factor :
+        [ not ] relation
 
-      rel_op :
-         "<" | "<=" | ">" | ">=" | "==" | "<>"
+     relation :
+        arithmetic_expression [ rel_op arithmetic_expression ]
 
-      arithmetic_expression :
-         [ add_op ] term { add_op term }
+     rel_op :
+        "<" | "<=" | ">" | ">=" | "==" | "<>"
 
-      add_op :
-         "+" | "-"
+     arithmetic_expression :
+        [ add_op ] term { add_op term }
 
-      term :
-         factor { mul_op factor }
+     add_op :
+        "+" | "-"
 
-      mul_op :
-         "*" | "/"
+     term :
+        factor { mul_op factor }
 
-      factor :
-         primary [ "^" primary ] 
+     mul_op :
+        "*" | "/"
 
-      primary :
-         UNSIGNED_NUMBER
-       | STRING
-       | time
-       | false
-       | true
-       | component_reference 
-       | name "(" { function_arguments } ")"
-       | "(" expression ")"
-       | "[" row_expression { ";" row_expression } "]"
+     factor :
+        primary [ "^" primary ]
 
-      name :
-         IDENT [ "." name ]
+     primary :
+        UNSIGNED_NUMBER
+      | STRING
+      | false
+      | true
+      | component_reference [ function_call ]
+      | "(" expression ")"
+      | "[" row_expression { ";" row_expression } "]"
 
-      component_reference :
-         IDENT [ subscripts ] [ "." component_reference ]
+     name :
+        IDENT [ "." name ]
 
-      row_expression :
-         expression { "," expression }
+     component_reference :
+        IDENT [ array_subscripts ] [ "." component_reference ]
 
-      function_arguments :
-         expression { "," expression }
-       | IDENT "=" expression { "," IDENT "=" expression }
+     function_call :
+        "(" [ function_arguments ] ")"
 
-      subscripts :
-         "[" subscript { "," subscript } "]"
+     function_arguments :
+        expression { "," expression }
+      | IDENT "=" expression { "," IDENT "=" expression }
 
-      subscript :
-         ":" | expression [ ":" expression [ ":" expression ] ]
+     row_expression :
+        expression { "," expression }
 
-      comment :
-         [ STRING ] [ annotation ]
+     array_subscripts :
+        "[" subscript { "," subscript } "]"
 
-      annotation :
-         annotation class_modification
+     subscript :
+        ":" | expression
+
+     comment :
+        [ STRING { "+" STRING } ] [ annotation ]
+
+     annotation :
+        annotation class_modification
+

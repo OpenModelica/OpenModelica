@@ -53,6 +53,12 @@ AST *zzmk_ast(AST *ast, Attrib *at)
 
 extern void *sibling_list(AST *ast);
 
+void unimpl(char *rule)
+{
+  fprintf(stderr, "= Unimplemented grammar rule: %s\n", rule);
+  exit(1);
+}
+
 >>
 
 /**************************************************************/
@@ -76,6 +82,7 @@ extern void *sibling_list(AST *ast);
 
 #token EXTERNAL		"external"
 #token EXTENDS		"extends"
+#token DISCRETE		"discrete"
 #token PARAMETER	"parameter"
 #token CONSTANT		"constant"
 #token REPLACEABLE	"replaceable"
@@ -189,7 +196,7 @@ extern void *sibling_list(AST *ast);
 /*   default : */
 /*     << parse_failed = 1; >> */
 
-model_specification :
+model_definition :
 	(
 	  cl:class_definition[false,false] ";"! 
 	| import_statement
@@ -331,14 +338,12 @@ component_clause!:
 	>> 
 	;
 
-type_prefix : << Attrib a = $[TYPE_PREFIX,"---"]; >>
-	{ f:FLOW      } 
-	{ p:PARAMETER
-	| c:CONSTANT  }
-	{ i:INPUT     
-	| o:OUTPUT    }
-        << #0 = #(#[&a],#0); >>
-	;
+/* type_prefix : << Attrib a = $[TYPE_PREFIX,"---"]; >> */
+/* 	{ f:FLOW}  */
+/*         { d:DISCRETE | p:PARAMETER | c:CONSTANT  } */
+/* 	{ i:INPUT | o:OUTPUT} */
+/*         << #0 = #(#[&a],#0); >> */
+/* 	; */
 
 type_specifier :
 	name_path
@@ -355,10 +360,10 @@ component_declaration :
 declaration :
 	i:IDENT^
 	{ a:array_dimensions }
-	{ s:modification }
+	{ m:modification }
 	<< #i->rml = Absyn__COMPONENT(mk_scon($i.u.stringval),
 				      #a ? #a->rml : Absyn__NODIM,
-				      #s ? mk_some(#s->rml) : mk_none()); >>
+				      #m ? mk_some(#m->rml) : mk_none()); >>
         ;
 
 array_dimensions :
@@ -401,7 +406,7 @@ subscript :
   ;
 
 /*
- * Modification (here: modification)
+ * Modifications
  */
 
 modification :
@@ -428,42 +433,44 @@ argument :
  
 element_modification : << bool is_final=false; >>
 	{ FINAL << is_final=true; >> } 
-	np:name_path /* Not in spec */
+	cr:component_reference /* name_path /* Not in spec */
 	sp:modification
 	<< 
 	   Attrib a = $[MODIFICATION,"---"];
 	   #0 = #(#[&a],#0);
 	   #0->rml = Absyn__MODIFICATION(RML_PRIM_MKBOOL(is_final),
-					 #np->rml,
+					 #cr->rml,
 					 #sp->rml);
 	>>
 	;
 
 element_redeclaration :
-	  << bool is_final=false; void *spec = NULL; >>
+	  << bool is_final=false, is_replaceable=false; void *spec = NULL; >>
 	  REDECLARE ^
 	  { FINAL << is_final=true; >> }
-	  ( ec:extends_clause                   << spec = #ec->rml; >>
-	  | cd:class_definition[false,is_final]
+	  { { REPLACEABLE << is_replaceable = true; >> }
+	    cd:class_definition[is_replaceable,is_final]
 	    << spec = Absyn__CLASSDEF(RML_PRIM_MKBOOL(false), #cd->rml); >>
+	  | ec:extends_clause                   << spec = #ec->rml; >>
 	  | cc:component_clause1
-	    << spec = #cc->rml; >> )
+	    << spec = #cc->rml; >> }
           << #0->rml = Absyn__REDECLARATION(RML_PRIM_MKBOOL(is_final), spec);
 	  >>
 	;
 
 component_clause1!:
-	<< bool fl=false, pa=false, co=false, in=false, ou=false;
+	<< bool fl=false, di=false, pa=false, co=false, in=false, ou=false;
 	   Attrib a = $[COMPONENTS,"---"]; >>
         /* inline type_prefix for easy access to the flags */
 	{ f:FLOW      << fl = true; >> } 
-	{ p:PARAMETER << pa = true; >>
+	{ d:DISCRETE  << di = true; >>
+	| p:PARAMETER << pa = true; >>
 	| c:CONSTANT  << co = true; >> }
 	{ i:INPUT     << in = true; >>
 	| o:OUTPUT    << ou = true; >> }
 	s:type_specifier
-	d:component_declaration
-        << #0 = #(#[&a], #p, #s, #d);
+	decl:component_declaration
+        << #0 = #(#[&a], #p, #s, #decl);
 	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(mk_none(),
 						   RML_PRIM_MKBOOL(fl),
 						   pa ? Absyn__PARAM :
@@ -473,7 +480,7 @@ component_clause1!:
 						   ou ? Absyn__OUTPUT:
 						   Absyn__BIDIR),
 				       #s->rml,
-				       mk_cons(#d->rml, mk_nil()));
+				       mk_cons(#decl->rml, mk_nil()));
 				       
 	>> 
 	;
@@ -505,75 +512,52 @@ equation_clause	:
 	;
 
 algorithm_clause :
-	ALGORITHM^ ( equation ";"! | annotation! ";"! )*
-	<< #0->rml = Absyn__ALGORITHMS(mk_nil()); >>
+	ALGORITHM^ ( algorithm ";"! | annotation! ";"! )*
+	<< #0->rml = Absyn__ALGORITHMS(sibling_list(#0->down)); >>
 	;
 
 equation : << bool is_assign = false; AST *top; >>
-	CONNECT^ LPAR c1: component_reference "," c2:component_reference RPAR
-	  << #0->rml = Absyn__EQ_5fCONNECT(#c1->rml,#c2->rml); >>
-	| ( lh:simple_expression << top = #lh; >>
-	    { ( a:ASSIGN^ << top = #a; >>
-	      | e:EQUALS^ << top = #e; >> )
-	      rh:expression << is_assign=true; >> }
-	    << 
-	       if(is_assign)
-		 top->rml = Absyn__EQ_5fEQUALS(#lh->rml, #rh->rml);
-	       else
-		 top->rml = Absyn__EQ_5fEXPR(#lh->rml);
-	    >>
-	| conditional_equation
-	| for_clause
-	| while_clause )
+	( e1:range_expression EQUALS^ e2:expression
+	  << #0->rml = Absyn__EQ_5fEQUALS(#e1->rml, #e2->rml); >>
+	| conditional_equation_e
+	| for_clause_e
+	| connect_clause )
 	comment!
 	;
 
-/* conditional_equation : */
-/* 	  i:IF^ expression << #i->setOpType(OP_FUNCTION); #i->setTranslation("If"); >>  */
-/* 	  THEN! */
-/* 	  el:equation_list << #el->setTranslation(";"); >> */
-/* 	  ( */
-/* 	   elseif_clause */
-/* 	  | ELSE! */
-/* 	    el2:equation_list << #el2->setTranslation(";"); >> */
-/* 	  |  */
-/* 	  ) */
-/* 	    END! IF! */
-/* 	  ; */
+algorithm :
+	( cr:component_reference
+	  ( ASSIGN^ e:expression
+	    << #0->rml = Absyn__ALG_5fASSIGN(#cr->rml, #e->rml); >>
+	  | function_call[#cr->rml] << unimpl("algorithm function_call"); >> )
+	| conditional_equation_a
+        | for_clause_a
+	| while_clause
+	| when_clause )
+  	comment!
+  	;
 
-/* elseif_clause: */
-/* 	  e:ELSEIF^ << #e->setOpType(OP_FUNCTION); #e->setTranslation("If"); >> */
-/* 	  expression THEN!  */
-/* 	  el:equation_list << #el->setTranslation(";"); >> */
-/* 	  ( elseif_clause | ELSE! el2:equation_list << #el2->setTranslation(";"); >> | ) */
-/* 	  ; */
-
-conditional_equation :
-	<< bool is_elseif=false; /* AST *e_ast; */ >>
-
+conditional_equation_e :
 	i:IF^ expression THEN!
-
-	el:equation_list << /* #el->setTranslation(";"); */ >>
-
-	( ELSEIF! << is_elseif=true; >> expression THEN!
-	el1:equation_list << /* #el1->setTranslation(";"); */ >> )*
-
-/* 	The LT(1) is there just to silence an ANTLR warning. It's not used. */
-	{ ( <</*LT(1),*/is_elseif>>? els:ELSE << /* #els->setTranslation("True"); */ >> | ELSE! )
-	  el2:equation_list << /* #el2->setTranslation(";"); */ >> }
-
+	el:equation_list
+	( ELSEIF! expression THEN!
+	  el1:equation_list )*
+	{ ELSE!
+	  el2:equation_list }
 	END! IF!
-	<< if (is_elseif) {
-	  /* #i->setOpType(OP_FUNCTION); 
-	     #i->setTranslation("Which"); */
-	   } else {
-	  /* #i->setOpType(OP_FUNCTION); 
-	     #i->setTranslation("If");  */
-	   }
-	>>
 	;
 
-for_clause :
+conditional_equation_a :
+	i:IF^ expression THEN!
+	el:algorithm_list
+	( ELSEIF! expression THEN!
+	  el1:algorithm_list )*
+	{ ELSE!
+	  el2:algorithm_list }
+	END! IF!
+	;
+
+for_clause_e :
 	FOR^ id:IDENT IN! e1:expression LOOP!
 	el:equation_list
 	END! FOR!
@@ -584,19 +568,57 @@ for_clause :
 	>>
 	;
 
-while_clause :
-	while_:WHILE^ expression LOOP!
-
-	el:equation_list << /* #el->setTranslation(";"); */ >>
-	END! WHILE!
-	<< /* #while_->setOpType(OP_FUNCTION); 
-	      #while_->setTranslation("While"); */
+for_clause_a :
+	FOR^ id:IDENT IN! e1:expression LOOP!
+	el:algorithm_list
+	END! FOR!
+	<< 
+	   #0->rml = Absyn__ALG_5fFOR(mk_scon($id.u.stringval),
+				      #e1->rml,
+				      sibling_list(#el));
 	>>
+	;
+
+while_clause :
+	wh:WHILE^ e:expression LOOP!
+	el:algorithm_list
+	END! WHILE!
+	<< #wh->rml = Absyn__ALG_5fWHILE(#e->rml, sibling_list(#el)); >>
+	;
+
+when_clause :
+	wh:WHEN^ e:expression LOOP!
+	el:algorithm_list
+	END! WHILE!
+	<< #wh->rml = Absyn__ALG_5fWHEN(#e->rml, sibling_list(#el)); >>
 	;
 
 equation_list :
 	( equation ";"! )*
-	<< /* #0=#(#[EXTRA_TOKEN],#0); */ >>
+	;
+
+algorithm_list :
+	( algorithm ";"! )*
+	;
+
+connect_clause :
+	  CONNECT^ LPAR c1: connector_ref "," c2:connector_ref RPAR
+	  << #0->rml = Absyn__EQ_5fCONNECT(#c1->rml,#c2->rml); >>
+	;
+
+connector_ref : << void *tail = NULL; >>
+	  i1:IDENT^ { a1:subscripts }
+	  << #i1->rml = mk_scon($i1.u.stringval); >>
+	  { dot:DOT^ i2:IDENT { a2:subscripts }
+	    << tail = Absyn__CREF_5fIDENT(#i2->rml, #a2?#a2->rml:mk_nil()); >>
+	    }
+
+	  << if(tail)
+	       #0->rml = Absyn__CREF_5fQUAL(#i1->rml, #a1?#a1->rml:mk_nil(),
+					    tail);
+             else
+	       #0->rml = Absyn__CREF_5fIDENT(#i1->rml, #a1?#a1->rml:mk_nil());
+	  >>
 	;
 
 /*
@@ -604,12 +626,11 @@ equation_list :
  */
 
 expression :
-
 	range_expression 
 	| ifpart:IF^
 	  e1:expression 
 	  THEN!
-	  e2:range_expression
+	  e2:expression
 	  ELSE!
 	  e3:expression
 	  << #0->rml = Absyn__IFEXP(#e1->rml, #e2->rml, #e3->rml); >>
@@ -662,7 +683,6 @@ relation : << void *relop; >>
 	;
 
 arithmetic_expression : << void *op; >>
-
 	unary_arithmetic_expression
 	(
 	  ( PLUS^ << op = Absyn__ADD; >> | MINUS^ << op = Absyn__SUB; >> )
@@ -697,35 +717,38 @@ factor :
 	;
 
 primary : << bool is_matrix; >>
-	  par:LPAR^
+	  ni:UNSIGNED_INTEGER
+	  << #ni->rml = Absyn__INTEGER(mk_icon($ni.u.ival)); >>
+	| nr:UNSIGNED_REAL
+	  << #nr->rml = Absyn__REAL(mk_rcon($nr.u.realval)); >>
+	| f:FALS/*E*/        << #f->rml = Absyn__BOOL(RML_FALSE); >>
+	| t:TRU/*E*/         << #t->rml = Absyn__BOOL(RML_TRUE); >>
+/* 	| (name_path_function_arguments)? */
+	| i:component_reference << #0->rml = Absyn__CREF(#i->rml); >>
+	  { fc:function_call[#0->rml] << #0->rml = #fc->rml; >> }
+	| s:STRING           << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
+	| par:LPAR^
 	  e:expression RPAR!
 	  << #par->rml = #e->rml; >>
 	| op:LBRACK^
 	  c:column_expression > [is_matrix] 
 	  << 
 	     if (is_matrix) {
-	       /* FIXME */
+	       unimpl("primary (matrix)");
 	     } else {
 	       #0->rml = Absyn__ARRAY(sibling_list(#c));
 	     }
 	  >>
 	  RBRACK!
-	| ni:UNSIGNED_INTEGER << #ni->rml = Absyn__INTEGER(mk_icon($ni.u.ival)); >>
-	| nr:UNSIGNED_REAL   << #nr->rml = Absyn__REAL(mk_rcon($nr.u.realval)); >>
-	| f:FALS/*E*/        << #f->rml = Absyn__BOOL(RML_FALSE); >>
-	| t:TRU/*E*/         << #t->rml = Absyn__BOOL(RML_TRUE); >>
-	| (name_path_function_arguments)?
-	| i:component_reference << #0->rml = Absyn__CREF(#i->rml); >>
-	| s:STRING           << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
 	;
 
-name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >>
-	n:name_path f:function_arguments
-	<< 
-	   #0=#(#[&a],#n,#f);
-	   #0->rml = Absyn__CALL(#n->rml, sibling_list(#f));
-	>>
-	;
+/* name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >> */
+/* 	n:name_path f:function_arguments */
+/* 	<<  */
+/* 	   #0=#(#[&a],#n,#f); */
+/* 	   #0->rml = Absyn__CALL(#n->rml, sibling_list(#f)); */
+/* 	>> */
+/* 	; */
 
 name_path : << bool qualified = false; >>
 	i:IDENT^
@@ -755,6 +778,11 @@ component_reference : << void *tail = NULL;>>
 	       #0->rml = Absyn__CREF_5fIDENT(#i->rml, #a?#a->rml:mk_nil()); >>
 	;
 
+function_call[void *name] :
+	  LPAR^ f:function_arguments RPAR!
+	  << #0->rml = Absyn__CALL(name, sibling_list(#f)); >>
+	;
+
 /* not in document's grammar */
 column_expression > [bool is_matrix] :
 	<< $is_matrix=false; >>
@@ -770,7 +798,9 @@ row_expression :
 	;
 
 function_arguments :
-	p:LPAR! expression ( ","! expression )* RPAR! 
+	  expression ( ","! expression )*
+	| IDENT EQUALS^ expression (","! IDENT EQUALS^ expression)*
+  	  << unimpl("function_arguments (named parameters)"); >>
 	;
 
 comment : 
