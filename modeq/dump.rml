@@ -92,8 +92,9 @@ relation path_string: Exp.Path => string =
 	rule	path_string(n) => ns &
 		string_append(s,".") => s1 &
 		string_append(s1,ns) => ss
-		--------------------------------------------
+		-------------------------------------
 		path_string(Exp.QUALIFIED(s,n)) => ss
+
 end
 
 relation dump_exp: Exp.Exp => () =
@@ -108,7 +109,7 @@ relation dump_exp: Exp.Exp => () =
 		dump_exp(Exp.PATH(p))
 
 	rule	print "\"" & print s & print "\""
-		--
+		---------------------------------
 		dump_exp(Exp.STRING(s))
 
 	rule	print "FALSE"
@@ -230,7 +231,7 @@ and dump_class: Absyn.Class => () =
 
 	rule	dump_class_restriction(r) & print "(" &
 		print n & print "," & dump_select(p,"PARTIAL,","") &
-		print ") = " & print i &
+		print ") = " & path_string(i) => is & print is &
 		dump_class_modification(m)
 		----------------------------------------
 		dump_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
@@ -319,7 +320,7 @@ and dump_elementspec: Absyn.ElementSpec => () =
 		dump_select(c,"CONSTANT,","") &
 		dump_select(i,"INPUT,","") &
 		dump_select(o,"OUTPUT,","") &
-		path_string t => ts & print ts & print "," &
+		path_string(t) => ts & print ts & print "," &
 		dump_list(cs, dump_component, ",") &
 		print ")"
 		------------------------------------------
