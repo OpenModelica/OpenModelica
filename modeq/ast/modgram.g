@@ -2,10 +2,10 @@
 
 #header <<
 
+/* #include "bool.h" */
 typedef int bool;
 #define false 0
 #define true  1
-/* #include "bool.h" */
 
 #include "attrib.h"
 #include "parser.h"
@@ -14,17 +14,11 @@ typedef int bool;
 #define AST_FIELDS Attrib *attr; void *rml;
 #define zzcr_ast(ast,atr,ttype,text) ast->attr=copy_attr(atr); ast->rml=NULL;
 
-/* typedef AST SORAST */
-
 >>
 
 <<
 
 #include <stdlib.h>
-
-/* #include "DLexerBase.h" */
-/* #include "scanner.h" */
-/* #include "AToken.h" */
 
 #include "rml.h"
 #include "yacclib.h"
@@ -655,14 +649,14 @@ primary : << bool is_matrix; >>
 	  >>
 	  RBRACK!
 
-	| nr:UNSIGNED_NUMBER << #nr->rml = mk_rcon($nr.u.floatval); >>
-	| f:FALS/*E*/        << #f->rml = RML_FALSE; >>
-	| t:TRU/*E*/         << #t->rml = RML_TRUE; >>
-	| (name_path_function_arguments)? /* name_path_function_arguments */
+	| nr:UNSIGNED_NUMBER << #nr->rml = Exp__NUMBER(mk_rcon($nr.u.floatval)); >>
+	| f:FALS/*E*/        << #f->rml = Exp__BOOL(RML_FALSE); >>
+	| t:TRU/*E*/         << #t->rml = Exp__BOOL(RML_TRUE); >>
+	| (name_path_function_arguments)?
 	| (member_list)?
 	| i:name_path        << #0->rml = Exp__PATH(#i->rml); >>
 	| TIME               << #0->rml = Exp__TIME; >>
-	| s:STRING           << #s->rml = mk_scon($s.u.stringval); >>
+	| s:STRING           << #s->rml = Exp__STRING(mk_scon($s.u.stringval)); >>
 	;
 
 name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >>
