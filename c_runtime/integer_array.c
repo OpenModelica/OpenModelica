@@ -1313,3 +1313,43 @@ void skew_integer_array(integer_array_t* x,integer_array_t* dest)
   dest->data[6] = 0;
 }
 
+void clone_reverse_integer_array_spec(integer_array_t* source, integer_array_t* dest)
+{
+  int i;
+  assert(integer_array_ok(source));
+
+  dest->ndims = source->ndims;
+  dest->dim_size = size_alloc(dest->ndims*sizeof(int));
+  assert(dest->dim_size);
+  
+  for (i = 0; i < dest->ndims; ++i)
+  {
+    dest->dim_size[i] = source->dim_size[dest->ndims - 1 - i];
+  }
+}
+
+void convert_alloc_integer_array_to_f77(integer_array_t* a, integer_array_t* dest) 
+{
+  int i;
+  clone_reverse_integer_array_spec(a,dest);
+  alloc_integer_array_data(dest);
+  transpose_integer_array (a,dest);
+  for (i = 0; i < dest->ndims; ++i)
+  {
+    dest->dim_size[i] = a->dim_size[i];
+  }
+}
+
+void convert_alloc_integer_array_from_f77(integer_array_t* a, integer_array_t* dest)
+{
+  int i;
+  clone_reverse_integer_array_spec(a,dest);
+  alloc_integer_array_data(dest);
+  for (i = 0; i < dest->ndims; ++i)
+  {
+    size_t tmp = dest->dim_size[i];
+    dest->dim_size[i] = a->dim_size[i];
+    a->dim_size[i] = tmp;
+  }
+  transpose_integer_array (a,dest);
+ }

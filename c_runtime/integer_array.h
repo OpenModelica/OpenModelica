@@ -175,4 +175,8 @@ void skew_integer_array(integer_array_t* x,integer_array_t* dest);
 
 size_t integer_array_nr_of_elements(integer_array_t* a);
 
+void clone_reverse_integer_array_spec(integer_array_t* source, integer_array_t* dest);
+void convert_alloc_integer_array_to_f77(integer_array_t* a, integer_array_t* dest);
+void convert_alloc_integer_array_from_f77(integer_array_t* a, integer_array_t* dest);
+
 #endif
