@@ -79,6 +79,10 @@ module Interactive:
 	  => InteractiveSymbolTable
   relation add_scope: (Absyn.Program, InteractiveVariable list) => Absyn.Program 
   relation is_primitive: (Absyn.ComponentRef, Absyn.Program) => bool  
+
+
+  relation get_elementitems_in_class: (Absyn.Class) => Absyn.ElementItem list 
+  relation get_classnames_in_elts: (Absyn.ElementItem list) => string list
 end
 
 
@@ -3457,6 +3461,29 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
   axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt)),_) => fail
   axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)),_) => fail
 
+end
+
+(** relation: get_elementitems_in_class
+ ** 
+ ** Both public and protected lists are searched.
+**)
+relation get_elementitems_in_class: (Absyn.Class) => Absyn.ElementItem list =
+
+  axiom	 get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) => []
+	  
+        (* Search in public list *)
+  rule	get_elementitems_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
+        list_append(elts,lst1) => lst 
+		------------------------------
+	    get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt))) => lst
+        
+        (* Search in protected list *)
+  rule	get_elementitems_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
+        list_append(elts,lst1) => lst 
+	    ------------------------------
+	    get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt))) => lst
+        
+  axiom get_elementitems_in_class(_) => []
 end
 
 (** relation: get_nth_component_in_elementintems 
