@@ -2741,7 +2741,7 @@ relation generate_read_call_write : (string,
 			       out_decl]) => cfn1' &
 	(*generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &*)
 	generate_var_decls(invars,is_rcw_input,1) => (cfn3,tnr2) &
-	c_add_statements(cfn3,["PRE_OPEN_INFILE"]) => cfn3' &
+	c_add_inits(cfn3,["PRE_OPEN_INFILE"]) => cfn3' &
 	invar_names invars => in_names &
 	Util.string_delimit_list(in_names,", ") => in_args &
 	

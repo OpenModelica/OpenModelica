@@ -1846,12 +1846,13 @@ Removed *)
 	
 	Env.extend_frame_t(env, n, ty) => env'	&
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
-	inst_element_list (env,mod,pre,csets,ClassInf.UNKNOWN(n),els,inst_dims,true) =>
+        let prot = false & (* how to get this? *)
+	inst_classdef (env,mod,pre,csets,ClassInf.UNKNOWN(n),parts,restr,prot,inst_dims,true) =>
 	  (_,tempenv,_,_,_) &
 	inst_ext_decl(tempenv, n, parts) => extdecl
 	--------------------------------------
 	implicit_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_,SCode.R_EXT_FUNCTION,parts as SCode.PARTS(els,_,_,_,_,_)),
+			       c as SCode.CLASS(n,_,_,restr as SCode.R_EXT_FUNCTION,parts as SCode.PARTS(els,_,_,_,_,_)),
 			       inst_dims)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)])
 
