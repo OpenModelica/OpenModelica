@@ -12,31 +12,135 @@ module Mod:
 
   with "absyn.rml"
   with "dae.rml"
+  with "env.rml"
+  with "exp.rml"
   with "prefix.rml"
   with "explode.rml"
+  with "types.rml"
+  with "staticexp.rml"
+  with "values.rml"
 
   type Ident = string
 
+  (** - Modification datatype *)
+  datatype SubMod = SUBMOD of Ident * int list * Mod
+  and Mod = MOD of bool * (SubMod list) * (Exp.Exp * Types.Type * bool) option
+  	  | REDECL of bool * Absyn.ElementSpec
+	  | NOMOD
+  (** This type is very similar to `SCode.Mod'.  The main difference is
+   ** that it uses `Exp.Exp' for the expressions.  Expressions stored
+   ** here are prefixed and typechecked.
+   **)
 
-  val empty_mod : SCode.Mod
+  val empty_mod : Mod
 
-  relation lookup_modification: (SCode.Mod,Absyn.Ident,int list) => SCode.Mod
-  relation lookup_modification_p: (SCode.Mod,Absyn.Path) => SCode.Mod
-  relation merge : (SCode.Mod, SCode.Mod) => SCode.Mod
-  relation mod_equation : SCode.Mod => Absyn.Exp option
+  relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod
+
+  relation lookup_modification: (Mod,Absyn.Ident,int list) => Mod
+  relation lookup_modification_p: (Mod,Absyn.Path) => Mod
+  relation merge : (Mod, Mod) => Mod
+  relation mod_equation : Mod => (Exp.Exp * Types.Type * bool) option
 
 (*
-  relation modify_class: (Env.Env, Absyn.Path, SCode.Mod, Prefix.Prefix, Absyn.Class)
+  relation modify_class: (Env.Env, Absyn.Path, Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_modify_class : (Env.Env, SCode.Mod, Prefix.Prefix, Absyn.Class)
+  relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation maybe_modify_class: (Env.Env, Absyn.Path, SCode.Mod,
+  relation maybe_modify_class: (Env.Env, Absyn.Path, Mod,
 				Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_maybe_modify_class : (Env.Env, SCode.Mod,
+  relation simple_maybe_modify_class : (Env.Env, Mod,
 				        Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
 *)
+
+end
+
+(** relation: elab_mod
+ **
+ ** This relation elaborates on the expressions in a modification and
+ ** turns them into global expressions.  This is done because the
+ ** expressions in modifications must be elaborated on in the context
+ ** they are provided in, and not the context they are used in.
+ **)
+ 
+relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod =
+
+  axiom	elab_mod (_,_,SCode.NOMOD) => NOMOD
+
+  rule	elab_submods (env,pre,subs) => subs'
+	------------------------------------
+	elab_mod (env,pre,MOD(final,subs,NONE)) => MOD(final,subs',NONE)
+	
+  rule	elab_submods (env,pre,subs) => subs' &
+	StatixExp.elab_exp(env,e) => (e',t,c) &
+	Prefix.prefix_exp(env,e',pre) => e''
+	------------------------------------
+	elab_mod (env,pre,MOD(final,subs,SOME(e)))
+	  => MOD(final,subs',SOME(e'',t,c))
+
+end
+
+relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list)
+	  => SubMod list =
+
+  axiom	elab_submods (_,_,[]) => []
+
+  rule	elab_submod (env,pre,x) => x' &
+	elab_submods (env,pre,xs) => xs'
+	--------------------------------
+	elab_submods (env,pre,x::xs) => x'::xs'
+
+end
+
+relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod =
+
+  rule	elab_subscripts (env,pre,ss) => ss' &
+	Prefix.prefix_add (i,ss',pre) => pre' &
+	elab_mod (env,pre',m) => m'
+	---------------------------
+	elab_submod (env,pre,SCode.SUBMOD(i,ss,m)) => SUBMOD(i,ss',m')
+
+end
+
+relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
+	=> int list =
+
+  axiom	elab_subscripts (_,_,[]) => []
+	
+  rule	print "# Use of colon subscript subscripts is not allowed" &
+	print " in modifications\n"
+	--------------------------------
+	elab_subscripts (env,pre,Absyn.NOSUB::xs) => fail
+	
+  rule	StaticExp.elab_exp(env,e) => (e',t,c) &
+	eval_subscript (env,e',t,c) => i &
+	elab_subscripts (env,pre,xs) => xs'
+	-----------------------------------
+	elab_subscripts (env,pre,Absyn.SUBSCRIPT(e)::xs) => i::xs'
+	
+end
+
+relation eval_subscript : (Env.Env, Exp.Exp, Types.Type, bool) => int =
+
+  rule	StaticExp.ceval (env,e) => Values.INTEGER(i)
+	--------------------------------------------
+	eval_subscript (env,e,Types.T_INTEGER,true) => i
+
+  rule	not t = Types.T_INTEGER &
+	print "# Non-integer subscript " & Exp.print_exp e &
+	print " in modification\n"
+	--------------------------
+	eval_subscript (_,e,t,_) => fail
+
+  rule	print "# Non-constant subscript " & Exp.print_exp e &
+	print " in modification\n"
+	--------------------------
+	eval_subscript (_,e,_,false) => fail
+
+  rule	print "- Mod.eval_subscript failed\n"
+	-------------------------------------
+	eval_subscript(_,_,_,_) => fail
 
 end
 
@@ -44,15 +148,15 @@ end
 
 with "dump.rml"
 
-val empty_mod = SCode.MOD(false,[],NONE)
+val empty_mod = MOD(false,[],NONE)
 
 (**)
 
-relation expand_nomod : SCode.Mod => SCode.Mod =
+relation expand_nomod : Mod => Mod =
 
-  axiom expand_nomod(m as SCode.MOD(_,_,_)) => m
+  axiom expand_nomod(m as MOD(_,_,_)) => m
 
-  axiom expand_nomod SCode.NOMOD => empty_mod
+  axiom expand_nomod NOMOD => empty_mod
 
 end
 
@@ -62,7 +166,7 @@ end
 
 (** relation: lookup_modification_p *)
 
-relation lookup_modification_p: (SCode.Mod,Absyn.Path) => SCode.Mod =
+relation lookup_modification_p: (Mod,Absyn.Path) => Mod =
 
   rule	lookup_modification (m,n,[]) => mod
 	--------------------------------
@@ -77,33 +181,33 @@ end
 
 (** relation: lookup_modification *)
 
-relation lookup_modification: (SCode.Mod,Absyn.Ident,int list) => SCode.Mod =
+relation lookup_modification: (Mod,Absyn.Ident,int list) => Mod =
 
-  axiom lookup_modification(SCode.NOMOD,_,_) => SCode.NOMOD
+  axiom lookup_modification(NOMOD,_,_) => NOMOD
 
 	(* FIXME: Is this correct? *)
-  axiom	lookup_modification(SCode.REDECL(_,_),_,_) => SCode.NOMOD
+  axiom	lookup_modification(REDECL(_,_),_,_) => NOMOD
 
   rule  lookup_modification2(subs,n,s) => mod
 	-----------------------------------
-	lookup_modification(SCode.MOD(_,subs,_),n,s) => mod
+	lookup_modification(MOD(_,subs,_),n,s) => mod
 	
   rule	print "# Mod.lookup_modification(" &
-	SCode.print_mod mod & print "," & print i &
+	(* print_mod mod & print "," & print i & *)
 	print ") failed\n"
 	--------------------
 	lookup_modification(mod,i,s) => fail
 
 end	
 
-relation lookup_modification2 : (SCode.SubMod list,Absyn.Ident,int list)
-	  => SCode.Mod =
+relation lookup_modification2 : (SubMod list,Absyn.Ident,int list)
+	  => Mod =
 
-  axiom lookup_modification2([],_,_) => SCode.NOMOD
+  axiom lookup_modification2([],_,_) => NOMOD
 
   rule  n = m (* & ss = s FIXME: subscripts *)
 	--------------------------------------
-	lookup_modification2(SCode.SUBMOD(n,ss,mod)::_,m,s) => mod
+	lookup_modification2(SUBMOD(n,ss,mod)::_,m,s) => mod
 	
 	(* FIXME: Redeclaration *)
 
@@ -125,31 +229,31 @@ end
 (** relation: merge
  **)
 
-relation merge : (SCode.Mod, SCode.Mod) => SCode.Mod =
+relation merge : (Mod, Mod) => Mod =
 
-  axiom merge(SCode.NOMOD,SCode.NOMOD) => SCode.NOMOD
+  axiom merge(NOMOD,NOMOD) => NOMOD
 
-  axiom merge(SCode.NOMOD,m) => m
+  axiom merge(NOMOD,m) => m
 
-  axiom merge(m,SCode.NOMOD) => m
+  axiom merge(m,NOMOD) => m
 
   rule  print " ignoring inner modification\n"
 	--------------------------------------
-	merge(m as SCode.REDECL(_,_),_) => m
+	merge(m as REDECL(_,_),_) => m
 
   rule  print "# can't merge modification with a redeclaration\n"
 	---------------------------------------------------------
-	merge(_,SCode.REDECL(_,_)) => fail
+	merge(_,REDECL(_,_)) => fail
 
   rule  print "# trying to modify final element\n"
 	------------------------------------------
-	merge(_,m as SCode.MOD(true,_,_)) => fail
+	merge(_,m as MOD(true,_,_)) => fail
 
   rule  merge_subs(subs1, subs2) => subs &
-	merge_ass(ass1, ass2) => ass
+	merge_eq(ass1, ass2) => ass
 	----------------------------
-	merge(SCode.MOD(final,subs1,ass1), SCode.MOD(false,subs2,ass2))
-	  => SCode.MOD(final,subs,ass)
+	merge(MOD(final,subs1,ass1), MOD(false,subs2,ass2))
+	  => MOD(final,subs,ass)
 
   rule	print "# incomplete handling of modification merging\n"
 	-----------------------------------------------------
@@ -160,8 +264,8 @@ end
 (** relation: merge_subs
  **)
 
-relation merge_subs : (SCode.SubMod list, SCode.SubMod list)
-	  => SCode.SubMod list =
+relation merge_subs : (SubMod list, SubMod list)
+	  => SubMod list =
 
   axiom merge_subs(s1,[]) => s1
 
@@ -175,8 +279,8 @@ end
 (** relation: merge_subs2
  **)
 
-relation merge_subs2 : (SCode.SubMod list, SCode.SubMod)
-	  => (SCode.SubMod list, SCode.SubMod) =
+relation merge_subs2 : (SubMod list, SubMod)
+	  => (SubMod list, SubMod) =
 
   axiom merge_subs2([],m) => ([],m)
 
@@ -185,8 +289,8 @@ relation merge_subs2 : (SCode.SubMod list, SCode.SubMod)
   rule  n1 = n2 & print "   merge clash in " & print n1 & print "\n"
 	(* FIXME: check subscripts? *)
 	-------
-	merge_subs2((s1 as SCode.SUBMOD(n1,subs1,m1))::ss,
-		    SCode.SUBMOD(n2,subs2,m2)) => (ss, s1)
+	merge_subs2((s1 as SUBMOD(n1,subs1,m1))::ss,
+		    SUBMOD(n2,subs2,m2)) => (ss, s1)
 
   rule  merge_subs2(ss, s2) => (ss',s)
 	------------------------------
@@ -194,28 +298,30 @@ relation merge_subs2 : (SCode.SubMod list, SCode.SubMod)
 
 end
 
-(** relation: merge_ass
+(** relation: merge_eq
  **)
 
-relation merge_ass : (Absyn.Exp option, Absyn.Exp option) => Absyn.Exp option =
+relation merge_eq : ((Exp.Exp * Types.Type * bool) option,
+		     (Exp.Exp * Types.Type * bool) option)
+	  => (Exp.Exp * Types.Type * bool) option =
 
 	(* Outer assignments take precedence *)
 
-  axiom merge_ass(e as SOME(_), _) => e
+  axiom merge_eq(e as SOME((_,_,_)), _) => e
 
-  axiom merge_ass(NONE,e) => e
+  axiom merge_eq(NONE,e) => e
 
 end
 
 (** relation: mod_equation
  **)
 
-relation mod_equation : SCode.Mod => Absyn.Exp option =
+relation mod_equation : Mod => (Exp.Exp * Types.Type * bool) option =
 
-  axiom mod_equation SCode.NOMOD => NONE
+  axiom mod_equation NOMOD => NONE
 
-  axiom mod_equation SCode.REDECL(_,_) => NONE
+  axiom mod_equation REDECL(_,_) => NONE
 
-  axiom mod_equation SCode.MOD(_,_,e) => e
+  axiom mod_equation MOD(_,_,e) => e
 
 end

@@ -1,4 +1,8 @@
-(** file: explode.rml
+(**
+ ** file: explode.rml
+ **
+ ** $Id$
+ **
  **)
 
 module SCode :

@@ -31,7 +31,7 @@ with "mod.rml"
 (** readable. FIXME: maybe they should be removed? *)
 
 type Prefix = Prefix.Prefix
-type Mod = SCode.Mod
+type Mod = Mod.Mod
 type Ident = Exp.Ident
 type Env = Env.Env
 
@@ -358,8 +358,9 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	print "  mod 2: " & SCode.print_mod mm & print "\n" &
 	print "  mod 3: " & SCode.print_mod m & print "\n" &
 
+	Mod.elab_mod(env,pre,m) => m' &
 	Mod.merge(classmod,mm) => mod &
-	Mod.merge(mod,m) => mod' &
+	Mod.merge(mod,m') => mod' &
 	print "  modification: " & SCode.print_mod mod' & print "\n" &
 
 	(** If the element is `protected', and an external *)
@@ -426,7 +427,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end	
 
-relation inst_var : (Env.Env,SCode.Mod,Prefix.Prefix,Connect.Sets,Ident,
+relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		     SCode.Class,Absyn.Exp option,int list, int list)
 	  => (DAE.DAEcomp list,Connect.Sets,Types.Type list) =
 
@@ -453,7 +454,7 @@ relation inst_var : (Env.Env,SCode.Mod,Prefix.Prefix,Connect.Sets,Ident,
 
 end
 
-relation inst_array : (Env.Env,SCode.Mod,Prefix.Prefix,Connect.Sets,Ident,
+relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		       SCode.Class,int,int,int list,int list)
 	  => (DAE.DAEcomp list,Connect.Sets,Types.Type list) =
 
@@ -579,7 +580,7 @@ end
  ** anything else.
  **)
 
-relation inst_class_decl : (Env.Env, SCode.Mod, Prefix.Prefix,
+relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class)
 	  => (Env.Env, DAE.DAEcomp list) =
 
@@ -1056,7 +1057,7 @@ end
 
 relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
 
-  rule  print "  equation modification: " & print v & SCode.print_mod mod &
+  rule  print "  equation modification: " & print v & Mod.print_mod mod &
 	print "\n" &
 
 	inst_eq_equation(env,pre,
@@ -1078,11 +1079,11 @@ relation inst_mod_equation : (Env, Prefix, Ident, Mod) => DAE.DAEcomp list =
 	Prefix.prefix_exp(env, e'', pre) => e'''
 	*)
 	-----------------------------------------
-	inst_mod_equation(env,pre,v,mod as SCode.MOD(_,_,SOME(e)))
+	inst_mod_equation(env,pre,v,mod as Mod.Mod(_,_,SOME(e,t,c)))
 	  => [DAE.EQUATION(e')]
 	  
-  axiom inst_mod_equation(_,_,_,SCode.MOD(_,_,NONE)) => []
-  axiom inst_mod_equation(_,_,_,SCode.NOMOD) => []
+  axiom inst_mod_equation(_,_,_,Mod.MOD(_,_,NONE)) => []
+  axiom inst_mod_equation(_,_,_,Mod.NOMOD) => []
 
   rule	print "- inst_mod_equation failed\n"
 	------------------------------------

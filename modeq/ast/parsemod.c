@@ -66,15 +66,15 @@ RML_BEGIN_LABEL(Parser__parse)
     int fail;
     parse_failed = 0;
     ANTLR(model_definition(&root/*, &fail*/), stdin);
-    /* printf("fail = %d\n", fail); */
+/*     printf("fail = %d  parse_failed = %d\n", fail, parse_failed); */
     if(parse_failed || !root) {
       fprintf(stderr, "parse error\n");
       RML_TAILCALLK(rmlFC);
     } else {
-      /* fprintf(stderr, "root = %p\n", root); */
-      /* fprintf(stderr, "\n"); */
-      /* zzpre_ast(root, &print_token, &print_lpar, &print_rpar); */
-      fprintf(stderr, "\n\n");
+/*       fprintf(stderr, "root = %p  root->rml = %p\n", root, root->rml); */
+/*       fprintf(stderr, "\n"); */
+/*       zzpre_ast(root, &print_token, &print_lpar, &print_rpar); */
+/*       fprintf(stderr, "\n\n"); */
       
       /* if( !root )
        *   RML_TAILCALLK(rmlFC); */

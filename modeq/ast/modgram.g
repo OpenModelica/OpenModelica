@@ -194,7 +194,7 @@ void unimpl(char *rule)
 
 /* exception */
 /*   default : */
-/*     << parse_failed = 1; >> */
+/*     << fprintf(stderr,"PARSE ERROR\n"); parse_failed = 1; >> */
 
 model_definition :
 	(
@@ -209,13 +209,13 @@ import_statement :
 	;
 
 class_definition[bool is_replaceable,bool is_final] :
-        << void *restr;
+        << void *restr, *parts;
 	   bool partial=false, has_array_dim=false, has_class_spec=false; >>
 	{ PARTIAL << partial = true; >> }
         ( CLASS_                  << restr = Absyn__R_5fCLASS; >>
-	| MODEL			  << restr = Absyn__R_5fMODEL; >>
+	| MODEL		  	  << restr = Absyn__R_5fMODEL; >>
 	| RECORD		  << restr = Absyn__R_5fRECORD; >>
-	| BLOCK			  << restr = Absyn__R_5fBLOCK; >>
+	| BLOCK		  	  << restr = Absyn__R_5fBLOCK; >>
 	| CONNECTOR		  << restr = Absyn__R_5fCONNECTOR; >>
 	| TYPE			  << restr = Absyn__R_5fTYPE; >>
 	| PACKAGE		  << restr = Absyn__R_5fPACKAGE; >>
@@ -223,13 +223,18 @@ class_definition[bool is_replaceable,bool is_final] :
 	)
         i:IDENT
 	comment
-	( c:composition END! { IDENT! }
+	( c:composition << parts = sibling_list(#c); >>
+	  END! { i2:IDENT
+		 << !strcmp($i.u.stringval,$i2.u.stringval)
+		 >>?[ fprintf(stderr, "Class %s ends with %s\n",
+			      $i.u.stringval, $i2.u.stringval);
+		    parse_failed = 1; ] }
 	  << 
 	     Attrib a = $[CLASS_,"---"];
 	     #0 = #(#[&a], #0);
 	     #0->rml = Absyn__CLASS(mk_scon($i.u.stringval),
 				    RML_PRIM_MKBOOL(partial),
-				    restr, Absyn__PARTS(sibling_list(#c)));
+				    restr, Absyn__PARTS(parts));
 	  >>
 	| EQUALS dp:name_path
 	    /* FIXME: grammar says array_dimensions */

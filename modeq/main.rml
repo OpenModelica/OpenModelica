@@ -15,11 +15,11 @@ relation main =
 	Parser.parse f => p &
 	Dump.dump p &
 	
-	print "\n = Exploding\n\n" &
+	(* print "\n = Exploding\n\n" & *)
 	SCode.elaborate(p) => p' &
 	(* Dump.dump p' & *)
 
-	print "\n = Instantiating\n\n" &
+	(* print "\n = Instantiating\n\n" & *)
 	Inst.instantiate(p') => d &
 	print "\n[result]\n\n" &
 	DAE.dump d &
@@ -31,5 +31,9 @@ relation main =
   rule	print "Supply a file name\n"
 	----------------------------
 	main []
+
+  rule	print "# An error occured\n"
+	----------------------------
+	main _
 
 end
