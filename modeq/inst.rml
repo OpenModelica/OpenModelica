@@ -1532,7 +1532,7 @@ end
  **
  ** This relation adds the equation in the declaration of a variable,
  ** if such an equation exists.
- ***)
+ **)
 
 relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  => DAE.Element list =
