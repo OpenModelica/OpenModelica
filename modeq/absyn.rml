@@ -62,7 +62,7 @@ module Absyn:
 
 
   datatype ClassDef = PARTS of ClassPart list
-			       * Comment option	     (* comment *)
+			       * string option	     (* string comment *)
 		    | DERIVED of Path
 			       * ArrayDim option
 			       * ElementArg list

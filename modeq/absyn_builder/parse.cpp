@@ -8,6 +8,7 @@
 #include "modelica_tree_parser.hpp"
 #include "modelica_expression_parser.hpp"
 #include "parse_tree_dumper.hpp"
+#include "antlr/ANTLRException.hpp"
 
 extern "C"
 {
@@ -53,13 +54,17 @@ RML_BEGIN_LABEL(Parser__parse)
 	  if (debug)
 	    {
 	  std::cout << "Build done\n";
-	    }
+	    } 
 
 	  rmlA0 = ast ? ast : mk_nil();
 	  
 	  RML_TAILCALLK(rmlSC); 
 	}    
     } 
+  catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
+    {
+      std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
+    }
   catch (std::exception &e)
     {
       std::cerr << "Error while parsing:\n" << e.what() << "\n";

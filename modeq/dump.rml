@@ -118,7 +118,7 @@ relation unparse_class_str: Absyn.Class => string =
 	select_string(f, "final ","") => s2 &
 	unparse_restriction_str (r) => s3 &
 	get_string_list (parts,unparse_class_part_str,"") => s4 &
-	unparse_comment_option(optcmt) => s5 &
+	unparse_string_comment_option(optcmt) => s5 &
 	Util.string_append_list([s1, s2, s3, " ", n, s5, "\n", s4, "\nend ", n, ";\n"]) => str
 	-----------------------------
 	unparse_class_str(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt))) => str
@@ -366,6 +366,11 @@ relation unparse_class_part_str: Absyn.ClassPart => string =
 	--------------------------------------
 	unparse_class_part_str(Absyn.EQUATIONS(eqs)) => str
 				
+  rule	get_string_list(eqs,unparse_equationitem_str,"\n") => s1 & 
+	string_append("\ninitial equation \n",s1) => str 
+	--------------------------------------
+	unparse_class_part_str(Absyn.INITIALEQUATIONS(eqs)) => str
+
   rule	get_string_list(eqs,unparse_algorithm_str,"\n") => s1 & 
 	string_append("algorithm \n",s1) => str 
 	--------------------------------------
@@ -435,7 +440,7 @@ end
 	
 relation unparse_elementitem_str: Absyn.ElementItem => string =
 
-  rule  unparse_element_str e => str
+  rule	unparse_element_str e => str
 	----------------------------
 	unparse_elementitem_str Absyn.ELEMENTITEM(e) => str
 
@@ -1628,7 +1633,7 @@ relation unparse_string_comment_option: string option => string =
 	
   axiom unparse_string_comment_option(NONE) => ""
 	
-  rule	string_append(" ",s)=> str
+  rule	string_append(" ",s)=> str 
 	--------------------------
 	unparse_string_comment_option(SOME(s)) => str
 end

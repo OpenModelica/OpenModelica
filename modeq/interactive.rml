@@ -94,7 +94,7 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	    => ("Clearing symbol table\n", newst)
 
   rule	Dump.unparse_str(p) => str
-	------------
+	--------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
 	    => (str,st)
 

@@ -187,7 +187,7 @@ relation translate_file : string list => () =
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
 	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
 	& Debug.fcall ("dump", Dump.dump, p)
-
+	
 	& Debug.fprint ("info", "\n------------------------------------------------------------ \n")
 	& Debug.fprint ("info", "---elaborating\n")
 	& SCode.elaborate(p) => p'

@@ -191,13 +191,13 @@ class_specifier returns [void* ast]
 	void *cmt = 0;
 }
 	:
-		( cmt = comment 
+		( (cmt = string_comment )
 			comp = composition		
 			{
 				ast = Absyn__PARTS(comp,cmt ? mk_some(cmt) : mk_none());
 			}
 		)
-	| EQUALS ( ast = derived_class | ast = enumeration)
+	| #(EQUALS ( ast = derived_class | ast = enumeration))
 
 	;
 
@@ -213,7 +213,7 @@ derived_class returns [void *ast]
 			p = name_path 
 			( as = array_subscripts )? 
 			( cmod = class_modification )? 
-			cmt = comment
+			(cmt = comment)?
 			{
 				if (as) { as = mk_some(as); }
 				else { as = mk_none(); }
@@ -227,17 +227,16 @@ derived_class returns [void *ast]
 enumeration returns [void* ast]
 {
 	l_stack el_stack;
-  	void *c1 = 0;
-  	void *c2 = 0;
-  	void *cmt = 0;
+	void *el = 0;
+	void *cmt = 0;
 }
     : 
 		#(ENUMERATION 
-			(i1:IDENT c1=comment) 
-			{ el_stack.push(Absyn__ENUMLITERAL(to_rml_str(i1),c1)); }
+			el = enumeration_literal
+			{ el_stack.push(el); }
 			(
-				(i2:IDENT c2=comment)
-				{ el_stack.push(Absyn__ENUMLITERAL(to_rml_str(i2),c2)); }
+				el = enumeration_literal
+				{ el_stack.push(el); }
 				
 			)* 
 			(cmt=comment)?
@@ -248,6 +247,15 @@ enumeration returns [void* ast]
 		}
 	;
 
+enumeration_literal returns [void *ast] :
+{
+   void *c1=0;
+}
+		#(ENUMERATION_LITERAL i1:IDENT (c1=comment)?) 
+		{
+			ast = Absyn__ENUMLITERAL(to_rml_str(i1),c1 ? mk_some(c1) : mk_none());
+		}
+	;	
 composition returns [void* ast]
 {
     void* el = 0;
@@ -263,21 +271,22 @@ composition returns [void* ast]
             (	
                 el = public_element_list
             |	el = protected_element_list
-            |	el = equation_clause
+			|   el = equation_clause
             |	el = algorithm_clause
             )
             {
                 el_stack.push(el);
             }
         )*
-        ( EXTERNAL
-            ( el = external_function_call)
-            ( ann = annotation)?
-			{ 
-                el_stack.push(el);
-                
-			}
-        )?
+        (	#(EXTERNAL
+				( el = external_function_call)
+				( ann = annotation)?
+				{ 
+					el_stack.push(el); 
+					
+				}
+			)
+		)?
         {
             ast = make_rml_list_from_stack(el_stack);
         }
@@ -455,7 +464,7 @@ import_clause returns [void* ast]
 			(imp = explicit_import_name
 			|imp = implicit_import_name
 			) 
-			cmt = comment
+			(cmt = comment)?
 		)
 		{
 			ast = Absyn__IMPORT(imp, cmt ? mk_some(cmt) : mk_none());
@@ -600,7 +609,7 @@ component_declaration returns [void* ast]
 
 }
 	:
-		(dec = declaration) (cmt = comment)
+		(dec = declaration) (cmt = comment)?
 		{
 			ast = Absyn__COMPONENTITEM(dec,cmt ? mk_some(cmt) : mk_none());
 		}
@@ -691,14 +700,14 @@ element_modification returns [void* ast]
 		cmt = string_comment
 		{
 			final = f != NULL ? RML_TRUE : RML_FALSE;
-			ast = Absyn__MODIFICATION(final, cref, mod,cmt ? mk_some(cmt) : mk_none());
+			ast = Absyn__MODIFICATION(final, cref, mod, cmt ? mk_some(cmt) : mk_none());
 		}
 	;
 
 element_redeclaration returns [void* ast]
 {
 	void* class_def = 0;
-	void* e_spec;
+	void* e_spec; 
 	void* constr = 0;
 }
 	:
@@ -841,7 +850,7 @@ equation returns [void* ast]
 			|	ast = connect_clause
 			|  ast = equation_funcall	
 			)
-			cmt = comment
+			(cmt = comment)?
 			{
 				ast = Absyn__EQUATIONITEM(ast,cmt ? mk_some(cmt) : mk_none());
 			}
@@ -884,7 +893,7 @@ algorithm returns [void* ast]
 			| ast = while_clause
 			| ast = when_clause_a
 			)
-			cmt = comment
+			(cmt = comment)?
 	  		{	
 				ast = Absyn__ALGORITHMITEM(ast, cmt ?  mk_some(cmt) : mk_none());
 	  		}
@@ -1467,16 +1476,14 @@ function_call returns [void* ast]
 function_arguments 	returns [void* ast]
 {
 	l_stack el_stack;
-	void* e=0;
 	void* elist=0;
 	void* namel=0;
 }
 	:
-		(e = expression { el_stack.push(e); } )* (namel = named_arguments)?
+		(elist=expression_list)? (namel = named_arguments)?
 		{
-
-			elist = make_rml_list_from_stack(el_stack);
 			if (!namel) namel = mk_nil();
+			if (!elist) elist = mk_nil();
 			ast = Absyn__FUNCTIONARGS(elist,namel); 		
 		}
 	;
@@ -1487,7 +1494,7 @@ named_arguments returns [void* ast]
 	void* n;
 } 
 	:
-		(n = named_argument { el_stack.push(n); }) (n = named_argument { el_stack.push(n); } )*
+		#(NAMED_ARGUMENTS (n = named_argument { el_stack.push(n); }) (n = named_argument { el_stack.push(n); } )*)
 		{
 			ast = make_rml_list_from_stack(el_stack);
 		}
@@ -1498,7 +1505,7 @@ named_argument returns [void* ast]
 	void* temp;
 }
 	:
-		#(eq:EQUALS i:IDENT temp = expression)
+		#(eq:EQUALS i:IDENT temp = expression) 
 		{
 			ast = Absyn__NAMEDARG(to_rml_str(i),temp);
 		}
@@ -1597,28 +1604,28 @@ comment returns [void* ast]
 
 string_comment returns [void *ast] :
 	{
+			void *cmt=0;
 	  ast = 0;	   
 	}
-		#(STRING_COMMENT ast=string_concatenation)
+		#(STRING_COMMENT cmt=string_concatenation)
 		{
+			ast = cmt;
 		}
 	|
+		{
+			ast = 0;
+		}
 	;
 
 string_concatenation returns [void * ast] :
 		{ 
-	  		ast = 0;
+			ast = 0;
 		}
 		s:STRING {
-// 			ast = new char(strlen(s)+1); // Such that it can be deleted below
-// 			memcpy(ast,s,strlen(s)+1); 
 	  		ast = to_rml_str(s);
 		}
 	|#(p:PLUS string_concatenation s2:STRING)
 		{
-			//  char *tempBuf=new char(strlen(subStr)+strlen(s2)+1);
-// 			sprintf(tempBuf,"%s%s",subStr,s2);
-// 			delete subStr; 
 			ast = to_rml_str(s2);
 		}
 	;
