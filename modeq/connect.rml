@@ -1,0 +1,162 @@
+(*
+ * connect.rml
+ *)
+
+module Connect :
+
+  with "exp.rml"
+
+  datatype Dir = IN | OUT
+
+  datatype Set = EQU of Exp.ComponentRef list
+	       | FLOW of (Exp.ComponentRef * Dir) list
+
+  type Sets = Set list
+
+  relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets
+  relation add_flow : (Sets, Exp.ComponentRef, Dir) => Sets
+
+end
+
+(**********************************************************************
+ * Lookup
+ **********************************************************************)
+
+relation find_in_set_equ : (Exp.ComponentRef list, Exp.ComponentRef) => () =
+
+  rule	Exp.eq_cref(c1,c2)
+	------------------
+	find_in_set_equ(c1::_,c2)
+
+  rule	find_in_set_equ(cs,c2)
+	----------------------
+	find_in_set_equ(_::cs,c2)
+
+end
+
+relation find_in_set_flow : ((Exp.ComponentRef * Dir) list, Exp.ComponentRef)
+	  => () =
+
+  rule	Exp.eq_cref(c1,c2)
+	------------------
+	find_in_set_flow((c1,_)::_,c2)
+
+  rule	find_in_set_flow(cs,c2)
+	----------------------
+	find_in_set_flow(_::cs,c2)
+
+end
+
+relation find_in_set : (Set, Exp.ComponentRef) => () =
+
+  rule	find_in_set_equ(cs,c)
+	---------------------
+	find_in_set(EQU(cs), c)
+
+  rule	find_in_set_flow(cs, c)
+	-----------------------
+	find_in_set(FLOW(cs), c)
+
+end
+
+relation new_equ_set : Exp.ComponentRef => Set =
+
+  axiom	new_equ_set c => EQU([c])
+
+end
+
+relation new_flow_set : (Exp.ComponentRef,Dir) => Set =
+
+  axiom	new_flow_set(c,d) => FLOW([(c,d)])
+
+end
+
+relation find_equ_set : (Sets, Exp.ComponentRef) => Set =
+
+  rule	new_equ_set c => s
+	------------------
+	find_equ_set([],c) => s
+
+  rule	find_in_set(s,c)
+	----------------
+	find_equ_set(s::_,c) => s
+
+  rule	find_equ_set(ss,c) => s
+	-------------------
+	find_equ_set(_::ss,c) => s
+
+end	
+
+(**********************************************************************
+ * Merge
+ **********************************************************************)
+
+relation remove_set : (Sets, Set) => Sets =
+
+  axiom	remove_set([],_) => []
+
+  rule	s = s1
+	------
+	remove_set(s::ss, s1) => ss
+	
+  rule	remove_set(ss,s1) => ss'
+	------------------------
+	remove_set(s::ss, s1) => s::ss'
+
+end
+
+relation remove_set2 : (Sets, Set, Set) => Sets =
+
+  axiom	remove_set2([],_,_) => []
+
+  rule	s = s1 &
+	remove_set(ss,s2) => ss'
+	------------------------
+	remove_set2(s::ss, s1, s2) => ss'
+	
+  rule	s = s2 &
+	remove_set(ss,s1) => ss'
+	------------------------
+	remove_set2(s::ss, s1, s2) => ss'
+	
+  rule	remove_set2(ss,s1,s2) => ss'
+	------------------------
+	remove_set2(s::ss, s1, s2) => s::ss'
+
+end
+
+relation merge : (Sets, Set, Set) => Sets =
+
+  rule	s1 = s2
+	-------
+	merge(ss,s1,s2) => ss
+
+  rule	list_append(cs1,cs2) => cs &
+	remove_set2(ss,s1,s2) => ss'
+	----------------------------
+	merge(ss, s1 as EQU(cs1), s2 as EQU(cs2)) => EQU(cs)::ss'
+
+  rule	list_append(cs1,cs2) => cs &
+	remove_set2(ss,s1,s2) => ss'
+	----------------------------
+	merge(ss, s1 as FLOW(cs1), s2 as FLOW(cs2)) => FLOW(cs)::ss'
+
+end
+
+(* Braindead *)
+
+relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
+
+  rule	find_equ_set(ss,r1) => s1 &
+	find_equ_set(ss,r2) => s2 &
+	merge(ss,s1,s2) => ss'
+	----------------------
+	add_equ(ss,r1,r2) => ss'
+	
+end
+
+relation add_flow : (Sets, Exp.ComponentRef, Dir) => Sets =
+
+  axiom	add_flow(s,r,d) => FLOW([(r,d)])::s
+
+end
