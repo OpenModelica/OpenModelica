@@ -4,8 +4,8 @@
 *)
 
 (**
-**
-  ** file:	 tornado.rml
+ **
+ ** file:	 tornado.rml
  ** module:		 Tornado
  ** description: Code generation of Nodelica models including equation
  ** code and symbolic information to the Tornado-1 format.
@@ -456,7 +456,8 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
         generate_compute_output(cname,dae',p,ass1,ass2,blt_no_states) => coutput &
         generate_compute_initial(cname,dae',p) => cinitial &
         generate_compute_state(cname,dae',p,ass1,ass2,blt_states) => cstate &
-        generate_compute_terminal(cname,dae',p) => cterm &
+        (*generate_compute_terminal(cname,dae',p) => cterm &*)
+        generate_compute_terminal(cname,dae',p,ass1,ass2,blt) => cterm &
         Util.string_append_list(["void C",cname,"::\n",
                                  "ComputeOutput()\n",
                                  "{\n",
@@ -802,11 +803,22 @@ end
  **   x:=do_calc(x,y);
  ** end when
  *)
-relation generate_compute_terminal:(string,DAELow.DAELow,Absyn.Program) => string =
+relation generate_compute_terminal:(string,DAELow.DAELow,Absyn.Program,int vector, int vector, int list list) => string =
         
+  rule  (*Util.string_append_list(["/* state code here*/\n"]) => cstate &*)
+        print("----------- START building block TERMINAL---------------\n") &
+        build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
+        Util.string_append_list(eqn_str_list) => cterminal &
+        print("----------- END building block TERMINAL---------------\n") 
+        
+        -------------------------------------------------------------
+        generate_compute_terminal(cname,dae,p,ass1,ass2,blocks) => cterminal
+
+
+
   rule Util.string_append_list(["/* terminal code here*/\n"]) => cterm
      -------------------------------------------------------------
-     generate_compute_terminal(cname,dae,p) => cterm
+     generate_compute_terminal(cname,dae,p,_,_,_) => cterm
 end
 
 
@@ -862,7 +874,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	    list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	    vector_nth(ass2,e') => v &
 	    int_sub(v,1) => v' &
-	    list_nth(vars,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname)) &  
+	    list_nth(vars,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname)) &  
 	    is_non_state kind &
 	    print "Solving for non-states\n" &
 
@@ -872,9 +884,11 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
         (* start debug output *)
         Exp.print_exp_str e1 => e1s &
 	    Exp.print_exp_str e2 => e2s &
-	    print "Equation " & print e1s & print " = " & print e2s &
-	    print " solved for " & Exp.print_exp_str varexp => s &
-	    print s & print " giving " &
+        int_string(e) => eqn_nr &
+        int_string(v) => var_nr &
+	    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
+	    print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
+	    print s & print "\ngiving:\n " &
 	    Exp.print_exp_str expr => s2 & print s2 & print "\n" &
         
 	    build_assignment(cr,expr,origname)  => assigment_string
