@@ -24,7 +24,7 @@ public:
 
 //   // --------- Dimensionality conversion functions ---------
 //   /// Converts a to a scalar
-//   double scalar();
+  Tp scalar() const;
   
 //   /// Converts a to a vector.
 //   modelica_real_array vector();
@@ -32,14 +32,25 @@ public:
 //   /// Converts a to a matrix.
 //   modelica_real_array matrix();
 
+  friend modelica_array<Tp> fill_array<Tp>(Tp s,std::vector<int> dims);
+
+  friend modelica_array<Tp> create_array<Tp>(std::vector<Tp> data);
+  friend modelica_array<Tp> create_array<Tp>(std::vector<modelica_array<Tp> > arrays);
+  
   void print_dims();
+  void print_data() const;
 //  void print();
   modelica_array<Tp> slice(std::vector<int> idx);
 
 protected:
   modelica_array() {};
-  modelica_array(std::vector<int> dims) { m_dim_size = dims;};
+  modelica_array(std::vector<int> dims);
   modelica_array(std::vector<int> dims,std::vector<Tp> scalars);
+
+  //   /// Returns the number of elements in the matrix.
+  int nr_of_elements() const;
+
+  
 
   typedef vector<Tp>::iterator data_iterator; 
   vector<Tp> m_data;
@@ -49,6 +60,13 @@ protected:
   std::vector<int> m_dim_size;
 
 };
+
+template <class Tp>
+modelica_array<Tp>::modelica_array(std::vector<int> dims)
+{
+  m_dim_size = dims;
+  m_data.resize(nr_of_elements());
+}
 
 template <class Tp>
 modelica_array<Tp>::modelica_array(std::vector<int> dims,std::vector<Tp> scalars)
@@ -78,6 +96,47 @@ int modelica_array<Tp>::size(int dim) const
   return m_dim_size[dim];
 }
 
+template <typename Tp>
+Tp modelica_array<Tp>::scalar() const
+{
+  for (int i = 0; i < m_dim_size.size(); ++i)
+    {
+      assert(m_dim_size[i] == 1);
+    }
+
+}
+
+template <typename Tp>
+modelica_array<Tp> create_array(std::vector<Tp> data)
+{
+  modelica_array<Tp> result(std::vector<int>(1,data.size()),data);
+  return result;
+}
+
+template <typename Tp>
+modelica_array<Tp> create_array(std::vector<modelica_array<Tp> > arrays)
+{
+  modelica_array<Tp> result;
+  std::vector<int> dims(1,1);
+  dims = arrays[1].m_dim_size;
+  dims.insert(dims.end(),result.m_dim_size.begin(),m_dim_size.end());
+
+  return result;
+  
+}
+
+template <class Tp>
+modelica_array<Tp> fill_array(Tp s,std::vector<int> dims)
+{
+  modelica_array<Tp> result(dims);
+
+  for (int i = 0; i < result.nr_of_elements(); ++i)
+    {
+      result.m_data[i] = s;
+    }
+  return result;
+}
+
 template <class Tp>
 void modelica_array<Tp>::print_dims() 
 {
@@ -97,6 +156,20 @@ modelica_array<Tp>  modelica_array<Tp>::slice(std::vector<int> idx)
   // Copy data
 }
 
+template <class Tp>
+int modelica_array<Tp>::nr_of_elements() const
+{
+  return std::accumulate(m_dim_size.begin(),m_dim_size.end(),1,std::multiplies<int>());
+}
+
+template <class Tp>
+void modelica_array<Tp>::print_data() const
+{
+  for (int i = 0; i < m_data.size();++i)
+    {
+      cout << "m_data[" << i <<"] = " << m_data[i] << endl;
+    }
+}
 // template <class Tp>
 // void modelica_array<Tp>::print() 
 // {
