@@ -176,15 +176,23 @@ end
 relation remove_simple_equations: (DAELow,Exp.ComponentRef list) 
 	=> (DAELow) =
 
-  rule	remove_simple_equations2(eqns,eqns,states,vars,knvars)
-	  => (eqns',reqns',vars',knvars')	  
+  rule	remove_simple_equations2(eqns,eqns,reqns,states,vars,knvars)
+	  => (eqns,reqns,vars,knvars) &
+	remove_simple_equations(DAELOW(vars,knvars,eqns,reqns),states) => res
 	-------------------------------------
 	remove_simple_equations(DAELOW(vars,knvars,eqns,reqns),states) 
-	  => DAELOW(vars',knvars',eqns',reqns')
+	  => res
+
+  rule	not remove_simple_equations2(eqns,eqns,reqns,states,vars,knvars)
+	  => (_,_,_,_)
+	-------------------------------------
+	remove_simple_equations(dae as DAELOW(vars,knvars,eqns,reqns),states) 
+	  => dae
 end
 
 relation remove_simple_equations2: (Equation list, (* all equations *)
 				    Equation list, (* eqns to iterate*)
+				    Equation list, (* removed eqns*)
 				    Exp.ComponentRef list,(* states *)
 				    Var list, (* variables states+alg *)
 				    Var list) (* known variables *)
@@ -193,64 +201,55 @@ relation remove_simple_equations2: (Equation list, (* all equations *)
 	      Var list, (* variables states+alg *)
 	      Var list) (* known variables *) =
 
+  axiom	remove_simple_equations2(alleqns,[],reqns,states,vars,knvars) 
+	  => fail
+
   rule	list_member(cr2,states) => false &
 	Util.list_deletemember(alleqns,e) => alleqns' &
-	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
-	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
-	remove_variable_named(vars,cr2) => (vars',var) &	
-	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
-	  => (alleqns''',reqns,vars'',knvars'')
+	(*Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
+	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
+	remove_variable_named(vars,cr2) => (vars',var) 
 	--------------------------------------------------
-	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr1,_),Exp.CREF(cr2,_)))::eqns,states,vars,knvars) 
-	  => (alleqns''',e::reqns,vars'',knvars'')
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr1,_),Exp.CREF(cr2,_)))::eqns,reqns,states,vars,knvars) 
+	  => (alleqns'',e::reqns,vars',var::knvars)
 
   rule	(* as above but swapped args *)
 	list_member(cr2,states) => false &
 	Util.list_deletemember(alleqns,e) => alleqns' &
-	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
-	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
-	remove_variable_named(vars,cr2) => (vars',var) &	
-	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
-	  => (alleqns''',reqns,vars'',knvars'')
+	(*Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
+	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
+	remove_variable_named(vars,cr2) => (vars',var) 	
 	--------------------------------------------------
-	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr2,_),Exp.CREF(cr1,_)))::eqns,states,vars,knvars) 
-	  => (alleqns''',e::reqns,vars'',knvars'')
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr2,_),Exp.CREF(cr1,_)))::eqns,reqns,states,vars,knvars) 
+	  => (alleqns'',e::reqns,vars',var::knvars)
 	
 
   rule	Exp.is_zero(e2) => true &
 	list_member(cr2,states) => false &
 	Util.list_deletemember(alleqns,e) => alleqns' &	
-	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
-	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
-	remove_variable_named(vars,cr2) => (vars',var) &	
-	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
-	  => (alleqns''',reqns,vars'',knvars'')
+(*	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
+	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
+	remove_variable_named(vars,cr2) => (vars',var) 
 	--------------------------------------------------
-	remove_simple_equations2(alleqns,(e as EQUATION(Exp.BINARY(Exp.CREF(cr1,_),Exp.SUB(_),Exp.CREF(cr2,_)),e2))::eqns,states,vars,knvars) 
-	  => (alleqns''',e::reqns,vars'',knvars'')
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.BINARY(Exp.CREF(cr1,_),Exp.SUB(_),Exp.CREF(cr2,_)),e2))::eqns,reqns,states,vars,knvars) 
+	  => (alleqns'',e::reqns,vars',var::knvars)
 
   rule	(* As above but swapped args *)
 	Exp.is_zero(e2) => true &
 	list_member(cr2,states) => false &
 	Util.list_deletemember(alleqns,e) => alleqns' &	
-	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
-	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
-	remove_variable_named(vars,cr2) => (vars',var) &	
-	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
-	  => (alleqns''',reqns,vars'',knvars'')
+	(*Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &*)
+	replace_all_lst(alleqns',cr2,cr1) => alleqns'' &
+	remove_variable_named(vars,cr2) => (vars',var) 
 	--------------------------------------------------
-	remove_simple_equations2(alleqns,(e as EQUATION(Exp.BINARY(Exp.CREF(cr2,_),Exp.SUB(_),Exp.CREF(cr1,_)),e2))::eqns,states,vars,knvars) 
-	  => (alleqns''',e::reqns,vars'',knvars'')
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.BINARY(Exp.CREF(cr2,_),Exp.SUB(_),Exp.CREF(cr1,_)),e2))::eqns,reqns,states,vars,knvars) 
+	  => (alleqns'',e::reqns,vars',var::knvars)
 
-  rule	remove_simple_equations2(alleqns,eqns,states,vars,knvars) 
+  rule	remove_simple_equations2(alleqns,eqns,reqns,states,vars,knvars) 
 	  => (alleqns',reqns,vars',knvars')
 	--------------------------------------------------------------
-	remove_simple_equations2(alleqns,_::eqns,states,vars,knvars)
+	remove_simple_equations2(alleqns,_::eqns,reqns,states,vars,knvars)
 	  => (alleqns',reqns,vars',knvars')
-
-  axiom	remove_simple_equations2(alleqns,[],states,vars,knvars) 
-	  => (alleqns,[],vars,knvars)
-
 end 
 
 relation remove_variable_named: (Var list,  Exp.ComponentRef) => (Var list, Var) =
@@ -264,6 +263,23 @@ relation remove_variable_named: (Var list,  Exp.ComponentRef) => (Var list, Var)
 	remove_variable_named(  (v as VAR(cr1,_,_,_,_,_,_,_,_,_))::rest,cr2) => (v::res,v2)
 end
 
+relation replace_all_lst: (Equation list, (* equation list *)
+		       Exp.ComponentRef, (*source variable, *)
+		       Exp.ComponentRef) (*target variable: src replaced with*)
+	=> Equation list =
+
+  axiom	replace_all_lst([],_,_) => []
+
+  rule	replace_all(e,cr1,cr2) => e' &
+	replace_all_lst(lst,cr1,cr2) => lst'
+	-----------------------------
+	replace_all_lst(e::lst,cr1,cr2) => e'::lst'
+
+  rule	replace_all_lst(lst,cr1,cr2) => lst'
+	-----------------------------------
+	replace_all_lst(e::lst,cr1,cr2) => e::lst'
+end
+
 relation replace_all: (Equation, (* equation *)
 		       Exp.ComponentRef, (*source variable, *)
 		       Exp.ComponentRef) (*target variable: src replaced with*)
@@ -273,6 +289,21 @@ relation replace_all: (Equation, (* equation *)
 	replace_all_exp(e2,s,t) => e2'
 	------------------------------
 	replace_all (EQUATION(e1,e2),s,t) => EQUATION(e1',e2')
+
+  rule 	not replace_all_exp(e1,s,t) => _ &
+	replace_all_exp(e2,s,t) => e2'
+	------------------------------
+	replace_all (EQUATION(e1,e2),s,t) => EQUATION(e1,e2')
+
+  rule 	replace_all_exp(e1,s,t) => e1' &
+	not replace_all_exp(e2,s,t) => _
+	------------------------------
+	replace_all (EQUATION(e1,e2),s,t) => EQUATION(e1',e2)
+
+  rule 	not replace_all_exp(e1,s,t) => _ &
+	not replace_all_exp(e2,s,t) => _
+	-----------------------------
+	replace_all (eqn as EQUATION(e1,e2),s,t) => fail
 end
 
 relation replace_all_exp: (Exp.Exp, 
@@ -284,28 +315,86 @@ relation replace_all_exp: (Exp.Exp,
 	----------------------------
 	replace_all_exp(Exp.CREF(cr,tp),s,t) => Exp.CREF(t,tp)
 
+  rule  Exp.cref_equal(cr,s) => false
+	-----------------------------
+	replace_all_exp(Exp.CREF(cr,tp),s,t) => fail
+
   rule	replace_all_exp(e1,s,t) => e1' &
 	replace_all_exp(e2,s,t) => e2' 
 	-----------------------------
 	replace_all_exp(Exp.BINARY(e1,op,e2),s,t) => Exp.BINARY(e1',op,e2')
 
+  rule	not replace_all_exp(e1,s,t) => _ &
+	replace_all_exp(e2,s,t) => e2' 
+	-----------------------------
+	replace_all_exp(Exp.BINARY(e1,op,e2),s,t) => Exp.BINARY(e1,op,e2')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	not replace_all_exp(e2,s,t) => _ 
+	-----------------------------
+	replace_all_exp(Exp.BINARY(e1,op,e2),s,t) => Exp.BINARY(e1',op,e2)
+
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	not replace_all_exp(e2,s,t) => _ 
+	-----------------------------
+	replace_all_exp(exp as Exp.BINARY(e1,op,e2),s,t) => fail
+
   rule	replace_all_exp(e,s,t) => e' 
 	-----------------------------
 	replace_all_exp(Exp.UNARY(op,e),s,t) => Exp.UNARY(op,e')
+
+  rule	not replace_all_exp(e,s,t) => _ 
+	-----------------------------
+	replace_all_exp(exp as Exp.UNARY(op,e),s,t) => fail
 
   rule	replace_all_exp(e1,s,t) => e1' &
 	replace_all_exp(e2,s,t) => e2' 
 	-----------------------------
 	replace_all_exp(Exp.LBINARY(e1,op,e2),s,t) => Exp.LBINARY(e1',op,e2')
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	replace_all_exp(e2,s,t) => e2' 
+	-----------------------------
+	replace_all_exp(Exp.LBINARY(e1,op,e2),s,t) => Exp.LBINARY(e1,op,e2')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	not replace_all_exp(e2,s,t) => _
+	-----------------------------
+	replace_all_exp(Exp.LBINARY(e1,op,e2),s,t) => Exp.LBINARY(e1',op,e2)
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	not replace_all_exp(e2,s,t) => _
+	----------------------------
+	replace_all_exp(exp as Exp.LBINARY(e1,op,e2),s,t) => fail
 	
   rule	replace_all_exp(e,s,t) => e'
 	-----------------------------
 	replace_all_exp(Exp.LUNARY(op,e),s,t) => Exp.LUNARY(op,e')
 
+  rule	not replace_all_exp(e,s,t) => _
+	-----------------------------
+	replace_all_exp(exp as Exp.LUNARY(op,e),s,t) => exp
+
   rule	replace_all_exp(e1,s,t) => e1' &
 	replace_all_exp(e2,s,t) => e2'
 	-------------------------
 	replace_all_exp(Exp.RELATION(e1,rel,e2),s,t) => Exp.RELATION(e1',rel,e2')
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	replace_all_exp(e2,s,t) => e2'
+	-------------------------
+	replace_all_exp(Exp.RELATION(e1,rel,e2),s,t) => Exp.RELATION(e1,rel,e2')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	not replace_all_exp(e2,s,t) => _
+	-------------------------
+	replace_all_exp(Exp.RELATION(e1,rel,e2),s,t) => Exp.RELATION(e1',rel,e2)
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	not replace_all_exp(e2,s,t) => _
+	-------------------------
+	replace_all_exp(exp as Exp.RELATION(e1,rel,e2),s,t) => fail
 	
   rule	replace_all_exp(e1,s,t) => e1' &
 	replace_all_exp(e2,s,t) => e2' &
@@ -313,11 +402,55 @@ relation replace_all_exp: (Exp.Exp,
 	-------------------------
 	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1',e2',e3')
 
-  rule	Util.list_map_2(expl,replace_all_exp,s,t) => expl' 
+  rule	not replace_all_exp(e1,s,t) => _ &
+	replace_all_exp(e2,s,t) => e2' &
+	replace_all_exp(e3,s,t) => e3'
+	-------------------------
+	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1,e2',e3')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	not replace_all_exp(e2,s,t) => _ &
+	replace_all_exp(e3,s,t) => e3'
+	-------------------------
+	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1',e2,e3')
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	not replace_all_exp(e2,s,t) => _ &
+	replace_all_exp(e3,s,t) => e3'
+	-------------------------
+	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1,e2,e3')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	replace_all_exp(e2,s,t) => e2' &
+	not replace_all_exp(e3,s,t) => _
+	-------------------------
+	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1',e2',e3)
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	replace_all_exp(e2,s,t) => e2' &
+	not replace_all_exp(e3,s,t) => _
+	--------------------------------
+	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1,e2',e3)
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	not replace_all_exp(e2,s,t) => _ &
+	not replace_all_exp(e3,s,t) => _
+	-------------------------
+	replace_all_exp(Exp.IFEXP(e1,e2,e3),s,t) => Exp.IFEXP(e1',e2,e3)
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	not replace_all_exp(e2,s,t) => _ &
+	not replace_all_exp(e3,s,t) => _
+	-------------------------
+	replace_all_exp(exp as Exp.IFEXP(e1,e2,e3),s,t) => fail
+
+  rule	(* Fixme, replace_all_exp can now fail, special map function needed*)
+	Util.list_map_2(expl,replace_all_exp,s,t) => expl' 
 	-------------------------------------------------
 	replace_all_exp(Exp.CALL(a,expl,b,c),s,t) => Exp.CALL(a,expl',b,c)
 	
-  rule	Util.list_map_2(expl,replace_all_exp,s,t) => expl' 
+  rule	(* Fixme, replace_all_exp can now fail, special map function needed*)
+	Util.list_map_2(expl,replace_all_exp,s,t) => expl' 
 	--------------------------------------------
 	replace_all_exp(Exp.ARRAY(tp,b,expl),s,t) => Exp.ARRAY(tp,b,expl')
 
@@ -326,7 +459,8 @@ relation replace_all_exp: (Exp.Exp,
 	---------------------------------------
 	replace_all_exp(e as Exp.MATRIX(_,_,_),s,t) => e
 	
-  rule	Util.list_map_2(expl,replace_all_exp,s,t) => expl'
+  rule	(* Fixme, replace_all_exp can now fail, special map function needed*)
+	Util.list_map_2(expl,replace_all_exp,s,t) => expl'
 	-----------------------
 	replace_all_exp(Exp.TUPLE(expl),s,t) => Exp.TUPLE(expl')
 
@@ -334,9 +468,17 @@ relation replace_all_exp: (Exp.Exp,
 	-----------------------
 	replace_all_exp(Exp.CAST(tp,e),s,t) => Exp.CAST(tp,e')
 
+  rule	not replace_all_exp(e,s,t) => _
+	-----------------------
+	replace_all_exp(exp as Exp.CAST(tp,e),s,t) => fail
+
   rule	replace_all_exp(e,s,t) => e'
 	----------------------------
 	replace_all_exp(Exp.ASUB(e,i),s,t) => Exp.ASUB(e,i)
+
+  rule	not replace_all_exp(e,s,t) => _
+	----------------------------
+	replace_all_exp(exp as Exp.ASUB(e,i),s,t) => exp
 
   rule	replace_all_exp(e1,s,t) => e1' &
 	replace_all_exp(e2,s,t) => e2' 
@@ -344,7 +486,23 @@ relation replace_all_exp: (Exp.Exp,
 	replace_all_exp(Exp.REDUCTION(a,e1,b,e2),s,t) 
 	  => Exp.REDUCTION(a,e1',b,e2')
 
-  axiom	replace_all_exp(e,s,t) => e
+  rule	not replace_all_exp(e1,s,t) => _ &
+	replace_all_exp(e2,s,t) => e2' 
+	------------------------------
+	replace_all_exp(Exp.REDUCTION(a,e1,b,e2),s,t) 
+	  => Exp.REDUCTION(a,e1,b,e2')
+
+  rule	replace_all_exp(e1,s,t) => e1' &
+	not replace_all_exp(e2,s,t) => _
+	------------------------------
+	replace_all_exp(Exp.REDUCTION(a,e1,b,e2),s,t) 
+	  => Exp.REDUCTION(a,e1',b,e2)
+
+  rule	not replace_all_exp(e1,s,t) => _ &
+	not replace_all_exp(e2,s,t) => _
+	------------------------------
+	replace_all_exp(exp as Exp.REDUCTION(a,e1,b,e2),s,t) 
+	  => fail
 end
 
 
@@ -913,11 +1071,11 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	  (* and try again, restarting. This could be optimized later. It should not
 	   be necessary to restart the matching. Instead one could continue the matching
 	   as usual. This has not been tested yet.*)
-	list_length(vars) => nv' &
+	(*list_length(vars) => nv' &
 	list_length(eqns) => nf' &
 	Util.list_fill(0,nv') => ass1 &
-	Util.list_fill(0,nf') => ass2 &
-	matching_algorithm2(dae,m,mt,nv',nf',1,ass1,ass2)
+	Util.list_fill(0,nf') => ass2 &*)
+	matching_algorithm2(dae,m,mt,nv,nf,(*1*)i,ass1,ass2)
 	  => (ass1',ass2',dae,m,mt)
 	------------------------
 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
@@ -956,7 +1114,7 @@ relation reduce_index_dummy_der: (DAELow,
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
 	new_dummy_var(state,dae) => (dummy_der,dae) &
 	eqns_for_var(mt,stateno) => reqns &
-	Util.list_union_p(reqns,deqns,int_eq) => changedeqns &
+	Util.list_union_p(deqns,reqns,int_eq) => changedeqns &
 	(* We need to change variables in the differentiated equations and in the 
 	  equations having the dummy derivative *)
 	replace_dummy_der(state,dummy_der,dae,m,mt,changedeqns) => (dae,m,mt) &
@@ -1083,7 +1241,7 @@ relation replace_dummy_der_others:( Var list ,Equation) => (Equation,Var list) =
 	int_gt(c,0) => cond &
 	Util.if(cond,[VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,d,NONE,0,"dummyder")],[]) => varlst &
 	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
-	Util.list_union_p(allvars,varlst,var_equal) => allvars'
+	Util.list_union_p(varlst,allvars,var_equal) => allvars'
 	---------------------------------------------------------------
 	replace_dummy_der_others(VAR(cr,DUMMY_DER,a,b,c,h,d,e,f,g)::vs,EQUATION(e1,e2))
 	  => (res,allvars')
@@ -1104,7 +1262,7 @@ relation replace_dummy_der_others:( Var list ,Equation) => (Equation,Var list) =
 	int_gt(c,0) => cond &
 	Util.if(cond,[VAR(dummyder',DUMMY_DER,a,b,NONE,NONE,d,NONE,0,"dummyder")],[]) => varlst &
 	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
-	Util.list_union_p(allvars,varlst,var_equal) => allvars'
+	Util.list_union_p(varlst,allvars,var_equal) => allvars'
 	---------------------------------------------------------------------------
 	replace_dummy_der_others(VAR(cr,STATE,a,b,c,h,d,e,f,g)::vs,EQUATION(e1,e2))
 	  => (res,allvars')
@@ -1122,7 +1280,7 @@ relation replace_dummy_der_others:( Var list ,Equation) => (Equation,Var list) =
 	int_gt(c,0) => cond &
 	Util.if(cond,[VAR(dummyder',DUMMY_DER,a,b,NONE,NONE,d,NONE,0,"dummyder")],[]) => varlst &
 	replace_dummy_der_others(vs,EQUATION(e1',e2')) => (res,allvars) &
-	Util.list_union_p(allvars,varlst,var_equal) => allvars'
+	Util.list_union_p(varlst,allvars,var_equal) => allvars'
 	---------------------------------------------------------------------------
 	replace_dummy_der_others(VAR(cr,VARIABLE,a,b,c,h,d,e,f,g)::vs,EQUATION(e1,e2))
 	  => (res,allvars')
