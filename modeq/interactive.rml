@@ -87,7 +87,6 @@ with "codegen.rml"
 with "print.rml"
 with "system.rml"
 with "classloader.rml"
-with "cache.rml"
 with "ceval.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 

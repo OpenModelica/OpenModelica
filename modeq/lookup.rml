@@ -36,7 +36,6 @@ module Lookup:
   with "exp.rml"
   with "env.rml"
   with "explode.rml"
-  with "cache.rml"
 
   relation lookup_type       : (Env.Env, Absyn.Path, bool (*msg flag *)) 
 	  => (Types.Type,Env.Env)

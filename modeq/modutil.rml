@@ -19,6 +19,16 @@
 
 *)
 
+(**
+ ** file:	 modutil.rml
+ ** module:      ModUtil
+ ** description: Miscellanous utilities (The horror, THE HORROR)
+ **
+ ** RCS: $Id$
+ ** 
+ ** This module communicates with the backend (through files) for simulation
+ ** plotting etc.
+ **)
 
 
 module ModUtil :
