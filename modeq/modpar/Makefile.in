@@ -4,8 +4,7 @@ RMLINCLUDE = @rmlinc@
 USE_MODPAR = @USE_MODPAR@
 
 ifdef USE_MODPAR
-OBJECTS = TaskSymbolTable.o \
-	Codegen.o \
+OBJECTS = Codegen.o \
 	TaskMerging.o \
 	TaskGraph.o \
 	MergeRule.o \

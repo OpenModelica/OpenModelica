@@ -5,6 +5,20 @@
 #include "MergeAllParents.hpp"
 #include "MergeSiblings.hpp"
 #include <iostream>
+#include <time.h>
+
+//Return the tlevel of a task, stored in a map, reused from Schedule
+double get_tlevel(VertexID u, const TaskGraph &g,map<VertexID,double>*level) {
+  map<VertexID,double>::iterator elt;
+  elt = level->find(u);
+  if (elt == level->end()) { 
+    cerr << "Error finding level value for node " 
+	 << getTaskID(u,&g) << endl;
+    exit(-1);
+  }
+  return elt->second;
+};
+
 
 TaskMerging::TaskMerging() : m_latency(0.001), 
 			     m_bandwidth(500.0), 
@@ -29,25 +43,26 @@ void TaskMerging::initializeRules()
     ContainSet *s = new ContainSet();
     s->insert(getTaskID(*v,m_taskgraph));
     (*m_containTasks)[*v] = s;
+    m_taskRemoved[*v]=false;
   }
     
   m_rules[0] = (MergeRule*)new SingleChildMerge(m_taskgraph,m_orig_taskgraph,
 						m_containTasks,m_invartask,
 						m_outvartask,m_latency,
-						m_bandwidth);
+						m_bandwidth,&m_taskRemoved);
   m_rules[1] = (MergeRule*)new DuplicateParentMerge(m_taskgraph,m_orig_taskgraph,
 						    m_containTasks,m_invartask,
 						    m_outvartask,m_latency,
-						    m_bandwidth);
+						    m_bandwidth,&m_taskRemoved);
   m_rules[2] = (MergeRule*)new MergeAllParents(m_taskgraph,m_orig_taskgraph,
 					       m_containTasks,m_invartask,
 					       m_outvartask,m_latency,
-					       m_bandwidth);
+					       m_bandwidth,&m_taskRemoved);
 
   m_rules[3] = (MergeRule*)new MergeSiblings(m_taskgraph,m_orig_taskgraph,
 					     m_containTasks,m_invartask,
 					     m_outvartask,m_latency,
-					     m_bandwidth);
+					     m_bandwidth,&m_taskRemoved);
   
   // Add more rules here and change number of rules in constructor.
 }
@@ -75,7 +90,6 @@ void TaskMerging::merge(TaskGraph *taskgraph, TaskGraph* orig_tg,
   m_outvartask = outvartask;
   
   int new_size,orig_size=num_vertices(*m_taskgraph);
-
   initializeRules();
 
   //printTaskInfo();
@@ -105,15 +119,50 @@ void TaskMerging::mergeRules()
 {
   
   //call each rule in order
-  bool change=true;
-  while(change) {
-    change=false;
-    change=m_rules[0]->apply();
-    change=m_rules[1]->apply();
-    change=m_rules[2]->apply();
-    change=m_rules[3]->apply();
-  }
   
+  bool change=true;
+  
+  map<VertexID,double> tlevel;
+  VertexIterator v,v_end;
+  for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
+    tlevel[*v] = m_rules[0]->tlevel(*v);
+  }
+
+  TQueue *queue= new TQueue(TLevelCmp(m_taskgraph,&tlevel));
+  
+  clock_t t1,t2,t3;
+  t1=clock();
+  for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
+    queue->push(*v);
+  }
+  t2 = clock();
+  cerr << "Sorting took " << (double)(t2-t1)/(double)CLOCKS_PER_SEC << " seconds." << endl;
+  while (!queue->empty()) {
+    VertexID t = queue->top();
+    if (!m_taskRemoved[t]) {
+      m_rules[0]->apply(t);
+      m_rules[1]->apply(t);
+    }
+    queue->pop();
+  };
+  cerr << "finished first round." << endl;
+  for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
+    queue->push(*v);
+  }
+  cerr << "Sorting took " << (double)(t2-t1)/(double)CLOCKS_PER_SEC << " seconds." << endl;
+  while (!queue->empty()) {
+    VertexID t = queue->top();
+    if (!m_taskRemoved[t]) {
+      m_rules[2]->apply(t);
+    }
+    queue->pop();
+  };
+  t3 = clock();
+  cerr << "mergin (1-3) took " << (double)(t3-t2)/(double)CLOCKS_PER_SEC << " seconds." << endl;
+
+  while( m_rules[3]->apply(m_invartask));
+
+
   //...
   updateExecCosts(); // When finished mergin, execcost should be calculated for each task 
 		     // from containSet.
@@ -130,7 +179,5 @@ void TaskMerging::updateExecCosts()
     put(VertexExecCostProperty(m_taskgraph),*v,cost);
   }
 }
-
-
 
 

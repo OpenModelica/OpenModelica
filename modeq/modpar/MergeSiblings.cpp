@@ -3,51 +3,43 @@
 MergeSiblings::MergeSiblings(TaskGraph *tg,TaskGraph * orig_tg,
 			     ContainSetMap *cmap, 
 			     VertexID inv, VertexID outv,
-			     double l,double B)
-  : MergeRule(tg,orig_tg,cmap,inv,outv,l,B)
+			     double l,double B, map<VertexID,bool>*removed) 
+  : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,removed)
 {
 }
 
-bool MergeSiblings::apply()
+bool MergeSiblings::apply(VertexID dummy)
 {
-  VertexIterator v,v_end;
   bool change = true;
-  while(change) {
-    ExecCostQueue exec_queue(TauCmp((MergeRule*)this));
-    ExecCostQueue exec_queue2(TauCmp((MergeRule*)this));
-    change = false;    
-    for(tie(v,v_end) = vertices(*m_taskgraph); v!=v_end; ++v) {
-      if (*v != m_invartask && *v != m_outvartask) {
-	if ((out_degree(*v,*m_taskgraph) == 1 &&
-	    in_degree(*v,*m_taskgraph) == 1 &&
-	    exist_edge(m_invartask,*v,m_taskgraph) &&
-	    exist_edge(*v,m_outvartask,m_taskgraph))
-	    ) {	  
-	  exec_queue.push(*v);
-	  // Do the merge
-	}
+  VertexIterator v,v_end;
+  ExecCostQueue exec_queue(TauCmp((MergeRule*)this));
+  ExecCostQueue exec_queue2(TauCmp((MergeRule*)this));
+  change = false;    
+  for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
+    if (*v != m_invartask && *v != m_outvartask) {
+      if ((out_degree(*v,*m_taskgraph) == 1 &&
+	   in_degree(*v,*m_taskgraph) == 1 &&
+	   exist_edge(m_invartask,*v,m_taskgraph) &&
+	   exist_edge(*v,m_outvartask,m_taskgraph))
+	  ) {	  
+	exec_queue.push(*v);
+	// Do the merge
       }
+      if ((out_degree(*v,*m_taskgraph) == 1 &&
+	   in_degree(*v,*m_taskgraph) == 0 &&
+	   exist_edge(*v,m_outvartask,m_taskgraph))
+	  ) {	  
+	exec_queue2.push(*v);
+	// Do the merge
+      }
+
     }
-    if (exec_queue.size() > 1) {
-      change = try_merge(exec_queue);
-    }
-    // Second variant, for nodes with no indegree
-    if (!change) {
-      for(tie(v,v_end) = vertices(*m_taskgraph); v!=v_end; ++v) {
-	if (*v != m_invartask && *v != m_outvartask) {
-	  if ((out_degree(*v,*m_taskgraph) == 1 &&
-	       in_degree(*v,*m_taskgraph) == 0 &&
-	       exist_edge(*v,m_outvartask,m_taskgraph))
-	    ) {	  
-	    exec_queue2.push(*v);
-	    // Do the merge
-	  }
-      }
-      }
-      if (exec_queue2.size() > 1) {
-	change = try_merge2(exec_queue2);
-      }
-    } 
+  }
+  if (exec_queue.size() > 1) {
+    change = try_merge(exec_queue);
+  } 
+  if (exec_queue2.size() > 1) {
+    change = try_merge2(exec_queue2);
   }
   return change;
 }
@@ -104,6 +96,7 @@ bool MergeSiblings::try_merge(ExecCostQueue & queue)
     
     addContainsTask(a,b);
 
+    (*m_taskRemoved)[b]=true;
     clear_vertex(b,*m_taskgraph);
     remove_vertex(b,*m_taskgraph);
     queue.push(a);  // The new task is added with new execcost, 
@@ -138,6 +131,7 @@ bool MergeSiblings::try_merge2(ExecCostQueue & queue)
     
     addContainsTask(a,b);
 
+    (*m_taskRemoved)[b]=true;
     clear_vertex(b,*m_taskgraph);
     remove_vertex(b,*m_taskgraph);
     queue.push(a);  // The new task is added with new execcost, 

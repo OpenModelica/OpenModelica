@@ -184,18 +184,18 @@ end
 relation build_expression:(Exp.Exp) => (int, string) =
 	
   rule	int_string(i) => is &
-	TaskGraphExt.new_task(is) => tid &
+	TaskGraphExt.new_task(is) => tid (*&
 	TaskGraphExt.get_starttask() => st &
 	TaskGraphExt.add_edge(st,tid,"") &
-	TaskGraphExt.set_commcost(st,tid,0) 
+	TaskGraphExt.set_commcost(st,tid,0)*) 
 	--------------------------------
 	build_expression(Exp.ICONST(i)) => (tid,"")
 
   rule	real_string(r) => rs &
-	TaskGraphExt.new_task(rs) => tid  &
+	TaskGraphExt.new_task(rs) => tid  (*&
 	TaskGraphExt.get_starttask() => st &
 	TaskGraphExt.add_edge(st,tid,"") &
-	TaskGraphExt.set_commcost(st,tid,0) 
+	TaskGraphExt.set_commcost(st,tid,0) *)
 	--------------------------------
 	build_expression(Exp.RCONST(r)) => (tid,"")
 	

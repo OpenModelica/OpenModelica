@@ -46,6 +46,13 @@ VertexTaskTypeMap::type VertexTaskTypeProperty(TaskGraph *tg)
   return pmap;
 }
 
+VertexColorMap::type VertexColorProperty(TaskGraph *tg)
+{
+  boost::vertex_color_t pname;
+  VertexColorMap::type pmap = get(pname, *tg);
+  return pmap;
+}
+
 EdgeCommCostMap::type EdgeCommCostProperty(TaskGraph* tg) 
 { 
   boost::edge_weight_t pname;
@@ -78,6 +85,16 @@ void setTaskType(VertexID task, TaskType t, TaskGraph *tg)
 TaskType getTaskType(VertexID task, TaskGraph *tg)
 {
   return get(VertexTaskTypeProperty(tg),task);
+}
+
+boost::default_color_type getVertexColor(VertexID v, TaskGraph *tg) 
+{
+  return get(VertexColorProperty(tg),v);
+}
+
+void setVertexColor(VertexID v, boost::default_color_type  color, TaskGraph *tg)
+{
+  put(VertexColorProperty(tg),v,color);
 }
 
 int getCommCost(EdgeID edge,TaskGraph * tg)
@@ -220,7 +237,7 @@ const int max_result_sets=max_nodes;
 // Create a result_set given a first result entry.
 ResultSet& make_resultset(string *firstelt)
 {
-  const int maxNo=20000;
+  const int maxNo=200000;
   static ResultSet sets[maxNo];
   static int curNo=0;
   ResultSet & set=sets[curNo++];
@@ -241,7 +258,7 @@ VertexID find_task(int taskID, TaskGraph *tg)
 {
   
   VertexIterator v,v_end;
-  
+  cerr << "Warning, calling slow find_task function." << endl;
   for (tie(v,v_end) = vertices(*tg);v != v_end; v++) {
     if (getTaskID(*v,tg) == taskID)
       return *v;

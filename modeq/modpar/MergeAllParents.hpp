@@ -9,9 +9,9 @@ class MergeAllParents : MergeRule
 
 public:
   MergeAllParents(TaskGraph *,TaskGraph*,ContainSetMap *, VertexID, VertexID,
-		  double,double);
+		  double,double,map<VertexID,bool>*);
   
-  bool apply();
+  bool apply(VertexID);
 private:
   int calculateAB(std::pair<ParentsIterator, ParentsIterator> pair,
 		  VertexID head,

@@ -8,8 +8,8 @@ class SingleChildMerge : MergeRule
 
 public:
   SingleChildMerge(TaskGraph *,TaskGraph *,ContainSetMap *, VertexID, VertexID,
-		   double,double);
-  bool apply();
+		   double,double, map<VertexID,bool>*);
+  bool apply(VertexID);
 
 private:
   void mergeTasks(VertexID n1, VertexID n2);

@@ -38,8 +38,8 @@ class MergeSiblings : MergeRule
 {
 public:
   MergeSiblings(TaskGraph *, TaskGraph*, ContainSetMap*, VertexID, VertexID,
-		double, double);
-  bool apply();
+		double, double,map<VertexID,bool>*); 
+  bool apply(VertexID);
 private:
   bool exist_edge(VertexID parent, VertexID child, TaskGraph *tg);
   bool try_merge(ExecCostQueue & queue);

@@ -3,36 +3,29 @@
 SingleChildMerge::SingleChildMerge(TaskGraph *tg,TaskGraph * orig_tg,
 				   ContainSetMap *cmap, 
 				   VertexID inv, VertexID outb, 
-				   double l, double B) 
-  : MergeRule(tg,orig_tg,cmap,inv,outb,l,B) 
+				   double l, double B,map<VertexID,bool> *removed) 
+  : MergeRule(tg,orig_tg,cmap,inv,outb,l,B,removed) 
 {
 
 }
 
-bool SingleChildMerge::apply()
+bool SingleChildMerge::apply(VertexID v)
 {
-  VertexIterator v,v_end;
   ChildrenIterator c,c_end;
-  bool change = true;
-  while(change) {
-    change = false;
-    for(tie(v,v_end) = vertices(*m_taskgraph); v!=v_end; ++v) {
-      if (*v != m_invartask && *v != m_outvartask) {
-	if (out_degree(*v,*m_taskgraph) == 1) {
-	  // tie(e,e_end) = out_edges(*v,*m_taskgraph);
-	  tie(c,c_end) = children(*v,*m_taskgraph);
-	  if (in_degree(*c,*m_taskgraph) == 1) {
-	    //cerr << "SingleChildMerge, parent: " << getTaskID(*v,m_taskgraph)
-	    //	 << " child: " << getTaskID(*c,m_taskgraph) << endl;
-	    mergeTasks(*v,*c);
-	    //cerr << "parent now contains: " ;
-	    //printContainTasks(*v,cerr); 
-	    //cerr << endl; 
-	    change=true;
-	    break;
-	  } 
-	}
-      }
+  bool change = false;
+  if (v != m_invartask && v != m_outvartask) {
+    if (out_degree(v,*m_taskgraph) == 1) {
+      // tie(e,e_end) = out_edges(v,*m_taskgraph);
+      tie(c,c_end) = children(v,*m_taskgraph);
+      if (in_degree(*c,*m_taskgraph) == 1) {
+	//cerr << "SingleChildMerge, parent: " << getTaskID(v,m_taskgraph)
+	//	 << " child: " << getTaskID(*c,m_taskgraph) << endl;
+	mergeTasks(v,*c);
+	//cerr << "parent now contains: " ;
+	//printContainTasks(v,cerr); 
+	//cerr << endl; 
+	change=true;
+      } 
     }
   }
   return change;
@@ -73,7 +66,9 @@ void SingleChildMerge::mergeTasks(VertexID n1, VertexID n2)
 			// go back to orig task graph when generating code.
 
   // Remove task and edges to the task
+  (*m_taskRemoved)[c]=true;
   clear_vertex(c,*m_taskgraph);
+  
 
   remove_vertex(c,*m_taskgraph);
 }

@@ -142,7 +142,7 @@ extern int nproc;
     char *filename = RML_STRINGDATA(rmlA0); 
     ofstream file(filename);
     my_write_graphviz(file,taskgraph,
-		      make_label_writer(VertexNameProperty(&taskgraph)),
+		      make_label_writer(VertexUniqueIDProperty(&taskgraph)),
 		      make_label_writer(EdgeCommCostProperty(&taskgraph))
 		      );
     file.close();

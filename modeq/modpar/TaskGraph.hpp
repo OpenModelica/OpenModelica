@@ -81,7 +81,8 @@ typedef  boost::property_map<TaskGraph,vertex_unique_id_t> VertexUniqueIDMap;
 typedef  boost::property_map<TaskGraph,boost::vertex_index_t> VertexIndexMap;
 typedef  boost::property_map<TaskGraph,vertex_resultname_t> VertexResultNameMap;
 typedef  boost::property_map<TaskGraph,vertex_tasktype_t> VertexTaskTypeMap;
-  
+typedef  boost::property_map<TaskGraph,boost::vertex_color_t> VertexColorMap;
+
 typedef  boost::property_map<TaskGraph,boost::edge_weight_t> EdgeCommCostMap;
 typedef  boost::property_map<TaskGraph,edge_result_set_t> EdgeResultSetMap;
   
@@ -115,11 +116,16 @@ VertexResultNameMap::type VertexResultNameProperty(TaskGraph *tg);
 
 VertexTaskTypeMap::type VertexTaskTypeProperty(TaskGraph *tg);
 
+VertexColorMap::type VertexColorProperty(TaskGraph *tg);
+
 EdgeCommCostMap::type EdgeCommCostProperty(TaskGraph* tg); 
 
 EdgeResultSetMap::type EdgeResultSetProperty(TaskGraph* tg);
 
-  
+boost::default_color_type getVertexColor(VertexID v, TaskGraph *tg);  
+
+void setVertexColor(VertexID v, boost::default_color_type  color, TaskGraph *tg);  
+
 int getCommCost(EdgeID edge,TaskGraph * tg);
   
 void setCommCost(EdgeID edge, int weight,TaskGraph * tg);
@@ -174,7 +180,6 @@ EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
 VertexID find_task(VertexID alientask,TaskGraph *alientg,TaskGraph *tg);
 
 VertexID find_task(int taskID,TaskGraph *tg);
-
 
 ResultSet& make_resultset(string *firstelt=0);
 

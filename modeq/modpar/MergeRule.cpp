@@ -3,11 +3,12 @@
 
 MergeRule::MergeRule(TaskGraph *tg, TaskGraph *orig_tg,
 		     ContainSetMap *cmap, VertexID invar, 
-		     VertexID outvar, double l, double B) 
+		     VertexID outvar, double l, double B,
+		     map<VertexID,bool>*removed) 
   : m_latency(l), m_bandwidth(B),
     m_taskgraph(tg), m_orig_taskgraph(orig_tg),
     m_containTasks(cmap), m_invartask(invar), 
-    m_outvartask(outvar)
+    m_outvartask(outvar), m_taskRemoved(removed)
 {
   VertexIterator v,v_end;
   
@@ -34,6 +35,7 @@ double MergeRule::getExecCost(VertexID v)
 {
   double cost =0.0;
   map<int,double>::iterator c;
+  if (v == m_invartask || v == m_outvartask) return 0.0;
   ContainSet *cset= m_containTasks->find(v)->second;
   if (cset) {
     ContainSet::iterator i;

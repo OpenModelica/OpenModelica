@@ -4,44 +4,39 @@
 DuplicateParentMerge::DuplicateParentMerge(TaskGraph *tg,TaskGraph * orig_tg,
 					   ContainSetMap *cmap, 
 					   VertexID inv, VertexID outv,
-					   double l,double B)
- : MergeRule(tg,orig_tg,cmap,inv,outv,l,B)
+					   double l,double B,map<VertexID,bool>* removed)
+ : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,removed)
 {
 }
 
-bool DuplicateParentMerge::apply()
+bool DuplicateParentMerge::apply(VertexID v)
 { 
-  VertexIterator v,v_end;
   bool change = true;
   vector<bool>* cond1,*cond2;
-  while(change) {
-    change = false;
-    for(tie(v,v_end) = vertices(*m_taskgraph); v!=v_end; ++v) {
-      if (*v != m_invartask && *v != m_outvartask) {
-	if (out_degree(*v,*m_taskgraph) > 1 &&
-	    !containTask(m_outvartask,children(*v,*m_taskgraph)) &&
-	    numberOfTrues(cond1=newTlevelLower(children(*v,*m_taskgraph),
-					       *v)) > 0 &&
-	    numberOfTrues(cond2=siblingCondition(children(*v,*m_taskgraph),
-						 *v)) > 0)
-	  {
+  change = false;
+    
+  if (v != m_invartask && v != m_outvartask) {
+    if (out_degree(v,*m_taskgraph) > 1 &&
+	!containTask(m_outvartask,children(v,*m_taskgraph)) &&
+	numberOfTrues(cond1=newTlevelLower(children(v,*m_taskgraph),
+					     v)) > 0 &&
+	numberOfTrues(cond2=siblingCondition(children(v,*m_taskgraph),
+					     v)) > 0)
+      {
 	    // do the merge, split children in two groups, one fulfilling
 	    // the merge, the other not fulfilling the merge...
-	    duplicateParent(*v,
+	duplicateParent(v,
 			    duplicateParentSelectFulfill(
-							 children(*v,*m_taskgraph),
+							 children(v,*m_taskgraph),
 							 cond1,cond2),
 			    duplicateParentSelectNotFulfill(
-							    children(*v,*m_taskgraph),
+							    children(v,*m_taskgraph),
 							    cond1,cond2)
 			    );
-	    delete cond1; delete cond2;
-	    // Do the merge
-	    change=true;
-	    break;
-	  }
+	delete cond1; delete cond2;
+	// Do the merge
+	change=true;
       }
-    }
   } 
   return change;
 }
@@ -111,13 +106,13 @@ DuplicateParentMerge::newTlevelLower(pair<ChildrenIterator ,ChildrenIterator> pa
     
     if (*v == m_invartask) {  // Ugly: invar shoudl not be duplicated.
       (*res)[i]=false;
-    }
-    if (getExecCost(*v) <= m_latency 
-	+ getCommCost(e)/m_bandwidth) {
-      (*res)[i]=true;
-    } else {
-      (*res)[i]=false;
-    }
+    } else
+      if (getExecCost(*v) <= m_latency 
+	  + getCommCost(e)/m_bandwidth) {
+	(*res)[i]=true;
+      } else {
+	(*res)[i]=false;
+      }
   } 
   return res;
 }
@@ -214,12 +209,14 @@ void DuplicateParentMerge::duplicateParent(VertexID parent,
 	ResultSet &newSet = getResultSet(edge(*p2,*child,*m_taskgraph).first,
 					 m_taskgraph);
 	newSet.make_union(&s);
-	
+	 
       }
       addContainsTask(*child,parent);
     }
+    (*m_taskRemoved)[parent]=true;
     clear_vertex(parent,*m_taskgraph);
     remove_vertex(parent,*m_taskgraph);
+
   } else {
     for (tie(p2,p2_end) = parents(parent,*m_taskgraph); p2 != p2_end ;p2++) {
       remove_edge(*p2,parent,*m_taskgraph);

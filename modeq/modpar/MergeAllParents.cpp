@@ -1,38 +1,34 @@
 #include "MergeAllParents.hpp"
-
+#include <time.h>
 
 MergeAllParents::MergeAllParents(TaskGraph *tg,TaskGraph *orig_tg,
 				 ContainSetMap *cmap, 
 				 VertexID inv, VertexID outv,
-				 double l,double B)
- : MergeRule(tg,orig_tg,cmap,inv,outv,l,B)
+				 double l,double B, map<VertexID,bool>* removed)
+ : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,removed)
 {
 }
 
-bool MergeAllParents::apply()
+bool MergeAllParents::apply(VertexID v)
 {
- VertexIterator v,v_end;
   bool change = true;
-  while(change) {
-    change = false;
-    for(tie(v,v_end) = vertices(*m_taskgraph); v!=v_end; ++v) {
-      if (*v != m_invartask && *v != m_outvartask) {
-	set<VertexID> A, B;
-	if (in_degree(*v,*m_taskgraph) > 1 && in_degree(*v,*m_taskgraph) < 4 && 
-	    /* !containTask(m_invartask,parents(*v,*m_taskgraph)) &&*/
-	    tlevel(*v) > maxTlevel(parents(*v,*m_taskgraph))  
-	    + totalExecCost(parents(*v,*m_taskgraph),*v) 
+  if (v != m_invartask && v != m_outvartask) { 
+    set<VertexID> A, B;
+    if (in_degree(v,*m_taskgraph) > 1 && 
+
+	    tlevel(v) > maxTlevel(parents(v,*m_taskgraph))  
+				       + totalExecCost(parents(v,*m_taskgraph),v) 
 	    /* &&
-	       calculateAB(parents(*v,*m_taskgraph),*v,A,B) > 0  */
+	       calculateAB(parents(v,*m_taskgraph),v,A,B) > 0  */
 	    ) {
-	  calculateAB(parents(*v,*m_taskgraph),*v,A,B);
+	  calculateAB(parents(v,*m_taskgraph),v,A,B);
 	  // Do the merge
-	  //cerr << "MergeAllParents, child: "<< getTaskID(*v,m_taskgraph) << " (";
-	  //printContainTasks(*v,cerr);
+	  //cerr << "MergeAllParents, child: "<< getTaskID(v,m_taskgraph) << " (";
+	  //printContainTasks(v,cerr);
 	  //cerr << ")" << endl;
 	  //cerr << "parents :" ;
 	  //ParentsIterator p,p_end;	    
-	  //for (tie(p,p_end)=parents(*v,*m_taskgraph); p != p_end; p++) {
+	  //for (tie(p,p_end)=parents(v,*m_taskgraph); p != p_end; p++) {
 	  // cerr << getTaskID(*p,m_taskgraph) << "(" ;
 	  // printContainTasks(*p,cerr);
 	  // cerr << ")  " ;
@@ -44,17 +40,13 @@ bool MergeAllParents::apply()
 	  //printVertexSet(B,cerr);
 	  //cerr << endl;
 
-	  mergeAll(parents(*v,*m_taskgraph),*v,A,B);
+	  mergeAll(parents(v,*m_taskgraph),v,A,B);
 	  //cerr << "parent now contains: " ;
 	  //printContainTasks(*v,cerr); 
 	  //cerr << endl;
 	  change=true;
-	  
-	  break;
 	}
-      }
-    }
-  } 
+  }
   return change;
 }
 
@@ -75,19 +67,20 @@ int MergeAllParents::calculateAB(std::pair<ParentsIterator, ParentsIterator> pai
   ParentsIterator p,p_end;
   ChildrenIterator c, c_end;
   for (tie(p,p_end)=pair; p != p_end; p++) {
-
-    for (tie(c,c_end) = children(*p,*m_taskgraph); c != c_end; c++) {
-      if (*c != head) {
-	EdgeID e; bool tmp;
-	tie(e,tmp) = edge(*p,*c,*m_taskgraph);
-	assert(tmp);
-	if (tlevel(*p) > tlevel_newc + 
-	    getCommCost(e)/m_bandwidth + m_latency ) {
+    if (*p != m_invartask) {
+      for (tie(c,c_end) = children(*p,*m_taskgraph); c != c_end; c++) {
+	if (*c != head) {
+	  EdgeID e; bool tmp;
+	  tie(e,tmp) = edge(*p,*c,*m_taskgraph);
+	  assert(tmp);
+	  if (tlevel(*p) > tlevel_newc + 
+	      getCommCost(e)/m_bandwidth + m_latency ) {
 	  A.insert(*c); // A - set of siblings not affecting merge.
 	  size++;
-	} else {
-	  if (*p != m_invartask) {
-	    B.insert(*p); // B - set of parents to be kept.
+	  } else {
+	    if (*p != m_invartask) {
+	      B.insert(*p); // B - set of parents to be kept.
+	    }
 	  }
 	}
       }
@@ -155,6 +148,7 @@ void MergeAllParents::mergeAll(std::pair<ParentsIterator,ParentsIterator> pair,
   // iterator.	
   for (pit=parents1.begin(); pit != parents1.end(); pit++) {
     if (B.find(*pit) == B.end() && *pit != m_invartask) {
+      (*m_taskRemoved)[*pit] = true;
       clear_vertex(*pit,*m_taskgraph);
       remove_vertex(*pit,*m_taskgraph);
     }
@@ -201,13 +195,15 @@ double MergeAllParents::totalExecCost(std::pair<ParentsIterator,ParentsIterator>
   
   for(tie(p,p_end) = pair; p != p_end; p++) {
     ContainSetMap::iterator set;
-    set = m_containTasks->find(*p);
-    if (set != m_containTasks->end()) {
-      allNodes.make_union((*set).second);
+    if (*p != m_invartask && *p != m_outvartask) {
+      set = m_containTasks->find(*p);
+      if (set != m_containTasks->end()) {
+	allNodes.make_union((*set).second);
+      }
+      allNodes.insert(getTaskID(*p,m_taskgraph));    
     }
-    allNodes.insert(getTaskID(*p,m_taskgraph));    
   }
- 
+  
   ContainSet::iterator it;
   for (it = allNodes.begin(); it !=allNodes.end(); it++) {
     cost +=getExecCost(find_task(*it,(TaskGraph*)m_taskgraph));

@@ -11,8 +11,8 @@ class DuplicateParentMerge : MergeRule
 public:
 
   DuplicateParentMerge(TaskGraph *,TaskGraph *,ContainSetMap *, VertexID, VertexID,
-		       double,double);
-  bool apply();
+		       double,double,map<VertexID,bool>*);
+  bool apply(VertexID);
   
 
 private:
