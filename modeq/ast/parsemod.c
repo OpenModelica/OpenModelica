@@ -4,6 +4,7 @@
 #include "dae.h"
 #include "exp.h"
 #include "class.h"
+#include "yacclib.h"
 #include <errno.h>
 
 /* Also see rml-1.3.6/examples/etc/ccall.c */
@@ -14,11 +15,10 @@ void Parser_5finit(void)
 
 void print_token(AST *ast)
 {
-#ifdef STRING_AST
-  fprintf(stderr, "%s", ast->t);
-#else
   print_attr(ast->attr, stderr);
-#endif
+
+  if(ast->rml)
+    fprintf(stderr,"*");
 
   if(zzchild(ast))
     fprintf(stderr,"(");
@@ -39,9 +39,23 @@ void print_rpar(AST *ast)
     fprintf(stderr, ")");
 }
 
+void *sibling_list(AST *ast)
+{
+  if(ast == NULL)
+  {
+/*     printf("sibling_list -> []\n"); */
+    return mk_nil();
+  }
+  else
+  {
+/*     printf("sibling_list -> x :: _\n"); */
+    return mk_cons(ast->rml,sibling_list(ast->right));
+  }
+}
+
 RML_BEGIN_LABEL(Parser__parse)
 {
-  AST *root;
+  AST *root = NULL;
   void *a0, *a0hdr;
   RML_INSPECTBOX(a0, a0hdr, rmlA0);
   if( a0hdr == RML_IMMEDIATE(RML_UNBOUNDHDR) )
@@ -58,7 +72,15 @@ RML_BEGIN_LABEL(Parser__parse)
   zzpre_ast(root, &print_token, &print_lpar, &print_rpar);
   fprintf(stderr, "\n\n");
   
-  rmlA0 = mk_cons(Class__CLASS(Class__CL_5fMODEL,mk_nil()), mk_nil());
+#if 0
+  rmlA0 = mk_cons(Class__CLASS(Exp__IDENT(mk_scon("foobar")),
+			       RML_TRUE,
+			       Class__CL_5fMODEL,
+			       mk_nil()),
+		  mk_nil());
+#else
+  rmlA0 = sibling_list(root);
+#endif
   
   RML_TAILCALLK(rmlSC);
 }
