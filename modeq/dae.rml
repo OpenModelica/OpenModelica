@@ -189,7 +189,11 @@ module DAE:
              bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
             | VAR_ATTR_STRING of string option  * (* quantity *)
              string option   (* Initial value *)
-
+            | VAR_ATTR_ENUMERATION of string option * (* quantity *)
+             (Exp.Exp option * Exp.Exp option) * (* min , max *)
+              Exp.Exp option * (*start*)
+              bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            
 
 
   datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
@@ -230,8 +234,8 @@ module DAE:
   relation dump_algorithm: Element => ()
   relation dump_algorithm_str : Element => string 
   relation dump_direction_str: VarDirection => string 
-  relation dump_variable_attributes: VariableAttributes option=> ()
-  relation dump_variable_attributes_str: VariableAttributes option => string 
+  relation dump_variable_attributes: (VariableAttributes option )=> ()
+  relation dump_variable_attributes_str: (VariableAttributes option ) => string 
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
@@ -296,19 +300,22 @@ relation dump2: DAElist => () =
 	Exp.print_exp e &
 	Print.print_buf ",dims=" &
 	Dump.print_list(dims,Exp.print_subscript,", ") &
-	dump_start_value start &
+(* 	dump_start_value start & *)
+    dump_variable_attributes dae_var_attr &
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_,_,_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_,_,dae_var_attr)::xs)
 
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr &
-	dump_start_value start &
+	(* 	dump_start_value start & *)
+    dump_variable_attributes dae_var_attr &
+
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
-	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_,_,_)::xs)
+	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_,_,dae_var_attr)::xs)
 
   rule	Print.print_buf "DEFINE(" &
 	Exp.print_component_ref cr &
@@ -784,47 +791,56 @@ relation dump_direction_str: VarDirection => string =
 
 end
 
-relation dump_stateSelect_str: StateSelect option => string =
+relation dump_stateSelect_str: StateSelect => string =
 
-  axiom dump_stateSelect_str(SOME(NEVER)) => "NEVER"
-  axiom dump_stateSelect_str(SOME(AVOID)) => "AVOID"
-  axiom dump_stateSelect_str(SOME(PREFER)) => "PREFER"
-  axiom dump_stateSelect_str(SOME(ALWAYS)) => "ALWAYS"  
-  axiom dump_stateSelect_str(SOME(DEFAULT)) => "DEFAULT"
-  axiom dump_stateSelect_str(NONE) => "none"
+  axiom dump_stateSelect_str(NEVER) => "StateSelect.never"
+  axiom dump_stateSelect_str(AVOID) => "StateSelect.avoid"
+  axiom dump_stateSelect_str(PREFER) => "StateSelect.prefer"
+  axiom dump_stateSelect_str(ALWAYS) => "StateSelect.always"  
+  axiom dump_stateSelect_str(DEFAULT) => "StateSelect.default"
 
 end
 
 relation dump_variable_attributes: VariableAttributes option => () =
  
-  rule  dump_variable_attributes_str(attr) => res &
-        print res
+  rule  dump_variable_attributes_str attr => res &
+        Print.print_buf res
         --------------------------------
-        dump_variable_attributes(attr) 
+        dump_variable_attributes(attr)
 
 
 end
 
+relation string_to_string: string => string =
+  rule  Util.string_append_list(["\"",str,"\""]) => str'
+        -----------------------------
+        string_to_string str => str'
+end
 
 relation dump_variable_attributes_str: VariableAttributes option => string =
  
-  rule  Dump.get_option_str(fixed,Dump.print_bool_str) => fixed_str &
-        Util.flatten_option(quant,"NONE") => quantity &
-        Util.flatten_option(unit,"NONE") => unit_str &
-        Util.flatten_option(displayUnit,"NONE") => displayUnit_str &
-        dump_stateSelect_str(stateSel) => stateSel_str &
-        Dump.get_option_str(min,real_string) => min_str &
-        Dump.get_option_str(max,real_string) => max_str &
-        Dump.get_option_str(Initial,real_string) => Initial_str &
-
-         Util.string_append_list([" (quantity: ",quantity, 
-                                " unit: ", unit_str,
-                                " displayUnit: ", displayUnit_str,
-                                " min: ", min_str,
-                                " max: ", max_str,
-                                " Initial: ", Initial_str,
-                                " fixed: ", fixed_str,
-                                " stateSel: ", stateSel_str,") "]) => res
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(unit,string_to_string,"unit = ") => unit_str &
+        Dump.get_option_with_concat_str(displayUnit,string_to_string,"displayUnit = ") => displayUnit_str &
+        Dump.get_option_with_concat_str(stateSel,dump_stateSelect_str,"StateSelect = ") => stateSel_str &
+        
+        Dump.get_option_with_concat_str(min,real_string,"min = ") => min_str &
+        Dump.get_option_with_concat_str(max,real_string,"max = ") => max_str &
+        Dump.get_option_with_concat_str(Initial,real_string,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                        "fixed = ") => fixed_str &
+        
+        Util.string_delimit_list_no_empty([quantity, 
+                                  unit_str,
+                                  displayUnit_str,
+                                  min_str,
+                                  max_str,
+                                  Initial_str,
+                                  fixed_str,
+                                  stateSel_str],", ") => res' &
+ 
+       Util.string_append_list(["(",res',")"]) => res
         --------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_REAL(quant,
                                                         unit,
@@ -835,42 +851,70 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
                                                         nominal,
                                                         stateSel))) =>  res 
         
-  rule  Dump.get_option_str(fixed,Dump.print_bool_str) => fixed_str &
-        Util.flatten_option(quant,"NONE") => quantity &
-        Dump.get_option_str(min,int_string) => min_str &
-        Dump.get_option_str(max,int_string) => max_str &
-        Dump.get_option_str(Initial,int_string) => Initial_str &
-        Util.string_append_list(["  (quantity: ",quantity,
-                                 " min: ", min_str,
-                                 " max: ", max_str,
-                                 " Initial: ", Initial_str,
-                                 " fixed: ", fixed_str,") "]) => res 
-        -----------------------------------------
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+ 
+        Dump.get_option_with_concat_str(min,int_string,"min = ") => min_str &
+        Dump.get_option_with_concat_str(max,int_string,"max = ") => max_str &
+        Dump.get_option_with_concat_str(Initial,int_string,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                        "fixed = ") => fixed_str &
+
+        Util.string_delimit_list_no_empty([quantity,
+                                  min_str,
+                                  max_str,
+                                  Initial_str,
+                                  fixed_str],", ") => res' & 
+        Util.string_append_list(["(",res',")"]) => res
+         -----------------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_INT(quant, 
                                                   (min , max),
                                                   Initial,
                                                   fixed))) => res
         
-  rule   Dump.get_option_str(fixed,Dump.print_bool_str) => fixed_str &
-        Util.flatten_option(quant,"NONE") => quantity &
-        Dump.get_option_str(Initial,Dump.print_bool_str) => Initial_str &
-        Util.string_append_list(["  (quantity: ",quantity,
-                                 " Initial: ", Initial_str,
-                                 " fixed: ", fixed_str,") "]) => res 
-        -----------------------------------------
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(Initial,Dump.print_bool_str,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                         "fixed = ") => fixed_str &
+        Util.string_delimit_list_no_empty([quantity,
+                                 Initial_str,
+                                 fixed_str],", ") => res' &
+      Util.string_append_list(["(",res',")"]) => res
+         -----------------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_BOOL(quant,
                                                    Initial,
                                                    fixed))) => res
 
-  rule  Util.flatten_option(quant,"NONE") => quantity &
-        Util.flatten_option(Initial,"NONE") => Initial_str &
-        Util.string_append_list(["  (quantity: ",quantity,
-                                 " Initial: ", Initial_str,") "]) => res 
-        -----------------------------------------
+  rule Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(Initial,string_to_string,"start = ") => Initial_str &
+        Util.string_delimit_list_no_empty([quantity,
+                                 Initial_str],", ") => res' & 
+      Util.string_append_list(["(",res',")"]) => res
+         -----------------------------------------
         dump_variable_attributes_str(SOME(VAR_ATTR_STRING(quant,
                                                           Initial))) => res
 
-  axiom dump_variable_attributes_str(NONE) => " (NONE) "
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(min,Exp.print_exp_str,"min = ") => min_str &
+        Dump.get_option_with_concat_str(max,Exp.print_exp_str,"max = ") => max_str &
+        Dump.get_option_with_concat_str(Initial,Exp.print_exp_str,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                        "fixed = ") => fixed_str &
+        
+        Util.string_delimit_list_no_empty([quantity, 
+                                  min_str,
+                                  max_str,
+                                  Initial_str,
+                                  fixed_str],", ") => res' &
+      Util.string_append_list(["(",res',")"]) => res
+         -----------------------------------------
+        dump_variable_attributes_str(SOME(VAR_ATTR_ENUMERATION(quant,
+                                                          (min,max),Initial,fixed))) 
+          => res
+
+  axiom dump_variable_attributes_str(NONE) => ""
 
   axiom dump_variable_attributes_str(_) => "unknown VariableAttributes"
 
@@ -929,7 +973,9 @@ relation dump_var : Element => () =
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
-	dump_start_value start &
+	(* 	dump_start_value start & *)
+    dump_variable_attributes dae_var_attr &
+
 (*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, ", ") => classstr &
 	Print.print_buf " \"{" &
@@ -941,7 +987,9 @@ relation dump_var : Element => () =
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & 
-	dump_start_value start &	
+	(* 	dump_start_value start & *)
+    dump_variable_attributes dae_var_attr &
+	
 	Print.print_buf " = " &
 	Exp.print_exp e & Print.print_buf ";\n"
 	--------------------------------------
@@ -957,7 +1005,8 @@ relation dump_var_str : Element => string =
 	dump_direction_str dir => s2 &
 	dump_type_str typ => s3 &	
 	Exp.print_component_ref_str id => s4 & 
-	dump_start_value_str start => s5 &
+(* 	dump_start_value_str start => s5 & *)
+    dump_variable_attributes_str dae_var_attr => s5 &
 (*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
 	Util.string_append_list([s1,s2,s3,s4,s5,";\n"]) => str
@@ -969,7 +1018,8 @@ relation dump_var_str : Element => string =
 	dump_type_str typ => s3 &	
 	Exp.print_component_ref_str id => s4 & 
 	Exp.print_exp_str e => s5 & 
-	dump_start_value_str start => s6 &
+(* 	dump_start_value_str start => s6 & *)
+    dump_variable_attributes_str dae_var_attr => s6 &
 (*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
 	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6,";\n"] )
@@ -1566,7 +1616,7 @@ relation dump_debug_element : Element => () =
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr & Print.print_buf ", " &
 	dump_kind vk &
-        dump_variable_attributes_str dae_var_attr => tmp_str &
+        dump_variable_attributes_str(dae_var_attr) => tmp_str &
         Print.print_buf tmp_str &
 	Print.print_buf ")"
 	-------------
@@ -1575,7 +1625,7 @@ relation dump_debug_element : Element => () =
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr & Print.print_buf ", " &
 	dump_kind vk & Print.print_buf ", " &
-        dump_variable_attributes_str dae_var_attr => tmp_str &
+        dump_variable_attributes_str(dae_var_attr) => tmp_str &
 	Exp.print_exp e &
         Print.print_buf tmp_str &
 	Print.print_buf ")"
