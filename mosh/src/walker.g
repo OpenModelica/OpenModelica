@@ -520,22 +520,7 @@ algorithm returns [value val]
                             }
                             else
                             {
-                                if (check_type(val,lhs))
-                                {
-                                    cout << "Overwriting value" << endl;
-                                    if (val.is_real()) lhs->set_value(val.get_real());
-                                    else if (val.is_integer()) lhs->set_value(val.get_integer());
-                                    else if (val.is_boolean()) lhs->set_value(val.get_boolean());
-                                    else if (val.is_string()) lhs->set_value(val.get_string());
-                                    else
-                                    {
-                                        cout << "Setting non supported type" << endl;
-                                    }
-                                }
-                                else
-                                {
-                                    cout << "Non compatible types" << endl;
-                                }
+                                *lhs = val;
                             }
                         }
                     |	(expression_list component_reference function_call)
