@@ -139,7 +139,7 @@ RML_BEGIN_LABEL(System__strtok)
 {
   char *s;
   char *delimit = RML_STRINGDATA(rmlA1);
-  char *str = RML_STRINGDATA(rmlA0);
+  char *str = strdup(RML_STRINGDATA(rmlA0));
 
   void * res = (void*)mk_nil();
   s=strtok(str,delimit);

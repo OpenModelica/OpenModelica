@@ -153,6 +153,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	  => (newval,st)
 
   rule	(* Call externally implemented functions. *) 
+	Static.is_function_in_cflist(cflist,func) => true &
 	ceval_list(env,expl,true,st) => vallst &
 	ModUtil.path_string2(func,"_") => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
@@ -161,7 +162,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	System.execute_function(funcstr) &
 	System.read_values_from_file(outfilename) => newval
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(_)) => (newval,st)
+	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => (newval,st)
 
 	(** Strings **)
 	
@@ -269,6 +270,21 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-------------------------
 	ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh),impl,st) 
 	  => (Values.REAL(sum),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.REAL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.REAL(rhv),st'') &
+	real_div(lhv, rhv) => div
+	-------------------------
+	ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st) 
+	  => (Values.REAL(div),st'')
+
+  rule	ceval (env,lh,impl,st) => (Values.REAL(lhv),st') &
+	ceval (env,rh,impl,st') => (Values.REAL(rhv),st'') &
+	not real_div(lhv,rhv) => _ &
+	Print.print_buf "#Error, division by zero.\n" 
+	-------------------------
+	ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st) 
+	  => fail
 
   rule	ceval (env,lh,impl,st) => (Values.INTEGER(lhv),st') &
 	ceval (env,rh,impl,st') => (Values.INTEGER(rhv),st'') &
@@ -421,9 +437,18 @@ end
 relation ceval_function: (Env.Env, Absyn.Path, Values.Value list) 
 	  => Values.Value =
 
-  rule	
+  rule	(* For record constructors *)
+	Lookup.lookup_record_constructor_class(env,funcname) => (_,_) &
+	Lookup.lookup_class(env,funcname,false) => (c,env') &
+	SCode.component_names(c) => compnames &
+	Types.values_to_mods(vallst,compnames) => mod &
+	Inst.inst_class(env',mod,Prefix.NOPRE,[],c,[],false,Inst.TOP_CALL)
+	  => (dae,_,_,_,_) &
+	DAE.dump_elements dae &
+	Print.get_string => s & print s & print "\n" &
+	DAE.dae_to_record_value(dae) => value  
 	----------------------
-	ceval_function(env,funcname,vallst) => fail
+	ceval_function(env,funcname,vallst) => value
 
 end
 
@@ -875,9 +900,11 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 
   rule	System.read_file(str) => scriptstr &
 	Parser.parsestringexp(scriptstr) => istmts &
-	Interactive.evaluate(istmts,st) => (res,newst)
+	Interactive.evaluate(istmts,st,true) => (res,newst) &
+	Util.string_append_list([res,"\ntrue"]) => res'
 	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(res'),newst)
 
 axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st) 
 	  => (Values.BOOL(false),st)

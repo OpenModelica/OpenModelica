@@ -48,6 +48,7 @@ with "codegen.rml"
 with "socket.rml"
 with "print.rml"
 with "corba.rml"
+with "system.rml"
 
 (** relation: server_loop
  **
@@ -164,7 +165,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 
   rule	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => exp &
-	Interactive.evaluate(exp,isymb) => (resultstr,newisymb) &
+	Interactive.evaluate(exp,isymb,false) => (resultstr,newisymb) &
 	Print.clear_buf()  &
 	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
 	Debug.fcall ("dump", Dump.dump_istmt, exp)
@@ -176,6 +177,23 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	handle_command (_,isymb) => (true,"Syntax Error\n", isymb)
 end
 
+relation is_modelica_file: string => () =
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mo"
+	------------
+	is_modelica_file(filename)
+end
+
+relation is_modelica_script_file: string => () =
+
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mos"
+	------------
+	is_modelica_script_file(filename)
+end
+
 (** relation: translate_file
  **
  ** This relation invokes the translator on a source file.  The
@@ -185,7 +203,7 @@ end
 relation translate_file : string list => () =
 
   rule	(*Print.print_buf "Parsing\n" &
-*)	
+*)	is_modelica_file(f) &
 	Parser.parse f => p
 
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
@@ -213,6 +231,14 @@ relation translate_file : string list => () =
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	& ModUtil.string_prefix_params d => d'
 	& Debug.fcall ("codegen", Codegen.generate_functions, d') 
+	------------------------------
+	translate_file [f]
+
+  rule	(*Print.print_buf "Parsing\n" &
+*)	is_modelica_script_file(f) &
+	Parser.parseexp f => stmts &
+	Interactive.evaluate(stmts,Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),true) => (res,newst) &
+	print res
 	------------------------------
 	translate_file [f]
 	

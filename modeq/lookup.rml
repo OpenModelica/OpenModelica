@@ -185,6 +185,10 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	----------------------------------------------------------
 	lookup_class(env, path, _) => (c, env')
 
+  rule	lookup_class_in_env(env,path,false) => (c, env') 
+	--------------------------------------
+	lookup_class(env, path as Absyn.IDENT(name),msgflag) => (c, env')
+
 
   rule	(* If we search for A1.A2....An.x while in scope A1.A2...An
 	 , just search for x. Must do like this to ensure finite recursion *)
@@ -758,7 +762,6 @@ relation lookup_functions_in_frame: (Env.HashTable, (*Classes and vars*)
 	lookup_functions_in_frame(ht,httypes,env,id) => fail
 
   rule	Env.hash_get(ht, id, Env.myhash) => Env.CLASS(cdef as SCode.CLASS(n,_,_,SCode.R_RECORD,_),cenv) &
-	Print.print_buf "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_varlst (cdef,env) => varlst &
 	Inst.package_prefix(cenv,Absyn.IDENT(n)) => fpath &
 	Types.make_function_type(fpath,varlst) => ftype

@@ -168,7 +168,9 @@ returns multiple arguments. *)
   relation ndims : Type => int
   relation get_dimension_sizes: Type => int list
   relation type_of_value: (Values.Value) => Type
-  
+
+  relation values_to_mods: (Values.Value list,string list) => Mod
+	  
   relation is_prop_const : Properties => bool
   relation get_prop_type : Properties => Type
   relation is_prop_array : Properties => bool
@@ -251,6 +253,27 @@ relation get_dimension_sizes: Type => int list =
 	get_dimension_sizes((T_ARRAY(DIM(NONE),tp),_)) => -1::res *)
 
   axiom	get_dimension_sizes((_,_)) => []
+
+end
+
+(* This relation takes a list of values and convert into a Modification.
+ Used for record construction evaluation. PersonRecord("name",45) has a value list 
+ { "name",45 } that needs to be converted into a modifier for the record class
+ PersonRecord ("name,45)
+*)
+relation values_to_mods: (Values.Value list,Ident list) => Mod =
+
+  axiom	values_to_mods([],_) => MOD(false,[],NONE)
+
+  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+	---------------------------------------
+	values_to_mods(Values.INTEGER(i)::rest,id::ids) 
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.ICONST(i),PROP((T_INTEGER([]),NONE),false)))))::res,NONE)
+
+  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+	---------------------------------------
+	values_to_mods(Values.REAL(r)::rest,id::ids) 
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.RCONST(r),PROP((T_REAL([]),NONE),false)))))::res,NONE)
 
 end
 

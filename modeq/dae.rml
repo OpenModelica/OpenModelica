@@ -38,6 +38,7 @@ module DAE:
   with "exp.rml"
   with "algorithm.rml"
   with "types.rml"
+  with "values.rml" 
 
   type Ident = string
   type InstDims = Exp.Subscript list
@@ -125,6 +126,7 @@ module DAE:
   relation get_variable_bindings_str: Element list => string
   relation to_flow: bool => Flow
   relation get_flow_variables: Element list => Exp.ComponentRef list
+  relation dae_to_record_value: Element list => Values.Value
 end
 
 (** - Relations
@@ -140,6 +142,7 @@ with "graphviz.rml"
 with "dump.rml"
 with "print.rml"
 with "util.rml"
+with "ceval.rml"
 
 (** relation: dump
  **
@@ -1553,4 +1556,25 @@ relation	get_flow_variables_2: (Exp.ComponentRef list ,Ident)
 	Exp.join_crefs(Exp.CREF_IDENT(id,[]),cr) => cr' 
 	----------------------------
 	get_flow_variables_2(cr::xs,id) => cr'::res
+end
+
+relation dae_to_record_value: (Element list) => Values.Value =
+  axiom	dae_to_record_value([]) => Values.RECORD([],[])
+
+(*  rule	Ceval.ceval([],e,true,NONE)  => (value,_) &
+	dae_to_record_value(rest) => Values.RECORD(vals,names)
+	--------------------------------------------------
+	dae_to_record_value(VAR(Exp.CREF_IDENT(id,_),_,_,_,SOME(e),_,_,_)::rest) 
+	  => Values.RECORD(value::vals,id::names)*)
+
+rule	Ceval.ceval([],rhs,false,NONE)  => (value,_) &
+	dae_to_record_value(rest) => Values.RECORD(vals,names)
+	--------------------------------------------------
+	dae_to_record_value(EQUATION(Exp.CREF(Exp.CREF_IDENT(id,_),_),rhs)::rest) 
+	  => Values.RECORD(value::vals,id::names)
+
+  rule	dae_to_record_value(rest) => res
+	--------------------------------------------------
+	dae_to_record_value(_::rest) => res
+
 end

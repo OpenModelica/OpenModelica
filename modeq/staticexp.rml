@@ -95,6 +95,8 @@ module Static :
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
   relation value_exp : Values.Value => Exp.Exp
   relation component_ref_to_path: Exp.ComponentRef => Absyn.Path 
+relation is_function_in_cflist : ((Absyn.Path * Types.Type) list, Absyn.Path) 
+	  => bool
 end
 
 

@@ -247,5 +247,58 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
 }
 RML_END_LABEL
 
+
+RML_BEGIN_LABEL(Parser__parseexp)
+{
+  char * filename = RML_STRINGDATA(rmlA0);
+  bool debug = check_debug_flag("parsedump");
+  try 
+    {
+      std::ifstream stream(filename);
+
+      modelica_lexer lex(stream);
+      modelica_expression_parser parse(lex);
+      ANTLR_USE_NAMESPACE(antlr)ASTFactory factory;
+      parse.initializeASTFactory(factory);
+      parse.setASTFactory(&factory);
+      parse.interactiveStmts();
+      antlr::RefAST t = parse.getAST();
+      
+      if (t)
+	{
+	  if (debug)
+	    {
+	      //std::cout << "parsedump not implemented for interactiveStmt yet"<<endl;
+	      //parse_tree_dumper dumper(std::cout);
+	      //dumper.dump(t);
+	    }
+
+	  modelica_tree_parser build;
+	  build.initializeASTFactory(factory);
+	  build.setASTFactory(&factory);
+	  void* ast = build.interactive_stmt(t);
+	  
+	  if (debug)
+	    {
+	  std::cout << "Build done\n";
+	    }
+
+	  rmlA0 = ast ? ast : mk_nil();
+	  
+	  RML_TAILCALLK(rmlSC); 
+	}    
+    } 
+  catch (std::exception &e)
+    {
+      std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
+    }
+  catch (...)
+    {
+      //std::cerr << "Error while parsing expression\n";
+    }
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
 } // extern "C"
 

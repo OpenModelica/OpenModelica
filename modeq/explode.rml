@@ -158,6 +158,7 @@ module SCode :
   relation print_restr: Restriction => ()
   relation variability_string: Variability => string
   relation count_parts: Class => int
+  relation component_names: Class => string list	  
 end
 
 
@@ -840,4 +841,20 @@ relation count_parts: Class => int =
 
   axiom	count_parts _ => 0
 
+end
+
+relation component_names: Class => string list =
+
+  rule	component_names_from_elts(elts) => res
+	--------------------------
+	component_names(CLASS(_,_,_,_,PARTS(elts,_,_,_,_,_))) => res
+  axiom	component_names(_) => []
+end
+relation component_names_from_elts:(Element list) => string list =
+
+  axiom	component_names_from_elts([]) => []
+
+  rule	component_names_from_elts(rest) => res 
+	--------------------------------------
+	component_names_from_elts(COMPONENT(id,_,_,_,_,_,_)::rest) => id::res
 end

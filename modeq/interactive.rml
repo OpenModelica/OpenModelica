@@ -49,7 +49,8 @@ module Interactive:
 						   InteractiveVariable list * (*List of variables with values*)  
   						   (Absyn.Path * Types.Type) list (* List of compiled functions, F.Q name + type*)
 
-  relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) 
+  relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
+	  => (string,InteractiveSymbolTable) 
 
   relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program
   relation update_scope: (Absyn.Program, InteractiveVariable list) => InteractiveVariable list
@@ -103,20 +104,32 @@ val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot
  ** This relation evaluates expressions feeded interactively to the compiler.
 **)
 
-relation evaluate: (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) =
+relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
+	  => (string,InteractiveSymbolTable) =
 
   rule	evaluate2(ISTMTS([x],true),st) => (res,newst)
 	----------------------------
-	evaluate (ISTMTS([x],true),st) => ("",newst)
+	evaluate (ISTMTS([x],true),st,false) => ("",newst)
+
+  rule	(* Verbose, semicolon off *)
+	evaluate2(ISTMTS([x],false),st) => (res,newst)
+	----------------------------
+	evaluate (ISTMTS([x],true),st,true) => (res,newst)
 
   rule	evaluate2(ISTMTS([x],false),st) => (res,newst)
 	----------------------------
-	evaluate (ISTMTS([x],false),st) => (res,newst)
+	evaluate (ISTMTS([x],false),st,verbose) => (res,newst)
 
   rule	evaluate2(ISTMTS([x],sc),st) => (res,newst) &
-	evaluate(ISTMTS(xs,sc),newst) => (res,newst') 
+	evaluate(ISTMTS(xs,sc),newst,false) => (res,newst') 
 	------------------------------------------
-	evaluate (ISTMTS(x::xs,sc),st) => (res,newst')
+	evaluate (ISTMTS(x::xs,sc),st,false) => (res,newst')
+
+  rule	evaluate2(ISTMTS([x],sc),st) => (res,newst) &
+	evaluate(ISTMTS(xs,sc),newst,true) => (res2,newst') &
+	Util.string_append_list([res,res2]) => res'
+	------------------------------------------
+	evaluate (ISTMTS(x::xs,sc),st,true) => (res',newst')
 end
 
 relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) =
@@ -149,15 +162,24 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	(string,InteractiveSymbolTable) =
 	
   rule	build_env_from_symboltable(st) => env &	
-	print "built env\n" &
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	print "elabed expr\n" &
 	Ceval.ceval (env,sexp,true,SOME(st')) => (value,SOME(st'')) &
-	print "evaluated expr\n" &
 	Values.val_string value =>  str
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
+
+  rule	build_env_from_symboltable(st) => env &	
+	not Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
+	Print.print_buf "# Error determing type of expression." 
+	-------------------------------
+	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => fail
 	
+  rule	build_env_from_symboltable(st) => env &	
+	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
+	not Ceval.ceval (env,sexp,true,SOME(st')) => (_,_) &
+	Print.print_buf "# Constant evaluating of expression failed.\n" 
+	-------------------------------
+	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => fail
 
   rule	build_env_from_symboltable(st) => env &	
 	Static.elab_exp(env,cond,true,SOME(st)) 
