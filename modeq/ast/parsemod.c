@@ -63,9 +63,9 @@ RML_BEGIN_LABEL(Parser__parse)
   }
   
   ANTLR(model_specification(&root), stdin);	/* start first rule */
-  fprintf(stderr, "root = %p\n", root);
-  fprintf(stderr, "\n");
-  zzpre_ast(root, &print_token, &print_lpar, &print_rpar);
+  /* fprintf(stderr, "root = %p\n", root); */
+  /* fprintf(stderr, "\n"); */
+  /* zzpre_ast(root, &print_token, &print_lpar, &print_rpar); */
   fprintf(stderr, "\n\n");
   
   /* if( !root )

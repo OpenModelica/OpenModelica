@@ -1,16 +1,19 @@
 Noteringar om syntaxen:   -*- outline -*-
 
-* Grammatiken: class_definition
+* Grammar: class_definition
 
- Borde väl vara
+Should be
 
      "=" name [ array_dimensions ] [ class_modification ] )
 
- och inte
+and not
 
      "=" IDENT [ array_dimensions ] [ class_modification ] )
 
-* Redeclare på array-element
+* Redeclare of array elements
+
+This is currently allowed by the grammar, but seems to me to be
+obviously wrong.
 
   class Foo
     Int x;
@@ -24,7 +27,20 @@ Noteringar om syntaxen:   -*- outline -*-
     Bar z(y[5](redeclare Real x));
   end;
 
-* Dubbla modifierare
+Solution: Change the production rule for element_modification
+
+Previously:
+
+      element_modification :
+         [ final ] component_reference modification
+
+New:
+
+      element_modification :
+         [ final ] name modification
+
+
+* Double modifiers
 
 The grammar for components are as follows (only the relevant parts are
 included here):
@@ -77,14 +93,27 @@ II. Change the modification rule to something like
           class_modification [ "=" expression ]
         | "=" expression
 
-I think that the latter is preferrable
+I think that the latter is preferrable, and after reading design
+meeting minutes, I am sure of it.
 
 * final
 
 Appendix B.5 contains a note that says that a class declaration can be
 prefixed with "final", but that is not described by the grammar.
 
-Suggestion: Change the production rule for class_definition to
+Suggestion: Change the production rule for class_definition.
+
+Previously:
+
+      class_definition :
+            [ partial ] 
+         ( class | model | record | block | connector | type |
+           package | function ) 
+         IDENT comment
+         ( composition end IDENT | 
+           "=" IDENT [ array_dimensions ] [ class_modification ] )
+
+New:
 
       class_definition :
             [ partial | final ] 
@@ -99,7 +128,8 @@ Suggestion: Change the production rule for class_definition to
 Connect statements in the equation part of a class definition can not
 be treated as a function call as the grammar implies. Therefore it
 would be more reasonable to make connect() a special construct which
-takes two component_references.
+takes two component_references, or even a more restricted for of
+component_reference, as the can only be one dot in them (ref. Dag).
 
   equation :
         ( "connect" "(" component_reference "," component_reference ")"
@@ -111,5 +141,5 @@ takes two component_references.
 
 * File name suffix
 
-The file name suffix should be standardized. I have seen both .mdc and
-.mo. I vote for .mdc.
+The file name suffix should be standardized. I have seen both .mdc,
+.mod and .mo. I vote for .mdc.

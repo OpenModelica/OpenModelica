@@ -2,9 +2,49 @@ Semantik-noteringar	-*- outline -*-
 
 * redeclare extends
 
-Vad betyder "redeclare extends ..."
+What does "redeclare extends ..." mean? It is not explained in the
+report. I guess it is provided as a means to alter modifications in
+extends claueses, but I can't see the need.
 
-* Typer i ekvationer
+	class A
+	  Real x;
+	end A;
+
+	class B
+	  extends A(x=17);
+	end B;
+
+	class C
+	  B b(redeclare extends A(x=100));
+	end C;
+
+The class C could just as easy be written as
+
+	class C
+	  B b(x=100);
+	end C;
+
+The only time I can find any difference between these two forms is
+when the programmer forgot about the variable shadowing rules.
+
+	class A
+	  Real x;
+	end A;
+
+	class B
+	  Integer x = 1;
+	  extends A;
+	end B;
+
+	class C
+	  B b1(redeclare extends A(x=100));
+	  B b2(x = 100);
+	end C;
+
+In this case b1.x will be 1 and b2.x will be 100, but the modification
+of b1 is lost, so I can't see the need for it.
+
+* Types in equations
 
 Vilka variabler får man ha i ekvationer? Bara Real(Type) och
 Integer(type)?
@@ -15,13 +55,14 @@ Hur hanteras strängar i ekvationer.
 
 Exakt hur fungerar connect()?
 
-Sista raden i connect-semantiken (B.2) måste vara fel.
+Beskrivningen av connect-semantiken (B.2) måste vara fel.
 
 * Kvalificerade identifierare
 
-Vilka olika saker kan foo vara i "foo.bar"?
+What can `foo' be in "foo.bar"? Different things if looking for a
+class definition or a variable?
 
-** En variabel (eller konstant) i scopet
+** A variable (or constant) in scope
 
     module Resistor
       Pin p,n;
@@ -31,9 +72,9 @@ Vilka olika saker kan foo vara i "foo.bar"?
       (p.v - n.v) = p.i * r;
     end Resistor;
 
-** En klass i scopet
+** A class in scope
 
-Klassen kommer ofta att vara ett package.
+The class will often (always?) be a package.
 
     package Foo
       constant Real x = 17.0;
@@ -43,7 +84,7 @@ Klassen kommer ofta att vara ett package.
       Real y = Foo.x;
     end Bar;
 
-Men t.ex. i specialiseringar kan det vara vanligt med andra klasser.
+But e.g. in modifications it may be common with other classes
 
     model Foo
 
@@ -58,29 +99,27 @@ Men t.ex. i specialiseringar kan det vara vanligt med andra klasser.
       extends Foo(Bar.x = 4711.0);
     end Baz;
 
-** Ett package i en fil "foo.mdc"
+** A package in a file "foo.mdc"
 
     module Foo
       Modelica.SIunit.Area a;
     end Foo;
 
-* Hur funkar = i deklarationer
+* How does = work in declarations
 
-Om man deklarerar
+Is
 
     model M
       Foo x = y;
     end M;
 
-Är det samma sak som:
+the same as
 
     model M
       Foo x;
     equation
       x = y;
     end M;
-
-eller är det bara startvärdet på x som påverkas?
 
 * Allt är ekvationer
 
@@ -134,31 +173,7 @@ Hilding tyckte visst att "x = 17" skulle ersättas av "x = 15" i N.
       M a(x=15);
     end N;
 
-* EQUALMOD
-
-    Type var = val;
-
-Jag kommer på två olika fall.
-
-** Type är en komplex typ eller en inbyggd typ
-
-Skriv om till följande:
-
-      Type var;
-    equation
-      var = val;
-
-** Type är en specialtyp
-
-Om Type är Real, Integer, String eller Boolean, eller ett derivat av
-dem skrivs det om som om det stod:
-
-    Type var(value = val);
-
-Frågan är hur man ser om det är ett derivat. En lösning är ju att
-alltid göra så här om det finns en variabel "value", men det är nog
-ett dåligt sätt. Man skulle också kunna ha en "special"-flagga i
-klassen som sedan ärvs.
+More precise rules?
 
 * Conflicting modifications
 
@@ -192,6 +207,8 @@ than an implementation hassle.
 	  b = a;
 	end;
 
+On reading this again I can't remember what the problem was...
+
 * What can you modify?
 
 Both variables and class declarations?
@@ -202,8 +219,8 @@ If you write
 
 	connect(a[<expression>],x)
 
-does <expression> have to be a constant expression? Otherwise it seems
-a little hard to generate connection sets.
+does <expression> have to be a constant (integer) expression?
+Otherwise it seems a little hard to generate connection sets.
 
 * Inconsistencies
 
@@ -214,3 +231,50 @@ a little hard to generate connection sets.
 Can the types of the predefined types Real etc. really be described in
 Modelica without breaking the restrictions of the 'type' class form?
 Not to mention the 'value' mess.
+
+* Protected elements
+
+Should inherited protected elements be accessible to the new class?
+
+	class A
+	protected
+	  Real x;
+	end A;
+
+	class B
+	  extends A;
+	  Real y = x + 1;
+	end B;
+
+* Types of expressions
+
+Nothing is said in the report about types of expressions. On reading
+the design minutes I at least found out that `/' on two integer should
+convert them to reals and do a real division.
+
+More could be said about types. The grammar doesn't even differentiate
+between real and integer literals.
+
+* Arrays
+
+Arrays are indexed from 1 and up. This is not mentioned in the
+report. There is hardly any mention of how many dimensions a matrix
+can have. And what the start-step-stop syntax means. For us who do not
+know Matlab by heart, this need a explanation in the report.
+
+Accessing componentes of an array of complex objects seems to be
+possible.
+
+	Record R
+	  Real x;
+	  ...
+	end R
+
+	...
+	  R r1[17];
+	  R r2[17]
+	equation
+	  r2.x = r2.x;
+	...
+
+This is not explained either, as far as I can tell.
