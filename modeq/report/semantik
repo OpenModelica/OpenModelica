@@ -174,3 +174,12 @@ than an implementation hassle.
 * What can you modify?
 
 Both variables and class declarations?
+
+* connect and array subscripts
+
+If you write
+
+	connect(a[<expression>],x)
+
+does <expression> have to be a constant expression? Otherwise it seems
+a little hard to generate connection sets.
