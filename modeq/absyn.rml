@@ -67,7 +67,10 @@ module Absyn:
 				  * Modification option
 
   datatype Equation = EQ_EXPR of Exp	     (* more later? *)
-		    | EQ_COND (* FIXME *)
+		    | EQ_IF of Exp
+			     * Equation list	     (* true branch *)  
+			     * (Exp * Equation list) list (* elseif branches *)
+			     * Equation list	     (* else branch *)
 		    | EQ_EQUALS of Exp * Exp
 		    | EQ_CONNECT of ComponentRef * ComponentRef
 		    | EQ_FOR of Ident * Exp * Equation list

@@ -530,14 +530,30 @@ algorithm :
   	;
 
 conditional_equation_e :
-	i:IF^ expression THEN!
-	el:equation_list
-	( ELSEIF! expression THEN!
-	  el1:equation_list )*
+	<< void *tbranch, *ebranch, *fbranch;
+	   AST *elseif = NULL; >>
+	IF^ c:expression THEN!
+	el:equation_list << tbranch = sibling_list(#el); >>
+
+	( ei:equation_elseif
+	  << if (elseif == NULL) elseif = #ei; >> )*
+
+	/* Collect the elseif branches */
+	<< if (elseif == NULL)
+     	     ebranch = mk_nil();
+	   else
+	     ebranch = sibling_list(elseif); >>
+
 	{ ELSE!
-	  el2:equation_list }
+	  el2:equation_list << fbranch = sibling_list(#el2); >> }
 	END! IF!
-	<< unimpl("conditional_equation_e"); >>
+	<< #0->rml = Absyn__EQ_5fIF(#c->rml,tbranch,ebranch,fbranch); >>
+	;
+
+equation_elseif :
+	  ELSEIF^ c:expression THEN!
+	  el:equation_list
+	  << #0->rml = mk_box2(0,#c->rml,sibling_list(#el)); >>
 	;
 
 conditional_equation_a :
