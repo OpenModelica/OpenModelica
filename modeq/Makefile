@@ -92,7 +92,7 @@ report:
 depend:
 	$(RM) .dep
 	for f in $(SRCRML); do \
-	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.h/p' < $$f | grep -v parse` >> .dep ; \
+	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.rml/p' < $$f | egrep -v 'nothing'` >> .dep ; \
 	done
 	mv Makefile Makefile.save
 	sed -n -e "1,/^## dependencies/p" < Makefile.save > Makefile
