@@ -7,6 +7,10 @@
 #include "read_write.h"
 #include "../values.h"
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 255
+#endif
+
 char * cc="/usr/bin/gcc";
 char * cflags="-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm";
 
