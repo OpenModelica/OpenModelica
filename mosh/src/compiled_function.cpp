@@ -98,21 +98,20 @@ value compiled_function::do_apply(value args)
     }
 
   write_input_file(args,"mosh_in.dat");
-
-  std::string execute_command = "rm -f result.dat;" 
+  std::string execute_command = "rm -f result.dat;./" 
     + m_filename+" mosh_in.dat"+" result.dat";
   
   if (system(execute_command.c_str())==-1)
     {
       cout << "Failed to execute file" << endl;
-      system("rm -f result.dat mosh_in.dat");
+       system("rm -f result.dat mosh_in.dat");
       return ret_val;
     }
   
   // Read output file
   ret_val = read_result_file("result.dat");
 
-  system("rm -f result.dat mosh_in.dat");
+   system("rm -f result.dat mosh_in.dat");
   
   // Return value
   return ret_val;
