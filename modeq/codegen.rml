@@ -1742,8 +1742,11 @@ relation dim_string : Exp.Subscript => string =
   rule	int_string i => str
 	---------------------
 	dim_string Exp.INDEX(Exp.ICONST(i)) => str
-
-  axiom	dim_string _ => ":"
+	
+  rule	Exp.print_subscript_str e => str &
+	print "Exp in dim_string: " & print str & print "\n" 
+	-------------------
+	dim_string e => ":"
 
 end
 relation is_var_q : DAE.Element => () =

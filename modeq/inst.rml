@@ -1256,7 +1256,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "mod equation done") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-	elab_arraydim(env2',ad,eq,impl,NONE) => dims &
+	elab_arraydim(env2',owncref,ad,eq,impl,NONE) => dims &
 	Debug.fprintln ("insttr", "arraydim elabed") &
 	(** Instantiate the component *)	
 	inst_var(cenv, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
@@ -1652,7 +1652,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
+	elab_arraydim(env2,cref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
 	inst_var(cenv, mod', Prefix.NOPRE, [], n, cl, attr,
@@ -1707,7 +1707,8 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
-	elab_arraydim(env2,ad,eq,impl,NONE) => dims &
+	let owncref = Absyn.CREF_IDENT(n,[]) &
+	elab_arraydim(env2,owncref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
 	inst_var(cenv, mod', Prefix.NOPRE, [], n, cl, attr,
@@ -1849,21 +1850,21 @@ end
  ** check that that the dimension sizes are compatible and complete.
  **)
 
-relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,Interactive.InteractiveSymbolTable option)
+relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, Mod.EqMod option, bool,Interactive.InteractiveSymbolTable option)
 	  => DimExp list =
 
-  rule	elab_arraydim_decl(env,ad,impl,cf) => dim &
+  rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim &
 	complete_arraydim(dim) => dim'
 	------------------------------
-	elab_arraydim(env,ad,NONE,impl,cf) => dim'
+	elab_arraydim(env,cref,ad,NONE,impl,cf) => dim'
 
-  rule	elab_arraydim_decl(env,ad,impl,cf) => dim1 &
+  rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => dim3
+	elab_arraydim(env,cref,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => dim3
 
-  rule	elab_arraydim_decl(env,ad,impl,cf) => dim1 &
+  rule	elab_arraydim_decl(env,cref,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	not compatible_arraydim(dim1,dim2) => dim3 &
 	Print.print_buf "# Array dimension mismatch\n" &
@@ -1872,12 +1873,12 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,Intera
 	Print.print_buf "    expected array dimensions [" &
 	print_dim dim1 & Print.print_buf "]\n"
 	---------------------------------
-	elab_arraydim(env,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
+	elab_arraydim(env,cref,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
 
 
   rule	Debug.fprint("failtrace", "- elab_arraydim failed\n")
 	-------------------------------------
-	elab_arraydim(_,_,_,_,_) => fail
+	elab_arraydim(_,_,_,_,_,_) => fail
 
 end
 
@@ -1946,15 +1947,22 @@ end
  ** contain `NONE'.
  **)
 
-relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.InteractiveSymbolTable option)
+relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool, Interactive.InteractiveSymbolTable option)
 	    => (DimExp option) list =
 
-  axiom	elab_arraydim_decl(_,[],_,_) => []
+  axiom	elab_arraydim_decl(_,_,[],_,_) => []
 
   rule	(*Print.print_buf "NOSUB in elab_arraydim_decl\n" & *)
-	elab_arraydim_decl(env,ds,impl,cf) => l 	
+	elab_arraydim_decl(env,cref,ds,impl,cf) => l 	
 	-------------------------------
-	elab_arraydim_decl(env,Absyn.NOSUB::ds,impl,cf) => NONE::l
+	elab_arraydim_decl(env,cref,Absyn.NOSUB::ds,impl,cf) => NONE::l
+
+  rule	(* For functions, this can occur: Real x[:,size(x,1)] ,i.e. referencing 
+	 the variable itself but a different dimension.*)
+	Absyn.cref_equal(cref,cr) => true &
+	elab_arraydim_decl(env,cref,ds,impl,cf) => l 	
+	-------------------------------
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(Absyn.CALL(Absyn.CREF_IDENT("size",_),Absyn.FUNCTIONARGS([Absyn.CREF(cr),_],_)))::ds,impl,cf) => NONE::l
 
   rule	Static.elab_exp(env, d,impl,st)
 	    => (e,Types.PROP(Types.T_INTEGER(_),_),_) &  
@@ -1964,9 +1972,9 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.Intera
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
 	Static.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
- 	elab_arraydim_decl(env,ds,impl,st) => l
+ 	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) => SOME(DIMINT(i))::l
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => SOME(DIMINT(i))::l
 
   rule	Static.elab_exp(env, d,impl,st)
 	    => (e,Types.PROP(Types.T_INTEGER(_),true),_) &  
@@ -1976,14 +1984,14 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.Intera
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
 	Static.ceval(env,e,impl,st) => (Values.INTEGER(i),_) &
- 	elab_arraydim_decl(env,ds,impl,st) => l
+ 	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
 
   rule	Static.elab_exp(env, d,impl,st) => (e,Types.PROP(Types.T_INTEGER(_),false),_) &
-	elab_arraydim_decl(env,ds,impl,st) => l
+	elab_arraydim_decl(env,cref,ds,impl,st) => l
 	-------------------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) 
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) 
 	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l 
 
   rule	Static.elab_exp(env,d,impl,st)
@@ -1992,11 +2000,12 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.Intera
 	Print.print_buf "    expression: " & Exp.print_exp e &
  	Print.print_buf " (" & Types.print_type t & Print.print_buf ")\n"
 	-------------------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) => fail
+	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => fail
 
-  rule	Debug.fprint("failtrace", "- elab_arraydim_decl failed\n")
+  rule	print "elab_arraydim_decl failed\n" &
+	Debug.fprint("failtrace", "- elab_arraydim_decl failed\n")
 	-------------------------------------
-	elab_arraydim_decl(_,_,_,_) => fail     
+	elab_arraydim_decl(_,_,_,_,_) => fail     
 end
 
 (** relation: complete_arraydim
@@ -4245,13 +4254,11 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
 	Types.Var =
 	  
   rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &
-	elab_arraydim(env,dim,NONE,true,NONE) => dimexp &
-	Debug.fprint ("recconst", "elaborated arraydim\n") &
 	Lookup.lookup_class(env,t,true) => (cl,cenv) &
 	Debug.fprint ("recconst", "looked up class\n") &
 	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
-	
-	elab_arraydim(env,dim,NONE,true,NONE) => dimexp &
+	let owncref = Absyn.CREF_IDENT(id,[]) &
+	elab_arraydim(env,owncref,dim,NONE,true,NONE) => dimexp &
 	Debug.fprint ("recconst", "calling inst_var\n") &
 	inst_var(cenv, mod', Prefix.NOPRE, [], id, cl, attr,
 		 dimexp, [], [], true) => (_, _, tp') &

@@ -790,7 +790,8 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	elab_builtin_size (env, [arraycr,ind]) 
 	  => (exp, prop)
 
-  rule	Print.print_buf "#-- elab_builtin_size: Couldn't elaborate size()\n" &
+  rule	print "elab_builtin_size failed\n" &
+	Print.print_buf "#-- elab_builtin_size: Couldn't elaborate size()\n" &
 	Print.print_buf "#-- Wrong args or non-constant dimension\n" 
 	----------------------------------------------------------
 	elab_builtin_size (env,expl) => fail
