@@ -61,7 +61,10 @@ relation exp_elementspec: Absyn.ElementSpec => (Ident*ElementSpec) list =
 	exp_elementspec(Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,re,de)))
 	  => [(n,CLASSDEF(rp,CLASS(n,pa,re,de')))]
 
-  rule	Mod.build(SOME(Absyn.CLASSMOD(args)), false) => mod
+  rule	Mod.build(SOME(Absyn.CLASSMOD(args)), false) => mod &
+
+	Exp.path_string(n) => ns &
+	print "extends " & Mod.dump(mod,ns) & print "\n"
 	---------------------------------------------------
 	exp_elementspec(Absyn.EXTENDS(n,args)) => [("",EXTENDS(n,mod))]
 
