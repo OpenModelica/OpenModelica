@@ -53,9 +53,9 @@ bool MergeSiblings::try_merge(ExecCostQueue & queue)
   double tau_a,tau_b; 
   tau_a = getExecCost(a);
   tau_b = getExecCost(b);
-    cerr << "tau_a + tau_b =" << tau_a + tau_b <<
-      endl;
-    cerr << "(2*m_latency + max(tau_a,tau_b) =" << (2*m_latency + max(tau_a,tau_b)) << endl;
+  //cerr << "tau_a + tau_b =" << tau_a + tau_b <<
+  //   endl;
+  //  cerr << "(2*m_latency + max(tau_a,tau_b) =" << (2*m_latency + max(tau_a,tau_b)) << endl;
   
   if ( tau_a + tau_b < (2*m_latency + max(tau_a,tau_b))&& queueSize > m_nproc) {
     //cerr << "queue size =" << queue.size() << endl;

@@ -198,15 +198,15 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	int_sub(v,1) => v' &
 	list_nth(vars,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname)) &  
 	is_non_state kind &
-	print "Solving for non-states\n" &
+	(*print "Solving for non-states\n" &*)
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
-	Exp.print_exp_str e1 => e1s &
+(*	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
 	print "Equation " & print e1s & print " = " & print e2s &
 	print " solved for " & Exp.print_exp_str varexp => s &
 	print s & print " giving " &
-	Exp.print_exp_str expr => s2 & print s2 & print "\n" &
+	Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
 	build_assignment(cr,expr,origname)  => ()
 	--------------------------------
 	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e)	
@@ -219,18 +219,18 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
 	list_nth(vars,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname) &
-	print "solving for state\n" &
+(*	print "solving for state\n" &*)
 	int_string(indx) => indxs &
 	Util.string_append_list(["xd[",indxs,"]"]) => id &
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
-	Exp.print_exp_str e1 => e1s &
+(*	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
 	print "Equation " & print e1s & print " = " & print e2s &
 	print "solved for " & Exp.print_exp_str varexp => s &
 	print s & print "giving " &
-	Exp.print_exp_str expr => s2 & print s2 & print "\n" &
+	Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
 	build_assignment(cr' ,expr,origname)  => ()
 	--------------------------------
 	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e)	
@@ -297,7 +297,7 @@ end
 relation add_variable: (DAELow.Var,int) => () =
 
   rule	Exp.cref_str(cf) => cfs &
-	print "adding variable " & print cfs & print "\n" &
+	(*print "adding variable " & print cfs & print "\n" &*)
 	TaskGraphExt.store_result(cfs,start,false,name)
 	------------------------------------
 	add_variable(DAELow.VAR(cf,_,_,_,_, _,_,_,_,name),start)

@@ -294,10 +294,10 @@ void Codegen::generateSubTaskCode(VertexID task)
   // Edges must be sorted in priority order since e.g. a-b != b-a
   EdgePrioQueue *queue = new EdgePrioQueue(EdgePrioCmp(m_tg));
   for (tie(e,e_end) = in_edges(task,*m_tg); e != e_end; e++) {
-    cerr << " prio = " << getPriority(*e,m_tg) << " for " << getResultName(source(*e,*m_tg),m_tg) ;
+    //cerr << " prio = " << getPriority(*e,m_tg) << " for " << getResultName(source(*e,*m_tg),m_tg) ;
     queue->push(*e);
   }
-  cerr << endl;
+  //cerr << endl;
 
   i=0;
   while(!queue->empty()) {
@@ -311,11 +311,11 @@ void Codegen::generateSubTaskCode(VertexID task)
       s.createQueue(); // Must create queue before iterating
       
       while(!s.empty()) {
-	cerr << " Resultsset indx "<< i << " =" << s.top();
+	//cerr << " Resultsset indx "<< i << " =" << s.top();
 	parentnames[i++] = s.top();
 	s.pop();
       }
-      cerr << endl;
+      //cerr << endl;
     }
   }
   delete queue;

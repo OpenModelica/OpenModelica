@@ -55,9 +55,10 @@ module DAELow:
 	          * Equation list (* Removed equations a=b*)
 
 
-  type IncidenceMatrix = int list list 
+  type IncidenceMatrix = int list list (* a list of variable indexes, one for each equation*)
 
-  type IncidenceMatrixT = IncidenceMatrix
+
+  type IncidenceMatrixT = IncidenceMatrix (* a list of equation indexes, one for each variable*)
 
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
@@ -121,12 +122,12 @@ relation lower: (DAE.DAElist) => DAELow =
 	Util.string_delimit_list(crefs,", " ) => st &
 	print st & print "\n" &*)
 	lower2(lst,s) => (low as DAELOW(vars,knvars,eqns,reqns))  &
-	print "states :" &
-	Util.list_map(s,Exp.print_component_ref_str) => sl &
-	Util.string_delimit_list(sl,", ") => str & print str & print "\n" &
-	remove_simple_equations(low,s) => low' &
-	print "removed simple equations, dae:" &
-	dump low' 
+(*	print "states :" &
+ 	Util.list_map(s,Exp.print_component_ref_str) => sl &
+	Util.string_delimit_list(sl,", ") => str & print str & print "\n" &*)
+	remove_simple_equations(low,s) => low' 
+(*	print "removed simple equations, dae:" &
+	dump low' *)
 	(*list_length(vars) => varlen &
 	int_string(varlen) => vs &
 	list_length(eqns) => eqnlen &
@@ -963,6 +964,10 @@ relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
 	transpose_matrix2(m,neq,0,[]) => mt
 	----------------
 	transpose_matrix(m) => mt
+
+  rule	print "#transpose_matrix failed\n" 
+	---------------------
+	transpose_matrix(_) => fail
 end
 relation transpose_matrix2: (IncidenceMatrix,int,int,IncidenceMatrixT) 
 	  => IncidenceMatrixT =
@@ -1172,7 +1177,7 @@ relation reduce_index_dummy_der: (DAELow,
 	states_in_eqns(eqns,dae,m,mt) => (states,stateindx) &
 	differentiate_eqns(dae,m,mt,nv,nf,eqns) 
 	  => (dae,m,mt,nv,nf,deqns) &	
-	  update_incidence_matrix(dae,m,mt,i) => (m,mt) &
+	 (* update_incidence_matrix(dae,m,mt,i) => (m,mt) &*)
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
 	new_dummy_var(state,dae) => (dummy_der,dae) &
 	eqns_for_var(mt,stateno) => reqns &
@@ -1180,8 +1185,8 @@ relation reduce_index_dummy_der: (DAELow,
 	(* We need to change variables in the differentiated equations and in the 
 	  equations having the dummy derivative *)
 	replace_dummy_der(state,dummy_der,dae,m,mt,changedeqns) => (dae,m,mt) &
-	make_algebraic(dae,state) => dae &
-	update_incidence_matrix(dae,m,mt,i) => (m,mt) 
+	make_algebraic(dae,state) => dae 
+	(*update_incidence_matrix(dae,m,mt,i) => (m,mt) *)
 	---------------------------------------------
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae,m,mt)
@@ -1251,19 +1256,22 @@ relation replace_dummy_der: (Exp.ComponentRef, (* state *)
 	replace_dummy_der2(state,dummyder,eqn) => eqn' &
 	replace_dummy_der_others(v,eqn') => (eqn',v') &
 	Util.list_union_p(v,v',var_equal) => v'' &
+	incidence_row(v'',eqn') => row' &
+	Util.list_replaceat(row',e',m) => m' &
+	transpose_matrix(m') => mt' &
 	Util.list_replaceat(eqn',e',eqns) => eqns' &
 	replace_dummy_der(state,dummyder,DAELOW(v'',kv,eqns',seqns),m,mt,rest) 
 	  => (dae,m,mt) 
 	-------------------------------
 	replace_dummy_der(state,dummyder,DAELOW(v,kv,eqns,seqns),m,mt,e::rest)
-	  => (dae,m,mt)
+	  => (dae,m',mt')
 
   rule	print "-replace_dummy_der failed\n" 
 	-------------------
 	replace_dummy_der(_,_,_,_,_,_) => fail
 end
 
-(* replaces der(state) with dummy_der variable in equationlist_append *)
+(* replaces der(state) with dummy_der variable in equation *)
 relation replace_dummy_der2:(Exp.ComponentRef,
 			     Exp.ComponentRef,
 			     Equation) => Equation =
@@ -1480,6 +1488,11 @@ relation differentiate_eqns: (DAELow,
 	list_nth(eqns,e') => eqn &
 	time_varying_vars(dae) => timevars &
 	Derive.differentiate_equation_time(eqn,timevars) => eqn' &
+	(* update equation row in IncidenceMatrix *)
+	incidence_row(v,eqn') => row' &
+	Util.list_replaceat(row',e',m) => m' &
+	transpose_matrix(m') => mt' &
+	
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
 	print "differentiated equation " &
 	equation_str eqn => str & 
@@ -1492,11 +1505,11 @@ relation differentiate_eqns: (DAELow,
 	Debug.fprint("bltdump", "\n") &
 	list_append(eqns,[eqn']) => eqns' &
 	list_length(eqns') => leneqns &
-	differentiate_eqns(DAELOW(v,kv,eqns',seqns),m,mt,nv,nf,es) 
-	  => (dae,m,mt,nv,nf,reqns)
+	differentiate_eqns(DAELOW(v,kv,eqns',seqns),m',mt',nv,nf,es) 
+	  => (dae,m',mt',nv,nf,reqns)
 	  ----------------------------
 	differentiate_eqns(dae as DAELOW(v,kv,eqns,seqns),m,mt,nv,nf,e::es) 
-	  => (dae,m,mt,nv,nf,leneqns::reqns)
+	  => (dae,m',mt',nv,nf,leneqns::reqns)
 
   rule	print "-differentiate_eqns failed\n" 
 	----------------------------
@@ -2025,11 +2038,11 @@ relation translate_dae: DAELow => DAELow =
 	calculate_indexes(kv) => kv' &
 	list_append(vars',kv') => totvars &
 	variable_replacements(totvars,eqns) => (s,t) &
-	Util.list_map(s,Exp.print_exp_str) => sl &
+	(*Util.list_map(s,Exp.print_exp_str) => sl &
 	Util.string_delimit_list(sl,", ") => sstr &
 	Util.list_map(t,Exp.print_exp_str) => tl &
 	Util.string_delimit_list(tl,", ") => tstr &
-	print "replace " & print sstr & print " with " & print tstr & print "\n" &
+	print "replace " & print sstr & print " with " & print tstr & print "\n" &*)
 	replace_variables(eqns,s,t) => eqns' &
 	transform_variables(vars',s,t) => vars'' &
 	transform_variables(kv',s,t) => kv'' 

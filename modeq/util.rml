@@ -577,6 +577,7 @@ relation list_replaceat: (''a, int, ''a list) => ''a list =
 	list_replaceat(x,nn,ys) => res
 	-----------------------------
 	list_replaceat(x,n,y::ys) => y::res
+
 end
 
 (** relation: list_reduce

@@ -411,11 +411,11 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 	modpar(_,_,_,_) => ()
 
   rule	(* Otherwise, build task graph *)
-	print "old dae:" & DAELow.dump dae &
+	(*print "old dae:" & DAELow.dump dae &*)
 	print "translating dae.\n" &
 	DAELow.translate_dae (dae) => indexed_dae &
 	DAELow.calculate_values(indexed_dae) => indexed_dae' &
-	print "new dae:" & DAELow.dump indexed_dae' &
+(*	print "new dae:" & DAELow.dump indexed_dae' &*)
 	print "building task graph\n" &
 	TaskGraph.build_taskgraph(indexed_dae',ass1,ass2,comps) &
 	TaskGraphExt.dump_graph("model.viz") &
