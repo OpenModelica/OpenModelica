@@ -172,7 +172,7 @@ relation prefix_exp2: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
   rule	prefix_exp2(env,e,p) => e'
 	-----------------------
-	prefix_exp2(env,Exp.CAST_TO_REAL(e), p) => Exp.CAST_TO_REAL(e')
+	prefix_exp2(env,Exp.CAST(Exp.REAL,e), p) => Exp.CAST(Exp.REAL,e')
 
   rule	print "- prefix_exp2 failed\n" &
 	print "  expression: " & Exp.print_exp e & print "\n"

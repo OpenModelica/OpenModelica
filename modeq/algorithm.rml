@@ -55,7 +55,7 @@ relation make_assignment : (Exp.Exp, Types.Type, bool,
 	make_assignment (Exp.CREF(c),lt,false,rhs,rt,_) => ASSIGN(c,rhs)
 
   rule	make_assignment (lhs,Types.T_REAL,lc,
-			 Exp.CAST_TO_REAL(rhs),Types.T_REAL,rc) => stmt
+			 Exp.CAST(Exp.REAL,rhs),Types.T_REAL,rc) => stmt
 	---------------------------------------------------------------
 	make_assignment (lhs,Types.T_REAL,lc,rhs,Types.T_INTEGER,rc) => stmt
 
