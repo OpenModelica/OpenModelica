@@ -1982,15 +1982,15 @@ relation inst_var2 : (Env.Env,
 	
         inst_start_binding_exp(mod,ty,idxs') => start &
 
-(*         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr & *)
-(*   	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp & *)
-(*         Debug.fprint("insttr", str_tmp) & *)
-(*   	    Debug.fprint("insttr", " <------------\n") & *)
-(*         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE, *)
-(*  		            inst_dims, start, dae_var_attr) => dae3 &  *)
+        inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr &
+  	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
+        Debug.fprint("failtrace", str_tmp) &
+  	    Debug.fprint("failtrace", " <------------\n") &
+        dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
+ 		            inst_dims, start, dae_var_attr) => dae3 &
 
-         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE, 
- 		            inst_dims, start, NONE) => dae3 & 
+(*          dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,  *)
+(*  		            inst_dims, start, NONE) => dae3 &  *)
         
         
 	list_append(dae1',dae2) => daex &
@@ -4977,11 +4977,14 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
         inst_real_binding(mod,index_list,"max") => max_val &
         inst_real_binding(mod,index_list,"start") => start_val &
         inst_bool_binding(mod,index_list,"fixed") => fixed_val &
-        inst_real_binding(mod,index_list,"nominal") => nominal_val 
+        inst_real_binding(mod,index_list,"nominal") => nominal_val &
+
+        inst_enumeration_binding(mod,index_list,"stateSelect") => exp_bind_select &
+        get_stateSelect_from_exp_option(exp_bind_select) => stateSelect_value
         -----------------------------------------
-        inst_dae_variable_attributes(mod,(Types.T_REAL(_),_),index_list) 
+        inst_dae_variable_attributes(mod,(Types.T_REAL(_),path),index_list) 
           => SOME(DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),start_val,
-                               fixed_val,nominal_val,SOME(DAE.DEFAULT)))
+                               fixed_val,nominal_val,stateSelect_value))
 
   rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
         inst_int_binding(mod,index_list,"min") => min_val &
@@ -5007,9 +5010,18 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
         inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val))
 
+  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
+        inst_binding(mod,enumtype,index_list,"min") => exp_bind_min &
+        inst_binding(mod,enumtype,index_list,"max") => exp_bind_max &
+        inst_binding(mod,enumtype,index_list,"start") => exp_bind_start &
+        inst_bool_binding(mod,index_list,"fixed") => fixed_val 
+        -----------------------------------------
+        inst_dae_variable_attributes(mod, enumtype as (Types.T_ENUMERATION(_,_),_),index_list) 
+          => SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val))
+
   rule  (*  Print.print_error_buf "# unknown type for variable.\n"  & *)
 (*         Mod.print_mod_str(mod) => str & *)
-(*         print str & print "<- mod \n"  *)
+(*         print str & print "<- mod \n" *)
         -----------------------------------------
         inst_dae_variable_attributes(mod,_,_) => NONE
 
@@ -5038,6 +5050,11 @@ relation inst_real_binding: (Types.Mod,int list,string) => real option =
         -----------------------------------------
         inst_real_binding(mod,index_list,bind_name) => SOME(result)
    
+  rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) => SOME(Exp.ICONST(result)) &
+        int_real(result) => r_result
+        -----------------------------------------
+        inst_real_binding(mod,index_list,bind_name) => SOME(r_result)
+
   rule	inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
         inst_real_binding(mod,index_list,bind_name) => NONE
@@ -5080,24 +5097,30 @@ relation inst_string_binding: (Types.Mod,int list,string) => string option =
    
 end
 
-
-(* relation inst_enumeration_binding: (Types.Mod,int list,string) => enumeration option = *)
+relation inst_enumeration_binding: (Types.Mod,int list,string) => Exp.Exp option =
      
-(*   rule inst_binding(mod,(Types.T_ENUMERATION([]),NONE),index_list,bind_name) => SOME(Exp.SCONST(result)) *)
-(*         ----------------------------------------- *)
-(*         inst_enumeration_binding(mod,index_list,bind_name) => SOME(result) *)
+  rule inst_binding(mod,(Types.T_ENUMERATION([],[]),NONE),index_list,bind_name) => result
+        -----------------------------------------
+        inst_enumeration_binding(mod,index_list,bind_name) => result
    
-(*   rule inst_binding(mod,(Types.T_ENUMERATION([]),NONE),index_list,bind_name) => NONE *)
-(*         ----------------------------------------- *)
-(*         inst_enumeration_binding(mod,index_list,bind_name) => NONE *)
-
-(*   rule  Print.print_error_buf "# Wrong type on predefined.\n" *)
-(*         ----------------------------------------- *)
-(*         inst_enumeration_binding(mod,index_list,_) => fail *)
+  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+        -----------------------------------------
+        inst_enumeration_binding(mod,index_list,_) => fail
    
-(* end *)
+end
 
+relation get_stateSelect_from_exp_option:(Exp.Exp option) => DAE.StateSelect option =
+        
+  axiom get_stateSelect_from_exp_option(SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",([]),Exp.CREF_IDENT("never",[])),Exp.ENUM))) => SOME(DAE.NEVER)
+  axiom get_stateSelect_from_exp_option(SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",([]),Exp.CREF_IDENT("avoid",[])),Exp.ENUM))) => SOME(DAE.AVOID)
+  axiom get_stateSelect_from_exp_option(SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",([]),Exp.CREF_IDENT("default",[])),Exp.ENUM))) => SOME(DAE.DEFAULT)
+  axiom get_stateSelect_from_exp_option(SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",([]),Exp.CREF_IDENT("prefer",[])),Exp.ENUM))) => SOME(DAE.PREFER)
+  axiom get_stateSelect_from_exp_option(SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",([]),Exp.CREF_IDENT("always",[])),Exp.ENUM))) => SOME(DAE.ALWAYS)
 
+  axiom get_stateSelect_from_exp_option(NONE) => NONE
+  axiom get_stateSelect_from_exp_option(_) => NONE
+       
+end
 
 (** LS & ELN
  ** 
