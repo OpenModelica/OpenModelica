@@ -1486,7 +1486,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
  	Mod.merge(mod,m',env2,pre) => mod1 &
 	Mod.merge(cmod,mod1,env2,pre) => mod1' &
 
-	
 	redeclare_type(mod1',comp,env2,pre,ci_state,impl) 
 	  => (SCode.COMPONENT(n,final,repl,prot,
 			      attr as SCode.ATTR(ad,flow,acc,param,dir),
@@ -1495,14 +1494,17 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 (*	Debug.fprint("insttr", "looking for type ") &
 	Debug.fcall("insttr",Dump.print_path,t) &
 	Debug.fprint("insttr"," \n") &*)
+	
 	get_derived_env(env,bc) => env' &
 	Lookup.lookup_class(env',t,true) => (cl,cenv) & 
+	
 (*	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &*)
 	
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
 
 	check_prot(prot, mm', vn) &
+
 (*	Debug.fprintln ("insttr", "Protection checked") &*)
 
 	Debug.fcall("myeqmod",Mod.print_mod, mod') & Debug.fprintln ("myeqmod", "\n") &
@@ -1512,15 +1514,20 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall("insttr",Mod.print_mod, mod') & Debug.fprintln ("insttr", "\n") &*)
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
+
 	elab_arraydim(env2',owncref,ad,eq,impl,NONE) => dims &
+
 (*	Debug.fprintln ("insttr", "arraydim elabed") &
 	Debug.fprintln ("arraydim", "arraydim elabed :") &
 	Debug.fcall("arraydim",print_dim2, dims) &*)
+
 	(** Instantiate the component *)	
 	(*Dump.select_string(impl,"IMPLICIT!!!\n","") => s &
 	print s &*)
+
 	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
 	  => (dae, csets', ty) &
+
 (*	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &*)
 
 	(** The environment is extended (updated) with the new variable *)
@@ -1631,7 +1638,7 @@ relation redeclare_type: (Types.Mod,
 	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
 	  => (newcomp,mod,env')
 	-------------
-	redeclare_type (Types.REDECL(redfin,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_,bc)),rmod)::rest),
+	redeclare_type (mod as Types.REDECL(redfin,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_,bc)),rmod)::rest),
 			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_),env,pre,ci_state,impl)
 	  => (newcomp,mod,env')
 
@@ -1643,7 +1650,7 @@ relation redeclare_type: (Types.Mod,
 
   axiom	redeclare_type(Types.REDECL(redfin,[]),comp,env,pre,ci_state,impl) => (comp,Types.NOMOD,env)
 
-  axiom	redeclare_type(mod,comp,env,pre,ci_state,impl) => (comp,mod,env)
+  axiom redeclare_type(mod,comp,env,pre,ci_state,impl) => (comp,mod,env)
 
   rule	Debug.fprint("failtrace", "- redeclare_type failed\n")
 	------------------------------------------------------

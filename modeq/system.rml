@@ -90,4 +90,14 @@ relation regular_file_exist: (string) => int
 
 relation directory_exist: (string) => int
 
+relation getDebugString: (string) => string
+
+relation startDebug: () => ()
+
+relation endDebug: () => ()
+
+relation incDebugLevel: () => ()
+
+relation decDebugLevel: () => ()
+
 end

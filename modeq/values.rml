@@ -56,6 +56,7 @@ with "absyn.rml"
   relation mult_scalar_arrayelt: (Value, Value list) => Value list
   relation mult_scalar_product: (Value list, Value list) => Value
   relation mult_matrix: (Value list,Value list) => Value list
+  relation div_arrayelt_scalar: (Value, Value list) => Value list
   relation intlist_to_value : int list => Value
   relation is_array : Value => bool
   relation write_to_file_as_args: (Value list,string) => ()
@@ -434,6 +435,52 @@ relation mult_matrix: (Value list,Value list) => Value list =
   axiom	 mult_matrix([],_) => []
 	
 end
+
+
+relation div_arrayelt_scalar: (Value, Value list) => Value list =
+
+  rule	v1 = 0.0 &
+		Print.print_buf "# Error, division by zero.\n" 
+		------------------------------------
+		div_arrayelt_scalar (sval as REAL(v1),_) => fail
+
+  rule	v1 = 0 &
+		Print.print_buf "# Error, division by zero.\n" 
+		------------------------------------
+		div_arrayelt_scalar (sval as INTEGER(v1),_) => fail
+
+  rule	div_arrayelt_scalar(sval,vals) => r1 &
+	div_arrayelt_scalar(sval,rest) => r2
+	------------------------------------
+	div_arrayelt_scalar (sval,ARRAY(vals)::rest) => ARRAY(r1)::r2
+ 
+  rule	int_div(v2,v1) => r1 &
+	div_arrayelt_scalar(sval,rest) => r2
+	------------------------------------
+	div_arrayelt_scalar (sval as INTEGER(v1),INTEGER(v2)::rest) => INTEGER(r1)::r2
+
+
+  rule	int_real(v2) => v2' &
+	real_div(v2',v1) => r1 &
+	div_arrayelt_scalar(sval,rest) => r2
+	------------------------------------
+	div_arrayelt_scalar (sval as REAL(v1),INTEGER(v2)::rest) => REAL(r1)::r2
+ 
+  rule	int_real(v1) => v1' &
+	real_div(v2,v1') => r1 &
+	div_arrayelt_scalar(sval,rest) => r2
+	------------------------------------
+	div_arrayelt_scalar (sval as INTEGER(v1),REAL(v2)::rest) => REAL(r1)::r2
+
+  rule	real_div(v2,v1) => r1 &
+	div_arrayelt_scalar(sval,rest) => r2
+	------------------------------------
+	div_arrayelt_scalar (sval as REAL(v1),REAL(v2)::rest) => REAL(r1)::r2
+
+	axiom div_arrayelt_scalar(_,[]) => []
+end
+
+
 
 (** This relation takes a Value list representing a matrix and strips the first column of the matrix, i.e. for each sub list it removes the first element. Returning both the stripped column and the resulting matrix.**)
 relation matrix_strip_first_column: Value list => (Value,Value list) =

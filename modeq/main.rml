@@ -253,6 +253,7 @@ relation translate_file : string list => () =
   rule	(*Print.print_buf "Parsing\n" &
 	 *)	is_modelica_file(f) 
 	& Parser.parse f => p
+	& print "1" 
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
 	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
 	& Debug.fcall ("dump", Dump.dump, p)
@@ -303,8 +304,8 @@ relation translate_file : string list => () =
 	translate_file [] => fail
 
   rule	Print.print_buf "# An error occured\n" &
-	Print.get_string () => str (*&
-	print str *)
+	Print.get_string () => str 
+	& print str 
 	----------------------------
 	translate_file _ => fail
 

@@ -2458,7 +2458,31 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	generate_binary(e1,Exp.MUL_MATRIX_PRODUCT(Exp.INT),e2, tnr) 
 	  => (cfn,var,tnr3)
 
-  rule	Print.print_buf "# div_array_scalar not implemented\n"
+  rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2, tnr1) =>(cfn2,var2,tnr2) &
+	generate_temp_decl("real_array",tnr2) => (decl, var, tnr3) &
+	Util.string_append_list(["div_alloc_real_array_scalar(&",var1,
+			", ",var2,", &", var,");"]) => stmt &
+	c_merge_fn(cfn1,cfn2) => cfn' &
+	c_add_variables(cfn',[decl]) => cfn'' &
+	c_add_statements(cfn'',[stmt]) => cfn
+	----------------------
+	generate_binary(e1,Exp.DIV_ARRAY_SCALAR(Exp.REAL),e2, tnr) 
+	  => (cfn,var,tnr3)
+
+  rule	generate_expression(e1, tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2, tnr1) =>(cfn2,var2, tnr2) &
+	generate_temp_decl("integer_array",tnr2) => (decl, var, tnr3) &
+	Util.string_append_list(["div_alloc_integer_array_scalar(&",var1,
+			", ",var2,", &",var,");"]) => stmt &
+	c_merge_fn(cfn1,cfn2) => cfn' &
+	c_add_variables(cfn',[decl]) => cfn'' &
+	c_add_statements(cfn'',[stmt]) => cfn
+	----------------------
+	generate_binary(e1,Exp.DIV_ARRAY_SCALAR(Exp.INT),e2, tnr) 
+	  => (cfn,var,tnr3)
+
+  rule	Print.print_buf "# div_array_scalar FAILING BECAUSE IT SUX\n"
 	-------------------------
 	generate_binary(_,Exp.DIV_ARRAY_SCALAR(_),_,_) => fail
 

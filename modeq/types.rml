@@ -220,7 +220,7 @@ relation is_array_or_string : Type => bool =
 	-------------------
 	is_array_or_string ty => true
 
-  axiom	is_array_or_string _ => false
+  rule -----------------	is_array_or_string _ => false
 
 end
 
@@ -359,29 +359,32 @@ relation subtype : (Type, Type) => bool =
 
   axiom	subtype ((T_ENUMERATION([],_),_),(T_ENUMERATION(_,_),_))=> true
 	
-  rule	subtype (t1,t2) => true
+  rule	Debug.fprint ("failtrace", "PIGS1 \n") &
+        subtype (t1,t2) => true
 	-----------------------
 	subtype((T_ARRAY(_,t1),_),(T_ARRAY(DIM(NONE),t2),_)) => true
-	
-  rule	subtype (t1,t2) => true
-	-----------------------
-	subtype((T_ARRAY(DIM(NONE),t1),_),(T_ARRAY(_,t2),_)) => true
-	
-  rule	i1 = i2 &
- 	subtype (t1,t2) => true
-	---------------------------------------------------------
-	subtype((T_ARRAY(DIM(SOME(i1)),t1),_),(T_ARRAY(DIM(SOME(i2)),t2),_)) => true
-	
+	    
+  rule  Debug.fprint ("failtrace", "PIGS2 \n") &
+        subtype (t1,t2) => true
+	    -----------------------
+	    subtype((T_ARRAY(DIM(NONE),t1),_),(T_ARRAY(_,t2),_)) => true
+	    
+  rule  Debug.fprint ("failtrace", "PIGS3 \n") &
+        i1 = i2 &
+ 	    subtype (t1,t2) => true
+	    ---------------------------------------------------------
+	    subtype((T_ARRAY(DIM(SOME(i1)),t1),_),(T_ARRAY(DIM(SOME(i2)),t2),_)) => true
+	    
   rule	subtype_varlist(els1, els2) => true
-	-----------------------------------
-	subtype((T_COMPLEX(st1,els1),_), (T_COMPLEX(st2,els2),_)) => true
-
-	(* PR. Check of tuples, similar to complex. Just that
-	 identifier name do not have to be checked. Only types are
-	 checked. *)
+	    -----------------------------------
+	    subtype((T_COMPLEX(st1,els1),_), (T_COMPLEX(st2,els2),_)) => true
+        
+	    (* PR. Check of tuples, similar to complex. Just that
+	     identifier name do not have to be checked. Only types are
+	     checked. *)
   rule	subtype_typelist(type_list1,type_list2) => true
 	-----------------------------------
-	subtype((T_TUPLE(type_list1),_), (T_TUPLE(type_list2),_)) => true
+	    subtype((T_TUPLE(type_list1),_), (T_TUPLE(type_list2),_)) => true
 
   axiom subtype(t1,t2) => false
 

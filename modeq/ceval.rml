@@ -269,6 +269,13 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st,dim) 
 	  => (Values.ARRAY(reslst),st'')
 
+  rule	ceval (env,rh,impl,st,dim) => (sval,st') &
+	ceval (env,lh,impl,st',dim) => (Values.ARRAY(aval),st'') &
+	Values.div_arrayelt_scalar(sval,aval) => reslst
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.DIV_ARRAY_SCALAR(_), rh),impl,st,dim) 
+	  => (Values.ARRAY(reslst),st'')
+
   rule	ceval (env,rh,impl,st,dim) => (Values.ARRAY(rhvals),st') &
 	ceval (env,lh,impl,st',dim) => (Values.ARRAY(lhvals),st'') &
 	Values.mult_scalar_product(rhvals,lhvals) => res

@@ -3644,6 +3644,8 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
  
   axiom	compute_return_type (Exp.MUL_ARRAY_SCALAR(_),[typ1,typ2],rtype) => typ1(* rtype*)
 
+  axiom	compute_return_type (Exp.DIV_ARRAY_SCALAR(_),[typ1,typ2],rtype) => typ1(* rtype*)
+
 
   axiom	compute_return_type (Exp.ADD(_),_,typ) => typ
   axiom	compute_return_type (Exp.SUB(_),_,typ) => typ
