@@ -165,6 +165,7 @@ module Dump:
   relation indent_str: (int) => string 
   relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string 
   relation variability_symbol: Absyn.Variability => string
+  relation unparse_modification_str: Absyn.Modification => string 
 end
 
 
