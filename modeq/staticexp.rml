@@ -1,5 +1,5 @@
 (**
- ** file:	 staticexp.rml
+ ** file:	 static.rml
  ** description: Static analysis of expressions
  **
  ** RCS: $Id$
@@ -25,15 +25,15 @@ module Static :
    ** expression.  The properties are created by analyzing the
    ** expressions. *)
 
-
+  (* Expression analysis *)
   relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties)
   relation elab_cref : (Env.Env, Absyn.ComponentRef) => (Exp.Exp, Properties)
 
+  (* Constant propagation *)
   relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
-  relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
-  relation value_exp : Values.Value => Exp.Exp
 
+  (* Property matching (type conversions etc.) *)
   relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
   relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 			 (Exp.Exp * Types.Type) list,
@@ -42,12 +42,25 @@ module Static :
   relation operators : Absyn.Operator
 	  => (Exp.Operator * Types.Type list * Types.Type) list
 
+  (* Utility relations *)
+  relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
+  relation value_exp : Values.Value => Exp.Exp
+
 end
 
 with "dump.rml"
 
 (**
  ** - Expression elaboration
+ **)
+
+(** relation: elab_exp
+ **
+ ** Static analysis of expressions means finding out the properties of
+ ** the expression.  These properties are described by the
+ ** `Properties' type, and include the type and the variability of the
+ ** expression.  This relation performs analysis, and returns an
+ ** `Exp.Exp' and the properties.
  **)
 
 relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
@@ -64,6 +77,8 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
   rule	elab_cref(env, cr) => (exp,prop)
 	---------------------------------------
 	elab_exp(env, Absyn.CREF(cr)) => (exp,prop)
+
+	(**  Binary and unary operations *)
 
   rule	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
 	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
@@ -119,6 +134,8 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env,exp as Absyn.RELATION(e1,op,e2))
 	  => (Exp.RELATION(e1'',op',e2''),PROP(rtype,c))
 
+	(**  Conditional expressions *)
+
   rule	elab_exp (env,e1) => (e1', prop1) &
 	elab_exp (env,e2) => (e2', prop2) &
 	elab_exp (env,e3) => (e3', prop3) &
@@ -126,9 +143,13 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	------------------------------------------------------
 	elab_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,prop)
 
+	(**  Function calls *)
+
   rule	elab_call(env,fn,args) => (e,prop)
 	-------------------------------------
 	elab_exp (env,Absyn.CALL(fn,args)) => (e,prop)
+
+	(**  Array-related expressions *)
 
   rule	elab_exp (env, start) => (start', PROP(Types.T_INTEGER, c_start)) &
 	elab_exp (env, stop) => (stop', PROP(Types.T_INTEGER, c_stop)) &
@@ -148,13 +169,15 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
 	  => (Exp.RANGE(start',SOME(step'),stop'), PROP(t, const))
 
+(*
   rule	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l
 	--------------------------------------------------------------
 	elab_exp (env, Absyn.ARRAY(es))
 	  => (Exp.ARRAY(es'),
 	      PROP(Types.T_ARRAY(Types.DIM(SOME(l),Types.NODIM), t),
 		   const))
-
+*)
+	
   rule	elab_matrix (env, es) => (es', t, dim, const) & list_length es' => l
 	--------------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es))
@@ -170,7 +193,7 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
 end
 
-(**)
+(** relation: elab_range_type *)
 
 relation elab_range_type : (Env.Env, Exp.Exp,
 			    Exp.Exp option, Exp.Exp, bool) => Types.Type =
@@ -197,7 +220,7 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 
 end
 
-(**)
+(** relation: elab_array *)
 
 relation elab_array : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Properties) =
@@ -1062,7 +1085,7 @@ relation ceval_subscripts : (Env.Env, Exp.Subscript list)
 
 end
 
-(** relation: ceval_subscripts
+(** relation: ceval_subscript
  **
  ** This relation relates a subscript to its canonical forms, which is
  ** when all expressions are evaluated to constant values.
