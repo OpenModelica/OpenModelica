@@ -23,7 +23,7 @@ module SCode :
 
   (** - Modifications *)
   datatype Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
-  	       | REDECL of bool * Absyn.ElementSpec
+  	       | REDECL of bool * Element list
 	       | NOMOD
   datatype SubMod = NAMEMOD of Ident * Mod         (* A named component *)
 		  | IDXMOD of Subscript list * Mod (* An array element *)
@@ -49,9 +49,11 @@ module SCode :
 		    | DERIVED of Path
 			       * Absyn.ArrayDim option
 			       * Mod
+
   (** The major difference between these types and their `Absyn' *)
   (** counterparts is that the `PARTS' constructor contains separate *)
   (** lists for elements, equations and algorithms. *)
+
 
   (* - Equations *)
   datatype Equation = EQ_EXPR of Absyn.Exp	(* more later? *)
@@ -104,10 +106,12 @@ module SCode :
   relation elaborate : Absyn.Program => Program
   relation build_mod : (Absyn.Modification option, bool) => Mod
   relation print_mod : Mod => ()
+  relation print_element : Element => ()
 	  
 end
 
 with "dump.rml"
+with "debug.rml"
 
 (** relation: elaborate
  **
@@ -133,14 +137,12 @@ end
 
 relation elab_class: Absyn.Class => Class =
 
-  rule	
-	print "before elab_classdef" &
-	elab_classdef d => d' &
-	print "after elab_classdef"
-	--------------------------------------------
+  rule	elab_classdef d => d'
+	---------------------
 	elab_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
 
 end
+
 
 (** relation: elab_classdef
  **
@@ -151,15 +153,100 @@ end
  ** the input.
  **)
 
+(** LS: Divided the elab_classdef into separate relations for
+ ** collecting the different parts
+ **)
+
 relation elab_classdef: Absyn.ClassDef => ClassDef =
 
   rule	build_mod(SOME(Absyn.CLASSMOD(a, NONE)), false) => mod
 	------------------------------------------------
 	elab_classdef(Absyn.DERIVED(p,d,a)) => DERIVED(p,d,mod)
 
+
+  rule	elab_classdef_elements parts => els &
+	elab_classdef_equations parts => eqs &
+	elab_classdef_algorithms parts => als
+	-------------------------------------
+	elab_classdef (Absyn.PARTS(parts)) => PARTS(els,eqs,als)
+
+end
+
+
+relation elab_classdef_elements: Absyn.ClassPart list => Element list =
+
+  axiom	elab_classdef_elements [] => []
+
+  rule	elab_classdef_elements rest => els &
+	elab_elist (es, false) => es' &
+	list_append (els, es') => els'
+	------------------------------
+	elab_classdef_elements (Absyn.PUBLIC(es)::rest) => els'
+
+  rule	elab_classdef_elements rest => els &
+	elab_elist (es, true) => es' &
+	list_append (els, es') => els'
+	------------------------------
+	elab_classdef_elements (Absyn.PROTECTED(es)::rest) => els'
+
+
+(** ignore all other than PUBLIC and PROTECTED, i.e. elements **)
+
+  rule	elab_classdef_elements rest => els
+	----------------------------------
+	elab_classdef_elements _::rest => els
+
+end
+
+
+relation elab_classdef_equations: Absyn.ClassPart list => Equation list = 
+
+  axiom	elab_classdef_equations [] => []
+
+  rule	elab_classdef_equations rest => eqs &
+	elab_equations(eql) => eql' &
+	list_append (eqs, eql') => eqs'
+	------------------------------
+	elab_classdef_equations (Absyn.EQUATIONS(eql)::rest) => eqs'
+
+(** ignore everthing other than equations **)
+  rule	elab_classdef_equations rest => eqs
+	-----------------------------------
+	elab_classdef_equations _::rest => eqs
+
+end
+
+
+
+relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
+
+  axiom	elab_classdef_algorithms [] => []
+
+  rule	elab_classdef_algorithms rest => als &
+	let als' = ALGORITHM(al)::als
+	-----------------------------
+	elab_classdef_algorithms (Absyn.ALGORITHMS(al)::rest) => als'
+
+
+(** ignore everthing other than algorithms **)
+
+  rule	elab_classdef_algorithms rest => als
+	------------------------------------
+	elab_classdef_algorithms _::rest => als
+
+end
+
+
+
+
+
+(** LS: replaced this with separate collector relations above for
+       elements, equations and algorithms
+
   axiom	elab_classdef(Absyn.PARTS([])) => PARTS([],[],[])
 
-	(* Lots of unnecessary consing ahead... *)
+
+ Lots of unnecessary consing ahead... 
   rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
 	elab_equations(l) => l' &
 	list_append(eqs,l') => eqs'
@@ -187,7 +274,15 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	elab_classdef(Absyn.PARTS(Absyn.PROTECTED(es)::ps))
 	  => PARTS(els',eqs,als)
 
-end
+  rule	print "#-- elab_classdef failed\n"
+	----------------------------------
+	elab_classdef _ => fail
+
+end	
+**)
+
+
+
 
 (** relation: elab_elist
  **
@@ -248,7 +343,8 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 
   rule	elab_elementspec(final,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
 	build_mod(m,false) => mod &
-	(* PR. This adds the arraydimension that may be specified together with the type of the component.  *)
+	(* PR. This adds the arraydimension that may be specified together with
+	 the type of the component.  *)
 	list_append(d,ad) => tot_dim
 	--------------------------------------------------
 	elab_elementspec(final,prot,
@@ -275,6 +371,7 @@ relation elab_equations : Absyn.Equation list => Equation list =
 	elab_equations e::es => e'::es'
 
 end
+
 
 (** relation: elab_equation
  **
@@ -307,6 +404,7 @@ relation elab_equation : Absyn.Equation => Equation =
 
 end
 
+
 (** - Modification management *)
 
 (** relation: build_mod
@@ -322,27 +420,31 @@ relation build_mod : (Absyn.Modification option, bool) => Mod =
   axiom	build_mod(SOME(Absyn.CLASSMOD([], e as SOME(_))), final)
 	  => MOD(final,[],e)
 
-  rule  build_args(l) => subs
+  rule	build_args(l) => subs
 	---------------------------------
 	build_mod(SOME(Absyn.CLASSMOD(l,e)),final) => MOD(final,subs,e)
 
 end
 
+(** LS: Adding elaborate for the elementspec in the redeclaration
+ **)
 relation build_args : (Absyn.ElementArg list) => SubMod list =
 
   axiom build_args [] => []
 
-  rule  build_args xs => subs &
+  rule	build_args xs => subs &
 	build_mod(SOME(mod),final) => mod' &
 	build_sub(cref,mod') => sub
 	----------------------
 	build_args((Absyn.MODIFICATION(final,cref,mod)::xs)) => (sub::subs)
 
-  rule  build_args xs => subs &
-	Absyn.element_spec_name spec => n
+  rule	build_args xs => subs &
+	Absyn.element_spec_name spec => n &
+	(** LS:: don't know what to use for "protected", so using false **)
+	elab_elementspec(final,false,spec) => elist
 	---------------------------
 	build_args((Absyn.REDECLARATION(final,spec)::xs))
-	  => (NAMEMOD(n,REDECL(final,spec))::subs)
+	  => (NAMEMOD(n,REDECL(final,elist))::subs)
 
 end
 
@@ -361,7 +463,7 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 	---------------------------------------
 	build_sub(c as Absyn.CREF_IDENT(_,_::_),MOD(_,_::_,_)) => fail
 
-  rule  print "# Illegal modification of " &
+  rule	print "# Illegal modification of " &
 	Dump.print_component_ref c & print "\n"
 	---------------------------------------
 	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),MOD(_,_::_,_)) => fail
@@ -372,7 +474,7 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 	------------------------------
 	build_sub(Absyn.CREF_IDENT(i,ss),mod) => NAMEMOD(i,mod')
 
-  rule  build_sub(path,mod) => sub &
+  rule	build_sub(path,mod) => sub &
 	let mod = MOD(false,[sub],NONE) &
 	build_sub_sub(ss,mod) => mod'
 	--------------------------
@@ -406,15 +508,22 @@ relation print_mod : Mod => () =
 
   axiom	print_mod(NOMOD)
 
-  rule  print "(redeclared)"
+  rule	print "redeclare(" & 
+	Dump.print_bool b & print ", " &
+	Dump.print_list(elist, print_element, ", ") &
+	print ")"
 	------------------------------
-	print_mod REDECL(_,_)
+	print_mod REDECL(b,elist)
 	
   rule	print_final final &
 	print_subs1 subs &
 	print_eqmod ass
 	------------
 	print_mod MOD(final, subs, ass)
+
+  rule	print "#-- print_mod failed\n"
+	------------------------
+	print_mod _
 
 end
 
@@ -424,8 +533,8 @@ relation print_final : bool => () =
 
   axiom print_final false
 
-  rule print " final "
-       --------------
+  rule	print " final "
+	--------------
        print_final true
 
 end
@@ -434,20 +543,20 @@ relation print_subs : SubMod list => () =
 
   axiom print_subs []
 
-  rule  print n & print_mod mod
+  rule	print n & print_mod mod
 	-----------------------
 	print_subs [NAMEMOD(n,mod)]
 
-  rule  print n & print_mod mod & print ", " &
+  rule	print n & print_mod mod & print ", " &
 	print_subs subs
 	---------------
 	print_subs NAMEMOD(n,mod)::subs
 
-  rule  Dump.print_subscripts ss & print_mod mod
+  rule	Dump.print_subscripts ss & print_mod mod
 	------------------
 	print_subs [IDXMOD(ss,mod)]
 
-  rule  Dump.print_subscripts ss & print_mod mod & print ", " &
+  rule	Dump.print_subscripts ss & print_mod mod & print ", " &
 	print_subs subs
 	--------------
 	print_subs IDXMOD(ss,mod)::subs
@@ -470,10 +579,27 @@ relation print_eqmod : Absyn.Exp option => () =
 
   axiom print_eqmod NONE
 
-  rule  print " = " & Dump.print_exp e
+  rule	print " = " & Dump.print_exp e
 	-----------------------------
 	print_eqmod SOME(e)
 
 end
 	
 (*!includecode*)
+
+
+relation print_element : Element => () =
+
+  rule	print "EXTENDS(" & Absyn.path_string path => str & print str & print ")"
+	----------------------------------------------------
+	print_element EXTENDS(path,mod)
+
+  rule	print "CLASSDEF(" & print n & print ")"
+	---------------------------------------
+	print_element CLASSDEF(n,final,repl,cl)
+
+  rule	print "COMPONENT(" & print n & print ")"
+	----------------------------------------
+	print_element COMPONENT(n,final,prot,attr,typath,mod)
+
+end	
