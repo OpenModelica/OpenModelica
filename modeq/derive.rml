@@ -76,6 +76,12 @@ relation differentiate_exp_time: (Exp.Exp,Exp.ComponentRef list) => Exp.Exp =
 	differentiate_exp_time(e as Exp.CREF(cr,tp),timevars) 
 	  => Exp.CALL(Absyn.IDENT("der"),[e],false,true)
 
+  rule  (* der(sin(x)) = der(x)*cos(x) *)
+	differentiate_exp_time(e,timevars) => e'
+	--------------------------------
+	differentiate_exp_time(Exp.CALL(Absyn.IDENT("sin"),[e],false,true),timevars) 
+	  => Exp.BINARY(e',Exp.MUL(Exp.REAL),Exp.CALL(Absyn.IDENT("cos"),[e],false,true))
+
   rule	(* list_member(cr,timevars) => false *)
 	--------------------------------
 	differentiate_exp_time(e as Exp.CREF(cr,tp),timevars) 
