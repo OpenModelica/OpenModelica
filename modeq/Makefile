@@ -7,21 +7,25 @@
 #
 
 SHELL	= /bin/sh
-CC	= cc
+CC	= gcc
 CFLAGS	= 
 LDFLAGS = -lrml -lm
 #RML	= /net/senilix/files/senilix3/labs/pelab/pub/pkg/rml/rml-2.1/sparc-sol2-gcc/bin/rmlc -g
-RML	= /home/pelab/pub/pkg/rml/current/sparc-sol2-gcc/bin/rmlc -g
+RMLHOME	= /home/pelab/pub/pkg/rml/current/sparc-sol2-gcc
+RML	= $(RMLHOME)/bin/rmlc -g
+RMLINC  = -I$(RMLHOME)/include/plain
 #RML	= rmlc -g
 PROG	= modeq
 AST	= ast/libast.a
-RTOBJ   = runtime/rtopts.o
+RTOBJ   = runtime/rtopts.o mystuff/myprint.o
 
 SRCRML=	debug.rml \
 	types.rml \
 	absyn.rml \
 	explode.rml \
 	dump.rml \
+	dumpgraphviz.rml \
+	graphviz.rml \
 	prefix.rml \
 	env.rml \
 	lookup.rml \
@@ -35,6 +39,7 @@ SRCRML=	debug.rml \
 	dae.rml \
 	mod.rml \
 	inst.rml \
+	codegen.rml \
 	main.rml
 
 SRCC=	$(SRCRML:.rml=.c)
