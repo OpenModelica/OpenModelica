@@ -18,6 +18,8 @@ module DAE:
   with "exp.rml"
   with "explode.rml"
   with "algorithm.rml"
+  with "types.rml"
+  with "staticexp.rml"
 
   type Ident = string
 
@@ -25,20 +27,44 @@ module DAE:
 
   datatype Type = REAL | INT | BOOL | STRING
 
-  datatype Element = VAR of Exp.ComponentRef * VarKind * Type
-(*!ignorecode*)
-                   | VARVAL of Exp.Exp (* Ugly hack *)
-(*!includecode*)
+(* LS: Added for variables in functions *)
+  datatype VarDirection = INPUT | OUTPUT | BIDIR
+
+(* LS: Removed VARVAL completely, and added Exp.Exp as an option to VAR *)
+  datatype Element = VAR of Exp.ComponentRef * VarKind * VarDirection * Type * Exp.Exp option
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | EQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
 		   | COMP of Ident * DAElist
+		   | FUNCTION of Absyn.Path * DAElist * Types.Type
+
+
+
+(* 
+ LS: Could have extended DAElist to have two lists, one with 
+ functions and one with elements, but that would mean a lot of
+ change in places where two daes are built and appended, in 
+ inst.rml 
+ FUNCTION could also consist of SCode.Class instead.
+ *)
+
 
   datatype DAElist = DAE of Element list
 	  
   relation dump: DAElist => ()
-	  
+  relation dump_debug: DAElist => ()
+  relation dump_debug_element : Element => ()
+  relation dump_graphviz: DAElist => ()
+  relation dump_type: Type => ()
+  relation dump_algorithm: Element => ()
+  relation get_matching_elements: (Element list, Element => () )  => Element list
+  relation get_output_vars: Element list  => Element list
+  relation is_output_var: Element => ()
+  relation is_parameter: Element => ()
+  relation is_comp: Element => ()
+  relation find_element: (Element list, Element => ()) => Element option
 end
+
 
 (** - Relations
  **
@@ -49,6 +75,7 @@ end
 (*!ignorecode*)
 
 with "rtopts.rml"
+with "graphviz.rml"
 
 (** relation: dump
  **
@@ -56,49 +83,124 @@ with "rtopts.rml"
  **)
 
 relation dump : DAElist => () =
-	
-  rule	RTOpts.modelica_output => false &
-	print "fclass " & print n & print "\n" &
-	dump(l) &
-	print "end " & print n & print ";\n"
-	-----------------------------------
-	dump DAE([COMP(n,l)])
 
-  rule	RTOpts.modelica_output => true &
-	print "class " & print n & print "\n" &
-	dump(l) &
-	print "end " & print n & print ";\n"
-	-----------------------------------
-	dump DAE([COMP(n,l)])
+  rule	dump_list (daelist, dump_function) &
+	dump_list (daelist, dump_comp_element)
+	-------------
+	dump DAE(daelist)
+end
 
-  rule	dump_vars l &
-	print "equation\n" &
-	dump_equations l &
-	dump_algorithms l
-	-----------------
-	dump DAE(l)
+
+
+relation dump_list : ('a list, 'a => ()) => () =
+
+  axiom	dump_list ([],_)
+
+  rule	r(first) &
+	dump_list (rest, r)
+	-------------------
+	dump_list (first::rest, r)
 
 end
 
+
+
+relation dump_comp_element : Element => () =
+
+  rule	RTOpts.modelica_output => false &
+	print "fclass " & print n & print "\n" &
+	dump_elements(l) &
+	print "end " & print n & print ";\n"
+	-----------------------------------
+	dump_comp_element COMP(n,DAE(l))
+
+  rule	RTOpts.modelica_output => true &
+	print "class " & print n & print "\n" &
+	dump_elements(l) &
+	print "end " & print n & print ";\n"
+	-----------------------------------
+	dump_comp_element COMP(n,DAE(l))
+
+(* LS: for non-COMPS, which are only FUNCTIONS at the moment *)
+
+  axiom	dump_comp_element _
+
+end
+
+
+
+relation dump_elements : Element list => () =
+
+  rule	dump_vars l &
+	print "equation\n" &
+	dump_list (l, dump_equation) &
+	dump_list (l, dump_algorithm)
+	-----------------
+	dump_elements l
+
+end
+
+(* replace this with dump_list when everything works after the VARVAL removal *)
+ (* project *)
+relation dump_vars: Element list => () =
+	
+  axiom	dump_vars []
+	
+  rule	dump_var first &
+	dump_vars rest
+	-------------------
+	dump_vars first :: rest
+
+end
+
+
+
 relation dump_kind =
 
-  rule	print "  constant  "
+  rule	print " constant  "
 	--------------------
 	dump_kind CONST
 	
-  rule	print "  parameter "
+  rule	print " parameter "
 	--------------------
 	dump_kind PARAM
 	
-  rule	print "  discrete  "
+  rule	print " discrete  "
 	--------------------
 	dump_kind DISCRETE
 
-  rule	print "            "
+  rule	print "           "
 	--------------------
 	dump_kind VARIABLE
 
 end
+
+relation dump_kind_str: VarKind => string =
+
+  axiom	dump_kind_str CONST => "constant"
+  axiom	dump_kind_str PARAM => "parameter"
+  axiom	dump_kind_str DISCRETE => "discrete"
+  axiom	dump_kind_str VARIABLE => ""
+
+end
+
+
+relation dump_direction =
+
+  rule	print " input  "
+	--------------------
+	dump_direction INPUT
+
+  rule	print " output "
+	--------------------
+	dump_direction OUTPUT
+	
+  rule	print "        "
+	--------------------
+	dump_direction BIDIR
+
+end
+
 
 relation dump_type =
 
@@ -120,20 +222,20 @@ relation dump_type =
 
 end
 
-relation dump_var : (Element, Exp.Exp option) => () =
+relation dump_var : Element => () =
 	
-  rule	dump_kind kind & dump_type typ &
+  rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & print ";\n"
 	--------------------------------------
-	dump_var(VAR(id, kind, typ), NONE)
+	dump_var VAR(id, kind, dir, typ, NONE)
 	
-  rule	dump_kind kind & dump_type typ &
+  rule	dump_kind kind & dump_direction dir & dump_type typ &
  	Exp.print_component_ref id & print " = " &
 	Exp.print_exp e & print ";\n"
 	--------------------------------------
-	dump_var(VAR(id, kind, typ), SOME(e))
+	dump_var VAR(id, kind, dir, typ, SOME(e))
 	
-  axiom	dump_var (_,_)
+  axiom	dump_var (_)
 
 end
 
@@ -164,43 +266,24 @@ relation dump_algorithm : Element => () =
 
 end
 
-relation dump_vars: Element list => () =
-	
-  axiom	dump_vars []
-	
-  rule	dump_var (first,SOME(e)) & (* Pretty, eh? *)
-	dump_vars rest
-	-------------------
-	dump_vars VARVAL(e) :: first :: rest
 
-  rule	dump_var (first,NONE) &
-	dump_vars rest
-	-------------------
-	dump_vars first :: rest
+(* LS *)
+relation dump_function: Element => () =
 
-end
 
-relation dump_equations: Element list => () =
+  rule	print "function " &
+	Absyn.path_string fpath => fstr &
+	print fstr & print "\n" &
+	dump_elements(dae) &
+	print "end " & print fstr & print ";\n\n\n"
+	------------------------------------
+	dump_function FUNCTION(fpath,DAE(dae),t)
 	
-  axiom	dump_equations []
-	
-  rule	dump_equation first &
-	dump_equations rest
-	-------------------
-	dump_equations first :: rest
+  axiom	dump_function _
+
 
 end
 
-relation dump_algorithms: Element list => () =
-	
-  axiom	dump_algorithms []
-	
-  rule	dump_algorithm first &
-	dump_algorithms rest
-	-------------------
-	dump_algorithms first :: rest
-
-end
 
 (** relation: pp_statement
  **
@@ -306,5 +389,320 @@ relation indent : int => () =
   rule	print " " & int_sub(i,1) => i' & indent i'
 	------------------------------------------
 	indent i
+
+end
+
+
+(* LS *)
+relation get_matching_elements: (Element list, Element => () )  => Element list =
+
+  axiom	get_matching_elements ([],_) => []
+
+(*
+  rule	cond(v) &
+	get_matching_elements (vl, cond) => vl'
+	-------------------
+	get_matching_elements (((vv as VARVAL(cr,e))::v::vl), cond) => vv::v::vl'
+*)
+
+  rule	cond(v) &
+	get_matching_elements (vl, cond) => vl'
+	-------------------
+	get_matching_elements (v::vl, cond) => v::vl'
+(*
+  rule	not cond(v) &
+	get_matching_elements (vl, cond) => vl'
+	--------------------------
+	get_matching_elements (VARVAL(_,_)::v::vl, cond) => vl'
+*)
+
+  rule	not cond(v) &
+	get_matching_elements (vl, cond) => vl'
+	--------------------------
+	get_matching_elements (v::vl, cond) => vl'
+
+end	
+
+
+(* LS *)
+relation is_parameter: Element => () =
+
+  (* LS: false means not protected, hence we ignore protected variables *)
+  axiom	is_parameter VAR(_, PARAM, _, _, _)
+
+end
+
+(* LS *)
+relation is_comp: Element => () =
+
+  axiom	is_comp COMP(_,_) 
+
+end
+
+
+
+(* LS *)
+relation get_output_vars: Element list  => Element list =
+	
+  rule	get_matching_elements(vl, is_output_var) => vl'
+	---------------------------------
+	get_output_vars vl => vl'
+end
+
+(* LS *)
+relation is_output_var: Element => () =
+
+  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _)
+
+end
+
+
+(* LS *)
+relation is_not_var: Element => () =
+
+  rule	not is_var e
+	------------
+	is_not_var e
+end
+
+(* LS *)
+relation is_var: Element => () =
+
+  axiom	is_var VAR(_,_,_,_,_)
+
+end
+
+(*******************************
+
+ Dump the data structures in a 
+ paranthesised way
+
+********************************)
+
+
+relation dump_debug : DAElist => () =
+
+  rule	print "DAE(" & dump_debug_elist elist & print ")"
+	-------------------------------------------------
+	dump_debug DAE(elist)
+
+end
+
+relation dump_debug_elist : Element list => () =
+
+  axiom dump_debug_elist []
+
+  rule	dump_debug_element first & print "\n" &
+	dump_debug_elist rest
+	---------------------
+	dump_debug_elist first :: rest
+
+end
+
+relation dump_debug_element : Element => () =
+
+  rule	print "VAR(" &
+	Exp.print_component_ref cr & print ", " &
+	dump_kind vk &
+	print ")"
+	-------------
+	dump_debug_element VAR(cr,vk,vd,ty,NONE)
+
+  rule	print "VAR(" &
+	Exp.print_component_ref cr & print ", " &
+	dump_kind vk & print ", " &
+	Exp.print_exp e &
+	print ")"
+	-------------
+	dump_debug_element VAR(cr,vk,vd,ty,SOME(e))
+
+  rule	print "DEFINE(" &
+	Exp.print_component_ref cr &
+	print ", " &
+	Exp.print_exp exp &
+	print ")"
+	----------------
+	dump_debug_element DEFINE(cr,exp)
+
+  rule	print "EQUATION(" &
+	Exp.print_exp e1 &
+	print "," &
+	Exp.print_exp e2 &
+	print ")"
+	------------------
+	dump_debug_element EQUATION(e1,e2)
+
+  rule	print "ALGORITHM()"
+	-------------------
+	dump_debug_element ALGORITHM(_)
+
+  rule	print "COMP(" & print n & print "," &
+	dump_debug (l) &
+	print ")"
+	--------------------------------------
+	dump_debug_element COMP(n,l)
+
+  rule	print "FUNCTION(" &
+	Absyn.path_string fpath => fstr &
+	print fstr & print "," &
+	Types.print_type t & print "," &
+	dump_debug (l) &
+	print ")"
+	--------------------------------------
+	dump_debug_element FUNCTION(fpath,l,t)
+
+end
+
+
+relation find_element : (Element list, Element => ()) => Element option =
+
+  axiom	find_element ([],_) => NONE
+
+  rule	f(e)
+	------------
+	find_element (e::rest, f) => SOME(e)
+
+  rule	not f(e) &
+	find_element (rest, f) => e'
+	-----------------
+	find_element (e::rest, f) => e'
+
+end
+
+
+(***************************
+ Graphviz relations to visualize 
+ the dae
+***************************)
+
+relation dump_graphviz : DAElist => () =
+
+  rule	build_graphviz dae => r &
+	Graphviz.dump(r)
+	----------------
+	dump_graphviz dae
+
+end
+
+
+relation build_graphviz : DAElist => Graphviz.Node =
+
+  rule	get_matching_elements (els, is_var) => vars &
+	get_matching_elements (els, is_not_var) => nonvars &
+	build_gr_list nonvars => nonvarnodes &
+	build_gr_vars vars => varnodes &
+	list_append (nonvarnodes,varnodes) => nodelist
+	-----------------------------
+	build_graphviz DAE(els) => Graphviz.NODE("DAE",[],nodelist)
+
+end
+
+relation build_gr_list : Element list => Graphviz.Node list =
+
+  axiom build_gr_list [] => []
+
+  rule	build_gr_element el => node &
+	build_gr_list rest => nodelist
+	---------------------------
+	build_gr_list el::rest => node::nodelist
+
+end
+
+relation build_gr_vars : Element list => Graphviz.Node list =
+
+  axiom build_gr_vars [] => []
+
+  rule	build_gr_strlist (vars, build_gr_var_str, 10) => strlist
+	---------------------------
+	build_gr_vars vars => [Graphviz.LNODE("VARS",strlist,[Graphviz.box],[])]
+
+end
+
+
+relation build_gr_strlist : (Element list, Element => string, int) => string list =
+
+  axiom	build_gr_strlist ([], _, _) => []
+
+  rule	int_le (count, 0) => true	
+	-------------------------------------
+	build_gr_strlist (var::rest, printer, count) => ["..."]
+
+  rule	int_gt (count, 0) => true &
+	int_sub (count, 1) => count' &
+	build_gr_strlist (rest, printer, count') => strlist &
+	printer (var) => str
+	-------------------------------------
+	build_gr_strlist (var::rest, printer, count) => str::strlist
+
+end
+
+relation build_gr_var_str : Element => string =
+
+  rule	Exp.print_component_ref_str cr => str
+	-------------------------------------
+	build_gr_var_str VAR(cr,_,_,_,NONE) => str
+
+  rule	Exp.print_component_ref_str cr => str &
+	print_exp_str_special exp => expstr &
+	string_append (str, " = ") => str' &
+	string_append (str', expstr) => str''
+	-------------------------------------
+	build_gr_var_str VAR(cr,_,_,_,SOME(exp)) => str''
+
+end
+
+relation print_exp_str_special : (Exp.Exp) => string =
+
+  rule	string_append ("\\\"", s) => s' &
+	string_append (s', "\\\"") => s''
+	---------------------------------
+	print_exp_str_special Exp.SCONST(s) => s''
+
+  rule	Exp.print_exp_str exp => str
+	----------------------------
+	print_exp_str_special exp => str
+
+end
+
+
+
+relation build_gr_element : Element => Graphviz.Node =
+
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	dump_kind_str vk => vkstr
+	--------------------------
+	build_gr_element VAR(cr,vk,vd,ty,NONE) => Graphviz.LNODE("VAR",[crstr,vkstr],[],[])
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	dump_kind_str vk => vkstr &
+	print_exp_str_special exp => expstr &
+	string_append ("= ", expstr) => expstr'
+	-------------------------------
+	build_gr_element VAR(cr,vk,vd,ty,SOME(exp)) => Graphviz.LNODE("VAR",[crstr,vkstr,expstr'],[],[])
+
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	print_exp_str_special exp => expstr &
+	string_append ("= ", expstr) => expstr'
+	---------------------------------------
+	build_gr_element DEFINE(cr,exp) => Graphviz.LNODE("DEFINE",[crstr,expstr'],[],[])
+
+  rule	print_exp_str_special e1 => e1str &
+	print_exp_str_special e2 => e2str
+	---------------------------------------
+	build_gr_element EQUATION(e1,e2) => Graphviz.LNODE("EQUATION",[e1str,"=",e2str],[],[])
+
+  axiom	build_gr_element ALGORITHM(_) => Graphviz.NODE("ALGORITHM",[],[])
+
+  rule	build_graphviz dae => node
+	---------------------------------------
+	build_gr_element COMP(n,dae) => Graphviz.LNODE("COMP",[n],[],[node])
+
+  rule	build_graphviz dae => node &
+	Absyn.path_string fpath => fstr
+	---------------------------------------
+	build_gr_element FUNCTION(fpath,dae,ty) => Graphviz.LNODE("FUNCTION",[fstr],[],[node])
+
 
 end
