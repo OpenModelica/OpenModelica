@@ -128,7 +128,7 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	----------------------
 	inst_program(env,c::(cs as (_::_))) => dae
 
-   rule print "failed" 
+   rule print "failed\n" 
 	------------
 	inst_program(_,_) => fail
 end

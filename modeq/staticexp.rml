@@ -460,9 +460,9 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 (*	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) 
 & *)
 	Lookup.lookup_functions_in_env(env,fn) => typelist &
-	print "\n We got the type list" &
+	print "\n We got the type list\n" &
 	elab_types (env,args,typelist) => (args', c, restype) &
-	print "\n We just elaborated the types" 
+	print "\n We just elaborated the types\n" 
 
 	(*P.R: When is T_FUNCTION ouputted from lookup_type? *)
 (*	print "Debug: We did a lookup T_FUNCTION " &
