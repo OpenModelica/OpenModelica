@@ -3,7 +3,7 @@ typedef struct {
   int type;
   union {
     int ival;
-    float floatval;
+    double realval;
     char *stringval;
   } u;
 } Attrib;
