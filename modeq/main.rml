@@ -18,15 +18,16 @@ with "dump.rml"
 with "explode.rml"
 with "dae.rml"
 with "inst.rml"
+with "rtopts.rml"
 
-(** relation: main
+(** relation: translate_file
  **
  ** The only relation in this module is the `main' relation, which is
  ** the starting point in all RML specifications.  It is invoked with
  ** a list containing the command-line arguments.
  **)
 
-relation main =
+relation translate_file : string list => () =
 
   rule	(* print "\n = Parsing\n\n" & *)
 	Parser.parse f => p &
@@ -43,14 +44,27 @@ relation main =
 	
 	print "\n[end result]\n"
 	----------------
-	main [f]
+	translate_file [f]
 	
+  rule	print "Too many arguments\n"
+	----------------------------
+	translate_file _::_::_
+
   rule	print "Supply a file name\n"
 	----------------------------
-	main []
+	translate_file []
 
   rule	print "# An error occured\n"
 	----------------------------
-	main _
+	translate_file _
+
+end
+
+relation main : string list => () =
+
+  rule	RTOpts.args args => args' &
+	translate_file args'
+	--------------------
+	main args
 
 end
