@@ -34,7 +34,7 @@ with "debug.rml"
 with "rtopts.rml"
 with "inst.rml"
 with "values.rml"
-
+with "tornadoext.rml"
 (** relation: generate_code
  ** This is the main relation that generates Tornado1 C++ code from the flat Modelica model
  ** It will generate two files <modelname>.cpp and <modelname>.hpp, the implementation file and 
@@ -242,6 +242,20 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
                         comp_name_list) 
           => (params_str,(r1::res))
  
+   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
+        cref_modelica_str(cr) => crs &
+        Util.string_append_list([" ",
+                                 is,
+                                 "  \"",
+                                 crs,"\" );\n"]) => r1 &
+        generate_links2(rest,var_index',param_index,comp_name_list) => (params_str,res) 
+          ---------------------------------------------
+        generate_links2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,_)::rest,
+                        var_index,
+                        param_index,
+                        comp_name_list) 
+          => (params_str,(r1::res))
+
           (* this rule take care of BIDIR variables *)
   rule  int_add(var_index,1) => var_index' & int_string(var_index) => is &
  (*       cref_modelica_str(cr) => crs &
@@ -252,11 +266,15 @@ relation generate_links2:(DAELow.Var list,int,int,string list) => (string list, 
 
         Exp.cref_str(cr) => crs &
         Util.string_split_at_char(crs,#".") => comp_name::_ &
+        TORNADOEXT.get_input_var_number(comp_name) => input_number &
+        int_string(input_number) => input_number_str &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
         Util.string_append_list(["  GetSubModel(",
                                  index_str,
-                                 ")->GetInputVar(0)->LinkValue(this, < unknown >, ",
+                                 ")->Get<unkown>Var(",
+                                 input_number_str,
+                                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",
                                  is,");", " // ",crs,"\n"]) => r1 &
         generate_links2(rest,var_index',param_index,comp_name_list) => (params,res) 
         ---------------------------------------------
