@@ -83,7 +83,7 @@ module Exp:
   datatype Subscript = WHOLEDIM
 		     | SLICE of Exp
 		     | INDEX of Exp
-  (** the `Subscript' and `ComponentRef' datatypes are simple *)
+  (** The `Subscript' and `ComponentRef' datatypes are simple *)
   (** translations of the corresponding types in the `Absyn' module. *)
 
   (** - Exported relations *)

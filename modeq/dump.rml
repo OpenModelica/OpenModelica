@@ -39,7 +39,7 @@ end
 
 with "classinf.rml"
 
-(** - Relations *)
+(* Relations *)
 
 relation dump: Absyn.Program => () =
 	
@@ -229,7 +229,7 @@ relation print_subscript: Absyn.Subscript => () =
 
 end
 
-(** - Modifications *)
+(* Modifications *)
 
 relation print_modification: Absyn.Modification => () =
 	
@@ -265,7 +265,7 @@ relation print_mod2 : Absyn.Exp option => () =
 
 end
 
-(** - Equations *)
+(* Equations *)
 
 relation print_equation: Absyn.Equation => () =
 	
@@ -312,7 +312,7 @@ relation print_eq_elseif : (Absyn.Exp * Absyn.Equation list) => () =
 
 end
 
-(** - Algorithm clauses *)
+(* Algorithm clauses *)
 
 relation print_algorithm: Absyn.Algorithm => () =
 	
@@ -360,12 +360,12 @@ relation print_alg_elseif : (Absyn.Exp * Absyn.Algorithm list) => () =
 
 end
 
-(** - Component references and paths *)
+(* Component references and paths *)
 
-(** relation: print_component_ref
- **
- ** Print a `ComponentRef'.
- **)
+(* relation: print_component_ref
+ *
+ * Print a `ComponentRef'.
+ *)
 
 relation print_component_ref : Absyn.ComponentRef => () =
 
@@ -392,10 +392,10 @@ relation print_subscripts : Absyn.Subscript list => () =
 
 end
 
-(** relation: print_path
- **
- ** Print a `Path'.
- **)
+(* relation: print_path
+ *
+ * Print a `Path'.
+ *)
 
 relation print_path : Absyn.Path => () =
 
@@ -405,12 +405,12 @@ relation print_path : Absyn.Path => () =
 
 end
 
-(** - Expressions *)
+(* - Expressions *)
 
-(** relation: print_exp
- **
- ** This relation prints a complete expression.
- **)
+(* relation: print_exp
+ *
+ * This relation prints a complete expression.
+ *)
 
 relation print_exp: Absyn.Exp => () =
 	
@@ -506,10 +506,10 @@ relation print_row : Absyn.Exp list => () =
 
 end
 
-(** relation: op_symbol
- **
- ** Make a string describing different operators.
- **)
+(* relation: op_symbol
+ *
+ * Make a string describing different operators.
+ *)
 
 relation op_symbol : Absyn.Operator => string =
   axiom	op_symbol(Absyn.ADD) => " + "
@@ -534,10 +534,10 @@ relation op_symbol : Absyn.Operator => string =
   axiom	op_symbol(Absyn.NEQUAL)    => " <> "
 end
 
-(** - Utility relations
- **
- ** These are utility relations used in some of the other
- ** relations. *)
+(* - Utility relations
+ *
+ * These are utility relations used in some of the other
+ * relations. *)
 
 relation print_select: (bool,string,string) => () =
 

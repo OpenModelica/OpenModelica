@@ -38,7 +38,7 @@ module Absyn:
   (** declaration.  The definition is either explicit, with a list of *)
   (** parts (`public', `protected', `equation' and `algorithm'), or it *)
   (** is a definition derived from another class.  In the latter case *)
-  (** this types contains the name of the derived class and an optional *)
+  (** this type contains the name of the derived class and an optional *)
   (** array dimension and a list of modifications. *)
 
   datatype ClassPart = PUBLIC of Element list
@@ -191,7 +191,7 @@ module Absyn:
 		       | R_PREDEFINED_BOOL
   (** These constructors each correspond to a different kind of class *)
   (** declaration in Modelica, except the last four, which are used *)
-  (** for the predefined types.  The parser assignes each class *)
+  (** for the predefined types.  The parser assigns each class *)
   (** declaration one of the restrictions, and the actual class *)
   (** definition is checked for conformance during translation.  The *)
   (** predefined types are created in the `Builtin' module and are *)
