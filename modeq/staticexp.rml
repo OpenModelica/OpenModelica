@@ -86,22 +86,15 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
-	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
-	print "  binary: " &
- 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") * " &
- 	Exp.print_exp e2' & print " (" & Types.print_type t2 & print ") => " &
-	Exp.print_exp Exp.BINARY(e1'',op',e2'') & print "\n"
-	-------------------------------------------------------
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
+	---------------------------------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2))
 	  => (Exp.BINARY(e1'',op',e2''),PROP(rtype,c))
 
   rule	elab_exp (env,e) => (e',PROP(t,c)) &
- 	Exp.print_exp e' & print " (" & Types.print_type t & print ") => " &
-	operators op => ops &
-	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
-	print "  unary: " &
-	Exp.print_exp Exp.UNARY(op',e'') & print "\n"
-	---------------------------------------------
+ 	operators op => ops &
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
+	------------------------------------------------------
 	elab_exp (env,exp as Absyn.UNARY(op,e))
 	  => (Exp.UNARY(op',e''),PROP(rtype,c))
 	
@@ -109,21 +102,15 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
-	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
-	print "  lbinary: " &
- 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") * " &
- 	Exp.print_exp e2' & print " (" & Types.print_type t2 & print ") => " &
-	Exp.print_exp Exp.LBINARY(e1'',op',e2'') & print "\n"
-	-------------------------------------------------------
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
+	---------------------------------------------------------------------
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2))
 	  => (Exp.LBINARY(e1'',op',e2''),PROP(rtype,c))
 
   rule	elab_exp (env,e) => (e',PROP(t,c)) &
  	operators op => ops &
-	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
-	print "  lunary: " &
-	Exp.print_exp Exp.LUNARY(op',e'') & print "\n"
-	-----------------------
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
+	------------------------------------------------------
 	elab_exp (env,exp as Absyn.LUNARY(op,e))
 	  => (Exp.LUNARY(op',e''),PROP(rtype,c))
 
@@ -345,11 +332,8 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 	(* This rule finds the built-in functions *)
 
   rule	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) &
-	print "   function " & Dump.print_path fn & print " is " &
-	Types.print_type t & print "\n" &
-	(* elab_call_args(env,args,params) => (args',c) *)
 	elab_input_args(env, args, params) => (args',c)
-	-------------------------------------
+	-----------------------------------------------
 	elab_call_args (env,fn,args) => (Exp.CALL(fn,args'), PROP(restype, c))
 
 
@@ -436,43 +420,6 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, (Ident * Types.Type) list)
 
 end
 
-(**)
-
-(*
-relation elab_call_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
-	  => (Exp.Exp list, bool) =
-
-  axiom	elab_call_args (env,[],[]) => ([],true)
-
-  rule	elab_exp (env,arg) => (arg',PROP(t1,c1)) &
-	match_type(arg',t1,pt) => arg'' &
-	elab_call_args (env,args,params) => (args',c2) &
-	bool_and (c1,c2) => c
-	---------------------------------
-	elab_call_args (env,arg::args,(pn,pt)::params) => (arg''::args',c)
-
-  rule	elab_exp (env,arg) => (arg',PROP(t1,c1)) &
-	not match_type(arg',t1,pt) => arg'' &
-	print "# Incompatible type of function argument: " &
-	Exp.print_exp arg' & print "\n"
-	-------------------------------
-	elab_call_args (env,arg::args,(pn,pt)::params) => fail
-
-  rule	print "# Too many functiion arguments\n"
-	----------------------------------------
-	elab_call_args (_,_::_,[]) => fail
-
-  rule	print "# Too few functiion arguments\n"
-	----------------------------------------
-	elab_call_args (_,[],_::_) => fail
-
-  rule	print "- elab_call_args failed\n"
-	---------------------------------
-	elab_call_args(_,_,_) => fail
-
-end
-*)
-
 (** relation: elab_cref
  **
  ** Elaborate on a component reference.  Check the type of the
@@ -484,19 +431,14 @@ end
 relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Properties, SCode.Accessibility) =
 
-  rule	print "    elab_cref " & Dump.print_component_ref c & print "\n" &
-	elab_cref_subs (env,c) => (c', const) &
-	print "     subs\n" &
+  rule	elab_cref_subs (env,c) => (c', const) &
 	Lookup.lookup_var (env,c') => (SCode.ATTR(ad,_,acc,variability,_),
 				       t,
 				       binding) &
-	print "     looked it up\n" &
 	elab_cref2 (env, c', acc, variability, t, binding)
 	  => (exp,const,acc') &
-	subscript_cref_type (exp,t) => t' &
-	print "    elab_cref " & Dump.print_component_ref c &
-	print " => " & print " (" & Types.print_type t' & print ")\n"
-	-------------------------
+	subscript_cref_type (exp,t) => t'
+	---------------------------------
 	elab_cref(env, c) => (exp, PROP(t', const), acc')
 
   rule	print "- elab_cref failed\n"
@@ -625,9 +567,7 @@ relation subscript_cref_type : (Exp.Exp, Types.Type) => Types.Type =
 	---------------------------------
 	subscript_cref_type (Exp.CREF(c), t) => t'
 
-  rule	print "  subscript_cref_type " & Exp.print_exp e & print "\n"
-	-------------------------------------------------------------
-	subscript_cref_type (e, t) => t
+  axiom	subscript_cref_type (e, t) => t
 
 end
 (**)
@@ -786,8 +726,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh))
 	  => Values.REAL(sum)
 
-  rule	Exp.print_exp(rh) & print "\n" &
-	ceval (env, lh) => Values.INTEGER(lhv) &
+  rule	ceval (env, lh) => Values.INTEGER(lhv) &
 	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_add(lhv, rhv) => sum
 	------------------------
@@ -997,11 +936,9 @@ end
 
 relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 
-  rule	print "    ceval_cref " & Exp.print_component_ref c & print " => " &
-	Lookup.lookup_var (env, c) => (_,_,binding) &
-	ceval_cref_binding (env,binding) => v &
-	Values.print_val v & print "\n"
-	-----------------------------------
+  rule	Lookup.lookup_var (env, c) => (_,_,binding) &
+	ceval_cref_binding (env,binding) => v
+	-------------------------------------
 	ceval_cref (env,c) => v
 
 	(* default *)

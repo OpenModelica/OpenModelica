@@ -165,12 +165,9 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
-  rule	print " instantiating " & print n & print "\n" &
-	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
-	  => (l,env', csets', ci_state', tys) &
-	print " " & print n & print " has state " &
- 	ClassInf.print_state ci_state' & print "\n"
-	-------------------------------------------
+  rule	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
+	  => (l,env', csets', ci_state', tys)
+	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,r,d), prot)
 	  => (l,env', csets', ci_state', tys)
@@ -223,14 +220,11 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.lookup_modification_p(mods,cn) => m &
 	Mod.elab_mod(env,pre,mod) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
-	print " deriving from " & Absyn.print_restr r & print " : " &
-	ClassInf.print_state new_ci_state & print "\n" &
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
 	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
 	  => (dae,env, csets', ci_state', tys) &
 
-	print "  " & ClassInf.print_state ci_state' & print "\n" &
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
@@ -304,7 +298,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 	 
   rule	Absyn.path_string(cn) => cns &
-	print "  extending class " & print cns & print "\n" &
 	
 	Lookup.lookup_class(env,cn) => (c as SCode.CLASS(cn2,_,restr,def)) &
 	Mod.lookup_modification_p(mods,cn) => classmod &
@@ -328,16 +321,15 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 	 
 	 (* If a variable is declared multiple times, the first is used *)
-  rule	Lookup.lookup_ident_local(env,n) => _ &
-	print " ignoring shadowed variable " & print n & print "\n"
-	--------------------------
+  rule	Lookup.lookup_ident_local(env,n) => _
+	-------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,_,_,_))
 	  => ([],env,csets,ci_state,[])
 	
   	(* Illegal redeclarations *)
   rule	Lookup.lookup_ident_local(env,n) => _ &
-	print "Trying to redeclare the class " & print n &
+	print "# Trying to redeclare the class " & print n &
 	print " as a variable\n"
 	------------------------
 	inst_element(env,mods,pre,csets,ci_state,
@@ -345,7 +337,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => fail
 
   rule	Lookup.lookup_class(env,Absyn.IDENT(n)) => v &
-	print "Trying to redeclare the variable " & print n &
+	print "# Trying to redeclare the variable " & print n &
 	print " as a class\n"
 	---------------------
 	inst_element(env,mods,pre,csets,ci_state,
@@ -377,8 +369,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
 
-	print " variable " & Exp.print_component_ref vn & print "\n" &
-
 	(** The class definition is fetched from the environment. *)
 	(** Then the set of modifications is calculated.  The *)
 	(** modificions is the result of merging the modifications *)
@@ -394,14 +384,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
 	Mod.elab_mod(env,pre,m) => m' &
-	(* print "  mod 1: " & Mod.print_mod classmod & print "\n" &
-	   print "  mod 2: " & Mod.print_mod mm & print "\n" &
-	   print "  mod 3: " & Mod.print_mod m' & print "\n" & *)
 
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m') => mod' &
-	print "  modification: " & Mod.print_mod mod' & print "\n" &
-
+	
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
 
@@ -422,9 +408,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	make_binding (env,attr,eq,cl) => binding &
 	Env.extend_frame_v(env,Types.VAR(n,attr,prot,ty,binding)) => env' &
-	print " extended frame with variable " & Exp.print_component_ref vn &
-	print " :: " & Types.print_type ty & print "\n" &
-
+	
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
 	(* dae_declare (vn,cl,attr) => dae3 & *)
@@ -520,7 +504,6 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	  => ([], csets, Types.T_NOTYPE)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
-	print "  modification[]: " & Mod.print_mod mod' & print "\n" &
 	inst_var(env,mod',pre,csets,n,cl,attr,NONE,dims,i::idxs)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
@@ -718,8 +701,7 @@ relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 			    Connect.Sets, SCode.Class)
 	  => (Env.Env, DAE.Element list) =
 
-  rule	print "  adding " & print n & print "\n" &
-	Env.extend_frame_c(env,c) => env' &
+  rule	Env.extend_frame_c(env,c) => env' &
 	implicit_instantiation(env',Mod.NOMOD,pre,csets,c) => (env'',dae)
 
 	(*
@@ -777,9 +759,8 @@ relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
 						   false,SCode.RO,Absyn.CONST,
 						   Absyn.BIDIR),
 				     false,
-				     ty,Types.UNBOUND)) => env' &
-	print "  added package " & print n & print "\n"
-	--------------------------------------------------------
+				     ty,Types.UNBOUND)) => env'
+	-------------------------------------------------------
 	add_package(env,n,ty,st,dae) => (env',dae)
 
   axiom	add_package(env,_,_,_,_) => (env,[])
@@ -846,11 +827,7 @@ relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.VarKind)
   axiom	dae_declare3 (vn, Types.T_STRING, kind)
 	  => [DAE.VAR(vn, kind, DAE.STRING)]
 
-  rule	print "  not declaring variable " &
-	Exp.print_component_ref c & print " :: " &
-	Types.print_type ty & print "\n"
-	--------------------------------------
-	dae_declare3 (c,ty,_) => []
+  axiom	dae_declare3 (c,ty,_) => []
 
 end
 
@@ -884,22 +861,26 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 					       [e,Absyn.STRING(d)])))
 	  => (dae,env,csets,ci_state')
 
+	(**  Normal equations *)
+
   rule	print "- No expression equations yet\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	-------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,SCode.EQ_EXPR(_)) => fail
 
+	(** The following rule handles shadowed (replaced) equations. *)
+	(** If an equation has a simple name on the left-hand side, *)
+	(** and that component has an equation modifier, this equation *)
+	(** is discared. *)
   rule	Lookup.lookup_ident_local(env,n)
 	  => Types.VAR(_,_,_,_,Types.EQBOUND(_,_)) &
-	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,
 		      SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2))
 	  => ([],env,csets,ci_state')
 
-  rule	print " equation\n" &
-	Static.elab_exp(env,e1) => (e1',prop1) &
+  rule	Static.elab_exp(env,e1) => (e1',prop1) &
 	Static.elab_exp(env,e2) => (e2',prop2) &
 	Prefix.prefix_exp(env,e1',pre) => e1'' &
 	Prefix.prefix_exp(env,e2',pre) => e2'' &
@@ -911,6 +892,9 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(**  `if' statements
 	 **
+	 ** If statements are instantiated by evaluating the
+	 ** conditional expression, and selecting the branch that
+	 ** should be used.
 	 **)
 
   rule	Static.elab_exp(env,e) => (e',Static.PROP(Types.T_BOOL,true)) &
@@ -934,9 +918,6 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 			     true)) &
 	(* FIXEM: Check bounds *)
 	Static.ceval (env,e') => v &
-	print "  Unrolling " & print i & print " in " &
- 	Dump.print_exp e & print " = " &
- 	Values.print_val v & print "\n" &
 	unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	-----------------------------------------------------------
@@ -1133,17 +1114,10 @@ relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
 			   bool, string, Prefix)
 	  => DAE.Element list =
 
-  rule	Prefix.prefix_exp(env,e,pre) => e' &
-	print " (constant) ASSERTION(" & Exp.print_exp e' & print "): " &
-	print d & print "\n"
-	--------------------
-	inst_assertion (env, e, Types.T_BOOL, true, d, pre) => [(* lost *)]
+	(* Constant assertions *)
+  axiom	inst_assertion (env, e, Types.T_BOOL, true, d, pre) => [(* lost *)]
 
-  rule	Prefix.prefix_exp(env,e,pre) => e' &
-	print " ASSERTION(" & Exp.print_exp e' & print "): " &
-	print d & print "\n"
-	--------------------
-	inst_assertion (env, e, Types.T_BOOL, _, d, pre) => [(* lost *)]
+  axiom	inst_assertion (env, e, Types.T_BOOL, _, d, pre) => [(* lost *)]
 
   rule	print "# Assertions have to be of type Boolean\n" &
 	print "  assertion: (" &
@@ -1167,8 +1141,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_) => ([], csets)
 
-  rule	print "   unroll: " & Values.print_val fst & print "\n" &
-	Env.open_scope env => env' &
+  rule	Env.open_scope env => env' &
 	Env.extend_frame_v (env',
 			    Types.VAR(i, SCode.ATTR([],
 						    false,
@@ -1293,25 +1266,19 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 			Absyn.ComponentRef, Absyn.ComponentRef)
 	  => Connect.Sets =
 
-  rule	print " connecting " &
-	Dump.print_component_ref(c1) & print " with " &
-	Dump.print_component_ref(c2) & print "\n" &
-	Static.elab_cref(env, c1) => (Exp.CREF(c1'),prop1,acc) &
+  rule	Static.elab_cref(env, c1) => (Exp.CREF(c1'),prop1,acc) &
 	Static.elab_cref(env, c2) => (Exp.CREF(c2'),prop2,acc) &
 	Static.canon_cref(env, c1') => c1'' &
 	Static.canon_cref(env, c2') => c2'' &
-	Lookup.lookup_var_local(env,c1'')
-	  => (SCode.ATTR(_,flow1,_,vt1,_),ty1,_) &
+	Lookup.lookup_var_local(env,c1'') => (attr1,ty1,_) &
 	Lookup.lookup_var_local(env,c2'')
-	  => (SCode.ATTR(_,flow2,_,vt2,_),ty2,_) &
-	print "  looked up connectors\n" &
-
+	  => (attr2,ty2,_) &
+	
 	(** Check that the types of the connectors are good. *)
 	valid_connector(ty1) &
 	valid_connector(ty2) &
-	check_connect_types(c1'',ty1,vt1,flow1,c2'',ty2,vt2,flow2) &
-	print "  they are valid connectors\n" &
-
+	check_connect_types(c1'',ty1,attr1,c2'',ty2,attr2) &
+	
 	component_face(c1'') => f1 &
 	component_face(c2'') => f2 &
 	connect_components(sets, pre, c1'', f1, ty1, c2'', f2, ty2, flow1)
@@ -1354,28 +1321,45 @@ end
  **)
 
 relation check_connect_types : (Exp.ComponentRef, Types.Type,
-				Absyn.Variability, bool,
+				SCode.Attributes,
 			       	Exp.ComponentRef, Types.Type,
-				Absyn.Variability, bool) => () =
+				SCode.Attributes) => () =
+
+  rule	print "# Can't connect two input variables\n" &
+	print "    while connecting " & Exp.print_component_ref c1 &
+	print " to " & Exp.print_component_ref c2 & print "\n"
+	------------------------------------------------------
+	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Sbsyn.INPUT),
+			    c2,_,SCode.ATTR(_,_,_,_,Sbsyn.INPUT)) => fail
+
+  rule	print "# Can't connect two output variables\n" &
+	print "    while connecting " & Exp.print_component_ref c1 &
+	print " to " & Exp.print_component_ref c2 & print "\n"
+	------------------------------------------------------
+	check_connect_types(c1,_,SCode.ATTR(_,_,_,_,Sbsyn.OUTPUT),
+			    c2,_,SCode.ATTR(_,_,_,_,Sbsyn.OUTPUT)) => fail
 
   rule	flow1 = flow2 &
 	Types.equivtypes(t1, t2) => true
 	-------------------------------
-	check_connect_types(_,t1,_,flow1,_,t2,_,flow2)
+	check_connect_types(_,t1,SCode.ATTR(_,flow1,_,_,_),
+			    _,t2,SCode.ATTR(_,flow2,_,_;_))
 
   rule	print "# Can't connect flow component " &
  	Exp.print_component_ref c1 &
 	print " to non-flow component " &
  	Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,_,true,c2,_,_,false) => fail
+	check_connect_types(c1,_,SCode.ATTR(_,true,_,_,_),
+			    c2,_,SCode.ATTR(_,false,_,_,_)) => fail
 
   rule	print "# Can't connect non-flow component " &
  	Exp.print_component_ref c1 &
 	print " to flow component " &
  	Exp.print_component_ref c2 & print "\n"
 	------------------------------------------------------
-	check_connect_types(c1,_,_,false,c2,_,_,true) => fail
+	check_connect_types(c1,_,SCode.ATTR(_,false,_,_,_),
+			    c2,_,SCode.ATTR(_,true,_,_,_)) => fail
 
   rule	print "- check_connect_types(" & Exp.print_component_ref c1 &
 	print " <-> " & Exp.print_component_ref c2 & print ") failed\n"
@@ -1402,10 +1386,6 @@ relation connect_components: (Connect.Sets,
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	print "  connect_components flow: " &
-	Exp.print_component_ref c1' & print " <-> " &
-	Exp.print_component_ref c2' &
-	print "\n" &
 	Connect.add_flow(sets, c1', f1, c2', f2) => sets'
 	-----------------------------------------
 	connect_components(sets, pre, c1, f1, Types.T_REAL,
@@ -1415,10 +1395,6 @@ relation connect_components: (Connect.Sets,
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	print "  connect_components non-flow: " &
-	Exp.print_component_ref c1' & print " <-> " &
-	Exp.print_component_ref c2' &
-	print "\n" &
 	Connect.add_equ(sets, c1', c2') => sets'
 	-----------------------------------------
 	connect_components(sets, pre, c1, _, Types.T_REAL,
@@ -1428,10 +1404,6 @@ relation connect_components: (Connect.Sets,
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	print "  connect_components 2: " &
-	Exp.print_component_ref c1' & print " <-> " &
-	Exp.print_component_ref c2' &
-	print "\n" &
 	connect_vars(sets,c1',f1,l1,c2',f2,l2) => sets'
 	----------------------------------------
 	connect_components(sets,pre,c1,f1, Types.T_COMPLEX(_,l1),
@@ -1468,20 +1440,16 @@ relation connect_vars : (Connect.Sets,
 
   rule	Exp.extend_cref(c1, n, []) => c1' &
 	Exp.extend_cref(c2, n, []) => c2' &
-	check_connect_types(c1', ty1, vt1, flow1, c2', ty2, vt2, flow2) &
-	(* print "  connect_vars: " &
-	 * Dump.print_component_ref c1' & print " <-> " &
-	 * Dump.print_component_ref c2' &
-	 * print "\n" & *)
+	check_connect_types(c1', ty1, attr1, c2', ty2, attr2) &
 	connect_components(sets,Prefix.NOPRE,
 			   c1',f1, ty1,
 			   c2',f2, ty2, flow1) => sets' &
 	connect_vars(sets',c1,f1,xs1,c2,f2,xs2) => sets''
 	--------------------------------------
 	connect_vars(sets,
-		     c1,f1, Types.VAR(n,SCode.ATTR(_,flow1,_,vt1,_),
+		     c1,f1, Types.VAR(n,attr1 as SCode.ATTR(_,flow1,_,vt1,_),
 				      _,ty1,_)::xs1,
-		     c2,f2, Types.VAR(_,SCode.ATTR(_,flow2,_,vt2,_),
+		     c2,f2, Types.VAR(_,attr2 as SCode.ATTR(_,flow2,_,vt2,_),
 				      _,ty2,_)::xs2)
 	  => sets''
 
@@ -1570,10 +1538,8 @@ end
 relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  => DAE.Element list =
 
-  rule  print "  equation modification: " & Exp.print_component_ref cr &
- 	Mod.print_mod mod & print "\n" &
-	inst_eq_equation(Exp.CREF(cr),Static.PROP(ty1,false(*FIXME*)),
-			 e,prop2) => dae
+  rule  inst_eq_equation(Exp.CREF(cr),
+			 Static.PROP(ty1,false(*FIXME*)), e,prop2) => dae
 	-----------------------------------------------
 	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME((e,prop2))))
 	  => dae
@@ -1587,13 +1553,15 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 
 end
 
-(**)
+(** relation: check_prot
+ **
+ ** This relation is used to check that a protected element is not
+ ** modified.
+ **)
 
 relation check_prot : (bool, Mod.Mod, Exp.ComponentRef) => () =
 
-  rule  print "  public variable " & Exp.print_component_ref cref & print "\n"
-	--------------------------------------------------
-	check_prot(false,_,cref)
+  axiom	check_prot(false,_,cref)
 	
   axiom check_prot(_,Mod.NOMOD,_)
 
@@ -1608,8 +1576,6 @@ end
  **
  ** This relation looks at the equation part of a modification, and if
  ** there is a declaration equation builds a `Types.Binding' for it.
- ** If the component being declared is declared to be constant, the
- ** relation `make_const_binding' is used.
  **
  **)
 
@@ -1618,49 +1584,16 @@ relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option, SCode.Clas
 
   axiom	make_binding (_,_,NONE,_) => Types.UNBOUND
 
-  rule	print "  constant binding: " & Exp.print_exp e & print "\n" &
-	----------------------------------------
-	make_binding (env,
-		      SCode.ATTR(_,_,_,Absyn.CONST,_),
-		      SOME((e,prop)),
-		      cl)
-	  => (* binding *) Types.EQBOUND(e,true)
+	(* Constant binding *)
+  axiom	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME((e,prop)), cl)
+	  => Types.EQBOUND(e,true)
 
 	(* default *)
 
-  rule	print "  nonconstant binding: " & Exp.print_exp e & print "\n"
-	-----------------------------------------------------------
-	make_binding (_,_, SOME((e,Static.PROP(t,c))),_) => Types.EQBOUND(e,c)
+  axiom	make_binding (_,_, SOME((e,Static.PROP(t,c))),_) => Types.EQBOUND(e,c)
 
   rule	print "- make_binding failed\n"
 	-------------------------------
 	make_binding(_,_,_,_) => fail
-
-end
-
-(** relation: make_const_binding *)
-
-relation make_const_binding : (Env.Env, Exp.Exp, Static.Properties,
-			       Types.Type) => Types.Binding =
-
-  rule	Static.match_prop(e, prop, Static.PROP(ct,true)) => e' &
-	Static.ceval (env, e') => v &
-	print "  constant expression " & Exp.print_exp e &
- 	print " = " & Values.print_val v & print " detected\n"
-	---------------------------------
-	make_const_binding (env,e,prop as Static.PROP(t,true),ct)
-	  => Types.VALBOUND(v)
-
-  rule	print "# Incompatible types in binding\n"
-	--------------------------------------
-	make_const_binding (env,e,Static.PROP(t,true),ct) => fail
-
-  rule	print "# Non-constant equation for constant\n"
-	---------------------------------
-	make_const_binding (env,e,Static.PROP(t,false),ct) => fail
-
-  rule	print "- make_const_binding failed\n"
-	-------------------------------
-	make_const_binding(_,_,_,_) => fail
 
 end
