@@ -28,6 +28,15 @@
  **
  **)
 
+(* This module is responsible for the lookup mechanism in Modelica.
+ ** It is responsible for looking up classes, variables, etc. in the
+ ** environment 'Env' by following the lookup rules.
+ ** The importand relations are:
+ ** lookup_class - to find a class 
+ ** lookup_type - to find types (e.g. functions, types, etc.)
+ ** lookup_var - to find a variable in the instance hierarchy.
+ **)
+
 module Lookup:
 
   with "classinf.rml"
