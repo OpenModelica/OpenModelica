@@ -3634,11 +3634,7 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],rtype) => fail
 
 	
-  rule Print.print_buf "PIGS PIGS " &
-	Types.print_type typ1 & Print.print_buf ", " & Types.print_type typ2 & Print.print_buf ",rtype " & Types.print_type rtype & 
-	Print.print_buf "\n"
-  ----------------------------
-  	compute_return_type (Exp.MUL_SCALAR_ARRAY(_),[typ1,typ2],rtype) => typ2 (*rtype*)
+  axiom compute_return_type (Exp.MUL_SCALAR_ARRAY(_),[typ1,typ2],rtype) => typ2 (*rtype*)
  
  
  

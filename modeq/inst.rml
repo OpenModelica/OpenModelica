@@ -4715,7 +4715,8 @@ relation inst_start_binding: (Types.Mod,Types.Type) => DAE.StartValue =
 
   rule	Mod.lookup_comp_modification(mod,"start") => mod &
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
-	Types.match_type(e,ty2,expected_type) => (e',ty') 
+	Types.match_type(e,ty2,expected_type) => (e',ty') &
+	Print.print_buf "WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
 	---------------------------------------------------
 	inst_start_binding (mod,expected_type) => SOME(e')
 
