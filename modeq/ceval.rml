@@ -860,6 +860,9 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
 
+axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st) 
+	  => (Values.BOOL(false),st)
+
 
   rule	SCode.elaborate(p) => p' &
 	Static.component_ref_to_path(cr) => path &

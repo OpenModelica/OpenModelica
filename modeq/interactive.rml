@@ -155,6 +155,25 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
 	
+
+  rule	build_env_from_symboltable(st) => env &	
+	Static.elab_exp(env,cond,true,SOME(st)) 
+	  => (econd,prop,SOME(st')) &
+	Ceval.ceval (env,econd,true,SOME(st')) 
+	  => (Values.BOOL(true),SOME(st'')) 
+	-----------------------------------------------
+	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_)),st as SYMBOLTABLE(p,_,_,_,_))
+	    => ("", st'')
+	
+  rule	build_env_from_symboltable(st) => env &	
+	Static.elab_exp(env,msg,true,SOME(st)) 
+	  => (msg',prop,SOME(st')) &
+	Ceval.ceval (env,msg',true,SOME(st')) 
+	  => (Values.STRING(str),SOME(st'')) 
+	-----------------------------------------------
+	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_)),st as SYMBOLTABLE(p,_,_,_,_))
+	    => (str, st'')
+
   rule	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
 	Ceval.ceval(env,sexp,true,SOME(st')) => (value,SOME(st'')) &
@@ -424,6 +443,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("getComponents",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	get_component_annotations(cr,p) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getComponentAnnotations",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
@@ -1962,6 +1991,28 @@ relation get_components: (Absyn.ComponentRef,Absyn.Program) => string =
 	axiom get_components(_,_) => "-1"
 end
 
+
+(** relation: get_component_annotations
+ ** This relation takes a `ComponentRef', a `Program' and
+ ** returns a list of all component annotations, as returned by 
+ ** get_nth_component_annotation.
+ **)
+relation get_component_annotations: (Absyn.ComponentRef,
+				      Absyn.Program) 
+	  => string = 
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_components_in_class(cdef) => comps &
+	get_component_annotations_from_elts(comps) => s1 &
+	string_append("{",s1) => s2 &
+	string_append(s2,"}") => str
+	-------------------------------------------------
+	get_component_annotations( model,p) => str
+
+	axiom get_component_annotations(_,_) => "-1"
+end
+
 (** relation: get_nth_component_annotation
  ** This relation takes a `ComponentRef', a `Program' and an int and  returns a comma separated string of values
  ** corresponding to the flat record for component annotations.
@@ -2970,6 +3021,75 @@ relation count_connections_in_equations: Absyn.EquationItem list => int =
   axiom	count_connections_in_equations([]) => 0
 end
 
+relation get_component_annotations_from_elts: (Absyn.Element list) 
+	  => string =
+
+  rule	Parser.parsestring Placement_records => p &
+	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	get_componentitems_annotations(comps,env) => res &
+	Util.string_delimit_list(res,",") => res'
+	------------------------------------------------
+	get_component_annotations_from_elts(comps) => res'
+end
+
+relation get_componentitems_annotations: (Absyn.Element list, Env.Env) 
+	  => string list =
+
+  axiom	get_componentitems_annotations([],_) => []
+
+  rule	get_componentitems_annotations_from_items(items,env)
+	  => res1 &
+	  get_componentitems_annotations(rest,env) => res2 &
+	list_append(res1,res2) => res
+	------------------------
+	get_componentitems_annotations(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,items),_)::rest,env) 
+	  => res
+  rule	get_componentitems_annotations(rest,env) => res2 &
+	list_append(["{}"],res2) => res
+	------------------------
+	get_componentitems_annotations(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,_),_)::rest,env) 
+	  => res
+
+  rule	get_componentitems_annotations(rest,env) => res 
+	------------------------
+	get_componentitems_annotations(_::rest,env) => res
+end
+
+
+
+relation get_componentitems_annotations_from_items: (Absyn.ComponentItem list,
+					  Env.Env) 
+	  => string list =
+
+  axiom	get_componentitems_annotations_from_items ([],env) => []
+
+  rule	Lookup.lookup_class(env,Absyn.IDENT("Placement"),false) => (c,env') &
+	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' &
+	Mod.elab_mod(env',Prefix.NOPRE,mod') => mod'' &
+	Inst.inst_class(env', mod'', Prefix.NOPRE, [], c,
+			[], false,Inst.TOP_CALL) 
+	  => (dae, _, cs, t, state) &
+	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
+	Inst.init_vars_modelica_output dae => dae' &
+     	DAE.get_variable_bindings_str dae' => gexpstr &
+	Util.string_append_list(["{",gexpstr,"}"]) => gexpstr' &
+	
+	get_componentitems_annotations_from_items(rest,env) => res
+	-----------------------------------------------
+	get_componentitems_annotations_from_items(Absyn.COMPONENTITEM(_,SOME(Absyn.COMMENT(SOME(
+		Absyn.ANNOTATION(mod as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)::_)
+	),_)))::rest,env)
+	  => gexpstr'::res
+
+  rule	get_componentitems_annotations_from_items(rest,env) => res 
+	-----------------------
+	get_componentitems_annotations_from_items (Absyn.COMPONENTITEM(_,NONE)::(rest as _::_),env) => "{},"::res
+
+  axiom	get_componentitems_annotations_from_items ([Absyn.COMPONENTITEM(_,NONE)],env) => ["{}"]
+
+end
+
 (** relation: get_component_annotation
  ** This relation takes an `Element' and returns a comma separated string of values
  ** corresponding to the flat record for a component annotation. If several components are declared 
@@ -3074,22 +3194,18 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	
         Parser.parsestring totstring => p &
 	SCode.elaborate(p) => p' &
-	Print.print_buf "elaborated program\n" &
 	Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
-	Print.print_buf "made env\n" &
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
 	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &	
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false,Inst.TOP_CALL) 
 	  => (dae, _, cs, t, state) &
-	Print.print_buf "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
-	Print.print_buf "calling elab_graphics_exp\n" &
 	Static.elab_graphics_exp(env,graphicexp) => (graphicexp2,prop) &
-	Print.print_buf "elab_graphics_exp finished\n" &
+
 	Exp.print_exp_str(graphicexp2) => gexpstr &
 	string_append(str,",") => s1 &
 	string_append(s1,gexpstr) => totstr
@@ -3108,7 +3224,7 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
 			[], false,Inst.TOP_CALL) 
 	  => (dae, _,cs, t, state) &
-	Print.print_buf "Instantiated Diagram class, without graphics primitives\n" &
+
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
@@ -3133,10 +3249,6 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	  => (dae, _, cs, t, state) &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
-	Debug.fprint ("interactivedump","Annotation DAE = ") &
-	Debug.fcall ("interactivedump", DAE.dump2, DAE.DAE(dae)) &
-	Debug.fprint ("interactivedump","Mod =") &
-	Debug.fcall ("interactivedump",SCode.print_mod, mod') &
      	DAE.get_variable_bindings_str dae' => str 
 	-----------------------------------------
 	get_annotation_string(totstring, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(anncname,_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => str
