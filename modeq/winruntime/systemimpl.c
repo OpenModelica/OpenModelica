@@ -70,10 +70,10 @@ void System_5finit(void)
 	char* mingwpath;
 	set_cc("gcc");
 	if (getenv("MODELICAUSERCFLAGS") != NULL) {
-		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\modeq\\win -lc_runtime_mingw %MODELICAUSERCFLAGS%");
+		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\c_runtime -lc_runtime %MODELICAUSERCFLAGS%");
 	}
 	else {
-		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\modeq\\win -lc_runtime_mingw");
+		set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\c_runtime -lc_runtime");
 	}
 	path = getenv("PATH");
 	moshhome = getenv("MOSHHOME");
