@@ -78,12 +78,12 @@ void simple_alloc_2d_real_array(real_array_t* dest, int r, int c)
 
 void alloc_real_array(real_array_t* dest,int ndims,...)
 {
-  va_list ap;
-  va_start(ap,ndims);
+ /*  va_list ap; */
+/*   va_start(ap,ndims); */
   
-  /* Allocate size for the dimension vector */
-  /* Allocate size for array */
-  va_end(ap);
+/*   /\* Allocate size for the dimension vector *\/ */
+/*   /\* Allocate size for array *\/ */
+/*   va_end(ap); */
 }
 
 
@@ -199,11 +199,12 @@ modelica_real* calc_index(int ndims,
 			  size_t* idx_vec, 
 			  real_array_t* arr)
 {
+  /* int i;
   for (i = 0; i < ndims; ++i)
     {
       
-    }
-  /*    int i;
+    }*/
+      int i;
     int d;
     modelica_real* data = arr->data;
     size_t stride = 1;
@@ -214,7 +215,7 @@ modelica_real* calc_index(int ndims,
 	stride *= arr->dim_size[i];
 	
     }
-  */
+  
     return data;
 }
 
