@@ -139,15 +139,12 @@ end
 relation check_subscripts : (Absyn.ArrayDim, Exp.Subscript list)
 	  => (Absyn.ArrayDim) =
 
+  axiom check_subscripts(x, []) => []
+
+  rule	check_subscripts(xs, ys) => ad
 	(* FIXME: Check range too? Yes! *)
-  axiom check_subscripts(Absyn.NODIM, []) => Absyn.NODIM
-  axiom check_subscripts(Absyn.ONEDIM(_), [_]) => Absyn.NODIM
-  axiom check_subscripts(Absyn.TWODIM(_,_), [_,_]) => Absyn.NODIM
-
-  axiom check_subscripts(Absyn.ONEDIM(x), []) => Absyn.ONEDIM(x)
-  axiom check_subscripts(Absyn.TWODIM(_,x), [_]) => Absyn.ONEDIM(x)
-
-  axiom check_subscripts(Absyn.TWODIM(x,y), []) => Absyn.TWODIM(x,y)
+	------------------------------
+	check_subscripts(x::xs,y::ys) => ad
 
   rule	print "- check_subscripts failed\n"
 	-----------------------------------
@@ -191,7 +188,7 @@ relation lookup_var_f : ((SCode.Ident * Env.FrameVar) list,
 
   rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
 	lookup_var2(f, id) => Env.FRAMEVAR(n,Absyn.ATTR(ad,f,vt,di),ty,_) &
-	check_subscripts(ad,ss) => Absyn.NODIM & (* FIXME: error message *)
+	check_subscripts(ad,ss) => [] & (* FIXME: error message *)
 	lookup_in_var(ty, ids) => (attr,ty,binding)
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty,binding)

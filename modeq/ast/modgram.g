@@ -361,51 +361,34 @@ component_declaration :
 
 declaration :
 	i:IDENT^
-	{ a:array_dimensions }
+	{ a:array_subscripts }
 	{ m:modification }
 	<< #i->rml = Absyn__COMPONENT(mk_scon($i.u.stringval),
 				      #a ? #a->rml : Absyn__NODIM,
 				      #m ? mk_some(#m->rml) : mk_none()); >>
         ;
 
-array_dimensions :
-	brak:LBRACK^
-	s1:subscript { ","! s2:subscript }
-	RBRACK!
-	<< if(#s2) #0->rml = Absyn__TWODIM(#s1->rml,#s2->rml);
-	   else #0->rml = Absyn__ONEDIM(#s1->rml); >>
-	;
-
-subscripts :
-	brak:LBRACK^
-	s:subscript_list
-	RBRACK!
-	<< #0->rml = sibling_list(#s); >>
-	;
-
-subscript_list :
-	subscript { ","! subscript { ","! subscript }}
+array_subscripts :
+	  brak:LBRACK^
+	  s:subscript ( ","! subscript )*
+	  RBRACK!
+	  << #0->rml = sibling_list(#s); >>
 	;
 
 subscript :
-	<< Attrib a = $[SUBSCRIPT,"---"]; >>
-	ex1:expression { ":"! ex2:expression { ":"! ex3:expression } }
-	<<
-	   #0 = #(#[&a],#0);
-	   if(#ex3)
-	     #0->rml = Absyn__SUB3(#ex1->rml, #ex2->rml, #ex3->rml);
-	   else if(#ex2)
-	     #0->rml = Absyn__SUB2(#ex1->rml, #ex2->rml);
-	   else
-	     #0->rml = Absyn__SUB1(#ex1->rml);
-	>>
+	  << Attrib a = $[SUBSCRIPT,"---"]; >>
+	  ex1:expression
+	  <<
+	     #0 = #(#[&a],#0);
+	     #0->rml = Absyn__SUBSCRIPT(#ex1->rml);
+	  >>
 
         | ":"!
-	<<
-	   #0 = #(#[&a],#0);
-	   #0->rml = Absyn__NOSUB;
-	>>
-  ;
+	  <<
+	     #0 = #(#[&a],#0);
+	     #0->rml = Absyn__NOSUB;
+	  >>
+	;
 
 /*
  * Modifications
@@ -612,9 +595,9 @@ connect_clause :
 	;
 
 connector_ref : << void *tail = NULL; >>
-	  i1:IDENT^ { a1:subscripts }
+	  i1:IDENT^ { a1:array_subscripts }
 	  << #i1->rml = mk_scon($i1.u.stringval); >>
-	  { dot:DOT^ i2:IDENT { a2:subscripts }
+	  { dot:DOT^ i2:IDENT { a2:array_subscripts }
 	    << tail = Absyn__CREF_5fIDENT(mk_scon($i2.u.stringval),
 					  #a2?#a2->rml:mk_nil()); >>
 	    }
@@ -780,7 +763,7 @@ name_path : << bool qualified = false; >>
 /* 	; */
 
 component_reference : << void *tail = NULL;>>
-	  i:IDENT^ { a:subscripts }
+	  i:IDENT^ { a:array_subscripts }
 	  << #i->rml = mk_scon($i.u.stringval); >>
 	  { dot:DOT^ c:component_reference << tail = #c->rml; >> }
 	  << if(tail)

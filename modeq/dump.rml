@@ -15,6 +15,8 @@ module Dump:
   relation dump: Absyn.Program => ()
   relation print_exp: Absyn.Exp => ()
   relation print_component_ref: Absyn.ComponentRef => ()
+  relation print_subscripts : Absyn.Subscript list => ()
+  relation print_arraydim: Absyn.ArrayDim => ()
   relation print_equation: Absyn.Equation => ()
   relation print_algorithm: Absyn.Algorithm => ()
   relation print_list : ('a list, 'a => (), string) => ()
@@ -196,16 +198,9 @@ end
 
 relation print_arraydim: Absyn.ArrayDim => () =
 
-  axiom print_arraydim(Absyn.NODIM)
-
-  rule	print "[" & print_subscript(s) & print "]"
-	-----------------------------------------
-	print_arraydim(Absyn.ONEDIM(s))
-	
-  rule	print "[" & print_subscript(s1) &
-	print "," & print_subscript(s2) & print "]"
-	-----------------------------------------
-	print_arraydim(Absyn.TWODIM(s1,s2))
+  rule	print_subscripts(s)
+	-------------------
+	print_arraydim(s)
 	
 end
 
@@ -217,16 +212,7 @@ relation print_subscript: Absyn.Subscript => () =
 
 	rule	print_exp(e1)
 		----------
-		print_subscript(Absyn.SUB1(e1))
-
-	rule	print_exp(e1) & print ":" & print_exp(e2)
-		-------------
-		print_subscript(Absyn.SUB2(e1,e2))
-
-	rule	print_exp(e1) & print ":" &
-		print_exp(e2) & print ":" & print_exp(e3)
-		----------------------------------------------
-		print_subscript(Absyn.SUB3(e1,e2,e3))
+		print_subscript(Absyn.SUBSCRIPT(e1))
 
 end
 
@@ -338,27 +324,26 @@ end
 
 relation print_component_ref : Absyn.ComponentRef => () =
 
-  rule	print_component_ref2 (s,subs)
-	----------------------------
+  rule	print s &
+	print_subscripts subs
+	---------------------
 	print_component_ref Absyn.CREF_IDENT(s,subs)
 
-  rule	print_component_ref2 (s,subs) &
+  rule	print s &
+	print_subscripts subs &
 	print "." &
 	print_component_ref cr
 	---------------------
 	print_component_ref Absyn.CREF_QUAL(s,subs,cr)
 end
 
-relation print_component_ref2 =
+relation print_subscripts : Absyn.Subscript list => () =
 
-  rule	print s
-	-------
-	print_component_ref2 (s,[])
+  axiom	print_subscripts []
 
-  rule	print s &
-	print "[" & print_list(l,print_subscript,",") & print "]"
+  rule	print "[" & print_list(l,print_subscript,",") & print "]"
 	-------------------------------------------------------
-	print_component_ref2 (s,l)
+	print_subscripts l
 
 end
 

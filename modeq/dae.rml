@@ -19,6 +19,7 @@ module DAE:
   datatype Type = REAL | INT | BOOL | STRING
 
   datatype DAEcomp = VAR of Exp.ComponentRef * VarKind * Type
+			  * Absyn.ArrayDim (*FIXME*)
 		   | VARVAL of Ident * VarKind * Exp.Exp
 		   | EQUATION of Exp.Exp
 		   | ALGORITHM of SCode.Algorithm
@@ -45,7 +46,7 @@ relation dump_kind =
 	--------------------
 	dump_kind DISCRETE
 
-  rule	print "  variable  "
+  rule	print "            "
 	--------------------
 	dump_kind VARIABLE
 
@@ -53,19 +54,19 @@ end
 
 relation dump_type =
 
-  rule	print "integer "
+  rule	print "Integer "
 	----------------
 	dump_type INT
 
-  rule	print "real    "
+  rule	print "Real    "
 	----------------
 	dump_type REAL
 
-  rule	print "bool    "
+  rule	print "Boolean "
 	----------------
 	dump_type BOOL
 
-  rule	print "string  "
+  rule	print "String  "
 	----------------
 	dump_type STRING
 
@@ -74,9 +75,9 @@ end
 relation dump_comp: DAEcomp => () =
 	
   rule	dump_kind kind & dump_type typ &
- 	Exp.print_component_ref id & print "\n"
+ 	Exp.print_component_ref id & Dump.print_arraydim ad & print "\n"
 	--------------------------------------
-	dump_comp(VAR(id, kind, typ))
+	dump_comp(VAR(id, kind, typ, ad))
 	
   rule	dump_kind kind & print id &
 	print "=" & Exp.print_exp ex & print "\n"
@@ -98,9 +99,9 @@ end
 relation dump_var : DAEcomp => () =
 	
   rule	dump_kind kind & dump_type typ &
- 	Exp.print_component_ref id & print "\n"
+ 	Exp.print_component_ref id & Dump.print_arraydim ad & print ";\n"
 	--------------------------------------
-	dump_var(VAR(id, kind, typ))
+	dump_var(VAR(id, kind, typ, ad))
 	
   axiom	dump_var _
 
@@ -108,7 +109,7 @@ end
 
 relation dump_equation : DAEcomp => () =
 	
-  rule	print "  " & Exp.print_exp eq & print "\n"
+  rule	print "  " & Exp.print_exp eq & print ";\n"
 	--------------------------------------
 	dump_equation(EQUATION(eq))
 	
@@ -118,9 +119,8 @@ end
 
 relation dump_algorithm : DAEcomp => () =
 
-  rule	print "\nalgorithm\n\n" &
-	Dump.print_list(alg, pp_algorithm, "") &
-	print "\n"
+  rule	print "algorithm\n" &
+	Dump.print_list(alg, pp_algorithm, "")
 	----------------------------------------------
 	dump_algorithm ALGORITHM(SCode.ALGORITHM(alg))
 
@@ -163,9 +163,14 @@ end
 
 relation dump: DAEform => () =
 	
-  rule	print "\nvariables\n\n" &
-	dump_vars l &
-	print "\nequations\n\n" &
+  rule	print "fclass " & print n & print "\n" &
+	dump(l) &
+	print "end " & print n & print ";\n"
+	-----------------------------------
+	dump DAE([COMP(n,l)])
+
+  rule	dump_vars l &
+	print "equation\n" &
 	dump_equations l &
 	dump_algorithms l
 	-----------------
@@ -192,7 +197,7 @@ relation pp_alg : (Absyn.Algorithm, int) => () =
 	Dump.print_component_ref c &
 	print " := " &
 	Dump.print_exp e &
-	print "\n"
+	print ";\n"
 	----------
 	pp_alg (Absyn.ALG_ASSIGN(c,e), i)
 
@@ -201,11 +206,11 @@ relation pp_alg : (Absyn.Algorithm, int) => () =
 	int_add(i,2) => i' &
 	pp_alg_list (algs, i') &
 	indent i &
-	print "end while\n"
+	print "end while;\n"
         -------------------
 	pp_alg (Absyn.ALG_WHILE(e,algs), i)
 	
-  rule	indent i & print "**ALGORITHM**\n"
+  rule	indent i & print "**ALGORITHM**;\n"
 	----------------------------------
 	pp_alg (_,i)
 

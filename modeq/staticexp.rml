@@ -16,7 +16,7 @@ module StaticExp :
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Types.BasicType, bool)
   relation elab_relop : (Absyn.RelOp, Types.BasicType) => Exp.RelOp
-  relation ceval : (Env.Env, Exp.Exp)	  => (Values.Value, Types.BasicType)
+  relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
   relation eq_cref : (Exp.ComponentRef, Exp.ComponentRef) => ()
 
@@ -65,27 +65,38 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.BasicType, bool) =
 
   rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
 	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
-	bool_and (c_start, c_stop) => const
-	-------------------------------------------
+	bool_and (c_start, c_stop) => const &
+	ceval (env,start') => Values.INTEGER(startv) &
+	ceval (env,stop') => Values.INTEGER(stopv) &
+	int_sub (stopv,startv) => n & int_add (n,1) => n'
+	-----------------------------------------------
 	elab_exp (env, Absyn.RANGE(start, NONE, stop))
 	  => (Exp.RANGE(start',NONE,stop'),
-	      Types.T_ARRAY(1, Types.T_INTEGER),
+	      Types.T_ARRAY(Types.DIM(SOME(n'),Types.NODIM), Types.T_INTEGER),
 	      const)
-
-  rule	elab_array (env, es) => (es', t, const)
-	---------------------------------------
-	elab_exp (env, Absyn.ARRAY(es))
-	  => (Exp.ARRAY(es'), Types.T_ARRAY(1, t), const)
 
   rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
 	elab_exp (env, step) => (step', Types.T_INTEGER, c_step) &
 	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
 	bool_and (c_start, c_step) => c1 &
-	bool_and (c1, c_stop) => const
-	-------------------------------------------
+	bool_and (c1, c_stop) => const &
+	ceval (env,start') => Values.INTEGER(startv) &
+	ceval (env,step') => Values.INTEGER(stepv) &
+	ceval (env,stop') => Values.INTEGER(stopv) &
+	int_sub (stopv,startv) => n &
+	int_div (n,stepv) => n' &
+ 	int_add (n',1) => n''
+	---------------------
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
 	  => (Exp.RANGE(start',SOME(step'),stop'),
-	      Types.T_ARRAY(1, Types.T_INTEGER),
+	      Types.T_ARRAY(Types.DIM(SOME(n''),Types.NODIM), Types.T_INTEGER),
+	      const)
+
+  rule	elab_array (env, es) => (es', t, const) & list_length es' => l
+	--------------------------------------------------------------
+	elab_exp (env, Absyn.ARRAY(es))
+	  => (Exp.ARRAY(es'),
+	      Types.T_ARRAY(Types.DIM(SOME(l),Types.NODIM), t),
 	      const)
 
   rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
@@ -283,41 +294,22 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
   axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.NOSUB, true)
 
   rule	elab_exp (env,sub1) => (sub1', ty, const) &
-	assert_integer_subscript (ty, sub1)
+	assert_subscript_type (ty, sub1)
 	-----------------------------------
-	elab_subscript (env,Absyn.SUB1(sub1)) => (Exp.SUB1(sub1'), const)
-
-  rule	elab_exp (env,sub1) => (sub1', ty1, const1) &
-	assert_integer_subscript (ty1, sub1) &
-	elab_exp (env,sub2) => (sub2', ty2, const2) &
-	assert_integer_subscript (ty2, sub2) &
-	bool_and(const1, const2) => const
-	---------------------------------
-	elab_subscript (env,Absyn.SUB2(sub1,sub2))
-	  => (Exp.SUB2(sub1',sub2'), const)
-
-  rule	elab_exp (env,sub1) => (sub1', ty1, const1) &
-	assert_integer_subscript (ty1, sub1) &
-	elab_exp (env,sub2) => (sub2', ty2, const2) &
-	assert_integer_subscript (ty2, sub2) &
-	elab_exp (env,sub3) => (sub3', ty3, const3) &
-	assert_integer_subscript (ty3, sub3) &
-	bool_and(const1, const2) => const3 &
-	bool_and(const3, const2) => const
-	---------------------------------
-	elab_subscript (env,Absyn.SUB3(sub1,sub2,sub3))
-	  => (Exp.SUB3(sub1',sub2',sub3'), const)
+	elab_subscript (env,Absyn.SUBSCRIPT(sub1)) => (Exp.SUB1(sub1'), const)
 
 end
 
-relation assert_integer_subscript : (Types.BasicType, Absyn.Exp) => () =
+relation assert_subscript_type : (Types.BasicType, Absyn.Exp) => () =
 
-  axiom	assert_integer_subscript (Types.T_INTEGER,_)
+  axiom	assert_subscript_type (Types.T_INTEGER,_)
 
-  rule	print "# Subscript is not an integer\n" &
+  axiom	assert_subscript_type (Types.T_ARRAY(_,Types.T_INTEGER),_)
+
+  rule	print "# Subscript is not an integer or integer array\n" &
 	print "#  expression: " & Dump.print_exp e & print "\n"
 	------------------------------------------------------
-	assert_integer_subscript (_,e) => fail
+	assert_subscript_type (_,e) => fail
 
 end
 
@@ -497,87 +489,82 @@ end
 
 (**)
 
-relation ceval : (Env.Env, Exp.Exp) => (Values.Value, Types.BasicType) =
+relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 
-  axiom	ceval (_,Exp.ICONST(x)) => (Values.INTEGER(x), Types.T_INTEGER)
-  axiom	ceval (_,Exp.RCONST(x)) => (Values.REAL(x),    Types.T_REAL)
-  axiom ceval (_,Exp.SCONST(x)) => (Values.STRING(x),  Types.T_STRING)
-  axiom ceval (_,Exp.BCONST(x)) => (Values.BOOL(x),    Types.T_BOOL)
+  axiom	ceval (_,Exp.ICONST(x)) => Values.INTEGER(x)
+  axiom	ceval (_,Exp.RCONST(x)) => Values.REAL(x)
+  axiom ceval (_,Exp.SCONST(x)) => Values.STRING(x)
+  axiom ceval (_,Exp.BCONST(x)) => Values.BOOL(x)
 
-  rule	ceval_list (env,es) => (es',t)
+  rule	ceval_list (env,es) => es' &
+	list_length es' => l
 	------------------------------
-	ceval (env,Exp.ARRAY(es)) => (Values.ARRAY(es'), Types.T_ARRAY(1,t))
+	ceval (env,Exp.ARRAY(es)) => Values.ARRAY(es')
 
-  rule	ceval_cref (env,c) => (v,t)
+  rule	ceval_cref (env,c) => v
 	---------------------------
-	ceval (env,Exp.CREF(c)) => (v,t)
+	ceval (env,Exp.CREF(c)) => v
 
 	(**  Numerical *)
 
-  rule	ceval (env, lh) => (Values.REAL(lhv), Types.T_REAL) &
-	ceval (env, rh) => (Values.REAL(rhv), Types.T_REAL) &
+  rule	ceval (env, lh) => Values.REAL(lhv) &
+	ceval (env, rh) => Values.REAL(rhv) &
 	real_add(lhv, rhv) => sum
 	-------------------------
 	ceval (env, Exp.BINARY(lh, Exp.REAL_ADD, rh))
-	  => (Values.REAL(sum), Types.T_REAL)
+	  => Values.REAL(sum)
 
   rule	Exp.print_exp(rh) & print "\n" &
-	ceval (env, lh) => (Values.INTEGER(lhv), Types.T_INTEGER) &
-	ceval (env, rh) => (Values.INTEGER(rhv), Types.T_INTEGER) &
+	ceval (env, lh) => Values.INTEGER(lhv) &
+	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_add(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.INT_ADD, rh))
-	  => (Values.INTEGER(sum), Types.T_INTEGER)
+	ceval (env, Exp.BINARY(lh, Exp.INT_ADD, rh)) => Values.INTEGER(sum)
 	(**)
-  rule	ceval (env, lh) => (Values.REAL(lhv), Types.T_REAL) &
-	ceval (env, rh) => (Values.REAL(rhv), Types.T_REAL) &
+  rule	ceval (env, lh) => Values.REAL(lhv) &
+	ceval (env, rh) => Values.REAL(rhv) &
 	real_sub(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.REAL_SUB, rh))
-	  => (Values.REAL(sum), Types.T_REAL)
+	ceval (env, Exp.BINARY(lh, Exp.REAL_SUB, rh)) => Values.REAL(sum)
 
-  rule	ceval (env, lh) => (Values.INTEGER(lhv), Types.T_INTEGER) &
-	ceval (env, rh) => (Values.INTEGER(rhv), Types.T_INTEGER) &
+  rule	ceval (env, lh) => Values.INTEGER(lhv) &
+	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_sub(lhv, rhv) => sum
 	------------------------
-	ceval (env, Exp.BINARY(lh, Exp.INT_SUB, rh))
-	  => (Values.INTEGER(sum), Types.T_INTEGER)
+	ceval (env, Exp.BINARY(lh, Exp.INT_SUB, rh)) => Values.INTEGER(sum)
 	(**)
-  rule	ceval (env, lh) => (Values.REAL(lhv), Types.T_REAL) &
-	ceval (env, rh) => (Values.REAL(rhv), Types.T_REAL) &
+  rule	ceval (env, lh) => Values.REAL(lhv) &
+	ceval (env, rh) => Values.REAL(rhv) &
 	real_mul(lhv, rhv) => sum
 	-------------------------
-	ceval (env, Exp.BINARY(lh, Exp.REAL_MUL, rh))
-	  => (Values.REAL(sum), Types.T_REAL)
+	ceval (env, Exp.BINARY(lh, Exp.REAL_MUL, rh)) => Values.REAL(sum)
 
-  rule	ceval (env, lh) => (Values.INTEGER(lhv), Types.T_INTEGER) &
-	ceval (env, rh) => (Values.INTEGER(rhv), Types.T_INTEGER) &
+  rule	ceval (env, lh) => Values.INTEGER(lhv) &
+	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_mul(lhv, rhv) => sum
 	------------------------
 	ceval (env, Exp.BINARY(lh, Exp.INT_MUL, rh))
-	  => (Values.INTEGER(sum), Types.T_INTEGER)
+	  => Values.INTEGER(sum)
 
 	(**)
 
-  rule	ceval (env, start) => (Values.INTEGER(start'), Types.T_INTEGER) &
-	ceval (env, stop) => (Values.INTEGER(stop'), Types.T_INTEGER) &
+  rule	ceval (env, start) => Values.INTEGER(start') &
+	ceval (env, stop) => Values.INTEGER(stop') &
 	ceval_range(start', 1, stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(start, NONE, stop))
-	  => (Values.ARRAY(arr), Types.T_ARRAY(1, Types.T_INTEGER))
+	ceval (env, Exp.RANGE(start, NONE, stop)) => Values.ARRAY(arr)
 
-  rule	ceval (env, start) => (Values.INTEGER(start'), Types.T_INTEGER) &
-	ceval (env, step) => (Values.INTEGER(step'), Types.T_INTEGER) &
-	ceval (env, stop) => (Values.INTEGER(stop'), Types.T_INTEGER) &
+  rule	ceval (env, start) => Values.INTEGER(start') &
+	ceval (env, step) => Values.INTEGER(step') &
+	ceval (env, stop) => Values.INTEGER(stop') &
 	ceval_range(start', step', stop') => arr
 	-------------------------------------------
-	ceval (env, Exp.RANGE(start, SOME(step), stop))
-	  => (Values.ARRAY(arr), Types.T_ARRAY(1, Types.T_INTEGER))
+	ceval (env, Exp.RANGE(start, SOME(step), stop)) => Values.ARRAY(arr)
 
-  rule	ceval (env,e) => (Values.INTEGER(i), _) &
+  rule	ceval (env,e) => Values.INTEGER(i) &
 	int_real i => r
 	---------------
-	ceval (env, Exp.CAST_TO_REAL(e)) => (Values.REAL(r), Types.T_REAL)
+	ceval (env, Exp.CAST_TO_REAL(e)) => Values.REAL(r)
 
   rule	print "- ceval " & Exp.print_exp e & print " failed\n"
 	-----------------------------------------------------
@@ -610,32 +597,29 @@ end
  ** that they are all of the same type.
  **)
 
-relation ceval_list : (Env.Env, Exp.Exp list)
-	  => (Values.Value list, Types.BasicType) =
+relation ceval_list : (Env.Env, Exp.Exp list) => Values.Value list =
 	  
-  rule	ceval (env, exp) => (v, t)
+  rule	ceval (env, exp) => v
 	----------------------------
-	ceval_list (env, [exp]) => ([v], t)
+	ceval_list (env, [exp]) => [v]
 
-  rule	ceval (env,exp) => (v, t1) &
-	ceval_list (env, exps) => (vs, t2) &
-	t1 = t2
-	-------
-	ceval_list (env, exp::exps) => (v::vs, t1)
+  rule	ceval (env,exp) => v &
+	ceval_list (env, exps) => vs
+	------------------------------
+	ceval_list (env, exp::exps) => v::vs
 
 end
 		      
 (**)
 
-relation ceval_cref : (Env.Env, Exp.ComponentRef)
-	  => (Values.Value, Types.BasicType) =
+relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 
   rule	print "    ceval_cref " & Exp.print_component_ref c & print " => " &
 	Lookup.lookup_var (env, c) => (_,_,binding) &
-	ceval_cref_binding (env,binding) => (v,t) &
-	Values.print_val v & print " (" & Types.print_type t & print ")\n"
+	ceval_cref_binding (env,binding) => v &
+	Values.print_val v & print "\n"
 	-----------------------------------
-	ceval_cref (env,c) => (v,t)
+	ceval_cref (env,c) => v
 
 	(* default *)
 
@@ -646,21 +630,18 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef)
 
 end
 
-relation ceval_cref_binding : (Env.Env, Env.Binding)
-	  => (Values.Value, Types.BasicType) =
+relation ceval_cref_binding : (Env.Env, Env.Binding) => Values.Value =
 
-  rule	value_type v => t
-	-----------------
-	ceval_cref_binding (env,Env.VALBOUND(v)) => (v,t)
+  axiom	ceval_cref_binding (env,Env.VALBOUND(v)) => v
 
   rule	print "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
 	ceval_cref_binding (env,Env.UNBOUND) => fail
 	
   rule	elab_exp (env,exp) => (exp',t,true) &
-	ceval (env,exp') => (v,t)
+	ceval (env,exp') => v
 	------------------------
-	ceval_cref_binding (env,Env.EQBOUND(exp)) => (v,t)
+	ceval_cref_binding (env,Env.EQBOUND(exp)) => v
 
   rule	print "- ceval_cref__binding failed (nonconstant EQBOUND(" &
 	Dump.print_exp exp & print ")\n"
@@ -749,23 +730,23 @@ relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
 
   axiom	ceval_subscript (env, Exp.NOSUB) => Exp.NOSUB
 
-  rule	ceval (env, e1) => (v1, Types.T_INTEGER) &
+  rule	ceval (env, e1) => v1 &
 	value_exp v1 => e1'
 	-----------------------------------------
 	ceval_subscript (env, Exp.SUB1(e1)) => Exp.SUB1(e1')
 	
-  rule	ceval (env, e1) => (v1, Types.T_INTEGER) &
+  rule	ceval (env, e1) => v1 &
 	value_exp v1 => e1' &
-	ceval (env, e2) => (v2, Types.T_INTEGER) &
+	ceval (env, e2) => v2 &
 	value_exp v2 => e2'
 	-----------------------------------------
 	ceval_subscript (env, Exp.SUB2(e1,e2)) => Exp.SUB2(e1',e2')
 	
-  rule	ceval (env, e1) => (v1, Types.T_INTEGER) &
+  rule	ceval (env, e1) => v1 &
 	value_exp v1 => e1' &
-	ceval (env, e2) => (v2, Types.T_INTEGER) &
+	ceval (env, e2) => v2 &
 	value_exp v2 => e2' &
-	ceval (env, e3) => (v3, Types.T_INTEGER) &
+	ceval (env, e3) => v3 &
 	value_exp v3 => e3'
 	-----------------------------------------
 	ceval_subscript (env, Exp.SUB3(e1,e2,e3)) => Exp.SUB3(e1',e2',e3')

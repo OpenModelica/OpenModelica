@@ -71,7 +71,8 @@ relation inst_program : (Env, SCode.Program) => DAE.DAEcomp list =
   rule	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_class(env,SCode.NOMOD,Prefix.NOPRE,[],c) => (dae,csets,_,_)
 	-----------------------------
-	inst_program(env,[c]) => dae
+	inst_program(env,[c as SCode.CLASS(n,_,_,_)])
+	  => [DAE.COMP(n,DAE.DAE(dae))]
 
   rule	inst_class_decl(env,SCode.NOMOD,Prefix.NOPRE,[],c) => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
@@ -366,25 +367,25 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	check_prot(prot, mm, vn) &
 
-	(** The class is instantiated with the calculated *)
-	(** modification, and an extended prefix. *)
+	Mod.mod_equation mod => eq &
 
-	Prefix.prefix_add(n,[],pre) => pre' &
+	(** The variable declaration and the (optional) equation *)
+	(** modification are inspected for array dimensions. *)
+	elab_arraydim(env,ad,eq) => dims &
 
-	(* FIXME: Redeclarations! *)
-	
-	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
+	(** Instantiate the component *)
+	inst_var(env,mod',pre,csets,cl,eq,dims) => (dae1,env',csets',vs,bty) &
 
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
-	Mod.mod_equation mod' => eq &
 	make_binding (env,attr,eq,cl) => binding &
 	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,binding)) => env' &
 	print " extended frame with variable " & Exp.print_component_ref vn &
  	print "\n" &
 
 	(** If the modification includes an equation, it is added. *)
+	(* FIXME: use env or env'? *)
 	inst_mod_equation(env',pre,n,mod') => dae2 &
 
 	(** If the type is one of the simple, predifined types a *)
@@ -392,11 +393,13 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	dae_declare (vn,cl,attr) => dae3 &
 
 	list_append(dae1, dae2) => dae4 &
-	list_append(dae3, dae4) => dae
-	--------------------------
+	list_append(dae4, dae3) => dae
+	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,prot,attr,t,m))
-          => (dae, env',csets',ci_state,[Types.VAR(n,attr,ty,eq)])
+		     SCode.COMPONENT(n,final,prot,
+				     attr as Absyn.ATTR(ad,_,_,_),t,m))
+          => (dae, env',csets',ci_state,[v])
+	
 
 	(** If the class lookup in the previous rule fails, this
 	 ** rule catches the error and prints an error message about
@@ -419,6 +422,120 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element (_,_,_,_,_,_) => fail
 
 end	
+
+relation inst_var : (Env.Env,SCode.Mod,Prefix.Prefix,Connect.Sets,Ident,
+		     SCode.Class,Absyn.Exp option,int list,
+		     bool,Absyn.VarType,Absyn.Direction,int list)
+	  => (DAE.DAEcomp list,Connect.Sets,Types.Var list) =
+
+  rule	(** The class is instantiated with the calculated *)
+	(** modification, and an extended prefix. *)
+
+	list_reverse idxs => idxs' &
+	(* Prefix.prefix_add(n,idxs,pre) => pre' & *)
+	let pre' = pre &
+
+	(* FIXME: Redeclarations! *)
+	
+	inst_class(env,mod,pre',csets,cl) => (dae,csets',ty,st)
+	--------------------------
+	inst_var(env,mod,pre,csets,n,cl,eq,[],flow,param,dir,idxs)
+          => (dae,csets',[Types.VAR(n,Absyn.ATTR(Absyn.NODIM,flow,param,dir),
+				    ty,eq)])
+
+  rule	inst_array(env,mod,pre,csets,n,cl,flow,param,dir,1,dim,dims,idxs)
+	  => (dae, csets', vs)
+	--------------------------
+	inst_var(env,mod,pre,csets,n,cl,eq,dim::dims,flow,param,dir,idxs)
+          => (dae,csets',vs)
+
+
+end
+
+relation inst_array : (Env.Env,SCode.Mod,Prefix.Prefix,Connect.Sets,Ident,
+		       SCode.Class,bool,Absyn.VarType,Absyn.Direction,
+		       int,int,int list,int list)
+	  => (DAE.DAEcomp list,Connect.Sets,Types.Var list) =
+
+  rule	int_gt(i,stop) => true
+	----------------------
+	inst_array(env,mod,pre,csets,n,cl,f,p,d,i,stop,dims,idxs)
+	  => ([], csets, [])
+
+  rule	inst_var(env,mod,pre,csets,n,cl,NONE(*FIXME*),dims,f,p,d,i::idxs)
+	  => (dae1,csets',v1) &
+	int_add(i,1) => i' &
+	inst_array(env,mod,pre,csets',n,cl,f,p,d,i',stop,dims,idxs)
+	  => (dae2, csets'',v2) &
+	list_append(dae1,dae2) => dae &
+	list_append(v1,v2) => vs
+	-----------------------------
+	inst_array(env,mod,pre,csets,n,cl,f,p,d,i,stop,dims,idxs)
+          => (dae,csets'',vs)
+
+end
+
+relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Absyn.Exp option)
+	  => int list =
+
+  rule	elab_arraydim_decl(env,ad) => dim1 &
+	complete_arraydim(dim1)
+	---------------------------------
+	elab_arraydim(env,ad,NONE) => dim1
+
+  rule	elab_arraydim_decl(env,ad) => dim1 &
+	StaticExp.elab_exp(env, d) => (e,t,c) &
+	elab_arraydim_type(t) => dim2 &
+	compatible_dim(dim1,dim2) => dim3
+	---------------------------------
+	elab_arraydim(env,ad,SOME(exp)) => dim3
+
+  rule	print "- elab_arraydim failed\n"
+	-------------------------------------
+	elab_arraydim_decl(_,_,_) => fail
+
+end
+
+relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
+
+  axiom	elab_arraydim_decl(_,[]) => []
+
+  rule	elab_arraydim_decl(env,ds) => l
+	-------------------------------
+	elab_arraydim_decl(env,Absyn.NOSUB::ds) => NONE::l
+
+  rule	StaticExp.elab_exp(env, d) => (e,Types.T_INTEGER,true) &
+	StaticExp.ceval(env,e) => Values.INTEGER(i) &
+	elab_arraydim_decl(env,ds) => l
+	-------------------------------------------
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => SOME(i)::l
+
+  rule	print "- elab_arraydim_decl failed\n"
+	-------------------------------------
+	elab_arraydim_decl(_,_) => fail
+	
+end
+
+relation elab_arraydim_type : Types.BasicType => (int option) list =
+
+  rule	elab_arraydim_type2(d) => l
+	---------------------------
+	elab_arraydim_type(Types.T_ARRAY(d,_)) => l
+	
+	(* default *)
+  axiom	elab_arraydim_type(_) => []
+
+end
+
+relation elab_arraydim_type2 : Types.ArrayDim => (int option) list =
+
+  axiom	elab_arraydim_type2(Types.NODIM) => []
+
+  rule	elab_arraydim_type2(ds) => ds'
+	------------------------------
+	elab_arraydim_type2(Types.DIM(d,ds)) => d::ds'
+
+end
 
 (** relation: inst_class_decl
  **
@@ -461,7 +578,7 @@ relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
 
   rule	ClassInf.valid(st, Absyn.R_PACKAGE) &
 	Env.extend_frame_v(env,
-			   Env.FRAMEVAR(n, Absyn.ATTR(Absyn.NODIM,
+			   Env.FRAMEVAR(n, Absyn.ATTR([],
 						      false,Absyn.CONST,
 						      Absyn.BIDIR),
 					ty,Env.UNBOUND)) => env' &
@@ -479,50 +596,52 @@ end
 relation dae_declare : (Exp.ComponentRef, SCode.Class, Absyn.VarAttr)
 	  => DAE.DAEcomp list =
 
-  rule	dae_declare2 (vn, rest, par) => dae
+  rule	dae_declare2 (vn, rest, par, ad) => dae
 	-----------------------------------
 	dae_declare (vn, SCode.CLASS(_,_,rest,_),
-		     Absyn.ATTR(_,_,par,_)) => dae
+		     Absyn.ATTR(ad,_,par,_)) => dae
 
 end
 
-relation dae_declare2 : (Exp.ComponentRef, Absyn.Restriction, Absyn.VarType)
+relation dae_declare2 : (Exp.ComponentRef, Absyn.Restriction, Absyn.VarType,
+			 Absyn.ArrayDim)
 	  => DAE.DAEcomp list =
 
-  rule	dae_declare3 (vn, rest, DAE.VARIABLE) => dae
+  rule	dae_declare3 (vn, rest, DAE.VARIABLE, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.VAR) => dae
+	dae_declare2 (vn, rest, Absyn.VAR, ad) => dae
 
-  rule	dae_declare3 (vn, rest, DAE.DISCRETE) => dae
+  rule	dae_declare3 (vn, rest, DAE.DISCRETE, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.DISCRETE) => dae
+	dae_declare2 (vn, rest, Absyn.DISCRETE, ad) => dae
 
-  rule	dae_declare3 (vn, rest, DAE.PARAM) => dae
+  rule	dae_declare3 (vn, rest, DAE.PARAM, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.PARAM) => dae
+	dae_declare2 (vn, rest, Absyn.PARAM, ad) => dae
 
-  rule	dae_declare3 (vn, rest, DAE.CONST) => dae
+  rule	dae_declare3 (vn, rest, DAE.CONST, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.CONST) => dae
+	dae_declare2 (vn, rest, Absyn.CONST, ad) => dae
 
 end
 
-relation dae_declare3 : (Exp.ComponentRef, Absyn.Restriction, DAE.VarKind)
+relation dae_declare3 : (Exp.ComponentRef, Absyn.Restriction, DAE.VarKind,
+			 Absyn.ArrayDim)
 	  => DAE.DAEcomp list =
 
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_INT, kind)
-	  => [DAE.VAR(vn, kind, DAE.INT)]
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_INT, kind, ad)
+	  => [DAE.VAR(vn, kind, DAE.INT, ad)]
 	
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_REAL, kind)
-	  => [DAE.VAR(vn, kind, DAE.REAL)]
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_REAL, kind, ad)
+	  => [DAE.VAR(vn, kind, DAE.REAL, ad)]
 	
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_BOOL, kind)
-	  => [DAE.VAR(vn, kind, DAE.BOOL)]
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_BOOL, kind, ad)
+	  => [DAE.VAR(vn, kind, DAE.BOOL, ad)]
 	
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_STRING, kind)
-	  => [DAE.VAR(vn, kind, DAE.STRING)]
+  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_STRING, kind, ad)
+	  => [DAE.VAR(vn, kind, DAE.STRING, ad)]
 
-  axiom	dae_declare3 (_,_,_) => []
+  axiom	dae_declare3 (_,_,_,_) => []
 
 end
 
@@ -586,8 +705,10 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
   rule	StaticExp.elab_exp (env,e)
-	  => (e',Types.T_ARRAY(1,Types.T_INTEGER),true) &
-	StaticExp.ceval (env,e') => (v,_) &
+	  => (e',Types.T_ARRAY(Types.DIM(_,Types.NODIM),
+			       Types.T_INTEGER),
+	      true) &
+	StaticExp.ceval (env,e') => v &
 	print "  Unrolling " & print i & print " in " &
  	Dump.print_exp e & print " = " &
  	Values.print_val v & print "\n" &
@@ -660,7 +781,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	print "   unroll: " & Values.print_val fst & print "\n" &
 	Env.open_scope env => env' &
 	Env.extend_frame_v (env',
-			    Env.FRAMEVAR(i, Absyn.ATTR(Absyn.NODIM,
+			    Env.FRAMEVAR(i, Absyn.ATTR([],
 						       false,
 						       Absyn.CONST,
 						       Absyn.BIDIR),
@@ -735,7 +856,9 @@ end
 relation check_connect_vars : (Exp.ComponentRef, Types.Type, bool,
 			       Exp.ComponentRef, Types.Type, bool) => () =
 
-  rule	Types.same_type(t1, t2)
+  rule	Types.simplify_type t1 => t1' &
+	Types.simplify_type t2 => t2' &
+	Types.same_type(t1', t2') => true
 	-----------------------
 	check_connect_vars(_,t1,false,_,t2,false)
 
@@ -982,7 +1105,7 @@ relation make_const_binding : (Env.Env, Exp.Exp,
 	make_const_binding (env,e,Types.T_INTEGER,Types.T_REAL,c) => b
 
   rule	t = ct &
-	StaticExp.ceval (env, e) => (v,_) &
+	StaticExp.ceval (env, e) => v &
 	print "  constant expression " & Exp.print_exp e &
  	print " = " & Values.print_val v & print " detected\n"
 	---------------------------------
@@ -1006,6 +1129,6 @@ relation class_type : SCode.Class => Types.BasicType =
 	  => Types.T_STRING
   axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_REAL,_) => Types.T_REAL
   axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_BOOL,_) => Types.T_BOOL
-  axiom	class_type _ => Types.T_OTHER
+  axiom	class_type _ => Types.T_COMPLEX([(* FIXME *)])
 
 end

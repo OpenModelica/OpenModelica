@@ -88,9 +88,7 @@ module Absyn:
   datatype Direction = INPUT | OUTPUT | BIDIR
 
   (** - Array dimensions *)
-  datatype ArrayDim = NODIM
-		    | ONEDIM of Subscript
-		    | TWODIM of Subscript * Subscript
+  type ArrayDim = Subscript list
   (** Variables in Modelica can be scalar, one-dimensional arrays, or *)
   (** two-dimensional matrices.  This datatype is used to indicate the *)
   (** dimensionality of a variable or a type definition. *)
@@ -122,9 +120,7 @@ module Absyn:
   
   (** - Subscripts *)
   datatype Subscript = NOSUB
-		     | SUB1 of Exp
-		     | SUB2 of Exp * Exp
-		     | SUB3 of Exp * Exp * Exp
+		     | SUBSCRIPT of Exp
   (** The `Subscript' datatype is used in variable references.  An *)
   (** one-dimensional array variable `a' can be supscriptet as `a[1]', *)
   (** `a[1:2]' or `a[1:2:3]'. *)

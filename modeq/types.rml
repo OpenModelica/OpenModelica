@@ -25,8 +25,14 @@ module Types :
 		     | T_REAL
 		     | T_STRING
 		     | T_BOOL
-		     | T_OTHER
-		     | T_ARRAY of int * BasicType
+		     | T_ARRAY of ArrayDim * BasicType
+		     | T_COMPLEX of Component list (* really a set *)
+
+  datatype ArrayDim = NODIM
+		    | DIM of int option * ArrayDim
+
+  datatype Component = COMP of Ident * BasicType
+
   (** To generate the correct set of equations, the translator has to *)
   (** differentiate between the primitive types `Real', `Integer', *)
   (** `String', `Boolean' and types directly derived from then from *)
@@ -38,16 +44,108 @@ module Types :
   (** type, and whether a variable is of one of these types.  *)
 
   (** - Exported relations *)
-  relation same_type : (Type, Type) => ()
+  relation simplify_type : Type => BasicType
+  relation same_type : (BasicType, BasicType) => bool
   relation lookup_component : (Type, Ident) => Var
   relation known_type : (ClassInf.State, Absyn.ArrayDim) => BasicType
   relation print_type : BasicType => ()
 
 end
 
+(** relation: simplify_type *)
+
+relation simplify_type : Type => BasicType =
+
+  rule	known_type(st,[]) => t
+	----------------------
+	simplify_type(TYPE(st,_)) => t
+
+  rule	simplify_vars(v) => cl
+	----------------------
+	simplify_type(TYPE(_,v)) => T_COMPLEX(cl)
+
+end
+
+(** relation: simplify_vars *)
+
+relation simplify_vars : Var list => Component list =
+
+	(* FIXME: What about array dimensions? *)
+
+  axiom	simplify_vars [] => []
+	
+  rule	simplify_type t => t' & simplify_vars(vs) => cs
+	-----------------------------------------------
+	simplify_vars(VAR(n,_,t,_)::vs) => COMP(n,t')::cs
+
+end
+
 (** relation: same_type
  **)
 
+relation same_type : (BasicType, BasicType) => bool =
+	
+  axiom	same_type (T_INTEGER,T_INTEGER) => true
+  axiom	same_type (T_REAL,T_REAL)       => true
+  axiom	same_type (T_STRING,T_STRING)   => true
+  axiom	same_type (T_BOOL,T_BOOL)       => true
+
+  rule	same_arraydim (d1,d2) => true & same_type (t1,t2) => true
+	---------------------------------------------------------
+	same_type (T_ARRAY(d1,t1),T_ARRAY(d2,t2)) => true
+	
+  rule	same_type_comp (c1, c2) => true
+	----------------------------------
+	same_type (T_COMPLEX(c1),T_COMPLEX(c2)) => true
+
+	(* default *)
+  axiom	same_type (_,_) => false
+
+end
+
+relation same_arraydim : (ArrayDim, ArrayDim) => bool =
+
+  axiom	same_arraydim (NODIM,NODIM) => true
+
+  rule	i1 = i2 & same_arraydim (d1,d2) => true
+	---------------------------------------
+	same_arraydim (DIM(i1,d1),DIM(i2,d2)) => true
+
+	(* default *)
+  axiom	same_arraydim (_,_) => false
+
+end
+
+relation same_type_comp : (Component list, Component list) => bool =
+
+  axiom same_type_comp([], []) => true
+
+  rule  pick(xs2,n) => (xs2',t2) &
+	same_type(t1,t2) => true &
+	same_type_comp(xs1,xs2') => true
+	---------------------
+	same_type_comp(COMP(n,t1)::xs1, xs2) => true
+
+	(* default *)
+  axiom	same_type_comp (_,_) => false
+
+end
+
+(** relation: pick *)
+
+relation pick : (Component list, Ident) => (Component list, BasicType) =
+
+  rule  n1 = n2
+	-------
+	pick(COMP(n1,ty)::xs,n2) => (xs,ty)
+
+  rule  pick(xs,n) => (xs',ty)
+	---------------------
+	pick(_::xs,n) => (xs',ty)
+
+end
+
+(*
 relation same_type : (Type, Type) => () =
 	
 	(* FIXME: Check state? *)
@@ -83,6 +181,7 @@ relation pick : (Var list, Ident)
 	pick(_::xs,n) => (xs',attr,ty)
 
 end
+*)
 
 (** relation: lookup_component *)
 
@@ -112,23 +211,35 @@ end
 
 relation known_type : (ClassInf.State, Absyn.ArrayDim) => BasicType =
 
-  rule	known_type (st, Absyn.NODIM) => t
-	---------------------------------
-	known_type (st, Absyn.ONEDIM(_)) => T_ARRAY(1,t)
+  rule	known_type (st, []) => t &
+	mk_arraydim dims => dims'
+	-------------------------
+	known_type (st, dims as (_::_)) => T_ARRAY(dims',t)
 
-  rule	known_type (st, Absyn.NODIM) => t
-	---------------------------------
-	known_type (st, Absyn.TWODIM(_,_)) => T_ARRAY(2,t)
+  axiom	known_type (ClassInf.TYPE_INTEGER(_),[]) => T_INTEGER
+  axiom	known_type (ClassInf.TYPE_REAL(_),[])    => T_REAL
+  axiom	known_type (ClassInf.TYPE_STRING(_),[])  => T_STRING
+  axiom	known_type (ClassInf.TYPE_BOOL(_),[])    => T_BOOL
 
-  axiom	known_type (ClassInf.TYPE_INTEGER(_),Absyn.NODIM) => T_INTEGER
-  axiom	known_type (ClassInf.TYPE_REAL(_),Absyn.NODIM)    => T_REAL
-  axiom	known_type (ClassInf.TYPE_STRING(_),Absyn.NODIM)  => T_STRING
-  axiom	known_type (ClassInf.TYPE_BOOL(_),Absyn.NODIM)    => T_BOOL
-  axiom	known_type (_,Absyn.NODIM)                        => T_OTHER
+	(* FIXME *)
+  axiom	known_type (_,[])                        => T_COMPLEX([])
 
   rule	print "- known_type failed\n"
 	-----------------------------
 	known_type (_,_) => fail
+
+end
+
+(** relation: mk_arraydim *)
+
+relation mk_arraydim : Absyn.ArrayDim => ArrayDim =
+
+  axiom	mk_arraydim [] => NODIM
+
+  rule	mk_arraydim ds => ds'
+	(* FIXME: calculate d *)
+	---------------------
+	mk_arraydim d::ds => DIM(NONE,ds')
 
 end
 
@@ -161,9 +272,31 @@ relation print_type : BasicType => () =
 	------------
 	print_type T_OTHER
 
-  rule	print "array(" & int_string dim => s & print s & print ") of " &
+  rule	print "array(" & print_arraydim dim & print ") of " &
 	print_type t
 	------------
 	print_type T_ARRAY(dim,t)
+
+end
+
+relation print_arraydim =
+
+  axiom	print_arraydim NODIM
+
+  rule	print ":"
+	---------
+	print_arraydim DIM(NONE,NODIM)
+
+  rule	int_string i => s & print s
+	---------------------------
+	print_arraydim DIM(SOME(i),NODIM)
+
+  rule	print ":," & print_arraydim(d)
+	------------------------------
+	print_arraydim DIM(NONE,d)
+
+  rule	int_string i => s & print s & print "," & print_arraydim(d)
+	-----------------------------------------------------------
+	print_arraydim DIM(SOME(i),d)
 
 end

@@ -20,7 +20,7 @@ module Mod:
 
   val empty_mod : SCode.Mod
 
-  relation lookup_modification: (SCode.Mod,Absyn.Ident) => SCode.Mod
+  relation lookup_modification: (SCode.Mod,Absyn.Ident,int list) => SCode.Mod
   relation lookup_modification_p: (SCode.Mod,Absyn.Path) => SCode.Mod
   relation merge : (SCode.Mod, SCode.Mod) => SCode.Mod
   relation mod_equation : SCode.Mod => Absyn.Exp option
@@ -64,11 +64,11 @@ end
 
 relation lookup_modification_p: (SCode.Mod,Absyn.Path) => SCode.Mod =
 
-  rule	lookup_modification (m,n) => mod
+  rule	lookup_modification (m,n,[]) => mod
 	--------------------------------
 	lookup_modification_p (m,Absyn.IDENT(n)) => mod
 
-  rule	lookup_modification (m,n) => mod &
+  rule	lookup_modification (m,n,[]) => mod &
 	lookup_modification_p (mod,p) => mod'
 	-------------------------------------
 	lookup_modification_p (m,Absyn.QUALIFIED(n,p)) => mod'
@@ -77,38 +77,39 @@ end
 
 (** relation: lookup_modification *)
 
-relation lookup_modification: (SCode.Mod,Absyn.Ident) => SCode.Mod =
+relation lookup_modification: (SCode.Mod,Absyn.Ident,int list) => SCode.Mod =
 
-  axiom lookup_modification(SCode.NOMOD,_) => SCode.NOMOD
+  axiom lookup_modification(SCode.NOMOD,_,_) => SCode.NOMOD
 
 	(* FIXME: Is this correct? *)
-  axiom	lookup_modification(SCode.REDECL(_,_),_) => SCode.NOMOD
+  axiom	lookup_modification(SCode.REDECL(_,_),_,_) => SCode.NOMOD
 
-  rule  lookup_modification2(subs,n) => mod
-	---------------------------------
-	lookup_modification(SCode.MOD(_,subs,_),n) => mod
+  rule  lookup_modification2(subs,n,s) => mod
+	-----------------------------------
+	lookup_modification(SCode.MOD(_,subs,_),n,s) => mod
 	
   rule	print "# Mod.lookup_modification(" &
 	SCode.print_mod mod & print "," & print i &
 	print ") failed\n"
 	--------------------
-	lookup_modification(mod,i) => fail
+	lookup_modification(mod,i,s) => fail
 
 end	
 
-relation lookup_modification2 : (SCode.SubMod list,Absyn.Ident) => SCode.Mod =
+relation lookup_modification2 : (SCode.SubMod list,Absyn.Ident,int list)
+	  => SCode.Mod =
 
-  axiom lookup_modification2([],_) => SCode.NOMOD
+  axiom lookup_modification2([],_,_) => SCode.NOMOD
 
-  rule  n = m
-	-----
-	lookup_modification2(SCode.SUBMOD(n,mod)::_,m) => mod
+  rule  n = m (* & ss = s FIXME: subscripts *)
+	--------------------------------------
+	lookup_modification2(SCode.SUBMOD(n,ss,mod)::_,m,s) => mod
 	
 	(* FIXME: Redeclaration *)
 
-  rule  lookup_modification2(xs,n) => mod
+  rule  lookup_modification2(xs,n,s) => mod
 	---------------------------------
-	lookup_modification2(x::xs,n) => mod
+	lookup_modification2(x::xs,n,s) => mod
 
 end
 
@@ -182,9 +183,10 @@ relation merge_subs2 : (SCode.SubMod list, SCode.SubMod)
 	(* Modifications in the list take precedence *)
 
   rule  n1 = n2 & print "   merge clash in " & print n1 & print "\n"
+	(* FIXME: check subscripts? *)
 	-------
-	merge_subs2((s1 as SCode.SUBMOD(n1,m1))::ss,
-		    SCode.SUBMOD(n2,m2)) => (ss, s1)
+	merge_subs2((s1 as SCode.SUBMOD(n1,subs1,m1))::ss,
+		    SCode.SUBMOD(n2,subs2,m2)) => (ss, s1)
 
   rule  merge_subs2(ss, s2) => (ss',s)
 	------------------------------

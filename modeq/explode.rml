@@ -13,7 +13,7 @@ module SCode :
   type Restriction = Absyn.Restriction
   type Equation = Absyn.Equation
 
-  datatype SubMod = SUBMOD of Ident * Mod
+  datatype SubMod = SUBMOD of Ident * Subscript list * Mod
   and Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
   	  | REDECL of bool * Absyn.ElementSpec
 	  | NOMOD
@@ -178,14 +178,19 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 	build_mod(m,false) => mod
 	--------------------------------------------------
 	elab_elementspec(final,prot,
-			 Absyn.COMPONENTS(attr as Absyn.ATTR(Absyn.NODIM,
-							     fl,pa,di),t,
+			 Absyn.COMPONENTS(attr as Absyn.ATTR([],fl,pa,di),t,
 					  (Absyn.COMPONENT(n,d,m))::xs))
 	  => COMPONENT(n,final,prot,Absyn.ATTR(d,fl,pa,di),t,mod)::xs'
 
 end
 
 (** - Modification management *)
+
+(** relation: build_mod
+ **
+ ** Builds an `SCode.Mod' from an `Absyn.Modification'.  The boolean
+ ** argument flags whether the modification is `final'.
+ **)
 
 relation build_mod : (Absyn.Modification option, bool) => Mod =
 
@@ -214,19 +219,39 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
 	Absyn.element_spec_name spec => n
 	---------------------------
 	build_args((Absyn.REDECLARATION(final,spec)::xs))
-	  => (SUBMOD(n,REDECL(final,spec))::subs)
+	  => (SUBMOD(n,[],REDECL(final,spec))::subs)
 
 end
 
+(** relation: build_sub
+ **
+ ** This relation converts a `ComponentRef' into a number of nested
+ ** `SUBMOD's.  It also prevents modifications of the type
+ ** `x[17](..)'.
+ **)
+
 relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 
-	(* FIXME: ignores subscripts *)
-  axiom build_sub(Absyn.CREF_IDENT(i,ss),mod) => SUBMOD(i,mod)
+	(* First some rules to prevent bad modifications *)
+
+  rule	print "# Illegal modification of " & Dump.print_component_ref c &
+	Dump.print_component_ref c & print "\n"
+	---------------------------------------
+	build_sub(c as Absyn.CREF_IDENT(_,_::_),MOD(_,_::_,_)) => fail
+
+  rule  print "# Illegal modification of " &
+	Dump.print_component_ref c & print "\n"
+	---------------------------------------
+	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),MOD(_,_::_,_)) => fail
+	
+	(* Then the normal rules *)
+	
+  axiom build_sub(Absyn.CREF_IDENT(i,ss),mod) => SUBMOD(i,ss,mod)
 
   rule  build_sub(path,mod) => sub
 	--------------------------
 	build_sub(Absyn.CREF_QUAL(i,ss,path),mod)
-	  => SUBMOD(i,MOD(false,[sub],NONE))
+	  => SUBMOD(i,ss,MOD(false,[sub],NONE))
 
 end
 
@@ -264,14 +289,14 @@ relation print_subs : SubMod list => () =
 
   axiom print_subs []
 
-  rule  print n & print_mod mod
+  rule  print n & Dump.print_subscripts ss & print_mod mod
 	------------------
-	print_subs [SUBMOD(n,mod)]
+	print_subs [SUBMOD(n,ss,mod)]
 
-  rule  print n & print_mod mod & print ", " &
+  rule  print n & Dump.print_subscripts ss & print_mod mod & print ", " &
 	print_subs subs
 	--------------
-	print_subs SUBMOD(n,mod)::subs
+	print_subs SUBMOD(n,ss,mod)::subs
 
 end
 
