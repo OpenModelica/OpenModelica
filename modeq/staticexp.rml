@@ -295,9 +295,8 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
 	------------------------------------
 	elab_call (env,fn,args) => (e,prop)
 
-  rule	print "# Invalid function name: " &
-	Dump.print_component_ref fn & print "\n"
-	----------------------------------------
+  rule	print "- elab_call failed\n"
+	----------------------------
 	elab_call (env,fn,args) => fail
 
 end
@@ -322,10 +321,10 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 	elab_call2 (env,fn,args) => (Exp.CALL(fn,args'), PROP(restype, c))
 *)
 
-  rule	Lookup.lookup_class(env,fn) => fcl &
-	Lots of work neede here (t as Types.T_COMPLEX(st,vl)) &
-	ClassInf.valid(st, Absyn.R_FUNCTION) &
-	function_params(vl) => (in,out as [Types.VAR(_,_,rt,_)]) &
+  rule	(* Lookup.lookup_class(env,fn) => fcl & *)
+	Lookup.lookup_type(env,fn) => (t as Types.T_COMPLEX(st,vl)) &
+	(* ClassInf.valid(st, Absyn.R_FUNCTION) & *)
+	function_params(vl) => (in,out as [Types.VAR(_,_,_,rt,_)]) &
 	elab_input_args(env, args, in) => args'
 	(** FIXME: calculate properties *)
 	----------------------------------
@@ -354,17 +353,28 @@ relation function_params : Types.Var list => (Types.Var list, Types.Var list) =
 
   axiom	function_params [] => ([],[])
 
+	(* Ignore protected components *)
+  rule	function_params vs => (in, out)
+	-------------------------------
+	function_params((Types.VAR(_,_,true,_,_))::vs) => (in, out)
+
   rule	function_params vs => (in, out)
 	------------------------------
 	function_params ((v as Types.VAR(_,Absyn.ATTR(_,_,_,Absyn.INPUT),
-					 _,_))::vs)
+					 false,_,_))::vs)
 	  => (v::in, out)
 
   rule	function_params vs => (in, out)
 	------------------------------
 	function_params ((v as Types.VAR(_,Absyn.ATTR(_,_,_,Absyn.OUTPUT),
-					 _,_))::vs)
+					 false,_,_))::vs)
 	  => (in, v::out)
+
+  rule	print "# Components in functions must be INPUT or OUTPUT\n" &
+	print "    component: " & print n & print "\n"
+	----------------------------------------------
+	function_params((v as Types.VAR(n,Absyn.ATTR(_,_,_,Absyn.BIDIR),_,_,_))
+			::vs) => fail
 
   rule	print "- function_params failed\n"
 	----------------------------------
@@ -389,7 +399,15 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Types.Var list)
 	match_type(e', t, vt) => e'' &
 	elab_input_args(env, es, vs) => args'
 	-------------------------------------
-	elab_input_args(env, e::es, Types.VAR(_,_,vt,_)::vs) => e''::args'
+	elab_input_args(env, e::es, Types.VAR(_,_,_,vt,_)::vs) => e''::args'
+
+  rule	elab_exp(env, e) => (e',PROP(t,_)) &
+	print "# Argument (" & Dump.print_exp e &
+ 	print ") doesn't match parameter type\n" &
+	print "    parameter type: " & Types.print_type vt & print "\n" &
+	print "    argument type: " & Types.print_type t & print "\n"
+	-------------------------------------------------------------
+	elab_input_args(env, e::es, Types.VAR(_,_,_,vt,_)::vs) => fail
 
 end
 

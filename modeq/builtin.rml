@@ -98,7 +98,7 @@ SCode.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,
 (* FIXME: Shuold contain components (attributes) from the real Real type *)
 val time_var =
 Types.VAR("time", Absyn.ATTR([] , false, Absyn.VAR, Absyn.BIDIR),
-	  Types.T_REAL, Types.UNBOUND)
+	  false, Types.T_REAL, Types.UNBOUND)
 
 (** - Some assorted function types *)
 

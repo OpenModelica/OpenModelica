@@ -19,6 +19,7 @@ module Types :
   (** - Variables *)
   datatype Var = VAR of Ident			  (* name *)
 		      * Absyn.VarAttr		  (* attributes *)
+		      * bool	                  (* protected *)
 		      * Type			  (* type *)
 		      * Binding			  (* equation modification *)
 
@@ -162,11 +163,11 @@ relation subtype_varlist : (Var list, Var list) => bool =
 
   axiom	subtype_varlist(_, []) => true
 
-  rule	varlist_lookup(l,n) => VAR(_,_,t1,_) &
+  rule	varlist_lookup(l,n) => VAR(_,_,_,t1,_) &
 	subtype(t1,t2) => true &
 	subtype_varlist(l,vs) => true
 	-----------------------------
-	subtype_varlist(l, VAR(n,_,t2,_)::vs) => true
+	subtype_varlist(l, VAR(n,_,_,t2,_)::vs) => true
 
 	(* default *)
   axiom	subtype_varlist(_,_) => false
@@ -183,7 +184,7 @@ relation varlist_lookup : (Var list, Ident) => Var =
 
   rule	n = name
 	--------
-	varlist_lookup((v as VAR(n,_,_,_))::_, name) => v
+	varlist_lookup((v as VAR(n,_,_,_,_))::_, name) => v
 
   rule	varlist_lookup(vs, name) => v
 	-----------------------------
@@ -242,7 +243,7 @@ relation same_type_c : (Var list, Var list) => bool =
 	same_type(t1,t2) => true &
 	same_type_c(xs1,xs2') => true
 	---------------------
-	same_type_c(VAR(n,_,t1,_)::xs1, xs2) => true
+	same_type_c(VAR(n,_,_,t1,_)::xs1, xs2) => true
 
 	(* default *)
   axiom	same_type_c(_,_) => false
@@ -256,7 +257,7 @@ relation pick : (Var list, Ident)
 
   rule  n1 = n2
 	-------
-	pick(VAR(n1,attr,ty,_)::xs,n2) => (xs,attr,ty)
+	pick(VAR(n1,attr,_,ty,_)::xs,n2) => (xs,attr,ty)
 
   rule  pick(xs,n) => (xs',attr,ty)
 	---------------------
@@ -293,7 +294,7 @@ relation lookup_component2 : (Var list , Ident) => Var =
 
   rule  n = m
 	-----
-	lookup_component2((v as VAR(n,_,_,_))::_, m) => v
+	lookup_component2((v as VAR(n,_,_,_,_))::_, m) => v
 
   rule  lookup_component2(vs, n) => v
 	-----------------------------

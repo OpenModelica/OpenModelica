@@ -414,7 +414,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** binding. *)
 
 	make_binding (env,attr,eq,cl) => binding &
-	Env.extend_frame_v(env,Types.VAR(n,attr,ty,binding)) => env' &
+	Env.extend_frame_v(env,Types.VAR(n,attr,prot,ty,binding)) => env' &
 	print " extended frame with variable " & Exp.print_component_ref vn &
 	print " :: " & Types.print_type ty & print "\n" &
 
@@ -436,7 +436,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				     t,m))
           => (dae, env',csets',ci_state,
 	      [Types.VAR(n,Absyn.ATTR([(* FIXME: why? *)],flow,param,dir),
-			 ty, binding)])
+			 prot, ty, binding)])
 	
 
 	(** If the class lookup in the previous rule fails, this
@@ -695,17 +695,47 @@ relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 
   rule	print "  adding " & print n & print "\n" &
 	Env.extend_frame_c(env,c) => env' &
+	implicit_instantiation(env',Mod.NOMOD,pre,csets,c) => (env'',dae)
 
-	let env'' = env' &
-	let dae' = []
 	(*
 	Prefix.prefix_add(n,[],pre) => pre' &
 	inst_class(env,mod,pre',csets,c) => (dae,csets',ty,st) &
 	add_package(env',n,ty,st,dae) => (env'', dae')
 	*)
 	----------------------------------
-	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,_,_))
-	  => (env'', dae')
+	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,restr,_))
+	  => (env'', dae)
+
+end
+
+(** relation implicit_instantiation
+ **
+ ** If a class definition is a function or a package, it is implicitly
+ ** instantiated and added as a type binding under the same name
+ ** as the class name.
+ **)
+
+relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
+				   Connect.Sets, SCode.Class)
+	  => (Env.Env, DAE.DAEcomp list) =
+
+  rule	Prefix.prefix_add(n,[],pre) => pre' &
+	inst_class(env,mod,pre',csets,c) => (dae, csets', ty, st) &
+	Env.extend_frame_t(env, n, ty) => env'
+	--------------------------------------
+	implicit_instantiation(env,mod,pre,csets,
+			       c as SCode.CLASS(n,_,Absyn.R_PACKAGE,_))
+	  => (env', dae)
+
+  rule	Prefix.prefix_add(n,[],pre) => pre' &
+	inst_class(env,mod,pre',csets,c) => (dae, csets', ty, st) &
+	Env.extend_frame_t(env, n, ty) => env'
+	--------------------------------------
+	implicit_instantiation(env,mod,pre,csets,
+			       c as SCode.CLASS(n,_,Absyn.R_FUNCTION,_))
+	  => (env', (*dae*) [])
+
+  axiom	implicit_instantiation(env,mod,pre,csets,c) => (env,[])
 
 end
 
@@ -721,6 +751,7 @@ relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
 			   Types.VAR(n, Absyn.ATTR([],
 						   false,Absyn.CONST,
 						   Absyn.BIDIR),
+				     false,
 				     ty,Types.UNBOUND)) => env' &
 	print "  added package " & print n & print "\n"
 	--------------------------------------------------------
@@ -838,7 +869,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation(env,mods,pre,csets,ci_state,SCode.EQ_EXPR(_)) => fail
 
   rule	Lookup.lookup_ident_local(env,n)
-	  => Types.VAR(_,_,_,Types.EQBOUND(_,_)) &
+	  => Types.VAR(_,_,_,_,Types.EQBOUND(_,_)) &
 	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
@@ -907,7 +938,7 @@ relation inst_eq_equation : (Exp.Exp, Static.Properties,
 
   rule	Static.operators Absyn.EQUAL => ops &
 	Static.deoverload (ops,[(e1,t1),(e2,t2)],
-			      Absyn.STRING("#INTERNAL ERROR#")) (*FIXME*)
+			      Absyn.STRING("#EQUATION#")) (*FIXME*)
 	  => (op, [e1',e2'], t)
 	------------------------------------------------------------------
 	inst_eq_equation(e1,Static.PROP(t1,_),
@@ -976,6 +1007,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						    false,
 						    Absyn.CONST,
 						    Absyn.BIDIR),
+				      true,
 				      Types.T_INTEGER,
 				      Types.VALBOUND(fst))) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
@@ -1281,8 +1313,10 @@ relation connect_vars : (Connect.Sets,
 	connect_vars(sets',c1,f1,xs1,c2,f2,xs2) => sets''
 	--------------------------------------
 	connect_vars(sets,
-		     c1,f1, Types.VAR(n,Absyn.ATTR(_,flow1,vt1,_),ty1,_)::xs1,
-		     c2,f2, Types.VAR(_,Absyn.ATTR(_,flow2,vt2,_),ty2,_)::xs2)
+		     c1,f1, Types.VAR(n,Absyn.ATTR(_,flow1,vt1,_),
+				      _,ty1,_)::xs1,
+		     c2,f2, Types.VAR(_,Absyn.ATTR(_,flow2,vt2,_),
+				      _,ty2,_)::xs2)
 	  => sets''
 
 end

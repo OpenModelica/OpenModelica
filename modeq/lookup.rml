@@ -248,14 +248,14 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 
 	(* FIXME: Should I really strip the ArrayDim? *)
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),ty',binding)) &
+	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),_,ty',binding)) &
 	check_subscripts(ad, ss) => dim
 	------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
 	  => (Absyn.ATTR(dim,fl,vt,di),ty',binding)
 
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),ty',_)) &
+	  => (Types.VAR(_,Absyn.ATTR(ad,fl,vt,di),_,ty',_)) &
 	check_subscripts(ad, ss) => _ &
 	lookup_in_var(ty', vs) => (attr, ty'',binding)
 	--------------------------------------
@@ -268,14 +268,14 @@ relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 	  => (Absyn.VarAttr, Types.Type, Types.Binding) =
 
   rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),ty,bind) &
+	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),_,ty,bind) &
 	check_subscripts(ad,ss) => dim
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
 	  => (Absyn.ATTR(dim,f,vt,di),ty,bind)
 
   rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),ty,_) &
+	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),_,ty,_) &
 	check_subscripts(ad,ss) => [] & (* FIXME: error message *)
 	lookup_in_var(ty, ids) => (attr,ty,binding)
 	----------------------------------
