@@ -57,6 +57,26 @@ module TORNADOEXT:
            **)
   relation get_hierachical_code: (string) => (string,string)
 (*   relation add_output_var_to_class: (string,string) => () *)
-	  
+
+          (**
+           ** arg1 what class has this variable
+           ** arg2 the name of the variable
+           ** arg3 the type of the variable (algstatevar, parameter)
+           **)
+  relation add_variable_for_index: (string,string,string) => ()
+          (** 
+           ** arg1 the variable name i.e. "out_1" in "Temp_foo.out_1"
+           ** arg2 the class name where is instatiated i.e. "Temp" for Temp_foo
+           ** returns the index of variable depending on type and direction
+           ** 
+           **)
+  relation get_flat_var_index: (string,string ) => int
+
+          (** 
+           ** arg1 the class name where is instatiated i.e. "Temp" for Temp_foo
+           ** arg3 the type of the variable (algstatevar, parameter)
+           ** 
+           **)
+  relation get_no_of_vars_with_type:(string) => int
 end 
 
