@@ -3483,13 +3483,10 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** should be used.
 	 **)
 
+
+	(* When the condition is constant evaluate it and select the correct branch *)
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
 	Ceval.ceval(env,e',false,NONE,NONE) => (Values.BOOL(cond),_) &
-(*	Debug.print("\nEQ_IF: ") &*)
-(*!!	print(cond) &
-*)
-(*	Dump.print_exp(cond) &
-	*)
 	select(cond,tb,fb) => b &
 	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, b)
 	  => (dae,env',csets', ci_state')
@@ -3500,11 +3497,6 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),true),_) &
 	Ceval.ceval(env,e',false,NONE,NONE) => (Values.BOOL(cond),_) &
-(*	Debug.print("\nEQ_IF: ") &*)
-(*!!	print(cond) &
-*)
-(*	Dump.print_exp(cond) &
-	*)
 	select(cond,tb,fb) => b &
 	inst_list(env,mod,pre,csets,ci_state,inst_e_initialequation, b)
 	  => (dae,env',csets', ci_state')
@@ -3513,6 +3505,16 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 			     INITIAL)
 	  => (dae,env',csets', ci_state')
 
+  rule	Static.elab_exp(env,e,false,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),false),_) &
+	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, tb)
+	  => (dae1,env',_, ci_state') &  (* There are no connections inside if-clauses. *)
+	inst_list(env',mod,pre,csets,ci_state,inst_e_equation, fb)
+	  => (dae2,env'',_, ci_state'')
+	--------------------------------------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb),
+			     NON_INITIAL)
+	=> ([DAE.IF_EQUATION(e',dae1,dae2)],env',csets, ci_state')
+
 
 	(**  `when equation' statement, modelica 1.1 
 	 **
@@ -3520,50 +3522,25 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** conditional expression.
 	 **)
 
-(* Test this! 1.1*)
-  rule	(* This is only done for 'for' loops. 
-	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
-	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
-	      Types.T_INTEGER, Types.UNBOUND)  &  *)
-
- 	Static.elab_exp (env,e,false,NONE)
-	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
-					   (Types.T_INTEGER(_),_)),_),
-			     true),_) &
-	(* FIXME: Check bounds *)
-	Ceval.ceval (env,e',false,NONE,NONE) => (v,_) &
-	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
-	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el)
-	  => (dae,env',csets', ci_state') (*&
-	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
-*)	-----------------------------------------------------------
-	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el),
+rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
+	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el) => (dae1,env',_,_) &
+	inst_equation_common(env',mod,pre,csets,ci_state,SCode.EQ_WHEN(ee,eel,eex),initial) 
+	  => (dae2::_, env'',_,ci_state') &
+         inst_equation_common_ci_trans (ci_state', initial) => ci_state''
+	-----------------------------------------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el, (ee,eel)::eex),   
 			     initial as NON_INITIAL)
-	  => (dae, env',csets', ci_state')
+	=> ([DAE.WHEN_EQUATION(e',dae1,SOME(dae2))], env'',csets, ci_state'')
 
-(* Test this! 1.1*)
-  rule	(* This is only done for 'for' loops. 
-	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
-	  => (Types.ATTR(false, SCode.RW, Absyn.VAR, _),
-	      Types.T_INTEGER, Types.UNBOUND)  &  *)
+rule	Static.elab_exp (env,e,false,NONE) => (e',_,_) &
+	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el) => (dae1,env',_,_) &
+         inst_equation_common_ci_trans (ci_state, initial) => ci_state'
+	-----------------------------------------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el,[]),   
+			     initial as NON_INITIAL)
+	  => ([DAE.WHEN_EQUATION(e',dae1,NONE)], env', csets, ci_state')
 
- 	Static.elab_exp (env,e,false,NONE)
-	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
-					   (Types.T_INTEGER(_),_)),_),
-			     true),_) &
-	(* FIXME: Check bounds *)
-	Ceval.ceval (env,e',false,NONE,NONE) => (v,_) &
-	(* Not possilbe for 'when'.unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') & *)
-	inst_list(env,mod,pre,csets,ci_state,inst_e_initialequation, el)
-	  => (dae,env',csets', ci_state') (*&
-	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
-*)	-----------------------------------------------------------
-	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el),
-			     initial as INITIAL)
-	  => (dae, env',csets', ci_state')
-
-
-
+(* seems unnecessary to handle when equations that are initial *) 
 
 
 	(**  `for' loops
