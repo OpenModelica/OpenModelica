@@ -58,7 +58,7 @@ tokens {
 
 stored_definition :
 			(within_clause SEMICOLON!)?
-			((f:FINAL)? class_definition SEMICOLON!)*
+			((f:FINAL)? class_definition SEMICOLON!)* 
 			EOF!
 			{
 				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
@@ -316,20 +316,20 @@ initial_equation_clause :
 		INITIAL! ec:equation_clause
         {
             #initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
-        }
+        } 
 
 		;
 
 equation_clause :
-		EQUATION^
+		EQUATION^  
 		    equation_annotation_list
   		;
 
 equation_annotation_list :
-		{ LA(1) == END && LA(2) == IDENT}?
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL}?
 		|
 		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
-		;
+		; 
 
 algorithm_clause :
 		ALGORITHM^
@@ -478,7 +478,7 @@ connector_ref_2 :
  */
 
 expression :
-		( if_expression
+		( if_expression 
         | simple_expression
 		)
 		;
@@ -697,8 +697,8 @@ subscript :
 
 comment :
 		(
-			string_comment	( ANNOTATION )=> annotation
-			| string_comment //(annotation)?
+			//string_comment	 ANNOTATION )=> annotation
+			string_comment (annotation)?
 		)
 		{
 			#comment=#([COMMENT,"COMMENT"],#comment);
