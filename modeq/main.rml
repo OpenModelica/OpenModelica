@@ -29,28 +29,18 @@ with "rtopts.rml"
 
 relation translate_file : string list => () =
 
-  rule	(* print "\n = Parsing\n\n" & *)
-	Parser.parse f => p &
-	(* Dump.dump p & *)
-	
-	(* print "\n = Exploding\n\n" & *)
+  rule	Parser.parse f => p &
 	SCode.elaborate(p) => p' &
-	(* Dump.dump p' & *)
-
-	(* print "\n = Instantiating\n\n" & *)
 	Inst.instantiate(p') => d &
-	print "\n[result]\n\n" &
-	DAE.dump d &
-	
-	print "\n[end result]\n"
-	----------------
+	DAE.dump d
+	----------
 	translate_file [f]
 	
-  rule	print "Too many arguments\n"
+  rule	print "# Too many arguments\n"
 	----------------------------
 	translate_file _::_::_
 
-  rule	print "Supply a file name\n"
+  rule	print "# Supply a file name\n"
 	----------------------------
 	translate_file []
 
