@@ -560,9 +560,10 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 
   rule	elab_exp (env,ind) => (indexp, PROP(indty, true)) &
 	ceval (env, indexp) => Values.INTEGER(value) &
+	int_string(value) => strval &
 	elab_exp (env,arraycr) => (Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
-	elab_builtin_size_2 (env, ty, value) => (exp, prop)
+	elab_builtin_size_2 (env, ty, value) => (exp, prop) 
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) => (exp, prop)
 
@@ -590,15 +591,25 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	  => (exp, prop)
 
   rule	print "#-- elab_builtin_size: Couldn't elaborate size()\n" &
-	print "#-- Wrong args or non-constant dimension\n"
+	print "#-- Wrong args or non-constant dimension\n" &
+	print "#env: " &
+	Env.print_env env &
+	print "\n" &
+	print "expl = " &
+	Debug.fprint_list ("peter6",expl,Dump.print_exp,", ") &
+	print "\n" 
 	----------------------------------------------------------
-	elab_builtin_size (_,_) => fail
+	elab_builtin_size (env,expl) => fail
 
 end
 
 relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Properties) =
 
-  axiom	elab_builtin_size_2 (env, Types.T_ARRAY(Types.DIM(SOME(dim)),ty), 1) 
+  rule	print "# Error non-constant dimension\n"
+	---------------------------------------
+	elab_builtin_size_2(env, Types.T_ARRAY(Types.DIM(NONE),ty), 1) => fail
+
+ axiom	elab_builtin_size_2 (env, Types.T_ARRAY(Types.DIM(SOME(dim)),ty), 1) 
 	  => (Exp.ICONST(dim), PROP(Types.T_INTEGER, true))
 
   rule	int_sub (ind, 1) => ind' &
@@ -606,6 +617,13 @@ relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Propertie
 	--------------------------------------------------
 	elab_builtin_size_2 (env, Types.T_ARRAY(_, ty), ind) => (exp, prop)
 
+  rule	print "# elab_builtin_size_2 failed\n type:" &
+	Types.print_type tp &
+	print " ind:" &
+	int_string ind => indstr & print indstr &
+	print "\n"
+	--------------------------------------
+	elab_builtin_size_2(_,tp,ind) => fail
 end
 
 

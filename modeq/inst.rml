@@ -425,16 +425,12 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	    
   rule	classdef_elts(elts) => cdefelts &
 	component_elts(elts) => compelts &
-	print " comp list length:" &
-	list_length(compelts) => len &
-	int_string len => lenstr &
-	print lenstr &
-	print "\n" &
 	extends_elts(elts) => extendselts &
 	(* 1. CLASSDEF nodes and COMPONENT nodes(add to env)*)
 	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims) => (_,env',csets',ci_state',tys) &
 	
-	Debug.fprint ("decl", "calling extend_components_to_env\n") &
+	Debug.fprint ("decl", "calling extend_components_to_env, env=\n") &
+	Debug.fcall ("decl",Env.print_env, env') &
 	extend_components_to_env(env',mod,pre,csets,ci_state,compelts,inst_dims) => env'' &
 	Debug.fprint("decl"," extended components to env, env=") &
 	Debug.fcall ("decl",Env.print_env, env'') &
@@ -507,6 +503,9 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 
 	Debug.fprint ("decl", "instantiating class to get type\n") &
 	inst_class(cenv,Mod.NOMOD,pre,csets,cl,inst_dims) => (_,_,ty,_) &
+	Debug.fprint ("decl", "got type:") &
+	Debug.fcall ("decl", Types.print_type, ty) &
+	Debug.fprint ("decl","\n") &
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 	    prot,ty,Types.UNBOUND),SOME(comp),false) => env' &
 	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims) => env''
@@ -605,7 +604,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Lookup.lookup_ident_local(env,n) => (_,_,_) &
 	print "# Trying to redeclare the class " & print n &
-	print " as a variable\n"
+	print " as a variable\n, env =" &
+	Env.print_env env
 	------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.CLASSDEF(n,_,_,_),_)
@@ -690,8 +690,12 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* The types in the environment does not have correct Binding.
 	   We must update those variables that is found in m into a new environment.*)
 	get_cref_from_mod(m) => crefs &
- 	update_variables_in_env(mods,crefs,env) => env2 &
+ 	update_variables_in_env(mods,crefs,env) => env2' &
 	
+	get_cref_from_dim(ad) => crefs2 &
+	update_variables_in_env(mods,crefs2,env2') => env2 &
+
+
 	Debug.fprintln ("insttr", "Elaborating current modifications") &
 	Mod.elab_mod(env2,pre,m) => m' &
 	Debug.fcall ("insttr", Mod.print_mod, m') &
@@ -716,8 +720,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	elab_arraydim(env2,ad,eq) => dims &
 					       
 	Debug.fprintln ("insttr", "arraydim elabed") &
-	Debug.fprint("peter2","inst_var, env =") &
-	Debug.fcall("peter2",Env.print_env, cenv) &
 	(** Instantiate the component *)	
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)
 	  => (dae,csets',ty) &
@@ -733,11 +735,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding),true) => env' &
 
-	Debug.fprint ("peter5", "component: ") &
-	Debug.fprint ("peter5", n) &
-	Debug.fprint ("peter5", ", updated env: ") &
-	Debug.fcall("peter5",Env.print_env, env') &
-	Debug.fprint ("peter5", "\n") &
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
 					       
@@ -867,6 +864,21 @@ relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
   axiom	get_cref_from_mod(_) => []
 end
 
+relation get_cref_from_dim: Absyn.ArrayDim => Absyn.ComponentRef list =
+	
+  rule	get_cref_from_dim(rest) => l1 &
+	get_cref_from_exp(exp) => l2 &
+	list_append(l1,l2) => res
+	----------------------
+	get_cref_from_dim(Absyn.SUBSCRIPT(exp)::rest) => res
+	
+  rule	get_cref_from_dim(rest) => res
+	------------------------------
+	get_cref_from_dim(Absyn.NOSUB::rest) => res
+
+  axiom	 get_cref_from_dim([]) => []
+end
+
 relation get_cref_from_submods: (SCode.SubMod list) => Absyn.ComponentRef list =
 
   rule	get_cref_from_mod(mod) => res1 &
@@ -921,13 +933,13 @@ relation get_cref_from_exp: ( Absyn.Exp ) => Absyn.ComponentRef list =
 	get_cref_from_exp(Absyn.IFEXP(e1,e2,e3)) => res
 	
   rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	print "Not implemented yet\n"
+	get_cref_from_farg(farg) => res
 	--------------------------------------------
-	get_cref_from_exp(Absyn.CALL(_,_)) => []
+	get_cref_from_exp(Absyn.CALL(_,farg)) => res
 
 
   rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	print "Not implemented yet\n"
+	print "get_cref_from_exp ARRAY Not implemented yet\n"
 	--------------------------------------------
 	get_cref_from_exp(Absyn.ARRAY(_)) => []
 
@@ -956,6 +968,24 @@ relation get_cref_from_exp: ( Absyn.Exp ) => Absyn.ComponentRef list =
 
 end
 
+relation get_cref_from_farg: (Absyn.FunctionArgs) => Absyn.ComponentRef list =
+	
+  rule	Util.list_map(expl, get_cref_from_exp) => l1 &
+	Util.list_flatten(l1) => fl1 &
+	Util.list_map(nargl,get_cref_from_narg) => l2 &
+	Util.list_flatten(l2) => fl2 &
+	list_append(fl1,fl2) => res
+	--------------------------------------------
+	get_cref_from_farg (Absyn.FUNCTIONARGS(expl,nargl)) => res
+
+end
+
+relation get_cref_from_narg: (Absyn.NamedArg) => Absyn.ComponentRef list =
+	
+  rule	get_cref_from_exp(exp) => res
+	-----------------------------
+	get_cref_from_narg(Absyn.NAMEDARG(_,exp)) => res
+end
 
 relation update_variables_in_env:(Mod.Mod,Absyn.ComponentRef list, Env.Env) => Env.Env =
 
@@ -972,28 +1002,18 @@ end
 relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.Env =
 
 	
-  rule	Debug.fprint ("peter3", "update_variable_in_env called, ident =") &
-	Debug.fcall ("peter3", Dump.print_component_ref, cref) &
-	Debug.fprint ("peter3", "\n") &
-	Debug.fprint("peter3","inst_var, env =") &
-	Debug.fcall("peter3",Env.print_env, env) &
-	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
+  rule		Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
 	    t,m)),_) &
 
-	Debug.fprint("peter3","got local ident\n") &
 	Lookup.lookup_class(env,t) => (cl,cenv) & 
-	Debug.fprint("peter3","got class \n") &
 
 	get_cref_from_mod(m) => crefs &
-	Debug.fprint("peter4","inst_var, env =") &
-	Debug.fcall("peter4",Env.print_env, env) &
- 	update_variables_in_env(mods,crefs,env) => env2 &
-	Debug.fprint("peter4","performed update of variables for ident=")  &
-	Debug.fcall ("peter4", Dump.print_component_ref, cref) &
-	Debug.fprint ("peter4", "\n") &
-	Debug.fprint("peter4","inst_var, env =") &
-	Debug.fcall("peter4",Env.print_env, env2) &
+ 	update_variables_in_env(mods,crefs,env) => env2' &
+	
+	get_cref_from_dim(ad) => crefs2 &
+	update_variables_in_env(mods,crefs2,env2') => env2 &
+
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
@@ -1003,20 +1023,13 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m') => mod' &
 	
-	(** If the element is `protected', and an external *)
-	(** modification is applied, it is an error. *)
-
 	Mod.mod_equation mod' => eq &
 
-	Debug.fprintln ("peter3", "mod equation done") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
 	elab_arraydim(env2,ad,eq) => dims &
-					       
-	Debug.fprintln ("peter3", "arraydim elabed") &
-	Debug.fprint("peter2","inst_var, env =") &
-	Debug.fcall("peter2",Env.print_env, env2) &
+	
 	(** Instantiate the component *)	
 	inst_var(env2,mod',Prefix.NOPRE,[],n,cl,attr,dims,[],[])
 	  => (dae1,csets',ty) &
@@ -1212,6 +1225,27 @@ rule	Exp.print_subscript x & print "," & print_dim xs
 	print_dim SOME(DIMEXP(x,_))::xs
 
 end
+
+relation print_dim2 : DimExp  list => () =
+
+  rule	int_string x => s & print s
+	---------------------------
+	print_dim2 [DIMINT(x)]
+
+  rule	Exp.print_subscript x
+	---------------------------
+	print_dim2 [DIMEXP(x,_)]
+
+  rule	int_string x => s & print s & print "," & print_dim2 xs
+	------------------------------------------------
+	print_dim2 DIMINT(x)::xs
+
+rule	Exp.print_subscript x & print "," & print_dim2 xs
+	------------------------------------------------
+	print_dim2 DIMEXP(x,_)::xs
+  axiom	print_dim2[] => ()
+
+end
 (*!includecode*)
 
 (** relation: elab_arraydim_decl
@@ -1226,22 +1260,26 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (DimExp option) list 
 
   axiom	elab_arraydim_decl(_,[]) => []
 
-  rule	elab_arraydim_decl(env,ds) => l
+  rule	print "NOSUB in elab_arraydim_decl\n" &
+	elab_arraydim_decl(env,ds) => l 
+	
 	-------------------------------
 	elab_arraydim_decl(env,Absyn.NOSUB::ds) => NONE::l
 
   rule	Static.elab_exp(env, d)
-	  => (e,Static.PROP(Types.T_INTEGER,true)) &
+	    => (e,Static.PROP(Types.T_INTEGER,_)) &  
+	    (* _ Was true, but structural parameters must be given 
+	       the numerical value in order to instantiate successfully *)
 	Static.ceval(env,e) => Values.INTEGER(i) &
-	elab_arraydim_decl(env,ds) => l
+ 	elab_arraydim_decl(env,ds) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d) => (e,Static.PROP(Types.T_INTEGER,false)) &
+(*  rule	Static.elab_exp(env, d) => (e,Static.PROP(Types.T_INTEGER,false)) &
 	elab_arraydim_decl(env,ds) => l
 	-------------------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) 
-	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l
+	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l *)
 
   rule	Static.elab_exp(env, d)
 	  => (e,Static.PROP(t,_)) &

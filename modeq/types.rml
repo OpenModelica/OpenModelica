@@ -541,8 +541,9 @@ end
 (* LS *)
 relation print_var : Var => () =
 
-  rule	print_type typ &
-	print n
+  rule	print_type typ & print " " &
+	print n & print " " & 
+	print_type typ
 	-------
 	print_var VAR(n, attr, prot, typ, bind)
 
