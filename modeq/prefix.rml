@@ -21,11 +21,54 @@ module Prefix:
 		  | PRE of string * int list * Prefix
 
   relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix
+  relation prefix_to_cref : Prefix => Exp.ComponentRef
   relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
-  relation prefix_exp  : (Env.Env,Exp.Exp,Prefix) => Exp.Exp
+  relation prefix_cref_list : (Prefix, Exp.ComponentRef list) =>
+	  Exp.ComponentRef list
+  relation prefix_exp  : (Env.Env,Exp.Exp, Prefix) => Exp.Exp
+  relation prefix_exp_list  : (Env.Env,Exp.Exp list, Prefix) => Exp.Exp list
   relation prefix_path : (Absyn.Path,Prefix) => Absyn.Path
+  relation print_prefix_str : Prefix => string
+  relation print_prefix : Prefix => ()
+  relation prefix_to_path: Prefix => Absyn.Path
 
 end
+
+relation print_prefix_str : Prefix => string =
+
+  axiom	print_prefix_str NOPRE => "<NOPRE>"
+
+  axiom	print_prefix_str PRE(str, [], NOPRE) => str
+
+  rule	string_append (str, "[]") => s
+	------------------------------
+	print_prefix_str PRE(str, _, NOPRE) => s
+
+  rule	print_prefix_str rest => rest' &
+	string_append (rest', ".") => s &
+	string_append (s, str) => s'
+	----------------------------
+	print_prefix_str PRE(str, [], rest) => s'
+
+  rule	print_prefix_str rest => rest' &
+	string_append (rest', ".") => s &
+	string_append (s, str) => s' &
+	string_append (s', "[]") => s''
+	----------------------------
+	print_prefix_str PRE(str, _, rest) => s''
+
+end
+
+relation print_prefix : Prefix => () =
+
+
+  rule	print_prefix_str p => s &
+	print s
+	------------------------------
+	print_prefix p
+
+end
+	
 
 (** relation: prefix_add
  **
@@ -58,22 +101,83 @@ relation prefix_path: (Absyn.Path,Prefix) => Absyn.Path =
 
 end
 
+(** relation: prefix_to_path
+ **
+ ** Convert a Prefix to a `Path'
+ **)
+
+relation prefix_to_path: Prefix => Absyn.Path =
+
+  rule	print "#-- Error: Cannot conver empty prefix to a path\n"
+	---------------------------------------------------------
+	prefix_to_path NOPRE => fail
+
+  axiom	prefix_to_path PRE(s,_,NOPRE) => Absyn.IDENT(s)
+  
+  rule	prefix_to_path ss => p
+	---------------------------
+	prefix_to_path PRE(s,_,ss) => Absyn.QUALIFIED(s,p)
+
+end
+
 (** relation: prefix_cref
  **
  ** Prefix a `ComponentRef' variable by adding the supplied prefix to
  ** it and returning a new `ComponentRef'.
+ **
+ ** LS: Changed to call prefix_to_cref which is more general now
  **)
 
 relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
-  axiom	prefix_cref (NOPRE, cref) => cref
-
-  rule	Exp.int_subscripts s => s' &
-	prefix_cref(xs, Exp.CREF_QUAL(i,s',cref)) => cref'
+  rule	prefix_to_cref2 (pre, SOME(cref)) => cref'
 	---------------------------------
-	prefix_cref (PRE(i,s,xs), cref) => cref'
+	prefix_cref (pre, cref) => cref'
 
 end
+
+
+(** relation: prefix_to_cref
+ **
+ ** Convert a prefix to a component reference.
+ **)
+
+relation prefix_to_cref : Prefix => Exp.ComponentRef =
+
+  rule	prefix_to_cref2 (pre, NONE) => cref'
+	-----------------------------------
+	prefix_to_cref pre => cref'
+
+end
+
+
+(** relation: prefix_to_cref2
+ **
+ ** Convert a prefix to a component reference. Converting NOPRE with no
+ ** component reference is an error because a component reference cannot be
+ ** empty
+ **)
+
+relation prefix_to_cref2 : (Prefix, Exp.ComponentRef option) => Exp.ComponentRef =
+
+  rule	print "#-- Cannot convert empty prefix to component reference\n"
+	----------------------------------------------------------------
+	prefix_to_cref2 (NOPRE, NONE) => fail
+
+  axiom	prefix_to_cref2 (NOPRE, SOME(cref)) => cref
+
+  rule	Exp.int_subscripts s => s' &
+	prefix_to_cref2 (xs, SOME(Exp.CREF_IDENT(i,s'))) => cref'
+	--------------------------
+	prefix_to_cref2 (PRE(i,s,xs), NONE) => cref'
+
+  rule	Exp.int_subscripts s => s' &
+	prefix_to_cref2 (xs, SOME(Exp.CREF_QUAL(i,s',cref))) => cref'
+	--------------------------
+	prefix_to_cref2 (PRE(i,s,xs), SOME(cref)) => cref'
+
+end
+
 
 (** relation: prefix_exp
  **
@@ -126,25 +230,25 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-----------------------
 	prefix_exp(env,Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
 
-  rule	prefix_explist(env,es,p) => es'
+  rule	prefix_exp_list(env,es,p) => es'
 	-----------------------
 	prefix_exp(env,Exp.CALL(f,es),p) => Exp.CALL(f,es')
 	(**)
   axiom	prefix_exp(env,Exp.ARRAY([]),p) => Exp.ARRAY([])
 
-  rule	prefix_explist(env,es,p) => es'
+  rule	prefix_exp_list(env,es,p) => es'
 	-------------------------------
 	prefix_exp(env,Exp.ARRAY(es),p) => Exp.ARRAY(es')
 
 
 (* PR. *)
-  rule	prefix_explist(env,es,p) => es'
+  rule	prefix_exp_list(env,es,p) => es'
 	-------------------------------
 	prefix_exp(env,Exp.TUPLE(es),p) => Exp.TUPLE(es')
 
   axiom	prefix_exp(env,Exp.MATRIX([]),p) => Exp.MATRIX([])
 
-  rule	prefix_explist(env,x,p) => x' &
+  rule	prefix_exp_list(env,x,p) => x' &
 	prefix_exp(env,Exp.MATRIX(xs),p) => Exp.MATRIX(xs')
 	----------------------------------------
 	prefix_exp(env,Exp.MATRIX(x::xs),p) => Exp.MATRIX((x'::xs'))
@@ -173,19 +277,36 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
 end
 
-(** relation: prefix_explist
+(** relation: prefix_exp_list
  ** 
  ** This relation prefixes a list of expressions using the
  ** `prefix_exp' relation.
  **)
 
-relation prefix_explist: (Env.Env,Exp.Exp list,Prefix) => Exp.Exp list =
+relation prefix_exp_list: (Env.Env,Exp.Exp list,Prefix) => Exp.Exp list =
 
-  axiom	prefix_explist(_,[],_) => []
+  axiom	prefix_exp_list(_,[],_) => []
 
   rule	prefix_exp(env,e,p) => e' &
-	prefix_explist(env,es,p) => es'
+	prefix_exp_list(env,es,p) => es'
 	---------------------------
-	prefix_explist(env,e::es,p) => (e'::es')
+	prefix_exp_list(env,e::es,p) => (e'::es')
+
+end	
+
+(** relation: prefix_cref_list
+ ** 
+ ** This relation prefixes a list of component references using the
+ ** `prefix_cref relation.
+ **)
+
+relation prefix_cref_list: (Prefix, Exp.ComponentRef list) => Exp.ComponentRef list =
+
+  axiom	prefix_cref_list(_, []) => []
+
+  rule	prefix_cref(p,cr) => cr' &
+	prefix_cref_list(p, crlist) => crlist'
+	---------------------------
+	prefix_cref_list(p,cr::crlist) => (cr'::crlist')
 
 end	
