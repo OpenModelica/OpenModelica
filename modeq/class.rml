@@ -49,4 +49,4 @@ and	 ClassRestriction = CL_CLASS
 
 and	 Class = CLASS of ClassRestriction*(ElementList list)
 
-end
+end (* module Class *)
