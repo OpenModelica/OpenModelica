@@ -1964,6 +1964,15 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	------------------------------------------------
 	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh)) => res
 
+ rule	(* {{..}..{..}} * {{..}..{..}} *)
+	ceval (env,rh) => Values.ARRAY(rhvals as (elt1::_)) &
+ 	ceval (env,lh) => Values.ARRAY(lhvals as (elt2::_)) &
+	Values.is_array(elt1) => true &
+	Values.is_array(elt2) => true &
+	Values.mult_matrix(lhvals,rhvals) => res
+	------------------------------------------------
+	ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh)) => Values.ARRAY(res)
+
   rule	ceval (env, lh) => Values.INTEGER(lhv) &
 	ceval (env, rh) => Values.INTEGER(rhv) &
 	int_add(lhv, rhv) => sum
@@ -2063,6 +2072,19 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 	ceval_range(start', step', stop') => arr
 	-------------------------------------------
 	ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop)) => Values.ARRAY(arr)
+
+  rule	ceval (env, start) => Values.REAL(start') &
+	ceval (env, stop) => Values.REAL(stop') &
+	ceval_range_real(start', 1.0, stop') => arr
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop)) => Values.ARRAY(arr)
+
+  rule	ceval (env, start) => Values.REAL(start') &
+	ceval (env, step) => Values.REAL(step') &
+	ceval (env, stop) => Values.REAL(stop') &
+	ceval_range_real(start', step', stop') => arr
+	-------------------------------------------
+	ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop)) => Values.ARRAY(arr)
 
   rule	ceval (env,e) => Values.INTEGER(i) &
 	int_real i => r
@@ -2170,6 +2192,25 @@ relation ceval_range : (int, int, int) => Values.Value list =
 	ceval_range (next, step, stop) => l
 	-----------------------------------
 	ceval_range (start, step, stop) => Values.INTEGER(start)::l
+
+end
+
+(** relation: ceval_range_real
+ **
+ ** This relation evaluates a range expression.  It only handles reals
+ **)
+
+relation ceval_range_real : (real, real, real) => Values.Value list =
+
+  rule	real_gt(start,stop) => true
+	--------------------------
+	ceval_range_real (start,_,stop) => []
+
+  rule	real_gt(start,stop) => false & (* redundant *)
+	real_add (start, step) => next &
+	ceval_range_real (next, step, stop) => l
+	-----------------------------------
+	ceval_range_real (start, step, stop) => Values.REAL(start)::l
 
 end
 

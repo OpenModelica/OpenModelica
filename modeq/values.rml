@@ -49,6 +49,7 @@ module Values :
   relation sub_elementwise_arrayelt: (Value list, Value list) => Value list
   relation mult_scalar_arrayelt: (Value, Value list) => Value list
   relation mult_scalar_product: (Value list, Value list) => Value
+  relation mult_matrix: (Value list,Value list) => Value list
   relation is_array :Value => bool
 end
 	
@@ -167,10 +168,16 @@ relation mult_scalar_product: (Value list, Value list) => Value =
 
   axiom	mult_scalar_product([],INTEGER(_)::_) => ARRAY([])
 
+  rule	mult_scalar_product (v2lst,vlst) => sres &
+	mult_scalar_product (rest,vlst) => ARRAY(vres) 
+	---------------------------------------------
+	mult_scalar_product (ARRAY(v2lst)::rest, vlst as (REAL(_)::_)) 
+	    => ARRAY(sres::vres)
+
+  axiom	mult_scalar_product([],REAL(_)::_) => ARRAY([])
+
 
   rule	matrix_strip_first_column (mat) => (ARRAY(col),mat') &
-	print_val ARRAY(col) &
-	print_val ARRAY(mat') & 
 	mult_scalar_product(vlst,col) => v &
 	mult_scalar_product(vlst,mat') => ARRAY(vals)
 	---------------------------------------------
@@ -183,6 +190,19 @@ relation mult_scalar_product: (Value list, Value list) => Value =
 	mult_scalar_product(vlst  as (INTEGER(_)::_), mat as (ARRAY([_])::_)) 
 	    => ARRAY([INTEGER(v)])
 
+  rule	matrix_strip_first_column (mat) => (ARRAY(col),mat') &
+	mult_scalar_product(vlst,col) => v &
+	mult_scalar_product(vlst,mat') => ARRAY(vals)
+	---------------------------------------------
+	mult_scalar_product(vlst  as (REAL(_)::_), mat as (ARRAY(_::_::_)::_)) 
+	    => ARRAY(v::vals)
+
+  rule	matrix_strip_first_column (mat) => (ARRAY(col),mat') &
+	mult_scalar_product(vlst,col) => REAL(v) 
+	---------------------------------------------
+	mult_scalar_product(vlst  as (REAL(_)::_), mat as (ARRAY([_])::_)) 
+	    => ARRAY([REAL(v)])
+
   rule	print "mult_scalar_product failed\n lst1 len:" &
 	list_length(lst1) => len &
 	int_string(len) => lenstr &
@@ -193,6 +213,19 @@ relation mult_scalar_product: (Value list, Value list) => Value =
 	--------------------------
 	mult_scalar_product(lst1,lst2) => fail
 end
+
+relation mult_matrix: (Value list,Value list) => Value list =
+	
+  rule	mult_scalar_product(v1lst,m2) => res1 &
+	mult_matrix(rest1,m2) => res2
+	-----------------------------
+	mult_matrix(m1 as (ARRAY(v1lst)::rest1),m2 as (ARRAY(_)::_)) => res1::res2
+	
+  axiom	 mult_matrix([],_) => []
+	
+	
+end
+
 (** This relation takes a Value list representing a matrix and strips the first column of the matrix, i.e. for each sub list it removes the first element. Returning both the stripped column and the resulting matrix.**)
 relation matrix_strip_first_column: Value list => (Value,Value list) =
 

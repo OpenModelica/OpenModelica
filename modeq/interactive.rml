@@ -120,11 +120,16 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	(string,InteractiveSymbolTable) =
 	
   rule	build_env_from_symboltable(st) => env &
+	
 	Static.elab_exp(env,exp) => (sexp,prop) &
+	print "elabed exp:" &
+	Exp.print_exp sexp &
 	Static.ceval (env,sexp) => value &
+	print "value:" & Values.print_val value &
+	print "\n" &
 	Values.val_string value =>  str 
 	--------------------
-	evaluate_expr(IEXP(exp),st) => (str,st)
+	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_)) => (str,st)
 	
   rule	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp) => (sexp,Static.PROP(t,_))  &
@@ -157,7 +162,8 @@ end
 
 relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
 	
-  rule	Env.open_scope Env.empty_env => env &
+  rule	SCode.elaborate(p) => p' &
+	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
 	add_vars_to_env(vars,env) => env'
 	------------------------------------------
 	build_env_from_symboltable(SYMBOLTABLE(p,sp,ic,vars)) => env'
