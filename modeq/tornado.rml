@@ -2061,9 +2061,10 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 	       
            translate_dae(dae) => dae' &
 
-         generate_compute_output(cname,dae',p,ass1,ass2,blt_no_states) => coutput &
+         generate_compute_output(cname,dae',p,ass1,ass2,blt_no_states) => (coutput,simple1) &
+         generate_compute_state(cname,dae',p,ass1,ass2,blt_states) => (cstate,simple2) &
          generate_compute_initial(cname,dae',p) => cinitial &
-         generate_compute_state(cname,dae',p,ass1,ass2,blt_states) => cstate &
+         Util.string_append_list([cinitial,simple1,simple2]) => cinitial' &
          (*generate_compute_terminal(cname,dae',p) => cterm &*)
          generate_compute_terminal(cname,dae',p,ass1,ass2,blt) => cterm &
          Util.string_append_list(["void C",cname,"::\n",
@@ -2075,7 +2076,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
                                   "void C",cname,"::\n",
                                   "ComputeInitial()\n",
                                   "{\n",
-                                  cinitial,
+                                  cinitial',
                                   "}\n",
                                   "\n",
                                   "void C",cname,"::\n",
@@ -2240,15 +2241,16 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
                                    Absyn.Program,
                                    int vector, 
                                    int vector, 
-                                   int list list) => string =
+                                   int list list) => (string,string) =
          
   rule  (*Util.string_append_list(["/* output code here*/\n"]) => coutput &*)
-         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-         Util.string_append_list(eqn_str_list) => coutput 
-         -------------------------------------------------------------
+         build_blocks(dae,ass1,ass2,blocks) => (eqn_str_list,seqn_str_list) &
+         Util.string_append_list(eqn_str_list) => coutput1 &
+         Util.string_append_list(seqn_str_list) => coutput2
+         -----------------------------------------------------------
          generate_compute_output(cname,
                                  dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_),
-                                 p,ass1,ass2,blocks) => coutput
+                                 p,ass1,ass2,blocks) => (coutput1,coutput2)
          
  end
 
@@ -2381,16 +2383,17 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 (** relation: generate_compute_state
  ** This relation generates the code for the calculation of the state variables.
  **)
- relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program,int vector, int vector, int list list) => string =
+ relation generate_compute_state:(string,DAELow.DAELow,Absyn.Program,int vector, int vector, int list list) => (string,string) =
          
   rule  (*Util.string_append_list(["/* state code here*/\n"]) => cstate &*)
          (*print("----------- START building block STATE---------------\n") &*)
-         build_blocks(dae,ass1,ass2,blocks) => eqn_str_list &
-         Util.string_append_list(eqn_str_list) => cstate 
+         build_blocks(dae,ass1,ass2,blocks) => (eqn_str_list,seqn_str_list) &
+         Util.string_append_list(eqn_str_list) => cstate1 &
+         Util.string_append_list(seqn_str_list) => cstate2 
          (*print("----------- END building block STATE---------------\n") *)
          
          -------------------------------------------------------------
-         generate_compute_state(cname,dae,p,ass1,ass2,blocks) => cstate
+         generate_compute_state(cname,dae,p,ass1,ass2,blocks) => (cstate1,cstate2)
 
  end
 
@@ -2415,9 +2418,10 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
  ** for the equations.
  ** It is NOT done for system of equations!
  **)
- relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => string list =
+ relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) 
+          => (string list,string list) =
 
-  axiom	build_blocks(_,_,_,[]) => []
+  axiom	build_blocks(_,_,_,[]) => ([],[])
 
          (* rule	(* For system of equations *) *)
 	     (* build_system(dae,ass1,ass2,block) &
@@ -2426,10 +2430,10 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 	      build_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)*)
 	     
   rule	(* for single equations *)
-	     build_equation(dae,ass1,ass2,eqn) => eqn_str &
-	     build_blocks(dae,ass1,ass2,blocks) => res
+	     build_equation(dae,ass1,ass2,eqn) => (eqn_str,seqn_str) &
+	     build_blocks(dae,ass1,ass2,blocks) => (res1,res2)
 	     -------------------------------------
-	     build_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
+	     build_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => (eqn_str::res1, seqn_str::res2)
 
   rule	print "-build_blocks failed\n" 
 	     -----------------
@@ -2441,9 +2445,41 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
  ** This returns the string for a specific equation in the 
  ** incidence matrix.
  ** It is used both for state variables and regular variables
+ ** RET1 = the usual equations
+ ** RET2 = the initial equation if there are some that are on the form of cref = constant.
  **)
- relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
+ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => (string,string) =
 	     
+  rule  (* Solving for non-states *)
+	     int_sub(e,1) => e' &
+	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	     vector_nth(ass2,e') => v &
+	     int_sub(v,1) => v' &
+	     DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	     DAELow.is_non_state kind &
+	     (*print "Solving for non-states\n" &*)
+
+	     let varexp = Exp.CREF(cr,Exp.REAL) &
+	     Exp.solve(e1,e2,varexp) => expr &
+	     
+         (* start debug output *)
+         Exp.print_exp_str e1 => e1s &
+	     Exp.print_exp_str e2 => e2s &
+         int_string(e) => eqn_nr &
+         int_string(v) => var_nr &
+	     (*    print "Equation nr: " & print eqn_nr & print " var nr: " & print var_nr &print " :\n" & print e1s & print " = " & print e2s &
+	      print "\nsolved for:\n " & Exp.print_exp_str varexp => s &
+	      print s & print "\ngiving:\n " &
+          Exp.print_exp_str expr => s2 & print s2 & print "\n" &*)
+         
+         Exp.simplify(expr) => simplify_exp &
+         Exp.is_const(simplify_exp) => true &
+	     build_assignment(cr,simplify_exp,origname)  => assigment_string 
+	     --------------------------------
+	     build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_)
+                                      ,_,eqns,_,_,_),ass1,ass2,e) 
+          => ("",assigment_string)
+ 
   rule  (* Solving for non-states *)
 	     int_sub(e,1) => e' &
 	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -2469,7 +2505,8 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
          Exp.simplify(expr) => simplify_exp &
 	     build_assignment(cr,simplify_exp,origname)  => assigment_string
 	     --------------------------------
-	     build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string	
+	     build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) 
+          => (assigment_string,"")
          
 
   rule  (* Solving the state s means solving for der(s) *)
@@ -2503,7 +2540,8 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
          Exp.simplify(expr) => simplify_exp &
 	     build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
 	     --------------------------------
-	     build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string 
+	     build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) 
+          => (assigment_string,"")
 
   rule	int_sub(e,1) => e' &
 	     DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -2518,7 +2556,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
          
   rule  print "-build_equation failed\n" 
 	     --------------------------------
-	     build_equation(_,_,_,_) => "//build_equation failed\n" 
+	     build_equation(_,_,_,_) => ("//build_equation failed\n","")
  end
 
 (** relation build_assignment 
