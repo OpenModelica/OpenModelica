@@ -51,4 +51,6 @@ relation sub_directories: (string) => string list
 
 relation mo_files: (string) => string list
 
+relation time: () => real
+
 end

@@ -8,6 +8,7 @@
 #include "read_write.h"
 #include "../values.h"
 #include <sys/dirent.h>
+#include <time.h>
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 255
@@ -399,6 +400,21 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
   rmlA0 = (void*)res;
   RML_TAILCALLK(rmlSC);
 }   
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__time)
+{
+  float time;
+  clock_t cl;
+  
+  cl=clock();
+  
+  time = (float)cl / (float)CLOCKS_PER_SEC;
+  /*  printf("clock : %d\n",cl); */
+  /* printf("returning time: %f\n",time);  */
+  rmlA0 = (void*) mk_rcon(time);
+  RML_TAILCALLK(rmlSC);
+}
 RML_END_LABEL
 
 float next_realelt(float *arr)
