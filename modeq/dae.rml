@@ -1,0 +1,85 @@
+(* dae.rml
+ *
+ * RML module that describes the DAE output format after instantiating
+ * a Modelica model.  The module also contains a relation for printing
+ * Dymola syntax from the DAE form.
+ *
+ * The DAE can be represented in two ways: either with the component
+ * structure of the orginal model, or in flattened form where all local
+ * names have been mangled to encode the component hierarchy and only
+ * variables and equations remain.
+ *
+ *)
+
+module DAE:
+
+with "exp.rml"
+
+type Ident = string
+
+datatype VarKind = LOCAL | PAR | CON
+
+datatype DAEcomp = VAR of Ident * VarKind
+		 | VARVAL of Ident * VarKind * Exp.Exp
+		 | EQUATION of Exp.Exp
+		 | COMP of Ident * DAEform
+and	 DAEform = DAE of DAEcomp list
+
+relation dump: DAEform => ()
+
+end
+
+relation dump_kind =
+	rule	print "  constant "
+		--------------------
+		dump_kind CON => ()
+
+	rule	print "  parameter "
+		--------------------
+		dump_kind PAR => ()
+
+	rule	print "  local "
+		--------------------
+		dump_kind LOCAL => ()
+end
+
+relation dump_comp: DAEcomp => () =
+
+	rule	dump_kind kind & print id & print "\n"
+		--------------------------------------
+		dump_comp(VAR(id, kind)) => ()
+
+	rule	dump_kind kind & print id &
+		print "=" & Exp.dump ex & print "\n"
+		--------------------------------------
+		dump_comp(VARVAL(id, kind, ex)) => ()
+
+	rule	print "  " & Exp.dump eq & print "\n"
+		--------------------------------------
+		dump_comp(EQUATION(eq)) => ()
+
+	rule	print "{ begin " & print id & print " }\n" &
+		dump contents &
+		print "{ end " & print id & print " }\n"
+		--------------------------------------
+		dump_comp ( COMP(id, contents)) => ()
+end
+
+and (* relation *) dump_list: DAEcomp list => () =
+
+	axiom	dump_list [] => ()
+
+	rule	dump_comp first &
+		dump_list rest
+		-------------------
+		dump_list first :: rest => ()
+end
+
+and (* relation *) dump: DAEform => () =
+
+	rule	dump_list l
+		-------------------
+		dump DAE(l) => ()
+end
+
+

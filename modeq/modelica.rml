@@ -1,0 +1,310 @@
+(*
+   modelica.rml - Definition of Modelica AST in RML
+*)
+
+module Modelica:
+
+with "exp.rml"
+with "dae.rml"
+
+type Ident = string
+
+(* Declaration of classes and their contents *)
+(* Note: should have separate structure for modifiers *)
+
+datatype Definition = DEF of Ident * Element list
+
+and      Element = BASE of Definition
+                 | CL of Class
+                 | COMP of Definition * Definition
+                 | EQUATION of Exp.Exp
+
+and	 Class = CLASS of Definition
+
+(* Global environment *)
+
+type Env = Definition list
+
+(* Modifier list - not used? *)
+
+type Mod = Element list
+
+(* Lookup routines for global environment and modifiers *)
+
+relation lookup: (Env, Ident) => Definition
+
+(* Instantiation of Modelica model *)
+
+relation instantiate_class: (Env, Env, Class)
+	=> DAE.DAEform
+
+(* Dump routines for debugging of AST *)
+
+relation dump: Definition => ()
+relation dump_class: Class => ()
+relation dump_element: Element => ()
+relation DumpElementList: Element list => ()
+
+(* Test cases *)
+
+relation test1: () => ()
+relation test2: () => ()
+relation test3: () => ()
+
+end
+
+(*************************************************************************)
+(* Lookup of names in global environment and modifier list *)
+
+relation lookup: (Env, Ident) => Definition =
+
+	rule	id1 = id
+		-----------------------
+		lookup(DEF(id1, elist) :: _, id) => DEF(id, elist)
+
+	rule	lookup(rest, id) => def
+		-----------------------
+		lookup(_ :: rest, id) => def
+end
+
+relation lookup_mod: (Mod, Ident) => Element list =
+
+	(* Match a modifier of the form "y = exp" *)
+
+	rule	id = y
+		& print "Found modifier " & print id
+		& print "=" & Exp.dump exp & print "\n"
+		--------------------------------
+		lookup_mod(EQUATION(Exp.EQU(Exp.IDENT(id), exp))::_, y) =>
+				[ EQUATION(exp) ]
+
+	(* Note: should handle modifier of type "y(exp)" too *)
+
+	(* If first modifier didn't match, check rest of modifiers *)
+	(* An empty modifier list means that the lookup failed     *)
+
+	rule	lookup_mod(rest, id) => result
+		------------------------
+		lookup_mod(_::rest, id) => result
+end
+
+(*************************************************************************)
+(* Instantiation of model *)
+(* Note: we should have a separate relation for checking the model *)
+
+val ErrorInstance = DAE.VAR("Error", DAE.LOCAL)
+
+(* Create a variable on DAE form, handling an optional initial value *)
+
+relation make_variable: (Ident, Element list) => DAE.DAEcomp =
+
+	axiom	make_variable(id, []) => DAE.VAR(id, DAE.LOCAL)
+
+	axiom	make_variable(id, [EQUATION(ex)]) => DAE.VARVAL(id, DAE.LOCAL, ex)
+
+	rule	print "Error: modifier too complicated for " &
+		print id & print "\n"
+		-----------------------------------------------
+		make_variable(id, _) => DAE.VAR(id, DAE.LOCAL)
+
+end
+
+relation inst_element: (Env, Env, Element) => DAE.DAEcomp =
+
+	(* Instantiate an equation *)
+
+	axiom	inst_element(g, m, EQUATION(e)) => DAE.EQUATION(e)
+
+	(* Instantiate base class *)
+
+	rule	lookup(g, id) => base &
+		inst_def(g, [DEF("?", elist)], base) => inst
+		-------------------------------------
+		inst_element(g, m, BASE(DEF(id, elist))) => DAE.COMP(id, inst)
+
+	rule	not lookup(g, id) => base &
+		print "Error: base class " & print id & print " not found\n"
+		-------------------------------------
+		inst_element(g, m, BASE(DEF(id, elist))) => ErrorInstance
+
+	(* Instantiate real variable - special case of component *)
+
+	rule	make_variable(id, mod) => var
+		-----------------------------------------------
+		inst_element(g, m, COMP(DEF("Real", _), DEF(id, mod))) => var
+
+	(* Instantiate other components *)
+
+	rule	lookup(g, typeid) => comp_type&
+		list_append(comp_mod, type_mod) => mod &
+		inst_def(g, [DEF("?", mod)], comp_type) => comp'
+		-------------------------------------------------
+		inst_element(g, m, COMP(DEF(typeid, type_mod),
+			DEF(compid, comp_mod))) => DAE.COMP(compid, comp')
+
+	rule	not lookup(g, typeid) => _ &
+		print "Error: type specifier " & print typeid &
+		print " for component " & print compid & print " not found\n"
+		-------------------------------------------------
+		inst_element(g, m, COMP(DEF(typeid, _),
+			DEF(compid, _))) => ErrorInstance
+
+	(* Nothing else has been implemented *)
+
+	axiom	inst_element(g, m, x) => ErrorInstance
+end
+
+(* If there is a modifier correspongding to an element, use it
+   instead of the element's modifier. *)
+
+and (* relation *) inst_element2: (Env, Env, Element) => DAE.DAEcomp =
+
+	rule	lookup_mod(m, id) => m' &
+		inst_element(g, mod, COMP(ty, DEF(id, m'))) => e'
+		----------------------------
+		inst_element2(g, mod as [DEF(_, m)], e as COMP(ty, DEF(id, compmod))) => e'
+
+	(* Note: should handle base classes and local classes the same way *)
+
+	(* The default rule is to instantiate without changing the modifier *)
+
+	rule	inst_element(g, m (* [] instead? *), e) => e'
+		----------------------------
+		inst_element2(g, m, e) => e'
+end
+
+(* Instantiate a list of elements by recursive traversal *)
+
+and (* relation *) inst_element_list: (Env, Env, Element list) => DAE.DAEcomp list =
+	
+	axiom	inst_element_list(g, m, []) => []
+
+	rule	inst_element2(g, m, e) => e' &
+		inst_element_list(g, m, rest) => rest'
+		---------------------------------
+		inst_element_list(g, m, e::rest) => e'::rest'
+end
+
+(* Instatiation of definition and class just go thrgough its elements *)
+
+and (* relation *) inst_def: (Env, Env, Definition) => DAE.DAEform =
+
+	rule	inst_element_list (g, m, elist) => daelist
+		---------------------------------
+		inst_def(g, m, DEF(name, elist)) => DAE.DAE(daelist)
+end
+
+relation instantiate_class: (Env, Env, Class) => DAE.DAEform =
+	
+	rule	inst_def(g, m, def) => def'
+		------------------------
+		instantiate_class(g, m, CLASS(def)) => def'
+end
+
+(*************************************************************************)
+(* Dump routines for debugging of AST *)
+
+relation dump: Definition => () =
+	rule	print id
+		----------------------------------
+		dump (DEF(id, []))
+
+	rule	print id & print " (\n" &
+		DumpElementList elist &
+		print ")\n"
+		----------------------------------
+		dump (DEF(id, elist))
+end
+
+and (* relation *) dump_class: Class => () =
+
+	rule	print "CLASS " &
+		dump def &
+		print "\n"
+		----------------------------
+		dump_class(CLASS(def)) => ()
+end
+
+
+and (* relation *) dump_element: Element => () =
+	rule	print "INHERIT " & dump(b) & print "\n"
+		--------------
+		dump_element(BASE(b))
+
+	rule	dump_class(d) & print "\n"
+		--------------
+		dump_element(CL(d))
+
+	rule	dump(typ) & print ": " & dump(comp) & print "\n"
+		--------------
+		dump_element(COMP(typ, comp))
+
+	rule	Exp.dump(eq) & print "\n"
+		--------------
+		dump_element(EQUATION(eq))
+
+end
+
+and (* relation *) DumpElementList: Element list => () =
+	axiom	DumpElementList([]) => ()
+
+	rule	dump_element first &
+		DumpElementList rest
+		-----------------------
+		DumpElementList(first :: rest) => ()
+end
+
+(*************************************************************************)
+(* Test cases *)
+
+val Real = CLASS(DEF("Real", []))
+
+val m1 = CLASS(DEF("m1", []))
+
+val m2 = CLASS(DEF("m2", [
+	COMP(DEF("Real", []), DEF("x", [])),
+	COMP(DEF("Real", []), DEF("y", [EQUATION(Exp.NUMBER(2.0))])),
+	EQUATION(Exp.EQU(Exp.IDENT("x"), Exp.IDENT("y")))
+	]))
+
+val m3 = CLASS(DEF("m3", [
+	COMP(DEF("m2", []), DEF("a", [])),
+	COMP(DEF("m2", []), DEF("b", [EQUATION(
+		Exp.EQU(Exp.IDENT("x"), Exp.NUMBER(3.0)))]))
+	]))
+
+val global_env = [Real, m1, m2, m3]
+
+relation test1 =
+	rule	print "\nTest case 1\n\n" &
+		dump_class m1 &
+		print "\n"
+		------------------------
+		test1 () => ()
+end
+
+relation test2 =
+	rule	print "\nTest case 2\n\n" &
+		dump_class m2
+		------------------------
+		test2
+end
+
+relation class_list_to_def_list =
+
+	axiom	class_list_to_def_list [] => []
+
+	rule	class_list_to_def_list tail => tail'
+		--------------------------------------
+		class_list_to_def_list CLASS(head)::tail => head::tail'
+end
+
+relation test3 =
+	rule	print "\nTest case 3\n\n" &
+		dump_class m3 &
+		class_list_to_def_list global_env => global_env' &
+		instantiate_class(global_env', [], m3) => m3' &
+		DAE.dump m3'
+		------------------------
+		test3
+end

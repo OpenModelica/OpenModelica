@@ -1,0 +1,52 @@
+(*
+   class.rml
+*)
+
+module Class:
+
+with "exp.rml"
+
+type Subscript = (Exp.Exp * (Exp.Exp * Exp.Exp option) option) option
+
+type ComponentRef = (string * Subscript list) list
+
+datatype ArrayDim = ONEDIM of Subscript
+		  | TWODIM of Subscript
+
+datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
+		    | REDECLARATION of bool * ElementSpec
+
+and	 Modification = CLASSMOD of ElementArg list
+		      | EQUALMOD of Exp.Exp
+
+and	 ElementSpec = CLASSDEF of bool		(* replaceable *)
+				   * Class
+		     | EXTENDS of string * ElementArg list
+		     | COMPONENT of bool	(* flow *)
+				  * bool	(* parameter *)
+				  * bool	(* constant *)
+				  * bool	(* input *)
+				  * bool	(* output *)
+				  * string	(* type name *)
+				  * string	(* component name *)
+				  * ArrayDim
+				  * Modification
+
+and	 Element = ELEMENT of bool*ElementSpec
+
+and	 ElementList = PUBLIC of Element list
+		     | PROTECTED of Element list
+		     | EQUATION of Element list
+		     | ALGORITHM of Element list
+
+and	 ClassRestriction = CL_CLASS
+			  | CL_TYPE
+			  | CL_CONNECTOR
+			  | CL_MODEL
+			  | CL_BLOCK
+			  | CL_PACKAGE
+			  | CL_FUNCTION
+
+and	 Class = CLASS of ClassRestriction*(ElementList list)
+
+end
