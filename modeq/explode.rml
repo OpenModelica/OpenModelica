@@ -179,13 +179,13 @@ relation elab_classdef_elements: Absyn.ClassPart list => Element list =
 
   rule	elab_classdef_elements rest => els &
 	elab_elist (es, false) => es' &
-	list_append (els, es') => els'
+	list_append (es',els) => els'
 	------------------------------
 	elab_classdef_elements (Absyn.PUBLIC(es)::rest) => els'
 
   rule	elab_classdef_elements rest => els &
 	elab_elist (es, true) => es' &
-	list_append (els, es') => els'
+	list_append (es',els) => els'
 	------------------------------
 	elab_classdef_elements (Absyn.PROTECTED(es)::rest) => els'
 

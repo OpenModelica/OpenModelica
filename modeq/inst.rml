@@ -475,14 +475,17 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** modification is applied, it is an error. *)
 
 	check_prot(prot, mm, vn) &
+	Debug.fprintln ("insttr", "Protection checked") &
 
 	Mod.mod_equation mod' => eq &
 
+	Debug.fprintln ("insttr", "mod equation done") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
 	elab_arraydim(env,ad,eq) => dims &
 					       
+	Debug.fprintln ("insttr", "arraydim elabed") &
 
 	(** Instantiate the component *)
 	inst_var(cenv,mod',pre,csets,n,cl,attr,dims,[],inst_dims)

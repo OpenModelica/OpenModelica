@@ -981,7 +981,7 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_index_spec(subs,tnr1) => (cfn2,var2,tnr2) &
 	exp_type_str(typ,true) => type_str &
 	Util.string_append_list(["indexed_assign_",type_str,"(&",
-			var1,", &",cref_str,", ",var2,");"]) => stmt &
+			var1,", &",cref_str,", &",var2,");"]) => stmt &
 
 	c_add_statements(cfn2,[stmt]) => cfn2' &
 	c_merge_fn(cfn1,cfn2') => cfn
@@ -1059,7 +1059,7 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	exp_type_str (t,true) => array_type_str &
 	generate_expression(e,tnr2) => (cfn3,evar,tnr3) &
 	Util.string_append_list(["for (",tvar," = 1; ",
-			    tvar," < size_of_dimension_",array_type_str,"(&",ivar,", 1); ",
+			    tvar," < size_of_dimension_",array_type_str,"(",ivar,", 1); ",
 			    "++",tvar,") {"]) => for_begin &
 	Util.string_append_list(["#ifdef ",i]) => def_beg1 &
 	Util.string_append_list(["#define ",dvar," ",i]) => def_beg2 &
@@ -1078,9 +1078,10 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	Util.string_append_list(["restore_memory_state(",svar,");"]) 
 	  => mem_end &
 	  Util.string_append_list(["#ifdef ",dvar]) => def_end1 &
-	Util.string_append_list(["#define ",i," ",dvar]) => def_end2 &
-	Util.string_append_list(["#undef ",dvar]) => def_end3 &
-	Util.string_append_list(["#endif"]) => def_end4 &
+	Util.string_append_list(["#undef ",i]) => def_end2 &
+	Util.string_append_list(["#define ",i," ",dvar]) => def_end3 &
+	Util.string_append_list(["#undef ",dvar]) => def_end4 &
+	Util.string_append_list(["#endif"]) => def_end5 &
 	let for_end = "}" &
 
 	c_add_variables(cfn3,[sdecl,tdecl,idecl]) => cfn3' &
@@ -1089,7 +1090,7 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 				mem_begin,stmt]) => cfn3'' &
 	
 	c_add_statements(cfn4,[mem_end,
-			       def_end1,def_end2,def_end3,def_end4,
+			       def_end1,def_end2,def_end3,def_end4,def_end5,
 			       for_end]) => cfn4' &
 
 	c_merge_fns([cfn3'',cfn4']) => cfn
@@ -1263,7 +1264,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	Util.if (is_a,cfn'',cfn') => cfn
 	----------------------------------------------------
-	generate_var(DAE.VAR(id, vk, vd, typ, NONE,inst_dims),tnr) => (cfn,tnr)
+	generate_var(DAE.VAR(id, vk, vd, typ, NONE,inst_dims),tnr) => (cfn,tnr1)
 
   rule	is_array id => is_a &
 	is_first_in_array id => true &
@@ -1289,7 +1290,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	Exp.print_exp e & print "\n"
 	-----------
 	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) 
-	  => (cfn,tnr)
+	  => (cfn,tnr1)
 
   
   rule	is_array id => is_a &
@@ -2039,7 +2040,7 @@ relation generate_array_rhs_cref : (string, Exp.Type,Exp.Subscript list, int)
 	exp_type_str(crt,true) => array_type_str &
 	generate_temp_decl(array_type_str,tnr1) => (decl,temp,tnr2) &
 	Util.string_append_list(["index_alloc_",array_type_str,"(&",cref_str,
-				 ", ",spec1,", ",temp,");"]) => stmt &
+				 ", &",spec1,", &",temp,");"]) => stmt &
 	c_add_variables(cfn1,[decl]) => cfn'&
 	c_add_statements(cfn',[stmt]) => cfn
 	-------------------------------------------
@@ -2050,11 +2051,15 @@ end
 relation generate_index_spec : (Exp.Subscript list, int) 
 	  => (CFunction, string, int) =
 
-  rule	generate_indices_array(subs,tnr) => (cfn1,idxs1,tnr1) &
+  rule	generate_indices_array(subs,tnr) => (cfn1,idxs1,idxsizes,tnr1) &
 	generate_temp_decl("index_spec_t",tnr1) => (decl,spec,tnr2) &
-	Util.string_delimit_list(idxs1,", ") => idxs_str &
+	list_length idxs1 => nridx &
+	int_string nridx => nridx_str &
+	Util.list_thread(idxsizes,idxs1) => idxs' &
+	Util.string_delimit_list(idxs',", ") => idxs_str &
 	Util.string_append_list(["create_index_spec(&",
-				 spec,", ",idxs_str,");"]) => stmt &
+				 spec,", ",nridx_str,", ",idxs_str,");"]) 
+	  => stmt &
   
 	c_add_variables(cfn1,[decl]) => cfn' &
 	c_add_statements(cfn',[stmt]) => cfn
@@ -2069,17 +2074,18 @@ relation generate_index_spec : (Exp.Subscript list, int)
 end
 
 relation generate_indices_array : (Exp.Subscript list, int) 
-	  => (CFunction, string list, int) =
+	  => (CFunction, string list, string list, int) =
 
-  axiom	generate_indices_array ([],tnr) => (c_empty_function,[],tnr)
+  axiom	generate_indices_array ([],tnr) => (c_empty_function,[],[],tnr)
 
-  rule	generate_index_array(f,tnr) => (cfn1,idx1, tnr1) &
-	generate_indices_array(r,tnr1)=>(cfn2,idxs2,tnr2) &
+  rule	generate_index_array(f,tnr) => (cfn1,idx1,idxsize1, tnr1) &
+	generate_indices_array(r,tnr1)=>(cfn2,idxs2,idxsizes2,tnr2) &
 	
 	c_merge_fn(cfn1,cfn2) => cfn &
-	let idxs = idx1::idxs2
+	let idxs = idx1::idxs2 &
+	let idxsizes = idxsize1::idxsizes2
 	---------
-	generate_indices_array (f::r, tnr) => (cfn,idxs,tnr2)
+	generate_indices_array (f::r, tnr) => (cfn,idxs,idxsizes,tnr2)
 
   rule	print "# generate_indices_array failed\n"
 	-----------------------------
@@ -2107,18 +2113,20 @@ relation generate_indices : (Exp.Subscript list, int)
 end
 
 relation generate_index_array : (Exp.Subscript, int)
-	  => (CFunction, string, int) =
+	  => (CFunction, string, string, int) =
 
   rule	generate_expression(e,tnr) => (cfn,var1,tnr1) &
-	Util.string_append_list(["make_index_array(",var1,")"]) => idx1
+	Util.string_append_list(["make_index_array(1, ",var1,")"]) => idx &
+	let idxsize = "(0)"
 	------------------------------------
 	generate_index_array(Exp.INDEX(e), tnr) 
-	  => (cfn,idx1,tnr1)
+	  => (cfn,idx,idxsize,tnr1)
 
-  rule	let idx1 = "(0)"
+  rule	let idx = "(0)" &
+	let idxsize = "(1)"
 	------------------------------------
 	generate_index_array(Exp.WHOLEDIM, tnr) 
-	  => (c_empty_function,idx1,tnr)
+	  => (c_empty_function,idx,idxsize,tnr)
 
 	  
   rule	print "# generate_index_array failed\n"
@@ -2572,7 +2580,7 @@ relation generate_read : DAE.Element list => CFunction =
 
   rule	comp_ref_cstr id => (cref_str,_) &
 	dae_type_str(t, false) => type_string &
-	Util.string_append_list(["read_",type_string,"(in_file, &",cref_str,");"])
+	Util.string_append_list(["if(read_",type_string,"(in_file, &",cref_str,")) return 1;"])
 	  => stmt &
 	  
 	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
@@ -2584,7 +2592,7 @@ relation generate_read : DAE.Element list => CFunction =
   rule	comp_ref_cstr id => (cref_str,_) &
 	is_first_in_array id => true &
 	dae_type_str(t, true) => type_string &
-	Util.string_append_list(["read_",type_string,"(in_file, &",cref_str,");"])
+	Util.string_append_list(["if(read_",type_string,"(in_file, &",cref_str,")) return 1;"])
 	  => stmt &
 	  
 	  c_add_statements(c_empty_function,[stmt]) => cfn1 &

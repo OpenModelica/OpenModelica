@@ -5,6 +5,7 @@ module Util :
   relation list_flatten : 'a list list => 'a list
   relation list_map : ('a list, 'a => 'b) => 'b list
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list
+  relation list_thread : ('a list, 'a list) => 'a list
   relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list
   relation list_list_thread_tuple : ('a list list, 'b list list) 
 	  => ('a * 'b) list list
@@ -47,6 +48,18 @@ relation list_list_map : ('a list list, 'a => 'b) => 'b list list =
 	list_list_map(r,fn) => r'
 	-------------------
 	list_list_map (f::r,fn) => f'::r'
+
+end
+
+relation list_thread : ('a list, 'a list) => 'a list =
+
+  axiom	list_thread([],[]) => []
+
+  rule	list_thread(ra,rb) => r' &
+	let c = fb::r' &
+	let d = fa::c
+	------------------------
+	list_thread(fa::ra,fb::rb) => d
 
 end
 

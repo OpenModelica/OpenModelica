@@ -1160,10 +1160,14 @@ end
 relation fill_subscripts : (Exp.Subscript list, Types.Type) 
 	  => Exp.Subscript list =
 
-  rule	fill_subscripts (subs,t) => subs' &
-	list_append(subs,[Exp.WHOLEDIM]) => subs''
+rule	fill_subscripts ([],t) => subs' &
+	list_append([Exp.WHOLEDIM],subs') => subs''
 	------------
-	fill_subscripts (subs,Types.T_ARRAY(_,t)) => subs''
+	fill_subscripts ([],Types.T_ARRAY(_,t)) => subs''
+
+  rule	fill_subscripts (subs,t) => subs' 
+	------------
+	fill_subscripts (fs::subs,Types.T_ARRAY(_,t)) => fs::subs'
 
   axiom	fill_subscripts (subs,_) => subs
 
