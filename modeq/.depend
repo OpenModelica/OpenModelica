@@ -1,0 +1,34 @@
+absyn.o: absyn.rml debug.sig dump.sig util.sig print.sig
+algorithm.o: algorithm.rml exp.sig types.sig explode.sig util.sig print.sig dump.sig debug.sig
+builtin.o: builtin.rml absyn.sig explode.sig env.sig types.sig classinf.sig debug.sig print.sig
+ceval.o: ceval.rml env.sig exp.sig interactive.sig values.sig staticexp.sig print.sig types.sig modutil.sig system.sig absyn.sig explode.sig inst.sig lookup.sig dump.sig dae.sig debug.sig util.sig modsim.sig classinf.sig rtopts.sig parse.sig prefix.sig codegen.sig classloader.sig
+classinf.o: classinf.rml explode.sig print.sig absyn.sig
+classloader.o: classloader.rml absyn.sig system.sig lookup.sig interactive.sig util.sig parse.sig print.sig env.sig dump.sig
+codegen.o: codegen.rml dae.sig print.sig dump.sig debug.sig absyn.sig algorithm.sig classinf.sig exp.sig modutil.sig types.sig util.sig inst.sig
+connect.o: connect.rml exp.sig staticexp.sig dae.sig env.sig dump.sig print.sig util.sig debug.sig
+dae.o: dae.rml absyn.sig exp.sig algorithm.sig types.sig values.sig rtopts.sig graphviz.sig dump.sig print.sig util.sig ceval.sig
+daelow.o: daelow.rml dae.sig exp.sig values.sig absyn.sig algorithm.sig util.sig daeext.sig print.sig derive.sig debug.sig env.sig builtin.sig ceval.sig types.sig explode.sig dump.sig system.sig vartransform.sig rtopts.sig
+derive.o: derive.rml daelow.sig exp.sig absyn.sig util.sig print.sig
+debug.o: debug.rml rtopts.sig dump.sig print.sig
+dump.o: dump.rml absyn.sig interactive.sig classinf.sig rtopts.sig print.sig util.sig debug.sig
+dumpgraphviz.o: dumpgraphviz.rml absyn.sig debug.sig graphviz.sig classinf.sig dump.sig
+env.o: env.rml absyn.sig values.sig explode.sig types.sig classinf.sig exp.sig dump.sig graphviz.sig dae.sig print.sig util.sig system.sig
+exp.o: exp.rml absyn.sig graphviz.sig rtopts.sig util.sig print.sig modutil.sig derive.sig system.sig dump.sig
+explode.o: explode.rml absyn.sig dump.sig debug.sig print.sig
+graphviz.o: graphviz.rml
+inst.o: inst.rml classinf.sig connect.sig dae.sig env.sig exp.sig explode.sig mod.sig prefix.sig types.sig absyn.sig debug.sig interactive.sig util.sig algorithm.sig builtin.sig dump.sig lookup.sig modutil.sig rtopts.sig staticexp.sig values.sig print.sig system.sig ceval.sig
+interactive.o: interactive.rml absyn.sig explode.sig dae.sig types.sig values.sig env.sig dump.sig debug.sig rtopts.sig util.sig parse.sig prefix.sig mod.sig lookup.sig classinf.sig exp.sig inst.sig staticexp.sig modutil.sig codegen.sig print.sig system.sig classloader.sig ceval.sig
+lookup.o: lookup.rml classinf.sig types.sig absyn.sig exp.sig env.sig explode.sig parse.sig debug.sig dump.sig inst.sig mod.sig prefix.sig print.sig builtin.sig util.sig modutil.sig staticexp.sig
+main.o: main.rml absyn.sig modutil.sig parse.sig dump.sig dumpgraphviz.sig explode.sig dae.sig daelow.sig inst.sig interactive.sig rtopts.sig debug.sig codegen.sig socket.sig print.sig corba.sig system.sig util.sig taskgraph.sig taskgraphext.sig tornado.sig simcodegen.sig
+mod.o: mod.rml absyn.sig env.sig exp.sig prefix.sig explode.sig types.sig dump.sig debug.sig print.sig inst.sig staticexp.sig values.sig util.sig
+modsim.o: modsim.rml system.sig util.sig
+modutil.o: modutil.rml absyn.sig dae.sig exp.sig rtopts.sig util.sig print.sig
+prefix.o: prefix.rml absyn.sig exp.sig env.sig lookup.sig util.sig print.sig
+staticexp.o: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig values.sig interactive.sig classinf.sig dump.sig print.sig system.sig lookup.sig debug.sig inst.sig codegen.sig modutil.sig dae.sig util.sig rtopts.sig parse.sig classloader.sig mod.sig prefix.sig ceval.sig
+simcodegen.o: simcodegen.rml daelow.sig absyn.sig exp.sig util.sig rtopts.sig debug.sig system.sig values.sig
+types.o: types.rml classinf.sig absyn.sig exp.sig values.sig explode.sig dump.sig debug.sig print.sig util.sig
+taskgraph.o: taskgraph.rml exp.sig daelow.sig taskgraphext.sig util.sig absyn.sig dae.sig ceval.sig values.sig print.sig
+tornado.o: tornado.rml dae.sig absyn.sig interactive.sig util.sig system.sig daelow.sig exp.sig debug.sig rtopts.sig inst.sig values.sig tornadoext.sig explode.sig lookup.sig env.sig simcodegen.sig
+util.o: util.rml
+values.o: values.rml exp.sig absyn.sig print.sig system.sig util.sig dump.sig
+vartransform.o: vartransform.rml exp.sig daelow.sig system.sig util.sig algorithm.sig
