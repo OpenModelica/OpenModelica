@@ -1,0 +1,125 @@
+#!/home/x97davka/arch/sparc-sun-solaris5.5.1/bin/pike
+
+object comstart = Regexp("^[ \t]*(\\(|)\\*\\*(.*)$");
+
+string untabify(string s)
+{
+  string s1, s2;
+  while(sscanf(s,"%[^\t]\t%s", s1, s2) == 2)
+    s = s1 + String.strmult(" ", 8 - sizeof(s1)%8) + s2;
+  return s;
+}
+
+string tex_escape(string s)
+{
+  array a;
+  string ss = "";
+  s = replace(s, ({ "_", "{", "}", "\\" }), ({ "\\_", "\\{", "\\}", "\\\\" }));
+  while(a=Regexp("([^`]*)`([^']*)'(.*)")->split(s))
+  {
+    ss += a[0]+"\\code{"+a[1]+"}";
+    s = a[2];
+  }
+  return ss + s;
+}
+
+
+void convert(string f)
+{
+  array(string) lines = Stdio.read_file(f) / "\n";
+  string state = "start", buf = "";
+  array a;
+
+  write("\\section{File \\texttt{"+(f/"/")[-1]+"}}\n");
+  foreach(lines, string line)
+  {
+    if(a = comstart->split(line))
+    {
+      string s, newstate;
+      switch(state) {
+      case "start":
+      case "comment":
+      case "itemize":
+	break;
+      case "code1":
+      case "code2":
+	write("}\n");
+	break;
+      }
+      newstate = "comment";
+      s = a[1];
+      if(s[sizeof(s)-2..] == "*)")
+	s = s[..sizeof(s)-3];
+      while(sizeof(s) && s[-1] == ' ') s = s[..sizeof(s)-2];
+      s = tex_escape(s);
+      if(s==")")
+	;
+      else if(s[..3] == "  o ")
+      {
+	newstate = "itemize";
+	if(state != "itemize")
+	  write("\\begin{itemize}\n");
+	write("\\item "+s[4..]+"\n");
+      }
+      else if(s[..3] == "    " && state == "itemize")
+      {
+	newstate = "itemize";
+	write("      "+s[4..]+"\n");
+      }
+      else if(s[..1] == "  ")
+	write("\\subsubsection{"+s[2..]+"}\n");
+      else if(a = Regexp(" *file: *(.*)")->split(s))
+      {
+	if(a[0] != (f/"/")[-1])
+	  werror("Filename mismatch in file "+f+": claims to be '"+a[0]+"'\n");
+      }
+      else if(a = Regexp(" *relation: *(.*)")->split(s))
+	write("\\subsection{Relation \\texttt{"+a[0]+"}}\n");
+      else if(a = Regexp(" *purpose: *(.*)")->split(s))
+	write("\\textbf{Purpose:} "+a[0]+"\n\\vspace{1ex}\n");
+      else
+	write(s+"\n");
+      if(state == "itemize" && newstate != "itemize")
+	write("\\end{itemize}\n");
+      state = newstate;
+    }
+    else
+    {
+      switch (state) {
+      case "code1":
+      case "code2":
+	break;
+      case "start":
+      case "comment":
+	// write("{\\small\\begin{verbatim}\n");
+	write("\\srcext{\n");
+	buf = "";
+	break;
+      }
+      line = tex_escape(untabify(line));
+      if(state=="code2" || line!="")
+	state = "code2";
+      else
+	state = "code1";
+      
+      if(state == "code2")
+	if(line == "")
+	  buf += "\n";
+	else
+	{
+	  write(buf+line+"\n");
+	  buf = "";
+	}
+    }
+  }
+
+  if(state == "code1" || state == "code2")
+    // write("\\end{verbatim}}\n");
+    write("}\n");
+}
+
+int main(int argc, array argv)
+{
+  foreach(argv[1..], string f)
+    convert(f);
+}
