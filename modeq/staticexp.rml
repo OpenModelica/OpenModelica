@@ -74,9 +74,9 @@ returns multiple arguments. *)
    ** expressions. *)
 
   datatype Slot = SLOT of Types.FuncArg *  (* An argument to a function *)
-			bool		   (* True if the slot has been filled, 
+			bool *		   (* True if the slot has been filled, 
 					      i.e. argument has been given a value*)
-
+			Exp.Exp option		   (* Contain the elaborated expression for the actual argument *)							  
 
   (* Expression analysis *)
   relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties)
@@ -1070,17 +1070,18 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, Slot l
 
   rule	Debug.fprint ("sei","elab_input_args, positional arguments\n") &
 	funcarg_lst_from_slots(slots) => farg &
-	elab_positional_input_args(env,exp,farg,slots) => (newexp,slots',c) &
-	elab_input_args(env,[],narg,slots') => (newexp2,newslots,c2) &
+	elab_positional_input_args(env,exp,farg,slots) => (slots',c) &
+	elab_input_args(env,[],narg,slots') => (_,newslots,c2) &
 	bool_and(c,c2) => c3 &
-	list_append(newexp,newexp2) => newexp3
+	exp_list_from_slots(newslots) => explst
 	----------------------------------------------------------------
-	elab_input_args(env,exp as _::_,narg,slots) => (newexp3,newslots,c3)
+	elab_input_args(env,exp as _::_,narg,slots) => (explst,newslots,c3)
 
   rule	Debug.fprint ("sei","elab_input_args, named arguments\n") &
 	funcarg_lst_from_slots(slots) => farg &
 	Debug.fprint ("sei","elab_input_args, got funcarg\n") &
-	elab_named_input_args(env,narg,farg,slots) => (newexp,newslots,c) &
+	elab_named_input_args(env,narg,farg,slots) => (newslots,c) &
+	exp_list_from_slots(newslots) => newexp &
 	Debug.fprint ("sei","elab_input_args, got expressions: ") &
 	Debug.fprint_list ("sei",newexp,Exp.print_exp,", ")
 	------------------------------------------------------------
@@ -1099,7 +1100,7 @@ relation make_empty_slots : (Types.FuncArg list) => Slot list =
 	
   rule	make_empty_slots(fs) => ss
 	--------------------------
-	make_empty_slots(fa::fs) => SLOT(fa,false)::ss
+	make_empty_slots(fa::fs) => SLOT(fa,false,NONE)::ss
 end
 
 relation funcarg_lst_from_slots : Slot list => Types.FuncArg list =
@@ -1108,25 +1109,39 @@ relation funcarg_lst_from_slots : Slot list => Types.FuncArg list =
 
   rule	funcarg_lst_from_slots(xs) => fs
 	-------------------------------
-	funcarg_lst_from_slots(SLOT(fa,_)::xs) => fa::fs
+	funcarg_lst_from_slots(SLOT(fa,_,_)::xs) => fa::fs
 end 
+
+relation exp_list_from_slots: (Slot list ) => Exp.Exp list =
+	
+  axiom	exp_list_from_slots [] => []
+	
+  rule	exp_list_from_slots(xs) => lst
+	------------------------------
+	exp_list_from_slots(SLOT(_,_,SOME(e))::xs) => e::lst
+
+  rule	exp_list_from_slots(xs) => lst
+	------------------------------
+	exp_list_from_slots(SLOT(_,_,NONE)::xs) => lst
+end
 
 (** relation: elab_positional_input_args
  ** This relation elaborates the positional input arguments of a function.
  ** A list of slots is filled from the beginning with types of each positional argument.
  **)
 relation elab_positional_input_args : (Env.Env, Absyn.Exp list, Types.FuncArg list,  Slot list) 
-	  => (Exp.Exp list, Slot list, bool) =
+	  => (Slot list, bool) =
 	  
-  axiom	elab_positional_input_args(_, [], _, slots) => ([], slots, true)
+  axiom	elab_positional_input_args(_, [], _, slots) => (slots, true)
 	
   rule	elab_exp(env, e) => (e',PROP(t, c1)) &
 	match_type(e', t, vt) => (e'',_) &
-	elab_positional_input_args(env, es, vs,slots) => (args',slots',c2) &
+	elab_positional_input_args(env, es, vs,slots) => (slots',c2) &
 	bool_and(c1, c2) => c &
-	fill_slot(farg,slots') => newslots
+	fill_slot(farg, e'',slots') => newslots
 	-------------------------------------
-	elab_positional_input_args(env, e::es, (farg as (_,vt))::vs, slots) => (e''::args', newslots, c)
+	elab_positional_input_args(env, e::es, (farg as (_,vt))::vs, slots) 
+	    => (newslots, c)
 end
 
 (** relation elab_named_input_args
@@ -1136,7 +1151,7 @@ end
  ** value is not a parameter or a constant the relation also fails.
 *)
 relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg list, Slot list) 
-	=> (Exp.Exp list, Slot list, bool) =
+	=> (Slot list, bool) =
 
 (*  rule	check_slots_filled(env,slots) 
 	----------------------------
@@ -1145,14 +1160,14 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
   rule	elab_exp(env, e) => (e',PROP(t, c1)) &
 	find_named_arg_type(id,farg) => vt &
 	match_type(e', t, vt) => (e'',_) &
-	fill_slot((id,vt), slots) => slots' &
-	elab_named_input_args(env, nas, farg ,slots') => (args', newslots, c2)&
+	fill_slot((id,vt), e'', slots) => slots' &
+	elab_named_input_args(env, nas, farg ,slots') => (newslots, c2)&
 	bool_and(c1, c2) => c 
 	---------------------
 	elab_named_input_args (env, Absyn.NAMEDARG(id,e)::nas,farg,slots) 
-	  => (e''::args', newslots, c)
+	  => (newslots, c)
 
-axiom elab_named_input_args (_,[],_,slots) => ([],slots,true)
+axiom elab_named_input_args (_,[],_,slots) => (slots,true)
 end
 
 (** relation find_named_arg_type
@@ -1171,28 +1186,28 @@ end
 end
 
 (** relation: fill_slot
- ** This relation takses a `FuncArg' and a Slot list and fills the slot holding the FuncArg, by setting
- ** the boolean value of the slot. The relation fails if the slot is allready set.
+ ** This relation takses a `FuncArg' and an Exp.Exp and a Slot list and fills the slot holding the FuncArg, by setting
+ ** the boolean value of the slot and setting the expression. The relation fails if the slot is allready set.
  **)
-relation fill_slot:(Types.FuncArg, Slot list) => Slot list =
+relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
 	
   rule	fa1 = fa2
 	---------
-	fill_slot((fa1,_), SLOT((fa2,b),false)::xs) => SLOT((fa2,b),true)::xs
+	fill_slot((fa1,_), exp,SLOT((fa2,b),false,_)::xs) => SLOT((fa2,b),true,SOME(exp))::xs
 
   rule	fa1 = fa2 &
 	print "#Error, slot in functional argument allready filled.\b" 
 	--------------------------------------------------------------
-	fill_slot((fa1,_), SLOT((fa2,b),true)::xs) => fail
+	fill_slot((fa1,_),exp, SLOT((fa2,b),true,_)::xs) => fail
 
   rule	not fa1 = fa2 &
-	fill_slot(slot,xs) => newslots
+	fill_slot(farg,exp,xs) => newslots
 	------------------------------
-	fill_slot(slot as (fa1,_), (s1 as SLOT((fa2,_),_))::xs) => s1::newslots
+	fill_slot((farg as (fa1,_)), exp,(s1 as SLOT((fa2,_),_,_))::xs) => s1::newslots
 
   rule  print "#Error, slot not found in function type.\n"
 	---------------------------------------------------
-	fill_slot(_,_) => fail
+	fill_slot(_,_,_) => fail
 end
 
 (* LS *)
