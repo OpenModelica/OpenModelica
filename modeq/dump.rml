@@ -316,7 +316,7 @@ and dump_subscript: Absyn.Subscript => () =
 end
 and dump_modification: Absyn.Modification => () =
 
-	rule	print "CLASSMOD(" &
+	rule	print "(" &
 		dump_list(l,dump_element_arg,",") &
 		print ")"
 		------------------------------------
