@@ -67,7 +67,7 @@ module DAELow:
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp
 		      | SOLVED_EQUATION of Exp.ComponentRef * Exp.Exp
-		      | ALGORITHM of int (* index in algorithms*) *
+		      | ALGORITHM of int (* index in algorithms, 0..n-1*) *
 				     Exp.Exp list *(*inputs CREF or der(CREF)*)
 				     Exp.Exp list(*outputs CREF or der(CREF)*)
 
@@ -698,8 +698,8 @@ relation remove_simple_equations: (Variables, (* vars *)
 	remove_simple_equations2(eqns,vars,knvars,empty_bintree,states,repl) 
 	  => (eqns',seqns,movedvars',vartransf) &
 (* 	VarTransform.dump_replacements(vartransf) => () & *)
-	    VarTransform.replace_equations(eqns',vartransf) => eqns'' &
-	    VarTransform.replace_equations(seqns,vartransf) => seqns' &
+	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
+	VarTransform.replace_equations(seqns,vartransf) => seqns' &
 	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
 	(*& print_vars_statistics(vars',knvars')*)
 	-------------------------------------
@@ -3695,6 +3695,7 @@ relation translate_dae: DAELow => DAELow =
 	 Util.string_delimit_list(tl,", ") => tstr &
 	 print "replace " & print sstr & print " with " & print tstr & print "\n" &*)
 	replace_variables(eqnsl,s,t) => eqnsl' &
+	replace_variables_in_alg(al,s,t) => al' &
 	transform_variables(varlst',s,t) => varlst'' &
 	transform_variables(knvarlst',s,t) => knvarlst''  &
 	empty_vars() => vars' &
@@ -3704,9 +3705,143 @@ relation translate_dae: DAELow => DAELow =
 	list_equation(eqnsl') => eqns'
 	------------------------------------
 	translate_dae(DAELOW(vars,knvars,eqns,seqns,ie,al)) 
-	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al)
+	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al')
 end
 
+(** relation: replace_variables_in_alg
+ ** This relation replaces variabless in algorithms.
+ ** See also replace_variables.
+ **)
+
+relation replace_variables_in_alg:(Algorithm.Algorithm array, 
+				   Exp.Exp list, (* source list *)
+				   Exp.Exp list) (* target list *)
+	 => (Algorithm.Algorithm array) =
+
+  rule	array_list(algarr) => alglst &
+	replace_variables_in_alg2(alglst,s,t) => alglst' &
+	list_array(alglst') => algarr'
+	-------------------
+	replace_variables_in_alg(algarr,s,t) => algarr'
+
+  rule	print "-replace_variables_in_alg failed\n" 
+	--------------------------
+	replace_variables_in_alg(_,_,_) => fail
+end
+
+(** relation replace_variables_in_alg2
+ ** Helper relation to replace_variables_in_alg.
+ **)
+relation replace_variables_in_alg2: (Algorithm.Algorithm list, 
+				     Exp.Exp list, (* source list *)
+				     Exp.Exp list) (* target list *)
+	  => Algorithm.Algorithm list =
+
+  axiom	replace_variables_in_alg2([],_,_) => []
+
+  rule	replace_variables_in_alg2(algs,s,t) => algs' &
+	replace_variables_in_stmts(stmts,s,t) => stmts'
+	-----------------------------------------------
+	replace_variables_in_alg2(Algorithm.ALGORITHM(stmts)::algs,s,t) 
+	  => Algorithm.ALGORITHM(stmts')::algs'
+end
+
+(** relation: replace_variables_in_stmts
+ ** Helper relation to replace_variables_in_alg2
+ ** Traverses a list of statements.
+ **)
+relation replace_variables_in_stmts: (Algorithm.Statement list, 
+				     Exp.Exp list, (* source list *)
+				     Exp.Exp list) (* target list *)
+	  => Algorithm.Statement list =
+  axiom	replace_variables_in_stmts([],_,_) => []
+
+  rule	replace_variables_in_stmt(stmt,s,t) => stmt' &
+	replace_variables_in_stmts(stmts,s,t) => stmts' 
+	-----------------------------------------------
+	replace_variables_in_stmts(stmt::stmts,s,t) => stmt'::stmts'
+end
+
+(** relation: replace_variables_in_stmt
+ ** Helper relation to replace_variables_in_stmts
+ ** Investigates a single statement.
+ **)
+relation replace_variables_in_stmt:(Algorithm.Statement,
+				   Exp.Exp list, (* source list *)
+				   Exp.Exp list) (* target list *)				   
+	=> Algorithm.Statement =
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) &
+	Exp.replace_exp_list(Exp.CREF(cr,Exp.OTHER),s,t) => (Exp.CREF(cr',_),_)
+	-----------------
+	replace_variables_in_stmt(Algorithm.ASSIGN(tp,cr,e),s,t) 
+	  => Algorithm.ASSIGN(tp,cr',e')
+
+  rule	Util.list_map_2_2(expl,Exp.replace_exp_list,s,t) => expl' &
+	Util.split_tuple2_list(expl') => (expl',cnt) &
+	Exp.replace_exp_list(exp,s,t) => (exp',_)
+	------------------------------------
+	replace_variables_in_stmt(Algorithm.TUPLE_ASSIGN(tp,expl,exp),s,t)
+	  => Algorithm.TUPLE_ASSIGN(tp,expl',exp')
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_)
+	---------------------------------
+	replace_variables_in_stmt(Algorithm.ASSIGN_ARR(tp,cr,e),s,t)
+	  => Algorithm.ASSIGN_ARR(tp,cr,e)
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts' &
+	replace_variables_in_else_branch(else_branch,s,t) => else_branch' 
+	-----------------------------------------------------------------
+	replace_variables_in_stmt(Algorithm.IF(e,stmts,else_branch),s,t)
+	  => Algorithm.IF(e',stmts',else_branch')
+  rule	
+	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts'
+	-----------------------------------------------
+	replace_variables_in_stmt(Algorithm.FOR(tp,b,id,e,stmts),s,t) 
+	  => Algorithm.FOR(tp,b,id,e',stmts')
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts' 
+	-----------------------------------------------
+	replace_variables_in_stmt(Algorithm.WHILE(e,stmts),s,t)
+	  => Algorithm.WHILE(e,stmts)
+
+  rule	Exp.replace_exp_list(e1,s,t) => (e1',_) &
+	Exp.replace_exp_list(e2,s,t) => (e2',_)
+	---------------------------------------
+	replace_variables_in_stmt(Algorithm.ASSERT(e1,e2),s,t) 
+	  => Algorithm.ASSERT(e1',e2')
+
+  rule	print "Warning, fallthrough in replace_variables_in_stmts\n" 
+	-----------------------------------
+	replace_variables_in_stmt(a,_,_) => a 
+end
+	
+(** relation: replace_variables_in_else_branch
+ ** Helper relation to replace_varibels_in_stmt
+ ** Investigates the else branch of if statements.
+ **)
+relation replace_variables_in_else_branch: (Algorithm.Else,
+				   Exp.Exp list, (* source list *)
+				   Exp.Exp list) (* target list *)				   => Algorithm.Else =
+  axiom	replace_variables_in_else_branch(Algorithm.NOELSE,_,_) => Algorithm.NOELSE
+	
+  rule	replace_variables_in_else_branch(else_branch,s,t) => else_branch' &
+	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts' 
+	-------------
+	replace_variables_in_else_branch(Algorithm.ELSEIF(e,stmts,else_branch),s,t)
+	=> Algorithm.ELSEIF(e',stmts',else_branch')
+
+  rule	replace_variables_in_stmts(stmts,s,t) => stmts'
+	-----------------------------------------------
+	replace_variables_in_else_branch(Algorithm.ELSE(stmts),s,t)
+	  => Algorithm.ELSE(stmts') 
+end
+					    
+			     
 (** relation: add_vars
  ** Adds a list of 'Var' to 'Variables'
  **)
@@ -3795,7 +3930,10 @@ end
  ** Transforms the equations, given two lists with source and target
  ** expressions
  **) 
-relation replace_variables: (Equation list, Exp.Exp list, Exp.Exp list) => (Equation list) =
+relation replace_variables: (Equation list, 
+			     Exp.Exp list, (* source list *)
+			     Exp.Exp list) (* target list *)
+	  => (Equation list) =
 	
   axiom	replace_variables ([],_,_) => []
 	
@@ -3804,6 +3942,15 @@ relation replace_variables: (Equation list, Exp.Exp list, Exp.Exp list) => (Equa
 	replace_variables(es,s,t) => es'
 	---------------------------------------
 	replace_variables(EQUATION(e1,e2)::es,s,t) => EQUATION(e1',e2')::es'
+
+  rule	(* TODO: we need to replace variables in algorithms too,
+	 * or disallow removal of simple equations that can be found
+	 * in algorithms 
+	 **)
+	replace_variables(es,s,t) => es'
+ 	---------------------------------------
+ 	replace_variables(ALGORITHM(indx,inputs,outputs)::es,s,t) 
+ 	  => ALGORITHM(indx,inputs,outputs)::es'
 
   rule	print "-replace_variables failed\n" 
 	------------------
@@ -3903,21 +4050,21 @@ end
  ** i.e der(s) is replaced before s is replaced which gives a wrong 
  ** variable like der(x[5])
  **)
- relation variable_replacements: (Var list, Equation list) 
+relation variable_replacements: (Var list, Equation list) 
 	  => (Exp.Exp list, Exp.Exp list) =
-	 
+	  
   rule	states_eqns(eqns,empty_bintree) => bt  &
-	 bintree_to_list(bt) => (states,_) &
-	 derivative_replacements(states,vars) => (s1,t1) &
-	 alg_variable_replacements(vars) => (s2,t2) &
-	 list_append(s1,s2) => s &
-	 list_append(t1,t2) => t
-	 ---------------------
-	 variable_replacements(vars,eqns) =>  (s,t)
-	 
+	bintree_to_list(bt) => (states,_) &
+	derivative_replacements(states,vars) => (s1,t1) &
+	alg_variable_replacements(vars) => (s2,t2) &
+	list_append(s1,s2) => s &
+	list_append(t1,t2) => t
+	---------------------
+	variable_replacements(vars,eqns) =>  (s,t)
+	
   rule	print "-variable_replacements failed\n" 
-	 ---------------------------------------
-	 variable_replacements(vars,eqns) =>  fail
+	---------------------------------------
+	variable_replacements(vars,eqns) =>  fail
 end
 
 (** relation: alg_variable_replacements
@@ -4002,6 +4149,16 @@ relation states_eqns: (Equation list,BinTree) => BinTree =
 	states_exp(e2,bt) => bt 
 	-----------------------
 	states_eqns(EQUATION(e1,e2)::es,bt) => bt
+
+  rule	Util.list_fold(expl1,states_exp,bt) => bt &
+	Util.list_fold(expl2,states_exp,bt) => bt &
+	states_eqns(es,bt) => bt 
+	------------------------
+	states_eqns(ALGORITHM(indx,expl1,expl2)::es,bt) => bt
+
+  rule	print "-states_eqns failed\n" 
+	-----------------
+	states_eqns(_,_) => fail
 end
 
 (** relation: derivative_replacements
@@ -4448,6 +4605,10 @@ end
   rule	bintree_to_list2(bt,[],[]) => (klst,vlst) 
 	------------------------------------------
 	bintree_to_list(bt) => (klst,vlst)
+
+  rule	print "-bintree_to_list failed\n" 
+	 --------------
+	 bintree_to_list(_) => fail
 end
 
 (** relation: bintree_to_list2

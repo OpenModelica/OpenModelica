@@ -69,7 +69,8 @@ module Codegen :
 							  ReturnTypeStruct *
 							  ArgumentDeclaration list							  
   relation generate_functions : DAE.DAElist => ()
-
+  relation generate_algorithm: (DAE.Element, int)
+	  => (CFunction, int) 
 	  
 end
 
@@ -1377,6 +1378,10 @@ relation generate_algorithms2: (DAE.Element list, int)
 end
 
 
+(** relation: generate_algorithm
+ ** Generates C-code for an DAE.Element that is ALGORTIHM
+ ** The tab indent number is passed as argument.
+ **)
 
 relation generate_algorithm: (DAE.Element, int)
 	  => (CFunction, int) =
