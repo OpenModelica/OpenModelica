@@ -27,8 +27,11 @@ with "rtopts.rml"
 
 relation translate_file : string list => () =
 
-  rule	Parser.parse f => p &
+  rule	print "Parsing\n" &
+	Parser.parse f => p &
+	print "elaborating\n" &
 	SCode.elaborate(p) => p' &
+	print "instantiating\n" &
 	Inst.instantiate(p') => d &
 	DAE.dump d
 	----------

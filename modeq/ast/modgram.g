@@ -424,7 +424,7 @@ argument :
  
 element_modification : << bool is_final=false; >>
 	{ FINAL << is_final=true; >> } 
-	cr:component_reference /* name_path /* Not in spec */
+	cr:single_component_reference /* name_path /* Not in spec */
 	sp:modification
 	<< 
 	   Attrib a = $[MODIFICATION,"---"];
@@ -517,7 +517,7 @@ equation : << bool is_assign = false; AST *top; >>
 	;
 
 algorithm :
-	( cr:component_reference
+	( cr:single_component_reference
 	  ( ASSIGN^ e:expression
 	    << #0->rml = Absyn__ALG_5fASSIGN(#cr->rml, #e->rml); >>
 	  | function_call << unimpl("algorithm function_call"); >> )
@@ -752,14 +752,16 @@ primary : << bool is_matrix; >>
 	| f:FALS/*E*/        << #f->rml = Absyn__BOOL(RML_FALSE); >>
 	| t:TRU/*E*/         << #t->rml = Absyn__BOOL(RML_TRUE); >>
 /* 	| (name_path_function_arguments)? */
-	| i:component_reference
+	/*		| i:single_component_reference
 	  { fc:function_call }
 	  << if(#fc)
 	       #0->rml = Absyn__CALL(#i->rml,#fc->rml);
      	     else
 	       #0->rml = Absyn__CREF(#i->rml);
           >>
-	| s:STRING << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
+	  */
+	| component_references 
+      	| s:STRING << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
 	| par:LPAR^
 	  e:expression RPAR!
 	  << #par->rml = #e->rml; >>
@@ -775,6 +777,15 @@ primary : << bool is_matrix; >>
 	  >>
 	  RBRACK!
 	;
+
+component_references:
+	  single_component_reference { function_or_multiple_references }
+       ;
+
+function_or_multiple_references:
+	    function_call 
+	    | "," single_component_reference { "," single_component_reference }
+	  ;
 
 /* name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >> */
 /* 	n:name_path f:function_arguments */
@@ -802,10 +813,10 @@ name_path : << bool qualified = false; >>
 /* 	name_path b:LBRACK^ subscript_list RBRACK! */
 /* 	; */
 
-component_reference : << void *tail = NULL;>>
+single_component_reference : << void *tail = NULL;>>
 	  i:IDENT^ { a:array_subscripts }
 	  << #i->rml = mk_scon($i.u.stringval); >>
-	  { dot:DOT^ c:component_reference << tail = #c->rml; >> }
+	  { dot:DOT^ c:single_component_reference << tail = #c->rml; >> }
 	  << if(tail)
 	       #0->rml = Absyn__CREF_5fQUAL(#i->rml, #a?#a->rml:mk_nil(), tail);
              else

@@ -1,0 +1,7 @@
+
+30 nov 1998
+The grammar now accepts multiple return values. The semantics does not complain although it should! (The semantics expects only one return value )
+
+26 nov 1998
+Started with adding multiple return values for functions to the grammar.
+
