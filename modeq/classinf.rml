@@ -41,6 +41,7 @@ module ClassInf :
   relation start : (Restriction, string) => State
   relation trans : (State, Event) => State
   relation valid : (State, Restriction) => ()
+  relation assert_valid : (State, Restriction) => ()
 
 end
 
@@ -223,9 +224,17 @@ relation valid : (State, Restriction) => () =
   axiom	valid(IS_NEW(s),        R_FUNCTION)
   axiom	valid(FUNCTION(s),      R_FUNCTION)
 
+end
+
+relation assert_valid : (State, Restriction) => () =
+
+  rule	valid(st,re)
+	------------
+	assert_valid(st,re)
+
   rule	print "# Restriction violation: " & print_state st &
 	print " is not a " & print_restr re & print "\n" 
 	-------------------------------------------
-	valid(st,re) => fail
+	assert_valid(st,re) => fail
 
 end

@@ -8,7 +8,9 @@ int zzcr_attr(Attrib *attr, int type, char *text)
   attr->type = type;
   switch (type)
   {
-  case UNSIGNED_NUMBER:
+  case UNSIGNED_INTEGER:
+    attr->u.ival = atoi(text); break;
+  case UNSIGNED_REAL:
     attr->u.floatval = atof(text); break;
   case IDENT:
     attr->u.stringval = strdup(text);
@@ -62,7 +64,9 @@ void print_attr(Attrib *attr, FILE *f)
 {
   switch (attr->type)
   {
-  case UNSIGNED_NUMBER:
+  case UNSIGNED_INTEGER:
+    fprintf(f, "%d", attr->u.ival); break;
+  case UNSIGNED_REAL:
     fprintf(f, "%.2f", attr->u.floatval); break;
   case IDENT:
     fprintf(f, "'%s'", attr->u.stringval); break;

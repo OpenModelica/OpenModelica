@@ -11,9 +11,12 @@ module Builtin:
   val str_type  : Explode.Class
   val bool_type : Explode.Class
 
+  val real_type : Explode.Class
+
 end
 
 with "exp.rml"
+with "types.rml"
 with "mod.rml"
 with "classinf.rml"
 
@@ -26,39 +29,33 @@ val str_type = Explode.CLASS("StringType",false,ClassInf.R_PREDEFINED,
 val bool_type = Explode.CLASS("BooleanType",false,ClassInf.R_PREDEFINED,
 			      Explode.PARTS([],[],[]))
 
-(*
-val real_type = Absyn.CLASS("Real",false,ClassInf.R_PREDEFINED,
-			    Absyn.PARTS(
-			    [Absyn.PUBLIC(
-			    [Absyn.ELEMENT(true,"value",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("RealType"),
-					       [Absyn.COMPONENT("value",
-								NONE,
-								NONE)])),
-			     Absyn.ELEMENT(true,"quantity",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("StringType"),
-					       [Absyn.COMPONENT("quantity",
-								NONE,
-								NONE)])),
-			     Absyn.ELEMENT(true,"unit",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("StringType"),
-					       [Absyn.COMPONENT("unit",
-								NONE,
-								NONE)])),
-			     Absyn.ELEMENT(true,"displayUnit",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("StringType"),
-					       [Absyn.COMPONENT("displayUnit",
-								NONE,
-								NONE)]))])]))
+val real_type =
+Explode.CLASS("Real",false,ClassInf.R_PREDEFINED,
+	      Explode.PARTS
+	      ([Explode.ELEMENT(true,
+				false,
+				"value",
+			      	Explode.COMPONENT("value",
+						  Types.ATTR(Types.NODIM,
+							     false,
+							     Types.VAR,
+							     Types.BIDIR),
+						  Exp.IDENT("RealType"),
+						  Mod.NOMOD)),
+	      	(* quantity *)
+	      	Explode.ELEMENT(true,false,"unit",
+			      	Explode.COMPONENT("unit",
+						  Types.ATTR(Types.NODIM,
+							     false,
+							     Types.VAR,
+							     Types.BIDIR),
+						  Exp.IDENT("StringType"),
+						  Mod.NOMOD))],
+	       (* displayUnit *)
+	       [],
+	       []))
 
+(*
 val integer_type = Absyn.CLASS("Integer",false,ClassInf.R_PREDEFINED,
 			    Absyn.PARTS(
 			    [Absyn.PUBLIC(
@@ -108,11 +105,11 @@ relation initial_env =
 	Env.extend_frame_c(env, rl_type, Mod.NOMOD) => env' &
 	Env.extend_frame_c(env', int_type, Mod.NOMOD) => env'' &
 	Env.extend_frame_c(env'', str_type, Mod.NOMOD) => env''' &
-	Env.extend_frame_c(env'', bool_type, Mod.NOMOD) => env''''
-(*	Env.extend_frame_c(env, real_type) => env'''' &
-	Env.extend_frame_c(env, integer_type) => env''''' &
+	Env.extend_frame_c(env''', bool_type, Mod.NOMOD) => env'''' &
+	Env.extend_frame_c(env'''', real_type, Mod.NOMOD) => env'''''
+(*	Env.extend_frame_c(env, integer_type) => env''''' &
 	Env.extend_frame_c(env, string_type) => env'''''' *)
 	----------------------------------------------
-	initial_env () => env''''
+	initial_env () => env'''''
 
 end

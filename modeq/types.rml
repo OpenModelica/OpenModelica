@@ -11,9 +11,8 @@ module Types :
 		    | TWODIM of Exp.Subscript * Exp.Subscript
 
   type Ident = string
-  type Var = (Ident * VarAttr * Type * ClassInf.State)
-  datatype Type = COMPLEX of  Var list
-		| BUILTIN of string
+  type Var = (Ident * VarAttr * Type)
+  datatype Type = TYPE of ClassInf.State * Var list
   datatype VarType = VAR | PARAM | CONST
   datatype Direction = INPUT | OUTPUT | BIDIR
   datatype VarAttr = ATTR of ArrayDim
@@ -27,15 +26,15 @@ module Types :
 end
 
 relation pick : (Var list, Ident)
-	  => (Var list, VarAttr, Type, ClassInf.State) =
+	  => (Var list, VarAttr, Type) =
 
   rule  n1 = n2
 	-------
-	pick((n1,attr,ty,st)::xs,n2) => (xs,attr,ty,st)
+	pick((n1,attr,ty)::xs,n2) => (xs,attr,ty)
 
-  rule  pick(xs,n) => (xs',attr,ty,st)
+  rule  pick(xs,n) => (xs',attr,ty)
 	---------------------
-	pick(_::xs,n) => (xs',attr,ty,st)
+	pick(_::xs,n) => (xs',attr,ty)
 
 end
 
@@ -43,23 +42,20 @@ relation same_type_c : (Var list, Var list) => () =
 
   axiom same_type_c([], [])
 
-  rule  pick(xs2,n) => (xs2',attr,t2,_) &
+  rule  pick(xs2,n) => (xs2',attr,t2) &
 	same_type(t1,t2) &
 	same_type_c(xs1,xs2')
 	---------------------
-	same_type_c((n,_,t1,_)::xs1, xs2)
+	same_type_c((n,_,t1)::xs1, xs2)
 
 end
 
 and same_type : (Type, Type) => () =
 
-  rule  t1 = t2
-	-------
-	same_type(BUILTIN(t1), BUILTIN(t2))
-
+	(* FIXME: Check state? *)
   rule  same_type_c(els1, els2)
 	-----------------------
-	same_type(COMPLEX(els1), COMPLEX(els2))
+	same_type(TYPE(st1,els1), TYPE(st2,els2))
 
 end
 
@@ -67,7 +63,7 @@ relation lookup_component2 : (Var list , Ident) => Var =
 
   rule  n = m
 	-----
-	lookup_component2((v as (n,_,_,_))::_, m) => v
+	lookup_component2((v as (n,_,_))::_, m) => v
 
   rule  lookup_component2(vs, n) => v
 	-----------------------------
@@ -79,10 +75,10 @@ relation lookup_component : (Type, Ident) => Var =
 
   rule  print "# trying to lookup in builtin type " & print n & print "\n"
 	------------------------------------------------------------------
-	lookup_component(BUILTIN(n),_) => fail
+	lookup_component(TYPE(ClassInf.PREDEFINED(n),_),_) => fail
 
   rule  lookup_component2(cs, id) => v
 	------------------------------
-	lookup_component(COMPLEX(cs), id) => v
+	lookup_component(TYPE(st,cs), id) => v
 
 end

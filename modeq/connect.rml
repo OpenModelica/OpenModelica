@@ -284,7 +284,7 @@ relation flow_equations : (Exp.ComponentRef * Face) list => DAE.DAEcomp list =
 	------------------
 	flow_equations cs => [DAE.EQUATION(Exp.RELATION(sum,
 							Exp.EQUAL,
-							Exp.NUMBER(0.0)))]
+							Exp.REAL(0.0)))]
 
 end
 

@@ -19,6 +19,7 @@ with "dump.rml"
 with "types.rml"
 with "connect.rml"
 with "classinf.rml"
+with "staticexp.rml"
 
 (* These make the code a little more readable *)
 type Prefix = Prefix.Prefix
@@ -36,7 +37,7 @@ relation assert : (bool, bool, string) => () =
 	assert(x,y,_)
 
   rule  not x = y &
-	print "ERROR: " & print m & print "\n"
+	print "# " & print m & print "\n"
 	--------------------------------------
 	assert(x,y,m)
 
@@ -86,7 +87,7 @@ relation connect_vars : (Connect.Sets,
 	connect_components(sets,[], c1',f1, c2',f2, ty, flow) => sets' &
 	connect_vars(sets',c1,f1,c2,f2,xs) => sets''
 	--------------------------------------
-	connect_vars(sets,c1,f1,c2,f2,(n,Types.ATTR(_,flow,_,_),ty,st)::xs)
+	connect_vars(sets,c1,f1,c2,f2,(n,Types.ATTR(_,flow,_,_),ty)::xs)
 	  => sets''
 
 end
@@ -110,7 +111,10 @@ relation connect_components: (Connect.Sets,
 			      Explode.ComponentRef, Connect.Face,
 			      Types.Type, bool) => Connect.Sets =
 	
-  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	(* flow type *)
+
+  rule	ClassInf.valid(st, ClassInf.R_TYPE) &
+	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	(* print "  connect_components flow: " &
 	 Dump.dump_component_ref c1' & print " <-> " &
@@ -118,10 +122,13 @@ relation connect_components: (Connect.Sets,
 	 print "\n" & *)
 	Connect.add_flow(sets, c1, f1, c2, f2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, f1, c2, f2, Types.BUILTIN(_), true)
+	connect_components(sets, pre, c1, f1, c2, f2, Types.TYPE(st,_), true)
 	  => sets'
 	
-  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	(* non-flow type *)
+
+  rule	ClassInf.valid(st, ClassInf.R_TYPE) &
+	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	(* print "  connect_components non-flow: " &
 	 Dump.dump_component_ref c1' & print " <-> " &
@@ -129,9 +136,11 @@ relation connect_components: (Connect.Sets,
 	 print "\n" & *)
 	Connect.add_equ(sets, c1, c2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, _, c2, _, Types.BUILTIN(_), false)
+	connect_components(sets, pre, c1, _, c2, _, Types.TYPE(st,_), false)
 	  => sets'
-	
+
+	(* Not a TYPE *)
+
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	(* print "  connect_components 2: " &
@@ -140,7 +149,7 @@ relation connect_components: (Connect.Sets,
 	 print "\n" & *)
 	connect_vars(sets,c1',f1,c2',f2, l) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1,c2,f2,Types.COMPLEX(l),_) => sets'
+	connect_components(sets,pre,c1,f1,c2,f2,Types.TYPE(_,l),_) => sets'
 	
 end
 
@@ -151,14 +160,18 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
   rule	print " connecting " &
 	Dump.dump_component_ref(c1) & print " with " &
 	Dump.dump_component_ref(c2) & print "\n" &
-	Env.lookup_var(env,c1) => (Types.ATTR(_,_,_,_),ty1,st1) &
-	Env.lookup_var(env,c2) => (Types.ATTR(_,_,_,_),ty2,st2) &
-	ClassInf.valid(st1,ClassInf.R_CONNECTOR) &
-	ClassInf.valid(st2,ClassInf.R_CONNECTOR) &
+	StaticExp.elab_cref(env, pre, c1) => (c1',_,_) &
+	StaticExp.elab_cref(env, pre, c2) => (c2',_,_) &
+	Env.lookup_var(env,c1')
+	  => (Types.ATTR(_,_,_,_),ty1 as Types.TYPE(st1,_)) &
+	Env.lookup_var(env,c2')
+	  => (Types.ATTR(_,_,_,_),ty2 as Types.TYPE(st2,_)) &
+	ClassInf.assert_valid(st1,ClassInf.R_CONNECTOR) &
+	ClassInf.assert_valid(st2,ClassInf.R_CONNECTOR) &
 	Types.same_type(ty1, ty2) &
-	component_face(c1) => f1 &
-	component_face(c2) => f2 &
-	connect_components(sets, pre, c1, f1, c2, f2, ty1, false) => sets'
+	component_face(c1') => f1 &
+	component_face(c2') => f2 &
+	connect_components(sets, pre, c1', f1, c2', f2, ty1, false) => sets'
 	---------------------------------
 	inst_connect(sets, env,pre,c1,c2) => sets'
 
@@ -198,12 +211,12 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 					     [e,Exp.STRING(d)])))
 	  => ([],env,csets,ci_state')
 
-  rule	print "No expression equations yet\n" &
+  rule	print "- No expression equations yet\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	-------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,Absyn.EQ_EXPR(_)) => fail
 
-  rule	Env.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,_,SOME(_)) &
+  rule	Env.lookup_var_local(env,n) => Env.FRAMEVAR(_,_,_,SOME(_)) &
 	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
@@ -267,13 +280,13 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 *)
 	 
   rule	Env.lookup_class(env,cn)
-	  => (c as Explode.CLASS(_,partial,_,_),classmod) &
+	  => (c as Explode.CLASS(cn2,_,restr,def), classmod) &
+
+	(* Make sure that the 'partial' flag is off *)
+	let c' = Explode.CLASS(cn2,false,restr,def) &
 	
 	Exp.path_string(cn) => cns &
 	print "  extending with class " & print cns & print "\n" &
-	
-	(* Can't extend partial classes *)
-	assert(partial,false,"Can't extend partial class") &
 	
 	(* Build the combind set of modifications *)
 	(* classmod is the modifications stored with the class *)
@@ -287,12 +300,12 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.merge(mods',m) => mods'' &
 	
 	(* Can't use inst_class, as that creates a new frame *)
-	inst_class_in(env,mods'',pre,csets,ci_state,c,prot)
-	  => (dae,env',csets',ci_state',tys)
+	inst_class_in(env,mods'',pre,csets,ci_state,c',prot)
+	  => (dae,env',csets',ci_state',vars)
 	----------------------------------
 	inst_element(env,mods,pre,csets, ci_state,
 	Explode.ELEMENT(final,prot,_,Explode.EXTENDS(cn,m)))
-	  => (dae,env',csets',ci_state',tys)
+	  => (dae,env',csets',ci_state',vars)
 	
   	(* components
 	 *
@@ -378,7 +391,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
 
 	Mod.mod_assignment mod' => ass &
-	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,st,ass)) => env' &
+	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,ass)) => env' &
 	print " extended frame with variable " & Dump.dump_component_ref vn &
  	print "\n" &
 
@@ -391,7 +404,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(env,mods,pre,csets,ci_state,
 		     Explode.ELEMENT(final,prot,_,
 				     Explode.COMPONENT(n,attr,t,m)))
-         => (dae,env',csets',ci_state,[(n,attr,ty,st)])
+         => (dae,env',csets',ci_state,[(n,attr,ty)])
 
   (*
    * If the class lookup in the previous rule fails, this rule catches
@@ -473,7 +486,7 @@ and inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (dae,env, csets', ci_state', tys) &
 
 	(* Check for restriction violations *)
-	ClassInf.valid(ci_state', re)
+	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      Explode.DERIVED(cn,ad,mod), re, prot)
@@ -515,11 +528,9 @@ and inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end
 
-and mktype : Types.Var list => Types.Type =
+and mktype : (ClassInf.State,Types.Var list) => Types.Type =
 
-  axiom	mktype [] => Types.BUILTIN("<unknown>")
-
-  axiom	mktype l => Types.COMPLEX(l)
+  axiom	mktype(st,l) => Types.TYPE(st,l)
 
 end
 
@@ -533,7 +544,7 @@ and inst_class: (Env, Mod, Prefix, Connect.Sets, Explode.Class)
 	Connect.dump_sets csets' &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
-	mktype(tys) => ty
+	mktype(ci_state',tys) => ty
 	-------------------------------------------
 	inst_class(env, mod, pre, csets, c as Explode.CLASS(n,_,r,_))
 	  => (dae, [], ty,ci_state')

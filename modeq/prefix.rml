@@ -59,7 +59,8 @@ relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
 end
 and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 
-  axiom	prefix_exp2(e as Exp.NUMBER(_),_) => e
+  axiom	prefix_exp2(e as Exp.INTEGER(_),_) => e
+  axiom	prefix_exp2(e as Exp.REAL(_),_) => e
   axiom	prefix_exp2(e as Exp.STRING(_),_) => e
   axiom	prefix_exp2(e as Exp.BOOL(_),_) => e
   axiom	prefix_exp2(e as Exp.TIME,_) => e

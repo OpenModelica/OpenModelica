@@ -5,6 +5,8 @@
 module Exp:
   
   type Ident = string
+
+  datatype Type = T_INTEGER | T_REAL | T_STRING | T_BOOL
   
   datatype Subscript = NOSUB
 		     | SUB1 of Exp
@@ -22,7 +24,8 @@ module Exp:
   datatype LUnaryOp = NOT
   datatype RelOp = LESS | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
   
-  datatype Exp = NUMBER of real
+  datatype Exp = INTEGER of int
+	       | REAL of real
 	       | CREF of ComponentRef
 	       | STRING of string
 	       | BOOL of bool
@@ -39,133 +42,19 @@ module Exp:
 	       
 	       | CALL of Path * Exp list		(* Function call *)
 	       | TIME
+
+	       | CAST_TO_REAL of Exp
+
+  type TypedExp = Exp * Type
 		  
   relation path_string : Path => string
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
   relation eq_cref : (ComponentRef, ComponentRef) => ()
+  relation infer_type : Exp => TypedExp
+
+  relation dump_component_ref : ComponentRef => ()
+  relation dump_exp: Exp => ()
   
-end
-
-(**********************************************************************
- * Constant evaluation
- **********************************************************************)
-
-relation ceval : Exp => Exp =
-
-  axiom	ceval (x as NUMBER(_)) => x
-  axiom ceval (x as STRING(_)) => x
-  axiom ceval (x as BOOL(_)) => x
-
-  rule	ceval_cref c => exp
-	-------------------
-	ceval CREF(c) => exp
-
-	(* Numerical *)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_add(lhv, rhv) => sum
-	-------------------------
-	ceval BINARY(lh, ADD, rh) => NUMBER(sum)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_sub(lhv, rhv) => diff
-	-------------------------
-	ceval BINARY(lh, SUB, rh) => NUMBER(diff)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_mul(lhv, rhv) => prod
-	-------------------------
-	ceval BINARY(lh, MUL, rh) => NUMBER(prod)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_div(lhv, rhv) => quot
-	--------------------------
-	ceval BINARY(lh, DIV, rh) => NUMBER(quot)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_pow(lhv, rhv) => pow
-	-------------------------
-	ceval BINARY(lh, POW, rh) => NUMBER(pow)
-
-  rule	ceval rh => NUMBER(rhv) &
-	real_neg(rhv) => rhv'
-	-------------------------
-	ceval UNARY(UMINUS, rh) => NUMBER(rhv')
-
-  rule	ceval rh => NUMBER(rhv)
-	-----------------------
-	ceval UNARY(UPLUS, rh) => NUMBER(rhv)
-
-	(* Boolean *)
-
-  rule	ceval lh => BOOL(lhv) &
-	ceval rh => BOOL(rhv) &
-	bool_and(lhv, rhv) => con
-	-------------------------
-	ceval LBINARY(lh, AND, rh) => BOOL(con)
-
-  rule	ceval lh => BOOL(lhv) &
-	ceval rh => BOOL(rhv) &
-	bool_or(lhv, rhv) => disj
-	-------------------------
-	ceval LBINARY(lh, OR, rh) => BOOL(disj)
-
-  rule	ceval rh => BOOL(rhv) &
-	bool_not rhv => rhv'
-	--------------------
-	ceval LUNARY(NOT, rh) => BOOL(rhv')
-
-	(* Relations *)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_lt(lhv,rhv) => b
-	---------------------
-	ceval RELATION(lh, LESS, rh) => BOOL(b)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_le(lhv,rhv) => b
-	---------------------
-	ceval RELATION(lh, LESSEQ, rh) => BOOL(b)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_gt(lhv,rhv) => b
-	---------------------
-	ceval RELATION(lh, GREATER, rh) => BOOL(b)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_ge(lhv,rhv) => b
-	---------------------
-	ceval RELATION(lh, GREATEREQ, rh) => BOOL(b)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_eq(lhv,rhv) => b
-	---------------------
-	ceval RELATION(lh, EQUAL, rh) => BOOL(b)
-
-  rule	ceval lh => NUMBER(lhv) &
-	ceval rh => NUMBER(rhv) &
-	real_ne(lhv,rhv) => b
-	---------------------
-	ceval RELATION(lh, NEQUAL, rh) => BOOL(b)
-
-end
-
-and ceval_cref : ComponentRef => Exp =
-
-  rule	print "# ceval_cref\n"
-	----------------------
-	ceval_cref c => fail
-
 end
 
 (**********************************************************************)
@@ -197,9 +86,7 @@ relation eq_subscript : (Subscript, Subscript) => () =
   axiom	eq_subscript(NOSUB,NOSUB)
 
 	(* FIXME *)
-  rule	ceval s1 => v1 &
-	ceval s2 => v2 &
-	v1 = v2
+  rule	s1 = s2
 	-------------------------------
 	eq_subscript(SUB1(s1),SUB1(s2))
 
@@ -227,3 +114,301 @@ relation eq_cref : (ComponentRef, ComponentRef) => () =
 	eq_cref((n1,s1)::c1, (n2,s2)::c2)
 
 end
+
+(**********************************************************************
+ * Type inference
+ **********************************************************************)
+
+relation infer_type : Exp => TypedExp =
+
+  rule	infer e => (e,t)
+	----------------
+	infer_type e => ((e,t))
+
+  rule	print "# Type inference error in expression: " &
+	dump_exp e
+	----------
+	infer_type e => fail
+
+end
+
+relation infer : Exp => (Exp, Type) =
+
+  axiom	infer (e as INTEGER(_)) => (e, T_INTEGER)
+  axiom	infer (e as REAL(_)) => (e, T_REAL)
+  axiom	infer (e as STRING(_)) => (e, T_STRING)
+  axiom	infer (e as BOOL(_)) => (e, T_BOOL)
+
+  rule	print "- Can't lookup variable types\n"
+	---------------------------------------
+	infer CREF(_) => fail
+
+  rule	infer e1 => (e1',t1) &
+	infer e1 => (e2',t2) &
+	infer_add(BINARY(e1',ADD,e2'),t1,t2) => (e',t)
+	---------------------
+	infer BINARY(e1,ADD,e2) => (e', t)
+
+  rule	infer e1 => (e1',t1) &
+	infer e1 => (e2',t2) &
+	infer_add(BINARY(e1',SUB,e2'),t1,t2) => (e',t)
+	---------------------
+	infer BINARY(e1,SUB,e2) => (e', t)
+
+  rule	infer e1 => (e1',t1) &
+	infer e1 => (e2',t2) &
+	infer_add(BINARY(e1',MUL,e2'),t1,t2) => (e',t)
+	---------------------
+	infer BINARY(e1,MUL,e2) => (e', t)
+
+  rule	infer e1 => (e1',t1) &
+	assert_real (e1',t1) => e1'' &
+	infer e2 => (e2',t2) &
+	assert_real (e2',t2) => e2''
+	--------------
+	infer BINARY(e1,DIV,e2) => (BINARY(e1'',DIV,e2''), T_REAL)
+
+  rule	infer e1 => (e1',t1) &
+	assert_real (e1',t1) => e1'' &
+	infer e2 => (e2',t2) &
+	assert_real (e2',t2) => e2''
+	--------------
+	infer BINARY(e1,POW,e2) => (BINARY(e1'',POW,e2''), T_REAL)
+
+  rule	infer e1 => (e1',t)
+	-------------------
+	infer UNARY(op,e1) => (UNARY(op,e1'), t)
+
+  rule	infer e1 => (e1',T_BOOL) &
+	infer e2 => (e2',T_BOOL)
+	------------------------
+	infer LBINARY(e1,op,e2) => (LBINARY(e1',op,e2'), T_BOOL)
+
+  rule	infer e1 => (e1',T_BOOL)
+	------------------------
+	infer LUNARY(op,e1) => (LUNARY(op,e1'), T_BOOL)
+
+  rule	infer e1 => (e1',t1) &
+	assert_real (e1',t1) => e1'' &
+	infer e2 => (e2',t2) &
+	assert_real (e2',t2) => e2''
+	----------------------------
+	infer RELATION(e1,op,e2) => (RELATION(e1'',op,e2''), T_BOOL)
+
+  rule	infer c => (c',T_BOOL) &
+	infer te => (te',t1) &
+	infer fe => (fe',t2) &
+	assert_compatible(te', t1, fe', t2) => (te'', fe'', t)
+	--------------------------------------------------
+	infer IFEXP(c,te,fe) => (IFEXP(c, te'', fe''), t)
+
+  rule	print "- Can't lookup function types\n"
+	-----------------------
+	infer CALL(f,args) => fail
+
+  axiom	infer TIME => (TIME, T_REAL)
+
+end
+
+relation infer_add : (Exp, Type, Type) => (Exp, Type) =
+
+  axiom	infer_add(e, T_INTEGER, T_INTEGER) => (e, T_INTEGER)
+  axiom	infer_add(e, T_REAL,    T_REAL)    => (e, T_REAL)
+
+  axiom	infer_add(e as BINARY(e1,op,e2),T_INTEGER,T_REAL)
+	  => (BINARY(CAST_TO_REAL(e1),op,e2),T_REAL)
+  axiom	infer_add(e as BINARY(e1,op,e2),T_REAL,T_INTEGER)
+	  => (BINARY(e1,op,CAST_TO_REAL(e2)),T_REAL)
+
+end
+
+relation assert_real : (Exp,Type) => Exp =
+
+  axiom	assert_real (e,T_REAL) => e
+  axiom	assert_real (e,T_INTEGER) => CAST_TO_REAL(e)
+
+end
+
+relation assert_compatible : (Exp, Type, Exp, Type) => (Exp, Exp, Type) =
+
+  axiom	assert_compatible(e1, T_INTEGER, e2, T_INTEGER) => (e1, e2, T_INTEGER)
+  axiom	assert_compatible(e1, T_REAL,    e2, T_REAL)    => (e1, e2, T_REAL)
+  axiom	assert_compatible(e1, T_STRING,  e2, T_STRING)  => (e1, e2, T_STRING)
+  axiom assert_compatible(e1, T_BOOL,    e2, T_BOOL)    => (e1, e2, T_BOOL)
+
+  axiom	assert_compatible(e1, T_INTEGER, e2, T_REAL)
+	  => (CAST_TO_REAL(e1), e2, T_REAL)
+  axiom	assert_compatible(e1, T_REAL,    e2, T_INTEGER)
+	  => (e1, CAST_TO_REAL(e2), T_REAL)
+
+end
+
+(**********************************************************************
+ * Dump
+ **********************************************************************)
+
+relation dump_list : ('a list, 'a => (), string) => () =
+
+  axiom	dump_list([],_,_)
+
+  rule	r(h)
+	------------------
+	dump_list([h],r,_)
+
+  rule	r(h) & print sep & dump_list(t,r,sep)
+	-------------------------------------
+	dump_list(h::t,r,sep)
+end
+
+relation binop_symbol: BinOp => string =
+  axiom	binop_symbol(ADD) => " + "
+  axiom	binop_symbol(SUB) => " - "
+  axiom	binop_symbol(MUL) => "*"
+  axiom	binop_symbol(DIV) => "/"
+  axiom	binop_symbol(POW) => "^"
+end
+
+relation unaryop_symbol: UnaryOp => string =
+  axiom	unaryop_symbol(UMINUS) => "-"
+  axiom	unaryop_symbol(UPLUS) => "+"
+end
+
+relation lbinop_symbol: LBinOp => string =
+  axiom	lbinop_symbol(AND) => " AND "
+  axiom	lbinop_symbol(OR) => " OR "
+end
+
+relation lunaryop_symbol: LUnaryOp => string =
+  axiom	lunaryop_symbol(NOT) => "NOT "
+end
+
+relation relop_symbol: RelOp => string =
+  axiom	relop_symbol(LESS)      => " < "
+  axiom	relop_symbol(LESSEQ)    => " <= "
+  axiom	relop_symbol(GREATER)   => " > "
+  axiom	relop_symbol(GREATEREQ) => " >= "
+  axiom	relop_symbol(EQUAL)     => " == "
+  axiom	relop_symbol(NEQUAL)    => " <> "
+end
+
+relation dump_component_ref : ComponentRef => () =
+
+  rule	dump_list(cr,dump_component_ref2,".")
+	-------------------------------------
+	dump_component_ref(cr)
+
+end
+
+and dump_component_ref2 =
+
+  rule	print s
+	-------------------------
+	dump_component_ref2((s,[]))
+
+  rule	print s &
+	print "[" & dump_list(l,dump_subscript,",") & print "]"
+	-------------------------------------------------------------
+	dump_component_ref2((s,l))
+
+end
+
+and dump_subscript: Subscript => () =
+
+  rule	print ":"
+	---------
+	dump_subscript(NOSUB)
+
+  rule	dump_exp(e1)
+	----------
+	dump_subscript(SUB1(e1))
+
+  rule	dump_exp(e1) & print ":" & dump_exp(e2)
+	-------------
+	dump_subscript(SUB2(e1,e2))
+
+  rule	dump_exp(e1) & print ":" &
+	dump_exp(e2) & print ":" & dump_exp(e3)
+	----------------------------------------------
+	dump_subscript(SUB3(e1,e2,e3))
+
+end
+
+and dump_exp: Exp => () =
+	
+  rule	real_string(x) => s & print s
+	-----------------------------
+	dump_exp(REAL(x))
+
+  rule	int_string(x) => s & print s
+	----------------------------
+	dump_exp(INTEGER(x))
+
+  rule	dump_component_ref(c)
+	---------------------
+	dump_exp(CREF(c))
+
+  rule	print "\"" & print s & print "\""
+	---------------------------------
+	dump_exp(STRING(s))
+
+  rule	print "FALSE"
+	-------------
+	dump_exp(BOOL(false))
+
+  rule	print "TRUE"
+	-------------
+	dump_exp(BOOL(true))
+
+  rule	binop_symbol(op) => sym &
+	dump_exp e1 & print sym & dump_exp e2
+	----------------------------
+	dump_exp(BINARY(e1, op, e2))
+
+  rule	unaryop_symbol(op) => sym &
+	print sym & dump_exp e
+	----------------------------
+	dump_exp(UNARY(op, e))
+
+  rule	lbinop_symbol(op) => sym &
+	dump_exp e1 & print sym & dump_exp e2
+	----------------------------
+	dump_exp(LBINARY(e1, op, e2))
+
+  rule	lunaryop_symbol(op) => sym &
+	print sym & dump_exp e
+	----------------------------
+	dump_exp(LUNARY(op, e))
+
+  rule	relop_symbol(op) => sym &
+	dump_exp(e1) & print sym & dump_exp(e2)
+	---------------------------------------
+	dump_exp(RELATION(e1, op, e2))
+
+  rule	print "IF " & dump_exp(c) &
+	print " THEN " & dump_exp(t) &
+	print " ELSE " & dump_exp(f)
+	----------------------------
+	dump_exp(IFEXP(c,t,f))
+
+  rule	path_string(fcn) => fs &
+	print fs & print "(" & dump_list(args,dump_exp,",") & print ")"
+	---------------------------------------------
+	dump_exp(CALL(fcn, args))
+
+	(*
+	 rule	print "EQUATION " & 
+	 dump_exp lhs &
+	 print " = " &
+	 dump_exp rhs
+	 ------------------------
+	 dump_exp(EQU(lhs, rhs))
+	 *)
+  rule	print "TIME"
+	------------------
+	dump_exp(TIME)
+
+  rule	print "#UNKNOWN EXPRESSION#"
+        ----------------------------------
+	dump_exp (_)
+end
+

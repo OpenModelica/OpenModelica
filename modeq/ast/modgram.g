@@ -169,7 +169,8 @@ extern void *sibling_list(AST *ast);
 
 #token STRING		"\"(~[\"])*\""
 
-#token UNSIGNED_NUMBER	"[0-9]+{\.[0-9]*}{[eE]{[\+\-]}[0-9]+}"
+#token UNSIGNED_INTEGER	"[0-9]+"
+#token UNSIGNED_REAL	"[0-9]+{\.[0-9]*}{[eE]{[\+\-]}[0-9]+}"
 
 #token "[\ \t]+"    << zzskip(); >>
 #token "\n"         << zzskip(); newline(); >>
@@ -680,7 +681,8 @@ primary : << bool is_matrix; >>
 	  >>
 	  RBRACK!
 
-	| nr:UNSIGNED_NUMBER << #nr->rml = Exp__NUMBER(mk_rcon($nr.u.floatval)); >>
+	| ni:UNSIGNED_INTEGER << #ni->rml = Exp__INTEGER(mk_icon($ni.u.ival)); >>
+	| nr:UNSIGNED_REAL   << #nr->rml = Exp__REAL(mk_rcon($nr.u.floatval)); >>
 	| f:FALS/*E*/        << #f->rml = Exp__BOOL(RML_FALSE); >>
 	| t:TRU/*E*/         << #t->rml = Exp__BOOL(RML_TRUE); >>
 	| (name_path_function_arguments)?

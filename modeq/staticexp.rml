@@ -1,0 +1,336 @@
+module StaticExp :
+
+  with "exp.rml"
+  with "env.rml"
+  with "prefix.rml"
+  with "types.rml"
+  with "classinf.rml"
+
+  relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
+	  => (Exp.Exp, Exp.Type, bool)
+  relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
+	  => (Exp.ComponentRef, Exp.Type, bool)
+
+end
+
+(**********************************************************************
+ * Constant evaluation
+ **********************************************************************)
+
+relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
+	  => (Exp.Exp, Exp.Type, bool) =
+
+  axiom	elab_exp(_,_, x as Exp.INTEGER(_)) => (x, Exp.T_INTEGER, true)
+  axiom	elab_exp(_,_, x as Exp.REAL(_))    => (x, Exp.T_REAL,    true)
+  axiom	elab_exp(_,_, x as Exp.STRING(_))  => (x, Exp.T_STRING,  true)
+  axiom	elab_exp(_,_, x as Exp.BOOL(_))    => (x, Exp.T_BOOL,    true)
+
+  rule	elab_cref(env, pre, cr) => (cr',t,c)
+	---------------------------------------
+	elab_exp(env, pre, Exp.CREF(cr)) => (Exp.CREF(cr'),t,c)
+
+  rule	elab_exp (env,pre,e1) => (e1', t1, c1) &
+	elab_exp (env,pre,e2) => (e2', t2, c2) &
+	elab_numtypes (e1',t1,e2',t2) => (e1'',e2'',t) &
+	elab_binary (e1'', t1, c1, op, e2'', t2, c2) => (e, t', c)
+	-------------------------------------------------------
+	elab_exp (env,pre,Exp.BINARY(e1,op,e2)) => (e,t',c)
+
+  rule	print "- elab_exp failed: " & Exp.dump_exp e & print "\n"
+	---------------------------------------------------------
+	elab_exp(_,_,e) => fail
+
+end
+
+relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
+	  => (Exp.ComponentRef, Exp.Type, bool) =
+
+  rule	elab_cref_subs(env,pre,c) => (c', const) &
+	print "- FIXME: elab_cref: " & Exp.dump_component_ref c & print "\n"
+	----------------------------
+	elab_cref(env, pre, c) => (c', Exp.T_INTEGER, false)
+
+end
+
+relation elab_cref_subs : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
+	  => (Exp.ComponentRef, bool) =
+
+  axiom	elab_cref_subs(_,_,[]) => ([], true)
+
+  rule	elab_subscripts (env, pre, ss) => (ss', const1) &
+	elab_cref_subs(env,pre,subs) => (cr, const2) &
+	bool_and(const1, const2) => const
+	-------------------------------------
+	elab_cref_subs(env,pre,(id,ss)::subs) => ((id,ss')::cr, const)
+
+end
+
+relation elab_subscripts : (Env.Env, Prefix.Prefix, Exp.Subscript list)
+	  => (Exp.Subscript list, bool) =
+
+  axiom	elab_subscripts (_,_,[]) => ([], true)
+
+  rule	elab_subscript (env,pre,sub) => (sub',const1) &
+	elab_subscripts (env,pre,subs) => (subs',const2) &
+	bool_and (const1, const2) => const
+	----------------------------------
+	elab_subscripts (env,pre,sub::subs) => (sub'::subs',const)
+
+end
+
+relation elab_subscript : (Env.Env, Prefix.Prefix, Exp.Subscript)
+	  => (Exp.Subscript, bool) =
+
+  axiom	elab_subscript (_,_,Exp.NOSUB) => (Exp.NOSUB, true)
+
+  rule	elab_exp (env,pre,sub1) => (sub1', T_INTEGER, const)
+	----------------------------------------------------
+	elab_subscript (env,pre,Exp.SUB1(sub1)) => (Exp.SUB1(sub1'), const)
+
+  rule	elab_exp (env,pre,sub1) => (sub1', T_INTEGER, const1) &
+	elab_exp (env,pre,sub2) => (sub2', T_INTEGER, const2) &
+	bool_and(const1, const2) => const
+	---------------------------------
+	elab_subscript (env,pre,Exp.SUB2(sub1,sub2))
+	  => (Exp.SUB2(sub1',sub2'), const)
+
+  rule	elab_exp (env,pre,sub1) => (sub1', T_INTEGER, const1) &
+	elab_exp (env,pre,sub2) => (sub2', T_INTEGER, const2) &
+	elab_exp (env,pre,sub3) => (sub3', T_INTEGER, const3) &
+	bool_and(const1, const2) => const3 &
+	bool_and(const3, const2) => const
+	---------------------------------
+	elab_subscript (env,pre,Exp.SUB3(sub1,sub2,sub3))
+	  => (Exp.SUB3(sub1',sub2',sub3'), const)
+
+end
+
+relation elab_numtypes : (Exp.Exp, Exp.Type, Exp.Exp, Exp.Type)
+	  => (Exp.Exp, Exp.Exp, Exp.Type) =
+
+  axiom	elab_numtypes (e1, Exp.T_INTEGER, e2, Exp.T_INTEGER)
+	  => (e1, e2, Exp.T_INTEGER)
+  axiom	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_REAL) => (e1, e2, Exp.T_REAL)
+  axiom	elab_numtypes (e1, Exp.T_INTEGER, e2, Exp.T_REAL)
+	  => (Exp.CAST_TO_REAL(e1), e2, Exp.T_REAL)
+  axiom	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_INTEGER)
+	  => (e1, Exp.CAST_TO_REAL(e2), Exp.T_REAL)
+
+end
+
+relation elab_binary : (Exp.Exp, Exp.Type, bool,
+			Exp.BinOp,
+			Exp.Exp, Exp.Type, bool) => (Exp.Exp, Exp.Type, bool) =
+
+	(* ADD *)
+
+  rule	int_add(i1,i2) => i
+	------------------------------------------------
+	elab_binary (Exp.INTEGER(i1),_,true,Exp.ADD,Exp.INTEGER(i2),_,true)
+	  => (Exp.INTEGER(i), Exp.T_INTEGER, true)
+			
+  rule	real_add(i1,i2) => i
+	------------------------------------------------
+	elab_binary (Exp.REAL(i1),_,true,Exp.ADD,Exp.REAL(i2),_,true)
+	  => (Exp.REAL(i), Exp.T_REAL, true)
+			
+  axiom	elab_binary (e1,Exp.T_INTEGER,_,Exp.ADD,e2,Exp.T_INTEGER,_)
+	  => (Exp.BINARY(e1,Exp.ADD,e2), Exp.T_INTEGER, false)
+			
+  axiom	elab_binary (e1,Exp.T_REAL,_,Exp.ADD,e2,Exp.T_REAL,_)
+	  => (Exp.BINARY(e1,Exp.ADD,e2), Exp.T_REAL, false)
+			
+	(* SUB *)
+
+  rule	int_sub(i1,i2) => i
+	------------------------------------------------
+	elab_binary (Exp.INTEGER(i1),_,true,Exp.SUB,Exp.INTEGER(i2),_,true)
+	  => (Exp.INTEGER(i), Exp.T_INTEGER, true)
+			
+  rule	real_sub(i1,i2) => i
+	------------------------------------------------
+	elab_binary (Exp.REAL(i1),_,true,Exp.SUB,Exp.REAL(i2),_,true)
+	  => (Exp.REAL(i), Exp.T_REAL, true)
+			
+  axiom	elab_binary (e1,Exp.T_INTEGER,_,Exp.SUB,e2,Exp.T_INTEGER,_)
+	  => (Exp.BINARY(e1,Exp.SUB,e2), Exp.T_INTEGER, false)
+			
+  axiom	elab_binary (e1,Exp.T_REAL,_,Exp.SUB,e2,Exp.T_REAL,_)
+	  => (Exp.BINARY(e1,Exp.SUB,e2), Exp.T_REAL, false)
+			
+end
+
+relation is_const : Exp.Exp => () =
+
+  axiom	is_const Exp.INTEGER(_)
+  axiom	is_const Exp.REAL(_)
+  axiom	is_const Exp.STRING(_)
+  axiom	is_const Exp.BOOL(_)
+
+end
+
+relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
+
+  axiom	ceval (x as Exp.INTEGER(_), t) => x
+  axiom	ceval (x as Exp.REAL(_), t) => x
+  axiom ceval (x as Exp.STRING(_), t) => x
+  axiom ceval (x as Exp.BOOL(_), t) => x
+
+(*
+  rule	ceval_cref c => exp
+	-------------------
+	ceval (Exp.CREF(c), t) => exp
+
+	(* Numerical *)
+
+  rule	ceval (lh, T_REAL) => REAL(lhv) &
+	ceval (rh, T_REAL) => REAL(rhv) &
+	real_add(lhv, rhv) => sum
+	-------------------------
+	ceval (BINARY(lh, ADD, rh), T_REAL) => REAL(sum)
+
+  rule	ceval (lh, T_INTEGER) => INTEGER(lhv) &
+	ceval (rh, T_INTEGER) => INTEGER(rhv) &
+	int_add(lhv, rhv) => sum
+	------------------------
+	ceval (BINARY(lh, ADD, rh), T_INTEGER) => INTEGER(sum)
+
+
+  rule	ceval (lh, T_REAL) => REAL(lhv) &
+	ceval (rh, T_REAL) => REAL(rhv) &
+	real_sub(lhv, rhv) => sum
+	-------------------------
+	ceval (BINARY(lh, SUB, rh), T_REAL) => REAL(sum)
+
+  rule	ceval (lh, T_INTEGER) => INTEGER(lhv) &
+	ceval (rh, T_INTEGER) => INTEGER(rhv) &
+	int_sub(lhv, rhv) => sum
+	------------------------
+	ceval (BINARY(lh, SUB, rh), T_INTEGER) => INTEGER(sum)
+
+  rule	ceval lh => REAL(lhv) &
+	ceval rh => REAL(rhv) &
+	real_mul(lhv, rhv) => sum
+	-------------------------
+	ceval ((BINARY(lh, MUL, rh), T_REAL)) => REAL(sum)
+
+  rule	ceval lh => INTEGER(lhv) &
+	ceval rh => INTEGER(rhv) &
+	int_mul(lhv, rhv) => sum
+	------------------------
+	ceval ((BINARY(lh, MUL, rh), T_INTEGER)) => INTEGER(sum)
+
+
+  rule	ceval lh => REAL(lhv) &
+	ceval rh => REAL(rhv) &
+	real_div(lhv, rhv) => sum
+	-------------------------
+	ceval ((BINARY(lh, DIV, rh), T_REAL)) => REAL(sum)
+
+  rule	ceval lh => INTEGER(lhv) &
+	ceval rh => INTEGER(rhv) &
+	int_div(lhv, rhv) => sum
+	------------------------
+	ceval ((BINARY(lh, DIV, rh), T_INTEGER)) => INTEGER(sum)
+
+
+  rule	ceval lh => REAL(lhv) &
+	ceval rh => REAL(rhv) &
+	real_pow(lhv, rhv) => sum
+	-------------------------
+	ceval ((BINARY(lh, POW, rh), T_REAL)) => REAL(sum)
+
+  rule	ceval lh => INTEGER(lhv) &
+	ceval rh => INTEGER(rhv) &
+	int_pow(lhv, rhv) => sum
+	------------------------
+	ceval ((BINARY(lh, POW, rh), T_INTEGER)) => INTEGER(sum)
+
+
+  rule	ceval rh => REAL(rhv) &
+	real_neg(rhv) => rhv'
+	-------------------------
+	ceval ((UNARY(UMINUS, rh), T_REAL)) => REAL(rhv')
+
+  rule	ceval rh => INTEGER(rhv) &
+	int_neg(rhv) => rhv'
+	--------------------
+	ceval ((UNARY(UMINUS, rh), T_INTEGER)) => INTEGER(rhv')
+
+
+  rule	ceval rh => REAL(rhv)
+	---------------------
+	ceval ((UNARY(UPLUS, rh), T_REAL)) => REAL(rhv)
+
+  rule	ceval rh => INTEGER(rhv)
+	------------------------
+	ceval ((UNARY(UPLUS, rh), T_INTEGER)) => INTEGER(rhv)
+
+
+	(* Boolean *)
+
+  rule	ceval lh => BOOL(lhv) &
+	ceval rh => BOOL(rhv) &
+	bool_and(lhv, rhv) => con
+	-------------------------
+	ceval LBINARY(lh, AND, rh) => BOOL(con)
+
+  rule	ceval lh => BOOL(lhv) &
+	ceval rh => BOOL(rhv) &
+	bool_or(lhv, rhv) => disj
+	-------------------------
+	ceval LBINARY(lh, OR, rh) => BOOL(disj)
+
+  rule	ceval rh => BOOL(rhv) &
+	bool_not rhv => rhv'
+	--------------------
+	ceval LUNARY(NOT, rh) => BOOL(rhv')
+
+	(* Relations *)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_lt(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, LESS, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_le(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, LESSEQ, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_gt(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, GREATER, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_ge(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, GREATEREQ, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_eq(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, EQUAL, rh) => BOOL(b)
+
+  rule	ceval lh => NUMBER(lhv) &
+	ceval rh => NUMBER(rhv) &
+	real_ne(lhv,rhv) => b
+	---------------------
+	ceval RELATION(lh, NEQUAL, rh) => BOOL(b)
+*)
+end
+
+and ceval_cref : Exp.ComponentRef => Exp.Exp =
+
+  rule	print "# ceval_cref\n"
+	----------------------
+	ceval_cref c => fail
+
+end
+
