@@ -2,13 +2,16 @@
 module Types :
 
   with "exp.rml"
+  with "classinf.rml"
+
+  type Restriction = ClassInf.Restriction
 
   datatype ArrayDim = NODIM
 		    | ONEDIM of Exp.Subscript
 		    | TWODIM of Exp.Subscript * Exp.Subscript
 
   type Ident = string
-  type Var = (Ident * VarAttr * Type)
+  type Var = (Ident * VarAttr * Type * ClassInf.State)
   datatype Type = COMPLEX of  Var list
 		| BUILTIN of string
   datatype VarType = VAR | PARAM | CONST
@@ -23,15 +26,16 @@ module Types :
 
 end
 
-relation pick : (Var list, Ident) => (Var list, VarAttr, Type) =
+relation pick : (Var list, Ident)
+	  => (Var list, VarAttr, Type, ClassInf.State) =
 
   rule  n1 = n2
 	-------
-	pick((n1,attr,t)::xs,n2) => (xs,attr,t)
+	pick((n1,attr,ty,st)::xs,n2) => (xs,attr,ty,st)
 
-  rule  pick(xs,n) => (xs',attr,t)
+  rule  pick(xs,n) => (xs',attr,ty,st)
 	---------------------
-	pick(_::xs,n) => (xs',attr,t)
+	pick(_::xs,n) => (xs',attr,ty,st)
 
 end
 
@@ -39,11 +43,11 @@ relation same_type_c : (Var list, Var list) => () =
 
   axiom same_type_c([], [])
 
-  rule  pick(xs2,n) => (xs2',attr,t2) &
+  rule  pick(xs2,n) => (xs2',attr,t2,_) &
 	same_type(t1,t2) &
 	same_type_c(xs1,xs2')
 	---------------------
-	same_type_c((n,_,t1)::xs1, xs2)
+	same_type_c((n,_,t1,_)::xs1, xs2)
 
 end
 
@@ -63,7 +67,7 @@ relation lookup_component2 : (Var list , Ident) => Var =
 
   rule  n = m
 	-----
-	lookup_component2((v as (n,_,_))::_, m) => v
+	lookup_component2((v as (n,_,_,_))::_, m) => v
 
   rule  lookup_component2(vs, n) => v
 	-----------------------------
