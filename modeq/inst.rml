@@ -25,7 +25,7 @@ type Ident = Exp.Ident
 
 (**********************************************************************)
 
-relation inst_list (* : (Env.Env, Mod.Mod, Prefix, =>, foo list) *)
+relation inst_list (* : (Env.Env, Mod, Prefix, =>, foo list) *)
 	 =
 
   axiom inst_list(env,mod,pre,r,[]) => ([],env)
@@ -46,7 +46,7 @@ relation inst_connect: (Exp.Exp,Exp.Exp) => DAE.DAEcomp list =
 
 end
 
-relation inst_equation: (Env.Env,Mod.Mod,Prefix,Absyn.Equation)
+relation inst_equation: (Env.Env,Mod,Prefix,Absyn.Equation)
 	  => (DAE.DAEcomp list, Env.Env) =
 
   (* connect
@@ -100,13 +100,11 @@ relation inst_mod_assignment : (Prefix, Ident, Mod) => DAE.DAEcomp list =
 	inst_mod_assignment(pre,v,mod as Mod.MOD(_,_,SOME(e)))
 	  => [DAE.EQUATION(Exp.RELATION(Exp.PATH(v'), Exp.EQUAL, e'))]
 
-  rule  print "FOO\n"
-	-----------------
-	inst_mod_assignment(_,_,_) => []
+  axiom inst_mod_assignment(_,_,_) => []
 
 end
 
-relation inst_element: (Env.Env, Mod.Mod, Prefix, Absyn.Element)
+relation inst_element: (Env.Env, Mod, Prefix, Absyn.Element)
 	  => (DAE.DAEcomp list, Env.Env) =
 
   (* extends
@@ -173,6 +171,7 @@ relation inst_element: (Env.Env, Mod.Mod, Prefix, Absyn.Element)
    
   rule	(* Absyn.convert(c) => c' & *)
 	Mod.lookup_modification(mods,n) => classmod &
+	print "  adding " & Mod.dump(classmod,n) & print "\n" &
 	(* Mod.simple_maybe_modify_class(env,mm,pre,c') => (c'',dae) & *)
 	Env.extend_frame_c(env,c,classmod) => env'
 	----------------------------------------
@@ -192,18 +191,23 @@ relation inst_element: (Env.Env, Mod.Mod, Prefix, Absyn.Element)
 	Exp.path_string(vn) => ns &
 	print " variable " & print ns & print "\n" &
 
+	(* Find the set of modifications *)
 	(* FIXME: merge order *)
 	Env.lookup_class(env,t) => (cl,classmod) &
-	Mod.merge(mods,classmod) => mods' &
+	print "  modification 1: " & Mod.dump(classmod,ns) & print "\n" &
 
-	(* Exp.path_string(t) => ts & *)
-	(* print "  class " & print ts & print " found\n" & *)
+	Mod.lookup_modification(mods,n) => mm &
+	print "  modification 2: " & Mod.dump(mm,ns) & print "\n" &
 
-	(* Find the set of modifications *)
-	Mod.lookup_modification(mods(*'*),n) => mm &
 	Mod.build(m,final) => m' &
-	Mod.merge(mm,m') => mm'' &
-	print "  modification: " & Mod.dump(mm'',ns) & print "\n" &
+	print "  modification 3: " & Mod.dump(m',ns) & print "\n" &
+
+	(* classmod is the modifications stored with the class *)
+	(* mm       is the modifications passed to the relation *)
+	(* m'       is the modification stored in the element *)
+	Mod.merge(classmod,mm) => mod &
+	Mod.merge(mod,m') => mod' &
+	print "  modification: " & Mod.dump(mod',ns) & print "\n" &
 
 	Prefix.prefix_add(n,pre) => pre' &
 
@@ -215,13 +219,13 @@ relation inst_element: (Env.Env, Mod.Mod, Prefix, Absyn.Element)
 
 	print "        added\n" &
 
-	inst_class(env,mm'',pre',cl) => dae1 &
-
-	print "        BAR\n" &
+	inst_class(env,mod',pre',cl) => dae1 &
+	print "        instantiated\n" &
 
 	(* If the modification assigns a value to this variable, add an
 	   equation *)
-	inst_mod_assignment(pre,n,mm'') => dae2 &
+	inst_mod_assignment(pre,n,mod') => dae2 &
+	print "        assigned\n" &
 
 	list_append(dae1, dae2) => dae
 	--------------------------
@@ -248,14 +252,14 @@ relation inst_element: (Env.Env, Mod.Mod, Prefix, Absyn.Element)
 
 end
 
-and inst_classpart: (Env.Env,Mod.Mod,Prefix,Absyn.ClassPart)
+and inst_classpart: (Env.Env,Mod,Prefix,Absyn.ClassPart)
 	  => (DAE.DAEcomp list,Env.Env) =
 
   rule	inst_list(env,mods,pre,inst_element,l) => (dae,env')
 	-------------------------------------------
 	inst_classpart(env,mods,pre,Absyn.PUBLIC(l)) => (dae,env')
 
-  rule	inst_list(env,mods,pre,inst_element,l) => (dae,env')
+  rule	print "FOO\n" & inst_list(env,mods,pre,inst_element,l) => (dae,env') & print "BAR\n"
 	-------------------------------------------
 	inst_classpart(env,mods,pre,Absyn.PROTECTED(l)) => (dae,env')
 
@@ -269,36 +273,51 @@ and inst_classpart: (Env.Env,Mod.Mod,Prefix,Absyn.ClassPart)
 
 end
 
-and inst_classdef: (Env.Env, Mod.Mod, Prefix, Absyn.ClassDef)
+and inst_classdef: (Env.Env, Mod, Prefix, Absyn.ClassDef)
 	  => (DAE.DAEcomp list, Env.Env) =
 
   rule	inst_list(env,mods,pre,inst_classpart,pl) => (dae,env')
-	& print "XYZZY\n"
 	------------------------------------------------
 	inst_classdef(env,mods,pre, Absyn.PARTS(pl)) => (dae,env')
 
-  rule	print "DERIVED not handled\n" & fail
-	------------------------------------
-	inst_classdef(env,_,_, Absyn.DERIVED(_,_,_)) => ([],env)
+  rule	Mod.build(SOME(Absyn.CLASSMOD(m)), false) => mod &
+	Env.lookup_class(env,cn) => (c,m) &
+	(* FIXME order *)
+	Mod.merge(mods,m) => mods' &
+	Mod.merge(mods',mod) => mods'' &
+	inst_class_in(env, mods'', pre, c) => (dae,env)
+	----------------------------------------
+	inst_classdef(env,mods,pre, Absyn.DERIVED(cn,ad,m)) => (dae,env)
+
 end
 
-and inst_class: (Env.Env, Mod, Prefix, Absyn.Class) => DAE.DAEcomp list =
+and inst_class_in: (Env.Env, Mod, Prefix, Absyn.Class)
+	  => (DAE.DAEcomp list, Env.Env) =
 
   rule	print " instantiating " & print n & print "\n" &
-	Env.new_frame(env) => env' &
-	inst_classdef(env',mods,pre,d) => (l,_)
+	inst_classdef(env,mods,pre,d) => (l,env')
 	------------------------------------------------------	
-	inst_class(env,mods,pre,c as Absyn.CLASS(n,false,r,d)) => l
+	inst_class_in(env,mods,pre,c as Absyn.CLASS(n,false,r,d)) => (l,env')
 
   rule	print "Can't instantiate partial class " & print n & print "\n" &
 	fail
 	------------------------------------------------------	
-	inst_class(env,mod,pre, Absyn.CLASS(n,true,_,_)) => []
+	inst_class_in(env,mod,pre, Absyn.CLASS(n,true,_,_))
+	  => ([],Env.empty_env)
 
 	(* FIXME *)
-  rule  print "# Fallthru in inst_class\n"
+  rule  print "# Fallthru in inst_class_in\n"
 	----------------------------------
-	inst_class(_,_,_,_) => []
+	inst_class_in(_,_,_,_) => ([],Env.empty_env)
+
+end
+
+and inst_class: (Env.Env, Mod, Prefix, Absyn.Class) => DAE.DAEcomp list =
+
+  rule	Env.new_frame(env) => env' &
+	inst_class_in(env', mod, pre, c) => (dae,_)
+	-------------------------------------------
+	inst_class(env, mod, pre, c) => dae
 
 end
 
