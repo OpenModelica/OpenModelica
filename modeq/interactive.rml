@@ -1070,20 +1070,51 @@ end
 relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.NamedArg list, Absyn.Program) => (Absyn.Program ,string) =
 	
   rule	Absyn.cref_to_path(model) => modelpath &
-	path_in_program(modelpath,p) => false
+	not get_pathed_class_in_program(modelpath,p) => _
 	---------------------------------
-	add_component (name,tp,model,annlst,p) => (p,"Error, No such model\n")
+	add_component (name,tp,model,annlst,p) => (p,"Error, No such model\n") 
 	
+	(* Adding component to model that resides inside package *)
+	(* Without annotation*)
+  rule	Absyn.cref_to_path(model) => modelpath &
+	Absyn.strip_last(modelpath) => modelwithin &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	Absyn.cref_to_path(tp) => tppath &
+	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
+	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),NONE)]),NONE))) => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
+	------------------------------------------------
+	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),[],p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+
+	(* Adding component to model that resides inside package *)
+	(* With annotation*)
+  rule	Absyn.cref_to_path(model) => modelpath &
+	Absyn.strip_last(modelpath) => modelwithin &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	Absyn.cref_to_path(tp) => tppath &
+	annotation_list_to_absyn(annlst) => annotation &
+	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
+	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[Absyn.NOSUB]),tppath,
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),SOME(Absyn.COMMENT(SOME(annotation),NONE)))]),NONE))) => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
+	------------------------------------------------
+	add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),annlst,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+	
+	(* Adding component to model that resides on top level *)
+	(* Without annotation*)
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[]),tppath,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),NONE)]),NONE))) => newcdef &	
-	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
 	------------------------------------------------
-	add_component( name,tp,model,[],p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+	add_component( name,tp,model as Absyn.CREF_IDENT(_,_),[],p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
 
+	(* Adding component to model that resides on top level *)
+	(* With annotation*)
   rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
@@ -1091,11 +1122,11 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED,"",
 	    Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR,[Absyn.NOSUB]),tppath,
 		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],NONE),SOME(Absyn.COMMENT(SOME(annotation),NONE)))]),NONE))) => newcdef &	
-	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p)=> newp
 	------------------------------------------------
-	add_component( name,tp,model,annlst,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
-	
-  axiom	add_component (_,_,_,_,p) => (p,"Not implemented yet\n")
+	add_component( name,tp,model as Absyn.CREF_IDENT(_,_),annlst,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
+
+  axiom	add_component (_,_,_,_,p) => (p,"add component Not implemented yet\n")
 	
 end
 
@@ -2465,24 +2496,6 @@ relation class_in_program:(string,Absyn.Program) => bool =
 	class_in_program (str, Absyn.PROGRAM(Absyn.CLASS(c1,_,_,_,_,_)::p,w)) => res
 	
   axiom class_in_program (_,_) => true
-end
-
-(** relation: path_in_program
- ** This relation takes a path and a program and returns true if the class
- ** referenced by the path exist in the program
-*)
-relation path_in_program: (Absyn.Path, Absyn.Program) => bool =
-	
-  rule	Absyn.path_string(path) => pathstr &
-	class_in_program(pathstr,p) => res
-	-----------------------------------
-	path_in_program (path as Absyn.IDENT(name),p) => res
-	
-  rule	class_in_program(c1,p) => true &
-	get_class_in_program(c1,p) => c1def &
-	path_in_program(prest,Absyn.PROGRAM([c1def],w)) => res
-	------------------------------------
-	path_in_program (path as Absyn.QUALIFIED(c1,prest),p as Absyn.PROGRAM(_,w)) => res
 end
 
 (** relation: get_pathed_class_in_program
