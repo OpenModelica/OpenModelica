@@ -29,6 +29,13 @@
  ** Modifications are simply the same kind of modifications used in
  ** the `Absyn' module.
  **
+ ** This type is very similar to `SCode.Mod'.  The main difference is
+ ** that it uses `Exp.Exp' for the expressions.  Expressions stored
+ ** here are prefixed and typechecked.
+ **
+ ** The datatype itself is moved to the Types module, in types.rml, to prevent
+ ** circular dependencies.
+ **
  **)
 
 module Mod:
@@ -43,13 +50,6 @@ module Mod:
 
   type Ident = string
 
-  (** - Modification datatype *)
-  (** Moved to Exp to prevent circular dependencies *)
-
-  (** This type is very similar to `SCode.Mod'.  The main difference is
-   ** that it uses `Exp.Exp' for the expressions.  Expressions stored
-   ** here are prefixed and typechecked.
-   **)
 
   relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Types.Mod
   relation unelab_mod : (Types.Mod) => SCode.Mod
