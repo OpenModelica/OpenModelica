@@ -24,3 +24,62 @@ Noteringar om syntaxen:   -*- outline -*-
     Bar z(y[5](redeclare Real x));
   end;
 
+* Dubbla modifierare
+
+The grammar for components are as follows (only the relevant parts are
+included here):
+
+
+       component_clause:
+          type_prefix type_specifier component_list
+
+       type_prefix :
+          [ flow ] [ parameter | constant ] [ input | output ]
+
+       type_specifier :
+          name
+
+       component_list :
+          component_declaration { "," component_declaration }
+
+       component_declaration :
+          declaration comment
+
+       declaration :
+          IDENT [ array_dimensions ] [ modification ]
+
+       modification :
+          class_modification
+        | "=" expression
+
+        
+       class_modification :
+          "(" { argument_list } ")"
+
+
+But the Modelica Standard Library contains code that breaks
+this. Namely there are components that contains both types of
+modifications simultaneously, as in the following example:
+
+   constant Real         N_A     (final unit="mol-1")
+                                 = 6.0221367e23  "Avogadro constant";
+
+There are two obvious solutions that I can see.
+
+I.  Rewrite the Standard Library to say
+
+   constant Real         N_A     (final unit="mol-1",
+                                  value = 6.0221367e23)  "Avogadro constant";
+
+II. Change the modification rule to something like
+
+       modification :
+          class_modification [ "=" expression ]
+        | "=" expression
+
+I think that the latter is preferrable
+
+* Syntaxfel i exempel och standardbiblioteket
+
+I B.6 står det "final type Real ...", vilket inte går enligt
+grammatiken.

@@ -6,21 +6,14 @@ end
 with "class.rml"
 with "absyn.rml"
 with "parse.rml"
-(* with "test.rml" *)
 with "dump.rml"
-(* with "lform.rml" *)
+with "lform.rml"
 with "dae.rml"
 with "inst.rml"
-(* with "modelica.rml" *)
+
+(* with "test.rml" *)
 
 relation main =
-(*
-		rule	Modelica.test1 &
-		Modelica.test2 &
-		Modelica.test3
-		------------------------
-		main _
-*)
 
 	rule	print "\n = Parsing\n\n" &
 		Parser.parse f => p &
@@ -30,8 +23,11 @@ relation main =
 		Absyn.explode_components(p) => p' &
 		Dump.dump p' &
 
+		print "\n = Elaborating\n\n" &
+		Lform.elaborate(p') => p'' &
+		
 		print "\n = Instantiating\n\n" &
-		Inst.instantiate(p') => d &
+		Inst.instantiate(p'') => d &
 		print "\n" &
 		DAE.dump d &
 

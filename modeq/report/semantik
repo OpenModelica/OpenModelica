@@ -7,9 +7,13 @@ Vad betyder "redeclare extends ..."
 * Typer i ekvationer
 
 Vilka variabler får man ha i ekvationer? Bara Real(Type) och
-Integer(type)? Exakt hur fungerar connect()?
+Integer(type)?
+
+Hur hanteras strängar i ekvationer.
 
 * connect
+
+Exakt hur fungerar connect()?
 
 Sista raden i connect-semantiken (B.2) måste vara fel.
 
@@ -77,6 +81,23 @@ Om man deklarerar
     end M;
 
 eller är det bara startvärdet på x som påverkas?
+
+* Allt är ekvationer
+
+Tydligen så ska tilldelningar vid variabeldeklarationer betraktas som
+ekvationer. Så
+
+	model Foo
+	  Real x = 17.0;
+	end Foo;
+
+är ekvavilent med
+
+	model Foo
+	  Real x;
+	equation
+	  x = 17.0;
+	end Foo;
 
 * Ersättning av ekvationer
 

@@ -1,2 +1,26 @@
-Lite designbeslut:
+Lite designbeslut:    -*- outline -*-
 
+* Enpass vs. Tvåpass
+
+Jag funderar på om jag ska göra allt i ett svep, eller dela upp det så
+att jag först gör ett pass där alla typnamn slås upp och modifieras
+enligt konstens alla regler. Det andra passet går sedan igenom
+alltihopa igen och skriver ut alla ekvationer.
+
+** Fördelar med tvåpass
+
+Semantiken blir troligen enklare att läsa och snyggare uppdelad.
+
+** Nackdelar med tvåpass
+
+Det blir lite onödigt jobb för kompilatorn. Dessutom blir det
+besvärligare att behålla enpasssemantiken, där man bara kan referera
+till saker som står tidigare i klassen. Eller vänta nu, det blir det
+ju inte alls. Det andra passet behöver ju inte göra en enda
+uppslagning, åtminstone inte av typer.
+
+** Saker man inte kan göra
+
+Det går inte att dela upp det första passet som jag från början hade
+tänkt. Man måste hålla reda på alla modifikationer innan man kan börja
+slå upp namn. Man måste också expandera all "extends".

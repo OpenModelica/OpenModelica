@@ -10,32 +10,33 @@
 module Mod:
 
   with "exp.rml"
+  with "absyn.rml"
   with "lform.rml"
   with "env.rml"
   with "dae.rml"
   with "prefix.rml"
 
-  type Mod = Lform.Modification
+  type Mod = Absyn.Modification
 
   val empty_mod : Mod
 
-  relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Lform.Class)
+  relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Lform.Class)
+  relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
   relation maybe_modify_class: (Env.Env, Exp.Path, Mod option,
-				Prefix.Prefix, Lform.Class)
+				Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
   relation simple_maybe_modify_class : (Env.Env, Mod option,
-				        Prefix.Prefix, Lform.Class)
+				        Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation lookup_modification: (Mod,Lform.Ident) => Mod option
+  relation lookup_modification: (Mod,Absyn.Ident) => Mod option
 
   relation merge : (Mod option, Mod option) => Mod option
 
 end
 
-val empty_mod = Lform.CLASSMOD([])
+val empty_mod = Absyn.CLASSMOD([])
 
 (**********************************************************************)
 
@@ -53,33 +54,33 @@ end
 
 (* utility *)
 
-relation element_name : Lform.Element => Exp.Ident =
+relation element_name : Absyn.Element => Exp.Ident =
 
-  axiom  element_name(Lform.ELEMENT(_,n,_)) => n
+  axiom  element_name(Absyn.ELEMENT(_,n,_)) => n
 
 end
 
 (**********************************************************************)
 
-relation lookup_classmod : (Lform.ElementArg list, Lform.Ident)
+relation lookup_classmod : (Absyn.ElementArg list, Absyn.Ident)
 	  => Mod option =
 
   axiom lookup_classmod([],_) => NONE
 
   rule	mn = n
 	------
-	lookup_classmod(Lform.MODIFICATION(f,Exp.IDENT(mn),m)::_,n)
+	lookup_classmod(Absyn.MODIFICATION(f,Exp.IDENT(mn),m)::_,n)
 	 => SOME(m)
 
   rule  mn = n
 	------
-	lookup_classmod(Lform.MODIFICATION(f,Exp.QUALIFIED(mn,p),m)::_,n)
-	 => SOME(Lform.CLASSMOD([Lform.MODIFICATION(f,p,m)]))
+	lookup_classmod(Absyn.MODIFICATION(f,Exp.QUALIFIED(mn,p),m)::_,n)
+	 => SOME(Absyn.CLASSMOD([Absyn.MODIFICATION(f,p,m)]))
 
   rule  print "FIXME: lookup_classmod(REDECLARATION)\n" &
 	fail
 	-----------------------------------------------
-	lookup_classmod(Lform.REDECLARATION(f,_)::_,n) => NONE
+	lookup_classmod(Absyn.REDECLARATION(f,_)::_,n) => NONE
 
   rule	lookup_classmod(es,n) => m
 	--------------------------
@@ -87,20 +88,20 @@ relation lookup_classmod : (Lform.ElementArg list, Lform.Ident)
 
 end	
 
-relation lookup_modification: (Mod,Lform.Ident) => Mod option =
+relation lookup_modification: (Mod,Absyn.Ident) => Mod option =
 
   rule	print "Error: lookup_modification(EQUALMOD(_)," &
 	print n & print ")\n"
 	----------------------------------------------
-	lookup_modification(Lform.EQUALMOD(_),n) => NONE
+	lookup_modification(Absyn.EQUALMOD(_),n) => NONE
 
   rule  lookup_classmod(cm,n) => m
 	------------------------
-	lookup_modification(Lform.CLASSMOD(cm),n) => m
+	lookup_modification(Absyn.CLASSMOD(cm),n) => m
 
 end
 
-relation modifies: (Mod,Lform.Ident) => () =
+relation modifies: (Mod,Absyn.Ident) => () =
 
   rule	lookup_modification(mod,n) => m
 	-------------------------------
@@ -108,22 +109,26 @@ relation modifies: (Mod,Lform.Ident) => () =
 
 end
 
-relation modify_element : (Mod option,Prefix.Prefix,Lform.Element,bool)
+relation modify_element : (Mod option,Prefix.Prefix,Absyn.Element,bool)
 	  => (Lform.Element, DAE.DAEcomp list) =
 
-  axiom modify_element(NONE,_,e,_) => (e,[])
+  rule	Lform.convert_element(e) => e'
+	------------------------------
+	modify_element(NONE,_,e,_) => (e',[])
 
   rule	element_name(e) => n &
 	modifies(mod,n) &
 	print "Error: Trying to modify protected element " &
-	print n & print "\n"
+	print n & print "\n" &
+	Lform.convert_element(e) => e'
 	--------------------------------------------------------------
-	modify_element(SOME(mod),_,e,false) => (e,[])
+	modify_element(SOME(mod),_,e,false) => (e',[])
 
   rule	modifies(mod,n) &
-	print "Error: Trying to modify final element " & print n & print "\n"
+	print "Error: Trying to modify final element " & print n & print "\n" &
+	Lform.convert_element(e) => e'
 	---------------------------------------------------------------------
-	modify_element(SOME(mod),_,e as Lform.ELEMENT(true,n,_),_) => (e,[])
+	modify_element(SOME(mod),_,e as Absyn.ELEMENT(true,n,_),_) => (e',[])
 
   rule	Prefix.prefix_exp(exp,pre) => exp' &
 	element_name(e) => n &
@@ -131,10 +136,11 @@ relation modify_element : (Mod option,Prefix.Prefix,Lform.Element,bool)
 
 	print "  modify_element: adding equation " &
 	Exp.path_string(np) => nps &
-	print nps & print " = ...\n"
+	print nps & print " = ...\n" &
+	Lform.convert_element(e) => e'
 	-----------------------------------
-	modify_element(SOME(Lform.EQUALMOD(exp)),pre, e,_)
-	 => (e,[DAE.EQUATION(Exp.RELATION(Exp.PATH(np),Exp.EQUAL,exp'))])
+	modify_element(SOME(Absyn.EQUALMOD(exp)),pre, e,_)
+	 => (e',[DAE.EQUATION(Exp.RELATION(Exp.PATH(np),Exp.EQUAL,exp'))])
 (*
   rule	Prefix.prefix_path(Exp.IDENT(en),pre) => np &
 
@@ -144,88 +150,89 @@ relation modify_element : (Mod option,Prefix.Prefix,Lform.Element,bool)
 
 	modify_class(env,np,m,pre,c) => (c',dae)
 	-----------------------------------------------------------
-	modify_element(SOME(m),pre, e as Lform.ELEMENT(f,en,
-					  Lform.COMPONENTS(_,_,_,_,_,t,
-					  [Lform.COMPONENT(])),_)
+	modify_element(SOME(m),pre, e as Absyn.ELEMENT(f,en,
+					  Absyn.COMPONENTS(_,_,_,_,_,t,
+					  [Absyn.COMPONENT(])),_)
 	 => (Lform.ELEMENT(f,en,Lform.COMPONENTS
 *)
   rule	Prefix.prefix_path(Exp.IDENT(en),pre) => np &
 	Exp.path_string(np) => ns &
-	print "# ignoring modification of " & print ns & print "\n"
+	print "# ignoring modification of " & print ns & print "\n" &
+	Lform.convert_element(e) => e'
 	-----------------------------------------------------------
-	modify_element(SOME(m),pre,e as Lform.ELEMENT(_,en,_),_) => (e,[])
+	modify_element(SOME(m),pre,e as Absyn.ELEMENT(_,en,_),_) => (e',[])
 
 end
 
-relation modify_classpart : (Mod,Prefix.Prefix,Lform.ClassPart)
+relation modify_classpart : (Mod,Prefix.Prefix,Absyn.ClassPart)
 	  => (Lform.ClassPart, DAE.DAEcomp list) =
 
-  axiom	modify_classpart(_,_,p as Lform.EQUATIONS(_))  => (p,[])
-  axiom	modify_classpart(_,_,p as Lform.ALGORITHMS(_)) => (p,[])
-  axiom	modify_classpart(_,_,p as Lform.PUBLIC([]))    => (p,[])
-  axiom	modify_classpart(_,_,p as Lform.PROTECTED([])) => (p,[])
+  axiom	modify_classpart(_,_,p as Absyn.EQUATIONS(_))  => (p,[])
+  axiom	modify_classpart(_,_,p as Absyn.ALGORITHMS(_)) => (p,[])
+  axiom	modify_classpart(_,_,p as Absyn.PUBLIC([]))    => (p,[])
+  axiom	modify_classpart(_,_,p as Absyn.PROTECTED([])) => (p,[])
 
   rule	element_name(e) => en &
 	lookup_modification(mod,en) => mod' &
 	modify_element(mod',pre,e,true) => (e',eq1) &
-	modify_classpart(mod,pre,Lform.PUBLIC(es))
+	modify_classpart(mod,pre,Absyn.PUBLIC(es))
 	 => (Lform.PUBLIC(es'),eq2) &
 	list_append(eq1,eq2) => eq
 	---------------------------------------
-	modify_classpart(mod,pre,Lform.PUBLIC(e::es))
+	modify_classpart(mod,pre,Absyn.PUBLIC(e::es))
 	 => (Lform.PUBLIC(e'::es'),eq)
 
   rule	element_name(e) => en &
 	lookup_modification(mod,en) => mod' &
 	modify_element(mod',pre,e,false) => (e',eq1) &
-	modify_classpart(mod,pre,Lform.PROTECTED(es))
+	modify_classpart(mod,pre,Absyn.PROTECTED(es))
 	 => (Lform.PUBLIC(es'),eq2) &
 	list_append(eq1,eq2) => eq
 	---------------------------------------
-	modify_classpart(mod,pre,Lform.PROTECTED(e::es)) =>
+	modify_classpart(mod,pre,Absyn.PROTECTED(e::es)) =>
 	  (Lform.PROTECTED(e'::es'), eq)
 
 end
 
-relation modify_classdef : (Env.Env,Mod,Prefix.Prefix,Lform.ClassDef)
+relation modify_classdef : (Env.Env,Mod,Prefix.Prefix,Absyn.ClassDef)
 	  => (Lform.ClassDef, DAE.DAEcomp list) =
 
-  axiom	modify_classdef(_,_,_,p as Lform.PARTS([])) => (p,[])
+  axiom	modify_classdef(_,_,_,p as Absyn.PARTS([])) => (p,[])
 
   rule	modify_classpart(mod,pre,p) => (p',eq1) &
-	modify_classdef(env,mod,pre,Lform.PARTS(ps))
+	modify_classdef(env,mod,pre,Absyn.PARTS(ps))
 	 => (Lform.PARTS(ps'),eq2) &
 	list_append(eq1,eq2) => eq
 	------------------------------------
-	modify_classdef(env,mod,pre,Lform.PARTS(p::ps))
+	modify_classdef(env,mod,pre,Absyn.PARTS(p::ps))
 	 => (Lform.PARTS(p'::ps'), eq)
 
-  rule	Env.lookup_class(env,p) => Lform.Class(n,_,r,d) &
-	(* FIXME: Check restriction *)
+  rule	(* FIXME: Check restriction *)
 	modify_classdef(env,mod,pre,d) => (d',eq)
 	---------------------------------
-	modify_classdef(env,mod,pre,Lform.DERIVED(p,ad,es)) => (d',eq)
+	modify_classdef(env,mod,pre,Absyn.DERIVED(Absyn.CLASS(n,_,r,d),
+						  ad,es)) => (d',eq)
 
 end
 
-relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Lform.Class)
+relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
 	  => (Lform.Class, DAE.DAEcomp list) =
 
   rule	print "  modify_class: Adding equation " &
 	Exp.path_string(vn) => s &
 	print s & print " = ...\n"
 	---------------------------------------------------
-	modify_class(env,vn,Lform.EQUALMOD(e), pre, c)
+	modify_class(env,vn,Absyn.EQUALMOD(e), pre, c)
 	 => (c,[DAE.EQUATION(Exp.RELATION(Exp.PATH(vn),Exp.EQUAL,e))])
 
   rule	modify_classdef(env,mod,pre,d) => (d',eq)
 	---------------------------------
-	modify_class(env,_,mod, pre, Lform.CLASS(n,p,r,d))
+	modify_class(env,_,mod, pre, Absyn.CLASS(n,p,r,d))
 	 => (Lform.CLASS(n,p,r,d'),eq)
 
 end
 
-relation maybe_modify_class: (Env.Env, Exp.Path, Mod option, Prefix.Prefix, Lform.Class)
+relation maybe_modify_class: (Env.Env, Exp.Path, Mod option, Prefix.Prefix, Absyn.Class)
 	  => (Lform.Class, DAE.DAEcomp list) =
 
   axiom	maybe_modify_class(_,_,NONE,pre,c) => (c, [])
@@ -236,24 +243,24 @@ relation maybe_modify_class: (Env.Env, Exp.Path, Mod option, Prefix.Prefix, Lfor
 
 end
 
-relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Lform.Class)
+relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
 	  => (Lform.Class, DAE.DAEcomp list) =
 
   rule	modify_classdef(env,mod,pre,d) => (d',dae)
 	---------------------------------
-	simple_modify_class(env,mod,pre,Lform.CLASS(n,p,r,d))
+	simple_modify_class(env,mod,pre,Absyn.CLASS(n,p,r,d))
 	 => (Lform.CLASS(n,p,r,d'),dae)
 
 end
 
-relation simple_maybe_modify_class : (Env.Env, Mod option, Prefix.Prefix, Lform.Class)
+relation simple_maybe_modify_class : (Env.Env, Mod option, Prefix.Prefix, Absyn.Class)
 	  => (Lform.Class, DAE.DAEcomp list) =
 
   axiom	simple_maybe_modify_class(_,NONE,_,c) => (c,[])
 
   rule	modify_classdef(env,mod,pre,d) => (d',dae)
 	--------------------------------------
-	simple_maybe_modify_class(env,SOME(mod),pre,Lform.CLASS(n,p,r,d))
+	simple_maybe_modify_class(env,SOME(mod),pre,Absyn.CLASS(n,p,r,d))
 	 => (Lform.CLASS(n,p,r,d'),dae)
 
 end
