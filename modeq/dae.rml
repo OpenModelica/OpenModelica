@@ -15,6 +15,7 @@ module DAE:
   with "dump.rml"
   with "exp.rml"
   with "explode.rml"
+  with "algorithm.rml"
 
   type Ident = string
 
@@ -26,7 +27,7 @@ module DAE:
 			  * Absyn.ArrayDim (*FIXME*)
 		   | VARVAL of Ident * VarKind * Exp.Exp
 		   | EQUATION of Exp.Exp
-		   | ALGORITHM of SCode.Algorithm
+		   | ALGORITHM of Algorithm.Algorithm
 		   | COMP of Ident * DAEform
   and	 DAEform = DAE of DAEcomp list
 	  
@@ -152,9 +153,9 @@ end
 relation dump_algorithm : DAEcomp => () =
 
   rule	print "algorithm\n" &
-	Dump.print_list(alg, pp_algorithm, "")
+	Dump.print_list(stmts, pp_statement, "")
 	----------------------------------------------
-	dump_algorithm ALGORITHM(SCode.ALGORITHM(alg))
+	dump_algorithm ALGORITHM(Algorithm.ALGORITHM(stmts))
 
   axiom	dump_algorithm _
 
@@ -193,51 +194,100 @@ relation dump_algorithms: DAEcomp list => () =
 
 end
 
-(** relation: pp_algorithm
+(** relation: pp_statement
  **
- ** Prettyprint an algorithm element
+ ** Prettyprint an algorithm statement
  **)
 
-relation pp_algorithm : Absyn.Algorithm => () =
+relation pp_statement : Algorithm.Statement => () =
 
-  rule	pp_alg (alg,2)
+  rule	pp_stmt (alg,2)
 	--------------
-	pp_algorithm alg
+	pp_statement alg
 
 end
 
-relation pp_alg : (Absyn.Algorithm, int) => () =
+relation pp_stmt : (Algorithm.Statement, int) => () =
 
   rule	indent i &
-	Dump.print_component_ref c &
+	Exp.print_component_ref c &
 	print " := " &
-	Dump.print_exp e &
+	Exp.print_exp e &
 	print ";\n"
 	----------
-	pp_alg (Absyn.ALG_ASSIGN(c,e), i)
+	pp_stmt (Algorithm.ASSIGN(c,e), i)
 
   rule	indent i &
-	print "while(" & Dump.print_exp e & print ") loop\n" &
+ 	print "if " & Exp.print_exp e & print " then\n" &
 	int_add(i,2) => i' &
-	pp_alg_list (algs, i') &
+	pp_stmt_list (then, i') &
+	pp_else (else, i) &
+	indent i & print "end if;\n"
+        -------------------
+	pp_stmt (Algorithm.IF(e,then,else), i)
+	
+  rule	indent i &
+	print "for " & print id & print " in " &
+ 	Exp.print_exp e & print " loop\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	print "end for;\n"
+        -------------------
+	pp_stmt (Algorithm.FOR(id,e,stmts), i)
+	
+  rule	indent i &
+	print "while " & Exp.print_exp e & print " loop\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
 	indent i &
 	print "end while;\n"
         -------------------
-	pp_alg (Absyn.ALG_WHILE(e,algs), i)
+	pp_stmt (Algorithm.WHILE(e,stmts), i)
+	
+  rule	indent i &
+	print "when " & Exp.print_exp e & print " do\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	print "end when;\n"
+        -------------------
+	pp_stmt (Algorithm.WHEN(e,stmts), i)
 	
   rule	indent i & print "**ALGORITHM**;\n"
 	----------------------------------
-	pp_alg (_,i)
+	pp_stmt (_,i)
 
 end
 
-relation pp_alg_list : (Absyn.Algorithm list, int) => () =
+relation pp_stmt_list : (Algorithm.Statement list, int) => () =
 
-  axiom	pp_alg_list ([],_)
+  axiom	pp_stmt_list ([],_)
 
-  rule	pp_alg (alg,i) & pp_alg_list(algs,i)
+  rule	pp_stmt (stmt,i) & pp_stmt_list(stmts,i)
 	--------------------------------
-	pp_alg_list (alg::algs,i)
+	pp_stmt_list (stmt::stmts,i)
+
+end
+
+relation pp_else : (Algorithm.Else, int) => () =
+
+  axiom	pp_else (Algorithm.NOELSE, _)
+
+  rule	indent i &
+ 	print "elseif " & Exp.print_exp e & print " then\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (then, i') &
+	pp_else (else, i)
+        -----------------
+	pp_else (Algorithm.ELSEIF(e,then,else), i)
+
+  rule	indent i &
+ 	print "else\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i')
+        ------------------------
+	pp_else (Algorithm.ELSE(stmts), i)
 
 end
 

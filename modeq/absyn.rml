@@ -76,7 +76,10 @@ module Absyn:
 		    | EQ_FOR of Ident * Exp * Equation list
 
   datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp
-		     | ALG_COND (* FIXME *)
+		     | ALG_IF of Exp
+			       * Algorithm list	     (* true branch *)  
+			       * (Exp * Algorithm list) list (* elseif *)
+			       * Algorithm list	     (* else branch *)
 		     | ALG_FOR of Ident * Exp * Algorithm list
 		     | ALG_WHILE of Exp * Algorithm list
 		     | ALG_WHEN of Exp * Algorithm list

@@ -67,27 +67,10 @@ relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
   axiom	prefix_cref (NOPRE, cref) => cref
 
-  rule	subscript_list s => s' &
+  rule	Exp.int_subscripts s => s' &
 	prefix_cref(xs, Exp.CREF_QUAL(i,s',cref)) => cref'
 	---------------------------------
 	prefix_cref (PRE(i,s,xs), cref) => cref'
-
-end
-
-(** relation: subscript_list
- **
- ** This relations describes the relation between a list of integers
- ** and a list of `Exp.Subscript' where each integer is converted to
- ** an integer constant expression.
- **)
-
-relation subscript_list : int list => Exp.Subscript list =
-
-  axiom	subscript_list [] => []
-
-  rule	subscript_list xs => xs'
-	------------------------
-	subscript_list x::xs => Exp.SUB1(Exp.ICONST(x))::xs'
 
 end
 
@@ -163,10 +146,16 @@ relation prefix_exp2: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
   axiom	prefix_exp2(env,Exp.ARRAY([]),p) => Exp.ARRAY([])
 
-  rule	prefix_exp2(env,e,p) => e' &
+  rule	prefix_explist(env,es,p) => es'
+	-------------------------------
 	prefix_exp2(env,Exp.ARRAY(es),p) => Exp.ARRAY(es')
-	----------------------------
-	prefix_exp2(env,Exp.ARRAY(e::es),p) => Exp.ARRAY(e'::es')
+
+  axiom	prefix_exp2(env,Exp.MATRIX([]),p) => Exp.MATRIX([])
+
+  rule	prefix_explist(env,x,p) => x' &
+	prefix_exp2(env,Exp.MATRIX(xs),p) => Exp.MATRIX(xs')
+	----------------------------------------
+	prefix_exp2(env,Exp.MATRIX(x::xs),p) => Exp.MATRIX((x'::xs'))
 
   rule	prefix_exp2(env,start, p) => start' &
 	prefix_exp2(env,stop, p) => stop'

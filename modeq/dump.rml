@@ -273,7 +273,7 @@ relation print_equation: Absyn.Equation => () =
 	
   rule	print "IF (" & print_exp(e) & print ") THEN " &
 	print_list(tb, print_equation, ";") &
-	print_list(eb, print_elseif, " ") &
+	print_list(eb, print_eq_elseif, " ") &
 	print " ELSE " & print_list(fb, print_equation, ";")
 	----------------------------------------------------
 	print_equation(Absyn.EQ_IF(e,tb,eb,fb))
@@ -301,12 +301,12 @@ end
 
 (**)
 
-relation print_elseif : (Absyn.Exp * Absyn.Equation list) => () =
+relation print_eq_elseif : (Absyn.Exp * Absyn.Equation list) => () =
 
   rule	print " ELSEIF " & print_exp e & print " THEN " &
 	print_list(el, print_equation, ";")
 	-----------------------------------
-	print_elseif((e,el))
+	print_eq_elseif((e,el))
 
 end
 
@@ -319,9 +319,12 @@ relation print_algorithm: Absyn.Algorithm => () =
 	-------------------------------------------
 	print_algorithm(Absyn.ALG_ASSIGN(cr,exp))
 	
-  rule	print "ALG_COND(..." & print ")"
-	-------------------------------------------
-	print_algorithm(Absyn.ALG_COND)
+  rule	print "IF (" & print_exp(e) & print ") THEN " &
+	print_list(tb, print_algorithm, ";") &
+	print_list(eb, print_alg_elseif, " ") &
+	print " ELSE " & print_list(fb, print_algorithm, ";")
+	----------------------------------------------------
+	print_algorithm(Absyn.ALG_IF(e,tb,eb,fb))
 	
   rule	print "FOR " & print i & print " in " & print_exp(e) &
 	print " {" & print_list(el, print_algorithm, ";") & print "}"
@@ -342,6 +345,17 @@ relation print_algorithm: Absyn.Algorithm => () =
 	--------------------------------
 	print_algorithm(_)
 	
+end
+
+(**)
+
+relation print_alg_elseif : (Absyn.Exp * Absyn.Algorithm list) => () =
+
+  rule	print " ELSEIF " & print_exp e & print " THEN " &
+	print_list(el, print_algorithm, ";")
+	-----------------------------------
+	print_alg_elseif((e,el))
+
 end
 
 (** - Component references *)
@@ -447,7 +461,9 @@ relation print_exp: Absyn.Exp => () =
 	---------
 	print_exp Absyn.ARRAY(es)
 	
-  rule	print "[MATRIX]"
+  rule	print "[" &
+	print_list(es, print_row, ";") &
+	print "]"
 	---------
 	print_exp Absyn.MATRIX(es)
 
@@ -463,6 +479,16 @@ relation print_exp: Absyn.Exp => () =
   rule	print "#UNKNOWN EXPRESSION#"
         ----------------------------------
 	print_exp (_)
+end
+
+(**)
+
+relation print_row : Absyn.Exp list => () =
+
+  rule	print_list(es, print_exp, ",")
+	------------------------------
+	print_row es
+
 end
 
 (** relation: *_symbol

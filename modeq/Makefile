@@ -14,8 +14,7 @@ RML	= rmlc -g
 PROG	= modeq
 AST	= ast/libast.a
 
-SRCRML=	dae.rml \
-	types.rml \
+SRCRML=	types.rml \
 	absyn.rml \
 	explode.rml \
 	dump.rml \
@@ -26,8 +25,10 @@ SRCRML=	dae.rml \
 	connect.rml \
 	classinf.rml \
 	exp.rml \
+	algorithm.rml \
 	staticexp.rml \
 	values.rml \
+	dae.rml \
 	mod.rml \
 	inst.rml \
 	main.rml

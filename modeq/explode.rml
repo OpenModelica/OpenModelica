@@ -122,8 +122,8 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	  => PARTS(els,eqs',als)
 
   rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-	list_append(als,[ALGORITHM(l)]) => als'
-	------------------------------
+	let als' = ALGORITHM(l)::als
+	----------------------------
 	elab_classdef(Absyn.PARTS(Absyn.ALGORITHMS(l)::ps))
 	  => PARTS(els,eqs,als')
 

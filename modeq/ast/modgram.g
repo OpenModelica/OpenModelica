@@ -110,9 +110,8 @@ void unimpl(char *rule)
 #token THEN		"then"
 #token ELSE		"else"
 #token ELSEIF		"elseif"
-/* #token ENDIF		"endif" */
-/* #token WHEN		"when" */
-/* #token ENDWHEN		"endwhen" */
+#token WHEN		"when"
+#token DO		"do"
 #token OR		"or"
 #token AND		"and"
 #token NOT		"not"
@@ -166,6 +165,8 @@ void unimpl(char *rule)
 #token ELEMENT
 #token MODIFICATION
 #token SUBSCRIPT
+#token ROW
+#token COLUMN
 
 #token "//(~[\n])*"  << zzskip(); >> /* skip C++-style comments */
 
@@ -530,7 +531,7 @@ algorithm :
   	;
 
 conditional_equation_e :
-	<< void *tbranch, *ebranch, *fbranch;
+	<< void *tbranch, *ebranch, *fbranch = NULL;
 	   AST *elseif = NULL; >>
 	IF^ c:expression THEN!
 	el:equation_list << tbranch = sibling_list(#el); >>
@@ -547,7 +548,8 @@ conditional_equation_e :
 	{ ELSE!
 	  el2:equation_list << fbranch = sibling_list(#el2); >> }
 	END! IF!
-	<< #0->rml = Absyn__EQ_5fIF(#c->rml,tbranch,ebranch,fbranch); >>
+	<< #0->rml = Absyn__EQ_5fIF(#c->rml,tbranch,ebranch,
+				    fbranch==NULL ? mk_nil() : fbranch); >>
 	;
 
 equation_elseif :
@@ -557,14 +559,31 @@ equation_elseif :
 	;
 
 conditional_equation_a :
-	i:IF^ expression THEN!
-	el:algorithm_list
-	( ELSEIF! expression THEN!
-	  el1:algorithm_list )*
+	<< void *tbranch, *ebranch, *fbranch = NULL;
+	   AST *elseif = NULL; >>
+	i:IF^ c:expression THEN!
+	el:algorithm_list << tbranch = sibling_list(#el); >>
+
+	( ei:algorithm_elseif
+	  << if (elseif == NULL) elseif = #ei; >> )*
+
+	/* Collect the elseif branches */
+	<< if (elseif == NULL)
+     	     ebranch = mk_nil();
+	   else
+	     ebranch = sibling_list(elseif); >>
+
 	{ ELSE!
-	  el2:algorithm_list }
+	  el2:algorithm_list << fbranch = sibling_list(#el2); >> }
 	END! IF!
-	<< unimpl("conditional_equation_a"); >>
+	<< #0->rml = Absyn__ALG_5fIF(#c->rml,tbranch,ebranch,
+				     fbranch==NULL ? mk_nil() : fbranch); >>
+	;
+
+algorithm_elseif :
+	  ELSEIF^ c:expression THEN!
+	  el:algorithm_list
+	  << #0->rml = mk_box2(0,#c->rml,sibling_list(#el)); >>
 	;
 
 for_clause_e :
@@ -597,9 +616,9 @@ while_clause :
 	;
 
 when_clause :
-	wh:WHEN^ e:expression LOOP!
+	wh:WHEN^ e:expression DO!
 	el:algorithm_list
-	END! WHILE!
+	END! WHEN!
 	<< #wh->rml = Absyn__ALG_5fWHEN(#e->rml, sibling_list(#el)); >>
 	;
 
@@ -750,9 +769,9 @@ primary : << bool is_matrix; >>
 	  c:column_expression > [is_matrix] 
 	  << 
 	     if (is_matrix) {
-	       unimpl("primary (matrix)");
+	       #0->rml = Absyn__MATRIX(#c->rml);
 	     } else {
-	       #0->rml = Absyn__ARRAY(sibling_list(#c));
+	       #0->rml = Absyn__ARRAY(#c->rml);
 	     }
 	  >>
 	  RBRACK!
@@ -802,15 +821,21 @@ function_call :
 /* not in document's grammar */
 column_expression > [bool is_matrix] :
 	<< $is_matrix=false; >>
-	row_expression ( ";"! row_expression << $is_matrix=true; >> )*
+	e:row_expression ( ";"! row_expression << $is_matrix=true; >> )*
+        << if($is_matrix) {
+	     Attrib a = $[COLUMN,"---"];
+	     #0 = #(#[&a], #e);
+	     #0->rml = sibling_list(#e);
+	   } >>
 	;
 
 row_expression :
-	expression 
+	e:expression 
 	( ","! expression 
 	)*
-        /* create token with translation {, balancer }, type BALANCED */
-	<< /* #0=#(#[EXTRA_TOKEN,"{",OP_BALANCED,'}'],#0); */ >>
+	<< Attrib a = $[ROW,"---"];
+	   #0 = #(#[&a], #e);
+	   #0->rml = sibling_list(#e); >>
 	;
 
 function_arguments :

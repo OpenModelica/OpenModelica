@@ -18,6 +18,7 @@ end
 (** Other modules used by this module *)
 
 with "exp.rml"
+with "algorithm.rml"
 with "values.rml"
 with "absyn.rml"
 with "prefix.rml"
@@ -153,7 +154,9 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	print " instantiating " & print n & print "\n" &
 	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
-	  => (l,env', csets', ci_state', tys)
+	  => (l,env', csets', ci_state', tys) &
+	print " " & print n & print " has " & ClassInf.print_state ci_state' &
+	print "\n"
 	------------------------------------------------------	
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,r,d), prot)
@@ -210,11 +213,15 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.lookup_modification_p(mods,cn) => m &
 	Mod.elab_mod(env,pre,mod) => mod' &
 	ClassInf.start(r, cn2) => new_ci_state &
+	print " deriving from " & Absyn.print_restr r & print " : " &
+	ClassInf.print_state new_ci_state & print "\n" &
 	(* FIXME order *)
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
 	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
 	  => (dae,env, csets', ci_state', tys) &
+
+	print "  " & ClassInf.print_state ci_state' & print "\n" &
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
@@ -301,8 +308,8 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* m        is the modification stored in the element *)
 	(* FIXME: verify order *)
 	(* print "  mod 1: " & print cns & Mod.print_mod classmod & print "\n" &
-	print "  mod 2: " & print cns & Mod.print_mod mods & print "\n" &
-	print "  mod 3: " & print cns & Mod.print_mod m' & print "\n" & *)
+	   print "  mod 2: " & print cns & Mod.print_mod mods & print "\n" &
+	   print "  mod 3: " & print cns & Mod.print_mod m' & print "\n" & *)
 	Mod.merge(classmod,mods) => mods' &
 	Mod.merge(mods',m') => mods'' &
 	
@@ -379,13 +386,13 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_modification(mods,n,[(*FIXME*)]) => mm &
 	Mod.elab_mod(env,pre,m) => m' &
-	print "  mod 1: " & Mod.print_mod classmod & print "\n" &
-	print "  mod 2: " & Mod.print_mod mm & print "\n" &
-	print "  mod 3: " & Mod.print_mod m' & print "\n" &
+	(* print "  mod 1: " & Mod.print_mod classmod & print "\n" &
+	   print "  mod 2: " & Mod.print_mod mm & print "\n" &
+	   print "  mod 3: " & Mod.print_mod m' & print "\n" & *)
 
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m') => mod' &
-	print "  modification: " & Mod.print_mod mod' & print "\n" &
+	(* print "  modification: " & Mod.print_mod mod' & print "\n" & *)
 
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
@@ -475,9 +482,9 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	(** FIXME: Redeclarations! *)
 	inst_class(env,mod,pre',csets,cl) => (dae1,csets',ty,st) &
 
-	idx_subs idxs' => subs &
+	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
-	dae_declare(cr,cl,Absyn.ATTR([], flow, vt, dir)) => dae2 &
+	dae_declare(cr,ty,Absyn.ATTR([], flow, vt, dir)) => dae2 &
 
 	list_append(dae1,dae2) => dae
 	--------------------------
@@ -495,22 +502,6 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	--------------------------------------------------
 	inst_var(_,_,_,_,n,_,_,_,_,_) => fail
 	
-end
-
-(** relation: idx_subs
- **
- ** This relation turns a list of integers into a list of
- ** `SCode.Subscript's.
- **)
-
-relation idx_subs : int list => Exp.Subscript list =
-
-  axiom	idx_subs [] => []
-
-  rule	idx_subs xs => xs'
-	------------------
-	idx_subs(x::xs) => Exp.SUB1(Exp.ICONST(x))::xs'
-
 end
 
 (**)
@@ -540,14 +531,14 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	
 end
 
-(**)
+(** relation: elab_arraydim *)
 
 relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.Eqmod option)
 	  => int list =
 
   rule	elab_arraydim_decl(env,ad) => dim &
 	complete_arraydim(dim) => dim'
-	---------------------------------
+	------------------------------
 	elab_arraydim(env,ad,NONE) => dim'
 
   rule	elab_arraydim_decl(env,ad) => dim1 &
@@ -556,13 +547,44 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.Eqmod option)
 	---------------------------------
 	elab_arraydim(env,ad,SOME((e,t,c))) => dim3
 
+  rule	elab_arraydim_decl(env,ad) => dim1 &
+	elab_arraydim_type(t) => dim2 &
+	not compatible_arraydim(dim1,dim2) => dim3 &
+	print "# Array dimension mismatch\n" &
+	print "    expression " & Exp.print_exp e &
+	print " has type " & Types.print_type t & print "\n" &
+	print "    expected array dimensions [" &
+	print_dim dim1 & print "]\n"
+	---------------------------------
+	elab_arraydim(env,ad,SOME((e,t,c))) => fail
+
   rule	print "- elab_arraydim failed\n"
 	-------------------------------------
 	elab_arraydim(_,_,_) => fail
 
 end
 
-(**)
+relation print_dim : (int option) list => () =
+
+  rule	print ":"
+	---------
+	print_dim [NONE]
+
+  rule	int_string x => s & print s
+	---------------------------
+	print_dim [SOME(x)]
+
+  rule	print ":," & print_dim xs
+	-------------------------
+	print_dim NONE::xs
+
+  rule	int_string x => s & print s & print "," & print_dim xs
+	------------------------------------------------
+	print_dim SOME(x)::xs
+
+end
+
+(** relation: elab_arraydim_decl *)
 
 relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 
@@ -584,7 +606,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 	
 end
 
-(**)
+(** relation: complete_arraydim *)
 
 relation complete_arraydim : (int option) list => int list =
 
@@ -596,7 +618,7 @@ relation complete_arraydim : (int option) list => int list =
 
 end
 
-(**)
+(** relation: elab_arraydim_type *)
 
 relation compatible_arraydim : ((int option) list,(int option) list)
 	  => int list =
@@ -616,9 +638,13 @@ relation compatible_arraydim : ((int option) list,(int option) list)
 	-------------------------------
 	compatible_arraydim (SOME(x)::xs,SOME(y)::ys) => x::l
 
+  rule	print "- compatible_arraydim failed\n"
+	--------------------------------------
+	compatible_arraydim (NONE::_,NONE::_) => fail
+
 end
 
-(**)
+(** relation: elab_arraydim_type *)
 
 relation elab_arraydim_type : Types.Type => (int option) list =
 
@@ -699,55 +725,66 @@ end
 (** relation: dae_declare
  **)
 
-relation dae_declare : (Exp.ComponentRef, SCode.Class, Absyn.VarAttr)
-	  => DAE.DAEcomp list =
+relation dae_declare : (Exp.ComponentRef,
+			Types.Type, Absyn.VarAttr) => DAE.DAEcomp list =
 
-  rule	dae_declare2 (vn, rest, par, ad) => dae
+  rule	dae_declare2 (vn, ty, par, ad) => dae
 	-----------------------------------
-	dae_declare (vn, SCode.CLASS(_,_,rest,_),
-		     Absyn.ATTR(ad,_,par,_)) => dae
+	dae_declare (vn, ty, Absyn.ATTR(ad,_,par,_)) => dae
+
+  rule	print "- dae_declare failed\n"
+	------------------------------
+	dae_declare(_,_,_) => fail
 
 end
 
-relation dae_declare2 : (Exp.ComponentRef, Absyn.Restriction, Absyn.VarType,
+relation dae_declare2 : (Exp.ComponentRef, Types.Type, Absyn.VarType,
 			 Absyn.ArrayDim)
 	  => DAE.DAEcomp list =
 
-  rule	dae_declare3 (vn, rest, DAE.VARIABLE, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.VARIABLE, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.VAR, ad) => dae
+	dae_declare2 (vn, ty, Absyn.VAR, ad) => dae
 
-  rule	dae_declare3 (vn, rest, DAE.DISCRETE, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.DISCRETE, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.DISCRETE, ad) => dae
+	dae_declare2 (vn, ty, Absyn.DISCRETE, ad) => dae
 
-  rule	dae_declare3 (vn, rest, DAE.PARAM, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.PARAM, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.PARAM, ad) => dae
+	dae_declare2 (vn, ty, Absyn.PARAM, ad) => dae
 
-  rule	dae_declare3 (vn, rest, DAE.CONST, ad) => dae
+  rule	dae_declare3 (vn, ty, DAE.CONST, ad) => dae
 	-----------------------------------------
-	dae_declare2 (vn, rest, Absyn.CONST, ad) => dae
+	dae_declare2 (vn, ty, Absyn.CONST, ad) => dae
+
+  rule	print "- dae_declare2 failed\n"
+	------------------------------
+	dae_declare2(_,_,_,_) => fail
 
 end
 
-relation dae_declare3 : (Exp.ComponentRef, Absyn.Restriction, DAE.VarKind,
+relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.VarKind,
 			 Absyn.ArrayDim)
 	  => DAE.DAEcomp list =
 
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_INT, kind, ad)
+  axiom	dae_declare3 (vn, Types.T_INTEGER, kind, ad)
 	  => [DAE.VAR(vn, kind, DAE.INT, ad)]
 	
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_REAL, kind, ad)
+  axiom	dae_declare3 (vn, Types.T_REAL, kind, ad)
 	  => [DAE.VAR(vn, kind, DAE.REAL, ad)]
 	
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_BOOL, kind, ad)
+  axiom	dae_declare3 (vn, Types.T_BOOL, kind, ad)
 	  => [DAE.VAR(vn, kind, DAE.BOOL, ad)]
 	
-  axiom	dae_declare3 (vn, Absyn.R_PREDEFINED_STRING, kind, ad)
+  axiom	dae_declare3 (vn, Types.T_STRING, kind, ad)
 	  => [DAE.VAR(vn, kind, DAE.STRING, ad)]
 
-  axiom	dae_declare3 (_,_,_,_) => []
+  rule	print "  not declaring variable " &
+	Exp.print_component_ref c & print " :: " &
+	Types.print_type ty & print "\n"
+	--------------------------------------
+	dae_declare3 (c,ty,_,_) => []
 
 end
 
@@ -942,14 +979,90 @@ relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			   SCode.Algorithm)
 	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
 
-  rule  print " algorithm\n" (* FIXME *)
-	-----------------------------
-	inst_algorithm(env,_,_,csets,ci_state,al)
-	  => ([DAE.ALGORITHM(al)],env,csets,ci_state)
+  rule	inst_statements(env,statements) => statements'
+	----------------------------------------------
+	inst_algorithm(env,_,_,csets,ci_state,SCode.ALGORITHM(statements))
+	  => ([DAE.ALGORITHM(Algorithm.ALGORITHM(statements'))],
+	      env,csets,ci_state)
 
   rule	print "- inst_algorithm failed\n"
 	---------------------------------
 	inst_algorithm(_,_,_,_,_,_) => fail
+
+end
+
+(** relation: inst_statements *)
+
+relation inst_statements : (Env, Absyn.Algorithm list)
+	  => Algorithm.Statement list =
+
+  axiom	inst_statements(env,[]) => []
+
+  rule	inst_statement(env,x) => x' &
+	inst_statements(env,xs) => xs'
+	------------------------------
+	inst_statements(env,x::xs) => x'::xs'
+
+end
+
+(** relation: inst_statement *)
+
+relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
+
+  rule	StaticExp.elab_cref (env,cr) => (ce, ct, ccon) &
+	StaticExp.elab_exp (env,e) => (e', et, econ) &
+	Algorithm.make_assignment(ce,ct,ccon,e',et,econ) => stmt
+	--------------------------------------------------------
+	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
+
+  rule	StaticExp.elab_exp(env,e) => (e',t,c) &
+	inst_statements(env,tb) => tb' &
+	inst_elseifs(env,eib) => eib' &
+	inst_statements(env,fb) => fb' &
+	Algorithm.make_if(e',t,tb',eib',fb') => stmt
+	--------------------------------------------
+	inst_statement(env,Absyn.ALG_IF(e,tb,eib,fb)) => stmt
+
+  rule	StaticExp.elab_exp (env,e) => (e',t,c) &
+	inst_statements(env,sl) => sl' &
+	Algorithm.make_for(i,e',t,c,sl') => stmt
+	---------------------------------------
+	inst_statement(env,Absyn.ALG_FOR(i,e,sl)) => stmt
+
+  rule	StaticExp.elab_exp (env,e) => (e',t,c) &
+	inst_statements(env,sl) => sl' &
+	Algorithm.make_while(e',t,c,sl') => stmt
+	---------------------------------------
+	inst_statement(env,Absyn.ALG_WHILE(e,sl)) => stmt
+
+  rule	StaticExp.elab_exp (env,e) => (e',t,c) &
+	inst_statements(env,sl) => sl' &
+	Algorithm.make_when(e',t,c,sl') => stmt
+	---------------------------------------
+	inst_statement(env,Absyn.ALG_WHEN(e,sl)) => stmt
+
+  rule	print "- inst_statement failed\n"
+	---------------------------------
+	inst_statement(_,_) => fail
+
+end
+
+(** relation: inst_elseifs *)
+
+relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
+	=> (Exp.Exp * Types.Type * Algorithm.Statement list) list =
+
+  axiom	inst_elseifs (env,[]) => []
+
+  rule	StaticExp.elab_exp(env,e) => (e',t,c) &
+	inst_statements(env,l) => stmts &
+	inst_elseifs(env,tail) => tail'
+	-------------------------------
+	inst_elseifs(env,(e,l)::tail) => ((e',t,stmts)::tail')
+
+  rule	print "- inst_elseifs failed\n"
+	-------------------------------
+	inst_elseifs(_,_) => fail
 
 end
 

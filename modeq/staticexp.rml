@@ -78,6 +78,13 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
 	elab_exp (env,Absyn.RELATION(e1,op,e2))
 	  => (e,t',c)
 
+  rule	elab_exp (env,e1) => (e1', t1, c1) &
+	elab_exp (env,e2) => (e2', t2, c2) &
+	elab_exp (env,e3) => (e3', t3, c3) &
+	elab_ifexp(e1',t1,c1,e2',t2,c2,e3',t3,c3) => (e,et,ec)
+	------------------------------------------------------
+	elab_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,et,ec)
+
   rule	elab_call(env,fn,args) => (e,t,c)
 	-------------------------------------
 	elab_exp (env,Absyn.CALL(fn,args)) => (e,t,c)
@@ -85,37 +92,35 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
   rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
 	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
 	bool_and (c_start, c_stop) => const &
-	ceval (env,start') => Values.INTEGER(startv) &
-	ceval (env,stop') => Values.INTEGER(stopv) &
-	int_sub (stopv,startv) => n & int_add (n,1) => n'
-	-----------------------------------------------
+	elab_range_type (env,start',NONE,stop',const) => t
+	--------------------------------------------------
 	elab_exp (env, Absyn.RANGE(start, NONE, stop))
-	  => (Exp.RANGE(start',NONE,stop'),
-	      Types.T_ARRAY(Types.DIM(SOME(n'),Types.NODIM), Types.T_INTEGER),
-	      const)
+	  => (Exp.RANGE(start',NONE,stop'), t, const)
 
   rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
 	elab_exp (env, step) => (step', Types.T_INTEGER, c_step) &
 	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
 	bool_and (c_start, c_step) => c1 &
 	bool_and (c1, c_stop) => const &
-	ceval (env,start') => Values.INTEGER(startv) &
-	ceval (env,step') => Values.INTEGER(stepv) &
-	ceval (env,stop') => Values.INTEGER(stopv) &
-	int_sub (stopv,startv) => n &
-	int_div (n,stepv) => n' &
- 	int_add (n',1) => n''
+	elab_range_type (env,start',SOME(step'),stop',const) => t
 	---------------------
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
-	  => (Exp.RANGE(start',SOME(step'),stop'),
-	      Types.T_ARRAY(Types.DIM(SOME(n''),Types.NODIM), Types.T_INTEGER),
-	      const)
+	  => (Exp.RANGE(start',SOME(step'),stop'), t, const)
 
   rule	elab_array (env, es) => (es', t, const) & list_length es' => l
 	--------------------------------------------------------------
 	elab_exp (env, Absyn.ARRAY(es))
 	  => (Exp.ARRAY(es'),
 	      Types.T_ARRAY(Types.DIM(SOME(l),Types.NODIM), t),
+	      const)
+
+  rule	elab_matrix (env, es) => (es', t, dim, const) & list_length es' => l
+	--------------------------------------------------------------------
+	elab_exp (env, Absyn.MATRIX(es))
+	  => (Exp.MATRIX(es'),
+	      Types.T_ARRAY(Types.DIM(SOME(l),
+				      Types.DIM(SOME(dim),
+						Types.NODIM)), t),
 	      const)
 
   rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
@@ -135,6 +140,33 @@ relation elab_exp_list : (Env.Env, Absyn.Exp list) => (Exp.Exp list, bool) =
 	bool_and (c1,c2) => c
 	---------------------------------
 	elab_exp_list (env,e::es) => (e'::es',c)
+
+end
+
+(**)
+
+relation elab_range_type : (Env.Env, Exp.Exp,
+			    Exp.Exp option, Exp.Exp, bool) => Types.Type =
+
+  rule	ceval (env,start) => Values.INTEGER(startv) &
+	ceval (env,stop) => Values.INTEGER(stopv) &
+	int_sub (stopv,startv) => n & int_add (n,1) => n'
+	-------------------------------------------------
+	elab_range_type (env,start,NONE,stop,true)
+	  => Types.T_ARRAY(Types.DIM(SOME(n'),Types.NODIM), Types.T_INTEGER)
+
+  rule	ceval (env,start) => Values.INTEGER(startv) &
+	ceval (env,step) => Values.INTEGER(stepv) &
+	ceval (env,stop) => Values.INTEGER(stopv) &
+	int_sub (stopv,startv) => n &
+	int_div (n,stepv) => n' &
+ 	int_add (n',1) => n''
+	-------------------------------------------------
+	elab_range_type (env,start,SOME(step),stop,true)
+	  => Types.T_ARRAY(Types.DIM(SOME(n''),Types.NODIM), Types.T_INTEGER)
+
+  axiom	elab_range_type (_,_,_,_,false)
+	  => Types.T_ARRAY(Types.DIM(NONE, Types.NODIM), Types.T_INTEGER)
 
 end
 
@@ -169,6 +201,55 @@ relation elab_array : (Env.Env, Absyn.Exp list)
   rule	print "- elab_array failed\n"
 	-----------------------------
 	elab_array (_,_) => fail
+
+end
+
+(** relation: elab_matrix *)
+
+relation elab_matrix : (Env.Env, Absyn.Exp list list)
+	=> (Exp.Exp list list, Types.Type, int, bool) =
+
+  rule	list_length(el) => dim &
+	elab_array(env,el) => (el', t, c)
+	---------------------------------
+	elab_matrix(env,[el]) => ([el'], t, dim, c)
+
+  rule	list_length(el) => dim1 &
+	elab_array(env,el) => (el',t1,c1) &
+	elab_matrix(env,els) => (els',t2,dim2,c2) &
+	t1 = t2 & dim1 = dim2 &
+	bool_and(c1,c2) => c
+	--------------------
+	elab_matrix(env,el::els) => (el'::els',t1,dim1,c)
+
+	(**  Error messages *)
+
+  rule	print "- How the f*ck did you write an empty matrix?\n"
+	-------------------------------------------------------
+	elab_matrix(_,[]) => fail
+
+  rule	elab_array(env,el) => (el',t1,c1) &
+	elab_matrix(env,els) => (els',t2,dim2,c2) &
+	not t1 = t2 &
+	print "# Incompatible types in matrix rows\n" &
+	print "    [" & Dump.print_list(el,Dump.print_exp,",") &
+	print "] is a row of " & Types.print_type t1 & print "\n" &
+	print "    the rest of the matrix is of " &
+	Types.print_type t2 & print "\n"
+	--------------------------------
+	elab_matrix(env,el::els) => fail
+
+  rule	list_length(el) => dim1 &
+	elab_matrix(env,els) => (els',t2,dim2,c2) &
+	not dim1 = dim2 &
+	print "# Incompatible row length in matrix expression\n" &
+	print "    [" & Dump.print_list(el,Dump.print_exp,",") &
+	print "] is a row of size " &
+	int_string dim1 => s & print s & print "\n" &
+	print "    the rest of the matrix rows are of size " &
+	int_string dim2 => s & print s & print "\n"
+	--------------------------------------------
+	elab_matrix(env,el::els) => fail
 
 end
 
@@ -221,10 +302,11 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 				       binding) &
 	print "     looked it up\n" &
 	elab_cref2 (env, c', vartype, t, binding) => (exp,const) &
+	subscript_cref_type (exp,t) => t' &
 	print "    elab_cref " & Dump.print_component_ref c &
-	print " => " & print " (" & Types.print_type t & print ")\n"
+	print " => " & print " (" & Types.print_type t' & print ")\n"
 	-------------------------
-	elab_cref(env, c) => (exp, t, const)
+	elab_cref(env, c) => (exp, t', const)
 
   rule	print "- elab_cref failed\n"
 	------------------------------
@@ -313,23 +395,94 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 
   axiom	elab_subscript (_,Absyn.NOSUB) => (Exp.NOSUB, true)
 
-  rule	elab_exp (env,sub1) => (sub1', ty, const) &
-	assert_subscript_type (ty, sub1)
-	-----------------------------------
-	elab_subscript (env,Absyn.SUBSCRIPT(sub1)) => (Exp.SUB1(sub1'), const)
+  rule	elab_exp (env,sub) => (sub', ty, const) &
+	elab_subscript_type (ty, sub, sub') => sub''
+	--------------------------------------------
+	elab_subscript (env,Absyn.SUBSCRIPT(sub)) => (sub'', const)
 
 end
 
-relation assert_subscript_type : (Types.Type, Absyn.Exp) => () =
+relation elab_subscript_type : (Types.Type, Absyn.Exp, Exp.Exp)
+	  => Exp.Subscript =
 
-  axiom	assert_subscript_type (Types.T_INTEGER,_)
+  axiom	elab_subscript_type (Types.T_INTEGER,_,sub) => Exp.INDEX(sub)
 
-  axiom	assert_subscript_type (Types.T_ARRAY(_,Types.T_INTEGER),_)
+  axiom	elab_subscript_type (Types.T_ARRAY(_,Types.T_INTEGER),_,sub)
+	  => Exp.SLICE(sub)
 
   rule	print "# Subscript is not an integer or integer array\n" &
-	print "#  expression: " & Dump.print_exp e & print "\n"
+	print "    expression: " & Dump.print_exp e &
+ 	print " :: " & Types.print_type t & print "\n"
 	------------------------------------------------------
-	assert_subscript_type (_,e) => fail
+	elab_subscript_type (t,e,_) => fail
+
+end
+
+(** relation: subscript_cref_type
+ **
+ ** If a component of an array type is subscripted, the type of the
+ ** component reference is of lower dimensionality than the
+ ** component.  This relation shows the relation between the component
+ ** type and the component reference expression type.
+ **)
+
+relation subscript_cref_type : (Exp.Exp, Types.Type) => Types.Type =
+
+  rule	subscript_cref_type2 (c, t) => t'
+	---------------------------------
+	subscript_cref_type (Exp.CREF(c), t) => t'
+
+  rule	print "  subscript_cref_type " & Exp.print_exp e & print "\n"
+	-------------------------------------------------------------
+	subscript_cref_type (e, t) => t
+
+end
+(**)
+relation subscript_cref_type2 : (Exp.ComponentRef, Types.Type) => Types.Type =
+
+  axiom	subscript_cref_type2 (Exp.CREF_IDENT(_,[]), t) => t
+
+  rule	subscript_type (dim,subs) => Types.NODIM
+	----------------------------------------
+	subscript_cref_type2 (Exp.CREF_IDENT(_,subs),
+			      Types.T_ARRAY(dim,t)) => t
+
+	(* double work *)
+  rule	subscript_type (dim,subs) => dim'
+	-----------------------------
+	subscript_cref_type2 (Exp.CREF_IDENT(_,subs),
+			      Types.T_ARRAY(dim,t)) => Types.T_ARRAY(dim',t)
+
+  rule	subscript_cref_type2 (c, t) => t'
+	---------------------------------
+	subscript_cref_type2 (Exp.CREF_QUAL(_,_,c), t) => t'
+
+end
+
+(** relation subscript_type
+ **
+ ** Given an array dimensionality and a list of subscripts, this
+ ** relation reduces the dimensionality.
+ **)
+
+relation subscript_type : (Types.ArrayDim, Exp.Subscript list)
+	  => Types.ArrayDim =
+
+  axiom	subscript_type (dim,[]) => dim
+
+  rule	subscript_type (dim, subs) => dim'
+	----------------------------------
+	subscript_type (Types.DIM(_,dim), Exp.INDEX(_)::subs) => dim'
+
+	(** FIXME: What happens when you slice the first index of a multidimensional array? *)
+  rule	subscript_type (dim, subs) => dim'
+	----------------------------------
+	subscript_type (Types.DIM(x,dim), Exp.SLICE(_)::subs)
+	  => Types.DIM(x,dim')
+
+  rule	print "- subscript_type failed\n"
+	---------------
+	subscript_type (_,_) => fail
 
 end
 
@@ -520,6 +673,62 @@ end
 relation elab_lunaryop : Absyn.LUnaryOp => Exp.LUnaryOp =
 
   axiom	elab_lunaryop Absyn.NOT => Exp.NOT
+
+end
+
+(** relation: elab_ifexp *)
+
+relation elab_ifexp : (Exp.Exp, Types.Type, bool,
+		       Exp.Exp, Types.Type, bool,
+		       Exp.Exp, Types.Type, bool)
+	  => (Exp.Exp, Types.Type, bool) =
+
+  rule	Types.same_type(t2,t3) => true &
+	const_ifexp(e1,c1,c2,c3) => c
+	-----------------------------
+	elab_ifexp(e1,Types.T_BOOL,c1,
+		   e2,t2,c2,e3,t3,c3) => (Exp.IFEXP(e1,e2,e3), t2, c)
+
+  rule	not t1 = Types.T_BOOL &
+	print "# conditional in if expression has to be boolean\n" &
+	print "    got type: " & Types.print_type t1 & print "\n" &
+	print "    expression: " & Exp.print_exp e1 & print "\n"
+	--------------------------------------------------------
+	elab_ifexp(e1,t1,c1,e2,t2,c2,e3,t3,c3) => fail
+
+  rule	Types.same_type(t2,t3) => false &
+	print "# Type mismatch in if-expression\n" &
+	print "    true branch : " & Exp.print_exp e2 &
+ 	print " :: " & Types.print_type t2 & print "\n" &
+	print "    false branch: " & Exp.print_exp e3 &
+ 	print " :: " & Types.print_type t3 & print "\n"
+	-----------------------------------------------
+	elab_ifexp(e1,Types.T_BOOL,c1,e2,t2,c2,e3,t3,c3) => fail
+
+  rule	print "- elab_ifexp failed\n"
+	-----------------------------
+	elab_ifexp(_,_,_,_,_,_,_,_,_) => fail
+
+end
+
+(** relation: const_ifexp
+ **
+ ** Tests wether an `if' expression is constant.  This is done by
+ ** first testing if the conditional is constant, and if so evaluating
+ ** it to see which branch should be tested for constant-ness.
+ **
+ ** FIXME: I don't do this now. I do the simple thing.
+ **
+ ** FIXME: It this the right criterion? Maybe a simple AND of the constants is enough?
+ **
+ ** This will miss some occations where the expression actually is
+ ** constant, as in the expression `if x then 1.0 else 1.0'.
+ **)
+
+relation const_ifexp : (Exp.Exp, bool, bool, bool) => bool =
+
+  axiom	const_ifexp(_,true,true,true) => true
+  axiom	const_ifexp(_,_,_,_) => false
 
 end
 
@@ -844,23 +1053,12 @@ relation ceval_subscript : (Env.Env, Exp.Subscript) => Exp.Subscript =
   rule	ceval (env, e1) => v1 &
 	value_exp v1 => e1'
 	-----------------------------------------
-	ceval_subscript (env, Exp.SUB1(e1)) => Exp.SUB1(e1')
+	ceval_subscript (env, Exp.INDEX(e1)) => Exp.INDEX(e1')
 	
   rule	ceval (env, e1) => v1 &
-	value_exp v1 => e1' &
-	ceval (env, e2) => v2 &
-	value_exp v2 => e2'
+	value_exp v1 => e1'
 	-----------------------------------------
-	ceval_subscript (env, Exp.SUB2(e1,e2)) => Exp.SUB2(e1',e2')
-	
-  rule	ceval (env, e1) => v1 &
-	value_exp v1 => e1' &
-	ceval (env, e2) => v2 &
-	value_exp v2 => e2' &
-	ceval (env, e3) => v3 &
-	value_exp v3 => e3'
-	-----------------------------------------
-	ceval_subscript (env, Exp.SUB3(e1,e2,e3)) => Exp.SUB3(e1',e2',e3')
+	ceval_subscript (env, Exp.SLICE(e1)) => Exp.SLICE(e1')
 	
 end
 
@@ -922,7 +1120,7 @@ relation eq_subscript : (Exp.Subscript, Exp.Subscript) => () =
  	(* FIXME: A little better, but probably not good *)
   rule	s1 = s2
 	-------------------------------
-	eq_subscript(Exp.SUB1(s1),Exp.SUB1(s2))
+	eq_subscript(Exp.INDEX(s1),Exp.INDEX(s2))
 	
   rule	print "- eq_subscript failed\n"
 	-------------------------------

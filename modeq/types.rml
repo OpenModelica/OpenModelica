@@ -268,7 +268,7 @@ relation print_type : Type => () =
 	-----------------
 	print_type T_COMPLEX(_,_)
 
-  rule	print "array(" & print_arraydim dim & print ") of " &
+  rule	print "array[" & print_arraydim dim & print "] of " &
 	print_type t
 	------------
 	print_type T_ARRAY(dim,t)

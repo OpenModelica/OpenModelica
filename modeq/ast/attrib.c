@@ -91,6 +91,7 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(OUTPUT);		/* 23 */
   tokprinter(FLOW);		/* 24 */
   tokprinter(EQUATION);		/* 25 */
+  tokprinter(ALGORITHM);	/* 27 */
   tokprinter(FINAL);		/* 28 */
   tokprinter(PUBLIC);		/* 29 */
   tokprinter(PROTECTED);	/* 30 */
@@ -102,9 +103,14 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(THEN);		/* 37 */
   tokprinter(ELSE);		/* 38 */
   tokprinter(ELSEIF);		/* 39 */
+  tokprinter(WHEN);
+  tokprinter(DO);
   tokprinter(AND);		/* 40 */
   tokprinter(NOT);		/* 42 */
   tokprinter(CONNECT);
+  tokprinter(IN);
+  tokprinter(FOR);
+  tokprinter(WHILE);
   tokprinter(EQUALS);		/* 49 */
   tokprinter(ASSIGN);		/* 50 */
   tokprinter(PLUS);		/* 51 */
@@ -112,14 +118,18 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(MULT);		/* 53 */
   tokprinter(DIV);		/* 54 */
   tokprinter(DOT);		/* 55 */
+  tokprinter(LESS);
   tokprinter(LESSEQ);		/* 57 */
-  tokprinter(GREATEREQ);	/* 59 */
+  tokprinter(GREATER);		/* 59 */
+  tokprinter(GREATEREQ);	/* 60 */
   tokprinter(COMPONENTS);	/* 66 */
   tokprinter(TYPE_PREFIX);	/* 67 */
   tokprinter(FUNCALL);		/* 68 */
   tokprinter(ELEMENT);		/* 70 */
   tokprinter(MODIFICATION);	/* 71 */
   tokprinter(SUBSCRIPT);	/* 72 */
+  tokprinter(ROW);
+  tokprinter(COLUMN);
 
   case zzEOF_TOKEN:
   default:

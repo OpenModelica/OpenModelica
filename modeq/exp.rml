@@ -58,9 +58,8 @@ module Exp:
 
   (** - Component references *)
   datatype Subscript = NOSUB
-		     | SUB1 of Exp
-		     | SUB2 of Exp * Exp
-		     | SUB3 of Exp * Exp * Exp
+		     | SLICE of Exp
+		     | INDEX of Exp
 
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
 		    	| CREF_IDENT of Ident * (Subscript list)
@@ -71,6 +70,7 @@ module Exp:
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()
   relation print_list : ('a list, 'a => (), string) => ()
+  relation int_subscripts : int list => Subscript list
 
 end
 
@@ -139,24 +139,19 @@ end
  **)
 
 relation print_subscript: Subscript => () =
-
-	rule	print ":"
-		---------
-		print_subscript(NOSUB)
-
-	rule	print_exp(e1)
-		----------
-		print_subscript(SUB1(e1))
-
-	rule	print_exp(e1) & print ":" & print_exp(e2)
-		-------------
-		print_subscript(SUB2(e1,e2))
-
-	rule	print_exp(e1) & print ":" &
-		print_exp(e2) & print ":" & print_exp(e3)
-		----------------------------------------------
-		print_subscript(SUB3(e1,e2,e3))
-
+	
+  rule	print ":"
+	---------
+	print_subscript(NOSUB)
+	
+  rule	print_exp(e1)
+	-------------
+	print_subscript(INDEX(e1))
+	
+  rule	print_exp(e1)
+	-------------
+	print_subscript(SLICE(e1))
+	
 end
 
 (** relation: print_exp
@@ -228,7 +223,9 @@ relation print_exp: Exp => () =
 	---------
 	print_exp ARRAY(es)
 	
-  rule	print "[MATRIX]"
+  rule	print "[" &
+	print_list(es, print_row, ";") &
+	print "]"
 	---------
 	print_exp MATRIX(es)
 
@@ -313,3 +310,31 @@ relation print_list : ('a list, 'a => (), string) => () =
 	print_list(h::t,r,sep)
 
 end
+
+(**)
+
+relation print_row : Exp list =>() =
+
+  rule	print_list(es,print_exp,",")
+	----------------------------
+	print_row es
+
+end
+
+(** relation: int_subscripts
+ **
+ ** This relation describes the relation between a list of integers
+ ** and a list of `Exp.Subscript' where each integer is converted to
+ ** an integer indexing expression.
+ **)
+
+relation int_subscripts : int list => Subscript list =
+
+  axiom	int_subscripts [] => []
+
+  rule	int_subscripts xs => xs'
+	------------------------
+	int_subscripts x::xs => INDEX(ICONST(x))::xs'
+
+end
+
