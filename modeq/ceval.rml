@@ -143,6 +143,12 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 	------------------------------
 	ceval (env, Exp.MATRIX(_,_,expll),impl,st,_) => (Values.ARRAY(elts),st)
 
+  rule    (* When in interactive mode, always evalutate crefs, i.e non-implicit
+	   * mode..*)
+	ceval_cref(env,c,false) => v
+	---------------------------
+	ceval (env,Exp.CREF(c,_),impl,SOME(st),_) => (v,SOME(st)) 
+
   rule	ceval_cref (env,c,impl) => v
 	---------------------------
 	ceval (env,Exp.CREF(c,_),impl,st,_) => (v,st) 
@@ -241,22 +247,29 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 
 	(* end luc_pop *)
 
+	(* FIXME: disabled calling of functions during ceval for now. Some
+	 * functions call other functions, which must be generated together in
+	 * order that compilation works  *)
+(*
+  axiom	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => fail
+*)
+
         (* Call functions in non-interactive mode. *) 
 	(* FIXME: functions are always generated. Put back the check
 	   and write another rule for the false case that generates the function *)
   rule	(* Static.is_function_in_cflist(cflist,funcpath) => true & *)
-	Debug.fprint("ceval", "- ceval call begin") &
+	Debug.fprintln("ceval", "- ceval call begin") &
 	ceval_generate_function(env, funcpath) &
-	Debug.fprint("ceval", "- ceval func generated") &
+	Debug.fprintln("ceval", "- ceval func generated") &
 	ceval_list(env,expl,impl,st) => vallst &
-	Debug.fprint("ceval", "- ceval args evaluated") &
+	Debug.fprintln("ceval", "- ceval args evaluated") &
 	ModUtil.path_string2(funcpath,"_") => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
 	Values.write_to_file_as_args(vallst,infilename)  &
 	System.execute_function(funcstr) &
 	System.read_values_from_file(outfilename) => newval
-	& Debug.fprint("ceval", "- ceval call success")
+	& Debug.fprintln("ceval", "- ceval call success")
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => (newval,st)
 
@@ -1005,7 +1018,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
 	Util.string_append_list([cname_str,".makefile"]) => makefilename &
 	SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
-	SimCodegen.generate_residual_code(indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
+	SimCodegen.generate_residual_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
 	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
 				      starttime_r,stoptime_r,stepsize_r) &
 	SimCodegen.generate_makefile(makefilename,classname) &
@@ -1447,7 +1460,7 @@ relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
 	--------------------------------------------------
 	ceval_builtin_size_2 (Values.ARRAY(l::lst), ind) => dim
 
-  rule	(*Debug.fprint("failtrace","- ceval_builtin_size_2 failed\n")*)
+  rule	Debug.fprint("failtrace","- ceval_builtin_size_2 failed\n")
 	-------------------------------------
 	ceval_builtin_size_2(_,_) => fail
 end
@@ -1735,32 +1748,93 @@ end
 
 relation ceval_generate_function : (Env.Env, Absyn.Path) => () =
 
-  rule	Debug.fprint("ceval", "- ceval_generate_function starting") &
+  rule	Debug.fprintln("ceval", "/*- ceval_generate_function starting*/") &
 	ModUtil.path_string2 (path,"_") => pathstr &
-	Lookup.lookup_class(env, path, false) => (cls, env') &
-	Inst.implicit_function_instantiation(env', Types.NOMOD,
-					     Prefix.NOPRE, [], cls, [], false)
-	  => (env'',d) &
-
-	ModUtil.string_prefix_params DAE.DAE(d) => d' &
-	Print.clear_buf &
-	Codegen.generate_functions(d') &
+	ceval_generate_function_str (path,env,[]) => (gencodestr,_) &
 	string_append(pathstr,".c") => filename &
+	Print.clear_buf &
+(*
+	string_append("CEVALGENFUNC_", pathstr) => defmacro &
+	Print.print_buf "#ifndef " & Print.print_buf defmacro & Print.print_buf "\n" &
+	Print.print_buf "#define " & Print.print_buf defmacro & Print.print_buf "\n" &
+*)
 	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
-	Print.print_buf "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\\n\");\n      return 1;\n    }\n" &
+	Print.print_buf gencodestr &
+	Print.print_buf "\nint main(int argc, char** argv)\n" &
+	Print.print_buf "{\n\n  if (argc != 3)\n" &
+	Print.print_buf "{\n      fprintf(stderr,\"# Incorrect number of arguments\\n\");\n" &
+	Print.print_buf "return 1;\n    }\n" &
 	Print.print_buf pathstr &
 	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
+(*
+	Print.print_buf "#endif /*" & Print.print_buf defmacro & Print.print_buf "*/\n" & 
+*)
 	Print.write_buf(filename)&
 	System.compile_c_file(filename) 
 	--------------------------------------
 	ceval_generate_function (env, path)
 
 
-  rule	Debug.fprint("failtrace","- ceval_generate_function failed\n")
+  rule	Debug.fprint("failtrace","/*- ceval_generate_function failed*/\n")
 	-------------------------------------
 	ceval_generate_function(_,_) => fail
 
 
+end
+
+(* Generates a function with the given path, and all functions that are called
+ * within that function. The string list contains names of functions already
+ * generated, which won't be generated again *)
+relation ceval_generate_function_str : (Absyn.Path, Env.Env, Absyn.Path list) => (string, Absyn.Path list) =
+
+	(* If getmember succeeds, path is in generated functions list, so do nothing *) 
+  rule	Util.list_getmember_p(path, gflist, ModUtil.path_equal) => gfmember 
+	--------------------------------------------------------------------
+	ceval_generate_function_str (path, env, gflist) => ("",gflist)
+
+	(* If getmember fails, path is not in generated functions list, hence
+	 * generate it *) 
+  rule	not Util.list_getmember_p(path, gflist, ModUtil.path_equal) => _ &
+	Debug.fprintln("ceval", "/*- ceval_generate_function_str starting*/") &
+	Lookup.lookup_class(env, path, false) => (cls, env') &
+	Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/") &
+	Inst.implicit_function_instantiation(env', Types.NOMOD, Prefix.NOPRE, [], cls, [], false) => (env'',d) &
+	Debug.fprint("ceval", "/*- ceval_generate_function_str getting functions: ") &
+	SimCodegen.get_called_functions_in_function (path, DAE.DAE(d)) => calledfuncs &
+	Util.list_map(calledfuncs, Absyn.path_string) => debugfuncs &
+	Util.string_delimit_list(debugfuncs, ", ") => debugfuncsstr &
+	Debug.fprint("ceval", debugfuncsstr) &
+	Debug.fprintln("ceval", "*/") &
+	ceval_generate_function_str_list (calledfuncs, env, gflist) => (calledfuncsstrs, gflist') &
+	Debug.fprint("ceval", "/*- ceval_generate_function_str prefixing dae */") &
+	ModUtil.string_prefix_params DAE.DAE(d) => d' &
+	Print.clear_buf &
+	Absyn.path_string path => funcname &
+	Util.string_append_list(["/*---FUNC: ", funcname, " ---*/\n\n"]) => funccom &
+	Print.print_buf funccom &
+	Debug.fprintln("ceval", "/* - ceval_generate_function_str generating functions */") &
+	Codegen.generate_functions(d') &
+	Print.get_string => thisfuncstr &
+	Util.list_append_elt(thisfuncstr, calledfuncsstrs) => calledfuncsstrs' &
+	Util.string_delimit_list(calledfuncsstrs', "\n\n") => resstr
+	---------------------------------------------------------------------------
+	ceval_generate_function_str (path, env, gflist) => (resstr, path::gflist)
+
+
+  rule	Debug.fprint("failtrace","/*- ceval_generate_function_str failed*/\n")
+	-------------------------------------
+	ceval_generate_function_str(_,_,_) => fail
+
+end
+
+relation ceval_generate_function_str_list : (Absyn.Path list, Env.Env, Absyn.Path list) => (string list, Absyn.Path list) =
+
+  axiom	ceval_generate_function_str_list ([],env,gflist) => ([], gflist)
+
+  rule	ceval_generate_function_str (first,env,gflist) => (firststr,gflist') &
+	ceval_generate_function_str_list (rest,env,gflist') => (reststr,gflist'')
+	-------------------------------------------------------------------------
+	ceval_generate_function_str_list (first::rest, env, gflist) => (firststr::reststr, gflist'')
 end
 
 

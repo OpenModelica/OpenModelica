@@ -69,6 +69,8 @@ module Codegen :
 							  ReturnTypeStruct *
 							  ArgumentDeclaration list							  
   relation generate_functions : DAE.DAElist => ()
+  relation generate_function_bodies : DAE.DAElist => ()
+  relation generate_function_headers : DAE.DAElist => ()
   relation generate_algorithm: (DAE.Element, int)
 	  => (CFunction, int) 
 	  
@@ -193,27 +195,61 @@ relation c_print_function : CFunction => () =
 	Util.string_append_list [rt," ",fn,"(",args_str,") {"] => stmt_str &
 	
 	let i0 = 0 &
-	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
-	c_print_indented (stmt_str,i1) => i2 & Print.print_buf "\n" &
+(*	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" & *)
+	c_print_indented (stmt_str,i0) => i2 & Print.print_buf "\n" &
 	c_print_indented_list (vd,i2)  => i3 & Print.print_buf "\n" &
 	c_print_indented_list (is,i3)  => i4 & Print.print_buf "\n" &
 	c_print_indented_list (st,i4)  => i5 & Print.print_buf "\n" &
 	c_print_indented_list (cl,i5)  => i6 & Print.print_buf "\n" &
 	c_print_indented      ("}",i6) => i7 & Print.print_buf "\n"
-	-----------
+	-----------------------------------------------------------
 	c_print_function CFUNCTION(rt,fn,rts,ad,vd,is,st,cl)
 
   rule	Util.string_delimit_list(ads,", ") => args_str &
-	Util.string_append_list [rt," ",fn,"(",args_str,");\n"] => stmt_str &
+	Util.string_append_list ["extern ", rt," ",fn,"(",args_str,");\n"] => stmt_str &
 	let i0 = 0 &
-	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
-	Print.print_buf "extern " & Print.print_buf stmt_str
-	---------------------------------------------------
+(*	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" & *)
+	c_print_indented (stmt_str,i0) => i2 & Print.print_buf "\n"
+	-----------------------------------------------------------
 	c_print_function CEXTFUNCTION(rt,fn,rts,ads)
 
   rule	Print.print_buf "# c_print_function_failed\n"
 	-----------
 	c_print_function _
+end
+
+relation c_print_function_headers : CFunction list => () =
+
+  axiom	c_print_function_headers []
+
+  rule	c_print_function_header(f) &
+	c_print_function_headers(r)
+	---------------------
+	c_print_function_headers f::r
+end
+
+relation c_print_function_header : CFunction => () =
+
+  rule	Util.string_delimit_list(ad,", ") => args_str &
+	Util.string_append_list [rt," ",fn,"(",args_str,");"] => stmt_str &
+	
+	let i0 = 0 &
+	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
+	c_print_indented (stmt_str,i1) => i2 & Print.print_buf "\n"
+	-----------------------------------------------------------
+	c_print_function_header CFUNCTION(rt,fn,rts,ad,vd,is,st,cl)
+
+  rule	Util.string_delimit_list(ads,", ") => args_str &
+	Util.string_append_list ["extern ", rt," ",fn,"(",args_str,");\n"] => stmt_str &
+	let i0 = 0 &
+	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
+	c_print_indented (stmt_str,i1) => i2 & Print.print_buf "\n"
+	---------------------------------------------------
+	c_print_function_header CEXTFUNCTION(rt,fn,rts,ads)
+
+  rule	Print.print_buf "# c_print_function_header failed\n"
+	-----------
+	c_print_function_header _
 end
 
 relation c_print_indented_list : (string list, int) => int =
@@ -372,13 +408,10 @@ end
 
 relation generate_functions : DAE.DAElist => () =
 
-  rule	Debug.fprintln ("cgtr", "generate_functions") &
-	generate_functions_elist elist => cfns &
-	Print.print_buf "#include \"modelica.h\"\n" &
-	c_print_functions cfns &
-	Print.print_buf "\n"
+  rule	generate_function_headers dae &
+	generate_function_bodies dae
 	------------------------------
-	generate_functions DAE.DAE(elist)
+	generate_functions (dae as DAE.DAE(elist))
 
   rule	Print.print_buf "# generate_functions failed\n"
 	--------------------------------------
@@ -386,6 +419,39 @@ relation generate_functions : DAE.DAElist => () =
 
 end
 
+relation generate_function_bodies : DAE.DAElist => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_function_bodies") &
+	generate_functions_elist elist => cfns &
+	Print.print_buf "\n/* body part */\n" &
+	c_print_functions cfns &
+	Print.print_buf "\n"
+	------------------------------
+	generate_function_bodies DAE.DAE(elist)
+
+  rule	Print.print_buf "# generate_function_bodies failed\n"
+	--------------------------------------
+	generate_function_bodies _  => fail
+
+end
+
+
+relation generate_function_headers : DAE.DAElist => () =
+
+  rule	Debug.fprintln ("cgtr", "generate_function_headers") &
+	generate_functions_elist elist => cfns &
+	Print.print_buf "/* header part */\n" &
+	Print.print_buf "#include \"modelica.h\"\n" & (* FIXME: needed? *)
+	c_print_function_headers cfns &
+	Print.print_buf "\n"
+	------------------------------
+	generate_function_headers DAE.DAE(elist)
+
+  rule	Print.print_buf "# generate_function_headers failed\n"
+	--------------------------------------
+	generate_function_headers _  => fail
+
+end
 
 
 relation generate_functions_elist : DAE.Element list => CFunction list =
@@ -492,6 +558,7 @@ relation generate_function : DAE.Element => CFunction list =
 	generate_function comp => fail
 	
 end
+
 
 relation generate_ext_function_name : (string, string) => string =
 

@@ -183,17 +183,19 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
   char* str = RML_STRINGDATA(rmlA0);
   char command[255];
   char exename[255];
-  assert(strlen(str) < 255);
+  if(strlen(str) >= 255) {
+    RML_TAILCALLK(rmlFC);
+  }
   if (cc == NULL||cflags == NULL) {
-    /* RMLFAIL */
+    RML_TAILCALLK(rmlFC);
   }
   memcpy(exename,str,strlen(str)-2);
   exename[strlen(str)-2]='\0';
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   printf("compile using: %s\n",command);
- if (system(command) != 0) {
-    /* RMLFAIL */
+  if (system(command) != 0) {
+    RML_TAILCALLK(rmlFC);
   }
        
   RML_TAILCALLK(rmlSC);
@@ -223,9 +225,10 @@ RML_BEGIN_LABEL(System__execute_5ffunction)
   char command[255];
   int ret_val;
   sprintf(command,"./%s %s_in.txt %s_out.txt",str,str,str);
-  ret_val = system(command);
-  
-  assert(ret_val == 0);
+  ret_val = system(command);  
+  if (ret_val != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
 
   RML_TAILCALLK(rmlSC);
 }
@@ -446,7 +449,9 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file=NULL;
   file = fopen(filename,"r");
-  assert(file != NULL);
+  if (file == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
   
   read_type_description(file,&desc);
   
@@ -470,7 +475,9 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
 	  size *= desc.dim_size[currdim];
 	}
 	rval_arr = (float*)malloc(sizeof(float)*size);
-	assert(rval_arr);
+	if(rval_arr == NULL) {
+	  RML_TAILCALLK(rmlFC);
+	}
 	/* Fill the array in reversed order */
 	for(i=size-1;i>=0;i--) {
 	  fscanf(file,"%e",&rval_arr[i]);
@@ -489,7 +496,9 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
 	  size *= desc.dim_size[currdim];
 	}
 	ival_arr = (int*)malloc(sizeof(int)*size);
-	assert(rval_arr);
+	if(rval_arr==NULL) {
+	  RML_TAILCALLK(rmlFC);
+	}
 	/* Fill the array in reversed order */
 	for(i=size-1;i>=0;i--) {
 	  fscanf(file,"%f",&ival_arr[i]);

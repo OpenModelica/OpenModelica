@@ -94,7 +94,9 @@ module Algorithm:
 
   relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties) 
 	  => Statement
-	
+
+  relation get_all_exps : Algorithm => Exp.Exp list
+
 end
 
 with "util.rml"
@@ -353,3 +355,89 @@ relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties)
 	 make_assert(_,_,Types.PROP(condt,_),_) => fail 
 	 *)
 end 
+
+(** relation: get_all_exps
+ ** 
+ ** This relation goes through the Algorithm structure and finds all the
+ ** expressions and returns them in a list
+ **)
+relation get_all_exps : Algorithm => Exp.Exp list =
+
+  rule	get_all_exps_stmts stmts => exps
+	-----------------------------------
+	get_all_exps ALGORITHM(stmts) => exps
+
+end
+
+relation get_all_exps_stmts : Statement list => Exp.Exp list=
+
+  rule	Util.list_map(stmts, get_all_exps_stmt) => expslist &
+	Util.list_flatten(expslist) => exps
+	-----------------------------------
+	get_all_exps_stmts stmts => exps
+end
+
+
+relation get_all_exps_stmt : Statement => Exp.Exp list =
+
+  rule	cref_to_exp cr => crexp
+	-----------------------
+	get_all_exps_stmt ASSIGN(expty, cr, exp) => [crexp,exp]
+
+  rule	list_append(explist,[exp]) => exps
+	---------------------------------
+	get_all_exps_stmt TUPLE_ASSIGN(expty, explist, exp) => exps
+
+  rule	cref_to_exp cr => crexp
+	-----------------------
+	get_all_exps_stmt ASSIGN_ARR(expty, cr, exp) => [crexp,exp]
+
+
+  rule	get_all_exps_stmts stmts => exps1 &
+	get_all_exps_else else => elseexps &
+	list_append(exps1, elseexps) => exps
+	------------------------------------
+	get_all_exps_stmt IF(exp, stmts, else) => exp::exps
+
+  rule	get_all_exps_stmts stmts => exps
+	--------------------------------
+	get_all_exps_stmt FOR(expty, flag, id, exp, stmts) => exp::exps
+
+  rule	get_all_exps_stmts stmts => exps
+	--------------------------------
+	get_all_exps_stmt WHILE(exp, stmts) => exp::exps
+
+  rule	get_all_exps_stmts stmts => exps
+	--------------------------------
+	get_all_exps_stmt WHEN(exp, stmts) => exp::exps
+
+  axiom	get_all_exps_stmt ASSERT(e1, e2) => [e1,e2]
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_stmt failed")
+	----------------------------------------------------------
+	get_all_exps_stmt _ => fail
+
+end
+
+relation get_all_exps_else : Else => Exp.Exp list =
+
+  axiom	get_all_exps_else NOELSE => []
+
+  rule	get_all_exps_stmts stmts => exps1 &
+	get_all_exps_else else => elseexps &
+	list_append (exps1,elseexps) => exps
+	------------------------------------
+	get_all_exps_else ELSEIF(exp,stmts,else) => exp::exps
+
+  rule	get_all_exps_stmts stmts => exps	
+	----------------------------------------
+	get_all_exps_else ELSE(stmts) => exps
+
+end
+
+
+relation cref_to_exp : Exp.ComponentRef => Exp.Exp =
+
+  axiom	cref_to_exp cref => Exp.CREF(cref, Exp.OTHER)
+
+end

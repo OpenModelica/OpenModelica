@@ -189,6 +189,9 @@ returns multiple arguments. *)
   relation flatten_array_type : Type => (Type, int list)
 
   relation flow_variables: (Var list, Exp.ComponentRef) => Exp.ComponentRef list
+
+  relation get_all_exps : Type => Exp.Exp list
+
 end
 
 
@@ -800,30 +803,45 @@ end
 relation print_type : Type => () =
 
   rule	Print.print_buf "Integer" 
+	& Print.print_buf " ("
+	& Dump.print_list(vars, print_var, ", ")
+	& Print.print_buf ")" 
 	---------------
-	print_type((T_INTEGER(_),_))
+	print_type((T_INTEGER(vars),_))
 
   rule	Print.print_buf "Real" 
+	& Print.print_buf " ("
+	& Dump.print_list(vars, print_var, ", ")
+	& Print.print_buf ")" 
 	------------
-	print_type((T_REAL(_),_))
+	print_type((T_REAL(vars),_))
 
   rule	Print.print_buf "String"
+	& Print.print_buf " ("
+	& Dump.print_list(vars, print_var, ", ")
+	& Print.print_buf ")" 
 	--------------
-	print_type((T_STRING(_),_))
+	print_type((T_STRING(vars),_))
 
   rule	Print.print_buf "Boolean" 
+	& Print.print_buf " ("
+	& Dump.print_list(vars, print_var, ", ")
+	& Print.print_buf ")" 
 	---------------
-	print_type((T_BOOL(_),_))
+	print_type((T_BOOL(vars),_))
 
   rule	Print.print_buf "EnumType" 
 	---------------
 	print_type((T_ENUM,_))
 
-  rule	Print.print_buf "enumeration(" &
+  rule	Print.print_buf "enumeration((" &
 	Dump.print_list(l,print, ", ") &
 	Print.print_buf ") "  
+	& Print.print_buf ", ("
+	& Dump.print_list(vars, print_var, ", ")
+	& Print.print_buf ")" 
 	---------------------
-	print_type((T_ENUMERATION(l,_),_))
+	print_type((T_ENUMERATION(l,vars),_))
 
   rule	Print.print_buf "composite(" &
 	Print.print_buf ", (" &
@@ -1615,4 +1633,111 @@ relation flow_variables: (Var list, Exp.ComponentRef) => Exp.ComponentRef list =
   rule	flow_variables(vs,cr) => res
 	-------------------------
 	flow_variables(_::vs,cr) => res
+end
+
+(** relation: get_all_exps
+ ** 
+ ** This relation goes through the Type structure and finds all the
+ ** expressions and returns them in a list
+ **)
+relation get_all_exps : Type => Exp.Exp list =
+
+  rule	get_all_exps_tt ttype => exps
+	-----------------------------
+	get_all_exps ((ttype, pathopt)) => exps
+
+end
+
+(** relation: get_all_exps_tt
+ ** 
+ ** This relation goes through the TType structure and finds all the
+ ** expressions and returns them in a list
+ **)
+relation get_all_exps_tt : TType => Exp.Exp list =
+
+  rule	get_all_exps_vars vars => exps
+	---------------------------------------------
+	get_all_exps_tt T_INTEGER(vars) => exps
+
+  rule	get_all_exps_vars vars => exps
+	---------------------------------------------
+	get_all_exps_tt T_REAL(vars) => exps
+
+  rule	get_all_exps_vars vars => exps
+	---------------------------------------------
+	get_all_exps_tt T_STRING(vars) => exps
+
+  rule	get_all_exps_vars vars => exps
+	---------------------------------------------
+	get_all_exps_tt T_BOOL(vars) => exps
+
+  rule	get_all_exps_vars vars => exps
+	---------------------------------------------
+	get_all_exps_tt T_ENUMERATION(strs, vars) => exps
+
+  rule	get_all_exps ty => exps
+	---------------------------------------------
+	get_all_exps_tt T_ARRAY(dim, ty) => exps
+
+  rule	get_all_exps_vars vars => exps
+	---------------------------------------------
+	get_all_exps_tt T_COMPLEX(cinf, vars) => exps
+
+  rule	Util.list_map(fargs, get_funcarg_type) => tys &
+	Util.list_map(tys, get_all_exps) => explists &
+	get_all_exps ty => tyexps &
+	Util.list_flatten(tyexps::explists) => exps
+	-------------------------------------------
+	get_all_exps_tt T_FUNCTION(fargs, ty) => exps
+
+  rule	Util.list_map(tys, get_all_exps) => explist &
+	Util.list_flatten(explist) => exps
+	----------------------------------
+	get_all_exps_tt T_TUPLE (tys) => exps
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_tt failed")
+	--------------------------------------------------------
+	get_all_exps_tt _ => fail
+
+end
+
+relation get_all_exps_vars : Var list => Exp.Exp list =
+
+  rule	Util.list_map(vars, get_all_exps_var) => explist &
+	Util.list_flatten(explist) => exps
+	----------------------------------
+	get_all_exps_vars vars => exps
+	
+end
+
+relation get_all_exps_var : Var => Exp.Exp list =
+
+  rule	get_all_exps ty => tyexps &
+	get_all_exps_binding bnd => bndexp &
+	list_append (tyexps,bndexp) => exps
+	----------------------------
+	get_all_exps_var VAR(id,attr,prot,ty,bnd) => exps
+	
+end
+
+
+relation get_all_exps_binding : Binding => Exp.Exp list =
+
+  axiom	get_all_exps_binding EQBOUND(exp,cnst) => [exp]
+
+  axiom	get_all_exps_binding UNBOUND => []
+
+  axiom	get_all_exps_binding VALBOUND(v) => []
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_binding failed")
+	-------------------------------------------------------------
+	get_all_exps_binding _ => fail
+
+end
+
+
+relation get_funcarg_type: FuncArg => Type =
+
+  axiom	get_funcarg_type ((id,ty)) => ty
+
 end

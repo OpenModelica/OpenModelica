@@ -22,6 +22,10 @@
 #ifndef MODELICA_H_
 #define MODELICA_H_
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "memory_pool.h"
 #include "index_spec.h"
 
@@ -39,4 +43,9 @@ typedef modelica_string_t modelica_string;
 
 typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;
+
+#if defined(__cplusplus)
+}
+#endif
+
 #endif

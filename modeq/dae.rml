@@ -172,6 +172,7 @@ module DAE:
   relation dae_to_record_value: (Element list, bool (*impl*) ) => Values.Value
   relation to_modelica_form: (DAElist) => DAElist
   relation get_named_function : (Absyn.Path, Element list) => Element list
+  relation get_all_exps : Element list => Exp.Exp list
 
 end
 
@@ -190,6 +191,7 @@ with "print.rml"
 with "util.rml"
 with "ceval.rml"
 with "modutil.rml"
+with "debug.rml"
 
 (** relation: dump
  **
@@ -2020,8 +2022,160 @@ relation get_named_function : (Absyn.Path, Element list) => Element list  =
 	-----------------------------------------	
 	get_named_function (path, el::rest) => res
 
-  rule	Print.print_buf "#-- get_named_function failed\n"
+  rule	Debug.fprintln("failtrace", "-- get_named_function failed")
 	-------------------------------------------------
 	get_named_function (_, _) => fail
 
 end
+
+
+(** relation: get_all_exps
+ ** 
+ ** This relation goes through the DAE structure and finds all the
+ ** expressions and returns them in a list
+ **)
+relation get_all_exps : Element list => Exp.Exp list =
+
+  rule	Util.list_map(elements, get_all_exps_element) => expslist &
+	Util.list_flatten(expslist) => exps
+	-----------------------------------
+	get_all_exps elements => exps
+
+end
+
+relation cref_to_exp : Exp.ComponentRef => Exp.Exp =
+
+  axiom	cref_to_exp cref => Exp.CREF(cref, Exp.OTHER)
+
+end
+
+(** relation: get_all_exps_element
+ ** 
+ ** Helper to get_all_exps. Implements get_all_exps for different kinds of
+ ** elements 
+ **)
+relation get_all_exps_element : Element => Exp.Exp list =
+
+	(* VAR *)
+  rule	Util.option_to_list bndexp => e1 &
+	Util.option_to_list startvalexp => e2 &
+	Util.list_map(instdims, get_all_exps_subscript) => e3 &
+	Util.list_flatten(e3) => e3 &
+	cref_to_exp cref => crefexp &
+	Util.list_flatten([e1, e2, e3, [crefexp]]) => exps
+	-------------------------------------------------------
+	get_all_exps_element VAR(cref,vk,vd,ty,bndexp,instdims,startvalexp,flow,pathlist) => exps
+
+
+  rule	cref_to_exp cref => crefexp 
+	----------------------------
+	get_all_exps_element DEFINE(cref, exp) => [crefexp, exp]
+
+  rule	cref_to_exp cref => crefexp
+	---------------------------
+	get_all_exps_element INITIALDEFINE(cref, exp) => [crefexp, exp]
+
+
+  axiom	get_all_exps_element EQUATION(e1, e2) => [e1,e2]
+
+  rule	Util.option_to_list elsewhenopt => ellist &
+	list_append(eqs,ellist) => elements &
+	get_all_exps elements => exps
+	---------------------------------------------------
+	get_all_exps_element WHEN_EQUATION(cond, eqs, elsewhenopt) => cond::exps
+	
+
+  rule	get_all_exps eqstrueb => explist1 &
+	get_all_exps eqsfalseb => explist2 &
+	Util.list_flatten([[cond],explist1,explist2]) => exps
+	---------------------------------------------------
+	get_all_exps_element IF_EQUATION(cond, eqstrueb, eqsfalseb) => exps
+
+
+  axiom	get_all_exps_element INITIALEQUATION(e1,e2) => [e1,e2]
+
+  rule	Algorithm.get_all_exps alg => exps
+	---------------------------------------------------
+	get_all_exps_element ALGORITHM(alg) => exps
+
+  rule	Algorithm.get_all_exps alg => exps
+	---------------------------------------------------
+	get_all_exps_element INITIALALGORITHM(alg) => exps
+
+  rule	get_all_exps elements => exps
+	-----------------------------
+	get_all_exps_element COMP(id, DAE(elements)) => exps
+
+
+  rule	get_all_exps elements => exps1 &
+	Types.get_all_exps ty => exps2 &
+	list_append(exps1,exps2) => exps
+	--------------------------------
+	get_all_exps_element FUNCTION(path, DAE(elements), ty) => exps
+
+  rule	get_all_exps elements => exps1 &
+	Types.get_all_exps ty => exps2 &
+	get_all_exps_extarg retarg => exps3 &
+	Util.list_map(args, get_all_exps_extarg) => argexps &
+	list_append([exps1,exps2,exps3],argexps) => expslist &
+	Util.list_flatten(expslist) => exps 
+	------------------------------------
+	get_all_exps_element EXTFUNCTION(path, DAE(elements), ty,
+					 EXTERNALDECL(fname, args, retarg, lang)) => exps
+
+  axiom	get_all_exps_element ASSERT(exp) => [exp]
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_element failed")
+	-------------------------------------------------------------
+	get_all_exps_element _ => fail
+
+
+end
+
+			     
+(** relation: get_all_exps_subscript
+ ** 
+ ** Get all exps from a Subscript 
+ **)
+relation get_all_exps_subscript : Exp.Subscript => Exp.Exp list =
+
+  axiom	get_all_exps_subscript Exp.WHOLEDIM => []
+  axiom	get_all_exps_subscript Exp.SLICE(e) => [e]
+  axiom	get_all_exps_subscript Exp.INDEX(e) => [e]
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_subscript failed")
+	------------------------------------------------------------
+	get_all_exps_subscript _ => fail	     			     
+end
+
+(** relation: get_all_exps_extarg
+ ** 
+ ** Get all exps from an ExtArg 
+ **)
+relation get_all_exps_extarg : ExtArg => Exp.Exp list =
+
+  rule	cref_to_exp cref => exp1 &
+	Types.get_all_exps ty => explist &
+	list_append([exp1],explist) => exps
+	-----------------------------------
+	get_all_exps_extarg EXTARG(cref, attr, ty) => exps
+
+  rule	Types.get_all_exps ty => explist &
+	list_append([exp1], explist) => exps
+	-----------------------------------
+	get_all_exps_extarg EXTARGEXP(exp1, ty) => exps	
+
+  rule	cref_to_exp cref => crefexp &
+	Types.get_all_exps ty => tyexps &
+	Util.list_flatten([[crefexp], tyexps, [exp]]) => exps
+	-----------------------------------------------------
+	get_all_exps_extarg EXTARGSIZE(cref, attr, ty, exp) => exps
+
+  axiom	get_all_exps_extarg NOEXTARG => []
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_extarg failed")
+	------------------------------------------------------------
+	get_all_exps_extarg _ => fail	     
+
+end
+

@@ -109,4 +109,9 @@ algorithm
 end misc_simplex1;
 
 model mo
+  parameter Real a[3,3]=[1,2,3;4,5,6;7,8,9];
+  Real b[2];
+  Real x;
+equation
+  b=misc_simplex1(a);
 end mo;

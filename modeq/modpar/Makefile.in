@@ -1,3 +1,6 @@
+srcdir= .
+top_builddir= ../..
+
 BOOST_HOME = @BOOSTHOME@
 RMLINCLUDE = @rmlinc@
 
@@ -41,3 +44,10 @@ Schedule.o: Schedule.cpp Schedule.hpp
 
 clean:
 	rm -rf $(OBJECTS)
+
+reallyclean: clean
+
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in
+	$(top_builddir)/config.status Makefile

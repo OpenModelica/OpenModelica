@@ -4872,10 +4872,10 @@ relation get_all_exps : DAELow => Exp.Exp list =
 	get_all_exps_eqns eqns => exps3 &
 	get_all_exps_eqns reqns => exps4 &
 	get_all_exps_eqns ieqns => exps5 &
-	Util.list_flatten([exps1, exps2, exps3, exps4, exps5]) => exps
-	(*
-	get_all_exps_algs algs => exps6 &
-	Util.list_flatten([exps1, exps2, exps3, exps4, exps5, exps6]) => exps *)
+	array_list algs => alglst &
+	Util.list_map(alglst, Algorithm.get_all_exps) => explist6 &
+	list_append([exps1, exps2, exps3, exps4, exps5],explist6) => explist &
+	Util.list_flatten(explist) => exps
 	---------------------------------------------------------------------	
 	get_all_exps (DAELOW(vars1,vars2,eqns,reqns,ieqns,algs)) => exps
 
@@ -4952,7 +4952,11 @@ end
 relation get_all_exps_eqn : Equation => Exp.Exp list =
 
   axiom	get_all_exps_eqn EQUATION(e1, e2) => [e1, e2]
-  axiom	get_all_exps_eqn SOLVED_EQUATION(cr, e) => [e]
-  axiom	get_all_exps_eqn ALGORITHM(_,_,_) => []
+  axiom	get_all_exps_eqn SOLVED_EQUATION(cr, e) => [Exp.CREF(cr,Exp.OTHER),e]
+
+  rule	list_append(e1, e2) => exps
+	---------------------------------
+	get_all_exps_eqn ALGORITHM(ind,e1,e2) => exps
 			     
 end
+

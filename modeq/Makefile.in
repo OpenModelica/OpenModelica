@@ -111,7 +111,22 @@ dclean:
 	-$(RM) -f $(PROGD)$(EXEEXT)
 
 
-reallyclean: clean dclean
+reallyclean:
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) reallyclean) \
+	done
+	(cd modeq_release; $(MAKE) reallyclean)
+	-$(RM) -f $(SRCH)
+	-$(RM) -f $(PROG)$(EXEEXT)
+
+dreallyclean: 
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) reallyclean) \
+	done
+	(cd modeq_debug; $(MAKE) reallyclean)
+	-$(RM) -f $(SRCRDB)
+	-$(RM) -f $(SRCH)
+	-$(RM) -f $(PROGD)$(EXEEXT)
 
 report:
 	@(cd report ; $(MAKE))

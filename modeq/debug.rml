@@ -52,7 +52,6 @@ end
 
 
 with "rtopts.rml"
-with "dump.rml"
 with "print.rml"
 
 
@@ -89,7 +88,7 @@ end
 relation fprint: (string, string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
-	Print.print_buf str
+	Print.print_error_buf str
 	-------------------
 	fprint (flag, str)
 
@@ -100,8 +99,8 @@ end
 relation fprintln: (string, string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
-	Print.print_buf str &
-	Print.print_buf "\n"
+	Print.print_error_buf str &
+	Print.print_error_buf "\n"
 	-------------------
 	fprintln (flag, str)
 
@@ -113,7 +112,7 @@ relation fprintl: (string, string list) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
 	make_string strlist => str &
-	Print.print_buf str
+	Print.print_error_buf str
 	-------------------
 	fprintl (flag, strlist)
 
@@ -210,10 +209,25 @@ end
 relation fprint_list: (string, 'a list, 'a => (), string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
-	Dump.print_list (lst, func, sep)
+	print_list (lst, func, sep)
 	--------------------------------
 	fprint_list (flag, lst, func, sep)
 
   axiom	fprint_list (_,_,_,_)
+
+end
+
+relation print_list : ('a list, 'a => (), string) => () =
+
+  axiom	print_list([],_,_)
+	
+  rule	r(h)
+	------------------
+	print_list([h],r,_)
+
+  rule	r(h) & Print.print_error_buf sep &
+	print_list(t,r,sep)
+	-------------------------------------
+	print_list(h::t,r,sep)
 
 end

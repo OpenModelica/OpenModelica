@@ -3926,32 +3926,31 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	Types.unparse_type t2  => str &	Print.print_error_buf str &
 	Print.print_error_buf "\n"
 	----------
-	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2,Types.PROP(t2,_), initial,impl) => fail
+	inst_eq_equation(e1,Types.PROP(t1,_), e2,Types.PROP(t2,_), initial,impl) => fail
 
 
 (* PR To debug*)
 
-  rule	(*Debug.print("\ne1 is PROP and e2 is PROP_TUPLE.  ")*)
-	---------------------------------	
-	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2, Types.PROP_TUPLE(_,_), initial,impl) => fail
+  rule	Debug.fprintln("failtrace", "\ne1 is PROP and e2 is PROP_TUPLE. ") &
+        Types.print_type t1 &
+        Types.print_type t2
+	------------------------------------------------------------------
+	inst_eq_equation(e1,Types.PROP(t1,_), e2, Types.PROP_TUPLE(t2,_), initial,impl) => fail
 
-  rule	(*Debug.print("e2 is PROP")*)
-	---------------------------------
-	inst_eq_equation(e1,_,
-			 e2,Types.PROP(t2,_), initial,impl) => fail
+  rule	Debug.fprintln("failtrace", "\ne2 is PROP") &
+        print "\n----- e2 is PROP: " &
+        Types.print_type t2 
+	-------------------------------------------
+	inst_eq_equation(e1,_, e2,Types.PROP(t2,_), initial,impl) => fail
 
-  rule	(*Debug.print("e1 is PROP")*)
-	---------------------------------
-	inst_eq_equation(e1,Types.PROP(t1,_),
-			 e2, _, initial,impl) => fail
-
-
-
+  rule	Debug.fprintln("failtrace", "e1 is PROP") &
+        print "\n----- e2 is PROP: " &
+        Types.print_type t1
+	-----------------------------------------
+	inst_eq_equation(e1,Types.PROP(t1,_), e2, _, initial,impl) => fail
 
 (* No match. *)
-  rule	Debug.fprint("failtrace", "\n No match in inst_eq_equation. ")
+  rule	Debug.fprintln("failtrace", "\n No match in inst_eq_equation. ")
 	---------------------------------	
 	inst_eq_equation(_,_,_,_,_,_) => fail
 

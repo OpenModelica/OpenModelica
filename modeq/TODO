@@ -164,6 +164,9 @@ List of things to implement:
 	- equation_funcall9 doesn't work: function generation of test3
 	- equation_funcall10 doesn't work: function generation of test3
 
+	- Fix print_exp_cpp_str call from tornado, add DAE.DAElist and
+	  send dae for function lookup. Needed for tuple variable name
+	  lookup in function return values.
 
 Specific adaptions:
 
