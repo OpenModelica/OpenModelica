@@ -2,6 +2,8 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <string>
+
 struct ClassItem { int *cl; int *env; }; // int or void does not matter...
 
 using namespace std;
