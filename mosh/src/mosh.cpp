@@ -136,7 +136,9 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 {
  CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);  
   char uri[300];
-  sprintf (uri, "file:///tmp/openmodelica.objid");
+  char *user = getenv("USER");
+  if (user == NULL) { user = "nobody"; }
+  sprintf (uri, "file:///tmp/openmodelica.%s.objid",user);
 
   CORBA::Object_var obj = orb->string_to_object(uri);
 
