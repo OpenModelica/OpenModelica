@@ -15,7 +15,7 @@ module StaticExp :
 end
 
 (**
- ** Constant evaluation
+ ** - Constant evaluation
  **)
 
 relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)

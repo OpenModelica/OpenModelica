@@ -229,18 +229,18 @@ end
 
 relation start : (Restriction, string) => State =
 
-  axiom	start (R_CLASS, s) => UNKNOWN(s)
-  axiom	start (R_MODEL, s) => MODEL(s)
-  axiom	start (R_RECORD, s) => RECORD(s)
-  axiom	start (R_BLOCK, s) => BLOCK(s)
-  axiom	start (R_CONNECTOR, s) => CONNECTOR(s)
-  axiom	start (R_TYPE, s) => TYPE(s)
-  axiom	start (R_PACKAGE, s) => PACKAGE(s)
-  axiom	start (R_FUNCTION, s) => FUNCTION(s)
-  axiom	start (R_PREDEFINED_INT, s) => TYPE_INTEGER(s)
-  axiom	start (R_PREDEFINED_REAL, s) => TYPE_REAL(s)
+  axiom	start (R_CLASS, s) 	       => UNKNOWN(s)
+  axiom	start (R_MODEL, s) 	       => MODEL(s)
+  axiom	start (R_RECORD, s)            => RECORD(s)
+  axiom	start (R_BLOCK, s)             => BLOCK(s)
+  axiom	start (R_CONNECTOR, s)         => CONNECTOR(s)
+  axiom	start (R_TYPE, s)              => TYPE(s)
+  axiom	start (R_PACKAGE, s)           => PACKAGE(s)
+  axiom	start (R_FUNCTION, s)          => FUNCTION(s)
+  axiom	start (R_PREDEFINED_INT, s)    => TYPE_INTEGER(s)
+  axiom	start (R_PREDEFINED_REAL, s)   => TYPE_REAL(s)
   axiom	start (R_PREDEFINED_STRING, s) => TYPE_STRING(s)
-  axiom	start (R_PREDEFINED_BOOL, s) => TYPE_BOOL(s)
+  axiom	start (R_PREDEFINED_BOOL, s)   => TYPE_BOOL(s)
 
 end
 
@@ -293,7 +293,7 @@ relation trans : (State, Event) => State =
   axiom	trans(FUNCTION(s),       FOUND_EQUATION) => fail
   axiom	trans(HAS_EQUATIONS(s),  FOUND_EQUATION) => HAS_EQUATIONS(s)
 
-  rule	print "- trans fallthru: " & print_state st &
+  rule	print "- trans failed: " & print_state st &
  	print ", " & print_event ev & print "\n"
 	--------------------------------------------------------
 	trans(st, ev) => fail

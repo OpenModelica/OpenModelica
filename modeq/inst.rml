@@ -98,7 +98,7 @@ relation inst_class: (Env, Mod, Prefix, Connect.Sets, Explode.Class)
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, Explode.CLASS(n,true,_,_)) => fail
 
-  rule	Env.new_frame(env) => env' &
+  rule	Env.open_scope(env) => env' &
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env', mod, pre, csets, ci_state, c, false)
 	  => (dae1,_,csets',ci_state', tys) &
@@ -134,11 +134,11 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (l,env', csets', ci_state', tys)
 	------------------------------------------------------	
 	inst_class_in(env,mods,pre,csets,ci_state,
-		      c as Explode.CLASS(n,false,r,d), prot)
+		      c as Explode.CLASS(n,_,r,d), prot)
 	  => (l,env', csets', ci_state', tys)
 
 	(* FIXME *)
-  rule  print "- Fallthru in inst_class_in\n"
+  rule  print "- inst_class_in failed\n"
 	----------------------------------
 	inst_class_in(_,_,_,csets,_,_,_) => fail
 
@@ -244,10 +244,9 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 end
 
 (** relation: inst_element
- ** purpose:  Instantiate an element of a class definition.
- **
- ** An element is either a class definition, a variable, or an
- ** `extends' clause.
+ ** This monster relation instantiates an element of a class
+ ** definition.  An element is either a class definition, a variable,
+ ** or an `extends' clause.
  **)
 
 relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -365,6 +364,9 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Prefix.prefix_add(n,[],pre) => pre' &
 
+	(* FIXME: Redeclarations! *)
+	
+	
 	inst_class(env,mod',pre',csets,cl) => (dae1,csets',ty,st) &
 
 	Mod.mod_assignment mod' => ass &
@@ -681,7 +683,7 @@ relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
 	
   axiom check_prot(_,Mod.NOMOD,_)
 
-  rule  print "ERROR: Trying to modify protected element " &
+  rule  print "# Trying to modify protected element " &
 	Dump.dump_component_ref cref & print "\n"
 	-----------------------------------------
 	check_prot(true,_,cref) => fail

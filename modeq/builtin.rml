@@ -1,3 +1,10 @@
+(** file: builtin.rml *)
+
+(** - Module header
+ **
+ ** The only exported relation is `initial_env'.
+ **)
+
 module Builtin:
 
   with "absyn.rml"
@@ -15,10 +22,14 @@ module Builtin:
 
 end
 
+(**)
+
 with "exp.rml"
 with "types.rml"
 with "mod.rml"
 with "classinf.rml"
+
+(** - The primitive types *)
 
 val rl_type = Explode.CLASS("RealType",false,ClassInf.R_PREDEFINED_REAL,
 			    Explode.PARTS([],[],[]))
@@ -28,6 +39,8 @@ val str_type = Explode.CLASS("StringType",false,ClassInf.R_PREDEFINED_STRING,
 			     Explode.PARTS([],[],[]))
 val bool_type = Explode.CLASS("BooleanType",false,ClassInf.R_PREDEFINED_BOOL,
 			      Explode.PARTS([],[],[]))
+
+(** - The `Real' type *)
 
 val real_type =
 Explode.CLASS("Real",false,ClassInf.R_PREDEFINED_REAL,
@@ -55,6 +68,8 @@ Explode.CLASS("Real",false,ClassInf.R_PREDEFINED_REAL,
 	       [],
 	       []))
 
+(** - The `Integer' type *)
+
 val integer_type =
 Explode.CLASS("Integer",false,ClassInf.R_PREDEFINED_INT,
 	      Explode.PARTS
@@ -81,6 +96,8 @@ Explode.CLASS("Integer",false,ClassInf.R_PREDEFINED_INT,
 	       [],
 	       []))
 
+(** - The `String' type *)
+
 val string_type =
 Explode.CLASS("String",false,ClassInf.R_PREDEFINED_STRING,
 	      Explode.PARTS
@@ -96,6 +113,8 @@ Explode.CLASS("String",false,ClassInf.R_PREDEFINED_STRING,
 						  Mod.NOMOD))],
 	       [],
 	       []))
+
+(** - The `Boolean' type *)
 
 val boolean_type =
 Explode.CLASS("Boolean",false,ClassInf.R_PREDEFINED_BOOL,
@@ -113,6 +132,8 @@ Explode.CLASS("Boolean",false,ClassInf.R_PREDEFINED_BOOL,
 	       [],
 	       []))
 
+
+(** - Initial environment *)
 
 relation initial_env =
 

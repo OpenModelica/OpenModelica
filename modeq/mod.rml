@@ -165,8 +165,30 @@ and build : (Absyn.Modification option, bool) => Mod =
 
 end
 
+(**
+ ** - Lookup
+ **)
 
-(**)
+(** relation: lookup_modification *)
+
+relation lookup_modification: (Mod,Absyn.Ident) => Mod =
+
+  axiom lookup_modification(NOMOD,_) => NOMOD
+
+	(* FIXME: Is this correct? *)
+  axiom	lookup_modification(REDECL(_,_),_) => NOMOD
+
+  rule  lookup_modification2(subs,n) => mod
+	---------------------------------
+	lookup_modification(MOD(_,subs,_),n) => mod
+
+  rule	print "# Mod.lookup_modification(" &
+	dump mod & print "," & print i &
+	print ") failed\n"
+	--------------------
+	lookup_modification(mod,i) => fail
+
+end	
 
 relation lookup_modification2 : (SubMod list,Absyn.Ident) => Mod =
 
@@ -184,19 +206,9 @@ relation lookup_modification2 : (SubMod list,Absyn.Ident) => Mod =
 
 end
 
-relation lookup_modification: (Mod,Absyn.Ident) => Mod =
-
-  axiom lookup_modification(NOMOD,_) => NOMOD
-
-  rule  lookup_modification2(subs,n) => mod
-	---------------------------------
-	lookup_modification(MOD(_,subs,_),n) => mod
-
-end
-
 (**
  **
- **   Merging
+ ** - Merging
  **
  ** The merge relation merges to modifications to one. The first
  ** argument is the "outer" modification that should take precedence over

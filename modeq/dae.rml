@@ -12,8 +12,10 @@ module DAE:
 
   type Ident = Exp.Ident
 
+  datatype VarKind = LOCAL | PARAM | CONST
+
   datatype DAEcomp = VAR of Ident * VarKind
-		   | VARVAL of Ident * Types.VarType * Exp.Exp
+		   | VARVAL of Ident * VarKind * Exp.Exp
 		   | EQUATION of Exp.Exp
 		   | COMP of Ident * DAEform
   and	 DAEform = DAE of DAEcomp list
@@ -28,15 +30,15 @@ relation dump_kind =
 
   rule	print "  constant "
 	--------------------
-	dump_kind Types.CONST
+	dump_kind CONST
 	
   rule	print "  parameter "
 	--------------------
-	dump_kind Types.PARAM
+	dump_kind PARAM
 	
   rule	print "  local "
 	--------------------
-	dump_kind Types.VAR
+	dump_kind LOCAL
 
 end
 

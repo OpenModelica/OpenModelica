@@ -10,44 +10,43 @@ module Absyn:
   with "exp.rml"
   with "types.rml"
 
-(** These types are imported from other modules and given unqualified *)
-(** names to help the readibility, and for backwards compatibility *)
-(** with older versions.  This should be changed. *)
+  (** - Imported types *)
+  (** These types are imported from other modules and given unqualified *)
+  (** names to help the readibility, and for backwards compatibility *)
+  (** with older versions.  This should be changed. *)
 
   type Ident = Exp.Ident
   type Path = Exp.Path
   type Subscript = Exp.Subscript
   type ClassRestriction = Types.Restriction
 
-(**  Types
- **
- ** A program is simply a list of class definitions declared at top
- ** level in the source file.
- **)
-
+  (** - Programs *)
   type Program = Class list
+  (** A program is simply a list of class definitions declared at top
+   ** level in the source file.
+   **)
 
-(** A class definition consists of a name, a flag to indicate if this *)
-(** class is declared as `partial', the declared class restriction, *)
-(** and the body of the declaration. *)
-
+  (** - Classes *)
   datatype Class = CLASS of Ident		     (* Name *)
 			  * bool		     (* Partial *)
 			  (* FIXME: final *)
 			  * ClassRestriction	     (* Restricion *)
 			  * ClassDef		     (* Body *)
+  (** A class definition consists of a name, a flag to indicate if this *)
+  (** class is declared as `partial', the declared class restriction, *)
+  (** and the body of the declaration. *)
 
-(** The `ClassDef' type contains the definition part of a class *)
-(** declaration.  The definition is either explicit, with a list of *)
-(** parts (`public', `protected', `equation' and `algorithm'), or it *)
-(** is a definition derived from another class.  In the latter case *)
-(** this types contains the name of the derived class and an optional *)
-(** array dimension and a list of modifications. *)
 
   datatype ClassDef = PARTS of ClassPart list
 		    | DERIVED of Path
 			       * Types.ArrayDim option
 			       * ElementArg list
+  (** The `ClassDef' type contains the definition part of a class *)
+  (** declaration.  The definition is either explicit, with a list of *)
+  (** parts (`public', `protected', `equation' and `algorithm'), or it *)
+  (** is a definition derived from another class.  In the latter case *)
+  (** this types contains the name of the derived class and an optional *)
+  (** array dimension and a list of modifications. *)
 
   datatype ClassPart = PUBLIC of Element list
 		     | PROTECTED of Element list

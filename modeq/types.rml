@@ -8,20 +8,37 @@ module Types :
 
   type Restriction = ClassInf.Restriction
 
+  (** - Array dimensions *)
   datatype ArrayDim = NODIM
 		    | ONEDIM of Exp.Subscript
 		    | TWODIM of Exp.Subscript * Exp.Subscript
+  (** Variables in Modelica can be scalar, one-dimensional arrays, or *)
+  (** two-dimensional matrices.  This datatype is used to indicate the *)
+  (** dimensionality of a variable or a type definition. *)
 
+  (** - Identifiers *)
   type Ident = string
+  (** FIXME: This is declared in many places. *)
+
+  (** - Variables *)
   type Var = (Ident * VarAttr * Type)
+  (** I wonder why this goes here? *)
+
+  (** - Types *)
   datatype Type = TYPE of ClassInf.State * Var list
-  datatype VarType = VAR | PARAM | CONST
-  datatype Direction = INPUT | OUTPUT | BIDIR
+  (** The `Type' datatype stores information about the type of an *)
+  (** instantiated variable. The only information that is kept is the *)
+  (** class inference state, and the subcomponents. *)
+
+  (** - Variable attributes *)
   datatype VarAttr = ATTR of ArrayDim
 			   * bool	(* flow *)
 			   * VarType	(* parameter *)
 			   * Direction
+  datatype VarType = VAR | PARAM | CONST
+  datatype Direction = INPUT | OUTPUT | BIDIR
 
+  (** - Exported relations *)
   relation same_type : (Type, Type) => ()
   relation lookup_component : (Type, Ident) => Var
   relation known_type : ClassInf.State => Exp.Type

@@ -23,7 +23,7 @@ with "absyn.rml"
 with "parse.rml"
 
 (**
- **  Lookup functions
+ ** - Lookup relations
  **
  ** These relations look up class and variable names in the environment.
  ** The names are supplied as a path, and if the path is qualified, a
@@ -31,6 +31,51 @@ with "parse.rml"
  ** nave is looked for in it.
  **)
 
+(** relation: lookup_class
+ **)
+
+relation lookup_class: (Env,Exp.Path) => (Explode.Class,Mod.Mod) =
+
+  rule	lookup_class_in_env(env,path) => (c,m)
+	--------------------------------------
+	lookup_class(env, path) => (c,m)
+
+  rule	lookup_package_class (env,pack,path) => (c,m)
+	--------------------------------------
+	lookup_class(env, Exp.QUALIFIED(pack,path)) => (c,m)
+
+end
+
+(** relation: lookup_var
+ **)
+
+relation lookup_var: (Env,Explode.ComponentRef)
+	  => (Types.VarAttr, Types.Type, Exp.Exp option) =
+
+  rule	(* print " lookup_var: looking in frame\n" & *)
+	lookup_var_f(vs,ref) => (attr,ty,ass)
+	-------------------------
+	lookup_var(Env.FRAME(vs,_)::fs,ref) => (attr,ty,ass)
+
+  rule	(* print " lookup_var: next frame\n" & *)
+	lookup_var(fs,ref) => (attr,ty,ass)
+	--------------------
+	lookup_var(_::fs,ref) => (attr,ty,ass)
+
+end
+
+(** relation: lookup_var_local
+ **)
+
+relation lookup_var_local : (Env, Explode.Ident) => Env.FrameVar =
+
+  rule  lookup_var2(vs, id) => fv
+	-------------------------
+	lookup_var_local(Env.FRAME(vs,_)::_, id) => fv
+
+end
+
+(** - Internal relations *)
 
 relation lookup_class_in_frame: ((Explode.Ident * Explode.Class *
 				  Mod.Mod) list,
@@ -48,7 +93,7 @@ relation lookup_class_in_frame: ((Explode.Ident * Explode.Class *
 	lookup_class_in_frame(_::fs,id) => (c,m)
 
 end
-
+(**)
 relation lookup_class_in_env: (Env,Exp.Path) => (Explode.Class,Mod.Mod) =
 
   rule	lookup_class_in_frame(cs,id) => (c,m)
@@ -60,7 +105,7 @@ relation lookup_class_in_env: (Env,Exp.Path) => (Explode.Class,Mod.Mod) =
 	lookup_class_in_env(f::fs,id) => (c,m)
 
 end
-
+(**)
 relation lookup_package_class : (Env, string, Exp.Path)
 	  => (Explode.Class, Mod.Mod) =
 
@@ -71,19 +116,7 @@ relation lookup_package_class : (Env, string, Exp.Path)
 	lookup_package_class (env, packname, path) => (c, Mod.NOMOD)
 
 end
-
-relation lookup_class: (Env,Exp.Path) => (Explode.Class,Mod.Mod) =
-
-  rule	lookup_class_in_env(env,path) => (c,m)
-	--------------------------------------
-	lookup_class(env, path) => (c,m)
-
-  rule	lookup_package_class (env,pack,path) => (c,m)
-	--------------------------------------
-	lookup_class(env, Exp.QUALIFIED(pack,path)) => (c,m)
-
-end
-
+(**)
 relation lookup_var2: ((Explode.Ident * Env.FrameVar) list,Explode.Ident)
 	  => Env.FrameVar =
 
@@ -96,7 +129,7 @@ relation lookup_var2: ((Explode.Ident * Env.FrameVar) list,Explode.Ident)
 	lookup_var2(_::fs,id) => fv
 
 end
-
+(**)
 relation check_subscripts : (Types.ArrayDim, Exp.Subscript list) => () =
 
 	(* FIXME: Check range too? *)
@@ -105,7 +138,7 @@ relation check_subscripts : (Types.ArrayDim, Exp.Subscript list) => () =
   axiom check_subscripts(Types.TWODIM(_,_), [_,_])
 
 end
-
+(**)
 relation lookup_in_var: (Types.Type, Explode.ComponentRef)
 	  => (Types.VarAttr,Types.Type) =
 
@@ -127,7 +160,7 @@ relation lookup_in_var: (Types.Type, Explode.ComponentRef)
 	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty'')
 
 end	
-
+(**)
 relation lookup_var_f : ((Explode.Ident * Env.FrameVar) list,
 			 Explode.ComponentRef)
 	  => (Types.VarAttr, Types.Type, Exp.Exp option) =
@@ -148,29 +181,6 @@ relation lookup_var_f : ((Explode.Ident * Env.FrameVar) list,
 
 end
 
-relation lookup_var: (Env,Explode.ComponentRef)
-	  => (Types.VarAttr, Types.Type, Exp.Exp option) =
-
-  rule	(* print " lookup_var: looking in frame\n" & *)
-	lookup_var_f(vs,ref) => (attr,ty,ass)
-	-------------------------
-	lookup_var(Env.FRAME(vs,_)::fs,ref) => (attr,ty,ass)
-
-  rule	(* print " lookup_var: next frame\n" & *)
-	lookup_var(fs,ref) => (attr,ty,ass)
-	--------------------
-	lookup_var(_::fs,ref) => (attr,ty,ass)
-
-end
-
-relation lookup_var_local : (Env, Explode.Ident) => Env.FrameVar =
-
-  rule  lookup_var2(vs, id) => fv
-	-------------------------
-	lookup_var_local(Env.FRAME(vs,_)::_, id) => fv
-
-end
-
 
 (**
  **  Package handling
@@ -184,7 +194,7 @@ relation locate_package : (Env.Env, string) => Explode.Class =
 	----------------
 	locate_package (env, pack) => c
 
-  rule	string_append (pack, ".mdc") => filename &
+  rule	string_append (pack, ".mo") => filename &
 	print "Loading " & print filename & print "...\n" &
 	Parser.parse filename => ((c as Absyn.CLASS(classname,_,_,_))::_) &
 	pack = classname &

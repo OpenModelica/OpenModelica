@@ -12,17 +12,32 @@ module Prefix:
   type Prefix = (string * Exp.Subscript list) list
 
   relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix
-  relation prefix_exp  : (Exp.Exp,Prefix) => Exp.Exp
   relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
+  relation prefix_exp  : (Exp.Exp,Prefix) => Exp.Exp
   relation prefix_path : (Exp.Path,Prefix) => Exp.Path
 
 end
+
+(** relation: prefix_add
+ **
+ ** This relation is used to extend a prefix with another level.  If
+ ** the prefix `a.b[10].c' is extended with `d' and an empty subscript
+ ** list, the resulting prefix is `a.b[10].c.d'.  Remember that
+ ** prefixes components are stored in the opposite order from the
+ ** normal order used when displaying them.
+ **)
 
 relation prefix_add : (Exp.Ident, Exp.Subscript list, Prefix) => Prefix =
 
   axiom prefix_add(i,s,p) => (((i,s)::p))
 
 end
+
+(** relation: prefix_path
+ **
+ ** Prefix a `Path' variable by adding the supplied prefix to it and
+ ** returning a new `Path'.
+ **)
 
 relation prefix_path: (Exp.Path,Prefix) => Exp.Path =
 
@@ -34,6 +49,12 @@ relation prefix_path: (Exp.Path,Prefix) => Exp.Path =
 
 end
 
+(** relation: prefix_path
+ **
+ ** Prefix a `ComponentRef' variable by adding the supplied prefix to
+ ** it and returning a new `ComponentRef'.
+ **)
+
 relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
   axiom	prefix_cref([], cref) => cref
@@ -44,17 +65,28 @@ relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
 end
 
-relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
+(** relation: prefix_exp
+ **
+ ** Add the supplied prefix to all component references in an
+ ** expression.
+ **)
 
-  axiom	prefix_explist([],_) => []
+relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
 
-  rule	prefix_exp2(e,p) => e' &
-	prefix_explist(es,p) => es'
-	---------------------------
-	prefix_explist(e::es,p) => (e'::es')
+  rule	list_reverse(p) => p' &
+	prefix_exp2(e,p') => e'
+	-----------------------
+	prefix_exp(e,p) => e'
 
-end	
-and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
+  rule	print "- prefix_exp fallthru\n"
+	-------------------------------
+	prefix_exp (_,_) => fail
+
+end
+
+(**)
+
+relation prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 
   axiom	prefix_exp2(e as Exp.INTEGER(_),_) => e
   axiom	prefix_exp2(e as Exp.REAL(_),_) => e
@@ -105,15 +137,15 @@ and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 
 end
 
-relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
+(**)
 
-  rule	list_reverse(p) => p' &
-	prefix_exp2(e,p') => e'
-	-----------------------
-	prefix_exp(e,p) => e'
+relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
 
-  rule	print "- prefix_exp fallthru\n"
-	-------------------------------
-	prefix_exp (_,_) => fail
+  axiom	prefix_explist([],_) => []
 
-end
+  rule	prefix_exp2(e,p) => e' &
+	prefix_explist(es,p) => es'
+	---------------------------
+	prefix_explist(e::es,p) => (e'::es')
+
+end	
