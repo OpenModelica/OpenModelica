@@ -1805,24 +1805,30 @@ end
 relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Types.Properties, Interactive.InteractiveSymbolTable option) =>
 	(Interactive.InteractiveSymbolTable option) =
 
-  axiom generate_compiled_function(_,_,_,_,NONE) => NONE
+(*  axiom generate_compiled_function(_,_,_,_,NONE) => NONE *)
 	
-  rule	Absyn.cref_to_path(fn) => pfn &
+  rule	Debug.fprintln("sei", "generate_compiled_function: start1") &
+	Absyn.cref_to_path(fn) => pfn &
 	is_function_in_cflist (cflist,pfn) => true
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => SOME(st)
 
-  rule	Absyn.cref_to_path(fn) => path &
+  rule	Debug.fprintln("sei", "generate_compiled_function: start2") &
+	Absyn.cref_to_path(fn) => path &
 	is_function_in_cflist (cflist, path) => false &
 	SCode.elaborate(p) => p' &
+	Debug.fprintln("sei", "generate_compiled_function: elaborated") &
 (*	Inst.instantiate_implicit(p') => d & *)
 	Lookup.lookup_class(env, path, false) => (cls, env') &
+	Debug.fprintln("sei", "generate_compiled_function: class looked up") &
 	Inst.implicit_function_instantiation(env', Types.NOMOD,
 					     Prefix.NOPRE, [], cls, [], false)
 	  => (env'',d) &
+	Debug.fprintln("sei", "generate_compiled_function: function instantiated") &
 	Print.clear_buf() &
 	ModUtil.string_prefix_params DAE.DAE(d) => d' &
 	Codegen.generate_functions(d') &
+	Debug.fprintln("sei", "generate_compiled_function: function generated") &
 	ModUtil.path_string2 (path,"_") => pathstr &	
 	string_append(pathstr,".c") => filename &
 	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
@@ -1830,9 +1836,29 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	Print.print_buf pathstr &
 	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
 	Print.write_buf(filename)& Print.clear_buf() &
-	System.compile_c_file(filename) 
+	System.compile_c_file(filename) &
+	Debug.fprintln("sei", "generate_compiled_function: compiled")
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),SOME(st as Interactive.SYMBOLTABLE(p,a,b,c,cflist))) => SOME(Interactive.SYMBOLTABLE(p,a,b,c,(path,t)::cflist))
+
+
+
+  rule	Debug.fprintln("sei", "generate_compiled_function: start3")
+	-----------------------------------------------
+	generate_compiled_function(env,fn,e,Types.PROP(t,_),NONE) => NONE
+
+
+
+
+  rule	Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
+	Dump.print_component_ref_str cr => str1 &
+	Exp.print_exp_str exp => str2 &
+	Print.print_buf str1 &
+	Print.print_buf " -- " &
+	Print.print_buf str2 &
+	Print.print_buf "\n"
+	------------------------------------------------------------------
+	generate_compiled_function(env,cr,exp,_,_) => fail
 
 end
 

@@ -1129,6 +1129,12 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m),cmod))::xs,inst_dims,impl) => env''
 
+(*  rule	add_components_to_env2(env,mods,pre,csets,ci_state,
+				 xs,inst_dims,impl) => env' 
+	-----------------
+	add_components_to_env2(env,mods,pre,csets,ci_state,
+				 nocomp::xs,inst_dims,impl) => env' *)
+
 
   axiom	add_components_to_env2(env,_,_,_,_,[],_,_) => env
 
@@ -2624,7 +2630,11 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 			       parts as SCode.PARTS(els,_,_,_,_,_)),
 			       inst_dims, false)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
-					
+				
+  rule	Debug.fprint("failtrace", "#-- implicit_function_instantiation failed\n")
+	------------------------------------------------------------------------
+	implicit_function_instantiation(_,_,_,_,_,_,_) => fail 
+
 end
 
 (** relation: inst_overloaded_functions
