@@ -2775,7 +2775,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 	-------------------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => fail
 
-  rule	print "elab_arraydim_decl failed\n" &
+  rule	Print.print_error_buf "elab_arraydim_decl failed\n" &
 	Debug.fprint("failtrace", "- elab_arraydim_decl failed\n")
 	-------------------------------------
 	elab_arraydim_decl(_,_,_,_,_) => fail     

@@ -29,8 +29,9 @@ except dump.
 ---------------------------------------------------------------------------
 		all		Turn on all debugging.			  
 		none		true if no flags given.			  
+		flatmodelica	Print flatmodelica. Also printed if none is true
 General--------------------------------------------------------------------
-									  
+		errorbuf	Print the error buffer before returning									  
 		info		General information			  
 		olddebug	print messages sent to the old Debug.print
 Dump-----------------------------------------------------------------------

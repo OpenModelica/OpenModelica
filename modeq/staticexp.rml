@@ -1082,16 +1082,22 @@ end
  **)
 relation elab_builtin_fill : (Env.Env, Absyn.Exp list, bool (*impl*) ) => (Exp.Exp, Types.Properties)	=
 
-  rule	elab_exp (env,s,impl,NONE) => (s', Types.PROP(sty, sconst),_) &
+  rule	elab_exp (env,s,impl,NONE) => (s', prop,_) &
 	elab_exp_list (env,dims,impl,NONE) => (dims', dimprops,_) &
+	Types.get_prop_type prop => sty &
 	Ceval.ceval_list (env, dims',impl,NONE) => dimvals &
 	elab_builtin_fill_2 (env, s', sty, dimvals) => (exp, prop) 
 	--------------------------------------------------
 	elab_builtin_fill (env, s::dims, impl) => (exp, prop)
 
-  rule	print"#-- elab_builtin_fill: Couldn't elaborate fill()\n"
+  rule	Debug.fprint("failtrace", "- elab_builtin_fill: Couldn't elaborate fill(): ") &
+	Util.bool_string impl => implstr &
+	Util.list_map(dims, Dump.print_exp_str) => expstrs &
+	Util.string_delimit_list(expstrs, ", ") => expstr &
+	Util.string_append_list([expstr, " impl=", implstr]) => str &
+	Debug.fprintln("failtrace", str)
 	---------------------------------------------------------
-	elab_builtin_fill (_,_,_) => fail
+	elab_builtin_fill (env,dims,impl) => fail
 
 end
 

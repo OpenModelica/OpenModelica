@@ -729,13 +729,15 @@ relation main : string list => () =
 	Debug.bcall (ismode, interactivemode, args' ) &
 	Debug.bcall (icmode, interactivemode_corba, args') &
 	Debug.bcall (imode', translate_file, args')
-	--------------------
+	& Print.get_error_string () => errstr
+	& Debug.fcall ("errorbuf", print, errstr)
+	---------------------------------------
 	main args 
 
   rule	print "#|Execution failed!"
-	& print "\n\n----\n\nError buffer:\n\n"
 	& Print.get_error_string () => errstr
-	& print errstr
+	& Debug.fcall ("errorbuf", print, "\n\n----\n\nError buffer:\n\n")
+	& Debug.fcall ("errorbuf", print, errstr)
 	--------------
 	main _ => fail
 end
