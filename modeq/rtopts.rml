@@ -3,6 +3,8 @@ module RTOpts:
   relation args : string list => string list
   relation typeinfo : () => bool
   relation split_arrays : () => bool
+  relation params_struct : () => bool
   relation modelica_output : () => bool
-
+  relation debug_flag : string => bool
+  relation debug_flag_info : () => bool
 end
