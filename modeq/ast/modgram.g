@@ -1,33 +1,33 @@
-// -*- C++ -*-
+/* -*- C -*- */
 
 #header <<
 
+typedef enum { false=0, true=1 } bool;
+/* #include "bool.h" */
+
 #include "parser.h"
-// #include "comments.h"
 #include "modAST.h"
 
-#ifndef __GNUG__
-#include "bool.h"
-#endif
-
-#ifdef _WIN32
-int getopt(int nargc, char **nargv, char *ostr);
-extern int optind;
-extern char *optarg;
-char *__progname;
-#endif
+typedef struct {
+  int type;
+  union {
+    int ival;
+    float floatval;
+    char *stringval;
+  } u;
+} Attrib;
 
 >>
 
 <<
 
-#include <stdlib.h>		// getopt
-#include "DLexerBase.h"		// Base info for DLG-generated scanner
-#include "DLGLexer.h"
-#include "AToken.h"		// Base token definitions for ANTLR
+#include <stdlib.h>
+
+/* #include "DLexerBase.h" */
+/* #include "scanner.h" */
+/* #include "AToken.h" */
 
 #include "rml.h"
-// #include "codegen.h"
 #include "dae.h"
 #include "exp.h"
 #include "class.h"
@@ -36,6 +36,31 @@ static int errors=0;
 
 static char *filename=NULL;
 static char *outputfilename=NULL;
+
+void newline()
+{
+  zzline++;
+}
+
+int zzcr_attr(Attrib *attr, int type, char *text)
+{
+  attr->type = type;
+  switch (type)
+  {
+  case UNSIGNED_NUMBER: attr->u.floatval = atof(text); break;
+  case STRING: attr->u.stringval = strdup(text); break;
+  default:
+    fprintf(stderr, "zzcr_attr: unknown type: %d\n", type);
+  }
+}
+
+void zzd_attr(Attrib *attr)
+{
+  switch(attr->type)
+  {
+  case STRING: free(attr->u.stringval); break;
+  }
+}
 
 int main(int argc, char **argv)
 {
@@ -56,7 +81,7 @@ int main(int argc, char **argv)
   extern int optind;
   int errflg = 0;
   
-  // Initialize RML
+  /* Initialize RML */
   Exp_5finit();
   DAE_5finit();
   Class_5finit();
@@ -74,7 +99,7 @@ int main(int argc, char **argv)
       break;
     case 'o':
       outputfilename = optarg;
-      //	cout << "ofile = " << ofile << "\n";
+      fprintf(stderr, "ofile = %s\n", outputfilename);
       break;
     case '?':
       errflg++;
@@ -97,36 +122,44 @@ int main(int argc, char **argv)
     source=stdin;
   }
   
-  // Declare the parser objects
-  DLGFileInput in(source);          // define the input file; in this case, source
-  DLGLexer scanner(&in);           // define an instance of your scanner
-  ANTLRTokenBuffer pipe(&scanner); // define a token buffer between scanner and parser
-  ANTLRToken tok;                  // create a token to use as a model
+  /* Declare the parser objects */
+#if 0
+  DLGFileInput in(source);	/* define the input file; in this
+				   case, source */
+  DLGLexer scanner(&in);	/* define an instance of your scanner */
+  ANTLRTokenBuffer pipe(&scanner); /* define a token buffer between
+				      scanner and parser */
+  ANTLRToken tok;		/* create a token to use as a model */
   ASTBase *root=NULL;
   AST *rootCopy;
-  ModParse parser(&pipe);        // create an instance of your parser
+  ModParse parser(&pipe);	/* create an instance of your parser */
   
-  scanner.setToken(&tok);          // tell the scanner what type the token is
+  scanner.setToken(&tok);	/* tell the scanner what type the
+				   token is */
   
-  parser.init();                 // initialize your parser
-  parser.model_specification(&root);              // start first rule
+  parser.init();		/* initialize your parser */
+  parser.model_specification(&root); /* start first rule */
   
   if (filename) fclose(source);
   
   rootCopy=(AST *) root;
+#endif
+
+  ANTLR(model_specification(), stdin);	/* start first rule */
+
   if (!noprint) {
     printf("Dump of tree:\n");
-    rootCopy->preorder();
+/*     rootCopy->preorder(); */
     printf("\n\n");
   }
   if (dump) {
     printf("Dump of tree:\n");
-    rootCopy->dumpTree();
+/*     rootCopy->dumpTree(); */
   }
 
-  rootCopy->destroy();
-  //    fprintf(stderr,"%d errors.\n",errors);
-  return 0;                        // it's over Johnnie... it's over
+/*   rootCopy->destroy(); */
+  fprintf(stderr,"%d errors.\n",errors);
+  return 0;
 }
 
 
@@ -136,7 +169,7 @@ int main(int argc, char **argv)
 /* Token definitions for the the lexical analyzer. */
 
 #lexclass START
-#token "/\*"		<< skip(); mode(C_STYLE_COMMENT); >>
+#token "/\*"		<< zzskip(); zzmode(C_STYLE_COMMENT); >>
 #token IMPORT		"import"
 #token CLASS_		"class"
 #token BOUNDARY		"boundary"
@@ -168,21 +201,21 @@ int main(int argc, char **argv)
 
 #token FINAL		"final"
 #token PUBLIC		"public"
-//#token PRIVATE		"private"
+/* #token PRIVATE		"private" */
 #token PROTECTED	"protected"
 #token LPAR		"\("
 #token RPAR		"\)"
 #token LBRACK		"\["
 #token RBRACK		"\]"
-//#token RECORD_BEGIN	"\{"
-//#token RECORD_END	"\}"
+/* #token RECORD_BEGIN	"\{" */
+/* #token RECORD_END	"\}" */
 #token IF		"if"
 #token THEN		"then"
 #token ELSE		"else"
 #token ELSEIF		"elseif"
-//#token ENDIF		"endif"
-//#token WHEN		"when"
-//#token ENDWHEN		"endwhen"
+/* #token ENDIF		"endif" */
+/* #token WHEN		"when" */
+/* #token ENDWHEN		"endwhen" */
 #token OR		"or"
 #token AND		"and"
 #token NOT		"not"
@@ -190,8 +223,8 @@ int main(int argc, char **argv)
 #token FALS		"false"
 #token TRU		"true"
 
-//#token FORALL		"forall"
-//#token ENDFORALL	"endforall"
+/* #token FORALL		"forall" */
+/* #token ENDFORALL	"endforall" */
 #token IN		"in"
 #token FOR		"for"
 #token WHILE		"while"
@@ -206,11 +239,11 @@ int main(int argc, char **argv)
 #token RESIDUE		"residue"
 */
 
-//#tokclass COMP_BEGIN	{ LPAR RECORD_BEGIN }
-//#tokclass COMP_END	{ RPAR RECORD_END }
+/* #tokclass COMP_BEGIN	{ LPAR RECORD_BEGIN } */
+/* #tokclass COMP_END	{ RPAR RECORD_END } */
 
-//#tokclass ARR_ARG_BEG	{ LPAR LBRACK }
-//#tokclass ARR_ARG_END   { RPAR RBRACK }
+/* #tokclass ARR_ARG_BEG	{ LPAR LBRACK } */
+/* #tokclass ARR_ARG_END   { RPAR RBRACK } */
 
 #tokclass REL_OP 	{ "<" "<=" ">" ">=" "==" "<>" }
 #tokclass ADD_OP	{ "\+" "\-" }
@@ -218,9 +251,9 @@ int main(int argc, char **argv)
 
 #tokclass ASSIGN	{ "=" ":=" }
 
-#token EXTRA_TOKEN	// used for synthetic nodes
+#token EXTRA_TOKEN	/* used for synthetic nodes */
 
-#token "//(~[\n])*"  << skip(); >> // skip C++-style comments
+#token "//(~[\n])*"  << zzskip(); >> /* skip C++-style comments */
 
 #token IDENT 		"([a-z]|[A-Z])([a-z]|[A-Z]|[0-9]|_)*"
 
@@ -228,23 +261,21 @@ int main(int argc, char **argv)
 
 #token UNSIGNED_NUMBER	"[0-9]+{\.[0-9]*}{[eE]{[\+\-]}[0-9]+}"
 
-#token "[\ \t]+"    << skip(); >>
-#token "\n"         << skip(); newline(); >>
+#token "[\ \t]+"    << zzskip(); >>
+#token "\n"         << zzskip(); newline(); >>
 
 #lexclass C_STYLE_COMMENT
 
-#token	"[\n\r]"	<< skip(); newline(); >>
-#token	"\*/"		<< skip(); mode(START); >>
-#token	"\*"		<< skip(); >>
-#token	"~[\*\n\r]+"	<< skip(); >>
+#token	"[\n\r]"	<< zzskip(); newline(); >>
+#token	"\*/"		<< zzskip(); zzmode(START); >>
+#token	"\*"		<< zzskip(); >>
+#token	"~[\*\n\r]+"	<< zzskip(); >>
 
 
 #lexclass START
 
 /**************************************************************/
 /* The main part of the Modelica parser. */
-
-class ModParse {
 
 model_specification :
 	(
@@ -255,20 +286,20 @@ model_specification :
 	;
 
 import_statement :
-	im:IMPORT^ STRING ";"! << #im->ni.type=IMPORT_STATEMENT; >>
+	im:IMPORT^ STRING ";"! << /* #im->ni.type=IMPORT_STATEMENT; */ >>
 	;
 
 class_definition[bool is_virtual,bool is_final] :
 	<< bool is_ext=false,is_external=false,is_fun=false, is_type=false,is_partial=false; char *classType; >>
 	{ PARTIAL! << is_partial=true; >> } 
         ( CLASS_! << classType="Class"; >>
-	  | MODEL! << classType="Model"; >>
-	  | RECORD! << classType="RecordType"; >>
-	  | BLOCK! << classType="BlockClass"; >>
-	  | CONNECTOR! << classType="Connector"; >>
-	  | TYPE! << classType="Type"; is_type=true; >>
-	  | PACKAGE! << classType="Package"; >>
-	  | { EXTERNAL! << is_external=true; >> } FUNCTION! << is_fun=true; >> )
+	| MODEL! << classType="Model"; >>
+	| RECORD! << classType="RecordType"; >>
+	| BLOCK! << classType="BlockClass"; >>
+	| CONNECTOR! << classType="Connector"; >>
+	| TYPE! << classType="Type"; is_type=true; >>
+	| PACKAGE! << classType="Package"; >>
+	| { EXTERNAL! << is_external=true; >> } FUNCTION! << is_fun=true; >> )
 	id:IDENT^
 	comment
 	( composition END! { IDENT! } |
@@ -276,18 +307,18 @@ class_definition[bool is_virtual,bool is_final] :
 	  IDENT { array_decl } { class_specialization } 	  
 	)
 	<< if (is_ext) {
-	     #id->ni.type=ET_EXTCLASS;
+	     /* #id->ni.type=ET_EXTCLASS; */
 	   } else if (is_fun) {
-	     #id->ni.type=ET_FUNCTION;
+	     /* #id->ni.type=ET_FUNCTION; */
 	   } else {
-	     #id->ni.type=CLASSDEF;
+	     /* #id->ni.type=CLASSDEF; */
 	   }
-  	  #id->classType=classType;
-          // #id->classType="Class";
-	  if (is_virtual)  #id->ni.properties |= CLASS_VIRTUAL;
-	  if (is_final)    #id->ni.properties |= IS_FINAL;
-	  if (is_partial)  #id->ni.properties |= CLASS_PARTIAL;
-	  if (is_external) #id->ni.properties |= FUNCTION_EXTERNAL;
+          /* #id->classType=classType; */
+/*           #id->classType="Class"; */
+/* 	  if (is_virtual)  #id->ni.properties |= CLASS_VIRTUAL; */
+/* 	  if (is_final)    #id->ni.properties |= IS_FINAL; */
+/* 	  if (is_partial)  #id->ni.properties |= CLASS_PARTIAL; */
+/* 	  if (is_external) #id->ni.properties |= FUNCTION_EXTERNAL; */
 	>>
 	;
 
@@ -301,14 +332,14 @@ composition :
 	;
 
 default_public!:
-	el:element_list[false] << #0=#(#[EXTRA_TOKEN],#el); >> ;
+	el:element_list[false] << /* #0=#(#[EXTRA_TOKEN],#el); */ >> ;
 
 public_elements: PUBLIC^ element_list[false];
 protected_elements: PROTECTED^ element_list[true];
 
 
 element_list[bool is_protected] :
-	( el:element ";"! << if (is_protected) #el->ni.properties |= ELEMENT_PROTECTED; >>
+	( el:element ";"! << /* if (is_protected) #el->ni.properties |= ELEMENT_PROTECTED; */ >>
 	  | annotation ";"! )*
     ;
 
@@ -320,32 +351,32 @@ element :
 	| component_clause[ET_COMPONENT] )
 	;
 
-//
-// Extends
-//
+/*
+ * Extends
+ */
 
 extends_clause:
-	EXTENDS! i:IDENT^ << #i->ni.type=ET_INHERIT; >>
+	EXTENDS! i:IDENT^ << /* #i->ni.type=ET_INHERIT; */ >>
 	{ class_specialization }
 	;
 
-//
-// Component clause
-//
+/*
+ * Component clause
+ */
 
 component_clause![NodeType nt] :
 	p:type_prefix
-	t:type_specifier << #t->ni.type=nt; >>
+	t:type_specifier << /* #t->ni.type=nt; */ >>
 	c:component_list[NO_SPECIAL]
-	<<  #0=#(#t,#(#[EXTRA_TOKEN],#p),#c); >>
+	<< /* #0=#(#t,#(#[EXTRA_TOKEN],#p),#c); */ >>
 	;
 
 type_prefix :
-	{ f1:FLOW << #f1->setTranslation("Flow "); >> } 
-	{ f2:PARAMETER << #f2->setTranslation("Parameter "); >> 
-	| f3:CONSTANT << #f3->setTranslation("Constant "); >> }
-	{ f4:INPUT << #f4->setTranslation("Input "); >>
-	| f5:OUTPUT << #f5->setTranslation("Output "); >> }
+	{ f1:FLOW      << /* #f1->setTranslation("Flow "); */      >> } 
+	{ f2:PARAMETER << /* #f2->setTranslation("Parameter "); */ >> 
+	| f3:CONSTANT  << /* #f3->setTranslation("Constant "); */  >> }
+	{ f4:INPUT     << /* #f4->setTranslation("Input "); */     >>
+	| f5:OUTPUT    << /* #f5->setTranslation("Output "); */    >> }
 	;
 
 type_specifier :
@@ -361,7 +392,7 @@ component_declaration[NodeType nt] :
 	;
 
 declaration[NodeType nt] :
-	i:IDENT^ << #i->ni.type=nt; >>
+	i:IDENT^ << /* #i->ni.type=nt; */ >>
 	{ array_decl  }
 	{ specialization["="] }
         ;
@@ -370,7 +401,7 @@ array_decl :
 	brak:LBRACK^
 	subscript_list
 	RBRACK!
-	<< #brak->setOpType(OP_ARRAYDECL); >>
+	<< /* #brak->setOpType(OP_ARRAYDECL); */ >>
 	;
 
 subscript_list :
@@ -382,36 +413,36 @@ subscript! :
   (expression ":")? ex1:expression ":" { ex2:expression }
 
 	<< 
-	   // if ex2 was parsed, build a [n:m] treee
-	   if (ex2_ast) #0=#(0,#ex1,#[EXTRA_TOKEN,"|"],#ex2);
-	   // else build a [n:] tree
-	   else #0=#(0,#ex1,#[EXTRA_TOKEN,"|"],#[EXTRA_TOKEN,"_"]);
+/* 	   if ex2 was parsed, build a [n:m] treee */
+  /*if (ex2_ast) #0=#(0,#ex1,#[EXTRA_TOKEN,"|"],#ex2); */
+/* 	   else build a [n:] tree */
+  /* else #0=#(0,#ex1,#[EXTRA_TOKEN,"|"],#[EXTRA_TOKEN,"_"]); */
 	>>
 
   | ":" { ex3:expression }
 	<<
-	  if (ex3_ast) {
-	    // if ex3 was parsed, build a [:m] tree
-	    #0=#(0,#[EXTRA_TOKEN,"1"],#[EXTRA_TOKEN,"|"],#ex3);
-	  } else {
-	    // else build a [:] tree
-	    #0=#(0,#[EXTRA_TOKEN,"_"]);
-	  }
+/* 	  if (ex3_ast) { */
+/* 	    if ex3 was parsed, build a [:m] tree */
+	    /* #0=#(0,#[EXTRA_TOKEN,"1"],#[EXTRA_TOKEN,"|"],#ex3); */
+/* 	  } else { */
+/* 	    else build a [:] tree */
+	    /* #0=#(0,#[EXTRA_TOKEN,"_"]); */
+/* 	  } */
 	>>
   | ex4:expression
 	<<
-	  // single expression; build [n] tree
-	  #0=#(0,#ex4);
+/* 	  single expression; build [n] tree */
+  /* #0=#(0,#ex4); */
 	>>
   ;
 
-//
-// Modification (here: specialization)
-//
+/*
+ * Modification (here: specialization)
+ */
 
 specialization[char *tr] : 
 	class_specialization { "=" expression }
-	| eq:"=" expression << #eq->setTranslation(tr); >>
+	| eq:"=" expression << /* #eq->setTranslation(tr); */ >>
 	;
 
 class_specialization :
@@ -429,7 +460,7 @@ argument :
  
 element_modification :
 	{ FINAL } 
-	id:IDENT^ << #id->ni.type=ELEMENT_MOD; >> 
+	id:IDENT^ << /* #id->ni.type=ELEMENT_MOD; */ >> 
 	{ array_decl } 
 	specialization["->"]
 	;
@@ -445,90 +476,90 @@ element_redeclaration :
 
 component_clause1![NodeType nt] :
 	p:type_prefix
-	t:type_specifier << #t->ni.type=nt; >>
+	t:type_specifier << /* #t->ni.type=nt; */ >>
 	c:component_declaration[ET_COMPONENT]
-	<<  #0=#(#t,#(#[EXTRA_TOKEN],#p),#c); >>
+	<< /* #0=#(#t,#(#[EXTRA_TOKEN],#p),#c); */ >>
 	;
 
-//component_clause1![NodeType nt] :
-//	  type_prefix 
-//	  t:type_specifier << #t->ni.type=nt; >>
-//	  c:component_declaration[ET_COMPONENT]
-//	  // manual tree construction:
-//	  // the type specifier is a new root with the component_declaration
-//	  // as a child.
-//	  << #0=#(#t,#c); >>
-//	  ;
+/* component_clause1![NodeType nt] : */
+/* 	  type_prefix  */
+/* 	  t:type_specifier << #t->ni.type=nt; >> */
+/* 	  c:component_declaration[ET_COMPONENT] */
+/* 	  // manual tree construction: */
+/* 	  // the type specifier is a new root with the component_declaration */
+/* 	  // as a child. */
+/* 	  << #0=#(#t,#c); >> */
+/* 	  ; */
 
-//
-// Equations
-//
+/*
+ * Equations
+ */
 
 
 equation_clause	: 
 	EQUATION^
-	( eq:equation ";"! << #eq->ni.type=ET_EQUATION; >>
-	  | an:annotation ";"! << #an->ni.type=ET_ANNOTATION; >>
+	( eq:equation ";"! << /* #eq->ni.type=ET_EQUATION; */ >>
+	  | an:annotation ";"! << /* #an->ni.type=ET_ANNOTATION; */ >>
 	)*
 	;
 
 algorithm_clause :
 	ALGORITHM^
-	( eq:equation ";"! << #eq->ni.type=ET_ALGORITHM; >> 
-	  | an:annotation ";"! << #an->ni.type=ET_ANNOTATION; >>
+	( eq:equation ";"! << /* #eq->ni.type=ET_ALGORITHM; */ >> 
+	  | an:annotation ";"! << /* #an->ni.type=ET_ANNOTATION; */ >>
 	)*
 	;
 
 equation :
 	( 
-	  simple_expression { op:ASSIGN^ << #op->setTranslation("=="); >> expression }
+	  simple_expression { op:ASSIGN^ << /* #op->setTranslation("=="); */ >> expression }
 	  | conditional_equation
 	  | for_clause
 	  | while_clause )
 	comment
 	;
 
-//conditional_equation :
-//	  i:IF^ expression << #i->setOpType(OP_FUNCTION); #i->setTranslation("If"); >> 
-//	  THEN!
-//	  el:equation_list << #el->setTranslation(";"); >>
-//	  (
-//	   elseif_clause
-//	  | ELSE!
-//	    el2:equation_list << #el2->setTranslation(";"); >>
-//	  | 
-//	  )
-//	    END! IF!
-//	  ;
-//
-//elseif_clause:
-//	  e:ELSEIF^ << #e->setOpType(OP_FUNCTION); #e->setTranslation("If"); >>
-//	  expression THEN! 
-//	  el:equation_list << #el->setTranslation(";"); >>
-//	  ( elseif_clause | ELSE! el2:equation_list << #el2->setTranslation(";"); >> | )
-//	  ;
+/* conditional_equation : */
+/* 	  i:IF^ expression << #i->setOpType(OP_FUNCTION); #i->setTranslation("If"); >>  */
+/* 	  THEN! */
+/* 	  el:equation_list << #el->setTranslation(";"); >> */
+/* 	  ( */
+/* 	   elseif_clause */
+/* 	  | ELSE! */
+/* 	    el2:equation_list << #el2->setTranslation(";"); >> */
+/* 	  |  */
+/* 	  ) */
+/* 	    END! IF! */
+/* 	  ; */
+
+/* elseif_clause: */
+/* 	  e:ELSEIF^ << #e->setOpType(OP_FUNCTION); #e->setTranslation("If"); >> */
+/* 	  expression THEN!  */
+/* 	  el:equation_list << #el->setTranslation(";"); >> */
+/* 	  ( elseif_clause | ELSE! el2:equation_list << #el2->setTranslation(";"); >> | ) */
+/* 	  ; */
 
 conditional_equation :
-	<< bool is_elseif=false; AST *e_ast;>>
+	<< bool is_elseif=false; /* AST *e_ast; */ >>
 
 	i:IF^ expression THEN!
 
-	el:equation_list << #el->setTranslation(";"); >>
+	el:equation_list << /* #el->setTranslation(";"); */ >>
 
 	( ELSEIF! << is_elseif=true; >> expression THEN!
-	el1:equation_list << #el1->setTranslation(";"); >> )*
+	el1:equation_list << /* #el1->setTranslation(";"); */ >> )*
 
-	// The LT(1) is there just to silence an ANTLR warning. It's not used.
-	{ ( <<LT(1),is_elseif>>? els:ELSE << #els->setTranslation("True"); >> | ELSE! )
-	  el2:equation_list << #el2->setTranslation(";"); >> }
+/* 	The LT(1) is there just to silence an ANTLR warning. It's not used. */
+	{ ( <</*LT(1),*/is_elseif>>? els:ELSE << /* #els->setTranslation("True"); */ >> | ELSE! )
+	  el2:equation_list << /* #el2->setTranslation(";"); */ >> }
 
 	END! IF!
 	<< if (is_elseif) {
-	     #i->setOpType(OP_FUNCTION); 
-	     #i->setTranslation("Which");
+	  /* #i->setOpType(OP_FUNCTION); 
+	     #i->setTranslation("Which"); */
 	   } else {
-	     #i->setOpType(OP_FUNCTION); 
-	     #i->setTranslation("If"); 
+	  /* #i->setOpType(OP_FUNCTION); 
+	     #i->setTranslation("If");  */
 	   }
 	>>
 	;
@@ -536,9 +567,9 @@ conditional_equation :
 for_clause ! :
 	for_:FOR id:IDENT IN! e1:expression ":"! e2:expression
 	{ ":"! e3:expression } LOOP!
-	el:equation_list << #el->setTranslation(";"); >>
+	el:equation_list << /* #el->setTranslation(";"); */ >>
 	END! FOR!
-	<< #for_=#[for_];
+	<< /* #for_=#[for_];
 	   #for_->setOpType(OP_FUNCTION); 
 	   #for_->setTranslation("For");
 	   if (e3_ast) {
@@ -553,34 +584,33 @@ for_clause ! :
                   #(#[EXTRA_TOKEN,"<="],#[id],#e2),
 	          #(#[EXTRA_TOKEN,"++",OP_POSTFIX],#[id]),
 	          #el);
-           }	   
+           }	 */   
 	>>
 	;
 
 while_clause :
 	while_:WHILE^ expression LOOP!
 
-	el:equation_list << #el->setTranslation(";"); >>
+	el:equation_list << /* #el->setTranslation(";"); */ >>
 	END! WHILE!
-	<< #while_->setOpType(OP_FUNCTION); 
-	   #while_->setTranslation("While");
+	<< /* #while_->setOpType(OP_FUNCTION); 
+	      #while_->setTranslation("While"); */
 	>>
 	;
 
 equation_list :
 	( equation ";"! )*
-	<< #0=#(#[EXTRA_TOKEN],#0); >>
+	<< /* #0=#(#[EXTRA_TOKEN],#0); */ >>
 	;
 
-//
-// Expressions
-//
+/*
+ * Expressions
+ */
 
 expression :
 
 	simple_expression 
-	| ifpart:IF^ << #ifpart->setOpType(OP_FUNCTION); #ifpart->setTranslation("If");
-			 >>
+	| ifpart:IF^ << /* #ifpart->setOpType(OP_FUNCTION); #ifpart->setTranslation("If"); */ >>
 	  expression 
 	  THEN!
 	  simple_expression
@@ -590,18 +620,18 @@ expression :
 
 simple_expression :
 	logical_term
-	( o:OR^ logical_term << #o->setTranslation("||"); >>
+	( o:OR^ logical_term << /* #o->setTranslation("||"); */ >>
 	)*
 	;
 
 logical_term :
 	logical_factor
-	( a:AND^ logical_factor << #a->setTranslation("&&"); >>
+	( a:AND^ logical_factor << /* #a->setTranslation("&&"); */ >>
 	)*
 	;
 
 logical_factor :
-	not:NOT^ << #not->setOpType(OP_PREFIX); #not->setTranslation("!"); >> 
+	not:NOT^ << /* #not->setOpType(OP_PREFIX); #not->setTranslation("!"); */ >> 
 	relation
 	| relation 
 	;
@@ -609,8 +639,8 @@ logical_factor :
 relation :
 	arithmetic_expression 
 	{ rel:REL_OP^ arithmetic_expression 
-	<< if (!strcmp(mytoken($rel)->getText(),"<>")) #rel->setTranslation("!=");
-           else if (!strcmp(mytoken($rel)->getText(),"==")) #rel->setTranslation("===");
+	<< /* if (!strcmp(mytoken($rel)->getText(),"<>")) #rel->setTranslation("!=");
+	      else if (!strcmp(mytoken($rel)->getText(),"==")) #rel->setTranslation("==="); */
 	>>
 	}
 	;
@@ -625,9 +655,9 @@ arithmetic_expression :
 
 unary_arithmetic_expression:
 
-	plus:"\+"^ term << #plus->setOpType(OP_PREFIX); >>
-	| minus:"\-"^ term << #minus->setOpType(OP_PREFIX); >>
-	| term 
+	plus:"\+"^ term  << /* #plus->setOpType(OP_PREFIX); */ >>
+      | minus:"\-"^ term << /* #minus->setOpType(OP_PREFIX); */ >>
+      | term 
 	;
 
 term :
@@ -642,34 +672,34 @@ factor :
 	primary 
 	{ "^"^ primary}
 
-	// Easy translation of der() function by me.
+/* 	Easy translation of der() function by me. */
  	| op:DER^ LPAR! primary RPAR! 
-		<< #op->setOpType(OP_POSTFIX);
-		   #op->setTranslation("'");
+		<< /* #op->setOpType(OP_POSTFIX);
+		      #op->setTranslation("'"); */
 		>>
 	;
 
 primary :
 	<< bool is_matrix; >>
-	par:LPAR^  << #par->setOpType(OP_BALANCED,')'); >> 
+	par:LPAR^  << /* #par->setOpType(OP_BALANCED,')'); */ >> 
 	expression RPAR!
 
-	| op:LBRACK^ << #op->setOpType(OP_BALANCED,'}');
-			#op->setTranslation("{"); >>
+	| op:LBRACK^ << /* #op->setOpType(OP_BALANCED,'}');
+			   #op->setTranslation("{"); */ >>
 	  column_expression > [is_matrix] 
 	<< if (!is_matrix) {
-		// Probable memory leak!
-		// elevate row expression to get rid of {{ }}
-		#0->setDown(#0->down()->down());
+	        /* Probable memory leak! */
+/* 		elevate row expression to get rid of {{ }} */
+	  /* #0->setDown(#0->down()->down()); */
 		}
 	>>
 	  RBRACK!
 
-	| nr:UNSIGNED_NUMBER << mytoken($nr)->convertFloat(); >>
+	| nr:UNSIGNED_NUMBER /* << mytoken($nr)->convertFloat(); >> */
 	| FALS/*E*/
 	| TRU/*E*/
 	| (name_path_function_arguments)? name_path_function_arguments
-	//| new_component_reference
+/* 	| new_component_reference */
 	| (member_list)?
 	| name_path
 	| TIME
@@ -678,37 +708,37 @@ primary :
 
 name_path_function_arguments ! :
 	n:name_path f:function_arguments
-	<< #0=#(#[EXTRA_TOKEN],#n,#f); >>
+	<< /* #0=#(#[EXTRA_TOKEN],#n,#f); */ >>
 	;
 
 name_path :
-	IDENT { dot:"."^ << #dot->setTranslation("`"); >> name_path }
+	IDENT { dot:"."^ << /* #dot->setTranslation("`"); */ >> name_path }
 	;
 
 new_component_reference :
 	a:array_op
-	{ dot:"."^ << #dot->setTranslation("`"); >>  new_component_reference }
+	{ dot:"."^ << /* #dot->setTranslation("`"); */ >>  new_component_reference }
 	;
 
 member_list:
-	comp_ref { dot:"."^ << #dot->setTranslation("Member"); #dot->setOpType(OP_FUNCTION); >> 
+	comp_ref { dot:"."^ << /* #dot->setTranslation("Member"); #dot->setOpType(OP_FUNCTION); */ >> 
 	( (member_list)? | name_path ) }
 	;
 
 comp_ref:
-	name_path b:LBRACK^ << #b->setOpType(OP_ARRAYRANGE); >> subscript_list RBRACK!
+	name_path b:LBRACK^ << /* #b->setOpType(OP_ARRAYRANGE); */ >> subscript_list RBRACK!
 	;
 
 array_op :
 	i:IDENT 
-	{ brak:LBRACK^ subscript_list RBRACK! << #brak->setOpType(OP_ARRAYRANGE); >> }
+	{ brak:LBRACK^ subscript_list RBRACK! << /* #brak->setOpType(OP_ARRAYRANGE); */ >> }
 	;
 
 component_reference ! :
 	i:IDENT { a:array_decl } { dot:"." c:component_reference }
 	;
 
-// not in document's grammar
+/* not in document's grammar */
 column_expression > [bool is_matrix] :
 	<< $is_matrix=false; >>
 	row_expression ( ";"! row_expression << $is_matrix=true; >> )*
@@ -718,22 +748,22 @@ row_expression :
 	expression 
 	( ","! expression 
 	)*
-	// create token with translation {, balancer }, type BALANCED
-	<< #0=#(#[EXTRA_TOKEN,"{",OP_BALANCED,'}'],#0); >>
+        /* create token with translation {, balancer }, type BALANCED */
+	<< /* #0=#(#[EXTRA_TOKEN,"{",OP_BALANCED,'}'],#0); */ >>
 	;
 
 function_arguments :
 	p:LPAR^ expression ( ","! expression )* RPAR! 
-	<< #p->setOpType(OP_FUNCTION); 
-	   #p->setTranslation(""); // don't output (
+	<< /* #p->setOpType(OP_FUNCTION); 
+	      #p->setTranslation(""); */ /* don't output ( */
 	>>
 	;
 
 comment : 
-	// several strings in a row is really one string continued on
-	// several lines.
+        /* several strings in a row is really one string continued on
+	   several lines. */
 	( s:STRING! )*
-	// Why is this syntactic predicate necessary??
+        /* Why is this syntactic predicate necessary?? */
 	{ (annotation)? annotation! }
 	;
 
