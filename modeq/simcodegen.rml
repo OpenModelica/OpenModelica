@@ -129,16 +129,15 @@ end
          Util.string_append_list([simple_eqn_str,coutput2]) => coutput 
          -------------------------------------------------------------
          generate_compute_output(cname,
-                                 dae as DAELow.DAELOW(DAELow.VARIABLES(vars,_),DAELow.VARIABLES(knvars,_),eqn,seqn,_),
+                                 dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,knvars,_,_),eqn,seqn,_),
                                  ass1,ass2,blocks) => coutput
          
  end
 
 
- relation build_simple_equation:(DAELow.Var vector, DAELow.Equation list) 
+ relation build_simple_equation:(DAELow.Var array, DAELow.Equation list) 
 	  => string =
            
-	   
            
   rule  
          --------------------------------
@@ -147,7 +146,7 @@ end
   rule  build_simple_equation(knvars,rest) => rest_res &
          print_exp_cpp_str(exp1) => exp1_str & 
          print_exp_cpp_str(exp2) => exp2_str &
-         vector_list(knvars) => knvarslist &
+         array_list(knvars) => knvarslist &
          DAELow.is_var_known(knvarslist,cr1) => true &
          DAELow.is_var_known(knvarslist,cr2) => true &
          Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n",rest_res]) => eqn_str 
@@ -158,7 +157,7 @@ end
   rule  build_simple_equation(knvars,rest) => rest_res &
          print_exp_cpp_str(exp1) => exp1_str & 
          print_exp_cpp_str(exp2) => exp2_str &
-         vector_list(knvars) => knvarslist &
+         array_list(knvars) => knvarslist &
          DAELow.is_var_known(knvarslist,cr1) => true &
          Util.string_append_list(["  ",exp1_str, " = ", exp2_str, ";\n",rest_res]) => eqn_str 
          (*& print "\n build_simple_equation: " & print(eqn_str) *)
@@ -168,7 +167,7 @@ end
   rule  build_simple_equation(knvars,rest) => rest_res &
          print_exp_cpp_str(exp1) => exp1_str & 
          print_exp_cpp_str(exp2) => exp2_str &
-         vector_list(knvars) => knvarslist &
+         array_list(knvars) => knvarslist &
          DAELow.is_var_known(knvarslist,cr2) => true &
          Util.string_append_list(["  ",exp2_str, " = ", exp1_str, ";\n",rest_res]) => eqn_str 
          (*& print "\n build_simple_equation: " & print(eqn_str) *)
@@ -218,7 +217,7 @@ end
 	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v &
 	 int_sub(v,1) => v' &
-	 vector_nth(vars,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
+	 array_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	 DAELow.is_non_state kind &
 	 (*print "Solving for non-states\n" &*)
 
@@ -238,7 +237,7 @@ end
          Exp.simplify(expr) => simplify_exp &
 	 build_assignment(cr,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => assigment_string	
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => assigment_string	
          
 
   rule  (* Solving the state s means solving for der(s) *)
@@ -247,7 +246,7 @@ end
 	 vector_nth(ass2,e') => v &
 	 (* v == variable no solved in this equation *)
 	 int_sub(v,1) => v' &
-	 vector_nth(vars,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
+	 array_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_) &
 
 	 (*print "solving for state\n" &*)
          cref_modelica_str(cr) => cr_str &
@@ -272,18 +271,18 @@ end
          Exp.simplify(expr) => simplify_exp &
 	 build_assignment(new_cr ,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => assigment_string 
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => assigment_string 
 
   rule	int_sub(e,1) => e' &
 	 array_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	 int_sub(v,1) => v' &
-	 vector_nth(vars,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
+	 array_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
 	 let varexp = Exp.CREF(cr,Exp.REAL) &
 	 not Exp.solve(e1,e2,varexp) => _ &
 	 print "nonlinear equation not implemented yet\n" 
 	 --------------------------------
-	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(vars,_),_,eqns,_,_),ass1,ass2,e) => fail
+	 build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_),ass1,ass2,e) => fail
          
   rule  print "-build_equation failed\n" 
 	 --------------------------------
