@@ -225,7 +225,8 @@ relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
 
   axiom	generate_constructor_statevars2([],_) => []
 
-  rule	int_add(i,1) => i' & int_string(i) => is &
+  rule	(* When start value is present*)
+	int_add(i,1) => i' & int_string(i) => is &
 	generate_constructor_statevars2(rest,i') => res &
 	Exp.cref_modelica_str(cr) => crs & 
 	Exp.print_exp_str start => startstr &
@@ -236,7 +237,8 @@ relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
 	generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_)::rest,i) 
 	  => r1::res
 
-  rule	int_add(i,1) => i' & int_string(i) => is &
+  rule	(* If no start value is present*)
+	int_add(i,1) => i' & int_string(i) => is &
 	generate_constructor_statevars2(rest,i') => res &
 	Exp.cref_modelica_str(cr) => crs & 
 	
@@ -302,7 +304,7 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
 				 "void C",cname,"::\n",
 				 "ComputeTerminal()\n",
 				 "{\n",
-				 cstate,
+				 cterm,
 				 "}\n",
 				 "\n"]) => methods
 	---------------------------
