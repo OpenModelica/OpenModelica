@@ -116,6 +116,7 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	Inst.instantiate_implicit(p') => d &
 	DAE.dump2 d &
 	ModUtil.string_prefix_params d => d' &
+	Print.get_string() => errstr &
 	Print.clear_buf & 
 	Codegen.generate_functions(d') &
 	string_append(pathstr,".c") => filename &
@@ -127,7 +128,7 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	System.compile_c_file(filename) 
 	--------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("generateCode",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_))
-	  => ("Ok\n",st)
+	  => (errstr,st)
 	  
   rule	System.set_c_compiler(str)
 	--------------------------
