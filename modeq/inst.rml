@@ -24,7 +24,17 @@ relation prefix_add: (Exp.Path,Prefix) => Exp.Path =
 
 end
 
-relation prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
+relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
+
+  axiom	prefix_explist([],_) => []
+
+  rule	prefix_exp2(e,p) => e' &
+	prefix_explist(es,p) => es'
+	---------------------------
+	prefix_explist(e::es,p) => (e'::es')
+
+end
+and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 
   axiom	prefix_exp2(e as Exp.NUMBER(_),_) => e
   axiom	prefix_exp2(e as Exp.STRING(_),_) => e
@@ -64,9 +74,9 @@ relation prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 	-----------------------
 	prefix_exp2(Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
 
-  rule	prefix_exp2(e1,p) => e1'
+  rule	prefix_explist(es,p) => es'
 	-----------------------
-	prefix_exp2(Exp.CALL(f,e1),p) => Exp.CALL(f,e1')
+	prefix_exp2(Exp.CALL(f,es),p) => Exp.CALL(f,es')
 
 end
 
@@ -95,7 +105,7 @@ end
 
 (**********************************************************************)
 
-relation inst_connect: (Exp.Exp,Exp,Exp) => DAE.DAEcomp list =
+relation inst_connect: (Exp.Exp,Exp.Exp) => DAE.DAEcomp list =
 
   rule	print "No connect() yet\n" & fail
 	---------------------------------
@@ -107,15 +117,15 @@ relation inst_equation: (Lform.Equation,Prefix) => DAE.DAEcomp list =
 
   rule	inst_connect(o1,o2) => l
 	------------------------
-	inst_equation(Lform.EQ_EXPR(Exp.CALL(Exp.IDENT("connect"),[o1,o2]))) =>
-		l
+	inst_equation(Lform.EQ_EXPR(Exp.CALL(Exp.IDENT("connect"),[o1,o2])),
+		      p) => l
 
   rule	print "No expression equations yet\n" & fail
 	--------------------------------------------
 	inst_equation(Lform.EQ_EXPR(_),p) => []
 
-  rule	prefix_expr(e1,p) => e1' &
-	prefix_expr(e1,p) => e2'
+  rule	prefix_exp(e1,p) => e1' &
+	prefix_exp(e2,p) => e2'
 	------------------------
 	inst_equation(Lform.EQ_EQUALS(e1,e2),p) =>
 		[DAE.EQUATION(Exp.RELATION(e1',Exp.EQUAL,e2'))]
@@ -140,7 +150,7 @@ end
 
 relation inst_classdef: (Lform.ClassDef,Prefix) => DAE.DAEcomp list =
 
-  rule	inst_list(inst_classpart,pl) => pl'
+  rule	inst_list(inst_classpart,pl,prefix) => pl'
 	-----------------------------------
 	inst_classdef(Lform.PARTS(pl),prefix) => pl'
 
@@ -151,7 +161,12 @@ relation inst_class: (Lform.Class,Prefix) => DAE.DAEcomp list =
   rule	print "instantiating " & print n & print "\n" &
 	inst_classdef(d,n::p) => l
 	------------------------------------------------------	
-	inst_class(c as Lform.CLASS(n,p,r,d),p) => l
+	inst_class(c as Lform.CLASS(n,FALSE,r,d),p) => l
+
+  rule	print "Can't instantiate partial class " & print n & print "\n" &
+	fail
+	------------------------------------------------------	
+	inst_class(Lform.CLASS(n,TRUE,_,_),p) => []
 
   (* FIXME *)
 
@@ -163,7 +178,7 @@ relation instantiate: Lform.Program => DAE.DAEform =
 	------------------------------
 	instantiate([]) => DAE.DAE([])
 
-  rule	inst_class(c) => l'
+  rule	inst_class(c,[]) => l'
 	-----------------------------
 	instantiate([c]) => DAE.DAE(l')
 
