@@ -11,136 +11,322 @@ module Mod:
 
   with "exp.rml"
   with "absyn.rml"
-  with "lform.rml"
-  with "env.rml"
+  (* with "env.rml" *)
+  (* with "lform.rml" *)
   with "dae.rml"
   with "prefix.rml"
 
-  type Mod = Absyn.Modification
+  datatype SubMod = SUBMOD of Exp.Ident * Mod
+  and Mod = MOD of bool * (SubMod list) * (Exp.Exp option)
+  	  | REDECL of bool * Absyn.ElementSpec
+	  | NOMOD
 
   val empty_mod : Mod
 
+  relation dump : (Mod,string) => ()
+  relation build : (Absyn.Modification option, bool) => Mod
+  relation lookup_modification: (Mod,Absyn.Ident) => Mod
+  relation merge : (Mod, Mod) => Mod
+
+(*
   relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
   relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation maybe_modify_class: (Env.Env, Exp.Path, Mod option,
+  relation maybe_modify_class: (Env.Env, Exp.Path, Mod,
 				Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation simple_maybe_modify_class : (Env.Env, Mod option,
+  relation simple_maybe_modify_class : (Env.Env, Mod,
 				        Prefix.Prefix, Absyn.Class)
 	    => (Lform.Class, DAE.DAEcomp list)
-  relation lookup_modification: (Mod,Absyn.Ident) => Mod option
-
-  relation merge : (Mod option, Mod option) => Mod option
-
-end
-
-val empty_mod = Absyn.CLASSMOD([])
-
-(**********************************************************************)
-
-relation inst_list =
-
-  axiom	inst_list(_,[],_) => []
-
-  rule	r(x,p) => x' &
-	inst_list(r,xs,p) => xs' &
-	list_append(x',xs') => y
-	----------------------
-	inst_list(r,x::xs,p) => y
-
-end
-
-(* utility *)
-
-relation element_name : Absyn.Element => Exp.Ident =
-
-  axiom  element_name(Absyn.ELEMENT(_,n,_)) => n
+*)
 
 end
 
 (**********************************************************************)
 
-relation lookup_classmod : (Absyn.ElementArg list, Absyn.Ident)
-	  => Mod option =
+val empty_mod = MOD(false,[],NONE)
 
-  axiom lookup_classmod([],_) => NONE
+(**********************************************************************)
 
-  rule	mn = n
-	------
-	lookup_classmod(Absyn.MODIFICATION(f,Exp.IDENT(mn),m)::_,n)
-	 => SOME(m)
+relation dump_final : bool => () =
 
-  rule  mn = n
-	------
-	lookup_classmod(Absyn.MODIFICATION(f,Exp.QUALIFIED(mn,p),m)::_,n)
-	 => SOME(Absyn.CLASSMOD([Absyn.MODIFICATION(f,p,m)]))
+  axiom dump_final false
 
-  rule  print "FIXME: lookup_classmod(REDECLARATION)\n" &
-	fail
-	-----------------------------------------------
-	lookup_classmod(Absyn.REDECLARATION(f,_)::_,n) => NONE
+  rule print "final "
+       --------------
+       dump_final true
 
-  rule	lookup_classmod(es,n) => m
+end
+
+relation dump_subs : SubMod list => () =
+
+  axiom dump_subs []
+
+  rule  dump(mod,n)
+	-----------
+	dump_subs [SUBMOD(n,mod)]
+
+  rule  dump(mod,n) &
+	dump_subs subs
+	--------------
+	dump_subs SUBMOD(n,mod)::subs
+
+end
+
+relation dump_ass : Exp.Exp option => () =
+
+  axiom dump_ass NONE
+
+  rule  print " = XXX"
+	--------------
+	dump_ass SOME(e)
+
+end
+	
+	
+relation dump : (Mod,string) => () =
+
+  rule  print n
+	-------
+	dump(NOMOD,n)
+
+  rule  print n & print "(redeclared)"
+	------------------------------
+	dump(REDECL(_,_),n)
+
+  rule  dump_final final &
+	print n &
+	print "(" &
+	dump_subs subs &
+	print ")" &
+	dump_ass ass
+	------------
+	dump(MOD(final, subs, ass),n)
+
+end
+
+(**********************************************************************)
+
+relation expand_nomod : Mod => Mod =
+
+  axiom expand_nomod(m as MOD(_,_,_)) => m
+
+  axiom expand_nomod NOMOD => empty_mod
+
+end
+
+relation build_sub : (Exp.Path,Mod) => SubMod =
+
+  axiom build_sub(Exp.IDENT(i),mod) => SUBMOD(i,mod)
+
+  rule  build_sub(path,mod) => sub
 	--------------------------
-	lookup_classmod(_::es,n) => m
+	build_sub(Exp.QUALIFIED(i,path),mod)
+	  => SUBMOD(i,MOD(false,[sub],NONE))
 
-end	
+end
 
-relation lookup_modification: (Mod,Absyn.Ident) => Mod option =
+relation build_args : (Absyn.ElementArg list) => SubMod list =
 
-  rule	print "Error: lookup_modification(EQUALMOD(_)," &
-	print n & print ")\n"
-	----------------------------------------------
-	lookup_modification(Absyn.EQUALMOD(_),n) => NONE
+  axiom build_args [] => []
 
-  rule  lookup_classmod(cm,n) => m
+  rule  build_args xs => subs &
+	build(SOME(mod),final) => mod' &
+	build_sub(path,mod') => sub
+	----------------------
+	build_args((Absyn.MODIFICATION(final,path,mod)::xs)) => (sub::subs)
+
+  rule  build_args xs => subs &
+	Absyn.element_spec_name spec => n
+	---------------------------
+	build_args((Absyn.REDECLARATION(final,spec)::xs))
+	  => (SUBMOD(n,REDECL(final,spec))::subs)
+
+end
+
+and build : (Absyn.Modification option, bool) => Mod =
+
+  axiom build(NONE, _) => NOMOD
+
+  axiom build(SOME(Absyn.EQUALMOD(exp)),final) => MOD(final,[],SOME(exp))
+
+  axiom	build(SOME(Absyn.CLASSMOD([])),_) => NOMOD
+
+  rule  build_args(l) => subs
+	---------------------------
+	build(SOME(Absyn.CLASSMOD(l)),final) => MOD(final,subs,NONE)
+
+end
+
+
+(**********************************************************************)
+
+relation lookup_modification2 : (SubMod list,Absyn.Ident) => Mod =
+
+  axiom lookup_modification2([],_) => NOMOD
+
+  rule  n = m
+	-----
+	lookup_modification2(SUBMOD(n,mod)::_,m) => mod
+	
+	(* FIXME: Redeclaration *)
+
+  rule  lookup_modification2(xs,n) => mod
+	---------------------------------
+	lookup_modification2(x::xs,n) => mod
+
+end
+
+relation lookup_modification: (Mod,Absyn.Ident) => Mod =
+
+  axiom lookup_modification(NOMOD,_) => NOMOD
+
+  rule  lookup_modification2(subs,n) => mod
+	---------------------------------
+	lookup_modification(MOD(_,subs,_),n) => mod
+
+end
+
+(**********************************************************************
+ *
+ *   Merging
+ *
+ * The merge relation merges to modifications to one. The first
+ * argument is the "outer" modification that should take effect after
+ * the "inner" modifications. FIXME: correct?
+ *
+ **********************************************************************)
+
+relation merge_subs2 : (SubMod list, SubMod) => (SubMod list, SubMod) =
+
+  axiom merge_subs2([],m) => ([],m)
+
+	(* Modifications in the list take precedence *)
+
+  rule  n1 = n2
+	-------
+	merge_subs2((s1 as SUBMOD(n1,m1))::ss, SUBMOD(n2,m2)) => (ss, s1)
+
+  rule  merge_subs2(ss, s2) => (ss',s)
+	------------------------------
+	merge_subs2(s1::ss, s2) => (s1::ss',s)
+
+end
+
+relation merge_subs : (SubMod list, SubMod list) => SubMod list =
+
+  axiom merge_subs(s1,[]) => s1
+
+  rule  merge_subs2(s1,s) => (s1',s') &
+	merge_subs(s1',s2) => ss
 	------------------------
-	lookup_modification(Absyn.CLASSMOD(cm),n) => m
+	merge_subs(s1,s::s2) => ss
 
 end
 
-relation modifies: (Mod,Absyn.Ident) => () =
+relation merge_ass : (Exp.Exp option, Exp.Exp option) => Exp.Exp option =
 
-  rule	lookup_modification(mod,n) => m
-	-------------------------------
-	modifies(mod,n)
+	(* Outer assignments take precedence *)
+
+  axiom merge_ass(e as SOME(_), _) => e
+
+  axiom merge_ass(NONE,e) => e
 
 end
 
-relation modify_element : (Mod option,Prefix.Prefix,Absyn.Element,bool)
+relation merge : (Mod, Mod) => Mod =
+
+  axiom merge(NOMOD,NOMOD) => NOMOD
+
+  axiom merge(NOMOD,m) => m
+
+  axiom merge(m,NOMOD) => m
+
+  rule  print " ignoring inner modification\n"
+	--------------------------------------
+	merge(m as REDECL(_,_),_) => m
+
+  rule  print "# can't merge modification with a redeclaration\n" & fail
+	----------------------------------------------------------------
+	merge(_,REDECL(_,_)) => NOMOD
+
+  rule  print "# trying to modify final element\n" & fail
+	-------------------------------------------------
+	merge(_,m as MOD(true,_,_)) => m
+
+  rule  merge_subs(subs1, subs2) => subs &
+	merge_ass(ass1, ass2) => ass
+	----------------------------
+	merge(MOD(final,subs1,ass1), MOD(false,subs2,ass2))
+	  => MOD(final,subs,ass)
+
+  rule	print "# incomplete handling of modification merging\n"
+	-----------------------------------------------------
+	merge(outer,inner) => outer
+
+end
+
+(**********************************************************************)
+(* To EOF
+
+relation check_mod : (Mod.Mod, string,Absyn.Element, bool) => () =
+
+  axiom check_mod(NOMOD,_,_,_)
+
+  rule	print "Error: Trying to modify protected element " &
+	print n & print "\n" &
+	fail
+	--------------------------------------------------------------
+	check_mod(MOD(_,_),n,e,false)
+
+  rule	print "Error: Trying to modify final element " & print n & print "\n" &
+	fail
+	---------------------------------------------------------------------
+	check_mod(MOD(_,_),n,e as Absyn.ELEMENT(true,_,_),_)
+
+  axiom check_mod(_,_,_,_)
+
+end
+
+relation modify_element : (Mod,Prefix.Prefix,Absyn.Element,bool)
 	  => (Lform.Element, DAE.DAEcomp list) =
 
-  rule	Lform.convert_element(e) => e'
-	------------------------------
-	modify_element(NONE,_,e,_) => (e',[])
-
-  rule	element_name(e) => n &
-	modifies(mod,n) &
-	print "Error: Trying to modify protected element " &
-	print n & print "\n" &
-	Lform.convert_element(e) => e'
-	--------------------------------------------------------------
-	modify_element(SOME(mod),_,e,false) => (e',[])
-
-  rule	modifies(mod,n) &
-	print "Error: Trying to modify final element " & print n & print "\n" &
-	Lform.convert_element(e) => e'
-	---------------------------------------------------------------------
-	modify_element(SOME(mod),_,e as Absyn.ELEMENT(true,n,_),_) => (e',[])
-
-  rule	Prefix.prefix_exp(exp,pre) => exp' &
-	element_name(e) => n &
+  rule	(* Prefix.prefix_exp(exp,pre) => exp' & *)
 	Prefix.prefix_path(Exp.IDENT(n),pre) => np &
-
-	print "  modify_element: adding equation " &
 	Exp.path_string(np) => nps &
-	print nps & print " = ...\n" &
-	Lform.convert_element(e) => e'
+
+	check_mod(mod,nps,e,prot) &
+
+	Prefix.prefix_add(pre, n) => pre' &
+	modify_element_spec(mod, pre', spec) => spec'
+
+	(* print "  modify_element: adding equation " & *)
+	(* print nps & print " = ...\n" & *)
+	(* Lform.convert_element(e) => e' *)
 	-----------------------------------
-	modify_element(SOME(Absyn.EQUALMOD(exp)),pre, e,_)
-	 => (e',[DAE.EQUATION(Exp.RELATION(Exp.PATH(np),Exp.EQUAL,exp'))])
+	modify_element(mod,pre,e as Absyn.ELEMENT(final,n,spec),pub)
+	 => (Lform.ELEMENT(final,n,spec'),
+	     [(* DAE.EQUATION(Exp.RELATION(Exp.PATH(np),Exp.EQUAL,exp')) *)])
+
+  rule	Prefix.prefix_path(Exp.IDENT(n),pre) => np &
+	Exp.path_string(np) => nps &
+
+	check_mod(mod,nps,e,prot) &
+
+	Prefix.prefix_add(pre, n) => pre' &
+	modify_element_spec(NONE, pre', spec) => spec' &
+
+	Prefix.prefix_exp(exp,pre) => exp'
+	(* print "  modify_element: adding equation " & *)
+	(* print nps & print " = ...\n" & *)
+	(* Lform.convert_element(e) => e' *)
+	-----------------------------------
+	modify_element(SOME(Absyn.EQUALMOD(exp)),pre,
+		       e as Absyn.ELEMENT(final,n,spec),pub)
+	 => (Lform.ELEMENT(final,n,spec'),
+	     [(* DAE.EQUATION(Exp.RELATION(Exp.PATH(np),Exp.EQUAL,exp')) *)])
+
 (*
   rule	Prefix.prefix_path(Exp.IDENT(en),pre) => np &
 
@@ -152,8 +338,8 @@ relation modify_element : (Mod option,Prefix.Prefix,Absyn.Element,bool)
 	-----------------------------------------------------------
 	modify_element(SOME(m),pre, e as Absyn.ELEMENT(f,en,
 					  Absyn.COMPONENTS(_,_,_,_,_,t,
-					  [Absyn.COMPONENT(])),_)
-	 => (Lform.ELEMENT(f,en,Lform.COMPONENTS
+					  [Absyn.COMPONENT(])),_))
+	 => (Lform.ELEMENT(f,en,Lform.COMPONENTS))
 *)
   rule	Prefix.prefix_path(Exp.IDENT(en),pre) => np &
 	Exp.path_string(np) => ns &
@@ -232,7 +418,7 @@ relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
 
 end
 
-relation maybe_modify_class: (Env.Env, Exp.Path, Mod option, Prefix.Prefix, Absyn.Class)
+relation maybe_modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
 	  => (Lform.Class, DAE.DAEcomp list) =
 
   axiom	maybe_modify_class(_,_,NONE,pre,c) => (c, [])
@@ -253,7 +439,7 @@ relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
 
 end
 
-relation simple_maybe_modify_class : (Env.Env, Mod option, Prefix.Prefix, Absyn.Class)
+relation simple_maybe_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
 	  => (Lform.Class, DAE.DAEcomp list) =
 
   axiom	simple_maybe_modify_class(_,NONE,_,c) => (c,[])
@@ -264,18 +450,4 @@ relation simple_maybe_modify_class : (Env.Env, Mod option, Prefix.Prefix, Absyn.
 	 => (Lform.CLASS(n,p,r,d'),dae)
 
 end
-
-
-relation merge : (Mod option, Mod option) => Mod option =
-
-  axiom merge(NONE,NONE) => NONE
-
-  axiom merge(NONE,m) => m
-
-  axiom merge(m,NONE) => m
-
-  rule	print "# incomplete handling of modification merging\n"
-	-----------------------------------------------------
-	merge(outer,inner) => outer
-
-end
+*)
