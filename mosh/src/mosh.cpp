@@ -19,11 +19,6 @@
 
 */
 
-#include "modelica_lexer.hpp"
-#include "modelica_expression_parser.hpp"
-#include "modelica_tree_parser.hpp"
-#include "parse_tree_dumper.hpp"
-
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -33,114 +28,88 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "value.hpp"
-#include "symboltable.hpp"
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
-void read_and_evaluate(istream&instream);
+void open_socket(char* hostname, int port);
 
-void check_moshhome(void);
+char * check_moshhome(void);
 
-// The symbol table
- symboltable symtab;
-
+void init_sockaddr (struct sockaddr_in *name,
+                             const char *hostname,
+                             int port);
 int main(int argc, char* argv[])
 {
-
-  check_moshhome();
+  char buf[40000];
   
-      if (argc > 2)
-      {
-  	std::cerr << "Incorrect number of arguments\n";
-  	return EXIT_FAILURE;
-      }
+  
+  char * moshhome=check_moshhome();
+  
+  if (argc==1) 
+    {
+      // Starting background server.
+      char systemstr[255];
+      sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log &",
+	      moshhome,moshhome);
+      int res = system(systemstr);
+      cout << "Started server..." << endl;
+    }
+  
+  if (argc > 2)
+    {
+      std::cerr << "Incorrect number of arguments\n";
+      return EXIT_FAILURE;
+    }
+  
+  std::cout << "Open Source Modelica 0.1" << endl;
+  std::cout << "Copyright 2002, PELAB, Linkoping University" << endl;
+      
+  int port=29500;
+  
+  char* hostname ="localhost";
+  // TODO: add port nr. and host as command line option
+  
+  
+ /* Create the socket. */
+  int sock = socket (PF_INET, SOCK_STREAM, 0);
+  if (sock < 0)
+    {
+      perror ("socket (client)");
+      exit (EXIT_FAILURE);
+    }
 
-    
-    if (argc == 1) // Interactiv mode
-      {
-	
-	std::cout << "Open Source Modelica 0.1" << endl;
-	std::cout << "Copyright 2002, PELAB, Linkoping University" << endl;
+  /* Connect to the server. */
+  struct sockaddr_in servername;
+  init_sockaddr (&servername, hostname, port);
+  if (0 > connect (sock,
+                   (struct sockaddr *) &servername,
+                   sizeof (servername)))
+    {
+      perror ("connect (client)");
+      exit (EXIT_FAILURE);
+    }
 
-	bool done = false;
-	while (!done)
-	  {
-	    char* line = readline(">>> ");
-	    
-	    if (!line) break;
-	    if (*line == EOF) done = true;
-
-	    if (*line)
-	      {
-		add_history(line);
-		
-		std::istrstream instream(line);
-		read_and_evaluate(instream);
-	      }
-	    free(line);
-	  }
-	cout << endl;
-	exit(EXIT_SUCCESS);
-      }
-    
-    if (argc == 2) // Batch mode
-      {
-	std::ifstream file; 
-	file.open(argv[1]);
-    
-	if (!file)
-	  {
-	    std::cerr << "Could not open file: " << argv[1] << endl;
-	    return 2;
-	  }
-
-	read_and_evaluate(file);
-	file.close();
-      }
-    return EXIT_SUCCESS;
+  bool done=false;	
+  while (!done) {
+    char* line = readline(">>> ");
+    if (strcmp(line,"quit()") == 0) {
+      done =true;
+    }
+    int nbytes = write(sock,line,strlen(line)+1);
+    int recvbytes = read(sock,buf,40000);
+    cout << buf;
+  }
+  close (sock);  
+  return EXIT_SUCCESS;
 }
 
-
-void read_and_evaluate(istream& instream)
-{
-    modelica_lexer lexer(instream);
-    //		lexer.setFilename(argv[1]);
-    try
-	{
-	    modelica_expression_parser parser(lexer);
-	    bool hide_result = parser.start_rule();
-	    
-	    antlr::RefAST ast = parser.getAST();
-	    
-	    	    parse_tree_dumper dumper(std::cout);
-	    
-	    if (ast) 
-		{
-		  // dumper.dump(ast);
-		  
-		  modelica_tree_parser walker;
-		  //symboltable symtab;
-		  //std::cout << "-------------- Beginning of walk-------------\n";
-		  //		  value result = walker.start_expression(ast,&symtab);
-		  value result = walker.start_algorithm(ast,&symtab);
-
-		  if (!hide_result) cout << result << endl;
-		  //std::cout << "---------------- Walking done ---------------\n";
-		}
-	    else
-	      {
-		std::cerr << "Parse error: <NULL> AST\n";
-		
-		
-	      }
-	}
-    catch(std::exception& e) 
-      {
-	std::cerr << "Exception: " << e.what() << std::endl;
-      }
-}
-
-
-void check_moshhome(void)
+char * check_moshhome(void)
 {
   char *str;
   
@@ -149,4 +118,23 @@ void check_moshhome(void)
     printf("Error, MOSHHOME not set. Set MOSHHOME to the directory where mosh resides (top dir)\n");
     exit(1);
   }
+  return str;
+}
+
+void
+init_sockaddr (struct sockaddr_in *name,
+               const char *hostname,
+               int port)
+{
+  struct hostent *hostinfo;
+
+  name->sin_family = AF_INET;
+  name->sin_port = htons (port);
+  hostinfo = gethostbyname (hostname);
+  if (hostinfo == NULL)
+    {
+      fprintf (stderr, "Unknown host %s.\n", hostname);
+      exit (EXIT_FAILURE);
+    }
+  name->sin_addr = *(struct in_addr *) hostinfo->h_addr;
 }
