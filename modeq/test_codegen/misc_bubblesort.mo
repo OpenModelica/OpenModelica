@@ -22,4 +22,8 @@ algorithm
 end misc_bubblesort;
 
 model mo
+  parameter Real a[8] = { 9,3,7,5,6,8,2,0 };
+  Real b[8];
+equation
+  b=misc_bubblesort(a);
 end mo;

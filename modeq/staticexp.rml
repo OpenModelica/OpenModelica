@@ -252,19 +252,21 @@ end
  ** This relation calls Ceval.ceval if the boolean parameter is true
  ** on the expression.
  **)
-relation ceval_if_constant: (Exp.Exp,bool (* constant *), bool (* impl *), Env.Env) => Exp.Exp =
+relation ceval_if_constant: (Exp.Exp, Types.Properties, bool (* constant *), bool (* impl *), Env.Env) 
+	  => (Exp.Exp, Types.Properties) =
 
-  axiom	ceval_if_constant(e,cnst as false,_,_) => e 
+  axiom	ceval_if_constant(e,prop,cnst as false,_,_) => (e, prop)
 
-  axiom	ceval_if_constant(e,cnst as true ,impl as true,_) => e 
+  axiom	ceval_if_constant(e,prop,cnst as true ,impl as true,_) => (e, prop)
 	
 
   rule	Ceval.ceval(env,e,impl,NONE,NONE) => (v,_) &
-	value_exp(v) => e'
+	value_exp(v) => e' &
+	value_type(v) => vt
 	---------------------------------
-	ceval_if_constant(e,cnst as true,impl (*as false*),env) => e'
+	ceval_if_constant(e,prop,cnst as true,impl (*as false*),env) => (e',Types.PROP(vt,true(*const*)))
 
-  axiom	ceval_if_constant(e,_,_,_) => e
+  axiom	ceval_if_constant(e,prop,const,impl,env) => (e,prop)
 
 end
 
@@ -309,19 +311,21 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
 	replace_operator_with_fcall(Exp.BINARY(e1'',op',e2''),c) => exp' &
-	ceval_if_constant(exp',c,impl,env) => exp''
+	let prop = Types.PROP(rtype,c) &
+	ceval_if_constant(exp',prop,c,impl,env) => (exp'',prop')
 	---------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),impl,st)
-	  => (exp'',Types.PROP(rtype,c),st'')
+	  => (exp'',prop',st'')
 
   rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
 	replace_operator_with_fcall(Exp.UNARY(op',e''),c) => exp' &
-	ceval_if_constant(exp',c,impl,env) => exp''
+	let prop = Types.PROP(rtype,c) &
+	ceval_if_constant(exp',prop,c,impl,env) => (exp'',prop')
 	---------------------------------------------------------
 	elab_exp (env,exp as Absyn.UNARY(op,e),impl, st)
-	  => (exp'', Types.PROP(rtype,c),st')
+	  => (exp'',prop',st')
 	
   rule	(* Logical binary expressions *)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
@@ -330,20 +334,22 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
 	replace_operator_with_fcall(Exp.LBINARY(e1'',op',e2''),c) => exp' &
-	ceval_if_constant(exp',c,impl,env) => exp''
+	let prop =  Types.PROP(rtype,c) &
+	ceval_if_constant(exp',prop,c,impl,env) => (exp'',prop')
 	-----------------------------------------------------------------
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2),impl,st)
-	  => (exp'', Types.PROP(rtype,c),st'')
+	  => (exp'',prop',st'')
 
   rule	(* Logical unary expressions *)
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
 	replace_operator_with_fcall(Exp.LUNARY(op',e''),c) => exp' &
-	ceval_if_constant(exp',c,impl,env) => exp''
+	let prop = Types.PROP(rtype,c) &
+	ceval_if_constant(exp',prop,c,impl,env) => (exp'',prop')
 	----------------------------------------------------------
 	elab_exp (env,exp as Absyn.LUNARY(op,e),impl,st)
-	  => (exp'',Types.PROP(rtype,c),st')
+	  => (exp'',prop',st')
 
   rule	(* Relations, e.g. a < b *)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
@@ -352,10 +358,11 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
 	replace_operator_with_fcall(Exp.RELATION(e1'',op',e2''),c) => exp' &
-	ceval_if_constant(exp',c,impl,env) => exp''
+	let prop = Types.PROP(rtype,c) &
+	ceval_if_constant(exp',prop,c,impl,env) => (exp'',prop')
 	-----------------------------------------------------------------
 	elab_exp (env,exp as Absyn.RELATION(e1,op,e2),impl,st)
-	  => (exp'', Types.PROP(rtype,c),st'')
+	  => (exp'',prop',st'')
 
 	(**  Conditional expressions *)
 
@@ -373,11 +380,11 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	(** TODO: Implement elaboration of named arguments. *)
 	Debug.fprintln("sei", "elab_exp CALL...") &
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop as Types.PROP(t,c),st') &
-	ceval_if_constant(e,c,impl,env) => e'
+	ceval_if_constant(e,prop,c,impl,env) => (e',prop')
 	& Debug.fprintln("sei", "elab_exp CALL done")
 	--------------------------------------
 	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs)),impl,st) 
-		=> (e',prop,st')
+		=> (e',prop',st')
 
 
 	(*PR. Get the properties for each expression in the tuple. 

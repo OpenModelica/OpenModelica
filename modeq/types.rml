@@ -939,7 +939,8 @@ relation unparse_type: Type => string =
 	--------------------------------------
 	unparse_type((T_COMPLEX(ci_state,vs),_)) => res
 
-  axiom	unparse_type(_) => "not implemented yet\n" 
+  axiom	unparse_type(_) => "unparse_type: not implemented yet\n" 
+
 end	
 
 (** relation: print_type
