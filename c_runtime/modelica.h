@@ -32,6 +32,16 @@
 #include "utility.h"
 #include "read_write.h"
 
+#include "memory_pool.c"
+#include "index_spec.c"
+
+#include "real_array.c"
+#include "integer_array.c"
+#include "string_array.c"
+#include "utility.c"
+#include "read_write.c"
+
+
 typedef real_array_t real_array;
 typedef integer_array_t integer_array;
 

@@ -80,7 +80,7 @@ void clear_current_state()
 /* allocates n reals in the real_buffer */
 real* real_alloc(int n)
 {
-  index_t start;
+  _index_t start;
 
   assert(n>=0);
   assert(current_state.real_buffer_ptr +n < NR_REAL_ELEMENTS);
@@ -95,7 +95,7 @@ real* real_alloc(int n)
 /* allocates n integers in the integer_buffer */
 integer* integer_alloc(int n)
 {
-  index_t start;
+  _index_t start;
 
   assert(n>=0);
   assert(current_state.integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
@@ -111,7 +111,7 @@ integer* integer_alloc(int n)
 /* allocates n strings in the string_buffer */
 string* string_alloc(int n)
 {
-  index_t start;
+  _index_t start;
 
   assert(n>=0);
   assert(current_state.string_buffer_ptr +n < NR_STRING_ELEMENTS);
@@ -127,7 +127,7 @@ string* string_alloc(int n)
 /* allocates n booleans in the boolean_buffer */
 boolean* boolean_alloc(int n)
 {
-  index_t start;
+  _index_t start;
 
   assert(n>=0);
   assert(current_state.boolean_buffer_ptr +n < NR_BOOLEAN_ELEMENTS);
@@ -142,7 +142,7 @@ boolean* boolean_alloc(int n)
 
 int* size_alloc(int n)
 {
-  index_t start;
+  _index_t start;
   
   assert(n>=0);
   assert(n + current_state.size_buffer_ptr < NR_SIZE_ELEMENTS);
@@ -156,7 +156,7 @@ int* size_alloc(int n)
 
 int** index_alloc(int n)
 {
-  index_t start;
+  _index_t start;
   
   assert(n>=0);
   assert(n + current_state.index_buffer_ptr < NR_SIZE_ELEMENTS);
@@ -168,7 +168,7 @@ int** index_alloc(int n)
   /*  return start;*/
 }
 
-index_t real_free(int n)
+_index_t real_free(int n)
 {
   assert(n>=0);
   assert(current_state.real_buffer_ptr-n>=0);
@@ -177,7 +177,7 @@ index_t real_free(int n)
   return current_state.real_buffer_ptr; 
 }
 
-index_t integer_free(int n)
+_index_t integer_free(int n)
 {
   assert(n>=0);
   assert(current_state.integer_buffer_ptr-n>=0);
@@ -186,7 +186,7 @@ index_t integer_free(int n)
   return current_state.integer_buffer_ptr; 
 }
 
-index_t string_free(int n)
+_index_t string_free(int n)
 {
   assert(n>=0);
   assert(current_state.string_buffer_ptr-n>=0);
@@ -195,7 +195,7 @@ index_t string_free(int n)
   return current_state.string_buffer_ptr; 
 }
 
-index_t boolean_free(int n)
+_index_t boolean_free(int n)
 {
   assert(n>=0);
   assert(current_state.boolean_buffer_ptr-n>=0);
@@ -204,7 +204,7 @@ index_t boolean_free(int n)
   return current_state.boolean_buffer_ptr; 
 }
 
-index_t size_free(int n)
+_index_t size_free(int n)
 {
   assert(n>=0);
   assert(current_state.size_buffer_ptr-n>=0);
@@ -213,7 +213,7 @@ index_t size_free(int n)
   return current_state.size_buffer_ptr; 
 }
 
-index_t index_free(int n)
+_index_t index_free(int n)
 {
   assert(n>=0);
   assert(current_state.index_buffer_ptr-n>=0);

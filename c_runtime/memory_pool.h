@@ -34,8 +34,7 @@ typedef double real;
 typedef int integer;
 typedef const char* string;
 typedef int boolean;
-
-typedef int index_t;
+typedef int _index_t; 
 
 extern real real_buffer[NR_REAL_ELEMENTS];
 extern integer integer_buffer[NR_INTEGER_ELEMENTS];
@@ -45,12 +44,12 @@ extern integer size_buffer[NR_SIZE_ELEMENTS];
 extern int* index_buffer[NR_INDEX_ELEMENTS];
 
 struct state_s {
-  index_t real_buffer_ptr;
-  index_t integer_buffer_ptr;
-  index_t string_buffer_ptr;
-  index_t boolean_buffer_ptr;
-  index_t size_buffer_ptr;
-  index_t index_buffer_ptr;
+  _index_t real_buffer_ptr;
+  _index_t integer_buffer_ptr;
+  _index_t string_buffer_ptr;
+  _index_t boolean_buffer_ptr;
+  _index_t size_buffer_ptr;
+  _index_t index_buffer_ptr;
 };
 
 typedef struct state_s state;
@@ -74,10 +73,10 @@ boolean* boolean_alloc(int n);
 int* size_alloc(int n);
 int** index_alloc(int n);
 
-index_t real_free(int n);
-index_t integer_free(int n);
-index_t string_free(int n);
-index_t boolean_free(int n);
-index_t size_free(int n);
-index_t index_free(int n);
+_index_t real_free(int n);
+_index_t integer_free(int n);
+_index_t string_free(int n);
+_index_t boolean_free(int n);
+_index_t size_free(int n);
+_index_t index_free(int n);
 #endif
