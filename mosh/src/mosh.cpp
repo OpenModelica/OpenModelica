@@ -56,8 +56,8 @@ char * check_moshhome(void);
 void init_sockaddr (struct sockaddr_in *name,
                              const char *hostname,
                              int port);
-void doCorbaCommunication(int argc, char **argv);
-void doSocketCommunication(void);
+void doCorbaCommunication(int argc, char **argv,const string *);
+void doSocketCommunication(const string*);
 
 
 /* Global variables */
@@ -88,19 +88,22 @@ int main(int argc, char* argv[])
   bool corba_comm=false;
   bool noserv=false;
   
+
   char * moshhome=check_moshhome();
-  
+
   corba_comm = flagSet("corba",argc,argv);
-  if ((noserv=flagSet("noserv",argc,argv))){
+  const string *scriptname = getFlagValue("f",argc,argv);
+  if ((noserv=flagSet("noserv",argc,argv))&&!scriptname){
     cout << "Skip starting server, assumed to be running" << endl;
   }
-  if ((corba_comm=flagSet("corba",argc,argv))) {
+  if ((corba_comm=flagSet("corba",argc,argv))&& !scriptname) {
+
     cout << "Using corba communication" << endl;
   }  
-  
-  cout << "Open Source Modelica 0.1" << endl;
-  cout << "Copyright 2002, PELAB, Linkoping University" << endl;
-  
+  if(!scriptname) {
+    cout << "Open Source Modelica 0.1" << endl;
+    cout << "Copyright 2002, PELAB, Linkoping University" << endl;
+  }
   if (corba_comm) {
     if (!noserv) {
       // Starting background server using corba
@@ -108,9 +111,10 @@ int main(int argc, char* argv[])
       sprintf(systemstr,"%s/../modeq/modeq +d=interactiveCorba > %s/error.log 2>&1 &",
 	      moshhome,moshhome);
       int res = system(systemstr);
-      cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+      if (!scriptname)
+	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
     }
-    doCorbaCommunication(argc,argv);
+    doCorbaCommunication(argc,argv,scriptname);
   } else {
     if (!noserv) {
      // Starting background server using corba
@@ -118,26 +122,38 @@ int main(int argc, char* argv[])
       sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log 2>&1 &",
 	      moshhome,moshhome);
       int res = system(systemstr);
-      cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+      if (!scriptname)
+	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
     } 
-    doSocketCommunication();
+    doSocketCommunication(scriptname);
   }
+
+  delete scriptname;
   return EXIT_SUCCESS;
 }
 
-void doCorbaCommunication(int argc, char **argv)
+void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 {
-  cerr << "doCorbaCommunication" << endl;
- CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);
- cerr << "inited orb" << endl;
-  
+ CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);  
   char uri[300];
   sprintf (uri, "file:///tmp/openmodelica.objid");
 
-  
   CORBA::Object_var obj = orb->string_to_object(uri);
-  cerr << "got obj" << endl;
+
   ModeqCommunication_var client = ModeqCommunication::_narrow(obj);
+
+  char cd_buf[MAXPATHLEN];
+  char cd_cmd[MAXPATHLEN+6];
+  getcwd(cd_buf,MAXPATHLEN);
+  sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
+  client ->sendExpression(cd_cmd);
+
+  if (scriptname) { // Execute script and output return value 
+    const char * str=("runScript(\""+*scriptname+"\")").c_str();
+    char *res=client->sendExpression(str);
+    cout << res << endl;
+    return;
+  }
 
   if (CORBA::is_nil(client)) {
     cerr << "Could not locate modeq server." << endl;
@@ -171,7 +187,7 @@ void doCorbaCommunication(int argc, char **argv)
 }
 
 
-void doSocketCommunication(void)
+void doSocketCommunication(const string * scriptname)
 {
   int port=29500; 
   char buf[40000];
@@ -218,6 +234,13 @@ void doSocketCommunication(void)
   write(sock,cd_cmd,strlen(cd_cmd)+1);
   read(sock,buf,40000);
 
+  if (scriptname) {
+    const char *str= ("runScript("+*scriptname+")").c_str();
+    int nbytes = write(sock,str,strlen(str)+1);
+    int recvbytes = read(sock,buf,40000);
+    cout << buf << endl;
+    return;
+  }
   // initialize history usage
   using_history();
 
