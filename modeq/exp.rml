@@ -16,13 +16,21 @@ module Exp:
   (** identifiers in Modelica. *)
 
   (** - Types *)
-  datatype Type = T_INTEGER | T_REAL | T_STRING | T_BOOL | T_OTHER
+  datatype Type = T_INTEGER
+		| T_REAL
+		| T_STRING
+		| T_BOOL
+		| T_OTHER
+		| T_ARRAY of int * Type
   (** To generate the correct set of equations, the translator has to *)
   (** differentiate between the primitive types `Real', `Integer', *)
   (** `String', `Boolean' and types directly derived from then from *)
-  (** other, complex types.  The `Type' type is used to store *)
+  (** other, complex types.  For arrays and matrices the type *)
+  (** `T_ARRAY' is used, with the first argument being the number of *)
+  (** dimensions, and the second being the type of the objects in the *)
+  (** array.  The `Type' type is used to store *)
   (** information about whether a class is derived from a primitive *)
-  (** type, and whether a variable is of one of these types. *)
+  (** type, and whether a variable is of one of these types.  *)
 
   (** - Subscripts *)
   datatype Subscript = NOSUB
@@ -66,6 +74,8 @@ module Exp:
 	       | CALL of Path * Exp list		(* Function call *)
 	       | TIME
 	       | CAST_TO_REAL of Exp
+	       | ARRAY of Exp list
+	       | MATRIX of Exp list list
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
   relation path_string : Path => string
@@ -257,6 +267,16 @@ relation dump_exp: Exp => () =
 	----------------------------------------
 	dump_exp CAST_TO_REAL(e)
 
+  rule	print "[" &
+	dump_list(es, dump_exp, ",") &
+	print "]"
+	---------
+	dump_exp ARRAY(es)
+	
+  rule	print "[MATRIX]"
+	---------
+	dump_exp MATRIX(es)
+	
   rule	print "#UNKNOWN EXPRESSION#"
         ----------------------------------
 	dump_exp (_)
@@ -313,7 +333,7 @@ relation relop_symbol: RelOp => string =
   axiom	relop_symbol(LESSEQ)    => " <= "
   axiom	relop_symbol(GREATER)   => " > "
   axiom	relop_symbol(GREATEREQ) => " >= "
-  axiom	relop_symbol(EQUAL)     => " == "
+  axiom	relop_symbol(EQUAL)     => " = "
   axiom	relop_symbol(NEQUAL)    => " <> "
 end
 
@@ -397,5 +417,10 @@ relation print_type : Type => () =
   rule	print "complex"
 	------------
 	print_type T_OTHER
+
+  rule	print "array(" & int_string dim => s & print s & print ") of " &
+	print_type t
+	------------
+	print_type T_ARRAY(dim,t)
 
 end
