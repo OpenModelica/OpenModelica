@@ -1130,8 +1130,8 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	 *)
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae as DAELOW(vars,knvars,eqns,_),m,mt) &
-(*	  print "reduced index, new DAE:\n" &
-	dump dae &*)
+	  print "reduced index, new DAE:\n" &
+	dump dae &
 	  (* and try again, restarting. This could be optimized later. It should not
 	   be necessary to restart the matching, according to Bernard Bachmann. Instead one 
 	   could continue the matching as usual. This was tested (2004-11-22) and it does not 
@@ -1142,7 +1142,7 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
  	list_length(eqns) => nf' &
 	Util.list_fill(0,nv') => ass1 &
 	Util.list_fill(0,nf') => ass2 &
-	matching_algorithm2(dae,m,mt,nv,nf,1,ass1,ass2)
+	matching_algorithm2(dae,m,mt,nv',nf',1,ass1,ass2)
 	  => (ass1',ass2',dae,m,mt)
 	------------------------
 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
@@ -1177,7 +1177,9 @@ relation reduce_index_dummy_der: (DAELow,
 	states_in_eqns(eqns,dae,m,mt) => (states,stateindx) &
 	differentiate_eqns(dae,m,mt,nv,nf,eqns) 
 	  => (dae,m,mt,nv,nf,deqns) &	
-	 (* update_incidence_matrix(dae,m,mt,i) => (m,mt) &*)
+	  print "differentiated equations, dae:" &
+	dump dae &
+	  update_incidence_matrix(dae,m,mt,i) => (m,mt) &
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
 	new_dummy_var(state,dae) => (dummy_der,dae) &
 	eqns_for_var(mt,stateno) => reqns &
@@ -1185,8 +1187,8 @@ relation reduce_index_dummy_der: (DAELow,
 	(* We need to change variables in the differentiated equations and in the 
 	  equations having the dummy derivative *)
 	replace_dummy_der(state,dummy_der,dae,m,mt,changedeqns) => (dae,m,mt) &
-	make_algebraic(dae,state) => dae 
-	(*update_incidence_matrix(dae,m,mt,i) => (m,mt) *)
+	make_algebraic(dae,state) => dae &
+	update_incidence_matrix(dae,m,mt,i) => (m,mt) 
 	---------------------------------------------
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae,m,mt)

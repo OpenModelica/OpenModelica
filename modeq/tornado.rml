@@ -455,7 +455,6 @@ relation generate_compute_methods: (string,DAELow.DAELow,Absyn.Program) => strin
         print "------------ END DAE DUMP BEFORE TRANSLATE ----------------\n" &
 
 
-
         translate_dae(dae') => dae'' &
 
         print "---------- START DAE DUMP AFTER TRANSLATE -----------------\n" &
