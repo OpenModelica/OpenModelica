@@ -19,10 +19,25 @@
 
 *)
 
+(**
+ ** file:	 types.rml
+ ** module:      Types
+ ** description: Type system
+ **
+ ** RCS: $Id$
+ **
+ ** This module contain a set of system calls, for e.g. compiling and 
+ ** executing stuff, reading and writing files and so on.
+ ** 
+ ** 
+ ** 
+ ** 
+ ** 
+ ** 
+ **)
+
 module System:
 
-(* This module contain a set of system calls, for e.g. compiling and executing stuff	 
- *)
 with "values.rml"
 
 relation vector_setnth: ('a vector,int,'a) => ('a vector)

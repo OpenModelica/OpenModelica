@@ -24,7 +24,7 @@
  ** module:      Graphviz
  ** description: Graphviz is a tool for drawing graphs from a textual
  ** representation. This module generates the textual input to graphviz from a
- ** tree defined using the data structures defined here, e.g. Node for tree *)
+ ** tree defined using the data structures defined here, e.g. Node for tree
  ** nodes. See http://www.research.att.com/sw/tools/graphviz/ .
  **
  ** Input: The tree constructed from data structures in Graphviz

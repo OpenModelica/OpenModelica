@@ -26,8 +26,9 @@
  **
  ** RCS: $Id$
  **
- ** This file defines the type system.  It contains an RML type
- ** called `Type' which defines types.  It also contains relations for
+ ** This file specifies the type system, as defined in the modelica
+ ** specification. It contains an RML type called `Type' which 
+ ** defines types. It also contains relations for
  ** determining subtyping etc.
  **
  ** There are a few known problems with this module.  It currently

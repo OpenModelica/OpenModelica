@@ -31,7 +31,7 @@
  ** This module contains various RML utilities *sigh*, mosly 
  ** related to lists.
  ** It is used pretty much everywhere. The difference between this 
- ** module and the Util module is that ModUtil contains modelica 
+ ** module and the ModUtil module is that ModUtil contains modelica 
  ** related utilities. The Util module only contains "low-level" 
  ** rml utilities, for example finding elements in lists.
  ** 
