@@ -12,14 +12,24 @@ module Mod:
   with "exp.rml"
   with "absyn.rml"
   with "env.rml"
+  with "dae.rml"
+  with "prefix.rml"
 
   type Mod = Absyn.Modification
 
   val empty_mod : Mod
 
-  relation modify_class       : (Env.Env,Mod, Absyn.Class) => Absyn.Class
-  relation maybe_modify_class : (Env.Env,Mod option,Absyn.Class) => Absyn.Class
+  relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
+	    => (Absyn.Class, DAE.DAEcomp list)
+  relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
+	    => (Absyn.Class, DAE.DAEcomp list)
+  relation maybe_modify_class: (Env.Env, Exp.Path, Mod option, Prefix.Prefix, Absyn.Class)
+	    => (Absyn.Class, DAE.DAEcomp list)
+  relation simple_maybe_modify_class : (Env.Env, Mod option, Prefix.Prefix, Absyn.Class)
+	    => (Absyn.Class, DAE.DAEcomp list)
   relation lookup_modification: (Mod,Absyn.Ident) => Mod option
+
+  relation merge : (Mod option, Mod option) => Mod option
 
 end
 
@@ -39,89 +49,18 @@ relation inst_list =
 
 end
 
+(* utility *)
+
+relation element_name : Absyn.Element => Exp.Ident =
+
+  axiom  element_name(Absyn.ELEMENT(_,n,_)) => n
+
+end
+
 (**********************************************************************)
 
-relation modifies: (Mod,Absyn.Ident) => () =
-
-  axiom	modifies(Absyn.CLASSMOD([]),_)
-
-end
-
-relation modify_element: (Mod,Absyn.Element,bool) => Absyn.Element =
-
-  rule	modifies(mod,n) &
-	print "Error: Trying to modify protected element " &
-	print n & print "\n"
-	--------------------------------------------------------------
-	modify_element(mod,e as Absyn.ELEMENT(_,n,_),false) => e
-
-  rule	modifies(mod,n) &
-	print "Error: Trying to modify final element " & print n & print "\n"
-	---------------------------------------------------------------------
-	modify_element(mod,e as Absyn.ELEMENT(true,n,_),_) => e
-
-end
-
-relation modify_classpart: (Mod,Absyn.ClassPart) => Absyn.ClassPart =
-
-  axiom	modify_classpart(mod,Absyn.PUBLIC([])) => Absyn.PUBLIC([])
-  axiom	modify_classpart(mod,Absyn.PROTECTED([])) => Absyn.PROTECTED([])
-
-  rule	modify_element(mod,e,true) => e' &
-	modify_classpart(mod,Absyn.PUBLIC(es)) => Absyn.PUBLIC(es')
-	---------------------------------------
-	modify_classpart(mod,Absyn.PUBLIC(e::es)) => Absyn.PUBLIC(e'::es')
-
-  rule	modify_element(mod,e,false) => e' &
-	modify_classpart(mod,Absyn.PROTECTED(es)) => Absyn.PUBLIC(es')
-	---------------------------------------
-	modify_classpart(mod,Absyn.PROTECTED(e::es)) =>
-	  Absyn.PROTECTED(e'::es')
-
-end
-
-relation modify_classdef: (Env.Env,Mod,Absyn.ClassDef) => Absyn.ClassDef =
-
-  axiom	modify_classdef(env,mod,p as Absyn.PARTS([])) => p
-
-  rule	modify_classpart(mod,p) => p' &
-	modify_classdef(env,mod,Absyn.PARTS(ps)) => Absyn.PARTS(ps')
-	------------------------------------
-	modify_classdef(env,mod,Absyn.PARTS(p::ps)) => Absyn.PARTS(p'::ps')
-
-  rule	Env.lookup_class(env,p) => Absyn.CLASS(n,_,r,d) &
-	(* FIXME: Check restriction *)
-	modify_classdef(env,mod,d) => d'
-	---------------------------------
-	modify_classdef(env,mod,Absyn.DERIVED(p,ad,es)) => d'
-
-end
-
-relation modify_class: (Env.Env,Mod, Absyn.Class) => Absyn.Class =
-
-  rule	print "# equal modifications are not handled yet\n"
-	---------------------------------------------------
-	modify_class(env,Absyn.EQUALMOD(e),c) => c
-
-  rule	modify_classdef(env,mod,d) => d'
-	---------------------------------
-	modify_class(env,mod,Absyn.CLASS(n,p,r,d))
-	 => Absyn.CLASS(n,p,r,d')
-
-end
-
-relation maybe_modify_class: (Env.Env,Mod option,Absyn.Class) => Absyn.Class =
-
-  axiom	maybe_modify_class(_,NONE,c) => c
-
-  rule	modify_class(env,mod,c) => c'
-	------------------------------
-	maybe_modify_class(env,SOME(mod),c) => c'
-
-end
-
-relation lookup_classmod
-	  : (Absyn.ElementArg list, Absyn.Ident) => Mod option =
+relation lookup_classmod : (Absyn.ElementArg list, Absyn.Ident)
+	  => Mod option =
 
   axiom lookup_classmod([],_) => NONE
 
@@ -159,3 +98,152 @@ relation lookup_modification: (Mod,Absyn.Ident) => Mod option =
 
 end
 
+relation modifies: (Mod,Absyn.Ident) => () =
+
+  rule	lookup_modification(mod,n) => m
+	-------------------------------
+	modifies(mod,n)
+
+end
+
+relation modify_element : (Mod option,Prefix.Prefix,Absyn.Element,bool)
+	  => (Absyn.Element, DAE.DAEcomp list) =
+
+  axiom modify_element(NONE,_,e,_) => (e,[])
+
+  rule	element_name(e) => n &
+	modifies(mod,n) &
+	print "Error: Trying to modify protected element " &
+	print n & print "\n"
+	--------------------------------------------------------------
+	modify_element(SOME(mod),_,e,false) => (e,[])
+
+  rule	modifies(mod,n) &
+	print "Error: Trying to modify final element " & print n & print "\n"
+	---------------------------------------------------------------------
+	modify_element(SOME(mod),_,e as Absyn.ELEMENT(true,n,_),_) => (e,[])
+
+  rule	Prefix.prefix_exp(exp,pre) => exp' &
+	element_name(e) => n &
+	Prefix.prefix_path(Exp.IDENT(n),pre) => np
+	-----------------------------------
+	modify_element(SOME(Absyn.EQUALMOD(exp)),pre, e,_)
+	 => (e,[DAE.EQUATION(Exp.RELATION(Exp.PATH(np),Exp.EQUAL,exp'))])
+
+end
+
+relation modify_classpart : (Mod,Prefix.Prefix,Absyn.ClassPart)
+	  => (Absyn.ClassPart, DAE.DAEcomp list) =
+
+  axiom	modify_classpart(_,_,p as Absyn.EQUATIONS(_))  => (p,[])
+  axiom	modify_classpart(_,_,p as Absyn.ALGORITHMS(_)) => (p,[])
+  axiom	modify_classpart(_,_,p as Absyn.PUBLIC([]))    => (p,[])
+  axiom	modify_classpart(_,_,p as Absyn.PROTECTED([])) => (p,[])
+
+  rule	element_name(e) => en &
+	lookup_modification(mod,en) => mod' &
+	modify_element(mod',pre,e,true) => (e',eq1) &
+	modify_classpart(mod,pre,Absyn.PUBLIC(es))
+	 => (Absyn.PUBLIC(es'),eq2) &
+	list_append(eq1,eq2) => eq
+	---------------------------------------
+	modify_classpart(mod,pre,Absyn.PUBLIC(e::es))
+	 => (Absyn.PUBLIC(e'::es'),eq)
+
+  rule	element_name(e) => en &
+	lookup_modification(mod,en) => mod' &
+	modify_element(mod',pre,e,false) => (e',eq1) &
+	modify_classpart(mod,pre,Absyn.PROTECTED(es))
+	 => (Absyn.PUBLIC(es'),eq2) &
+	list_append(eq1,eq2) => eq
+	---------------------------------------
+	modify_classpart(mod,pre,Absyn.PROTECTED(e::es)) =>
+	  (Absyn.PROTECTED(e'::es'), eq)
+
+end
+
+relation modify_classdef : (Env.Env,Mod,Prefix.Prefix,Absyn.ClassDef)
+	  => (Absyn.ClassDef, DAE.DAEcomp list) =
+
+  axiom	modify_classdef(_,_,_,p as Absyn.PARTS([])) => (p,[])
+
+  rule	modify_classpart(mod,pre,p) => (p',eq1) &
+	modify_classdef(env,mod,pre,Absyn.PARTS(ps))
+	 => (Absyn.PARTS(ps'),eq2) &
+	list_append(eq1,eq2) => eq
+	------------------------------------
+	modify_classdef(env,mod,pre,Absyn.PARTS(p::ps))
+	 => (Absyn.PARTS(p'::ps'), eq)
+
+  rule	Env.lookup_class(env,p) => Absyn.CLASS(n,_,r,d) &
+	(* FIXME: Check restriction *)
+	modify_classdef(env,mod,pre,d) => (d',eq)
+	---------------------------------
+	modify_classdef(env,mod,pre,Absyn.DERIVED(p,ad,es)) => (d',eq)
+
+end
+
+relation modify_class: (Env.Env, Exp.Path, Mod, Prefix.Prefix, Absyn.Class)
+	  => (Absyn.Class, DAE.DAEcomp list) =
+
+  rule	print "  modify_class: Adding equation " &
+	Exp.path_string(vn) => s &
+	print s & print " = ...\n"
+	---------------------------------------------------
+	modify_class(env,vn,Absyn.EQUALMOD(e), pre, c)
+	 => (c,[DAE.EQUATION(Exp.RELATION(Exp.PATH(vn),Exp.EQUAL,e))])
+
+  rule	modify_classdef(env,mod,pre,d) => (d',eq)
+	---------------------------------
+	modify_class(env,_,mod, pre, Absyn.CLASS(n,p,r,d))
+	 => (Absyn.CLASS(n,p,r,d'),eq)
+
+end
+
+relation maybe_modify_class: (Env.Env, Exp.Path, Mod option, Prefix.Prefix, Absyn.Class)
+	  => (Absyn.Class, DAE.DAEcomp list) =
+
+  axiom	maybe_modify_class(_,_,NONE,pre,c) => (c, [])
+
+  rule	modify_class(env,vn,mod,pre,c) => (c',l)
+	------------------------------
+	maybe_modify_class(env,vn,SOME(mod),pre,c) => (c',l)
+
+end
+
+relation simple_modify_class : (Env.Env, Mod, Prefix.Prefix, Absyn.Class)
+	  => (Absyn.Class, DAE.DAEcomp list) =
+
+  rule	modify_classdef(env,mod,pre,d) => (d',dae)
+	---------------------------------
+	simple_modify_class(env,mod,pre,Absyn.CLASS(n,p,r,d))
+	 => (Absyn.CLASS(n,p,r,d'),dae)
+
+end
+
+relation simple_maybe_modify_class : (Env.Env, Mod option, Prefix.Prefix, Absyn.Class)
+	  => (Absyn.Class, DAE.DAEcomp list) =
+
+  axiom	simple_maybe_modify_class(_,NONE,_,c) => (c,[])
+
+  rule	modify_classdef(env,mod,pre,d) => (d',dae)
+	--------------------------------------
+	simple_maybe_modify_class(env,SOME(mod),pre,Absyn.CLASS(n,p,r,d))
+	 => (Absyn.CLASS(n,p,r,d'),dae)
+
+end
+
+
+relation merge : (Mod option, Mod option) => Mod option =
+
+  axiom merge(NONE,NONE) => NONE
+
+  axiom merge(NONE,m) => m
+
+  axiom merge(m,NONE) => m
+
+  rule	print "Incomplete handling of modification merging\n"
+	-----------------------------------------------------
+	merge(outer,inner) => outer
+
+end
