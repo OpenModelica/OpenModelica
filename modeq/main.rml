@@ -510,6 +510,7 @@ relation translate_file : string list => () =
  	----------------------------
  	translate_file [] => fail
 
+(*
   rule	Print.print_error_buf "# An error occured. Perhaps this is not a Modelica file or does not end with .mo?\n" &
 	Print.get_error_string () => str 
 	& print str 
@@ -517,6 +518,7 @@ relation translate_file : string list => () =
 	& print printstr
 	----------------------------
 	translate_file _ => fail
+*)
 
 end
 
@@ -733,7 +735,8 @@ relation main : string list => () =
 	--------------------
 	main args
 
-  rule	print "\n\n----\n\nMain failed. Error buffer:\n\n"
+  rule	print "#|Execution failed!"
+	& print "\n\n----\n\nError buffer:\n\n"
 	& Print.get_error_string () => errstr
 	& print errstr
 	--------------
