@@ -89,6 +89,8 @@ extern "C"
     output << "{\n";
     output << "  SetName(Name);\n";
     output << "  SetDesc(L\" \");\n\n";
+    output << "std::cout << \"new:" << class_name << "\" << std::endl;\n";
+
     int no_of_input_vars = get_no_of_direction_vars_with_type(string("input"), 
                                                               string("variable"),
                                                               variables);
@@ -242,7 +244,7 @@ extern "C"
         }           
 
     }
-    //cout << (debug_found ? "FOUND  " : "NOT FOUND") << "TORNADOEXT " << variable_name << " in class  " << class_str_key << " index: "<< ret_val<<  endl;
+    // cout << (debug_found ? "FOUND  " : "NOT FOUND") << "TORNADOEXT " << variable_name << " in class  " << class_str_key << " index: "<< ret_val<<  endl;
 
     rmlA0 = (void*) mk_icon(ret_val);
     RML_TAILCALLK(rmlSC);
