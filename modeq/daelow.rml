@@ -1921,6 +1921,8 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 
   rule	array_length(m) => nvars &
 	array_length(mt) => neqns &
+	int_gt(nvars,0) => true &
+	int_gt(neqns,0) => true &
 	int_real(nvars) => nrvars &
 	real_mul(nrvars,2.0)=> nrvars' &
 	real_int(nrvars') => memsize & 
@@ -1933,6 +1935,12 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 	assignments_vector(ass2) => vec2 
 	--------------------------
 	matching_algorithm(dae,m,mt) => (vec1,vec2,dae,m,mt)
+	
+  rule	list_vector([]) => v1 & 
+	list_vector([]) => v2 
+	------------------------
+	matching_algorithm(dae,m,mt) => (v1,v2,dae,m,mt)
+	
 end
 
 (** relation assignments_vector
@@ -2638,7 +2646,12 @@ end
  ** Transform the expandable Equation array to a list of Equations.
  **)
 relation equation_list:(EquationArray) => Equation list =
-	
+
+  axiom	equation_list(EQUATION_ARRAY(0,_,arr)) => []
+  rule	array_nth(arr,0) => SOME(elt) 
+	-----------------------------
+	equation_list(EQUATION_ARRAY(1,_,arr)) => [elt]
+
   rule	n - 1 => lastpos &
 	equation_list2(arr,0,lastpos) => lst 
 	-----------------------
