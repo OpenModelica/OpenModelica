@@ -9,7 +9,7 @@ package testFEM
     
     extends Boundary;
     
-    redeclare record Data 
+    redeclare record extends Data 
       parameter Point p0;
       parameter Real w;
       parameter Real h;
@@ -36,7 +36,7 @@ package testFEM
     redeclare function shape 
       input Real u;
       input Data d;
-      output Point x;
+      output BPoint x;
     algorithm 
       x := Composite4.shape(u, d.boundary);
     end shape;
@@ -132,7 +132,7 @@ package testFEM
     end shape;
     
   end MyBoundary;
-
+  
   model MyBoundaryPoissonTest 
     import PDEbhjl.Boundaries.*;
     import PDEbhjl.*;
@@ -191,8 +191,11 @@ package testFEM
           function value = myfunc);
     myFieldP.Data myfield(domain=mydomain);
     
-    parameter BCType bc[2]={{dirzero.bcType,dirzero.val,dirzero.index},{dirfive
-        .bcType,dirfive.val,dirfive.index}};
+    parameter BoundaryCondition.Buildbc buildbc(n=2, data={dirzero,dirfive});
+    /* 
+ parameter BCType bc[2]={{dirzero.bcType,dirzero.val,dirzero.index},{dirfive.
+      bcType,dirfive.val,dirfive.index}};
+*/
     package PDE = PDEbhjl.FEMForms.Autonomous.Poisson2D (redeclare package 
           domainP = myDomainP);
     PDE.Equation pde(
@@ -200,9 +203,8 @@ package testFEM
       nbp=n, 
       refine=refine, 
       nbc=2, 
-      bc=bc);
+      bc=buildbc.bc);
   end MyBoundaryPoissonTest;
-  
   
   model Possion2DTest 
     import PDEbhjl.Boundaries.*;
@@ -211,7 +213,16 @@ package testFEM
     parameter Integer n=20;
     parameter Real refine=0.5;
     
-    parameter Circle.Data bnd(c={0,0}, r=2);
+    parameter BoundaryCondition.Data dirzero(
+      bcType=BoundaryCondition.dirichlet, 
+      val=0, 
+      index=1, 
+      name="dirzero");
+    
+    parameter Circle.Data bnd(
+      c={0,0}, 
+      r=2, 
+      bc=dirzero);
     
     parameter myDomain.Data domain(boundary=bnd);
     
@@ -240,17 +251,21 @@ package testFEM
   package PDE = FEMForms.Autonomous.Poisson2D (redeclare package domainP = 
           myDomain, redeclare package initialField = myField);
 */
-    package PDE = FEMForms.Autonomous.Poisson2D (redeclare package domainP = 
-            myDomain);
-    parameter PDE.Equation pde(
+    parameter BoundaryCondition.Buildbc buildbc(n=1, data={dirzero});
+    
+    package PDE = PDEbhjl.FEMForms.Autonomous.Poisson2D (redeclare package 
+          domainP = myDomain);
+    PDE.Equation pde(
       nbp=n, 
       refine=refine, 
-      domain=domain);
+      domain=domain, 
+      nbc=1, 
+      bc=buildbc.bc);
     
     // Modelica part
     
   end Possion2DTest;
-
+  
   model MyGenericBoundaryDiffusionTest 
     import PDEbhjl.Boundaries.*;
     import PDEbhjl.*;
@@ -265,11 +280,27 @@ package testFEM
     
     package MyBoundary = MyGenericBoundary2;
     
+    parameter BoundaryCondition.Data dirzero(
+      bcType=BoundaryCondition.dirichlet, 
+      val=0, 
+      index=1, 
+      name="dirzero");
+    
+    parameter BoundaryCondition.Data dirfive(
+      bcType=BoundaryCondition.dirichlet, 
+      val=5, 
+      index=2, 
+      name="dirfive");
+    
     parameter MyBoundary.Data bnd(
       p0=p0, 
       w=w, 
       h=h, 
-      cw=cw);
+      cw=cw, 
+      bottom(bc=dirzero), 
+      right(bc=dirfive), 
+      top(bc=dirzero), 
+      left(bc=dirzero));
     
     package myDomainP = Domain (redeclare package boundaryP = MyBoundary);
     parameter myDomainP.Data mydomain(boundary=bnd);
@@ -295,12 +326,18 @@ package testFEM
           function value = myfunc);
     myFieldP.Data myfield(domain=mydomain);
     
+    parameter BoundaryCondition.Buildbc buildbc(n=2, data={dirzero,dirfive});
+    
+    // package PDE = PDEbhjl.FEMForms.Autonomous.Poisson2D (redeclare package 
+    //      domainP = myDomainP);
     package PDE = PDEbhjl.FEMForms.Autonomous.Diffusion2D (redeclare package 
           domainP = myDomainP);
     PDE.Equation pde(
       domain=mydomain, 
       nbp=n, 
       refine=refine, 
-      g0=5);
+      g0=1, 
+      nbc=2, 
+      bc=buildbc.bc);
   end MyGenericBoundaryDiffusionTest;
 end testFEM;

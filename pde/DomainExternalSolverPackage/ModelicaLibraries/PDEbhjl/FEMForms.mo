@@ -18,7 +18,7 @@ package FEMForms
         parameter Integer nbp=20;
         parameter Real refine=0.7;
         parameter Integer nbc=1;
-        parameter BCType bc[nbc];
+        parameter BCType bc[nbc]={{1,0,1} for i in 1:nbc};
         //parameter initialField.Parameters inifp;
         
         // internal packages  
@@ -206,6 +206,8 @@ together with specific boundary conditions.
         parameter domainP.Data domain;
         parameter Integer nbp=20;
         parameter Real refine=0.7;
+        parameter Integer nbc=1;
+        parameter BCType bc[nbc]={{1,0,1} for i in 1:nbc};
         //parameter initialField.Parameters inifp;
         
         // internal packages  
@@ -234,9 +236,9 @@ together with specific boundary conditions.
         parameter FormSize formsize=FormSize(interiorSize, ddomain.mesh.nv - 
             interiorSize);
         parameter Integer u_indices[formsize.nu]=getUnknownIndices(ddomain.mesh
-            .filename, ddomain.mesh.nv, formsize.nu);
+            .filename, ddomain.mesh.nv, formsize.nu, nbc, bc);
         parameter Integer b_indices[formsize.nb]=getBlockedIndices(ddomain.mesh
-            .filename, ddomain.mesh.nv, formsize.nb);
+            .filename, ddomain.mesh.nv, formsize.nb, nbc, bc);
         
         package rhsDFieldP = DiscreteConstField (redeclare package fieldP = 
                 rhsFieldP, redeclare package ddomainP = ddomainP);
@@ -250,9 +252,8 @@ together with specific boundary conditions.
           b_indices=b_indices, 
           val_u=interpolationP.interpolate_indirect(ddomain, rhsField, formsize
               .nu, u_indices), 
-          val_b=fill(5, formsize.nb));
-        //val_b=interpolationP.interpolate_indirect(ddomain, rhsField, formsize.nb, 
-        //   b_indices));
+          val_b=interpolationP.interpolate_indirect(ddomain, rhsField, formsize
+              .nb, b_indices));
         
         package uDFieldP = DiscreteField (redeclare package ddomainP = ddomainP, 
               redeclare package fieldP = uFieldP);
@@ -262,40 +263,27 @@ together with specific boundary conditions.
           formsize=formsize, 
           u_indices=u_indices, 
           b_indices=b_indices, 
-          val_u(start={0 for i in 1:formsize.nu}), 
-          val_b(start={0 for i in 1:formsize.nb}));
+          val_u(start={0 for i in 1:formsize.nu}));
         
       protected 
-        parameter Integer bndcond[fd.ddomain.mesh.ne, 2]={{0,1} for i in 1:fd.
-            ddomain.mesh.ne};
-        //    parameter Real Laplace[fd.ddomain.mesh.nv, fd.ddomain.mesh.nv];
-        //    parameter Real g[fd.ddomain.mesh.nv];
         parameter Real laplace_uu[formsize.nu, formsize.nu]=getForm_gradgrad_uu(
             fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
-            .nb);
+            .nb, nbc, bc);
         parameter Real laplace_ub[formsize.nu, formsize.nb]=getForm_gradgrad_ub(
             fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
-            .nb);
-        
+            .nb, nbc, bc);
         parameter Real mass_uu[formsize.nu, formsize.nu]=getForm_mass_uu(fd.
-            ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb);
+            ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb, 
+            nbc, bc);
         parameter Real mass_ub[formsize.nu, formsize.nb]=getForm_mass_ub(fd.
-            ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb);
-        
-        //  initial equation 
-        //    (Laplace,g) = getMatrix(fd.ddomain.mesh, fd.ddomain.mesh.nv, g_rhs.val, 
-        //      bndcond);
+            ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb, 
+            nbc, bc);
+        parameter Real bvals[formsize.nb]=getBlockedValues(fd.ddomain.mesh.
+            filename, fd.ddomain.mesh.nv, formsize.nb, nbc, bc);
       equation 
-        //writeSquareMatrix("mass_uu.txt", formsize.nu, mass_uu);
-        //writeMatrix("mass_ub.txt", formsize.nu, formsize.nb, mass_ub);
-        //writeSquareMatrix("laplace_uu.txt", formsize.nu, laplace_uu);
-        //writeMatrix("laplace_ub.txt", formsize.nu, formsize.nb, laplace_ub);
-        //writeVector("g_u.txt", formsize.nu, g_rhs.val_u);
-        //writeVector("g_b.txt", formsize.nb, g_rhs.val_b);
         mass_uu*der(fd.val_u) = -laplace_uu*fd.val_u - laplace_ub*fd.val_b + 
           mass_uu*g_rhs.val_u + mass_ub*g_rhs.val_b;
-        fd.val_b = zeros(size(fd.val_b, 1));
-        //fd.val = g;
+        fd.val_b = bvals;
       end Equation;
       
       annotation (Documentation(info="<HTML>
@@ -642,6 +630,17 @@ together with specific boundary conditions.
       parameter Integer boundarySize=size(boundary, 1);
     end Data;
     
+    function createData 
+      input Integer nbp;
+      input domainP.Data domain;
+      input Real refine=0.7;
+      output Data data(
+        nbp=nbp, 
+        domain=domain, 
+        refine=refine);
+    algorithm 
+    end createData;
+    
   end DiscreteDomain;
   
   package Mesh "2D spatial domain" 
@@ -656,7 +655,7 @@ together with specific boundary conditions.
     record Data 
       parameter Integer n;
       parameter Point polygon[n];
-      parameter Integer bc[:]={1 for i in 1:n};
+      parameter Integer bc[n]={1 for i in 1:n};
       parameter Real refine(
         min=0, 
         max=1) = 0.7 "0 < refine < 1, less is finer";
@@ -673,14 +672,20 @@ together with specific boundary conditions.
       parameter Integer nv=s[1] "Number of vertices";
       parameter Integer ne=s[2] "Number of edges on boundary";
       parameter Integer nt=s[3] "Number of triangles";
-      parameter Coordinate x[:, 3]=get_v(filename, nv) 
+      parameter Coordinate x[nv, 3]=get_v(filename, nv) 
         "Coordinates of grid-points (1:2) and inner/bd (3)";
-      parameter Integer edge[:, 3]=get_e(filename, ne) 
+      parameter Integer edge[ne, 3]=get_e(filename, ne) 
         "Edges by vertex-tuple (1:2) and index for boundary condition (3)";
-      parameter Integer triangle[:, 4]=get_t(filename, nt) 
+      parameter Integer triangle[nt, 4]=get_t(filename, nt) 
         "Triangles by vertex-triple (1:3) and index for dependence of coefficients (4)";
     end Data;
     
+    function createMesh 
+      input Integer n;
+      input Point polygon[n];
+      output Data mesh(n=n, polygon=polygon);
+    algorithm 
+    end createMesh;
   end Mesh;
   
   package MeshGeneration "Grid generation for 1D and triangular 2D" 

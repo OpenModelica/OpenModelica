@@ -1,0 +1,5 @@
+translateModel("PDEbhjl.FEMForms.MeshGeneration.generate2D");
+translateModel("PDEbhjl.FEMForms.MeshGeneration.sizes2D");
+translateModel("PDEbhjl.FEMForms.MeshGeneration.vertices2D");
+translateModel("PDEbhjl.FEMForms.MeshGeneration.edges2D");
+translateModel("PDEbhjl.FEMForms.MeshGeneration.triangles2D");
