@@ -153,7 +153,7 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
   rule	Debug.fprintln("setr", "elab_exp_cref") &
 	elab_cref(env, cr) => (exp,prop,_)
 	---------------------------------------
-	elab_exp(env, Absyn.CREF(cr)) => (exp,prop)
+	elab_exp(env, Absyn.CREF(cr)) => (exp,prop) 
 
 	(**  Binary and unary operations *)
 
@@ -1415,7 +1415,12 @@ relation elab_cref2 : (Env.Env,
 
   rule	value_exp v => e
 	----------------
-	elab_cref2 (_,cr,_,_,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
+	elab_cref2 (_,cr,_,Absyn.CONST,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
+
+  rule	elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr'
+	----------------
+	elab_cref2 (_,cr,acc,Absyn.PARAM,tt, Types.VALBOUND(v)) => (Exp.CREF(cr',t),false,acc)
 
   rule	elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
@@ -1687,7 +1692,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 
   rule	ceval_cref (env,c) => v
 	---------------------------
-	ceval (env,Exp.CREF(c,_)) => v
+	ceval (env,Exp.CREF(c,_)) => v 
 
   rule	print "# Can't call functions at compile time\n" &
 	print "    expression: " & Exp.print_exp e & print "\n"

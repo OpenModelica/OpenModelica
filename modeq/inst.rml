@@ -965,16 +965,26 @@ end
 relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.Env =
 
 	
-  rule	Debug.fprint ("decl", "update_variable_in_env called\n") &
-	Lookup.lookup_ident_local(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
+  rule	Debug.fprint ("peter3", "update_variable_in_env called, ident =") &
+	Debug.fcall ("peter3", Dump.print_component_ref, cref) &
+	Debug.fprint ("peter3", "\n") &
+	Debug.fprint("peter3","inst_var, env =") &
+	Debug.fcall("peter3",Env.print_env, env) &
+	Lookup.lookup_ident(env,id) => (ty,SOME(SCode.COMPONENT(n,final,prot,
 	    attr as SCode.ATTR(ad,flow,acc,param,dir),
 	    t,m))) &
 
+	Debug.fprint("peter3","got local ident\n") &
 	Lookup.lookup_class(env,t) => (cl,cenv) & 
+	Debug.fprint("peter3","got class \n") &
 
 	get_cref_from_mod(m) => crefs &
- 	update_variables_in_env(mods,crefs,cenv) => env2 &
-
+	Debug.fprint("peter3","inst_var, env =") &
+	Debug.fcall("peter3",Env.print_env, env) &
+ 	update_variables_in_env(mods,crefs,env) => env2 &
+	Debug.fprint("peter3","performed update of variables for ident=")  &
+	Debug.fcall ("peter3", Dump.print_component_ref, cref) &
+	Debug.fprint ("peter3", "\n") &
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
@@ -989,13 +999,13 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 
 	Mod.mod_equation mod' => eq &
 
-	Debug.fprintln ("insttr", "mod equation done") &
+	Debug.fprintln ("peter3", "mod equation done") &
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 
 	elab_arraydim(env2,ad,eq) => dims &
 					       
-	Debug.fprintln ("insttr", "arraydim elabed") &
+	Debug.fprintln ("peter3", "arraydim elabed") &
 	Debug.fprint("peter2","inst_var, env =") &
 	Debug.fcall("peter2",Env.print_env, env) &
 	(** Instantiate the component *)	
@@ -1009,11 +1019,17 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding)) => env' 
 	----------------------------------
-	update_variable_in_env (mods,Absyn.CREF_IDENT(id,subscr),env) => env'
+	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env) => env'
 
-  rule	print "update_variable_in_env failed\n" 
+  rule	Lookup.lookup_ident(env,id) => (ty,NONE) 
+	----------------------------------
+	update_variable_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env) => env
+
+  rule	print "update_variable_in_env failed\n ident ="  &
+	Dump.print_component_ref cref &
+	print "\n" 
 	---------------------------
-	update_variable_in_env(_,_,env) => env
+	update_variable_in_env(_,cref,env) => env
 end
 
 relation inst_dim_exp : DimExp => Exp.Subscript =

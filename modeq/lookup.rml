@@ -45,6 +45,7 @@ module Lookup:
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding)
   relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element option)
+  relation lookup_ident : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element option)
   relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) 
 end
 
@@ -245,6 +246,26 @@ relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element
 	----------------------------
 	lookup_ident_local(Env.FRAME(items)::_, id) => (fv,b)
 
+end
+
+(* Same as lookup_ident_local, except check all frames *)
+relation lookup_ident : (Env.Env, SCode.Ident) => (Types.Var,SCode.Element option) =
+
+	
+
+  rule	lookup_var2(items, id) => (fv,b) 
+	----------------------------
+	lookup_ident(Env.FRAME(items)::_, id) => (fv,b)
+
+  rule	lookup_ident(rest,id) => (fv,b)
+	---------------------------------
+	lookup_ident(_::rest,id) => (fv,b)
+
+  rule	print "# Error lookup_ident: " &
+	print id &
+	print " failed\n"
+	--------------
+	lookup_ident(_,id) => fail	
 end
 
 
