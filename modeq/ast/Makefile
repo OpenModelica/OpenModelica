@@ -23,7 +23,7 @@ DLG = $(BIN)/dlg
 #CFLAGS = -ggdb -I. -I$(ANTLR_H) #does not work in linux
 CFLAGS = -g -I. -I.. -I$(ANTLR_H)
 #AFLAGS = -CC -gt 
-AFLAGS =
+AFLAGS = -gt -gl
 #DFLAGS = -C2 -CC -cs
 DFLAGS = -C2
 GRM = modgram.g
@@ -40,7 +40,8 @@ ANTLR_SPAWN = modgram.c \
               $(DLG_FILE) $(TOKENS)
 DLG_SPAWN = scanner.c mode.h
 CCC=g++
-CC=gcc
+#CC=gcc
+CC=cc
 
 libast.a : $(OBJ)
 	ar -rc $@ $(OBJ)
