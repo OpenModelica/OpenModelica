@@ -9,6 +9,7 @@ AC_SUBST(antlrlib)
 AC_SUBST(readlineinc)
 AC_SUBST(readlinelib)
 AC_SUBST(LIBSOCKET)
+AC_SUBST(LIBNSL)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -138,7 +139,7 @@ AC_MSG_CHECKING([for scandir])
 AC_TRY_LINK([
 #include <dirent.h>      
 ], [
-int file_select_directories(const struct dirent *entry) {	      
+int file_select_directories(struct dirent *entry) {	      
  return 0;						      
 }							      
 							      
@@ -146,7 +147,7 @@ int main() {
 char dir[]=".";					      
 int count;						      
 struct dirent **files;				      
-scandir(dir, &files, file_select_directories, 0);      
+scandir(dir, &files, file_select_directories, NULL);      
 return 0;						      
 }							      
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
@@ -160,6 +161,15 @@ AC_CHECK_FUNC(socket,
  [AC_MSG_RESULT([no]);
   AC_MSG_CHECKING([for libsocket]);
   AC_CHECK_LIB(socket, socket,[AC_MSG_RESULT([yes]); LIBSOCKET="-lsocket"],[AC_MSG_ERROR([neither socket nor libsocket.a found])])
+])
+
+dnl check for gethostbyname
+
+AC_CHECK_FUNC(gethostbyname, 
+ [AC_MSG_RESULT([yes]); LIBNSL=""],
+ [AC_MSG_RESULT([no]);
+  AC_MSG_CHECKING([for libnsl]);
+  AC_CHECK_LIB(nsl,gethostbyname, [AC_MSG_RESULT([yes]); LIBNSL="-lnsl"],[AC_MSG_ERROR([neither gethostbyname nor libnsl.a found])])
 ])
 
 AC_OUTPUT(Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile  modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile)
