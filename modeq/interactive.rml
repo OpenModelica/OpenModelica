@@ -28,7 +28,7 @@ module Interactive:
   with "types.rml"
   with "values.rml"							  
 
-  datatype InteractiveStmt = IALG of Absyn.Algorithm
+  datatype InteractiveStmt = IALG of Absyn.AlgorithmItem
 			   | IEXP of Absyn.Exp
   datatype InteractiveStmts = ISTMTS of InteractiveStmt list
 							  
@@ -206,12 +206,13 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st')
 	
-  rule	build_env_from_symboltable(st) => env &
+  rule	print "alg_assign\n" &
+	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
 	Static.ceval(env,sexp,true,SOME(st')) => value &
 	add_var_to_symboltable(ident,value,t,st') => newst	
 	-----------------------------------------------
-	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st as SYMBOLTABLE(p,_,_,_,_)) 
+	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
 	    => ("",newst)
 	
   rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str

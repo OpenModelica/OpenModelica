@@ -112,8 +112,8 @@ module Exp:
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
 		    	| CREF_IDENT of Ident * (Subscript list)
 
-  datatype Subscript = WHOLEDIM
-		     | SLICE of Exp
+  datatype Subscript = WHOLEDIM     (* a[:,1] *)
+		     | SLICE of Exp (* a[1:3,1], a[1:2:10,2] *)
 		     | INDEX of Exp
   (** The `Subscript' and `ComponentRef' datatypes are simple *)
   (** translations of the corresponding types in the `Absyn' module. *)

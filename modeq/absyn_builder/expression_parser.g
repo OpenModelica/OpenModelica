@@ -41,7 +41,7 @@ tokens {
 }
 
 interactiveStmt returns [void *ast]
-                : ( (component_reference ASSIGN) => algorithm | expression ) (SEMICOLON)?
+                : ( (component_reference ASSIGN) => algorithm | expression ) (SEMICOLON)? 
                 {
 		#interactiveStmt = #([INTERACTIVE_STMT,"INTERACTIVE_STMT"],#interactiveStmt);
                 }

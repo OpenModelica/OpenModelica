@@ -197,7 +197,7 @@ end
 
 relation dump_istmt : Interactive.InteractiveStmts => () =
   rule	Print.print_buf ("IALG(") &
-	print_algorithm(alg) => () &
+	print_algorithmitem(alg) => () &
 	Print.print_buf ")\n" 
 	--------------------------
 	dump_istmt(Interactive.ISTMTS([Interactive.IALG(alg)])) => ()
@@ -209,7 +209,7 @@ relation dump_istmt : Interactive.InteractiveStmts => () =
 	dump_istmt(Interactive.ISTMTS([Interactive.IEXP(expr)])) => ()
 	
   rule Print.print_buf "IALG(" &
-	print_algorithm(alg) => () &
+	print_algorithmitem(alg) => () &
 	Print.print_buf "," &
 	dump_istmt(Interactive.ISTMTS(l)) => ()
 	--------------------------
