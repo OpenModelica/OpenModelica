@@ -13,33 +13,10 @@ end
 with "prefix.rml"
 with "env.rml"
 with "mod.rml"
+with "builtin.rml"
 
 type Prefix = Prefix.Prefix
 
-val real_type = Absyn.CLASS("Real",false,Absyn.CL_TYPE,
-			    Absyn.PARTS(
-			    [Absyn.PUBLIC(
-			    [Absyn.ELEMENT(true,"quantity",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("StringType"),
-					       [Absyn.COMPONENT("quantity",
-								NONE,
-								NONE)])),
-			     Absyn.ELEMENT(true,"unit",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("StringType"),
-					       [Absyn.COMPONENT("unit",
-								NONE,
-								NONE)])),
-			     Absyn.ELEMENT(true,"displayUnit",
-			      Absyn.COMPONENTS(false, true, false,
-					       false, false,
-					       Exp.IDENT("StringType"),
-					       [Absyn.COMPONENT("displayUnit",
-								NONE,
-								NONE)]))])]))
 
 
 (**********************************************************************)
@@ -76,7 +53,8 @@ relation inst_equation: (Env.Env,Mod.Mod,Prefix,Absyn.Equation)
 	--------------------------------------------
 	inst_equation(env,mods,pre,Absyn.EQ_EXPR(_)) => (([],env))
 
-  rule	Prefix.prefix_exp(e1,pre) => e1' &
+  rule	print " equation\n" &
+	Prefix.prefix_exp(e1,pre) => e1' &
 	Prefix.prefix_exp(e2,pre) => e2'
 	------------------------
 	inst_equation(env,mods,pre,Absyn.EQ_EQUALS(e1,e2)) =>
@@ -128,21 +106,24 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 		     Absyn.ELEMENT(_,n,Absyn.CLASSDEF(_,c)))
 	 => (([],env'))
 
-  rule	Env.lookup_class(env,t) => cl &
+  rule	print " variable " & print n & print "\n" &
+	Env.lookup_class(env,t) => cl &
 	Mod.maybe_modify_class(env,m,cl) => cl' &
 	Mod.lookup_modification(mods,n) => mm &
 	Mod.maybe_modify_class(env,mm,cl') => cl'' &
-	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,cl'',f,p,c,i,o)) => env'
+	Env.extend_frame_v(env,Env.FRAMEVAR(n,ad,cl'',f,p,c,i,o)) => env' &
+	Prefix.prefix_add(n,pre) => pre' &
+	inst_class(env,Mod.empty_mod,pre',cl'') => l
 	--------------------------
 	inst_element(env,mods,pre,
 		     Absyn.ELEMENT(_,_,Absyn.COMPONENTS(f,p,c,i,o,t,
 					    [Absyn.COMPONENT(n,ad,m)])))
-         => (([],env'))
+         => ((l,env'))
 
   rule	not Env.lookup_class(env,t) => cl &
 	Exp.path_string(t) => s &
-	print "Unknown class '" & print s & print "' while instantiating " &
-	Prefix.prefix_add(Exp.IDENT(n),pre) => n' &
+	print "# unknown class '" & print s & print "' while instantiating " &
+	Prefix.prefix_path(Exp.IDENT(n),pre) => n' &
 	Exp.path_string(n') => ns &
 	print ns & print "\n"
 	--------------------------
@@ -186,9 +167,9 @@ and inst_classdef: (Env.Env,Mod.Mod,Prefix,Absyn.ClassDef)
 	inst_classdef(env,_,_,Absyn.DERIVED(_,_,_)) => (([],env))
 end
 
-relation inst_class: (Env.Env,Mod.Mod,Prefix,Absyn.Class) => DAE.DAEcomp list =
+and inst_class: (Env.Env,Mod.Mod,Prefix,Absyn.Class) => DAE.DAEcomp list =
 
-  rule	print "instantiating " & print n & print "\n" &
+  rule	print " instantiating " & print n & print "\n" &
 	Env.new_frame(env) => env' &
 	inst_classdef(env',mods,pre,d) => ((l,_))
 	------------------------------------------------------	
@@ -213,8 +194,7 @@ relation inst_program : (Env.Env, Absyn.Program) => DAE.DAEcomp list =
 	-----------------------------
 	inst_program(env,[c]) => l
 
-  rule	print "Adding class\n" &
-	Env.extend_frame_c(env,c) => env' &
+  rule	Env.extend_frame_c(env,c) => env' &
 	inst_program(env',cs) => l
 	----------------------
 	inst_program(env,c::cs) => l
@@ -223,9 +203,8 @@ end
 
 relation instantiate: Absyn.Program => DAE.DAEform =
 
-  rule	Env.new_frame(Env.empty_env) => env &
-	Env.extend_frame_c(env, real_type) => env' &
-	inst_program(env',p) => l
+  rule	Builtin.initial_env => env &
+	inst_program(env,p) => l
 	-----------------------------
 	instantiate(p) => DAE.DAE(l)
 
