@@ -42,8 +42,8 @@ module Types :
 		| T_FUNCTION of FuncArg list * Type (* Only single-result *)
 		| T_NOTYPE
 
-  datatype ArrayDim = NODIM
-		    | DIM of int option * ArrayDim
+  datatype ArrayDim = (* NODIM
+		    | *) DIM of int option (* * ArrayDim *)
 
   type FuncArg = Ident * Type
 
@@ -137,6 +137,7 @@ end
 
 relation sub_arraydim : (ArrayDim, ArrayDim) => bool =
 
+(*
   axiom	sub_arraydim (NODIM,NODIM) => true
 
   rule	sub_arraydim (d1,d2) => true
@@ -147,6 +148,13 @@ relation sub_arraydim : (ArrayDim, ArrayDim) => bool =
  	sub_arraydim (d1,d2) => true
 	---------------------------------------
 	sub_arraydim (DIM(SOME(i1),d1),DIM(SOME(i2),d2)) => true
+*)
+
+  axiom	sub_arraydim (DIM(_),DIM(NONE)) => true
+
+  rule	i1 = i2
+	---------------------------------------
+	sub_arraydim (DIM(SOME(i1)),DIM(SOME(i2))) => true
 
 	(* default *)
   axiom	sub_arraydim (_,_) => false
@@ -225,11 +233,17 @@ end
 
 relation same_arraydim : (ArrayDim, ArrayDim) => bool =
 
+(*
   axiom	same_arraydim (NODIM,NODIM) => true
 
   rule	i1 = i2 & same_arraydim (d1,d2) => true
 	---------------------------------------
 	same_arraydim (DIM(i1,d1),DIM(i2,d2)) => true
+*)
+
+  rule	d1 = d2
+	-------
+	same_arraydim(DIM(d1), DIM(d2)) => true
 
 	(* default *)
   axiom	same_arraydim (_,_) => false
@@ -275,6 +289,11 @@ end
 
 relation lookup_component : (Type, Ident) => Var =
 
+  rule	basic_type(t) => true &
+	lookup_in_builtin(t,n) => v
+	-------------------------
+	lookup_component(t,n) => v
+
   rule  lookup_component2(cs, id) => v
 	------------------------------
 	lookup_component(T_COMPLEX(st,cs), id) => v
@@ -288,6 +307,24 @@ relation lookup_component : (Type, Ident) => Var =
 	print " in noncomplex type\n"
 	-----------------------------------------
 	lookup_component(_, id) => fail
+
+end
+
+(** relation: lookup_in_builtin
+ **
+ ** Since builtin types are not represented as T_COMPLEX, special care
+ ** is needed to be able to lookup the attributes (`start' etc) in
+ ** them.
+ **)
+
+relation lookup_in_builtin : (Type,Ident) => Var =
+
+  axiom	lookup_in_builtin(t,"start")
+	  => VAR("start",
+		 SCode.ATTR([], false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, t, UNBOUND)
+
+	(** FIXME: Add the others *)
 
 end
 
@@ -318,9 +355,9 @@ end
 relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type =
 
   rule	known_type (st, []) => t &
-	mk_arraydim dims => dims'
+	mk_arraydim(dims,t) => t'
 	-------------------------
-	known_type (st, dims as (_::_)) => T_ARRAY(dims',t)
+	known_type (st, dims as (_::_)) => t'
 
   axiom	known_type (ClassInf.TYPE_INTEGER(_),[]) => T_INTEGER
   axiom	known_type (ClassInf.TYPE_REAL(_),[])    => T_REAL
@@ -338,14 +375,15 @@ end
 
 (** relation: mk_arraydim *)
 
-relation mk_arraydim : Absyn.ArrayDim => ArrayDim =
+relation mk_arraydim : (Absyn.ArrayDim, Type) => Type =
 
-  axiom	mk_arraydim [] => NODIM
+  axiom	mk_arraydim([],t) => t
 
-  rule	mk_arraydim ds => ds'
+  rule	mk_arraydim(ds,t) => t' &
+	lift_array(t',NONE) => t''
 	(** FIXME: calculate d *)
 	---------------------
-	mk_arraydim d::ds => DIM(NONE,ds')
+	mk_arraydim(d::ds, t) => t''
 
 end
 
@@ -357,8 +395,8 @@ end
 
 relation lift_array : (Type,int option) => Type =
 
-  axiom	lift_array (T_ARRAY(dim,ty),i) => T_ARRAY(DIM(i,dim),ty)
-  axiom	lift_array (ty,i) => T_ARRAY(DIM(i,NODIM),ty)
+(*  axiom	lift_array (T_ARRAY(dim,ty),i) => T_ARRAY(DIM(i,dim),ty) *)
+  axiom	lift_array (ty,i) => T_ARRAY(DIM(i(*,NODIM*)),ty)
 
 end
 
@@ -369,8 +407,8 @@ end
 
 relation unlift_array : Type => Type =
 
-  axiom	unlift_array T_ARRAY(DIM(_,NODIM),ty) => ty
-  axiom	unlift_array T_ARRAY(DIM(_,dim),ty) => T_ARRAY(dim,ty)
+  axiom	unlift_array T_ARRAY(DIM(_(*,NODIM*)),ty) => ty
+(*  axiom	unlift_array T_ARRAY(DIM(_,dim),ty) => T_ARRAY(dim,ty) *)
 
 end
 
@@ -427,12 +465,17 @@ relation print_arraydim =
 
   rule	print ":"
 	---------
-	print_arraydim DIM(NONE,NODIM)
+	print_arraydim DIM(NONE)
 
   rule	int_string i => s & print s
 	---------------------------
-	print_arraydim DIM(SOME(i),NODIM)
+	print_arraydim DIM(SOME(i))
 
+  rule	print "#STRANGE#"
+	-----------------
+	print_arraydim _
+
+(*
   rule	print ":," & print_arraydim(d)
 	------------------------------
 	print_arraydim DIM(NONE,d)
@@ -440,6 +483,7 @@ relation print_arraydim =
   rule	int_string i => s & print s & print "," & print_arraydim(d)
 	-----------------------------------------------------------
 	print_arraydim DIM(SOME(i),d)
+*)
 
 end
 
