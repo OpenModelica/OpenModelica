@@ -116,6 +116,21 @@ List of things to implement:
 24. 	Updating the testsuite to Modelica2.1, writing new tests.
 	12 days
 
+25.	Array construction (3.4.4.1). Using array(... for ...)
+	syntax. Related to 14, should be done after or together with 14.
+
+26.	Array constructors with iterators. Using {expr for i in ...}
+	syntax. Related to 14 and 25.
+
+27.	Deduction of ranges (3.3.3.1). It is allowed to leave out "in
+	range" in loops. e.g. 
+            for i loop
+               ...
+            end for;
+        according to specification. Implemented in parser but not
+	walker and absyn.
+
+
 Specific adaptions:
 
 For SKF:	
