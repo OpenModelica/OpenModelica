@@ -1,0 +1,48 @@
+
+module Types :
+
+  with "explode.rml"
+
+  type Ident = string
+  datatype Type = COMPLEX of (Ident * Type) list
+		| BUILTIN of string
+
+  relation same_type : (Type, Type) => ()
+
+end
+
+relation pick : ((Ident * Type) list, Ident) => ((Ident * Type) list, Type) =
+
+  rule  n1 = n2
+	-------
+	pick((n1,t)::xs,n2) => (xs,t)
+
+  rule  pick(xs,n) => (xs',t)
+	---------------------
+	pick(_::xs,n) => (xs',t)
+
+end
+
+relation same_type_c : ((Ident * Type) list, (Ident * Type) list) => () =
+
+  axiom same_type_c([], [])
+
+  rule  pick(xs2,n) => (xs2',t2) &
+	same_type(t1,t2) &
+	same_type_c(xs1,xs2')
+	---------------------
+	same_type_c((n,t1)::xs1, xs2)
+
+end
+
+and same_type : (Type, Type) => () =
+
+  rule  t1 = t2
+	-------
+	same_type(BUILTIN(t1), BUILTIN(t2))
+
+  rule  same_type_c(els1, els2)
+	-----------------------
+	same_type(COMPLEX(els1), COMPLEX(els2))
+
+end
