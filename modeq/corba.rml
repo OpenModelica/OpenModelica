@@ -1,0 +1,49 @@
+(*
+    Copyright PELAB, Linkoping University
+
+    This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*)
+(**
+ ** file:        corba.rml
+ ** module:      Corba
+ ** description: Modelica Corba communication module
+ **
+ ** RCS: %W %E
+ **
+ ** This is the Corba connection module of the compiler
+ **)
+
+module Corba:
+(** relation initialize:
+ ** Initializes the CORBA communication 
+**)
+  relation initialize: () => ()
+(** 
+ ** relation wait_for_command
+ ** A blocking relation, waiting for incomming commands.
+ ** (will lock)
+**)
+  relation wait_for_command: () => string
+(** 
+ ** Sends a reply from the incomming message returned by wait_for_command.
+ ** MUST be issued after a wait_for_command has been issued. (will unlock)
+ **)
+  relation sendreply: (string) => ()
+
+  relation close: () => ()
+end	  
