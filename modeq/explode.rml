@@ -1,0 +1,179 @@
+(* absyn.rml *)
+
+module Explode :
+
+  with "exp.rml"
+  with "absyn.rml"
+  with "mod.rml"
+
+  type Ident = Absyn.Ident
+  type Path = Absyn.Path
+  type Subscript = Absyn.Subscript
+  type ComponentRef = Absyn.ComponentRef
+  type ArrayDim = Absyn.ArrayDim
+  type ClassRestriction = Absyn.ClassRestriction
+  type Equation = Absyn.Equation
+  type Algorithm = Absyn.Algorithm
+
+  type Mod = Mod.Mod
+
+  datatype ElementSpec = CLASSDEF of bool		(* replaceable *)
+				   * Class
+		       | EXTENDS of Path * Mod
+		       | COMPONENT of Ident	(* component name *)
+				    * bool	(* flow *)
+				    * bool	(* parameter *)
+				    * bool	(* constant *)
+				    * bool	(* input *)
+				    * bool	(* output *)
+				    * Path	(* type name *)
+				    * ArrayDim option
+				    * Mod
+
+  and	   Element = ELEMENT of bool		(* final *)
+			      * bool            (* protected *)
+			      * Ident
+			      * ElementSpec
+
+  and	   Class = CLASS of Ident		(* Name *)
+			  * bool		(* Partial *)
+			  * ClassRestriction	(* Restricion *)
+			  * ClassDef		(* Parts *)
+
+  and	   ClassDef = PARTS of Element list
+			     * Equation list
+			     * Algorithm list
+		    | DERIVED of Path
+			       * ArrayDim option
+			       * Mod
+
+  type Program = Class list
+
+  relation explode : Absyn.Program => Program
+  relation element_spec_name : ElementSpec => Ident
+
+end
+
+relation exp_elementspec: Absyn.ElementSpec => (Ident*ElementSpec) list =
+
+  rule	exp_classdef(de) => de'
+	-----------------------
+	exp_elementspec(Absyn.CLASSDEF(rp,Absyn.CLASS(n,pa,re,de)))
+	  => [(n,CLASSDEF(rp,CLASS(n,pa,re,de')))]
+
+  rule	Mod.build(SOME(Absyn.CLASSMOD(args)), false) => mod
+	---------------------------------------------------
+	exp_elementspec(Absyn.EXTENDS(n,args)) => [("",EXTENDS(n,mod))]
+
+  axiom	exp_elementspec(Absyn.COMPONENTS(_,_,_,_,_,_,[])) => []
+
+  rule	exp_elementspec(Absyn.COMPONENTS(f,p,c,i,o,t,xs)) => xs' &
+	Mod.build(m,false) => mod
+	--------------------------------------------------
+	exp_elementspec(Absyn.COMPONENTS(f,p,c,i,o,t,
+					 (Absyn.COMPONENT(n,d,m))::xs))
+	  => ((n,COMPONENT(n,f,p,c,i,o,t,d,mod))::xs')
+
+end
+
+relation mk_elements: (bool,(Ident*ElementSpec) list, bool)
+	  => Element list =
+
+  axiom	mk_elements(_,[],_) => []
+
+  rule	mk_elements(f,ss,prot) => ss'
+	------------------------
+	mk_elements(f,(n,s)::ss,prot) => ELEMENT(f,prot,n,s)::ss'
+
+end
+
+relation exp_element : (Absyn.Element, bool) => Element list =
+
+  rule	exp_elementspec(s) => ss &
+        mk_elements(f,ss,prot) => es
+	-------------------------------
+	exp_element(Absyn.ELEMENT(f,_,s), prot) => es
+
+end
+
+relation exp_elist : (Absyn.Element list, bool) => Element list =
+
+  axiom	exp_elist([],_) => []
+
+  rule	exp_element(e, prot) => e' &
+	exp_elist(es, prot) => es' &
+	list_append(e',es') => l
+	---------------------
+	exp_elist(e::es, prot) => l
+
+end
+
+relation exp_classdef: Absyn.ClassDef => ClassDef =
+
+  rule	Mod.build(SOME(Absyn.CLASSMOD(a)), false) => mod
+	------------------------------------------------
+	exp_classdef(Absyn.DERIVED(p,d,a)) => DERIVED(p,d,mod)
+
+  axiom	exp_classdef(Absyn.PARTS([])) => PARTS([],[],[])
+
+	(* Lots of unnecessary consing ahead... *)
+  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+	list_append(eqs,l) => eqs'
+	------------------------------
+	exp_classdef(Absyn.PARTS(Absyn.EQUATIONS(l)::ps))
+	  => PARTS(els,eqs',als)
+
+  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+	list_append(als,l) => als'
+	------------------------------
+	exp_classdef(Absyn.PARTS(Absyn.ALGORITHMS(l)::ps))
+	  => PARTS(els,eqs,als')
+
+  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+  	exp_elist(es,false) => es' &
+	list_append(els,es') => els'
+	------------------------------
+	exp_classdef(Absyn.PARTS(Absyn.PUBLIC(es)::ps))
+	  => PARTS(els',eqs,als)
+
+  rule	exp_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
+  	exp_elist(es,true) => es' &
+	list_append(els,es') => els'
+	------------------------------
+	exp_classdef(Absyn.PARTS(Absyn.PROTECTED(es)::ps))
+	  => PARTS(els',eqs,als)
+
+end
+
+relation exp_class: Absyn.Class => Class =
+
+  rule	exp_classdef(d) => d'
+	--------------------------------------------
+	exp_class(Absyn.CLASS(n,p,r,d)) => CLASS(n,p,r,d')
+
+end
+
+relation explode: Absyn.Program => Program =
+
+  axiom	explode([]) => []
+
+  rule	exp_class(c) => c' &
+	explode(cs) => cs'
+	-----------------------------
+	explode(c::cs) => (c'::cs')
+
+end
+
+(**********************************************************************)
+
+relation element_spec_name : ElementSpec => Ident =
+
+  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_)) => n
+
+  axiom element_spec_name COMPONENT(n,_,_,_,_,_,_,_,_) => n
+
+  rule  print "# element_spec_name EXTENDS\n" & fail
+	--------------------------------------------
+	element_spec_name EXTENDS(_,_) => "#error#"
+
+end
