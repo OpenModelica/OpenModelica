@@ -6,6 +6,11 @@ module Builtin:
 
   relation initial_env : () => Env.Env
 
+  val rl_type   : Explode.Class
+  val int_type  : Explode.Class
+  val str_type  : Explode.Class
+  val bool_type : Explode.Class
+
 end
 
 with "exp.rml"
@@ -17,6 +22,8 @@ val int_type = Explode.CLASS("IntegerType",false,Absyn.CL_TYPE,
 			     Explode.PARTS([],[],[]))
 val str_type = Explode.CLASS("StringType",false,Absyn.CL_TYPE,
 			     Explode.PARTS([],[],[]))
+val bool_type = Explode.CLASS("BooleanType",false,Absyn.CL_TYPE,
+			      Explode.PARTS([],[],[]))
 
 (*
 val real_type = Absyn.CLASS("Real",false,Absyn.CL_TYPE,
@@ -100,10 +107,11 @@ relation initial_env =
 	Env.extend_frame_c(env, rl_type, Mod.NOMOD) => env' &
 	Env.extend_frame_c(env', int_type, Mod.NOMOD) => env'' &
 	Env.extend_frame_c(env'', str_type, Mod.NOMOD) => env'''
+	Env.extend_frame_c(env'', bool_type, Mod.NOMOD) => env''''
 (*	Env.extend_frame_c(env, real_type) => env'''' &
 	Env.extend_frame_c(env, integer_type) => env''''' &
 	Env.extend_frame_c(env, string_type) => env'''''' *)
 	----------------------------------------------
-	initial_env () => env'''
+	initial_env () => env''''
 
 end
