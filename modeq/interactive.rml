@@ -2647,7 +2647,7 @@ end
 (** relation: get_component_name_and_type_and_comment
  ** This relation takes an `Element' and returns a string of comma separated values of the 
  **  type and name and comment of the component, e.g. 'Resistor,R1, "comment"' 
- ** or 'Resistor,R1,R2,"comment1","comment2"'
+ ** or 'Resistor,R1,"comment1",R2,"comment2"'
  ** If Element is not a component, the empty string is returned
 **)
 relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env) 
@@ -2677,21 +2677,19 @@ end
 
 (** relation_get_componentitems_name
  ** This relation takes a `ComponentItems' list and returns a comma separated list of all
- ** component names.
+ ** component names and comments (if any).
 **)
-
-
 relation get_componentitems_name: Absyn.ComponentItem list => string =
 	
   rule	string_append(c1,",") => s1 &
 	get_componentitems_name(c2::rest) => s3 &
-	Util.string_append_list([s1,"\"",s2,"\", ",s3]) => str
+	Util.string_append_list([s1,"\"",s2,"\",",s3]) => str
 	----------------------------
 	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))::(c2::rest)) => str
 
   rule	string_append(c1,",") => s1 &
 	get_componentitems_name(c2::rest) => s3 &
-	Util.string_append_list([s1, s3]) => str
+	Util.string_append_list([s1,"\"\",",s3]) => str
 	----------------------------
 	get_componentitems_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),NONE)::(c2::rest)) => str
 
@@ -2699,10 +2697,14 @@ relation get_componentitems_name: Absyn.ComponentItem list => string =
 	------------------------------------
 	get_componentitems_name(_::rest) => res
 
-  rule	Util.string_append_list([c1,", \"",s2,"\""]) => res
+  rule	Util.string_append_list([c1,",\"",s2,"\""]) => res
 	----------------------
 	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),SOME(Absyn.COMMENT(_,SOME(s2))))]) => res
-  axiom	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) => c1
+
+  rule  Util.string_append_list([c1,",\"\""]) => res
+	---------------------------------------
+	get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) => res
+
   axiom	get_componentitems_name([_]) => ""
 end
 (** relation: add_to_public
