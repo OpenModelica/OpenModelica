@@ -421,6 +421,9 @@ relation generate_function : DAE.Element => CFunction list =
   rule	generate_function_name fpath => fn_name_str &
 	Debug.fprintl ("cgtr", ["generating function ", fn_name_str, "\n"]) &
 
+	Debug.fprintln ("cgtrdumpdae3", "Dumping DAE:") &
+	Debug.fcall ("cgtrdumpdae3", DAE.dump2, DAE.DAE(dae)) &
+
 
 	DAE.get_output_vars dae => outvars &
 	DAE.get_input_vars dae => invars &
@@ -558,8 +561,7 @@ relation generate_return_decl: DAE.Element => (string, string) =
 (* changed DAE.VAR(..., NONE, inst_dims) to ..._, inst_dims) because removed second *)
 (* rule *)
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (id_str,_) &
 	Util.list_map(inst_dims,dim_string) => dim_strs &
@@ -570,8 +572,8 @@ relation generate_return_decl: DAE.Element => (string, string) =
 	tmpprintinit initopt => expstr &
 	string_append(decl_str', expstr) => decl_str
 	---------------------------------------------------
-	generate_return_decl (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, 
-				      typ, initopt, inst_dims,start,flow)) => (decl_str,id_str)
+	generate_return_decl (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, 
+					     typ, initopt, inst_dims,start,flow)) => (decl_str,id_str)
 
 (* not needed here, generate_return_decl is used to create the return struct
   rule	is_array id => is_a &
@@ -597,37 +599,41 @@ relation generate_return_decl: DAE.Element => (string, string) =
 
 end
 
-relation is_array : Exp.ComponentRef => bool =
+relation is_array : DAE.Element => bool =
 	
-  axiom	is_array Exp.CREF_IDENT(_,[]) => false
-  axiom	is_array Exp.CREF_IDENT(_,_::_) => true
-  axiom	is_array Exp.CREF_QUAL(_,_::_,_) => true
 
-  rule	is_array cref => b
-	------------------
-	is_array Exp.CREF_QUAL(_,[],cref) => b
+  axiom	is_array DAE.VAR(cr,vk,vd,ty,_,[],st,fl) => false
+  axiom	is_array DAE.VAR(cr,vk,vd,ty,_,_::_,st,fl) => true
+
+  rule	Print.print_buf "#-- is_array failed\n" &
+	Print.print_buf "#-- Not an array:" &
+	DAE.dump2 DAE.DAE([el])
+	--------------------------
+	is_array el => fail
 
 end
 
-relation is_array_or_string : (Exp.ComponentRef, DAE.Type) => bool =
+relation is_array_or_string : DAE.Element => bool =
 
-  rule	is_array cr => true &
+  rule	is_array var => true &
 	Print.print_buf "#-- array of strings is probably not supported yet\n"
 	------------------------------------------------------------------
-	is_array_or_string (cr, DAE.STRING) => fail
+	is_array_or_string (var as DAE.VAR(cr,vk,vd,DAE.STRING,_,_,st,fl)) => fail
 
-  rule	is_array cr => true
+  rule	is_array var => true
 	-------------------
-	is_array_or_string (cr, _) => true
+	is_array_or_string (var as DAE.VAR(cr,vk,vd,ty,_,_,st,fl)) => true
 
-  axiom	is_array_or_string (_, DAE.STRING) => true
+  axiom	is_array_or_string (var as DAE.VAR(cr,vk,vd,DAE.STRING,_,_,st,fl)) => true
 
-  rule	Print.print_buf "#-- is_array_or_string failed\n"
+  rule	Print.print_buf "#-- is_array_or_string failed\n" &
+	DAE.dump2 DAE.DAE([el])
 	------------------------------------------------------------------
-	is_array_or_string (_,_) => fail
+	is_array_or_string el => fail
 	
 end
 
+(*
 relation is_first_in_array : Exp.ComponentRef => bool =
 
   axiom	is_first_in_array Exp.CREF_IDENT(_,[]) => true
@@ -658,7 +664,7 @@ relation subs_is_one : Exp.Subscript list => bool =
   axiom	subs_is_one _::_ => false
 
 end
-
+*)
 
 relation dae_exp_type : DAE.Type => Exp.Type =
 
@@ -1168,8 +1174,7 @@ end
 	
 relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 	generate_size_subscripts(inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
@@ -1236,8 +1241,7 @@ end
 
 relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int) =
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 (*	list_reverse inst_dims => inst_dims' & *)
@@ -1255,14 +1259,13 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 	  c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
 	-----------
-	generate_alloc_outvar_f77(DAE.VAR(id, vk, DAE.BIDIR, typ, e,
-					  inst_dims,start,flow),
+	generate_alloc_outvar_f77(var as DAE.VAR(id, vk, DAE.BIDIR, typ, e,
+						 inst_dims,start,flow),
 				  prefix,
 				  tnr) 
 	  => (cfn,tnr1)
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	var_name_external id => cref_str &
 (*	list_reverse inst_dims => inst_dims' & *)
@@ -1280,8 +1283,8 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 	  c_add_inits(cfn1',[alloc_str]) => cfn' &
 	Util.if (is_a,cfn',cfn1') => cfn
 	-----------
-	generate_alloc_outvar_f77(DAE.VAR(id, vk, vd, typ, e,
-					  inst_dims,start,flow),
+	generate_alloc_outvar_f77(var as DAE.VAR(id, vk, vd, typ, e,
+						 inst_dims,start,flow),
 				  prefix,
 				  tnr) 
 	  => (cfn,tnr1)
@@ -1685,8 +1688,7 @@ end
 
 relation generate_var_init : (DAE.Element, int) => (CFunction, int) =
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ, is_a) => typ_str &
 	comp_ref_cstr id => (id_str,_) &
 	Exp.print_exp_str e => expstr & 
@@ -1695,13 +1697,13 @@ relation generate_var_init : (DAE.Element, int) => (CFunction, int) =
 				  ]) => init_str &
 	c_add_statements(c_empty_function,[init_str]) => cfn
 	-----------
-	generate_var_init    (DAE.VAR(id, 
-				      DAE.VARIABLE, 
-				      DAE.OUTPUT, 
-				      typ, 
-				      SOME(e),
-				      _,start,flow),tnr)
-	=> (cfn, tnr)
+	generate_var_init    (var as DAE.VAR(id, 
+					     DAE.VARIABLE, 
+					     DAE.OUTPUT, 
+					     typ, 
+					     SOME(e),
+					     _,start,flow),tnr)
+	  => (cfn, tnr)
 
   axiom	generate_var_init (_, tnr) => (c_empty_function, tnr)
 
@@ -1720,12 +1722,13 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	generate_var(DAE.VAR(id, DAE.PARAM, vd, typ, NONE,_))
 *)
 
+(*
   rule	is_first_in_array id => false
 	-----------------------------
 	generate_var(DAE.VAR(id,_,_,_,_,_,_,_),tnr) => (c_empty_function,tnr)
+*)
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 	generate_size_subscripts(inst_dims,tnr) => (cfn1',vars1,tnr1) &
@@ -1744,10 +1747,9 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	Util.if (is_a,cfn'',cfn') => cfn
 	----------------------------------------------------
-	generate_var(DAE.VAR(id, vk, vd, typ, NONE,inst_dims,start,flow),tnr) => (cfn,tnr1)
+	generate_var(var as DAE.VAR(id, vk, vd, typ, NONE,inst_dims,start,flow),tnr) => (cfn,tnr1)
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 	generate_size_subscripts(inst_dims,tnr) => (cfn1',vars1,tnr1) &
@@ -1769,12 +1771,11 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	Print.print_buf "# default value not implemented yet: " &
 	Exp.print_exp e & Print.print_buf "\n"
 	-----------
-	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims,start,flow),tnr) 
+	generate_var(var as DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims,start,flow),tnr) 
 	  => (cfn,tnr1)
 
   
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 	Util.string_append_list([typ_str," ",cref_str,";"]) => decl_str &
@@ -1785,8 +1786,8 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	Print.print_buf "# default value not implemented yet: " &
 	Exp.print_exp e & Print.print_buf "\n"
 	-----------
-	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),
-			     inst_dims,start,flow),tnr) 
+	generate_var(var as DAE.VAR(id, vk, vd, typ, SOME(e),
+				    inst_dims,start,flow),tnr) 
 	  => (cfn'',tnr1)
 	
   rule	Print.print_buf "# generate_var failed\n  " &
@@ -1797,12 +1798,14 @@ end
 
 relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 
+(*
   rule	is_first_in_array id => false
 	-----------------------------
 	generate_var_decl(DAE.VAR(id,_,_,_,_,_,_,_),tnr) => (c_empty_function,tnr)
+*)
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 	Util.list_map(inst_dims,dim_string) => dim_strs &
@@ -1815,12 +1818,11 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 	
 	c_add_variables(c_empty_function,[decl_str]) => cfn
 	----------------------------------------------------
-	generate_var_decl(DAE.VAR(id, vk, vd, typ, NONE,
-				  inst_dims,start,flow),tnr) 
+	generate_var_decl(var as DAE.VAR(id, vk, vd, typ, NONE,
+					 inst_dims,start,flow),tnr) 
 	  => (cfn,tnr)
 
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
+  rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 	Util.list_map(inst_dims,dim_string) => dim_strs &
@@ -1840,8 +1842,8 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 	Exp.print_exp e & Print.print_buf "\n"
 *)
 	-----------
-	generate_var_decl(DAE.VAR(id, vk, vd, typ, SOME(e),
-				  inst_dims,start,flow),tnr) 
+	generate_var_decl(var as DAE.VAR(id, vk, vd, typ, SOME(e),
+					 inst_dims,start,flow),tnr) 
 	  => (cfn,tnr1)
 
 	
@@ -1902,20 +1904,19 @@ end
 
 relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
 
-  rule	is_array id => false &
+  rule	is_array var => false &
 	comp_ref_cstr id => (cref_str1,_) &
 	comp_ref_cstr id => (cref_str2,_) &
 	Util.string_append_list([varname,".",cref_str1," = ",cref_str2,";"])
 	  =>stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
 	-----------
-	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
+	generate_result_var (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
 			     varname,
 			     tnr)
 	  => (cfn,tnr)
 
-  rule	is_array id => true &
-	is_first_in_array id => true &
+  rule	is_array var => true &
 	dae_type_str (typ, true) => typ_str &
 	comp_ref_cstr id => (cref_str1,_) &
 	comp_ref_cstr id => (cref_str2,_) &
@@ -1924,15 +1925,14 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
 	  => stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
 	-----------
-	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
+	generate_result_var (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
 			     varname,
 			     tnr)
 	  => (cfn,tnr)
 
-  rule	is_array id => true &
-	is_first_in_array id => false
+  rule	is_array var => true
 	-----------
-	generate_result_var (DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
+	generate_result_var (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_),
 			     varname,
 			     tnr)
 	  => (c_empty_function,tnr)
@@ -3218,7 +3218,7 @@ relation generate_extcall_copydecls_f77 : (DAE.Element list, int) => (CFunction,
   axiom	generate_extcall_copydecls_f77 ([], tnr) => (c_empty_function, tnr)
 
   rule	let DAE.VAR(cref, vk, vd, ty, value, dims,start,_) = var &
-	is_array cref => true &
+	is_array var => true &
 	var_name_external_cref cref => cref' &
 	list_reverse dims => dims' &
 	let extvar = DAE.VAR(cref', vk, vd, ty, value, dims',NONE,DAE.NON_FLOW) &
@@ -3907,7 +3907,6 @@ relation invar_names : DAE.Element list => string list =
 
 
   rule	comp_ref_cstr id => (cref_str,_) &
-	is_first_in_array id => true &
 	invar_names r => r'
 	----------
 	invar_names DAE.VAR(id,vk,DAE.INPUT,t,_,_,_,_)::r => cref_str::r'
@@ -3980,14 +3979,12 @@ relation var_arg_names_external : DAE.Element list => string list =
 
 
   rule	var_name_external id => cref_str &
-	is_first_in_array id => true &
 	var_arg_names_external r => r'
 	----------------------------
 	var_arg_names_external DAE.VAR(id,vk,DAE.INPUT,t,_,_,_,_)::r => cref_str::r'
 
   rule	var_name_external id => cref_str &
 	string_append("&", cref_str) => cref_str2 &
-	is_first_in_array id => true &
 	var_arg_names_external r => r'
 	----------------------------
 	var_arg_names_external DAE.VAR(id,vk,DAE.OUTPUT,t,_,_,_,_)::r => cref_str2::r'
@@ -4016,7 +4013,6 @@ relation generate_read : DAE.Element list => CFunction =
 	generate_read DAE.VAR(id,vk,DAE.INPUT,t,_,[],_,_)::r => cfn
 
   rule	comp_ref_cstr id => (cref_str,_) &
-	is_first_in_array id => true &
 	dae_type_str(t, true) => type_string &
 	Util.string_append_list(["if(read_",type_string,"(in_file, &",cref_str,")) return 1;"])
 	  => stmt &
@@ -4053,7 +4049,6 @@ relation generate_write : DAE.Element list => CFunction =
 	generate_write DAE.VAR(id,vk,DAE.OUTPUT,t,_,[],_,_)::r => cfn
 
   rule	comp_ref_cstr id => (cref_str,_) &
-	is_first_in_array id => true &
 	dae_type_str(t, true) => type_string &
 	Util.string_append_list(["write_",type_string,"(out_file, &out.",cref_str,");"])
 	  => stmt &

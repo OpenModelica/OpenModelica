@@ -342,7 +342,7 @@ end
  ** Replaces a userdefined operator expression with a corresponding function call expression.
  ** Other expressions just passes through.
 **)
-relation replace_operator_with_fcall: (Exp.Exp,bool (*const*)) => Exp.Exp =
+relation replace_operator_with_fcall: (Exp.Exp,bool (*built in*)) => Exp.Exp =
 
   axiom	replace_operator_with_fcall(Exp.BINARY(e1,Exp.USERDEFINED(funcname),e2),c) 
 	  => (Exp.CALL(funcname,[e1,e2],false,c))
@@ -836,7 +836,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	Types.array_element_type ty => ((Types.T_INTEGER(_),_)) &
 	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, ind_const),_) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_integer_array"),
-			   [crefe,indexp],false,false) &
+			   [crefe,indexp],false,true) &
 	let prop = Types.PROP((Types.T_INTEGER([]),NONE),false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
@@ -848,7 +848,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	Types.array_element_type ty => ((Types.T_REAL(_),_)) &
 	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, ind_const),_) &
 	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_real_array"),
-			   [crefe,indexp],false,false) &
+			   [crefe,indexp],false,true) &
 	let prop = Types.PROP((Types.T_INTEGER([]),NONE),false)
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) 
@@ -1334,7 +1334,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("lookupClass"),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1344,28 +1344,28 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("typeOf"),
 		       [Exp.CREF(Exp.CREF_IDENT(varid,[]),Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clear",_),
 			      [],[],impl,
 			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("clear"), [], false, false),
+	  => (Exp.CALL(Absyn.IDENT("clear"), [], false, true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clearVariables",_),
 			      [],[],impl,
 			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("clearVariables"), [], false, false),
+	  => (Exp.CALL(Absyn.IDENT("clearVariables"), [], false, true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("clearCache",_),
 			      [],[],impl,
 			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("clearCache"), [], false, false),
+	  => (Exp.CALL(Absyn.IDENT("clearCache"), [], false, true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1375,7 +1375,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("list"),
 		       [],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1387,7 +1387,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("list"),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1409,7 +1409,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("translateModel"),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP(recordtype,false),
 	      SOME(st))
 
@@ -1421,7 +1421,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("timing"),
 		       [exp'],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_REAL([]),NONE),false),
 	      st')
 
@@ -1434,7 +1434,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("generateCode"),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1444,7 +1444,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("setCompiler"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1454,7 +1454,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("setCompilerFlags"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1464,7 +1464,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("setDebugFlags"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1474,7 +1474,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("cd"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1484,7 +1484,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("cd"),
 		       [],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1494,7 +1494,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("system"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_INTEGER([]),NONE),false),
 	      SOME(st))
 
@@ -1504,7 +1504,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	  => (Exp.CALL(Absyn.IDENT("readFile"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1515,7 +1515,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("listVariables"),
 		       [],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_ARRAY(Types.DIM(NONE),(Types.T_NOTYPE,NONE)),NONE),false),
 	      SOME(st))
 
@@ -1525,7 +1525,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getErrorString"),
 		       [],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1535,7 +1535,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("runScript"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1547,7 +1547,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("loadModel"),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1557,7 +1557,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("loadFile"),
 		       [Exp.SCONST(str)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1569,7 +1569,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("saveModel"),
 		       [Exp.SCONST(str),Exp.CREF(cr',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1579,7 +1579,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("help"),
 		       [],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1592,7 +1592,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getUnit"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1605,7 +1605,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getQuantity"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1618,7 +1618,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getDisplayUnit"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
@@ -1631,7 +1631,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getMin"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_REAL([]),NONE),false),
 	      SOME(st))
 
@@ -1644,7 +1644,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getMax"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_REAL([]),NONE),false),
 	      SOME(st))
 
@@ -1657,7 +1657,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getStart"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_REAL([]),NONE),false),
 	      SOME(st))
 
@@ -1670,7 +1670,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getFixed"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
@@ -1683,7 +1683,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getNominal"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_REAL([]),NONE),false),
 	      SOME(st))
 
@@ -1696,7 +1696,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	  => (Exp.CALL(Absyn.IDENT("getStateSelect"),
 		       [Exp.CREF(cr',Exp.OTHER),Exp.CREF(cr2',Exp.OTHER)],
 		       false,
-		       false),
+		       true),
 	      Types.PROP((Types.T_ENUMERATION(["never", "avoid", "default", "prefer", "always"],[]),NONE),false),
 	      SOME(st))
 
