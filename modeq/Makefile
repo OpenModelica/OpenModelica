@@ -23,6 +23,7 @@ SRCRML=	exp.rml \
 	env.rml \
 	builtin.rml \
 	connect.rml \
+	classinf.rml \
 	inst.rml \
 	main.rml
 SRCC=	$(SRCRML:.rml=.c)
