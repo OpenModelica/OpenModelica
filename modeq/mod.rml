@@ -1,0 +1,153 @@
+(**********************************************************************
+ *
+ *   Modifications
+ *
+ * Modifications are simply the same kind of modifications used in
+ * Absyn.
+ *
+ **********************************************************************)
+
+module Mod:
+
+  with "exp.rml"
+  with "absyn.rml"
+  with "env.rml"
+
+  type Mod = Absyn.Modification
+
+  relation modify_class       : (Env.Env,Mod, Absyn.Class) => Absyn.Class
+  relation maybe_modify_class : (Env.Env,Mod option,Absyn.Class) => Absyn.Class
+  relation lookup_modification: (Mod,Absyn.Ident) => Mod option
+
+end
+
+(**********************************************************************)
+
+relation inst_list =
+
+  axiom	inst_list(_,[],_) => []
+
+  rule	r(x,p) => x' &
+	inst_list(r,xs,p) => xs' &
+	list_append(x',xs') => y
+	----------------------
+	inst_list(r,x::xs,p) => y
+
+end
+
+(**********************************************************************)
+
+relation modifies: (Mod,Absyn.Ident) => () =
+
+  axiom	modifies(Absyn.CLASSMOD([]),_)
+
+end
+
+relation modify_element: (Mod,Absyn.Element,bool) => Absyn.Element =
+
+  rule	modifies(mod,n) &
+	print "Error: Trying to modify protected element " &
+	print n & print "\n"
+	--------------------------------------------------------------
+	modify_element(mod,e as Absyn.ELEMENT(_,n,_),false) => e
+
+  rule	modifies(mod,n) &
+	print "Error: Trying to modify final element " & print n & print "\n"
+	---------------------------------------------------------------------
+	modify_element(mod,e as Absyn.ELEMENT(true,n,_),_) => e
+
+end
+
+relation modify_classpart: (Mod,Absyn.ClassPart) => Absyn.ClassPart =
+
+  axiom	modify_classpart(mod,Absyn.PUBLIC([])) => Absyn.PUBLIC([])
+  axiom	modify_classpart(mod,Absyn.PROTECTED([])) => Absyn.PROTECTED([])
+
+  rule	modify_element(mod,e,true) => e' &
+	modify_classpart(mod,Absyn.PUBLIC(es)) => Absyn.PUBLIC(es')
+	---------------------------------------
+	modify_classpart(mod,Absyn.PUBLIC(e::es)) => Absyn.PUBLIC(e'::es')
+
+  rule	modify_element(mod,e,false) => e' &
+	modify_classpart(mod,Absyn.PROTECTED(es)) => Absyn.PUBLIC(es')
+	---------------------------------------
+	modify_classpart(mod,Absyn.PROTECTED(e::es)) =>
+	  Absyn.PROTECTED(e'::es')
+
+end
+
+relation modify_classdef: (Env.Env,Mod,Absyn.ClassDef) => Absyn.ClassDef =
+
+  axiom	modify_classdef(env,mod,p as Absyn.PARTS([])) => p
+
+  rule	modify_classpart(mod,p) => p' &
+	modify_classdef(env,mod,Absyn.PARTS(ps)) => Absyn.PARTS(ps')
+	------------------------------------
+	modify_classdef(env,mod,Absyn.PARTS(p::ps)) => Absyn.PARTS(p'::ps')
+
+  rule	Env.lookup_class(env,p) => Absyn.CLASS(n,_,r,d) &
+	(* FIXME: Check restriction *)
+	modify_classdef(env,mod,d) => d'
+	---------------------------------
+	modify_classdef(env,mod,Absyn.DERIVED(p,ad,es)) => d'
+
+end
+
+relation modify_class: (Env.Env,Mod, Absyn.Class) => Absyn.Class =
+
+  rule	modify_classdef(env,mod,d) => d'
+	---------------------------------
+	modify_class(env,mod,Absyn.CLASS(n,p,r,d))
+	 => Absyn.CLASS(n,p,r,d')
+
+end
+
+relation maybe_modify_class: (Env.Env,Mod option,Absyn.Class) => Absyn.Class =
+
+  axiom	maybe_modify_class(_,NONE,c) => c
+
+  rule	modify_class(env,mod,c) => c'
+	------------------------------
+	maybe_modify_class(env,SOME(mod),c) => c'
+
+end
+
+relation lookup_classmod
+	  : (Absyn.ElementArg list, Absyn.Ident) => Mod option =
+
+  axiom lookup_classmod([],_) => NONE
+
+  rule	mn = n
+	------
+	lookup_classmod(Absyn.MODIFICATION(f,Exp.IDENT(mn),m)::_,n)
+	 => SOME(m)
+
+  rule  mn = n
+	------
+	lookup_classmod(Absyn.MODIFICATION(f,Exp.QUALIFIED(mn,p),m)::_,n)
+	 => SOME(Absyn.CLASSMOD([Absyn.MODIFICATION(f,p,m)]))
+
+  rule  print "FIXME: lookup_classmod(REDECLARATION)\n" &
+	fail
+	-----------------------------------------------
+	lookup_classmod(Absyn.REDECLARATION(f,_)::_,n) => NONE
+
+  rule	lookup_classmod(es,n) => m
+	--------------------------
+	lookup_classmod(_::es,n) => m
+
+end	
+
+relation lookup_modification: (Mod,Absyn.Ident) => Mod option =
+
+  rule	print "Error: lookup_modification(EQUALMOD(_)," &
+	print n & print ")\n"
+	----------------------------------------------
+	lookup_modification(Absyn.EQUALMOD(_),n) => NONE
+
+  rule  lookup_classmod(cm,n) => m
+	------------------------
+	lookup_modification(Absyn.CLASSMOD(cm),n) => m
+
+end
+

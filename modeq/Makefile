@@ -12,7 +12,12 @@ RML	= rmlc
 PROG	= modeq
 AST	= ast/libast.a
 
-SRCRML=	class.rml exp.rml dae.rml main.rml absyn.rml dump.rml inst.rml
+SRCRML=	class.rml exp.rml dae.rml main.rml absyn.rml \
+	dump.rml \
+	prefix.rml \
+	env.rml \
+	mod.rml \
+	inst.rml
 #	lform.rml
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)

@@ -1,0 +1,94 @@
+(**********************************************************************
+ *
+ *   Prefix handling
+ *
+ * When instantiating an expression, there is a prefix that has to be
+ * added to each variable name to be able to use it in the flattened
+ * equation set. These relations take care of adding the prefixes.
+ *
+ **********************************************************************)
+
+module Prefix:
+
+  with "exp.rml"
+  
+  type Prefix = string list
+
+  relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp
+
+end
+       
+relation prefix_add: (Exp.Path,Prefix) => Exp.Path =
+
+  axiom	prefix_add(p,[]) => p
+
+  rule	prefix_add(Exp.QUALIFIED(s,p),ss) => p'
+	---------------------------
+	prefix_add(p,s::ss) => p'
+
+end
+
+relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
+
+  axiom	prefix_explist([],_) => []
+
+  rule	prefix_exp2(e,p) => e' &
+	prefix_explist(es,p) => es'
+	---------------------------
+	prefix_explist(e::es,p) => (e'::es')
+
+end
+and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
+
+  axiom	prefix_exp2(e as Exp.NUMBER(_),_) => e
+  axiom	prefix_exp2(e as Exp.STRING(_),_) => e
+  axiom	prefix_exp2(e as Exp.BOOL(_),_) => e
+  axiom	prefix_exp2(e as Exp.TIME,_) => e
+
+  rule	prefix_add(p,pre) => p'
+	--------------------------
+	prefix_exp2(Exp.PATH(p),pre) => Exp.PATH(p')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2'
+	-----------------------
+	prefix_exp2(Exp.BINARY(e1,o,e2),p) => Exp.BINARY(e1',o,e2')
+
+  rule	prefix_exp2(e1,p) => e1'
+	-----------------------
+	prefix_exp2(Exp.UNARY(o,e1),p) => Exp.UNARY(o,e1')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2'
+	-----------------------
+	prefix_exp2(Exp.LBINARY(e1,o,e2),p) => Exp.LBINARY(e1',o,e2')
+
+  rule	prefix_exp2(e1,p) => e1'
+	-----------------------
+	prefix_exp2(Exp.LUNARY(o,e1),p) => Exp.LUNARY(o,e1')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2'
+	-----------------------
+	prefix_exp2(Exp.RELATION(e1,o,e2),p) => Exp.RELATION(e1',o,e2')
+
+  rule	prefix_exp2(e1,p) => e1' &
+	prefix_exp2(e2,p) => e2' &
+	prefix_exp2(e3,p) => e3'
+	-----------------------
+	prefix_exp2(Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
+
+  rule	prefix_explist(es,p) => es'
+	-----------------------
+	prefix_exp2(Exp.CALL(f,es),p) => Exp.CALL(f,es')
+
+end
+
+relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
+
+  rule	list_reverse(p) => p' &
+	prefix_exp2(e,p') => e'
+	-----------------------
+	prefix_exp(e,p) => e'
+
+end
