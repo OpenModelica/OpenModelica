@@ -1349,7 +1349,7 @@ end
  * second argument and merges the two.
  * Annotation "parts" that exist in both the old and the new annotation will be changed
  * according to the new definition. For instance,
- * mergee_annotations(annotation(x=1,y=2),annotation(x=3)) => annotation(x=3,y=2)
+ * merge_annotations(annotation(x=1,y=2),annotation(x=3)) => annotation(x=3,y=2)
  **)
 relation merge_annotations:(Absyn.Annotation, Absyn.Annotation) => Absyn.Annotation =
 	 
@@ -1389,10 +1389,11 @@ relation remove_modification_in_elementargs:(Absyn.ElementArg list, Absyn.Compon
 	remove_modification_in_elementargs([(m as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),_,_))],cr as Absyn.CREF_IDENT(id2,_))
 	  => fail
 
-  rule	id = id2 
+  rule	id = id2 &
+	remove_modification_in_elementargs(xs,cr) => res 
 	---------------------------------------------
 	remove_modification_in_elementargs(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(id,_),_,_)::xs,cr as Absyn.CREF_IDENT(id2,_))
-	  => xs
+	  => res
   rule	not id = id2 &
 	remove_modification_in_elementargs(xs, cr) => res 
 	---------------------------------------------
