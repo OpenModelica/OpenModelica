@@ -15,19 +15,19 @@
 
 \newtheorem{Def}{Definition}[chapter]
 
+\newcommand{\codefont}{\normalfont\ttfamily\fontsize{8}{9}\selectfont}
+
 \makeatletter
 
+% See the verbatim package
 \def\boxedverbatim{\begingroup%
-  %\setbox0=\vbox{}%
   \parskip=0pt\topsep=0pt\partopsep=0pt%
   \def\verbatim@processline{%
     \setbox1=\hbox{\the\verbatim@line}%
-    %\hsize=\linewidth
     \setbox0=\vbox{{\box0}{\box1}}%
-    %\the\verbatim@line\par
     }%
   \def\verbatim@font{%
-    \normalfont\ttfamily\fontsize{8}{9}\selectfont
+    \codefont
     \let\do\do@noligs
     \verbatim@nolig@list}
    \verbatim}
@@ -273,7 +273,10 @@ exactly one of the sets in $C$.
 
 Each connection set is used to generate one or more equations. In the
 case of variables declared with the \code{flow} type modifier, the
-equation generated is a sum-to-zero equation.
+equation generated is a sum-to-zero equation, as in equation
+\ref{eq:flow}.  The coefficient $d_v$ is $1$ if the component $v$ was
+added to the connection set from an inner connector, and $-1$ if it
+was added from an outer connector. \note{Clear?}
 
 \begin{equation}
   \label{eq:flow}
@@ -283,7 +286,7 @@ equation generated is a sum-to-zero equation.
 In the case of non-flow components a number of simple equations is
 generated. If the connection set contains $n$ components $c_1 \ldots
 c_n$, equations to the effect of $c_1=c_2=\cdots=c_n$ are generated,
-as in (\ref{eqn:nonflow}).
+as in \ref{eqn:nonflow}.
 
 \begin{eqnarray}
   \label{eqn:nonflow}
@@ -293,6 +296,98 @@ as in (\ref{eqn:nonflow}).
   c_{n-1} & =      & c_n  
 \end{eqnarray}
 
+
+\subsection{Example}
+\label{sec:csetex}
+
+This section contains a short example of the use of connections in
+Modelica, and shows the corresponding connection sets and generated
+equations.  The Modelica source is shown in figure \ref{fig:csetex1}
+and declares a connector \code{C} and models \code{A} and \code{M}.
+The model that is instantiated at the top level is \code{M}, as it is
+the last model in the file.
+
+\begin{figure}[htbp]
+\begin{boxedverbatim}
+connector C
+  Real x;
+  flow Real y;
+end C;
+
+model A
+  C con1, con2;
+end A;
+
+model M
+  C con;
+  A a1, a2;
+  Real y;
+equation
+  connect(con,a1.con1);
+  connect(a1.con1,a2.con1);
+  connect(a1.con2,a2.con2);
+  y = con.y;
+end M;
+\end{boxedverbatim}
+  \caption{\code{connect} example}
+  \label{fig:csetex1}
+\end{figure}
+
+Connection sets are generated at two different levels in this example.
+While instantiating the model \code{M}, the three \code{connect}
+statements creates the connection sets described in figure
+\ref{fig:csetex2}, and the two instances of the model \code{A}
+(components \code{a1} and \code{a2} in model \code{M}) create the
+connectsion sets in figure \ref{fig:csetex3}.  Each component in the
+sets are marked with a label indicating whether they were added from
+an inner or an outer connector.
+
+\newcommand{\Outer}[1]{\code{#1}^{\text{outer}}}
+\newcommand{\inner}[1]{\code{#1}^{\text{inner}}}
+
+\begin{figure}[htbp]
+  \begin{center}
+    $\left\{ \Outer{con.x}, \inner{a1.con1.x}, \inner{a2.con1.x} \right\}$
+    $\left\{ \inner{con.y}, \inner{a1.con1.y}, \inner{a2.con1.y} \right\}$
+    $\left\{ \inner{a1.con2.x}, \inner{a2.con2.x} \right\}$
+    $\left\{ \inner{a1.con2.y}, \inner{a2.con2.y} \right\}$
+    \caption{Connection sets from \code{M}}
+    \label{fig:csetex2}
+  \end{center}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{center}
+    $\left\{ \Outer{a1.con1.x}, \Outer{a1.con2.x} \right\}$
+    $\left\{ \Outer{a1.con1.y}, \Outer{a1.con2.y} \right\}$
+    $\left\{ \Outer{a2.con1.x}, \Outer{a2.con2.x} \right\}$
+    $\left\{ \Outer{a2.con1.y}, \Outer{a2.con2.y} \right\}$
+    \caption{Connection sets from \code{A}}
+    \label{fig:csetex3}
+  \end{center}
+\end{figure}
+
+The equations generated from these connection sets, together with the
+last equation in the model \code{M} is shown in figure
+\ref{fig:csetex4}.
+
+\begin{figure}[htbp]
+  \begin{center}
+    \begin{eqnarray*}
+      \code{con.x}     &=& \code{a1.con1.x} \\
+      \code{a1.con1.x} &=& \code{a2.con1.x} \\
+      -\code{con.y} + \code{a1.con1.y} + \code{a2.con1.y} &=& 0 \\
+      \code{a1.con2.x} &=& \code{a2.con2.x} \\
+      \code{a1.con2.y} + \code{a2.con2.y} &=& 0 \\
+      \code{a1.con1.x} &=& \code{a1.con2.x} \\
+      -\code{a1.con1.y} - \code{a1.con2.x} &=& 0 \\
+      \code{a2.con1.x} &=& \code{a2.con2.x} \\
+      -\code{a2.con1.y} - \code{a2.con2.x} &=& 0
+    \end{eqnarray*}
+    \caption{Equations}
+    \label{fig:csetex4}
+  \end{center}
+\end{figure}
 
 \chapter{Design}
 \label{cha:design}
@@ -384,9 +479,9 @@ converted to more readable text.
 \input{main.tex}
 
 
-\chapter{rmldoc \note{Ska vara ett appendix}}
+\chapter{rmldoc \note{appendix}}
 
-{\small\verbatiminput{../tools/rmldoc}}
+{\codefont\verbatiminput{../tools/rmldoc}}
 
 \begin{thebibliography}{99}
 \bibitem[FOO]{Hm}
