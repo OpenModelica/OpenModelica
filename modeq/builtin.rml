@@ -253,17 +253,33 @@ Types.VAR("time", Types.ATTR(false, SCode.RO, SCode.VAR, Absyn.BIDIR),
 val nil2real = Types.T_FUNCTION([],
 				Types.T_REAL([]))
 
+val nil2bool = Types.T_FUNCTION([],
+				Types.T_REAL([]))
+
 val real2real = Types.T_FUNCTION([("x",Types.T_REAL([]))],
 				 Types.T_REAL([]))
 
 val real2int = Types.T_FUNCTION([("x",Types.T_REAL([]))],
 				 Types.T_INTEGER([]))
 
+val int2real = Types.T_FUNCTION([("x",Types.T_INTEGER([]))],
+				 Types.T_REAL([]))
+
 val real_real2real = Types.T_FUNCTION([("x",Types.T_REAL([])),("y",Types.T_REAL([]))],
 				      Types.T_REAL([]))
 
+val int2int = Types.T_FUNCTION([("x",Types.T_INTEGER([]))],
+				      Types.T_INTEGER([]))
+
+val int_int2int = Types.T_FUNCTION([("x",Types.T_INTEGER([])),("y",Types.T_INTEGER([]))],
+				      Types.T_INTEGER([]))
+
 val bool2bool = Types.T_FUNCTION([("x",Types.T_BOOL([]))],
 				 Types.T_BOOL([]))
+
+val string2string = Types.T_FUNCTION([("x",Types.T_STRING([]))],
+				 Types.T_STRING([]))
+
 
 val real_real2bool = Types.T_FUNCTION([("x",Types.T_REAL([])),("y",Types.T_REAL([]))],
 				      Types.T_BOOL([]))
@@ -924,6 +940,10 @@ Env.extend_frame_t(env, "scalar", array1dimint2int)	      => env &
 	Env.extend_frame_t(env, "identity", int2array6dimint) 		     => env &
 	Env.extend_frame_t(env, "identity", int2array7dimint) 		     => env &
 	Env.extend_frame_t(env, "identity", int2array8dimint) 		     => env &
+	
+	Env.extend_frame_t(env, "initial", nil2bool) 		             => env &
+
+	Env.extend_frame_t(env, "terminal", nil2bool) 		             => env &
 
 	Env.extend_frame_t(env, "diagonal", array1dimint2matrixint)	      => env &
 	Env.extend_frame_t(env, "diagonal", array1dimreal2matrixreal)      => env &
@@ -976,6 +996,8 @@ Env.extend_frame_t(env, "scalar", array1dimint2int)	      => env &
 *)
 
 	Env.extend_frame_t(env, "linspace", int_int2vectorreal)	      => env &
+	Env.extend_frame_t(env, "min", int_int2int)			      => env &
+	Env.extend_frame_t(env, "min", real_real2real)			      => env &
 	Env.extend_frame_t(env, "min", array1dimint2int) 		     => env &
 	Env.extend_frame_t(env, "min", array2dimint2int) 		     => env &
 	Env.extend_frame_t(env, "min", array3dimint2int) 		     => env &
@@ -994,6 +1016,8 @@ Env.extend_frame_t(env, "scalar", array1dimint2int)	      => env &
 	Env.extend_frame_t(env, "min", array7dimreal2real) 		     => env &
 	Env.extend_frame_t(env, "min", array8dimreal2real) 		     => env &
 
+	Env.extend_frame_t(env, "max", int_int2int)			      => env &
+	Env.extend_frame_t(env, "max", real_real2real)			      => env &
 	Env.extend_frame_t(env, "max", array1dimint2int)	      => env &
 	Env.extend_frame_t(env, "max", array2dimint2int)	      => env &
 	Env.extend_frame_t(env, "max", array3dimint2int)	      => env &
@@ -1011,6 +1035,8 @@ Env.extend_frame_t(env, "scalar", array1dimint2int)	      => env &
 	Env.extend_frame_t(env, "max", array6dimreal2real)	      => env &
 	Env.extend_frame_t(env, "max", array7dimreal2real)	      => env &
 	Env.extend_frame_t(env, "max", array8dimreal2real)	      => env &
+	
+	Env.extend_frame_t(env, "noEvent", real2real)		      => env &
 
 	Env.extend_frame_t(env, "sum", array1dimint2int)	      => env &
 	Env.extend_frame_t(env, "sum", array2dimint2int)	      => env &
@@ -1049,6 +1075,10 @@ Env.extend_frame_t(env, "scalar", array1dimint2int)	      => env &
 	Env.extend_frame_t(env, "product", array7dimreal2real)	      => env &
 	Env.extend_frame_t(env, "product", array8dimreal2real)	      => env & 
 
+	Env.extend_frame_t(env, "pre", real2real)	              => env & 
+	Env.extend_frame_t(env, "pre", int2int)			      => env & 
+	Env.extend_frame_t(env, "pre", bool2bool)	              => env & 
+	Env.extend_frame_t(env, "pre", string2string)	              => env & 
 
 	Env.extend_frame_t(env, "symmetric", array1dimint2array1dimint)	      => env &
 	Env.extend_frame_t(env, "symmetric", array2dimint2array2dimint)	      => env &
@@ -1087,12 +1117,14 @@ Env.extend_frame_t(env, "scalar", array1dimint2int)	      => env &
 	Env.extend_frame_t(env, "symmetric", array8dimbool2array8dimbool)	      => env &
 
 
-  	Env.extend_frame_t(env, "cross", array1dimint2array1dimint)	      	     => env &
-	Env.extend_frame_t(env, "cross", array1dimreal2array1dimreal)	     => env &
+  	Env.extend_frame_t(env, "cross", array1dimint2array1dimint)	      	      => env &
+	Env.extend_frame_t(env, "cross", array1dimreal2array1dimreal)	   	      => env &
 
-	Env.extend_frame_t(env, "skew", array1dimint2array3dimint) 		     => env & 
-	Env.extend_frame_t(env, "skew", array1dimreal2array3dimreal)              => env  
-
+	Env.extend_frame_t(env, "skew", array1dimint2array3dimint) 		      => env & 
+	Env.extend_frame_t(env, "skew", array1dimreal2array3dimreal)		      => env &
+	
+	Env.extend_frame_t(env, "sqrt", int2real)			              => env & 
+	Env.extend_frame_t(env, "sqrt", real2real)			              => env 
 (*Debug.	Print.print_buf "\n Just AFTER the built in array functions part." *)
 	----------------------------------------------
 	initial_env () => env

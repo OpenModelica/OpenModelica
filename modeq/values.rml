@@ -48,6 +48,7 @@ with "exp.rml"
   relation print_val : Value => ()
   relation add_elementwise_arrayelt: (Value list, Value list) => Value list
   relation sub_elementwise_arrayelt: (Value list, Value list) => Value list
+  relation sum_arrayelt: (Value list) => Value	  
   relation mult_scalar_arrayelt: (Value, Value list) => Value list
   relation mult_scalar_product: (Value list, Value list) => Value
   relation mult_matrix: (Value list,Value list) => Value list
@@ -263,6 +264,32 @@ relation sub_elementwise_arrayelt: (Value list, Value list) => Value list =
 
   axiom	sub_elementwise_arrayelt([],[]) => []
 end
+
+relation sum_arrayelt: (Value list) => Value =
+
+  axiom	sum_arrayelt([INTEGER(v1)]) => INTEGER(v1)
+
+  axiom	sum_arrayelt([REAL(v1)]) => REAL(v1)
+
+  axiom	sum_arrayelt([ARRAY(v1)]) => ARRAY(v1)
+
+  rule	sum_arrayelt(xs) => INTEGER(v1) &
+	int_add(v1,v2) => v3
+	--------------------
+	sum_arrayelt(INTEGER(v2)::xs) => INTEGER(v3) 
+	
+  rule	sum_arrayelt(xs) => REAL(v1) &
+	real_add(v1,v2) => v3
+	--------------------
+	sum_arrayelt(REAL(v2)::xs) => REAL(v3) 
+	
+  rule	sum_arrayelt(arr) => ARRAY(v1) &
+	add_elementwise_arrayelt(v1,v2) => v3
+	------------------------------------
+	sum_arrayelt(arr as ARRAY(v2)::_) => ARRAY(v3)
+
+end
+
 
 relation mult_scalar_arrayelt: (Value, Value list) => Value list =
 

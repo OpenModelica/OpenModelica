@@ -248,14 +248,13 @@ rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
 	lookup_class(cache,env, p as Absyn.QUALIFIED(pack,path), msgflag) 
 	  => (cache, c', env5)
 
-  rule	Print.print_buf "- lookup_class failed\n" &
-	Print.print_buf "  - looked for " & Absyn.path_string path => s & 
- 	Print.print_buf s & Print.print_buf "\n"  &
-	print "- lookup_class failed looked for " & print s & 
-	print "\nenv:" & Print.get_string() => str &
-	Print.clear_buf & Env.print_env env & Print.get_string() => envstr &
-	Print.clear_buf & Print.print_buf str &
-	print envstr 
+  rule	Absyn.path_string path => s & 
+	Print.print_buf "#Error, class " & print s & print " not found.\n" &
+	Debug.fprint("failtrace", "- lookup_class failed\n  - looked for ") &
+ 	Debug.fprint("failtrace",  s) &
+	Debug.fprint("failtrace", "\n env:") &
+	Debug.fcall("failtrace", Env.print_env, env) &
+	Debug.fprint("failtrace", "\n") 
 	--------------
 	lookup_class(cache,env,path,true)=> fail 
 end
@@ -471,10 +470,12 @@ relation complete_path: (Env.Env, Absyn.Path) => Absyn.Path =
 	------------------
 	complete_path(env,path as Absyn.QUALIFIED(pack,_)) => path'
 
-  rule	Print.print_buf "-complete_path failed\n env=" &
-	Env.print_env env & Print.print_buf "\ntype: " &
-	Absyn.path_string path => str & Print.print_buf str &
-	Print.print_buf "\n" 
+  rule	Debug.fprint("failtrace", "-complete_path failed\n env=") &
+	Debug.fcall("failtrac", Env.print_env, env) & 
+	Debug.fprint("failtrace", "\ntype: ")  &
+	Absyn.path_string path => str & 
+	Debug.fprint("failtrace", str )&
+	Debug.fprint("failtrace", "\n" )
 	--------------------
 	complete_path(env,path) => fail
 
@@ -515,7 +516,7 @@ relation lookup_var : (Env.Env, Exp.ComponentRef)
 	------------------------------------------------------
 	lookup_var (env, cref) => (attr,ty,binding)
 
-  rule	print "- lookup_var failed\n"
+  rule	Debug.fprint("failtrace",  "- lookup_var failed\n")
 	--------------------
 	lookup_var(_,_) => fail
 end
@@ -567,7 +568,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
 
   rule	not lookup_var_local(env,cr) => (attr,ty,bind) &
-	print "lookup_var_in_packages failed\n" 
+	Debug.fprint("failtrace",  "lookup_var_in_packages failed\n" )
 	--------------------------------------------------
 	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => fail
 
@@ -871,7 +872,7 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
 
   axiom	build_varlst_from_elts ([],_) => []
 
-  rule	Print.print_buf "ERROR build_varlst_from_elts failed!\n"
+  rule	Debug.fprint("failtrace", "- build_varlst_from_elts failed!\n")
 	----------------------------------------------
 	build_varlst_from_elts(_,_) => fail
 end
@@ -905,15 +906,14 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
 
   rule	Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
-        Print.print_buf "Class " &
+        Print.print_buf "# Class " &
         Print.print_buf id       &
         Print.print_buf " not found and the lookup reached an encapsulated class\n"
 	---------------------
 	lookup_class_in_env(Env.FRAME(sid,items,true)::fs, aid as Absyn.IDENT(id),true) => fail
 
   rule	Builtin.initial_env() => i_env & 
-        not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
-        Print.print_buf "No message in this case.\n" 
+        not lookup_class_in_env(  i_env, aid,false)=>(_,_)
 	---------------------
 	lookup_class_in_env(Env.FRAME(sid,items,true)::fs, 
 			    aid as Absyn.IDENT(id),false) => fail
@@ -1016,11 +1016,13 @@ relation lookup_class_in_class: (Cache.Cache, Env.Env, SCode.Class, Absyn.Path, 
 	lookup_class_in_class (cache, env, cdef, path ,_) 
 	  => (cache', c, env')
 
-  rule	Print.print_buf "- lookup_class_in_class failed\n" &
-	Print.print_buf "  - class = " & Print.print_buf cname &
-	Print.print_buf "\n  - looked for: " & Absyn.path_string path => s & 
-	Print.print_buf s & Print.print_buf "\n env:"  &
-	Env.print_env env & Print.print_buf "\n" 
+  rule	Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
+	Debug.fprint("failtrace",cname) &
+	Debug.fprint("failtrace", "\n  - looked for: ") & Absyn.path_string path => s & 
+	Debug.fprint("failtrace", s) & 
+	Debug.fprint("failtrace", "\n env:")  &
+	Debug.fcall("failtrace", Env.print_env, env) & 
+	Debug.fprint("failtrace", "\n")
 	-----------------
 	lookup_class_in_class(cache, env, SCode.CLASS(cname,_,_,_,_), path, _) => fail
 end
@@ -1094,11 +1096,12 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 	-------------------------------------------
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env5)
 
-  rule	Print.print_buf "- lookup_type_in_class failed\n" &
-	Print.print_buf "  - class = " & Print.print_buf cname &
-	Print.print_buf "\n  - looked for: " & Absyn.path_string path => s & 
-	Print.print_buf s & Print.print_buf "\n" 
-	-----------------
+  rule	Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
+	Debug.fprint("failtrace",cname) &
+	Debug.fprint("failtrace", "\n  - looked for: ") & Absyn.path_string path => s & 
+	Debug.fprint("failtrace", s) & 
+	Debug.fprint("failtrace", "\n")
+	-------------------------------
 	lookup_type_in_class(_, SCode.CLASS(cname,_,_,_,_), path, _) => fail
 end
 	
@@ -1222,10 +1225,9 @@ relation check_subscripts : (Types.Type, Exp.Subscript list)
 	check_subscripts(Types.T_ARRAY(Types.DIM(NONE),t),
 			 Exp.SLICE(_)::ys) => t'
 
-  rule	Print.print_buf "- check_subscripts failed (" &
-	Types.print_type t & Print.print_buf ", [" &
- 	Exp.print_list(s,Exp.print_subscript,",") & Print.print_buf "])\n"
-	& print "- check_subscripts failed\n"
+  rule	Debug.fprint("failtrace", "- check_subscripts failed ( ") &
+	Debug.fcall("failtrace", Types.print_type, t) & 
+	Debug.fprint("failtrace", ")\n")
 	-----------------------------------
 	check_subscripts(t,s) => fail
 
@@ -1245,7 +1247,7 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	(* Protected components *)
   rule  Types.lookup_component(ty, id)
 	  => (Types.VAR(_,_,true,_,_)) &
-	Print.print_buf "- lookup of protected element not allowed\n" 
+	Print.print_buf "# Error, referencing protected elements not allowed.\n" 
 	------------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
 	  => fail
@@ -1257,7 +1259,7 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	--------------------------------------
 	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty''',binding)
 
-  rule	Print.print_buf "- lookup_in_var failed\n"
+  rule	Debug.fprint("failtrace", "- lookup_in_var failed\n")
 	--------------------------------
 	lookup_in_var(_,_) => fail
 

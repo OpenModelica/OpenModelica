@@ -155,9 +155,10 @@ returns multiple arguments. *)
   relation elab_type : Type => Exp.Type
   relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
   relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
+  relation match_type_list : (Exp.Exp, Type list, Type list) => (Exp.Exp, Type list) 
   relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
   relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list 
-  relation match_with_promote : (Properties, Properties) => Properties 
+  relation match_with_promote : (Properties, Properties, bool (* Allow Integer => Real *)) => Properties 
 
   relation flatten_array_type : Type => (Type, int list)
 
@@ -1149,6 +1150,27 @@ relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	match_type(e, e_type, expected_type) => (e',e_type')
 end
 
+(** relation: match_type_list
+ **
+ ** This relation matches a list of types, with a list of other types.
+ ** Type conversion is disredaded, but an expression is given (the rhs of a tuple assignment)
+ ** if such conversions should be implemented
+ **)
+
+relation match_type_list : (Exp.Exp, Type list, Type list ) => (Exp.Exp, Type list) =
+
+  axiom	match_type_list(e,[],[]) => (e,[])
+
+  rule	match_type(e,t1,t2) => (e',tp) &
+	match_type_list(e',ts1,ts2) => (e'',res) 
+	--------------------------------------
+	match_type_list(e, t1::ts1, t2::ts2) => (e',tp::res)
+
+  rule	Debug.fprint("failtrace","- match_type_list failed\n") 
+	-----------------------------------------------------
+	match_type_list(e, t1::ts1, t2::ts2) => fail
+end
+
 (** relation: type_convert
  **
  ** This relations converts the expression in the first argument to
@@ -1270,13 +1292,13 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	    
   axiom	type_convert(e, T_INTEGER(v), T_REAL(_))=> (Exp.CAST(Exp.REAL,e),T_REAL(v))
 
-  rule	Debug.fprint("tcvt","- type conversion failed: ") &
+(*  rule	Debug.fprint("tcvt","- type conversion failed: ") &
 	Debug.fcall ("tcvt",print_type,t1) & 
 	Debug.fprint("tcvt",", ") & 
 	Debug.fcall ("tcvt",print_type,t2) &
 	Debug.fprint("tcvt","\n")
 	-------------------------------
-	type_convert (_,t1,t2) => fail
+	type_convert (_,t1,t2) => fail *)
 end
 
 relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
@@ -1288,7 +1310,7 @@ relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
 	-------------------------------------------
 	type_convert_array (first::rest, ty1, ty2) => first'::rest'
 
-  rule	Print.print_buf "- type conversion of array failed exp=" &
+(*  rule	Print.print_buf "- type conversion of array failed exp=" &
 	Exp.print_exp e &
 	Print.print_buf "t1 = " &
 	print_type t1 & 
@@ -1296,7 +1318,7 @@ relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
 	print_type t2 &
 	Print.print_buf "\n" 
 	-------------------------------
-	type_convert_array (e::_,t1,t2) => fail
+	type_convert_array (e::_,t1,t2) => fail *)
 
 end
 
@@ -1309,14 +1331,14 @@ relation type_convert_matrix : ((Exp.Exp*bool) list list, Type, Type) => (Exp.Ex
 	-------------------------------------------
 	type_convert_matrix (first::rest, ty1, ty2) => first'::rest'
 
-  rule	Print.print_buf "- type conversion of matrix failed" &
+(*  rule	Print.print_buf "- type conversion of matrix failed" &
 	Print.print_buf "t1 = " &
 	print_type t1 & 
 	Print.print_buf " t2 = " &
 	print_type t2 &
 	Print.print_buf "\n" 
 	-------------------------------
-	type_convert_matrix (e::_,t1,t2) => fail
+	type_convert_matrix (e::_,t1,t2) => fail *)
 
 end
 
@@ -1343,36 +1365,57 @@ relation type_convert_list : (Exp.Exp list, Type list, Type list)
 
 end
 
-relation match_with_promote : (Properties, Properties) => Properties =
+relation match_with_promote : (Properties, Properties, bool (* Allow Integer => Real *)) 
+	  => Properties =
 
-  rule	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c) &
+  rule	match_with_promote(PROP(t1,c1),PROP(t2,c2),havereal) => PROP(t,c) &
 	let dim = dim1
 	-----
 	match_with_promote(PROP(T_ARRAY(dim1,t1),c1),
-			   PROP(T_ARRAY(dim2,t2),c2)) 
+			   PROP(T_ARRAY(dim2,t2),c2), havereal) 
 	  => PROP(T_ARRAY(dim,t),c)
 
   rule	is_array t1 => false &
-	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+	match_with_promote(PROP(t1,c1),PROP(t2,c2), havereal) => PROP(t,c)
 	---------------------------
 	match_with_promote(PROP(t1,c1),
-			   PROP(T_ARRAY(DIM(SOME(1)),t2),c2)) 
+			   PROP(T_ARRAY(DIM(SOME(1)),t2),c2), havereal) 
 	  => PROP(T_ARRAY(DIM(SOME(1)),t),c)
 
   rule	is_array t2 => false &
-	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+	match_with_promote(PROP(t1,c1),PROP(t2,c2), havereal) => PROP(t,c)
 	-----
 	match_with_promote(PROP(T_ARRAY(DIM(SOME(1)),t1),c1),
-			   PROP(t2,c2)) 
+			   PROP(t2,c2), havereal) 
 	  => PROP(T_ARRAY(DIM(SOME(1)),t),c)
 
 
   rule	is_array t1 => false &
-	is_array t2 => false &
+	is_array t2 => false &	
 	t1 = t2 &
 	let t = t1 &
 	bool_and(c1,c2) => c
 	--------------
-	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => PROP(t,c)
+	match_with_promote(PROP(t1,c1),PROP(t2,c2), false) => PROP(t,c)
 
+
+  rule	(* Have real and both Real *)
+	bool_and(c1,c2) => c
+	--------------
+	match_with_promote(PROP(T_REAL(v),c1),PROP(T_REAL(_),c2), true) => PROP(T_REAL(v),c)
+
+  rule	(* Have real and first Integer *)
+	bool_and(c1,c2) => c
+	--------------
+	match_with_promote(PROP(T_INTEGER(_),c1),PROP(T_REAL(v),c2), true) => PROP(T_REAL(v),c)
+
+  rule	(* Have real and second Integer *)
+	bool_and(c1,c2) => c
+	--------------
+	match_with_promote(PROP(T_REAL(v),c1),PROP(T_INTEGER(_),c2), true) => PROP(T_REAL(v),c)
+
+  rule	(* Have real and both Integer *)
+	bool_and(c1,c2) => c
+	--------------
+	match_with_promote(PROP(T_INTEGER(_),c1),PROP(T_INTEGER(_),c2), true) => PROP(T_REAL([]),c)
 end

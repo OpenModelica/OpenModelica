@@ -45,6 +45,7 @@ module Algorithm:
   (** It is simple a list of algorithm statements. *)
 
   datatype Statement = ASSIGN of Exp.Type * Exp.ComponentRef * Exp.Exp
+		     | TUPLE_ASSIGN of Exp.Type * Exp.Exp list * Exp.Exp
 		     | ASSIGN_ARR of Exp.Type * Exp.ComponentRef * Exp.Exp
 		     | IF of Exp.Exp * Statement list * Else
 		     | FOR of Exp.Type * bool * Ident * Exp.Exp * Statement list
@@ -66,6 +67,9 @@ module Algorithm:
 			      Exp.Exp, Types.Properties,
 			      SCode.Accessibility) => Statement
 
+  relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
+			    Exp.Exp, Types.Properties) => Statement 
+
   relation make_if : (Exp.Exp,
 		      Types.Properties,
 		      Statement list,
@@ -86,10 +90,10 @@ module Algorithm:
 	
 end
 
-
-
-
+with "util.rml"
 with "print.rml"
+with "dump.rml"
+with "debug.rml"
 
 (** relation: make_assignment
  **
@@ -129,7 +133,7 @@ predicate
 	make_assignment(Exp.CREF(c,crt), lhprop,
 			rhs, rhprop, _) => ASSIGN(t,c,rhs')
 
-rule	Types.is_prop_const (lhprop) => false &
+  rule	Types.is_prop_const (lhprop) => false &
 	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
 	Types.is_prop_array lhprop => true &
 	get_prop_exp_type lhprop => t
@@ -156,6 +160,43 @@ rule	Types.is_prop_const (lhprop) => false &
 
 end
 
+(** relation: make_tuple_assignment
+ **
+ ** This relation creates an `TUPLE_ASSIGN' construct, and checks that the
+ ** assignment is semantically valid, which means that the component
+ ** being assigned is not constant, and that the types match.
+ **)
+
+relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
+			    Exp.Exp, Types.Properties) => Statement =
+
+  rule	Util.list_map(lprop, Types.is_prop_const) => bvals &
+	Util.bool_or_list(bvals) => true &
+	Print.print_buf "# Trying to assign to constant component in tuple assignment\n" &
+	Print.print_buf "    " & 
+	Dump.print_list(lhs, Exp.print_exp, ", ") &
+ 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
+	-------------------------------------------
+	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
+
+  rule	Util.list_map(lhprops, Types.is_prop_const) => bvals &
+	Util.bool_or_list(bvals) => false &
+	Util.list_map(lhprops,Types.get_prop_type) => lhrtypes &
+	Types.match_type_list(rhs,tpl,lhrtypes) => (rhs',_)
+	(* Don't use the new rhs', since type conversions of several output args
+	 are not clearly defined. *)
+	----------------------------------------------
+	make_tuple_assignment(expl, lhprops,
+			rhs, Types.PROP_TUPLE(Types.T_TUPLE(tpl),Types.TUPLE_CONST(clist))) 
+	  => TUPLE_ASSIGN(Exp.OTHER,expl,rhs)
+
+  rule	Debug.fprint("failtrace", "- make_tuple_assignment failed\n")
+	-------------------------------------------
+	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
+
+end
+
+
 relation get_prop_exp_type : Types.Properties => Exp.Type =
 	
   rule	Types.get_prop_type p => ty &
@@ -176,7 +217,7 @@ relation get_type_exp_type : Types.Type => Exp.Type =
 	------------------------
 	get_type_exp_type Types.T_ARRAY(_,t) => t'
 
-  axiom	get_type_exp_type _ => fail
+  axiom	get_type_exp_type _ => Exp.OTHER (*was fail but records must be handled somehow *)
 
 end
 
@@ -272,8 +313,11 @@ relation make_when_a : (Exp.Exp, Types.Properties,
 
   axiom	make_when_a(e,Types.PROP(Types.T_BOOL(_),_),stmts) => WHEN(e,stmts)
 
+  axiom	make_when_a(e,Types.PROP(Types.T_ARRAY(_,Types.T_BOOL(_)),_),stmts) => WHEN(e,stmts)
+
+
   rule	Print.print_buf "# Type error in when conditional.\n" &
-	Print.print_buf "    Expected Boolean, got " &
+	Print.print_buf "    Expected Boolean scalar or vector, got " &
 	Types.print_type t & Print.print_buf "\n"
 	-------------------------------
 	make_when_a(_,Types.PROP(t,_),_) => fail

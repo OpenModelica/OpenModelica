@@ -1218,6 +1218,11 @@ relation print_algorithm: Absyn.Algorithm => () =
 	-------------------------------------------
 	print_algorithm(Absyn.ALG_ASSIGN(cr,exp))
 	
+  rule	Print.print_buf "ALG_TUPLE_ASSIGN(" & print_exp(e1) &
+	Print.print_buf " := " & print_exp(e2) & Print.print_buf ")"
+	-------------------------------------------
+	print_algorithm(Absyn.ALG_TUPLE_ASSIGN(e1,e2))
+
   rule	Print.print_buf "IF (" & print_exp(e) & Print.print_buf ") THEN " &
 	print_list_debug("print_algorithm",tb, print_algorithmitem, ";") &
 	print_list_debug("print_algorithm",eb, print_alg_elseif, " ") &

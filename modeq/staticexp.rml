@@ -61,8 +61,14 @@ module Static :
 							Types.Properties) 
 	  (* Special relation for graphics annotations, because of inhomogenous *)
 	  (* array of graphics primitives *) 
-  relation elab_exp_list : (Env.Env, Absyn.Exp list,bool, Interactive.InteractiveSymbolTable option) 
+  relation elab_exp_list : (Env.Env, Absyn.Exp list,bool (* Implicit inst *)
+			    , Interactive.InteractiveSymbolTable option) 
 	    => (Exp.Exp list, Types.Properties list, Interactive.InteractiveSymbolTable option)
+
+  relation elab_exp_list_list : (Env.Env, Absyn.Exp list list, bool (* Implicit inst *)
+				 , Interactive.InteractiveSymbolTable option) 
+	  => (Exp.Exp list list, Types.Properties list list, Interactive.InteractiveSymbolTable option)
+
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Types.Properties, SCode.Accessibility)
   relation elab_cref_list : (Env.Env, Absyn.ComponentRef list)
@@ -122,6 +128,18 @@ relation elab_exp_list : (Env.Env, Absyn.Exp list, bool, Interactive.Interactive
 	elab_exp_list (env, rest,impl,st') => (exps, props,st'')
 	-----------------------------------------
 	elab_exp_list (env, e::rest,impl,st) => (exp::exps, p::props,st'') 
+end
+
+relation elab_exp_list_list : (Env.Env, Absyn.Exp list list, bool
+			       , Interactive.InteractiveSymbolTable option)
+	  => (Exp.Exp list list, Types.Properties list list, Interactive.InteractiveSymbolTable option ) =
+
+  axiom	elab_exp_list_list (_,[],impl,st) => ([],[],st)
+
+  rule	elab_exp_list (env, e,impl,st) => (exp,p,st') & 
+	elab_exp_list_list (env, rest,impl,st') => (exps, props,st'')
+	-----------------------------------------
+	elab_exp_list_list (env, e::rest,impl,st) => (exp::exps, p::props,st'') 
 end
 
 (** relation: elab_exp
@@ -288,7 +306,12 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 		   const),st)
 	
   rule	Debug.fprintln("setr", "elab_exp_matrix") &
-	elab_matrix_semi (env,es,impl,st) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
+	elab_exp_list_list(env,es,impl,st) => (_, tps, _) &
+	Util.list_list_map(tps,Types.get_prop_type) => tps' &
+	Util.list_flatten(tps') => tps'' &
+	Types.contain_real(tps'') => havereal &
+	Debug.fprintln("setr", "calculated havereal\n") &
+	elab_matrix_semi (env,es,impl,st,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
 	Types.elab_type t => at
 	------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es),impl,st)
@@ -454,7 +477,11 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 		   const))
 	
   rule	Debug.fprintln("setr", "elab_graphics_exp_matrix") &
-	elab_matrix_semi (env,es,false,NONE) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
+	elab_exp_list_list(env,es,false,NONE) => (_, tps, _) &
+	Util.list_list_map(tps,Types.get_prop_type) => tps' &
+	Util.list_flatten(tps') => tps'' &
+	Types.contain_real(tps'') => havereal &
+	elab_matrix_semi (env,es,false,NONE,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
 	Types.elab_type t => at
 	------------------------------------------------------------
 	elab_graphics_exp (env, Absyn.MATRIX(es))
@@ -621,7 +648,8 @@ relation elab_graphics_array : (Env.Env, Absyn.Exp list)
 
 end
 
-relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool, Interactive.InteractiveSymbolTable option)
+relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
+			      , Interactive.InteractiveSymbolTable option, bool (*have real*))
 	=> ((Exp.Exp*bool) list, Types.Properties, int, int) =
 
 
@@ -630,13 +658,13 @@ relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool, Interactive.Interac
 	int_max(2,ndims) => maxn &
 	int_gt(ndims,0) => array
 	----------------------------------------
-	elab_matrix_comma (env,[el],impl,st) => ([(el',array)],Types.PROP(t,c),1,maxn)
+	elab_matrix_comma (env,[el],impl,st,havereal) => ([(el',array)],Types.PROP(t,c),1,maxn)
 
 
   rule	elab_exp (env,el,impl,st) => (el', Types.PROP(t1,c1),_) &
-	elab_matrix_comma(env,els,impl,st) => (els', Types.PROP(t2,c2), _,maxn2) &
+	elab_matrix_comma(env,els,impl,st,havereal) => (els', Types.PROP(t2,c2), _,maxn2) &
 
-	Types.match_with_promote(Types.PROP(t1,c1),Types.PROP(t2,c2)) => props &
+	Types.match_with_promote(Types.PROP(t1,c1),Types.PROP(t2,c2),havereal) => props &
 
 	list_length el::els => dim &
 
@@ -644,36 +672,39 @@ relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool, Interactive.Interac
 	int_max (maxn1,maxn2) => maxn &
 	int_gt(maxn1,0) => array
 	-------------------------------------
-	elab_matrix_comma (env,el::els,impl,st) 
+	elab_matrix_comma (env,el::els,impl,st,havereal) 
 	  => ((el',array)::els',props,dim,maxn)
-
+	  
+  rule	Debug.fprint("failtrace","- elab_matrix_comma failed\n")
+	-------------------------------------
+	elab_matrix_comma (_,_,_,_,_) => fail
 end
 
 (** relation: elab_matrix_semi *)
 
-relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool, Interactive.InteractiveSymbolTable option)
+relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*), Interactive.InteractiveSymbolTable option, bool(*contain real*))
 	=> ((Exp.Exp*bool) list list, Types.Properties, int, int, int) =
+	  
 
-  rule	elab_matrix_comma(env,el,impl,st) => (el', props, dim, maxn)
+  rule	elab_matrix_comma(env,el,impl,st,havereal) => (el', props, dim, maxn)
 	---------------------------------
-	elab_matrix_semi(env,[el],impl,st) => ([el'], props, 1, dim, maxn)
+	elab_matrix_semi(env,[el],impl,st,havereal) => ([el'], props, 1, dim, maxn)
 
   rule	list_length(el) => dim &
-	elab_matrix_comma(env,el,impl,st) => (el',props1,dim1,maxn1) &
-	elab_matrix_semi(env,els,impl,st) => (els',props2,_,dim2,maxn2) &
+	elab_matrix_comma(env,el,impl,st,havereal) => (el',props1,dim1,maxn1) &
+	elab_matrix_semi(env,els,impl,st,havereal) => (els',props2,_,dim2,maxn2) &
 
 	dim1 = dim2 &
 			
-	Types.match_with_promote(props1,props2) => props &
+	Types.match_with_promote(props1,props2,havereal) => props &
 
 	int_max(maxn1,maxn2) => maxn
 	--------------------
-	elab_matrix_semi(env,el::els,impl,st) => (el'::els',props,dim,dim1,maxn)
+	elab_matrix_semi(env,el::els,impl,st,havereal) => (el'::els',props,dim,dim1,maxn)
 
-
-
-
-
+  rule	Debug.fprint("failtrace", "- elab_matrix_semi failed\n" )
+	-------------------
+	elab_matrix_semi(_,_,_,_,_) => fail
 
 	(**  Error messages *)
 (*
@@ -862,6 +893,72 @@ relation build_exp_list : (Exp.Exp, int) => Exp.Exp list =
 	build_exp_list (e, c) => e::rest
 
 end
+
+relation elab_builtin_sum : (Env.Env, Absyn.Exp list) 
+	  => (Exp.Exp, Types.Properties) =
+
+  rule	(* For constant expressions *)
+	elab_exp(env,arrexp,false,NONE) => (exp',Types.PROP(Types.T_ARRAY(dim,tp),c as true),_) &
+	ceval(env, exp',false,NONE) => (Values.ARRAY(vals),_) &
+	Values.sum_arrayelt(vals) => value &
+	value_exp value => exp''
+	----------------------
+	elab_builtin_sum(env,[arrexp]) => (exp'', Types.PROP(tp,c))
+
+  rule	(* For non-constant expressions *)
+	elab_exp(env,arrexp,false,NONE) => (exp',Types.PROP(Types.T_ARRAY(dim,tp),c as false),_) &
+	let exp'' = Exp.CALL(Absyn.IDENT("sum"),
+			   [exp'],false,false) 
+	---------------------------------------
+	elab_builtin_sum(env,[arrexp]) => (exp'', Types.PROP(tp,c))
+end
+
+relation elab_builtin_pre : (Env.Env, Absyn.Exp list) 
+	  => (Exp.Exp, Types.Properties) =
+
+  rule	elab_exp(env,exp,false,NONE) => (exp',Types.PROP(tp,c),_) &
+	Types.basic_type(tp) => true &
+	let exp'' = Exp.CALL(Absyn.IDENT("pre"),
+			   [exp'],false,false) 
+	------------------------------------
+	elab_builtin_pre(env,[exp]) => (exp'', Types.PROP(tp,c))
+
+  rule	elab_exp(env,exp,false,NONE) => (exp,Types.PROP(tp,c),_) &
+	Types.basic_type(tp) => false &
+	Print.print_buf "#Error, operand of pre must be of built-in type.\n"
+	------------------------------------
+	elab_builtin_pre(env,[exp]) => fail
+
+  rule	Print.print_buf "#Error, wrong type or wrong number of arguments to pre operator.\n"
+	------------------------------------
+	elab_builtin_pre(env,_) => fail
+end
+
+relation elab_builtin_initial : (Env.Env, Absyn.Exp list) 
+	  => (Exp.Exp, Types.Properties) =
+
+  axiom	elab_builtin_initial(env,[]) 
+	  => (Exp.CALL(Absyn.IDENT("initial"),
+			   [],false,false), Types.PROP(Types.T_BOOL([]),false))
+
+  rule	Print.print_buf "#Error, initial takes no arguments.\n"
+	------------------
+	elab_builtin_initial(env,_) => fail
+end
+
+relation elab_builtin_terminal : (Env.Env, Absyn.Exp list) 
+	  => (Exp.Exp, Types.Properties) =
+
+  axiom	elab_builtin_terminal(env,[]) 
+	  => (Exp.CALL(Absyn.IDENT("terminal"),
+			   [],false,false), Types.PROP(Types.T_BOOL([]),false))
+
+  rule	Print.print_buf "#Error, terminal takes no arguments.\n"
+	------------------
+	elab_builtin_terminal(env,_) => fail
+
+end
+
 
 relation elab_builtin_array : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties) =
@@ -1085,7 +1182,10 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list)
   axiom	elab_builtin_handler "min" => elab_builtin_min
   axiom elab_builtin_handler "transpose" => elab_builtin_transpose
   axiom	elab_builtin_handler "array" => elab_builtin_array
-
+  axiom	elab_builtin_handler "sum" => elab_builtin_sum
+  axiom	elab_builtin_handler "pre" => elab_builtin_pre
+  axiom	elab_builtin_handler "initial" => elab_builtin_initial
+  axiom	elab_builtin_handler "terminal" => elab_builtin_terminal
 end
 
 
@@ -1133,7 +1233,12 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st')
 
-  rule	Debug.fprint("failtrace", "- elab_call failed\n")
+  rule	Debug.fprint("failtrace", "- elab_call failed\n") &
+	Debug.fprint("failtrace", " function: ") &
+	Debug.fcall("failtrace", Dump.print_component_ref,fn) &
+	Debug.fprint("failtrace", " posargs: ") &
+	Debug.fprint_list("failtrace", args, Dump.print_exp,", ") &	
+	Debug.fprint("failtrace", "\n") 
 	----------------------------
 	elab_call (env,fn,args,nargs,impl,st) => fail
 
@@ -3582,7 +3687,8 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 	---------------------------------
 	elab_arglist (pt::pts, (arg, atype)::args) => (arg'::args',atype'::atypes')
 
-  rule	Debug.fprint("earg","- Static.elab_arglist failed lst1 len:") &
+(* This relation should fail sometimes. Thus it is not a good idea to print stuff here... *)
+(*  rule	Debug.fprint("earg","- Static.elab_arglist failed lst1 len:") &
 	list_length(lst1) => len1 &
 	list_length(lst2) => len2 &
 	int_string(len1) => str1 &
@@ -3590,7 +3696,7 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 	Debug.fprintl("earg", [str1, " lst len2: ", str2, "\n"]) &
 	Debug.fprint("failtrace","- Static.elab_arglist failed.") 
 	--------------------------------------
-	elab_arglist (lst1,lst2) => fail
+	elab_arglist (lst1,lst2) => fail *)
 end
 
 
@@ -3773,9 +3879,6 @@ relation dim_size : (Types.Type,int) => int =
 	dim_size(t,d') => n
 	----------------------
 	dim_size(Types.T_ARRAY(_,t),d) => n
-
-
-
 end
 
 relation element_type : Types.Type => Types.Type =

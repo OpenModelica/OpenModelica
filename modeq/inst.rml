@@ -433,7 +433,7 @@ relation inst_class_in: (Cache.Cache, Env, Mod, Prefix, Connect.Sets, ClassInf.S
 	  => (cache', l,env', csets', ci_state', tys) &
 	clock() => t2 &
 	real_sub(t2,t1) => time &
-	real_gt(time,0.3) => b &
+	real_gt(time,1.5) => b &
 	real_string time =>timestr &
 	Util.string_append_list(["inst_class_in", n, ": ", timestr, "\n" ]) => s1 &
 	Dump.select_string(b,s1,"") => str &
@@ -629,18 +629,25 @@ relation	inst_extends_list:(Cache.Cache, Env.Env, Mod.Mod, SCode.Element list, b
 	=
   rule	Lookup.lookup_class(cache, env, tp, true) 
 	  => (cache', c as SCode.CLASS(cn,_,encf,r,_), cenv) &
-	Mod.lookup_modification_p(mod, Absyn.IDENT(cn)) => innermod &
-	inst_derived_classes(cenv, innermod, c, impl) =>
+	Mod.lookup_modification_p(mod, Absyn.IDENT(cn)) => outermod &
+	inst_derived_classes(cenv, outermod, c, impl) =>
 	  (cenv1, els, eq1, ieq1, alg1, ialg1) &
 	
 	Env.open_scope(cenv1,encf) => cenv' &
 	Env.name_scope(cenv',cn) => cenv'' &
 	ClassInf.start(r, cn) => new_ci_state &
-	inst_class_in(cache, cenv'', Mod.NOMOD, Prefix.NOPRE, [], new_ci_state, c,false (*prot*) ,[],false,false)
-	  => (cache', _, env'', _, _, _) &
+	Mod.elab_untyped_mod(emod) => mod' &
+	Mod.merge(outermod,mod') => mod'' &
+
+	(* New Solution: Is it enough to only extend local classes to the env
+	 without doing any instanitation? *)
+(*	inst_class_in(cache, cenv'', mod'', Prefix.NOPRE, [], new_ci_state, c,false (*prot*) ,[],true,true)
+	  => (cache', _, env'', _, _, _) &*)
+	add_local_classes_to_env(cenv'',c) => env'' &
+	(* End new Solution*)
 
 	make_complete_type_names(env'',els) => els' &
-	inst_extends_list(cache',env'', innermod, els', impl) 
+	inst_extends_list(cache',env'', outermod, els', impl) 
 	  => (cache'',_,mods, compelts1, eq2, ieq2, alg2, ialg2) &  
 	inst_extends_list(cache'', env, mod, rest, impl)
 	  => (cache''', env', mods', compelts2, eq3, ieq3, alg3, ialg3) & 
@@ -648,6 +655,8 @@ relation	inst_extends_list:(Cache.Cache, Env.Env, Mod.Mod, SCode.Element list, b
 	(* corresponding elements. But emod is Absyn.Mod and can not  *)
 	(* be elaborated, because for instance extends A(x=y) can reference *)
 	(* a variable y defined in A and will thus not be found. *)
+	(* On the other hand: A(n=4), n might be a structural parameter that must be set to *)
+	(* instantiate A. How could this be solved? *)
 	(* Solution: made new relation elab_untyped_mod which transforms *)
 	(* to a Mod, but set the type information to unknown. *)
 	(* We can then perform the merge, and update untyped modifications *)
@@ -664,7 +673,6 @@ relation	inst_extends_list:(Cache.Cache, Env.Env, Mod.Mod, SCode.Element list, b
 	Print.get_string() => str1 & print str1 &*)
 				      
 	update_components(compelts,mods') => compelts3 &
-
         Util.list_flatten([eq1, eq2, eq3]) => eq &
 	Util.list_flatten([ieq1, ieq2, ieq3]) => ieq &
 	Util.list_flatten([alg1, alg2, alg3]) => alg &
@@ -690,6 +698,34 @@ relation	inst_extends_list:(Cache.Cache, Env.Env, Mod.Mod, SCode.Element list, b
   rule	Debug.fprint("failtrace",  "- inst_extends_list failed\n" )
 	---------------------
 	inst_extends_list(_,_,_,_,_) => fail
+end
+
+relation add_local_classes_to_env: (Env.Env, SCode.Class) => Env.Env =
+
+  rule	add_local_classes_to_env2(env,parts) => env'
+	-------------------------------------	
+	add_local_classes_to_env(env,SCode.CLASS(_,_,_,_,SCode.PARTS(parts,_,_,_,_,_)))=> env'
+	
+  axiom	add_local_classes_to_env(env,_) => env
+end
+
+relation add_local_classes_to_env2: (Env.Env, SCode.Element list) => Env.Env =
+
+  axiom	add_local_classes_to_env2(env,[]) => env
+
+  rule	Env.extend_frame_c(env,c) => env' &
+	add_local_classes_to_env2(env',xs) => env''
+	------------------------------------------
+	add_local_classes_to_env2(env,SCode.CLASSDEF(n,_,_,c)::xs) => env''
+	
+  rule	Env.extend_frame_i(env,imp) => env' &
+	add_local_classes_to_env2(env',xs) => env''
+	-------------------------------------------
+	add_local_classes_to_env2(env,SCode.IMPORT(imp)::xs) => env''
+
+  rule	add_local_classes_to_env2(env,xs) => env'
+	--------------------------------------
+	add_local_classes_to_env2(env,_::xs) => env'
 end
 
 (** relation: update_components
@@ -772,6 +808,10 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	--------------------------------------------------
 	make_complete_type_names(env, (SCode.COMPONENT(id,f,r,p,attr,tp,mod))::rest)
 	  => SCode.COMPONENT(id,f,r,p,attr,tp',mod)::res
+
+  rule	Debug.fprint("failtrace","-make_complete_type_names failed\n") 
+	--------------------------------------
+	make_complete_type_names(_, _) => fail
 end
 
 
@@ -798,7 +838,7 @@ relation inst_derived_classes: 	(Env.Env, Mod.Mod, SCode.Class, bool) =>
 	inst_derived_classes(env, mod, SCode.CLASS(_,_,_,_,SCode.DERIVED(tp,_,dmod)),impl) 
 	  => (env, elt, eq, ieq, alg, ialg) 
 
-  rule	Print.print_buf "- inst_derived_classes failed\n" 
+  rule	Debug.fprint("failtrace", "- inst_derived_classes failed\n")
 	----------------------
 	inst_derived_classes(_,_,_,_) => fail
 end
@@ -1081,15 +1121,15 @@ relation inst_element : (Cache.Cache, Env, Mod, Prefix, Connect.Sets, ClassInf.S
 	------------------------
 	inst_element(cache, env, mods, pre, csets, ci_state,
 		     SCode.CLASSDEF(n,_,_,_),_,_,_)
-	  => fail
+ 	  => fail 
 	  
-  rule	Lookup.lookup_class(Cache.CACHE([],[]), env,Absyn.IDENT(n),false) => (_,_,_) &
+ (* rule	Lookup.lookup_class(Cache.CACHE([],[]), env,Absyn.IDENT(n),false) => (_,_,_) &
 	Print.print_buf "# Trying to redeclare the variable " & Print.print_buf n &
 	Print.print_buf " as a class\n"
 	---------------------
 	inst_element(cache, env, mods, pre, csets, ci_state,
 		     SCode.COMPONENT(n,_,_,_,_,_,_),_,_,_)
-	  => fail
+	  => fail*)
 	  
           (**  A new class definition
 	   **
@@ -1636,21 +1676,23 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 	--------------------------------------------------------------------
 	update_variable_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,impl) => env
 
+  rule	(* Nothing to update. *)
+	Lookup.lookup_ident(env,id) => (ty,NONE,_) 
+	----------------------------------
+	update_variable_in_env (mods, Absyn.CREF_QUAL(id,_,_),env,impl) => env
+
   rule	(* For qualified names, e.g. a.b.c, instanitate component a *)
 	Lookup.lookup_ident(env,id) 
 	  => (ty, 
 	      SOME(SCode.COMPONENT(n,final,repl,prot,
 				   attr as SCode.ATTR(ad,flow,acc,param,dir),
 				   t,m)),_) &
-	
 	Lookup.lookup_class(Cache.CACHE([],[]),env,t,false) => (_,cl,cenv) & 
-
 	get_cref_from_mod(m) => crefs &
  	update_variables_in_env(mods,crefs,env,impl) => env2' &
 	
 	get_cref_from_dim(ad) => crefs2 &
 	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
-
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m) => m' &
@@ -1670,6 +1712,7 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env, bool)
 	inst_var(Cache.CACHE([],[]), cenv, mod', Prefix.NOPRE, [], n, cl, attr,
 		 dims, [], [], false)
 	  => (_, dae1, csets', ty) &
+
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
@@ -2484,8 +2527,8 @@ end
 
 relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE.ExtArg =
 
-  rule	Lookup.lookup_var_local (env, cref) => (attr, ty, bnd) &
-	Print.print_buf "inst_ext_get_fargs_single lookup_var_local success\n"
+  rule	Lookup.lookup_var_local (env, cref) => (attr, ty, bnd) 
+	(*& Print.print_buf "inst_ext_get_fargs_single lookup_var_local success\n"*)
 	--------------------------------------------------------
 	inst_ext_get_fargs_single (env, Exp.CREF(cref,crty), Types.PROP(ty,cnst)) => DAE.EXTARG(cref,attr,ty)
 
@@ -3585,6 +3628,21 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 	--------------------------------------------------------
 	inst_statement(env,Absyn.ALG_ASSIGN(cr,e)) => stmt
 
+  rule	print "tuple_assign begin\n" &
+	Static.elab_exp (env,e,false,NONE) => (e' as Exp.CALL(_,_,_,_), eprop, _) &
+	print "tuple_assign elabed call\n" &
+	Static.elab_exp_list(env, expl, false, NONE) 
+	  => (expl', cprops, _) &
+	  print "tuple_assign elabed crefs\n" &
+	Algorithm.make_tuple_assignment(expl',cprops,e',eprop) => stmt
+	 &	print "tuple_assign finished\n" 
+	--------------------------------------------------------
+	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e)) => stmt
+
+  rule	Print.print_buf "#Error, tuple assignment only allowed when rhs is function call.\n" 
+	--------------------------------------------------------
+	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e)) => fail
+
   rule	Static.elab_exp(env,e,false,NONE) => (e',prop,_) &
 	inst_algorithmitems(env,tb) => tb' &
 	inst_elseifs(env,eib) => eib' &
@@ -3635,7 +3693,9 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 					       Absyn.FUNCTIONARGS([cond,msg],[])))
 	  => stmt
 
-  rule  Debug.fprint("failtrace", "- inst_statement failed\n") 
+  rule  Debug.fprint("failtrace", "- inst_statement failed\n alg:") &
+	Debug.fcall("failtrace", Dump.print_algorithm, alg) &
+	Debug.fprint("failtrace", "\n") 
 	---------------------------------
 	inst_statement(env,alg) => fail
 end
@@ -3728,16 +3788,20 @@ relation check_connect_types : (Exp.ComponentRef, Types.Type,
 			       	Exp.ComponentRef, Types.Type,
 				Types.Attributes) => () =
 
-  rule	Print.print_buf "# Can't connect two input variables\n" &
+  rule	assert_different_faces(c1,c2) &
+	Print.print_buf "# Can't connect two input variables\n" &
 	Print.print_buf "    while connecting " & Exp.print_component_ref c1 &
-	Print.print_buf " to " & Exp.print_component_ref c2 & Print.print_buf "\n"
+	Print.print_buf " to " & Exp.print_component_ref c2 &
+	Print.print_buf "\n unless one of them is inside connector and the other outside connector."
 	------------------------------------------------------
 	check_connect_types(c1,_,Types.ATTR(_,_,_,Absyn.INPUT),
 			    c2,_,Types.ATTR(_,_,_,Absyn.INPUT)) => fail
 
-  rule	Print.print_buf "# Can't connect two output variables\n" &
+  rule	assert_different_faces(c1,c2) &
+	Print.print_buf "# Can't connect two output variables\n" &
 	Print.print_buf "    while connecting " & Exp.print_component_ref c1 &
-	Print.print_buf " to " & Exp.print_component_ref c2 & Print.print_buf "\n"
+	Print.print_buf " to " & Exp.print_component_ref c2 & 
+	Print.print_buf "\n unless one of them is inside connector and the other outside connector."
 	------------------------------------------------------
 	check_connect_types(c1,_,Types.ATTR(_,_,_,Absyn.OUTPUT),
 			    c2,_,Types.ATTR(_,_,_,Absyn.OUTPUT)) => fail
@@ -3764,11 +3828,28 @@ relation check_connect_types : (Exp.ComponentRef, Types.Type,
 	check_connect_types(c1,_,Types.ATTR(false,_,_,_),
 			    c2,_,Types.ATTR(true,_,_,_)) => fail
 
-  rule	Print.print_buf "- check_connect_types(" & Exp.print_component_ref c1 &
-	Print.print_buf " <-> " & Exp.print_component_ref c2 & Print.print_buf ") failed\n"
+  rule	Debug.fprint("failtrace", "- check_connect_types(") & 
+	Debug.fcall("failtrace", Exp.print_component_ref, c1) &
+	Debug.fprint("failtrace", " <-> ") & 
+        Debug.fcall("failtrace", Exp.print_component_ref, c2) & 
+	Debug.fprint("failtrace", ") failed\n")
 	------------------------------------------------------
 	check_connect_types(c1,_,_,c2,_,_) => fail
 
+end
+
+(* fails if two connectors have same faces, e.g both inside or both outside connectors *)
+relation assert_different_faces: (Exp.ComponentRef,Exp.ComponentRef)  => () =
+
+  rule	component_face(c1) => Connect.INNER &	
+	component_face(c1) => Connect.OUTER 
+	----------------------------------
+	assert_different_faces(c1,c2) => ()
+
+  rule	component_face(c1) => Connect.OUTER &	
+	component_face(c1) => Connect.INNER 
+	----------------------------------
+	assert_different_faces(c1,c2) => ()
 end
 
 (** relation: connect_components
@@ -3785,7 +3866,7 @@ relation connect_components: (Connect.Sets,
 			      Exp.ComponentRef, Connect.Face, Types.Type,
 			      bool) => Connect.Sets =
 	
-	(**  Flow type *)
+	(**  Flow type, must be a subtype of Real *)
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
@@ -3793,6 +3874,15 @@ relation connect_components: (Connect.Sets,
 	-----------------------------------------
 	connect_components(sets, pre, c1, f1, Types.T_REAL(_),
 			   c2, f2, Types.T_REAL(_), true) => sets'
+
+  rule	Types.array_element_type(t1) => Types.T_REAL(_) &
+	Types.array_element_type(t2) => Types.T_REAL(_) &
+	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	Connect.add_equ(sets, c1', c2') => sets'
+	----------------------------------------
+	connect_components(sets,pre,c1,f1, Types.T_ARRAY(_,t1),
+			   c2,f2, Types.T_ARRAY(_,t2),true) => sets'
 	
 	(**  Non-flow type *)
 
@@ -3803,6 +3893,20 @@ relation connect_components: (Connect.Sets,
 	connect_components(sets, pre, c1, _, Types.T_REAL(_),
 			   c2, _, Types.T_REAL(_), false) => sets'
 
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	Connect.add_equ(sets, c1', c2') => sets'
+	-----------------------------------------
+	connect_components(sets, pre, c1, _, Types.T_INTEGER(_),
+			   c2, _, Types.T_INTEGER(_), false) => sets'
+
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	Connect.add_equ(sets, c1', c2') => sets'
+	----------------------------------------
+	connect_components(sets,pre,c1,f1, Types.T_ARRAY(_,_),
+			   c2,f2, Types.T_ARRAY(_,_),false) => sets'
+
 	(**  Complex types *)
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
@@ -3811,7 +3915,7 @@ relation connect_components: (Connect.Sets,
 	----------------------------------------
 	connect_components(sets,pre,c1,f1, Types.T_COMPLEX(_,l1),
 			   c2,f2, Types.T_COMPLEX(_,l2),_) => sets'
-
+	
 	(**  Error *)
 	
   rule	Prefix.prefix_cref(pre, c1) => c1' &
@@ -3931,13 +4035,9 @@ relation component_face : Exp.ComponentRef => Connect.Face =
 
   axiom component_face Exp.CREF_QUAL(_,_,Exp.CREF_IDENT(_,_)) => Connect.INNER
 
-  axiom	component_face Exp.CREF_IDENT(_,_) => Connect.OUTER
+  axiom component_face Exp.CREF_QUAL(_,_,Exp.CREF_QUAL(_,_,_)) => Connect.INNER
 
-  rule	Print.print_buf "# While connecting " &
-	Exp.print_component_ref c & Print.print_buf "\n" &
-	Print.print_buf "# Only local or child connectors allowed.\n"
-	---------------------------------------------------
-	component_face c => fail
+  axiom	component_face Exp.CREF_IDENT(_,_) => Connect.OUTER
 
 end
 
