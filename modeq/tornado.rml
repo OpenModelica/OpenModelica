@@ -60,6 +60,7 @@ relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	    DAELow.calculate_values(dae'') => dae''' &
 	    Absyn.path_string(class) => cname &
         add_dae_var_to_index_map(dae''') &
+        add_dummy_der_to_top_model(dae''',cname) &
         generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
 	    generate_header(cname) => header &
 	    generate_impl_header(cname) => implheader &
@@ -68,10 +69,10 @@ relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	    generate_compute_methods(cname,dae''',p,blt,ass1,ass2,m,mt) => cmethods &
         generate_dll_code(cname) => dll_code &
         TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
-         Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
-         Debug.fcall("bltdump", DAELow.dump,dae''') &
-         Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
-         Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
+        Debug.fcall("bltdump", DAELow.dump,dae''') &
+        Debug.fcall0("bltdump", TORNADOEXT.dump_testing) &
+        Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
+        Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
 	     string_append(cname,".h") => headerfile &
 	     string_append(cname,".cpp") => implfile &
 	     string_append(cname,"DLL.cpp") => dllfile &
@@ -664,7 +665,7 @@ end
          generate_constructor_algvars(dae) => (algvars,noAlgVar_str',no_alg_vars') &
 	     generate_constructor_statevars(dae) => (statevars,noStateVar_str') &
          generate_constructor_parameters(dae) => (parameters,noParamsVar_str') &
-         generate_links(dae,comp_name_list) => (links) &
+         generate_links(dae,comp_name_list,cname) => (links) &
          
          generate_no_of_strings("","parameter",cname,"  SetNoParams") => no_param_var_str &
 
@@ -678,7 +679,7 @@ end
 				                  "  SetName(Name);\n",
 				                  "  SetDesc(L\"",cname," test.\");\n",
 				                  "\n",
-                                  "CDummy m_Dummy;\n\n",
+                                  "  CDummy m_Dummy;\n\n",
                                   no_param_var_str,
                                   "\n",
 				                  parameters,
@@ -758,6 +759,68 @@ end
  end
 
 (**
+ ** 
+ **)
+ relation add_dummy_der_to_top_model:(DAELow.DAELow,string) => () = 
+         
+         
+  rule	DAELow.vararray_list(vararr) => varlst &
+         DAELow.vararray_list(knvararr) => knvarlst &
+ 	     Util.list_select(knvarlst,is_param) => knvarlst' & 
+         list_append(knvarlst',varlst) => all_vars &
+         add_dummy_der_to_top_model2(all_vars,top_class_name)
+	     
+	     -------------------------------------------
+         add_dummy_der_to_top_model(DAELow.DAELOW(vars as DAELow.VARIABLES(_,vararr,_,_),
+                                                  vars2 as DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_),
+                                    top_class_name) 
+          => ()        
+	     
+  axiom add_dummy_der_to_top_model(_,_) => fail
+ end
+
+(** 
+ ** This relation update the index in the map in TORNADOEXT
+ ** algebraic variable links.
+ ** ARG1 the daelow.var list
+ ** this is for #define-index
+ ** DO NOT CHANGE THE STRING FOR THE DIFFERENT TYPES BECAUSE THERE ARE USED IN generate_no_of_values_strings
+ **)
+ relation add_dummy_der_to_top_model2:(DAELow.Var list,string) => () = 
+	     
+  axiom	add_dummy_der_to_top_model2([],_) => ()
+         
+(*   rule print "IN add_dummy_der_to_top_model2\n"& *)
+(*          int_eq(1,0) => true *)
+(*          ------------------------------ *)
+(*          add_dummy_der_to_top_model2(_,_,_,_) => ([],[],0) *)
+
+         
+  rule  (* there should be no split because of there will be an error if top-class has a *)
+         (* var with same name *)
+         Exp.cref_str(cr) => cr_str &
+         
+         
+         get_default_values => (unit,default_value,lower_bound,upper_bound,Desc) &
+         TORNADOEXT.add_variable_to_class(top_class_name,cr_str,"dummy_der","",unit,default_value,lower_bound,upper_bound,Desc) &
+
+
+         add_dummy_der_to_top_model2(rest,top_class_name) 
+         ---------------------------------------------
+         add_dummy_der_to_top_model2(DAELow.VAR(cr,(kind as DAELow.DUMMY_DER),dir,_,_,_,_,start,_,_,class_paths)::rest,
+                                     top_class_name)
+ 
+  rule  add_dummy_der_to_top_model2(rest,top_class_name) =>
+         -----------------------------------------------
+         add_dummy_der_to_top_model2(_::rest,top_class_name)
+	       
+  rule  print "-add_dummy_der_to_top_model2 failed\n" 
+         ----------------------
+         add_dummy_der_to_top_model2(_,_) => fail
+ end
+
+
+(**
  ** fills the all_var_and_params map in tornadoext
  **)
  relation add_dae_var_to_index_map:(DAELow.DAELow) => () = 
@@ -780,6 +843,7 @@ end
  ** This relation update the index in the map in TORNADOEXT
  ** algebraic variable links.
  ** ARG1 the daelow.var list
+ ** this is for #define-index
  ** DO NOT CHANGE THE STRING FOR THE DIFFERENT TYPES BECAUSE THERE ARE USED IN generate_no_of_values_strings
  **)
  relation add_dae_var_to_index_map2:(DAELow.Var list) => () = 
@@ -833,7 +897,7 @@ end
 (**
  ** returns the string and numberOfAlgValues
  **)
- relation generate_links:(DAELow.DAELow,string list) => (string) = 
+ relation generate_links:(DAELow.DAELow,string list,string) => (string) = 
          
          
   rule	DAELow.vararray_list(vararr) => varlst &
@@ -841,7 +905,7 @@ end
  	     Util.list_select(knvarlst,is_param) => knvarlst' & 
          list_append(knvarlst',varlst) => all_vars &
          generate_indep_var(comp_name_list,0) => indep_var_list &
-         generate_links2(all_vars,comp_name_list) => (vars_params_list_str,vars_lst) &
+         generate_links2(all_vars,comp_name_list,top_class_name) => (vars_params_list_str,vars_lst) &
 	     
 	     generate_simple_equation_links(comp_name_list,seqn,vars,vars2) => simple_equation_links &
 	     Util.list_flatten([vars_params_list_str, ["\n"],indep_var_list,vars_lst, ["\n// SIMPLE EQNS \n"],
@@ -850,9 +914,10 @@ end
          -------------------------------------------
          generate_links(DAELow.DAELOW(vars as DAELow.VARIABLES(_,vararr,_,_),
                                       vars2 as DAELow.VARIABLES(_,knvararr,_,_),eqn,seqn,_,_),
-		                comp_name_list) => (res)        
+		                comp_name_list,
+                        top_class_name) => (res)        
 	     
-  axiom generate_links(_,_) => ("/* generation of variables linking has failed */")
+  axiom generate_links(_,_,_) => ("/* generation of variables linking has failed */")
  end
 
 (** relation: generate_simple_equation_links
@@ -873,79 +938,6 @@ relation generate_simple_equation_links: (string list,
         axiom generate_simple_equation_links(_,_,_,_) => ["/* generation simple_equation_links has failed */"]
 end 
 
-
-(** relation generate_getsubmodel_code
- ** generates the code for GetSubModel(<value>)
- ** TODO: in future this should be GetSubModel(<value>)->GetSubmodel(<value2>)...
- ** if several hireactical levels are present
- **)
-relation generate_getsubmodel_code:(string list, Exp.ComponentRef,
-                                    DAELow.VarKind,DAE.VarDirection) => string =
-
-(*   rule  Exp.cref_str(cr) => crs & *)
-(*         print "generate_getsubmodel_code: " & print crs & print "\n" & *)
-(*         int_eq(1,0) => true *)
-(* 	    ------------------------- *)
-(* 	    generate_getsubmodel_code(comp_name_list,cr,_,_) => "" *)
-
-  rule  Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::_ &
-        Util.list_position(comp_name,comp_name_list) => index &
-        int_string(index) => index_str &
-	    Util.string_append_list(["  //((CDAEModel*)GetSubModel(",index_str,"))"]) => res
-	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_DER,_) => res
-
-  rule	Util.string_append_list(["  //((CDAEModel*)this)"]) => res
-	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_DER,_) => res
-
-  rule  Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::_ &
-        Util.list_position(comp_name,comp_name_list) => index &
-        int_string(index) => index_str &
-	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
-	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_STATE,_) => res
-
-  rule  Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::_ &
-        Util.list_position(comp_name,comp_name_list) => index &
-        int_string(index) => index_str &
-	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
-	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DISCRETE,_) => res
-
-
-  rule  Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::_ &
-        Util.list_position(comp_name,comp_name_list) => index &
-        int_string(index) => index_str &
-	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
-	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr,DAELow.VARIABLE,DAE.BIDIR) => res
- 
- rule  Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::_ &
-        Util.list_position(comp_name,comp_name_list) => index &
-        int_string(index) => index_str &
-	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
-	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,_) => res
-
-  rule  Exp.cref_str(cr) => crs &
-        Util.string_split_at_char(crs,#".") => comp_name::_ &
-        Util.list_position(comp_name,comp_name_list) => index &
-        int_string(index) => index_str &
-	    Util.string_append_list(["  GetSubModel(",index_str,")"]) => res
-	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr,_,_) => res
-
-        (*this print is removed because the model does not need to have submodels*)
-  rule	Util.string_append_list(["  ((CDAEModel*)this)"]) => res
-	----------------
-	generate_getsubmodel_code(comp_name_list,cr,_,_) => res
-end
 
 relation generate_simple_equation_links2: (string list, 
 					                       DAELow.Equation list,
@@ -990,8 +982,7 @@ relation generate_simple_equation_links2: (string list,
 (*                                         knvars) => [""] *)
         
   axiom generate_simple_equation_links2(_,[],_,_) => []
-	    
-        
+    
    rule  is_var_on_top_model(cr) => from_top_bool &
         is_var_on_top_model(cr2) => to_top_bool &
 
@@ -1026,8 +1017,7 @@ relation generate_simple_equation_links2: (string list,
                                         knvars) 
 	      =>  link_str::rest
 
-       (* this checks if the the var is a DAELow.Variable *)
-        (*if it is then it must decide the direction*)
+(*           this checks if the var is from known vars *)
   rule  is_var_on_top_model(cr) => from_top_bool &
         is_var_on_top_model(cr2) => to_top_bool &
 
@@ -1128,16 +1118,15 @@ end
  ** It returns a string list for the parameters links and a string list for the 
  ** algebraic variable links.
  ** ARG1 the daelow.var list
- ** ARG2 the index for the variables (output, input)
- ** ARG3 the index for the parameter
- ** ARG4 the component list to get the submodel. The submodel is the index in this list
+ ** ARG2 the component list to get the submodel. The submodel is the index in this list
+ ** ARG3 the name of the topmodel
  ** [GetSubModel(<component index>)->GetParam(0)->LinkValue(this, MSLE_PARAM, <param index>);,...]
  ** [GetSubModel(<component index>)->Get__Var(0)->LinkValue(this, MSLE_INDEP_VAR, <variable index>);]
  ** int - the number of algstatevars 
  **)
- relation generate_links2:(DAELow.Var list,string list) => (string list, string list) = 
+ relation generate_links2:(DAELow.Var list,string list,string) => (string list, string list) = 
 	     
-  axiom	generate_links2([],_) => ([],[])
+  axiom	generate_links2([],_,_) => ([],[])
          
 (*   rule print "IN generate_links2\n"& *)
 (*          int_eq(1,0) => true *)
@@ -1147,6 +1136,31 @@ end
          (* check first if output variable is on the top model.*)
 
   rule  is_var_on_top_model(cr) => top_bool &
+         generate_getsubmodel_code(comp_name_list,cr,kind,dir) => sub_model_str &
+         generate_GetCall_string_for_var(kind,dir,top_bool) => call_str &
+         
+         generate_MACRO_string_for_var(DAELow.DUMMY_STATE,dir,top_bool) => macro_str &
+         
+         Exp.cref_str(cr) => crs &
+         TORNADOEXT.get_var_index(crs,top_class_name) => input_number &
+         int_string(input_number) => var_index_str &
+         
+         get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
+
+         Exp.cref_str(cr) => crs & 
+         Util.string_append_list([sub_model_str,"->",
+                                  call_str,"(",var_index_str,")",
+                                  "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ", 
+                                  sub_model_str," ",call_str," ",crs, "\n"]) => link_str3 &
+         Util.string_append_list([link_str3]) => link_str &
+         generate_links2(rest,comp_name_list,top_class_name) => (params_str,res) 
+         ---------------------------------------------
+         generate_links2(DAELow.VAR(cr,(kind as DAELow.DUMMY_DER),dir,_,_,_,_,start,_,_,class_paths)::rest,
+                         comp_name_list,
+                         top_class_name) 
+          => (params_str,link_str::res)
+
+   rule  is_var_on_top_model(cr) => top_bool &
          generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,dir) => sub_model_str &
          generate_GetCall_string_for_var(DAELow.STATE,dir,top_bool) => call_str &
          
@@ -1168,10 +1182,11 @@ end
                                   "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ", 
                                    sub_model_str," ",call_str," ",crs, "\n"]) => link_str3 &
          Util.string_append_list([link_str1,link_str2,link_str3]) => link_str &
-         generate_links2(rest,comp_name_list) => (params_str,res) 
+         generate_links2(rest,comp_name_list,top_class_name) => (params_str,res) 
          ---------------------------------------------
          generate_links2(DAELow.VAR(cr,DAELow.DUMMY_STATE,dir,_,_,_,_,start,_,_,class_paths)::rest,
-                         comp_name_list) 
+                         comp_name_list,
+                         top_class_name) 
           => (params_str,link_str::res)
 
   rule  is_var_on_top_model(cr) => top_bool &
@@ -1194,10 +1209,11 @@ end
                                   "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ", 
                                    sub_model_str," ",call_str," ",crs, "\n"]) => link_str3 &
          Util.string_append_list([link_str1,link_str2,link_str3]) => link_str &
-         generate_links2(rest,comp_name_list) => (params_str,res) 
+         generate_links2(rest,comp_name_list,top_class_name) => (params_str,res) 
          ---------------------------------------------
          generate_links2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,start,_,_,class_paths)::rest,
-                         comp_name_list) 
+                         comp_name_list,
+                         top_class_name) 
           => (params_str,link_str::res)
 
 
@@ -1216,20 +1232,22 @@ end
                                   var_flat_index_str,
                                   "); // ",sub_model_str," ",call_str," ",crs, "\n"]) => link_str &
 
-         generate_links2(rest,comp_name_list) => (params_str,res) 
+         generate_links2(rest,comp_name_list,top_class_name) => (params_str,res) 
          ---------------------------------------------
          generate_links2(DAELow.VAR(cr,kind,dir,_,_,_,_,start,_,_,class_paths)::rest,
-                         comp_name_list) 
+                         comp_name_list,
+                         top_class_name) 
           => (params_str,link_str::res)
 
-  rule  generate_links2(rest,comp_name_list) => (params, res)
+  rule  generate_links2(rest,comp_name_list,top_class_name) => (params, res)
          -----------------------------------------------
-         generate_links2(_::rest,comp_name_list) 
+         generate_links2(_::rest,comp_name_list,
+                         top_class_name) 
           => (params,res)
 	       
   rule  print "-generate_links2 failed\n" 
          ----------------------
-         generate_links2(_,_) => (["TEST"],["/* not yet implemented */"])
+         generate_links2(_,_,_) => (["TEST"],["/* not yet implemented */"])
  end
 
 
@@ -1254,13 +1272,16 @@ relation generate_constructor_inputvars:(DAELow.DAELow) => (string, string) =
 
   rule  DAELow.vararray_list(vararr) => vars &
         DAELow.vararray_list(knvararr) => knvars &
-        list_append(vars,knvars) => all_vars &
-        generate_constructor_inputvars2(all_vars,0) => (lst,no_of_vars) &
+        generate_constructor_inputvars2(vars,0) => (vars_str,no_of_vars') &
+        generate_constructor_inputvars2(knvars,0) => (knvars_str,no_of_vars'') &
         
-	    Util.string_delimit_list(lst,"\n") => res &
+        list_append(vars_str,knvars_str) => all_vars &
+        int_add(no_of_vars',no_of_vars'') => no_of_vars &
+	    Util.string_delimit_list(all_vars,"\n") => res &
 	    int_string no_of_vars => lenstr &
+        int_string no_of_vars' => no_values &
         Util.string_append_list(["  SetNoInputVars(",lenstr,");\n"]) => prefix1 &
-        Util.string_append_list(["  SetNoInputVarValues(",lenstr,");\n"]) => prefix2 &
+        Util.string_append_list(["  SetNoInputVarValues(",no_values,");\n"]) => prefix2 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
         generate_constructor_inputvars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
@@ -1366,6 +1387,20 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
         ---------------------------------------------
         generate_constructor_algvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,_)::rest,i) 
           => (r1::res,no_of_vars')
+ 
+       (* this rule take care of DUMMY_DER variables *)
+  rule  int_add(i,1) => i' & int_string(i) => is &
+(*         is_var_on_top_model(cr) => true & *)
+        generate_constructor_algvars2(rest,i') => (res,no_of_vars) &
+        int_add(no_of_vars,1) => no_of_vars' &
+        SimCodegen.cref_modelica_str(cr) => crs &
+        Util.string_append_list(["  SetAlgStateVar(",
+                                 is,
+                                 ", new CAlgStateVar(L\"",
+                                 crs,"\", L\"\",0));"]) => r1 
+        ---------------------------------------------
+        generate_constructor_algvars2(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,_)::rest,i) 
+          => (r1::res,no_of_vars')
 	      
   rule  generate_constructor_algvars2(rest,i) => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars'
@@ -1415,8 +1450,9 @@ relation generate_constructor_outputvars:(DAELow.DAELow) => (string, string) =
         
         
 	    int_string no_of_vars => lenstr &
+        int_string no_of_vars' => values_str &
         Util.string_append_list(["  SetNoOutputVars(",lenstr,");\n"]) => prefix1 &
-        Util.string_append_list(["  SetNoOutputVarValues(",lenstr,");\n"]) => prefix2 &
+        Util.string_append_list(["  SetNoOutputVarValues(",values_str,");\n"]) => prefix2 &
         Util.string_append_list([prefix1,res,"\n"]) => res' 
         -------------------------------------------
         generate_constructor_outputvars(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
@@ -2445,4 +2481,79 @@ relation generate_type_name: (DAELow.VarKind,DAE.VarDirection,bool) => string =
   axiom	generate_type_name(DAELow.PARAM,_,_) => "ParamValues"
   axiom	generate_type_name(DAELow.CONST,_,_) => "ParamValues"
   axiom	generate_type_name(_,_,_) => "unknown kind"
+end
+
+
+
+(** relation generate_getsubmodel_code
+ ** generates the code for GetSubModel(<value>)
+ ** TODO: in future this should be GetSubModel(<value>)->GetSubmodel(<value2>)...
+ ** if several hireactical levels are present
+ **)
+relation generate_getsubmodel_code:(string list, Exp.ComponentRef,
+                                    DAELow.VarKind,DAE.VarDirection) => string =
+
+(*   rule  Exp.cref_str(cr) => crs & *)
+(*         print "generate_getsubmodel_code: " & print crs & print "\n" & *)
+(*         int_eq(1,0) => true *)
+(* 	    ------------------------- *)
+(* 	    generate_getsubmodel_code(comp_name_list,cr,_,_) => "" *)
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_DER,_) => res
+
+  rule	Util.string_append_list(["  ((CDAEModel*)this)"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_DER,_) => res
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    ------------------------- 
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_STATE,_) => res
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DISCRETE,_) => res
+
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.VARIABLE,DAE.BIDIR) => res
+ 
+ rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,_) => res
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  GetSubModel(",index_str,")"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,_,_) => res
+
+        (*this print is removed because the model does not need to have submodels*)
+  rule	Util.string_append_list(["  ((CDAEModel*)this)"]) => res
+	----------------
+	generate_getsubmodel_code(comp_name_list,cr,_,_) => res
 end
