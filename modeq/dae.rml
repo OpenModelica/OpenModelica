@@ -61,7 +61,10 @@ module DAE:
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
+  relation get_input_vars: Element list  => Element list
+  relation is_var: Element => ()
   relation is_output_var: Element => ()
+  relation is_input_var: Element => ()
   relation is_parameter: Element => ()
   relation is_comp: Element => ()
   relation find_element: (Element list, Element => ()) => Element option
@@ -454,10 +457,25 @@ relation get_output_vars: Element list  => Element list =
 	get_output_vars vl => vl'
 end
 
+(* HJ *)
+relation get_input_vars: Element list  => Element list =
+	
+  rule	get_matching_elements(vl, is_input_var) => vl'
+	---------------------------------
+	get_input_vars vl => vl'
+end
+
 (* LS *)
 relation is_output_var: Element => () =
 
   axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _)
+
+end
+
+(* HJ *)
+relation is_input_var: Element => () =
+
+  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty, _, _)
 
 end
 

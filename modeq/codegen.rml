@@ -148,6 +148,17 @@ relation c_add_cleanups : (CFunction, CleanupStatement list) => CFunction =
 
 end
 
+relation c_merge_fns : CFunction list => CFunction =
+	
+  axiom	c_merge_fns [] => c_empty_function
+
+  rule	c_merge_fns r => cfn2 &
+	c_merge_fn(cfn1,cfn2) => cfn
+	----------------------
+	c_merge_fns cfn1::r => cfn
+
+end
+
 relation c_merge_fn : (CFunction, CFunction) => CFunction =
 
   rule	list_append(vd1,vd2) => vd &
@@ -257,6 +268,7 @@ relation generate_function : DAE.Element => CFunction list =
 
 
 	DAE.get_output_vars dae => outvars &
+	DAE.get_input_vars dae => invars &
 	generate_result_struct (outvars,fpath) => struct_strs &
 	generate_return_type   fpath           => retstr &
 	generate_function_name fpath           => fn_name_str & 
@@ -266,12 +278,14 @@ relation generate_function : DAE.Element => CFunction list =
 
 	generate_function_body_tuple(fpath, dae, restype) => body_cfn &
 
-	c_merge_fn(head_cfn,body_cfn) => cfn
+	c_merge_fn(head_cfn,body_cfn) => cfn &
+	
+	generate_read_call_write(fn_name_str,outvars,retstr,invars) => rcw_fn
 	---------------------------
 	generate_function DAE.FUNCTION(fpath, 
 				       DAE.DAE(dae), 
 				       Types.T_FUNCTION(args,restype)) 
-	  => [cfn]
+	  => [cfn,rcw_fn]
 
 
   rule	generate_functions_elist daelist => cfns
@@ -789,7 +803,7 @@ relation generate_function_body_tuple : (Absyn.Path,
 	c_add_variables (out_fn, [mem_decl])  => mem_fn' &
 	c_add_inits     (mem_fn',[mem_stmt1]) => mem_fn &
 
-	generate_vars        (dae, tnr_mem)          => (var_fn,tnr_var) &
+	generate_vars        (dae, is_var_q, tnr_mem)=> (var_fn,tnr_var) &
 	generate_algorithms  (dae, tnr_var)          => (alg_fn,tnr_alg) &
 	generate_result_vars (dae, ret_var, tnr_alg) => (res_var_fn,tnr_res) &
 	
@@ -832,9 +846,12 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
 	list_map(inst_dims,int_string) => dim_strs &
+	list_length dim_strs => ndims &
+	int_string ndims => ndims_str &
 	append_strings(dim_strs,", ") => dims_str &
 	append_strings(["alloc_",typ_str,
-			"(&",prefix,".",cref_str,", ",dims_str,");"],"")
+			"(&",prefix,".",cref_str,", ",
+			ndims_str,", ",dims_str,");"],"")
 	  => alloc_str &
 	  
 	  c_add_inits(c_empty_function,[alloc_str]) => cfn' &
@@ -967,16 +984,26 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 
 end
 
-relation generate_vars : (DAE.Element list,int) => (CFunction,int) =
+relation generate_vars : (DAE.Element list,DAE.Element => (),int) => (CFunction,int) =
 
-  axiom	generate_vars ([],tnr) => (c_empty_function,tnr)
+  axiom	generate_vars ([],_,tnr) => (c_empty_function,tnr)
 	
-  rule	generate_var (first,tnr)  => (cfn1,tnr1) & 
-	generate_vars (rest,tnr1)  => (cfn2,tnr2) &
+  rule	verify first &
+	generate_var (first,tnr)  => (cfn1,tnr1) & 
+	generate_vars (rest,verify,tnr1)  => (cfn2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
 	--------------------
-	generate_vars (first :: rest,tnr)  => (cfn,tnr2) 
+	generate_vars (first :: rest,verify,tnr)  => (cfn,tnr2) 
 
+  rule	not verify first &
+	generate_vars (rest,verify,tnr)  => (cfn,tnr2)
+	--------------------
+	generate_vars (first :: rest,verify,tnr)  => (cfn,tnr2) 
+
+  rule	print "# generate_vars failed\n"
+	---------------------------------
+	generate_vars (_,_,_) => fail
+	
 end
 
 
@@ -993,9 +1020,11 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	generate_var(DAE.VAR(id, DAE.PARAM, vd, typ, NONE,_))
 *)
 
-rule	generate_var_q (vk) &
-	generate_var_q2 (vd) &
-	is_array id => is_a &
+  rule	is_first_in_array id => false
+	-----------------------------
+	generate_var(DAE.VAR(id,_,_,_,_,_),tnr) => (c_empty_function,tnr)
+
+  rule	is_array id => is_a &
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
@@ -1003,17 +1032,18 @@ rule	generate_var_q (vk) &
 	append_strings(dim_strs,", ") => dims_str &
 	append_strings([" /* [",dims_str,"] */"],"") => dim_comment &
 	if (is_a,dim_comment,"") => dim_comment' &
+	list_length dim_strs => ndims &
+	int_string ndims => ndims_str &
 	append_strings([typ_str," ",cref_str,";",dim_comment'],"")=> decl_str &
-	append_strings(["alloc_",typ_str,"(&",cref_str,", ",dims_str,");"],"") => alloc_str &
+	append_strings(["alloc_",typ_str,"(&",cref_str,", ",
+			ndims_str,", ",dims_str,");"],"") => alloc_str &
 	c_add_variables(c_empty_function,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	if (is_a,cfn'',cfn') => cfn
 	----------------------------------------------------
 	generate_var(DAE.VAR(id, vk, vd, typ, NONE,inst_dims),tnr) => (cfn,tnr)
 
-  rule	generate_var_q (vk) &
-	generate_var_q2 (vd) &
-	is_array id => is_a &
+  rule	is_array id => is_a &
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
@@ -1021,8 +1051,11 @@ rule	generate_var_q (vk) &
 	append_strings(dim_strs,", ") => dims_str &
 	append_strings([" /* [",dims_str,"] */"],"") => dim_comment &
 	if (is_a,dim_comment,"") => dim_comment' &
+	list_length dim_strs => ndims &
+	int_string ndims => ndims_str &
 	append_strings([typ_str," ",cref_str,";",dim_comment'],"")=> decl_str &
-	append_strings(["alloc_",typ_str,"(&",cref_str,", ",dims_str,");"],"") => alloc_str &
+	append_strings(["alloc_",typ_str,"(&",cref_str,", ",
+			ndims_str,", ",dims_str,");"],"") => alloc_str &
 	c_add_variables(c_empty_function,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	if (is_a,cfn'',cfn') => cfn &
@@ -1033,9 +1066,7 @@ rule	generate_var_q (vk) &
 	  => (cfn,tnr)
 
   
-  rule	generate_var_q (vk) &
-	generate_var_q2 (vd) &
-	is_array id => is_a &
+  rule	is_array id => is_a &
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
@@ -1048,12 +1079,22 @@ rule	generate_var_q (vk) &
 	Exp.print_exp e & print "\n"
 	-----------
 	generate_var(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) => (cfn'',tnr1)
-
-  axiom	generate_var (_,tnr) => (c_empty_function,tnr)
-
+	
+  rule	print "# generate_var failed\n  " &
+	DAE.dump_debug_element e & print "\n"
+	-----------------------------------
+	generate_var (e,_) => fail
 end
 
 
+relation is_var_q : DAE.Element => () =
+
+  rule	generate_var_q(vk) &
+	generate_var_q2(vd)
+	---------------------
+	is_var_q DAE.VAR(id,vk,vd,_,_,_)
+
+end
 relation generate_var_q : DAE.VarKind => () =
 
   axiom	generate_var_q DAE.VARIABLE
@@ -1102,7 +1143,7 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
 	comp_ref_cstr id => (cref_str1,_) &
 	comp_ref_cstr id => (cref_str2,_) &
 	append_strings(["copy_",typ_str,"_data(&",
-			varname,".",cref_str2,", &",cref_str1,");"],"") 
+			cref_str1,", &",varname,".",cref_str2,");"],"") 
 	  => stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
 	-----------
@@ -2199,5 +2240,152 @@ relation comp_ref_cstr : Exp.ComponentRef => (string, Exp.Subscript list) =
 	list_flatten([subs,cref_subs]) => subs'
 	------------------------------
 	comp_ref_cstr Exp.CREF_QUAL(id,subs,cref) => (cref_str',subs')
+
+end
+
+(* generate_read_call_write(fpath,outvars,retstr,args) => rcw_fn *)
+relation generate_read_call_write : (string,
+				     DAE.Element list,
+				     string,
+				     DAE.Element list)
+	=> CFunction =
+
+
+  rule	string_append(fnname,"_read_call_write") => rcw_fnname &
+	c_make_function("int",rcw_fnname,[],
+			["char const* in_filename",
+			 "char const* out_filename"]) => cfn1 &
+
+	append_strings([retstr," out;"],"") => out_decl&
+	c_add_statements(cfn1,["PRE_VARIABLES",
+			       out_decl]) => cfn1' &
+	(*generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &*)
+	generate_vars(invars,is_rcw_input,1) => (cfn3,tnr2) &
+	c_add_statements(cfn3,["PRE_OPEN_INFILE"]) => cfn3' &
+	invar_names invars => in_names &
+	append_strings(in_names,", ") => in_args &
+	
+	generate_read(invars) => cfn4 &
+	append_strings(["out = ",fnname,"(",in_args,");"],"") => fn_call &
+	c_add_statements(cfn4,["PRE_READ_DONE",
+			       fn_call,
+			       "PRE_OPEN_OUTFILE"]) => cfn4' &
+
+	generate_write(outvars) => cfn5 &
+	c_add_statements(cfn5,["PRE_WRITE_DONE",
+			       "return 0;"]) => cfn5' &
+
+	c_merge_fns([cfn1',cfn3',cfn4',cfn5']) => cfn 
+	------------------------------------------------------
+	generate_read_call_write(fnname,outvars,retstr,invars) => cfn
+
+end
+
+relation invar_names : DAE.Element list => string list =
+
+  axiom	invar_names [] => []
+
+
+  rule	comp_ref_cstr id => (cref_str,_) &
+	is_first_in_array id => true &
+	invar_names r => r'
+	----------
+	invar_names DAE.VAR(id,vk,DAE.INPUT,t,_,_)::r => cref_str::r'
+
+  rule	invar_names r => cfn
+	-------
+	invar_names _::r => cfn
+
+
+end
+
+relation generate_read : DAE.Element list => CFunction =
+
+  axiom	generate_read [] => c_empty_function
+
+
+  rule	comp_ref_cstr id => (cref_str,_) &
+	dae_type_str(t, false) => type_string &
+	append_strings(["read_",type_string,"(in_file, &",cref_str,");"],"")
+	  => stmt &
+	  
+	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
+	generate_read r => cfn2 &
+	c_merge_fn(cfn1,cfn2) => cfn
+	----------
+	generate_read DAE.VAR(id,vk,DAE.INPUT,t,_,[])::r => cfn
+
+  rule	comp_ref_cstr id => (cref_str,_) &
+	is_first_in_array id => true &
+	dae_type_str(t, true) => type_string &
+	append_strings(["read_",type_string,"(in_file, &",cref_str,");"],"")
+	  => stmt &
+	  
+	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
+	generate_read r => cfn2 &
+	c_merge_fn(cfn1,cfn2) => cfn
+	----------
+	generate_read DAE.VAR(id,vk,DAE.INPUT,t,_,_::_)::r => cfn
+
+	
+  rule	generate_read r => cfn
+	-------
+	generate_read _::r => cfn
+
+
+end
+
+
+relation generate_write : DAE.Element list => CFunction =
+
+  axiom	generate_write [] => c_empty_function
+
+
+  rule	comp_ref_cstr id => (cref_str,_) &
+	dae_type_str(t, false) => type_string &
+	append_strings(["write_",type_string,"(out_file, &out.",cref_str,");"],"")
+	  => stmt &
+	  
+	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
+	generate_write r => cfn2 &
+	c_merge_fn(cfn1,cfn2) => cfn
+	----------
+	generate_write DAE.VAR(id,vk,DAE.OUTPUT,t,_,[])::r => cfn
+
+  rule	comp_ref_cstr id => (cref_str,_) &
+	is_first_in_array id => true &
+	dae_type_str(t, true) => type_string &
+	append_strings(["write_",type_string,"(out_file, &out.",cref_str,");"],"")
+	  => stmt &
+	  
+	  c_add_statements(c_empty_function,[stmt]) => cfn1 &
+	generate_write r => cfn2 &
+	c_merge_fn(cfn1,cfn2) => cfn
+	----------
+	generate_write DAE.VAR(id,vk,DAE.OUTPUT,t,_,_::_)::r => cfn
+
+	
+  rule	generate_write r => cfn
+	-------
+	generate_write _::r => cfn
+
+
+end
+
+relation is_rcw_output : DAE.Element => () =
+
+  rule	DAE.is_var e &
+	DAE.is_output_var e
+	--------------------
+	is_rcw_output e 
+
+end
+
+relation is_rcw_input : DAE.Element => () =
+
+  rule	DAE.is_var e &
+	DAE.is_input_var e
+	--------------------
+	is_rcw_input e 
 
 end
