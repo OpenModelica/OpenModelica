@@ -1524,8 +1524,8 @@ primary returns [void* ast]
 				ast = Absyn__MATRIX(make_rml_list_from_stack(el_stack));
 			}
 		| #(LBRACE ( (ast = expression_list) { ast = Absyn__ARRAY(ast); }
-                   | (ast = for_iterator)
-                ) RBRACE)
+                   | #(FOR_ITERATOR ast = for_iterator)
+                ))
 		| END { ast = Absyn__END; }
 		)
 	;
