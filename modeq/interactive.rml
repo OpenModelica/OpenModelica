@@ -735,6 +735,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  rule	is_protected(cr,class,p) => b1 &
+	Util.bool_string(b1) => s1 &
+	string_append(s1,"\n") => resstr 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("isProtected",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.CREF(class)],_)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
   rule	is_constant(cr,class,p) => b1 &
 	Util.bool_string(b1) => s1 &
 	string_append(s1,"\n") => resstr 
@@ -950,6 +961,29 @@ relation is_parameter: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program) =
 	is_parameter (cr,classname,p) => true
 
   axiom	is_parameter (_,_,_) => false
+end
+
+(** relation: is_protected
+ ** This relation takes a class and a component reference and a program
+ ** and returns true if the component referenced is in a protected section.
+**)
+relation is_protected: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program) => bool =
+
+  rule	Absyn.cref_to_path(classname) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_public_list(parts) => publst &
+	get_components_contains_name(cr,publst) => _
+	------------------------
+	is_protected (cr,classname,p) => false
+
+  rule	Absyn.cref_to_path(classname) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_protected_list(parts) => protlst &
+	get_components_contains_name(cr,protlst) => _
+	---------------------------------------------
+	is_protected (cr,classname,p) => true
+
+  axiom	is_protected (_,_,_) => false
 end
 
 (** relation: is_constant
@@ -3423,7 +3457,7 @@ relation get_public_list: Absyn.ClassPart list => Absyn.ElementItem list =
 end
 
 
-(** relation: get_public_list
+(** relation: get_protected_list
  ** This relation takes a ClassPart List and returns an appended list of all protected lists.
  **
 *)
