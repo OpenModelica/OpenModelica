@@ -1,0 +1,51 @@
+CPP = cl /nologo
+
+ANTLR_INCP = /I "$(ANTLR_HOME)\lib\cpp"
+ANTLR_LIBP = /libpath:"$(ANTLR_HOME)\lib\cpp"
+
+PARSE_INCP = /I "..\..\src"
+PARSE_LIBP = /libpath:"..\..\src"
+
+INCP = $(ANTLR_INCP) $(PARSE_INCP)
+LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
+
+CFLAGS = $(INCP) /GX /D DEBUG
+CPPFLAGS = $(CFLAGS)
+LINKFLAGS = /nologo $(LIBP)
+
+LIBS = antlr.lib modelica_parser.lib
+
+OBJS = test_parser.obj
+
+ANTLR = java -cp "$(ANTLR_HOME)" antlr.Tool
+
+all : parser test_parser.exe dot_parser.exe
+
+parser:
+	@cd ..\..\src
+	@echo Making parser in ..\..\src
+	@$(MAKE) /nologo
+	@cd ..\test\parser
+
+
+test_parser.exe : $(OBJS) 
+	link /out:$@ $(LINKFLAGS) $(LIBS) $(OBJS)
+
+dot_parser.exe : test_parser.exe
+	copy test_parser.exe dot_parser.exe
+
+
+
+clean:
+	-rm -f *.obj *.exe *~
+
+
+test_parser.obj : test_parser.cpp \
+..\..\src\modelica_lexer.hpp \
+..\..\src\modelica_parser.hpp \
+..\..\src\token_names.hpp \
+..\..\src\parse_tree_dumper.hpp
+
+
+
+

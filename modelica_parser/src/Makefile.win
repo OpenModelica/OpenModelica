@@ -1,0 +1,50 @@
+CPP=cl /nologo
+LINK=link
+LINKFLAGS = -lib /nologo
+
+INCLUDES = /I "$(ANTLR_HOME)\lib\cpp"
+LIBP = /libpath:"$(ANTLR_HOME)\lib\cpp"
+
+CFLAGS = $(INCLUDES) /GX /D DEBUG
+CPPFLAGS = $(CFLAGS)
+
+ANTLRFLAGS=
+
+lexergen= modelica_lexer.cpp modelica_lexer.hpp \
+	  ModelicaTokenTypes.hpp ModelicaTokenTypes.txt
+parsergen= modelica_parser.cpp modelica_parser.hpp \
+	   modelica_parserTokenTypes.hpp modelica_parserTokenTypes.txt
+
+lexersrcs=modelica_lexer.cpp
+parsersrcs=modelica_parser.cpp
+
+lexerobjs=$(lexersrcs:.cpp=.obj)
+parserobjs=$(parsersrcs:.cpp=.obj)
+helperobjs=token_names.obj parse_tree_dumper.obj
+
+OBJS = $(OBJS) $(lexerobjs) $(parserobjs) $(helperobjs)
+
+ANTLR = java -cp "$(ANTLR_HOME)" antlr.Tool
+
+all : modelica_parser.lib
+
+modelica_parser.lib : $(OBJS)
+	$(LINK) $(LINKFLAGS) $(OBJS) /out:$@
+
+$(lexergen) : ModelicaLexer.g
+	$(ANTLR) $(ANTLRFLAGS) $**
+
+$(parsergen) : Modelica.g ModelicaLexer.g
+	$(ANTLR) $(ANTLRFLAGS) Modelica.g
+
+clean:
+	-rm -f *.o *.obj *~ core *.core 
+
+reallyclean: clean
+	-rm -f $(lexergen) $(parsergen) 
+
+$(lexerobjs) : $(lexergen)
+$(parserobjs) : $(parsergen)
+
+token_names.obj : token_names.cpp token_names.hpp
+parse_tree_dumper.obj : parse_tree_dumper.cpp parse_tree_dumper.hpp

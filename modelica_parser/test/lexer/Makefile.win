@@ -1,0 +1,45 @@
+CPP = cl /nologo
+
+ANTLR_INCP = /I "$(ANTLR_HOME)\lib\cpp"
+ANTLR_LIBP = /libpath:"$(ANTLR_HOME)\lib\cpp"
+
+PARSE_INCP = /I "..\..\src"
+PARSE_LIBP = /libpath:"..\..\src"
+
+INCP = $(ANTLR_INCP) $(PARSE_INCP)
+LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
+
+CFLAGS = $(INCP) /GX /D DEBUG
+CPPFLAGS = $(CFLAGS)
+LINKFLAGS = /nologo $(LIBP)
+
+LIBS = antlr.lib modelica_parser.lib
+
+OBJS = test_lexer.obj 
+
+ANTLR = java -cp "$(ANTLR_HOME)" antlr.Tool
+
+all : parser test_lexer.exe ModelicaTokenTypes.txt
+
+parser:
+	@cd ..\..\src
+	@echo Making parser in ..\..\src
+	@$(MAKE) /nologo
+	@cd ..\test\lexer
+
+
+test_lexer.exe : $(OBJS) 
+	link /out:$@ $(LINKFLAGS) $(LIBS) $(OBJS)
+
+
+
+ModelicaTokenTypes.txt : ..\..\src\ModelicaTokenTypes.txt
+	type ..\..\src\ModelicaTokenTypes.txt > $@
+
+clean:
+	-rm -f *.obj ModelicaTokenTypes.txt *~
+
+
+test_lexer.obj : ..\..\src\modelica_lexer.hpp ..\..\src\token_names.hpp
+
+
