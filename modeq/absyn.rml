@@ -73,7 +73,7 @@ module Absyn:
 
   datatype ClassPart = PUBLIC of ElementItem list
 		     | PROTECTED of ElementItem list
-		     | EQUATIONS of Equation list
+		     | EQUATIONS of EquationItem list
 		     | ALGORITHMS of Algorithm list
   (** A class definition contains several parts.  There are public and *)
   (** protected component declarations, type definitions and `extends' *)
@@ -127,15 +127,18 @@ module Absyn:
   (** `ElementSpec' by writing them on the same line in the source. *)
   (** This type contains the information specific to one component. *)
 
+  datatype EquationItem = EQUATIONITEM of Equation
+					  * Annotation option
+
   datatype Equation = EQ_EXPR of Exp	     (* more later? *)
 		    | EQ_IF of Exp
-			     * Equation list	     (* true branch *)  
-			     * (Exp * Equation list) list (* elseif branches *)
-			     * Equation list	     (* else branch *)
+			     * EquationItem list	     (* true branch *)  
+			     * (Exp * EquationItem list) list (* elseif branches *)
+			     * EquationItem list	     (* else branch *)
 		    | EQ_EQUALS of Exp * Exp
-		    | EQ_CONNECT of ComponentRef * ComponentRef
-		    | EQ_FOR of Ident * Exp * Equation list
-		    | EQ_WHEN_E of Exp * Equation list (*1.1*) 
+		    | EQ_CONNECT of ComponentRef * ComponentRef 
+		    | EQ_FOR of Ident * Exp * EquationItem list
+		    | EQ_WHEN_E of Exp * EquationItem list (*1.1*) 
 		    | EQ_ASSERT of Assert
 
   (** The `Equation' type describes one equation in an equation *)

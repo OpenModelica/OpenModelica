@@ -191,7 +191,7 @@ relation print_class_part: Absyn.ClassPart => () =
 	print_class_part(Absyn.PROTECTED(el))
 	
   rule	print "EQUATIONS(" &
-	print_list_debug("print_class_part",eqs,print_equation,",") &
+	print_list_debug("print_class_part",eqs,print_equationitem,",") &
 	print ")"
 	--------------------------------------
 	print_class_part(Absyn.EQUATIONS(eqs))
@@ -479,9 +479,9 @@ relation print_equation: Absyn.Equation => () =
 	print_equation(Absyn.EQ_EXPR(e))
 	
   rule	print "IF (" & print_exp(e) & print ") THEN " &
-	print_list_debug("print_equation",tb, print_equation, ";") &
+	print_list_debug("print_equation",tb, print_equationitem, ";") &
 	print_list_debug("print_equation",eb, print_eq_elseif, " ") &
-	print " ELSE " & print_list_debug("print_equation",fb, print_equation, ";")
+	print " ELSE " & print_list_debug("print_equation",fb, print_equationitem, ";")
 	----------------------------------------------------
 	print_equation(Absyn.EQ_IF(e,tb,eb,fb))
 	
@@ -496,7 +496,7 @@ relation print_equation: Absyn.Equation => () =
 	print_equation(Absyn.EQ_CONNECT(e1,e2))
 	
   rule	print "FOR " & print i & print " in " & print_exp(e) &
-	print " {" & print_list_debug("print_equation",el, print_equation, ";") & print "}"
+	print " {" & print_list_debug("print_equation",el, print_equationitem, ";") & print "}"
 	----------------------------------------------------------
 	print_equation Absyn.EQ_FOR(i,e,el)
 	
@@ -506,12 +506,27 @@ relation print_equation: Absyn.Equation => () =
 	
 end
 
+relation print_equationitem: Absyn.EquationItem => () =
+  rule	print "EQUATIONITEM(" &
+	print_equation eq &
+	print ", " &
+	print_annotation ann &
+	print ")\n"
+	--------------
+	print_equationitem Absyn.EQUATIONITEM(eq,SOME(ann))
+	
+  rule	print "EQUATIONITEM(" &
+	print_equation eq &
+	print ",NONE)\n"
+	--------------
+	print_equationitem Absyn.EQUATIONITEM(eq,NONE)
+end
 (**)
 
-relation print_eq_elseif : (Absyn.Exp * Absyn.Equation list) => () =
+relation print_eq_elseif : (Absyn.Exp * Absyn.EquationItem list) => () =
 
   rule	print " ELSEIF " & print_exp e & print " THEN " &
-	print_list_debug("print_eq_elseif",el, print_equation, ";")
+	print_list_debug("print_eq_elseif",el, print_equationitem, ";")
 	-----------------------------------
 	print_eq_elseif((e,el))
 

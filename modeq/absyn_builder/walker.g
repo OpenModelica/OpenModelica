@@ -706,13 +706,16 @@ component_clause1 returns [void* ast]
 equation_clause returns [void* ast]
 {
     l_stack el_stack;
-    void* e;
-    void* ann;
+    void *e=0; 
 }
     :
 		#(EQUATION
-            (e = equation { el_stack.push(e); }
-			| ann = annotation
+            (
+		(e = equation | annotation) 
+		{ 
+			el_stack.push(e); 
+
+		}
             )*
         )
         {
@@ -738,7 +741,11 @@ algorithm_clause returns [void* ast]
         }
 		;
 
-equation returns [void* ast]
+equation returns [void* ast] 
+{
+void *ann=0;
+
+}
     :
         #(EQUATION_STATEMENT
             (	ast = equality_equation
@@ -748,7 +755,12 @@ equation returns [void* ast]
             |	ast = connect_clause
             |	ast = assert_clause
             )
-            comment
+            ann = comment
+	{
+	  if (!ann) ann=mk_none();
+	  else ann=mk_some(ann); 
+	  ast = Absyn__EQUATIONITEM(ast,ann);
+	}
         )
 		;
 

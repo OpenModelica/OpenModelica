@@ -117,3 +117,17 @@ record Placement
        Boolean iconTransformation.flipVertical=false;
        Real iconTransformation.rotation=0;
 end Placement;
+
+Connection annotations are modifications of the following (flattened)
+Modelica record:
+
+record Line
+  Real points[2][:];
+  Integer color[3]={0,0,0};
+  enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot) pattern = Solid;
+  Real thickness=0.25;
+  enumeration(None,Open,Filled,Half) arrow[2] = {None, None};
+  Real arrowSize=3.0;
+  Boolean smooth=false;
+end Line;
+

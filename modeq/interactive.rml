@@ -188,6 +188,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
+
+  rule	get_nth_connection_annotation(cr,p,n) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getNthConnectionAnnotation",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,st)
 end
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
@@ -373,6 +383,21 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int) => string 
 	axiom get_nth_connection(_,_,_) => "-1"
 end
 
+(** relation: get_nth_connection_annotation
+ ** This relation takes a `ComponentRef' and a `Program' and an int and 
+** returns a comma separated string  of values for the annotation of the the nth connection.
+**)
+relation get_nth_connection_annotation: (Absyn.ComponentRef, Absyn.Program, int) => string =
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	let str = "Not finished" 
+	--------------
+	get_nth_connection_annotation(model,p,n) => str
+
+  axiom	get_nth_connection_annotation(_,_,_) => "-1"
+end
+
 (**relation: get_nth_connection_in_class
  ** This relation takes a `Class' and  an int ane returns the nth connection
  ** in that class.
@@ -414,14 +439,14 @@ end
    ** returns the nth connection as an `Equation'. If the number is larger than the number of connections
  ** in the list, the relation fails.
 **)
-relation get_nth_connection_in_equations: (Absyn.Equation list, int) => Absyn.Equation =
+relation get_nth_connection_in_equations: (Absyn.EquationItem list, int) => Absyn.Equation =
 
-axiom	get_nth_connection_in_equations ((eq as Absyn.EQ_CONNECT(_,_))::xs,1) => eq
+axiom	get_nth_connection_in_equations ((Absyn.EQUATIONITEM((eq as Absyn.EQ_CONNECT(_,_)),_))::xs,1) => eq
 
   rule	int_sub (n,1) => newn &
 	get_nth_connection_in_equations (xs,newn) => eq
 	-----------------------------------------------
-	get_nth_connection_in_equations (Absyn.EQ_CONNECT(_,_)::xs,n) => eq
+	get_nth_connection_in_equations (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),_)::xs,n) => eq
 
   rule	get_nth_connection_in_equations (xs,n) => eq
 	--------------------------------------------
@@ -478,12 +503,12 @@ end
  ** This relation takes an `Equation' list and returns  an int 
  ** with the number of connect statements in that list.
 **)
-relation count_connections_in_equations: Absyn.Equation list => int =
+relation count_connections_in_equations: Absyn.EquationItem list => int =
 	
   rule	count_connections_in_equations(xs) => r1 &
 	int_add(r1,1)  => res 
 	---------------------
-	count_connections_in_equations(Absyn.EQ_CONNECT(_,_)::xs) => res
+	count_connections_in_equations(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),_)::xs) => res
 	
   rule	count_connections_in_equations(xs) => res
 	-----------------------------------------

@@ -386,14 +386,14 @@ end
  ** equation.
  **)
 
-relation elab_equations : Absyn.Equation list => Equation list =
+relation elab_equations : Absyn.EquationItem list => Equation list =
 
   axiom	elab_equations [] => []
 
   rule	elab_equation e => e' &
 	elab_equations es => es'
 	------------------------
-	elab_equations e::es => e'::es'
+	elab_equations Absyn.EQUATIONITEM(e,ann)::es => e'::es'
 
 end
 
@@ -415,7 +415,7 @@ relation elab_equation : Absyn.Equation => Equation =
 	------------------------
 	elab_equation Absyn.EQ_IF(e,tb,[],fb) => EQ_IF(e,tb',fb')
 
-  rule	elab_equation Absyn.EQ_IF(e,tb,[],[Absyn.EQ_IF(ee,ei,eis,fb)]) => eq
+  rule	elab_equation Absyn.EQ_IF(e,tb,[],[Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE)]) => eq
 	------------------------------------------------------------------
 	elab_equation Absyn.EQ_IF(e,tb,(ee,ei)::eis,fb) => eq
 

@@ -257,14 +257,14 @@ relation print_componentitem: Absyn.ComponentItem => Node =
 end
 
 
-relation print_equations: Absyn.Equation list => Node list =
+relation print_equations: Absyn.EquationItem list => Node list =
 
   axiom	print_equations [] => []
 
-  rule	print_equation e => node &
+  rule	print_equation eq => node &
 	print_equations el => nl
 	--------------------------
-	print_equations e::el => node::nl
+	print_equations Absyn.EQUATIONITEM(eq,ann)::el => node::nl
 	
 end
 
