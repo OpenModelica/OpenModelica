@@ -357,17 +357,16 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,true,_,_,_),_,false) => fail
 
-  rule	print "inst_class " & print n & print "\n" &
-	Env.open_scope(env,encflag) => env' &
+  rule	Env.open_scope(env,encflag) => env' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env', mod, pre, csets, ci_state, c, false,inst_dims,impl)
-	  => (dae1,_,csets',ci_state', tys) &
+	inst_class_in(env', mod, pre, csets, ci_state, c, false, inst_dims, impl)
+	  => (dae1, _, csets', ci_state', tys) &
 	Connect.equations csets' => dae2 &
 	list_append(dae1, dae2) => dae &
 	mktype(ci_state',tys) => ty
 	-------------------------------------------
 	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl)
-	  => (dae, [], ty,ci_state')
+	  => (dae, [], ty, ci_state')
 
   rule	Print.print_buf "- inst_class " & Print.print_buf n & Print.print_buf " failed\n"
 	-----------------------------------------------------
@@ -429,15 +428,41 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.print_prefix_str pre => prestr &
 	Debug.fprintl ("insttr", ["inst_class parts: pre=",prestr,"\n"]) &       
 	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
-	inst_element_list(env,mods,pre,csets,ci_state1, els, inst_dims, impl)
-	  => (dae1,env1, csets1, ci_state2, tys) &
-	inst_list(env1,mods,pre,csets1,ci_state2,inst_equation, eqs)
+
+	classdef_elts(els) => cdefelts &
+	component_elts(els) => compelts &
+	extends_elts(els) => extendselts &
+	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
+	inst_element_list2(env,mods,pre,csets,ci_state,cdefelts,inst_dims, impl)
+	  => (_,env1,csets',ci_state',tys) &
+	
+	(*2. EXTENDS Nodes*)
+	(* inst_extends_list only flatten inhteritance structure. *)
+	(* It does not perform component instantiations. *)
+	inst_extends_list(env1,mods,extendselts,impl)
+	  => (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) &
+	list_append(extcomps,compelts) => compelts' &
+		
+	(* Add variables to env, wihtout type and binding, *)
+	(* which will be added later in inst_element_list  *)
+	(* (where update_variable is called) *)
+	extend_components_to_env(env2,emods,pre,csets,ci_state,compelts',inst_dims,impl) => env3 &
+
+	(* Add components from base classes to be instantiated in 3 as well. *)
+	list_append(eqs,eqs2) => eqs' &
+	list_append(initeqs,initeqs2) => initeqs' &
+	list_append(alg,alg2) => alg' &
+	list_append(initalg,initalg2) => initalg' &
+	(*3. Instantiate components *)
+	inst_element_list(env3,emods,pre,csets,ci_state1, compelts', inst_dims, impl)
+	  => (dae1,env4, csets1, ci_state2, tys) &
+	inst_list(env4,mods,pre,csets1,ci_state2,inst_equation, eqs')
 	  => (dae2,_,csets2, ci_state3) &
-	inst_list(env1,mods,pre,csets2,ci_state3,inst_initialequation, initeqs)
+	inst_list(env4,mods,pre,csets2,ci_state3,inst_initialequation, initeqs')
 	  => (dae3,_,csets3, ci_state4) &
-	inst_list(env1,mods,pre,csets3,ci_state4, inst_algorithm, als)
+	inst_list(env4,mods,pre,csets3,ci_state4, inst_algorithm, alg')
 	  => (dae4,_,csets4, ci_state5) &
-	inst_list(env1,mods,pre,csets4,ci_state5, inst_initialalgorithm, initals)
+	inst_list(env4,mods,pre,csets4,ci_state5, inst_initialalgorithm, initalg')
 	  => (dae5,_,csets5, ci_state6) &
 	list_append(dae1,dae2) => dae6 &
 	list_append(dae6,dae3) => dae7 &
@@ -445,8 +470,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(dae8,dae5) => dae 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
-		      SCode.PARTS(els,eqs,initeqs,als,initals,_), re, prot, inst_dims, impl)
-	  => (dae, env1, csets5, ci_state6, tys)
+		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, inst_dims, impl)
+	  => (dae, env4, csets5, ci_state6, tys)
 
 	(** This rule describes how to instantiate a derived class *)
 	(** definition *)
@@ -489,10 +514,93 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 end	
 
 
+(** relation: inst_extends_list 
+ ** 
+ ** This relations flattens out the inheritance structure of a class.
+ ** It takes an SCode.Element list and flattens out the extends nodes
+ ** of that list. The result is a list of components and lists of equations
+ ** and algorithms.
+**)
+relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
+	  => (Env.Env, Mod.Mod, SCode.Element list, SCode.Equation list,
+	      SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) 
+	=
+  rule	Lookup.lookup_class(env, tp, true) 
+	  => (c as SCode.CLASS(cn,_,_,_,_), cenv) &
+	Mod.lookup_modification_p(mod, Absyn.IDENT(cn)) => innermod &
+	inst_derived_classes(cenv, innermod, c, impl) =>
+	  (cenv', els, eq1, ieq1, alg1, ialg1) &
+	inst_extends_list(env, innermod, els, impl) 
+	  => (env',mods, compelts1, eq2, ieq2, alg2, ialg2) &  
+	inst_extends_list(env', mod, rest, impl)
+	  => (env'', mods', compelts2, eq2, initeq2, alg2, ialg2)& 
+	(* Must merge(mod,emod) here and then apply the bindings to the *)
+	(* corresponding elements. But emod is Absyn.Mod and can not  *)
+	(* be elaborated, because for instance extends A(x=y) can reference *)
+	(* a variable y defined in A and will thus not be found. *)
+	(* Solution: made new relation elab_untyped_mod which transforms *)
+	(* to a Mod, but set the type information to unknown. *)
+	(* We can then perform the merge, and update untyped modifications *)
+	(* later (using update_mod), when we are instantiating the components. *)
+	Mod.elab_untyped_mod(emod) => emod' &
+	Mod.merge(mods',mod) => mod' &			      
+	Mod.merge(mod',emod') => mods' &			      
+	list_append(compelts1, compelts2) => compelts &
+	list_append(eq1, eq2) => eq &
+	list_append(ieq1, ieq2) => ieq &
+	list_append(alg1, alg2) => alg &
+	list_append(ialg1, ialg2) => ialg 
+	-----------------------------------
+	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl)
+	  => (env'', mods',compelts, eq, ieq, alg, ialg)
+
+  rule	inst_extends_list(env, mod, rest, impl)
+	  => (env', mods, compelts2, eq2, initeq2, alg2, ialg2) 
+	------------------------------------------------
+	inst_extends_list(env, mod, elt::rest, impl) 
+	  => (env',mods, elt::compelts2, eq2, initeq2, alg2, ialg2) 
+
+  axiom	inst_extends_list(env,mod,[],impl) => (env, mod, [], [], [], [], [])
+
+  rule	Print.print_buf "- inst_extends_list failed\n" 
+	---------------------
+	inst_extends_list(_,_,_,_) => fail
+end
+
+
+(** relation: inst_derived_classes
+ ** 
+ ** This relation takes a class definition and returns the
+ ** elements and equations and algorithms of the class.
+ ** If the class is derived, the class is looked up and the 
+ ** derived class parts are fetched.
+ **)
+
+relation inst_derived_classes: 	(Env.Env, Mod.Mod, SCode.Class, bool) =>
+	  (Env.Env, SCode.Element list, SCode.Equation list, 
+	   SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) =
+	
+  axiom	inst_derived_classes(env,mod,SCode.CLASS(_,_,_,_,SCode.PARTS(elt,eq,ieq,alg,ialg,_)),_) => (env,elt,eq,ieq,alg,ialg)
+
+  rule	Lookup.lookup_class(env,tp,true) => (c,cenv) &
+	(* Mod.lookup_modification_p(mod, c) => innermod & *)
+	(* We have to merge and apply modifications as well! *)
+	inst_derived_classes(cenv, mod, c, impl) 
+	  => (env, elt, eq, ieq, alg, ialg)
+	-------------------------------------
+	inst_derived_classes(env, mod, SCode.CLASS(_,_,_,_,SCode.DERIVED(tp,_,dmod)),impl) 
+	  => (env, elt, eq, ieq, alg, ialg) 
+
+  rule	Print.print_buf "- inst_derived_classes failed\n" 
+	----------------------
+	inst_derived_classes(_,_,_,_) => fail
+end
 
 
 (** relation: inst_element_list
  **
+
+ ** Moved to inst_classdef, FIXME: Move commments later
  ** Instantiate elements one at a time, and concatenate the resulting
  ** lists of equations.
  ** P.A, Modelica1.4: (enables declare before use)
@@ -510,35 +618,14 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State, Types.Var list) =
 	    
 	    
-  rule	classdef_elts(elts) => cdefelts &
-	component_elts(elts) => compelts &
-	extends_elts(elts) => extendselts &
-	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
-	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims, impl) => (_,env',csets',ci_state',tys) &
-(*	print "calling extend_components_to_env, env=" &
-	Print.clear_buf& Env.print_env env' & Print.get_string => str & print str & print "\n" &
-	Debug.fprint ("extend", "calling extend_components_to_env, env=\n") & *)
-	Debug.fcall ("extend",Env.print_env, env') &
-	extend_components_to_env(env',mod,pre,csets,ci_state,compelts,inst_dims,impl) => env'' &
-(*	print "updated extend_components_to_env, env=" &
-	Print.clear_buf& Env.print_env env'' & Print.get_string => str & print str & print "\n" & 
-	print "prefix = " & Prefix.print_prefix_str pre => prefixstr & print prefixstr & print "\n" & *)
-	Debug.fprint("extend"," extended components to env, env=") &
-	Debug.fcall ("extend",Env.print_env, env'') &
-	(*2. EXTENDS Nodes*)
-	inst_element_list2(env'',mod,pre,csets',ci_state',extendselts,inst_dims,impl) => (dae2,env''',csets'',ci_state'',tys2) &
-
-	Debug.fprint("decl"," instantiated base classes, env, env=") &
-	Debug.fcall ("decl",Env.print_env, env''') &
+  rule	Debug.fprint("decl"," instantiated base classes, env, env=") &
+	Debug.fcall ("decl",Env.print_env, env) &
 	
-	(*3. instantiate COMPONENT nodes*)
-	inst_element_list2(env''',mod,pre,csets'',ci_state'',compelts,inst_dims,impl) => (dae3,env'''',csets''',ci_state''',tys3) &
-	list_append(dae2,dae3) => totdae &
-	list_append(tys,tys2) => ts1 &
-	list_append(ts1,tys3) => tottys
-	----------------------------------------------------------------------------------------------------
+	inst_element_list2(env,mod,pre,csets,ci_state,elts,inst_dims,impl) 
+	  => (dae, env', csets', ci_state', tys) 
+	---------------------------------------------
 	inst_element_list(env,mod,pre,csets,ci_state,elts,inst_dims, impl) 
-	    => (totdae,env'''',csets''',ci_state''',tottys)
+	    => (dae, env', csets', ci_state', tys)
 
   rule	Print.print_buf "- inst_element_list failed\n" 
 	---------------------
@@ -694,7 +781,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprintln ("insttr", "Base class found") &
 	Mod.lookup_modification_p(mods,cn) => classmod &
 	Debug.fprintln ("insttr", "Modifications fetched") &
-	Mod.elab_mod(env,pre,m) => m' &
+	(* Instantiation of the extended class is done in an environment *)
+	(* that is combined of the environment of the class itself and *)
+	(* the class it is instantiated in. *)
+	list_append(cenv,env) => newcenv &
+	Mod.elab_mod(newcenv,pre,m) => m' &
 	Debug.fprintln ("insttr", "Modifications elaborated") &
 	(* Build the combind set of modifications *)
 	(* classmod is the modifications stored with the class *)
@@ -711,10 +802,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* environment (top frame of env'), by  inst_class_in, should be *)
 	(* copied into the resulting environment *)
 
-	(* Instantiation of the extended class is done in an environment *)
-	(* that is combined of the environment of the class itself and *)
-	(* the class it is instantiated in. *)
-	list_append(cenv,env) => newcenv &
 	inst_class_in(newcenv,mods'',pre,csets,ci_state,c,false,inst_dims,impl)
 	  => (dae,fr::env',csets',ci_state',vars) &
 	Env.merge_inherited_content(fr,env) => env''
@@ -832,22 +919,22 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	get_cref_from_dim(ad) => crefs2 &
 	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
 
+	(* Update the untyped modifiers to typed ones, and extract class *)
+	(* and component modifiers again.*)
+	Mod.update_mod(env2,pre,mods) => mods' &	
+	Mod.lookup_modification_p(mods',t) => classmod' &
+	Mod.lookup_comp_modification(mods',n) => mm' &
+		
 	Debug.fprintln ("insttr", "Elaborating current modifications") &
 	Mod.elab_mod(env2,pre,m) => m' &
 	Debug.fcall ("insttr", Mod.print_mod, m') &
 
-	Mod.merge(classmod,mm) => mod &
+	Mod.merge(classmod',mm') => mod &
 	Mod.merge(mod,m') => mod1 &
-	Debug.fprintln ("redecl", "Merged modifications") &
-	Debug.fcall ("redecl", Mod.print_mod, mod1) &
-	print "inst_element :" & print n & print "before redeclare\n" &
+
 	redeclare_type(mod1,comp,env2,pre,impl) => (SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m),mod',env2') &
-	print "inst_element :" & print n & print "after redeclare\n" &
-	Debug.fprintln ("redecl", "Merged modifications") &
-	Debug.fcall ("redecl", Mod.print_mod, mod') &
-
 	
 	Debug.fprint("insttr", "looking for type") &
 	Debug.fcall("insttr",Dump.print_path,t) &
@@ -862,7 +949,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
 
-	check_prot(prot, mm, vn) &
+	check_prot(prot, mm', vn) &
 	Debug.fprintln ("insttr", "Protection checked") &
 
 	Mod.mod_equation mod' => eq &
@@ -1204,6 +1291,7 @@ relation get_cref_from_narg: (Absyn.NamedArg) => Absyn.ComponentRef list =
 	get_cref_from_narg(Absyn.NAMEDARG(_,exp)) => res
 end
 
+
 relation update_variables_in_env:(Mod.Mod,Absyn.ComponentRef list, Env.Env, bool) 
 	=> Env.Env =
 
@@ -1407,7 +1495,7 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,Intera
 	elab_arraydim_type(t,ad) => dim2 &
 	compatible_arraydim(dim1,dim2) => dim3
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Types.PROP(t,c))),impl,cf) => dim3
+	elab_arraydim(env,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => dim3
 
   rule	elab_arraydim_decl(env,ad,impl,cf) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
@@ -1418,7 +1506,7 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option, bool,Intera
 	Print.print_buf "    expected array dimensions [" &
 	print_dim dim1 & Print.print_buf "]\n"
 	---------------------------------
-	elab_arraydim(env,ad,SOME((e,Types.PROP(t,c))),impl,cf) => fail
+	elab_arraydim(env,ad,SOME(Mod.TYPED(e,Types.PROP(t,c))),impl,cf) => fail
 
 
   rule	Print.print_buf "- elab_arraydim failed\n"
@@ -3387,7 +3475,7 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	inst_eq_equation(Exp.CREF(cr,t),
 			 Types.PROP(ty1,false(*FIXME*)), e,prop2,NON_INITIAL) => dae
 	-----------------------------------------------
-	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME((e,prop2))))
+	inst_mod_equation(cr,ty1, mod as Mod.MOD(_,_,SOME(Mod.TYPED(e,prop2))))
 	  => dae
 
   axiom inst_mod_equation(_,_,Mod.MOD(_,_,NONE)) => []
@@ -3437,27 +3525,27 @@ relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option)
   axiom	make_binding (_,_,NONE) => Types.UNBOUND
 
 (* Numerical values becoms VALBOUND *)
-  axiom	make_binding (env, _, SOME((Exp.ICONST(i),_))) 
+  axiom	make_binding (env, _, SOME(Mod.TYPED(Exp.ICONST(i),_))) 
 	    => Types.VALBOUND(Values.INTEGER(i))
 	    
-  axiom make_binding (env, _, SOME((Exp.RCONST(r),_)))
+  axiom make_binding (env, _, SOME(Mod.TYPED(Exp.RCONST(r),_)))
 	    => Types.VALBOUND(Values.REAL(r))
 	    
-  axiom	make_binding (env, _, SOME((Exp.SCONST(s),_)))
+  axiom	make_binding (env, _, SOME(Mod.TYPED(Exp.SCONST(s),_)))
 	=> Types.VALBOUND(Values.STRING(s))
 	    
-  axiom	make_binding (env, _, SOME((Exp.BCONST(b),_)))
+  axiom	make_binding (env, _, SOME(Mod.TYPED(Exp.BCONST(b),_)))
 	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
-axiom  	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME((e,prop)))
+axiom  	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME(Mod.TYPED(e,prop)))
 	  => Types.EQBOUND(e,true)
 
 	(* default *)
 
   rule	Exp.simplify(e) => e'
 	-------------------
-	make_binding (_,_, SOME((e,Types.PROP(t,c)))) => Types.EQBOUND(e',c)
+	make_binding (_,_, SOME(Mod.TYPED(e,Types.PROP(t,c)))) => Types.EQBOUND(e',c)
 
   rule	Print.print_buf "- make_binding failed\n"
 	-------------------------------

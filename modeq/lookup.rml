@@ -57,6 +57,7 @@ with "mod.rml"
 with "prefix.rml"
 with "print.rml"
 with "builtin.rml"
+with "util.rml"
 
 (**
  ** - Lookup relations
@@ -72,25 +73,50 @@ with "builtin.rml"
 
 relation lookup_type: (Env.Env,Absyn.Path) => (Types.Type, Env.Env) =
 
-  rule	Debug.fprint ("lotr","lookup_type(")	&
-	Debug.fcall ("lotr",Env.print_env, env) &
-	Debug.fprint ("lotr",", ") & 
-	Debug.fcall ("lotr",Dump.print_path,path) &
-	Debug.fprint ("lotr",")\n") &
+	(* Lookup of simple names *)
+  rule	Debug.fprint ("lotype","lookup_type(")	&
+	Debug.fcall ("lotype",Env.print_env, env) &
+	Debug.fprint ("lotype",", ") & 
+	Debug.fcall ("lotype",Dump.print_path,path) &
+	Debug.fprint ("lottype",")\n") &
 	lookup_type_in_env(env,path) => (t,env') &
-
-	Debug.fprint ("lotr", "found type:") &
-	Debug.fcall ("lotr",Types.print_type, t) 
+	Debug.fprint ("lotype", "found type:") &
+	Debug.fcall ("lotype",Types.print_type, t) 
 	--------------------------------------
-	lookup_type(env, path) => (t,env')
+	lookup_type(env, path as Absyn.IDENT(_)) => (t,env')
 
-  rule	lookup_package_type (env,pack,path) => (t,env')
+	(* Lookup of qualified name *)
+  rule	lookup_class(env, Absyn.IDENT(pack), true) 
+	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
+	Env.open_scope(env', encflag) => env2 &
+	ClassInf.start(restr, id) => ci_state &
+	(* Instantiate implicit (last argument = true) *)
+	Inst.inst_class_in(env2, Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
+	  => (_,env'',_,cistate1,_) &
+        not ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
+	(* Has to do additional check for encapsulated classes, see rule below *)
+	lookup_type_in_class(env'', c, path, true) => (t, env''') 
 	--------------------------------------
-	lookup_type(env, Absyn.QUALIFIED(pack,path)) => (t,env')
-	
-  rule	Print.print_buf "lookup_type failed!\n" 
+	lookup_type(env, Absyn.QUALIFIED(pack, path)) => (t, env''')
+
+
+  rule	lookup_class(env, Absyn.IDENT(pack), true) 
+	  => (c as SCode.CLASS(id, _, encflag, restr, _), env') &
+	Env.open_scope(env', encflag) => env2 &
+	ClassInf.start(restr, id) => ci_state &
+	Inst.inst_class_in(env2, Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true)
+	  => (_, env'', _, cistate1, _) &
+        ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
+	(* Has NOT to do additional check for encapsulated classes, see rule above *)
+	lookup_type_in_class(env'', c, path, false) => (c', env''') 
+	--------------------------------------
+	lookup_type(env, p as Absyn.QUALIFIED(pack, path)(*, msgflag*)) => (c', env''')
+
+  rule	Absyn.path_string path => s1 & 
+	Util.string_append_list(["# Error, type ", s1, " not found.\n"]) => s2 &
+	Print.print_buf s2
 	---------------------
-	lookup_type(_,_) => fail
+	lookup_type(_,path) => fail
 end
 
 (** relation: lookup_class
@@ -657,16 +683,6 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
 	build_varlst_from_elts(_,_) => fail
 end
 
-relation lookup_package_type : (Env.Env, string, Absyn.Path) => (Types.Type,Env.Env) =
-	
-  rule	locate_package (env,packname) => pack &
- 	Print.print_buf "- package lookup of types not implemented\n"
-	(* lookup_type_in_package (pack, path) => t *)
-	-------------------------------------
-	lookup_package_type (env, packname, path) => (* t *) fail
-
-end
-
 (**  Class lookup *)
 
 relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
@@ -774,9 +790,61 @@ relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (SCo
   rule	Print.print_buf "- lookup_class_in_class failed\n" &
 	Print.print_buf "  - class = " & Print.print_buf cname &
 	Print.print_buf "\n  - looked for: " & Absyn.path_string path => s & 
+	Print.print_buf s & Print.print_buf "\n env:"  &
+	Env.print_env env & Print.print_buf "\n" 
+	-----------------
+	lookup_class_in_class(env, SCode.CLASS(cname,_,_,_,_), path, _) => fail
+end
+
+(** relation: lookup_type_in_class
+ ** This relation looks up an type inside a class (The outer class can be a package)
+ ** Environment is passed along in case it needs to be modified...
+ ** bool determines whether we restrict lookup for encapsulated class (true).
+ **  
+ **)
+relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Types.Type, Env.Env) =
+
+  rule	lookup_type_in_env(env, classname(*, true*)) => (tp, env')
+        (* true means here encapsulated *)
+      	----------------------------------------------------
+	lookup_type_in_class (env, cdef,classname as Absyn.IDENT(_),true) => (tp, env')
+	
+  rule	lookup_type_in_env(env, classname(*, true*)) => (t ,env') 
+        (* false means that we do not restrict lookup to encapsulated classes *)
+      	----------------------------------------------------
+	lookup_type_in_class (env, cdef, classname as Absyn.IDENT(_) ,false) => (t, env')
+
+  rule	(* Restrict lookup to encapsulated elements only *)
+	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env) &
+       	Env.open_scope(env, encflag) => env2 &
+	ClassInf.start(restr, id) => ci_state &
+	Inst.inst_class_in(env2, Mod.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [], true) 
+	  => (_,env'',_,_,_) &
+  	lookup_type_in_class (env'', c, p1, false) => (t, env3)
+	-------------------------------------------
+	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => (t, env3)
+
+  rule	(* Restrict lookup to encapsulated elements only *)
+	lookup_class_in_env (env, Absyn.IDENT(c1),true) => (c as SCode.CLASS(id,_,encflag as false,restr,_) ,env) &
+        Print.print_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is still qualified)\n")
+	-------------------------------------------
+	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => fail
+
+  rule	(* Lookup not restricted to encapsulated elts. only *)
+	lookup_class_in_env (env, Absyn.IDENT(c1), true) => (c as SCode.CLASS(id,_,encflag,restr,_) ,env') &
+       	Env.open_scope(env',encflag) => env2 &
+	ClassInf.start(restr,id) => ci_state &
+	Inst.inst_class_in(env2,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true) => (_,env'',_,_,_) &
+  	lookup_type_in_class (env'',c,p1,false) => (t, env3)
+	-------------------------------------------
+	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env3)
+
+  rule	Print.print_buf "- lookup_type_in_class failed\n" &
+	Print.print_buf "  - class = " & Print.print_buf cname &
+	Print.print_buf "\n  - looked for: " & Absyn.path_string path => s & 
 	Print.print_buf s & Print.print_buf "\n" 
 	-----------------
-	lookup_class_in_class(_,SCode.CLASS(cname,_,_,_,_),path,_) => fail
+	lookup_type_in_class(_, SCode.CLASS(cname,_,_,_,_), path, _) => fail
 end
 	
 (** relation: lookup_class_in_parts
@@ -820,16 +888,7 @@ relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 	------------------------------
 	lookup_class_in_frame(_::fs,id,msg) => (c, env)
 end
-(**)
-relation lookup_package_class : (Env.Env, string, Absyn.Path)
-	  => (SCode.Class, Env.Env) =
 
-  rule	locate_package (env,packname) => pack &
-	lookup_class_in_package (pack, path) => (c, _)
-	-------------------------------------
-	lookup_package_class (env, packname, path) => (c, env)
-
-end
 (**)
 relation lookup_var2 : ((SCode.Ident * Env.Item) list,SCode.Ident)
 	  => (Types.Var,SCode.Element option, bool) =
@@ -1008,40 +1067,6 @@ relation print_frame_element: (SCode.Ident * Env.Item) => () =
   rule	Print.print_buf "t:" & Print.print_buf n
 	-------
 	print_frame_element ((n,Env.TYPE(_)))
-
-end
-
-
-
-
-(**
- **  Package handling
- **)
-
-(** relation: locate_package
- **
- ** This relation finds a package in a file and loads it.
- **
- ** It appends `.mo' to the name of the package and tries to load a
- ** file of that name.  This relation should be memoized, as it
- ** currently reloads the package each time it is used.
- **)
-
-relation locate_package : (Env.Env, string) => SCode.Class =
-
-  rule	lookup_class(env, Absyn.IDENT(pack),true) => (c, env) &
-	assert_package c
-	----------------
-	locate_package (env, pack) => c
-
-  rule	string_append (pack, ".mo") => filename &
-	Print.print_buf "Loading " & Print.print_buf filename & Print.print_buf "...\n" &
-	Parser.parse filename => (Absyn.PROGRAM((c as Absyn.CLASS(classname,_,_,_,_,_))::_,w)) &
-	pack = classname &
-	SCode.elaborate Absyn.PROGRAM([c],w) => [c'] &
-	assert_package c'
-	--------------------------------------------
-	locate_package(env, pack) => c'
 
 end
 
