@@ -8,8 +8,6 @@
 
 module SCode :
 
-  (* with "exp.rml" *)
-  (* with "types.rml" *)
   with "absyn.rml"
 
   type Ident = Absyn.Ident
