@@ -71,7 +71,11 @@ void simple_indexed_assign_real_array2(real_array_t* source,
 */
 void index_real_array(real_array_t* source, 
 			       index_spec_t* spec, 
-			       real_array_t*);
+			       real_array_t* dest);
+void index_alloc_real_array(real_array_t* source, 
+			       index_spec_t* spec, 
+			       real_array_t* dest);
+
 void simple_index_alloc_real_array1(real_array_t* source,int i1,real_array_t* dest);
 
 void simple_index_real_array1(real_array_t* source, 

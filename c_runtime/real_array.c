@@ -407,9 +407,19 @@ void index_real_array(real_array_t* source,
 {
   
 }
+
+void index_alloc_real_array(real_array_t* source, 
+			       index_spec_t* spec, 
+			       real_array_t* dest)
+{
+  
+}
+
+
 /* Returns dest := source[i1,:,:...]*/
 void simple_index_alloc_real_array1(real_array_t* source,int i1,real_array_t* dest)
 {
+  
 
 }
 

@@ -6,12 +6,18 @@ state current_state = {
   0,/*real buffer*/
   0,/*integer buffer*/
   0,/*string buffer*/
-  0 /*boolean buffer*/
+  0,/*boolean buffer*/
+  0,/* size buffer */
+  0 /* index buffer */
 };
 
-size_mem current_buffer_index = {
-  0
-};
+real real_buffer[NR_REAL_ELEMENTS];
+integer integer_buffer[NR_INTEGER_ELEMENTS];
+string string_buffer[NR_STRING_ELEMENTS];
+boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
+integer size_buffer[NR_SIZE_ELEMENTS];
+int* index_buffer[NR_INDEX_ELEMENTS];
+
 
 state get_memory_state()
 {
@@ -117,11 +123,25 @@ int* size_alloc(int n)
   index_t start;
   
   assert(n>=0);
-  assert(n+current_buffer_index.size_buffer_ptr<NR_SIZE_ELEMENTS);
+  assert(n + current_state.size_buffer_ptr < NR_SIZE_ELEMENTS);
  
-  start = current_buffer_index.size_buffer_ptr;
-  current_buffer_index.size_buffer_ptr += n;
+  start = current_state.size_buffer_ptr;
+  current_state.size_buffer_ptr += n;
   return size_buffer+n;
+
+  /*  return start;*/
+}
+
+int** index_alloc(int n)
+{
+  index_t start;
+  
+  assert(n>=0);
+  assert(n + current_state.index_buffer_ptr < NR_SIZE_ELEMENTS);
+ 
+  start = current_state.index_buffer_ptr;
+  current_state.index_buffer_ptr += n;
+  return index_buffer+n;
 
   /*  return start;*/
 }
@@ -165,8 +185,17 @@ index_t boolean_free(int n)
 index_t size_free(int n)
 {
   assert(n>=0);
-  assert(current_buffer_index.size_buffer_ptr-n>=0);
+  assert(current_state.size_buffer_ptr-n>=0);
   
-  current_buffer_index.size_buffer_ptr -= n;
-  return current_buffer_index.size_buffer_ptr; 
+  current_state.size_buffer_ptr -= n;
+  return current_state.size_buffer_ptr; 
+}
+
+index_t index_free(int n)
+{
+  assert(n>=0);
+  assert(current_state.index_buffer_ptr-n>=0);
+  
+  current_state.index_buffer_ptr -= n;
+  return current_state.index_buffer_ptr; 
 }
