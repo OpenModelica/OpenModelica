@@ -1,0 +1,6 @@
+
+To be able to use mosh (osm) you must
+set the MOSHHOME environment variable
+to point to the mosh directory e.g
+setenv MOSHHOME ~/cvs/modelica/mosh
+
