@@ -20,3 +20,8 @@ extern void *mk_box2(unsigned ctor, void*, void*);
 extern void *mk_box3(unsigned ctor, void*, void*, void*);
 extern void *mk_box4(unsigned ctor, void*, void*, void*, void*);
 extern void *mk_box5(unsigned ctor, void*, void*, void*, void*, void*);
+extern void *mk_box6(unsigned ctor, void*, void*, void*, void*, void*, void*);
+extern void *mk_box8(unsigned ctor, void*, void*, void*, void*, void *,
+		     void*, void*, void*);
+extern void *mk_box9(unsigned ctor, void*, void*, void*, void*, void *,
+		     void*, void*, void*, void*);
