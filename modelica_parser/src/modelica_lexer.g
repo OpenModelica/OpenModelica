@@ -22,6 +22,7 @@ tokens {
 	ANNOTATION	= "annotation"	;
 	BLOCK		= "block"	;
 	BOUNDARY	= "boundary"	;
+	CODE		= "Code"		;
 	CLASS		= "class"	;
 	CONNECT		= "connect"	;
 	CONNECTOR	= "connector"	;

@@ -23,6 +23,13 @@ tokens {
 	ARGUMENT_LIST;
 	CLASS_DEFINITION	;
 	CLASS_MODIFICATION;
+	CODE_EXPRESSION;
+	CODE_MODIFICATION;
+	CODE_ELEMENT;
+	CODE_EQUATION;
+	CODE_INITIALEQUATION;
+	CODE_ALGORITHM;
+	CODE_INITIALALGORITHM;
 	COMMENT;
 	DECLARATION	; 
 	DEFINITION ;
@@ -488,6 +495,7 @@ connector_ref_2 :
 expression :
 		( if_expression 
         | simple_expression
+		| code_expression
 		)
 		;
 
@@ -534,6 +542,58 @@ simple_expression ! :
 			}
 		}
 		;
+/* Code quotation mechanism */
+code_expression ! :
+		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element 
+		| eq:code_equation_clause | ieq:code_initial_equation_clause
+		| alg:code_algorithm_clause | ialg:code_initial_algorithm_clause
+		)  RPAR 
+ 		{
+ 			if (#e) {
+ 				#code_expression = #([CODE_EXPRESSION, "CODE_EXPRESSION"],#e);
+ 			} else if (#m) {
+ 				#code_expression = #([CODE_MODIFICATION, "CODE_MODIFICATION"],#m);
+ 			} else if (#el) {
+ 				#code_expression = #([CODE_ELEMENT, "CODE_ELEMENT"],#el);
+ 			} else if (#eq) {
+				#code_expression = #([CODE_EQUATION, "CODE_EQUATION"],#eq);
+ 			} else if (#ieq) {				
+ 				#code_expression = #([CODE_INITIALEQUATION, "CODE_EQUATION"],#ieq);
+ 			} else if (#alg) {
+				#code_expression = #([CODE_ALGORITHM, "CODE_ALGORITHM"],#alg);
+  			} else if (#ialg) {				
+ 				#code_expression = #([CODE_INITIALALGORITHM, "CODE_ALGORITHM"],#ialg);
+			}
+		}
+	;
+
+code_equation_clause :
+		( EQUATION^ (equation SEMICOLON! | annotation SEMICOLON! )*  )
+		;
+
+code_initial_equation_clause :
+ 		{ LA(2)==EQUATION}?
+ 		INITIAL! ec:code_equation_clause
+         {
+             #code_initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
+         } 
+ 		;
+
+code_algorithm_clause :
+		ALGORITHM^ (algorithm SEMICOLON! | annotation SEMICOLON!)*
+		;
+code_initial_algorithm_clause :
+		{ LA(2) == ALGORITHM }?
+		INITIAL! ALGORITHM^
+		(algorithm SEMICOLON!
+		|annotation SEMICOLON!
+		)*
+		{
+			#code_initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #code_initial_algorithm_clause);
+		}
+		;
+
+/* End Code quotation mechanism */
 
 logical_expression :
 		logical_term ( OR^ logical_term )*
