@@ -225,8 +225,7 @@ relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) => (DAE.Elemen
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs, path as Absyn.IDENT(name2)) => dae
   axiom	inst_class_in_program(env,[],_) => []
 	
-  rule	Print.print_buf "inst_class_in_program failed\n env:\n" &
-	Env.print_env env
+  rule	Print.print_buf "inst_class_in_program failed\n" 
 	-------------------------------
 	inst_class_in_program(env,_,_) => fail
 

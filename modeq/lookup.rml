@@ -794,7 +794,8 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 
 	(* Protected components *)
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,_,true,_,_))
+	  => (Types.VAR(_,_,true,_,_)) &
+	Print.print_buf "- lookup of protected element not allowed\n" 
 	------------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
 	  => fail

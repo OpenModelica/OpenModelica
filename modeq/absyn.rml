@@ -162,7 +162,7 @@ module Absyn:
 		    | EQ_WHEN_E of Exp 
 				* EquationItem list 
 				* (Exp * EquationItem list) list (* else when *)
-		    | EQ_NORETCALL of Ident * FunctionArgs		   (* fcalls without return value *)
+		    | EQ_NORETCALL of Ident * FunctionArgs	 (* fcalls without return value *)
 
   (** The `Equation' type describes one equation in an equation *)
   (** section. *)
