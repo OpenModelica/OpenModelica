@@ -29,7 +29,7 @@ typedef int bool;
 #include "rml.h"
 #include "yacclib.h"
 #include "exp.h"
-#include "class.h"
+#include "absyn.h"
 #include "errno.h"
 
 static int errors=0;
@@ -127,6 +127,7 @@ extern void *sibling_list(AST *ast);
 */
 
 #token EQUALS           "="
+#token ASSIGN           ":="
 #token PLUS             "\+"
 #token MINUS            "\-"
 #token MULT             "\*"
@@ -143,14 +144,13 @@ extern void *sibling_list(AST *ast);
 #tokclass ADD_OP	{ PLUS MINUS }
 #tokclass MUL_OP	{ MULT DIV }
 
-#tokclass ASSIGN	{ "=" ":=" }
-
 /* synthetic nodes */
 #token EXTRA_TOKEN	/* used for synthetic nodes */
 #token COMPONENTS
 #token TYPE_PREFIX
 #token FUNCALL
 #token ELEMENT
+#token MODIFICATION
 
 #token "//(~[\n])*"  << zzskip(); >> /* skip C++-style comments */
 
@@ -189,16 +189,17 @@ import_statement :
 	;
 
 class_definition[bool is_replaceable,bool is_final] :
-        << void *restr; bool partial = false; >>
+        << void *restr;
+	   bool partial=false, has_array_decl=false, has_class_spec=false; >>
 	{ PARTIAL << partial = true; >> }
-        ( CLASS_                  << restr = Class__CL_5fCLASS; >>
-	| MODEL			  << restr = Class__CL_5fMODEL; >>
-	| RECORD		  << restr = Class__CL_5fRECORD; >>
-	| BLOCK			  << restr = Class__CL_5fBLOCK; >>
-	| CONNECTOR		  << restr = Class__CL_5fCONNECTOR; >>
-	| TYPE			  << restr = Class__CL_5fTYPE; >>
-	| PACKAGE		  << restr = Class__CL_5fPACKAGE; >>
-	| { EXTERNAL } FUNCTION   << restr = Class__CL_5fFUNCTION; >>
+        ( CLASS_                  << restr = Absyn__CL_5fCLASS; >>
+	| MODEL			  << restr = Absyn__CL_5fMODEL; >>
+	| RECORD		  << restr = Absyn__CL_5fRECORD; >>
+	| BLOCK			  << restr = Absyn__CL_5fBLOCK; >>
+	| CONNECTOR		  << restr = Absyn__CL_5fCONNECTOR; >>
+	| TYPE			  << restr = Absyn__CL_5fTYPE; >>
+	| PACKAGE		  << restr = Absyn__CL_5fPACKAGE; >>
+	| { EXTERNAL } FUNCTION   << restr = Absyn__CL_5fFUNCTION; >>
 	)
         i:IDENT
 	comment
@@ -206,14 +207,27 @@ class_definition[bool is_replaceable,bool is_final] :
 	  << 
 	     Attrib a = $[CLASS_,"---"];
 	     #0 = #(#[&a], #0);
-	     #0->rml = Class__CLASS(mk_scon($i.u.stringval),
+	     #0->rml = Absyn__CLASS(mk_scon($i.u.stringval),
 				    RML_PRIM_MKBOOL(partial),
-				    restr, sibling_list(#c)
-				    /*((#c->rml)
-				      ? sibling_list(#c)
-				      : mk_nil()) */);
+				    restr, Absyn__PARTS(sibling_list(#c)));
 	  >>
-	| EQUALS IDENT { array_decl } { class_specialization } 
+	| EQUALS di:IDENT
+	  { da:array_decl << has_array_decl=true; >> }
+	  { ds:class_specialization << has_class_spec=true; >> } 
+	  << 
+	     Attrib a = $[CLASS_,"---"];
+	     #0 = #(#[&a], #0);
+	     #0->rml = Absyn__CLASS(mk_scon($i.u.stringval),
+				    RML_PRIM_MKBOOL(partial),
+				    restr,
+				    Absyn__DERIVED(mk_scon($di.u.stringval),
+						   (has_array_decl
+						    ? mk_some(#da->rml)
+						    : mk_none()),
+						   (has_class_spec
+						    ? mk_some(#ds->rml)
+						    : mk_none())));
+	  >>
 	)
 	;
 
@@ -228,20 +242,22 @@ composition :
 
 default_public:
 	element_list[false]
-	<< Attrib a = $[PUBLIC,"---"];
+	<< 
+	   Attrib a = $[PUBLIC,"---"];
 	   void *els = sibling_list(#0);
 	   printf("default_public\n");
 	   #0 = #(#[&a],#0);
-	   #0->rml = Class__PUBLIC(els); >>
+	   #0->rml = Absyn__PUBLIC(els);
+	>>
         ;
 
 public_elements:
 	PUBLIC^ element_list[false]
-	<< #0->rml = Class__PUBLIC(mk_nil()); >>
+	<< #0->rml = Absyn__PUBLIC(mk_nil()); >>
 	;
 protected_elements:
 	PROTECTED^ element_list[true]
-	<< #0->rml = Class__PROTECTED(mk_nil()); >>
+	<< #0->rml = Absyn__PROTECTED(mk_nil()); >>
 	;
 
 element_list[bool is_protected] :
@@ -254,12 +270,12 @@ element :
 	{ FINAL << is_final = true; >> }
 	( { REPLACEABLE << is_replaceable=true; >> }
 	  c:class_definition[is_replaceable,is_final]
-	  << spec=Class__CLASSDEF(RML_PRIM_MKBOOL(is_replaceable), #c->rml); >>
+	  << spec=Absyn__CLASSDEF(RML_PRIM_MKBOOL(is_replaceable), #c->rml); >>
 	| ec:extends_clause << spec = #ec->rml; >>
 	| cc:component_clause << spec = #cc->rml; >>  )
 	<< Attrib a = $[ELEMENT,"---"];
 	   #0 = #(#[&a],#0);
-	   #0->rml = Class__ELEMENT(RML_PRIM_MKBOOL(is_final), spec); >>
+	   #0->rml = Absyn__ELEMENT(RML_PRIM_MKBOOL(is_final), spec); >>
 	;
 
 /*
@@ -269,7 +285,7 @@ element :
 extends_clause:
 	EXTENDS^ i:IDENT
 	{ class_specialization }
-	<< #0->rml = Class__EXTENDS(mk_scon(i.u.stringval),
+	<< #0->rml = Absyn__EXTENDS(mk_scon(i.u.stringval),
 				    mk_nil() /* FIXME */); >>
 	;
 
@@ -285,7 +301,7 @@ component_clause!: << Attrib a = $[COMPONENTS,"---"]; >>
 	   #0 = #(#[&a], #p, #s, #l);
 	   /* FIXME: Split to several elements */
 
-	   #0->rml = Class__COMPONENT(RML_PRIM_MKBOOL(fl),
+	   #0->rml = Absyn__COMPONENT(RML_PRIM_MKBOOL(fl),
 				      RML_PRIM_MKBOOL(pa),
 				      RML_PRIM_MKBOOL(co),
 				      RML_PRIM_MKBOOL(in),
@@ -296,7 +312,7 @@ component_clause!: << Attrib a = $[COMPONENTS,"---"]; >>
 				      mk_none());
 
 #if 0
-	   #0->rml = Class__EXTENDS(mk_scon("shit"),mk_nil());
+	   #0->rml = Absyn__EXTENDS(mk_scon("shit"),mk_nil());
 #endif
 	>> 
 	;
@@ -373,35 +389,44 @@ subscript! :
  */
 
 specialization :
-	class_specialization { EQUALS expression }
-	| EQUALS^ expression
+	  c:class_specialization /* { EQUALS expression } */
+	  << #0->rml = Absyn__CLASSMOD(#c); >>
+	| EQUALS^ e:expression
+	  << #0->rml = Absyn__EQUALMOD(#e->rml); >>
 	;
 
 class_specialization :
-	LPAR^ argument_list RPAR! 
+	  LPAR^ al:argument_list RPAR! 
+	  << #0->rml = sibling_list(#al); >>
 	;
 
 argument_list :
-	argument ( ","! argument )*
+	  argument ( ","! argument )*
 	;
 
 argument :
-	element_modification
+	  element_modification
 	| element_redeclaration
 	;
  
-element_modification :
-	{ FINAL } 
-	id:IDENT^ << /* #id->ni.type=ELEMENT_MOD; */ >> 
-	{ array_decl } 
-	specialization
+element_modification : << bool is_final=false; >>
+	{ FINAL << is_final=true; >> } 
+	cr:component_reference
+	sp:specialization
+	<< 
+	   Attrib a = $[MODIFICATION,"---"];
+	   #0 = #(#[&a],#0);
+	   #0->rml = Absyn__MODIFICATION(RML_PRIM_MKBOOL(is_final),
+					 #cr->rml,
+					 #sp->rml);
+	>>
 	;
 
 element_redeclaration :
-	<< bool is_final=false; >>
-	REDECLARE
-	{ FINAL << is_final=true; >> }
-	( extends_clause
+	  << bool is_final=false; >>
+	  REDECLARE
+	  { FINAL << is_final=true; >> }
+	  ( extends_clause
 	  | class_definition[false,is_final]
 	  | component_clause1[ET_COMPONENT] )
 	;
@@ -428,22 +453,25 @@ component_clause1[NodeType nt] :
 
 
 equation_clause	: 
-	EQUATION^ ( equation ";"! | annotation ";"! )*
-	<< #0->rml = Class__EQUATIONS(sibling_list(#0->down)); >>
+	EQUATION^ ( equation ";"! | annotation! ";"! )*
+	<< #0->rml = Absyn__EQUATIONS(sibling_list(#0->down)); >>
 	;
 
 algorithm_clause :
-	ALGORITHM^ ( equation ";"! | annotation ";"! )*
-	<< #0->rml = Class__ALGORITHMS(mk_nil()); >>
+	ALGORITHM^ ( equation ";"! | annotation! ";"! )*
+	<< #0->rml = Absyn__ALGORITHMS(mk_nil()); >>
 	;
 
-equation : << bool is_assign = false; >>
-	( lh:simple_expression { ASSIGN^ rh:expression << is_assign=true; >> }
+equation : << bool is_assign = false; AST *top; >>
+	( lh:simple_expression << top = #lh; >>
+	  { ( a:ASSIGN^ << top = #a; >>
+	    | e:EQUALS^ << top = #e; >> )
+	    rh:expression << is_assign=true; >> }
 	  << 
 	     if(is_assign)
-	       #0->rml = Class__EQ_5fASSIGN(#lh->rml, #rh->rml);
+	       top->rml = Absyn__EQ_5fEQUALS(#lh->rml, #rh->rml);
 	     else
-	       #lh->rml = Class__EQ_5fEXPR(#lh->rml);
+	       top->rml = Absyn__EQ_5fEXPR(#lh->rml);
 	  >>
 	| conditional_equation
 	| for_clause
@@ -576,19 +604,21 @@ relation :
 	}
 	;
 
-arithmetic_expression :
+arithmetic_expression : << void *op; >>
 
 	unary_arithmetic_expression
 	(
-	  ADD_OP^ term
+	  ( PLUS^ << op = Exp__ADD; >> | MINUS^ << op = Exp__SUB; >> )
+	  e2:term
+	  << #0->rml = Exp__BINARY(#0->down->rml,op,#e2->rml); >>
 	)*
 	;
 
 unary_arithmetic_expression:
 
-	plus:PLUS^ term  << /* #plus->setOpType(OP_PREFIX); */ >>
-      | minus:MINUS^ term << /* #minus->setOpType(OP_PREFIX); */ >>
-      | term 
+	PLUS^ t1:term   << #0->rml = Exp__UNARY(Exp__UPLUS,#t1->rml); >>
+      | MINUS^ t2:term << #0->rml = Exp__UNARY(Exp__UMINUS,#t2->rml); >>
+      | term
 	;
 
 term :
@@ -629,7 +659,6 @@ primary : << bool is_matrix; >>
 	| f:FALS/*E*/        << #f->rml = RML_FALSE; >>
 	| t:TRU/*E*/         << #t->rml = RML_TRUE; >>
 	| (name_path_function_arguments)? /* name_path_function_arguments */
-/* 	| new_component_reference */
 	| (member_list)?
 	| i:name_path        << #0->rml = Exp__PATH(#i->rml); >>
 	| TIME               << #0->rml = Exp__TIME; >>
@@ -653,27 +682,22 @@ name_path : << bool qualified = false; >>
              #0->rml = Exp__IDENT(mk_scon($i.u.stringval)); >>
 	;
 
-new_component_reference :
-	a:array_op
-	{ dot:"."^ << /* #dot->setTranslation("`"); */ >>  new_component_reference }
-	;
-
 member_list:
-	comp_ref { dot:"."^ << /* #dot->setTranslation("Member"); #dot->setOpType(OP_FUNCTION); */ >> 
+	comp_ref { dot:DOT^
 	( (member_list)? | name_path ) }
 	;
 
 comp_ref:
-	name_path b:LBRACK^ << /* #b->setOpType(OP_ARRAYRANGE); */ >> subscript_list RBRACK!
+	name_path b:LBRACK^ subscript_list RBRACK!
 	;
 
-array_op :
-	i:IDENT 
-	{ brak:LBRACK^ subscript_list RBRACK! << /* #brak->setOpType(OP_ARRAYRANGE); */ >> }
-	;
-
-component_reference ! :
-	i:IDENT { a:array_decl } { dot:"." c:component_reference }
+component_reference : << void *tail = NULL; >>
+	  i:IDENT^ { a:array_decl }
+	  << #i->rml = mk_box2(0,
+			       mk_scon($i.u.stringval),
+			       mk_nil() /* FIXME */); >>
+	  { dot:DOT^ c:component_reference << tail = #c->rml; >> }
+	  << #0->rml = mk_cons(#i->rml, tail != NULL ? tail : mk_nil()); >>
 	;
 
 /* not in document's grammar */
