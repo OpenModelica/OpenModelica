@@ -451,7 +451,7 @@ const value& value::operator+= (const value& val)
     }
   else
     {
-      throw modelica_runtime_error("Types does not match\n");
+      throw modelica_runtime_error("Types do not match\n");
     }
     
   return *this;
@@ -498,7 +498,7 @@ const value& value::operator-= (const value& val)
     }
   else
     {
-      throw modelica_runtime_error("Adding non-numerical value\n");
+      throw modelica_runtime_error("Types do not match\n");
     }
 
 //   if (val.is_array() || is_array())
@@ -607,21 +607,43 @@ double value::to_double() const
 
 value value::operator-() const
 {
-    if (!is_numeric())
+     if (!is_numeric())
 	{
 	    throw modelica_runtime_error("unary minus on non-numerical value\n");
 	}
 
-    value tmp(*this);
+     value tmp(*this);
 
-    if (is_integer()) 
-	{
-	    tmp.m_integer = - m_integer;
+     if (is_real_array())
+       {
+	 tmp.m_real_array = - m_real_array;
 	}
-    else
+      else if (is_integer_array())
 	{
-	    tmp.m_real = - m_real;
+	  tmp.m_integer_array = - m_integer_array;
 	}
+      else if (is_real())
+	{
+	  tmp.m_real = - m_real;
+	}
+      else if (is_integer())
+	{
+	  tmp.m_integer = - m_integer;
+	}
+     else
+       {
+	 throw modelica_runtime_error("Internal error in value +=");
+       }
+        
+     return tmp; 
+//     if (is_integer()) 
+// 	{
+// 	    tmp.m_integer = - m_integer;
+// 	}
+//     else
+// 	{
+// 	    tmp.m_real = - m_real;
+// 	}
 
     return tmp;
 }

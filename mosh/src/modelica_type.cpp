@@ -339,10 +339,3 @@ ostream& operator<< (ostream& o, const modelica_type& v)
   return o;
 }
 
-ostream& modelica_type::print_dims(ostream& o) 
-{
-  for (int i = 0; i < m_dimensions.size();++i)
-    {
-      o << "dimensions[" << i << "] : " << m_dimensions[i];
-    }
-}

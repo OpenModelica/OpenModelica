@@ -34,6 +34,8 @@ public:
   const numerical_array<Tp>& operator-= (const numerical_array<Tp>& arr);
   numerical_array<Tp> operator-(const numerical_array<Tp>& arr) const;
 
+  numerical_array<Tp> operator- () const;
+
   numerical_array() {};
   numerical_array(std::vector<int> dims) : modelica_array<Tp>(dims) {};
   numerical_array(std::vector<int> dims,std::vector<Tp> scalars) : modelica_array<Tp>(dims,scalars) {};
@@ -89,7 +91,7 @@ const numerical_array<Tp>& numerical_array<Tp>::operator+= (const numerical_arra
 {
   assert(m_dim_size == arr.m_dim_size);
 
-  for (int i = 0; i < m_data.size(); ++i)
+  for (size_t i = 0; i < m_data.size(); ++i)
     {
       m_data[i] += arr.m_data[i];
     }
@@ -110,7 +112,7 @@ const numerical_array<Tp>& numerical_array<Tp>::operator-= (const numerical_arra
 {
   assert(m_dim_size == arr.m_dim_size);
 
-  for (int i = 0; i < m_data.size(); ++i)
+  for (size_t i = 0; i < m_data.size(); ++i)
     {
       m_data[i] -= arr.m_data[i];
     }
@@ -125,6 +127,18 @@ numerical_array<Tp> numerical_array<Tp>::operator-(const numerical_array<Tp>& ar
   tmp -= arr;
   return tmp;
 }
+
+template<typename Tp>
+numerical_array<Tp> numerical_array<Tp>::operator- () const
+{
+  numerical_array<Tp> tmp(*this);
+  for (size_t i = 0; i < m_data.size(); ++i)
+    {
+      tmp.m_data[i] = -m_data[i];
+    }
+  return tmp;
+}
+
 // typedef numerical_array<double> real_array;
 // typedef numerical_array<int> integer_array;
 

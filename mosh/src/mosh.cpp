@@ -86,7 +86,7 @@ void read_and_evaluate(istream& instream)
 	    
 	    antlr::RefAST ast = parser.getAST();
 	    
-	    parse_tree_dumper dumper(std::cout);
+	    //	    parse_tree_dumper dumper(std::cout);
 	    
 	    if (ast) 
 		{

@@ -76,7 +76,6 @@ protected:
 
   type_en m_type;
 
-  ostream& print_dims(ostream& o);
 };
 
 #endif

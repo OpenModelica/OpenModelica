@@ -1188,7 +1188,7 @@ expression_list_array returns [value val]
             {
                 if (exp_list[0].is_real())
                 {
-                    for (int i=0; i < exp_list.size();++i)
+                    for (size_t i=0; i < exp_list.size();++i)
                     {
                           tmp_real.push_back(exp_list[i].get_real());
                     }
@@ -1198,7 +1198,7 @@ expression_list_array returns [value val]
                 }
                 else if (exp_list[0].is_integer())
                 {
-                    for (int i=0; i < exp_list.size();++i)
+                    for (size_t i=0; i < exp_list.size();++i)
                     {
                           tmp_integer.push_back(exp_list[i].get_integer());
                     }
