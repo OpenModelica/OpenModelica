@@ -4,7 +4,8 @@
  **
  ** RCS: $Id$
  **
- ** This module exports only one relation. *)
+ ** This module exports only one relation.
+ **)
 
 module Inst:
 
@@ -33,9 +34,10 @@ with "staticexp.rml"
 with "mod.rml"
 with "rtopts.rml"
 
-(** These type aliases are introduced to make the code a little more
+(**
+ ** These type aliases are introduced to make the code a little more
  ** readable.
- ** FIXME: maybe they should be removed? *)
+ **)
 
 type Prefix = Prefix.Prefix
 type Mod = Mod.Mod
@@ -156,8 +158,6 @@ end
  **
  ** This rule instantiates the contents of a class definition, with a
  ** new environment already setup.
- **
- ** FIXME: This relation is just a wrapper around `inst_classdef', and could probably be removed.
  **)
 
 relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -175,7 +175,6 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      c as SCode.CLASS(n,_,r,d), prot)
 	  => (l,env', csets', ci_state', tys)
 
-	(* FIXME *)
   rule  print "- inst_class_in failed\n"
 	----------------------------------
 	inst_class_in(_,_,_,csets,_,_,_) => fail
@@ -203,7 +202,6 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
 
-	(** FIXME: propagate prot *)
   rule	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state' &
 	inst_element_list(env,mods,pre,csets,ci_state', els)
 	  => (dae1,env', csets', ci_state'', tys) &
@@ -227,7 +225,6 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.start(r, cn2) => new_ci_state &
 	print " deriving from " & Absyn.print_restr r & print " : " &
 	ClassInf.print_state new_ci_state & print "\n" &
-	(* FIXME order *)
 	Mod.merge(mods,m) => mods' &
 	Mod.merge(mods',mod') => mods'' &
 	inst_class_in(env, mods'', pre, csets, new_ci_state, c, prot)
@@ -317,15 +314,11 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* classmod is the modifications stored with the class *)
 	(* mods     is the modifications passed to the relation *)
 	(* m        is the modification stored in the element *)
-	(* FIXME: verify order *)
-	(* print "  mod 1: " & print cns & Mod.print_mod classmod & print "\n" &
-	   print "  mod 2: " & print cns & Mod.print_mod mods & print "\n" &
-	   print "  mod 3: " & print cns & Mod.print_mod m' & print "\n" & *)
 	Mod.merge(classmod,mods) => mods' &
 	Mod.merge(mods',m') => mods'' &
 	
 	(* Can't use inst_class, as that creates a new frame *)
-	inst_class_in(env,mods'',pre,csets,ci_state,c,false(*FIXME: FOO?*))
+	inst_class_in(env,mods'',pre,csets,ci_state,c,false)
 	  => (dae,env',csets',ci_state',vars)
 	----------------------------------
 	inst_element(env,mods,pre,csets, ci_state, SCode.EXTENDS(cn,m))
@@ -377,7 +370,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** parameter or constant.  All of these are treated in a
 	 ** similar way.
 	 **
-	 ** FIXME: doc
 	 ** Lookup the class name, apply modifications and add the
 	 ** variable to the current frame in the environment. Then
 	 ** instantiate the class with an extended prefix.
@@ -386,7 +378,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
 
 	print " variable " & Exp.print_component_ref vn & print "\n" &
-	(** FIXME: merge order *)
 
 	(** The class definition is fetched from the environment. *)
 	(** Then the set of modifications is calculated.  The *)
@@ -434,10 +425,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	print " extended frame with variable " & Exp.print_component_ref vn &
 	print " :: " & Types.print_type ty & print "\n" &
 
-	(** If the modification includes an equation, it is added. *)
-	(* FIXME: use env or env'? *)
-	(* inst_mod_equation(env',pre,n,ty,mod') => dae2 & *)
-
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
 	(* dae_declare (vn,cl,attr) => dae3 & *)
@@ -451,7 +438,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m))
           => (dae, env',csets',ci_state,
-	      [Types.VAR(n,SCode.ATTR([(* FIXME: why? *)],flow,acc,param,dir),
+	      [Types.VAR(n,SCode.ATTR([],flow,acc,param,dir),
 			 prot, ty, binding)])
 	
 
@@ -493,7 +480,7 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 
   rule	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
-	(** FIXME: Redeclarations! *)
+	(* This is where redeclare should be handled *)
 	inst_class(env,mod,pre',csets,cl) => (dae1,csets',ty,st) &
 
 	Exp.int_subscripts idxs' => subs &
@@ -534,7 +521,7 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
 	print "  modification[]: " & Mod.print_mod mod' & print "\n" &
-	inst_var(env,mod',pre,csets,n,cl,attr,NONE(*FIXME*),dims,i::idxs)
+	inst_var(env,mod',pre,csets,n,cl,attr,NONE,dims,i::idxs)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
 	inst_array(env,mod,pre,csets',n,(cl,attr),i',stop,dims,idxs)
@@ -886,8 +873,6 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => ([],env,csets',ci_state')
 	  
 	(**  assert
-	 **
-	 ** FIXME: Handle assertions
 	 **)
 
   rule	Static.elab_exp(env,e) => (e', Static.PROP(t, c)) &
@@ -969,7 +954,6 @@ end
  ** Equations follow the same typing rules as equality expressions.
  ** This relation adds the equation to the DAE.
  **
- ** FIXME: type conversions (use Static.match_prop)
  **)
 
 relation inst_eq_equation : (Exp.Exp, Static.Properties,
@@ -1003,7 +987,8 @@ end
 
 (** relation: inst_eq_equation_2
  **
- ** FIXME: doc
+ ** This is the second stage of `inst_eq_equation', when the types are
+ ** checked.
  **)
 
 relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type)
@@ -1085,7 +1070,8 @@ end
 
 (** relation: inst_array_equation
  **
- ** FIXME: doc
+ ** This checks the array size and uses `inst_array_el_eq' to create
+ ** equations for each array element.
  **)
 
 relation inst_array_equation : (Exp.Exp, Exp.Exp,
@@ -1110,7 +1096,8 @@ end
 
 (** relation: inst_array_el_eq
  **
- ** FIXME: doc
+ ** This relation loops recursively through all indexes in the two
+ ** arrays and generates an equation for each pair of elements.
  **)
 
 relation inst_array_el_eq : (Exp.Exp, Exp.Exp, Types.Type, int, int)
@@ -1138,7 +1125,8 @@ end
 
 (** relation: inst_assertion
  **
- ** Instantiate an assertion.
+ ** Instantiate an assertion.  There are not assertions in the output
+ ** currently.
  **)
 
 relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
@@ -1149,13 +1137,13 @@ relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
 	print " (constant) ASSERTION(" & Exp.print_exp e' & print "): " &
 	print d & print "\n"
 	--------------------
-	inst_assertion (env, e, Types.T_BOOL, true, d, pre) => [(*FIXME*)]
+	inst_assertion (env, e, Types.T_BOOL, true, d, pre) => [(* lost *)]
 
   rule	Prefix.prefix_exp(env,e,pre) => e' &
 	print " ASSERTION(" & Exp.print_exp e' & print "): " &
 	print d & print "\n"
 	--------------------
-	inst_assertion (env, e, Types.T_BOOL, _, d, pre) => [(*FIXME*)]
+	inst_assertion (env, e, Types.T_BOOL, _, d, pre) => [(* lost *)]
 
   rule	print "# Assertions have to be of type Boolean\n" &
 	print "  assertion: (" &
@@ -1342,7 +1330,6 @@ end
  ** This relation tests whether a type is a eligible to be used in
  ** connections.
  **
- ** FIXME: It is unknown whether `Real' is a valid connector.
  **)
 
 relation valid_connector : Types.Type => () =
@@ -1364,7 +1351,6 @@ end
  ** Check that the type and type attributes of two connectors match,
  ** so that they really may be connected.
  **
- ** FIXME: This checks the `flow' attribute on the top variable. This depends on whether connections are allowed on Reals.
  **)
 
 relation check_connect_types : (Exp.ComponentRef, Types.Type,
@@ -1570,7 +1556,6 @@ relation component_face : Exp.ComponentRef => Connect.Face =
   rule	print "# While connecting " &
 	Exp.print_component_ref c & print "\n" &
 	print "# Only local or child connectors allowed.\n"
-	(* FIXME: This only checks the syntactic properties. *)
 	---------------------------------------------------
 	component_face c => fail
 
@@ -1626,7 +1611,6 @@ end
  ** If the component being declared is declared to be constant, the
  ** relation `make_const_binding' is used.
  **
- ** FIXME: Why is the result from make_const_binding ignored?
  **)
 
 relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option, SCode.Class)
@@ -1635,8 +1619,6 @@ relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option, SCode.Clas
   axiom	make_binding (_,_,NONE,_) => Types.UNBOUND
 
   rule	print "  constant binding: " & Exp.print_exp e & print "\n" &
-	class_type cl => ct &
-	make_const_binding (env,e, prop, ct) => binding
 	----------------------------------------
 	make_binding (env,
 		      SCode.ATTR(_,_,_,Absyn.CONST,_),
@@ -1680,20 +1662,5 @@ relation make_const_binding : (Env.Env, Exp.Exp, Static.Properties,
   rule	print "- make_const_binding failed\n"
 	-------------------------------
 	make_const_binding(_,_,_,_) => fail
-
-end
-
-(** relation: class_type *)
-
-relation class_type : SCode.Class => Types.Type =
-
-  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_INT,_) => Types.T_INTEGER
-  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_STRING,_)
-	  => Types.T_STRING
-  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_REAL,_) => Types.T_REAL
-  axiom	class_type SCode.CLASS(_,_,Absyn.R_PREDEFINED_BOOL,_) => Types.T_BOOL
-
-	(* FIXME: Should instantiate the class *)
-  axiom	class_type _ => Types.T_COMPLEX(ClassInf.UNKNOWN("---"),[(* FIXME *)])
 
 end

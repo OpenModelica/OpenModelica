@@ -6,7 +6,6 @@
  ** boolean values, and also arrays of any dimensionality and type.
  ** Multidimensional arrays are represented as arrays of arrays.
  **
- ** FIXME: complex types?
  **)
 
 module Values :

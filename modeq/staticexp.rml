@@ -224,7 +224,6 @@ end
 relation elab_array : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Properties) =
 
-	(* FIXME: Should we handle empty arrays? *)
   rule	elab_exp (env,e) => (e',prop)
 	-----------------------------
 	elab_array (env,[e]) => ([e'],prop)
@@ -519,7 +518,6 @@ relation elab_cref2 : (Env.Env,
 		       Types.Type, Types.Binding)
 	  => (Exp.Exp,bool,SCode.Accessibility) =
 
-	(* FIXME: Check type of expression anyway? *)
   axiom	elab_cref2 (_,cr, acc, Absyn.VAR, _,_) => (Exp.CREF(cr),false, acc)
   axiom	elab_cref2 (_,cr, acc, Absyn.DISCRETE, _,_) => (Exp.CREF(cr),false,acc)
 
@@ -659,6 +657,9 @@ end
  **
  ** Given an array dimensionality and a list of subscripts, this
  ** relation reduces the dimensionality.
+ **
+ ** This does not handle slices or check that subscripts are not out
+ ** of bounds.
  **)
 
 relation subscript_type : (Types.Type, Exp.Subscript list)
@@ -672,7 +673,6 @@ relation subscript_type : (Types.Type, Exp.Subscript list)
 			Exp.INDEX(_)::subs) => t'
 
   rule	subscript_type (t, subs) => t'
-	(* FIXME: calculate size of slice *)
 	------------------------------
 	subscript_type (Types.T_ARRAY(dim,t),
 			Exp.SLICE(_)::subs)
@@ -726,10 +726,6 @@ end
  ** Tests wether an `if' expression is constant.  This is done by
  ** first testing if the conditional is constant, and if so evaluating
  ** it to see which branch should be tested for constant-ness.
- **
- ** FIXME: I don't do this now. I do the simple thing.
- **
- ** FIXME: It this the right criterion? Maybe a simple AND of the constants is enough?
  **
  ** This will miss some occations where the expression actually is
  ** constant, as in the expression `if x then 1.0 else 1.0'.
@@ -962,7 +958,7 @@ end
 
 (** relation: ceval_range
  **
- ** FIXME: Should handle reals too, I guess
+ ** This relation evaluates a range expression.  It only handles integers.
  **)
 
 relation ceval_range : (int, int, int) => Values.Value list =
@@ -1183,7 +1179,6 @@ relation eq_subscript : (Exp.Subscript, Exp.Subscript) => () =
 
   axiom	eq_subscript(Exp.NOSUB,Exp.NOSUB)
  	
- 	(* FIXME: A little better, but probably not good *)
   rule	s1 = s2
 	-------------------------------
 	eq_subscript(Exp.INDEX(s1),Exp.INDEX(s2))
@@ -1206,7 +1201,6 @@ end
  ** it means to add, say, an integer and a real number, the
  ** expressions have to be de-overloaded, with one operator for each
  ** distinct operation.
- ** FIXME: Better motivation
  **)
 
 (** relation: elab_arglist
@@ -1235,7 +1229,6 @@ end
  ** necessary, the expression is modified to match.  The only relevant
  ** property is the type.
  **
- ** FIXME: This could check the variability also, but it might need to do different things in different places.
  **)
 
 relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =

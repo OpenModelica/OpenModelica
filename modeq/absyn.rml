@@ -22,7 +22,6 @@ module Absyn:
   (** - Classes *)
   datatype Class = CLASS of Ident		     (* Name *)
 			  * bool		     (* Partial *)
-			  (* FIXME: final *)
 			  * Restriction	             (* Restricion *)
 			  * ClassDef		     (* Body *)
   (** A class definition consists of a name, a flag to indicate if this *)

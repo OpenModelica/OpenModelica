@@ -250,15 +250,20 @@ end
 relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	  => (SCode.Attributes,Types.Type,Types.Binding) =
 
-	(* FIXME: Check protected flag *)
-
-	(* FIXME: Should I really strip the ArrayDim? *)
+	(* Public components *)
   rule  Types.lookup_component(ty, id)
-	  => (Types.VAR(_,SCode.ATTR(ad,fl,acc,vt,di),_,ty',binding)) &
+	  => (Types.VAR(_,SCode.ATTR(ad,fl,acc,vt,di),false,ty',binding)) &
 	check_subscripts(ad, ty', ss) => (dim, ty'')
 	--------------------------------------------
 	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
 	  => (SCode.ATTR(dim,fl,acc,vt,di),ty'',binding)
+
+	(* Protected components *)
+  rule  Types.lookup_component(ty, id)
+	  => (Types.VAR(_,_,true,_,_))
+	------------------------------
+	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
+	  => fail
 
   rule  Types.lookup_component(ty, id)
 	  => (Types.VAR(_,SCode.ATTR(ad,fl,acc,vt,di),_,ty',_)) &
@@ -272,7 +277,10 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	lookup_in_var(_,_) => fail
 
 end	
-(**)
+
+(** relation lookup_var_f
+ **)
+
 relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 			 Exp.ComponentRef)
 	  => (SCode.Attributes, Types.Type, Types.Binding) =
@@ -283,11 +291,11 @@ relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 	check_subscripts(ad,ty,ss) => (ad', ty')
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
-	  => (SCode.ATTR([(*FIXME*)],f,acc,vt,di),ty',bind)
+	  => (SCode.ATTR([],f,acc,vt,di),ty',bind)
 
   rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
 	lookup_var2(f, id) => Types.VAR(n,SCode.ATTR(ad,f,acc,vt,di),_,ty,_) &
-	check_subscripts(ad, ty,ss) => ([], ty') & (* FIXME: error message *)
+	check_subscripts(ad, ty,ss) => ([], ty') &
 	lookup_in_var(ty', ids) => (attr,ty'',binding)
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty'',binding)
@@ -301,7 +309,6 @@ end
 relation locate_package : (Env.Env, string) => SCode.Class =
 
   rule	lookup_class(env, Absyn.IDENT(pack)) => c &
-	(* FIXME: modifications? *)
 	assert_package c
 	----------------
 	locate_package (env, pack) => c
@@ -337,8 +344,6 @@ end
 relation lookup_class_in_elements : (SCode.Element list, Absyn.Path)
 	  => SCode.Class =
 
-	(* FIXME: Doesn't complain about an identifier being used for *)
-	(* both a variable and a class *)
   rule	n1 = n2
         -------
         lookup_class_in_elements (SCode.CLASSDEF(n1,_,_,c)::_,

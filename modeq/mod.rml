@@ -158,7 +158,7 @@ relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
 	
 end
 
-(** relation: expand_int_list
+(** relation: expand_list
  **
  ** This utility relation takes a list of integer values and a list of
  ** list of integers, and for each integer in the first and each list
@@ -191,7 +191,6 @@ relation eval_subscript : (Env.Env, Exp.Exp, Static.Properties)
 	--------------------------------------------
 	eval_subscript (env,e,Static.PROP(Types.T_INTEGER,true)) => [i]
 
-	(* FIXME *)
   rule	Static.ceval (env,e) => Values.ARRAY(xs) &
 	print "- Ignoring all but the first index in modification\n"
 	--------------------------------------------
@@ -289,7 +288,6 @@ relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod =
 
   axiom lookup_comp_modification(NOMOD,_) => NOMOD
 
-	(* FIXME: Is this correct? *)
   axiom	lookup_comp_modification(REDECL(_,_),_) => NOMOD
 
   rule  lookup_comp_modification2(subs,n) => mod
@@ -334,14 +332,13 @@ relation lookup_idx_modification: (Mod, int) => Mod =
 
   axiom lookup_idx_modification(NOMOD,_) => NOMOD
 
-	(* FIXME: Is this correct? *)
   axiom	lookup_idx_modification(REDECL(_,_),_) => NOMOD
 
   rule  lookup_idx_modification2(subs,NONE,idx) => (mod',subs') &
 	merge (MOD(f,subs',NONE),mod') => mod'' &
 
-	index_eqmod (eq,[idx]) => eq' & (* FIXME *)
-	merge (mod'',MOD(false,[],eq')) => mod''' (* FIXME: order *)
+	index_eqmod (eq,[idx]) => eq' &
+	merge (mod'',MOD(false,[],eq')) => mod'''
 	-----------------------------------
 	lookup_idx_modification(MOD(f,subs,eq),idx) => mod'''
 	
@@ -355,7 +352,6 @@ end
 
 (** relation: lookup_idx_modification2
  **
- ** FIXME: This relation depends heavily on the matrix/array typing
  **)
 
 relation lookup_idx_modification2 : (SubMod list, EqMod option, int)

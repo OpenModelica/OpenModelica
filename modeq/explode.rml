@@ -28,7 +28,6 @@ module SCode :
 			  * bool		(* Partial *)
 			  * Restriction	        (* Restricion *)
 			  * ClassDef		(* Parts *)
-  (* FIXME: should the name really be part of the class type? *)
 
   datatype ClassDef = PARTS of Element list
 			     * Equation list
@@ -329,7 +328,7 @@ end
 relation build_sub_sub : (Subscript list, Mod) => Mod =
 
   axiom	build_sub_sub ([], m) => m
-  axiom	build_sub_sub (l, m) => MOD(false(*FIXME*),[IDXMOD(l,m)],NONE)
+  axiom	build_sub_sub (l, m) => MOD(false,[IDXMOD(l,m)],NONE)
 
 end
 
