@@ -56,7 +56,7 @@ relation prefix_explist: (Exp.Exp list,Prefix) => Exp.Exp list =
 	---------------------------
 	prefix_explist(e::es,p) => (e'::es')
 
-end
+end	
 and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 
   axiom	prefix_exp2(e as Exp.INTEGER(_),_) => e
@@ -102,6 +102,10 @@ and prefix_exp2: (Exp.Exp,Prefix) => Exp.Exp =
 	-----------------------
 	prefix_exp2(Exp.CALL(f,es),p) => Exp.CALL(f,es')
 
+  rule	prefix_exp2 (e,p) => e'
+	------------------
+	prefix_exp2 (Exp.CAST_TO_REAL(e), p) => Exp.CAST_TO_REAL(e')
+
 end
 
 relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
@@ -110,5 +114,9 @@ relation prefix_exp: (Exp.Exp,Prefix) => Exp.Exp =
 	prefix_exp2(e,p') => e'
 	-----------------------
 	prefix_exp(e,p) => e'
+
+  rule	print "- prefix_exp fallthru\n"
+	-------------------------------
+	prefix_exp (_,_) => fail
 
 end
