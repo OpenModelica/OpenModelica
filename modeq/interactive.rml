@@ -2006,9 +2006,17 @@ relation delete_connection: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Compo
 	  => (string,Absyn.Program) =
 	
   rule	Absyn.cref_to_path(model) => modelpath &
+	Absyn.strip_last(modelpath) => modelwithin &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	delete_equation_in_class(cdef,c1,c2) => newcdef &
-	update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
+	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p)=> newp
+	---------------------------------------------------
+	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	delete_equation_in_class(cdef,c1,c2) => newcdef &
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
 	---------------------------------------------------
 	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)
 
