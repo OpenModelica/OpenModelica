@@ -50,12 +50,12 @@ libast.a : $(OBJ)
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-modgram.o: modgram.c attrib.h parser.h modAST.h tokens.h \
+modgram.o: modgram.c attrib.h parser.h tokens.h \
 	$(RMLINCLUDE)/rml.h ../dae.h ../exp.h mode.h
-scanner.o: scanner.c attrib.h parser.h modAST.h
-err.o: err.c attrib.h parser.h modAST.h tokens.h
+scanner.o: scanner.c attrib.h parser.h
+err.o: err.c attrib.h parser.h tokens.h
 yacclib.o: yacclib.c $(RMLINCLUDE)/rml.h yacclib.h
-attrib.o: attrib.c stdpccts.h attrib.h parser.h modAST.h tokens.h mode.h
+attrib.o: attrib.c stdpccts.h attrib.h parser.h tokens.h mode.h
 
 $(SCAN).o : $(SCAN).c $(TOKENS)
 	$(CC) -c $(CFLAGS) -o $(SCAN).o $(SCAN).c

@@ -9,7 +9,7 @@ typedef int bool;
 
 #include "attrib.h"
 #include "parser.h"
-#include "modAST.h"
+/* #include "modAST.h" */
 
 #define AST_FIELDS Attrib *attr; void *rml; void *aux[5];
 #define zzcr_ast(ast,atr,ttype,text) \
