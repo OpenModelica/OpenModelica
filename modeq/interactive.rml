@@ -1914,6 +1914,8 @@ end
 relation get_base_classes_from_elts : (Absyn.ElementItem list, Env.Env) 
 	  => Absyn.ComponentRef list =
 
+  axiom	get_base_classes_from_elts([], env) => []
+
   rule	(* Inherited class is defined inside package *)
 	get_base_classes_from_elts(rest,env) => cl &
 	Lookup.lookup_class(env,path,true) => (c,env') &
@@ -1922,7 +1924,7 @@ relation get_base_classes_from_elts : (Absyn.ElementItem list, Env.Env)
 	Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
 	Absyn.path_to_cref(p') => cref
 	------------------------
-	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),NONE))::rest, env )
+	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_))::rest, env )
 	    => cref::cl
 
   rule	(* Inherited class defined on top level scope*)
@@ -1931,14 +1933,12 @@ relation get_base_classes_from_elts : (Absyn.ElementItem list, Env.Env)
 	Env.get_env_path(env') => NONE &
 	Absyn.path_to_cref(path) => cref
 	--------------------------------
-	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),NONE))::rest, env )
+	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(path,_),_))::rest, env )
 	    => cref::cl
 
   rule	get_base_classes_from_elts(rest, env) => cl
 	--------------------------------------
 	get_base_classes_from_elts (_::rest, env) => cl
-
-  axiom	get_base_classes_from_elts([], env) => []
 end
 
 relation get_icon_annotation_from_baseclasses :(Absyn.ComponentRef list, Absyn.Program) 

@@ -45,7 +45,7 @@ In the interactive environment type names and component references
 (e.g.\ variables) are given as parameters to these functions \emph{as
 they are}. That is, a type name is written for instance like:
 \begin{verbatim}
-translateClass(Modelica.Electrical.Analog.Basic.Resistor)
+translateModel(Modelica.Electrical.Analog.Basic.Resistor)
 \end{verbatim}
 and a variable is written similarly like:
 \begin{verbatim}
@@ -56,29 +56,29 @@ VariableName}, and special automatic quoting mechanisms are applied
 when the expected type of an expression is any of these types.
 For instance,
 \begin{verbatim}
-translateClass(A.B)
+translateModel(A.B)
 \end{verbatim}
 is automatically quoted (since the expected type of the parameter is
 {\tt TypeName}, and is therefore equivalent to
 \begin{verbatim}
-translateClass(Code(A.B))
+translateModel(Code(A.B))
 \end{verbatim}
 where {\tt Code} is the quote identifier.
 
 Below follows the description of each predefined function in the
 interactive environment.
 \funcbegin
-\func{translateClass(\emph{className})}
+\func{translateModel(\emph{className})}
 Instantiates a class and return a string
 containing the flat class definition. 
 
 The function header is defined as:
 \begin{verbatim}
-function translateClass
+function translateModel
     input TypeName className;
     output String flatclass;
 ...
-end translateClass;
+end translateModel;
 \end{verbatim}
 
 \func{list()}
@@ -227,17 +227,17 @@ function runScript
 end runScript;
 \end{verbatim}
 
-\func{loadClass(\emph{classname})}  
+\func{loadModel(\emph{classname})}  
 Load \emph{classname} from the MODELICAPATH enviroment variable,
 returns true if successful.
 
 The function header is defined as:
 \begin{verbatim}
-function loadClass
+function loadModel
     input TypeName class;
     output Boolean res;
 ...
-end loadClass;
+end loadModel;
 \end{verbatim}
 
 \func{loadFile(\emph{filename)}} Load the modelica file given as string argument.
@@ -251,7 +251,7 @@ function loadFile
 end loadFile;
 \end{verbatim}
 
-\func{saveClass(\emph{filename},\emph{className})} 
+\func{saveModel(\emph{filename},\emph{className})} 
 Save the class with name \emph{className} in the file \emph{filename}.
 
 The function header is defined as:

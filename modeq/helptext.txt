@@ -1,12 +1,12 @@
 Open Source Modelica functions
 ------------------------------
 
-translateClass(classname) - Instantiates a class and return a string
+translateModel(modelname) - Instantiates a model/class and return a string
 containing the flat class definition.
 
 list() - Returns a string containing all class definitions.
 
-list(classname) - Returns a string containing the class definition of
+list(modelname) - Returns a string containing the class definition of
 the named class.
 
 typeOf(variable) - Returns the type of the variable as a string.
@@ -34,11 +34,11 @@ listVariables() - Return a vector of the defined variables names.
 
 runScript(str) - Exectute script file given as string argument.
 
-loadClass(classname) - Load classname from MODELICAPATH.
+loadModel(classname) - Load model or package from MODELICAPATH.
 
 loadFile(str) - Load modelica file (.mo) given as string argument.
 
-saveClass(str,classname) - Save the class with name classname in the
+saveModel(str,modelname) - Save the model/class with name classname in the
 file given by the string argument.
 
 help() - print this helptext (returned as a string).

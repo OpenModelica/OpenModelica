@@ -1541,10 +1541,10 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 
   rule	elab_untyped_cref(env,cr) => cr'
 	------------------------------------------------------------------
-	elab_call_interactive(env, Absyn.CREF_IDENT("loadClass",_),
+	elab_call_interactive(env, Absyn.CREF_IDENT("loadModel",_),
 			      [ Absyn.CREF(cr)],[],impl,
 			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("loadClass"),
+	  => (Exp.CALL(Absyn.IDENT("loadModel"),
 		       [Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
@@ -1563,10 +1563,10 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 
   rule	elab_untyped_cref(env,cr) => cr'
 	------------------------------------------------------------------
-	elab_call_interactive(env, Absyn.CREF_IDENT("saveClass",_),
+	elab_call_interactive(env, Absyn.CREF_IDENT("saveModel",_),
 			      [ Absyn.STRING(str),Absyn.CREF(cr)],[],impl,
 			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("saveClass"),
+	  => (Exp.CALL(Absyn.IDENT("saveModel"),
 		       [Exp.SCONST(str),Exp.CREF(cr',Exp.OTHER)],
 		       false,
 		       false),
@@ -3257,14 +3257,14 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Print.get_string => str &
 	let newst = Interactive.SYMBOLTABLE(p', sp, [], iv, cf)
 	------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
 	
   rule	component_ref_to_path(cr) => path &
 	ModUtil.path_string(path) => pathstr &
 	Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str &
 	Print.print_error_buf str
 	------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(false),st)
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(false),st)
 
   rule	Parser.parse(name) => p1 &
 	Interactive.update_program(p1,p) => newp
@@ -3282,7 +3282,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str &
 	System.write_file(filename,str) 
 	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveClass"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
   rule	(*Error writing to file *)
@@ -3291,14 +3291,14 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str &
 	Print.print_error_buf "Error writing to file.\n" 
 	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveClass"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
   rule	(*Error writing to file *)
 	component_ref_to_path(cr) => classpath &
 	Print.print_error_buf "Error unknown class.\n" 
 	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveClass"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
   rule	System.read_env("MOSHHOME") => moshhome &
