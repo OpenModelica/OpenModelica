@@ -24,7 +24,7 @@ CFLAGS = $(INCP) -g -Wall -DDEBUG
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = $(LIBP) 
 
-LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap -lssl -lmico -lcrypto -ldl -lm -lpthread 
+LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap -lssl -lmico -lcrypto -lm -lpthread 
 
 
 OBJS += mosh.o options.o
