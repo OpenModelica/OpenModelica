@@ -41,6 +41,19 @@ type Ident = Exp.Ident
 type Env = Env.Env
 
 
+(** relation: select
+ **
+ ** This utility relation selects one of two objects depending on a
+ ** boolean variable.
+ **)
+
+relation select : (bool, 'a, 'a) => 'a =
+
+  axiom	select (true,x,_) => x
+  axiom	select (false,_,x) => x
+
+end
+
 (** relation: instantiate
  ** purpose:  Instantiate a Modelica program
  **
@@ -252,6 +265,10 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element_list(env,mod,pre,csets,ci_state,el::els)
 	  => (dae, env'', csets'', ci_state'', tys)
 
+  rule	print "- inst_element_list failed\n"
+	------------------------------------
+	inst_element_list(_,_,_,_,_,_) => fail
+
 end
 
 (** relation: inst_element
@@ -375,23 +392,23 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	check_prot(prot, mm, vn) &
 
-	Mod.mod_equation mod => eq &
+	Mod.mod_equation mod' => eq &
 
 	(** The variable declaration and the (optional) equation *)
 	(** modification are inspected for array dimensions. *)
 	elab_arraydim(env,ad,eq) => dims &
 
 	(** Instantiate the component *)
-	inst_var(env,mod',pre,csets,n,cl,eq,dims,[])
-	  => (dae1,csets',[ty]) &
+	inst_var(env,mod',pre,csets,n,cl,attr,eq,dims,[])
+	  => (dae1,csets',ty) &
 
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
-	make_binding (env,attr,eq,cl) => (binding,eqexp) &
+	make_binding (env,attr,eq,cl) => binding &
 	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,binding)) => env' &
 	print " extended frame with variable " & Exp.print_component_ref vn &
- 	print "\n" &
+	print " :: " & Types.print_type ty & print "\n" &
 
 	(** If the modification includes an equation, it is added. *)
 	(* FIXME: use env or env'? *)
@@ -399,17 +416,17 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
-	dae_declare (vn,cl,attr) => dae3 &
+	(* dae_declare (vn,cl,attr) => dae3 & *)
 
-	list_append(dae1, dae2) => dae4 &
-	list_append(dae4, dae3) => dae
+	list_append(dae1, dae2) => dae(*4 &
+	list_append(dae4, dae3) => dae*)
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,
 				     attr as Absyn.ATTR(ad,flow,param,dir),
 				     t,m))
           => (dae, env',csets',ci_state,
-	      [Types.VAR(n,Absyn.ATTR([],flow,param,dir), ty,eqexp)])
+	      [Types.VAR(n,Absyn.ATTR([],flow,param,dir), ty, binding)])
 	
 
 	(** If the class lookup in the previous rule fails, this
@@ -428,64 +445,99 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		     SCode.COMPONENT(n,final,prot,_,t,_))
          => ([],env,csets,ci_state,[])
 
+  rule	Prefix.prefix_path(Absyn.IDENT(n),pre) => n' &
+	Absyn.path_string(n') => ns &
+	print "- inst_element COMPONENT(" & print ns & print ") failed\n"
+	-----------------------------------------------------------------
+	inst_element(_,_,pre,_,_,SCode.COMPONENT(n,_,_,_,_,_))
+         => fail
+
+(*
   rule	print "- inst_element failed\n"
 	-------------------------------
 	inst_element (_,_,_,_,_,_) => fail
+*)
 
 end	
 
 (**)
 
 relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		     SCode.Class,Mod.Eqmod option,int list, int list)
-	  => (DAE.DAEcomp list,Connect.Sets,Types.Type list) =
+		     SCode.Class,Absyn.VarAttr,Mod.Eqmod option,
+		     int list, int list)
+	  => (DAE.DAEcomp list,Connect.Sets,Types.Type) =
 
-  rule	
 	(** The class is instantiated with the calculated *)
 	(** modification, and an extended prefix. *)
 
-	list_reverse idxs => idxs' &
-	Prefix.prefix_add(n,idxs,pre) => pre' &
-	(* let pre' = pre & *)
+  rule	list_reverse idxs => idxs' &
+	Prefix.prefix_add(n,idxs',pre) => pre' &
+	(** FIXME: Redeclarations! *)
+	inst_class(env,mod,pre',csets,cl) => (dae1,csets',ty,st) &
 
-	(* FIXME: Redeclarations! *)
+	idx_subs idxs' => subs &
+	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
+	dae_declare(cr,cl,Absyn.ATTR([], flow, vt, dir)) => dae2 &
+
+	list_append(dae1,dae2) => dae
+	--------------------------
+	inst_var(env,mod,pre,csets,n,cl,Absyn.ATTR(_,flow,vt,dir),eq,[],idxs)
+          => (dae,csets',ty)
+
+  rule	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs)
+	  => (dae, csets', ty) &
+	Types.lift_array(ty,SOME(dim)) => ty'
+	-------------------------------
+	inst_var(env,mod,pre,csets,n,cl,attr,eq,dim::dims,idxs)
+          => (dae,csets',ty')
+
+  rule	print "- inst_var failed: " & print n & print "\n"
+	--------------------------------------------------
+	inst_var(_,_,_,_,n,_,_,_,_,_) => fail
 	
-	inst_class(env,mod,pre',csets,cl) => (dae,csets',ty,st)
-	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,eq,[],idxs)
-          => (dae,csets',[ty])
+end
 
-  rule	inst_array(env,mod,pre,csets,n,cl,1,dim,dims,idxs)
-	  => (dae, csets', tys)
-	--------------------------
-	inst_var(env,mod,pre,csets,n,cl,eq,dim::dims,idxs)
-          => (dae,csets',tys)
+(** relation: idx_subs
+ **
+ ** This relation turns a list of integers into a list of
+ ** `SCode.Subscript's.
+ **)
 
+relation idx_subs : int list => Exp.Subscript list =
+
+  axiom	idx_subs [] => []
+
+  rule	idx_subs xs => xs'
+	------------------
+	idx_subs(x::xs) => Exp.SUB1(Exp.ICONST(x))::xs'
 
 end
 
 (**)
 
 relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		       SCode.Class,int,int,int list,int list)
-	  => (DAE.DAEcomp list,Connect.Sets,Types.Type list) =
+		       (SCode.Class*Absyn.VarAttr),int,int,int list,int list)
+	  => (DAE.DAEcomp list,Connect.Sets,Types.Type) =
 
   rule	int_gt(i,stop) => true
 	----------------------
-	inst_array(env,mod,pre,csets,n,cl,i,stop,dims,idxs)
-	  => ([], csets, [])
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,stop,dims,idxs)
+	  => ([], csets, Types.T_NOTYPE)
 
-  rule	inst_var(env,mod,pre,csets,n,cl,NONE(*FIXME*),dims,i::idxs)
-	  => (dae1,csets',v1) &
+  rule	inst_var(env,mod,pre,csets,n,cl,attr,NONE(*FIXME*),dims,i::idxs)
+	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
-	inst_array(env,mod,pre,csets',n,cl,i',stop,dims,idxs)
-	  => (dae2, csets'',v2) &
-	list_append(dae1,dae2) => dae &
-	list_append(v1,v2) => tys
+	inst_array(env,mod,pre,csets',n,(cl,attr),i',stop,dims,idxs)
+	  => (dae2, csets'',_) &
+	list_append(dae1,dae2) => dae
 	-----------------------------
-	inst_array(env,mod,pre,csets,n,cl,i,stop,dims,idxs)
-          => (dae,csets'',tys)
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,stop,dims,idxs)
+          => (dae,csets'',ty)
 
+  rule	print "- inst_array failed: " & print n & print "\n"
+	--------------------------------------------------
+	inst_array(_,_,_,_,n,(_,_),_,_,_,_) => fail
+	
 end
 
 (**)
@@ -635,7 +687,7 @@ relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
 			   Env.FRAMEVAR(n, Absyn.ATTR([],
 						      false,Absyn.CONST,
 						      Absyn.BIDIR),
-					ty,Env.UNBOUND)) => env' &
+					ty,Types.UNBOUND)) => env' &
 	print "  added package " & print n & print "\n"
 	--------------------------------------------------------
 	add_package(env,n,ty,st,dae) => (env',dae)
@@ -703,7 +755,7 @@ end
  **)
 
 relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
-			 Absyn.Equation)
+			 SCode.Equation)
 	  => (DAE.DAEcomp list, Env, Connect.Sets, ClassInf.State) =
 
 	(**  connect
@@ -714,7 +766,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	inst_connect(csets,env,pre,c1,c2) => csets' &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------------
-	inst_equation(env,mods,pre, csets, ci_state, Absyn.EQ_CONNECT(c1,c2))
+	inst_equation(env,mods,pre, csets, ci_state, SCode.EQ_CONNECT(c1,c2))
 	  => ([],env,csets',ci_state')
 	  
 	(**  assert
@@ -727,22 +779,22 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
 	inst_equation(env,mods,pre,csets, ci_state,
-		      Absyn.EQ_EXPR(Absyn.CALL(Absyn.CREF_IDENT("assert",[]),
+		      SCode.EQ_EXPR(Absyn.CALL(Absyn.CREF_IDENT("assert",[]),
 					       [e,Absyn.STRING(d)])))
 	  => (dae,env,csets,ci_state')
 
   rule	print "- No expression equations yet\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	-------------------------------------
-	inst_equation(env,mods,pre,csets,ci_state,Absyn.EQ_EXPR(_)) => fail
+	inst_equation(env,mods,pre,csets,ci_state,SCode.EQ_EXPR(_)) => fail
 
   rule	Lookup.lookup_ident_local(env,n)
-	  => Env.FRAMEVAR(_,_,_,Env.EQBOUND(_)) &
+	  => Env.FRAMEVAR(_,_,_,Types.EQBOUND(_,_)) &
 	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,
-		      Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2))
+		      SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2))
 	  => ([],env,csets,ci_state')
 
   rule	print " equation\n" &
@@ -753,8 +805,21 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_eq_equation(e1'',t1,e2'',t2) => dae &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	--------------------------------------------------------------
-	inst_equation(env, mods, pre, csets, ci_state, Absyn.EQ_EQUALS(e1,e2))
+	inst_equation(env, mods, pre, csets, ci_state, SCode.EQ_EQUALS(e1,e2))
 	  => (dae, env, csets, ci_state')
+
+	(**  `if' statements
+	 **
+	 **)
+
+  rule	StaticExp.elab_exp(env,e) => (e',Types.T_BOOL,true) &
+	StaticExp.ceval(env,e') => Values.BOOL(cond) &
+	select(cond,tb,fb) => b &
+	inst_list(env,mod,pre,csets,ci_state,inst_equation, b)
+	  => (dae,env',csets', ci_state')
+	--------------------------------------------------------
+	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb))
+	  => (dae,env',csets', ci_state')
 
 	(**  `for' loops
 	 **
@@ -773,7 +838,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	unroll(env,mod,pre,csets,ci_state,i,v,el) => (dae, csets') &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	-----------------------------------------------------------
-	inst_equation(env,mod,pre,csets,ci_state,Absyn.EQ_FOR(i,e,el))
+	inst_equation(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el))
 	  => (dae, env,csets', ci_state')
 
   rule	print "- inst_equation failed\n"
@@ -793,8 +858,10 @@ relation inst_eq_equation : (Exp.Exp, Types.Type, Exp.Exp, Types.Type)
 	
   rule	Types.same_type(t1,t2) => false &
 	print "# Type mismatch in equation\n"&
-	print "# " & Exp.print_exp e1 & print " = " & Exp.print_exp e2 &
-	print "\n"
+	print "    lhs: " & Exp.print_exp e1 &
+	print " :: " & Types.print_type t1 & print "\n" &
+	print "    rhs: " & Exp.print_exp e2 &
+	print " :: " & Types.print_type t2 & print "\n"
 	----------
 	inst_eq_equation(e1,t1,e2,t2) => fail
 
@@ -838,7 +905,7 @@ end
  **)
 
 relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-		   Ident, Values.Value, Absyn.Equation list)
+		   Ident, Values.Value, SCode.Equation list)
 	  => (DAE.DAEcomp list, Connect.Sets) =
 
   axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_) => ([], csets)
@@ -852,7 +919,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						       Absyn.BIDIR),
 					 Types.T_COMPLEX(ClassInf.TYPE_INTEGER
 						    ("<for loop>"),[]),
-					 Env.VALBOUND(fst))) => env'' &
+					 Types.VALBOUND(fst))) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
 	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs)
@@ -900,15 +967,21 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	StaticExp.canon_cref(env, c1') => c1'' &
 	StaticExp.canon_cref(env, c2') => c2'' &
 	Lookup.lookup_var_local(env,c1'')
-	  => (Absyn.ATTR(_,_,_,_),ty1 as Types.T_COMPLEX(st1,_),_) &
+	  => (Absyn.ATTR(_,flow1,_,_),ty1,_) &
 	Lookup.lookup_var_local(env,c2'')
-	  => (Absyn.ATTR(_,_,_,_),ty2 as Types.T_COMPLEX(st2,_),_) &
-	check_connect_vars(c1'',ty1,con1,c2'',ty2,con2) &
-	ClassInf.assert_valid(st1,Absyn.R_CONNECTOR) &
-	ClassInf.assert_valid(st2,Absyn.R_CONNECTOR) &
+	  => (Absyn.ATTR(_,flow2,_,_),ty2,_) &
+	print "  looked up connectors\n" &
+
+	(** Check that the types of the connectors are good. *)
+	valid_connector(ty1) &
+	valid_connector(ty2) &
+	check_connect_types(c1'',ty1,con1,flow1,c2'',ty2,con2,flow2) &
+	print "  they are valid connectors\n" &
+
 	component_face(c1'') => f1 &
 	component_face(c2'') => f2 &
-	connect_components(sets, pre, c1'', f1, c2'', f2, ty1, false) => sets'
+	connect_components(sets, pre, c1'', f1, c2'', f2, ty1, flow1)
+	  => sets'
 	---------------------------------
 	inst_connect(sets, env,pre,c1,c2) => sets'
 
@@ -918,22 +991,85 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 
 end
 
-relation check_connect_vars : (Exp.ComponentRef, Types.Type, bool,
-			       Exp.ComponentRef, Types.Type, bool) => () =
+(** relation valid_connector:
+ **
+ ** This relation tests whether a type is a eligible to be used in
+ ** connections.
+ **
+ ** FIXME: It is unknown whether `Real' is a valid connector.
+ **)
 
-  rule	Types.same_type(t1, t2) => true
+relation valid_connector : Types.Type => () =
+
+  axiom	valid_connector Types.T_REAL
+
+  rule	ClassInf.valid(state,Absyn.R_CONNECTOR)
+	---------------------------------------
+	valid_connector Types.T_COMPLEX(state,_)
+
+  rule	print "# Can't connect objects of type " &
+	Types.print_type t & print "\n"
 	-------------------------------
-	check_connect_vars(_,t1,false,_,t2,false)
+	valid_connector t => fail
+end
 
-  rule	print "# Can't connect " & Exp.print_component_ref c1 &
+(** relation: check_connect_types
+ **
+ ** Check that the type of two connectors match, so that they really
+ ** may be connected.
+ **
+ ** FIXME: This checks the `flow' attribute on the top variable. This depends on whether connections are allowed on Reals.
+ **)
+
+relation check_connect_types : (Exp.ComponentRef, Types.Type, bool, bool,
+			       	Exp.ComponentRef, Types.Type, bool, bool)
+	  => () =
+
+  rule	flow1 = flow2 &
+	Types.same_type(t1, t2) => true
+	-------------------------------
+	check_connect_types(_,t1,false,flow1,_,t2,false,flow2)
+
+  rule	print "# Can't connect constant connector " &
+ 	Exp.print_component_ref c1 &
 	print " to " & Exp.print_component_ref c2 & print "\n"
-	(* FIXME: Better message *)
 	------------------------------------------------------
-	check_connect_vars(c1,_,_,c2,_,_) => fail
+	check_connect_types(c1,_,true,_,c2,_,_,_) => fail
+
+  rule	print "# Can't connect constant connector " &
+ 	Exp.print_component_ref c2 &
+	print " to " & Exp.print_component_ref c1 & print "\n"
+	------------------------------------------------------
+	check_connect_types(c1,_,_,_,c2,_,true,_) => fail
+
+  rule	print "# Can't connect flow component " &
+ 	Exp.print_component_ref c1 &
+	print " to non-flow component " &
+ 	Exp.print_component_ref c2 & print "\n"
+	------------------------------------------------------
+	check_connect_types(c1,_,_,true,c2,_,_,false) => fail
+
+  rule	print "# Can't connect non-flow component " &
+ 	Exp.print_component_ref c1 &
+	print " to flow component " &
+ 	Exp.print_component_ref c2 & print "\n"
+	------------------------------------------------------
+	check_connect_types(c1,_,_,false,c2,_,_,true) => fail
+
+  rule	print "- check_connect_types(" & Exp.print_component_ref c1 &
+	print " <-> " & Exp.print_component_ref c2 & print ") failed\n"
+	------------------------------------------------------
+	check_connect_types(c1,_,_,_,c2,_,_,_) => fail
 
 end
 
-(**)
+(** relation: connect_components
+ **
+ ** This relation connects two components and generates connection
+ ** sets along the way.  For simple components (of type `Real') it
+ ** adds the components to the set, and for complex types it traverses
+ ** the subcomponents and recursively connects them to each other.
+ **)
 
 relation connect_components: (Connect.Sets,
 			      Prefix,
@@ -941,49 +1077,66 @@ relation connect_components: (Connect.Sets,
 			      Exp.ComponentRef, Connect.Face,
 			      Types.Type, bool) => Connect.Sets =
 	
-	(* flow type *)
-
-  rule	ClassInf.valid(st, Absyn.R_TYPE) &
-	Prefix.prefix_cref(pre, c1) => c1' &
-	Prefix.prefix_cref(pre, c2) => c2' &
-	(* print "  connect_components flow: " &
-	   Dump.dump_component_ref c1' & print " <-> " &
-	   Dump.dump_component_ref c2' &
-	   print "\n" & *)
-	Connect.add_flow(sets, c1', f1, c2', f2) => sets'
-	-----------------------------------------
-	connect_components(sets, pre, c1, f1, c2, f2, Types.T_COMPLEX(st,_), true)
-	  => sets'
-	
-	(* non-flow type *)
-
-  rule	ClassInf.valid(st, Absyn.R_TYPE) &
-	Prefix.prefix_cref(pre, c1) => c1' &
-	Prefix.prefix_cref(pre, c2) => c2' &
-	(* print "  connect_components non-flow: " &
-	   Dump.dump_component_ref c1' & print " <-> " &
-	   Dump.dump_component_ref c2' &
-	   print "\n" & *)
-	Connect.add_equ(sets, c1', c2') => sets'
-	-----------------------------------------
-	connect_components(sets, pre, c1, _, c2, _, Types.T_COMPLEX(st,_), false)
-	  => sets'
-
-	(* Not a TYPE *)
+	(**  Flow type *)
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	(* print "  connect_components 2: " &
-	   Dump.dump_component_ref c1' & print " <-> " &
-	   Dump.dump_component_ref c2' &
-	   print "\n" & *)
+	print "  connect_components flow: " &
+	Exp.print_component_ref c1' & print " <-> " &
+	Exp.print_component_ref c2' &
+	print "\n" &
+	Connect.add_flow(sets, c1', f1, c2', f2) => sets'
+	-----------------------------------------
+	connect_components(sets, pre, c1, f1, c2, f2,
+			   Types.T_REAL, true) => sets'
+	
+	(**  Non-flow type *)
+
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	print "  connect_components non-flow: " &
+	Exp.print_component_ref c1' & print " <-> " &
+	Exp.print_component_ref c2' &
+	print "\n" &
+	Connect.add_equ(sets, c1', c2') => sets'
+	-----------------------------------------
+	connect_components(sets, pre, c1, _, c2, _,
+			   Types.T_REAL, false) => sets'
+
+	(**  Complex types *)
+
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	print "  connect_components 2: " &
+	Exp.print_component_ref c1' & print " <-> " &
+	Exp.print_component_ref c2' &
+	print "\n" &
 	connect_vars(sets,c1',f1,c2',f2, l) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1,c2,f2,Types.T_COMPLEX(_,l),_) => sets'
+	connect_components(sets,pre,c1,f1,c2,f2,
+			   Types.T_COMPLEX(_,l),_) => sets'
+
+	(**  Error *)
+	
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	print "# Wrong type in connection\n"&
+ 	print "  while making connectiion " &
+	Exp.print_component_ref c1 & print " <-> " &
+	Exp.print_component_ref c2 & print "\n" &
+	print "  The type `" & Types.print_type t &
+	print "' is not allowed in connections\n"
+	----------------------------------------
+	connect_components(_,pre,c1,_,c2,_,t,_) => fail
 	
 end
 
-(**)
+(** relation: connect_vars
+ **
+ ** This relation connects two subcomponents by adding the component
+ ** name to the current path and recursively connecting the components
+ ** using the relation `connet_components'.
+ **)
 
 relation connect_vars : (Connect.Sets,
 			 Exp.ComponentRef, Connect.Face,
@@ -995,8 +1148,8 @@ relation connect_vars : (Connect.Sets,
   rule	Exp.extend_cref(c1, n, []) => c1' &
 	Exp.extend_cref(c2, n, []) => c2' &
 	(* print "  connect_vars: " &
-	 * Dump.dump_component_ref c1' & print " <-> " &
-	 * Dump.dump_component_ref c2' &
+	 * Dump.print_component_ref c1' & print " <-> " &
+	 * Dump.print_component_ref c2' &
 	 * print "\n" & *)
 	connect_components(sets,Prefix.NOPRE, c1',f1, c2',f2, ty, flow)
 	  => sets' &
@@ -1103,8 +1256,10 @@ relation inst_mod_equation : (Env, Prefix, Ident, Types.Type, Mod)
 	  => dae
 	  
   rule  Types.same_type(ty1,ty2) => false &
-	print "# Wrong type in equation modifier\n"
-	-------------------------------------------
+	print "# Wrong type in equation modifier\n" &
+	print "    expected: " & Types.print_type ty1 & print "\n" &
+	print "    was:      " & Types.print_type ty2 & print "\n"
+	--------------------------------------------------------
 	inst_mod_equation(env,pre,v,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
 	  => fail
 	  
@@ -1141,19 +1296,26 @@ end
  **)
 
 relation make_binding : (Env.Env, Absyn.VarAttr, Mod.Eqmod option, SCode.Class)
-	  => (Env.Binding, Exp.Exp option) =
+	  => Types.Binding =
 
-  axiom	make_binding (_,_,NONE,_) => (Env.UNBOUND, NONE)
+  axiom	make_binding (_,_,NONE,_) => Types.UNBOUND
 
-  rule	class_type cl => ct &
+  rule	print "  constant binding: " & Exp.print_exp e & print "\n" &
+	class_type cl => ct &
 	make_const_binding (env,e, t, ct, c) => binding
 	----------------------------------------
 	make_binding (env,Absyn.ATTR(_,_,Absyn.CONST,_),SOME((e,t,c)),cl)
-	  => (* binding *) (Env.EQBOUND(e), SOME(e))
+	  => (* binding *) Types.EQBOUND(e,c)
 
 	(* default *)
 
-  axiom make_binding (_,_, SOME((e,t,c)),_) => (Env.EQBOUND(e), SOME(e))
+  rule	print "  nonconstant binding: " & Exp.print_exp e & print "\n"
+	-----------------------------------------------------------
+	make_binding (_,_, SOME((e,t,c)),_) => Types.EQBOUND(e,c)
+
+  rule	print "- make_binding failed\n"
+	-------------------------------
+	make_binding(_,_,_,_) => fail
 
 end
 
@@ -1172,7 +1334,7 @@ relation make_const_binding : (Env.Env, Exp.Exp,
 	print "  constant expression " & Exp.print_exp e &
  	print " = " & Values.print_val v & print " detected\n"
 	---------------------------------
-	make_const_binding (env,e,t,ct,true) => Env.VALBOUND(v)
+	make_const_binding (env,e,t,ct,true) => Types.VALBOUND(v)
 
   rule	not t = ct &
 	print "# Different types in binding\n"
@@ -1182,6 +1344,10 @@ relation make_const_binding : (Env.Env, Exp.Exp,
   rule	print "# Non-constant equation for constant\n"
 	---------------------------------
 	make_const_binding (env,e,t,ct,false) => fail
+
+  rule	print "- make_const_binding failed\n"
+	-------------------------------
+	make_const_binding(_,_,_,_,_) => fail
 
 end
 
