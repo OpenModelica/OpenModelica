@@ -1315,7 +1315,7 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
          Values.val_string value => val_str &
-        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetInputVar(",
                                  var_flat_index_str,
                                  ", new CInputVar(L\"",
@@ -1332,7 +1332,7 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
         get_start_value(start) => startstr &
-        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetInputVar(",
                                  var_flat_index_str,
                                  ", new CInputVar(L\"",
@@ -1348,7 +1348,7 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
         generate_constructor_inputvars2(rest,i') => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
-        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetInputVar(",
                                  var_flat_index_str,
                                  ", new CInputVar(L\"",
@@ -1426,7 +1426,7 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
         generate_constructor_algvars2(rest,i') => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
-        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetAlgStateVar(",
                                  var_flat_index_str,
                                  ", new CAlgStateVar(L\"",
@@ -1441,7 +1441,7 @@ relation generate_constructor_algvars2:(DAELow.Var list,int) => (string list, in
         generate_constructor_algvars2(rest,i') => (res,no_of_vars) &
         int_add(no_of_vars,1) => no_of_vars' &
         SimCodegen.cref_modelica_str(cr) => crs &
-        get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
+        get_var_index_str(cr,class_paths) => var_flat_index_str &
         Util.string_append_list(["  SetAlgStateVar(",
                                  is,
                                  ", new CAlgStateVar(L\"",
