@@ -26,6 +26,7 @@ tokens {
 	COMMENT;
 	DECLARATION	; 
 	DEFINITION ;
+	ENUMERATION_LITERAL;
 	ELEMENT		;
 	ELEMENT_MODIFICATION		;
 	ELEMENT_REDECLARATION	;
@@ -37,6 +38,7 @@ tokens {
     FOR_INDICES ;
 	FUNCTION_CALL		;
 	FUNCTION_ARGUMENTS;
+	NAMED_ARGUMENTS;
 	QUALIFIED;
 	RANGE2		;
 	RANGE3		;
@@ -92,8 +94,8 @@ class_type :
 
 class_specifier :
 		( string_comment composition END! IDENT!
-		| EQUALS name_path ( array_subscripts )? ( class_modification )? comment
-		| EQUALS enumeration 
+		| EQUALS^  name_path ( array_subscripts )? ( class_modification )? comment
+		| EQUALS^ enumeration 
 		)
 		;
 enumeration :
@@ -102,9 +104,15 @@ enumeration :
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
 		;
+
 enumeration_literal :
 		IDENT comment
+		{
+			#enumeration_literal=#([ENUMERATION_LITERAL,
+					"ENUMERATION_LITERAL"],#enumeration_literal);
+		}		
 		;
+
 composition :
 		element_list
 		(	public_element_list
@@ -114,7 +122,7 @@ composition :
 		|	equation_clause
 		|	algorithm_clause
 		)*
-		( EXTERNAL	( language_specification )? 
+		( EXTERNAL^	( language_specification )? 
 			( external_function_call )?
 			(SEMICOLON!) ?  
 			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
@@ -619,58 +627,65 @@ component_reference :
 		;
 
 function_call :
-		LPAR! (function_arguments)? RPAR!
+		LPAR! (function_arguments) RPAR! 
 		{
-			#function_call=#([FUNCTION_ARGUMENTS,"FUNCTION_ARGUMENTS"],#function_call);
-		}
+			#function_call = #([FUNCTION_ARGUMENTS,"FUNCTION_ARGUMENTS"],#function_call);
+		}	
 		;
 
 function_arguments :
-		( for_or_expression_list 
-		|  expression function_arguments2 
-		| named_arguments
-		)
-		;
-function_arguments2 :
-		{!(LA(1) == IDENT && LA(2) == EQUALS) || LA(1) == RPAR}?
-  		|
-		( COMMA! function_arguments ) function_arguments2
+			(for_or_expression_list)
+			(named_arguments) ?
 		;
 
 for_or_expression_list 
     :
-        e:expression
-        ( COMMA! (COMMA expression) => expression_list2
-            {
-                #for_or_expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
-            }
-        | FOR^ for_indices
-        )?
-    ;
+		(
+			{LA(1)==IDENT && LA(2) == EQUALS|| LA(1) == RPAR}?
+		|
+			(
+				e:expression
+				( COMMA! for_or_expression_list2 
+				| FOR^ for_indices
+				)?
+			)
+			{
+				#for_or_expression_list = #([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
+			}
 
+		)
+		;
+
+for_or_expression_list2 :
+		{LA(2) == EQUALS}?
+		| 
+		expression (COMMA! for_or_expression_list2)?
+		;
+	
 named_arguments :
-		named_argument ( COMMA! (COMMA IDENT EQUALS) => named_arguments)?
+		named_arguments2
+		{
+			#named_arguments=#([NAMED_ARGUMENTS,"NAMED_ARGUMENTS"],#named_arguments);
+		}
+		;
+
+named_arguments2 :
+		named_argument ( COMMA! (COMMA IDENT EQUALS) => named_arguments2)?
 		;
 
 named_argument :
 		IDENT EQUALS^ expression
 		;
 
-expression_list :
+expression_list : 
 		expression_list2
 		{
 			#expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#expression_list);
 		}
 		;
 expression_list2 :
-		expression expression_list3
+		expression (COMMA! expression_list2)?
 	    ;
-
-expression_list3:
-	{LA(2) != END}?
-	(COMMA! expression_list2) 
-	|
-	;
 
 array_subscripts : 
 		LBRACK^ subscript ( COMMA! subscript )* RBRACK!
@@ -681,13 +696,12 @@ subscript :
 		;
 
 comment :
-		 string_comment	( ANNOTATION )=> annotation
-		| string_comment //(annotation)?
+		(
+			string_comment	( ANNOTATION )=> annotation
+			| string_comment //(annotation)?
+		)
 		{
-			if (#comment)
-            {
-                #comment=#([COMMENT,"COMMENT"],#comment);
-            }
+			#comment=#([COMMENT,"COMMENT"],#comment);
 		}
 		;
 
