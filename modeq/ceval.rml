@@ -329,7 +329,7 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 
 
 	(* end luc_pop *)
-(*
+
 	(* FIXME: disabled calling of functions during ceval for now. Some
 	 * functions call other functions, which must be generated together in
 	 * order that compilation works  *)
@@ -342,28 +342,42 @@ relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
 	   and write another rule for the false case that generates the function *)
   rule	(* Static.is_function_in_cflist(cflist,funcpath) => true & *)
 	Debug.fprintln("ceval", "- ceval call begin") &
+ print "ceval call begin" &
 	ceval_generate_function(env, funcpath) &
+ print "ceval func" &
 	Debug.fprintln("ceval", "- ceval func generated") &
+ print "ceval list" &
 	ceval_list(env,expl,impl,st) => vallst &
 	Debug.fprintln("ceval", "- ceval args evaluated") &
+ print "ceval path_string2" &
 	ModUtil.path_string2(funcpath,"_") => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
+ print "ceval write" &
 	Values.write_to_file_as_args(vallst,infilename)  &
+ print "ceval sysexec" &
 	System.execute_function(funcstr) &
+ print "ceval sysread" &
 	System.read_values_from_file(outfilename) => newval
+& print "ceval done"
 	& Debug.fprintln("ceval", "- ceval call success")
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => (newval,st)
 
 (*	ceval (env, e as Exp.CALL(funcpath,expl,_,_),false,st as SOME(Interactive.SYMBOLTABLE(_,_,_,_,cflist)),_) => (newval,st)
 *)
-*)
+
 
         (* FIXME: Fix this in order to allow calling of constant-marked function
 	 * calls. One should call the function as if we were in interactive
 	 * mode, and put the result instead of the function call *)
 	 
+
+  rule	Print.print_buf "# Can't call builtin functions at compile time\n" &
+	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
+	-------------------------------------------------------
+	ceval (env, e as Exp.CALL(_,_,_,builtin as true),impl as false,NONE,_) => fail
+
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
