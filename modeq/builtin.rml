@@ -4,10 +4,6 @@
  **
  ** RCS: $Id$
  **
- **)
-
-(** - Module header
- **
  ** The only exported relation is `initial_env'.
  **)
 

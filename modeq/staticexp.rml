@@ -284,6 +284,8 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
 
 end
 
+(**)
+
 relation elab_call2 : (Env.Env, Absyn.Path, Absyn.Exp list)
 	=> (Exp.Exp, Types.Type, bool) =
 
@@ -299,6 +301,8 @@ relation elab_call2 : (Env.Env, Absyn.Path, Absyn.Exp list)
 	elab_call2 (_,fn,_) => fail
 
 end
+
+(**)
 
 relation elab_call_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
 	  => (Exp.Exp list, bool) =
@@ -509,7 +513,7 @@ relation subscript_cref_type2 : (Exp.ComponentRef, Types.Type) => Types.Type =
 
 end
 
-(** relation subscript_type
+(** relation: subscript_type
  **
  ** Given an array dimensionality and a list of subscripts, this
  ** relation reduces the dimensionality.
@@ -821,8 +825,7 @@ end
 
 (** relation: ceval_list
  **
- ** Do a constant evaluation on a number of expressions, and assert
- ** that they are all of the same type.
+ ** This relation does a constant evaluation on a number of expressions.
  **)
 
 relation ceval_list : (Env.Env, Exp.Exp list) => Values.Value list =
@@ -1047,6 +1050,7 @@ end
  ** it means to add, say, an integer and a real number, the
  ** expressions have to be de-overloaded, with one operator for each
  ** distinct operation.
+ ** FIXME: Better motivation
  **)
 
 (** relation: elab_arglist
@@ -1072,6 +1076,11 @@ end
  **
  ** This is the relation that takes care of the type conversions.  All
  ** type conversion rules are described in this relation.
+ **
+ ** The first argument is the expected type.  The second and third
+ ** arguments are the given expression and its type, respectively.
+ ** When a type case is required, an `Exp.CAST()' is wrapped around
+ ** the expressions.
  **)
 
 relation elab_arg : (Types.Type, Exp.Exp, Types.Type) => Exp.Exp =

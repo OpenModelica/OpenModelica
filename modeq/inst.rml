@@ -1371,22 +1371,10 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 
   rule  print "  equation modification: " & Exp.print_component_ref cr &
  	Mod.print_mod mod & print "\n" &
-
-	(* Types.same_type(ty1,ty2) => true & *)
 	inst_eq_equation(Exp.CREF(cr),ty1,e,ty2) => dae
 	-----------------------------------------------
 	inst_mod_equation(cr,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
 	  => dae
-	  
-(*
-  rule  Types.same_type(ty1,ty2) => false &
-	print "# Wrong type in equation modifier\n" &
-	print "    expected: " & Types.print_type ty1 & print "\n" &
-	print "    was:      " & Types.print_type ty2 & print "\n"
-	--------------------------------------------------------
-	inst_mod_equation(cr,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
-	  => fail
-*)
 	  
   axiom inst_mod_equation(_,_,Mod.MOD(_,_,NONE)) => []
   axiom inst_mod_equation(_,_,Mod.NOMOD) => []
@@ -1444,6 +1432,8 @@ relation make_binding : (Env.Env, Absyn.VarAttr, Mod.EqMod option, SCode.Class)
 
 end
 
+(** relation: make_const_binding *)
+
 relation make_const_binding : (Env.Env, Exp.Exp,
 			       Types.Type, Types.Type, bool) => Types.Binding =
 
@@ -1474,6 +1464,8 @@ relation make_const_binding : (Env.Env, Exp.Exp,
 	make_const_binding(_,_,_,_,_) => fail
 
 end
+
+(** relation: class_type *)
 
 relation class_type : SCode.Class => Types.Type =
 
