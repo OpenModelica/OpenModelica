@@ -1,11 +1,11 @@
 
-function t
+function test
   input  Real x;
   output Real y;
 protected
 algorithm
   y := x + 1;
-end t;
+end test;
 
 model mo
   Real x;
