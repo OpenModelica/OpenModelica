@@ -17,7 +17,7 @@ LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP)
 
 CFLAGS = $(INCP) -g -Wall -DDEBUG
 CXXFLAGS = $(CFLAGS)
-LINKFLAGS = $(LIBP)
+LINKFLAGS = $(LIBP) -static
 
 LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap
 
@@ -74,7 +74,9 @@ depend :
 	gcc -M $(CXXFLAGS) mosh.cpp $(walkersrcs) > Makefile.depend
 
 clean:
-	-rm -f *.o *~ core *.core mosh
+	-rm -f *.o *~ core *.core mosh modelica_expression_parser.cpp \
+	modelica_expression_parser.hpp modelia_tree_parser.cpp \
+	modelica_tree_parser.hpp
 
 reallyclean: clean
 	-rm -f $(parsergen) $(walkergen) modelica_expression_parserTokenTypes.txt expandedexpression_parser.g modelica_parserTokenTypes.txt
