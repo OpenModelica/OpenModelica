@@ -123,13 +123,17 @@ end
 relation elab_cref_subs : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 	  => (Exp.ComponentRef, bool) =
 
-  axiom	elab_cref_subs(_,_,[]) => ([], true)
+  rule	elab_subscripts (env, pre, ss) => (ss', const)
+	----------------------------------------------
+	elab_cref_subs(env,pre,Exp.CREF_IDENT(id,ss))
+	  => (Exp.CREF_IDENT(id,ss'), const)
 
   rule	elab_subscripts (env, pre, ss) => (ss', const1) &
 	elab_cref_subs(env,pre,subs) => (cr, const2) &
 	bool_and(const1, const2) => const
 	-------------------------------------
-	elab_cref_subs(env,pre,(id,ss)::subs) => ((id,ss')::cr, const)
+	elab_cref_subs(env,pre,Exp.CREF_QUAL(id,ss,subs))
+	  => (Exp.CREF_QUAL(id,ss',cr), const)
 
 end
 

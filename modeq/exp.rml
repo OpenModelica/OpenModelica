@@ -1,51 +1,51 @@
 (**
  ** file:  exp.rml
  **
- ** This module contains data types for describing Modelica
- ** expressions.  It is used throughout the semantic description, in
- ** the abstract syntax tree and elsewhere.  All the other modules use
- ** this module.
+ ** This file contains the module `Exp', which contains data types for
+ ** describing Modelica expressions.  It is used throughout the
+ ** semantic description, in the abstract syntax tree and elsewhere.
+ ** All the other modules use this module.
  ** 
  **)
 
 module Exp:
 
+  (** - Identifiers *)
+  type Ident = string
   (** Define `Ident' as an alias for `string' and use it for all *)
   (** identifiers in Modelica. *)
 
-  type Ident = string
-
-(** To generate the correct set of equations, the translator has to *)
-(** differentiate between the primitive types `Real', `Integer', *)
-(** `String', `Boolean' and types directly derived from then from *)
-(** other, complex types.  The `Type' type is used to store *)
-(** information about whether a class is derived from a primitive *)
-(** type, and whether a variable is of one of these types. *)
-
+  (** - Types *)
   datatype Type = T_INTEGER | T_REAL | T_STRING | T_BOOL | T_OTHER
+  (** To generate the correct set of equations, the translator has to *)
+  (** differentiate between the primitive types `Real', `Integer', *)
+  (** `String', `Boolean' and types directly derived from then from *)
+  (** other, complex types.  The `Type' type is used to store *)
+  (** information about whether a class is derived from a primitive *)
+  (** type, and whether a variable is of one of these types. *)
 
-(** The `Subscript' datatype is used in variable references.  An *)
-(** one-dimensional array variable `a' can be supscriptet as `a[1]', *)
-(** `a[1:2]' or `a[1:2:3]'. *)
-
+  (** - Subscripts *)
   datatype Subscript = NOSUB
 		     | SUB1 of Exp
 		     | SUB2 of Exp * Exp
 		     | SUB3 of Exp * Exp * Exp
+  (** The `Subscript' datatype is used in variable references.  An *)
+  (** one-dimensional array variable `a' can be supscriptet as `a[1]', *)
+  (** `a[1:2]' or `a[1:2:3]'. *)
 
-(** A component reference is the fully or partially qualified name of *)
-(** a component (variable).  It is represented as a list of *)
-(** identifier--subscript pairs.  The type `Path', on the other hand, *)
-(** is used to store references to class names, or components inside *)
-(** class definitions. *)
+  (** - Component references and paths *)
+  datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
+		    	| CREF_IDENT of Ident * (Subscript list)
 
-  type ComponentRef = (Ident * (Subscript list)) list
-  
-  datatype Path = QUALIFIED of string * Path
+  datatype Path = QUALIFIED of Ident * Path
 	      	| IDENT of Ident
+  (** A component reference is the fully or partially qualified name of *)
+  (** a component (variable).  It is represented as a list of *)
+  (** identifier--subscript pairs.  The type `Path', on the other hand, *)
+  (** is used to store references to class names, or components inside *)
+  (** class definitions. *)
 	      	
-(** The `Exp' datatype is the container of a Modelica expression. *)
-
+  (** - Expressions *)
   datatype BinOp = ADD | SUB | MUL | DIV | POW
   datatype UnaryOp = UMINUS | UPLUS
   datatype LBinOp = AND | OR
@@ -57,23 +57,16 @@ module Exp:
 	       | CREF of ComponentRef
 	       | STRING of string
 	       | BOOL of bool
-	       
 	       | BINARY of Exp * BinOp * Exp
 	       | UNARY of UnaryOp * Exp
-	       
 	       | LBINARY of Exp * LBinOp * Exp
 	       | LUNARY of LUnaryOp * Exp
-	       
 	       | RELATION of Exp * RelOp * Exp
-	       
 	       | IFEXP of Exp * Exp * Exp
-	       
 	       | CALL of Path * Exp list		(* Function call *)
 	       | TIME
-
 	       | CAST_TO_REAL of Exp
-
-(** The exported relations are described later. *)
+  (** The `Exp' datatype is the container of a Modelica expression. *)
 
   relation path_string : Path => string
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
@@ -112,13 +105,15 @@ end
 
 relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
 
-  axiom	extend_cref([], i, s) => [(i,s)]
+  axiom	extend_cref (CREF_IDENT(i1,s1),i,s) => CREF_QUAL(i1,s1,CREF_IDENT(i,s))
 
-  rule	extend_cref(xs, i, s) => xs'
-	----------------------------
-	extend_cref(x::xs, i, s) => x::xs'
+  rule	extend_cref (c,i,s) => c'
+	-------------------------
+	extend_cref (CREF_QUAL(i1,s1,c), i, s) => CREF_QUAL(i1,s1,c')
 
 end
+
+(** - Equality relations *)
 
 (** relation: eq_cref
  **
@@ -130,13 +125,16 @@ end
 
 relation eq_cref : (ComponentRef, ComponentRef) => () =
 
-  axiom	eq_cref([],[])
+  rule	n1 = n2 &
+	eq_subscripts (s1,s2)
+	---------------------
+	eq_cref (CREF_IDENT(n1,s1), CREF_IDENT(n2,s2))
 
   rule	n1 = n2 &
-	eq_subscripts(s1,s2) &
-	eq_cref(c1,c2)
-	-------------------
-	eq_cref((n1,s1)::c1, (n2,s2)::c2)
+	eq_subscripts (s1,s2) &
+	eq_cref (c1,c2)
+	---------------
+	eq_cref (CREF_QUAL(n1,s1,c1), CREF_QUAL(n2,s2,c2))
 
 end
 
@@ -182,7 +180,7 @@ relation eq_subscript : (Subscript, Subscript) => () =
 end
 
 (**
- **  Dump
+ ** - Printing expressions
  **
  ** This module provides some relations to print data to the standard
  ** output.  This is used for error messages, and for debugging the
@@ -190,10 +188,10 @@ end
  **
  ** relation: dump_exp
  **
- ** This is the main relation, which prints a complete expression.
+ ** This relation prints a complete expression.
  **)
 
-and dump_exp: Exp => () =
+relation dump_exp: Exp => () =
 	
   rule	int_string(x) => s & print s
 	----------------------------
@@ -219,9 +217,8 @@ and dump_exp: Exp => () =
 	-------------
 	dump_exp(BOOL(true))
 
-  rule	binop_symbol(op) => sym &
-	dump_exp e1 & print sym & dump_exp e2
-	----------------------------
+  rule	binop_symbol(op) => sym & dump_exp e1 & print sym & dump_exp e2
+	---------------------------------------------------------------
 	dump_exp(BINARY(e1, op, e2))
 
   rule	unaryop_symbol(op) => sym &
@@ -229,19 +226,16 @@ and dump_exp: Exp => () =
 	----------------------------
 	dump_exp(UNARY(op, e))
 
-  rule	lbinop_symbol(op) => sym &
-	dump_exp e1 & print sym & dump_exp e2
-	----------------------------
+  rule	lbinop_symbol(op) => sym & dump_exp e1 & print sym & dump_exp e2
+	----------------------------------------------------------------
 	dump_exp(LBINARY(e1, op, e2))
 
-  rule	lunaryop_symbol(op) => sym &
-	print sym & dump_exp e
-	----------------------------
+  rule	lunaryop_symbol(op) => sym & print sym & dump_exp e
+	---------------------------------------------------
 	dump_exp(LUNARY(op, e))
 
-  rule	relop_symbol(op) => sym &
-	dump_exp(e1) & print sym & dump_exp(e2)
-	---------------------------------------
+  rule	relop_symbol(op) => sym & dump_exp(e1) & print sym & dump_exp(e2)
+	-----------------------------------------------------------------
 	dump_exp(RELATION(e1, op, e2))
 
   rule	print "IF " & dump_exp(c) &
@@ -255,14 +249,6 @@ and dump_exp: Exp => () =
 	---------------------------------------------
 	dump_exp(CALL(fcn, args))
 
-	(*
-	 rule	print "EQUATION " & 
-	 dump_exp lhs &
-	 print " = " &
-	 dump_exp rhs
-	 ------------------------
-	 dump_exp(EQU(lhs, rhs))
-	 *)
   rule	print "TIME"
 	------------------
 	dump_exp(TIME)
@@ -278,7 +264,7 @@ end
 
 (** relation: dump_list
  **
- ** This is utility relation that prints a list of objects using a
+ ** This is a utility relation that prints a list of objects using a
  ** provided relation that does the printing of each list element.
  **)
 
@@ -295,9 +281,9 @@ relation dump_list : ('a list, 'a => (), string) => () =
 	dump_list(h::t,r,sep)
 end
 
-(** relation: binop_symbol
+(** relation: *_symbol
  **
- ** Print a `BinOp'.
+ ** Make a string describing different operators.
  **)
 
 relation binop_symbol: BinOp => string =
@@ -308,39 +294,19 @@ relation binop_symbol: BinOp => string =
   axiom	binop_symbol(POW) => "^"
 end
 
-(** relation: unaryop_symbol
- **
- ** Print a `UnaryOp'.
- **)
-
 relation unaryop_symbol: UnaryOp => string =
   axiom	unaryop_symbol(UMINUS) => "-"
   axiom	unaryop_symbol(UPLUS) => "+"
 end
-
-(** relation: lbinop_symbol
- **
- ** Print a `lBinOp.
- **)
 
 relation lbinop_symbol: LBinOp => string =
   axiom	lbinop_symbol(AND) => " AND "
   axiom	lbinop_symbol(OR) => " OR "
 end
 
-(** relation: lunaryop_symbol
- **
- ** Print a `LUnaryOp'.
- **)
-
 relation lunaryop_symbol: LUnaryOp => string =
   axiom	lunaryop_symbol(NOT) => "NOT "
 end
-
-(** relation: relop_symbol
- **
- ** Print a `RelOp.
- **)
 
 relation relop_symbol: RelOp => string =
   axiom	relop_symbol(LESS)      => " < "
@@ -358,22 +324,27 @@ end
 
 relation dump_component_ref : ComponentRef => () =
 
-  rule	dump_list(cr,dump_component_ref2,".")
-	-------------------------------------
-	dump_component_ref(cr)
+  rule	dump_component_ref2 (s,subs)
+	----------------------------
+	dump_component_ref CREF_IDENT(s,subs)
 
+  rule	dump_component_ref2 (s,subs) &
+	print "." &
+	dump_component_ref cr
+	---------------------
+	dump_component_ref CREF_QUAL(s,subs,cr)
 end
 
 and dump_component_ref2 =
 
   rule	print s
-	-------------------------
-	dump_component_ref2((s,[]))
+	-------
+	dump_component_ref2 (s,[])
 
   rule	print s &
 	print "[" & dump_list(l,dump_subscript,",") & print "]"
-	-------------------------------------------------------------
-	dump_component_ref2((s,l))
+	-------------------------------------------------------
+	dump_component_ref2 (s,l)
 
 end
 

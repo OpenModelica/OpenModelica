@@ -40,8 +40,6 @@ relation same_type : (Type, Type) => () =
 
 end
 
-(**)
-
 relation same_type_c : (Var list, Var list) => () =
 
   axiom same_type_c([], [])
@@ -54,7 +52,7 @@ relation same_type_c : (Var list, Var list) => () =
 
 end
 
-(**)
+(** relation: pick *)
 
 relation pick : (Var list, Ident)
 	  => (Var list, VarAttr, Type) =
@@ -69,7 +67,7 @@ relation pick : (Var list, Ident)
 
 end
 
-(**)
+(** relation: lookup_component *)
 
 relation lookup_component : (Type, Ident) => Var =
 
@@ -93,7 +91,7 @@ relation lookup_component2 : (Var list , Ident) => Var =
 
 end
 
-(**)
+(** relation: known_type *)
 
 relation known_type : ClassInf.State => Exp.Type =
 

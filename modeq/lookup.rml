@@ -116,7 +116,7 @@ relation lookup_in_var: (Types.Type, Explode.ComponentRef)
 	  => ((_,Types.ATTR(ad,fl,vt,di),ty')) &
 	check_subscripts(ad, ss)
 	------------------------
-	lookup_in_var(ty, [(id,ss)])
+	lookup_in_var(ty, Exp.CREF_IDENT(id,ss))
 	  => (Types.ATTR(Types.NODIM,fl,vt,di),ty')
 
   rule  Types.lookup_component(ty, id)
@@ -124,7 +124,7 @@ relation lookup_in_var: (Types.Type, Explode.ComponentRef)
 	check_subscripts(ad, ss) &
 	lookup_in_var(ty', vs) => (attr, ty'')
 	--------------------------------------
-	lookup_in_var(ty, (id,ss)::vs) => (attr,ty'')
+	lookup_in_var(ty, Exp.CREF_QUAL(id,ss,vs)) => (attr,ty'')
 
 end	
 
@@ -136,14 +136,15 @@ relation lookup_var_f : ((Explode.Ident * Env.FrameVar) list,
 	lookup_var2(f, id) => Env.FRAMEVAR(n,Types.ATTR(ad,f,vt,di),ty,ass) &
 	check_subscripts(ad,ss)
 	----------------------------------
-	lookup_var_f(f,[(id,ss)]) => (Types.ATTR(Types.NODIM,f,vt,di),ty,ass)
+	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
+	  => (Types.ATTR(Types.NODIM,f,vt,di),ty,ass)
 
   rule  (* print " lookup_var_f 2: " & print id & print "\n" & *)
 	lookup_var2(f, id) => Env.FRAMEVAR(n,Types.ATTR(ad,_,_,_),ty,ass) &
 	check_subscripts(ad,ss) &
 	lookup_in_var(ty, ids) => (attr,ty)
 	----------------------------------
-	lookup_var_f(f,(id,ss)::ids) => (attr,ty,ass)
+	lookup_var_f(f,Exp.CREF_QUAL(id,ss,ids)) => (attr,ty,ass)
 
 end
 

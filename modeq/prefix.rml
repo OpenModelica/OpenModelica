@@ -38,9 +38,9 @@ relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
   axiom	prefix_cref([], cref) => cref
 
-  rule	prefix_cref(xs, x::cref) => cref'
+  rule	prefix_cref(xs, Exp.CREF_QUAL(i,s,cref)) => cref'
 	---------------------------------
-	prefix_cref(x::xs, cref) => cref'
+	prefix_cref((i,s)::xs, cref) => cref'
 
 end
 

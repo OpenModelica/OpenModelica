@@ -1,7 +1,7 @@
 (**
  ** file: classinf.rml
  **
- ** This file deals with class inference, that is determining if a
+ ** This module deals with class inference, that is determining if a
  ** class definition adhers to one of the class restrictions, and, if
  ** specifically declared in a restrictied form, if it breaks that
  ** restriction.
@@ -26,6 +26,7 @@
 
 module ClassInf :
 
+  (** - Restrictions *)
   datatype Restriction = R_CLASS
 		       | R_MODEL
 		       | R_RECORD
@@ -34,11 +35,19 @@ module ClassInf :
 		       | R_TYPE
 		       | R_PACKAGE
 		       | R_FUNCTION
-		       | R_PREDEFINED_INT (* For internal use only *)
+		       | R_PREDEFINED_INT
 		       | R_PREDEFINED_REAL
 		       | R_PREDEFINED_STRING
 		       | R_PREDEFINED_BOOL
+  (** These constructors each correspond to a different kind of class *)
+  (** declaration in Modelica, except the last four, which are used *)
+  (** for the predefined types.  The parser assignes each class *)
+  (** declaration one of the restrictions, and the actual class *)
+  (** definition is checked for conformance during translation.  The *)
+  (** predefined types are created in the `Builtin' module and are *)
+  (** assigned special restrictions. *)
 
+  (** - Machine states *)
   datatype State = UNKNOWN       of string
 		 | MODEL	 of string
 		 | RECORD	 of string
@@ -54,11 +63,14 @@ module ClassInf :
 		 | TYPE_STRING   of string
 		 | TYPE_BOOL     of string
 
-  (** The `Event' type contains the different events during *)
-  (** instantiation that signals a possible machine transition. *)
+  (** - Events *)
   datatype Event = FOUND_EQUATION     (* There are definitions inside *)
 				      (* the current definition *)
 		 | NEWDEF	      (* This is not a derived class *)
+  (** The `Event' type contains the different events during *)
+  (** instantiation that signals a possible machine transition. *)
+
+  (** - Exported relations *)
 
   relation start : (Restriction, string) => State
   relation trans : (State, Event) => State
@@ -74,9 +86,12 @@ module ClassInf :
 
 end
 
-(** relation: print_restr
- ** purpose:  Output for debugging and error messages
- **)
+(** - Printing *)
+(**)
+(** Some relations for printing error and debug information about the *)
+(** state machine. *)
+
+(** relation: print_restr *)
 
 relation print_restr : Restriction => () =
 
@@ -130,9 +145,7 @@ relation print_restr : Restriction => () =
 
 end
 
-(** relation: print_state
- ** purpose:  Output for debugging and error messages
- **)
+(** relation: print_state *)
 
 relation print_state : State => () =
 
@@ -194,9 +207,7 @@ relation print_state : State => () =
 
 end
 
-(** relation: print_event
- ** purpose:  Output for debugging and error messages
- **)
+(** relation: print_event *)
 
 relation print_event : Event => () =
 
@@ -209,6 +220,8 @@ relation print_event : Event => () =
 	print_event NEWDEF
 
 end
+
+(** - Transitions *)
 
 (** relation: start
  ** purpose:  State machine initialization

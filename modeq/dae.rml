@@ -3,17 +3,17 @@
  ** This file is not really mine.  It will be rewritten later.
  **)
 
+(** - Module header *)
+
 module DAE:
   
   with "exp.rml"
   with "dump.rml"
 
-  type Ident = string
-
-  datatype VarKind = LOCAL | PAR | CON
+  type Ident = Exp.Ident
 
   datatype DAEcomp = VAR of Ident * VarKind
-		   | VARVAL of Ident * VarKind * Exp.Exp
+		   | VARVAL of Ident * Types.VarType * Exp.Exp
 		   | EQUATION of Exp.Exp
 		   | COMP of Ident * DAEform
   and	 DAEform = DAE of DAEcomp list
@@ -22,59 +22,62 @@ module DAE:
 	  
 end
 
-(**)
+(** - Relations *)
 
 relation dump_kind =
 
   rule	print "  constant "
 	--------------------
-	dump_kind CON => ()
+	dump_kind Types.CONST
 	
   rule	print "  parameter "
 	--------------------
-	dump_kind PAR => ()
+	dump_kind Types.PARAM
 	
   rule	print "  local "
 	--------------------
-	dump_kind LOCAL => ()
+	dump_kind Types.VAR
+
 end
 
 relation dump_comp: DAEcomp => () =
 	
   rule	dump_kind kind & print id & print "\n"
 	--------------------------------------
-	dump_comp(VAR(id, kind)) => ()
+	dump_comp(VAR(id, kind))
 	
   rule	dump_kind kind & print id &
 	print "=" & Dump.dump_exp ex & print "\n"
 	--------------------------------------
-	dump_comp(VARVAL(id, kind, ex)) => ()
+	dump_comp(VARVAL(id, kind, ex))
 	
   rule	print "  " & Dump.dump_exp eq & print "\n"
 	--------------------------------------
-	dump_comp(EQUATION(eq)) => ()
+	dump_comp(EQUATION(eq))
 	
   rule	print "{ begin " & print id & print " }\n" &
 	dump contents &
 	print "{ end " & print id & print " }\n"
         --------------------------------------
-        dump_comp ( COMP(id, contents)) => ()
+        dump_comp ( COMP(id, contents))
+
 end
 
 relation dump_list: DAEcomp list => () =
 	
-  axiom	dump_list [] => ()
+  axiom	dump_list []
 	
   rule	dump_comp first &
 	dump_list rest
 	-------------------
-	dump_list first :: rest => ()
+	dump_list first :: rest
+
 end
 
 relation dump: DAEform => () =
 	
   rule	dump_list l
 	-------------------
-	dump DAE(l) => ()
+	dump DAE(l)
 
 end

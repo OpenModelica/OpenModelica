@@ -116,7 +116,7 @@ Explode.CLASS("Boolean",false,ClassInf.R_PREDEFINED_BOOL,
 
 relation initial_env =
 
-  rule	Env.new_frame(Env.empty_env) => env &
+  rule	Env.open_scope(Env.empty_env) => env &
 	Env.extend_frame_c(env, rl_type, Mod.NOMOD) => env' &
 	Env.extend_frame_c(env', int_type, Mod.NOMOD) => env'' &
 	Env.extend_frame_c(env'', str_type, Mod.NOMOD) => env''' &

@@ -339,7 +339,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** instantiate the class with an extended prefix.
 	 **)
 
-  rule	Prefix.prefix_cref(pre,[(n,[])]) => vn &
+  rule	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
 
 	print " variable " & Dump.dump_component_ref vn & print "\n" &
 
@@ -445,7 +445,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,
-		      Absyn.EQ_EQUALS(Exp.CREF([(n,[])]), e2))
+		      Absyn.EQ_EQUALS(Exp.CREF(Exp.CREF_IDENT(n,[])), e2))
 	  => ([],env,csets,ci_state')
 
   rule	print " equation\n" &
@@ -638,13 +638,15 @@ end
 
 relation component_face : Exp.ComponentRef => Connect.Face =
 
-  axiom component_face (c as [_,_]) => Connect.INNER
+  axiom component_face Exp.CREF_QUAL(_,_,Exp.CREF_IDENT(_,_)) => Connect.INNER
 
-  axiom	component_face (c as [_]) => Connect.OUTER
+  axiom	component_face Exp.CREF_IDENT(_,_) => Connect.OUTER
 
-  rule	print "# component_face error: " &
-	Dump.dump_component_ref c & print "\n"
-	--------------------------------------
+  rule	print "# While connecting " &
+	Dump.dump_component_ref c & print "\n" &
+	print "# Only local or child connectors allowed.\n"
+	(* FIXME: This only checks the syntactic properties. *)
+	---------------------------------------------------
 	component_face c => fail
 
 end
@@ -653,7 +655,7 @@ end
 
 relation inst_mod_assignment : (Prefix, Ident, Mod) => DAE.DAEcomp list =
 
-  rule  Prefix.prefix_cref(pre, [(v,[])]) => v' &
+  rule  Prefix.prefix_cref(pre, Exp.CREF_IDENT(v,[])) => v' &
 	
 	print "  assignment modification: " &
  	Dump.dump_component_ref v' &

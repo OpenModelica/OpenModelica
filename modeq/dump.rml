@@ -25,37 +25,38 @@ with "classinf.rml"
 
 relation dump_select: (bool,string,string) => () =
 
-	rule	print no
-		-------------------------
-		dump_select(false,yes,no)
-
-	rule	print yes
-		-------------------------
-		dump_select(true,yes,no)
+  rule	print no
+	-------------------------
+	dump_select(false,yes,no)
+	
+  rule	print yes
+	-------------------------
+	dump_select(true,yes,no)
 
 end
 
 relation dump_option = (* : ('a option)*('a => 'b) = *)
 
-	axiom	dump_option(NONE,_)
-
-	rule	r( x )
-		---------------------
-		dump_option(SOME(x),r)
-
+  axiom	dump_option(NONE,_)
+	
+  rule	r( x )
+	------
+	dump_option(SOME(x),r)
+	
 end
 
 relation dump_list : ('a list, 'a => (), string) => () =
 
-	axiom	dump_list([],_,_)
+  axiom	dump_list([],_,_)
+	
+  rule	r(h)
+	------------------
+	dump_list([h],r,_)
 
-	rule	r(h)
-		------------------
-		dump_list([h],r,_)
+  rule	r(h) & print sep & dump_list(t,r,sep)
+	-------------------------------------
+	dump_list(h::t,r,sep)
 
-	rule	r(h) & print sep & dump_list(t,r,sep)
-		-------------------------------------
-		dump_list(h::t,r,sep)
 end
 
 (* Exp *)
@@ -79,41 +80,44 @@ relation dump_class_restriction: Absyn.ClassRestriction => () =
 end
 
 relation dump: Absyn.Program => () =
-
-	axiom	dump [] => ()
-
-	rule	dump_class c & print "\n" &
-		dump cs
-		----------------
-		dump c::cs => ()
-
-end
-and dump_class: Absyn.Class => () =
-
-	rule	dump_class_restriction(r) & print "(" &
-		print n & print "," & dump_select(p,"PARTIAL,","") &
-		dump_list(parts,dump_class_part,",") & print ")"
-		----------------------------------------
-		dump_class(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => ()
-
-	rule	dump_class_restriction(r) & print "(" &
-		print n & print "," & dump_select(p,"PARTIAL,","") &
-		print ") = " & Exp.path_string(i) => is & print is &
-		dump_class_modification(m)
-		----------------------------------------
-		dump_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
+	
+  axiom	dump [] => ()
+	
+  rule	dump_class c & print "\n" &
+	dump cs
+	----------------
+	dump c::cs => ()
 
 end
-and dump_class_modification =
 
-	axiom	dump_class_modification([])
+relation dump_class: Absyn.Class => () =
 
-	rule	print "(" & dump_list(l,dump_element_arg,",") & print ")"
-		---------------------------------------------------------
-		dump_class_modification(l)
+  rule	dump_class_restriction(r) & print "(" &
+	print n & print "," & dump_select(p,"PARTIAL,","") &
+	dump_list(parts,dump_class_part,",") & print ")"
+	----------------------------------------
+	dump_class(Absyn.CLASS(n,p,r,Absyn.PARTS(parts))) => ()
+
+  rule	dump_class_restriction(r) & print "(" &
+	print n & print "," & dump_select(p,"PARTIAL,","") &
+	print ") = " & Exp.path_string(i) => is & print is &
+	dump_class_modification(m)
+	----------------------------------------
+	dump_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
 
 end
-and dump_element_arg =
+
+relation dump_class_modification =
+
+  axiom	dump_class_modification([])
+	
+  rule	print "(" & dump_list(l,dump_element_arg,",") & print ")"
+	---------------------------------------------------------
+	dump_class_modification(l)
+	
+end
+
+relation dump_element_arg =
 	
   rule	print "ARG(" &
 	dump_select(f,"FINAL,",",") &
@@ -131,47 +135,50 @@ and dump_element_arg =
 	dump_element_arg(Absyn.REDECLARATION(f,spec))
 
 end
-and dump_class_part: Absyn.ClassPart => () =
 
-	rule 	print "PUBLIC(" & dump_elements(el) & print ")"
-		-----------------------------------------------
-		dump_class_part(Absyn.PUBLIC(el))
+relation dump_class_part: Absyn.ClassPart => () =
 
-	rule 	print "PROTECTED(" & dump_elements(el) & print ")"
-		---------------------------------------
-		dump_class_part(Absyn.PROTECTED(el))
-
-	rule 	print "EQUATIONS(" &
-		dump_list(eqs,dump_equation,",") &
-		print ")"
-		--------------------------------------
-		dump_class_part(Absyn.EQUATIONS(eqs))
-
-	rule 	print "ALGORITHMS(...)"
-		---------------------------------------
-		dump_class_part(Absyn.ALGORITHMS(_))
-
+  rule 	print "PUBLIC(" & dump_elements(el) & print ")"
+	-----------------------------------------------
+	dump_class_part(Absyn.PUBLIC(el))
+	
+  rule 	print "PROTECTED(" & dump_elements(el) & print ")"
+	---------------------------------------
+	dump_class_part(Absyn.PROTECTED(el))
+	
+  rule 	print "EQUATIONS(" &
+	dump_list(eqs,dump_equation,",") &
+	print ")"
+	--------------------------------------
+	dump_class_part(Absyn.EQUATIONS(eqs))
+	
+  rule 	print "ALGORITHMS(...)"
+	---------------------------------------
+	dump_class_part(Absyn.ALGORITHMS(_))
+	
 end
-and dump_elements: Absyn.Element list => () =
 
-	axiom	dump_elements [] => ()
+relation dump_elements: Absyn.Element list => () =
 
-	rule    dump_element e
-		--------------------------
-		dump_elements [e]
+  axiom	dump_elements [] => ()
 
-	rule    dump_element e & print "," &
-		dump_elements els
-		--------------------------
-		dump_elements e::els
-
+  rule	dump_element e
+	--------------------------
+	dump_elements [e]
+	
+  rule	dump_element e & print "," &
+	dump_elements els
+	--------------------------
+	dump_elements e::els
+	
 end
-and dump_element: Absyn.Element => () =
 
-	rule	print "ELEMENT(" & dump_select(final,"FINAL,","") &
-		dump_elementspec spec & print ")"
-		----------------
-		dump_element (Absyn.ELEMENT(final,_,spec))
+relation dump_element: Absyn.Element => () =
+	
+  rule	print "ELEMENT(" & dump_select(final,"FINAL,","") &
+	dump_elementspec spec & print ")"
+	----------------
+	dump_element (Absyn.ELEMENT(final,_,spec))
 
 end
 and dump_elementspec: Absyn.ElementSpec => () =
@@ -296,22 +303,11 @@ and dump_equation: Absyn.Equation => () =
 		dump_equation(_)
 
 end
-and dump_component_ref : Exp.ComponentRef => () =
 
-	rule	dump_list(cr,dump_component_ref2,".")
-		-------------------------------------
-		dump_component_ref(cr)
+relation dump_component_ref : Exp.ComponentRef => () =
 
-end
-and dump_component_ref2 =
-
-	rule	print s
-		-------------------------
-		dump_component_ref2((s,[]))
-
-	rule	print s &
-		print "[" & dump_list(l,dump_subscript,",") & print "]"
-		-------------------------------------------------------------
-		dump_component_ref2((s,l))
+  rule	Exp.dump_component_ref c
+	------------------------
+	dump_component_ref c
 
 end
