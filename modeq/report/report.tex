@@ -6,7 +6,9 @@
 \title{Blahonga Blahonga}
 
 \newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\filename}[1]{\texttt{#1}}
 \newcommand{\firstref}[1]{\textit{#1}}
+\newcommand{\note}[1]{[\textsc{#1}]}
 
 \newtheorem{Def}{Definition}[chapter]
 
@@ -70,7 +72,7 @@ translator.
 \label{cha:devenv}
 
 
-\chapter{Semantics}
+\chapter{Informal semantics}
 \label{cha:semantics}
 
 
@@ -91,12 +93,80 @@ more comprehensive informal description of the language semantics.
 \label{sec:types}
 
 
-\section{Overview of the type system in Modelica}
+\subsection{Overview of the type system in Modelica}
 \label{sec:typeoverview}
+
+The type system is based on \firstref{classes}. A class is the basic
+unit of modelling. It is used to modularize the model description and
+to \ldots{}
 
 
 \subsection{Type equality and subtypes}
 \label{sec:typeq}
+
+
+\subsection{Class restrictions}
+\label{sec:clrestr}
+
+A class can either be declared with the \code{class} keyword, or with
+one of its restricted forms, listed below.  The restricted forms are
+used to indicate the intended use of the class, and to impose certain
+restrictions on what the class definition can contain, and how it can
+be used.
+
+\begin{table}[htbp]
+  \begin{center}
+    \begin{tabular}{lp{8cm}}
+      \hline
+      \code{record} & No equations are allowed in the definition or in any
+      of its components. A \code{record} instance may not be used in
+      connections. \\
+      \hline
+      \code{type}   & May only be declared as derived from one of the
+      predefined types, or as a matrix of a \code{type}. \\
+      \hline
+      \code{connector} & No equations are allowed in the definition or
+      in any of its components. \\
+      \hline
+      \code{model} & A \code{model} instance may not be used in
+      connections. \\
+      \hline
+      \code{block} & Each public component must be declared with one
+      of the modifiers \code{input} or \code{output}. \\
+      \hline
+      \code{package} & May only contain declarations of classes and
+      constants. \\
+      \hline
+      \code{function} & Each public component must be declared with one
+      of the modifiers \code{input} or \code{output}. No equations are
+      allowed and only one algorithm secion is allowed. \\
+      \hline
+    \end{tabular}
+    \caption{Class restrictions}
+    \label{tab:clrestr}
+  \end{center}
+\end{table}
+
+A valid program can always be transformed into another valid program
+by replacing all occurences of the restricted class keywords with the
+keyword \code{class}.  For a class declared with the keyword
+\code{class} to be able to be used as if it was declared with a
+restricted keyword \note{Fel men nästan rätt}, it has to adher to the
+restrictions for that keyword.
+
+As an example, this means that if a variable is used in a connection,
+its type has to be either a class declared with \code{connector}, or a
+class declared with \code{class} which contains no equations.  Another
+implication is that an invalid program can be transformed into a valid
+program by replacing all restricted keywords with \code{class}, e.g.
+when incorrectly trying to use a \code{record} in a connection,
+because the keyword \code{record} has the same restrictions as the
+\code{connector} keyword, except that \code{record} is explicitly not
+allowed in connections, but \code{class} is, as long as it fulfills
+the restrictions.
+
+\subsection{Arrays and matrices}
+\label{sec:arrays}
 
 
 \section{Connections}
@@ -111,9 +181,9 @@ connected to produce equation according to the rules below.  Each
 connector reference has either the syntactic form \code{c}, where
 \code{c} is a connector instance in the class containing the
 \code{connect} construct, or \code{m.c}, where \code{m} is the name of
-a component or an array of components (??) of the class containing the
-\code{connect} construct, and \code{c} is the name of a connector
-variable in the component \code{m}.
+a component or an array of components \note{Stämmer det?} of the class
+containing the \code{connect} construct, and \code{c} is the name of a
+connector variable in the component \code{m}.
 
 
 \subsection{Connection sets}
@@ -146,6 +216,72 @@ names \code{a} and \code{b} are checked to be of the same type
 In the case of variables declared with the \code{flow} type modifier,
 the equation generated is a sum-to-zero equation. \[\sum_{v \in C} d_v
 v = 0\]
+
+
+\chapter{Design}
+\label{cha:design}
+
+
+\section{Abstract syntax}
+\label{sec:absyndesign}
+
+The abstract syntax is closely modelled after the syntactic
+structure.  Unfortunately, this form is not very convenient for
+the semantic description of the instantiation process.  To address
+this problem, a second internal form, called the \firstref{exploded
+  form} \note{Hmmm} is introduced. The main difference are that each
+variable declaration is a separate entity with type, attributes and
+modifications, instead of declaring several variables at once. Another
+difference is that the class parts (\code{public}, \code{protected},
+\code{equation} and \code{algorithm}) are sorted and collected in a
+more structured fashion.
+
+
+\section{Class restriction inference}
+\label{sec:classinf}
+
+To be able to determine if a class definition or a variable can be
+used under certain circumstances it is necessary to check whether it
+adhers the restrictions currently imposed on it. If the class is
+declared with one of the restricted keywords listen in table
+\ref{tab:clrestr}, it is immediately known, but when the class is
+declared using the \code{class} keyword, the definition has to be
+scanned to see what restrictions it breaks.
+
+This is done for each variable as it is instantiated, using the state
+machine in the file \filename{classinf.rml}.  While instantiating a
+class the current state is kept in a variable of type
+\code{ClassInf.State}.  It is initialized with the keyword used to
+declare the class using the relation \code{ClassInf.start}.  If the
+keyword was one of the restricted forms, the state will be initialized
+to a state that directly corresponds to that form, and it will never
+change to another state.  If the keyword was \code{class}, the state
+is initialized to \code{ClassInf.UNKNOWN}.
+
+Transitions in the state machine are triggered by events signalled
+during instantiation indicating that some piece of information has been
+encountered which affects the class restriction. The defined events
+are listed in table \ref{tab:classinfevents}.
+
+\begin{table}[htbp]
+  \begin{center}
+    \begin{tabular}{lp{8cm}}
+      \hline
+      \code{FOUND\_EQUATION} & The class is now known to contain at
+      least one equation. \\
+      \hline
+      \note{Fyll på} & \ldots
+    \end{tabular}
+    \caption{Class restriction inference events}
+    \label{tab:classinfevents}
+  \end{center}
+\end{table}
+
+\note{Skriv nåt om \code{ClassInf.valid}}
+
+\chapter{Annotated formal semantics}
+\label{cha:formsem}
+
 
 
 \begin{thebibliography}{99}
