@@ -15,7 +15,7 @@ module Absyn:
   datatype ArrayDim = ONEDIM of Subscript
 		    | TWODIM of Subscript*Subscript
 
-  datatype ElementArg = MODIFICATION of bool * ComponentRef * Modification
+  datatype ElementArg = MODIFICATION of bool * Path * Modification
 		      | REDECLARATION of bool * ElementSpec
 
   and	   Modification = CLASSMOD of ElementArg list

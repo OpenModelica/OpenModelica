@@ -250,7 +250,7 @@ and dump_element_arg =
 
 	rule	print "ARG(" &
 		dump_select(f,"FINAL,",",") &
-		dump_component_ref(r) &
+		path_string(r) => s & print s &
 		dump_modification(m) &
 		print ")"
 		-------------------------------------------
