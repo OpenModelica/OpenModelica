@@ -1871,6 +1871,7 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
   rule	(*Debug.fprintln("sei", "generate_compiled_function: start3")*)
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),NONE) => NONE
+	(* PROP_TUPLE? *)
 
   rule	(* If fails, skip it. *)
 	--------------------------------------------------
