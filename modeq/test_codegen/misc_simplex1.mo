@@ -1,10 +1,10 @@
 
 function pivot1
-  input Real b[6,9];
+  input Real b[:,:];
   input Integer p;
   input Integer q;
 
-  output Real a[6,9];
+  output Real a[size(b,1),size(b,2)];
 
 protected
   Integer M;
@@ -42,16 +42,16 @@ end pivot1;
 
 function misc_simplex1
 
-  input Real matr[6,9];
+  input Real matr[:,:];
 
 
 
-  output Real x[8];
+  output Real x[size(matr,2)-1];
   output Real z;
 
   
 protected
-  Real a[6,9];
+  Real a[size(matr,1),size(matr,2)];
   Integer M;
   Integer N;
 output  Integer q;
