@@ -175,22 +175,12 @@ relation add_replacement: (VariableReplacements,
 			   Exp.ComponentRef) (* dest *)
 	  => VariableReplacements =
 
-  rule	(** if rule a->b exists and we want to add a->d,
-	 ** the replacements should contain two rules:
-	 ** a->d   and  b->d 
+  rule	(** if rule a->b exists, fail
 	 **)
-	tree_get(bt,src) => olddst &
-	make_transitive(repl,src,dst) => (repl',src',dst') &
-	make_transitive(repl',src,olddst) => (REPLACEMENTS(bt,invbt),_,olddst') &
-	tree_add(bt,src',dst') => bt' &
-	add_replacement_inv(invbt,src',dst') => invbt' &
-	tree_add(bt',src',olddst') => bt'' &
-	add_replacement_inv(invbt',src',olddst') => invbt''
+	tree_get(bt,src) => olddst 
 	-----------------------
 	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
-	  => REPLACEMENTS(bt'',invbt'')
-	
-
+	  => fail
 
   rule	make_transitive(repl,src,dst) => (REPLACEMENTS(bt,invbt),src',dst') &
 	tree_add(bt,src',dst') => bt' &

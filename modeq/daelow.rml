@@ -693,7 +693,7 @@ relation remove_simple_equations: (Variables, (* vars *)
   rule	VarTransform.empty_replacements() => repl &
 	remove_simple_equations2(eqns,vars,knvars,empty_bintree,states,repl) 
 	  => (eqns',seqns,movedvars',vartransf) &
-	(*VarTransform.dump_replacements(vartransf) => () &*)
+	VarTransform.dump_replacements(vartransf) => () &
 	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
 	VarTransform.replace_equations(seqns,vartransf) => seqns' &
 	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
