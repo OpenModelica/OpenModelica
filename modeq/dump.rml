@@ -195,12 +195,27 @@ end
 relation print_element: Absyn.Element => () =
 	
   rule	print "ELEMENT(" & print_select(final,"FINAL,","") &
+	print_innerouter inout &
+	print ", " &
 	print_elementspec spec & print ")"
 	----------------
-	print_element (Absyn.ELEMENT(final,_,spec))
+	print_element (Absyn.ELEMENT(final,inout,_,spec))
 
 end
 
+relation print_innerouter: Absyn.InnerOuter => () =
+   rule print "INNER"
+	----------------------------
+	print_innerouter(Absyn.INNER)
+
+   rule print "OUTER"
+        ----------------------------
+        print_innerouter(Absyn.OUTER)
+
+   rule print " "
+        ----------------------------------
+        print_innerouter(Absyn.UNSPECIFIED)
+end
 (**)
 
 relation print_elementspec: Absyn.ElementSpec => () =

@@ -76,6 +76,7 @@ module Absyn:
 
   (** - Elements *)
   datatype Element = ELEMENT of bool		     (* final *)
+			      * InnerOuter	     (* inner/outer *)	     
 			      * Ident
 			      * ElementSpec
 
@@ -86,7 +87,9 @@ module Absyn:
 		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
 				     * Path	     (* type name *)
 				     * Component list
-				     
+  (** One of the keyword inner and outer CAN be given to reference an inner or
+      outer component. Thus there are three disjoint possibilities. **)		     
+  datatype InnerOuter = INNER | OUTER | UNSPECIFIED
 				     
   datatype Import = NAMED_IMPORT of Ident * Path
 		  | QUAL_IMPORT of Path

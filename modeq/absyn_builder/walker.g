@@ -267,23 +267,32 @@ element returns [void* ast]
     void* class_def = 0;
     void* e_spec = 0;
     void* final = 0;
+    void* innerouter = 0;
 }
     : 
         ( e_spec = import_clause
             {
-                ast = Absyn__ELEMENT(RML_FALSE,mk_scon("import"),e_spec);
+                ast = Absyn__ELEMENT(RML_FALSE,Absyn__UNSPECIFIED,mk_scon("import"),e_spec);
             }
         | e_spec = extends_clause
             {
-                ast = Absyn__ELEMENT(RML_FALSE,mk_scon("extends"),e_spec);
+                ast = Absyn__ELEMENT(RML_FALSE,Absyn__UNSPECIFIED,mk_scon("extends"),e_spec);
             }
         | #(DECLARATION 
                 (   // TODO: fix Absyn to handle inner, outer
                     (f:FINAL)? { final = f!=NULL?RML_TRUE:RML_FALSE; }
-                    (i:INNER | o:OUTER)?
+                    (i:INNER | o:OUTER)? { 
+					   if (i!=NULL) {
+						innerouter = Absyn__INNER; 
+					   } else if (o != NULL) {
+						innerouter = Absyn__OUTER;
+					   } else {
+						innerouter = Absyn__UNSPECIFIED;
+					   }
+					 }
                     (e_spec = component_clause
                         {
-                            ast = Absyn__ELEMENT(final,
+                            ast = Absyn__ELEMENT(final,innerouter,
                                 mk_scon("component"),e_spec);
                         }
                     | r:REPLACEABLE 
@@ -292,7 +301,7 @@ element returns [void* ast]
                         e_spec = component_clause 
                         (constraining_clause)?
                         {
-                            ast = Absyn__ELEMENT(final,
+                            ast = Absyn__ELEMENT(final,Absyn__UNSPECIFIED,
                                 mk_scon("replaceable_component"),e_spec);
                         }
                     )
@@ -308,7 +317,7 @@ element returns [void* ast]
                         {
                             ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(1),
                                 class_def);
-                            ast = Absyn__ELEMENT(final,mk_scon("??"),ast);
+                            ast = Absyn__ELEMENT(final,Absyn__UNSPECIFIED,mk_scon("??"),ast);
                             
                         }
                     | 
@@ -320,7 +329,7 @@ element returns [void* ast]
                         {
                             ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(1),
                                 class_def);
-                            ast = Absyn__ELEMENT(final,mk_scon("??"),ast);
+                            ast = Absyn__ELEMENT(final,Absyn__UNSPECIFIED,mk_scon("??"),ast);
                         }
                     )
                 )
