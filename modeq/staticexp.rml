@@ -372,7 +372,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
-end
+end 
 
 (** relation: add_for_loop_scope_const 
  ** Creates a new scope on the environment used for loops and adds a loop variable 
@@ -3791,7 +3791,11 @@ end
 (** relation: operators
  **
  ** This relation relates the operators in the abstract syntax to the
- ** de-overaloaded operators in the SCode.
+ ** de-overaloaded operators in the SCode. It produces a list of available
+ ** types for a specific operator, that the overload relation chooses from.
+ ** Therefore, in order for the builtin type conversion from Integer to 
+ ** Real to work, operators that work on both Integers and Reals must 
+ ** return the Integer type -before- the Real type in the list.
  **)
 
 relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
@@ -3953,8 +3957,11 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	let real_vector = (Types.T_ARRAY(Types.DIM(NONE),real_scalar),NONE) &
 	let real_matrix = (Types.T_ARRAY(Types.DIM(NONE), real_vector),NONE) &
 	let real_pow = Exp.POW(Exp.REAL) &
+	let int_pow = Exp.POW(Exp.INT) &
 
-	let scalars = [(real_pow,[real_scalar, real_scalar], real_scalar)] &
+	let scalars = [(int_pow, [int_scalar, int_scalar], int_scalar),
+		       (real_pow,[real_scalar, real_scalar], real_scalar)] &
+		       
 
 	let arrscalar = [(Exp.POW_ARR(Exp.REAL),
 			  [real_matrix,int_scalar],
