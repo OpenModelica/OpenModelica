@@ -5,10 +5,12 @@
 #include <errno.h>
 
 static int type_info;
+static int split_arrays;
 
 void RTOpts_5finit(void)
 {
   type_info = 0;
+  split_arrays = 1;
 }
 
 RML_BEGIN_LABEL(RTOpts__args)
@@ -32,6 +34,10 @@ RML_BEGIN_LABEL(RTOpts__args)
       case 't':
 	type_info = 1;
 	break;
+      case 'a':
+	split_arrays = 0;
+	type_info = 0;
+	break;
       default:
 	fprintf(stderr, "# Unknown option: %s\n", arg);
 	RML_TAILCALLK(rmlFC);
@@ -50,6 +56,13 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__typeinfo)
 {
   rmlA0 = RML_PRIM_MKBOOL(type_info);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__split_5farrays)
+{
+  rmlA0 = RML_PRIM_MKBOOL(split_arrays);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
