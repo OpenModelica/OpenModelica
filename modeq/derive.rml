@@ -24,7 +24,15 @@
  ** module:      Derive
  ** description: Differentiation of equations from DAELow
  **
- ** RCS: %W% %E%
+ ** RCS: $Id$
+ ** 
+ ** This module is responsible for symbolic differentiation of equations and 
+ ** expressions. Is is currently (2004-09-28) only used by the solve relation in 
+ ** the exp module for solving equations.
+ ** 
+ ** The symbolic differentiation is used in the Newton-Raphson method and in
+ ** index reduction.
+ ** 
  ** 
  **)
 

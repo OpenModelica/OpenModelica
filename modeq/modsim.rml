@@ -19,11 +19,11 @@
 
 *)
 (**
- ** file:	 static.rml
- ** module:      Static
- ** description: Static analysis of expressions
+ ** file:	 modsim.rml
+ ** module:      Modsim
+ ** description: 
  **
- ** RCS: %W %E
+ ** RCS: $Id$
  ** 
  ** This module communicates with the backend (through files) for simulation
  ** plotting etc.
