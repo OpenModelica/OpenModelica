@@ -17,6 +17,8 @@ module Dump:
 
 end
 
+with "classinf.rml"
+
 (*************************************************************************)
 (* Dump routines for debugging of AST *)
 
@@ -167,37 +169,9 @@ end
 
 relation dump_class_restriction: Absyn.ClassRestriction => () =
 
-	rule	print "CLASS"
-		--------------------------------------------
-		dump_class_restriction(Absyn.CL_CLASS) => ()
-
-	rule	print "TYPE"
-		----------------------------
-		dump_class_restriction(Absyn.CL_TYPE) => ()
-
-	rule	print "CONNECTOR"
-		----------------------------
-		dump_class_restriction(Absyn.CL_CONNECTOR) => ()
-
-	rule	print "MODEL"
-		----------------------------
-		dump_class_restriction(Absyn.CL_MODEL) => ()
-
-	rule	print "MODEL"
-		------------------------------------------------
-		dump_class_restriction(Absyn.CL_MODEL) => ()
-
-	rule	print "BLOCK"
-		------------------------------------------------
-		dump_class_restriction(Absyn.CL_BLOCK) => ()
-
-	rule	print "PACKAGE"
-		--------------------------------------------------
-		dump_class_restriction(Absyn.CL_PACKAGE) => ()
-
-	rule	print "FUNCTION"
-		---------------------------------------------------
-		dump_class_restriction(Absyn.CL_FUNCTION) => ()
+  rule	ClassInf.print_restr re
+	-----------------------
+	dump_class_restriction re
 
 end
 
