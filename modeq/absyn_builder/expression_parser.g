@@ -27,7 +27,7 @@
 header "post_include_hpp" {
 
 #define null 0
-
+#include "MyAST.h"
 }
 
 options {
@@ -35,6 +35,11 @@ options {
 }
 
 class modelica_expression_parser extends modelica_parser;
+
+options {
+    ASTLabelType = "RefMyAST";
+}
+
 
 tokens {
 	INTERACTIVE_STMT;
