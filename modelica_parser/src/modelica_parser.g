@@ -577,7 +577,7 @@ function_call :
 function_arguments :
 		( expression_list
 		| named_arguments
-		)
+		)?
 		;
 
 named_arguments :
