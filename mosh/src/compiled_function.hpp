@@ -16,8 +16,6 @@ public:
   virtual value do_apply(value args);
   bool match_formal_parameters(value val);
 
-  void write_input_file(value args);
-  void read_result_file(value* v);
 protected:
   std::string m_filename;
 

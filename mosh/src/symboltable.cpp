@@ -28,6 +28,10 @@ symboltable::symboltable()
   m_symboltable["ceil"] = value(new ceil_t);
   m_symboltable["floor"] = value(new floor_t);
   m_symboltable["integer"] = value(new integer_t);
+  m_symboltable["cd"] = value(new cd_t);
+  m_symboltable["system"] = value(new system_t);
+  m_symboltable["read"] = value(new read_t);
+  m_symboltable["write"] = value(new write_t);
 
 }
 

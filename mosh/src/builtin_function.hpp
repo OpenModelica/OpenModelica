@@ -110,6 +110,42 @@ protected:
   value do_apply(value args);
 };
 
+class cd_t : public builtin_function
+{
+public:
+  cd_t();
+  virtual ~cd_t();
+protected:
+  value do_apply(value args);
+};
+
+class system_t : public builtin_function
+{
+public:
+  system_t();
+  virtual ~system_t();
+protected:
+  value do_apply(value args);
+};
+
+class read_t : public builtin_function
+{
+public:
+  read_t();
+  virtual ~read_t();
+protected:
+  value do_apply(value args);
+};
+
+class write_t : public builtin_function
+{
+public:
+  write_t();
+  virtual ~write_t();
+protected:
+  value do_apply(value args);
+};
+
 template <class Fn>
 class unary_fcn : public builtin_function
 {

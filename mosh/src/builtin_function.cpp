@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <fstream>
 
+#include <unistd.h>
+
 #include "function_argument.hpp"
 
 builtin_function::builtin_function()
@@ -76,6 +78,205 @@ value abs_t::do_apply(value args)
 //     }
 //   return new_val;
   return value(true);
+}
+
+cd_t::cd_t()
+{
+}
+cd_t::~cd_t()
+{
+}
+value cd_t::do_apply(value args)
+{
+  value ret;
+  if (args.is_function_argument())
+    {
+      function_argument* fnarg = args.get_function_argument();
+      if (fnarg)
+	{
+	  if (fnarg->size() == 1)
+	    {
+	      value val = fnarg->begin()->first;
+	      if (val.is_string())
+		{
+		  std::string path = val.get_string();
+		  if(chdir(path.c_str()))
+		    {
+		      std::cout << "Unable to change directory to \"" 
+				<< path.c_str() << "\"\n";
+		    }
+		  char buf[1024];
+		  char *b2;
+		  b2 = getcwd(buf,1024);
+		  if (b2)
+		    {
+		      ret = std::string(buf);
+		    }
+		  else
+		    {
+		      std::cout << "Unable to get current directory\n";
+		    }
+		}
+	      else
+		{
+		  std::cout << "Type mismatch. Expected string\n";
+		}
+	    }
+	  else
+	    {
+	      std::cout << "Incorrect number of arguments. Expected one string\n";
+	    }
+	}
+      else
+	{
+	  std::cout << "Internal error: NULL function_argument\n";
+	}
+    }
+  else
+    {
+      std::cout << "Internal error: not function_argument\n";
+    }
+  return ret;
+}
+
+system_t::system_t()
+{
+}
+system_t::~system_t()
+{
+}
+value system_t::do_apply(value args)
+{
+  value ret;
+  if (args.is_function_argument())
+    {
+      function_argument* fnarg = args.get_function_argument();
+      if (fnarg)
+	{
+	  if (fnarg->size() == 1)
+	    {
+	      value val = fnarg->begin()->first;
+	      if (val.is_string())
+		{
+		  std::string cmd = val.get_string();
+		  ret = system(cmd.c_str());
+		}
+	      else
+		{
+		  std::cout << "Type mismatch. Expected string\n";
+		}
+	    }
+	  else
+	    {
+	      std::cout << "Incorrect number of arguments. Expected one string\n";
+	    }
+	}
+      else
+	{
+	  std::cout << "Internal error: NULL function_argument\n";
+	}
+    }
+  else
+    {
+      std::cout << "Internal error: not function_argument\n";
+    }
+  return ret;
+}
+
+
+read_t::read_t()
+{
+}
+read_t::~read_t()
+{
+}
+value read_t::do_apply(value args)
+{
+  value ret;
+  if (args.is_function_argument())
+    {
+      function_argument* fnarg = args.get_function_argument();
+      if (fnarg)
+	{
+	  if (fnarg->size() == 1)
+	    {
+	      value val = fnarg->begin()->first;
+	      if (val.is_string())
+		{
+		  std::string path = val.get_string();
+		  
+		  ret = read_result_file(path.c_str());
+
+		}
+	      else
+		{
+		  std::cout << "Type mismatch. Expected string\n";
+		}
+	    }
+	  else
+	    {
+	      std::cout << "Incorrect number of arguments. Expected one string\n";
+	    }
+	}
+      else
+	{
+	  std::cout << "Internal error: NULL function_argument\n";
+	}
+    }
+  else
+    {
+      std::cout << "Internal error: not function_argument\n";
+    }
+  return ret;
+}
+
+write_t::write_t()
+{
+}
+write_t::~write_t()
+{
+}
+value write_t::do_apply(value args)
+{
+  value ret;
+  if (args.is_function_argument())
+    {
+      function_argument* fnarg = args.get_function_argument();
+      if (fnarg)
+	{
+	  if (fnarg->size() == 2)
+	    {
+	      function_argument::parameter_iterator it = fnarg->begin();
+	      value val = it->first;
+	      ++it;
+	      value file = it->first;
+	      if (file.is_string())
+		{
+		  std::string path = file.get_string();
+		  
+		  ret = write_input_file(val,path.c_str());
+
+		}
+	      else
+		{
+		  std::cout << "Type mismatch. Expected string for second argument\n";
+		}
+	    }
+	  else
+	    {
+	      std::cout << "Incorrect number of arguments. Expected one value and one string\n";
+	    }
+	}
+      else
+	{
+	  std::cout << "Internal error: NULL function_argument\n";
+	}
+    }
+  else
+    {
+      std::cout << "Internal error: not function_argument\n";
+    }
+  return ret;
 }
 
 bt_div_t::bt_div_t()

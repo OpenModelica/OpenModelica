@@ -962,6 +962,16 @@ primary	returns [value val]
             */
             }
 		| #(LPAR exp_list = expression_list)
+            {
+                if (exp_list.size() == 1)
+                {
+                    val = exp_list[0];
+                }
+                else
+                {
+                    val = exp_list;
+                }
+            }
 		| #(LBRACK exp_list = expression_list 
 			//{val = create_array(expr_val);}
             (exp_list = expression_list )*)

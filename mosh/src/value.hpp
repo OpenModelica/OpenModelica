@@ -76,7 +76,7 @@ public:
   tuple_type& get_tuple();
 
   modelica_function* get_function();
-  function_argument* get_function_argument();
+  function_argument* get_function_argument() const;
 
   modelica_type type() const;
   void set_type(const modelica_type& tp);
@@ -157,6 +157,9 @@ protected:
   modelica_type m_basic_type; 
 };
 
+
+value read_result_file(const char* filename);
+int write_input_file(value const& val, const char* filename);
 
 bool check_type(value v1,value v2);
 
