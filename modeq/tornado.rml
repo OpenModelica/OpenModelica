@@ -600,6 +600,8 @@ end
 				                  "\n",
 				                  initializationvars,
 				                  "\n",
+                                  "  this->GetIndepVar(0)->LinkValue(this, MSLE_INDEP_VAR, 0);\n", 
+                                  "\n",
                                   links,
                                   "\n",
                                   "  Reset();\n",
@@ -791,8 +793,8 @@ end
          
   rule	DAELow.vararray_list(vararr) => varlst &
          DAELow.vararray_list(knvararr) => knvarlst &
-(* 	     Util.list_select(knvarlst,is_param) => knvarlst' & *)
-         list_append(knvarlst,varlst) => all_vars &
+ 	     Util.list_select(knvarlst,is_param) => knvarlst' & 
+         list_append(knvarlst',varlst) => all_vars &
          generate_indep_var(comp_name_list,0) => indep_var_list &
          generate_links2(all_vars,comp_name_list) => (vars_params_list_str,vars_lst) &
 	     
@@ -872,67 +874,63 @@ relation generate_simple_equation_links2: (string list,
         
         (* this checks if the the var is a DAELow.Variable *)
         (*if it is then it must decide the direction*)
-  rule  generate_getsubmodel_code(comp_name_list,cr) => sub_model_code  &
+  rule  is_var_on_top_model(cr) => from_top_bool &
+        is_var_on_top_model(cr2) => to_top_bool &
+
+        DAELow.get_var(cr,knvars) 
+	      => (DAELow.VAR(_,from_kind,from_dir,_,_,_,_,_,_,_,from_class_paths),_) &
+        DAELow.get_var(cr2,vars) 
+	      => (to_var as DAELow.VAR(_,to_kind,to_dir,_,_,_,_,_,_,_,to_class_paths),varindx) &
+        generate_getsubmodel_code(comp_name_list,cr) => sub_model_str &
+        generate_GetCall_string_for_var(from_kind,from_dir,from_top_bool) => call_str &
+        generate_MACRO_string_for_var(to_kind,to_dir,to_top_bool) => macro_str &
+        get_flat_var_index_str(cr2,to_class_paths) => var_flat_index_str &
+        get_var_index_str(cr,from_class_paths) => var_index_str &
         Exp.cref_str(cr) => crs &
         Exp.cref_str(cr2) => crs2 &
         Util.string_split_at_char(crs,#".") => comp_path_string_list &
-        Util.list_last(comp_path_string_list) => comp_name &
-        DAELow.get_var(cr2,vars) 
-	      => (to_var as DAELow.VAR(_,_(*DAELow.VARIABLE*),dir',_,_,_,_,_,_,_,_),varindx) &
-          DAELow.get_var(cr,knvars) 
-	      => (DAELow.VAR(_,DAELow.VARIABLE,dir,_,_,_,_,_,_,_,class_paths),_) &
-          (* print "80 \n" &	      list_reverse(class_paths) => _::class_path::_ &  *)
-        list_reverse(class_paths) => class_path::_ &  
-        Absyn.path_string(class_path) => class_path_str &
-        TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
-        int_string(input_number) => input_number_str &
-        tornado_direction(dir) => dir_kind &
-        int_sub(varindx,1) => varindx' &
-        (*         int_string(varindx') => varindxstr & *)
-        (* 	    Util.string_append_list([sub_model_code,"->Get",dir_kind,"Var(",input_number_str, *)
-                                        (* 				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ",  *)
-                                        (*                                  varindxstr,"); //", crs," -> ",crs2,"\n"]) => linkstr & *)
+        Util.string_append_list([sub_model_str,"->",
+                                 call_str,"(",var_index_str,")",
+                                 "->LinkValue(this, ",macro_str,", ",
+                                 var_flat_index_str,
+                                 "); // ",crs," -> ",crs2,"\n"]) => link_str &
         
-       	Util.string_append_list(["// from: ",crs,"\n",
-                                 sub_model_code,"->Get",dir_kind,"Var(",input_number_str,")"]) => prefix &
-        
-        get_TO_link_string_from_dae_var(prefix,to_var,varindx') => linkstr &
         generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
 	    --------------------------------
 	    generate_simple_equation_links2(comp_name_list,
                                         DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,
                                         vars,
                                         knvars) 
-	      =>  linkstr::rest
+	      =>  link_str::rest
 	      
-  rule	generate_getsubmodel_code(comp_name_list,cr) => sub_model_code  &
-	    Exp.cref_str(cr) => crs &
-	    Exp.cref_str(cr2) => crs2 &
-        Util.string_split_at_char(crs,#".") => comp_path_string_list &
-        Util.list_last(comp_path_string_list) => comp_name &
-	    DAELow.get_var(cr,knvars)
-          => (DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_path),_) &
-	      DAELow.get_var(cr2,vars)
- 	      => (to_var as DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_paths),varindx) &
-	      list_reverse(class_paths) => class_path::_ & 
-        Absyn.path_string(class_path) => class_path_str &
-        print "1 \n" &
-        TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number &
-        int_string(input_number) => input_number_str &
-        tornado_from_kind(kind) => tkind &
-        int_sub(varindx,1) => varindx' &
-        (*         int_string(varindx) => varindxstr & *)
-        (* 	    Util.string_append_list([sub_model_code,"->Get",tkind,"Var(",input_number_str, *)
-                                        (* 				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ", varindxstr,");\n"]) => linkstr & *)
+(*   rule	generate_getsubmodel_code(comp_name_list,cr) => sub_model_code  & *)
+(* 	    Exp.cref_str(cr) => crs & *)
+(* 	    Exp.cref_str(cr2) => crs2 & *)
+(*         Util.string_split_at_char(crs,#".") => comp_path_string_list & *)
+(*         Util.list_last(comp_path_string_list) => comp_name & *)
+(* 	    DAELow.get_var(cr,knvars) *)
+(*           => (DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_path),_) & *)
+(* 	      DAELow.get_var(cr2,vars) *)
+(*  	      => (to_var as DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_paths),varindx) & *)
+(* 	      list_reverse(class_paths) => class_path::_ &  *)
+(*         Absyn.path_string(class_path) => class_path_str & *)
+(*         print "1 \n" & *)
+(*         TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number & *)
+(*         int_string(input_number) => input_number_str & *)
+(*         tornado_from_kind(kind) => tkind & *)
+(*         int_sub(varindx,1) => varindx' & *)
+(*         (\*         int_string(varindx) => varindxstr & *\) *)
+(*         (\* 	    Util.string_append_list([sub_model_code,"->Get",tkind,"Var(",input_number_str, *\) *)
+(*                                         (\* 				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ", varindxstr,");\n"]) => linkstr & *\) *)
 
-	    Util.string_append_list(["// from: ",crs,"\n",
-                                 sub_model_code,"->Get",tkind,"Var(",input_number_str,")"]) => prefix &
-        get_TO_link_string_from_dae_var(prefix,to_var,varindx') => linkstr &
-	    generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
-	    --------------------------------
-	    generate_simple_equation_links2(comp_name_list,DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,
-                                        vars,knvars) 
-	      =>  linkstr::rest
+(* 	    Util.string_append_list(["// from: ",crs,"\n", *)
+(*                                  sub_model_code,"->Get",tkind,"Var(",input_number_str,")"]) => prefix & *)
+(*         get_TO_link_string_from_dae_var(prefix,to_var,varindx') => linkstr & *)
+(* 	    generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest *)
+(* 	    -------------------------------- *)
+(* 	    generate_simple_equation_links2(comp_name_list,DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns, *)
+(*                                         vars,knvars)  *)
+(* 	      =>  linkstr::rest *)
 	      
   rule	generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
 	    --------------------------------
@@ -1224,7 +1222,9 @@ end
          Exp.cref_str(cr) => crs & 
          Util.string_append_list([sub_model_str,"->",
                                   call_str,"(",var_index_str,")",
-                                  "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ",crs,"\n"]) => link_str &
+                                  "->LinkValue(this, ", macro_str,", ",
+                                  var_flat_index_str,
+                                  "); // ",crs,"\n"]) => link_str &
 
          generate_links2(rest,comp_name_list) => (params_str,res) 
          ---------------------------------------------
