@@ -249,7 +249,7 @@ relation generate_global_data:(Absyn.Path,DAELow.DAELow) => string  =
 				 "#define NY ",ny_str,"\n",
 				 "#define NP ",np_str,"\n",
 				 "#define MAXORD 5\n",
-				 "#define time *t\n",
+				 "#define time (*t)\n",
 				 "\n",
 				 "double x[NX];\n",
 				 "double xd[NX];\n",

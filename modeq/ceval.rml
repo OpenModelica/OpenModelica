@@ -1210,8 +1210,21 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
-	axiom ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (Values.STRING("The environment variable PTII must point to the ptplot installation in order to use the plot command"),st)
+  rule	(* Catch error reading simulation file. *)
+	System.read_env("PTII") => ptii &
+	string_length(ptii) => ptii_length &
+	int_gt(ptii_length,0) => true &
+	Util.list_map(vars,Exp.print_exp_str) => vars' &
+	Util.list_union_elt("time",vars') => vars'' &
+	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
+	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
+	  not System.read_ptolemyplot_dataset(filename,vars'',0) => _ 
+	---------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING("Error reading the simulation result."),st)
+	  
+  axiom ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+ 	  => (Values.STRING("The environment variable PTII must point to the ptplot installation in order to use the plot command"),st)
 	  
   rule	System.time => t1 &
 	ceval(env,exp,true,SOME(st),NONE) => (value,SOME(st')) &   

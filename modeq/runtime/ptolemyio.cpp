@@ -60,8 +60,14 @@ extern "C"
     if (datasize == 0) { 
       datasize = readIntervalSize;
     } else {
-      if( readIntervalSize == 0) {return NULL;}
-      if (readIntervalSize != datasize) {return NULL;}
+      if( readIntervalSize == 0) {
+	cerr << "could not read interval size." << endl;
+	return NULL;
+      }
+      if (readIntervalSize != datasize) {
+	cerr << "intervalsize not matching data size." << endl;
+	return NULL;
+      }
     }
     olst = mk_nil();
     for (int i=0; i<size; i++) {
@@ -76,6 +82,8 @@ extern "C"
       while( string(buf).find(var) == string(buf).npos) {
 	if (!stream.getline(buf,255)) {
 	  // if we reached end of file return..
+	  cerr << "variable " << var << " not found in simulation result." 
+	       << endl;
 	  return NULL;
 	}
       }
