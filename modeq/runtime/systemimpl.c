@@ -22,8 +22,8 @@
 
 #ifndef HAVE_SCANDIR
 
-typedef int _file_select_func_type(struct dirent *);
-typedef int _file_compar_func_type(struct dirent **, struct dirent **);
+typedef int _file_select_func_type(const struct dirent *);
+typedef int _file_compar_func_type(const struct dirent **, const struct dirent **);
 
 void reallocdirents(struct dirent ***entries, 
 		    unsigned int oldsize, 
@@ -310,7 +310,7 @@ RML_END_LABEL
 
 char *select_from_dir;
 
-int file_select_directories(struct dirent *entry)
+int file_select_directories(const struct dirent *entry)
 {
   char fileName[MAXPATHLEN];
   int res;
@@ -350,7 +350,7 @@ RML_BEGIN_LABEL(System__sub_5fdirectories)
 }
 RML_END_LABEL
 
-int file_select_mo(struct dirent *entry)
+int file_select_mo(const struct dirent *entry)
 {
   char fileName[MAXPATHLEN];
   int res; char* ptr;
