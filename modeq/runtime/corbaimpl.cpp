@@ -1,6 +1,7 @@
 #include "modeq_communication.h"
 #include "modeq_communication_impl.h"
 
+#include <sstream>
 
 
 extern "C" {
@@ -15,7 +16,6 @@ extern "C" {
 #include <iostream>
 #include <fstream>
 
-const char* objref_file="/tmp/openmodelica.objid";
 
 using namespace std;
 
@@ -33,6 +33,7 @@ bool corba_waiting=false;
 
 char * modeq_message;
 
+ostringstream objref_file;
 
 CORBA::ORB_var orb;
 PortableServer::POA_var poa;
@@ -67,7 +68,12 @@ RML_BEGIN_LABEL(Corba__initialize)
   PortableServer::ObjectId_var oid = poa->activate_object(server);
 
   /* Write reference to file */
-  ofstream of (objref_file);
+  char *user = getenv("USER");
+  if (user==NULL) { user="nobody"; }
+
+  
+  objref_file << "/tmp/openmodelica." << user << ".objid";
+  ofstream of (objref_file.str().c_str());
   CORBA::Object_var ref = poa->id_to_reference (oid.in());
   CORBA::String_var str = orb->object_to_string (ref.in());
   of << str.in() << endl;
@@ -83,7 +89,7 @@ RML_BEGIN_LABEL(Corba__initialize)
     RML_TAILCALLK(rmlFC);
   }
   
-  std::cout << "Created server." << std::endl;
+  //std::cout << "Created server." << std::endl;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -136,12 +142,15 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__close)
 {
-  orb->shutdown(TRUE);
-  remove(objref_file);
-
+  try {
+    orb->shutdown(FALSE);
+  } catch (CORBA::Exception) {
+    cerr << "Error shutting down." << endl;
+  }
+  remove(objref_file.str().c_str());
 #ifdef HAVE_PTHREAD_YIELD  
-  pthread_yield(); // Allowing other thread to shutdown.
-#else
+    pthread_yield(); // Allowing other thread to shutdown.
+#else  
   sched_yield(); // use as backup (in cygwin)
 #endif
   RML_TAILCALLK(rmlSC);
