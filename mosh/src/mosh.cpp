@@ -34,6 +34,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/unistd.h>
+#include <sys/stat.h>
+
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -109,6 +112,15 @@ int main(int argc, char* argv[])
     perror("Error connecting to modeq server in interactive mode.\n");
     exit(1);
   }
+
+  // Change directory for server to the same directory as client has
+  char cd_buf[MAXPATHLEN];
+  char cd_cmd[MAXPATHLEN+6];
+  getcwd(cd_buf,MAXPATHLEN);
+  sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
+  int cd_nbytes = write(sock,cd_cmd,strlen(cd_cmd)+1);
+  int cd_recvbytes = read(sock,buf,40000);
+
   bool done=false;	
   while (!done) {
     char* line = readline(">>> ");
