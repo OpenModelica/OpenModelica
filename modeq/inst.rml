@@ -3583,8 +3583,6 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => (dae, env,csets', ci_state')
 
-	  (** FIXME: Old code? no add_for_loop_scope **)
-
   rule	(*Debug.fprintln ("insttr", "inst_equation_common_eqfor_2") &*)
 	Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
 	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
@@ -3600,19 +3598,9 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
 	  => fail
 
-	  (** FIXME: Old code? loop variable need not be in scope **)
-  rule	not Lookup.lookup_var(env, Exp.CREF_IDENT(i,[]))
-	  => (Types.ATTR(false, SCode.RW, SCode.VAR, _),
-	      (Types.T_INTEGER(_),_), Types.UNBOUND) &
-	Print.print_buf "# Invalid loop variable: " & Print.print_buf i & Print.print_buf "\n"
-	-----------------------------------------------------------
-	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial)
-	  => fail
-
   rule	Debug.fprint("failtrace", "- inst_equation_common failed\n")
 	----------------------------------
 	inst_equation_common(_,_,_,_,_,_,_) => fail
-
 end
 
 (** LS & ELN **)
@@ -4302,15 +4290,15 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	Static.elab_cref(env, c2) => (Exp.CREF(c2',t2),prop2,acc) &
 	Static.canon_cref(env, c1') => c1'' &
 	Static.canon_cref(env, c2') => c2'' &
-	Lookup.lookup_var_local(env,c1'')
+	(* Can not only look local, a for loop creates a scope if there are connect 
+	 statements in the loop the connector instances are then not local.*)
+	Lookup.lookup_var(env,c1'')
 	  => (attr1 as Types.ATTR(flow1,_,_,_),ty1,_) &
-	Lookup.lookup_var_local(env,c2'') => (attr2,ty2,_) &
-	
+	Lookup.lookup_var(env,c2'') => (attr2,ty2,_) &
 	(** Check that the types of the connectors are good. *)
 	valid_connector(ty1) &
 	valid_connector(ty2) &
 	check_connect_types(c1'',ty1,attr1,c2'',ty2,attr2) &
-	
 	component_face(c1'') => f1 &
 	component_face(c2'') => f2 &
 	connect_components(sets, pre, c1'', f1, ty1, c2'', f2, ty2, flow1)

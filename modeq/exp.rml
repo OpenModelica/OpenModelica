@@ -161,7 +161,7 @@ module Exp:
   relation dump_exp_graphviz : Exp => Graphviz.Node
   relation exp_contains : (Exp, Exp) => bool
   relation solve : (Exp, Exp, Exp) => Exp
-
+  relation get_cref_from_exp: (Exp) => ComponentRef list	  
 end
 
 
@@ -2260,4 +2260,92 @@ relation exp_contains : (Exp, Exp) => bool =
 	exp_contains (e, cr) => fail
 
 
+end
+
+
+relation get_cref_from_exp: ( Exp ) => ComponentRef list =
+
+  axiom	get_cref_from_exp(ICONST(_)) => []
+  axiom	get_cref_from_exp(RCONST(_)) => []
+  axiom	get_cref_from_exp(SCONST(_)) => []
+  axiom	get_cref_from_exp(BCONST(_)) => []
+  axiom	get_cref_from_exp(CREF(cr,_)) => [cr]
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(BINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(UNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(LBINARY(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => res
+	----------------------------
+	get_cref_from_exp(LUNARY(op,e1)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	get_cref_from_exp(RELATION(e1,op,e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	---------------------------
+	get_cref_from_exp(IFEXP(e1,e2,e3)) => res
+	
+  rule	Util.list_map(farg,get_cref_from_exp) => res &
+	Util.list_flatten(res) => res2
+	--------------------------------------------
+	get_cref_from_exp(CALL(_,farg,_,_)) => res2
+
+
+  rule	Util.list_map(expl,get_cref_from_exp) => res1 &
+	Util.list_flatten(res1) => res
+	--------------------------------------------
+	get_cref_from_exp(ARRAY(_,_,expl)) => res
+
+  rule	print "get_cref_from_exp MATRIX not impl. yet\n" 
+	----------------
+	get_cref_from_exp(MATRIX(_,_,_)) => []
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res1 &
+	get_cref_from_exp(e3) => l3 &
+	list_append(res1,l3) => res
+	---------------------------
+	get_cref_from_exp(RANGE(_,e1,SOME(e3),e2)) => res
+
+  rule	get_cref_from_exp(e1) => l1 &
+	get_cref_from_exp(e2) => l2 &
+	list_append(l1,l2) => res 
+	---------------------------
+	get_cref_from_exp(RANGE(_,e1,NONE,e2)) => res
+	    
+  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
+	Print.print_buf "Not implemented yet\n" 
+	------------------
+	get_cref_from_exp(TUPLE(expl)) => []
+
+  rule	get_cref_from_exp(e) => res
+	---------------------------
+	get_cref_from_exp(CAST(_,e)) => res
+
+  rule	get_cref_from_exp(e) => res
+	---------------------------
+	get_cref_from_exp(ASUB(e,_)) => res
+
+  axiom	get_cref_from_exp(_) => []
 end

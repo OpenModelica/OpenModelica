@@ -35,7 +35,6 @@ double MergeRule::getExecCost(VertexID v)
 {
   double cost =0.0;
   map<int,double>::iterator c;
-  if (v == m_invartask || v == m_outvartask) return 0.0;
   ContainSet *cset= m_containTasks->find(v)->second;
   if (cset) {
     ContainSet::iterator i;

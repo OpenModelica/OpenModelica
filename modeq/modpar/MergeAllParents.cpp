@@ -11,7 +11,7 @@ MergeAllParents::MergeAllParents(TaskGraph *tg,TaskGraph *orig_tg,
 
 bool MergeAllParents::apply(VertexID v)
 {
-  bool change = true;
+  bool change = false;
   if (v != m_invartask && v != m_outvartask) { 
     set<VertexID> A, B;
     if (in_degree(v,*m_taskgraph) > 1 && 
@@ -42,7 +42,7 @@ bool MergeAllParents::apply(VertexID v)
 
 	  mergeAll(parents(v,*m_taskgraph),v,A,B);
 	  //cerr << "parent now contains: " ;
-	  //printContainTasks(*v,cerr); 
+	  //printContainTasks(v,cerr); 
 	  //cerr << endl;
 	  change=true;
 	}
@@ -62,7 +62,7 @@ int MergeAllParents::calculateAB(std::pair<ParentsIterator, ParentsIterator> pai
 {
   int size=0;
   double tlevel_newc = maxTlevel(parents(head,*m_taskgraph))
-    + totalExecCost(pair,head);
+    + totalExecCost(pair,head); //This calcuation is not correct. It should be even lower.
 
   ParentsIterator p,p_end;
   ChildrenIterator c, c_end;

@@ -76,7 +76,7 @@ relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => 
 	build_system(dae,ass1,ass2,block) &
 	build_blocks(dae,ass1,ass2,blocks)
 	-------------------------------------
-	build_blocks(dae,ass1,ass2,(block as _::_::_)::blocks)
+	build_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)
 	
   rule	(* for single equations *)
 	build_equation(dae,ass1,ass2,eqn) &
@@ -89,6 +89,13 @@ relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => 
 	build_blocks(_,_,_,_) => fail
 end
 
+relation is_non_state: DAELow.VarKind => () =
+
+  axiom	is_non_state (DAELow.VARIABLE) => ()
+  axiom	is_non_state (DAELow.DUMMY_DER) => ()
+  axiom	is_non_state (DAELow.DUMMY_STATE) => ()
+end
+
 (* Build task graph for a single equation.*)
 relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	
@@ -98,7 +105,8 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	list_nth(vars,v') => (v as DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_)) &  
+	list_nth(vars,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_)) &  
+	is_non_state kind &
 	print "Solving for non-states\n" &
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
@@ -111,6 +119,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	build_assignment(cr,expr)  => ()
 	--------------------------------
 	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e)	
+
 
   rule	(* Solving the state s means solving for der(s) *)
 	int_sub(e,1) => e' &
@@ -144,15 +153,53 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e)	=> fail
+	build_equation(DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e) => fail
+
+  rule	print "-build_equation failed\n" 
+	--------------------------------
+	build_equation(_,_,_,_) => fail
 end
 
 (* Build task graph for a system of equations *)
 relation build_system:(DAELow.DAELow, int vector, int vector, int list) => () =
 
-  rule	print "system of equations\n" 
-	-----------------------------
-	build_system(dae,ass1,ass2,system) => fail
+  rule	print "build system\n" &
+	TaskGraphExt.new_task("equation system") => tid &
+	build_system2(dae,ass1,ass2,system,tid) => predtasks &
+	Util.list_map(predtasks, TaskGraphExt.get_task) => predtaskids &
+	add_predecessors(tid,predtaskids,predtasks) 
+	------------------------------------------
+	build_system(dae,ass1,ass2,system) => ()
+
+  rule	print "build_system failed\n" 
+	---------------
+	build_system(_,_,_,_) => fail
+end
+
+relation build_system2: (DAELow.DAELow, int vector, int vector, int list,int) => (string list) =
+
+  axiom	build_system2(dae,ass1,ass2,[],tid) => []
+
+  rule	int_sub(e,1) => e' &
+	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	list_nth(vars,v') => (v as DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_)) &  
+	Exp.get_cref_from_exp(e1) => cr1 &
+	Exp.get_cref_from_exp(e2) => cr2 &
+	list_append(cr1,cr2) => crs &
+	Util.list_deletemember(crs,cr) => crs' &
+	Util.list_map(crs',Exp.cref_str) => crs'' &
+	Exp.cref_str cr => crstr &
+	TaskGraphExt.store_result(crstr,tid,true) &	
+	build_system2(dae,ass1,ass2,rest,tid) => crs2 &
+	Util.list_union(crs'',crs2) => res
+	-------------------------------------
+	build_system2(dae as DAELow.DAELOW(vars,_,eqns,_),ass1,ass2,e::rest,tid) => res
+  rule	print "build_system2 failed\n" 
+	------------------
+	build_system2(_,_,_,_,_) => fail
 end
 
 relation add_variable: (DAELow.Var,int) => () =

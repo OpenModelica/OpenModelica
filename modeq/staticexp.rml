@@ -3192,11 +3192,6 @@ relation eq_subscript : (Exp.Subscript, Exp.Subscript) => () =
   rule	s1 = s2
 	-------------------------------
 	eq_subscript(Exp.INDEX(s1),Exp.INDEX(s2))
-	
-  rule	Print.print_buf "- eq_subscript failed\n"
-	-------------------------------
-	eq_subscript(_,_)
-
 end
 
 (** - Argument type casting and operator de-overloading

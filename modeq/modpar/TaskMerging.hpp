@@ -69,6 +69,7 @@ private:
   int numberOfTrues(vector<bool> *v);
   
   void printTaskInfo();
+  void removeSourceAndSink();
   // Variables
   double m_latency;
   double m_bandwidth;
@@ -80,10 +81,13 @@ private:
   VertexID m_outvartask;
 
   map<VertexID,bool> m_taskRemoved;
-
+  
   MergeRule **m_rules;
   const int m_num_rules;
   
+  list<std::pair<int,int> > m_source_sink_edges;
+  int m_invarID;
+  int m_outvarID;
 };
 
 

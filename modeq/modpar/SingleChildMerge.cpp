@@ -13,20 +13,18 @@ bool SingleChildMerge::apply(VertexID v)
 {
   ChildrenIterator c,c_end;
   bool change = false;
-  if (v != m_invartask && v != m_outvartask) {
-    if (out_degree(v,*m_taskgraph) == 1) {
-      // tie(e,e_end) = out_edges(v,*m_taskgraph);
-      tie(c,c_end) = children(v,*m_taskgraph);
-      if (in_degree(*c,*m_taskgraph) == 1) {
-	//cerr << "SingleChildMerge, parent: " << getTaskID(v,m_taskgraph)
-	//	 << " child: " << getTaskID(*c,m_taskgraph) << endl;
-	mergeTasks(v,*c);
-	//cerr << "parent now contains: " ;
-	//printContainTasks(v,cerr); 
-	//cerr << endl; 
-	change=true;
-      } 
-    }
+  if (out_degree(v,*m_taskgraph) == 1) {
+    // tie(e,e_end) = out_edges(v,*m_taskgraph);
+    tie(c,c_end) = children(v,*m_taskgraph);
+    if (in_degree(*c,*m_taskgraph) == 1) {
+      //cerr << "SingleChildMerge, parent: " << getTaskID(v,m_taskgraph)
+      //   << " child: " << getTaskID(*c,m_taskgraph) << endl;
+      mergeTasks(v,*c);
+      //cerr << "parent now contains: " ;
+      //printContainTasks(v,cerr); 
+      //cerr << endl; 
+      change=true;
+    } 
   }
   return change;
 }

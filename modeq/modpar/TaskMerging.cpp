@@ -115,12 +115,48 @@ void TaskMerging::printTaskInfo()
   }
 }
 
+// Remove source and sink nodes to speedup and simplify task merging
+// ExecCost(src)= ExecCost(sink) = 0  
+void TaskMerging::removeSourceAndSink()
+{
+  ChildrenIterator c,c_end;
+  ParentsIterator p,p_end;
+  m_invarID= getTaskID(m_invartask,m_taskgraph);
+  m_outvarID= getTaskID(m_outvartask,m_taskgraph);
+
+  for(tie(c,c_end) = children(m_invartask,*m_taskgraph); c != c_end; c++) {
+    m_source_sink_edges.push_back(pair<int,int>(m_invarID,getTaskID(*c,m_taskgraph)));
+  }
+
+
+  for(tie(p,p_end) = parents(m_outvartask,*m_taskgraph); p != p_end; p++) {
+    m_source_sink_edges.push_back(pair<int,int>(m_outvarID,getTaskID(*p,m_taskgraph)));
+  }
+
+  clear_vertex(m_invartask,*m_taskgraph);
+  clear_vertex(m_outvartask,*m_taskgraph);
+  remove_vertex(m_invartask,*m_taskgraph);
+  remove_vertex(m_outvartask,*m_taskgraph);
+  m_taskRemoved[m_invartask]=true;
+  m_taskRemoved[m_outvartask]=true;
+
+  ofstream file("removed.viz");
+  my_write_graphviz(file,
+		    *m_taskgraph,
+		    make_label_writer(VertexUniqueIDProperty(m_taskgraph)),
+		    make_label_writer(EdgeCommCostProperty(m_taskgraph))
+		    );
+  file.close();
+}
+
 void TaskMerging::mergeRules()
 {
   
   //call each rule in order
   
   bool change=true;
+
+  removeSourceAndSink();
   
   map<VertexID,double> tlevel;
   VertexIterator v,v_end;
@@ -137,26 +173,23 @@ void TaskMerging::mergeRules()
   }
   t2 = clock();
   cerr << "Sorting took " << (double)(t2-t1)/(double)CLOCKS_PER_SEC << " seconds." << endl;
-  while (!queue->empty()) {
-    VertexID t = queue->top();
-    if (!m_taskRemoved[t]) {
-      m_rules[0]->apply(t);
-      m_rules[1]->apply(t);
+
+  while(change) {
+    change = false;
+    for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
+      change =  change || m_rules[0]->apply(*v) ||
+	m_rules[1]->apply(*v) ||
+	m_rules[2]->apply(*v);
+      if (change) break;
     }
-    queue->pop();
-  };
-  cerr << "finished first round." << endl;
-  for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
-    queue->push(*v);
   }
-  cerr << "Sorting took " << (double)(t2-t1)/(double)CLOCKS_PER_SEC << " seconds." << endl;
-  while (!queue->empty()) {
-    VertexID t = queue->top();
-    if (!m_taskRemoved[t]) {
-      m_rules[2]->apply(t);
-    }
-    queue->pop();
-  };
+  updateExecCosts(); // Remove later
+  ofstream file("removed2.viz");
+  my_write_graphviz(file,
+		    *m_taskgraph,
+		    make_label_writer(VertexExecCostProperty(m_taskgraph)),
+		    make_label_writer(EdgeCommCostProperty(m_taskgraph))
+		    );
   t3 = clock();
   cerr << "mergin (1-3) took " << (double)(t3-t2)/(double)CLOCKS_PER_SEC << " seconds." << endl;
 

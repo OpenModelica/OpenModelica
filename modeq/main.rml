@@ -279,7 +279,7 @@ relation translate_file : string list => () =
 	& run_backend_q() => runbe 
 	& Debug.bcall (runbe, optimize_dae,d) 
 	& Print.get_string () => str
-	(*& print str*)
+	& print str
 	------------------------------
 	translate_file [f]
 
