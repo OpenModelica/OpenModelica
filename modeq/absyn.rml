@@ -4,6 +4,10 @@ module Absyn:
 
   with "exp.rml"
 
+  type Ident = Exp.Ident
+
+  type Path = Exp.Path
+
   type Subscript = (Exp.Exp * ((Exp.Exp * (Exp.Exp option)) option)) option
 
   type ComponentRef = (string * (Subscript list)) list
@@ -17,19 +21,19 @@ module Absyn:
   and	   Modification = CLASSMOD of ElementArg list
 			| EQUALMOD of Exp.Exp
 
-  and	   Component = COMPONENT of Exp.Ident	(* component name *)
+  and	   Component = COMPONENT of Ident	(* component name *)
 				  * ArrayDim option
 				  * Modification option
 
   and	   ElementSpec = CLASSDEF of bool		(* replaceable *)
 				   * Class
-		       | EXTENDS of string * ElementArg list
+		       | EXTENDS of Path * ElementArg list
 		       | COMPONENTS of bool	(* flow *)
 				     * bool	(* parameter *)
 				     * bool	(* constant *)
 				     * bool	(* input *)
 				     * bool	(* output *)
-				     * Exp.Path	(* type name *)
+				     * Path	(* type name *)
 				     * Component list
 
   and	   Element = ELEMENT of bool		(* final *)
@@ -44,15 +48,15 @@ module Absyn:
 			    | CL_PACKAGE
 			    | CL_FUNCTION
 
-  and	   Class = CLASS of Exp.Ident             (* Name *)
+  and	   Class = CLASS of Ident             (* Name *)
 			  * bool			(* Partial *)
 			  * ClassRestriction      (* Restricion *)
 			  * ClassDef		(* Parts *)
 
   and	   ClassDef = PARTS of ClassPart list
-		    | DERIVED of Exp.Ident
+		    | DERIVED of Path
 			       * ArrayDim option
-			       * (ElementArg list) option
+			       * ElementArg list
 
   and	   ClassPart = PUBLIC of Element list
 		     | PROTECTED of Element list
@@ -65,5 +69,110 @@ module Absyn:
   and	   Algorithm = ALGORITHM (* Fill in later *)
 
   type Program = Class list
+
+  relation explode_components: Program => Program
+
+end
+
+relation append =
+
+  axiom	append([],y) => y
+
+  rule	append(xs,ys) => z
+	------------------------
+	append(x::xs,ys) => x::z
+
+end
+
+relation exp_elementspec: ElementSpec => ElementSpec list =
+
+  axiom	exp_elementspec(x as CLASSDEF(_,_)) => [x]
+  axiom	exp_elementspec(x as EXTENDS(_,_)) => [x]
+
+  axiom	exp_elementspec(COMPONENTS(_,_,_,_,_,_,[])) => []
+
+  rule	exp_elementspec(COMPONENTS(f,p,c,i,o,t,xs)) => xs'
+	--------------------------------------------------
+	exp_elementspec(COMPONENTS(f,p,c,i,o,t,x::xs)) =>
+		COMPONENTS(f,p,c,i,o,t,[x])::xs'
+
+end
+
+relation mk_elements: (bool,ElementSpec list) => Element list =
+
+  axiom	mk_elements(_,[]) => []
+
+  rule	mk_elements(f,ss) => ss'
+	------------------------
+	mk_elements(f,s::ss) => ELEMENT(f,s)::ss'
+
+end
+
+relation exp_element: Element => Element list =
+
+  rule	exp_elementspec(s) => ss &
+        mk_elements(f,ss) => es
+	-------------------------------
+	exp_element(ELEMENT(f,s)) => es
+
+end
+
+relation exp_elist: Element list => Element list =
+
+  axiom	exp_elist([]) => []
+
+  rule	exp_element(e) => e' &
+	exp_elist(es) => es' &
+	append(e',es') => l
+	---------------------
+	exp_elist(e::es) => l
+
+end
+
+relation exp_classpart: ClassPart => ClassPart =
+
+  axiom	exp_classpart(e as EQUATIONS(_)) => e
+
+  axiom	exp_classpart(a as ALGORITHMS(_)) => a
+
+  rule	exp_elist(es) => es'
+	---------------------------------------
+	exp_classpart(PUBLIC(es)) => PUBLIC(es')
+
+  rule	exp_elist(es) => es'
+	---------------------------------------
+	exp_classpart(PROTECTED(es)) => PROTECTED(es')
+
+end
+
+relation exp_classdef: ClassDef => ClassDef =
+
+  axiom	exp_classdef(x as DERIVED(_,_,_)) => x
+
+  axiom	exp_classdef(x as PARTS([])) => x
+
+  rule	exp_classpart(p) => p' &
+	exp_classdef(PARTS(ps)) => PARTS(ps')
+	------------------------------
+	exp_classdef(PARTS(p::ps)) => PARTS(p'::ps')
+
+end
+
+relation exp_class: Class => Class =
+
+  rule	exp_classdef(d) => d'
+	--------------------------------------------
+	exp_class(CLASS(n,p,r,d)) => CLASS(n,p,r,d')
+
+end
+
+relation explode_components: Program => Program =
+
+  axiom	explode_components([]) => []
+
+  rule	exp_class(c) => c' &
+	explode_components(cs) => cs'
+	-----------------------------
+	explode_components(c::cs) => (c'::cs')
 
 end
