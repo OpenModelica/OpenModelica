@@ -5,12 +5,16 @@ module StaticExp :
   with "lookup.rml"
   with "prefix.rml"
   with "types.rml"
+  with "values.rml"
   with "classinf.rml"
 
   relation elab_exp : (Env.Env, Prefix.Prefix, Exp.Exp)
 	  => (Exp.Exp, Exp.Type, bool)
+
   relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 	  => (Exp.Exp, Exp.Type, bool)
+
+  relation ceval : (Env.Env, Exp.Exp) => (Values.Value, Exp.Type)
 
 end
 
@@ -73,7 +77,13 @@ relation elab_exp_list : (Env.Env, Prefix.Prefix, Exp.Exp list)
 
 end
 
-(**)
+(** relation: elab_cref
+ **
+ ** Elaborate on a component reference.  Check the type of the
+ ** component referred to, and check if the environment contains
+ ** either a constant binding for that variable, or if it contains an
+ ** equation binding with a constant expression.
+ **)
 
 relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
 	  => (Exp.Exp, Exp.Type, bool) =
@@ -81,9 +91,9 @@ relation elab_cref : (Env.Env, Prefix.Prefix, Exp.ComponentRef)
   rule	elab_cref_subs (env,pre,c) => (c', const) &
 	Lookup.lookup_var (env,c') => (Types.ATTR(_,_,vartype,_),
 				       Types.TYPE(st, _),
-				       ass) &
+				       binding) &
 	Types.known_type st => t &
-	elab_cref2 (env, pre, c', vartype, t, ass) => (exp,const) &
+	elab_cref2 (env, pre, c', vartype, t, binding) => (exp,const) &
 	print "    elab_cref " & Exp.dump_component_ref c &
 	print " => " & Exp.dump_exp exp & print " (" &
 	Exp.print_type t & print ")\n"
@@ -100,16 +110,22 @@ end
 
 relation elab_cref2 : (Env.Env, Prefix.Prefix,
 		       Exp.ComponentRef, Types.VarType,
-		       Exp.Type, Exp.Exp option) => (Exp.Exp, bool) =
+		       Exp.Type, Env.Binding) => (Exp.Exp, bool) =
 
 	(* FIXME: Check type of expression anyway? *)
   axiom	elab_cref2 (_,_,cr, Types.VAR, _, _) => (Exp.CREF(cr), false)
+
+  rule	value_exp v => e
+	----------------
+	elab_cref2 (_,_,cr,_,t, Env.VALBOUND(v))
+	  => (e, true)
 
   rule	elab_exp (env,pre,exp) => (exp', t', c) &
 	c = true (* & *)
 	(* t = t' *) (* FIXME: cast *)
 	------------------------
-	elab_cref2 (env,pre,cr,_,t, SOME(exp)) => ((*exp'*) Exp.CREF(cr), true)
+	elab_cref2 (env,pre,cr,_,t, Env.EQBOUND(exp))
+	  => (Exp.CREF(cr), true)
 
   rule	print "# Constant or parameter without a value (I think)\n" &
 	print "# component: " & Exp.dump_component_ref cr & print "\n"
@@ -188,17 +204,18 @@ relation elab_numtypes : (Exp.Exp, Exp.Type, Exp.Exp, Exp.Type)
 
   axiom	elab_numtypes (e1, Exp.T_INTEGER, e2, Exp.T_INTEGER)
 	  => (e1, e2, Exp.T_INTEGER)
-  axiom	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_REAL) => (e1, e2, Exp.T_REAL)
+  axiom	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_REAL)
+	  => (e1, e2, Exp.T_REAL)
 
   rule	cast_to_real e1 => e1'
 	----------------------
-	elab_numtypes (e1, Exp.T_INTEGER, e2, Exp.T_REAL) => (e1', e2,
-							      Exp.T_REAL)
+	elab_numtypes (e1, Exp.T_INTEGER,
+		       e2, Exp.T_REAL) => (e1', e2, Exp.T_REAL)
 
   rule	cast_to_real e2 => e2'
 	----------------------
-	elab_numtypes (e1, Exp.T_REAL, e2, Exp.T_INTEGER) => (e1, e2',
-							      Exp.T_REAL)
+	elab_numtypes (e1, Exp.T_REAL,
+		       e2, Exp.T_INTEGER) => (e1, e2', Exp.T_REAL)
 
   rule	print "- elab_numtypes fallthru\n"
 	----------------------------------
@@ -312,12 +329,16 @@ end
 
 (**)
 
-relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
+relation ceval : (Env.Env, Exp.Exp) => (Values.Value, Exp.Type) =
 
-  axiom	ceval (x as Exp.INTEGER(_), t) => x
-  axiom	ceval (x as Exp.REAL(_), t) => x
-  axiom ceval (x as Exp.STRING(_), t) => x
-  axiom ceval (x as Exp.BOOL(_), t) => x
+  axiom	ceval (_,Exp.INTEGER(x)) => (Values.INTEGER(x), Exp.T_INTEGER)
+  axiom	ceval (_,Exp.REAL(x)) => (Values.REAL(x), Exp.T_REAL)
+  axiom ceval (_,Exp.STRING(x)) => (Values.STRING(x), Exp.T_STRING)
+  axiom ceval (_,Exp.BOOL(x)) => (Values.BOOL(x), Exp.T_BOOL)
+
+  rule	ceval_list (env,es) => (es',t)
+	------------------------------
+	ceval (env,Exp.ARRAY(es)) => (Values.ARRAY(es'), Exp.T_ARRAY(1,t))
 
 (*
   rule	ceval_cref c => exp
@@ -470,11 +491,37 @@ relation ceval : (Exp.Exp, Exp.Type) => Exp.Exp =
 	---------------------
 	ceval RELATION(lh, NEQUAL, rh) => BOOL(b)
 *)
+
+  rule	print "- ceval " & Exp.dump_exp e & print " failed\n"
+	-----------------------------------------------------
+	ceval (_,e) => fail
+	
 end
 
+(** relation: ceval_list
+ **
+ ** Do a constant evaluation on a number of expressions, and assert
+ ** that they are all of the same type.
+ **)
+
+relation ceval_list : (Env.Env, Exp.Exp list)
+	  => (Values.Value list, Exp.Type) =
+	  
+  rule	ceval (env, exp) => (v, t)
+	----------------------------
+	ceval_list (env, [exp]) => ([v], t)
+
+  rule	ceval (env,exp) => (v, t1) &
+	ceval_list (env, exps) => (vs, t2) &
+	t1 = t2
+	-------
+	ceval_list (env, exp::exps) => (v::vs, t1)
+
+end
+		      
 (**)
 
-and ceval_cref : Exp.ComponentRef => Exp.Exp =
+relation ceval_cref : Exp.ComponentRef => Exp.Exp =
 
   rule	print "# ceval_cref\n"
 	----------------------
@@ -482,3 +529,17 @@ and ceval_cref : Exp.ComponentRef => Exp.Exp =
 
 end
 
+(**)
+
+relation value_exp : Values.Value => Exp.Exp =
+
+  axiom	value_exp (Values.INTEGER(x)) => Exp.INTEGER(x)
+  axiom	value_exp (Values.REAL(x)) => Exp.REAL(x)
+  axiom value_exp (Values.STRING(x)) => Exp.STRING(x)
+  axiom value_exp (Values.BOOL(x)) => Exp.BOOL(x)
+
+  rule	print "- value_exp failed\n"
+	----------------------------
+	value_exp _ => fail
+
+end
