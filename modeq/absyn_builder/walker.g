@@ -557,7 +557,7 @@ element returns [void* ast]
 
  }
      :
-         dec = declaration ann = comment
+         (dec = declaration) (ann = comment)
          {
              if (!ann) ann = mk_none();
              else ann = mk_some(ann);
@@ -1511,7 +1511,10 @@ element returns [void* ast]
          {
              ast = ann;
          }
-         |
+         | 
+	 {
+	   ast = 0;
+	 }
          ;
 
  string_comment :
