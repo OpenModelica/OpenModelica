@@ -39,13 +39,15 @@ LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) 
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
+all : subdirs $(PROG)
+
+
 .SUFFIXES:
 .SUFFIXES: .o .rml .h
 .PHONY: all subdirs report vctarget absyn_subdir clean reallyclean
 
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
-all: $(PROG)
 
 $(ALLRML): %.rml : $(srcdir)/%.rml
 	cp $< $@
@@ -66,7 +68,6 @@ $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	$(srcdir)/rml2sig/rmldep.sh $<
 
 
-all : $(SRCO) subdirs $(PROG)
 
 vctarget: $(SRCC) absyn_subdir
 
