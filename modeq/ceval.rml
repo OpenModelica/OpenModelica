@@ -24,7 +24,7 @@
  ** module:      Ceval
  ** description: Constant propagation of expressions
  **
- ** RCS: %W%
+ ** RCS: $Id$
  ** 
  ** This module handles constant propagation (or evaluation)
  ** When elaborating expressions, in the Static module, expressions are checked to 
@@ -52,7 +52,9 @@ module Ceval :
   with "interactive.rml"
   with "values.rml"
 
-  relation ceval : (Env.Env, Exp.Exp, bool (*implicit*) , Interactive.InteractiveSymbolTable option, int option)
+  (** Constant evaluation of expressions *)
+  relation ceval : (Env.Env, Exp.Exp, bool (*implicit*) ,
+		    Interactive.InteractiveSymbolTable option, int option (* dimensions *) )
 	    => (Values.Value, Interactive.InteractiveSymbolTable option)
 
   relation ceval_list : (Env.Env, Exp.Exp list, bool,
@@ -85,16 +87,19 @@ with "prefix.rml"
 with "codegen.rml"
 with "classloader.rml"
 
+
 (** relation: ceval
  **
- ** This relations is used when the value of a constant expression is
+ ** This relation is used when the value of a constant expression is
  ** needed.  It takes an environment and an expression and calculates
  ** its value.
- ** The third argument indicates whether the evaluation is performed in the interactive environment, 
- ** in which case function calls are evaluated.
+ **
+ ** The third argument indicates whether the evaluation is performed in the
+ ** interactive environment (implicit instantiation), in which case function
+ ** calls are evaluated.
+ **
+ ** The last argument is an optional dimension.
  **)
-
-
 relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option, int option) 
 	    => (Values.Value, Interactive.InteractiveSymbolTable option) =
 
@@ -146,7 +151,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-----------------------------------------
 	ceval (env,Exp.SIZE(cref,NONE),impl,st,_) => (v,st) 	
 
-(* Start luc_pop *)
+	(* Start luc_pop *)
   rule	ceval_builtin_floor(env,exp,impl,st) => (v,st)
 	-----------------------------------------
 	ceval (env,Exp.CALL(Absyn.IDENT("floor"),[exp],_,_),impl,st,_) => (v,st) 	
@@ -175,17 +180,15 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-----------------------------------------
 	ceval (env,Exp.CALL(Absyn.IDENT("rem"),[exp1, exp2],_,_),impl,st,_) => (v,st) 	
 
-
-
-(* end luc_pop *)
+	(* end luc_pop *)
 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-------------------------------------------------------
 	ceval (env, e as Exp.CALL(_,_,_,_),false,NONE,_) => fail
 
-  rule	(*Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
-	Exp.print_exp e & Print.print_buf "\n" *)
+  rule	(* Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
+	   Exp.print_exp e & Print.print_buf "\n" *)
 	-------------------------------------------
 	ceval(env, e as Exp.CALL(_,_,_,_),true,NONE,_) => fail
 
@@ -194,7 +197,7 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, e as Exp.CALL(_,_,_,_),true, SOME(st),_) => (value,SOME(st))
 
   rule	(* Call of record constructors, etc., i.e. functions that can be 
-	 constant propagated. *)
+	   constant propagated. *)
 	ceval_list(env,expl,true,st) => vallst &
 	ceval_function(env,func,vallst) => newval
 	-------------------------------------------------------
@@ -476,23 +479,27 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim)
 	  => fail (* (v,st) *)
 
-(* ceval can apparently fail and that is ok, catched by other rules...
-  rule	Debug.fprint("failtrace", "- ceval ") &
+  (*  ceval can apparently fail and that is ok, catched by other rules...
+   rule	Debug.fprint("failtrace", "- ceval ") &
 	Debug.fcall("failtrace",Exp.print_exp, e) &
 	Debug.fprint("failtrace", " failed\n") 
 	-----------------------------------------------------
-	ceval (_,e,_,_,_) => fail*)
+	ceval (_,e,_,_,_) => fail
+   *)
 end
 
 
 
-(* relation: ceval_function for constant evaluation of functions
- returning a single value. For now only record constructors. *)
+(** relation: ceval_function 
+ ** 
+ ** For constant evaluation of functions returning a single value. For now only
+ ** record constructors.
+ **)
 relation ceval_function: (Env.Env, Absyn.Path, Values.Value list) 
 	  => Values.Value =
 
-  rule	(* For record constructors *)
-	Lookup.lookup_record_constructor_class(env,funcname) => (_,_) &
+	(* For record constructors *)
+  rule	Lookup.lookup_record_constructor_class(env,funcname) => (_,_) &
 	Lookup.lookup_class(env,funcname,false) => (c,env') &
 	SCode.component_names(c) => compnames &
 	Types.values_to_mods(vallst,compnames) => mod &
@@ -506,11 +513,17 @@ relation ceval_function: (Env.Env, Absyn.Path, Values.Value list)
 
 end
 
+
 (** relaton: ceval_ast_exp
  **
- ** This relation evaluates a piece of Expression AST, replacing Eval(variable) with
- ** the value of the variable, given that it is of type "Expression".
-**)
+ ** Part of meta-programming using CODE.
+ **
+ ** This relation evaluates a piece of Expression AST, replacing Eval(variable)
+ ** with the value of the variable, given that it is of type "Expression".
+ ** 
+ ** Example: y = Code(1 + x)
+ **          2 + 5 * ( x + Eval(y) )  =>   2 + 5 * ( x + 1 + x )
+ **)
 relation ceval_ast_exp: (Env.Env, Absyn.Exp, 
 			 bool, Interactive.InteractiveSymbolTable option)
 	=> Absyn.Exp =
@@ -599,6 +612,10 @@ relation ceval_ast_exp: (Env.Env, Absyn.Exp,
   axiom	ceval_ast_exp(env,e as Absyn.CODE(_),_,_) => e
 end
 
+(** relation: ceval_ast_exp_list
+ ** 
+ ** List version of ceval_ast_exp
+ **)
 relation ceval_ast_exp_list: (Env.Env, Absyn.Exp list, 
 			      bool, Interactive.InteractiveSymbolTable option) 
 	  => (Absyn.Exp list) =
@@ -611,6 +628,9 @@ relation ceval_ast_exp_list: (Env.Env, Absyn.Exp list,
 	  => e::res
 end
 
+(** relation: ceval_ast_exp_list
+ ** 
+ **)
 relation ceval_ast_exp_list_list: (Env.Env, Absyn.Exp list list, 
 			  bool, Interactive.InteractiveSymbolTable option)
 	  => (Absyn.Exp list list) =
@@ -624,7 +644,10 @@ relation ceval_ast_exp_list_list: (Env.Env, Absyn.Exp list list,
 	  => e::res
 end
 
-(* For IFEXP *)
+(** relation: ceval_ast_exp_list_list
+ **
+ ** For IFEXP
+ **)
 relation ceval_ast_expexp_list: (Env.Env, (Absyn.Exp*Absyn.Exp) list, 
 				 bool, Interactive.InteractiveSymbolTable option) 
 	  => (Absyn.Exp*Absyn.Exp) list =
@@ -640,11 +663,11 @@ relation ceval_ast_expexp_list: (Env.Env, (Absyn.Exp*Absyn.Exp) list,
 end
 
 
+
+
 (** relation: ceval_ast_elt
- ** This relation evaluates the Eval function found everywhere inside an Element AST 
- ** and replaces it with the value of the variable of the Eval opreratior if it is
- ** of type Expression.
-**)
+ **
+ **)
 relation ceval_ast_elt: (Env.Env, Absyn.Element, 
 			 bool, Interactive.InteractiveSymbolTable option)
 	  => (Absyn.Element) =
@@ -656,6 +679,9 @@ relation ceval_ast_elt: (Env.Env, Absyn.Element,
 	  => (Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems'),file,line,c))
 end
 
+(** relation: ceval_ast_citems
+ **
+ **)
 relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list, 
 			 bool, Interactive.InteractiveSymbolTable option)
 	      => Absyn.ComponentItem list =
@@ -669,12 +695,15 @@ relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list,
 			  impl,st)
 	  => (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad',modopt'),cmt)::res)
 
-  rule	(* If one component fails, the rest should still succeed *)
-	ceval_ast_citems(env,xs,impl,st) => res 
+  	(* If one component fails, the rest should still succeed *)
+  rule	ceval_ast_citems(env,xs,impl,st) => res 
 	----------------------------------
 	ceval_ast_citems(env,x::xs,impl,st) => x::res
 end
 
+(** relation: ceval_ast_modopt
+ **
+ **)
 relation ceval_ast_modopt: (Env.Env, Absyn.Modification option,
 			    bool, Interactive.InteractiveSymbolTable option)
 	  => Absyn.Modification option	=
@@ -684,12 +713,14 @@ relation ceval_ast_modopt: (Env.Env, Absyn.Modification option,
 	ceval_ast_modopt(env,SOME(mod),st,impl) => SOME(res)
 
   axiom	ceval_ast_modopt(env,NONE,_,_) => NONE
+	
 end
 
-(**relation: ceval_ast_modification
+(** relation: ceval_ast_modification
+ **
  ** This relation evaluates Eval(variable) inside an AST Modification  and replaces 
  ** the Eval operator with the value of the variable if it has a type "Expression"
-**)
+ **)
 relation ceval_ast_modification: (Env.Env, Absyn.Modification, 
 				  bool, Interactive.InteractiveSymbolTable option)
 	  => (Absyn.Modification) =
