@@ -2012,7 +2012,7 @@ relation get_components: (Absyn.ComponentRef,Absyn.Program) => string =
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => str
 	-------------------------------------------------
-	get_components( model,p) => str
+	get_components(model,p) => str
 
 	axiom get_components(_,_) => "-1"
 end

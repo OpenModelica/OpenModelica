@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <sstream>
 #include <fstream> 
@@ -63,7 +62,7 @@ RML_BEGIN_LABEL(Parser__parse)
 		{
 			if (debug)
 			{
-				parse_tree_dumper dumper(std::cout);
+				parse_tree_dumper dumper(std::cerr);
 				//dumper.initializeASTFactory(factory);
 				//dumper.setASTFactory(&factory);
 				dumper.dump(t);
@@ -76,12 +75,12 @@ RML_BEGIN_LABEL(Parser__parse)
 				ast = build.stored_definition(t);
 			}
 			catch (ANTLR_USE_NAMESPACE(antlr)NoViableAltException &e) {
-				parse_tree_dumper dumper(std::cout);
+				parse_tree_dumper dumper(std::cerr);
 				std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
 				dumper.dump(e.node);	      
 			}
 			catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e) {
-				parse_tree_dumper dumper(std::cout);
+				parse_tree_dumper dumper(std::cerr);
 				if (e.node) {
 					std::cerr << "Error walking AST while  building RML data: " << e.getMessage() << " AST:" << std::endl;
 					dumper.dump(e.node);	      
@@ -92,7 +91,7 @@ RML_BEGIN_LABEL(Parser__parse)
 			}
 
 			if (debug) {
-				std::cout << "Build done\n";
+				std::cerr << "Build done\n";
 			} 
 
 			rmlA0 = ast ? ast : mk_nil();
@@ -107,10 +106,10 @@ RML_BEGIN_LABEL(Parser__parse)
 		std::cerr << "Lexical error (CharStreamException). "  << std::endl;    
 	}
   catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) {
-		std::cerr << filename << ":" << e.getLine() << ":" << e.getColumn() << ": error: " << e.getMessage() << std::endl;
+		std::cerr << "[" << filename << ":" << e.getLine() << ":" << e.getColumn() << "]: error: " << e.getMessage() << std::endl;
   }
   catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) {
-		std::cerr << filename << ":" << lex->getLine() << ":" << lex->getColumn() << ": error: illegal token" << std::endl;
+		std::cerr << "[" << filename << ":" << lex->getLine() << ":" << lex->getColumn() << "]: error: illegal token" << std::endl;
   }
 
 	catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) {
@@ -147,7 +146,7 @@ RML_BEGIN_LABEL(Parser__parsestring)
 
 		if (t) {
 			if (debug) {
-				parse_tree_dumper dumper(std::cout);
+				parse_tree_dumper dumper(std::cerr);
 				//dumper.initializeASTFactory(factory);
 				//dumper.setASTFactory(&factory);
 				dumper.dump(t);
@@ -158,7 +157,7 @@ RML_BEGIN_LABEL(Parser__parsestring)
 			build.setASTFactory(&factory);
 			void* ast = build.stored_definition(t);
 
-			if (debug) { std::cout << "Build done\n"; }
+			if (debug) { std::cerr << "Build done\n"; }
 
 			rmlA0 = ast ? ast : mk_nil();
 			rmlA1 = mk_scon("Ok");
@@ -225,8 +224,8 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
 	{
 	  if (debug)
 	    {
-	      //std::cout << "parsedump not implemented for interactiveStmt yet"<<endl;
-	      //parse_tree_dumper dumper(std::cout);
+	      //std::cerr << "parsedump not implemented for interactiveStmt yet"<<endl;
+	      //parse_tree_dumper dumper(std::cerr);
 	      //dumper.dump(t);
 	    }
 
@@ -237,7 +236,7 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
 	  
 	  if (debug)
 	    {
-	  std::cout << "Build done\n";
+	  std::cerr << "Build done\n";
 	    }
 
 	  rmlA0 = ast ? ast : mk_nil();
@@ -261,7 +260,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Parser__parseexp)
 {
-	std::cout << "parseexp" << std::endl;
+	std::cerr << "parseexp" << std::endl;
 
 	char * filename = RML_STRINGDATA(rmlA0);
   bool debug = check_debug_flag("parsedump");
@@ -281,8 +280,8 @@ RML_BEGIN_LABEL(Parser__parseexp)
 	{
 	  if (debug)
 	    {
-	      //std::cout << "parsedump not implemented for interactiveStmt yet"<<endl;
-	      //parse_tree_dumper dumper(std::cout);
+	      //std::cerr << "parsedump not implemented for interactiveStmt yet"<<endl;
+	      //parse_tree_dumper dumper(std::cerr);
 	      //dumper.dump(t);
 	    }
 
@@ -293,7 +292,7 @@ RML_BEGIN_LABEL(Parser__parseexp)
 	  
 	  if (debug)
 	    {
-	  std::cout << "Build done\n";
+	  std::cerr << "Build done\n";
 	    }
 
 	  rmlA0 = ast ? ast : mk_nil();
