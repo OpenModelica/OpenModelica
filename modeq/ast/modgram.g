@@ -287,12 +287,18 @@ extends_clause:
  * Component clause
  */
 
-component_clause!: << Attrib a = $[COMPONENTS,"---"]; >>
-	p:type_prefix
+component_clause!:
+	<< bool fl=false, pa=false, co=false, in=false, ou=false;
+	   Attrib a = $[COMPONENTS,"---"]; >>
+        /* inline type_prefix for easy access to the flags */
+	{ f:FLOW      << fl = true; >> } 
+	{ p:PARAMETER << pa = true; >>
+	| c:CONSTANT  << co = true; >> }
+	{ i:INPUT     << in = true; >>
+	| o:OUTPUT    << ou = true; >> }
 	s:type_specifier
 	l:component_list[NO_SPECIAL]
-        << bool fl=false, pa=false, co=false, in=false, ou=false;
-	   #0 = #(#[&a], #p, #s, #l);
+        << #0 = #(#[&a], #p, #s, #l);
 	   /* FIXME: Split to several elements */
 
 	   #0->rml = Absyn__COMPONENT(RML_PRIM_MKBOOL(fl),
@@ -305,9 +311,6 @@ component_clause!: << Attrib a = $[COMPONENTS,"---"]; >>
 				      mk_none(),
 				      mk_none());
 
-#if 0
-	   #0->rml = Absyn__EXTENDS(mk_scon("shit"),mk_nil());
-#endif
 	>> 
 	;
 
