@@ -437,20 +437,22 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	component_elts(els) => compelts &
 	extends_elts(els) => extendselts &
 	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
-	inst_element_list2(env,mods,pre,csets,ci_state,cdefelts,inst_dims, impl)
-	  => (_,env1,csets',ci_state',tys) &
-	
+(*	inst_element_list2(env,mods,pre,csets,ci_state,cdefelts,inst_dims, impl)
+	  => (_,env1,csets',ci_state',tys) &*)	
+	add_classdefs_to_env(env,cdefelts,impl) => env1 &
+
 	(*2. EXTENDS Nodes*)
 	(* inst_extends_list only flatten inhteritance structure. *)
 	(* It does not perform component instantiations. *)
 	inst_extends_list(env1,mods,extendselts,impl)
 	  => (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) &
 	  
-	list_append(extcomps,compelts) => compelts' &
+
+	Util.list_flatten([extcomps,compelts,cdefelts]) => compelts' &	
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
-	extend_components_to_env(env2,emods,pre,csets,ci_state,compelts',inst_dims,impl) => env3 &
+	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',inst_dims,impl) => env3 &
 	(* Add components from base classes to be instantiated in 3 as well. *)
 	list_append(eqs,eqs2) => eqs' &
 	list_append(initeqs,initeqs2) => initeqs' &
@@ -561,6 +563,11 @@ relation	inst_extends_list:(Env.Env, Mod.Mod, SCode.Element list, bool)
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl)
 	  => (env', mods',compelts3, eq, ieq, alg, ialg)
 
+  rule	print "Failed inst_extends_list on EXTENDS\n" 
+	------------------------------------------------
+	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, impl) 
+	  => fail
+
   rule	inst_extends_list(env, mod, rest, impl)
 	  => (env', mods, compelts2, eq2, initeq2, alg2, ialg2) 
 	------------------------------------------------
@@ -595,6 +602,10 @@ relation update_components: (SCode.Element list, Mod.Mod) => SCode.Element list 
 	--------------------------------
 	update_components(c::xs,mod) 
 	  => c::res
+
+  rule	print "-update_components failed\n"
+	----------------------
+	update_components(_,_) => fail
 end
 
 
@@ -742,7 +753,22 @@ relation component_elts: (SCode.Element list) => (SCode.Element list) =
 	component_elts(_::xs) => res
 end
 
-relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+relation add_classdefs_to_env : (Env, SCode.Element list, bool) => (Env) =
+
+  axiom	add_classdefs_to_env(env,[],_) => env
+
+  rule	Env.extend_frame_c(env,cl) => env' &
+	add_classdefs_to_env(env',xs,impl) => env''
+	------------------
+	add_classdefs_to_env(env,(SCode.CLASSDEF(_,_,_,cl))::xs,impl) => env''
+
+  rule	Env.extend_frame_i(env,imp) => env' &
+	add_classdefs_to_env(env',xs,impl) => env''
+	-------------------------
+	add_classdefs_to_env(env,(SCode.IMPORT(imp))::xs,impl) => env 
+end  
+
+relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			    SCode.Element list, InstDims, bool)
 	    => (Env) =
 
@@ -761,28 +787,28 @@ relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.St
 	 modifications (e.g. when instanitating a partial class that must be redeclared through a modification)*)
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 	    prot,Types.T_NOTYPE,Types.UNBOUND),SOME(comp),false) => env' & 
-	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims,impl) => env'' &
+	add_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims,impl) => env'' &
 	Debug.fprint("decl", " updated env :") &
 	Debug.fcall ("decl", Env.print_env, env'') 
 	-----------------
-	extend_components_to_env(env,mods,pre,csets,ci_state,
+	add_components_to_env(env,mods,pre,csets,ci_state,
 		     (comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m))::xs,inst_dims,impl) => env''
 
-  rule	extend_components_to_env(env,mods,pre,csets,ci_state,
+  rule	add_components_to_env(env,mods,pre,csets,ci_state,
 				 xs,inst_dims,impl) => env' 
 	-----------------
-	extend_components_to_env(env,mods,pre,csets,ci_state,
+	add_components_to_env(env,mods,pre,csets,ci_state,
 				 nocomp::xs,inst_dims,impl) => env'
 
 
-  axiom	extend_components_to_env(env,_,_,_,_,[],_,_) => env
+  axiom	add_components_to_env(env,_,_,_,_,[],_,_) => env
 
-  rule	Print.print_buf "- extend_components_to_env failed\n" &
+  rule	Print.print_buf "- add_components_to_env failed\n" &
 	Print.print_buf "  - env: \n" & Env.print_env env & Print.print_buf "\n" 
 	--------------------
-	extend_components_to_env(env,_,_,_,_,_,_,_) => fail
+	add_components_to_env(env,_,_,_,_,_,_,_) => fail
 end
 
 relation inst_element_list2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,

@@ -208,11 +208,18 @@ rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path),msgflag) => (c', env5)
 
-(*  rule	Print.print_buf "- lookup_class failed\n" &
+  rule	Print.print_buf "- lookup_class failed\n" &
 	Print.print_buf "  - looked for " & Absyn.path_string path => s & 
-	Print.print_buf s & Print.print_buf "\n" 
+ 	Print.print_buf s & Print.print_buf "\n"  &
+	print "- lookup_class failed looked for " & print s & 
+	print "envpath =" & Env.get_env_path env => p1 & 
+	Absyn.path_string p1 => s1 &
+	print s1 & print "\nenv:" & Print.get_string() => str &
+	Print.clear_buf & Env.print_env env & Print.get_string() => envstr &
+	Print.clear_buf & Print.print_buf str &
+	print envstr 
 	--------------
-	lookup_class(_,path,_)=> fail *)
+	lookup_class(env,path,true)=> fail 
 end
 
 relation lookup_qualified_imported_class_in_env:(Env.Env,Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
@@ -365,7 +372,7 @@ relation complete_path: (Env.Env, Absyn.Path) => Absyn.Path =
   rule	lookup_class(env,(*Absyn.IDENT(pack)*)path,true) 
 	  => (SCode.CLASS(id,_,_,_,_),env') &	
 	Env.get_env_path(env') => path1 &
-	Absyn.join_paths(path1,path) => path' 
+	Absyn.join_paths(path1,Absyn.IDENT(id)) => path' 
 	
 (*	& Print.print_buf "Qualified completed to " 
 	& Absyn.path_string path' => s1 & Print.print_buf s1 &
@@ -986,12 +993,12 @@ relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 	---------------------------------------------------------
 	lookup_class_in_frame((n,Env.CLASS(c, env))::_, id,_) => (c, env)
 
-(*
+
   rule	id = n & Print.print_buf "# Error while looking up class " &
 	Print.print_buf id & Print.print_buf ": found a component\n"
 	------------------------------------
-	lookup_class_in_frame((n,Env.VAR(_))::_,id) => fail
-*)
+	lookup_class_in_frame((n,Env.VAR(_,_,_))::_,id,true) => fail
+
 
   rule	lookup_class_in_frame(fs,id,msg) => (c, env)
 	------------------------------
