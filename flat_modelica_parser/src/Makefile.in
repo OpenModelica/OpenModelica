@@ -29,7 +29,7 @@ parsersrcs=$(filter %.cpp,$(parsergen))
 lexerobjs=$(lexersrcs:.cpp=.o)
 parserobjs=$(parsersrcs:.cpp=.o)
 
-#helperobjs =  parse_tree_dumper.o token_names.o
+helperobjs =  parse_tree_dumper.o token_names.o
 
 OBJS += $(lexerobjs) $(parserobjs) 
 #$(helperobjs)
@@ -53,8 +53,9 @@ $(parsergen): flat_modelica_parser.g flat_modelica_lexer.g
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-test: test.cpp libflat_modelica_parser.a
-	$(CXX) -o test test.cpp libflat_modelica_parser.a  $(LIB) $(INCLUDES)
+test: test.cpp libflat_modelica_parser.a parse_tree_dumper.o
+	$(CXX) -o test test.cpp libflat_modelica_parser.a  \
+	$(MODELICA_PARSER)/parse_tree_dumper.o $(LIB) $(INCLUDES)
 
 depend: $(DFILES)
 
@@ -67,6 +68,10 @@ reallyclean: clean
 flat_modelica_lexer.o:flat_modelica_lexer.cpp flat_modelica_lexer.hpp
 flat_modelica_parser.o:flat_modelica_parser.cpp flat_modelica_parser.hpp
 #token_names.o:token_names.cpp
-#parse_tree_dumper.o:parse_tree_dumper.cpp parse_tree_dumper.hpp
+parse_tree_dumper.o: 
+	cd $(MODELICA_PARSER) ; make ; cd ../../flat_modelica_parser/src
+
+
+#parse_tree_dumper.cpp: parse_tree_dumper.cpp
 #include $(DFILES)
 

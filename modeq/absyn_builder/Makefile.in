@@ -9,20 +9,26 @@ ANTLR_LIBP = -L@antlrlib@
 RML_HOME =  @rmlhome@
 RML_INCP = -I@rmlinc@
 
+FLAT_PARSE_HOME = ../../flat_modelica_parser
+FLAT_PARSE_INCP = -I$(FLAT_PARSE_HOME)/src
+FLAT_PARSE_LIBP = -L$(FLAT_PARSE_HOME)/src
+
 PARSE_HOME = ../../modelica_parser
 PARSE_INCP = -I$(PARSE_HOME)/src
 PARSE_LIBP = -L$(PARSE_HOME)/src
 
-INCP = $(ANTLR_INCP) $(PARSE_INCP) $(RML_INCP)
-LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
+INCP = $(ANTLR_INCP) $(PARSE_INCP) $(FLAT_PARSE_INCP) $(RML_INCP)
+LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(FLAT_PARSE_LIBP)
 
 CFLAGS = $(INCP) -O3 -Wall
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = $(LIBP)
 
-LIBS = -lantlr -lmodelica_parser
+LIBS = -lantlr -lmodelica_parser -lflat_modelica_parser
 
-PARSER_OBJS = $(PARSE_HOME)/src/modelica_parser.o $(PARSE_HOME)/src/modelica_lexer.o \
+PARSER_OBJS = $(FLAT_PARSE_HOME)/src/flat_modelica_parser.o \
+	$(FLAT_PARSE_HOME)/src/flat_modelica_lexer.o \
+	$(PARSE_HOME)/src/modelica_parser.o $(PARSE_HOME)/src/modelica_lexer.o \
 	$(PARSE_HOME)/src/token_names.o $(PARSE_HOME)/src/parse_tree_dumper.o
 
 
@@ -37,13 +43,11 @@ exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp
 exprparsesrcs=$(filter %.cpp,$(exprparsegen))
 exprparseobjs=$(exprparsesrcs:.cpp=.o)
 
-
-
-OBJS += $(walkerobjs) $(exprparseobjs)  $(PARSER_OBJS) parse.o yacclib.o
+OBJS += $(walkerobjs) $(exprparseobjs) $(PARSER_OBJS) parse.o yacclib.o
 
 ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
 
-all : parser absyn_builder.a
+all : flat_parser parser absyn_builder.a
 
 vctarget: vcparser $(walkergen) $(exprparsegen)
 
@@ -52,6 +56,9 @@ vcparser:
 
 parser:
 	cd $(PARSE_HOME)/src; $(MAKE) -f Makefile
+
+flat_parser:
+	cd $(FLAT_PARSE_HOME)/src; $(MAKE) -f Makefile
 
 absyn_builder.a : $(OBJS)
 	ar -r $@ $(OBJS)
@@ -74,8 +81,8 @@ clean:
 
 reallyclean: clean
 
-
-
-walker.o : walker.cpp $(PARSE_HOME)/src/modelica_lexer.hpp $(PARSE_HOME)/src/modelica_parser.hpp
+walker.o : walker.cpp $(PARSE_HOME)/src/modelica_lexer.hpp $(PARSE_HOME)/src/modelica_parser.hpp \
+	$(FLAT_PARSE_HOME)/src/flat_modelica_parser.hpp \
+	$(FLAT_PARSE_HOME)/src/flat_modelica_lexer.hpp
 
 
