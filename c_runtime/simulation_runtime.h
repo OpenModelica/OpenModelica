@@ -63,6 +63,7 @@ void read_input(int argc, char **argv,
 		double *step);
 extern double x[];
 extern double xd[];
+extern double dummy_delta[];
 extern double y[];
 extern double p[];
 extern long liw;

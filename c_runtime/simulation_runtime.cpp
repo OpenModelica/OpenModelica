@@ -110,19 +110,26 @@ int main(int argc, char **argv)
   tout = t+step;
  
   DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /* rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
+  functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+					      // alg vars too.
   functionDAE_output(&t,x,xd,y);
   add_result(data,t,x,xd,y,nx,ny,&actual_points);
   info[0] = 1;
   //dumpresult(t,y,idid,rwork,iwork);
   tout += step;
-  while(t<stop) {
+  while(t<stop && idid>0) {
     DDASRT(functionDAE_res, &nx, &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /*rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
+    functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+					      // alg vars too.
     functionDAE_output(&t,x,xd,y);
     add_result(data,t,x,xd,y,nx,ny,&actual_points);
     //dumpresult(t,y,idid,rwork,iwork);
     tout += step;
   }  
-
+  if (idid < 0 ) {
+    cerr << "Error, simulation stopped at time: " << t << endl;
+    cerr << "Result written to file." << endl;
+  }
   string * result_file =(string*)getFlagValue("-r",argc,argv);
   const char * result_file_cstr;
   if (!result_file) {
