@@ -56,6 +56,7 @@ module ClassInf :
 
   (* Debug relation *)
   relation print_state : State => ()
+  relation get_state_name : State => string
 
 end
 
@@ -130,6 +131,26 @@ relation print_state : State => () =
 	print_state HAS_EQUATIONS(s)
 
 end
+
+relation get_state_name : State => string =
+
+  axiom	get_state_name UNKNOWN(s)	=> s
+  axiom	get_state_name MODEL(s)		=> s
+  axiom	get_state_name RECORD(s)	=> s
+  axiom	get_state_name BLOCK(s)		=> s
+  axiom	get_state_name CONNECTOR(s)	=> s
+  axiom	get_state_name TYPE(s)		=> s
+  axiom	get_state_name PACKAGE(s)	=> s
+  axiom	get_state_name FUNCTION(s)	=> s
+  axiom	get_state_name TYPE_INTEGER(s)	=> s
+  axiom	get_state_name TYPE_REAL(s)	=> s
+  axiom	get_state_name TYPE_STRING(s)	=> s
+  axiom	get_state_name TYPE_BOOL(s)	=> s
+  axiom	get_state_name IS_NEW(s)	=> s
+  axiom	get_state_name HAS_EQUATIONS(s)	=> s
+
+end
+
 
 (** relation: print_event *)
 
@@ -213,8 +234,8 @@ relation trans : (State, Event) => State =
 
   axiom	trans(BLOCK(s),          FOUND_EQUATION) => BLOCK(s)
 
-  rule	print "# In class " & print s & print "\n" &
-	print "# Equations not allowed in connectors\n"
+  rule	print "#-- In class " & print s & print "\n" &
+	print "#-- Equations not allowed in connectors\n"
 	-----------------------------------------------
 	trans(CONNECTOR(s),      FOUND_EQUATION) => fail
 
