@@ -3,6 +3,8 @@ module Main:
 	relation main: string list => ()
 end
 
+with "parse.rml"
+
 (* with "modelica.rml" *)
 
 relation main =
@@ -14,7 +16,8 @@ relation main =
 		main _
 *)
 
-   rule print "Fel\n"
+   rule print "Jahaja\n" &
+	Parser.parse f => p
 	----------------
-	main _
+	main f::argv
 end
