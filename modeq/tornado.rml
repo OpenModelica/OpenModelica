@@ -197,7 +197,7 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
  Util.string_append_list([" SetOutputVar(",is,", new COutputVar(L\"",crs,"\", L\"\",0);"]) 
    => r1 
  --------------------
- generate_constructor_outputvars2(DAELow.VAR(cr,VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_)::rest,i) 
+ generate_constructor_outputvars2(DAELow.VAR(cr,VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,_)::rest,i) 
    => r1::res
 
   rule generate_constructor_outputvars2(rest,i) => res 
@@ -244,7 +244,7 @@ relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
      startstr,");"]) 
    => r1 
  --------------------
- generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_)::rest,i) 
+ generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,SOME(start),_,_,_)::rest,i) 
    => r1::res
 
   rule (* If no start value is present*)
@@ -255,7 +255,7 @@ relation generate_constructor_statevars2: (DAELow.Var list,int) => string list =
  Util.string_append_list(["  SetDerStateVar(",is,", new CDerStateVar(L\"",crs,"\", L\"\",0);"]) 
    => r1 
  --------------------
- generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_)::rest,i) 
+ generate_constructor_statevars2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,NONE,_,_,_)::rest,i) 
    => r1::res
 
   rule generate_constructor_statevars2(rest,i) => res 
@@ -305,7 +305,7 @@ relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
         int_add(outputCounter,1) => outputCounter' & 
         generate_var_defines2(rest,outputCounter',derStateCounter) => res
         ----------------------------------------------
-        generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,dir,_,_,_,_,_,_,_)::rest,
+        generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,dir,_,_,_,_,_,_,_,_)::rest,
                               outputCounter,derStateCounter) 
           => r1::res
           
@@ -316,7 +316,7 @@ relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
         int_add(derStateCounter,1) => derStateCounter' & 
         generate_var_defines2(rest,outputCounter,derStateCounter') => res
         ----------------------------------------------
-        generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_)::rest,
+        generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_,_)::rest,
                               outputCounter,derStateCounter) 
           => r1::res
           
@@ -609,7 +609,7 @@ relation check_component_for_statevars:(int, int list, DAELow.DAELow,int vector,
         int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
 	vector_nth(ass2,adjusted_variable_index_to_check) => v &
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname)) &  
+	vector_nth(varvec,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	not is_non_state(kind)
         -------------------------------------------------------------
         check_component_for_statevars(i,component,dae as DAELow.DAELOW(DAELow.VARIABLES(varvec,bt),_,_,_),ass1,ass2) => true
@@ -621,7 +621,7 @@ relation check_component_for_statevars:(int, int list, DAELow.DAELow,int vector,
         int_sub(variable_index_to_check,1) => adjusted_variable_index_to_check &
 	vector_nth(ass2,adjusted_variable_index_to_check) => v &
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname)) &  
+	vector_nth(varvec,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
         int_add(i,1) => next_i &
         check_component_for_statevars(next_i,component,dae,ass1,ass2) => result
         -------------------------------------------------------------
@@ -672,7 +672,7 @@ relation extract_der_from_var_list: DAELow.Var list => (Exp.Exp list, Exp.Exp li
         (*print "extract_der_from_var_list Is not state\n" &*)
         extract_der_from_var_list(var_list) => (res1,res2)
         -------------------------------------------------------------
-        extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname))::var_list)  
+        extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_))::var_list)  
           => (res1,res2)
 
   rule  (*print "extract_der_from_var_list Is state" &*)
@@ -695,7 +695,7 @@ relation extract_der_from_var_list: DAELow.Var list => (Exp.Exp list, Exp.Exp li
 
         extract_der_from_var_list(var_list) => (res1,res2)
         -------------------------------------------------------------
-        extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname))::var_list)  
+        extract_der_from_var_list((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_))::var_list)  
           => (dercall::res1, new_varexp::res2)
 
 
@@ -868,7 +868,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v &
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname)) &  
+	vector_nth(varvec,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_)) &  
 	is_non_state kind &
 	print "Solving for non-states\n" &
 	
@@ -897,7 +897,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname) &
+	vector_nth(varvec,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_) &
 	print "solving for state\n" &
 	int_string(indx) => indxs &
 	
@@ -929,7 +929,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => string =
 	list_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	vector_nth(varvec,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname) &  
+	vector_nth(varvec,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_) &  
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
