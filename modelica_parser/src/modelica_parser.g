@@ -122,15 +122,18 @@ composition :
 		|	equation_clause
 		|	algorithm_clause
 		)*
-		( EXTERNAL	( language_specification )? 
-			( external_function_call )?
-			(SEMICOLON!) ?  
-			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
-
-			( annotation SEMICOLON! )?
-		)?
+		( external_clause )?
 		;
 
+external_clause :
+        EXTERNAL^	
+            ( language_specification )? 
+            ( external_function_call )?
+			(SEMICOLON!) ?  
+			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
+			( annotation SEMICOLON! )?
+        ;
+		
 public_element_list :
 		PUBLIC^ element_list
 		;
