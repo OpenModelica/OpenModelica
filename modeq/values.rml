@@ -1,0 +1,71 @@
+(**
+ ** file: values.rml
+ **
+ ** The modeul `Values' contains data structures for representing
+ ** constant Modelica values.  These include integer, real, string and
+ ** boolean values, and also arrays of any dimensionality and type.
+ ** Multidimensional arrays are represented as arrays of arrays.
+ **
+ ** FIXME: complex types?
+ **)
+
+module Values :
+
+  datatype Value = INTEGER of int
+		 | REAL of real
+		 | STRING of string
+		 | BOOL of bool
+		 | ARRAY of Value list
+
+  relation val_string : Value => string
+  relation print_val : Value => ()
+
+end
+
+relation val_string : Value => string =
+
+  rule	int_string n => s
+	-----------------
+	val_string INTEGER(n) => s
+
+  rule	real_string x => s
+	------------------
+	val_string REAL(x) => s
+
+  axiom	val_string STRING(s) => s
+
+  axiom	val_string BOOL(FALSE) => "FALSE"
+  axiom	val_string BOOL(TRUE) => "TRUE"
+
+  rule	val_list_string vs => s &
+	string_append("[",s) => s' &
+	string_append(s',"]") => s''
+	----------------------------
+	val_string ARRAY(vs) => s''
+
+end
+
+relation val_list_string : Value list => string =
+
+  rule	val_string v => s
+	-----------------
+	val_list_string [v] => s
+
+  rule	val_string v => s &
+	val_list_string vs => s' &
+	string_append (s,",") => s'' &
+	string_append (s'',s') =>s'''
+	------------------------------
+	val_list_string v::vs => s'''
+
+end
+
+relation print_val : Value => () =
+
+  rule	val_string v => s &
+	print s
+	-------
+	print_val v
+
+end
+
