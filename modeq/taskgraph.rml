@@ -47,17 +47,104 @@ relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list)
 
   rule	TaskGraphExt.new_task("start") => starttask &
 	TaskGraphExt.new_task("end") => endtask &
+	TaskGraphExt.set_execcost(starttask,1.0) &
+	TaskGraphExt.set_execcost(starttask,1.0) &
 	TaskGraphExt.register_startstop(starttask,endtask) &
 	add_variables(vars,starttask) &
-	add_variables([DAELow.VAR(Exp.CREF_IDENT("time",[]),DAELow.VARIABLE,DAE.INPUT,DAE.REAL,NONE,[],NONE,0)],starttask) &
-	add_variables(knvars,starttask) &
-	build_blocks(dae,ass1,ass2,blocks)
+	add_variables([DAELow.VAR(Exp.CREF_IDENT("sim_time",[]),DAELow.VARIABLE,DAE.INPUT,DAE.REAL,NONE,[],NONE,0)],starttask) &
+	build_blocks(dae,ass1,ass2,blocks) &
+	build_inits(dae) 
 	----------------------------------
 	build_taskgraph(dae as DAELow.DAELOW(vars,knvars,_,_),ass1,ass2,blocks)
 
   rule	print "-build_taskgraph failed\n"
 	-----------------------
 	build_taskgraph(_,_,_,_) => fail
+end
+
+(** relation: build_inits
+ * This relation traverses the DAE and calls external relations to build 
+ * the initialization values for the DAE
+ * This is implemented in C++ as a set of vectors
+**)
+relation build_inits:(DAELow.DAELow) => () =
+
+  rule	build_inits2(vars) &
+	build_inits2(kvars)
+	--------------------
+	build_inits(DAELow.DAELOW(vars,kvars,_,_)) => ()
+end
+
+
+relation build_inits2:(DAELow.Var list) => () =
+
+  axiom	build_inits2([]) => ()
+
+  rule	Exp.print_exp_str start => v &
+	TaskGraphExt.add_initvar(indx,v) &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.VARIABLE,_,_,_,_,SOME(start),indx)::rest)
+
+  rule	TaskGraphExt.add_initvar(indx,"0.0") &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.VARIABLE,_,_,_,_,NONE,indx)::rest)
+
+  rule	Exp.print_exp_str start => v &
+	TaskGraphExt.add_initstate(indx,v) &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.STATE,_,_,_,_,SOME(start),indx)::rest)
+
+  rule	TaskGraphExt.add_initstate(indx,"0.0") &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.STATE,_,_,_,_,NONE,indx)::rest)
+
+  rule	Exp.print_exp_str start => v &
+	TaskGraphExt.add_initvar(indx,v) &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,SOME(start),indx)::rest)
+
+  rule	TaskGraphExt.add_initvar(indx,"0.0") &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,NONE,indx)::rest)
+
+  rule	Exp.print_exp_str start => v &
+	TaskGraphExt.add_initvar(indx,v) &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.DUMMY_STATE,_,_,_,_,SOME(start),indx)::rest)
+
+  rule	TaskGraphExt.add_initvar(indx,"0.0") &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.DUMMY_STATE,_,_,_,_,NONE,indx)::rest)
+
+  rule	Exp.print_exp_str start => v &
+	TaskGraphExt.add_initparam(indx,v) &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.PARAM,_,_,SOME(start),_,_,indx)::rest)
+
+  rule	TaskGraphExt.add_initparam(indx,"0.0") &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.PARAM,_,_,NONE,_,_,indx)::rest)
+
+  rule	Exp.print_exp_str start => v &
+	TaskGraphExt.add_initparam(indx,v) &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.CONST,_,_,SOME(start),_,_,indx)::rest)
+
+  rule	TaskGraphExt.add_initparam(indx,"0.0") &
+	build_inits2(rest)
+	--------------------
+	build_inits2(DAELow.VAR(_,DAELow.CONST,_,_,NONE,_,_,indx)::rest)
 end
 
 relation add_variables:(DAELow.Var list,int) => () =
@@ -248,9 +335,21 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	--------------------------------
 	build_expression(Exp.RCONST(r)) => (tid,"")
 	
-  rule	Exp.cref_str(cr) => crs &
+  rule	(* for state variables and alg. variables*)
+	Exp.cref_str(cr) => crs &
 	TaskGraphExt.get_task(crs) => tid
 	---------------------------------
+	build_expression(Exp.CREF(cr,_)) => (tid,crs)
+
+  rule	(* for state variables and alg. variables*)
+	TaskGraphExt.get_task("sim_time") => tid
+	---------------------------------
+	build_expression(Exp.CREF(Exp.CREF_IDENT("time",_),_)) => (tid,"sim_time")
+
+  rule	(* for constants and parameters, no data to send from proc0 *)
+	Exp.cref_str(cr) => crs &
+	TaskGraphExt.new_task(crs) => tid  
+ 	---------------------------------
 	build_expression(Exp.CREF(cr,_)) => (tid,crs)
 
   rule	build_expression(e1) => (t1,s1) &

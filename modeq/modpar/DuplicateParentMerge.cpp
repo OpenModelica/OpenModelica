@@ -4,8 +4,8 @@
 DuplicateParentMerge::DuplicateParentMerge(TaskGraph *tg,TaskGraph * orig_tg,
 					   ContainSetMap *cmap, 
 					   VertexID inv, VertexID outv,
-					   double l,double B,map<VertexID,bool>* removed)
- : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,removed)
+					   double l,double B,int nproc,map<VertexID,bool>* removed)
+ : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,nproc,removed)
 {
 }
 

@@ -78,6 +78,12 @@ Schedule::Schedule(TaskGraph *tg,VertexID start, VertexID end, int nproc)
 
   initialize_index(m_taskgraph);
 
+  // TDS uses level without counting communication cost, thus
+  // execcost for start and end node can not be zero because they must be 
+  // sorted before and after the other nodes.
+  setExecCost(m_start,1.0,m_taskgraph);
+  setExecCost(m_end,1.0,m_taskgraph);
+
   scheduleTDS();
 }
 
@@ -345,6 +351,14 @@ void Schedule::mergeTaskLists(TaskList *t1, TaskList *t2)
 
   int t2indx= getTaskListIndex(t2);
   cerr << "t2indx = " << t2indx << endl;
+  if (t2indx == 0) { // Proc 0 can not be merged into another processor, swap list
+    TaskList *tmp;
+    tmp=t1;
+    t1=t2;
+    t2=tmp;
+    t2indx = getTaskListIndex(t2);
+  }
+    
   while (!t2->empty()) { // Insert all tasks in t2 into t1
     VertexID task=t2->top();
     map<VertexID,set<int>*>::iterator ma;
@@ -480,7 +494,8 @@ void Schedule::printSchedule(ostream &os)
     while (!t.empty()) {
       VertexID task=t.top();
       t.pop();
-      os << getTaskID(task,m_taskgraph) << " ";
+      os << getTaskID(task,m_taskgraph) << ":"<<task<< " (" << m_level[task] << ", "
+	 << getExecCost(task,m_taskgraph) << ") ";
     }
     os << endl;
   }

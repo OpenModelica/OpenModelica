@@ -134,7 +134,7 @@ RML_BEGIN_LABEL(Parser__parse)
   catch (...) {
     std::cerr << "Error while parsing\n";
   }
-  std::cerr << "Exiting Parse" << std::endl;
+  //std::cerr << "Exiting Parse" << std::endl;
 
   RML_TAILCALLK(rmlFC);
 }

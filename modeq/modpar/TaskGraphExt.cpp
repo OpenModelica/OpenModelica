@@ -35,6 +35,10 @@ ContainSetMap contain_set;
 VertexID start_task;
 VertexID stop_task;
 
+// Start and stop task in merged task graph
+VertexID merged_start_task;
+VertexID merged_stop_task;
+
 // Task Merging object
 TaskMerging taskmerging;
 
@@ -43,6 +47,11 @@ Schedule *schedule;
 
 // Codegen object
 Codegen *codegen;
+
+// Initialization vectors
+vector<double> initvars;
+vector<double> initstates;
+vector<double> initparams;
 
 extern "C"
 {
@@ -122,12 +131,15 @@ extern int nproc;
     int send_to_end = (rml_sint_t)(rmlA2);
     VertexID taskID;
     map<int,VertexID>::iterator i;
+    string str2=string(str);
 
-    symboltable[string(str)]=task;
+    symboltable[str2]=task;
 
     i = id_map.find(task);
     if (i == id_map.end()) { RML_TAILCALLK(rmlFC);};
     taskID = i->second;
+
+    setResultName(taskID,str2,&taskgraph);
  
     if (send_to_end) {
       add_edge(taskID,stop_task,&taskgraph,new string(str));
@@ -177,8 +189,6 @@ extern int nproc;
     if (i == id_map.end()) { RML_TAILCALLK(rmlFC);};
     stop_task = i->second;
 
-    setExecCost(start_task,0.0,&taskgraph);
-    setExecCost(stop_task,0.0,&taskgraph);
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL
@@ -268,9 +278,10 @@ extern int nproc;
     int nx = RML_UNTAGFIXNUM(rmlA0);
     int ny = RML_UNTAGFIXNUM(rmlA1);
     int np = RML_UNTAGFIXNUM(rmlA2);
-    codegen = new Codegen("model.cpp","model.hpp");
+    codegen = new Codegen("model.cpp","model.hpp","modelinit.txt");
     
-    codegen->initialize(&taskgraph,&merged_taskgraph,schedule,&contain_set,nproc,nx,ny,np);
+    codegen->initialize(&taskgraph,&merged_taskgraph,schedule,&contain_set,nproc,nx,ny,np,
+			merged_start_task,merged_stop_task,initvars,initstates,initparams);
 
     codegen->generateCode();
     			  
@@ -278,5 +289,38 @@ extern int nproc;
   } 
   RML_END_LABEL  
 
-  
+
+  RML_BEGIN_LABEL(TaskGraphExt__add_5finitvar)
+  {
+    int indx = RML_UNTAGFIXNUM(rmlA0);
+    char *value = RML_STRINGDATA(rmlA1); 
+
+    double val = atof(value);
+    cerr << "initvars[" << indx << "] =" << val << endl;
+    initvars.insert(initvars.begin()+indx,val);
+    RML_TAILCALLK(rmlSC);
+  } 
+  RML_END_LABEL  
+
+  RML_BEGIN_LABEL(TaskGraphExt__add_5finitstate)
+  {
+    int indx = RML_UNTAGFIXNUM(rmlA0);
+    char *value = RML_STRINGDATA(rmlA1); 
+    double val = atof(value);
+    cerr << "initstates[" << indx << "] =" << val << endl;
+    initstates.insert(initstates.begin()+indx,val);
+    RML_TAILCALLK(rmlSC);
+  } 
+  RML_END_LABEL  
+
+  RML_BEGIN_LABEL(TaskGraphExt__add_5finitparam)
+  {
+    int indx = RML_UNTAGFIXNUM(rmlA0);
+    char *value = RML_STRINGDATA(rmlA1); 
+    double val = atof(value);
+    cerr << "initparams[" << indx << "] =" << val << endl;
+    initparams.insert(initparams.begin()+indx,val);
+    RML_TAILCALLK(rmlSC);
+  } 
+  RML_END_LABEL  
 } // extern "C"

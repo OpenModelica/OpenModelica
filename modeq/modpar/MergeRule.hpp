@@ -21,11 +21,12 @@ protected:
   void printContainTasks(VertexID task, ostream &os);
   void printVertexSet(set<VertexID> list, ostream &os);  
 
-  MergeRule(TaskGraph *,TaskGraph *,ContainSetMap *, VertexID, VertexID,double,double,
+  MergeRule(TaskGraph *,TaskGraph *,ContainSetMap *, VertexID, VertexID,double,double,int,
 	    map<VertexID,bool> *removed);
   virtual ~MergeRule() {};
   double m_latency;
   double m_bandwidth;
+  int m_nproc;
   TaskGraph *m_taskgraph;
   TaskGraph *m_orig_taskgraph;
   ContainSetMap * m_containTasks;

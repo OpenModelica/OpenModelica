@@ -397,6 +397,8 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 	RTOpts.no_proc => n &
 	TaskGraphExt.schedule(n) &
 	DAELow.calculate_sizes(indexed_dae) => (nx,ny,np)  &
+	int_string np => nps &
+	print "=======\nnp =" & print nps & print "=======\n" &
 	TaskGraphExt.generate_code(nx,ny,np) &
 	print "done\n" 
 	-----------------

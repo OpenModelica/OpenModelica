@@ -546,7 +546,7 @@ relation lower_known_varkind: (DAE.VarKind) => VarKind =
 (* Fails for everything but parameters and constants *)
 
   axiom	lower_known_varkind(DAE.PARAM) => PARAM
-  axiom	lower_known_varkind(DAE.CONST) => CONST
+(*  axiom	lower_known_varkind(DAE.CONST) => CONST*)
 end
 
 
@@ -1762,11 +1762,14 @@ end
 relation translate_dae: DAELow => DAELow =
 
   rule	calculate_indexes(vars) => vars' &
-	variable_replacements(vars',eqns) => (s,t) &
+	calculate_indexes(kv) => kv' &
+	list_append(vars',kv') => totvars &
+	variable_replacements(totvars,eqns) => (s,t) &
 	Util.list_map(s,Exp.print_exp_str) => sl &
 	Util.string_delimit_list(sl,", ") => sstr &
 	Util.list_map(t,Exp.print_exp_str) => tl &
 	Util.string_delimit_list(tl,", ") => tstr &
+	print "replace " & print sstr & print "with " & print tstr & print "\n" &
 	replace_variables(eqns,s,t) => eqns' &
 	transform_variables(vars') => vars'' 
 	------------------------------------
@@ -1776,12 +1779,28 @@ end
 relation calculate_sizes: DAELow => (int, (* nx *)
 				     int, (* ny *)
 				     int) (* np *) =
-  rule	list_length(knvars) => np &
+  rule	calculate_param_sizes(knvars) => np &
 	calculate_var_sizes(vars,0,0) => (nx,ny)
 	-----------------------------------
 	calculate_sizes(DAELOW(vars,knvars,_,_)) => (nx,ny,np)
 end
 
+relation calculate_param_sizes:( Var list) => (int) =
+
+  axiom	calculate_param_sizes([]) => 0
+
+  rule	calculate_param_sizes(vs) => s1 &
+	int_add(s1,1) => s2 
+	------------------
+	calculate_param_sizes(VAR(_,PARAM,_,_,_,_,_,_)::vs) 
+	  => (s2)
+
+  rule	calculate_param_sizes(vs) => s1 
+	------------------
+	calculate_param_sizes(VAR(_,_,_,_,_,_,_,_)::vs) 
+	  => (s1)
+end
+	
 relation calculate_var_sizes:( Var list, int, int) => (int, int) =
 
   axiom	calculate_var_sizes([],nx,ny) => (nx,ny)
@@ -1835,7 +1854,10 @@ end
 
 (* Returns a two list of replacement expressions for variable transformations.
  For instance, replacing state 's' with 'x[3]' and 'der(s)' with 'xd[3]',
- NOTE: The derivative expressions must be first, so they are replaced first.*)
+ NOTE: The derivative expressions must be first, so they are replaced first
+ i.e 'der(s)' is replaced before 's' is replaced which gives a wrong 
+ variable like 'der(x[5)'
+ *)
 relation variable_replacements: (Var list, Equation list) => (Exp.Exp list, Exp.Exp list) =
 	 
   rule	states_eqns(eqns) => states  &
@@ -1872,7 +1894,7 @@ relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["dummy[",indxs,"]"]) => newid
+	Util.string_append_list(["y[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,DUMMY_DER,_,_,_,_,_,indx)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
@@ -1896,6 +1918,13 @@ relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 	Util.string_append_list(["p[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,PARAM,_,_,_,_,_,indx)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["p[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,STRUCTPARAM,_,_,_,_,_,indx)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	alg_variable_replacements(vs) => (s1,t1) &
@@ -1992,7 +2021,7 @@ relation transform_variable: (int, VarKind) => Exp.ComponentRef =
  	transform_variable(i, STATE) => Exp.CREF_IDENT(id,[])
 
   rule	int_string(i) => is &
-	Util.string_append_list(["dummy[",is,"]"]) => id
+	Util.string_append_list(["y[",is,"]"]) => id
 	-------------------
  	transform_variable(i, DUMMY_DER) => Exp.CREF_IDENT(id,[])
 
@@ -2033,13 +2062,15 @@ relation calculate_indexes2: (Var list,int,int,int,int,int) => Var list =
 	calculate_indexes2(VAR(cr,STATE,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
 	  => VAR(cr,STATE,d,tp,b,dim,start,x)::vars'
 
-  rule	int_add(dummy,1) => dummy' &
-	calculate_indexes2(vs,x,xd,y,p,dummy') => vars' 
+ rule	(* Dummy derivatives become algebraic variables *)
+	int_add(y,1) => y' &
+	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
 	----------------------------------------
 	calculate_indexes2(VAR(cr,DUMMY_DER,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,DUMMY_DER,d,tp,b,dim,start,dummy)::vars'
+	  => VAR(cr,DUMMY_DER,d,tp,b,dim,start,y)::vars'
 
-  rule	int_add(y,1) => y' &
+  rule	(* Dummy state become algebraic variables *)
+	int_add(y,1) => y' &
 	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
 	----------------------------------------
 	calculate_indexes2(VAR(cr,DUMMY_STATE,d,tp,b,dim,start,_)::vs,x,xd,y,p,dummy) 

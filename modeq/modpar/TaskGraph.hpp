@@ -191,6 +191,8 @@ ResultSet& copy_resultset(ResultSet &);
 
 extern map<int,double> execcost; // mapping from unique id to exec cost.
 
+extern int tempNo;
+
 // return the maximum value of a vector
 template <class T> T max(std::vector<T> v) {
   typename vector<T>::iterator i;

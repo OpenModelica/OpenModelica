@@ -3,6 +3,8 @@
 
 const int max_nodes=1000;
 
+int tempNo=0;
+
 VertexNameMap::type VertexNameProperty(TaskGraph* tg)
 {
   boost::vertex_name_t pname;
@@ -156,7 +158,6 @@ string & getResultName(VertexID task, TaskGraph *tg)
 
 string * genTemp()
 {
-  static int tempNo=0;
   ostringstream str;
   
   str << "tmp" << tempNo++;
@@ -275,20 +276,15 @@ ResultSet& make_resultset(string *firstelt)
 
 ResultSet& copy_resultset(ResultSet &s)
 {
-  cerr << "Entering copy_resultset" << endl;
   ResultSet & set=sets[curNo++];
   if (curNo == maxNo) {
     cerr << "Error, ResultSet allocator reached maximum no :" << maxNo << endl;
     exit(-1);
   }
   ResultSet::iterator vname; 
-  cerr << "loop over set..." << endl;
-  for( vname= s.begin(),cerr<<"start"<< endl; vname != s.end(); vname++) {
-    cerr << "name: " << *vname << endl;
+  for( vname= s.begin(); vname != s.end(); vname++) {
     set.insert(*vname);
-
   }
-  cerr << "done copy_resultset" << endl;
   return set;
 }
 

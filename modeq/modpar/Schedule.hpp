@@ -90,11 +90,12 @@ public:
   void calc_level(VertexID u, const TaskGraph & g)
   {
     ChildrenIterator c,c_end;
-    double maxVal=-1;
+    double maxVal=0;
     for (tie(c,c_end)=children(u,g); c != c_end; c++) {
       maxVal = max(maxVal,get_level(*c,g,m_level)+getExecCost(*c,&g));
     }
     (*m_level)[u] = maxVal;
+    cerr << "level for task "<< u << " = " << maxVal<< endl;
   };
 protected:
   
@@ -144,11 +145,13 @@ public:
   void calc_level(VertexID u, const TaskGraph & g)
   {
     ChildrenIterator c,c_end;
-    double maxVal=-1;
+    double maxVal=0;
     for (tie(c,c_end)=children(u,g); c != c_end; c++) {
+      cerr << "Child execcost="<< getExecCost(*c,&g) << endl;
       maxVal = max(maxVal,get_level(*c,g,m_level)+getExecCost(*c,&g));
     }
     (*m_level)[u] = maxVal;
+    cerr << "level for task "<< u << " = " << maxVal<< endl;
   };
 protected:
   

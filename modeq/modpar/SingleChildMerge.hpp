@@ -8,7 +8,7 @@ class SingleChildMerge : MergeRule
 
 public:
   SingleChildMerge(TaskGraph *,TaskGraph *,ContainSetMap *, VertexID, VertexID,
-		   double,double, map<VertexID,bool>*);
+		   double,double, int, map<VertexID,bool>*);
   bool apply(VertexID);
 
 private:

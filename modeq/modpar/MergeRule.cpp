@@ -4,8 +4,9 @@
 MergeRule::MergeRule(TaskGraph *tg, TaskGraph *orig_tg,
 		     ContainSetMap *cmap, VertexID invar, 
 		     VertexID outvar, double l, double B,
+		     int nproc,
 		     map<VertexID,bool>*removed) 
-  : m_latency(l), m_bandwidth(B),
+  : m_latency(l), m_bandwidth(B),m_nproc(nproc),
     m_taskgraph(tg), m_orig_taskgraph(orig_tg),
     m_containTasks(cmap), m_invartask(invar), 
     m_outvartask(outvar), m_taskRemoved(removed)

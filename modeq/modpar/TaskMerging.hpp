@@ -85,6 +85,7 @@ private:
   // Variables
   double m_latency;
   double m_bandwidth;
+  int m_nproc;
   bool m_change; // True when task graph changed because of rewrite rule.
   TaskGraph *m_taskgraph; 
   TaskGraph *m_orig_taskgraph;

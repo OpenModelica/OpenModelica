@@ -70,4 +70,8 @@ relation set_commcost: (int, (* source *)
 			int, (* target *)
 			int) (* value *) => ()
 
+relation add_initvar: (int, string) => ()
+relation add_initstate: (int, string) => ()
+relation add_initparam: (int, string) => ()
+
 end
