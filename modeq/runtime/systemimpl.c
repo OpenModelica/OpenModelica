@@ -112,7 +112,7 @@ void set_cflags(char *str)
 
 void System_5finit(void)
 {
-  set_cc("/usr/bin/gcc");
+  set_cc("gcc");
   set_cflags("-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
 }
 
