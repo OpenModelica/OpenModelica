@@ -70,6 +70,8 @@ module DAE:
 			      unconnected flow variables *)
 			Absyn.Path list (* The class the variable is instantiated from *)
 
+
+
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | INITIALDEFINE of Exp.ComponentRef * Exp.Exp
 		   | EQUATION of Exp.Exp * Exp.Exp
@@ -87,6 +89,28 @@ module DAE:
 		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl 
 	           | ASSERT of Exp.Exp
 
+  datatype VariableAttributes = VAR_ATTR_REAL of string * (* quantity *)
+             string *(* unit *)
+             string *(* displayUnit *)
+             (real * real) * (* min , max *)
+             real * (* Initial value *)
+             bool * (* fixed - true: default for parameter/constant, false - default for other variables *)
+             real  * (* nominal *)
+             StateSelect
+            | VAR_ATTR_INT of string * (* quantity *)
+             (int * int) * (* min , max *)
+             int * (* Initial value *)
+             bool  (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_BOOL of string * (* quantity *)
+             bool * (* Initial value *)
+             bool  (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_STRING of string * (* quantity *)
+             string  (* Initial value *)
+
+
+
+  datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
+  
   datatype ExtArg = EXTARG of Exp.ComponentRef * Types.Attributes * Types.Type
                      | EXTARGEXP of Exp.Exp * Types.Type
                      | EXTARGSIZE of Exp.ComponentRef * Types.Attributes * Types.Type * Exp.Exp
@@ -123,6 +147,8 @@ module DAE:
   relation dump_algorithm: Element => ()
   relation dump_algorithm_str : Element => string 
   relation dump_direction_str: VarDirection => string 
+  relation dump_variable_attributes: VariableAttributes => ()
+  relation dump_variable_attributes_str: VariableAttributes => string 
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
@@ -672,6 +698,77 @@ relation dump_direction_str: VarDirection => string =
   axiom	dump_direction_str BIDIR => ""
 
 end
+
+relation dump_stateSelect_str: StateSelect => string =
+
+  axiom dump_stateSelect_str(NEVER) => "NEVER"
+  axiom dump_stateSelect_str(AVOID) => "AVOID"
+  axiom dump_stateSelect_str(PREFER) => "PREFER"
+  axiom dump_stateSelect_str(ALWAYS) => "ALWAYS"  
+  axiom dump_stateSelect_str(DEFAULT) => "DEFAULT"
+
+end
+
+relation dump_variable_attributes: VariableAttributes => () =
+ 
+  rule  dump_variable_attributes_str(attr) => res &
+        print res
+        --------------------------------
+        dump_variable_attributes(attr) 
+        
+
+
+
+end
+
+relation dump_variable_attributes_str: VariableAttributes => string =
+ 
+  rule Dump.print_bool_str(fixed) => fixed_str &
+        dump_stateSelect_str(stateSel) => stateSel_str &
+        real_string(min) => min_str &
+        real_string(max) => max_str &
+        real_string(Initial) => Initial_str &
+
+        Util.string_append_list([" quantity: ",quantity,
+                                " unit: ", unit,
+                                " displayUnit: ", displayUnit,
+                                " min: ", min_str,
+                                " max: ", max_str,
+                                " Initial: ", Initial_str,
+                                " fixed: ", fixed_str,
+                                " stateSel: ", stateSel_str]) => res 
+        --------------------------------
+        dump_variable_attributes_str(VAR_ATTR_REAL(quantity,unit,displayUnit, (min , max),Initial,fixed,nominal,stateSel)) => res
+        
+  rule  Dump.print_bool_str(fixed) => fixed_str &
+        int_string(min) => min_str &
+        int_string(max) => max_str &
+        int_string(Initial) => Initial_str &
+        Util.string_append_list([" quantity: ",quantity,
+                                 " min: ", min_str,
+                                 " max: ", max_str,
+                                 " Initial: ", Initial_str,
+                                 " fixed: ", fixed_str]) => res 
+        -----------------------------------------
+        dump_variable_attributes_str(VAR_ATTR_INT(quantity, (min , max),Initial,fixed)) => res
+        
+  rule  Dump.print_bool_str(fixed) => fixed_str &
+        Dump.print_bool_str(Initial) => Initial_str &
+        Util.string_append_list([" quantity: ",quantity,
+                                 " Initial: ", Initial_str,
+                                 " fixed: ", fixed_str]) => res 
+        -----------------------------------------
+        dump_variable_attributes_str(VAR_ATTR_BOOL(quantity,Initial,fixed)) => res
+
+  rule  Util.string_append_list([" quantity: ",quantity,
+                                 " Initial: ", Initial]) => res 
+        -----------------------------------------
+        dump_variable_attributes_str(VAR_ATTR_STRING(quantity,Initial)) => res
+
+  axiom dump_variable_attributes_str(VAR_ATTR_STRING(quantity,Initial)) => "unknown VariableAttributes"
+
+end
+
 
 relation dump_type =
 

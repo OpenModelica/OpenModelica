@@ -1,23 +1,23 @@
 (*
-    Copyright PELAB, Linkoping University
-
-    This file is part of Open Source Modelica (OSM).
-
-    OSM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
+ Copyright PELAB, Linkoping University
+ 
+ This file is part of Open Source Modelica (OSM).
+ 
+ OSM is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    OSM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenModelica; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-*)
+ (at your option) any later version.
+ 
+ OSM is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with OpenModelica; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ *)
 
 (**
  ** file:	 daelow.rml
@@ -40,8 +40,8 @@
  ** dummy derivatives for solving higher index problems.
  ** It also includes the tarjan algorithm to detect strong components
  ** in the BLT sorting.
-**)
-module DAELow:
+ **)
+ module DAELow:
   
   with "dae.rml"
   with "exp.rml"
@@ -64,6 +64,17 @@ module DAELow:
 			string *(* original variable name *)
 			Absyn.Path list (* classname variable belongs to *)
 
+  datatype VariableAttributes = VAR_ATTR of string * (* quantity *)
+            string *(* unit *)
+            string *(* displayUnit *)
+            (real * real) * (* min , max *)
+            real * (* Initial value *)
+            bool * (* fixed - true: default for parameter/constant, false - default for other variables *)
+            real  * (* nominal *)
+            StateSelect
+            
+  datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
+                                                       
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp
 		      | SOLVED_EQUATION of Exp.ComponentRef * Exp.Exp

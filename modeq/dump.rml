@@ -73,6 +73,7 @@ module Dump:
   relation print_import : Absyn.Import => () 
   relation op_symbol : Absyn.Operator => string
   relation print_bool : bool => ()
+  relation print_bool_str : bool => string 
   relation print_select: (bool,string,string) => ()
   relation print_option : (('a option),('a => ())) => () 
   relation select_string: (bool,string,string) => string

@@ -1553,6 +1553,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*Dump.select_string(impl,"IMPLICIT!!!\n","") => s &
 	print s &*)
 
+
+ 
+
+
 	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
 	  => (dae, csets', ty) &
 	  
@@ -1567,7 +1571,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* true in update_frame means the variable is now instantiated. *)
 	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding),true) => env' 
-
 
 	(* Now we can also put the binding into the dae *)
 	(** If the type is one of the simple, predifined types a *)
@@ -1721,14 +1724,18 @@ relation inst_var : (Env.Env,
 	print_dims dims' &
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims',idxs,inst_dims,impl) 
 	  => (dae,csets',ty') &
-	  make_array_type(dims',ty') => ty
+	  make_array_type(dims',ty') => ty 
+
+
+
 	--------------------------
 	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,SCode.R_TYPE,_),attr,dims,idxs,inst_dims,impl)
           => (dae,csets',ty)
 	  
   rule	(* Generic case: fall trough *)
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl) 
-	  => (dae,csets',ty')
+	  => (dae,csets',ty') 
+
 	----------------------
 	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,_,_),attr,dims,idxs,inst_dims,impl)
           => (dae,csets',ty')
@@ -1833,7 +1840,15 @@ relation inst_var2 : (Env.Env,
         Debug.fprint ("insttr", "\n ******************\n ") &
 	Debug.fprint ("insttr", "\n ") &
 	
-        inst_start_binding(mod,ty,idxs') => start & 
+        inst_start_binding_exp(mod,ty,idxs') => start &
+
+(*         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr & *)
+(*   	    DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp & *)
+(*         Debug.fprint("failtrace", str_tmp) & *)
+(*   	    Debug.fprint("failtrace", " <------------\n") & *)
+
+
+
 	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
 		    inst_dims, start) => dae3 &
 	list_append(dae1',dae2) => daex &
@@ -4742,8 +4757,86 @@ relation component_face : Exp.ComponentRef => Connect.Face =
 end
 
 
+(** relation: inst_binding
+** This relation investigates a modification and extracts the 
+** <...> modification. E.g. Real x(<...>=1+3) => 1+3
+** It also handles the case Integer T0[2](final <...>={5,6})={9,10} becomes
+** Integer T0[1](<...>=5); Integer T0[2](<...>=6);
+**
+** Arg 1 is the modification  
+** Arg 2 is the expected type that the modification should have
+** Arg 3 is the index list for the element: for T0[1,2] is {1,2} 
+**
+**)
+relation inst_binding: (Types.Mod,Types.Type,int list,string) => Exp.Exp option =
+        
+  rule  
+        
+	    Mod.lookup_comp_modification(mod,bind_name) => mod2 &
+	    
+	    Mod.mod_equation(mod2) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
+	    Types.match_type(e,ty2,expected_type) => (e',ty') 
+	    ---------------------------------------------------
+	    inst_binding (mod,expected_type,[],bind_name) => SOME(e')
 
-(** relation: inst_start_binding
+        
+  rule  Mod.lookup_comp_modification(mod,bind_name) => mod2 &
+	    
+        inst_binding2(mod2,etype,index_list,bind_name) => result 
+	    ---------------------------------------------------
+        (*maybe this should be index::[]*)
+	    inst_binding (mod,etype,index_list,bind_name) => result
+ 
+  rule  not Mod.lookup_comp_modification(mod,bind_name) => mod2 
+	    --------------------------------------------------
+	    inst_binding (mod,expected_type,[],bind_name) => NONE
+        
+  rule  (*Debug.fprint("failtrace", "inst_binding 3333333333333") & 
+	     Debug.fcall("failtrace", Types.print_type, etype) &
+	     Debug.fprint("failtrace", "\n") *)
+        ---------------------------------
+   	    inst_binding(mod,etype,_,_) => NONE
+
+end
+
+(** relation: inst_binding2
+** This relation investigates a modification and extracts the <...> modification if
+** the modification is in array of components. 
+** Help-relation to inst_binding
+*)
+relation inst_binding2: (Types.Mod,Types.Type,int list,string) => Exp.Exp option  =
+
+  rule  (* this rule handles the case where there is only one element in the index-list*)
+        Mod.lookup_idx_modification(mod,index) => mod2 &
+	    
+        Mod.mod_equation(mod2) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
+
+        Types.match_type(e,ty2,etype) => (e',ty') 
+	    ---------------------------------------------------
+        (*maybe this should be index::[]*)
+	    inst_binding2 (mod,etype,index::[],bind_name) => SOME(e')
+ 
+  rule  (* this rule handles the case where there is several elements in the index-list*)
+        Mod.lookup_idx_modification(mod,index) => mod2 &
+	    
+        inst_binding2(mod2,etype,res,bind_name) => result
+	    ---------------------------------------------------
+        (*maybe this should be index::[]*)
+	    inst_binding2 (mod,etype,index::res,bind_name) => result
+
+  rule  not Mod.lookup_idx_modification(mod,index) => mod2
+	   	---------------------------------------------------
+        (*maybe this should be index::[]*)
+	    inst_binding2 (mod,etype,index::res,bind_name) => NONE
+
+  rule  (*Print.print_buf("inst_binding2 failed\n")*)
+        ---------------------------------------------------
+	    inst_binding2 (_,_,_,_) => fail
+   
+end
+
+
+(** relation: inst_start_binding_exp
 ** This relation investigates a modification and extracts the 
 ** start modification. E.g. Real x(start=1+3) => 1+3
 ** It also handles the case Integer T0[2](final start={5,6})={9,10} becomes
@@ -4754,97 +4847,127 @@ end
 ** Arg 3 is the index list for the element: for T0[1,2] is {1,2} 
 **
 **)
-relation inst_start_binding: (Types.Mod,Types.Type,int list) => DAE.StartValue =
-        
-  rule  
-        
-	    Mod.lookup_comp_modification(mod,"start") => mod2 &
-	    
-	    Mod.mod_equation(mod2) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
-	    Types.match_type(e,ty2,expected_type) => (e',ty') 
-
-	 (*   & Debug.fprint("failtrace", "NO INDEX-------------- \n inst_start_binding ") & 
-	    Debug.fcall("failtrace",Types.print_type, ty2) & 
-	    Debug.fprint("failtrace", "| mod: ") & 
-	    Debug.fcall("failtrace",Mod.print_mod, mod) & 
-	    Debug.fprint("failtrace", "\n | mod2: ") & 
-	    Debug.fcall("failtrace",Mod.print_mod, mod2) & 
-	    Debug.fprint("failtrace", "\n , expected type ") & 
-	    Debug.fcall("failtrace", Types.print_type, expected_type) &
-	    Debug.fprint("failtrace", "\n--------------\n") *)
-        
-	    ---------------------------------------------------
-	    inst_start_binding (mod,expected_type,[]) => SOME(e')
-        
-  rule  
-  	    
-	    Mod.lookup_comp_modification(mod,"start") => mod2 &
-	    
-        inst_start_binding2(mod2,etype,index_list) => result 
-	    ---------------------------------------------------
-        (*maybe this should be index::[]*)
-	    inst_start_binding (mod,etype,index_list) => result
- 
-        
-  rule  (*Debug.fprint("failtrace", "inst_start_binding 3333333333333") & 
-	     Debug.fcall("failtrace", Types.print_type, etype) &
-	     Debug.fprint("failtrace", "\n") *)
-        ---------------------------------
-   	    inst_start_binding(mod,etype,_) => NONE
-
-end
-
-(** relation: inst_start_binding2
-** This relation investigates a modification and extracts the start modification if
-** the modification is in array of components. 
-** Help-relation to inst_start_binding
-*)
-relation inst_start_binding2: (Types.Mod,Types.Type,int list) => DAE.StartValue =
-
-  rule  (* this rule handles the case where there is only one element in the index-list*)
-        Mod.lookup_idx_modification(mod,index) => mod2 &
-	    
-        Mod.mod_equation(mod2) => SOME(Types.TYPED(e,Types.PROP(ty2,c))) &
-
-        Types.match_type(e,ty2,etype) => (e',ty') 
-        
-	   (* & Debug.fprint("failtrace", "-------------- \n inst_start_binding ") & 
-	    Debug.fcall("failtrace",Types.print_type, ty2) & 
-	    Debug.fprint("failtrace", "| mod: ") & 
-	    Debug.fcall("failtrace",Mod.print_mod, mod) & 
-	    Debug.fprint("failtrace", "\n | mod2: ") & 
-	    Debug.fcall("failtrace",Mod.print_mod, mod2) & 
-	    Debug.fprint("failtrace", "\n | mod3: ") & 
-	    Debug.fcall("failtrace", Types.print_type, etype) &
-	    Debug.fprint("failtrace", "\n--------------\n") *)
-        
-	    ---------------------------------------------------
-        (*maybe this should be index::[]*)
-	    inst_start_binding2 (mod,etype,index::[]) => SOME(e')
- 
-  rule  (* this rule handles the case where there is several elements in the index-list*)
-        Mod.lookup_idx_modification(mod,index) => mod2 &
-	    
-        inst_start_binding2(mod2,etype,res) => result
-
-	 (*   & Debug.fprint("failtrace", "-------------- \n inst_start_binding ") & 
-	    Debug.fprint("failtrace", "| mod: ") & 
-	    Debug.fcall("failtrace",Mod.print_mod, mod) & 
-	    Debug.fprint("failtrace", "\n | mod2: ") & 
-	    Debug.fcall("failtrace",Mod.print_mod, mod2) & 
-	    Debug.fprint("failtrace", "\n , expected type ") & 
-	    Debug.fcall("failtrace", Types.print_type, etype) &
-	    Debug.fprint("failtrace", "\n--------------\n") *)
-        
-	    ---------------------------------------------------
-        (*maybe this should be index::[]*)
-	    inst_start_binding2 (mod,etype,index::res) => result
-
-  rule  (*Print.print_buf("inst_start_binding2 failed\n")*)
-        ---------------------------------------------------
-	    inst_start_binding2 (_,_,_) => fail
+relation inst_start_binding_exp: (Types.Mod,Types.Type,int list) => DAE.StartValue =
+     
+  rule inst_binding(mod,etype,index_list,"start") => result
+        -----------------------------------------
+        inst_start_binding_exp(mod,etype,index_list) => result
    
 end
+
+relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.VariableAttributes =
+
+  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
+        inst_string_binding(mod,index_list,"unit") => unit_str &
+        inst_string_binding(mod,index_list,"displayUnit") => displayunit_str &
+        inst_real_binding(mod,index_list,"min") => min_val &
+        inst_real_binding(mod,index_list,"max") => max_val &
+        inst_real_binding(mod,index_list,"start") => start_val &
+        inst_bool_binding(mod,index_list,"fixed") => fixed_val &
+        inst_real_binding(mod,index_list,"nominal") => nominal_val 
+        -----------------------------------------
+        inst_dae_variable_attributes(mod,(Types.T_REAL(_),_),index_list) 
+          => DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),start_val,
+                               fixed_val,nominal_val,DAE.DEFAULT)
+
+  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
+        inst_int_binding(mod,index_list,"min") => min_val &
+        inst_int_binding(mod,index_list,"max") => max_val &
+        inst_int_binding(mod,index_list,"start") => start_val &
+        inst_bool_binding(mod,index_list,"fixed") => fixed_val 
+        -----------------------------------------
+        inst_dae_variable_attributes(mod,(Types.T_INTEGER(_),_),index_list) 
+          => DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,
+                               fixed_val)
+        
+  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
+        inst_bool_binding(mod,index_list,"start") => start_val &
+        inst_bool_binding(mod,index_list,"fixed") => fixed_val 
+        -----------------------------------------
+        inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
+          => DAE.VAR_ATTR_BOOL(quantity_str,start_val,
+                               fixed_val)
+  
+  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
+        inst_string_binding(mod,index_list,"start") => start_val 
+        -----------------------------------------
+        inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
+          => DAE.VAR_ATTR_STRING(quantity_str,start_val)
+
+  rule  Print.print_error_buf "# unknown type for variable.\n"
+        -----------------------------------------
+        inst_dae_variable_attributes(_,_,_) => fail
+
+end
+(*  x02lucpo FIXME: check the type of variable for the fixed because there is a difference between *)
+(*  parameters and variables *)
+relation inst_bool_binding: (Types.Mod,int list,string) => bool =
+     
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.BCONST(result))
+        -----------------------------------------
+        inst_bool_binding(mod,index_list,bind_name) => result
+   
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
+        -----------------------------------------
+        inst_bool_binding(mod,index_list,bind_name) => false
+
+  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+        -----------------------------------------
+        inst_bool_binding(mod,index_list,_) => fail
+   
+end
+
+relation inst_real_binding: (Types.Mod,int list,string) => real =
+     
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.RCONST(result))
+        -----------------------------------------
+        inst_real_binding(mod,index_list,bind_name) => result
+   
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
+        -----------------------------------------
+        inst_real_binding(mod,index_list,bind_name) => 0.0
+
+  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+        -----------------------------------------
+        inst_real_binding(mod,index_list,_) => fail
+   
+end
+
+relation inst_int_binding: (Types.Mod,int list,string) => int =
+     
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.ICONST(result))
+        -----------------------------------------
+        inst_int_binding(mod,index_list,bind_name) => result
+   
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
+        -----------------------------------------
+        inst_int_binding(mod,index_list,bind_name) => 0
+
+  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+        -----------------------------------------
+        inst_int_binding(mod,index_list,_) => fail
+   
+end
+
+relation inst_string_binding: (Types.Mod,int list,string) => string =
+     
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.SCONST(result))
+        -----------------------------------------
+        inst_string_binding(mod,index_list,bind_name) => result
+   
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
+        -----------------------------------------
+        inst_string_binding(mod,index_list,bind_name) => ""
+
+  rule  Print.print_error_buf "# Wrong type on predefined type string.\n"
+        -----------------------------------------
+        inst_string_binding(mod,index_list,_) => fail
+   
+end
+
+
+
+
 
 (** LS & ELN
  ** 
