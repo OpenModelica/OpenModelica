@@ -28,7 +28,8 @@ module Static :
 
   (* Expression analysis *)
   relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties)
-  relation elab_cref : (Env.Env, Absyn.ComponentRef) => (Exp.Exp, Properties)
+  relation elab_cref : (Env.Env, Absyn.ComponentRef)
+	  => (Exp.Exp, Properties, SCode.Accessibility)
 
   (* Constant propagation *)
   relation ceval : (Env.Env, Exp.Exp)	  => Values.Value
@@ -75,7 +76,7 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
   axiom	elab_exp(_, Absyn.BOOL(x))
 	  => (Exp.BCONST(x), PROP(Types.T_BOOL,   true))
 
-  rule	elab_cref(env, cr) => (exp,prop)
+  rule	elab_cref(env, cr) => (exp,prop,_)
 	---------------------------------------
 	elab_exp(env, Absyn.CREF(cr)) => (exp,prop)
 
@@ -387,20 +388,20 @@ relation function_params : Types.Var list => ((Ident * Types.Type) list,
 
   rule	function_params vs => (in, out)
 	------------------------------
-	function_params (Types.VAR(n,SCode.ATTR(_,_,_,Absyn.INPUT),
+	function_params (Types.VAR(n,SCode.ATTR(_,_,_,_,Absyn.INPUT),
 				   false,t,Types.UNBOUND)::vs)
 	  => ((n,t)::in, out)
 
   rule	function_params vs => (in, out)
 	------------------------------
-	function_params (Types.VAR(n,SCode.ATTR(_,_,_,Absyn.OUTPUT),
+	function_params (Types.VAR(n,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),
 					 false,t,Types.UNBOUND)::vs)
 	  => (in, (n,t)::out)
 
   rule	print "# Components in functions must be INPUT or OUTPUT\n" &
 	print "    component: " & print n & print "\n"
 	----------------------------------------------
-	function_params((v as Types.VAR(n,SCode.ATTR(_,_,_,Absyn.BIDIR),_,_,_))
+	function_params((v as Types.VAR(n,SCode.ATTR(_,_,_,_,Absyn.BIDIR),_,_,_))
 			::vs) => fail
 
   rule	print "- function_params failed\n"
@@ -484,21 +485,23 @@ end
  ** equation binding with a constant expression.
  **)
 
-relation elab_cref : (Env.Env, Absyn.ComponentRef) => (Exp.Exp, Properties) =
+relation elab_cref : (Env.Env, Absyn.ComponentRef)
+	  => (Exp.Exp, Properties, SCode.Accessibility) =
 
   rule	print "    elab_cref " & Dump.print_component_ref c & print "\n" &
 	elab_cref_subs (env,c) => (c', const) &
 	print "     subs\n" &
-	Lookup.lookup_var (env,c') => (SCode.ATTR(ad,_,variability,_),
+	Lookup.lookup_var (env,c') => (SCode.ATTR(ad,_,acc,variability,_),
 				       t,
 				       binding) &
 	print "     looked it up\n" &
-	elab_cref2 (env, c', variability, t, binding) => (exp,const) &
+	elab_cref2 (env, c', acc, variability, t, binding)
+	  => (exp,const,acc') &
 	subscript_cref_type (exp,t) => t' &
 	print "    elab_cref " & Dump.print_component_ref c &
 	print " => " & print " (" & Types.print_type t' & print ")\n"
 	-------------------------
-	elab_cref(env, c) => (exp, PROP(t', const))
+	elab_cref(env, c) => (exp, PROP(t', const), acc')
 
   rule	print "- elab_cref failed\n"
 	------------------------------
@@ -514,34 +517,37 @@ end
  **)
 
 relation elab_cref2 : (Env.Env,
-		       Exp.ComponentRef, Absyn.Variability,
-		       Types.Type, Types.Binding) => (Exp.Exp,bool) =
+		       Exp.ComponentRef,
+		       SCode.Accessibility, Absyn.Variability,
+		       Types.Type, Types.Binding)
+	  => (Exp.Exp,bool,SCode.Accessibility) =
 
 	(* FIXME: Check type of expression anyway? *)
-  axiom	elab_cref2 (_,cr, Absyn.VAR, _, _) => (Exp.CREF(cr),false)
-  axiom	elab_cref2 (_,cr, Absyn.DISCRETE, _, _) => (Exp.CREF(cr),false)
+  axiom	elab_cref2 (_,cr, acc, Absyn.VAR, _,_) => (Exp.CREF(cr),false, acc)
+  axiom	elab_cref2 (_,cr, acc, Absyn.DISCRETE, _,_) => (Exp.CREF(cr),false,acc)
 
   rule	value_exp v => e
 	----------------
-	elab_cref2 (_,cr,_,t, Types.VALBOUND(v)) => (e,true)
+	elab_cref2 (_,cr,_,_,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
 
-  axiom	elab_cref2 (env,cr,_,t, Types.EQBOUND(exp,true)) => (Exp.CREF(cr),true)
+  axiom	elab_cref2 (env,cr,acc,_,t, Types.EQBOUND(exp,true))
+	  => (Exp.CREF(cr),true,acc)
 
   rule	print "# Constant or parameter with a non-constant initializer\n" &
 	print "# component: " & Exp.print_component_ref cr & print " = " &
 	Exp.print_exp exp & print "\n"
 	------------------------------
-	elab_cref2 (_,cr, _,_,Types.EQBOUND(exp,false)) => fail
+	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,false)) => fail
 
   rule	print "# Constant or parameter without a value\n" &
 	print "# component: " & Exp.print_component_ref cr & print "\n"
 	----------------------------------------------
-	elab_cref2 (_,cr, _,_,Types.UNBOUND) => fail
+	elab_cref2 (_,cr,_,_,_,Types.UNBOUND) => fail
 
   rule	print "- elab_cref2 failed (component: " &
 	Exp.print_component_ref cr & print ")\n"
 	----------------------------------------
-	elab_cref2 (_,cr, _,_,_) => fail
+	elab_cref2 (_,cr,_,_,_,_) => fail
 
 end	
 
@@ -747,7 +753,12 @@ relation is_const : Exp.Exp => () =
 
 end
 
-(**)
+(** relation: ceval
+ **
+ ** This relations is used when the value of a constant expression is
+ ** needed.  It takes an environment and an expression and calculates
+ ** its value.
+ **)
 
 relation ceval : (Env.Env, Exp.Exp) => Values.Value =
 
