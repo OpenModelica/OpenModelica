@@ -1,6 +1,8 @@
 (**
  ** file: mod.rml
  **
+ ** $Id$
+ **
  ** Modifications are simply the same kind of modifications used in
  ** the `Absyn' module.
  **
@@ -8,10 +10,7 @@
 
 module Mod:
 
-  (* with "exp.rml" *)
   with "absyn.rml"
-  (* with "env.rml" *)
-  (* with "lform.rml" *)
   with "dae.rml"
   with "prefix.rml"
   with "explode.rml"
@@ -48,55 +47,6 @@ val empty_mod = SCode.MOD(false,[],NONE)
 
 (**)
 
-relation dump_final : bool => () =
-
-  axiom dump_final false
-
-  rule print " final "
-       --------------
-       dump_final true
-
-end
-
-relation dump_subs : SCode.SubMod list => () =
-
-  axiom dump_subs []
-
-  rule  print n & dump mod
-	------------------
-	dump_subs [SCode.SUBMOD(n,mod)]
-
-  rule  print n & dump mod & print ", " &
-	dump_subs subs
-	--------------
-	dump_subs SCode.SUBMOD(n,mod)::subs
-
-end
-
-relation dump_subs1 : SCode.SubMod list => () =
-
-  axiom dump_subs1 [] => ()
-
-  rule	print "(" &
-	dump_subs l &
-	print ")"
-	-----------
-	dump_subs1 l
-
-end
-
-relation dump_ass : Absyn.Exp option => () =
-
-  axiom dump_ass NONE
-
-  rule  print " = " & Dump.dump_exp e
-	-----------------------------
-	dump_ass SOME(e)
-
-end
-	
-(**)
-
 relation expand_nomod : SCode.Mod => SCode.Mod =
 
   axiom expand_nomod(m as SCode.MOD(_,_,_)) => m
@@ -121,16 +71,16 @@ relation lookup_modification: (SCode.Mod,Absyn.Ident) => SCode.Mod =
   rule  lookup_modification2(subs,n) => mod
 	---------------------------------
 	lookup_modification(SCode.MOD(_,subs,_),n) => mod
-
+	
   rule	print "# Mod.lookup_modification(" &
-	dump mod & print "," & print i &
+	SCode.print_mod mod & print "," & print i &
 	print ") failed\n"
 	--------------------
 	lookup_modification(mod,i) => fail
 
 end	
 
-relation lookup_modification2 : (SCode.SubMod list,Absyn.Ident) => Mod =
+relation lookup_modification2 : (SCode.SubMod list,Absyn.Ident) => SCode.Mod =
 
   axiom lookup_modification2([],_) => SCode.NOMOD
 

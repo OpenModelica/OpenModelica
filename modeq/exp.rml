@@ -343,12 +343,22 @@ relation lunaryop_symbol : LUnaryOp => string =
 end
 
 relation relop_symbol : RelOp => string =
-  axiom	relop_symbol(LESS)      => " < "
-  axiom	relop_symbol(LESSEQ)    => " <= "
-  axiom	relop_symbol(GREATER)   => " > "
-  axiom	relop_symbol(GREATEREQ) => " >= "
-  axiom	relop_symbol(EQUAL)     => " = "
-  axiom	relop_symbol(NEQUAL)    => " <> "
+  axiom	relop_symbol(INT_LESS)       => " < "
+  axiom	relop_symbol(REAL_LESS)      => " < "
+  axiom	relop_symbol(INT_LESSEQ)     => " <= "
+  axiom	relop_symbol(REAL_LESSEQ)    => " <= "
+  axiom	relop_symbol(INT_GREATER)    => " > "
+  axiom	relop_symbol(REAL_GREATER)   => " > "
+  axiom	relop_symbol(INT_GREATEREQ)  => " >= "
+  axiom	relop_symbol(REAL_GREATEREQ) => " >= "
+  axiom	relop_symbol(INT_EQUAL)      => " = "
+  axiom	relop_symbol(REAL_EQUAL)     => " = "
+  axiom	relop_symbol(STRING_EQUAL)   => " = "
+  axiom	relop_symbol(BOOL_EQUAL)     => " = "
+  axiom	relop_symbol(INT_NEQUAL)     => " <> "
+  axiom	relop_symbol(REAL_NEQUAL)    => " <> "
+  axiom	relop_symbol(STRING_NEQUAL)  => " <> "
+  axiom	relop_symbol(BOOL_NEQUAL)    => " <> "
 end
 
 (** - Utility relations

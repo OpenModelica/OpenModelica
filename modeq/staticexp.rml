@@ -15,6 +15,7 @@ module StaticExp :
 		       Absyn.Exp)           => (Exp.Exp, Types.BasicType, bool)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.ComponentRef, Types.BasicType, bool)
+  relation elab_relop : (Absyn.RelOp, Types.BasicType) => Exp.RelOp
   relation ceval : (Env.Env, Exp.Exp)	  => (Values.Value, Types.BasicType)
 
 end
@@ -57,6 +58,26 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.BasicType, bool) =
 	elab_exp (env,Absyn.CALL(fn,args)) => (Exp.CALL(fn,args'),
 					       Types.T_REAL (*FIXME*),
 					       c)
+
+  rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
+	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
+	bool_and (c_start, c_stop) => const
+	-------------------------------------------
+	elab_exp (env, Absyn.RANGE(start, NONE, stop))
+	  => (Exp.RANGE(start',NONE,stop'),
+	      Types.T_ARRAY(1, Types.T_INTEGER),
+	      const)
+
+  rule	elab_exp (env, start) => (start', Types.T_INTEGER, c_start) &
+	elab_exp (env, step) => (step', Types.T_INTEGER, c_step) &
+	elab_exp (env, stop) => (stop', Types.T_INTEGER, c_stop) &
+	bool_and (c_start, c_step) => c1 &
+	bool_and (c1, c_stop) => const
+	-------------------------------------------
+	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
+	  => (Exp.RANGE(start',SOME(step'),stop'),
+	      Types.T_ARRAY(1, Types.T_INTEGER),
+	      const)
 
   rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
 	---------------------------------------------------------
@@ -237,6 +258,18 @@ relation elab_binary : (Exp.Exp, Types.BasicType, bool,
 	elab_binary (e1,Types.T_REAL,c1,Absyn.ADD,e2,Types.T_REAL,c2)
 	  => (Exp.BINARY(e1,Exp.REAL_ADD,e2), Types.T_REAL, c)
 
+	(**  SUB *)
+
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,Types.T_INTEGER,c1,Absyn.SUB,e2,Types.T_INTEGER,c2)
+	  => (Exp.BINARY(e1,Exp.INT_SUB,e2), Types.T_INTEGER, c)
+
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,Types.T_REAL,c1,Absyn.SUB,e2,Types.T_REAL,c2)
+	  => (Exp.BINARY(e1,Exp.REAL_SUB,e2), Types.T_REAL, c)
+
 	(**  Failure *)
   rule	print "- elab_binary failed " (* &
 	Absyn.dump_exp e1 & print " (" & Types.print_type t1 & print ") o " &
@@ -331,6 +364,20 @@ relation ceval : (Env.Env, Exp.Exp) => (Values.Value, Types.BasicType) =
 	int_add(lhv, rhv) => sum
 	------------------------
 	ceval (env, Exp.BINARY(lh, INT_ADD, rh))
+	  => (Values.INTEGER(sum), Types.T_INTEGER)
+
+  rule	ceval (env, lh) => (Values.REAL(lhv), Types.T_REAL) &
+	ceval (env, rh) => (Values.REAL(rhv), Types.T_REAL) &
+	real_sub(lhv, rhv) => sum
+	-------------------------
+	ceval (env, Exp.BINARY(lh, Exp.REAL_SUB, rh))
+	  => (Values.REAL(sum), Types.T_REAL)
+
+  rule	ceval (env, lh) => (Values.INTEGER(lhv), Types.T_INTEGER) &
+	ceval (env, rh) => (Values.INTEGER(rhv), Types.T_INTEGER) &
+	int_sub(lhv, rhv) => sum
+	------------------------
+	ceval (env, Exp.BINARY(lh, INT_SUB, rh))
 	  => (Values.INTEGER(sum), Types.T_INTEGER)
 
 	(**)

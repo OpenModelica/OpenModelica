@@ -9,8 +9,6 @@ with "explode.rml"
 with "dae.rml"
 with "inst.rml"
 
-(* with "test.rml" *)
-
 relation main =
 
   rule	print "\n = Parsing\n\n" &

@@ -3,6 +3,8 @@
 #
 # David Kågedal <x97davka@ida.liu.se>
 #
+# $Id$
+#
 
 SHELL	= /bin/sh
 CC	= cc
@@ -26,6 +28,7 @@ SRCRML=	dae.rml \
 	exp.rml \
 	staticexp.rml \
 	values.rml \
+	mod.rml \
 	inst.rml \
 	main.rml
 
@@ -83,3 +86,15 @@ reallyclean: clean
 
 report:
 	@(cd report ; $(MAKE))
+
+depend:
+	$(RM) .dep
+	for f in $(SRCRML); do \
+	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.h/p' < $$f | grep -v parse` >> .dep ; \
+	done
+	mv Makefile Makefile.save
+	sed -n -e "1,/^## dependencies/p" < Makefile.save > Makefile
+	cat .dep >> Makefile
+	$(RM) .dep Makefile.save
+
+## dependencies

@@ -29,9 +29,6 @@ typedef int bool;
 
 #include "rml.h"
 #include "yacclib.h"
-#include "exp.h"
-#include "classinf.h"
-#include "types.h"
 #include "absyn.h"
 #include "errno.h"
 
@@ -109,13 +106,10 @@ extern void *sibling_list(AST *ast);
 #token OR		"or"
 #token AND		"and"
 #token NOT		"not"
-#token TIME		"time"
 #token FALS		"false"
 #token TRU		"true"
 #token CONNECT		"connect"
 
-/* #token FORALL		"forall" */
-/* #token ENDFORALL	"endforall" */
 #token IN		"in"
 #token FOR		"for"
 #token WHILE		"while"
@@ -204,14 +198,14 @@ class_definition[bool is_replaceable,bool is_final] :
         << void *restr;
 	   bool partial=false, has_array_dim=false, has_class_spec=false; >>
 	{ PARTIAL << partial = true; >> }
-        ( CLASS_                  << restr = ClassInf__R_5fCLASS; >>
-	| MODEL			  << restr = ClassInf__R_5fMODEL; >>
-	| RECORD		  << restr = ClassInf__R_5fRECORD; >>
-	| BLOCK			  << restr = ClassInf__R_5fBLOCK; >>
-	| CONNECTOR		  << restr = ClassInf__R_5fCONNECTOR; >>
-	| TYPE			  << restr = ClassInf__R_5fTYPE; >>
-	| PACKAGE		  << restr = ClassInf__R_5fPACKAGE; >>
-	| { EXTERNAL } FUNCTION   << restr = ClassInf__R_5fFUNCTION; >>
+        ( CLASS_                  << restr = Absyn__R_5fCLASS; >>
+	| MODEL			  << restr = Absyn__R_5fMODEL; >>
+	| RECORD		  << restr = Absyn__R_5fRECORD; >>
+	| BLOCK			  << restr = Absyn__R_5fBLOCK; >>
+	| CONNECTOR		  << restr = Absyn__R_5fCONNECTOR; >>
+	| TYPE			  << restr = Absyn__R_5fTYPE; >>
+	| PACKAGE		  << restr = Absyn__R_5fPACKAGE; >>
+	| { EXTERNAL } FUNCTION   << restr = Absyn__R_5fFUNCTION; >>
 	)
         i:IDENT
 	comment
@@ -235,7 +229,7 @@ class_definition[bool is_replaceable,bool is_final] :
 				    Absyn__DERIVED(#dp->rml,
 						   (has_array_dim
 						    ? #da->rml
-						    : Types__NODIM),
+						    : Absyn__NODIM),
 						   (has_class_spec
 						    ? #ds->rml
 						    : mk_nil())));
@@ -316,14 +310,14 @@ component_clause!:
 	s:type_specifier
 	l:component_list
         << #0 = #(#[&a], #p, #s, #l);
-	   #0->rml = Absyn__COMPONENTS(Types__ATTR(mk_none(),
+	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(mk_none(),
 						   RML_PRIM_MKBOOL(fl),
-						   pa ? Types__PARAM :
-						   co ? Types__CONST :
-						   Types__VAR,
-						   in ? Types__INPUT :
-						   ou ? Types__OUTPUT:
-						   Types__BIDIR),
+						   pa ? Absyn__PARAM :
+						   co ? Absyn__CONST :
+						   Absyn__VAR,
+						   in ? Absyn__INPUT :
+						   ou ? Absyn__OUTPUT:
+						   Absyn__BIDIR),
 				       #s->rml,
 				       sibling_list(#l));
 				       
@@ -356,7 +350,7 @@ declaration :
 	{ a:array_dimensions }
 	{ s:modification }
 	<< #i->rml = Absyn__COMPONENT(mk_scon($i.u.stringval),
-				      #a ? #a->rml : Types__NODIM,
+				      #a ? #a->rml : Absyn__NODIM,
 				      #s ? mk_some(#s->rml) : mk_none()); >>
         ;
 
@@ -364,8 +358,8 @@ array_dimensions :
 	brak:LBRACK^
 	s1:subscript { ","! s2:subscript }
 	RBRACK!
-	<< if(#s2) #0->rml = Types__TWODIM(#s1->rml,#s2->rml);
-	   else #0->rml = Types__ONEDIM(#s1->rml); >>
+	<< if(#s2) #0->rml = Absyn__TWODIM(#s1->rml,#s2->rml);
+	   else #0->rml = Absyn__ONEDIM(#s1->rml); >>
 	;
 
 subscripts :
@@ -385,17 +379,17 @@ subscript :
 	<<
 	   #0 = #(#[&a],#0);
 	   if(#ex3)
-	     #0->rml = Exp__SUB3(#ex1->rml, #ex2->rml, #ex3->rml);
+	     #0->rml = Absyn__SUB3(#ex1->rml, #ex2->rml, #ex3->rml);
 	   else if(#ex2)
-	     #0->rml = Exp__SUB2(#ex1->rml, #ex2->rml);
+	     #0->rml = Absyn__SUB2(#ex1->rml, #ex2->rml);
 	   else
-	     #0->rml = Exp__SUB1(#ex1->rml);
+	     #0->rml = Absyn__SUB1(#ex1->rml);
 	>>
 
         | ":"!
 	<<
 	   #0 = #(#[&a],#0);
-	   #0->rml = Exp__NOSUB;
+	   #0->rml = Absyn__NOSUB;
 	>>
   ;
 
@@ -463,14 +457,14 @@ component_clause1!:
 	s:type_specifier
 	d:component_declaration
         << #0 = #(#[&a], #p, #s, #d);
-	   #0->rml = Absyn__COMPONENTS(Types__ATTR(mk_none(),
+	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(mk_none(),
 						   RML_PRIM_MKBOOL(fl),
-						   pa ? Types__PARAM :
-						   co ? Types__CONST :
-						   Types__VAR,
-						   in ? Types__INPUT :
-						   ou ? Types__OUTPUT:
-						   Types__BIDIR),
+						   pa ? Absyn__PARAM :
+						   co ? Absyn__CONST :
+						   Absyn__VAR,
+						   in ? Absyn__INPUT :
+						   ou ? Absyn__OUTPUT:
+						   Absyn__BIDIR),
 				       #s->rml,
 				       mk_cons(#d->rml, mk_nil()));
 				       
@@ -611,7 +605,7 @@ expression :
 	  e2:range_expression
 	  ELSE!
 	  e3:expression
-	  << #0->rml = Exp__IFEXP(#e1->rml, #e2->rml, #e3->rml); >>
+	  << #0->rml = Absyn__IFEXP(#e1->rml, #e2->rml, #e3->rml); >>
 	;
 
 range_expression :
@@ -620,16 +614,16 @@ range_expression :
 	<<
 	   if (#e2)
      	     if (#e3)
-               #0->rml = Exp__RANGE(#e1->rml,mk_some(#e2->rml),#e3->rml);
+               #0->rml = Absyn__RANGE(#e1->rml,mk_some(#e2->rml),#e3->rml);
              else
-               #0->rml = Exp__RANGE(#e1->rml,mk_none(),#e2->rml);
+               #0->rml = Absyn__RANGE(#e1->rml,mk_none(),#e2->rml);
         >>
 	;
 
 simple_expression : << void *l, *op; >>
 	logical_term << l = #0->rml; >>
 	( o:OR^ e2:logical_term
-	  << #0->rml = Exp__LBINARY(l, Exp__OR, #e2->rml);
+	  << #0->rml = Absyn__LBINARY(l, Absyn__OR, #e2->rml);
 	     l = #0->rml; >>
 	)*
 	;
@@ -637,26 +631,26 @@ simple_expression : << void *l, *op; >>
 logical_term : << void *l, *op; >>
 	logical_factor << l = #0->rml; >>
 	( a:AND^ e2:logical_factor
-	  << #0->rml = Exp__LBINARY(l, Exp__AND, #e2->rml);
+	  << #0->rml = Absyn__LBINARY(l, Absyn__AND, #e2->rml);
 	     l = #0->rml; >>
 	)*
 	;
 
 logical_factor :
-	not:NOT^ r:relation << #0->rml = Exp__LUNARY(Exp__NOT,#r->rml); >>
+	not:NOT^ r:relation << #0->rml = Absyn__LUNARY(Absyn__NOT,#r->rml); >>
 	| relation 
 	;
 
 relation : << void *relop; >>
 	e1:arithmetic_expression 
-	{ ( LESS^      << relop = Exp__LESS; >>
-	  | LESSEQ^    << relop = Exp__LESSEQ; >>
-	  | GREATER^   << relop = Exp__GREATER; >>
-	  | GREATEREQ^ << relop = Exp__GREATEREQ; >>
-	  | EQEQ^      << relop = Exp__EQUAL; >>
-	  | LESSGT^    << relop = Exp__NEQUAL; >>
+	{ ( LESS^      << relop = Absyn__LESS; >>
+	  | LESSEQ^    << relop = Absyn__LESSEQ; >>
+	  | GREATER^   << relop = Absyn__GREATER; >>
+	  | GREATEREQ^ << relop = Absyn__GREATEREQ; >>
+	  | EQEQ^      << relop = Absyn__EQUAL; >>
+	  | LESSGT^    << relop = Absyn__NEQUAL; >>
 	  ) e2:arithmetic_expression 
-	  << #0->rml = Exp__RELATION(#e1->rml, relop, #e2->rml); >>
+	  << #0->rml = Absyn__RELATION(#e1->rml, relop, #e2->rml); >>
 	}
 	;
 
@@ -664,16 +658,16 @@ arithmetic_expression : << void *op; >>
 
 	unary_arithmetic_expression
 	(
-	  ( PLUS^ << op = Exp__ADD; >> | MINUS^ << op = Exp__SUB; >> )
+	  ( PLUS^ << op = Absyn__ADD; >> | MINUS^ << op = Absyn__SUB; >> )
 	  e2:term
-	  << #0->rml = Exp__BINARY(#0->down->rml,op,#e2->rml); >>
+	  << #0->rml = Absyn__BINARY(#0->down->rml,op,#e2->rml); >>
 	)*
 	;
 
 unary_arithmetic_expression:
 
-	PLUS^ t1:term  << #0->rml = Exp__UNARY(Exp__UPLUS,#t1->rml); >>
-      | MINUS^ t2:term << #0->rml = Exp__UNARY(Exp__UMINUS,#t2->rml); >>
+	PLUS^ t1:term  << #0->rml = Absyn__UNARY(Absyn__UPLUS,#t1->rml); >>
+      | MINUS^ t2:term << #0->rml = Absyn__UNARY(Absyn__UMINUS,#t2->rml); >>
       | term
 	;
 
@@ -681,17 +675,17 @@ term : << void *op; >>
 
 	factor
 	(
-	  ( MULT^ << op = Exp__MUL; >>
-	  | DIV^  << op = Exp__DIV; >> )
+	  ( MULT^ << op = Absyn__MUL; >>
+	  | DIV^  << op = Absyn__DIV; >> )
 	  f:factor
-	  << #0->rml = Exp__BINARY(#0->down->rml,op,#f->rml); >>
+	  << #0->rml = Absyn__BINARY(#0->down->rml,op,#f->rml); >>
 	)*
 	;
 
 factor :
 	  e1:primary 
-	  { "^"^ e2:primary << #0->rml = Exp__BINARY(#e1->rml,
-						     Exp__POW,
+	  { "^"^ e2:primary << #0->rml = Absyn__BINARY(#e1->rml,
+						     Absyn__POW,
 						     #e2->rml); >> }
 	;
 
@@ -705,25 +699,24 @@ primary : << bool is_matrix; >>
 	     if (is_matrix) {
 	       /* FIXME */
 	     } else {
-	       #0->rml = Exp__ARRAY(sibling_list(#c));
+	       #0->rml = Absyn__ARRAY(sibling_list(#c));
 	     }
 	  >>
 	  RBRACK!
-	| ni:UNSIGNED_INTEGER << #ni->rml = Exp__INTEGER(mk_icon($ni.u.ival)); >>
-	| nr:UNSIGNED_REAL   << #nr->rml = Exp__REAL(mk_rcon($nr.u.realval)); >>
-	| f:FALS/*E*/        << #f->rml = Exp__BOOL(RML_FALSE); >>
-	| t:TRU/*E*/         << #t->rml = Exp__BOOL(RML_TRUE); >>
+	| ni:UNSIGNED_INTEGER << #ni->rml = Absyn__INTEGER(mk_icon($ni.u.ival)); >>
+	| nr:UNSIGNED_REAL   << #nr->rml = Absyn__REAL(mk_rcon($nr.u.realval)); >>
+	| f:FALS/*E*/        << #f->rml = Absyn__BOOL(RML_FALSE); >>
+	| t:TRU/*E*/         << #t->rml = Absyn__BOOL(RML_TRUE); >>
 	| (name_path_function_arguments)?
-	| i:component_reference << #0->rml = Exp__CREF(#i->rml); >>
-	| TIME               << #0->rml = Exp__TIME; >>
-	| s:STRING           << #s->rml = Exp__STRING(mk_scon($s.u.stringval)); >>
+	| i:component_reference << #0->rml = Absyn__CREF(#i->rml); >>
+	| s:STRING           << #s->rml = Absyn__STRING(mk_scon($s.u.stringval)); >>
 	;
 
 name_path_function_arguments ! : << Attrib a = $[FUNCALL,"---"]; >>
 	n:name_path f:function_arguments
 	<< 
 	   #0=#(#[&a],#n,#f);
-	   #0->rml = Exp__CALL(#n->rml, sibling_list(#f));
+	   #0->rml = Absyn__CALL(#n->rml, sibling_list(#f));
 	>>
 	;
 
@@ -731,9 +724,9 @@ name_path : << bool qualified = false; >>
 	i:IDENT^
 	{ dot:DOT^ n:name_path << qualified = true; >> }
         << if(qualified)
-	     #0->rml = Exp__QUALIFIED(mk_scon($i.u.stringval),#n->rml);
+	     #0->rml = Absyn__QUALIFIED(mk_scon($i.u.stringval),#n->rml);
            else
-             #0->rml = Exp__IDENT(mk_scon($i.u.stringval)); >>
+             #0->rml = Absyn__IDENT(mk_scon($i.u.stringval)); >>
 	;
 
 /* member_list: */
@@ -750,9 +743,9 @@ component_reference : << void *tail = NULL;>>
 	  << #i->rml = mk_scon($i.u.stringval); >>
 	  { dot:DOT^ c:component_reference << tail = #c->rml; >> }
 	  << if(tail)
-	       #0->rml = Exp__CREF_5fQUAL(#i->rml, #a?#a->rml:mk_nil(), tail);
+	       #0->rml = Absyn__CREF_5fQUAL(#i->rml, #a?#a->rml:mk_nil(), tail);
              else
-	       #0->rml = Exp__CREF_5fIDENT(#i->rml, #a?#a->rml:mk_nil()); >>
+	       #0->rml = Absyn__CREF_5fIDENT(#i->rml, #a?#a->rml:mk_nil()); >>
 	;
 
 /* not in document's grammar */

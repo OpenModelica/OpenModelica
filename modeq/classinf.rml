@@ -53,7 +53,7 @@ module ClassInf :
 
   (** - Exported relations *)
 
-  (* relation start : (Restriction, string) => State *)
+  relation start : (Absyn.Restriction, string) => State
   relation trans : (State, Event) => State
 
   relation valid : (State, Absyn.Restriction) => ()
@@ -152,24 +152,24 @@ end
 (** relation: start
  ** purpose:  State machine initialization
  **)
-(*
+
 relation start : (Absyn.Restriction, string) => State =
 
-  axiom	start (R_CLASS, s) 	       => UNKNOWN(s)
-  axiom	start (R_MODEL, s) 	       => MODEL(s)
-  axiom	start (R_RECORD, s)            => RECORD(s)
-  axiom	start (R_BLOCK, s)             => BLOCK(s)
-  axiom	start (R_CONNECTOR, s)         => CONNECTOR(s)
-  axiom	start (R_TYPE, s)              => TYPE(s)
-  axiom	start (R_PACKAGE, s)           => PACKAGE(s)
-  axiom	start (R_FUNCTION, s)          => FUNCTION(s)
-  axiom	start (R_PREDEFINED_INT, s)    => TYPE_INTEGER(s)
-  axiom	start (R_PREDEFINED_REAL, s)   => TYPE_REAL(s)
-  axiom	start (R_PREDEFINED_STRING, s) => TYPE_STRING(s)
-  axiom	start (R_PREDEFINED_BOOL, s)   => TYPE_BOOL(s)
+  axiom	start (Absyn.R_CLASS, s) 	       => UNKNOWN(s)
+  axiom	start (Absyn.R_MODEL, s) 	       => MODEL(s)
+  axiom	start (Absyn.R_RECORD, s)            => RECORD(s)
+  axiom	start (Absyn.R_BLOCK, s)             => BLOCK(s)
+  axiom	start (Absyn.R_CONNECTOR, s)         => CONNECTOR(s)
+  axiom	start (Absyn.R_TYPE, s)              => TYPE(s)
+  axiom	start (Absyn.R_PACKAGE, s)           => PACKAGE(s)
+  axiom	start (Absyn.R_FUNCTION, s)          => FUNCTION(s)
+  axiom	start (Absyn.R_PREDEFINED_INT, s)    => TYPE_INTEGER(s)
+  axiom	start (Absyn.R_PREDEFINED_REAL, s)   => TYPE_REAL(s)
+  axiom	start (Absyn.R_PREDEFINED_STRING, s) => TYPE_STRING(s)
+  axiom	start (Absyn.R_PREDEFINED_BOOL, s)   => TYPE_BOOL(s)
 
 end
-*)
+
 (** relation: trans
  **)
 
