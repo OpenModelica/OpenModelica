@@ -19,7 +19,7 @@ ifdef USE_CORBA
   CORBAIMPL = -I../../modeq/runtime
   CORBAOBJS = ../../modeq/runtime/modeq_communication.o \
 	../../modeq/runtime/modeq_communication_impl.o
-  CORBALIB = -L$(CORBAHOME)/lib -lmico
+  CORBALIB = -L$(CORBAHOME)/lib -lmico -lssl -lcrypto
   CORBAINC = -I$(CORBAHOME)/include
 else
   CORBAIMPL =
@@ -34,7 +34,7 @@ CFLAGS = $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = $(LIBP) 
 
-LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap -lssl  $(CORBALIB) -lcrypto -lm -lpthread 
+LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap  $(CORBALIB) -lm -lpthread 
 
 
 OBJS += mosh.o options.o
