@@ -61,7 +61,7 @@ val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scal
 
 val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
 
-val Icon_records = "record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); end Icon;"
+val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); GraphicItem graphics[:]; end Icon;"
 
 (* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
 (* PA. Only Line for now... *)

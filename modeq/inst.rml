@@ -41,7 +41,7 @@ module Inst:
   with "explode.rml"
   with "mod.rml"
   with "prefix.rml"
-  with "types.rml"							  
+  with "types.rml"
 
   type InstDims = Exp.Subscript list
 
@@ -71,7 +71,8 @@ module Inst:
 			   SCode.Class, bool, InstDims)
 	  => (DAE.Element list, Env.Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list)
-
+  relation inst_record_constructor_elt : (Env.Env, SCode.Element) 
+	 => (Types.Var)
   relation mktype : (ClassInf.State,Types.Var list) => Types.Type
 
   relation init_vars_modelica_output : DAE.Element list => DAE.Element list
@@ -2509,4 +2510,29 @@ relation init_vars_modelica_output_2 : (Exp.ComponentRef, Exp.Exp option, DAE.El
 	init_vars_modelica_output_2 (excr, exp, e1 :: rest) => (exp', e1 :: rest')
 
 end
+(** relation: inst_record_constructor_elt
+ ** This relation takes an Env and an Element and builds a input argument to a record constructor.
+   ** E.g if the element is Real x; the resulting Var is "input Real x;"
+**)
+relation inst_record_constructor_elt : (Env.Env,SCode.Element) =>
+	Types.Var =
+	  
+  rule	elab_arraydim(env,dim,NONE) => dimexp &
+	Lookup.lookup_class(env,t) => (cl,cenv) &
+	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
+	
+	elab_arraydim(env,dim,NONE) => dimexp &
+	inst_var(cenv,mod',Prefix.NOPRE,[],id,cl,attr,dimexp,[],[]) => (_,_,tp') &
+	Debug.fprint ("recconst", "Type of argument:") &
+	Debug.fcall ("recconst",Types.print_type,tp') &
+	Debug.fprint ("recconst","\n") &
+	Mod.mod_equation mod' => eq &
+	make_binding(env,attr,eq) => bind
+	---------------------------------------
+	inst_record_constructor_elt (env,SCode.COMPONENT(id,_,prot,attr as SCode.ATTR(dim,f,acc,var,dir),t,mod)) 
+	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp',bind)
 
+  rule	print "#Error, inst_record_constructor_elt failed\n"
+	------------------
+	inst_record_constructor_elt(_,_) => fail
+end

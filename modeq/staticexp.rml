@@ -1158,16 +1158,28 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 	elab_named_input_args(env,[],farg,slots) => ([],slots,true) *)
 
   rule	elab_exp(env, e) => (e',PROP(t, c1)) &
+	Debug.fprint("sei", "elab_named_input_arg, elaborated exp\n  id =") &
+	Debug.fprint("sei",id) &
 	find_named_arg_type(id,farg) => vt &
-	match_type(e', t, vt) => (e'',_) &
+	Debug.fprint ("sei", "elab_named_input_arg, found type\n") &
+	match_type(e', t, vt) => (e'',_) &      
 	fill_slot((id,vt), e'', slots) => slots' &
-	elab_named_input_args(env, nas, farg ,slots') => (newslots, c2)&
+	Debug.fprint ("sei", "elab_named_input_arg, filled slot\n") &
+	elab_named_input_args(env, nas, farg ,slots') => (newslots, c2) &
 	bool_and(c1, c2) => c 
 	---------------------
 	elab_named_input_args (env, Absyn.NAMEDARG(id,e)::nas,farg,slots) 
 	  => (newslots, c)
 
 axiom elab_named_input_args (_,[],_,slots) => (slots,true)
+
+  rule	Debug.fprint ("sei","elab_named_input_args failed, nargs = ") &
+	Debug.fprint_list ("sei", narg, Dump.print_named_arg," ,")&
+	Debug.fprint ("sei"," FuncArg=") &
+	Debug.fcall  ("sei",Types.print_params,farg) &
+	Debug.fprint ("sei", "\n")
+	-----------------
+	elab_named_input_args(env,narg,farg,_) => fail
 end
 
 (** relation find_named_arg_type
@@ -2111,7 +2123,6 @@ relation match_type : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Type)
 	type_convert(e, e_type, expected_type) => (e',e_type')
 	--------------------------------------------
 	match_type(e, e_type, expected_type) => (e',e_type')
-
 end
 
 (** relation: type_convert

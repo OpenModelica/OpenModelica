@@ -99,10 +99,12 @@ module Types :
   relation lookup_component : (Type, Ident) => Var
   relation lift_array : (Type,int option) => Type
   relation unlift_array : Type => Type
+  relation make_array: (Type, Absyn.ArrayDim) => Type
   relation array_element_type : Type => Type
   relation print_type : Type => ()
   relation print_var : Var => ()
   relation print_binding : Binding => ()
+  relation print_params : FuncArg list => () 
   relation make_function_type : (Var list) => Type
   relation make_enumeration_type : (Var list) => Type
   relation is_parameter: Var => ()
@@ -369,6 +371,17 @@ relation lookup_component2 : (Var list , Ident) => Var =
 	-----------------------------
 	lookup_component2(v::vs, n) => v
 
+end
+
+(** relation: make_array
+ **  This relation makes an array type given a Type and an Absyn.ArrayDim
+ **)
+relation make_array: (Type, Absyn.ArrayDim) => Type =
+  axiom	 make_array(t,[]) => t
+
+  rule	list_length(l) => len
+	--------------------
+	make_array(t,l) => T_ARRAY(DIM(SOME(len)),t)
 end
 
 (** relation: lift_array

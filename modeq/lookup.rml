@@ -353,16 +353,12 @@ end
 
 relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list =
 
-  rule	build_varlst_from_elts(rest,env) => types &
+  rule	build_varlst_from_elts(rest,env) => vars &
   (*P.A Here we need to do a lookup of the type. Therefore we need the env passed along from lookup_xxxx function. *)
-	lookup_class(env,t) => (cl,cenv) &
-	Mod.elab_mod(env,Prefix.NOPRE,mod) => mod' &
-	Inst.inst_class(cenv,mod',Prefix.NOPRE,[],cl,[]) => (_,_,tp,cistate) &	
-	Mod.mod_equation mod' => eq &
-	Inst.make_binding(env,attr,eq) => bind
+	Inst.inst_record_constructor_elt(env,comp) => var
 	-------------------------------------
-	build_varlst_from_elts (SCode.COMPONENT(id,_,prot,attr as SCode.ATTR(dim,f,acc,var,dir),t,mod)::rest,env) 
-	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp,bind)::types
+	build_varlst_from_elts ((comp as SCode.COMPONENT(_,_,_,_ ,_,_))::rest,env) 
+	    => var::vars
 
   axiom	build_varlst_from_elts ([],_) => []
 
