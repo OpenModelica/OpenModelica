@@ -8,9 +8,9 @@
 MODEQ=../modeq
 CC=gcc
 
-CFLAGS= -Wall -ansi -pedantic -I../../c_runtime
+CFLAGS= -Wall -ansi -pedantic -g -I../../c_runtime
 
-LDFLAGS= -L../../c_runtime 
+LDFLAGS= -L../../c_runtime -lm
 
 MOFILES = $(TARGET:=.mo)
 TARGETS = $(MOFILES:.mo=)
@@ -21,7 +21,7 @@ all : $(MOFILES:.mo=)
 
 
 $(TARGETS) : % : %.main.o
-	gcc -o $@ $(LDFLAGS) $< -lc_runtime
+	gcc -g -o $@ $(LDFLAGS) $< -lc_runtime
 
 $(OBJS) : %.main.o : %.c main.c
 	@echo compiling $(subst .main.o,,$@)

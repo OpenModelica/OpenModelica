@@ -1,7 +1,7 @@
 
 function misc_bubblesort
   input Real[10] x;
-  output Real[10] y;
+  output Real[size(x,1)] y;
 protected
   Real t;
 algorithm
@@ -9,7 +9,7 @@ algorithm
   y := x;
 
   for i in 1:size(x,1) loop
-    for j in i:size(x,1) loop
+    for j in 1:size(x,1) loop
       
       if y[i] > y[j] then
 	t := y[i];
