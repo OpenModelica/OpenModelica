@@ -300,7 +300,7 @@ relation translate_file : string list => () =
 	& Parser.parse f => p
 	& SCode.elaborate(p) => p'
 	& Inst.instantiate(p') => d
-	& transform_if_flat(f,d) => d 
+	(*& transform_if_flat(f,d) => d *)
 	& Absyn.last_classname(p) => cname
 	& Tornado.generate_code(p,d,cname) 
 	----------------------------
