@@ -387,6 +387,16 @@ and converted to assignment statements when possible.  Strongly
 connected sets of equations are solved by using a symbolic or numeric
 solver.
 
+Most tools that use Modelica will also let users define models and
+describe their relations using a graphical tool, with icons
+representing the models, and lines representing connections between
+them.
+
+This section is not intended to teach Modelica, but to give an
+introduction to the basic ideas behind the language.  See
+\cite{modelica10} for a more comprehensive introduction to the
+language.
+
 \subsection{Object-orientation}
 
 Modelica is an object-oriented modeling language, which means that the
@@ -406,10 +416,70 @@ modeling.
 \subsection{The class concept}
 
 In Modelica, the basic means of structuring models is the
-\firstref{class} concept.  Everthing in Modelica is declared as a
-class.  
+\firstref{class} concept.  Everything in Modelica is declared as a
+class.  There are several keywords in the language that is used for
+declaring classes, depending on what kind of class is being defined.
+A common kind is \term{model}, which is used for describing the main
+objects in a model definition.
 
-\fixme{More stuff}
+\begin{example}[A model]
+\label{exa:model}
+  The following piece of Modelica code defines a model named
+  \code{Resistor}.
+
+\begin{boxedverbatim}
+  model Resistor
+    parameter Real R(unit = "Ohm");
+    Pin n, p;
+    Real v, i;
+  equation
+    v = p.v - n.v;
+    i = n.i;
+    i = p.i;
+    R * i = v;
+  end Resistor;
+\end{boxedverbatim}
+
+  The definition contains two variables \code{i}, and \code{v}, a
+  parameter \code{R}, and two connector components \code{p}, and
+  \code{n}, each containing \code{i} and \code{v} variables.
+\end{example}
+
+The \code{Pin} in the example above is not defined as as \code{model},
+but rather as a \code{connector}, which is a simpler variant of
+\code{model}, which is used to define connect models to each other.
+The connectors define interfaces (or ports), which connect to each
+other using the Modelica \code{connect} clause.  Example
+\ref{exa:silly} shows how the model definition \code{Resistor} can be
+used to build more complex models, in this case a silly circuit with a
+voltage source (\code{ACSource}) and two resistors connected in a
+loop.
+
+\begin{example}[A silly circuit]
+  \label{exa:silly}
+  
+\begin{boxedverbatim}
+  model SillyCircuit
+    Resistor r1(R = 1.0), r2(R = 2.0);
+    ACSource ac(V = 10.0);
+  equation
+    connect(r1.n, r2.p);
+    connect(ac.n, r1.p);
+    connect(r2.n, ac.p);
+  end SillyCircuit;
+\end{boxedverbatim}
+\end{example}
+
+\subsection{Hierarchical modeling}
+
+The basic principle when building models in Modelica is that of model
+reuse, and hierarchical modeling.  This means that complex models are
+created by taking previously defined models (and connectors etc) and
+combining them into a new model definition that can be used just like
+any other model.
+
+Example \ref{exa:model} show an example of this, where the connector
+\code{Pin} is reused twice.
 
 \section{The Modelica design group}
 \label{sec:designgroup}
@@ -549,7 +619,7 @@ have been done.  The limitations are listen in no particular order.
   This might seem like a very basic feature to support, but it depends
   on properties of the type system which are not completely clear yet.
   
-  A type is a property of a peice of data.  Instantiating a class
+  A type is a property of a piece of data.  Instantiating a class
   gives an object of a certain class, and by examining the class
   definition it is possible to determine what the type will be
   \emph{if the class is instantiated without modifications}.  But the
@@ -593,18 +663,18 @@ have been done.  The limitations are listen in no particular order.
   make it possible to determine the full type of the arguments for
   each function call.
   
-  However, this is currently hard to implement in this semantic
-  specification because of RML limitations.  The RML module which does
-  the instantiation is called \code{Inst} (see section
-  \ref{src:Inst}).  It needs to do static analysize of expressions,
-  and for that purpose it uses the relations in the module
-  \code{Static}.  But if the \code{Static} module encounters a
-  function call it would need to do an implicit instantiation, which
-  would require the use of the \code{Inst} module.  Unfortunately,
-  circular dependencies between modules are not allowed in RML.
+%  However, this is currently hard to implement in this semantic
+%  specification because of RML limitations.  The RML module which does
+%  the instantiation is called \code{Inst} (see section
+%  \ref{src:Inst}).  It needs to do static analysis of expressions,
+%  and for that purpose it uses the relations in the module
+%  \code{Static}.  But if the \code{Static} module encounters a
+%  function call it would need to do an implicit instantiation, which
+%  would require the use of the \code{Inst} module.  Unfortunately,
+%  circular dependencies between modules are not allowed in RML.
 
-  This can be worked around in several ways, but all of them would
-  make the specification less structured or harder to understand.
+%  This can be worked around in several ways, but all of them would
+%  make the specification less structured or harder to understand.
 
 \item The checking of component attributes is severely lacking.  For
   instance, it is currently possible to use a variable in an outer
@@ -732,13 +802,13 @@ mean.
   \code{height} are separate elements, but the grammar only needs one
   \code{element} rule to match them.
 
-  \begin{boxedverbatim}
-    class C
-      extends OtherClass;
-      type Length = Real(unit = "m");
-      Length width, height;
-    end C;
-  \end{boxedverbatim}
+\begin{boxedverbatim}
+  class C
+    extends OtherClass;
+    type Length = Real(unit = "m");
+    Length width, height;
+  end C;
+\end{boxedverbatim}
 \end{example}
 
 The word \term{instantiate} is used in many language descriptions,
@@ -779,15 +849,15 @@ two related, but slightly different, meanings.
   \code{B} needs to be instantiated twice to create the subcomponents
   \code{b1} and \code{b2}.
 
-  \begin{boxedverbatim}
-    class B
-      Real x;
-    end B;
+\begin{boxedverbatim}
+  class B
+    Real x;
+  end B;
 
-    class C
-      B b1,b2;
-    end C;
-  \end{boxedverbatim}
+  class C
+    B b1,b2;
+  end C;
+\end{boxedverbatim}
 \end{example}
 
 \begin{Def}{Component}
@@ -815,16 +885,16 @@ two related, but slightly different, meanings.
   
   Consider the following Modelica model:
   
-  \begin{boxedverbatim}
-    model A
-      Real x;
-    end A;
+\begin{boxedverbatim}
+  model A
+    Real x;
+  end A;
 
-    model B
-      A a;
-      Real y;
-    end B;
-  \end{boxedverbatim}
+  model B
+    A a;
+    Real y;
+  end B;
+\end{boxedverbatim}
 
   If an instance of \code{B} is created under the name, \code{B} will
   contain two subcomponents referred to as \code{B.a.x} and
@@ -1127,25 +1197,25 @@ the last model in the file.
 
 \begin{figure}[htbp]
 \begin{boxedverbatim}
-connector C
-  Real x;
-  flow Real y;
-end C;
+  connector C
+    Real x;
+    flow Real y;
+  end C;
 
-model A
-  C con1, con2;
-end A;
+  model A
+    C con1, con2;
+  end A;
 
-model M
-  C con;
-  A a1, a2;
-  Real y;
-equation
-  connect(con,a1.con1);
-  connect(a1.con1,a2.con1);
-  connect(a1.con2,a2.con2);
-  y = con.y;
-end M;
+  model M
+    C con;
+    A a1, a2;
+    Real y;
+  equation
+    connect(con,a1.con1);
+    connect(a1.con1,a2.con1);
+    connect(a1.con2,a2.con2);
+    y = con.y;
+  end M;
 \end{boxedverbatim}
   \caption{\code{connect} example}
   \label{fig:csetex1}
@@ -1243,10 +1313,10 @@ parameter \code{amplitude} in the example in figure
 \ref{fig:nonstrucparam}, there will be no problems changing its value
 after translating the model to simple equations.
 
-Howver, when the parameter is used for more complicated things, such
+However, when the parameter is used for more complicated things, such
 as defining the size of an array, it is usually not possible to change
 its value after translation to simple equations.  Consider the
-exammple in figure \ref{fig:strucparam}.  The size of the array
+example in figure \ref{fig:strucparam}.  The size of the array
 \code{v} is determined by the parameter \code{levels}.  The equation
 section first defines two equations, and then there is a loop which
 defines another $\code{levels} - 1$ equations.  This means that the
@@ -1258,14 +1328,14 @@ erroneous model.
 
 \begin{figure}[htbp]
   \begin{center}
-    \begin{boxedverbatim}
-      model SinSource
-        parameter Real amplitude;
-        Real x;
-      equation
-        x = amplitude * sin(time);
-      end SinSource;
-    \end{boxedverbatim}
+\begin{boxedverbatim}
+  model SinSource
+    parameter Real amplitude;
+    Real x;
+  equation
+    x = amplitude * sin(time);
+  end SinSource;
+\end{boxedverbatim}
     \caption{Non-structural parameter}
     \label{fig:nonstrucparam}
   \end{center}
@@ -1273,21 +1343,21 @@ erroneous model.
 
 \begin{figure}[htbp]
   \begin{center}
-    \begin{boxedverbatim}
-      model Stack
-        parameter Integer levels;
-        Real v[levels];
-        Real x,y;
-      protected
-        Integer i;
-      equation
-        x = v[1];
-        y = v[levels];
-        for i in 2:levels loop
-          v[i-1] = v[i] * 0.8;
-        end for;
-      end Stack;
-    \end{boxedverbatim}
+\begin{boxedverbatim}
+  model Stack
+    parameter Integer levels;
+    Real v[levels];
+    Real x,y;
+  protected
+    Integer i;
+  equation
+    x = v[1];
+    y = v[levels];
+    for i in 2:levels loop
+      v[i-1] = v[i] * 0.8;
+    end for;
+  end Stack;
+\end{boxedverbatim}
     \caption{Structural parameter}
     \label{fig:strucparam}
   \end{center}
@@ -1305,7 +1375,7 @@ if at least one of the following conditions are fulfilled:
   value is defined in terms of another structural parameter.
 \end{enumerate}
 
-As this semanatic specification treats all parameters as constants,
+As this semantic specification treats all parameters as constants,
 this distinction between structural and non-structural parameters is
 not important.  But for simulation environment implementors, it will
 be important.  Most implementations will include a compilation step
@@ -1629,14 +1699,27 @@ too lengthy, but a brief overview is given below.
 
 When instantiating a class, certain information is available about
 what has been instantiated before, and what set of modifiers are
-currently applicable to the class being instantiated.
+currently applicable to the class being instantiated.  Modelica uses
+lexical scoping (the language specification currently specifies
+dynamic scoping, but this will be changed in later versions), which
+means that when a class definition is saved in the environment, the
+current environment needs to be saved in the environment together with
+the class definition.
 
 \subsection{Class instantiation}
 \label{sec:eleminst}
 
-Instantiation of a class is done by the relation \code{Inst.inst\_class}
+Instantiation of a class is done by the relation
+\code{Inst.inst\_class}.  It goes through the class definition and
+instantiates all its elements, expanding all \code{extends} elements.
+The equations are added to the list of equations that are collected as
+the result of instantiation.
 
-\unfinished
+Before adding anything to the result, all names of components are
+converted to globally unique names, using the normal hierarchical
+naming scheme with dots between the name parts.  If topmost model
+contains a sub-model named \code{a}, which contains a variable
+\code{b}, the global name of the last variable will be \code{a.b}.
 
 
 \section{Static expression analysis}
@@ -1681,13 +1764,13 @@ transformations are applied to them.
 
 \begin{figure}[htbp]
   \begin{center}
-    \begin{boxedverbatim}
-      model M
-        real x[3], y[3];
-      equation
-        x = y;
-      end M;
-    \end{boxedverbatim}
+\begin{boxedverbatim}
+  model M
+    real x[3], y[3];
+  equation
+    x = y;
+  end M;
+\end{boxedverbatim}
     \caption{Array component equation}
     \label{fig:arreq}
   \end{center}
@@ -1695,15 +1778,15 @@ transformations are applied to them.
 
 \begin{figure}[htbp]
   \begin{center}
-    \begin{boxedverbatim}
-      model M
-        real x[3], y[3];
-      equation
-        x[1] = y[1];
-        x[2] = y[2];
-        x[3] = y[3];
-      end M;
-    \end{boxedverbatim}
+\begin{boxedverbatim}
+  model M
+    real x[3], y[3];
+  equation
+    x[1] = y[1];
+    x[2] = y[2];
+    x[3] = y[3];
+  end M;
+\end{boxedverbatim}
     \caption{Expanded array equations}
     \label{fig:arreqexp}
   \end{center}
@@ -1729,7 +1812,7 @@ not allow the concept of expression subscripting or of picking
 subcomponent from complex expressions.  In the flat Modelica output
 (see chapter \ref{cha:target}) this is solved in two different ways.
 For arrays, an expression subscripting operator is introduced, which
-allowd things like \codebox{(A*B)[3,4]}.  For expressions of a
+allows things like \codebox{(A*B)[3,4]}.  For expressions of a
 composite type, a new identifier is introduced, which is defined to be
 identical to the expression.  Then this name is used to look up
 subcomponents.  The name is constructed by concatenating the name
@@ -1927,7 +2010,7 @@ are expanded into their simple components.
 \chapter{Conclusions}
 \label{cha:conclusions}
 
-In this chapter, some of the conclusions and experences from writing
+In this chapter, some of the conclusions and experiences from writing
 the semantic specification are given.  Also, some suggestions for
 future work are proposed.
 
@@ -1935,7 +2018,7 @@ future work are proposed.
 \label{sec:result}
 
 The result of this work is an RML semantic specification for Modelica
-which is incomplete, but works farily well for the part of the
+which is incomplete, but works fairly well for the part of the
 language it handles.
 
 Another result of working on the semantic specification is that many
@@ -1949,12 +2032,12 @@ specifications, it has meant great progress.
 \section{Translator usability}
 
 Another goal was to produce a Modelica translator that could be used
-in real-world applications.  This has become somthing of a secondary
+in real-world applications.  This has become something of a secondary
 goal, but there are some issues worth mentioning.
 
 Some properties of the formal semantic specification makes the output
 of the translator not so suitable for real use.  For instance, solving
-matrix eqations is often best done by keeping them as equations
+matrix equations is often best done by keeping them as equations
 between matrices, but the translator translates them to one equation
 for each of the matrix elements.
 
@@ -1964,15 +2047,50 @@ existing solvers and simulation environments.  This is not complete,
 and relies on some ugly tricks with the RML system.  This code is not
 included in this report.
 
-As to the performance of the translator, this has not been evaluated,
-but it is clear that it is not overly inefficient.  It translates a
-reasonably sized model in a few seconds on a modern computer system.
+The performance of the translator has not been fully evaluated,
+although a simple performance test was done using a 1049--line
+Modelica model, containing 16 repetitions of a simple electrical
+circuit model.  The test was performed on a Sun Ultra 1 workstation
+running Solaris 2.6.  Running the translation 20 times with the
+standard output directed to \filename{/dev/null}, it translated the
+file in 0.26 seconds on the average.  This is not a complete test, but
+at least it hints that the performance is reasonable.
 
+
+\section{RML experiences}
+\label{sec:rmlexpereince}
+
+For practical purposes, writing an RML specification is very much like
+programming in a functional programming language or a logic
+programming language, but without the expressive power of those
+languages.  This limitations of course make the programming more
+cumbersome, but on the upside, the resulting specification will
+hopefully be much more readable.
+
+The newest version of the RML compiler works well, and even gives
+useful error messages.  However, debugging a specification after it
+has passed through the compiler is not very fun.  No debugger is
+available, and there is no built-in means of tracing the resolution
+process.
 
 \section{Future work}
 \label{sec:future}
 
-\unfinished
+As already stated, the semantic specifications needs more work before
+it can be considered complete.  It is possible that it even needs to
+be rewritten in large parts, to accommodate for new developments in the
+Modelica design process.
+
+To make the translator usable in a production environment, more work
+is needed to allow the translator to be used with existing modeling
+tools and equation solvers.
+
+Another important work is the development of a test suite that is used
+to test the translator to see that it does what it is supposed to.
+There currently exists a test suite that tests most of the features
+that are implemented, and some which are not yet implemented.  It
+contains over 160 cases, but it needs to be expanded 
+
 
 \appendix
 
@@ -1989,7 +2107,7 @@ The specification is separated into a number of files, to modularize
 it and to make it easier to maintain and to make the structure
 clearer.  Each file contains one module.  The names of the files are
 the names of the module it contains, with all letters in lower case,
-and with the suffex \code{.rml} appended.
+and with the suffix \code{.rml} appended.
 
 \subsection*{Source modules}
 
