@@ -632,7 +632,7 @@ relation generate_compute_residual_state:(string,
   rule	
         build_residual_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_list &
         Util.string_append_list(eqn_str_list) => cstate &
-        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,"\n}\n"]) 
+        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,"\n}\n"]) 
 	  => res
         -------------------------------------------------------------
         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => res
@@ -650,7 +650,7 @@ end
                                    int vector, 
                                    int list list) => string =
          
-  rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xprime, double* y)\n{\n" &
+  rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xd, double* y)\n{\n" &
 	 let func_footer = "\n}\n" &
 	 build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &
 	 Util.list_flatten([[func_header],eqn_str_lst,[func_footer]]) => res &
@@ -1102,12 +1102,12 @@ end
   rule	print_exp2_str(c,0) => ifstr &
 	 print_exp2_str(t,0) => thenstr &
 	 print_exp2_str(f,0) => elsestr &
-	 string_append ("( ", ifstr) => s &
+	 string_append ("(( ", ifstr) => s &
 	 string_append (s, " ) ? ( ") => s' &
 	 string_append (s', thenstr) => s'' &
 	 string_append (s'', " ) : ( ") => s''' &
 	 string_append (s''', elsestr) => s'''' &
-	 string_append (s'''', " ) ") => slast 
+	 string_append (s'''', " )) ") => slast 
 	 ----------------------------
 	 print_exp2_str(Exp.IFEXP(c,t,f),_) => slast
 
