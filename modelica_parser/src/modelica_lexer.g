@@ -130,7 +130,7 @@ ML_COMMENT_CHAR :
 		;
 		
 SL_COMMENT :
-		"//" (~('\n' | '\r') { newline(); } )*
+		"//" (~('\n' | '\r') )*
 		{  $setType(antlr::Token::SKIP); }
   	;
 
