@@ -225,13 +225,13 @@ real* calc_index_va(real_array_t* source,int ndims,va_list ap)
 {
   int i;
   int index;
-  int dim_s;
+  int dim_i;
 
   index = 0;
   for (i = 0; i < ndims; ++i)
     {
-      dim_s = va_arg(ap,int);
-      index = index*source->dim_size[i]+dim_s;
+      dim_i = va_arg(ap,int)-1;
+      index = index*source->dim_size[i]+dim_i;
     }
 
   return source->data+index;
