@@ -2228,23 +2228,55 @@ relation inst_dim_type : DimExp => int option =
 
 end
 
+(** relation: fix_direction
+ ** Updates the direction of a DAE element list.
+ ** If a component has prefix input, all variables of the component 
+ ** should be input.
+ ** Similarly if a component has prefix output.
+ ** If the component is bidirectional, the original direction is kept
+ **)
 relation fix_direction : (DAE.Element list, Absyn.Direction)
 	  => DAE.Element list =
-
-
+	  (* Component that is bidirectional does not change direction on subcomponents  *)
+  axiom	fix_direction(lst,Absyn.BIDIR) => lst 
+	
   axiom	fix_direction ([],_) => []
 
-  rule	absyn_dir_to_dae_dir dir => dir' &
+  rule	(* bidirectional variables are changed to input or output if component has such
+	 * prefix.
+	 *)
+	absyn_dir_to_dae_dir dir => dir' &
 	fix_direction (r,dir) => r'
-	-----
-	fix_direction (DAE.VAR(cr,vk,_,t,e,id,start,flow,class)::r,dir) 
+	-----------------------------
+	fix_direction (DAE.VAR(cr,vk,DAE.BIDIR,t,e,id,start,flow,class)::r,dir) 
 	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow,class)::r'
 
+  rule	(* Error, component declared as input or output  when containing variable that
+	 * has prefix input. 
+	 *)
+	Print.print_buf "#Error, component declared as " & Dump.direction_symbol dir => str &
+	Print.print_buf str & Print.print_buf " when having the variable " & 
+	Exp.print_component_ref cr & Print.print_buf " declared as input\n"
+ 	-----------------------------
+	fix_direction (DAE.VAR(cr,vk,DAE.INPUT,t,e,id,start,flow,class)::r,dir) 
+	  => fail
+
+
+  rule	(* Error, component declared as input or output  when containing variable that
+	 * has prefix output 
+	 *)
+	Print.print_buf "#Error, component declared as " & Dump.direction_symbol dir => str &
+	Print.print_buf str & Print.print_buf " when having the variable " & 
+	Exp.print_component_ref cr & Print.print_buf " declared as input\n"
+ 	-----------------------------
+	fix_direction (DAE.VAR(cr,vk,DAE.OUTPUT,t,e,id,start,flow,class)::r,dir) 
+	  => fail
+
   rule	fix_direction(lst,dir) => lst' &
-	fix_direction(r,dir) => r'
-	-------------------------------
-	fix_direction(DAE.COMP(id,DAE.DAE(lst))::r,dir) 
-	  => DAE.COMP(id,DAE.DAE(lst'))::r'
+ 	fix_direction(r,dir) => r'
+ 	-------------------------------
+ 	fix_direction(DAE.COMP(id,DAE.DAE(lst))::r,dir) 
+ 	  => DAE.COMP(id,DAE.DAE(lst'))::r'
 
   rule	fix_direction(r,dir) => r'
 	---------------------------

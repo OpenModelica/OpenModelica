@@ -121,6 +121,7 @@ module DAE:
   relation dump_ext_decl_str : ExternalDecl => string
   relation dump_ext_arg_str : ExtArg => string 
   relation dump_algorithm: Element => ()
+  relation dump_algorithm_str : Element => string 
   relation dump_direction_str: VarDirection => string 
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_matching: ('a list, 'a => () )  => 'a list

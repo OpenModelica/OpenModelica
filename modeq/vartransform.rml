@@ -70,6 +70,7 @@ relation dump_replacements: (VariableReplacements) => ()
 end
 with "system.rml" 
 with "util.rml" 
+with "algorithm.rml"
 
 (** relation: apply_replacements
  ** This relation takes a VariableReplacements and two component references.
@@ -110,6 +111,30 @@ axiom replace_equations([],_) => []
 	---------------------------------
 	replace_equations(DAELow.EQUATION(e1,e2)::es,repl) 
 	  => DAELow.EQUATION(e1',e2')::es'
+
+  rule	replace_equations_stmts(stmts,repl) => stmts' &
+	replace_equations(es,repl) => es'
+	---------------------------------
+	replace_equations(DAELow.ALGORITHM(Algorithm.ALGORITHM(stmts))::es,repl) 
+	  => DAELow.ALGORITHM(Algorithm.ALGORITHM(stmts))::es'
+end
+
+relation replace_equations_stmts: (Algorithm.Statement list, VariableReplacements) 
+	  => Algorithm.Statement list =
+  axiom	replace_equations_stmts ([],_) => []
+
+  rule	replace_exp(e,repl) => e' &
+	replace_exp(Exp.CREF(cr,Exp.OTHER),repl) => Exp.CREF(cr',_) &
+	replace_equations_stmts(xs,repl) => xs'
+	---------------------------------------
+	replace_equations_stmts(Algorithm.ASSIGN(tp,cr,e)::xs,repl) 
+	  => Algorithm.ASSIGN(tp,cr',e')::xs'
+
+  rule	print "Warning, not implemented in replace_equations_stmts\n" &
+	replace_equations_stmts(xs,repl) => xs'
+	------------------
+	replace_equations_stmts(x::xs,repl) => x::xs'
+
 end
 
 

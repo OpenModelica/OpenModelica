@@ -89,6 +89,8 @@ module Util :
 	  
   relation list_reduce: ('a list, ('a,'a) => 'a) => 'a
 	      
+  relation array_replaceat_with_fill: (''a, int, ''a array,''a) => ''a array 
+
   relation tuple2_1 : ('a * 'b) => 'a
   relation tuple2_2 : ('a * 'b) => 'b
 
@@ -768,6 +770,74 @@ relation list_reduce: ('a list, ('a,'a) => 'a) => 'a =
 	r(res1,res2) => res
 	-------------------
 	list_reduce(a::b::(xs as _::_),r) => res
+end
+
+(** relation: array_replaceat_with_fill
+ ** Takes 
+ ** - an element, 
+ ** - a position 
+ ** - an array and 
+ ** - a fill value 
+ ** The relation replaces the value at the given position in the array, if the given position is 
+ ** out of range, the fill value is used to padd the array up to that element position and then
+ ** insert the value at the position
+ ** 
+ ** For example,
+ ** array_replaceat_withfill("A", 5, ["a","b","c"],"dummy") => ["a","b","c","dummy","A"]
+ **)
+relation array_replaceat_with_fill: (''a, int, ''a array,''a) => ''a array =
+	
+  rule	(* Replacing element with index in range of the array*)
+	array_length(arr) => alen &
+	int_lt(pos,alen) => true &
+	array_setnth(arr,pos,x) => res
+	-----------------------------
+	array_replaceat_with_fill(x,pos,arr,fillv) => res
+		     
+
+  rule	(* Replacing element out of range of array, create new array, and copy elts.*)
+	int_add(pos, 1) => pos' &
+	array_create(pos',fillv) => newarr &
+	array_copy(arr,newarr) => res &
+	array_setnth(res,pos,x) => res'
+	-------------------------------
+	array_replaceat_with_fill(x,pos,arr,fillv) => res'
+
+  rule	print "-array_replaceat_with_fill failed\n" 
+	-------------
+	array_replaceat_with_fill(_,_,_,_) => fail
+end
+
+(** relation: array_copy
+ ** copies all values in src array into dest array.
+ ** The relation fails if all elements can not be fit into dest array.
+ **) 
+relation array_copy:(''a array (*src*),  ''a array (*dst*)) => ''a array =
+
+  rule	array_length(src) => srclen &
+	array_length(dst) => dstlen &
+	int_gt(srclen,dstlen) => true &
+	print "-array_copy failed. Can not fit elements into dest array\n" 
+	-----------------------------
+	array_copy(src,dst) => fail
+
+
+  rule	array_length(src) => srclen &
+	int_sub(srclen, 1) => srclen &
+	array_copy2(src,dst,srclen) => dst'
+	-----------------------
+	array_copy(src,dst) => dst'
+end
+relation array_copy2: (''a array (*src*),  ''a array (*dst*),int (*current pos*)) 
+	  => ''a array =
+  axiom	array_copy2(src,dst,-1) => dst
+
+  rule	array_nth(src,pos) => elt &
+	array_setnth(dst,pos,elt) => dst' &
+	int_sub(pos, 1) => pos &
+	array_copy2(src,dst',pos) => dst'' 
+	---------------------------
+	array_copy2(src,dst,pos) => dst''
 end
 
 (** relation: tuple2_1

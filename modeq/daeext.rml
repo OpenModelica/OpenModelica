@@ -39,6 +39,8 @@ module DAEEXT:
   relation get_e_mark: (int) => bool (* returns e_mark(i) *) 
   relation v_mark: (int) => () (* sets v_mark(i) to true *)
   relation get_v_mark: (int) => bool (* returns e_mark(i) *)
+  relation get_marked_eqns:() => int list 
+  relation get_marked_variables:() => int list 
   relation dump_marked_equations: (int) => ()
   relation dump_marked_variables: (int) => ()
 

@@ -48,27 +48,27 @@ relation generate_code:	 (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 
   rule	DAELow.lower(dae) => (dae' as DAELow.DAELOW(_,_,eqns,_)) &
         generate_blt(dae') => (dae'',blt,ass1,ass2) &
-	    DAELow.calculate_values(dae'') => dae''' & 
-	    Absyn.path_string(class) => cname &
+	DAELow.calculate_values(dae'') => dae''' & 
+	Absyn.path_string(class) => cname &
         generate_code_for_hierarhical_objects(class,dae''',p) => hie_code &
-	    generate_header(cname) => header &
-	    generate_impl_header(cname) => implheader &
-	    generate_constructor(cname,p,dae''') => constr &
-	    generate_var_defines(dae''') => defines &
-	    generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
-	    Util.string_append_list([implheader,hie_code,constr,defines,cmethods]) => impl &
-	    string_append(cname,".h") => headerfile &
-	    string_append(cname,".cpp") => implfile &
-	    print "Generating: " & print headerfile & print "\n" &
-	    System.write_file(headerfile,header) &
-	    print "Generating: " & print implfile & print "\n" &
-	    System.write_file(implfile,impl) 
-	    -------------------------------------------------------------------
-	    generate_code(p,dae,class) => 
+	generate_header(cname) => header &
+	generate_impl_header(cname) => implheader &
+	generate_constructor(cname,p,dae''') => constr &
+	generate_var_defines(dae''') => defines &
+	generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
+	Util.string_append_list([implheader,hie_code,constr,defines,cmethods]) => impl &
+	string_append(cname,".h") => headerfile &
+	string_append(cname,".cpp") => implfile &
+	print "Generating: " & print headerfile & print "\n" &
+	System.write_file(headerfile,header) &
+	print "Generating: " & print implfile & print "\n" &
+	System.write_file(implfile,impl) 
+	-------------------------------------------------------------------
+	generate_code(p,dae,class) => 
         
   rule  print "generate_code failed\n" 
-	    ------------------------------
-	    generate_code(_,_,_) => fail
+	------------------------------
+	generate_code(_,_,_) => fail
 end
 
 relation generate_code_for_hierarhical_objects: (Absyn.Path,DAELow.DAELow,Absyn.Program)

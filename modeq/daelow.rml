@@ -31,7 +31,7 @@ module DAELow:
   with "exp.rml"
   with "values.rml"
   with "absyn.rml"
-  
+  with "algorithm.rml"
 
 
   datatype VarKind = VARIABLE | STATE | DUMMY_DER | DUMMY_STATE | DISCRETE | PARAM | CONST
@@ -50,6 +50,7 @@ module DAELow:
 
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp
+		      | ALGORITHM of Algorithm.Algorithm
 
 
 (* The lowered DAE consist of variables and equations. The variables are split into 
@@ -84,7 +85,7 @@ module DAELow:
 
   type Value = int
 
-  type IncidenceMatrix = int list list (* a list of variable indexes (1..n), 
+  type IncidenceMatrix = int list array (* an array of lists of variable indexes (1..n), 
 					one for each equation. For state variables
 					the index is negated, since when sorting to 
 					retrieve underlying ODE, the states are considered 
@@ -226,10 +227,17 @@ relation extract_algebraic_and_differential_eqn: (Equation list) => (Equation li
         extract_algebraic_and_differential_eqn((eqn as EQUATION(exp1,exp2))::rest) 
           => (eqn::resAlgEqn,resDiffEqn)
 
+
   rule	extract_algebraic_and_differential_eqn(rest) => (resAlgEqn,resDiffEqn)
         ---------------------------------------
         extract_algebraic_and_differential_eqn((eqn as EQUATION(exp1,exp2))::rest)
           => (resAlgEqn,eqn::resDiffEqn)
+
+  rule	(* Put algorithms in algebraic equations *)
+	extract_algebraic_and_differential_eqn(rest) => (resAlgEqn,resDiffEqn)
+        ---------------------------------------
+        extract_algebraic_and_differential_eqn((alg)::rest) 
+          => (alg::resAlgEqn,resDiffEqn)
 end
 
 (** relation: dump
@@ -278,6 +286,10 @@ relation equation_str: Equation => string =
 	Util.string_append_list([s1,"=",s2]) => res
 	--------------------
 	equation_str(EQUATION(e1,e2)) => res
+
+  rule	DAE.dump_algorithm_str(DAE.ALGORITHM(alg)) => res
+	-----------------------
+	equation_str(ALGORITHM(alg)) => res
 end
 
 (** relation: remove_simple_equations
@@ -709,6 +721,12 @@ relation lower2: (DAE.DAElist, BinTree (* states *)) => DAELow =
 	lower2 (DAE.DAE((e as DAE.EQUATION(e1,e2))::xs),states) 
 	  => DAELOW(vars,knvars,e'::eqns,reqns)
 
+  rule	lower2(DAE.DAE(xs),states) => DAELOW(vars,knvars,eqns,reqns) &
+	lower_eqn(e) => e' 
+	--------------------------------
+	lower2 (DAE.DAE((e as DAE.ALGORITHM(_))::xs),states) 
+	  => DAELOW(vars,knvars,e'::eqns,reqns)
+
   rule	lower2(dae,states) => DAELOW(vars1,knvars1,eqns1,reqns1) &
 	lower2(DAE.DAE(xs),states) => DAELOW(vars2,knvars2,eqns2,reqns2) &
 	merge_vars(vars1,vars2) => vars &
@@ -740,6 +758,8 @@ relation lower_eqn: (DAE.Element) => Equation =
 	Exp.stringify_crefs(e2') => e2'' 
 	-----------------------
 	lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1'',e2'')
+
+axiom	lower_eqn(DAE.ALGORITHM(stmts)) => ALGORITHM(stmts)
 end
 
 (** relation: lower_var
@@ -821,26 +841,41 @@ end
  **)
 relation incidence_matrix: (DAELow)
 	  => IncidenceMatrix =
-	  
-  axiom	incidence_matrix(DAELOW(_,_,[],_)) => [] 
 
-  rule	incidence_matrix(DAELOW(vars,knvars,eqns,reqns)) => lst &
-	incidence_row(vars,e) => row
-	----------------------------
-	incidence_matrix(DAELOW(vars,knvars,e::eqns,reqns)) => row::lst
+  rule	incidence_matrix2(daelow) => lstlst &
+	list_array(lstlst) => arr
+	-------------------
+	incidence_matrix(daelow) => arr
 
   rule	print "incidence_matrix failed\n" 
 	----------------------
 	incidence_matrix(_) => fail
+end
+(** relation incidence_matrix2
+ ** Helper relation to incidence_matrix
+ ** Calculates the incidence matrix as a list of list of integers
+ **)
+relation incidence_matrix2:(DAELow) => int list list =
+	  
+  axiom	incidence_matrix2(DAELOW(_,_,[],_)) => [] 
+
+  rule	incidence_matrix2(DAELOW(vars,knvars,eqns,reqns)) => lst &
+	incidence_row(vars,e) => row
+	----------------------------
+	incidence_matrix2(DAELOW(vars,knvars,e::eqns,reqns)) => row::lst
+
+  rule	print "incidence_matrix2 failed\n" 
+	----------------------
+	incidence_matrix2(_) => fail
 end
 
 (** relation: incidence_row
  ** Helper relation to incidence_matrix. Calculates the indidence row
  ** in the matrix for one equation.
  **)
- relation incidence_row: ( Variables, Equation) 
+relation incidence_row: ( Variables, Equation) 
 	  => int list =
-	
+	  
   rule	(*Inefficient to for each cref in equation traverse the varlist*)
 	(* Should use a map or a bintree*)
 	incidence_row_exp(e1,vars) => lst1 &
@@ -848,11 +883,79 @@ end
 	list_append(lst1,lst2) => res
 	------------------------------------
 	incidence_row(vars,EQUATION(e1,e2)) => res
+	
+  rule	(** For now assume that algorithm will be solvable for correct variables.
+	 ** I.e. find all variables in algorithm and add to lst.
+	 ** If algorithm later on needs to be inverted, i.e. solved for different
+	 ** variables than calculated, a non linear solver or analysis of algorithm itself
+	 ** needs to be implemented. 
+	 **)
+	incidence_row_stmts(stmts,vars) => res
+	------------------------------------
+	incidence_row(vars,ALGORITHM(Algorithm.ALGORITHM(stmts))) => res
 
   rule	print "-incidence_row failed\n"
 	------------------
 	incidence_row(vars,_) => fail
 end 
+
+(** relation incidence_row_stmts
+ ** Helper relation to incidence_row, investigates statements for
+ ** variables, returning variable indexes.
+ **)
+relation incidence_row_stmts: (Algorithm.Statement list, Variables) => int list =
+
+  axiom	incidence_row_stmts ([],_) => []
+
+  rule	incidence_row_stmts(rest,vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	incidence_row_exp(Exp.CREF(cr,Exp.OTHER),vars) => lst3 &
+	Util.list_flatten([lst1,lst2,lst3]) => res
+	------------------------------------------
+	incidence_row_stmts(Algorithm.ASSIGN(tp,cr,e)::rest,vars) => res
+
+  rule	incidence_row_stmts(rest,vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	Util.list_map_1(expl,incidence_row_exp,vars) => lst3 &
+	Util.list_flatten(lst3) => lst3' &
+	Util.list_flatten([lst1,lst2,lst3']) => res
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.TUPLE_ASSIGN(tp,expl,e)::rest,vars) 
+	  => res
+
+  rule	incidence_row_stmts(rest,vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	incidence_row_exp(Exp.CREF(cr,Exp.OTHER),vars) => lst3 &
+	Util.list_flatten([lst1,lst2,lst3]) => res
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.ASSIGN_ARR(tp,cr,e)::rest,vars) 
+	  => res
+
+  rule	print "incidence_row_stmts on IF not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.IF(e,stmts,else)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on FOR not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.FOR(_,_,_,_,_)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on WHILE not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.WHILE(_,_)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on WHEN not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.WHEN(e,_)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on ASSERT not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.ASSERT(_,_)::rest,vars) 
+	  => []
+end
 
 (** relation: incidence_row_exp
  ** Helper relation to incidence_row, investigates expressions for
@@ -1092,25 +1195,36 @@ end
  **)
 relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
 
-  rule	list_length(m) => neq &
-	transpose_matrix2(m,neq,0,[]) => mt
-	----------------
+  rule	array_list(m) => mlst &
+	transpose_matrix2(mlst) => mtlst &
+	list_array(mtlst) => mt 
+	------------------
 	transpose_matrix(m) => mt
-
-  rule	print "#transpose_matrix failed\n" 
-	---------------------
-	transpose_matrix(_) => fail
 end
-relation transpose_matrix2: (IncidenceMatrix,int,int,IncidenceMatrixT) 
-	  => IncidenceMatrixT =
-  axiom	transpose_matrix2(_,0,_,_) => []
+
+relation transpose_matrix2: (int list list) => int list list =
+
+  rule	list_length(m) => neq &
+	transpose_matrix3(m,neq,0,[]) => mt
+	----------------
+	transpose_matrix2(m) => mt
+
+  rule	print "#transpose_matrix2 failed\n" 
+	---------------------
+	transpose_matrix2(_) => fail
+end
+
+relation transpose_matrix3: (int list list,int,int,int list list) 
+	  => int list list =
+
+  axiom	transpose_matrix3(_,0,_,_) => []
 
   rule	int_sub(neq,1) => neq' &
 	int_add(eqno,1) => eqno' &
-	transpose_matrix2(m,neq',eqno',mt) => mt'&
+	transpose_matrix3(m,neq',eqno',mt) => mt'&
 	transpose_row(m,eqno',1) => row
 	-------------------------
-	transpose_matrix2(m,neq,eqno,mt) => row::mt'
+	transpose_matrix3(m,neq,eqno,mt) => row::mt'
 end
 
 (* relation: transpose_row
@@ -1119,7 +1233,7 @@ end
  ** Input: row number (variable)
  ** Input: iterator (start with one)
 **)
-relation transpose_row: (IncidenceMatrix,int(*row*),int(*iter*)) => int list =
+relation transpose_row: (int list list,int(*row*),int(*iter*)) => int list =
 
   axiom	transpose_row([],_,_) => []
 	
@@ -1157,7 +1271,8 @@ relation dump_incidence_matrix: IncidenceMatrix => () =
 
   rule	print "Incidence Matrix\n (row == equation)" &
 	print "====================================\n" &
-	dump_incidence_matrix2(m) 
+	array_list(m) => m' &
+	dump_incidence_matrix2(m') 
 	-------------------------
 	dump_incidence_matrix(m) => ()
 end 
@@ -1169,7 +1284,8 @@ relation dump_incidence_matrix_t: IncidenceMatrix => () =
 
   rule	print "Transpose Incidence Matrix (row == var)\n" &
 	print "=====================================\n" &
-	dump_incidence_matrix2(m) 
+	array_list(m) => m' &
+	dump_incidence_matrix2(m') 
 	-------------------------
 	dump_incidence_matrix_t(m) => ()
 end 
@@ -1177,7 +1293,7 @@ end
 (** relation: dump_incidence_matrix2
  ** Helper relation to dump_incidence_matrix (+_t).
  **)
-relation dump_incidence_matrix2: IncidenceMatrix => () =
+relation dump_incidence_matrix2: int list list => () =
 
   axiom	dump_incidence_matrix2([]) => ()
 
@@ -1263,8 +1379,8 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 	      int vector (* vector of variable indices*),
 	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
 
-  rule	list_length(m) => nvars &
-	list_length(mt) => neqns &
+  rule	array_length(m) => nvars &
+	array_length(mt) => neqns &
 	Util.list_fill(0,nvars) => assign1 &
 	Util.list_fill(0,nvars) => assign2 &
 	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2) 
@@ -1372,19 +1488,19 @@ relation reduce_index_dummy_der: (DAELow,
 				IncidenceMatrix, 
 				IncidenceMatrixT) =
 	
-  rule	marked_eqns(nf) => eqns &
+  rule	DAEEXT.get_marked_eqns() => eqns &
 
 	(*Util.list_map(eqns,int_string) => es &
-	 Util.string_delimit_list(es,", ") => es' &
-	 print "marked equations " & print es' & print "\n" &*)
+	Util.string_delimit_list(es,", ") => es' &
+	print "marked equations " & print es' & print "\n" &*)
 	(* Collect the states in the equations that are singular, i.e. composing
 	 a constraint between states.*)
 	states_in_eqns(eqns,dae,m,mt) => (states,stateindx) &
 	differentiate_eqns(dae,m,mt,nv,nf,eqns) 
 	  => (dae,m,mt,nv,nf,deqns) &	
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
-(*	Exp.print_component_ref_str state => statestr &
-	print "Choosen dummy state: " & print statestr & print "\n" &*)
+	(*	Exp.print_component_ref_str state => statestr &
+	 print "Choosen dummy state: " & print statestr & print "\n" &*)
 	new_dummy_var(state,dae) => (dummy_der,dae) &
 	eqns_for_var_with_states(mt,stateno) => reqns &
 	Util.list_union_p(deqns,reqns,int_eq) => changedeqns &
@@ -1397,8 +1513,7 @@ relation reduce_index_dummy_der: (DAELow,
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae,m,mt)
 
-  rule	marked_eqns(nf) => eqns &
-
+  rule	DAEEXT.get_marked_eqns() => eqns &
 	Util.list_map(eqns,int_string) => es &
 	Util.string_delimit_list(es,", ") => es' &
 	states_in_eqns(eqns,dae,m,mt) => ([],_) &
@@ -1433,6 +1548,11 @@ relation update_incidence_matrix:(DAELow,
 	update_transposed_matrix(changedvars',m',mt) => mt' 
 	------------------------------
 	update_incidence_matrix(dae,m,mt,eqns) => (m',mt')
+
+
+  rule	print "update_incidence_matrix failed\n" 
+	---------------------------------------
+	update_incidence_matrix(dae,m,mt,eqns) => fail
 end
 
 relation update_incidence_matrix2: (DAELow,
@@ -1446,13 +1566,14 @@ relation update_incidence_matrix2: (DAELow,
   rule	int_sub(e,1) => e' &
 	list_nth(daeeqns,e') => eqn &
 	incidence_row(vars,eqn) => row &
-	Util.list_replaceat_with_fill(row,e',m,[]) => m' &
+	Util.array_replaceat_with_fill(row,e',m,[]) => m' &
 	vars_in_eqn(m',e) => changedvars1 &
 	update_incidence_matrix2(dae,m',eqns) => (m'',changedvars2) 
 	---------------------------------------------------
-	update_incidence_matrix2(dae as DAELOW(vars,knvars,daeeqns,daeseqns),m,e::eqns) => (m'',changedvars1::changedvars2)
+	update_incidence_matrix2(dae as DAELOW(vars,knvars,daeeqns,daeseqns),m,e::eqns) 
+	  => (m'',changedvars1::changedvars2)
 
-  rule	print "-update_incididence_matrix failed\n" 
+  rule	print "-update_incididence_matrix2 failed\n" 
 	-------------------------------------------
 	update_incidence_matrix2(_,_,_) => fail
 
@@ -1467,9 +1588,10 @@ relation update_transposed_matrix: (int list(*var list*), IncidenceMatrix,Incide
 
   axiom	update_transposed_matrix([],m,mt) => mt
 
-  rule	transpose_row(m,v,1) => row' &
+  rule	array_list(m) => mlst &
+	transpose_row(mlst,v,1) => row' &
 	int_sub(v,1) => v' &
-	Util.list_replaceat_with_fill(row',v',mt,[]) => mt' &
+	Util.array_replaceat_with_fill(row',v',mt,[]) => mt' &
 	update_transposed_matrix(vars,m,mt') => mt''
 	-------------------------
 	update_transposed_matrix(v::vars,m,mt) => mt''
@@ -1828,7 +1950,7 @@ relation differentiate_eqns: (DAELow,
 	Debug.fprint("bltdump", str) &
 	Debug.fprint("bltdump", " to ") & 
 	equation_str eqn' => str &
-(*	print " to " & print str &  print "\n" &*)
+	(*print " to " & print str &  print "\n" &*)
 	Debug.fprint("bltdump",str) & 
 	Debug.fprint("bltdump", "\n") &
 	list_append(eqns,[eqn']) => eqns' &
@@ -1867,82 +1989,6 @@ relation add_marked_vars:(DAELow,
 	add_marked_vars(dae,m,nt,nv',nf,vs) => (dae,m,mt,nv,nf)
 	-------------------------------------------------------
 	add_marked_vars(dae,m,nt,nv,nf,v::vs) => (dae,m,mt,nv,nf)
-end
-
-(** relation marked_vars
- ** Returns a list of the variables that are marked.
- ** Input: total number of variables/equations.
- **)
-relation marked_vars: (int) => int list =
-	
-  rule	marked_vars2(0,size) => res
-	----------------
-	marked_vars(size) => res
-end
-
-(** relation: marked_vars2
- ** Helper relation to marked_vars
- **)
-relation marked_vars2: (int,int) => int list =
-	
-  rule	int_eq(size,pos) => true
-	------------------------
-	marked_vars2(pos,size) => []
-	
-  rule	DAEEXT.get_v_mark(pos) => true &
-	int_add(pos,1) => v &
-	marked_vars2(v,size) => res
-	---------------------
-	marked_vars2(pos,size) => pos::res
-	
-  rule	DAEEXT.get_v_mark(pos) => false &
-	int_add(pos,1) => v &
-	marked_vars2(v,size) => res
-	---------------------
-	marked_vars2(pos,size) => res
-end
-
-(** relation: marked_eqns
- ** This relation returns all marked equations.
- ** Input: total number of variables/equations.
- **)
-relation marked_eqns: (int) => int list  =
-	
-  rule	marked_eqns2(1,size) => res
-	----------------
-	marked_eqns(size) => res
-	
-  rule	print "-marked_eqns failed\n" 
-	-----------------
-	marked_eqns(_) => fail
-end
-
-(** relation: marked_eqns2
- ** Helper relation to marked_eqns
-**)
-relation marked_eqns2: (int,int) => int list =
-
-  rule	int_eq(size,pos) => true &
-	DAEEXT.get_e_mark(pos) => true 
-	------------------------
-	marked_eqns2(pos,size) => [pos]
-
-  rule	int_eq(size,pos) => true &
-	DAEEXT.get_e_mark(pos) => false
-	------------------------
-	marked_eqns2(pos,size) => []
-
-  rule	DAEEXT.get_e_mark(pos) => true &
-	int_add(pos,1) => v &
-	marked_eqns2(v,size) => res
-	---------------------
-	marked_eqns2(pos,size) => pos::res
-
-  rule	DAEEXT.get_e_mark(pos) => false &
-	int_add(pos,1) => v &
-	marked_eqns2(v,size) => res
-	---------------------
-	marked_eqns2(pos,size) => res
 end
 
 (** relation path_found
@@ -2040,7 +2086,7 @@ relation vars_in_eqn: (IncidenceMatrix, int(* equation*))
 	  => int list (* variables *) =
 
   rule	int_sub(n,1) => n' &
-	list_nth(m,n') => res &
+	array_nth(m,n') => res &
 	remove_negative(res) => res'
 	--------------------
 	vars_in_eqn(m,n) => res' 
@@ -2069,7 +2115,7 @@ relation eqns_for_var: (IncidenceMatrixT, int (* variable *))
 	  => int list (* equations *) =
 
   rule	int_sub(n,1) => n' &
-	list_nth(mt,n') => res &
+	array_nth(mt,n') => res &
 	remove_negative(res) => res'
 	--------------------
 	eqns_for_var(mt,n) => res'
@@ -2092,7 +2138,7 @@ relation eqns_for_var_with_states: (IncidenceMatrixT, int (* variable *))
 	  => int list (* equations *) =
 
   rule	int_sub(n,1) => n' &
-	list_nth(mt,n') => res &
+	array_nth(mt,n') => res &
 	Util.list_map(res,int_abs) => res'
 	----------------------------------
 	eqns_for_var_with_states(mt,n) => res'
@@ -2220,7 +2266,7 @@ relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
 			     int vector, int vector) => 
 	(int list list ) (* list of components *) =
 
-  rule	list_length(m) => n &
+  rule	array_length(m) => n &
 	DAEEXT.init_lowlink(n) &
 	DAEEXT.init_number(n) &
 	strong_connect_main(m,mt,ass1,ass2,n,0,1,[],[]) 
@@ -2327,7 +2373,7 @@ relation reachable_nodes: (int,
   rule	int_sub(eqn,1) => eqn' &
 	vector_nth(a2,eqn') => var &
 	int_sub(var,1) => var' &
-	list_nth(mt,var') => reachable &
+	array_nth(mt,var') => reachable &
 	Util.list_position(eqn,reachable) => pos &
 	list_delete(reachable,pos) => reachable'
 	----------------------------------------
