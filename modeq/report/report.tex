@@ -3,7 +3,7 @@
 \usepackage[latin1]{inputenc}
 \usepackage{amsmath}
 \usepackage{verbatim}
-\usepackage{boxedminipage}
+%\usepackage{boxedminipage}
 
 \author{David Kågedal}
 \title{Blahonga Blahonga}
@@ -45,12 +45,48 @@
 \textfont\myfam=\tenmy
 \def\srcextfont{\mytt}
 
+\makeatletter
+
+\def\boxedverbatim{\begingroup
+  \setbox0=\vbox{\parskip=0pt\topsep=0pt\partopsep=0pt}
+  \def\verbatim@processline{%
+    \setbox1=\hbox{\the\verbatim@line}%
+    \hsize=\wd0
+    \setbox0=\vbox{{\box0}{\box1}}%
+    %\the\verbatim@line\par
+    }%
+   \verbatim}
+\def\endboxedverbatim{\endverbatim\begin{center}\fbox{\box0}\end{center}%
+  \endgroup}
+
+%\def\boxedverbatim{%
+%  \def\verbatim@processline{%
+%    {\setbox0=\hbox{\the\verbatim@line}%
+%      \hsize=\wd0
+%      \the\verbatim@line\par}}%
+%  \setbox0=\vbox{\parskip=0pt\topsep=0pt\partopsep=0pt}%
+%  \verbatim@}
+%\def\endboxedverbatim{\fbox{\box0}}
+
+%\newenvironment{boxedverbatim}{%
+%  \setbox0=\vbox{\parskip=0pt\topsep=0pt\partopsep=0pt}%
+%  \def\verbatim@processline{%
+%    {\setbox0=\vbox{\box0\hbox{\the\verbatim@line}}%
+%      \hsize=\wd0
+%      %\the\verbatim@line\par
+%      }}%
+%  \verbatim}%
+%{\endverbatim\fbox{\box0}}
+
+  
+\makeatother
+  
+
 \begin{document}
 
 \titlepage
 \maketitle{}
 \endtitlepage
-
 
 \begin{abstract}
 \label{abs}

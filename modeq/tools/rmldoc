@@ -1,4 +1,5 @@
-#!/home/x97davka/arch/sparc-sun-solaris5.5.1/bin/pike
+#!/usr/local/bin/pike
+// -*- pike -*-
 
 object comstart = Regexp("^[ \t]*(\\(|)\\*\\*(.*)$");
 
@@ -43,7 +44,7 @@ void convert(string f)
 	break;
       case "code1":
       case "code2":
-	write("}\n");
+	write("\\end{boxedverbatim}\n");
 	break;
       }
       newstate = "comment";
@@ -92,7 +93,7 @@ void convert(string f)
       case "start":
       case "comment":
 	// write("{\\small\\begin{verbatim}\n");
-	write("\\srcext{\n");
+	write("\\begin{boxedverbatim}\n");
 	buf = "";
 	break;
       }
@@ -115,7 +116,7 @@ void convert(string f)
 
   if(state == "code1" || state == "code2")
     // write("\\end{verbatim}}\n");
-    write("}\n");
+    write("\\end{boxedverbatim}\n");
 }
 
 int main(int argc, array argv)

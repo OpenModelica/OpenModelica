@@ -13,8 +13,11 @@ SOURCES = inst.tex classinf.tex mod.tex connect.tex
 %.tex : ../%.rml
 	$(RMLDOC) $< > $@
 
-report.dvi: report.tex report.aux $(SOURCES)
+report.dvi: report.tex $(SOURCES)
 	$(LATEX) $<
 
 report.ps: report.dvi
 	dvips -o $@ $<
+
+clean:
+	$(RM) $(SOURCES) report.dvi report.ps report.aux report.toc report.log
