@@ -67,61 +67,77 @@ relation inst_list : (Env, Mod, Prefix, Connect.Sets,
 
 end
 
-	(* FIXME flow variables. This needs to be totally reworked *)
-
-relation connect_vars : (Connect.Sets, Exp.ComponentRef, Exp.ComponentRef,
+relation connect_vars : (Connect.Sets,
+			 Exp.ComponentRef, Connect.Face,
+			 Exp.ComponentRef, Connect.Face,
 			 Types.Var list) => Connect.Sets =
 
-  axiom	connect_vars(sets,_,_,[]) => sets
+  axiom	connect_vars(sets,_,_,_,_,[]) => sets
 
   rule	Exp.extend_cref(c1, n, []) => c1' &
 	Exp.extend_cref(c2, n, []) => c2' &
-	print "  connect_vars: " &
+	(* print "  connect_vars: " &
 	Dump.dump_component_ref c1' & print " <-> " &
 	Dump.dump_component_ref c2' &
-	print "\n" &
-	connect_components(sets,[], c1', c2', ty, flow) => sets' &
-	connect_vars(sets',c1,c2,xs) => sets''
+	print "\n" & *)
+	connect_components(sets,[], c1',f1, c2',f2, ty, flow) => sets' &
+	connect_vars(sets',c1,f1,c2,f2,xs) => sets''
 	--------------------------------------
-	connect_vars(sets,c1,c2,(n,Types.ATTR(_,flow,_,_),ty)::xs) => sets''
+	connect_vars(sets,c1,f1,c2,f2,(n,Types.ATTR(_,flow,_,_),ty)::xs)
+	  => sets''
+
+end
+
+relation component_face : Exp.ComponentRef => Connect.Face =
+
+  axiom component_face (c as [_,_]) => Connect.INNER
+
+  axiom	component_face (c as [_]) => Connect.OUTER
+
+  rule	print "# component_face error: " &
+	Dump.dump_component_ref c & print "\n"
+	--------------------------------------
+	component_face c => fail
 
 end
 
 relation connect_components: (Connect.Sets,
 			      Prefix,
-			      Explode.ComponentRef,
-			      Explode.ComponentRef,
+			      Explode.ComponentRef, Connect.Face,
+			      Explode.ComponentRef, Connect.Face,
 			      Types.Type, bool) => Connect.Sets =
 	
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	print "  connect_components flow: " &
-	Dump.dump_component_ref c1' & print " <-> " &
-	Dump.dump_component_ref c2' &
-	print "\n" &
-	Connect.add_flow(sets, c1, Connect.IN, c2, Connect.IN) => sets'
+	(* print "  connect_components flow: " &
+	 Dump.dump_component_ref c1' & print " <-> " &
+	 Dump.dump_component_ref c2' &
+	 print "\n" & *)
+	Connect.add_flow(sets, c1, f1, c2, f2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, c2, Types.BUILTIN(_), true) => sets'
+	connect_components(sets, pre, c1, f1, c2, f2, Types.BUILTIN(_), true)
+	  => sets'
 	
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	print "  connect_components non-flow: " &
-	Dump.dump_component_ref c1' & print " <-> " &
-	Dump.dump_component_ref c2' &
-	print "\n" &
+	(* print "  connect_components non-flow: " &
+	 Dump.dump_component_ref c1' & print " <-> " &
+	 Dump.dump_component_ref c2' &
+	 print "\n" & *)
 	Connect.add_equ(sets, c1, c2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, c2, Types.BUILTIN(_), false) => sets'
+	connect_components(sets, pre, c1, _, c2, _, Types.BUILTIN(_), false)
+	  => sets'
 	
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	print "  connect_components 2: " &
-	Dump.dump_component_ref c1' & print " <-> " &
-	Dump.dump_component_ref c2' &
-	print "\n" &
-	connect_vars(sets,c1',c2', l) => sets'
+	(* print "  connect_components 2: " &
+	 Dump.dump_component_ref c1' & print " <-> " &
+	 Dump.dump_component_ref c2' &
+	 print "\n" & *)
+	connect_vars(sets,c1',f1,c2',f2, l) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,c2,Types.COMPLEX(l),_) => sets'
+	connect_components(sets,pre,c1,f1,c2,f2,Types.COMPLEX(l),_) => sets'
 	
 end
 
@@ -136,16 +152,18 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 			Explode.ComponentRef,Explode.ComponentRef)
 	  => Connect.Sets =
 
-  rule	print " trying to connect " &
-	Dump.dump_component_ref(o1) & print " with " &
-	Dump.dump_component_ref(o2) & print "\n" &
-	Env.lookup_var(env,o1) => (Types.ATTR(_,flow1,_,dir1),ty1) &
-	Env.lookup_var(env,o2) => (Types.ATTR(_,flow2,_,dir2),ty2) &
+  rule	print " connecting " &
+	Dump.dump_component_ref(c1) & print " with " &
+	Dump.dump_component_ref(c2) & print "\n" &
+	Env.lookup_var(env,c1) => (Types.ATTR(_,flow1,_,dir1),ty1) &
+	Env.lookup_var(env,c2) => (Types.ATTR(_,flow2,_,dir2),ty2) &
 	Types.same_type(ty1, ty2) &
 	check_flow(flow1, flow2) &
-	connect_components(sets, pre, o1, o2, ty1, flow1) => sets'
+	component_face(c1) => f1 &
+	component_face(c2) => f2 &
+	connect_components(sets, pre, c1, f1, c2, f2, ty1, flow1) => sets'
 	---------------------------------
-	inst_connect(sets, env,pre,o1,o2) => sets'
+	inst_connect(sets, env,pre,c1,c2) => sets'
 
   rule	print "# could not connect\n"
 	---------------------------------
@@ -479,10 +497,13 @@ and inst_class: (Env, Mod, Prefix, Connect.Sets, Explode.Class)
 	  => (DAE.DAEcomp list, Connect.Sets, Types.Type) =
 
   rule	Env.new_frame(env) => env' &
-	inst_class_in(env', mod, pre, csets, c, false) => (dae,_,csets',tys) &
+	inst_class_in(env', mod, pre, csets, c, false) => (dae1,_,csets',tys) &
+	Connect.dump_sets csets' &
+	Connect.equations csets' => dae2 &
+	list_append(dae1, dae2) => dae &
 	mktype(tys) => ty
 	-------------------------------------------
-	inst_class(env, mod, pre, csets, c) => (dae, csets', ty)
+	inst_class(env, mod, pre, csets, c) => (dae, [], ty)
 
 end
 
@@ -493,10 +514,7 @@ relation inst_program : (Env, Explode.Program) => DAE.DAEcomp list =
 	inst_program(env,[]) => fail
 
   rule	Env.extend_frame_c(env,c,Mod.NOMOD) => env' &
-	inst_class(env',Mod.NOMOD,[],[],c) => (dae1,csets,_) &
-	Connect.dump_sets csets &
-	Connect.equations csets => dae2 &
-	list_append(dae1, dae2) => dae
+	inst_class(env',Mod.NOMOD,[],[],c) => (dae,csets,_)
 	-----------------------------
 	inst_program(env,[c]) => dae
 
