@@ -3,7 +3,7 @@
 
 #include "antlr/CommonAST.hpp"
 #include <iostream>
-
+#include "MyAST.h"
 
 class parse_tree_dumper
 {
@@ -45,7 +45,7 @@ public:
 	fIndent += i;
     }
 
-    void dump(antlr::RefAST ast)
+    void dump(RefMyAST ast)
     {
 	toIndent();
 	out << prefix;
@@ -60,7 +60,7 @@ public:
 	    {
 		out << " {" << std::endl;
 		indent(indentSize);
-		dump(ast->getFirstChild());
+		dump( RefMyAST(ast->getFirstChild()) );
 		indent(-indentSize);
 		toIndent();
 		out << "}" << std::endl;
@@ -71,18 +71,18 @@ public:
 	    }
 	    if (ast->getNextSibling() != 0)
 	    {
-		dump(ast->getNextSibling());
+		dump(RefMyAST(ast->getNextSibling()));
 	    }
 	}
     }
-    void dump_dot(antlr::RefAST ast)
+    void dump_dot(RefMyAST ast)
     {
 	out << "digraph G {\n";
 	dump_dot_recursive(ast);
 	out << "}\n";	
     }
     
-    void dump_dot_recursive(antlr::RefAST ast)
+    void dump_dot_recursive(RefMyAST ast)
     {
 	if (ast == 0)
 	{
@@ -91,7 +91,7 @@ public:
 	else
 	{
 	    out << "\"" << ast.get() << "\" [label=\"" << ast->toString() << "\" shape=\"box\"];\n";
-	    antlr::RefAST current_ast = ast->getFirstChild();
+	    RefMyAST current_ast = RefMyAST(ast->getFirstChild());
 	    
 	    while (current_ast != 0)
 	    {
