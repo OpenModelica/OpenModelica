@@ -62,7 +62,8 @@ end
 relation dump_node : Node => Ident =
 	
   rule	nodename typ => nm &
-	list_append([ATTR("label", typ)], attr) => newattr &
+	make_label [typ] => typlbl &
+	list_append([ATTR("label", typlbl)], attr) => newattr &
 	make_node(nm, newattr) => out &
 	print out &
 	dump_children(nm, children)
@@ -124,9 +125,11 @@ relation dump_children : (Ident, Children) => () =
 end
 
 
+(* changed use of str as part of nodename, since it may contain spaces
+*)
 relation nodename : string => string =
 
-  rule	tick => i & int_string i => is & string_append(str,is) => s
+  rule	tick => i & int_string i => is & string_append("GVNOD",is) => s
 	-----------------------------------------------------------------
 	nodename str => s
 end
