@@ -8,6 +8,8 @@
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\firstref}[1]{\textit{#1}}
 
+\newtheorem{Def}{Definition}[chapter]
+
 \begin{document}
 
 \titlepage
@@ -48,6 +50,12 @@ translator.
 \label{cha:semantics}
 
 
+
+\section{Types}
+\label{sec:types}
+
+
+
 \section{Connections}
 \label{sec:connections}
 
@@ -69,5 +77,19 @@ connector variable in the component \code{m}.
 To create equations from the \code{connect} constructs, the
 connections are collected in \firstref{connection sets}.
 
+\begin{Def}[Connection sets]
+  A connection set is a set $C$ of variables connected by means of
+  \code{connect} constructs.
+\end{Def}
+
+When a \code{connect(a,b)} construct is encountered, the component
+names \code{a} and \code{b} are checked to be of the same type.
+
+\subsection{Equations}
+\label{sec:coneq}
+
+In the case of variables declared with the \code{flow} type modifier,
+the equation generated is a sum-to-zero equation. \[\sum_{v \in C} d_v
+v = 0\]
 
 \end{document}
