@@ -324,41 +324,60 @@ relation merge : (Sets, Set, Set) => Sets =
 	merge(ss,s1,s2) => ss
 
   rule	list_append(cs1,cs2) => cs &
-	remove_set(ss,s1,s2) => ss'
+	remove_set2(ss,s1,s2) => ss'
 	----------------------------
 	merge(ss, s1 as EQU(cs1), s2 as EQU(cs2)) => EQU(cs)::ss'
 
   rule	list_append(cs1,cs2) => cs &
-	remove_set(ss,s1,s2) => ss'
+	remove_set2(ss,s1,s2) => ss'
 	----------------------------
 	merge(ss, s1 as FLOW(cs1), s2 as FLOW(cs2)) => FLOW(cs)::ss'
 
 end
 
-(** relation: remove_set
+(** relation: remove_set2
  ** 
  ** This relation removes the two sets given in the second and third
  ** argument from the collection of sets given in the first argument.
  **)
 
-relation remove_set : (Sets, Set, Set) => Sets =
+relation remove_set2 : (Sets, Set, Set) => Sets =
 
-  axiom	remove_set([],_,_) => []
+  axiom	remove_set2([],_,_) => []
 
   rule	s = s1 &
 	remove_set(ss,s2) => ss'
 	------------------------
-	remove_set(s::ss, s1, s2) => ss'
+	remove_set2(s::ss, s1, s2) => ss'
 	
   rule	s = s2 &
 	remove_set(ss,s1) => ss'
 	------------------------
-	remove_set(s::ss, s1, s2) => ss'
+	remove_set2(s::ss, s1, s2) => ss'
 	
-  rule	remove_set(ss,s1,s2) => ss'
+  rule	remove_set2(ss,s1,s2) => ss'
 	------------------------
-	remove_set(s::ss, s1, s2) => s::ss'
+	remove_set2(s::ss, s1, s2) => s::ss'
 
+end
+
+(** relation: remove_set
+ **
+ ** This relation removes one set from a list of sets.
+ **)
+
+relation remove_set : (Sets, Set) => Sets =
+
+  axiom	remove_set([],_) => []
+
+  rule	s = s1
+      	------
+      	remove_set(s::ss, s1) => ss
+      
+  rule	remove_set(ss,s1) => ss'
+      	------------------------
+      	remove_set(s::ss, s1) => s::ss'
+	
 end
 
 (**
