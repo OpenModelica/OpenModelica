@@ -89,7 +89,6 @@ RML_BEGIN_LABEL(Socket__handlerequest)
   }
   len = recv(sock,buf,bufSize,0);
   buf[len]=0;
-  printf("got %s\n",buf);
   FD_ZERO(&sockSet);
   FD_SET(sock,&sockSet); // create fd set of 
   while ( select(1,&sockSet,NULL,NULL,&timeout) > 0) {

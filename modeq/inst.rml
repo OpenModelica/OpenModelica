@@ -307,7 +307,8 @@ relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env =
 end
 
 relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env.Env = 
-  rule	add_program_to_env([],prog,c) => env'
+  rule	Builtin.simple_initial_env => env &
+	add_program_to_env(env,prog,c) => env'
 	--------------------------------
 	make_simple_env_from_program (prog,c) => env'
 end

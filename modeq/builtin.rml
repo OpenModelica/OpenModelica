@@ -47,6 +47,7 @@ module Builtin:
   val real_type : SCode.Class
 
   relation initial_env : () => Env.Env
+  relation simple_initial_env : () => Env.Env
 
 end
 
@@ -668,7 +669,24 @@ val array_array2int
  ** up using this relation.  It creates an empty environment and adds
  ** all the built-in definitions to it.
  **)
- 
+relation simple_initial_env =
+
+  rule	Debug.fprint ("insttr","Creating initial env.\n") &
+	Env.open_scope(Env.empty_env,false) => env &
+	Env.extend_frame_c(env, rl_type) => env &
+	Env.extend_frame_c(env, int_type) => env &
+	Env.extend_frame_c(env, str_type) => env &
+	Env.extend_frame_c(env, bool_type) => env &
+	Env.extend_frame_c(env, enum_type) => env &
+	Env.extend_frame_c(env, real_type) => env &
+	Env.extend_frame_c(env, integer_type) => env &
+	Env.extend_frame_c(env, string_type) => env &
+	Env.extend_frame_c(env, boolean_type) => env &
+	Env.extend_frame_c(env, state_select_type) => env 
+	----------------------------------
+ 	simple_initial_env () => env
+end
+
 relation initial_env =
 
   rule	Debug.fprint ("insttr","Creating initial env.\n") &
