@@ -1,0 +1,9 @@
+import PDE2D.FEMExternal.*;
+import PDE2D.Boundaries.*;
+import PDE2D.*;
+import testDomain.ExtMeshTest3.*;
+
+bnd=Circle.Data();
+omega=CircularDomain.Data(boundary=bnd);
+u=CircularField.Data(domain=omega);
+d_omega=DiscreteCircularDomain.Data(nbp=20, domain=omega);
