@@ -1034,7 +1034,7 @@ if test -d /home/pelab/pkg/gnu/lib ; then
   readlinelib="/home/pelab/pkg/gnu/lib"
   echo "$ac_t""yes" 1>&6
 else
-  readlinelib = `find /usr/lib /usr/local/lib -name libreadline.a | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+  readlinelib=`find /usr/lib /usr/local/lib -name libreadline.a | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
   if test -z "$readlinelib" ; then
      echo "$ac_t""no" 1>&6
      { echo "configure: error: Could not find readline lib file" 1>&2; exit 1; }
