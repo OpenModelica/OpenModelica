@@ -1391,10 +1391,13 @@ relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Clas
 end
 
 (** relation: delete_component
-** This relation deletes a component from a class.
-**)
+ ** This relation deletes a component from a class given the name of the component instance,
+ ** the model in which the component is instantiated in, and the Program.
+ **
+ ** Both public and protected lists are searched.
+ **)
 relation delete_component: (string, Absyn.ComponentRef, Absyn.Program) 
-	  => (Absyn.Program ,string) =
+	 => (Absyn.Program ,string) =
 
   rule	Absyn.cref_to_path(model) => modelpath &
 	not get_pathed_class_in_program(modelpath,p) => _
@@ -1419,8 +1422,15 @@ relation delete_component: (string, Absyn.ComponentRef, Absyn.Program)
   axiom	delete_component(_,_,p) => (p,"false\n") 
 end
 
-relation delete_component_from_class: (string, Absyn.Class) => Absyn.Class =
+(** relation: delete_component_from_class
+ ** This relation deletes a component from a class given the name of the component instance, and a 'Class'.
+ ** 
+ ** Both public and protected lists are searched.
+ **)
+relation delete_component_from_class: (string, Absyn.Class)
+	 => Absyn.Class =
 	
+	(* Search in public list *)
   rule	get_public_list(parts) => publst &
 	delete_component_from_elementitems(name,publst) => publst2 &
 	list_length(publst2) => l2 &
@@ -1429,8 +1439,20 @@ relation delete_component_from_class: (string, Absyn.Class) => Absyn.Class =
 	l1' = l2 &
 	replace_public_list(parts,publst2) => parts2 
 	--------------------------------------------
-	delete_component_from_class ( name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt))) 
-	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	delete_component_from_class(name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt))) 
+	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+
+	(* Search in protected list *)
+  rule	get_protected_list(parts) => protlst &
+	delete_component_from_elementitems(name,protlst) => protlst2 &
+	list_length(protlst2) => l2 &
+	list_length(protlst) => l1 &
+	int_sub(l1,1) => l1' &
+	l1' = l2 &
+	replace_protected_list(parts,protlst2) => parts2 
+	--------------------------------------------
+	delete_component_from_class(name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt))) 
+	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
 end	
 
 relation delete_component_from_elementitems: (string, Absyn.ElementItem list) 
@@ -1505,7 +1527,7 @@ end
 relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.NamedArg list,
 			    Absyn.Program) => (Absyn.Program ,string) =
 
-  rule	(* Updating component to model that resides inside package*)
+  rule	(* Updating a public component to model that resides inside package *)
 	Absyn.cref_to_path(model) => modelpath &
 	Absyn.strip_last(modelpath) => modelwithin &
 	delete_component(name,model,p) => (p',_) &
@@ -1527,7 +1549,29 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	update_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) 
 	  => (newp, "true\n")
 
-  rule	(* Updating component to model that resides on top level *)
+  rule	(* Updating a protected component to model that resides inside package*)
+	Absyn.cref_to_path(model) => modelpath &
+	Absyn.strip_last(modelpath) => modelwithin &
+	delete_component(name,model,p) => (p',_) &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(modelpath,p') => cdef &
+	get_protected_list(parts) => protlst &
+	get_components_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
+	  => Absyn.COMPONENTS(attr,tp,items) &
+	get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
+	  => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),ann) &
+	annotation_list_to_absyn_comment(nargs,ann) => annotation &
+	modification_to_absyn(nargs,mod) => modification &
+	add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
+	    Absyn.COMPONENTS(attr,tp,
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE)))
+	  => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p) => newp
+	--------------------------
+	update_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) 
+	  => (newp, "true\n")
+
+  rule	(* Updating a public component to model that resides on top level *)
 	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	Absyn.cref_to_path(tp) => tppath &
@@ -1549,6 +1593,30 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	------------------------------------------------
 	update_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) 
 	  => (newp,"true\n")
+
+  rule	(* Updating a protected component to model that resides on top level *)
+	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	Absyn.cref_to_path(tp) => tppath &
+	delete_component(name,model,p) => (p',_) &
+	get_pathed_class_in_program(modelpath,p') => cdef &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_protected_list(parts) => protlst &
+	get_components_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
+	  =>Absyn.COMPONENTS(attr,tp,items) &
+	get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
+	  => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),ann) &
+	annotation_list_to_absyn_comment(nargs,ann) => annotation &
+	modification_to_absyn(nargs,mod) => modification &
+	add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,false,Absyn.UNSPECIFIED,"",
+	    Absyn.COMPONENTS(attr,tppath,
+		[Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),annotation)]),NONE))) 
+	  => newcdef &	
+	update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
+	------------------------------------------------
+	update_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) 
+	  => (newp,"true\n")
+
 end
 
 (** relation:add_class_annotation 
@@ -3326,6 +3394,26 @@ relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class =
 
 end
 
+(** relation: add_to_protected
+ ** This relation takes a 'Class' definition and adds an `ElementItem' to the first protected list in the class.
+ ** If no protected list is available in the class one is created.
+ **)
+relation add_to_protected: (Absyn.Class, Absyn.ElementItem) => Absyn.Class = 
+
+  rule	get_protected_list(parts) => protlst &
+	list_append(protlst,[eitem]) => protlst2 &
+	replace_protected_list(parts,protlst2) => parts2 
+	--------------------------------------------
+	add_to_protected ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)), eitem) 
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+
+  axiom	add_to_protected ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_)),eitem) => fail
+
+  axiom	add_to_protected(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),eitem)
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(Absyn.PROTECTED([eitem])::parts,cmt))
+
+end
+
 (** relation: add_to_equation
  ** This relation takes a 'Class' definition and adds an `EquationItem' to the first equation list in the class.
  ** If no public list is available in the class one is created.
@@ -3516,6 +3604,24 @@ relation replace_public_list: (Absyn.ClassPart list,Absyn.ElementItem list) => A
   axiom replace_public_list([],_) => []
 end
 
+(** relation: replace_public_list
+ ** This relation replaces the `ElementItem' list in the `ClassPart' list, and returns the updated
+ ** list.
+*)
+relation replace_protected_list: (Absyn.ClassPart list,Absyn.ElementItem list) => Absyn.ClassPart list =
+
+  rule	delete_protected_list(rest) => rest'
+	---------------------------------
+	replace_protected_list ((lst as Absyn.PROTECTED(_))::rest,newprotlist) 
+	  => Absyn.PROTECTED(newprotlist)::rest'
+	
+  rule	replace_protected_list(xs,new) => ys
+	---------------------------------
+	replace_protected_list(x::xs,new) => x::ys
+
+  axiom replace_protected_list([],_) => []
+end
+
 relation delete_public_list:(Absyn.ClassPart list) 
 	  => Absyn.ClassPart list =
   axiom	delete_public_list([]) => []
@@ -3527,6 +3633,19 @@ relation delete_public_list:(Absyn.ClassPart list)
   rule	delete_public_list(xs) => res
 	-----------------------------
 	delete_public_list(x::xs) => x::res
+end
+
+relation delete_protected_list:(Absyn.ClassPart list) 
+	  => Absyn.ClassPart list =
+  axiom	delete_protected_list([]) => []
+
+  rule	delete_protected_list(xs) => res
+	-----------------------------
+	delete_protected_list(Absyn.PROTECTED(_)::xs) => res
+
+  rule	delete_protected_list(xs) => res
+	-----------------------------
+	delete_protected_list(x::xs) => x::res
 end
 
 (** relation: replace_equation_list
