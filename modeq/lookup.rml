@@ -148,7 +148,7 @@ relation lookup_class: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
         Debug.fcall ("lotr",Dump.print_path,path) &
 	Debug.fprint ("lotr",")\n") 
 	----------------------------------------------------------
-	lookup_class(env,path as Absyn.IDENT(_),_) => (c, env')
+	lookup_class(env, path, _) => (c, env')
 
   rule	Debug.fprint ("lotr","TRIES lookup_class(3)\n") &
         lookup_unqualified_imported_class_in_env(env,env,path) => (c, env') &
@@ -156,7 +156,7 @@ relation lookup_class: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env) =
         Debug.fcall ("lotr",Dump.print_path,path) &
 	Debug.fprint ("lotr",")\n")
 	----------------------------------------------------------
-	lookup_class(env,path as Absyn.IDENT(_),_) => (c, env')
+	lookup_class(env, path, _) => (c, env')
 
   rule	Debug.fprint ("lotr","TRIES lookup_class(4)\n") &
         lookup_class(env,Absyn.IDENT(pack),msgflag) => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
@@ -220,15 +220,31 @@ rule	Debug.fprint ("lotr","TRIES lookup_class(5)\n") &
 	lookup_class(env,path,true)=> fail 
 end
 
+(** relation: lookup_qualified_imported_class_in_env
+ ** This relation looks up imported names on the qualified form: import A.B;
+**)
+
 relation lookup_qualified_imported_class_in_env:(Env.Env,Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 
   rule	lookup_qualified_imported_class_in_frame(items,totenv,name) => (c,_)
 	-----------------------------------------------------------------
 	lookup_qualified_imported_class_in_env(env as (Env.FRAME(sid,items,_)::fs),totenv,Absyn.IDENT(name)) => (c,env)
 
-  rule	lookup_qualified_imported_class_in_env(fs,env,id) => (c, _)
+  rule	lookup_qualified_imported_class_in_frame(items,totenv,pack) 
+	  => (c as SCode.CLASS(id,_,encflag,restr,_), env') &
+       	Env.open_scope(env',encflag) => env2 &
+	Env.name_scope (env2,id) => env3 &
+	ClassInf.start(restr,id) => ci_state &
+	Inst.inst_class_in(env3,Mod.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
+	  => (_,env4,_,_,_) &  
+
+	lookup_class_in_class(env4,c,path,false) => (c', env'')
+	-----------------------------------------------------------------
+	lookup_qualified_imported_class_in_env(env as (Env.FRAME(sid,items,_)::fs),totenv, Absyn.QUALIFIED(pack,path)) => (c', env'')
+
+  rule	lookup_qualified_imported_class_in_env(fs,env,id) => (c, env')
 	---------------------------------------------
-	lookup_qualified_imported_class_in_env(f::fs,env,id) => (c,f::fs)
+	lookup_qualified_imported_class_in_env(f::fs,env,id) => (c, env')
 end
 
 relation lookup_qualified_imported_class_in_frame: ((SCode.Ident * Env.Item) list,Env.Env,

@@ -127,10 +127,11 @@ relation unelab_mod: Mod => SCode.Mod =
 	unelab_mod (m as MOD(final,subs,SOME(UNTYPED(e))))
 	  => SCode.MOD(final,subs',SOME(e))
 	  
-  rule	Print.print_buf "NOT IMPLEMENTED YET. NEED Exp.Exp->Absyn.Exp\n"  
+  rule	unelab_submods (subs) => subs' &
+	Exp.unelab_exp(e) => e'
 	------------------------------------
 	unelab_mod (m as MOD(final,subs,SOME(TYPED(e,p))))
-	  => fail
+	  => SCode.MOD(final,subs',SOME(e'))
 	  
   axiom	unelab_mod (m as REDECL(final, elist)) 
 	  =>  SCode.REDECL(final, elist)

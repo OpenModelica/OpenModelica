@@ -127,6 +127,7 @@ module Exp:
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
   relation int_subscripts : int list => Subscript list
   relation simplify : Exp => Exp
+  relation unelab_exp : Exp => Absyn.Exp 	   
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()
   relation print_component_ref_str : ComponentRef => string
@@ -291,6 +292,49 @@ relation simplify : Exp => Exp =
 
   axiom	simplify e => e
 
+end
+
+relation unelab_exp : Exp => Absyn.Exp =
+
+  axiom	unelab_exp(ICONST(i)) => Absyn.INTEGER(i)
+  axiom	unelab_exp(RCONST(r)) => Absyn.REAL(r)
+  axiom	unelab_exp(SCONST(s)) => Absyn.STRING(s)
+  axiom	unelab_exp(BCONST(b)) => Absyn.BOOL(b)
+
+  rule	unelab_cref(cr) => cr'
+	----------------
+	unelab_exp(CREF(cr,t))=> Absyn.CREF(cr')
+end
+
+relation unelab_cref: ComponentRef => Absyn.ComponentRef =
+
+  rule	unelab_subscripts(subs) => subs'
+	-------------------------------
+	unelab_cref(CREF_IDENT(id,subs)) => Absyn.CREF_IDENT(id,subs')
+	
+  rule	unelab_cref(cr) => cr' &
+	unelab_subscripts(subs)=> subs'
+	----------------------
+	unelab_cref(CREF_QUAL(id,subs,cr)) => Absyn.CREF_QUAL(id,subs',cr')
+end
+
+relation unelab_subscripts: Subscript list => Absyn.Subscript list =
+	
+  axiom	unelab_subscripts([]) => []
+
+  rule	unelab_subscripts(xs) => xs'
+	---------------------------
+	unelab_subscripts(WHOLEDIM::xs) => Absyn.NOSUB::xs'
+	
+  rule	unelab_subscripts(xs) => xs' &
+	unelab_exp(e) => e'
+	---------------------------
+	unelab_subscripts(SLICE(e)::xs) => Absyn.SUBSCRIPT(e')::xs'
+
+  rule	unelab_subscripts(xs) => xs' &
+	unelab_exp(e) => e'
+	---------------------------
+	unelab_subscripts(INDEX(e)::xs) => Absyn.SUBSCRIPT(e')::xs'
 end
 
 (** relation: subscripts_append

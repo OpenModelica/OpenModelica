@@ -724,7 +724,7 @@ relation make_complete_type_names: (Env.Env, SCode.Element list) => SCode.Elemen
 	  
   rule	make_complete_type_names(env, rest) => res &
 	Lookup.complete_path(env, tp) => tp' 
-        & print "completed to " & Absyn.path_string tp' => s & print s & print "\n" 
+        (*& print "completed to " & Absyn.path_string tp' => s & print s & print "\n" *)
 	--------------------------------------------------
 	make_complete_type_names(env, (SCode.COMPONENT(id,f,r,p,attr,tp,mod))::rest)
 	  => SCode.COMPONENT(id,f,r,p,attr,tp',mod)::res
