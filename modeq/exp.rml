@@ -128,9 +128,11 @@ module Exp:
   (** - Exported relations *)
 
   relation is_range : Exp => bool
+  relation is_zero: Exp => bool 
 
   relation prepend_string_cref : (string, ComponentRef) => ComponentRef
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
+  relation subscript_cref: (ComponentRef, Subscript list) => ComponentRef	  
   relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef
   relation int_subscripts : int list => Subscript list
   relation simplify : Exp => Exp
@@ -226,6 +228,32 @@ relation is_range : Exp => bool =
 
 end
 
+(** relation: is_zero
+ **
+ ** Returns true íf an expression is constant and has the value zero, 
+ ** otherwise false
+ **)
+relation is_zero: Exp => bool =
+
+  rule	int_eq(ival,0) => true
+	----------------------
+	is_zero(ICONST(ival)) => true
+
+  rule	(* Due to bug in rml, go trough a cast from int *)
+	int_real(0) => rzero &
+	real_eq(rzero,rval) => true 
+	---------------------------
+	is_zero(RCONST(rval)) => true
+
+  rule	(* Casting to zero is still zero *)
+	is_zero(e) => res 
+	------------------
+	is_zero(CAST(t,e)) => res
+
+  axiom	is_zero(_) => false
+
+end
+
 (** LS:
  ** Replace this with a call to print_component_ref_str
  ** and comparison of the resulting strings, after the _str relations are 
@@ -304,6 +332,22 @@ relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
 	extend_cref (CREF_QUAL(i1,s1,c), i, s) => CREF_QUAL(i1,s1,c')
 
 end
+(** relation: subscript_cref
+ **
+ ** The 'subscript_cref' relation adds a subscript to the 'ComponentRef'
+ ** For instance 'a.b' with subscript 10 becomes 'a.b[10] and 'c.d[1,2] with subscript 
+ ** 3,4 becomes 'c.d[1,2,3,4]' 
+ **)
+relation subscript_cref: (ComponentRef, Subscript list) => ComponentRef	=
+
+  rule	list_append(sub,newsub) => newsub'
+	-----------------------------------
+	subscript_cref (CREF_IDENT(id,sub),newsub) => CREF_IDENT(id,newsub')
+
+  rule	subscript_cref(cref,newsub) => cref'
+	-----------------------------------
+	subscript_cref (CREF_QUAL(id,sub,cref),newsub) => CREF_QUAL(id,sub,cref')
+end
 
 (** - Utility relations
  **
@@ -339,6 +383,16 @@ end
  **)
 
 relation simplify : Exp => Exp =
+
+	(* a+(-b) and (-b)+a *)
+  rule	simplify(e1) => e1' &
+	simplify(e2) => e2' 
+	-------------------
+	simplify (BINARY(e1,ADD(tp),UNARY(UMINUS(tp2),e2))) => BINARY(e1',SUB(tp),e2')
+  rule	simplify(e1) => e1' &
+	simplify(e2) => e2' 
+	-------------------
+	simplify (BINARY(UNARY(UMINUS(tp2),e2),ADD(tp),e1)) => BINARY(e1',SUB(tp),e2')
 
 	(* Array and Matrix stuff *)
 

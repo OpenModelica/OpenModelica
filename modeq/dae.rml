@@ -72,7 +72,8 @@ module DAE:
 		   | INITIALALGORITHM of Algorithm.Algorithm
 		   | COMP of Ident * DAElist
 		   | FUNCTION of Absyn.Path * DAElist * Types.Type
-		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl
+		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl 
+	           | ASSERT of Exp.Exp
 
   datatype ExtArg = EXTARG of Exp.ComponentRef * Types.Attributes * Types.Type
 		  | EXTARGEXP of Exp.Exp * Types.Type
@@ -246,6 +247,13 @@ relation dump2: DAElist => () =
 	dump2 (DAE(xs))
 	--------------
 	dump2 (DAE(EXTFUNCTION(path,dae,tp,extdecl)::xs))
+
+  rule	Print.print_buf "ASSERT(\n" &
+	Exp.print_exp e &
+	Print.print_buf ")\n" &	
+	dump2 (DAE(xs))
+	--------------
+	dump2 (DAE(ASSERT(e)::xs))
 
   axiom dump2 (DAE([]))
 
@@ -492,6 +500,12 @@ relation dump_equations_str: Element list => string =
 	-------------------------------
 	dump_equations_str( DEFINE(c,e)::xs) => str
 
+  rule	Exp.print_exp_str e => s &
+	dump_equations_str(xs) => s2 &
+	Util.string_append_list([s,";\n",s2]) => str
+	-------------------------------
+	dump_equations_str( ASSERT(e)::xs) => str
+
   rule	dump_equations_str(xs) => str
 	-----------------------------
 	dump_equations_str(_::xs) => str
@@ -721,6 +735,11 @@ relation dump_equation : Element => () =
 	Print.print_buf " ::= " & Exp.print_exp e & Print.print_buf ";\n"
 	--------------------------------------
 	dump_equation(DEFINE(c, e))
+
+  rule	Exp.print_exp e & Print.print_buf ";\n"
+	--------------------------------------
+	dump_equation(ASSERT(e))
+	
 	
   axiom	dump_equation _
 
@@ -762,6 +781,11 @@ relation dump_equation_str : Element => string =
 	string_append(s5,";\n") => str
 	--------------------------------------
 	dump_equation_str(DEFINE(c, e)) => str
+
+rule	Exp.print_exp_str e => s &
+	string_append(s,";\n") => str
+	--------------------------------------
+	dump_equation_str(ASSERT(e)) => str
 	
   axiom	dump_equation_str _ => ""
 

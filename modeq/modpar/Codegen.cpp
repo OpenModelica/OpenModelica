@@ -368,19 +368,22 @@ void  Codegen::generateParallelMPIGlobals()
 
 void Codegen::generateGlobals()
 {
+  int numsteps = 1000;
   m_cstream << "#include \"" << m_fileNameFunc << "\"" << endl << endl;
-  m_cstream << "#include \"solvers.h\"" << endl;
+  m_cstream << "#include \"solvers.hpp\"" << endl;
   
   m_cstream << "/* Global variables */" << endl;
   m_cstream << "const int nx = " << m_nx << ";" << endl;
   m_cstream << "const int ny = " << m_ny << ";" << endl;
   m_cstream << "const int np = " << m_np << ";" << endl;
+  m_cstream << "const int numsteps = " << numsteps << ";" << endl; 
   m_cstream << "double x[nx]; /* State vector */" << endl;
   m_cstream << "double xd[nx]; /* State derivative vector */" << endl;
   m_cstream << "double y[ny]; /* alg var vector */" << endl;
   m_cstream << "double p[np]; /* parameter vector */" << endl << endl;
+  m_cstream << "double res[(nx+nx+ny+1)*numsteps]; /* Result */" << endl;
 
-  m_cstream << "void (*solver)(double*, double*, double*, double*,int,int,int, double,double,double,void (*)(double)) = &euler;" << endl;
+  m_cstream << "void (*solver)(double*, double*, double*, double*,double*,int,int,int, int, double,double,double,void (*)(double)) = &euler;" << endl;
 
   // put MPI globals
   generateParallelMPIGlobals();

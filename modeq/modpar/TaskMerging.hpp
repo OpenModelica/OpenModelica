@@ -28,6 +28,14 @@ private:
 
 typedef priority_queue<VertexID,vector<VertexID>,TLevelCmp> TQueue;
 
+class EdgeInfo {
+public:
+  EdgeInfo(int s,int t, string*res) : source(s),target(t),result(res) {};
+  int source;
+  int target;
+  string * result;
+};
+
 class TaskMerging 
 {
 public:
@@ -70,6 +78,10 @@ private:
   
   void printTaskInfo();
   void removeSourceAndSink();
+
+  void reinsertSourceAndSink();
+  void add_edge_containing(const EdgeInfo &info);
+
   // Variables
   double m_latency;
   double m_bandwidth;
@@ -85,7 +97,7 @@ private:
   MergeRule **m_rules;
   const int m_num_rules;
   
-  list<std::pair<int,int> > m_source_sink_edges;
+  list<EdgeInfo> m_source_sink_edges;
   int m_invarID;
   int m_outvarID;
 };

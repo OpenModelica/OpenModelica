@@ -33,7 +33,7 @@
 module TaskGraph:
   with "exp.rml"
   with "daelow.rml"
-
+  
   relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list) => ()
 
 end
@@ -41,6 +41,7 @@ end
 with "taskgraphext.rml"
 with "util.rml" 
 with "absyn.rml"
+with "dae.rml"
 
 relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list) => () =
 
@@ -48,6 +49,7 @@ relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list)
 	TaskGraphExt.new_task("end") => endtask &
 	TaskGraphExt.register_startstop(starttask,endtask) &
 	add_variables(vars,starttask) &
+	add_variables([DAELow.VAR(Exp.CREF_IDENT("time",[]),DAELow.VARIABLE,DAE.INPUT,DAE.REAL,NONE,[],NONE,0)],starttask) &
 	add_variables(knvars,starttask) &
 	build_blocks(dae,ass1,ass2,blocks)
 	----------------------------------

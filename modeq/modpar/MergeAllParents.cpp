@@ -78,12 +78,12 @@ int MergeAllParents::calculateAB(std::pair<ParentsIterator, ParentsIterator> pai
 	  A.insert(*c); // A - set of siblings not affecting merge.
 	  size++;
 	  } else {
-	    if (*p != m_invartask) {
 	      B.insert(*p); // B - set of parents to be kept.
-	    }
 	  }
 	}
       }
+    } else { // invartask should not be merged.
+      B.insert(*p);
     }
   }
   //cerr << "calculateAB, size =" << size << endl;

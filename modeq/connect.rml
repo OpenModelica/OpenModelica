@@ -51,12 +51,13 @@ module Connect :
   (** A connection set is represented using the `Set' type. *)
 
   relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets
+  relation add_array_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef, int) => Sets
   relation add_flow : (Sets,
 		       Exp.ComponentRef, Face,
 		       Exp.ComponentRef, Face) => Sets
   relation print_sets : Sets => ()
   relation equations : Sets => DAE.Element list
-  relation unconnected_flow_equations : (Sets, DAE.Element list, bool (* CallingScope*)) 
+  relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool (* CallingScope*)) 
 	  => DAE.Element list
 end
 
@@ -98,6 +99,25 @@ relation add_flow : (Sets, Exp.ComponentRef, Face, Exp.ComponentRef, Face)
 	add_flow(ss,r1,d1,r2,d2) => ss'
 	
 end
+
+
+(* For connecting two arrays, an equal equation for each index should be generated.*)
+
+relation add_array_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef, int) => Sets =
+
+  axiom	add_array_equ(s,_,_,0) => s
+
+  rule	Exp.subscript_cref(r1,[Exp.INDEX(Exp.ICONST(i))]) => r1' &
+	Exp.subscript_cref(r2,[Exp.INDEX(Exp.ICONST(i))]) => r2' &
+	int_sub(i,1) => i' &
+	find_equ_set(ss,r1') => s1 &
+	find_equ_set(ss,r2') => s2 &
+	merge(ss,s1,s2) => ss' &
+	add_array_equ(ss',r1,r2,i') => ss''	
+	----------------------
+	add_array_equ(ss,r1,r2,i) => ss''
+end
+
 
 (**
  ** - Equation generation
@@ -414,22 +434,46 @@ end
  ** call. However, the top call must generate for both inner and outer 
  ** connectors, hence the last argument, true for top call*)
 
-relation unconnected_flow_equations : (Sets, DAE.Element list, bool) => DAE.Element list =
+relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool) => DAE.Element list =
 
-  rule	(* All flow variables, i.e. the outermost call to inst_class *)
-	DAE.get_flow_variables(dae) => vars &
+  rule	(* if outermost call look at both inner and outer unconnected connectors *)
+	Env.local_outside_connector_flowvars(env) => v1 &
+	Env.local_inside_connector_flowvars(env) => v2 &
+	list_append(v1,v2) => vars &
 	get_all_flow_variables(csets) => vars2 &
+	Print.print_buf "vars : " &
+	Util.list_map(vars,Exp.print_component_ref_str) => str &
+	Util.string_delimit_list(str, ",") => str'  &
+	Print.print_buf str' &
+	Print.print_buf "\nvars2 (to remove) : " &
+	Util.list_map(vars2,Exp.print_component_ref_str) => str &
+	Util.string_delimit_list(str, ",") => str'  &
+	Print.print_buf str' &
+	Print.print_buf "\n" &
 	remove_variables(vars,vars2) => unconnectedvars &
 	generate_zeroflow_equations(unconnectedvars) => dae'
 	----------------------------------
-	unconnected_flow_equations(csets,dae,true) => dae'
+	unconnected_flow_equations(csets,dae,env,true) => dae'
 
-	(* If not all variables, do none... *)
-  axiom	unconnected_flow_equations(csets,dae,false) => []
+	(* If not outermost call, only look at unconnected inner connectors *)
+  rule	Env.local_inside_connector_flowvars(env) => vars &
+ 	get_all_flow_variables(csets) => vars2 &
+ 	Print.print_buf "vars : " &
+	Util.list_map(vars,Exp.print_component_ref_str) => str &
+	Util.string_delimit_list(str, ",") => str'  &
+ 	Print.print_buf "\nvars2 (to remove) : " &
+	Util.list_map(vars2,Exp.print_component_ref_str) => str &
+	Util.string_delimit_list(str, ",") => str'  &
+	Print.print_buf str' &
+	Print.print_buf "\n" &
+	remove_variables(vars,vars2) => unconnectedvars &
+ 	generate_zeroflow_equations(unconnectedvars) => dae'
+	----------------------------------
+	 unconnected_flow_equations(csets,dae,env,true) => dae'
 
   rule	(*Debug.fprint("failtrace","-unconnected_flow_equations failed\n") *)
 	----------------------------------
-	unconnected_flow_equations(csets,dae,_) => []
+	unconnected_flow_equations(csets,dae,env,_) => []
 end
 
 relation remove_variables: (Exp.ComponentRef list, Exp.ComponentRef list) 

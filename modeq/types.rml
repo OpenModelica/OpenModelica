@@ -186,6 +186,7 @@ returns multiple arguments. *)
 
   relation flatten_array_type : Type => (Type, int list)
 
+  relation flow_variables: (Var list, Exp.ComponentRef) => Exp.ComponentRef list
 end
 
 
@@ -482,9 +483,9 @@ relation lookup_component : (Type, Ident) => Var =
 	lookup_component((T_ARRAY(dim,(T_COMPLEX(st,cs),_)),_), id) 
 	  => VAR(n,attr,prot,ty',bnd)
 
-  rule	Print.print_buf "- Looking up " &
+  rule	(*Print.print_buf "- Looking up " &
 	Print.print_buf id &
-	Print.print_buf " in noncomplex type\n"
+	Print.print_buf " in noncomplex type\n"*)
 	-----------------------------------------
 	lookup_component(_, id) => fail
 
@@ -910,9 +911,11 @@ relation print_var : Var => () =
 
   rule	print_type typ & Print.print_buf " " &
 	Print.print_buf n & Print.print_buf " " & 
+	SCode.variability_string var => vs &
+	Print.print_buf vs & Print.print_buf " " &
 	print_binding bind 
 	-------
-	print_var VAR(n, attr, prot, typ, bind)
+	print_var VAR(n, ATTR(_,_,var,_), prot, typ, bind)
 
 end
 
@@ -1583,4 +1586,25 @@ relation print_prop : Properties => () =
 	---------------------------------
 	print_prop PROP_TUPLE(ty,const)
 
+end
+
+
+(** relation: flow_variables
+ **
+ ** This relation retrieves all variables names that are flow variables, and 
+ ** prepends the prefix given as an 'Exp.ComponentRef'
+**)
+
+relation flow_variables: (Var list, Exp.ComponentRef) => Exp.ComponentRef list =
+
+  axiom	flow_variables([],_) => []
+
+  rule	Exp.join_crefs(cr,Exp.CREF_IDENT(id,[])) => cr' &
+	flow_variables(vs,cr) => res
+	-------------------------
+	flow_variables(VAR(id,ATTR(true,_,_,_),_,_,_)::vs,cr) => cr'::res
+
+  rule	flow_variables(vs,cr) => res
+	-------------------------
+	flow_variables(_::vs,cr) => res
 end

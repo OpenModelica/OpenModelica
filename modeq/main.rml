@@ -394,15 +394,18 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 	real_string(time) => timestr &
 	print "task merging took " & print timestr & print " seconds\n" &
 	TaskGraphExt.dump_merged_graph("merged_model.viz") &
-	int_eq(1,0) => true &
 	RTOpts.no_proc => n &
 	TaskGraphExt.schedule(n) &
 	DAELow.calculate_sizes(indexed_dae) => (nx,ny,np)  &
 	TaskGraphExt.generate_code(nx,ny,np) &
-
 	print "done\n" 
 	-----------------
 	modpar(dae,ass1,ass2,comps)
+
+  rule	Debug.fprint("failtrace", "-modpar failed\n") 
+	---------------
+	modpar(_,_,_,_) => fail
+	
 end
 
 relation run_modpar_q: () => bool =

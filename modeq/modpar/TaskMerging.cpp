@@ -115,24 +115,81 @@ void TaskMerging::printTaskInfo()
   }
 }
 
+
+// Reinsert the source and sink nodes after merging has been preformed.
+void::TaskMerging::reinsertSourceAndSink()
+{
+
+
+ list<EdgeInfo>::iterator e;
+ 
+ m_taskRemoved[m_invartask]=false;
+ m_taskRemoved[m_outvartask]=false;
+
+ m_invartask = boost::add_vertex(*m_taskgraph);
+ m_outvartask = boost::add_vertex(*m_taskgraph);
+ nameVertex(m_invartask,m_taskgraph,"invar");
+ nameVertex(m_invartask,m_taskgraph,"outvar"); 
+ put(VertexUniqueIDProperty(m_taskgraph),
+     m_invartask,
+     m_invarID); 
+ put(VertexUniqueIDProperty(m_taskgraph),
+     m_outvartask,
+     m_outvarID); 
+ for(e=m_source_sink_edges.begin(); e != m_source_sink_edges.end(); e++) {
+   add_edge_containing(*e);
+ }
+}
+
+void TaskMerging::add_edge_containing(const EdgeInfo &info)
+{
+  if (info.source == m_invarID) {
+    cerr << "Source edge" << endl;
+    VertexIterator v,v_end;
+    // This is really expensive, fortunately there are no longer so many tasks
+    for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
+    ContainSet *cset = m_containTasks->find(*v)->second;
+      if (cset && cset->find(info.target) != cset->end()) {
+	add_edge(m_invartask,*v,m_taskgraph,info.result);
+      }
+    }
+  } else if (info.target == m_outvarID) {
+    cerr << "Target edge" << endl;
+    VertexIterator v,v_end;
+    // This is really expensive, fortunately there are no longer so many tasks
+    for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) { 
+    ContainSet *cset = m_containTasks->find(*v)->second;
+      if (cset && cset->find(info.source) != cset->end()) {
+	add_edge(*v,m_outvartask,m_taskgraph,info.result);
+      }
+    }
+    
+    
+  }  
+}
+
+
 // Remove source and sink nodes to speedup and simplify task merging
 // ExecCost(src)= ExecCost(sink) = 0  
 void TaskMerging::removeSourceAndSink()
 {
   ChildrenIterator c,c_end;
   ParentsIterator p,p_end;
-  m_invarID= getTaskID(m_invartask,m_taskgraph);
-  m_outvarID= getTaskID(m_outvartask,m_taskgraph);
+  m_invarID = getTaskID(m_invartask,m_taskgraph);
+  m_outvarID = getTaskID(m_outvartask,m_taskgraph);
 
   for(tie(c,c_end) = children(m_invartask,*m_taskgraph); c != c_end; c++) {
-    m_source_sink_edges.push_back(pair<int,int>(m_invarID,getTaskID(*c,m_taskgraph)));
+    m_source_sink_edges.push_back(EdgeInfo(m_invarID,
+					   getTaskID(*c,m_taskgraph),
+					   &getResultName(*c,m_taskgraph)));
   }
-
 
   for(tie(p,p_end) = parents(m_outvartask,*m_taskgraph); p != p_end; p++) {
-    m_source_sink_edges.push_back(pair<int,int>(m_outvarID,getTaskID(*p,m_taskgraph)));
+    m_source_sink_edges.push_back(EdgeInfo(getTaskID(*p,m_taskgraph),
+					   m_outvarID,
+					   &getResultName(*p,m_taskgraph)));
   }
-
+  
   clear_vertex(m_invartask,*m_taskgraph);
   clear_vertex(m_outvartask,*m_taskgraph);
   remove_vertex(m_invartask,*m_taskgraph);
@@ -158,12 +215,14 @@ void TaskMerging::mergeRules()
 
   removeSourceAndSink();
   
+  // calculate tlevel for each node
   map<VertexID,double> tlevel;
   VertexIterator v,v_end;
   for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
     tlevel[*v] = m_rules[0]->tlevel(*v);
   }
 
+  // a queue sorted on tlevel.
   TQueue *queue= new TQueue(TLevelCmp(m_taskgraph,&tlevel));
   
   clock_t t1,t2,t3;
@@ -177,26 +236,15 @@ void TaskMerging::mergeRules()
   while(change) {
     change = false;
     for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
-      change =  change || m_rules[0]->apply(*v) ||
-	m_rules[1]->apply(*v) ||
+      change =  change || m_rules[0]->apply(*v)  ||
+      	m_rules[1]->apply(*v) ||
 	m_rules[2]->apply(*v);
       if (change) break;
     }
   }
-  updateExecCosts(); // Remove later
-  ofstream file("removed2.viz");
-  my_write_graphviz(file,
-		    *m_taskgraph,
-		    make_label_writer(VertexExecCostProperty(m_taskgraph)),
-		    make_label_writer(EdgeCommCostProperty(m_taskgraph))
-		    );
-  t3 = clock();
-  cerr << "mergin (1-3) took " << (double)(t3-t2)/(double)CLOCKS_PER_SEC << " seconds." << endl;
 
-  while( m_rules[3]->apply(m_invartask));
-
-
-  //...
+  // put back source and sink nodes.
+  reinsertSourceAndSink();
   updateExecCosts(); // When finished mergin, execcost should be calculated for each task 
 		     // from containSet.
 }

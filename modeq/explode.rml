@@ -164,6 +164,7 @@ module SCode :
   relation variability_string: Variability => string
   relation count_parts: Class => int
   relation component_names: Class => string list	  
+  relation is_parameter_or_const: Variability => bool
 end
 
 
@@ -838,11 +839,13 @@ relation print_element : Element => () =
 	Print.print_buf ",mod:" & print_mod mod & 
 	Print.print_buf ",tp:" & Absyn.path_string typath => s &
 	Print.print_buf s &
+	variability_string var => vs &
+	Print.print_buf ",var:" & Print.print_buf vs &
 	Print.print_buf ", from baseclass: " &
 	Absyn.path_string path => str & Print.print_buf str & 
 	Print.print_buf ")"
 	----------------------------------------
-	print_element COMPONENT(n,final,repl,prot,attr,typath,mod,SOME(path))
+	print_element COMPONENT(n,final,repl,prot,ATTR(_,_,_,var,_),typath,mod,SOME(path))
 
   rule	Print.print_buf "CLASSDEF(" & Print.print_buf n & 
 	Print.print_buf ")" 
@@ -868,6 +871,20 @@ relation variability_string: Variability => string =
   axiom	variability_string(PARAM) => "PARAM" 
   axiom	variability_string(STRUCTPARAM) => "STRUCTPARAM"
   axiom	variability_string(CONST) => "CONST" 
+end
+
+relation is_parameter_or_const: Variability => bool =
+
+  axiom	is_parameter_or_const (VAR) => false
+
+  axiom	is_parameter_or_const (DISCRETE) => false
+
+  axiom	is_parameter_or_const (PARAM) => true
+
+  axiom	is_parameter_or_const (STRUCPARAM) => true
+
+  axiom	is_parameter_or_const (CONST) => true
+
 end
 
 relation count_parts: Class => int =

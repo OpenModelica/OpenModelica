@@ -15,7 +15,8 @@ bool DuplicateParentMerge::apply(VertexID v)
   vector<bool>* cond1,*cond2;
   change = false;
     
-  if (out_degree(v,*m_taskgraph) > 1 &&
+  if (v != m_invartask && v != m_outvartask &&
+      out_degree(v,*m_taskgraph) > 1 &&
       /*!containTask(m_outvartask,children(v,*m_taskgraph)) &&*/
       numberOfTrues(cond1=newTlevelLower(children(v,*m_taskgraph),
 					 v)) > 0 &&

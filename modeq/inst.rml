@@ -120,6 +120,7 @@ with "print.rml"
 with "system.rml"
 with "ceval.rml"
 
+val for_scope_name = "$for loop scope$"	  
 (**
  ** These type aliases are introduced to make the code a little more
  ** readable.
@@ -412,7 +413,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, InstDims,boo
 	is_top_call(callscope) => callscope' &  
 	Connect.equations csets' => dae2 &
 	
-	Connect.unconnected_flow_equations (csets',dae1,callscope') => dae3 &
+	Connect.unconnected_flow_equations (csets',dae1,env''', callscope') => dae3 &
 	Util.list_flatten([dae1, dae2, dae3]) => dae &
 	package_prefix(env, Absyn.IDENT(n)) => typename &
 	mktype(typename,ci_state',tys) => ty
@@ -1180,9 +1181,9 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State
 	not ClassInf.is_function(cistate) &  (* Functions should not be considered *)
 	get_crefs_from_compdims(allcomps) => crefs &
 	member_crefs(Absyn.CREF_IDENT(n,[]),crefs) => true &
+	SCode.is_parameter_or_const param => true &
 	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
 									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m,bc),cmod)],instdims,impl) => env' &
-	
 	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
@@ -3364,13 +3365,13 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 ** Handle connct statements
 	 **)
 
-  rule	inst_connect(csets,env,pre,c1,c2) => csets' &
+  rule	inst_connect(csets,env,pre,c1,c2) => (csets',dae) &
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 	------------------------------------------------------------
 	inst_equation_common(env,mods,pre, csets, ci_state, 
 			     SCode.EQ_CONNECT(c1,c2), 
 			     initial)
-	  => ([],env,csets',ci_state')
+	  => (dae,env,csets',ci_state')
 	  
 	(**  assert
 	 **)
@@ -3399,6 +3400,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Lookup.lookup_ident_local(env,n)
 	  => (Types.VAR(_,_,_,_,Types.EQBOUND(_,_)),_,_) &
 	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
+	& print "discarding equation\n" 
 	------------------------------------------------------
 	inst_equation_common(env,mods,pre,csets,ci_state,
 			     SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(n,[])), e2),
@@ -3640,7 +3642,7 @@ end
 (** HJ: **)
 relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 
-  rule	Env.open_scope (env,false,SOME("$for loop scope$")) => env' &
+  rule	Env.open_scope (env,false,SOME(for_scope_name)) => env' &
 	Env.extend_frame_v(env',
 			   Types.VAR(i,
 				     Types.ATTR(false,
@@ -3859,8 +3861,8 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
   rule	RTOpts.split_arrays => true &
 	Exp.contain_functioncall(e1) => false &
 	Exp.contain_functioncall(e2) => false &
-	(* For debugging.
-	Print.print_buf "  Array equation: " &
+(*	 For debugging.*)
+(*	Print.print_buf "  Array equation: " &
 	Exp.print_exp e1 & Print.print_buf " = " &
 	Exp.print_exp e2 & Print.print_buf "\n" & *)
 	inst_array_equation(e1,e2,ad,t,initial) => dae
@@ -4024,9 +4026,9 @@ relation inst_assertion : (Env.Env, Exp.Exp, Types.Type,
 	  => DAE.Element list =
 
 	(* Constant assertions *)
-  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), true, d, pre) => [(* lost *)]
+  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), true, d, pre) => [DAE.ASSERT(e)]
 
-  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), _, d, pre) => [(* lost *)]
+  axiom	inst_assertion (env, e, (Types.T_BOOL(_),_), _, d, pre) => [DAE.ASSERT(e)]
 
   rule	Print.print_buf "# Assertions have to be of type Boolean\n" &
 	Print.print_buf "  assertion: (" &
@@ -4055,7 +4057,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   axiom	unroll (_,_,_,csets,_,_,Values.ARRAY([]),_,_) => ([], csets)
 
-  rule	Env.open_scope (env,false,SOME("$for loop scope$")) => env' &
+  rule	Env.open_scope (env,false,SOME(for_scope_name)) => env' &
 	Env.extend_frame_v (env',
 			    Types.VAR(i, Types.ATTR(false,
 						    SCode.RO,
@@ -4073,7 +4075,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	unroll (env,mods,pre,csets,ci_state,i,Values.ARRAY(fst::rest),eqs,initial as NON_INITIAL)
 	  => (dae, csets'')
 
-  rule	Env.open_scope (env, false,SOME("$for loop scope$")) => env' &
+  rule	Env.open_scope (env, false,SOME(for_scope_name)) => env' &
 	Env.extend_frame_v (env',
 			    Types.VAR(i, Types.ATTR(false,
 						    SCode.RO,
@@ -4296,19 +4298,21 @@ relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.AlgorithmItem list) list)
 end
 
 (** relation: inst_connect
+ ** 
+ ** Generates connectionsets for connections.
+ ** Parameters and constants in connectors should generate appropriate assert statements.
+ ** Hence, a 'DAE.Element list' is returned as well.
  **)
 
 relation inst_connect: (Connect.Sets, Env, Prefix,
 			Absyn.ComponentRef, Absyn.ComponentRef)
-	  => Connect.Sets =
+	  => (Connect.Sets,DAE.Element list) =
 
   rule	Static.elab_cref(env, c1) => (Exp.CREF(c1',t1),prop1,acc) &
 	Static.elab_cref(env, c2) => (Exp.CREF(c2',t2),prop2,acc) &
 	Static.canon_cref(env, c1') => c1'' &
 	Static.canon_cref(env, c2') => c2'' &
-	(* Can not only look local, a for loop creates a scope if there are connect 
-	 statements in the loop the connector instances are then not local.*)
-	Lookup.lookup_var(env,c1'')
+	Lookup.lookup_var_local(env,c1'')
 	  => (attr1 as Types.ATTR(flow1,_,_,_),ty1,_) &
 	Lookup.lookup_var(env,c2'') => (attr2,ty2,_) &
 	(** Check that the types of the connectors are good. *)
@@ -4317,10 +4321,10 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	check_connect_types(c1'',ty1,attr1,c2'',ty2,attr2) &
 	component_face(c1'') => f1 &
 	component_face(c2'') => f2 &
-	connect_components(sets, pre, c1'', f1, ty1, c2'', f2, ty2, flow1)
-	  => sets'
+	connect_components(sets, env, pre, c1'', f1, ty1, c2'', f2, ty2, flow1)
+	  => (sets',dae)
 	---------------------------------
-	inst_connect(sets, env,pre,c1,c2) => sets'
+	inst_connect(sets, env,pre,c1,c2) => (sets',dae)
 
   rule	Print.print_buf "# could not connect\n"
 	---------------------------------
@@ -4431,22 +4435,25 @@ end
  ** sets along the way.  For simple components (of type `Real') it
  ** adds the components to the set, and for complex types it traverses
  ** the subcomponents and recursively connects them to each other.
+ ** A DAE.Element list is returned for assert statements.
  **)
 
 relation connect_components: (Connect.Sets,
+			      Env.Env,
 			      Prefix,
 			      Exp.ComponentRef, Connect.Face, Types.Type,
 			      Exp.ComponentRef, Connect.Face, Types.Type,
-			      bool) => Connect.Sets =
-	
+			      bool) 
+	  => (Connect.Sets, DAE.Element list) =
+	  	
 	(**  Flow type, must be a subtype of Real *)
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_flow(sets, c1', f1, c2', f2) => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, f1, (Types.T_REAL(_),_),
-			   c2, f2, (Types.T_REAL(_),_), true) => sets'
+	connect_components(sets, env, pre, c1, f1, (Types.T_REAL(_),_),
+			   c2, f2, (Types.T_REAL(_),_), true) => (sets',[])
 
   rule	Types.array_element_type(t1) => ((Types.T_REAL(_),_)) &
 	Types.array_element_type(t2) => ((Types.T_REAL(_),_)) &
@@ -4454,40 +4461,60 @@ relation connect_components: (Connect.Sets,
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_equ(sets, c1', c2') => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1, (Types.T_ARRAY(_,t1),_),
-			   c2,f2, (Types.T_ARRAY(_,t2),_),true) => sets'
+	connect_components(sets,env, pre,c1,f1, (Types.T_ARRAY(_,t1),_),
+			   c2,f2, (Types.T_ARRAY(_,t2),_),true) => (sets',[])
 	
 	(**  Non-flow type *)
 
+	(** Parameters and constants generate assert statements *)
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	Connect.add_equ(sets, c1', c2') => sets'
-	-----------------------------------------
-	connect_components(sets, pre, c1, _, (Types.T_REAL(_),_),
-			   c2, _, (Types.T_REAL(_),_), false) => sets'
+	Lookup.lookup_var_local(env,c1') => (Types.ATTR(_,_,vr,_),t1, _) &
+	SCode.is_parameter_or_const(vr) => true &
+	Types.basic_type t1 => true &
+	Lookup.lookup_var_local(env,c2') => (Types.ATTR(_,_,_,_) ,t2, _) &
+	Types.basic_type t2 => true 
+	------------------------------------
+	connect_components(sets, env, pre, c1, f1, (_,_),
+			   c2, f2, (_,_), false) 
+	  => (sets,
+	      [DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),
+				     [Exp.RELATION(Exp.CREF(c1',Exp.REAL),
+						 Exp.EQUAL(Exp.BOOL),
+						 Exp.CREF(c2',Exp.REAL))
+				      ,Exp.SCONST("automatically generated from connect")],false,true))])
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_equ(sets, c1', c2') => sets'
 	-----------------------------------------
-	connect_components(sets, pre, c1, _, (Types.T_INTEGER(_),_),
-			   c2, _, (Types.T_INTEGER(_),_), false) => sets'
+	connect_components(sets, env, pre, c1, _, (Types.T_REAL(_),_),
+			   c2, _, (Types.T_REAL(_),_), false) => (sets',[])
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	Connect.add_equ(sets, c1', c2') => sets'
+	-----------------------------------------
+	connect_components(sets, env, pre, c1, _, (Types.T_INTEGER(_),_),
+			   c2, _, (Types.T_INTEGER(_),_), false) => (sets',[])
+
+  rule	Prefix.prefix_cref(pre, c1) => c1' &
+	Prefix.prefix_cref(pre, c2) => c2' &
+	dim1 = dim2 &
+	Connect.add_array_equ(sets,c1',c2',dim1) => sets'
 	----------------------------------------
-	connect_components(sets,pre,c1,f1, (Types.T_ARRAY(_,_),_),
-			   c2,f2, (Types.T_ARRAY(_,_),_),false) => sets'
+	connect_components(sets,env,pre,c1,f1, (Types.T_ARRAY(Types.DIM(SOME(dim1)),t1),_),
+			   c2,f2, (Types.T_ARRAY(Types.DIM(SOME(dim2)),t2),_),false) 
+	  => (sets',[])
 
 	(**  Complex types *)
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	connect_vars(sets,c1',f1,l1,c2',f2,l2) => sets'
+	connect_vars(sets,env,c1',f1,l1,c2',f2,l2) => (sets',dae)
 	----------------------------------------
-	connect_components(sets,pre,c1,f1, (Types.T_COMPLEX(_,l1),_),
-			   c2,f2, (Types.T_COMPLEX(_,l2),_),_) => sets'
+	connect_components(sets,env,pre,c1,f1, (Types.T_COMPLEX(_,l1),_),
+			   c2,f2, (Types.T_COMPLEX(_,l2),_),_) => (sets',dae)
 	
 	(**  Error *)
 	
@@ -4500,7 +4527,7 @@ relation connect_components: (Connect.Sets,
 	Print.print_buf "  The type `" & Types.print_type t1 &
 	Print.print_buf "' is not allowed in connections\n"
 	----------------------------------------
-	connect_components(_,pre,c1,_,t1,c2,_,t2,_) => fail
+	connect_components(_,env,pre,c1,_,t1,c2,_,t2,_) => fail
 	
 end
 
@@ -4511,27 +4538,29 @@ end
  ** using the relation `connet_components'.
  **)
 
-relation connect_vars : (Connect.Sets,
+relation connect_vars : (Connect.Sets, 
+			 Env.Env,
 			 Exp.ComponentRef, Connect.Face, Types.Var list,
 			 Exp.ComponentRef, Connect.Face, Types.Var list)
-	  => Connect.Sets =
+	  => (Connect.Sets, DAE.Element list) =
 
-  axiom	connect_vars(sets,_,_,[],_,_,[]) => sets
+  axiom	connect_vars(sets,env,_,_,[],_,_,[]) => (sets,[])
 
   rule	Exp.extend_cref(c1, n, []) => c1' &
 	Exp.extend_cref(c2, n, []) => c2' &
 	check_connect_types(c1', ty1, attr1, c2', ty2, attr2) &
-	connect_components(sets,Prefix.NOPRE,
+	connect_components(sets,env,Prefix.NOPRE,
 			   c1',f1, ty1,
-			   c2',f2, ty2, flow1) => sets' &
-	connect_vars(sets',c1,f1,xs1,c2,f2,xs2) => sets''
+			   c2',f2, ty2, flow1) => (sets',dae) &
+	connect_vars(sets',env,c1,f1,xs1,c2,f2,xs2) => (sets'',dae2) &
+	list_append(dae,dae2) => dae'					 
 	--------------------------------------
-	connect_vars(sets,
+	connect_vars(sets,env,
 		     c1,f1, Types.VAR(n,attr1 as Types.ATTR(flow1,_,vt1,_),
 				      _,ty1,_)::xs1,
 		     c2,f2, Types.VAR(_,attr2 as Types.ATTR(flow2,_,vt2,_),
 				      _,ty2,_)::xs2)
-	  => sets''
+	  => (sets'',dae')
 
 end
 

@@ -52,7 +52,7 @@ module Lookup:
 	  => (Types.Var,(SCode.Element*Types.Mod) option,bool)
   relation lookup_ident : (Env.Env, SCode.Ident) 
 	  => (Types.Var,(SCode.Element*Types.Mod) option,bool)
-  relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) 
+  relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list)
 end
 
 with "parse.rml"
@@ -573,6 +573,9 @@ end
  ** This relation is very similar to `lookup_var', but it only looks
  ** in the topmost environment frame, which means that it only finds
  ** names defined in the local scope.
+ ** ----EXCEPTION---: When the topmost scope is the scope of a for loop, the lookup
+ ** continues on the next scope. This to allow variables in the local scope to 
+ ** also be found even if inside a for scope.
  **)
 
 relation lookup_var_local : (Env.Env,Exp.ComponentRef)
@@ -582,6 +585,11 @@ relation lookup_var_local : (Env.Env,Exp.ComponentRef)
 	--------------------------------------------
 	lookup_var_local(Env.FRAME(sid,ht,_,_,_)::fs,ref) => (attr,ty,binding)
 
+  rule	(* Exception, when in for loop scope allow search of next scope *)
+	lookup_var_local(env,ref) => (attr,ty,binding)
+	------------------------------
+	lookup_var_local(Env.FRAME(SOME("$for loop scope$"),_,_,_,_)::env,ref) 
+	  => (attr,ty,binding)
 end
 
 relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,(SCode.Element*Types.Mod) option,bool) =
@@ -1364,3 +1372,4 @@ relation lookup_class_in_elements : (SCode.Element list, Absyn.Path)
 	lookup_class_in_elements (_::es, path) => c
 
 end	
+

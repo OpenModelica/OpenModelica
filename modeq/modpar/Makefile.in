@@ -13,7 +13,8 @@ OBJECTS = Codegen.o \
 	MergeAllParents.o \
 	MergeSiblings.o \
 	Schedule.o \
-	TaskGraphExt.o 
+	TaskGraphExt.o \
+	solvers.o
 else
 OBJECTS = TaskGraphExt_stub.o
 endif
@@ -21,7 +22,7 @@ all: libmodpar.a
 libmodpar.a: $(OBJECTS)
 	ar -r $@ $(OBJECTS)
 
-INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME)
+INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I../../mosh/src
 
 CFLAGS = $(INCFLAGS) -g -Wall -DUNIX=1
 CXXFLAGS = $(CFLAGS)

@@ -111,8 +111,13 @@ relation lower: (DAE.DAElist) => DAELow =
 	Util.list_map(s,Exp.cref_str) => crefs &
 	Util.string_delimit_list(crefs,", " ) => st &
 	print st & print "\n" &*)
-	lower2(lst,s) => (low as DAELOW(vars,knvars,eqns,reqns)) 
-(*	remove_simple_equations(low,s) => low' *)
+	lower2(lst,s) => (low as DAELOW(vars,knvars,eqns,reqns))  &
+	print "states :" &
+	Util.list_map(s,Exp.print_component_ref_str) => sl &
+	Util.string_delimit_list(sl,", ") => str & print str & print "\n" &
+	remove_simple_equations(low,s) => low' &
+	print "removed simple equations, dae:" &
+	dump low' 
 	(*list_length(vars) => varlen &
 	int_string(varlen) => vs &
 	list_length(eqns) => eqnlen &
@@ -122,7 +127,7 @@ relation lower: (DAE.DAElist) => DAELow =
 	print st & print "\n" &
 	print es & print " equations\n" *)
 	--------------------
-	lower(lst) => low
+	lower(lst) => low'
 end
 
 relation dump: DAELow => () =
@@ -166,36 +171,70 @@ end
 relation remove_simple_equations: (DAELow,Exp.ComponentRef list) 
 	=> (DAELow) =
 
-  rule	remove_simple_equations2(eqns,eqns,states)
-	  => (eqns',reqns')	  
+  rule	remove_simple_equations2(eqns,eqns,states,vars,knvars)
+	  => (eqns',reqns',vars',knvars')	  
 	-------------------------------------
 	remove_simple_equations(DAELOW(vars,knvars,eqns,reqns),states) 
-	  => DAELOW(vars,knvars,eqns,reqns')
+	  => DAELOW(vars',knvars',eqns',reqns')
 end
 
 relation remove_simple_equations2: (Equation list, (* all equations *)
 				    Equation list, (* eqns to iterate*)
-				    Exp.ComponentRef list) (* states *)
+				    Exp.ComponentRef list,(* states *)
+				    Var list, (* variables states+alg *)
+				    Var list) (* known variables *)
 	  => (Equation list, (* all equations *)  
-	      Equation list) (* removed equations*) =
+	      Equation list, (* removed equations*) 
+	      Var list, (* variables states+alg *)
+	      Var list) (* known variables *) =
 
   rule	list_member(cr1,states) => false &
 	list_member(cr2,states) => false &
 	Util.list_deletemember(alleqns,e) => alleqns' &
-	Util.list_map_2(alleqns,replace_all,cr1,cr2) => alleqns'' &
-	remove_simple_equations2(alleqns'',eqns,states) => (alleqns''',reqns)
+	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
+	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
+	remove_variable_named(vars,cr2) => (vars',var) &	
+	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
+	  => (alleqns''',reqns,vars'',knvars'')
 	--------------------------------------------------
-	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr1,_),Exp.CREF(cr2,_)))::eqns,states) 
-	  => (alleqns''',e::reqns)
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.CREF(cr1,_),Exp.CREF(cr2,_)))::eqns,states,vars,knvars) 
+	  => (alleqns''',e::reqns,vars'',knvars'')
 	
-  rule	remove_simple_equations2(alleqns,eqns,states) => (alleqns',reqns)
-	--------------------------------------------------------------
-	remove_simple_equations2(alleqns,_::eqns,states)
-	  => (alleqns',reqns)
 
-  axiom	remove_simple_equations2(alleqns,[],states) => (alleqns,[])
+  rule	Exp.is_zero(e2) => true &
+	list_member(cr1,states) => false &
+	list_member(cr2,states) => false &
+	Util.list_deletemember(alleqns,e) => alleqns' &	
+	Util.list_map_2(alleqns',replace_all,cr2,cr1) => alleqns'' &
+	Util.list_map_2(eqns,replace_all,cr2,cr1) => eqns' &
+	remove_variable_named(vars,cr2) => (vars',var) &	
+	remove_simple_equations2(alleqns'',eqns',states,vars',var::knvars) 
+	  => (alleqns''',reqns,vars'',knvars'')
+	--------------------------------------------------
+	remove_simple_equations2(alleqns,(e as EQUATION(Exp.BINARY(Exp.CREF(cr1,_),Exp.SUB(_),Exp.CREF(cr2,_)),e2))::eqns,states,vars,knvars) 
+	  => (alleqns''',e::reqns,vars'',knvars'')
+
+  rule	remove_simple_equations2(alleqns,eqns,states,vars,knvars) 
+	  => (alleqns',reqns,vars',knvars')
+	--------------------------------------------------------------
+	remove_simple_equations2(alleqns,_::eqns,states,vars,knvars)
+	  => (alleqns',reqns,vars',knvars')
+
+  axiom	remove_simple_equations2(alleqns,[],states,vars,knvars) 
+	  => (alleqns,[],vars,knvars)
 
 end 
+
+relation remove_variable_named: (Var list,  Exp.ComponentRef) => (Var list, Var) =
+
+  rule	Exp.cref_equal(cr1,cr2) => true
+	-------------------------------
+	remove_variable_named(  (v as VAR(cr1,_,_,_,_,_,_,_))::rest,cr2) => (rest,v)
+
+  rule	remove_variable_named(rest,cr2) => (res,v2)
+	-------------------------------
+	remove_variable_named(  (v as VAR(cr1,_,_,_,_,_,_,_))::rest,cr2) => (v::res,v2)
+end
 
 relation replace_all: (Equation, (* equation *)
 		       Exp.ComponentRef, (*source variable, *)
@@ -212,6 +251,11 @@ relation replace_all_exp: (Exp.Exp,
 			   Exp.ComponentRef, (* source variable *)
 			   Exp.ComponentRef) (* target variable *)
 	  => (Exp.Exp) =
+
+  rule	Exp.cref_equal(cr,s) => true
+	----------------------------
+	replace_all_exp(Exp.CREF(cr,tp),s,t) => Exp.CREF(t,tp)
+
   rule	replace_all_exp(e1,s,t) => e1' &
 	replace_all_exp(e2,s,t) => e2' 
 	-----------------------------
@@ -224,7 +268,7 @@ relation replace_all_exp: (Exp.Exp,
   rule	replace_all_exp(e1,s,t) => e1' &
 	replace_all_exp(e2,s,t) => e2' 
 	-----------------------------
-	replace_all_exp(Exp.LBINARY(e1,op,e2),s,t) => Exp.LBINARY(e1,op,e2)
+	replace_all_exp(Exp.LBINARY(e1,op,e2),s,t) => Exp.LBINARY(e1',op,e2')
 	
   rule	replace_all_exp(e,s,t) => e'
 	-----------------------------
@@ -458,8 +502,10 @@ end
 
 relation lower_eqn: (DAE.Element) => Equation =
 
-  axiom	 lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1,e2)
-
+  rule	Exp.simplify(e1) => e1' &
+	Exp.simplify(e2) => e2'
+	-----------------------
+	lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1',e2')
 end
 
 relation lower_var: (DAE.Element, Exp.ComponentRef list) => Var =
@@ -822,8 +868,8 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	 *)
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae as DAELOW(vars,knvars,eqns,_),m,mt) &
-	  print "reduced index, new DAE:\n" &
-	dump dae &
+(*	  print "reduced index, new DAE:\n" &
+	dump dae &*)
 	  (* and try again, restarting. This could be optimized later. It should not
 	   be necessary to restart the matching. Instead one could continue the matching
 	   as usual. This has not been tested yet.*)
@@ -879,6 +925,16 @@ relation reduce_index_dummy_der: (DAELow,
 	---------------------------------------------
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae,m,mt)
+
+  rule	marked_eqns(nf) => eqns &
+
+	Util.list_map(eqns,int_string) => es &
+	Util.string_delimit_list(es,", ") => es' &
+	states_in_eqns(eqns,dae,m,mt) => ([],_) &
+	print_equations(eqns,dae) 
+	---------------------------------------------
+	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
+	  => fail
 
   rule	print "-reduce_index_dummy_der failed\n"
 	--------------------
@@ -1165,10 +1221,13 @@ relation differentiate_eqns: (DAELow,
 	time_varying_vars(dae) => timevars &
 	Derive.differentiate_equation_time(eqn,timevars) => eqn' &
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
+	print "differentiated equation " &
 	equation_str eqn => str & 
+	print str & print "\n" &
 	Debug.fprint("bltdump", str) &
 	Debug.fprint("bltdump", " to ") & 
 	equation_str eqn' => str &
+	print " to " & print str &  print "\n" &
 	Debug.fprint("bltdump",str) & 
 	Debug.fprint("bltdump", "\n") &
 	list_append(eqns,[eqn']) => eqns' &
@@ -2005,3 +2064,31 @@ relation calculate_indexes2: (Var list,int,int,int,int,int) => Var list =
 	  => VAR(cr,CONST,d,tp,b,dim,start,p)::vars'
 end
 
+relation print_equations: (int list, DAELow) => () =
+
+  axiom	print_equations ([],_) => ()
+
+  rule	print_equations(rest,dae) => () &
+	print_equation_no(n,dae) => ()
+	----------------
+	print_equations(n::rest,dae) => ()
+end
+
+relation print_equation_no: (int, DAELow) => () =
+
+  rule	int_sub(eqno,1) => eqno' &
+	list_nth(eqns,eqno') => eq &
+	print_equation eq => ()
+	----------------
+	print_equation_no(eqno,DAELOW(_,_,eqns,_)) => ()
+end
+
+relation print_equation: Equation =>  () =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	Exp.print_exp_str e2 => s2 &
+	Util.string_append_list([s1, " = ", s2, "\n" ]) => res &
+	print res
+	-----------------
+	print_equation(EQUATION(e1,e2))
+end
