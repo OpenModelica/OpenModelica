@@ -1199,7 +1199,12 @@ relation dae_declare : (Exp.ComponentRef,
 			) 
 	  => DAE.Element list =
 
-  rule	dae_declare2 (vn, ty, par, dir, e, inst_dims) => dae
+  rule	Debug.fprint( "insttr", "dae_declare(") &
+	Debug.fcall ( "insttr", Exp.print_component_ref,vn) &
+	Debug.fprint ( "insttr", ",") &
+	Debug.fcall ( "insttr", Types.print_type,ty)  &
+	Debug.fprint ("insttr", "...)\n") &
+	dae_declare2 (vn, ty, par, dir, e, inst_dims) => dae
 	-----------------------------------
 	dae_declare (vn, ty, SCode.ATTR(_,_,_,par,dir), e, inst_dims) => dae
 
@@ -1287,14 +1292,6 @@ axiom dae_declare4 (vn, Types.T_ENUM, kind, dir, e, inst_dims)
   axiom	dae_declare4 (vn, Types.T_ENUMERATION(l), kind, dir, e, inst_dims)
 	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims)]
 
-  rule	print "dae_declare4 complex arg.\n"
-	---------
-	dae_declare4(vn, Types.T_COMPLEX(_,_),kind,dir,e,inst_dims)
-	=> []
-
-  rule	print "dae_declare4 failed!\n"
-	------------------------------
-	dae_declare4 (_,_,_,_,_,_) => []
   axiom	dae_declare4 (c,ty,_,_,_,_) => []
 
 end

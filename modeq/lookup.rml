@@ -310,13 +310,55 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
   rule	lookup_class_in_frame(items,id) => (c, _) 
 	---------------------
 	lookup_class_in_env(env as (Env.FRAME(items)::fs),Absyn.IDENT(id))
-	  => (c,env)
+	    => (c,env)
+
+  rule	lookup_class_in_frame(items, id) => (c,  _) &
+	lookup_class_in_class(env, c, path) => (c2, _)
+	-------------------------------------------	
+	lookup_class_in_env(env as (Env.FRAME(items)::fs), Absyn.QUALIFIED(id,path)) 
+	    => (c2,env)
 
   rule	lookup_class_in_env(fs,id) => (c, _)
 	---------------------
 	lookup_class_in_env(f::fs,id) => (c, f::fs)
 
 end
+
+(** relation: lookup_class_in_class
+ ** This relation looks up an inner class of a class (The outer class can be a package)
+ ** Environment is passed along in case it needs to be modified...
+ **)
+relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path) => (SCode.Class, Env.Env) =
+
+  rule	lookup_class_in_parts(env,classname,parts) => (c,env)
+	----------------------------------------------------
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)),Absyn.IDENT(classname)) => (c,env)
+	    
+  rule	lookup_class_in_parts (env, c1, parts) => (c,env) &
+	lookup_class_in_class (env,c,p1) => (c',env)
+	-------------------------------------------
+	lookup_class_in_class (env, SCode.CLASS(_,_,_,SCode.PARTS(parts,_,_)), Absyn.QUALIFIED(c1,p1)) => (c',env)
+	
+end
+	
+(** relation: lookup_class_in_parts
+ ** This relation takes an `Env' and an `Ident' and an `Element' list, and returns the `Class' 
+ ** having the name specified by the `Ident'. If not found, the relation fails.
+ **)
+relation lookup_class_in_parts: (Env.Env, SCode.Ident, SCode.Element list) => (SCode.Class, Env.Env) =
+	
+  rule	name = name2
+	------------
+	lookup_class_in_parts(env, name,  SCode.CLASSDEF(name2,_,_,c)::xs) => (c, env)
+
+
+  rule	lookup_class_in_parts(env, name, xs) => (c,env)
+	-----------------------------------------------
+	lookup_class_in_parts(env, name, _::xs) => (c,env)
+
+  axiom	lookup_class_in_parts(env, name, []) => fail
+end
+
 (**)
 relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
 				 SCode.Ident)
