@@ -86,7 +86,6 @@ clean:
 		(cd $$d ; $(MAKE) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
-	done	
 	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG) *~
 
 reallyclean: clean
