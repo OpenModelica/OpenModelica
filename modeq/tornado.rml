@@ -1147,7 +1147,7 @@ end
          generate_getsubmodel_code(comp_name_list,cr,kind,dir) => sub_model_str &
          generate_GetCall_string_for_var(kind,dir,top_bool) => call_str &
          
-         generate_MACRO_string_for_var(DAELow.DUMMY_STATE,dir,top_bool) => macro_str &
+         generate_MACRO_string_for_var(kind,dir,top_bool) => macro_str &
          
          Exp.cref_str(cr) => crs &
          TORNADOEXT.get_var_index(crs,top_class_name) => input_number &
@@ -1168,34 +1168,34 @@ end
                          top_class_name) 
           => (params_str,link_str::res)
 
-  rule  is_var_on_top_model(cr) => top_bool &
-         generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,dir) => sub_model_str &
-         generate_GetCall_string_for_var(DAELow.STATE,dir,top_bool) => call_str &
+(*   rule  is_var_on_top_model(cr) => top_bool & *)
+(*          generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,dir) => sub_model_str & *)
+(*          generate_GetCall_string_for_var(DAELow.STATE,dir,top_bool) => call_str & *)
          
-         generate_MACRO_string_for_var(DAELow.DUMMY_STATE,dir,top_bool) => macro_str &
-         get_var_index_str(cr,class_paths) => var_index_str & 
-         get_flat_var_index_str(cr,class_paths) => var_flat_index_str &
+(*          generate_MACRO_string_for_var(DAELow.DUMMY_STATE,dir,top_bool) => macro_str & *)
+(*          get_var_index_str(cr,class_paths) => var_index_str &  *)
+(*          get_flat_var_index_str(cr,class_paths) => var_flat_index_str & *)
 
-         Exp.cref_str(cr) => crs & 
-         Util.string_append_list([sub_model_str,"->",
-                                  call_str,"(",var_index_str,")",
-                                  (*                                   "->LinkInitialValue(&m_Dummy, ",var_flat_index_str,");  ","\n"]) => link_str1 & *)
-         "->LinkInitialValue(&m_Dummy, 0);\n"]) => link_str1 &
-         Util.string_append_list([sub_model_str,"->",
-                                  call_str,"(",var_index_str,")",
-                                  (*                                   "->LinkDerivative(&m_Dummy, ",var_flat_index_str,");  ","\n"]) => link_str2 & *)
-         "->LinkDerivative(&m_Dummy, 0);\n"]) => link_str2 &
-         Util.string_append_list([sub_model_str,"->",
-                                  call_str,"(",var_index_str,")",
-                                  "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ", 
-                                  sub_model_str," ",call_str," ",crs, "\n"]) => link_str3 &
-         Util.string_append_list([link_str1,link_str2,link_str3]) => link_str &
-         generate_links2(rest,comp_name_list,top_class_name) => (params_str,res) 
-         ---------------------------------------------
-         generate_links2(DAELow.VAR(cr,DAELow.DUMMY_STATE,dir,_,_,_,_,start,_,_,class_paths)::rest,
-                         comp_name_list,
-                         top_class_name) 
-          => (params_str,link_str::res)
+(*          Exp.cref_str(cr) => crs &  *)
+(*          Util.string_append_list([sub_model_str,"->", *)
+(*                                   call_str,"(",var_index_str,")", *)
+(*                                   (\*                                   "->LinkInitialValue(&m_Dummy, ",var_flat_index_str,");  ","\n"]) => link_str1 & *\) *)
+(*          "->LinkInitialValue(&m_Dummy, 0);\n"]) => link_str1 & *)
+(*          Util.string_append_list([sub_model_str,"->", *)
+(*                                   call_str,"(",var_index_str,")", *)
+(*                                   (\*                                   "->LinkDerivative(&m_Dummy, ",var_flat_index_str,");  ","\n"]) => link_str2 & *\) *)
+(*          "->LinkDerivative(&m_Dummy, 0);\n"]) => link_str2 & *)
+(*          Util.string_append_list([sub_model_str,"->", *)
+(*                                   call_str,"(",var_index_str,")", *)
+(*                                   "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ",  *)
+(*                                   sub_model_str," ",call_str," ",crs, "\n"]) => link_str3 & *)
+(*          Util.string_append_list([link_str1,link_str2,link_str3]) => link_str & *)
+(*          generate_links2(rest,comp_name_list,top_class_name) => (params_str,res)  *)
+(*          --------------------------------------------- *)
+(*          generate_links2(DAELow.VAR(cr,DAELow.DUMMY_STATE,dir,_,_,_,_,start,_,_,class_paths)::rest, *)
+(*                          comp_name_list, *)
+(*                          top_class_name)  *)
+(*           => (params_str,link_str::res) *)
 
   rule  is_var_on_top_model(cr) => top_bool &
          generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,dir) => sub_model_str &
@@ -1802,7 +1802,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 	      => string list =
   axiom generate_var_defines2([]) => []
          
-  rule  get_var_index_str(cr,class_paths) => index_str &
+  rule  get_flat_var_index_str(cr,class_paths) => index_str &
          SimCodegen.cref_modelica_str(cr) => crs &
          Util.string_append_list(["#define ",crs," (m_DerStateVarValues[",index_str,"])\n",
                                   "#define _D_",crs," (m_Derivatives[",index_str,"])\n"]) => r1 &
@@ -1814,7 +1814,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
            
   rule  Exp.cref_str(cr) => modelicaStr &
          is_var_on_top_model(cr) => top_bool &
-	     get_var_index_str(cr,class_paths) => index_str &
+	     get_flat_var_index_str(cr,class_paths) => index_str &
          SimCodegen.cref_modelica_str(cr) => crs &
          generate_type_name(kind,dir,top_bool) => ret_str &
          Util.string_append_list(["#define ",crs," ( m_",ret_str,"[",index_str,"])\n"]) => r1 &
@@ -2530,7 +2530,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
 
   axiom	generate_GetCall_string_for_var(DAELow.STATE,_,_) =>  "GetDerStateVar"
   axiom	generate_GetCall_string_for_var(DAELow.DUMMY_DER,_,_) => "GetAlgStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.DUMMY_STATE,_,_) => "GetDerStateVar"
+  axiom	generate_GetCall_string_for_var(DAELow.DUMMY_STATE,_,_) => "GetAlgStateVar"
   axiom	generate_GetCall_string_for_var(DAELow.DISCRETE,_,_) => "GetAlgStateVar"
   axiom	generate_GetCall_string_for_var(DAELow.PARAM,_,_) => "GetParam"
   axiom	generate_GetCall_string_for_var(DAELow.CONST,_,_) => "GetParam"
