@@ -7,6 +7,11 @@ CFLAGS= -Wall -ansi -pedantic -I../../c_runtime
 
 LDFLAGS= -L../../c_runtime 
 
+CDIR = csrc
+ODIR = obj
+BDIR = bin
+
+
 MOFILES = \
 	algorithm_for1.mo \
 	algorithm_if1.mo \

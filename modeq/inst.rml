@@ -23,7 +23,10 @@ module Inst:
   with "prefix.rml"
   with "types.rml"
 
-  type InstDims = int list
+  type InstDims = Exp.Subscript list
+
+  datatype DimExp = DIMINT of int
+		  | DIMEXP of Exp.Subscript * Exp.Exp option
 
   relation instantiate: SCode.Program => DAE.DAElist
 
@@ -552,7 +555,7 @@ relation inst_var : (Env.Env,
 		     Ident,
 		     SCode.Class,
 		     SCode.Attributes,
-		     int list, 
+		     DimExp list, 
 		     int list,
 		     InstDims)
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
@@ -594,12 +597,12 @@ relation inst_var : (Env.Env,
 
 
 
-  rule	(* for debugging.
-	print "= inst_array mod: " & print n & Mod.print_mod mod & print "\n" & *)
-	list_append(inst_dims,[dim]) => inst_dims' &
+  rule	inst_dim_exp dim => dime &
+	list_append(inst_dims,[dime]) => inst_dims' &
 	inst_array(env,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims')
 	  => (dae, csets', ty) &
-	Types.lift_array(ty,SOME(dim)) => ty'
+	inst_dim_type dim => dimt &
+	Types.lift_array(ty,dimt) => ty'
 	-------------------------------
 	inst_var(env,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims)
           => (dae,csets',ty')
@@ -608,6 +611,20 @@ relation inst_var : (Env.Env,
 	--------------------------------------------------
 	inst_var(_,_,_,_,n,_,_,_,_,_) => fail
 	
+end
+
+relation inst_dim_exp : DimExp => Exp.Subscript =
+
+  axiom	inst_dim_exp DIMINT(i) => Exp.INDEX(Exp.ICONST(i))
+  axiom	inst_dim_exp DIMEXP(e,_) => e
+
+end
+
+relation inst_dim_type : DimExp => int option =
+
+  axiom	inst_dim_type DIMINT(i) => SOME(i)
+  axiom	inst_dim_type DIMEXP(_,_) => NONE
+
 end
 
 relation fix_direction : (DAE.Element list, Absyn.Direction)
@@ -650,28 +667,34 @@ relation inst_array : (Env.Env,
 		       Ident,
 		       (SCode.Class*SCode.Attributes),
 		       int,
-		       int,
-		       int list,
+		       DimExp,
+		       DimExp list,
 		       int list,
 		       InstDims
 		       )
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
+  rule	inst_var(env,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims)
+	  => (dae,csets,ty)
+	-----------------
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims)
+	  => (dae,csets,ty)
+
   rule	int_gt(i,stop) => true
 	----------------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,stop,dims,idxs,inst_dims)
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims)
 	  => ([], csets, Types.T_NOTYPE)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
 	inst_var(env,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
-	inst_array(env,mod,pre,csets',n,(cl,attr),i',stop,dims,idxs,inst_dims)
+	inst_array(env,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims)
 	  => (dae2, csets'',_) &
 
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	inst_array(env,mod,pre,csets,n,(cl,attr),i,stop,dims,idxs,inst_dims)
+	inst_array(env,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims)
           => (dae,csets'',ty)
 
   rule	print "- inst_array failed: " & print n & print "\n"
@@ -696,7 +719,7 @@ end
  **)
 
 relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
-	  => int list =
+	  => DimExp list =
 
   rule	elab_arraydim_decl(env,ad) => dim &
 	complete_arraydim(dim) => dim'
@@ -734,7 +757,7 @@ end
  **)
 
 (*!ignorecode*)
-relation print_dim : (int option) list => () =
+relation print_dim : (DimExp option) list => () =
 
   rule	print ":"
 	---------
@@ -742,7 +765,11 @@ relation print_dim : (int option) list => () =
 
   rule	int_string x => s & print s
 	---------------------------
-	print_dim [SOME(x)]
+	print_dim [SOME(DIMINT(x))]
+
+  rule	Exp.print_subscript x
+	---------------------------
+	print_dim [SOME(DIMEXP(x,_))]
 
   rule	print ":," & print_dim xs
 	-------------------------
@@ -750,20 +777,24 @@ relation print_dim : (int option) list => () =
 
   rule	int_string x => s & print s & print "," & print_dim xs
 	------------------------------------------------
-	print_dim SOME(x)::xs
+	print_dim SOME(DIMINT(x))::xs
+
+rule	Exp.print_subscript x & print "," & print_dim xs
+	------------------------------------------------
+	print_dim SOME(DIMEXP(x,_))::xs
 
 end
 (*!includecode*)
 
 (** relation: elab_arraydim_decl
  **
- ** Given an `Absyj.ArrayDim', this relation evaluates all dimension
+ ** Given an `Absyn.ArrayDim', this relation evaluates all dimension
  ** size specifications, creating a list of (optional) integers.  When
  ** the array dimension size is specified as `:', the result will
  ** contain `NONE'.
  **)
 
-relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
+relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (DimExp option) list =
 
   axiom	elab_arraydim_decl(_,[]) => []
 
@@ -776,14 +807,13 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 	Static.ceval(env,e) => Values.INTEGER(i) &
 	elab_arraydim_decl(env,ds) => l
 	-------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => SOME(i)::l
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => SOME(DIMINT(i))::l
 
-  rule	Static.elab_exp(env, d)
-	  => (e,Static.PROP(Types.T_INTEGER,false)) &
-	print "# Variable array sizes are not allowed\n" &
-	print "    expression: " & Exp.print_exp e & print "\n"
+  rule	Static.elab_exp(env, d) => (e,Static.PROP(Types.T_INTEGER,false)) &
+	elab_arraydim_decl(env,ds) => l
 	-------------------------------------------------------
-	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) => fail
+	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds) 
+	  => SOME(DIMEXP(Exp.INDEX(e),NONE))::l
 
   rule	Static.elab_exp(env, d)
 	  => (e,Static.PROP(t,_)) &
@@ -809,13 +839,17 @@ end
  ** specified array dimension sizes.
  **)
 
-relation complete_arraydim : (int option) list => int list =
+relation complete_arraydim : (DimExp option) list => DimExp list =
 
   axiom	complete_arraydim [] => []
 
   rule	complete_arraydim xs => xs'
 	---------------------------
 	complete_arraydim SOME(x)::xs => x::xs'
+
+  rule	complete_arraydim xs => xs'
+	---------------------------
+	complete_arraydim NONE::xs => DIMEXP(Exp.WHOLEDIM,NONE)::xs'
 
 end
 
@@ -829,8 +863,8 @@ end
  ** a dimension size, they have to specify the same size.
  **)
 
-relation compatible_arraydim : ((int option) list,(int option) list)
-	  => int list =
+relation compatible_arraydim : ((DimExp option) list,(DimExp option) list)
+	  => DimExp list =
 
   axiom	compatible_arraydim([],[]) => []
 
@@ -845,7 +879,35 @@ relation compatible_arraydim : ((int option) list,(int option) list)
   rule	x = y &
 	compatible_arraydim(xs,ys) => l
 	-------------------------------
-	compatible_arraydim (SOME(x)::xs,SOME(y)::ys) => x::l
+	compatible_arraydim (SOME(DIMINT(x))::xs,SOME(DIMINT(y))::ys) 
+	  => DIMINT(x)::l
+
+  rule	arraydim_condition(DIMEXP(Exp.INDEX(Exp.ICONST(x)),NONE),DIMEXP(y,e))
+	  => de &
+	compatible_arraydim(xs,ys) => l
+	-------------------------------
+	compatible_arraydim (SOME(DIMINT(x))::xs,SOME(DIMEXP(y,e))::ys)
+	  => de::l
+
+  rule	arraydim_condition(DIMEXP(Exp.INDEX(Exp.ICONST(y)),NONE),DIMEXP(x,e))
+	  => de &
+	compatible_arraydim(xs,ys) => l
+	-------------------------------
+	compatible_arraydim (SOME(DIMEXP(x,e))::xs,SOME(DIMINT(y))::ys) 
+	  => de::l
+
+  rule	arraydim_condition(DIMEXP(x,e1),DIMEXP(y,e2))
+	  => de &
+	compatible_arraydim(xs,ys) => l
+	-------------------------------
+	compatible_arraydim (SOME(DIMEXP(x,e1))::xs,SOME(DIMEXP(y,e2))::ys)
+	  => de::l
+
+
+  rule	compatible_arraydim(xs,ys) => l
+	--------------------------------
+	compatible_arraydim (NONE::xs,NONE::ys) 
+	  => DIMEXP(Exp.WHOLEDIM,NONE)::l
 
   rule	print "- compatible_arraydim failed\n"
 	--------------------------------------
@@ -853,6 +915,11 @@ relation compatible_arraydim : ((int option) list,(int option) list)
 
 end
 
+relation arraydim_condition : (DimExp, DimExp) => DimExp =
+	
+  axiom arraydim_condition (de,_) => de
+
+end
 (** relation: elab_arraydim_type
  **
  ** Find out the dimension sizes of a type.  The second argument is
@@ -861,11 +928,17 @@ end
  **)
 
 relation elab_arraydim_type : (Types.Type, Absyn.ArrayDim)
-	  => int option list =
+	  => DimExp option list =
 
   rule	elab_arraydim_type(t,ad) => l
 	---------------------------
-	elab_arraydim_type(Types.T_ARRAY(Types.DIM(i),t), _::ad) => i::l
+	elab_arraydim_type(Types.T_ARRAY(Types.DIM(NONE),t), _::ad) 
+	  => NONE::l
+	
+  rule	elab_arraydim_type(t,ad) => l
+	---------------------------
+	elab_arraydim_type(Types.T_ARRAY(Types.DIM(SOME(i)),t), _::ad) 
+	  => SOME(DIMINT(i))::l
 	
  axiom elab_arraydim_type(_,[]) => []
 

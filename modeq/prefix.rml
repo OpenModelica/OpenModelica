@@ -235,7 +235,7 @@ relation prefix_exp: (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
   rule	prefix_exp_list(env,es,p) => es'
 	-----------------------
-	prefix_exp(env,Exp.CALL(f,es,b),p) => Exp.CALL(f,es',b)
+	prefix_exp(env,Exp.CALL(f,es,b,bi),p) => Exp.CALL(f,es',b,bi)
 
 	(**)
   axiom	prefix_exp(env,Exp.ARRAY(t,a,[]),p) => Exp.ARRAY(t,a,[])

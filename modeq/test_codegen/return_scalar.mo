@@ -1,9 +1,9 @@
 
-function fn
+function return_scalar
   output Real r;
 algorithm
   r := 1.0;
-end fn;
+end return_scalar;
 
 model mo
 end mo;

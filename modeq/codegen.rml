@@ -129,6 +129,14 @@ relation c_merge_fn : (CFunction, CFunction) => CFunction =
 			 
 end
 
+relation c_move_statements_to_inits : CFunction => CFunction =
+
+  rule	list_append(is,st) => is'
+	---------------------------
+	c_move_statements_to_inits CFUNCTION(rt,fn,rts,ad,vd,is,st,cl) 
+	  => CFUNCTION(rt,fn,rts,ad,vd,is',[],cl)
+end
+
 relation c_print_functions : CFunction list => () =
 
   axiom	c_print_functions []
@@ -468,7 +476,7 @@ relation generate_return_decl: DAE.Element => (string, string) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (id_str,_) &
-	Util.list_map(inst_dims,int_string) => dim_strs &
+	Util.list_map(inst_dims,dim_string) => dim_strs &
 	Util.string_delimit_list(dim_strs,", ") => dims_str &
 	Util.string_append_list([typ_str," ",id_str,";",
 				 " /* [",dims_str,"] */"]) 
@@ -830,7 +838,9 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	Util.list_map(inst_dims,int_string) => dim_strs &
+	generate_size_subscripts(inst_dims,tnr) => (cfn1,dim_strs,tnr1) &
+	c_move_statements_to_inits cfn1 => cfn1' &
+
 	list_length dim_strs => ndims &
 	int_string ndims => ndims_str &
 	Util.string_delimit_list(dim_strs,", ") => dims_str &
@@ -839,18 +849,38 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 			ndims_str,", ",dims_str,");"])
 	  => alloc_str &
 	  
-	  c_add_inits(c_empty_function,[alloc_str]) => cfn' &
-	Util.if (is_a,cfn',c_empty_function) => cfn
+	  c_add_inits(cfn1',[alloc_str]) => cfn' &
+	Util.if (is_a,cfn',cfn1') => cfn
 	-----------
 	generate_alloc_outvar(DAE.VAR(id, vk, vd, typ, e,inst_dims),
 			      prefix,
 			      tnr) 
-	  => (cfn,tnr)
+	  => (cfn,tnr1)
 
-  axiom	generate_alloc_outvar (_,_,tnr) => (c_empty_function,tnr)
+  rule	not DAE.is_var e
+	-------------
+	generate_alloc_outvar (e,_,tnr) => (c_empty_function,tnr)
 
 end
 
+relation generate_size_subscripts : (Exp.Subscript list,int)
+	  => (CFunction,string list,int) =
+
+  axiom	generate_size_subscripts ([],tnr) => (c_empty_function,[],tnr)
+
+  rule	generate_expression (e,tnr) => (cfn1,var1,tnr1) &
+	generate_size_subscripts (r,tnr1) => (cfn2,vars2,tnr2) &
+	c_merge_fn(cfn1,cfn2) => cfn
+	-------
+	generate_size_subscripts (Exp.INDEX(e)::r,tnr)
+	  => (cfn,var1::vars2,tnr2)
+
+  rule	print "# generate_size_subscripts failed\n" & print " - [" &
+	Dump.print_list(subs,Exp.print_subscript,", ") & print "]\n"
+	-----------
+	generate_size_subscripts(subs,_) => fail
+
+end
 relation prefix_cr : (string, Exp.ComponentRef) => Exp.ComponentRef =
 
   axiom	prefix_cr (prf,cref) 
@@ -1171,6 +1201,30 @@ relation generate_vars : (DAE.Element list,DAE.Element => (),int)
 	
 end
 
+relation generate_var_decls : (DAE.Element list,DAE.Element => (),int) 
+	  => (CFunction,int) =
+
+  axiom	generate_var_decls ([],_,tnr) => (c_empty_function,tnr)
+	
+  rule	verify first &
+	generate_var_decl (first,tnr)  => (cfn1,tnr1) & 
+	generate_var_decls (rest,verify,tnr1)  => (cfn2,tnr2) &
+	c_merge_fn(cfn1,cfn2) => cfn
+	--------------------
+	generate_var_decls (first :: rest,verify,tnr)  => (cfn,tnr2) 
+
+  rule	not verify first &
+	generate_var_decls (rest,verify,tnr)  => (cfn,tnr2)
+	--------------------
+	generate_var_decls (first :: rest,verify,tnr)  => (cfn,tnr2) 
+
+  rule	print "# generate_var_decls failed\n"
+	---------------------------------
+	generate_var_decls (_,_,_) => fail
+	
+end
+
+
 
 relation generate_var : (DAE.Element,int) => (CFunction,int) =
 (*
@@ -1193,7 +1247,10 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	Util.list_map(inst_dims,int_string) => dim_strs &
+	generate_size_subscripts(inst_dims,tnr) => (cfn1',vars1,tnr1) &
+	c_move_statements_to_inits cfn1' => cfn1 &
+	Util.string_delimit_list(vars1,", ") => dimvars_str &
+	Util.list_map(inst_dims,dim_string) => dim_strs &
 	Util.string_delimit_list(dim_strs,", ") => dims_str &
 	Util.string_append_list([" /* [",dims_str,"] */"]) => dim_comment &
 	Util.if (is_a,dim_comment,"") => dim_comment' &
@@ -1201,8 +1258,8 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	int_string ndims => ndims_str &
 	Util.string_append_list([typ_str," ",cref_str,";",dim_comment'])=> decl_str &
 	Util.string_append_list(["alloc_",typ_str,"(&",cref_str,", ",
-			ndims_str,", ",dims_str,");"]) => alloc_str &
-	c_add_variables(c_empty_function,[decl_str]) => cfn' &
+			ndims_str,", ",dimvars_str,");"]) => alloc_str &
+	c_add_variables(cfn1,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	Util.if (is_a,cfn'',cfn') => cfn
 	----------------------------------------------------
@@ -1212,7 +1269,10 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	is_first_in_array id => true &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
-	Util.list_map(inst_dims,int_string) => dim_strs &
+	generate_size_subscripts(inst_dims,tnr) => (cfn1',vars1,tnr1) &
+	c_move_statements_to_inits cfn1' => cfn1 &
+	Util.string_delimit_list(vars1,", ") => dimvars_str &
+	Util.list_map(inst_dims,dim_string) => dim_strs &
 	Util.string_delimit_list(dim_strs,", ") => dims_str &
 	Util.string_append_list([" /* [",dims_str,"] */"]) => dim_comment &
 	Util.if (is_a,dim_comment,"") => dim_comment' &
@@ -1221,8 +1281,8 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	Util.string_append_list([typ_str," ",cref_str,";",dim_comment'])
 	  => decl_str &
 	Util.string_append_list(["alloc_",typ_str,"(&",cref_str,", ",
-			ndims_str,", ",dims_str,");"]) => alloc_str &
-	c_add_variables(c_empty_function,[decl_str]) => cfn' &
+			ndims_str,", ",dimvars_str,");"]) => alloc_str &
+	c_add_variables(cfn1,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	Util.if (is_a,cfn'',cfn') => cfn &
 	print "# default value not implemented yet: " &
@@ -1252,7 +1312,63 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	generate_var (e,_) => fail
 end
 
+relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 
+  rule	is_first_in_array id => false
+	-----------------------------
+	generate_var_decl(DAE.VAR(id,_,_,_,_,_),tnr) => (c_empty_function,tnr)
+
+  rule	is_array id => is_a &
+	is_first_in_array id => true &
+	dae_type_str (typ,is_a) => typ_str &
+	comp_ref_cstr id => (cref_str,_) &
+	Util.list_map(inst_dims,dim_string) => dim_strs &
+	Util.string_delimit_list(dim_strs,", ") => dims_str &
+	Util.string_append_list([" /* [",dims_str,"] */"]) => dim_comment &
+	Util.if (is_a,dim_comment,"") => dim_comment' &
+	list_length dim_strs => ndims &
+	int_string ndims => ndims_str &
+	Util.string_append_list([typ_str," ",cref_str,";",dim_comment'])=> decl_str &
+	
+	c_add_variables(c_empty_function,[decl_str]) => cfn
+	----------------------------------------------------
+	generate_var_decl(DAE.VAR(id, vk, vd, typ, NONE,inst_dims),tnr) => (cfn,tnr)
+
+  rule	is_array id => is_a &
+	is_first_in_array id => true &
+	dae_type_str (typ,is_a) => typ_str &
+	comp_ref_cstr id => (cref_str,_) &
+	Util.list_map(inst_dims,dim_string) => dim_strs &
+	Util.string_delimit_list(dim_strs,", ") => dims_str &
+	Util.string_append_list([" /* [",dims_str,"] */"]) => dim_comment &
+	Util.if (is_a,dim_comment,"") => dim_comment' &
+	list_length dim_strs => ndims &
+	int_string ndims => ndims_str &
+	Util.string_append_list([typ_str," ",cref_str,";",dim_comment'])
+	  => decl_str &
+	c_add_variables(c_empty_function,[decl_str]) => cfn &
+	print "# default value not implemented yet: " &
+	Exp.print_exp e & print "\n"
+	-----------
+	generate_var_decl(DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims),tnr) 
+	  => (cfn,tnr)
+
+	
+  rule	print "# generate_var failed\n  " &
+	DAE.dump_debug_element e & print "\n"
+	-----------------------------------
+	generate_var_decl (e,_) => fail
+end
+
+relation dim_string : Exp.Subscript => string =
+
+  rule	int_string i => str
+	---------------------
+	dim_string Exp.INDEX(Exp.ICONST(i)) => str
+
+  axiom	dim_string _ => ":"
+
+end
 relation is_var_q : DAE.Element => () =
 
   rule	generate_var_q(vk) &
@@ -1479,9 +1595,11 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 
 	c_add_statements(cfn2,[stmt]) => cfn &
 
-	Util.string_append_list([tvar,".",ret_type,"_1"]) => var
+	Util.string_append_list([tvar,".",ret_type,"_1"]) => var_not_bi &
+	Util.if(builtin,tvar,var_not_bi) => var
 	-------------------------
-	generate_expression(Exp.CALL(fn,args,false),tnr) => (cfn,var,tnr2)
+	generate_expression(Exp.CALL(fn,args,false,builtin),tnr) 
+	  => (cfn,var,tnr2)
 
 rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	generate_return_type fn => ret_type &
@@ -1494,7 +1612,8 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 
 	c_add_statements(cfn2,[stmt]) => cfn
 	-------------------------
-	generate_expression(Exp.CALL(fn,args,true),tnr) => (cfn,tvar,tnr2)
+	generate_expression(Exp.CALL(fn,args,true,builtin),tnr) 
+	  => (cfn,tvar,tnr2)
 
   rule	generate_expressions(elist,tnr) => (cfn1,vars1,tnr1) &
 	list_length vars1 => nvars &
@@ -1503,9 +1622,12 @@ rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	exp_short_type_str t => short_type_str &
 	generate_temp_decl(array_type_str,tnr1) => (tdecl,tvar,tnr2) &
 	Util.if(a,"","scalar_") => scalar &
-	Util.string_delimit_list (vars1, ", ") => args_str &
+	Util.if(a,"&","") => scalar_ref &
+	string_append(", ",scalar_ref) => scalar_delimit &
+	Util.string_delimit_list (vars1, scalar_delimit) => args_str &
 	Util.string_append_list ["array_",scalar,array_type_str,"(&",
-				 tvar,", ",nvars_str,", ",args_str,");"
+				 tvar,", ",nvars_str,", ",
+				 scalar_ref,args_str,");"
 				 ] => stmt &
 	c_add_variables(cfn1,[tdecl]) => cfn' &
 	c_add_statements(cfn',[stmt]) => cfn
@@ -1832,11 +1954,16 @@ end
 relation generate_scalar_lhs_cref : (Exp.Type, Exp.ComponentRef, int)
 	  => (CFunction, string, int) =
 
-  rule	Debug.fprintln("gcge","generating cref ccode") &
-	ident_cstr id => cid
+  rule	comp_ref_cstr cref => (cref_str,[])
 	--------------------
-	generate_scalar_lhs_cref(_,Exp.CREF_IDENT(id,[]),tnr)
-	  => (c_empty_function,cid,tnr)
+	generate_scalar_lhs_cref(t,cref,tnr)
+	  => (c_empty_function,cref_str,tnr)
+
+  rule	comp_ref_cstr cref => (cref_str,subs) &
+	generate_scalar_rhs_cref(cref_str,t,subs,tnr) => (cfn,var,tnr')
+	--------------------
+	generate_scalar_lhs_cref(t,cref,tnr)
+	  => (cfn,var,tnr')
 
   rule	Debug.fprintln("gcge","generating cref ccode") &
 	generate_indices(idx,tnr) => (cfn1,idxs1,tnr1) &
@@ -2281,7 +2408,7 @@ relation generate_matrix : (Exp.Type, int, (Exp.Exp*bool) list list, int)
 	list_length(vars2) => n &
 	int_string n => n_str &
 	generate_temp_decl(array_type_str,tnr2) => (tdecl,tvar,tnr3) &
-	Util.string_append_list(["concatenate_",array_type_str,"(1, &",
+	Util.string_append_list(["cat_alloc_",array_type_str,"(1, &",
 				 tvar,", ",n_str,
 				 ", &",args_str,");"]) => stmt &
 
@@ -2323,7 +2450,7 @@ relation concatenate_matrix_row : (Exp.Type, string list, int)
 	list_length(vars) => n &
 	int_string n => n_str &
 	generate_temp_decl(array_type_str,tnr) => (tdecl,tvar,tnr1) &
-	Util.string_append_list(["concatenate_",array_type_str,"(2, &",
+	Util.string_append_list(["cat_alloc_",array_type_str,"(2, &",
 				 tvar,", ",n_str,
 				 ", &",args_str,");"]) => stmt &
 
@@ -2398,7 +2525,7 @@ relation generate_read_call_write : (string,
 	c_add_inits(cfn1,["PRE_VARIABLES",
 			       out_decl]) => cfn1' &
 	(*generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &*)
-	generate_vars(invars,is_rcw_input,1) => (cfn3,tnr2) &
+	generate_var_decls(invars,is_rcw_input,1) => (cfn3,tnr2) &
 	c_add_statements(cfn3,["PRE_OPEN_INFILE"]) => cfn3' &
 	invar_names invars => in_names &
 	Util.string_delimit_list(in_names,", ") => in_args &

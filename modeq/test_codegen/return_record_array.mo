@@ -3,11 +3,11 @@ record rec
   Real r;
 end rec;
 
-function fn
+function return_record_array
   output rec[2] r;
 algorithm
 
-end fn;
+end return_record_array;
 
 model mo
 end mo;

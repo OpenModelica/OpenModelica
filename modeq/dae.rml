@@ -22,7 +22,7 @@ module DAE:
   with "staticexp.rml"
 
   type Ident = string
-  type InstDims = int list
+  type InstDims = Exp.Subscript list
 
   datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
 

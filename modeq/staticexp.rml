@@ -540,6 +540,29 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	------------------------------------------------------
 	elab_builtin_size (env, [arraycr,ind]) => (exp, prop)
 
+  rule	elab_exp (env,arraycr) => (crefe as Exp.CREF(cr,crt), crprop) &
+	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
+	Types.array_element_type ty => Types.T_INTEGER &
+	elab_exp (env,ind) => (indexp, PROP(indty, ind_const)) &
+	let exp = Exp.CALL(Absyn.IDENT("size_integer_array"),
+			   [crefe,indexp],false,true) &
+	let prop = PROP(Types.T_INTEGER,false)
+	------------------------------------------------------
+	elab_builtin_size (env, [arraycr,ind]) 
+	  => (exp, 
+	      prop)
+
+ rule	elab_exp (env,arraycr) => (crefe as Exp.CREF(cr,crt), crprop) &
+	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
+	Types.array_element_type ty => Types.T_REAL &
+	elab_exp (env,ind) => (indexp, PROP(indty, ind_const)) &
+	let exp = Exp.CALL(Absyn.IDENT("size_of_dimension_real_array"),
+			   [crefe,indexp],false,true) &
+	let prop = PROP(Types.T_INTEGER,false)
+	------------------------------------------------------
+	elab_builtin_size (env, [arraycr,ind]) 
+	  => (exp, prop)
+
   rule	print "#-- elab_builtin_size: Couldn't elaborate size()\n" &
 	print "#-- Wrong args or non-constant dimension\n"
 	----------------------------------------------------------
@@ -557,10 +580,6 @@ relation elab_builtin_size_2 : (Env.Env, Types.Type, int) => (Exp.Exp, Propertie
 	--------------------------------------------------
 	elab_builtin_size_2 (env, Types.T_ARRAY(_, ty), ind) => (exp, prop)
 
-  rule	print "#-- elab_builtin_size_2: Couldn't elaborate size()\n" &
-	print "#-- Maybe not an array type or not a component reference\n" 
-	----------------------------------------------------------
-	elab_builtin_size_2 (env, crexp, ind) => fail
 end
 
 
@@ -737,7 +756,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 	elab_call_args(env,fn,args) 
 	  => (Exp.CALL(fn,args'), PROP_TUPLE(Types.T_TUPLE(types), const)) 
  *)
-	elab_call_args(env,fn,args) => (Exp.CALL(fn,args',tuple), prop )
+	elab_call_args(env,fn,args) => (Exp.CALL(fn,args',tuple,false), prop )
 
 	(* 
 	 Functions that returns just one argument should not return a
@@ -771,7 +790,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list)
 (*PR.	elab_input_args(env, args, params) => (args',c)  *)
 	Debug.fprintln ("sei", "elab_call_args succeeded")
 	-----------------------------------------------
-	elab_call_args (env,fn,args) => (Exp.CALL(fn,args',tuple), PROP(restype, c))
+	elab_call_args (env,fn,args) => (Exp.CALL(fn,args',tuple,false), PROP(restype, c))
 
 
 (*  rule	not Lookup.lookup_type(env,fn) => _ &
@@ -1448,7 +1467,7 @@ relation ceval : (Env.Env, Exp.Exp) => Values.Value =
   rule	print "# Can't call functions at compile time\n" &
 	print "    expression: " & Exp.print_exp e & print "\n"
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(_,_,_)) => fail
+	ceval (env, e as Exp.CALL(_,_,_,_)) => fail
 
 	(**  Numerical *)
 

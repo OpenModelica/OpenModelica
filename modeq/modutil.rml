@@ -95,8 +95,8 @@ relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b)
 
   rule	string_prefix_component_refs (str, r, rarg, el) => el'
 	--------------------------------------------
-	string_prefix_component_ref (str, r, rarg, Exp.CALL(p, el,b)) 
-	  => Exp.CALL(p, el',b)
+	string_prefix_component_ref (str, r, rarg, Exp.CALL(p, el,b,bi)) 
+	  => Exp.CALL(p, el',b,bi)
 
   rule	string_prefix_component_refs (str, r, rarg, el) => el'
 	--------------------------------------------
@@ -297,7 +297,7 @@ relation print_exp_no_funcall : Exp.Exp => () =
   rule	path_string(fcn) => fs &
 	print fs
 	--------
-	print_exp_no_funcall Exp.CALL(fcn, args,_)
+	print_exp_no_funcall Exp.CALL(fcn, args,_,_)
 
   rule	Exp.print_exp e
 	---------------

@@ -3,7 +3,7 @@ record rec
   Integer i;
 end rec;
 
-function fn
+function return_multiple_record
   output rec r1;
   output rec r2;
 algorithm
@@ -12,7 +12,7 @@ algorithm
 
   r2.r := 1.0;
   r2.i := 1;
-end fn;
+end return_multiple_record;
 
 model mo
 end mo;
