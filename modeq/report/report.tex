@@ -11,7 +11,7 @@
 \usepackage{palatino}
 \usepackage{euler}
 
-\author{David Kågedal}
+\author{David Kågedal \\ LiTH-IDA-Ex-98/48 ???}
 \title{A Natural Semantics specification for the equation-based
   modeling language Modelica}
 
@@ -129,12 +129,12 @@ grammar in a common format, such as BNF\cite{drakboken}.  However,
 when it comes to the semantics of a programming language, things are
 not so straightforward.
 
-The semantics of the language describes what any particular program
+The semantics of the language describe what any particular program
 written in the language ``means'', i.e. what should happen when the
 program is executed, or evaluated in some form.
 
 Most programming language semantic definitions are given by a standard
-text written in English which tries to give a complete an unambiguous
+text written in English which tries to give a complete and unambiguous
 specification of the language.  Unfortunately, this is often not
 enough.  Natural language is inherently not very exact, and it is hard
 to make sure that all special cases are covered.  One of the most
@@ -234,7 +234,7 @@ $$
 This is not a complete proof.  We need to prove the sequent $3
 \Rightarrow n_1$, and the only rule matching that is rule
 \ref{eq:int}, leading to the following proof tree where $3$ is
-substituted for $n_3$:
+substituted for $n_1$:
 
 $$
   \dedu{ 3 \Rightarrow 3 \hspace{1em}
@@ -322,7 +322,7 @@ expression type used in the previous section.
 \end{boxedverbatim}
 
 With this type declaration, the expression $1*(2+3)$ is represented as
-the RML value \codebox{MUL(INT(1),ADD(NUM(2),NUM(3)))}.
+the RML value \codebox{MUL(INT(1),ADD(INT(2),INT(3)))}.
 
 The signature of a relation can also be described as an RML type,
 using the \code{=>} type constructor.  A relation has a name, and each
@@ -343,7 +343,7 @@ integer addition an multiplication, respectively.
 \begin{boxedverbatim}
   relation eval : Exp => int =
 
-    axiom eval NUM(i) => i
+    axiom eval INT(i) => i
 
     rule  eval e1 => n1  &  eval e2 => n2  &  int_add(n1,n2) => n
           -------------------------------------------------------
@@ -564,9 +564,9 @@ specify programming languages, could be applied to it.
 \section{Scope of the thesis}
 \label{sec:scope}
 
-The work that is forms the basis for this thesis only concerns the
-formal specification of the Modelica semantics.  The initial goal was
-to write a complete semantic specification for Modelica 1.0.
+The work that forms the basis for this thesis only concerns the formal
+specification of the Modelica semantics.  The initial goal was to
+write a complete semantic specification for Modelica 1.0.
 Unfortunately, Modelica 1.0 was not very well-defined, which means
 that considerable effort has been needed to figure out what the
 semantics were.  This has been done by taking part of the Modelica
@@ -588,7 +588,7 @@ Since this partly conflicts with the desire to produce a clear
 semantical description, which not necessarily gives translation
 efficiency high priority, a decision needed to be made on what to
 focus on.  I chose to concentrate on the semantical description, which
-shows in things like describing the semantics of equations between to
+shows in things like describing the semantics of equations between two
 matrices as a number of simple equations between the individual
 elements of the two matrices.
 
@@ -608,7 +608,7 @@ fixed.
 
 Below is a list of issues that is not covered by the semantic
 specification, or were implemented before it was decided how it should
-have been done.  The limitations are listen in no particular order.
+have been done.  The limitations are listed in no particular order.
 
 \begin{enumerate}
 
@@ -650,31 +650,30 @@ have been done.  The limitations are listen in no particular order.
   translation.  This would be needed when the value of a constant (or
   parameter) is defined in terms of a function call.
   
-\item Functions are implemented in too simplistic way.  A simple
-  type-checking of arguments and a single return value is perform, but
-  it only allows complete types, meaning that the sizes of array
+\item Functions are implemented in a too simplistic way.  A simple
+  type-checking of arguments and a single return value is performed,
+  but it only allows complete types, meaning that the sizes of array
   dimensions in input or output arguments must by fully specified, and
   can not depend on the actual arguments given in each function call.
   
-  The function semantics are still uncertain.  There has been though
-  about a proposal where function calls are defined in terms of
-  ``implicit instantiation'', where each function definition would be
-  instantiated once for each function call in the model.  This would
-  make it possible to determine the full type of the arguments for
-  each function call.
+  The function semantics are still uncertain.  There have been
+  thoughts about a proposal where function calls are defined in terms
+  of ``implicit instantiation'', where each function definition would
+  be instantiated once for each function call in the model.  This
+  would make it possible to determine the full type of the arguments
+  for each function call.
   
-%  However, this is currently hard to implement in this semantic
-%  specification because of RML limitations.  The RML module which does
-%  the instantiation is called \code{Inst} (see section
-%  \ref{src:Inst}).  It needs to do static analysis of expressions,
-%  and for that purpose it uses the relations in the module
-%  \code{Static}.  But if the \code{Static} module encounters a
-%  function call it would need to do an implicit instantiation, which
-%  would require the use of the \code{Inst} module.  Unfortunately,
-%  circular dependencies between modules are not allowed in RML.
-
-%  This can be worked around in several ways, but all of them would
-%  make the specification less structured or harder to understand.
+  However, this is currently hard to implement in this semantic
+  specification due to RML limitations.  The RML module which does the
+  instantiation is called \code{Inst} (see section \ref{src:Inst}).
+  It needs to do static analysis of expressions, and for that purpose
+  it uses the relations in the module \code{Static}.  But if the
+  \code{Static} module encounters a function call it would need to do
+  an implicit instantiation, which would require the use of the
+  \code{Inst} module.  Unfortunately, circular dependencies between
+  modules are not allowed in RML.  This can be worked around in
+  several ways, but all of them would make the specification less
+  structured or harder to understand.
 
 \item The checking of component attributes is severely lacking.  For
   instance, it is currently possible to use a variable in an outer
@@ -750,7 +749,7 @@ will fail.
 This report was written using the \LaTeX{}\cite{Lamport86} text
 formatting system.
 
-To produce the annotated semantics in chapter \ref{cha:formsem} a
+To produce the annotated semantics in appendix \ref{app:formsem} a
 small program was written to convert the RML source files with
 comments to \LaTeX{} source with the comments converted to ordinary
 text. This program is a quick'n'dirty Pike\cite{pike} hack, and is
@@ -774,8 +773,8 @@ the needed to find out what was really intended.
 
 This chapter complements the Modelica specification by filling in some
 of the larger holes in the informal language semantics.  It is
-intended to help the understanding of the formal semantics in chapter
-\ref{cha:formsem}.
+intended to help the understanding of the formal semantics in appendix
+\ref{app:formsem}.
 
 
 \section{Terminology}
@@ -797,8 +796,8 @@ mean.
 
 \begin{example}
   The following class definition contains four elements.  One
-  \code{extends} statement, one class definition, and two class
-  definitions.   Note that the definitions of \code{width} and
+  \code{extends} statement, one class definition, and two component
+  declarations.  Note that the definitions of \code{width} and
   \code{height} are separate elements, but the grammar only needs one
   \code{element} rule to match them.
 
@@ -811,9 +810,9 @@ mean.
 \end{boxedverbatim}
 \end{example}
 
-The word \term{instantiate} is used in many language descriptions,
-with slightly different meaning.  In the specification it is used in
-two related, but slightly different, meanings.
+The word \term{instantiate} is used in many language descriptions.  In
+this specification it is used in two related, but slightly different,
+meanings.
   
 \begin{Def}{Instantiation}
   Instantiating a class means creating an object (or class instance)
@@ -821,10 +820,11 @@ two related, but slightly different, meanings.
   modified by any given modifiers.  This instance is not a run-time
   object that needs an allocated piece of memory, as in many dynamic
   object-oriented languages, but the principle is the same.
-
-  For every component declaration in the class definition (possible
+  
+  For every component declaration in the class definition (possibly
   inherited from another class definitions using an \code{extends}
-  element), the component declarations class is also instantiated.
+  element), the class of the component declaration is also
+  instantiated.
 
   When instantiating a class all of the elements in the definition of
   that class are also said to be instantiated.  Instantiating an
@@ -835,8 +835,8 @@ two related, but slightly different, meanings.
   \begin{itemize}
   \item Instantiating a class definition simply means adding the class
     definition to the partially instantiated parent.
-  \item Instantiation a component declaration means instantiating the
-    class of the component and add that object to the partially
+  \item Instantiating a component declaration means instantiating the
+    class of the component and adding that object to the partially
     instantiated parent.
   \item Instantiating an extends element means instantiating all the
     elements in the extended class.
@@ -861,7 +861,7 @@ two related, but slightly different, meanings.
 \end{example}
 
 \begin{Def}{Component}
-  The term \term{Component} refers to an class instance.  Many
+  The term \term{Component} refers to a class instance.  Many
   components are composed of several other components.
 \end{Def}
 
@@ -941,8 +941,8 @@ specification.
     $(N,T)$, where $N$ is an identifier and $T$ is a type.  No two
     components in the set can have the same identifier.
     
-  \item An array of a type, with a undefined or non-negative, integer
-    size.
+  \item An array of a type, where the size of the array is either
+    unknown or a non-negative integer.
   \end{enumerate}
 \end{Def}
 
@@ -1086,7 +1086,7 @@ a description of how the overloading of operators works.
 \section{Functions}
 \label{sec:functions}
 
-The semantics of functions are yet to be defined.  What is cleared is
+The semantics of functions are yet to be defined.  What is clear is
 that it should be possible to use positional arguments that depends on
 the order of the \code{input} components of the function definition.
 It should also be possible to use named arguments matching against the
@@ -1097,8 +1097,8 @@ How all this integrates into the type system and the general semantics
 of Modelica is yet to be determined.  For simple cases a very
 simplistic semantic description can be used, but for some cases, where
 the sizes of array dimensions are unknown and depend of each other,
-either an extended type system is needed, or the concept of implicit
-function instantiation probably needs to be introduced.
+either an extended type system is needed, or other extensions, such as
+that of implicit function instantiation, needs to be introduced.
 
 For the purposes of this specification, a simplistic model where all
 formal parameter types needs to be fully determinable from the
@@ -1288,7 +1288,7 @@ so obvious.
 In principle, parameters are constants that the user may modify before
 a simulation run is started.  The value of a parameter is constant
 throughout the simulation, but it should be possible to change it
-before simulation is a simple way.  In description of parameters the
+before simulation in a simple way.  In description of parameters the
 notion of compile-time is often used, indicating that parameters are
 not constant during compilation, but constants are.
 
@@ -1371,8 +1371,7 @@ if at least one of the following conditions are fulfilled:
 \item It appears in the dimension size of a array declaration.
 \item It is used to index an array in any expression.
 \item It is used in a range expression (\code{a:b} or \code{a:b:c}).
-\item A parameter could be said to be a structural parameter if its
-  value is defined in terms of another structural parameter.
+\item Its value is defined in terms of another structural parameter.
 \end{enumerate}
 
 As this semantic specification treats all parameters as constants,
@@ -1388,7 +1387,7 @@ worthwhile to examine it further.
 \chapter{The Target language: Flat Modelica}
 \label{cha:target}
 
-The formal semantic specification in chapter \ref{cha:formsem}
+The formal semantic specification in appendix \ref{app:formsem}
 specifies the semantics of Modelica by showing how it is translated
 into another, simpler, language.  The translation is a sort of
 flattening of the object-oriented structure of the model.  This
@@ -1503,7 +1502,8 @@ The following extensions are made:
   name, a temporary name is introduced for that expression, and the
   name is used instead.  If an ordinary equation between the temporary
   name and the expression was introduced, this would not solve the
-  problem but just create a new, similar problem.
+  problem of defining the semantics of the complex equation, but just
+  create a new, similar problem.
 
   From a mathematical point of view, there is no difference in the
   meaning of \code{::=} and \code{=}.
@@ -1717,9 +1717,9 @@ the result of instantiation.
 
 Before adding anything to the result, all names of components are
 converted to globally unique names, using the normal hierarchical
-naming scheme with dots between the name parts.  If topmost model
+naming scheme with dots between the name parts.  If the topmost model
 contains a sub-model named \code{a}, which contains a variable
-\code{b}, the global name of the last variable will be \code{a.b}.
+\code{b}, the global name of this variable will be \code{a.b}.
 
 
 \section{Static expression analysis}
@@ -1901,7 +1901,7 @@ helpful, so they were reduced to only one.
 \label{sec:dearep}
 
 The DAEs are collected in a data structure defined in the module
-\code{DAE} (see section \ref{src:dae}).  This structure is basically a
+\code{DAE} (see section \ref{src:DAE}).  This structure is basically a
 linear list where each element is either a variable declaration, an
 equation or an algorithm.
 
@@ -1960,7 +1960,7 @@ a unique identifier in the global name space.  For instance, the
 voltage variable in the positive connector in the capacitor named
 \code{C2} will get the global name \code{C2.p.v}.
 
-The set of all components is listen with their global name in figure
+The set of all components is listed with their global names in figure
 \ref{fig:ex-flatname}.
 
 \begin{figure}[htbp]
@@ -2095,7 +2095,7 @@ contains over 160 cases, but it needs to be expanded
 \appendix
 
 \chapter{Annotated formal semantics}
-\label{cha:formsem}
+\label{app:formsem}
 
 This chapter contains the complete formal semantics of Modelica.  This
 includes the RML source files, but the comments in the files are
@@ -2144,41 +2144,6 @@ and with the suffix \code{.rml} appended.
 \bibliographystyle{plain}
 \bibliography{report}
 
-\begin{thebibliography}{blah}
- 
-% \bibitem{key:foo}
-% I. M. Author, 
-% ``Some Related Article I Wrote,''
-% {\em Some Fine Journal}, Vol. 17, pp. 1-100, 1987.
- 
-%\bibitem{drakboken}
-%A. V. Aho, R. Sethi, and J. D. Ullman,
-%{\em Compilers -- Principles, Techniques, and Tools,}
-%Addison-Wesley, 1986.
- 
-\bibitem{pf}
-Peter Fritzson,
-{\em Generating Practical Compilers from Natural Semantics,}
-Draft, 1996.
- 
-\bibitem{pi}
-Mikael Pettersson,
-{\em Compiling Natural Semantics,}
-Ph.D. thesis,
-Linköping University, Dec 1995.
-To appear as a volume in {\em LNCS},
-Springer-Verlag, 1997.
- 
-\bibitem{pike}
-Idonex AB,
-{\em The Pike programming language},
-{\tt http://pike.idonex.se/}
-
-\bibitem{modelicawww}
-Modelica, {\tt http://www.dynasim.se/Modelica/}
-
-\end{thebibliography}
-
-\printindex
+% \printindex
 
 \end{document}
