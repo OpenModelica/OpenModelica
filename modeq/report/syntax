@@ -83,3 +83,19 @@ I think that the latter is preferrable
 
 I B.6 står det "final type Real ...", vilket inte går enligt
 grammatiken.
+
+* connect
+
+Connect statements in the equation part of a class definition can not
+be treated as a function call as the grammar implies. Therefore it
+would be more reasonable to make connect() a special construct which
+takes two component_references.
+
+  equation :
+        ( "connect" "(" component_reference "," component_reference ")"
+	  | simple_expression [ ( "=" | ":=" ) expression ] 
+          | conditional_equation
+          | for_clause
+          | while_clause )
+        comment
+
