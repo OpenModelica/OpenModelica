@@ -10,14 +10,22 @@ module Types :
   with "classinf.rml"
   with "absyn.rml"
   with "exp.rml"
+  with "values.rml"
 
   (** - Identifiers *)
   type Ident = string
   (** FIXME: This is declared in many places. *)
 
   (** - Variables *)
-  datatype Var = VAR of Ident * Absyn.VarAttr * Type * Exp.Exp option
-  (** I wonder why this goes here? *)
+  datatype Var = VAR of Ident			  (* name *)
+		      * Absyn.VarAttr		  (* attributes *)
+		      * Type			  (* type *)
+		      * Binding			  (* equation modification *)
+
+  datatype Binding = UNBOUND
+		   | EQBOUND of Exp.Exp * bool
+		   | VALBOUND of Values.Value
+  (** FIXME: I wonder why this goes here? *)
 
   (** - Types *)
   (* datatype Type = TYPE of ClassInf.State * Var list *)
@@ -33,9 +41,10 @@ module Types :
 		| T_ARRAY of ArrayDim * Type
 		| T_COMPLEX of ClassInf.State
 			     * Var list
+		| T_NOTYPE
 
   datatype ArrayDim = NODIM
-		    | DIM of int option * ArrayDim
+		    | DIM of int (* FIXME: option needed? *) option * ArrayDim
 
   (* datatype Component = COMP of Ident * Type *)
 
@@ -51,10 +60,28 @@ module Types :
 
   (** - Exported relations *)
 (*  relation simplify_type : Type => Type *)
+  relation basic_type : Type => bool
   relation same_type : (Type, Type) => bool
   relation lookup_component : (Type, Ident) => Var
   relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type
+  relation lift_array : (Type,int option) => Type
   relation print_type : Type => ()
+
+end
+
+(** relation: basic_type
+ **
+ ** Test whether a type is one of the builtin types.
+ **)
+
+relation basic_type : Type => bool =
+
+  axiom	basic_type T_INTEGER => true
+  axiom	basic_type T_REAL => true
+  axiom	basic_type T_STRING => true
+  axiom	basic_type T_BOOL => true
+  axiom	basic_type T_ARRAY(_,_) => false
+  axiom	basic_type T_COMPLEX(_,_) => false
 
 end
 
@@ -199,6 +226,19 @@ relation mk_arraydim : Absyn.ArrayDim => ArrayDim =
 
 end
 
+(** relation: lift_array
+ **
+ ** This relation turns a type into an array of that type.  If the
+ ** type already is an array, aonther dimension is simply added.
+ **)
+
+relation lift_array : (Type,int option) => Type =
+
+  axiom	lift_array (T_ARRAY(dim,ty),i) => T_ARRAY(DIM(i,dim),ty)
+  axiom	lift_array (ty,i) => T_ARRAY(DIM(i,NODIM),ty)
+
+end
+
 (** relation: print_type
  **
  ** This relation prints a textual description of a Modelica type.  If
@@ -208,30 +248,34 @@ end
 
 relation print_type : Type => () =
 
-  rule	print "integer"
+  rule	print "Integer"
 	---------------
 	print_type T_INTEGER
 
-  rule	print "real"
+  rule	print "Real"
 	------------
 	print_type T_REAL
 
-  rule	print "string"
+  rule	print "String"
 	--------------
 	print_type T_STRING
 
-  rule	print "bool"
-	------------
+  rule	print "Boolean"
+	---------------
 	print_type T_BOOL
 
-  rule	print "complex"
-	------------
+  rule	print "composite"
+	-----------------
 	print_type T_COMPLEX(_,_)
 
   rule	print "array(" & print_arraydim dim & print ") of " &
 	print_type t
 	------------
 	print_type T_ARRAY(dim,t)
+
+  rule	print "#NOTYPE#"
+	----------------
+	print_type T_NOTYPE
 
 end
 
