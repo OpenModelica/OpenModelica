@@ -117,11 +117,12 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
   rule	SCode.elaborate(p) => p' &
 	Absyn.cref_to_path(cr) => path &
 	Inst.instantiate_class(p',path) => dae &
-	Print.print_buf "instanitated\n" &
-	DAE.dump_str (dae) => str 
+	Print.get_string => s &
+	DAE.dump_str (dae) => str &
+	string_append(s,str) => res
 	--------------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
-	    => (str,st)
+	    => (res,st)
 	    
   rule	Print.get_string() => s1 &
 	string_append("#Error instanitating class\n",s1) => str

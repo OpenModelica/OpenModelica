@@ -432,7 +432,7 @@ element returns [void* ast]
 					(
 						class_def = class_definition[fd != NULL]
 						{
-							ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(1),
+							ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(0),
 								class_def);
 							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,mk_scon("??"),ast,mk_none());
 
@@ -443,7 +443,7 @@ element returns [void* ast]
 							(constr = constraining_clause)?
 						)
 						{
-							ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(1),
+							ast = Absyn__CLASSDEF(rd ? RML_TRUE : RML_FALSE,
 								class_def);
 							ast = Absyn__ELEMENT(final,
 								rd ? RML_TRUE : RML_FALSE,innerouter,

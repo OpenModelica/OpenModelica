@@ -680,8 +680,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
  (** LS: Is this really correct? First modifications are lookuped from mods and *)
  (** put into classmod, than classmod and mods are merged ??? **)
 	 
-  rule	Absyn.path_string(cn) => cns &
-	Debug.fprintln ("insttr", "Looking for base class") &
+  rule	Debug.fprintln ("insttr", "Looking for base class") &
 	Lookup.lookup_class(env,cn,true) => (c as SCode.CLASS(cn2,_,_,restr,def), cenv) &
 	Debug.fprintln ("insttr", "Base class found") &
 	Mod.lookup_modification_p(mods,cn) => classmod &
@@ -707,7 +706,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (dae,fr::env',csets',ci_state',vars) &
 	Env.merge_inherited_content(fr,env) => env''
 	  ----------------------------------
-	inst_element(env,mods,pre,csets,ci_state,SCode.EXTENDS(cn,m),inst_dims,impl)
+	inst_element(env,mods,pre,csets,ci_state,extends as SCode.EXTENDS(cn,m),inst_dims,impl)
 	  => (dae,env'',csets',ci_state',vars)
 	  
   	  (**  Rules to catch redeclarations and name collsions
@@ -747,8 +746,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	   ** Put it in the current frame in the environment
 	   **)
 
-  rule	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
+  rule	(* Redeclare of class definition, replaceable is true *)
+	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
 	  => (classmod as Mod.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
+	  print "replacable classdef\n" &
 	Debug.fprintln ("insttr", "*--*Classdef mods") &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "*--*All mods") &
@@ -756,11 +757,21 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_class_decl(env,classmod,pre,csets,cls2,inst_dims) => (env',dae)
 	-------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state, 
-		     SCode.CLASSDEF(n,_,_,c),inst_dims,impl)
+		     SCode.CLASSDEF(n,_,true,c),inst_dims,impl)
 	  => (dae,env',csets,ci_state,[])
 
-	
-  rule	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) => classmod &
+  rule	(* Redeclare of class definition, replaceable is false *)
+	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
+	  => (classmod as Mod.REDECL(final, [SCode.CLASSDEF(n2,f2,repl2,cls2)])) &
+	Print.print_buf "# Trying to redeclare class " & Print.print_buf n &
+	Print.print_buf " but class not declared as replacable.\n" 
+	-------------------------------------------------
+	inst_element(env,mods,pre,csets,ci_state, 
+		     SCode.CLASSDEF(n,_,false,c),inst_dims,impl)
+	  => fail
+
+  rule	(* Classdefinition without redeclaration *)
+	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) => classmod &
 	Debug.fprintln ("insttr", "**Classdef mods") &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
 	Debug.fprintln ("insttr", "**All mods") &
@@ -795,15 +806,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** included in the variable declaration is in the variable *)
 	(** `m'.  All of these are merged so that the correct *)
 	(** precedence rules are followed. *)
-	Debug.fprint("insttr", "looking for type") &
-	Debug.fcall("insttr",Dump.print_path,t) &
-	Debug.fprint("insttr"," in env:") &
-	Debug.fcall("insttr",Env.print_env,env) &
-	Debug.fprint("insttr"," \n") &
-	
-	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
-	
-	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	Debug.fprintln ("insttr", "Looking up class modifications") &
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Debug.fcall ("insttr", Mod.print_mod, classmod) &
@@ -818,15 +820,29 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	get_cref_from_dim(ad) => crefs2 &
 	update_variables_in_env(mods,crefs2,env2',impl) => env2 &
 
-
 	Debug.fprintln ("insttr", "Elaborating current modifications") &
 	Mod.elab_mod(env2,pre,m) => m' &
 	Debug.fcall ("insttr", Mod.print_mod, m') &
 
 	Mod.merge(classmod,mm) => mod &
-	Mod.merge(mod,m') => mod' &
-	Debug.fprintln ("insttr", "Merged modifications") &
-	Debug.fcall ("insttr", Mod.print_mod, mod') &
+	Mod.merge(mod,m') => mod1 &
+	Debug.fprintln ("redecl", "Merged modifications") &
+	Debug.fcall ("redecl", Mod.print_mod, mod1) &
+
+	redeclare_type(mod1,comp,env2,pre) => (SCode.COMPONENT(n,final,repl,prot,
+				     attr as SCode.ATTR(ad,flow,acc,param,dir),
+				     t,m),mod') &
+	(* Merge in eventual modifications from redeclare *)
+
+	Debug.fprint("insttr", "looking for type") &
+	Debug.fcall("insttr",Dump.print_path,t) &
+	Debug.fprint("insttr"," in env:") &
+	Debug.fcall("insttr",Env.print_env,env) &
+	Debug.fprint("insttr"," \n") &
+	
+	Lookup.lookup_class(env,t,true) => (cl,cenv) & 
+	
+	Debug.fprintl ("insttr", ["found type for: ", n, "\n"]) &
 	
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
@@ -862,7 +878,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fprint("insttr","inst_element Component succeeded\n") 
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
-		     SCode.COMPONENT(n,final,repl,prot,
+		     comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
 				     t,m),inst_dims,impl)
           => (dae, env',csets',ci_state,
@@ -894,6 +910,39 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(_,_,_,_,_,el,_,_) => fail
 
 end	
+
+(** relation: redeclare_type
+ ** This relation takes a 'Mod' and an SCode.Element and if the modification contain
+ ** a redeclare of that element, the type is changed and an updated element is returned
+**)
+relation redeclare_type: (Mod.Mod, SCode.Element,Env.Env,Prefix.Prefix) => (SCode.Element,Mod.Mod) =
+
+  rule	n1=n2 &
+	Mod.elab_mod(env,pre,mod) => m'				   
+	-------------
+	redeclare_type (Mod.REDECL(_,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod))::rest),
+			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre) => (redecl,m')
+
+  rule	not n1=n2 &
+	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre) => (newcomp,mod)
+	-------------
+	redeclare_type (Mod.REDECL(redfin,(redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_))::rest),
+			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_),env,pre) => (newcomp,mod)
+
+  rule	redeclare_type(Mod.REDECL(redfin,rest),comp,env,pre) => (newcomp,mod)
+	----------------------------
+	redeclare_type(Mod.REDECL(redfin,_::rest),comp,env,pre) =>(newcomp,mod)
+
+  axiom	redeclare_type(Mod.REDECL(redfin,[]),comp,env,pre) => (comp,Mod.NOMOD)
+
+  axiom	redeclare_type(mod,comp,env,pre) => (comp,mod)
+  axiom	redeclare_type(mod,comp,env,pre) => (comp,mod)
+
+  rule	Print.print_buf "- redeclare_type failed\n" 
+	----------------
+	redeclare_type(_,_,_,_) => fail
+end
+
 
 (** relation: inst_var
  **
@@ -3304,6 +3353,7 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 
   axiom inst_mod_equation(_,_,Mod.MOD(_,_,NONE)) => []
   axiom inst_mod_equation(_,_,Mod.NOMOD) => []
+  axiom	inst_mod_equation(_,_,Mod.REDECL(_,_)) => []
 
   rule	Print.print_buf "- inst_mod_equation failed\n"
 	------------------------------------
