@@ -1608,7 +1608,8 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 		Util.list_fill(Values.REAL(0.0),correctDim) => zeroList &
 	
 	
-		Util.list_replaceat(Values.REAL(rv2), row, zeroList) => listWithElement &
+		int_sub(row , 1) => correctPlace &
+		Util.list_replaceat(Values.REAL(rv2), correctPlace, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
 	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp &
@@ -1625,7 +1626,8 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 		Util.list_fill(Values.REAL(0.0),correctDim) => zeroList &
 	
 		
-		Util.list_replaceat(Values.REAL(rv2), row, zeroList) => listWithElement &
+		int_sub(row , 1) => correctPlace &
+		Util.list_replaceat(Values.REAL(rv2), correctPlace, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
 		list_append(listIN,[Values.ARRAY(listWithElement)]) => appendedList &
@@ -1641,7 +1643,8 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 		Util.list_fill(Values.INTEGER(0),correctDim) => zeroList &
 	
 	
-		Util.list_replaceat(Values.INTEGER(rv2), row, zeroList) => listWithElement &
+		int_sub(row , 1) => correctPlace &
+		Util.list_replaceat(Values.INTEGER(rv2), correctPlace, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
 	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp &
@@ -1658,7 +1661,8 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 		Util.list_fill(Values.INTEGER(0),correctDim) => zeroList &
 	
 		
-		Util.list_replaceat(Values.INTEGER(rv2), row, zeroList) => listWithElement &
+		int_sub(row , 1) => correctPlace &
+		Util.list_replaceat(Values.INTEGER(rv2), correctPlace, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
 		list_append(listIN,[Values.ARRAY(listWithElement)]) => appendedList &
