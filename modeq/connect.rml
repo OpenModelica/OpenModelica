@@ -1,24 +1,107 @@
 (*
-    Copyright PELAB, Linkoping University
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
 
-    This file is part of Open Source Modelica (OSM).
+   
+    This file is part of OpenModelica, in the following denoted OSM.
 
-    OSM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
 
-    OSM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    The OSM License, Version 1.1, March 4, 2005.
 
-    You should have received a copy of the GNU General Public License
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
     along with OpenModelica; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
 *)
-
 (**
  ** file:	 connect.rml
  ** module:      Connect
