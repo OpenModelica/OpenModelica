@@ -431,13 +431,13 @@ argument :
  
 element_modification : << bool is_final=false; >>
 	{ FINAL << is_final=true; >> } 
-	cr:component_reference
+	np:name_path /* Not in spec */
 	sp:specialization
 	<< 
 	   Attrib a = $[MODIFICATION,"---"];
 	   #0 = #(#[&a],#0);
 	   #0->rml = Absyn__MODIFICATION(RML_PRIM_MKBOOL(is_final),
-					 #cr->rml,
+					 #np->rml,
 					 #sp->rml);
 	>>
 	;
