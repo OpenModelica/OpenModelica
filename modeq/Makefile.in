@@ -6,7 +6,11 @@
 # $Id$
 #
 
+srcdir= .
+top_builddir= ..
+
 ANTLR_HOME = @antlrhome@
+EXEEXT = @EXEEXT@
 
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
@@ -19,93 +23,49 @@ RMLHOME	= @rmlhome@
 #RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
 RML	= @rmlc_bin@ -Wc,-O3
 RMLINC  = -I$(RMLHOME)/include/plain
-MYRML	= ./myrmlc
 
 USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
 
-ifdef USE_CORBA
- CORBAOBJ = runtime/corbaimpl.o runtime/modeq_communication_impl.o runtime/modeq_communication.o 
- CORBALIB = -L$(CORBAHOME)/lib -lmico -lcrypto -lssl
-else
- CORBAOBJ = runtime/corbaimpl_stub.o
- CORBALIB =
-endif
-
 #LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
+#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
 
-PROG	= modeq
-AST	= absyn_builder/absyn_builder.a
-RTOBJ   = runtime/systemimpl.o ../c_runtime/libc_runtime.a runtime/rtopts.o runtime/socketimpl.o \
-	  runtime/printimpl.o runtime/ptolemyio.o runtime/daeext.o runtime/tornadoext.o $(CORBAOBJ) \
-	modpar/libmodpar.a
+include Makefile.common
 
-SRCRML= absyn.rml \
-	algorithm.rml \
-	builtin.rml \
-	ceval.rml \
-	classinf.rml \
-	classloader.rml \
-	codegen.rml \
-	connect.rml \
-	dae.rml \
-	daelow.rml \
-	derive.rml \
-	debug.rml \
-	dump.rml \
-	dumpgraphviz.rml \
-	env.rml \
-	exp.rml \
-	explode.rml \
-	graphviz.rml \
-	inst.rml \
-	interactive.rml \
-	lookup.rml \
-	main.rml \
-	mod.rml \
-	modsim.rml \
-	modutil.rml \
-	prefix.rml \
-	staticexp.rml \
-	simcodegen.rml \
-	types.rml \
-	taskgraph.rml \
-	tornado.rml \
-	util.rml \
-	values.rml \
-	vartransform.rml
-
-SRCC=	$(SRCRML:.rml=.c)
-SRCH=	$(SRCRML:.rml=.h)
-SRCSIG=	$(SRCRML:.rml=.sig)
-SRCO=	$(SRCC:.c=.o)
-
+PROG = modeq
+PROGD = modeqd
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime absyn_builder modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .rml .h
-.PHONY: all subdirs report vctarget absyn_subdir
+.PHONY: all subdirs report vctarget absyn_subdir debug release depend clean dclean test reallyclean
 
-#%.o %.h: %.rml %.rml.impl
-#	$(MYRML) "$(RML)" $*.rml
+all : debug subdirs #release
 
-%.o : %.rml
-	$(RML) -c $<
+debug:	$(PROGD) $(SRCRDB)
 
-%.c : %.rml
-	$(RML) +C $<
+release: $(PROG)
 
-%.h : %.rml
-	$(RML) -c $<
+%.rdb:	modeq_debug/%.rdb 
+	cp $< $@
 
-%.sig : %.rml
-	./rml2sig/rmldep.sh $<
+#	@for x in $(SRCRDB); do \
+#		echo $$x;
+#		cp modeq_debug/$$x .; \
+#	done
+
+$(PROG): 
+	(cd modeq_release && $(MAKE))
+	cp modeq_release/$(PROG)$(EXEEXT) .
 
 
-all : $(SRCO) subdirs $(PROG)
+$(PROGD): 
+	(cd modeq_debug && $(MAKE))
+	cp modeq_debug/$(PROGD)$(EXEEXT) .
+
+
 
 vctarget: $(SRCC) absyn_subdir
 
@@ -115,12 +75,9 @@ absyn_subdir:
 test:
 	@(cd testsuite ; $(MAKE))
 
-$(PROG): $(SRCO) $(AST) $(RTOBJ)
-	g++ -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
 
-
-ast/libast.a:
-	@(cd ast ; $(MAKE) libast.a)
+#ast/libast.a:
+#	@(cd ast ; $(MAKE) libast.a)
 
 subdirs:
 	@for d in $(SUBDIRS); do \
@@ -131,58 +88,32 @@ clean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
-	$(RM) $(SRCO) $(SRCC) $(SRCH) $(SRCSIG) $(PROG) *~
+	(cd modeq_release; $(MAKE) clean)
+	-$(RM) -f $(SRCH)
+	-$(RM) -f $(PROG)$(EXEEXT)
 
-reallyclean: clean
+dclean:
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) clean) \
+	done
+	(cd modeq_debug; $(MAKE) clean)
+	-$(RM) -f $(SRCRDB)
+	-$(RM) -f $(SRCH)
+	-$(RM) -f $(PROGD)$(EXEEXT)
+
+
+reallyclean: clean dclean
 
 report:
 	@(cd report ; $(MAKE))
 
-depend:
-	$(RM) .dep
+depend:	
+	-$(RM) .depend
 	for f in $(SRCRML); do \
-	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.sig/p' < $$f | egrep -v 'nothing'` >> .dep ; \
+	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.sig/p' < $$f | egrep -v 'nothing'` >> .depend ; \
 	done
-	mv Makefile.in Makefile.in.save
-	mv Makefile Makefile.save
-	sed -n -e "1,/^## dependencies/p" < Makefile.in.save > Makefile.in
-	sed -n -e "1,/^## dependencies/p" < Makefile.save > Makefile
-	cat .dep >> Makefile.in
-	cat .dep >> Makefile
-	$(RM) .dep Makefile.in.save Makefile.save
 
-## dependencies
-absyn.o: absyn.rml debug.sig dump.sig util.sig print.sig
-algorithm.o: algorithm.rml exp.sig types.sig explode.sig util.sig print.sig dump.sig debug.sig
-builtin.o: builtin.rml absyn.sig explode.sig env.sig types.sig classinf.sig debug.sig print.sig
-ceval.o: ceval.rml env.sig exp.sig interactive.sig values.sig staticexp.sig print.sig types.sig modutil.sig system.sig absyn.sig explode.sig inst.sig lookup.sig dump.sig dae.sig debug.sig util.sig modsim.sig classinf.sig rtopts.sig parse.sig prefix.sig codegen.sig classloader.sig
-classinf.o: classinf.rml explode.sig print.sig absyn.sig
-classloader.o: classloader.rml absyn.sig system.sig lookup.sig interactive.sig util.sig parse.sig print.sig env.sig dump.sig
-codegen.o: codegen.rml dae.sig print.sig dump.sig debug.sig absyn.sig algorithm.sig classinf.sig exp.sig modutil.sig types.sig util.sig inst.sig
-connect.o: connect.rml exp.sig staticexp.sig dae.sig env.sig dump.sig print.sig util.sig debug.sig
-dae.o: dae.rml absyn.sig exp.sig algorithm.sig types.sig values.sig rtopts.sig graphviz.sig dump.sig print.sig util.sig ceval.sig
-daelow.o: daelow.rml dae.sig exp.sig values.sig absyn.sig algorithm.sig util.sig daeext.sig print.sig derive.sig debug.sig env.sig builtin.sig ceval.sig types.sig explode.sig dump.sig system.sig vartransform.sig rtopts.sig
-derive.o: derive.rml daelow.sig exp.sig absyn.sig util.sig print.sig
-debug.o: debug.rml rtopts.sig dump.sig print.sig
-dump.o: dump.rml absyn.sig interactive.sig classinf.sig rtopts.sig print.sig util.sig debug.sig
-dumpgraphviz.o: dumpgraphviz.rml absyn.sig debug.sig graphviz.sig classinf.sig dump.sig
-env.o: env.rml absyn.sig values.sig explode.sig types.sig classinf.sig exp.sig dump.sig graphviz.sig dae.sig print.sig util.sig system.sig
-exp.o: exp.rml absyn.sig graphviz.sig rtopts.sig util.sig print.sig modutil.sig derive.sig system.sig dump.sig
-explode.o: explode.rml absyn.sig dump.sig debug.sig print.sig
-graphviz.o: graphviz.rml
-inst.o: inst.rml classinf.sig connect.sig dae.sig env.sig exp.sig explode.sig mod.sig prefix.sig types.sig absyn.sig debug.sig interactive.sig util.sig algorithm.sig builtin.sig dump.sig lookup.sig modutil.sig rtopts.sig staticexp.sig values.sig print.sig system.sig ceval.sig
-interactive.o: interactive.rml absyn.sig explode.sig dae.sig types.sig values.sig env.sig dump.sig debug.sig rtopts.sig util.sig parse.sig prefix.sig mod.sig lookup.sig classinf.sig exp.sig inst.sig staticexp.sig modutil.sig codegen.sig print.sig system.sig classloader.sig ceval.sig
-lookup.o: lookup.rml classinf.sig types.sig absyn.sig exp.sig env.sig explode.sig parse.sig debug.sig dump.sig inst.sig mod.sig prefix.sig print.sig builtin.sig util.sig modutil.sig staticexp.sig
-main.o: main.rml absyn.sig modutil.sig parse.sig dump.sig dumpgraphviz.sig explode.sig dae.sig daelow.sig inst.sig interactive.sig rtopts.sig debug.sig codegen.sig socket.sig print.sig corba.sig system.sig util.sig taskgraph.sig taskgraphext.sig tornado.sig simcodegen.sig
-mod.o: mod.rml absyn.sig env.sig exp.sig prefix.sig explode.sig types.sig dump.sig debug.sig print.sig inst.sig staticexp.sig values.sig util.sig
-modsim.o: modsim.rml system.sig util.sig
-modutil.o: modutil.rml absyn.sig dae.sig exp.sig rtopts.sig util.sig print.sig
-prefix.o: prefix.rml absyn.sig exp.sig env.sig lookup.sig util.sig print.sig
-staticexp.o: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig values.sig interactive.sig classinf.sig dump.sig print.sig system.sig lookup.sig debug.sig inst.sig codegen.sig modutil.sig dae.sig util.sig rtopts.sig parse.sig classloader.sig mod.sig prefix.sig ceval.sig
-simcodegen.o: simcodegen.rml daelow.sig absyn.sig exp.sig util.sig rtopts.sig debug.sig system.sig
-types.o: types.rml classinf.sig absyn.sig exp.sig values.sig explode.sig dump.sig debug.sig print.sig util.sig
-taskgraph.o: taskgraph.rml exp.sig daelow.sig taskgraphext.sig util.sig absyn.sig dae.sig ceval.sig values.sig print.sig
-tornado.o: tornado.rml dae.sig absyn.sig interactive.sig util.sig system.sig daelow.sig exp.sig debug.sig rtopts.sig inst.sig values.sig tornadoext.sig explode.sig lookup.sig env.sig simcodegen.sig
-util.o: util.rml
-values.o: values.rml exp.sig absyn.sig print.sig system.sig util.sig dump.sig
-vartransform.o: vartransform.rml exp.sig daelow.sig system.sig util.sig algorithm.sig
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in
+	$(top_builddir)/config.status Makefile

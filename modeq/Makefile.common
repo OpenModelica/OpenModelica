@@ -1,0 +1,65 @@
+#
+# Common part of Makefile for modeq. Contains sourcenames.
+#
+# David Kågedal <x97davka@ida.liu.se>
+#
+# $Id$
+#
+
+
+ifdef USE_CORBA
+ CORBAOBJ = $(srcdir)/runtime/corbaimpl.o $(srcdir)/runtime/modeq_communication_impl.o \
+	 $(srcdir)/runtime/modeq_communication.o 
+ CORBALIB = -L$(CORBAHOME)/lib -lmico -lcrypto -lssl
+else
+ CORBAOBJ = $(srcdir)/runtime/corbaimpl_stub.o
+ CORBALIB =
+endif
+
+AST	= $(srcdir)/absyn_builder/absyn_builder.a
+RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/../c_runtime/libc_runtime.a \
+	$(srcdir)/runtime/rtopts.o $(srcdir)/runtime/socketimpl.o \
+	$(srcdir)/runtime/printimpl.o $(srcdir)/runtime/ptolemyio.o \
+	$(srcdir)/runtime/daeext.o $(srcdir)/runtime/tornadoext.o $(CORBAOBJ) \
+	$(srcdir)/modpar/libmodpar.a
+
+SRCRML= absyn.rml \
+	algorithm.rml \
+	builtin.rml \
+	ceval.rml \
+	classinf.rml \
+	classloader.rml \
+	codegen.rml \
+	connect.rml \
+	dae.rml \
+	daelow.rml \
+	derive.rml \
+	debug.rml \
+	dump.rml \
+	dumpgraphviz.rml \
+	env.rml \
+	exp.rml \
+	explode.rml \
+	graphviz.rml \
+	inst.rml \
+	interactive.rml \
+	lookup.rml \
+	main.rml \
+	mod.rml \
+	modsim.rml \
+	modutil.rml \
+	prefix.rml \
+	staticexp.rml \
+	simcodegen.rml \
+	types.rml \
+	taskgraph.rml \
+	tornado.rml \
+	util.rml \
+	values.rml \
+	vartransform.rml
+
+SRCC=	$(SRCRML:.rml=.c)
+SRCH=	$(SRCRML:.rml=.h)
+SRCSIG=	$(SRCRML:.rml=.sig)
+SRCRDB=	$(SRCRML:.rml=.rdb)
+SRCO=	$(SRCC:.c=.o)

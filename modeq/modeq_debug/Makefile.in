@@ -1,0 +1,92 @@
+#
+# Makefile for modeq
+#
+# David Kågedal <x97davka@ida.liu.se>
+#
+# $Id$
+#
+
+ANTLR_HOME = @antlrhome@
+
+ANTLR_INCP = -I@antlrinc@
+ANTLR_LIBP = -L@antlrlib@
+LIBSOCKET = @LIBSOCKET@
+
+SHELL	= /bin/sh
+CC	= gcc
+CFLAGS	= $(USE_CORBA)
+RMLHOME	= @rmlhome@
+RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
+#RML	= @rmlc_bin@ -Wc,-O3
+RMLINC  = -I$(RMLHOME)/include/plain
+
+
+USE_CORBA = @USE_CORBA@
+CORBAHOME = @CORBAHOME@
+
+LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
+#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
+
+srcdir = ..
+top_builddir = ../..
+
+include $(srcdir)/Makefile.common
+
+PROG = modeqd
+
+SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
+
+.SUFFIXES:
+.SUFFIXES: .o .rml .h
+.PHONY: all subdirs report vctarget absyn_subdir clean reallyclean
+
+%.rml : $(srcdir)/%.rml
+	cp $< $@ 
+
+%.o : %.rml
+	$(RML) -c $<
+
+%.c : %.rml
+	$(RML) +C $<
+
+%.h : %.rml
+	$(RML) -c $<
+
+%.sig : %.rml
+	$(srcdir)/rml2sig/rmldep.sh $<
+
+
+all : $(SRCRML) $(SRCO) subdirs $(PROG)
+
+vctarget: $(SRCC) absyn_subdir
+
+absyn_subdir:
+	@(cd $(srcdir)/absyn_builder ; $(MAKE) vctarget)
+
+$(PROG): $(SRCRML) $(SRCO) $(AST) $(RTOBJ)
+	g++ -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
+
+subdirs:
+	cp $(SRCH) $(srcdir)
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE)) \
+	done
+
+clean:
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) clean) \
+	done
+	(cd $(srcdir) && $(RM) $(SRCH))
+	done	
+	$(RM) $(SRCO) $(SRCC) $(SRCH) $(SRCSIG) $(PROG) *~
+
+reallyclean: clean
+
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in
+	$(top_builddir)/config.status Makefile
+
+
+## dependencies
+include $(srcdir)/.depend
