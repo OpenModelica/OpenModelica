@@ -297,7 +297,7 @@ argument ! :
 		;
 
 element_modification :
-		( EACH )? ( FINAL )? component_reference modification string_comment
+		( EACH )? ( FINAL )? component_reference ( modification )? string_comment
 	;
 
 element_redeclaration :
