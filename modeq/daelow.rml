@@ -186,6 +186,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation states: (DAE.DAElist,BinTree) => BinTree
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
+  relation exists_var: (Exp.ComponentRef, Variables) => bool 
   relation var_list: (Variables) => Var list 
 
   relation equation_add: (EquationArray,Equation) => EquationArray 
@@ -1975,6 +1976,33 @@ relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
 	-----------------
 	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => fail
 end
+
+(** relation: exists_var
+ ** Return true if a variable exists in th vector
+ **)
+relation exists_var: (Exp.ComponentRef, Variables) => bool =
+	
+  rule	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(hashvec,hashindx) => indexes &
+	get_var2(cr, indexes) => indx &
+	vararray_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_)) &
+	Exp.cref_equal(cr,cr2) => true 
+	-----------------------------
+	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => true
+
+  rule	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(hashvec,hashindx) => indexes &
+	get_var2(cr, indexes) => indx &
+	not vararray_nth(varr,indx) => (_) &
+	print "could not found variable, cr:" &
+	Exp.print_component_ref_str cr => str &
+	print str  & print "\n" 
+	-----------------
+	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => false
+end
+
 (** relation get_var2
  ** Helper relation to get_var
  **)
