@@ -1053,9 +1053,8 @@ relation update_variable_in_env: (Mod.Mod,Absyn.ComponentRef, Env.Env) => Env.En
 	(* Qualified names should not be considered, because:
 	 FIXME: explanation...
 	 *)
-  rule	print "nisse\n"
-	----------------
-	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env) => env
+  axiom	update_variable_in_env(mods,Absyn.CREF_QUAL(_,_,_),env) => env
+
   rule	print "update_variable_in_env failed\n ident ="  &
 	Dump.print_component_ref cref &
 	print "\n" 

@@ -520,7 +520,7 @@ end
 (* This relation gets all base classes of a class, NOT Recursive.*)
 relation get_base_classes : (Absyn.Class) => Absyn.ComponentRef list =
 
-  rule	get_base_classes_from_parts(parts) => res
+  rule	get_base_classes_from_parts(parts) => res 
 	-----------------------------------------
 	get_base_classes (Absyn.CLASS(_,_,_,Absyn.PARTS(parts))) =>res
 
@@ -531,7 +531,7 @@ relation get_base_classes_from_parts: (Absyn.ClassPart list) => Absyn.ComponentR
 
   rule	get_base_classes_from_elts(elts) => c1 &
 	get_base_classes_from_parts(rest) => c2 &
-	list_append(c1,c2) => res
+	list_append(c1,c2) => res 
 	----------------------------
 	get_base_classes_from_parts(Absyn.PUBLIC(elts)::rest) => res
 
@@ -544,7 +544,7 @@ end
 
 relation get_base_classes_from_elts : (Absyn.ElementItem list) => Absyn.ComponentRef list =
   rule	get_base_classes_from_elts(rest) => cl &
-	Absyn.path_to_cref(path) => cref
+	Absyn.path_to_cref(path) => cref 
 	------------------------
 	get_base_classes_from_elts (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.EXTENDS(path,_)))::rest )
 	    => cref::cl
