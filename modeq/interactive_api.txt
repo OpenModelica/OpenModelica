@@ -54,6 +54,10 @@ deleteComponent(<ident>,<cref>)		Deletes a component (A0)
 updateComponent(<ident>,<cref>,		Updates an already existing component.
 	<cref>,annotate=<expr>)
 
+addIconAnnotation(<cref>,<expr>)	Adds icon annotation given by
+					A1 to the model definition
+					referenced by A0.
+
 getComponentCount(<cref>)		Returns the number of
 					components in a class.
 

@@ -365,7 +365,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
   rule	Dump.print_component_ref_str fn => fnstr &
 	Debug.fprintl("setr", ["elab_graphics_exp_call: ",fnstr,"\n"]) &
-	elab_call(env,fn,args,nargs,false,NONE) => (e,prop,_) 
+	elab_call(env,fn,args,nargs,true,NONE) => (e,prop,_) 
 	--------------------------------------
 	elab_graphics_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) 
 		=> (e,prop)

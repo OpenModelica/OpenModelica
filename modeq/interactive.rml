@@ -76,8 +76,8 @@ val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scal
 
 val Line_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); record Line  Boolean visible=true;  Real points[2,:]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line;"
 
-val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); GraphicItem graphics[:]; end Icon;"
-val Diagram_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Diagram CoordinateSystem coordinateSystem(extent ={{-100.0, -100.0}, {100.0, 100.0}}); GraphicItem graphics[:]; end Diagram;"
+val Icon_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Icon CoordinateSystem coordinateSystem(extent ={{-10.0, -10.0}, {10.0, 10.0}}); /*GraphicItem graphics[:];*/ end Icon;"
+val Diagram_records = "record GraphicItem Boolean visible=true; end GraphicItem; record CoordinateSystem Real extent[2,2]; end CoordinateSystem; record Diagram CoordinateSystem coordinateSystem(extent ={{-100.0, -100.0}, {100.0, 100.0}}); /*GraphicItem graphics[:];*/ end Diagram;"
 
 (* This variable contains all records needed for the graphical primitives, such as Line, Ellipse, etc. *)
 val Graphics_records = "type LinePattern=enumeration(None,Solid,Dash,Dot,DashDot,DashDotDot); type Arrow=enumeration(None,Open,Filled,Half); type FillPattern=enumeration(None,Solid,Horizontal,Vertical,Cross,Forward,Backward,CrossDiag,HorizontalCylinder,VerticalCylinder,Sphere); type BorderPattern=enumeration(None,Raised,Sunken,Engraved); type TextStyle=enumeration(Bold,Italic,Underline); record Line  Boolean visible=true;  Real points[:,2]; Integer color[3]={0,0,0}; LinePattern pattern = LinePattern.Solid; Real thickness=0.25; Arrow arrow[2]={Arrow.None,Arrow.None};  Real arrowSize = 3.0;  Boolean smooth=false; end Line; record Polygon Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real points[:]; Boolean smooth=false; end Polygon; record Rectangle Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; BorderPattern borderPattern=BorderPattern.None; Real extent[2,2]; Real radius=0.0; end Rectangle; record Ellipse Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; end Ellipse; record Text Boolean visible=true;Integer lineColor[3]={0,0,0};Integer fillColor[3]={0,0,0}; LinePattern pattern=LinePattern.Solid; FillPattern fillPattern=FillPattern.None; Real lineThickness=0.25; Real extent[2,2]; String textString; Real fontSize; String fontName; TextStyle textStyle[:]; end Text;"
@@ -331,6 +331,20 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,newst)
 	    
+  rule	Absyn.cref_to_path(path) => path' &
+	Absyn.path_last_ident(path') => name &
+	Absyn.strip_last(path') => wpath &
+	update_program(
+	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.WITHIN(wpath)),p) => newp &
+	let newst = SYMBOLTABLE(newp,s,ic,iv,cf)
+	---------------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("createModel",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(path as Absyn.CREF_QUAL(_,_,_))],[])))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("OK",newst)
+
   rule	componentref_to_path(cr) => path &
 	update_program(
 	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.WITHIN(path)),
@@ -355,6 +369,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr',SYMBOLTABLE(newp,s,ic,iv,cf))
+
+  rule	
+	add_icon_annotation(cr,annexpr,p) => newp &
+	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("addIconAnnotation",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),annexpr],_)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("not impl.\n",newst)
 
   rule	get_component_count(cr,p) => count &
 	int_string count => str &
@@ -461,7 +486,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 
   rule	Absyn.cref_to_path(cr) => path &
 	get_icon_annotation(path,p) => s1 &
-	string_append(s1,"\n") => resstr 
+	string_append(s1,"\n") => resstr
 	-----------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
@@ -675,6 +700,17 @@ relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.Nam
 	
   axiom	add_component (_,_,_,_,p) => (p,"Not implemented yet\n")
 	
+end
+
+(** relation:add_icon_annotation 
+ ** This relation takes a `ComponentRef' and an `Exp' expression and a `Program' and adds the 
+ ** expression as an icon annotation to the specified model in the program, 
+ ** returning the updated program.
+**)
+relation add_icon_annotation:(Absyn.ComponentRef,Absyn.Exp,Absyn.Program) => Absyn.Program =
+
+  axiom add_icon_annotation(_,_,p) => p 
+	(* TODO:, implement add_icon_annotation *)
 end
 
 (** relation: get_component_count
@@ -892,7 +928,7 @@ relation get_diagram_annotation: (Absyn.Path, Absyn.Program) => string =
 	---------------------------
 	get_diagram_annotation(modelpath,p) => str
 
-  axiom get_diagram_annotation(_,_) => "get_icon_annotation failed!"
+  axiom get_diagram_annotation(_,_) => "get_diagram_annotation failed!"
 end
 
 (** relation: get_icon_annotation
@@ -1579,17 +1615,20 @@ relation get_annotation_string: (string,Absyn.Annotation) => string =
 	
         Parser.parsestring totstring => p &
 	SCode.elaborate(p) => p' &
+	Print.print_buf "elaborated program\n" &
 	Inst.make_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
+	Print.print_buf "made env\n" &
 	get_class_in_program("Icon",p) => placementc &
 	SCode.elab_class(placementc) => placementclass &
-	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &
+	Mod.elab_mod (env,Prefix.NOPRE,mod') => mod'' &	
 	Inst.inst_class(env,mod'',Prefix.NOPRE,[],placementclass,[],false) => (dae,cs,t,state) &
 	Print.print_buf "Instantiated Icon class, without graphics primitives\n" &
 	(* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
 	Inst.init_vars_modelica_output dae => dae' &
      	DAE.get_variable_bindings_str dae' => str  &
-	
+	Print.print_buf "calling elab_graphics_exp\n" &
 	Static.elab_graphics_exp(env,graphicexp) => (graphicexp2,prop) &
+	Print.print_buf "elab_graphics_exp finished\n" &
 	Exp.print_exp_str(graphicexp2) => gexpstr &
 	string_append(str,",") => s1 &
 	string_append(s1,gexpstr) => totstr
