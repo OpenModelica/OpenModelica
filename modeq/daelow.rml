@@ -2389,11 +2389,11 @@ end
  **)
 relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
 	
-  rule	RTOpts.tornado_cg => true &
-        string_append("_DUMMYDER_",id) => id'
+  rule	RTOpts.tornado_cg => true 
+(*       &  string_append("_DUMMYDER_",id) => id' *)
 	-------------------------------
 	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
-	  => Exp.CREF_IDENT(id',subs)
+	  => Exp.CREF_IDENT(id(* id' *),subs)
 	  
   rule  string_append("der_",id) => id'
 	-------------------------------

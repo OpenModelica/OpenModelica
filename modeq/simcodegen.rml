@@ -565,8 +565,8 @@ relation cref_modelica_str : Exp.ComponentRef => string =
         cref_modelica_str(Exp.CREF_IDENT(s,_)) => res'
         
   rule	cref_modelica_str(n) => ns &
-	string_append(s,"_") => s1 &
-	string_append(s1,ns) => ss
+(*  	string_append(s,"_") => s1 &  *)
+	string_append(s(*s1*),ns) => ss
 	-------------------------------------
 	 cref_modelica_str(Exp.CREF_QUAL(s,_,n)) => ss
 end
