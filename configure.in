@@ -8,6 +8,7 @@ AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
 AC_SUBST(readlineinc)
 AC_SUBST(readlinelib)
+AC_SUBST(LIBSOCKET)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -130,5 +131,36 @@ dnl Checks for library functions.
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(getcwd select socket strdup strerror)
 
-AC_OUTPUT(Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile  modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile)
+
+dnl Check if scandir is available
+AC_MSG_CHECKING([for scandir])
+
+AC_TRY_LINK([
+#include <dirent.h>      
+], [
+int file_select_directories(struct dirent *entry) {	      
+ return 0;						      
+}							      
+							      
+int main() {					      
+char dir[]=".";					      
+int count;						      
+struct dirent **files;				      
+scandir(dir, &files, file_select_directories, NULL);      
+return 0;						      
+}							      
+], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
+      [AC_MSG_RESULT([no])])                              
+
+dnl check for socket
+AC_MSG_CHECKING([for socket])
+
+AC_CHECK_FUNC(socket, 
+ [AC_MSG_RESULT([yes]); LIBSOCKET=""],
+ [AC_MSG_RESULT([no]);
+  AC_MSG_CHECKING([for libsocket]);
+  AC_CHECK_LIB(socket, socket,[AC_MSG_RESULT([yes]); LIBSOCKET="-lsocket"],[AC_MSG_ERROR([neither socket nor libsocket.a found])])
+])
+
+AC_OUTPUT(Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile  modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile)
 
