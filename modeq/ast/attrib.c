@@ -92,6 +92,8 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(PROTECTED);	/* 30 */
   tokprinter(LPAR);		/* 31 */
   tokprinter(RPAR);		/* 32 */
+  tokprinter(LBRACK);		/* 33 */
+  tokprinter(RBRACK);		/* 34 */
   tokprinter(AND);		/* 40 */
   tokprinter(CONNECT);
   tokprinter(EQUALS);		/* 49 */
@@ -107,6 +109,7 @@ void print_attr(Attrib *attr, FILE *f)
   tokprinter(TYPE_PREFIX);	/* 67 */
   tokprinter(FUNCALL);		/* 68 */
   tokprinter(ELEMENT);		/* 69 */
+  tokprinter(SUBSCRIPT);	/* 72 */
 
   case zzEOF_TOKEN:
   default:
