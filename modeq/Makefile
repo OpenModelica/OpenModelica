@@ -22,6 +22,7 @@ SRCRML=	exp.rml \
 	mod.rml \
 	env.rml \
 	builtin.rml \
+	connect.rml \
 	inst.rml \
 	main.rml
 SRCC=	$(SRCRML:.rml=.c)
@@ -32,7 +33,8 @@ RMLINCLUDE = $(RMLDIR)/include/plain
 
 SUBDIRS	= ast
 
-.SUFFIXES: .rml
+.SUFFIXES:
+.SUFFIXES: .o .rml
 .PHONY: all subdirs
 
 .rml.o:
@@ -43,22 +45,14 @@ all : $(SRCO) subdirs $(PROG)
 $(PROG): $(SRCO) ast/libast.a
 	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
 
-# $(SRCO):	rml.h
 absyn.o:	absyn.rml
 exp.o:		exp.rml
-	$(RML) -c $<
 env.o:		env.rml
-	$(RML) -c $<
 explode.o:	explode.rml
-	$(RML) -c $<
 inst.o:		inst.rml
-	$(RML) -c $<
 mod.o:		mod.rml exp.h absyn.h dae.h prefix.h
-	$(RML) -c $<
 main.o:		main.rml
-	$(RML) -c $<
 dump.o:		dump.rml
-	$(RML) -c $<
 
 #main.o:		main.rml absyn.rml parse.rml dump.rml \
 #		lform.rml dae.rml inst.rml
