@@ -11,3 +11,19 @@ Grammatiken: class_definition
 --
 Vilka variabler får man ha i ekvationer? Bara Real(Type) och
 Integer(type)? Exakt hur fungerar connect()?
+--
+
+Patologiskt:
+
+  class Foo
+    Int x;
+  end;
+
+  class Bar
+    Foo y[10];
+  end;
+
+  class Weird
+    Bar z(y[5](redeclare Real x));
+  end;
+
