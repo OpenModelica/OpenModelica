@@ -943,13 +943,16 @@ relation get_cref_from_exp: ( Absyn.Exp ) => Absyn.ComponentRef list =
 	get_cref_from_exp(Absyn.CALL(_,farg)) => res
 
 
-  rule	Util.list_map(expl,get_cref_from_exp) => res
+  rule	Util.list_map(expl,get_cref_from_exp) => res1 &
+	Util.list_flatten(res1) => res
 	--------------------------------------------
-	get_cref_from_exp(Absyn.ARRAY(expl)) => []
+	get_cref_from_exp(Absyn.ARRAY(expl)) => res
 
-  rule	print "# get_Cref_from_exp(MATRIX) not implemented yet\n"
+  rule	Util.list_list_map(expll,get_cref_from_exp) => res1 & 
+	Util.list_flatten(res1) => res2 &
+	Util.list_flatten(res2) => res
 	----------------
-	get_cref_from_exp(Absyn.MATRIX(_)) => []
+	get_cref_from_exp(Absyn.MATRIX(expll)) => res
 
   rule	get_cref_from_exp(e1) => l1 &
 	get_cref_from_exp(e2) => l2 &
@@ -1268,7 +1271,7 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (DimExp option) list 
 
   axiom	elab_arraydim_decl(_,[]) => []
 
-  rule	print "NOSUB in elab_arraydim_decl\n" &
+  rule	(*print "NOSUB in elab_arraydim_decl\n" & *)
 	elab_arraydim_decl(env,ds) => l 	
 	-------------------------------
 	elab_arraydim_decl(env,Absyn.NOSUB::ds) => NONE::l

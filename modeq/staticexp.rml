@@ -80,6 +80,7 @@ returns multiple arguments. *)
 
   (* Expression analysis *)
   relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties)
+  relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) (* Special relation for graphics annotations, because of inhomogenous array of graphics primitives *)
   relation elab_exp_list : (Env.Env, Absyn.Exp list) => (Exp.Exp list, Properties list)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Properties, SCode.Accessibility)
@@ -300,6 +301,167 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
 end
 
+relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
+
+  axiom	elab_graphics_exp(_, Absyn.INTEGER(x))
+	  => (Exp.ICONST(x), PROP(Types.T_INTEGER,true))
+  axiom	elab_graphics_exp(_, Absyn.REAL(x))
+	  => (Exp.RCONST(x), PROP(Types.T_REAL,   true))
+  axiom	elab_graphics_exp(_, Absyn.STRING(x))
+	  => (Exp.SCONST(x), PROP(Types.T_STRING, true))
+  axiom	elab_graphics_exp(_, Absyn.BOOL(x))
+	  => (Exp.BCONST(x), PROP(Types.T_BOOL,   true))
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_cref") &
+	elab_cref(env, cr) => (exp,prop,_)
+	---------------------------------------
+	elab_graphics_exp(env, Absyn.CREF(cr)) => (exp,prop) 
+
+	(**  Binary and unary operations *)
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_binary") &
+	elab_graphics_exp (env,e1) => (e1', PROP(t1, c1)) &
+	elab_graphics_exp (env,e2) => (e2', PROP(t2, c2)) &
+	bool_and (c1,c2) => c &
+	operators op => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
+	---------------------------------------------------------------------
+	elab_graphics_exp (env,exp as Absyn.BINARY(e1,op,e2))
+	  => (Exp.BINARY(e1'',op',e2''),PROP(rtype,c))
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_unary") &
+	elab_graphics_exp (env,e) => (e',PROP(t,c)) &
+ 	operators op => ops &
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
+	------------------------------------------------------
+	elab_graphics_exp (env,exp as Absyn.UNARY(op,e))
+	  => (Exp.UNARY(op',e''),PROP(rtype,c))
+	
+  rule	Debug.fprintln("setr", "elab_graphics_exp_lbinary") &
+	elab_graphics_exp (env,e1) => (e1', PROP(t1, c1)) &
+	elab_graphics_exp (env,e2) => (e2', PROP(t2, c2)) &
+	bool_and (c1,c2) => c &
+	operators op => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
+	---------------------------------------------------------------------
+	elab_graphics_exp (env,exp as Absyn.LBINARY(e1,op,e2))
+	  => (Exp.LBINARY(e1'',op',e2''),PROP(rtype,c))
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_lunary") &
+	elab_graphics_exp (env,e) => (e',PROP(t,c)) &
+ 	operators op => ops &
+	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
+	------------------------------------------------------
+	elab_graphics_exp (env,exp as Absyn.LUNARY(op,e))
+	  => (Exp.LUNARY(op',e''),PROP(rtype,c))
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_relation") &
+	
+	elab_graphics_exp (env,e1) => (e1', PROP(t1, c1)) &
+	
+	elab_graphics_exp (env,e2) => (e2', PROP(t2, c2)) &
+	
+	bool_and (c1,c2) => c &
+	operators op => ops &
+	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
+	----------------------------------------------
+	elab_graphics_exp (env,exp as Absyn.RELATION(e1,op,e2))
+	  => (Exp.RELATION(e1'',op',e2''),PROP(rtype,c))
+
+	(**  Conditional expressions *)
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_ifexp") &
+	elab_graphics_exp (env,e1) => (e1', prop1) &
+	elab_graphics_exp (env,e2) => (e2', prop2) &
+	elab_graphics_exp (env,e3) => (e3', prop3) &
+	elab_ifexp(e1',prop1,e2',prop2,e3',prop3) => (e,prop)
+	------------------------------------------------------
+	elab_graphics_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,prop)
+
+	(**  Function calls *)
+	(** PA. Only positional arguments are elaborated for now.*)
+	(** TODO: Implement elaboration of named arguments. *)
+
+  rule	Dump.print_component_ref_str fn => fnstr &
+	Debug.fprintl("setr", ["elab_graphics_exp_call: ",fnstr,"\n"]) &
+	elab_call(env,fn,args,nargs) => (e,prop) 
+	--------------------------------------
+	elab_graphics_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) 
+		=> (e,prop)
+
+	(*PR. Get the properties for each expression in the tuple. 
+	* Each expression has its own constflag.
+	* !!The output from functions does just have one const flag. 
+	* Fix this!!
+	*)
+	
+  rule	Debug.fprintln("setr", "elab_graphics_exp_tuple") &
+	Debug.print "\n#####################elab_graphics_exp tuple.####################" &
+(*	Dump.print_exp e1 &
+*)	Debug.print "\n ###################" &
+	elab_tuple(env,e) => (e', props) &
+	Debug.print "\nThe elaborated tuple." &
+	split_props(props) => (types, consts) &
+	Debug.print "\n split_props was just executed."
+	-------------------------------------
+	elab_graphics_exp (env,Absyn.TUPLE(e as e1::rest)) 
+	  => (Exp.TUPLE(e'),PROP_TUPLE(Types.T_TUPLE(types), TUPLE_CONST(consts)))
+
+
+	(**  Array-related expressions *)
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_range1") &
+	elab_graphics_exp (env, start) => (start', PROP(start_t, c_start)) &
+	elab_graphics_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	deoverload_range((start',start_t),
+			 NONE,
+			 (stop',stop_t)) => (start'',NONE,stop'',rt) &
+	bool_and (c_start, c_stop) => const &
+	elab_range_type (env,start'',NONE,stop'',const,rt) => t
+	--------------------------------------------------
+	elab_graphics_exp (env, Absyn.RANGE(start, NONE, stop))
+	  => (Exp.RANGE(rt,start',NONE,stop'), PROP(t, const))
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_range2") &
+	elab_graphics_exp (env, start) => (start', PROP(start_t, c_start)) &
+	elab_graphics_exp (env, step) => (step', PROP(step_t, c_step)) &
+	elab_graphics_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	deoverload_range((start',start_t),
+			 SOME((step',step_t)),
+			 (stop',stop_t)) => (start'',SOME(step''),stop'',rt) &
+	bool_and (c_start, c_step) => c1 &
+	bool_and (c1, c_stop) => const &
+	elab_range_type (env,start'',SOME(step''),stop'',const,rt) => t
+	---------------------
+	elab_graphics_exp (env, Absyn.RANGE(start, SOME(step), stop))
+	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), PROP(t, const))
+
+  rule	Debug.fprintln("setr", "elab_graphics_exp_array") &
+	elab_graphics_array (env, es) => (es', PROP(t, const)) & list_length es' => l&
+	elab_type t => at &
+	Types.is_array t => a
+	--------------------------------------------------------------
+	elab_graphics_exp (env, Absyn.ARRAY(es))
+	  => (Exp.ARRAY(at,a,es'),
+	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
+		   const))
+	
+  rule	Debug.fprintln("setr", "elab_graphics_exp_matrix") &
+	elab_matrix_semi (env, es) => (es', PROP(t,c), dim1,dim2,nmax) & 
+	elab_type t => at
+	------------------------------------------------------------
+	elab_graphics_exp (env, Absyn.MATRIX(es))
+	  => (Exp.MATRIX(at,nmax,es'),
+	      PROP(Types.T_ARRAY(Types.DIM(SOME(dim1)),
+				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
+		   c))
+
+  rule	print "- elab_graphics_exp failed: " & Dump.print_exp e & print "\n"
+	-----------------------------------------------------------
+	elab_graphics_exp(_,e) => fail
+
+end
+
 relation deoverload_range : ((Exp.Exp*Types.Type), 
 			     (Exp.Exp*Types.Type) option,
 			     (Exp.Exp*Types.Type)) 
@@ -430,6 +592,25 @@ relation elab_array : (Env.Env, Absyn.Exp list)
   rule	print "- elab_array failed\n"
 	-----------------------------
 	elab_array (_,_) => fail
+
+end
+
+relation elab_graphics_array : (Env.Env, Absyn.Exp list)
+	  => (Exp.Exp list, Properties) =
+
+  rule	elab_exp (env,e) => (e',prop)
+	-----------------------------
+	elab_graphics_array (env,[e]) => ([e'],prop)
+
+  rule	elab_exp (env,e) => (e',PROP(t1,c1)) &
+	elab_graphics_array (env,es) => (es',PROP(t2,c2)) &
+	bool_and (c1,c2) => c
+	---------------------------------
+	elab_graphics_array (env,e::es) => (e'::es',PROP(t1,c))
+
+  rule	print "- elab_graphics_array failed\n"
+	-----------------------------
+	elab_graphics_array (_,_) => fail
 
 end
 
@@ -1249,7 +1430,12 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 	Debug.fprint("sei",id) &
 	find_named_arg_type(id,farg) => vt &
 	Debug.fprint ("sei", "elab_named_input_arg, found type\n") &
-	match_type(e', t, vt) => (e'',_) &      
+	Debug.fprint ("sei", "exp t = " ) &
+	Debug.fcall ("sei", Types.print_type,t ) &
+	Debug.fprint ("sei", "func t = " ) &
+	Debug.fcall ("sei", Types.print_type,vt ) &
+	match_type(e', t, vt) => (e'',_) &
+	Debug.fprint ("sei", "elab_named_input_arg, Types matched!\n") &
 	fill_slot((id,vt), e'', slots) => slots' &
 	Debug.fprint ("sei", "elab_named_input_arg, filled slot\n") &
 	elab_named_input_args(env, nas, farg ,slots') => (newslots, c2) &
@@ -2212,7 +2398,9 @@ relation match_type : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Type)
 	match_type(e, e_type, expected_type) => (e, e_type)
 
   rule	Types.subtype(e_type, expected_type) => false &
-	type_convert(e, e_type, expected_type) => (e',e_type')
+	Debug.fprint("sei", "trying type convert\n") &
+	type_convert(e, e_type, expected_type) => (e',e_type') &
+	Debug.fprint("sei", "Type convert succeded\n") 
 	--------------------------------------------
 	match_type(e, e_type, expected_type) => (e',e_type')
 end
@@ -2239,6 +2427,25 @@ relation type_convert : (Exp.Exp, Types.Type, Types.Type) => (Exp.Exp, Types.Typ
 		     Types.T_ARRAY(Types.DIM(SOME(dim1)), ty1), 
 		     Types.T_ARRAY(Types.DIM(SOME(dim2)), ty2))
 	  => (Exp.ARRAY(at,a,elist'),Types.T_ARRAY(Types.DIM(SOME(dim1)),ty2))
+
+  rule	int_eq (dim1, dim2) => true &
+	int_eq (dim11,dim22) => true &
+	type_convert_matrix (ell, t1, t2) => ell' &
+	elab_type t2 => at 
+	------------------------------------------
+	type_convert(Exp.MATRIX(_,nmax,ell), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t1)), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim2)), Types.T_ARRAY(Types.DIM(SOME(dim22)),t2)))
+	    => (Exp.MATRIX(at,nmax,ell'),Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t2)))
+	    
+  rule	int_eq (dim11,dim22) => true &
+	type_convert_matrix (ell, t1, t2) => ell' &
+	elab_type t2 => at 
+	------------------------------------------
+	type_convert(Exp.MATRIX(_,nmax,ell), 
+		     Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t1)), 
+		     Types.T_ARRAY(Types.DIM(NONE), Types.T_ARRAY(Types.DIM(SOME(dim22)),t2)))
+	    => (Exp.MATRIX(at,nmax,ell'),Types.T_ARRAY(Types.DIM(SOME(dim1)),Types.T_ARRAY(Types.DIM(SOME(dim11)),t2)))
 
   rule	type_convert (e, ty1, ty2) => (e',t') 
 	------------------------------------------
@@ -2296,6 +2503,37 @@ relation type_convert_array : (Exp.Exp list, Types.Type, Types.Type) => Exp.Exp 
 
 end
 
+relation type_convert_matrix : ((Exp.Exp*bool) list list, Types.Type, Types.Type) => (Exp.Exp*bool) list list =
+
+  axiom type_convert_matrix ([], _, _) => []
+
+  rule	type_convert_matrix (rest, ty1, ty2) => rest' &
+	type_convert_matrix_row(first,ty1,ty2) => first'
+	-------------------------------------------
+	type_convert_matrix (first::rest, ty1, ty2) => first'::rest'
+
+  rule	print "- type conversion of matrix failed" &
+	print "t1 = " &
+	Types.print_type t1 & 
+	print " t2 = " &
+	Types.print_type t2 &
+	print "\n" 
+	-------------------------------
+	type_convert_matrix (e::_,t1,t2) => fail
+
+end
+
+relation type_convert_matrix_row: ((Exp.Exp*bool) list , Types.Type, Types.Type) 
+	    => ( Exp.Exp * bool) list =
+  axiom type_convert_matrix_row ([],_,_) => []
+
+  rule	type_convert_matrix_row(rest,t1,t2) => rest &
+	type_convert(exp,t1,t2) => (exp',newt) &
+	Types.is_array t2 => a
+	---------------------------------
+	type_convert_matrix_row((exp,_)::rest,t1,t2 )=> ((exp',a)::rest)
+end
+
 relation type_convert_list : (Exp.Exp list, Types.Type list, Types.Type list) 
 	  => (Exp.Exp list, Types.Type list) =
 
@@ -2307,9 +2545,6 @@ relation type_convert_list : (Exp.Exp list, Types.Type list, Types.Type list)
 	type_convert_list (first::rest, ty1::ty1rest, ty2::ty2rest) => (first'::rest',ty'::tyrest')
 
 end
-
-
-
 
 (** relation: deoverlooad
  **
