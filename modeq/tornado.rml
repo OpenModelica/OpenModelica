@@ -50,7 +50,7 @@ relation generate_code:  (Absyn.Program, DAE.DAElist, Absyn.Path) => () =
 	generate_var_defines(dae') => defines &
 	generate_compute_methods(cname,dae',p) => cmethods &
 	Util.string_append_list([implheader,constr,defines,cmethods]) => impl &
-	string_append(cname,".hpp") => headerfile &
+	string_append(cname,".h") => headerfile &
 	string_append(cname,".cpp") => implfile &
 	System.write_file(headerfile,header) &
 	System.write_file(implfile,impl) 
@@ -196,6 +196,7 @@ relation generate_constructor_outputvars2:(DAELow.Var list,int) => string list =
 	--------------------
 	generate_constructor_outputvars2(DAELow.VAR(cr,VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_)::rest,i) 
 	  => r1::res
+
   rule	generate_constructor_outputvars2(rest,i) => res 
 	-----------------------------------------------
 	generate_constructor_outputvars2(_::rest,i) 
@@ -265,14 +266,64 @@ end
 
 relation generate_var_defines: (DAELow.DAELow) => string =
 
-  rule	Util.string_append_list(["/*generate var defines here*/\n"]) => vdefs
+  rule	generate_var_defines2(vars,0,0) => vdefs1list &
+	list_length(vdefs1list) => len &
+	int_sub(len,1) => len' &
+	Util.string_append_list(vdefs1list) => vdefs1 &
+	generate_var_defines2(knvars,0,0) => vdefs2list &
+	Util.string_append_list(vdefs2list) => vdefs2 &
+	Util.string_append_list(["#define _t_ m_IndepVarValues[0]\n",vdefs1,vdefs2,"\n"]) => vdefs
 	---------------------
-	generate_var_defines(dae) => vdefs
+	generate_var_defines(DAELow.DAELOW(vars,knvars,eqn,seqn)) => vdefs
 
   rule	print "-generate_var_defines failed\n"
 	--------------------------------------
 	generate_var_defines(_) => fail
 end
+
+
+(** Helper function for generate_var_defines
+ ** Recursively traverses the list of variables and generates the defines 
+ ** in the tornado format for them.
+ ** Arg1 is the list of variables
+ ** Arg2 is the counter for Output variables
+ ** Arg3 is the counter for DerState and derivative variables
+**)
+relation generate_var_defines2: (DAELow.Var list,int,int) => string list =
+
+  axiom	generate_var_defines2([],_,_) => []
+
+  rule	int_string(outputCounter) => outputCounterString &
+	Exp.cref_modelica_str(cr) => crs &
+	Util.string_append_list(["#define _",crs,"_ m_OutputVarValues[",outputCounterString,"]\n"]) => r1 &
+	int_add(outputCounter,1) => outputCounter' & 
+	generate_var_defines2(rest,outputCounter',derStateCounter) => res
+	----------------------------------------------
+	generate_var_defines2(DAELow.VAR(cr,DAELow.VARIABLE,dir,_,_,_,_,_,_,_)::rest,
+			      outputCounter,derStateCounter) 
+	  => r1::res
+
+  rule	int_string(derStateCounter) => derStateCounterString &
+	Exp.cref_modelica_str(cr) => crs &
+	Util.string_append_list(["#define _",crs,"_ m_DerStateVarValues[",derStateCounterString,"]\n",
+				 "#define _D_",crs,"_ m_Derivatives[",derStateCounterString,"]\n"]) => r1 &
+ 	int_add(derStateCounter,1) => derStateCounter' & 
+	generate_var_defines2(rest,outputCounter,derStateCounter') => res
+	----------------------------------------------
+	generate_var_defines2(DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_)::rest,
+			      outputCounter,derStateCounter) 
+	  => r1::res
+
+  rule	generate_var_defines2(rest,outputCounter,derStateCounter) => res 
+	-----------------------------------------------
+	generate_var_defines2(_::rest,outputCounter,derStateCounter) => res
+
+  rule	print "-generate_var_defines2 failed\n"
+	--------------------------------------
+	generate_var_defines2(_,_,_) => fail
+end
+
+
 
 (** relation: generate_compute_methods
  ** This relation generates the code for the computation of the equations
@@ -373,15 +424,15 @@ relation generate_state_partition:(int list list,DAELow.DAELow) =>
 	int_string(state_component_number) => state_component_number_string &
 	print state_component_number_string &
 	print "\n" &
- 	list_length(blt) => nr_of_components &
+ 	list_length(blt) => nr_of_components (*&
 	int_sub(nr_of_components,state_component_number) => component_offset &	
 	print "(non-reversed): " &
 	int_string(component_offset) => component_offset_string &
 	print component_offset_string &
 	print "\n" &
-	Util.list_split(blt,component_offset) => (blt_states,blt_no_states)
+	Util.list_split(blt,component_offset) => (blt_states,blt_no_states) *)
 	-----------------------------------------
-	generate_state_partition(blt,dae) => (blt_states,blt_no_states)  
+	generate_state_partition(blt,dae) => (reversed_blt,reversed_blt)  
 
   rule	print "-generate_state_partition failed\n" 
 	-----------------------------------------
@@ -404,9 +455,7 @@ relation has_state_var:(int, int list list, DAELow.DAELow) => int =
 	has_state_var(index,element::reversed_blt,dae) => index
 
 	(* If we have no more components return 0 *)
-  rule	
-	-----------------------------------------
-	has_state_var(_,[],_) => 0
+  axiom	has_state_var(_,[],_) => 0
 	
   rule	(* If no statevars found in this component, continue with the next one*)
 	int_add(1,index) => next_index &

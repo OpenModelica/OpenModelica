@@ -101,9 +101,7 @@ module SCode :
   (* - Equations *)
   datatype Equation = EQUATION of EEquation
 				  * Absyn.Path option (*baseclassname if in bclass*)
-  datatype EEquation = (*REMOVE - If noone complains, I will remove this 2004-11-01
-			EQ_EXPR of Absyn.Exp	(* more later? *)
-		    | *)EQ_IF of Absyn.Exp	(* conditional *)
+  datatype EEquation = EQ_IF of Absyn.Exp	(* conditional *)
 			     * EEquation list	(* true branch *)  
 			     * EEquation list	(* false branch *)
 		    | EQ_EQUALS of Absyn.Exp * Absyn.Exp

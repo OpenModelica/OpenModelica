@@ -3430,28 +3430,6 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 			     initial)
 	  => (dae,env,csets',ci_state')
 	  
-	(**  assert
-	 **)
-
-(* REMOVE - If noone complains, I will remove this 2004-11-01
-   rule	Static.elab_exp(env,e,false,NONE) => (e', Types.PROP(t, c),_) &
-	inst_assertion (env, e', t, c, d, pre) => dae &
-	inst_equation_common_ci_trans (ci_state, initial) => ci_state'
-	--------------------------------------------------------------
-	inst_equation_common(env,mods,pre,csets, ci_state,
-			     SCode.EQ_EXPR(Absyn.CALL(Absyn.CREF_IDENT("assert",[]),
-						      Absyn.FUNCTIONARGS([e,Absyn.STRING(d)],[]))),
-			     initial)
-	  => (dae,env,csets,ci_state') *)
-
-	(**  Normal equations *)
-
-(* REMOVE - If noone complains, I will remove this 2004-11-01
-   rule	Print.print_buf "- No expression equations yet\n" &
-	inst_equation_common_ci_trans (ci_state, initial) => ci_state' (* but fail? *)
-	-------------------------------------
-	inst_equation_common(env,mods,pre,csets,ci_state,SCode.EQ_EXPR(_),initial) => fail *)
-
 	(** The following rule handles shadowed (replaced) equations. *)
 	(** If an equation has a simple name on the left-hand side, *)
 	(** and that component has an equation modifier, this equation *)

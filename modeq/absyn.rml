@@ -188,9 +188,7 @@ module Absyn:
 
   (* Information on one (kind) of equation, different constructors for different
      kinds of equations *)
-  datatype Equation = (* REMOVE - If noone complains, I will remove this 2004-11-01
-		       EQ_EXPR of Exp                    One sided equations? *)
-		     EQ_IF of Exp                     (* Conditional expression *)
+  datatype Equation = EQ_IF of Exp                     (* Conditional expression *)
 			     * EquationItem list	     (* true branch *)  
 			     * (Exp * EquationItem list) list (* elseif branches *)
 			     * EquationItem list	     (* else branch *)
