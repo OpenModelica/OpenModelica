@@ -29,6 +29,8 @@ Flattening and type resolution (modeq)
       record rec Real x; end rec;
       rec[4] recs;
       recs.x = {1,2,3,4};
+ * type Real[2] arrtype does not work. 
+   (Instantiated components will be of type Real)
  * a lot more...
 
 
