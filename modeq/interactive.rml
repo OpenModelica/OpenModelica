@@ -163,16 +163,19 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 
        (* Since expressions cannot be tuples an empty string is returned *)
   rule	build_env_from_symboltable(st) => env &
-	Static.elab_exp_list(env,exps,true,SOME(st)) => (sexps,props,SOME(st'))	&
-	Util.list_map(props, Types.get_prop_type) => types &
+	Static.elab_exp(env,rexp,true,SOME(st)) => (srexp,rprop,SOME(st'))	&
+	Types.get_prop_type rprop => ((Types.T_TUPLE(types),_)) &
 	Util.list_map(crefexps, get_ident_from_crefexp) => idents &
-	Static.ceval_list(env,sexps,true,SOME(st')) => values &
-	add_vars_to_symboltable(idents,values,types,st') => newst
+	Static.ceval(env,srexp,true,SOME(st')) => (Values.TUPLE(values), SOME(st'')) &
+	add_vars_to_symboltable(idents,values,types,st'') => newst
 	-----------------------------------------------
-	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),Absyn.TUPLE(exps)),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
+	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),rexp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
 	    => ("", newst)
 	
-  rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str
+  rule	Print.get_string() => s1 & Print.clear_buf() & string_append("Error evaluating expr.\n",s1) => str &
+	Debug.fprint ("failtrace", "#-- evaluate_expr failed:") &
+	Debug.fcall ("failtrace", Dump.dump_istmt, ISTMTS([stmt], true)) &
+	Debug.fprintln ("failtrace", "\n")
 	-----------------------------
 	evaluate_expr(stmt,st) => (str,st)
 end
@@ -3157,3 +3160,4 @@ end
 	get_instantiated_class((x as INSTCLASS(path,_,_))::xs, path2) 
 	  => res
 end
+
