@@ -351,9 +351,10 @@ relation lookup_component : (Type, Ident) => Var =
 	------------------------------
 	lookup_component(T_COMPLEX(st,cs), id) => v
 
-  rule	Print.print_buf "# Can't lookup components in arrays\n"
-	------------------------------
-	lookup_component(T_ARRAY(dim,t), id) => fail
+  rule	lookup_component2(cs,id) => VAR(n,attr,prot,ty,bnd) &
+	let ty' = T_ARRAY(dim,ty)
+	-----------------------------
+	lookup_component(T_ARRAY(dim,T_COMPLEX(st,cs)), id) => VAR(n,attr,prot,ty',bnd)
 
   rule	Print.print_buf "- Looking up " &
 	Print.print_buf id &

@@ -1,6 +1,9 @@
 #include "rml.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
+#include <sys/unistd.h>
+#include <sys/stat.h>
 #include "read_write.h"
 #include "../values.h"
 
@@ -80,6 +83,41 @@ RML_BEGIN_LABEL(System__execute_5ffunction)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__system_5fcall)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  int ret_val;
+  ret_val = system(str);
+
+  rmlA0 = (void*) mk_icon(ret_val);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__cd)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  int ret_val;
+  ret_val = chdir(str);
+
+  rmlA0 = (void*) mk_icon(ret_val);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__pwd)
+{
+  char buf[MAXPATHLEN];
+  getcwd(buf,MAXPATHLEN);
+  rmlA0 = (void*) mk_scon(buf);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
 RML_BEGIN_LABEL(System__write_5ffile)
 {
   char* data = RML_STRINGDATA(rmlA1);
@@ -95,9 +133,29 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__read_5ffile)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  printf("read_file, data:%s\n",str);
- RML_TAILCALLK(rmlSC);
+  char* filename = RML_STRINGDATA(rmlA0);
+  char* buf;
+  int res;
+  FILE * file = NULL;
+  struct stat statstr;
+  res = stat(filename, &statstr);
+
+  if(res!=0){
+    rmlA0 = (void*) mk_scon("No such file");
+    RML_TAILCALLK(rmlSC);
+  }
+
+  file = fopen(filename,"rb");
+  buf = malloc(statstr.st_size+1);
+ 
+ if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size){
+    rmlA0 = (void*) mk_scon("Failed while reading file");
+    RML_TAILCALLK(rmlSC);
+  }
+
+  fclose(file);
+  rmlA0 = (void*) mk_scon(buf);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

@@ -121,8 +121,8 @@ stored_definition returns [void *ast]
     ;
 
 interactive_stmt returns [void *ast]
-{
-    void *a1=0;
+{ 
+    void *a1=0; 
     void *e1=0;
 }
     :
@@ -131,7 +131,7 @@ interactive_stmt returns [void *ast]
         {
             if (a1 != 0 ) 
             ast = Interactive__ISTMTS(mk_cons(Interactive__IALG(a1),mk_nil()));
-            else
+            else 
             ast = Interactive__ISTMTS(mk_cons(Interactive__IEXP(e1),mk_nil()));
             assert(ast != 0);
         }

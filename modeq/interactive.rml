@@ -93,6 +93,11 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("clear",_),_))]),_) 
 	    => ("Clearing symbol table\n", newst)
 
+  rule	let newst = SYMBOLTABLE(p,fp,ic,[],cf)
+	-------------------------------------------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("clearVariables",_),_))]),SYMBOLTABLE(p,fp,ic,iv,cf)) 
+	    => ("Clearing variables.\n", newst) 
+
   rule	Dump.unparse_str(p) => str
 	--------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
@@ -171,12 +176,50 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("typeOf",_),Absyn.FUNCTIONARGS([ Absyn.CREF(Absyn.CREF_IDENT(varid,_))],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
 	  => (str',st)
 
+ rule	System.pwd() => res &
+	string_append(res,"\n") => res'
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("cd",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
+	  => (res',st)
+
+  rule	System.cd(str) => res &
+	int_eq (res,0) => true &
+	System.pwd => str' &
+	string_append(str',"\n") => str''
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("cd",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
+	  => (str'',st)
+
+  rule	System.cd(str) => res &
+	int_eq (res,0) => false 
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("cd",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
+	  => ("No such directory\n",st)
+
+  rule	System.system_call(str) => res &
+	int_string res => str' &
+	string_append(str',"\n") => str''
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("system",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
+	  => (str'',st)
+
+  rule	System.read_file(str) => str' &
+	string_append(str',"\n") => str''
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("cat",_),Absyn.FUNCTIONARGS([ Absyn.STRING(str)],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
+	  => (str'',st)
+
+  rule	get_variable_names(vars) => vars &
+	string_append(vars,"\n") => str
+	--------------------------
+	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("listVariables",_),Absyn.FUNCTIONARGS([],[])))]),st as SYMBOLTABLE(_,_,_,vars,_))
+	  => (str,st)
+
   rule	not get_type_of_variable(varid,vars) => tp &
 	string_append(varid, " is not defined\n") => str
 	--------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("typeOf",_),Absyn.FUNCTIONARGS([ Absyn.CREF(Absyn.CREF_IDENT(varid,_))],[])))]),st as SYMBOLTABLE(p,_,_,vars,_))
 	  => (str,st)
-
 	    
   rule	evaluate_graphical_api(stmts,st) => (str,newst)
 	----------------------------------------------------
@@ -206,10 +249,12 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st')
 	
-  rule	print "alg_assign\n" &
-	build_env_from_symboltable(st) => env &
+  rule	build_env_from_symboltable(st) => env &
+	print "built env\n" &
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
+	print "elabed env\n" &
 	Static.ceval(env,sexp,true,SOME(st')) => value &
+	print "evaled env\n" &
 	add_var_to_symboltable(ident,value,t,st') => newst	
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
@@ -220,6 +265,24 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	evaluate_expr(stmt,st) => (str,st)
 end
 	
+relation get_variable_names: (InteractiveVariable list) => string =
+
+  rule	get_variable_list_str(vars) => strlst &
+	Util.string_delimit_list(strlst,", ") => str &
+	Util.string_append_list(["{",str,"}"]) => res
+	---------------------------------------------
+	get_variable_names(vars) => res
+end
+
+relation get_variable_list_str: (InteractiveVariable list) => string list =
+	
+  axiom	get_variable_list_str([]) => []
+	
+  rule	get_variable_list_str(vs)=> res 
+	----------------------------
+	get_variable_list_str(IVAR(p,_,_)::vs) => p::res
+end
+
 relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type =
 	axiom get_type_of_variable(id,[]) => fail
 	

@@ -39,4 +39,10 @@ relation read_file: (string) => string
 
 relation read_values_from_file: (string) => Values.Value
 
+relation system_call: (string) => int
+
+relation cd: (string) => int
+
+relation pwd: () => string
+
 end
