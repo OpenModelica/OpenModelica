@@ -144,6 +144,14 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 	-------------------------------------
 	ceval (env, e as Exp.CALL(_,_,_,_),true, SOME(st)) => (value,SOME(st))
 
+  rule	(* Call of record constructors, etc., i.e. functions that can be 
+	 constant propagated. *)
+	ceval_list(env,expl,true,st) => vallst &
+	ceval_function(env,func,vallst) => newval
+	-------------------------------------------------------
+	ceval (env, e as Exp.CALL(func,expl,_,_),true,st as SOME(_)) 
+	  => (newval,st)
+
   rule	(* Call externally implemented functions. *) 
 	ceval_list(env,expl,true,st) => vallst &
 	ModUtil.path_string2(func,"_") => funcstr &
@@ -407,6 +415,17 @@ relation ceval : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable opt
 end
 
 
+
+(* relation: ceval_function for constant evaluation of functions
+ returning a single value. For now only record constructors. *)
+relation ceval_function: (Env.Env, Absyn.Path, Values.Value list) 
+	  => Values.Value =
+
+  rule	
+	----------------------
+	ceval_function(env,funcname,vallst) => fail
+
+end
 
 (** relaton: ceval_ast_exp
  **

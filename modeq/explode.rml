@@ -90,6 +90,7 @@ module SCode :
 			       * Mod
 		    | ENUMERATION of Ident list
 
+		    | OVERLOAD of Absyn.Path list 						 
   (** The major difference between these types and their `Absyn' *)
   (** counterparts is that the `PARTS' constructor contains separate *)
   (** lists for elements, equations and algorithms. *)
@@ -224,7 +225,7 @@ end
 	
 relation contain_external_func_decl:(Absyn.Class) => bool =
 	
-  axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_)::_,_))) => true
+  axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_,_)::_,_))) => true
 	
   rule	contain_external_func_decl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt))) => res
 	----------------------
@@ -267,6 +268,7 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	--------------------------
 	elab_classdef(Absyn.ENUMERATION(lst,_)) => ENUMERATION(lst')
 
+  axiom	elab_classdef(Absyn.OVERLOAD(lst,_)) => OVERLOAD(lst)
 end
 
 relation elab_enumlist:(Absyn.EnumLiteral list) => Ident list =
@@ -395,7 +397,7 @@ end
 
 relation elab_classdef_externaldecls: (Absyn.ClassPart list) => Absyn.ExternalDecl option =
 
-  axiom	elab_classdef_externaldecls(Absyn.EXTERNAL(decl)::_) => SOME(decl)
+  axiom	elab_classdef_externaldecls(Absyn.EXTERNAL(decl,_)::_) => SOME(decl)
 
   rule	elab_classdef_externaldecls(rest) => res
 	---------------------------------------

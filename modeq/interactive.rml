@@ -149,8 +149,11 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	(string,InteractiveSymbolTable) =
 	
   rule	build_env_from_symboltable(st) => env &	
+	print "built env\n" &
 	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
+	print "elabed expr\n" &
 	Ceval.ceval (env,sexp,true,SOME(st')) => (value,SOME(st'')) &
+	print "evaluated expr\n" &
 	Values.val_string value =>  str
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')

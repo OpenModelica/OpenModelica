@@ -82,6 +82,8 @@ module Absyn:
 
 		    | ENUMERATION of EnumLiteral list   
 				* Comment option     (* comment*)		
+	            | OVERLOAD of Path list (* function names *)
+				* Comment option
   (** The `ClassDef' type contains the definition part of a class *)
   (** declaration.  The definition is either explicit, with a list of *)
   (** parts (`public', `protected', `equation' and `algorithm'), or it *)
@@ -100,7 +102,7 @@ module Absyn:
 		     | INITIALEQUATIONS of EquationItem list	
 		     | ALGORITHMS of AlgorithmItem list
 		     | INITIALALGORITHMS of AlgorithmItem list
-		     | EXTERNAL of ExternalDecl
+		     | EXTERNAL of ExternalDecl * Annotation option
   (** A class definition contains several parts.  There are public and *)
   (** protected component declarations, type definitions and `extends' *)
   (** clauses, collectively called elements.  There are also equation *)

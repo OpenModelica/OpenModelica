@@ -1257,12 +1257,12 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st')
 
-  rule	(*Debug.fprint("failtrace", "- elab_call failed\n") &
+  rule	Debug.fprint("failtrace", "- elab_call failed\n") &
 	Debug.fprint("failtrace", " function: ") &
 	Debug.fcall("failtrace", Dump.print_component_ref,fn) &
 	Debug.fprint("failtrace", " posargs: ") &
 	Debug.fprint_list("failtrace", args, Dump.print_exp,", ") &	
-	Debug.fprint("failtrace", "\n") *)
+	Debug.fprint("failtrace", "\n") 
 	----------------------------
 	elab_call (env,fn,args,nargs,impl,st) => fail
 
@@ -1858,16 +1858,18 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,Types.PROP(t,_),NONE) => NONE
 
+  rule	(* If fails, skip it. *)
+	--------------------------------------------------
+	generate_compiled_function(_,_,_,_,st) => st
 
 
-
-  rule	(*Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
+  rule	Debug.fprint("failtrace", "- generate_compiled_function failed4\n") &
 	Dump.print_component_ref_str cr => str1 &
 	Exp.print_exp_str exp => str2 &
 	Print.print_buf str1 &
 	Print.print_buf " -- " &
 	Print.print_buf str2 &
-	Print.print_buf "\n"*)
+	Print.print_buf "\n"
 	------------------------------------------------------------------
 	generate_compiled_function(env,cr,exp,_,_) => fail
 
@@ -2014,7 +2016,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	elab_call_args(env,fn,_,_,_) => fail
 
   rule	(*elab_exp(env, e) => (e',Types.PROP(t,_)) &*)
-	(*Debug.fprint("failtrace", "- elab_call_args failed\n")*)
+	Debug.fprint("failtrace", "- elab_call_args failed\n")
 	---------------------------------
 	elab_call_args(_,_,_,_,_) => fail
 
@@ -2072,10 +2074,10 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list)
         elab_types(env, args, (Types.T_FUNCTION(params,restype),_)::trest) 
 	  => (args', c, restype,t)
 
-(*  rule	Debug.fprint("failtrace","- elab_types failed.") 
+  rule	Debug.fprint("failtrace","- elab_types failed.") 
 	--------------
 	elab_types(env,_,_) => fail
-*)
+
 end
 
 

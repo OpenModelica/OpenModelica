@@ -2712,6 +2712,16 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 			       inst_dims, false)
 	  => (env', [DAE.EXTFUNCTION(fpath,DAE.DAE(dae), ty, extdecl)])
 				
+  rule        (* Overloaded functions *)
+        inst_overloaded_functions(env,n,funcnames) => (env',daefuncs)
+	-----------------------------
+         implicit_function_instantiation(env,mod,pre,csets,
+                              c as SCode.CLASS(n,_,_, restr as SCode.R_FUNCTION
+,
+                              SCode.OVERLOAD(funcnames)),
+                              inst_dims, false)
+         => (env', daefuncs)
+
   rule	(*Debug.fprint("failtrace", "#-- implicit_function_instantiation failed\n")*)
 	------------------------------------------------------------------------
 	implicit_function_instantiation(_,_,_,_,_,_,_) => fail 
