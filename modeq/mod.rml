@@ -423,7 +423,7 @@ end
  **
  ** The merge relation merges to modifications to one. The first
  ** argument is the "outer" modification that should take precedence over
- ** the "inner" modifications. FIXME: correct?
+ ** the "inner" modifications.
  **
  **)
 
