@@ -248,12 +248,55 @@ module Absyn:
   (** assigned special restrictions. *)
 
 
+  relation update_program: (Program,Program) => Program
   relation path_string : Path => string
   relation cref_to_path : ComponentRef => Path
   relation element_spec_name : ElementSpec => Ident
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
   relation print_absyn_exp : Exp => ()  (*PR. for debugging.*)
+end
+
+(** relation: update_program
+ **
+ ** This relation takes an old program, i.e. the old symboltable, and a new program, i.e. a new set of classes and updates the old program with the definitions in the new one.
+ **)
+
+relation update_program: (Program,Program) => Program = 
+  axiom	update_program ([],prg) => prg
+
+  rule	class_in_program(name,p2) => false &
+	print "class not in program\n" &
+	update_program(p1,c1::p2) => pnew
+	---------------------------------
+	update_program ((c1 as CLASS(name,_,_,_))::p1,p2) => pnew
+
+  rule	class_in_program(name,p2) => true &
+	print "class in program\n" &
+	update_program(p1,p2) => pnew
+	-----------------------------
+	update_program ((c1 as CLASS(name,_,_,_))::p1,p2) => pnew
+
+  rule	print "Further program merging not implemented yet\n"
+	------------------------
+	update_program (a,b) => b
+end
+
+
+(** relation: class_in_program
+ ** This relation takes a name and a Program and returns true if the name exists as a top class in the program.
+**)
+
+relation class_in_program:(string,Program) => bool = 
+
+  axiom class_in_program (str,[]) => false
+	
+  rule	not str = c1 &
+	class_in_program(str,p) => res
+	-----------------------
+	class_in_program (str, CLASS(c1,_,_,_)::p) => res
+	
+  axiom class_in_program (_,_) => true
 end
 
 (** relation: path_string

@@ -32,8 +32,8 @@ walkergen= modelica_tree_parser.cpp modelica_tree_parser.hpp \
 walkersrcs=$(filter %.cpp,$(walkergen))
 walkerobjs=$(walkersrcs:.cpp=.o)
 
-exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp \
-	       modelica_tree_parserTokenTypes.txt
+exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp 
+
 exprparsesrcs=$(filter %.cpp,$(exprparsegen))
 exprparseobjs=$(exprparsesrcs:.cpp=.o)
 

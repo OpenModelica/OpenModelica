@@ -33,6 +33,7 @@ module Main:
 	relation main: string list => ()
 end
 
+with "absyn.rml"
 with "modutil.rml"
 with "parse.rml"
 with "dump.rml"
@@ -58,11 +59,11 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
 	Debug.fprint ("interactivedump" , str ) &
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
-	handle_command str  => true &
-	Socket.sendreply(shandle,"OK\n") &
-	server_loop (shandle,isymb) => newsymb
+	handle_command (str,isymb)  => (true,replystr,newsymb) &
+	Socket.sendreply(shandle,replystr) &
+	server_loop (shandle,newsymb) => ressymb
 	-----------------------------
-	server_loop (shandle,isymb) => newsymb
+	server_loop (shandle,isymb) => ressymb
 
   rule  print "Exiting\n" &
 	Socket.sendreply(shandle, "quit requested, shutting server down") &
@@ -120,32 +121,34 @@ end
  ** This relation handles the commands in form of strings send to the server
  ** If the command is quit, the relation returns false, otherwise it sends the string to the parse relation and returns true.
 **)
-relation handle_command: string => bool =
-  rule	let quitcmd = "quit()" & 
-	string_length(quitcmd) => slen &
-	strncmp("quit()",str,slen) => true 
-	---------------------------
-	handle_command str => false
+relation handle_command: (string,Interactive.InteractiveSymbolTable)  => 
+	(bool, string, Interactive.InteractiveSymbolTable) =
 
+  rule	strncmp("quit()",str,6) => true 
+	-------------------------------
+	handle_command (str, isymb) => (false,"Ok\n",isymb)
+	
   rule	check_classdef str => true &
 	Debug.fprint ("dump","\nDetected class definition, parsing...\n") &
 	Parser.parsestring str => p &
+	Absyn.update_program (iprog,p) => newprog &
  	Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n") &
-	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p) &
-	Debug.fcall ("dump", Dump.dump, p) 
-	------------------------------------
-	handle_command str => true
+	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
+	Debug.fcall ("dump", Dump.dump, newprog) 
+	----------------------------------
+	handle_command (str, Interactive.SYMBOLTABLE(iprog,a,b,c)) => 
+	(true, "Ok\n",Interactive.SYMBOLTABLE(newprog,a,b,c))
 
   rule	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => exp &
 	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
 	Debug.fcall ("dump", Dump.dump_istmt, exp)
 	--------------------------------------------------
-	handle_command str => true
+	handle_command (str, isymb) => (true, "No evaluation yet", isymb)
 
   rule  print "Error occured building AST\n"
 	----------------------------------
-	handle_command _ => true
+	handle_command (_,isymb) => (true,"Syntax Error\n", isymb)
 end
 
 (** relation: translate_file
