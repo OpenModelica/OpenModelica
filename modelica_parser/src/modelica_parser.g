@@ -24,12 +24,14 @@ tokens {
 	CLASS_DEFINITION	;
 	CLASS_MODIFICATION;
 	COMMENT;
-	DECLARATION	;
+	DECLARATION	; 
 	DEFINITION ;
 	ELEMENT		;
 	ELEMENT_MODIFICATION		;
 	ELEMENT_REDECLARATION	;
     EQUATION_STATEMENT;
+ 	INITIAL_EQUATION;
+	INITIAL_ALGORITHM;
 	EXPRESSION_LIST;
 	EXTERNAL_FUNCTION_CALL;
     FOR_INDICES ;
@@ -107,12 +109,16 @@ composition :
 		element_list
 		(	public_element_list
 		|	protected_element_list
+		| 	initial_equation_clause	
+		| 	initial_algorithm_clause	
 		|	equation_clause
 		|	algorithm_clause
 		)*
 		( EXTERNAL	( language_specification )? 
 			( external_function_call )?
-			SEMICOLON!
+			(SEMICOLON!) ?  
+			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
+
 			( annotation SEMICOLON! )?
 		)?
 		;
@@ -142,15 +148,6 @@ element_list :
 		((element | annotation ) SEMICOLON!)*
 		;
 
-//element_list_annotation :
-//		annotation
-//		{ 
-//			#element_list_annotation = #([ELEMENT,"c"], 
-//				#element_list_annotation); 
-//		}
-//		;
-
-
 element :
 			ic:import_clause
 		|	ec:extends_clause			 
@@ -158,7 +155,7 @@ element :
 			(INNER | OUTER)?
 		(	(class_definition | cc:component_clause)
 			|(REPLACEABLE ( class_definition | cc2:component_clause )
-				(constraining_clause)?
+				(constraining_clause comment)?
 			 )
 		)
 		{ 
@@ -204,7 +201,7 @@ implicit_import_name!
 // Note that this is a minor modification of the standard by 
 // allowing the comment.
 extends_clause : 
-		EXTENDS^ name_path ( class_modification )? comment
+		EXTENDS^ name_path ( class_modification )?
 		;
 
 constraining_clause :
@@ -258,7 +255,7 @@ modification :
 		;
 
 class_modification :
-		LPAR! ( argument_list )? RPAR!
+		LPAR! ( argument_list )? RPAR! 
 		{
 			#class_modification=#([CLASS_MODIFICATION,"CLASS_MODIFICATION"],
 				#class_modification);
@@ -284,11 +281,11 @@ argument ! :
 		;
 
 element_modification :
-		( FINAL )? component_reference modification string_comment
+		( EACH )? ( FINAL )? component_reference modification string_comment
 	;
 
 element_redeclaration :
-		REDECLARE^
+		REDECLARE^ ( EACH )? (FINAL )?
 		(	(class_definition | component_clause1)
 			|
 			( REPLACEABLE ( class_definition | component_clause1 )
@@ -306,11 +303,24 @@ component_clause1 :
  * 2.2.6 Equations
  */
 
+initial_equation_clause :
+		{ LA(2)==EQUATION}?
+		INITIAL! ec:equation_clause
+        {
+            #initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
+        }
+
+		;
+
 equation_clause :
 		EQUATION^
-		(equation SEMICOLON!
-		|annotation SEMICOLON!
-		)*
+		    equation_annotation_list
+  		;
+
+equation_annotation_list :
+		{ LA(1) == END && LA(2) == IDENT}?
+		|
+		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
 		;
 
 algorithm_clause :
@@ -319,14 +329,24 @@ algorithm_clause :
 		|annotation SEMICOLON!
 		)*
 		;
-
+initial_algorithm_clause :
+		{ LA(2)==ALGORITHM}?
+		INITIAL! ALGORITHM^
+		(algorithm SEMICOLON!
+		|annotation SEMICOLON!
+		)*
+		{
+	            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #initial_algorithm_clause);
+		}
+		;
 equation :
-		(	equality_equation
+
+		(	(simple_expression EQUALS) => equality_equation
 		|	conditional_equation_e
 		|	for_clause_e
-		|	when_clause_e
 		|	connect_clause
-		|	assert_clause
+		|	when_clause_e
+		|   IDENT function_call
 		)
         {
             #equation = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #equation);
@@ -341,7 +361,6 @@ algorithm :
 		|	for_clause_a
 		|	while_clause
 		|	when_clause_a
-		|	assert_clause
 		)
 		comment
         {
@@ -373,13 +392,13 @@ conditional_equation_a :
 		;
 
 for_clause_e :
-		FOR^ IDENT IN! expression LOOP!
+		FOR^ for_indices LOOP!
 		equation_list
 		END! FOR!
 		;
 
 for_clause_a :
-		FOR^ IDENT IN! expression LOOP!
+		FOR^ for_indices LOOP!
 		algorithm_list
 		END! FOR!
 		;
@@ -393,7 +412,13 @@ while_clause :
 when_clause_e :
 		WHEN^ expression THEN!
 		equation_list
+		(else_when_e) *
 		END! WHEN!
+		;
+
+else_when_e :	
+		ELSEWHEN^ expression THEN! 
+		equation_list
 		;
 
 when_clause_a :
@@ -419,7 +444,9 @@ algorithm_elseif :
 		;
 
 equation_list :
-		( equation SEMICOLON! )*
+		{LA(1) != END || (LA(1) == END && LA(2) != IDENT)}?
+		|
+		(equation SEMICOLON! equation_list)
 		;
 
 algorithm_list :
@@ -438,11 +465,6 @@ connector_ref_2 :
 		IDENT^ ( array_subscripts )?
 		;
 
-assert_clause :
-		ASSERT^ LPAR! expression COMMA! STRING ( PLUS^ STRING )* RPAR!
-		|TERMINATE LPAR! STRING ( PLUS^ STRING )* RPAR!
-		;
-
 /*
  * 2.2.7 Expressions
  */
@@ -454,20 +476,24 @@ expression :
 		;
 
 if_expression :
-		IF^ expression THEN! expression ELSE! expression
+		IF^ expression THEN! expression (elseif_expression)* ELSE! expression
     ;
 
-
+elseif_expression : 
+		ELSEIF^ expression THEN! expression
+		;
 
 for_indices :
-        for_index (COMMA! for_index)*
-        {
-            #for_indices=#([FOR_INDICES,"FOR_INDICES"],#for_indices);
-        }
+        for_index for_indices2
     ;
+for_indices2 :
+	{LA(2) != IN}?
+		| 
+		(COMMA! for_index) for_indices2
+		;
 
 for_index:
-        (IDENT (COMMA^ IDENT)* IN^ expression)
+        (IDENT (IN^ expression)?)
 ;
 
 
@@ -542,11 +568,6 @@ factor :
 		primary ( POWER^ primary )?
 		;
 
-
-
-
-
-
 primary :
 		( UNSIGNED_INTEGER
 		| UNSIGNED_REAL
@@ -557,11 +578,9 @@ primary :
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
 		| LBRACE^ expression_list RBRACE!
+		| END
 		)
     ;
-
-
-
 
 component_reference__function_call ! :
 		cr:component_reference ( fc:function_call )? 
@@ -595,7 +614,6 @@ name_path_star returns [bool val]
 		}
 		;
 
-
 component_reference :
 		IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
 		;
@@ -608,25 +626,30 @@ function_call :
 		;
 
 function_arguments :
-//		( for_or_expression_list
-		( expression ( COMMA! function_arguments )* 
+		( for_or_expression_list 
+		|  expression function_arguments2 
 		| named_arguments
 		)
 		;
+function_arguments2 :
+		{!(LA(1) == IDENT && LA(2) == EQUALS) || LA(1) == RPAR}?
+  		|
+		( COMMA! function_arguments ) function_arguments2
+		;
 
-//for_or_expression_list 
-//    :
-//        e:expression
-//        ( COMMA! expression_list2
-//            {
-//                #for_or_expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
-//            }
-//        | FOR^ for_indices
-//        )?
-//    ;
+for_or_expression_list 
+    :
+        e:expression
+        ( COMMA! (COMMA expression) => expression_list2
+            {
+                #for_or_expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#for_or_expression_list);
+            }
+        | FOR^ for_indices
+        )?
+    ;
 
 named_arguments :
-		named_argument ( COMMA! named_argument )*
+		named_argument ( COMMA! (COMMA IDENT EQUALS) => named_arguments)?
 		;
 
 named_argument :
@@ -640,9 +663,16 @@ expression_list :
 		}
 		;
 expression_list2 :
-		expression ( COMMA! expression )*
-    ;
-array_subscripts :
+		expression expression_list3
+	    ;
+
+expression_list3:
+	{LA(2) != END}?
+	(COMMA! expression_list2) 
+	|
+	;
+
+array_subscripts : 
 		LBRACK^ subscript ( COMMA! subscript )* RBRACK!
 	;
 
@@ -651,18 +681,18 @@ subscript :
 		;
 
 comment :
-		string_comment (annotation)?
+		 string_comment	( ANNOTATION )=> annotation
+		| string_comment //(annotation)?
 		{
 			if (#comment)
             {
                 #comment=#([COMMENT,"COMMENT"],#comment);
             }
 		}
-//		string_comment	( ( ANNOTATION )=> annotation
 		;
 
 string_comment :
-		( STRING ( PLUS^ STRING )* )?
+		( STRING (PLUS STRING) => ( PLUS^ STRING )* )?
 		{
             if (#string_comment)
             {

@@ -1,5 +1,6 @@
 
 #include <antlr/Token.hpp>
+#include "antlr/ANTLRException.hpp"
 
 #include "modelica_lexer.hpp"
 #include "modelica_parser.hpp"
@@ -49,6 +50,12 @@ int main(int argc, char* argv[])
 
 	
     }
+    catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
+      {
+	std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
+	file.close();
+	return EXIT_FAILURE;
+      }
     catch(std::exception& e) 
     {
 	std::cerr << "Exception: " << e.what() << std::endl;
