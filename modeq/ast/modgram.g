@@ -253,19 +253,18 @@ default_public:
 	<< 
 	   Attrib a = $[PUBLIC,"---"];
 	   void *els = sibling_list(#0);
-	   printf("default_public\n");
 	   #0 = #(#[&a],#0);
 	   #0->rml = Absyn__PUBLIC(els);
 	>>
         ;
 
 public_elements:
-	PUBLIC^ element_list[false]
-	<< #0->rml = Absyn__PUBLIC(mk_nil()); >>
+	PUBLIC^ el:element_list[false]
+	<< #0->rml = Absyn__PUBLIC(sibling_list(#el)); >>
 	;
 protected_elements:
-	PROTECTED^ element_list[true]
-	<< #0->rml = Absyn__PROTECTED(mk_nil()); >>
+	PROTECTED^ el:element_list[true]
+	<< #0->rml = Absyn__PROTECTED(sibling_list(#el)); >>
 	;
 
 element_list[bool is_protected] :
