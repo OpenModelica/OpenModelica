@@ -644,8 +644,8 @@ end
          
   rule	DAELow.vararray_list(vararr) => varlst &
          DAELow.vararray_list(knvararr) => knvarlst &
-(* 	     Util.list_select(knvarlst,is_param) => knvarlst' & *)
-         list_append(knvarlst,varlst) => all_vars &
+ 	     Util.list_select(knvarlst,is_param) => knvarlst' & 
+         list_append(knvarlst',varlst) => all_vars &
          add_dae_var_to_index_map2(all_vars)
 	     
 	     -------------------------------------------
@@ -671,92 +671,16 @@ end
 (*          add_dae_var_to_index_map2(_,_,_,_) => ([],[],0) *)
 
          (* check first if output variable is on the top model.*)
-  rule  is_var_on_top_model(cr) => true &
+  rule  is_var_on_top_model(cr) => top_bool &
  	     list_reverse(class_paths) => class_path::_ & 
          Exp.cref_str(cr) => crs &
          Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"OutputVarValues") &
+         generate_type_name(kind,dir,top_bool) => type_str &
+         TORNADOEXT.add_variable_for_index(class_path_str,crs,type_str) &
          add_dae_var_to_index_map2(rest) 
          ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,class_paths)::rest)
+         add_dae_var_to_index_map2(DAELow.VAR(cr,kind,dir,_,_,_,_,start,_,_,class_paths)::rest)
  
-  rule  list_reverse(class_paths) => class_path::_ & 
-         Exp.cref_str(cr) => crs &
-         Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"AlgStateVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.OUTPUT,_,_,_,_,start,_,_,class_paths)::rest)
-         
-  rule  is_var_on_top_model(cr) => true &
- 	     list_reverse(class_paths) => class_path::_ & 
-         Exp.cref_str(cr) => crs &
-         Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"InputVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,class_paths)::rest)
- 
-  rule  list_reverse(class_paths) => class_path::_ & 
-         Exp.cref_str(cr) => crs &
-         Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"AlgStateVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,start,_,_,class_paths)::rest)
-           
-  rule  is_var_on_top_model(cr) => true &
- 	     list_reverse(class_paths) => class_path::_ & 
-         Exp.cref_str(cr) => crs &
-         Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"AlgStateVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,class_paths)::rest)
- 
-  rule  list_reverse(class_paths) => class_path::_ & 
-          Exp.cref_str(cr) => crs &
-        Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"AlgStateVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.BIDIR,_,_,_,_,start,_,_,class_paths)::rest)
-
-
-  rule  list_reverse(class_paths) => class_path::_ & 
-          Exp.cref_str(cr) => crs &
-         Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"ParamValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.PARAM,_,_,_,_,_,start,_,_,class_paths)::rest)
-
-        
-  rule  list_reverse(class_paths) => class_path::_ & 
-         Exp.cref_str(cr) => crs &
-         Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"DerStateVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,_,class_paths)::rest)
-
-  rule  list_reverse(class_paths) => class_path::_ & 
-         Exp.cref_str(cr) => crs &
-         Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"DerStateVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,start,_,_,class_paths)::rest)
-
-   rule  list_reverse(class_paths) => class_path::_ & 
-          Exp.cref_str(cr) => crs &
-        Absyn.path_string(class_path) => class_path_str &
-         TORNADOEXT.add_variable_for_index(class_path_str,crs,"DerStateVarValues") &
-         add_dae_var_to_index_map2(rest) 
-         ---------------------------------------------
-         add_dae_var_to_index_map2(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,_,start,_,_,class_paths)::rest)
-       
-
   rule  add_dae_var_to_index_map2(rest) =>
          -----------------------------------------------
          add_dae_var_to_index_map2(_::rest)
@@ -834,20 +758,62 @@ end
  ** TODO: in future this should be GetSubModel(<value>)->GetSubmodel(<value2>)...
  ** if several hireactical levels are present
  **)
-relation generate_getsubmodel_code:(string list, Exp.ComponentRef) => string =
-  rule	
-	    Exp.cref_str(cr) => crs &
+relation generate_getsubmodel_code:(string list, Exp.ComponentRef,
+                                    DAELow.VarKind,DAE.VarDirection) => string =
+
+  rule  Exp.cref_str(cr) => crs &
         Util.string_split_at_char(crs,#".") => comp_name::_ &
         Util.list_position(comp_name,comp_name_list) => index &
         int_string(index) => index_str &
 	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
 	    -------------------------
-	    generate_getsubmodel_code(comp_name_list,cr) => res
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_DER,_) => res
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DUMMY_STATE,_) => res
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.DISCRETE,_) => res
+
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.VARIABLE,DAE.BIDIR) => res
+ 
+ rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  ((CDAEModel*)GetSubModel(",index_str,"))"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,_) => res
+
+  rule  Exp.cref_str(cr) => crs &
+        Util.string_split_at_char(crs,#".") => comp_name::_ &
+        Util.list_position(comp_name,comp_name_list) => index &
+        int_string(index) => index_str &
+	    Util.string_append_list(["  GetSubModel(",index_str,")"]) => res
+	    -------------------------
+	    generate_getsubmodel_code(comp_name_list,cr,_,_) => res
 
         (*this print is removed because the model does not need to have submodels*)
-  rule	Util.string_append_list(["  this"]) => res
+  rule	Util.string_append_list(["  ((CDAEModel*)this)"]) => res
 	----------------
-	generate_getsubmodel_code(comp_name_list,cr) => res
+	generate_getsubmodel_code(comp_name_list,cr,_,_) => res
 end
 
 relation generate_simple_equation_links2: (string list, 
@@ -857,6 +823,17 @@ relation generate_simple_equation_links2: (string list,
 	      => string list =
 	      
 (*   rule  print "v----------------------\n" & *)
+(*         Exp.cref_str(cr) => var1 & *)
+(*         Exp.cref_str(cr2) => var2 & *)
+(*         print var1 & print " == " & print var2 & print "\n" & *)
+(*         int_eq(1,0) => true *)
+
+(*         -------------------------------- *)
+(* 	    generate_simple_equation_links2(comp_name_list, *)
+(*                                         DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns, *)
+(*                                         vars, *)
+(*                                         knvars) => [""] *)
+(*   rule   *)
 (*         DAELow.get_var(cr,knvars) => (var1 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
 (*         DAELow.get_var(cr2,vars) => (var2 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
 (*         DAELow.dump_vars([var1,var2]) & *)
@@ -867,21 +844,35 @@ relation generate_simple_equation_links2: (string list,
 (* 	    generate_simple_equation_links2(comp_name_list, *)
 (*                                         DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns, *)
 (*                                         vars, *)
-(*                                         knvars) => [""]  *)
+(*                                         knvars) => [""] *)
+(*   rule   *)
+(*         DAELow.get_var(cr,knvars) => (var1 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
+(*         DAELow.get_var(cr2,knvars) => (var2 as DAELow.VAR(_,_,_,_,_,_,_,_,_,_,class_path),_) & *)
+(*         DAELow.dump_vars([var1,var2]) & *)
+(*         print "^----------------------\n" & *)
+(*         int_eq(1,0) => true *)
+
+(*         -------------------------------- *)
+(* 	    generate_simple_equation_links2(comp_name_list, *)
+(*                                         DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns, *)
+(*                                         vars, *)
+(*                                         knvars) => [""] *)
         
   axiom generate_simple_equation_links2(_,[],_,_) => []
 	    
         
-        (* this checks if the the var is a DAELow.Variable *)
-        (*if it is then it must decide the direction*)
-  rule  is_var_on_top_model(cr) => from_top_bool &
+   rule  is_var_on_top_model(cr) => from_top_bool &
         is_var_on_top_model(cr2) => to_top_bool &
 
         DAELow.get_var(cr,knvars) 
 	      => (DAELow.VAR(_,from_kind,from_dir,_,_,_,_,_,_,_,from_class_paths),_) &
         DAELow.get_var(cr2,vars) 
 	      => (to_var as DAELow.VAR(_,to_kind,to_dir,_,_,_,_,_,_,_,to_class_paths),varindx) &
-        generate_getsubmodel_code(comp_name_list,cr) => sub_model_str &
+        generate_getsubmodel_code(comp_name_list,cr,from_kind,from_dir) => sub_model_str &
+        generate_getsubmodel_code(comp_name_list,cr2,to_kind,to_dir) => to_sub_model_str &
+
+        generate_GetCall_string_for_var(to_kind,to_dir,to_top_bool) => to_call_str &
+
         generate_GetCall_string_for_var(from_kind,from_dir,from_top_bool) => call_str &
         generate_MACRO_string_for_var(to_kind,to_dir,to_top_bool) => macro_str &
         get_flat_var_index_str(cr2,to_class_paths) => var_flat_index_str &
@@ -893,7 +884,46 @@ relation generate_simple_equation_links2: (string list,
                                  call_str,"(",var_index_str,")",
                                  "->LinkValue(this, ",macro_str,", ",
                                  var_flat_index_str,
-                                 "); // ",crs," -> ",crs2,"\n"]) => link_str &
+                                 ");", (* // ",sub_model_str,"  ",call_str," ",crs, *)
+(*                                  "\n; // ",to_sub_model_str,"  ",to_call_str," ",crs2, *)
+                                 (* " -> ",crs2, *)"\n"]) => link_str &
+        
+        generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
+	    --------------------------------
+	    generate_simple_equation_links2(comp_name_list,
+                                        DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns,
+                                        vars,
+                                        knvars) 
+	      =>  link_str::rest
+
+       (* this checks if the the var is a DAELow.Variable *)
+        (*if it is then it must decide the direction*)
+  rule  is_var_on_top_model(cr) => from_top_bool &
+        is_var_on_top_model(cr2) => to_top_bool &
+
+        DAELow.get_var(cr,knvars) 
+	      => (DAELow.VAR(_,from_kind,from_dir,_,_,_,_,_,_,_,from_class_paths),_) &
+        DAELow.get_var(cr2,knvars) 
+	      => (to_var as DAELow.VAR(_,to_kind,to_dir,_,_,_,_,_,_,_,to_class_paths),varindx) &
+        generate_getsubmodel_code(comp_name_list,cr,from_kind,from_dir) => sub_model_str &
+        generate_getsubmodel_code(comp_name_list,cr2,to_kind,to_dir) => to_sub_model_str &
+
+        generate_GetCall_string_for_var(to_kind,to_dir,to_top_bool) => to_call_str &
+
+        generate_GetCall_string_for_var(from_kind,from_dir,from_top_bool) => call_str &
+        generate_MACRO_string_for_var(to_kind,to_dir,to_top_bool) => macro_str &
+        get_flat_var_index_str(cr2,to_class_paths) => var_flat_index_str &
+        get_var_index_str(cr,from_class_paths) => var_index_str &
+        Exp.cref_str(cr) => crs &
+        Exp.cref_str(cr2) => crs2 &
+        Util.string_split_at_char(crs,#".") => comp_path_string_list &
+        Util.string_append_list([sub_model_str,"->",
+                                 call_str,"(",var_index_str,")",
+                                 "->LinkValue(this, ",macro_str,", ",
+                                 var_flat_index_str,
+                                 ");",(*  // ",sub_model_str,"  ",call_str," ",crs, *)
+(*                                  "\n; // ",to_sub_model_str,"  ",to_call_str," ",crs2, *)
+                                 (* " -> ",crs2, *)"\n"]) => link_str &
         
         generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
 	    --------------------------------
@@ -903,34 +933,6 @@ relation generate_simple_equation_links2: (string list,
                                         knvars) 
 	      =>  link_str::rest
 	      
-(*   rule	generate_getsubmodel_code(comp_name_list,cr) => sub_model_code  & *)
-(* 	    Exp.cref_str(cr) => crs & *)
-(* 	    Exp.cref_str(cr2) => crs2 & *)
-(*         Util.string_split_at_char(crs,#".") => comp_path_string_list & *)
-(*         Util.list_last(comp_path_string_list) => comp_name & *)
-(* 	    DAELow.get_var(cr,knvars) *)
-(*           => (DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_path),_) & *)
-(* 	      DAELow.get_var(cr2,vars) *)
-(*  	      => (to_var as DAELow.VAR(_,kind,dir,_,_,_,_,_,_,_,class_paths),varindx) & *)
-(* 	      list_reverse(class_paths) => class_path::_ &  *)
-(*         Absyn.path_string(class_path) => class_path_str & *)
-(*         print "1 \n" & *)
-(*         TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number & *)
-(*         int_string(input_number) => input_number_str & *)
-(*         tornado_from_kind(kind) => tkind & *)
-(*         int_sub(varindx,1) => varindx' & *)
-(*         (\*         int_string(varindx) => varindxstr & *\) *)
-(*         (\* 	    Util.string_append_list([sub_model_code,"->Get",tkind,"Var(",input_number_str, *\) *)
-(*                                         (\* 				                 ")->LinkValue(this, MSLE_ALG_STATE_VAR, ", varindxstr,");\n"]) => linkstr & *\) *)
-
-(* 	    Util.string_append_list(["// from: ",crs,"\n", *)
-(*                                  sub_model_code,"->Get",tkind,"Var(",input_number_str,")"]) => prefix & *)
-(*         get_TO_link_string_from_dae_var(prefix,to_var,varindx') => linkstr & *)
-(* 	    generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest *)
-(* 	    -------------------------------- *)
-(* 	    generate_simple_equation_links2(comp_name_list,DAELow.SOLVED_EQUATION(cr,Exp.CREF(cr2,_))::eqns, *)
-(*                                         vars,knvars)  *)
-(* 	      =>  linkstr::rest *)
 	      
   rule	generate_simple_equation_links2(comp_name_list,eqns,vars,knvars) => rest
 	    --------------------------------
@@ -951,115 +953,6 @@ relation generate_simple_equation_links2: (string list,
 
 end
 
-relation tornado_from_kind: (DAELow.VarKind) => string =
-
-  axiom	tornado_from_kind(DAELow.VARIABLE) => "Variable"
-  axiom	tornado_from_kind(DAELow.STATE) => "DerState"
-  axiom	tornado_from_kind(DAELow.DUMMY_DER) => "AlgState"
-  axiom	tornado_from_kind(DAELow.DUMMY_STATE) => "AlgState"
-  axiom	tornado_from_kind(DAELow.DISCRETE) => "AlgState"
-  axiom	tornado_from_kind(DAELow.PARAM) => "Param"
-  axiom	tornado_from_kind(DAELow.CONST) => "Param"
-  axiom	tornado_from_kind(_) => "unknown kind"
-end
-
-(** 
- ** this relation return the TO kind: MSLE_ALG_STATE_VAR
- ** depe
- **)
-
-                 (* relation tornado_to_kind: (DAELow.VarKind,bool) => string = *)
-
-                            (*   axiom	tornado_to_kind(DAELow.VARIABLE) => "Variable" *)
-                            (*   axiom	tornado_to_kind(DAELow.STATE) => "DerState" *)
-                            (*   axiom	tornado_to_kind(DAELow.DUMMY_DER) => "AlgState" *)
-                            (*   axiom	tornado_to_kind(DAELow.DUMMY_STATE) => "AlgState" *)
-                            (*   axiom	tornado_to_kind(DAELow.DISCRETE) => "AlgState" *)
-                            (*   axiom	tornado_to_kind(DAELow.PARAM) => "Param" *)
-                            (*   axiom	tornado_to_kind(DAELow.CONST) => "Param" *)
-                            (*   axiom	tornado_to_kind(_) => "unknown kind" *)
-                            (* end *)
-
-                            relation tornado_direction: (DAE.VarDirection) => string =
-
-  axiom	tornado_direction(DAE.INPUT) => "Input"
-  axiom	tornado_direction(DAE.OUTPUT) => "Output"
-  axiom	tornado_direction(DAE.BIDIR) => "AlgState"
-  axiom	tornado_direction(_) => "unknown kind"
-                            end
-
-
-(**
- ** this combines the getSubModel(...)->get<type>(index)-> with
- ** the string )->LinkValue(this, , ", varindxstr,");\n"]
-**)
- relation get_TO_link_string_from_dae_var:(string,DAELow.Var, int) => string =
-         
-
-  rule  is_var_on_top_model(cr) => true &
-         get_flat_var_index_str(cr,class_paths) => index_str &
- 
-         Exp.cref_str(cr) => crs &
-         Util.string_append_list(["  this->GetDerStateVar(",index_str,")",
-                                  "->LinkInitialValue(this, ",
-                                  index_str,");",
-                                  "// simple eqn rem: ",crs, "\n",
-                                  "  this->GetDerStateVar(",index_str,")",
-                                  "->LinkDerivative(this, ",
-                                  index_str,");",
-                                  "// simple eqn rem: ",crs, "\n",
-                                  "  this->GetDerStateVar(",index_str,")",
-                                  "->LinkValue(this, ",
-                                  "MSLE_DER_STATE_VAR, ",
-                                  index_str,");",
-                                  "// simple eqn rem: ",crs, "\n\n",
-                                  prefix,
-                                  "->LinkValue(this, MSLE_DER_STATE_VAR, ",
-                                  index_str,");\n\n"
-                                  ]) => res
-         -----------------------------------------
-         get_TO_link_string_from_dae_var(prefix,
-                                         DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_,class_paths),
-                                         index) => res
-
-
-   rule (*   is_var_on_top_model(cr) => true & *)
-         Exp.cref_str(cr) => crs &
-         get_flat_var_index_str(cr,class_paths) => index_str &
-         Util.string_append_list([prefix,
-                                  "->LinkValue(this, ",
-                                  "MSLE_DER_STATE_VAR, ",
-                                  index_str,");",
-                                  "// simple eqn rem: ",crs,
-                                  "\n"]) => res
-         -----------------------------------------
-         get_TO_link_string_from_dae_var(prefix,
-                                         DAELow.VAR(cr,DAELow.STATE,dir,_,_,_,_,_,_,_,class_paths),
-                                         index) => res
-        
-  rule (*   is_var_on_top_model(cr) => true & *)
-         Exp.cref_str(cr) => crs &
-         get_flat_var_index_str(cr,class_paths) => index_str &
-         Util.string_append_list([prefix,
-                                  "->LinkValue(this, ",
-                                  "MSLE_ALG_STATE_VAR, ",
-                                  index_str,");",
-                                  "// simple eqn rem: ",crs,
-                                  "\n"]) => res
-         -----------------------------------------
-         get_TO_link_string_from_dae_var(prefix,
-                                         DAELow.VAR(cr,_,dir,_,_,_,_,_,_,_,class_paths),
-                                         index) => res
-
-  rule print "get_TO_link_string_from_dae_var failed"
-         -----------------------------------------
-         get_TO_link_string_from_dae_var(prefix,
-                                         DAELow.VAR(cr,_,dir,_,_,_,_,_,_,_,class_path),
-                                         index) => fail
-
-         
- end
-
 
 (** relation generate_indep_var 
  ** This return the string list for each component index:
@@ -1077,42 +970,6 @@ relation generate_indep_var : (string list, int) => string list =
         generate_indep_var(rest,index_inc) => res
         ---------------------------------------------
         generate_indep_var(component_name::rest,index) => comp_str::res
-end
-
-(* Tornado/EE/MSLE/AlgModel.h:        SetType(MSLE_ALG_MODEL); *)
-(* Tornado/EE/MSLE/AlgStateVar.h:        SetType(MSLE_ALG_STATE_VAR); *)
-(* Tornado/EE/MSLE/DAEModel.h:        SetType(MSLE_DAE_MODEL); *)
-(* Tornado/EE/MSLE/DerStateVar.h:        SetType(MSLE_DER_STATE_VAR); *)
-(* Tornado/EE/MSLE/IndepVar.h:        SetType(MSLE_INDEP_VAR); *)
-(* Tornado/EE/MSLE/InputVar.h:          SetType(MSLE_INPUT_VAR); *)
-(* Tornado/EE/MSLE/Model.h:        SetType(MSLE_MODEL); *)
-(* Tornado/EE/MSLE/Object.h:      SetType(TType Type) *)
-(* Tornado/EE/MSLE/OutputVar.h:        SetType(MSLE_OUTPUT_VAR); *)
-(* Tornado/EE/MSLE/Param.h:        SetType(MSLE_PARAM); *)
-(* Tornado/EE/MSLE/SolveSet.h:        SetType(MSLE_SOLVE_SET); *)
-
-
-(**
- ** arg1 the type
- ** arg2 the direction
- ** arg3 if is on the top model
- **)
-relation generate_MACRO_string_for_var: (DAELow.VarKind,DAE.VarDirection,bool) => string =
-
-  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,true) => "MSLE_OUTPUT_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,false) => "MSLE_ALG_STATE_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.INPUT,true) => "MSLE_INPUT_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.INPUT,false) => "MSLE_ALG_STATE_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.BIDIR,true) =>  "MSLE_ALG_STATE_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.BIDIR,false) => "MSLE_ALG_STATE_VAR"
-
-  axiom	generate_MACRO_string_for_var(DAELow.STATE,_,_) =>  "MSLE_DER_STATE_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.DUMMY_DER,_,_) => "MSLE_ALG_STATE_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.DUMMY_STATE,_,_) => "MSLE_ALG_STATE_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.DISCRETE,_,_) => "MSLE_ALG_STATE_VAR"
-  axiom	generate_MACRO_string_for_var(DAELow.PARAM,_,_) => "MSLE_PARAM"
-  axiom	generate_MACRO_string_for_var(DAELow.CONST,_,_) => "MSLE_PARAM"
-  axiom	generate_MACRO_string_for_var(_,_,_) => "unknown kind"
 end
 
 
@@ -1136,31 +993,6 @@ end
 
 
 
-(**
- ** arg1 the type
- ** arg2 the direction
- ** arg3 if is on the top model
- **)
-
-relation generate_GetCall_string_for_var:(DAELow.VarKind,DAE.VarDirection,bool) 
-        => string =
- 
- axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,true) => "GetOutputVar"
-  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,false) => "GetAlgStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.INPUT,true) => "GetInputVar"
-  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.INPUT,false) => "GetAlgStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.BIDIR,true) =>  "GetAlgStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.BIDIR,false) => "GetAlgStateVar"
-
-  axiom	generate_GetCall_string_for_var(DAELow.STATE,_,_) =>  "GetDerStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.DUMMY_DER,_,_) => "GetAlgStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.DUMMY_STATE,_,_) => "GetAlgStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.DISCRETE,_,_) => "GetAlgStateVar"
-  axiom	generate_GetCall_string_for_var(DAELow.PARAM,_,_) => "GetParam"
-  axiom	generate_GetCall_string_for_var(DAELow.CONST,_,_) => "GetParam"
-  axiom	generate_GetCall_string_for_var(_,_,_) => "unknown kind"
-
-end
 
 (** relation generate_links2
  ** This relation generates links for parameters and for algebraic variables.
@@ -1186,7 +1018,7 @@ end
          (* check first if output variable is on the top model.*)
 
   rule  is_var_on_top_model(cr) => top_bool &
-         generate_getsubmodel_code(comp_name_list,cr) => sub_model_str &
+         generate_getsubmodel_code(comp_name_list,cr,DAELow.STATE,dir) => sub_model_str &
          generate_GetCall_string_for_var(DAELow.STATE,dir,top_bool) => call_str &
          
          generate_MACRO_string_for_var(DAELow.STATE,dir,top_bool) => macro_str &
@@ -1196,13 +1028,14 @@ end
          Exp.cref_str(cr) => crs & 
          Util.string_append_list([sub_model_str,"->",
                                   call_str,"(",var_index_str,")",
-                                  "->LinkInitialValue(this, ",var_flat_index_str,"); // ",crs,"\n"]) => link_str1 &
+                                  "->LinkInitialValue(this, ",var_flat_index_str,");  ","\n"]) => link_str1 &
          Util.string_append_list([sub_model_str,"->",
                                   call_str,"(",var_index_str,")",
-                                  "->LinkDerivative(this, ",var_flat_index_str,"); // ",crs,"\n"]) => link_str2 &
+                                  "->LinkDerivative(this, ",var_flat_index_str,");  ","\n"]) => link_str2 &
          Util.string_append_list([sub_model_str,"->",
                                   call_str,"(",var_index_str,")",
-                                  "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); // ",crs,"\n"]) => link_str3 &
+                                  "->LinkValue(this, ", macro_str,", ",var_flat_index_str,"); ",(* // ", *)
+(*                                   sub_model_str," ",call_str," ",crs, *)"\n"]) => link_str3 &
          Util.string_append_list([link_str1,link_str2,link_str3]) => link_str &
          generate_links2(rest,comp_name_list) => (params_str,res) 
          ---------------------------------------------
@@ -1212,7 +1045,7 @@ end
 
 
   rule  is_var_on_top_model(cr) => top_bool &
-         generate_getsubmodel_code(comp_name_list,cr) => sub_model_str &
+         generate_getsubmodel_code(comp_name_list,cr,kind,dir) => sub_model_str &
          generate_GetCall_string_for_var(kind,dir,top_bool) => call_str &
          
          generate_MACRO_string_for_var(kind,dir,top_bool) => macro_str &
@@ -1224,7 +1057,7 @@ end
                                   call_str,"(",var_index_str,")",
                                   "->LinkValue(this, ", macro_str,", ",
                                   var_flat_index_str,
-                                  "); // ",crs,"\n"]) => link_str &
+                                  ");",(*  // ",sub_model_str," ",call_str," ",crs, *)"\n"]) => link_str &
 
          generate_links2(rest,comp_name_list) => (params_str,res) 
          ---------------------------------------------
@@ -1232,45 +1065,6 @@ end
                          comp_name_list) 
           => (params_str,link_str::res)
 
-(*   rule  Exp.cref_str(cr) => crs & *)
-         
-(*          Util.string_split_at_char(crs,#".") => comp_path_string_list & *)
-(*          Util.list_last(comp_path_string_list) => comp_name & *)
-(*          list_reverse(class_paths) => class_path::_ &  *)
-(*          Absyn.path_string(class_path) => class_path_str & *)
-(*          TORNADOEXT.get_var_index(comp_name,class_path_str) => input_number & *)
-(*          get_flat_var_index_str(cr,class_path) => is' & *)
- 
-(*          int_string(input_number) => input_number_str & *)
-(*          Util.list_first(comp_path_string_list) => comp_name' & *)
-(*          Util.list_position(comp_name',comp_name_list) => index & *)
-(*          int_string(index) => index_str & *)
-(*          Util.string_append_list(["  ((CDAEModel*\)GetSubModel(", *)
-(*                                   index_str, *)
-(*                                   "))->GetDerStateVar(", *)
-(*                                   input_number_str, *)
-(*                                   ")->LinkValue(this, MSLE_DER_STATE_VAR, ", *)
-(*                                   is',");", " // ",crs,"\n", *)
-(*                                   "  ((CDAEModel*\)GetSubModel(", *)
-(*                                   index_str, *)
-(*                                   "))->GetDerStateVar(", *)
-(*                                   input_number_str, *)
-(*                                   ")->LinkInitialValue(this, ", *)
-(*                                   is',");", " // ",crs,"\n", *)
-(*                                   "  ((CDAEModel*\)GetSubModel(", *)
-(*                                   index_str, *)
-(*                                   "))->GetDerStateVar(", *)
-(*                                   input_number_str, *)
-(*                                   ")->LinkDerivative(this, ", *)
-(*                                   is',");", " // ",crs,"\n" *)
-
-(*                                   ]) => r1 & *)
-(*          generate_links2(rest,comp_name_list) => (params,res)  *)
-(*          --------------------------------------------- *)
-(*          generate_links2(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,start,_,org_name,class_paths)::rest, *)
-(*                          comp_name_list)  *)
-(*           => (r1::params,res) *)
-           
   rule  generate_links2(rest,comp_name_list) => (params, res)
          -----------------------------------------------
          generate_links2(_::rest,comp_name_list) 
@@ -1342,11 +1136,6 @@ relation generate_constructor_inputvars2:(DAELow.Var list,int) => (string list, 
         generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,_,_,_,_)::rest,i) 
           => (r1::res,no_of_vars')
 	      
-	      (*   rule  generate_constructor_inputvars2(rest,i) => (res,no_of_vars) & *)
-	    (*         int_add(no_of_vars,1) => no_of_vars' *)
-	    (*         --------------------------------------------- *)
-	    (*         generate_constructor_inputvars2(DAELow.VAR(cr,DAELow.VARIABLE,DAE.INPUT,_,_,_,_,_,_,_,_)::rest,i)  *)
-	    (*           => (res,no_of_vars') *)
         
   rule  generate_constructor_inputvars2(rest,i) => (res,no_of_vars)
         -----------------------------------------------
@@ -1771,28 +1560,7 @@ relation generate_constructor_parameters2:(DAELow.Var list,int) => (string list,
   axiom	is_param(_) => false
   end
 
-(**
- ** arg1 the type
- ** arg2 the direction
- ** arg3 if is on the top model
- **)
-relation get_type_name_for_array: (DAELow.VarKind,DAE.VarDirection,bool) => string =
 
-  axiom	get_type_name_for_array(DAELow.VARIABLE,DAE.OUTPUT,true) => "m_OutputVarValues"
-  axiom	get_type_name_for_array(DAELow.VARIABLE,DAE.OUTPUT,false) => "m_AlgStateVarValues"
-  axiom	get_type_name_for_array(DAELow.VARIABLE,DAE.INPUT,true) => "m_InputVarValues"
-  axiom	get_type_name_for_array(DAELow.VARIABLE,DAE.INPUT,false) => "m_AlgStateVarValues"
-  axiom	get_type_name_for_array(DAELow.VARIABLE,DAE.BIDIR,true) => "m_AlgStateVarValues"
-  axiom	get_type_name_for_array(DAELow.VARIABLE,DAE.BIDIR,false) => "m_AlgStateVarValues"
-
-  axiom	get_type_name_for_array(DAELow.STATE,_,_) => "this should be done different! STATE"
-  axiom	get_type_name_for_array(DAELow.DUMMY_DER,_,_) => "m_AlgStateVarValues"
-  axiom	get_type_name_for_array(DAELow.DUMMY_STATE,_,_) => "m_AlgStateVarValues"
-  axiom	get_type_name_for_array(DAELow.DISCRETE,_,_) => "m_AlgStateVarValues"
-  axiom	get_type_name_for_array(DAELow.PARAM,_,_) => "m_ParamValues"
-  axiom	get_type_name_for_array(DAELow.CONST,_,_) => "m_ParamValues"
-  axiom	get_type_name_for_array(_,_,_) => "unknown kind"
-end
 
 (** Helper function for generate_var_defines
  ** Recursively traverses the list of variables and generates the defines 
@@ -1816,8 +1584,8 @@ end
          is_var_on_top_model(cr) => top_bool &
 	     get_flat_var_index_str(cr,class_paths) => index_str &
          SimCodegen.cref_modelica_str(cr) => crs &
-         get_type_name_for_array(kind,dir,top_bool) => ret_str &
-         Util.string_append_list(["#define ",crs," (",ret_str,"[",index_str,"])\n"]) => r1 &
+         generate_type_name(kind,dir,top_bool) => ret_str &
+         Util.string_append_list(["#define ",crs," ( m_",ret_str,"[",index_str,"])\n"]) => r1 &
          generate_var_defines2(rest) => res
          ----------------------------------------------
          generate_var_defines2(DAELow.VAR(cr,kind,dir,_,_,_,_,_,_,_,class_paths)::rest) 
@@ -2436,3 +2204,75 @@ end
  end
 
 
+ 
+(**
+ ** arg1 the type
+ ** arg2 the direction
+ ** arg3 if is on the top model
+ **)
+relation generate_MACRO_string_for_var: (DAELow.VarKind,DAE.VarDirection,bool) => string =
+
+  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,true) => "MSLE_OUTPUT_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,false) => "MSLE_ALG_STATE_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.INPUT,true) => "MSLE_INPUT_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.INPUT,false) => "MSLE_ALG_STATE_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.BIDIR,true) =>  "MSLE_ALG_STATE_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.VARIABLE,DAE.BIDIR,false) => "MSLE_ALG_STATE_VAR"
+
+  axiom	generate_MACRO_string_for_var(DAELow.STATE,_,_) =>  "MSLE_DER_STATE_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.DUMMY_DER,_,_) => "MSLE_ALG_STATE_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.DUMMY_STATE,_,_) => "MSLE_ALG_STATE_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.DISCRETE,_,_) => "MSLE_ALG_STATE_VAR"
+  axiom	generate_MACRO_string_for_var(DAELow.PARAM,_,_) => "MSLE_PARAM"
+  axiom	generate_MACRO_string_for_var(DAELow.CONST,_,_) => "MSLE_PARAM"
+  axiom	generate_MACRO_string_for_var(_,_,_) => "unknown kind"
+end
+
+(**
+ ** arg1 the type
+ ** arg2 the direction
+ ** arg3 if is on the top model
+ **)
+
+relation generate_GetCall_string_for_var:(DAELow.VarKind,DAE.VarDirection,bool) 
+        => string =
+ 
+ axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,true) => "GetOutputVar"
+  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.OUTPUT,false) =>"GetOutputVar"(*  "GetAlgStateVar" *)
+  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.INPUT,true) => "GetInputVar"
+  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.INPUT,false) =>"GetInputVar" (*  "GetAlgStateVar" *)
+  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.BIDIR,true) =>  "GetAlgStateVar"
+  axiom	generate_GetCall_string_for_var(DAELow.VARIABLE,DAE.BIDIR,false) => "GetAlgStateVar"
+
+  axiom	generate_GetCall_string_for_var(DAELow.STATE,_,_) =>  "GetDerStateVar"
+  axiom	generate_GetCall_string_for_var(DAELow.DUMMY_DER,_,_) => "GetAlgStateVar"
+  axiom	generate_GetCall_string_for_var(DAELow.DUMMY_STATE,_,_) => "GetAlgStateVar"
+  axiom	generate_GetCall_string_for_var(DAELow.DISCRETE,_,_) => "GetAlgStateVar"
+  axiom	generate_GetCall_string_for_var(DAELow.PARAM,_,_) => "GetParam"
+  axiom	generate_GetCall_string_for_var(DAELow.CONST,_,_) => "GetParam"
+  axiom	generate_GetCall_string_for_var(_,_,_) => "unknown kind"
+
+end
+
+(**
+ ** arg1 the type
+ ** arg2 the direction
+ ** arg3 if is on the top model
+ **)
+relation generate_type_name: (DAELow.VarKind,DAE.VarDirection,bool) => string =
+
+  axiom	generate_type_name(DAELow.VARIABLE,DAE.OUTPUT,true) => "OutputVarValues"
+  axiom	generate_type_name(DAELow.VARIABLE,DAE.OUTPUT,false) => "AlgStateVarValues"
+  axiom	generate_type_name(DAELow.VARIABLE,DAE.INPUT,true) => "InputVarValues"
+  axiom	generate_type_name(DAELow.VARIABLE,DAE.INPUT,false) => "AlgStateVarValues"
+  axiom	generate_type_name(DAELow.VARIABLE,DAE.BIDIR,true) => "AlgStateVarValues"
+  axiom	generate_type_name(DAELow.VARIABLE,DAE.BIDIR,false) => "AlgStateVarValues"
+
+  axiom	generate_type_name(DAELow.STATE,_,_) => "DerStateVarValues"
+  axiom	generate_type_name(DAELow.DUMMY_DER,_,_) => "AlgStateVarValues"
+  axiom	generate_type_name(DAELow.DUMMY_STATE,_,_) => "AlgStateVarValues"
+  axiom	generate_type_name(DAELow.DISCRETE,_,_) => "AlgStateVarValues"
+  axiom	generate_type_name(DAELow.PARAM,_,_) => "ParamValues"
+  axiom	generate_type_name(DAELow.CONST,_,_) => "ParamValues"
+  axiom	generate_type_name(_,_,_) => "unknown kind"
+end
