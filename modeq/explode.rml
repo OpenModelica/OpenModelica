@@ -30,6 +30,8 @@
  ** in a more convenient way than the `Absyn' module does.  The most
  ** important relation in this module is the `elaborate' relation
  ** which turns an abstract syntax tree into an SCode representation.
+ **
+ ** The SCode representaion is used as input to the Inst module
  **)
 
 module SCode :

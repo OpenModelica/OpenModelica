@@ -27,6 +27,8 @@
  ** 
  ** This module communicates with the backend (through files) for simulation
  ** plotting etc.
+ **
+ ** Used from Ceval 
  **)
 
 module ModSim :
