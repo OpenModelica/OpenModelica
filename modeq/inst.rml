@@ -5036,8 +5036,7 @@ relation inst_real_binding: (Types.Mod,int list,string) => real option =
         -----------------------------------------
         inst_real_binding(mod,index_list,bind_name) => SOME(result)
    
-  rule 
-        inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) => NONE
+  rule	inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
         inst_real_binding(mod,index_list,bind_name) => NONE
 

@@ -35,6 +35,8 @@ extern "C"
 #include "../values.h"
 #include <stdio.h>
 #include "../absyn_builder/yacclib.h"
+void print_error_buf_impl(char*str);
+
 
   /* Given a file name and an array of variables, return the RML datastructure
      in Values for Real[size(vars,1],:] i.e. a matrix of variable values, one column for each variable. */
@@ -62,10 +64,12 @@ extern "C"
     } else {
       if( readIntervalSize == 0) {
 	cerr << "could not read interval size." << endl;
+	print_error_buf_impl("could not read interval size.\n");
 	return NULL;
       }
       if (readIntervalSize != datasize) {
 	cerr << "intervalsize not matching data size." << endl;
+	print_error_buf_impl("intervalsize not matching data size.\n");
 	return NULL;
       }
     }
@@ -82,8 +86,10 @@ extern "C"
       while( string(buf).find(var) == string(buf).npos) {
 	if (!stream.getline(buf,255)) {
 	  // if we reached end of file return..
-	  cerr << "variable " << var << " not found in simulation result." 
-	       << endl;
+	  string str=string("variable ")+ vars[i]
+	    +"  not found in simulation result.\n";
+	  cerr << str;
+	  print_error_buf_impl((char*)str.c_str());
 	  return NULL;
 	}
       }

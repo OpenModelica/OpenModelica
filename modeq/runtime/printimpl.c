@@ -20,9 +20,8 @@ void Print_5finit(void)
 
 }
 
-RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
+void print_error_buf_impl(char *str)
 {
-  char* str = RML_STRINGDATA(rmlA0);
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
   
   assert(str != NULL);
@@ -33,6 +32,12 @@ RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
 
   sprintf((char*)(errorBuf+strlen(errorBuf)),"%s",str);
   errorNfilled=strlen(errorBuf);
+}
+
+RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
+{
+ char* str = RML_STRINGDATA(rmlA0);
+ print_error_buf_impl(str);
 
   /*  printf("%s",str);*/
 
