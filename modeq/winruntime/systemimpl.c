@@ -166,7 +166,8 @@ RML_BEGIN_LABEL(System__system_5fcall)
 {
 	int ret_val;
 	char* str = RML_STRINGDATA(rmlA0);
-	if (str[0] == '\"') {
+	fprintf(stderr, "%s\n", str);
+	if (0 && str[0] == '\"') {
 		char longname[MAX_PATH];
 		char shortname[MAX_PATH];
 		char* endpos = strstr(&str[1],"\"");
