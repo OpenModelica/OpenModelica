@@ -188,9 +188,8 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 	  => [CLASSDEF(n,final,rp,CLASS(n,pa,re,de'))]
 
   rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
-	Absyn.path_string(n) => ns &
-	print "extends " & print ns & print_mod mod & print "\n"
-	---------------------------------------------------
+	Absyn.path_string(n) => ns
+	--------------------------
 	elab_elementspec(final,prot,Absyn.EXTENDS(n,args))
 	  => [EXTENDS(n,mod)]
 
