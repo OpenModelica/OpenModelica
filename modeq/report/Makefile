@@ -4,6 +4,7 @@ SHELL	  = /bin/sh
 LATEX	  = latex
 MAKEINDEX = makeindex
 RMLDOC    = pike ../tools/rmldoc
+PICtoTEX  = gpic -t
 
 SOURCES = exp.tex \
 	dae.tex \
@@ -21,7 +22,8 @@ SOURCES = exp.tex \
 	classinf.tex \
 	staticexp.tex \
 	inst.tex \
-	main.tex
+	main.tex \
+	transfig.tex
 
 TEXJUNK = report.log report.toc report.stc report.dvi report.aux
 
@@ -31,6 +33,9 @@ TEXJUNK = report.log report.toc report.stc report.dvi report.aux
 
 %.tex : ../%.rml
 	$(RMLDOC) $< > $@
+
+%.tex : %.pic
+	$(PICtoTEX) $< > $@
 
 report.dvi: report.tex report.ind report.bbl $(SOURCES)
 	$(LATEX) $<

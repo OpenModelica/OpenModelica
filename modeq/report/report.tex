@@ -1184,48 +1184,92 @@ the previous section.
 
 
 The semantic specification is written as a translation from Modelica
-to a target language called flag Modelica\ref{cha:target}.  The
+to a target language called flat Modelica (see chapter \ref{cha:target}).  The
 translation is performed in several steps, which are outlined in this
 chapter.
 
 \begin{figure}[htbp]
   \begin{center}
-    
+    \input{transfig.tex}
+    \centerline{\box\graph}
     \caption{Translation steps}
     \label{fig:transsteps}
   \end{center}
 \end{figure}
 
-A schematic view of the translation steps are show in 
+A schematic view of the translation steps are show in figure
+\ref{fig:transsteps}.  The box labeled ``RML'' shows what parts of the
+translation are performed and handled by the RML specification.
 
 \section{Lexical analysis and parsing}
 \label{sec:laxparse}
 
 The lexical analyzer and parser are not really part of the semantic
 specification, and this report will not go into detail about the
-parsing of Modelica.
+parsing of Modelica.  It is based on the Modelica grammar as specified
+in the Modelica specification, and is written using a parser generator
+called PCCTS\cite{pccts}.  This generates a parser in C, which is
+separately compiled and linked with the RML specification.
 
 The Modelica source file being translated is first passed to the
 lexical analyzer that scans the source for tokens, which it then
-passes on to the parser.  The parser uses its grammar to build the
-abstract syntax tree (AST).  The abstract syntax tree is an RML data
-structure described in the module \code{Absyn} (see section
-\ref{src:absyn}).
+passes on to the parser.  The parser uses its grammar to build an RML
+representation of the contents of the source file, which is then used
+in the RML specification for further processing.
 
-\section{Preparing the AST}
+
+\section{Abstract syntax}
+\label{sec:absyndesign}
+
+The \firstref{abstract syntax} is closely modeled after the syntactic
+structure, and is defined in the module \code{Absyn} (section
+\ref{src:absyn}).  It basically defines data structures for
+representing the structure of the source file (the \firstref{abstract
+  syntax tree}, or \firstref{AST}), which are used by the parser to
+build a tree describing the source file.  There is a datatype for
+representing a class definition, and the whole file is represented
+using the datatype \code{Program}, which is defined as a list of
+classes.
+
+\section{Preparing the AST: SCode}
 \label{sec:asttoscode}
 
-The AST closely corresponds to the parse tree and keeps the structure
-of the source file.  This has several disadvantages when it comes to
-translating the program, and especially if the translation rules
-should be easy to read for a human.  For this reason a preparatory
-translation pass is introduced which translates the AST into an
-intermediate form, called SCode.  This intermediate form contains no
-more information than the abstract syntax.  It merely restructures the
-tree representation in it.
+That the AST keeps the structure of the source file has several
+disadvantages when it comes to translating the program, especially if
+the translation rules should be easy to read for a human.  To address
+this problem, a preparatory transformation pass is introduced which
+transforms the AST into an intermediate form, called \firstref{SCode}.
+This intermediate form contains no more information than the abstract
+syntax, but merely restructures the tree representation in it.
+Besides some minor simplifications the SCode structure differs from
+the abstract syntax in the following important respects:
+
+\begin{description}
+\item[All components are described separately]
+  
+  In the source and in the abstract syntax several components in a
+  class definition can be declared at once, as in \codebox{Real x,
+    y[17];}.  In the SCode this is represented as two unrelated
+  declarations, as if it had been written \codebox{Real x; Real
+    y[17];}.
+
+\item[Class declaration sections]
+  In a Modelica class declaration the \code{public}, \code{protected},
+  \code{equation} and \code{algorithm} sections may be included in any
+  number and in any order, with an implicit \code{public} section
+  first.  In the SCode these sections are collected so that all
+  \code{public} and \code{protected} sections are combined into one
+  section, while keeping the order of the elements.  The information
+  about which elements were in a \code{protected} section is stored
+  with the element itself.
+
+\item[Modifications]
+  Modifications are stored using the data types in the \code{Mod}
+  module (section \ref{src:mod}).
+\end{description}
 
 One might have thought that more work could be done at this stage,
-like analyzing expression types and resolving names.  But due to the
+such as expression type analysis and name resolution.  But due to the
 nature of the Modelica language, the only way to know anything about
 how the names will be resolved during instantiation is to do a more or
 less full instantiation.  It is possible to analyze a class
@@ -1239,14 +1283,32 @@ not be of much use.
 
 The major part of the translation procedure, as described by the RML
 specification is the translation from SCode to hybrid
-differential-algebraic equations (hybrid DAEs).  As a Modelica source
-files simply contain declarations of models and other kinds of
-classes, there is a convention that the last class, which should be a
-model, is instantiated as the top-level model.
+differential-algebraic equations (hybrid DAEs).
+
+A Modelica source file contains only definitions of models and other
+classes, which does not really have any semantic meaning in terms of
+equations, since the equations appear when a model definition is
+\emph{used} to create an instance of that model.
+                                                 
+To give a Modelica source file a meaning there is a convention that
+the last class, which should be a model, is instantiated as the
+top-level model.  In a graphical modeling environment the situation
+will of course be different.
 
 Many different things, such as expression analysis, equation expansion
 and connection equation generation takes place during the
 instantiation step.
+
+
+\section{DAE representation}
+\label{sec:dearep}
+
+The DAEs are collected in a datastructure defined in the module
+\code{DAE} (see section \ref{src:dae}).  This structure is basically a
+linear list where each element is either a variable declaration, an
+equation or an algorithm.
+
+
 
 \section{Output of equations}
 \label{sec:output}
@@ -1357,8 +1419,8 @@ and to give motivation for the design decisions made.
 
 
 \section{Abstract syntax}
-\label{sec:absyndesign}
 
+\fixme{remove}
 The \firstref{abstract syntax} is closely modeled after the syntactic
 structure, and is defined in the file \filename{absyn.rml} (section
 \ref{src:absyn}).  It basically describes the structure of the source
@@ -1370,12 +1432,12 @@ that can be written literally in Modelica.
 \section{SCode}
 \label{sec:scode}
 
-Unfortunately, this abstract syntax is not very convenient for the
-semantic description of the instantiation process.  To address this
-problem, a second internal form, called \firstref{SCode}, is
-introduced (section \ref{src:scode}).  Besides some minor
-simplifications the SCode structure differs from the abstract syntax
-in the following respects:
+\fixme{remove} Unfortunately, this abstract syntax is not very
+convenient for the semantic description of the instantiation process.
+To address this problem, a second internal form, called
+\firstref{SCode}, is introduced (section \ref{src:scode}).  Besides
+some minor simplifications the SCode structure differs from the
+abstract syntax in the following respects:
 
 \begin{description}
 \item[All components are described separately]
@@ -1587,22 +1649,22 @@ clearer.
 %\begin{landscape}
   
 \input{main.tex}
-\input{absyn.tex}
-\input{exp.tex}
-\input{classinf.tex}
-\input{types.tex}
-\input{explode.tex}
-\input{inst.tex}
-\input{prefix.tex}
-\input{mod.tex}
-\input{algorithm.tex}
-\input{env.tex}
-\input{lookup.tex}
-\input{builtin.tex}
-\input{connect.tex}
-\input{staticexp.tex}
-\input{dae.tex}
-\input{dump.tex}
+%\input{absyn.tex}
+%\input{exp.tex}
+%\input{classinf.tex}
+%\input{types.tex}
+%\input{explode.tex}
+%\input{inst.tex}
+%\input{prefix.tex}
+%\input{mod.tex}
+%\input{algorithm.tex}
+%\input{env.tex}
+%\input{lookup.tex}
+%\input{builtin.tex}
+%\input{connect.tex}
+%\input{staticexp.tex}
+%\input{dae.tex}
+%\input{dump.tex}
 
 %\end{landscape}
 
