@@ -80,6 +80,8 @@ module ClassInf :
 	  (* Succeeds if state is FUNCTION *)
   relation is_function: State => ()
 
+  relation matching_state : (State, State list) => bool
+
   (* Debug relation *)
   relation print_state : State => ()
   relation get_state_name : State => string
@@ -351,6 +353,34 @@ relation assert_valid : (State, SCode.Restriction) => () =
 	assert_valid(st,re) => fail
 
 end
+
+
+relation matching_state : (State, State list) => bool =
+
+  axiom	matching_state (st, []) => false
+
+  axiom	matching_state (UNKNOWN(_),	  UNKNOWN(_)::rest) => true
+  axiom matching_state (MODEL(_),	  MODEL(_)::rest) => true
+  axiom matching_state (RECORD(_),	  RECORD(_)::rest) => true
+  axiom matching_state (BLOCK(_),	  BLOCK(_)::rest) => true
+  axiom matching_state (CONNECTOR(_),	  CONNECTOR(_)::rest) => true
+  axiom matching_state (TYPE(_),	  TYPE(_)::rest) => true
+  axiom matching_state (PACKAGE(_),	  PACKAGE(_)::rest) => true
+  axiom matching_state (FUNCTION(_),	  FUNCTION(_)::rest) => true
+  axiom matching_state (ENUMERATION(_),	  ENUMERATION(_)::rest) => true
+  axiom matching_state (HAS_EQUATIONS(_), HAS_EQUATIONS(_)::rest) => true
+  axiom matching_state (IS_NEW(_),	  IS_NEW(_)::rest) => true
+  axiom matching_state (TYPE_INTEGER(_),  TYPE_INTEGER(_)::rest) => true
+  axiom matching_state (TYPE_REAL(_),	  TYPE_REAL(_)::rest) => true
+  axiom matching_state (TYPE_STRING(_),	  TYPE_STRING(_)::rest) => true
+  axiom matching_state (TYPE_BOOL(_),	  TYPE_BOOL(_)::rest) => true
+  axiom matching_state (TYPE_ENUM(_),	  TYPE_ENUM(_)::rest) => true
+
+  rule	matching_state (st, rest) => res
+	--------------------------------
+	matching_state (st, first::rest) => res
+end
+
 
 relation is_function: State => () =
   axiom is_function FUNCTION(_) => ()
