@@ -447,6 +447,22 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
+  axiom inst_class_in(env,mods,pre,csets,ci_state,
+                      c as SCode.CLASS("Real",_,_,_,_),_,_, impl,packimpl)
+          => ([] (* No DAE *), env, [], ci_state, [])
+	  
+  axiom inst_class_in(env,mods,pre,csets,ci_state,
+                      c as SCode.CLASS("Integer",_,_,_,_),_,_, impl,packimpl)
+          => ([] (* No DAE *), env, [], ci_state, [])
+	  
+  axiom inst_class_in(env,mods,pre,csets,ci_state,
+                      c as SCode.CLASS("String",_,_,_,_),_,_, impl,packimpl)
+          => ([] (* No DAE *), env, [], ci_state, [])
+	  
+ axiom inst_class_in(env,mods,pre,csets,ci_state,
+                     c as SCode.CLASS("Boolean",_,_,_,_),_,_, impl,packimpl)
+         => ([] (* No DAE *), env, [], ci_state, [])
+
   rule	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims
 		      ,impl,packimpl)
 	  => (l,env', csets', ci_state', tys) 
