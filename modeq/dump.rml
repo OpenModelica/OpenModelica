@@ -641,7 +641,6 @@ relation unparse_annotation_option: (int, Absyn.Annotation option) => string =
 end
 
 
-(**)
 
 relation print_element: Absyn.Element => () =
 	
@@ -668,7 +667,8 @@ relation unparse_element_str: (int, Absyn.Element) => string =
 	unparse_elementspec_str(i, spec,s1,s2,s3) => s4 &	
 	int_string(lineno) => s5 &
 	indent_str(i) => is &
-	Util.string_append_list([s4, " ", filename," ", s5,";"]) => str 
+        Util.string_append_list([s4, ";"]) => str
+(*	Util.string_append_list([s4, " ", filename," ", s5,";"]) => str *)
 	----------------------------
 	unparse_element_str(i, Absyn.ELEMENT(final,repl,inout,_,spec,filename,lineno,constr)) => str
 end
