@@ -38,6 +38,7 @@ module Debug:
  relation fprintl: (string, string list) => ()
  relation fprint_list: (string, 'a list, 'a => (), string) => ()
  relation fcall: (string, 'a => (), 'a) => ()
+ relation fcall0: (string, () => ()) => ()
  relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b
  relation bcall: (bool, 'a => (), 'a) => () 
  relation notfcall: (string, 'a => (), 'a) => ()
@@ -116,7 +117,7 @@ end
 
 relation make_string : string list => string =
 
-  axiom	make_string [str] => str
+  axiom	make_string [] => ""
 
   rule	make_string rest => res &
 	string_append (first, res) => res'
@@ -138,6 +139,20 @@ relation fcall: (string, 'a => (), 'a) => () =
   axiom	fcall (_,_,_)
 
 end
+
+(* Call the given function (2nd arg) if the flag given in 1st arg is set *)
+
+relation fcall0: (string, () => ()) => () =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	func()
+	------------
+	fcall0 (flag, func)
+
+  axiom	fcall0 (_,_)
+
+end
+
 
 (* Call the given function (2nd arg) if the flag given in 1st arg is set, and *)
 (* return its return value *)

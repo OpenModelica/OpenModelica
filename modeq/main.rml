@@ -138,6 +138,22 @@ relation check_classdef: string => bool =
   axiom	check_classdef _ => true
 end
 
+
+relation make_debug_result : (string, string) => string =
+
+  rule	Print.get_string () => debugstr &
+	Util.string_append_list ([res, 
+				  "\n---DEBUG(",flagstr,")---\n", 
+				  debugstr,
+				  "\n---/DEBUG(",flagstr,")---\n"]) => res_with_debug &
+	RTOpts.debug_flag (flagstr) => dumpflag &
+	Util.if (dumpflag, res_with_debug, res) => res'
+	-----------------------------------------------------
+	make_debug_result (flagstr, res) => res'
+end
+
+
+
 (** relation handle_command
  **
  ** This relation handles the commands in form of strings send to the server
@@ -151,6 +167,8 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	handle_command (str, isymb) => (false,"Ok\n",isymb)
 	
   rule	(*check_classdef str => true &*)
+	Debug.fcall0 ("dump", Print.clear_buf) &
+	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
 	Debug.fprint ("dump","\nTrying to parse class definition...\n") &
 	Parser.parsestring(str) => (p,msg) & (* Always succeeds, check msg for errors *)
 	msg = "Ok" &
@@ -160,36 +178,42 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	Interactive.remove_compiled_functions(p,cf) => cf' &
  	Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n") &
 	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
-	Debug.fcall ("dump", Dump.dump, newprog) 
-	----------------------------------
+	Debug.fcall ("dump", Dump.dump, newprog) &
+	make_debug_result("dump", "Ok\n") => res' &
+	make_debug_result("dumpgraphviz", res') => res
+	----------------------------------------------
 	handle_command (str, Interactive.SYMBOLTABLE(iprog,a,b,vars,cf)) => 
-	(true, "Ok\n",Interactive.SYMBOLTABLE(newprog,a,b,vars',cf'))
+	(true, res, Interactive.SYMBOLTABLE(newprog,a,b,vars',cf'))
 
-  rule	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
+  rule	Debug.fcall0 ("dump", Print.clear_buf) &
+	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
+	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => (exp,msg) & (* always succeeds, check msg for errors *)
 	msg = "Ok" &
 	Interactive.evaluate(exp,isymb,false) => (resultstr,newisymb) &
 	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
-	Debug.fcall ("dump", Dump.dump_istmt, exp)
+	Debug.fcall ("dump", Dump.dump_istmt, exp) &
+	make_debug_result("dump", resultstr) => res' &
+	make_debug_result("dumpgraphviz", res') => res
 	--------------------------------------------------
-	handle_command (str, isymb) => (true, resultstr, newisymb)
+	handle_command (str, isymb) => (true, res, newisymb)
 
-  rule	Parser.parsestring str => (p,msg) &
+  rule	Debug.fcall0 ("failtrace", Print.clear_buf) &
+	Parser.parsestring str => (p,msg) &
 	Parser.parsestringexp str => (p,expmsg) &
 	not msg = "Ok" &
 	not expmsg = "Ok" &
 	Debug.fprint ("failtrace", "\nBoth parser and expression parser failed: \n") &
-	Debug.fprintl ("failtrace", ["parser: ", msg, "\n"]) &
-	Debug.fprintl ("failtrace", ["expparser: ", expmsg, "\n"]) &
-	Print.get_string () => debugstr &
-	Util.string_append_list ([debugstr, "Parser: ",msg,"Expression parser: ",expmsg,"\n"]) => str
-	----------------------------------
-	handle_command (str,isymb) => (true, str, isymb)
+	Debug.fprintl ("failtrace", ["parser: \n", msg, "\n"]) &
+	Debug.fprintl ("failtrace", ["expparser: \n", expmsg, "\n"]) &
+	make_debug_result("failtrace", "Syntax error\n") => res
+	-----------------------------------------------------
+	handle_command (str,isymb) => (true, res, isymb)
 
 
   rule  Print.print_buf "Error occured building AST\n" &
 	Print.get_string () => debugstr &
-	string_append (debugstr,"Syntax Error") => str
+	string_append (debugstr,"Syntax Error\n") => str
 	----------------------------------
 	handle_command (_,isymb) => (true,str,isymb)
 
