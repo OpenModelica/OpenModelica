@@ -27,7 +27,7 @@ IDL	= idl
 CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime $(CORBAINCL)
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
-CPPSRC  = ptolemyio.cpp daeext.cpp $(CORBASRC)
+CPPSRC  = ptolemyio.cpp daeext.cpp tornadoext.cpp $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 all: $(OBJ)

@@ -146,6 +146,7 @@ RML_BEGIN_LABEL(RTOpts__args)
 	break;
       case 'c':
 	tornado_cg = 1;
+	/*modelica_output = 1;*/
 	break;
       case 'm':
 	modelica_output = 1;
@@ -227,7 +228,15 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__modelica_5foutput)
 {
-  rmlA0 = RML_PRIM_MKBOOL(modelica_output);
+/*  this check is needed for not generating variable of the  */
+/*  form a_b_c. The tornado implementation needs the variable */
+/*  of the form a.b.c */
+  if(tornado_cg)
+    {
+      rmlA0 = RML_PRIM_MKBOOL(0);
+    }else{
+      rmlA0 = RML_PRIM_MKBOOL(modelica_output);
+    }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
