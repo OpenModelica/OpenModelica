@@ -15,8 +15,8 @@ IDL	= idl
 CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
-CPPSRC  = cacheimpl.cpp ptolemyio.cpp modeq_communication_impl.cpp \
-          modeq_communication.cc corbaimpl.cpp
+CPPSRC  = cacheimpl.cpp ptolemyio.cpp modeq_communication.cc \
+          modeq_communication_impl.cpp corbaimpl.cpp
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 all: $(OBJ)
