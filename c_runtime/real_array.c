@@ -79,7 +79,7 @@ void alloc_real_array(real_array_t* dest,int ndims,...)
 {
   
   int i;
-  int test;
+
   va_list ap;
   va_start(ap,ndims);
   
@@ -205,84 +205,37 @@ modelica_real* calc_index_spec(int ndims, size_t* idx_vec, real_array_t* arr, in
 }
 
 /* Uses zero based indexing */
-modelica_real* calc_index(int ndims, 
-			  size_t* idx_vec, 
-			  real_array_t* arr)
+modelica_real* calc_index(int ndims, size_t* idx_vec, real_array_t* arr)
 {
-  /* int i;
+  int i;
+  int index;
+
+  index = 0;
   for (i = 0; i < ndims; ++i)
     {
-      
-    }*/
-      int i;
-    int d;
-    modelica_real* data = arr->data;
-    size_t stride = 1;
-    for (i = 0; i < ndims; ++i)
-    {
-	d = idx_vec[i];
-	data += d*stride;
-	stride *= arr->dim_size[i];
-	
+      /* Assert that idx_vec[i] is not out of bounds */
+      index = index*arr->dim_size[i] + idx_vec[i]; 
     }
   
-    return data;
+  return arr->data + index;
 }
 
-void indexed_assign_real_array(real_array_t* source, 
-			       real_array_t* dest,
-			       index_spec_t* spec)
+/* One based index*/
+real* calc_index_va(real_array_t* source,int ndims,va_list ap)
 {
-  
-    size_t* idx_vec;
-    size_t d,d2;
-    size_t quit;
+  int i;
+  int index;
+  int dim_s;
 
-    assert(real_array_ok(source));
-    assert(real_array_ok(dest));
-
-/*    assert(index_spec_ok(spec));
-    assert(real_array_index_ok(dest, spec));
-    assert(real_array_index_result_ok(source, dest, spec));
-*/
-    idx_vec = calloc(source->ndims, sizeof(size_t));
-    
-    d2 = d = source->ndims - 1;
-
-    quit = 0;
-    while(1)
+  index = 0;
+  for (i = 0; i < ndims; ++i)
     {
-/*
-	for (i = 0; i < source->ndims; ++i)
-	{
-	    printf("%d",idx_vec[i]);
-	    if (i < source->ndims-1) printf(", ");
-	}
-	printf("\n");
-*/
-	*calc_index_spec(source->ndims,idx_vec,dest,spec) =
-	    *calc_index(source->ndims,idx_vec, source);
-
-	idx_vec[d]++;
-	d2 = d;
-	while (idx_vec[d2] >= source->dim_size[d2])
-	{
-	    idx_vec[d2] = 0;
-	    if (!d2) 
-	    {
-		quit = 1;
-		break;
-	    }
-	    d2--;
-	    idx_vec[d2]++;	    
-	}
-	if (quit) break;
+      dim_s = va_arg(ap,int);
+      index = index*source->dim_size[i]+dim_s;
     }
-    
 
-    
+  return source->data+index;
 }
-
 void print_real_matrix(real_array_t* source)
 {
   size_t i,j;
@@ -350,16 +303,6 @@ void print_real_array(real_array_t* source)
     
 }
 
-/* Zero based index */
-void simple_indexed_assign_real_array1(real_array_t* source, 
-				       int i1,
-				       real_array_t* dest)
-{
-  /* Assert that source has the correct dimension */
-  /* Assert that dest has the correct dimension */
-  
-  dest->data[i1] = source->data[i1]; 
-}
 
 void put_real_element(real value,int i1,real_array_t* dest)
 {
@@ -376,6 +319,17 @@ void put_matrix_element(real value, int r, int c, real_array_t* dest)
   printf("Index %d\n",r*dest->dim_size[1]+c);
 }
 
+/* Zero based index */
+void simple_indexed_assign_real_array1(real_array_t* source, 
+				       int i1,
+				       real_array_t* dest)
+{
+  /* Assert that source has the correct dimension */
+  /* Assert that dest has the correct dimension */
+  
+  dest->data[i1] = source->data[i1]; 
+}
+
 void simple_indexed_assign_real_array2(real_array_t* source, 
 				       int i1, int i2, 
 				       real_array_t* dest)
@@ -388,6 +342,59 @@ void simple_indexed_assign_real_array2(real_array_t* source,
   dest->data[i1*size_j+i2] = source->data[i1*size_j+i2];
 }
 
+void indexed_assign_real_array(real_array_t* source, 
+			       real_array_t* dest,
+			       index_spec_t* spec)
+{
+  
+    size_t* idx_vec;
+    size_t d,d2;
+    size_t quit;
+
+    assert(real_array_ok(source));
+    assert(real_array_ok(dest));
+
+/*    assert(index_spec_ok(spec));
+    assert(real_array_index_ok(dest, spec));
+    assert(real_array_index_result_ok(source, dest, spec));
+*/
+    idx_vec = calloc(source->ndims, sizeof(size_t));
+    
+    d2 = d = source->ndims - 1;
+
+    quit = 0;
+    while(1)
+    {
+/*
+	for (i = 0; i < source->ndims; ++i)
+	{
+	    printf("%d",idx_vec[i]);
+	    if (i < source->ndims-1) printf(", ");
+	}
+	printf("\n");
+*/
+	*calc_index_spec(source->ndims,idx_vec,dest,spec) =
+	    *calc_index(source->ndims,idx_vec, source);
+
+	idx_vec[d]++;
+	d2 = d;
+	while (idx_vec[d2] >= source->dim_size[d2])
+	{
+	    idx_vec[d2] = 0;
+	    if (!d2) 
+	    {
+		quit = 1;
+		break;
+	    }
+	    d2--;
+	    idx_vec[d2]++;	    
+	}
+	if (quit) break;
+    }
+    
+
+    
+}
 
 /*
 
@@ -398,6 +405,7 @@ void index_real_array(real_array_t* source,
 			       index_spec_t* spec, 
 			       real_array_t* dest)
 {
+  
 }
 
 void simple_index_real_array1(real_array_t* source, 
@@ -412,6 +420,17 @@ void simple_index_real_array2(real_array_t* source,
 {
 }
 
+real* real_array_element_addr(real_array_t* source,int ndims,...)
+{
+  va_list ap;
+  real* tmp;
+
+  va_start(ap,ndims);
+  tmp = calc_index_va(source,ndims,ap);
+  va_end(ap);
+  
+  return tmp;
+}
 
 void modelica_builtin_cat_real_array(int k, real_array_t* A, real_array_t* B)
 {
@@ -435,6 +454,7 @@ void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
 void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest)
 {
   clone_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
   add_real_array(a,b,dest);
 }
 
@@ -456,6 +476,7 @@ void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
 void sub_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest)
 {
   clone_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
   sub_real_array(a,b,dest);
 }
 
@@ -473,6 +494,13 @@ void mul_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest)
     }
 }
 
+void mul_alloc_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest)
+{
+  clone_real_array_spec(b,dest);
+  alloc_real_array_data(dest);
+  mul_scalar_real_array(a,b,dest);
+}
+
 void mul_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest)
 {
   size_t nr_of_elements;
@@ -484,6 +512,14 @@ void mul_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest)
       dest->data[i] = a->data[i]*b;
     }
 }
+
+void mul_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest)
+{
+    clone_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
+  mul_real_array_scalar(a,b,dest);
+}
+
 
 double mul_real_scalar_product(real_array_t* a, real_array_t* b)
 {
@@ -625,6 +661,13 @@ void div_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest)
     }
 }
 
+void div_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest)
+{
+  clone_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
+  div_real_array_scalar(a,b,dest);
+}
+
 
 void exp_real_array(real_array_t* a, modelica_integer n, real_array_t* dest)
 {
@@ -658,6 +701,13 @@ void exp_real_array(real_array_t* a, modelica_integer n, real_array_t* dest)
 	  free_real_array_data(tmp);
 	}
     }
+}
+
+void exp_alloc_real_array(real_array_t* a,modelica_integer b,real_array_t* dest)
+{
+  clone_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
+  exp_real_array(a,b,dest);
 }
 
 void promote_real_array(real_array_t* a, int n,real_array_t* dest)
