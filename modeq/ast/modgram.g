@@ -332,8 +332,7 @@ component_clause!:
 	s:type_specifier
 	l:component_list
         << #0 = #(#[&a], #p, #s, #l);
-	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(mk_none(),
-						   RML_PRIM_MKBOOL(fl),
+	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(RML_PRIM_MKBOOL(fl),
 						   pa ? Absyn__PARAM :
 						   co ? Absyn__CONST :
 						   di ? Absyn__DISCRETE :
@@ -463,8 +462,7 @@ component_clause1!:
 	s:type_specifier
 	decl:component_declaration
         << #0 = #(#[&a], #p, #s, #decl);
-	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(mk_none(),
-						   RML_PRIM_MKBOOL(fl),
+	   #0->rml = Absyn__COMPONENTS(Absyn__ATTR(RML_PRIM_MKBOOL(fl),
 						   pa ? Absyn__PARAM :
 						   co ? Absyn__CONST :
 						   di ? Absyn__DISCRETE :
