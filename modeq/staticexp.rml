@@ -695,6 +695,13 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
 	(** LS: size(A) that returns an array of sizes for all dimensions is not *)
 	(** implemented, just size(A,x) that returns size of x:th dimension *)
+(*
+  rule	elab_exp(env,dim,false,NONE) => (dimp,_,_) &
+	elab_exp(env,arraycr,false,NONE) => (arraycrefe,_,_) &
+	let exp = Exp.SIZE(arraycrefe,dimp)
+	---------------------------------------------------------------
+	elab_builtin_size (env, [arraycr,dim]) => (exp,Types.PROP(Types.T_INTEGER,false))
+*)
 
   rule	elab_exp (env,ind,false,NONE) => (indexp, Types.PROP(indty, true),_) &
 	ceval (env, indexp,false,NONE) => Values.INTEGER(value) &

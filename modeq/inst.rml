@@ -802,6 +802,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* environment (top frame of env'), by  inst_class_in, should be *)
 	(* copied into the resulting environment *)
 
+	(* Instantiation of the extended class is done in an environment *)
+	(* that is combined of the environment of the class itself and *)
+	(* the class it is instantiated in. *)
+
 	inst_class_in(newcenv,mods'',pre,csets,ci_state,c,false,inst_dims,impl)
 	  => (dae,fr::env',csets',ci_state',vars) &
 	Env.merge_inherited_content(fr,env) => env''
@@ -931,11 +935,27 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Mod.merge(classmod',mm') => mod &
 	Mod.merge(mod,m') => mod1 &
+<<<<<<< inst.rml
+	Debug.fprintln ("redecl", "Merged modifications") &
+	Debug.fcall ("redecl", Mod.print_mod, mod1) &
+	print "inst_element :" & print n & print "before redeclare\n" &
+	redeclare_type(mod1,comp,env2,pre,impl) => (SCode.COMPONENT(n,final,repl,prot,
+=======
 
 	redeclare_type(mod1,comp,env2,pre,impl) => (SCode.COMPONENT(n,final,repl,prot,
+>>>>>>> 1.127
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
+<<<<<<< inst.rml
+				     t,m),mod',env2') &
+	print "inst_element :" & print n & print "after redeclare\n" &
+	Debug.fprintln ("redecl", "Merged modifications") &
+	Debug.fcall ("redecl", Mod.print_mod, mod') &
+
+	
+=======
 				     t,m),mod',env2') &
 	
+>>>>>>> 1.127
 	Debug.fprint("insttr", "looking for type") &
 	Debug.fcall("insttr",Dump.print_path,t) &
 	Debug.fprint("insttr"," in env:") &
@@ -1842,7 +1862,7 @@ Removed *)
 	
 	Env.extend_frame_t(env, n, ty) => env'	&
 	Prefix.prefix_path (Absyn.IDENT(n), pre) => fpath &
-	inst_element_list (env,mod,pre,csets,ClassInf.UNKNOWN(n),els,inst_dims,false) =>
+	inst_element_list (env,mod,pre,csets,ClassInf.UNKNOWN(n),els,inst_dims,true) =>
 	  (_,tempenv,_,_,_) &
 	inst_ext_decl(tempenv, n, parts) => extdecl
 	--------------------------------------
@@ -1937,18 +1957,22 @@ end
 relation inst_ext_make_externaldecl: (Ident, SCode.Element list, Absyn.ExternalDecl) 
 	  => Absyn.ExternalDecl = 
 
-  (* the case with only one output var *)
+  (* the case with only one output var, and that cannot be array, otherwise
+      inst_ext_make_crefs outvar will fail *)
   rule	Util.list_matching (els, is_output_var) => outvar::[] &
+(*	is_not_array_type_var outvar & *)
 	Util.list_matching (els, is_input_var) => invars &
-	Util.list_map (invars, inst_ext_make_cref) => exps &
-	inst_ext_make_cref outvar => Absyn.CREF(retcref) &
+	Util.list_map (invars, inst_ext_make_crefs) => explists &
+	Util.list_flatten explists => exps &
+	inst_ext_make_crefs outvar => [Absyn.CREF(retcref)] &
 	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps)
 	------------------------------------------------
 	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_)) 
 	  => extdecl
 
   rule	Util.list_matching (els, is_inout_var) => inoutvars &
-	Util.list_map (inoutvars, inst_ext_make_cref) => exps &
+	Util.list_map (inoutvars, inst_ext_make_crefs) => explists &
+	Util.list_flatten explists => exps &
 	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE,exps)
 	------------------------------------------------
 	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_)) 
@@ -1975,13 +1999,36 @@ relation is_output_var : SCode.Element => () =
   axiom	is_output_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),_,_)
 end
 
+(* subscript list is empty => not an array type *)
+relation is_not_array_type_var : SCode.Element => () =
+  axiom	is_not_array_type_var SCode.COMPONENT(_,_,_,_,SCode.ATTR([],_,_,_,_),_,_)
+end
+
 relation is_input_var : SCode.Element => () =
   axiom	is_input_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.INPUT),_,_)
 end
 
-relation inst_ext_make_cref : SCode.Element => Absyn.Exp =
-  axiom	inst_ext_make_cref SCode.COMPONENT(id,_,_,_,_,_,_)
-	  => Absyn.CREF(Absyn.CREF_IDENT(id,[]))
+relation inst_ext_make_crefs : SCode.Element => Absyn.Exp list =
+
+  rule	inst_ext_make_crefs_2 (id,dims,1) => sizelist &
+	let crlist = Absyn.CREF(Absyn.CREF_IDENT(id,[]))::sizelist
+	-----------------------------------------------
+	inst_ext_make_crefs SCode.COMPONENT(id,fi,re,pr,SCode.ATTR(dims,_,_,_,_),path,mod)
+	  => crlist
+end
+
+relation inst_ext_make_crefs_2 : (SCode.Ident, Absyn.ArrayDim, int) => Absyn.Exp list =
+
+  axiom	inst_ext_make_crefs_2 (id, [], _) => []
+
+  rule	int_add(dimno,1) => nextdimno &
+	inst_ext_make_crefs_2 (id, restdim, nextdimno) => restlist &
+	let exps = Absyn.CALL(Absyn.CREF_IDENT("size",[]),
+			      Absyn.FUNCTIONARGS([Absyn.CREF(Absyn.CREF_IDENT(id,[])),
+						  Absyn.INTEGER(dimno)], []))::restlist
+	---------------------------------------
+	inst_ext_make_crefs_2 (id,dim::restdim,dimno) => exps
+
 end
 
 relation inst_ext_get_fname : (Absyn.ExternalDecl, Ident) => Ident =
@@ -1991,9 +2038,56 @@ relation inst_ext_get_fname : (Absyn.ExternalDecl, Ident) => Ident =
 
 end
 
+(* special elab_exp for explicit external calls. This special relation calls 
+   elab_exp_ext which handles size builtin calls specially, and uses the ordinary 
+   Static.elab_exp for other expressions  *)
+relation elab_exp_list_ext : (Env.Env, Absyn.Exp list, bool,
+			      Interactive.InteractiveSymbolTable option) =>
+	(Exp.Exp list, Types.Properties list, Interactive.InteractiveSymbolTable option) =
+
+  axiom	elab_exp_list_ext (_,[],impl,st) => ([],[],st)
+
+  rule	elab_exp_ext (env, e,impl,st) => (exp,p,st') & 
+	elab_exp_list_ext (env, rest,impl,st') => (exps, props,st'')
+	-----------------------------------------
+	elab_exp_list_ext (env, e::rest,impl,st) => (exp::exps, p::props,st'') 
+
+end
+
+(* special elab_exp for explicit external calls. This special relation calls 
+   elab_exp_ext which handles size builtin calls specially, and uses the ordinary 
+   Static.elab_exp for other expressions  *)
+
+relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTable option)
+	    => (Exp.Exp, Types.Properties,Interactive.InteractiveSymbolTable option) =
+
+  rule	Print.print_buf "// elab_exp_ext success for " &
+(*	Static.elab_builtin_size(env,args) => (e,prop) & *)
+	Static.elab_exp(env,dim,impl,NONE) => (dimp, Types.PROP(dimty,dim_const),_) &
+	Static.elab_exp(env,arraycr,impl,NONE) => (arraycrefe, arraycrprop,_) &
+	let exp = Exp.SIZE(arraycrefe,dimp) &
+	Exp.print_exp exp &
+	Print.print_buf "\n"
+	----------------------------------------------------	
+	elab_exp_ext (env,
+		      call as Absyn.CALL(Absyn.CREF_IDENT("size",_),
+					 Absyn.FUNCTIONARGS(args as [arraycr,dim],nargs)),impl,st) 
+	  => (exp,Types.PROP(Types.T_INTEGER,false),st)
+
+  rule	Print.print_buf "// elab_exp_ext failed for " &
+	Absyn.print_absyn_exp exp &
+	Print.print_buf " calling Static.elab_exp: " &
+	Static.elab_exp (env,exp,impl,st) => (e,prop,st) &
+	Exp.print_exp e &
+	Print.print_buf "\n"
+	---------------------------------------------------
+	elab_exp_ext (env,exp,impl,st) => (e,prop,st)
+
+end
+
 relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl) => DAE.ExtArg list =
 
-  rule	Static.elab_exp_list (env, absexps, false, NONE) => (exps,props,_) &
+  rule	elab_exp_list_ext (env, absexps, false, NONE) => (exps,props,_) &
 	inst_ext_get_fargs2 (env, exps, props) => extargs	
 	---------------------------------------------------------
 	inst_ext_get_fargs (env, Absyn.EXTERNALDECL(id,lang,retcr,absexps)) => extargs
@@ -2028,10 +2122,17 @@ relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) => DAE
 	--------------------------------------------------------
 	inst_ext_get_fargs_single (env, Exp.CREF(cref,crty), Types.PROP(ty,cnst)) => fail
 
+  rule	Lookup.lookup_var_local (env, cref) => (attr, varty, bnd)
+	------------------------------------------------------
+	inst_ext_get_fargs_single (env, Exp.SIZE(Exp.CREF(cref,crty), dim), Types.PROP(ty,cnst)) 
+	  => DAE.EXTARGSIZE(cref,attr,varty,dim)
 				   
-  rule	Print.print_buf "#-- inst_ext_get_fargs_single failed\n"
+  rule	Print.print_buf "#-- inst_ext_get_fargs_single failed\n" &
+	Exp.print_exp_str exp => estr & 
+	Print.print_buf estr &
+	Print.print_buf "\n"
 	--------------------------------------------------------
-	inst_ext_get_fargs_single (_,_,_) => fail
+	inst_ext_get_fargs_single (_,exp,prop) => fail
 end
 
 

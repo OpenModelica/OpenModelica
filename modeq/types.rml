@@ -139,6 +139,8 @@ returns multiple arguments. *)
   relation get_vars: (Var list, Var => () )  => Var list
   relation get_type_name: Type => string
   relation is_array : Type => bool
+  relation is_input_attr : Attributes => bool
+  relation is_output_attr : Attributes => bool
   relation ndims : Type => int
   
   relation is_prop_const : Properties => bool
@@ -151,11 +153,15 @@ returns multiple arguments. *)
   relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
   relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list 
   relation match_with_promote : (Properties, Properties) => Properties 
+
+  relation flatten_array_type : Type => (Type, int list)
+
 end
 
 with "dump.rml"
 with "debug.rml"
 with "print.rml"
+with "util.rml"
 
 relation is_array : Type => bool =
 
@@ -821,14 +827,30 @@ end
 relation is_input_var: Var => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
-  axiom	is_input_var VAR(n, ATTR(fl,ac,var,Absyn.INPUT), false, ty, bnd)
+  rule	is_input_attr attr => true
+	--------------------------
+	is_input_var VAR(n, attr, false, ty, bnd)
 
 end
 
 relation is_output_var: Var => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
-  axiom	is_output_var VAR(n, ATTR(fl,ac,var,Absyn.OUTPUT), false, ty, bnd)
+  rule	is_output_attr attr => true
+	---------------------------
+	is_output_var VAR(n, attr, false, ty, bnd)
+
+end
+
+relation is_input_attr : Attributes => bool =
+
+  axiom	is_input_attr ATTR(_,_,_,Absyn.INPUT) => true
+
+end
+
+relation is_output_attr : Attributes => bool =
+
+  axiom	is_output_attr ATTR(_,_,_,Absyn.OUTPUT) => true
 
 end
 
@@ -889,6 +911,21 @@ relation is_parameter: Var => () =
 
 end
 
+relation flatten_array_type : Type => (Type, int list) =
+
+  rule	flatten_array_type ty => (ty', dimlist')
+	--------------------------------------
+  	flatten_array_type T_ARRAY(DIM(NONE), ty) => (ty', dimlist')
+
+  rule	flatten_array_type ty => (ty', dimlist) &
+	list_append (dimlist,[dim]) => dimlist'
+	--------------------------------------
+  	flatten_array_type T_ARRAY(DIM(SOME(dim)), ty) => (ty', dimlist')
+
+  axiom	flatten_array_type ty => (ty, [])
+
+end
+
 relation get_type_name: Type => string =
 
   axiom	get_type_name T_INTEGER	=> "Integer"
@@ -899,6 +936,14 @@ relation get_type_name: Type => string =
   rule	ClassInf.get_state_name st => n
 	-------------------------------
 	get_type_name T_COMPLEX(st, _) => n
+
+  rule	flatten_array_type arrayty => (ty, dims) &
+	Util.list_map(dims, int_string) => dimstrs &
+	Util.string_delimit_list(dimstrs,", ") => dimstr &
+	get_type_name ty => tystr &
+	Util.string_append_list([tystr,"[",dimstr,"]"]) => str
+	------------------------------------------------------
+	get_type_name (arrayty as T_ARRAY(_,_)) => str
 
   axiom	get_type_name _ => "Not nameable type or no type"
 
