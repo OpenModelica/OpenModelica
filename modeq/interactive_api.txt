@@ -1,0 +1,114 @@
+TODO: Add comments and modifications to appropriate functinons, such
+as addComponent, newModel, etc. (Low priority)
+TODO: Add functions for retrieval of icon information. (High Priority)
+
+API for interactive environment
+===============================
+
+The API for interactive/incremental development consist of a set of
+Modelica functions. They are sent to the interactive environment as
+plain text and parsed using an expression parser for Modelica. The API
+will be used by humans when interactively building models, directly or
+by using scripts, but also by for instance a model editor who wants to
+interact with the symbol table for adding/changing/removing models and
+components, etc.
+
+
+
+Definitions:
+------------
+An == Argument no. n
+<cref> == Component Reference, e.g. `A.B.C' or `A'
+<ident> == identifier, e.g. `A' or `Modelica'
+<string> == Modelica string, e.g. `"Nisse"' or `"foo"' 
+
+The following functions are provided:
+
+Function				Meaning
+===========				=======
+saveModel(<cref>,<string>)		Saves the model (A0) in a file
+					given by a string (A1).
+
+loadFile(<string>)			Loads all models in the file.
+
+createModel(<cref>)			Creates an empty model.
+
+deleteModel(<cref>)			Deletes the model from the
+					symbol table.
+
+addComponent(<ident>,<cref>,		Adds a component with name (A0),
+	<cref>,annotate=<expr>)		type (A1), and class (A2) as
+					arguments. Optional
+					annotations are given with
+					the named argument `annotate'.
+
+deleteComponent(<ident>,<cref>)		Deletes a component (A0)
+					within a class (A1).
+
+updateComponent(<ident>,<cref>,		Updates an already existing component.
+	<cref>,annotate=<expr>)
+
+getComponentsCount(<cref>)		Returns the number of
+					components of a class.
+
+getNthComponent(<cref>,<int>)		Returns the belonging class, 
+					component name and  type name
+					of the nth component of a class.
+					e.g. "A.B.C, R2, Resistor"
+
+
+getNthComponentAnnotation(<cref>,<int>) Returns the flattened
+					annotation record of the nth
+					component.
+					Consists of a comma separated
+					string of 15 values, see
+					Annotations below, e.g "false,10,30,..."
+
+getConnectionsCount(<cref>)		Returns the number of
+					connections in the model.
+
+getNthConnection(<cref>,<int>)		Returns the nth connection,
+					as a comma separated pair of
+					connectors, e.g. "R1.n,R2.p".
+getNthConnectionAnnotation(<cref>,<int>)
+					Returns the nth connection
+					annotation as comma separated
+					list of values of a flattened
+					record, see Annotation below.
+					
+getConnectorCount(<cref>)		Returns the number of
+					connectors of a class.
+
+getNthConnector(<cref>,<int>)		Returns the name of the nth
+					connector, e.g "n"
+
+getNthConnectorAnnotation(<cref>,<int>	Returns the nth connector
+					annotation as comma separated
+					list of values of a flat
+					record, see Annotation below
+
+
+
+Annotations
+===========
+1. Component annotations.
+------------------------
+Component annotations are modifications of the following (flattened)
+Modelica record:
+record Placement
+       Boolean visible = true;
+       Real transformation.x=0;
+       Real transformation.y=0;
+       Real transformation.scale=1;	
+       Real transformation.aspectRatio=1;	
+       Boolean transformation.flipHorizontal=false;
+       Boolean transformation.flipVertical=false;
+       Real transformation.rotation=0;
+       Real iconTransformation.x=0;
+       Real iconTransformation.y=0;
+       Real iconTransformation.scale=1;	
+       Real iconTransformation.aspectRatio=1;	
+       Boolean iconTransformation.flipHorizontal=false;
+       Boolean iconTransformation.flipVertical=false;
+       Real iconTransformation.rotation=0;
+end Placement;
