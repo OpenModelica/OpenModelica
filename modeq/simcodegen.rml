@@ -256,23 +256,26 @@ relation generate_var_names_algvars:(DAELow.Var list) => string list =
 				_,value,indx,origname,_)::vs)
 	=> origname'::res
 
-  rule	generate_var_names_algvars(vs) => res 
+  rule	generate_var_names_algvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
 				_,value,indx,origname,_)::vs)
-	=> origname::res
+	=> origname'::res
 
-  rule	generate_var_names_algvars(vs) => res 
+  rule	generate_var_names_algvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
 				_,value,indx,origname,_)::vs)
-	=> origname::res
+	=> origname'::res
 
-  rule	generate_var_names_algvars(vs) => res 
+  rule	generate_var_names_algvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_)::vs)
-	=> origname::res
+	=> origname'::res
 
   rule	generate_var_names_algvars(vs) => res 
 	-----------------------
