@@ -177,7 +177,7 @@ relation generate_init_data2:(DAELow.DAELow,
 	array_create(np,"") => nparr &
 	generate_init_data3(var_lst,nxarr,nxdarr,nyarr,nparr) 
 	  =>(nxarr',nxdarr',nyarr',nparr') &
-	generate_init_data3(knvar_lst,nxarr',nxdarr',nyarr',nparr')  
+	generate_init_data4(knvar_lst,nxarr',nxdarr',nyarr',nparr')  
 	  =>(nxarr'',nxdarr'',nyarr'',nparr'') &
 	array_list(nxarr'') => nx_lst &
 	array_list(nxdarr'') => nxd_lst &
@@ -268,15 +268,32 @@ relation generate_init_data3:(DAELow.Var list,
 				       _,value,indx,origname,_)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
+end
 
+(** relation: generate_init_data4
+ ** Helper relation to generate_init_data2
+** Traverses parameters 
+ **)
+relation generate_init_data4: (DAELow.Var list, 
+			       string array,
+			       string array,
+			       string array,
+			       string array)  
+	  => (string array,
+	      string array,
+	      string array,
+	      string array)   =
+  axiom	generate_init_data4([],nxarr,nxdarr,nyarr,nparr) 
+	  => (nxarr,nxdarr,nyarr,nparr) 
+	
   rule	(* Parameters *)
 	Values.val_string(value) => v &
 	Util.string_append_list([v, " // ",origname]) => str &
 	array_setnth(nparr,indx,str) => nparr &
-	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
+	generate_init_data4(rest,nxarr,nxdarr,nyarr,nparr) 
 	=> (nxarr,nxdarr,nyarr,nparr) 
 	--------------------
-	generate_init_data3(DAELow.VAR(_,DAELow.PARAM,_,_,_,SOME(value),_,
+	generate_init_data4(DAELow.VAR(_,DAELow.PARAM,_,_,_,SOME(value),_,
 				_,indx,origname,_)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
@@ -284,15 +301,25 @@ relation generate_init_data3:(DAELow.Var list,
   rule	(* Parameters without value binding. Should normally not happen *)
 	Util.string_append_list(["0.0  // ",origname]) => str &
 	array_setnth(nparr,indx,str) => nparr &
-	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
+	generate_init_data4(rest,nxarr,nxdarr,nyarr,nparr) 
 	=> (nxarr,nxdarr,nyarr,nparr) 
 	--------------------
-	generate_init_data3(DAELow.VAR(_,DAELow.PARAM,_,_,_,NONE,_,
+	generate_init_data4(DAELow.VAR(_,DAELow.PARAM,_,_,_,NONE,_,
 				_,indx,origname,_)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
-end
 
+  rule	(* Skip alg. vars that are removed 
+	 In future we should compare eliminated variables 
+	 intial values to their aliases to detect inconsistent
+	 initial values.
+	 *)
+	generate_init_data4(vs,nxarr,nxdarr,nyarr,nparr) 
+	  => (nxarr',nxdarr',nyarr',nparr')
+	-----------------------------------
+	generate_init_data4(_::vs,nxarr,nxdarr,nyarr,nparr) 
+	=> (nxarr',nxdarr',nyarr',nparr')
+end
 
 (** relation: generate_compute_residual_state
  ** This relation generates the code for the calculation of the 
