@@ -2222,16 +2222,17 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 	      int vector (* vector of variable indices*),
 	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
 
-  rule	array_length(m) => nvars &
+  rule	check_matching(dae) &  	
+	array_length(m) => nvars &
 	array_length(mt) => neqns &
 	int_gt(nvars,0) => true &
 	int_gt(neqns,0) => true &
 	int_add(nvars,nvars) => memsize &
 	assignments_create(nvars,memsize,0) => assign1 &
 	assignments_create(nvars,memsize,0) => assign2 &
-	
 	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2) 
 	  => (ass1, ass2,dae,m,mt) &
+
 	assignments_vector(ass1) => vec1 &
 	assignments_vector(ass2) => vec2 
 	--------------------------
@@ -2242,6 +2243,39 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 	------------------------
 	matching_algorithm(dae,m,mt) => (v1,v2,dae,m,mt)
 	
+end
+
+(** relation: check_matching
+ ** Checks that the matching is correct, i.e. that the number of variables
+ ** is the same as the number of equations. If not, the relation fails and
+ ** prints an error message.
+ **)
+relation check_matching : (DAELow) => () =
+	
+  rule	equation_size(eqns) => esize &
+	int_eq(esize,vars_size) => true 
+	------------------
+	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_)) 
+	  => ()
+
+  rule	equation_size(eqns) => esize &
+	int_lt(esize,vars_size) => true &
+	Print.print_buf "#Error, too few equations.\n" &
+	print "#Error, to few equations\n" 
+ 	------------------
+	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_)) 
+	  => fail
+
+  rule	equation_size(eqns) => esize &
+	int_gt(esize,vars_size) => true &
+	Print.print_buf "#Error, to many equations.\n" &
+	print "#Error, too many equations." 
+	------------------
+	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_)) => fail
+
+  rule	print "check_matching failed\n" 
+	--------------------
+	check_matching(_) => fail
 end
 
 (** relation assignments_vector

@@ -174,21 +174,27 @@ relation add_replacement: (VariableReplacements,
 			   Exp.ComponentRef, (* source *) 
 			   Exp.ComponentRef) (* dest *)
 	  => VariableReplacements =
-	  
-  rule	(* No previous elt for dst -> src *)
-	not tree_get2(invbt,dst) => _ &  
-	make_transitive(repl,src,dst) => (REPLACEMENTS(bt,invbt),src',dst') &
-	tree_add(bt,src',dst') => bt' &
-	tree_add2(invbt,dst',[src']) => invbt' 
-	---------------------------
-	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
-	  => REPLACEMENTS(bt',invbt')
 
-  rule	(* previous elt for dst -> src, append.. *)
-	tree_get2(invbt,dst) => srcs &
-	make_transitive(repl,src,dst) => (REPLACEMENTS(bt,invbt),src',dst') &
+  rule	(** if rule a->b exists and we want to add a->d,
+	 ** the replacements should contain two rules:
+	 ** a->d   and  b->d 
+	 **)
+	tree_get(bt,src) => olddst &
+	make_transitive(repl,src,dst) => (repl',src',dst') &
+	make_transitive(repl',src,olddst) => (REPLACEMENTS(bt,invbt),_,olddst') &
 	tree_add(bt,src',dst') => bt' &
-	tree_add2(invbt,dst',src'::srcs) => invbt'
+	add_replacement_inv(invbt,src',dst') => invbt' &
+	tree_add(bt',src',olddst') => bt'' &
+	add_replacement_inv(invbt',src',olddst') => invbt''
+	-----------------------
+	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
+	  => REPLACEMENTS(bt'',invbt'')
+	
+
+
+  rule	make_transitive(repl,src,dst) => (REPLACEMENTS(bt,invbt),src',dst') &
+	tree_add(bt,src',dst') => bt' &
+	add_replacement_inv(invbt,src',dst') => invbt' 
 	---------------------------
 	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
 	  => REPLACEMENTS(bt',invbt')
@@ -197,6 +203,29 @@ relation add_replacement: (VariableReplacements,
 	---------------------------------
 	add_replacement(_,_,_) => fail
 end
+
+(** relation: add_replacement_inv
+ ** Helper relation to add_replacement_inv
+ ** Adds the inverse rule of a replacement to the second binary tree
+ ** of VariableReplacements.
+ **)
+relation add_replacement_inv: (BinTree2, Exp.ComponentRef, Exp.ComponentRef)
+	=> BinTree2 =
+
+  rule	(* No previous elt for dst -> src *)
+	not tree_get2(invbt,dst) => _ &  
+	tree_add2(invbt,dst,[src]) => invbt' 
+	-------------------
+	add_replacement_inv(invbt,src,dst) => invbt' 
+	
+
+  rule	(* previous elt for dst -> src, append.. *)
+	tree_get2(invbt,dst) => srcs &
+	tree_add2(invbt,dst,src::srcs) => invbt'
+	-----------------------
+	add_replacement_inv(invbt,src,dst) => invbt'
+end
+	  
 
 (** relation: make_transitive
  ** This relation takes a set of replacement rules and a new replacement rule
@@ -214,7 +243,7 @@ relation make_transitive: (VariableReplacements,	(* replacement rules *)
 	      Exp.ComponentRef) =	(* updated dst *)   
 
   rule	make_transitive1(repl,src,dst) => (repl',src',dst') &
-	make_transitive2(repl',src',dst') => (repl'',src'',dst'')
+	make_transitive2(repl',src',dst') => (repl'',src'',dst'') 
 	------------------
 	make_transitive(repl,src,dst) => (repl'',src'',dst'')
 end
@@ -233,7 +262,8 @@ relation make_transitive1: (VariableReplacements,	(* replacement rules *)
 	tree_get2(invbt,src) => lst &
 	add_replacements(repl,lst,dst) => repl' 
 	---------------------------------------
-	make_transitive1(repl as REPLACEMENTS(bt,invbt),src,dst) => (repl',src,dst)
+	make_transitive1(repl as REPLACEMENTS(bt,invbt),src,dst) 
+	  => (repl',src,dst)
 
   axiom	make_transitive1(repl,src,dst) => (repl,src,dst)
 end
@@ -271,11 +301,11 @@ relation add_replacements: (VariableReplacements, Exp.ComponentRef list, Exp.Com
   rule	add_replacement(repl,src,dst) => repl' &
 	add_replacements(repl',srcs,dst) => repl''
 	------------------------------------------
-	add_replacements(repl,src::srcs,dst) => repl'
+	add_replacements(repl,src::srcs,dst) => repl''
 
   rule	print "add_replacements failed\n" 
 	---------------------------------
-	add_replacements(_,_,_) => fail
+	add_replacements(_,_,_) => fail 
 end
 
 (** relation: get_replacement
