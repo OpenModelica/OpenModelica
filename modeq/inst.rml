@@ -94,10 +94,12 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
    *)
 
   rule	Env.lookup_class(env,cn) => c &
-	Mod.merge(SOME(mods),SOME(Absyn.CLASSMOD(m))) => mods' &
-	Mod.simple_maybe_modify_class(env,mods',c) => Absyn.CLASS(n,_,r,d) &
+	Mod.merge(SOME(mods),SOME(Lform.CLASSMOD(m))) => mods' &
+	Mod.simple_maybe_modify_class(env,mods',pre,c)
+	 => (Absyn.CLASS(n,_,r,d), dae1) &
 	(* Can't use inst_class, as that creates a new frame *)
-	inst_classdef(env,mods,pre,d) => (dae,env')
+	inst_classdef(env,mods,pre,d) => (dae2,env') &
+	list_append(dae1,dae2) => dae
 	----------------------------------
 	inst_element(env,mods,pre,Absyn.ELEMENT(_,_,Absyn.EXTENDS(cn,m)))
 	 => (dae,env')
@@ -140,13 +142,14 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
    * Put it in the current frame in the environment
    *)
    
-  rule	Mod.lookup_modification(mods,n) => mm &
-	Mod.simple_maybe_modify_class(env,mm,c) => c' &
-	Env.extend_frame_c(env,c') => env'
+  rule	Lform.convert(c) => c' &
+	Mod.lookup_modification(mods,n) => mm &
+	Mod.simple_maybe_modify_class(env,mm,pre,c') => (c'',dae) &
+	Env.extend_frame_c(env,c'') => env'
 	----------------------------------------
 	inst_element(env,mods,pre,
 		     Absyn.ELEMENT(_,n,Absyn.CLASSDEF(_,c)))
-	 => ([],env')
+	 => (dae,env')
 
   (* A variable
    *
@@ -163,13 +166,15 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 	Env.lookup_class(env,t) => cl &
 
 	Exp.path_string(t) => ts &
-	print "  class " & print ts & print " found\n" &
+	(* print "  class " & print ts & print " found\n" & *)
 
 	(* Find the set of modifications *)
 	Mod.lookup_modification(mods,n) => mm &
 	Mod.merge(mm,m) => m' &
 
-	Mod.maybe_modify_class(env,vn,m',cl) => (cl',eqs) &
+	Prefix.prefix_add(n,pre) => pre' &
+
+	Mod.maybe_modify_class(env,vn,m',pre',cl) => (cl',dae1) &
 
 	(* print "        modified\n" & *)
 
@@ -177,13 +182,13 @@ relation inst_element: (Env.Env,Mod.Mod,Prefix,Absyn.Element)
 
 	(* print "        added\n" & *)
 
-	Prefix.prefix_add(n,pre) => pre' &
-	inst_class(env,Mod.empty_mod,pre',cl') => l
+	inst_class(env,Mod.empty_mod,pre',cl') => dae2 &
+	list_append(dae1,dae2) => dae
 	--------------------------
 	inst_element(env,mods,pre,
 		     Absyn.ELEMENT(_,_,Absyn.COMPONENTS(f,p,c,i,o,t,
 					    [Absyn.COMPONENT(n,ad,m)])))
-         => (l,env')
+         => (dae,env')
 
   (*
    * If the class lookup in the previous rule fails, this rule catches
