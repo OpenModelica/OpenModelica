@@ -24,10 +24,10 @@ module Mod:
   type Ident = string
 
   (** - Modification datatype *)
-  type Eqmod = (Exp.Exp * Types.Type * bool)
+  type EqMod = (Exp.Exp * Types.Type * bool)
   datatype SubMod = NAMEMOD of Ident * Mod
 		  | IDXMOD of int list * Mod
-  and Mod = MOD of bool * (SubMod list) * Eqmod option
+  and Mod = MOD of bool * (SubMod list) * EqMod option
   	  | REDECL of bool * Absyn.ElementSpec
 	  | NOMOD
   (** This type is very similar to `SCode.Mod'.  The main difference is
@@ -37,10 +37,11 @@ module Mod:
 
   relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod) => Mod
 
-  relation lookup_modification: (Mod,Absyn.Ident,int list) => Mod
+  relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod
+  relation lookup_idx_modification: (Mod, int list) => Mod
   relation lookup_modification_p: (Mod,Absyn.Path) => Mod
   relation merge : (Mod, Mod) => Mod
-  relation mod_equation : Mod => Eqmod option
+  relation mod_equation : Mod => EqMod option
 
   relation print_mod : Mod => ()
 
@@ -199,61 +200,133 @@ end
 
 relation lookup_modification_p: (Mod,Absyn.Path) => Mod =
 
-  rule	lookup_modification (m,n,[]) => mod
+  rule	lookup_comp_modification (m,n) => mod
 	--------------------------------
 	lookup_modification_p (m,Absyn.IDENT(n)) => mod
 
-  rule	lookup_modification (m,n,[]) => mod &
+  rule	lookup_comp_modification (m,n) => mod &
 	lookup_modification_p (mod,p) => mod'
 	-------------------------------------
 	lookup_modification_p (m,Absyn.QUALIFIED(n,p)) => mod'
 
 end
 
-(** relation: lookup_modification
+(** relation: lookup_comp_modification
  **
  ** This relation is used to look up an identifier in a modification.
  **)
 
-relation lookup_modification: (Mod,Absyn.Ident,int list) => Mod =
+relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod =
 
-  axiom lookup_modification(NOMOD,_,_) => NOMOD
+  axiom lookup_comp_modification(NOMOD,_) => NOMOD
 
 	(* FIXME: Is this correct? *)
-  axiom	lookup_modification(REDECL(_,_),_,_) => NOMOD
+  axiom	lookup_comp_modification(REDECL(_,_),_) => NOMOD
 
-  rule  lookup_modification2(subs,n,s) => mod
+  rule  lookup_comp_modification2(subs,n) => mod
 	-----------------------------------
-	lookup_modification(MOD(_,subs,_),n,s) => mod
+	lookup_comp_modification(MOD(_,subs,_),n) => mod
 	
-  rule	print "# Mod.lookup_modification(" &
+  rule	print "# Mod.lookup_comp_modification(" &
 	print_mod mod & print "," & print i &
 	print ") failed\n"
 	--------------------
-	lookup_modification(mod,i,s) => fail
+	lookup_comp_modification(mod,i) => fail
 
 end	
 
 (**)
 
-relation lookup_modification2 : (SubMod list,Absyn.Ident,int list)
-	  => Mod =
+relation lookup_comp_modification2 : (SubMod list,Absyn.Ident) => Mod =
 
-  axiom lookup_modification2([],_,_) => NOMOD
+  axiom lookup_comp_modification2([],_) => NOMOD
 
   rule  n = m
 	--------------------------------------
-	lookup_modification2(NAMEMOD(n,mod)::_,m,s) => mod
+	lookup_comp_modification2(NAMEMOD(n,mod)::_,m) => mod
 	
 	(* FIXME: Redeclaration *)
 
-  rule  lookup_modification2(xs,n,s) => mod
+  rule  lookup_comp_modification2(xs,n) => mod
 	---------------------------------
-	lookup_modification2(x::xs,n,s) => mod
+	lookup_comp_modification2(x::xs,n) => mod
 
-  rule	print "- lookup_modification2 failed\n"
+  rule	print "- lookup_comp_modification2 failed\n"
 	---------------------------------------
-	lookup_modification2 (_,_,_) => fail
+	lookup_comp_modification2 (_,_) => fail
+
+end
+
+(** relation: lookup_idx_modification
+ **
+ **)
+
+relation lookup_idx_modification: (Mod, int list) => Mod =
+
+  axiom lookup_idx_modification(NOMOD,_) => NOMOD
+
+	(* FIXME: Is this correct? *)
+  axiom	lookup_idx_modification(REDECL(_,_),_) => NOMOD
+
+  rule  lookup_idx_modification2(subs,NONE,xs) => (mod',subs') &
+	merge (MOD(f,subs',NONE),mod') => mod'' &
+
+	index_eqmod (eq,xs) => eq' &
+	merge (mod'',MOD(false,[],eq')) => mod''' (* FIXME: order *)
+	-----------------------------------
+	lookup_idx_modification(MOD(f,subs,eq),xs) => mod'''
+	
+  rule	print "# Mod.lookup_idx_modification(" &
+	print_mod mod & print "," & print "[...]" &
+	print ") failed\n"
+	--------------------
+	lookup_idx_modification(mod,xs) => fail
+
+end	
+
+(**)
+
+relation lookup_idx_modification2 : (SubMod list, EqMod option, int list)
+	  => (Mod, SubMod list) =
+
+  axiom lookup_idx_modification2([],_,_) => (NOMOD, [])
+
+  rule  xs = ys
+	--------------------------------------
+	lookup_idx_modification2(IDXMOD(xs,mod)::subs,eq,ys) => (mod,subs)
+	
+	(* FIXME: Redeclaration *)
+
+  rule  lookup_idx_modification2(xs,eq,idxs) => (mod,xs')
+	---------------------------------
+	lookup_idx_modification2(x::xs,eq,idxs) => (mod,x::xs')
+
+  rule	print "- lookup_idx_modification2 failed\n"
+	---------------------------------------
+	lookup_idx_modification2 (_,_,_) => fail
+
+end
+
+(** relation: index_eqmod
+ **
+ ** If there is an equation modification, this relation can subscript
+ ** it using the provided indexing expressions.  This is used when a
+ ** modification equates an array variable with an array expression.
+ ** This expression will be expanded to produce one equation
+ ** expression per array component.
+ **)
+
+relation index_eqmod : (EqMod option, int list) => EqMod option =
+
+  axiom	index_eqmod (NONE,_) => NONE
+
+  axiom	index_eqmod (e,[]) => e
+
+  rule	Types.unlift_array t => t' &
+	Exp.simplify Exp.ASUB(e,x) => exp &
+	index_eqmod (SOME((exp,t',c)),xs) => e
+	------------------------------------------
+	index_eqmod (SOME((e,t,c)),x::xs) => e
 
 end
 
@@ -341,7 +414,7 @@ end
 (** relation: merge_eq
  **)
 
-relation merge_eq : (Eqmod option, Eqmod option) => Eqmod option =
+relation merge_eq : (EqMod option, EqMod option) => EqMod option =
 
 	(* Outer assignments take precedence *)
 
@@ -354,7 +427,7 @@ end
 (** relation: mod_equation
  **)
 
-relation mod_equation : Mod => Eqmod option =
+relation mod_equation : Mod => EqMod option =
 
   axiom mod_equation NOMOD => NONE
   axiom mod_equation REDECL(_,_) => NONE
@@ -469,7 +542,7 @@ end
 
 (**)
 
-relation print_eqmod : Eqmod option => () =
+relation print_eqmod : EqMod option => () =
 
   axiom print_eqmod NONE
 

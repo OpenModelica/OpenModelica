@@ -41,10 +41,13 @@ module Types :
 		| T_ARRAY of ArrayDim * Type
 		| T_COMPLEX of ClassInf.State
 			     * Var list
+		| T_FUNCTION of FuncArg list * Type (* Only single-result *)
 		| T_NOTYPE
 
   datatype ArrayDim = NODIM
 		    | DIM of int (* FIXME: option needed? *) option * ArrayDim
+
+  type FuncArg = Ident * Type
 
   (* datatype Component = COMP of Ident * Type *)
 
@@ -65,6 +68,7 @@ module Types :
   relation lookup_component : (Type, Ident) => Var
   relation known_type : (ClassInf.State, Absyn.ArrayDim) => Type
   relation lift_array : (Type,int option) => Type
+  relation unlift_array : Type => Type
   relation print_type : Type => ()
 
 end
@@ -239,6 +243,18 @@ relation lift_array : (Type,int option) => Type =
 
 end
 
+(** relation: unlift_array
+ **
+ ** This relation turns an array of a type into that type.
+ **)
+
+relation unlift_array : Type => Type =
+
+  axiom	unlift_array T_ARRAY(DIM(_,NODIM),ty) => ty
+  axiom	unlift_array T_ARRAY(DIM(_,dim),ty) => T_ARRAY(dim,ty)
+
+end
+
 (** relation: print_type
  **
  ** This relation prints a textual description of a Modelica type.  If
@@ -273,6 +289,11 @@ relation print_type : Type => () =
 	------------
 	print_type T_ARRAY(dim,t)
 
+  rule	print "function(" & print_params params & print " => " &
+	print_type restype & print ")"
+	------------------------------
+	print_type T_FUNCTION(params,restype)
+
   rule	print "#NOTYPE#"
 	----------------
 	print_type T_NOTYPE
@@ -298,5 +319,20 @@ relation print_arraydim =
   rule	int_string i => s & print s & print "," & print_arraydim(d)
 	-----------------------------------------------------------
 	print_arraydim DIM(SOME(i),d)
+
+end
+
+relation print_params : FuncArg list => () =
+
+  axiom	print_params []
+
+  rule	print n & print " :: " & print_type t
+	-------------------------------------
+	print_params [(n,t)]
+
+  rule	print n & print " :: " & print_type t &
+	print " × " & print_params params
+	---------------------------------
+	print_params ((n,t)::params)
 
 end

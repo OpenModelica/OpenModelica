@@ -15,12 +15,13 @@ module Lookup:
   with "env.rml"
   with "explode.rml"
 
+  relation lookup_type       : (Env.Env, Absyn.Path) => (Types.Type)
   relation lookup_class      : (Env.Env, Absyn.Path) => (SCode.Class)
   relation lookup_var        : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr,Types.Type,Env.Binding)
+	  => (Absyn.VarAttr,Types.Type,Types.Binding)
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Env.Binding)
-  relation lookup_ident_local : (Env.Env, Absyn.Ident) => Env.FrameVar
+	  => (Absyn.VarAttr, Types.Type, Types.Binding)
+  relation lookup_ident_local : (Env.Env, Absyn.Ident) => Types.Var
 
 end
 
@@ -34,6 +35,21 @@ with "parse.rml"
  ** variable named as the first part of the path is searched for, and the
  ** name is looked for in it.
  **)
+
+(** relation: lookup_type
+ **)
+
+relation lookup_type: (Env.Env,Absyn.Path) => Types.Type =
+
+  rule	lookup_type_in_env(env,path) => t
+	--------------------------------------
+	lookup_type(env, path) => t
+
+  rule	lookup_package_type (env,pack,path) => t
+	--------------------------------------
+	lookup_type(env, Absyn.QUALIFIED(pack,path)) => t
+
+end
 
 (** relation: lookup_class
  **)
@@ -54,16 +70,16 @@ end
  **)
 
 relation lookup_var : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Env.Binding) =
+	  => (Absyn.VarAttr, Types.Type, Types.Binding) =
 
   rule	(* print " lookup_var: looking in frame\n" & *)
-	lookup_var_f(vs,ref) => (attr,ty,binding)
-	-------------------------
-	lookup_var(Env.FRAME(vs,_)::fs,ref) => (attr,ty,binding)
+	lookup_var_f(items,ref) => (attr,ty,binding)
+	--------------------------------------------
+	lookup_var(Env.FRAME(items)::fs,ref) => (attr,ty,binding)
 
   rule	(* print " lookup_var: next frame\n" & *)
 	lookup_var(fs,ref) => (attr,ty,binding)
-	--------------------
+	---------------------------------------
 	lookup_var(_::fs,ref) => (attr,ty,binding)
 
 end
@@ -72,49 +88,103 @@ end
  **)
 
 relation lookup_var_local : (Env.Env,Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Env.Binding) =
+	  => (Absyn.VarAttr, Types.Type, Types.Binding) =
 
-  rule	lookup_var_f(vs,ref) => (attr,ty,binding)
-	-------------------------
-	lookup_var_local(Env.FRAME(vs,_)::fs,ref) => (attr,ty,binding)
+  rule	lookup_var_f(items,ref) => (attr,ty,binding)
+	--------------------------------------------
+	lookup_var_local(Env.FRAME(items)::fs,ref) => (attr,ty,binding)
 
 end
 
-relation lookup_ident_local : (Env.Env, SCode.Ident) => Env.FrameVar =
+relation lookup_ident_local : (Env.Env, SCode.Ident) => Types.Var =
 
-  rule  lookup_var2(vs, id) => fv
-	-------------------------
-	lookup_ident_local(Env.FRAME(vs,_)::_, id) => fv
+  rule  lookup_var2(items, id) => fv
+	----------------------------
+	lookup_ident_local(Env.FRAME(items)::_, id) => fv
 
 end
 
 (** - Internal relations *)
 
-relation lookup_class_in_frame: ((SCode.Ident * SCode.Class) list,
-				 SCode.Ident)
-	  => SCode.Class =
+(**  Type lookup *)
 
-  rule	(* print "  lookup_class_in_frame(" & print id & print "): " &
-	print n & print "\n" & *)
-	id = n
-	---------------------------------------------------------
-	lookup_class_in_frame((n,c)::_, id) => c
+relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type) =
 
-  rule	lookup_class_in_frame(fs,id) => c
-	------------------------------
-	lookup_class_in_frame(_::fs,id) => c
+  rule	lookup_type_in_frame(items,id) => c
+	---------------------
+	lookup_type_in_env(Env.FRAME(items)::fs,Absyn.IDENT(id)) => c
+
+  rule	lookup_type_in_env(fs,id) => c
+	---------------------
+	lookup_type_in_env(f::fs,id) => c
 
 end
 (**)
+relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
+				 SCode.Ident)
+	  => Types.Type =
+
+  rule	(* print "  lookup_type_in_frame(" & print id & print "): " &
+	   print n & print "\n" & *)
+	id = n
+	---------------------------------------------------------
+	lookup_type_in_frame((n,Env.TYPE(t))::_, id) => t
+
+  rule	id = n & print "# Error while looking up type " &
+	print id & print ": found a component\n"
+	------------------------------------
+	lookup_type_in_frame((n,Env.VAR(_))::_,id) => fail
+
+  rule	(* print "  lookup_type_in_frame(" & print id & print "): not " &
+	   print n & print "\n" & *)
+	lookup_type_in_frame(fs,id) => t
+	------------------------------
+	lookup_type_in_frame((n,_)::fs,id) => t
+
+end
+(**)
+relation lookup_package_type : (Env.Env, string, Absyn.Path) => Types.Type =
+	
+  rule	locate_package (env,packname) => pack &
+ 	print "- package lookup of types not implemented\n"
+	(* lookup_type_in_package (pack, path) => t *)
+	-------------------------------------
+	lookup_package_type (env, packname, path) => (* t *) fail
+
+end
+
+(**  Class lookup *)
+
 relation lookup_class_in_env: (Env.Env,Absyn.Path) => (SCode.Class) =
 
-  rule	lookup_class_in_frame(cs,id) => c
+  rule	lookup_class_in_frame(items,id) => c
 	---------------------
-	lookup_class_in_env(Env.FRAME(_,cs)::fs,Absyn.IDENT(id)) => c
+	lookup_class_in_env(Env.FRAME(items)::fs,Absyn.IDENT(id)) => c
 
   rule	lookup_class_in_env(fs,id) => c
 	---------------------
 	lookup_class_in_env(f::fs,id) => c
+
+end
+(**)
+relation lookup_class_in_frame: ((SCode.Ident * Env.Item) list,
+				 SCode.Ident)
+	  => SCode.Class =
+
+  rule	(* print "  lookup_class_in_frame(" & print id & print "): " &
+	   print n & print "\n" & *)
+	id = n
+	---------------------------------------------------------
+	lookup_class_in_frame((n,Env.CLASS(c))::_, id) => c
+
+  rule	id = n & print "# Error while looking up class " &
+	print id & print ": found a component\n"
+	------------------------------------
+	lookup_class_in_frame((n,Env.VAR(_))::_,id) => fail
+
+  rule	lookup_class_in_frame(fs,id) => c
+	------------------------------
+	lookup_class_in_frame(_::fs,id) => c
 
 end
 (**)
@@ -128,12 +198,22 @@ relation lookup_package_class : (Env.Env, string, Absyn.Path)
 
 end
 (**)
-relation lookup_var2: ((SCode.Ident * Env.FrameVar) list,SCode.Ident)
-	  => Env.FrameVar =
+relation lookup_var2: ((SCode.Ident * Env.Item) list,SCode.Ident)
+	  => Types.Var =
 
   rule	id = n
 	--------------------------------------------
-	lookup_var2((n,fv)::_,id) => fv
+	lookup_var2((n,Env.VAR(fv))::_,id) => fv
+
+  rule	id = n & print "# Error while looking up component " &
+	print id & print ": found a class\n"
+	------------------------------------
+	lookup_var2((n,Env.CLASS(_))::_,id) => fail
+
+  rule	id = n & print "# Error while looking up component " &
+	print id & print ": found a type\n"
+	------------------------------------
+	lookup_var2((n,Env.TYPE(_))::_,id) => fail
 
   rule	lookup_var2(fs,id) => fv
 	------------------------
@@ -158,7 +238,7 @@ relation check_subscripts : (Absyn.ArrayDim, Exp.Subscript list)
 end
 (**)
 relation lookup_in_var: (Types.Type, Exp.ComponentRef)
-	  => (Absyn.VarAttr,Types.Type,Env.Binding) =
+	  => (Absyn.VarAttr,Types.Type,Types.Binding) =
 
 	(* FIXME: Check protected flag *)
 
@@ -179,19 +259,19 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 
 end	
 (**)
-relation lookup_var_f : ((SCode.Ident * Env.FrameVar) list,
+relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 			 Exp.ComponentRef)
-	  => (Absyn.VarAttr, Types.Type, Env.Binding) =
+	  => (Absyn.VarAttr, Types.Type, Types.Binding) =
 
   rule  (* print " lookup_var_f 1: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Env.FRAMEVAR(n,Absyn.ATTR(ad,f,vt,di),ty,bind) &
+	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),ty,bind) &
 	check_subscripts(ad,ss) => dim
 	----------------------------------
 	lookup_var_f(f,Exp.CREF_IDENT(id,ss))
 	  => (Absyn.ATTR(dim,f,vt,di),ty,bind)
 
   rule	(* print " lookup_var_f 2: " & print id & print "\n" & *)
-	lookup_var2(f, id) => Env.FRAMEVAR(n,Absyn.ATTR(ad,f,vt,di),ty,_) &
+	lookup_var2(f, id) => Types.VAR(n,Absyn.ATTR(ad,f,vt,di),ty,_) &
 	check_subscripts(ad,ss) => [] & (* FIXME: error message *)
 	lookup_in_var(ty, ids) => (attr,ty,binding)
 	----------------------------------

@@ -50,12 +50,13 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
 	print "  binary: " &
- 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") x " &
+ 	Exp.print_exp e1' & print " (" & Types.print_type t1 & print ") × " &
  	Exp.print_exp e2' & print " (" & Types.print_type t2 & print ") => " &
-	elab_numtypes (e1',t1,e2',t2) => (e1'',e2'',t) &
- 	Exp.print_exp e1'' & print " (" & Types.print_type t & print ") x " &
- 	Exp.print_exp e2'' & print " (" & Types.print_type t & print ")\n" &
-	elab_binary (e1'', t, c1, op, e2'', t, c2) => (e, t', c)
+	elab_numtypes (e1',t1,e2',t2) => (e1'',t1',e2'',t2') &
+ 	Exp.print_exp e1'' & print " (" & Types.print_type t1' & print ") × " &
+ 	Exp.print_exp e2'' & print " (" & Types.print_type t2' & print ")\n" &
+	elab_binary (e1'', t1', c1, op, e2'', t2', c2) => (e, t', c) &
+	print "  binary exp: " & Exp.print_exp e & print "\n"
 	-------------------------------------------------------
 	elab_exp (env,Absyn.BINARY(e1,op,e2)) => (e,t',c)
 
@@ -72,8 +73,8 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
 
   rule	elab_exp (env,e1) => (e1', t1, c1) &
 	elab_exp (env,e2) => (e2', t2, c2) &
-	elab_numtypes (e1',t1,e2',t2) => (e1'',e2'',t) &
-	elab_relation (e1'', c1, t, op, e2'', c2) => (e, t', c)
+	elab_numtypes (e1',t1,e2',t2) => (e1'',t1',e2'',t2') &
+	elab_relation (e1'', c1, t1', op, e2'', c2, t2') => (e, t', c)
 	----------------------------------------------
 	elab_exp (env,Absyn.RELATION(e1,op,e2))
 	  => (e,t',c)
@@ -126,20 +127,6 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Type, bool) =
   rule	print "- elab_exp failed: " & Dump.print_exp e & print "\n"
 	---------------------------------------------------------
 	elab_exp(_,e) => fail
-
-end
-
-(**)
-
-relation elab_exp_list : (Env.Env, Absyn.Exp list) => (Exp.Exp list, bool) =
-
-  axiom	elab_exp_list (_,[]) => ([],true)
-
-  rule	elab_exp (env,e) => (e',_,c1) &
-	elab_exp_list (env,es) => (es',c2) &
-	bool_and (c1,c2) => c
-	---------------------------------
-	elab_exp_list (env,e::es) => (e'::es',c)
 
 end
 
@@ -274,12 +261,42 @@ end
 relation elab_call2 : (Env.Env, Absyn.Path, Absyn.Exp list)
 	=> (Exp.Exp, Types.Type, bool) =
 
-  rule	(* FIXME: lookup function *)
-	elab_exp_list (env,args) => (args',c)
+  rule	Lookup.lookup_type(env,fn) => (t as Types.T_FUNCTION(params,restype)) &
+	print "   function " & Dump.print_path fn & print " is " &
+	Types.print_type t & print "\n" &
+	elab_call_args(env,args,params) => (args',c)
 	-------------------------------------
-	elab_call2 (env,fn,args) => (Exp.CALL(fn,args'),
-				     Types.T_REAL (*FIXME*),
-				     c)
+	elab_call2 (env,fn,args) => (Exp.CALL(fn,args'), restype, c)
+
+  rule	print "# Couldn't find function " & Dump.print_path fn & print "\n"
+	-------------------------------------------------------------------
+	elab_call2 (_,fn,_) => fail
+
+end
+
+relation elab_call_args : (Env.Env, Absyn.Exp list, Types.FuncArg list)
+	  => (Exp.Exp list, bool) =
+
+  axiom	elab_call_args (env,[],[]) => ([],true)
+
+  rule	elab_exp (env,arg) => (arg',t1,c1) &
+	Types.same_type(t1,pt) => true &
+	elab_call_args (env,args,params) => (args',c2) &
+	bool_and (c1,c2) => c
+	---------------------------------
+	elab_call_args (env,arg::args,(pn,pt)::params) => (arg'::args',c)
+
+  rule	print "# Too many functiion arguments\n"
+	----------------------------------------
+	elab_call_args (_,_::_,[]) => fail
+
+  rule	print "# Too few functiion arguments\n"
+	----------------------------------------
+	elab_call_args (_,[],_::_) => fail
+
+  rule	print "- elab_call_args failed\n"
+	---------------------------------
+	elab_call_args(_,_,_) => fail
 
 end
 
@@ -323,7 +340,7 @@ end
 
 relation elab_cref2 : (Env.Env,
 		       Exp.ComponentRef, Absyn.VarType,
-		       Types.Type, Env.Binding) => (Exp.Exp,bool) =
+		       Types.Type, Types.Binding) => (Exp.Exp,bool) =
 
 	(* FIXME: Check type of expression anyway? *)
   axiom	elab_cref2 (_,cr, Absyn.VAR, _, _) => (Exp.CREF(cr),false)
@@ -496,31 +513,36 @@ end
  **)
 
 relation elab_numtypes : (Exp.Exp, Types.Type, Exp.Exp, Types.Type)
-	  => (Exp.Exp, Exp.Exp, Types.Type) =
+	  => (Exp.Exp, Types.Type, Exp.Exp, Types.Type) =
 
-  rule	elab_numtypes (e1, t1, e2, t2) => (e1,e2,t)
-	(* FIXME: what about the dimensions? *)
+	(** FIXME: This is a strange trick that doesn't really work *)
+  rule	elab_numtypes (e1, t1, e2, t2) => (e1,t1',e2,t2')
 	-------------------------------------------
-	elab_numtypes (e1, Types.T_ARRAY(dim1,t1), e2, Types.T_ARRAY(dim2,t2))
-	  => (e1, e2, t)
+	elab_numtypes (e1, Types.T_ARRAY(dim1,t1), e2, t2)
+	  => (e1, Types.T_ARRAY(dim1,t1'), e2, t2')
+
+  rule	elab_numtypes (e1, t1, e2, t2) => (e1,t1',e2,t2')
+	-------------------------------------------
+	elab_numtypes (e1, t1, e2, Types.T_ARRAY(dim2,t2))
+	  => (e1, t1', e2, Types.T_ARRAY(dim2,t2'))
 
   axiom	elab_numtypes (e1, Types.T_INTEGER, e2, Types.T_INTEGER)
-	  => (e1, e2, Types.T_INTEGER)
+	  => (e1, Types.T_INTEGER, e2, Types.T_INTEGER)
 
   axiom	elab_numtypes (e1, Types.T_REAL, e2, Types.T_REAL)
-	  => (e1, e2, Types.T_REAL)
+	  => (e1, Types.T_REAL, e2, Types.T_REAL)
 
   axiom	elab_numtypes (e1, Types.T_INTEGER, e2, Types.T_REAL)
-	  => (Exp.CAST_TO_REAL(e1), e2, Types.T_REAL)
+	  => (Exp.CAST_TO_REAL(e1), Types.T_REAL, e2, Types.T_REAL)
 
   axiom	elab_numtypes (e1, Types.T_REAL, e2, Types.T_INTEGER)
-	  => (e1, Exp.CAST_TO_REAL(e2), Types.T_REAL)
+	  => (e1,Types.T_REAL, Exp.CAST_TO_REAL(e2), Types.T_REAL)
 
   axiom	elab_numtypes (e1, Types.T_STRING, e2, Types.T_STRING)
-	  => (e1, e2, Types.T_STRING)
+	  => (e1, Types.T_STRING, e2, Types.T_STRING)
 
   axiom	elab_numtypes (e1, Types.T_BOOL, e2, Types.T_BOOL)
-	  => (e1, e2, Types.T_STRING)
+	  => (e1, Types.T_STRING, e2, Types.T_STRING)
 
   rule	print "- elab_numtypes failed\n" &
 	print "  type1 = " & Types.print_type t1 &
@@ -574,6 +596,24 @@ relation elab_binary : (Exp.Exp, Types.Type, bool,
 	elab_binary (e1,Types.T_REAL,c1,Absyn.MUL,e2,Types.T_REAL,c2)
 	  => (Exp.BINARY(e1,Exp.REAL_MUL,e2), Types.T_REAL, c)
 
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,Types.T_ARRAY(dim,T_INTEGER),c1,
+		     Absyn.MUL,
+		     e2,Types.T_INTEGER,c2)
+	  => (Exp.BINARY(e1,Exp.INT_ARRAY_SCALAR_MUL(1(*FIXME*)),e2),
+	      Types.T_ARRAY(dim,T_INTEGER),
+	      c)
+
+  rule	bool_and (c1,c2) => c
+	---------------------
+	elab_binary (e1,Types.T_ARRAY(dim,T_REAL),c1,
+		     Absyn.MUL,
+		     e2,Types.T_REAL,c2)
+	  => (Exp.BINARY(e1,Exp.REAL_ARRAY_SCALAR_MUL(1(*FIXME*)),e2),
+	      Types.T_ARRAY(dim,T_REAL),
+	      c)
+
 	(**  DIV
 	 **
 	 ** Division is always real division. Integers are always
@@ -602,34 +642,34 @@ end
 
 (** relation: elab_relation *)
 
-relation elab_relation : (Exp.Exp, bool,
-			  Types.Type, Absyn.RelOp,
-			  Exp.Exp, bool)
+relation elab_relation : (Exp.Exp, bool, Types.Type,
+			  Absyn.RelOp,
+			  Exp.Exp, bool, Types.Type)
 	  => (Exp.Exp, Types.Type, bool) =
 
 	(** First some rules to reduce the number of operators to just *)
 	(** four: `<' `<=' `=' `!='. *)
 
-  rule	elab_relation (e2,c2,t,Absyn.LESS,e1,c1) => (e,t,c)
+  rule	elab_relation (e2,c2,t1,Absyn.LESS,e1,c1,t2) => (e,t,c)
 	----------------------------------------
-	elab_relation (e1,c1,t,Absyn.GREATER,e2,c2) => (e,t,c)
+	elab_relation (e1,c1,t1,Absyn.GREATER,e2,c2,t2) => (e,t,c)
 
-  rule	elab_relation (e2,c2,t,Absyn.LESSEQ,e1,c1) => (e,t,c)
+  rule	elab_relation (e2,c2,t1,Absyn.LESSEQ,e1,c1,t2) => (e,t,c)
 	----------------------------------------
-	elab_relation (e1,c1,t,Absyn.GREATEREQ,e2,c2) => (e,t,c)
+	elab_relation (e1,c1,t1,Absyn.GREATEREQ,e2,c2,t2) => (e,t,c)
 
 	(** Then the real rules *)
 
   rule	bool_and (c1,c2) => c &
-	elab_relop (op,t) => op'
+	elab_relop (op,t1) => op'
 	---------------------
-	elab_relation (e1,c1,t,op,e2,c2)
+	elab_relation (e1,c1,t1,op,e2,c2,t2)
 	  => (Exp.RELATION(e1,op',e2), Types.T_BOOL, c)
 
 	(**  Failure *)
   rule	print "- elab_relation failed\n"
 	--------------------------------
-	elab_relation(_,_,_,_,_,_) => fail
+	elab_relation(_,_,_,_,_,_,_) => fail
 			
 end
 
@@ -951,7 +991,7 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef) => Values.Value =
 
 end
 
-relation ceval_cref_binding : (Env.Env, Env.Binding) => Values.Value =
+relation ceval_cref_binding : (Env.Env, Types.Binding) => Values.Value =
 
   axiom	ceval_cref_binding (env,Types.VALBOUND(v)) => v
 

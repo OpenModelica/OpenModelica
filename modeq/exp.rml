@@ -21,6 +21,8 @@ module Exp:
   datatype BinOp = INT_ADD | REAL_ADD | STRING_ADD
 		 | INT_SUB | REAL_SUB
 		 | INT_MUL | REAL_MUL
+		 | INT_ARRAY_SCALAR_MUL of int
+		 | REAL_ARRAY_SCALAR_MUL of int
 		 | REAL_DIV
 		 | REAL_POW
   datatype UnaryOp = UMINUS | UPLUS
@@ -51,6 +53,7 @@ module Exp:
 	       | RANGE of Exp * Exp option * Exp
                  (* New constructors *)
 	       | CAST_TO_REAL of Exp
+	       | ASUB of Exp * int
   (** The `Exp' datatype closely corresponds to the `Absyn.Exp' *)
   (** datatype, but is used for statically analyzed expressions.  It *)
   (** includes explicit type promotions and typed (non-overloaded) *)
@@ -71,6 +74,7 @@ module Exp:
   relation print_component_ref : ComponentRef => ()
   relation print_list : ('a list, 'a => (), string) => ()
   relation int_subscripts : int list => Subscript list
+  relation simplify : Exp => Exp
 
 end
 
@@ -160,92 +164,220 @@ end
  **)
 
 relation print_exp: Exp => () =
+
+  rule	print_exp2 (e,0)
+	----------------
+	print_exp e
+
+end
+
+relation print_exp2: (Exp,int) => () =
 	
   rule	int_string(x) => s & print s
 	----------------------------
-	print_exp(ICONST(x))
+	print_exp2(ICONST(x),_)
 
   rule	real_string(x) => s & print s
 	-----------------------------
-	print_exp(RCONST(x))
+	print_exp2(RCONST(x),_)
 
   rule	print "\"" & print s & print "\""
 	---------------------------------
-	print_exp(SCONST(s))
+	print_exp2(SCONST(s),_)
 
   rule	print "false"
 	-------------
-	print_exp(BCONST(false))
+	print_exp2(BCONST(false),_)
 
   rule	print "true"
 	-------------
-	print_exp(BCONST(true))
+	print_exp2(BCONST(true),_)
 
   rule	print_component_ref(c)
 	---------------------
-	print_exp(CREF(c))
+	print_exp2(CREF(c),_)
 
-  rule	binop_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
-	---------------------------------------------------------------
-	print_exp(BINARY(e1, op, e2))
+  rule	binop_symbol(op) => sym &
+ 	binop_priority op => pri2 &
+	print_leftpar(pri1,pri2) => pri3 &
+	print_exp2 (e1,pri3) & print sym & print_exp2 (e2,pri3) &
+	print_rightpar(pri1,pri2)
+	------------------------
+	print_exp2(BINARY(e1, op, e2),pri1)
 
   rule	unaryop_symbol(op) => sym &
-	print sym & print_exp e
+	unaryop_priority(op) => pri2 &
+	print_leftpar(pri1,pri2) => pri3 &
+	print sym & print_exp2 (e,pri3) &
+	print_rightpar(pri1,pri2)
 	----------------------------
-	print_exp(UNARY(op, e))
+	print_exp2(UNARY(op, e),pri1)
 
-  rule	lbinop_symbol(op) => sym & print_exp e1 & print sym & print_exp e2
+  rule	lbinop_symbol(op) => sym &
+	lbinop_priority(op) => pri2 &
+	print_leftpar(pri1,pri2) => pri3 &
+	print_exp2 (e1,pri3) & print sym & print_exp2 (e2,pri3) &
+	print_rightpar(pri1,pri2)
 	----------------------------------------------------------------
-	print_exp(LBINARY(e1, op, e2))
+	print_exp2(LBINARY(e1, op, e2),pri1)
 
-  rule	lunaryop_symbol(op) => sym & print sym & print_exp e
+  rule	lunaryop_symbol(op) => sym &
+ 	lunaryop_priority(op) => pri2 &
+	print_leftpar(pri1,pri2) => pri3 &
+ 	print sym & print_exp2 (e,pri3) &
+	print_rightpar(pri1,pri2)
 	---------------------------------------------------
-	print_exp(LUNARY(op, e))
+	print_exp2(LUNARY(op, e),pri1)
 
-  rule	relop_symbol(op) => sym & print_exp(e1) & print sym & print_exp(e2)
+  rule	relop_symbol(op) => sym &
+ 	relop_priority(op) => pri2 &
+	print_leftpar(pri1,pri2) => pri3 &
+ 	print_exp2(e1,pri3) & print sym & print_exp2(e2,pri3) &
+	print_rightpar(pri1,pri2)
 	-----------------------------------------------------------------
-	print_exp(RELATION(e1, op, e2))
+	print_exp2(RELATION(e1, op, e2),pri1)
 
-  rule	print "if " & print_exp(c) &
-	print " then " & print_exp(t) &
-	print " else " & print_exp(f)
+  rule	print "if " & print_exp2(c,0) &
+	print " then " & print_exp2(t,0) &
+	print " else " & print_exp2(f,0)
 	----------------------------
-	print_exp(IFEXP(c,t,f))
+	print_exp2(IFEXP(c,t,f),_)
 
   rule	Absyn.path_string(fcn) => fs &
 	print fs & print "(" & print_list(args,print_exp,",") & print ")"
 	---------------------------------------------
-	print_exp(CALL(fcn, args))
+	print_exp2(CALL(fcn, args),_)
 
   rule	print "[" &
 	print_list(es, print_exp, ",") &
 	print "]"
 	---------
-	print_exp ARRAY(es)
+	print_exp2 (ARRAY(es),_)
 	
   rule	print "[" &
 	print_list(es, print_row, ";") &
 	print "]"
 	---------
-	print_exp MATRIX(es)
+	print_exp2 (MATRIX(es),_)
 
-  rule	print "(" & print_exp start & print ":" & print_exp stop & print ")"
+  rule	let pri2 = 41 &
+	print_leftpar(pri1,pri2) => pri3 &
+	print_exp2 (start,pri3) & print ":" & print_exp2 (stop,pri3) &
+ 	print_rightpar(pri1,pri2)
 	-------------------------------------------------------------
-	print_exp RANGE(start,NONE,stop)
+	print_exp2 (RANGE(start,NONE,stop),pri1)
 
-  rule	print "(" & print_exp start & print ":" & print_exp step &
- 	print ":" & print_exp stop & print ")"
-	-------------------------------------------------------------
-	print_exp RANGE(start,SOME(step),stop)
+  rule	let pri2 = 41 &
+	print_leftpar(pri1,pri2) => pri3 &
+	print_exp2 (start,pri3) & print ":" &
+	print_exp2 (step,pri3) & print ":" &
+ 	print_exp2 (stop,pri3) &
+ 	print_rightpar(pri1,pri2)
+	-------------------------
+	print_exp2 (RANGE(start,SOME(step),stop),pri1)
 
   rule	print "Real(" & print_exp e & print ")"
 	---------------------------------------
-	print_exp CAST_TO_REAL(e)
+	print_exp2 (CAST_TO_REAL(e),_)
+
+  rule	let pri2 = 51 &
+	print_leftpar(pri1,pri2) => pri3 &
+	print_exp2 (e,pri3) &
+ 	print_rightpar(pri1,pri2) &
+ 	print "[" &
+ 	int_string i => s & print s & print "]"
+	---------------------------------------
+	print_exp2 (ASUB(e,i),pri1)
 	
   rule	print "#UNKNOWN EXPRESSION#"
         ----------------------------------
-	print_exp (_)
+	print_exp2 (_,_)
+
 end
+
+relation print_leftpar : (int,int) => int =
+
+  rule	int_gt(x,y) => true & print "("
+	-----------------------
+	print_leftpar(x,y) => 0
+
+  axiom	print_leftpar(pri1,pri2) => pri2
+
+end
+
+relation print_rightpar : (int,int) => () =
+
+  rule	int_gt(x,y) => true & print ")"
+	-----------------------
+	print_rightpar(x,y)
+
+  axiom	print_rightpar(_,_)
+
+end
+
+(* priorities:
+ *
+ *   and, or				10
+ *   not				11
+ *   <, >, =, != etc.			21
+ *   unary +, unary -			31
+ *   +, -				32
+ *   *					33
+ *   /					34
+ *   ^					35
+ *   :					41
+ *   []					51
+ *
+ *)
+
+relation binop_priority : BinOp => int =
+  axiom	binop_priority(INT_ADD)    	      	 => 32
+  axiom	binop_priority(REAL_ADD)   	      	 => 32
+  axiom	binop_priority(STRING_ADD) 	      	 => 32
+  axiom	binop_priority(INT_SUB)    	      	 => 32
+  axiom	binop_priority(REAL_SUB)   	      	 => 32
+  axiom	binop_priority(INT_MUL)    	      	 => 32
+  axiom	binop_priority(REAL_MUL)   	      	 => 33 
+  axiom	binop_priority(INT_ARRAY_SCALAR_MUL(_))  => 33
+  axiom	binop_priority(REAL_ARRAY_SCALAR_MUL(_)) => 33
+  axiom	binop_priority(REAL_DIV)   	      	 => 34
+  axiom	binop_priority(REAL_POW)   	      	 => 35      
+end
+
+relation unaryop_priority : UnaryOp => int =
+  axiom	unaryop_priority(UMINUS)   => 31
+  axiom	unaryop_priority(UPLUS)    => 31
+end
+
+relation lbinop_priority : LBinOp => int =
+  axiom	lbinop_priority(AND) => 10
+  axiom	lbinop_priority(OR) => 10
+end
+
+relation lunaryop_priority : LUnaryOp => int =
+  axiom	lunaryop_priority(NOT) => 11
+end
+
+relation relop_priority : RelOp => int =
+  axiom	relop_priority(INT_LESS)       => 21
+  axiom	relop_priority(REAL_LESS)      => 21
+  axiom	relop_priority(INT_LESSEQ)     => 21
+  axiom	relop_priority(REAL_LESSEQ)    => 21
+  axiom	relop_priority(INT_GREATER)    => 21
+  axiom	relop_priority(REAL_GREATER)   => 21
+  axiom	relop_priority(INT_GREATEREQ)  => 21
+  axiom	relop_priority(REAL_GREATEREQ) => 21
+  axiom	relop_priority(INT_EQUAL)      => 21
+  axiom	relop_priority(REAL_EQUAL)     => 21
+  axiom	relop_priority(STRING_EQUAL)   => 21
+  axiom	relop_priority(BOOL_EQUAL)     => 21
+  axiom	relop_priority(INT_NEQUAL)     => 21
+  axiom	relop_priority(REAL_NEQUAL)    => 21
+  axiom	relop_priority(STRING_NEQUAL)  => 21
+  axiom	relop_priority(BOOL_NEQUAL)    => 21
+end
+
+(**)
 
 relation binop_symbol : BinOp => string =
   axiom	binop_symbol(INT_ADD) => " + "
@@ -253,10 +385,25 @@ relation binop_symbol : BinOp => string =
   axiom	binop_symbol(STRING_ADD) => " + "
   axiom	binop_symbol(INT_SUB) => " - "
   axiom	binop_symbol(REAL_SUB) => " - "
-  axiom	binop_symbol(INT_MUL) => "*"
-  axiom	binop_symbol(REAL_MUL) => "*"
-  axiom	binop_symbol(REAL_DIV) => "/"
-  axiom	binop_symbol(REAL_POW) => "^"
+  axiom	binop_symbol(INT_MUL) => " * "
+  axiom	binop_symbol(REAL_MUL) => " * "
+  axiom	binop_symbol(REAL_DIV) => " / "
+  axiom	binop_symbol(REAL_POW) => " ^ "
+
+  rule	int_string dim => s1 &
+	string_append(" <int[",s1) => s2 &
+	string_append(s2,"] *> ") => s3
+	-------------------------------
+	binop_symbol(INT_ARRAY_SCALAR_MUL(dim)) => s3
+
+  rule	int_string dim => s1 &
+	string_append(" <real[",s1) => s2 &
+	string_append(s2,"] *> ") => s3
+	-------------------------------
+	binop_symbol(REAL_ARRAY_SCALAR_MUL(dim)) => s3
+
+  axiom	binop_symbol(_) => " <unknown binop> "
+
 end
 
 relation unaryop_symbol : UnaryOp => string =
@@ -338,3 +485,21 @@ relation int_subscripts : int list => Subscript list =
 
 end
 
+(** relation: simplify
+ **
+ ** This relation does some very basic simplification on expressions.
+ ** It is not intended to be used to simplify expressions provided by
+ ** the model, but to simplify unnecessarily complex expressions
+ ** constructed during instantiation.
+ **)
+
+relation simplify : Exp => Exp =
+
+  rule	int_sub (i,1) => i' &
+	list_nth(exps,i') => exp
+	-----------------------
+	simplify ASUB(ARRAY(exps),i) => exp
+
+  axiom	simplify e => e
+
+end

@@ -101,8 +101,25 @@ SCode.CLASS("Boolean",false,Absyn.R_PREDEFINED_BOOL,
 
 (* FIXME: Shuold contain components (attributes) from the real Real type *)
 val time_var =
-Env.FRAMEVAR("time", Absyn.ATTR([] , false, Absyn.VAR, Absyn.BIDIR),
-	     Types.T_COMPLEX(ClassInf.TYPE_REAL("time"), []), Types.UNBOUND)
+Types.VAR("time", Absyn.ATTR([] , false, Absyn.VAR, Absyn.BIDIR),
+	  Types.T_REAL, Types.UNBOUND)
+
+(** - Some assorted function types *)
+
+val nil2real = Types.T_FUNCTION([],
+				Types.T_REAL)
+
+val real2real = Types.T_FUNCTION([("x",Types.T_REAL)],
+				 Types.T_REAL)
+
+val real_real2real = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
+				      Types.T_REAL)
+
+val bool2bool = Types.T_FUNCTION([("x",Types.T_BOOL)],
+				 Types.T_BOOL)
+
+val real_real2bool = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
+				      Types.T_BOOL)
 
 (** - Initial environment *)
 
@@ -118,8 +135,31 @@ relation initial_env =
 	Env.extend_frame_c(env7, string_type) => env8 &
 	Env.extend_frame_c(env8, boolean_type) => env9 &
 	Env.extend_frame_c(env9, boolean_type) => env10 &
-	Env.extend_frame_v(env10, time_var) => env11
+
+	Env.extend_frame_v(env10, time_var) => env11 &
+
+	(* non-functions *)
+	Env.extend_frame_t(env11, "inital", nil2real)                => env12 &
+	Env.extend_frame_t(env12, "terminal", nil2real)              => env13 &
+	Env.extend_frame_t(env13, "event", bool2bool)                => env14 &
+	Env.extend_frame_t(env14, "switch", bool2bool)               => env15 &
+	Env.extend_frame_t(env15, "timeEvent", real_real2bool)       => env16 &
+	Env.extend_frame_t(env16, "der", real2real)                  => env17 &
+
+	(* non-differentiable functions *)
+	Env.extend_frame_t(env17, "div", real_real2real)             => env18 &
+	Env.extend_frame_t(env18, "rem", real_real2real)             => env19 &
+	Env.extend_frame_t(env19, "ceil", real2real)                 => env20 &
+	Env.extend_frame_t(env20, "floor", real2real)                => env21 &
+
+	(* differentiable functions *)
+	Env.extend_frame_t(env21, "abs", real2real)                  => env22 &
+	Env.extend_frame_t(env22, "sign", real2real)                 => env23 &
+
+	(* Not in the report *)
+	Env.extend_frame_t(env23, "sin", real2real) 		     => env24 &
+	Env.extend_frame_t(env24, "cos", real2real) 		     => env25
 	----------------------------------------------
-	initial_env () => env11
+	initial_env () => env25
 
 end

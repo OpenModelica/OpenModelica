@@ -56,7 +56,6 @@ relation select : (bool, 'a, 'a) => 'a =
 end
 
 (** relation: instantiate
- ** purpose:  Instantiate a Modelica program
  **
  ** To instantiate a Modelica program, an initial environment is
  ** built, containing the predefined types. Then the program is
@@ -73,7 +72,6 @@ relation instantiate: SCode.Program => DAE.DAEform =
 end
 
 (** relation: inst_program
- ** purpose:  Instantiate a Modelica program using a provided environment.
  **
  ** Instantiating a Modelica program is the same as instantiating the
  ** last class definition in the source file. First all the class
@@ -155,9 +153,9 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	print " instantiating " & print n & print "\n" &
 	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot)
 	  => (l,env', csets', ci_state', tys) &
-	print " " & print n & print " has " & ClassInf.print_state ci_state' &
-	print "\n"
-	------------------------------------------------------	
+	print " " & print n & print " has state " &
+ 	ClassInf.print_state ci_state' & print "\n"
+	-------------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,r,d), prot)
 	  => (l,env', csets', ci_state', tys)
@@ -361,6 +359,12 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(**  A variable
 	 **
+	 ** This is the rule for instantiating a model component.  A
+	 ** component can be a structured subcomponent or a variable,
+	 ** parameter or constant.  All of these are treated in a
+	 ** similar way.
+	 **
+	 ** FIXME: doc
 	 ** Lookup the class name, apply modifications and add the
 	 ** variable to the current frame in the environment. Then
 	 ** instantiate the class with an extended prefix.
@@ -369,7 +373,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => vn &
 
 	print " variable " & Exp.print_component_ref vn & print "\n" &
-	(* FIXME: merge order *)
+	(** FIXME: merge order *)
 
 	(** The class definition is fetched from the environment. *)
 	(** Then the set of modifications is calculated.  The *)
@@ -384,7 +388,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Lookup.lookup_class(env,t) => cl &
 	Mod.lookup_modification_p(mods,t) => classmod &
-	Mod.lookup_modification(mods,n,[(*FIXME*)]) => mm &
+	Mod.lookup_comp_modification(mods,n) => mm &
 	Mod.elab_mod(env,pre,m) => m' &
 	(* print "  mod 1: " & Mod.print_mod classmod & print "\n" &
 	   print "  mod 2: " & Mod.print_mod mm & print "\n" &
@@ -392,7 +396,7 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	Mod.merge(classmod,mm) => mod &
 	Mod.merge(mod,m') => mod' &
-	(* print "  modification: " & Mod.print_mod mod' & print "\n" & *)
+	print "  modification: " & Mod.print_mod mod' & print "\n" &
 
 	(** If the element is `protected', and an external *)
 	(** modification is applied, it is an error. *)
@@ -413,19 +417,20 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** binding. *)
 
 	make_binding (env,attr,eq,cl) => binding &
-	Env.extend_frame_v(env,Env.FRAMEVAR(n,attr,ty,binding)) => env' &
+	Env.extend_frame_v(env,Types.VAR(n,attr,ty,binding)) => env' &
 	print " extended frame with variable " & Exp.print_component_ref vn &
 	print " :: " & Types.print_type ty & print "\n" &
 
 	(** If the modification includes an equation, it is added. *)
 	(* FIXME: use env or env'? *)
-	inst_mod_equation(env',pre,n,ty,mod') => dae2 &
+	(* inst_mod_equation(env',pre,n,ty,mod') => dae2 & *)
 
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
 	(* dae_declare (vn,cl,attr) => dae3 & *)
 
-	list_append(dae1, dae2) => dae(*4 &
+	let dae = dae1
+	(*list_append(dae1, dae2) => dae4 &
 	list_append(dae4, dae3) => dae*)
 	-----------------------------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
@@ -433,7 +438,8 @@ relation inst_element: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 				     attr as Absyn.ATTR(ad,flow,param,dir),
 				     t,m))
           => (dae, env',csets',ci_state,
-	      [Types.VAR(n,Absyn.ATTR([],flow,param,dir), ty, binding)])
+	      [Types.VAR(n,Absyn.ATTR([(* FIXME: why? *)],flow,param,dir),
+			 ty, binding)])
 	
 
 	(** If the class lookup in the previous rule fails, this
@@ -470,7 +476,7 @@ end
 (**)
 
 relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
-		     SCode.Class,Absyn.VarAttr,Mod.Eqmod option,
+		     SCode.Class,Absyn.VarAttr,Mod.EqMod option,
 		     int list, int list)
 	  => (DAE.DAEcomp list,Connect.Sets,Types.Type) =
 
@@ -484,9 +490,11 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
-	dae_declare(cr,ty,Absyn.ATTR([], flow, vt, dir)) => dae2 &
+	inst_mod_equation(cr,ty,mod) => dae2 &
+	dae_declare(cr,ty,Absyn.ATTR([], flow, vt, dir)) => dae3 &
 
-	list_append(dae1,dae2) => dae
+	list_append(dae1,dae2) => daex &
+	list_append(daex,dae3) => dae
 	--------------------------
 	inst_var(env,mod,pre,csets,n,cl,Absyn.ATTR(_,flow,vt,dir),eq,[],idxs)
           => (dae,csets',ty)
@@ -515,11 +523,14 @@ relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	inst_array(env,mod,pre,csets,n,(cl,attr),i,stop,dims,idxs)
 	  => ([], csets, Types.T_NOTYPE)
 
-  rule	inst_var(env,mod,pre,csets,n,cl,attr,NONE(*FIXME*),dims,i::idxs)
+  rule	Mod.lookup_idx_modification(mod,[i]) => mod' &
+	print "  modification[]: " & Mod.print_mod mod' & print "\n" &
+	inst_var(env,mod',pre,csets,n,cl,attr,NONE(*FIXME*),dims,i::idxs)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
 	inst_array(env,mod,pre,csets',n,(cl,attr),i',stop,dims,idxs)
 	  => (dae2, csets'',_) &
+
 	list_append(dae1,dae2) => dae
 	-----------------------------
 	inst_array(env,mod,pre,csets,n,(cl,attr),i,stop,dims,idxs)
@@ -533,7 +544,7 @@ end
 
 (** relation: elab_arraydim *)
 
-relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.Eqmod option)
+relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 	  => int list =
 
   rule	elab_arraydim_decl(env,ad) => dim &
@@ -710,10 +721,10 @@ relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
 
   rule	ClassInf.valid(st, Absyn.R_PACKAGE) &
 	Env.extend_frame_v(env,
-			   Env.FRAMEVAR(n, Absyn.ATTR([],
-						      false,Absyn.CONST,
-						      Absyn.BIDIR),
-					ty,Types.UNBOUND)) => env' &
+			   Types.VAR(n, Absyn.ATTR([],
+						   false,Absyn.CONST,
+						   Absyn.BIDIR),
+				     ty,Types.UNBOUND)) => env' &
 	print "  added package " & print n & print "\n"
 	--------------------------------------------------------
 	add_package(env,n,ty,st,dae) => (env',dae)
@@ -826,7 +837,7 @@ relation inst_equation: (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_equation(env,mods,pre,csets,ci_state,SCode.EQ_EXPR(_)) => fail
 
   rule	Lookup.lookup_ident_local(env,n)
-	  => Env.FRAMEVAR(_,_,_,Types.EQBOUND(_,_)) &
+	  => Types.VAR(_,_,_,Types.EQBOUND(_,_)) &
 	print " shadowed equation for " & print n & print "\n" &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
@@ -886,6 +897,18 @@ end
 
 relation inst_eq_equation : (Exp.Exp, Types.Type, Exp.Exp, Types.Type)
 	  => DAE.DAEcomp list =
+
+	  (** FIXME: This type promotion is not decided *)
+
+  rule	inst_eq_equation(Exp.CAST_TO_REAL(e1),Types.T_REAL,e2,Types.T_REAL)
+	  => dae
+	--------
+	inst_eq_equation(e1,Types.T_INTEGER,e2,Types.T_REAL) => dae
+
+  rule	inst_eq_equation(e1,Types.T_REAL,Exp.CAST_TO_REAL(e2),Types.T_REAL)
+	  => dae
+	--------
+	inst_eq_equation(e1,Types.T_REAL,e2,Types.T_INTEGER) => dae
 
   rule	Types.same_type(t1,t2) => true &
 	(* FIXME: magic? *)
@@ -950,12 +973,12 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
   rule	print "   unroll: " & Values.print_val fst & print "\n" &
 	Env.open_scope env => env' &
 	Env.extend_frame_v (env',
-			    Env.FRAMEVAR(i, Absyn.ATTR([],
-						       false,
-						       Absyn.CONST,
-						       Absyn.BIDIR),
-					 Types.T_INTEGER,
-					 Types.VALBOUND(fst))) => env'' &
+			    Types.VAR(i, Absyn.ATTR([],
+						    false,
+						    Absyn.CONST,
+						    Absyn.BIDIR),
+				      Types.T_INTEGER,
+				      Types.VALBOUND(fst))) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
 	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs)
@@ -1354,33 +1377,34 @@ end
  ** if such an equation exists.
  ***)
 
-relation inst_mod_equation : (Env, Prefix, Ident, Types.Type, Mod)
+relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod)
 	  => DAE.DAEcomp list =
 
-  rule  print "  equation modification: " & print v & Mod.print_mod mod &
-	print "\n" &
+  rule  print "  equation modification: " & Exp.print_component_ref cr &
+ 	Mod.print_mod mod & print "\n" &
 
-	Types.same_type(ty1,ty2) => true &
-	Prefix.prefix_cref(pre,Exp.CREF_IDENT(v,[])) => cr &
+	(* Types.same_type(ty1,ty2) => true & *)
 	inst_eq_equation(Exp.CREF(cr),ty1,e,ty2) => dae
 	-----------------------------------------------
-	inst_mod_equation(env,pre,v,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
+	inst_mod_equation(cr,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
 	  => dae
 	  
+(*
   rule  Types.same_type(ty1,ty2) => false &
 	print "# Wrong type in equation modifier\n" &
 	print "    expected: " & Types.print_type ty1 & print "\n" &
 	print "    was:      " & Types.print_type ty2 & print "\n"
 	--------------------------------------------------------
-	inst_mod_equation(env,pre,v,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
+	inst_mod_equation(cr,ty1,mod as Mod.MOD(_,_,SOME((e,ty2,c))))
 	  => fail
+*)
 	  
-  axiom inst_mod_equation(_,_,_,_,Mod.MOD(_,_,NONE)) => []
-  axiom inst_mod_equation(_,_,_,_,Mod.NOMOD) => []
+  axiom inst_mod_equation(_,_,Mod.MOD(_,_,NONE)) => []
+  axiom inst_mod_equation(_,_,Mod.NOMOD) => []
 
   rule	print "- inst_mod_equation failed\n"
 	------------------------------------
-  	inst_mod_equation (_,_,_,_,_) => fail
+  	inst_mod_equation (_,_,_) => fail
 
 end
 
@@ -1407,7 +1431,7 @@ end
  ** analyzed constant property be used?
  **)
 
-relation make_binding : (Env.Env, Absyn.VarAttr, Mod.Eqmod option, SCode.Class)
+relation make_binding : (Env.Env, Absyn.VarAttr, Mod.EqMod option, SCode.Class)
 	  => Types.Binding =
 
   axiom	make_binding (_,_,NONE,_) => Types.UNBOUND
@@ -1432,8 +1456,7 @@ relation make_binding : (Env.Env, Absyn.VarAttr, Mod.Eqmod option, SCode.Class)
 end
 
 relation make_const_binding : (Env.Env, Exp.Exp,
-			       Types.Type, Types.Type, bool)
-	  => Env.Binding =
+			       Types.Type, Types.Type, bool) => Types.Binding =
 
 	(* Cast the value to real if necessary *)
   rule	make_const_binding (env,Exp.CAST_TO_REAL(e),

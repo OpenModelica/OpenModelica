@@ -24,6 +24,7 @@ module Dump:
   relation dump: Absyn.Program => ()
   relation print_exp: Absyn.Exp => ()
   relation print_component_ref: Absyn.ComponentRef => ()
+  relation print_path : Absyn.Path => ()
   relation print_subscripts : Absyn.Subscript list => ()
   relation print_arraydim: Absyn.ArrayDim => ()
   relation print_equation: Absyn.Equation => ()
@@ -61,7 +62,7 @@ relation print_class: Absyn.Class => () =
 
   rule	print_class_restriction(r) & print "(" &
 	print n & print "," & print_select(p,"PARTIAL,","") &
-	print ") = " & Absyn.path_string(i) => is & print is &
+	print ") = " & print_path(i) &
 	print_class_modification(m)
 	----------------------------------------
 	print_class(Absyn.CLASS(n,p,r,Absyn.DERIVED(i,_,m))) => ()
@@ -174,14 +175,13 @@ relation print_elementspec: Absyn.ElementSpec => () =
 	print_elementspec(Absyn.CLASSDEF(repl,cl))
 	
 	
-  rule	Absyn.path_string(p) => s &
-	print "EXTENDS(" & print s & print "," &
+  rule	print "EXTENDS(" & print_path p & print "," &
 	print_list(l,print_element_arg,",") & print ")"
 	------------------------------------------
 	print_elementspec(Absyn.EXTENDS(p,l))
 
   rule	print "COMPONENTS(attr... ," &
-	Absyn.path_string(t) => ts & print ts & print "," &
+	print_path(t) & print "," &
 	print_list(cs, print_component, ",") &
 	print ")"
 	------------------------------------------
@@ -358,7 +358,7 @@ relation print_alg_elseif : (Absyn.Exp * Absyn.Algorithm list) => () =
 
 end
 
-(** - Component references *)
+(** - Component references and paths *)
 
 (** relation: print_component_ref
  **
@@ -387,6 +387,19 @@ relation print_subscripts : Absyn.Subscript list => () =
   rule	print "[" & print_list(l,print_subscript,",") & print "]"
 	-------------------------------------------------------
 	print_subscripts l
+
+end
+
+(** relation: print_component_ref
+ **
+ ** Print a `Path'.
+ **)
+
+relation print_path : Absyn.Path => () =
+
+  rule	Absyn.path_string p => s & print s
+	----------------------------------
+	print_path p
 
 end
 
