@@ -16,7 +16,6 @@ module SCode :
   type Path = Absyn.Path
   type Subscript = Absyn.Subscript
   type Restriction = Absyn.Restriction
-  type Equation = Absyn.Equation
 
   datatype SubMod = SUBMOD of Ident * Subscript list * Mod
   and Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
@@ -38,6 +37,15 @@ module SCode :
 		    | DERIVED of Path
 			       * Absyn.ArrayDim option
 			       * Mod
+
+  (* - Equations *)
+  datatype Equation = EQ_EXPR of Absyn.Exp	(* more later? *)
+		    | EQ_IF of Absyn.Exp	(* conditional *)
+			     * Equation list	(* true branch *)  
+			     * Equation list	(* false branch *)
+		    | EQ_EQUALS of Absyn.Exp * Absyn.Exp
+		    | EQ_CONNECT of Absyn.ComponentRef * Absyn.ComponentRef
+		    | EQ_FOR of Ident * Absyn.Exp * Equation list
 
   (** - Algorithms *)
   datatype Algorithm = ALGORITHM of Absyn.Algorithm list
@@ -107,7 +115,8 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 
 	(* Lots of unnecessary consing ahead... *)
   rule	elab_classdef(Absyn.PARTS(ps)) => PARTS(els,eqs,als) &
-	list_append(eqs,l) => eqs'
+	elab_equations(l) => l' &
+	list_append(eqs,l') => eqs'
 	------------------------------
 	elab_classdef(Absyn.PARTS(Absyn.EQUATIONS(l)::ps))
 	  => PARTS(els,eqs',als)
@@ -186,6 +195,50 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 			 Absyn.COMPONENTS(attr as Absyn.ATTR([],fl,pa,di),t,
 					  (Absyn.COMPONENT(n,d,m))::xs))
 	  => COMPONENT(n,final,prot,Absyn.ATTR(d,fl,pa,di),t,mod)::xs'
+
+end
+
+(** relation: elab_equations
+ **)
+
+relation elab_equations : Absyn.Equation list => Equation list =
+
+  axiom	elab_equations [] => []
+
+  rule	elab_equation e => e' &
+	elab_equations es => es'
+	------------------------
+	elab_equations e::es => e'::es'
+
+end
+
+(** relation: elab_equation
+ **
+ ** The translation of equations are straightforward, with one
+ ** exception.  `If' clauses are translated so that the SCode only
+ ** contains simple `if'-`else' constructs, and no `elseif'.
+ **)
+
+relation elab_equation : Absyn.Equation => Equation =
+
+  axiom	elab_equation Absyn.EQ_EXPR(e) => EQ_EXPR(e)
+	
+  rule	elab_equations tb => tb' &
+	elab_equations fb => fb'
+	------------------------
+	elab_equation Absyn.EQ_IF(e,tb,[],fb) => EQ_IF(e,tb',fb')
+
+  rule	elab_equation Absyn.EQ_IF(e,tb,[],[Absyn.EQ_IF(ee,ei,eis,fb)]) => eq
+	------------------------------------------------------------------
+	elab_equation Absyn.EQ_IF(e,tb,(ee,ei)::eis,fb) => eq
+
+  axiom	elab_equation Absyn.EQ_EQUALS(e1,e2) => EQ_EQUALS(e1,e2)
+
+  axiom	elab_equation Absyn.EQ_CONNECT(c1,c2) => EQ_CONNECT(c1,c2)
+
+  rule	elab_equations l => l'
+	----------------------
+	elab_equation Absyn.EQ_FOR(i,e,l) => EQ_FOR(i,e,l')
 
 end
 
