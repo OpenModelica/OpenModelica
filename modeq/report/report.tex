@@ -385,6 +385,22 @@ and converted to assignment statements when possible.  Strongly
 connected sets of equations are solved by using a symbolic or numeric
 solver.
 
+\subsection{Object-orientation}
+
+Modelica is an object-oriented modeling language, which means that the
+building blocks of a Modelica model are objects which correspond more
+or less to real-world object.  When modeling an electrical circuit
+with a voltage source and a resistor, it will be built up by one
+object representing the voltage source and one representing the
+resistor.  There will most likely also be other objects, such as
+connectors used for connecting the ``pins'' of the components.
+
+This is a principle that has become very popular in the programming
+community, but it is still not very common in the modeling and
+simulation world, partly because the mathematical description using
+hybrid DAEs\cite{dae} is not very familiar to the engineers who do the
+modeling.
+
 \fixme{More stuff}
 
 \section{The Modelica design group}
