@@ -1390,7 +1390,6 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.Intera
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	print "ceval arraydim decl default .\n" &
 	Static.ceval(env,e,impl,st) => Values.INTEGER(i) &
  	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------
@@ -1403,15 +1402,12 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim, bool, Interactive.Intera
 	       PA: This is true for normal models, e.g. model test Real x[n]; end test;
 	       It is NOT true for functions, or other implicit instantiated models. 
 	     *)
-	print "ceval arraydim decl using implicit inst.\n" &
 	Static.ceval(env,e,impl,st) => Values.INTEGER(i) &
  	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl as true,st) => SOME(DIMINT(i))::l
 
-  rule	print "ceval arraydim decl non-const \n" &
-	Static.elab_exp(env, d,impl,st) => (e,Types.PROP(Types.T_INTEGER,false),_) &
-	print "non-const elabed exp\n" &
+  rule	Static.elab_exp(env, d,impl,st) => (e,Types.PROP(Types.T_INTEGER,false),_) &
 	elab_arraydim_decl(env,ds,impl,st) => l
 	-------------------------------------------------------
 	elab_arraydim_decl(env,Absyn.SUBSCRIPT(d)::ds,impl,st) 
@@ -2947,12 +2943,14 @@ relation make_binding : (Env.Env, SCode.Attributes, Mod.EqMod option)
 	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
-  axiom	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME((e,prop)))
+axiom  	make_binding (env, SCode.ATTR(_,_,_,Absyn.CONST,_), SOME((e,prop)))
 	  => Types.EQBOUND(e,true)
 
 	(* default *)
 
-  axiom	make_binding (_,_, SOME((e,Types.PROP(t,c)))) => Types.EQBOUND(e,c)
+  rule	Exp.simplify(e) => e'
+	-------------------
+	make_binding (_,_, SOME((e,Types.PROP(t,c)))) => Types.EQBOUND(e',c)
 
   rule	Print.print_buf "- make_binding failed\n"
 	-------------------------------

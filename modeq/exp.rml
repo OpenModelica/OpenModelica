@@ -262,13 +262,14 @@ relation simplify : Exp => Exp =
 	-----------------------
 	simplify ASUB(e, i) => exp
 
-(*
+
   rule	simplify e => MATRIX(t,n,exps) &
 	int_sub (i,1) => i' &
-	list_nth(exps,i') => exp
+	list_nth(exps,i') => (expl) &
+	Util.split_tuple2_list(expl) => (expl',bls) &
+	Util.bool_and_list(bls) => b
 	-----------------------
-	simplify ASUB(e, i) => ARRAY(t,b,exp)
-*)
+	simplify ASUB(e, i) => ARRAY(t,b,expl')
 
   rule	simplify e => IFEXP(c,t,f) &
 	simplify ASUB(t,i) => t' &
@@ -1093,9 +1094,9 @@ relation print_exp2_str : (Exp,int) => string =
  	int_string i => s4 &
 	string_append (s1, s2) => s &
 	string_append (s, s3) => s' &
-	string_append (s', "{") => s'' &
+	string_append (s', "[") => s'' &
 	string_append (s'', s4) => s''' &
-	string_append (s''', "}") => s''''
+	string_append (s''', "]") => s''''
 	---------------------------------------
 	print_exp2_str (ASUB(e,i),pri1) => s''''
 	

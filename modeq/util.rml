@@ -37,9 +37,11 @@ module Util :
   relation tuple2_1 : ('a * 'b) => 'a
   relation tuple2_2 : ('a * 'b) => 'b
 
+  relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list)
   relation string_append_list : string list => string
   relation string_delimit_list : (string list, string) => string
 
+  relation bool_and_list: bool list => bool
   relation bool_string: bool => string 
 
 end
@@ -168,6 +170,14 @@ relation tuple2_2 : ('a * 'b) => 'b =
 
 end
 
+relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list) =
+  axiom	split_tuple2_list([]) => ([],[])
+
+  rule	split_tuple2_list(rest) => (xs,ys)
+	---------------------------------
+	split_tuple2_list((x,y)::rest) => (x::xs, y::ys)
+end
+
 relation if : (bool,'a,'a) => 'a =
 	
   axiom	if (true,r,_) => r
@@ -202,7 +212,18 @@ relation string_delimit_list : (string list, string) => string =
 	string_delimit_list(f::r,delim) => str
 end
 
+relation bool_and_list: bool list => bool =
+  axiom	bool_and_list([b]) => b
+
+  rule	bool_and_list(rest) => b1 &
+	bool_and(b1,b) => res
+	---------------------
+  	bool_and_list(b::rest) => res
+end
+
 relation bool_string: bool => string =
   axiom	bool_string true => "true"
   axiom	bool_string false => "false"
 end
+
+
