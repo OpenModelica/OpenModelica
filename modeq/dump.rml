@@ -360,7 +360,7 @@ relation unparse_class_part_str: Absyn.ClassPart => string =
 	string_append(langstr," ") => s1 &
 	Util.string_append_list(["\nexternal ",langstr," ", outputstr, "=",ident,"(",expstr,");\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(Absyn.EXTERNAL(Absyn.EXTERNALDECL(ident,lang,SOME(output),expl)))
+	unparse_class_part_str(Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,SOME(output),expl)))
 	    => str
 
   rule	get_option_str(lang,identity) => langstr &
@@ -368,8 +368,11 @@ relation unparse_class_part_str: Absyn.ClassPart => string =
 	string_append(langstr," ") => s1 &
 	Util.string_append_list(["\nexternal ", langstr," ",ident,"(",expstr,");\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(Absyn.EXTERNAL(Absyn.EXTERNALDECL(ident,lang,NONE,expl))) 
+	unparse_class_part_str(Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,NONE,expl))) 
 	    => str
+
+  axiom	unparse_class_part_str(Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,_,NONE,_))) 
+	    => "\n  external;\n"
 end
 
 (**)

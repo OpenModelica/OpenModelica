@@ -284,7 +284,7 @@ module Absyn:
 
   (* ExternalDecl *)
   datatype ExternalDecl = EXTERNALDECL of 
-				  Ident  * (* The name of the external function *)
+				  Ident option  * (* The name of the external function *)
 				  string option * (* Lanugage of the external function *)
 				  ComponentRef option * (* ouput parameter as return value*)
 				  Exp list (* only positional arguments, i.e. expression list*)						     

@@ -243,11 +243,12 @@ composition returns [void* ast]
                 el_stack.push(el);
             }
         )*
-        ( EXTERNAL 
-            ( el = external_function_call )?
+        ( EXTERNAL
+            ( el = external_function_call)
             ( ann = annotation)?
         { 
-            el_stack.push(el);
+                el_stack.push(el);
+                
         }
         )?
         {
@@ -289,27 +290,36 @@ external_function_call returns [void* ast]
             void* temp2=0;
             void* temp3=0;
             void *lang;
+            ast = 0;
         }
         :
         (s:STRING)?
-        #(EXTERNAL_FUNCTION_CALL 
+        (#(EXTERNAL_FUNCTION_CALL 
             (
                 (i:IDENT (temp = expression_list)?)
                 {
                     if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
                     else { lang = mk_none(); }
                     if (!temp) { temp = mk_nil(); }
-                    ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(to_rml_str(i),lang,mk_none(),temp));
+                    ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(mk_some(to_rml_str(i)),lang,mk_none(),temp));
                 }
             | #(e:EQUALS temp2 = component_reference i2:IDENT ( temp3 = expression_list)?)
                 {
                     if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
                     else { lang = mk_none(); }
                     if (!temp2) { temp2 = mk_nil(); }
-                    ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(to_rml_str(i2),lang,mk_some(temp2),temp3));
+                    ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(mk_some(to_rml_str(i2)),lang,mk_some(temp2),temp3));
                 }
             )
-        )
+        ))?                            
+            {
+                if (!ast) { 
+                    if (s != NULL) { lang = mk_some(to_rml_str(s)); } 
+                    else { lang = mk_none(); }
+                    ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(mk_none(),lang,mk_none(),mk_nil()));
+                }
+        }
+
     ;
 
 element_list returns [void* ast]
