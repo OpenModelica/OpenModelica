@@ -408,31 +408,136 @@ end
  **
  ** Instantiate elements one at a time, and concatenate the resulting
  ** lists of equations.
+ ** P.A, Modelica1.4: (enables declare before use)
+ ** 1. "First names of declared local classes (and components) are found. Redeclarations are performed."
+ ** This means that we first handle all CLASSDEF nodes and apply modifiers and declarations to them and 
+ ** also COMPONENT nodes to add the variables to the environment.
+ ** 2. Second, "base-classes are looked up, flattened and inserted into the class."
+ ** This means that all EXTENDS nodes are handled.
+ ** 3. Third, "Flatten the class, apply modifiers and instantiate all local elements."
+ ** This handles COMPONENT nodes.
  **)
 
 relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			      SCode.Element list, InstDims)
-	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
-	      Types.Var list) =
+			    SCode.Element list, InstDims)
+	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State, Types.Var list) =
+	    
+	    
+  rule	classdef_elts(elts) => cdefelts &
+	component_elts(elts) => compelts &
+	extends_elts(elts) => extendselts &
+	(* 1. CLASSDEF nodes and COMPONENT nodes(add to env)*)
+	inst_element_list2(env,mod,pre,csets,ci_state,cdefelts,inst_dims) => (dae,env',csets',ci_state',tys) &
+	
+	Debug.fprint ("decl", "calling extend_components_to_env\n") &
+	extend_components_to_env(env,mod,pre,csets,ci_state,compelts,inst_dims) => env'' &
+	Debug.fprint("decl"," extended components to env, env=") &
+	Debug.fcall ("decl",Env.print_env, env'') &
+	(*2. EXTENDS Nodes*)
+	inst_element_list2(env'',mod,pre,csets',ci_state',extendselts,inst_dims) => (dae2,env''',csets'',ci_state'',tys2) &
+	
+	(*3. instantiate COMPONENT nodes*)
+	inst_element_list2(env''',mod,pre,csets'',ci_state'',compelts,inst_dims) => (dae3,env'''',csets''',ci_state''',tys3) &
+	list_append(dae,dae2) => d1 &
+	list_append(d1,dae3) => totdae &
+	list_append(tys,tys2) => ts1 &
+	list_append(ts1,tys3) => tottys
+	----------------------------------------------------------------------------------------------------
+	inst_element_list(env,mod,pre,csets,ci_state,elts,inst_dims) 
+	    => (totdae,env'''',csets''',ci_state''',tottys)
+end
 
-  axiom inst_element_list(env,_,_,csets,ci_state,[],_)
-	  => ([], env, csets, ci_state, [])
 
+relation classdef_elts: (SCode.Element list) => (SCode.Element list) =
+
+  axiom classdef_elts ([]) => []
+	
+  rule	classdef_elts(xs) => res
+	------------------------
+	classdef_elts ((cdef as SCode.CLASSDEF(_,_,_,_))::xs) => cdef::res
+
+  rule	classdef_elts(xs) => res
+	------------------------
+	classdef_elts(_::xs) => res
+end
+
+relation extends_elts: (SCode.Element list) => (SCode.Element list) =
+
+  axiom extends_elts ([]) => []
+	
+  rule	extends_elts(xs) => res
+	------------------------
+	extends_elts ((cdef as SCode.EXTENDS(_,_))::xs) => cdef::res
+
+  rule	extends_elts(xs) => res
+	------------------------
+	extends_elts(_::xs) => res
+end
+relation component_elts: (SCode.Element list) => (SCode.Element list) =
+
+  axiom component_elts ([]) => []
+	
+  rule	component_elts(xs) => res
+	------------------------
+	component_elts ((cdef as SCode.COMPONENT(_,_,_,_,_,_))::xs) => cdef::res
+
+  rule	component_elts(xs) => res
+	------------------------
+	component_elts(_::xs) => res
+end
+
+relation extend_components_to_env : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			    SCode.Element list, InstDims)
+	    => (Env) =
+
+  rule	Lookup.lookup_class(env,t) => (cl,cenv) & 
+	Debug.fprint ("decl", "got class \n") &
+
+	(** PA: PROBLEM, Modifiers should be merged in this phase, but
+	   since undeclared components can not be found (is done in this phase)
+	   the modifiers can not be elaborated to get a variable binding.
+	   Thus, we need to store the merged modifier for elaboration in the 
+	   next stage. Where should modifiers be stored????
+	   Temporary solution. Postpone modifier merge to later phase. 
+	   What impact does this have?
+	   **)
+
+	Debug.fprint ("decl", "instantiating class to get type\n") &
+	inst_class(env,Mod.NOMOD,pre,csets,cl,inst_dims) => (_,_,ty,_) &
+	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+	    prot,ty,Types.UNBOUND),false) => env' &
+	extend_components_to_env(env',mods,pre,csets,ci_state,xs,inst_dims) => env''
+	-----------------
+	extend_components_to_env(env,mods,pre,csets,ci_state,
+		     SCode.COMPONENT(n,final,prot,
+				     attr as SCode.ATTR(ad,flow,acc,param,dir),
+				     t,m)::xs,inst_dims) => env''
+  axiom	extend_components_to_env(env,_,_,_,_,[],_) => env
+end
+
+relation inst_element_list2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
+			    SCode.Element list, InstDims)
+	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
+		Types.Var list) =
+	
+  axiom	inst_element_list2(env,_,_,csets,ci_state,[],_)
+	    => ([], env, csets, ci_state, [])
+	
   rule  inst_element(env,mod,pre,csets,ci_state,el, inst_dims)
 	  => (dae1,env',csets',ci_state',tys1) &
-	inst_element_list(env',mod,pre,csets',ci_state',els, inst_dims)
+	inst_element_list2(env',mod,pre,csets',ci_state',els, inst_dims)
 	  => (dae2,env'',csets'',ci_state'',tys2) &
 	list_append(tys1, tys2) => tys &
 	list_append(dae1, dae2) => dae 
 	------------------------------
-	inst_element_list(env,mod,pre,csets,ci_state,el::els, inst_dims)
+	inst_element_list2(env,mod,pre,csets,ci_state,el::els, inst_dims)
 	  => (dae, env'', csets'', ci_state'', tys)
 
-  rule	print "- inst_element_list failed\n" &
+  rule	print "- inst_element_list2 failed\n" &
 	Dump.print_list (els, SCode.print_element, ", ") &
 	print "\n"
 	------------------------------------
-	inst_element_list(_,_,_,_,_,els,_) => fail
+	inst_element_list2(_,_,_,_,_,els,_) => fail
 
 end
 
@@ -483,7 +588,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	   **)
 	 
 	(* If a variable is declared multiple times, the first is used *)
-  rule	Lookup.lookup_ident_local(env,n) => _
+  rule	Lookup.lookup_ident_local(env,n) => (_,true) &
+	Debug.fprint ("insttr", "variable already declared, using first def") 
 	-------------------------------------
 	inst_element(env,mods,pre,csets,ci_state,
 		     SCode.COMPONENT(n,final,prot,_,_,_),_)
@@ -491,7 +597,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  
   	  (* Illegal redeclarations *)
 
-  rule	Lookup.lookup_ident_local(env,n) => _ &
+  rule	Lookup.lookup_ident_local(env,n) => (_,_) &
 	print "# Trying to redeclare the class " & print n &
 	print " as a variable\n"
 	------------------------
@@ -607,7 +713,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", Types.print_binding, binding) &
 	Debug.fcall ("insttr", print, "\n") &
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding)) => env' &
+					 prot,ty,binding),true) => env' &
 
 	(** If the type is one of the simple, predifined types a *)
 	(** simple variable declaration is added to the DAE. *)
@@ -1347,7 +1453,7 @@ relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	(** and that component has an equation modifier, this equation *)
 	(** is discared. *)
   rule	Lookup.lookup_ident_local(env,n)
-	  => Types.VAR(_,_,_,_,Types.EQBOUND(_,_)) &
+	  => (Types.VAR(_,_,_,_,Types.EQBOUND(_,_)),_) &
 	ClassInf.trans(ci_state, ClassInf.FOUND_EQUATION) => ci_state'
 	------------------------------------------------------
 	inst_equation(env,mods,pre,csets,ci_state,
@@ -1550,7 +1656,7 @@ relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
 						Absyn.BIDIR),
 				     false,
 				     typ, 
-				     Types.UNBOUND)
+				     Types.UNBOUND),true
 			   ) => env''
 	---------------
 	add_for_loop_scope(env, i,typ) => env''
@@ -1910,7 +2016,7 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 						    Absyn.BIDIR),
 				      true,
 				      Types.T_INTEGER,
-				      Types.VALBOUND(fst))) => env'' &
+				      Types.VALBOUND(fst)),true) => env'' &
 	inst_list(env'',mods,pre,csets,ci_state,inst_equation, eqs)
 	  => (dae1,env''',csets', ci_state') &
 	unroll (env, mods, pre, csets', ci_state', i, Values.ARRAY(rest), eqs)

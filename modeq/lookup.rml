@@ -44,7 +44,7 @@ module Lookup:
 	  => (Types.Attributes,Types.Type,Types.Binding)
   relation lookup_var_local  : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding)
-  relation lookup_ident_local : (Env.Env, SCode.Ident) => Types.Var
+  relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,bool)
   relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) 
 end
 
@@ -103,13 +103,17 @@ relation lookup_class: (Env.Env,Absyn.Path) => (SCode.Class, Env.Env) =
 	Debug.fcall("lotr",Dump.print_path,path) &
 	Debug.fprint("lotr","\n")
 	--------------------------------------
-	lookup_class(env, path) => (c, env')
+	lookup_class(env, path as Absyn.IDENT(_)) => (c, env')
 
-  rule	lookup_package_class (env,pack,path) => (c, env')&
+  rule	
+	Debug.fprint("lotr","lookup_class(") &
+	Debug.fcall("lotr",Dump.print_path,p) &
+ 	Debug.fprint("lotr",")  qualified called\n") &
+	lookup_package_class (env,pack,path) => (c, env')&
 	Debug.fprint("lotr", "lookup_package_class => ") &
 	Debug.fcall("lotr",Dump.print_path,path)
 	--------------------------------------
-	lookup_class(env, Absyn.QUALIFIED(pack,path)) => (c, env')
+	lookup_class(env, p as Absyn.QUALIFIED(pack,path)) => (c, env')
 
 end
 
@@ -222,11 +226,11 @@ relation lookup_var_local : (Env.Env,Exp.ComponentRef)
 
 end
 
-relation lookup_ident_local : (Env.Env, SCode.Ident) => Types.Var =
+relation lookup_ident_local : (Env.Env, SCode.Ident) => (Types.Var,bool) =
 
-  rule  lookup_var2(items, id) => fv
+  rule  lookup_var2(items, id) => (fv,b)
 	----------------------------
-	lookup_ident_local(Env.FRAME(items)::_, id) => fv
+	lookup_ident_local(Env.FRAME(items)::_, id) => (fv,b)
 
 end
 
@@ -294,7 +298,7 @@ relation lookup_type_in_frame: ((SCode.Ident * Env.Item) list,
   rule	id = n & print "# Error while looking up type " &
 	print id & print ": found a component\n"
 	------------------------------------
-	lookup_type_in_frame((n,Env.VAR(_))::_,env,id) => fail
+	lookup_type_in_frame((n,Env.VAR(_,_))::_,env,id) => fail
 
   rule	id = n & 
 	build_record_constructor_varlst (cdef,env) => varlst &
@@ -335,7 +339,7 @@ relation lookup_functions_in_frame: ((SCode.Ident * Env.Item) list,
   rule	id = n & print "# Error while looking up type " &
 	print id & print ": found a component\n"
 	------------------------------------
-	lookup_functions_in_frame((n,Env.VAR(_))::_,env,id) => fail
+	lookup_functions_in_frame((n,Env.VAR(_,_))::_,env,id) => fail
 
   rule	id = n & print "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_varlst (cdef,env) => varlst &
@@ -383,7 +387,7 @@ relation lookup_recconst_in_frame: ((SCode.Ident * Env.Item) list,
   rule	id = n & print "# Error while looking up record constructor class " &
 	print id & print ": found a component\n"
 	------------------------------------
-	lookup_recconst_in_frame((n,Env.VAR(_))::_,env,id) => fail
+	lookup_recconst_in_frame((n,Env.VAR(_,_))::_,env,id) => fail
 
   rule	id = n & print "Found record when looking for function. Assuming implicit record constructor\n" &
 	build_record_constructor_class (cdef,env) => cdef 
@@ -575,16 +579,16 @@ relation lookup_package_class : (Env.Env, string, Absyn.Path)
 end
 (**)
 relation lookup_var2 : ((SCode.Ident * Env.Item) list,SCode.Ident)
-	  => Types.Var =
+	  => (Types.Var,bool) =
 
   rule	Debug.fprintl ("locom", ["Comparing: ", n, " <=> ", id, "\n"]) &
 	id = n
 	--------------------------------------------
-	lookup_var2((n,Env.VAR(fv))::_,id) => fv
+	lookup_var2((n,Env.VAR(fv,b))::_,id) => (fv,b)
 
-  rule	lookup_var2(fs,id) => fv
+  rule	lookup_var2(fs,id) => (fv,b)
 	------------------------
-	lookup_var2(_::fs,id) => fv
+	lookup_var2(_::fs,id) => (fv,b)
 
 end
 
@@ -687,7 +691,7 @@ relation lookup_var_f : ((SCode.Ident * Env.Item) list,
 	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
 	Debug.fcall ("lotr", print_frame, f) &
 	lookup_var2(f, id)
-	  => Types.VAR(n, Types.ATTR(f,acc,vt,di),_,ty,bind) &
+	  => (Types.VAR(n, Types.ATTR(f,acc,vt,di),_,ty,bind),_) &
 	Debug.fprintl ("lotr", ["looking up: found ", id, "\n"]) &
 	check_subscripts(ty,ss) => ty'
 	----------------------------------
@@ -697,7 +701,7 @@ relation lookup_var_f : ((SCode.Ident * Env.Item) list,
   rule	Debug.fprint ("lotr", "lookup_var_f QUAL:") &
 	Debug.fprintl ("lotr", ["looking up: ", id, "\n"]) &
 	Debug.fcall ("lotr", print_frame, f) &
-	lookup_var2(f, id) => Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,_) &
+	lookup_var2(f, id) => (Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,_),_) &
 	Debug.fprintl ("lotr", ["looking up: found ", id, "\n"]) &
 	check_subscripts(ty,ss) => ty' & (* FIXME: Check for non-array *)
 	lookup_in_var(ty', ids) => (attr,ty'',binding)
@@ -741,7 +745,7 @@ relation print_frame_element: (SCode.Ident * Env.Item) => () =
 
   rule	print "v:" & print n
 	-------
-	print_frame_element ((n,Env.VAR(_)))
+	print_frame_element ((n,Env.VAR(_,_)))
 
   rule	print "c:" & print n
 	-------
