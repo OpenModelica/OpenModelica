@@ -863,7 +863,7 @@ relation is_primitive_class: (Absyn.Class,Absyn.Program) => bool =
 	lookup_classdef(path,inmodel,p)=> (cdef,_) &
 	is_primitive_class(cdef,p) => res
 	-------------------------------
-	is_primitive_class(Absyn.CLASS(cname,_,_,_,Absyn.R_CLASS,Absyn.DERIVED(path,_,_,_)),p) => res
+	is_primitive_class(Absyn.CLASS(cname,_,_,_,Absyn.R_CLASS,Absyn.DERIVED(path,_,_,_,_)),p) => res
 
 end
 
@@ -1316,7 +1316,7 @@ relation count_public_components: Absyn.Class => int =
 	count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)) => res
 	
   axiom count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],_)) => 0
-  axiom count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_)) => -1
+  axiom count_public_components Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)) => -1
 end
 
 relation count_components: Absyn.ElementItem list => int =
@@ -1620,7 +1620,7 @@ relation get_packages_in_class:(Absyn.Path, Absyn.Program, Absyn.Class) => strin
   rule	lookup_classdef(path,inmodel,p) => (cdef,newpath) &
 	get_packages_in_class(newpath,p,cdef) => res 
 	--------------------------------------------
-	get_packages_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_))) => res
+	get_packages_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_))) => res
 end
 
 
@@ -1707,7 +1707,7 @@ relation get_classnames_in_class:(Absyn.Path, Absyn.Program, Absyn.Class) => str
   rule	lookup_classdef(path,inmodel,p) => (cdef,newpath) &
 	get_classnames_in_class(newpath,p,cdef) => res 
 	--------------------------------------------
-	get_classnames_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_))) => res
+	get_classnames_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_))) => res
 end
 
 
@@ -1964,7 +1964,7 @@ relation count_public_connectors: (Absyn.Path, Absyn.Program, Absyn.Class) => in
   rule	lookup_classdef(cname,modelpath,p) => (cdef,newmodelpath) &
 	count_public_connectors (newmodelpath,p,cdef) => res
 	--------------------------------------------------
-	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(cname,_,_,_))) => res
+	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(cname,_,_,_,_))) => res
 end
 
 (** relation: count_connectors
@@ -2320,7 +2320,7 @@ relation get_nth_public_component_in_class:  (Absyn.Class,int) => Absyn.Element 
 	get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)),n) => res
 	
   axiom get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt)),_) => fail
-  axiom get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_)),_) => fail
+  axiom get_nth_public_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)),_) => fail
 
 end
 
@@ -2404,7 +2404,7 @@ relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class =
 	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)), eitem) 
 	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
 
-  axiom	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_)),eitem) => fail
+  axiom	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_)),eitem) => fail
 
   axiom	add_to_public(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),eitem)
 	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(Absyn.PUBLIC([eitem])::parts,cmt))
@@ -2424,7 +2424,7 @@ relation add_to_equation: (Absyn.Class, Absyn.EquationItem) => Absyn.Class =
 	add_to_equation ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)), eitem) 
 	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
 
-  axiom	add_to_equation ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_)),eitem) => fail
+  axiom	add_to_equation ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_)),eitem) => fail
 
   rule	(* Add the equations last, to make nicer output if public section present *)
 	list_append(parts,[Absyn.EQUATIONS([eitem])]) => newparts
@@ -2720,7 +2720,7 @@ relation get_classes_in_class: (Absyn.Path, Absyn.Program,Absyn.Class) => Absyn.
   rule	lookup_classdef(path, modelpath,p) => (cdef,newpath) &
 	get_classes_in_class(newpath,p,cdef) => res
 	--------------------------------------------
-	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_))) => res
+	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_))) => res
 end
 
 relation get_classes_in_parts: Absyn.ClassPart list => Absyn.Class list =

@@ -245,8 +245,9 @@ end
 relation elab_classdef: Absyn.ClassDef => ClassDef =
 
   rule	build_mod(SOME(Absyn.CLASSMOD(a, NONE)), false) => mod
+	(* TODO: attributes of derived classes *)
 	------------------------------------------------
-	elab_classdef(Absyn.DERIVED(p,d,a,cmt)) => DERIVED(p,d,mod)
+	elab_classdef(Absyn.DERIVED(p,d,attr,a,cmt)) => DERIVED(p,d,mod)
 
 
   rule	elab_classdef_elements parts => els &

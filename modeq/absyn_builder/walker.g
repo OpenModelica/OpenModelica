@@ -216,9 +216,11 @@ derived_class returns [void *ast]
 	void *as = 0;
 	void *cmod = 0;
   	void *cmt = 0;
+	void *attr = 0;
+	type_prefix_t pfx;
 }
 	:
-		(
+		(   type_prefix[pfx]
 			p = name_path 
 			( as = array_subscripts )? 
 			( cmod = class_modification )? 
@@ -227,8 +229,13 @@ derived_class returns [void *ast]
 				if (as) { as = mk_some(as); }
 				else { as = mk_none(); }
 				if (!cmod) { cmod = mk_nil(); }
-				
-				ast = Absyn__DERIVED(p, as, cmod, cmt? mk_some(cmt) : mk_none());
+				attr = Absyn__ATTR(
+				pfx.flow,
+				pfx.variability,
+				pfx.direction,
+ 				mk_nil());
+
+				ast = Absyn__DERIVED(p, as, attr, cmod, cmt? mk_some(cmt) : mk_none());
 			}
 		)
 	;
@@ -558,7 +565,7 @@ component_clause returns [void* ast]
 				pfx.flow,
 				pfx.variability,
 				pfx.direction,
-				arr);
+ 				arr);
 
 			ast = Absyn__COMPONENTS(attr, path, comp_list);
 		}

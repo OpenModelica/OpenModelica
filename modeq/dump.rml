@@ -146,15 +146,16 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	select_string(p, "partial ", "") => s1 &
 	select_string(f, "final ", "") => s2 &
 	unparse_restriction_str (r)  => s3 &
-	string_append(s1,s2) => s4 &
-	Absyn.path_string i => s5 &
-	get_option_str(dim,print_arraydim_str) => s6 &
-	unparse_mod1_str m => s7 &
-	unparse_comment_option(optcmt) => s8 &
-	Util.string_append_list([is,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s7,s8]) 
+	unparse_elementattr_str attr => s4 &
+	string_append(s1,s2) => s5 &
+	Absyn.path_string i => s6 &
+	get_option_str(dim,print_arraydim_str) => s7 &
+	unparse_mod1_str m => s8 &
+	unparse_comment_option(optcmt) => s9 &
+	Util.string_append_list([is,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s7,s8,s9]) 
 	  => str
 	------------------------------
-	unparse_class_str(indent,Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,dim,m,optcmt)),fi,re,io) => str
+	unparse_class_str(indent,Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,dim,attr,m,optcmt)),fi,re,io) => str
 	
   rule	indent_str(i) => is &
 	select_string(p, "partial ", "") => s1 &
@@ -260,7 +261,7 @@ relation print_class: Absyn.Class => () =
 	Print.print_buf ") = " & print_path(i) &
 	print_class_modification(m)
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,_,m,_))) => ()
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,_,_,m,_))) => ()
 	
   rule	print_class_restriction(r) & Print.print_buf "(" &
 	Print.print_buf n & Print.print_buf "," &

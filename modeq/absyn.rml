@@ -65,8 +65,10 @@ module Absyn:
 			       * string option	     (* string comment *)
 		    | DERIVED of Path
 			       * ArrayDim option
+			       * ElementAttributes   
 			       * ElementArg list
 			       * Comment option	     (* comment *)
+
 		    | ENUMERATION of EnumLiteral list   
 				  * Comment option     (* comment*)		
 
