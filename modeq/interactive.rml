@@ -1997,7 +1997,9 @@ end
 relation get_icon_annotation_in_class : (Absyn.Class) => string =
 
   rule	get_public_list(parts) => publst &
-	get_icon_annotation_in_elementitemlist(publst) => str
+	get_protected_list(parts) => protlst &
+	list_append(publst,protlst) => lst &
+	get_icon_annotation_in_elementitemlist(lst) => str
 	----------------------------
 	get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) => str	
 end
@@ -2043,7 +2045,9 @@ end
 relation get_diagram_annotation_in_class : (Absyn.Class) => string =
 
   rule	get_public_list(parts) => publst &
-	get_diagram_annotation_in_elementitemlist(publst) => str
+	get_protected_list(parts) => protlst &
+	list_append(publst,protlst) => lst &
+	get_diagram_annotation_in_elementitemlist(lst) => str
 	----------------------------
 	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) => str	
 end
@@ -2870,6 +2874,24 @@ relation get_public_list: Absyn.ClassPart list => Absyn.ElementItem list =
 	---------------------------
 	get_public_list(x::xs) => ys
 
+end
+
+
+(** relation: get_public_list
+ ** This relation takes a ClassPart List and returns an appended list of all protected lists.
+ **
+*)
+relation get_protected_list: Absyn.ClassPart list => Absyn.ElementItem list =
+  axiom	get_protected_list([]) => []
+	
+  rule	get_protected_list(rest) => res2 &
+	list_append(res1,res2) => res
+	-----------------------------
+	get_protected_list Absyn.PROTECTED(res1)::rest => res
+	
+  rule	get_protected_list(xs) => ys
+	---------------------------
+	get_protected_list(x::xs) => ys
 end
 
 (** relation: get_equation_list
