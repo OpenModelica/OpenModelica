@@ -10,6 +10,7 @@ module Algorithm:
 
   with "exp.rml"
   with "types.rml"
+  with "staticexp.rml"
 
   type Ident = string
 
@@ -25,87 +26,84 @@ module Algorithm:
 		| ELSEIF of Exp.Exp * Statement list * Else
 		| ELSE of Statement list
 
-  relation make_assignment : (Exp.Exp, Types.Type, bool,
-			      Exp.Exp, Types.Type, bool) => Statement
+  relation make_assignment : (Exp.Exp, Static.Properties,
+			      Exp.Exp, Static.Properties) => Statement
 
   relation make_if : (Exp.Exp,
-		      Types.Type,
+		      Static.Properties,
 		      Statement list,
-		      (Exp.Exp * Types.Type * Statement list) list,
+		      (Exp.Exp * Static.Properties * Statement list) list,
 		      Statement list) => Statement
 
-  relation make_for : (Ident, Exp.Exp, Types.Type, bool,
+  relation make_for : (Ident, Exp.Exp, Static.Properties,
 		       Statement list) => Statement
 
-  relation make_while : (Exp.Exp, Types.Type, bool,
+  relation make_while : (Exp.Exp, Static.Properties,
 			 Statement list) => Statement
 	
-  relation make_when : (Exp.Exp, Types.Type, bool,
+  relation make_when : (Exp.Exp, Static.Properties,
 			Statement list) => Statement
 	
 end
 
 (** relation: make_assignment *)
 
-relation make_assignment : (Exp.Exp, Types.Type, bool,
-			    Exp.Exp, Types.Type, bool) => Statement =
+relation make_assignment : (Exp.Exp, Static.Properties,
+			    Exp.Exp, Static.Properties) => Statement =
 
-  rule	Types.same_type(lt,rt) => true
-	------------------------------
-	make_assignment (Exp.CREF(c),lt,false,rhs,rt,_) => ASSIGN(c,rhs)
-
-  rule	make_assignment (lhs,Types.T_REAL,lc,
-			 Exp.CAST(Exp.REAL,rhs),Types.T_REAL,rc) => stmt
-	---------------------------------------------------------------
-	make_assignment (lhs,Types.T_REAL,lc,rhs,Types.T_INTEGER,rc) => stmt
+  rule	Static.match_prop(rhs, lhprop, rhprop) => rhs'
+	--------------------------------------
+	make_assignment(Exp.CREF(c), lhprop as Static.PROP(_,false),
+			rhs, rhprop) => ASSIGN(c,rhs')
 
   rule	print "# Trying to assign to constant component\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n"
 	-------------------------------------------
-	make_assignment (lhs,lt,true,rhs,rt,_) => fail
+	make_assignment (lhs,Static.PROP(lt,true),
+			 rhs,Static.PROP(rt,_)) => fail
 
-  rule	Types.same_type (lt,rt) => false &
+  rule	Types.equivtypes (lt,rt) => false &
 	print "# Type mismatch in assignment\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n" &
 	print "    " & Types.print_type lt &
  	print " := " & Types.print_type rt & print "\n"
 	-------------------------------------------
-	make_assignment (lhs,lt,_,rhs,rt,_) => fail
+	make_assignment (lhs,Static.PROP(lt,_),rhs,Static.PROP(rt,_)) => fail
 
   rule	print "- Algorithm.make_assignment failed\n" &
 	print "    " & Exp.print_exp lhs &
  	print " := " & Exp.print_exp rhs & print "\n"
 	---------------------------------------------
-	make_assignment (lhs,_,_,rhs,_,_) => fail
+	make_assignment (lhs,_,rhs,_) => fail
 
 end
 
 (** relation: make_if *)
 
 relation make_if : (Exp.Exp,
-		    Types.Type,
+		    Static.Properties,
 		    Statement list,
-		    (Exp.Exp * Types.Type * Statement list) list,
+		    (Exp.Exp * Static.Properties * Statement list) list,
 		    Statement list) => Statement =
 
   rule	make_else(eib,fb) => else
 	-------------------------
-	make_if(e,Types.T_BOOL,tb,eib,fb) => IF(e,tb,else)
+	make_if(e,Static.PROP(Types.T_BOOL,_),tb,eib,fb) => IF(e,tb,else)
 
   rule	print "# Type error in if conditional (" &
 	Exp.print_exp e & print ")\n" &
 	print "    Expected Boolean, got " &
 	Types.print_type t & print "\n"
 	-------------------------------
-	make_if(e,t,_,_,_) => fail
+	make_if(e,Static.PROP(t,_),_,_,_) => fail
 
 end
 
 (** relation: make_else *)
 
-relation make_else : ((Exp.Exp * Types.Type * Statement list) list,
+relation make_else : ((Exp.Exp * Static.Properties * Statement list) list,
 		      Statement list) => Else =
 
 	(** This removes empty else branches *)
@@ -115,58 +113,59 @@ relation make_else : ((Exp.Exp * Types.Type * Statement list) list,
 
   rule	make_else (xs,fb) => else
 	-------------------------
-	make_else ((e,Types.T_BOOL,b)::xs,fb) => ELSEIF(e,b,else)
+	make_else ((e,Static.PROP(Types.T_BOOL,_),b)::xs,fb)
+	  => ELSEIF(e,b,else)
 	
   rule	print "# Type error in elseif conditional (" &
 	Exp.print_exp e & print ")\n" &
 	print "    Expected Boolean, got " &
 	Types.print_type t & print "\n"
 	-------------------------------
-	make_else((e,t,_)::_,_) => fail
+	make_else((e,Static.PROP(t,_),_)::_,_) => fail
 
 end
 
 (** relation: make_if *)
 
-relation make_for : (Ident, Exp.Exp, Types.Type, bool,
+relation make_for : (Ident, Exp.Exp, Static.Properties,
 		     Statement list) => Statement =
 
-  axiom	make_for(i,e,Types.T_ARRAY(_,_),_,stmts) => FOR(i,e,stmts)
+  axiom	make_for(i,e,Static.PROP(Types.T_ARRAY(_,_),_),stmts) => FOR(i,e,stmts)
 
   rule	print "# Type error in for conditional.\n" &
 	print "    Expected array, got " &
 	Types.print_type t & print "\n"
 	-------------------------------
-	make_for(_,_,t,_,_) => fail
+	make_for(_,_,Static.PROP(t,_),_) => fail
 
 end
 
 (** relation: make_while *)
 
-relation make_while : (Exp.Exp, Types.Type, bool,
+relation make_while : (Exp.Exp, Static.Properties,
 		       Statement list) => Statement =
 
-  axiom	make_while(e,Types.T_BOOL,_,stmts) => WHILE(e,stmts)
+  axiom	make_while(e,Static.PROP(Types.T_BOOL,_),stmts) => WHILE(e,stmts)
 
   rule	print "# Type error in while conditional.\n" &
 	print "    Expected Boolean, got " &
 	Types.print_type t & print "\n"
 	-------------------------------
-	make_while(_,t,_,_) => fail
+	make_while(_,Static.PROP(t,_),_) => fail
 
 end
 
 (** relation: make_when *)
 
-relation make_when : (Exp.Exp, Types.Type, bool,
+relation make_when : (Exp.Exp, Static.Properties,
 		      Statement list) => Statement =
 
-  axiom	make_when(e,Types.T_BOOL,_,stmts) => WHEN(e,stmts)
+  axiom	make_when(e,Static.PROP(Types.T_BOOL,_),stmts) => WHEN(e,stmts)
 
   rule	print "# Type error in when conditional.\n" &
 	print "    Expected Boolean, got " &
 	Types.print_type t & print "\n"
 	-------------------------------
-	make_when(_,t,_,_) => fail
+	make_when(_,Static.PROP(t,_),_) => fail
 
 end
