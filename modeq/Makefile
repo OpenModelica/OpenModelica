@@ -4,10 +4,12 @@
 # David Kågedal <x97davka@ida.liu.se>
 #
 
+RMLDIR  = /home/pelab/pub/pkg/rml/rml-1.9.0/sol2-sparc
+
 SHELL	= /bin/sh
 CC	= cc
-CFLAGS	=
-LDFLAGS = -lm -L/home/pelab/pub/pkg/rml/current/sol2-sparc/lib/plain -lrml
+CFLAGS	= 
+LDFLAGS = -lrml
 RML	= rmlc
 PROG	= modeq
 AST	= ast/libast.a
@@ -17,9 +19,8 @@ SRCRML=	exp.rml \
 	absyn.rml \
 	dump.rml \
 	prefix.rml \
-	env.rml \
-	lform.rml \
 	mod.rml \
+	env.rml \
 	builtin.rml \
 	inst.rml \
 	main.rml
@@ -27,16 +28,18 @@ SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
 SRCO=	$(SRCC:.c=.o)
 
+RMLINCLUDE = $(RMLDIR)/include/plain
+
 SUBDIRS	= ast
 
 .SUFFIXES: .rml
 .PHONY: subdirs
 
-.rml.c:
+.rml.o:
 	$(RML) -c $<
 
-.c.o:
-	$(CC) -c $(CFLAGS) -o $@ $<
+#.c.o:
+#	$(CC) -c $(CFLAGS) -o $@ $<
 
 # .rml.o:
 # 	  $(RML) -c $<
@@ -45,13 +48,14 @@ SUBDIRS	= ast
 all : $(SRCO) subdirs $(PROG)
 
 $(PROG): $(SRCO) ast/libast.a
-	$(CC) -o $(PROG) $(SRCO) $(LDFLAGS) $(AST)
+	$(RML) -o $(PROG) $(SRCO) $(AST) $(LDFLAGS)
 
 # $(SRCO):	rml.h
-# inst.o:		inst.rml mod.h env.h
+inst.o:		inst.rml mod.h env.h
+	$(RML) -c $<
 
-main.c:		main.rml absyn.rml parse.rml dump.rml \
-		lform.rml dae.rml inst.rml
+#main.o:		main.rml absyn.rml parse.rml dump.rml \
+#		lform.rml dae.rml inst.rml
 
 ast/libast.a:
 	@(cd ast ; $(MAKE) libast.a)
