@@ -419,6 +419,16 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  rule	get_nth_component_modification(cr,p,n) => s1 &
+	string_append(s1,"\n") => resstr
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getNthComponentModification",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.INTEGER(n)],_)))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
   rule	get_inheritance_count(cr,p) => count &
 	int_string count => str &
 	string_append(str,"\n") => resstr
@@ -1538,6 +1548,25 @@ relation get_nth_component_annotation: (Absyn.ComponentRef,Absyn.Program, int) =
 	axiom get_nth_component_annotation(_,_,_) => "-1"
 end
 
+(** relation: get_nth_component_modification
+ ** This relation takes a `ComponentRef', a `Program' and an int and  returns a comma separated string of values
+ ** corresponding to the flat record for component annotations.
+ **)
+relation get_nth_component_modification: (Absyn.ComponentRef,Absyn.Program, int) 
+	  => string = 
+
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	get_nth_public_component_in_class(cdef,n) => comp &
+	get_component_modification(comp) => str &
+	Util.string_append_list(["{",str,"}"]) => str'
+	---------------------------------------------- 
+	get_nth_component_modification( model,p,n) => str'
+
+	axiom get_nth_component_modification(_,_,_) => "-1"
+end
+
+
 (** relation: get_connection_count
  ** This relation takes a `ComponentRef' and a `Program' and returns a string containing
  ** the number of connections in the model identified by the `ComponentRef'.
@@ -2415,6 +2444,46 @@ relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 	-----------------------
 	get_componentitems_annotation ([Absyn.COMPONENTITEM(_,NONE)]) => res
 end
+
+(** relation: get_component_modification
+ ** This relation takes an `Element' and returns a comma separated list of 
+ ** Code expression for the modification of the component.
+**)
+relation get_component_modification: Absyn.Element => string =
+	
+  rule	get_componentitems_modification(lst) => str
+	-----------------------------------------
+	get_component_modification(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,lst),NONE)) => str
+	axiom get_component_modification _ => ""
+end 
+
+relation get_componentitems_modification: Absyn.ComponentItem list => string =
+	
+  rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => s1 &
+	get_componentitems_modification(rest) => s2 &
+	Util.string_append_list([s1,",",s2]) => res
+	-------------------------------------------
+	get_componentitems_modification (Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(mod)),_)::(rest as (_::_))) => res
+	
+  rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => res 
+	-------------------------------------------------------------
+	get_componentitems_modification ([Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(mod)),_)]) => res
+
+  rule	get_componentitems_modification(rest) => str &
+	string_append("Code(),",str) => res
+	-----------------------
+	get_componentitems_modification (Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,NONE),_)::(rest as (_::_))) => res
+
+  rule	get_componentitems_modification(rest) => str &
+	string_append("Code(),",str) => res
+	-----------------------
+	get_componentitems_modification (Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,NONE),_)::(rest as (_::_))) => res
+
+  rule	let res = "Code()"
+	-----------------------
+	get_componentitems_modification ([Absyn.COMPONENTITEM(_,NONE)]) => res
+end
+
 
 (** relation_ get_annotation_string
  ** This relation takes an annotation and returns a comma separates string of values
