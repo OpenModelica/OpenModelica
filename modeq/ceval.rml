@@ -1612,9 +1612,7 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 		Util.list_replaceat(Values.REAL(rv2), correctPlace, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
-	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp &
-	    
-	    int_string row => RowString 
+	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp
 	    --------------------------------------------------
 	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  [] ) =>  retExp
 
@@ -1631,9 +1629,7 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 
 		int_add(row,1) => newRow &
 		list_append(listIN,[Values.ARRAY(listWithElement)]) => appendedList &
-	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow, appendedList ) => retExp &
-	     
-	    int_string newRow => RowString 
+	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow, appendedList ) => retExp
 	    --------------------------------------------------
 	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  listIN ) => retExp
 	    
@@ -1647,9 +1643,7 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 		Util.list_replaceat(Values.INTEGER(rv2), correctPlace, zeroList) => listWithElement &
 
 		int_add(row,1) => newRow &
-	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp &
-	    
-	    int_string row => RowString 
+	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow,[Values.ARRAY(listWithElement)] ) => retExp
 	    --------------------------------------------------
 	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  [] ) =>  retExp
 
@@ -1666,16 +1660,12 @@ relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.Interact
 
 		int_add(row,1) => newRow &
 		list_append(listIN,[Values.ARRAY(listWithElement)]) => appendedList &
-	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow, appendedList ) => retExp &
-	     
-	    int_string newRow => RowString 
+	    ceval_builtin_diagonal2(env,s1,impl,st,matrixDimension,newRow, appendedList ) => retExp
 	    --------------------------------------------------
 	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row,  listIN ) => retExp
 
  
-  rule	matrixDimension = row &
-     
-	    int_string row => RowString
+  rule	matrixDimension = row
         --------------------------------------------------
 	    ceval_builtin_diagonal2 (env,s1,impl,st,matrixDimension,row, listIN) => listIN
 	    
