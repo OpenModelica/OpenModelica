@@ -1,14 +1,4 @@
 header {
-    #include <string>
-    #include <iostream>
-    std::string & replaceAll(std::string & str, const char *src, const char* dst) 
-    {
-        size_t pos;
-        while((pos = str.find(".")) < str.size()-1) {
-                str.replace(pos,1,"_");
-            }
-        return str;
-    }
 
 }
 
@@ -103,8 +93,16 @@ tokens {
         WITH            = "with";
         WITHTYPE        = "withtype";
 }
-
-
+{
+    std::string & replaceAll(std::string & str, const char *src, const char* dst) 
+    {
+        size_t pos;
+        while((pos = str.find(".")) < str.size()-1) {
+                str.replace(pos,1,"_");
+            }
+        return str;
+    }
+}
 // ---------
 // Operators
 // ---------
