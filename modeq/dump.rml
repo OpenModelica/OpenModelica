@@ -145,17 +145,19 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
   rule	indent_str(i) => is &
 	select_string(p, "partial ","") => s1 &
 	select_string(f, "final ","") => s2 &
+	select_string(e, "encapsulated ","") => s2' &
 	unparse_restriction_str (r) => s3 &
 	int_add(i,1) => i' &
 	unparse_class_part_str_lst(i',parts,true) => s4 &
 	unparse_string_comment_option(optcmt) => s5 &
-	Util.string_append_list([is, s1, s2, re, io, s3, " ", n, s5, "\n", s4, is, "end ", n]) => str
+	Util.string_append_list([is, s2', s1, s2, re, io, s3, " ", n, s5, "\n", s4, is, "end ", n]) => str
 	-----------------------------
 	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt)),fi,re,io) => str
 
   rule	indent_str(indent) => is &
 	select_string(p, "partial ", "") => s1 &
-	select_string(f, "final ", "") => s2 &
+	select_string(f, "final ", "") => s2 & 
+	select_string(e, "encapsulated ","") => s2' &
 	unparse_restriction_str (r)  => s3 &
 	unparse_elementattr_str attr => s4 &
 	string_append(s1,s2) => s5 &
@@ -163,7 +165,7 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	get_option_str(dim,print_arraydim_str) => s7 &
 	unparse_mod1_str m => s8 &
 	unparse_comment_option(optcmt) => s9 &
-	Util.string_append_list([is,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s7,s8,s9]) 
+	Util.string_append_list([is,s2',s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s7,s8,s9]) 
 	  => str
 	------------------------------
 	unparse_class_str(indent,Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,dim,attr,m,optcmt)),fi,re,io) => str
@@ -171,10 +173,11 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
   rule	indent_str(i) => is &
 	select_string(p, "partial ", "") => s1 &
 	select_string(f, "final ", "") => s2 &
+	select_string(e, "encapsulated ","") => s2' &
 	unparse_restriction_str (r)  => s3 &
 	unparse_enumliterals(l) => s4 &
 	unparse_comment_option(cmt) => s5 &
-	Util.string_append_list([is,s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5]) => str
+	Util.string_append_list([is,s2',s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5]) => str
 	-------------------------------
 	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,cmt)),fi,re,io) => str    
 
