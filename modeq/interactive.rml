@@ -105,9 +105,17 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.STRING(name),Absyn.CREF(cr)],[])))]
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
-	    
+	
+	
+  rule	Absyn.add_component(name,tp,model,annlst,p) => (newp,resstr)
+	-----------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("addComponent",_),
+		Absyn.FUNCTIONARGS([Absyn.STRING(name),Absyn.CREF(tp),Absyn.CREF(model)],annlst)))]
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,SYMBOLTABLE(newp,s,ic,iv))
 end
-
 
 relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
 

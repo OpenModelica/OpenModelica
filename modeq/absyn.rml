@@ -275,6 +275,7 @@ module Absyn:
 
 
   relation update_program: (Program,Program) => Program
+  relation add_component: (string,ComponentRef,ComponentRef,NamedArg list, Program) => (Program,string)
   relation path_string : Path => string
   relation cref_to_path : ComponentRef => Path
   relation element_spec_name : ElementSpec => Ident
@@ -323,6 +324,51 @@ relation update_program: (Program,Program) => Program =
 	update_program (a,b) => b
 end
 	
+(** relation add_component
+ ** This relation takes:  arg1 - string giving the instancename, arg2 - `ComponentRef' giving the component type
+ ** arg3 - ComponentRef giving the model to instantiate the component within, arg4 - `NamedArg' list of annotations 
+ ** and arg5 - a Program. The result is an updated program with the component and its annotations inserted, and a string
+ ** "OK" for success. If the insertion fails, a suitable error string is given along with the input Program.
+ **)
+relation add_component: (string, ComponentRef,ComponentRef,NamedArg list, Program) => (Program ,string) =
+	
+  rule	cref_to_path(model) => modelpath &
+	path_in_program(modelpath,p) => false
+	---------------------------------
+	add_component (name,tp,model,annlst,p) => (p,"Error, No such model\n")
+	
+  rule	cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef &
+	cref_to_path(tp) => tppath &
+	annotation_list_to_absyn(annlst) => annotation &
+	add_to_public(cdef,ELEMENTITEM(ELEMENT(false,UNSPECIFIED,"",
+	    COMPONENTS(ATTR(false,VAR,BIDIR,[NOSUB]),tppath,
+		[COMPONENTITEM(COMPONENT(name,[],NONE),SOME(annotation))])))) => newcdef &	
+	update_program(PROGRAM([newcdef],w),p)=> newp
+	------------------------------------------------
+	add_component( name,tp,model,annlst,p as PROGRAM(_,w)) => (newp,"Ok\n")
+	
+  axiom	add_component (_,_,_,_,p) => (p,"Not implemented yet\n")
+	
+end
+
+(** relation: add_to_public
+ ** This relation takes a 'Class' definition and adds an `ElementItem' to the first public list in the class.
+ ** If no public list is available in the class one is created.
+ **)
+relation add_to_public: (Class, ElementItem) => Class = 
+
+  rule	get_public_list(parts) => publst &
+	let publst2 = eitem::publst &
+	replace_public_list(parts,publst2) => parts2 
+	--------------------------------------------
+	add_to_public ( CLASS(i,p,r,PARTS(parts)), eitem) => CLASS(i,p,r,PARTS(parts2))
+
+  axiom	add_to_public ( CLASS(i,p,r,DERIVED(_,_,_)),eitem) => fail
+
+  axiom	add_to_public(CLASS(i,p,r,PARTS(parts)),eitem) => CLASS(i,p,r,PARTS(PUBLIC([eitem])::parts))
+
+end
 (** relation: replace_class_in_program
  ** This relation takes a `Class' and a `Program' and replaces the class definition 
  ** at the top level in the program by the class definition of the `Class'.
@@ -446,7 +492,7 @@ end
 
 (** relation: get_inner_class
  ** This relation takes a class name and a class and return the inner class definition 
- ** having that name
+ ** having that name.
 **)
 relation get_inner_class: (Class, Ident) => Class =
   rule	get_public_list(parts) => publst &
@@ -488,7 +534,7 @@ relation get_public_list: ClassPart list => ElementItem list =
 	---------------------------
 	get_public_list(x::xs) => ys
 
-  axiom get_public_list(_) => []
+  axiom get_public_list(_) => fail
 end
 
 (** relation: get_class_from_elementitemlist
@@ -529,8 +575,43 @@ relation class_in_program:(string,Program) => bool =
   axiom class_in_program (_,_) => true
 end
 
+(** relation: path_in_program
+ ** This relation takes a path and a program and returns true if the class
+ ** referenced by the path exist in the program
+*)
+relation path_in_program: (Path, Program) => bool =
+	
+  rule	path_string(path) => pathstr &
+	class_in_program(pathstr,p) => res
+	-----------------------------------
+	path_in_program (path as IDENT(name),p) => res
+	
+  rule	class_in_program(c1,p) => true &
+	get_class_in_program(c1,p) => c1def &
+	path_in_program(prest,PROGRAM([c1def],w)) => res
+	------------------------------------
+	path_in_program (path as QUALIFIED(c1,prest),p as PROGRAM(_,w)) => res
+end
+
+(** relation: get_pathed_class_in_program
+ ** This relation takes a `Path' and a `Program` and retrieves the class definition referenced 
+ ** by the `Path' from the `Program'.
+*)
+relation get_pathed_class_in_program: (Path, Program) => Class =
+
+  rule	get_class_in_program(str,p) => c1
+	---------------------------------
+	get_pathed_class_in_program (IDENT(str),p) => c1
+	
+  rule	
+	get_class_in_program(c1,p) => c1def &
+	get_pathed_class_in_program(prest,PROGRAM([c1def],w)) => res
+	------------------------------------------------------------
+	get_pathed_class_in_program (path as QUALIFIED(c1,prest),p as PROGRAM(_,w)) => res
+end
+
 (** relation: get_class_in_program
- ** This relation takes a name and a Program and returns the class with the name `name'.
+ ** This relation takes a Path and a Program and returns the class with the name `Path'.
  ** If that class does not exist, the relation fail
 **)
 
@@ -546,6 +627,49 @@ relation get_class_in_program:(string,Program) => Class =
   rule  str = c1name
 	------------
 	get_class_in_program (str, PROGRAM((c1 as CLASS(c1name,_,_,_))::p,w)) => c1
+end
+
+(** relation: annotation_list_to_absyn
+ ** This relation takes a list of `NamedArg' and returns an absyn `Annotation'.
+ ** for instance [annotation = Placement( ...) ] is converted to ANNOTATION(Placement(...)) 
+ **)
+relation annotation_list_to_absyn: (NamedArg list) => Annotation =
+  axiom annotation_list_to_absyn( [] ) => ANNOTATION([])
+	
+  rule	record_constructor_to_modification(e) => eltarg
+	------------------------------------
+	annotation_list_to_absyn(NAMEDARG("annotate",e)::_) => ANNOTATION([eltarg])
+	
+  rule	annotation_list_to_absyn(al) => annres
+	--------------------------------------
+	annotation_list_to_absyn(a::al) => annres
+end
+	
+(** relation:record_constructor_to_modification
+ ** This relation takes a record constructor expression and translates it into a `ElementArg'.
+ ** Since modifications must be named, only named arguments are treated in the record constructor.
+ **)
+relation record_constructor_to_modification: (Exp ) => ElementArg =
+
+  rule	Util.list_map(nargs,namedarg_to_modification) => eltarglst &
+        let res = MODIFICATION(false,cr,CLASSMOD(eltarglst,NONE))
+	-----------------------------------
+	record_constructor_to_modification(CALL(cr,FUNCTIONARGS([],nargs))) => res	
+end
+
+(** relation: namedarg_to_modification
+ ** This relation takes a `NamedArg' and translates it into a `ElementArg'.
+ **)
+relation namedarg_to_modification: (NamedArg) => ElementArg = 
+
+  rule	record_constructor_to_modification(c) => elt &
+	let res = MODIFICATION(false,cr,CLASSMOD([elt],NONE))
+	----------------------------
+	namedarg_to_modification( NAMEDARG(id,c as CALL(cr,FUNCTIONARGS([],nargs)))) => res
+
+  rule	let res = MODIFICATION(false,CREF_IDENT(id,[]),CLASSMOD([],SOME(e)))
+	----------------------------------------------------------------
+	namedarg_to_modification( NAMEDARG(id,e)) => res
 end
 
 (** relation: path_string

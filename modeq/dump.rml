@@ -164,6 +164,7 @@ relation print_element_arg =
   rule	print "ARG(" &
 	print_select(f,"FINAL,",",") &
 	print_component_ref(r) &
+	print_modification(m) &
 	print ")"
 	-------------------------------------------
 	print_element_arg(Absyn.MODIFICATION(f,r,m))
@@ -767,7 +768,7 @@ end
 relation print_function_args: Absyn.FunctionArgs => () =
 	
   rule  print "FUNCTIONARGS(" &
-	print_list_debug("print_exp",expargs,print_exp,", ") 
+	print_list_debug("print_exp",expargs,print_exp,", ") &
 	print ", " &
 	print_list_debug("print_namedarg",nargs,print_named_arg,", ") &
 	print ")"
