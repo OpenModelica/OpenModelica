@@ -909,7 +909,8 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
   rule	System.read_file(str) => scriptstr &
-	Parser.parsestringexp(scriptstr) => istmts &
+	Parser.parsestringexp(scriptstr) => (istmts,msg) &
+	msg = "Ok" &
 	Interactive.evaluate(istmts,st,true) => (res,newst) &
 	Util.string_append_list([res,"\ntrue"]) => res'
 	--------------------------
