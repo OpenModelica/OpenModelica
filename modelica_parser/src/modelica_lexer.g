@@ -134,8 +134,9 @@ SL_COMMENT :
 		{  $setType(antlr::Token::SKIP); }
   	;
 
-IDENT options { testLiterals = true;} :
-		NONDIGIT (NONDIGIT | DIGIT)*;
+IDENT options { testLiterals = true; paraphrase = "an identifier";} :
+		NONDIGIT (NONDIGIT | DIGIT)*
+		;
 
 protected
 NONDIGIT : 	('_' | 'a'..'z' | 'A'..'Z');
