@@ -278,7 +278,7 @@ relation translate_file : string list => () =
 	& Absyn.last_classname(p) => cname
 	& print "absynfippel done"
 	& Tornado.generate_code(p,d,cname) 
-	& print "tornadogen done"
+	& print "tornadogen done\n"
 	----------------------------
 	translate_file [f] 
 
