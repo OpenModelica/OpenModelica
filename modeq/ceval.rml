@@ -1014,7 +1014,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	Util.string_append_list([moshhome, pd, "..", pd, "modeq", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
 
 	System.system_call(s_call) => 0 &
-	Util.string_append_list([".", pd, cname_str,".exe"]) => sim_call &
+	Util.string_append_list([".", pd, cname_str]) => sim_call &
 	System.system_call(sim_call) => _ &
 	Util.string_append_list([cname_str,"_res.plt"]) => result_file &
 	let simValue = Values.RECORD([Values.STRING(result_file)],["resultFile"]) &
