@@ -243,7 +243,7 @@ void copy_real_array_data(real_array_t* source, real_array_t* dest)
 
 */
 
-modelica_real* calc_index_spec(int ndims, size_t* idx_vec, real_array_t* arr, index_spec_t* spec)
+modelica_real* calc_real_index_spec(int ndims, size_t* idx_vec, real_array_t* arr, index_spec_t* spec)
 {
   /* idx_vec is zero based */
   /* spec is one based */
@@ -276,7 +276,7 @@ modelica_real* calc_index_spec(int ndims, size_t* idx_vec, real_array_t* arr, in
 }
 
 /* Uses zero based indexing */
-modelica_real* calc_index(int ndims, size_t* idx_vec, real_array_t* arr)
+modelica_real* calc_real_index(int ndims, size_t* idx_vec, real_array_t* arr)
 {
   int i;
   int index;
@@ -293,7 +293,7 @@ modelica_real* calc_index(int ndims, size_t* idx_vec, real_array_t* arr)
 }
 
 /* One based index*/
-real* calc_index_va(real_array_t* source,int ndims,va_list ap)
+real* calc_real_index_va(real_array_t* source,int ndims,va_list ap)
 {
   int i;
   int index;
@@ -383,7 +383,7 @@ void put_real_element(real value,int i1,real_array_t* dest)
   dest->data[i1] = value;
 }
 
-void put_matrix_element(real value, int r, int c, real_array_t* dest)
+void put_real_matrix_element(real value, int r, int c, real_array_t* dest)
 {
   /* Assert that dest hast correct dimension */
   /* Assert that r and c are valid indices */
@@ -412,26 +412,6 @@ void simple_indexed_assign_real_array2(real_array_t* source,
   size_j = source->dim_size[1];
 
   dest->data[i1*size_j+i2] = source->data[i1*size_j+i2];
-}
-
-int imax(int i,int j)
-{
-  return i < j ? j : i;
-}
-
-int next_index(int ndims, size_t* idx, size_t* size) 
-{
-  int d = ndims - 1;
-
-  idx[d]++;
-  while (idx[d] >= size[d])
-    {
-      idx[d] = 0;
-      if (!d) { return 1; }
-      d--;
-      idx[d]++;	    
-    }
-  return 0;
 }
 
 void indexed_assign_real_array(real_array_t* source, 
@@ -481,8 +461,8 @@ void indexed_assign_real_array(real_array_t* source,
 	      }
 	  }
 
-	*calc_index_spec(dest->ndims,idx_vec1,dest,dest_spec) =
-	  *calc_index(source->ndims,idx_vec2, source);
+	*calc_real_index_spec(dest->ndims,idx_vec1,dest,dest_spec) =
+	  *calc_real_index(source->ndims,idx_vec2, source);
 
 	quit = next_index(dest_spec->ndims,idx_vec1,idx_size);
 
@@ -545,8 +525,8 @@ void index_real_array(real_array_t* source,
 	  }
 	}
 		
-	*calc_index(dest->ndims,idx_vec2, dest) 
-	  = *calc_index_spec(source->ndims,idx_vec1, source,source_spec);
+	*calc_real_index(dest->ndims,idx_vec2, dest) 
+	  = *calc_real_index_spec(source->ndims,idx_vec1, source,source_spec);
 
 	quit = next_index(source->ndims,idx_vec1,idx_size);
 	if (quit) break;
@@ -654,7 +634,7 @@ real* real_array_element_addr(real_array_t* source,int ndims,...)
   real* tmp;
 
   va_start(ap,ndims);
-  tmp = calc_index_va(source,ndims,ap);
+  tmp = calc_real_index_va(source,ndims,ap);
   va_end(ap);
   
   return tmp;

@@ -62,11 +62,11 @@ void clone_real_array_spec(real_array_t* source, real_array_t* dest);
 /* Copy real data*/
 void copy_real_array_data(real_array_t* source, real_array_t* dest);
 
-real* calc_index(int ndims,size_t* idx_vec,real_array_t* arr);
-real* calc_index_va(real_array_t* source,int ndims,va_list ap);
+real* calc_real_index(int ndims,size_t* idx_vec,real_array_t* arr);
+real* calc_real_index_va(real_array_t* source,int ndims,va_list ap);
 
 void put_real_element(real value,int i1,real_array_t* dest);
-void put_matrix_element(real value, int r, int c, real_array_t* dest);
+void put_real_matrix_element(real value, int r, int c, real_array_t* dest);
 
 void print_real_matrix(real_array_t* source);
 void print_real_array(real_array_t* source);
@@ -114,6 +114,8 @@ void array_scalar_real_array(real_array_t* dest,int n,real first,...);
 void array_alloc_scalar_real_array(real_array_t* dest,int n,real first,...);
 
 real* real_array_element_addr(real_array_t* source,int ndims,...);
+real* real_array_element_addr1(real_array_t* source,int ndims,int dim1);
+real* real_array_element_addr2(real_array_t* source,int ndims,int dim1,int dim2);
 
 void cat_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
 void cat_alloc_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);

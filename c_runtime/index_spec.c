@@ -101,3 +101,23 @@ int* make_index_array(int nridx,...)
   return res;
 
 }
+
+int imax(int i,int j)
+{
+  return i < j ? j : i;
+}
+
+int next_index(int ndims, size_t* idx, size_t* size) 
+{
+  int d = ndims - 1;
+
+  idx[d]++;
+  while (idx[d] >= size[d])
+    {
+      idx[d] = 0;
+      if (!d) { return 1; }
+      d--;
+      idx[d]++;	    
+    }
+  return 0;
+}
