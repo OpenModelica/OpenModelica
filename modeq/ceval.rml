@@ -1572,6 +1572,12 @@ relation ceval_builtin_integer : (Env.Env, Exp.Exp, bool, Interactive.Interactiv
  
 end
 
+(* relation ceval_builtin_diagonal
+** This relation generates a matrix[n,n] (A) of the vector {a,b,...,n}
+** where the diagonal of A is the vector {a,b,...,n}
+** ie A[1,1] == a, A[2,2] == b ...
+*)
+
 relation ceval_builtin_diagonal : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
 	=> (Values.Value, Interactive.InteractiveSymbolTable option) =
 	
@@ -1598,6 +1604,9 @@ relation ceval_builtin_diagonal : (Env.Env, Exp.Exp, bool, Interactive.Interacti
  
 end
 
+(* this is a help relation that is calling itself recursively to 
+ generate the a nxn matrix with some special diagonal elements. 
+ see ceval_builtin_diagonal *)
 
 relation ceval_builtin_diagonal2 : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option, int, int,  Values.Value list  ) 
 		=>  Values.Value list =
