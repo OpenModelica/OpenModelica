@@ -19,7 +19,21 @@
 
 *)
 
-(* parse.rml *)
+(**
+ ** file:	 parse.rml
+ ** module:      Parser
+ ** description: Interface to external code for parsing
+ **
+ ** The parser module is used for both parsing of files and statements in
+ ** interactive mode. Some relations never fails, even if parsing fails. Instead,
+ ** they return an error message other than "Ok".
+ **
+ ** Input: String to parse
+ ** Output: Absyn.Program or InteractiveStmts
+ ** $Id$
+ **
+ **)
+
 
 module Parser:
   with "absyn.rml"
