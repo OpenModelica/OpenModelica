@@ -1,0 +1,621 @@
+ (*
+    Copyright PELAB, Linkoping University
+    This source is non-free and should not be included in OpenModelica.
+
+*)
+(**
+ ** file:	 vartransform.rml
+ ** module:      VarTransform
+ ** description: VarTransform contains a Binary Tree representation of variable replacements.
+ **
+ ** RCS: $Id$
+ ** 
+ **)
+
+(** 
+ ** This module contain a Binary tree representation of variable replacements
+ ** along with some relations for performing replacements of variables in equations
+**)
+
+module VarTransform:
+ with "exp.rml"
+ with "daelow.rml"
+
+
+ datatype VariableReplacements = REPLACEMENTS of
+				BinTree * (* src -> dst, used for replacing *)
+				BinTree2 (* dst->src, used for lookup to make 
+					  rules transitive. A destination can 
+					  have several sources, therefore 
+					  another BinTree *)
+
+ datatype BinTree = TREENODE of TreeValue option * (* Value *)
+				BinTree option * (* left subtree *)
+				BinTree option (* right subtree *)
+
+ datatype BinTree2 = TREENODE2 of TreeValue2 option * (* Value *)
+				BinTree2 option * (* left subtree *)
+				BinTree2 option (* right subtree *)
+
+(* Each node in the binary tree can have a value associated with it.*)
+
+  datatype TreeValue = TREEVALUE of Key (* Key *)
+				* Value (* Value *)
+
+  datatype TreeValue2 = TREEVALUE2 of Key (* Key *)
+				* Value2 (* Value *)
+
+  type Key = Exp.ComponentRef
+
+  type Value = Exp.ComponentRef
+
+  type Value2 = Exp.ComponentRef list
+
+relation empty_replacements:() => VariableReplacements
+
+relation add_replacement:(VariableReplacements,Exp.ComponentRef, Exp.ComponentRef) 
+	  => VariableReplacements
+
+relation get_replacement:(VariableReplacements, Exp.ComponentRef) => Exp.ComponentRef
+
+relation replace_exp:(Exp.Exp,VariableReplacements) => Exp.Exp 
+
+relation apply_replacements: (VariableReplacements, Exp.ComponentRef, Exp.ComponentRef) 
+	=> (Exp.ComponentRef, Exp.ComponentRef)
+
+relation replace_equations:(DAELow.Equation list,VariableReplacements) => DAELow.Equation list
+
+relation dump_replacements: (VariableReplacements) => ()
+
+end
+with "system.rml" 
+with "util.rml" 
+
+(** relation: apply_replacements
+ ** This relation takes a VariableReplacements and two component references.
+ ** It applies the replacements to each component reference.
+ **)
+relation apply_replacements: (VariableReplacements, Exp.ComponentRef, Exp.ComponentRef) 
+	=> (Exp.ComponentRef, Exp.ComponentRef) =
+
+  rule	replace_exp(Exp.CREF(cr1,Exp.REAL),repl) => (Exp.CREF(cr1',_)) &
+	replace_exp(Exp.CREF(cr2,Exp.REAL),repl) => (Exp.CREF(cr2',_))	
+	----------------------------------------------------------------------
+	apply_replacements(repl, cr1, cr2) => (cr1', cr2') 
+end
+
+
+(** relation: empty_replacements
+ ** Returns an empty set of replacement rules
+ **)
+relation empty_replacements:()=> VariableReplacements =
+
+  axiom	 empty_replacements() => REPLACEMENTS(TREENODE(NONE,NONE,NONE),
+					      TREENODE2(NONE,NONE,NONE))
+end
+
+(** relation: replace_equations
+ ** This relation takes a list of equations ana a set of variable replacements
+ ** and applies the replacements on all equations.
+ ** The relation returns the updated list of equations
+ **)
+relation replace_equations:(DAELow.Equation list,VariableReplacements) 
+	  => DAELow.Equation list =
+
+axiom replace_equations([],_) => []
+
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' &
+	replace_equations(es,repl) => es'
+	---------------------------------
+	replace_equations(DAELow.EQUATION(e1,e2)::es,repl) 
+	  => DAELow.EQUATION(e1',e2')::es'
+end
+
+
+(** relation: dump_replacements 
+ ** Prints the variable replacements on form var1 -> var2
+ **)
+relation dump_replacements: (VariableReplacements) => () =
+
+  rule	
+	bintree_to_explist(bt) => (srcs, dsts) &
+	Util.list_map(srcs,Exp.print_exp_str) => srcstrs &
+	Util.list_map(dsts,Exp.print_exp_str) => dststrs &
+	Util.list_map_1(dststrs,string_append,"\n") => dststrs' &
+	Util.list_thread(srcstrs,dststrs') => strs &
+	Util.string_delimit_list(strs," -> ") => str &
+	print "Replacements:\n" &
+	print "=============\n" &
+	print str & print "\n" 
+	-------------------------------
+	dump_replacements(REPLACEMENTS(bt,_)) => ()
+
+end
+
+(** relation: add_replacement
+ ** Adds a replacement rule to the set of replacement rules given as argument.
+ ** If a replacement rule a->b already exists and we add a new rule b->c then
+ ** the rule a->b is updated to a->c. This is done using the make_transitive relation.
+ **)
+relation add_replacement: (VariableReplacements,Exp.ComponentRef, Exp.ComponentRef) 
+	  => VariableReplacements =
+
+	  
+  rule	(* No previous elt for dst -> src *)
+	not tree_get2(invbt,dst) => _ &  
+	make_transitive(repl,src,dst) => (REPLACEMENTS(bt,invbt),src',dst') &
+	tree_add(bt,src',dst') => bt' &
+	tree_add2(invbt,dst',[src']) => invbt' 
+	---------------------------
+	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
+	  => REPLACEMENTS(bt',invbt')
+
+  rule	(* previous elt for dst -> src, append.. *)
+	tree_get2(invbt,dst) => srcs &
+	make_transitive(repl,src,dst) => (REPLACEMENTS(bt,invbt),src',dst') &
+	tree_add(bt,src',dst') => bt' &
+	tree_add2(invbt,dst',src'::srcs) => invbt'
+	---------------------------
+	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
+	  => REPLACEMENTS(bt',invbt')
+
+  rule	print "-add_replacement failed\n" 
+	---------------------------------
+	add_replacement(_,_,_) => fail
+end
+
+(** relation: make_transitive
+ ** This relation takes a set of replacement rules and a new replacement rule
+ ** in the form of two ComponentRef:s and makes sure the new replacement rule
+ ** is replaced with the transitive value.
+ ** For example, if we have the rule a->b and a new rule c->a it is changed to c->b.
+ ** Also, if we have a rule a->b and a new rule b->c then the -old- rule a->b is changed
+ ** to a->c
+**)
+relation make_transitive: (VariableReplacements,	(* replacement rules *)
+			   Exp.ComponentRef,		(*src*) 
+			   Exp.ComponentRef)		(*dst*)
+	  => (VariableReplacements,			(* updated replacement rules *)
+	      Exp.ComponentRef,		(* src*) 
+	      Exp.ComponentRef) =	(* updated dst *)   
+
+  rule	make_transitive1(repl,src,dst) => (repl',src',dst') &
+	make_transitive2(repl',src',dst') => (repl'',src'',dst'')
+	------------------
+	make_transitive(repl,src,dst) => (repl'',src'',dst'')
+end
+
+(** relation: make_transitive1
+ ** helper relation to make_transitive
+ **)
+relation make_transitive1: (VariableReplacements,	(* replacement rules *)
+			   Exp.ComponentRef,		(*src*) 
+			   Exp.ComponentRef)		(*dst*)
+	  => (VariableReplacements,			(* updated replacement rules *)
+	      Exp.ComponentRef,		(* src*) 
+	      Exp.ComponentRef) =	(* updated dst *)   
+
+  rule	(* old rule a->b must be updated to a->c when new rule b->c introduced*)
+	tree_get2(invbt,src) => lst &
+	add_replacements(repl,lst,dst) => repl' 
+	---------------------------------------
+	make_transitive1(repl as REPLACEMENTS(bt,invbt),src,dst) => (repl',src,dst)
+
+  axiom	make_transitive1(repl,src,dst) => (repl,src,dst)
+end
+
+(** relation: make_transitive2
+ ** helper relation to make_transitive
+**)
+relation make_transitive2: (VariableReplacements,	(* replacement rules *)
+			   Exp.ComponentRef,		(*src*) 
+			   Exp.ComponentRef)		(*dst*)
+	  => (VariableReplacements,			(* updated replacement rules *)
+	      Exp.ComponentRef,		(* src*) 
+	      Exp.ComponentRef) =	(* updated dst *)   
+	
+  rule	(* If dst has own replacement rule, change to its destintation and recurse *)
+	tree_get(bt,dst) => newdst &
+	make_transitive2(repl,src,newdst) => (repl',src',dst')
+	-----------------------------------------------
+	make_transitive2(repl as REPLACEMENTS(bt,invbt),src,dst) 
+	  => (repl',src',dst')
+
+	  (* dst has no own replacement, return *)
+  axiom	make_transitive2(repl,src,dst) => (repl,src,dst)
+end
+
+(** relation: add_replacements
+ ** Adding of several replacements at once with common destination.
+ ** Uses add_replacement
+**)
+relation add_replacements: (VariableReplacements, Exp.ComponentRef list, Exp.ComponentRef) 
+	  => VariableReplacements =
+
+  axiom	add_replacements(repl,[],_) => repl
+
+  rule	add_replacement(repl,src,dst) => repl' &
+	add_replacements(repl',srcs,dst) => repl''
+	------------------------------------------
+	add_replacements(repl,src::srcs,dst) => repl'
+
+  rule	print "add_replacements failed\n" 
+	---------------------------------
+	add_replacements(_,_,_) => fail
+end
+
+(** relation: get_replacement
+ ** Retrives a replacement variable given a set of replacement rules and a source
+ ** variable.
+ **)
+relation get_replacement:(VariableReplacements, Exp.ComponentRef) => Exp.ComponentRef =
+
+  rule	tree_get(bt,src) => dst
+	-----------------------
+	get_replacement(REPLACEMENTS(bt,invbt),src) => dst
+end
+
+(** relation: replace_exp
+ ** Takes a set of replacement rules and an expression
+ ** and replaces all variables in the expression using 
+ ** the replacement rules.
+ **)
+relation replace_exp:(Exp.Exp,VariableReplacements) => Exp.Exp =
+	 
+  rule	get_replacement(repl,cr) => cr' 
+	------------------------------
+	replace_exp(Exp.CREF(cr,t),repl) 
+	  => Exp.CREF(cr',t)
+
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' 
+	------------------------------------
+	replace_exp(Exp.BINARY(e1,op,e2),repl) 
+	  => Exp.BINARY(e1',op,e2')
+	  
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' 
+	------------------------------------
+	replace_exp(Exp.LBINARY(e1,op,e2),repl) 
+	  => Exp.LBINARY(e1',op,e2')
+
+  rule	replace_exp(e1,repl) => e1'
+	------------------------------------
+	replace_exp(Exp.UNARY(op,e1),repl) 
+	  => Exp.UNARY(op,e1')
+
+  rule	replace_exp(e1,repl) => e1'
+	------------------------------------
+	replace_exp(Exp.LUNARY(op,e1),repl) 
+	  => Exp.LUNARY(op,e1')
+
+
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' 
+	------------------------------------
+	replace_exp(Exp.RELATION(e1,op,e2),repl) 
+	  => Exp.RELATION(e1',op,e2')
+
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' &
+	replace_exp(e3,repl) => e3' 
+	------------------------------------
+	replace_exp(Exp.IFEXP(e1,e2,e3),repl) 
+	  => Exp.IFEXP(e1',e2',e3')
+
+  rule  Util.list_map_1(expl,replace_exp,repl) => expl' 
+	-----------------------------------------------
+	replace_exp(Exp.CALL(path,expl,t,c),repl) 
+	  => Exp.CALL(path,expl',t,c)
+
+  rule	Util.list_map_1(expl,replace_exp,repl) => expl' 
+	----------------------------------------------
+	replace_exp(Exp.ARRAY(tp,c,expl),repl) 
+	  => Exp.ARRAY(tp,c,expl')
+
+  rule	print "replace_exp for matrix not impl." 
+	-----------------------------------------------
+	replace_exp(Exp.MATRIX(a,b,c),repl) 
+	  => Exp.MATRIX(a,b,c)
+
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' 
+	-----------------------------------------------
+	replace_exp(Exp.RANGE(tp,e1,NONE,e2),repl) 
+	  => Exp.RANGE(tp,e1',NONE,e2')
+
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' &
+	replace_exp(e3,repl) => e3' 
+	-----------------------------------------------
+	replace_exp(Exp.RANGE(tp,e1,SOME(e3),e2),repl) 
+	  => Exp.RANGE(tp,e1',SOME(e3'),e2')
+
+  rule	Util.list_map_1(expl,replace_exp,repl) => expl'
+	-----------------------------------------------
+	replace_exp(Exp.TUPLE(expl),repl) 
+	  => Exp.TUPLE(expl')
+
+  rule	replace_exp(e1,repl) => e1'
+	-----------------------------------------------
+	replace_exp(Exp.CAST(tp,e1),repl) 
+	  => Exp.CAST(tp,e1')
+
+  rule	replace_exp(e1,repl) => e1' 
+	-----------------------------------------------
+	replace_exp(Exp.ASUB(e1,i),repl)
+	  => Exp.ASUB(e1',i)
+
+  rule	replace_exp(e1,repl) => e1'
+	-----------------------------------------------
+	replace_exp(Exp.SIZE(e1,NONE),repl) 
+	  => Exp.SIZE(e1',NONE)
+
+  rule	replace_exp(e1,repl) => e1' &
+	replace_exp(e2,repl) => e2' 
+	-----------------------------------------------
+	replace_exp(Exp.SIZE(e1,SOME(e2)),repl) 
+	  => Exp.SIZE(e1',SOME(e2'))
+
+  rule	print "replace_exp on CODE not impl.\n" 
+	-----------------------------------------------
+	replace_exp(Exp.CODE(a,b),repl) 
+	  => Exp.CODE(a,b)
+
+  rule	replace_exp(e,repl) => e' &
+	replace_exp(r,repl) => r' 
+	-----------------------------------------------
+	replace_exp(Exp.REDUCTION(p,e,id,r),repl) 
+	  => Exp.REDUCTION(p,e',id,r')
+
+ axiom	replace_exp(e,repl) => e
+end
+
+(** relation: bintree_to_list
+ ** This relation takes a BinTree and transform it into a list
+ ** representation, i.e. two lists of keys and values
+ **)
+ relation bintree_to_explist: (BinTree) => (Exp.Exp list, Exp.Exp list) =
+
+  rule	bintree_to_explist2(bt,[],[]) => (klst,vlst) 
+	------------------------------------------
+	bintree_to_explist(bt) => (klst,vlst)
+end
+
+(** relation: bintree_to_list2
+ ** helper relation to bintree_to_list
+ **)
+relation bintree_to_explist2: (BinTree,Exp.Exp list,Exp.Exp list ) 
+	  => (Exp.Exp list, Exp.Exp list) =
+
+ axiom	bintree_to_explist2( TREENODE(NONE,NONE,NONE),klst,vlst) => (klst,vlst)
+ 
+  rule	bintree_to_explist_opt(left,klst,vlst) => (klst,vlst) &
+	bintree_to_explist_opt(right,klst,vlst) => (klst,vlst) 
+	------------------
+	bintree_to_explist2(TREENODE(SOME(TREEVALUE(key,value)),left,right),klst,vlst)
+	  => (Exp.CREF(key,Exp.REAL)::klst,Exp.CREF(value,Exp.REAL)::vlst) 
+	  
+  rule	bintree_to_explist_opt(left,klst,vlst) => (klst,vlst) &
+	bintree_to_explist_opt(left,klst,vlst) => (klst,vlst) 
+	--------------------------------------------------
+	bintree_to_explist2(TREENODE(NONE,left,right),klst,vlst) => (klst,vlst)
+end
+
+(** relation: bintree_to_list_opt
+ ** helper relation to bintree_to_list
+ **)
+relation bintree_to_explist_opt: (BinTree option, Exp.Exp list, Exp.Exp list) 
+	  => (Exp.Exp list, Exp.Exp list) =
+
+  axiom	bintree_to_explist_opt(NONE,klst,vlst) => (klst,vlst)
+
+  rule	bintree_to_explist2(bt,klst,vlst) => (klst,vlst) 
+	---------------------------------------------
+	bintree_to_explist_opt(SOME(bt),klst,vlst) => (klst,vlst)
+end
+	
+(** relation: tree_get
+ ** Copied from generic implementation. Changed that no hashrelation is passed
+ ** since a string can not be uniquely mapped to an int. Therefore we need to compare two strings
+ ** to get a unique ordering.
+**)
+relation tree_get: (BinTree, Key) => Value =
+ 
+ rule	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr &
+	System.strcmp(rkeystr,keystr) => 0 
+	----------------------------------
+	tree_get (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right), key)
+	   => rval
+
+  rule	(* Search to the right*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_get(right,key) => res
+	--------------------
+	tree_get(TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right)),key)
+	  => res
+
+  rule	(* Search to the left*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => false &
+	tree_get(left,key) => res
+	--------------------
+	tree_get(TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left),right),key)
+	  => res
+	
+(*  rule	print "tree_get failed\n" 
+	---------------
+	tree_get(_,_,_) => fail*)
+end
+
+(** relation: tree_add
+ ** Copied from generic implementation. Changed that no hashrelation is passed
+ ** since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
+ ** to get a unique ordering.
+**)
+relation tree_add: (BinTree, Key, Value) => (BinTree) =
+
+  axiom	tree_add (TREENODE(NONE,NONE,NONE),key,value) 
+	  => TREENODE(SOME(TREEVALUE(key,value)),NONE,NONE)
+
+  rule	(* Replace this node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0
+	----------------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right),key,value)
+	  => (TREENODE(SOME(TREEVALUE(rkey,value)),left,right))
+
+  rule	(* Insert to right subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_add(t,key,value) => t'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right as SOME(t)),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t')))
+
+  rule	(* Insert to right node*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true & 
+	tree_add(TREENODE(NONE,NONE,NONE),key,value) => right'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right as NONE),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right')))
+
+  rule	(* Insert to left subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_add(t,key,value) => t'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left as SOME(t),right),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t'),right))
+
+  rule	(* Insert to left node*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_add(TREENODE(NONE,NONE,NONE),key,value) => left'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left as NONE,right),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left'),right))
+
+  rule	print "tree_add failed\n"
+	-----------------------
+	tree_add(_,_,_) => fail
+ end 
+
+(** relation: tree_get2
+ ** Copied from generic implementation. Changed that no hashrelation is passed
+ ** since a string can not be uniquely mapped to an int. Therefore we need to compare two strings
+ ** to get a unique ordering.
+**)
+relation tree_get2: (BinTree2, Key) => Value2 =
+ 
+ rule	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr &
+	System.strcmp(rkeystr,keystr) => 0 
+	----------------------------------
+	tree_get2 (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,right), key)
+	   => rval
+
+  rule	(* Search to the right*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_get2(right,key) => res
+	--------------------
+	tree_get2(TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(right)),key)
+	  => res
+
+  rule	(* Search to the left*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => false &
+	tree_get2(left,key) => res
+	--------------------
+	tree_get2(TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(left),right),key)
+	  => res
+	
+(*  rule	print "tree_get failed\n" 
+	---------------
+	tree_get2(_,_,_) => fail*)
+end
+
+(** relation: tree_add2
+ ** Copied from generic implementation. Changed that no hashrelation is passed
+ ** since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
+ ** to get a unique ordering.
+**)
+relation tree_add2: (BinTree2, Key, Value2) => (BinTree2) =
+
+  axiom	tree_add2 (TREENODE2(NONE,NONE,NONE),key,value) 
+	  => TREENODE2(SOME(TREEVALUE2(key,value)),NONE,NONE)
+
+  rule	(* Replace this node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0
+	----------------------------------
+	tree_add2 (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,right),key,value)
+	  => (TREENODE2(SOME(TREEVALUE2(rkey,value)),left,right))
+
+  rule	(* Insert to right subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_add2(t,key,value) => t'
+	------------------------
+	tree_add2 (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,right as SOME(t)),key,value) 
+	  => (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(t')))
+
+  rule	(* Insert to right node*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true & 
+	tree_add2(TREENODE2(NONE,NONE,NONE),key,value) => right'
+	------------------------
+	tree_add2 (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,right as NONE),key,value) 
+	  => (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(right')))
+
+  rule	(* Insert to left subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_add2(t,key,value) => t'
+	------------------------
+	tree_add2 (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left as SOME(t),right),key,value) 
+	  => (TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(t'),right))
+
+  rule	(* Insert to left node*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_add2(TREENODE2(NONE,NONE,NONE),key,value) => left'
+	------------------------
+	tree_add2 (TREENODE2(SOME(TREEVALUE2(rkey,rval)),left as NONE,right),key,value) 
+	  => (TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(left'),right))
+
+  rule	print "tree_add2 failed\n"
+	-----------------------
+	tree_add2(_,_,_) => fail
+ end 
