@@ -75,17 +75,17 @@
 \label{abs}
 
 Modelica is a new modeling language.  It is an object-oriented,
-equation-based languaged that is designed to incorporate features from
+equation-based languages that is designed to incorporate features from
 several previous modeling languages and form a common ground for
 modeling and simulation implementors.  As a part of the design
 process, the exact semantics of the language needs to be defined.
 
 Formal descriptions of the syntax of programming languages has long
-been accepted as a natural way of describing the syntacical form of
-the language. Today everobody expects a BNF-like grammar for a new
+been accepted as a natural way of describing the syntactical form of
+the language. Today everybody expects a BNF-like grammar for a new
 language. But that is not the case when it comes to describing the
 semantics of languages. Formalisms for the specifications of semantics
-hase been avaiable for many years, but are not often used by others
+has been available for many years, but are not often used by others
 than researchers.
 
 One advantage of using a formal description of the semantics is of
@@ -93,9 +93,13 @@ course that the specification becomes more strict and unambiguous. But
 there is also the possibility of using the semantic specification to
 generate a language translator, or compiler, in an automatic way.
 
-This paper describes a partial formal semantics for Modelica. The
+This report describes a partial formal semantics for Modelica. The
 notation used enables it to be passed to a compiler generator that
-generates a Modelica translator.
+generates a Modelica translator, that translates a Modelica model into
+a simple set of equations.
+
+The language used for the specification is called RML, and is based on
+Natural semantics, an operational semantic specification formalism.
 
 \end{abstract}
 
@@ -130,7 +134,7 @@ specification of the language.  Unfortunately, this is often not
 enough.  Natural language is inherently not very exact, and it is hard
 to make sure that all special cases are covered.  One of the most
 important requirements of a language specification is that two
-different language implementors should be able to read thte
+different language implementors should be able to read the
 specification and make implementations that interpret the
 specification in the same way.  This implies that the specification
 must be exact and unambiguous.
@@ -149,7 +153,7 @@ various approaches.
 \label{sec:natsem}
 \index{foobar}
 
-The formatlism that we use is called \firstref{Natural Semantics}.
+The formalism that we use is called \firstref{Natural Semantics}.
 The ``natural'' in Natural semantics is intended to indicate its
 similarities to natural deduction, which is a way of constructing
 proofs in formal logic systems.  A specification in Natural semantics
@@ -157,9 +161,9 @@ is usually given a proof-theoretic interpretation, meaning that it is
 used to construct proofs.
 
 There are many different presentations of Natural semantics in the
-litterature, and I choose to present the simple form that RML uses.
+literature, and I choose to present the simple form that RML uses.
 
-Natural seamtics uses \firstref{inference rules} to describe the
+Natural semantics uses \firstref{inference rules} to describe the
 semantics.  These rules consist of a \firstref{consequence} and a
 number of \firstref{premises}.
 
@@ -294,7 +298,7 @@ to interpret or translate any file in the described language.
 \label{sec:rmlsyn}
 
 The RML syntax borrows elements from languages like SML\cite{sml} to
-introduce a strict type system and a module system.  The sytax for
+introduce a strict type system and a module system.  The syntax for
 rules looks like the normal Natural semantics rule layout, adjusted
 for ASCII text.
 
@@ -303,7 +307,7 @@ rules that have the same \firstref{signature}, meaning that they
 perform the same operation, but are applicable at different times.
 
 The type system includes basic types, such as \code{int}, \code{real}
-and \code{bool}.  User-defined algebraic types may be declared in ab
+and \code{bool}.  User-defined algebraic types may be declared in a
 SML-like syntax, as in the following example that declares the
 expression type used in the previous section.
 
@@ -355,23 +359,23 @@ language unifies and generalizes previous object-oriented modeling
 languages designed by different companies and research institutions.
 
 Compared with the widespread simulation languages previously
-available, this language offers three important adnvaces:
+available, this language offers three important advances:
 
 \begin{itemize}
 \item Non-causal modeling based on differential and algebraic
   equations.
 
-\item Multidomain modeling capability, i.e. it is possible to combine
+\item Multi-domain modeling capability, i.e. it is possible to combine
   electrical, mechanical, thermodynamic, hydraulic etc. model
   components within the same application model
   
-\item A general type systen that unifies object-orientation, multiple
+\item A general type system that unifies object-orientation, multiple
   inheritance, and templates within a single class construct.
 \end{itemize}
 
 A Modelica model is defined in terms of classes containing equations
 and definitions.  The semantics of such a model is defined via
-tranlation of classes, instances, connections and functions into a
+translation of classes, instances, connections and functions into a
 flat set of constants, variables and equations.  Equations are sorted
 and converted to assignment statements when possible.  Strongly
 connected sets of equations are solved by using a symbolic or numeric
@@ -388,7 +392,7 @@ language for hybrid systems.  Since the start, the group has expanded
 to include many new members from around Europe.
 
 A first version of the Modelica language definition was finalized in
-September 1997, and there was much rejoycing.  But no complete
+September 1997, and there was much rejoicing.  But no complete
 implementation existed yet, and there was actually a lot more work
 needed to make the specification comprehensive enough to be able to
 build a implementation for it.
@@ -424,20 +428,20 @@ formalized description of the language.  The language specification
 available at the time (version 1.0 from September 1997)\fixme{ref} did
 not contain much about the semantics of the language.  This meant that
 nobody knew exactly how the language worked, and it was not certain
-that everbody in the design group agreed on the semantical details,
+that everybody in the design group agreed on the semantical details,
 since they were not clearly described anywhere.
 
 \section{Gaining experience with RML}
 
 The RML language and compiler were new, and only a few language
 specifications had been written using it.  More experience with
-various language specificatiosn was desired.
+various language specifications was desired.
 
 \section{Natural semantics and equation-based\\ languages}
 
 Modelica is not a programming language, such as C or LISP.  Instead it
 is a modeling language, with basically only static semantics.  For
-this reason it was intresting to see how a formalism like Natural
+this reason it was interesting to see how a formalism like Natural
 semantics, which is usually used to specify programming languages,
 could be applied to it.
 
@@ -449,7 +453,7 @@ could be applied to it.
 \label{sec:rmlc}
 
 The RML compiler is currently at version 2.0.  When the work on the
-Modeclia semantics began, the RML version was at 1.5.  The new
+Modelica semantics began, the RML version was at 1.5.  The new
 compiler provided much improved error messages and freedom in writing
 source files.
 
@@ -471,14 +475,14 @@ the transformation logic to the RML code.  Therefore, the parser
 itself is not further described in this report.
 
 The parser generator in PCCTS is powerful, but it has a few problems,
-and is curretly not maintained very actively.  Because of problems
+and is currently not maintained very actively.  Because of problems
 with error handlers, the translator does not deal very well with
 syntax errors.
 
 \section{The report}
 \label{sec:report}
 
-This report was writting using the \LaTeX{}\cite{Lamport86} text
+This report was written using the \LaTeX{}\cite{Lamport86} text
 formatting system.
 
 To produce the annotated semantics in chapter \ref{cha:formsem} a
@@ -505,7 +509,7 @@ the needed to find out what was really intended.
 
 This chapter complements the Modelica specification by providing a
 more comprehensive informal description of the language semantics.  It
-is indended to help the understanding of the formal semantics in
+is intended to help the understanding of the formal semantics in
 chapter \ref{cha:formsem}.
 
 
@@ -571,7 +575,7 @@ mean.
 \label{sec:typeoverview}
 
 The type system is based on \firstref{classes}. A class is the basic
-unit of modelling. It is used to modularize the model description and
+unit of modeling. It is used to modularize the model description and
 to give the models a hierarchical structure.  Another important
 concept in the type system is that of \firstref{arrays}.
 
@@ -612,7 +616,7 @@ this specification and the Modelica language definition.
   synonym for a two-dimensional array.
 \end{Def}
 
-\fixme{Should we make a difference between incompete and complete
+\fixme{Should we make a difference between incomplete and complete
   types?}
 
 \unfinished
@@ -684,7 +688,7 @@ be used.
       \hline
       \code{function} & Each public component must be declared with one
       of the modifiers \code{input} or \code{output}. No equations are
-      allowed and only one algorithm secion is allowed. \\
+      allowed and only one algorithm section is allowed. \\
       \hline
     \end{tabular}
     \caption{Class restrictions}
@@ -693,10 +697,10 @@ be used.
 \end{table}
 
 A goal of the Modelica design is that a valid program can always be
-transformed into another valid program by replacing all occurences of
+transformed into another valid program by replacing all occurrences of
 the restricted class keywords with the keyword \code{class}.  For a
 class declared with the keyword \code{class} to be able to be used as
-if it was declared with a restricted keyword, it has to adher to the
+if it was declared with a restricted keyword, it has to adhere to the
 restrictions for that keyword.
 
 As an example, this means that if a variable is used in a connection,
@@ -726,7 +730,7 @@ clear, but there are some points worth noting.
 \label{sec:arrayop}
 
 The exact meaning of multiplication where one or more of the operands
-are arrays is currently being defined.  Simiarily for other
+are arrays is currently being defined.  Similarly for other
 operations.  The semantics specified here should be regarded as an
 absolute reference to what these operations should mean, but rather as
 a description of how the overloading of operators works.
@@ -858,7 +862,7 @@ While instantiating the model \code{M}, the three \code{connect}
 statements creates the connection sets described in figure
 \ref{fig:csetex2}, and the two instances of the model \code{A}
 (components \code{a1} and \code{a2} in model \code{M}) create the
-connectsion sets in figure \ref{fig:csetex3}.  Each component in the
+connection sets in figure \ref{fig:csetex3}.  Each component in the
 sets are marked with a label indicating whether they were added from
 an inner or an outer connector.
 
@@ -918,7 +922,7 @@ last equation in the model \code{M} is shown in figure
 
 The lexical analyzer and parser are not really part of the semantic
 specification, and this report will not go into detail about the
-parsing of Moedlica.
+parsing of Modelica.
 
 The Modelica source file being translated is first passed to the
 lexical analyzer that scans the source for tokens, which it then
@@ -936,7 +940,7 @@ translating the program, and especially if the translation rules
 should be easy to read for a human.  For this reason a preparatory
 translation pass is introduced which translates the AST into an
 intermediate form, called SCode.  This intermediate form contains no
-more information than the abstract syntax.  It merey restructures the
+more information than the abstract syntax.  It merely restructures the
 tree representation in it.
 
 One might have thought that more work could be done at this stage,
@@ -1063,7 +1067,7 @@ The following extensions are made:
   
   This is a consequence of how the semantic specification looks at the
   components.  Using the simple \codebox{x[2,3]} could be done instead, as it
-  is shorter and introduces no ambuguities.
+  is shorter and introduces no ambiguities.
   
 \item Identifiers may contain dots (\code{.}) (resulting from
   subcomponents in the originating Modelica code) and tilde signs
@@ -1082,7 +1086,7 @@ The following extensions are made:
 
 %     <Peter: The expansion is not possible for recursive functions.>
 
-%     <david: This is still experimental. It might be removed.>
+%     <David: This is still experimental. It might be removed.>
 
 %     Calls to predefined and external functions remain in the flat
 %     representation as they are in the Modelica code.
@@ -1097,7 +1101,7 @@ The following extensions are made:
   syntax \code{expression[x]} is allowed.  This is not allowed in
   Modelica.
   
-\item Almost no overloading of operators occus in the flat Modelica.
+\item Almost no overloading of operators occurs in the flat Modelica.
   If a model contains an array multiplied by a scalar, the flat model
   does not use the multiplication sign, but an operator that is
   specialized for that particular operation.
@@ -1131,17 +1135,17 @@ the previous section.
   
 \item Most information gathered from the analysis is included.  Some
   type information is lost, though.  The arithmetic operations on
-  scalars and the equatlity sign are still overloaded.  This is to
+  scalars and the equality sign are still overloaded.  This is to
   improve readability.  Changing the syntax to include this
   information is very easy.
 
 \item The output looks reasonably much like Modelica, so a person
-  knowledgable of Modelica syntax should have no problem understanding
+  knowledgeable of Modelica syntax should have no problem understanding
   the output.
   
 \item Parsing of the flat Modelica has not been explored. It should
   possible to write a parser that will accept and understand flat
-  Modeilca.  One thing that may cause trouble is the extension where
+  Modelica.  One thing that may cause trouble is the extension where
   array subscripting may be allowed on arbitrary expressions.
 
 \item Feeding the output to an equation solver needs either a special
@@ -1194,10 +1198,10 @@ representation.
 \section{Flattening}
 
 The main translation step does several things simultaneously.  One
-important part is the flattening of the heirarchical structure.  This
+important part is the flattening of the hierarchical structure.  This
 means that all composite components are split up in subcomponents, and
-all ``atomic'' components \fixme{terminologi} will recieve a new name
-that identifies it with a unique identifer in the global namespace.
+all ``atomic'' components \fixme{terminology} will receive a new name
+that identifies it with a unique identifier in the global name space.
 For instance, the voltage variable in the positive connector in the
 capacitor named \code{C2} will get the global name \code{C2.p.v}.
 
@@ -1256,7 +1260,7 @@ are expanded into their simple components.
 \section{Abstract syntax}
 \label{sec:absyndesign}
 
-The \firstref{abstract syntax} is closely modelled after the syntactic
+The \firstref{abstract syntax} is closely modeled after the syntactic
 structure, and is defined in the file \filename{absyn.rml} (section
 \ref{src:absyn}).  It basically describes the structure of the source
 file, and defines the top-level data type \code{Program} as a list of
@@ -1294,7 +1298,7 @@ in the following respects:
   with the element itself.
 
 \item[Modifications]
-  Modifications are stored using the datatypes in the \code{Mod}
+  Modifications are stored using the data types in the \code{Mod}
   module (section \ref{src:mod}).
 \end{description}
 
@@ -1303,7 +1307,7 @@ in the following respects:
 
 To be able to determine if a class definition or a variable can be
 used under certain circumstances it is necessary to check whether it
-adhers the restrictions currently imposed on it. If the class is
+adheres the restrictions currently imposed on it. If the class is
 declared with one of the restricted keywords listen in table
 \ref{tab:clrestr}, it is immediately known, but when the class is
 declared using the \code{class} keyword, the definition has to be
@@ -1320,7 +1324,7 @@ corresponds to that form, and it will never change to another state.
 If the keyword was \code{class}, the state is initialized to
 \code{ClassInf.UNKNOWN}.
 
-Transitions in the state machine are triggered by events signalled
+Transitions in the state machine are triggered by events signaled
 during instantiation indicating that some piece of information has been
 encountered which affects the class restriction. The defined events
 are listed in table \ref{tab:classinfevents}.
@@ -1453,9 +1457,9 @@ specification, but two distinct types of usage can be noted.
   subcomponents need to be known.
 \end{description}
 
-These two needs could be met by two different datatypes, and a
+These two needs could be met by two different data types, and a
 previous version of the specification did it this way.  But having two
-datatypes that essentially does the same thing is more confusing than
+data types that essentially does the same thing is more confusing than
 helpful, so they were reduced to only one.
 
 
