@@ -90,8 +90,7 @@ module Static :
 
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Types.Properties, SCode.Accessibility)
-  relation elab_cref_list : (Env.Env, Absyn.ComponentRef list)
-	  => (Exp.Exp list, Types.Properties list, SCode.Accessibility list)
+
   relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 	  => (Exp.Subscript list, bool)
 	  
@@ -136,8 +135,8 @@ with "mod.rml"
 with "prefix.rml"
 with "ceval.rml"
 
-(** LS:
- ** - Expression elaboration
+(** relation: elab_exp_list
+ ** Expression elaboration of Absyn.Exp list, i.e. lists of expressions.
  **)
 
 relation elab_exp_list : (Env.Env, Absyn.Exp list, bool, Interactive.InteractiveSymbolTable option)
@@ -151,6 +150,9 @@ relation elab_exp_list : (Env.Env, Absyn.Exp list, bool, Interactive.Interactive
 	elab_exp_list (env, e::rest,impl,st) => (exp::exps, p::props,st'') 
 end
 
+(** relation: elab_exp_list_list
+ ** Expression elaboration of lists of lists of expressions. Used in for instance matrices, etc.
+ **)
 relation elab_exp_list_list : (Env.Env, Absyn.Exp list list, bool
 			       , Interactive.InteractiveSymbolTable option)
 	  => (Exp.Exp list list, Types.Properties list list, Interactive.InteractiveSymbolTable option ) =
@@ -206,8 +208,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	  => (Exp.END, Types.PROP((Types.T_INTEGER([]),NONE),true),st)
 
 
-  rule	(*Debug.fprintln("setr", "elab_exp_cref") &*)
-	elab_cref(env, cr) => (exp,prop,_)
+  rule	elab_cref(env, cr) => (exp,prop,_)
 	---------------------------------------
 	elab_exp(env, Absyn.CREF(cr),impl,st) => (exp,prop,st) 
 
@@ -224,8 +225,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),impl,st)
 	  => (exp'',Types.PROP(rtype,c),st'')
 
-  rule	(*Debug.fprintln("setr", "elab_exp_unary") &*)
-	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
+  rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
 	replace_operator_with_fcall(Exp.UNARY(op',e''),c) => exp' &
@@ -234,7 +234,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,exp as Absyn.UNARY(op,e),impl, st)
 	  => (exp'', Types.PROP(rtype,c),st')
 	
-  rule	(*Debug.fprintln("setr", "elab_exp_lbinary") &*)
+  rule	(* Logical binary expressions *)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') &
 	bool_and (c1,c2) => c &
@@ -246,7 +246,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2),impl,st)
 	  => (exp'', Types.PROP(rtype,c),st'')
 
-  rule	(*Debug.fprintln("setr", "elab_exp_lunary") &*)
+  rule	(* Logical unary expressions *)
 	elab_exp (env,e,impl,st) => (e',Types.PROP(t,c),st') &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype) &
@@ -256,7 +256,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env,exp as Absyn.LUNARY(op,e),impl,st)
 	  => (exp'',Types.PROP(rtype,c),st')
 
-  rule	(*Debug.fprintln("setr", "elab_exp_relation") &*)
+  rule	(* Relations, e.g. a < b *)
 	elab_exp (env,e1,impl,st) => (e1', Types.PROP(t1, c1),st') &
 	elab_exp (env,e2,impl,st') => (e2', Types.PROP(t2, c2),st'') & 
 	bool_and (c1,c2) => c &
@@ -270,7 +270,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 
 	(**  Conditional expressions *)
 
-  rule	(*Debug.fprintln("setr", "elab_exp_ifexp") &*)
+  rule	(* if expressions *)
 	elab_exp (env,e1,impl,st) => (e1', prop1,st') &
 	elab_exp (env,e2,impl,st') => (e2', prop2,st'') &
 	elab_exp (env,e3,impl,st'') => (e3', prop3,st''') &
@@ -279,12 +279,9 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	------------------------------------------------------
 	elab_exp (env,Absyn.IFEXP(e1,e2,e3,_),impl,st) => (e,prop,st''')
 
-	(**  Function calls *)
+  rule	(**  Function calls *)
 	(** PA. Only positional arguments are elaborated for now.*)
 	(** TODO: Implement elaboration of named arguments. *)
-
-  rule	Dump.print_component_ref_str fn => fnstr &
-	(*Debug.fprintl("setr", ["elab_exp_call: ",fnstr,"\n"]) &*)
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop as Types.PROP(t,c),st') &
 	ceval_if_constant(e,c,env) => e'
 	--------------------------------------
@@ -298,19 +295,12 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	* Fix this!!
 	*)
 	
-  rule	(*Debug.fprintln("setr", "elab_exp_tuple") &
-	Debug.print "\n#####################elab_exp tuple.####################" &*)
-(*	Dump.print_exp e1 &
-*)	Debug.print "\n ###################" &
+  rule	(* Tuple function calls *)
 	elab_tuple(env,e) => (e', props) &
-(*	Debug.print "\nThe elaborated tuple." &*)
 	split_props(props) => (types, consts) 
-(*	& Debug.print "\n split_props was just executed."*)
 	-------------------------------------
 	elab_exp (env,Absyn.TUPLE(e as e1::rest),impl,st) 
 	  => (Exp.TUPLE(e'),Types.PROP_TUPLE((Types.T_TUPLE(types),NONE), Types.TUPLE_CONST(consts)),st)
-
-
 	(**  Array-related expressions *)
 
 	(** Elab reduction expressions, including array() constructor **)
@@ -321,7 +311,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	  => (e,prop,st')
 
 
-  rule	(*Debug.fprintln("setr", "elab_exp_range1") &*)
+  rule	(* Range expressions without step value, e.g. 1:5 *)
 	elab_exp (env, start,impl,st) => (start', Types.PROP(start_t, c_start),st') &
 	elab_exp (env, stop,impl,st') => (stop', Types.PROP(stop_t, c_stop),st'') &
 	deoverload_range((start',start_t),
@@ -333,7 +323,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env, Absyn.RANGE(start, NONE, stop),impl,st)
 	  => (Exp.RANGE(rt,start',NONE,stop'), Types.PROP(t, const),st'')
 
-  rule	(*Debug.fprintln("setr", "elab_exp_range2") &*)
+  rule	(* Range expressions with step value, e.g. 1:0.5:4 *)
 	elab_exp (env,start,impl,st) => (start', Types.PROP(start_t, c_start),st') &
 	elab_exp (env,step,impl,st') => (step', Types.PROP(step_t, c_step),st'') &
 	elab_exp (env,stop,impl,st'') => (stop', Types.PROP(stop_t, c_stop),st''') &
@@ -347,7 +337,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp (env, Absyn.RANGE(start, SOME(step), stop),impl,st)
 	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), Types.PROP(t, const),st''')
 
-  rule	(*Debug.fprintln("setr", "elab_exp_array") &*)
+  rule	(* array expressions, e.g. {1,2,3} *)
 	elab_array (env, es,impl,st) => (es', Types.PROP(t, const)) & list_length es' => l&
 	Types.elab_type t => at &
 	Types.is_array t => a
@@ -357,12 +347,11 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(l)), t),NONE),
 		   const),st)
 	
-  rule	(*Debug.fprintln("setr", "elab_exp_matrix") &*)
+  rule	(* matrix expressions, e.g. [1,0;0,1] *)
 	elab_exp_list_list(env,es,impl,st) => (_, tps, _) &
 	Util.list_list_map(tps,Types.get_prop_type) => tps' &
 	Util.list_flatten(tps') => tps'' &
 	Types.contain_real(tps'') => havereal &
-	(*Debug.fprintln("setr", "calculated havereal\n") &*)
 	elab_matrix_semi (env,es,impl,st,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
 	Types.elab_type t => at
 	------------------------------------------------------------
@@ -372,7 +361,8 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t),NONE)),NONE),
 		   c),st)
 
-  rule	elab_code_type(env,c) => tp &
+  rule	(* Code expressions *)
+	elab_code_type(env,c) => tp &
 	Types.elab_type tp => tp'
 	-------------------
 	elab_exp (env, Absyn.CODE(c),impl,st) =>  (Exp.CODE(c,tp'),Types.PROP(tp,true),st)
@@ -382,8 +372,6 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
-
-
 end
 
 (** relation: add_for_loop_scope_const 
@@ -438,16 +426,6 @@ relation elab_call_reduction : (Env.Env, Absyn.ComponentRef, Absyn.Exp,
 
 end
 
-
-(* HL bort
-relation elab_exp_dim : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTable option,int)
-	    => (Exp.Exp, Types.Properties,Interactive.InteractiveSymbolTable option) =
-
-  axiom elab_exp_dim(_,Absyn.END,impl,st,dim)
-	  => (Exp.ICONST(dim), Types.PROP((Types.T_INTEGER([]),NONE),true),st)
-
-end
-*)
 (** relation: replace_operator_with_fcall
  ** Replaces a userdefined operator expression with a corresponding function call expression.
  ** Other expressions just passes through.
@@ -502,6 +480,14 @@ relation elab_code_type: (Env.Env, Absyn.Code) => Types.Type =
 
 end
 
+
+(** relation elab_graphics_exp
+ ** This relation is specially designed for elaboration of expressions when
+ ** investigating Modelica 2.0 graphical annotations.
+ ** These have an array of records representing graphical objects. These elements can
+ ** have different types, therefore elab_graphic_exp will allow arrays with elements of 
+ ** varying types. 
+ **)
 relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties) =
 
   axiom	elab_graphics_exp(_, Absyn.INTEGER(x))
@@ -513,15 +499,13 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
   axiom	elab_graphics_exp(_, Absyn.BOOL(x))
 	  => (Exp.BCONST(x), Types.PROP((Types.T_BOOL([]),NONE),   true))
 
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_cref") &*)
-	elab_cref(env, cr) => (exp,prop,_)
+  rule	elab_cref(env, cr) => (exp,prop,_)
 	---------------------------------------
 	elab_graphics_exp(env, Absyn.CREF(cr)) => (exp,prop) 
 
 	(**  Binary and unary operations *)
 
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_binary") &*)
-	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
+  rule	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators(op, env, t1, t2) => ops &
@@ -530,15 +514,14 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,exp as Absyn.BINARY(e1,op,e2))
 	  => (Exp.BINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_unary") &*)
-	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
+  rule	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
 	elab_graphics_exp (env,exp as Absyn.UNARY(op,e))
 	  => (Exp.UNARY(op',e''),Types.PROP(rtype,c))
 	
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_lbinary") &*)
+  rule	(* Logical binary expressions *)
 	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
@@ -548,7 +531,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,exp as Absyn.LBINARY(e1,op,e2))
 	  => (Exp.LBINARY(e1'',op',e2''),Types.PROP(rtype,c))
 
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_lunary") &*)
+  rule	(* Logical unary expressions *)
 	elab_graphics_exp (env,e) => (e',Types.PROP(t,c)) &
  	operators(op, env, t, (Types.T_NOTYPE,NONE)) => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
@@ -556,12 +539,9 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	elab_graphics_exp (env,exp as Absyn.LUNARY(op,e))
 	  => (Exp.LUNARY(op',e''),Types.PROP(rtype,c))
 
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_relation") &*)
-	
+  rule	(* Relation expressions *)
 	elab_graphics_exp (env,e1) => (e1', Types.PROP(t1, c1)) &
-	
 	elab_graphics_exp (env,e2) => (e2', Types.PROP(t2, c2)) &
-	
 	bool_and (c1,c2) => c &
 	operators(op, env, t1, t2) => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
@@ -571,8 +551,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
 	(**  Conditional expressions *)
 
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_ifexp") &*)
-	elab_graphics_exp (env,e1) => (e1', prop1) &
+  rule	elab_graphics_exp (env,e1) => (e1', prop1) &
 	elab_graphics_exp (env,e2) => (e2', prop2) &
 	elab_graphics_exp (env,e3) => (e3', prop3) &
 	elab_ifexp(e1',prop1,e2',prop2,e3',prop3) => (e,prop)
@@ -585,7 +564,6 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	(** TODO: Implement elaboration of named arguments. *)
 
   rule	Dump.print_component_ref_str fn => fnstr &
-	(*Debug.fprintl("setr", ["elab_graphics_exp_call: ",fnstr,"\n"]) &*)
 	elab_call(env,fn,args,nargs,true,NONE) => (e,prop,_) 
 	--------------------------------------
 	elab_graphics_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) 
@@ -597,14 +575,9 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	* Fix this!!
 	*)
 	
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_tuple") &
-	Debug.print "\n#####################elab_graphics_exp tuple.####################" &*)
-(*	Dump.print_exp e1 &
-*)	Debug.print "\n ###################" &
+  rule	
 	elab_tuple(env,e) => (e', props) &
-(*	Debug.print "\nThe elaborated tuple." &*)
 	split_props(props) => (types, consts) 
-(*	Debug.print "\n split_props was just executed."*)
 	-------------------------------------
 	elab_graphics_exp (env,Absyn.TUPLE(e as e1::rest)) 
 	  => (Exp.TUPLE(e'),Types.PROP_TUPLE((Types.T_TUPLE(types),NONE), Types.TUPLE_CONST(consts)))
@@ -612,8 +585,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
 	(**  Array-related expressions *)
 
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_range1") &*)
-	elab_graphics_exp (env, start) => (start', Types.PROP(start_t, c_start)) &
+  rule	elab_graphics_exp (env, start) => (start', Types.PROP(start_t, c_start)) &
 	elab_graphics_exp (env, stop) => (stop', Types.PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
 			 NONE,
@@ -652,8 +624,7 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(l)), t),NONE),
 		   const))
 	
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_matrix") &*)
-	elab_exp_list_list(env,es,false,NONE) => (_, tps, _) &
+  rule	elab_exp_list_list(env,es,false,NONE) => (_, tps, _) &
 	Util.list_list_map(tps,Types.get_prop_type) => tps' &
 	Util.list_flatten(tps') => tps'' &
 	Types.contain_real(tps'') => havereal &
@@ -672,6 +643,10 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Types.Properties)
 
 end
 
+(** relation: deoverload_range
+ ** Does deoverloading of range expressions. They can be both Integer ranges and Real ranges.
+ ** This relation determines which one to use.
+**)
 relation deoverload_range : ((Exp.Exp*Types.Type), 
 			     (Exp.Exp*Types.Type) option,
 			     (Exp.Exp*Types.Type)) 
@@ -696,7 +671,9 @@ relation deoverload_range : ((Exp.Exp*Types.Type),
 	  => (e1',SOME(e2'),e3',Exp.REAL)
 
 end
-(** relation: elab_range_type *)
+(** relation: elab_range_type 
+ ** Helper relation to elab_range. Calculates the dimension of the range expression.
+ *)
 
 relation elab_range_type : (Env.Env, Exp.Exp,
 			    Exp.Exp option, Exp.Exp, bool,Exp.Type) => Types.Type =
@@ -748,6 +725,9 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 
 end
 
+(** relation: elab_tuple
+ ** This relation does elaboration of tuples, i.e. function calls returning several values.
+ **)
 relation elab_tuple : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Types.Properties list) =
 
@@ -772,7 +752,9 @@ relation elab_tuple : (Env.Env, Absyn.Exp list)
 end
 
 
-(** relation: elab_array *)
+(** relation: elab_array 
+ ** This relation elaborates on array expressions.
+ **)
 
 relation elab_array : (Env.Env, Absyn.Exp list,bool,Interactive.InteractiveSymbolTable option)
 	  => (Exp.Exp list, Types.Properties) =
@@ -805,6 +787,9 @@ relation elab_array : (Env.Env, Absyn.Exp list,bool,Interactive.InteractiveSymbo
 
 end
 
+(** relation: elab_graphics_array
+ ** This relation elaborates array expressions for graphics elaboration.
+ **)
 relation elab_graphics_array : (Env.Env, Absyn.Exp list)
 	  => (Exp.Exp list, Types.Properties) =
 
@@ -824,6 +809,10 @@ relation elab_graphics_array : (Env.Env, Absyn.Exp list)
 
 end
 
+(** relation elab_matrix_comma
+ ** This relation is a helper relation for elab_matrix_semi.
+ ** It elaborates one matrix row of a matrix.
+ **)
 relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
 			      , Interactive.InteractiveSymbolTable option, bool (*have real*))
 	=> ((Exp.Exp*bool) list, Types.Properties, int, int) =
@@ -856,7 +845,10 @@ relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
 	elab_matrix_comma (_,_,_,_,_) => fail
 end
 
-(** relation: elab_matrix_semi *)
+(** relation: elab_matrix_semi
+ ** This relation elaborates Matrix expressions, e.g. [1,0;2,1] 
+ ** A row is elaborated with elab_matrix_comma.
+ *)
 
 relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*), Interactive.InteractiveSymbolTable option, bool(*contain real*))
 	=> ((Exp.Exp*bool) list list, Types.Properties, int, int, int) =
@@ -913,7 +905,11 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*
 *)
 end
 
-
+(** relation: elab_builtin_size
+ ** This relation elaborates the size operator.
+ ** Input is the list of arguments to size as Absyn.Exp expressions and the 
+ ** environment, Env.Env.
+ **)
 relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule	(** size(A,x) that returns size of x:th dimension *)
@@ -932,14 +928,16 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	---------------------------------------------------------------
 	elab_builtin_size (env, [arraycr]) 
 	  => (exp,Types.PROP((Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE),c))
-
-
   rule	(*Debug.fprint("failtrace", "- elab_builtin_size failed\n")*)
 	----------------------------------------------------------
 	elab_builtin_size (env,expl) => fail
 end
 
 
+(** relation: elab_builtin_fill
+ ** This relation elaborates the builtin operator fill.
+ ** The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env
+ **)
 relation elab_builtin_fill : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties)	=
 
   rule	elab_exp (env,s,false,NONE) => (s', Types.PROP(sty, sconst),_) &
@@ -955,7 +953,9 @@ relation elab_builtin_fill : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
 end
 
-
+(** relation: elab_builtin_fill_2
+ ** Helper relation to elab_builtin_fill
+ **)
 relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -985,6 +985,10 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 
 end
 
+(** relation: elab_builtin_transpose
+ ** This relation elaborates the builtin operator transpose
+ ** The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env
+ **)
 relation elab_builtin_transpose : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1003,6 +1007,9 @@ relation elab_builtin_transpose : (Env.Env, Absyn.Exp list)
 	elab_builtin_transpose (env, [matexp]) => (exp, prop)
 end
 
+(** relation: elab_builtin_transpose_2
+ ** Helper relation to elab_builtin_transpose
+ **)
 relation elab_builtin_transpose_2 : (Env.Env, Exp.Exp, Types.Type) => 
 	(Exp.Exp, Types.Properties) =
 
@@ -1012,7 +1019,11 @@ relation elab_builtin_transpose_2 : (Env.Env, Exp.Exp, Types.Type) =>
 	elab_builtin_transpose_2(env, exp, tp) => fail
 end
 
-relation build_exp_list : (Exp.Exp, int) => Exp.Exp list =
+(** relation: build_exp_list
+ ** Helper relation to e.g. elab_builtin_fill_2. Creates n copies of the same 
+ ** expression given as input.
+ **)
+relation build_exp_list : (Exp.Exp, int (* n *)) => Exp.Exp list =
 
   axiom	build_exp_list(e,0) => []
   axiom	build_exp_list (e,1) => [e]
@@ -1024,6 +1035,10 @@ relation build_exp_list : (Exp.Exp, int) => Exp.Exp list =
 
 end
 
+(** relation: elab_builtin_sum
+ ** This relation elaborates the builtin operator sum.
+ ** The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env
+ **)
 relation elab_builtin_sum : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1045,6 +1060,10 @@ relation elab_builtin_sum : (Env.Env, Absyn.Exp list)
 	elab_builtin_sum(env,[arrexp]) => (exp'', Types.PROP(tp,c))
 end
 
+(** relation: elab_builtin_pre
+ ** This relation elaborates the builtin operator pre.
+ ** Input is the arguments to the pre operator and the environment, Env.Env.
+ **)
 relation elab_builtin_pre : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1066,6 +1085,10 @@ relation elab_builtin_pre : (Env.Env, Absyn.Exp list)
 	elab_builtin_pre(env,_) => fail
 end
 
+(** relation: elab_builtin_initial
+ ** This relation elaborates the builtin operator 'initial()'
+ ** Input is the arguments to the operator, which should be an empty list.
+ **)
 relation elab_builtin_initial : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1078,6 +1101,10 @@ relation elab_builtin_initial : (Env.Env, Absyn.Exp list)
 	elab_builtin_initial(env,_) => fail
 end
 
+(** relation: elab_builtin_terminal
+ ** This relation elaborates the builtin operator 'terminal()'
+ ** Input is the arguments to the operator, which should be an empty list.
+ **)
 relation elab_builtin_terminal : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1091,7 +1118,11 @@ relation elab_builtin_terminal : (Env.Env, Absyn.Exp list)
 
 end
 
-
+(** relation: elab_builtin_array
+ ** This relation elaborates the builtin operator 'array'. For instance, 
+ ** array(1,4,6) which is the same as {1,4,6}.
+ ** Input is the list of arguments to the operator, as Absyn.Exp list.
+ **)
 relation elab_builtin_array : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties) =
   rule	elab_exp_list(env, expl, false, NONE) 
@@ -1105,7 +1136,10 @@ relation elab_builtin_array : (Env.Env, Absyn.Exp list)
 	elab_builtin_array(env,expl) => (exp, Types.PROP(newtp,c))
 end
 
-(* Asserts that all types are of same dimensionality and of same builtin types *)
+(** relation elab_builtin_array2.
+ ** Helper relation to elab_builtin_array.
+ ** Asserts that all types are of same dimensionality and of same builtin types.
+ **)
 relation elab_builtin_array2: (Exp.Exp list, Types.Properties list)
 	=> (Exp.Exp list, Types.Properties) =
 
@@ -1127,6 +1161,9 @@ relation elab_builtin_array2: (Exp.Exp list, Types.Properties list)
 	elab_builtin_array2(expl,tpl as (tp::_)) => (expl', tp)
 end
 
+(** relation: elab_bultin_array3
+ ** Helper relation to elab_builtin_array.
+ **)
 relation elab_builtin_array3: (Exp.Exp list, Types.Properties list, Types.Properties)
 	=> (Exp.Exp list, Types.Properties) =
   axiom	elab_builtin_array3([],[],tp) => ([],tp)
@@ -1137,6 +1174,9 @@ relation elab_builtin_array3: (Exp.Exp list, Types.Properties list, Types.Proper
 	elab_builtin_array3(e1::expl,t1::tpl,tp) => (e1'::expl', t1)
 end
 
+(** relation: elab_builtin_zeros
+ ** This relation elaborates the builtin operator 'zeros(n)'.
+ **)
 relation elab_builtin_zeros : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_fill (env, Absyn.INTEGER(0)::args) => (e,p)
@@ -1144,6 +1184,10 @@ relation elab_builtin_zeros : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Prope
 	elab_builtin_zeros (env, args) => (e,p)
 end
 
+(** relation: same_dimensions
+ ** This relation returns true of all the properties, containing types, have the same 
+ ** dimensions, otherwise false. 
+ **)
 relation same_dimensions: (Types.Properties list ) => bool =
 
   rule	Util.list_map(tpl,Types.get_prop_type) => tpl' &
@@ -1186,6 +1230,9 @@ relation same_dimensions3: (int list) => bool =
   axiom	same_dimensions3(_) => false
 end
 
+(** relation: elab_builtin_ones
+ ** This relation elaborates on the builtin opeator 'ones(n)'.
+ **)
 relation elab_builtin_ones : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_fill (env, Absyn.INTEGER(1)::args) => (e,p)
@@ -1193,23 +1240,30 @@ relation elab_builtin_ones : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 	elab_builtin_ones (env, args) => (e,p)
 end
 
+(** relation: elab_builtin_max
+ **  This relation elaborates on the builtin operator 'max(v1,v2)'
+ **)
 relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
-  rule	elab_exp (env,arrexp,false,NONE) 
+
+  rule	(* max(vector) of type Integer *)
+	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
 	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
 	-------------------------------------------------------
 	elab_builtin_max(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
 
-  rule	elab_exp (env,arrexp,false,NONE) 
+  rule	(* max(vector) of type Real *)
+	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
 	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
 	-------------------------------------------------------
 	elab_builtin_max(env, [arrexp]) => (Exp.RCONST(r),Types.PROP(ty,true))
 
-	(* max(x,y) where x & y are scalars *)
-  rule	elab_exp (env,s1,false,NONE) 
+	
+  rule	(* max(x,y) where x & y are scalar Integers *)
+	elab_exp (env,s1,false,NONE) 
 	  => (s1', Types.PROP(arrty, arrconst),_) &
 	Ceval.ceval(env,s1',false,NONE,NONE) => (Values.INTEGER(i1),_) &
 	elab_exp (env,s2,false,NONE) 
@@ -1220,7 +1274,8 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 	elab_builtin_max(env, [s1, s2]) 
 	  => (Exp.ICONST(res),Types.PROP((Types.T_INTEGER([]),NONE),true))
 
-  rule	elab_exp (env,s1,false,NONE) 
+  rule	(* max(x,y) where x & y are scalar Reals *)
+	elab_exp (env,s1,false,NONE) 
 	  => (s1', Types.PROP(arrty, arrconst),_) &
 	Ceval.ceval(env,s1',false,NONE,NONE) => (Values.REAL(r1),_) &
 	elab_exp (env,s2,false,NONE) 
@@ -1232,6 +1287,9 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 	  => (Exp.RCONST(res),Types.PROP((Types.T_REAL([]),NONE),true))
 end
 
+(** relation: elab_builtin_max_2
+ ** Helper relation to elab_builtin_max.
+ **)
 relation elab_builtin_max_2 : (Values.Value) => (Values.Value, Types.Type) =
 
   rule	elab_builtin_max_2(v1)
@@ -1262,15 +1320,22 @@ relation elab_builtin_max_2 : (Values.Value) => (Values.Value, Types.Type) =
 	  => (Values.REAL(i),(Types.T_REAL([]),NONE))
 end
 
+(** relation: elab_builtin_min
+ ** This relation elaborates the builtin operator 'min(a,b)'
+ **)
+
 relation elab_builtin_min : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
-  rule	elab_exp (env,arrexp,false,NONE) 
+
+  rule	(* min(v) for an Integer vector v *)
+	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
 	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
 	-------------------------------------------------------
 	elab_builtin_min(env, [arrexp]) => (Exp.ICONST(i),Types.PROP(ty,true))
 
-  rule	elab_exp (env,arrexp,false,NONE) 
+  rule (* min(v) for a Real vector v *)
+	elab_exp (env,arrexp,false,NONE) 
 	  => (arrexp', Types.PROP(arrty, arrconst),_) &
 	Ceval.ceval(env,arrexp',false,NONE,NONE) => (Values.ARRAY(vals),_) &
 	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
@@ -1307,6 +1372,9 @@ relation elab_builtin_min_2 : (Values.Value) => (Values.Value, Types.Type) =
 	  => (Values.REAL(i),(Types.T_REAL([]),NONE))
 end
 
+(** relation: elab_builtin_floor
+ ** This relation elaborates on the builtin operator floor.
+ **)
 relation elab_builtin_floor : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule (*print "# floor function not implemented yet\n" &*)
@@ -1318,6 +1386,9 @@ relation elab_builtin_floor : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Prope
             Types.PROP((Types.T_REAL([]),NONE),c))
 end
 
+(** relation: elab_builtin_ceil
+ ** This relation elaborates on the builtin operator ceil.
+ **)
 relation elab_builtin_ceil : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
         
   rule (**print "# ceil function not implemented yet\n" &**)
@@ -1329,6 +1400,9 @@ relation elab_builtin_ceil : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
               Types.PROP((Types.T_REAL([]),NONE),c))
 end
 
+(** relation: elab_builtin_abs
+ ** This relation elaborates on the builtin operator abs
+ **)
 relation elab_builtin_abs : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
 
   rule	elab_exp (env,s1,false,NONE) 
@@ -1347,7 +1421,9 @@ relation elab_builtin_abs : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
 	
 end
 
-
+(** relation: elab_builtin_sqrt
+ ** This relation elaborates on the builtin operator sqrt.
+ **)
 relation elab_builtin_sqrt : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule 
         elab_exp (env,s1,false,NONE) 
@@ -1360,6 +1436,9 @@ relation elab_builtin_sqrt : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Proper
 
 end
 
+(** relation: elab_builtin_div
+ ** This relation elaborates on the builtin operator div.
+ **)
 relation elab_builtin_div : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule  elab_exp (env,s1,false,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
@@ -1399,6 +1478,9 @@ relation elab_builtin_div : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
         
 end
 
+(** relation: elab_builtin_mod
+ ** This relation elaborates on the builtin operator mod.
+ **)
 relation elab_builtin_mod : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule  elab_exp (env,s1,false,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
@@ -1438,6 +1520,9 @@ relation elab_builtin_mod : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
         
 end
 
+(** relation: elab_builtin_sqrt
+ ** This relation elaborates on the builtin operator rem.
+ **)
 relation elab_builtin_rem : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule  elab_exp (env,s1,false,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
@@ -1477,6 +1562,10 @@ relation elab_builtin_rem : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Propert
         
 end
 
+(** relation: elab_builtin_integer
+ ** This relation elaborates on the builtin operator integer, which extracts the 
+ ** Integer value of a Real value.
+ **)
 relation elab_builtin_integer : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties) =
   rule 
         elab_exp (env,s1,false,NONE) 
@@ -1489,6 +1578,10 @@ relation elab_builtin_integer : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Pro
 
 end
 
+(** relation: elab_builtin_diagonal
+ ** This relation elaborates on the builtin operator diagonal, creating a matrix with 
+ ** a value of the diagonal. The other elements are zero.
+ **)
 relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Properties)	=
 
   rule	elab_exp (env,s1,false,NONE) 
@@ -1507,6 +1600,10 @@ relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Pr
 	
 end
 
+(** relation: elab_builtin_dymtabletimeini
+ ** This relation elaborates on the function dymtabletimeini, which is a Dymola
+ ** builtin function for table initialization. Should probably be removed in the future.
+ **)
 relation elab_builtin_dymtabletimeini : (Env.Env, Absyn.Exp list) 
 	  => (Exp.Exp, Types.Properties)	=
 	
@@ -1549,7 +1646,11 @@ relation elab_builtin_noevent : (Env.Env, Absyn.Exp list) => (Exp.Exp, Types.Pro
 	
 end
 
-
+(** relation: elab_builtin_handler
+ ** This relation dispatches the elaboration of builtin operators by returning the 
+ ** appropriate relation. When a new builtin operator is added, a new rule has to be added to 
+ ** this relation.
+**)
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list) 
 					  => (Exp.Exp, Types.Properties)) =
 
@@ -1582,9 +1683,9 @@ end
 
 
 (** relation: elab_call_builtin
- **
+ ** This relation elaborates on builtin operators, by calling the builtin handler 
+ ** to retrieve the correct relation to call.
  **)
-
 relation elab_call_builtin : (Env.Env, Absyn.ComponentRef, Absyn.Exp list)
 	=> (Exp.Exp, Types.Properties) =
 
@@ -2136,9 +2237,11 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 
 end
 
-(* This relation elaborates variablenames to Exp.Exp. A variablename can
- * be used in e.g. plot(model,{v1[3],v2.t}) It should only be used in interactive functions that uses variablenames as componentreferences.
-*)
+(** relation: elab_variablenames
+ ** This relation elaborates variablenames to Exp.Exp. A variablename can
+ ** be used in e.g. plot(model,{v1[3],v2.t}) It should only be used in interactive 
+ ** functions that uses variablenames as componentreferences.
+**)
 relation elab_variablenames: Absyn.Exp list => Exp.Exp list =
 
   axiom	elab_variablenames [] => []
@@ -2152,8 +2255,10 @@ relation elab_variablenames: Absyn.Exp list => Exp.Exp list =
 end
 
 
-(* This relation is used to "elaborate" interactive functions optional parameters, e.g. simulate(A.b, startTime=1), startTime is an optional parameter *)
-
+(** relation: get_optional_named_arg
+ **  This relation is used to "elaborate" interactive functions optional parameters, 
+ ** e.g. simulate(A.b, startTime=1), startTime is an optional parameter 
+ **)
 relation get_optional_named_arg: (Env.Env, Interactive.InteractiveSymbolTable option,
 				  Ident,Absyn.NamedArg list,Exp.Exp) 
 	=> Exp.Exp =
@@ -2170,9 +2275,11 @@ relation get_optional_named_arg: (Env.Env, Interactive.InteractiveSymbolTable op
 	get_optional_named_arg(env,st,id,Absyn.NAMEDARG(id2,exp)::xs,dexp) => exp'
 end
 
-(* This relation elaborates a ComponentRef without adding type information. *)
-(* Environment is passed along, such that constant subscripts can be elabed using existing
- relations *)	
+(** relation: elab_untyped_cref
+ ** This relation elaborates a ComponentRef without adding type information. 
+ **  Environment is passed along, such that constant subscripts can be elabed using existing
+ ** relations
+ **)
 relation elab_untyped_cref: (Env.Env, Absyn.ComponentRef) => Exp.ComponentRef =
 
   rule	elab_subscripts(env, subs) => (subs',_)
@@ -2185,6 +2292,9 @@ relation elab_untyped_cref: (Env.Env, Absyn.ComponentRef) => Exp.ComponentRef =
 	elab_untyped_cref(env, Absyn.CREF_QUAL(id,subs,cr)) => Exp.CREF_QUAL(id,subs',cr')
 end
 
+(** relation: path_to_component_ref
+ ** This relation tranlates a typename to a variable name.
+ **)
 relation path_to_component_ref: Absyn.Path => Exp.ComponentRef =
 
   axiom	path_to_component_ref(Absyn.IDENT(s)) => Exp.CREF_IDENT(s,[])
@@ -2194,6 +2304,9 @@ relation path_to_component_ref: Absyn.Path => Exp.ComponentRef =
 	path_to_component_ref(Absyn.QUALIFIED(id,path)) => Exp.CREF_QUAL(id,[],cref)
 end
 
+(** relation: component_ref_to_path
+ ** This relation translates a variable name to a type name.
+ **)
 relation component_ref_to_path: Exp.ComponentRef => Absyn.Path =
 
   axiom	component_ref_to_path(Exp.CREF_IDENT(s,[])) => Absyn.IDENT(s)
@@ -2271,8 +2384,13 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 
 end
 
-
-relation is_function_in_cflist : ((Absyn.Path * Types.Type) list, Absyn.Path) => bool =
+(** relation: is_function_in_cflist
+ ** This relation returns true if a function, named by an Absyn.Path, is present
+ ** in the list of precompiled functions that can be executed in the interactive mode.
+ **)
+relation is_function_in_cflist : ((Absyn.Path * Types.Type) list, (* list of compiled functions*)
+				  Absyn.Path)  (* function name *)
+	  => bool =
 
   axiom	is_function_in_cflist ([],_) => false
 
@@ -2295,7 +2413,11 @@ end
  ** arguments to the formal parameters.
  **)
 
-relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list, Interactive.InteractiveSymbolTable option)
+relation elab_call_args : (Env.Env, 
+			   Absyn.Path, 
+			   Absyn.Exp list, 
+			   Absyn.NamedArg list, 
+			   Interactive.InteractiveSymbolTable option)
 	=> (Exp.Exp, Types.Properties) =
 
   rule	(* This rule finds record constructors, user defined or implicit *)	
@@ -2416,9 +2538,9 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list)
 end
 
 
-(* PR get_prop 
-*)
-(* LS: Changed type list to type, since T_TUPLE already fixed before *)
+(** relation: get_properties
+ ** This relation creates a Properties object from a Types.Type and a Types.Const value
+ **)
 relation get_properties : (Types.Type, Types.Const)  => Types.Properties =
 
 	(* At least two elements in the type list, this is a tuple. *)
@@ -2498,42 +2620,9 @@ relation split_props : (Types.Properties list) => (Types.Type list, Types.Const 
   axiom	split_props([]) => ([], [])
 end
 
-
-
-
-
-
-
-
-
-
-(* obsolete LS: added space to inner comments, for emacs fontify to work
-relation split_props: (Types.Properties list, Types.Type list, Types.Const list) => (Types.Type list, Types.Const list) =
-  rule 	list_append(ts,t::[]) => t1 &
-	list_append(cs,Types.CONST(c)::[]) => t2 &
-	split_props(props, t1, t2) => (types, consts)
-	-------------------------------------
-	split_props (Types.PROP(t,c)::props, ts, cs)=> (types,consts)
-
-  rule 	( *  list_append(ts,t::[]) => ts' &   * )
-	list_append(cs, t_c::[]) => cs' & 
-	split_props(props, [], cs') => (types, consts)
-	-------------------------------------
-	split_props (Types.PROP_TUPLE(t,t_c)::props, ts, cs)=> (types,consts)
-  
-  axiom	split_props([],ts,cs) => (ts, cs)
-end
-*)
-
-
-
-
-
-
-
-
-
-(* LS: Changed to match FuncArg *)
+(** relation: get_types
+ ** This relatoin returns the types of a Types.FuncArg list.
+ **)
 relation get_types :(Types.FuncArg list) => Types.Type list =
 
   rule	(* print("\nDebug: Got a type for output of function. ") & *)
@@ -2546,7 +2635,7 @@ relation get_types :(Types.FuncArg list) => Types.Type list =
 end
 
 
-(** relation: functio_params
+(** relation: function_params
  **
  ** A function definition is just a clas definition where all publi
  ** components are declared as either inpu or outpu.  This
@@ -2639,6 +2728,10 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list, Slot l
 	elab_input_args(_,_,_,_) => fail*)
 end
 
+(** relation: make_empty_slots
+ ** Helper relatoin to elab_input_args.
+ ** Creates the slots to be filled with arguments. Intially they are empty.
+ **)
 relation make_empty_slots : (Types.FuncArg list) => Slot list =
 	
   axiom	make_empty_slots([]) => []
@@ -2648,6 +2741,9 @@ relation make_empty_slots : (Types.FuncArg list) => Slot list =
 	make_empty_slots(fa::fs) => SLOT(fa,false,NONE)::ss
 end
 
+(** relation: funcarg_lst_from_slots
+ ** Converts slots to Types.Funcarg
+ **)
 relation funcarg_lst_from_slots : Slot list => Types.FuncArg list =
 	
   axiom	 funcarg_lst_from_slots [] => [] 
@@ -2657,6 +2753,9 @@ relation funcarg_lst_from_slots : Slot list => Types.FuncArg list =
 	funcarg_lst_from_slots(SLOT(fa,_,_)::xs) => fa::fs
 end 
 
+(** relation exp_list_from_slots
+ ** Convers slots to expressions 
+ **)
 relation exp_list_from_slots: (Slot list ) => Exp.Exp list =
 	
   axiom	exp_list_from_slots [] => []
@@ -2671,10 +2770,9 @@ relation exp_list_from_slots: (Slot list ) => Exp.Exp list =
 end
 
 (** relation: fill_default_slots
- ** This function takes a slot list and a class definition of a function and fills default values into slots which 
- ** have not been filled.
-   **)
-	
+ ** This function takes a slot list and a class definition of a function and fills 
+ ** default values into slots which have not been filled.
+ **)
 relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
 	
   rule	fill_default_slots(xs,class,env) => res
@@ -2698,6 +2796,9 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env) => Slot list =
   axiom	fill_default_slots([],_,_) => []
 end
 
+(** relation print_slots
+ ** prints the slots on Print buffer
+ **)
 relation print_slots: Slot list => () =
   rule	Print.print_buf "SLOT(" &
 	Types.print_farg farg &
@@ -2746,18 +2847,9 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 	elab_named_input_args(env,[],farg,slots) => ([],slots,true) *)
 
   rule	elab_exp(env, e,false,NONE) => (e',Types.PROP(t, c1),_) &
-	(*Debug.fprint("sei", "elab_named_input_arg, elaborated exp\n  id =") &
-	Debug.fprint("sei",id) &*)
 	find_named_arg_type(id,farg) => vt &
-	(*Debug.fprint ("sei", "elab_named_input_arg, found type\n") &
-	Debug.fprint ("sei", "exp t = " ) &
-	Debug.fcall ("sei", Types.print_type,t ) &
-	Debug.fprint ("sei", "func t = " ) &
-	Debug.fcall ("sei", Types.print_type,vt ) &*)
 	Types.match_type(e', t, vt) => (e'',_) &
-	(*Debug.fprint ("sei", "elab_named_input_arg, Types matched!\n") &*)
 	fill_slot((id,vt), e'', slots) => slots' &
-	(*Debug.fprint ("sei", "elab_named_input_arg, filled slot\n") &*)
 	elab_named_input_args(env, nas, farg ,slots') => (newslots, c2) &
 	bool_and(c1, c2) => c 
 	---------------------
@@ -2766,17 +2858,14 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, Types.FuncArg li
 
 axiom elab_named_input_args (_,[],_,slots) => (slots,true)
 
-  rule	(*Debug.fprint ("sei","elab_named_input_args failed, nargs = ") &
-	Debug.fprint_list ("sei", narg, Dump.print_named_arg," ,")&
-	Debug.fprint ("sei"," FuncArg=") &
-	Debug.fcall  ("sei",Types.print_params,farg) &
-	Debug.fprint ("sei", "\n")*)
+  rule	Debug.fprint("failtrace", "- elab_named_input_args failed\n") 
 	-----------------
 	elab_named_input_args(env,narg,farg,_) => fail
 end
 
 (** relation find_named_arg_type
- ** This relation takes an Ident and a FuncArg list, and returns the FuncArg which has that identifier.
+ ** This relation takes an Ident and a FuncArg list, and returns the FuncArg which has 
+ ** that identifier.
  ** Used for instance when looking up named arguments from the function type.
  **)
  relation find_named_arg_type : (Ident, Types.FuncArg list) => Types.Type =
@@ -2815,21 +2904,6 @@ relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
 	fill_slot(_,_,_) => fail
 end
 
-(* LS *)
-
-relation elab_cref_list : (Env.Env, Absyn.ComponentRef list)
-	=> (Exp.Exp list, Types.Properties list, SCode.Accessibility list) =
-
-  axiom	elab_cref_list (_, []) => ([], [], [])
-
-  rule	elab_cref (env, cref) => (exp, prop, acc) &
-	elab_cref_list (env, creflist) => (explist, proplist, acclist)
-	----------------------------------------------------------
-	elab_cref_list (env, cref::creflist) 
-	  => (exp::explist, prop::proplist, acc::acclist)
-
-end
-
 
 (** relation: elab_cref
  **
@@ -2846,9 +2920,6 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	Lookup.lookup_var (env,c') => (Types.ATTR(_,acc,variability,_),
 				       t,
 				       binding) &
-	(*Debug.fprint("ecref","elab_cref, looked up type:\n") &
-	Debug.fcall("ecref",Types.print_type,t) &*)
-
 	elab_cref2 (env, c', acc, variability, t, binding)
 	  => (exp,const,acc') 
 	(* FIXME subscript_cref_type (exp,t) => t' &  *)
@@ -2870,6 +2941,13 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef)
 
 end
 
+(** relation: fill_cref_subscripts
+ ** This is a helper relation to elab_cref2.
+ ** It investigates a Types.Type in order to fill the subscript lists of a component 
+ ** reference. For instance, the name 'a.b' with the type array of one dimension will become
+ ** 'a.b[:]'.
+ **)
+
 relation fill_cref_subscripts : (Exp.ComponentRef,Types.Type)
 	  => Exp.ComponentRef =
 
@@ -2884,9 +2962,11 @@ relation fill_cref_subscripts : (Exp.ComponentRef,Types.Type)
 	-----------------------------
 	fill_cref_subscripts (Exp.CREF_QUAL(id,subs,cref),t)
 			      => Exp.CREF_QUAL(id,subs,cref') 
-
 end
 
+(** relation: fill_subscripts
+ ** Helper relation to fill_cref_subscripts.
+ **)
 relation fill_subscripts : (Exp.Subscript list, Types.Type) 
 	  => Exp.Subscript list =
 
@@ -3030,8 +3110,11 @@ end
 (** relation: create_cref_array
  ** helper relation to cref_vectorize, creates each individual cref, e.g. {x[1],x[2], ...} from x.
 **)
-
-relation create_cref_array: (Exp.ComponentRef,int,int,Exp.Type, Types.Type) => Exp.Exp =
+relation create_cref_array: (Exp.ComponentRef,
+			     int, (* index iterator *)
+			     int, (* dimension size *)
+			     Exp.Type, 
+			     Types.Type) => Exp.Exp =
 
   rule	int_gt(indx,ds) => true
 	------------------------
@@ -3053,7 +3136,6 @@ end
  **
  ** This relation elaborates on all subscripts in a component reference.
  **)
-
 relation elab_cref_subs : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.ComponentRef, bool) =
 
@@ -3148,19 +3230,7 @@ relation elab_subscript : (Env.Env, Absyn.Subscript)
 	elab_subscript (env,Absyn.SUBSCRIPT(sub)) => (sub'', const)
 
 end
-(* HL bort
-relation elab_subscript_dim : (Env.Env, Absyn.Subscript, int)
-	  => (Exp.Subscript, bool) =
 
-  axiom	elab_subscript_dim (_,Absyn.NOSUB,_) => (Exp.WHOLEDIM, true)
-
-  rule elab_exp_dim (env,sub,false,NONE,dim) => (sub', Types.PROP(ty, const),_) &
-	elab_subscript_type (ty, sub, sub') => sub''
-	--------------------------------------------
-	elab_subscript_dim (env,Absyn.SUBSCRIPT(sub),dim) => (sub'', const)
-
-end
-*)
 (** relation: elab_subscript_type
  **
  ** This relation is used to find the correct constructor for
@@ -3352,7 +3422,9 @@ relation value_exp : Values.Value => Exp.Exp =
 
 end
 
-(**)
+(** relation: value_type
+ ** This relation investigates a Value and return the Type of this value.
+ **)
 
 relation value_type : Values.Value => Types.Type =
 
@@ -3488,34 +3560,16 @@ relation elab_arglist : (Types.Type list, (Exp.Exp * Types.Type) list)
 
   axiom	elab_arglist ([],[]) => ([],[])
 
-  rule	(*Debug.fprint("earg","Match: ") & 
-	Debug.fcall ("earg",Types.print_type, atype) & 
-	Debug.fprint("earg"," == ") & 
-	Debug.fcall ("earg",Types.print_type,pt) &
-	Debug.fprint("earg","\n") &*)
-	Types.match_type(arg, atype, pt) => (arg',atype') &
-	(*Debug.fprint("earg","Types matched\n") &*)
+  rule	Types.match_type(arg, atype, pt) => (arg',atype') &
 	elab_arglist (pts, args) => (args',atypes')
 	---------------------------------
 	elab_arglist (pt::pts, (arg, atype)::args) => (arg'::args',atype'::atypes')
 
 (* This relation should fail sometimes. Thus it is not a good idea to print stuff here... *)
-(*  rule	Debug.fprint("earg","- Static.elab_arglist failed lst1 len:") &
-	list_length(lst1) => len1 &
-	list_length(lst2) => len2 &
-	int_string(len1) => str1 &
-	int_string(len2) => str2 &
-	Debug.fprintl("earg", [str1, " lst len2: ", str2, "\n"]) &
-	Debug.fprint("failtrace","- Static.elab_arglist failed.") 
-	--------------------------------------
-	elab_arglist (lst1,lst2) => fail *)
+
 end
 
-
-
-
-
-(** relation: deoverlooad
+(** relation: deoverload
  **
  ** Given several lists of parameter types and one argument list, this
  ** relation tries to find one list of parameter types which is
@@ -3554,6 +3608,11 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 	deoverload([], args, exp) => fail
 
 end
+
+(** relation: compute_return_type
+ ** This relation determines the return type of an operator and the types of 
+ ** the operands.
+ **)
 
 relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Types.Type =
 
@@ -3677,6 +3736,9 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
   axiom	compute_return_type (Exp.USERDEFINED(_),_,typ) => typ
 end 
 
+(** relation n_dims
+ ** Returns the number of dimensions of a Type.
+ **)
 relation n_dims : Types.Type => int =
 	
   axiom	n_dims((Types.T_INTEGER(_),_)) => 0
@@ -3691,7 +3753,12 @@ relation n_dims : Types.Type => int =
 
 end
 
-relation dim_size : (Types.Type,int) => int =
+(** relation: dim_size
+ ** Returns the dimension size of the given dimesion.
+ **)
+
+relation dim_size : (Types.Type,int (*n:th dimension*)) => 
+	int (* size of n:nth dimension *) =
 
   axiom	dim_size((Types.T_ARRAY(Types.DIM(SOME(n)),_),_),1) => n
 
@@ -3701,6 +3768,11 @@ relation dim_size : (Types.Type,int) => int =
 	----------------------
 	dim_size((Types.T_ARRAY(_,t),_),d) => n
 end
+
+(** relation: element_type
+ ** Returns the element type of a type, i.e. for arrays, return the element type, and for 
+ ** bulitin scalar types return the type itself.
+ **)
 
 relation element_type : Types.Type => Types.Type =
 	
@@ -3722,14 +3794,13 @@ end
  ** de-overaloaded operators in the SCode.
  **)
 
-(** LS: POW added
- **)
 relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	  => (Exp.Operator * Types.Type list * Types.Type) list =
 
 	(**  Arithmetical operators *)
 
-  rule	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
+  rule	(* The ADD operator *)
+	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
 	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
 	array_type_list(9, (Types.T_STRING([]),NONE)) => stringarrtypes &
 	
@@ -3765,7 +3836,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	operators (Absyn.ADD,env,t1,t2) => types
 
 
-  rule	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
+  rule	(* the SUB operator *)
+	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
 	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
 	
 	operator_return(Exp.SUB_ARR(Exp.INT), 
@@ -3790,7 +3862,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	---------------------------
 	operators(Absyn.SUB,env,t1,t2) => types
 
-  rule	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
+  rule	(* The MUL operator *)
+	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
 	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
 	n_types(9, (Types.T_INTEGER([]),NONE)) => inttypes &
 	n_types(9, (Types.T_REAL([]),NONE)) => realtypes &
@@ -3858,7 +3931,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	--------------------------------------------------------------------------
 	operators(Absyn.MUL,env,t1,t2) => types
 
-  rule	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
+  rule	(* The DIV operator *)
+	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
 	n_types(9, (Types.T_REAL([]),NONE)) => realtypes &
 	let real_div = Exp.DIV(Exp.REAL) &
 	let real_scalar = (Types.T_REAL([]),NONE) &
@@ -3873,7 +3947,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	-----------------------------------------------------------
 	operators(Absyn.DIV,env,t1,t2) => types
 
-  rule	let real_scalar = (Types.T_REAL([]),NONE) &
+  rule	(* The POW operator *)
+	let real_scalar = (Types.T_REAL([]),NONE) &
 	let int_scalar = (Types.T_INTEGER([]),NONE) &
 	let real_vector = (Types.T_ARRAY(Types.DIM(NONE),real_scalar),NONE) &
 	let real_matrix = (Types.T_ARRAY(Types.DIM(NONE), real_vector),NONE) &
@@ -3889,7 +3964,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	-------------------------------------------------------
 	operators(Absyn.POW,env,t1,t2) => types
 
-  rule	let scalars = [(Exp.UMINUS(Exp.INT),
+  rule	(* The UMINUS operator, unary minus *)
+	let scalars = [(Exp.UMINUS(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE)],
 	       (Types.T_INTEGER([]),NONE)),
 	      (Exp.UMINUS(Exp.REAL),
@@ -3900,7 +3976,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	---------------------------------------------
 	operators (Absyn.UMINUS,env,t1,t2) => types
 
-  rule	let scalars = [(Exp.UPLUS(Exp.INT),
+  rule	(* The UPLUS operator, unary plus.*)
+	let scalars = [(Exp.UPLUS(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE)],
 	       (Types.T_INTEGER([]),NONE)),
 	      (Exp.UPLUS(Exp.REAL),
@@ -3930,7 +4007,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 
 	(**  Relational operators *)
 
-  rule let scalars = [(Exp.LESS(Exp.INT),
+  rule (* '<' operator *)
+	let scalars = [(Exp.LESS(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE), (Types.T_INTEGER([]),NONE)],
 	       (Types.T_BOOL([]),NONE)),
 	      (Exp.LESS(Exp.REAL),
@@ -3939,9 +4017,10 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	get_koening_operator_types("less",env,t1,t2) => userops &
 	Util.list_flatten([scalars,userops]) => types
 	---------------------------------------------
-	operators(Absyn.LESS,env,t1,t2) => types
+ 	operators(Absyn.LESS,env,t1,t2) => types
 
-  rule	let scalars = [(Exp.LESSEQ(Exp.INT),
+  rule	(* '<=' operator *)
+	let scalars = [(Exp.LESSEQ(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE), (Types.T_INTEGER([]),NONE)],
 	       (Types.T_BOOL([]),NONE)),
 	      (Exp.LESSEQ(Exp.REAL),
@@ -3952,7 +4031,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	---------------------------------------------
 	operators(Absyn.LESSEQ,env,t1,t2) => types
 
-  rule	let scalars = [(Exp.GREATER(Exp.INT),
+  rule	(* '>' operator *)
+	let scalars = [(Exp.GREATER(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE), (Types.T_INTEGER([]),NONE)],
 	       (Types.T_BOOL([]),NONE)),
 	      (Exp.GREATER(Exp.REAL),
@@ -3963,7 +4043,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	---------------------------------------------
 	operators(Absyn.GREATER,env,t1,t2) => types
 
-  rule	let scalars = [(Exp.GREATEREQ(Exp.INT),
+  rule	(* '>=' operator *)
+	let scalars = [(Exp.GREATEREQ(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE), (Types.T_INTEGER([]),NONE)],
 	       (Types.T_BOOL([]),NONE)),
 	      (Exp.GREATEREQ(Exp.REAL),
@@ -3974,7 +4055,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	---------------------------------------------
 	operators(Absyn.GREATEREQ,env,t1,t2) => types
 
-  rule	let scalars = [(Exp.EQUAL(Exp.INT),
+  rule	(* '==' operator *)
+	let scalars = [(Exp.EQUAL(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE), (Types.T_INTEGER([]),NONE)],
 	       (Types.T_BOOL([]),NONE)),
 	      (Exp.EQUAL(Exp.REAL),
@@ -3991,7 +4073,8 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	---------------------------------------------
 	operators(Absyn.EQUAL,env,t1,t2) => types
 
-  rule	let scalars = [(Exp.NEQUAL(Exp.INT),
+  rule	(* '!=' operator *)
+	let scalars = [(Exp.NEQUAL(Exp.INT),
 	       [(Types.T_INTEGER([]),NONE), (Types.T_INTEGER([]),NONE)],
 	       (Types.T_BOOL([]),NONE)),
 	      (Exp.NEQUAL(Exp.REAL),
@@ -4009,11 +4092,12 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	operators(Absyn.NEQUAL,env,t1,t2) => types
 
 
-  rule	Print.print_buf "- operators(" & Dump.op_symbol op => s &
- 	Print.print_buf s & Print.print_buf ") failed\n"
+  rule	Debug.fprint("failtrace", "-operators failed, op: ")  &
+	Dump.op_symbol op => s &
+ 	Debug.fprint("failtrace",s) &
+	Debug.fprint("failtrace","\n")
 	----------------------------
 	operators(op,env,t1,t2) => fail
-
 end
 
 (** relation: get_koening_function_types
@@ -4160,7 +4244,14 @@ relation build_operator_types: (Types.Type list,Absyn.Path)
 	  => ((Exp.USERDEFINED(funcname),argtypes,tp)::rest) 
 end
 
-relation n_dim_array : (int, Types.Type) => Types.Type =
+
+(** relation: n_dim_array
+ ** Returns a type based on the type given as input but as an array type with
+ ** n dimensions.
+ **)
+
+relation n_dim_array : (int(*n*), Types.Type(* orig type *)) => 
+	Types.Type (* array type of n dimensions with element type = orig type *) =
 
   axiom	n_dim_array (0, t) => t
 
@@ -4170,6 +4261,12 @@ relation n_dim_array : (int, Types.Type) => Types.Type =
 	n_dim_array (n, t) => ((Types.T_ARRAY(Types.DIM(NONE),t'),NONE))
 
 end
+
+(** relation: n_types
+ ** Creates n copies of the type type.
+ ** This could instead be accomplished with Util.list_fill...
+ **)
+
 relation n_types : (int, Types.Type) => Types.Type list =
 
   axiom	n_types (0,_) => []
@@ -4181,6 +4278,10 @@ relation n_types : (int, Types.Type) => Types.Type list =
 
 end
 
+(** relation: operator_return
+ ** This relation collects the types and operator lists into a tuple list, suitable
+ ** for the deoverloading relation.
+**)
 relation operator_return : (Exp.Operator, 
 			    Types.Type list, 
 			    Types.Type list, 
@@ -4196,7 +4297,13 @@ relation operator_return : (Exp.Operator,
 
 end
 
-relation array_type_list : (int, Types.Type) => Types.Type list =
+(** relation: array_type_list
+ ** This relation creates a list of types using the original type passed as input, but 
+ ** as array types up to n dimensions.
+ **)
+relation array_type_list : (int (* n *), Types.Type(* orig type *)) => 
+	Types.Type list (* array types *)
+	=
   
   axiom array_type_list (0,_) => []
 
@@ -4205,6 +4312,5 @@ relation array_type_list : (int, Types.Type) => Types.Type list =
 	array_type_list (n', t) => r
 	-----------------------------
 	array_type_list (n, t) => f::r
-
-
+ 
 end
