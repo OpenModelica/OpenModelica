@@ -52,18 +52,9 @@ List of things to implement:
 	
 	Also check that the other operators in this table are correct.
 	15 days.
-
-13.	All builtin functions in 3.4.3 (except size) have not been
-	correctly implemented. Look at how size is implemented when
-	implementing them. Some of them are added to the builtin.rml,
-	some of them not.  15 days.
 	
 14.	3.4.3.1 Reduction expressions (Not implemented at all). (See also 3.4.4)  15 days.
 
-15.	Array access with end operator A[end]:=A[end-1];
-	Array access on the form A[{1,2,3}] (in ceval)
-	+ many more under that section in the spec.
-	10 days work.
 
 16.	Slice operation. Works but the resulting component names are sometimes
 	messed up. Check this.
@@ -102,10 +93,9 @@ List of things to implement:
 	This means that we have to traverse the AST to search for models
 	15 days	
 
-22.	Line number information in parser
-	The parser should return good error messages including line numbers and code fragment
-	that is erroneous.
-	25 days (To write -good- error messages)
+22.     Better error messages in Parser.
+	Kaj has implemented line numbers, but perhaps better messages are needed.
+	Investigation & implementation 10 days.
 
 23.	Line number and file information in instantiation.
 	Line numbers should also be present in the Absyn and SCode ASTs, such that instantiation 
