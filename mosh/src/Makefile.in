@@ -21,31 +21,12 @@ LINKFLAGS = $(LIBP) -static
 
 LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap
 
-PARSER_OBJS = ../../modelica_parser/src/modelica_lexer.o ../../modelica_parser/src/token_names.o ../../modelica_parser/src/parse_tree_dumper.o
 
-HELPER_OBJS = value.o symboltable.o builtin_function.o \
-		modelica_function.o compiled_function.o function_argument.o modelica_type.o
+OBJS += mosh.o
 
-parsergen= modelica_expression_parser.cpp modelica_expression_parser.hpp \
-	   modelica_expression_parserTokenTypes.hpp modelica_expression_parserTokenTypes.txt
 
-walkergen= modelica_tree_parser.cpp modelica_tree_parser.hpp \
-	   modelica_tree_parserTokenTypes.hpp modelica_tree_parserTokenTypes.txt
+all : mosh
 
-parsersrcs=$(filter %.cpp,$(parsergen))
-parserobjs=$(parsersrcs:.cpp=.o)
-
-walkersrcs=$(filter %.cpp,$(walkergen))
-walkerobjs=$(walkersrcs:.cpp=.o)
-
-OBJS += $(parserobjs) $(walkerobjs) $(HELPER_OBJS) mosh.o $(PARSER_OBJS) 
-
-ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
-
-all : parser mosh
-
-parser:
-	cd ../../modelica_parser/src; $(MAKE) -f Makefile
 
 mosh : $(OBJS) 
 	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS)
@@ -53,35 +34,11 @@ mosh : $(OBJS)
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-$(parsergen): expandedexpression_parser.g
-	java antlr.Tool $(ANTLRFLAGS) expandedexpression_parser.g
-
-#$(walkergen): walker.g modelica_expression_parserTokenTypes.txt runtime/modelica_array.hpp runtime/numerical_array.hpp
-$(walkergen): walker.g modelica_expression_parserTokenTypes.txt 
-	java antlr.Tool $(ANTLRFLAGS) walker.g
-#$<
-
-
-$(walkerobjs) : runtime/modelica_array.hpp runtime/numerical_array.hpp
-
-expandedexpression_parser.g: expression_parser.g
-	java antlr.Tool -glib ../../modelica_parser/src/modelica_parser.g expression_parser.g
-
-#modelica_parserTokenTypes.txt : ../../src/modelica_parserTokenTypes.txt
-#	cp ../../src/modelica_parserTokenTypes.txt .
-
-depend :
-	gcc -M $(CXXFLAGS) mosh.cpp $(walkersrcs) > Makefile.depend
 
 clean:
-	-rm -f *.o *~ core *.core mosh modelica_expression_parser.cpp \
-	modelica_expression_parser.hpp modelia_tree_parser.cpp \
-	modelica_tree_parser.hpp
-
-reallyclean: clean
-	-rm -f $(parsergen) $(walkergen) modelica_expression_parserTokenTypes.txt expandedexpression_parser.g modelica_parserTokenTypes.txt
+	-rm -f *.o *~ core *.core mosh 
 
 
-mosh.o : mosh.cpp ../../modelica_parser/src/modelica_lexer.hpp ../../modelica_parser/src/modelica_parser.hpp
+mosh.o : mosh.cpp 
 
-#include Makefile.depend
+
