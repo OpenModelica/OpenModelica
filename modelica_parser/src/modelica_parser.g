@@ -103,7 +103,6 @@ class_type :
 class_specifier :
 		( string_comment composition END! IDENT!
 		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
-		| EQUALS^ overloading
 		| EQUALS^ enumeration
 		)
 		;
@@ -112,9 +111,6 @@ base_prefix:
 		type_prefix
 		;
 
-overloading:
-		OVERLOAD^ LPAR! name_list RPAR! comment
-		;
 name_list:
 		name_path (COMMA! name_path)*
 		;
@@ -554,7 +550,7 @@ simple_expression ! :
 		;
 /* Code quotation mechanism */
 code_expression ! :
-		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element 
+		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element (SEMICOLON!)?
 		| eq:code_equation_clause | ieq:code_initial_equation_clause
 		| alg:code_algorithm_clause | ialg:code_initial_algorithm_clause
 		)  RPAR 

@@ -89,7 +89,6 @@ module SCode :
 			       * Absyn.ArrayDim option
 			       * Mod
 		    | ENUMERATION of Ident list
-	            | OVERLOAD of Absyn.Path list
 
   (** The major difference between these types and their `Absyn' *)
   (** counterparts is that the `PARTS' constructor contains separate *)
@@ -268,7 +267,6 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	--------------------------
 	elab_classdef(Absyn.ENUMERATION(lst,_)) => ENUMERATION(lst')
 
-  axiom	elab_classdef(Absyn.OVERLOAD(lst,_)) => OVERLOAD(lst)
 end
 
 relation elab_enumlist:(Absyn.EnumLiteral list) => Ident list =

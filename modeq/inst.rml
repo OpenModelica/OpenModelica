@@ -2593,15 +2593,6 @@ relation implicit_function_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool)
 	  => (Env.Env, DAE.Element list) =
 
-  rule	(* Overloaded functions *)
-	inst_overloaded_functions(env,n,funcnames) => (env',daefuncs)
-	-----------------------------
-	implicit_function_instantiation(env,mod,pre,csets,
-			       c as SCode.CLASS(n,_,_, restr as SCode.R_FUNCTION, 
-			       SCode.OVERLOAD(funcnames)),
-			       inst_dims, false)
-	  => (env', daefuncs)
-
 rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 	inst_class(env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
 	  => (dae, _, csets', ty, st) &
