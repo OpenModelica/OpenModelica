@@ -1,5 +1,6 @@
 (**
  ** file:	 dump.rml
+ ** module:      Dump
  ** description: debug printing
  **
  ** RCS: $Id$
@@ -391,7 +392,7 @@ relation print_subscripts : Absyn.Subscript list => () =
 
 end
 
-(** relation: print_component_ref
+(** relation: print_path
  **
  ** Print a `Path'.
  **)

@@ -1,10 +1,12 @@
 (**
  ** file:	 dae.rml
+ ** module:      DAE
  ** description: DAE management and output
  **
  ** RCS: $Id$
- **
- ** This file is not really mine.  It will be rewritten later.
+ ** 
+ ** This module defines types for collecting DAE equations together
+ ** with declarations of variables.
  **)
 
 (** - Module header *)
@@ -26,7 +28,7 @@ module DAE:
   datatype Element = VAR of Exp.ComponentRef * VarKind * Type
 (*!ignorecode*)
                    | VARVAL of Exp.Exp (* Ugly hack *)
-(*!includecod*)
+(*!includecode*)
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | EQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm

@@ -1,10 +1,15 @@
 (**
  ** file:	 builtin.rml
+ ** module:      Builtin
  ** description: Builting types and variables
  **
  ** RCS: $Id$
  **
- ** The only exported relation is `initial_env'.
+ ** This module defines the builtin types, variables and functions in
+ ** Modelica.  The only exported relation is `initial_env'.
+ ** 
+ ** Currently, the only attribute defined in the built-in types is
+ ** `unit'.  The others can easily be added.
  **)
 
 module Builtin:
@@ -40,8 +45,8 @@ val str_type = SCode.CLASS("StringType",false,Absyn.R_PREDEFINED_STRING,
 			   SCode.PARTS([],[],[]))
 val bool_type = SCode.CLASS("BooleanType",false,Absyn.R_PREDEFINED_BOOL,
 			    SCode.PARTS([],[],[]))
-
-(** - The `Real' type *)
+(** These are the primitive types that are used to build the types
+ ** `Real', `Integer' etc. *)
 
 val unit = SCode.COMPONENT("unit",true,false,
 			      SCode.ATTR([],
@@ -51,13 +56,15 @@ val unit = SCode.COMPONENT("unit",true,false,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
 			      SCode.MOD(false,[],SOME(Absyn.STRING(""))))
+(** This `unit' component is used in several places below, and it is
+ ** declared once here to make the definitions below easier to read. *)
+
+(** - The `Real' type *)
 
 val real_type =
 SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
 	    SCode.PARTS
-	    ([(* quantity *)
-	      unit],
-	     (* displayUnit *)
+	    ([unit],
 	     [],
 	     []))
 
@@ -66,9 +73,7 @@ SCode.CLASS("Real",false,Absyn.R_PREDEFINED_REAL,
 val integer_type =
 SCode.CLASS("Integer",false,Absyn.R_PREDEFINED_INT,
 	    SCode.PARTS
-	    ([(* quantity *)
-	      unit],
-	     (* displayUnit *)
+	    ([unit],
 	     [],
 	     []))
 
@@ -115,6 +120,13 @@ val real_real2bool = Types.T_FUNCTION([("x",Types.T_REAL),("y",Types.T_REAL)],
 
 (** - Initial environment *)
 
+(** relation: initial_env
+ ** 
+ ** The initial environment where instantiation takes place is built
+ ** up using this relation.  It creates an empty environment and adds
+ ** all the built-in definitions to it.
+ **)
+ 
 relation initial_env =
 
   rule	Env.open_scope(Env.empty_env) => env1 &

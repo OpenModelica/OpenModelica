@@ -1,27 +1,41 @@
 (**
  ** file:	 scode.rml
+ ** module:      SCode
  ** description: SCode intermediate form
  **
  ** RCS: $Id$
  **
+ ** This module contains data structures to describe a Modelica model
+ ** in a more convenient way than the `Absyn' module does.  The most
+ ** important relation in this module is the `elaborate' relation
+ ** which turns an abstract syntax tree into an SCode representation.
  **)
 
 module SCode :
 
   with "absyn.rml"
 
+  (** Some definitions are borrowed from `Absyn' *)
   type Ident = Absyn.Ident
   type Path = Absyn.Path
   type Subscript = Absyn.Subscript
   type Restriction = Absyn.Restriction
 
-  datatype SubMod = NAMEMOD of Ident * Mod
-		  | IDXMOD of Subscript list * Mod
-  and Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
-  	  | REDECL of bool * Absyn.ElementSpec
-	  | NOMOD
+  (** - Modifications *)
+  datatype Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
+  	       | REDECL of bool * Absyn.ElementSpec
+	       | NOMOD
+  datatype SubMod = NAMEMOD of Ident * Mod         (* A named component *)
+		  | IDXMOD of Subscript list * Mod (* An array element *)
+  (** Modifications are represented in an more structured way than in 
+   ** the `Absyn' module.  Modifications using qualified names
+   ** (such as in `x.y =  z') are normalized (to `x(y = z)').  And a
+   ** special case when arrays are subscripted in a modification.
+   **)
 
+  (** - Programs *)
   type Program = Class list
+  (** As in the AST, a program is simply a list of class definitions. *)
 
   (** - Classes *)
   datatype Class = CLASS of Ident		(* Name *)
@@ -35,6 +49,9 @@ module SCode :
 		    | DERIVED of Path
 			       * Absyn.ArrayDim option
 			       * Mod
+  (** The major difference between these types and their `Absyn' *)
+  (** counterparts is that the `PARTS' constructor contains separate *)
+  (** lists for elements, equations and algorithms. *)
 
   (* - Equations *)
   datatype Equation = EQ_EXPR of Absyn.Exp	(* more later? *)
@@ -44,9 +61,15 @@ module SCode :
 		    | EQ_EQUALS of Absyn.Exp * Absyn.Exp
 		    | EQ_CONNECT of Absyn.ComponentRef * Absyn.ComponentRef
 		    | EQ_FOR of Ident * Absyn.Exp * Equation list
+  (** These are almost identical to the `Absyn' versions.  In `EQ_IF', *)
+  (** the `elseif' branches are represented as normal `else' branches *)
+  (** with a single `if' statement in them. *)
 
   (** - Algorithms *)
   datatype Algorithm = ALGORITHM of Absyn.Algorithm list
+  (** The `Absyn' module uses the terminology from the grammar, where *)
+  (** `algorithm' means an algorithmic statement.  But here, *)
+  (** `Algorithm' means a whole algorithm section. *)
 
   (** - Elements *)
   datatype Element = EXTENDS of Path * Mod
@@ -65,6 +88,7 @@ module SCode :
   (** `CLASSDEF' (for local class definitions) and `COMPONENT' (for *)
   (** local variables). *)
 
+  (** - Attributes *)
   datatype Attributes = ATTR of Absyn.ArrayDim
 			      * bool	(* flow *)
 			      * Accessibility
@@ -74,10 +98,9 @@ module SCode :
   datatype Accessibility = RW	(* read/write *)
 			 | RO	(* read-only *)
 			 | WO	(* write-only (not used) *)
+  (** These are attributes that apply to a declared component. *)
 
   relation elaborate : Absyn.Program => Program
-
-  (* Modification handling *)
   relation build_mod : (Absyn.Modification option, bool) => Mod
   relation print_mod : Mod => ()
 	  
@@ -86,6 +109,9 @@ end
 with "dump.rml"
 
 (** relation: elaborate
+ **
+ ** This relation takes an `Absyn.Program' and constructs a `Program'
+ ** from it.
  **)
 
 relation elaborate: Absyn.Program => Program =
@@ -100,6 +126,8 @@ relation elaborate: Absyn.Program => Program =
 end
 
 (** relation: elab_class
+ **
+ ** This relations converts an `Absyn.Class' to a `Class'.
  **)
 
 relation elab_class: Absyn.Class => Class =
@@ -111,6 +139,12 @@ relation elab_class: Absyn.Class => Class =
 end
 
 (** relation: elab_classdef
+ **
+ ** This relation converts an `Absyn.ClassDef' to a `ClassDef'.  For
+ ** the `DERIVED' case, the conversion is fairly trivial, but for the
+ ** `PARTS' case more work is needed.  The result contains separate
+ ** lists for elements, equations and algorithms, which are mixed in
+ ** the input.
  **)
 
 relation elab_classdef: Absyn.ClassDef => ClassDef =
@@ -152,6 +186,10 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 end
 
 (** relation: elab_elist
+ **
+ ** This relation converts a list of `Absyn.Element' to a list of
+ ** `Element'.  The boolean argument flags whether the elements are
+ ** pretected.
  **)
 
 relation elab_elist : (Absyn.Element list, bool) => Element list =
@@ -167,6 +205,11 @@ relation elab_elist : (Absyn.Element list, bool) => Element list =
 end
 
 (** relation: elab_element
+ **
+ ** This relation converts an `Absyn.Element' to a list of
+ ** `Element's.  The original element may declare several components
+ ** at once, and those are separated to several declarations in the
+ ** result.
  **)
 
 relation elab_element : (Absyn.Element, bool) => Element list =
@@ -178,6 +221,10 @@ relation elab_element : (Absyn.Element, bool) => Element list =
 end
 
 (** relation: elab_elementspec
+ **
+ ** This relation turns an `Absyn.ElementSpec' to a list of
+ ** `Element's.  The boolean arguments say if the element is final and
+ ** protected, respectively.
  **)
 
 relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
@@ -206,6 +253,10 @@ relation elab_elementspec: (bool,bool,Absyn.ElementSpec) => Element list =
 end
 
 (** relation: elab_equations
+ **
+ ** This relation transforms a list of `Absyn.Equation's to a list of
+ ** `Equations's, by applying the `elab_equation' relation to each
+ ** equation.
  **)
 
 relation elab_equations : Absyn.Equation list => Equation list =
@@ -322,7 +373,12 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 
 end
 
-(** relation: build_sub_sub *)
+(** relation: build_sub_sub
+ **
+ ** This relation is used to handle the case when a array component is
+ ** indexed in the modification, so that only one or a limitied number
+ ** of array elements should be modified.
+ **)
 
 relation build_sub_sub : (Subscript list, Mod) => Mod =
 
@@ -331,7 +387,13 @@ relation build_sub_sub : (Subscript list, Mod) => Mod =
 
 end
 
-(** relation: print_mod *)
+(** relation: print_mod
+ **
+ ** This relation prints a modification.  The code is excluded from
+ ** the report for brevity.
+ **)
+
+(*!ignorecode*)
 
 relation print_mod : Mod => () =
 
@@ -407,3 +469,4 @@ relation print_eqmod : Absyn.Exp option => () =
 
 end
 	
+(*!includecode*)

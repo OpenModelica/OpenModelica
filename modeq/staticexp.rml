@@ -1,9 +1,14 @@
 (**
  ** file:	 static.rml
+ ** module:      Static
  ** description: Static analysis of expressions
  **
  ** RCS: $Id$
- **
+ ** 
+ ** This module does static analysis and constant evaluation of
+ ** expressions.  The analyzed expressions are built using the
+ ** constructors in the `Exp' module.  Also, a set of properties of
+ ** the expressions is calculated during analysis.
  **)
 
 module Static :
@@ -516,8 +521,6 @@ end
  **
  ** This relation converts a list of `Absyn.Subscript' to a list of
  ** `Exp.Subscript', and checks if all subscripts are constant.
- **
- ** FIXME: doc
  **)
 
 relation elab_subscripts : (Env.Env, Absyn.Subscript list)
@@ -534,7 +537,7 @@ relation elab_subscripts : (Env.Env, Absyn.Subscript list)
 
 end
 
-(** relation elab_subscript
+(** relation: elab_subscript
  **
  ** This relation converts an `Absyn.Subscript' to an
  ** `Exp.Subscript'.
@@ -583,7 +586,7 @@ end
  ** component.  This relation shows the relation between the component
  ** type and the component reference expression type.
  **
- ** FIXME: oops this was unnecessary
+ ** This relation might actually not be needed.
  **)
 
 relation subscript_cref_type : (Exp.Exp, Types.Type) => Types.Type =
@@ -648,7 +651,10 @@ relation subscript_type : (Types.Type, Exp.Subscript list)
 
 end
 
-(** relation: elab_ifexp *)
+(** relation: elab_ifexp
+ ** 
+ ** This relation elaborates on the parts of an if expression.
+ **)
 
 relation elab_ifexp : (Exp.Exp, Properties,
 		       Exp.Exp, Properties,
@@ -699,17 +705,6 @@ relation const_ifexp : (Exp.Exp, bool, bool, bool) => bool =
 
   axiom	const_ifexp(_,true,true,true) => true
   axiom	const_ifexp(_,_,_,_) => false
-
-end
-
-(**)
-
-relation is_const : Exp.Exp => () =
-
-  axiom	is_const Exp.ICONST(_)
-  axiom	is_const Exp.RCONST(_)
-  axiom	is_const Exp.SCONST(_)
-  axiom	is_const Exp.BCONST(_)
 
 end
 

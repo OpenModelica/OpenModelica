@@ -1,5 +1,6 @@
 (**
  ** file:	 inst.rml
+ ** module:      Inst
  ** description: Model instantiation
  **
  ** RCS: $Id$
@@ -451,7 +452,13 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end	
 
-(** relation: inst_var *)
+(** relation: inst_var
+ **
+ ** A component element in a class may consist of several subcomponents
+ ** or array elements.  This relation is used to instantiate a
+ ** component, instantiating all subcomponents and array elements
+ ** separately.
+ **)
 
 relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		     SCode.Class,SCode.Attributes,
@@ -492,7 +499,12 @@ relation inst_var : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 	
 end
 
-(**)
+(** relation: inst_array
+ **
+ ** When an array is instantiated by `inst_var', this relation is used
+ ** to go through all the array elements and instantiate each array
+ ** element separately.
+ **)
 
 relation inst_array : (Env.Env,Mod.Mod,Prefix.Prefix,Connect.Sets,Ident,
 		       (SCode.Class*SCode.Attributes),int,int,int list,int list)
@@ -567,7 +579,11 @@ relation elab_arraydim : (Env.Env, Absyn.ArrayDim, Mod.EqMod option)
 
 end
 
-(** relation: print_dim *)
+(** relation: print_dim
+ **
+ ** This relation prints array dimensions.  The code is not included
+ ** in the report.
+ **)
 
 (*!ignorecode*)
 relation print_dim : (int option) list => () =
@@ -591,7 +607,13 @@ relation print_dim : (int option) list => () =
 end
 (*!includecode*)
 
-(** relation: elab_arraydim_decl *)
+(** relation: elab_arraydim_decl
+ **
+ ** Given an `Absyj.ArrayDim', this relation evaluates all dimension
+ ** size specifications, creating a list of (optional) integers.  When
+ ** the array dimension size is specified as `:', the result will
+ ** contain `NONE'.
+ **)
 
 relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 
@@ -629,7 +651,15 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ArrayDim) => (int option) list =
 	
 end
 
-(** relation: complete_arraydim *)
+(** relation: complete_arraydim
+ **
+ ** This relation converts a list of optional integers to a list of
+ ** integers.  If one element of the list is `NONE', this relation
+ ** will fail.
+ **
+ ** This is used to check that an array specification contain fully
+ ** specified array dimension sizes.
+ **)
 
 relation complete_arraydim : (int option) list => int list =
 
@@ -641,7 +671,15 @@ relation complete_arraydim : (int option) list => int list =
 
 end
 
-(** relation: elab_arraydim *)
+(** relation: compatible_arraydim
+ **
+ ** Given two, possibly incomplete, array dimension size
+ ** specifications as list of optional integers, this relation checks
+ ** whether they are compatible.  Being compatible means that they
+ ** have the same number of dimension, and for every dimension at
+ ** least one of the lists specifies its size.  If both lists specify
+ ** a dimension size, they have to specify the same size.
+ **)
 
 relation compatible_arraydim : ((int option) list,(int option) list)
 	  => int list =
@@ -663,7 +701,7 @@ relation compatible_arraydim : ((int option) list,(int option) list)
 
   rule	print "- compatible_arraydim failed\n"
 	--------------------------------------
-	compatible_arraydim (NONE::_,NONE::_) => fail
+	compatible_arraydim (_,_) => fail
 
 end
 
@@ -703,12 +741,6 @@ relation inst_class_decl : (Env.Env, Mod.Mod, Prefix.Prefix,
 
   rule	Env.extend_frame_c(env,c) => env' &
 	implicit_instantiation(env',Mod.NOMOD,pre,csets,c) => (env'',dae)
-
-	(*
-	Prefix.prefix_add(n,[],pre) => pre' &
-	inst_class(env,mod,pre',csets,c) => (dae,csets',ty,st) &
-	add_package(env',n,ty,st,dae) => (env'', dae')
-	*)
 	----------------------------------
 	inst_class_decl(env,mod,pre,csets,c as SCode.CLASS(n,_,restr,_))
 	  => (env'', dae)
@@ -746,27 +778,15 @@ relation implicit_instantiation : (Env.Env, Mod.Mod, Prefix.Prefix,
 
 end
 
-(** relation: add_package
- **)
-
-relation add_package : (Env.Env, Absyn.Ident, Types.Type, ClassInf.State,
-			DAE.Element list)
-	  => (Env.Env, DAE.Element list) =
-
-  rule	ClassInf.valid(st, Absyn.R_PACKAGE) &
-	Env.extend_frame_v(env,
-			   Types.VAR(n, Types.ATTR(false,SCode.RO,Absyn.CONST,
-						   Absyn.BIDIR),
-				     false,
-				     ty,Types.UNBOUND)) => env'
-	-------------------------------------------------------
-	add_package(env,n,ty,st,dae) => (env',dae)
-
-  axiom	add_package(env,_,_,_,_) => (env,[])
-
-end
-
 (** relation: dae_declare
+ **
+ ** Given a global component name, a type, and a set of attributes,
+ ** this relation declares a component for the DAE result.  Altough
+ ** this relation returns a list of `DAE.Element's, only one component
+ ** is actually declared.
+ **
+ ** The relations `dae_declare2' and `dae_declare3' below are helper
+ ** relations that perform parts of the task.
  **)
 
 relation dae_declare : (Exp.ComponentRef,
@@ -831,6 +851,13 @@ relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.VarKind)
 end
 
 (** relation: inst_equation
+ **
+ ** The DAE output of the translation contains equations which
+ ** in most cases directly corresponds to equations in the source.
+ ** Some of them are also generated from `commect' clauses.
+ **
+ ** This relation takes an equation from the source and generates DAE
+ ** equations and connection sets.
  **)
 
 relation inst_equation : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -1180,6 +1207,11 @@ relation unroll : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 end
 
 (** relation: inst_algorithm
+ **
+ ** Algorithms are converted to the representation defined in the
+ ** module `Algorithm', and the added to the DAE result.
+ **
+ ** This relation converts an algorithm section.
  **)
 
 relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -1198,7 +1230,10 @@ relation inst_algorithm : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end
 
-(** relation: inst_statements *)
+(** relation: inst_statements
+ **
+ ** This relation converts a list of algorithm statements.
+ **)
 
 relation inst_statements : (Env, Absyn.Algorithm list)
 	  => Algorithm.Statement list =
@@ -1212,7 +1247,12 @@ relation inst_statements : (Env, Absyn.Algorithm list)
 
 end
 
-(** relation: inst_statement *)
+(** relation: inst_statement
+ **
+ ** This relation Looks at an algorithm statement and uses relations
+ ** in the `Algorithm' module to build a representation of it that can
+ ** be used in the DAE output.
+ **)
 
 relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 
@@ -1254,7 +1294,10 @@ relation inst_statement : (Env, Absyn.Algorithm) => Algorithm.Statement =
 
 end
 
-(** relation: inst_elseifs *)
+(** relation: inst_elseifs
+ **
+ ** This relation helps `inst_statement' to handle `elseif' parts.
+ **)
 
 relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
 	=> (Exp.Exp * Static.Properties * Algorithm.Statement list) list =
@@ -1273,7 +1316,8 @@ relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.Algorithm list) list)
 
 end
 
-(**)
+(** relation: inst_connect
+ **)
 
 relation inst_connect: (Connect.Sets, Env, Prefix,
 			Absyn.ComponentRef, Absyn.ComponentRef)
@@ -1468,7 +1512,14 @@ relation connect_vars : (Connect.Sets,
 
 end
 
-(**)
+(** relation: mktype
+ **
+ ** From a class inference state, and a list of subcomponents, this
+ ** relation returns `Types.Type'.  If the class inference state
+ ** indicates that the type should be a built-in type, one of the
+ ** built-in type constructors is used.  Otherwise, a `T_COMPLEX' is
+ ** built.
+ **)
 
 relation mktype : (ClassInf.State,Types.Var list) => Types.Type =
 
@@ -1481,32 +1532,11 @@ relation mktype : (ClassInf.State,Types.Var list) => Types.Type =
 
 end
 
-(**)
-
-relation assert : (bool, bool, string) => () =
-
-  rule  x = y
-	-----
-	assert(x,y,_)
-
-  rule  not x = y &
-	print "# " & print m & print "\n"
-	--------------------------------------
-	assert(x,y,m)
-
-end
-
-(**)
-
-relation optional_cons : ('a option, 'a list) => 'a list =
-
-  axiom optional_cons(NONE, l) => l
-
-  axiom optional_cons(SOME(x), l) => x::l
-
-end
-
-(**)
+(** relation: inst_list
+ **
+ ** This is a utility used to do instantiation of list of things,
+ ** collecting the result in another list.
+ **)
 
 relation inst_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
@@ -1526,7 +1556,11 @@ relation inst_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 end
 
-(**)
+(** relation: component_face
+ ** 
+ ** This relation determines whether a component reference refers to an
+ ** inner or outer connector.
+ **)
 
 relation component_face : Exp.ComponentRef => Connect.Face =
 

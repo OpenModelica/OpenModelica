@@ -1,5 +1,6 @@
 (**
  ** file:        mod.rml
+ ** module:      Mod
  ** description: Modification handling
  **
  ** RCS: $Id$
@@ -96,8 +97,6 @@ end
  **
  ** This relation elaborates on a submodification, turning an
  ** `SCode.SubMod' into one or more `SubMod's.
- **
- ** FIXME: when several?
  **)
 
 relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod) => SubMod list =
@@ -142,7 +141,7 @@ end
 
 (** relation: prefix_idxmods
  **
- ** This relation adds a subscript to each `IDXMO' in a list of
+ ** This relation adds a subscript to each `IDXMOD' in a list of
  ** submodifications.
  **)
 
@@ -160,8 +159,8 @@ end
  **
  ** This relation goes through an array slice modification and creates
  ** an singly indexed modification for each index in the slice.  For
- ** example, `x[2:3] = y' is changed into `x[2] = y[1]' and 'x[3] =
- ** y[2]'.
+ ** example, `x[2:3] = y' is changed into `x[2] = y[1]' and
+ ** `x[3] = y[2]'.
  **)
 
 relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Mod)
@@ -190,27 +189,6 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Mod)
 
 end
 
-(** relation: elab_subscripts
- **
- ** FIXME: doc
- **)
-
-(*
-relation elab_subscripts : (Env.Env, Prefix.Prefix, SCode.Subscript list)
-	=> Exp.Subscript list =
-
-  axiom	elab_subscripts (_,_,[]) => [[]]
-	
-  rule	Static.elab_exp(env,e) => (e',prop) &
-	eval_subscript (env,e',prop) => is &
-	elab_subscripts (env,pre,xs) => xs' &
-	expand_list (is,xs') => l
-	-----------------------------------
-	elab_subscripts (env,pre,Absyn.SUBSCRIPT(e)::xs) => l
-	
-end
-*)
-
 (** relation: expand_list
  **
  ** This utility relation takes a list of integer values and a list of
@@ -232,42 +210,6 @@ relation expand_list : (Values.Value list, int list list) => int list list =
 	-----------------------
 	expand_list(xx as (Values.INTEGER(x)::xs),yy as (y::ys))
 		    => ((x::y)::l)
-
-end
-
-(** relation: eval_subscript
- **
- ** FIXME: doc
- **)
-
-relation eval_subscript : (Env.Env, Exp.Exp, Static.Properties)
-	  => Values.Value =
-
-  rule	Static.ceval (env,e) => i
-	--------------------------------------------
-	eval_subscript (env,e,Static.PROP(Types.T_INTEGER,true)) => i
-
-  rule	Static.ceval (env,e) => a
-	----------------------------------------
-	eval_subscript (env,e,
-			Static.PROP(Types.T_ARRAY(Types.DIM(SOME(sz)),
-						  Types.T_INTEGER),true))
-	  => a
-
-  rule	not t = Types.T_INTEGER &
-	print "# Non-integer subscript " & Exp.print_exp e &
-	print " in modification\n"
-	--------------------------
-	eval_subscript (_,e,Static.PROP(t,_)) => fail
-
-  rule	print "# Non-constant subscript " & Exp.print_exp e &
-	print " in modification\n"
-	--------------------------
-	eval_subscript (_,e,Static.PROP(_,false)) => fail
-
-  rule	print "- Mod.eval_subscript failed\n"
-	-------------------------------------
-	eval_subscript(_,_,_) => fail
 
 end
 
@@ -319,7 +261,11 @@ end
  ** - Lookup
  **)
 
-(** relation: lookup_modification_p *)
+(** relation: lookup_modification_p
+ ** 
+ ** This relation extracts a modification from inside another
+ ** modification, using a name to look up submodifications.
+ **)
 
 relation lookup_modification_p: (Mod,Absyn.Path) => Mod =
 
@@ -357,7 +303,10 @@ relation lookup_comp_modification: (Mod, Absyn.Ident) => Mod =
 
 end	
 
-(**)
+(** relation: lookup_comp_modification2
+ ** 
+ ** This relation is just a helper to `lookup_comp_modification'.
+ **)
 
 relation lookup_comp_modification2 : (SubMod list,Absyn.Ident) => Mod =
 
@@ -367,8 +316,6 @@ relation lookup_comp_modification2 : (SubMod list,Absyn.Ident) => Mod =
 	--------------------------------------
 	lookup_comp_modification2(NAMEMOD(n,mod)::_,m) => mod
 	
-	(* FIXME: Redeclaration *)
-
   rule  lookup_comp_modification2(xs,n) => mod
 	---------------------------------
 	lookup_comp_modification2(x::xs,n) => mod
@@ -381,6 +328,8 @@ end
 
 (** relation: lookup_idx_modification
  **
+ ** This relation extracts modifications to an array element, using an
+ ** integer to index the modification.
  **)
 
 relation lookup_idx_modification: (Mod, int) => Mod =
@@ -407,6 +356,7 @@ end
 
 (** relation: lookup_idx_modification2
  **
+ ** This relation does part of the job for `lookup_idx_modification'.
  **)
 
 relation lookup_idx_modification2 : (SubMod list, EqMod option, int)
@@ -478,6 +428,9 @@ end
  **)
 
 (** relation: merge
+ ** 
+ ** This relation merges to modificiations into one.  The first
+ ** modifications takes precedence over the second.
  **)
 
 relation merge : (Mod, Mod) => Mod =
@@ -513,6 +466,8 @@ relation merge : (Mod, Mod) => Mod =
 end
 
 (** relation: merge_subs
+ ** 
+ ** This relation merges to list of `SubMod's.
  **)
 
 relation merge_subs : (SubMod list, SubMod list)
@@ -528,6 +483,11 @@ relation merge_subs : (SubMod list, SubMod list)
 end
 
 (** relation: merge_subs2
+ ** 
+ ** This relation helps in the merging of two lists of `SubMod's.  It
+ ** compares one `SubMod' against a list of other `SubMod's, and if
+ ** there is one with the same name,  it is kept and the one `SubMod'
+ ** given in the second argument is discarded.
  **)
 
 relation merge_subs2 : (SubMod list, SubMod)
@@ -553,6 +513,9 @@ relation merge_subs2 : (SubMod list, SubMod)
 end
 
 (** relation: merge_eq
+ ** 
+ ** The outer modification, given in the first argument, takes
+ ** precedence over the inner modifications.
  **)
 
 relation merge_eq : (EqMod option, EqMod option) => EqMod option =
@@ -566,6 +529,8 @@ relation merge_eq : (EqMod option, EqMod option) => EqMod option =
 end
 
 (** relation: mod_equation
+ ** 
+ ** This relation simply extracts the equation part of a modification.
  **)
 
 relation mod_equation : Mod => EqMod option =

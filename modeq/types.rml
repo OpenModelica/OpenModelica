@@ -1,5 +1,6 @@
 (**
  ** file:	 types.rml
+ ** module:      Types
  ** description: Type system
  **
  ** RCS: $Id$
@@ -8,8 +9,10 @@
  ** called `Type' which defines types.  It also contains relations for
  ** determining subtyping etc.
  **
- ** There are a few known problems with this.  It currently depends on
- ** `SCode.Attributes', which in turn depends on `Absyn.ArrayDim'.
+ ** There are a few known problems with this module.  It currently
+ ** depends on `SCode.Attributes', which in turn depends on
+ ** `Absyn.ArrayDim'.  However, the only things used from those
+ ** modules are constants that could be moved to their own modules.
  **)
 
 module Types :
@@ -22,7 +25,6 @@ module Types :
 
   (** - Identifiers *)
   type Ident = string
-  (** FIXME: This is declared in many places. *)
 
   (** - Variables *)
   datatype Var = VAR of Ident			  (* name *)
@@ -39,7 +41,6 @@ module Types :
   datatype Binding = UNBOUND
 		   | EQBOUND of Exp.Exp * bool
 		   | VALBOUND of Values.Value
-  (** FIXME: I wonder why this goes here? *)
 
   (** - Types *)
   datatype Type = T_INTEGER
@@ -70,7 +71,6 @@ module Types :
   relation basic_type : Type => bool
   relation equivtypes : (Type, Type) => bool
   relation subtype : (Type, Type) => bool
-  (* relation same_type : (Type, Type) => bool *)
   relation lookup_component : (Type, Ident) => Var
   relation lift_array : (Type,int option) => Type
   relation unlift_array : Type => Type
@@ -126,46 +126,21 @@ relation subtype : (Type, Type) => bool =
   axiom	subtype (T_STRING,T_STRING)   => true
   axiom	subtype (T_BOOL,T_BOOL)       => true
 
-  rule	sub_arraydim (d1,d2) => true &
+  rule	subtype (t1,t2) => true
+	-----------------------
+	subtype(T_ARRAY(_,t1),T_ARRAY(DIM(NONE),t2)) => true
+	
+  rule	i1 = i2 &
  	subtype (t1,t2) => true
 	---------------------------------------------------------
-	subtype(T_ARRAY(d1,t1),T_ARRAY(d2,t2)) => true
+	subtype(T_ARRAY(DIM(SOME(i1)),t1),T_ARRAY(DIM(SOME(i2)),t2)) => true
 	
-	(* FIXME: Check state? *)
   rule	subtype_varlist(els1, els2) => true
 	-----------------------------------
 	subtype(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
 
 	(* default *)
   axiom	subtype(_,_) => false
-
-end
-
-(** FIXME: Incorporate `sub_arraydim' in `subtype' *)
-
-relation sub_arraydim : (ArrayDim, ArrayDim) => bool =
-
-(*
-  axiom	sub_arraydim (NODIM,NODIM) => true
-
-  rule	sub_arraydim (d1,d2) => true
-	---------------------------------------
-	sub_arraydim (DIM(_,d1),DIM(NONE,d2)) => true
-
-  rule	i1 = i2 &
- 	sub_arraydim (d1,d2) => true
-	---------------------------------------
-	sub_arraydim (DIM(SOME(i1),d1),DIM(SOME(i2),d2)) => true
-*)
-
-  axiom	sub_arraydim (DIM(_),DIM(NONE)) => true
-
-  rule	i1 = i2
-	---------------------------------------
-	sub_arraydim (DIM(SOME(i1)),DIM(SOME(i2))) => true
-
-	(* default *)
-  axiom	sub_arraydim (_,_) => false
 
 end
 
@@ -211,85 +186,6 @@ relation varlist_lookup : (Var list, Ident) => Var =
 
 end
 
-(** relation: same_type
- **
- ** FIXME: An half-hearted type equivalence relation.
- **)
-
-relation same_type : (Type, Type) => bool =
-	
-  axiom	same_type (T_INTEGER,T_INTEGER) => true
-  axiom	same_type (T_REAL,T_REAL)       => true
-  axiom	same_type (T_STRING,T_STRING)   => true
-  axiom	same_type (T_BOOL,T_BOOL)       => true
-
-  rule	same_arraydim (d1,d2) => true & same_type (t1,t2) => true
-	---------------------------------------------------------
-	same_type (T_ARRAY(d1,t1),T_ARRAY(d2,t2)) => true
-	
-	(* FIXME: Check state? *)
-  rule	same_type_c(els1, els2) => true
-	-------------------------------
-	same_type(T_COMPLEX(st1,els1), T_COMPLEX(st2,els2)) => true
-
-	(* default *)
-  axiom	same_type (_,_) => false
-
-end
-
-(**)
-
-relation same_arraydim : (ArrayDim, ArrayDim) => bool =
-
-(*
-  axiom	same_arraydim (NODIM,NODIM) => true
-
-  rule	i1 = i2 & same_arraydim (d1,d2) => true
-	---------------------------------------
-	same_arraydim (DIM(i1,d1),DIM(i2,d2)) => true
-*)
-
-  rule	d1 = d2
-	-------
-	same_arraydim(DIM(d1), DIM(d2)) => true
-
-	(* default *)
-  axiom	same_arraydim (_,_) => false
-
-end
-
-(**)
-
-relation same_type_c : (Var list, Var list) => bool =
-
-  axiom same_type_c([], []) => true
-
-  rule  pick(xs2,n) => (xs2',attr,t2) &
-	same_type(t1,t2) => true &
-	same_type_c(xs1,xs2') => true
-	---------------------
-	same_type_c(VAR(n,_,_,t1,_)::xs1, xs2) => true
-
-	(* default *)
-  axiom	same_type_c(_,_) => false
-
-end
-
-(** relation: pick *)
-
-relation pick : (Var list, Ident)
-	  => (Var list, Attributes, Type) =
-
-  rule  n1 = n2
-	-------
-	pick(VAR(n1,attr,_,ty,_)::xs,n2) => (xs,attr,ty)
-
-  rule  pick(xs,n) => (xs',attr,ty)
-	---------------------
-	pick(_::xs,n) => (xs',attr,ty)
-
-end
-
 (** relation: lookup_component
  **
  ** This relation finds a subcomponent by name.
@@ -323,20 +219,45 @@ end
  ** Since builtin types are not represented as T_COMPLEX, special care
  ** is needed to be able to lookup the attributes (`start' etc) in
  ** them.
+ **
+ ** This is not a complete solution.  The current way of mapping the
+ ** both the Modelica type `Real' and the simple type `RealType' to
+ ** `Types.T_REAL' is a bit problematic, since it doesn't make a
+ ** difference between `Real' and `RealType', which makes the
+ ** translator accept things like `x.start.start.start'.
  **)
 
 relation lookup_in_builtin : (Type,Ident) => Var =
+
+  axiom	lookup_in_builtin(T_REAL,"start")
+	  => VAR("start",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_REAL, UNBOUND)
 
   axiom	lookup_in_builtin(t,"start")
 	  => VAR("start",
 		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
 		 false, t, UNBOUND)
 
-	(** FIXME: Add the others *)
+  axiom	lookup_in_builtin(T_INTEGER,"unit")
+	  => VAR("unit",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, UNBOUND)
+
+  axiom	lookup_in_builtin(T_REAL,"unit")
+	  => VAR("unit",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, UNBOUND)
+
+	(* The rest of them should also be added *)
 
 end
 
-(**)
+(** relation: lookup_component2
+ **
+ ** This relation finds a named `Var' in a list of `Var's, comparing
+ ** the name against the second argument to this relation.
+ **)
 
 relation lookup_component2 : (Var list , Ident) => Var =
 
@@ -358,8 +279,7 @@ end
 
 relation lift_array : (Type,int option) => Type =
 
-(*  axiom	lift_array (T_ARRAY(dim,ty),i) => T_ARRAY(DIM(i,dim),ty) *)
-  axiom	lift_array (ty,i) => T_ARRAY(DIM(i(*,NODIM*)),ty)
+  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty)
 
 end
 
@@ -370,8 +290,7 @@ end
 
 relation unlift_array : Type => Type =
 
-  axiom	unlift_array T_ARRAY(DIM(_(*,NODIM*)),ty) => ty
-(*  axiom	unlift_array T_ARRAY(DIM(_,dim),ty) => T_ARRAY(dim,ty) *)
+  axiom	unlift_array T_ARRAY(DIM(_),ty) => ty
 
 end
 
@@ -424,10 +343,6 @@ end
 
 relation print_arraydim =
 
-(*
-  axiom	print_arraydim NODIM
-*)
-
   rule	print ":"
 	---------
 	print_arraydim DIM(NONE)
@@ -439,16 +354,6 @@ relation print_arraydim =
   rule	print "#STRANGE#"
 	-----------------
 	print_arraydim _
-
-(*
-  rule	print ":," & print_arraydim(d)
-	------------------------------
-	print_arraydim DIM(NONE,d)
-
-  rule	int_string i => s & print s & print "," & print_arraydim(d)
-	-----------------------------------------------------------
-	print_arraydim DIM(SOME(i),d)
-*)
 
 end
 

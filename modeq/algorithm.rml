@@ -1,5 +1,6 @@
 (**
  ** file:	 algorithm.rml
+ ** module:      Algorithm
  ** description: Algorithm datatypes
  **
  ** RCS: $Id$
@@ -27,16 +28,16 @@ module Algorithm:
 		     | FOR of Ident * Exp.Exp * Statement list
 		     | WHILE of Exp.Exp * Statement list
 		     | WHEN of Exp.Exp * Statement list
-  (** There are four kinds of statements.  Assignments (`a := b;'), *)
-  (** if statements (`if A then B; elseif C; else D;'), for loops *)
-  (** (`for i in 1:10 loop ...; end for;') and when statements (`when *)
-  (** E do S; end when;'). *)
+  (** There are four kinds of statements.  Assignments (`a := b;'),
+   ** if statements (`if A then B; elseif C; else D;'), for loops
+   ** (`for i in 1:10 loop ...; end for;') and when statements
+   ** (`when E do S; end when;'). *)
 
   datatype Else = NOELSE
 		| ELSEIF of Exp.Exp * Statement list * Else
 		| ELSE of Statement list
-  (** An if statements can one or more `elseif' branches and an *)
-  (** optional `else' branch. *)
+  (** An if statements can one or more `elseif' branches and an
+   ** optional `else' branch. *)
 
   relation make_assignment : (Exp.Exp, Static.Properties,
 			      Exp.Exp, Static.Properties,
@@ -155,7 +156,7 @@ relation make_else : ((Exp.Exp * Static.Properties * Statement list) list,
 
 end
 
-(** relation: make_if *)
+(** relation: make_for *)
 
 relation make_for : (Ident, Exp.Exp, Static.Properties,
 		     Statement list) => Statement =

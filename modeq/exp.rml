@@ -1,5 +1,6 @@
 (**
  ** file:	 exp.rml
+ ** module:      Exp
  ** description: Expressions
  **
  ** This file contains the module `Exp', which contains data types for

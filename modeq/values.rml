@@ -1,11 +1,17 @@
 (**
- ** file: values.rml
+ ** file:        values.rml
+ ** module:      Values
+ ** description: Evaluated expression values
  **
- ** The modeul `Values' contains data structures for representing
+ ** RCS: $Id$
+ ** 
+ ** The module `Values' contains data structures for representing
  ** constant Modelica values.  These include integer, real, string and
  ** boolean values, and also arrays of any dimensionality and type.
  ** Multidimensional arrays are represented as arrays of arrays.
  **
+ ** The code is excluded from the report, since they convey no
+ ** semantic information.
  **)
 
 module Values :
@@ -20,6 +26,13 @@ module Values :
   relation print_val : Value => ()
 
 end
+
+(*!ignorecode*) 
+
+(** relation: val_string
+ **
+ ** This relation returns a textual representation of a value.
+ **)
 
 relation val_string : Value => string =
 
@@ -48,6 +61,12 @@ relation val_string : Value => string =
 
 end
 
+(** relation: val_list_string
+ **
+ ** This relation returns a textual representation of a list of
+ ** values, separating each value with a comman.
+ **)
+
 relation val_list_string : Value list => string =
 
   axiom	val_list_string [] => "## EMPTY LIST ##"
@@ -69,6 +88,11 @@ relation val_list_string : Value list => string =
 
 end
 
+(** relation: print_val
+ **
+ ** This relation prints a value.
+ **)
+
 relation print_val : Value => () =
 
   rule	val_string v => s &
@@ -78,3 +102,4 @@ relation print_val : Value => () =
 
 end
 
+(*!includecode*)

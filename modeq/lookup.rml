@@ -1,5 +1,6 @@
 (**
  ** file:	 lookup.rml
+ ** module:      Lookup
  ** description: Scoping rules
  **
  ** RCS: $Id$
@@ -85,6 +86,10 @@ relation lookup_var : (Env.Env,Exp.ComponentRef)
 end
 
 (** relation: lookup_var_local
+ ** 
+ ** This relation is very similar to `lookup_var', but it only looks
+ ** in the topmost environment frame, which means that it only finds
+ ** names defined in the local scope.
  **)
 
 relation lookup_var_local : (Env.Env,Exp.ComponentRef)
@@ -213,7 +218,7 @@ relation lookup_var2: ((SCode.Ident * Env.Item) list,SCode.Ident)
 
 end
 
-(** relation check_subscripts
+(** relation: check_subscripts
  **
  ** This relation checks a list of subscripts agains type, and removes
  ** dimensions from the type according to the subscripting.
@@ -283,7 +288,7 @@ relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 
 end	
 
-(** relation lookup_var_f
+(** relation: lookup_var_f
  **
  ** This relation looks in a frame to find a declared variable.  If
  ** the name being looked up is qualified, the first part of the name
@@ -314,6 +319,15 @@ end
  **  Package handling
  **)
 
+(** relation: locate_package
+ **
+ ** This relation finds a package in a file and loads it.
+ **
+ ** It appends `.mo' to the name of the package and tries to load a
+ ** file of that name.  This relation should be memoized, as it
+ ** currently reloads the package each time it is used.
+ **)
+
 relation locate_package : (Env.Env, string) => SCode.Class =
 
   rule	lookup_class(env, Absyn.IDENT(pack)) => c &
@@ -332,6 +346,12 @@ relation locate_package : (Env.Env, string) => SCode.Class =
 
 end
 
+(** relation: assert_package
+ ** 
+ ** This relation checks that a class definition is a package.  This
+ ** breaks the everything-can-be-generalized-to-class principle, since
+ ** it requires that the keyword `package' is used in the package file.
+ **)
 relation assert_package : SCode.Class => () =
 
 	(* Break the generalize-to-class rule *)
@@ -339,6 +359,12 @@ relation assert_package : SCode.Class => () =
 
 end
 
+(** relation: lookup_class_in_package
+ ** 
+ ** This relation searches a class definition for a named class
+ ** definition.
+ **)
+ 
 relation lookup_class_in_package : (SCode.Class, Absyn.Path) => SCode.Class =
 
   rule	lookup_class_in_elements (els, path) => c
@@ -348,6 +374,10 @@ relation lookup_class_in_package : (SCode.Class, Absyn.Path) => SCode.Class =
 				 path) => c
 
 end
+(** relation: lookup_class_in_elements
+ ** 
+ ** This relation helps `lookup_class_in_package' to do its thing.
+ **)
 
 relation lookup_class_in_elements : (SCode.Element list, Absyn.Path)
 	  => SCode.Class =

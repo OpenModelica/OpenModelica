@@ -1,5 +1,6 @@
 (**
  ** file:	 absyn.rml
+ ** module:      Absyn
  ** description: Abstract syntax
  **
  ** RCS: $Id$
