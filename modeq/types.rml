@@ -186,9 +186,10 @@ relation basic_type : Type => bool =
   axiom	basic_type T_REAL => true
   axiom	basic_type T_STRING => true
   axiom	basic_type T_BOOL => true
+  axiom	basic_type T_ENUM => true
   axiom	basic_type T_ARRAY(_,_) => false
   axiom	basic_type T_COMPLEX(_,_) => false
-
+  axiom	basic_type T_ENUMERATION(_) => false
 end
 
 (** relation: equivtypes
@@ -224,6 +225,13 @@ relation subtype : (Type, Type) => bool =
   axiom	subtype (T_BOOL,T_BOOL)       => true
   axiom	subtype (T_ENUM,T_ENUM)	      => true
 
+  rule	l2 = l1 &
+	subtype(T_ENUMERATION(rest1),T_ENUMERATION(rest2)) => res
+	----------------------------------------------------------
+	subtype (T_ENUMERATION(l1::rest1),T_ENUMERATION(l2::rest2)) => res
+
+  axiom	subtype (T_ENUMERATION([]),T_ENUMERATION(_)) => true
+	
   rule	subtype (t1,t2) => true
 	-----------------------
 	subtype(T_ARRAY(_,t1),T_ARRAY(DIM(NONE),t2)) => true
@@ -369,29 +377,159 @@ end
  **)
 
 relation lookup_in_builtin : (Type,Ident) => Var =
-
-  axiom	lookup_in_builtin(T_REAL,"start")
-	  => VAR("start",
+(* PA: covers Modelica 2.0 spec.*)
+	(* Real *)	
+  axiom	lookup_in_builtin(T_REAL,"quantity")
+	  => VAR("quantity",
 		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
-		 false, T_REAL, UNBOUND)
-
-  axiom	lookup_in_builtin(t,"start")
-	  => VAR("start",
-		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
-		 false, t, UNBOUND)
-
-  axiom	lookup_in_builtin(T_INTEGER,"unit")
-	  => VAR("unit",
-		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
-		 false, T_STRING, UNBOUND)
+		 false, T_STRING, VALBOUND(Values.STRING("")))
 
   axiom	lookup_in_builtin(T_REAL,"unit")
 	  => VAR("unit",
 		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
-		 false, T_STRING, UNBOUND)
+		 false, T_STRING, VALBOUND(Values.STRING("")))
 
-	(* The rest of them should also be added *)
+  axiom	lookup_in_builtin(T_REAL,"displayUnit")
+	  => VAR("displayUnit",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, VALBOUND(Values.STRING("")))
 
+  axiom	lookup_in_builtin(T_REAL,"min")
+	  => VAR("min",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_REAL, UNBOUND)
+
+  axiom	lookup_in_builtin(T_REAL,"max")
+	  => VAR("max",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_REAL, UNBOUND)
+
+  axiom	lookup_in_builtin(T_REAL,"start")
+	  => VAR("start",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_REAL, VALBOUND(Values.REAL(0.0)))
+
+  axiom	lookup_in_builtin(T_REAL,"fixed")
+	  => VAR("fixed",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
+					  depending on variability of instance*)
+  axiom	lookup_in_builtin(T_REAL,"enable")
+	  => VAR("enable",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+
+  axiom	lookup_in_builtin(T_REAL,"nominal")
+	  => VAR("nominal",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_REAL, UNBOUND)
+
+  axiom	lookup_in_builtin(T_REAL,"stateSelect")
+	  => VAR("stateSelect",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_ENUMERATION(["never","avoid","default","prefer","always"]),
+		 VALBOUND(Values.ENUM("default")))
+		 (* optimized away looking up the builtin enumeration type 'stateSelect' *)
+
+	(* Integer *)
+  axiom	lookup_in_builtin(T_INTEGER,"quantity")
+	  => VAR("quantity",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, VALBOUND(Values.STRING("")))
+
+  axiom	lookup_in_builtin(T_INTEGER,"min")
+	  => VAR("min",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_INTEGER, UNBOUND)
+
+  axiom	lookup_in_builtin(T_INTEGER,"max")
+	  => VAR("max",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_INTEGER, UNBOUND)
+
+  axiom	lookup_in_builtin(T_INTEGER,"start")
+	  => VAR("start",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_REAL, VALBOUND(Values.INTEGER(0)))
+
+  axiom	lookup_in_builtin(T_INTEGER,"fixed")
+	  => VAR("fixed",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
+					  depending on variability of instance*)
+  axiom	lookup_in_builtin(T_INTEGER,"enable")
+	  => VAR("enable",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+
+	(* Boolean *)
+  axiom	lookup_in_builtin(T_BOOL,"quantity")
+	  => VAR("quantity",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, VALBOUND(Values.STRING("")))
+
+  axiom	lookup_in_builtin(T_BOOL,"start")
+	  => VAR("start",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, VALBOUND(Values.BOOL(false)))
+
+  axiom	lookup_in_builtin(T_BOOL,"fixed")
+	  => VAR("fixed",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
+					  depending on variability of instance*)
+  axiom	lookup_in_builtin(T_BOOL,"enable")
+	  => VAR("enable",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+
+	(* String *)
+  axiom	lookup_in_builtin(T_STRING,"quantity")
+	  => VAR("quantity",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, VALBOUND(Values.STRING("")))
+
+  axiom	lookup_in_builtin(T_STRING,"start")
+	  => VAR("start",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, VALBOUND(Values.STRING("")))
+
+  axiom	lookup_in_builtin(T_STRING,"enable")
+	  => VAR("enable",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, VALBOUND(Values.BOOL(true)))
+
+	(* Enumeration ( type E in spec) *)
+  axiom	lookup_in_builtin(T_ENUM,"quantity")
+	  => VAR("quantity",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_STRING, VALBOUND(Values.STRING("")))
+
+  axiom	lookup_in_builtin(T_ENUM,"min")
+	  => VAR("min",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_ENUM, UNBOUND) (* Should be bound to the first element of
+					  T_ENUMERATION list higher up in the call chain *)
+  axiom	lookup_in_builtin(T_ENUM,"max")
+	  => VAR("max",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_ENUM, UNBOUND) (* Should be bound to the last element of 
+					  T_ENUMERATION list higher up in the call chain *)
+  axiom	lookup_in_builtin(T_ENUM,"start")
+	  => VAR("start",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, UNBOUND) (* Should be bound to the last element of 
+					  T_ENUMERATION list higher up in the call chain *)
+
+  axiom	lookup_in_builtin(T_ENUM,"fixed")
+	  => VAR("fixed",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
+					  depending on variability of instance*)
+  axiom	lookup_in_builtin(T_ENUM,"enable")
+	  => VAR("enable",
+		 ATTR(false, SCode.RW, Absyn.PARAM, Absyn.BIDIR),
+		 false, T_BOOL, VALBOUND(Values.BOOL(true)))		 
 end
 
 (** relation: lookup_component2

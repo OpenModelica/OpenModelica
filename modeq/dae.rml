@@ -109,6 +109,7 @@ with "rtopts.rml"
 with "graphviz.rml"
 with "dump.rml"
 with "print.rml"
+with "util.rml"
 
 (** relation: dump
  **
@@ -464,6 +465,13 @@ relation dump_type_str =
 
   axiom	dump_type_str STRING => "String  "
 
+  axiom	dump_type_str ENUM => "Enum  "
+	
+  rule	Util.string_delimit_list(l,", ") => s1 &
+	string_append("enumeration(",s1) => s2 &
+	string_append(s2,") ") => str
+	----------------------------
+	dump_type_str ENUMERATION(l) => str
 end
 
 relation dump_var : Element => () =

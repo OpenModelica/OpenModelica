@@ -123,7 +123,7 @@ relation unparse_class_str: Absyn.Class => string =
 	string_append(s5,"\n") => s6 &
 	get_string_list (parts,unparse_class_part_str,"") => s7 &
 	string_append(s6,s7) => s8 &
-	string_append(s8, "\n end ") => s9 &
+	string_append(s8, "\nend ") => s9 &
         string_append(s9,n) => s10 &
 	string_append(s10,";\n") => str			     
 	-----------------------------
@@ -150,7 +150,7 @@ relation unparse_class_str: Absyn.Class => string =
 	string_append(s3," ") => s4 &
 	string_append(s4,n) => s5 &
 	string_append(s5,"= enumeration(") => s6 &
-	stringlist_append (l) => s7 &
+	Util.string_delimit_list(l,", ") => s7 &
 	string_append(s6,s7) => s8 &
 	string_append(s8,");\n") => str				      
 	-------------------------------
@@ -275,7 +275,7 @@ relation print_element_arg =
 	Print.print_buf ")"
 	-------------------------------------------
 	print_element_arg(Absyn.MODIFICATION(f,r,m))
-	
+
   rule	Print.print_buf "REDECLARATION(" &
 	print_select(f,"FINAL,",",") &
 	print_elementspec spec &
@@ -535,8 +535,7 @@ relation unparse_elementspec_str: Absyn.ElementSpec => string =
 	string_append(s1,s2) => s3 &
 	string_append(s3," ") => s4 &
 	get_string_list(cs, unparse_componentitem_str, ",") => s5 &
-	string_append(s4,s5) => s6 &
-	string_append(s6,";") => str
+	string_append(s4,s5) => str
 	------------------------------------------
 	unparse_elementspec_str(Absyn.COMPONENTS(attr,t,cs)) => str
 	
@@ -1279,6 +1278,21 @@ relation print_function_args: Absyn.FunctionArgs => () =
 	print_function_args Absyn.FUNCTIONARGS(expargs,nargs)
 end
 
+relation print_function_args_str: Absyn.FunctionArgs => string =
+	
+  rule	print_list_str(expargs,print_exp_str,", ") => s1 &
+	string_append(s1,", ") => s2 &
+	print_list_str(nargs,print_named_arg_str,", ") => s3 &
+	string_append(s2,s3) => str 
+	---------------------------
+	print_function_args_str Absyn.FUNCTIONARGS(expargs,nargs as _::_) => str
+
+  rule	print_list_str(expargs,print_exp_str,", ") => str 
+	---------------------------------------------
+	print_function_args_str Absyn.FUNCTIONARGS(expargs,[]) => str
+
+end
+
 relation print_named_arg: Absyn.NamedArg => () =
   rule	Print.print_buf ident &
 	Print.print_buf "=" &
@@ -1287,7 +1301,13 @@ relation print_named_arg: Absyn.NamedArg => () =
 	print_named_arg Absyn.NAMEDARG(ident,e)
 end
 
-	
+relation print_named_arg_str: Absyn.NamedArg => string =
+  rule	string_append(ident,"=") => s1 &
+	print_exp_str(e) => s2 &
+	string_append(s1,s2) => str
+	---------------------------
+	print_named_arg_str Absyn.NAMEDARG(ident,e) => str
+end	
 
 (**)
 
@@ -1377,9 +1397,9 @@ relation print_exp_str : Absyn.Exp => string =
 	print_exp_str(Absyn.IFEXP(c,t,f)) => s''''
 
   rule	print_component_ref_str(fcn) => fs &
-	let argstr = "not implemented yet" & 
+	print_function_args_str(args) => argsstr &
 	string_append(fs, "(") => s &
-	string_append(s, argstr) => s' &
+	string_append(s, argsstr) => s' &
 	string_append(s', ")") => s''
 	---------------------------------------------
 	print_exp_str(Absyn.CALL(fcn, args)) => s''

@@ -2168,11 +2168,18 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	  (* An assignment to a varaible of T_ENUMERATION type is an explicit 
 	     assignment to the value componnent of the enumeration, i.e. having a type T_ENUM*)
 	
-  rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM.\n") &
+  rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
 	inst_eq_equation_2(e1,e2,t) => dae
 	----------------------
 	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP(Types.T_ENUMERATION(_),_),
 	    e2,Types.PROP(t as Types.T_ENUM,_)) => dae
+
+  rule	Debug.fprint ("insttr", "Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\n") &
+	inst_eq_equation_2(e1,e2,t) => dae
+	----------------------
+	inst_eq_equation(e1 as Exp.CREF(_,_),Types.PROP(Types.T_ENUMERATION(_),_),
+	    e2,Types.PROP(t as Types.T_ENUMERATION(_),_)) => dae
+
 
   rule	(* Types.equivtypes(t1,t2) => false & *)
 	Print.print_buf "# Illegal types in equation\n"&

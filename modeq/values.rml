@@ -41,9 +41,9 @@ with "exp.rml"
 		 | REAL of real
 		 | STRING of string
 		 | BOOL of bool
+		 | ENUM of string
 		 | ARRAY of Value list
 		 | TUPLE of Value list 
-
   relation val_string : Value => string
   relation print_val : Value => ()
   relation add_elementwise_arrayelt: (Value list, Value list) => Value list

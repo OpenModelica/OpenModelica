@@ -111,10 +111,12 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	Inst.instantiate_class(p',path) => dae &
 	DAE.dump_debug dae &
 	Print.print_buf "dumped dae:\n" &
-	DAE.dump_str (dae) => str 
+	DAE.dump_str (dae) => str & 
+	Print.get_string => s2 &
+	string_append(s2,str) => str'
 	--------------------------------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("translateClass",_),Absyn.FUNCTIONARGS([ Absyn.CREF(cr)],[])))]),st as SYMBOLTABLE(p,_,_,_,_))
-	    => (str,st)
+	    => (str',st)
 	    
   rule	Print.get_string() => s1 &
 	string_append("#Error instanitating class\n",s1) => str
@@ -1056,8 +1058,8 @@ end
 relation get_top_models: (Absyn.Program) => string =
 
   rule	get_top_models_in_program(p) => strlist &
-	Print.print_buf "program =" &
-	Dump.dump p & Print.print_buf "\n" &
+(*	Print.print_buf "program =" &
+	Dump.dump p & Print.print_buf "\n" &*)
 	Util.string_delimit_list(strlist,",") => str &
 	string_append("{",str) => s1 &
 	string_append(s1,"}") => res

@@ -531,6 +531,13 @@ relation print_exp2 : (Exp,int) => () =
 	print_exp2 (RANGE(_,start,SOME(step),stop),pri1)
 
   rule	RTOpts.modelica_output => false &
+	int_real(i) => r &
+	real_string(r) => rstr &
+	Print.print_buf rstr
+	---------------------------------------
+	print_exp2 (CAST(REAL,ICONST(i)),_)
+
+  rule	RTOpts.modelica_output => false &
 	Print.print_buf "Real(" & print_exp e & Print.print_buf ")"
 	---------------------------------------
 	print_exp2 (CAST(REAL,e),_)
@@ -1021,9 +1028,9 @@ relation print_exp2_str : (Exp,int) => string =
 	-----------------------------
 	print_exp2_str (TUPLE(es),_) => s''
 	
-  rule	print_list_str(es, print_row_str, ";") => s &
-	string_append ("{",s) => s' &
-	string_append (s',"}") => s''
+  rule	print_list_str(es, print_row_str, "},{") => s &
+	string_append ("{{",s) => s' &
+	string_append (s',"}}") => s''
 	-----------------------------
 	print_exp2_str (MATRIX(_,_,es),_) => s''
 
