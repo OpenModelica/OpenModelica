@@ -173,14 +173,14 @@ relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	
   rule	build_env_from_symboltable(st) => env &	
 	Static.elab_exp(env,exp) => (sexp,prop) &
-	Static.ceval (env,sexp,true) => value &
+	Static.ceval (env,sexp,SOME(st)) => value &
 	Values.val_string value =>  str
 	-------------------------------
 	evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st)
 	
   rule	build_env_from_symboltable(st) => env &
 	Static.elab_exp(env,exp) => (sexp,Static.PROP(t,_))  &
-	Static.ceval(env,sexp,true) => value &
+	Static.ceval(env,sexp,SOME(st)) => value &
 	add_var_to_symboltable(ident,value,t,st) => newst
 	-----------------------------------------------
 	evaluate_expr(IALG(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp)),st) => ("",newst)

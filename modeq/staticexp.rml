@@ -43,6 +43,7 @@ module Static :
   with "classinf.rml"
   with "lookup.rml"
   with "debug.rml"
+  with "interactive.rml"
 
   type Ident = string
 
@@ -79,9 +80,11 @@ returns multiple arguments. *)
 			Exp.Exp option		   (* Contain the elaborated expression for the actual argument *)							  
 
   (* Expression analysis *)
-  relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties)
+  relation elab_exp : (Env.Env, Absyn.Exp,Interactive.InteractiveSymbolTable option)
+	    => (Exp.Exp, Properties)
   relation elab_graphics_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) (* Special relation for graphics annotations, because of inhomogenous array of graphics primitives *)
-  relation elab_exp_list : (Env.Env, Absyn.Exp list) => (Exp.Exp list, Properties list)
+  relation elab_exp_list : (Env.Env, Absyn.Exp list, Interactive.InteractiveSymbolTable option) 
+	    => (Exp.Exp list, Properties list)
   relation elab_cref : (Env.Env, Absyn.ComponentRef)
 	  => (Exp.Exp, Properties, SCode.Accessibility)
   relation elab_cref_list : (Env.Env, Absyn.ComponentRef list)
@@ -90,8 +93,9 @@ returns multiple arguments. *)
 	  => (Exp.Subscript list, bool)
 
   (* Constant propagation *)
-  relation ceval : (Env.Env, Exp.Exp, bool)	  => Values.Value
-  relation ceval_list : (Env.Env, Exp.Exp list)	  => Values.Value list
+  relation ceval : (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable option)
+	    => Values.Value
+  relation ceval_list : (Env.Env, Exp.Exp list, Interactive.InteractiveSymbolTable option)	  => Values.Value list
   relation canon_cref : (Env.Env, Exp.ComponentRef) => Exp.ComponentRef
 
   (* Property matching (type conversions etc.) *)
@@ -122,15 +126,15 @@ with "system.rml"
  ** - Expression elaboration
  **)
 
-relation elab_exp_list : (Env.Env, Absyn.Exp list) 
+relation elab_exp_list : (Env.Env, Absyn.Exp list, Interactive.InteractiveSymbolTable option)
 	  => (Exp.Exp list, Properties list) =
 
-  axiom	elab_exp_list (_,[]) => ([],[])
+  axiom	elab_exp_list (_,[],_) => ([],[])
 
-  rule	elab_exp (env, e) => (exp,p) & 
-	elab_exp_list (env, rest) => (exps, props)
+  rule	elab_exp (env, e,st) => (exp,p) & 
+	elab_exp_list (env, rest,st) => (exps, props)
 	-----------------------------------------
-	elab_exp_list (env, e::rest) => (exp::exps, p::props) 
+	elab_exp_list (env, e::rest,st) => (exp::exps, p::props) 
 end
 
 (** relation: elab_exp
@@ -142,82 +146,80 @@ end
  ** `Exp.Exp' and the properties.
  **)
 
-relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
+relation elab_exp : (Env.Env, Absyn.Exp, Interactive.InteractiveSymbolTable option)
+	    => (Exp.Exp, Properties) =
 
-  axiom	elab_exp(_, Absyn.INTEGER(x))
+  axiom	elab_exp(_, Absyn.INTEGER(x),_)
 	  => (Exp.ICONST(x), PROP(Types.T_INTEGER,true))
-  axiom	elab_exp(_, Absyn.REAL(x))
+  axiom	elab_exp(_, Absyn.REAL(x),_)
 	  => (Exp.RCONST(x), PROP(Types.T_REAL,   true))
-  axiom	elab_exp(_, Absyn.STRING(x))
+  axiom	elab_exp(_, Absyn.STRING(x),_)
 	  => (Exp.SCONST(x), PROP(Types.T_STRING, true))
-  axiom	elab_exp(_, Absyn.BOOL(x))
+  axiom	elab_exp(_, Absyn.BOOL(x),_)
 	  => (Exp.BCONST(x), PROP(Types.T_BOOL,   true))
 
   rule	Debug.fprintln("setr", "elab_exp_cref") &
 	elab_cref(env, cr) => (exp,prop,_)
 	---------------------------------------
-	elab_exp(env, Absyn.CREF(cr)) => (exp,prop) 
+	elab_exp(env, Absyn.CREF(cr),_) => (exp,prop) 
 
 	(**  Binary and unary operations *)
 
   rule	Debug.fprintln("setr", "elab_exp_binary") &
-	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
-	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
+	elab_exp (env,e1,st) => (e1', PROP(t1, c1)) &
+	elab_exp (env,e2,st) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
-	elab_exp (env,exp as Absyn.BINARY(e1,op,e2))
+	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),st)
 	  => (Exp.BINARY(e1'',op',e2''),PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_exp_unary") &
-	elab_exp (env,e) => (e',PROP(t,c)) &
+	elab_exp (env,em,st) => (e',PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
-	elab_exp (env,exp as Absyn.UNARY(op,e))
+	elab_exp (env,exp as Absyn.UNARY(op,e),st)
 	  => (Exp.UNARY(op',e''),PROP(rtype,c))
 	
   rule	Debug.fprintln("setr", "elab_exp_lbinary") &
-	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
-	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
+	elab_exp (env,e1,st) => (e1', PROP(t1, c1)) &
+	elab_exp (env,e2,st) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	---------------------------------------------------------------------
-	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2))
+	elab_exp (env,exp as Absyn.LBINARY(e1,op,e2),st)
 	  => (Exp.LBINARY(e1'',op',e2''),PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_exp_lunary") &
-	elab_exp (env,e) => (e',PROP(t,c)) &
+	elab_exp (env,e,st) => (e',PROP(t,c)) &
  	operators op => ops &
 	deoverload (ops, [(e',t)], exp) => (op', [e''], rtype)
 	------------------------------------------------------
-	elab_exp (env,exp as Absyn.LUNARY(op,e))
+	elab_exp (env,exp as Absyn.LUNARY(op,e),st)
 	  => (Exp.LUNARY(op',e''),PROP(rtype,c))
 
   rule	Debug.fprintln("setr", "elab_exp_relation") &
-	
-	elab_exp (env,e1) => (e1', PROP(t1, c1)) &
-	
-	elab_exp (env,e2) => (e2', PROP(t2, c2)) &
-	
+	elab_exp (env,e1,st) => (e1', PROP(t1, c1)) &
+	elab_exp (env,e2,st) => (e2', PROP(t2, c2)) &
 	bool_and (c1,c2) => c &
 	operators op => ops &
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype)
 	----------------------------------------------
-	elab_exp (env,exp as Absyn.RELATION(e1,op,e2))
+	elab_exp (env,exp as Absyn.RELATION(e1,op,e2),st)
 	  => (Exp.RELATION(e1'',op',e2''),PROP(rtype,c))
 
 	(**  Conditional expressions *)
 
   rule	Debug.fprintln("setr", "elab_exp_ifexp") &
-	elab_exp (env,e1) => (e1', prop1) &
-	elab_exp (env,e2) => (e2', prop2) &
-	elab_exp (env,e3) => (e3', prop3) &
+	elab_exp (env,e1,st) => (e1', prop1) &
+	elab_exp (env,e2,st) => (e2', prop2) &
+	elab_exp (env,e3,st) => (e3', prop3) &
 	elab_ifexp(e1',prop1,e2',prop2,e3',prop3) => (e,prop)
 	------------------------------------------------------
-	elab_exp (env,Absyn.IFEXP(e1,e2,e3)) => (e,prop)
+	elab_exp (env,Absyn.IFEXP(e1,e2,e3),st) => (e,prop)
 
 	(**  Function calls *)
 	(** PA. Only positional arguments are elaborated for now.*)
@@ -225,9 +227,9 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
   rule	Dump.print_component_ref_str fn => fnstr &
 	Debug.fprintl("setr", ["elab_exp_call: ",fnstr,"\n"]) &
-	elab_call(env,fn,args,nargs) => (e,prop) 
+	elab_call(env,fn,args,nargs,st) => (e,prop) 
 	--------------------------------------
-	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs))) 
+	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs)),st) 
 		=> (e,prop)
 
 	(*PR. Get the properties for each expression in the tuple. 
@@ -245,28 +247,28 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	split_props(props) => (types, consts) &
 	Debug.print "\n split_props was just executed."
 	-------------------------------------
-	elab_exp (env,Absyn.TUPLE(e as e1::rest)) 
+	elab_exp (env,Absyn.TUPLE(e as e1::rest),st) 
 	  => (Exp.TUPLE(e'),PROP_TUPLE(Types.T_TUPLE(types), TUPLE_CONST(consts)))
 
 
 	(**  Array-related expressions *)
 
   rule	Debug.fprintln("setr", "elab_exp_range1") &
-	elab_exp (env, start) => (start', PROP(start_t, c_start)) &
-	elab_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	elab_exp (env, start,st) => (start', PROP(start_t, c_start)) &
+	elab_exp (env, stop,st) => (stop', PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
 			 NONE,
 			 (stop',stop_t)) => (start'',NONE,stop'',rt) &
 	bool_and (c_start, c_stop) => const &
 	elab_range_type (env,start'',NONE,stop'',const,rt) => t
 	--------------------------------------------------
-	elab_exp (env, Absyn.RANGE(start, NONE, stop))
+	elab_exp (env, Absyn.RANGE(start, NONE, stop),st)
 	  => (Exp.RANGE(rt,start',NONE,stop'), PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_exp_range2") &
-	elab_exp (env, start) => (start', PROP(start_t, c_start)) &
-	elab_exp (env, step) => (step', PROP(step_t, c_step)) &
-	elab_exp (env, stop) => (stop', PROP(stop_t, c_stop)) &
+	elab_exp (env,start,st) => (start', PROP(start_t, c_start)) &
+	elab_exp (env,step,st) => (step', PROP(step_t, c_step)) &
+	elab_exp (env,stop,st) => (stop', PROP(stop_t, c_stop)) &
 	deoverload_range((start',start_t),
 			 SOME((step',step_t)),
 			 (stop',stop_t)) => (start'',SOME(step''),stop'',rt) &
@@ -274,24 +276,24 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 	bool_and (c1, c_stop) => const &
 	elab_range_type (env,start'',SOME(step''),stop'',const,rt) => t
 	---------------------
-	elab_exp (env, Absyn.RANGE(start, SOME(step), stop))
+	elab_exp (env, Absyn.RANGE(start, SOME(step), stop),st)
 	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), PROP(t, const))
 
   rule	Debug.fprintln("setr", "elab_exp_array") &
-	elab_array (env, es) => (es', PROP(t, const)) & list_length es' => l&
+	elab_array (env, es,st) => (es', PROP(t, const)) & list_length es' => l&
 	elab_type t => at &
 	Types.is_array t => a
 	--------------------------------------------------------------
-	elab_exp (env, Absyn.ARRAY(es))
+	elab_exp (env, Absyn.ARRAY(es),st)
 	  => (Exp.ARRAY(at,a,es'),
 	      PROP(Types.T_ARRAY(Types.DIM(SOME(l)), t),
 		   const))
 	
   rule	Debug.fprintln("setr", "elab_exp_matrix") &
-	elab_matrix_semi (env, es) => (es', PROP(t,c), dim1,dim2,nmax) & 
+	elab_matrix_semi (env,es,st) => (es', PROP(t,c), dim1,dim2,nmax) & 
 	elab_type t => at
 	------------------------------------------------------------
-	elab_exp (env, Absyn.MATRIX(es))
+	elab_exp (env, Absyn.MATRIX(es),st)
 	  => (Exp.MATRIX(at,nmax,es'),
 	      PROP(Types.T_ARRAY(Types.DIM(SOME(dim1)),
 				 Types.T_ARRAY(Types.DIM(SOME(dim2)), t)),
@@ -299,7 +301,7 @@ relation elab_exp : (Env.Env, Absyn.Exp) => (Exp.Exp, Properties) =
 
   rule	Print.print_buf "- elab_exp failed: " & Dump.print_exp e & Print.print_buf "\n"
 	-----------------------------------------------------------
-	elab_exp(_,e) => fail
+	elab_exp(_,e,_) => fail
 
 end
 
@@ -493,16 +495,16 @@ end
 relation elab_range_type : (Env.Env, Exp.Exp,
 			    Exp.Exp option, Exp.Exp, bool,Exp.Type) => Types.Type =
 
-  rule	ceval (env,start,false) => Values.INTEGER(startv) &
-	ceval (env,stop,false) => Values.INTEGER(stopv) &
+  rule	ceval (env,start,NONE) => Values.INTEGER(startv) &
+	ceval (env,stop,NONE) => Values.INTEGER(stopv) &
 	int_sub (stopv,startv) => n & int_add (n,1) => n'
 	-------------------------------------------------
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_INTEGER)
 
-  rule	ceval (env,start,false) => Values.INTEGER(startv) &
-	ceval (env,step,false) => Values.INTEGER(stepv) &
-	ceval (env,stop,false) => Values.INTEGER(stopv) &
+  rule	ceval (env,start,NONE) => Values.INTEGER(startv) &
+	ceval (env,step,NONE) => Values.INTEGER(stepv) &
+	ceval (env,stop,NONE) => Values.INTEGER(stopv) &
 	int_sub (stopv,startv) => n &
 	int_div (n,stepv) => n' &
  	int_add (n',1) => n''
@@ -510,8 +512,8 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,SOME(step),stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n'')), Types.T_INTEGER)
 
-  rule	ceval (env,start,false) => Values.REAL(startv) &
-	ceval (env,stop,false) => Values.REAL(stopv) &
+  rule	ceval (env,start,NONE) => Values.REAL(startv) &
+	ceval (env,stop,NONE) => Values.REAL(stopv) &
 	real_sub (stopv,startv) => n &
 	real_floor n => n'' &
 	real_int n'' => n''' &
@@ -520,9 +522,9 @@ relation elab_range_type : (Env.Env, Exp.Exp,
 	elab_range_type (env,start,NONE,stop,true,_)
 	  => Types.T_ARRAY(Types.DIM(SOME(n')), Types.T_REAL)
 
-  rule	ceval (env,start,false) => Values.REAL(startv) &
-	ceval (env,step,false) => Values.REAL(stepv) &
-	ceval (env,stop,false) => Values.REAL(stopv) &
+  rule	ceval (env,start,NONE) => Values.REAL(startv) &
+	ceval (env,step,NONE) => Values.REAL(stepv) &
+	ceval (env,stop,NONE) => Values.REAL(stopv) &
 	real_sub (stopv,startv) => n &
 	real_div (n,stepv) => n' &
 	real_floor n' => n''' &
@@ -566,22 +568,22 @@ end
 
 (** relation: elab_array *)
 
-relation elab_array : (Env.Env, Absyn.Exp list)
+relation elab_array : (Env.Env, Absyn.Exp list,Interactive.InteractiveSymbolTable option)
 	  => (Exp.Exp list, Properties) =
 
-  rule	elab_exp (env,e) => (e',prop)
+  rule	elab_exp (env,e,st) => (e',prop)
 	-----------------------------
-	elab_array (env,[e]) => ([e'],prop)
+	elab_array (env,[e],st) => ([e'],prop)
 
-  rule	elab_exp (env,e) => (e',PROP(t1,c1)) &
-	elab_array (env,es) => (es',PROP(t2,c2)) &
+  rule	elab_exp (env,e,st) => (e',PROP(t1,c1)) &
+	elab_array (env,es,st) => (es',PROP(t2,c2)) &
 	t1 = t2 &
 	bool_and (c1,c2) => c
 	---------------------------------
-	elab_array (env,e::es) => (e'::es',PROP(t1,c))
+	elab_array (env,e::es,st) => (e'::es',PROP(t1,c))
 
-  rule	elab_exp (env,e) => (e',PROP(t1,c1)) &
-	elab_array (env,es) => (es',PROP(t2,c2)) &
+  rule	elab_exp (env,e,st) => (e',PROP(t1,c1)) &
+	elab_array (env,es,st) => (es',PROP(t2,c2)) &
 	not t1 = t2 &
 	Print.print_buf "# Incompatible types in array expression\n" &
 	Print.print_buf "  " & Dump.print_exp e & Print.print_buf " is of type " &
@@ -589,11 +591,11 @@ relation elab_array : (Env.Env, Absyn.Exp list)
         Dump.print_list (es, Dump.print_exp, ",") &
 	Print.print_buf "] are of type " & Types.print_type t2 & Print.print_buf "\n"
 	---------------------------------------------------------
-	elab_array (env,e::es) => fail
+	elab_array (env,e::es,st) => fail
 
   rule	Print.print_buf "- elab_array failed\n"
 	-----------------------------
-	elab_array (_,_) => fail
+	elab_array (_,_,_) => fail
 
 end
 
@@ -650,20 +652,20 @@ relation match_with_promote : (Properties, Properties) => Properties =
 
 end
 
-relation elab_matrix_comma : (Env.Env, Absyn.Exp list)
+relation elab_matrix_comma : (Env.Env, Absyn.Exp list, Interactive.InteractiveSymbolTable option)
 	=> ((Exp.Exp*bool) list, Properties, int, int) =
 
 
-  rule	elab_exp (env,el) => (el', PROP(t,c)) &
+  rule	elab_exp (env,el,st) => (el', PROP(t,c)) &
 	Types.ndims t => ndims &
 	int_max(2,ndims) => maxn &
 	int_gt(ndims,0) => array
 	----------------------------------------
-	elab_matrix_comma (env,[el]) => ([(el',array)],PROP(t,c),1,maxn)
+	elab_matrix_comma (env,[el],st) => ([(el',array)],PROP(t,c),1,maxn)
 
 
-  rule	elab_exp (env,el) => (el', PROP(t1,c1)) &
-	elab_matrix_comma(env,els) => (els', PROP(t2,c2), _,maxn2) &
+  rule	elab_exp (env,el,st) => (el', PROP(t1,c1)) &
+	elab_matrix_comma(env,els,st) => (els', PROP(t2,c2), _,maxn2) &
 
 	match_with_promote(PROP(t1,c1),PROP(t2,c2)) => props &
 
@@ -673,23 +675,23 @@ relation elab_matrix_comma : (Env.Env, Absyn.Exp list)
 	int_max (maxn1,maxn2) => maxn &
 	int_gt(maxn1,0) => array
 	-------------------------------------
-	elab_matrix_comma (env,el::els) 
+	elab_matrix_comma (env,el::els,st) 
 	  => ((el',array)::els',props,dim,maxn)
 
 end
 
 (** relation: elab_matrix_semi *)
 
-relation elab_matrix_semi : (Env.Env, Absyn.Exp list list)
+relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, Interactive.InteractiveSymbolTable option)
 	=> ((Exp.Exp*bool) list list, Properties, int, int, int) =
 
-  rule	elab_matrix_comma(env,el) => (el', props, dim, maxn)
+  rule	elab_matrix_comma(env,el,st) => (el', props, dim, maxn)
 	---------------------------------
-	elab_matrix_semi(env,[el]) => ([el'], props, 1, dim, maxn)
+	elab_matrix_semi(env,[el],st) => ([el'], props, 1, dim, maxn)
 
   rule	list_length(el) => dim &
-	elab_matrix_comma(env,el) => (el',props1,dim1,maxn1) &
-	elab_matrix_semi(env,els) => (els',props2,_,dim2,maxn2) &
+	elab_matrix_comma(env,el,st) => (el',props1,dim1,maxn1) &
+	elab_matrix_semi(env,els,st) => (els',props2,_,dim2,maxn2) &
 
 	dim1 = dim2 &
 			
@@ -697,7 +699,7 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list)
 
 	int_max(maxn1,maxn2) => maxn
 	--------------------
-	elab_matrix_semi(env,el::els) => (el'::els',props,dim,dim1,maxn)
+	elab_matrix_semi(env,el::els,st) => (el'::els',props,dim,dim1,maxn)
 
 
 
@@ -742,7 +744,7 @@ relation elab_builtin_size : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties) 
 	(** implemented, just size(A,x) that returns size of x:th dimension *)
 
   rule	elab_exp (env,ind) => (indexp, PROP(indty, true)) &
-	ceval (env, indexp,false) => Values.INTEGER(value) &
+	ceval (env, indexp,NONE) => Values.INTEGER(value) &
 	int_string(value) => strval &
 	elab_exp (env,arraycr) => (Exp.CREF(cr,crt), crprop) &
 	Lookup.lookup_var (env, cr) => (attr, ty, bnd) &
@@ -807,7 +809,7 @@ relation elab_builtin_fill : (Env.Env, Absyn.Exp list) => (Exp.Exp, Properties)	
 
   rule	elab_exp (env,s) => (s', PROP(sty, sconst)) &
 	elab_exp_list (env,dims) => (dims', dimprops) &
-	ceval_list (env, dims') => dimvals &
+	ceval_list (env, dims',NONE) => dimvals &
 	elab_builtin_fill_2 (env, s', sty, dimvals) => (exp, prop) 
 	--------------------------------------------------
 	elab_builtin_fill (env, s::dims) => (exp, prop)
@@ -903,7 +905,7 @@ end
  ** work.
  **)
 
-relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list)
+relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg list,Interactive.InteractiveSymbolTable option)
 	=> (Exp.Exp, Properties) =
 
 	  (** LS: Check if a builtin function call, e.g. size()
@@ -912,17 +914,17 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
   rule	(* PA. Built in functions have only possitional arguments *)
 	elab_call_builtin (env, fn, args) => (e,prop)
 	---------------------------------------------
-	elab_call (env,fn,args,nargs) => (e,prop)
+	elab_call (env,fn,args,nargs,st) => (e,prop)
 
   rule	Absyn.cref_to_path fn => fn' &
-	elab_call_args (env,fn',args,nargs) => (e,prop) &
+	elab_call_args (env,fn',args,nargs,st) => (e,prop) &
 	Debug.fprintln ("sei", "elab_call succeeded")
 	------------------------------------
-	elab_call (env,fn,args,nargs) => (e,prop)
+	elab_call (env,fn,args,nargs,st) => (e,prop)
 
   rule	Print.print_buf "- elab_call failed\n"
 	----------------------------
-	elab_call (env,fn,args,nargs) => fail
+	elab_call (env,fn,args,nargs,st) => fail
 
 end
 
@@ -935,7 +937,7 @@ end
  ** arguments to the formal parameters.
  **)
 
-relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list)
+relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg list, Interactive.InteractiveSymbolTable option)
 	=> (Exp.Exp, Properties) =
 
   rule	(* This rule finds record constructors, user defined or implicit *)
@@ -961,7 +963,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	exp_list_from_slots(newslots2) => args'' &
 	Debug.fprintln ("setr", "elab_call_args_succeeded")
 	------------------------------------
-	elab_call_args(env,fn,args,nargs) => (Exp.CALL(fn,args'',false,false), prop )
+	elab_call_args(env,fn,args,nargs,st) => (Exp.CALL(fn,args'',false,false), prop )
 
 	(* This rule finds user-defined functions. *)
 
@@ -1001,7 +1003,7 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 	
 	Debug.fprintln ("setr", "elab_call_args_succeeded")
 	--------------------------------------------
-	elab_call_args(env,fn,args,nargs) => (Exp.CALL(fn,args',tuple,false), prop )
+	elab_call_args(env,fn,args,nargs,st) => (Exp.CALL(fn,args',tuple,false), prop )
 
 	(* 
 	 Functions that returns just one argument should not return a
@@ -1035,19 +1037,19 @@ relation elab_call_args : (Env.Env, Absyn.Path, Absyn.Exp list, Absyn.NamedArg l
 (*PR.	elab_input_args(env, args, params) => (args',c)  *)
 	Debug.fprintln ("sei", "elab_call_args succeeded")
 	-----------------------------------------------
-	elab_call_args (env,fn,args,nargs) => (Exp.CALL(fn,args',tuple,false), PROP(restype, c))
+	elab_call_args (env,fn,args,nargs,st) => (Exp.CALL(fn,args',tuple,false), PROP(restype, c))
 
   rule	not Lookup.lookup_type(env,fn) => (_,_) &
 	
 	Print.print_buf "# Couldn't find function " & Dump.print_path fn & Print.print_buf "\n" &
 	Env.print_env env 
 	-------------------------------------------------------------------
-	elab_call_args(env,fn,_,_) => fail
+	elab_call_args(env,fn,_,_,_) => fail
 
   rule	(*elab_exp(env, e) => (e',PROP(t,_)) &*)
 	Print.print_buf "- elab_call_args failed\n"
 	---------------------------------
-	elab_call_args(_,_,_,_) => fail
+	elab_call_args(_,_,_,_,_) => fail
 
 end
 
@@ -1880,17 +1882,18 @@ end
  ** in which case function calls are evaluated.
  **)
 
-relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
+relation ceval : (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable option) 
+	    => Values.Value =
 
   axiom	ceval (_,Exp.ICONST(x),_) => Values.INTEGER(x)
   axiom	ceval (_,Exp.RCONST(x),_) => Values.REAL(x)
   axiom ceval (_,Exp.SCONST(x),_) => Values.STRING(x)
   axiom ceval (_,Exp.BCONST(x),_) => Values.BOOL(x)
 
-  rule	ceval_list (env,es) => es' &
+  rule	ceval_list (env,es,st) => es' &
 	list_length es' => l
 	------------------------------
-	ceval (env,Exp.ARRAY(_,_,es),_) => Values.ARRAY(es')
+	ceval (env,Exp.ARRAY(_,_,es),st) => Values.ARRAY(es')
 
   rule	ceval_matrixelt(env,expll) => elts
 	------------------------------
@@ -1903,21 +1906,19 @@ relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(_,_,_,_),false) => fail
+	ceval (env, e as Exp.CALL(_,_,_,_),NONE) => fail
 
-  rule	(* Call externally implemented functions, if present *)
-	print "external call\n" &
-	ceval_list(env,expl) => vallst &
-	print "cevaled list\n" &
+
+  rule	(* Call externally implemented functions. *) 
+	ceval_list(env,expl,st) => vallst &
 	Absyn.path_string(func) => funcstr &
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
 	Values.write_to_file_as_args(vallst,infilename)  &
-	print "written to file\n" &
 	System.execute_function(funcstr) &
 	System.read_values_from_file(outfilename) => newval
 	-------------------------------------------------------
-	ceval (env, e as Exp.CALL(func,expl,_,_),true) => newval
+	ceval (env, e as Exp.CALL(func,expl,_,_),st) => newval
 
 	(**  Numerical *)
 
@@ -2141,7 +2142,7 @@ relation ceval : (Env.Env, Exp.Exp, bool) => Values.Value =
 	ceval (env, Exp.CAST(Exp.REAL,e),i) => Values.REAL(r)
 
   rule	type_convert_array(expl, Types.T_INTEGER, Types.T_REAL) => expl' &
-	ceval_list(env,expl) => vallst
+	ceval_list(env,expl,st) => vallst
 	--------------------------
 	ceval (env, Exp.CAST(Exp.REAL,Exp.ARRAY(Exp.INT,_,expl)),i) => Values.ARRAY(vallst)
 
@@ -2273,16 +2274,17 @@ end
  ** This relation does a constant evaluation on a number of expressions.
  **)
 
-relation ceval_list : (Env.Env, Exp.Exp list) => Values.Value list =
+relation ceval_list : (Env.Env, Exp.Exp list, Interactive.InteractiveSymbolTable option) 
+	    => Values.Value list =
 	  
-  rule	ceval (env, exp,false) => v
+  rule	ceval (env, exp,st) => v
 	----------------------------
-	ceval_list (env, [exp]) => [v]
+	ceval_list (env, [exp],st) => [v]
 
-  rule	ceval (env,exp,false) => v &
-	ceval_list (env, exps) => vs
+  rule	ceval (env,exp,st) => v &
+	ceval_list (env, exps,st) => vs
 	------------------------------
-	ceval_list (env, exp::exps) => v::vs
+	ceval_list (env, exp::exps,st) => v::vs
 
 end
 		      
