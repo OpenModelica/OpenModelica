@@ -42,6 +42,10 @@ module Interactive:
 end
 with "dump.rml"
 
+(** relation: evaluate
+ ** This relation evaluates expressions feeded interactively to the compiler.
+**)
+
 relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable) =
 
   rule	let newst = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[])
@@ -52,5 +56,55 @@ relation evaluate:  (InteractiveStmts, InteractiveSymbolTable) => (string,Intera
 	------------
 	evaluate(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("list",_),_))]),st as SYMBOLTABLE(p,_,_,_))
 	    => (" symboltable :",st)
+
+  rule	evaluate_graphical_api(stmts,st) => (str,newst)
+	----------------------------------------------------
+	evaluate(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))]),st) => (str,newst)
   axiom	evaluate(_,st) => ("Not implemented yet\n",st)
 end
+
+(** relation: evaluate_graphical_api
+ ** This relation evaluates all primitives in the graphical api.
+ **)
+
+relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) => 
+	(string, InteractiveSymbolTable) = 
+	
+  rule	let resstr="GAPI function not implemented yet\n" & let newst = st
+	---------------------------------------------------
+	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("loadModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	
+	
+  rule	let resstr="GAPI function not implemented yet\n" & let newst = st
+	---------------------------------------------------
+	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("saveModel",_),_))]),st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	
+  rule	Absyn.update_program(
+      Absyn.PROGRAM([Absyn.CLASS(name,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.TOP),
+      p) => newp &
+	let newst = SYMBOLTABLE(newp,s,ic,iv) &
+	string_append(name,"\n") => resstr
+	---------------------------------------------------
+	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("newModel",_),[Absyn.STRING(name)]))]),st as SYMBOLTABLE(p,s,ic,iv)) 
+	    => (resstr,newst)
+	    
+  rule	componentref_to_path(cr) => path &
+	Absyn.update_program(
+      Absyn.PROGRAM([Absyn.CLASS(name,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])]))],Absyn.WITHIN(path)),
+      p) => newp &
+	let newst = SYMBOLTABLE(newp,s,ic,iv) &
+	string_append(name,"\n") => resstr
+	---------------------------------------------------
+	evaluate_graphical_api(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("newModel",_),[Absyn.STRING(name),Absyn.CREF(cr)]))]), st as SYMBOLTABLE(p,s,ic,iv)) => (resstr,newst)
+	    
+end
+
+
+relation componentref_to_path: Absyn.ComponentRef => Absyn.Path = 
+
+  axiom componentref_to_path(Absyn.CREF_IDENT(ident,_)) => Absyn.IDENT(ident)
+	
+  rule	componentref_to_path(x) => px
+	-----------------------------
+	componentref_to_path(Absyn.CREF_QUAL(id,_,x)) => Absyn.QUALIFIED(id,px)
+end	
