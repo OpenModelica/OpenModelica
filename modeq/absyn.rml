@@ -361,6 +361,7 @@ module Absyn:
 				* string option
 
   (* ExternalDecl *)
+  (* Declaration of an external function call *)
   datatype ExternalDecl = EXTERNALDECL of 
 				  Ident option  * (* The name of the external function *)
 				  string option * (* Lanugage of the external function *)
@@ -389,6 +390,8 @@ module Absyn:
 end
 
 
+(** From here down, only absyn helper functions should be present. 
+ Thus,no actual absyn datatype definitions. *)
 
 with "debug.rml"
 with "dump.rml"
@@ -400,7 +403,6 @@ with "print.rml"
  ** The `ElementSpec' type contans the name of the element, and this
  ** relation extracts this name.
  **)
-
 relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_,_)) => n
@@ -425,6 +427,11 @@ relation path_string: Path => string =
 	path_string path => s
 end
 
+
+(** relation: opt_path_string
+ **
+ ** Returns a path converted to string or an empty string if nothing exist
+ **)
 relation opt_path_string: Path option => string =
 
   axiom	opt_path_string(NONE) => ""
@@ -434,7 +441,10 @@ relation opt_path_string: Path option => string =
 	opt_path_string(SOME(p)) => str
 end
 
-
+(** relation: 
+ **
+ ** Helper relation to path_string
+ **)
 relation path_string2: (Path, string) => string =
 
   axiom	path_string2(IDENT(s),_) => s
@@ -447,6 +457,10 @@ relation path_string2: (Path, string) => string =
 	
 end
 
+(** relation: path_last_ident
+ **
+ ** Returns the last ident (After last dot) in a paht
+ **)
 relation path_last_ident : Path => Ident =
 	
   rule	path_last_ident(p) => res
@@ -457,6 +471,10 @@ relation path_last_ident : Path => Ident =
 
 end
 
+(** relation: path_first_ident
+ **
+ ** Returns the last ident (After last dot) in a paht
+ **)
 relation path_first_ident : Path => Ident =
 
   axiom	path_first_ident(QUALIFIED(n,p)) => n
@@ -464,6 +482,11 @@ relation path_first_ident : Path => Ident =
   axiom	path_first_ident(IDENT(n)) => n
 end
 
+(** relation: get_cref_from_exp
+ **
+ ** Returns a flattened list of the component references 
+ ** in an expression
+ **)
 relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 
   axiom	get_cref_from_exp(INTEGER(_)) => []
@@ -545,6 +568,11 @@ relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 
 end
 
+(** relation: get_cref_from_farg
+ ** 
+ ** Returns the flattened list of all component references 
+ ** present in a list of function arguments.
+ **)
 relation get_cref_from_farg: (FunctionArgs) => ComponentRef list =
 	
   rule	Util.list_map(expl, get_cref_from_exp) => l1 &
@@ -557,6 +585,11 @@ relation get_cref_from_farg: (FunctionArgs) => ComponentRef list =
 
 end
 
+(** relation: get_cref_from_narg
+ ** 
+ ** Returns the flattened list of all component references 
+ ** present in a list of named function arguments.
+ **)
 relation get_cref_from_narg: (NamedArg) => ComponentRef list =
 	
   rule	get_cref_from_exp(exp) => res
@@ -564,7 +597,10 @@ relation get_cref_from_narg: (NamedArg) => ComponentRef list =
 	get_cref_from_narg(NAMEDARG(_,exp)) => res
 end
 
-
+(** relation: join_paths
+ **
+ ** This relation joins two paths
+ **)
 relation join_paths: (Path, Path) => (Path) =
 
   axiom	join_paths(IDENT(str),p2) => QUALIFIED(str,p2) 
@@ -574,6 +610,11 @@ relation join_paths: (Path, Path) => (Path) =
 	join_paths(QUALIFIED(str,p),p2) => QUALIFIED(str,p')
 end
 
+(** relation: strip_last
+ **
+ ** Returns the path given as argument to the relation
+ ** minus the last ident.
+ **)
 relation strip_last: (Path) => Path =
 
   axiom	strip_last(IDENT(_)) => fail
@@ -592,7 +633,6 @@ end
  ** If the component reference contains subscripts, it will silently
  ** fail.
  **)
-
 relation cref_to_path : ComponentRef => Path =
 
   axiom	cref_to_path CREF_IDENT(i,[]) => IDENT(i)
@@ -603,6 +643,11 @@ relation cref_to_path : ComponentRef => Path =
 
 end
 
+(** relation: path_to_cref
+ **
+ ** This relation converts a Path to a ComponentRef.
+ ** 
+ **)
 relation path_to_cref : Path => ComponentRef =
 
   axiom	path_to_cref IDENT(i) => CREF_IDENT(i,[])
@@ -611,6 +656,10 @@ relation path_to_cref : Path => ComponentRef =
 	path_to_cref QUALIFIED(i,p) => CREF_QUAL(i,[],c)
 end
 
+(** relation: cref_get_first
+ **
+ ** Returns first ident from a ComponentRef
+ **)
 relation cref_get_first : ComponentRef => ComponentRef =
 
   axiom	cref_get_first(CREF_IDENT(i,_)) => CREF_IDENT(i,[])
@@ -619,15 +668,10 @@ relation cref_get_first : ComponentRef => ComponentRef =
 
 end
 
-
-(** relation: print_restr
- **
- ** This is a utility relation for printing a `Restriction'.  The code
- ** is excluded for brevity.
+(** relation: restr_string
+ ** 
+ ** Maps a class restriction to the corresponding string for printing
  **)
-
-(*!ignorecode*)
-
 relation restr_string : Restriction => string =
 
   axiom restr_string R_CLASS			=> "CLASS"
@@ -645,15 +689,23 @@ relation restr_string : Restriction => string =
 
 end
 
+(** relation: print_restr
+ **
+ ** This is a utility relation for printing a `Restriction'.  The code
+ ** is excluded for brevity.
+ **)
 relation print_restr : Restriction => () =
 
   rule	restr_string restr => str &
 	Print.print_buf str
 	----------------
 	print_restr restr
-
 end
 
+(** relation: last_classname
+ **
+ ** Returns the path (=namse) of the last class in a program
+ **)
 relation last_classname: Program => Path =
 
   rule	Util.list_last(lst) => CLASS(id,_,_,_,_,_) 
@@ -661,7 +713,10 @@ relation last_classname: Program => Path =
 	last_classname(PROGRAM(lst,_)) => IDENT(id)
 end
 
-(* PR. To debug. *)
+(** relation: print_absyn_exp 
+ **
+ ** Prints an Exp
+ **)
 relation print_absyn_exp : Exp => () =
   rule	Debug.print "This is an array: " &
 	Debug.print "[" &
@@ -670,9 +725,7 @@ relation print_absyn_exp : Exp => () =
 	---------
 	print_absyn_exp (ARRAY(es))
 
-	(*PR.*)
   rule	Debug.print "(" &
-
 	Debug.print ")"
 	---------
 	print_absyn_exp (TUPLE(es))
@@ -683,7 +736,12 @@ relation print_absyn_exp : Exp => () =
 	print_absyn_exp (_)
 end
 
-
+(** relation: cref_equal
+ **
+ ** Checks if the name of a ComponentRef is equal to the name of 
+ ** another ComponentRef
+ ** 
+ **)
 relation cref_equal: (ComponentRef, ComponentRef) =>  bool =
 
   rule	id = id2
