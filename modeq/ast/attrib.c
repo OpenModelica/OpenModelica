@@ -4,14 +4,20 @@
 
 int zzcr_attr(Attrib *attr, int type, char *text)
 {
+  int l;
   attr->type = type;
   switch (type)
   {
   case UNSIGNED_NUMBER:
     attr->u.floatval = atof(text); break;
   case IDENT:
-  case STRING:
     attr->u.stringval = strdup(text);
+    break;
+  case STRING:
+    l = strlen(text);
+    attr->u.stringval = (char *)malloc(l-1);
+    memcpy(attr->u.stringval, text+1, l-2);
+    attr->u.stringval[l-2] = 0;
     break;
   default:
     break;
@@ -43,12 +49,8 @@ Attrib *copy_attr(Attrib *attr)
   switch(attr->type)
   {
   case IDENT:
-    a->u.stringval = strdup(attr->u.stringval); break;
   case STRING:
-    l = strlen(attr->u.stringval);
-    a->u.stringval = (char *)malloc(l-1);
-    memcpy(a->u.stringval, attr->u.stringval+1, l-2);
-    a->u.stringval[l-2] = 0;
+    a->u.stringval = strdup(attr->u.stringval);
     break;
   }
   return a;
