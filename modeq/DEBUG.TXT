@@ -28,6 +28,7 @@ except dump.
 
 ---------------------------------------------------------------------------
 		all		Turn on all debugging.			  
+		none		true if no flags given.			  
 General--------------------------------------------------------------------
 									  
 		info		General information			  
