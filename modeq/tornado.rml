@@ -59,16 +59,20 @@ with "simcodegen.rml"
 	     generate_constructor(cname,p,dae''') => constr &
 	     generate_var_defines(dae''') => defines &
 	     generate_compute_methods(cname,dae''',p,blt,ass1,ass2) => cmethods &
+         generate_dll_code(cname) => dll_code &
          TORNADOEXT.get_hierachical_code(cname) => (hierachical_header_code,hierachical_code) &
          (*  	    TORNADOEXT.dump_testing() &  *)
          Util.string_append_list([implheader,hierachical_code,constr,defines,cmethods]) => impl &
          Util.string_append_list([header,hierachical_header_code,"#endif\n"]) => header' &
 	     string_append(cname,".h") => headerfile &
+	     string_append(cname,"DLL.cpp") => dllfile &
 	     string_append(cname,".cpp") => implfile &
 	     print "Generating: " & print headerfile & print "\n" &
 	     System.write_file(headerfile,header') &
 	     print "Generating: " & print implfile & print "\n" &
-	     System.write_file(implfile,impl) 
+	     System.write_file(implfile,impl) &
+	     print "Generating: " & print dllfile & print "\n" &
+	     System.write_file(dllfile,dll_code) 
 	     -------------------------------------------------------------------
 	     generate_code(p,dae,class) => 
          
@@ -76,6 +80,68 @@ with "simcodegen.rml"
 	     ------------------------------
 	     generate_code(_,_,_) => fail
  end
+
+
+relation generate_dll_code: (string) => string =
+
+  rule  Util.string_append_list(["#ifdef _MSC_VER\n",
+                                "#pragma warning(disable:4250)\n",
+                                "#pragma warning(disable:4786)\n",
+                                "#endif\n",
+                                "\n",
+                                "#include \"Tornado/EE/Common/DLL.h\"\n",
+                                "\n",
+                                "#include \"",cname,".h\"\n",
+                                "\n",
+                                "using  namespace std;\n",
+                                "using namespace Common;\n",
+                                "using namespace Tornado;\n",
+                                "\n",
+                                "#ifdef _WIN32\n",
+                                "#include <windows.h>\n",
+                                
+                                "BOOL APIENTRY\n",
+                                "DllMain(HANDLE hModule,\n",
+                                "        DWORD ul_reason_for_call,\n",
+                                "        LPVOID lpReserved)\n",
+                                "{\n",
+                                "  switch (ul_reason_for_call)\n",
+                                "  {\n",
+                                "    case DLL_PROCESS_ATTACH:\n",
+                                "    case DLL_THREAD_ATTACH:\n",
+                                "    case DLL_THREAD_DETACH:\n",
+                                "    case DLL_PROCESS_DETACH:\n",
+                                "      break;\n",
+                                "  }\n",
+                                "  return TRUE;\n",
+                                "}\n",
+                                "#endif\n",
+                                "\n",
+                                "static wstring g_ID = L\"Tornado.MSLE.DAEModel.",cname,"\";\n",
+                                "\n",
+                                "void*\n",
+                                "GetID()\n",
+                                "{\n",
+                                "  return (void*)g_ID.c_str();\n",
+                                "}\n",
+                                "\n",
+                                "void*\n",
+                                "Create()\n",
+                                "{\n",
+                                "  CDAEModel* pDAEModel = new C",cname,"(L\"\");\n",
+                                "\n",
+                                "  return (void*)pDAEModel;\n",
+                                "}\n"]) => res
+        ------------------------------
+        generate_dll_code(cname) => res
+  
+
+        
+  rule  print "generate_dll_code failed\n" 
+	    ------------------------------
+	    generate_dll_code(_) => fail
+    
+end        
 
  relation generate_code_for_hierarhical_objects: (Absyn.Path,DAELow.DAELow,Absyn.Program)
           => string =
