@@ -37,7 +37,7 @@ if test -x $RMLHOME/bin/rmlc ; then
    rmlc_bin=$RMLHOME/bin/rmlc
   AC_MSG_RESULT([yes])
 else
-  rmlc_bin=`find $RMLHOME -name rmlc| tail -1`
+  rmlc_bin=`find $RMLHOME -name rmlc| head -1`
   if test -z "$rmlc_bin" ; then
     AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin or anywhere in \$RMLHOME])
     AC_MSG_RESULT([no])
@@ -71,7 +71,7 @@ else
 fi
 
 AC_MSG_CHECKING([for antlr header files])
-antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
+antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
 if test -z "$antlrinc" ; then 
   AC_MSG_ERROR([Could not find antlr include files])
 else 
@@ -79,7 +79,7 @@ else
 fi
 
 AC_MSG_CHECKING([for antlr libs])
-antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
 if test -z "$antlrlib" ; then 
   AC_MSG_ERROR([Could not find antlr lib file])
 else 
