@@ -1642,7 +1642,7 @@ relation get_component_modifier_names: (Absyn.ComponentRef, (* class *)
 	------------------------------------------------
 	get_component_modifier_names(class,ident,p) => res''
 
-  axiom	get_component_modifier_names(_,_,_) => "{e}"
+  axiom	get_component_modifier_names(_,_,_) => "{}"
 end
 
 relation get_modification_names:(Absyn.ElementArg list) 
