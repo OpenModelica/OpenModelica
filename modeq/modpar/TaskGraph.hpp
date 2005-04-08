@@ -119,6 +119,14 @@ public:
   string top() { return m_queue.top(); };
   bool empty() { return m_queue.empty(); };
   size_t size() { return m_set.size(); };
+  int num_copies(string s) {
+    std::map<string,int>::iterator it=m_num_copies.find(s);
+    if (it != m_num_copies.end()) {
+      return 1;
+    } else {
+      return it->second;
+    }
+  }
   inline  void make_union (ResultSet *s) {
     if (s == this) { return; }
     std::set<string>::iterator it;
@@ -128,17 +136,32 @@ public:
       if (pit != s->m_map.end()) {
 	m_map[*it] = pit->second;
       }
+      map<string,int>::iterator pit2 = s->m_num_copies.find(*it);
+      if (pit2 != s->m_num_copies.end()) {
+	m_num_copies[*it] = pit2->second;
+      } else {
+	m_num_copies[*it] = 1; // Should not happen, but set to 1 just in case..
+      }
     }
   };
   inline void insert(std::pair<string,int> pair) {
     string t1; int t2;
     tie(t1,t2) = pair;
+    if (m_set.find(t1) != m_set.end()) { // variable allready exist
+      int old_num=m_num_copies.find(t1)->second;
+      m_num_copies[t1]=++old_num;
+    } else {
+      m_num_copies[t1]=1;
+    }
     m_set.insert(t1);
     m_map[t1]=t2;
   };
 
-  std::set<string> m_set;
-  std::map<string,int> m_map;
+  std::set<string> m_set; // Set datastructure
+  std::map<string,int> m_map; // priority for each result
+  std::map<string,int> m_num_copies; // number of copies of each variable.
+  /* The number of copies is required if we have a task like a*a. Then we need 
+     to keep track of that 'a' is used twice. */
   PrioQueue m_queue;  
 };  
   

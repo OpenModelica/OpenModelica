@@ -352,20 +352,87 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr) &  
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
-	print "nonlinear equation not implemented yet\n" 
+	build_nonlinear_equations([varexp],[Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2)]) 
 	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
+	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => ()
 
   rule	print "-build_equation failed\n" 
 	--------------------------------
 	build_equation(_,_,_,_) => fail
 end
 
+(** relation: build_nonlinear_equations
+ ** builds task graph for solving non-linear equations
+ **)
+
+relation build_nonlinear_equations: (Exp.Exp list, (* variables *)
+				     Exp.Exp list) (* residuals *)
+	=> () =
+
+  rule	list_length(vars) => size &
+	int_string(size) => size_str &
+	Util.string_append_list(["SOLVENONLINEAR",size_str,"(%s)"]) => taskname &
+	TaskGraphExt.new_task(taskname) => tid &
+	build_nonlinear_equations2(tid,0,residuals) &
+	Util.list_map(vars,Exp.print_exp_str) => varnames &
+	store_multiple_results(varnames,tid)
+	---------------------------------------------
+	build_nonlinear_equations(vars,residuals) => ()
+
+  rule	print "build_nonlinear_equatins failed\n" 
+	-----------------------------------------
+	build_nonlinear_equations(vars,residuals) => fail
+end
+
+(** relation store_multiple_results
+ ** When a task calculates several values, this relation is used.
+ ** It collects the names of the values into one string, separated by semicolons
+ ** and uses that as the resultstring.
+ **)
+relation store_multiple_results: (string list, (* var names*)
+				  int (* task id*)
+				  )
+	=> () =
+
+  rule	Util.string_delimit_list(varnames,";") => result_str &
+	TaskGraphExt.store_result(result_str,tid,true,result_str)
+	-----------------------------------------
+	store_multiple_results(varnames,tid) => ()
+
+  rule	print "store_multiple_results failed\n" 
+	-----------------------
+	store_multiple_results(_,_) => fail
+end
+
+
+relation build_nonlinear_equations2: (int, (*task id *)
+				      int, (* predecessor counter *)
+				      Exp.Exp list) (* residuals *)
+	=> () =
+
+  axiom	build_nonlinear_equations2(tid,pred_cnt,[]) => ()
+
+  rule	(* Does not work. We should collect all variables and construct
+	 a string for the residual, given variables as %s:s in the string.
+	 Then we can create a residual function to be used to solve the nonlinear
+	 system.*)
+	build_expression(res) => (task,str) &
+	TaskGraphExt.add_edge(task,tid,"",0) &
+	pred_cnt + 1 => pred_cnt' &
+	build_nonlinear_equations2(tid,pred_cnt',residuals) 
+	--------------------------------
+	build_nonlinear_equations2(tid,pred_cnt,res::residuals) => ()
+
+  rule	print "build_nonlinear_equations2 failed\n" 
+	----------------------------
+	build_nonlinear_equations2(_,_,_) => fail
+end
+
+
 (* Build task graph for a system of equations *)
 relation build_system:(DAELow.DAELow, int vector, int vector, int list) => () =
 
-  rule	print "build system\n" &
-	TaskGraphExt.new_task("equation system") => tid &
+  rule	TaskGraphExt.new_task("equation system") => tid &
 	build_system2(dae,ass1,ass2,system,tid) => predtasks &
 	Util.list_map(predtasks, TaskGraphExt.get_task) => predtaskids &
 	add_predecessors(tid,predtaskids,predtasks,0) 
@@ -540,6 +607,14 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	build_call_str(funcstr,numargs) => ts &
 	Util.list_map__2(expl,build_expression) => (tasks,strs) &
 	TaskGraphExt.new_task(ts) => t &
+	print "building call " & print ts & 
+	int_string t => t_str & print " for task " & print  t_str & print "\n" &
+	Util.string_delimit_list(strs,", ") => s &
+	print " predecessor strs :" & print s & print "\n" &
+	Util.list_map(tasks,int_string) => tasks_str &
+	Util.string_delimit_list(tasks_str,", ") => t_str &
+	print " predecessor tasks :" & print t_str & print "\n" &
+
 	add_predecessors(t,tasks,strs,0) 
 	------------------------------
 	build_expression(Exp.CALL(func,expl,_,_)) => (t,"") 
@@ -603,7 +678,7 @@ relation add_predecessors: (int, int list,string list,int (* prio*)) => () =
 
 axiom add_predecessors(_,[],[],_) 
 
-  rule	TaskGraphExt.add_edge(t,t1,s,prio) &
+  rule	TaskGraphExt.add_edge(t1,t,s,prio) &
 	int_add(prio,1) => prio' &
 	add_predecessors(t,ts,strs,prio')
 	---------------------

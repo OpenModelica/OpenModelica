@@ -278,7 +278,7 @@ int Codegen::getParentSize(VertexID task, TaskGraph *tg)
   int size;
   for (tie(e,e_end) = in_edges(task,*tg),size=0; e != e_end; e++) {
     int resSize = getResultSet(*e,tg).size();
-    size += resSize == 0 ? 1 : resSize;
+    size += resSize == 0 ? getCommCost(*e,tg) : resSize;
   }
   return size;
 }
@@ -307,7 +307,10 @@ void Codegen::generateSubTaskCode(VertexID task)
     // empty resultset, use Resultname instead.
     
     if (s.size() == 0) {
-      parentnames[i++]=getResultName(source(e,*m_tg),m_tg);
+      for(int j=0; j < getCommCost(e,m_tg); j++) { // if same variable used more
+						   // than once, e.g. a*a.
+	parentnames[i++]=getResultName(source(e,*m_tg),m_tg);
+      }
     } else {
       s.createQueue(); // Must create queue before iterating
       
