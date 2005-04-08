@@ -5018,7 +5018,7 @@ relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) => DAE.Va
   rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
         inst_string_binding(mod,index_list,"start") => start_val 
         -----------------------------------------
-        inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
+        inst_dae_variable_attributes(mod,(Types.T_STRING(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val))
 
   rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &

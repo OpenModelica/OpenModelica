@@ -955,7 +955,113 @@ relation is_const_zero : Exp => bool =
 
 end
 
+relation simplify_binary_const : (Operator, Exp, Exp) => Exp =
+
+(*   rule  print_exp_str(e1) => e1_str & *)
+(*         print_exp_str(e2) => e2_str & *)
+(*         binop_symbol_1 oper => op_str & *)
+(*         print "simplify_binary_const: " & print e1_str & print " " & print op_str & print " " & print e2_str & print "\n" & *)
+(*         int_eq(1,2) => true *)
+(*         ---------------------------- *)
+(* 	simplify_binary_const (oper, e1, e2) => fail *)
+
+
+  rule  int_add(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( ADD(_), ICONST(e1), ICONST(e2)) => ICONST(e3)
+
+  rule  real_add(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( ADD(_), RCONST(e1), RCONST(e2)) => RCONST(e3)
+
+  rule  int_real(e2) => e2' &
+        real_add(e1, e2') => e3 
+	---------------------------
+	simplify_binary_const ( ADD(_), RCONST(e1), ICONST(e2)) => RCONST(e3)
+
+  rule  int_real(e1) => e1' &
+        real_add(e1', e2) => e3 
+	---------------------------
+	simplify_binary_const ( ADD(_), ICONST(e1), RCONST(e2)) => RCONST(e3)
+
+  rule  int_sub(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( SUB(_), ICONST(e1), ICONST(e2)) => ICONST(e3)
+
+  rule  real_sub(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( SUB(_), RCONST(e1), RCONST(e2)) => RCONST(e3)
+
+  rule  int_real(e2) => e2' &
+        real_sub(e1, e2') => e3 
+	---------------------------
+	simplify_binary_const ( SUB(_), RCONST(e1), ICONST(e2)) => RCONST(e3)
+
+  rule  int_real(e1) => e1' &
+        real_sub(e1', e2) => e3 
+	---------------------------
+	simplify_binary_const ( SUB(_), ICONST(e1), RCONST(e2)) => RCONST(e3)
+
+
+  rule  int_mul(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( MUL(_), ICONST(e1), ICONST(e2)) => ICONST(e3)
+
+  rule  real_mul(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( MUL(_), RCONST(e1), RCONST(e2)) => RCONST(e3)
+
+  rule  int_real(e2) => e2' &
+        real_mul(e1, e2') => e3 
+	---------------------------
+	simplify_binary_const ( MUL(_), RCONST(e1), ICONST(e2)) => RCONST(e3)
+
+  rule  int_real(e1) => e1' &
+        real_mul(e1', e2) => e3 
+	---------------------------
+	simplify_binary_const ( MUL(_), ICONST(e1), RCONST(e2)) => RCONST(e3)
+
+
+  rule  int_div(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( DIV(_), ICONST(e1), ICONST(e2)) => ICONST(e3)
+
+  rule  real_div(e1, e2) => e3 
+	---------------------------
+	simplify_binary_const ( DIV(_), RCONST(e1), RCONST(e2)) => RCONST(e3)
+
+  rule  int_real(e2) => e2' &
+        real_div(e1, e2') => e3 
+	---------------------------
+	simplify_binary_const ( DIV(_), RCONST(e1), ICONST(e2)) => RCONST(e3)
+
+  rule  int_real(e1) => e1' &
+        real_div(e1', e2) => e3 
+	---------------------------
+	simplify_binary_const ( DIV(_), ICONST(e1), RCONST(e2)) => RCONST(e3)
+
+
+end
+
 relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
+        
+(*   rule  print_exp_str(e1) => e1_str & *)
+(*         print_exp_str(e2) => e2_str & *)
+(*         binop_symbol_1 oper => op_str & *)
+(*         print "simplify_binary: " & print e1_str & print " " & print op_str & print " " & print e2_str & print "\n" & *)
+(*         int_eq(1,2) => true *)
+(*         ---------------------------- *)
+(* 	simplify_binary (e, oper, e1, e2) => fail *)
+
+
+  rule  simplify e1 => e1' &
+        simplify e2 => e2' &
+        is_const (e1') => true &
+        is_const (e2') => true  & 
+        simplify_binary_const(oper,e1',e2') => e3
+	---------------------------
+	simplify_binary (e, oper, e1, e2) => e3
+      
 
   rule	is_const_zero (e1) => true &
 	simplify e2 => e2'
@@ -987,6 +1093,16 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	simplify BINARY(e1, ADD(ty), e2) => e
 	--------------------
 	simplify_binary (_, SUB(ty), e1, UNARY(UMINUS(ty2),e2)) => e
+        
+  rule  (* x+x => 2x *)
+        exp_equal(e1,e2) => true 
+	---------------------------
+	simplify_binary (_, ADD(INT), e1, e2) => BINARY(ICONST(2),MUL(INT),e1) 
+
+  rule  (* x+x => 2x *)
+        exp_equal(e1,e2) => true 
+	---------------------------
+	simplify_binary (_, ADD(REAL), e1, e2) => BINARY(RCONST(2.0),MUL(REAL),e1) 
 
   rule	is_const_zero (e1) => true 
 	---------------------------

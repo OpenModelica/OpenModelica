@@ -826,19 +826,21 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
         
         Dump.get_option_with_concat_str(min,real_string,"min = ") => min_str &
         Dump.get_option_with_concat_str(max,real_string,"max = ") => max_str &
+        Dump.get_option_with_concat_str(nominal,real_string,"nominal = ") => nominal_str &
         Dump.get_option_with_concat_str(Initial,real_string,"start = ") => Initial_str &
         Dump.get_option_with_concat_str(fixed,
                                         Dump.print_bool_str,
                                         "fixed = ") => fixed_str &
         
         Util.string_delimit_list_no_empty([quantity, 
-                                  unit_str,
-                                  displayUnit_str,
-                                  min_str,
-                                  max_str,
-                                  Initial_str,
-                                  fixed_str,
-                                  stateSel_str],", ") => res' &
+                                           unit_str,
+                                           displayUnit_str,
+                                           min_str,
+                                           max_str,
+                                           Initial_str,
+                                           fixed_str,
+                                           nominal_str,
+                                           stateSel_str],", ") => res' &
  
         Util.string_append_list(["(",res',")"]) => res1 &
         Util.is_empty_string(res') => is_empty &
@@ -895,7 +897,7 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
   rule Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
         Dump.get_option_with_concat_str(Initial,string_to_string,"start = ") => Initial_str &
         Util.string_delimit_list_no_empty([quantity,
-                                 Initial_str],", ") => res' & 
+                                           Initial_str],", ") => res' & 
         Util.string_append_list(["(",res',")"]) => res1 &
         Util.is_empty_string(res') => is_empty &
         Util.if(is_empty,"",res1) => res

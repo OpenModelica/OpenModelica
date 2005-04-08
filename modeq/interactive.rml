@@ -158,6 +158,8 @@ module Interactive:
   relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type 
   relation add_instantiated_class: (InstantiatedClass list, InstantiatedClass) => InstantiatedClass list 
   relation get_instantiated_class: (InstantiatedClass list, Absyn.Path) => InstantiatedClass 
+  
+
   relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
 	  => InteractiveSymbolTable
   relation add_scope: (Absyn.Program, InteractiveVariable list) => Absyn.Program 
@@ -1642,7 +1644,7 @@ relation get_component_modifier_names: (Absyn.ComponentRef, (* class *)
 	------------------------------------------------
 	get_component_modifier_names(class,ident,p) => res''
 
-  axiom	get_component_modifier_names(_,_,_) => "{}"
+  axiom	get_component_modifier_names(_,_,_) => "{e}"
 end
 
 relation get_modification_names:(Absyn.ElementArg list) 

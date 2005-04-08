@@ -134,6 +134,7 @@ end
 with "absyn.rml" 
 with "util.rml"
 with "print.rml" 
+with "graphviz.rml" 
 
 relation differentiate_equation_time: (DAELow.Equation,
 				  DAELow.Variables) (* time varying variables *)
@@ -302,6 +303,14 @@ end
  **)
 relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 
+  rule  (* Exp.dump_exp_graphviz(exp) => node & *)
+(*         Graphviz.dump(node) & *)
+        Exp.print_exp_str(exp) => exp_str &
+        print exp_str & print "\n" &
+        int_eq(1,0) => true
+        -------------------------------
+        differentiate_exp(exp,cr) => fail
+        
   axiom	differentiate_exp(Exp.ICONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp(Exp.RCONST(_),_) => Exp.RCONST(0.0)
 
@@ -328,6 +337,18 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	differentiate_exp(Exp.BINARY(e1,Exp.SUB(tp),e2),tv) 
 	  => Exp.BINARY(e1',Exp.SUB(tp),e2')
 
+  rule	Exp.cref_equal (cr, tv) => true &
+        Exp.exp_contains(e2,Exp.CREF(tv,tp)) => false &
+        differentiate_exp(Exp.CREF(tv,tp),tv) => const_one
+	-----------------------------
+	differentiate_exp(Exp.BINARY((e1 as Exp.CREF(cr,_)),Exp.POW(tp),e2),tv) 
+	  => (* ax^(a-1) *)
+	  Exp.BINARY(e2,
+		     Exp.MUL(tp),
+ 		     Exp.BINARY(e1,Exp.POW(tp),                 
+			        Exp.BINARY(e2,Exp.SUB(tp),const_one)))
+                     
+
   rule	differentiate_exp(e1,tv) => e1' &
 	differentiate_exp(e2,tv) => e2' 
 	-----------------------------
@@ -352,6 +373,7 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
   rule	differentiate_exp(e,tv) => e' 
 	-----------------------------
 	differentiate_exp(Exp.UNARY(op,e),tv) => Exp.UNARY(op,e')
+
 
   rule	differentiate_exp(Exp.BINARY(e1,op,e2),tv) => Exp.BINARY(e1',op,e2')
 	-----------------------------

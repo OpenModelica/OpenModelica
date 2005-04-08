@@ -131,10 +131,7 @@ relation add_edge: (int (*from*),
 
 relation get_task: string => int 
 
-relation store_result: (string, 
-			int, 
-			bool(*send to endtask? *),
-			string (* orig name*)) => ()
+relation store_result: (string, int, bool(*send to endtask? *),string (* orig name*)) => ()
 
 relation dump_graph: (string) => ()
 
