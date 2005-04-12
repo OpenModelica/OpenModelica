@@ -1094,6 +1094,19 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
+  rule	Static.component_ref_to_path(cr) => path &
+	 SCode.elaborate(p) => p' &
+	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	 DAELow.lower(dae) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_)) &
+	 DAELow.calculate_jacobian(vars,eqnarr) => jac &
+	 DAELow.dump_jacobian_str(vars,jac) => str &
+	 Util.string_append_list(["[",str,"]"]) => res
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
+
+
   rule	
          System.read_env("MOSHHOME") => moshhome &
          Static.component_ref_to_path(cr) => path & 

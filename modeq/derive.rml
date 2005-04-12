@@ -253,10 +253,8 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	-------------------------
 	differentiate_exp_time(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1',e2',e3')
 
-  rule	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
-	-------------------------------------------------
-	differentiate_exp_time(Exp.CALL(a as Absyn.IDENT("der"),expl,b,c),tv) 
-	  => Exp.CALL(a,expl',b,c)
+  axiom	differentiate_exp_time(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp)],b,c),tv) 
+	  => Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp),Exp.ICONST(2)],b,c)
 
   rule	print "Error. differentiating of function not impl. yet.\n" &
 	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
@@ -302,14 +300,6 @@ end
  ** differentiate_exp('2*x*y+2*x+y',x) => 2*x+2
  **)
 relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
-
-  rule  (* Exp.dump_exp_graphviz(exp) => node & *)
-(*         Graphviz.dump(node) & *)
-        Exp.print_exp_str(exp) => exp_str &
-        print exp_str & print "\n" &
-        int_eq(1,0) => true
-        -------------------------------
-        differentiate_exp(exp,cr) => fail
         
   axiom	differentiate_exp(Exp.ICONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp(Exp.RCONST(_),_) => Exp.RCONST(0.0)
@@ -395,10 +385,9 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-------------------------
 	differentiate_exp(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1',e2',e3')
 
-  rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
-	-------------------------------------------------
-	differentiate_exp(Exp.CALL(a as Absyn.IDENT("der"),expl,b,c),tv) 
-	  => Exp.CALL(a,expl',b,c)
+  axiom	(* TODO: How do we describe dx^2/(dtdv) ? Or is it really needed? *) 
+	differentiate_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp)],b,c),tv) 
+	  => Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp),Exp.ICONST(2)],b,c)
 	
   rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
 	--------------------------------------------

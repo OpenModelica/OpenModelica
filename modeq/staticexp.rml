@@ -2126,6 +2126,19 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP(recordtype,false),
 	      SOME(st))
 
+  rule	elab_untyped_cref(env,cr,impl) => cr' 
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("jacobian",_),
+			      [ Absyn.CREF(cr)],args,impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("jacobian"),
+		       [Exp.CREF(cr',Exp.OTHER)], 
+		       false,
+		       true),
+	      Types.PROP((Types.T_STRING([]),NONE),false),
+	      SOME(st))
+
+
   rule	elab_variablenames(vars) => vars'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("readSimulationResult",_),
