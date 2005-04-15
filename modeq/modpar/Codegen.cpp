@@ -1,4 +1,7 @@
 #include "Codegen.hpp"
+#include "boost/tokenizer.hpp"
+using namespace std;
+using namespace boost;
 
 const string TAB = string("        ");
 
@@ -344,6 +347,8 @@ void Codegen::generateSubTaskCode(VertexID task)
     break;
   case NonLinSys:
     m_cstream << TAB << "/* NonLinear system*/" << endl;
+    generateNonLinearResidualFunc(task);
+    m_cstream << TAB << "/* end NonLinear system*/" << endl;
     break;
   case Copy:
     m_cstream << TAB << getResultName(task,m_tg) 
@@ -354,6 +359,59 @@ void Codegen::generateSubTaskCode(VertexID task)
   default:
     assert(false);    
   };
+}
+
+  // Generates the residual function for solving nonlinear equation systems.
+void Codegen::generateNonLinearResidualFunc(VertexID task) 
+{
+  int tasknumber = getTaskID(task,m_tg); // Task no. used to make unique funcion name
+  m_cstreamFunc << "void residualFunc" << tasknumber 
+		<< "( int n, double *xloc, double *res, int iflag) {" << endl;
+  m_cstreamFunc << getVertexName(task,m_tg) << endl;
+  m_cstreamFunc << "}" << endl;
+  
+  int n = out_degree(task,*m_tg);
+  int lr = (n*(n+1))/2;
+  m_cstream << TAB <<"{ double nls_x[" << n <<"];" << endl;
+  m_cstream << TAB <<"double nls_diag[" << n <<"];" << endl;
+  m_cstream << TAB <<"double nls_qtf[" << n << "];" << endl;
+  m_cstream << TAB <<"double nls_wa1[" << n << "];" << endl;
+  m_cstream << TAB <<"double nls_wa2[" << n << "];" << endl;
+  m_cstream << TAB <<"double nls_wa3[" << n << "];" << endl;
+  m_cstream << TAB << "double nls_wa4[" << n << "];" << endl;
+  m_cstream << TAB << "int info,nfev;" << endl;
+  m_cstream << TAB << "double nls_fjac[" << n*n << "];" << endl;
+
+  InEdgeIterator e,e_end;		// Iterate over parents and set values 
+  int i;
+  for (i=0,tie(e,e_end) = in_edges(task,*m_tg); e != e_end; e++,i++) {
+    ResultSet &s = getResultSet(*e,m_tg);
+    m_cstream << TAB << "nls_x[" << i << "] = " << s.top() << ";\n" << endl;
+  }
+ 
+  m_cstream << TAB << "hybrd(residualFunc" << tasknumber << "," << n << ", &nls_x, 1e-6," 
+	    << "2000, " << n-1 << ", " << n-1 << ", 1e-6, &nls_diag, 1, 100.0,"
+	    << " -1, &info, &nfev, &nls_fjac, "<< n <<", " << lr
+	    <<", &nls_qtf, &nls_wa1, &nls_wa2, &nls_wa3, &nls_wa4);" << endl;
+  m_cstream << TAB << "if (info == 0) { printf(\"improper input parameters to nonlinear system nuber  " << tasknumber << "\");" << endl;
+  m_cstream << TAB << "exit(-3);" << endl;
+  m_cstream << TAB << " }"<< endl;
+  
+  m_cstream << TAB << "if (info >= 2 && info <= 5) { printf(\"error solving nonlinear system number " << tasknumber << "\");" << endl;
+  m_cstream << TAB << "exit(-2);" << endl;
+  m_cstream << TAB << " }"<< endl;
+
+  
+  string & results = getResultName(task,m_tg);
+  char_separator<char> sep(",");  
+  tokenizer<char_separator<char> >  tokens(results,sep);
+  i=0;
+  for (tokenizer<char_separator<char> >::iterator beg=tokens.begin(); beg != tokens.end();++beg,++i) {
+    m_cstream << TAB << *beg <<  " =  nls_x[" << i << "];\n" << endl;
+
+  }
+  
+  m_cstream << "}" << endl; // Closing scope for nonlinear system.
 }
 
 void Codegen::generateParallelFunctionHeader(int procno) 
@@ -473,11 +531,13 @@ void  Codegen::generateParallelMPIHeaders()
 void  Codegen::generateParallelMPIGlobals()
 {
   m_cstreamFunc  << "#include <mpi.h>" << endl;
+  m_cstreamFunc  << "#include <stdio.h>" << endl;
   m_cstreamFunc  << "/* Declaration of MPI Global variables */" << endl;
   m_cstreamFunc  << "extern MPI_Status status;" << endl;
   m_cstreamFunc  << "extern MPI_Request request;" << endl;
   m_cstreamFunc  << "extern int rank;" << endl;
- 
+  m_cstreamFunc  << "extern double x[];" << endl;
+  m_cstreamFunc  << "extern double xd[];" << endl;
   m_cstream << "/* MPI Global variables */" << endl;
   m_cstream << "MPI_Status status;" << endl;
   m_cstream << "MPI_Request request;" << endl;
