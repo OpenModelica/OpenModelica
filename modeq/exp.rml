@@ -1,4 +1,4 @@
-(*
+ (*
     Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
     Sweden, in the following denoted PELAB/LIU.
 
@@ -166,7 +166,7 @@ module Exp:
                  (* New constructors *)
 	       | CAST of Type * Exp				(* Cast operator *)
 	       | ASUB of Exp * int				(* Array subscripts *)
-               | SIZE of Exp * Exp option			(* The size operator *)
+               | SIZE of Exp * Exp option			(* The ssize operator *)
 	       | CODE of Absyn.Code * Type			(* Modelica AST constructor *)
 	       | REDUCTION of Absyn.Path * Exp (*expr*) * Ident * Exp (*range*)  (* Reduction expression *)
 	       | END						(* array index to last element, e.g. a[end]:=1; *)
@@ -280,6 +280,10 @@ module Exp:
   relation get_function_calls : Exp  => Exp list
   relation type_string : Type => string
 
+  relation factors: Exp => Exp list 
+
+
+  relation dump_exp_str : (Exp,int) => string  
 end
 
 
@@ -612,11 +616,17 @@ relation simplify : Exp => Exp =
 
 	(* Operations *)
 
+
   rule	simplify e1 => e1' &
 	let exp' = UNARY(op, e1') &
 	simplify_unary (exp', op, e1') => e
 	----------------------------------
 	simplify (exp as UNARY(op, e1)) => e
+
+
+  rule  simplify_add_and_mul(exp) => exp'
+        ----------------------------------
+        simplify(exp) => exp'
 
   rule	simplify e1 => e1' &
 	simplify e2 => e2' &
@@ -650,6 +660,393 @@ relation simplify : Exp => Exp =
 end
 
 
+relation simplify_add_and_mul:(Exp) => Exp =
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify_binary_add_coeff(BINARY(e1',ADD(tp),e2')) => exp'
+        --------------------------------------
+        simplify_add_and_mul(exp as BINARY(e1,ADD(tp),e2)) => exp'
+ 
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify_binary_mul_coeff(BINARY(e1',MUL(tp),e2')) => exp'
+        --------------------------------------
+        simplify_add_and_mul(exp as BINARY(e1,MUL(tp),e2)) => exp'
+   
+        
+  axiom simplify_add_and_mul(_) => fail
+end
+
+
+relation simplify_binary_add_coeff:(Exp) => Exp =
+        
+(*   rule  dump_exp_str(exp,0) => e1_str & print "simplify_binary_add_coeff: \n" & print e1_str &  print "\n" & *)
+(*         int_eq(1,2) => true *)
+(*         ---------------------------- *)
+(* 	simplify_binary_add_coeff (exp) => fail *)
+
+  rule  simplify_binary_add_coeff2(e1) => (e1'',coeff1) &
+        simplify_binary_add_coeff2(e2) => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true & 
+        real_add(coeff1,coeff2) => res_coeff
+        --------------------------
+        simplify_binary_add_coeff (BINARY(e1,ADD(REAL),e2)) => BINARY(RCONST(res_coeff),
+                                                                  MUL(REAL),
+                                                                  e1'')
+
+  rule  simplify_binary_add_coeff2(e1) => (e1'',coeff1) &
+        simplify_binary_add_coeff2(e2) => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true & 
+        real_add(coeff1,coeff2) => res_coeff &
+        real_int(res_coeff) => res_int
+        --------------------------
+        simplify_binary_add_coeff (BINARY(e1,ADD(INT),e2)) => BINARY(ICONST(res_int),
+                                                                  MUL(INT),
+                                                                     e1'')
+
+  rule  simplify_two_add_exp(e2,e3,e1,tp1) => exp 
+        ----------------------------------------
+        simplify_binary_add_coeff (BINARY(BINARY(e1,
+                                                 ADD(tp1),
+                                                 e2),
+                                          ADD(tp2),
+                                          e3)) => exp
+
+  rule  simplify_two_add_exp(e1,e3,e2,tp1) => exp
+        ----------------------------------------
+        simplify_binary_add_coeff (BINARY(BINARY(e1,
+                                                 ADD(tp1),
+                                                 e2),
+                                          ADD(tp2),
+                                          e3)) => exp
+
+  rule  simplify_two_add_exp(e2,e3,e1,tp1) => exp 
+        ----------------------------------------
+        simplify_binary_add_coeff (BINARY(e3,
+                                          ADD(tp2),
+                                          BINARY(e1,
+                                                 ADD(tp1),
+                                                 e2))) => exp
+        
+  rule  simplify_two_add_exp(e1,e3,e2,tp1) => exp
+        ----------------------------------------
+        simplify_binary_add_coeff (BINARY(e3,
+                                          ADD(tp2),
+                                          BINARY(e1,
+                                                 ADD(tp1),
+                                                 e2))) => exp
+
+
+  axiom simplify_binary_add_coeff(_) => fail
+
+end
+
+(**
+ ** this relation simplify the three exp like this:
+ ** e3 + <coeff> * e1
+ ** used for: x*x+x+x => x * x + x * 2
+ **)
+
+relation simplify_two_add_exp:(Exp,Exp,Exp,Type) => Exp =
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        is_const(e1') => true &
+        is_const(e2') => true &
+        simplify_binary_const(ADD(INT),e1,e2) => e4 
+        ---------------------------
+        simplify_two_add_exp(e1,e2,e3,INT) => BINARY(e3',
+                                                     ADD(INT),
+                                                     e4)
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        is_const(e1') => true &
+        is_const(e2') => true &
+        simplify_binary_const(ADD(REAL),e1,e2) => e4 
+        ---------------------------
+        simplify_two_add_exp(e1,e2,e3,REAL) => BINARY(e3',
+                                                     ADD(REAL),
+                                                     e4)
+
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        exp_equal(e1',e2') => true & 
+        simplify_binary_add_coeff2(e1') => (e1'',coeff1) &
+        simplify_binary_add_coeff2(e2') => (e2'',coeff2) &
+        real_add(coeff1,coeff2) => res_coeff &
+        real_int(res_coeff) => res_int
+        ---------------------------
+        simplify_two_add_exp(e1,e2,e3,INT) => BINARY(e3',
+                                                     ADD(INT),
+                                                     BINARY(e1'',MUL(INT),ICONST(res_int)))
+
+        
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        exp_equal(e1',e2') => true & 
+        simplify_binary_add_coeff2(e1') => (e1'',coeff1) &
+        simplify_binary_add_coeff2(e2') => (e2'',coeff2) &
+        real_add(coeff1,coeff2) => res_coeff 
+        ----------------------------------
+        simplify_two_add_exp(e1,e2,e3,REAL) => BINARY(e3',
+                                                     ADD(REAL),
+                                                     BINARY(e1'',MUL(REAL),RCONST(res_coeff)))
+
+  axiom simplify_two_add_exp(_,_,_,_) => fail
+        
+end
+
+(**
+ ** this relatin checks for x+x+x+x and returns (x,4.0)
+ **)
+ relation simplify_binary_add_coeff2:(Exp) => (Exp, real) =
+         
+(*   rule  dump_exp_str(exp,0) => e1_str & print "coeff2: \n" & print e1_str &  print "\n" & *)
+(*         int_eq(1,2) => true *)
+(*         ---------------------------- *)
+(* 	simplify_binary_add_coeff2 (exp) => fail *)
+
+  rule  simplify(exp) => (exp' as CREF(cr,_))
+        -------------------------------
+        simplify_binary_add_coeff2(exp) => (exp', 1.0)
+
+  rule  simplify(exp) => BINARY(RCONST(coeff),MUL(_),e1) 
+        ------------------------------
+        simplify_binary_add_coeff2(exp) => (e1,coeff )
+
+  rule  simplify(exp) => BINARY(e1,MUL(_),RCONST(coeff)) 
+        ------------------------------
+        simplify_binary_add_coeff2(exp) => (e1,coeff )
+        
+  rule  simplify(exp) => BINARY(e1,MUL(_),ICONST(coeff)) &
+        int_real(coeff) => coeff'
+        -------------------------------
+        simplify_binary_add_coeff2(exp) => (e1,coeff' )
+
+  rule  simplify(exp) => BINARY(ICONST(coeff),MUL(_),e1) &
+        int_real(coeff) => coeff'
+        -------------------------------
+        simplify_binary_add_coeff2(exp) => (e1,coeff' )
+ 
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify_binary_add_coeff2(e1') => (e1'',coeff1) &
+        simplify_binary_add_coeff2(e2') => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true &
+        real_add(coeff1,coeff2) => res_coeff
+        --------------------------
+        simplify_binary_add_coeff2 (BINARY(e1,ADD(tp),e2)) => (e1'',res_coeff)
+
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        exp_equal(e1',e2') => true
+        --------------------------
+        simplify_binary_add_coeff2 (BINARY(e1,ADD(tp),e2)) => (e1',2.0)
+
+
+        
+  rule(*   print "simplify_binary_add_coeff2 + FAIL\n"  *)
+        (* this should fail because it is used as "not simplify_binary_add_coeff" in simplify_binary 
+         to see when a coeff cannot be simplify*)
+        --------------------------
+        simplify_binary_add_coeff2(_) => fail 
+        
+
+end
+
+(** 
+** this relation simplifies the expression x*x*x*x to x^4
+**)
+
+relation simplify_binary_mul_coeff:(Exp) => Exp =
+        
+(*   rule  print_exp_str(exp) => e1_str & print "simplify_binary_mul_coeff: " & print e1_str &  print "\n" & *)
+(*         int_eq(1,2) => true *)
+(*         ---------------------------- *)
+(* 	simplify_binary_mul_coeff (exp) => fail *)
+
+  rule  simplify_binary_mul_coeff2(e1) => (e1'',coeff1) &
+        simplify_binary_mul_coeff2(e2) => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true & 
+        real_add(coeff1,coeff2) => res_coeff
+        --------------------------
+        simplify_binary_mul_coeff (BINARY(e1,MUL(REAL),e2)) => BINARY(e1'',
+                                                                    POW(REAL),
+                                                                    RCONST(res_coeff))
+  rule  simplify_binary_mul_coeff2(e1) => (e1'',coeff1) &
+        simplify_binary_mul_coeff2(e2) => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true & 
+        real_add(coeff1,coeff2) => res_coeff &
+        real_int(res_coeff) =>  res_int
+        
+        --------------------------
+        simplify_binary_mul_coeff (BINARY(e1,MUL(INT),e2)) => BINARY(e1'',
+                                                                    POW(INT),
+                                                                    ICONST(res_int))
+ 
+
+  rule  simplify_two_mul_exp(e2,e3,e1,tp1) => exp 
+        ----------------------------------------
+        simplify_binary_mul_coeff (BINARY(BINARY(e1,
+                                                 MUL(tp1),
+                                                 e2),
+                                          MUL(tp2),
+                                          e3)) => exp
+
+  rule  simplify_two_mul_exp(e1,e3,e2,tp1) => exp
+        ----------------------------------------
+        simplify_binary_mul_coeff (BINARY(BINARY(e1,
+                                                 MUL(tp1),
+                                                 e2),
+                                          MUL(tp2),
+                                          e3)) => exp
+
+ rule  simplify_two_mul_exp(e2,e3,e1,tp1) => exp 
+        ----------------------------------------
+        simplify_binary_mul_coeff (BINARY(e3,
+                                          MUL(tp2),
+                                          BINARY(e1,
+                                                 MUL(tp1),
+                                                 e2))) => exp
+
+ rule  simplify_two_mul_exp(e1,e3,e2,tp1) => exp
+        ----------------------------------------
+        simplify_binary_mul_coeff (BINARY(e3,
+                                          MUL(tp2),
+                                          BINARY(e1,
+                                                 MUL(tp1),
+                                                 e2))) => exp
+
+
+  axiom simplify_binary_mul_coeff (_) => fail
+
+ end
+
+
+(**
+ ** this relation simplify the three exp like this:
+ ** e3 + <coeff> * e1
+ ** used for: x*x*x+x => x ^ 2
+ **)
+
+relation simplify_two_mul_exp:(Exp,Exp,Exp,Type) => Exp =
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        is_const(e1') => true &
+        is_const(e2') => true &
+        simplify_binary_const(MUL(INT),e1,e2) => e4 
+        ---------------------------
+        simplify_two_mul_exp(e1,e2,e3,INT) => BINARY(e3',
+                                                     MUL(INT),
+                                                     e4)
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        is_const(e1') => true &
+        is_const(e2') => true &
+        simplify_binary_const(MUL(REAL),e1,e2) => e4 
+        ---------------------------
+        simplify_two_mul_exp(e1,e2,e3,REAL) => BINARY(e3',
+                                                     MUL(REAL),
+                                                     e4)
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        simplify_binary_mul_coeff2(e1') => (e1'',coeff1) &
+        simplify_binary_mul_coeff2(e2') => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true & 
+        real_add(coeff1,coeff2) => res_coeff &
+        real_int(res_coeff) => res_int
+        ---------------------------
+        simplify_two_mul_exp(e1,e2,e3,INT) => BINARY(e3',
+                                                     MUL(INT),
+                                                     BINARY(e1'',POW(INT),ICONST(res_int)))
+
+        
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify(e3) => e3' &
+        simplify_binary_mul_coeff2(e1') => (e1'',coeff1) &
+        simplify_binary_mul_coeff2(e2') => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true & 
+        real_add(coeff1,coeff2) => res_coeff 
+        ----------------------------------
+        simplify_two_mul_exp(e1,e2,e3,REAL) => BINARY(e3',
+                                                     MUL(REAL),
+                                                     BINARY(e1'',POW(REAL),RCONST(res_coeff)))
+
+ 
+  axiom simplify_two_mul_exp(_,_,_,_) => fail
+        
+end
+
+(**
+** this relation takes an expression X*X*X*X*X* and return (X,5.0)
+** to be used for X^5
+**)
+
+relation simplify_binary_mul_coeff2:(Exp) => (Exp, real) =
+
+  rule  simplify(exp) => (exp' as  CREF(cr,_))
+        -------------------------------
+        simplify_binary_mul_coeff2(exp) => (exp', 1.0)
+
+  rule  simplify(exp) => BINARY(e1,POW(_),RCONST(coeff))
+        ------------------------------
+        simplify_binary_mul_coeff2(exp) => (e1,coeff )
+
+  rule  simplify(exp) => BINARY(RCONST(coeff),POW(_),e1)
+        ------------------------------
+        simplify_binary_mul_coeff2(exp) => (e1,coeff )
+
+  rule  simplify(exp) => BINARY(e1,POW(_),ICONST(coeff)) &
+        int_real(coeff) => coeff'
+        -------------------------------
+        simplify_binary_mul_coeff2(exp) => (e1,coeff' )
+
+  rule  simplify(exp) => BINARY(ICONST(coeff),POW(_),e1) &
+        int_real(coeff) => coeff'
+        -------------------------------
+        simplify_binary_mul_coeff2(exp) => (e1,coeff' )
+
+
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        simplify_binary_mul_coeff2(e1') => (e1'',coeff1) &
+        simplify_binary_mul_coeff2(e2') => (e2'',coeff2) &
+        exp_equal(e1'',e2'') => true &
+        real_add(coeff1,coeff2) => res_coeff
+        --------------------------
+        simplify_binary_mul_coeff2 (BINARY(e1,MUL(tp),e2)) => (e1'',res_coeff)
+
+        
+  rule  simplify(e1) => e1' &
+        simplify(e2) => e2' &
+        exp_equal(e1',e2') => true
+        --------------------------
+        simplify_binary_mul_coeff2(BINARY(e1,MUL(tp),e2)) => (e1',2.0)
+
+ rule (*  print "simplify_binary_mul_coeff2 * FAIL\n"  *)
+        (* this should fail because it is used as "not simplify_binary_mul_coeff" in simplify_binary 
+         to see when a coeff cannot be simplify*)
+        --------------------------
+        simplify_binary_mul_coeff2(_) => fail 
+        
+
+end
 (** relation: simplify_asub
  ** This relation simplifies array subscripts on vector operations
  **)
@@ -966,6 +1363,7 @@ relation simplify_binary_const : (Operator, Exp, Exp) => Exp =
 (* 	simplify_binary_const (oper, e1, e2) => fail *)
 
 
+
   rule  int_add(e1, e2) => e3 
 	---------------------------
 	simplify_binary_const ( ADD(_), ICONST(e1), ICONST(e2)) => ICONST(e3)
@@ -1041,19 +1439,40 @@ relation simplify_binary_const : (Operator, Exp, Exp) => Exp =
 	simplify_binary_const ( DIV(_), ICONST(e1), RCONST(e2)) => RCONST(e3)
 
 
+        (* this is out-commented because of a bug in rml version 2.2.2. it creates the error: *)
+        (* ---------- *)
+        (* exp.c: In function `Exp__simplify_5fbinary_5fconst': *)
+        (* exp.c:34644: error: parse error before '=' token *)
+        (* exp.c:35636:1: unterminated argument list invoking macro "rml_prim_get_real" *)
+        (* exp.c:1306: warning: `Exp__unelab_5fsubscripts' used but never defined *)
+        (* ---------- *)
+        
+        (*   axiom simplify_binary_const ( POW(_), CREF(e1,tp), ICONST(1)) => CREF(e1,tp) *)
+        
+        (*   axiom simplify_binary_const ( POW(_), CREF(e1,tp), RCONST(1.0)) => CREF(e1,tp) *)
+        
+        (*   axiom simplify_binary_const ( POW(_), ICONST(1), CREF(e1,tp)) => CREF(e1,tp) *)
+        
+        (*   axiom simplify_binary_const ( POW(_), RCONST(1.0), CREF(e1,tp)) => CREF(e1,tp) *)
+        
+        
+  axiom simplify_binary_const ( op, e1,e2) => fail
+        
 end
+
+
 
 relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
         
-(*   rule  print_exp_str(e1) => e1_str & *)
-(*         print_exp_str(e2) => e2_str & *)
+(*   rule  dump_exp_str(e1,0) => e1_str & *)
+(*         dump_exp_str(e2,0) => e2_str & *)
 (*         binop_symbol_1 oper => op_str & *)
 (*         print "simplify_binary: " & print e1_str & print " " & print op_str & print " " & print e2_str & print "\n" & *)
 (*         int_eq(1,2) => true *)
 (*         ---------------------------- *)
 (* 	simplify_binary (e, oper, e1, e2) => fail *)
 
-
+ 
   rule  simplify e1 => e1' &
         simplify e2 => e2' &
         is_const (e1') => true &
@@ -1094,16 +1513,6 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	--------------------
 	simplify_binary (_, SUB(ty), e1, UNARY(UMINUS(ty2),e2)) => e
         
-  rule  (* x+x => 2x *)
-        exp_equal(e1,e2) => true 
-	---------------------------
-	simplify_binary (_, ADD(INT), e1, e2) => BINARY(ICONST(2),MUL(INT),e1) 
-
-  rule  (* x+x => 2x *)
-        exp_equal(e1,e2) => true 
-	---------------------------
-	simplify_binary (_, ADD(REAL), e1, e2) => BINARY(RCONST(2.0),MUL(REAL),e1) 
-
   rule	is_const_zero (e1) => true 
 	---------------------------
 	simplify_binary (_, MUL(ty), e1, e2) => e1
@@ -2733,6 +3142,9 @@ relation stringify_crefs: Exp => Exp =
 end
 
 
+
+
+
 relation dump_exp_graphviz : Exp => Graphviz.Node =
 	
   axiom dump_exp_graphviz(END) => Graphviz.NODE("END",[],[])
@@ -2851,6 +3263,225 @@ relation dump_exp_graphviz : Exp => Graphviz.Node =
 	dump_exp_graphviz (REDUCTION(fcn,exp,id,iterexp)) =>  Graphviz.LNODE("REDUCTION",[fs],[],[expt,itert])
 
   axiom	dump_exp_graphviz (_) => Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",[],[])
+
+end
+
+
+relation gen_string_n_time:(string,int) => string =
+
+  axiom gen_string_n_time(str,0) => ""
+        
+  rule  int_add(level,-1) => new_level &
+        gen_string_n_time(str,new_level ) => new_str &
+        string_append(str,new_str) => res_str 
+        -------------------------------
+        gen_string_n_time(str,level) => res_str
+        
+
+end
+
+
+relation dump_exp_str : (Exp,int) => string  =
+	
+  rule  gen_string_n_time("   |",level) => gen_str &
+        Util.string_append_list([gen_str,"END","\n"]) => res_str
+        --------------------------------
+        dump_exp_str(END,level) => res_str
+        
+  rule  gen_string_n_time("   |",level) => gen_str &
+        int_string(x) => s &
+        Util.string_append_list([gen_str,"ICONST ",s,"\n"]) => res_str
+	----------------------------
+	dump_exp_str(ICONST(x),level) => res_str (*Graphviz.LNODE("ICONST",[s],[],[])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+   	real_string(x) => s &
+	Util.string_append_list([gen_str,"RCONST ",s,"\n"]) => res_str
+        -----------------------------
+	dump_exp_str(RCONST(x),level) => res_str (*Graphviz.LNODE("RCONST",[s],[],[])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+   	string_append ("\"", s) => s' &
+	string_append (s', "\"") => s'' &
+	Util.string_append_list([gen_str,"SCONST ",s'',"\n"]) => res_str
+	---------------------------------
+	dump_exp_str(SCONST(s),level) => res_str (*Graphviz.LNODE("SCONST",[s''],[],[])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+	Util.string_append_list([gen_str,"BCONST ","false","\n"]) => res_str
+        -------------------------
+   	dump_exp_str(BCONST(false),level) => res_str (*Graphviz.LNODE("BCONST",["false"],[],[])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+	Util.string_append_list([gen_str,"BCONST ", "true","\n"]) => res_str
+        ----------------------------
+   	dump_exp_str(BCONST(true),level) => res_str (*Graphviz.LNODE("BCONST",["true"],[],[])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+   	print_component_ref_str (c) => s &
+	Util.string_append_list([gen_str,"CREF ",s,"\n"]) => res_str
+	--------------------------------
+	dump_exp_str(CREF(c,_),level) => res_str (*Graphviz.LNODE("CREF",[s],[],[])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+   	binop_symbol(op) => sym &
+	dump_exp_str(e1,new_level1) => lt & 
+	dump_exp_str(e2,new_level2) => rt &
+	Util.string_append_list([gen_str,"BINARY ",sym,"\n",lt,rt,""]) => res_str
+	----------------------------
+	dump_exp_str(BINARY(e1, op, e2),level) => res_str (*Graphviz.LNODE("BINARY",[sym],[],[lt,rt])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+   	unaryop_symbol(op) => sym &
+	dump_exp_str(e,new_level1) => ct &
+	Util.string_append_list([gen_str,"UNARY ",sym,"\n",ct,""]) => res_str
+	----------------------------
+	dump_exp_str(UNARY(op, e),level) => res_str (*Graphviz.LNODE("UNARY",[sym],[],[ct])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+   	lbinop_symbol(op) => sym &
+	dump_exp_str(e1,new_level1) => lt & 
+	dump_exp_str(e2,new_level2) => rt &
+	Util.string_append_list([gen_str,"LBINARY ",sym,"\n",lt,rt,""]) => res_str
+	----------------------------------------------------------------
+	dump_exp_str(LBINARY(e1, op, e2),level) => res_str (*Graphviz.LNODE("LBINARY",[sym],[],[lt,rt])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+   	lunaryop_symbol(op) => sym &
+ 	dump_exp_str(e,new_level1) => ct &
+	Util.string_append_list([gen_str,"LUNARY ",sym,"\n",ct,""]) => res_str
+	---------------------------------------------------
+	dump_exp_str(LUNARY(op, e),level) => res_str (*Graphviz.LNODE("LUNARY",[sym],[],[ct])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+   	relop_symbol(op) => sym &
+ 	dump_exp_str(e1,new_level1) => lt & 
+	dump_exp_str(e2,new_level2) => rt & 
+	Util.string_append_list([gen_str,"RELATION ",sym,"\n",lt,rt,""]) => res_str
+	-----------------------------------------------------------------
+	dump_exp_str(RELATION(e1, op, e2),level) => res_str (*Graphviz.LNODE("RELATION",[sym],[],[lt,rt])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+        int_add(level,1) => new_level3 &
+   	dump_exp_str(c,new_level1) => ct &
+	dump_exp_str(t,new_level2) => tt &
+	dump_exp_str(f,new_level3) => ft & 
+	Util.string_append_list([gen_str,"IFEXP ","\n",ct,tt,ft,""]) => res_str
+	----------------------------
+	dump_exp_str(IFEXP(c,t,f),level) => res_str (*Graphviz.NODE("IFEXP",[],[ct,tt,ft])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+   	Absyn.path_string(fcn) => fs &
+        int_add(level,1) => new_level1 &
+	Util.list_map_1(args, dump_exp_str,new_level1) => argnodes &
+        Util.string_append_list(argnodes) => argnodes' &
+	Util.string_append_list([gen_str,"CALL ",fs,"\n",argnodes',""]) => res_str
+	---------------------------------------------
+	dump_exp_str(CALL(fcn, args,_,_),level) => res_str (*Graphviz.LNODE("CALL",[fs],[],argnodes)*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+  	Util.list_map_1(es, dump_exp_str,new_level1) => nodes &
+        Util.string_append_list(nodes) => nodes' &
+	Util.string_append_list([gen_str,"ARRAY ",nodes',"\n"]) => res_str
+	-----------------------------
+	dump_exp_str(ARRAY(_,_,es),level) => res_str (*Graphviz.NODE("ARRAY",[],nodes)*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+       int_add(level,1) => new_level1 &
+   	Util.list_map_1(es, dump_exp_str,new_level1) => nodes &
+        Util.string_append_list(nodes) => nodes' &
+	Util.string_append_list([gen_str,"TUPLE ",nodes',"\n"]) => res_str
+	-----------------------------
+	dump_exp_str(TUPLE(es),level) => res_str (*Graphviz.NODE("TUPLE",[],nodes)*)
+
+	
+  rule gen_string_n_time("   |",level) => gen_str &
+   	print_list_str(es, print_row_str, "},{") => s &
+	string_append ("{{",s) => s' &
+	string_append (s',"}}") => s'' & 
+	Util.string_append_list([gen_str,"MATRIX ","\n",s'',"","\n"]) => res_str
+	-----------------------------
+	dump_exp_str(MATRIX(_,_,es),level) => res_str (*Graphviz.LNODE("MATRIX",[s''],[],[])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+   	dump_exp_str(start,new_level1) => t1 &
+	let t2 = ":" &
+	dump_exp_str(stop,new_level2) => t3 & 
+	Util.string_append_list([gen_str,"RANGE ","\n",t1,t2,t3,""]) => res_str
+	-------------------------------------------------------------
+	dump_exp_str(RANGE(_,start,NONE,stop),level) => res_str (*Graphviz.NODE("RANGE",[],[t1,t2,t3])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+        int_add(level,1) => new_level3 &
+   	dump_exp_str(start,new_level1) => t1 &
+	dump_exp_str(step,new_level2) => t2 &
+ 	dump_exp_str(stop,new_level3) => t3 & 
+	Util.string_append_list([gen_str,"RANGE ","\n",t1,t2,t3,""]) => res_str
+	-------------------------------------
+	dump_exp_str(RANGE(_,start,SOME(step),stop),level) => res_str (*Graphviz.NODE("RANGE",[],[t1,t2,t3])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+    	type_string ty => tystr &
+	dump_exp_str(e,new_level1) => ct & 
+	Util.string_append_list([gen_str,"CAST ","\n",ct,""]) => res_str
+	---------------------------------------
+	dump_exp_str(CAST(ty,e),level) => res_str (*Graphviz.LNODE("CAST",[tystr],[],[ct])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+       int_add(level,1) => new_level1 &
+   	dump_exp_str(e,new_level1) => ct &
+ 	int_string i => istr &
+	Util.string_append_list(["[",istr,"]"]) => s & 
+	Util.string_append_list([gen_str,"ASUB ","\n",s,ct,""]) => res_str
+	---------------------------------------
+	dump_exp_str(ASUB(e,i),level) => res_str (*Graphviz.LNODE("ASUB",[s],[],[ct])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+  	dump_exp_str(cr,new_level1) => crt &
+ 	dump_exp_str(dim,new_level2) => dimt & 
+	Util.string_append_list([gen_str,"SIZE ","\n",crt,dimt,""]) => res_str
+	------------------------
+	dump_exp_str(SIZE(cr,SOME(dim)),level) => res_str (*Graphviz.NODE("SIZE",[],[crt,dimt])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+   	dump_exp_str(cr,new_level1) => crt & 
+	Util.string_append_list([gen_str,"SIZE ","\n",crt,""]) => res_str
+	------------------------
+	dump_exp_str(SIZE(cr,NONE),level) => res_str (*Graphviz.NODE("SIZE",[],[crt])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+        int_add(level,1) => new_level1 &
+        int_add(level,1) => new_level2 &
+   	Absyn.path_string fcn => fs &
+	dump_exp_str(exp,new_level1) => expt &
+	dump_exp_str(iterexp,new_level2) => itert & 
+	Util.string_append_list([gen_str,"REDUCTION ","\n",expt,itert,""]) => res_str
+	-------------------------------------------------------
+	dump_exp_str(REDUCTION(fcn,exp,id,iterexp),level) => res_str (*Graphviz.LNODE("REDUCTION",[fs],[],[expt,itert])*)
+
+  rule gen_string_n_time("   |",level) => gen_str &
+ 	Util.string_append_list([gen_str," UNKNOWN EXPRESSION ","\n"]) => res_str
+        -----------------------------------------
+  	dump_exp_str(_,level) => res_str (*Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",[],[])*)
 
 end
 

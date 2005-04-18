@@ -253,8 +253,10 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	-------------------------
 	differentiate_exp_time(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1',e2',e3')
 
-  axiom	differentiate_exp_time(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp)],b,c),tv) 
-	  => Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp),Exp.ICONST(2)],b,c)
+  rule	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
+	-------------------------------------------------
+	differentiate_exp_time(Exp.CALL(a as Absyn.IDENT("der"),expl,b,c),tv) 
+	  => Exp.CALL(a,expl',b,c)
 
   rule	print "Error. differentiating of function not impl. yet.\n" &
 	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
@@ -300,6 +302,12 @@ end
  ** differentiate_exp('2*x*y+2*x+y',x) => 2*x+2
  **)
 relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
+
+(*   rule  Exp.dump_exp_str(exp,0) => exp_str & *)
+(*         print exp_str & print "\n" & *)
+(*         int_eq(1,0) => true *)
+(*         ------------------------------- *)
+(*         differentiate_exp(exp,cr) => fail *)
         
   axiom	differentiate_exp(Exp.ICONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp(Exp.RCONST(_),_) => Exp.RCONST(0.0)
@@ -327,7 +335,8 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	differentiate_exp(Exp.BINARY(e1,Exp.SUB(tp),e2),tv) 
 	  => Exp.BINARY(e1',Exp.SUB(tp),e2')
 
-  rule	Exp.cref_equal (cr, tv) => true &
+  rule	(* a^x => ax^(a-1) *)
+        Exp.cref_equal (cr, tv) => true &
         Exp.exp_contains(e2,Exp.CREF(tv,tp)) => false &
         differentiate_exp(Exp.CREF(tv,tp),tv) => const_one
 	-----------------------------
@@ -364,6 +373,82 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-----------------------------
 	differentiate_exp(Exp.UNARY(op,e),tv) => Exp.UNARY(op,e')
 
+  rule  Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(Absyn.IDENT("sin"),exp::[],b,c),tv) 
+	  => Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),[exp],b,c),
+                        Exp.MUL(Exp.REAL),
+                        exp')
+
+  rule  Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(Absyn.IDENT("cos"),exp::[],b,c),tv) 
+	  => Exp.BINARY(Exp.UNARY(Exp.UMINUS(Exp.REAL),Exp.CALL(Absyn.IDENT("sin"),[exp],b,c)),
+                        Exp.MUL(Exp.REAL),
+                        exp')
+
+  rule  (* exp(x) => x' * exp(x) *)
+        Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(Absyn.IDENT("exp"),exp::[],b,c),tv) 
+	  => Exp.BINARY(Exp.CALL(Absyn.IDENT("exp"),exp::[],b,c),
+                        Exp.MUL(Exp.REAL),
+                        exp')
+ 
+  rule  (* log(x) => x' * 1/x *)
+        Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(Absyn.IDENT("log"),exp::[],b,c),tv) 
+	  => Exp.BINARY(exp',
+                        Exp.MUL(Exp.REAL),
+                        Exp.BINARY(Exp.RCONST(1.0),
+                                   Exp.DIV(Exp.REAL),
+                                   exp))
+
+  rule  (* log10(x) => x'*1/(x*log(10)) *)
+        Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(Absyn.IDENT("log10"),exp::[],b,c),tv) 
+	  => Exp.BINARY(exp',
+                        Exp.MUL(Exp.REAL),
+                        Exp.BINARY(Exp.RCONST(1.0),
+                                   Exp.DIV(Exp.REAL),
+                                   Exp.BINARY(exp,
+                                              Exp.MUL(Exp.REAL),
+                                              Exp.CALL(Absyn.IDENT("log"),[Exp.RCONST(10.0)],b,c))))
+
+
+  rule  (* sqrt(x) => 1(2 * sqrt(x)) * der(x) *)
+        Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(Absyn.IDENT("sqrt"),exp::[],b,c),tv) 
+	  => Exp.BINARY(Exp.BINARY(Exp.RCONST(1.0),
+                                   Exp.DIV(Exp.REAL),
+                                   Exp.BINARY(Exp.RCONST(2.0),
+                                              Exp.MUL(Exp.REAL),
+                                              Exp.CALL(Absyn.IDENT("sqrt"),exp::[],b,c))),
+                        Exp.MUL(Exp.REAL),
+                        exp')
+        
+
+  rule  (* tan x => 1/((cos x)^2) *)
+        Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(Absyn.IDENT("tan"),exp::[],b,c),tv) 
+	  => Exp.BINARY(Exp.BINARY(Exp.RCONST(1.0),
+                                   Exp.DIV(Exp.REAL),
+                                   Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),[exp],b,c),
+                                              Exp.POW(Exp.REAL),
+                                              Exp.RCONST(2.0))),
+                        Exp.MUL(Exp.REAL),
+                        exp')
 
   rule	differentiate_exp(Exp.BINARY(e1,op,e2),tv) => Exp.BINARY(e1',op,e2')
 	-----------------------------
@@ -385,9 +470,10 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-------------------------
 	differentiate_exp(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1',e2',e3')
 
-  axiom	(* TODO: How do we describe dx^2/(dtdv) ? Or is it really needed? *) 
-	differentiate_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp)],b,c),tv) 
-	  => Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp),Exp.ICONST(2)],b,c)
+  rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
+	-------------------------------------------------
+	differentiate_exp(Exp.CALL(a as Absyn.IDENT("der"),expl,b,c),tv) 
+	  => Exp.CALL(a,expl',b,c)
 	
   rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
 	--------------------------------------------

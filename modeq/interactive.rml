@@ -173,6 +173,10 @@ module Interactive:
   relation get_components: (Absyn.ComponentRef,Absyn.Program) => string 
   relation is_primitive_class: (Absyn.Class,Absyn.Program) => bool 
   relation get_componentitems_name: Absyn.ComponentItem list => string list 
+
+          (* this is added for optimization of modeleditor*)
+           
+  relation get_top_classnames: (Absyn.Program) => string
 end
 
 
@@ -590,6 +594,45 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS( [Absyn.CREF(Absyn.CREF_IDENT(name,_)),Absyn.CREF(cr)] , [])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
+
+
+  rule  System.regular_file_exist(name) => 0 &
+        Parser.parse(name) => p1 &
+        update_program(p1,p) => newp &
+        get_top_classnames(p1) => top_names_str
+        ---------------------------------------------------
+	evaluate_graphical_api(
+	                       ISTMTS([IEXP(Absyn.CALL(
+		                                       Absyn.CREF_IDENT("loadFile",_),
+		                                       Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
+	                              ),
+	                       st as SYMBOLTABLE(p,s,ic,iv,cf)) => (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf))
+
+
+ 
+        (** it the rule above have failed then check if file exists **)
+        (* without this modeq crashes *)
+  rule  System.regular_file_exist(name) => rest &
+        int_gt(rest,0) => true
+        ---------------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("loadFile",_),
+		Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
+
+        (*check if the parse went wrong*)
+        
+  rule  not Parser.parse(name) => p1
+        ---------------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("loadFile",_),
+		Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
+
 
 
 	rule	delete_class(cr,p) => (resstr, newp)

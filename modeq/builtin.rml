@@ -819,6 +819,8 @@ relation initial_env =
 	Env.extend_frame_t(env, "acos", real2real) 		     => env &
 	Env.extend_frame_t(env, "atan", real2real) 		     => env &
 	Env.extend_frame_t(env, "exp", real2real)		     => env &
+	Env.extend_frame_t(env, "log", real2real)		     => env &
+	Env.extend_frame_t(env, "log10", real2real)		     => env &
 	(* PR. Add the built in array functions here.*)
 	(* Also do it for real, string and bool*)
 	Env.extend_frame_t(env, "ndims", array1dimint2int) 		     => env &

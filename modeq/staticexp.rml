@@ -1762,52 +1762,84 @@ end
  **)
 relation elab_builtin_differentiate : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
         
-  rule (*print "# differentiate function not implemented yet\n" &*)
-        Absyn.get_cref_from_exp(s1) => cref_list1 &
+  rule  Absyn.get_cref_from_exp(s1) => cref_list1 &
         Absyn.get_cref_from_exp(s2) => cref_list2 &
         list_append(cref_list1,cref_list2) => cref_list &
-        (*         print"1\n" & *)
-        absyn_cref_list_to_interactive_var_list(cref_list,Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])) => symbol_table &
-        (*         print"2\n" & *)
+        absyn_cref_list_to_interactive_var_list(cref_list,
+                                                Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),
+                                                (Types.T_REAL([]),NONE)) => symbol_table &
         Interactive.build_env_from_symboltable(symbol_table) => gen_env &
-        (*         print"3\n" & *)
-        elab_exp (gen_env,s1,impl,NONE)
-	  => (s1', st,_) &
-          (*         print"4\n" & *)
-        elab_exp(gen_env,s2,impl,NONE)
-	  => (s2', st,_)
-          --------------------------------------
+        elab_exp (gen_env,s1,impl,NONE) => (s1', st,_) &
+        elab_exp(gen_env,s2,impl,NONE) => (s2', st,_)
+        --------------------------------------
         elab_builtin_differentiate(env,[s1,s2],impl)
           => (Exp.CALL(Absyn.IDENT("differentiate"),[s1',s2'],false,true),
               st)
         
-  rule	print"#-- elab_builtin_differentiate: Couldn't elaborate differentiate()\n"
+  rule  print"#-- elab_builtin_differentiate: Couldn't elaborate differentiate()\n"
 	---------------------------------------------------------
 	elab_builtin_differentiate (_,_,_) => fail
 	
 end
 
-relation absyn_cref_list_to_interactive_var_list: ( Absyn.ComponentRef list, Interactive.InteractiveSymbolTable)
+(** relation: elab_builtin_simplify
+ ** This relation elaborates on the builtin operator simplify, 
+ ** The call in mosh is: simplify(x+y*x-x,"Real") if the variable should be Real
+ ** or simplify(x+y*x-x,"Integer") if the variable should be Integer
+ ** This relation is only for testing simplify
+ **)
+relation elab_builtin_simplify : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
+        
+  rule  Absyn.get_cref_from_exp(s1) => cref_list &
+        absyn_cref_list_to_interactive_var_list(cref_list,
+                                                Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),
+                                                (Types.T_REAL([]),NONE)) => symbol_table &
+        Interactive.build_env_from_symboltable(symbol_table) => gen_env &
+        elab_exp (gen_env,s1,impl,NONE) => (s1', st,_)
+        --------------------------------------
+        elab_builtin_simplify(env,[s1,Absyn.STRING("Real")],impl)
+          => (Exp.CALL(Absyn.IDENT("simplify"),[s1'],false,true),
+              st)
+        
+  rule  Absyn.get_cref_from_exp(s1) => cref_list &
+        absyn_cref_list_to_interactive_var_list(cref_list,
+                                                Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),
+                                                (Types.T_INTEGER([]),NONE)) => symbol_table &
+        Interactive.build_env_from_symboltable(symbol_table) => gen_env &
+        elab_exp (gen_env,s1,impl,NONE) => (s1', st,_)
+        --------------------------------------
+        elab_builtin_simplify(env,[s1,Absyn.STRING("Integer")],impl)
+          => (Exp.CALL(Absyn.IDENT("simplify"),[s1'],false,true),
+              st)
+        
+
+  rule	print"#-- elab_builtin_simplify: Couldn't elaborate simplify()\n"
+	---------------------------------------------------------
+	elab_builtin_simplify (_,_,_) => fail
+	
+end
+
+relation absyn_cref_list_to_interactive_var_list: ( Absyn.ComponentRef list, Interactive.InteractiveSymbolTable,Types.Type)
           => Interactive.InteractiveSymbolTable =
 
 
-  axiom absyn_cref_list_to_interactive_var_list([],symbol_table) => symbol_table
+  axiom absyn_cref_list_to_interactive_var_list([],symbol_table,_) => symbol_table
   
   rule  Absyn.cref_to_path(cr) => path &
         Absyn.path_string(path) => path_str &
         Interactive.add_var_to_symboltable(path_str,
                                        Values.CODE(Absyn.C_VARIABLENAME(cr)),
-                                       (Types.T_REAL([]),NONE),
+                                       tp,
                                        symbol_table) => symbol_table' &
-        absyn_cref_list_to_interactive_var_list(rest,symbol_table') => symbol_table''
+        absyn_cref_list_to_interactive_var_list(rest,symbol_table',tp) => symbol_table''
         -------------------------------------------
-        absyn_cref_list_to_interactive_var_list(cr::rest,symbol_table) 
+        absyn_cref_list_to_interactive_var_list(cr::rest,symbol_table,tp) 
           => symbol_table''
         
 
   rule  Print.print_error_buf("error in absyn_cref_list_to_interactive_var_list") 
         --------------------------------------------
-        absyn_cref_list_to_interactive_var_list(_,_) => fail
+        absyn_cref_list_to_interactive_var_list(_,_,_) => fail
 end
 
 
@@ -1887,6 +1919,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*
   axiom elab_builtin_handler "rem" => elab_builtin_rem
   axiom	elab_builtin_handler "diagonal" => elab_builtin_diagonal
   axiom	elab_builtin_handler "differentiate" => elab_builtin_differentiate
+  axiom	elab_builtin_handler "simplify" => elab_builtin_simplify
   axiom	elab_builtin_handler "noEvent" => elab_builtin_noevent
 
   axiom	elab_builtin_handler "dymTableTimeIni" => elab_builtin_dymtabletimeini
@@ -2125,19 +2158,6 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       true),
 	      Types.PROP(recordtype,false),
 	      SOME(st))
-
-  rule	elab_untyped_cref(env,cr,impl) => cr' 
-	------------------------------------------------------------------
-	elab_call_interactive(env, Absyn.CREF_IDENT("jacobian",_),
-			      [ Absyn.CREF(cr)],args,impl,
-			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("jacobian"),
-		       [Exp.CREF(cr',Exp.OTHER)], 
-		       false,
-		       true),
-	      Types.PROP((Types.T_STRING([]),NONE),false),
-	      SOME(st))
-
 
   rule	elab_variablenames(vars) => vars'
 	------------------------------------------------------------------

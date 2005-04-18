@@ -136,7 +136,6 @@ with "dae.rml"
 with "ceval.rml"
 with "values.rml"
 with "print.rml"
-with "vartransform.rml"
 
 relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list) => () =
 
@@ -346,214 +345,27 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	--------------------------------
 	build_equation(DAELow.DAELOW(vars,_,eqns,_,_,_),ass1,ass2,e)	
 
-  rule	(* non-state nonlinear *)
-	int_sub(e,1) => e' &
+  rule	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr) &  
-	is_non_state kind &
+	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr) &  
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
-	build_nonlinear_equations([varexp],[Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2)]) 
+	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => ()
-
-  rule	(* state nonlinear *)
-	int_sub(e,1) => e' &
-	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
-	vector_nth(ass2,e') => v &
-	(* v == variable no solved in this equation *)
-	int_sub(v,1) => v' &
-	DAELow.var_list(vars) => varlst &
-	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr) &
-	int_string(indx) => indxs &
-	Util.string_append_list(["xd[",indxs,"]"]) => id &
-	let cr' = Exp.CREF_IDENT(id,[]) &
-	let varexp = Exp.CREF(cr',Exp.REAL) &
-	not Exp.solve(e1,e2,varexp) => _ &
-	build_nonlinear_equations([varexp],[Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2)]) 
-	--------------------------------
-	build_equation(DAELow.DAELOW(vars,_,eqns,_,_,_),ass1,ass2,e)	
+	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
 
   rule	print "-build_equation failed\n" 
 	--------------------------------
 	build_equation(_,_,_,_) => fail
 end
 
-(** relation: build_nonlinear_equations
- ** builds task graph for solving non-linear equations
- **)
-
-relation build_nonlinear_equations: (Exp.Exp list, (* variables *)
-				     Exp.Exp list) (* residuals *)
-	=> () =
-
-  rule	list_length(vars) => size &
-	int_string(size) => size_str &
-	build_residual_code(vars,residuals) => taskname &
-	TaskGraphExt.new_task(taskname) => tid &
-	TaskGraphExt.set_tasktype(tid,3) & (* See TaskType in TaskGraph.hpp *)
-	build_nonlinear_equations2(tid,vars,residuals) &
-	Util.list_map(vars,Exp.print_exp_str) => varnames &
-	store_multiple_results(varnames,tid)
-	---------------------------------------------
-	build_nonlinear_equations(vars,residuals) => ()
-
-  rule	print "build_nonlinear_equatins failed\n" 
-	-----------------------------------------
-	build_nonlinear_equations(vars,residuals) => fail
-end
-
-(** relation: build_residual_code
- ** This relation takes a list of expressions and builds code for 
- ** calculating the residuals as a string. Used for e.g. solving non-linear equations.
- **)
-relation build_residual_code:(Exp.Exp list, (* vars *)
-			      Exp.Exp list) (* residuals *)
-	  => string =
-
-  rule	make_residual_replacements(vars) => repl &
-	build_residual_code2(es,0,repl) => res
-	-------------------
-	build_residual_code(vars,es) => res
-
-  rule	print "build_residual_code failed\n" 
-	--------------------------
-	build_residual_code(_,_) => fail
-end
-
-(** relation: make_residual_replacements
- ** This relation makes replacement rules for variables occuring in a 
- ** nonlinear equation system. They should be replaced by x[index], i.e.
- ** an unique index in the x vector.
- **)
-relation make_residual_replacements:(Exp.Exp list) => 
-	VarTransform.VariableReplacements =
-
-  rule	VarTransform.empty_replacements() => repl &
-	make_residual_replacements2(repl,expl,0) => repl'
-	---------------------
-	make_residual_replacements(expl) => repl'
-end
-
-relation make_residual_replacements2:(VarTransform.VariableReplacements,
-				      Exp.Exp list,
-				      int) => 
-	VarTransform.VariableReplacements =
-  axiom	make_residual_replacements2(repl,[],_) => repl
-
-  rule	int_string(pos) => pstr &
-	Util.string_append_list(["xloc[",pstr,"]"]) => str &
-	VarTransform.add_replacement(repl,cr,Exp.CREF_IDENT(str,[])) => repl' &
-	pos + 1 => pos' &
-	make_residual_replacements2(repl',es,pos') => repl''
-	------------------------------
-	make_residual_replacements2(repl,Exp.CREF(cr,_)::es,pos) => repl''
-end
-				      
-
-relation build_residual_code2:(Exp.Exp list, 
-			       int, 
-			       VarTransform.VariableReplacements) 
-	  => string =
-
-  axiom	build_residual_code2([],_,_) => "" 
-
-  rule	VarTransform.replace_exp(e,repl) => e' &
-	Exp.print_exp_str(e') => s1 &
-	pos + 1 => pos'  &
-	build_residual_code2(es,pos',repl) => s2 &
-	int_string(pos) => pstr &
-	Util.string_append_list(["res[",pstr,"]=",s1,";\n",s2]) => res
-	-------------------------
-	build_residual_code2(e::es,pos,repl) => res
-
-  rule	print "build_residual_code2 failed\n" 
-	-------------------------
-	build_residual_code2(_,_,_) => fail
-end
-
-(** relation store_multiple_results
- ** When a task calculates several values, this relation is used.
- ** It collects the names of the values into one string, separated by semicolons
- ** and uses that as the resultstring.
- **)
-relation store_multiple_results: (string list, (* var names*)
-				  int (* task id*)
-				  )
-	=> () =
-
-  rule	Util.string_delimit_list(varnames,";") => result_str &
-	TaskGraphExt.store_result(result_str,tid,true,result_str)
-	-----------------------------------------
-	store_multiple_results(varnames,tid) => ()
-
-  rule	print "store_multiple_results failed\n" 
-	-----------------------
-	store_multiple_results(_,_) => fail
-end
-
-
-relation build_nonlinear_equations2: (int, (*task id *)
-				      Exp.Exp list, (* vars *)
-				      Exp.Exp list) (* residuals *)
-	=> () =
-
-  axiom	build_nonlinear_equations2(tid,_,[]) => ()
-
-  rule	(* Collect all variables and construct
-	 a string for the residual, that can be directly used in codegen.*)
-	Exp.get_cref_from_exp(res) => vars1 &
-	Util.list_map(vars,Exp.get_cref_from_exp) => vars' &
-	Util.list_flatten(vars') => vars2 &
-	(* No duplicate elements *)
-	Util.list_union_p(vars1,vars2,Exp.cref_equal) => vars1' &
-	Util.list_setdifference_p(vars1',vars2,Exp.cref_equal) => vars &
-	add_edges_from_vars(vars,tid,0) 
-	--------------------------------
-	build_nonlinear_equations2(tid,vars,res::residuals) => ()
-
-  rule	print "build_nonlinear_equations2 failed\n" &
-	Exp.print_exp_str e => es & print "first residual :" &
-	print es & print "\n" 
-	----------------------------
-	build_nonlinear_equations2(_,_,e::_) => fail
-end
-
-(** relation: add_edges_from_vars
- ** Adds an edge between the tasks where the variables are defined and the tasks
- ** given as second argument.
- **)
-relation add_edges_from_vars: (Exp.ComponentRef list, 
-			       int (* task *),
-			       int (* priority*)) => () =
-
-  axiom	add_edges_from_vars([],_,_) => ()
-
-  rule	Exp.cref_str(v) => v_str &
-	TaskGraphExt.get_task(v_str) => predt &
-	TaskGraphExt.add_edge(predt,tid,v_str,prio) &
-	prio + 1 => prio' &
-	add_edges_from_vars(vs,tid,prio') 
-	------------------------------
-	add_edges_from_vars(v::vs,tid,prio)
-
-  rule	Exp.cref_str(v) => v_str &
-	not TaskGraphExt.get_task(v_str) => _ &
-	print "task " & print v_str & print " not found\n" 
-	------------------------------------------------
-	add_edges_from_vars(v::vs,_,_) => fail
-
-  rule	print "add_edges_from_vars failed\n" 
-	----------------------
-	add_edges_from_vars(_,_,_) => fail
-end
-
 (* Build task graph for a system of equations *)
 relation build_system:(DAELow.DAELow, int vector, int vector, int list) => () =
 
-  rule	TaskGraphExt.new_task("equation system") => tid &
+  rule	print "build system\n" &
+	TaskGraphExt.new_task("equation system") => tid &
 	build_system2(dae,ass1,ass2,system,tid) => predtasks &
 	Util.list_map(predtasks, TaskGraphExt.get_task) => predtaskids &
 	add_predecessors(tid,predtaskids,predtasks,0) 
@@ -728,14 +540,6 @@ relation build_expression:(Exp.Exp) => (int, string) =
 	build_call_str(funcstr,numargs) => ts &
 	Util.list_map__2(expl,build_expression) => (tasks,strs) &
 	TaskGraphExt.new_task(ts) => t &
-	print "building call " & print ts & 
-	int_string t => t_str & print " for task " & print  t_str & print "\n" &
-	Util.string_delimit_list(strs,", ") => s &
-	print " predecessor strs :" & print s & print "\n" &
-	Util.list_map(tasks,int_string) => tasks_str &
-	Util.string_delimit_list(tasks_str,", ") => t_str &
-	print " predecessor tasks :" & print t_str & print "\n" &
-
 	add_predecessors(t,tasks,strs,0) 
 	------------------------------
 	build_expression(Exp.CALL(func,expl,_,_)) => (t,"") 
@@ -799,7 +603,7 @@ relation add_predecessors: (int, int list,string list,int (* prio*)) => () =
 
 axiom add_predecessors(_,[],[],_) 
 
-  rule	TaskGraphExt.add_edge(t1,t,s,prio) &
+  rule	TaskGraphExt.add_edge(t,t1,s,prio) &
 	int_add(prio,1) => prio' &
 	add_predecessors(t,ts,strs,prio')
 	---------------------

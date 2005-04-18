@@ -228,6 +228,7 @@ relation ceval_builtin_handler : Absyn.Ident  => ((Env.Env, Exp.Exp list, bool, 
   axiom ceval_builtin_handler "rem" => ceval_builtin_rem
   axiom	ceval_builtin_handler "diagonal" => ceval_builtin_diagonal
   axiom	ceval_builtin_handler "differentiate" => ceval_builtin_differentiate
+  axiom	ceval_builtin_handler "simplify" => ceval_builtin_simplify
 
   rule	Debug.fprint("ceval", "No ceval_builtin_handler found for: ") &
 	Debug.fprintln("ceval", id)
@@ -1094,19 +1095,6 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
-  rule	Static.component_ref_to_path(cr) => path &
-	 SCode.elaborate(p) => p' &
-	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
-	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	 DAELow.lower(dae) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_)) &
-	 DAELow.calculate_jacobian(vars,eqnarr) => jac &
-	 DAELow.dump_jacobian_str(vars,jac) => str &
-	 Util.string_append_list(["[",str,"]"]) => res
-	 -------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
-
-
   rule	
          System.read_env("MOSHHOME") => moshhome &
          Static.component_ref_to_path(cr) => path & 
@@ -1359,16 +1347,19 @@ end
 	 ------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(false),st)
 
-  rule	Parser.parse(name) => p1 &
-	 Interactive.update_program(p1,p) => newp
-	 --------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf))
+         (*move loadFile to interactive*)
 
-  rule	not Parser.parse(name) => _
-	 --------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (Values.BOOL(false),st)
+(*   rule	Parser.parse(name) => p1 & *)
+(* 	 Interactive.update_program(p1,p) => newp & *)
+(*          Interactive.get_top_classnames(newp) => top_names_str *)
+(* 	 -------------------------- *)
+(* 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))  *)
+(* 	  => (Values.STRING(top_names_str),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf)) *)
+
+(*   rule	not Parser.parse(name) => _ *)
+(* 	 -------------------------- *)
+(* 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))  *)
+(* 	  => (Values.BOOL(false),st) *)
 
   rule	Static.component_ref_to_path(cr) => classpath &
 	 Interactive.get_pathed_class_in_program(classpath,p) => class &
@@ -1876,21 +1867,48 @@ end
            
          
            
-  rule  Derive.differentiate_exp(exp1,cr) => differentiated_exp &
+  rule   Derive.differentiate_exp(exp1,cr) => differentiated_exp &
          Exp.simplify(differentiated_exp) => differentiated_exp' &
          (* this is wrong... *)
-          Exp.print_exp_str(differentiated_exp') => exp_str
-         (* this should be used instead but unelab_exp must be able to unelaborate a complete exp *)
+          Exp.print_exp_str(differentiated_exp') => ret_val
+         (* this should be used instead but unelab_exp must be able to unelaborate a complete exp 
+           now it doesn't so the expression is returned as string*)
          (*Exp.unelab_exp(differentiated_exp') => absyn_exp *)
          ----------------------------------------------
          ceval_builtin_differentiate(env,[exp1,Exp.CREF(cr,_)],impl,st) 
-          => (Values.STRING(exp_str),st) 
+          => (Values.STRING(ret_val),st) 
            (*           =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) *)
 
 	 
   rule Print.print_buf "#Differentiation failed\n" 
 	 ---------------------------------------------------------
 	 ceval_builtin_differentiate (_,_,_,st) => fail
+	 
+         
+ end
+
+(* relation ceval_builtin_simplify
+ ** this relation simplify a equation: x^2 + x => 2x + 1
+ *)
+
+ relation ceval_builtin_simplify : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+           
+         
+           
+  rule  Exp.simplify(exp1) => exp1' &
+         Exp.print_exp_str(exp1') => ret_val
+         (* this should be used instead but unelab_exp must be able to unelaborate a complete exp *)
+         (*Exp.unelab_exp(simplifyd_exp') => absyn_exp *)
+         ----------------------------------------------
+         ceval_builtin_simplify(env,[exp1],impl,st) 
+          => (Values.STRING(ret_val),st) 
+           (*           =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) *)
+
+	 
+  rule Print.print_buf "#simplification failed\n" 
+	 ---------------------------------------------------------
+	 ceval_builtin_simplify (_,_,_,st) => fail
 	 
          
  end
