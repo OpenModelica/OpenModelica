@@ -164,6 +164,7 @@
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp
 		      | SOLVED_EQUATION of Exp.ComponentRef * Exp.Exp
+		      | RESIDUAL_EQUATION of Exp.Exp (* not present from front end *)
 		      | ALGORITHM of int (* index in algorithms, 0..n-1*) *
 				     Exp.Exp list *(*inputs CREF or der(CREF)*)
 				     Exp.Exp list(*outputs CREF or der(CREF)*)
@@ -242,6 +243,8 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
   relation dump_eqns: Equation list => () 
+
+  relation dump_jacobian_str: ((int*int*Equation) list ) => string   
         
   relation lower: (DAE.DAElist) => DAELow
 
@@ -280,17 +283,31 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 				       int, (* ny *)
 				       int) (* np *)
 
+  relation calculate_jacobian: (Variables, 
+				EquationArray, 
+				IncidenceMatrix,
+				IncidenceMatrixT) 
+	  => ((int * int * Equation) list)
+
   relation states: (DAE.DAElist,BinTree) => BinTree
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
+  relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
   relation var_list: (Variables) => Var list 
+
+  relation var_cref: (Var) => Exp.ComponentRef 
+
+  relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
+	  => int list
 
   relation equation_add: (EquationArray,Equation) => EquationArray 
   relation equation_nth:(EquationArray,int) => Equation 
   relation equation_setnth: (EquationArray,int,Equation) => EquationArray
   relation equation_list:(EquationArray) => Equation list 
   relation list_equation:(Equation list ) => EquationArray
+  relation equation_to_residual_form:(Equation) => Equation 
+  relation residual_exp: (Equation) => Exp.Exp
 
 
   relation vararray_nth:(VariableArray, int) => Var 
@@ -729,6 +746,15 @@ relation var_list: (Variables) => Var list =
 	var_list(VARIABLES(_,vararr,_,_)) => varlst
 end
 
+(** relation: var_cref
+ ** extracts the ComponentRef of a variable.
+ **)
+relation var_cref: (Var) => Exp.ComponentRef =
+
+  axiom	var_cref(VAR(cr,_,_,_,_,_,_,_,_,_,_,_)) => cr
+
+end
+
 (** relation vararray_list
  ** Transforms a VariableArray to a Var list
  **)
@@ -763,6 +789,34 @@ relation vararray_list2:(Var option array,int,int) => Var list =
 	vararray_list2(arr,pos',lastpos) => res
 	---------------------------------------
 	vararray_list2(arr,pos,lastpos) => v::res
+end
+
+(** relation: dump_jacobian_str
+ ** Dumps the sparse jacobian.
+ ** Uses the variables to determine size of Jacobian matrix.
+ **)
+relation dump_jacobian_str: ((int*int*Equation) list ) => string =
+
+  rule	dump_jacobian_str2(eqns) => res &
+	Util.string_delimit_list(res,", ") => res'
+	------------------
+	dump_jacobian_str(eqns) => res'
+end
+
+(** relation: dump_jacobian_str2
+ ** Helper relation to dump_jacobian_str
+**)
+relation dump_jacobian_str2:((int*int*Equation) list) => string list =
+
+  axiom	dump_jacobian_str2([]) => []
+
+  rule	Exp.print_exp_str(e) => estr &
+	int_string(row) => rowstr &
+	int_string(col) => colstr &
+	Util.string_append_list(["{",rowstr,",",colstr,"}:",estr]) => str &
+	dump_jacobian_str2(eqns) => strs
+	--------------------------------
+	dump_jacobian_str2((row,col,RESIDUAL_EQUATION(e))::eqns) => str::strs
 end
 
 (** relation: dump_eqns
@@ -804,6 +858,11 @@ relation equation_str: Equation => string =
 	Util.string_append_list([s1," := ",s2]) => res
 	--------------------
 	equation_str(SOLVED_EQUATION(cr,e2)) => res
+
+  rule	Exp.print_exp_str e => s1 &
+	Util.string_append_list([s1, "= 0"]) => res
+	----------------------------------------------------------
+	equation_str(RESIDUAL_EQUATION(e)) => res
 
   rule	int_string(i) => is &
 	Util.string_append_list(["Algorithm no: ",is,"\n"]) => res
@@ -2006,7 +2065,7 @@ relation vararray_setnth:(VariableArray,
 end
 
 (** relation vararray_nth
- ** Retrieve the n:th Var from VariableArray
+ ** Retrieve the n:th Var from VariableArray, index from 0..n-1.
 **)
 relation vararray_nth:(VariableArray,
 		       int (* n *)) 
@@ -2083,6 +2142,17 @@ relation hash_chars:(char list) => int =
 	int_add(c1,c2) => res 
 	----------------
 	hash_chars(c::cs) => res
+end
+
+(** relation: get_var_at
+ ** Return variable at a given position, enumerated from 1..n
+ **)
+relation get_var_at:(Variables,int) => (Var) =
+
+  rule	n - 1 => pos &
+	vararray_nth(vararr,pos) => v
+	---------------------
+	get_var_at(VARIABLES(_,vararr,_,_),n) => v
 end
 
 (** relation: get_var
@@ -3191,6 +3261,15 @@ relation equation_size:(EquationArray) => int =
   axiom	equation_size(EQUATION_ARRAY(n,_,_)) => n
 end
 
+
+(** relation: variable_size
+ ** Returns the number of variables
+ **)
+relation variable_size:(Variables) => int =
+
+  axiom	variable_size(VARIABLES(_,_,_,n)) => n 
+end
+
 (** relation equation_nth
  ** Return the n:th equation from the expandable equation array 
 **)
@@ -3332,7 +3411,7 @@ end
 
 (** relation: vars_in_eqn
  ** This relation returns all variable indices as a list for a given
- ** equation, given as an equation index.
+ ** equation, given as an equation index. (1...n)
  ** Negative indexes are removed.
 **)
 relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
@@ -3985,6 +4064,146 @@ relation add_vars: (Var list, Variables) => Variables =
   rule	Util.list_fold(varlst,add_var,vars) => vars'
 	-------------------------
 	add_vars(varlst,vars) => vars'
+end
+
+(** relation: calculate_jacobian
+ ** This relation takes an array of equations and the variables of the equation
+ ** and calculates the jacobian of the equations.
+ **)
+relation calculate_jacobian: (Variables, 
+			      EquationArray, 
+			      IncidenceMatrix,
+			      IncidenceMatrixT) 
+	  => ((int * int * Equation) list) =
+
+  rule	equation_list(eqns) => eqn_lst &
+	Util.list_map(eqn_lst,equation_to_residual_form) => eqn_lst' &
+	calculate_jacobian_rows(eqn_lst',vars,m,mt) => jac &
+	list_reverse(jac) => jac' 
+	-----------------------------
+	calculate_jacobian(vars, eqns,m,mt) => jac'
+
+  rule	print "calculate_jacobian failed\n" 
+	--------------------
+	calculate_jacobian(_,_,_,_) => fail
+end
+
+(** relation: calculate_jacobian_rows
+ ** This relation takes a list of Equations and a set of variables and calculates
+ ** the jacobian expression for each variable over each equations, returned in 
+ ** a sparse matrix representation. 
+ ** For example, the equation on index e1: 3*a*x+5*y*z+ z*z  given the 
+ ** variables {x,y,z} on index x1,y1,z1 gives
+ ** {(e1,x1,3*a), (e1,y1,5*z), (e1,z1,5*y+2*z)}
+ **)
+relation calculate_jacobian_rows:(Equation list, Variables, 
+				 IncidenceMatrix, IncidenceMatrixT) 
+	  => ((int * int * Equation) list) =
+
+  rule	calculate_jacobian_rows2(eqns,vars,m,mt,1) => res
+	--------------------------
+	calculate_jacobian_rows(eqns,vars,m,mt) => res 
+end
+
+(** relation: calculate_jacobian_rows2
+ ** Helper relation to calculate_jacobian_rows
+ **)
+relation calculate_jacobian_rows2:(Equation list, Variables, 
+				 IncidenceMatrix, IncidenceMatrixT, int)
+	  => ((int * int * Equation) list) =
+  axiom	calculate_jacobian_rows2([],_,_,_,_) => []
+
+  rule	eqn_indx + 1 => eqn_indx' &
+	calculate_jacobian_rows2(eqns,vars,m,mt,eqn_indx') => l1 &
+	calculate_jacobian_row(eqn,vars,m,mt,eqn_indx) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	calculate_jacobian_rows2(eqn::eqns,vars,m,mt,eqn_indx) => res
+end
+
+(** relation calculate_jacobian_row
+ ** Calculates the jacobian for one equation. See calculate_jacobian_rows.
+ **)
+relation calculate_jacobian_row: (Equation, 
+				  Variables,
+				  IncidenceMatrix,
+				  IncidenceMatrixT,
+				  int (* eqn index *)) 
+	  => ((int * int * Equation) list) =
+
+  rule	vars_in_eqn(m,eqn_indx) => var_indxs &
+	(* Remove duplicates and get in correct order: acsending index *)
+	Util.list_union_p(var_indxs,[],int_eq) => var_indxs' &
+	list_reverse(var_indxs') => var_indxs'' &
+	calculate_jacobian_row2(e,vars,eqn_indx,var_indxs'') => eqns 
+	----------------------------------------------
+	calculate_jacobian_row(RESIDUAL_EQUATION(e),vars,m,mt,eqn_indx) => eqns
+
+  rule	print "calculate_jacobian_row failed\n" 
+	--------------------------------------
+	calculate_jacobian_row(_,_,_,_,_) => fail
+end
+
+(** relation: make_residual_eqn
+ ** Transforms an expression into a residual equation
+ **)
+relation make_residual_eqn: Exp.Exp => Equation =
+
+axiom make_residual_eqn(e) => RESIDUAL_EQUATION(e)
+end
+
+(** relation: calculate_jacobian_row2
+ ** Helper relation to calculate_jacobian_row
+ ** Differentiates expression for each variable cref.
+ **)
+relation calculate_jacobian_row2: (Exp.Exp, 
+				   Variables,
+				   int, (* equation index *)
+				   int list) (* var indexes *)
+	  => ((int* int* Equation) list) =
+
+  axiom	calculate_jacobian_row2(e,_,_,[]) => []
+
+  rule	get_var_at(vars,vindx) => v &
+	var_cref(v) => cr &
+	Derive.differentiate_exp(e,cr) => e' &
+	Exp.simplify(e') => e'' &
+	calculate_jacobian_row2(e,vars,eqn_indx,vindxs) => es
+	-----------------------------------
+	calculate_jacobian_row2(e,vars,eqn_indx,vindx::vindxs) 
+	  => ((eqn_indx,vindx,RESIDUAL_EQUATION(e''))::es)
+end
+
+(** relation: residual_exp
+** This relation extracts the residual expression from a residual equation
+ **)
+relation residual_exp: (Equation) => Exp.Exp =
+
+  axiom	residual_exp(RESIDUAL_EQUATION(e)) => e
+
+end
+
+
+(** relation: equation_to_residual_form
+ ** This relation transforms an equation to its residual form.
+ ** For instance, a=b is transformed to a-b=0 
+ **)
+relation equation_to_residual_form:(Equation) => Equation =
+
+  rule	Exp.simplify(Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2))=> e
+	-----------------------------------------
+	equation_to_residual_form(EQUATION(e1,e2)) => RESIDUAL_EQUATION(e)
+
+  rule	Exp.simplify(Exp.BINARY(Exp.CREF(cr,Exp.REAL),Exp.SUB(Exp.REAL),exp)) => e
+	--------------------------------------------------------------------------
+	equation_to_residual_form(SOLVED_EQUATION(cr,exp)) => RESIDUAL_EQUATION(e)
+
+  axiom	equation_to_residual_form(e as RESIDUAL_EQUATION(_)) => e
+  axiom	equation_to_residual_form(e as ALGORITHM(_,_,_)) => e
+
+  rule	print "equation_to_residual_form failed\n" 
+	--------------------------
+	equation_to_residual_form(_) => fail
 end
 
 (** relation: calculate_sizes

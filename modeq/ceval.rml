@@ -1,13 +1,13 @@
 (*
  Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
  Sweden, in the following denoted PELAB/LIU.
-
+ 
  
  This file is part of OpenModelica, in the following denoted OSM.
-
-
+ 
+ 
  The OSM License, Version 1.1, March 4, 2005.
-
+ 
 
  1 Preface
 
@@ -102,6 +102,7 @@ Swedish courts.
 
 See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
 *)
+
 (**
  ** file:	 ceval.rml
  ** module:      Ceval
@@ -127,28 +128,28 @@ See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
  **     InteractiveSymbolTable: Modified symbol table
  **     Subscript list : Evaluates subscripts and generates constant expressions. 
  **)
-
-
+											   
  module Ceval :
-                                                                                     with "env.rml"
-                                                                                           with "exp.rml"
-                                                                                           with "interactive.rml"
-                                                                                           with "values.rml"
-
+  with "env.rml"
+  with "exp.rml"
+  with "interactive.rml"
+  with "values.rml"
+											   
                                                                                            (** Constant evaluation of expressions *)
   relation ceval : (Env.Env, Exp.Exp, bool (*implicit*) ,
 		    Interactive.InteractiveSymbolTable option, int option (* dimensions *) )
 	  => (Values.Value, Interactive.InteractiveSymbolTable option)
-
+	    
   relation ceval_list : (Env.Env, Exp.Exp list, bool (*impl*),
 			 Interactive.InteractiveSymbolTable option) 
 	  => Values.Value list
-
+	    
   relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list, bool (*impl*) )
 	  => Exp.Subscript list
-
+	    
   end
 
+with "abb_come.rml"
 with "daelow.rml"
 with "simcodegen.rml"
 with "staticexp.rml"
@@ -1095,8 +1096,20 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
-  rule	
-         System.read_env("MOSHHOME") => moshhome &
+  rule	Static.component_ref_to_path(cr) => path &
+	 SCode.elaborate(p) => p' &
+	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	 DAELow.lower(dae) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_)) &
+	 DAELow.incidence_matrix(daelow) => m &
+	 DAELow.transpose_matrix(m) => mt &
+	 DAELow.calculate_jacobian(vars,eqnarr,m,mt) => jac &
+	 DAELow.dump_jacobian_str(jac) => res 
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
+
+  rule	System.read_env("MOSHHOME") => moshhome &
          Static.component_ref_to_path(cr) => path & 
 	 Absyn.path_string path => pathstr &
 	 Print.print_error_buf "#Failed to instantiate " &
