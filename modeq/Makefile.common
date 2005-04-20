@@ -20,7 +20,7 @@ AST	= $(srcdir)/absyn_builder/absyn_builder.a
 RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/../c_runtime/libc_runtime.a \
 	$(srcdir)/runtime/rtopts.o $(srcdir)/runtime/socketimpl.o \
 	$(srcdir)/runtime/printimpl.o $(srcdir)/runtime/ptolemyio.o \
-	$(srcdir)/runtime/daeext.o $(srcdir)/runtime/tornadoext.o $(CORBAOBJ) \
+	$(srcdir)/runtime/daeext.o $(CORBAOBJ) \
 	$(srcdir)/modpar/libmodpar.a
 
 SRCRML= absyn.rml \
@@ -53,14 +53,12 @@ SRCRML= absyn.rml \
 	simcodegen.rml \
 	types.rml \
 	taskgraph.rml \
-	tornado.rml \
-	tornadocodegen.rml \
 	util.rml \
 	values.rml \
 	vartransform.rml
 
 ALLRML = $(SRCRML) daeext.rml print.rml rtopts.rml system.rml parse.rml \
-		taskgraphext.rml corba.rml socket.rml tornadoext.rml
+		taskgraphext.rml corba.rml socket.rml 
 
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)

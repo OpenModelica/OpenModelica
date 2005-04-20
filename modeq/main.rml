@@ -139,7 +139,6 @@ with "system.rml"
 with "util.rml"
 with "taskgraph.rml"
 with "taskgraphext.rml" 
-with "tornado.rml"
 with "simcodegen.rml"
 
 (** relation: server_loop
@@ -356,8 +355,6 @@ end
 (** relation: transform_if_flat
  ** Checks is a modelica file is a flat modelica file
  ** and if so, translates all variables on the form a.b.c to a_b_c
- ** This is needed to prevent tornado code generation from beliving
- ** that those variables belong to subcomponents.
  **)
 relation transform_if_flat: (string, DAE.DAElist) => DAE.DAElist =
 
@@ -410,18 +407,6 @@ end
  **)
 
 relation translate_file : string list => () =
-
-  rule	(* for tornado code generation, MathCode project*)
-	is_modelica_file(f) &
-	run_tornado_cg_q() => true 
-	& Parser.parse f => p
-	& SCode.elaborate(p) => p'
-	& Inst.instantiate(p') => d
-	(*& transform_if_flat(f,d) => d *)
-	& Absyn.last_classname(p) => cname
-	& Tornado.generate_code(p,d,cname) 
-	----------------------------
-	translate_file [f] 
 
   rule	(*Print.print_buf "Parsing\n" &	 *)
 	is_modelica_file(f) 
@@ -521,16 +506,6 @@ relation translate_file : string list => () =
 *)
 
 end
-
-
-(* Determine if tornado code generation should be used*)
-relation run_tornado_cg_q:() => bool =
-
-  rule	RTOpts.tornado_cg => res
-	------------------------
-	run_tornado_cg_q() => res
-end
-
 
 (* Determine if backend, i.e. BLT etc. should be run.
 It should be run if either "blt" flag is set or if 

@@ -1021,15 +1021,9 @@ end
   axiom	print_exp2_str(Exp.BCONST(true),_) => "true"
 
 
-  rule  RTOpts.tornado_cg => true &
-         cref_modelica_str(c) => res 
-         --------------------------------
-         print_exp2_str(Exp.CREF(c,_),_) => res
- 
-  rule  
-	     Exp.print_component_ref_str c => res
-         --------------------------------
-         print_exp2_str(Exp.CREF(c,_),_) => res
+  rule	Exp.print_component_ref_str c => res
+        --------------------------------
+        print_exp2_str(Exp.CREF(c,_),_) => res
 
   rule  Exp.binop_symbol(op) => sym &
  	 Exp.binop_priority(op) => pri2' &

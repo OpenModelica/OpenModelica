@@ -19,7 +19,6 @@ static int debug_none;
 int nproc;
 double latency=0.0;
 double bandwidth=0.0;
-int tornado_cg;
 int simulation_cg;
 int silent;
 
@@ -33,7 +32,6 @@ void RTOpts_5finit(void)
   debug_all = 0;
   debug_none = 1;
   nproc = 0;
-  tornado_cg = 0;
   simulation_cg = 0;
   silent = 0;
 }
@@ -150,10 +148,6 @@ RML_BEGIN_LABEL(RTOpts__args)
 	split_arrays = 0;
 	type_info = 0;
 	break;
-      case 'c':
-	tornado_cg = 1;
-	/*modelica_output = 1;*/
-	break;
       case 's':
 	simulation_cg = 1;
 	break;
@@ -242,15 +236,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__modelica_5foutput)
 {
-/*  this check is needed for not generating variable of the  */
-/*  form a_b_c. The tornado implementation needs the variable */
-/*  of the form a.b.c */
-  if(tornado_cg)
-    {
-      rmlA0 = RML_PRIM_MKBOOL(0);
-    }else{
-      rmlA0 = RML_PRIM_MKBOOL(modelica_output);
-    }
+  rmlA0 = RML_PRIM_MKBOOL(modelica_output);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -321,13 +307,6 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__bandwidth)
 {
   rmlA0 = mk_rcon(bandwidth);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(RTOpts__tornado_5fcg)
-{
-  rmlA0 = RML_PRIM_MKBOOL(tornado_cg);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

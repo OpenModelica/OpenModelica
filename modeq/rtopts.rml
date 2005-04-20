@@ -129,7 +129,6 @@ module RTOpts:
   relation no_proc: () => int 	  
   relation latency:() => real
   relation bandwidth: () => real	  
-  relation tornado_cg: () => bool
   relation simulation_cg: () => bool
   relation silent: () => bool  	  
 end

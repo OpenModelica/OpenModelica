@@ -10,7 +10,19 @@ FSRCS = daux.f \
           ddassl.f \
           dlamch.f \
           dlinpk.f \
-          lsame.f
+          lsame.f \
+          dogleg.f \
+          dpmpar.f \
+	  enorm.f \
+	  fdjac1.f \
+ 	  hybrd1.f \
+	  hybrd.f \
+	  hybrj.f \
+	  qform.f \
+	  qrfac.f \
+ 	  r1mpyq.f \
+	  r1updt.f 
+	  
 FOBJS = $(patsubst %.f,%.o,$(FSRCS))
 
 OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \

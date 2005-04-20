@@ -149,7 +149,6 @@ See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
 	    
   end
 
-with "abb_come.rml"
 with "daelow.rml"
 with "simcodegen.rml"
 with "staticexp.rml"
