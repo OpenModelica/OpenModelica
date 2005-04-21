@@ -144,11 +144,17 @@ module Types :
 			      * Absyn.Direction
 
   datatype Binding = UNBOUND
-		   | EQBOUND of Exp.Exp * bool (* LS: bool for constant? *)
+		   | EQBOUND of Exp.Exp * 
+				bool (* constant *)
 		   | VALBOUND of Values.Value
 
   (** - Types *)
-  type Type = (TType * Absyn.Path option)
+  type Type = (TType * Absyn.Path option (* classname *))
+
+	(**
+	 **  A Type is a tuple of a TType (containing the actual type) and a optional classname
+	 **  for the class where the type originates from.
+	 **)
 
   datatype TType = T_INTEGER of Var list
 		| T_REAL of Var list
@@ -157,12 +163,13 @@ module Types :
 		| T_ENUM 
 		| T_ENUMERATION of string list * Var list
 		| T_ARRAY of ArrayDim * Type
-		| T_COMPLEX of ClassInf.State
+		| T_COMPLEX of ClassInf.State		  (* The type of. a class *)
 			     * Var list
 		| T_FUNCTION of FuncArg list 
-			     * Type (* Only single-result *)
-		| T_TUPLE of Type list (*PR. Used by functions who return multiple values. *)
-		| T_NOTYPE
+			     * Type			  (* Only single-result *)
+		| T_TUPLE of Type list			  (* For functions returning 
+							   multiple values. *)
+		| T_NOTYPE				  (* Used when type is not yet determined *)
 
 
   datatype ArrayDim = DIM of int option
@@ -213,8 +220,8 @@ returns multiple arguments. *)
 		   UNTYPED of Absyn.Exp
   datatype SubMod = NAMEMOD of Ident * Mod
 		  | IDXMOD of int list * Mod
-  and Mod = MOD of bool * (SubMod list) * EqMod option
-  	  | REDECL of bool * (SCode.Element*Mod) list
+  and Mod = MOD of bool (* final *) * (SubMod list) * EqMod option
+  	  | REDECL of bool (* final *) * (SCode.Element*Mod) list
 	  | NOMOD
 
 
@@ -350,12 +357,16 @@ relation get_dimension_sizes: Type => int list =
 
 end
 
-(* FIXME: How about other value types, e.g. array, enum etc *)
-(* This relation takes a list of values and convert into a Modification.
- Used for record construction evaluation. PersonRecord("name",45) has a value list 
- { "name",45 } that needs to be converted into a modifier for the record class
- PersonRecord ("name,45)
-*)
+(** relation: values_to_mods
+ ** author: PA
+ **
+ ** This relation takes a list of values and convert into a Modification.
+ **  Used for record construction evaluation. PersonRecord("name",45) has a value list 
+ ** { "name",45 } that needs to be converted into a modifier for the record class
+ **  PersonRecord ("name,45)
+ **  FIXME: How about other value types, e.g. array, enum etc 
+**)
+
 relation values_to_mods: (Values.Value list,Ident list) => Mod =
 
   axiom	values_to_mods([],_) => MOD(false,[],NONE)
@@ -398,9 +409,11 @@ relation values_to_mods: (Values.Value list,Ident list) => Mod =
 end
 
 (** relation: values_to_record_constructor_call
+ ** 
  ** This relation transforms a list of values and an Absyn.Path to a function call
  ** to a record constructor.
  **)
+
 relation values_to_record_constructor_call:(Absyn.Path, Values.Value list) 
 	  => Exp.Exp =
 
@@ -411,10 +424,12 @@ relation values_to_record_constructor_call:(Absyn.Path, Values.Value list)
 end
 
 (** relation values_to_vars
+ ** 
  ** Translates a list of Values.Value to a Var list, using a list
  ** of identifiers as component names.
  ** Used e.g. when retrieving the type of a record value.
  **)
+
 relation values_to_vars:(Values.Value list,Exp.Ident list) => Var list =
 	
   axiom	values_to_vars([],[]) => []
@@ -431,6 +446,8 @@ relation values_to_vars:(Values.Value list,Exp.Ident list) => Var list =
 end
 	
 (** relation: type_of_value
+ ** author: PA
+ **
  ** Returns the type of a Values.Value.
  ** Some information is lost in the translation, like attributes
  ** of the builtin type.
@@ -672,7 +689,7 @@ end
  **)
 
 relation lookup_in_builtin : (Type,Ident) => Var =
-(* PA: covers Modelica 2.0 spec.*)
+
 	(* Real *)	
   rule	lookup_component2(cs, id) => v
 	-------------------------------

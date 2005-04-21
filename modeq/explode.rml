@@ -143,8 +143,8 @@ module SCode :
 		   | R_PREDEFINED_ENUM
 							  
   (** - Modifications *)
-  datatype Mod = MOD of bool * (SubMod list) * (Absyn.Exp option)
-  	       | REDECL of bool * Element list
+  datatype Mod = MOD of bool (* final *) * (SubMod list) * (Absyn.Exp option)
+  	       | REDECL of bool (* final *) * Element list
 	       | NOMOD
   datatype SubMod = NAMEMOD of Ident * Mod         (* A named component *)
 		  | IDXMOD of Subscript list * Mod (* An array element *)
@@ -171,12 +171,12 @@ module SCode :
 			     * Algorithm list
 			     * Algorithm list   (* InitialAlgorithm *)
                              * Absyn.ExternalDecl option  (* Used by external functions*)
-		    | DERIVED of Path
+		    | DERIVED of Path		(* short class definition *)
 			       * Absyn.ArrayDim option
 			       * Mod
 		    | ENUMERATION of Ident list
 
-		    | OVERLOAD of Absyn.Path list 						 
+		    | OVERLOAD of Absyn.Path list 		 
   (** The major difference between these types and their `Absyn' *)
   (** counterparts is that the `PARTS' constructor contains separate *)
   (** lists for elements, equations and algorithms. *)
@@ -202,7 +202,7 @@ module SCode :
 
   (** - Algorithms *)
   datatype Algorithm = ALGORITHM of Absyn.Algorithm list
-				    * Absyn.Path option (*baseclassname if in bclass*)
+				    * Absyn.Path option (* baseclass name if in baseclass*)
   (** The `Absyn' module uses the terminology from the grammar, where *)
   (** `algorithm' means an algorithmic statement.  But here, *)
   (** `Algorithm' means a whole algorithm section. *)
@@ -213,7 +213,7 @@ module SCode :
 			       * bool		(* final *)
 			       * bool		(* replaceable *)
 			       * Class
-			       * Path option    (*baseclassname if in baseclass*)
+			       * Path option    (* baseclass name if in baseclass*)
 		   | IMPORT    of Absyn.Import
 		   | COMPONENT of Ident		(* component name *)
 				* bool		(* final *)
@@ -222,18 +222,22 @@ module SCode :
 				* Attributes
 				* Path		(* type name *)
 				* Mod
-			        * Path option    (*baseclassname if in baseclass*)
-  (** There are three types of elements in a declaration, represented *)
+			        * Path option   (* baseclass name if in baseclass*)
+
+  (** There are four types of elements in a declaration, represented *)
   (** by the constructors `EXTENDS' (for `extends' clauses), *)
-  (** `CLASSDEF' (for local class definitions) and `COMPONENT' (for *)
-  (** local variables). *)
+  (** `CLASSDEF' (for local class definitions)  `COMPONENT' (for *)
+  (** local variables). and `IMPORT' (for `import' clauses) *)
+  (** The baseclass name is initially NONE in the translation, and
+   ** if an element is inherited from a base class it is filled in during the
+   ** instantiation process. *)
 
   (** - Attributes *)
   datatype Attributes = ATTR of Absyn.ArrayDim
-			      * bool	(* flow *)
-			      * Accessibility
+			      * bool		(* flow *)
+			      * Accessibility   (* RW, RO, WO *)
 	  		      * Variability	(* parameter *)
-			      * Absyn.Direction
+			      * Absyn.Direction (* input, output or bidirectional *)
 
   datatype Variability = VAR | DISCRETE | PARAM | STRUCTPARAM | CONST 
 
@@ -244,7 +248,7 @@ module SCode :
 
   relation elaborate : Absyn.Program => Program
   relation elab_class: Absyn.Class => Class	
-  relation build_mod : (Absyn.Modification option, bool) => Mod
+  relation build_mod : (Absyn.Modification option, bool (* final *)) => Mod
   relation get_element_named: (Ident, Class) => Element
   relation print_mod : Mod => ()
   relation print_element : Element => ()
@@ -684,7 +688,7 @@ end
  ** argument flags whether the modification is `final'.
  **)
 
-relation build_mod : (Absyn.Modification option, bool) => Mod =
+relation build_mod : (Absyn.Modification option, bool (* final *)) => Mod =
 
   axiom build_mod(NONE, _) => NOMOD
 

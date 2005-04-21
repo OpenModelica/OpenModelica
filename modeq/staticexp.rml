@@ -4685,7 +4685,7 @@ relation get_koening_operator_types_in_scope: (string, Env.Env)
 	(* TODO: Fix so lookup_functions_in_env also does instantiation to get type *)
 	Lookup.lookup_functions_in_env([f'],Absyn.IDENT(funcname)) => tplst &
 	list_length(tplst) => tplen &
-	Inst.package_prefix(f'::fs,Absyn.IDENT(funcname)) => fullfuncname &
+	Inst.make_fully_qualified(f'::fs,Absyn.IDENT(funcname)) => fullfuncname &
 	build_operator_types(tplst,fullfuncname) => res
 	--------------------------------------------------
 	get_koening_operator_types_in_scope(funcname,f::fs) => res

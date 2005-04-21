@@ -861,7 +861,7 @@ relation lookup_type_in_frame: (Env.BinTree, (* Classes and vars*)
 	(* An improvement (perhaps needing lot of code) is to add the function to the environment, which is *)
 	(* returned from this relation.*)
 	Env.tree_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(n,_,_,SCode.R_RECORD,_),_) &
-	Inst.package_prefix(env,Absyn.IDENT(n)) => fpath &
+	Inst.make_fully_qualified(env,Absyn.IDENT(n)) => fpath &
 	build_record_constructor_varlst (cdef,env) => varlst &
 	Types.make_function_type(fpath,varlst) => ftype 
 	----------------------------------------
@@ -911,7 +911,7 @@ relation lookup_functions_in_frame: (Env.BinTree, (*Classes and vars*)
 
   rule	Env.tree_get(ht, id, Env.myhash) => Env.CLASS(cdef as SCode.CLASS(n,_,_,SCode.R_RECORD,_),cenv) &
 	build_record_constructor_varlst (cdef,env) => varlst &
-	Inst.package_prefix(cenv,Absyn.IDENT(n)) => fpath &
+	Inst.make_fully_qualified(cenv,Absyn.IDENT(n)) => fpath &
 	Types.make_function_type(fpath,varlst) => ftype
 	----------------------------------------
 	lookup_functions_in_frame(ht,httypes,env,id) => [ftype]
