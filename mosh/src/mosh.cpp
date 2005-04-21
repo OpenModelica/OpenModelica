@@ -52,7 +52,7 @@ using namespace std;
 /* Local functios */
 void open_socket(char* hostname, int port);
 
-char * check_moshhome(void);
+char * check_omhome(void);
 
 void init_sockaddr (struct sockaddr_in *name,
                              const char *hostname,
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
   bool noserv=false;
   
 
-  char * moshhome=check_moshhome();
+  char * omhome=check_omhome();
 
   corba_comm = flagSet("corba",argc,argv);
   const string *scriptname = getFlagValue("f",argc,argv);
@@ -103,15 +103,15 @@ int main(int argc, char* argv[])
     cout << "Using corba communication" << endl;
   }  
   if(!scriptname) {
-    cout << "Open Source Modelica 0.1" << endl;
+    cout << "Open Source Modelica 1.2.2" << endl;
     cout << "Copyright 2002, PELAB, Linkoping University" << endl;
   }
   if (corba_comm) {
     if (!noserv) {
       // Starting background server using corba
       char systemstr[255];
-      sprintf(systemstr,"%s/../modeq/modeq +d=interactiveCorba > %s/error.log 2>&1 &",
-	      moshhome,moshhome);
+      sprintf(systemstr,"modeq +d=interactiveCorba > %s/error.log 2>&1 &",
+	      omhome);
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
@@ -121,8 +121,8 @@ int main(int argc, char* argv[])
     if (!noserv) {
      // Starting background server using corba
       char systemstr[255];
-      sprintf(systemstr,"%s/../modeq/modeq +d=interactive > %s/error.log 2>&1 &",
-	      moshhome,moshhome);
+      sprintf(systemstr,"modeq +d=interactive > %s/error.log 2>&1 &",
+	      omhome);
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
@@ -292,13 +292,13 @@ void doSocketCommunication(const string * scriptname)
 }
 
 
-char * check_moshhome(void)
+char * check_omhome(void)
 {
   char *str;
   
-  str=getenv("MOSHHOME");
+  str=getenv("OPENMODELICAHOME");
   if (str == NULL) {
-    printf("Error, MOSHHOME not set. Set MOSHHOME to the directory where mosh resides (top dir)\n");
+    printf("Error, OPENMODELICAHOME not set. Set OPENMODELICAHOME to the root directory of the OpenModlica installation\n");
     exit(1);
   }
   return str;
