@@ -66,15 +66,15 @@ void System_5finit(void)
 {
 	char* path;
 	char* newPath;
-	char* moshhome;
+	char* omhome;
 	char* mingwpath;
 	set_cc("gcc");
-	set_cflags("-I%MOSHHOME%\\..\\c_runtime -L%MOSHHOME%\\..\\c_runtime -lc_runtime %MODELICAUSERCFLAGS%");
+	set_cflags("-I%OPENMODELICAHOME%\\c_runtime -L%OPENMODELICAHOME%\\c_runtime -lc_runtime %MODELICAUSERCFLAGS%");
 	path = getenv("PATH");
-	moshhome = getenv("MOSHHOME");
-	if (moshhome) {
-		mingwpath = malloc(strlen(moshhome)+20);
-		sprintf(mingwpath,"%s\\..\\mingw\\bin", moshhome); 
+	omhome = getenv("OPENMODELICAHOME");
+	if (omhome) {
+		mingwpath = malloc(strlen(omhome)+20);
+		sprintf(mingwpath,"%s\\mingw\\bin", omhome); 
 		if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
 			newPath = malloc(strlen(path)+strlen(mingwpath)+10);
 			sprintf(newPath,"PATH=%s;%s",mingwpath,path);

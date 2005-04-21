@@ -113,7 +113,7 @@ void set_cflags(char *str)
 void System_5finit(void)
 {
   set_cc("gcc");
-  set_cflags("-I$MOSHHOME/../c_runtime -L$MOSHHOME/../c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
+  set_cflags("-I$OPENMODELICAHOME/c_runtime -L$OPENMODELICAHOME/c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
 }
 
 RML_BEGIN_LABEL(System__strtok)

@@ -164,7 +164,6 @@ with "dump.rml"
 with "dae.rml"
 with "debug.rml"
 with "util.rml"
-with "modsim.rml"
 with "classinf.rml"
 with "rtopts.rml"
 with "parse.rml"
@@ -1058,43 +1057,6 @@ end
 	 -------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
-
-  rule	Static.component_ref_to_path(cr) => path &
-	 SCode.elaborate(p) => p' &
-	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
-	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	 DAE.dump_str (dae) => str &
-
-
-         (* get rid of f in fclass so that old modsimpack works. 
-          Get rid of this when modsimpack understands fclass. *)
-	 string_list(str) => charlist &
-	 list_delete(charlist, 0) => charlist' &
-	 list_string(charlist') => str' &
-
-	 Debug.fcall ("daedump", DAE.dump, dae) &
-	 Debug.fcall ("daedump2", DAE.dump2, dae) &
-	 Debug.fcall ("daedumpdebug", DAE.dump_debug, dae) &
-	 Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, dae) &
-
-	 Print.get_string() => s2 &
-	 print s2 &
-	 Print.print_error_buf s2 &
-	 Exp.cref_modelica_str(cr) => modelname &
-	 string_append(modelname,".mof") => filename &
-	 System.pwd => pwd &
-	 System.path_delimiter => pd &
-	 Util.string_append_list([pwd,pd,filename]) => filename' &
-	 System.write_file(filename',str') &
-	 print "wrote flat file: " & 
-	 print str & print "\n" &
-	 ModSim.compile_flat_class(filename',modelname) => exefile &
-	 
-	 let record = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(str),Values.STRING(exefile)],["flatClass","exefile"])
-	 -------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (record,Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
-
   rule	Static.component_ref_to_path(cr) => path &
 	 SCode.elaborate(p) => p' &
 	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
@@ -1108,7 +1070,7 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
-  rule	System.read_env("MOSHHOME") => moshhome &
+  rule	System.read_env("OPENMODELICAHOME") => omhome &
          Static.component_ref_to_path(cr) => path & 
 	 Absyn.path_string path => pathstr &
 	 Print.print_error_buf "#Failed to instantiate " &
@@ -1119,7 +1081,7 @@ end
 	 
   axiom
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
-	  => (Values.STRING("The environment variable MOSHHOME was not set"),st)
+	  => (Values.STRING("The environment variable OPENMODELICAHOME was not set"),st)
            
 	   
 	   (* FIXME: Should ceval be called with impl=true here? *)
@@ -1158,8 +1120,8 @@ end
          (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
           *)
 	 System.path_delimiter => pd &
-	 System.read_env("MOSHHOME") => moshhome &
-	 Util.string_append_list([moshhome, pd, "..", pd, "modeq", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
+	 System.read_env("OPENMODELICAHOME") => omhome &
+	 Util.string_append_list([omhome, pd, "modeq", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
 
 	 System.system_call(s_call) => 0 &
 	 Util.string_append_list([".", pd, cname_str]) => sim_call &
@@ -1183,8 +1145,8 @@ end
 	  => (simValue,newst)
 	   
   rule	
-	 (* simulation fail for som other reason than MOSHOME not being set.*)
-	 System.read_env("MOSHHOME") => moshhome &
+	 (* simulation fail for som other reason than OPENMODELICAHOME not being set.*)
+	 System.read_env("OPENMODELICAHOME") => omhome &
 	 Print.get_error_string() => str &
 	 Util.string_append_list(["Simulation failed.\n",str,"\n"]) => res &
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(res)],["resultFile"])
@@ -1193,7 +1155,7 @@ end
 	  => (simValue,st)
 
   rule	
-         let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING("Simulation Failed. Environment variable MOSHHOME not set.")],["resultFile"])
+         let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")],["resultFile"])
 	 ------------------------------------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,st)
@@ -1240,9 +1202,9 @@ end
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
 	   System.read_ptolemyplot_dataset(filename,vars'',0) => value &
 	 System.pwd() => pwd &
-	 System.read_env("MOSHHOME") => moshhome &
+	 System.read_env("OPENMODELICAHOME") => omhome &
 	 System.path_delimiter => pd &
-	 Util.string_append_list([moshhome,pd,"..",pd,"modeq",pd,"scripts",pd,"doPlot"]) => plotCmd &
+	 Util.string_append_list([omhome,pd,"modeq",pd,"scripts",pd,"doPlot"]) => plotCmd &
 	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
@@ -1403,9 +1365,9 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
-  rule	System.read_env("MOSHHOME") => moshhome &
+  rule	System.read_env("OPENMODELICAHOME") => omhome &
          System.path_delimiter => pd &
-         Util.string_append_list([moshhome,pd,"..",pd,"modeq",pd,"helptext.txt"]) => filename &
+         Util.string_append_list([omhome,pd,"modeq",pd,"helptext.txt"]) => filename &
 	 print filename & 
 	 System.read_file(filename) => str 
 	 --------------------------

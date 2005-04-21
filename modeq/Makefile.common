@@ -46,7 +46,6 @@ SRCRML= absyn.rml \
 	lookup.rml \
 	main.rml \
 	mod.rml \
-	modsim.rml \
 	modutil.rml \
 	prefix.rml \
 	staticexp.rml \

@@ -1,4 +1,0 @@
-#!/bin/sh
-cd ${MOSHHOME}/../ModSimPack
-bin/ModelicaOptimizer `cygpath -w $1`
-

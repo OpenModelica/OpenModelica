@@ -21,19 +21,16 @@ SRCRML= absyn.rml \
 	lookup.rml \
 	main.rml \
 	mod.rml \
-	modsim.rml \
 	modutil.rml \
 	prefix.rml \
 	staticexp.rml \
 	simcodegen.rml \
 	types.rml \
 	taskgraph.rml \
-	tornado.rml \
-	tornadocodegen.rml \
 	util.rml \
 	values.rml \
 	vartransform.rml
 
 ALLRML = $(SRCRML) daeext.rml print.rml rtopts.rml system.rml parse.rml \
-		taskgraphext.rml corba.rml socket.rml tornadoext.rml
+		taskgraphext.rml corba.rml socket.rml 
 

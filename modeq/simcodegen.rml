@@ -173,7 +173,7 @@ with "modutil.rml"
 
 (** relation generate_makefile
  ** This relation generates a makefile for the simulation code.
- ** It uses MOSHHOME as a reference to find c_runtime with libraries.
+ ** It uses OPENMODELICAHOME as a reference to find c_runtime with libraries.
  **)
 relation generate_makefile: (string, Absyn.Path) => () =
 			     
@@ -183,8 +183,8 @@ relation generate_makefile: (string, Absyn.Path) => () =
 				 "CXX=g++\n",
 				 cname,": ",cpp_file, "\n",
 				 "\t $(CXX) -o ",cname," ",cpp_file, 
-				 " -L$(MOSHHOME)/../c_runtime/",
-				 " -I$(MOSHHOME)/../c_runtime/ ",
+				 " -L$(OPENMODELICAHOME)/c_runtime/",
+				 " -I$(OPENMODELICAHOME)/c_runtime/ ",
 				 " -lsim -lg2c -lc_runtime\n"
 				 ]) => str &
 	System.write_file(filename,str) 

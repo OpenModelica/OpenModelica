@@ -28,9 +28,9 @@ You need:
 How to run
 ==========
 To be able to use mosh (osm) you must
-set the MOSHHOME environment variable
-to point to the mosh directory e.g
-setenv MOSHHOME ~/cvs/modelica/mosh
+set the OPENMODELICAHOME environment variable
+to point to the root directory of osm e.g
+setenv OPENMODELICAHOME ~/cvs/modelica
 
 For linking of external functions, use the environment variable MODELICAUSERCFLAGS, e.g.
 setenv MODELICAUSERCFLAGS "~/src/myfunctions.o -L/usr/local/lib/ -llapack_CYGWIN -lg2c"
