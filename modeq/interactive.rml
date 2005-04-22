@@ -603,7 +603,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
         ---------------------------------------------------
 	evaluate_graphical_api(
 	                       ISTMTS([IEXP(Absyn.CALL(
-		                                       Absyn.CREF_IDENT("loadFile",_),
+		                                       Absyn.CREF_IDENT("loadFileInteractive",_),
 		                                       Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
 	                              ),
 	                       st as SYMBOLTABLE(p,s,ic,iv,cf)) => (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf))
@@ -617,7 +617,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
         ---------------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
-		Absyn.CREF_IDENT("loadFile",_),
+		Absyn.CREF_IDENT("loadFileInteractive",_),
 		Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
@@ -628,7 +628,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
         ---------------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
-		Absyn.CREF_IDENT("loadFile",_),
+		Absyn.CREF_IDENT("loadFileInteractive",_),
 		Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)

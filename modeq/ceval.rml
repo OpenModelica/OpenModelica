@@ -1321,20 +1321,28 @@ end
 	 ------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(false),st)
 
-         (*move loadFile to interactive*)
 
-(*   rule	Parser.parse(name) => p1 & *)
-(* 	 Interactive.update_program(p1,p) => newp & *)
-(*          Interactive.get_top_classnames(newp) => top_names_str *)
-(* 	 -------------------------- *)
-(* 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))  *)
-(* 	  => (Values.STRING(top_names_str),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf)) *)
+  rule  System.regular_file_exist(name) => 0 &
+         Parser.parse(name) => p1 &
+	 Interactive.update_program(p1,p) => newp
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf))
 
-(*   rule	not Parser.parse(name) => _ *)
-(* 	 -------------------------- *)
-(* 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))  *)
-(* 	  => (Values.BOOL(false),st) *)
-
+       (** it the rule above have failed then check if file exists **)
+        (* without this modeq crashes *)
+  rule  System.regular_file_exist(name) => rest &
+         int_gt(rest,0) => true
+         ---------------------------------------------------
+         ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (Values.BOOL(false),st)
+           
+           
+  rule	not Parser.parse(name) => _
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => (Values.BOOL(false),st)
+           
   rule	Static.component_ref_to_path(cr) => classpath &
 	 Interactive.get_pathed_class_in_program(classpath,p) => class &
 	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)) => str &
