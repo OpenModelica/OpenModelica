@@ -223,6 +223,7 @@ module SCode :
 				* Path		(* type name *)
 				* Mod
 			        * Path option   (* baseclass name if in baseclass*)
+                                * Absyn.Comment option (* this if for extraction comments and annotations from Absyn *)
 
   (** There are four types of elements in a declaration, represented *)
   (** by the constructors `EXTENDS' (for `extends' clauses), *)
@@ -368,7 +369,8 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	elab_classdef_initialalgorithms parts => initals &
 	elab_classdef_externaldecls parts => decl
 	-------------------------------------
-	elab_classdef (Absyn.PARTS(parts,cmt)) => PARTS(els,eqs,initeqs,als,initals,decl)
+	elab_classdef (Absyn.PARTS(parts,cmt)) 
+          => PARTS(els,eqs,initeqs,als,initals,decl)
 
   rule	elab_enumlist(lst) => lst'
 	--------------------------
@@ -562,7 +564,9 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
   rule	elab_classdef(de) => de' &
 	elab_restriction(cl,re) => re'
 	-----------------------
-	elab_elementspec(final,repl,prot,Absyn.CLASSDEF(rp,cl as Absyn.CLASS(n,pa,fi,e,re,de)))
+	elab_elementspec(final,repl,prot,
+                         Absyn.CLASSDEF(rp,
+                                        cl as Absyn.CLASS(n,pa,fi,e,re,de)))
 	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re',de'),NONE)]
 
   rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
@@ -575,6 +579,7 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 
   rule	elab_elementspec(final,repl,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
 	build_mod(m,false) => mod &
+
 	(* PR. This adds the arraydimension that may be specified together with
 	 the type of the component.  *)
 	elab_variability(pa) => pa' &
@@ -582,8 +587,8 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 	--------------------------------------------------
 	elab_elementspec(final,repl,prot,
 			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di,ad),t,
-					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_)::xs))
-	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa',di),t,mod,NONE)::xs'
+					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),comment)::xs))
+	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa',di),t,mod,NONE,comment)::xs'
 
   axiom	elab_elementspec(final,repl,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
 
@@ -788,7 +793,7 @@ relation get_element_named_from_elts: (Ident, Element list) => Element =
   rule	not id1 = id2 &
 	get_element_named_from_elts(id2,xs) => elt
 	---------------------------
-	get_element_named_from_elts(id2,COMPONENT(id1,_,_,_,_,_,_,_)::xs) => elt
+	get_element_named_from_elts(id2,COMPONENT(id1,_,_,_,_,_,_,_,_)::xs) => elt
 	
   rule	not id1 = id2 &
 	get_element_named_from_elts(id2,xs) => elt
@@ -801,7 +806,7 @@ relation get_element_named_from_elts: (Ident, Element list) => Element =
 
   rule	id1 = id2
 	--------------------
-	get_element_named_from_elts(id2,(comp as COMPONENT(id1,_,_,_,_,_,_,_))::_) => comp
+	get_element_named_from_elts(id2,(comp as COMPONENT(id1,_,_,_,_,_,_,_,_))::_) => comp
 
   rule	id1 = id2
 	--------------------
@@ -995,7 +1000,7 @@ relation print_element_str : Element => string =
 				 "var :", vs, ", from baseclass: ",
 				 str,")"]) => res
 	----------------------------------------
-	print_element_str COMPONENT(n,final,repl,prot,ATTR(_,_,_,var,_),typath,mod,SOME(path)) => res
+	print_element_str COMPONENT(n,final,repl,prot,ATTR(_,_,_,var,_),typath,mod,SOME(path),comment) => res
 
   rule	Util.string_append_list(["CLASSDEF(",n,")"]) => res
 	---------------------------------------
@@ -1006,7 +1011,7 @@ relation print_element_str : Element => string =
 	Util.string_append_list(["COMPONENT(",n, " mod:",mod_str, ", tp: ",
 				 s, ")"])=> res 
 	----------------------------------------
-	print_element_str COMPONENT(n,final,repl,prot,attr,typath,mod,NONE) 
+	print_element_str COMPONENT(n,final,repl,prot,attr,typath,mod,NONE,comment) 
 	  => res
 
   axiom	print_element_str(IMPORT(_)) => "IMPORT(_)"
@@ -1057,7 +1062,7 @@ relation component_names_from_elts:(Element list) => string list =
 
   rule	component_names_from_elts(rest) => res 
 	--------------------------------------
-	component_names_from_elts(COMPONENT(id,_,_,_,_,_,_,_)::rest) => id::res
+	component_names_from_elts(COMPONENT(id,_,_,_,_,_,_,_,_)::rest) => id::res
 end
 
 relation is_function : Class => bool =

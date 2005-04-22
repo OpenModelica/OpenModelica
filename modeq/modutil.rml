@@ -311,8 +311,8 @@ relation string_prefix_element : (string, DAE.Element list, DAE.Element)
 
   rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
 	-----------------------------------------------------------------
-	string_prefix_element (str, dae, DAE.VAR(cr,vk,vd,ty,SOME(exp),inst_dims,start,flow,cl,dae_var_attr)) 
-	  => DAE.VAR(cr,vk,vd,ty,SOME(exp'),inst_dims,start,flow,cl,dae_var_attr)
+	string_prefix_element (str, dae, DAE.VAR(cr,vk,vd,ty,SOME(exp),inst_dims,start,flow,cl,dae_var_attr,comment)) 
+	  => DAE.VAR(cr,vk,vd,ty,SOME(exp'),inst_dims,start,flow,cl,dae_var_attr,comment)
 
   rule	string_prefix_component_ref (str, is_parameter_daelist, dae, exp) => exp'
 	-----------------------------------------------------------------
@@ -356,11 +356,11 @@ relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
 
   rule	Exp.cref_equal (cr, crv) => true
 	------------------------
-	is_parameter_daelist (cr, DAE.VAR(crv,DAE.PARAM,vd,ty,e,_,_,_,_,_)::rest)
+	is_parameter_daelist (cr, DAE.VAR(crv,DAE.PARAM,vd,ty,e,_,_,_,_,_,_)::rest)
 
   rule	Exp.cref_equal (cr, crv) => true
 	------------------------
-	is_parameter_daelist (cr, DAE.VAR(crv,vk,vd,ty,e,_,_,_,_,_)::rest) => fail
+	is_parameter_daelist (cr, DAE.VAR(crv,vk,vd,ty,e,_,_,_,_,_,_)::rest) => fail
 
   rule	is_parameter_daelist (cr, rest)
 	-------------------------------
@@ -390,14 +390,14 @@ end
 relation get_var_value_expr : (DAE.Element list, Exp.ComponentRef) 
 	  => Exp.Exp =
 
-  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, NONE,_,_,_,_,_)) &
+  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, NONE,_,_,_,_,_,_)) &
 	Print.print_buf "#-- get_var_value_expr: Warning: Variable is not initialized\n" &
 	Exp.print_component_ref cr & Print.print_buf "\n"
 	---------------------------------------------------------
 	get_var_value_expr (dae, cr) => Exp.SCONST("UNDEF")
 
 
-  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, SOME(value),_,_,_,_,_))
+  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, SOME(value),_,_,_,_,_,_))
 	---------------------------------------------------------
 	get_var_value_expr (dae, cr) => value
 
@@ -467,7 +467,7 @@ relation find_var : (DAE.Element list, Exp.ComponentRef) => DAE.Element option =
 
   rule	Exp.cref_equal (cr1, cr2) => true
 	--------------------
-	find_var ((e as DAE.VAR(cr1, vk, vd, ty, value,_,_,_,_,_))::rest, cr2) => SOME(e)
+	find_var ((e as DAE.VAR(cr1, vk, vd, ty, value,_,_,_,_,_,_))::rest, cr2) => SOME(e)
 
   rule	find_var (rest, cr) => e'
 	----------------------------

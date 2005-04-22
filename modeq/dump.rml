@@ -166,6 +166,8 @@ module Dump:
   relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string 
   relation variability_symbol: Absyn.Variability => string
   relation unparse_modification_str: Absyn.Modification => string 
+
+  relation unparse_comment_option: (Absyn.Comment option) => string
 end
 
 

@@ -306,7 +306,7 @@ relation generate_var_names_states:(DAELow.Var list) => string list =
 	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_states(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
-				_,value,indx,origname,_,dae_var_attr)::vs)
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
 	=> origname'::res
 
   rule	generate_var_names_states(vs) => res 
@@ -326,7 +326,7 @@ relation generate_var_names_derivatives:(DAELow.Var list) => string list =
 	Util.string_append_list(["\"der(",origname,")\""]) => origname'
 	-----------------------
 	generate_var_names_derivatives(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
-				_,value,indx,origname,_,dae_var_attr)::vs)
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
 	=> origname'::res
 
   rule	generate_var_names_derivatives(vs) => res 
@@ -346,28 +346,28 @@ relation generate_var_names_algvars:(DAELow.Var list) => string list =
 	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
-				_,value,indx,origname,_,dae_var_attr)::vs)
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
 	=> origname'::res
 
   rule	generate_var_names_algvars(vs) => res &
 	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
-				_,value,indx,origname,_,dae_var_attr)::vs)
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
 	=> origname'::res
 
   rule	generate_var_names_algvars(vs) => res &
 	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
-				_,value,indx,origname,_,dae_var_attr)::vs)
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
 	=> origname'::res
 
   rule	generate_var_names_algvars(vs) => res &
 	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
-				_,value,indx,origname,_,dae_var_attr)::vs)
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
 	=> origname'::res
 
   rule	generate_var_names_algvars(vs) => res 
@@ -529,7 +529,7 @@ relation generate_init_data3:(DAELow.Var list,
 	  =>  (nxarr,nxdarr,nyarr,nparr)
 	--------------------
 	generate_init_data3(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
-				_,value,indx,origname,_,dae_var_attr)::rest,
+				_,value,indx,origname,_,dae_var_attr,comment)::rest,
  			    nxarr,nxdarr,nyarr,nparr)
  	  => (nxarr,nxdarr,nyarr,nparr)
 
@@ -540,7 +540,7 @@ relation generate_init_data3:(DAELow.Var list,
 	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr)
 	=> (nxarr,nxdarr,nyarr,nparr)
 	--------------------
-	 generate_init_data3(DAELow.VAR(_,DAELow.STATE,_,_,_,_,_,value,indx,origname,_,dae_var_attr)::rest,nxarr,nxdarr,nyarr,nparr)
+	 generate_init_data3(DAELow.VAR(_,DAELow.STATE,_,_,_,_,_,value,indx,origname,_,dae_var_attr,comment)::rest,nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
 
   rule	(* dummy derivatives => algebraic variables *)
@@ -550,7 +550,7 @@ relation generate_init_data3:(DAELow.Var list,
 	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
 	  => (nxarr,nxdarr,nyarr,nparr)
  	--------------------
- 	generate_init_data3(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,_,value,indx,origname,_,dae_var_attr)::rest,nxarr,nxdarr,nyarr,nparr)
+ 	generate_init_data3(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,_,value,indx,origname,_,dae_var_attr,comment)::rest,nxarr,nxdarr,nyarr,nparr)
 	=> (nxarr,nxdarr,nyarr,nparr)
 
   rule	(* Dummy states => algebraic variables *)
@@ -561,7 +561,7 @@ relation generate_init_data3:(DAELow.Var list,
 	=> (nxarr,nxdarr,nyarr,nparr) 
  	--------------------
  	generate_init_data3(DAELow.VAR(_,DAELow.DUMMY_STATE,_,_,_,_,
-				       _,value,indx,origname,_,dae_var_attr)::rest,
+				       _,value,indx,origname,_,dae_var_attr,comment)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
 end
@@ -590,7 +590,7 @@ relation generate_init_data4: (DAELow.Var list,
 	=> (nxarr,nxdarr,nyarr,nparr) 
 	--------------------
 	generate_init_data4(DAELow.VAR(_,DAELow.PARAM,_,_,_,SOME(value),_,
-				_,indx,origname,_,dae_var_attr)::rest,
+				_,indx,origname,_,dae_var_attr,comment)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
 
@@ -601,7 +601,7 @@ relation generate_init_data4: (DAELow.Var list,
 	=> (nxarr,nxdarr,nyarr,nparr) 
 	--------------------
 	generate_init_data4(DAELow.VAR(_,DAELow.PARAM,_,_,_,NONE,_,
-				_,indx,origname,_,dae_var_attr)::rest,
+				_,indx,origname,_,dae_var_attr,comment)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
 
@@ -775,7 +775,7 @@ relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v &
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr)) &  
+	DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
 	DAELow.is_non_state kind &
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
@@ -792,7 +792,7 @@ relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_,dae_var_attr) &
+	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment) &
 	let new_varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,new_varexp) => expr &
         Exp.simplify(expr) => simplify_exp &
@@ -806,7 +806,7 @@ relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int
  	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
  	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr) &  
+	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment) &  
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
@@ -892,7 +892,7 @@ end
 	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	 vector_nth(ass2,e') => v &
 	 int_sub(v,1) => v' &
-	 DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr)) &  
+	 DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
 	 DAELow.is_non_state kind &
 	 (*print "Solving for non-states\n" &*)
 	 
@@ -910,7 +910,7 @@ end
 	 vector_nth(ass2,e') => v &
 	 int_sub(v,1) => v' &
 	 DAELow.vararray_nth(vararr,v') 
-	  => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_,dae_var_attr) &
+	  => DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment) &
 	 int_string(indx) => indx_str &
 	 let exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2) &
 	 Exp.simplify(exp) => simplify_exp &
@@ -925,7 +925,7 @@ end
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr) &  
+	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment) &  
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 

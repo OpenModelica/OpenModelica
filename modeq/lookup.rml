@@ -993,8 +993,8 @@ end
 relation build_record_constructor_elts: (SCode.Element list, Env.Env) => SCode.Element list =
   rule	build_record_constructor_elts (rest,env) => res
 	-------------------------------------------
-	build_record_constructor_elts((comp as SCode.COMPONENT(id,fl,repl,prot,SCode.ATTR(d,f,ac,var,dir),tp,mod,bc))::rest,env)
-	    => SCode.COMPONENT(id,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT),tp,mod,bc)::res
+	build_record_constructor_elts((comp as SCode.COMPONENT(id,fl,repl,prot,SCode.ATTR(d,f,ac,var,dir),tp,mod,bc,comment))::rest,env)
+	    => SCode.COMPONENT(id,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT),tp,mod,bc,comment)::res
   axiom	build_record_constructor_elts([],_) => []
 end
 	
@@ -1009,7 +1009,7 @@ relation build_record_constructor_result_elt: (SCode.Element list, SCode.Ident, 
   rule	build_record_constructor_result_mod(elts) => submodlst
 	-------------------------------------------------
 	build_record_constructor_result_elt (elts,id,env) 
-	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,SCode.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE),NONE)
+	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,SCode.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE),NONE,NONE)
 end
 	
 (** relation: build_record_constructor_result_mod
@@ -1026,7 +1026,7 @@ relation build_record_constructor_result_mod: (SCode.Element list) => SCode.SubM
 	
   rule	build_record_constructor_result_mod(rest) => restmod
 	---------------------------------------------------
-	build_record_constructor_result_mod (SCode.COMPONENT(id,_,_,_,_,_,_,_)::rest) 
+	build_record_constructor_result_mod (SCode.COMPONENT(id,_,_,_,_,_,_,_,_)::rest) 
 	    => SCode.NAMEMOD("result",SCode.MOD(false,[SCode.NAMEMOD(id,SCode.MOD(false,[],SOME(Absyn.CREF(Absyn.CREF_IDENT(id,[])))))],NONE))::restmod
 
   axiom	build_record_constructor_result_mod([]) => []
@@ -1063,7 +1063,7 @@ relation build_varlst_from_elts: (SCode.Element list,Env.Env ) => Types.Var list
   (*P.A Here we need to do a lookup of the type. Therefore we need the env passed along from lookup_xxxx function. *)
 	Inst.inst_record_constructor_elt(env,comp, true (* FIXME: impl*) ) => var
 	-------------------------------------
-	build_varlst_from_elts ((comp as SCode.COMPONENT(_,_,_,_ ,_,_,_,_))::rest,env) 
+	build_varlst_from_elts ((comp as SCode.COMPONENT(_,_,_,_ ,_,_,_,_,_))::rest,env) 
 	    => var::vars
 
   axiom	build_varlst_from_elts ([],_) => []

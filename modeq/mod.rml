@@ -788,11 +788,13 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	elab_mod(env,pre,m1) => m1' &
 	elab_mod(env,pre,m2) => m2' &
 	merge(m1',m2',env,pre) => m'' 
+
+ (* DO SOMETHING INTELLIGENT WITH THE COMMENTS!!! *)
 	--------------------------------------
-	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1,bc),_)]),
-	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2,bc2),_)])
+	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1,bc,comment),_)]),
+	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2,bc2,comment2),_)])
 			       ,env,pre) 
-	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc),m'')])
+	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc,comment),m'')])
 *)
 
   rule	(* If didn't work, try with untyped modifications*)
@@ -801,12 +803,12 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	elab_untyped_mod(m2,env,pre) => m2' &
 	merge(m1',m2',env,pre) => m'' 
 	--------------------------------------
-	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1,bc),_)]),
-	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2,bc2),_)])
+	merge(Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,m1,bc,comment),_)]),
+	      Types.REDECL(f2,[(SCode.COMPONENT(id2,_,_,_,_,_,m2,bc2,comment2),_)])
 			       ,env,pre) 
-	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc),m'')])
+	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc,comment),m'')])
 	  
-  axiom	merge(mod as Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_),_)]),
+  axiom	merge(mod as Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_,_),_)]),
 	      mods as Types.MOD(_,subs,_),env,pre) 
 	(*luc_pop : this shoud return the first mod because it have been merged in merge_subs*)
 	 (* => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
@@ -815,7 +817,7 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	(*end luc_pop*)
 		  
   axiom	merge(Types.MOD(_,subs,_),
-	      Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_),_)]),
+	      Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_,_),_)]),
 	      env,pre)
 	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
 		       NONE)

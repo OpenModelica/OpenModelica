@@ -149,7 +149,7 @@ relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list
 	DAELow.vararray_list(knvararr) => knvars &
 	add_variables(vars,starttask) &
 	add_variables([DAELow.VAR(Exp.CREF_IDENT("sim_time",[]),DAELow.VARIABLE,
-                              DAE.INPUT,DAE.REAL,NONE,NONE,[],NONE,0,"time",[],NONE)],starttask) &
+                              DAE.INPUT,DAE.REAL,NONE,NONE,[],NONE,0,"time",[],NONE,NONE)],starttask) &
 	build_blocks(dae,ass1,ass2,blocks) &
 	print "done building taskgraph, about to build inits.\n" &
 	build_inits(dae) 
@@ -188,73 +188,73 @@ relation build_inits2:(DAELow.Var list) => () =
 	build_inits2(rest)
 	--------------------
 	build_inits2(DAELow.VAR(_,DAELow.VARIABLE,_,_,_,_,
-				_,SOME(value),indx,origname,_,dae_var_attr)::rest)
+				_,SOME(value),indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	TaskGraphExt.add_initvar(indx,"0.0",origname) &
 	build_inits2(rest)
 	--------------------
-	build_inits2(DAELow.VAR(_,DAELow.VARIABLE,_,_,_,_,_,NONE,indx,origname,_,dae_var_attr)::rest)
+	build_inits2(DAELow.VAR(_,DAELow.VARIABLE,_,_,_,_,_,NONE,indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	Exp.print_exp_str(value) => v &
 	TaskGraphExt.add_initstate(indx,v,origname) &
 	build_inits2(rest)
 	--------------------
-	build_inits2(DAELow.VAR(_,DAELow.STATE,_,_,_,_,_,SOME(value),indx,origname,_,dae_var_attr)::rest)
+	build_inits2(DAELow.VAR(_,DAELow.STATE,_,_,_,_,_,SOME(value),indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	TaskGraphExt.add_initstate(indx,"0.0",origname) &
 	build_inits2(rest)
 	--------------------
-	build_inits2(DAELow.VAR(_,DAELow.STATE,_,_,_,_,_,NONE,indx,origname,_,dae_var_attr)::rest)
+	build_inits2(DAELow.VAR(_,DAELow.STATE,_,_,_,_,_,NONE,indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	Exp.print_exp_str(value) => v &
 	TaskGraphExt.add_initvar(indx,v,origname) &
 	build_inits2(rest)
 	--------------------
-	build_inits2(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,_,SOME(value),indx,origname,_,dae_var_attr)::rest)
+	build_inits2(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,_,SOME(value),indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	TaskGraphExt.add_initvar(indx,"0.0",origname) &
 	build_inits2(rest)
 	--------------------
-	build_inits2(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,_,NONE,indx,origname,_,dae_var_attr)::rest)
+	build_inits2(DAELow.VAR(_,DAELow.DUMMY_DER,_,_,_,_,_,NONE,indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	Exp.print_exp_str(value) => v &
 	TaskGraphExt.add_initvar(indx,v,origname) &
 	build_inits2(rest)
 	--------------------
 	build_inits2(DAELow.VAR(_,DAELow.DUMMY_STATE,_,_,_,_,
-				_,SOME(value),indx,origname,_,dae_var_attr)::rest)
+				_,SOME(value),indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	TaskGraphExt.add_initvar(indx,"0.0",origname) &
 	build_inits2(rest)
 	--------------------
 	build_inits2(DAELow.VAR(_,DAELow.DUMMY_STATE,_,_,_,_,_,
-				NONE,indx,origname,_,dae_var_attr)::rest)
+				NONE,indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	Values.val_string(value) => v &
 	TaskGraphExt.add_initparam(indx,v,origname) &
 	build_inits2(rest)
 	--------------------
 	build_inits2(DAELow.VAR(_,DAELow.PARAM,_,_,_,SOME(value),_,
-				_,indx,origname,_,dae_var_attr)::rest)
+				_,indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	TaskGraphExt.add_initparam(indx,"0.0",origname) &
 	build_inits2(rest)
 	--------------------
 	build_inits2(DAELow.VAR(_,DAELow.PARAM,_,_,_,NONE,_,
-				_,indx,origname,_,dae_var_attr)::rest)
+				_,indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	Values.val_string(value) => v &
 	TaskGraphExt.add_initparam(indx,v,origname) &
 	build_inits2(rest)
 	--------------------
 	build_inits2(DAELow.VAR(_,DAELow.CONST,_,_,_,SOME(value),_,
-				_,indx,origname,_,dae_var_attr)::rest)
+				_,indx,origname,_,dae_var_attr,comment)::rest)
 
   rule	TaskGraphExt.add_initparam(indx,"0.0",origname) &
 	build_inits2(rest)
 	--------------------
 	build_inits2(DAELow.VAR(_,DAELow.CONST,_,_,_,NONE,_,
-				_,indx,origname,_,dae_var_attr)::rest)
+				_,indx,origname,_,dae_var_attr,comment)::rest)
 end
 
 relation add_variables:(DAELow.Var list,int) => () =
@@ -305,7 +305,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
 	DAELow.var_list(vars) => varlst &
-	list_nth(varlst,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr)) &  
+	list_nth(varlst,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
 	is_non_state kind &
 	(*print "Solving for non-states\n" &*)
 	let varexp = Exp.CREF(cr,Exp.REAL) &
@@ -328,7 +328,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
 	DAELow.var_list(vars) => varlst &
-	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr) &
+	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment) &
 (*	print "solving for state\n" &*)
 	int_string(indx) => indxs &
 	Util.string_append_list(["xd[",indxs,"]"]) => id &
@@ -349,7 +349,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr) &  
+	DAELow.vararray_nth(vararr,v') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment) &  
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
@@ -386,7 +386,7 @@ relation build_system2: (DAELow.DAELow, int vector, int vector, int list,int) =>
 	vector_nth(ass2,e') => v &
 	(* v == variable no solved in this equation *)
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => (v as DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_,_,origname,_,dae_var_attr)) &  
+	DAELow.vararray_nth(vararr,v') => (v as DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
 	Exp.get_cref_from_exp(e1) => cr1 &
 	Exp.get_cref_from_exp(e2) => cr2 &
 	list_append(cr1,cr2) => crs &
@@ -410,7 +410,7 @@ relation add_variable: (DAELow.Var,int) => () =
 	(*print "adding variable " & print cfs & print "\n" &*)
 	TaskGraphExt.store_result(cfs,start,false,name)
 	------------------------------------
-	add_variable(DAELow.VAR(cf,_,_,_,_, _,_,_,_,name,_,dae_var_attr),start)
+	add_variable(DAELow.VAR(cf,_,_,_,_, _,_,_,_,name,_,dae_var_attr,comment),start)
 end
 
 		     

@@ -1130,8 +1130,8 @@ relation add_inherit_scope: ( SCode.Element list, Absyn.Path)
 
   rule	add_inherit_scope(xs,tp) => res
 	-------------------------------
-	add_inherit_scope(SCode.COMPONENT(a,b,c,d,e,f,g,_)::xs,tp)
-	  => SCode.COMPONENT(a,b,c,d,e,f,g,SOME(tp))::res
+	add_inherit_scope(SCode.COMPONENT(a,b,c,d,e,f,g,_,comment)::xs,tp)
+	  => SCode.COMPONENT(a,b,c,d,e,f,g,SOME(tp),comment)::res
 
   rule	add_inherit_scope(xs,tp) => res
 	-------------------------------
@@ -1183,7 +1183,7 @@ relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod,Env.Env)
 	Mod.merge(cmod,cmod2,env,Prefix.NOPRE) => mod' &
 	update_components(xs,mod,env) => res 
 	--------------------------------
-	update_components((comp as SCode.COMPONENT(id,_,_,_,_,_,_,_),cmod)::xs,mod,env) 
+	update_components((comp as SCode.COMPONENT(id,_,_,_,_,_,_,_,_),cmod)::xs,mod,env) 
 	  => ((comp,mod')::res)
 
   rule	update_components(xs,mod,env) => res 
@@ -1350,7 +1350,7 @@ relation component_elts: (SCode.Element list) => (SCode.Element list) =
 	
   rule	component_elts(xs) => res
 	------------------------
-	component_elts ((cdef as SCode.COMPONENT(_,_,_,_,_,_,_,_))::xs) => cdef::res
+	component_elts ((cdef as SCode.COMPONENT(_,_,_,_,_,_,_,_,_))::xs) => cdef::res
 
   rule	component_elts(xs) => res
 	------------------------
@@ -1408,24 +1408,24 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets,
 	member_crefs(Absyn.CREF_IDENT(n,[]),crefs) => true &
 	SCode.is_parameter_or_const param => true &
 	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
-									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m,bc),cmod)],instdims,impl) => env' &
+									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
 	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
 			       ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m,bc)),cmod)::xs, allcomps,instdims,impl) => env''
+				     t,m,bc,comment)),cmod)::xs, allcomps,instdims,impl) => env''
 
   rule	(* Not structural parameter. No Change.*)
 	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
-									  SCode.ATTR(ad,flow,acc,param,dir),t,m,bc),cmod)],instdims,impl) => env' &
+									  SCode.ATTR(ad,flow,acc,param,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
 	
 	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
 			       ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m,bc)),cmod)::xs, allcomps,instdims,impl) => env''
+				     t,m,bc,comment)),cmod)::xs, allcomps,instdims,impl) => env''
 	
   rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------
@@ -1473,7 +1473,7 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 	add_components_to_env2(env,mods,pre,csets,ci_state,
 		     ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m,bc),cmod))::xs,inst_dims,impl) => env''
+				     t,m,bc,comment),cmod))::xs,inst_dims,impl) => env''
 
   axiom	add_components_to_env2(env,_,_,_,_,[],_,_) => env
 
@@ -1500,7 +1500,7 @@ relation get_crefs_from_compdims: ((SCode.Element*Types.Mod) list) => Absyn.Comp
 	(*Util.list_map(crefs2,Absyn.cref_get_first) => crefs2' &*)
 	list_append(crefs1,crefs2) => crefs
 	------------------------------------
-	get_crefs_from_compdims((SCode.COMPONENT(_,_,_,_,SCode.ATTR(arraydim,_,_,_,_),_,_,_),_)::xs)
+	get_crefs_from_compdims((SCode.COMPONENT(_,_,_,_,SCode.ATTR(arraydim,_,_,_,_),_,_,_,_),_)::xs)
 	  => crefs
 
   rule	get_crefs_from_compdims(xs) => crefs
@@ -1557,7 +1557,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*& Debug.fprint ("insttr", "variable already declared, using first def") *)
 	-------------------------------------
 	inst_element(env, mods, pre, csets, ci_state,
-		     (SCode.COMPONENT(n,final,repl,prot,_,_,_,_),_),_,_,_)
+		     (SCode.COMPONENT(n,final,repl,prot,_,_,_,_,_),_),_,_,_)
 	  => ([], env, csets, ci_state, []) 
 
   	  (* Illegal redeclarations *)
@@ -1680,7 +1680,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	redeclare_type(mod1',comp,env2,pre,ci_state,impl) 
 	  => (SCode.COMPONENT(n,final,repl,prot,
 			      attr as SCode.ATTR(ad,flow,acc,param,dir),
-			      t,m,bc),mod',env2') &
+			      t,m,bc,comment),mod',env2') &
 	
 (*	Debug.fprint("insttr", "looking for type ") &
 	Debug.fcall("insttr",Dump.print_path,t) &
@@ -1720,7 +1720,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
  
 
 
-	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl)
+	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl,comment)
 	  => (dae, csets', ty) &
 	  
 (*	Debug.fprintl ("insttr", ["instantiated: ", n, "\n"]) &*)
@@ -1744,7 +1744,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element(env,mods,pre,csets,ci_state,
 		     (comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m,bc),cmod),inst_dims,impl,packimpl)
+				     t,m,bc,comment),cmod),inst_dims,impl,packimpl)
           => (dae, env',csets',ci_state,
 	      [Types.VAR(n,Types.ATTR(flow,acc,param,dir), prot, ty, binding)])
 	
@@ -1766,7 +1766,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 (*	Debug.fcall ("instdb", Env.print_env, env) *)
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
-		     (SCode.COMPONENT(n,final,repl,prot,_,t,_,_),_),_,_,_)
+		     (SCode.COMPONENT(n,final,repl,prot,_,t,_,_,_),_),_,_,_)
 (*         => ([],env,csets,ci_state,[]) *) => fail
 
   rule	Debug.fprint("failtrace", "- inst_element failed\n") &
@@ -1837,15 +1837,17 @@ relation redeclare_type: (Types.Mod,
 	Mod.elab_mod(env',pre,mod,impl) => m' &
 	Mod.merge(rmod,m',env',pre) => m''
 	--------------------------------
-	redeclare_type ((m as Types.REDECL(_,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod,bc)),rmod)::rest)),
-			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_),env,pre,ci_state,impl) => (redecl,m'',env')
+	redeclare_type ((m as Types.REDECL(_,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod,bc,comment)),rmod)::rest)),
+			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_,_),env,pre,ci_state,impl) => (redecl,m'',env')
 
   rule	not n1=n2 &
 	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
 	  => (newcomp,mod,env')
-	-------------
-	redeclare_type (mod as Types.REDECL(redfin,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_,bc)),rmod)::rest),
-			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_),env,pre,ci_state,impl)
+	  -------------
+	redeclare_type (mod as Types.REDECL(redfin,
+                                            ((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_,bc,comment)),
+                                             rmod)::rest),
+			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_,comment2),env,pre,ci_state,impl)
 	  => (newcomp,mod,env')
 
   rule	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
@@ -1886,7 +1888,8 @@ relation inst_var : (Env.Env,
 		     DimExp list, 
 		     int list,
 		     InstDims,
-		     bool (*impl*) )
+		     bool (*impl*),
+                     Absyn.Comment option)
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
   rule	(* Variables of userdefined type, e.g. Point p => Real p[3]; *)
@@ -1896,18 +1899,21 @@ relation inst_var : (Env.Env,
 
 	(* Collect dimensions *)
 	get_usertype_dimensions(env,mod,pre,cl,inst_dims,impl) => (dims' as _::_) &
-	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims',idxs,inst_dims,impl) 
+	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims',idxs,inst_dims,impl,comment) 
 	  => (dae,csets',ty') &
 	  make_array_type(dims',ty') => ty
 	--------------------------
-	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,SCode.R_TYPE,_),attr,dims,idxs,inst_dims,impl)
+	inst_var(env,ci_state,mod,pre,csets,n,
+                 cl as SCode.CLASS(id,_,_,SCode.R_TYPE,_),
+                 attr,dims,idxs,inst_dims,impl,comment)
           => (dae,csets',ty)
 	  
   rule	(* Generic case: fall trough *)
-	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl) 
+	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl,comment) 
 	  => (dae,csets',ty')
 	----------------------
-	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,_,_),attr,dims,idxs,inst_dims,impl)
+	inst_var(env,ci_state,mod,pre,csets,n,cl as SCode.CLASS(id,_,_,_,_),
+                 attr,dims,idxs,inst_dims,impl,comment)
           => (dae,csets',ty')
 end
 
@@ -1927,11 +1933,11 @@ relation inst_var2 : (Env.Env,
 		      DimExp list, 
 		      int list,
 		      InstDims,
-		      bool (* True = Implicit instantiation, should only be 
+		      bool, (* True = Implicit instantiation, should only be 
 			    used when instantiating functions. Then we can 
 			    not always find dimensional sizes. e.g. 
 			    input Real x[:]; *)
-		      )
+		      Absyn.Comment option)
 	  => (DAE.Element list,Connect.Sets,Types.Type) =
 
 	(** The class is instantiated with the calculated *)
@@ -1962,13 +1968,14 @@ relation inst_var2 : (Env.Env,
 
 
 	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e), 
-		    inst_dims,NONE,NONE)
+		    inst_dims,NONE,NONE,comment)
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
 (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
 	--------------------------
-	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
-		 [],idxs,inst_dims,impl (*as false*))
+	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),
+                  pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
+		 [],idxs,inst_dims,impl (*as false*),comment)
           => (dae,csets',ty)
 
   rule	(* Parameters *)
@@ -1981,13 +1988,13 @@ relation inst_var2 : (Env.Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 (*	inst_mod_equation(cr,ty,mod) => dae2 &*)
 
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE)
+	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE,comment)
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
 	--------------------------
 	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
-		 [],idxs,inst_dims,impl (*as false*))
+		 [],idxs,inst_dims,impl (*as false*),comment)
           => (dae,csets',ty)
 
   rule	(* Scalar Variables *)
@@ -2024,7 +2031,7 @@ relation inst_var2 : (Env.Env,
   	DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
         Debug.fprintln("failtrace", str_tmp) &
         dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
- 		            inst_dims, start, dae_var_attr) => dae3 &
+ 		            inst_dims, start, dae_var_attr,comment) => dae3 &
 
 (*          dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,  *)
 (*  		            inst_dims, start, NONE) => dae3 &  *)
@@ -2036,7 +2043,7 @@ relation inst_var2 : (Env.Env,
 	 & Debug.fprint("instvartr", "\nEnd of inst_var variables\n")*)
 	--------------------------
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
-		  [],idxs,inst_dims,impl (*as false*))
+		  [],idxs,inst_dims,impl (*as false*),comment)
           => (dae,csets',ty)
 
 
@@ -2055,11 +2062,12 @@ relation inst_var2 : (Env.Env,
 	(* Put the mod equation in the dae so that code will be generated *)
 	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
 
-	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE) => dae1 &
+	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE,comment) => dae1 &
 	list_append (dae1, [daeeq]) => dae
 	-------------------------------
 	inst_var2(env,ci_state as
-		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl)
+		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,
+                  attr,dims as _::_,idxs,inst_dims,impl,comment)
           => (dae,csets,ty')
 
   rule	(* Array variables without binding in functions , e.g. input Real x[:] *)
@@ -2068,10 +2076,11 @@ relation inst_var2 : (Env.Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
 	inst_dim_exp_lst(dims,impl) => dims' &
-	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE) => dae &
+	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE,comment) => dae &
 	make_array_type(dims,ty) => arrty 
 	-------------------------------
-	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,cl,attr,dims as _::_,idxs,inst_dims,impl)
+	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,
+                  n,cl,attr,dims as _::_,idxs,inst_dims,impl,comment)
           => (dae,csets,arrty)
 	  
 
@@ -2080,12 +2089,12 @@ relation inst_var2 : (Env.Env,
 	(* flatten *)
 	inst_dim_exp (dim,impl) => dime &
 	list_append(inst_dims,[dime]) => inst_dims' &
-	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl)
+	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl,comment)
 	  => (dae, csets', ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty'
 	-------------------------------
-	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl)
+	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl,comment)
           => (dae,csets',ty')
 
 (* Rules for instantation of function variables (e.g. input and output 
@@ -2101,7 +2110,7 @@ rule	Print.print_buf "!!! Error, implicit instantiation of variables\n"
 	Debug.fprint("failtrace",  n) &
 	Debug.fprint("failtrace", "\n")
 	--------------------------------------------------
-	inst_var2(_,_,_,_,_,n,_,_,_,_,_,_) => fail
+	inst_var2(_,_,_,_,_,n,_,_,_,_,_,_,_) => fail
 	
 end
 
@@ -2188,7 +2197,7 @@ relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 	list_append(res1,res2) => res 
 	(*&Util.list_map(res,Absyn.cref_get_first) => res'*)
 	-----------------------------
-	get_cref_from_mod(SCode.REDECL(b, SCode.COMPONENT(n,_,_,_,_,_,m,_)::xs)) 
+	get_cref_from_mod(SCode.REDECL(b, SCode.COMPONENT(n,_,_,_,_,_,m,_,_)::xs)) 
 	  => res
   rule	(* For redeclarations e.g "redeclare B2 b(cref=<expr>)", find cref *)
 	get_cref_from_mod(SCode.REDECL(b,xs)) => res
@@ -2299,7 +2308,7 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	  => (ty, 
 	      SOME((SCode.COMPONENT(n,final,repl,prot,
 				   attr as SCode.ATTR(ad,flow,acc,param,dir),
-				   t,m,bc),cmod)),_) &
+				   t,m,bc,comment),cmod)),_) &
 
 	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
 
@@ -2328,7 +2337,7 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 
 	(** Instantiate the component *)	
 	inst_var(cenv,ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
-		 dims, [], [], impl)
+		 dims, [], [], impl,NONE)
 	  => (dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
@@ -2362,7 +2371,7 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	  => (ty, 
 	      SOME((SCode.COMPONENT(n,final,repl,prot,
 				   attr as SCode.ATTR(ad,flow,acc,param,dir),
-				   t,m,_),cmod)),_) &
+				   t,m,_,comment),cmod)),_) &
 	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
 
 	get_cref_from_mod(m) => crefs &
@@ -2390,7 +2399,7 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 
 	(** Instantiate the component *)	
 	inst_var(cenv, ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
-		 dims, [], [], false)
+		 dims, [], [], false,NONE)
 	  => (dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
@@ -2484,8 +2493,8 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 	absyn_dir_to_dae_dir dir => dir' &
 	fix_direction (r,dir) => r'
 	-----------------------------
-	fix_direction (DAE.VAR(cr,vk,DAE.BIDIR,t,e,id,start,flow,class,dae_var_attr)::r,dir) 
-	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow,class,dae_var_attr)::r'
+	fix_direction (DAE.VAR(cr,vk,DAE.BIDIR,t,e,id,start,flow,class,dae_var_attr,comment)::r,dir) 
+	  => DAE.VAR(cr,vk,dir',t,e,id,start,flow,class,dae_var_attr,comment)::r'
 
   rule	(* Error, component declared as input or output  when containing variable that
 	 * has prefix input. 
@@ -2498,7 +2507,7 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 	Print.print_error_buf str &
 	Print.print_error_buf " declared as input\n"
  	-----------------------------
-	fix_direction (DAE.VAR(cr,vk,DAE.INPUT,t,e,id,start,flow,class,dae_var_attr)::r,dir) 
+	fix_direction (DAE.VAR(cr,vk,DAE.INPUT,t,e,id,start,flow,class,dae_var_attr,comment)::r,dir) 
 	  => fail
 
 
@@ -2513,7 +2522,7 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 	Print.print_error_buf str & 
 	Print.print_error_buf " declared as input\n"
  	-----------------------------
-	fix_direction (DAE.VAR(cr,vk,DAE.OUTPUT,t,e,id,start,flow,class,dae_var_attr)::r,dir) 
+	fix_direction (DAE.VAR(cr,vk,DAE.OUTPUT,t,e,id,start,flow,class,dae_var_attr,comment)::r,dir) 
 	  => fail
 
   rule	fix_direction(lst,dir) => lst' &
@@ -2562,8 +2571,8 @@ relation inst_array : (Env.Env,
 		       DimExp list,
 		       int list,
 		       InstDims,
-		       bool
-		       )
+		       bool,
+		       Absyn.Comment option)
 	  => (DAE.Element list, Connect.Sets, Types.Type) =
 	  
   rule	(* If is a function var.*)
@@ -2577,28 +2586,32 @@ relation inst_array : (Env.Env,
 	Types.match_prop(e,Types.PROP(ty,false),p) => e' &
 	make_dae_equation(Exp.CREF(cr,ty'),e',NON_INITIAL) => dae 
 	---------------------------------------------------
-	inst_array(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state as ClassInf.FUNCTION(_),
+                   mod,pre,csets,n,(cl,attr),i,
+                   DIMEXP(_,_),dims,idxs,inst_dims,impl,comment)
 	  => ([dae],[],ty)
 
-  rule	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+  rule	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl,comment)
 	  => (dae,csets,ty) 
 	-----------------
-	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMEXP(_,_),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,
+                   DIMEXP(_,_),dims,idxs,inst_dims,impl,comment)
 	  => (dae,csets,ty)
 
   rule	int_gt(i,stop) => true
 	----------------------
-	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,
+                   DIMINT(stop),dims,idxs,inst_dims,impl,comment)
 	  => ([], csets, (Types.T_NOTYPE,NONE))
 
   rule	(* Modifiers of arrays that are functioncall, eg. Real x[:]=foo(...) *)
 	(* Should only generate -one- functioncall *)
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,p)) &
 	Exp.contain_functioncall(e) => true &
-	inst_var2(env,ci_state,Types.NOMOD,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+	inst_var2(env,ci_state,Types.NOMOD,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl,comment)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
-	inst_array(env,ci_state,Types.NOMOD,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state,Types.NOMOD,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl,comment)
 	  => (dae2, csets'',arrty) &
 	(* Make the equation containing the functioncall *)
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
@@ -2606,26 +2619,26 @@ relation inst_array : (Env.Env,
 	make_dae_equation(Exp.CREF(cr,arrty'),e,NON_INITIAL) => dae3 &
 	Util.list_flatten([dae1,dae2,[dae3]]) => dae
 	-----------------------------
-	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl,comment)
           => (dae,csets',ty)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
-	inst_var2(env,ci_state,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl)
+	inst_var2(env,ci_state,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl,comment)
 	  => (dae1,csets',ty) &
 	int_add(i,1) => i' &
-	inst_array(env,ci_state,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl,comment)
 	  => (dae2, csets'',_) &
 
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl)
+	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl,comment)
           => (dae,csets'',ty)
 
   rule	Debug.fprint("failtrace", "- inst_array failed: ") &
 	Debug.fcall("failtrace", Print.print_buf,  n) &
 	Debug.fprint("failtrace", "\n") 
 	--------------------------------------------------
-	inst_array(_,_,_,_,_,n,(_,_),_,_,_,_,_,_) => fail
+	inst_array(_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_) => fail
 	
 end
 
@@ -3287,7 +3300,7 @@ end
 **)
 
 relation is_output_var : SCode.Element => () =
-  axiom	is_output_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),_,_,_)
+  axiom	is_output_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.OUTPUT),_,_,_,_)
 end
 
 (** relation: is_input_var
@@ -3295,7 +3308,7 @@ end
  ** Succeds for element that is input component
  **)
 relation is_input_var : SCode.Element => () =
-  axiom	is_input_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.INPUT),_,_,_)
+  axiom	is_input_var SCode.COMPONENT(_,_,_,_,SCode.ATTR(_,_,_,_,Absyn.INPUT),_,_,_,_)
 end
 
 (** relation: inst_ext_make_crefs
@@ -3310,7 +3323,7 @@ relation inst_ext_make_crefs : SCode.Element => Absyn.Exp list =
   rule	inst_ext_make_crefs_2 (id,dims,1) => sizelist &
 	let crlist = Absyn.CREF(Absyn.CREF_IDENT(id,[]))::sizelist
 	-----------------------------------------------
-	inst_ext_make_crefs SCode.COMPONENT(id,fi,re,pr,SCode.ATTR(dims,_,_,_,_),path,mod,_)
+	inst_ext_make_crefs SCode.COMPONENT(id,fi,re,pr,SCode.ATTR(dims,_,_,_,_),path,mod,_,comment)
 	  => crlist
 end
 
@@ -3524,12 +3537,12 @@ end
 relation make_enum_components: string list => SCode.Element list =
 
   axiom make_enum_components ([str]) 
-	  =>  [SCode.COMPONENT(str,true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE)]
+	  =>  [SCode.COMPONENT(str,true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE)]
 	  
   rule	make_enum_components(x) => els
 	----------------------------
 	make_enum_components (str::(x as (_::_)))
-	  => SCode.COMPONENT(str,true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE):: els
+	  => SCode.COMPONENT(str,true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE):: els
 end
 
 (** relation: dae_declare
@@ -3549,7 +3562,8 @@ relation dae_declare : (Exp.ComponentRef,
 			Exp.Exp option,
 			InstDims,
 			DAE.StartValue,
-			DAE.VariableAttributes option) 
+			DAE.VariableAttributes option,
+                        Absyn.Comment option) 
 	  => DAE.Element list =
 
   rule	(*Debug.fprint( "insttr", "dae_declare(") &
@@ -3558,14 +3572,14 @@ relation dae_declare : (Exp.ComponentRef,
 	Debug.fcall ( "insttr", Types.print_type,ty)  &
 	Debug.fprint ("insttr", "...)\n") &*)
 	DAE.to_flow flow => flow' &
-	dae_declare2 (vn, ty, flow', par, dir, e, inst_dims, start,dae_var_attr) => dae
+	dae_declare2 (vn, ty, flow', par, dir, e, inst_dims, start,dae_var_attr,comment) => dae
 	-----------------------------------
-	dae_declare (vn, ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start,dae_var_attr) 
+	dae_declare (vn, ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
   rule	Debug.fprint("failtrace", "- dae_declare failed\n")
 	------------------------------
-	dae_declare(_,_,_,_,_,_,_) => fail
+	dae_declare(_,_,_,_,_,_,_,_) => fail
 
 end
 
@@ -3576,40 +3590,41 @@ end
 
 relation dae_declare2 : (Exp.ComponentRef, Types.Type, DAE.Flow, SCode.Variability,
 			 Absyn.Direction, Exp.Exp option, 
-			 InstDims, DAE.StartValue,DAE.VariableAttributes option)
+			 InstDims, DAE.StartValue,DAE.VariableAttributes option,
+                        Absyn.Comment option)
 	  => DAE.Element list =
 
   rule	dae_declare3 (vn, ty, flow, DAE.VARIABLE, dir, e, 
-		      inst_dims,start, dae_var_attr) => dae
+		      inst_dims,start, dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.VAR, dir, e, inst_dims,start,dae_var_attr) => dae
+	dae_declare2 (vn, ty, flow, SCode.VAR, dir, e, inst_dims,start,dae_var_attr,comment) => dae
 
   rule	dae_declare3 (vn, ty, flow,  DAE.DISCRETE, dir, e,  
-		      inst_dims,start,dae_var_attr) => dae
+		      inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.DISCRETE, dir, e, inst_dims,start,dae_var_attr) => dae
+	dae_declare2 (vn, ty, flow, SCode.DISCRETE, dir, e, inst_dims,start,dae_var_attr,comment) => dae
 
   rule	dae_declare3 (vn, ty, flow, DAE.PARAM, dir, e,  
-		      inst_dims,start,dae_var_attr) => dae
+		      inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.PARAM, dir, e, inst_dims,start,dae_var_attr) 
+	dae_declare2 (vn, ty, flow, SCode.PARAM, dir, e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
   rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e,  
-		      inst_dims,start,dae_var_attr) => dae
+		      inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.CONST, dir, e, inst_dims,start,dae_var_attr) 
+	dae_declare2 (vn, ty, flow, SCode.CONST, dir, e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
   rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e, 
-		      inst_dims,start,dae_var_attr) => dae
+		      inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare2 (vn, ty, flow, SCode.STRUCTPARAM, dir, e, inst_dims,start,dae_var_attr) 
+	dae_declare2 (vn, ty, flow, SCode.STRUCTPARAM, dir, e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
   rule	Debug.fprint("failtrace", "- dae_declare2 failed\n")
 	------------------------------
-	dae_declare2(_,_,_,_,_,_,_,_,_) => fail
+	dae_declare2(_,_,_,_,_,_,_,_,_,_) => fail
 
 end
 
@@ -3620,25 +3635,26 @@ end
 
 relation dae_declare3 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 			 Absyn.Direction, Exp.Exp option, 
-			 InstDims, DAE.StartValue,DAE.VariableAttributes option)
+			 InstDims, DAE.StartValue,DAE.VariableAttributes option,
+                        Absyn.Comment option)
 	  => DAE.Element list =
 
-  rule	dae_declare4 (vn, ty, fl, vk, DAE.INPUT, e, inst_dims,start,dae_var_attr) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.INPUT, e, inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, fl, vk, Absyn.INPUT, e, inst_dims,start,dae_var_attr) 
+	dae_declare3 (vn, ty, fl, vk, Absyn.INPUT, e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
-  rule	dae_declare4 (vn, ty, fl, vk, DAE.OUTPUT, e, inst_dims,start,dae_var_attr) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.OUTPUT, e, inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, fl, vk, Absyn.OUTPUT, e, inst_dims,start,dae_var_attr) => dae
+	dae_declare3 (vn, ty, fl, vk, Absyn.OUTPUT, e, inst_dims,start,dae_var_attr,comment) => dae
 
-  rule	dae_declare4 (vn, ty, fl, vk, DAE.BIDIR, e, inst_dims,start,dae_var_attr) => dae
+  rule	dae_declare4 (vn, ty, fl, vk, DAE.BIDIR, e, inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
-	dae_declare3 (vn, ty, fl, vk, Absyn.BIDIR, e, inst_dims,start,dae_var_attr) => dae
+	dae_declare3 (vn, ty, fl, vk, Absyn.BIDIR, e, inst_dims,start,dae_var_attr,comment) => dae
 
   rule	Debug.fprint("failtrace", "#- dae_declare3 failed\n")
 	------------------------------
-	dae_declare3(_,_,_,_,_,_,_,_,_) => fail
+	dae_declare3(_,_,_,_,_,_,_,_,_,_) => fail
 
 end
 
@@ -3649,35 +3665,36 @@ end
 
 relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 			 DAE.VarDirection, Exp.Exp option, InstDims, 
-			 DAE.StartValue,DAE.VariableAttributes option)
+			 DAE.StartValue,DAE.VariableAttributes option,
+                        Absyn.Comment option)
 	  => DAE.Element list =
 
   axiom	dae_declare4 (vn, (Types.T_INTEGER(_),_), fl, kind, dir, e,  
-		      inst_dims,start,dae_var_attr)
-	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl,[],dae_var_attr)]
+		      inst_dims,start,dae_var_attr,comment)
+	  => [DAE.VAR(vn, kind, dir, DAE.INT, e,  inst_dims,start,fl,[],dae_var_attr,comment)]
 	
   axiom	dae_declare4 (vn, (Types.T_REAL(_),_), fl, kind, dir, e, 
-		      inst_dims,start,dae_var_attr)
-	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl,[],dae_var_attr)]
+		      inst_dims,start,dae_var_attr,comment)
+	  => [DAE.VAR(vn, kind, dir, DAE.REAL, e, inst_dims,start,fl,[],dae_var_attr,comment)]
 
   axiom	dae_declare4 (vn, (Types.T_BOOL(_),_), fl, kind, dir, e, 
-		      inst_dims,start,dae_var_attr)
-	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl,[],dae_var_attr)]
+		      inst_dims,start,dae_var_attr,comment)
+	  => [DAE.VAR(vn, kind, dir, DAE.BOOL, e, inst_dims,start,fl,[],dae_var_attr,comment)]
 	
   axiom	dae_declare4 (vn, (Types.T_STRING(_),_), fl, kind, dir, e, 
-		      inst_dims,start,dae_var_attr)
-	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl,[],dae_var_attr)]
+		      inst_dims,start,dae_var_attr,comment)
+	  => [DAE.VAR(vn, kind, dir, DAE.STRING, e, inst_dims,start,fl,[],dae_var_attr,comment)]
 
-axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start,dae_var_attr)
+  axiom dae_declare4 (vn, (Types.T_ENUM,_), fl, kind, dir, e, inst_dims,start,dae_var_attr,comment)
 	=> []
 	(* We should not declare each enumeration value of an enumeration when instantiating,e.g Myenum my !=> constant EnumType my.enum1,... *)
 	(*[DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)]*)
 
   axiom	dae_declare4 (vn, (Types.T_ENUMERATION(l,_),_), fl, kind, dir, e,
-		      inst_dims,start,dae_var_attr)
-	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,[],dae_var_attr)]
+		      inst_dims,start,dae_var_attr,comment)
+	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,[],dae_var_attr,comment)]
 
-  axiom	dae_declare4 (c,ty,_,_,_,_,_,_,_) => []
+  axiom	dae_declare4 (c,ty,_,_,_,_,_,_,_,_) => []
 
 end
 
@@ -4217,7 +4234,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
   rule	new_ident => n &
 
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
-				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE)
+				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE,NONE)
 	  => decl &
 	inst_eq_equation_2(Exp.CREF(n,Exp.OTHER), e2, t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
@@ -4230,7 +4247,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	(** where none of the sides is a component reference *)
   rule	new_ident => n &
 	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
-				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE)
+				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE,NONE)
 	  => decl &
 	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
@@ -5488,10 +5505,10 @@ relation init_vars_modelica_output_1 : (DAE.Element list, DAE.Element list)
 
   rule	init_vars_modelica_output_2 (cr, exp, done) => (exp', done') &
 	init_vars_modelica_output_2 (cr, exp', todorest) => (exp'', todorest') &
-	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims,start,flow,class,dae_var_attr)]) => done'' &
+	list_append (done', [DAE.VAR(cr, vk, vd, ty, exp'',inst_dims,start,flow,class,dae_var_attr,comment)]) => done'' &
 	init_vars_modelica_output_1 (done'', todorest') => done'''
 	--------------------------------------------------------
-	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims,start,flow,class,dae_var_attr)) :: todorest)
+	init_vars_modelica_output_1 (done, (v as DAE.VAR(cr, vk, vd, ty, exp,inst_dims,start,flow,class,dae_var_attr,comment)) :: todorest)
 	  => done'''
 
 
@@ -5568,7 +5585,7 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
 	elab_arraydim(env,owncref,dim,NONE,false,NONE) => dimexp &
 	Debug.fprint ("recconst", "calling inst_var\n") &
 	inst_var(cenv, ClassInf.FUNCTION(""),mod', Prefix.NOPRE, [], id, cl, attr,
-		 dimexp, [], [], impl ) => (_, _, tp') &
+		 dimexp, [], [], impl,comment) => (_, _, tp') &
 	Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &
@@ -5579,7 +5596,7 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
 	inst_record_constructor_elt (env,
 				     SCode.COMPONENT(id,_,repl,prot,
 						     attr as
-						     SCode.ATTR(dim,f,acc,var,dir),t,mod,bc),impl) 
+						     SCode.ATTR(dim,f,acc,var,dir),t,mod,bc,comment),impl) 
 	    => Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT),prot,tp',bind)
 
   rule	Debug.fprint("failtrace", "- inst_record_constructor_elt failed.,elt:")

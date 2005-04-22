@@ -171,7 +171,7 @@ val unit = SCode.COMPONENT("unit",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
-			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE,NONE)
 
 val quantity = SCode.COMPONENT("quantity",true,false,false,
 			      SCode.ATTR([],
@@ -180,7 +180,7 @@ val quantity = SCode.COMPONENT("quantity",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
-			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE,NONE)
 
 val display_unit = SCode.COMPONENT("displayUnit",true,false,false,
 			      SCode.ATTR([],
@@ -189,7 +189,7 @@ val display_unit = SCode.COMPONENT("displayUnit",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
-			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE,NONE)
 
 val min = SCode.COMPONENT("min",true,false,false,
 			      SCode.ATTR([],
@@ -198,7 +198,7 @@ val min = SCode.COMPONENT("min",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("RealType"),
-			      SCode.MOD(false,[],SOME(Absyn.REAL(-1e99))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.REAL(-1e99))),NONE,NONE)
 
 val max = SCode.COMPONENT("max",true,false,false,
 			      SCode.ATTR([],
@@ -207,7 +207,7 @@ val max = SCode.COMPONENT("max",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("RealType"),
-			      SCode.MOD(false,[],SOME(Absyn.REAL(1e99))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.REAL(1e99))),NONE,NONE)
 
 val real_start = SCode.COMPONENT("start",true,false,false,
 			      SCode.ATTR([],
@@ -216,7 +216,7 @@ val real_start = SCode.COMPONENT("start",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("RealType"),
-			      SCode.MOD(false,[],SOME(Absyn.REAL(0.0))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.REAL(0.0))),NONE,NONE)
 
 val integer_start = SCode.COMPONENT("start",true,false,false,
 			      SCode.ATTR([],
@@ -225,7 +225,7 @@ val integer_start = SCode.COMPONENT("start",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("IntegerType"),
-			      SCode.MOD(false,[],SOME(Absyn.INTEGER(0))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.INTEGER(0))),NONE,NONE)
 
 val string_start = SCode.COMPONENT("start",true,false,false,
 			      SCode.ATTR([],
@@ -234,7 +234,7 @@ val string_start = SCode.COMPONENT("start",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StringType"),
-			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.STRING(""))),NONE,NONE)
 
 val boolean_start = SCode.COMPONENT("start",true,false,false,
 			      SCode.ATTR([],
@@ -243,7 +243,7 @@ val boolean_start = SCode.COMPONENT("start",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("BooleanType"),
-			      SCode.MOD(false,[],SOME(Absyn.BOOL(false))),NONE)
+			      SCode.MOD(false,[],SOME(Absyn.BOOL(false))),NONE,NONE)
 
 val fixed = SCode.COMPONENT("fixed",true,false,false,
 			      SCode.ATTR([],
@@ -252,7 +252,7 @@ val fixed = SCode.COMPONENT("fixed",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("BooleanType"),
-			      SCode.MOD(false,[],SOME(Absyn.BOOL(false))),NONE) 
+			      SCode.MOD(false,[],SOME(Absyn.BOOL(false))),NONE,NONE) 
 					(* Should be true for variables*)
 
 val nominal = SCode.COMPONENT("nominal",true,false,false,
@@ -262,7 +262,7 @@ val nominal = SCode.COMPONENT("nominal",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("RealType"),
-			      SCode.MOD(false,[],NONE),NONE)
+			      SCode.MOD(false,[],NONE),NONE,NONE)
 
 val state_select = SCode.COMPONENT("stateSelect",true,false,false,
 			      SCode.ATTR([],
@@ -271,16 +271,18 @@ val state_select = SCode.COMPONENT("stateSelect",true,false,false,
 					 SCode.PARAM,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("StateSelect"),
-			      SCode.MOD(false,[],SOME(Absyn.CREF(Absyn.CREF_QUAL("StateSelect",[],Absyn.CREF_IDENT("default",[]))))),NONE)
+			      SCode.MOD(false,[],
+                                        SOME(Absyn.CREF(Absyn.CREF_QUAL("StateSelect",[],Absyn.CREF_IDENT("default",[]))))),
+                                   NONE,NONE)
 
 (* The StateSelect enumeration *)
 val state_select_comps = 
 [
- SCode.COMPONENT("never",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE),
- SCode.COMPONENT("avoid",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE),
- SCode.COMPONENT("default",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE),
- SCode.COMPONENT("prefer",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE),
- SCode.COMPONENT("always",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE)
+ SCode.COMPONENT("never",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE),
+ SCode.COMPONENT("avoid",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE),
+ SCode.COMPONENT("default",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE),
+ SCode.COMPONENT("prefer",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE),
+ SCode.COMPONENT("always",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE)
 ]
 
 val state_select_type = 
