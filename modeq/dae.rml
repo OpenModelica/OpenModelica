@@ -138,22 +138,21 @@ module DAE:
   datatype Type = REAL | INT | BOOL | STRING | ENUM | ENUMERATION of string list
   datatype Flow = FLOW | NON_FLOW 
 
-(* LS: Added for variables in functions *)
   datatype VarDirection = INPUT | OUTPUT | BIDIR
 
 (* LS: Removed VARVAL completely, and added Exp.Exp as an option to VAR *)
-  datatype Element = VAR of Exp.ComponentRef * 
-			VarKind * 
-			VarDirection * 
-			Type * 
-			Exp.Exp option * (* Binding expression e.g. for parameters*)
-			InstDims *
-			StartValue * (* value of start attribute *)
-			Flow * (* Flow of connector variable. Needed for 
-			      unconnected flow variables *)
-			Absyn.Path list *(* The class the variable is instantiated from *)
-                        VariableAttributes option *
-                        Absyn.Comment option (* this contains the comment and annotation from Absyn *)
+  datatype Element = VAR of Exp.ComponentRef *  (* varible name *)
+			VarKind *		(* variable, constant, parameter, etc. *)
+			VarDirection *		(* input, output or bidir *)
+			Type *			(* one of the builtin types *)
+			Exp.Exp option *	(* Binding expression e.g. for parameters*)
+			InstDims *		(* dimension of original component *)
+			StartValue *		(* value of start attribute *)
+			Flow *			(* Flow of connector variable. Needed for 
+						unconnected flow variables *)
+			Absyn.Path list *	(* class the variable is instantiated from *)
+                        VariableAttributes option *   (* attributes: min,max,quantity..*)
+                        Absyn.Comment option	      (* comment and annotation from Absyn*)
 
 
 		   | DEFINE of Exp.ComponentRef * Exp.Exp

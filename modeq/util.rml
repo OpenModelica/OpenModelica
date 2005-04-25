@@ -184,6 +184,7 @@ module Util :
   relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list)
   relation string_append_list : string list => string
   relation string_delimit_list : (string list, string) => string
+  relation string_delimit_list_2sep : (string list, string,string,int) => string
   relation string_delimit_list_no_empty : (string list, string) => string
   relation string_replace_char : (string, char, char) => string
   relation string_split_at_char : (string, char) => string list 
@@ -1079,6 +1080,62 @@ relation string_delimit_list : (string list, string) => string =
 	---------------------------
 	string_delimit_list(f::r,delim) => str
 end
+
+(** relation: string_delimit_list_2sep
+ ** author: PA
+ **
+ ** This relation is similar to string_delimit_list, i.e it inserts string delimiters between 
+ ** consecutive strings in a list. But it also count the lists and inserts a second string delimiter
+ ** when the counter is reached. This can be used when for instance outputting large lists of values
+ ** and a newline is needed after ten or so items.
+**)
+
+relation string_delimit_list_2sep : (string list, string,string,int) => string =
+
+  rule	string_delimit_list_2sep2(str,sep1,sep2,n,0) => res
+	----------------------------
+	string_delimit_list_2sep(str,sep1,sep2,n) => res
+end
+
+
+(** relation: string_delimit_list_2sep2
+ ** author: PA
+ **
+ ** Helper relation to string_delimit_list_2sep
+ **)
+
+relation string_delimit_list_2sep2: (string list, string, string, int,int (* iterator*)) 
+	  => string =
+
+  axiom	string_delimit_list_2sep2([],_,_,_,_) => "" 
+  axiom	string_delimit_list_2sep2([s],_,_,_,_) => s 
+
+  rule	(* special case for first element*)
+	string_delimit_list_2sep2(r,sep1,sep2,n,1) => str1 &
+	string_append_list([f,sep1,str1]) => str
+	---------------------------
+	string_delimit_list_2sep2(f::r,sep1,sep2,n,0) => str
+
+  rule	(* insert second delimiter*)
+	int_mod(iter,n) => 0 &
+	iter + 1 => iter' &
+	string_delimit_list_2sep2(r,sep1,sep2,n,iter') => str1 &
+	string_append_list([f,sep1,sep2,str1]) => str
+	---------------------------
+	string_delimit_list_2sep2(f::r,sep1,sep2,n,iter) => str
+
+  rule	(* not inserting second delimiter*)
+	iter + 1 => iter' &
+	string_delimit_list_2sep2(r,sep1,sep2,n,iter') => str1 &
+	string_append_list([f,sep1,str1]) => str
+	---------------------------
+	string_delimit_list_2sep2(f::r,sep1,sep2,n,iter) => str
+	
+  rule	print "string_delimit_list_2sep2 failed\n"
+	-------------------------
+	string_delimit_list_2sep2(_,_,_,_,_) => fail
+end
+
 
 (** relation string_delimit_list_no_empty
  ** Takes a list of strings and a string delimiter and appends all list elements with

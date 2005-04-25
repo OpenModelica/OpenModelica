@@ -1039,8 +1039,27 @@ end
 	 ------------------------
 	 print_exp2_str (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22)),pri1) => s'''
 
-  rule	
- 	 Exp.binop_priority op => pri2 &
+  rule	(* x^2 => x*x *)
+	 Exp.binop_priority op => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e1,pri3) => s2 & 
+	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 Util.string_append_list([s1,s2, "*",s2,s4]) => res 
+	 ------------------------
+	 print_exp2_str (Exp.BINARY(e1, (op as Exp.POW(_)), Exp.ICONST(2)),pri1) => res
+	 
+  rule	(* x^2 => x*x *)
+	 int_real(2) => two' &
+	 real_eq(two,two) => true &
+	 Exp.binop_priority op => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e1,pri3) => s2 & 
+	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 Util.string_append_list([s1,s2, "*",s2,s4]) => res 
+	 ------------------------
+	 print_exp2_str (Exp.BINARY(e1, (op as Exp.POW(_)), Exp.RCONST(two)),pri1) => res
+
+  rule	Exp.binop_priority op => pri2 &
 	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
 	 print_exp2_str (e1,pri3) => s2 & 
 	 print_exp2_str (e2,pri2) => s3 &
@@ -1050,7 +1069,7 @@ end
          string_append(s',",") => s'' &
          string_append(s'',s3) => s''' &
          string_append(s''',")") => res &
-	     string_append (res, s4) => res'
+	 string_append (res, s4) => res'
 	 ------------------------
 	 print_exp2_str (Exp.BINARY(e1, (op as Exp.POW(_)), e2),pri1) => res'
 
