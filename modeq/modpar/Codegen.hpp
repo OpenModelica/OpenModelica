@@ -62,6 +62,9 @@ private:
   void generateTemporaries();
   void generateParallelFunctionLocals(TaskList *tasks);
 
+  // Generates the residual function for solving nonlinear equation systems.
+  void generateNonLinearResidualFunc(VertexID task);
+
   void generateKillCommand();
   void generateTmpDeclarations();
 
