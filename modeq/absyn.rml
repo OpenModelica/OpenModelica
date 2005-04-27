@@ -452,6 +452,7 @@ module Absyn:
   relation element_spec_name : ElementSpec => Ident
   relation cref_to_path : ComponentRef => Path
   relation path_to_cref : Path => ComponentRef
+  relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef
   relation path_string : Path => string
   relation opt_path_string: Path option => string
   relation path_string2 : (Path, string) => string
@@ -734,6 +735,16 @@ relation path_to_cref : Path => ComponentRef =
 	-------------------
 	path_to_cref QUALIFIED(i,p) => CREF_QUAL(i,[],c)
 end
+
+
+relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
+
+  axiom	join_crefs ( CREF_IDENT(id,sub),cr2) => CREF_QUAL(id,sub,cr2)
+	
+  rule	join_crefs(cr,cr2) => cr'
+	------------------------
+	join_crefs (CREF_QUAL(id,sub,cr),cr2) => CREF_QUAL(id,sub,cr')
+end 
 
 (** relation: cref_get_first
  **

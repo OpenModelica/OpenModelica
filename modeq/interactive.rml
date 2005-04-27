@@ -1671,6 +1671,27 @@ relation get_modification_names:(Absyn.ElementArg list)
 
   axiom	get_modification_names([]) => []
 
+  rule	(* has submodifiers, add these instead of this modifier name*)
+	get_modification_names(rest) => names &
+	get_modification_names(args) => names2 &
+	Util.list_map_1(names2,string_append,".") => names2' &
+	Util.list_map_1(names2', string_append,name) => names2'' &
+	list_append(names2'',names) => res
+	---------------
+	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,_),SOME(Absyn.CLASSMOD(args as _::_,_)),cmt)::rest)
+	  => res
+
+  rule	(* no submodifiers, add name*)
+	get_modification_names(rest) => names 
+	--------------------------------
+	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,_),SOME(Absyn.CLASSMOD([],_)),cmt)::rest)
+	  => name::names
+
+  rule	(* no submodifiers 2, add name*)
+	get_modification_names(rest) => names
+	--------------------------------
+	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,_),NONE,cmt)::rest)
+	  => name::names
   rule	get_modification_names(rest) => names
 	---------------
 	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,_),mod,cmt)::rest)
