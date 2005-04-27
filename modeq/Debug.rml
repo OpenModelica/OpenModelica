@@ -1,0 +1,317 @@
+(*
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
+
+   
+    This file is part of OpenModelica, in the following denoted OSM.
+
+
+    The OSM License, Version 1.1, March 4, 2005.
+
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
+*)
+(**
+ ** file:	 Debug.rml
+ ** module:      Debug
+ ** description: debug printing
+ **
+ ** RCS: $Id$
+ **
+ ** Printing routines for debug output of strings. Also flag controlled
+ ** printing. When flag controlled printing relations are called, printing is 
+ ** done only if the given flag is among the flags given in the runtime 
+ ** arguments, to +d-flag, i.e. if +d=inst,lookup is given in the command line,
+ ** only calls containing these flags will actually print something, e.g.:
+ ** fprint("inst", "Starting instantiation..."). See runtime/rtopts.c for
+ ** implementation of flag checking.
+ **
+ **)
+
+module Debug:
+ relation print: string => ()
+ relation fprint: (string, string) => ()
+ relation fprintln: (string, string) => ()
+ relation fprintl: (string, string list) => ()
+ relation fprint_list: (string, 'a list, 'a => (), string) => ()
+ relation fcall: (string, 'a => (), 'a) => ()
+ relation fcall0: (string, () => ()) => ()
+ relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b
+ relation bcall: (bool, 'a => (), 'a) => () 
+ relation bcall_2: (bool, ('a,'b) => (), 'a,'b) => () 
+ relation notfcall: (string, 'a => (), 'a) => ()
+end
+
+
+with "RTOpts.rml"
+with "Print.rml"
+
+
+(* PR 
+ * This realtion is used for debug printing. 
+ *)
+relation print: string => () =
+   (* Debug output.
+	Takes a lot of time during runtime. Hangs
+
+    LS: Reason: print means Debug.print, so recursive infinit loop.
+        Correct version should call RML.print for the builtin print
+
+   rule Print.print_buf s
+	------------
+	print s => ()
+
+    Correct:
+
+    rule RML.print s
+	 -----------
+	 print s => ()
+
+    *)
+
+   rule fprint ("olddebug", s)
+	----------------------
+	print s => ()
+
+end 
+
+(* LS: Flag controlled debugging *)
+
+relation fprint: (string, string) => () =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	Print.print_error_buf str
+	-------------------
+	fprint (flag, str)
+
+  axiom	fprint (_,_)
+
+end
+
+relation fprintln: (string, string) => () =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	Print.print_error_buf str &
+	Print.print_error_buf "\n"
+	-------------------
+	fprintln (flag, str)
+
+  axiom	fprintln (_,_)
+
+end
+
+relation fprintl: (string, string list) => () =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	make_string strlist => str &
+	Print.print_error_buf str
+	-------------------
+	fprintl (flag, strlist)
+
+  axiom	fprintl (_,_)
+
+end
+
+relation make_string : string list => string =
+
+  axiom	make_string [] => ""
+
+  rule	make_string rest => res &
+	string_append (first, res) => res'
+	----------------------------------
+	make_string first::rest => res'
+
+end
+
+
+(* Call the given function (2nd arg) if the flag given in 1st arg is set *)
+
+relation fcall: (string, 'a => (), 'a) => () =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	func(str)
+	------------
+	fcall (flag, func, str)
+
+  axiom	fcall (_,_,_)
+
+end
+
+(* Call the given function (2nd arg) if the flag given in 1st arg is set *)
+
+relation fcall0: (string, () => ()) => () =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	func()
+	------------
+	fcall0 (flag, func)
+
+  axiom	fcall0 (_,_)
+
+end
+
+
+(* Call the given function (2nd arg) if the flag given in 1st arg is set, and *)
+(* return its return value *)
+
+relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	func(arg) => res
+	----------------
+	fcallret (flag, func, arg, def) => res
+
+  axiom	fcallret (_,_,_,def) => def
+
+end
+
+relation bcall: (bool, 'a => (), 'a) => () =
+
+  rule	func(str)
+	------------
+	bcall (true, func, str)
+
+  axiom	bcall (false,_,_)
+
+end
+
+relation bcall_2: (bool, ('a,'b) => (), 'a,'b) => () =
+
+  rule	func(a,b)
+	------------
+	bcall_2 (true, func, a,b)
+
+  axiom	bcall_2 (false,_,_,_)
+
+end
+
+(* Call the given function (2nd arg) if the flag given in 1st arg is NOT set *)
+
+relation notfcall: (string, 'a => (), 'a) => () =
+
+  rule	RTOpts.debug_flag (flag) => false &
+	func(str)
+	------------
+	notfcall (flag, func, str)
+
+  axiom	notfcall (_,_,_)
+
+end
+
+relation fprint_list: (string, 'a list, 'a => (), string) => () =
+
+  rule	RTOpts.debug_flag (flag) => true &
+	print_list (lst, func, sep)
+	--------------------------------
+	fprint_list (flag, lst, func, sep)
+
+  axiom	fprint_list (_,_,_,_)
+
+end
+
+relation print_list : ('a list, 'a => (), string) => () =
+
+  axiom	print_list([],_,_)
+	
+  rule	r(h)
+	------------------
+	print_list([h],r,_)
+
+  rule	r(h) & Print.print_error_buf sep &
+	print_list(t,r,sep)
+	-------------------------------------
+	print_list(h::t,r,sep)
+
+end
+

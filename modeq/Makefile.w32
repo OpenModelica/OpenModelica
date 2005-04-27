@@ -33,37 +33,35 @@ clean:
 	del /Q /F $(OBJS) $(SRCC) $(SRCH) $(SIGS) VC7\Release\main.obj VC7\Release\modeqrml.lib
 
 
-
-absyn.obj: absyn.rml debug.sig dump.sig util.sig print.sig
-algorithm.obj: algorithm.rml exp.sig types.sig explode.sig util.sig print.sig dump.sig debug.sig
-builtin.obj: builtin.rml absyn.sig explode.sig env.sig types.sig classinf.sig debug.sig print.sig
-ceval.obj: ceval.rml env.sig exp.sig interactive.sig values.sig daelow.sig simcodegen.sig staticexp.sig print.sig types.sig modutil.sig system.sig absyn.sig explode.sig inst.sig lookup.sig dump.sig dae.sig debug.sig util.sig classinf.sig rtopts.sig parse.sig prefix.sig codegen.sig classloader.sig derive.sig
-classinf.obj: classinf.rml explode.sig print.sig absyn.sig
-classloader.obj: classloader.rml absyn.sig system.sig lookup.sig interactive.sig util.sig parse.sig print.sig env.sig dump.sig
-codegen.obj: codegen.rml dae.sig print.sig dump.sig debug.sig absyn.sig algorithm.sig classinf.sig exp.sig modutil.sig types.sig util.sig inst.sig
-connect.obj: connect.rml exp.sig staticexp.sig dae.sig env.sig dump.sig print.sig util.sig debug.sig
-dae.obj: dae.rml absyn.sig exp.sig algorithm.sig types.sig values.sig rtopts.sig graphviz.sig dump.sig print.sig util.sig ceval.sig modutil.sig debug.sig
-daelow.obj: daelow.rml dae.sig exp.sig values.sig absyn.sig algorithm.sig util.sig daeext.sig print.sig derive.sig debug.sig env.sig builtin.sig ceval.sig types.sig explode.sig dump.sig system.sig vartransform.sig rtopts.sig
-derive.obj: derive.rml daelow.sig exp.sig absyn.sig util.sig print.sig graphviz.sig
-debug.obj: debug.rml rtopts.sig print.sig
-dump.obj: dump.rml absyn.sig interactive.sig classinf.sig rtopts.sig print.sig util.sig debug.sig
-dumpgraphviz.obj: dumpgraphviz.rml absyn.sig debug.sig graphviz.sig classinf.sig dump.sig
-env.obj: env.rml absyn.sig values.sig explode.sig types.sig classinf.sig exp.sig dump.sig graphviz.sig dae.sig print.sig util.sig system.sig
-exp.obj: exp.rml absyn.sig graphviz.sig rtopts.sig util.sig print.sig modutil.sig derive.sig system.sig dump.sig
-explode.obj: explode.rml absyn.sig dump.sig debug.sig print.sig util.sig
-graphviz.obj: graphviz.rml
-inst.obj: inst.rml classinf.sig connect.sig dae.sig env.sig exp.sig explode.sig mod.sig prefix.sig types.sig absyn.sig debug.sig interactive.sig util.sig algorithm.sig builtin.sig dump.sig lookup.sig modutil.sig rtopts.sig staticexp.sig values.sig print.sig system.sig ceval.sig
-interactive.obj: interactive.rml absyn.sig explode.sig dae.sig types.sig values.sig env.sig dump.sig debug.sig rtopts.sig util.sig parse.sig prefix.sig mod.sig lookup.sig classinf.sig exp.sig inst.sig staticexp.sig modutil.sig codegen.sig print.sig system.sig classloader.sig ceval.sig
-lookup.obj: lookup.rml classinf.sig types.sig absyn.sig exp.sig env.sig explode.sig parse.sig debug.sig dump.sig inst.sig mod.sig prefix.sig print.sig builtin.sig util.sig modutil.sig staticexp.sig
-main.obj: main.rml absyn.sig modutil.sig parse.sig dump.sig dumpgraphviz.sig explode.sig dae.sig daelow.sig inst.sig interactive.sig rtopts.sig debug.sig codegen.sig socket.sig print.sig corba.sig system.sig util.sig taskgraph.sig taskgraphext.sig simcodegen.sig
-mod.obj: mod.rml absyn.sig env.sig exp.sig prefix.sig explode.sig types.sig dump.sig debug.sig print.sig inst.sig staticexp.sig values.sig util.sig
-modutil.obj: modutil.rml absyn.sig dae.sig exp.sig rtopts.sig util.sig print.sig
-prefix.obj: prefix.rml absyn.sig exp.sig env.sig lookup.sig util.sig print.sig
-staticexp.obj: staticexp.rml absyn.sig exp.sig explode.sig types.sig env.sig values.sig interactive.sig classinf.sig dump.sig print.sig system.sig lookup.sig debug.sig inst.sig codegen.sig modutil.sig dae.sig util.sig rtopts.sig parse.sig classloader.sig mod.sig prefix.sig ceval.sig
-simcodegen.obj: simcodegen.rml dae.sig daelow.sig absyn.sig exp.sig util.sig rtopts.sig debug.sig system.sig values.sig codegen.sig print.sig modutil.sig
-types.obj: types.rml classinf.sig absyn.sig exp.sig values.sig explode.sig dump.sig debug.sig print.sig util.sig staticexp.sig
-taskgraph.obj: taskgraph.rml exp.sig daelow.sig taskgraphext.sig util.sig absyn.sig dae.sig ceval.sig values.sig print.sig
-util.obj: util.rml
-values.obj: values.rml exp.sig absyn.sig print.sig system.sig util.sig dump.sig
-vartransform.obj: vartransform.rml exp.sig daelow.sig system.sig util.sig algorithm.sig
-
+Absyn.obj: Absyn.rml Debug.sig Dump.sig Util.sig Print.sig
+Algorithm.obj: Algorithm.rml Exp.sig Types.sig SCode.sig Util.sig Print.sig Dump.sig Debug.sig
+Builtin.obj: Builtin.rml Absyn.sig SCode.sig Env.sig Types.sig ClassInf.sig Debug.sig Print.sig
+Ceval.obj: Ceval.rml Env.sig Exp.sig Interactive.sig Values.sig DAELow.sig SimCodegen.sig Static.sig Print.sig Types.sig ModUtil.sig System.sig Absyn.sig SCode.sig Inst.sig Lookup.sig Dump.sig DAE.sig Debug.sig Util.sig ClassInf.sig RTOpts.sig Parser.sig Prefix.sig Codegen.sig ClassLoader.sig Derive.sig
+ClassInf.obj: ClassInf.rml SCode.sig Print.sig Absyn.sig
+ClassLoader.obj: ClassLoader.rml Absyn.sig System.sig Lookup.sig Interactive.sig Util.sig Parser.sig Print.sig Env.sig Dump.sig
+Codegen.obj: Codegen.rml DAE.sig Print.sig Dump.sig Debug.sig Absyn.sig Algorithm.sig ClassInf.sig Exp.sig ModUtil.sig Types.sig Util.sig Inst.sig
+Connect.obj: Connect.rml Exp.sig Static.sig DAE.sig Env.sig Dump.sig Print.sig Util.sig Debug.sig
+DAE.obj: DAE.rml Absyn.sig Exp.sig Algorithm.sig Types.sig Values.sig RTOpts.sig Graphviz.sig Dump.sig Print.sig Util.sig Ceval.sig ModUtil.sig Debug.sig
+DAELow.obj: DAELow.rml DAE.sig Exp.sig Values.sig Absyn.sig Algorithm.sig Util.sig DAEEXT.sig Print.sig Derive.sig Debug.sig Env.sig Builtin.sig Ceval.sig Types.sig SCode.sig Dump.sig System.sig VarTransform.sig RTOpts.sig
+Derive.obj: Derive.rml DAELow.sig Exp.sig Absyn.sig Util.sig Print.sig Graphviz.sig
+Debug.obj: Debug.rml RTOpts.sig Print.sig
+Dump.obj: Dump.rml Absyn.sig Interactive.sig ClassInf.sig RTOpts.sig Print.sig Util.sig Debug.sig
+DumpGraphviz.obj: DumpGraphviz.rml Absyn.sig Debug.sig Graphviz.sig ClassInf.sig Dump.sig
+Env.obj: Env.rml Absyn.sig Values.sig SCode.sig Types.sig ClassInf.sig Exp.sig Dump.sig Graphviz.sig DAE.sig Print.sig Util.sig System.sig
+Exp.obj: Exp.rml Absyn.sig Graphviz.sig RTOpts.sig Util.sig Print.sig ModUtil.sig Derive.sig System.sig Dump.sig
+SCode.obj: SCode.rml Absyn.sig Dump.sig Debug.sig Print.sig Util.sig
+Graphviz.obj: Graphviz.rml
+Inst.obj: Inst.rml ClassInf.sig Connect.sig DAE.sig Env.sig Exp.sig SCode.sig Mod.sig Prefix.sig Types.sig Absyn.sig Debug.sig Interactive.sig Util.sig Algorithm.sig Builtin.sig Dump.sig Lookup.sig ModUtil.sig RTOpts.sig Static.sig Values.sig Print.sig System.sig Ceval.sig
+Interactive.obj: Interactive.rml Absyn.sig SCode.sig DAE.sig Types.sig Values.sig Env.sig Dump.sig Debug.sig RTOpts.sig Util.sig Parser.sig Prefix.sig Mod.sig Lookup.sig ClassInf.sig Exp.sig Inst.sig Static.sig ModUtil.sig Codegen.sig Print.sig System.sig ClassLoader.sig Ceval.sig
+Lookup.obj: Lookup.rml ClassInf.sig Types.sig Absyn.sig Exp.sig Env.sig SCode.sig Parser.sig Debug.sig Dump.sig Inst.sig Mod.sig Prefix.sig Print.sig Builtin.sig Util.sig ModUtil.sig Static.sig
+Main.obj: Main.rml Absyn.sig ModUtil.sig Parser.sig Dump.sig DumpGraphviz.sig SCode.sig DAE.sig DAELow.sig Inst.sig Interactive.sig RTOpts.sig Debug.sig Codegen.sig Socket.sig Print.sig Corba.sig System.sig Util.sig TaskGraph.sig TaskGraphExt.sig SimCodegen.sig
+Mod.obj: Mod.rml Absyn.sig Env.sig Exp.sig Prefix.sig SCode.sig Types.sig Dump.sig Debug.sig Print.sig Inst.sig Static.sig Values.sig Util.sig
+ModUtil.obj: ModUtil.rml Absyn.sig DAE.sig Exp.sig RTOpts.sig Util.sig Print.sig
+Prefix.obj: Prefix.rml Absyn.sig Exp.sig Env.sig Lookup.sig Util.sig Print.sig
+Static.obj: Static.rml Absyn.sig Exp.sig SCode.sig Types.sig Env.sig Values.sig Interactive.sig ClassInf.sig Dump.sig Print.sig System.sig Lookup.sig Debug.sig Inst.sig Codegen.sig ModUtil.sig DAE.sig Util.sig RTOpts.sig Parser.sig ClassLoader.sig Mod.sig Prefix.sig Ceval.sig
+SimCodegen.obj: SimCodegen.rml DAE.sig DAELow.sig Absyn.sig Exp.sig Util.sig RTOpts.sig Debug.sig System.sig Values.sig Codegen.sig Print.sig ModUtil.sig
+Types.obj: Types.rml ClassInf.sig Absyn.sig Exp.sig Values.sig SCode.sig Dump.sig Debug.sig Print.sig Util.sig Static.sig
+TaskGraph.obj: TaskGraph.rml Exp.sig DAELow.sig TaskGraphExt.sig Util.sig Absyn.sig DAE.sig Ceval.sig Values.sig Print.sig
+Util.obj: Util.rml
+Values.obj: Values.rml Exp.sig Absyn.sig Print.sig System.sig Util.sig Dump.sig
+VarTransform.obj: VarTransform.rml Exp.sig DAELow.sig System.sig Util.sig Algorithm.sig

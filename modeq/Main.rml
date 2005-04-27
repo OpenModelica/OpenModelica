@@ -1,0 +1,719 @@
+(*
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
+
+   
+    This file is part of OpenModelica, in the following denoted OSM.
+
+
+    The OSM License, Version 1.1, March 4, 2005.
+
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
+*)
+(**
+ ** file:        Main.rml
+ ** module:      Main
+ ** description: Modelica main program
+ **
+ ** RCS: $Id$
+ **
+ ** This is the main program in the Modelica specification. 
+ ** It either tranlates a file given as a command line argument
+ ** or starts a server loop communicating through CORBA or sockets
+ ** (The Win32 implementation only implements CORBA)
+ **)
+
+module Main:
+	relation main: string list => ()
+end
+
+with "Absyn.rml"
+with "ModUtil.rml"
+with "Parser.rml"
+with "Dump.rml"
+with "DumpGraphviz.rml"
+with "SCode.rml"
+with "DAE.rml"
+with "DAELow.rml"
+with "Inst.rml"
+with "Interactive.rml"
+with "RTOpts.rml"
+with "Debug.rml"
+with "Codegen.rml"
+with "Socket.rml"
+with "Print.rml"
+with "Corba.rml"
+with "System.rml"
+with "Util.rml"
+with "TaskGraph.rml"
+with "TaskGraphExt.rml" 
+with "SimCodegen.rml"
+
+(** relation: server_loop
+ **
+ ** This relation is the main loop of the server listening to a port
+    which recieves modelica expressions,  
+**)
+
+relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
+
+  rule	Socket.handlerequest shandle => str &
+	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
+	Debug.fprint ("interactivedump" , str ) &
+	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
+	Print.clear_buf & 
+	Print.clear_error_buf &
+   	handle_command (str,isymb)  => (true,replystr,newsymb) &
+	Socket.sendreply(shandle,replystr) &
+	server_loop (shandle,newsymb) => ressymb
+	-----------------------------
+	server_loop (shandle,isymb) => ressymb
+
+  rule  (* 2004-11-27 - adrpo added this part to make the loop deterministic *)
+	Socket.handlerequest shandle => str &
+	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
+	Debug.fprint ("interactivedump" , str ) &
+	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
+	Print.clear_buf & 
+	handle_command (str,isymb)  => (false,replystr,newsymb) &
+	(* 2004-11-27 - adrpo added part ends here *)
+	Print.print_buf "Exiting\n" &
+	Socket.sendreply(shandle, "quit requested, shutting server down\n") &
+ 	Socket.close shandle &
+	Socket.cleanup 
+	---------------------
+	server_loop (shandle,isymb) => isymb
+end
+
+relation charlistcompare: (char list, char list, int) => bool =
+
+  rule	a = b
+	-------------------
+	charlistcompare(a::_,b::_,1) => true
+
+  rule	not a = b
+	------------
+	charlistcompare(a::_,b::_,1) => false
+
+  rule	int_sub(n,1) => n1 &
+	a = b &
+	charlistcompare(l1,l2,n1) => true
+	-------------------------------------
+	charlistcompare(a::l1,b::l2,n) => true
+	
+  axiom	charlistcompare(_,_,_) => false
+end
+
+relation strncmp: (string,string,int)=>bool =
+  rule	string_list(s1) => clst1 &
+	string_list(s2) => clst2 &
+	string_length(s1) => s1len &
+	string_length(s2) => s2len &
+	int_ge(s1len,n) => true &
+	int_ge(s2len,n) => true &
+	charlistcompare(clst1,clst2,n) => true
+	-------------------------------------
+	strncmp (s1,s2,n) => true
+	axiom strncmp(_,_,_) => false
+end
+
+relation check_classdef: string => bool =
+
+  rule	strncmp(" ",str,1) => true & 
+	string_list(str) => clst &
+	list_delete(clst,0) => clst' &
+	list_string(clst') => str' &
+	check_classdef(str')=> res
+	--------------------------
+	check_classdef(str) => res
+	(* Need to check for a whitespace after as well to get the keyword,
+	e.g typeOf function would be taken as a type definition otherwise *)
+  rule	strncmp ("end ",str,4) => false &
+	strncmp ("type ",str,5) => false &
+	strncmp ("class ",str,6) => false &
+	strncmp ("model ",str,6) => false &
+	strncmp ("block ",str,6) => false &
+	strncmp ("within ",str,7) => false &
+	strncmp ("record ",str,7) => false &
+ 	strncmp ("package ",str,8) => false &
+	strncmp ("partial ",str,8) => false &
+	strncmp ("function ",str,9) => false &
+	strncmp ("connector ",str,10) => false &
+	strncmp ("encapsulated ",str,12) => false 
+	-------------------------------
+	check_classdef str => false
+
+  axiom	check_classdef _ => true
+end
+
+
+relation make_debug_result : (string, string) => string =
+
+  rule	Print.get_string () => debugstr &
+	Util.string_append_list ([res, 
+				  "\n---DEBUG(",flagstr,")---\n", 
+				  debugstr,
+				  "\n---/DEBUG(",flagstr,")---\n"]) => res_with_debug &
+	RTOpts.debug_flag (flagstr) => dumpflag &
+	Util.if (dumpflag, res_with_debug, res) => res'
+	-----------------------------------------------------
+	make_debug_result (flagstr, res) => res'
+end
+
+
+
+(** relation handle_command
+ **
+ ** This relation handles the commands in form of strings send to the server
+ ** If the command is quit, the relation returns false, otherwise it sends the string to the parse relation and returns true.
+**)
+relation handle_command: (string,Interactive.InteractiveSymbolTable)  => 
+	(bool, string, Interactive.InteractiveSymbolTable) =
+
+  rule	strncmp("quit()",str,6) => true 
+	-------------------------------
+	handle_command (str, isymb) => (false,"Ok\n",isymb)
+	
+  rule	(*check_classdef str => true &*)
+	Debug.fcall0 ("dump", Print.clear_buf) &
+	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
+	Debug.fprint ("dump","\nTrying to parse class definition...\n") &
+	Parser.parsestring(str) => (p,msg) & (* Always succeeds, check msg for errors *)
+	msg = "Ok" &
+	Interactive.add_scope(p,vars) => p' &
+	Interactive.update_scope(p,vars) => vars' &
+	Interactive.update_program (p',iprog) => newprog &
+	Interactive.remove_compiled_functions(p,cf) => cf' &
+ 	Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n") &
+	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
+	Debug.fcall ("dump", Dump.dump, newprog) &
+	make_debug_result("dump", msg) => res' &
+	make_debug_result("dumpgraphviz", res') => res
+	----------------------------------------------
+	handle_command (str, Interactive.SYMBOLTABLE(iprog,a,b,vars,cf)) => 
+	(true, res, Interactive.SYMBOLTABLE(newprog,a,b,vars',cf'))
+
+  rule	Debug.fcall0 ("dump", Print.clear_buf) &
+	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
+	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
+	Parser.parsestringexp str => (exp,msg) & (* always succeeds, check msg for errors *)
+	msg = "Ok" &
+	Interactive.evaluate(exp,isymb,false) => (resultstr,newisymb) &
+	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
+	Debug.fcall ("dump", Dump.dump_istmt, exp) &
+	make_debug_result("dump", resultstr) => res' &
+	make_debug_result("dumpgraphviz", res') => res
+	--------------------------------------------------
+	handle_command (str, isymb) => (true, res, newisymb)
+
+  rule	Debug.fcall0 ("failtrace", Print.clear_buf) &
+	Parser.parsestring str => (p,msg) &
+	Parser.parsestringexp str => (p,expmsg) &
+	not msg = "Ok" &
+	not expmsg = "Ok" &
+	Debug.fprint ("failtrace", "\nBoth parser and expression parser failed: \n") &
+	Debug.fprintl ("failtrace", ["parser: \n", msg, "\n"]) &
+	Debug.fprintl ("failtrace", ["expparser: \n", expmsg, "\n"]) &
+	make_debug_result("failtrace", msg) => res
+	-----------------------------------------------------
+	handle_command (str,isymb) => (true, res, isymb)
+
+
+  rule  Print.print_buf "Error occured building AST\n" &
+	Print.get_string () => debugstr &
+	string_append (debugstr,"Syntax Error\n") => str
+	----------------------------------
+	handle_command (_,isymb) => (true,str,isymb)
+
+end
+
+relation is_modelica_file: string => () =
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mo"
+	------------
+	is_modelica_file(filename)
+
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mof"
+	------------
+	is_modelica_file(filename)
+
+end
+
+relation is_flat_modelica_file: string => () =
+
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mof"
+	------------
+	is_flat_modelica_file(filename)
+end
+
+relation is_modelica_script_file: string => () =
+
+  rule	System.strtok(filename,".") => lst &
+	list_reverse(lst) => last::_ &
+	last = "mos"
+	------------
+	is_modelica_script_file(filename)
+end
+
+(** relation: transform_if_flat
+ ** Checks is a modelica file is a flat modelica file
+ ** and if so, translates all variables on the form a.b.c to a_b_c
+ **)
+relation transform_if_flat: (string, DAE.DAElist) => DAE.DAElist =
+
+  rule	is_flat_modelica_file(f) &
+	DAE.to_modelica_form(dae) => d 
+	---------------------
+	transform_if_flat(f,dae) => d
+
+  axiom	transform_if_flat(_,d) => d
+
+end
+
+relation is_not_function : SCode.Class => bool =
+
+  rule	SCode.is_function cls => res &
+	bool_not(res) => res
+	------------------------------
+	is_not_function cls => res
+
+end
+
+relation remove_functions : SCode.Program => SCode.Program =
+
+  rule	Util.list_select (classes, is_not_function) => classes'
+	------------------------------------------------------
+	remove_functions classes => classes'
+
+  rule	print "#-- remove_functions failed"
+	--------------------------------------
+	remove_functions _ => fail
+
+end
+
+relation keep_only_functions : SCode.Program => SCode.Program =
+
+  rule	Util.list_select (classes, SCode.is_function) => classes'
+	------------------------------------------------------
+	keep_only_functions classes => classes'
+
+  rule	print "#-- keep_only_functions failed"
+	--------------------------------------
+	keep_only_functions _ => fail
+
+end	
+
+(** relation: translate_file
+ **
+ ** This relation invokes the translator on a source file.  The
+ ** argument should be a list with a single file name.
+ **)
+
+relation translate_file : string list => () =
+
+  rule	(*Print.print_buf "Parsing\n" &	 *)
+	is_modelica_file(f) 
+	& Parser.parse f => p
+	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
+	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
+	& Debug.fcall ("dump", Dump.dump, p)
+	
+	& Debug.fprint ("info", "\n------------------------------------------------------------ \n")
+	& Debug.fprint ("info", "---elaborating\n")
+	& SCode.elaborate(p) => p'
+
+(*	 & Dump.dump p' *)
+
+(*	& Debug.fprint ("info", "---Removing functions\n")
+	& remove_functions p' => pnofunc'
+	& Debug.fprint ("info", "---Removed functions\n---Filtering functions\n")
+	& keep_only_functions p' => pfunc'
+	& Debug.fprint ("info", "---Filtered functions\n")
+	& Debug.fprint ("info", "---instantiating\n")
+*)
+	& Debug.fprint ("info", "\n------------------------------------------------------------ \n")
+	& Debug.fprint ("info", "---instantiating\n")
+	& Inst.instantiate(p') => d'
+	& Debug.fprint ("beforefixmodout", "Explicit part:\n")
+	& Debug.fcall ("beforefixmodout", DAE.dump_debug, d')
+(*	& Inst.instantiate_implicit(pfunc') => dimpl'
+	& Debug.fprint ("beforefixmodout", "Implicit part:\n")
+	& Debug.fcall ("beforefixmodout", DAE.dump_debug, dimpl')
+*)	& fix_modelica_output (d') => d
+(*	& fix_modelica_output (dimpl') => dimpl
+*)
+(* & Debug.	print "\nJust instantiated" *)
+	& Print.clear_buf()
+	& Debug.fprint ("info", "---dumping\n")
+	& Debug.fcallret ("flatmodelica", DAE.dump_str, d, "") => s
+	& Debug.fcall ("flatmodelica", Print.print_buf, s)
+(*
+	& Debug.fprint ("flatmodelica", "Implicit:\n")
+	& Debug.fcall ("flatmodelica", DAE.dump, dimpl)
+*)
+	& Debug.fcallret ("none", DAE.dump_str, d, "") => s
+	& Debug.fcall ("none", Print.print_buf, s)
+	& Debug.fcall ("daedump", DAE.dump, d)
+	& Debug.fcall ("daedump2", DAE.dump2, d)
+	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
+	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
+	(*& ModUtil.string_prefix_params d => d'*)
+	(* & Debug.fcall ("codegen", Codegen.generate_functions, d)  *)
+	& Absyn.last_classname(p) => cname
+(*	& optimize_dae(d, dimpl, cname)
+*)
+
+	& Print.get_string () => str
+	& RTOpts.silent() => silent 
+	& bool_not(silent) => notsilent
+	& Debug.bcall(notsilent,print, str)
+	& optimize_dae(d, d, cname)
+	------------------------------
+	translate_file [f]
+
+  rule	(*Print.print_buf "Parsing\n" &
+*)	is_modelica_script_file(f) &
+ 	Parser.parseexp f => stmts &
+	Interactive.evaluate(stmts,Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),true) => (res,newst) &
+	print res
+	------------------------------
+	translate_file [f]
+	
+  rule	Print.print_error_buf "# Too many arguments\n"
+	----------------------------
+	translate_file _::_::_ => fail
+
+  rule	Print.print_buf "Usage: modeq <options> filename \n" &
+	Print.print_buf "modeq accepts .mo (Modelica files) \n" &
+	Print.print_buf "              .mof (Flat Modelica files) \n" &
+	Print.print_buf "              .mos (Modelica Script files) \n" &
+ 	Print.print_buf "Options:\n========" &
+	Print.print_buf "+s    Generate simulation code\n" &
+	Print.print_buf "+q    Run in quiet mode, ouput nothing\n" &
+	Print.print_buf "+d=flags, set flags: \n" &
+	Print.print_buf "    blt               apply blt transformation\n" &
+	Print.print_buf "    interactive       run in interactive mode\n" &
+	Print.print_buf "    interactiveCorba  run in interactive mode using Corba\n" &
+	Print.print_buf "    ..., see DEBUG.TXT for further flags\n" 
+ 	----------------------------
+ 	translate_file [] => fail
+
+(*
+  rule	Print.print_error_buf "# An error occured. Perhaps this is not a Modelica file or does not end with .mo?\n" &
+	Print.get_error_string () => str 
+	& print str 
+	& Print.get_string => printstr
+	& print printstr
+	----------------------------
+	translate_file _ => fail
+*)
+
+end
+
+(* Determine if backend, i.e. BLT etc. should be run.
+It should be run if either "blt" flag is set or if 
+parallelization is enabled by giving flag -n=<no proc.>
+ *)
+relation run_backend_q: () => bool =
+
+  rule	RTOpts.debug_flag "blt" => bltflag &
+	RTOpts.simulation_cg => sim_cg &
+	RTOpts.no_proc() => n &
+	int_gt (n,0) => par &
+	bool_or (bltflag,par) => res &
+	bool_or(res,sim_cg) => res'
+	----------------------------
+	run_backend_q() => res' 
+end
+
+(* Used for both parallization and for normal execution.*)
+relation optimize_dae: (DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
+
+  rule	run_backend_q() => true
+	& DAELow.lower(dae) => dlow 
+	& Debug.fcall("dumpdaelow", DAELow.dump, dlow) 
+	& DAELow.incidence_matrix(dlow) => m 
+	& DAELow.transpose_matrix(m) => mT 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
+	& DAELow.matching_algorithm(dlow,m,mT) => (v1,v2,dlow',m,mT) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
+	& Debug.fcall("bltdump", DAELow.dump,dlow')
+	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
+	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
+	& modpar(dlow',v1,v2,comps) 
+	& simcodegen(classname,daeimpl,dlow',v1,v2,m,mT,comps)
+(*	& DAELow.dump_components(comps) *)
+	-----------------------
+	optimize_dae(dae,daeimpl,classname) => ()
+
+	(* If not running backend. *)
+  axiom	optimize_dae(_,_,_) => ()
+end
+
+(*  The automatic paralellzation module.*)
+relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
+
+  rule	(* If modpar not enabled, nproc = 0, return *) 
+	RTOpts.no_proc() => n &
+	int_eq(n,0) => true
+	----------------
+	modpar(_,_,_,_) => ()
+
+  rule	(* Otherwise, build task graph *)
+	(*print "old dae:" & DAELow.dump dae &*)
+	print "translating dae.\n" &
+	DAELow.translate_dae (dae) => indexed_dae &
+	DAELow.calculate_values(indexed_dae) => indexed_dae' &
+(*	print "new dae:" & DAELow.dump indexed_dae' &*)
+	print "building task graph\n" &
+	TaskGraph.build_taskgraph(indexed_dae',ass1,ass2,comps) &
+	TaskGraphExt.dump_graph("model.viz") &
+	RTOpts.latency  => l &
+	RTOpts.bandwidth => b &
+	clock() => t1 &
+	TaskGraphExt.merge_tasks(l,b) &
+	clock() => t2 &
+	real_sub(t2,t1) => time &
+	real_string(time) => timestr &
+	print "task merging took " & print timestr & print " seconds\n" &
+	TaskGraphExt.dump_merged_graph("merged_model.viz") &
+	RTOpts.no_proc => n &
+	TaskGraphExt.schedule(n) &
+	DAELow.calculate_sizes(indexed_dae') => (nx,ny,np)  &
+	int_string np => nps &
+	print "=======\nnp =" & print nps & print "=======\n" &
+	TaskGraphExt.generate_code(nx,ny,np) &
+	print "done\n" 
+	-----------------
+	modpar(dae,ass1,ass2,comps)
+
+  rule	Debug.fprint("failtrace", "-modpar failed\n") 
+	---------------
+	modpar(_,_,_,_) => fail
+	
+end
+
+(** relation simcodegen
+ ** Genereates simulation code using the SimCodegen module
+ **)
+relation simcodegen: (Absyn.Path, (* classname *)
+		      DAE.DAElist, 
+		      DAELow.DAELow, 
+		      int vector, (* ass1 *)
+		      int vector, (* ass2 *)
+		      DAELow.IncidenceMatrix,
+		      DAELow.IncidenceMatrixT,
+		      int list list) (* blocks *)
+	  => () =
+
+  rule	RTOpts.simulation_cg() => true &
+	DAELow.translate_dae (dlow) => indexed_dlow &
+	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
+	Absyn.path_string(classname) => cname_str &
+	print cname_str & print "\n" &
+	Util.string_append_list([cname_str,".cpp"]) => filename &
+	Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
+	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
+	Util.string_append_list([cname_str,".makefile"]) => makefilename &
+	SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	SimCodegen.generate_residual_code(dae,indexed_dlow',ass1,ass2,m,mt,comps,classname,filename) &
+	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,0.0,1.0,0.01) &
+	SimCodegen.generate_makefile(makefilename,classname)
+	----------------------------------------------------------------------------------
+	simcodegen(classname,dae,dlow,ass1,ass2,m,mt,comps)
+
+
+
+	(* If not generating simulation code*)
+  axiom	simcodegen(_,_,_,_,_,_,_,_) => ()
+
+end
+
+
+relation run_modpar_q: () => bool =
+	
+  rule	RTOpts.no_proc() => n &
+	int_gt(n,0) => res
+	------------------
+	run_modpar_q() => res
+end
+
+relation fix_modelica_output : DAE.DAElist => DAE.DAElist =
+
+  rule	RTOpts.modelica_output => true &
+	Inst.init_vars_modelica_output dae => dae'
+	-------------------------------
+	fix_modelica_output DAE.DAE(dae) => DAE.DAE(dae')
+
+  rule	RTOpts.modelica_output => false
+	-------------------------------
+	fix_modelica_output (d as DAE.DAE(dae)) => d
+
+end
+
+
+relation interactivemode: string list => () =
+
+  rule	Socket.waitforconnect 29500  => shandle &
+	server_loop (shandle, Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])) => _
+	-------------------
+	interactivemode _
+end
+	
+relation interactivemode_corba: string list => () =
+
+  rule	Corba.initialize &
+	server_loop_corba (Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])) => _
+	-------------------
+	interactivemode_corba _
+end
+
+(** relation: server_loop_corba
+ **
+ ** This relation is the main loop of the server for a CORBA impl.
+**)
+relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
+
+  rule	Corba.wait_for_command() => str &
+	Print.clear_buf & 
+	handle_command (str,isymb)  => (true,replystr,newsymb) &
+	Corba.sendreply(replystr) &
+	server_loop_corba (newsymb) => ressymb
+	-----------------------------
+	server_loop_corba (isymb) => ressymb
+
+  rule  Print.print_buf "Exiting\n" &
+	Corba.sendreply("quit requested, shutting server down\n") &
+ 	Corba.close
+	---------------------
+	server_loop_corba (isymb) => isymb
+end
+
+(** relation: main
+ **
+ ** This is the main relation that the RML runtime system calls to
+ ** start the translation.
+ **)
+
+relation main : string list => () =
+
+  rule	RTOpts.args args => args' &
+	RTOpts.debug_flag("interactive") => ismode &
+	RTOpts.debug_flag("interactiveCorba") => icmode &
+	bool_or(ismode,icmode) => imode &
+	bool_not(imode) => imode' &
+	Debug.bcall (ismode, interactivemode, args' ) &
+	Debug.bcall (icmode, interactivemode_corba, args') &
+	Debug.bcall (imode', translate_file, args')
+	& Print.get_error_string () => errstr
+	& Debug.fcall ("errorbuf", print, errstr)
+	---------------------------------------
+	main args 
+
+  rule	print "#|Execution failed!"
+	& Print.get_error_string () => errstr
+	& Debug.fcall ("errorbuf", print, "\n\n----\n\nError buffer:\n\n")
+	& Debug.fcall ("errorbuf", print, errstr)
+	--------------
+	main _ => fail
+end
+

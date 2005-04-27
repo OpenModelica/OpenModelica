@@ -1,0 +1,440 @@
+(*
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
+
+   
+    This file is part of OpenModelica, in the following denoted OSM.
+
+
+    The OSM License, Version 1.1, March 4, 2005.
+
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
+*)
+(**
+ ** file:	 Prefix.rml
+ ** module:      Prefix
+ ** description: Prefix management
+ **
+ ** RCS: $Id$
+ **
+ ** When instantiating an expression, there is a prefix that 
+ ** has to be added to each variable name to be able to use it in the 
+ ** flattened equation set.
+ ** 
+ ** A prefix for a variable x could be for example a.b.c so that the 
+ ** fully qualified name is a.b.c.x. 
+ **
+ **)
+
+module Prefix:
+
+  with "Absyn.rml"
+  with "Exp.rml"
+  with "Env.rml"
+  with "Lookup.rml"
+  
+  datatype Prefix = NOPRE
+		  | PRE of string * int list * Prefix
+
+  relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix
+  relation prefix_to_cref : Prefix => Exp.ComponentRef
+  relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
+  relation prefix_cref_list : (Prefix, Exp.ComponentRef list) =>
+	  Exp.ComponentRef list
+  relation prefix_exp  : (Env.Env,Exp.Exp, Prefix) => Exp.Exp
+  relation prefix_exp_list  : (Env.Env,Exp.Exp list, Prefix) => Exp.Exp list
+  relation prefix_path : (Absyn.Path,Prefix) => Absyn.Path
+  relation print_prefix_str : Prefix => string
+  relation print_prefix : Prefix => ()
+  relation prefix_to_path: Prefix => Absyn.Path
+
+end
+
+
+with "Util.rml"
+with "Print.rml"
+
+relation print_prefix_str : Prefix => string =
+
+  axiom	print_prefix_str NOPRE => "<NOPRE>"
+
+  axiom	print_prefix_str PRE(str, [], NOPRE) => str
+
+  rule	string_append (str, "[]") => s
+	------------------------------
+	print_prefix_str PRE(str, _, NOPRE) => s
+
+  rule	print_prefix_str rest => rest' &
+	string_append (rest', ".") => s &
+	string_append (s, str) => s'
+	----------------------------
+	print_prefix_str PRE(str, [], rest) => s'
+
+  rule	print_prefix_str rest => rest' &
+	string_append (rest', ".") => s &
+	string_append (s, str) => s'	&
+	string_append (s', "[]") => s''
+	----------------------------
+	print_prefix_str PRE(str, _, rest) => s''
+
+end
+
+relation print_prefix : Prefix => () =
+
+
+  rule	print_prefix_str p => s &
+	Print.print_buf s
+	------------------------------
+	print_prefix p
+
+end
+	
+
+(** relation: prefix_add
+ **
+ ** This relation is used to extend a prefix with another level.  If
+ ** the prefix `a.b[10].c' is extended with `d' and an empty subscript
+ ** list, the resulting prefix is `a.b[10].c.d'.  Remember that
+ ** prefixes components are stored in the opposite order from the
+ ** normal order used when displaying them.
+ **)
+
+relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix =
+
+  axiom prefix_add(i,s,p) => PRE(i,s,p)
+
+end
+
+(** relation: prefix_path
+ **
+ ** Prefix a `Path' variable by adding the supplied prefix to it and
+ ** returning a new `Path'.
+ **)
+
+relation prefix_path: (Absyn.Path,Prefix) => Absyn.Path =
+
+  axiom	prefix_path(p,NOPRE) => p
+  
+  rule	prefix_path(Absyn.QUALIFIED(s,p),ss) => p'
+	---------------------------
+	prefix_path(p,PRE(s,_,ss)) => p'
+
+end
+
+(** relation: prefix_to_path
+ **
+ ** Convert a Prefix to a `Path'
+ **)
+
+relation prefix_to_path: Prefix => Absyn.Path =
+
+  rule	Print.print_buf "#-- Error: Cannot convert empty prefix to a path\n"
+	---------------------------------------------------------
+	prefix_to_path NOPRE => fail
+
+  axiom	prefix_to_path PRE(s,_,NOPRE) => Absyn.IDENT(s)
+  
+  rule	prefix_to_path ss => p
+	---------------------------
+	prefix_to_path PRE(s,_,ss) => Absyn.QUALIFIED(s,p)
+
+end
+
+(** relation: prefix_cref
+ **
+ ** Prefix a `ComponentRef' variable by adding the supplied prefix to
+ ** it and returning a new `ComponentRef'.
+ **
+ ** LS: Changed to call prefix_to_cref which is more general now
+ **)
+
+relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
+
+  rule	prefix_to_cref2 (pre, SOME(cref)) => cref'
+	---------------------------------
+	prefix_cref (pre, cref) => cref'
+
+end
+
+
+(** relation: prefix_to_cref
+ **
+ ** Convert a prefix to a component reference.
+ **)
+
+relation prefix_to_cref : Prefix => Exp.ComponentRef =
+
+  rule	prefix_to_cref2 (pre, NONE) => cref'
+	-----------------------------------
+	prefix_to_cref pre => cref'
+
+end
+
+
+(** relation: prefix_to_cref2
+ **
+ ** Convert a prefix to a component reference. Converting NOPRE with no
+ ** component reference is an error because a component reference cannot be
+ ** empty
+ **)
+
+relation prefix_to_cref2 : (Prefix, Exp.ComponentRef option) => Exp.ComponentRef =
+
+  rule	Print.print_buf "#-- Cannot convert empty prefix to component reference\n"
+	----------------------------------------------------------------
+	prefix_to_cref2 (NOPRE, NONE) => fail
+
+  axiom	prefix_to_cref2 (NOPRE, SOME(cref)) => cref
+
+  rule	Exp.int_subscripts s => s' &
+	prefix_to_cref2 (xs, SOME(Exp.CREF_IDENT(i,s'))) => cref'
+	--------------------------
+	prefix_to_cref2 (PRE(i,s,xs), NONE) => cref'
+
+  rule	Exp.int_subscripts s => s' &
+	prefix_to_cref2 (xs, SOME(Exp.CREF_QUAL(i,s',cref))) => cref'
+	--------------------------
+	prefix_to_cref2 (PRE(i,s,xs), SOME(cref)) => cref'
+
+end
+
+
+(** relation: prefix_exp
+ **
+ ** Add the supplied prefix to all component references in an
+ ** expression.
+ **)
+
+relation prefix_exp : (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
+
+  axiom	prefix_exp(_,e as Exp.ICONST(_),_) => e
+  axiom	prefix_exp(_,e as Exp.RCONST(_),_) => e
+  axiom	prefix_exp(_,e as Exp.SCONST(_),_) => e
+  axiom	prefix_exp(_,e as Exp.BCONST(_),_) => e
+
+  rule	Lookup.lookup_var_local(env,p) => (_,_,_) &
+	prefix_cref(pre,p) => p'
+	--------------------------
+	prefix_exp(env,Exp.CREF(p,t),pre) => Exp.CREF(p',t)
+
+  rule	not Lookup.lookup_var_local(env,p) => (_,_,_)
+	--------------------------
+	prefix_exp(env,e as Exp.CREF(p,_),pre) => e
+
+  rule	prefix_exp(env,e1,p) => e1' &
+	prefix_exp(env,e2,p) => e2'
+	-----------------------
+	prefix_exp(env,Exp.BINARY(e1,o,e2),p) => Exp.BINARY(e1',o,e2')
+
+  rule	prefix_exp(env,e1,p) => e1'
+	-----------------------
+	prefix_exp(env,Exp.UNARY(o,e1),p) => Exp.UNARY(o,e1')
+
+  rule	prefix_exp(env,e1,p) => e1' &
+	prefix_exp(env,e2,p) => e2'
+	-----------------------
+	prefix_exp(env,Exp.LBINARY(e1,o,e2),p) => Exp.LBINARY(e1',o,e2')
+
+  rule	prefix_exp(env,e1,p) => e1'
+	-----------------------
+	prefix_exp(env,Exp.LUNARY(o,e1),p) => Exp.LUNARY(o,e1')
+
+  rule	prefix_exp(env,e1,p) => e1' &
+	prefix_exp(env,e2,p) => e2'
+	-----------------------
+	prefix_exp(env,Exp.RELATION(e1,o,e2),p) => Exp.RELATION(e1',o,e2')
+
+  rule	prefix_exp(env,e1,p) => e1' &
+	prefix_exp(env,e2,p) => e2' &
+	prefix_exp(env,e3,p) => e3'
+	-----------------------
+	prefix_exp(env,Exp.IFEXP(e1,e2,e3),p) => Exp.IFEXP(e1',e2',e3')
+
+  rule	prefix_exp(env,cref,p) => cref' &
+	prefix_exp(env,dim,p) => dim'
+	----------------------------
+	prefix_exp(env,Exp.SIZE(cref,SOME(dim)),p) => Exp.SIZE(cref',SOME(dim'))
+
+  rule	prefix_exp(env,cref,p) => cref'
+	-------------------------------
+	prefix_exp(env,Exp.SIZE(cref,NONE),p) => Exp.SIZE(cref',NONE)
+
+  rule	prefix_exp_list(env,es,p) => es'
+	-----------------------
+	prefix_exp(env,Exp.CALL(f,es,b,bi),p) => Exp.CALL(f,es',b,bi)
+
+  axiom	prefix_exp(env,Exp.ARRAY(t,a,[]),p) => Exp.ARRAY(t,a,[])
+
+  rule	prefix_exp_list(env,es,p) => es'
+	-------------------------------
+	prefix_exp(env,Exp.ARRAY(t,a,es),p) => Exp.ARRAY(t,a,es')
+
+  rule	prefix_exp_list(env,es,p) => es'
+	-------------------------------
+	prefix_exp(env,Exp.TUPLE(es),p) => Exp.TUPLE(es')
+
+  axiom	prefix_exp(env,Exp.MATRIX(t,a,[]),p) => Exp.MATRIX(t,a,[])
+
+  rule	Util.list_map(x,Util.tuple2_1) => el &
+	Util.list_map(x,Util.tuple2_2) => bl &
+	prefix_exp_list(env,el,p) => el' &
+	Util.list_thread_tuple(el',bl) => x' &
+	prefix_exp(env,Exp.MATRIX(t,a,xs),p) => Exp.MATRIX(t,b,xs')
+	----------------------------------------
+	prefix_exp(env,Exp.MATRIX(t,a,x::xs),p) => Exp.MATRIX(t,a,(x'::xs'))
+
+  rule	prefix_exp(env,start, p) => start' &
+	prefix_exp(env,stop, p) => stop'
+	------------------------------
+	prefix_exp(env,Exp.RANGE(t,start,NONE,stop), p)
+	  => Exp.RANGE(t,start',NONE,stop')
+
+  rule	prefix_exp(env,start, p) => start' &
+	prefix_exp(env,step, p) => step' &
+	prefix_exp(env,stop, p) => stop'
+	------------------------------
+	prefix_exp(env,Exp.RANGE(t,start,SOME(step),stop), p)
+	  => Exp.RANGE(t,start',SOME(step'),stop')
+
+  rule	prefix_exp(env,e,p) => e'
+	-----------------------
+	prefix_exp(env,Exp.CAST(Exp.REAL,e), p) => Exp.CAST(Exp.REAL,e')
+
+  rule	prefix_exp(env,exp,p) => exp' &
+	prefix_exp(env,iterexp,p) => iterexp'
+	-------------------------------------
+	prefix_exp(env,Exp.REDUCTION(fcn,exp,id,iterexp), p) => Exp.REDUCTION(fcn,exp',id,iterexp')
+
+  rule	Print.print_buf "- prefix_exp failed\n" &
+	Print.print_buf "  expression: " & Exp.print_exp e & Print.print_buf "\n"
+	-----------------------------------------------------
+	prefix_exp(_,e,_) => fail
+
+end
+
+(** relation: prefix_exp_list
+ ** 
+ ** This relation prefixes a list of expressions using the
+ ** `prefix_exp' relation.
+ **)
+
+relation prefix_exp_list: (Env.Env,Exp.Exp list,Prefix) => Exp.Exp list =
+
+  axiom	prefix_exp_list(_,[],_) => []
+
+  rule	prefix_exp(env,e,p) => e' &
+	prefix_exp_list(env,es,p) => es'
+	---------------------------
+	prefix_exp_list(env,e::es,p) => (e'::es')
+
+end	
+
+(** relation: prefix_cref_list
+ ** 
+ ** This relation prefixes a list of component references using the
+ ** `prefix_cref relation.
+ **)
+
+relation prefix_cref_list: (Prefix, Exp.ComponentRef list) => Exp.ComponentRef list =
+
+  axiom	prefix_cref_list(_, []) => []
+
+  rule	prefix_cref(p,cr) => cr' &
+	prefix_cref_list(p, crlist) => crlist'
+	---------------------------
+	prefix_cref_list(p,cr::crlist) => (cr'::crlist')
+
+end	
+

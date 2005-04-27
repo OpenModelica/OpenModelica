@@ -1,0 +1,2392 @@
+(*
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
+
+   
+    This file is part of OpenModelica, in the following denoted OSM.
+
+
+    The OSM License, Version 1.1, March 4, 2005.
+
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
+*)
+(**
+ ** file:	 DAE.rml
+ ** module:      DAE
+ ** description: DAE management and output
+ **
+ ** RCS: $Id$
+ ** 
+ ** This module defines data structures for DAE equations and 
+ ** declarations of variables and functions. It also exports some help
+ ** relations for other modules. The DAE data structure is the result of
+ ** flattening, containing only flat modelica, i.e. equations, algorithms,
+ ** variables and functions. 
+ **
+ ** 
+ **)
+
+(** - Module header *)
+
+module DAE:
+  
+  with "Absyn.rml"
+  with "Exp.rml"
+  with "Algorithm.rml"
+  with "Types.rml"
+  with "Values.rml" 
+
+  type Ident = string
+  type InstDims = Exp.Subscript list
+
+  type StartValue = Exp.Exp option
+
+  datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
+
+  datatype Type = REAL | INT | BOOL | STRING | ENUM | ENUMERATION of string list
+  datatype Flow = FLOW | NON_FLOW 
+
+  datatype VarDirection = INPUT | OUTPUT | BIDIR
+
+(* LS: Removed VARVAL completely, and added Exp.Exp as an option to VAR *)
+  datatype Element = VAR of Exp.ComponentRef *  (* varible name *)
+			VarKind *		(* variable, constant, parameter, etc. *)
+			VarDirection *		(* input, output or bidir *)
+			Type *			(* one of the builtin types *)
+			Exp.Exp option *	(* Binding expression e.g. for parameters*)
+			InstDims *		(* dimension of original component *)
+			StartValue *		(* value of start attribute *)
+			Flow *			(* Flow of connector variable. Needed for 
+						unconnected flow variables *)
+			Absyn.Path list *	(* class the variable is instantiated from *)
+                        VariableAttributes option *   (* attributes: min,max,quantity..*)
+                        Absyn.Comment option	      (* comment and annotation from Absyn*)
+
+
+		   | DEFINE of Exp.ComponentRef * Exp.Exp
+		   | INITIALDEFINE of Exp.ComponentRef * Exp.Exp
+		   | EQUATION of Exp.Exp * Exp.Exp
+		   | WHEN_EQUATION of Exp.Exp        (* Condition *) *
+		                      Element list   (* Equations *) *
+		                      Element option (* Elsewhen should be of type WHEN_EQUATION*)
+		   | IF_EQUATION   of Exp.Exp      (* Condition *) *
+		                      Element list (* Equations of true branch*) *
+		                      Element list (* Equations of false branch*)
+		   | INITIALEQUATION of Exp.Exp * Exp.Exp
+		   | ALGORITHM of Algorithm.Algorithm
+		   | INITIALALGORITHM of Algorithm.Algorithm
+		   | COMP of Ident * DAElist
+		   | FUNCTION of Absyn.Path * DAElist * Types.Type
+		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl 
+	           | ASSERT of Exp.Exp
+
+  datatype VariableAttributes = VAR_ATTR_REAL of string option * (* quantity *)
+             string option *(* unit *)
+             string option *(* displayUnit *)
+             (real option * real option) * (* min , max *)
+             real option * (* Initial value *)
+             bool option * (* fixed - true: default for parameter/constant, false - default for other variables *)
+             real  option * (* nominal *)
+             StateSelect option 
+            | VAR_ATTR_INT of string option * (* quantity *)
+             (int option * int option ) * (* min , max *)
+             int option * (* Initial value *)
+             bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_BOOL of string option * (* quantity *)
+             bool option * (* Initial value *)
+             bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_STRING of string option  * (* quantity *)
+             string option   (* Initial value *)
+            | VAR_ATTR_ENUMERATION of string option * (* quantity *)
+             (Exp.Exp option * Exp.Exp option) * (* min , max *)
+              Exp.Exp option * (*start*)
+              bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            
+
+
+  datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
+  
+  datatype ExtArg = EXTARG of Exp.ComponentRef * Types.Attributes * Types.Type
+                     | EXTARGEXP of Exp.Exp * Types.Type
+                     | EXTARGSIZE of Exp.ComponentRef * Types.Attributes * Types.Type * Exp.Exp
+                     | NOEXTARG
+
+  datatype ExternalDecl = EXTERNALDECL of Ident * (* external function name *)
+					  ExtArg list * (* parameters *)
+					  ExtArg * (* return type *)
+					  string (* language *)
+	  
+
+(* 
+ LS: Could have extended DAElist to have two lists, one with 
+ functions and one with elements, but that would mean a lot of
+ change in places where two daes are built and appended, in 
+ Inst.rml 
+ FUNCTION could also consist of SCode.Class instead.
+ *)
+
+  datatype DAElist = DAE of Element list
+
+
+  relation dump: DAElist => ()
+  relation dump2: DAElist => ()
+  relation dump_elements : Element list => () 
+  relation dump_str: DAElist => string
+  relation dump_debug: DAElist => ()
+  relation dump_debug_element : Element => ()
+  relation dump_graphviz: DAElist => ()
+  relation dump_type: Type => ()
+  relation dump_type_str: Type => string
+  relation dump_ext_decl_str : ExternalDecl => string
+  relation dump_ext_arg_str : ExtArg => string 
+  relation dump_algorithm: Element => ()
+  relation dump_algorithm_str : Element => string 
+  relation dump_direction_str: VarDirection => string 
+  relation dump_variable_attributes: (VariableAttributes option )=> ()
+  relation dump_variable_attributes_str: (VariableAttributes option ) => string 
+  relation get_matching_elements: (Element list, Element => () )  => Element list
+  relation get_matching: ('a list, 'a => () )  => 'a list
+  relation get_output_vars: Element list  => Element list
+  relation get_bidir_vars: Element list  => Element list
+  relation get_input_vars: Element list  => Element list
+  relation generate_dae_type: Type => Types.Type
+  relation set_component_type: (Element list,Absyn.Path) => Element list
+  relation is_algorithm : Element => ()
+  relation is_function : Element => ()
+  relation is_var: Element => ()
+  relation is_output_var: Element => ()
+  relation is_input_var: Element => ()
+  relation is_bidir_var: Element => ()
+  relation is_parameter: Element => ()
+  relation is_comp: Element => ()
+  relation find_element: (Element list, Element => ()) => Element option
+  relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list)
+  relation get_variable_bindings_str: Element list => string
+  relation to_flow: bool => Flow
+  relation get_flow_variables: Element list => Exp.ComponentRef list
+  relation dae_to_record_value: (Absyn.Path,Element list, bool (*impl*) ) => Values.Value
+  relation to_modelica_form: (DAElist) => DAElist
+  relation get_named_function : (Absyn.Path, Element list) => Element list
+  relation get_all_exps : Element list => Exp.Exp list
+
+end
+
+(** - Relations
+ **
+ ** The only relations in this module are for printing, and are not
+ ** included in the report.
+ **)
+
+(*!ignorecode*)
+
+with "RTOpts.rml"
+with "Graphviz.rml"
+with "Dump.rml"
+with "Print.rml"
+with "Util.rml"
+with "Ceval.rml"
+with "ModUtil.rml"
+with "Debug.rml"
+
+(** relation: dump
+ **
+ ** This relation prints the DAE in the standard output format.
+ **)
+
+relation dump : DAElist => () =
+	
+  rule	dump_list (daelist, dump_function) &
+	dump_list (daelist, dump_comp_element) 
+	-------------
+	dump DAE(daelist)
+end
+
+relation dump2: DAElist => () =
+  rule	Print.print_buf "VAR(" &
+	Exp.print_component_ref cr &
+	Print.print_buf "=" &
+	Exp.print_exp e &
+	Print.print_buf ",dims=" &
+	Dump.print_list(dims,Exp.print_subscript,", ") &
+(* 	dump_start_value start & *)
+        Dump.unparse_comment_option(comment) => comment_str &
+        print "  comment:" & print comment_str & print ",\n " &
+     dump_variable_attributes dae_var_attr &
+	Print.print_buf ")\n" &
+	dump2 (DAE(xs))
+	-------------------
+	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_,_,dae_var_attr,comment)::xs)
+
+  rule	Print.print_buf "VAR(" &
+	Exp.print_component_ref cr &
+	(* 	dump_start_value start & *)
+        Dump.unparse_comment_option(comment) => comment_str &
+        print "  comment:" & print comment_str & print ",\n " &
+    dump_variable_attributes dae_var_attr &
+
+	Print.print_buf ")\n" &
+	dump2 (DAE(xs))
+	-------------------
+	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_,_,dae_var_attr,comment)::xs)
+
+  rule	Print.print_buf "DEFINE(" &
+	Exp.print_component_ref cr &
+	Print.print_buf ")\n" &
+	dump2 (DAE(xs))
+	---------
+	dump2 DAE(DEFINE(cr,_)::xs)
+
+  rule	Print.print_buf "INITIALDEFINE(" &
+	Exp.print_component_ref cr &
+	Print.print_buf ")\n" &
+	dump2 (DAE(xs))
+	---------
+	dump2 DAE(INITIALDEFINE(cr,_)::xs)
+
+  rule	Print.print_buf "EQUATION(" &
+	Exp.print_exp e1 &
+	Print.print_buf " = " &
+	Exp.print_exp e2 &
+	Print.print_buf ")\n" &
+	dump2( DAE(xs))
+	---------
+	dump2 DAE(EQUATION(e1,e2)::xs)
+	
+  rule	Print.print_buf "INITIALEQUATION(" &
+	Exp.print_exp e1 &
+	Print.print_buf " = " &
+	Exp.print_exp e2 &
+	Print.print_buf ")\n" &
+	dump2( DAE(xs))
+	---------
+	dump2 DAE(INITIALEQUATION(e1,e2)::xs)
+
+  rule	Print.print_buf "ALGORITHM(...)" &
+	dump2 (DAE(xs))
+	------------
+	dump2 (DAE(ALGORITHM(_)::xs))
+
+  rule	Print.print_buf "INITIALALGORITHM(...)" &
+	dump2 (DAE(xs))
+	------------
+	dump2 (DAE(INITIALALGORITHM(_)::xs))
+
+  rule	Print.print_buf "COMP(" &
+	Print.print_buf ident &
+	dump2 (lst) &
+	Print.print_buf ")\n" &
+	dump2 (DAE(xs))
+	----------
+	dump2 (DAE(COMP(ident,lst)::xs))
+
+  rule	Print.print_buf "FUNCTION(...)\n" &
+	dump2 (DAE(xs))
+	--------------
+	dump2 (DAE(FUNCTION(_,_,_)::xs))
+
+  rule	Print.print_buf "EXTFUNCTION(\n" &
+	Absyn.path_string path => str & Print.print_buf str &
+	Print.print_buf ", " &
+	dump2 dae &
+	Print.print_buf ", " &
+	Types.print_type tp &
+	Print.print_buf ", " &
+	dump_ext_decl_str extdecl => extdeclstr &
+	Print.print_buf extdeclstr &
+	Print.print_buf ")\n" &	
+	dump2 (DAE(xs))
+	--------------
+	dump2 (DAE(EXTFUNCTION(path,dae,tp,extdecl)::xs))
+
+  rule	Print.print_buf "ASSERT(\n" &
+	Exp.print_exp e &
+	Print.print_buf ")\n" &	
+	dump2 (DAE(xs))
+	--------------
+	dump2 (DAE(ASSERT(e)::xs))
+
+  axiom dump2 (DAE([]))
+
+  rule	Print.print_buf "dump2 failed\n"
+	---------------------
+	dump2 (_)
+end
+
+relation dump_start_value: StartValue => () =
+
+  rule	Print.print_buf("(start=") &
+	Exp.print_exp e &
+	Print.print_buf(")")
+	--------------------
+	dump_start_value(SOME(e)) => ()
+
+  axiom	dump_start_value(_) => ()
+
+end
+
+relation dump_start_value_str: StartValue => string =
+
+  rule	Exp.print_exp_str e => s &
+	Util.string_append_list(["(start=",s,")"]) => res
+	--------------------
+	dump_start_value_str(SOME(e)) => res
+
+  axiom	dump_start_value_str(_) => ""
+
+end
+
+relation dump_ext_decl_str : ExternalDecl => string = 
+
+  rule	Dump.get_string_list (extargs, dump_ext_arg_str, ",") => extargsstr &
+	dump_ext_arg_str retty => rettystr &
+	Util.string_append_list(["EXTERNALDECL(",id,", (",extargsstr,"), ",
+				 rettystr,", \"",lang,"\")"]) => str
+	-----------------------------------------------------------------------
+	dump_ext_decl_str EXTERNALDECL(id,extargs,retty,lang) => str
+end
+
+relation dump_ext_arg_str : ExtArg => string = 
+
+  axiom	dump_ext_arg_str NOEXTARG => "void"
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	Dump.direction_symbol dir => dirstr &
+	Types.get_type_name ty => tystr &
+	Util.string_append_list([dirstr," ",tystr," ",crstr]) => str
+	------------------------------------------------------------
+	dump_ext_arg_str EXTARG(cr,Types.ATTR(fl,acc,var,dir),ty) => str
+
+  rule	Exp.print_exp_str exp => crstr &
+	Types.get_type_name ty => tystr &
+	Util.string_append_list(["(",tystr,") ",crstr]) => str
+	------------------------------------------------------------
+	dump_ext_arg_str EXTARGEXP(exp,ty) => str
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	Exp.print_exp_str dim => dimstr &
+	Util.string_append_list(["size(",crstr,",",dimstr,")"]) => str
+	------------------------------------------------------------
+	dump_ext_arg_str EXTARGSIZE(cr,attr,ty,dim) => str
+end
+
+(** relation: dump_str
+ ** 
+ ** This relation prints the DAE to a string.
+**)
+relation dump_str : DAElist => string =
+
+  rule	Util.list_map(daelist,dump_function_str) => flist &
+	Util.list_map(daelist,dump_comp_element_str) => clist &
+	list_append(flist,clist) => slist &
+	Util.string_append_list(slist) => str
+	-------------------------------------
+	dump_str DAE(daelist) => str
+
+end
+	
+	
+relation dump_list : ('a list, 'a => ()) => () =
+	
+  axiom	dump_list ([],_)
+	
+  rule	r(first) &
+	dump_list (rest, r)
+	-------------------
+	dump_list (first::rest, r)
+	
+end
+
+relation dump_list_str : (Element list, Element => string) => string =
+	
+  rule	Util.list_map (daelist, func) => slist &
+	Util.string_append_list(slist) => str
+	-------------------------------------
+	dump_list_str (daelist,func) => str
+end
+
+relation dump_comp_element : Element => () =
+	
+  rule	RTOpts.modelica_output => false &	
+	Print.print_buf "fclass " & Print.print_buf n & Print.print_buf "\n" &
+	dump_elements(l) &
+	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
+	-----------------------------------
+	dump_comp_element COMP(n,DAE(l))
+
+  rule	RTOpts.modelica_output => true &
+	Print.print_buf "class " & Print.print_buf n & Print.print_buf "\n" &
+	dump_elements(l) &
+	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
+	-----------------------------------
+	dump_comp_element COMP(n,DAE(l))
+
+(* LS: for non-COMPS, which are only FUNCTIONS at the moment *)
+axiom	dump_comp_element _
+
+end
+
+relation dump_comp_element_str : Element => string =
+	
+  rule	RTOpts.modelica_output => false &
+	string_append("fclass ",n) => s1 & 
+	string_append(s1,"\n") => s2 &
+	dump_elements_str(l) => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4,"end ") => s5 &
+        string_append(s5,n) => s6 &
+        string_append(s6,";\n") => str
+	-----------------------------------
+	dump_comp_element_str COMP(n,DAE(l)) => str
+
+  rule	RTOpts.modelica_output => true &
+	string_append("class ",n) => s1 &
+	string_append(s1,"\n") => s2 &
+	dump_elements_str(l) => s3 &
+	string_append(s2,s3)  => s4 &
+	string_append(s4,"end ") => s5 &
+	string_append(s5,n) => s6 &
+	string_append(s6,";\n") => str
+  	-----------------------------------
+	dump_comp_element_str COMP(n,DAE(l)) => str
+
+(* LS: for non-COMPS, which are only FUNCTIONS at the moment *)
+
+  axiom	dump_comp_element_str _ => ""
+
+end
+
+
+relation dump_elements : Element list => () =
+ rule	dump_vars l &
+	Print.print_buf "initial equation\n" &
+	dump_list (l, dump_initialequation) &
+	Print.print_buf "equation\n" &
+	dump_list (l, dump_equation) &
+	dump_list (l, dump_initialalgorithm) & 
+	dump_list (l, dump_algorithm) & 
+	dump_list (l, dump_comp_element)
+	-----------------
+	dump_elements l
+
+end
+
+relation dump_elements_str : Element list => string =
+
+  rule	dump_vars_str l => s1 &
+	dump_initialequations_str(l) => s2 &
+	dump_equations_str(l) => s3 &
+	dump_initialalgorithms_str(l) => s4 &
+	dump_algorithms_str(l) => s5 &
+	Util.string_equal(s2,"") => noiniteq &
+	Util.string_equal(s4,"") => noinitalg &
+	Util.string_equal(s3,"") => noeq &
+	Util.string_equal(s5,"") => noalg &
+	Dump.select_string(noiniteq,"","initial equation\n") => initeqstr &
+	Dump.select_string(noinitalg,"","initial algorithm\n") => initalgstr &
+	Dump.select_string(noeq,"","equation\n") => eqstr &
+	Dump.select_string(noalg,"","algorithm\n") => algstr &
+
+	Util.string_append_list([s1,initeqstr,s2,initalgstr,s4,eqstr,s3,algstr,s5]) => str
+	---------------------------
+	dump_elements_str l => str
+
+end
+
+relation dump_algorithms_str: Element list => string = 
+	
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("algorithm\n",s1) => s2 &
+	dump_algorithms_str(xs) => s3 &
+	string_append(s1,s3) => str
+	--------------------------------------
+	dump_algorithms_str (ALGORITHM(Algorithm.ALGORITHM(stmts))::xs) => str
+
+  rule	dump_algorithms_str(xs) => str
+	------------------------------
+	dump_algorithms_str(_::xs) => str
+	
+  axiom dump_algorithms_str([])  => ""
+
+end
+
+relation dump_initialalgorithms_str: Element list => string = 
+	
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("algorithm\n",s1) => s2 &
+	dump_initialalgorithms_str(xs) => s3 &
+	string_append(s1,s3) => str
+	--------------------------------------
+	dump_initialalgorithms_str (INITIALALGORITHM(Algorithm.ALGORITHM(stmts))::xs) => str
+
+  rule	dump_initialalgorithms_str(xs) => str
+	------------------------------
+	dump_initialalgorithms_str(_::xs) => str
+	
+  axiom dump_initialalgorithms_str([])  => ""
+
+end
+
+relation dump_equations_str: Element list => string =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," = ") => s3 &
+	Exp.print_exp_str e2  => s4 &
+	string_append(s3,s4) => s4' &
+	string_append(s4',";\n") => s5 &
+	dump_equations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_equations_str( EQUATION(e1,e2)::xs) => str
+	
+  rule	Exp.print_component_ref_str c => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," = ") => s3 &
+	Exp.print_exp_str e  => s4 &
+	string_append(s3,s4) => s4' &
+	string_append(s4',";\n") => s5 &
+	dump_equations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_equations_str( DEFINE(c,e)::xs) => str
+
+  rule	Exp.print_exp_str e => s &
+	dump_equations_str(xs) => s2 &
+	Util.string_append_list([s,";\n",s2]) => str
+	-------------------------------
+	dump_equations_str( ASSERT(e)::xs) => str
+
+  rule   Exp.print_exp_str(c) => s &
+	dump_equations_str(xs1) => s1 &
+	dump_equations_str(xs2) => s2 &
+         dump_equations_str(xs) => s3 &
+	Util.string_append_list(["  if ",s," then\n", s1, "  else\n", s2, 
+             "  end if;\n", s3 ]) => str
+	-------------------------------
+	dump_equations_str( IF_EQUATION(c,xs1,xs2)::xs) => str
+
+  rule   Exp.print_exp_str(c) => s &
+	dump_equations_str(xs1) => s1 & 
+         dump_equations_str(xs2::xs) => s2 & 
+	Util.string_append_list(["when ",s," then\n", s1, "  else", s2]) => str
+	-------------------------------
+	dump_equations_str( WHEN_EQUATION(c,xs1,SOME(xs2))::xs) => str
+
+
+  rule   Exp.print_exp_str(c) => s &
+	dump_equations_str(xs1) => s1 &
+         dump_equations_str(xs) => s3 &
+	Util.string_append_list(["when ",s," then\n", s1, "  end when;\n",s3]) => str
+	-------------------------------
+	dump_equations_str( WHEN_EQUATION(c,xs1,NONE)::xs) => str
+
+  rule	dump_equations_str(xs) => str
+	-----------------------------
+	dump_equations_str(_::xs) => str
+	
+  axiom dump_equations_str([]) => ""
+
+end
+
+relation dump_initialequations_str: Element list => string =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," = ") => s3 &
+	Exp.print_exp_str e2  => s4 &
+	string_append(s3,s4) => s4' &
+	string_append(s4',";\n") => s5 &
+	dump_equations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_initialequations_str( INITIALEQUATION(e1,e2)::xs) => str
+	
+  rule	Exp.print_component_ref_str c => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," := ") => s3 &
+	Exp.print_exp_str e  => s4 &
+	string_append(s3,s4) => s4' &
+	string_append(s4',";\n") => s5 &
+	dump_initialequations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_initialequations_str( INITIALDEFINE(c,e)::xs) => str
+
+  rule	dump_initialequations_str(xs) => str
+	-----------------------------
+	dump_initialequations_str(_::xs) => str
+	
+  axiom dump_initialequations_str([]) => ""
+
+end
+
+
+(* replace this with dump_list when everything works after the VARVAL removal *)
+ (* project *)
+relation dump_vars: Element list => () =
+	
+  axiom	dump_vars []
+	
+  rule	dump_var first &
+	dump_vars rest
+	-------------------
+	dump_vars first :: rest
+
+end
+
+relation dump_vars_str: Element list => string =
+	
+  axiom	dump_vars_str [] => ""
+	
+  rule	dump_var_str first => s1 &
+	dump_vars_str rest => s2 &
+	string_append(s1,s2) => str
+	-------------------
+	dump_vars_str first :: rest => str
+
+end
+
+
+relation dump_kind =
+
+  rule	Print.print_buf " constant  "
+	--------------------
+	dump_kind CONST
+	
+  rule	Print.print_buf " parameter "
+	--------------------
+	dump_kind PARAM
+	
+  rule	Print.print_buf " discrete  "
+	--------------------
+	dump_kind DISCRETE
+
+  rule	Print.print_buf "           "
+	--------------------
+	dump_kind VARIABLE
+
+end
+
+relation dump_kind_str: VarKind => string =
+
+  axiom	dump_kind_str CONST => "constant "
+  axiom	dump_kind_str PARAM => "parameter "
+  axiom	dump_kind_str DISCRETE => "discrete "
+  axiom	dump_kind_str VARIABLE => ""
+
+end
+
+
+relation dump_direction =
+
+  rule	Print.print_buf " input  "
+	--------------------
+	dump_direction INPUT
+
+  rule	Print.print_buf " output "
+	--------------------
+	dump_direction OUTPUT
+	
+  rule	Print.print_buf "        "
+	--------------------
+	dump_direction BIDIR
+
+end
+
+relation dump_direction_str: VarDirection => string =
+
+  axiom	dump_direction_str INPUT => "input "
+	
+  axiom dump_direction_str OUTPUT => "output "
+	
+  axiom	dump_direction_str BIDIR => ""
+
+end
+
+relation dump_stateSelect_str: StateSelect => string =
+
+  axiom dump_stateSelect_str(NEVER) => "StateSelect.never"
+  axiom dump_stateSelect_str(AVOID) => "StateSelect.avoid"
+  axiom dump_stateSelect_str(PREFER) => "StateSelect.prefer"
+  axiom dump_stateSelect_str(ALWAYS) => "StateSelect.always"  
+  axiom dump_stateSelect_str(DEFAULT) => "StateSelect.default"
+
+end
+
+relation dump_variable_attributes: VariableAttributes option => () =
+ 
+  rule  dump_variable_attributes_str attr => res &
+        Print.print_buf res
+        --------------------------------
+        dump_variable_attributes(attr)
+
+
+end
+
+relation string_to_string: string => string =
+  rule  Util.string_append_list(["\"",str,"\""]) => str'
+        -----------------------------
+        string_to_string str => str'
+end
+
+relation dump_variable_attributes_str: VariableAttributes option => string =
+ 
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(unit,string_to_string,"unit = ") => unit_str &
+        Dump.get_option_with_concat_str(displayUnit,string_to_string,"displayUnit = ") => displayUnit_str &
+        Dump.get_option_with_concat_str(stateSel,dump_stateSelect_str,"StateSelect = ") => stateSel_str &
+        
+        Dump.get_option_with_concat_str(min,real_string,"min = ") => min_str &
+        Dump.get_option_with_concat_str(max,real_string,"max = ") => max_str &
+        Dump.get_option_with_concat_str(nominal,real_string,"nominal = ") => nominal_str &
+        Dump.get_option_with_concat_str(Initial,real_string,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                        "fixed = ") => fixed_str &
+        
+        Util.string_delimit_list_no_empty([quantity, 
+                                           unit_str,
+                                           displayUnit_str,
+                                           min_str,
+                                           max_str,
+                                           Initial_str,
+                                           fixed_str,
+                                           nominal_str,
+                                           stateSel_str],", ") => res' &
+ 
+        Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
+        --------------------------------
+        dump_variable_attributes_str(SOME(VAR_ATTR_REAL(quant,
+                                                        unit,
+                                                        displayUnit, 
+                                                        (min , max),
+                                                        Initial,
+                                                        fixed,
+                                                        nominal,
+                                                        stateSel))) =>  res 
+        
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+ 
+        Dump.get_option_with_concat_str(min,int_string,"min = ") => min_str &
+        Dump.get_option_with_concat_str(max,int_string,"max = ") => max_str &
+        Dump.get_option_with_concat_str(Initial,int_string,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                        "fixed = ") => fixed_str &
+
+        Util.string_delimit_list_no_empty([quantity,
+                                  min_str,
+                                  max_str,
+                                  Initial_str,
+                                  fixed_str],", ") => res' & 
+         Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
+         -----------------------------------------
+        dump_variable_attributes_str(SOME(VAR_ATTR_INT(quant, 
+                                                  (min , max),
+                                                  Initial,
+                                                  fixed))) => res
+        
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(Initial,Dump.print_bool_str,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                         "fixed = ") => fixed_str &
+        Util.string_delimit_list_no_empty([quantity,
+                                 Initial_str,
+                                 fixed_str],", ") => res' &
+         Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
+         -----------------------------------------
+        dump_variable_attributes_str(SOME(VAR_ATTR_BOOL(quant,
+                                                   Initial,
+                                                   fixed))) => res
+
+  rule Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(Initial,string_to_string,"start = ") => Initial_str &
+        Util.string_delimit_list_no_empty([quantity,
+                                           Initial_str],", ") => res' & 
+        Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
+         -----------------------------------------
+        dump_variable_attributes_str(SOME(VAR_ATTR_STRING(quant,
+                                                          Initial))) => res
+
+  rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
+        Dump.get_option_with_concat_str(min,Exp.print_exp_str,"min = ") => min_str &
+        Dump.get_option_with_concat_str(max,Exp.print_exp_str,"max = ") => max_str &
+        Dump.get_option_with_concat_str(Initial,Exp.print_exp_str,"start = ") => Initial_str &
+        Dump.get_option_with_concat_str(fixed,
+                                        Dump.print_bool_str,
+                                        "fixed = ") => fixed_str &
+        
+        Util.string_delimit_list_no_empty([quantity, 
+                                  min_str,
+                                  max_str,
+                                  Initial_str,
+                                  fixed_str],", ") => res' &
+        Util.string_append_list(["(",res',")"]) => res1 &
+        Util.is_empty_string(res') => is_empty &
+        Util.if(is_empty,"",res1) => res
+         -----------------------------------------
+        dump_variable_attributes_str(SOME(VAR_ATTR_ENUMERATION(quant,
+                                                          (min,max),Initial,fixed))) 
+          => res
+
+  axiom dump_variable_attributes_str(NONE) => ""
+
+  axiom dump_variable_attributes_str(_) => "unknown VariableAttributes"
+
+end
+
+
+relation dump_type =
+
+  rule	Print.print_buf "Integer "
+	----------------
+	dump_type INT
+
+  rule	Print.print_buf "Real    "
+	----------------
+	dump_type REAL
+
+  rule	Print.print_buf "Boolean "
+	----------------
+	dump_type BOOL
+
+  rule	Print.print_buf "String  "
+	----------------
+	dump_type STRING
+
+  rule	Print.print_buf "Enum "
+	-------------
+	dump_type ENUM
+
+  rule	Print.print_buf "Enumeration(" &
+	Dump.print_list(l,print,",") &
+	Print.print_buf ") "
+	------------------
+	dump_type ENUMERATION(l)
+end
+
+relation dump_type_str =
+
+  axiom	dump_type_str INT => "Integer " 
+	
+  axiom	dump_type_str REAL => "Real "
+
+  axiom	dump_type_str BOOL => "Boolean "
+
+  axiom	dump_type_str STRING => "String "
+
+  axiom	dump_type_str ENUM => "Enum "
+	
+  rule	Util.string_delimit_list(l,", ") => s1 &
+	string_append("enumeration(",s1) => s2 &
+	string_append(s2,") ") => str
+	----------------------------
+	dump_type_str ENUMERATION(l) => str
+end
+
+relation dump_var : Element => () =
+	
+  rule	dump_kind kind & dump_direction dir & dump_type typ &
+ 	Exp.print_component_ref id & 
+	(* 	dump_start_value start & *)
+    
+        dump_comment_option(comment) &
+        dump_variable_attributes dae_var_attr &
+        
+(*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr &
+	Print.print_buf " \"{" &
+	Print.print_buf classstr &
+	Print.print_buf "}\" " & *)
+	Print.print_buf ";\n"
+	--------------------------------------
+	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,classlst,dae_var_attr,comment)
+	
+  rule	dump_kind kind & dump_direction dir & dump_type typ &
+ 	Exp.print_component_ref id & 
+	(* 	dump_start_value start & *)
+    dump_variable_attributes dae_var_attr &
+	
+	Print.print_buf " = " &
+	Exp.print_exp e & Print.print_buf ";\n"
+	--------------------------------------
+	dump_var VAR(id, kind, dir, typ, SOME(e),_,start,flow,class,dae_var_attr,comment)
+	
+  axiom	dump_var (_)
+
+end
+
+relation dump_var_str : Element => string =
+	
+  rule	dump_kind_str kind => s1 & 
+	dump_direction_str dir => s2 &
+	dump_type_str typ => s3 &	
+	Exp.print_component_ref_str id => s4 & 
+(* 	dump_start_value_str start => s5 & *)
+        dump_comment_option_str(comment) => comment_str &
+        dump_variable_attributes_str dae_var_attr => s5 &
+(*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
+	Util.string_append_list([s1,s2,s3,s4,s5,comment_str,";\n"]) => str
+	--------------------------------------
+	dump_var_str VAR(id, kind, dir, typ, NONE,_,start,flow,classlst,dae_var_attr,comment) => str
+	
+  rule	dump_kind_str kind => s1 & 
+	dump_direction_str dir => s2 &
+	dump_type_str typ => s3 &	
+	Exp.print_component_ref_str id => s4 & 
+	Exp.print_exp_str e => s5 & 
+(* 	dump_start_value_str start => s6 & *)
+        dump_comment_option_str(comment) => comment_str &
+    dump_variable_attributes_str dae_var_attr => s6 &
+(*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
+	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6,comment_str,";\n"] )
+	  => str
+	--------------------------------------
+	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,classlst,dae_var_attr,comment) => str
+	
+  axiom	dump_var_str (_) => ""
+
+end
+
+relation dump_comment_option_str : (Absyn.Comment option) => string =
+
+  axiom dump_comment_option_str(NONE) => ""
+	
+  rule  Util.string_append_list([" \"",cmt,"\""]) => str
+	---------------------------------------------
+	dump_comment_option_str(SOME(Absyn.COMMENT(annopt,SOME(cmt)))) => str
+	
+  axiom dump_comment_option_str(SOME(Absyn.COMMENT(annopt,NONE))) => ""
+	
+end
+
+relation dump_comment_option : (Absyn.Comment option) => () =
+
+  rule  dump_comment_option_str(comment) => str &
+        Print.print_buf(str) 
+	---------------------------------------------
+	dump_comment_option(comment) => ()
+	
+end
+
+
+relation dump_equation : Element => () =
+	
+  rule	Print.print_buf "  " & Exp.print_exp e1 &
+	Print.print_buf " = " & Exp.print_exp e2 & Print.print_buf ";\n"
+	--------------------------------------
+	dump_equation(EQUATION(e1, e2))
+	
+  rule	Print.print_buf "  " & Exp.print_component_ref c &
+	Print.print_buf " ::= " & Exp.print_exp e & Print.print_buf ";\n"
+	--------------------------------------
+	dump_equation(DEFINE(c, e))
+
+  rule	Exp.print_exp e & Print.print_buf ";\n"
+	--------------------------------------
+	dump_equation(ASSERT(e))
+	
+	
+  axiom	dump_equation _
+
+end
+
+relation dump_initialequation : Element => () =
+	
+  rule	Print.print_buf "  " & Exp.print_exp e1 &
+	Print.print_buf " = " & Exp.print_exp e2 & Print.print_buf ";\n"
+	--------------------------------------
+	dump_initialequation(INITIALEQUATION(e1, e2))
+	
+  rule	Print.print_buf "  " & Exp.print_component_ref c &
+	Print.print_buf " ::= " & Exp.print_exp e & Print.print_buf ";\n"
+	--------------------------------------
+	dump_initialequation(INITIALDEFINE(c, e))
+	
+  axiom	dump_initialequation _
+
+end
+
+relation dump_equation_str : Element => string =
+	
+  rule	
+	Exp.print_exp_str e1 => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2, " = ") => s3 &
+	Exp.print_exp_str e2  => s4 & 
+	string_append(s3,s4)=> s5 &
+	string_append(s5,";\n") => str
+	--------------------------------------
+	dump_equation_str(EQUATION(e1, e2)) => str
+	
+  rule	Exp.print_component_ref_str c => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(" ::= ",s2) => s3 &
+	Exp.print_exp_str e => s4 & 
+	string_append(s3,s4) => s5 &
+	string_append(s5,";\n") => str
+	--------------------------------------
+	dump_equation_str(DEFINE(c, e)) => str
+
+rule	Exp.print_exp_str e => s &
+	string_append(s,";\n") => str
+	--------------------------------------
+	dump_equation_str(ASSERT(e)) => str
+	
+  axiom	dump_equation_str _ => ""
+
+end
+
+relation dump_algorithm : Element => () =
+
+  rule	Print.print_buf "algorithm\n" &
+	Dump.print_list(stmts, pp_statement, "")
+	----------------------------------------------
+	dump_algorithm ALGORITHM(Algorithm.ALGORITHM(stmts))
+
+  axiom	dump_algorithm _
+
+end
+
+relation dump_initialalgorithm : Element => () =
+
+  rule	Print.print_buf "initial algorithm\n" &
+	Dump.print_list(stmts, pp_statement, "")
+	----------------------------------------------
+	dump_initialalgorithm INITIALALGORITHM(Algorithm.ALGORITHM(stmts))
+
+  axiom	dump_initialalgorithm _
+
+end
+
+relation dump_algorithm_str : Element => string =
+
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("algorithm\n",s1) => str
+	----------------------------------------------
+	dump_algorithm_str ALGORITHM(Algorithm.ALGORITHM(stmts)) => str
+
+  axiom	dump_algorithm_str _ => ""
+
+end
+
+
+relation dump_initialalgorithm_str : Element => string =
+
+  rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
+	string_append("initial algorithm\n",s1) => str
+	----------------------------------------------
+	dump_initialalgorithm_str INITIALALGORITHM(Algorithm.ALGORITHM(stmts)) => str
+
+  axiom	dump_initialalgorithm_str _ => ""
+
+end
+
+(* LS *)
+relation dump_function: Element => () =
+
+
+  rule	Print.print_buf "function " &
+	Absyn.path_string fpath => fstr &
+	Print.print_buf fstr & Print.print_buf "\n" &
+	dump_elements(dae) &
+	Print.print_buf "end " & Print.print_buf fstr & Print.print_buf ";\n\n"
+	------------------------------------
+	dump_function FUNCTION(fpath,DAE(dae),t)
+	
+  axiom	dump_function _
+
+
+end
+
+(* LS *)
+relation dump_function_str: Element => string =
+
+
+  rule	Absyn.path_string fpath => fstr &
+	dump_elements_str(dae) => daestr &
+	Util.string_append_list(["function ", fstr, "\n", 
+				 daestr,
+				 "end ", fstr, ";\n\n"]) => str
+	------------------------------------
+	dump_function_str FUNCTION(fpath,DAE(dae),t) => str
+	
+  axiom	dump_function_str _ => ""
+
+end
+
+
+(** relation: pp_statement
+ **
+ ** Prettyprint an algorithm statement
+ **)
+
+relation pp_statement : Algorithm.Statement => () =
+
+  rule	pp_stmt (alg,2)
+	--------------
+	pp_statement alg
+
+end
+
+relation pp_statement_str : Algorithm.Statement => string =
+
+  rule	pp_stmt_str (alg,2) => str
+	--------------
+	pp_statement_str alg => str
+
+end
+
+relation pp_stmt : (Algorithm.Statement, int) => () =
+
+  rule	indent i &
+	Exp.print_component_ref c &
+	Print.print_buf " := " &
+	Exp.print_exp e &
+	Print.print_buf ";\n"
+	----------
+	pp_stmt (Algorithm.ASSIGN(_,c,e), i)
+
+  rule	indent i &
+	Exp.print_component_ref c &
+	Print.print_buf " := " &
+	Exp.print_exp e &
+	Print.print_buf ";\n"
+	----------
+	pp_stmt (Algorithm.ASSIGN_ARR(_,c,e), i)
+
+  rule	indent i &
+ 	Print.print_buf "if " & Exp.print_exp e & Print.print_buf " then\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (then, i') &
+	pp_else (else, i) &
+	indent i & Print.print_buf "end if;\n"
+        -------------------
+	pp_stmt (Algorithm.IF(e,then,else), i)
+	
+  rule	indent i &
+	Print.print_buf "for " & Print.print_buf id & Print.print_buf " in " &
+ 	Exp.print_exp e & Print.print_buf " loop\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	Print.print_buf "end for;\n"
+        -------------------
+	pp_stmt (Algorithm.FOR(_,_,id,e,stmts), i)
+	
+  rule	indent i &
+	Print.print_buf "while " & Exp.print_exp e & Print.print_buf " loop\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	Print.print_buf "end while;\n"
+        -------------------
+	pp_stmt (Algorithm.WHILE(e,stmts), i)
+	
+  rule	indent i &
+	Print.print_buf "when " & Exp.print_exp e & Print.print_buf " do\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i') &
+	indent i &
+	Print.print_buf "end when;\n"
+        -------------------
+	pp_stmt (Algorithm.WHEN(e,stmts), i)
+	
+  rule	indent i & Print.print_buf "**ALGORITHM**;\n"
+	----------------------------------
+	pp_stmt (_,i)
+
+end
+
+relation pp_stmt_str : (Algorithm.Statement, int) => string =
+
+  rule	indent_str i => s1 &
+	Exp.print_component_ref_str c => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," := ") => s4 &
+	Exp.print_exp_str e => s5 &
+	string_append(s4,s5) => s6 &
+	string_append(s6,";\n") => str
+	----------
+	pp_stmt_str (Algorithm.ASSIGN(_,c,e), i) => str
+
+  rule	indent_str i => s1 &
+	Exp.print_component_ref_str c => s2 &
+	string_append(s1,s2) => s3 &
+	string_append(s3," := ") => s4 &
+	Exp.print_exp_str e => s5 &
+	string_append(s4,s5) => s6 &
+	string_append(s6,";\n") => str
+	----------
+	pp_stmt_str (Algorithm.ASSIGN_ARR(_,c,e), i) => str
+
+  rule	indent_str i => s1 &
+	string_append(s1,"if ") => s2 &
+	Exp.print_exp_str e => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," then\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (then, i') => s6 &
+	string_append(s5,s6) => s7 &
+	pp_else_str (else, i) => s8 &
+	string_append(s7,s8) => s9 &
+	indent_str i => s10 & 
+	string_append(s9,s10) => s11 &
+	string_append(s11,"end if;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.IF(e,then,else), i) => str
+	
+  rule	indent_str i => s1 &
+	string_append(s1,"for ") => s2 &
+	string_append(s2,id) => s3 &
+	string_append(s3," in ") => s4 &
+ 	Exp.print_exp_str e => s5 &
+	string_append(s4,s5) => s6 &
+	string_append(s6," loop\n") => s7 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s8 &
+	string_append(s7,s8) => s9 &				   
+	indent_str i => s10 &
+	string_append(s9,s10) => s11 &
+	string_append(s11,"end for;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.FOR(_,_,id,e,stmts), i) => str
+	
+  rule	indent_str i => s1 &
+	string_append(s1,"while ") => s2 &
+	Exp.print_exp_str e => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," loop\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s6 &
+	string_append(s5,s6) => s7 &
+	indent_str i => s8 &
+	string_append(s7,s8) => s9 &
+	string_append(s9,"end while;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.WHILE(e,stmts), i) => str
+	
+  rule	indent_str i => s1 &
+	string_append(s1,"when ") => s2 &
+	Exp.print_exp_str e => s3 & 
+	string_append(s2,s3) => s4 &
+	string_append(s4," do\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s6 &
+	string_append(s5,s6) => s7 &				  
+	indent_str i => s8 &
+	string_append(s7,s8) => s9 &
+	string_append(s9,"end when;\n") => str
+        -------------------
+	pp_stmt_str (Algorithm.WHEN(e,stmts), i) => str
+	
+  rule	indent_str i => s1 & string_append(s1,"**ALGORITHM**;\n") => str
+	----------------------------------
+	pp_stmt_str (_,i) => str
+
+end
+
+relation pp_stmt_list : (Algorithm.Statement list, int) => () =
+
+  axiom	pp_stmt_list ([],_)
+
+  rule	pp_stmt (stmt,i) & pp_stmt_list(stmts,i)
+	--------------------------------
+	pp_stmt_list (stmt::stmts,i)
+
+end
+
+relation pp_stmt_list_str : (Algorithm.Statement list, int) => string =
+
+  axiom	pp_stmt_list_str ([],_) => ""
+
+  rule	pp_stmt_str (stmt,i) =>s1 & pp_stmt_list_str(stmts,i) => s2 &
+	string_append(s1,s2) => str
+	--------------------------------
+	pp_stmt_list_str (stmt::stmts,i) => str
+
+end
+
+relation pp_else : (Algorithm.Else, int) => () =
+
+  axiom	pp_else (Algorithm.NOELSE, _)
+
+  rule	indent i &
+ 	Print.print_buf "elseif " & Exp.print_exp e & Print.print_buf " then\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (then, i') &
+	pp_else (else, i)
+        -----------------
+	pp_else (Algorithm.ELSEIF(e,then,else), i)
+
+  rule	indent i &
+ 	Print.print_buf "else\n" &
+	int_add(i,2) => i' &
+	pp_stmt_list (stmts, i')
+        ------------------------
+	pp_else (Algorithm.ELSE(stmts), i)
+
+end
+
+relation pp_else_str : (Algorithm.Else, int) => string =
+
+  axiom	pp_else_str (Algorithm.NOELSE, _) => ""
+
+  rule	indent_str i => s1 &
+	string_append(s1,"elseif ") => s2 &
+	Exp.print_exp_str e => s3 &
+	string_append(s2,s3) => s4 &
+	string_append(s4," then\n") => s5 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (then, i') => s6 &
+	string_append(s5,s6) => s7 &
+	pp_else_str (else, i) => s8 &
+	string_append(s7,s8) => str
+        -----------------
+	pp_else_str (Algorithm.ELSEIF(e,then,else), i) => str
+
+  rule	indent_str i => s1 &
+ 	string_append(s1,"else\n") => s2 &
+	int_add(i,2) => i' &
+	pp_stmt_list_str (stmts, i') => s3 &
+	string_append(s2,s3) => str
+        ------------------------
+	pp_else_str (Algorithm.ELSE(stmts), i) => str
+
+end
+
+relation indent : int => () =
+
+  axiom indent 0
+
+  rule	Print.print_buf " " & int_sub(i,1) => i' & indent i'
+	------------------------------------------
+	indent i
+
+end
+
+relation indent_str : int => string =
+
+  axiom indent_str 0 => ""
+
+  rule	int_sub(i,1) => i' & indent_str i' => s1 &
+	string_append(" ",s1) => str
+	------------------------------------------
+	indent_str i => str
+
+end
+
+(* LS *)
+relation get_matching_elements: (Element list, Element => () )  => Element list =
+
+  rule	get_matching (elist, cond ) => elist
+	------------------------------------
+	get_matching_elements (elist, cond) => elist
+end	
+
+(* LS *)
+relation get_matching: ('a list, 'a => () )  => 'a list =
+
+  axiom	get_matching ([],_) => []
+
+  rule	cond(v) &
+	get_matching (vl, cond) => vl'
+	-------------------
+	get_matching (v::vl, cond) => v::vl'
+
+  rule	not cond(v) &
+	get_matching (vl, cond) => vl'
+	--------------------------
+	get_matching (v::vl, cond) => vl'
+end	
+
+
+(* LS *)
+relation is_parameter: Element => () =
+
+  (* LS: false means not protected, hence we ignore protected variables *)
+  axiom	is_parameter VAR(_, PARAM, _, _, _,  _,_,_,_,_,_)
+
+end
+
+(* LS *)
+relation is_comp: Element => () =
+
+  axiom	is_comp COMP(_,_) 
+
+end
+
+
+
+(* LS *)
+relation get_output_vars: Element list  => Element list =
+	
+  rule	get_matching_elements(vl, is_output_var) => vl'
+	---------------------------------
+	get_output_vars vl => vl'
+end
+
+(* LS *)
+relation get_bidir_vars: Element list  => Element list =
+	
+  rule	get_matching_elements(vl, is_bidir_var) => vl'
+	---------------------------------
+	get_bidir_vars vl => vl'
+end
+
+(* HJ *)
+relation get_input_vars: Element list  => Element list =
+	
+  rule	get_matching_elements(vl, is_input_var) => vl'
+	---------------------------------
+	get_input_vars vl => vl'
+end
+
+(* Generate a Types.Type from a DAE.Type
+ ** Is needed when investigating the DAE and want to e.g. evaluate expressions.
+ **)
+relation generate_dae_type: Type => Types.Type =
+
+  axiom	generate_dae_type(REAL) => ((Types.T_REAL([]),NONE))
+  axiom	generate_dae_type(INT) => ((Types.T_INTEGER([]),NONE))
+  axiom	generate_dae_type(BOOL) => ((Types.T_BOOL([]),NONE))
+  axiom	generate_dae_type(STRING) => ((Types.T_STRING([]),NONE))
+end
+
+(**  relation: set_component_type
+ ** This relation takes a dae element list and a type name and inserts the type name 
+ ** into each Var  (variable) of the dae. This type name is the origin of the variable.
+ **)
+relation set_component_type: (Element list,Absyn.Path) => Element list =
+
+  axiom	set_component_type ([],_) => []
+	
+  rule	set_component_type(xs,newtype) => xs'
+	-------------------------------------
+	set_component_type(VAR(cr,kind,dir,tp,bind,dim,start,flow,lst,dae_var_attr,comment)::xs,newtype) 
+	  => VAR(cr,kind,dir,tp,bind,dim,start,flow,newtype::lst,dae_var_attr,comment)::xs'
+	  
+  rule	set_component_type(xs,newtype) => xs'
+	-------------------------------------
+	set_component_type(x::xs,newtype) 
+	  => x::xs'
+end
+
+
+(* LS *)
+relation is_output_var: Element => () =
+
+  axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _, _, _,_,_,_)
+
+end
+
+(* LS *)
+relation is_bidir_var: Element => () =
+
+  axiom	is_bidir_var VAR(n, VARIABLE, BIDIR, ty, _, _, _, _,_,_,_)
+
+end
+
+(* HJ *)
+relation is_input_var: Element => () =
+
+  axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _,_,_,_)
+
+end
+
+
+(* LS *)
+relation is_not_var: Element => () =
+
+  rule	not is_var e
+	------------
+	is_not_var e
+end
+
+(* LS *)
+relation is_var: Element => () =
+
+  axiom	is_var VAR(_,_,_,_,_,_,_,_,_,_,_)
+
+end
+
+relation is_algorithm : Element => () =
+
+  axiom is_algorithm ALGORITHM(_)
+
+end
+
+relation is_function : Element => () =
+
+  axiom is_function FUNCTION(_,_,_)
+  axiom	is_function EXTFUNCTION(_,_,_,_)
+
+end
+
+(*******************************
+
+ Dump the data structures in a 
+ paranthesised way
+
+********************************)
+
+
+relation dump_debug : DAElist => () =
+
+  rule	Print.print_buf "DAE(" & dump_debug_elist elist & Print.print_buf ")"
+	-------------------------------------------------
+	dump_debug DAE(elist)
+
+end
+
+relation dump_debug_elist : Element list => () =
+
+  axiom dump_debug_elist []
+
+  rule	dump_debug_element first & Print.print_buf "\n" &
+	dump_debug_elist rest
+	---------------------
+	dump_debug_elist first :: rest
+
+end
+
+relation dump_debug_element : Element => () =
+
+  rule	Print.print_buf "VAR(" &
+	Exp.print_component_ref cr & Print.print_buf ", " &
+	dump_kind vk &
+        Dump.unparse_comment_option(comment) => comment_str &
+        Print.print_buf "  comment:" &  Print.print_buf comment_str &
+
+        dump_variable_attributes_str(dae_var_attr) => tmp_str &
+        Print.print_buf tmp_str &
+	Print.print_buf ")"
+	-------------
+	    dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_,_,dae_var_attr,comment)
+
+  rule	Print.print_buf "VAR(" &
+	Exp.print_component_ref cr & Print.print_buf ", " &
+	dump_kind vk & Print.print_buf ", " &
+        Dump.unparse_comment_option(comment) => comment_str &
+        Print.print_buf "  comment:" &  Print.print_buf comment_str &
+        dump_variable_attributes_str(dae_var_attr) => tmp_str &
+	Exp.print_exp e &
+        Print.print_buf tmp_str &
+	Print.print_buf ")"
+	-------------
+	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_,_,dae_var_attr,comment)
+
+  rule	Print.print_buf "DEFINE(" &
+	Exp.print_component_ref cr &
+	Print.print_buf ", " &
+	Exp.print_exp exp &
+	Print.print_buf ")"
+	----------------
+	dump_debug_element DEFINE(cr,exp)
+
+  rule	Print.print_buf "INITIALDEFINE(" &
+	Exp.print_component_ref cr &
+	Print.print_buf ", " &
+	Exp.print_exp exp &
+	Print.print_buf ")"
+	----------------
+	dump_debug_element INITIALDEFINE(cr,exp)
+
+  rule	Print.print_buf "EQUATION(" &
+	Exp.print_exp e1 &
+	Print.print_buf "," &
+	Exp.print_exp e2 &
+	Print.print_buf ")"
+	------------------
+	dump_debug_element EQUATION(e1,e2)
+
+  rule	Print.print_buf "INITIALEQUATION(" &
+	Exp.print_exp e1 &
+	Print.print_buf "," &
+	Exp.print_exp e2 &
+	Print.print_buf ")"
+	------------------
+	dump_debug_element INITIALEQUATION(e1,e2)
+
+  rule	Print.print_buf "ALGORITHM()"
+	-------------------
+	dump_debug_element ALGORITHM(_)
+
+  rule	Print.print_buf "INITIALALGORITHM()"
+	-------------------
+	dump_debug_element INITIALALGORITHM(_)
+
+  rule	Print.print_buf "COMP(" & Print.print_buf n & Print.print_buf "," &
+	dump_debug (l) &
+	Print.print_buf ")"
+	--------------------------------------
+	dump_debug_element COMP(n,l)
+
+  rule	Print.print_buf "FUNCTION(" &
+	Absyn.path_string fpath => fstr &
+	Print.print_buf fstr & Print.print_buf "," &
+	Types.print_type t & Print.print_buf "," &
+	dump_debug (l) &
+	Print.print_buf ")"
+	--------------------------------------
+	dump_debug_element FUNCTION(fpath,l,t)
+
+  rule	Print.print_buf "UNKNOWN "
+	---------------------------
+	dump_debug_element _
+
+end
+
+
+relation find_element : (Element list, Element => ()) => Element option =
+
+  axiom	find_element ([],_) => NONE
+
+  rule	f(e)
+	------------
+	find_element (e::rest, f) => SOME(e)
+
+  rule	not f(e) &
+	find_element (rest, f) => e'
+	-----------------
+	find_element (e::rest, f) => e'
+
+end
+
+
+(***************************
+ Graphviz relations to visualize 
+ the dae
+***************************)
+
+relation dump_graphviz : DAElist => () =
+
+  rule	build_graphviz dae => r &
+	Graphviz.dump(r)
+	----------------
+	dump_graphviz dae
+
+end
+
+
+relation build_graphviz : DAElist => Graphviz.Node =
+
+  rule	get_matching_elements (els, is_var) => vars &
+	get_matching_elements (els, is_not_var) => nonvars &
+	build_gr_list nonvars => nonvarnodes &
+	build_gr_vars vars => varnodes &
+	list_append (nonvarnodes,varnodes) => nodelist
+	-----------------------------
+	build_graphviz DAE(els) => Graphviz.NODE("DAE",[],nodelist)
+
+end
+
+relation build_gr_list : Element list => Graphviz.Node list =
+
+  axiom build_gr_list [] => []
+
+  rule	build_gr_element el => node &
+	build_gr_list rest => nodelist
+	---------------------------
+	build_gr_list el::rest => node::nodelist
+
+end
+
+relation build_gr_vars : Element list => Graphviz.Node list =
+
+  axiom build_gr_vars [] => []
+
+  rule	build_gr_strlist (vars, build_gr_var_str, 10) => (strlist,_)
+	---------------------------
+	build_gr_vars vars => [Graphviz.LNODE("VARS",strlist,[Graphviz.box],[])]
+
+end
+
+relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list) =
+
+  axiom	build_gr_strlist ([], _, _) => ([],[])
+
+  rule	int_le (count, 0) => true	
+	-------------------------------------
+	build_gr_strlist (ignored, printer, count) => (["..."], ignored)
+
+  rule	int_gt (count, 0) => true &
+	int_sub (count, 1) => count' &
+	build_gr_strlist (rest, printer, count') => (strlist, ignored) &
+	printer (var) => str
+	-------------------------------------
+	build_gr_strlist (var::rest, printer, count) => (str::strlist, ignored)
+
+end
+
+relation build_gr_var_str : Element => string =
+
+  rule	Exp.print_component_ref_str cr => str
+	-------------------------------------
+	build_gr_var_str VAR(cr,_,_,_,NONE,_,_,_,_,_,_) => str
+
+  rule	Exp.print_component_ref_str cr => str &
+	print_exp_str_special exp => expstr &
+	string_append (str, " = ") => str' &
+	string_append (str', expstr) => str''
+	-------------------------------------
+	build_gr_var_str VAR(cr,_,_,_,SOME(exp),_,_,_,_,_,_) => str''
+
+end
+
+relation print_exp_str_special : (Exp.Exp) => string =
+
+  rule	string_append ("\\\"", s) => s' &
+	string_append (s', "\\\"") => s''
+	---------------------------------
+	print_exp_str_special Exp.SCONST(s) => s''
+
+  rule	Exp.print_exp_str exp => str
+	----------------------------
+	print_exp_str_special exp => str
+
+end
+
+
+
+relation build_gr_element : Element => Graphviz.Node =
+
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	dump_kind_str vk => vkstr
+	--------------------------
+	build_gr_element VAR(cr,vk,vd,ty,NONE,_,_,_,_,_,_) 
+	  => Graphviz.LNODE("VAR",[crstr,vkstr],[],[])
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	dump_kind_str vk => vkstr &
+	print_exp_str_special exp => expstr &
+	string_append ("= ", expstr) => expstr'
+	-------------------------------
+	build_gr_element VAR(cr,vk,vd,ty,SOME(exp),_,_,_,_,_,_) 
+	  => Graphviz.LNODE("VAR",[crstr,vkstr,expstr'],[],[])
+
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	print_exp_str_special exp => expstr &
+	string_append ("= ", expstr) => expstr'
+	---------------------------------------
+	build_gr_element DEFINE(cr,exp) => Graphviz.LNODE("DEFINE",[crstr,expstr'],[],[])
+
+  rule	print_exp_str_special e1 => e1str &
+	print_exp_str_special e2 => e2str
+	---------------------------------------
+	build_gr_element EQUATION(e1,e2) => Graphviz.LNODE("EQUATION",[e1str,"=",e2str],[],[])
+
+  axiom	build_gr_element ALGORITHM(_) => Graphviz.NODE("ALGORITHM",[],[])
+
+  rule	Exp.print_component_ref_str cr => crstr &
+	print_exp_str_special exp => expstr &
+	string_append ("= ", expstr) => expstr'
+	---------------------------------------
+	build_gr_element INITIALDEFINE(cr,exp) => Graphviz.LNODE("INITIALDEFINE",[crstr,expstr'],[],[])
+
+  rule	print_exp_str_special e1 => e1str &
+	print_exp_str_special e2 => e2str
+	---------------------------------------
+	build_gr_element INITIALEQUATION(e1,e2) => Graphviz.LNODE("INITIALEQUATION",[e1str,"=",e2str],[],[])
+
+  axiom	build_gr_element INITIALALGORITHM(_) => Graphviz.NODE("INITIALALGORITHM",[],[])
+
+  rule	build_graphviz dae => node
+	---------------------------------------
+	build_gr_element COMP(n,dae) => Graphviz.LNODE("COMP",[n],[],[node])
+
+  rule	build_graphviz dae => node &
+	Absyn.path_string fpath => fstr
+	---------------------------------------
+	build_gr_element FUNCTION(fpath,dae,ty) => Graphviz.LNODE("FUNCTION",[fstr],[],[node])
+
+
+end
+
+(** relation: get_variable_bindings_str
+ ** This relation takes a `DAE.Element' list and returns a comma separated string of variable bindings.
+ ** E.g. model A Real x=1; Real y=2; end A; => "1,2"
+ **)
+relation get_variable_bindings_str: Element list => string =
+	
+  rule	get_variable_list elts => varlst &
+	get_bindings_str varlst => str
+	------------------------------
+	get_variable_bindings_str elts => str
+end
+
+relation get_variable_list: Element list  => Element list =
+
+  rule	get_variable_list lst => res
+	-------------------------------------
+	get_variable_list  VAR(a,b,c,d,e,f,g,h,i,dae_var_attr,comment)::lst 
+	  => (VAR(a,b,c,d,e,f,g,h,i,dae_var_attr,comment)::res)
+
+  rule	get_variable_list lst => res
+	----------------------------
+	get_variable_list _::lst => res
+
+  axiom	get_variable_list [] => []
+end
+
+relation get_bindings_str: Element list  => string =
+	
+  rule	Exp.print_exp_str e => expstr &
+	string_append(expstr,",") => s3 &
+	get_bindings_str(lst) => s4 &
+	string_append(s3,s4) => str
+	-----------------
+	get_bindings_str((v as VAR(cr,_,_,_,SOME(e),_,_,_,_,_,_))::(lst as _::_)) => str
+
+  rule	let s1 = "-," &
+	get_bindings_str(lst) => s2 &
+	string_append(s1,s2) => str
+	-----------------
+	get_bindings_str((v as VAR(cr,_,_,_,NONE,_,_,_,_,_,_))::(lst as _::_)) => str	
+
+  rule	Exp.print_exp_str e => str 
+	-----------------
+	get_bindings_str([v as VAR(cr,_,_,_,SOME(e),_,_,_,_,_,_)]) => str
+
+  axiom	get_bindings_str([v as VAR(cr,_,_,_,NONE,_,_,_,_,_,_)]) => ""	
+end
+
+
+relation to_flow: bool => Flow =
+
+  axiom	to_flow(true) => FLOW
+  axiom	to_flow(false) => NON_FLOW
+
+end
+
+relation get_flow_variables: Element list => Exp.ComponentRef list =
+
+  axiom get_flow_variables([]) => []
+
+  rule	get_flow_variables(xs) => res
+	-----------------------------
+	get_flow_variables(VAR(cr,_,_,_,_,_,_,FLOW,_,_,_)::xs) => cr::res
+
+  rule	get_flow_variables(lst) => res1 &
+	get_flow_variables_2(res1,id) => res1' &
+	get_flow_variables(xs) => res2 &
+	list_append(res1',res2) => res
+	-----------------------------
+	get_flow_variables(COMP(id,DAE(lst))::xs) => res
+
+  rule	get_flow_variables(xs) => res
+	-----------------------------
+	get_flow_variables(_::xs) => res
+end
+
+relation get_flow_variables_2: (Exp.ComponentRef list ,Ident) 
+	  => Exp.ComponentRef list =
+
+  axiom	get_flow_variables_2([],id) => []
+	
+  rule	get_flow_variables_2(xs,id) => res &
+	Exp.join_crefs(Exp.CREF_IDENT(id,[]),cr) => cr' 
+	----------------------------
+	get_flow_variables_2(cr::xs,id) => cr'::res
+end
+
+(** relation: dae_to_record_value
+ ** Transforms a list of elements into a record value.
+ ** TODO: This does not work for records inside records. 
+ ** For a general approach we need to build an environment from the DAE and then
+ ** instead investigate the variables and lookup their values from the created environment.
+ **)
+relation dae_to_record_value: (Absyn.Path, Element list, bool (*impl*) ) => Values.Value =
+  axiom	dae_to_record_value(cname,[],_) => Values.RECORD(cname,[],[])
+
+rule	Ceval.ceval([],rhs,impl,NONE,NONE)  => (value,_) &
+	dae_to_record_value(cname,rest,impl) => Values.RECORD(cname,vals,names) &
+	Exp.print_component_ref_str(cr) => cr_str 
+	--------------------------------------------------
+	dae_to_record_value(cname,EQUATION(Exp.CREF(cr,_),rhs)::rest,impl) 
+	  => Values.RECORD(cname,value::vals,cr_str::names)
+
+  rule	dae_to_record_value(cname,rest,impl) => res
+	----------------------------------------------
+	dae_to_record_value(cname,_::rest,impl) => res
+
+  rule	Debug.fprint("failtrace","-dae_to_record_value failed\n")
+	---------------------------------------------------------
+	dae_to_record_value(_,_,_) => fail
+end
+
+(* Transforms all variables from a.b.c to a_b_c, etc*)
+relation to_modelica_form: (DAElist) => DAElist =
+
+  rule	to_modelica_form_elts(elts) => elts'
+	-------------------------------
+	to_modelica_form(DAE(elts)) => DAE(elts')
+end
+
+relation to_modelica_form_elts: (Element list) => Element list =
+
+	axiom to_modelica_form_elts([]) => []
+
+  rule	Exp.print_component_ref_str cr => str &
+	Util.string_replace_char(str,#".",#"_") => str' &
+	to_modelica_form_elts(elts) => elts' &
+	to_modelica_form_exp_opt(d) => d' 
+	------------------------------
+	to_modelica_form_elts(VAR(cr,a,b,c,d,e,f,g,h,dae_var_attr,comment)::elts)
+	  => (VAR(Exp.CREF_IDENT(str',[]),a,b,c,d',e,f,g,h,dae_var_attr,comment)::elts')
+
+  rule	to_modelica_form_exp(e) => e' &
+	to_modelica_form_cref(cr) => cr' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(DEFINE(cr,e)::elts)
+	  => (DEFINE(cr',e')::elts')
+
+  rule	to_modelica_form_exp(e) => e' &
+	to_modelica_form_cref(cr) => cr' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(INITIALDEFINE(cr,e)::elts)
+	  => (INITIALDEFINE(cr',e')::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(EQUATION(e1,e2)::elts)
+	  => (EQUATION(e1',e2')::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_elts(welts) => welts' &
+	to_modelica_form_elts([elt]) => [elt'] &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(WHEN_EQUATION(e1,welts,SOME(elt))::elts)
+	  => (WHEN_EQUATION(e1',welts',SOME(elt'))::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_elts(welts) => welts' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(WHEN_EQUATION(e1,welts,NONE)::elts)
+	  => (WHEN_EQUATION(e1',welts',NONE)::elts')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_elts(telts) => telts' &
+	to_modelica_form_elts(eelts) => eelts' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(IF_EQUATION(e1,telts,eelts)::elts)
+	  => (IF_EQUATION(e1',telts',eelts')::elts')
+
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(INITIALEQUATION(e1,e2)::elts)
+	  => (INITIALEQUATION(e1',e2')::elts')
+
+  rule	print "to_modelica_form_elts(ALGORITHM) not impl. yet\n" &
+	to_modelica_form_elts(elts) => elts' 
+	------------------------------------
+ 	to_modelica_form_elts(ALGORITHM(a)::elts) 
+	  => ALGORITHM(a)::elts'
+	
+  rule	print "to_modelica_form_elts(INITIALALGORITHM) not impl. yet\n" &
+	to_modelica_form_elts(elts) => elts' 
+	------------------------------------
+ 	to_modelica_form_elts(INITIALALGORITHM(a)::elts) 
+	  => INITIALALGORITHM(a)::elts'
+
+  rule	to_modelica_form(dae) => dae' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------
+	to_modelica_form_elts(COMP(id,dae)::elts) 
+	  => COMP(id,dae')::elts'
+
+  rule	to_modelica_form(dae) => dae' &
+	to_modelica_form_elts(elts) => elts' 
+	-------------------------
+	to_modelica_form_elts(FUNCTION(p,dae,t)::elts) 
+	  => FUNCTION(p,dae',t)::elts'
+
+  rule	to_modelica_form_elts(elts) => elts'  &
+	to_modelica_form(dae) => dae'
+	-------------------------
+	to_modelica_form_elts(EXTFUNCTION(p,dae,t,d)::elts) 
+	  => EXTFUNCTION(p,dae,t,d)::elts'
+
+  rule	to_modelica_form_elts(elts) => elts' &
+	to_modelica_form_exp(e) => e' 
+	-----------------------------
+	to_modelica_form_elts(ASSERT(e)::elts) 
+	  => ASSERT(e')::elts'
+end
+
+relation to_modelica_form_exp_opt: Exp.Exp option => Exp.Exp option =
+
+  rule	to_modelica_form_exp(e) => e'
+	--------------------
+	to_modelica_form_exp_opt(SOME(e)) => SOME(e')
+
+  axiom	to_modelica_form_exp_opt(NONE) => NONE
+end
+
+relation to_modelica_form_cref: Exp.ComponentRef => Exp.ComponentRef =
+
+  rule	Exp.print_component_ref_str(cr) => str &
+	Util.string_replace_char(str,#".",#"_") => str' 
+	------------------------
+	to_modelica_form_cref(cr) => Exp.CREF_IDENT(str',[])
+end
+
+relation to_modelica_form_exp: (Exp.Exp) => Exp.Exp =
+
+  rule	to_modelica_form_cref(cr) => cr'
+	--------------------------------
+	to_modelica_form_exp(Exp.CREF(cr,t)) => Exp.CREF(cr',t)
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2'
+	--------------------
+	to_modelica_form_exp(Exp.BINARY(e1,op,e2)) => Exp.BINARY(e1',op,e2')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2'
+	--------------------
+	to_modelica_form_exp(Exp.LBINARY(e1,op,e2)) => Exp.LBINARY(e1',op,e2')
+
+rule	to_modelica_form_exp(e) => e'
+	--------------------
+	to_modelica_form_exp(Exp.UNARY(op,e)) => Exp.UNARY(op,e')
+
+rule	to_modelica_form_exp(e) => e'
+	--------------------
+	to_modelica_form_exp(Exp.LUNARY(op,e)) => Exp.LUNARY(op,e')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2'
+	--------------------
+	to_modelica_form_exp(Exp.RELATION(e1,op,e2)) 
+	  => Exp.RELATION(e1',op,e2')
+
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_exp(e2) => e2' &
+	to_modelica_form_exp(e3) => e3'
+	------------------
+	to_modelica_form_exp(Exp.IFEXP(e1,e2,e3)) 
+	  => Exp.IFEXP(e1',e2',e3')
+
+  rule	Util.list_map(expl,to_modelica_form_exp) => expl'
+	------------------------------
+	to_modelica_form_exp(Exp.CALL(f,expl,t,b))
+	  => Exp.CALL(f,expl',t,b)
+
+  rule	Util.list_map(expl,to_modelica_form_exp) => expl'
+	---------------------
+	to_modelica_form_exp (Exp.ARRAY(t,b,expl)) 
+	  => (Exp.ARRAY(t,b,expl'))
+
+  rule	Util.list_map(expl,to_modelica_form_exp) => expl'
+	---------------------
+	to_modelica_form_exp (Exp.TUPLE(expl)) 
+	  => (Exp.TUPLE(expl'))
+
+  rule	to_modelica_form_exp(e) => e'
+	-------------------
+	to_modelica_form_exp(Exp.CAST(t,e)) => Exp.CAST(t,e')
+
+  rule	to_modelica_form_exp(e) => e'
+	------------------
+	to_modelica_form_exp(Exp.ASUB(e,i)) => Exp.ASUB(e',i)
+
+  rule	to_modelica_form_exp(e) => e' &
+	to_modelica_form_exp_opt(eopt) => eopt'
+	------------------
+	to_modelica_form_exp(Exp.SIZE(e,eopt)) => Exp.SIZE(e',eopt')
+	
+  axiom	to_modelica_form_exp(e) => e
+end
+
+(** relation: get_named_function
+ ** return the FUNCTION with the given name. Returns empty list if not found
+ ** TODO: Only top level functions are checked. Add recursing into the DAE
+ ** and path name checking.
+ ** TODO: External functions?
+ **)
+relation get_named_function : (Absyn.Path, Element list) => Element list  =
+
+  axiom	get_named_function (_, []) => []
+
+  rule	ModUtil.path_equal (path, elpath) => true
+	-----------------------------------------	
+	get_named_function (path, (el as FUNCTION(elpath, _, _))::rest) => [el]
+
+  rule	get_named_function (path, rest) => res
+	-----------------------------------------	
+	get_named_function (path, el::rest) => res
+
+  rule	Debug.fprintln("failtrace", "-- get_named_function failed")
+	-------------------------------------------------
+	get_named_function (_, _) => fail
+
+end
+
+
+(** relation: get_all_exps
+ ** 
+ ** This relation goes through the DAE structure and finds all the
+ ** expressions and returns them in a list
+ **)
+relation get_all_exps : Element list => Exp.Exp list =
+
+  rule	Util.list_map(elements, get_all_exps_element) => expslist &
+	Util.list_flatten(expslist) => exps
+	-----------------------------------
+	get_all_exps elements => exps
+
+end
+
+relation cref_to_exp : Exp.ComponentRef => Exp.Exp =
+
+  axiom	cref_to_exp cref => Exp.CREF(cref, Exp.OTHER)
+
+end
+
+(** relation: get_all_exps_element
+ ** 
+ ** Helper to get_all_exps. Implements get_all_exps for different kinds of
+ ** elements 
+ **)
+relation get_all_exps_element : Element => Exp.Exp list =
+
+	(* VAR *)
+  rule	Util.option_to_list bndexp => e1 &
+	Util.option_to_list startvalexp => e2 &
+	Util.list_map(instdims, get_all_exps_subscript) => e3 &
+	Util.list_flatten(e3) => e3 &
+	cref_to_exp cref => crefexp &
+	Util.list_flatten([e1, e2, e3, [crefexp]]) => exps
+	-------------------------------------------------------
+	get_all_exps_element VAR(cref,vk,vd,ty,bndexp,instdims,startvalexp,flow,pathlist,dae_var_attr,comment) => exps
+
+
+  rule	cref_to_exp cref => crefexp 
+	----------------------------
+	get_all_exps_element DEFINE(cref, exp) => [crefexp, exp]
+
+  rule	cref_to_exp cref => crefexp
+	---------------------------
+	get_all_exps_element INITIALDEFINE(cref, exp) => [crefexp, exp]
+
+
+  axiom	get_all_exps_element EQUATION(e1, e2) => [e1,e2]
+
+  rule	Util.option_to_list elsewhenopt => ellist &
+	list_append(eqs,ellist) => elements &
+	get_all_exps elements => exps
+	---------------------------------------------------
+	get_all_exps_element WHEN_EQUATION(cond, eqs, elsewhenopt) => cond::exps
+	
+
+  rule	get_all_exps eqstrueb => explist1 &
+	get_all_exps eqsfalseb => explist2 &
+	Util.list_flatten([[cond],explist1,explist2]) => exps
+	---------------------------------------------------
+	get_all_exps_element IF_EQUATION(cond, eqstrueb, eqsfalseb) => exps
+
+
+  axiom	get_all_exps_element INITIALEQUATION(e1,e2) => [e1,e2]
+
+  rule	Algorithm.get_all_exps alg => exps
+	---------------------------------------------------
+	get_all_exps_element ALGORITHM(alg) => exps
+
+  rule	Algorithm.get_all_exps alg => exps
+	---------------------------------------------------
+	get_all_exps_element INITIALALGORITHM(alg) => exps
+
+  rule	get_all_exps elements => exps
+	-----------------------------
+	get_all_exps_element COMP(id, DAE(elements)) => exps
+
+
+  rule	get_all_exps elements => exps1 &
+	Types.get_all_exps ty => exps2 &
+	list_append(exps1,exps2) => exps
+	--------------------------------
+	get_all_exps_element FUNCTION(path, DAE(elements), ty) => exps
+
+  rule	get_all_exps elements => exps1 &
+	Types.get_all_exps ty => exps2 &
+	get_all_exps_extarg retarg => exps3 &
+	Util.list_map(args, get_all_exps_extarg) => argexps &
+	list_append([exps1,exps2,exps3],argexps) => expslist &
+	Util.list_flatten(expslist) => exps 
+	------------------------------------
+	get_all_exps_element EXTFUNCTION(path, DAE(elements), ty,
+					 EXTERNALDECL(fname, args, retarg, lang)) => exps
+
+  axiom	get_all_exps_element ASSERT(exp) => [exp]
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_element failed")
+	-------------------------------------------------------------
+	get_all_exps_element _ => fail
+
+
+end
+
+			     
+(** relation: get_all_exps_subscript
+ ** 
+ ** Get all exps from a Subscript 
+ **)
+relation get_all_exps_subscript : Exp.Subscript => Exp.Exp list =
+
+  axiom	get_all_exps_subscript Exp.WHOLEDIM => []
+  axiom	get_all_exps_subscript Exp.SLICE(e) => [e]
+  axiom	get_all_exps_subscript Exp.INDEX(e) => [e]
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_subscript failed")
+	------------------------------------------------------------
+	get_all_exps_subscript _ => fail	     			     
+end
+
+(** relation: get_all_exps_extarg
+ ** 
+ ** Get all exps from an ExtArg 
+ **)
+relation get_all_exps_extarg : ExtArg => Exp.Exp list =
+
+  rule	cref_to_exp cref => exp1 &
+	Types.get_all_exps ty => explist &
+	list_append([exp1],explist) => exps
+	-----------------------------------
+	get_all_exps_extarg EXTARG(cref, attr, ty) => exps
+
+  rule	Types.get_all_exps ty => explist &
+	list_append([exp1], explist) => exps
+	-----------------------------------
+	get_all_exps_extarg EXTARGEXP(exp1, ty) => exps	
+
+  rule	cref_to_exp cref => crefexp &
+	Types.get_all_exps ty => tyexps &
+	Util.list_flatten([[crefexp], tyexps, [exp]]) => exps
+	-----------------------------------------------------
+	get_all_exps_extarg EXTARGSIZE(cref, attr, ty, exp) => exps
+
+  axiom	get_all_exps_extarg NOEXTARG => []
+
+  rule	Debug.fprintln("failtrace", "-- get_all_exps_extarg failed")
+	------------------------------------------------------------
+	get_all_exps_extarg _ => fail	     
+
+end
+
+

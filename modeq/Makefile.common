@@ -23,44 +23,45 @@ RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/../c_runtime/libc_runtime.a \
 	$(srcdir)/runtime/daeext.o $(CORBAOBJ) \
 	$(srcdir)/modpar/libmodpar.a
 
-SRCRML= absyn.rml \
-	algorithm.rml \
-	builtin.rml \
-	ceval.rml \
-	classinf.rml \
-	classloader.rml \
-	codegen.rml \
-	connect.rml \
-	dae.rml \
-	daelow.rml \
-	derive.rml \
-	debug.rml \
-	dump.rml \
-	dumpgraphviz.rml \
-	env.rml \
-	exp.rml \
-	explode.rml \
-	graphviz.rml \
-	inst.rml \
-	interactive.rml \
-	lookup.rml \
-	main.rml \
-	mod.rml \
-	modutil.rml \
-	prefix.rml \
-	staticexp.rml \
-	simcodegen.rml \
-	types.rml \
-	taskgraph.rml \
-	util.rml \
-	values.rml \
-	vartransform.rml
+SRCRML= Absyn.rml \
+	Algorithm.rml \
+	Builtin.rml \
+	Ceval.rml \
+	ClassInf.rml \
+	ClassLoader.rml \
+	Codegen.rml \
+	Connect.rml \
+	DAE.rml \
+	DAELow.rml \
+	Derive.rml \
+	Debug.rml \
+	Dump.rml \
+	DumpGraphviz.rml \
+	Env.rml \
+	Exp.rml \
+	SCode.rml \
+	Graphviz.rml \
+	Inst.rml \
+	Interactive.rml \
+	Lookup.rml \
+	Main.rml \
+	Mod.rml \
+	ModUtil.rml \
+	Prefix.rml \
+	Static.rml \
+	SimCodegen.rml \
+	Types.rml \
+	TaskGraph.rml \
+	Util.rml \
+	Values.rml \
+	VarTransform.rml
 
-ALLRML = $(SRCRML) daeext.rml print.rml rtopts.rml system.rml parse.rml \
-		taskgraphext.rml corba.rml socket.rml 
+ALLRML = $(SRCRML) DAEEXT.rml Print.rml RTOpts.rml System.rml Parser.rml \
+		TaskGraphExt.rml Corba.rml Socket.rml 
 
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)
 SRCSIG=	$(SRCRML:.rml=.sig)
 SRCRDB=	$(SRCRML:.rml=.rdb)
 SRCO=	$(SRCC:.c=.o)
+

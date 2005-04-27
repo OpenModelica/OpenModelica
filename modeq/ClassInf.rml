@@ -1,0 +1,494 @@
+(*
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
+
+   
+    This file is part of OpenModelica, in the following denoted OSM.
+
+
+    The OSM License, Version 1.1, March 4, 2005.
+
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
+*)
+(**
+ ** file:	 ClassInf.rml
+ ** module:      ClassInf
+ ** description: Class restrictions
+ **
+ ** RCS:	 $Id$
+ **
+ ** This module deals with class inference, i.e. determining if a
+ ** class definition adhers to one of the class restrictions, and, if
+ ** specifically declared in a restrictied form, if it breaks that
+ ** restriction.
+ **
+ ** The inference is implemented as a finite state machine.  The
+ ** relation `start' initializes a new machine, and the relation
+ ** `trans' signals transitions in the machine.  Finally, the state
+ ** can be checked agains a restriction with the `valid' relation.
+ ** 
+ **)
+
+module ClassInf :
+
+  with "SCode.rml"
+
+  (** - Machine states *)
+  datatype State = UNKNOWN       of string
+		 | MODEL	 of string
+		 | RECORD	 of string
+		 | BLOCK	 of string
+		 | CONNECTOR	 of string
+		 | TYPE		 of string
+		 | PACKAGE	 of string
+		 | FUNCTION	 of string
+		 | ENUMERATION   of string
+		 | HAS_EQUATIONS of string
+		 | IS_NEW        of string
+		 | TYPE_INTEGER  of string
+		 | TYPE_REAL     of string
+		 | TYPE_STRING   of string
+		 | TYPE_BOOL     of string
+		 | TYPE_ENUM of string
+
+  (** - Events *)
+  datatype Event = FOUND_EQUATION     (* There are definitions inside the current definition *)
+		 | NEWDEF	      (* This is not a derived class *)
+  (** The `Event' type contains the different events during *)
+  (** instantiation that signals a possible machine transition. *)
+
+  (** - Exported relations *)
+
+  relation start : (SCode.Restriction, string (*ident*)) => State
+
+  (** relation: trans
+   **
+   ** This is the state machine transition relation.  It describes the
+   ** transitions between states at different events.
+   **)
+  relation trans : (State, Event) => State
+
+  (** relation: valid
+   **
+   ** This is the validity relation which determines if a state is valid
+   ** according to one of the restrictions.  This means, that if a class
+   ** definition is to be used as, say, a connector, the state of the
+   ** state machine is checked against the `SCode.R_CONNECTOR'
+   ** restriction using this relation to find out if it is an error to
+   ** use this class definition as a connector.
+   **)
+   relation valid : (State, SCode.Restriction) => ()
+  (* `assert_valid' is identical to 'valid'.  The only difference is *)
+  (* that it prints an error message when it fails. *)
+  relation assert_valid : (State, SCode.Restriction) => ()
+  
+  (* Succeeds if state is FUNCTION *)
+  relation is_function: State => ()
+
+  relation matching_state : (State, State list) => bool
+
+  (* Debug relation *)
+  relation print_state : State => ()
+  relation get_state_name : State => string
+
+end
+
+
+with "Print.rml"
+with "Absyn.rml"
+
+(** - Printing *)
+(**)
+(** Some relations for printing error and debug information about the *)
+(** state machine.
+ **
+ ** The code is excluded from the report.
+ **)
+
+(*!ignorecode*)
+
+(** relation: print_state *)
+
+relation print_state : State => () =
+
+  rule	Print.print_buf "UNKNOWN " & Print.print_buf s
+	----------------------------
+	print_state UNKNOWN(s)
+
+  rule	Print.print_buf "MODEL " & Print.print_buf s
+	----------------------------
+	print_state MODEL(s)
+
+  rule	Print.print_buf "RECORD " & Print.print_buf s
+	----------------------------
+	print_state RECORD(s)
+
+  rule	Print.print_buf "BLOCK " & Print.print_buf s
+	----------------------------
+	print_state BLOCK(s)
+
+  rule	Print.print_buf "CONNECTOR " & Print.print_buf s
+	----------------------------
+	print_state CONNECTOR(s)
+
+  rule	Print.print_buf "TYPE " & Print.print_buf s
+	----------------------------
+	print_state TYPE(s)
+
+  rule	Print.print_buf "PACKAGE " & Print.print_buf s
+	----------------------------
+	print_state PACKAGE(s)
+
+  rule	Print.print_buf "FUNCTION " & Print.print_buf s
+	----------------------------
+	print_state FUNCTION(s)
+
+  rule	Print.print_buf "TYPE_INTEGER " & Print.print_buf s
+	----------------------------
+	print_state TYPE_INTEGER(s)
+
+  rule	Print.print_buf "TYPE_REAL " & Print.print_buf s
+	----------------------------
+	print_state TYPE_REAL(s)
+
+  rule	Print.print_buf "TYPE_STRING " & Print.print_buf s
+	----------------------------
+	print_state TYPE_STRING(s)
+
+  rule	Print.print_buf "TYPE_BOOL " & Print.print_buf s
+	----------------------------
+	print_state TYPE_BOOL(s)
+
+  rule	Print.print_buf "IS_NEW " & Print.print_buf s
+	----------------------------
+	print_state IS_NEW(s)
+
+  rule	Print.print_buf "HAS_EQUATIONS " & Print.print_buf s
+	----------------------------
+	print_state HAS_EQUATIONS(s)
+
+end
+
+relation get_state_name : State => string =
+
+  axiom	get_state_name UNKNOWN(s)	=> s
+  axiom	get_state_name MODEL(s)		=> s
+  axiom	get_state_name RECORD(s)	=> s
+  axiom	get_state_name BLOCK(s)		=> s
+  axiom	get_state_name CONNECTOR(s)	=> s
+  axiom	get_state_name TYPE(s)		=> s
+  axiom	get_state_name PACKAGE(s)	=> s
+  axiom	get_state_name FUNCTION(s)	=> s
+  axiom	get_state_name TYPE_INTEGER(s)	=> s
+  axiom	get_state_name TYPE_REAL(s)	=> s
+  axiom	get_state_name TYPE_STRING(s)	=> s
+  axiom	get_state_name TYPE_BOOL(s)	=> s
+  axiom	get_state_name IS_NEW(s)	=> s
+  axiom	get_state_name HAS_EQUATIONS(s)	=> s
+
+end
+
+
+(** relation: print_event *)
+
+relation print_event : Event => () =
+
+  rule	Print.print_buf "FOUND_EQUATION"
+	----------------------
+	print_event FOUND_EQUATION
+
+  rule	Print.print_buf "NEWDEF"
+	--------------
+	print_event NEWDEF
+
+end
+
+(*!includecode*)
+
+(** - Transitions *)
+
+(** relation: start
+ **
+ ** This is the  state machine initialization relation.
+ **)
+
+relation start : (SCode.Restriction, string) => State =
+
+  axiom	start (SCode.R_CLASS, s) 	       => UNKNOWN(s)
+  axiom	start (SCode.R_MODEL, s) 	       => MODEL(s)
+  axiom	start (SCode.R_RECORD, s)            => RECORD(s)
+  axiom	start (SCode.R_BLOCK, s)             => BLOCK(s)
+  axiom	start (SCode.R_CONNECTOR, s)         => CONNECTOR(s)
+  axiom	start (SCode.R_TYPE, s)              => TYPE(s)
+  axiom	start (SCode.R_PACKAGE, s)           => PACKAGE(s)
+  axiom	start (SCode.R_FUNCTION, s)          => FUNCTION(s)
+  axiom	start (SCode.R_EXT_FUNCTION, s)      => FUNCTION(s)
+  axiom start (SCode.R_ENUMERATION,s)	     => ENUMERATION(s)
+  axiom	start (SCode.R_PREDEFINED_INT, s)    => TYPE_INTEGER(s)
+  axiom	start (SCode.R_PREDEFINED_REAL, s)   => TYPE_REAL(s)
+  axiom	start (SCode.R_PREDEFINED_STRING, s) => TYPE_STRING(s)
+  axiom	start (SCode.R_PREDEFINED_BOOL, s)   => TYPE_BOOL(s)
+  axiom	start (SCode.R_PREDEFINED_ENUM, s)   => TYPE_ENUM(s)
+
+end
+
+(** relation: trans
+ **
+ ** This is the state machine transition relation.  It describes the
+ ** transitions between states at different events.
+ **)
+
+relation trans : (State, Event) => State =
+
+	(** Event `NEWDEF' *)
+
+  axiom	trans(UNKNOWN(s),        NEWDEF) => IS_NEW(s)
+  axiom	trans(MODEL(s),          NEWDEF) => MODEL(s)
+  axiom	trans(RECORD(s),         NEWDEF) => RECORD(s)
+  axiom	trans(BLOCK(s),          NEWDEF) => BLOCK(s)
+  axiom	trans(CONNECTOR(s),      NEWDEF) => CONNECTOR(s)
+
+  rule	Print.print_error_buf "# In class " & Print.print_error_buf s &
+	Print.print_error_buf "\n" &
+	Print.print_error_buf "# 'type' can only be derived from predefined types\n"
+	-----------------------------------------------
+	trans(TYPE(s),           NEWDEF) => fail
+
+  axiom	trans(PACKAGE(s),        NEWDEF) => PACKAGE(s)
+  axiom	trans(FUNCTION(s),       NEWDEF) => FUNCTION(s)
+  axiom trans(ENUMERATION(s),	 NEWDEF) => ENUMERATION(s)
+  axiom	trans(IS_NEW(s),         NEWDEF) => IS_NEW(s)
+  axiom	trans(TYPE_INTEGER(s),   NEWDEF) => TYPE_INTEGER(s)
+  axiom	trans(TYPE_REAL(s),      NEWDEF) => TYPE_REAL(s)
+  axiom	trans(TYPE_STRING(s),    NEWDEF) => TYPE_STRING(s)
+  axiom	trans(TYPE_BOOL(s),      NEWDEF) => TYPE_BOOL(s)
+  axiom trans(TYPE_ENUM(s),NEWDEF) => TYPE_ENUM(s)
+	(** Event `FOUND_EQUATION' *)
+
+  axiom	trans(UNKNOWN(s),        FOUND_EQUATION) => HAS_EQUATIONS(s)
+  axiom	trans(IS_NEW(s),         FOUND_EQUATION) => HAS_EQUATIONS(s)
+  axiom	trans(MODEL(s),          FOUND_EQUATION) => MODEL(s)
+
+  rule	Print.print_error_buf "# In class " &
+	Print.print_error_buf s & Print.print_error_buf "\n" &
+	Print.print_error_buf "# Equations not allowed in records\n"
+	-----------------------------------------------
+	trans(RECORD(s),         FOUND_EQUATION) => fail
+
+  axiom	trans(BLOCK(s),          FOUND_EQUATION) => BLOCK(s)
+
+  rule	Print.print_error_buf "# In class " &
+	Print.print_error_buf s &
+        Print.print_error_buf "\n" &
+	Print.print_error_buf "# Equations not allowed in connectors\n"
+	-----------------------------------------------
+	trans(CONNECTOR(s),      FOUND_EQUATION) => fail
+
+  axiom	trans(TYPE(s),           FOUND_EQUATION) => fail (* CORRECT? *)
+  axiom	trans(PACKAGE(s),        FOUND_EQUATION) => fail
+  axiom	trans(FUNCTION(s),       FOUND_EQUATION) => fail
+  axiom	trans(HAS_EQUATIONS(s),  FOUND_EQUATION) => HAS_EQUATIONS(s)
+
+  rule	Print.print_buf "- trans failed: " & print_state st &
+ 	Print.print_buf ", " & print_event ev & Print.print_buf "\n"
+	--------------------------------------------------------
+	trans(st, ev) => fail
+
+end
+
+(** relation: valid
+ **
+ ** This is the validity relation which determines if a state is valid
+ ** according to one of the restrictions.  This means, that if a class
+ ** definition is to be used as, say, a connector, the state of the
+ ** state machine is checked against the `SCode.R_CONNECTOR'
+ ** restriction using this relation to find out if it is an error to
+ ** use this class definition as a connector.
+ **)
+
+relation valid : (State, SCode.Restriction) => () =
+
+  axiom	valid(UNKNOWN(s), _)
+
+  axiom	valid(IS_NEW(s),        SCode.R_CLASS)
+  axiom	valid(HAS_EQUATIONS(s), SCode.R_CLASS)
+
+  axiom	valid(MODEL(s),         SCode.R_MODEL)
+  axiom	valid(IS_NEW(s),        SCode.R_MODEL)
+  axiom	valid(HAS_EQUATIONS(s), SCode.R_MODEL)
+
+  axiom	valid(RECORD(s),        SCode.R_RECORD)
+  axiom	valid(IS_NEW(s),        SCode.R_RECORD)
+
+  axiom	valid(BLOCK(s),         SCode.R_BLOCK)
+  axiom	valid(HAS_EQUATIONS(s), SCode.R_BLOCK)
+
+  axiom	valid(CONNECTOR(_),     SCode.R_CONNECTOR)
+  axiom	valid(IS_NEW(_),        SCode.R_CONNECTOR)
+  axiom valid(TYPE_INTEGER(_),	SCode.R_CONNECTOR)
+  axiom valid(TYPE_REAL(_),	SCode.R_CONNECTOR)
+  axiom valid(TYPE_STRING(_),	SCode.R_CONNECTOR)
+  axiom valid(TYPE_BOOL(_),	SCode.R_CONNECTOR)
+
+  axiom	valid(TYPE(s),          SCode.R_TYPE)
+  axiom	valid(TYPE_INTEGER(s),  SCode.R_TYPE)
+  axiom	valid(TYPE_REAL(s),     SCode.R_TYPE)
+  axiom	valid(TYPE_STRING(s),   SCode.R_TYPE)
+  axiom	valid(TYPE_BOOL(s),     SCode.R_TYPE)
+
+  axiom	valid(IS_NEW(s),        SCode.R_PACKAGE)
+  axiom	valid(PACKAGE(s),       SCode.R_PACKAGE)
+
+  axiom	valid(IS_NEW(s),        SCode.R_FUNCTION)
+  axiom	valid(FUNCTION(s),      SCode.R_FUNCTION)
+
+end
+
+(** relation: assert_valid
+ **
+ ** This relation has the same semantical meaning as the relation
+ ** `valid'.  However, it prints an error message when it fails.
+ **)
+
+relation assert_valid : (State, SCode.Restriction) => () =
+
+  rule	valid(st,re)
+	------------
+	assert_valid(st,re)
+
+  rule	Print.print_error_buf "# Restriction violation: " & 
+	get_state_name st => str &
+	Print.print_error_buf str &
+	Print.print_error_buf " is not a " &
+	SCode.restr_string re => str &
+	Print.print_error_buf str &
+	Print.print_error_buf "\n" 
+	-------------------------------------------
+	assert_valid(st,re) => fail
+
+end
+
+
+relation matching_state : (State, State list) => bool =
+
+  axiom	matching_state (st, []) => false
+
+  axiom	matching_state (UNKNOWN(_),	  UNKNOWN(_)::rest) => true
+  axiom matching_state (MODEL(_),	  MODEL(_)::rest) => true
+  axiom matching_state (RECORD(_),	  RECORD(_)::rest) => true
+  axiom matching_state (BLOCK(_),	  BLOCK(_)::rest) => true
+  axiom matching_state (CONNECTOR(_),	  CONNECTOR(_)::rest) => true
+  axiom matching_state (TYPE(_),	  TYPE(_)::rest) => true
+  axiom matching_state (PACKAGE(_),	  PACKAGE(_)::rest) => true
+  axiom matching_state (FUNCTION(_),	  FUNCTION(_)::rest) => true
+  axiom matching_state (ENUMERATION(_),	  ENUMERATION(_)::rest) => true
+  axiom matching_state (HAS_EQUATIONS(_), HAS_EQUATIONS(_)::rest) => true
+  axiom matching_state (IS_NEW(_),	  IS_NEW(_)::rest) => true
+  axiom matching_state (TYPE_INTEGER(_),  TYPE_INTEGER(_)::rest) => true
+  axiom matching_state (TYPE_REAL(_),	  TYPE_REAL(_)::rest) => true
+  axiom matching_state (TYPE_STRING(_),	  TYPE_STRING(_)::rest) => true
+  axiom matching_state (TYPE_BOOL(_),	  TYPE_BOOL(_)::rest) => true
+  axiom matching_state (TYPE_ENUM(_),	  TYPE_ENUM(_)::rest) => true
+
+  rule	matching_state (st, rest) => res
+	--------------------------------
+	matching_state (st, first::rest) => res
+end
+
+
+relation is_function: State => () =
+  axiom is_function FUNCTION(_) => ()
+end
+

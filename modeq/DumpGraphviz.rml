@@ -1,0 +1,465 @@
+(*
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
+
+   
+    This file is part of OpenModelica, in the following denoted OSM.
+
+
+    The OSM License, Version 1.1, March 4, 2005.
+
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
+*)
+(**
+ ** file:	 Dump.rml
+ ** module:      Dump
+ ** description: debug printing
+ **
+ ** RCS: $Id$
+ **
+ ** Printing routines for debugging of the AST.  These relations do
+ ** nothing but print the data structures to the standard output.
+ **
+ ** The implementation of the relations are excluded from the report,
+ ** as they occupy a lot of space and do not convey any useful
+ ** semantic information.
+ **)
+
+
+module DumpGraphviz:
+
+  with "Absyn.rml"
+  with "Debug.rml"
+  with "Graphviz.rml"
+
+  type Ident = string
+  type Node = Graphviz.Node
+
+  (* Dump routines for debugging of AST *)
+
+  relation dump: Absyn.Program => ()
+end
+
+
+
+
+(*!ignorecode*)
+
+with "ClassInf.rml"
+with "Dump.rml"
+
+(* Relations *)
+
+relation dump : Absyn.Program => () =
+	
+  rule	(* print "> Beginning of rule dump\n" & *)
+	build_graphviz(p) => r &
+	Graphviz.dump(r)
+	(* & print "> End of rule dump\n" *)
+	----------------------
+	dump p 
+end
+
+
+relation build_graphviz : Absyn.Program => Node =
+
+  rule	(* print "> Beginning of rule build_graphviz\n" & *)
+	print_classes cs => nl
+	(* & print "> End of rule build_graphviz\n" *)
+	----------------------
+	build_graphviz(Absyn.PROGRAM(cs,_)) => Graphviz.NODE("ROOT",[],nl)
+
+end
+
+
+relation print_classes : Absyn.Class list => Node list =
+
+  axiom	print_classes [] => []
+
+  rule	(* print "> Beginning of rule print_classes\n" & *)
+	print_class c => node &
+	print_classes cs => nl
+	(* & print "> End of rule print_classes\n" *)
+	-----------------------
+	print_classes c::cs => node::nl
+
+end
+
+relation print_class: Absyn.Class => Node =
+
+  rule	(* print "> Beginning of rule print_class\n" & *)
+	Absyn.restr_string r => rs &
+	print_parts parts => nl
+	(* & print "> End of rule print_class\n" *)
+	-----------------------
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_))) => Graphviz.NODE(rs,[],nl)
+
+end
+
+
+relation print_parts : Absyn.ClassPart list => Node list =
+
+  axiom print_parts [] => []
+	
+  rule	(* print "> Beginning of rule print_parts\n" & *)
+	print_class_part(c) => node &
+	print_parts cs => nl
+	(* & print "> End of rule print_parts\n" *)
+	-----------------------------
+	print_parts c::cs => node::nl
+end
+
+(**)
+
+relation print_class_part: Absyn.ClassPart => Node =
+
+  rule	(* print "> Beginning of rule print_class_part\n" & *)
+	print_elementitems el => nl
+	(* & print "> End of rule print_class_part\n" *)
+	-----------------------
+	print_class_part(Absyn.PUBLIC(el)) => Graphviz.NODE("PUBLIC",[],nl)
+
+
+  rule	(* print "> Beginning of rule print_class_part\n" & *)
+	print_elementitems el => nl
+	(* & print "> End of rule print_class_part\n" *)
+	-----------------------
+	print_class_part(Absyn.PROTECTED(el)) => Graphviz.NODE("PROTECTED",[],nl)
+
+
+  rule	print_equations eqs => nl
+	------------------------
+	print_class_part(Absyn.EQUATIONS(eqs)) => Graphviz.NODE("EQUATIONS",[],nl)
+
+  rule	print_algorithms eqs => nl
+	------------------------
+	print_class_part(Absyn.ALGORITHMS(eqs)) => Graphviz.NODE("ALGORITHMS",[],nl)
+
+(*
+  rule	print_constraints eqs => nl
+	------------------------
+	print_class_part(Absyn.CONSTRAINTS(eqs)) => Graphviz.NODE("CONSTRAINTS",[],nl)
+*)
+
+
+  rule	(* print "> Error in print_class_part\n" *)
+	print ""
+	---------------------------------
+	print_class_part(_) => Graphviz.NODE("PART_ERROR",[],[])
+end
+
+
+(**)
+
+
+relation print_elementitems: Absyn.ElementItem list => Node list =
+
+  axiom	print_elementitems [] => []
+
+  rule	print_elementitems el => nl
+	-----------------------------
+	print_elementitems (Absyn.ANNOTATIONITEM(_)::el) => nl
+
+  rule	(* print "> Beginning of rule print_elements\n" & *)
+	print_element e => node &
+	print_elementitems el => nl
+	(* & print "> End of rule print_elements\n" *)
+	--------------------------
+	print_elementitems (Absyn.ELEMENTITEM(e)::el) => node::nl
+end
+
+(**)
+
+relation make_bool_attr: (string,bool) => Graphviz.Attribute =
+
+  rule	select_string(flag,"true","false") => s
+	---------------------------------------
+	make_bool_attr (str,flag) => Graphviz.ATTR(str,s)
+
+end
+
+relation make_leaf: (string, Graphviz.Attribute list) => Node =
+
+  axiom	make_leaf (str, al) => Graphviz.NODE(str,al,[])
+
+end
+
+
+relation print_element: Absyn.Element => Node =
+
+  rule	(* print "> Beginning of rule print_element\n" & *)
+	make_bool_attr("final",final) => fa &
+	print_elementspec spec => elsp
+	(* & print "> End of rule print_element\n" *)
+	------------------
+	print_element (Absyn.ELEMENT(final,_,_,_,spec,_,_,_)) => Graphviz.NODE("ELEMENT",[fa],[elsp])
+
+end
+
+
+relation print_path: Absyn.Path => Node =
+
+  rule	Absyn.path_string p => s &
+	make_leaf(s,[]) => pn
+	--------------------
+	print_path p => pn
+end
+
+
+relation print_elementspec: Absyn.ElementSpec => Node =
+
+  rule	print_class cl => nl &
+	make_bool_attr("replaceable",repl) => ra
+	--------------------
+	print_elementspec(Absyn.CLASSDEF(repl, cl)) => Graphviz.NODE("CLASSDEF",[ra],[])
+
+  rule	print_path p => en
+	---------------------------------
+	print_elementspec(Absyn.EXTENDS(p, l)) => Graphviz.NODE("EXTENDS",[],[en])
+
+  rule	print_path(p) => pn &
+	print_components(cs) => cns
+	--------------------------
+	print_elementspec(Absyn.COMPONENTS(attr,p,cs)) => Graphviz.NODE("COMPONENTS",[],pn::cns)
+
+  rule	print ""
+	--------
+	print_elementspec(_) => Graphviz.NODE("ELSPEC_ERROR",[],[])
+end
+
+relation print_components: Absyn.ComponentItem list => Node list =
+
+  axiom	print_components [] => []
+
+  rule	print_componentitem c => n &
+	print_components cs => nl
+	-------------------------
+	print_components c::cs => n::nl
+
+end
+
+
+relation print_componentitem: Absyn.ComponentItem => Node =
+
+  rule	print "" &
+	let nn = Graphviz.NODE(n,[],[]) 
+	--------
+	print_componentitem(Absyn.COMPONENTITEM(Absyn.COMPONENT(n,a,m),_)) => Graphviz.LNODE("COMPONENT",[n],[],[nn])
+end
+
+
+relation print_equations: Absyn.EquationItem list => Node list =
+
+  axiom	print_equations [] => []
+
+  rule	print_equation eq => node &
+	print_equations el => nl
+	--------------------------
+	print_equations Absyn.EQUATIONITEM(eq,ann)::el => node::nl
+	
+end
+
+
+relation print_equation: Absyn.Equation => Node =
+
+  rule	Dump.print_exp_str e1 => s1 &
+	Dump.print_exp_str e2 => s2 &
+	string_append (s1, " = ") => s &
+	string_append (s, s2) => s'
+	---------------------------
+	print_equation (Absyn.EQ_EQUALS(e1,e2)) => Graphviz.LNODE("EQ_EQUALS",[s'],[],[])
+
+  rule	Dump.print_component_ref_str c1 => s1 &
+	Dump.print_component_ref_str c2 => s2 &
+	string_append ("connect(", s1) => s &
+	string_append (s, s2) => s' &
+	string_append (s', ")") => s''
+	---------------------------
+	print_equation (Absyn.EQ_CONNECT(c1,c2)) => Graphviz.LNODE("EQ_CONNECT",[s''],[],[])
+
+  rule	print_equations eqs => eqn &
+	Dump.print_exp_str e => es
+	------------------------
+	print_equation (Absyn.EQ_FOR(n,e,eqs)) => Graphviz.LNODE("EQ_FOR",[n,es],[],eqn)
+
+  axiom	print_equation (_) => Graphviz.NODE("EQ_ERROR",[],[])
+
+end
+
+
+relation print_algorithms: Absyn.AlgorithmItem list => Node list =
+
+  axiom	print_algorithms [] => []
+
+  rule	print_algorithmitem e => node &
+	print_algorithms el => nl
+	--------------------------
+	print_algorithms e::el => node::nl
+	
+end
+
+relation print_algorithmitem: Absyn.AlgorithmItem => Node =
+	
+  rule	print_algorithm (alg) => node
+	---------------------------------
+	print_algorithmitem (Absyn.ALGORITHMITEM(alg,_)) => node
+
+  axiom	print_algorithmitem (_) => Graphviz.NODE("ALG_ERROR",[],[])
+end
+
+relation print_algorithm: Absyn.Algorithm => Node =
+
+  rule	print "" 
+	------------------
+	print_algorithm (Absyn.ALG_ASSIGN(cr,e)) => Graphviz.NODE("ALG_ASSIGN",[],[])
+
+  rule	print ""
+	--------
+	print_algorithm (_) => Graphviz.NODE("ALG_ERROR",[],[])
+end
+
+
+(*
+relation print_constraints: Absyn.Constraint list => Node list =
+
+  axiom	print_constraints [] => []
+
+  rule	print_constraint e => node &
+	print_constraints el => nl
+	--------------------------
+	print_constraints e::el => node::nl
+	
+end
+
+
+relation print_constraint: Absyn.Constraint => Node =
+
+  rule	print "" 
+	------------------
+	print_constraint (Absyn.INEQ_EXPR(e)) => Graphviz.NODE("INEQ_EXPR",[],[])
+
+  rule	print ""
+	--------
+	print_constraint (_) => Graphviz.NODE("ALG_ERROR",[],[])
+end
+*)
+
+
+
+
+relation variability_symbol: Absyn.Variability => string =
+
+  axiom variability_symbol(Absyn.VAR) => ""
+  axiom	variability_symbol(Absyn.DISCRETE) => "DISCRETE"
+  axiom	variability_symbol(Absyn.PARAM) => "PARAM"
+  axiom	variability_symbol(Absyn.CONST) => "CONST"
+
+end
+
+relation direction_symbol: Absyn.Direction => string =
+
+  axiom direction_symbol(Absyn.BIDIR) => ""
+  axiom	direction_symbol(Absyn.INPUT) => "INPUT"
+  axiom	direction_symbol(Absyn.OUTPUT) => "OUTPUT"
+
+end
+
+relation select_string: (bool,string,string) => string =
+
+  axiom	select_string(true,a,b) => a
+  axiom	select_string(false,a,b) => b
+
+end
+

@@ -1,0 +1,5283 @@
+(*
+    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
+    Sweden, in the following denoted PELAB/LIU.
+
+   
+    This file is part of OpenModelica, in the following denoted OSM.
+
+
+    The OSM License, Version 1.1, March 4, 2005.
+
+
+    1 Preface
+
+    The aim of this license is to lay down the conditions enabling you to use, 
+    modify and circulate OSM. However, PELAB/LIU remain the authors of 
+    OSM and so retain property rights and the use of all ancillary rights.
+
+    2 Definitions
+
+    OSM is defined as all successive versions of the OSM software and their 
+    documentation that have been developed by PELAB/LIU and including
+    accepted contributions from other contributors according to this license.
+
+    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
+    modified and/or translated and/or adapted.
+
+
+    3 Dual License
+
+    OSM is made available under the OSM licensing scheme, which is a dual
+    licensing scheme with two options, a) and b):
+
+    a) OSM OPEN SOURCE LICENSE:
+
+    If you wish to write Open Source software you can use the Open Source version 
+    of OSM, released under the OSM license which include GPL as its open source 
+    licensing option. If you use the OSM Open Source version you must release your 
+    Application using OSM including this Application's source code under the GPL as well.
+
+    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
+    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
+
+    You should have received a copy of the GPL - GNU General Public License
+    along with OpenModelica; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+    b) OSM COMMERCIAL LICENSE
+
+    If you are using OSM commercially - that is, for commercial usage or
+    for creating proprietary software for sale or use in a commercial setting
+    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
+    you to use OSM without releasing your Application under the GPL.
+
+    Comment: Payments for OSM are intended for OSM development and
+    integration of accepted contributions into OSM.
+
+
+    4 Priority
+
+    If there is any conflict between this OSM License text and the GNU GPL
+    license, this text has priority.
+
+
+    5 Contributions 
+
+    PELAB/LIU reserves the right to accept or turn down source code contributions
+    to OSM.
+
+
+    6 Limitation of the warranty
+
+    Except when mentioned otherwise in writing, OSM is supplied as is, with 
+    no explicit or implicit warranty, including warranties of commercialization or 
+    adaptation. You assume all risks concerning the quality or the effects of
+    OSM and its use. If OSM is defective, you will bear the costs of 
+    all required services, corrections or repairs.
+
+
+    7 Consent
+
+    When you access and use OSM, you are presumed to be aware of and to 
+    have accepted all the rights and obligations of the present OSM license.
+    This includes accepting that your open source code contributions to OSM, 
+    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
+    copyright and ownership by PELAB/IDA.
+
+
+    8 Binding effect
+
+    This license has the binding value of a contract.
+    You are not responsible for respect of the license by a third party.
+
+
+    9 Applicable law
+
+    The present license and its effects are subject to Swedish law and  
+    Swedish courts.
+
+
+    10 Contact information
+
+    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
+*)
+
+(**
+ ** file:	 DAELow.rml
+ ** module:      DAELow
+ ** description: DAELow a lower form of DAE including sparse matrises for
+ ** BLT decomposition, etc.
+ **
+ ** RCS: $Id$
+ ** 
+ **)
+
+(** 
+ ** This module is a lowered form of a DAE including equations 
+ ** and simple equations in
+ ** two separate lists. The variables are split into known variables
+ ** parameters and constants, and unknown variables, 
+ ** states and algebraic variables.
+ ** The module includes the BLT sorting algorithm which sorts the
+ ** equations into blocks, and the index reduction algorithm using
+ ** dummy derivatives for solving higher index problems.
+ ** It also includes the tarjan algorithm to detect strong components
+ ** in the BLT sorting.
+ **)
+ module DAELow:
+  
+  with "DAE.rml"
+  with "Exp.rml"
+  with "Values.rml"
+  with "Absyn.rml"
+  with "Algorithm.rml"
+
+
+  datatype VarKind = VARIABLE | STATE | DUMMY_DER | DUMMY_STATE | DISCRETE | PARAM | CONST
+
+  datatype Var = VAR of Exp.ComponentRef * 
+			VarKind * 
+			DAE.VarDirection * 
+			DAE.Type * 
+			Exp.Exp option * (* Binding expression e.g. for parameters*)
+			Values.Value option * (* binding value for parameters*)
+			DAE.InstDims *
+			DAE.StartValue *  (* value of start attribute *)
+			int * (* index in impl. vector *)
+			string *(* original variable name *)
+			Absyn.Path list *(* classname variable belongs to *)
+                        DAE.VariableAttributes option *
+                        Absyn.Comment option (* this contains the comment and annotation from Absyn *)
+
+  datatype VariableAttributes = VAR_ATTR of string * (* quantity *)
+            string *(* unit *)
+            string *(* displayUnit *)
+            (real * real) * (* min , max *)
+            real * (* Initial value *)
+            bool * (* fixed - true: default for parameter/constant, false - default for other variables *)
+            real  * (* nominal *)
+            StateSelect
+            
+  datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
+                                                       
+
+  datatype Equation = EQUATION of Exp.Exp * Exp.Exp
+		      | SOLVED_EQUATION of Exp.ComponentRef * Exp.Exp
+		      | RESIDUAL_EQUATION of Exp.Exp (* not present from front end *)
+		      | ALGORITHM of int (* index in algorithms, 0..n-1*) *
+				     Exp.Exp list *(*inputs CREF or der(CREF)*)
+				     Exp.Exp list(*outputs CREF or der(CREF)*)
+
+
+(* THE LOWERED DAE consist of variables and equations. The variables are split into 
+ * two lists, one for unknown variables states and algebraic and one for known variables
+ * constants and parameters.
+ * The equations are also split into two lists, one with simple equations, a=b, a-b=0, etc., that 
+  * are removed from  the set of equations to speed up calculations.
+ *)
+ datatype DAELow = DAELOW of Variables (* ordered Variables, only states and alg. vars*)		    
+		  * Variables (* Known variables, i.e. constants and parameters*)
+	          * EquationArray (* ordered Equations *)
+	          * EquationArray (* Removed equations a=b*)
+		  * EquationArray (* Initial equations *)
+		  * Algorithm.Algorithm array (* Algorithms *)
+
+ datatype Variables = VARIABLES of CrefIndex list array (* HashTB, cref->indx*)
+				   * VariableArray (* Array of variables *)    
+				   * int (* bucket size *)
+				   * int (* no. of vars *)
+
+datatype CrefIndex = CREFINDEX of Exp.ComponentRef * int
+
+(* array of Equations are expandable, to amortize the cost of adding 
+ ** equations in a more efficient manner
+ *)
+
+
+datatype VariableArray = VARIABLE_ARRAY of int * (* no. elements *)
+					   int * (* array size *)
+					   Var option array	
+
+datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
+					   int * (* array size *)
+					   Equation option array 
+
+ (** Assignments of variables to equations and vice versa are implemented by a
+  ** expandable array to amortize addition of array elements more efficient *)
+ datatype Assignments = ASSIGNMENTS of int * (* actual size *)
+				       int * (* allocaded size >= actual size *)
+				       int array (* array of indices *)
+
+(** Generic Binary tree implementation *)
+ datatype BinTree = TREENODE of TreeValue option * (* Value *)
+				BinTree option * (* left subtree *)
+				BinTree option (* right subtree *)
+
+(* Each node in the binary tree can have a value associated with it.*)
+
+  datatype TreeValue = TREEVALUE of Key (* Key *)
+				* Value (* Value *)
+
+  type Key = Exp.ComponentRef
+
+  type Value = int
+
+  type IncidenceMatrix = int list array (* an array of lists of variable indexes (1..n), 
+					one for each equation. For state variables
+					the index is negated, since when sorting to 
+					retrieve underlying ODE, the states are considered 
+					known. The system is solved for the derivatives and
+					the algebraic variables: \dot{x},y.
+					But the states must be located when debugging and
+					when a state is transformed to an algebraic varialbe
+					in index reduction using dummy derivatives.
+					*)
+
+  type IncidenceMatrixT = IncidenceMatrix (* a list of equation indexes (1..n), 
+					   one for each variable*. Equations that -only- 
+					   contain the state variable and not the derivative
+					   has a negative index.
+					   *)
+
+  relation dump: DAELow => ()
+  relation dump_vars: Var list => ()
+  relation dump_eqns: Equation list => () 
+
+  relation dump_jacobian_str: ((int*int*Equation) list ) => string   
+        
+  relation lower: (DAE.DAElist) => DAELow
+
+  relation incidence_matrix: (DAELow) => IncidenceMatrix
+ 
+  relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT
+		  
+  relation dump_incidence_matrix: IncidenceMatrix => ()
+
+  relation dump_incidence_matrix_t: IncidenceMatrixT => ()
+
+  relation dump_matching: (int vector) => () 
+	  
+  relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT) 
+	  => (int vector,(* var solved in eqn*) 
+	      int vector, (* eqn solves var *) 
+	      DAELow,
+	      IncidenceMatrix, 
+	      IncidenceMatrixT)
+
+  relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
+			       int vector, int vector) => 
+	  (int list list )
+
+  relation generate_state_partition:(int list list,DAELow,
+				     int vector,int vector,
+				     IncidenceMatrix,IncidenceMatrixT) 
+	  => (int list list, int list list) 
+
+  relation dump_components: (int list list) => ()
+
+  relation translate_dae: DAELow => DAELow 
+  relation calculate_values: DAELow => DAELow	  
+	  
+  relation calculate_sizes: DAELow => (int, (* nx *)
+				       int, (* ny *)
+				       int) (* np *)
+
+  relation calculate_jacobian: (Variables, 
+				EquationArray, 
+				IncidenceMatrix,
+				IncidenceMatrixT) 
+	  => ((int * int * Equation) list)
+
+  relation states: (DAE.DAElist,BinTree) => BinTree
+
+  relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
+  relation get_var_at:(Variables,int) => (Var)
+  relation exists_var: (Exp.ComponentRef, Variables) => bool 
+  relation var_list: (Variables) => Var list 
+
+  relation var_cref: (Var) => Exp.ComponentRef 
+
+  relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
+	  => int list
+
+  relation equation_add: (EquationArray,Equation) => EquationArray 
+  relation equation_nth:(EquationArray,int) => Equation 
+  relation equation_setnth: (EquationArray,int,Equation) => EquationArray
+  relation equation_list:(EquationArray) => Equation list 
+  relation list_equation:(Equation list ) => EquationArray
+  relation equation_to_residual_form:(Equation) => Equation 
+  relation residual_exp: (Equation) => Exp.Exp
+
+
+  relation vararray_nth:(VariableArray, int) => Var 
+  relation vararray_setnth:(VariableArray, int, Var) => VariableArray 
+  relation vararray_add:(VariableArray,Var) => VariableArray 
+  relation vararray_length: (VariableArray) => int
+  relation vararray_list:(VariableArray) => Var list
+  relation is_state_var: (Var) => bool
+  relation is_non_state: VarKind => ()
+  relation is_var_known : (Var list, Exp.ComponentRef) => bool 
+  relation is_param: (Var ) => bool 
+
+  relation get_all_exps : DAELow => Exp.Exp list
+
+end (* End Module *)
+
+(* Implementation *)
+with "Util.rml" 
+with "DAEEXT.rml"
+with "Print.rml"
+with "Derive.rml"
+with "Debug.rml"
+with "Env.rml" 
+with "Builtin.rml"
+with "Ceval.rml" 
+with "Types.rml"
+with "SCode.rml"
+with "Dump.rml"
+with "System.rml"
+with "VarTransform.rml"
+with "RTOpts.rml"
+
+val empty_bintree = TREENODE(NONE,NONE,NONE)
+
+(** relation: lower
+ ** This relation translates a DAE, which is the result from instantiating a 
+ ** class, into a more precise form, called DAELow defined in this module.
+ ** The DAELow representation splits the DAE into equations and variables
+ ** and further divides variables into known and unknown variables and the 
+ ** equations into simple and nonsimple equations.
+ ** The variables are inserted into a hash table. This gives a lookup cost of 
+ ** O(1) for finding a variable. The equations are put in an expandable
+ ** array. Where adding a new equation can be done in O(1) time if space 
+ ** is available.
+ **)
+relation lower: (DAE.DAElist) => DAELow =
+
+  rule	states(lst,empty_bintree) => s &
+	lower2(lst,s) => (vars,knvars,eqns,reqns,ieqns,algs)  &
+	(*	print "lowered dae:" & dump low &*)	
+	lower_algorithms(vars,algs) => algeqns &
+	list_append(algeqns,eqns) => eqns &
+	remove_simple_equations(vars,knvars,eqns,reqns,s) 
+	  => (vars,knvars,eqns,reqns) & 
+	sort_eqn(eqns) => eqns' &
+	list_equation(eqns') => eqnarr &
+	list_equation(reqns) => reqnarr &
+	list_equation(ieqns) => ieqnarr &
+	list_array(algs) => algarr
+(*	& print "removed simple equations, dae:" &
+	dump low' *)
+	(*list_length(vars) => varlen &
+	int_string(varlen) => vs &
+	list_length(eqns) => eqnlen &
+	int_string(eqnlen) => es &
+	print vs & print " variables\n========" &
+	dump_vars(vars) &
+	print st & print "\n" &
+	print es & print " equations\n" *)
+	--------------------
+	lower(lst) => DAELOW(vars,knvars,eqnarr,reqnarr,ieqnarr,algarr)
+end
+
+(** relation sort_eqn 
+ ** This relation sorts the equation. It puts first the algebraic eqns
+ ** and last the differentiated eqns
+ **
+ **
+ **)
+relation sort_eqn :  Equation list => Equation list =
+
+  rule  extract_algebraic_and_differential_eqn(eqns) => (algEqns,diffEqns) &
+(*        print "ALGEBRAIC EQUATIONS\n" &
+        dump_eqns(algEqns) &
+        print "\n\nDIFFERENTIATED EQUATIONS\n" &
+        dump_eqns(diffEqns) &*)
+        list_append(algEqns,diffEqns) => res
+        ---------------------------------------
+        sort_eqn(eqns) 
+          => res
+
+  rule  print "sort_eqn failed \n"
+        ---------------------------------------
+        sort_eqn(eqns) => fail
+end
+
+relation extract_algebraic_and_differential_eqn: (Equation list) => (Equation list,Equation list) =
+
+  axiom	extract_algebraic_and_differential_eqn([]) => ([],[]) 
+
+  rule  is_algebraic(exp1) => true &
+        is_algebraic(exp2) => true &
+        extract_algebraic_and_differential_eqn(rest) => (resAlgEqn,resDiffEqn)
+        ---------------------------------------
+        extract_algebraic_and_differential_eqn((eqn as EQUATION(exp1,exp2))::rest) 
+          => (eqn::resAlgEqn,resDiffEqn)
+
+
+  rule	extract_algebraic_and_differential_eqn(rest) => (resAlgEqn,resDiffEqn)
+        ---------------------------------------
+        extract_algebraic_and_differential_eqn((eqn as EQUATION(exp1,exp2))::rest)
+          => (resAlgEqn,eqn::resDiffEqn)
+
+  rule	(* Put algorithms in algebraic equations *)
+	extract_algebraic_and_differential_eqn(rest) => (resAlgEqn,resDiffEqn)
+        ---------------------------------------
+        extract_algebraic_and_differential_eqn((alg)::rest) 
+          => (alg::resAlgEqn,resDiffEqn)
+end
+
+(** relation:generate_state_partition
+ ** This relation traverses the equations to find out which blocks needs to
+ ** be solved by the numerical solver (Dynamic Section) and which blocks only 
+ ** needs to be solved for output to file ( Accepted Section).
+ ** This is done by traversing the graph of strong components, where
+ ** equations/variable pairs correspond to nodes of the graph. The edges of 
+ ** this graph are the dependencies between blocks or components. 
+ ** The traversal is made in the backward direction of this graph.
+ ** The result is a split of the blocks into two lists.
+ **) 
+relation generate_state_partition:(int list list, (* blocks *)
+				   DAELow,
+				   int vector, (* assignments1 *)
+				   int vector, (* assignments2 *)
+				   IncidenceMatrix, IncidenceMatrixT) => 
+ (int list list, (* dynamic blocks *)
+  int list list) (* output blocks *)
+	=
+        
+  rule	(*equation_size(e) => size &*)
+	vector_length(ass1) => size &
+	array_create(size,0) => arr &
+	mark_state_equations(dae,arr,m,mt,ass1,ass2) => arr' &
+	split_blocks(blt,arr) => (blt_states,blt_no_states)
+        -----------------------------------------
+        generate_state_partition(blt,dae as DAELOW(v,kv,e,se,ie,al),ass1,ass2,m,mt) => (blt_states,blt_no_states)
+        
+  rule  print "-generate_state_partition failed\n" 
+        -----------------------------------------
+        generate_state_partition(_,_,_,_,_,_) => fail
+        
+end
+
+(** relation: split_blocks
+ ** Split the blocks into two parts, one dynamic and one output, depedning
+ ** on if an equation in the block is marked or not.
+ **)
+
+relation split_blocks:( int list list (* blocks *), int array (* marks *)) 
+	  => (int list list (* dynamic *), 
+	      int list list (* output *)
+	      ) =
+
+  axiom	split_blocks([],_) => ([], [])
+
+  rule	(* block is dynamic, belong in dynamic section *)
+	block_is_dynamic(block,arr) => true &
+	split_blocks(blocks,arr) => (states,output) 
+	---------------------------------------
+	split_blocks(block::blocks,arr) => (block::states,output)
+
+  rule	(* block is not dynamic, belong in output section *)
+	split_blocks(blocks,arr) => (states,output) 
+	---------------------------------------
+	split_blocks(block::blocks,arr) => (states,block::output)
+end
+
+(* relation block_is_dynamic
+ ** Return true if the block contains a variable that is marked
+ **)
+relation block_is_dynamic: (int list, int array) => bool =
+
+  axiom	block_is_dynamic([],_) => false
+	
+  rule	int_sub(x,1) => x' &
+	array_nth(arr,x') => 0 &
+	block_is_dynamic(xs,arr) => res 
+	---------------------
+	block_is_dynamic(x::xs,arr) => res
+
+  rule	int_sub(x,1) => x' &
+	array_nth(arr,x') => mark_value &
+	int_ne(mark_value,0) => true
+	---------------------
+	block_is_dynamic(x::xs,arr) => true
+end
+
+(** relation mark_state_equations
+ ** This relation goes through all equations and marks the ones that
+ ** calculates a state, or is needed in order to calculate a state, 
+ ** with a non-zero value in the array passed as argument.
+ ** This is done by traversing the directed graph of nodes where
+ ** a node is an equation/solved variable and following the edges in the 
+ ** backward direction.
+ **)
+relation mark_state_equations:(DAELow, 
+			       int array, (* marks *)
+			       IncidenceMatrix,
+			       IncidenceMatrixT,
+			       int vector, (* assignments *)
+			       int vector) (* assignments *)
+	  => int array (* marks *) = 
+
+  rule	var_list(v) => v_lst &
+	Util.list_select(v_lst,is_state_var) => statevar_lst &
+	Util.list_fold(statevar_lst,mark_state_equation,(dae,arr,m,mt,a1,a2)) 
+	  => ((dae,arr',m,mt,a1,a2))
+	------------------------------------------------------------
+	mark_state_equations(dae as DAELOW(v,kn,e,se,ie,alg),arr,m,mt,a1,a2) => arr'
+
+  rule	print "-mark_state_equations failed\n" 
+	----------------
+	mark_state_equations(_,_,_,_,_,_) => fail
+
+end
+
+(** relation mark_state_equation
+ ** This relation is a helper relation to mark_state_equations
+ ** It performs marking for one equation and its transitive closure by 
+ ** following edges in backward direction.
+ **)
+relation mark_state_equation: (Var, (DAELow * 
+				     int array * 
+				     IncidenceMatrix* IncidenceMatrixT *
+				     int vector* int vector) 
+			       (* tuple so we can use Util.list_fold*)
+			       ) => ((DAELow *
+				     int array *
+				     IncidenceMatrix *
+				     IncidenceMatrixT *
+				     int vector *
+				     int vector)) =
+  rule	get_var(cr,vars) => (v,v_indx) &
+	int_sub(v_indx,1) => v_indx' &
+	vector_nth(a1,v_indx') => eqn &
+	mark_state_equation2(eqn,(arr,m,mt,a1,a2)) => ((arr',m,mt,a1,a2))
+	--------------------
+	mark_state_equation(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_), 
+			    (dae as DAELOW(vars,_,_,_,_,_),
+			     arr,m,mt,a1,a2)
+			    ) 
+	  => ((dae,arr',m,mt,a1,a2))
+
+  rule	not get_var(cr,vars) => (_,_) &
+	print "mark_state_equation var " &
+	Exp.print_component_ref_str cr => s &
+	print s & print "not found\n" 
+	-----------------------
+	mark_state_equation(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_),
+			    (dae as DAELOW(vars,_,_,_,_,_),
+			     arr,m,mt,a1,a2)) => fail
+
+  rule	get_var(cr,vars) => (_,v_indx) &
+	int_sub(v_indx,1) => v_indx' &
+	not vector_nth(a1,v_indx') => eqn &
+	print "mark_state_equation index ="  &
+	int_string v_indx => str & print str & 
+	print ", failed\n" 
+	-----------------------
+	mark_state_equation(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_),
+			    (dae as DAELOW(vars,_,_,_,_,_),
+			     arr,m,mt,a1,a2)) => fail
+end
+
+(** relation: mark_state_equation2
+ ** Helper relation to mark_state_equation
+ ** Does the job by looking at variable indexes and incidencematrices.
+ **)
+relation mark_state_equation2: (int (* eqn*), ( int array * (* marks *) 
+					     IncidenceMatrix *
+					     IncidenceMatrixT *
+					     int vector * int vector)) 
+	  => (( int array * (* marks *) 
+	      IncidenceMatrix * IncidenceMatrixT *
+	      int vector * int vector)) =
+	
+  rule	(* Mark an unmarked node/equation *)
+	int_sub(eqn,1) => eqn' &
+	array_nth(marks,eqn') => 0 &
+	array_setnth(marks,eqn',1) => marks' &
+	inv_reachable_nodes(eqn,m,mt,a1,a2) => inv_reachable &
+	remove_negative(inv_reachable) => inv_reachable' &
+	Util.list_fold(inv_reachable',mark_state_equation2,(marks',m,mt,a1,a2)) 
+	  => ((marks'',m,mt,a1,a2))
+	--------------------------
+	mark_state_equation2(eqn,(marks,m,mt,a1,a2)) => ((marks'',m,mt,a1,a2))
+
+  rule	(* Node allready marked. *)
+	int_sub(eqn,1) => eqn' &
+	array_nth(marks,eqn') => mark_value &
+	int_ne(mark_value,0) => true
+	--------------------------
+	mark_state_equation2(eqn,(marks,m,mt,a1,a2)) => ((marks,m,mt,a1,a2))
+
+  rule	print "mark_state_equation2 failed, eqn:" &
+	int_string(eqn) => eqnstr &
+	print eqnstr & print "array length =" &
+	array_length(marks) => len & int_string(len) => lens &
+	print lens & print "\n" &
+	int_sub(eqn,1) => eqn' &
+	array_nth(marks,eqn') => mark_value &
+	int_string(mark_value) => ms & 
+	print "mark_value:" & print ms &print "\n" 
+	---------------------------
+	mark_state_equation2(eqn,(marks,m,mt,a1,a2)) => fail
+end
+
+(** relation: inv_reachable_nodes
+ ** Similar to reachable_nodes, but follows edges in backward direction
+ ** I.e. what equations/variables needs to be solved to solve this one.
+ **)
+relation inv_reachable_nodes:(int, IncidenceMatrix, IncidenceMatrixT, 
+			      int vector, int vector) 
+	  => int list =
+
+  rule	int_sub(e,1) => eqn' &
+	array_nth(m,eqn') => var_lst &
+	remove_negative(var_lst) => var_lst' &
+	inv_reachable_nodes2(var_lst',a1) => lst
+	---------------------
+	inv_reachable_nodes(e,m,mt,a1,a2) => lst
+
+  rule	print "-inv_reachable_nodes failed, eqn:"& 
+	int_string(eqn) => eqn_str & print eqn_str & 
+	print "\n" 
+	--------------
+	inv_reachable_nodes(eqn,_,_,_,_) => fail
+end
+
+(** relation: inv_reachable_nodes2
+ ** Helper relation to inv_reachable_nodes
+ **)
+relation inv_reachable_nodes2:(int list (* variables *), 
+			       int vector (* assignments1*)
+			       ) => 
+	int list  =
+
+  axiom	inv_reachable_nodes2([],_) => []
+
+  rule	inv_reachable_nodes2(vs,a1) => eqns &
+	int_sub(v,1) => v' &
+	(* Which equation is variable solved in? *)
+	vector_nth(a1,v') => eqn 
+	----------------------
+	inv_reachable_nodes2(v::vs,a1) => eqn::eqns
+
+  rule	print "-inv_reachable_nodes2 failed\n" 
+	-------------------
+	inv_reachable_nodes2(_,_) => fail
+end
+		  
+(** relation: is_state_var
+ ** Returns true for state variables, false otherwise.
+**)
+relation is_state_var: (Var) => bool =
+
+  axiom	is_state_var (VAR(_,STATE,_,_,_,_,_,_,_,_,_,_,_)) => true
+  axiom	is_state_var(_) => false
+end
+
+(** relation is_non_state 
+ ** this equation checks if the the varkind is state of variable
+ ** used both in build_equation and generate_compute_state
+ **)
+relation is_non_state: VarKind => () =
+                                                 
+  axiom	is_non_state (VARIABLE) => ()
+  axiom	is_non_state (DUMMY_DER) => ()
+  axiom	is_non_state (DUMMY_STATE) => ()
+end
+
+(** relation: dump
+ ** This relation dumps the DAELow representaton to stdout.
+ **)
+relation dump: DAELow => () =
+
+  rule	print "Variables (" & 
+	var_list(vars1) => vars &
+	list_length(vars) => varlen &
+	int_string(varlen) => varlen_str &
+	print varlen_str & print ")\n" &
+	print "=========\n" &
+
+	dump_vars vars &
+	print "\n" &
+	print "Known Variables (constants) (" &
+	var_list(vars2) => knvars &
+	list_length(knvars) => varlen &
+	int_string(varlen) => varlen_str &
+	print varlen_str & print ")\n" &
+	print "=============================\n" &
+	dump_vars knvars &
+	print "\nEquations (" &
+	equation_list(eqns) => eqnsl &
+	list_length(eqnsl) => eqnlen &
+	int_string(eqnlen) => eqnlen_str &
+	print eqnlen_str & print ")\n" &
+	print "=========\n" &
+
+	dump_eqns eqnsl &
+	print "Simple Equations (" &
+	equation_list(reqns) => reqnsl &
+	list_length(reqnsl) => eqnlen &
+	int_string(eqnlen) => eqnlen_str &
+	print eqnlen_str & print ")\n" &
+	print "=========\n" &
+	dump_eqns reqnsl &
+	print "Initial Equations (" &
+	equation_list(ieqns) => ieqnsl &
+	list_length(ieqnsl) => eqnlen &
+	int_string(eqnlen) => eqnlen_str &
+	print eqnlen_str & print ")\n" &
+	print "=========\n" &
+	dump_eqns ieqnsl 
+	-----------------
+	dump(DAELOW(vars1,vars2,eqns,reqns,ieqns,algs))
+end
+
+(** relation: var_list
+ ** Takes Variables and returns a list of 'Var', useful for e.g. dumping.
+ **)
+relation var_list: (Variables) => Var list =
+
+  rule	vararray_list(vararr) => varlst 
+	--------------------------------------
+	var_list(VARIABLES(_,vararr,_,_)) => varlst
+end
+
+(** relation: var_cref
+ ** extracts the ComponentRef of a variable.
+ **)
+relation var_cref: (Var) => Exp.ComponentRef =
+
+  axiom	var_cref(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_)) => cr
+
+end
+
+(** relation vararray_list
+ ** Transforms a VariableArray to a Var list
+ **)
+
+relation vararray_list:(VariableArray) => Var list =
+
+  axiom	vararray_list(VARIABLE_ARRAY(0,_,arr)) => []
+
+  rule	array_nth(arr,0) => SOME(elt) 
+	------------------
+	vararray_list(VARIABLE_ARRAY(1,_,arr)) => [elt]
+
+  rule	n  - 1 => lastpos &
+	vararray_list2(arr,0,lastpos) => lst 
+	---------------
+	vararray_list(VARIABLE_ARRAY(n,size,arr)) => lst
+end
+
+(** relation: vararray_list2
+ ** Helper relation to vararray_list
+**)
+
+relation vararray_list2:(Var option array,int,int) => Var list =
+	
+  rule	int_eq (pos,lastpos) => true &
+	array_nth(arr,pos) => SOME(v) 
+	--------------------
+	vararray_list2(arr,pos,lastpos) => [v]
+
+  rule	pos + 1 => pos' &
+	array_nth(arr,pos) => SOME(v) &
+	vararray_list2(arr,pos',lastpos) => res
+	---------------------------------------
+	vararray_list2(arr,pos,lastpos) => v::res
+end
+
+(** relation: dump_jacobian_str
+ ** Dumps the sparse jacobian.
+ ** Uses the variables to determine size of Jacobian matrix.
+ **)
+relation dump_jacobian_str: ((int*int*Equation) list ) => string =
+
+  rule	dump_jacobian_str2(eqns) => res &
+	Util.string_delimit_list(res,", ") => res'
+	------------------
+	dump_jacobian_str(eqns) => res'
+end
+
+(** relation: dump_jacobian_str2
+ ** Helper relation to dump_jacobian_str
+**)
+relation dump_jacobian_str2:((int*int*Equation) list) => string list =
+
+  axiom	dump_jacobian_str2([]) => []
+
+  rule	Exp.print_exp_str(e) => estr &
+	int_string(row) => rowstr &
+	int_string(col) => colstr &
+	Util.string_append_list(["{",rowstr,",",colstr,"}:",estr]) => str &
+	dump_jacobian_str2(eqns) => strs
+	--------------------------------
+	dump_jacobian_str2((row,col,RESIDUAL_EQUATION(e))::eqns) => str::strs
+end
+
+(** relation: dump_eqns
+ ** Helper relation to dump.
+ **)
+relation dump_eqns: Equation list => () =
+
+  rule	dump_eqns2(eqns,1) 
+	------------------
+	dump_eqns(eqns)
+end
+
+relation dump_eqns2: (Equation list,int) => () =
+
+  axiom	dump_eqns2([],_) => ()
+
+  rule	equation_str eqn => es &
+	int_string(index) => is &
+	print is & print " : " & print es & print "\n" &
+	index +1 => index' &
+	dump_eqns2(eqns,index') 
+	----------------
+	dump_eqns2(eqn::eqns,index) => ()
+end
+
+(** relation: equation_str
+ ** Helper relation to e.g. dump.
+ **)
+relation equation_str: Equation => string =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	Exp.print_exp_str e2 => s2 &
+	Util.string_append_list([s1," = ",s2]) => res
+	--------------------
+	equation_str(EQUATION(e1,e2)) => res
+
+  rule	Exp.print_component_ref_str cr => s1 &
+	Exp.print_exp_str e2 => s2 &
+	Util.string_append_list([s1," := ",s2]) => res
+	--------------------
+	equation_str(SOLVED_EQUATION(cr,e2)) => res
+
+  rule	Exp.print_exp_str e => s1 &
+	Util.string_append_list([s1, "= 0"]) => res
+	----------------------------------------------------------
+	equation_str(RESIDUAL_EQUATION(e)) => res
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["Algorithm no: ",is,"\n"]) => res
+	----------------------------------------------------------
+	equation_str(ALGORITHM(i,_,_)) => res
+end
+
+(** relation: remove_simple_equations
+ ** This relation moves simple equations on the form a=b from equations 2nd 
+ ** in DAELow to simple equations 3rd in DAELow to speed up assignment alg. 
+ **)
+relation remove_simple_equations: (Variables, (* vars *)
+				   Variables, (* known vars *)
+				   Equation list, (* eqns *) 
+				   Equation list, (* simple eqns *)
+				   BinTree) 
+	=> (Variables,
+	    Variables, 
+	    Equation list, 
+	    Equation list) =
+
+  rule	VarTransform.empty_replacements() => repl &
+	remove_simple_equations2(eqns,vars,knvars,empty_bintree,states,repl) 
+	  => (eqns',seqns,movedvars',vartransf) &
+(* 	VarTransform.dump_replacements(vartransf) => () & *)
+	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
+	VarTransform.replace_equations(seqns,vartransf) => seqns' &
+	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
+	(*& print_vars_statistics(vars',knvars')*)
+	-------------------------------------
+	remove_simple_equations(vars,knvars,eqns,reqns,states) 
+	  => (vars',knvars',eqns'',seqns')
+
+  rule	print "-remove_simple_equations failed\n"  
+	------------------------
+	remove_simple_equations(_,_,_,_,_) => fail
+end
+
+(** relation remove_simple_equations2
+ ** helper relation to remove_simple_equations
+ **)
+relation remove_simple_equations2: (Equation list, (* all equations*)
+				    Variables, (* variables *)
+				    Variables, (* known variables *)
+				    BinTree, (* moved vars *)
+				    BinTree,(* states *)
+				    VarTransform.VariableReplacements) (* variable replacements*)
+	  => (Equation list, (* diff equations and non-simple equations  *)  
+	      Equation list, (* simple equations*) 
+	      BinTree, (* moved variables *) 
+	      VarTransform.VariableReplacements) (*  list of replacements *) =
+
+  axiom	remove_simple_equations2([],vars,knvars,mvars,states,repl)  
+	  => ([],[],mvars,repl) 
+
+  rule	(* Both are states, i.e. x1 = x2 can not be removed *)
+	simple_equation(e) => (cr1,cr2) &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	tree_get(states,cr1) => _ &
+	tree_get(states,cr2) => _ &
+	remove_simple_equations2(eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',seqns',mvars',repl)
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (e::eqns',seqns',mvars',repl)
+	  
+  rule	(* cr1 is state and cr2 not, remove cr2*)
+	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr2) => _ &
+	tree_get(states,cr1) => _ &
+	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
+	tree_add(mvars,cr2,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr2,Exp.CREF(cr1,t))::seqns',mvars'',repl'')
+
+  rule	(* as above but swapped args: cr1 is state and cr2 not, remove cr2*)
+	simple_equation(e) => (cr2,cr1) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr2) => _ &
+	tree_get(states,cr1) => _ &
+	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
+	tree_add(mvars,cr2,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr2,Exp.CREF(cr1,t))::seqns',mvars'',repl'')
+
+  rule	(* cr1 variable, cr2 constant, remove cr1 *)
+	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
+	is_variable(cr1,vars,knvars) &
+	not is_variable(cr2,vars,knvars) &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
+	tree_add(mvars,cr1,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
+
+  rule	(* same as above but swapped args: remove cr1 *)
+	simple_equation(e) => (cr2,cr1) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
+	is_variable(cr1,vars,knvars) &
+	not is_variable(cr2,vars,knvars) &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
+	tree_add(mvars,cr1,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
+
+  rule	(* None are states, but  variables, remove cr1 *)
+	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
+	not tree_get(states,cr1) => _ &
+	not tree_get(states,cr2) => _ &
+	is_variable(cr1,vars,knvars) &
+	is_variable(cr2,vars,knvars) &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' & 
+	tree_add(mvars,cr1,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
+
+  rule	(* same as above but swapped args, remove cr1 *)
+	simple_equation(e) => (cr1,cr2) &
+	typeof_equation(e) => t &
+	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	not VarTransform.get_replacement(repl,cr1) => _ &
+	not tree_get(states,cr1) => _ &
+	not tree_get(states,cr2) => _ &
+	is_variable(cr1,vars,knvars) &
+	is_variable(cr2,vars,knvars) &
+	VarTransform.add_replacement(repl,cr1,cr2) => repl' & 
+	tree_add(mvars,cr1,0) => mvars' &
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	  => (eqns',seqns',mvars'',repl'')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
+
+  rule	(* Not a simple variable, check rest*)
+	remove_simple_equations2(eqns,vars,knvars,mvars,states,repl) 
+	  => (eqns',seqns',mvars',repl')
+	--------------------------------------------------
+	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
+	  => (e::eqns',seqns',mvars',repl')
+end 
+
+(** relation typeof_equation
+ ** Returns the Exp.Type of an equation
+**)
+relation typeof_equation: (Equation) => Exp.Type =
+
+  rule	Exp.typeof(e) => t
+	-------------------
+	typeof_equation(EQUATION(e,_)) => t
+	
+  rule	Exp.typeof(e) => t 
+	-------------------
+	typeof_equation(SOLVED_EQUATION(_,e)) => t
+end
+
+
+(** relation: move_variables
+ ** This relation takes the two variable lists of a dae (states+alg) and known vars
+ ** and moves a set of variables from the first to the second set.
+ ** This relation is needed to manage this in complexity O(n) by only traversing 
+ ** the set once for all variables.
+ **)
+relation move_variables:(Variables,	(* alg+state *)
+			 Variables,	(* known *)
+			 BinTree)	(* vars to move from first7 to second*)
+	  => (Variables,		(* updated alg+state vars*)
+	      Variables) =	(* updated known vars*)
+	
+  rule	var_list(vars1) => lst1 &
+	var_list(vars2) => lst2 &
+	move_variables2(lst1,lst2,mvars) => (lst1',lst2') &
+	empty_vars() => v1 &
+	empty_vars() => v2 &
+	add_vars(lst1',v1) => vars &
+	add_vars(lst2',v2) => knvars 
+	--------------------------------------------------------
+	move_variables(vars1, vars2, mvars)
+	  => (vars,knvars)
+end
+
+(** relation: move_variables2
+ ** helper relation to move_variables.
+ **)
+relation move_variables2: (Var list,	(* alg+state vars as list *)
+			   Var list,	(* known vars as list *)
+			   BinTree)	(* move-variables as BinTree *)
+	=> (Var list,	(* updated alg+state vars as list*)
+	    Var list) =	(* update known vars as list *)
+
+  axiom	move_variables2([],knvars,_) => ([],knvars)
+
+  rule	(* alg var moved to known vars*)
+	tree_get(mvars,cr) => _ &
+	move_variables2(vs,knvars,mvars) => (vs',knvars')
+	--------------------------
+	move_variables2((v as VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_))::vs,knvars,mvars)
+	  => (vs',v::knvars')
+	  
+  rule	(* alg var not moved to known vars*)
+	not tree_get(mvars,cr) => _ &
+	move_variables2(vs,knvars,mvars) => (vs',knvars')
+	--------------------------
+	move_variables2((v as VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_))::vs,knvars,mvars)
+	  => (v::vs',knvars')
+end
+
+(** relation: is_variable
+ ** This relation takes a Exp.ComponentRef and two Variables. It searches the two sets of variables and 
+ ** succed if the variable is STATE or VARIABLE. Otherwise it fails.
+ **)
+relation is_variable: (Exp.ComponentRef, Variables, Variables) => () =
+
+  rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_,_,_,_,_,_,_,_,_,_),_)
+	---------------------------------------------------------
+	is_variable(cr,vars,_) => ()
+
+  rule	get_var(cr,vars) => (VAR(_,STATE,_,_,_,_,_,_,_,_,_,_,_),_)
+	------------------------------------------------------
+	is_variable(cr,vars,_) => ()
+
+  rule	get_var(cr,knvars) => (VAR(_,VARIABLE,_,_,_,_,_,_,_,_,_,_,_),_)
+	-----------------------------------------------------------
+	is_variable(cr,_,knvars) => ()
+end
+
+(** relation simple_equation
+ ** This relation investigates if an Equation is simple, i.e. on the form
+ ** a = b or a-b=0 
+ ** These relations can be removed from the set of equations.
+ **) 
+relation simple_equation: (Equation) => (Exp.ComponentRef, Exp.ComponentRef) =
+
+  axiom	simple_equation EQUATION(Exp.CREF(cr1,_),Exp.CREF(cr2,_)) => (cr1,cr2)
+
+  rule	Exp.is_zero(e) => true
+	----------------------------------
+	simple_equation(EQUATION(Exp.BINARY(Exp.CREF(cr1,_),Exp.SUB(_),Exp.CREF(cr2,_)),e))
+	  => (cr1,cr2)
+
+  rule	Exp.is_zero(e) => true
+	----------------------------------
+	simple_equation(EQUATION(e,Exp.BINARY(Exp.CREF(cr1,_),Exp.SUB(_),Exp.CREF(cr2,_))))
+	  => (cr1,cr2)
+end
+
+(** relation: remove_variable_named
+ ** Removes a varaible from the 'Variables' set given a ComponentRef name.
+ ** The removed variable is returned, such that is can be used elsewhere.
+ **)
+relation remove_variable_named: (Variables,  Exp.ComponentRef) => (Variables, Var) =
+
+  rule	not get_var(cr,vars) => (_,_) &
+	print "-remove_variable_named failed. variable " 
+	& Exp.print_component_ref_str cr => str &
+	print str & print " not found.\n" 
+	---------------------
+ 	remove_variable_named(vars,cr)  => fail
+
+  rule	get_var(cr,vars) => (var,_) &
+	delete_var(vars,cr) => vars' 
+	------------------------------
+	remove_variable_named(vars,cr) => (vars',var)
+
+  rule	print "-remove_variable_named failed\n" 
+	--------------------
+	remove_variable_named(_,_) => fail
+end
+
+(** relation: dump_vars
+ ** Helper relation to dump.
+ **)
+relation dump_vars: Var list => ()=
+
+  rule	dump_vars2(vars,1) 
+	----------------
+	dump_vars(vars)
+end
+relation dump_vars2: (Var list,int) => () =
+
+  axiom	dump_vars2([],_) => ()
+
+  rule	int_string (varno) => varnostr &
+	print varnostr & print ": " &
+	DAE.dump_direction_str dir => dirstr & print dirstr & print " " &
+	Exp.print_component_ref_str(cr) => str &
+	print str & print ":" & dump_kind kind &
+	Util.list_map(paths,Absyn.path_string) => paths_lst &
+	Util.string_delimit_list(paths_lst,", ") => path_str &
+        Dump.unparse_comment_option(comment) => comment_str &
+	print "= " & Exp.print_exp_str e => s & print s & print(" ") & print(path_str) & 
+        print "  " & print comment_str & print ",\n " &
+        
+        print " former: " & print old_name &
+	int_add(varno,1) => varno' &
+    	DAE.dump_variable_attributes(dae_var_attr) &
+        dump_vars2(xs,varno') 
+	    -------------
+	dump_vars2(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,old_name,paths,dae_var_attr,comment)::xs,varno)
+
+  rule  int_string (varno) => varnostr &
+	print varnostr & print ": " &
+	DAE.dump_direction_str dir => dirstr & print dirstr & print " " &
+	Exp.print_component_ref_str(cr) => str &
+	Util.list_map(paths,Absyn.path_string) => path_strs &
+	Util.string_delimit_list(path_strs, ", ") => path_str &
+        Dump.unparse_comment_option(comment) => comment_str &
+	print str & print ":" & dump_kind kind & print(" ") & print(path_str) & 
+        print " former: " & print old_name &
+	    DAE.dump_variable_attributes(dae_var_attr) &
+        print "  " & print comment_str & 
+        print ",\n " &
+	int_add(varno,1) => varno' &
+ 	dump_vars2(xs,varno') 
+	-------------
+	dump_vars2(VAR(cr,kind,dir,_,NONE,_,_,_,_,old_name,paths,dae_var_attr,comment)::xs,varno)
+end 
+
+(** relation: dump_kind
+ ** Helper relation to dump.
+ **)
+relation dump_kind: VarKind => () =
+
+  rule	print "VARIABLE" 
+	--------------
+	dump_kind VARIABLE
+
+  rule	print "STATE" 
+	--------------
+	dump_kind STATE
+
+  rule	print "DUMMY_DER" 
+	--------------
+	dump_kind DUMMY_DER
+
+  rule	print "DUMMY_STATE" 
+	--------------
+	dump_kind DUMMY_STATE
+
+  rule	print "DISCRETE" 
+	--------------
+	dump_kind DISCRETE
+
+  rule	print "PARAM" 
+	--------------
+	dump_kind PARAM
+
+  rule	print "CONST" 
+	--------------
+	dump_kind CONST
+end
+
+(** relation: states
+ ** Returns a BinTree of all states in the DAE.
+ ** This relation is used by the lower relation.
+ **)
+relation states: (DAE.DAElist,BinTree) => BinTree =
+
+  axiom states (DAE.DAE([]),bt) => bt
+
+  rule	states(DAE.DAE(xs),bt) => bt &
+	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
+	-----------------------------------
+	states(DAE.DAE(DAE.EQUATION(e1,e2)::xs),bt)  => bt
+
+  rule	states(dae,bt) => bt &
+	states(DAE.DAE(xs),bt) => bt 
+	-------------------------
+	states(DAE.DAE(DAE.COMP(_,dae)::xs),bt) => bt
+	
+  rule  states(DAE.DAE(xs),bt) => bt
+	-----------------
+	states(DAE.DAE(_::xs),bt) => bt
+end
+
+(** relation: states_exp
+ ** Helper relation to states.
+ **)
+relation states_exp: (Exp.Exp,BinTree) => BinTree =
+
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
+	-----------------------------
+	states_exp(Exp.BINARY(e1,_,e2),bt) => bt
+
+  rule	states_exp(e,bt) => bt
+	-----------------------------
+	states_exp(Exp.UNARY(_,e),bt) => bt
+
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
+	-----------------------------
+	states_exp(Exp.LBINARY(e1,_,e2),bt) => bt
+	
+  rule	states_exp(e,bt) => bt
+	----------------------
+	states_exp(Exp.LUNARY(_,e),bt) => bt
+
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
+	-------------------------
+	states_exp(Exp.RELATION(e1,_,e2),bt) => bt
+	
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt &
+	states_exp(e3,bt) => bt 
+	-------------------------
+	states_exp(Exp.IFEXP(e1,e2,e3),bt) => bt
+
+  rule	(* value irrelevant, give zero *)
+	Exp.stringify_component_ref(cr) => cr' &
+	tree_add(bt,cr',0) => bt
+	-----------------------
+	states_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),bt) => bt
+
+  rule	Util.list_fold(expl,states_exp,bt) => bt 
+	----------------------------------------
+	states_exp(Exp.CALL(_,expl,_,_),bt) => bt
+	
+  rule	Util.list_fold(expl,states_exp,bt) => bt 
+	----------------------------------------
+	states_exp(Exp.ARRAY(_,_,expl),bt) => bt
+
+  rule	Print.print_buf "states_exp on MATRIX not impl.\n" &
+	print "states_exp on MATRIX not impl.\n"
+	---------------------------------------
+	states_exp(Exp.MATRIX(_,_,_),bt) => bt
+	
+  rule	Util.list_fold(expl,states_exp,bt) => bt 
+	----------------------------------------
+	states_exp(Exp.TUPLE(expl),bt) => bt
+
+  rule	states_exp(e,bt) => bt
+	-----------------------
+	states_exp(Exp.CAST(_,e),bt) => bt
+
+  rule	states_exp(e,bt) => bt
+	-----------------------
+	states_exp(Exp.ASUB(e,_),bt) => bt
+
+  rule	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
+	-----------------------
+	states_exp(Exp.REDUCTION(_,e1,_,e2),bt) => bt
+
+  axiom	states_exp(_,bt) => bt
+end
+
+(** relation: lower2
+ ** Helper relation to lower.
+ **)
+relation lower2: (DAE.DAElist, BinTree (* states *)) 
+	  => (Variables,
+	      Variables,
+	      Equation list,
+	      Equation list,
+	      Equation list,
+	      Algorithm.Algorithm list) =
+	
+  rule	empty_vars() => v1 &
+	empty_vars() => v2
+	------------------
+	lower2 (DAE.DAE([]),_) => (v1,v2,[],[],[],[])
+	
+  rule	lower2(DAE.DAE(xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+	lower_var (v,states) => v' &
+	add_var(v',vars) => vars' 
+	--------------------------------
+	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_))::xs),states) 
+	  => (vars',knvars,eqns,reqns,ieqns,algs)
+
+  rule	lower2(DAE.DAE(xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+	(* in previous rule, lower_var failed.  *)
+	lower_known_var (v) => v' &
+	add_var(v',knvars) => knvars'
+	--------------------------------
+	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_))::xs),states) 
+	  => (vars,knvars',eqns,reqns,ieqns,algs)
+	  
+  rule	lower2(DAE.DAE(xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+	lower_eqn(e) => e' 
+	--------------------------------
+	lower2 (DAE.DAE((e as DAE.EQUATION(e1,e2))::xs),states) 
+	  => (vars,knvars,e'::eqns,reqns,ieqns,algs)
+
+  rule	lower2(DAE.DAE(xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+	lower_eqn(e) => e' 
+	--------------------------------
+	lower2 (DAE.DAE((e as DAE.INITIALEQUATION(e1,e2))::xs),states) 
+	  => (vars,knvars,eqns,reqns,e'::ieqns,algs)
+
+  rule	lower2(DAE.DAE(xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs) 
+	--------------------------------
+	lower2 (DAE.DAE((DAE.ALGORITHM(a))::xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,a::algs)
+
+  rule	lower2(dae,states) 
+	  => (vars1,knvars1,eqns1,reqns1,ieqns1,algs1) &
+	lower2(DAE.DAE(xs),states) 
+	  => (vars2,knvars2,eqns2,reqns2,ieqns2,algs2) &
+	merge_vars(vars1,vars2) => vars &
+	list_append(eqns1,eqns2) => eqns &
+	list_append(ieqns1,ieqns2) => ieqns &
+	list_append(reqns1,reqns2) => reqns &
+	merge_vars(knvars1,knvars2) => knvars &
+	list_append(algs1,algs2) => algs 
+	--------------------------------
+	lower2(DAE.DAE(DAE.COMP(_,dae)::xs),states) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs)
+	
+  rule	lower2(DAE.DAE(xs),states) 
+	  => (v,kv,e,re,ie,al)
+	---------------------
+	lower2 (DAE.DAE(_::xs),states) => (v,kv,e,re,ie,al)
+
+  rule	print "-lower2 failed\n" 
+	------------------------
+	lower2 (_,_) => fail	
+end
+
+(** relation: lower_algorithms
+ ** This relation lowers algorithm sections by generating a list
+ ** of ALGORITHMS nodes for the BLT sorting, which are put in 
+ ** the equation list.
+ ** An algorithm that calculates n variables will get n  ALGORITHM nodes
+ ** such that the BLT sorting can be done correctly.
+**)
+relation lower_algorithms: (Variables, (* vars *)
+			    Algorithm.Algorithm list)
+	  => Equation list =
+
+  rule	lower_algorithms2(vars,algs,0) => (eqns,_)
+	---------------------
+	lower_algorithms(vars,algs) => eqns
+end
+
+(** relation: lower_algorithms2
+ ** Helper relation to lower_algorithms. To handle indexes in Equation nodes
+ ** for algorithms to indentify the corresponding algorithm.
+ **)
+relation lower_algorithms2: (Variables, (*vars*)
+			     Algorithm.Algorithm list, 
+			     int (* algindex*)) 
+	  => (Equation list,
+	      int) (* updated algindex*) =
+	
+  axiom	lower_algorithms2(vars,[],aindx) => ([],aindx)
+	
+  rule	lower_algorithm(vars,a,aindx) => eqns & 
+	int_add(aindx, 1) => aindx &
+	lower_algorithms2(vars,algs,aindx) => (eqns2,aindx) &
+	list_append(eqns,eqns2) => res
+	------------------------
+	lower_algorithms2 (vars,a::algs,aindx) => (res,aindx)
+end
+
+(** relation: lower_algorithm
+ ** Lowers a single algorithm. Creates n ALGORITHM nodes for blt sorting.
+ **)
+relation lower_algorithm: (Variables, (*vars*)
+			   Algorithm.Algorithm, 
+			   int) (*algindx*) 
+			  => Equation list =
+
+  rule	lower_algorithm_inputs_outputs(vars,a) 
+	  => (inputs,outputs) &
+	list_length(outputs) => numnodes &
+        lower_algorithm2(inputs,outputs,numnodes,aindx) => lst
+	-----------------------------------------------------
+	lower_algorithm(vars,a,aindx) => lst
+end
+
+relation lower_algorithm2:(Exp.Exp list, (* inputs *) 
+			   Exp.Exp list, (* outputs *)
+			   int, (* numnodes*) 
+			   int) (* aindx *)
+	=> (Equation list) =
+
+  axiom	lower_algorithm2(_,_,0,_) => []
+
+  rule	int_sub(numnodes,1) => numnodes' &
+	lower_algorithm2(inputs,outputs,numnodes',aindx) => res 
+	-----------------------------------------------------
+	lower_algorithm2(inputs,outputs,numnodes,aindx)
+	  => ALGORITHM(aindx,inputs,outputs)::res
+end
+
+(** relation: lower_algorithm_inputs_outputs
+ ** This relation finds the inputs and the outputs of an algorithm.
+ ** An input is all values that are reffered on the right hand side of any 
+ ** statement in the algorithm and an output is a variables belonging to the 
+ ** variables that are assigned a value in the algorithm.
+ **)
+relation lower_algorithm_inputs_outputs: (Variables, 
+					  Algorithm.Algorithm)
+	=> (Exp.Exp list,
+	    Exp.Exp list)  =
+
+  axiom	lower_algorithm_inputs_outputs(_,Algorithm.ALGORITHM([])) => ([],[])
+
+  rule	lower_statement_inputs_outputs(vars,s) => (inputs1,outputs1) &
+	lower_algorithm_inputs_outputs(vars,Algorithm.ALGORITHM(ss))
+	  =>(inputs2,outputs2) &
+	Util.list_union_p(inputs1,inputs2,Exp.exp_equal) => inputs &
+	Util.list_union_p(outputs1,outputs2,Exp.exp_equal) => outputs 
+	---------------------------------------------------------
+	lower_algorithm_inputs_outputs(vars,Algorithm.ALGORITHM(s::ss))
+	  => (inputs,outputs)
+end
+
+(** relation lower_statement_inputs_outputs
+ ** Helper relatoin to lower_algorithm_inputs_outputs
+ ** Investigates single statements. Returns Exp.Exp list
+ ** instead of Exp.ComponentRef list because derivatives must
+ ** be handled as well.
+ **)
+relation lower_statement_inputs_outputs: (Variables, (* vars *)
+					  Algorithm.Statement) => 
+	(Exp.Exp list, (* inputs, CREF or der(CREF) *)
+	 Exp.Exp list (* outputs, CREF or der(CREF)*)
+	 ) =
+
+  rule	states_and_vars_exp(e,vars) => inputs
+	--------------------------------------------
+	lower_statement_inputs_outputs(vars,Algorithm.ASSIGN(tp,cr,e))
+	  =>(inputs ,[Exp.CREF(cr,tp)])
+
+  rule	print "lower_statement_input_outputs finished yet\n" 
+	--------------------------
+	lower_statement_inputs_outputs(_,_) => fail
+end
+
+(** relation: states_and_vars_exp
+ ** This relation investigates an expression and returns as subexpressions
+ ** that are variable names or derivatives of state names or states
+ **)
+ relation states_and_vars_exp: (Exp.Exp,
+				Variables) (* vars *)
+ 				 
+	  => Exp.Exp list =
+	   
+  rule	get_var(cr,vars) => (_,_)
+ 	 -----------------------------
+	states_and_vars_exp(e as Exp.CREF(cr,tp),vars) => [e]
+
+	
+  rule	states_and_vars_exp(e1,vars) => s1 &
+	states_and_vars_exp(e2,vars) => s2 &
+	Util.list_union_p(s1,s2,Exp.exp_equal) => res
+	-----------------------------
+	states_and_vars_exp(Exp.BINARY(e1,_,e2),vars) => res
+
+  rule	states_and_vars_exp(e,vars) => res
+	-----------------------------
+	states_and_vars_exp(Exp.UNARY(_,e),vars) => res
+
+  rule	states_and_vars_exp(e1,vars) => s1 &
+	states_and_vars_exp(e2,vars) => s2 &
+	Util.list_union_p(s1,s2,Exp.exp_equal) => res
+	-----------------------------
+	states_and_vars_exp(Exp.LBINARY(e1,_,e2),vars) => res
+	
+  rule	states_and_vars_exp(e,vars) => res
+	-----------------------------
+	states_and_vars_exp(Exp.LUNARY(_,e),vars) => res
+
+  rule	states_and_vars_exp(e1,vars) => s1 &
+	states_and_vars_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	-------------------------
+	states_and_vars_exp(Exp.RELATION(e1,_,e2),vars) => res
+	
+  rule	states_and_vars_exp(e1,vars) => s1 &
+	states_and_vars_exp(e2,vars) => s2 &
+	states_and_vars_exp(e3,vars) => s3 &
+	Util.list_list_union_p([s1,s2,s3],Exp.exp_equal) => res
+	-------------------------
+	states_and_vars_exp(Exp.IFEXP(e1,e2,e3),vars) => res
+
+  rule  get_var(cr,vars) => (VAR(_,STATE,_,_,_, _,_,_,_,_,_,_,_),_)
+	--------------------------------
+	states_and_vars_exp(e as Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
+	  => [e]
+
+  rule  get_var(cr,vars) => (_,p)
+	--------------------------------
+	states_and_vars_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
+	  => []
+
+  rule	Util.list_map_1(expl,states_and_vars_exp,vars) => lst &
+	Util.list_list_union_p(lst,Exp.exp_equal) => res
+	-----------------------------------------------
+	states_and_vars_exp(Exp.CALL(_,expl,_,_),vars) => res
+	
+  rule	print "not impl. yet" 
+	-----------------------
+	states_and_vars_exp(Exp.ARRAY(_,_,expl),vars) => []
+
+  rule	Print.print_buf "states_and_vars_exp on MATRIX not impl.\n" &
+	print "states_and_vars_exp on MATRIX not impl.\n"
+	---------------------------------------
+	states_and_vars_exp(Exp.MATRIX(_,_,_),vars) => []
+	
+  rule	print "not impl. yet." 
+	-----------------------
+	states_and_vars_exp(Exp.TUPLE(expl),vars) => []
+
+  rule	states_and_vars_exp(e,vars) => res
+	-----------------------
+	states_and_vars_exp(Exp.CAST(_,e),vars) => res
+
+  rule	states_and_vars_exp(e,vars) => res
+	-----------------------
+	states_and_vars_exp(Exp.ASUB(e,_),vars) => res
+
+  rule	states_and_vars_exp(e1,vars) => s1 &
+	states_and_vars_exp(e2,vars) => s2 &
+	Util.list_union_p(s1,s2,Exp.exp_equal) => res
+	--------------------
+	states_and_vars_exp(Exp.REDUCTION(_,e1,_,e2),vars) => res
+
+  axiom	states_and_vars_exp(_,_) => []
+end
+
+
+(** relation: lower_eqn
+ ** Helper relation to lower2.
+ ** Transforma a DAE.Element to Equation.
+ **)
+relation lower_eqn: (DAE.Element) => Equation =
+
+  rule	Exp.simplify(e1) => e1' &
+	Exp.simplify(e2) => e2' &
+	Exp.stringify_crefs(e1') => e1'' &
+	Exp.stringify_crefs(e2') => e2'' 
+	-----------------------
+	lower_eqn(DAE.EQUATION(e1,e2)) => EQUATION(e1'',e2'')
+
+  rule	Exp.simplify(e1) => e1' &
+	Exp.simplify(e2) => e2' &
+	Exp.stringify_crefs(e1') => e1'' &
+	Exp.stringify_crefs(e2') => e2'' 
+	-----------------------
+	lower_eqn(DAE.INITIALEQUATION(e1,e2)) => EQUATION(e1'',e2'')
+
+end
+
+(** relation: lower_var
+ ** Transforms a DAE variable to DAELOW variable.
+ ** Includes changing the ComponentRef name to a simpler form 'a'.'b'.'c' becomes
+ ** 'a.b.c' (as CREF_IDENT("a.b.c",[]) )
+ **)
+relation lower_var: (DAE.Element, BinTree(* states*)) => Var =
+
+  rule	Exp.print_component_ref_str name => origname &
+	let newname = Exp.CREF_IDENT(origname,[]) &
+	lower_varkind(kind,newname,states) => kind' & 
+	lower_binding(bind) => bind' &
+	lower_binding(start) => start'
+	----------------------------------------
+	lower_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_,class,dae_var_attr,comment),states)
+	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment)
+
+(*  rule	print "-lower_var failed\n" 
+	------------------------
+	lower_var (_,_) => fail*)
+
+end
+
+(** relation: lower_binding
+ ** Helper relation to lower_var
+ **)
+relation lower_binding: Exp.Exp option => Exp.Exp option =
+	
+  axiom	 lower_binding NONE => NONE 
+
+  rule	Exp.stringify_crefs(e) => e'
+	----------------------------
+	lower_binding(SOME(e)) =>  SOME(e)
+end
+
+(** relation: lower_known_var
+ ** Helper relation to lower2
+ **)
+relation lower_known_var: (DAE.Element) => Var =
+
+  rule	lower_known_varkind(kind) => kind' &
+	Exp.print_component_ref_str name => origname &
+	lower_binding(bind) => bind' &
+	lower_binding(start) => start'
+	----------------------------------------
+	lower_known_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_,class,dae_var_attr,comment))
+	  => VAR(Exp.CREF_IDENT(origname,[]),kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment)
+end
+
+(** relation: lower_varkind
+ ** Helper relation to lower_var.
+ **)
+relation lower_varkind: (DAE.VarKind, Exp.ComponentRef, BinTree (* states *)) 
+	=> VarKind =
+	(* Fails for not states that are not algebraic variables, e.g.
+	 parameters and constants *)
+
+  rule	tree_get(states,v) => _
+	-----------------------------
+	lower_varkind(DAE.VARIABLE,v,states) => STATE
+
+  axiom	lower_varkind(DAE.VARIABLE,_,_) => VARIABLE
+
+end
+(** relation: lower_known_varkind
+ ** Helper relation to lower_known_var.
+ **)
+relation lower_known_varkind: (DAE.VarKind) => VarKind =
+(* Fails for everything but parameters and constants *)
+
+  axiom	lower_known_varkind(DAE.PARAM) => PARAM
+  axiom	lower_known_varkind(DAE.CONST) => CONST
+end
+
+(** relation: incidence_matrix
+ ** Calculates the incidence matrix, i.e. which variables are present
+ ** in each equation.
+ **)
+relation incidence_matrix: (DAELow)
+	  => IncidenceMatrix =
+
+  rule	equation_list(eqns) => eqnsl &
+	incidence_matrix2(vars,eqnsl) => lstlst &
+	list_array(lstlst) => arr
+	-------------------
+	incidence_matrix(DAELOW(vars,knvars,eqns,reqns,_,_)) => arr
+
+  rule	print "incidence_matrix failed\n" 
+	----------------------
+	incidence_matrix(_) => fail
+end
+(** relation incidence_matrix2
+ ** Helper relation to incidence_matrix
+ ** Calculates the incidence matrix as a list of list of integers
+ **)
+relation incidence_matrix2:(Variables, Equation list) => int list list =
+	  
+  axiom	incidence_matrix2(_,[]) => [] 
+
+  rule	incidence_matrix2(vars,eqns) => lst &
+	incidence_row(vars,e) => row
+	----------------------------
+	incidence_matrix2(vars,e::eqns) => row::lst
+
+  rule	print "incidence_matrix2 failed\n" 
+	----------------------
+	incidence_matrix2(_,_) => fail
+end
+
+(** relation: incidence_row
+ ** Helper relation to incidence_matrix. Calculates the indidence row
+ ** in the matrix for one equation.
+ **)
+relation incidence_row: ( Variables, Equation) 
+	  => int list =
+	  
+  rule	(*Inefficient to for each cref in equation traverse the varlist*)
+	(* Should use a map or a bintree*)
+	incidence_row_exp(e1,vars) => lst1 &
+	incidence_row_exp(e2,vars) => lst2 &
+	list_append(lst1,lst2) => res
+	------------------------------------
+	incidence_row(vars,EQUATION(e1,e2)) => res
+	
+  rule	(** For now assume that algorithm will be solvable for correct variables.
+	 ** I.e. find all variables in algorithm and add to lst.
+	 ** If algorithm later on needs to be inverted, i.e. solved for different
+	 ** variables than calculated, a non linear solver or analysis of algorithm itself
+	 ** needs to be implemented. 
+	 **)
+	Util.list_map_1(inputs,incidence_row_exp,vars) => lst1 &
+	Util.list_map_1(outputs,incidence_row_exp,vars) => lst2 &
+	list_append(lst1,lst2) => res &
+	Util.list_flatten(res) => res'
+	------------------------------------
+	incidence_row(vars,ALGORITHM(indx,inputs,outputs)) => res'
+
+  rule	print "-incidence_row failed\n"
+	------------------
+	incidence_row(vars,_) => fail
+end 
+
+(** relation incidence_row_stmts
+ ** Helper relation to incidence_row, investigates statements for
+ ** variables, returning variable indexes.
+ **)
+relation incidence_row_stmts: (Algorithm.Statement list, Variables) => int list =
+
+  axiom	incidence_row_stmts ([],_) => []
+
+  rule	incidence_row_stmts(rest,vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	incidence_row_exp(Exp.CREF(cr,Exp.OTHER),vars) => lst3 &
+	Util.list_flatten([lst1,lst2,lst3]) => res
+	------------------------------------------
+	incidence_row_stmts(Algorithm.ASSIGN(tp,cr,e)::rest,vars) => res
+
+  rule	incidence_row_stmts(rest,vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	Util.list_map_1(expl,incidence_row_exp,vars) => lst3 &
+	Util.list_flatten(lst3) => lst3' &
+	Util.list_flatten([lst1,lst2,lst3']) => res
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.TUPLE_ASSIGN(tp,expl,e)::rest,vars) 
+	  => res
+
+  rule	incidence_row_stmts(rest,vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	incidence_row_exp(Exp.CREF(cr,Exp.OTHER),vars) => lst3 &
+	Util.list_flatten([lst1,lst2,lst3]) => res
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.ASSIGN_ARR(tp,cr,e)::rest,vars) 
+	  => res
+
+  rule	print "incidence_row_stmts on IF not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.IF(e,stmts,else)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on FOR not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.FOR(_,_,_,_,_)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on WHILE not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.WHILE(_,_)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on WHEN not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.WHEN(e,_)::rest,vars) 
+	  => []
+
+  rule	print "incidence_row_stmts on ASSERT not implemented\n"
+	-------------------------------------------
+	incidence_row_stmts(Algorithm.ASSERT(_,_)::rest,vars) 
+	  => []
+end
+
+(** relation: incidence_row_exp
+ ** Helper relation to incidence_row, investigates expressions for
+ ** variables, returning variable indexes.
+ **)
+relation incidence_row_exp: (Exp.Exp, Variables ) 
+	  => int list =
+
+  rule	(* If variable x is a state, der(x) is a variable in incidence matrix,
+	 x is inserted as negative value, since it is needed by debugging and index
+	 reduction using dummy derivatives*)
+	get_var(cr,vars) => (VAR(_,STATE,_,_,_ ,_,_,_,_,_,_,_,_),p) &
+	int_sub(0,p) => p' 
+ 	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p']
+	
+  rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_,_, _,_,_,_,_,_,_,_),p) 
+	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
+
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_DER,_,_,_ ,_,_,_,_,_,_,_,_),p) 
+	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
+
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_STATE,_,_,_, _,_,_,_,_,_,_,_),p) 
+	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	-----------------------------
+	incidence_row_exp(Exp.BINARY(e1,_,e2),vars) => res
+
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------------
+	incidence_row_exp(Exp.UNARY(_,e),vars) => res
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	-----------------------------
+	incidence_row_exp(Exp.LBINARY(e1,_,e2),vars) => res
+	
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------------
+	incidence_row_exp(Exp.LUNARY(_,e),vars) => res
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	-------------------------
+	incidence_row_exp(Exp.RELATION(e1,_,e2),vars) => res
+	
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	incidence_row_exp(e3,vars) => s3 &
+	Util.list_flatten([s1,s2,s3]) => res
+	-------------------------
+	incidence_row_exp(Exp.IFEXP(e1,e2,e3),vars) => res
+
+  rule  get_var(cr,vars) => (VAR(_,STATE,_,_,_, _,_,_,_,_,_,_,_),p)
+	--------------------------------
+	incidence_row_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
+	  => [p]
+
+  rule  get_var(cr,vars) => (_,p)
+	--------------------------------
+	incidence_row_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
+	  => []
+
+  rule	Util.list_map_1(expl,incidence_row_exp,vars) => lst &
+	Util.list_flatten(lst) => res
+	-----------------------------------------------
+	incidence_row_exp(Exp.CALL(_,expl,_,_),vars) => res
+	
+  rule	print "not impl. yet" 
+	-----------------------
+	incidence_row_exp(Exp.ARRAY(_,_,expl),vars) => []
+
+  rule	Print.print_buf "incidence_row_exp on MATRIX not impl.\n" &
+	print "incidence_row_exp on MATRIX not impl.\n"
+	---------------------------------------
+	incidence_row_exp(Exp.MATRIX(_,_,_),vars) => []
+	
+  rule	print "not impl. yet." 
+	-----------------------
+	incidence_row_exp(Exp.TUPLE(expl),vars) => []
+
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------
+	incidence_row_exp(Exp.CAST(_,e),vars) => res
+
+  rule	incidence_row_exp(e,vars) => res
+	-----------------------
+	incidence_row_exp(Exp.ASUB(e,_),vars) => res
+
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
+	list_append(s1,s2) => res
+	--------------------
+	incidence_row_exp(Exp.REDUCTION(_,e1,_,e2),vars) => res
+
+  axiom	incidence_row_exp(_,_) => []
+end
+
+(**relation empty_vars
+ ** Returns a Variable datastructure that is empty.
+ ** Using the bucketsize 10000 and array size 1000.
+ **)
+relation empty_vars: () => Variables =
+
+  rule	array_create(10000,[]) => arr &
+	Util.list_fill(NONE,1000) => lst &
+	list_array(lst) => emptyarr
+	------------------------
+	empty_vars() => VARIABLES(arr,VARIABLE_ARRAY(0,1000,emptyarr), 10000,0)
+end
+
+(** relation: merge_vars
+ ** Takes two sets of Variables and merges them. The variables of the first argument takes 
+ ** precedence over the second set, i.e. if a variable name exists in both sets, the variable
+ ** definition from the first set is used.
+ **)
+relation merge_vars: (Variables, Variables) => Variables =
+
+rule	var_list(vars2) => varlst &
+	Util.list_fold(varlst,add_var,vars1) => vars1' 
+	------------------------------
+	merge_vars(vars1,vars2) => vars1'
+
+  rule	print "-merge_vars failed\n" 
+	----------------------------
+	merge_vars(_,_) => fail
+end
+
+(** relation: add_var
+ ** Add a variable to Variables.
+ ** If the variable allready exists, the relation updates the variable.
+ **)
+relation add_var: (Var, Variables) => Variables =
+
+  rule	(* adding when not existing previously *)
+	not get_var(cr,vars) => (_,_) &
+	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => indx & 
+	vararray_length(varr) => newpos &
+	vararray_add(varr,v) => varr' &
+	array_nth(hashvec,indx)=> indexes &
+	array_setnth(hashvec,indx,CREFINDEX(cr,newpos)::indexes) => hashvec' &
+	vararray_length(varr') => n'
+	-----------------------------
+	add_var(v as VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_),vars as VARIABLES(hashvec,varr,bsize,n)) 
+	  => VARIABLES(hashvec',varr',bsize,n')
+
+  rule	(* adding when allready present => Updating value *) 
+	get_var(cr,vars) => (v,indx) &
+	int_sub(indx,1) => indx' &
+	vararray_setnth(varr,indx',newv) => varr'
+	-----------------------------------
+	add_var( newv as VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_),vars as VARIABLES(hashvec,varr,bsize,n))
+	  => VARIABLES(hashvec,varr',bsize,n)
+
+  rule	print "-add_var failed\n"
+	--------------------------
+	add_var(_,_) => fail
+end
+
+(** relation vararray_length
+ ** Returns the number of variable in the VariableArray
+ **)
+relation vararray_length: (VariableArray) => int =
+
+  axiom	vararray_length(VARIABLE_ARRAY(n,_,_)) => n
+
+end
+
+(** relation vararray_add
+ ** Adds a variable last to the VariableArray, increasing array size
+ ** if no space left by factor 1.4
+**)
+relation vararray_add:(VariableArray,Var) => VariableArray =
+
+  rule	(* Have space to add array elt. *)
+	int_lt(n,size) => true &
+	n +1 => n' &
+	array_setnth(arr,n,SOME(v)) => arr' 
+	-------------------------
+	vararray_add(VARIABLE_ARRAY(n,size,arr),v) 
+	  => VARIABLE_ARRAY(n',size,arr')
+
+  rule	(* Do NOT have splace to add array elt. Expand with factor 1.4 *)
+	int_lt(n,size) => false &
+	int_real(size) => rsize &
+	real_mul(rsize,0.4) => rexpandsize &
+	real_int(rexpandsize) => expandsize &
+	int_add(expandsize,size) => newsize &
+	Util.array_expand(expandsize,arr,NONE) => arr' &
+	n + 1 => n' &
+	array_setnth(arr',n,SOME(v)) => arr''
+	---------------------------------
+	vararray_add(VARIABLE_ARRAY(n,size,arr),v)
+	  => VARIABLE_ARRAY(n',newsize,arr'')
+
+  rule	print "-vararray_add failed\n"
+	--------------------
+	vararray_add(_,_) => fail
+end
+
+(** relation vararray_setnth
+ ** Set the n:th variable in the VariableArray to v.
+ **)
+
+relation vararray_setnth:(VariableArray,
+			  int, (* n *)
+			  Var) (* v *)
+	  => VariableArray =
+
+  rule	int_lt(pos,size) => true &
+	array_setnth(arr,pos,SOME(v)) => arr'
+	-------------------------
+	vararray_setnth(VARIABLE_ARRAY(n,size,arr),pos,v)
+	=> VARIABLE_ARRAY(n,size,arr')
+
+  rule	print "-vararray_setnth failed\n"
+	-------------------------
+	vararray_setnth(_,_,_)
+	=> fail
+end
+
+(** relation vararray_nth
+ ** Retrieve the n:th Var from VariableArray, index from 0..n-1.
+**)
+relation vararray_nth:(VariableArray,
+		       int (* n *)) 
+	  => Var =
+
+  rule	int_lt(pos,n) => true &
+	array_nth(arr,pos) => SOME(v)
+	--------------
+	vararray_nth(VARIABLE_ARRAY(n,_,arr),pos) => v
+
+  rule	int_lt(pos,n) => true &
+	array_nth(arr,pos) => NONE & 
+	print "vararray_nth has NONE!!!\n" 
+	--------------
+	vararray_nth(VARIABLE_ARRAY(n,_,arr),pos) => fail
+
+  rule	print "-vararray_nth , pos : " & int_string(pos) => ps & print ps &
+	print "\n  array_length:" & vararray_length(arr) => len & 
+	int_string(len) => lens & print lens & print "\n" &
+	int_string(n) => ns &
+	print "n :" & print ns & print "\n" 
+	--------------
+	vararray_nth(arr as VARIABLE_ARRAY(n,_,_),pos) => fail
+end
+
+(** relation replace_var
+ ** Takes a 'Var' list and a 'Var' and replaces the var with the 
+ ** same ComponentRef in Var list with Var
+**)
+relation replace_var: (Var list, Var) => Var list =
+
+  axiom	 replace_var([],_) => []
+
+  rule	Exp.cref_equal(cr1,cr2) => true
+	---------------------
+	replace_var(VAR(cr1,_,_,_,_,_,_,_,_,_,_,_,_)::vs,v as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,_)) => v::vs 
+  rule	replace_var(vs,repl) => vs'
+	---------------------
+	replace_var(v::vs,repl as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,_)) => v::vs' 
+end
+
+(** relation hash_component_ref
+ ** Calculates a hash value for Exp.ComponentRef
+ **)
+relation hash_component_ref: (Exp.ComponentRef) => int =
+
+  rule	Exp.print_component_ref_str(cr) => crstr &
+	hash_string(crstr) => res
+	--------------------
+	hash_component_ref(cr) => res
+end
+
+(** relation hash_string
+ ** Calculates a hash value of a string
+ **)
+relation hash_string:(string)  => int =
+
+  rule	System.hash(str)=> res 
+	(*string_list(str) => charlst &
+	hash_chars(charlst) => res*)
+	------------------------
+	hash_string(str) => res
+end
+
+(** relation: hash_chars
+ ** Calculates a hash value for a list of chars
+ **)
+relation hash_chars:(char list) => int =
+
+  axiom	hash_chars([]) => 0
+
+  rule	char_int(c) => c2 &
+	hash_chars(cs) => c1 &
+	int_add(c1,c2) => res 
+	----------------
+	hash_chars(c::cs) => res
+end
+
+(** relation: get_var_at
+ ** Return variable at a given position, enumerated from 1..n
+ **)
+relation get_var_at:(Variables,int) => (Var) =
+
+  rule	n - 1 => pos &
+	vararray_nth(vararr,pos) => v
+	---------------------
+	get_var_at(VARIABLES(_,vararr,_,_),n) => v
+end
+
+(** relation: get_var
+ ** Return a variable and its index in the vector.
+ ** The index is enumerated from 1..n 
+ **)
+relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
+	
+  rule	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(hashvec,hashindx) => indexes &
+	get_var2(cr, indexes) => indx &
+	vararray_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,_)) &
+	Exp.cref_equal(cr,cr2) => true &
+	int_add(indx,1) => indx'
+	-----------------------------
+	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => (v,indx')
+
+  rule	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(hashvec,hashindx) => indexes &
+	get_var2(cr, indexes) => indx &
+	not vararray_nth(varr,indx) => (_) &
+	print "get var failed because vararray_nth failed, cr:" &
+	Exp.print_component_ref_str cr => str &
+	print str  & print "\n" 
+	-----------------
+	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => fail
+end
+
+(** relation: exists_var
+ ** Return true if a variable exists in th vector
+ **)
+relation exists_var: (Exp.ComponentRef, Variables) => bool =
+	
+  rule	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(hashvec,hashindx) => indexes &
+	get_var2(cr, indexes) => indx &
+	vararray_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,_)) &
+	Exp.cref_equal(cr,cr2) => true 
+	-----------------------------
+	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => true
+
+  rule	hash_component_ref(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(hashvec,hashindx) => indexes &
+	get_var2(cr, indexes) => indx &
+	not vararray_nth(varr,indx) => (_) &
+	print "could not found variable, cr:" &
+	Exp.print_component_ref_str cr => str &
+	print str  & print "\n" 
+	-----------------
+	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => false
+end
+
+(** relation get_var2
+ ** Helper relation to get_var
+ **)
+relation get_var2:(Exp.ComponentRef, CrefIndex list) => int =
+
+  rule	Exp.cref_equal(cr,cr2) => true 
+	------------------------------
+	get_var2(cr,CREFINDEX(cr2,v)::_) => v
+
+  rule	get_var2(cr,vs) => res
+	----------------------
+	get_var2(cr,v::vs) => res
+end
+
+(** relation: delete_var
+ ** Deletes a variable from 'Variables'. This is an expensive operation since we need to create a new 
+ ** binary tree with new indexes as well as a new compacted vector of variables.
+ **)
+relation delete_var: (Variables,Exp.ComponentRef) => Variables =
+
+  rule	vararray_list(varr) => varlst &
+	delete_var2(cr,varlst) => varlst' &
+	empty_vars() => newvars &
+	add_vars(varlst',newvars) => newvars'
+	--------------------------------------------------
+	delete_var(VARIABLES(hashvec,varr,bsize,n),cr) 
+	  =>  newvars'
+end
+
+(** relation: delete_var2
+ ** Helper relation to delete_var.
+ ** Deletes the var named 'Exp.ComponentRef' from the 'Var' list.
+ **)
+relation delete_var2: (Exp.ComponentRef,Var list) => Var list =
+
+  axiom	delete_var2(_,[]) => []
+
+  rule	Exp.cref_equal(cr1,cr2) => true
+	--------------------------------
+	delete_var2(cr1,VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,_)::vs) => vs
+  
+  rule	delete_var2(cr1,vs) => vs'
+	--------------------------------
+	delete_var2(cr1,v::vs) =>  v::vs'
+end
+
+(** relation: transpose_matrix
+ ** Calculates the transpose of the incidence matrix, i.e. which equations 
+ ** each variable is present in.
+ **)
+relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
+
+  rule	array_list(m) => mlst &
+	transpose_matrix2(mlst) => mtlst &
+	list_array(mtlst) => mt 
+	------------------
+	transpose_matrix(m) => mt
+end
+
+relation transpose_matrix2: (int list list) => int list list =
+
+  rule	list_length(m) => neq &
+	transpose_matrix3(m,neq,0,[]) => mt
+	----------------
+	transpose_matrix2(m) => mt
+
+  rule	print "#transpose_matrix2 failed\n" 
+	---------------------
+	transpose_matrix2(_) => fail
+end
+
+relation transpose_matrix3: (int list list,int,int,int list list) 
+	  => int list list =
+
+  axiom	transpose_matrix3(_,0,_,_) => []
+
+  rule	int_sub(neq,1) => neq' &
+	int_add(eqno,1) => eqno' &
+	transpose_matrix3(m,neq',eqno',mt) => mt'&
+	transpose_row(m,eqno',1) => row
+	-------------------------
+	transpose_matrix3(m,neq,eqno,mt) => row::mt'
+end
+
+(* relation: transpose_row
+ ** Helper relation to transpose_matrix2.
+ ** Input: IncidenceMatrix (eqn => var)
+ ** Input: row number (variable)
+ ** Input: iterator (start with one)
+**)
+relation transpose_row: (int list list,int(*row*),int(*iter*)) => int list =
+
+  axiom	transpose_row([],_,_) => []
+	
+  rule	list_member(varno,m) => true &
+	int_add(eqn,1) => eqn' &
+	transpose_row(ms,varno,eqn') => res
+	---------------------------
+	transpose_row(m::ms,varno,eqn) => eqn::res
+
+  rule	(* Negative index present, state variable. *)
+	(*list_member(varno,m) => false &*)
+	int_sub(0,varno) => varno' &
+	list_member(varno',m) => true &
+	int_sub(0,eqn) => eqnneg &
+	int_add(eqn,1) => eqn' &
+	transpose_row(ms,varno,eqn') => res
+	---------------------------
+	transpose_row(m::ms,varno,eqn) => eqnneg::res
+
+  rule	(* not present at all *)
+	int_add(eqn,1) => eqn' &
+	transpose_row(ms,varno,eqn') => res
+	---------------------------
+	transpose_row(m::ms,varno,eqn) => res
+
+  rule	print "-transpose_row failed\n" 
+	-------------------------------
+	transpose_row(_,_,_) => fail
+end
+
+(** relation: dump_incidence_matrix
+ ** Prints the incidence matrix on stdout.
+ **)
+relation dump_incidence_matrix: IncidenceMatrix => () =
+
+  rule	print "Incidence Matrix\n (row == equation)" &
+	print "====================================\n" &
+	array_length(m) => mlen &
+	int_string(mlen) => mlen_str &
+	print "number of rows: " & print mlen_str & print "\n" &
+	array_list(m) => m' &
+	dump_incidence_matrix2(m') 
+	-------------------------
+	dump_incidence_matrix(m) => ()
+end 
+
+(** relation: dump_incidence_matrix_t
+ ** Prints the transposed incidence matrix on stdout.
+ **)
+relation dump_incidence_matrix_t: IncidenceMatrix => () =
+
+  rule	print "Transpose Incidence Matrix (row == var)\n" &
+	print "=====================================\n" &
+	array_length(m) => mlen &
+	int_string(mlen) => mlen_str &
+	print "number of rows: " & print mlen_str & print "\n" &
+	array_list(m) => m' &
+	dump_incidence_matrix2(m') 
+	-------------------------
+	dump_incidence_matrix_t(m) => ()
+end 
+	
+(** relation: dump_incidence_matrix2
+ ** Helper relation to dump_incidence_matrix (+_t).
+ **)
+relation dump_incidence_matrix2: int list list => () =
+
+  axiom	dump_incidence_matrix2([]) => ()
+
+  rule	dump_incidence_row(row) &
+	dump_incidence_matrix2(rows)
+	---------------------------
+	dump_incidence_matrix2(row::rows)
+end
+
+(** relation: dump_incidence_row
+ ** Helper relation to dump_incidence_matrix2.
+ **)
+relation dump_incidence_row: int list => () =
+
+  rule	print "\n"
+	----------
+	dump_incidence_row [] 
+
+  rule	int_string(x) => s &
+	print s & print " " &
+	dump_incidence_row(xs) 
+	----------------------
+	dump_incidence_row (x::xs)
+end
+
+(** relation: dump_matching
+ ** prints the matching information on stdout.
+ **)
+relation dump_matching: (int vector) => () =
+	
+  rule	print "Matching\n" &
+	print "========\n" &
+	vector_length(v) => len &
+	int_string(len) => len_str &
+	print len_str & print " variables and equations\n" &
+	dump_matching2(v,0) 
+	-------------------
+	dump_matching(v) 
+end
+
+(** relation: dump_matching2
+ ** Helper relation to dump_matching.
+ **)
+relation dump_matching2: (int vector, int) => () =
+
+  rule	vector_length(v) => len &
+	int_add(i,1) => i' &
+	int_eq(len,i') => true &
+	int_string i' => s & 
+	vector_nth(v,i) => eqn &
+	int_string eqn => s2 & 
+	print "var " & print s & 
+	print " is solved in eqn " &
+	print s2 & print "\n" 
+	---------------------
+	dump_matching2(v,i) 
+
+  rule	vector_length(v) => len &
+	int_add(i,1) => i' &
+	int_eq(len,i') => false &
+	int_string i' => s & 
+	vector_nth(v,i) => eqn &
+	int_string eqn => s2 & 
+	print "var " & print s & 
+	print " is solved in eqn " &
+	print s2  & print "\n" &
+	dump_matching2(v,i') 
+	---------------------
+	dump_matching2(v,i) 
+end
+
+(** relation: matching_algorithm
+ ** This relation performs the matching algorithm, which is the first
+ ** part of sorting the equations into BLT (Block Lower Triangular) form.
+ ** The matching algorithm finds a variable that is solved in each equation.
+ ** But to also find out which equations forms a block of equations, the 
+ ** the second algorithm of the BLT sorting: strong components 
+ ** algorithm is run. 
+ ** This relation returns the updated DAE in case of index reduction has 
+ ** added equations and variables, and the incidence matrix. The variable
+ ** assignments is returned as a vector of variable indices, as well as its
+ ** inverse, i.e. which equation a variable is solved in as a vector of 
+ ** equation indices.
+ **)
+		 
+relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT) 
+	  => (int vector(* vector of equation indices*) , 
+	      int vector (* vector of variable indices*),
+	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
+
+  rule	check_matching(dae) &  	
+	array_length(m) => nvars &
+	array_length(mt) => neqns &
+	int_gt(nvars,0) => true &
+	int_gt(neqns,0) => true &
+	int_add(nvars,nvars) => memsize &
+	assignments_create(nvars,memsize,0) => assign1 &
+	assignments_create(nvars,memsize,0) => assign2 &
+	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2) 
+	  => (ass1, ass2,dae,m,mt) &
+
+	assignments_vector(ass1) => vec1 &
+	assignments_vector(ass2) => vec2 
+	--------------------------
+	matching_algorithm(dae,m,mt) => (vec1,vec2,dae,m,mt)
+	
+  rule	Print.print_error_buf "#Error, matching failed\n" &
+	list_vector([]) => v1 & 
+	list_vector([]) => v2 
+	------------------------
+	matching_algorithm(dae,m,mt) => (v1,v2,dae,m,mt)
+	
+end
+
+(** relation: check_matching
+ ** Checks that the matching is correct, i.e. that the number of variables
+ ** is the same as the number of equations. If not, the relation fails and
+ ** prints an error message.
+ **)
+relation check_matching : (DAELow) => () =
+	
+  rule	equation_size(eqns) => esize &
+	int_eq(esize,vars_size) => true 
+	------------------
+	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_)) 
+	  => ()
+
+  rule	equation_size(eqns) => esize &
+	int_lt(esize,vars_size) => true &
+	Print.print_error_buf "#Error, too few equations. Underdetermined system\n" &
+	print "#Error, to few equations\n" 
+ 	------------------
+	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_)) 
+	  => fail
+
+  rule	equation_size(eqns) => esize &
+	int_gt(esize,vars_size) => true &
+	Print.print_error_buf "#Error, to many equations. Overdetermined system.\n" &
+	print "#Error, too many equations." 
+	------------------
+	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_)) => fail
+
+  rule	print "check_matching failed\n" 
+	--------------------
+	check_matching(_) => fail
+end
+
+(** relation assignments_vector
+** Converts Assignments to vector of int elements
+ **)
+relation assignments_vector: (Assignments) => int vector =
+
+  rule	array_create(size,0) => newarr &
+	Util.array_n_copy(arr,newarr,size) => newarr' &
+	array_vector(newarr') => vec
+	----------------------------
+	assignments_vector(ASSIGNMENTS(size,_,arr)) => vec
+
+  rule	print "-assignments_vector failed\n" 
+	----------------------------
+	assignments_vector(_) => fail
+end
+
+(** relation assignments_create
+ ** Creates an assignment array of n elements, filled with value v
+ **)
+relation assignments_create: (int (*size*), int(*memsize*), int) 
+	  => Assignments =
+
+  rule	Util.list_fill(0,memsize) => lst &
+	list_array(lst) => arr 
+(*	array_create(memsize,v) => arr &
+	*)
+	
+	------------------------------
+	assignments_create(n,memsize,v) => ASSIGNMENTS(n,memsize,arr)
+end
+
+(** relation assignments_setnth
+ ** Sets the n:nt assignment value to 'value'.
+ **)
+relation assignments_setnth:(Assignments,int (*n*),int (*value*)) 
+	  => Assignments =
+	  
+  rule	array_setnth(arr,n,v) => arr
+	-----------------------
+	assignments_setnth(ASSIGNMENTS(s,ms,arr),n,v)
+	  => ASSIGNMENTS(s,ms,arr)
+
+  rule	print "-assignments_setnth failed\n" 
+	-----------------------
+	assignments_setnth(_,_,_) => fail	
+end
+
+(** relation assignments_expand
+ ** Expands the assignments array with n values, initialized with zero.
+ **)
+relation assignments_expand: (Assignments, int (*n*)) => Assignments =
+
+  axiom	assignments_expand(ass,0) => ass
+
+  rule	assignments_add(ass,0) => ass' &
+	int_sub(n,1) => n' &
+	assignments_expand(ass',n') => ass''
+	------------------------------------
+	assignments_expand(ass,n) => ass''
+end
+
+
+(** relation assignments_add
+ ** Adds a value to the end of the assignments array. If memsize = actual size
+ ** this means copying the whole array, expanding it size to fit the value 
+ ** Expansion is made by a factor 1.4. Otherwise, the element is inserted taking O(1) in 
+ ** insertion cost.
+ **)
+relation assignments_add:(Assignments,int (*value*)) 
+	  => Assignments =
+
+  rule	(* Out of bounds, increase and copy. *)
+	int_eq(s,ms) => true &
+	int_real(ms) => msr &
+	real_mul(msr,0.4) => msr' &
+	real_int(msr') => ms' &
+	int_add(s,1) => s' &
+	int_add(ms',ms) => ms'' &
+	Util.array_expand(ms',arr,0) => arr' &
+	array_setnth(arr',s,v) => arr''
+	-------------------------------
+	assignments_add(ASSIGNMENTS(s,ms,arr),v)
+	=> ASSIGNMENTS(s',ms'',arr'')
+
+  rule	(* space available, increase size and insert element.*)
+	array_setnth(arr,s,v) => arr' &
+	int_add(s,1) => s' 	
+	--------------------------
+	assignments_add(ASSIGNMENTS(s,ms,arr),v)
+	  => ASSIGNMENTS(s',ms,arr')
+
+  rule  print "-assignments_add failed\n" 	
+	--------------------------------------
+	assignments_add(ASSIGNMENTS(s,ms,arr),v)
+	=> fail
+end
+
+
+(** relation matching_algorithm2
+ ** This is the outer loop of the matching algorithm
+ ** The find_path algorithm is called for each equation/variable.
+**)
+relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
+			       ,int (* number of vars*)
+			       ,int (* number of eqns*)
+			       ,int (* current var*)
+			       ,Assignments(*assignments, array of eqn indices*) 
+			       ,Assignments)(*assignments, array of var indices*)
+	  =>  (Assignments, (* assignments, array of equation indices*) 
+	       Assignments, (* assignments, list of variable indices *)
+	       DAELow,
+	       IncidenceMatrix, 
+	       IncidenceMatrixT) =
+	  
+  rule	int_eq(nv,i) => true &
+	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')  (* exit loop *)
+	---------------------------------------------
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	  => (ass1',ass2',dae,m,mt)
+
+  rule	int_add(i,1) => i' &
+	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2') & 
+	matching_algorithm2(dae,m,mt,nv,nf,i',ass1',ass2') 
+	  => (ass1'',ass2'',dae,m,mt)
+	----------------------------------------------------------------
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	  => (ass1'',ass2'',dae,m,mt) 
+
+  rule	(* path_found failed, Try index reduction using dummy derivatives.
+	 When a constraint exist between states and index reduction is needed
+	 the dummy derivative will select one of the states as a dummy state
+	 (and the derivative of that state as a dummy derivative).
+	 For instance, u1=u2 is a constraint between states. Choose u1 as dummy state
+	 and der(u1) as dummy derivative, named der_u1. The differentiated function 
+	 then becomes: der_u1 = der(u2).
+	 In the dummy derivative method this equation is added and the original equation
+	 u1=u2 is kept. This is not the case for the original pantilides algorithm, where
+	 the original equation is removed from the system.
+	 *)
+	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
+	  => (dae as DAELOW(VARIABLES(_,_,_,nv'),VARIABLES(_,_,_,nkv),eqns,_,_,_),m,mt) &
+
+	  (* and try again, restarting. This could be optimized later. It should not
+	   be necessary to restart the matching, according to Bernard Bachmann. Instead one 
+	   could continue the matching as usual. This was tested (2004-11-22) and it does not 
+	   work to continue without restarting.
+	   For instance the Influenca model "../testsuite/mofiles/Influenca.mo" does not work if
+	   not restarting.
+	   2004-12-29 PA. This was a bug, assignment lists needed to be expanded with the size
+	   of the system in order to work. SO: Matching is not needed to be restarted from 
+	   scratch.
+	   *)
+ 	equation_size(eqns) => nf' &
+	int_sub(nv',nv) => nvd &
+	assignments_expand(ass1,nvd) => ass1' &
+	assignments_expand(ass2,nvd) => ass2' &
+	matching_algorithm2(dae,m,mt,nv',nf',i,ass1',ass2')
+	  => (ass1'',ass2'',dae,m,mt)
+	------------------------
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	  => (ass1'',ass2'',dae,m,mt)
+
+  rule	(* When index reduction also fails, the model is structurally 
+	 singular. **)
+	print "Error, model singular. i=" &
+	int_string(i) => is & print is & print "\n" 
+	& DAEEXT.dump_marked_equations(nf) 
+	& DAEEXT.dump_marked_variables(nv)
+	------------------------------
+ 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) => fail
+end
+
+(** relation: reduce_index_dummy_der
+ ** When matching fails, this relation is called to try to 
+ ** reduce the index by differentiating the marked equations and
+ ** replacing one of the variable with a dummy derivative, i.e. making 
+ ** it algebraic.
+ ** The new DAELow is returned along with an updated incidence matrix.
+ **)
+relation reduce_index_dummy_der: (DAELow, 
+				  IncidenceMatrix, 
+				  IncidenceMatrixT,
+				  int, (* number of vars*)
+				  int, (* number of eqns*)
+				  int) (* i *)
+			    
+			    => (DAELow,
+				IncidenceMatrix, 
+				IncidenceMatrixT) =
+	
+  rule	DAEEXT.get_marked_eqns() => eqns &
+
+(*	Util.list_map(eqns,int_string) => es &
+	Util.string_delimit_list(es,", ") => es' &
+	print "marked equations " & print es' & print "\n" &*)
+	(* Collect the states in the equations that are singular, i.e. composing
+	 a constraint between states.*)
+	states_in_eqns(eqns,dae,m,mt) => (states,stateindx) &
+	differentiate_eqns(dae,m,mt,nv,nf,eqns) 
+	  => (dae,m,mt,nv,nf,deqns) &	
+	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
+(*		Exp.print_component_ref_str state => statestr &
+	 print "Choosen dummy state: " & print statestr & print "\n" &*)
+	new_dummy_var(state,dae) => (dummy_der,dae) &
+	eqns_for_var_with_states(mt,stateno) => reqns &
+	Util.list_union_p(deqns,reqns,int_eq) => changedeqns &
+	(* We need to change variables in the differentiated equations and in the 
+	  equations having the dummy derivative *)
+	replace_dummy_der(state,dummy_der,dae,m,mt,changedeqns) => (dae,m,mt) &
+	make_algebraic(dae,state) => dae &
+	update_incidence_matrix(dae,m,mt,changedeqns) => (m,mt) 
+	---------------------------------------------
+	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
+	  => (dae,m,mt)
+
+  rule	DAEEXT.get_marked_eqns() => eqns &
+	Util.list_map(eqns,int_string) => es &
+	Util.string_delimit_list(es,", ") => es' &
+	states_in_eqns(eqns,dae,m,mt) => ([],_) &
+	print_equations(eqns,dae) 
+	---------------------------------------------
+	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
+	  => fail
+
+  rule	print "-reduce_index_dummy_der failed\n"
+	--------------------
+	reduce_index_dummy_der(_,_,_,_,_,_) => fail
+end
+
+(** relation: update_incidence_matrix
+ ** Takes a daelow and the incidence matrix and its transposed represenation and a list of 
+ ** equation indexes that needs to be updated.
+ ** First the IncidenceMatrix is updated, i.e. the mapping from equations to variables.
+ ** Then, by collecting all variables in the list of equations to update, a list of changed variables
+ ** are retrieved. This is used to update the IncidenceMatrixT (transpose) mapping from variables to 
+ ** equations.
+ ** The relation returns an updated incidence matrix.
+ **)
+relation update_incidence_matrix:(DAELow,
+				  IncidenceMatrix, 
+				  IncidenceMatrixT,
+				  int list) (* list of equations to update*)
+	  => (IncidenceMatrix, 
+	      IncidenceMatrixT) =
+ 
+  rule	update_incidence_matrix2(dae,m,eqns) => (m',changedvars) &
+	Util.list_flatten(changedvars) => changedvars' &
+	update_transposed_matrix(changedvars',m',mt) => mt' 
+	------------------------------
+	update_incidence_matrix(dae,m,mt,eqns) => (m',mt')
+
+
+  rule	print "update_incidence_matrix failed\n" 
+	---------------------------------------
+	update_incidence_matrix(dae,m,mt,eqns) => fail
+end
+
+relation update_incidence_matrix2: (DAELow,
+				    IncidenceMatrix,
+				    int list) (* list of equations to update *)
+	  => (IncidenceMatrix, 
+	      int list list ) (* changed vars *) =
+
+  axiom	update_incidence_matrix2(dae,m,[]) => (m,[[]])
+
+  rule	int_sub(e,1) => e' &
+	equation_nth(daeeqns,e') => eqn &
+	incidence_row(vars,eqn) => row &
+	Util.array_replaceat_with_fill(row,e',m,[]) => m' &
+	vars_in_eqn(m',e) => changedvars1 &
+	update_incidence_matrix2(dae,m',eqns) => (m'',changedvars2) 
+	---------------------------------------------------
+	update_incidence_matrix2(dae as DAELOW(vars,knvars,daeeqns,daeseqns,_,_),m,e::eqns) 
+	  => (m'',changedvars1::changedvars2)
+
+  rule	print "-update_incididence_matrix2 failed\n" 
+	-------------------------------------------
+	update_incidence_matrix2(_,_,_) => fail
+
+end
+
+(* relation: update_transposed_matrix
+ ** Takes a list of variables and the transposed IncidenceMatrix, and updates the
+ ** variable rows.
+**)
+relation update_transposed_matrix: (int list(*var list*), IncidenceMatrix,IncidenceMatrixT) 
+	  => IncidenceMatrixT =
+
+  axiom	update_transposed_matrix([],m,mt) => mt
+
+  rule	array_list(m) => mlst &
+	transpose_row(mlst,v,1) => row' &
+	int_sub(v,1) => v' &
+	Util.array_replaceat_with_fill(row',v',mt,[]) => mt' &
+	update_transposed_matrix(vars,m,mt') => mt''
+	-------------------------
+	update_transposed_matrix(v::vars,m,mt) => mt''
+
+  rule	print "-update_transposed_matrix failed\n" 
+	------------------
+	update_transposed_matrix(_,_,_) => fail
+end
+
+(** relation: make_algebraic
+ Make the variable a dummy derivative, i.e. change varkind from STATE 
+ ** to DUMMY_STATE.
+ **)
+relation make_algebraic: (DAELow, 
+			  Exp.ComponentRef) (* state *)
+	  => (DAELow) =
+	  
+  rule	get_var(cr,vars) => (VAR(cr,kind,d,t,b,value,dim,start,idx,name,class,dae_var_attr,comment) ,indx) &
+	add_var(VAR(cr,DUMMY_STATE,d,t,b,value,dim,start,idx,name,class,dae_var_attr,comment),vars) => vars'
+	-------------------------------------------------------------------------
+	make_algebraic(DAELOW(vars,kv,e,se,ie,al),cr) 
+	  => DAELOW(vars',kv,e,se,ie,al)
+
+  rule	print "-make_algebraic failed\n" 
+	--------------------------------
+	make_algebraic(_,_) => fail
+end	  
+
+(** relation: replace_dummy_der
+ ** Helper relation to reduce_index_dummy_der
+ ** replaces der(state) with the variable dummy der.
+ **)
+relation replace_dummy_der: (Exp.ComponentRef, (* state *)
+			     Exp.ComponentRef, (* dummy der name *)
+			     DAELow, 
+			     IncidenceMatrix, 
+			     IncidenceMatrixT,
+			     int list)		(* equations *)
+	  => ( DAELow, 
+	      IncidenceMatrix, 
+	      IncidenceMatrixT) =
+	
+  axiom	replace_dummy_der(state,dummy,dae,m,mt,[]) => (dae,m,mt)
+	
+  rule	int_sub(e,1) => e' &
+	equation_nth(eqns,e') => eqn &
+	replace_dummy_der2(state,dummyder,eqn) => eqn' &
+	replace_dummy_der_others(eqn',v) => (eqn',v') &
+	(*incidence_row(v'',eqn') => row' &
+	 Util.list_replaceat(row',e',m) => m' &
+	 transpose_matrix(m') => mt' &*)
+	equation_setnth(eqns,e',eqn') => eqns' &
+	replace_dummy_der(state,dummyder,DAELOW(v',kv,eqns',seqns,ie,al),m,mt,rest) 
+	  => (dae,m,mt) 
+	  -------------------------------
+	replace_dummy_der(state,dummyder,DAELOW(v,kv,eqns,seqns,ie,al),m,mt,e::rest)
+	  => (dae,m,mt)
+	  
+  rule	print "-replace_dummy_der failed\n" 
+	-------------------
+	replace_dummy_der(_,_,_,_,_,_) => fail
+end
+
+(** relation: replace_dummy_der2
+ ** Helper relation to reduce_index_dummy_der
+ ** replaces der(state) with dummy_der variable in equation 
+ **)
+relation replace_dummy_der2:(Exp.ComponentRef,
+			     Exp.ComponentRef,
+			     Equation) => Equation =
+	
+  rule	let dercall = Exp.CALL(Absyn.IDENT("der"),
+			       [Exp.CREF(st,Exp.REAL)],
+			       false,
+			       true) &
+	Exp.replace_exp(e1,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e1',_) &
+	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e2',_)
+	---------------------------------------------------------------
+	replace_dummy_der2(st,dummyder,EQUATION(e1,e2)) => EQUATION(e1',e2')
+	
+  rule	print "-replace_dummy_der2 failed\n" 
+	---------------
+	replace_dummy_der2(_,_,_) => fail
+end
+(** relation: replace_dummy_der_others
+ ** Helper relation to reduce_index_dummy_der.
+ ** This relation replaces
+ ** 1. der(der_s)  with der2_s (Where der_s is a dummy state)
+ ** 2. der(der(v)) with der2_v (where v is a state)
+ ** 3. der(v)  for alg. var v with der_v 
+ ** in the 'Equation' given as arguments. To do this it needs the 'Variables' 
+ ** also passed as argument to the relation to e.g. determine if a variable
+ ** is a dummy variable, etc.
+ **)
+relation replace_dummy_der_others:(Equation, Variables) => (Equation, Variables) =
+  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars') &
+	replace_dummy_der_others_exp(e2,vars') => (e2', vars'')
+	---------------------------------------------------------------
+	replace_dummy_der_others(EQUATION(e1,e2),vars)
+	  => (EQUATION(e1',e2'),vars'')
+
+  rule	print "-replace_dummy_der_others failed\n" 
+	---------------------
+	replace_dummy_der_others(_,_) => fail 
+end
+
+(** relation replace_dummy_der_others_exp
+ ** Helper relation for replace_dummy_der_others
+ **)
+relation replace_dummy_der_others_exp: (Exp.Exp, Variables) => (Exp.Exp,Variables) =
+	
+  axiom	replace_dummy_der_others_exp(e as Exp.ICONST(_),vars) => (e,vars)
+  axiom	replace_dummy_der_others_exp(e as Exp.RCONST(_),vars) => (e,vars)
+  axiom	replace_dummy_der_others_exp(e as Exp.SCONST(_),vars) => (e,vars)
+  axiom	replace_dummy_der_others_exp(e as Exp.BCONST(_),vars) => (e,vars)	
+  axiom	replace_dummy_der_others_exp(e as Exp.CREF(_,_),vars) => (e,vars)
+	
+  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars1) &
+	replace_dummy_der_others_exp(e2,vars1) => (e2',vars2)
+	---------------------------------------
+	replace_dummy_der_others_exp(Exp.BINARY(e1,op,e2),vars)
+	  => (Exp.BINARY(e1',op,e2'),vars2)
+	  
+  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars1) &
+	replace_dummy_der_others_exp(e2,vars1) => (e2',vars2)
+	---------------------------------------
+	replace_dummy_der_others_exp(Exp.LBINARY(e1,op,e2),vars)
+	  => (Exp.LBINARY(e1',op,e2'),vars2)
+	  
+  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars1)
+	---------------------------------------
+	replace_dummy_der_others_exp(Exp.UNARY(op,e1),vars)
+	  => (Exp.UNARY(op,e1'),vars1)
+
+  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars1)
+	---------------------------------------
+	replace_dummy_der_others_exp(Exp.LUNARY(op,e1),vars)
+	  => (Exp.LUNARY(op,e1'),vars1)
+	  
+  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars1) &
+	replace_dummy_der_others_exp(e2,vars1) => (e2',vars2) 
+	--------------------------------------------
+	replace_dummy_der_others_exp(Exp.RELATION(e1,op,e2),vars)
+	  => (Exp.RELATION(e1',op,e2'), vars2)
+	  
+  rule	replace_dummy_der_others_exp(e1,vars) => (e1',vars1) &
+	replace_dummy_der_others_exp(e2,vars1) => (e2',vars2) &
+	replace_dummy_der_others_exp(e3,vars2) => (e3',vars3) 
+	--------------------------------------------
+	replace_dummy_der_others_exp(Exp.IFEXP(e1,e2,e3),vars)
+	  => (Exp.IFEXP(e1',e2',e3'),vars3)
+	  
+  rule	(* der(der(s)) s is state => der_der_s *)
+	get_var(cr,vars) => (VAR(_,STATE,a,b,c ,d,e,f,g,h,i,dae_var_attr,comment),_) &
+	create_dummy_var(cr) => dummyder & 
+	create_dummy_var(dummyder) => dummyder' &
+	add_var(VAR(dummyder',DUMMY_DER,a,b,NONE,NONE,e,NONE,0,"dummyder",i,dae_var_attr,comment),vars) => vars'
+	--------------------------------------------------------------------------------
+	replace_dummy_der_others_exp(Exp.CALL(Absyn.IDENT("der"),
+					      [Exp.CALL(Absyn.IDENT("der"),
+							[Exp.CREF(cr,_)],
+							_,
+							 _)],
+					       _,
+					       _),vars)
+	 => (Exp.CREF(dummyder',Exp.REAL),vars')
+
+   rule  (* der(der_s)) der_s is dummy var => der_der_s *)
+	get_var(cr,vars) => (VAR(_,DUMMY_DER,a,b,c,d,e,f,g,h,i,dae_var_attr,comment),_) &
+	create_dummy_var(cr) => dummyder & 
+	add_var(VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,e,NONE,0,"dummyder",i,dae_var_attr,comment),vars) => vars'
+	-------------------------------------------------------
+	replace_dummy_der_others_exp(Exp.CALL(Absyn.IDENT("der"),
+					      [Exp.CREF(cr,_)],
+					      _,
+					      _),vars)
+	  => (Exp.CREF(dummyder,Exp.REAL),vars')
+	  
+	  
+  rule  (* der(v) v is alg var => der_v *)
+	get_var(cr,vars) => (VAR(_,VARIABLE,a,b,c,d,e,f,g,h,i,dae_var_attr,comment),_) &
+	create_dummy_var(cr) => dummyder & 
+	add_var(VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,e,NONE,0,"dummyder",i,dae_var_attr,comment),vars) => vars'
+	-------------------------------------------------------
+	replace_dummy_der_others_exp(Exp.CALL(Absyn.IDENT("der"),
+					      [Exp.CREF(cr,_)],
+					      _,
+					      _),vars)
+	  => (Exp.CREF(dummyder,Exp.REAL),vars')
+	  
+  axiom	replace_dummy_der_others_exp(e,vars) => (e,vars)
+end
+
+relation var_equal: (Var,Var) => bool =
+	
+  rule	Exp.cref_equal(cr1,cr2) => res 
+	------------------------------
+	var_equal(VAR(cr1,_,_,_,_ ,_,_,_,_,_,_,_,_),VAR(cr2,_,_,_,_ ,_,_,_,_,_,_,_,_)) => res
+end
+
+(** relation new_dummy_var
+ ** This relation creates a new variable named "der_"+<varname> and 
+ ** adds it to the dae.
+ **) 
+relation new_dummy_var:(Exp.ComponentRef,DAELow) => (Exp.ComponentRef,DAELow) =
+	
+  rule	get_var(var,vars) => (VAR(_,kind,dir,tp,bind,value,dim,start,idx,name,class,dae_var_attr,comment),_) &
+	create_dummy_var(var) => dummyvar &
+	add_var(VAR(dummyvar,DUMMY_DER,dir,tp,NONE,NONE,dim,NONE,0,"dummyvar",class,dae_var_attr,comment),vars) 
+	  => vars'
+	-----------------------------------
+	new_dummy_var(var,DAELOW(vars,kv,eqns,seqns,ie,al)) 
+	  => (dummyvar, DAELOW(vars',kv,eqns,seqns,ie,al))
+
+  rule	print "-new_dummy_var failed\n" 
+	-------------------------
+	new_dummy_var(_,_) => fail
+end
+
+(** relation: create_dummy_var
+ ** Creates a new variable name by adding "der_" before it.
+ ** Helper relation to new_dummy_var.
+ **)
+relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
+	  
+  rule  string_append("der_",id) => id'
+	-------------------------------
+	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
+	  => Exp.CREF_IDENT(id',subs)
+
+  rule	create_dummy_var(cr) => cr'
+	------------------------
+	create_dummy_var(Exp.CREF_QUAL(id,subs,cr)) 
+	  => Exp.CREF_QUAL(id,subs,cr')
+end
+(** relation: select_dummy_state
+ ** This relation is the heuristic to select among the states which one
+ ** will be transformed into  an algebraic variable, a so called dummy state
+ **(dummy derivative). It should in the future consider initial values, etc.
+ **)
+relation select_dummy_state: (Exp.ComponentRef list, (* variable names *)
+			      int list, (* variable numbers *)
+			      DAELow, 
+			      IncidenceMatrix,
+			      IncidenceMatrixT) 
+	  => (Exp.ComponentRef, int) =
+	  
+	  (* for now, select the first one... *)
+  axiom	select_dummy_state(s::_,sn::_,_,_,_) => (s,sn)
+	
+  rule	print "Error, no state to select\n" 
+	------------------------------------
+	select_dummy_state([],_,_,_,_) => fail
+end
+
+(** relation: states_in_eqns
+ ** Helper relation to reduce_index_dummy_der.
+ ** Returns all states in the equations given as equation index list.
+ **)
+relation states_in_eqns: (int list (* eqns *),
+			  DAELow, 
+			  IncidenceMatrix,
+			  IncidenceMatrixT) 
+	  => (Exp.ComponentRef list, (* name for each state *)
+	      int list)  (* number for each state *)
+	=
+	
+  axiom	states_in_eqns([],_,_,_) => ([],[])
+	
+  rule	states_in_eqns(rest,DAELOW(vars,kv,eqns,seqns,ie,al),m,mt) => (res1,res2) &
+	int_sub(e,1) => e' &
+	equation_nth(eqns,e') => eqn &
+	states_in_eqn(eqn,vars) => vars2 &
+	var_list(vars) => varlst &
+	states_in_vars(varlst,vars2) => (res11,res22) &
+	list_append(res11,res1) => res1' &
+	list_append(res22,res2) => res2'
+	--------------------------------
+	states_in_eqns(e::rest,DAELOW(vars,kv,eqns,seqns,ie,al),m,mt) => (res1',res2')
+	
+  rule	print "-states_in_eqns failed\n"
+	-------------------------
+	states_in_eqns(_,_,_,_) => fail
+	
+end
+
+(** relation: states_in_vars
+ ** Helper relation to states_in_eqns
+ **)
+relation states_in_vars: (Var list, int list) => 
+	(Exp.ComponentRef list, (* names of the states *)
+	 int list ) (* number for each state *)  =
+	
+  axiom	states_in_vars (vars,[]) => ([],[])
+	
+  rule	int_sub(v,1) => v' &
+	list_nth(vars,v') => VAR(cr,_,_,_,_,_, _,_,_,_,_,_,_) &
+	states_in_vars(vars,rest) => (res1,res2)  
+	---------------------------------
+	states_in_vars(vars,v::rest) => (cr::res1,v::res2)
+	
+  rule	states_in_vars(vars,rest) => (res1,res2)
+	----------------------------------------
+	states_in_vars(vars,v::rest) => (res1,res2)
+end
+
+
+(** relation: differentiate_eqns
+ ** This relation takes a dae, its incidence matrices and the number of 
+ ** equations an variables and a list of equation indices to 
+ ** differentiate. This is used in the index reduction algorithm
+ ** using dummy derivatives, when all marked equations are differentiated.
+ ** The relation updates the dae, the incidence matrix and returns 
+ ** a list of indices of the differentiated equations, they are added last in
+ ** the dae.
+ **)
+relation differentiate_eqns: (DAELow, 
+			      IncidenceMatrix, 
+			      IncidenceMatrixT,
+			      int, (* number of vars*)
+			      int, (* number of eqns*)
+			      int list) (* equations *)
+	  => (DAELow, 
+	      IncidenceMatrix, 
+	      IncidenceMatrixT,
+	      int, (* number of vars*)
+	      int, (* number of eqns*) 
+	      int list) (* differentiated equations *) =
+
+  axiom	differentiate_eqns(dae,m,mt,nv,nf,[]) => (dae,m,mt,nv,nf,[])
+	
+  rule	int_sub(e,1) => e' &
+	equation_nth(eqns,e') => eqn &
+	Derive.differentiate_equation_time(eqn,v) => eqn' &
+	(* update equation row in IncidenceMatrix *)	
+	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
+(*	print "differentiated equation " &*)
+	equation_str eqn => str & 
+(*	print str & print "\n" &*)
+	Debug.fprint("bltdump", str) &
+	Debug.fprint("bltdump", " to ") & 
+	equation_str eqn' => str &
+(*	print " to " & print str &  print "\n" &*)
+	Debug.fprint("bltdump",str) & 
+	Debug.fprint("bltdump", "\n") &
+	equation_add(eqns,eqn') => eqns' &
+	equation_size(eqns') => leneqns & (* length gives index of new equation *)
+	differentiate_eqns(DAELOW(v,kv,eqns',seqns,ie,al),m,mt,nv,nf,es) 
+	  => (dae,m,mt,nv,nf,reqns)
+	  ----------------------------
+	differentiate_eqns(dae as DAELOW(v,kv,eqns,seqns,ie,al),m,mt,nv,nf,e::es) 
+	  => (dae,m,mt,nv,nf,leneqns::e::reqns)
+	  
+  rule	print "-differentiate_eqns failed\n" 
+	----------------------------
+	differentiate_eqns(_,_,_,_,_,_) => fail
+end
+
+relation equation_add: (EquationArray,Equation) => EquationArray =
+	
+  rule	(* Have space to add array elt. *)
+	int_lt(n,size) => true &
+	n + 1 => n' &
+	array_setnth(arr,n,SOME(e)) => arr'
+	-------------------------------
+	equation_add(EQUATION_ARRAY(n,size,arr),e) 
+	  =>  EQUATION_ARRAY(n',size,arr')
+
+  rule	(* Do NOT Have space to add array elt. Expand array with factor 1.4 *)
+	int_lt(n,size) => false &
+	int_real(size) => rsize &
+	real_mul(rsize,0.4) => rexpandsize &
+	real_int(rexpandsize) => expandsize &
+	int_add(expandsize,size) => newsize &
+	Util.array_expand(expandsize,arr,NONE) => arr' &
+	n + 1 => n' &
+	array_setnth(arr',n,SOME(e)) => arr''
+	-------------------------------
+	equation_add(EQUATION_ARRAY(n,size,arr),e) 
+	  =>  EQUATION_ARRAY(n',newsize,arr'')
+
+  rule	print "-equation_add failed\n" 
+	---------------------
+	equation_add(eqn,e) => fail
+end
+
+(** relation: equation_list
+ ** Transform the expandable Equation array to a list of Equations.
+ **)
+relation equation_list:(EquationArray) => Equation list =
+
+  axiom	equation_list(EQUATION_ARRAY(0,_,arr)) => []
+  rule	array_nth(arr,0) => SOME(elt) 
+	-----------------------------
+	equation_list(EQUATION_ARRAY(1,_,arr)) => [elt]
+
+  rule	n - 1 => lastpos &
+	equation_list2(arr,0,lastpos) => lst 
+	-----------------------
+	equation_list(EQUATION_ARRAY(n,size,arr)) => lst
+
+  rule	print "equation_list failed\n"
+	----------------------
+	equation_list(_) => fail
+end
+
+
+(** relation: list_equation
+ ** Transform the a list of Equations into an expandable Equation array.
+ **)
+relation list_equation:(Equation list ) => EquationArray =
+	
+  rule	list_length(lst) => len &
+	int_real(len) => rlen &
+	rlen *. 1.4 => rlen' &
+	real_int(rlen') => size &
+	array_create(size,NONE) => optarr &
+	Util.list_map(lst,Util.make_option) => eqn_optlst &
+	list_array(eqn_optlst) => eqnarr &
+	Util.array_copy(eqnarr,optarr) => newarr
+	----------------------------------
+	list_equation(lst) => EQUATION_ARRAY(len,size,newarr)
+end
+
+(** relation: equation_list2
+ ** Helper relation to equation_list
+ **)
+relation equation_list2:(Equation option array,
+			int(*pos*),
+			int(*lastpos*)) 
+	  => Equation list =
+
+  rule	int_eq(pos,lastpos) => true &
+	array_nth(arr,pos) => SOME(e) 
+	-----------------------------
+	equation_list2(arr,pos,lastpos) => [e]
+
+  rule	pos + 1 => pos' &
+	array_nth(arr,pos) => SOME(e) &
+	equation_list2(arr,pos',lastpos) => res
+	---------------------------------------
+	equation_list2(arr,pos,lastpos) => e::res
+end
+
+(** relation: equation_size
+ ** Returns the number of equations
+ **)
+relation equation_size:(EquationArray) => int =
+
+  axiom	equation_size(EQUATION_ARRAY(n,_,_)) => n
+end
+
+
+(** relation: variable_size
+ ** Returns the number of variables
+ **)
+relation variable_size:(Variables) => int =
+
+  axiom	variable_size(VARIABLES(_,_,_,n)) => n 
+end
+
+(** relation equation_nth
+ ** Return the n:th equation from the expandable equation array 
+**)
+relation equation_nth:(EquationArray,
+		       int (*n*)) 
+	  => Equation =
+
+  rule	int_lt(pos,n) => true &
+	array_nth(arr,pos) => SOME(e) 
+	---------------------
+	equation_nth(EQUATION_ARRAY(n,_,arr),pos) => e
+
+  rule	print "equation_nth failed\n" 
+	-----------------------------
+	equation_nth(_,_) => fail
+end
+
+(** relation equation_setnth
+ ** Sets the nth array element of an EquationArray.
+ **)
+relation equation_setnth: (EquationArray,int,Equation) => EquationArray =
+
+  rule	array_setnth(arr,pos,SOME(eqn)) => arr'
+	---------------------------------------
+	equation_setnth(EQUATION_ARRAY(n,size,arr),pos,eqn) 
+	  => EQUATION_ARRAY(n,size,arr')
+end
+
+(** relation: add_marked_vars
+ ** This relation is part of the matching algorithm.
+**)
+relation add_marked_vars:(DAELow, 
+			  IncidenceMatrix, 
+			  IncidenceMatrixT,
+			  int, (* number of vars*)
+			  int, (* number of eqns*)
+			  int list) (* marked vars *) 
+	=> (DAELow, 
+	    IncidenceMatrix, 
+	    IncidenceMatrixT,
+	    int, (* number of vars*)
+	    int) (* number of eqns*) =
+  axiom	add_marked_vars(dae,m,mt,nv,nf,[]) => (dae,m,mt,nv,nf)
+	
+  rule	(* TODO remove variable from dae and m,mt and add der{variable} instead*)
+	int_add(nv,1) => nv' &
+	DAEEXT.set_v(v,nv') &
+	
+	add_marked_vars(dae,m,nt,nv',nf,vs) => (dae,m,mt,nv,nf)
+	-------------------------------------------------------
+	add_marked_vars(dae,m,nt,nv,nf,v::vs) => (dae,m,mt,nv,nf)
+end
+
+(** relation path_found
+ ** This relation is part of the matching algorithm.
+ ** It tries to find a matching for the equation index given as 
+ ** third argument, i.
+ **)
+relation path_found: (IncidenceMatrix, IncidenceMatrixT, int (* equation *), 
+		      Assignments, Assignments) 
+	=> (Assignments, Assignments) =
+
+
+  rule	DAEEXT.e_mark(i) (*Sideeffect*) &
+	assign_one_in_eqn(m,mt,i,ass1,ass2) => (ass1',ass2')
+	------------
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')
+
+  rule	forall_unmarked_vars_in_eqn(m,mt,i,ass1,ass2) => (ass1',ass2')
+	-----------------------------------------------------------
+	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')
+end
+
+(** relation: assign_one_in_eqn
+ ** Helper relation to path_found.
+ **)
+relation assign_one_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int, 
+		      Assignments, Assignments) => (Assignments, Assignments) =
+	
+  rule  vars_in_eqn(m,i) => vars &
+	assign_first_unassigned(i,vars,ass1,ass2) => (ass1',ass2') 
+	----------------------------------------------------------
+	assign_one_in_eqn(m,mt,i,ass1,ass2) => (ass1',ass2')
+
+	(*  rule	print "assign_one_in_eqn failed\n" 
+	 ----------------------------------
+	 assign_one_in_eqn(_,_,_,_,_) => fail*)
+end 
+
+(** relation: states_in_eqn
+ ** Helper relation to states_in_eqns
+ **)
+relation states_in_eqn: (Equation, Variables) => int list =
+
+  rule	states_as_algebraic_vars(vars) => vars' &
+	incidence_row(vars',eqn) => res
+	-----------------
+	states_in_eqn(eqn,vars) => res
+end
+
+(** relation: states_as_algebraic_vars
+ ** Return the subset of variables consisting of all states, but changed varkind to variable.
+ **)
+relation states_as_algebraic_vars:( Variables) => Variables =
+	 
+  rule	(* Creates a new set of Variables from a Var list *)
+	var_list(vars) => varlst &
+	states_as_algebraic_vars2(varlst) => varlst' &
+	empty_vars() => v1 &
+	add_vars(varlst',v1) => v1' 
+	----------------------------------------------
+	states_as_algebraic_vars(vars)  => v1'
+end
+
+(** relation: states_as_algebraic_vars2
+ ** helper relation to states_as_algebraic_vars
+**)
+relation states_as_algebraic_vars2: (Var list ) => Var list =
+
+  axiom	states_as_algebraic_vars2 [] => []
+
+  rule	(* states treated as algebraic variables *)
+	states_as_algebraic_vars2(vs) => res 
+	------------------------------------
+	states_as_algebraic_vars2(VAR(cr,STATE,a,b,c,d,e,f,g,h,i,dae_var_attr,comment)::vs) 
+	  => (VAR(cr,VARIABLE,a,b,c,d,e,f,g,h,i,dae_var_attr,comment)::res)
+
+  rule	(* other variables treated as known *)
+	states_as_algebraic_vars2(vs) => res 
+	------------------------------------
+	states_as_algebraic_vars2(VAR(cr,_,a,b,c,d,e,f,g,h,i,dae_var_attr,comment)::vs) 
+	  => (VAR(cr,CONST,a,b,c,d,e,f,g,h,i,dae_var_attr,comment)::res)
+
+  rule	states_as_algebraic_vars2(vs) => res 
+	----------------------
+	states_as_algebraic_vars2(_::vs) 
+	  => res
+end
+
+(** relation: vars_in_eqn
+ ** This relation returns all variable indices as a list for a given
+ ** equation, given as an equation index. (1...n)
+ ** Negative indexes are removed.
+**)
+relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
+	  => int list (* variables *) =
+
+  rule	int_sub(n,1) => n' &
+	array_nth(m,n') => res &
+	remove_negative(res) => res'
+	--------------------
+	vars_in_eqn(m,n) => res' 
+
+  rule	print "vars_in_eqn failed, indx="  &
+	int_string indx => s & print s & print "\n"
+	----------------------------
+	vars_in_eqn(_,indx) => fail
+end
+
+(** relation: remove_negative
+ ** Removes all negative integers.
+**)
+relation remove_negative:(int list) => int list =
+
+  rule	Util.list_select(lst,Util.int_positive) => lst'
+	----------------------
+	remove_negative(lst) => lst'
+end
+
+(** relation: eqns_for_var
+ ** This relation returns all equations as a list of equation indices
+ ** given a variable as a variable index.
+**)
+relation eqns_for_var: (IncidenceMatrixT, int (* variable *)) 
+	  => int list (* equations *) =
+
+  rule	int_sub(n,1) => n' &
+	array_nth(mt,n') => res &
+	remove_negative(res) => res'
+	--------------------
+	eqns_for_var(mt,n) => res'
+
+  rule	print "eqns_for_var failed, indx="  &
+	int_string indx => s & print s & print "\n"
+	----------------------------
+	eqns_for_var(_,indx) => fail
+end
+
+(** relation: eqns_for_var_with_states
+ ** This relation returns all equations as a list of equation indices
+ ** given a variable as a variable index, including the equations containing the 
+ ** state variable but not its derivative. This must be used to update equations
+ ** when a state is changed to algebraic variable in index reduction using dummy derivatives.
+ ** These equation indices are represented with negative index, thus all indices are mapped
+ ** trough int_abs (absolute value).
+**)
+relation eqns_for_var_with_states: (IncidenceMatrixT, int (* variable *)) 
+	  => int list (* equations *) =
+
+  rule	int_sub(n,1) => n' &
+	array_nth(mt,n') => res &
+	Util.list_map(res,int_abs) => res'
+	----------------------------------
+	eqns_for_var_with_states(mt,n) => res'
+
+  rule	print "eqns_for_var failed, indx="  &
+	int_string indx => s & print s & print "\n"
+	----------------------------
+	eqns_for_var_with_states(_,indx) => fail
+end
+
+(** relation: assign_first_unassigned
+ ** This relation assigns the first unassign variable to the equation
+ ** given as first argument. It is part of the matching algorithm.
+ **)
+relation assign_first_unassigned: (int(* equation*),
+				   int list (* variables*), 
+				   Assignments (* ass1 *), 
+				   Assignments (* ass2 *)) 
+	  => (Assignments,  (* ass1 *)
+	      Assignments)  (* ass2 *)  =
+
+  rule	get_assigned(v,ass1,ass2) => 0 &
+	assign(v,i,ass1,ass2) => (ass1',ass2')
+	--------------------------------------
+	assign_first_unassigned(i,v::vs,ass1,ass2) => (ass1',ass2')
+ 
+  rule	assign_first_unassigned(i,vs,ass1,ass2) => (ass1',ass2')
+	--------------------------------------------------------
+	assign_first_unassigned(i,v::vs,ass1,ass2) => (ass1',ass2')
+end
+
+(** relation: get_assigned
+ ** returns the assigned equation for a variable.
+ **)
+relation get_assigned: (int		(* variable *), 
+			Assignments,	(* ass1 *) 
+			Assignments)	(* ass2 *) 
+	  => int (* equation *) =
+	
+  rule	int_sub(v,1) => v' &
+	array_nth(m,v') => res
+	-------------------
+	get_assigned(v,ASSIGNMENTS(_,_,m),_) => res
+end
+
+(** relation: assign
+ ** Assign a variable to an equation, updating both assignment lists.
+ **)
+relation assign: (int,		(* variable *)
+		  int,		(* equation *)
+		  Assignments,	(* ass1 *)
+		  Assignments)	(* ass2 *)
+	  => (Assignments,	(* updated ass1 *)
+	      Assignments)	(* updated ass2 *) =
+
+  rule	(*print "assign " & int_string v => vs &
+	int_string e => es & print vs & print " to eqn " &
+	print es & print "\n" &*)
+	int_sub(v,1) => v' &
+	int_sub(e,1) => e' &
+	assignments_setnth(ass1,v',e) => ass1' &
+	assignments_setnth(ass2,e',v) => ass2'
+	----------------------------------------
+	assign(v,e,ass1,ass2) => (ass1',ass2')
+end
+
+(** relation: forall_unmarked_vars_in_eqn
+ ** This relation is part of the matching algorithm. It loops over all umarked
+ ** variables in an equation.
+ **)
+relation forall_unmarked_vars_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int, 
+		      Assignments (* ass1*), Assignments (*ass2*)) 
+	  => (Assignments, Assignments)  =
+	
+  rule	vars_in_eqn(m,i) => vars &
+	Util.list_matching(vars,is_not_v_marked) => vars' &
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vars',ass1,ass2) 
+	  => (ass1',ass2')
+	-------------------------
+	forall_unmarked_vars_in_eqn (m,mt,i,ass1,ass2) => (ass1',ass2')
+end
+
+(** relation: is_not_v_marked
+ ** This relation succeds for variables that are not marked.
+**)
+relation is_not_v_marked: int => () =
+
+  rule	DAEEXT.get_v_mark(i) => false
+	------------------
+	is_not_v_marked(i)
+end
+
+(** relation: forall_unmarked_vars_in_eqn_body
+ ** This relation is part of the matching algorithm.
+ ** It is the body of the loop over all unmarked variables.
+ **)
+relation forall_unmarked_vars_in_eqn_body: (IncidenceMatrix, IncidenceMatrixT
+					    , int
+					    , int list (* var list*)
+					    , Assignments 
+					    , Assignments)  
+	  => (Assignments, Assignments) =
+
+  rule	DAEEXT.v_mark(v) &
+	get_assigned(v,ass1,ass2) => assarg &
+	path_found(m,mt,assarg,ass1,ass2) => (ass1',ass2') &
+	assign(v,i,ass1',ass2') => (ass1'',ass2'')
+	----------------------------
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vars as (v::vs),ass1,ass2) 
+	  => (ass1'',ass2'')
+	
+  rule	DAEEXT.v_mark(v) &
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vs,ass1,ass2) => (ass1',ass2')
+	--------------------------------------------------------------------
+	forall_unmarked_vars_in_eqn_body(m,mt,i,vars as (v::vs),ass1,ass2)
+	  => (ass1',ass2')
+end
+
+(** relation: strong_components
+ ** This is the second part of the BLT sorting. It takes the variable 
+ ** assignments and the incidence matrix as input and identifies strong 
+ ** components, i.e. subsystems of equations.
+ **)
+relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
+			     int vector, int vector) => 
+	(int list list ) (* list of components *) =
+
+  rule	array_length(m) => n &
+	DAEEXT.init_lowlink(n) &
+	DAEEXT.init_number(n) &
+	strong_connect_main(m,mt,ass1,ass2,n,0,1,[],[]) 
+	  => (i,stack,comps) 
+	-----------------------------------
+	strong_components(m,mt,ass1,ass2) => (comps)
+
+  rule	print "strong_components failed\n" 
+	----------------------------------
+	strong_components(_,_,_,_) => fail
+end
+
+(** relation: strong_connect_main
+ ** Helper relation to strong_components
+ **)
+relation strong_connect_main:(IncidenceMatrix,
+			 IncidenceMatrixT,
+			 int vector, (* Assignment *)
+			 int vector, (* Assignment *)
+			 int, (* n - number of equations *)
+			 int, (* i *)
+			 int, (* w *)
+			 int list, (* stack *)
+		         int list list) (* components *)
+	  => (int, (* i *)
+	      int list, (* stack *) 
+	      int list list) (* components *) =
+  rule	int_gt(w,n) => true
+	-------------------
+	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comp) 
+	  => (i,stack,comp)
+	
+  rule	DAEEXT.get_number(w) => 0 &
+	strong_connect(m,mt,a1,a2,i,w,stack,comps)
+	  =>(i,stack',comps) &
+	int_add(w,1) => w' &
+	strong_connect_main(m,mt,a1,a2,n,i,w',stack',comps)
+	  => (i,stack'',comps) 
+	-----------------------------
+	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comps)
+	  => (i,stack'',comps)
+
+  rule	DAEEXT.get_number(w) => num &
+	int_eq(num,0) => false &
+	int_add(w,1) => w' &
+	strong_connect_main(m,mt,a1,a2,n,i,w',stack,comps)
+	  => (i,stack',comps)
+	---------------------------------
+	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comps)
+	  =>(i,stack',comps)
+end
+
+(** relation: strong_connect
+ ** Helper relation to strong_connect_main
+ **)
+relation strong_connect: (IncidenceMatrix,
+			  IncidenceMatrixT,
+			  int vector,
+			  int vector,
+			  int, (* i *)
+			  int, (* v *)
+			  int list, (* stack *)
+			  int list list) (* components *)
+	  => (int, (* i *)
+	      int list, (* stack *)
+	      int list list ) (* int list list*) =
+
+  rule	int_add(i,1) => i' &
+(*	set_number(number,v,i') => number' &
+	set_lowlink(lowlink,v,i') => lowlink' &*)
+	DAEEXT.set_number(v,i') &
+	DAEEXT.set_lowlink(v,i') &
+	let stack' = v::stack & 
+	reachable_nodes(v,m,mt,a1,a2) => eqns &
+	iterate_reachable_nodes(eqns,m,mt,a1,a2,i',v,stack',comps)
+	  => (i',stack'',comps') &
+	check_root(m,mt,a1,a2,i',v,stack'') 
+	  => (i',stack''',comp) &
+	cons_if_nonempty(comp,comps') => comps''
+	---------------------------------------------
+	strong_connect(m,mt,a1,a2,i,v,stack,comps) 
+	  => (i',stack''',comps'')
+
+  rule	print "-strong_connect failed\n" 
+	--------------------
+	strong_connect(_,_,_,_,_,_,_,_) => fail
+end
+
+(** relation: cons_if_nonempty
+ ** Small helper relation to avoid empty sublists.
+ ** Consider moving to Util?
+ **)
+relation cons_if_nonempty: (int list, int list list) => int list list =
+  axiom	cons_if_nonempty ([],lst) => lst 
+
+  axiom	cons_if_nonempty (e,lst) => e::lst
+end 
+
+(** relation: reachable_nodes
+ ** Helper relation to strong_connect.
+ ** Returns a list of reachable nodes (equations), corresponding
+ ** to those equations that uses the solved variable of this equation.
+ ** The edges of the graph that identifies strong components/blocks are
+ ** dependencies between blocks. A directed edge e = (n1,n2) means 
+ ** that n1 solves for a variable (e.g. 'a') that is used in the equation
+ ** of n2, i.e. the equation of n1 must be solved before the equation of n2.
+ **)
+relation reachable_nodes: (int,
+			   IncidenceMatrix,
+			   IncidenceMatrixT,
+			   int vector,
+			   int vector) => int list =
+	
+  rule	int_sub(eqn,1) => eqn' &
+	vector_nth(a2,eqn') => var &
+	int_sub(var,1) => var' &
+	(* Got the variable that is solved in the equation *)
+	array_nth(mt,var') => reachable &
+	(* in which other equations is this variable present ?*)
+	remove_negative(reachable) => reachable' &
+	Util.list_position(eqn,reachable') => pos 
+	(* .. except this one *)&
+	list_delete(reachable',pos) => reachable''
+	----------------------------------------
+	reachable_nodes(eqn,m,mt,a1,a2) => reachable''
+
+  rule	print "-reachable_nodes failed, eqn: " &
+	int_string(eqn) => eqnstr & print eqnstr &
+	print "\n" 
+	-----------------------
+	reachable_nodes(eqn,_,_,_,_) => fail  
+end			  
+
+(** relation: iterate_reachable_nodes
+ ** Helper relation to strong_connect.
+ **)
+relation iterate_reachable_nodes: (int list, 
+				   IncidenceMatrix,
+				   IncidenceMatrixT,
+				   int vector,
+				   int vector,
+				   int, (* i *)
+				   int, (* v *)
+				   int list, (* stack *)
+				   int list list) (* components *)
+	  => (int, (* i *)
+	      int list, (* stack *) 
+	      int list list) (* components *) =
+	
+  rule	DAEEXT.get_number(w) => 0 &
+	strong_connect(m,mt,a1,a2,i,w,stack,comps) 
+	  => (i,stack,comps') &
+	DAEEXT.get_lowlink(v) => lv &
+	DAEEXT.get_lowlink(w) => lw &
+	int_min(lv,lw) => minv &
+	DAEEXT.set_lowlink(v,minv) &
+	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps') 
+	  => (i,stack,comps'')
+	  ----------------------------
+	iterate_reachable_nodes(w::ws,m,mt,a1,a2,i,v,stack,comps) 
+	  => (i, stack,comps'')
+	  
+  rule	DAEEXT.get_number(w) => nw &
+	DAEEXT.get_number(v) => nv &
+	int_lt(nw,nv) => true &
+	list_member(w,stack) => true &
+	DAEEXT.get_lowlink(w) => lowlinkw &
+	int_min(nw,lowlinkw) => minv &
+	DAEEXT.set_lowlink(v,minv) &
+	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps) 
+	  => (i,stack,comps')
+	  -----------------------
+	iterate_reachable_nodes(w::ws,m,mt,a1,a2,i,v,stack,comps)
+	  => (i,stack,comps')
+	  
+  rule	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps) 
+	  => (i,stack,comps')
+	  -----------------------------
+	iterate_reachable_nodes(w::ws,m,mt,a1,a2,i,v,stack,comps)
+	  => (i,stack,comps')
+	  
+  axiom iterate_reachable_nodes([],m,mt,a1,a2,i,v,stack,comps)
+	  => (i,stack,comps)
+end
+
+(** relation: dump_list
+ ** Helper relation to dump.
+ **)
+relation dump_list: (int list, string) => () =
+
+  rule	Util.list_map(l,int_string) => s &
+	Util.string_delimit_list(s,", ") => sl &
+	print str & print sl & print "\n" 
+	-------------------
+	dump_list(l,str) => ()
+end
+	    
+(** relation: check_root
+ ** Helper relation to strong_connect.
+ **)
+relation check_root: (IncidenceMatrix,
+		      IncidenceMatrixT,
+		      int vector,
+		      int vector,
+		      int, (* i *)
+		      int, (* v *)
+		      int list) (* stack *)
+		     
+	  => (int, (* i *)
+	      int list, (* stack *) 
+	      int list) (* comps *) =
+
+  rule	DAEEXT.get_lowlink(v) => lv &
+	DAEEXT.get_number(v) => nv &
+	int_eq(lv,nv) => true &
+	check_stack(m,mt,a1,a2,i,v,stack,[])
+	=> (i,stack',comps) 
+	------------------------------------
+	check_root(m,mt,a1,a2,i,v,stack)
+	  => (i, stack',comps)
+
+  axiom	check_root(m,mt,a1,a2,i,v,stack) 
+	  => (i,stack,[])	
+end
+
+(** relation: check_stack
+ ** Helper relation to check_root.
+ **)
+relation check_stack: (IncidenceMatrix,
+		       IncidenceMatrixT,
+		       int vector,
+		       int vector,
+		       int, (* i *)
+		       int, (* v *)
+		       int list, (* stack *)
+		       int list) (* component list*)
+		     
+	  => (int, (* i *) 
+	      int list, (* stack *) 
+	      int list) (* comps *) =
+
+  rule	DAEEXT.get_number(top) => topn &
+	DAEEXT.get_number(v) => vn &
+	int_ge(topn,vn) => true &
+	check_stack(m,mt,a1,a2,i,v,rest,comp) 
+	  => (i,stack',comp') 
+	  -----------------------------
+	check_stack(m,mt,a1,a2,i,v,top::rest,comp)
+	  => (i,stack',top::comp')
+	  
+  axiom	check_stack(m,mt,a1,a2,i,v,stack,comp) 
+	  => (i,stack,comp)
+end
+
+(** relation: dump_components
+ ** Prints the blocks of the BLT sorting on stdout.
+ **)
+relation dump_components: (int list list) => () =
+
+  rule	print "Blocks\n" &
+	print "=======\n" &
+	dump_components2(l,1)
+	---------------------
+	dump_components (l) => ()
+end
+
+(** relation: dump_components2
+ ** Helper relation to dump_components.
+ **)
+relation dump_components2: (int list list,int) => () =
+
+  axiom	dump_components2([],_) => ()
+	
+  rule	DAEEXT.get_lowlink(i) => ni &
+	print "{" & 
+	Util.list_map(l,int_string) => ls &
+	Util.string_delimit_list(ls,", ") =>  s &
+	print s & print "}\n" 
+	& int_add(i,1) => i' &
+	dump_components2(lst,i') 
+	---------------------
+	dump_components2(l::lst,i) 
+end
+(** relation translate_dae
+ ** Translates the dae so variables are indexed into different arrays:
+ ** - xd for derivatives
+ ** - x for states
+ ** - dummy_der for dummy derivatives
+ ** - dummy for dummy states
+ ** - y for algebraic variables 
+ ** - p for parameters
+ ** 
+ **  The equations are updated with the new variable names.
+ **)
+relation translate_dae: DAELow => DAELow =
+	
+  rule	var_list(vars) => varlst &
+	var_list(knvars) => knvarlst &
+	calculate_indexes(varlst) => varlst' &
+	calculate_indexes(knvarlst) => knvarlst' &
+	list_append(varlst',knvarlst') => totvars &
+	equation_list(eqns) => eqnsl &
+	variable_replacements(totvars,eqnsl) => (s,t) &
+	(*Util.list_map(s,Exp.print_exp_str) => sl &
+	 Util.string_delimit_list(sl,", ") => sstr &
+	 Util.list_map(t,Exp.print_exp_str) => tl &
+	 Util.string_delimit_list(tl,", ") => tstr &
+	 print "replace " & print sstr & print " with " & print tstr & print "\n" &*)
+	replace_variables(eqnsl,s,t) => eqnsl' &
+	replace_variables_in_alg(al,s,t) => al' &
+	transform_variables(varlst',s,t) => varlst'' &
+	transform_variables(knvarlst',s,t) => knvarlst''  &
+	empty_vars() => vars' &
+	empty_vars() => knvars' &
+	add_vars(varlst'',vars') => vars'' &
+	add_vars(knvarlst'',knvars') => knvars'' &
+	list_equation(eqnsl') => eqns'
+	------------------------------------
+	translate_dae(DAELOW(vars,knvars,eqns,seqns,ie,al)) 
+	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al')
+end
+
+(** relation: replace_variables_in_alg
+ ** This relation replaces variabless in algorithms.
+ ** See also replace_variables.
+ **)
+
+relation replace_variables_in_alg:(Algorithm.Algorithm array, 
+				   Exp.Exp list, (* source list *)
+				   Exp.Exp list) (* target list *)
+	 => (Algorithm.Algorithm array) =
+
+  rule	array_list(algarr) => alglst &
+	replace_variables_in_alg2(alglst,s,t) => alglst' &
+	list_array(alglst') => algarr'
+	-------------------
+	replace_variables_in_alg(algarr,s,t) => algarr'
+
+  rule	print "-replace_variables_in_alg failed\n" 
+	--------------------------
+	replace_variables_in_alg(_,_,_) => fail
+end
+
+(** relation replace_variables_in_alg2
+ ** Helper relation to replace_variables_in_alg.
+ **)
+relation replace_variables_in_alg2: (Algorithm.Algorithm list, 
+				     Exp.Exp list, (* source list *)
+				     Exp.Exp list) (* target list *)
+	  => Algorithm.Algorithm list =
+
+  axiom	replace_variables_in_alg2([],_,_) => []
+
+  rule	replace_variables_in_alg2(algs,s,t) => algs' &
+	replace_variables_in_stmts(stmts,s,t) => stmts'
+	-----------------------------------------------
+	replace_variables_in_alg2(Algorithm.ALGORITHM(stmts)::algs,s,t) 
+	  => Algorithm.ALGORITHM(stmts')::algs'
+end
+
+(** relation: replace_variables_in_stmts
+ ** Helper relation to replace_variables_in_alg2
+ ** Traverses a list of statements.
+ **)
+relation replace_variables_in_stmts: (Algorithm.Statement list, 
+				     Exp.Exp list, (* source list *)
+				     Exp.Exp list) (* target list *)
+	  => Algorithm.Statement list =
+  axiom	replace_variables_in_stmts([],_,_) => []
+
+  rule	replace_variables_in_stmt(stmt,s,t) => stmt' &
+	replace_variables_in_stmts(stmts,s,t) => stmts' 
+	-----------------------------------------------
+	replace_variables_in_stmts(stmt::stmts,s,t) => stmt'::stmts'
+end
+
+(** relation: replace_variables_in_stmt
+ ** Helper relation to replace_variables_in_stmts
+ ** Investigates a single statement.
+ **)
+relation replace_variables_in_stmt:(Algorithm.Statement,
+				   Exp.Exp list, (* source list *)
+				   Exp.Exp list) (* target list *)				   
+	=> Algorithm.Statement =
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) &
+	Exp.replace_exp_list(Exp.CREF(cr,Exp.OTHER),s,t) => (Exp.CREF(cr',_),_)
+	-----------------
+	replace_variables_in_stmt(Algorithm.ASSIGN(tp,cr,e),s,t) 
+	  => Algorithm.ASSIGN(tp,cr',e')
+
+  rule	Util.list_map_2_2(expl,Exp.replace_exp_list,s,t) => expl' &
+	Util.split_tuple2_list(expl') => (expl',cnt) &
+	Exp.replace_exp_list(exp,s,t) => (exp',_)
+	------------------------------------
+	replace_variables_in_stmt(Algorithm.TUPLE_ASSIGN(tp,expl,exp),s,t)
+	  => Algorithm.TUPLE_ASSIGN(tp,expl',exp')
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_)
+	---------------------------------
+	replace_variables_in_stmt(Algorithm.ASSIGN_ARR(tp,cr,e),s,t)
+	  => Algorithm.ASSIGN_ARR(tp,cr,e)
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts' &
+	replace_variables_in_else_branch(else_branch,s,t) => else_branch' 
+	-----------------------------------------------------------------
+	replace_variables_in_stmt(Algorithm.IF(e,stmts,else_branch),s,t)
+	  => Algorithm.IF(e',stmts',else_branch')
+  rule	
+	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts'
+	-----------------------------------------------
+	replace_variables_in_stmt(Algorithm.FOR(tp,b,id,e,stmts),s,t) 
+	  => Algorithm.FOR(tp,b,id,e',stmts')
+
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts' 
+	-----------------------------------------------
+	replace_variables_in_stmt(Algorithm.WHILE(e,stmts),s,t)
+	  => Algorithm.WHILE(e,stmts)
+
+  rule	Exp.replace_exp_list(e1,s,t) => (e1',_) &
+	Exp.replace_exp_list(e2,s,t) => (e2',_)
+	---------------------------------------
+	replace_variables_in_stmt(Algorithm.ASSERT(e1,e2),s,t) 
+	  => Algorithm.ASSERT(e1',e2')
+
+  rule	print "Warning, fallthrough in replace_variables_in_stmts\n" 
+	-----------------------------------
+	replace_variables_in_stmt(a,_,_) => a 
+end
+	
+(** relation: replace_variables_in_else_branch
+ ** Helper relation to replace_varibels_in_stmt
+ ** Investigates the else branch of if statements.
+ **)
+relation replace_variables_in_else_branch: (Algorithm.Else,
+				   Exp.Exp list, (* source list *)
+				   Exp.Exp list) (* target list *)				   => Algorithm.Else =
+  axiom	replace_variables_in_else_branch(Algorithm.NOELSE,_,_) => Algorithm.NOELSE
+	
+  rule	replace_variables_in_else_branch(else_branch,s,t) => else_branch' &
+	Exp.replace_exp_list(e,s,t) => (e',_) &
+	replace_variables_in_stmts(stmts,s,t) => stmts' 
+	-------------
+	replace_variables_in_else_branch(Algorithm.ELSEIF(e,stmts,else_branch),s,t)
+	=> Algorithm.ELSEIF(e',stmts',else_branch')
+
+  rule	replace_variables_in_stmts(stmts,s,t) => stmts'
+	-----------------------------------------------
+	replace_variables_in_else_branch(Algorithm.ELSE(stmts),s,t)
+	  => Algorithm.ELSE(stmts') 
+end
+					    
+			     
+(** relation: add_vars
+ ** Adds a list of 'Var' to 'Variables'
+ **)
+
+relation add_vars: (Var list, Variables) => Variables =
+
+  rule	Util.list_fold(varlst,add_var,vars) => vars'
+	-------------------------
+	add_vars(varlst,vars) => vars'
+end
+
+(** relation: calculate_jacobian
+ ** This relation takes an array of equations and the variables of the equation
+ ** and calculates the jacobian of the equations.
+ **)
+relation calculate_jacobian: (Variables, 
+			      EquationArray, 
+			      IncidenceMatrix,
+			      IncidenceMatrixT) 
+	  => ((int * int * Equation) list) =
+
+  rule	equation_list(eqns) => eqn_lst &
+	Util.list_map(eqn_lst,equation_to_residual_form) => eqn_lst' &
+	calculate_jacobian_rows(eqn_lst',vars,m,mt) => jac &
+	list_reverse(jac) => jac' 
+	-----------------------------
+	calculate_jacobian(vars, eqns,m,mt) => jac'
+
+  rule	print "calculate_jacobian failed\n" 
+	--------------------
+	calculate_jacobian(_,_,_,_) => fail
+end
+
+(** relation: calculate_jacobian_rows
+ ** This relation takes a list of Equations and a set of variables and calculates
+ ** the jacobian expression for each variable over each equations, returned in 
+ ** a sparse matrix representation. 
+ ** For example, the equation on index e1: 3*a*x+5*y*z+ z*z  given the 
+ ** variables {x,y,z} on index x1,y1,z1 gives
+ ** {(e1,x1,3*a), (e1,y1,5*z), (e1,z1,5*y+2*z)}
+ **)
+relation calculate_jacobian_rows:(Equation list, Variables, 
+				 IncidenceMatrix, IncidenceMatrixT) 
+	  => ((int * int * Equation) list) =
+
+  rule	calculate_jacobian_rows2(eqns,vars,m,mt,1) => res
+	--------------------------
+	calculate_jacobian_rows(eqns,vars,m,mt) => res 
+end
+
+(** relation: calculate_jacobian_rows2
+ ** Helper relation to calculate_jacobian_rows
+ **)
+relation calculate_jacobian_rows2:(Equation list, Variables, 
+				 IncidenceMatrix, IncidenceMatrixT, int)
+	  => ((int * int * Equation) list) =
+  axiom	calculate_jacobian_rows2([],_,_,_,_) => []
+
+  rule	eqn_indx + 1 => eqn_indx' &
+	calculate_jacobian_rows2(eqns,vars,m,mt,eqn_indx') => l1 &
+	calculate_jacobian_row(eqn,vars,m,mt,eqn_indx) => l2 &
+	list_append(l1,l2) => res
+	-------------------------
+	calculate_jacobian_rows2(eqn::eqns,vars,m,mt,eqn_indx) => res
+end
+
+(** relation calculate_jacobian_row
+ ** Calculates the jacobian for one equation. See calculate_jacobian_rows.
+ **)
+relation calculate_jacobian_row: (Equation, 
+				  Variables,
+				  IncidenceMatrix,
+				  IncidenceMatrixT,
+				  int (* eqn index *)) 
+	  => ((int * int * Equation) list) =
+
+  rule	vars_in_eqn(m,eqn_indx) => var_indxs &
+	(* Remove duplicates and get in correct order: acsending index *)
+	Util.list_union_p(var_indxs,[],int_eq) => var_indxs' &
+	list_reverse(var_indxs') => var_indxs'' &
+	calculate_jacobian_row2(e,vars,eqn_indx,var_indxs'') => eqns 
+	----------------------------------------------
+	calculate_jacobian_row(RESIDUAL_EQUATION(e),vars,m,mt,eqn_indx) => eqns
+
+  rule	print "calculate_jacobian_row failed\n" 
+	--------------------------------------
+	calculate_jacobian_row(_,_,_,_,_) => fail
+end
+
+(** relation: make_residual_eqn
+ ** Transforms an expression into a residual equation
+ **)
+relation make_residual_eqn: Exp.Exp => Equation =
+
+axiom make_residual_eqn(e) => RESIDUAL_EQUATION(e)
+end
+
+(** relation: calculate_jacobian_row2
+ ** Helper relation to calculate_jacobian_row
+ ** Differentiates expression for each variable cref.
+ **)
+relation calculate_jacobian_row2: (Exp.Exp, 
+				   Variables,
+				   int, (* equation index *)
+				   int list) (* var indexes *)
+	  => ((int* int* Equation) list) =
+
+  axiom	calculate_jacobian_row2(e,_,_,[]) => []
+
+  rule	get_var_at(vars,vindx) => v &
+	var_cref(v) => cr &
+	Derive.differentiate_exp(e,cr) => e' &
+	Exp.simplify(e') => e'' &
+	calculate_jacobian_row2(e,vars,eqn_indx,vindxs) => es
+	-----------------------------------
+	calculate_jacobian_row2(e,vars,eqn_indx,vindx::vindxs) 
+	  => ((eqn_indx,vindx,RESIDUAL_EQUATION(e''))::es)
+end
+
+(** relation: residual_exp
+** This relation extracts the residual expression from a residual equation
+ **)
+relation residual_exp: (Equation) => Exp.Exp =
+
+  axiom	residual_exp(RESIDUAL_EQUATION(e)) => e
+
+end
+
+
+(** relation: equation_to_residual_form
+ ** This relation transforms an equation to its residual form.
+ ** For instance, a=b is transformed to a-b=0 
+ **)
+relation equation_to_residual_form:(Equation) => Equation =
+
+  rule	Exp.simplify(Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2))=> e
+	-----------------------------------------
+	equation_to_residual_form(EQUATION(e1,e2)) => RESIDUAL_EQUATION(e)
+
+  rule	Exp.simplify(Exp.BINARY(Exp.CREF(cr,Exp.REAL),Exp.SUB(Exp.REAL),exp)) => e
+	--------------------------------------------------------------------------
+	equation_to_residual_form(SOLVED_EQUATION(cr,exp)) => RESIDUAL_EQUATION(e)
+
+  axiom	equation_to_residual_form(e as RESIDUAL_EQUATION(_)) => e
+  axiom	equation_to_residual_form(e as ALGORITHM(_,_,_)) => e
+
+  rule	print "equation_to_residual_form failed\n" 
+	--------------------------
+	equation_to_residual_form(_) => fail
+end
+
+(** relation: calculate_sizes
+ ** Calculates the number of state variables, nx,
+ ** the number of algebraic variables, ny
+ ** and the number of parameters/constants, np.
+ **)
+relation calculate_sizes: DAELow => (int, (* nx *)
+				     int, (* ny *)
+				     int) (* np *) =
+  rule	var_list(vars) => varlst &
+	var_list(knvars) => knvarlst &
+	calculate_param_sizes(knvarlst) => np &
+	calculate_var_sizes(varlst,0,0) => (nx,ny)
+	-----------------------------------
+	calculate_sizes(DAELOW(vars,knvars,_,_,_,_)) => (nx,ny,np)
+end
+
+(** relation: calculate_param_sizes
+ ** Helper relation to calculate_sizes
+ **)
+relation calculate_param_sizes:( Var list) => (int) =
+
+  axiom	calculate_param_sizes([]) => 0
+
+  rule	calculate_param_sizes(vs) => s1 &
+	int_add(s1,1) => s2 
+	------------------
+	calculate_param_sizes(VAR(_,PARAM,_,_,_,_,_,_,_,_,_,_,_)::vs) 
+	  => (s2)
+
+  rule	calculate_param_sizes(vs) => s1 
+	------------------
+	calculate_param_sizes(VAR(_,_,_,_,_,_ ,_,_,_,_,_,_,_)::vs) 
+	  => (s1)
+end
+	
+(** relation: calculate_var_sizes
+ ** Helper relation to calculate_sizes
+ **)
+relation calculate_var_sizes:( Var list, int, int) => (int, int) =
+
+  axiom	calculate_var_sizes([],nx,ny) => (nx,ny)
+
+  rule	int_add(ny,1) => ny' &
+	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
+	----------------------------
+	calculate_var_sizes(VAR(_,VARIABLE,_,_,_, _,_,_,_,_,_,_,_)::vs,nx,ny) 
+	  => (nx'',ny'')
+
+  rule	int_add(nx,1) => nx' &
+	calculate_var_sizes(vs,nx',ny) => (nx'',ny'')
+	----------------------------
+	calculate_var_sizes(VAR(_,STATE,_,_,_ ,_,_,_,_,_,_,_,_)::vs,nx,ny) 
+	  => (nx'',ny'')
+
+  rule	int_add(ny,1) => ny' &
+	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
+	----------------------------
+	calculate_var_sizes(VAR(_,DUMMY_STATE,_,_,_ ,_,_,_,_,_,_,_,_)::vs,nx,ny) 
+	  => (nx'',ny'')
+
+  rule	int_add(ny,1) => ny' &
+	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
+	----------------------------
+	calculate_var_sizes(VAR(_,DUMMY_DER,_,_,_, _,_,_,_,_,_,_,_)::vs,nx,ny) 
+	  => (nx'',ny'')
+
+  rule	print "-calculate_var_sizes failed\n" 
+	----------------------------
+	calculate_var_sizes(_,_,_) 
+	  => fail
+end
+
+
+(** relation: replace_variables
+ ** Transforms the equations, given two lists with source and target
+ ** expressions
+ **) 
+relation replace_variables: (Equation list, 
+			     Exp.Exp list, (* source list *)
+			     Exp.Exp list) (* target list *)
+	  => (Equation list) =
+	
+  axiom	replace_variables ([],_,_) => []
+	
+  rule	Exp.replace_exp_list(e1,s,t) => (e1',_) &
+	Exp.replace_exp_list(e2,s,t) => (e2',_) &
+	replace_variables(es,s,t) => es'
+	---------------------------------------
+	replace_variables(EQUATION(e1,e2)::es,s,t) => EQUATION(e1',e2')::es'
+
+  rule	(* TODO: we need to replace variables in algorithms too,
+	 * or disallow removal of simple equations that can be found
+	 * in algorithms 
+	 **)
+	replace_variables(es,s,t) => es'
+ 	---------------------------------------
+ 	replace_variables(ALGORITHM(indx,inputs,outputs)::es,s,t) 
+ 	  => ALGORITHM(indx,inputs,outputs)::es'
+
+  rule	print "-replace_variables failed\n" 
+	------------------
+	replace_variables(_,_,_) => fail
+end
+
+(** relation: calculate_values
+ ** This relation calculates the values from the parameter binding expressions.
+ ** This is performed by building an environment and adding all the parameters and constants
+ ** to it and then calling ceval to retreive the constant values of each parameter or constant.
+ ** NOTE: This depends on the DAELow having the indexed forms of component references, since the 
+ ** environmen requires simple names for each variable.
+ **
+**)
+relation calculate_values: (DAELow) => DAELow =
+	
+  rule	Builtin.initial_env => env &
+	var_list(knvars) => knvarlst &
+	add_variables_to_env(knvarlst,env) => env' &
+	update_variables(knvarlst,env') => knvarlst' &
+	empty_vars() => knvars &
+	add_vars(knvarlst',knvars) => knvars'
+	--------------------------------------
+	calculate_values(DAELOW(vars,knvars,eqns,seqns,ie,al)) 
+	  => DAELOW(vars,knvars',eqns,seqns,ie,al)
+end
+
+(** relation: add_variables_to_env
+ ** Helper relation to calculate_values
+ **)
+relation add_variables_to_env: (Var list, Env.Env) => Env.Env =
+	
+  axiom	add_variables_to_env([],env) => env
+	
+  rule	(* Some of the attributes added to env here does not matter, defaults are used *)
+	DAE.generate_dae_type(t) => t' &
+	    Env.extend_frame_v(env,Types.VAR(crn,Types.ATTR(false,SCode.RW,SCode.CONST,Absyn.BIDIR),
+                                         false,t',Types.EQBOUND(e,true)),
+			               NONE,false) 
+	  => env' &
+	add_variables_to_env(rest,env') => env'' 
+	------------------
+	add_variables_to_env(VAR(Exp.CREF_IDENT(crn,_),a,b,t,SOME(e),_,d,f,g,h,i,dae_var_attr,comment)::rest,env) => env''
+	
+  rule	(* Some of the attributes added to env here does not matter, defaults are used *)
+	DAE.generate_dae_type(t) => t' &
+	Env.extend_frame_v(env,Types.VAR(crn,Types.ATTR(false,SCode.RW,SCode.CONST,Absyn.BIDIR),false,t',Types.UNBOUND),
+			   NONE,false)
+	  => env' &
+	add_variables_to_env(rest,env') => env'' 
+	-------------------------------------------
+	add_variables_to_env(VAR(Exp.CREF_IDENT(crn,_),a,b,t,NONE,_,d,f,g,h,i,dae_var_attr,comment)::rest,env) => env''
+
+  rule	Print.print_buf "Warning, skipping a variable qualified:" &
+	Exp.print_component_ref cr &
+	add_variables_to_env(rest,env) => env'
+	------------------
+	add_variables_to_env(VAR(cr as Exp.CREF_QUAL(_,_,_),_,_,_,_,_,_,_,_,_,_,_,_)::rest,env) => env'
+
+  rule	Print.print_buf "Warning, skipping a variable :" &
+	add_variables_to_env(rest,env) => env'
+	------------------
+	add_variables_to_env(_::rest,env) => env'
+
+end
+
+(** relation: update_variables
+ ** Helper relation to calculate_values
+ **)
+relation update_variables:(Var list, Env.Env) => Var list =
+
+  axiom	update_variables([],_) => []
+
+  rule	update_variables(rest,env) => rest' &
+	Ceval.ceval(env,e,false,NONE,NONE) => (v,_)
+	-----------------------------------
+	update_variables(VAR(cr,a,b,c,SOME(e),_,d,f,g,h,i,dae_var_attr,comment)::rest,env)
+	  => (VAR(cr,a,b,c,SOME(e),SOME(v),d,f,g,h,i,dae_var_attr,comment)::rest')
+
+  rule	update_variables(rest,env) => rest' &
+	not Ceval.ceval(env,e,false,NONE,NONE) => (_,_) &
+	Print.print_buf "Warning, ceval failed for parameter: " &
+	Exp.print_component_ref cr & Print.print_buf "\n" 
+	-----------------------------------
+	update_variables(VAR(cr,a,b,c,SOME(e),v,d,f,g,h,i,dae_var_attr,comment)::rest,env)
+	  => (VAR(cr,a,b,c,SOME(e),v,d,f,g,h,i,dae_var_attr,comment)::rest')
+
+  rule	update_variables(rest,env) => rest'
+	-----------------------------------
+	update_variables(VAR(cr,a,b,c,NONE,v,d,f,g,h,i,dae_var_attr,comment)::rest,env)
+	  => (VAR(cr,a,b,c,NONE,v,d,f,g,h,i,dae_var_attr,comment)::rest')
+end
+
+(** relation: variable_replacements
+ ** Returns a two list of replacement expressions for variable transformations.
+ ** For instance, replacing state s with x[3] and der(s) with xd[3],
+ ** NOTE: The derivative expressions must be first, so they are replaced first
+ ** i.e der(s) is replaced before s is replaced which gives a wrong 
+ ** variable like der(x[5])
+ **)
+relation variable_replacements: (Var list, Equation list) 
+	  => (Exp.Exp list, Exp.Exp list) =
+	  
+  rule	states_eqns(eqns,empty_bintree) => bt  &
+	bintree_to_list(bt) => (states,_) &
+	derivative_replacements(states,vars) => (s1,t1) &
+	alg_variable_replacements(vars) => (s2,t2) &
+	list_append(s1,s2) => s &
+	list_append(t1,t2) => t
+	---------------------
+	variable_replacements(vars,eqns) =>  (s,t)
+	
+  rule	print "-variable_replacements failed\n" 
+	---------------------------------------
+	variable_replacements(vars,eqns) =>  fail
+end
+
+(** relation: alg_variable_replacements
+ ** Build replacement "rules" for the variables, eg. states, 
+ ** algebraic variables, parameters, etc. 
+ **)
+relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
+
+  axiom	alg_variable_replacements([]) => ([],[])
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["y[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,VARIABLE,_,_,_ ,_,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["x[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,STATE,_,_,_, _,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["y[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,DUMMY_DER,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["y[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,DUMMY_STATE,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["y[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,DISCRETE,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["p[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,PARAM,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["p[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,STRUCTPARAM,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_replacements(vs) => (s1,t1) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["p[",indxs,"]"]) => newid
+	--------------------
+	alg_variable_replacements(VAR(cr,CONST,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	print "-alg_variable_replacements failed\n" 
+	-------------------------------------------
+	alg_variable_replacements(_) => fail
+end
+
+(** relation: states_eqns
+ ** Takes a list of equations and an (empty) BinTree and 
+ ** fills the tree with the state variables present in the equations
+ **)
+relation states_eqns: (Equation list,BinTree) => BinTree =
+	
+ axiom	states_eqns([],bt) => bt
+ 
+ rule	states_eqns(es,bt) => bt &
+	states_exp(e1,bt) => bt &
+	states_exp(e2,bt) => bt 
+	-----------------------
+	states_eqns(EQUATION(e1,e2)::es,bt) => bt
+
+  rule	Util.list_fold(expl1,states_exp,bt) => bt &
+	Util.list_fold(expl2,states_exp,bt) => bt &
+	states_eqns(es,bt) => bt 
+	------------------------
+	states_eqns(ALGORITHM(indx,expl1,expl2)::es,bt) => bt
+
+  rule	print "-states_eqns failed\n" 
+	-----------------
+	states_eqns(_,_) => fail
+end
+
+(** relation: derivative_replacements
+ ** Helper relation for variable_replacements 
+ **)
+relation derivative_replacements: (Exp.ComponentRef list, Var list) 
+	  => (Exp.Exp list, Exp.Exp list) =
+
+  axiom	derivative_replacements([],_) => ([],[])
+	
+  rule	derivative_replacements(ss,vars)  => (s1,t1) &
+	get_index(s,vars) => indx &
+	int_string(indx) => indxs &
+	Util.string_append_list(["xd[",indxs,"]"]) => newid
+	------------------------------------------
+	derivative_replacements(s::ss,vars) 
+	  => (Exp.CALL(Absyn.IDENT("der"),
+		       [Exp.CREF(s,Exp.REAL)],
+		       false,
+		       true
+		       )::s1,
+	      Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	print "-derivative_replacements failed\n" 
+	----------------------
+	derivative_replacements(_,_) => fail
+end
+
+(** relation: get_index
+ ** Helper relation to derivative_replacements 
+ **)
+relation get_index: (Exp.ComponentRef, Var list) => int =
+
+  rule	Exp.cref_equal(cr1,cr2) => true
+	-------------------------------
+	get_index(cr1,VAR(cr2,_,_,_,_, _,_,_,indx,_,_,dae_var_attr,comment)::_) => indx
+
+  rule	get_index(cr1,vs) => indx
+	-------------------------
+	get_index(cr1,_::vs) => indx
+end
+
+(** relation: calculate_indexes
+ ** Helper relation to translate_dae. Calculates the indexes for each variable
+ ** in one of the arrays. x, xd, y.
+ **)
+relation calculate_indexes: (Var list) => Var list =
+	
+  rule	calculate_indexes2(vars,0,0,0,0,0) => vars'
+	----------------------------------------
+	calculate_indexes(vars) => vars'
+
+  rule	print "-calculate_indexes failed\n" 
+	------------------------
+	calculate_indexes(_) => fail
+end
+
+(** relation: transform_variables
+ ** Helper relation to translate_dae
+**)
+relation transform_variables: (Var list, Exp.Exp list, Exp.Exp list) => (Var list) =
+
+  axiom transform_variables([],_,_) => []
+
+  rule	transform_variables(vs,s,t) => vs' &
+	transform_variable(i,kind) => cr' &
+	Exp.print_component_ref_str(cr) => name &
+	Exp.replace_exp_list(e,s,t) => (e',_) 
+	-------------------
+	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,f,i,_,j,dae_var_attr,comment)::vs,s,t)
+	=> (VAR(cr',kind,a,b,SOME(e'),c,d,f,i,name,j,dae_var_attr,comment)::vs')
+
+  rule	transform_variables(vs,s,t) => vs' &
+	transform_variable(i,kind) => cr' &
+	Exp.print_component_ref_str(cr) => name 
+	---------------------------------------
+	transform_variables(VAR(cr,kind,a,b,NONE, c,d,f,i,_,j,dae_var_attr,comment)::vs,s,t)
+	=> (VAR(cr',kind,a,b,NONE,c,d,f,i,name,j,dae_var_attr,comment)::vs')
+
+end
+
+(** relation: transform_variable
+ ** Helper relation to transform_variables
+**)
+relation transform_variable: (int, VarKind) => Exp.ComponentRef =
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["y[",is,"]"]) => id
+	-------------------
+ 	transform_variable(i, VARIABLE) => Exp.CREF_IDENT(id,[])
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["x[",is,"]"]) => id
+	-------------------
+ 	transform_variable(i, STATE) => Exp.CREF_IDENT(id,[])
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["y[",is,"]"]) => id
+	-------------------
+ 	transform_variable(i, DUMMY_DER) => Exp.CREF_IDENT(id,[])
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["y[",is,"]"]) => id
+	-------------------
+ 	transform_variable(i, DUMMY_STATE) => Exp.CREF_IDENT(id,[])
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["y[",is,"]"]) => id
+	-------------------
+ 	transform_variable(i, DISCRETE) => Exp.CREF_IDENT(id,[])
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["p[",is,"]"]) => id
+	-------------------
+ 	transform_variable(i, PARAM) => Exp.CREF_IDENT(id,[])
+
+  rule	int_string(i) => is &
+	Util.string_append_list(["p[",is,"]"]) => id
+	-------------------
+ 	transform_variable(i, CONST) => Exp.CREF_IDENT(id,[])
+end
+
+(** relation: calculate_indexes2
+** Helper relation to calculate_indexes
+ **)
+relation calculate_indexes2: (Var list,int,int,int,int,int) => Var list =
+
+  axiom	calculate_indexes2([],_,_,_,_,_) => []
+	
+  rule	int_add(y,1) => y' &
+	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	----------------------------------------
+	calculate_indexes2(VAR(cr,VARIABLE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,VARIABLE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+
+  rule	int_add(x,1) => x' &
+	calculate_indexes2(vs,x',xd,y,p,dummy) => vars' 
+	----------------------------------------
+	calculate_indexes2(VAR(cr,STATE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,STATE,d,tp,b,value,dim,start,x,name,cl,dae_var_attr,comment)::vars'
+
+ rule	(* Dummy derivatives become algebraic variables *)
+	int_add(y,1) => y' &
+	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	----------------------------------------
+	calculate_indexes2(VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy)
+ 	  => VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+
+
+  rule	(* Dummy state become algebraic variables *)
+	int_add(y,1) => y' &
+	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	----------------------------------------
+	calculate_indexes2(VAR(cr,DUMMY_STATE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,DUMMY_STATE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+
+  rule	int_add(y,1) => y' &
+	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	----------------------------------------
+	calculate_indexes2(VAR(cr,DISCRETE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,DISCRETE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+
+  rule	int_add(p,1) => p' &
+	calculate_indexes2(vs,x,xd,y,p',dummy) => vars' 
+	----------------------------------------
+	calculate_indexes2(VAR(cr,PARAM,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,PARAM,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment)::vars'
+
+  rule	int_add(p,1) => p' &
+	calculate_indexes2(vs,x,xd,y,p',dummy) => vars' 
+	----------------------------------------
+	calculate_indexes2(VAR(cr,CONST,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
+	  => VAR(cr,CONST,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment)::vars'
+end
+
+(** relation: print_equations
+ ** Helper relation to dump
+ **)
+relation print_equations: (int list, DAELow) => () =
+
+  axiom	print_equations ([],_) => ()
+
+  rule	print_equations(rest,dae) => () &
+	print_equation_no(n,dae) => ()
+	----------------
+	print_equations(n::rest,dae) => ()
+end
+
+(** relation: print_equation_no
+ ** Helper relation to print_equations
+ **)
+relation print_equation_no: (int, DAELow) => () =
+
+  rule	int_sub(eqno,1) => eqno' &
+	equation_nth(eqns,eqno') => eq &
+	print_equation eq => ()
+	----------------
+	print_equation_no(eqno,DAELOW(_,_,eqns,_,_,_)) => ()
+end
+
+(** relation: print_equation
+ ** Helper relation to print_equations
+ **)
+relation print_equation: Equation =>  () =
+
+  rule	Exp.print_exp_str e1 => s1 &
+	Exp.print_exp_str e2 => s2 &
+	Util.string_append_list([s1, " = ", s2, "\n" ]) => res &
+	print res
+	-----------------
+	print_equation(EQUATION(e1,e2))
+ end
+ 
+ 
+(** relation: tree_get
+ ** Copied from generic implementation. Changed that no hashrelation is passed
+ ** since a string can not be uniquely mapped to an int. Therefore we need to compare two strings
+ ** to get a unique ordering.
+**)
+relation tree_get: (BinTree, Key) => Value =
+
+
+  rule	Exp.print_component_ref_str(key) => keystr &
+	tree_get2(bt,keystr) => v 
+	-----------------------
+	tree_get(bt,key) => v
+end
+(** relation: tree_get2
+ ** Helper relation to tree_get
+ **)
+relation tree_get2:(BinTree, string) => Value =
+ 
+ rule	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => 0 
+	----------------------------------
+	tree_get2 (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right), keystr)
+	   => rval
+
+  rule	(* Search to the right*)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_get2(right,keystr) => res
+	--------------------
+	tree_get2(TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right)),keystr)
+	  => res
+
+  rule	(* Search to the left*)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => false &
+	tree_get2(left,keystr) => res
+	--------------------
+	tree_get2(TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left),right),keystr)
+	  => res
+	
+(*  rule	print "tree_get2 failed\n" 
+	---------------
+	tree_get2(_,_,_) => fail*)
+end
+
+(** relation: tree_add
+ ** Copied from generic implementation. Changed that no hashrelation is passed
+ ** since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
+ ** to get a unique ordering.
+**)
+relation tree_add: (BinTree, Key, Value) => (BinTree) =
+
+  axiom	tree_add (TREENODE(NONE,NONE,NONE),key,value) 
+	  => TREENODE(SOME(TREEVALUE(key,value)),NONE,NONE)
+
+  rule	(* Replace this node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0
+	----------------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right),key,value)
+	  => (TREENODE(SOME(TREEVALUE(rkey,value)),left,right))
+
+  rule	(* Insert to right subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_add(t,key,value) => t'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right as SOME(t)),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t')))
+
+  rule	(* Insert to right node*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true & 
+	tree_add(TREENODE(NONE,NONE,NONE),key,value) => right'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right as NONE),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right')))
+
+  rule	(* Insert to left subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_add(t,key,value) => t'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left as SOME(t),right),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t'),right))
+
+  rule	(* Insert to left node*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_add(TREENODE(NONE,NONE,NONE),key,value) => left'
+	------------------------
+	tree_add (TREENODE(SOME(TREEVALUE(rkey,rval)),left as NONE,right),key,value) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left'),right))
+
+  rule	print "tree_add failed\n"
+	-----------------------
+	tree_add(_,_,_) => fail
+ end 
+
+(** relation: tree_delete
+ ** This relation deletes an entry from the BinTree.
+ **)
+relation tree_delete: (BinTree, Key) => (BinTree) =
+
+  axiom	tree_delete(bt as TREENODE(NONE,NONE,NONE),key) => bt
+
+  rule	(* delete this node, when existing right node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0 &
+	tree_delete_rightmost_value(right) => (rightmost,right') &
+	tree_prune_empty_nodes(right') => optright'
+	-------------------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),
+			      left,
+			      SOME(right)),
+		     key)
+	  => (TREENODE(SOME(rightmost),left,optright'))
+	  
+  rule	(* delete this node, when no right node, but left node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0 
+	-------------------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),
+			      SOME(TREENODE(leftval,lleft,lright)),
+			      NONE),
+		     key)
+	  => (TREENODE(leftval,lleft,lright))
+	  
+  rule	(* delete this node, when no left or right node *)
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	Exp.print_component_ref_str(key) => keystr & 
+	System.strcmp(rkeystr,keystr) => 0 
+	-------------------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),
+			      NONE,
+			      NONE),
+
+		     key)
+	  => (TREENODE(NONE,NONE,NONE))
+	  
+  rule	(* delete in right subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+        int_gt(cmpval,0) => true &
+	tree_delete(t,key) => t' &
+	tree_prune_empty_nodes(t') => topt'
+	------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),left,right as SOME(t)),key) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),left,topt'))
+	  
+  rule	(* delete in left subtree*)
+	Exp.print_component_ref_str(key) => keystr &
+	Exp.print_component_ref_str(rkey) => rkeystr &
+	System.strcmp(rkeystr,keystr) => cmpval &
+	int_gt(cmpval,0) => false &
+	tree_delete(t,key) => t' &
+	tree_prune_empty_nodes(t') => topt'
+	------------------------
+	tree_delete (TREENODE(SOME(TREEVALUE(rkey,rval)),left as SOME(t),right),key) 
+	  => (TREENODE(SOME(TREEVALUE(rkey,rval)),topt',right))
+
+  rule	print "tree_delete failed\n" 
+	----------------------------
+	tree_delete(_,_) => fail
+end
+
+(** relation: tree_delete_rightmost_value
+ ** This relation takes a BinTree and deletes the rightmost value of the tree.
+ ** Tt returns this value and the updated BinTree. This relation is used in 
+ ** the binary tree deletion relation 'tree_delete'.
+ **)
+ relation tree_delete_rightmost_value: (BinTree) 
+		     => (TreeValue,	(* deleted value*)  
+			 BinTree) =	(* updated bintree*) 
+
+  axiom	tree_delete_rightmost_value(TREENODE(SOME(treevalue),NONE,NONE)) 
+	  => (treevalue,TREENODE(NONE,NONE,NONE))
+
+  axiom	tree_delete_rightmost_value(TREENODE(SOME(treevalue),SOME(left),NONE))
+	 => (treevalue,left)
+
+  rule tree_delete_rightmost_value(right) => (value, right') &
+	tree_prune_empty_nodes(right') => rightopt'
+	--------------------------------------------
+	tree_delete_rightmost_value(TREENODE(treeval,left,SOME(right)))
+	  => (value,TREENODE(treeval,left,rightopt'))
+
+  rule	not tree_delete_rightmost_value(right) => (_,_) &
+	 print "right value was empty , left NONE\n" 
+	--------------------------------------------
+	tree_delete_rightmost_value(TREENODE(SOME(treeval),NONE,SOME(right))) 
+	  => (treeval,TREENODE(NONE,NONE,NONE))
+
+
+  rule	print "-tree_delete_rightmost_value failed\n" 
+	 --------------------------------------------
+	 tree_delete_rightmost_value(bt) => fail
+end
+
+(** relation: tree_prune_emtpy_nodes
+ ** This relation is a helper relation to tree_delete
+ ** It is used to delete empty nodes of the BinTree representation, that might be introduced
+ ** when deleting nodes.
+ **)
+relation tree_prune_empty_nodes: (BinTree) => BinTree option =
+  axiom	tree_prune_empty_nodes TREENODE(NONE,NONE,NONE) => NONE
+  axiom	tree_prune_empty_nodes bt => SOME(bt)
+end
+
+(** relation: bintree_to_list
+ ** This relation takes a BinTree and transform it into a list
+ ** representation, i.e. two lists of keys and values
+ **)
+ relation bintree_to_list: (BinTree) => (Key list, Value list) =
+
+  rule	bintree_to_list2(bt,[],[]) => (klst,vlst) 
+	------------------------------------------
+	bintree_to_list(bt) => (klst,vlst)
+
+  rule	print "-bintree_to_list failed\n" 
+	 --------------
+	 bintree_to_list(_) => fail
+end
+
+(** relation: bintree_to_list2
+ ** helper relation to bintree_to_list
+ **)
+relation bintree_to_list2: (BinTree,Key list,Value list ) 
+	  => (Key list, Value list) =
+
+ axiom	bintree_to_list2( TREENODE(NONE,NONE,NONE),klst,vlst) => (klst,vlst)
+ 
+  rule	bintree_to_list_opt(left,klst,vlst) => (klst,vlst) &
+	bintree_to_list_opt(right,klst,vlst) => (klst,vlst) 
+	------------------
+	bintree_to_list2(TREENODE(SOME(TREEVALUE(key,value)),left,right),klst,vlst)
+	  => (key::klst,value::vlst) 
+	  
+  rule	bintree_to_list_opt(left,klst,vlst) => (klst,vlst) &
+	bintree_to_list_opt(left,klst,vlst) => (klst,vlst) 
+	--------------------------------------------------
+	bintree_to_list2(TREENODE(NONE,left,right),klst,vlst) => (klst,vlst)
+end
+
+(** relation: bintree_to_list_opt
+ ** helper relation to bintree_to_list
+ **)
+relation bintree_to_list_opt: (BinTree option, Key list, Value list) 
+	  => (Key list, Value list) =
+
+  axiom	bintree_to_list_opt(NONE,klst,vlst) => (klst,vlst)
+
+  rule	bintree_to_list2(bt,klst,vlst) => (klst,vlst) 
+	---------------------------------------------
+	bintree_to_list_opt(SOME(bt),klst,vlst) => (klst,vlst)
+end
+
+(** relation: print_vars_statistics
+ ** Prints statistics on variables, currently depth of BinTree, etc.
+ **)
+relation print_vars_statistics: (Variables,Variables) => () =
+
+  rule	print "Variable Statistics\n" &
+	print "===================\n" &
+	print "Number of variables: " &
+        int_string(n1) => lenstr &
+	print lenstr & print "\n" &
+	print "Bucket size for variables: " &
+	int_string(bsize1) => bstr & 
+	print bstr & print "\n" &
+	print "Number of known variables: " &
+	int_string(n2) => lenstr &
+	print lenstr & print "\n" &
+	print "Bucket size for known variables: " &
+	int_string(bsize1) => bstr & 
+	print bstr & print "\n" 
+	-----------------------
+	print_vars_statistics(VARIABLES(_,v1,bsize1,n1),VARIABLES(_,v2,bsize2,n2)) => ()
+end
+
+
+(** relation: bintree_depth
+ ** This relation calculates the depth of the Binary Tree given
+ ** as input. It can be used for debugging purposes to investigate
+ ** how balanced binary trees are.
+ **)
+relation bintree_depth : (BinTree) => int =
+
+  axiom	bintree_depth(TREENODE(_,NONE,NONE)) => 1 
+
+  rule	bintree_depth(left) => ld &
+	bintree_depth(right) => rd &
+	int_max(ld,rd) => res &
+	int_add(res,1) => res'
+	--------------------
+	bintree_depth(TREENODE(_,SOME(left),SOME(right))) => res'
+
+  rule	bintree_depth(left) => ld 
+	-------------------------
+	bintree_depth(TREENODE(_,SOME(left),NONE)) => ld
+
+  rule	bintree_depth(right) => rd 
+	-------------------------
+	bintree_depth(TREENODE(_,NONE,SOME(right))) => rd
+end	
+
+(** relation is_algebraic
+ ** This relation returns true if an expression is purely algebraic, i.e. not
+ ** containing any derivatives
+ ** Otherwise it returns false.
+ **)
+relation is_algebraic : (Exp.Exp) => bool =
+        
+  axiom is_algebraic(Exp.END) => true
+        
+  axiom is_algebraic(Exp.ICONST(x))  => true
+
+  axiom is_algebraic(Exp.RCONST(x)) => true
+
+  axiom is_algebraic(Exp.SCONST(s))  => true
+
+  axiom	is_algebraic(Exp.BCONST(false))  => true
+
+  axiom	is_algebraic(Exp.BCONST(true)) => true
+
+  axiom is_algebraic(Exp.CREF(c,_)) => true
+
+  rule  is_algebraic (e1)  => true & 
+        is_algebraic (e2) => true
+        ------------------------
+        is_algebraic (Exp.BINARY(e1, op as Exp.SUB(ty), e2 as Exp.BINARY(e21, Exp.SUB(ty2), e22))) => true
+
+  rule  is_algebraic (e1) => true & 
+        is_algebraic (e2) => true
+        ------------------------
+        is_algebraic (Exp.BINARY(e1, op, e2)) => true
+
+  rule  is_algebraic (e) => true 
+        ----------------------------
+        is_algebraic(Exp.UNARY(op, e)) => true
+        
+  rule  is_algebraic (e1) => true &
+        is_algebraic (e2) => true 
+        ----------------------------------------------------------------
+        is_algebraic(Exp.LBINARY(e1, op, e2)) => true
+
+  rule  is_algebraic (e) => true
+        ---------------------------------------------------
+        is_algebraic(Exp.LUNARY(op, e)) => true
+        
+  rule  is_algebraic(e1) => true & 
+        is_algebraic(e2) => true
+        -----------------------------------------------------------------
+        is_algebraic(Exp.RELATION(e1, op, e2)) => true 
+
+  rule	is_algebraic(c) => true &
+        is_algebraic(t) => true &
+        is_algebraic(f) => true
+        ----------------------------
+        is_algebraic(Exp.IFEXP(c,t,f)) => true
+
+  axiom is_algebraic(Exp.CALL(Absyn.IDENT("der"), args,_,_)) => false
+
+  axiom is_algebraic(Exp.CALL(fcn, args,_,_))  => true
+
+
+  axiom is_algebraic (Exp.ARRAY(_,_,es)) => true
+
+  axiom is_algebraic (Exp.TUPLE(es)) => true
+
+  axiom is_algebraic (Exp.MATRIX(_,_,es)) => true
+
+  rule  is_algebraic (start) => true &
+        is_algebraic (stop) => true
+        -------------------------------------------------------------
+        is_algebraic (Exp.RANGE(_,start,NONE,stop)) => true
+
+  rule  is_algebraic (start) => true &
+        is_algebraic (step) => true &
+        is_algebraic (stop) => true 
+        -------------------------------------
+        is_algebraic (Exp.RANGE(_,start,SOME(step),stop)) => true 
+        
+  axiom is_algebraic (Exp.CAST(REAL,Exp.ICONST(ival))) => true
+
+  axiom is_algebraic (Exp.CAST(REAL,Exp.UNARY(Exp.UMINUS(_),Exp.ICONST(ival)))) => true
+
+  axiom is_algebraic (Exp.CAST(Exp.REAL,e)) => true
+
+  axiom is_algebraic (Exp.CAST(Exp.REAL,e)) => true
+
+  rule  is_algebraic (e) => true 
+        ---------------------------------------
+        is_algebraic (Exp.ASUB(e,i)) => true
+
+  axiom is_algebraic (Exp.SIZE(cr,SOME(dim))) => true
+
+  axiom is_algebraic (Exp.SIZE(cr,NONE)) => true
+
+  axiom is_algebraic (Exp.REDUCTION(fcn,exp,id,iterexp)) => true
+
+  axiom	is_algebraic (_) => true
+
+ end
+
+(** relation: is_var_known
+ ** Returns true if the the variable is present in the variable list.
+ ** This is done by traversing the list, searching for a matching variable 
+ ** name.
+ **)
+relation is_var_known : (Var list, Exp.ComponentRef) => bool =
+	
+  rule	
+        --------------------------------
+        is_var_known([],var_name) => false
+	
+  rule	Exp.cref_equal(cr,var_name) => true
+        -------------------------------
+        is_var_known((variable as VAR(cr,_,_,_,_,_,_,_, indx,origname,_,dae_var_attr,comment))::rest,
+                     var_name) => true
+	
+  rule	is_var_known(rest,var_name) => res
+        -------------------------------
+        is_var_known((variable as VAR(cr,_,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment))::rest,
+                     var_name) => res
+end 
+
+
+(** relation: get_all_exps
+ ** 
+ ** This relation goes through the DAELow structure and finds all the
+ ** expressions and returns them in a list
+ **)
+relation get_all_exps : DAELow => Exp.Exp list =
+
+  rule	get_all_exps_vars vars1 => exps1 &
+	get_all_exps_vars vars2 => exps2 &
+	get_all_exps_eqns eqns => exps3 &
+	get_all_exps_eqns reqns => exps4 &
+	get_all_exps_eqns ieqns => exps5 &
+	array_list algs => alglst &
+	Util.list_map(alglst, Algorithm.get_all_exps) => explist6 &
+	list_append([exps1, exps2, exps3, exps4, exps5],explist6) => explist &
+	Util.list_flatten(explist) => exps
+	---------------------------------------------------------------------	
+	get_all_exps (DAELOW(vars1,vars2,eqns,reqns,ieqns,algs)) => exps
+
+end
+
+
+(** relation: get_all_exps_vars
+ ** 
+ ** Helper to get_all_exps. Goes through the Variables type
+ **)
+relation get_all_exps_vars : Variables => Exp.Exp list =
+
+	(* We can ignore crefs, they don't contains real expressions *)
+  rule	vararray_list vararray => vars &
+	Util.list_map(vars, get_all_exps_var) => exps &
+	Util.list_flatten(exps) => exps
+	---------------------------------------------------------------------	
+	get_all_exps_vars VARIABLES(crefindex, vararray, bsize, nvars) => exps
+
+end
+
+
+
+(** relation: get_all_exps_var
+ ** 
+ ** Helper to get_all_exps_vars. Get all exps from a  Var.
+ ** Exp.OTHER is used as type for componentref. Not important here.
+ ** We only use the exp list for finding function calls
+ **)
+relation get_all_exps_var : Var => Exp.Exp list =
+
+  rule	Util.option_to_list bndexp => e1 &
+	Util.option_to_list startvalexp => e2 &
+	Util.list_map(instdims, get_all_exps_subscript) => e3 &
+	Util.list_flatten(e3) => e3 &
+	Util.list_flatten([e1, e2, e3, [Exp.CREF(cref, Exp.OTHER)]]) => exps
+	-------------------------------------------------------
+	get_all_exps_var VAR(cref, vk, vd, ty, bndexp, bndval, instdims,
+			     startvalexp, ind, orgname, clsnames,dae_var_attr,comment) => exps
+			     
+end
+
+(** relation: get_all_exps_subscript
+ ** 
+ ** Get all exps from a Subscript 
+ **)
+relation get_all_exps_subscript : Exp.Subscript => Exp.Exp list =
+
+  axiom	get_all_exps_subscript Exp.WHOLEDIM => []
+  axiom	get_all_exps_subscript Exp.SLICE(e) => [e]
+  axiom	get_all_exps_subscript Exp.INDEX(e) => [e]
+			     
+end
+
+
+(** relation: get_all_exps_eqns
+ ** 
+ ** Helper to get_all_exps. Goes through the EquationArray type
+ **)
+relation get_all_exps_eqns : EquationArray => Exp.Exp list =
+
+  rule	equation_list eqnarray => eqns &
+	Util.list_map(eqns, get_all_exps_eqn) => exps &
+	Util.list_flatten(exps) => exps
+	-------------------------------
+	get_all_exps_eqns (eqnarray as EQUATION_ARRAY(_,_,_)) => exps
+
+end
+
+(** relation: get_all_exps_eqn
+ ** 
+ ** Helper to get_all_exps_eqns. Get all exps from an Equation.
+ **)
+relation get_all_exps_eqn : Equation => Exp.Exp list =
+
+  axiom	get_all_exps_eqn EQUATION(e1, e2) => [e1, e2]
+  axiom	get_all_exps_eqn SOLVED_EQUATION(cr, e) => [Exp.CREF(cr,Exp.OTHER),e]
+
+  rule	list_append(e1, e2) => exps
+	---------------------------------
+	get_all_exps_eqn ALGORITHM(ind,e1,e2) => exps
+			     
+end
+
+
+  relation is_param: (Var ) => bool =
+          
+  axiom	is_param(VAR(_,PARAM,_,_,_,_,_,_,_,_,_,_,_)) => true
+  axiom	is_param(_) => false
+  end
+
+
