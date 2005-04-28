@@ -4294,7 +4294,7 @@ echo "${ECHO_T}Not compiling with BOOST" >&6; USE_MODPAR=""; BOOSTHOME=""
 
 fi;
 
-                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modeq/modeq_release/Makefile modeq/modeq_debug/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile modeq/modpar/Makefile flat_modelica_parser/src/Makefile"
+                                                                                                                                            ac_config_files="$ac_config_files Makefile modeq/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile modeq/Makefile modeq/modeq_release/Makefile modeq/modeq_debug/Makefile modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile modeq/modpar/Makefile flat_modelica_parser/src/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -4847,15 +4847,11 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "modeq/rml2sig/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/rml2sig/Makefile" ;;
-  "modeq/ast/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/ast/Makefile" ;;
   "modelica_parser/test/parser/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/test/parser/Makefile" ;;
-  "modelica_parser/examples/walker/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/examples/walker/Makefile" ;;
   "mosh/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES mosh/src/Makefile" ;;
   "modeq/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/Makefile" ;;
   "modeq/modeq_release/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/modeq_release/Makefile" ;;
   "modeq/modeq_debug/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/modeq_debug/Makefile" ;;
-  "modelica_parser/examples/mosh/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/examples/mosh/Makefile" ;;
-  "modelica_parser/examples/class2dot/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/examples/class2dot/Makefile" ;;
   "modeq/absyn_builder/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/absyn_builder/Makefile" ;;
   "modelica_parser/test/lexer/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/test/lexer/Makefile" ;;
   "modeq/test_codegen/Makefile" ) CONFIG_FILES="$CONFIG_FILES modeq/test_codegen/Makefile" ;;
