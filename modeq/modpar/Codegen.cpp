@@ -393,7 +393,7 @@ void Codegen::generateNonLinearResidualFunc(VertexID task)
  
   m_cstream << TAB << "hybrd(residualFunc" << tasknumber << "," << n << ", nls_x, nls_fvec,1e-6," 
 	    << "2000, " << n-1 << ", " << n-1 << ", 1e-6, nls_diag, 1, 100.0,"
-	    << " -1, &info, &nfev, nls_fjac, nls_r, 1," << lr
+	    << " -1, &info, &nfev, nls_fjac, 1, nls_r," << lr
 	    <<", nls_qtf, nls_wa1, nls_wa2, nls_wa3, nls_wa4);" << endl;
   m_cstream << TAB << "if (info == 0) { printf(\"improper input parameters to nonlinear system nuber  " << tasknumber << "\");" << endl;
   m_cstream << TAB << "exit(-3);" << endl;
@@ -544,7 +544,7 @@ void  Codegen::generateParallelMPIGlobals()
   m_cstreamFunc  <<  "void hybrd_(void (int, double *, double*, int)," << endl
 		 << "int, double*,double*,double,int, " << endl
 		 << "int,int,double,double*,int,double, " << endl 
-		 << "int,int*,int*,double *,int,double*, " << endl 
+		 << "int,int*,int*,double *,double*,double*, " << endl 
 		 << "int, double*,double*,double*,double*,double*);" << endl;
   m_cstream << "/* MPI Global variables */" << endl;
   m_cstream << "MPI_Status status;" << endl;
