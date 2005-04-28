@@ -219,5 +219,5 @@ fi
 AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 
-AC_OUTPUT(Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile modelica_parser/examples/walker/Makefile mosh/src/Makefile modeq/Makefile modeq/modeq_release/Makefile modeq/modeq_debug/Makefile modelica_parser/examples/mosh/Makefile modelica_parser/examples/class2dot/Makefile  modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile modeq/modpar/Makefile flat_modelica_parser/src/Makefile)
+AC_OUTPUT(Makefile modeq/rml2sig/Makefile modeq/ast/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile modeq/Makefile modeq/modeq_release/Makefile modeq/modeq_debug/Makefile modeq/absyn_builder/Makefile modelica_parser/test/lexer/Makefile modeq/test_codegen/Makefile modeq/runtime/Makefile modelica_parser/src/Makefile modeq/modpar/Makefile flat_modelica_parser/src/Makefile)
 
