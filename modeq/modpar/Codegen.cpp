@@ -373,7 +373,9 @@ void Codegen::generateNonLinearResidualFunc(VertexID task)
   int n = out_degree(task,*m_tg);
   int lr = (n*(n+1))/2;
   m_cstream << TAB <<"{ double nls_x[" << n <<"];" << endl;
+  m_cstream << TAB <<"double nls_fvec[" << n <<"];" << endl;
   m_cstream << TAB <<"double nls_diag[" << n <<"];" << endl;
+  m_cstream << TAB <<"double nls_r[" << lr << "];" << endl;
   m_cstream << TAB <<"double nls_qtf[" << n << "];" << endl;
   m_cstream << TAB <<"double nls_wa1[" << n << "];" << endl;
   m_cstream << TAB <<"double nls_wa2[" << n << "];" << endl;
@@ -389,10 +391,10 @@ void Codegen::generateNonLinearResidualFunc(VertexID task)
     m_cstream << TAB << "nls_x[" << i << "] = " << s.top() << ";\n" << endl;
   }
  
-  m_cstream << TAB << "hybrd(residualFunc" << tasknumber << "," << n << ", &nls_x, 1e-6," 
-	    << "2000, " << n-1 << ", " << n-1 << ", 1e-6, &nls_diag, 1, 100.0,"
-	    << " -1, &info, &nfev, &nls_fjac, "<< n <<", " << lr
-	    <<", &nls_qtf, &nls_wa1, &nls_wa2, &nls_wa3, &nls_wa4);" << endl;
+  m_cstream << TAB << "hybrd(residualFunc" << tasknumber << "," << n << ", nls_x, nls_fvec,1e-6," 
+	    << "2000, " << n-1 << ", " << n-1 << ", 1e-6, nls_diag, 1, 100.0,"
+	    << " -1, &info, &nfev, nls_fjac, nls_r, 1," << lr
+	    <<", nls_qtf, nls_wa1, nls_wa2, nls_wa3, nls_wa4);" << endl;
   m_cstream << TAB << "if (info == 0) { printf(\"improper input parameters to nonlinear system nuber  " << tasknumber << "\");" << endl;
   m_cstream << TAB << "exit(-3);" << endl;
   m_cstream << TAB << " }"<< endl;
@@ -525,6 +527,7 @@ void  Codegen::generateParallelMPIHeaders()
   m_cstreamFunc << "#define BARRIER MPI_Barrier(MPI_COMM_WORLD)" << endl;
 
   m_cstreamFunc << "#define abs(x) fabs(x)" << endl;
+  m_cstreamFunc << "#define hybrd hybrd_" << endl;
 
 }
 
@@ -541,7 +544,7 @@ void  Codegen::generateParallelMPIGlobals()
   m_cstreamFunc  <<  "void hybrd_(void (int, double *, double*, int)," << endl
 		 << "int, double*,double*,double,int, " << endl
 		 << "int,int,double,double*,int,double, " << endl 
-		 << "int,int,int*,double *,int,double*, " << endl 
+		 << "int,int*,int*,double *,int,double*, " << endl 
 		 << "int, double*,double*,double*,double*,double*);" << endl;
   m_cstream << "/* MPI Global variables */" << endl;
   m_cstream << "MPI_Status status;" << endl;
