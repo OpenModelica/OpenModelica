@@ -199,9 +199,7 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 	  function, and try again. *)
 	lookup_class(env, path, false) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_FUNCTION,_),env') &
-	Inst.implicit_function_instantiation(env', Types.NOMOD,
-					       Prefix.NOPRE, [], c, [], false) 
-	  => (env'',_) &
+	Inst.implicit_function_type_instantiation(env', c) => env'' &
 	lookup_type_in_env(env'',path) => (t,env3) 
 	--------------------------------------
 	lookup_type(env, path as Absyn.IDENT(_),msg) => (t,env3)
@@ -212,9 +210,7 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 	  * instantiate that function, and try again. *)
 	lookup_class(env, path, msg) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_EXT_FUNCTION,_),env') &
-	Inst.implicit_function_instantiation(env', Types.NOMOD,
-					       Prefix.NOPRE, [], c, [], false) 
-	  => (env'',_) &
+	Inst.implicit_function_type_instantiation(env', c) => env'' &
 	lookup_type_in_env(env'',path) => (t,env3) 
 	--------------------------------------
 	lookup_type(env, path as Absyn.IDENT(_),msg) => (t,env3)
@@ -798,9 +794,8 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
   rule	(* If we find class that is function. *)
 	lookup_class([f], path, false) 
 	  => (c as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),env') &
-	Inst.implicit_function_instantiation(env', Types.NOMOD,
-					     Prefix.NOPRE, [], c, [], false) 
-	  => (env as (Env.FRAME(sid,ht,httypes,_,_)::_),_) &
+	Inst.implicit_function_type_instantiation(env',c) 
+	  => (env as (Env.FRAME(sid,ht,httypes,_,_)::_)) &
 	lookup_functions_in_frame(ht,httypes,env,id) => res
 	---------------------------
 	lookup_functions_in_env(f::_,path as Absyn.IDENT(id)) => res
@@ -878,8 +873,7 @@ relation lookup_type_in_frame: (Env.BinTree, (* Classes and vars*)
 
   rule	(* If we found class that is external function *)
 	Env.tree_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION,_),cenv) &
-	Inst.implicit_function_instantiation(cenv,Types.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
-	  => (env',_) &
+	Inst.implicit_function_type_instantiation(cenv,cdef) => env' &
 	lookup_type_in_env(env',Absyn.IDENT(id)) => (ty,env'')
 	----------------------------------------
 	lookup_type_in_frame(ht,httypes,env,id) => (ty,env'')
@@ -918,16 +912,14 @@ relation lookup_functions_in_frame: (Env.BinTree, (*Classes and vars*)
 
   rule	(* If found class that is function.*)
 	Env.tree_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION,_),cenv) &
-	Inst.implicit_function_instantiation(cenv,Types.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
-	  => (env',_) &
+	Inst.implicit_function_type_instantiation(cenv,cdef)  => env' &
 	lookup_functions_in_env(env',Absyn.IDENT(id)) => tps
 	----------------------------------------------------
 	lookup_functions_in_frame(ht,httypes,env,id) => tps
 
   rule	(* If found class that is external function.*)
 	Env.tree_get(ht,id,Env.myhash) => Env.CLASS(cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION,_),cenv) &
-	Inst.implicit_function_instantiation(cenv,Types.NOMOD,Prefix.NOPRE,[],cdef,[],false) 
-	  => (env',_) &
+	Inst.implicit_function_type_instantiation(cenv,cdef) => env' &
 	lookup_functions_in_env(env',Absyn.IDENT(id)) => tps
 	----------------------------------------------------
 	lookup_functions_in_frame(ht,httypes,env,id) => tps
@@ -1253,9 +1245,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
   rule	(* If not found, look for classdef that is function and instantiate. *)
 	lookup_class_in_env(env, classname, false) 
 	  => (c as SCode.CLASS(_, _, _, SCode.R_FUNCTION, _), env') &
-	Inst.implicit_function_instantiation(env', Types.NOMOD,
-					     Prefix.NOPRE, [], c, [], false) 
-	  => (env'',_) &
+	Inst.implicit_function_type_instantiation(env', c)  => env'' &
 	lookup_type_in_env(env'',classname) => (t,env3) 
         (* true means here encapsulated *)
       	----------------------------------------------------
@@ -1264,9 +1254,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
   rule	(* If not found, look for classdef that is external function and instantiate. *)
 	lookup_class_in_env(env, classname, false) 
 	  => (c as SCode.CLASS(_, _, _, SCode.R_EXT_FUNCTION, _), env') &
-	Inst.implicit_function_instantiation(env', Types.NOMOD,
-					     Prefix.NOPRE, [], c, [], false) 
-	  => (env'',_) &
+	Inst.implicit_function_type_instantiation(env', c) => env'' &
 	lookup_type_in_env(env'',classname) => (t,env3) 
         (* true means here encapsulated *)
       	----------------------------------------------------

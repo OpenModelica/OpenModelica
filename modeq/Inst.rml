@@ -245,6 +245,8 @@ module Inst:
 					      Prefix.Prefix, Connect.Sets, SCode.Class,
 					      InstDims, bool)
 	  => ( Env.Env, DAE.Element list)
+ relation implicit_function_type_instantiation:(Env.Env, SCode.Class)
+	  => (Env.Env)
   relation make_fully_qualified : (Env.Env, Absyn.Path) => Absyn.Path
   relation add_nomod: SCode.Element list => (SCode.Element*Types.Mod) list
 
@@ -3146,6 +3148,30 @@ rule	(*Prefix.prefix_add(n,[],pre) => pre' &*)
 	implicit_function_instantiation(_,_,_,_,_,_,_) => fail 
 
 end
+
+(** relation implicit_function_type_instantiation
+ ** author: PA
+ **
+ ** When looking up a function type it is sufficient to only instantiate the input 
+ ** and output arguments of the function. 
+ ** The implicit_function_instantiation relation will instantiate the function body,
+ ** resulting in a DAE for the body. This relation does not do that. Therefore
+ ** it is the only solution available for recursive functions, where the function 
+ ** body contain a call to the function itself.
+ **)
+
+ relation implicit_function_type_instantiation:(Env.Env, SCode.Class)
+	  => (Env.Env) =
+
+  rule	let stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,[],[],[],[],NONE)) &
+	implicit_function_instantiation(env,Types.NOMOD,
+					Prefix.NOPRE, [], stripped_class
+					, [], false) => (env',_)
+	 --------------------------------------------------------
+	 implicit_function_type_instantiation(env,SCode.CLASS(id,p,e,r,SCode.PARTS(elts,_,_,_,_,_)))
+	 => env'
+end
+							      
 
 (** relation: inst_overloaded_functions
  **
