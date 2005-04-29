@@ -20,7 +20,7 @@ Foundation, Inc.,	59 Temple Place, Suite 330,	Boston,	MA	02111-1307	USA
 */
 #include <stdio.h>
 #include "rml.h"
-#include "../ast/yacclib.h"
+#include "../absyn_builder/yacclib.h"
 #include <errno.h>
 #include <assert.h>
 
