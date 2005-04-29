@@ -1,7 +1,6 @@
 
 #include <stdio.h>
 #include "rml.h"
-#include "../ast/yacclib.h"
 #include <errno.h>
 #include <assert.h>
 
