@@ -52,9 +52,10 @@ extern "C"
 		}
 
 		std::ifstream stream(filename);
-		if (!stream) {    
-			cerr << "File \"" << filename << "\" not found." << endl;
-			exit(1);
+		if (!stream) 
+		{
+			std::cerr << "Error opening file" << std::endl;
+			RML_TAILCALLK(rmlFC);
 		}
 		//bool debug = true;
 		modelica_lexer *lex=0;
@@ -63,11 +64,6 @@ extern "C"
 		flat_modelica_lexer *flat_lex=0;
 		ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
 
-		if (!stream) 
-		{
-			std::cerr << "Error opening file" << std::endl;
-			RML_TAILCALLK(rmlFC);
-		}
 		RefMyAST t = 0;
 		try
 		{
