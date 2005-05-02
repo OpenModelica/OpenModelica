@@ -471,7 +471,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	--------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
-		Absyn.CREF_IDENT("setExtendsModifier",_),
+		Absyn.CREF_IDENT("setExtendsModifierValue",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(class),
 				    Absyn.CREF(ident),
 				    Absyn.CREF(subident),
@@ -489,6 +489,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident)],[])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
+
   rule	get_extends_modifier_value(class,ident,subident,p) => resstr 
 	--------------------------------------------
 	evaluate_graphical_api(
@@ -506,23 +507,44 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
 
-  rule	get_component_modifier_value(class,ident,subident,p) => resstr 
+  rule	get_component_modifier_value(class,Absyn.CREF_IDENT(ident,[]),subident,p) 
+	  => resstr 
 	--------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("getComponentModifierValue",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident),Absyn.CREF(subident)],[])))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident))],[])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	set_component_modifier(class,ident,subident,mod,p) => (p',resstr)
+  rule	get_parameter_value(class,Absyn.CREF_IDENT(ident,[]),p) => resstr 
 	--------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
-		Absyn.CREF_IDENT("setComponentModifier",_),
+		Absyn.CREF_IDENT("getComponentModifierValue",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_IDENT(ident,_))],[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	set_parameter_value(class,ident,exp,p) => (p',resstr)
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("setComponentModifierValue",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(class),
-				    Absyn.CREF(ident),
-				    Absyn.CREF(subident),
+				    Absyn.CREF(ident as Absyn.CREF_IDENT(_,_)),
+				    Absyn.CODE(Absyn.C_EXPRESSION(exp))
+				    ],[])))],_),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
+
+  rule	set_component_modifier(class,Absyn.CREF_IDENT(ident,[]),subident,mod,p) 
+	  => (p',resstr)
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("setComponentModifierValue",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),
+				    Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident)),
 				    Absyn.CODE(Absyn.C_MODIFICATION(mod))
 				    ],[])))],_),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
@@ -1138,11 +1160,10 @@ relation set_extends_modifier_value: (Absyn.ComponentRef, (* class *)
 
   rule	Absyn.cref_to_path(class) => p_class &
 	Absyn.cref_to_path(inheritclass) => inherit_class &
- 	Absyn.cref_to_path(subident) => Absyn.IDENT(subidentname) &
  	build_within(p_class) => within &
  	get_pathed_class_in_program(p_class,p) => cdef &
-	get_class_env(p,p_class) => env &
-	set_extends_submodifier_in_class(cdef,inherit_class,subidentname,mod,env)
+	get_class_env(p,p_class) => _::env &
+	set_extends_submodifier_in_class(cdef,inherit_class,subident,mod,env)
 	  => cdef' &
  	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
 	------------------------------
@@ -1154,15 +1175,15 @@ end
 
 relation set_extends_submodifier_in_class:(Absyn.Class, 
 					   Absyn.Path, (* inherit_name*)
-					   Absyn.Ident, (* submodifier*)
+					   Absyn.ComponentRef, (* submodifier*)
 					   Absyn.Modification,
 					   Env.Env) => Absyn.Class =
-  rule	set_extends_submodifier_in_classparts(parts,inherit_name,submodident,mod,env) 
+  rule	set_extends_submodifier_in_classparts(parts,inherit_name,submod,mod,env) 
 	  => parts'
 	  ---------------------------------------------------------
 	set_extends_submodifier_in_class(Absyn.CLASS(id,p,f,e,r,
 						       Absyn.PARTS(parts,cmt)),
-					   inherit_name, submodident,mod,env)
+					   inherit_name, submod,mod,env)
 	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt))
 end
 
@@ -1171,32 +1192,32 @@ end
  **)
 relation set_extends_submodifier_in_classparts: (Absyn.ClassPart list, 
 						 Absyn.Path, (* inherit_name*)
-						 Absyn.Ident, (* submodifier*)
+						 Absyn.ComponentRef, (* submodifier*)
 						 Absyn.Modification,
 						 Env.Env)
 	  => Absyn.ClassPart list =
   axiom	set_extends_submodifier_in_classparts([],_,_,_,_) => []
 	
-  rule	set_extends_submodifier_in_classparts(rest,inherit,submodident,mod,env) 
+  rule	set_extends_submodifier_in_classparts(rest,inherit,submod,mod,env) 
 	  => res &
-	set_extends_submodifier_in_elementitems(elts,inherit,submodident,mod,env) 
+	set_extends_submodifier_in_elementitems(elts,inherit,submod,mod,env) 
 	  => elts'
 	-------------------------------------
 	set_extends_submodifier_in_classparts(Absyn.PUBLIC(elts)::rest,
-		 				inherit,submodident,mod,env)
+		 				inherit,submod,mod,env)
  	  => (Absyn.PUBLIC(elts')::res)
 	  
-  rule	set_extends_submodifier_in_classparts(rest,inherit,submodident,mod,env) 
+  rule	set_extends_submodifier_in_classparts(rest,inherit,submod,mod,env) 
 	  => res &
- 	set_extends_submodifier_in_elementitems(elts,inherit,submodident,mod,env) 
+ 	set_extends_submodifier_in_elementitems(elts,inherit,submod,mod,env) 
  	  => elts'
  	-------------------------------------
- 	set_extends_submodifier_in_classparts(Absyn.PROTECTED(elts)::rest,inherit,submodident,mod,env)
+ 	set_extends_submodifier_in_classparts(Absyn.PROTECTED(elts)::rest,inherit,submod,mod,env)
  	  => (Absyn.PROTECTED(elts')::res)
 
-   rule	set_extends_submodifier_in_classparts(rest,inherit,submodident,mod,env) => res 
+   rule	set_extends_submodifier_in_classparts(rest,inherit,submod,mod,env) => res 
 	-------------------------------------
- 	set_extends_submodifier_in_classparts(elt::rest,inherit,submodident,mod,env)
+ 	set_extends_submodifier_in_classparts(elt::rest,inherit,submod,mod,env)
 	  => (elt::res)
 end
 
@@ -1205,24 +1226,24 @@ end
  **)
 relation set_extends_submodifier_in_elementitems:(Absyn.ElementItem list,
 						  Absyn.Path,(*inherit_name*)
-						  Absyn.Ident, (*submodifier*)
+						  Absyn.ComponentRef, (*submodifier*)
 						  Absyn.Modification,
 						  Env.Env)
 	=> Absyn.ElementItem list =
 
   axiom	set_extends_submodifier_in_elementitems([],_,_,_,_) => [] 
 	
-  rule	set_extends_submodifier_in_elementitems(rest,inherit,submodident,mod,env) 
+  rule	set_extends_submodifier_in_elementitems(rest,inherit,submod,mod,env) 
 	  => res &
-	set_extends_submodifier_in_element(elt,inherit,submodident,mod,env) => elt'
+	set_extends_submodifier_in_element(elt,inherit,submod,mod,env) => elt'
 	-------------------------------------------------
-	set_extends_submodifier_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,inherit,submodident,mod,env)
+	set_extends_submodifier_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,inherit,submod,mod,env)
 	  => Absyn.ELEMENTITEM(elt')::res
 	  
-  rule	set_extends_submodifier_in_elementitems(rest,inherit,submodident,mod,env) 
+  rule	set_extends_submodifier_in_elementitems(rest,inherit,submod,mod,env) 
 	  => res 
 	-------------------------------------------------
-	set_extends_submodifier_in_elementitems(elt::rest,inherit,submodident,mod,env)
+	set_extends_submodifier_in_elementitems(elt::rest,inherit,submod,mod,env)
 	  => elt::res
 end
 
@@ -1231,16 +1252,16 @@ end
  **)
 relation set_extends_submodifier_in_element: (Absyn.Element, 
 					      Absyn.Path,(*inherit_name*)
-					      Absyn.Ident, (*submodifier*)
+					      Absyn.ComponentRef, (*submodifier*)
 					      Absyn.Modification,
 					      Env.Env)
 	  => Absyn.Element =
 	  
   rule	Inst.make_fully_qualified(env,path) => path' &
 	ModUtil.path_equal(inherit,path') => true &
-	set_submodifier_in_elementargs(eargs,submodident,mod) => eargs'
+	set_submodifier_in_elementargs(eargs,submod,mod) => eargs'
 	----------------------------------------------------
-	set_extends_submodifier_in_element(Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs),s,l,constr),inherit,submodident,mod,env) 
+	set_extends_submodifier_in_element(Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs),s,l,constr),inherit,submod,mod,env) 
 	  => Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs'),s,l,constr)
   axiom	set_extends_submodifier_in_element(elt,_,_,_,_) => elt
 end
@@ -1258,17 +1279,16 @@ relation get_extends_modifier_value:(Absyn.ComponentRef, (*class *)
 	  => string =
 
   rule	Absyn.cref_to_path(class) => p_class &
-	Absyn.cref_to_path(subident) => Absyn.IDENT(subidentname) &
 	Absyn.cref_to_path(inherit_name) => name &
 	get_pathed_class_in_program(p_class,p) => cdef &
-	get_class_env(p,p_class) => env &
+	get_class_env(p,p_class) => _::env &
         get_extends_elementspec_in_class(cdef) => exts &
 	Util.list_map_1(exts,make_extends_fully_qualified,env) => exts' &
 	Util.list_select_1(exts',name,extends_elementspec_named) 
 	  => [ Absyn.EXTENDS(extpath,extmod) ] &	
-	get_modification_value(extmod,subidentname) => mod  &
+	get_modification_value(extmod,subident) => mod  &
 	Dump.unparse_modification_str(mod) => res 
-	----------------------------
+	-----------------------------------------
 	get_extends_modifier_value(class,inherit_name,subident,p)
 	  => res
 
@@ -1303,7 +1323,7 @@ relation get_extends_modifier_names: (Absyn.ComponentRef, (* class *)
 	Absyn.cref_to_path(inherit_name) => name &
 	get_pathed_class_in_program(p_class,p) => cdef &
 	get_extends_elementspec_in_class(cdef) => exts &
-	get_class_env(p,p_class) => env &
+	get_class_env(p,p_class) => _::env &
 	Util.list_map_1(exts,make_extends_fully_qualified,env) => exts' &
 	Util.list_select_1(exts',name,extends_elementspec_named) => [ Absyn.EXTENDS(extpath,extmod) ] &
 	get_modification_names(extmod) => res &
@@ -1414,14 +1434,14 @@ relation set_component_modifier: (Absyn.ComponentRef, (* class *)
 	  => (Absyn.Program, string) =
 	  
   rule	Absyn.cref_to_path(class) => p_class &
-	Absyn.cref_to_path(varname) => Absyn.IDENT(varname) &
- 	Absyn.cref_to_path(subident) => Absyn.IDENT(subidentname) &
+	
  	build_within(p_class) => within &
  	get_pathed_class_in_program(p_class,p) => cdef &
- 	set_component_submodifier_in_class(cdef,varname,subidentname,mod) => cdef' &
+ 	set_component_submodifier_in_class(cdef,varname,subident,mod) => cdef' &
  	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
 	-----------------------------------
-	set_component_modifier(class,varname,subident,mod,p) => (newp,"Ok") 
+	set_component_modifier(class,Absyn.CREF_IDENT(varname,_),subident,mod,p) 
+	  => (newp,"Ok") 
 	
   axiom	set_component_modifier(_,_,_,_,p) => (p, "Error")
 end
@@ -1432,7 +1452,7 @@ end
  **)
 relation set_component_submodifier_in_class: (Absyn.Class, 
 					      Absyn.Ident, (* component name*)
-					      Absyn.Ident, (* subvariable name *)
+					      Absyn.ComponentRef,(*subvariable path*)
 					      Absyn.Modification)
 	  => Absyn.Class =
 	  
@@ -1450,9 +1470,10 @@ end
  **)
 relation set_component_submodifier_in_classparts: (Absyn.ClassPart list, 
 						   Absyn.Ident, (* component name*)
-						   Absyn.Ident, (* subvariable name*)
+						   Absyn.ComponentRef, (* subvariable path*)
 						   Absyn.Modification)
 	=> Absyn.ClassPart list =
+
   axiom	set_component_submodifier_in_classparts([],_,_,_) => []
 
   rule	set_component_submodifier_in_classparts(rest,varname,submodident,mod) 
@@ -1483,7 +1504,7 @@ end
  **)
 relation set_component_submodifier_in_elementitems:(Absyn.ElementItem list,
 						    Absyn.Ident, (* component name*)
-						    Absyn.Ident, (* subvariable name*)
+						    Absyn.ComponentRef, (* subvariable path*)
 						    Absyn.Modification)
 	=> Absyn.ElementItem list =
 
@@ -1508,7 +1529,7 @@ end
  **)
 relation set_component_submodifier_in_element: (Absyn.Element, 
 						Absyn.Ident, (* component name*)
-						Absyn.Ident, (* submodifier name*)
+						Absyn.ComponentRef, (* submodifier path*)
 						Absyn.Modification)
 	=> Absyn.Element =
 
@@ -1526,21 +1547,21 @@ end
  **)
 relation set_component_submodifier_in_compitems:(Absyn.ComponentItem list,
 						 Absyn.Ident, (* component name*)
-						 Absyn.Ident, (* submodifier name*)
+						 Absyn.ComponentRef, (* submodifier path*)
 						 Absyn.Modification)
 	=> (Absyn.ComponentItem list) =
 	  
   axiom	set_component_submodifier_in_compitems([],_,_,_) => []
 
   rule	varname = id &
-	set_submodifier_in_elementargs(args,submodident,mod) => args'
+	set_submodifier_in_elementargs(args,submodpath,mod) => args'
 	---------------------------------------
 	set_component_submodifier_in_compitems(
 			  Absyn.COMPONENTITEM(
                            Absyn.COMPONENT(id,dim,
 					   SOME(Absyn.CLASSMOD(args,
 							       expopt))),cmt)::rest,
-					       varname,submodident,mod)
+					       varname,submodpath,mod)
 	  => (Absyn.COMPONENTITEM(
                 Absyn.COMPONENT(id,dim,
 				SOME(Absyn.CLASSMOD(args',
@@ -1551,41 +1572,60 @@ relation set_component_submodifier_in_compitems:(Absyn.ComponentItem list,
 	set_component_submodifier_in_compitems(
 			  Absyn.COMPONENTITEM(
                            Absyn.COMPONENT(id,dim,NONE),cmt)::rest,
-					       varname,submodident,mod)
+					       varname,submod,mod)
 	  => (Absyn.COMPONENTITEM(
                 Absyn.COMPONENT(id,dim,
-				SOME(Absyn.CLASSMOD([Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(submodident,[]),SOME(mod),NONE)],NONE))),cmt)::rest)
+				SOME(Absyn.CLASSMOD([Absyn.MODIFICATION(false,Absyn.NON_EACH,submod,SOME(mod),NONE)],NONE))),cmt)::rest)
 
   rule	set_component_submodifier_in_compitems(rest,varname,submodident,mod) => res
 	---------------------------------
 	set_component_submodifier_in_compitems(comp::rest,varname,submodident,mod)
 	  => comp::res
+
+  rule	print "-set_component_submodifier_in_compitems failed\n" 
+	-----------------------
+	set_component_submodifier_in_compitems(_,_,_,_) => fail
 end
 
 (** relation: set_submodifier_in_elementargs
  ** Helper relation to set_component_submodifier_in_compitems
  **)
 relation set_submodifier_in_elementargs: (Absyn.ElementArg list,
-						     Absyn.Ident, (* subcomponent name*)
-						    Absyn.Modification)
+					  Absyn.ComponentRef, (* subcomponent name*)
+					  Absyn.Modification)
 	  => Absyn.ElementArg list =
 	  
   axiom	set_submodifier_in_elementargs([],_,_) => []
 
   rule	name = submodident
 	 ----------------------
- 	set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),_,cmt)::rest,submodident,mod) 
+ 	set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),_,cmt)::rest,Absyn.CREF_IDENT(submodident,_),mod) 
 	  => Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt)::rest
 
-  rule	name = submodident
-	----------------------
-	set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_QUAL(name,idx,cr),_,cmt)::rest,submodident,mod) 
-	  => Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt)::rest
+  rule	Absyn.cref_equal(cr1,cr2) => true
+	---------------------------------
+	set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,cr1 as Absyn.CREF_QUAL(_,_,_),_,cmt)::rest,cr2,mod) 
+	  => Absyn.MODIFICATION(f,each,cr1,SOME(mod),cmt)::rest
+
+  rule	name1 = name2 
+	---------------------------------
+	set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_QUAL(name1,_,_),_,cmt)::rest,Absyn.CREF_IDENT(name2,idx),mod) 
+	  => Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name2,idx),SOME(mod),cmt)::rest
+
+  rule	name1 = name2 &
+	set_submodifier_in_elementargs(args,cr1,mod) => args'
+	---------------------------------
+	set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,cr as Absyn.CREF_IDENT(name2,_),SOME(Absyn.CLASSMOD(args,exp)),cmt)::rest,Absyn.CREF_QUAL(name1,_,cr1),mod) 
+	  => Absyn.MODIFICATION(f,each,cr,SOME(Absyn.CLASSMOD(args',exp)),cmt)::rest
 
   rule	set_submodifier_in_elementargs(rest,submodident,mod) => res
  	----------------------
  	set_submodifier_in_elementargs(m::rest,submodident,mod) 
 	  => m::res
+
+  rule  print "-set_submodifier_in_elementargs failed\n"
+	-------------------
+	set_submodifier_in_elementargs(_,_,_) => fail
 end
 				 
 (** relation: get_component_modifier_value(class,ident,subident,p) => resstr 
@@ -1604,14 +1644,13 @@ relation get_component_modifier_value: (Absyn.ComponentRef, (* class *)
 
   rule	Absyn.cref_to_path(class) => p_class &
 	Absyn.cref_to_path(ident) => Absyn.IDENT(name) &
-	Absyn.cref_to_path(subident) => Absyn.IDENT(subidentname) &
 	get_pathed_class_in_program(p_class,p) => cdef &
 	get_components_in_class(cdef) => comps &
 	Util.list_map(comps,get_componentitems_in_element) => compelts &
 	Util.list_flatten(compelts) => compelts' & 
 	Util.list_select_1(compelts',name,componentitem_named) 
 	  => [Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_)] &
-	get_modification_value(mod,subidentname) => mod  &
+	get_modification_value(mod,subident) => mod  &
 	Dump.unparse_modification_str(mod) => res 
 	  ---------------------------
 	get_component_modifier_value(class,ident,subident,p) => res
@@ -1624,16 +1663,18 @@ end
  ** Helper relation to get_component_modifier_value
  ** Investigates modifications to find submodifier.
 **)
-relation get_modification_value:(Absyn.ElementArg list, Absyn.Ident) 
+relation get_modification_value:(Absyn.ElementArg list, Absyn.ComponentRef) 
 	  => Absyn.Modification =
-  rule	name=name2
-	---------------------
-	get_modification_value (Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name2,_),SOME(mod),cmt)::rest,name) => mod
 
-  rule	name=name2
+  rule	Absyn.cref_equal(cr1,cr2) => true
 	---------------------
-	get_modification_value (Absyn.MODIFICATION(f,each,Absyn.CREF_QUAL(name2,_,cr),SOME(mod),cmt)::rest,name) 
-	  => Absyn.CLASSMOD([Absyn.MODIFICATION(f,each,cr,SOME(mod),cmt)],NONE)
+	get_modification_value (Absyn.MODIFICATION(f,each,cr1,SOME(mod),cmt)::rest,
+				cr2) => mod
+  rule	name1=name2 &
+	get_modification_value(args,cr2) => res
+	---------------------
+	get_modification_value (Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name1,_),SOME(Absyn.CLASSMOD(args,exp)),cmt)::rest,Absyn.CREF_QUAL(name2,_,cr2)) 
+	  => res
 
 
   rule	get_modification_value(rest,name) => mod
@@ -1663,7 +1704,7 @@ relation get_component_modifier_names: (Absyn.ComponentRef, (* class *)
 	------------------------------------------------
 	get_component_modifier_names(class,ident,p) => res''
 
-  axiom	get_component_modifier_names(_,_,_) => "{e}"
+  axiom	get_component_modifier_names(_,_,_) => "{}"
 end
 
 relation get_modification_names:(Absyn.ElementArg list) 
@@ -1673,13 +1714,24 @@ relation get_modification_names:(Absyn.ElementArg list)
 
   rule	get_modification_names(rest) => names
 	---------------
-	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,_),mod,cmt)::rest)
+	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,_),NONE,cmt)::rest)
 	  => name::names
 
-  rule	get_modification_names(rest) => names
+  rule	Dump.print_component_ref_str(cr) => name &
+	get_modification_names(rest) => names 
 	---------------
-	get_modification_names(Absyn.MODIFICATION(f,each,Absyn.CREF_QUAL(name,[],cr),mod,cmt)::rest)
+	get_modification_names(Absyn.MODIFICATION(f,each,cr ,SOME(Absyn.CLASSMOD([],_)),cmt)::rest)
 	  => name::names
+	  
+  rule	Dump.print_component_ref_str(cr) => name &		       
+	get_modification_names(args) => names2 &
+	Util.list_map_1r(names2,string_append,".") => names2' &
+	Util.list_map_1r(names2',string_append,name) => names2'' &
+	get_modification_names(rest) => names &
+	list_append(names2'',names) => res
+	---------------
+	get_modification_names(Absyn.MODIFICATION(f,each,cr,SOME(Absyn.CLASSMOD(args,_)),cmt)::rest)
+	  => res
 
   rule	get_modification_names(rest) => names
 	---------------
