@@ -292,7 +292,6 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	  => (env'',cistate1) &
         not ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has to do additional check for encapsulated classes, see rule below *)
 
-	(*lookup_class_in_class(env'', c, path, true) => (c', env''') *)
 	lookup_class(env'',path,msgflag) => (c',env''')
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path),msgflag) 
@@ -306,8 +305,6 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
 	  => (env4,cistate1) &
         ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has NOT to do additional check for encapsulated classes, see rule above *)
-	(*lookup_class_in_class(env4, c, path, false) 
-	  => (c', env5) *)
 	  lookup_class(env4,path,msgflag) => (c',env5)
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path), msgflag) 
@@ -349,8 +346,6 @@ relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 	Inst.partial_inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, [], ci_state,
 			   c, false, []) 
 	  => (env4,_) &  
-(*	lookup_class_in_class(env4, c, path, false) 
-	  => (c', env'')*)
 	  lookup_class(env4,path,false) => (c',env'')
 	-----------------------------------------------------------------
 	lookup_qualified_imported_class_in_env(env as (Env.FRAME(sid,_,_,imps,_)::fs),totenv, Absyn.QUALIFIED(pack,path)) 
@@ -1131,103 +1126,6 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) => (SCode.Class, Env.Env
 	  => (c, env')
 end
 
-(** relation: lookup_class_in_class
- **
- ** This relation looks up an inner class of a class (The outer class can be a package)
- ** Environment is passed along in case it needs to be modified...
- ** bool determines whether we restrict lookup for encapsulated class (true).
- **  
- **)
-relation lookup_class_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) 
-	  => (SCode.Class, Env.Env) =
-	  
-  rule	print "OBSOLETE!!!!\n" 
-	----------------------
-	lookup_class_in_class(_,_,_,_) => fail
-
-	  (* Look in cache *)
-(*rule	Env.get_env_path(env) => envpath &
-	Absyn.opt_path_string(envpath) => envpathstr &
-	Absyn.path_string(path) => pathstr &
-	Cache.get_class(envpathstr,pathstr) => (c,env) 
-	----------------------------------------------
-	lookup_class_in_class (env, _,path,_) => (c, env)*)
-
-  rule	lookup_class_in_env(env,classname,true) => (c as SCode.CLASS(_,_,true,_,_) ,env') 
-        (* true means here encapsulated *)
-      	----------------------------------------------------
-	lookup_class_in_class (env, cdef,classname as Absyn.IDENT(_),true) 
-	  => (c, env')
-
-  rule	lookup_class_in_env(env,classname,false) => (c as SCode.CLASS(_,_,false,_,_) ,env') &
-        (* false means here non-encapsulated *)
-        Print.print_error_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is already a simple name: ") &
-	Print.print_error_buf(id) & Print.print_error_buf(" )\n")
-      	----------------------------------------------------
-	lookup_class_in_class (env, cdef, classname as Absyn.IDENT(id),true) => fail
-	
-  rule	lookup_class_in_env(env,classname,false) => (c ,env') 
-        (* false means that we do not restrict lookup to encapsulated classes *)
-(*	&Print.print_buf " (class in class) Found class " & Print.print_buf name &
-	Print.print_buf "in envh:" &
-	Env.print_env env' &
-	Print.print_buf "\n:" *)
-
-      	----------------------------------------------------
-	lookup_class_in_class (env, cdef, classname as Absyn.IDENT(name) ,false) 
-	  => (c, env')
-
-  rule	(* Restrict lookup to encapsulated elements only *)
-	lookup_class_in_env (env, Absyn.IDENT(c1),false) 
-	  => (c as SCode.CLASS(id,_,encflag as true,restr,_) ,env1) &
-       	Env.open_scope(env1,encflag,SOME(id)) => env2 &
-	ClassInf.start(restr,id) => ci_state &
-(*	Print.print_buf "instanitating class " &
-	Print.print_buf id &
-	Print.print_buf " in envpath:\n" &
-	Env.print_env_path(env3) &
-	Print.print_buf "\n" &*)
-	Inst.inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
-	  => (_,env4,_,_,_) &
-  	lookup_class_in_class (env4, c, p1, false) => (c', env5)
-	-------------------------------------------
-	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) 
-	  => (c',env5)
-
-  rule	(* Restrict lookup to encapsulated elements only *)
-	lookup_class_in_env (env, Absyn.IDENT(c1),false) 
-	  => (c as SCode.CLASS(id,_,encflag as false,restr,_) ,env) &
-        Print.print_error_buf("# Error: attempt to search qualified class name went into non-encapsulated class (when it is still qualified)\n")
-	-------------------------------------------
-	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => fail
-
-  rule	(* Lookup not restricted to encapsulated elts. only *)
-	lookup_class_in_env (env, Absyn.IDENT(c1), false) 
-	  => (c as SCode.CLASS(id,_,encflag,restr,_) ,env1) &
-       	Env.open_scope(env1,encflag,SOME(id)) => env2 &
-	ClassInf.start(restr,id) => ci_state &
-(*	Print.print_buf "instanitating class " &
-	Print.print_buf id &
-	Print.print_buf " in envpath:\n" &
-	Env.print_env_path(env3) &
-	Print.print_buf "\n" &*)
-
-	Inst.inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[],true,true) 
-	  => (_,env4,_,_,_) &
-  	lookup_class_in_class (env4, c, p1, false) => (c', env5)
-	-------------------------------------------
-	lookup_class_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) 
-	  => (c', env5)
-
-
-  rule	Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
-	Debug.fprint("failtrace",cname) &
-	Debug.fprint("failtrace", "\n  - looked for: ") & Absyn.path_string path => s & 
-	Debug.fprint("failtrace", s) & 
-	Debug.fprint("failtrace", "\n")
-	-----------------
-	lookup_class_in_class(env, SCode.CLASS(cname,_,_,_,_), path, _) => fail
-end
 
 (** relation: lookup_type_in_class
  ** This relation looks up an type inside a class (The outer class can be a package)
@@ -1292,8 +1190,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool) => (Type
 	-------------------------------------------
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env5)
 
-  rule	(*Debug.fprint("failtrace", "- lookup_class_in_class failed\n   - class =") &
-	Debug.fprint("failtrace",cname) &
+  rule	(*Debug.fprint("failtrace",cname) &
 	Debug.fprint("failtrace", "\n  - looked for: ") & Absyn.path_string path => s & 
 	Debug.fprint("failtrace", s) & 
 	Debug.fprint("failtrace", "\n")*)
