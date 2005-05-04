@@ -473,10 +473,10 @@ end
 (** From here down, only absyn helper functions should be present. 
  Thus,no actual absyn datatype definitions. *)
 
-with "debug.rml"
-with "dump.rml"
-with "util.rml"
-with "print.rml"
+with "Debug.rml"
+with "Dump.rml"
+with "Util.rml"
+with "Print.rml"
 
 (** relation: element_spec_name
  **
