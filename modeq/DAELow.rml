@@ -149,15 +149,6 @@
 			Absyn.Path list *(* classname variable belongs to *)
                         DAE.VariableAttributes option *
                         Absyn.Comment option (* this contains the comment and annotation from Absyn *)
-
-  datatype VariableAttributes = VAR_ATTR of string * (* quantity *)
-            string *(* unit *)
-            string *(* displayUnit *)
-            (real * real) * (* min , max *)
-            real * (* Initial value *)
-            bool * (* fixed - true: default for parameter/constant, false - default for other variables *)
-            real  * (* nominal *)
-            StateSelect
             
   datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
                                                        
@@ -297,6 +288,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation var_list: (Variables) => Var list 
 
   relation var_cref: (Var) => Exp.ComponentRef 
+  relation var_nominal: (Var) => real
 
   relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
 	  => int list
@@ -307,6 +299,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation equation_list:(EquationArray) => Equation list 
   relation list_equation:(Equation list ) => EquationArray
   relation equation_to_residual_form:(Equation) => Equation 
+  relation to_residual_form:(DAELow) => DAELow
   relation residual_exp: (Equation) => Exp.Exp
 
 
@@ -747,12 +740,27 @@ relation var_list: (Variables) => Var list =
 end
 
 (** relation: var_cref
+ ** author: PA
+ **
  ** extracts the ComponentRef of a variable.
  **)
 relation var_cref: (Var) => Exp.ComponentRef =
 
   axiom	var_cref(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_)) => cr
 
+end
+
+(** relation: var_nominal
+ ** author: PA
+ **
+ ** Extacts the nominal attribute of a variable. If the variable has no 
+ ** nominal value, the relation fails.
+ **)
+
+relation var_nominal: (Var) => real =
+
+  axiom	var_nominal(VAR(_,_,_,_,_,_,_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(nominal),_)),_))
+	  => nominal
 end
 
 (** relation vararray_list
@@ -4187,6 +4195,20 @@ relation residual_exp: (Equation) => Exp.Exp =
 
 end
 
+(** relation: to_residual_form
+ ** author: PA
+ **
+ ** This relation transforms a daelow to residualform on the equations.
+ **)
+relation to_residual_form: (DAELow) => DAELow =
+
+  rule	equation_list(eqns) => eqn_lst &
+	Util.list_map(eqn_lst,equation_to_residual_form) => eqn_lst2 &
+	list_equation(eqn_lst2) => eqns2
+	------------------------
+	to_residual_form(DAELOW(vars,knvars,eqns,seqns,ieqns,ialg))
+	  => DAELOW(vars,knvars,eqns2,seqns,ieqns,ialg)
+end
 
 (** relation: equation_to_residual_form
  ** This relation transforms an equation to its residual form.

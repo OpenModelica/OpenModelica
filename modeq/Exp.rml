@@ -283,6 +283,7 @@ module Exp:
   relation type_string : Type => string
 
   relation factors: Exp => Exp list 
+  relation terms: Exp => Exp list 
 
 
   relation dump_exp_str : (Exp,int) => string  
@@ -1145,6 +1146,66 @@ relation no_factors: (Exp list, Exp) => Exp list =
   axiom no_factors ([],e) => [e]
   axiom	no_factors(lst,_) => lst
 end
+
+
+(** relation: negate
+ ** author: PA
+ **
+ ** Negates an expression.
+ **)
+
+relation negate: (Exp) => Exp =
+
+  rule	typeof(e) => t
+	--------------
+	negate(e) => UNARY(UMINUS(t),e)
+
+end
+
+
+(**  relation: terms
+ ** author: PA
+ **
+ ** Returns the terms of the expression if any as a list of expressiosn
+ **)
+relation terms: Exp => Exp list =
+
+  rule	terms(e1) => f1 &
+	terms(e2) => f2 &
+	list_append(f1,f2) => res
+	-------------------------
+	terms (BINARY(e1,ADD(_),e2)) => res
+
+  rule	terms e1 => f1 &
+	terms e2 => f2 &
+	Util.list_map(f2,negate) => f2' &
+	list_append(f1,f2') => res
+	-------------------------
+	terms(BINARY(e1,SUB(_),e2)) => res
+
+  axiom	terms (e as BINARY(_,MUL(_),_)) => [e] 
+  axiom	terms (e as BINARY(_,DIV(_),_)) => [e]
+  axiom	terms (e as CREF(cr,_)) => [e]
+	
+  axiom	terms (e as ICONST(_)) => [e]
+  axiom	terms (e as RCONST(_)) => [e]
+  axiom	terms (e as SCONST(_)) => [e]
+  axiom	terms (e as UNARY(_,_)) => [e]
+  axiom	terms (e as IFEXP(_,_,_)) => [e]
+  axiom	terms (e as CALL(_,_,_,_)) => [e]
+  axiom	terms (e as ARRAY(_,_,_)) => [e]
+  axiom	terms (e as MATRIX(_,_,_)) => [e]
+  axiom	terms (e as RANGE(_,_,_,_)) => [e]
+  axiom	terms (e as CAST(_,_)) => [e]
+  axiom	terms (e as ASUB(_,_)) => [e]
+  axiom	terms (e as SIZE(_,_)) => [e]
+  axiom	terms (e as REDUCTION(_,_,_,_)) => [e]
+
+
+  axiom	terms (_) => []
+end
+
+
 
 (** relation: factors
  ** Returns the factors of the expression if any as a list of expressions
@@ -3606,6 +3667,12 @@ relation solve2 : ( Exp (*e1*), Exp (*e2*), Exp(*e3*)) => Exp =
 	solve2 (e1, e2, crexp as CREF(cr,_)) => fail
 
 end
+
+(** relation get_terms_containing_x
+ **
+ ** Retrieves all terms of an expression containng a variable, given
+ ** as second argument (in the form of an Exp)
+ **)
 
 relation get_terms_containing_x : (Exp, Exp) => (Exp, Exp) =
 
