@@ -3088,11 +3088,13 @@ relation make_fully_qualified : (Env.Env, Absyn.Path) => Absyn.Path =
 	----------------------------
 	make_fully_qualified (env,path) => path
 
-  rule	Env.get_env_path env => SOME(path') &
-	Absyn.join_paths(path',path) => path''
+  rule	Lookup.lookup_class(env,path,false) => (_,_::env') &
+	Env.get_env_path env' => SOME(path') &
+	Absyn.join_paths(path',path) => path'' 
 	--------------------------------------
 	make_fully_qualified (env,path) => path''
 
+  axiom	make_fully_qualified(env,path) => path
 end
 
 (** relation: implicit_function_instantiation

@@ -1162,7 +1162,7 @@ relation set_extends_modifier_value: (Absyn.ComponentRef, (* class *)
 	Absyn.cref_to_path(inheritclass) => inherit_class &
  	build_within(p_class) => within &
  	get_pathed_class_in_program(p_class,p) => cdef &
-	get_class_env(p,p_class) => _::env &
+	get_class_env(p,p_class) => env &
 	set_extends_submodifier_in_class(cdef,inherit_class,subident,mod,env)
 	  => cdef' &
  	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
@@ -1281,7 +1281,7 @@ relation get_extends_modifier_value:(Absyn.ComponentRef, (*class *)
   rule	Absyn.cref_to_path(class) => p_class &
 	Absyn.cref_to_path(inherit_name) => name &
 	get_pathed_class_in_program(p_class,p) => cdef &
-	get_class_env(p,p_class) => _::env &
+	get_class_env(p,p_class) => env &
         get_extends_elementspec_in_class(cdef) => exts &
 	Util.list_map_1(exts,make_extends_fully_qualified,env) => exts' &
 	Util.list_select_1(exts',name,extends_elementspec_named) 
@@ -1323,7 +1323,7 @@ relation get_extends_modifier_names: (Absyn.ComponentRef, (* class *)
 	Absyn.cref_to_path(inherit_name) => name &
 	get_pathed_class_in_program(p_class,p) => cdef &
 	get_extends_elementspec_in_class(cdef) => exts &
-	get_class_env(p,p_class) => _::env &
+	get_class_env(p,p_class) => env &
 	Util.list_map_1(exts,make_extends_fully_qualified,env) => exts' &
 	Util.list_select_1(exts',name,extends_elementspec_named) => [ Absyn.EXTENDS(extpath,extmod) ] &
 	get_modification_names(extmod) => res &
