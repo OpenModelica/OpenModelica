@@ -560,6 +560,15 @@ relation simplify : Exp => Exp =
 	-------------------
 	simplify (BINARY(BINARY(e1,DIV(tp2),e2),DIV(tp),e3)) => e
 
+  rule	(* (a1+a2+...+an) / b  => a1/b+a2/b+...+an/b *)
+	terms(e1) => (expl as _::_::_) &
+	Util.list_map_1(expl,divide,e2) => expl' &
+	make_sum(expl') => e &
+	simplify(e) => e'
+	---------------------------
+	simplify(BINARY(e1,DIV(tp),e2)) => e'
+	
+
   rule	(* e1 / e2 where e1 and e2 can be factorized with common factor
 	 e.g  a*b/c*a => b/c *)
 	simplify(e1) => e1' &
@@ -694,9 +703,10 @@ relation simplify_binary_add_coeff:(Exp) => Exp =
         exp_equal(e1'',e2'') => true & 
         real_add(coeff1,coeff2) => res_coeff
         --------------------------
-        simplify_binary_add_coeff (BINARY(e1,ADD(REAL),e2)) => BINARY(RCONST(res_coeff),
-                                                                  MUL(REAL),
-                                                                  e1'')
+        simplify_binary_add_coeff (BINARY(e1,ADD(REAL),e2)) 
+	  => BINARY(RCONST(res_coeff),
+                    MUL(REAL),
+                    e1'')
 
   rule  simplify_binary_add_coeff2(e1) => (e1'',coeff1) &
         simplify_binary_add_coeff2(e2) => (e2'',coeff2) &
@@ -704,9 +714,10 @@ relation simplify_binary_add_coeff:(Exp) => Exp =
         real_add(coeff1,coeff2) => res_coeff &
         real_int(res_coeff) => res_int
         --------------------------
-        simplify_binary_add_coeff (BINARY(e1,ADD(INT),e2)) => BINARY(ICONST(res_int),
-                                                                  MUL(INT),
-                                                                     e1'')
+        simplify_binary_add_coeff (BINARY(e1,ADD(INT),e2)) 
+	  => BINARY(ICONST(res_int),
+                    MUL(INT),
+                    e1'')
 
   rule  simplify_two_add_exp(e2,e3,e1,tp1) => exp 
         ----------------------------------------
@@ -1096,6 +1107,18 @@ relation simplify_asub: (Exp, int) => Exp =
 
 end
 
+
+(** relation: divide
+ ** author: PA
+ **
+ ** divides two expressions.
+ **)
+
+relation divide: (Exp,Exp) => Exp =
+	
+  axiom	divide(e1,e2) => BINARY(e1,DIV(REAL),e2)
+end
+
 (** relation: remove_factor
  ** Remove the factor from the expression (factorize it out)
 **)
@@ -1294,6 +1317,32 @@ relation make_product: (Exp list) => Exp =
 	make_product(lst) => fail
 end
 
+
+(** relation: make_sum
+ ** Takes a list of expressions an makes a sum expression adding all 
+ ** elements in the list.
+ **)
+relation make_sum: (Exp list) => Exp =
+
+  axiom	make_sum([e1]) => e1
+
+  rule	(* Take type info from e1, ok since type checking already performed. *)
+	typeof(e1) => tp
+	----------------
+	make_sum([e1,e2]) => BINARY(e1,ADD(tp),e2)
+
+  rule	make_sum(rest) => e2 &
+	typeof(e2) => tp
+	------------------
+	make_sum(e1::rest) => BINARY(e1,ADD(tp),e2)
+
+  rule	print "-make_sum failed, exp lst:" &
+	Util.list_map(lst,print_exp_str) => explst &
+	Util.string_delimit_list(explst,", ") => str &
+	print str & print "\n" 
+	------------------------------
+	make_sum(lst) => fail
+end
 (** relation typeof
  ** Retrieves the Type of the Expression
  **)
@@ -1629,6 +1678,21 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	---------------------------
 	simplify_binary (_, DIV(ty), e1, UNARY(UMINUS(ty2),e2)) 
 	  => BINARY(e1',DIV(ty),e2')
+
+  rule	(* (c1*x)/c2 *)
+	is_const(e3) => true &
+	is_const(e1) => true &
+	simplify(BINARY(BINARY(e1,DIV(tp2),e3),MUL(tp),e2)) => e
+	-------------------------------------
+	simplify_binary(_,DIV(tp2),BINARY(e2,MUL(tp),e3),e1) => e
+
+  rule	(* (x*c1)/c2 *)
+	is_const(e3) => true &
+	is_const(e2) => true &
+	print "is const2 \n" &
+	simplify(BINARY(BINARY(e2,DIV(tp2),e3),MUL(tp),e1)) => e
+	-------------------------------------
+	simplify_binary(_,DIV(tp2),BINARY(e2,MUL(tp),e3),e1) => e
   
   rule	(* e1^e2, where e2 is one *)
 	simplify(e) => e' &
