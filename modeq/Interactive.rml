@@ -418,6 +418,14 @@ relation add_var_to_varlist: (Absyn.Ident, Values.Value, Types.Type,
   axiom	add_var_to_varlist(ident,v,t,[]) => [IVAR(ident,v,t)]
 end
 
+
+(** relation: build_env_from_symboltable
+ ** author: PA
+ ** 
+ ** Builds an environment from a symboltable by adding all interactive variables
+ ** and their bindings to the environment.
+ **)
+
 relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
 	
   rule	SCode.elaborate(p) => p' &
@@ -526,16 +534,19 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-  rule	set_parameter_value(class,ident,exp,p) => (p',resstr)
+  rule	(* special case for clearing modifier *)
+	set_component_modifier(class,ident,Absyn.CREF_IDENT("",[]),mod,p) 
+	  => (p',resstr)
 	--------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("setComponentModifierValue",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(class),
 				    Absyn.CREF(ident as Absyn.CREF_IDENT(_,_)),
-				    Absyn.CODE(Absyn.C_EXPRESSION(exp))
+				    Absyn.CODE(Absyn.C_MODIFICATION(mod as Absyn.CLASSMOD([],NONE)))
 				    ],[])))],_),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
+
 
   rule	set_component_modifier(class,Absyn.CREF_IDENT(ident,[]),subident,mod,p) 
 	  => (p',resstr)
@@ -1173,6 +1184,14 @@ relation set_extends_modifier_value: (Absyn.ComponentRef, (* class *)
   axiom	set_extends_modifier_value(_,_,_,_,p) => (p,"Error")
 end
 
+(** relation: set_extends_submodifier_in_class
+ ** author: PA
+ **
+ ** Sets a modifier of an extends clause for a given subcomponent.
+ ** For instance, 
+ ** extends A(b=4); // b is subcomponent
+ **)
+
 relation set_extends_submodifier_in_class:(Absyn.Class, 
 					   Absyn.Path, (* inherit_name*)
 					   Absyn.ComponentRef, (* submodifier*)
@@ -1257,6 +1276,12 @@ relation set_extends_submodifier_in_element: (Absyn.Element,
 					      Env.Env)
 	  => Absyn.Element =
 	  
+
+  rule	(* special case for clearing modifications*)
+	-----------------------------
+	set_extends_submodifier_in_element(Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs),s,l,constr),inherit,submod,Absyn.CLASSMOD([],NONE),env) 
+	  => Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,[]),s,l,constr)
+
   rule	Inst.make_fully_qualified(env,path) => path' &
 	ModUtil.path_equal(inherit,path') => true &
 	set_submodifier_in_elementargs(eargs,submod,mod) => eargs'
@@ -1553,6 +1578,16 @@ relation set_component_submodifier_in_compitems:(Absyn.ComponentItem list,
 	  
   axiom	set_component_submodifier_in_compitems([],_,_,_) => []
 
+  rule	(* for "empty" modifications*)
+	varname = id 
+	---------------------------------------
+	set_component_submodifier_in_compitems(
+			  Absyn.COMPONENTITEM(
+                           Absyn.COMPONENT(id,dim,_),cmt)::rest,
+					       varname,submodpath,Absyn.CLASSMOD([],NONE))
+	  => (Absyn.COMPONENTITEM(
+				  Absyn.COMPONENT(id,dim,NONE),cmt)::rest)
+	
   rule	varname = id &
 	set_submodifier_in_elementargs(args,submodpath,mod) => args'
 	---------------------------------------
