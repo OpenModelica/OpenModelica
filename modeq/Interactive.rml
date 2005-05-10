@@ -177,6 +177,9 @@ module Interactive:
           (* this is added for optimization of modeleditor*)
            
   relation get_top_classnames: (Absyn.Program) => string
+  relation get_component_modification: Absyn.Element => string 
+
+  relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class 
 end
 
 
@@ -198,6 +201,7 @@ with "Print.rml"
 with "System.rml"
 with "ClassLoader.rml"
 with "Ceval.rml"
+ with "Encrypt.rml"
 
 val Placement_records = "record Transformation Real x=0.0; Real y=0.0; Real scale=1.0; Real aspectRatio=1.0; Boolean flipHorizontal=false; Boolean flipVertical=false; Real rotation=0.0; end Transformation; record Placement Boolean visible=true; Transformation transformation; Transformation iconTransformation; end Placement;" 
 
@@ -667,6 +671,24 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
 
 
+
+	rule	decrypt_class(cr,p) => (resstr, newp)
+	---------------------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("decryptClass",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)], [])))],_
+		),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
+
+	rule	encrypt_class(cr,p) => (resstr, newp)
+	---------------------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("encryptClass",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(cr)], [])))],_
+		),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
 
 	rule	delete_class(cr,p) => (resstr, newp)
 	---------------------------------------------------------
@@ -2175,6 +2197,34 @@ relation is_primitive: (Absyn.ComponentRef, Absyn.Program) => bool =
   axiom	is_primitive(_,_) => false
 end
 
+
+relation decrypt_class: (Absyn.ComponentRef, Absyn.Program) => (string, Absyn.Program) =
+
+  rule	(* Top level class *)
+	Absyn.cref_to_path(class) => cpath &
+	get_pathed_class_in_program(cpath, p) => class &
+        Encrypt.decrypt_class(class) => class' &
+        update_program(Absyn.PROGRAM([class'],Absyn.TOP),p) => p'
+	---------------------------------------------------------------------------------------
+	decrypt_class(class, p as Absyn.PROGRAM(clist, w)) => ("true", p' )
+
+  axiom	decrypt_class(_, p) => ("false",p)	
+end
+
+relation encrypt_class: (Absyn.ComponentRef, Absyn.Program) => (string, Absyn.Program) =
+
+  rule	(* Top level class *)
+	Absyn.cref_to_path(class) => cpath &
+	get_pathed_class_in_program(cpath, p) => class &
+        Encrypt.encrypt_class(class) => class' &
+        update_program(Absyn.PROGRAM([class'],Absyn.TOP),p) => p'
+	---------------------------------------------------------------------------------------
+	encrypt_class(class, p as Absyn.PROGRAM(clist, w)) => ("true", p' )
+
+  axiom	encrypt_class(_, p) => ("false",p)	
+end
+ 
+ 
 (** relation: delete_class
  ** This relation takes a component reference and a program. 
  ** It deletes the class specified by the component reference from the given program.
