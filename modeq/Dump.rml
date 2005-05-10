@@ -131,6 +131,7 @@ module Dump:
 
   relation dump: Absyn.Program => ()
   relation unparse_str: Absyn.Program => string
+  relation unparse_class_list: (int, Absyn.Class list) => string 
   relation dump_istmt: Interactive.InteractiveStmts => ()
   relation direction_symbol: Absyn.Direction => string
   relation print_exp: Absyn.Exp => ()
