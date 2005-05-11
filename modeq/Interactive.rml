@@ -478,18 +478,18 @@ end
 relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) => 
 	(string, InteractiveSymbolTable) = 
 
-  rule	set_extends_modifier_value(class,ident,subident,mod,p) 
+  rule	set_extends_modifier_value(class,Absyn.CREF_IDENT(ident,[]),
+				   subident,mod,p) 
 	  => (newp,resstr)
 	--------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("setExtendsModifierValue",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(class),
-				    Absyn.CREF(ident),
-				    Absyn.CREF(subident),
+				    Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident)),
 				    Absyn.CODE(Absyn.C_MODIFICATION(mod))
 				    ],[])))],_
-	    ),
+	    ), 
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) 
 	  => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
 
@@ -537,6 +537,18 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_IDENT(ident,_))],[])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	(* expressions *)
+	set_parameter_value(class,ident,exp,p) => (p',resstr)
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("setComponentModifierValue",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),
+				    Absyn.CREF(ident as Absyn.CREF_IDENT(_,_)),
+				    Absyn.CODE(Absyn.C_EXPRESSION(exp))
+				    ],[])))],_),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
 
   rule	(* special case for clearing modifier *)
 	set_component_modifier(class,ident,Absyn.CREF_IDENT("",[]),mod,p) 
