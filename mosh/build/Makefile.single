@@ -5,7 +5,7 @@
 # >make -f Makefile.single TARGET=algorithm_for1
 #
 
-MODEQ=$(MOSHHOME)/../modeq/modeq
+MODEQ=$(MOSHHOME)/../Compiler/modeq
 CC=gcc
 
 CRTHOME=$(MOSHHOME)/../c_runtime
