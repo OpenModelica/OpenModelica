@@ -1,0 +1,12 @@
+*.ast
+*.fol
+*.cps
+*.rdb
+*.c
+*.h
+*.sig
+Makefile
+modelica.pdf
+modelica.ps
+modeq.exe
+old-modelica.rml

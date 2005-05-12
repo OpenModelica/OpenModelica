@@ -37,14 +37,14 @@ setenv MODELICAUSERCFLAGS "~/src/myfunctions.o -L/usr/local/lib/ -llapack_CYGWIN
 
 For debugging purposes it can be useful to start mosh and modeq in two different termnials.
 For this use:
-modelica/modeq/modeq +d=interactive
+OpenModelica/Compiler/modeq +d=interactive
 
-modelica/mosh/src/mosh -noserv
+OpenModelica/mosh/src/mosh -noserv
 
 ( The -noserv argument will prevent mosh from starting its own modeq in the background )
 
 If you want to change the port number of the socket connection you
-will have to do it manually in mosh.cpp and modeq/main.rml.
+will have to do it manually in mosh.cpp and Compiler/Main.rml.
 
 
 Example Session

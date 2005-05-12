@@ -11,23 +11,23 @@ release: modeq
 
 modeqd:	
 	(cd c_runtime; $(MAKE) -f Makefile)
-	(cd modeq/rml2sig; $(MAKE) -f Makefile)
-	(cd modeq; $(MAKE) -f Makefile debug)
+	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
+	(cd Compiler; $(MAKE) -f Makefile debug)
 
 modeq:	
 	(cd c_runtime; $(MAKE) -f Makefile)
-	(cd modeq/rml2sig; $(MAKE) -f Makefile)
-	(cd modeq; $(MAKE) -f Makefile release)
+	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
+	(cd Compiler; $(MAKE) -f Makefile release)
 mosh:
 	(cd mosh/src; $(MAKE) -f Makefile)
 
 
 clean:
 	(cd c_runtime; $(MAKE) -f Makefile clean)
-	(cd modeq/rml2sig; $(MAKE) -f Makefile clean)
-	(cd modeq; $(MAKE) -f Makefile clean)
-	(cd modeq/modeq_debug; $(MAKE) -f Makefile clean)
-	(cd modeq/modeq_release; $(MAKE) -f Makefile clean)
+	(cd Compiler/rml2sig; $(MAKE) -f Makefile clean)
+	(cd Compiler; $(MAKE) -f Makefile clean)
+	(cd Compiler/modeq_debug; $(MAKE) -f Makefile clean)
+	(cd Compiler/modeq_release; $(MAKE) -f Makefile clean)
 	(cd mosh/src; $(MAKE) -f Makefile clean)
 
 

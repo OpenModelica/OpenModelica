@@ -1,107 +1,24 @@
 (*
-    Copyright (c) PELAB, Dept. Computer and Information Science, Linkoping University,
-    Sweden, in the following denoted PELAB/LIU.
-
+   Copyright PELAB, Linkoping University
    
-    This file is part of OpenModelica, in the following denoted OSM.
+   This file is part of Open Source Modelica (OSM).
 
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-    The OSM License, Version 1.1, March 4, 2005.
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-
-    1 Preface
-
-    The aim of this license is to lay down the conditions enabling you to use, 
-    modify and circulate OSM. However, PELAB/LIU remain the authors of 
-    OSM and so retain property rights and the use of all ancillary rights.
-
-    2 Definitions
-
-    OSM is defined as all successive versions of the OSM software and their 
-    documentation that have been developed by PELAB/LIU and including
-    accepted contributions from other contributors according to this license.
-
-    OSM DERIVED SOFTWARE is defined as all or part of OSM that you have 
-    modified and/or translated and/or adapted.
-
-
-    3 Dual License
-
-    OSM is made available under the OSM licensing scheme, which is a dual
-    licensing scheme with two options, a) and b):
-
-    a) OSM OPEN SOURCE LICENSE:
-
-    If you wish to write Open Source software you can use the Open Source version 
-    of OSM, released under the OSM license which include GPL as its open source 
-    licensing option. If you use the OSM Open Source version you must release your 
-    Application using OSM including this Application's source code under the GPL as well.
-
-    This OSM license text, and Copyright (c) PELAB/Linkoping University, must
-    be present in your copy of OSM and in OSM DERIVED SOFTWARE.
-
-    You should have received a copy of the GPL - GNU General Public License
+    You should have received a copy of the GNU General Public License
     along with OpenModelica; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
-    b) OSM COMMERCIAL LICENSE
-
-    If you are using OSM commercially - that is, for commercial usage or
-    for creating proprietary software for sale or use in a commercial setting
-    - you must purchase a commercial license of OSM from PELAB/LIU, which allows
-    you to use OSM without releasing your Application under the GPL.
-
-    Comment: Payments for OSM are intended for OSM development and
-    integration of accepted contributions into OSM.
-
-
-    4 Priority
-
-    If there is any conflict between this OSM License text and the GNU GPL
-    license, this text has priority.
-
-
-    5 Contributions 
-
-    PELAB/LIU reserves the right to accept or turn down source code contributions
-    to OSM.
-
-
-    6 Limitation of the warranty
-
-    Except when mentioned otherwise in writing, OSM is supplied as is, with 
-    no explicit or implicit warranty, including warranties of commercialization or 
-    adaptation. You assume all risks concerning the quality or the effects of
-    OSM and its use. If OSM is defective, you will bear the costs of 
-    all required services, corrections or repairs.
-
-
-    7 Consent
-
-    When you access and use OSM, you are presumed to be aware of and to 
-    have accepted all the rights and obligations of the present OSM license.
-    This includes accepting that your open source code contributions to OSM, 
-    if accepted into OSM by PELAB/IDA, follow the OSM licensing rules including
-    copyright and ownership by PELAB/IDA.
-
-
-    8 Binding effect
-
-    This license has the binding value of a contract.
-    You are not responsible for respect of the license by a third party.
-
-
-    9 Applicable law
-
-    The present license and its effects are subject to Swedish law and  
-    Swedish courts.
-
-
-    10 Contact information
-
-    See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
 *)
+
 (**
  ** file:	 absyn.rml
  ** module:      Absyn
@@ -115,7 +32,7 @@
  ** for printing the AST.
  **  
  ** absyn.rml's constructors are primarily used by the walker 
- ** (modeq/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
+ ** (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
  ** converts it into an RML abstract syntax tree.
  **
  ** When the AST has been built, it is normaly used by explode.rml in order to
@@ -128,7 +45,7 @@
  **)
 
 module Absyn:
-
+							  
   (** An identifier, for example a variable name *)
   type Ident = string
 
@@ -150,6 +67,7 @@ module Absyn:
 		   | IMPORT_DEFINITION of ElementSpec(* For split definitions*)
 					* Path option (* insert into. 
 						       Default, NONE *)
+		   | RML_FILE of Ident * RMLInterface list * RMLDefs list
 
 
   (** Within statements *)
@@ -190,11 +108,13 @@ module Absyn:
   datatype EnumLiteral = ENUMLITERAL of Ident	     (* Literal *)
 			 * Comment option	     (* comment *)
 
+
   (** A class definition contains several parts.  There are public and *)
   (** protected component declarations, type definitions and `extends' *)
   (** clauses, collectively called elements.  There are also equation *)
   (** sections and algorithm sections. The EXTERNAL part is used only by functions *)
   (** which can be declared as external C or FORTRAN functions. *)
+
   datatype ClassPart = PUBLIC of ElementItem list
 		     | PROTECTED of ElementItem list
 		     | EQUATIONS of EquationItem list
@@ -206,8 +126,7 @@ module Absyn:
   (** An element item is either an element or an annotation *)
   datatype ElementItem = ELEMENTITEM of Element 
 		       | ANNOTATIONITEM of Annotation 
-
-
+  (** An element item is either an element or an annotation *)
 
   (** - Elements *)
   (* The basic element type in Modelica *)
@@ -353,12 +272,20 @@ module Absyn:
 	       | RELATION of Exp * Operator * Exp (* Relations, e.g. a >= 0 *)
 	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list  (* If expressions *)
 	       | CALL of ComponentRef * FunctionArgs (* Function calls *)
-	       | ARRAY of Exp list (* Array construction using '{','}' or 'array' *)
-	       | MATRIX of Exp list list (* Matrix construction using '[', ']' *)
+(*	       | ARRAY of Exp list *)
+
+(*P.R		ARRAY consists of an vector of the dimension sizes and an vector consiting of the vector data.*)	
+	       | ARRAY of Exp list
+
+	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
-	       | TUPLE of Exp list  (* Tuples used in function calls returning several values *)
+	       | TUPLE of Exp list (*PR.*) (* Tuples used in function calls returning several values *)
 	       | END (* array access operator for last element, e.g. a[end]:=1; *)
 	       | CODE of Code (* Modelica AST Code constructors *)
+	       | RMLCALL of RMLIdent * Exp list
+               | RMLCONS of Exp * Exp
+               | RMLNIL
+               | RMLLIT of RMLLiteral (* FIXME in parser! *)
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
@@ -440,408 +367,73 @@ module Absyn:
 				* string option
 
   (* ExternalDecl *)
-  (* Declaration of an external function call *)
   datatype ExternalDecl = EXTERNALDECL of 
 				  Ident option  * (* The name of the external function *)
 				  string option * (* Lanugage of the external function *)
 				  ComponentRef option * (* ouput parameter as return value*)
 				  Exp list (* only positional arguments, i.e. expression list*)						     
-				   		       
 
 
-  relation element_spec_name : ElementSpec => Ident
-  relation cref_to_path : ComponentRef => Path
-  relation path_to_cref : Path => ComponentRef
-  relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef
-  relation path_string : Path => string
-  relation opt_path_string: Path option => string
-  relation path_string2 : (Path, string) => string
-  relation path_last_ident : Path => Ident
-  relation path_first_ident : Path => Ident
-  relation get_cref_from_exp : ( Exp ) => ComponentRef list 
-  relation cref_get_first : ComponentRef => ComponentRef 
-  relation join_paths: (Path, Path) => Path
-  relation strip_last: (Path) => Path 
-  relation print_restr : Restriction => ()
-  relation restr_string : Restriction => string
-  relation cref_equal: (ComponentRef, ComponentRef) =>  bool
-  relation print_absyn_exp : Exp => ()  
-  relation last_classname: Program => Path
-end
+  (* RML Stuff - work in progress *)
+  datatype RMLDatatype = DATATYPE of Ident * DTMember list
+
+  datatype RMLDecl = RELATION_INTERFACE of Ident * RMLSignature
+		   | DATATYPEDECL of RMLDatatype list
+		   | TYPE of Ident * RMLType
+		   | WITH of string
+                   | VALINTERFACE of Ident * RMLType
+                   | VALDEF of Ident * Exp
+                   | RELATION_DEFINITION of Ident * RMLSignature * RMLRule list
+                   | RMLDECLCOMMENT of string
+
+  type RMLInterface = RMLDecl
+  type RMLDefs      = RMLDecl
+
+  datatype RMLSignature = CALLSIGN of RMLType * RMLType
+
+  datatype RMLType = RMLTYPE_INT
+                   | RMLTYPE_STRING
+                   | RMLTYPE_REAL
+		   | RMLTYPE_LIST of RMLType
+                   | RMLTYPE_SIGNATURE of RMLSignature
+                   | RMLTYPE_TUPLE of RMLType list
+                   | RMLTYPE_TYVAR of RMLIdent
+                   | RMLTYPE_USERDEFINED of RMLIdent
+
+  datatype RMLRule = RMLRULE of Ident *
+                                RMLPattern list *
+                                RMLGoal *
+                                RMLResult
+
+  datatype RMLResult = RMLNoResult
+                     | RMLResultExp of Exp list
+                     | RMLResultFail
+
+  datatype RMLGoal = RMLGOAL_NOT of RMLGoal
+		   | RMLGOAL_AND of RMLGoal * RMLGoal
+                   | RMLGOAL_PAT of RMLPattern
+		   | RMLGOAL_LET of RMLPattern * Exp
+                   | RMLGOAL_EQUAL of Exp * Exp
+                   | RMLGOAL_RELATION of RMLIdent * Exp list * RMLPattern
+
+  datatype RMLPattern = RMLPAT_CALL of RMLIdent * RMLPattern list
+                      | RMLPAT_WILDCARD
+                      | RMLPAT_LITERAL of RMLLiteral
+                      | RMLPAT_IDENT of RMLIdent
+                      | RMLPAT_AS of Ident * RMLPattern
+                      | RMLPAT_CONS of RMLPattern * RMLPattern
+                      | RMLPAT_STRUCT of RMLPattern list
+                      | RMLPAT_NIL
+
+  datatype RMLIdent   = RMLSHORTID of Ident
+                      | RMLLONGID of Ident * Ident
+
+  datatype RMLLiteral = RMLLIT_INTEGER of int
+                      | RMLLIT_STRING of string
+                      | RMLLIT_REAL of real
+                      | RMLLIT_CHAR of int
+
+  datatype DTMember = DTCONS of Ident * RMLType list
 
 
-(** From here down, only absyn helper functions should be present. 
- Thus,no actual absyn datatype definitions. *)
-
-with "Debug.rml"
-with "Dump.rml"
-with "Util.rml"
-with "Print.rml"
-
-(** relation: element_spec_name
- **
- ** The `ElementSpec' type contans the name of the element, and this
- ** relation extracts this name.
- **)
-relation element_spec_name : ElementSpec => Ident =
-
-  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_,_)) => n
-
-  axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
-
-  rule  Print.print_buf "# element_spec_name EXTENDS\n"
-	-------------------------------------
-	element_spec_name EXTENDS(_,_) => fail
-
-end
-
-(** relation: path_string
- **
- ** This relation simply converts a `Path' to a `string'.
- **)
-
-relation path_string: Path => string =
-
-  rule	path_string2 (path, ".") => s
-	-----------------------------
-	path_string path => s
-end
-
-
-(** relation: opt_path_string
- **
- ** Returns a path converted to string or an empty string if nothing exist
- **)
-relation opt_path_string: Path option => string =
-
-  axiom	opt_path_string(NONE) => ""
-
-  rule	path_string(p) => str 
-	-----------------
-	opt_path_string(SOME(p)) => str
-end
-
-(** relation: 
- **
- ** Helper relation to path_string
- **)
-relation path_string2: (Path, string) => string =
-
-  axiom	path_string2(IDENT(s),_) => s
-  
-  rule	path_string2(n,str) => ns &
-	string_append(s,str) => s1 &
-	string_append(s1,ns) => ss
-	-------------------------------------
-	path_string2(QUALIFIED(s,n), str) => ss
-	
-end
-
-(** relation: path_last_ident
- **
- ** Returns the last ident (After last dot) in a paht
- **)
-relation path_last_ident : Path => Ident =
-	
-  rule	path_last_ident(p) => res
-	-------------------------
-	path_last_ident(QUALIFIED(_,p)) => res
-	
-  axiom	path_last_ident(IDENT(n)) => n
-
-end
-
-(** relation: path_first_ident
- **
- ** Returns the last ident (After last dot) in a paht
- **)
-relation path_first_ident : Path => Ident =
-
-  axiom	path_first_ident(QUALIFIED(n,p)) => n
-	
-  axiom	path_first_ident(IDENT(n)) => n
-end
-
-(** relation: get_cref_from_exp
- **
- ** Returns a flattened list of the component references 
- ** in an expression
- **)
-relation get_cref_from_exp: ( Exp ) => ComponentRef list =
-
-  axiom	get_cref_from_exp(INTEGER(_)) => []
-  axiom	get_cref_from_exp(REAL(_)) => []
-  axiom	get_cref_from_exp(STRING(_)) => []
-  axiom	get_cref_from_exp(BOOL(_)) => []
-  axiom	get_cref_from_exp(CREF(cr)) => [cr]
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res
-	-------------------------
-	get_cref_from_exp(BINARY(e1,op,e2)) => res
-
-  rule	get_cref_from_exp(e1) => res
-	----------------------------
-	get_cref_from_exp(UNARY(op,e1)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res
-	-------------------------
-	get_cref_from_exp(LBINARY(e1,op,e2)) => res
-
-  rule	get_cref_from_exp(e1) => res
-	----------------------------
-	get_cref_from_exp(LUNARY(op,e1)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res
-	-------------------------
-	get_cref_from_exp(RELATION(e1,op,e2)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res1 &
-	get_cref_from_exp(e3) => l3 &
-	list_append(res1,l3) => res
-	(* TODO elseif's e4 *)
-	---------------------------
-	get_cref_from_exp(IFEXP(e1,e2,e3,e4)) => res
-	
-  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	get_cref_from_farg(farg) => res
-	--------------------------------------------
-	get_cref_from_exp(CALL(_,farg)) => res
-
-
-  rule	Util.list_map(expl,get_cref_from_exp) => res1 &
-	Util.list_flatten(res1) => res
-	--------------------------------------------
-	get_cref_from_exp(ARRAY(expl)) => res
-
-  rule	Util.list_list_map(expll,get_cref_from_exp) => res1 & 
-	Util.list_flatten(res1) => res2 &
-	Util.list_flatten(res2) => res
-	----------------
-	get_cref_from_exp(MATRIX(expll)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res1 &
-	get_cref_from_exp(e3) => l3 &
-	list_append(res1,l3) => res
-	---------------------------
-	get_cref_from_exp(RANGE(e1,SOME(e3),e2)) => res
-
-  rule	get_cref_from_exp(e1) => l1 &
-	get_cref_from_exp(e2) => l2 &
-	list_append(l1,l2) => res 
-	---------------------------
-	get_cref_from_exp(RANGE(e1,NONE,e2)) => res
-	    
-  rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	Print.print_buf "Not implemented yet\n" 
-	------------------
-	get_cref_from_exp(TUPLE(expl)) => []
-
-end
-
-(** relation: get_cref_from_farg
- ** 
- ** Returns the flattened list of all component references 
- ** present in a list of function arguments.
- **)
-relation get_cref_from_farg: (FunctionArgs) => ComponentRef list =
-	
-  rule	Util.list_map(expl, get_cref_from_exp) => l1 &
-	Util.list_flatten(l1) => fl1 &
-	Util.list_map(nargl,get_cref_from_narg) => l2 &
-	Util.list_flatten(l2) => fl2 &
-	list_append(fl1,fl2) => res
-	--------------------------------------------
-	get_cref_from_farg (FUNCTIONARGS(expl,nargl)) => res
-
-end
-
-(** relation: get_cref_from_narg
- ** 
- ** Returns the flattened list of all component references 
- ** present in a list of named function arguments.
- **)
-relation get_cref_from_narg: (NamedArg) => ComponentRef list =
-	
-  rule	get_cref_from_exp(exp) => res
-	-----------------------------
-	get_cref_from_narg(NAMEDARG(_,exp)) => res
-end
-
-(** relation: join_paths
- **
- ** This relation joins two paths
- **)
-relation join_paths: (Path, Path) => (Path) =
-
-  axiom	join_paths(IDENT(str),p2) => QUALIFIED(str,p2) 
-	
-  rule	join_paths(p,p2) => p'
-	-----------------------
-	join_paths(QUALIFIED(str,p),p2) => QUALIFIED(str,p')
-end
-
-(** relation: strip_last
- **
- ** Returns the path given as argument to the relation
- ** minus the last ident.
- **)
-relation strip_last: (Path) => Path =
-
-  axiom	strip_last(IDENT(_)) => fail
-	
-  axiom	strip_last(QUALIFIED(str,IDENT(_))) => IDENT(str)
-
-  rule	strip_last(p) => p'
-	-------------------
-	strip_last(QUALIFIED(str,p)) => QUALIFIED(str,p')	
-end
-
-
-(** relation: cref_to_path
- **
- ** This relation converts a `ComponentRef' to a `Path', if possible.
- ** If the component reference contains subscripts, it will silently
- ** fail.
- **)
-relation cref_to_path : ComponentRef => Path =
-
-  axiom	cref_to_path CREF_IDENT(i,[]) => IDENT(i)
-
-  rule	cref_to_path c => p
-	-------------------
-	cref_to_path CREF_QUAL(i,[],c) => QUALIFIED(i,p)
-
-end
-
-(** relation: path_to_cref
- **
- ** This relation converts a Path to a ComponentRef.
- ** 
- **)
-relation path_to_cref : Path => ComponentRef =
-
-  axiom	path_to_cref IDENT(i) => CREF_IDENT(i,[])
-  rule	path_to_cref p => c
-	-------------------
-	path_to_cref QUALIFIED(i,p) => CREF_QUAL(i,[],c)
-end
-
-
-relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
-
-  axiom	join_crefs ( CREF_IDENT(id,sub),cr2) => CREF_QUAL(id,sub,cr2)
-	
-  rule	join_crefs(cr,cr2) => cr'
-	------------------------
-	join_crefs (CREF_QUAL(id,sub,cr),cr2) => CREF_QUAL(id,sub,cr')
-end 
-
-(** relation: cref_get_first
- **
- ** Returns first ident from a ComponentRef
- **)
-relation cref_get_first : ComponentRef => ComponentRef =
-
-  axiom	cref_get_first(CREF_IDENT(i,_)) => CREF_IDENT(i,[])
-
-  axiom	cref_get_first(CREF_QUAL(i,_,_)) => CREF_IDENT(i,[])
-
-end
-
-(** relation: restr_string
- ** 
- ** Maps a class restriction to the corresponding string for printing
- **)
-relation restr_string : Restriction => string =
-
-  axiom restr_string R_CLASS			=> "CLASS"
-  axiom	restr_string R_MODEL			=> "MODEL"
-  axiom	restr_string R_RECORD			=> "RECORD"
-  axiom restr_string R_BLOCK			=> "BLOCK"
-  axiom restr_string R_CONNECTOR		=> "CONNECTOR"
-  axiom restr_string R_TYPE			=> "TYPE"
-  axiom restr_string R_PACKAGE			=> "PACKAGE"
-  axiom restr_string R_FUNCTION			=> "FUNCTION"
-  axiom restr_string R_PREDEFINED_INT		=> "PREDEFINED_INT"
-  axiom restr_string R_PREDEFINED_REAL		=> "PREDEFINED_REAL"
-  axiom restr_string R_PREDEFINED_STRING	=> "PREDEFINED_STRING"
-  axiom restr_string R_PREDEFINED_BOOL		=> "PREDEFINED_BOOL"
-
-end
-
-(** relation: print_restr
- **
- ** This is a utility relation for printing a `Restriction'.  The code
- ** is excluded for brevity.
- **)
-relation print_restr : Restriction => () =
-
-  rule	restr_string restr => str &
-	Print.print_buf str
-	----------------
-	print_restr restr
-end
-
-(** relation: last_classname
- **
- ** Returns the path (=namse) of the last class in a program
- **)
-relation last_classname: Program => Path =
-
-  rule	Util.list_last(lst) => CLASS(id,_,_,_,_,_) 
-	-------------------------
-	last_classname(PROGRAM(lst,_)) => IDENT(id)
-end
-
-(** relation: print_absyn_exp 
- **
- ** Prints an Exp
- **)
-relation print_absyn_exp : Exp => () =
-  rule	Debug.print "This is an array: " &
-	Debug.print "[" &
-
-	Debug.print "]"
-	---------
-	print_absyn_exp (ARRAY(es))
-
-  rule	Debug.print "(" &
-	Debug.print ")"
-	---------
-	print_absyn_exp (TUPLE(es))
-
-
-  rule	Debug.print "\nNo tuple." 
-	---------
-	print_absyn_exp (_)
-end
-
-(** relation: cref_equal
- **
- ** Checks if the name of a ComponentRef is equal to the name of 
- ** another ComponentRef
- ** 
- **)
-relation cref_equal: (ComponentRef, ComponentRef) =>  bool =
-
-  rule	id = id2
-	-----------------------
-	cref_equal(CREF_IDENT(id,_),CREF_IDENT(id2,_)) => true
-
-  rule	id = id2 &
-	cref_equal(cr1,cr2) => true
-	---------------------------
-	cref_equal(CREF_QUAL(id,_,cr1),CREF_QUAL(id2,_,cr2)) => true
-
-  axiom	cref_equal(_,_) => false
 end

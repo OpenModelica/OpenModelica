@@ -43,7 +43,7 @@ package Boundaries
     
   end Arc;
   
-  package Circle 
+  package Circle
     extends Arc(Data(a_start=0, a_end=2*pi));
     
     // redeclare record Parameters = Arc.Parameters (a_start=0, a_end=2*Arc.pi);
@@ -73,7 +73,7 @@ package Boundaries
       parameter Point p;
       parameter Real w;
       parameter Real h;
-      
+
       parameter Bnd.Data bnddata(n=4, parts={bottom,right,top,left});
       parameter Line.Data bottom(
         p1=p, 
