@@ -1121,7 +1121,7 @@ end
           *)
 	 System.path_delimiter => pd &
 	 System.read_env("OPENMODELICAHOME") => omhome &
-	 Util.string_append_list([omhome, pd, "modeq", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
+	 Util.string_append_list([omhome, pd, "Compiler", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
 
 	 System.system_call(s_call) => 0 &
 	 Util.string_append_list([".", pd, cname_str]) => sim_call &
@@ -1204,7 +1204,7 @@ end
 	 System.pwd() => pwd &
 	 System.read_env("OPENMODELICAHOME") => omhome &
 	 System.path_delimiter => pd &
-	 Util.string_append_list([omhome,pd,"modeq",pd,"scripts",pd,"doPlot"]) => plotCmd &
+	 Util.string_append_list([omhome,pd,"Compiler",pd,"scripts",pd,"doPlot"]) => plotCmd &
 	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
@@ -1375,7 +1375,7 @@ end
 
   rule	System.read_env("OPENMODELICAHOME") => omhome &
          System.path_delimiter => pd &
-         Util.string_append_list([omhome,pd,"modeq",pd,"helptext.txt"]) => filename &
+         Util.string_append_list([omhome,pd,"Compiler",pd,"helptext.txt"]) => filename &
 	 print filename & 
 	 System.read_file(filename) => str 
 	 --------------------------
