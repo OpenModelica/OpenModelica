@@ -20,6 +20,7 @@
 #include "MyAST.h"
 
 using namespace std;
+string modelicafilename; // The filename for the parsed file.
 extern "C"
 {
 
@@ -44,6 +45,10 @@ extern "C"
 		* into the code. This way, if this relation fails at least the 
 		* ast is initialized */
 		void* ast = mk_nil();
+
+		// Set global filename, used to populate elements with
+		// corresponding file name.
+		modelicafilename=filestring;
 
 		//For parsing flat modelica (mof) files, if such is given
 		bool parseFlatModelica=false;

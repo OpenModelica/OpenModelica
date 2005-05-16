@@ -478,6 +478,29 @@ end
 relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) => 
 	(string, InteractiveSymbolTable) = 
 
+
+  rule	get_source_file(class,p) => resstr
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("getSourceFile",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class)],[])))],_
+	    ), 
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	  => (resstr,st)
+  
+  rule	set_source_file(class,filename,p) => (resstr,newp)
+	--------------------------------------------
+	evaluate_graphical_api(
+	    ISTMTS([IEXP(Absyn.CALL(
+		Absyn.CREF_IDENT("setSourceFile",_),
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),
+				    Absyn.STRING(filename)
+				    ],[])))],_
+	    ), 
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	  => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
+
   rule	set_extends_modifier_value(class,Absyn.CREF_IDENT(ident,[]),
 				   subident,mod,p) 
 	  => (newp,resstr)
@@ -502,12 +525,12 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
 
-  rule	get_extends_modifier_value(class,ident,subident,p) => resstr 
+  rule	get_extends_modifier_value(class,Absyn.CREF_IDENT(ident,[]),subident,p) => resstr 
 	--------------------------------------------
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("getExtendsModifierValue",_),
-		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident),Absyn.CREF(subident)],[])))],_
+		Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident))],[])))],_
 	    ),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
   rule	get_component_modifier_names(class,ident,p) => resstr 
@@ -546,7 +569,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 		Absyn.CREF_IDENT("setComponentModifierValue",_),
 		Absyn.FUNCTIONARGS([Absyn.CREF(class),
 				    Absyn.CREF(ident as Absyn.CREF_IDENT(_,_)),
-				    Absyn.CODE(Absyn.C_EXPRESSION(exp))
+				    Absyn.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(_,SOME(exp))))
 				    ],[])))],_),
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
 
@@ -605,7 +628,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
   rule update_program(
-      Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE))],Absyn.TOP),
+      Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile")],Absyn.TOP),
       p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
 	----------------------------------------
@@ -620,7 +643,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	Absyn.path_last_ident(path') => name &
 	Absyn.strip_last(path') => wpath &
 	update_program(
-	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE))],Absyn.WITHIN(wpath)),p) => newp &
+	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile")],Absyn.WITHIN(wpath)),p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv,cf)
 	---------------------------------------------------
 	evaluate_graphical_api(
@@ -632,7 +655,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 
   rule	Absyn.cref_to_path(cr) => path &
 	update_program(
-	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE))],Absyn.WITHIN(path)),
+	    Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile")],Absyn.WITHIN(path)),
 	    p) => newp &
 	let newst = SYMBOLTABLE(newp,s,ic,iv,cf) &
 	string_append(name,"\n") => resstr
@@ -1171,6 +1194,51 @@ relation get_class_env: (Absyn.Program, Absyn.Path) => Env.Env =
 
 end
 
+(** relation: get_source_file
+ ** author: PA
+ ** Retrieves the Source file attribute of a Class.
+ ** When parsing classes, the source file name is added to the Class definition
+ ** and to all Elements, see Absyn. This relation retrieves the source file
+ ** of the Class.
+ **)
+
+relation get_source_file: (Absyn.ComponentRef, (* class *)
+			   Absyn.Program) => string =
+  rule	Absyn.cref_to_path(class) => p_class &
+	get_pathed_class_in_program(p_class,p) => cdef &
+        Absyn.class_filename(cdef) => filename
+	---------------------------
+	get_source_file(class,p) => filename
+
+axiom	get_source_file(_,_) => "Error"
+
+end
+	
+(** relation: set_source_file
+ ** author: PA
+ **
+ ** Sets the source file of a Class. Is for instance used
+ ** when adding a new class to an aldready stored package.
+ ** The class should then have the same file as the package.
+ **)
+
+relation set_source_file: (Absyn.ComponentRef, (* class *)
+			   string, (* filename *)
+			   Absyn.Program) 
+	  => (string,
+	      Absyn.Program) =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	get_pathed_class_in_program(p_class,p) => cdef &
+ 	build_within(p_class) => within &
+	Absyn.set_class_filename(cdef,filename) => cdef' &
+ 	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
+	----------------------------
+	set_source_file(class,filename,p) => ("Ok",newp)
+	
+  axiom	set_source_file(_,_,p) => ("Error" ,p)
+end
+
 (** relation: set_extends_modifier_value
  ** This relation sets the submodifier value of an extends clause in a Class.
  ** for instance,
@@ -1217,9 +1285,9 @@ relation set_extends_submodifier_in_class:(Absyn.Class,
 	  => parts'
 	  ---------------------------------------------------------
 	set_extends_submodifier_in_class(Absyn.CLASS(id,p,f,e,r,
-						       Absyn.PARTS(parts,cmt)),
+						       Absyn.PARTS(parts,cmt),file),
 					   inherit_name, submod,mod,env)
-	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt))
+	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file)
 end
 
 (** relation: set_extends_submodifier_in_classparts
@@ -1403,7 +1471,7 @@ relation get_extends_elementspec_in_class: (Absyn.Class)
 
   rule	get_extends_elementspec_in_classparts(parts) => ext
 	-------------------------
-	get_extends_elementspec_in_class( Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) => ext
+	get_extends_elementspec_in_class( Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) => ext
 
   axiom	get_extends_elementspec_in_class(_) => []
 end
@@ -1501,9 +1569,9 @@ relation set_component_submodifier_in_class: (Absyn.Class,
 	  => parts'
 	  ---------------------------------------------------------
 	set_component_submodifier_in_class(Absyn.CLASS(id,p,f,e,r,
-						       Absyn.PARTS(parts,cmt)),
+						       Absyn.PARTS(parts,cmt),file),
 					   varname, submodident,mod)
-	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt))
+	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file)
 end
 
 (** relation: set_component_submodifier_in_classparts
@@ -1853,9 +1921,9 @@ relation set_variable_binding_in_class:(Absyn.Class,Absyn.Ident,Absyn.Exp)
 
   rule	set_variable_binding_in_classparts(parts,id2,exp) => parts'
 	---------------------------------------------------------
-	set_variable_binding_in_class(Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts,cmt)),
+	set_variable_binding_in_class(Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts,cmt),file),
 				      id2,exp)
-	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt))
+	  => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file)
 end
 
 (** relation set_variable_binding_in_classparts
@@ -2023,8 +2091,8 @@ relation rename_class_visitor: ((Absyn.Class* (Absyn.Path*string)))
   rule	Absyn.path_last_ident(old_class) => id2 &
 	id = id2 
 	----------------
-	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e),(old_class,new_name)))
-	  => ((Absyn.CLASS(new_name,a,b,c,d,e),(old_class,new_name)))
+	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,f),(old_class,new_name)))
+	  => ((Absyn.CLASS(new_name,a,b,c,d,e,f),(old_class,new_name)))
 
   axiom	rename_class_visitor((class,args)) => ((class,args))
 
@@ -2086,8 +2154,8 @@ end
   rule  traverse_inner_class_parts(parts,visitor,args,visit_prot) => ((parts',args'))
 	 
 	 --------------------------------------------------------------
-	 traverse_inner_class(Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts,str_opt)),visitor,args,visit_prot) 
-	  => ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts',str_opt)),args'))
+	 traverse_inner_class(Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts,str_opt),file),visitor,args,visit_prot) 
+	  => ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts',str_opt),file),args'))
 	   
   axiom	traverse_inner_class(cl,_,args,_) => ((cl,args))
 
@@ -2238,16 +2306,16 @@ relation delete_class_from_list: (Absyn.Class, Absyn.Class list)
 
   rule name = name2
 	-------------------------------------------------------------------------------------------
-  delete_class_from_list(Absyn.CLASS(name,_,_,_,_,_), Absyn.CLASS(name2,_,_,_,_,_)::xs) => xs
+  delete_class_from_list(Absyn.CLASS(name,_,_,_,_,_,_), Absyn.CLASS(name2,_,_,_,_,_,_)::xs) => xs
 
   rule not name = name2 &
   delete_class_from_list(cdef, xs) => res
 	--------------------------------------
-  delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_), (x as Absyn.CLASS(name2,_,_,_,_,_))::xs) => x::res
+  delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_,_), (x as Absyn.CLASS(name2,_,_,_,_,_,_))::xs) => x::res
 
   rule delete_class_from_list(cdef, xs) => res
 	--------------------------------------
-  delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_), x::xs) => x::res
+  delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_,_), x::xs) => x::res
 end
 
 (** relation: is_type 
@@ -2258,7 +2326,7 @@ end
 relation is_type: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_TYPE,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_TYPE,_,_) 
 	----------------------------
 	is_type(cr,p) => true
 
@@ -2273,7 +2341,7 @@ end
 relation is_connector: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_,_) 
 	----------------------------
 	is_connector(cr,p) => true
 
@@ -2288,7 +2356,7 @@ end
 relation is_model: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_MODEL,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_MODEL,_,_) 
 	----------------------------
 	is_model(cr,p) => true
 
@@ -2303,7 +2371,7 @@ end
 relation is_record: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_RECORD,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_RECORD,_,_) 
 	----------------------------
 	is_record(cr,p) => true
 
@@ -2318,7 +2386,7 @@ end
 relation is_block: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK,_,_) 
 	----------------------------
 	is_block(cr,p) => true
 
@@ -2333,7 +2401,7 @@ end
 relation is_function: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION,_,_) 
 	----------------------------
 	is_function(cr,p) => true
 
@@ -2348,7 +2416,7 @@ end
 relation is_package: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE,_,_) 
 	----------------------------
 	is_package(cr,p) => true
 
@@ -2363,7 +2431,7 @@ end
 relation is_class: (Absyn.ComponentRef, Absyn.Program) => bool =
 	
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_CLASS,_) 
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,Absyn.R_CLASS,_,_) 
 	----------------------------
 	is_class(cr,p) => true
 
@@ -2378,7 +2446,7 @@ end
 relation is_parameter: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program) => bool =
 
   rule	Absyn.cref_to_path(classname) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) &
 	get_public_list(parts) => publst &
 	get_components_contains_name(cr,publst) => Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.PARAM,_,_),_,_) 
 	------------------------
@@ -2394,14 +2462,14 @@ end
 relation is_protected: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program) => bool =
 
   rule	Absyn.cref_to_path(classname) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) &
 	get_public_list(parts) => publst &
 	get_components_contains_name(cr,publst) => _
 	------------------------
 	is_protected (cr,classname,p) => false
 
   rule	Absyn.cref_to_path(classname) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) &
 	get_protected_list(parts) => protlst &
 	get_components_contains_name(cr,protlst) => _
 	---------------------------------------------
@@ -2417,7 +2485,7 @@ end
 relation is_constant: (Absyn.ComponentRef, Absyn.ComponentRef, Absyn.Program) => bool =
 
   rule	Absyn.cref_to_path(classname) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) &
 	get_public_list(parts) => publst &
 	get_components_contains_name(cr,publst) => Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.CONST,_,_),_,_) 
 	------------------------
@@ -2467,17 +2535,17 @@ end
 
 relation is_primitive_class: (Absyn.Class,Absyn.Program) => bool =
 	
-  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_INT,_),_) => true
-  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_REAL,_),_) => true
-  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_STRING,_),_) => true
-  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_BOOL,_),_) => true
-  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_TYPE,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_INT,_,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_REAL,_,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_STRING,_,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_BOOL,_,_),_) => true
+  axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_TYPE,_,_),_) => true
 	
   rule	Absyn.cref_to_path(Absyn.CREF_IDENT(cname,[])) => inmodel &
 	lookup_classdef(path,inmodel,p)=> (cdef,_) &
 	is_primitive_class(cdef,p) => res
 	-------------------------------
-	is_primitive_class(Absyn.CLASS(cname,_,_,_,Absyn.R_CLASS,Absyn.DERIVED(path,_,_,_,_)),p) => res
+	is_primitive_class(Absyn.CLASS(cname,_,_,_,Absyn.R_CLASS,Absyn.DERIVED(path,_,_,_,_),_),p) => res
 
 end
 
@@ -2488,7 +2556,7 @@ relation remove_compiled_functions: (Absyn.Program, (Absyn.Path * Types.Type) li
 	    => (Absyn.Path * Types.Type) list =
   rule	remove_cf(id,cfs) => cfs'
 	-----------------
-	remove_compiled_functions(Absyn.PROGRAM([Absyn.CLASS(id,_,_,_,Absyn.R_FUNCTION,_)],_),cfs) => cfs'
+	remove_compiled_functions(Absyn.PROGRAM([Absyn.CLASS(id,_,_,_,Absyn.R_FUNCTION,_,_)],_),cfs) => cfs'
   axiom	remove_compiled_functions(_,cfs) => cfs
 end
 
@@ -2518,7 +2586,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
   axiom	update_program (Absyn.PROGRAM([],_),prg) => prg
      
   rule	(* For split definitions at top, when introducing new model, eg. "package A" *)
-	let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE)) &
+	let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile") &
 	update_program(Absyn.PROGRAM([newclass],Absyn.TOP),oldp) => newp
 	-------------------------------------------------------
 	update_program(Absyn.BEGIN_DEFINITION(Absyn.IDENT(name),restr,p,e),oldp) => newp
@@ -2526,7 +2594,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
   rule	(* For split definitions not at top,  eg. "package A.B" *)
 	Absyn.strip_last(path) => w &
 	Absyn.path_last_ident(path) => name &
-	let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE)) &
+	let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile") &
 	update_program(Absyn.PROGRAM([newclass],Absyn.WITHIN(w)),oldp) => newp
 	-------------------------------------------------------
 	update_program(Absyn.BEGIN_DEFINITION(path as Absyn.QUALIFIED(_,_),
@@ -2536,13 +2604,13 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
   rule	class_in_program(name,p2) => false &
 	update_program(Absyn.PROGRAM(c2,w),Absyn.PROGRAM((c1::c3),w2)) => pnew
 	---------------------------------------------------------
-	update_program (Absyn.PROGRAM((c1 as Absyn.CLASS(name,_,_,_,_,_))::c2,w as Absyn.TOP),p2 as Absyn.PROGRAM(c3,w2)) => pnew
+	update_program (Absyn.PROGRAM((c1 as Absyn.CLASS(name,_,_,_,_,_,_))::c2,w as Absyn.TOP),p2 as Absyn.PROGRAM(c3,w2)) => pnew
 
   rule	class_in_program(name,p2) => true &
 	update_program(Absyn.PROGRAM(c2,w),p2) => pnew &
         replace_class_in_program(c1,pnew) => pnew' 
 	------------------------------------------
-	update_program (Absyn.PROGRAM((c1 as Absyn.CLASS(name,_,_,_,_,_))::c2,w as Absyn.TOP),p2) => pnew'
+	update_program (Absyn.PROGRAM((c1 as Absyn.CLASS(name,_,_,_,_,_,_))::c2,w as Absyn.TOP),p2) => pnew'
 	
   rule	insert_class_in_program(c1,w,p2) => pnew &
 	update_program(Absyn.PROGRAM(c2,w),pnew) => pnew' 
@@ -2791,19 +2859,19 @@ relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) => (Absyn.Clas
 	lookup_classdef(path,_,p) => (cdef,path)
 
   axiom	lookup_classdef(Absyn.IDENT("Real"),_,_) => 
-	(Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL,Absyn.PARTS([],NONE)), 
+	(Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL,Absyn.PARTS([],NONE),"NoFile"), 
 	 Absyn.IDENT("Real"))
 
   axiom	lookup_classdef(Absyn.IDENT("Integer"),_,_) => 
-	(Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INT,Absyn.PARTS([],NONE)), 
+	(Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INT,Absyn.PARTS([],NONE),"NoFile"), 
 	 Absyn.IDENT("Integer"))
 
   axiom	lookup_classdef(Absyn.IDENT("String"),_,_) => 
-	(Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING,Absyn.PARTS([],NONE)), 
+	(Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING,Absyn.PARTS([],NONE),"NoFile"), 
 	 Absyn.IDENT("String"))
 
   axiom	lookup_classdef(Absyn.IDENT("Boolean"),_,_) => 
-	(Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([],NONE)), 
+	(Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([],NONE),"NoFile"), 
 	 Absyn.IDENT("Boolean"))
 
   rule	Print.print_error_buf "#Error, lookup_classdef failed\n" &
@@ -2865,8 +2933,8 @@ relation delete_component_from_class: (string, Absyn.Class)
 	l1' = l2 &
 	replace_public_list(parts,publst2) => parts2 
 	--------------------------------------------
-	delete_component_from_class(name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt))) 
-	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	delete_component_from_class(name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file)) 
+	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file)
 
 	(* Search in protected list *)
   rule	get_protected_list(parts) => protlst &
@@ -2877,8 +2945,8 @@ relation delete_component_from_class: (string, Absyn.Class)
 	l1' = l2 &
 	replace_protected_list(parts,protlst2) => parts2 
 	--------------------------------------------
-	delete_component_from_class(name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt))) 
-	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	delete_component_from_class(name, Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file)) 
+	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file)
 end	
 
 relation delete_component_from_elementitems: (string, Absyn.ElementItem list) 
@@ -2957,7 +3025,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	Absyn.cref_to_path(model) => modelpath &
 	Absyn.strip_last(modelpath) => modelwithin &
 	delete_component(name,model,p) => (p',_) &
-	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	get_pathed_class_in_program(modelpath,p') => cdef &
 	get_public_list(parts) => publst &
 	get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
@@ -2979,7 +3047,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	Absyn.cref_to_path(model) => modelpath &
 	Absyn.strip_last(modelpath) => modelwithin &
 	delete_component(name,model,p) => (p',_) &
-	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	get_pathed_class_in_program(modelpath,p') => cdef &
 	get_protected_list(parts) => protlst &
 	get_components_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
@@ -3003,7 +3071,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	Absyn.cref_to_path(tp) => tppath &
 	delete_component(name,model,p) => (p',_) &
 	get_pathed_class_in_program(modelpath,p') => cdef &
-	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	get_public_list(parts) => publst &
 	get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
 	  =>Absyn.COMPONENTS(attr,tp,items) &
@@ -3026,7 +3094,7 @@ relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,Absyn.
 	Absyn.cref_to_path(tp) => tppath &
 	delete_component(name,model,p) => (p',_) &
 	get_pathed_class_in_program(modelpath,p') => cdef &
-	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) &
+	get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	get_protected_list(parts) => protlst &
 	get_components_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
 	  =>Absyn.COMPONENTS(attr,tp,items) &
@@ -3082,7 +3150,7 @@ relation add_class_annotation_to_class: ( Absyn.Class, Absyn.NamedArg list)
 	annotation_list_to_absyn(nargs) => annotation &
 	add_to_public(cdef,Absyn.ANNOTATIONITEM(annotation)) => cdef' 
 	------------------------------------------------------------
-	add_class_annotation_to_class(cdef as Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)),nargs) => cdef'
+	add_class_annotation_to_class(cdef as Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_),nargs) => cdef'
 
   rule	get_public_list(parts) => publst &
 	get_element_annotation_in_elements(publst) => Absyn.ANNOTATIONITEM(oldann) &
@@ -3091,8 +3159,8 @@ relation add_class_annotation_to_class: ( Absyn.Class, Absyn.NamedArg list)
 	replace_element_annotation_in_elements(publst,newann') => publst2 &
 	replace_public_list(parts,publst2) => parts2 
 	--------------------------------
-	add_class_annotation_to_class(cdef as Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),nargs)
-	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	add_class_annotation_to_class(cdef as Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file),nargs)
+	=> Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file)
 end
 
 (** relation: replace_element_annotation_in_elements
@@ -3277,25 +3345,25 @@ end
 
 relation count_components: Absyn.Class => int =
 
-  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => c1 &
+  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file) => c1 &
 	count_components_in_elts(elt) => c2 &
 	int_add(c1,c2) => res
 	---------------------
-	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)) 
+	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt),file) 
 	    => res
 
-  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => c1 &
+  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file) => c1 &
 	count_components_in_elts(elt) => c2 &
 	int_add(c1,c2) => res
 	---------------------
-	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)) 
+	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt),file) 
 	    => res
-  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)) => res
+  rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file) => res
 	-----------------------------------------------------
-	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)) => res
+	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file) => res
 	
-  axiom count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],_)) => 0
-  axiom count_components Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)) => -1
+  axiom count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],_),_) => 0
+  axiom count_components Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_),_) => -1
 end
 
 relation count_components_in_elts: Absyn.ElementItem list => int =
@@ -3547,8 +3615,8 @@ relation delete_equation_in_class: (Absyn.Class, Absyn.ComponentRef, Absyn.Compo
 	delete_equation_in_eqlist(eqlst,c1,c2) => eqlst' &
 	replace_equation_list(parts,eqlst') => parts2 
 	----------------------------
-	delete_equation_in_class(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),c1,c2)
-	  => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	delete_equation_in_class(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file),c1,c2)
+	  => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file)
 end
 
 relation delete_equation_in_eqlist: (Absyn.EquationItem list, Absyn.ComponentRef,Absyn.ComponentRef) => Absyn.EquationItem list =
@@ -3703,7 +3771,7 @@ relation get_top_packages_in_program: Absyn.Program => string list =
 	
   rule	get_top_packages_in_program (Absyn.PROGRAM(rest,w)) => res
 	-----------------------------------------
-	get_top_packages_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,_,Absyn.R_PACKAGE,_)::rest,w)) => id::res
+	get_top_packages_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,_,Absyn.R_PACKAGE,_,_)::rest,w)) => id::res
 
   rule	get_top_packages_in_program (Absyn.PROGRAM(rest,w)) => res
 	------------------------------------------
@@ -3720,12 +3788,12 @@ relation get_packages_in_class:(Absyn.Path, Absyn.Program, Absyn.Class) => strin
   rule	get_packages_in_parts(parts) => strlist &
 	Util.string_delimit_list(strlist,",") => res
 	-------------------------------------
-	get_packages_in_class(_,_,Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,cmt))) => res
+	get_packages_in_class(_,_,Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,cmt),_)) => res
 
   rule	lookup_classdef(path,inmodel,p) => (cdef,newpath) &
 	get_packages_in_class(newpath,p,cdef) => res 
 	--------------------------------------------
-	get_packages_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_))) => res
+	get_packages_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_),_)) => res
 end
 
 
@@ -3749,7 +3817,7 @@ relation get_packages_in_elts: (Absyn.ElementItem list) => string list =
 	
   rule	get_packages_in_elts(rest) => res
 	--------------------------------
-	get_packages_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,Absyn.R_PACKAGE,_)),_,_,NONE))::rest) => id::res
+	get_packages_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,Absyn.R_PACKAGE,_,_)),_,_,NONE))::rest) => id::res
 
   rule	get_packages_in_elts(rest) => res
 	--------------------------------
@@ -3790,7 +3858,7 @@ relation get_top_classnames_in_program: Absyn.Program => string list =
 	
   rule	get_top_classnames_in_program (Absyn.PROGRAM(rest,w)) => res 
 	-----------------------------------------
-	get_top_classnames_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,_,_,_)::rest,w)) => id::res
+	get_top_classnames_in_program (Absyn.PROGRAM(Absyn.CLASS(id,_,_,_,_,_,_)::rest,w)) => id::res
 
   rule	get_top_classnames_in_program (Absyn.PROGRAM(rest,w)) => res
 	------------------------------------------
@@ -3807,12 +3875,12 @@ relation get_classnames_in_class:(Absyn.Path, Absyn.Program, Absyn.Class) => str
   rule	get_classnames_in_parts(parts) => strlist &
 	Util.string_delimit_list(strlist,",") => res
 	-------------------------------------
-	get_classnames_in_class(_,_,Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) => res
+	get_classnames_in_class(_,_,Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) => res
 
   rule	lookup_classdef(path,inmodel,p) => (cdef,newpath) &
 	get_classnames_in_class(newpath,p,cdef) => res 
 	--------------------------------------------
-	get_classnames_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_))) => res
+	get_classnames_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_),_)) => res
 end
 
 
@@ -3836,7 +3904,7 @@ relation get_classnames_in_elts: (Absyn.ElementItem list) => string list =
 	
   rule	get_classnames_in_elts(rest) => res
 	--------------------------------
-	get_classnames_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,_,_)),_,_,NONE))::rest) => id::res
+	get_classnames_in_elts ( Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(id,_,_,_,_,_,_)),_,_,NONE))::rest) => id::res
   rule	get_classnames_in_elts(rest) => res
 	--------------------------------
 	get_classnames_in_elts (_::rest) => res
@@ -3851,7 +3919,7 @@ relation get_base_classes : (Absyn.Class, Env.Env)
 
   rule	get_base_classes_from_parts(parts, env) => res 
 	-----------------------------------------
-	get_base_classes (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)),env) 
+	get_base_classes (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_),env) 
 	  => res
 
   axiom	get_base_classes (_,_) => []
@@ -3912,7 +3980,7 @@ relation count_base_classes : (Absyn.Class)
 
   rule	count_base_classes_from_parts(parts) => res 
 	-----------------------------------------
-	count_base_classes (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) 
+	count_base_classes (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) 
 	  => res
 
   axiom	count_base_classes (_) => 0
@@ -3970,7 +4038,7 @@ relation get_icon_annotation_in_class : (Absyn.Class) => string =
 	string_append("{",s1) => s2 &
 	string_append(s2,"}") => str 
 	------------------------
-	get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) 
+	get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) 
 	  => str	
 end
 
@@ -4103,7 +4171,7 @@ relation get_diagram_annotation_in_class : (Absyn.Class) => string =
 	list_append(publst,protlst) => lst &
 	get_diagram_annotation_in_elementitemlist(lst) => str
 	----------------------------
-	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) => str	
+	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) => str	
 end
 
 relation get_diagram_annotation_in_elementitemlist: (Absyn.ElementItem list) => string =
@@ -4136,20 +4204,20 @@ relation get_nth_public_connector_str: (Absyn.Path, Absyn.Class, Absyn.Program, 
 	
   rule	get_nth_connector_str (p, modelpath, elt, n) => (str,tp)
 	------------------------------------------
-	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,_)), p, n)  
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,_),_), p, n)  
 	  => (str,tp)
 	
 	(** The rule above failed, count the number of connectors in the first public list, subtract the number 
 	 ** and try the rest of the list **)
-  rule	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([Absyn.PUBLIC(elt)],cmt))) => c1 &
+  rule	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([Absyn.PUBLIC(elt)],cmt),file)) => c1 &
 	int_sub(n,c1) => c2 &
-	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)),p,c2) => (str,tp)
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file),p,c2) => (str,tp)
 	--------------------------------------------------
-	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)), p, n) => (str,tp)
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt),file), p, n) => (str,tp)
 	
-  rule	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)), p, n) => (str,tp)
+  rule	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file), p, n) => (str,tp)
 	-----------------------------------------------------
-	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)), p, n) => (str,tp)
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file), p, n) => (str,tp)
 	
 end
 
@@ -4174,7 +4242,7 @@ relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem li
 	-----------------
 	get_nth_connector_str(p,modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),_,_,NONE))::lst,n) => (str,tp) 
 
-  rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
+  rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_,_), newmodelpath) &
 	get_nth_compname(complst,n) => str 
 	----------------------------------
 	get_nth_connector_str(p, modelpath, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,tp,complst),_,_,NONE))::lst, n) 
@@ -4182,7 +4250,7 @@ relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem li
 
   rule	(** Not so fast, since we lookup and instantiate two times just because this was not 
 	 ** the connector we were looking for. **)
-	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
+	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_,_), newmodelpath) &
 	list_length(complst) => c1 &
 	int_sub(n,c1) => newn &
 	get_nth_connector_str(p,modelpath,lst,newn) => (str,tp)
@@ -4213,23 +4281,23 @@ end
  *)
 relation count_public_connectors: (Absyn.Path, Absyn.Program, Absyn.Class) => int =
 	
-  rule	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => c1 &
+  rule	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => c1 &
 	count_connectors(modelpath,p,elt) => c2 &
 	int_add(c1,c2) => res
 	---------------------
-	count_public_connectors (modelpath, p,  Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt))) 
+	count_public_connectors (modelpath, p,  Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt),file)) 
 	    => res
 	    
-  rule	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => res
+  rule	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => res
 	-----------------------------------------------------
-	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt))) => res
+	count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file)) => res
 	
-  axiom count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) => 0
+  axiom count_public_connectors (modelpath, p, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),file)) => 0
 
   rule	lookup_classdef(cname,modelpath,p) => (cdef,newmodelpath) &
 	count_public_connectors (newmodelpath,p,cdef) => res
 	--------------------------------------------------
-	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(cname,_,_,_,_))) => res
+	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(cname,_,_,_,_),_)) => res
 end
 
 (** relation: count_connectors
@@ -4245,7 +4313,7 @@ relation count_connectors: (Absyn.Path, Absyn.Program, Absyn.ElementItem list) =
 	---------------------
 	count_connectors(modelpath, p, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.EXTENDS(tp,_),_,_,NONE))::lst) => res
 
-  rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_), newmodelpath) &
+  rule	lookup_classdef(tp,modelpath,p) => (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR,_,_), newmodelpath) &
 	list_length(complst) => c1 &
 	count_connectors(modelpath,p,lst) => c2 &
 	int_add(c1,c2) => res
@@ -4306,7 +4374,7 @@ relation get_nth_connectionitem_in_class: (Absyn.Class, int) => Absyn.EquationIt
 
   rule	get_nth_connectionitem_in_classparts(parts,n) => eq
 	-------------------------
-	get_nth_connectionitem_in_class ( Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)),n) => eq
+	get_nth_connectionitem_in_class ( Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_),n) => eq
 end
 
 (**relation: get_nth_connectionitem_in_classparts
@@ -4378,7 +4446,7 @@ relation count_connections: Absyn.Class => int =
 	
   rule	count_connections_in_classparts(parts) => count
 	-----------------------------------------------
-	count_connections Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)) => count
+	count_connections Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) => count
 end
 
 (** relation: count_connections_in_classparts
@@ -4699,21 +4767,21 @@ end
 **)
 relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
 
-  axiom	 get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) => []
+  axiom	 get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
 	  
   (* Search in public list *)
-  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
+  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
 	get_components_in_elementitems(elts) => lst2 &
 	list_append(lst2,lst1) => res
 	------------------------------
-	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt))) => res
+	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt),file)) => res
 
   (* Search in protected list *)
-  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
+  rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
 	get_components_in_elementitems(elts) => lst2 &
 	list_append(lst2,lst1) => res
 	------------------------------
-	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt))) => res
+	get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt),file)) => res
 
   axiom	get_components_in_class(_) => []
 end
@@ -4739,7 +4807,7 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	int_le(n,count) => true &
 	get_nth_component_in_elementitems(elt,n) => res
 	-----------------------------------------------
-	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt)),n) 
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt),file),n) 
 	    => res
 	    
 	    (* The rule above failed, i.e the nth number is larger than # elements in first public list *)
@@ -4748,13 +4816,13 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	int_sub(n,c1) => newn &
 	int_string(newn) => newnstr &
 	int_gt(newn,0) =>  true &
-	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt)),newn) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file),newn) => res
 	------------------------------------------------------------------------------------
-	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::rest,cmt)),n) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::rest,cmt),file),n) => res
 
   rule	get_nth_component_in_elementitems(elt,n) => res
 	-----------------------------------------------
-	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt)),n) 
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::lst,cmt),file),n) 
 	    => res
 	    
 	    (* The rule above failed, i.e the nth number is larger than # elements in first public list *)
@@ -4762,16 +4830,16 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
   rule	count_components_in_elts(elt) => c1 &
 	int_sub(n,c1) => newn &
 	int_gt(newn,0) => true &
-	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt)),newn) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file),newn) => res
 	------------------------------------------------------------------------------------
-	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::rest,cmt)),n) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elt)::rest,cmt),file),n) => res
 
-  rule	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt)),n) => res
+  rule	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file),n) => res
 	-----------------------------------------------------------------------
-	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt)),n) => res
+	get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file),n) => res
 	
-  axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt)),_) => fail
-  axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_)),_) => fail
+  axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),file),_) => fail
+  axiom get_nth_component_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_),file),_) => fail
 
 end
 
@@ -4781,19 +4849,19 @@ end
 **)
 relation get_elementitems_in_class: (Absyn.Class) => Absyn.ElementItem list =
 
-  axiom	 get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt))) => []
+  axiom	 get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
 	  
         (* Search in public list *)
-  rule	get_elementitems_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
+  rule	get_elementitems_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
         list_append(elts,lst1) => lst 
 		------------------------------
-	    get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt))) => lst
+	    get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt),file)) => lst
         
         (* Search in protected list *)
-  rule	get_elementitems_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt))) => lst1 &
+  rule	get_elementitems_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
         list_append(elts,lst1) => lst 
 	    ------------------------------
-	    get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt))) => lst
+	    get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt),file)) => lst
         
   axiom get_elementitems_in_class(_) => []
 end
@@ -4941,13 +5009,13 @@ relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class =
 	list_append(publst,[eitem]) => publst2 &
 	replace_public_list(parts,publst2) => parts2 
 	--------------------------------------------
-	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)), eitem) 
-	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file), eitem) 
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file)
 
-  axiom	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_)),eitem) => fail
+  axiom	add_to_public ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_),file),eitem) => fail
 
-  axiom	add_to_public(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),eitem)
-	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(Absyn.PUBLIC([eitem])::parts,cmt))
+  axiom	add_to_public(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file),eitem)
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(Absyn.PUBLIC([eitem])::parts,cmt),file)
 
 end
 
@@ -4961,13 +5029,13 @@ relation add_to_protected: (Absyn.Class, Absyn.ElementItem) => Absyn.Class =
 	list_append(protlst,[eitem]) => protlst2 &
 	replace_protected_list(parts,protlst2) => parts2 
 	--------------------------------------------
-	add_to_protected ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)), eitem) 
-	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	add_to_protected ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file), eitem) 
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file)
 
-  axiom	add_to_protected ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_)),eitem) => fail
+  axiom	add_to_protected ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_),file),eitem) => fail
 
-  axiom	add_to_protected(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),eitem)
-	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(Absyn.PROTECTED([eitem])::parts,cmt))
+  axiom	add_to_protected(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file),eitem)
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(Absyn.PROTECTED([eitem])::parts,cmt),file)
 
 end
 
@@ -4981,16 +5049,16 @@ relation add_to_equation: (Absyn.Class, Absyn.EquationItem) => Absyn.Class =
 	let eqlst2 = eitem::eqlst &
 	replace_equation_list(parts,eqlst2) => parts2 
 	--------------------------------------------
-	add_to_equation ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)), eitem) 
-	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt))
+	add_to_equation ( Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file), eitem) 
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file)
 
-  axiom	add_to_equation ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_)),eitem) => fail
+  axiom	add_to_equation ( Absyn.CLASS(i,p,f,e,r,Absyn.DERIVED(_,_,_,_,_),file),eitem) => fail
 
   rule	(* Add the equations last, to make nicer output if public section present *)
 	list_append(parts,[Absyn.EQUATIONS([eitem])]) => newparts
 	------------------
-	add_to_equation(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt)),eitem)
-	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(newparts,cmt))
+	add_to_equation(Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,cmt),file),eitem)
+	    => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(newparts,cmt),file)
 end
 
 
@@ -5002,14 +5070,14 @@ relation replace_class_in_program: (Absyn.Class, Absyn.Program) => Absyn.Program
   axiom replace_class_in_program(c, Absyn.PROGRAM([],w)) => Absyn.PROGRAM([c],w)
   rule	name1 = name2
 	-------------
-	replace_class_in_program(c as Absyn.CLASS(name1,_,_,_,_,_),Absyn.PROGRAM(Absyn.CLASS(name2,_,_,_,_,_)::clst,w))
+	replace_class_in_program(c as Absyn.CLASS(name1,_,_,_,_,_,_),Absyn.PROGRAM(Absyn.CLASS(name2,_,_,_,_,_,_)::clst,w))
 	    => Absyn.PROGRAM(c::clst,w)
 	    
   rule	not name1 = name2 &
 	replace_class_in_program(c, Absyn.PROGRAM(clst,w)) => Absyn.PROGRAM(newclst,w)
 	-------------------------------------------------------
-	replace_class_in_program(c as Absyn.CLASS(name1,_,_,_,_,_),
-	    Absyn.PROGRAM((c1 as Absyn.CLASS(name2,_,_,_,_,_))::clst,w)) 
+	replace_class_in_program(c as Absyn.CLASS(name1,_,_,_,_,_,_),
+	    Absyn.PROGRAM((c1 as Absyn.CLASS(name2,_,_,_,_,_,_))::clst,w)) 
 	    => Absyn.PROGRAM(c1::newclst,w)
 
   rule	Print.print_buf "replace_class_in_program failed \n class:" &
@@ -5043,7 +5111,7 @@ relation insert_class_in_program: (Absyn.Class, Absyn.Within, Absyn.Program) => 
   rule	print "Error inserting in class. (" & Dump.unparse_within(0, w) => s1 & print s1 
 	& print ") program = \n" (*& Dump.unparse_str p => pstr & print pstr & print "\n"  *)
 	-------------------
-	insert_class_in_program(c1 as Absyn.CLASS(name,_,_,_,_,_),w,p) => fail	
+	insert_class_in_program(c1 as Absyn.CLASS(name,_,_,_,_,_,_),w,p) => fail	
 end
 
 (** relation: insert_class_in_class
@@ -5088,8 +5156,8 @@ relation remove_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
 	remove_class_in_elementitemlist(publst,c1) => publst2 &
 	replace_public_list(parts,publst2) => parts2 
 	-----------------------------------------------
-	remove_inner_class (c1,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt))) 
-	    => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt))
+	remove_inner_class (c1,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt),file)) 
+	    => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt),file)
 
   rule	Print.print_buf "Failed in remove_inner_class\n"
 	---------------------------------------
@@ -5109,13 +5177,13 @@ relation remove_class_in_elementitemlist: (Absyn.ElementItem list, Absyn.Class) 
   rule	not name1 = name &
 	remove_class_in_elementitemlist(xs,c) => res
 	------------------------------------------
-	remove_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_)) => e1::res
+	remove_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_,_)),_,_,NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_,_)) => e1::res
 	
   rule name1 = name 
 	-----------------------------
 	remove_class_in_elementitemlist(
-	    (e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, Absyn.CLASS(name1,_,_,_,_,_)),f,g,h)))::xs,
-	    c2 as Absyn.CLASS(name,_,_,_,_,_))
+	    (e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, Absyn.CLASS(name1,_,_,_,_,_,_)),f,g,h)))::xs,
+	    c2 as Absyn.CLASS(name,_,_,_,_,_,_))
 	    => xs
 	
   rule	remove_class_in_elementitemlist(xs,c) => res
@@ -5134,8 +5202,8 @@ relation replace_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
 	replace_class_in_elementitemlist(publst,c1) => publst2 &
 	replace_public_list(parts,publst2) => parts2 
 	-----------------------------------------------
-	replace_inner_class (c1,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt))) 
-	    => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt))
+	replace_inner_class (c1,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt),file)) 
+	    => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt),file)
   rule	Print.print_buf "Failed in replace_inner_class\n"
 	---------------------------------------
 	replace_inner_class (_,_) => fail
@@ -5154,13 +5222,13 @@ relation replace_class_in_elementitemlist: (Absyn.ElementItem list, Absyn.Class)
   rule	not name1 = name &
 	replace_class_in_elementitemlist(xs,c) => res
 	------------------------------------------
-	replace_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_)) => e1::res
+	replace_class_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_,_)),_,_,NONE)))::xs,c as Absyn.CLASS(name,_,_,_,_,_,_)) => e1::res
 	
   rule name1 = name 
 	-----------------------------
 	replace_class_in_elementitemlist(
-	    (e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, Absyn.CLASS(name1,_,_,_,_,_)),f,g,h)))::xs,
-	    c2 as Absyn.CLASS(name,_,_,_,_,_))
+	    (e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, Absyn.CLASS(name1,_,_,_,_,_,_)),f,g,h)))::xs,
+	    c2 as Absyn.CLASS(name,_,_,_,_,_,_))
 	    => Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e,c2),f,g,h))::xs
 	
   rule	replace_class_in_elementitemlist(xs,c) => res
@@ -5178,7 +5246,7 @@ relation get_inner_class: (Absyn.Class, Absyn.Ident) => Absyn.Class =
   rule	get_public_list(parts) => publst &
 	get_class_from_elementitemlist(publst,name) => c1
 	-----------------------------------------------
-	get_inner_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_)), name) => c1
+	get_inner_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_), name) => c1
 
   rule	Print.get_string => str &
 	Print.clear_buf &
@@ -5333,12 +5401,12 @@ relation get_class_from_elementitemlist: (Absyn.ElementItem list, Absyn.Ident) =
 
   rule	name1 = name2
 	------------------------------
-	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE))::xs,name2) => c1
+	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_,_)),_,_,NONE))::xs,name2) => c1
 
   rule	not name1 = name &
 	get_class_from_elementitemlist(xs,name) => res
 	------------------------------------------
-	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_)),_,_,NONE))::xs,name) => res
+	get_class_from_elementitemlist(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,c1 as Absyn.CLASS(name1,_,_,_,_,_,_)),_,_,NONE))::xs,name) => res
 
   rule	get_class_from_elementitemlist(xs,name) => res
 	----------------------------------------------
@@ -5358,7 +5426,7 @@ relation class_in_program:(string,Absyn.Program) => bool =
   rule	not str = c1 &
 	class_in_program(str,Absyn.PROGRAM(p,w)) => res
 	-----------------------
-	class_in_program (str, Absyn.PROGRAM(Absyn.CLASS(c1,_,_,_,_,_)::p,w)) => res
+	class_in_program (str, Absyn.PROGRAM(Absyn.CLASS(c1,_,_,_,_,_,_)::p,w)) => res
 	
   axiom class_in_program (_,_) => true
 end
@@ -5387,12 +5455,12 @@ relation get_classes_in_class: (Absyn.Path, Absyn.Program,Absyn.Class) => Absyn.
 
   rule	get_classes_in_parts(parts)  => res
 	--------------------------
-	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_))) => res
+	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) => res
 
   rule	lookup_classdef(path, modelpath,p) => (cdef,newpath) &
 	get_classes_in_class(newpath,p,cdef) => res
 	--------------------------------------------
-	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_))) => res
+	get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_),_)) => res
 end
 
 relation get_classes_in_parts: Absyn.ClassPart list => Absyn.Class list =
@@ -5440,11 +5508,11 @@ relation get_class_in_program:(string, Absyn.Program) => Absyn.Class =
   rule	not str = c1 &
 	get_class_in_program(str,Absyn.PROGRAM(p,w)) => res
 	-----------------------------------------
-	get_class_in_program (str, Absyn.PROGRAM(Absyn.CLASS(c1,_,_,_,_,_)::p,w)) => res
+	get_class_in_program (str, Absyn.PROGRAM(Absyn.CLASS(c1,_,_,_,_,_,_)::p,w)) => res
 	
   rule  str = c1name
 	------------
-	get_class_in_program (str, Absyn.PROGRAM((c1 as Absyn.CLASS(c1name,_,_,_,_,_))::p,w)) => c1
+	get_class_in_program (str, Absyn.PROGRAM((c1 as Absyn.CLASS(c1name,_,_,_,_,_,_))::p,w)) => c1
 end
 
 (** relation: modification_to_absyn

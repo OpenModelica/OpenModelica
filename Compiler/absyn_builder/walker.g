@@ -1,7 +1,10 @@
 
 header "post_include_hpp" {
 	#define null 0
+
+    #include <string.h>
     
+    extern std::string modelicafilename; // Global filename string.
     
     extern "C" {
 		#include <stdio.h>
@@ -44,6 +47,7 @@ tokens {
 {
     
     typedef std::string mstring;
+
     
     void* to_rml_str(RefMyAST &t)
     {
@@ -205,7 +209,8 @@ class_definition [bool final] returns [ void* ast ]
 				RML_PRIM_MKBOOL(final),
 				RML_PRIM_MKBOOL(e != 0), 
                 restr,
-                class_spec
+                class_spec,
+                mk_scon((char*)(modelicafilename.c_str()))
             );                
         }
     ;
@@ -462,28 +467,16 @@ element returns [void* ast]
 	void* constr = 0;
 }
 
-//expr:   #(ASSIGN expr expr)
-//        | ...
-//        | a:ID
-//          {              
-//     MyASTNode *q = static_cast<MyASTNode*>((ANTLR_USE_NAMESPACE(antlr)AST*)a);
-//           std::cout  a->getText()  " is at line "  q->getLine()
-//                 " at file "    q->getFilename()  std::endl; 
-//          }
-
-//File information will be added later since this requires a custom token type
-//in the lexer as well.   /kajny
-           
 	: 
 		( e_spec = i_clause:import_clause
 			{                
 				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("import"),
-                    e_spec,mk_scon("NoFile"),mk_icon(i_clause->getLine()),mk_none());
+                    e_spec,mk_scon((char*)(modelicafilename.c_str())),mk_icon(i_clause->getLine()),mk_none());
 			}
 		| e_spec = e_clause:extends_clause
 			{
 				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("extends"),
-                    e_spec,mk_scon("NoFile"),mk_icon(e_clause->getLine()),mk_none());
+                    e_spec,mk_scon((char*)(modelicafilename.c_str())),mk_icon(e_clause->getLine()),mk_none());
 			}
 		| #(decl:DECLARATION 
 				(   
@@ -493,7 +486,7 @@ element returns [void* ast]
 						{
 							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,
 								mk_scon("component"),e_spec,
-                                mk_scon("NoFile"),mk_icon(decl->getLine()),mk_none());
+                                mk_scon((char*)(modelicafilename.c_str())),mk_icon(decl->getLine()),mk_none());
             
 						}
 					| r:REPLACEABLE 
@@ -504,7 +497,7 @@ element returns [void* ast]
 								r ? RML_TRUE : RML_FALSE,
 								Absyn__UNSPECIFIED,
 								mk_scon("replaceable_component"),e_spec,
-                                mk_scon("NoFile"),mk_icon(decl->getLine()),
+                                mk_scon((char*)(modelicafilename.c_str())),mk_icon(decl->getLine()),
 								constr? mk_some(constr):mk_none());
 						}
 					)
@@ -520,7 +513,7 @@ element returns [void* ast]
 							ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(0),
 								class_def);
 							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,mk_scon("??"),
-                                ast,mk_scon("NoFile"),mk_icon(def->getLine()),mk_none());
+                                ast,mk_scon((char*)(modelicafilename.c_str())),mk_icon(def->getLine()),mk_none());
 
 						}
 					| 
@@ -534,7 +527,7 @@ element returns [void* ast]
 							ast = Absyn__ELEMENT(final,
 								rd ? RML_TRUE : RML_FALSE,innerouter,
 								mk_scon("??"),
-								ast,mk_scon("NoFile"),mk_icon(def->getLine()),
+								ast,mk_scon((char*)(modelicafilename.c_str())),mk_icon(def->getLine()),
                                 constr ? mk_some(constr) : mk_none());
 						}
 					)

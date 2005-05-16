@@ -312,6 +312,8 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation is_non_state: VarKind => ()
   relation is_var_known : (Var list, Exp.ComponentRef) => bool 
   relation is_param: (Var ) => bool 
+  relation is_output: (Var) => bool 	  
+  relation is_input: (Var) => bool
 
   relation get_all_exps : DAELow => Exp.Exp list
 
@@ -5296,10 +5298,41 @@ relation get_all_exps_eqn : Equation => Exp.Exp list =
 end
 
 
-  relation is_param: (Var ) => bool =
+(** relation: is_param
+ **
+ ** Return true if variable is a parameter.
+ **)
+
+relation is_param: (Var ) => bool =
           
   axiom	is_param(VAR(_,PARAM,_,_,_,_,_,_,_,_,_,_,_)) => true
   axiom	is_param(_) => false
-  end
+ end
+
+(** relation: is_output
+ **
+ ** Return true if variable is declared as output. Note that the output
+ ** attribute sticks with a variable even if it is originating from a sub
+ ** component, which is not the case for Dymola.
+ **)
+
+relation is_output: (Var) => bool =
+
+  axiom	is_output( VAR(_,_,DAE.OUTPUT,_,_,_,_,_,_,_,_,_,_)) => true
+  axiom	is_output(_) => false
+end 	  
+
+(** relation: is_input
+ **
+ ** Returns true if variable is declared as input.
+ ** See also is_ouput above
+**)
+
+relation is_input: (Var) => bool =
+
+  axiom	is_input( VAR(_,_,DAE.INPUT,_,_,_,_,_,_,_,_,_,_)) => true
+
+  axiom	is_input(_) => false
+end
 
 

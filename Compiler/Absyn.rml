@@ -115,7 +115,7 @@
  ** for printing the AST.
  **  
  ** absyn.rml's constructors are primarily used by the walker 
- ** (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
+ ** (modeq/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
  ** converts it into an RML abstract syntax tree.
  **
  ** When the AST has been built, it is normaly used by explode.rml in order to
@@ -165,6 +165,7 @@ module Absyn:
 			  * bool		     (* Encapsulated *)
 			  * Restriction	             (* Restricion *)
 			  * ClassDef		     (* Body *)
+			  * string		     (* File name class is defined in*)
 
  
   (** The `ClassDef' type contains the definition part of a class *)
@@ -467,6 +468,8 @@ module Absyn:
   relation cref_equal: (ComponentRef, ComponentRef) =>  bool
   relation print_absyn_exp : Exp => ()  
   relation last_classname: Program => Path
+  relation class_filename: Class => string
+  relation set_class_filename: (Class,string) => Class
 end
 
 
@@ -485,7 +488,7 @@ with "Print.rml"
  **)
 relation element_spec_name : ElementSpec => Ident =
 
-  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_,_)) => n
+  axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_,_,_)) => n
 
   axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
 
@@ -798,10 +801,37 @@ end
  **)
 relation last_classname: Program => Path =
 
-  rule	Util.list_last(lst) => CLASS(id,_,_,_,_,_) 
+  rule	Util.list_last(lst) => CLASS(id,_,_,_,_,_,_) 
 	-------------------------
 	last_classname(PROGRAM(lst,_)) => IDENT(id)
 end
+
+(** relation class_filename
+ ** author: PA
+ **
+ ** Retrieves the filename where the class is stored.
+ **)
+
+relation class_filename: Class => string =
+
+  axiom	class_filename (CLASS(_,_,_,_,_,_,filename)) => filename
+end
+
+(** relation class_filename
+ ** author: PA
+ **
+ ** Sets the filename where the class is stored.
+ **)
+
+relation set_class_filename: (Class,string) => Class =
+
+
+  axiom	set_class_filename(CLASS(n,p,f,e,r,body,_),filename)
+	=> CLASS(n,p,f,e,r,body,filename)
+end
+
+
+
 
 (** relation: print_absyn_exp 
  **

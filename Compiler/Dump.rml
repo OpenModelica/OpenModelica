@@ -240,7 +240,7 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	unparse_string_comment_option(optcmt) => s5 &
 	Util.string_append_list([is, s2', s1, s2, re, io, s3, " ", n, s5, "\n", s4, is, "end ", n]) => str
 	-----------------------------
-	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt)),fi,re,io) => str
+	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt),_),fi,re,io) => str
 
   rule	indent_str(indent) => is &
 	select_string(p, "partial ", "") => s1 &
@@ -256,7 +256,7 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	Util.string_append_list([is,s2',s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s7,s8,s9]) 
 	  => str
 	------------------------------
-	unparse_class_str(indent,Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,dim,attr,m,optcmt)),fi,re,io) => str
+	unparse_class_str(indent,Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,dim,attr,m,optcmt),_),fi,re,io) => str
 	
   rule	indent_str(i) => is &
 	select_string(p, "partial ", "") => s1 &
@@ -267,7 +267,7 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	unparse_comment_option(cmt) => s5 &
 	Util.string_append_list([is,s2',s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5]) => str
 	-------------------------------
-	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,cmt)),fi,re,io) => str    
+	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,cmt),_),fi,re,io) => str    
 
 end 
 
@@ -357,21 +357,21 @@ relation print_class: Absyn.Class => () =
 	Print.print_buf n & Print.print_buf "," & print_select(p,"PARTIAL,","") &
 	print_list_debug("print_class1",parts,print_class_part,",") & Print.print_buf ")"
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_))) => ()
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_),_)) => ()
 	
   rule	print_class_restriction(r) & Print.print_buf "(" &
 	Print.print_buf n & Print.print_buf "," & print_select(p,"PARTIAL,","") &
 	Print.print_buf ") = " & print_path(i) &
 	print_class_modification(m)
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,_,_,m,_))) => ()
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.DERIVED(i,_,_,m,_),_)) => ()
 	
   rule	print_class_restriction(r) & Print.print_buf "(" &
 	Print.print_buf n & Print.print_buf "," &
 	print_select(p,"PARTIAL,","") &
 	Print.print_buf "ENUMERATION(...)\n"
 	----------
-	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,_))) => ()
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,_),_)) => ()
 end
 
 (**)

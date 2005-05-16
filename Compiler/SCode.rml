@@ -299,7 +299,7 @@ relation elab_class: Absyn.Class => Class =
   rule	elab_classdef d => d' &
 	elab_restriction(c,r) => r'
 	---------------------
-	elab_class(c as Absyn.CLASS(n,p,f,e,r,d)) => CLASS(n,p,e,r',d')
+	elab_class(c as Absyn.CLASS(n,p,f,e,r,d,file)) => CLASS(n,p,e,r',d')
 
 end
 
@@ -332,11 +332,11 @@ end
 	
 relation contain_external_func_decl:(Absyn.Class) => bool =
 	
-  axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_,_)::_,_))) => true
+  axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_,_)::_,_),_)) => true
 	
-  rule	contain_external_func_decl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt))) => res
+  rule	contain_external_func_decl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file)) => res
 	----------------------
-	contain_external_func_decl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::rest,cmt))) => res
+	contain_external_func_decl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::rest,cmt),file)) => res
 
   axiom	contain_external_func_decl(_) => false
 end
@@ -566,7 +566,7 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 	-----------------------
 	elab_elementspec(final,repl,prot,
                          Absyn.CLASSDEF(rp,
-                                        cl as Absyn.CLASS(n,pa,fi,e,re,de)))
+                                        cl as Absyn.CLASS(n,pa,fi,e,re,de,file)))
 	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re',de'),NONE)]
 
   rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &

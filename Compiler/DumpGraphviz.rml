@@ -184,7 +184,7 @@ relation print_class: Absyn.Class => Node =
 	print_parts parts => nl
 	(* & print "> End of rule print_class\n" *)
 	-----------------------
-	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_))) => Graphviz.NODE(rs,[],nl)
+	print_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_),_)) => Graphviz.NODE(rs,[],nl)
 
 end
 
