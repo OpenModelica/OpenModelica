@@ -3088,9 +3088,15 @@ relation make_fully_qualified : (Env.Env, Absyn.Path) => Absyn.Path =
 	----------------------------
 	make_fully_qualified (env,path) => path
 
-  rule	Lookup.lookup_class(env,path,false) => (_,_::env') &
+  rule	(** To make a class fully qualified, the class path
+	 ** is looked up in the environment.
+	 ** The FQ path consist of the simple class name
+	 ** appended to the environment path of the looked up class.
+	 **)
+	Lookup.lookup_class(env,path,false) => (_,env') &
 	Env.get_env_path env' => SOME(path') &
-	Absyn.join_paths(path',path) => path'' 
+	Absyn.path_last_ident(path) => class_name &
+	Absyn.join_paths(path',Absyn.IDENT(class_name)) => path''
 	--------------------------------------
 	make_fully_qualified (env,path) => path''
 
