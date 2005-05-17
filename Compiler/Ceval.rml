@@ -1061,7 +1061,7 @@ end
 	 SCode.elaborate(p) => p' &
 	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
 	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	 DAELow.lower(dae) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_)) &
+	 DAELow.lower(dae) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_,_)) &
 	 DAELow.incidence_matrix(daelow) => m &
 	 DAELow.transpose_matrix(m) => mt &
 	 DAELow.calculate_jacobian(vars,eqnarr,m,mt) => jac &

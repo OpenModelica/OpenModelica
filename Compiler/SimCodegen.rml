@@ -292,7 +292,7 @@ relation generate_var_names:(DAELow.DAELow,int, int) => string =
 	Util.string_append_list(["char* varnames[",tot_elts_str,"] = {",
 				 str, "};\n"]) => res
 	-------------------
-	generate_var_names(DAELow.DAELOW(vars,knvars,_,_,_,_),nx,ny) => res
+	generate_var_names(DAELow.DAELOW(vars,knvars,_,_,_,_,_),nx,ny) => res
 
 end
 
@@ -483,7 +483,7 @@ relation generate_init_data2:(DAELow.DAELow,
 	Util.list_flatten([nx_lst,nxd_lst,ny_lst,np_lst]) => whole_lst &
 	Util.string_delimit_list(whole_lst,"\n") => res
 	-----------------------------
-	generate_init_data2(DAELow.DAELOW(vars,knvars,_,_,initeqn,alg),nx,ny,np) => res
+	generate_init_data2(DAELow.DAELOW(vars,knvars,_,_,initeqn,alg,_),nx,ny,np) => res
 
 end
 
@@ -619,6 +619,26 @@ relation generate_init_data4: (DAELow.Var list,
 end
 
 
+relation dump_when_clauses_str: (DAELow.WhenClause list) => string =
+
+  axiom	dump_when_clauses_str [] => ""
+
+  rule	dump_when_clause_str c => str &
+	dump_when_clauses_str xs => str2 &
+	string_append(str, str2) => res
+	------------------------------
+	dump_when_clauses_str c::xs => res
+end
+
+relation dump_when_clause_str: (DAELow.WhenClause) => string =
+
+  rule	Exp.print_exp_str exp => str1 &
+	Util.string_append_list ["when ", str1, "\n"] => res
+	----------------------------------------
+	dump_when_clause_str DAELow.WHEN_CLAUSE(exp) => res
+
+end
+
 relation generate_when_clauses: (string,
 				 DAE.DAElist,
 				 DAELow.DAELow,
@@ -629,9 +649,10 @@ relation generate_when_clauses: (string,
 	  
   rule
 	build_when_blocks(dae,dlow,ass1,ass2,blocks) => when_str &
-	Util.string_append_list(["/*\n",when_str,"*/\n"]) => res
+	dump_when_clauses_str wc => wcs &
+	Util.string_append_list(["/*\n",wcs,when_str,"*/\n"]) => res
 	--------------------------------------------------
-	generate_when_clauses(cname,dae,dlow,ass1,ass2,blocks) => res
+	generate_when_clauses(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,wc),ass1,ass2,blocks) => res
 
   rule	print "-generate_when_clauses failed\n"
 	----------------------------------------
@@ -669,13 +690,13 @@ relation build_when_equation: (DAE.DAElist,
 	DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
 	build_assignment(dae,cr,expr,origname) => assignment_string
 	--------------------------------
-	build_when_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assignment_string
+	build_when_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => assignment_string
 
   rule	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.WHEN_EQUATION(e as DAELow.WHEN_EQ(_,cr,expr)) &
 	print "-build_when_equation failed\n"
 	----------------------------------------
-	build_when_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
+	build_when_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => fail
 
 	axiom build_when_equation(_,_,_,_,_) => ""
 end
@@ -775,7 +796,7 @@ relation build_block: (DAE.DAElist,
 	  => (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) &
 	Util.string_delimit_list(stmt_strs,"\n") => res
 	---------------
-	build_block(dae,dlow as DAELow.DAELOW(_,_,eqns,_,_,alg),ass1,as2,block as e::_) 
+	build_block(dae,dlow as DAELow.DAELOW(_,_,eqns,_,_,alg,_),ass1,as2,block as e::_) 
 	  => res
 
   rule	print "#Solving of equation systems not implemented yet.\n"
@@ -796,7 +817,7 @@ relation all_same_algorithm: (DAELow.DAELow,
  	DAELow.equation_nth(eqns,e') => DAELow.ALGORITHM(indx,_,_) &
 	all_same_algorithm2(dlow, block,indx) => res
 	----------------------
-	all_same_algorithm(dlow as DAELow.DAELOW(_,_,eqns,_,_,alg),block as e::_) 
+	all_same_algorithm(dlow as DAELow.DAELOW(_,_,eqns,_,_,alg,_),block as e::_) 
 	  => res
 
   axiom	all_same_algorithm(_,_) => false
@@ -816,13 +837,13 @@ relation all_same_algorithm2:(DAELow.DAELow,
 	int_eq(indx,indx2) => true &
 	all_same_algorithm2(dlow,es,indx) => b1 
 	--------------------------------------
-	all_same_algorithm2(dlow as DAELow.DAELOW(_,_,eqns,_,_,alg),e::es,indx) => b1
+	all_same_algorithm2(dlow as DAELow.DAELOW(_,_,eqns,_,_,alg,_),e::es,indx) => b1
 
   rule	int_sub(e,1) => e' &
  	DAELow.equation_nth(eqns,e') => DAELow.ALGORITHM(indx2,_,_) &
 	int_eq(indx,indx2) => false 
 	--------------------------------------
-	all_same_algorithm2(dlow as DAELow.DAELOW(_,_,eqns,_,_,alg),e::es,indx) => false
+	all_same_algorithm2(dlow as DAELow.DAELOW(_,_,eqns,_,_,alg,_),e::es,indx) => false
 
   axiom	all_same_algorithm2(_,_,_) => false
 
@@ -847,7 +868,7 @@ relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int
         Exp.simplify(expr) => simplify_exp &
 	build_assignment(dae,cr,simplify_exp,origname)  => assigment_string
 	--------------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string	
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => assigment_string	
         
 	
   rule	(* Solving the state s means solving for der(s) *)
@@ -862,7 +883,7 @@ relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int
         Exp.simplify(expr) => simplify_exp &
 	build_assignment(dae,cr ,simplify_exp,origname)  => assigment_string
 	--------------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string 
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => assigment_string 
 	
   rule	(* probably, solved failed in rule above. This means that we have 
 	 a non-linear equation. *)
@@ -875,7 +896,7 @@ relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => fail
 
   rule	(* Algorithms *)
 	(* Each algorithm should only be genated once.*)
@@ -886,7 +907,7 @@ relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int
 	  => (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) &
 	Util.string_delimit_list(stmt_strs,"\n") => res
 	-------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,algs),ass1,ass2,e) => res 
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,algs,_),ass1,ass2,e) => res 
         
   rule	print "-build_equation failed\n" 
 	--------------------------------
@@ -965,7 +986,7 @@ end
          Exp.simplify(expr) => simplify_exp &
 	 build_assignment(dae,cr,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string	
+	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => assigment_string	
          
 	 
   rule  (* Solving the state s, caluate residual form. *) 
@@ -983,13 +1004,13 @@ end
 	 let new_cr = Exp.CREF_IDENT(cr_str,[]) &
 	 build_assignment(dae,new_cr,simplify_exp,origname)  => assigment_string
 	 --------------------------------
-	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => assigment_string 
+	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => assigment_string 
 	 
   rule	(* when-equations are not part of the residual equations *)
         int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.WHEN_EQUATION(e) 
 	--------------------------------
-	build_residual_equation(_,DAELow.DAELOW(_,_,eqns,_,_,_),_,_,e) => ""
+	build_residual_equation(_,DAELow.DAELOW(_,_,eqns,_,_,_,_),_,_,e) => ""
 
   rule	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -1000,7 +1021,7 @@ end
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_),ass1,ass2,e) => fail
+	build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => fail
          
 
   rule  print "-build_residual_equation failed\n" 
