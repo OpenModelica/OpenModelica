@@ -1889,6 +1889,29 @@ relation elab_builtin_noevent : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp
 	
 end
 
+(** relation: elab_builtin_edge
+ ** This relation handles the built in edge operator. If the operand is constant edge is always false
+ **)
+relation elab_builtin_edge : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
+
+  rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_BOOL([]),_),c as false),_)  
+	----------------------------------
+	elab_builtin_edge(env,[exp],impl) 
+	  => (Exp.CALL(Absyn.IDENT("edge"),[exp'],false,true), Types.PROP((Types.T_BOOL([]),NONE),false))
+
+  rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_BOOL([]),_),c as true),_) &
+	value_exp Values.BOOL(false) => exp''
+	----------------------------------
+	elab_builtin_edge(env,[exp],impl) 
+	  => (exp'', Types.PROP((Types.T_BOOL([]),NONE),true))
+
+  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to edge operator.\n"
+	------------------------------------
+	elab_builtin_edge(env,_,_) => fail
+
+	
+end
+
 (** relation: elab_builtin_handler
  ** This relation dispatches the elaboration of builtin operators by returning the 
  ** appropriate relation. When a new builtin operator is added, a new rule has to be added to 
@@ -1921,6 +1944,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*
   axiom	elab_builtin_handler "differentiate" => elab_builtin_differentiate
   axiom	elab_builtin_handler "simplify" => elab_builtin_simplify
   axiom	elab_builtin_handler "noEvent" => elab_builtin_noevent
+  axiom	elab_builtin_handler "edge" => elab_builtin_edge
 
   axiom	elab_builtin_handler "dymTableTimeIni" => elab_builtin_dymtabletimeini
 

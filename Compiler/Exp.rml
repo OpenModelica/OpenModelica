@@ -3219,11 +3219,11 @@ relation stringify_crefs: Exp => Exp =
   rule	stringify_crefs(e1) => e1' &
 	stringify_crefs(e2) => e2' 
 	-------------------
-	stringify_crefs(LBINARY(e1,op,e2)) => BINARY(e1',op,e2')
+	stringify_crefs(LBINARY(e1,op,e2)) => LBINARY(e1',op,e2')
 	
   rule	stringify_crefs(e) => e'
 	-------------------
-	stringify_crefs(LUNARY(op,e)) => UNARY(op,e')
+	stringify_crefs(LUNARY(op,e)) => LUNARY(op,e')
 	
   rule	stringify_crefs(e1) => e1' &
 	stringify_crefs(e2) => e2' 

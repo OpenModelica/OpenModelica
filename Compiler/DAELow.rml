@@ -159,6 +159,13 @@
 		      | ALGORITHM of int (* index in algorithms, 0..n-1*) *
 				     Exp.Exp list *(*inputs CREF or der(CREF)*)
 				     Exp.Exp list(*outputs CREF or der(CREF)*)
+		      | WHEN_EQUATION of WhenEquation
+
+ 
+  datatype WhenEquation = WHEN_EQ of int * (* index in whenClauses *)
+                                     Exp.ComponentRef * Exp.Exp
+                        
+  datatype WhenClause = WHEN_CLAUSE of Exp.Exp (* condition *)
 
 
 (* THE LOWERED DAE consist of variables and equations. The variables are split into 
@@ -316,7 +323,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation is_input: (Var) => bool
 
   relation get_all_exps : DAELow => Exp.Exp list
-
+  relation get_when_equation_expr : WhenEquation => (Exp.ComponentRef, Exp.Exp) 
 end (* End Module *)
 
 (* Implementation *)
@@ -351,7 +358,8 @@ val empty_bintree = TREENODE(NONE,NONE,NONE)
 relation lower: (DAE.DAElist) => DAELow =
 
   rule	states(lst,empty_bintree) => s &
-	lower2(lst,s) => (vars,knvars,eqns,reqns,ieqns,algs)  &
+	lower2(lst,s,[]) => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses)  &
+	list_reverse whenclauses => whenclauses' &
 	(*	print "lowered dae:" & dump low &*)	
 	lower_algorithms(vars,algs) => algeqns &
 	list_append(algeqns,eqns) => eqns &
@@ -869,6 +877,13 @@ relation equation_str: Equation => string =
 	--------------------
 	equation_str(SOLVED_EQUATION(cr,e2)) => res
 
+  rule	Exp.print_component_ref_str cr => s1 &
+	Exp.print_exp_str e2 => s2 &
+	int_string(i) => is &
+	Util.string_append_list([s1," := ",s2 ,"when clause no:",is,"\n"]) => res
+	----------------------------------------------------
+	equation_str(WHEN_EQUATION(WHEN_EQ(i,cr,e2))) => res
+
   rule	Exp.print_exp_str e => s1 &
 	Util.string_append_list([s1, "= 0"]) => res
 	----------------------------------------------------------
@@ -1051,6 +1066,10 @@ relation typeof_equation: (Equation) => Exp.Type =
   rule	Exp.typeof(e) => t 
 	-------------------
 	typeof_equation(SOLVED_EQUATION(_,e)) => t
+
+  rule	Exp.typeof(e) => t 
+	-------------------
+	typeof_equation(WHEN_EQUATION(WHEN_EQ(_,_,e))) => t
 end
 
 
@@ -1188,10 +1207,10 @@ relation dump_vars2: (Var list,int) => () =
 	Util.string_delimit_list(paths_lst,", ") => path_str &
         Dump.unparse_comment_option(comment) => comment_str &
 	print "= " & Exp.print_exp_str e => s & print s & print(" ") & print(path_str) & 
-        print "  " & print comment_str & print ",\n " &
+        print "  " & print comment_str &
         
         print " former: " & print old_name &
-	int_add(varno,1) => varno' &
+	int_add(varno,1) => varno' & print ",\n" &
     	DAE.dump_variable_attributes(dae_var_attr) &
         dump_vars2(xs,varno') 
 	    -------------
@@ -1208,7 +1227,7 @@ relation dump_vars2: (Var list,int) => () =
         print " former: " & print old_name &
 	    DAE.dump_variable_attributes(dae_var_attr) &
         print "  " & print comment_str & 
-        print ",\n " &
+        print ",\n" &
 	int_add(varno,1) => varno' &
  	dump_vars2(xs,varno') 
 	-------------
@@ -1346,63 +1365,101 @@ relation states_exp: (Exp.Exp,BinTree) => BinTree =
   axiom	states_exp(_,bt) => bt
 end
 
+
+relation lower_when_eqn: (DAE.Element,int (* when-clause index *),WhenClause list)  
+	  =>  (Equation list, int (* when-clause index*), WhenClause list) =
+
+  rule	i + 1 => i' &
+	lower_when_eqn2(eqnl,i) => res 
+	--------------------------------------
+	lower_when_eqn(DAE.WHEN_EQUATION(cond,eqnl,NONE),i,whenList)  (* No elsewhen yet *) 
+	  => (res,i',WHEN_CLAUSE(cond)::whenList)
+end
+
+relation lower_when_eqn2: (DAE.Element list, int) => Equation list = 
+	
+  axiom lower_when_eqn2([],_) => []
+
+  rule	
+	lower_when_eqn2(xs,i) => eqnl &
+	Exp.simplify(e) => e' &
+	Exp.stringify_crefs(e') => e'' &
+	Exp.stringify_component_ref(cr) => cr'
+	------------------------------
+	lower_when_eqn2(DAE.EQUATION(cre as Exp.CREF(cr,_) ,e)::xs, i) 
+	  => WHEN_EQUATION(WHEN_EQ(i,cr',e''))::eqnl
+end
+
 (** relation: lower2
  ** Helper relation to lower.
  **)
-relation lower2: (DAE.DAElist, BinTree (* states *)) 
+relation lower2: (DAE.DAElist, BinTree (* states *), WhenClause list) 
 	  => (Variables,
 	      Variables,
 	      Equation list,
 	      Equation list,
 	      Equation list,
-	      Algorithm.Algorithm list) =
+	      Algorithm.Algorithm list,
+	      WhenClause list) =
 	
   rule	empty_vars() => v1 &
 	empty_vars() => v2
 	------------------
-	lower2 (DAE.DAE([]),_) => (v1,v2,[],[],[],[])
+	lower2 (DAE.DAE([]),_,whenclauses) => (v1,v2,[],[],[],[],whenclauses)
 	
-  rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+  rule	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses') &
 	lower_var (v,states) => v' &
 	add_var(v',vars) => vars' 
 	--------------------------------
-	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_))::xs),states) 
-	  => (vars',knvars,eqns,reqns,ieqns,algs)
+	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_))::xs),states,whenclauses) 
+	  => (vars',knvars,eqns,reqns,ieqns,algs,whenclauses')
 
-  rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+
+  rule	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses') &
 	(* in previous rule, lower_var failed.  *)
 	lower_known_var (v) => v' &
 	add_var(v',knvars) => knvars'
 	--------------------------------
-	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_))::xs),states) 
-	  => (vars,knvars',eqns,reqns,ieqns,algs)
+	lower2 (DAE.DAE((v as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_))::xs),states,whenclauses) 
+	  => (vars,knvars',eqns,reqns,ieqns,algs,whenclauses')
 	  
-  rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+  rule	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses') &
 	lower_eqn(e) => e' 
 	--------------------------------
-	lower2 (DAE.DAE((e as DAE.EQUATION(e1,e2))::xs),states) 
-	  => (vars,knvars,e'::eqns,reqns,ieqns,algs)
+	lower2 (DAE.DAE((e as DAE.EQUATION(e1,e2))::xs),states,whenclauses) 
+	  => (vars,knvars,e'::eqns,reqns,ieqns,algs,whenclauses')
 
-  rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,ieqns,algs) &
+
+  rule	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (vars,knvars,eqns1,reqns,ieqns,algs,whenclauses') &
+	list_length whenclauses' => count &
+	lower_when_eqn(e,count,whenclauses') => (eqns2,count',whenclauses'') &
+	list_append(eqns1,eqns2) => eqns 
+	--------------------------------
+	lower2 (DAE.DAE((e as DAE.WHEN_EQUATION(c,eqns,NONE))::xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses'')
+
+
+  rule	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses') &
 	lower_eqn(e) => e' 
 	--------------------------------
-	lower2 (DAE.DAE((e as DAE.INITIALEQUATION(e1,e2))::xs),states) 
-	  => (vars,knvars,eqns,reqns,e'::ieqns,algs)
+	lower2 (DAE.DAE((e as DAE.INITIALEQUATION(e1,e2))::xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,e'::ieqns,algs,whenclauses')
 
-  rule	lower2(DAE.DAE(xs),states) 
-	  => (vars,knvars,eqns,reqns,ieqns,algs) 
+  rule	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses') 
 	--------------------------------
-	lower2 (DAE.DAE((DAE.ALGORITHM(a))::xs),states) 
-	  => (vars,knvars,eqns,reqns,ieqns,a::algs)
+	lower2 (DAE.DAE((DAE.ALGORITHM(a))::xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,a::algs,whenclauses')
 
-  rule	lower2(dae,states) 
-	  => (vars1,knvars1,eqns1,reqns1,ieqns1,algs1) &
-	lower2(DAE.DAE(xs),states) 
-	  => (vars2,knvars2,eqns2,reqns2,ieqns2,algs2) &
+  rule	lower2(dae,states,whenclauses) 
+	  => (vars1,knvars1,eqns1,reqns1,ieqns1,algs1,whenclauses') &
+	lower2(DAE.DAE(xs),states,whenclauses') 
+	  => (vars2,knvars2,eqns2,reqns2,ieqns2,algs2,whenclauses'') &
 	merge_vars(vars1,vars2) => vars &
 	list_append(eqns1,eqns2) => eqns &
 	list_append(ieqns1,ieqns2) => ieqns &
@@ -1410,17 +1467,17 @@ relation lower2: (DAE.DAElist, BinTree (* states *))
 	merge_vars(knvars1,knvars2) => knvars &
 	list_append(algs1,algs2) => algs 
 	--------------------------------
-	lower2(DAE.DAE(DAE.COMP(_,dae)::xs),states) 
-	  => (vars,knvars,eqns,reqns,ieqns,algs)
+	lower2(DAE.DAE(DAE.COMP(_,dae)::xs),states,whenclauses) 
+	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses'')
 	
-  rule	lower2(DAE.DAE(xs),states) 
-	  => (v,kv,e,re,ie,al)
+  rule	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (v,kv,e,re,ie,al,whenclauses')
 	---------------------
-	lower2 (DAE.DAE(_::xs),states) => (v,kv,e,re,ie,al)
+	lower2 (DAE.DAE(_::xs),states,whenclauses) => (v,kv,e,re,ie,al,whenclauses')
 
   rule	print "-lower2 failed\n" 
 	------------------------
-	lower2 (_,_) => fail	
+	lower2 (_,_,_) => fail	
 end
 
 (** relation: lower_algorithms
@@ -1772,6 +1829,16 @@ relation incidence_row: ( Variables, Equation)
 	list_append(lst1,lst2) => res
 	------------------------------------
 	incidence_row(vars,EQUATION(e1,e2)) => res
+
+  rule	(*Inefficient to for each cref in equation traverse the varlist*)
+	(* Should use a map or a bintree*)
+        get_when_equation_expr(we) => (cr, e2) &
+	let e1 = Exp.CREF(cr,Exp.OTHER) &
+	incidence_row_exp(e1,vars) => lst1 &
+	incidence_row_exp(e2,vars) => lst2 &
+	list_append(lst1,lst2) => res
+	------------------------------------
+	incidence_row(vars,WHEN_EQUATION(we)) => res
 	
   rule	(** For now assume that algorithm will be solvable for correct variables.
 	 ** I.e. find all variables in algorithm and add to lst.
@@ -2349,7 +2416,7 @@ end
  **)
 relation dump_incidence_matrix: IncidenceMatrix => () =
 
-  rule	print "Incidence Matrix\n (row == equation)" &
+  rule	print "Incidence Matrix (row == equation)\n" &
 	print "====================================\n" &
 	array_length(m) => mlen &
 	int_string(mlen) => mlen_str &
@@ -2902,6 +2969,15 @@ relation replace_dummy_der2:(Exp.ComponentRef,
 	Exp.replace_exp(e2,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e2',_)
 	---------------------------------------------------------------
 	replace_dummy_der2(st,dummyder,EQUATION(e1,e2)) => EQUATION(e1',e2')
+
+  rule	let dercall = Exp.CALL(Absyn.IDENT("der"),
+			       [Exp.CREF(st,Exp.REAL)],
+			       false,
+			       true) &
+	Exp.replace_exp(e1,dercall, Exp.CREF(dummyder,Exp.REAL)) => (e1',_) &
+	let res = WHEN_EQUATION(WHEN_EQ(i,cr,e1'))
+	---------------------------------------------------------------
+	replace_dummy_der2(st,dummyder,WHEN_EQUATION(WHEN_EQ(i,cr,e1))) => res
 	
   rule	print "-replace_dummy_der2 failed\n" 
 	---------------
@@ -2923,6 +2999,11 @@ relation replace_dummy_der_others:(Equation, Variables) => (Equation, Variables)
 	---------------------------------------------------------------
 	replace_dummy_der_others(EQUATION(e1,e2),vars)
 	  => (EQUATION(e1',e2'),vars'')
+
+  rule	replace_dummy_der_others_exp(e2,vars) => (e2', vars')
+	---------------------------------------------------------------
+	replace_dummy_der_others(WHEN_EQUATION(WHEN_EQ(i,cr,e2)),vars)
+	  => (WHEN_EQUATION(WHEN_EQ(i,cr,e2')),vars')
 
   rule	print "-replace_dummy_der_others failed\n" 
 	---------------------
@@ -4324,6 +4405,13 @@ relation replace_variables: (Equation list,
 	---------------------------------------
 	replace_variables(EQUATION(e1,e2)::es,s,t) => EQUATION(e1',e2')::es'
 
+  rule	let e1 = Exp.CREF(cr,Exp.OTHER) &
+	Exp.replace_exp_list(e1,s,t) => (e1' as Exp.CREF(cr',_),_) &
+	Exp.replace_exp_list(e2,s,t) => (e2',_) &
+	replace_variables(es,s,t) => es'
+	---------------------------------------
+	replace_variables(WHEN_EQUATION(WHEN_EQ(i,cr,e2))::es,s,t) => WHEN_EQUATION(WHEN_EQ(i,cr',e2'))::es'
+
   rule	(* TODO: we need to replace variables in algorithms too,
 	 * or disallow removal of simple equations that can be found
 	 * in algorithms 
@@ -4538,6 +4626,10 @@ relation states_eqns: (Equation list,BinTree) => BinTree =
 	------------------------
 	states_eqns(ALGORITHM(indx,expl1,expl2)::es,bt) => bt
 
+ rule	states_eqns(es,bt) => bt 
+	-----------------------
+	states_eqns(WHEN_EQUATION(_)::es,bt) => bt
+ 
   rule	print "-states_eqns failed\n" 
 	-----------------
 	states_eqns(_,_) => fail
@@ -4752,6 +4844,14 @@ relation print_equation: Equation =>  () =
 	print res
 	-----------------
 	print_equation(EQUATION(e1,e2))
+
+  rule	get_when_equation_expr w =>(cr, e2) &
+	Exp.print_component_ref_str cr => s1 &
+	Exp.print_exp_str e2 => s2 &
+	Util.string_append_list([s1, " =  ", s2, "\n" ]) => res &
+	print res
+	-----------------
+	print_equation(WHEN_EQUATION(w))
  end
  
  
@@ -5290,6 +5390,7 @@ relation get_all_exps_eqn : Equation => Exp.Exp list =
 
   axiom	get_all_exps_eqn EQUATION(e1, e2) => [e1, e2]
   axiom	get_all_exps_eqn SOLVED_EQUATION(cr, e) => [Exp.CREF(cr,Exp.OTHER),e]
+  axiom	get_all_exps_eqn WHEN_EQUATION(WHEN_EQ(_,cr, e)) => [Exp.CREF(cr,Exp.OTHER),e]
 
   rule	list_append(e1, e2) => exps
 	---------------------------------
@@ -5335,4 +5436,14 @@ relation is_input: (Var) => bool =
   axiom	is_input(_) => false
 end
 
+
+(** relation: get_when_equation_expr
+ **
+ ** Get the left and right hand parts from an equation appearing in a when clause
+ **)
+relation get_when_equation_expr : WhenEquation => (Exp.ComponentRef, Exp.Exp) =
+
+  axiom get_when_equation_expr(WHEN_EQ(_,cr,e)) => (cr,e)
+
+end
 

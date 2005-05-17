@@ -170,7 +170,8 @@ module DAE:
 		   | COMP of Ident * DAElist
 		   | FUNCTION of Absyn.Path * DAElist * Types.Type
 		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl 
-	           | ASSERT of Exp.Exp
+	            | ASSERT of Exp.Exp
+                     | REINIT of Exp.ComponentRef * Exp.Exp
 
   datatype VariableAttributes = VAR_ATTR_REAL of string option * (* quantity *)
              string option *(* unit *)
@@ -668,9 +669,16 @@ relation dump_equations_str: Element list => string =
   rule   Exp.print_exp_str(c) => s &
 	dump_equations_str(xs1) => s1 &
          dump_equations_str(xs) => s3 &
-	Util.string_append_list(["when ",s," then\n", s1, "  end when;\n",s3]) => str
+	Util.string_append_list(["  when ",s," then\n", s1, "  end when;\n",s3]) => str
 	-------------------------------
 	dump_equations_str( WHEN_EQUATION(c,xs1,NONE)::xs) => str
+
+  rule   Exp.print_component_ref_str(cr) => s &
+	Exp.print_exp_str(e) => s1 &
+         dump_equations_str(xs) => s2 &
+	Util.string_append_list(["  reinit(",s,",", s1, ");\n",s2]) => str
+	-------------------------------
+	dump_equations_str( REINIT(cr,e)::xs) => str
 
   rule	dump_equations_str(xs) => str
 	-----------------------------

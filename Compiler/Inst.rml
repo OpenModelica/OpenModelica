@@ -4004,6 +4004,13 @@ rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
 				     [e1',e2'],false,false))], 
 	      env, csets, ci_state)
 
+  rule (* reinit statement *)
+	Static.elab_cref(env,cr,impl) => (Exp.CREF(cr',_),_,_) &
+         Static.elab_exp(env,e2,impl,NONE) => (e2',_,_)
+	-------------------------------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state, SCode.EQ_REINIT(cr,e2),initial,impl)
+          => ([DAE.REINIT(cr',e2')], env, csets, ci_state)
+
   rule	Debug.fprint("failtrace", "- inst_equation_common failed\n")
 	----------------------------------
 	inst_equation_common(_,_,_,_,_,_,_,impl) => fail
