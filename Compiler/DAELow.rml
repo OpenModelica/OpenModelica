@@ -695,6 +695,7 @@ relation is_non_state: VarKind => () =
   axiom	is_non_state (VARIABLE) => ()
   axiom	is_non_state (DUMMY_DER) => ()
   axiom	is_non_state (DUMMY_STATE) => ()
+  axiom  is_non_state (DISCRETE) => ()
 end
 
 (** relation: dump
@@ -1939,6 +1940,10 @@ relation incidence_row_exp: (Exp.Exp, Variables )
 	incidence_row_exp(Exp.CREF(cr,_),vars) => [p']
 	
   rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_,_, _,_,_,_,_,_,_,_),p) 
+	-----------------------------
+	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
+
+  rule	get_var(cr,vars) => (VAR(_,DISCRETE,_,_,_, _,_,_,_,_,_,_,_),p) 
 	-----------------------------
 	incidence_row_exp(Exp.CREF(cr,_),vars) => [p]
 
@@ -4396,6 +4401,12 @@ relation calculate_var_sizes:( Var list, int, int) => (int, int) =
 	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
 	----------------------------
 	calculate_var_sizes(VAR(_,VARIABLE,_,_,_, _,_,_,_,_,_,_,_)::vs,nx,ny) 
+	  => (nx'',ny'')
+
+  rule	int_add(ny,1) => ny' &
+	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
+	----------------------------
+	calculate_var_sizes(VAR(_,DISCRETE,_,_,_, _,_,_,_,_,_,_,_)::vs,nx,ny) 
 	  => (nx'',ny'')
 
   rule	int_add(nx,1) => nx' &

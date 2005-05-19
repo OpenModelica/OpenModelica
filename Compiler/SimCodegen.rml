@@ -353,6 +353,13 @@ relation generate_var_names_algvars:(DAELow.Var list) => string list =
   rule	generate_var_names_algvars(vs) => res &
 	Util.string_append_list(["\"",origname,"\""]) => origname'
 	-----------------------
+	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
+	=> origname'::res
+
+  rule	generate_var_names_algvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
+	-----------------------
 	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment)::vs)
 	=> origname'::res
@@ -530,6 +537,18 @@ relation generate_init_data3:(DAELow.Var list,
 	  =>  (nxarr,nxdarr,nyarr,nparr)
 	--------------------
 	generate_init_data3(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
+				_,value,indx,origname,_,dae_var_attr,comment)::rest,
+ 			    nxarr,nxdarr,nyarr,nparr)
+ 	  => (nxarr,nxdarr,nyarr,nparr)
+
+  rule	(* algebraic variables *)
+	print_exp_str_opt(value) => v &
+	Util.string_append_list([v, " // ",origname]) => str &
+	array_setnth(nyarr,indx,str) => nyarr &
+	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr)
+	  =>  (nxarr,nxdarr,nyarr,nparr)
+	--------------------
+	generate_init_data3(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment)::rest,
  			    nxarr,nxdarr,nyarr,nparr)
  	  => (nxarr,nxdarr,nyarr,nparr)
