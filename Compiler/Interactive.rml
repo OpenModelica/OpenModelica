@@ -1511,9 +1511,11 @@ relation get_extends_elementspec_in_elementitems: (Absyn.ElementItem list)
 	=> Absyn.ElementSpec list =
   axiom	get_extends_elementspec_in_elementitems([]) => [] 
 	
-  rule	get_extends_elementspec_in_elementitems(rest) 
-	  => res &
-	get_extends_elementspec_in_element(elt) => elt
+  rule	(* Bug in RML. If the two premisses below are in swapped order
+	 * the compiler enters infinite loop (but no stack overflow) *)
+	get_extends_elementspec_in_element(elt) => elt &
+	get_extends_elementspec_in_elementitems(rest) 
+	  => res 
 	-------------------------------------------------
 	get_extends_elementspec_in_elementitems(Absyn.ELEMENTITEM(elt)::rest)
 	  => elt::res
@@ -1521,13 +1523,13 @@ relation get_extends_elementspec_in_elementitems: (Absyn.ElementItem list)
   rule	get_extends_elementspec_in_elementitems(rest) 
 	  => res 
 	-------------------------------------------------
-	get_extends_elementspec_in_elementitems(elt::rest)
+	get_extends_elementspec_in_elementitems(_::rest)
 	  => res
 end
 
 relation get_extends_elementspec_in_element:(Absyn.Element) 
 	  => Absyn.ElementSpec =
-	  
+
   axiom	get_extends_elementspec_in_element(Absyn.ELEMENT(_,_,_,_,ext as Absyn.EXTENDS(_,_),_,_,_)) => ext
 end
 
@@ -1713,8 +1715,10 @@ relation set_submodifier_in_elementargs: (Absyn.ElementArg list,
 					  Absyn.ComponentRef, (* subcomponent name*)
 					  Absyn.Modification)
 	  => Absyn.ElementArg list =
-	  
-  axiom	set_submodifier_in_elementargs([],_,_) => []
+
+	(* empty list, add as new modifier *)
+  axiom	set_submodifier_in_elementargs([],cref ,mod) 
+	  => [Absyn.MODIFICATION(false,Absyn.NON_EACH,cref,SOME(mod),NONE)]
 
   rule	name = submodident
 	 ----------------------
