@@ -671,7 +671,7 @@ relation generate_when_clauses: (string,
 	dump_when_clauses_str wc => wcs &
 	Util.string_append_list(["/*\n",wcs,when_str,"*/\n"]) => res
 	--------------------------------------------------
-	generate_when_clauses(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,wc),ass1,ass2,blocks) => res
+	generate_when_clauses(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,DAELow.EVENT_INFO(wc,_)),ass1,ass2,blocks) => res
 
   rule	print "-generate_when_clauses failed\n"
 	----------------------------------------
@@ -874,6 +874,15 @@ end
  **)
 relation build_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int) => string =
 	     
+  rule  (* filter discrete variables *)
+	int_sub(e,1) => e' &
+	vector_nth(ass2,e') => v &
+	int_sub(v,1) => v' &
+	DAELow.vararray_nth(vararr,v') => (DAELow.VAR(_,kind,_,_,_,_,_,_,_,_,_,_,_)) &  
+	DAELow.is_discrete kind 
+	--------------------------------
+	build_equation(_,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,_,_,_,_,_),_,ass2,e) => ""
+        
   rule  (* Solving for non-states *)
 	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -991,6 +1000,15 @@ end
 				   int (* equation no. *)
 				   ) => string =
 	 
+  rule  (* Do not output equations for discrete variables here *)
+	 int_sub(e,1) => e' &
+	 vector_nth(ass2,e') => v &
+	 int_sub(v,1) => v' &
+	 DAELow.vararray_nth(vararr,v') => (DAELow.VAR(_,kind,_,_,_,_,_,_,_,_,_,_,_)) &  
+	 DAELow.is_discrete kind 
+	 --------------------------------
+	 build_residual_equation(_,DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,_,_,_,_,_),_,ass2,e) => ""	
+         
   rule  (* Solving for non-states *)
 	 int_sub(e,1) => e' &
 	 DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &

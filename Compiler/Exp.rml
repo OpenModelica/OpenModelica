@@ -225,6 +225,9 @@ module Exp:
   relation is_zero: Exp => bool 
   relation is_const: Exp => bool 
 
+  relation is_relation: Exp => bool
+  relation get_relations : Exp => Exp list 
+
   relation prepend_string_cref : (string, ComponentRef) => ComponentRef
   relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef
   relation subscript_cref: (ComponentRef, Subscript list) => ComponentRef	  
@@ -402,12 +405,73 @@ relation is_const: Exp => bool =
   axiom	is_const(_) => false
 
 end
+
+relation is_relation : (Exp) => bool =
+
+  axiom	is_relation(RELATION(_,_,_)) => true
+  axiom  is_relation(LUNARY(_,RELATION(_,_,_))) => true
+
+  rule   is_relation(e1) => b1 &
+	is_relation(e2) => b2 &
+	bool_or(b1,b2) => res
+	----------------------------------------
+	is_relation(LBINARY(e1,_,e2)) => res
+	
+  axiom	is_relation(_) => false
+end
+
+
+relation get_relations : (Exp) => Exp list =
+  axiom	get_relations(e as RELATION(_,_,_)) => [e]
+
+  rule	get_relations(e1) => rellst1 &
+	get_relations(e2) => rellst2 &
+	list_append(rellst1,rellst2) => rellst
+	----------------------------------------
+	get_relations(LBINARY(e1,_,e2)) => rellst
+
+  rule	get_relations(e) => rellst 
+	----------------------------------------
+	get_relations(LUNARY(_,e)) => rellst
+
+  rule	get_relations(e1) => rellst1 &
+	get_relations(e2) => rellst2 &
+	list_append(rellst1,rellst2) => rellst
+	----------------------------------------
+	get_relations(BINARY(e1,_,e2)) => rellst
+
+  rule	get_relations(cond) => rellst1 &
+	get_relations(tb) => rellst2 &
+	get_relations(fb) => rellst3 &
+	list_append(rellst1,rellst2) => rellst4 &
+	list_append(rellst3,rellst4) => rellst
+	----------------------------------------
+	get_relations(IFEXP(cond,tb,fb)) => rellst
+
+  rule	get_relations(e) => rellst
+	----------------------------------------
+	get_relations(ARRAY(_,_,[e])) => rellst
+
+  rule	get_relations(ARRAY(t,sc,xs)) => rellst1 &
+	get_relations(e) => rellst2 &
+	list_append(rellst1,rellst2) => rellst
+	----------------------------------------
+	get_relations(ARRAY(t,sc,e::xs)) => rellst
+
+  rule	get_relations(e) => rellst 
+	----------------------------------------
+	get_relations(UNARY(_,e)) => rellst
+
+	
+
+  axiom	get_relations(_) => []
+end
+
 (** LS:
  ** Replace this with a call to print_component_ref_str
  ** and comparison of the resulting strings, after the _str relations are 
  ** working
  **)
-
 relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
 
   axiom	join_crefs ( CREF_IDENT(id,sub),cr2) => CREF_QUAL(id,sub,cr2)

@@ -171,6 +171,13 @@
 
   datatype WhenClause = WHEN_CLAUSE of Exp.Exp (* condition *)
 
+  datatype ZeroCrossing = ZERO_CROSSING of Exp.Exp * (* relation *)
+				      int list * (* list of equations where the relation occurs *)
+				      int list (* list of when clauses where the relation occurs *)
+
+  datatype EventInfo = EVENT_INFO of WhenClause list * (* List of when clauses. The WhenEquation datatype refer to this list by position *) 
+			         ZeroCrossing list
+
 
 (* THE LOWERED DAE consist of variables and equations. The variables are split into 
  * two lists, one for unknown variables states and algebraic and one for known variables
@@ -184,7 +191,7 @@
 		  * EquationArray (* Removed equations a=b*)
 		  * EquationArray (* Initial equations *)
 		  * Algorithm.Algorithm array (* Algorithms *)
-		  * WhenClause list (* List of when clauses. The WhenEquation datatype refer to this list by position *) 
+		  * EventInfo 
 
  datatype Variables = VARIABLES of CrefIndex list array (* HashTB, cref->indx*)
 				   * VariableArray (* Array of variables *)    
@@ -322,6 +329,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation vararray_list:(VariableArray) => Var list
   relation is_state_var: (Var) => bool
   relation is_non_state: VarKind => ()
+  relation is_discrete: VarKind => ()
   relation is_var_known : (Var list, Exp.ComponentRef) => bool 
   relation is_param: (Var ) => bool 
   relation is_output: (Var) => bool 	  
@@ -365,31 +373,197 @@ relation lower: (DAE.DAElist) => DAELow =
   rule	states(lst,empty_bintree) => s &
 	lower2(lst,s,[]) => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses)  &
 	list_reverse whenclauses => whenclauses' &
-	(*	print "lowered dae:" & dump low &*)	
 	lower_algorithms(vars,algs) => algeqns &
 	list_append(algeqns,eqns) => eqns &
 	remove_simple_equations(vars,knvars,eqns,reqns,s) 
 	  => (vars,knvars,eqns,reqns) & 
+	detect_implicit_discrete(vars, eqns) => vars' &
 	sort_eqn(eqns) => eqns' &
+	find_zero_crossings(vars',eqns',whenclauses') => (zero_crossings) &
+
+(*	Util.list_map(zero_crossings,dump_zc_str) => zcstr &
+	Util.string_append_list zcstr => zcstr' &
+	print zcstr' &
+*)
 	list_equation(eqns') => eqnarr &
 	list_equation(reqns) => reqnarr &
 	list_equation(ieqns) => ieqnarr &
 	list_array(algs) => algarr
-(*	& print "removed simple equations, dae:" &
-	dump low' *)
-	(*list_length(vars) => varlen &
-	int_string(varlen) => vs &
-	list_length(eqns) => eqnlen &
-	int_string(eqnlen) => es &
-	print vs & print " variables\n========" &
-	dump_vars(vars) &
-	print st & print "\n" &
-	print es & print " equations\n" *)
 	--------------------
-	lower(lst) => DAELOW(vars,knvars,eqnarr,reqnarr,ieqnarr,algarr,whenclauses')
+	lower(lst) 
+	  => DAELOW(vars',knvars,eqnarr,reqnarr,ieqnarr,algarr,EVENT_INFO(whenclauses',zero_crossings))
 end
 
-(** relation sort_eqn 
+(** relation: dump_zc_str
+ ** Dumps a zerocrossing into a string, for debugging purposes.
+ **)
+relation dump_zc_str : (ZeroCrossing) => string =
+  
+  rule	Util.list_map(eq,int_string) => eq_s_list &
+	Util.string_delimit_list(eq_s_list, ",") => eq_s &
+	Util.list_map(wc,int_string) => wc_s_list &
+	Util.string_delimit_list(wc_s_list, ",") => wc_s &
+	Exp.print_exp_str(e) => str &
+	Util.string_append_list([str, " in equations [", eq_s, "] and when conditions [", wc_s, "]\n"]) => str2
+	----------------------------------------
+	dump_zc_str ZERO_CROSSING(e,eq,wc) => str2
+
+end
+
+(** relation: merge_zero_crossings
+ ** Takes a list of zero crossings and if more than one have identical
+ ** relation expressions they are merged into one zerocrossing.
+ ** In trhe resulting list all zerocrossing have uniq relation expressions.
+ **)
+relation merge_zero_crossings : ZeroCrossing list => ZeroCrossing list =
+
+  axiom	merge_zero_crossings [] => []
+
+  axiom	merge_zero_crossings [zc] => [zc]
+
+  rule	Util.list_select_1(xs,zc,same_zero_crossing) => samezc &
+	Util.list_select_1(xs,zc,different_zero_crossing) => diff &
+	merge_zero_crossings diff => diff' &
+	Util.list_fold(samezc,merge_zero_crossing, zc) => same'
+	----------------------------------------
+	merge_zero_crossings zc::xs => same'::diff'
+
+end
+
+(** relation: merge_zero_crossing
+ ** Merges two zero crossings into one by makeing the union of the lists of 
+ ** equaions and when clauses they appear in.
+ **)
+relation merge_zero_crossing : (ZeroCrossing, ZeroCrossing) => ZeroCrossing =
+
+  rule	Util.list_union(eq1,eq2) => eq &
+	Util.list_union(wc1,wc2) => zc 
+	----------------------------------------
+	merge_zero_crossing (ZERO_CROSSING(e1,eq1,wc1),ZERO_CROSSING(e2,eq2,wc2)) 
+	  => ZERO_CROSSING(e1,eq,zc) 
+end
+
+(** relation: same_zero_crossing
+ ** Returns true if both zero crossings have the same relation expression
+ **)
+relation same_zero_crossing : (ZeroCrossing, ZeroCrossing) => bool =
+
+  rule	Exp.exp_equal(e1,e2) => res
+	----------------------------------------
+	same_zero_crossing(ZERO_CROSSING(e1,_,_),ZERO_CROSSING(e2,_,_)) => res
+
+end
+
+(** relation: different_zero_crossing
+ ** Return true if the realation expressions differ.
+ **)
+relation different_zero_crossing : (ZeroCrossing, ZeroCrossing) => bool =
+
+  rule	same_zero_crossing(zc1,zc2) => res &
+	bool_not res => res'
+	----------------------------------------
+	different_zero_crossing(zc1,zc2) => res'
+
+end
+
+(** relation: find_zero_crossings
+ ** This relation finds all zerocrossings in the list ogf equations and
+ ** the list of when clauses. Used in lower2.
+ **)
+relation find_zero_crossings : (Variables, Equation list, WhenClause list) 
+	  => (ZeroCrossing list) =
+
+  rule	find_zero_crossings2(vars,eq,1,wc,1) => res &
+	merge_zero_crossings(res) => res'
+	----------------------------------------
+	find_zero_crossings(vars,eq,wc) => res'
+end
+
+(** relation: find_zero_crossings2
+ ** Helper function to find_zero_crossing.
+ **)
+relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list, int) 
+	  => (ZeroCrossing list) =
+       
+  axiom	find_zero_crossings2 (v, [], _, [], _) => ([])
+
+  rule	Exp.get_relations(e1) => rellst1 &
+	make_zero_crossings(rellst1, [eq_count], []) => zc1 &
+	Exp.get_relations(e2) => rellst2 &
+	make_zero_crossings(rellst2, [eq_count], []) => zc2 &
+	eq_count + 1 => eq_count' &
+	find_zero_crossings2 (v,xs,eq_count',[],0) => zc3 &
+	list_append(zc1,zc2) => zc4 &
+	list_append(zc3,zc4) => res
+	----------------------------------------
+	find_zero_crossings2 (v,(e as EQUATION(e1,e2))::xs,eq_count,[],_) => (res)
+
+
+  rule	eq_count + 1 => eq_count' &
+	find_zero_crossings2 (v,xs,eq_count',[],0) => (res)
+	----------------------------------------
+	find_zero_crossings2 (v,e::xs,eq_count,[],_) => (res)
+
+  rule	wc_count + 1 => wc_count' &
+	find_zero_crossings2 (v,el,eq_count,xs,wc_count') => (res1) &
+	Exp.get_relations(e) => rel &
+	make_zero_crossings(rel,[],[wc_count]) => res2 &
+	list_append(res1,res2) => res
+	----------------------------------------
+	find_zero_crossings2 (v,el,eq_count,(wc as WHEN_CLAUSE(e))::xs,wc_count) => (res)
+end
+
+(** relation: make_zero_crossing
+ ** Constructs a ZeroCrossing from an expression and lists of equation indecies
+ ** and when clause indecies.
+ **) 
+relation make_zero_crossing : (Exp.Exp, int list, int list) => ZeroCrossing =
+
+  axiom	make_zero_crossing(e,eq_ind,wc_ind) => ZERO_CROSSING(e,eq_ind,wc_ind)
+
+end
+
+(** relation: make_zero_crossings
+ ** Constructs a list of ZeroCrossings from a list expressions and lists of 
+ ** equation indecies and when clause indecies.
+ ** Each Zerocrossing gets the same lists of indecies.
+ **) 
+relation make_zero_crossings : (Exp.Exp list, int list, int list) => ZeroCrossing list =
+
+  axiom	make_zero_crossings([],_,_) => []
+
+  rule	make_zero_crossing(e,eq_ind,wc_ind) => res &
+         make_zero_crossings(xs,eq_ind,wc_ind) => resx 
+	----------------------------------------
+	make_zero_crossings(e::xs, eq_ind, wc_ind) => res::resx
+end
+
+(** relation: detect_implicit_discrete
+ ** This relation updates the variable kind to discrete for variables set 
+ ** in when equations.
+ **)
+relation detect_implicit_discrete : (Variables, Equation list) => Variables =
+
+  axiom	detect_implicit_discrete(v,[]) => v
+
+  rule	get_var(cr, v) => (VAR(cr,_,dir,vartype,bind,value,dims,start,ind,
+			       orig,clname,attr,comment),_) &
+	add_var(VAR(cr,DISCRETE,dir,vartype,bind,value,dims,start,ind,
+		    orig,clname,attr,comment),v) => v' &
+	detect_implicit_discrete(v',xs) => v''
+	----------------------------------------
+	detect_implicit_discrete(v, WHEN_EQUATION(WHEN_EQ(_,cr,_))::xs) => v''
+	
+  rule	detect_implicit_discrete(v,xs) => v'
+	----------------------------------------
+	detect_implicit_discrete(v, _::xs) => v'
+
+end
+
+
+
+
+(** relation: sort_eqn 
  ** This relation sorts the equation. It puts first the algebraic eqns
  ** and last the differentiated eqns
  **
@@ -513,7 +687,7 @@ relation block_is_dynamic: (int list, int array) => bool =
 	block_is_dynamic(x::xs,arr) => true
 end
 
-(** relation mark_state_equations
+(** relation: mark_state_equations
  ** This relation goes through all equations and marks the ones that
  ** calculates a state, or is needed in order to calculate a state, 
  ** with a non-zero value in the array passed as argument.
@@ -542,7 +716,7 @@ relation mark_state_equations:(DAELow,
 
 end
 
-(** relation mark_state_equation
+(** relation: mark_state_equation
  ** This relation is a helper relation to mark_state_equations
  ** It performs marking for one equation and its transitive closure by 
  ** following edges in backward direction.
@@ -686,7 +860,7 @@ relation is_state_var: (Var) => bool =
   axiom	is_state_var(_) => false
 end
 
-(** relation is_non_state 
+(** relation: is_non_state 
  ** this equation checks if the the varkind is state of variable
  ** used both in build_equation and generate_compute_state
  **)
@@ -696,6 +870,14 @@ relation is_non_state: VarKind => () =
   axiom	is_non_state (DUMMY_DER) => ()
   axiom	is_non_state (DUMMY_STATE) => ()
   axiom  is_non_state (DISCRETE) => ()
+end
+
+(** relation: is_discrete
+ ** this equation checks if the the varkind is discrete,
+ ** used both in build_equation and generate_compute_state
+ **)
+relation is_discrete: VarKind => () =
+  axiom  is_discrete (DISCRETE) => ()
 end
 
 (** relation: dump
@@ -742,7 +924,7 @@ relation dump: DAELow => () =
 	print "=========\n" &
 	dump_eqns ieqnsl 
 	-----------------
-	dump(DAELOW(vars1,vars2,eqns,reqns,ieqns,algs,whenclauses))
+	dump(DAELOW(vars1,vars2,eqns,reqns,ieqns,algs,eventinfo))
 end
 
 (** relation: var_list
@@ -779,7 +961,7 @@ relation var_nominal: (Var) => real =
 	  => nominal
 end
 
-(** relation vararray_list
+(** relation: vararray_list
  ** Transforms a VariableArray to a Var list
  **)
 
@@ -932,7 +1114,7 @@ relation remove_simple_equations: (Variables, (* vars *)
 	remove_simple_equations(_,_,_,_,_) => fail
 end
 
-(** relation remove_simple_equations2
+(** relation: remove_simple_equations2
  ** helper relation to remove_simple_equations
  **)
 relation remove_simple_equations2: (Equation list, (* all equations*)
@@ -1060,7 +1242,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (e::eqns',seqns',mvars',repl')
 end 
 
-(** relation typeof_equation
+(** relation: typeof_equation
  ** Returns the Exp.Type of an equation
 **)
 relation typeof_equation: (Equation) => Exp.Type =
@@ -1148,7 +1330,7 @@ relation is_variable: (Exp.ComponentRef, Variables, Variables) => () =
 	is_variable(cr,_,knvars) => ()
 end
 
-(** relation simple_equation
+(** relation: simple_equation
  ** This relation investigates if an Equation is simple, i.e. on the form
  ** a = b or a-b=0 
  ** These relations can be removed from the set of equations.
@@ -1371,15 +1553,21 @@ relation states_exp: (Exp.Exp,BinTree) => BinTree =
   axiom	states_exp(_,bt) => bt
 end
 
+(** relation: lower_when_eqn
+ ** This relation lowers a when clause. The condition expresion is but in the 
+ ** WhenClause list and the equations inside are but in the equation list.
+ ** if the condition involves expressions that are not pure boolean variables
+ ** a help variable is inserted together with an extra equation 
+ **)
+relation lower_when_eqn: (DAE.Element, int (* when-clause index *),WhenClause list)  
+	  =>  (Equation list, Variables, int (* when-clause index*), WhenClause list) =
 
-relation lower_when_eqn: (DAE.Element,int (* when-clause index *),WhenClause list)  
-	  =>  (Equation list, int (* when-clause index*), WhenClause list) =
-
-  rule	i + 1 => i' &
+  rule	empty_vars() => vars &
+	i + 1 => i' &
 	lower_when_eqn2(eqnl,i) => res 
 	--------------------------------------
-	lower_when_eqn(DAE.WHEN_EQUATION(cond,eqnl,NONE),i,whenList)  (* No elsewhen yet *) 
-	  => (res,i',WHEN_CLAUSE(cond)::whenList)
+	lower_when_eqn(DAE.WHEN_EQUATION(cond,eqnl,NONE(* No elsewhen yet *)),i,whenList)  
+	  => (res,vars,i',WHEN_CLAUSE(cond)::whenList)
 end
 
 relation lower_when_eqn2: (DAE.Element list, int) => Equation list = 
@@ -1440,9 +1628,10 @@ relation lower2: (DAE.DAElist, BinTree (* states *), WhenClause list)
 
 
   rule	lower2(DAE.DAE(xs),states,whenclauses) 
-	  => (vars,knvars,eqns1,reqns,ieqns,algs,whenclauses') &
+	  => (vars1,knvars,eqns1,reqns,ieqns,algs,whenclauses') &
 	list_length whenclauses' => count &
-	lower_when_eqn(e,count,whenclauses') => (eqns2,count',whenclauses'') &
+	lower_when_eqn(e,count,whenclauses') => (eqns2,vars2,count',whenclauses'') &
+	merge_vars(vars1,vars2) => vars & 
 	list_append(eqns1,eqns2) => eqns 
 	--------------------------------
 	lower2 (DAE.DAE((e as DAE.WHEN_EQUATION(c,eqns,NONE))::xs),states,whenclauses) 
@@ -1576,7 +1765,7 @@ relation lower_algorithm_inputs_outputs: (Variables,
 	  => (inputs,outputs)
 end
 
-(** relation lower_statement_inputs_outputs
+(** relation: lower_statement_inputs_outputs
  ** Helper relatoin to lower_algorithm_inputs_outputs
  ** Investigates single statements. Returns Exp.Exp list
  ** instead of Exp.ComponentRef list because derivatives must
@@ -1722,7 +1911,7 @@ relation lower_var: (DAE.Element, BinTree(* states*)) => Var =
 
   rule	Exp.print_component_ref_str name => origname &
 	let newname = Exp.CREF_IDENT(origname,[]) &
-	lower_varkind(kind,newname,states) => kind' & 
+	lower_varkind(kind,tp,newname,states) => kind' & 
 	lower_binding(bind) => bind' &
 	lower_binding(start) => start'
 	----------------------------------------
@@ -1764,18 +1953,22 @@ end
 (** relation: lower_varkind
  ** Helper relation to lower_var.
  **)
-relation lower_varkind: (DAE.VarKind, Exp.ComponentRef, BinTree (* states *)) 
+relation lower_varkind: (DAE.VarKind, DAE.Type, Exp.ComponentRef, BinTree (* states *)) 
 	=> VarKind =
 	(* Fails for not states that are not algebraic variables, e.g.
 	 parameters and constants *)
 
   rule	tree_get(states,v) => _
 	-----------------------------
-	lower_varkind(DAE.VARIABLE,v,states) => STATE
+	lower_varkind(DAE.VARIABLE,_,v,states) => STATE
 
-  axiom	lower_varkind(DAE.VARIABLE,_,_) => VARIABLE
+  axiom	lower_varkind(_,DAE.BOOL,_,_) => DISCRETE
 
-  axiom	lower_varkind(DAE.DISCRETE,_,_) => DISCRETE
+  axiom	lower_varkind(_,DAE.INT,_,_) => DISCRETE
+
+  axiom	lower_varkind(DAE.VARIABLE,_,_,_) => VARIABLE
+
+  axiom	lower_varkind(DAE.DISCRETE,_,_,_) => DISCRETE
 
 end
 (** relation: lower_known_varkind
@@ -1805,7 +1998,7 @@ relation incidence_matrix: (DAELow)
 	----------------------
 	incidence_matrix(_) => fail
 end
-(** relation incidence_matrix2
+(** relation: incidence_matrix2
  ** Helper relation to incidence_matrix
  ** Calculates the incidence matrix as a list of list of integers
  **)
@@ -1866,7 +2059,7 @@ relation incidence_row: ( Variables, Equation)
 	incidence_row(vars,_) => fail
 end 
 
-(** relation incidence_row_stmts
+(** relation: incidence_row_stmts
  ** Helper relation to incidence_row, investigates statements for
  ** variables, returning variable indexes.
  **)
@@ -2095,7 +2288,8 @@ relation add_var: (Var, Variables) => Variables =
 	add_var(_,_) => fail
 end
 
-(** relation vararray_length
+
+(** relation: vararray_length
  ** Returns the number of variable in the VariableArray
  **)
 relation vararray_length: (VariableArray) => int =
@@ -2104,7 +2298,7 @@ relation vararray_length: (VariableArray) => int =
 
 end
 
-(** relation vararray_add
+(** relation: vararray_add
  ** Adds a variable last to the VariableArray, increasing array size
  ** if no space left by factor 1.4
 **)
@@ -2136,7 +2330,7 @@ relation vararray_add:(VariableArray,Var) => VariableArray =
 	vararray_add(_,_) => fail
 end
 
-(** relation vararray_setnth
+(** relation: vararray_setnth
  ** Set the n:th variable in the VariableArray to v.
  **)
 
@@ -2157,7 +2351,7 @@ relation vararray_setnth:(VariableArray,
 	=> fail
 end
 
-(** relation vararray_nth
+(** relation: vararray_nth
  ** Retrieve the n:th Var from VariableArray, index from 0..n-1.
 **)
 relation vararray_nth:(VariableArray,
@@ -2184,7 +2378,7 @@ relation vararray_nth:(VariableArray,
 	vararray_nth(arr as VARIABLE_ARRAY(n,_,_),pos) => fail
 end
 
-(** relation replace_var
+(** relation: replace_var
  ** Takes a 'Var' list and a 'Var' and replaces the var with the 
  ** same ComponentRef in Var list with Var
 **)
@@ -2200,7 +2394,7 @@ relation replace_var: (Var list, Var) => Var list =
 	replace_var(v::vs,repl as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,_)) => v::vs' 
 end
 
-(** relation hash_component_ref
+(** relation: hash_component_ref
  ** Calculates a hash value for Exp.ComponentRef
  **)
 relation hash_component_ref: (Exp.ComponentRef) => int =
@@ -2211,7 +2405,7 @@ relation hash_component_ref: (Exp.ComponentRef) => int =
 	hash_component_ref(cr) => res
 end
 
-(** relation hash_string
+(** relation: hash_string
  ** Calculates a hash value of a string
  **)
 relation hash_string:(string)  => int =
@@ -2302,7 +2496,7 @@ relation exists_var: (Exp.ComponentRef, Variables) => bool =
 	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => false
 end
 
-(** relation get_var2
+(** relation: get_var2
  ** Helper relation to get_var
  **)
 relation get_var2:(Exp.ComponentRef, CrefIndex list) => int =
@@ -2606,7 +2800,7 @@ relation check_matching : (DAELow) => () =
 	check_matching(_) => fail
 end
 
-(** relation assignments_vector
+(** relation: assignments_vector
 ** Converts Assignments to vector of int elements
  **)
 relation assignments_vector: (Assignments) => int vector =
@@ -2622,7 +2816,7 @@ relation assignments_vector: (Assignments) => int vector =
 	assignments_vector(_) => fail
 end
 
-(** relation assignments_create
+(** relation: assignments_create
  ** Creates an assignment array of n elements, filled with value v
  **)
 relation assignments_create: (int (*size*), int(*memsize*), int) 
@@ -2637,7 +2831,7 @@ relation assignments_create: (int (*size*), int(*memsize*), int)
 	assignments_create(n,memsize,v) => ASSIGNMENTS(n,memsize,arr)
 end
 
-(** relation assignments_setnth
+(** relation: assignments_setnth
  ** Sets the n:nt assignment value to 'value'.
  **)
 relation assignments_setnth:(Assignments,int (*n*),int (*value*)) 
@@ -2653,7 +2847,7 @@ relation assignments_setnth:(Assignments,int (*n*),int (*value*))
 	assignments_setnth(_,_,_) => fail	
 end
 
-(** relation assignments_expand
+(** relation: assignments_expand
  ** Expands the assignments array with n values, initialized with zero.
  **)
 relation assignments_expand: (Assignments, int (*n*)) => Assignments =
@@ -2668,7 +2862,7 @@ relation assignments_expand: (Assignments, int (*n*)) => Assignments =
 end
 
 
-(** relation assignments_add
+(** relation: assignments_add
  ** Adds a value to the end of the assignments array. If memsize = actual size
  ** this means copying the whole array, expanding it size to fit the value 
  ** Expansion is made by a factor 1.4. Otherwise, the element is inserted taking O(1) in 
@@ -2704,7 +2898,7 @@ relation assignments_add:(Assignments,int (*value*))
 end
 
 
-(** relation matching_algorithm2
+(** relation: matching_algorithm2
  ** This is the outer loop of the matching algorithm
  ** The find_path algorithm is called for each equation/variable.
 **)
@@ -3022,7 +3216,7 @@ relation replace_dummy_der_others:(Equation, Variables) => (Equation, Variables)
 	replace_dummy_der_others(_,_) => fail 
 end
 
-(** relation replace_dummy_der_others_exp
+(** relation: replace_dummy_der_others_exp
  ** Helper relation for replace_dummy_der_others
  **)
 relation replace_dummy_der_others_exp: (Exp.Exp, Variables) => (Exp.Exp,Variables) =
@@ -3116,7 +3310,7 @@ relation var_equal: (Var,Var) => bool =
 	var_equal(VAR(cr1,_,_,_,_ ,_,_,_,_,_,_,_,_),VAR(cr2,_,_,_,_ ,_,_,_,_,_,_,_,_)) => res
 end
 
-(** relation new_dummy_var
+(** relation: new_dummy_var
  ** This relation creates a new variable named "der_"+<varname> and 
  ** adds it to the dae.
  **) 
@@ -3377,7 +3571,7 @@ relation variable_size:(Variables) => int =
   axiom	variable_size(VARIABLES(_,_,_,n)) => n 
 end
 
-(** relation equation_nth
+(** relation: equation_nth
  ** Return the n:th equation from the expandable equation array 
 **)
 relation equation_nth:(EquationArray,
@@ -3394,7 +3588,7 @@ relation equation_nth:(EquationArray,
 	equation_nth(_,_) => fail
 end
 
-(** relation equation_setnth
+(** relation: equation_setnth
  ** Sets the nth array element of an EquationArray.
  **)
 relation equation_setnth: (EquationArray,int,Equation) => EquationArray =
@@ -3430,7 +3624,7 @@ relation add_marked_vars:(DAELow,
 	add_marked_vars(dae,m,nt,nv,nf,v::vs) => (dae,m,mt,nv,nf)
 end
 
-(** relation path_found
+(** relation: path_found
  ** This relation is part of the matching algorithm.
  ** It tries to find a matching for the equation index given as 
  ** third argument, i.
@@ -3989,7 +4183,7 @@ relation dump_components2: (int list list,int) => () =
 	---------------------
 	dump_components2(l::lst,i) 
 end
-(** relation translate_dae
+(** relation: translate_dae
  ** Translates the dae so variables are indexed into different arrays:
  ** - xd for derivatives
  ** - x for states
@@ -4009,11 +4203,6 @@ relation translate_dae: DAELow => DAELow =
 	list_append(varlst',knvarlst') => totvars &
 	equation_list(eqns) => eqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
-	(*Util.list_map(s,Exp.print_exp_str) => sl &
-	 Util.string_delimit_list(sl,", ") => sstr &
-	 Util.list_map(t,Exp.print_exp_str) => tl &
-	 Util.string_delimit_list(tl,", ") => tstr &
-	 print "replace " & print sstr & print " with " & print tstr & print "\n" &*)
 	replace_variables(eqnsl,s,t) => eqnsl' &
 	replace_variables_in_alg(al,s,t) => al' &
 	replace_variables_in_when_clauses(wc,s,t) => wc' &
@@ -4025,8 +4214,8 @@ relation translate_dae: DAELow => DAELow =
 	add_vars(knvarlst'',knvars') => knvars'' &
 	list_equation(eqnsl') => eqns'  
 	------------------------------------
-	translate_dae(DAELOW(vars,knvars,eqns,seqns,ie,al,wc)) 
-	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al',wc') 
+	translate_dae(DAELOW(vars,knvars,eqns,seqns,ie,al,EVENT_INFO(wc,zc))) 
+	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al',EVENT_INFO(wc',zc)) 
 end
 
 
@@ -4077,7 +4266,7 @@ relation replace_variables_in_alg:(Algorithm.Algorithm array,
 	replace_variables_in_alg(_,_,_) => fail
 end
 
-(** relation replace_variables_in_alg2
+(** relation: replace_variables_in_alg2
  ** Helper relation to replace_variables_in_alg.
  **)
 relation replace_variables_in_alg2: (Algorithm.Algorithm list, 
@@ -4256,7 +4445,7 @@ relation calculate_jacobian_rows2:(Equation list, Variables,
 	calculate_jacobian_rows2(eqn::eqns,vars,m,mt,eqn_indx) => res
 end
 
-(** relation calculate_jacobian_row
+(** relation: calculate_jacobian_row
  ** Calculates the jacobian for one equation. See calculate_jacobian_rows.
  **)
 relation calculate_jacobian_row: (Equation, 
@@ -5221,7 +5410,7 @@ relation bintree_depth : (BinTree) => int =
 	bintree_depth(TREENODE(_,NONE,SOME(right))) => rd
 end	
 
-(** relation is_algebraic
+(** relation: is_algebraic
  ** This relation returns true if an expression is purely algebraic, i.e. not
  ** containing any derivatives
  ** Otherwise it returns false.
