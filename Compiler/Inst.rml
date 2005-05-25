@@ -1380,6 +1380,29 @@ relation add_classdefs_to_env : (Env, SCode.Element list, bool) => (Env) =
 	add_classdefs_to_env(env,(SCode.IMPORT(imp))::xs,impl) => env''
 end  
 
+
+(** relation: is_structural_parameter
+ ** author: PA
+ **
+ ** This relation investigates a component to find out if it is a structural parameter.
+ ** This is achieved by looking at the restriction to find if it is a parameter
+ ** and by investigating all components to find it is used in array dimensions of the 
+ ** component.
+ **)
+relation is_structural_parameter: (SCode.Variability, (* components variability*)
+				   Absyn.ComponentRef, (* component name *)
+				   (SCode.Element*Types.Mod) list) (* all elements *)		 
+	=> bool =
+
+  rule	SCode.is_parameter_or_const param => true &
+	get_crefs_from_compdims(allcomps) => crefs &
+	member_crefs(compname,crefs) => res
+	---------------------
+	is_structural_parameter(param,compname,allcomps) => res
+
+  axiom	is_structural_parameter(_,_,_) => false
+end
+
 (** relation: add_components_to_env
  ** author: PA
  **
@@ -1406,11 +1429,10 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets,
   rule	(* Check if the component is a structural parameter, change it's
 	 attribute to STRUCTPARAM. *)
 	not ClassInf.is_function(cistate) &  (* Functions should not be considered *)
-	get_crefs_from_compdims(allcomps) => crefs &
-	member_crefs(Absyn.CREF_IDENT(n,[]),crefs) => true &
-	SCode.is_parameter_or_const param => true &
+	is_structural_parameter(param,Absyn.CREF_IDENT(n,[]),allcomps) => true &
 	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
 									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
+	
 	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
@@ -2343,9 +2365,12 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	  => (dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
-
 	make_binding (env2,attr,eq) => binding &
-	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
+
+	(* check if binding makes other variables into structural parameters*)
+	check_structural_param_binding(param,binding,env2) => env2' &
+
+	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding),false(*encapsulated*)) => env' 
 (*	& Debug.fprint("insttr","Updated variable ") &
 	Debug.fprint("insttr", id) &
@@ -2425,6 +2450,52 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	update_component_in_env(mod,cref,env,ci_state,impl) => env
 end
 
+(** relation: check_structural_param_binding
+ ** author: PA
+ ** 
+ ** Checks if the binding of a structural parameter makes other parameters structural.
+ ** For instance,
+ ** parameter Integer m=n
+ ** if m is structural, so will n be.
+ **)
+relation check_structural_param_binding: (SCode.Variability, Types.Binding, Env.Env)
+	=> Env.Env =
+
+  rule	Exp.get_cref_from_exp(exp) => crefs & Exp.print_exp_str exp => str &
+	Util.list_fold(crefs,make_structural_in_env,env) => env'
+	-------------------------------
+	check_structural_param_binding(SCode.STRUCTPARAM,Types.EQBOUND(exp,_),env)
+	  => env'
+
+  axiom	check_structural_param_binding(_,_,env) => env
+
+end
+
+(** relation: make_structural_in_env
+ ** author: PA
+ **
+ ** This relation is used to update a parameter in the environment to a 
+ ** structural parameter.
+ **)
+
+relation make_structural_in_env:(Exp.ComponentRef,Env.Env) => Env.Env =
+
+  rule	Lookup.lookup_ident(env,id) 
+	  => (Types.VAR(n,Types.ATTR(flow,acc,SCode.PARAM,dir),prot,tp,bind),
+	      SOME((SCode.COMPONENT(a,b,c,d,
+				   SCode.ATTR(e,f,g,SCode.PARAM,h),i,j,k,l),m)),typed) &
+ 	(* replace variable, relys on hash_add to replace node. *)
+ 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,SCode.STRUCTPARAM,dir),prot,tp,bind),
+			   SOME((SCode.COMPONENT(a,b,c,d,
+					    SCode.ATTR(e,f,g,SCode.STRUCTPARAM,h),i,j,k,l),m)),false) => env'
+	--------------------------------------------------------
+	make_structural_in_env(Exp.CREF_IDENT(id,_),env) => env'
+
+  rule	print "make_structural_in_env failed\n"
+	--------------------------
+	make_structural_in_env(_,env) => env
+end
+	
 (** relation: inst_dim_exp_lst
  **
  ** Instantiates dimension expressions, DimExp, which are transformed to Exp.Subscript's

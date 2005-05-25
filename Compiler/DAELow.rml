@@ -136,19 +136,19 @@
 
   datatype VarKind = VARIABLE | STATE | DUMMY_DER | DUMMY_STATE | DISCRETE | PARAM | CONST
 
-  datatype Var = VAR of Exp.ComponentRef * 
-			VarKind * 
-			DAE.VarDirection * 
-			DAE.Type * 
-			Exp.Exp option * (* Binding expression e.g. for parameters*)
-			Values.Value option * (* binding value for parameters*)
-			DAE.InstDims *
-			DAE.StartValue *  (* value of start attribute *)
-			int * (* index in impl. vector *)
-			string *(* original variable name *)
-			Absyn.Path list *(* classname variable belongs to *)
-                        DAE.VariableAttributes option *
-                        Absyn.Comment option (* this contains the comment and annotation from Absyn *)
+  datatype Var = VAR of Exp.ComponentRef *	(* variable name *)
+			VarKind *		(* Kind of variable*)
+			DAE.VarDirection *	(* input, output or bidirectional*)
+			DAE.Type *		(* builtin type or enumeration *)
+			Exp.Exp option *	(* Binding expression e.g. for parameters*)
+			Values.Value option *	(* binding value for parameters*)
+			DAE.InstDims *		(* array dimensions on nonexpanded var *)
+			DAE.StartValue *	(* value of start attribute *)
+			int *			(* index in impl. vector *)
+			string *		(* original variable name *)
+			Absyn.Path list *	(* classname variable belongs to *)
+                        DAE.VariableAttributes option * (* values on builtin attributes*)
+                        Absyn.Comment option	(* this contains the comment and annotation from Absyn *)
             
   datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
                                                        
