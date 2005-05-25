@@ -131,7 +131,7 @@ module SimCodegen:
   with "Absyn.rml"
   with "Exp.rml"
 
-  relation generate_residual_code: (DAE.DAElist,
+  relation generate_simulation_code: (DAE.DAElist,
 				    DAELow.DAELow, 		      
 				    int vector, (* ass1 *)
 				    int vector, (* ass2 *)
@@ -140,9 +140,7 @@ module SimCodegen:
 				    int list list, (* blocks*)
 				    Absyn.Path,  (* classname *)
 				    string) => ()
-	  
-  relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => ()
-	  
+	  	  
   relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
 				string,real,real,real)  => ()
 	  
@@ -193,12 +191,13 @@ relation generate_makefile: (string, Absyn.Path) => () =
 end
 
 
-(** relation generate_residual_code
+(** relation generate_simulation_code
  ** Outputs simulation code from a DAELow suitable for connection to DASSL.
  ** The state calculations are generated on residual form, i.e. 
  ** g(\dot{x},x,y,t) = 0.
+ ** and on explicit ode form, \dot{x}=f(x,y,t)
  **)
-relation generate_residual_code: (DAE.DAElist,
+relation generate_simulation_code: (DAE.DAElist,
 				  DAELow.DAELow, 		      
 				  int vector, (* ass1 *)
 				  int vector, (* ass2 *)
@@ -225,12 +224,12 @@ relation generate_residual_code: (DAE.DAElist,
 				 cglobal,coutput,cstate,cwhen]) => res &
 	System.write_file(filename,res) 
 	---------------------------------------------------------------------
-	generate_residual_code(dae,dlow,ass1,ass2,m,mt,comps,class,filename) => ()
+	generate_simulation_code(dae,dlow,ass1,ass2,m,mt,comps,class,filename) => ()
 
 
-  rule	print "-generate_residual_code failed\n" 
+  rule	print "-generate_simulation_code failed\n" 
 	-----------------------
-	generate_residual_code(_,_,_,_,_,_,_,_,_) => fail
+	generate_simulation_code(_,_,_,_,_,_,_,_,_) => fail
 end
 
 (** relation: generate_global_data
@@ -387,13 +386,192 @@ end
 (** relation generate_ode_code
  ** Outputs simulation code from a DAELow. 
  ** The state calculations are generated on explicit ode form: 
- ** x_dot := f(x,y,t)
+ ** \dot{x} := f(x,y,t)
 **)
-relation generate_ode_code: (DAELow.DAELow, Absyn.Path, string) => () =
+relation generate_ode_code: (DAELow.DAELow, 
+			     int list list, (* components*)
+			     int vector, (* ass1 *)
+			     int vector, (* ass2 *)
+			     DAELow.IncidenceMatrix,
+			     DAELow.IncidenceMatrixT,
+			     Absyn.Path) => string =
+
+  rule	Absyn.path_string(class) => cname &
+        DAELow.generate_state_partition(comps,dlow,ass1,ass2,m,mt) 
+	  => (blt_states,blt_no_states) &
+	generate_ode_blocks(dlow,ass1,ass2,blt_states) => block_code &
+	generate_ode_header() => cheader &
+	generate_ode_footer() => cfooter &
+	Util.string_append_list([cheader,block_code,cfooter]) => res
+	-------------------------------------------
+	generate_ode_code(dlow,comps,ass1,ass2,m,mt,class) => res
+end
+
+(** relation: generate_ode_header
+ ** author: PA
+ **
+ ** Geneates the header of the function for calcuating the explicit ode
+ **)
+relation generate_ode_header: () => string =
+	
+  rule	Util.string_append_list(
+	[
+	 " void functionODE(/*insert stuff here*/) {"
+	 ]) => res
+	------------------------
+	generate_ode_header() => res
+
+end	
+
+(** relation: generate_ode_footer
+ ** author: PA
+ **
+ ** Geneates the footer of the function for calcuating the explicit ode
+ **)
+relation generate_ode_footer: () => string =
+	
+  rule	Util.string_append_list(
+	[
+	 " void functionODE("
+
+	 ]) => res
+	------------------------
+	generate_ode_footer() => res
+
+end	
+
+(** relation: generate_ode_blocks
+ ** author: PA
+ **
+ ** Generates the simulation code for the ode code.
+ ** 
+**)
+relation generate_ode_blocks:(DAELow.DAELow, int vector, int vector, int list list) 
+	  => string =
+
+  axiom	generate_ode_blocks(_,_,_,[]) => ""
+
+  rule	(* For system of equations *)
+	generate_ode_system(dae,ass1,ass2,block) => s1  &
+	generate_ode_blocks(dae,ass1,ass2,blocks) => s2 &
+	string_append(s1,s2) => res
+	-------------------------------------
+	generate_ode_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks) => res
+	
+  rule	(* for single equations *)
+	generate_ode_equation(dae,ass1,ass2,eqn) => s1 &
+	generate_ode_blocks(dae,ass1,ass2,blocks) => s2 &
+	string_append(s1,s2) => res
+	-------------------------------------
+	generate_ode_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => res
+
+  rule	print "-generate_ode_blocks failed\n" 
+	-----------------
+	generate_ode_blocks(_,_,_,_) => fail
+end
+
+(** relation: generate_ode_system
+ ** author: PA
+ **
+ ** Generates code for a subsystem of equations, both linear and non-linear.
+ **)
+relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list) 
+	  => string =
 
   rule	
-	-------------------------------------------
-	generate_ode_code(dlow,class,filename) => ()
+	-------------------------
+	generate_ode_system(daelow,ass1,ass2,block) 
+	  => "/* system of equations not impl. yet. */"
+end
+
+
+relation is_non_state: DAELow.VarKind => () =
+
+  axiom	is_non_state (DAELow.VARIABLE) => ()
+  axiom	is_non_state (DAELow.DUMMY_DER) => ()
+  axiom	is_non_state (DAELow.DUMMY_STATE) => ()
+end 
+
+(** relation: generate_ode_equation
+ ** author: PA
+ **
+ **  Generates code for a single equation for the ode code generation, see
+ ** genrerate_ode_code.
+ **)
+
+relation generate_ode_equation: (DAELow.DAELow, 
+				 int vector, (*assignements 1 *)
+				 int vector, (* assignements 2 *)
+				 int) (* equation number*)
+	  => string =
+
+  rule	(* Solving for non-states *)
+	int_sub(e,1) => e' &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	DAELow.var_list(vars) => varlst &
+	list_nth(varlst,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
+	is_non_state kind &
+
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr &
+	print_exp_cpp_str(expr) => expr_str &
+	Exp.print_component_ref_str(cr) => cr_str &
+	Util.string_append_list([cr_str,"=",expr_str]) => res
+	-----------------------
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
+
+  rule	(* Solving the state s means solving for der(s) *)
+	int_sub(e,1) => e' &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	DAELow.var_list(vars) => varlst &
+	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["xd[",indxs,"]"]) => id &
+	let cr' = Exp.CREF_IDENT(id,[]) &
+	let varexp = Exp.CREF(cr',Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr &
+	print_exp_cpp_str(expr) => expr_str &
+	Exp.print_component_ref_str(cr) => cr_str &
+	Util.string_append_list([cr_str,"=",expr_str]) => res
+	----------------------------
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
+
+	(* state nonlinear *)
+  rule	int_sub(e,1) => e' &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	DAELow.var_list(vars) => varlst &
+	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,_) &
+	int_string(indx) => indxs &
+	Util.string_append_list(["xd[",indxs,"]"]) => id &
+	let cr' = Exp.CREF_IDENT(id,[]) &
+	let varexp = Exp.CREF(cr',Exp.REAL) &
+	not Exp.solve(e1,e2,varexp) => _ &
+	generate_nonlinear_equations([varexp],[Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2)])
+	  => res
+	-------------------------------------
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
+end
+
+(** relation: generate_nonlinear_equations
+ ** author: PA
+ ** 
+ ** This relation generates a nonlinear system of equations.
+ **)
+
+relation generate_nonlinear_equations: (Exp.Exp list, (* variables *)
+				     Exp.Exp list) (* residuals *)
+	=> string =
+  axiom	generate_nonlinear_equations(_,_) 
+	  => "/* Generate non-linear equations not impl. yet.*/\n"
 end
 
 (** relation generate_functions
@@ -723,7 +901,7 @@ end
 
 (** relation: generate_compute_residual_state
  ** This relation generates the code for the calculation of the 
- ** state variables on residual form. Called from generate_residual_code.
+ ** state variables on residual form. Called from generate_simulation_code.
  **)
 relation generate_compute_residual_state:(string,
 					  DAE.DAElist,

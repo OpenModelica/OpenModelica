@@ -1113,7 +1113,7 @@ end
 	 Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
 	 Util.string_append_list([cname_str,".makefile"]) => makefilename &
 	 SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
-	 SimCodegen.generate_residual_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
+	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
 	 SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
 				       starttime_r,stoptime_r,stepsize_r) &
 	 SimCodegen.generate_makefile(makefilename,classname) &

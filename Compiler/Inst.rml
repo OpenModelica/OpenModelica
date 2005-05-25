@@ -810,6 +810,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
+	print "ready to instantiate components\n" &
 	inst_element_list(env4, mods, pre, csets, ci_state1, compelts'', 
 			  inst_dims, impl, packimpl)
 	  => (dae1,env5, csets1, ci_state2, tys) &
@@ -1397,7 +1398,7 @@ relation is_structural_parameter: (SCode.Variability, (* components variability*
   rule	SCode.is_parameter_or_const param => true &
 	get_crefs_from_compdims(allcomps) => crefs &
 	member_crefs(compname,crefs) => res
-	---------------------
+	-----------------------------------
 	is_structural_parameter(param,compname,allcomps) => res
 
   axiom	is_structural_parameter(_,_,_) => false
@@ -1432,7 +1433,6 @@ relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets,
 	is_structural_parameter(param,Absyn.CREF_IDENT(n,[]),allcomps) => true &
 	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
 									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
-	
 	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
 	------------------------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
@@ -1757,7 +1757,7 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	Debug.fcall ("insttr", print, "\n") &*)
 	(* true in update_frame means the variable is now instantiated. *)
 	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),true(*encapsulated*)) => env' 
+					 prot,ty,binding),true(*type info present*)) => env' 
 
 	(* Now we can also put the binding into the dae *)
 	(** If the type is one of the simple, predifined types a *)
@@ -2368,10 +2368,10 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	make_binding (env2,attr,eq) => binding &
 
 	(* check if binding makes other variables into structural parameters*)
-	check_structural_param_binding(param,binding,env2) => env2' &
+	check_structural_param_binding(param,binding,env2) => (env2',binding') &
 
 	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),false(*encapsulated*)) => env' 
+					 prot,ty,binding'),false(*type info present*)) => env' 
 (*	& Debug.fprint("insttr","Updated variable ") &
 	Debug.fprint("insttr", id) &
 	Debug.fprint("insttr"," in env.\n ") *)
@@ -2434,7 +2434,7 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	make_binding (env2,attr,eq) => binding &
 
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-					 prot,ty,binding),false(*encapsulated*)) => env' 
+					 prot,ty,binding),false(*type info present*)) => env' 
 	------------
 	update_component_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, impl) 
 	  => env'
@@ -2459,15 +2459,18 @@ end
  ** if m is structural, so will n be.
  **)
 relation check_structural_param_binding: (SCode.Variability, Types.Binding, Env.Env)
-	=> Env.Env =
+	=> (Env.Env, Types.Binding) =
 
+	  (* collect varnames from binding and make them structural. Also make sure
+	   * that binding has constant = true.
+	   *)
   rule	Exp.get_cref_from_exp(exp) => crefs & Exp.print_exp_str exp => str &
-	Util.list_fold(crefs,make_structural_in_env,env) => env'
-	-------------------------------
-	check_structural_param_binding(SCode.STRUCTPARAM,Types.EQBOUND(exp,_),env)
-	  => env'
+	Util.list_fold(crefs,make_structural_in_env,env) => env' 
+	-------------------------------------------------
+	check_structural_param_binding(SCode.STRUCTPARAM,Types.EQBOUND(exp,const),env)
+	  => (env',Types.EQBOUND(exp,true))
 
-  axiom	check_structural_param_binding(_,_,env) => env
+  axiom	check_structural_param_binding(_,bind,env) => (env,bind)
 
 end
 

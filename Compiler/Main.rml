@@ -615,7 +615,7 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
 	Util.string_append_list([cname_str,".makefile"]) => makefilename &
 	SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
-	SimCodegen.generate_residual_code(dae,indexed_dlow',ass1,ass2,m,mt,comps,classname,filename) &
+	SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mt,comps,classname,filename) &
 	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,0.0,1.0,0.01) &
 	SimCodegen.generate_makefile(makefilename,classname)
 	----------------------------------------------------------------------------------
