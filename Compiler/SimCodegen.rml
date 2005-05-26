@@ -416,7 +416,9 @@ relation generate_ode_header: () => string =
 	
   rule	Util.string_append_list(
 	[
-	 " void functionODE(/*insert stuff here*/) {"
+	 "void functionODE(double *x, double *xd, double *y, double *p, \n",
+	 "                  int nx, int ny, int np, double *time)\n",
+	 "{\n"
 	 ]) => res
 	------------------------
 	generate_ode_header() => res
@@ -432,7 +434,7 @@ relation generate_ode_footer: () => string =
 	
   rule	Util.string_append_list(
 	[
-	 " void functionODE("
+	 "}"
 
 	 ]) => res
 	------------------------

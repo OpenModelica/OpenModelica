@@ -810,7 +810,6 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
-	print "ready to instantiate components\n" &
 	inst_element_list(env4, mods, pre, csets, ci_state1, compelts'', 
 			  inst_dims, impl, packimpl)
 	  => (dae1,env5, csets1, ci_state2, tys) &

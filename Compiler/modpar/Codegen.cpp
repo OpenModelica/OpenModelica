@@ -541,11 +541,13 @@ void  Codegen::generateParallelMPIGlobals()
   m_cstreamFunc  << "extern int rank;" << endl;
   m_cstreamFunc  << "extern double x[];" << endl;
   m_cstreamFunc  << "extern double xd[];" << endl;
+  m_cstreamFunc  << "extern \"C\" {" << endl;
   m_cstreamFunc  <<  "void hybrd_(void (int, double *, double*, int)," << endl
-		 << "int, double*,double*,double,int, " << endl
-		 << "int,int,double,double*,int,double, " << endl 
-		 << "int,int*,int*,double *,double*,double*, " << endl 
-		 << "int, double*,double*,double*,double*,double*);" << endl;
+		 << "int n, double* x,double* fvec,double xtol,int maxfev, " << endl
+		 << "int ml,int mu,double epsfcn,double* diag,int mode, double factor, " << endl 
+		 << "int nprint,int* info,int* nfev,double* fjac,int ldfjac,double* r, " << endl 
+		 << "int lr, double* qtf,double* wa1,double* wa2,double* wa3,double* wa4);" << endl;
+  m_cstreamFunc << "}" << endl;
   m_cstream << "/* MPI Global variables */" << endl;
   m_cstream << "MPI_Status status;" << endl;
   m_cstream << "MPI_Request request;" << endl;
