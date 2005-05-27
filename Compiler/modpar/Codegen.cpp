@@ -366,7 +366,7 @@ void Codegen::generateNonLinearResidualFunc(VertexID task)
 {
   int tasknumber = getTaskID(task,m_tg); // Task no. used to make unique funcion name
   m_cstreamFunc << "void residualFunc" << tasknumber 
-		<< "( int n, double *xloc, double *res, int iflag) {" << endl;
+		<< "( int* n, double *xloc, double *res, int* iflag) {" << endl;
   m_cstreamFunc << getVertexName(task,m_tg) << endl;
   m_cstreamFunc << "}" << endl;
   
@@ -381,7 +381,18 @@ void Codegen::generateNonLinearResidualFunc(VertexID task)
   m_cstream << TAB <<"double nls_wa2[" << n << "];" << endl;
   m_cstream << TAB <<"double nls_wa3[" << n << "];" << endl;
   m_cstream << TAB << "double nls_wa4[" << n << "];" << endl;
+  m_cstream << TAB << "double xtol=1e-6;" << endl;
+  m_cstream << TAB << "double epsfcn=1e-6;" << endl;
+  m_cstream << TAB << "int maxfev=2000;" << endl;
+  m_cstream << TAB << "int n=" << n << ";"<< endl;
+  m_cstream << TAB << "int ml=" << n-1 << ";"<< endl;
+  m_cstream << TAB << "int mu=" << n-1 << ";"<< endl;
+  m_cstream << TAB << "int mode=1;" << endl;
   m_cstream << TAB << "int info,nfev;" << endl;
+  m_cstream << TAB << "double factor=100.0;" << endl;
+  m_cstream << TAB << "int nprint = 1;" << endl;
+  m_cstream << TAB << "int lr = " << lr << ";" << endl;
+  m_cstream << TAB << "int ldfjac = 1;" << endl;
   m_cstream << TAB << "double nls_fjac[" << n*n << "];" << endl;
 
   InEdgeIterator e,e_end;		// Iterate over parents and set values 
@@ -391,10 +402,10 @@ void Codegen::generateNonLinearResidualFunc(VertexID task)
     m_cstream << TAB << "nls_x[" << i << "] = " << s.top() << ";\n" << endl;
   }
  
-  m_cstream << TAB << "hybrd(residualFunc" << tasknumber << "," << n << ", nls_x, nls_fvec,1e-6," 
-	    << "2000, " << n-1 << ", " << n-1 << ", 1e-6, nls_diag, 1, 100.0,"
-	    << " -1, &info, &nfev, nls_fjac, 1, nls_r," << lr
-	    <<", nls_qtf, nls_wa1, nls_wa2, nls_wa3, nls_wa4);" << endl;
+  m_cstream << TAB << "hybrd(residualFunc" << tasknumber << ",&n , nls_x, nls_fvec,&xtol," <<endl
+	    << TAB << "&maxfev, &ml, &mu, &epsfcn, nls_diag, &mode, &factor, &nprint," << endl
+	    << TAB << " &info, &nfev, nls_fjac, &ldfjac, nls_r," << endl 
+	    << TAB << "&lr,nls_qtf, nls_wa1, nls_wa2, nls_wa3, nls_wa4);" << endl;
   m_cstream << TAB << "if (info == 0) { printf(\"improper input parameters to nonlinear system nuber  " << tasknumber << "\");" << endl;
   m_cstream << TAB << "exit(-3);" << endl;
   m_cstream << TAB << " }"<< endl;
@@ -541,13 +552,21 @@ void  Codegen::generateParallelMPIGlobals()
   m_cstreamFunc  << "extern int rank;" << endl;
   m_cstreamFunc  << "extern double x[];" << endl;
   m_cstreamFunc  << "extern double xd[];" << endl;
-  m_cstreamFunc  << "extern \"C\" {" << endl;
+<<<<<<< .mine
+  m_cstreamFunc  <<  "void hybrd_(void (int*, double *, double*, int*)," << endl
+		 << "int* n, double* x,double* fvec,double* xtol,int* maxfev, " << endl
+		 << "int* ml,int* mu,double* epsfcn,double* diag,int* mode, double* factor, " << endl 
+		 << "int* nprint,int* info,int* nfev,double* fjac,int* ldfjac,double* r, " << endl 
+		 << "int* lr, double* qtf,double* wa1,double* wa2,double* wa3,double* wa4);" << endl;
+  m_cstreamFunc << "}" << endl;
+=======
   m_cstreamFunc  <<  "void hybrd_(void (int, double *, double*, int)," << endl
 		 << "int n, double* x,double* fvec,double xtol,int maxfev, " << endl
 		 << "int ml,int mu,double epsfcn,double* diag,int mode, double factor, " << endl 
 		 << "int nprint,int* info,int* nfev,double* fjac,int ldfjac,double* r, " << endl 
 		 << "int lr, double* qtf,double* wa1,double* wa2,double* wa3,double* wa4);" << endl;
   m_cstreamFunc << "}" << endl;
+>>>>>>> .r1786
   m_cstream << "/* MPI Global variables */" << endl;
   m_cstream << "MPI_Status status;" << endl;
   m_cstream << "MPI_Request request;" << endl;
