@@ -1962,9 +1962,13 @@ relation lower_varkind: (DAE.VarKind, DAE.Type, Exp.ComponentRef, BinTree (* sta
 	-----------------------------
 	lower_varkind(DAE.VARIABLE,_,v,states) => STATE
 
-  axiom	lower_varkind(_,DAE.BOOL,_,_) => DISCRETE
 
-  axiom	lower_varkind(_,DAE.INT,_,_) => DISCRETE
+  axiom	lower_varkind(DAE.VARIABLE,DAE.BOOL,_,_) => DISCRETE
+
+  axiom	lower_varkind(DAE.DISCRETE,DAE.BOOL,_,_) => DISCRETE
+
+  axiom	lower_varkind(DAE.VARIABLE,DAE.INT,_,_) => DISCRETE
+  axiom	lower_varkind(DAE.DISCRETE,DAE.INT,_,_) => DISCRETE
 
   axiom	lower_varkind(DAE.VARIABLE,_,_,_) => VARIABLE
 

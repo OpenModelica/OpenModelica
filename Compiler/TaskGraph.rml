@@ -137,6 +137,7 @@ with "Ceval.rml"
 with "Values.rml"
 with "Print.rml"
 with "VarTransform.rml"
+with "SimCodegen.rml"
 
 relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list) => () =
 
@@ -149,6 +150,7 @@ relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list
 	DAELow.vararray_list(vararr) =>  vars &
 	DAELow.vararray_list(knvararr) => knvars &
 	add_variables(vars,starttask) &
+	add_variables(knvars,starttask) &
 	add_variables([DAELow.VAR(Exp.CREF_IDENT("sim_time",[]),DAELow.VARIABLE,
                               DAE.INPUT,DAE.REAL,NONE,NONE,[],NONE,0,"time",[],NONE,NONE)],starttask) &
 	build_blocks(dae,ass1,ass2,blocks) &
@@ -346,7 +348,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	--------------------------------
 	build_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e)	
 
-  rule	int_sub(e,1) => e' &
+(*  rule	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e') => v & (* v==variable no solved in this equation *)
 	int_sub(v,1) => v' &
@@ -356,7 +358,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
 	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => fail
-
+*)
   rule	(* state nonlinear *)
 	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -370,6 +372,22 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
+	build_nonlinear_equations([varexp],[Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2)]) 
+	--------------------------------
+	build_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e)	
+
+  rule	(* Solving nonlinear for non-states *)
+	int_sub(e,1) => e' &
+	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
+	vector_nth(ass2,e') => v &
+	(* v == variable no solved in this equation *)
+	int_sub(v,1) => v' &
+	DAELow.var_list(vars) => varlst &
+	list_nth(varlst,v') => (v as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
+	is_non_state kind &
+	(*print "Solving for non-states\n" &*)
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	not Exp.solve(e1,e2,varexp) => expr &
 	build_nonlinear_equations([varexp],[Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2)]) 
 	--------------------------------
 	build_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e)	
@@ -459,7 +477,7 @@ relation build_residual_code2:(Exp.Exp list,
   axiom	build_residual_code2([],_,_) => "" 
 
   rule	VarTransform.replace_exp(e,repl) => e' &
-	Exp.print_exp_str(e') => s1 &
+	SimCodegen.print_exp_cpp_str(e') => s1 &
 	pos + 1 => pos'  &
 	build_residual_code2(es,pos',repl) => s2 &
 	int_string(pos) => pstr &
@@ -665,6 +683,16 @@ relation build_expression:(Exp.Exp) => (int, string) =
  	---------------------------------
 	build_expression(Exp.CREF(cr,_)) => (tid,crs)
 
+  rule	(* special case for pow *)
+	build_expression(e1) => (t1,s1) &
+	real_int(rval) => ival &
+	int_string(ival) => istr &
+	Util.string_append_list(["pow(%s,",istr,")"]) => ts &
+	TaskGraphExt.new_task(ts) => t &
+	TaskGraphExt.add_edge(t1,t,s1,0) 
+	---------------------------
+	build_expression(Exp.BINARY(e1,Exp.POW(_),Exp.RCONST(rval))) => (t,"")
+
   rule	build_expression(e1) => (t1,s1) &
 	build_expression(e2) => (t2,s2) &
 	Exp.binop_symbol_1(op) => ops &
@@ -786,11 +814,11 @@ relation build_call_str:(string , int) => string =
 	build_call_str(str,n) => res
 end
 
-relation add_predecessors: (int, int list,string list,int (* prio*)) => () =
+relation add_predecessors: (int (* task*), int list (* list of precessors *),string list,int (* prio*)) => () =
 
 axiom add_predecessors(_,[],[],_) 
 
-  rule	TaskGraphExt.add_edge(t,t1,s,prio) &
+  rule	TaskGraphExt.add_edge(t1,t,s,prio) &
 	int_add(prio,1) => prio' &
 	add_predecessors(t,ts,strs,prio')
 	---------------------
