@@ -143,6 +143,8 @@ module Util :
   relation list_map_1: ('a list, ('a, 'b) => 'c, 'b) => 'c list
   relation list_map_1r: ('a list, ('b,'a) => 'c, 'b) => 'c list
   relation list_map_2: ('a list, ('a, 'b,'c) => 'd, 'b,'c) => 'd list 
+  relation list_map_3: ('a list, ('a, 'b,'c,'d) => 'e, 'b,'c,'d) => 'e list 
+  relation list_map_3_2: ('a list, ('a, 'b,'c,'d) => ('e,'f), 'b,'c,'d) => ('e list, 'f list) 
   relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list
   relation list_fold: ('a list, ('a,'b)=> 'b, 'b) => 'b	  
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list 
@@ -372,6 +374,34 @@ relation list_map_2: ('a list, ('a, 'b,'c) => 'd, 'b,'c) => 'd list =
 	list_map_2(r,fn,extraarg1,extraarg2) => r'
 	-------------------
 	list_map_2(f::r,fn,extraarg1,extraarg2) => f'::r'
+end
+
+(** relation list_map_3
+ ** Takes a list and a relation and three extra arguments passed to the relation.
+ ** The relation produces one new value which is used for creating a new list.
+ **)
+relation list_map_3: ('a list, ('a, 'b,'c,'d) => 'e, 'b,'c,'d) => 'e list =
+
+  axiom	list_map_3 ([],_,_,_,_) => []
+
+  rule	fn (f,extraarg1,extraarg2,extraarg3) => f' &
+	list_map_3(r,fn,extraarg1,extraarg2,extraarg3) => r'
+	-------------------
+	list_map_3(f::r,fn,extraarg1,extraarg2,extraarg3) => f'::r'
+end
+
+(** relation list_map_3_2
+ ** Takes a list and a relation and three extra arguments passed to the relation.
+ ** The relation produces two values which is used for creating two new lists.
+ **)
+relation list_map_3_2: ('a list, ('a, 'b,'c,'d) => ('e,'f), 'b,'c,'d) => ('e list, 'f list) =
+
+  axiom	list_map_3_2 ([],_,_,_,_) => ([],[])
+
+  rule	fn (f,extraarg1,extraarg2,extraarg3) => (f1',f2') &
+	list_map_3_2(r,fn,extraarg1,extraarg2,extraarg3) => (r1',r2')
+	-------------------
+	list_map_3_2(f::r,fn,extraarg1,extraarg2,extraarg3) => (f1'::r1',f2'::r2')
 end
 
 (** relation: list_map_2_2

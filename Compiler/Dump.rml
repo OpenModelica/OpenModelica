@@ -201,7 +201,7 @@ relation unparse_str : Absyn.Program => string =
 	
   rule	unparse_within(0,w) => s1 &
 	unparse_class_list(0,cs) => s2 &
-	string_append(s2,s1) => s3 &
+	string_append(s1,s2) => s3 &
 	string_append(s3,"\n") => str
 	------------------------
 	unparse_str Absyn.PROGRAM(cs,w) => str

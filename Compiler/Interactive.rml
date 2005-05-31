@@ -158,6 +158,8 @@ module Interactive:
   relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type 
   relation add_instantiated_class: (InstantiatedClass list, InstantiatedClass) => InstantiatedClass list 
   relation get_instantiated_class: (InstantiatedClass list, Absyn.Path) => InstantiatedClass 
+
+  relation get_contained_class_and_file: (Absyn.Path, Absyn.Program) => (Absyn.Program, string)
   
 
   relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
@@ -5705,3 +5707,117 @@ end
 	  => res
 end
 
+(** relation: get_contained_class_and_file
+ ** author: PA
+ ** 
+ ** Returns the package or class in which the model is saved and the file name it is saved in.
+ ** This is used to save a model in a package when the whole package is saved in a file.
+ **)
+	    
+relation get_contained_class_and_file: (Absyn.Path, (* class name*)
+					Absyn.Program) (* program*)
+	  => (Absyn.Program, (* package as a program*)
+	      string) = (* filename *)
+
+  rule	get_pathed_class_in_program(classname,p) => cdef &
+	Absyn.class_filename(cdef) => filename &
+	get_surrounding_package(classname,p) => p' &
+	remove_inner_diff_filed_classes(p') => p''
+	---------------------------------------------------
+	get_contained_class_and_file(classname,p) => (p'',filename)
+
+end
+
+(** relation remove_inner_diff_filed_classes
+ ** author: PA
+ **
+ ** Removes all inner classes that have different file name than the class itself.
+ ** The filename of the class is passed as argument.
+ **)
+relation remove_inner_diff_filed_classes: (Absyn.Program) (* package as program. *)
+	  => Absyn.Program =
+	  
+  rule	Util.list_map(classlst,remove_inner_diff_filed_class) => classlst'
+	------------------------
+	remove_inner_diff_filed_classes(Absyn.PROGRAM(classlst,within)) 
+	  =>  Absyn.PROGRAM(classlst',within)
+end
+
+(** relation: remove_inner_diff_filed_class
+ ** author: PA
+ ** 
+ ** Helper relation to remove_inner_diff_filed_classes, removes all local classes in class
+ ** that does not have the same filename as the class iteself.
+**)
+relation remove_inner_diff_filed_class: (Absyn.Class) => Absyn.Class =
+
+
+  rule	get_public_list(parts) => publst &
+	remove_class_diff_filed_in_elementitemlist(publst,file) => publst2 &
+	replace_public_list(parts,publst2) => parts2 
+	----------------------------
+	remove_inner_diff_filed_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt),file)) 
+	    => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt),file)
+end
+
+(** relation: remove_class_diff_filed_in_elementitemlist
+ ** author: PA 
+ **
+ ** This relation takes an Element list and a filename and returns a modified element list
+ ** where the elements not stored in filename is removed.
+  **)
+
+relation remove_class_diff_filed_in_elementitemlist: (Absyn.ElementItem list, 
+					   string)  (* filename *)
+	  => Absyn.ElementItem list =
+	
+  rule	(* annotations are kept *)
+	remove_class_diff_filed_in_elementitemlist(xs,c) => res
+	-----------------------------------------
+	remove_class_diff_filed_in_elementitemlist((a1 as Absyn.ANNOTATIONITEM(_))::xs,c) => a1::res
+
+  rule	not filename1 = filename2 &
+	remove_class_diff_filed_in_elementitemlist(xs,filename1) => res
+	------------------------------------------
+	remove_class_diff_filed_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(_,_,_,_,_,_,filename2)),_,_,_)))::xs,filename1) => res
+	
+  rule  filename1 = filename2 &
+	remove_class_diff_filed_in_elementitemlist(xs,filename1) => res
+	-----------------------------
+	remove_class_diff_filed_in_elementitemlist((e1 as Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.CLASSDEF(_,Absyn.CLASS(_,_,_,_,_,_,filename2)),_,_,_)))::xs,filename1)
+	  => e1::res
+	
+  rule	remove_class_diff_filed_in_elementitemlist(xs,filename) => res
+	-----------------------------------------
+	remove_class_diff_filed_in_elementitemlist(c1::xs,filename) => c1::res
+
+  axiom	 remove_class_diff_filed_in_elementitemlist([],filename) => []
+end
+					   
+
+(** relation: get_surrounding_package
+ ** author: PA
+ **
+ ** This relation investigates the surrounding packages and returns the outermost package
+ ** that has the same filename as the class
+ **)
+
+relation get_surrounding_package: (Absyn.Path, Absyn.Program) => Absyn.Program =
+	
+  rule	get_pathed_class_in_program(classpath,p) => cdef &
+	Absyn.class_filename(cdef) => filename1 &
+	Absyn.strip_last(classpath) => ppath &
+	get_pathed_class_in_program(ppath,p) => pdef &
+	Absyn.class_filename(pdef) => filename2 &
+	filename1 = filename2  &
+	get_surrounding_package(ppath,p) => res
+	-----------------------------------------
+	get_surrounding_package(classpath,p) => res
+
+  rule	(* No package with same filename *)
+	get_pathed_class_in_program(classpath,p) => cdef &
+	build_within(classpath) => within 
+	----------------------------------	
+	get_surrounding_package(classpath,p) 
+	  => Absyn.PROGRAM([cdef],within)
+end

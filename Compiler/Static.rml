@@ -2385,6 +2385,18 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),
 	      SOME(st))
 
+  rule	elab_untyped_cref(env,cr,impl) => cr'
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("save",_),
+			      [ Absyn.CREF(cr)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("save"),
+		       [Exp.CREF(cr',Exp.OTHER)],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),false),
+	      SOME(st))
+
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("saveAll",_),
 			      [ Absyn.STRING(str)],[],impl,
 			      SOME(st)) 

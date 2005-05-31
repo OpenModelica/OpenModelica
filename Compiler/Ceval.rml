@@ -1351,6 +1351,17 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
+  rule	Static.component_ref_to_path(cr) => classpath &
+	Interactive.get_contained_class_and_file(classpath,p) => (p',filename) &
+	Dump.unparse_str(p') => str &
+	System.write_file(filename,str) 
+	--------------------------
+	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(true),st)
+
+  axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	  => (Values.BOOL(false),st)
+
   rule	Dump.unparse_str(p) => str &
 	 System.write_file(filename,str) 
 	 --------------------------

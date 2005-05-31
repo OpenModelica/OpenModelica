@@ -261,6 +261,8 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation incidence_matrix: (DAELow) => IncidenceMatrix
  
   relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT
+	  
+  relation abs_incidence_matrix: IncidenceMatrix => IncidenceMatrix
 		  
   relation dump_incidence_matrix: IncidenceMatrix => ()
 
@@ -299,12 +301,14 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 				IncidenceMatrixT) 
 	  => ((int * int * Equation) list)
 
+
   relation states: (DAE.DAElist,BinTree) => BinTree
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
   relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
   relation var_list: (Variables) => Var list 
+  relation list_var: (Var list ) => Variables
 
   relation var_cref: (Var) => Exp.ComponentRef 
   relation var_nominal: (Var) => real
@@ -935,6 +939,23 @@ relation var_list: (Variables) => Var list =
   rule	vararray_list(vararr) => varlst 
 	--------------------------------------
 	var_list(VARIABLES(_,vararr,_,_)) => varlst
+end
+
+(** relation: list_var
+ ** author: PA
+ ** Takes Var list and creates a Variables structure, see also var_list.
+ **)
+
+relation list_var: (Var list ) => Variables =
+
+  rule	empty_vars() => res
+	-------------------
+	list_var([]) => res
+
+  rule	list_var(vs) => vars &
+	add_var(v,vars) => vars' 
+	--------------------------------------
+	list_var(v::vs) => vars'
 end
 
 (** relation: var_cref
@@ -2584,6 +2605,23 @@ relation transpose_matrix3: (int list list,int,int,int list list)
 	transpose_matrix3(m,neq,eqno,mt) => row::mt'
 end
 
+
+(** relation abs_incidence_matrix
+ ** author: PA
+ ** 
+ ** Applies absolute value to all entries in the incidence matrix.
+ ** This can be used when e.g. der(x) and x are considered the same variable.
+ **)
+
+relation abs_incidence_matrix: IncidenceMatrix => IncidenceMatrix =
+
+  rule	array_list(m) => lst &
+	Util.list_list_map(lst,int_abs) => lst' &
+	list_array(lst') => res
+	----------------------
+	abs_incidence_matrix(m) => res
+end
+
 (* relation: transpose_row
  ** Helper relation to transpose_matrix2.
  ** Input: IncidenceMatrix (eqn => var)
@@ -3577,7 +3615,9 @@ end
 
 (** relation: equation_nth
  ** Return the n:th equation from the expandable equation array 
+ ** indexed from 0..1.
 **)
+
 relation equation_nth:(EquationArray,
 		       int (*n*)) 
 	  => Equation =
