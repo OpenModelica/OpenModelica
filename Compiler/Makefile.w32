@@ -17,10 +17,10 @@ SIGS=    $(ALLRML:.rml=.sig)
 
 .PHONY : all
 
-all: VC7\Release\main.obj VC7\Release\modeqrml.lib
+all: VC7\Release\main.obj VC7\Release\omcrml.lib
 
-VC7\Release\modeqrml.lib: $(OBJS)
-	lib /NOLOGO /OUT:VC7\Release\modeqrml.lib $(OBJS)
+VC7\Release\omcrml.lib: $(OBJS)
+	lib /NOLOGO /OUT:VC7\Release\omcrml.lib $(OBJS)
 
 .rml.obj:
 	$(RML) -Eplain $<
@@ -30,7 +30,7 @@ VC7\Release\main.obj: main.obj
 	copy /B /Y main.obj VC7\Release\main.obj
 
 clean:
-	del /Q /F $(OBJS) $(SRCC) $(SRCH) $(SIGS) VC7\Release\main.obj VC7\Release\modeqrml.lib
+	del /Q /F $(OBJS) $(SRCC) $(SRCH) $(SIGS) VC7\Release\main.obj VC7\Release\omcrml.lib
 
 
 Absyn.obj: Absyn.rml Debug.sig Dump.sig Util.sig Print.sig

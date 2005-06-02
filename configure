@@ -4239,10 +4239,17 @@ echo "${ECHO_T}disabling CORBA" >&6;
 	USE_CORBA="";
 	CORBAHOME="";
 else
-	echo "$as_me:$LINENO: result: enabling CORBA... CORBAHOME=\"$withval\"" >&5
+  if test "x$withval" = "xyes"; then
+    echo "$as_me:$LINENO: result: enabling CORBA... CORBAHOME=\"/usr/local\"" >&5
+echo "${ECHO_T}enabling CORBA... CORBAHOME=\"/usr/local\"" >&6;
+    USE_CORBA="-DUSE_CORBA";
+    CORBAHOME="/usr/local";
+  else
+    echo "$as_me:$LINENO: result: enabling CORBA... CORBAHOME=\"$withval\"" >&5
 echo "${ECHO_T}enabling CORBA... CORBAHOME=\"$withval\"" >&6;
-	USE_CORBA="-DUSE_CORBA";
-	CORBAHOME="$withval";
+    USE_CORBA="-DUSE_CORBA";
+    CORBAHOME="$withval";
+  fi
 fi
 
 else
@@ -4294,7 +4301,7 @@ echo "${ECHO_T}Not compiling with BOOST" >&6; USE_MODPAR=""; BOOSTHOME=""
 
 fi;
 
-                                                                                                                                            ac_config_files="$ac_config_files Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/modeq_release/Makefile Compiler/modeq_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
+                                                                                                                                            ac_config_files="$ac_config_files Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -4850,8 +4857,8 @@ do
   "modelica_parser/test/parser/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/test/parser/Makefile" ;;
   "mosh/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES mosh/src/Makefile" ;;
   "Compiler/Makefile" ) CONFIG_FILES="$CONFIG_FILES Compiler/Makefile" ;;
-  "Compiler/modeq_release/Makefile" ) CONFIG_FILES="$CONFIG_FILES Compiler/modeq_release/Makefile" ;;
-  "Compiler/modeq_debug/Makefile" ) CONFIG_FILES="$CONFIG_FILES Compiler/modeq_debug/Makefile" ;;
+  "Compiler/omc_release/Makefile" ) CONFIG_FILES="$CONFIG_FILES Compiler/omc_release/Makefile" ;;
+  "Compiler/omc_debug/Makefile" ) CONFIG_FILES="$CONFIG_FILES Compiler/omc_debug/Makefile" ;;
   "Compiler/absyn_builder/Makefile" ) CONFIG_FILES="$CONFIG_FILES Compiler/absyn_builder/Makefile" ;;
   "modelica_parser/test/lexer/Makefile" ) CONFIG_FILES="$CONFIG_FILES modelica_parser/test/lexer/Makefile" ;;
   "Compiler/test_codegen/Makefile" ) CONFIG_FILES="$CONFIG_FILES Compiler/test_codegen/Makefile" ;;

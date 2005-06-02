@@ -1,5 +1,5 @@
-#include "modeq_communication.h"
-#include "modeq_communication_impl.h"
+#include "omc_communication.h"
+#include "omc_communication_impl.h"
 
 #include <sstream>
 
@@ -21,24 +21,24 @@ using namespace std;
 
 pthread_mutex_t lock;
 
-// Condition variable for keeping modeq waiting for client requests
-pthread_cond_t modeq_waitformsg;
-pthread_mutex_t modeq_waitlock;
-bool modeq_waiting=false;
+// Condition variable for keeping omc waiting for client requests
+pthread_cond_t omc_waitformsg;
+pthread_mutex_t omc_waitlock;
+bool omc_waiting=false;
 
-// Condition variable for keeping corba waiting for returnvalue from modeq
+// Condition variable for keeping corba waiting for returnvalue from omc
 pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
 
-char * modeq_message;
+char * omc_message;
 
 ostringstream objref_file;
 
 CORBA::ORB_var orb;
 PortableServer::POA_var poa;
 
-ModeqCommunication_impl * server;
+OmcCommunication_impl * server;
 
 extern "C" {
 void* runOrb(void*arg);
@@ -50,12 +50,12 @@ void Corba_5finit(void)
 
 RML_BEGIN_LABEL(Corba__initialize)
 {
-  char *dummyArgv="modeq";
+  char *dummyArgv="omc";
   int zero=0;
-  pthread_cond_init(&modeq_waitformsg,NULL);
+  pthread_cond_init(&omc_waitformsg,NULL);
   pthread_cond_init(&corba_waitformsg,NULL);
   pthread_mutex_init(&corba_waitlock,NULL);
-  pthread_mutex_init(&modeq_waitlock,NULL);
+  pthread_mutex_init(&omc_waitlock,NULL);
   
   orb = CORBA::ORB_init(zero, 0,"mico-local-orb");
   CORBA::Object_var poaobj = orb->resolve_initial_references("RootPOA");
@@ -63,7 +63,7 @@ RML_BEGIN_LABEL(Corba__initialize)
   poa = PortableServer::POA::_narrow(poaobj);
   PortableServer::POAManager_var mgr = poa->the_POAManager();
 
-  server = new ModeqCommunication_impl(); 
+  server = new OmcCommunication_impl(); 
 
   PortableServer::ObjectId_var oid = poa->activate_object(server);
 
@@ -110,15 +110,15 @@ void* runOrb(void* arg)
 
 RML_BEGIN_LABEL(Corba__wait_5ffor_5fcommand)
 {
-  pthread_mutex_lock(&modeq_waitlock);
-  while (!modeq_waiting) {
-    pthread_cond_wait(&modeq_waitformsg,&modeq_waitlock);
+  pthread_mutex_lock(&omc_waitlock);
+  while (!omc_waiting) {
+    pthread_cond_wait(&omc_waitformsg,&omc_waitlock);
   }
-  modeq_waiting = false;
-  pthread_mutex_unlock(&modeq_waitlock);
+  omc_waiting = false;
+  pthread_mutex_unlock(&omc_waitlock);
 
-  rmlA0=mk_scon(modeq_message);
-  pthread_mutex_lock(&lock); // Lock so no other tread can talk to modeq.
+  rmlA0=mk_scon(omc_message);
+  pthread_mutex_lock(&lock); // Lock so no other tread can talk to omc.
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -130,12 +130,12 @@ RML_BEGIN_LABEL(Corba__sendreply)
   // Signal to Corba that it can return, taking the value in message
   pthread_mutex_lock(&corba_waitlock); 
   corba_waiting=true;
-  modeq_message =CORBA::string_dup(msg);
+  omc_message =CORBA::string_dup(msg);
 
   pthread_cond_signal(&corba_waitformsg);
   pthread_mutex_unlock(&corba_waitlock);
 
-  pthread_mutex_unlock(&lock); // Unlock, so other threads can ask modeq stuff.
+  pthread_mutex_unlock(&lock); // Unlock, so other threads can ask omc stuff.
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

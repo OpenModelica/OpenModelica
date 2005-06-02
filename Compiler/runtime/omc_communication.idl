@@ -1,0 +1,6 @@
+// As simple as can be omc communication, sending and recieving of strings.
+ 
+interface OmcCommunication {
+  string sendExpression( in string expr);
+  string sendClass( in string model);
+};

@@ -185,9 +185,15 @@ if test "x$withval" = "xno" ; then
 	USE_CORBA=""; 
 	CORBAHOME="";
 else 
-	AC_MSG_RESULT([enabling CORBA... CORBAHOME="$withval"]); 
-	USE_CORBA="-DUSE_CORBA"; 
-	CORBAHOME="$withval";
+  if test "x$withval" = "xyes"; then
+    AC_MSG_RESULT([enabling CORBA... CORBAHOME="/usr/local"]); 
+    USE_CORBA="-DUSE_CORBA"; 
+    CORBAHOME="/usr/local";
+  else
+    AC_MSG_RESULT([enabling CORBA... CORBAHOME="$withval"]); 
+    USE_CORBA="-DUSE_CORBA"; 
+    CORBAHOME="$withval";
+  fi
 fi
 ], [
 AC_MSG_RESULT([enabling CORBA (no CORBAHOME given, using /usr/local)]); USE_CORBA="-DUSE_CORBA"; CORBAHOME="/usr/local";
@@ -219,5 +225,5 @@ fi
 AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 
-AC_OUTPUT(Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/modeq_release/Makefile Compiler/modeq_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile)
+AC_OUTPUT(Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile)
 

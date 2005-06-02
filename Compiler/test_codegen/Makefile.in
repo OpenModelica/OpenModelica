@@ -1,6 +1,6 @@
 # -*- Mode: Makefile -*-
 
-MODEQ=../modeq
+OMC=../omc
 CC=gcc
 
 CFLAGS= -Wall -ansi -pedantic -I../../c_runtime

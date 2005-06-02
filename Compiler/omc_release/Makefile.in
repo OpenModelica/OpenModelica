@@ -1,5 +1,5 @@
 #
-# Makefile for modeq
+# Makefile for omc
 #
 # David Kågedal <x97davka@ida.liu.se>
 #
@@ -27,13 +27,13 @@ top_builddir = ../..
 include $(srcdir)/Makefile.common
 
 
-PROG = modeqd
-RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
+#PROG = omcd
+#RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
+#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
 
-#PROG = modeq
-#RML	= @rmlc_bin@ -Wc,-O3
-#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
+PROG = omc
+RML	= @rmlc_bin@ -Wc,-O3
+LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
 
 
 

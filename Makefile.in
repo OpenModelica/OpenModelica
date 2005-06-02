@@ -1,20 +1,20 @@
-.PHONY : all modeq modeqd debug release mosh clean
+.PHONY : all omc omcd debug release mosh clean
 
 top_builddir = .
 
 #all : debug
 all : release 
 
-debug: modeqd
+debug: omcd
 
-release: modeq
+release: omc
 
-modeqd:	
+omcd:	
 	(cd c_runtime; $(MAKE) -f Makefile)
 	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
 	(cd Compiler; $(MAKE) -f Makefile debug)
 
-modeq:	
+omc:	
 	(cd c_runtime; $(MAKE) -f Makefile)
 	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
 	(cd Compiler; $(MAKE) -f Makefile release)
@@ -26,8 +26,8 @@ clean:
 	(cd c_runtime; $(MAKE) -f Makefile clean)
 	(cd Compiler/rml2sig; $(MAKE) -f Makefile clean)
 	(cd Compiler; $(MAKE) -f Makefile clean)
-	(cd Compiler/modeq_debug; $(MAKE) -f Makefile clean)
-	(cd Compiler/modeq_release; $(MAKE) -f Makefile clean)
+	(cd Compiler/omc_debug; $(MAKE) -f Makefile clean)
+	(cd Compiler/omc_release; $(MAKE) -f Makefile clean)
 	(cd mosh/src; $(MAKE) -f Makefile clean)
 
 

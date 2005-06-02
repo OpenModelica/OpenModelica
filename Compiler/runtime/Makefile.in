@@ -14,7 +14,7 @@ CFLAGS = @DEFS@ $(USE_CORBA)
 
 
 ifdef USE_CORBA
-  CORBASRC = modeq_communication.cc modeq_communication_impl.cpp corbaimpl.cpp
+  CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
   CORBAINCL = -I$(CORBAHOME)/include
 else
   CORBASRC = corbaimpl_stub.cpp
@@ -32,10 +32,10 @@ OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 all: $(OBJ)
 
-modeq_communication.cc modeq_communication.h : modeq_communication.idl
-	$(IDL) modeq_communication.idl
+omc_communication.cc omc_communication.h : omc_communication.idl
+	$(IDL) omc_communication.idl
 
-modeq_communication.h: modeq_communication_impl.cpp corbaimpl.cpp
+omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 
 clean:
 	$(RM) -rf *.o 

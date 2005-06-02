@@ -685,7 +685,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 
  
         (** it the rule above have failed then check if file exists **)
-        (* without this modeq crashes *)
+        (* without this omc crashes *)
   rule  System.regular_file_exist(name) => rest &
         int_gt(rest,0) => true
         ---------------------------------------------------

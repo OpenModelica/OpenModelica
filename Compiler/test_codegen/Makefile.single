@@ -5,7 +5,7 @@
 # >make -f Makefile.single TARGET=algorithm_for1
 #
 
-MODEQ=../modeq
+OMC=../omc
 CC=gcc
 
 CFLAGS= -W -Wall -ansi -pedantic-errors -Werror -g -I../../c_runtime
@@ -36,7 +36,7 @@ $(OBJS) : $(ODIR)/%.main.o : $(CDIR)/%.c main.c
 	 -c -o $@ main.c
 
 $(GENC) : $(CDIR)/%.c : %.mo 
-	@$(MODEQ) $< +d=codegen > $@
+	@$(OMC) $< +d=codegen > $@
 
 $(CDIR) $(ODIR) $(BDIR) : % :
 	mkdir $@
@@ -45,7 +45,7 @@ $(CDIR) $(ODIR) $(BDIR) : % :
 
 
 .mo.c:
-	@$(MODEQ) $< +d=codegen > $(<:.mo=.c)
+	@$(OMC) $< +d=codegen > $(<:.mo=.c)
 
 clean :
 	rm -f $(TARGETS)

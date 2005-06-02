@@ -1,5 +1,5 @@
 #
-# Makefile for modeq
+# Makefile for omc
 #
 # David Kågedal <x97davka@ida.liu.se>
 #
@@ -32,15 +32,15 @@ CORBAHOME = @CORBAHOME@
 
 include Makefile.common
 
-PROG = modeq
-PROGD = modeqd
+PROG = omc
+PROGD = omcd
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime absyn_builder modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .rml .h
-.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean modeq_release modeq_debug
+.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release omc_debug
 
 #all : debug 
 all : release
@@ -49,33 +49,33 @@ debug:	$(PROGD) $(SRCRDB)
 
 release: $(PROG)
 
-$(SRCRDB): %.rdb: modeq_debug/%.rdb 
+$(SRCRDB): %.rdb: omc_debug/%.rdb 
 	cp $< $@
 
 #	@for x in $(SRCRDB); do \
 #		echo $$x;
-#		cp modeq_debug/$$x .; \
+#		cp omc_debug/$$x .; \
 #	done
 
-$(PROG): modeq_release
-	cp modeq_release/$(PROG)$(EXEEXT) .
+$(PROG): omc_release
+	cp omc_release/$(PROG)$(EXEEXT) .
 
-$(PROGD): modeq_debug
-	cp modeq_debug/$(PROGD)$(EXEEXT) .
+$(PROGD): omc_debug
+	cp omc_debug/$(PROGD)$(EXEEXT) .
 
-modeq_release:
-	(cd modeq_release && $(MAKE))
+omc_release:
+	(cd omc_release && $(MAKE))
 
-modeq_debug:
-	(cd modeq_debug && $(MAKE))
+omc_debug:
+	(cd omc_debug && $(MAKE))
 
 
 
 #vctarget:
-#	@(cd modeq_debug ; $(MAKE) vctarget)
+#	@(cd omc_debug ; $(MAKE) vctarget)
 
 vctarget: 
-	@(cd modeq_release ; $(MAKE) vctarget)
+	@(cd omc_release ; $(MAKE) vctarget)
 
 
 
@@ -97,7 +97,7 @@ clean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
-	(cd modeq_release; $(MAKE) clean)
+	(cd omc_release; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(PROG)$(EXEEXT)
 
@@ -105,7 +105,7 @@ dclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
-	(cd modeq_debug; $(MAKE) clean)
+	(cd omc_debug; $(MAKE) clean)
 	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(PROGD)$(EXEEXT)
@@ -115,7 +115,7 @@ reallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
-	(cd modeq_release; $(MAKE) reallyclean)
+	(cd omc_release; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(PROG)$(EXEEXT)
 
@@ -123,7 +123,7 @@ dreallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
-	(cd modeq_debug; $(MAKE) reallyclean)
+	(cd omc_debug; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(PROGD)$(EXEEXT)

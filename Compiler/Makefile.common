@@ -1,5 +1,5 @@
 #
-# Common part of Makefile for modeq. Contains sourcenames.
+# Common part of Makefile for omc. Contains sourcenames.
 #
 # David Kågedal <x97davka@ida.liu.se>
 #
@@ -8,8 +8,8 @@
 
 
 ifdef USE_CORBA
- CORBAOBJ = $(srcdir)/runtime/corbaimpl.o $(srcdir)/runtime/modeq_communication_impl.o \
-	 $(srcdir)/runtime/modeq_communication.o 
+ CORBAOBJ = $(srcdir)/runtime/corbaimpl.o $(srcdir)/runtime/omc_communication_impl.o \
+	 $(srcdir)/runtime/omc_communication.o 
  CORBALIB = -L$(CORBAHOME)/lib -lmico -lcrypto -lssl
 else
  CORBAOBJ = $(srcdir)/runtime/corbaimpl_stub.o

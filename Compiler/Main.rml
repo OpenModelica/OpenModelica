@@ -480,10 +480,10 @@ relation translate_file : string list => () =
 	----------------------------
 	translate_file _::_::_ => fail
 
-  rule	Print.print_buf "Usage: modeq <options> filename \n" &
-	Print.print_buf "modeq accepts .mo (Modelica files) \n" &
-	Print.print_buf "              .mof (Flat Modelica files) \n" &
-	Print.print_buf "              .mos (Modelica Script files) \n" &
+  rule	Print.print_buf "Usage: omc <options> filename \n" &
+	Print.print_buf "omc accepts .mo (Modelica files) \n" &
+	Print.print_buf "            .mof (Flat Modelica files) \n" &
+	Print.print_buf "            .mos (Modelica Script files) \n" &
  	Print.print_buf "Options:\n========" &
 	Print.print_buf "+s    Generate simulation code\n" &
 	Print.print_buf "+q    Run in quiet mode, ouput nothing\n" &

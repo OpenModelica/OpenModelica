@@ -20,8 +20,8 @@
 */
 
 #ifndef NOMICO
-#include "modeq_communication.h"
-#include "modeq_communication_impl.h"
+#include "omc_communication.h"
+#include "omc_communication_impl.h"
 #endif
 
 
@@ -43,16 +43,16 @@ static   char obj_ref[1024];
 using namespace std;
 
 HANDLE lock;
-HANDLE modeq_client_request_event;
-HANDLE modeq_return_value_ready;
+HANDLE omc_client_request_event;
+HANDLE omc_return_value_ready;
 
-char * modeq_message;
+char * omc_message;
 
 #ifndef NOMICO
 CORBA::ORB_var orb;
 PortableServer::POA_var poa;
 
-ModeqCommunication_impl * server;
+OmcCommunication_impl * server;
 #endif
 
 extern "C" {
@@ -68,18 +68,18 @@ RML_BEGIN_LABEL(Corba__initialize)
 {
 #ifndef NOMICO
   char *dummyArgv[3];
-  dummyArgv[0] = "modeq";
+  dummyArgv[0] = "omc";
   dummyArgv[1] = "-ORBNoResolve";
   dummyArgv[2] = "-ORBIIOPAddr";
   dummyArgv[3] = "inet:127.0.0.1:0";
   int argc=4;
 
-  modeq_client_request_event = CreateEvent(NULL,FALSE,FALSE,"modeq_client_request_event");
-  if (modeq_client_request_event == NULL) {
+  omc_client_request_event = CreateEvent(NULL,FALSE,FALSE,"omc_client_request_event");
+  if (omc_client_request_event == NULL) {
 	RML_TAILCALLK(rmlFC);
   }
-  modeq_return_value_ready = CreateEvent(NULL,FALSE,FALSE,"modeq_return_value_ready");
-  if (modeq_return_value_ready == NULL) {
+  omc_return_value_ready = CreateEvent(NULL,FALSE,FALSE,"omc_return_value_ready");
+  if (omc_return_value_ready == NULL) {
 	RML_TAILCALLK(rmlFC);
   }
   lock = CreateMutex(NULL, FALSE, "lock");
@@ -92,7 +92,7 @@ RML_BEGIN_LABEL(Corba__initialize)
   poa = PortableServer::POA::_narrow(poaobj);
   PortableServer::POAManager_var mgr = poa->the_POAManager();
 
-  server = new ModeqCommunication_impl(); 
+  server = new OmcCommunication_impl(); 
 
   PortableServer::ObjectId_var oid = poa->activate_object(server);
 
@@ -139,11 +139,11 @@ DWORD WINAPI runOrb(void* arg) {
 
 RML_BEGIN_LABEL(Corba__wait_5ffor_5fcommand)
 {
-  while (WAIT_OBJECT_0 != WaitForSingleObject(modeq_client_request_event,INFINITE) );
+  while (WAIT_OBJECT_0 != WaitForSingleObject(omc_client_request_event,INFINITE) );
   
-  rmlA0=mk_scon(modeq_message);
+  rmlA0=mk_scon(omc_message);
   
-  WaitForSingleObject(lock,INFINITE); // Lock so no other tread can talk to modeq.
+  WaitForSingleObject(lock,INFINITE); // Lock so no other tread can talk to omc.
 
   RML_TAILCALLK(rmlSC);
 }
@@ -155,11 +155,11 @@ RML_BEGIN_LABEL(Corba__sendreply)
 	char *msg=RML_STRINGDATA(rmlA0);
 
   // Signal to Corba that it can return, taking the value in message
-  modeq_message = CORBA::string_dup(msg);
+  omc_message = CORBA::string_dup(msg);
 
-  SetEvent(modeq_return_value_ready);
+  SetEvent(omc_return_value_ready);
 
-  ReleaseMutex(lock); // Unlock, so other threads can ask modeq stuff.
+  ReleaseMutex(lock); // Unlock, so other threads can ask omc stuff.
 #endif
   RML_TAILCALLK(rmlSC);
 }

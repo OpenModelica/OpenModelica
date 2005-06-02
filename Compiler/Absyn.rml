@@ -115,7 +115,7 @@
  ** for printing the AST.
  **  
  ** absyn.rml's constructors are primarily used by the walker 
- ** (modeq/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
+ ** (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
  ** converts it into an RML abstract syntax tree.
  **
  ** When the AST has been built, it is normaly used by explode.rml in order to

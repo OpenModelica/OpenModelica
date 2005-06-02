@@ -1180,7 +1180,7 @@ relation initial_env =
 	Env.extend_frame_t(env, "array", n7real2arrayreal)           => env &
 	Env.extend_frame_t(env, "array", n8real2arrayreal)           => env &
 
-(*	Fill is impossible to do with this scemen, because the type of the array is unkown during the compile time of Modeq.
+(*	Fill is impossible to do with this scemen, because the type of the array is unkown during the compile time of omc.
 
 	Env.extend_frame_t(env, "fill", array2int) 		     => env &
 *)
