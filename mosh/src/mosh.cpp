@@ -44,7 +44,7 @@
 #include "options.h"
 #ifdef USE_CORBA
 #include <CORBA.h>
-#include "modeq_communication.h"
+#include "omc_communication.h"
 #endif
 
 using namespace std;
@@ -70,17 +70,17 @@ int maxhistoryfileentries = 3000;
 
 pthread_mutex_t lock;
 
-// Condition variable for keeping modeq waiting for client requests
-pthread_cond_t modeq_waitformsg;
-pthread_mutex_t modeq_waitlock;
-bool modeq_waiting=false;
+// Condition variable for keeping omc waiting for client requests
+pthread_cond_t omc_waitformsg;
+pthread_mutex_t omc_waitlock;
+bool omc_waiting=false;
 
-// Condition variable for keeping corba waiting for returnvalue from modeq
+// Condition variable for keeping corba waiting for returnvalue from omc
 pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
 
-char * modeq_message;
+char * omc_message;
 
 
 /* Main function, handles options: -noserv -corba 
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     if (!noserv) {
       // Starting background server using corba
       char systemstr[255];
-      sprintf(systemstr,"modeq +d=interactiveCorba > %s/error.log 2>&1 &",
+      sprintf(systemstr,"omc +d=interactiveCorba > %s/error.log 2>&1 &",
 	      omhome);
       int res = system(systemstr);
       if (!scriptname)
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     if (!noserv) {
      // Starting background server using corba
       char systemstr[255];
-      sprintf(systemstr,"modeq +d=interactive > %s/error.log 2>&1 &",
+      sprintf(systemstr,"omc +d=interactive > %s/error.log 2>&1 &",
 	      omhome);
       int res = system(systemstr);
       if (!scriptname)
@@ -145,7 +145,7 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 
   CORBA::Object_var obj = orb->string_to_object(uri);
 
-  ModeqCommunication_var client = ModeqCommunication::_narrow(obj);
+  OmcCommunication_var client = OmcCommunication::_narrow(obj);
 
   char cd_buf[MAXPATHLEN];
   char cd_cmd[MAXPATHLEN+6];
@@ -161,7 +161,7 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
   }
 
   if (CORBA::is_nil(client)) {
-    cerr << "Could not locate modeq server." << endl;
+    cerr << "Could not locate omc server." << endl;
     exit(1);
   }
   // initialize history usage
@@ -233,7 +233,7 @@ void doSocketCommunication(const string * scriptname)
     }
   }
   if (!connected) {
-    perror("Error connecting to modeq server in interactive mode.\n");
+    perror("Error connecting to omc server in interactive mode.\n");
     exit(1);
   }
 

@@ -17,8 +17,8 @@ CORBAHOME = @CORBAHOME@
 
 ifdef USE_CORBA
   CORBAIMPL = -I../../Compiler/runtime
-  CORBAOBJS = ../../Compiler/runtime/modeq_communication.o \
-	../../Compiler/runtime/modeq_communication_impl.o
+  CORBAOBJS = ../../Compiler/runtime/omc_communication.o \
+	../../Compiler/runtime/omc_communication_impl.o
   CORBALIB = -L$(CORBAHOME)/lib -lmico -lssl -lcrypto
   CORBAINC = -I$(CORBAHOME)/include
 else
