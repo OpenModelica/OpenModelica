@@ -182,6 +182,13 @@ module Interactive:
   relation get_component_modification: Absyn.Element => string 
 
   relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class 
+  relation traverse_classes: (Absyn.Program, 
+			      ((Absyn.Class * 'a) => (Absyn.Class * 'a)),  (* rel-ation to apply*)
+			      'a, (* extra value passed to re-lation*)
+			      bool) (* true = traverse protected elements*)
+	  => (Absyn.Program* 'a)
+
+  relation is_package: (Absyn.ComponentRef, Absyn.Program) => bool
 end
 
 

@@ -273,7 +273,6 @@ with "Dump.rml"
 with "Debug.rml"
 with "Print.rml"
 with "Util.rml"
-
 (** relation: elaborate
  **
  ** This relation takes an `Absyn.Program' and constructs a `Program'
@@ -298,7 +297,7 @@ end
 
 relation elab_class: Absyn.Class => Class =
 
-  rule	elab_classdef d => d' &
+  rule  elab_classdef d => d' &
 	elab_restriction(c,r) => r'
 	---------------------
 	elab_class(c as Absyn.CLASS(n,p,f,e,r,d,file)) => CLASS(n,p,e,r',d')

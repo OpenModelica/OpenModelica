@@ -470,6 +470,7 @@ module Absyn:
   relation last_classname: Program => Path
   relation class_filename: Class => string
   relation set_class_filename: (Class,string) => Class
+  relation is_package_restriction: Restriction => bool
 end
 
 
@@ -874,4 +875,13 @@ relation cref_equal: (ComponentRef, ComponentRef) =>  bool =
 	cref_equal(CREF_QUAL(id,_,cr1),CREF_QUAL(id2,_,cr2)) => true
 
   axiom	cref_equal(_,_) => false
+end
+(** relation is_package_restriction
+ ** checks if the provided parameter is a package or not
+ **) 
+relation is_package_restriction: Restriction => bool =
+        
+  axiom is_package_restriction(R_PACKAGE) => true
+  axiom is_package_restriction(_) => false
+        
 end
