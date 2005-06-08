@@ -341,6 +341,9 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 
   relation get_all_exps : DAELow => Exp.Exp list
   relation get_when_equation_expr : WhenEquation => (Exp.ComponentRef, Exp.Exp) 
+
+  relation simple_equation: (Equation) => (Exp.ComponentRef, Exp.ComponentRef)
+
 end (* End Module *)
 
 (* Implementation *)
@@ -1165,6 +1168,10 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  
   rule	(* cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr1,cr2) &
+        (* is the variable to be removed is output the do not remove it *)
+        get_var(cr2,vars) => (var,_) &
+        is_output(var) => false &
+
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr2) => _ &
@@ -1179,6 +1186,10 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 
   rule	(* as above but swapped args: cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr2,cr1) &
+        (* is the variable to be removed is output the do not remove it *)
+        get_var(cr2,vars) => (var,_) &
+        is_output(var) => false &
+
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr2) => _ &
@@ -1194,6 +1205,10 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* cr1 variable, cr2 constant, remove cr1 *)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
+        (* is the variable to be removed is output the do not remove it *)
+        get_var(cr1,vars) => (var,_) &
+        is_output(var) => false &
+
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
 	is_variable(cr1,vars,knvars) &
@@ -1209,6 +1224,10 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* same as above but swapped args: remove cr1 *)
 	simple_equation(e) => (cr2,cr1) &
 	typeof_equation(e) => t &
+        (* is the variable to be removed is output the do not remove it *)
+        get_var(cr1,vars) => (var,_) &
+        is_output(var) => false &
+
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
 	is_variable(cr1,vars,knvars) &
@@ -1224,6 +1243,10 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* None are states, but  variables, remove cr1 *)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
+        (* is the variable to be removed is output the do not remove it *)
+        get_var(cr1,vars) => (var,_) &
+        is_output(var) => false &
+
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
 	not tree_get(states,cr1) => _ &
@@ -1241,6 +1264,10 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* same as above but swapped args, remove cr1 *)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
+        (* is the variable to be removed is output the do not remove it *)
+        get_var(cr1,vars) => (var,_) &
+        is_output(var) => false &
+
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
 	not tree_get(states,cr1) => _ &

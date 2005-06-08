@@ -1190,6 +1190,12 @@ relation remove_factor: (Exp, (* factor *)
 			 Exp) (* expr *)
 	=> (Exp) =	(* updated expr *)
 
+  rule  factors(factor) => e1::rest  &
+	factors(expr) => e2s &
+	Util.list_setdifference_p(e2s,e1::rest,exp_equal) => [] (* factor = expr *)
+	----------------------
+	remove_factor(factor,expr) => e1
+
   rule  factors(factor) => e1s &
 	factors(expr) => e2s &
 	Util.list_setdifference_p(e2s,e1s,exp_equal) => factors' &
