@@ -245,6 +245,7 @@ relation generate_global_data:(Absyn.Path,DAELow.DAELow) => string  =
 	int_string(ny) => ny_str &
 	int_string(np) => np_str &
 	generate_var_names(dlow,nx,ny) => varnames &
+
 	Util.string_append_list(["\n",
 				 "#define NX ",nx_str,"\n",
 				 "#define NY ",ny_str,"\n",
@@ -252,11 +253,21 @@ relation generate_global_data:(Absyn.Path,DAELow.DAELow) => string  =
 				 "#define MAXORD 5\n",
 				 "#define time (*t)\n",
 				 "\n",
+                                 "#if NX > 0 /* some c-compilers does not like a static array of |a|==0 */\n",
 				 "double x[NX];\n",
+                                 "#endif\n",
+                                 "#if NX > 0\n",
 				 "double xd[NX];\n",
+                                 "#endif\n",
+                                 "#if NX > 0\n",
 				 "double dummy_delta[NX];\n",
+                                 "#endif\n",
+                                 "#if NY > 0\n",
 				 "double y[NY];\n",
+                                 "#endif\n",
+                                 "#if NP > 0\n",
 				 "double p[NP];\n",
+                                 "#endif\n",
 				 "double rwork[50+(MAXORD+4)*NX+NX*NX];\n",
 				 "long iwork[20+NX];\n",
 				 "long liw = 20+NX;\n",
@@ -418,7 +429,7 @@ relation generate_ode_header: () => string =
   rule	Util.string_append_list(
 	[
 	 "void functionODE(double *x, double *xd, double *y, double *p, \n",
-	 "                  int nx, int ny, int np, double *time)\n",
+	 "                  int nx, int ny, int np, double *t)\n",
 	 "{\n"
 	 ]) => res
 	------------------------
@@ -959,7 +970,7 @@ relation generate_compute_residual_state:(string,
   rule	
         build_residual_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_list &
         Util.string_append_list(eqn_str_list) => cstate &
-        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,"\n}\n"]) 
+        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,"return 0;\n\n}\n"]) 
 	  => res
         -------------------------------------------------------------
         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => res
@@ -978,7 +989,7 @@ end
                                    int list list) => string =
          
   rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xd, double* y)\n{\n" &
-	 let func_footer = "\n}\n" &
+	 let func_footer = "return 0;\n\n}\n" &
 	 build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &
 	 Util.list_flatten([[func_header],eqn_str_lst,[func_footer]]) => res &
          Util.string_append_list(res) => coutput 

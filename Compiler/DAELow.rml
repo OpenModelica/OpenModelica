@@ -1169,8 +1169,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr1,cr2) &
         (* is the variable to be removed is output the do not remove it *)
-        get_var(cr2,vars) => (var,_) &
-        is_output(var) => false &
+        is_var_on_top_level_and_output(cr2,vars) => false &
 
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
@@ -1187,8 +1186,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* as above but swapped args: cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr2,cr1) &
         (* is the variable to be removed is output the do not remove it *)
-        get_var(cr2,vars) => (var,_) &
-        is_output(var) => false &
+        is_var_on_top_level_and_output(cr2,vars) => false &
 
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
@@ -1206,8 +1204,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        get_var(cr1,vars) => (var,_) &
-        is_output(var) => false &
+        is_var_on_top_level_and_output(cr1,vars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1225,8 +1222,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr2,cr1) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        get_var(cr1,vars) => (var,_) &
-        is_output(var) => false &
+        is_var_on_top_level_and_output(cr1,vars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1244,8 +1240,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        get_var(cr1,vars) => (var,_) &
-        is_output(var) => false &
+        is_var_on_top_level_and_output(cr1,vars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1265,8 +1260,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        get_var(cr1,vars) => (var,_) &
-        is_output(var) => false &
+        is_var_on_top_level_and_output(cr1,vars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1289,6 +1283,27 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
 	  => (e::eqns',seqns',mvars',repl')
 end 
+
+(** rela-tion is_var_on_top_level_and_output
+ ** this rela-tion checks if the provided cr is from a var that is on top model
+ ** and has the DAE.VarDirection = OUTPUT
+ ** The check for top-model is done by spliting the old name at '.' and 
+ ** check if the list-lenght is 1
+ **) 
+relation is_var_on_top_level_and_output:(Exp.ComponentRef, Variables) => bool =
+
+  rule  get_var(cr,vars) => (VAR(cr,kind,DAE.OUTPUT,_,_,_,_,_,_,old_name,_,_,_),_) &
+        Util.string_split_at_char(old_name, #".") => cr_str_lst &
+        list_length(cr_str_lst) => 1
+        ---------------------------------------------
+        is_var_on_top_level_and_output(cr,vars) => true
+   
+  axiom is_var_on_top_level_and_output(_,_) => false
+
+end
+                                  
+
+
 
 (** relation: typeof_equation
  ** Returns the Exp.Type of an equation
