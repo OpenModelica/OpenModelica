@@ -166,6 +166,7 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
 	Debug.fprint ("interactivedump" , str ) &
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
+	Print.clear_error_buf &
 	Print.clear_buf & 
 	handle_command (str,isymb)  => (false,replystr,newsymb) &
 	(* 2004-11-27 - adrpo added part ends here *)
@@ -263,8 +264,8 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	(bool, string, Interactive.InteractiveSymbolTable) =
 
   rule	strncmp("quit()",str,6) => true 
-	-------------------------------
-	handle_command (str, isymb) => (false,"Ok\n",isymb)
+		-------------------------------
+		handle_command (str, isymb) => (false,"Ok\n",isymb)
 	
   rule	(*check_classdef str => true &*)
 	Debug.fcall0 ("dump", Print.clear_buf) &
@@ -681,7 +682,12 @@ relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => Interactive
 	-----------------------------
 	server_loop_corba (isymb) => ressymb
 
-  rule  Print.print_buf "Exiting\n" &
+  rule (* start - 2005-06-12 - adrpo added this part to make the loop deterministic *)
+		Corba.wait_for_command() => str &
+		Print.clear_buf & 
+		handle_command (str,isymb)  => (false,replystr,newsymb) &
+		(* end - 2005-06-12 - *)
+	Print.print_buf "Exiting\n" &
 	Corba.sendreply("quit requested, shutting server down\n") &
  	Corba.close
 	---------------------
