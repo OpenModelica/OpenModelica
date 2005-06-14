@@ -1,3 +1,4 @@
+cd("..");
 translateModel("PDEbhjl.FEMForms.Mesh.generate");
 translateModel("PDEbhjl.FEMForms.Mesh.get_s");
 translateModel("PDEbhjl.FEMForms.Mesh.get_v");

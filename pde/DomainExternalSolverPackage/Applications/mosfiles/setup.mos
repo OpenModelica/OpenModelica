@@ -1,0 +1,7 @@
+Hidden.ElementWiseOperators=true;
+Hidden.AllowDerExpressions=true;
+Hidden.BuildReferencedArrays=true;
+Hidden.InlineExpandNonVariables=true;
+Advanced.NewStateSelection=true;
+Advanced.CheckMultipleClass:=false;
+Hidden.NewBLT=true;

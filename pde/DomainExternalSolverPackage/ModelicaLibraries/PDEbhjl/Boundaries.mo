@@ -43,7 +43,7 @@ package Boundaries
     
   end Arc;
   
-  package Circle
+  package Circle 
     extends Arc(Data(a_start=0, a_end=2*pi));
     
     // redeclare record Parameters = Arc.Parameters (a_start=0, a_end=2*Arc.pi);
@@ -73,7 +73,7 @@ package Boundaries
       parameter Point p;
       parameter Real w;
       parameter Real h;
-
+      
       parameter Bnd.Data bnddata(n=4, parts={bottom,right,top,left});
       parameter Line.Data bottom(
         p1=p, 
@@ -227,7 +227,7 @@ package Boundaries
     redeclare function points = Boundary.points;
     
   end GenericTemp;
-
+  
   package Bezier 
     extends Boundary;
     
@@ -378,7 +378,6 @@ package Boundaries
     end points;
     
   end Composite8dist;
-  
   
   package HComposite4 
     extends Boundary;
@@ -541,4 +540,51 @@ package Boundaries
     end points;
     
   end Composite4;
+
+  package Composite6 
+    extends Boundary;
+    package PartType = Boundaries.GenericTemp;
+    
+    redeclare replaceable record Data 
+      parameter Integer n=6;
+      parameter PartType.Data parts1(bc(index=1));
+      parameter PartType.Data parts2(bc(index=2));
+      parameter PartType.Data parts3(bc(index=3));
+      parameter PartType.Data parts4(bc(index=4));
+      parameter PartType.Data parts5(bc(index=5));
+      parameter PartType.Data parts6(bc(index=6));
+    end Data;
+    
+    /* Bug in shape: All parts does not start at s-is==0, which causes some corners to be 
+    skipped because both x and y changes. Should be fixed by somehow making sure that 
+    every time new part is started, s-is starts from 0. Maybe some kind of threshold and 
+    rounding s-is<e to zero. */
+    
+    redeclare function shape 
+      input Real u;
+      input Data d;
+      output BPoint x;
+    protected 
+      Real s=d.n*u;
+      Integer is=integer(s);
+      Integer pno=is + 1;
+    algorithm 
+      x := if pno == 1 then PartType.shape(s - is, d.parts1) else if pno == 2
+         then PartType.shape(s - is, d.parts2) else if pno == 3 then 
+        PartType.shape(s - is, d.parts3) else if pno == 4 then PartType.shape(s
+         - is, d.parts4) else if pno == 5 then PartType.shape(s - is, d.parts5)
+         else if pno == 6 then PartType.shape(s - is, d.parts6) else {-1,-1,-1};
+    end shape;
+    
+    replaceable function points 
+      input Integer n;
+      input Data d;
+      output Point x[n];
+    algorithm 
+      for i in 1:n loop
+        x[i, :] := shape((i - 1)/n, d);
+      end for;
+    end points;
+    
+  end Composite6;
 end Boundaries;
