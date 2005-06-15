@@ -610,7 +610,6 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	DAELow.translate_dae (dlow) => indexed_dlow &
 	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
 	Absyn.path_string(classname) => cname_str &
-	print cname_str & print "\n" &
 	Util.string_append_list([cname_str,".cpp"]) => filename &
 	Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
 	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &

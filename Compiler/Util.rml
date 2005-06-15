@@ -145,6 +145,7 @@ module Util :
   relation list_map_2: ('a list, ('a, 'b,'c) => 'd, 'b,'c) => 'd list 
   relation list_map_3: ('a list, ('a, 'b,'c,'d) => 'e, 'b,'c,'d) => 'e list 
   relation list_map_3_2: ('a list, ('a, 'b,'c,'d) => ('e,'f), 'b,'c,'d) => ('e list, 'f list) 
+  relation list_map_1_2: ('a list, ('a, 'b) => ('c,'d), 'b) => ('c list,'d list)
   relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list
   relation list_fold: ('a list, ('a,'b)=> 'b, 'b) => 'b	  
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list 
@@ -402,6 +403,21 @@ relation list_map_3_2: ('a list, ('a, 'b,'c,'d) => ('e,'f), 'b,'c,'d) => ('e lis
 	list_map_3_2(r,fn,extraarg1,extraarg2,extraarg3) => (r1',r2')
 	-------------------
 	list_map_3_2(f::r,fn,extraarg1,extraarg2,extraarg3) => (f1'::r1',f2'::r2')
+end
+
+(** relation: list_map_1_2
+ ** Takes a list and a relation with one extra arguments passed to the relation.
+ ** The relation returns a tuple of two values which are used for creating 
+ ** two new lists
+ **)
+ relation list_map_1_2: ('a list, ('a, 'b) => ('c,'d), 'b) => ('c list,'d list) = 
+
+  axiom	list_map_1_2 ([],_,_) => ([],[])
+
+  rule	fn (f,extraarg1) => (f1,f2) &
+	list_map_1_2(r,fn,extraarg1) => (r1,r2)
+	-------------------
+	list_map_1_2(f::r,fn,extraarg1) => (f1::r1,f2::r2)
 end
 
 (** relation: list_map_2_2

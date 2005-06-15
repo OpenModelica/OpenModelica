@@ -250,6 +250,14 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 					   has a negative index.
 					   *)
 
+  datatype JacobianType = JAC_CONSTANT (* If jacobian has only constant values, for system
+				    * of equations this means that it can be solved statically.*)
+			| JAC_TIME_VARYING (* If jacobian has time varying parts, like parameters or
+					* algebraic variables *)
+			| JAC_NONLINEAR (* If jacobian contains variables that are solved for,
+				     * means that a nonlinear system of equations needs to be
+				     * solved *)
+
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
   relation dump_eqns: Equation list => () 
@@ -301,6 +309,8 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 				IncidenceMatrixT) 
 	  => ((int * int * Equation) list)
 
+  relation analyze_jacobian:(DAELow, (int * int * Equation) list) => JacobianType
+  relation jacobian_type_str: JacobianType => string
 
   relation states: (DAE.DAElist,BinTree) => BinTree
 
@@ -320,11 +330,13 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation equation_nth:(EquationArray,int) => Equation 
   relation equation_setnth: (EquationArray,int,Equation) => EquationArray
   relation equation_list:(EquationArray) => Equation list 
+  relation equation_size:(EquationArray) => int 
   relation list_equation:(Equation list ) => EquationArray
   relation equation_to_residual_form:(Equation) => Equation 
   relation to_residual_form:(DAELow) => DAELow
   relation residual_exp: (Equation) => Exp.Exp
 
+  relation get_eqnsys_rhs_exp: (Exp.Exp, Variables) => Exp.Exp 
 
   relation vararray_nth:(VariableArray, int) => Var 
   relation vararray_setnth:(VariableArray, int, Var) => VariableArray 
@@ -1219,7 +1231,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
 
   rule	(* same as above but swapped args: remove cr1 *)
-	simple_equation(e) => (cr2,cr1) &
+  	simple_equation(e) => (cr2,cr1) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
         is_var_on_top_level_and_output(cr1,vars) => false &
@@ -1257,7 +1269,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (eqns',SOLVED_EQUATION(cr1,Exp.CREF(cr2,t))::seqns',mvars'',repl'')
 
   rule	(* same as above but swapped args, remove cr1 *)
-	simple_equation(e) => (cr1,cr2) &
+  	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
         is_var_on_top_level_and_output(cr1,vars) => false &
@@ -1270,7 +1282,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	is_variable(cr2,vars,knvars) &
 	VarTransform.add_replacement(repl,cr1,cr2) => repl' & 
 	tree_add(mvars,cr1,0) => mvars' &
-	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+		remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
@@ -2465,7 +2477,7 @@ end
  ** Calculates a hash value for Exp.ComponentRef
  **)
 relation hash_component_ref: (Exp.ComponentRef) => int =
-
+	
   rule	Exp.print_component_ref_str(cr) => crstr &
 	hash_string(crstr) => res
 	--------------------
@@ -2561,6 +2573,8 @@ relation exists_var: (Exp.ComponentRef, Variables) => bool =
 	print str  & print "\n" 
 	-----------------
 	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => false
+
+  axiom	exists_var(_,_) => false
 end
 
 (** relation: get_var2
@@ -4474,6 +4488,224 @@ relation add_vars: (Var list, Variables) => Variables =
   rule	Util.list_fold(varlst,add_var,vars) => vars'
 	-------------------------
 	add_vars(varlst,vars) => vars'
+end
+
+(** relation: analyze_jacobian
+ ** author: PA
+ ** 
+ ** Analyze the jacobian to find out if the jacobian of system of equations can be solved
+ ** at compiletime or runtime or if it is a nonlinear system of equations.
+**)
+relation analyze_jacobian:(DAELow, (int * int * Equation) list) => JacobianType =
+
+  rule	jacobian_constant(jac) => true &
+	rhs_constant(daelow) => true
+	-------------------------------
+	analyze_jacobian(daelow,jac) => JAC_CONSTANT
+
+  rule	jacobian_nonlinear(daelow,jac) => true
+	-----------------------
+	analyze_jacobian(daelow,jac) => JAC_NONLINEAR
+
+  axiom	analyze_jacobian(daelow,jac) => JAC_TIME_VARYING
+
+end
+
+(** relation: rhs_constant
+ ** author: PA
+ ** 
+ ** Determines if the right hand sides of an equation system,
+ ** represented as a DAELow, is constant. 
+ **)
+relation rhs_constant: (DAELow) => bool =
+
+
+  rule	equation_list(eqns) => eqn_lst &
+	rhs_constant2(eqn_lst,vars) => res
+	----------------------
+	rhs_constant(DAELOW(vars,knvars,eqns,_,_,_,_)) => res
+end
+
+(** relation: get_eqnsys_rhs_exp
+ ** author: PA
+ ** 
+ ** Retrieve the right hand side expression of an equation
+ ** in an equation system, given a set of variables.
+ **)
+relation get_eqnsys_rhs_exp: (Exp.Exp, 
+			      Variables) (* variables of the eqn sys.*) 
+	  => Exp.Exp =
+
+rule  	Exp.terms(exp) => term_lst &
+	Util.list_select_1(term_lst,vars,free_from_any_var) => rhs_lst &
+	Exp.make_sum(rhs_lst) => new_exp &
+	Exp.simplify(new_exp) => res
+	----------------------------
+	get_eqnsys_rhs_exp(exp,vars) => res
+end
+
+
+(** relation: rhs_constant2
+ ** author: PA
+ **
+ ** Helper relation to rhs_constant, traverses equation list.
+ **)
+
+relation rhs_constant2: (Equation list, 
+			 Variables) (* variables in subsystem *)
+	  => bool =
+
+axiom rhs_constant2([],_) => true
+
+	(* check rhs for for EQUATION nodes. *)
+  rule	Exp.typeof(e1) => tp &
+	let new_exp = Exp.BINARY(e1,Exp.SUB(tp),e2) &
+	get_eqnsys_rhs_exp(new_exp,vars) => rhs_exp &
+	Exp.is_const(rhs_exp) => true &
+	rhs_constant2(rest,vars) => res 
+	----------------------
+	rhs_constant2(EQUATION(e1,e2)::rest,vars) => res
+
+	(* check rhs for for RESIDUAL_EQUATION nodes. *)
+  rule	get_eqnsys_rhs_exp(e,vars) => rhs_exp &
+	Exp.is_const(rhs_exp) => true &
+	rhs_constant2(rest,vars) => res
+	----------------------
+	rhs_constant2(RESIDUAL_EQUATION(e)::rest,vars) => res
+
+  axiom	rhs_constant2(_,_) => false
+end
+
+(** relation: free_from_any_var
+ ** author: PA
+ **
+ ** Helper relation to rhs_constant2
+ ** returns true if expression does not contain any of the variables
+ ** passed as argument.
+ **)
+
+relation free_from_any_var: (Exp.Exp, Variables) => bool =
+
+  rule	(* Special case for expressions with no variables*)
+	Exp.get_cref_from_exp(e) => []
+	------------------------------
+	free_from_any_var(e,_) => true 
+
+  rule	Exp.get_cref_from_exp(e) => crefs  &
+	Util.list_map_1(crefs,exists_var,vars) => b_lst &
+	Util.bool_or_list(b_lst) => res &
+	bool_not(res) => res' 
+	-----------------------
+	free_from_any_var(e,vars) => res'
+
+  axiom	free_from_any_var(_,_) => true
+
+end
+
+(** relation: jacobian_type_str
+ ** author: PA
+ ** 
+ ** Returns the jacobian type as a string, used for debugging.
+ **)
+
+relation jacobian_type_str: JacobianType => string = 
+
+  axiom	jacobian_type_str JAC_CONSTANT => "Jacobian Constant"
+
+  axiom	jacobian_type_str JAC_TIME_VARYING => "Jacobian Time varying"
+
+  axiom	jacobian_type_str JAC_NONLINEAR => "Jacobian Nonlinear"
+end
+
+(** relation: jacobian_constant
+ ** author: PA
+ **
+ ** Checks if jacobian is constant, i.e. all expressions in each equation are constant.
+ **)
+
+relation jacobian_constant:((int * int * Equation) list) => bool =
+
+  axiom	jacobian_constant ([]) => true
+
+  rule	Exp.is_const(e1) => true &
+	Exp.is_const(e2) => true &
+	jacobian_constant(eqns) => true 
+	------------------------------
+	jacobian_constant((_,_,EQUATION(e1,e2))::eqns) => true
+
+  rule	Exp.is_const(e) => true &
+	jacobian_constant(eqns) => true
+	--------------------------
+	jacobian_constant((_,_,RESIDUAL_EQUATION(e))::eqns) => true
+	
+  rule	Exp.is_const(e) => true &
+	jacobian_constant(eqns) => true
+	--------------------------
+	jacobian_constant((_,_,SOLVED_EQUATION(_,e))::eqns) => true
+
+  axiom	jacobian_constant(_) => false
+
+end
+
+(** relation: jacobian_nonlinear
+ ** author: PA
+ ** 
+ ** Check if jacobian indicates a nonlinear system.
+ **)
+
+relation jacobian_nonlinear:(DAELow,(int*int*Equation) list) => bool =
+
+  rule	jacobian_nonlinear_exp(daelow,e1) => false &
+	jacobian_nonlinear_exp(daelow,e2) => false &
+	jacobian_nonlinear(daelow,xs) => false
+	---------------------------------------
+	jacobian_nonlinear(daelow,(_,_,EQUATION(e1,e2))::xs) => false
+
+
+  rule	jacobian_nonlinear_exp(daelow,e) => false &
+	jacobian_nonlinear(daelow,xs) => false
+	---------------------------------------
+	jacobian_nonlinear(daelow,(_,_,RESIDUAL_EQUATION(e))::xs) => false
+
+  axiom	jacobian_nonlinear(_,[]) => false
+
+  axiom	jacobian_nonlinear(_,_) => true
+end
+
+
+(** relation: jacobian_nonlinear_exp
+ ** author: PA
+ ** 
+ ** Checks wheter the jacobian indicates a nonlinear system.
+ ** This is true if the jacobian contains any of the variables that is solved
+ ** for.
+ **)
+
+relation jacobian_nonlinear_exp: (DAELow, Exp.Exp) => bool =
+	
+  rule	Exp.get_cref_from_exp(e) => crefs &
+	contain_any_var(crefs,vars) => res
+	---------------------------------
+	jacobian_nonlinear_exp(DAELOW(vars,_,_,_,_,_,_),e) => res
+end
+
+(** relation: contain_any_var
+ ** author: PA
+ **
+ ** Returns true if any of the variables given as ComponentRef list is among 
+ ** the Variables.
+ **)
+relation contain_any_var:(Exp.ComponentRef list, Variables) => bool =
+
+  axiom	contain_any_var([],_) => false
+
+  rule	get_var(cr,vars) => (_,_) 
+	----------------------------
+	contain_any_var(cr::crefs,vars) => true
+
+  rule	contain_any_var(crefs,vars) => res
+	------------------------
+	contain_any_var(_::crefs,vars) => res
 end
 
 (** relation: calculate_jacobian

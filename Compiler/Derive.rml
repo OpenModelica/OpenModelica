@@ -233,10 +233,13 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	-----------------------------
 	differentiate_exp_time(Exp.UNARY(op,e),tv) => Exp.UNARY(op,e')
 
-  rule	differentiate_exp_time(Exp.BINARY(e1,op,e2),tv) => Exp.BINARY(e1',op,e2')
+  rule	(* The derivative of logic expressions are non-existent *)
+	Print.print_error_buf "#Derivative of expression " &
+	Exp.print_exp_str e => e_str & Print.print_error_buf e_str & 
+	Print.print_error_buf " is non-existent\n" 
 	-----------------------------
-	differentiate_exp_time(Exp.LBINARY(e1,op,e2),tv) 
-	  => Exp.LBINARY(e1',op,e2')
+	differentiate_exp_time(e as Exp.LBINARY(e1,op,e2),tv) 
+	  => fail
 	
   rule	differentiate_exp_time(e,tv) => e'
 	-----------------------------
@@ -450,10 +453,13 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
                         Exp.MUL(Exp.REAL),
                         exp')
 
-  rule	differentiate_exp(Exp.BINARY(e1,op,e2),tv) => Exp.BINARY(e1',op,e2')
+  rule	(* The derivative of logic expressions are non-existent *)
+	Print.print_error_buf "#Derivative of expression " &
+	Exp.print_exp_str e => e_str & Print.print_error_buf e_str & 
+	Print.print_error_buf " is non-existent\n" 
 	-----------------------------
-	differentiate_exp(Exp.LBINARY(e1,op,e2),tv) 
-	  => Exp.LBINARY(e1',op,e2')
+	differentiate_exp(e as Exp.LBINARY(e1,op,e2),tv) 
+	  => fail
 	
   rule	differentiate_exp(e,tv) => e'
 	-----------------------------

@@ -159,6 +159,7 @@ module SimCodegen:
 	  
 end
 
+val TAB = "    " (* TAB is four whitespaces *)
 
 with "Util.rml"
 with "RTOpts.rml"
@@ -506,15 +507,215 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list)
 	(* calculate jacobian. If constant, linear system of equations. Otherwise nonlinear *)
 	
 	DAELow.calculate_jacobian(vars',eqns',m',mt') => jac &
-	DAELow.dump subsystem_dae & 
-	DAELow.dump_incidence_matrix m'  & Print.get_string() => s &
-	print s & 
-	DAELow.dump_jacobian_str(jac) => str &
-	print "Jacobian for subsystem: " & print str &
-	print "\n" 
+	DAELow.analyze_jacobian(subsystem_dae,jac) => jac_tp &
+	generate_ode_system2(subsystem_dae,jac,jac_tp) => str &
+	DAELow.jacobian_type_str jac_tp => jac_tp_str &
+	Util.string_append_list(["/* system of equations of type ",jac_tp_str, "*/\n",
+				 str,
+				 "/* End system of equations */\n"
+				 ]) 
+	  => res
 	-------------------------
 	generate_ode_system(daelow as DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev),ass1,ass2,block) 
-	  => "/* system of equations not impl. yet. */"
+	  => res
+end
+
+(** relation: generate_ode_system2
+ ** author: PA
+ ** 
+ ** Generates the actual simulation code for the system of equation, once
+ ** its jacobian and type has been given.
+ **)
+relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
+				(int * int * DAELow.Equation) list, (* jacobian *)
+				DAELow.JacobianType) (* Type of jacobian, constant,etc.*)
+	=> string = 
+
+
+	  (* constant jacobians. Linear system of equations (A x = b) where
+	   A and b are constants. *)
+  rule	DAELow.equation_size(eqn) => eqn_size &
+	let str  = "/*solving constant linear system of equations*/\n"
+	------------------------------
+ 	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,
+			     DAELow.JAC_CONSTANT) => str
+	
+
+	(* Time varying jacobian. Linear system of equations that needs to 
+	 * be solved during runtime. *)
+  rule	DAELow.equation_size(eqn) => eqn_size &
+	generate_ode_system2_declaration(eqn_size) => s1 &
+	generate_ode_system2_populate_Ab(jac,v,eqn) => s2 &
+	generate_ode_system2_solve_call() => s3 &
+	generate_ode_system2_collect_results(v) => s4 &
+	Util.string_append_list([s1,s2,s3,s4]) => str
+	--------------------
+	generate_ode_system2(d as DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,DAELow.JAC_TIME_VARYING) => str
+
+	(* Time varying nonlinear jacobian. Non-linear system of equations*)
+  rule	let str ="/* solving nonlinear system of equations*/\n" 
+	------------------------
+	generate_ode_system2(subdae,jac,DAELow.JAC_TIME_VARYING) => str
+end
+
+
+(** relation: generate_ode_system2_declaration
+ ** author: PA
+ ** 
+ ** Generates code for the declaration of A and b when
+ ** solving linear systems of equations.
+ **)
+
+relation generate_ode_system2_declaration: (int) => string =
+
+  rule	int_string(size) => size_str &
+	
+	Util.string_append_list([TAB,"declare_matrix(A,",size_str,",",
+				 size_str,");\n",
+				 TAB,"declare_vector(b,",size_str,");\n"])
+	  => res
+	-----------------------
+	generate_ode_system2_declaration(size)  => res
+end
+
+(** relation: generate_ode_system2_populate_Ab
+ ** author: PA
+ ** 
+ ** Generates code for the population of A and b when
+ ** solving linear system of equations.
+ **)
+	    
+relation generate_ode_system2_populate_Ab:((int * int * DAELow.Equation) list,
+					   DAELow.Variables,
+					   DAELow.EquationArray)
+	  => string =
+
+  rule	generate_ode_system2_populate_A(jac,vars,eqns) => s1 &
+	generate_ode_system2_populate_b(jac,vars,eqns) => s2 &
+	string_append(s1,s2) => res
+	---------------------------
+	generate_ode_system2_populate_Ab(jac,vars,eqns) => res
+end
+
+(** relation: generate_ode_system2_populate_A
+ ** author: PA
+ ** 
+ ** Generates code for the population of A 
+ ** solving linear system of equations.
+ **)
+	    
+relation generate_ode_system2_populate_A:((int * int * DAELow.Equation) list,
+					   DAELow.Variables,
+					   DAELow.EquationArray)
+	  => string =
+
+  axiom	generate_ode_system2_populate_A([],_,_) => ""
+
+  rule	int_string(r) => rs &
+	int_string(c) => rc &
+	print_exp_cpp_str(exp) => es &
+	generate_ode_system2_populate_A(jac,vars,eqn) => s1 &
+	Util.string_append_list([TAB,"set_matrix_elt(A,",rs,", ",rc,", ",es,");\n",s1]) => res
+	------------------------
+	generate_ode_system2_populate_A((r,c,DAELow.RESIDUAL_EQUATION(exp))::jac,vars,eqn) => res
+end
+
+(** relation: generate_ode_system2_populate_b
+ ** author: PA
+ **
+ ** Generates code for the population of A 
+ ** solving linear system of equations.
+ **)
+
+relation generate_ode_system2_populate_b: ((int * int * DAELow.Equation) list,
+					   DAELow.Variables,
+					   DAELow.EquationArray)
+	  => string =
+
+  rule	DAELow.equation_list(eqns) => eqn_lst &
+	generate_ode_system2_populate_b2(eqn_lst,vars,0) => res
+	--------------------------------
+	generate_ode_system2_populate_b(jac,vars,eqns) => res
+end
+
+(** relation: generate_ode_system2_populate_b2
+ ** author: PA
+ ** Helper relation to generate_ode_system2_populate_b
+ **)
+
+relation generate_ode_system2_populate_b2: (DAELow.Equation list,
+					    DAELow.Variables,
+					    int (* index iterator*)) 
+	  => string =
+
+  axiom	generate_ode_system2_populate_b2([],_,_) => ""
+
+
+  rule	Exp.typeof(e1) => tp &
+	let new_exp = Exp.BINARY(e1,Exp.SUB(tp),e2) &
+	DAELow.get_eqnsys_rhs_exp(new_exp,v) => rhs_exp &
+	print_exp_cpp_str(rhs_exp) => rhs_str &
+	int_string(index) => index_str &
+	index + 1 => index'  &
+	generate_ode_system2_populate_b2(rest,v,index') => s1 &
+	Util.string_append_list([TAB,"set_vector_elt(b",index_str,
+				 ", ",rhs_str, ");\n",s1]) => res
+	--------------------------------------------------------
+	generate_ode_system2_populate_b2(DAELow.EQUATION(e1,e2)::rest,v,index) 
+	  => res
+end
+
+
+(** relation: generate_ode_system2_solve_call
+ ** author: PA
+ ** 
+ ** Generates code for the call, including setup, for solving
+ ** a linear system of equations.
+ **)
+
+relation generate_ode_system2_solve_call:() => string =
+
+
+  rule	Util.string_append_list([TAB,"solve_linear_equation_system(A,b);\n"]) 
+	=> res
+	---------------------------
+	generate_ode_system2_solve_call() => res
+end
+
+(** relation: generate_ode_system2_collect_results
+ ** author: PA
+ **
+ ** Generates the code for storing the result of solving
+ ** a linear system of equations into the affected variables .
+ **)
+
+relation generate_ode_system2_collect_results:(DAELow.Variables) 
+	  => string =
+
+  rule	DAELow.var_list(vars) => var_lst &
+	Util.list_map(var_lst,DAELow.var_cref) => crefs &
+	Util.list_map(crefs,Exp.print_component_ref_str) => strs &
+	generate_ode_system2_collect_results2(strs,0) => res
+	-------------------------------
+	generate_ode_system2_collect_results(vars) => res
+end
+(** relation: generate_ode_system2_collect_results2
+ ** author: PA
+ ** 
+ ** Helper relation to generate_ode_system2_collect_results
+**)
+relation generate_ode_system2_collect_results2: (string list,int)
+	  => string =
+	  
+  axiom	generate_ode_system2_collect_results2([],_) => "" 
+	
+  rule	index + 1 => index' &
+	generate_ode_system2_collect_results2(strs,index') => s1 &
+	int_string(index) => index_str &
+	Util.string_append_list([TAB,str," = get_vector_elt(b,",index_str,");\n",s1])
+	=> res
+	----------------------
+	generate_ode_system2_collect_results2(str::strs,index) => res    
 end
 
 (** relation transform_x_to_xd
@@ -522,6 +723,7 @@ end
  ** this relation transforms x variables (in the state vector)
  ** to corresponding xd variable (in the derivatives vector)
  **)
+
 relation transform_x_to_xd: DAELow.Var => DAELow.Var =
 
   rule	int_string(index) => index_str &
@@ -583,8 +785,8 @@ relation generate_ode_equation: (DAELow.DAELow,
 	Exp.solve(e1,e2,varexp) => expr &
 	print_exp_cpp_str(expr) => expr_str &
 	Exp.print_component_ref_str(cr) => cr_str &
-	Util.string_append_list([cr_str,"=",expr_str,";\n"]) => res
-	-----------------------
+	Util.string_append_list([TAB,cr_str,"=",expr_str,";\n"]) => res
+	-----------------------------------------------------------
 	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
 
   rule	(* Solving the state s means solving for der(s) *)
@@ -598,7 +800,7 @@ relation generate_ode_equation: (DAELow.DAELow,
 	Exp.solve(e1,e2,varexp) => expr &
 	print_exp_cpp_str(expr) => expr_str &
 	Exp.print_component_ref_str(cr') => cr_str &
-	Util.string_append_list([cr_str,"=",expr_str,";\n"]) => res
+	Util.string_append_list([TAB,cr_str,"=",expr_str,";\n"]) => res
 	----------------------------
 	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
 

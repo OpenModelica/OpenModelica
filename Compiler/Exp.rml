@@ -287,6 +287,7 @@ module Exp:
 
   relation factors: Exp => Exp list 
   relation terms: Exp => Exp list 
+  relation make_sum: (Exp list) => Exp 
 
 
   relation dump_exp_str : (Exp,int) => string  
@@ -387,6 +388,10 @@ end
  ** otherwise false
  **)
 relation is_const: Exp => bool =
+
+  rule	is_const(e) => res
+	---------------------------
+	is_const(UNARY(op,e)) => res
 
   rule	
 	----------------------
