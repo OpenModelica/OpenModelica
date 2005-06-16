@@ -4296,7 +4296,7 @@ end
  **)
 relation translate_dae: DAELow => DAELow =
 	
-  rule	var_list(vars) => varlst &
+  rule  var_list(vars) => varlst &
 	var_list(knvars) => knvarlst &
 	calculate_indexes(varlst) => varlst' &
 	calculate_indexes(knvarlst) => knvarlst' &
@@ -4308,7 +4308,7 @@ relation translate_dae: DAELow => DAELow =
 	replace_variables_in_when_clauses(wc,s,t) => wc' &
 	transform_variables(varlst',s,t) => varlst'' &
 	transform_variables(knvarlst',s,t) => knvarlst''  &
-	empty_vars() => vars' &
+        empty_vars() => vars' &
 	empty_vars() => knvars' &
 	add_vars(varlst'',vars') => vars'' &
 	add_vars(knvarlst'',knvars') => knvars'' &
@@ -5252,19 +5252,34 @@ relation transform_variables: (Var list, Exp.Exp list, Exp.Exp list) => (Var lis
 
   rule	transform_variables(vs,s,t) => vs' &
 	transform_variable(i,kind) => cr' &
-	Exp.print_component_ref_str(cr) => name &
-	Exp.replace_exp_list(e,s,t) => (e',_) 
+	Exp.print_component_ref_str(cr) => name &	
+        Exp.replace_exp_list(e,s,t) => (e',_) &
+        transform_startValue(start,s,t) => start'
 	-------------------
-	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,f,i,_,j,dae_var_attr,comment)::vs,s,t)
-	=> (VAR(cr',kind,a,b,SOME(e'),c,d,f,i,name,j,dae_var_attr,comment)::vs')
+	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,start,i,_,j,dae_var_attr,comment)::vs,s,t)
+	=> (VAR(cr',kind,a,b,SOME(e'),c,d,start',i,name,j,dae_var_attr,comment)::vs')
 
   rule	transform_variables(vs,s,t) => vs' &
 	transform_variable(i,kind) => cr' &
-	Exp.print_component_ref_str(cr) => name 
+	Exp.print_component_ref_str(cr) => name &
+        transform_startValue(start,s,t) => start'
 	---------------------------------------
-	transform_variables(VAR(cr,kind,a,b,NONE, c,d,f,i,_,j,dae_var_attr,comment)::vs,s,t)
-	=> (VAR(cr',kind,a,b,NONE,c,d,f,i,name,j,dae_var_attr,comment)::vs')
+	transform_variables(VAR(cr,kind,a,b,NONE, c,d,start,i,_,j,dae_var_attr,comment)::vs,s,t)
+	=> (VAR(cr',kind,a,b,NONE,c,d,start',i,name,j,dae_var_attr,comment)::vs')
 
+end
+
+(** relation: transform_startValue
+ ** Helper relation to transform_variables
+**)
+relation transform_startValue:(DAE.StartValue, Exp.Exp list, Exp.Exp list) => DAE.StartValue =
+
+  rule  Exp.replace_exp_list(e,s,t) => (e',_)
+        --------------------------
+        transform_startValue(SOME(e),s,t) => SOME(e')
+        
+  axiom  transform_startValue(NONE,_,_) => NONE
+        
 end
 
 (** relation: transform_variable
