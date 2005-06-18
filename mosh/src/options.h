@@ -2,6 +2,7 @@
 #define _MYOPTIONS
 
 #include <string>
+#include <algorithm>
 
 /* -f */
 bool flagSet(char*, int, char**);
