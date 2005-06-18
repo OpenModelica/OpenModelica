@@ -257,18 +257,28 @@ relation generate_global_data:(Absyn.Path,DAELow.DAELow) => string  =
 				 "\n",
                                  "#if NX > 0 /* some c-compilers does not like a static array of |a|==0 */\n",
 				 "double x[NX];\n",
-                                 "#endif\n",
+                                 "#else\n",
+				 "double *x;\n",
+				 "#endif\n",
                                  "#if NX > 0\n",
 				 "double xd[NX];\n",
+                                 "#else\n",
+				 "double *xd;\n",
                                  "#endif\n",
                                  "#if NX > 0\n",
 				 "double dummy_delta[NX];\n",
+                                 "#else\n",
+				 "double *dummy_delta;\n",
                                  "#endif\n",
                                  "#if NY > 0\n",
 				 "double y[NY];\n",
+                                 "#else\n",
+				 "double *y;\n",
                                  "#endif\n",
                                  "#if NP > 0\n",
 				 "double p[NP];\n",
+                                 "#else\n",
+				 "double *p;\n",
                                  "#endif\n",
 				 "double rwork[50+(MAXORD+4)*NX+NX*NX];\n",
 				 "long iwork[20+NX];\n",
@@ -522,12 +532,11 @@ relation generate_ode_footer: () => string =
 	
   rule	Util.string_append_list(
 	[
-	 "}"
+	 "}\n"
 
 	 ]) => res
 	------------------------
 	generate_ode_footer() => res
-
 end	
 
 (** relation: generate_ode_blocks
@@ -621,7 +630,7 @@ relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
   rule	DAELow.equation_size(eqn) => eqn_size &
 	generate_ode_system2_declaration(eqn_size) => s1 &
 	generate_ode_system2_populate_Ab(jac,v,eqn) => s2 &
-	generate_ode_system2_solve_call() => s3 &
+	generate_ode_system2_solve_call(eqn_size) => s3 &
 	generate_ode_system2_collect_results(v) => s4 &
 	Util.string_append_list([s1,s2,s3,s4]) => str
 	--------------------
@@ -678,21 +687,44 @@ end
  ** Generates code for the population of A 
  ** solving linear system of equations.
  **)
-	    
 relation generate_ode_system2_populate_A:((int * int * DAELow.Equation) list,
 					   DAELow.Variables,
 					   DAELow.EquationArray)
 	  => string =
 
-  axiom	generate_ode_system2_populate_A([],_,_) => ""
 
-  rule	int_string(r) => rs &
-	int_string(c) => rc &
+  rule	DAELow.equation_size(eqns) => n_rows &
+	generate_ode_system2_populate_A2(jac,vars,eqns,n_rows) => res
+	-----------------------------
+	generate_ode_system2_populate_A(jac,vars,eqns) => res
+
+end
+
+(** relation: generate_ode_system2_populate_A2
+ ** author: PA
+ **
+ ** Helper relation to generate_ode_system2_populate_A
+ **)
+
+relation generate_ode_system2_populate_A2:((int * int * DAELow.Equation) list,
+					  DAELow.Variables,
+					  DAELow.EquationArray,
+					  int) (* n rows *)
+	  => string =
+
+  axiom	generate_ode_system2_populate_A2([],_,_,_) => ""
+
+  rule  r - 1 => r' &
+	c - 1 => c' &
+	int_string(r') => rs &
+	int_string(c') => rc &
+	int_string(n_rows) => n_rows_str &
 	print_exp_cpp_str(exp) => es &
 	generate_ode_system2_populate_A(jac,vars,eqn) => s1 &
-	Util.string_append_list([TAB,"set_matrix_elt(A,",rs,", ",rc,", ",es,");\n",s1]) => res
-	------------------------
-	generate_ode_system2_populate_A((r,c,DAELow.RESIDUAL_EQUATION(exp))::jac,vars,eqn) => res
+	Util.string_append_list([TAB,"set_matrix_elt(A,",rs,", ",rc,", ",
+				 n_rows_str,", ",es,");\n",s1]) => res
+	--------------------------------------------------------------
+	generate_ode_system2_populate_A2((r,c,DAELow.RESIDUAL_EQUATION(exp))::jac,vars,eqn,n_rows) => res
 end
 
 (** relation: generate_ode_system2_populate_b
@@ -729,11 +761,13 @@ relation generate_ode_system2_populate_b2: (DAELow.Equation list,
   rule	Exp.typeof(e1) => tp &
 	let new_exp = Exp.BINARY(e1,Exp.SUB(tp),e2) &
 	DAELow.get_eqnsys_rhs_exp(new_exp,v) => rhs_exp &
-	print_exp_cpp_str(rhs_exp) => rhs_str &
+	let rhs_exp' = Exp.UNARY(Exp.UMINUS(tp),rhs_exp) &
+	Exp.simplify(rhs_exp') => rhs_exp'' &
+	print_exp_cpp_str(rhs_exp'') => rhs_str &
 	int_string(index) => index_str &
 	index + 1 => index'  &
 	generate_ode_system2_populate_b2(rest,v,index') => s1 &
-	Util.string_append_list([TAB,"set_vector_elt(b",index_str,
+	Util.string_append_list([TAB,"set_vector_elt(b,",index_str,
 				 ", ",rhs_str, ");\n",s1]) => res
 	--------------------------------------------------------
 	generate_ode_system2_populate_b2(DAELow.EQUATION(e1,e2)::rest,v,index) 
@@ -748,13 +782,16 @@ end
  ** a linear system of equations.
  **)
 
-relation generate_ode_system2_solve_call:() => string =
+relation generate_ode_system2_solve_call:(int (* size of system *)) 
+	  => string =
 
 
-  rule	Util.string_append_list([TAB,"solve_linear_equation_system(A,b);\n"]) 
-	=> res
+  rule	int_string(eqn_size) => size_str &
+	Util.string_append_list([TAB,"solve_linear_equation_system(A,b,",
+				 size_str,");\n"]) 
+ 	  => res
 	---------------------------
-	generate_ode_system2_solve_call() => res
+	generate_ode_system2_solve_call(eqn_size) => res
 end
 
 (** relation: generate_ode_system2_collect_results
@@ -768,6 +805,7 @@ relation generate_ode_system2_collect_results:(DAELow.Variables)
 	  => string =
 
   rule	DAELow.var_list(vars) => var_lst &
+	list_reverse(var_lst) => var_lst' &
 	Util.list_map(var_lst,DAELow.var_cref) => crefs &
 	Util.list_map(crefs,Exp.print_component_ref_str) => strs &
 	generate_ode_system2_collect_results2(strs,0) => res
@@ -1280,7 +1318,7 @@ end
                                    int vector, 
                                    int list list) => string =
          
-  rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xd, double* y)\n{\n" &
+  rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xd, double* y, double* p)\n{\n" &
 	 let func_footer = "return 0;\n\n}\n" &
 	 build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &
 	 Util.list_flatten([[func_header],eqn_str_lst,[func_footer]]) => res &

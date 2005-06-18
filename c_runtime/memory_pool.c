@@ -34,11 +34,11 @@ state current_state = {
   0 /* char buffer */
 };
 
-real real_buffer[NR_REAL_ELEMENTS];
-integer integer_buffer[NR_INTEGER_ELEMENTS];
-string string_buffer[NR_STRING_ELEMENTS];
-boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
-integer size_buffer[NR_SIZE_ELEMENTS];
+m_real real_buffer[NR_REAL_ELEMENTS];
+m_integer integer_buffer[NR_INTEGER_ELEMENTS];
+m_string string_buffer[NR_STRING_ELEMENTS];
+m_boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
+m_integer size_buffer[NR_SIZE_ELEMENTS];
 int* index_buffer[NR_INDEX_ELEMENTS];
 char char_buffer[NR_CHAR_ELEMENTS];
 
@@ -83,7 +83,7 @@ void clear_current_state()
 }
 
 /* allocates n reals in the real_buffer */
-real* real_alloc(int n)
+m_real* real_alloc(int n)
 {
   _index_t start;
 
@@ -98,7 +98,7 @@ real* real_alloc(int n)
 }
 
 /* allocates n integers in the integer_buffer */
-integer* integer_alloc(int n)
+m_integer* integer_alloc(int n)
 {
   _index_t start;
 
@@ -114,7 +114,7 @@ integer* integer_alloc(int n)
 }
 
 /* allocates n strings in the string_buffer */
-string* string_alloc(int n)
+m_string* string_alloc(int n)
 {
   _index_t start;
 
@@ -130,7 +130,7 @@ string* string_alloc(int n)
 }
 
 /* allocates n booleans in the boolean_buffer */
-boolean* boolean_alloc(int n)
+m_boolean* boolean_alloc(int n)
 {
   _index_t start;
 

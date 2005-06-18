@@ -27,7 +27,7 @@ void euler ( double *x, double *xd, double *y, double *p, double *res,
 			       double*,// y
 			       double*,// p
 			       int,int,int, //nx,ny,np
-			       double) // time
+			       double*) // time
 	     )
 {
 
@@ -51,7 +51,7 @@ void euler ( double *x, double *xd, double *y, double *p, double *res,
       res[j++] = sim_time; //store time last.
       //      cerr << "storing result for time " << sim_time << " indx :" << j << endl;
     } 
-    f(x,xd,y,p,nx,ny,np,sim_time); // calculate equations
+    f(x,xd,y,p,nx,ny,np,&sim_time); // calculate equations
     for(int i=0; i < nx; i++) {
       x[i]=x[i]+xd[i]*step; // Based on that, calculate state variables.
     }

@@ -76,16 +76,28 @@ extern char *varnames[];
 
 // function for calculating ouput values 
 int 
-functionDAE_output(double *t, double *x, double *xprimne, double *y);
+functionDAE_output(double *t, double *x, double *xprimne, double *y, double* p);
 
 // function for calculating state values on residual form
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
+
+void functionODE(double *x, double *xd, double *y, double *p, 
+		 int nx, int ny, int np, double *t);
 
 void add_result(double *data, double time,double *nx, double *ndx, double *y,
 		long nx, long ny, long *actual_points);
 
 void store_result(const char * filename, double*data,
 		  long numpoints, long nx, long ny);
+
+void euler ( double *x, double *xd, double *y, double *p, double *data,
+	     int nx, int ny, int np, double *time, double *step,
+	     void (*f)(double*,// x
+		       double*,// xd
+		       double*,// y
+		       double*,// p
+		       int,int,int, //nx,ny,np
+		       double *));
 
 #endif

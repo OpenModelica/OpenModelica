@@ -66,7 +66,95 @@ inline double * initialize_simdata(long numpoints,long nx, long ny)
   return data;
 }
 
-int main(int argc, char **argv) 
+int euler_main(int, char **);
+int dassl_main(int, char **);
+
+int main(int argc, char**argv) 
+{
+
+  /* the main method identifies which solver to use and then calls 
+     respecive solver main function*/
+  if (!getFlagValue("m",argc,argv)) {
+    return dassl_main(argc,argv);
+  } else  if (*getFlagValue("m",argc,argv) == std::string("euler")) {
+    return euler_main(argc,argv);
+  }
+  else if (*getFlagValue("m",argc,argv) == std::string("dassl")) {
+    return dassl_main(argc,argv);
+  } else {
+    cout << "Unrecognized solver, using dassl." << endl;
+    return dassl_main(argc,argv);    
+  }
+      return -1;
+}
+
+
+/* The main function for the explicit euler solver */
+
+int euler_main(int argc,char** argv) {
+  double start = 0.0; //default value
+  double stop = 5;
+  double step = 0.05;
+  double sim_time;
+
+  if (argc == 2 && flagSet("?",argc,argv)) {
+    cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler}" << endl;
+    exit(0);
+  }
+
+  read_input(argc,argv,x,xd,y,p,nx,ny,np,&start,&stop,&step);
+  
+  long numpoints = long((stop-start)/step)+2;
+
+  double *data =  initialize_simdata(numpoints,nx,ny);
+
+  int npts_per_result=int((stop-start)/(step*(numpoints-2)));
+  long actual_points =0 ; // the number of actual points saved
+  int pt=0;
+  for(sim_time=start; sim_time <= stop; sim_time+=step,pt++) {
+
+    euler(x,xd,y,p,data,nx,ny,np,&sim_time,&step,functionODE);
+
+    /* Calculate the output variables */
+    functionDAE_output(&sim_time,x,xd,y,p);
+
+    if (pt % npts_per_result == 0 || sim_time+step > stop) { // store result
+      add_result(data,sim_time,x,xd,y,nx,ny,&actual_points);
+    }
+  } 
+
+
+  string * result_file =(string*)getFlagValue("r",argc,argv);
+  const char * result_file_cstr;
+  if (!result_file) {
+    result_file_cstr = string(string(model_name)+string("_res.plt")).c_str();
+  } else {
+    result_file_cstr = result_file->c_str();
+  }
+  store_result(result_file_cstr,data,actual_points,nx,ny);
+
+  return 0;
+}
+
+void euler ( double *x, double *xd, double *y, double *p, double *data,
+	     int nx, int ny, int np, double *time, double *step,
+	     void (*f)(double*,// x
+		       double*,// xd
+		       double*,// y
+		       double*,// p
+		       int,int,int, //nx,ny,np
+		       double *) // time
+	     )
+{
+  f(x,xd,y,p,nx,ny,np,time); // calculate equations
+  for(int i=0; i < nx; i++) {
+    x[i]=x[i]+xd[i]*(*step); // Based on that, calculate state variables.
+  }
+}
+
+
+/* The main function for the dassl solver*/
+int dassl_main(int argc, char **argv) 
 {
   int status;
   double start = 0.0; //default value
@@ -98,7 +186,7 @@ int main(int argc, char **argv)
     rwork[i] = 0.0;
   
   if (argc == 2 && flagSet("?",argc,argv)) {
-    cout << "usage: " << argv[0]  << " <-f initfile> <-r result file>" << endl;
+    cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler}" << endl;
     exit(0);
   }
 
@@ -110,11 +198,10 @@ int main(int argc, char **argv)
   
   t=start;
   tout = t+step;
- 
   DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /* rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
   functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
-  functionDAE_output(&t,x,xd,y);
+  functionDAE_output(&t,x,xd,y,p);
   add_result(data,t,x,xd,y,nx,ny,&actual_points);
   info[0] = 1;
   //dumpresult(t,y,idid,rwork,iwork);
@@ -123,7 +210,7 @@ int main(int argc, char **argv)
     DDASRT(functionDAE_res, &nx, &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /*rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
     functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
-    functionDAE_output(&t,x,xd,y);
+    functionDAE_output(&t,x,xd,y,p);
     add_result(data,t,x,xd,y,nx,ny,&actual_points);
     //dumpresult(t,y,idid,rwork,iwork);
     tout += step;
@@ -133,7 +220,7 @@ int main(int argc, char **argv)
     cerr << "Result written to file." << endl;
 	status = 1;
   }
-  string * result_file =(string*)getFlagValue("-r",argc,argv);
+  string * result_file =(string*)getFlagValue("r",argc,argv);
   const char * result_file_cstr;
   if (!result_file) {
     result_file_cstr = string(string(model_name)+string("_res.plt")).c_str();

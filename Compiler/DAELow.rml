@@ -4922,6 +4922,7 @@ relation calculate_var_sizes:( Var list, int, int) => (int, int) =
 	calculate_var_sizes(VAR(_,STATE,_,_,_ ,_,_,_,_,_,_,_,_)::vs,nx,ny) 
 	  => (nx'',ny'')
 
+	  (* A dummy state is an algebraic variable *)
   rule	int_add(ny,1) => ny' &
 	calculate_var_sizes(vs,nx,ny') => (nx'',ny'')
 	----------------------------

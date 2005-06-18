@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+#include <assert.h>
+
 #include "memory_pool.h"
 #include "index_spec.h"
 
@@ -36,6 +38,8 @@ extern "C" {
 #include "utility.h"
 #include "modelica_string.h"
 #include "read_write.h"
+
+#include "matrix.h"
 
 typedef real_array_t real_array;
 typedef integer_array_t integer_array;

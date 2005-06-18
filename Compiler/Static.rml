@@ -4468,8 +4468,18 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	      (Exp.UMINUS(Exp.REAL),
 	       [(Types.T_REAL([]),NONE)],
 	       (Types.T_REAL([]),NONE))] &
+	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
+	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
+	
+	operator_return_unary(Exp.UMINUS(Exp.INT), 
+			intarrtypes, 
+			intarrtypes) => intarrs &
+
+	operator_return_unary(Exp.UMINUS(Exp.REAL), 
+			realarrtypes, 
+			realarrtypes) => realarrs &
 	get_koening_operator_types("unaryMinus",env,t1,t2) => userops &
-	Util.list_flatten([scalars,userops]) => types
+	Util.list_flatten([scalars,intarrs,realarrs,userops]) => types
 	---------------------------------------------
 	operators (Absyn.UMINUS,env,t1,t2) => types
 
@@ -4480,8 +4490,18 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	      (Exp.UPLUS(Exp.REAL),
 	       [(Types.T_REAL([]),NONE)],
 	       (Types.T_REAL([]),NONE))] &
+	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
+	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
+	
+	operator_return_unary(Exp.UPLUS(Exp.INT), 
+			intarrtypes, 
+			intarrtypes) => intarrs &
+
+	operator_return_unary(Exp.UPLUS(Exp.REAL), 
+			realarrtypes, 
+			realarrtypes) => realarrs &
 	get_koening_operator_types("unaryPlus",env,t1,t2) => userops &
-	Util.list_flatten([scalars,userops]) => types
+	Util.list_flatten([scalars,intarrs,realarrs,userops]) => types
 	---------------------------------------------
 	operators(Absyn.UPLUS,env,t1,t2) => types
 
@@ -4779,7 +4799,7 @@ end
 
 (** relation: operator_return
  ** This relation collects the types and operator lists into a tuple list, suitable
- ** for the deoverloading relation.
+ ** for the deoverloading relation for binary operations.
 **)
 relation operator_return : (Exp.Operator, 
 			    Types.Type list, 
@@ -4790,10 +4810,30 @@ relation operator_return : (Exp.Operator,
   axiom operator_return (_,[],[],[]) => []
 
   rule	operator_return (op, lr, rr, rer) => rest & 
+	(* list contains two types, i.e. BINARY operations*)
 	let t = (op,[l,r],re)
 	---------------------------------------
 	operator_return (op, l::lr, r::rr, re::rer) => t::rest
 
+end
+
+(** relation: operator_return_unary
+ ** This relation collects the types and operator lists into a tuple list, 
+ ** suitable for the deoverloading relation to be used for unary 
+ ** expressions.
+**)
+relation operator_return_unary : (Exp.Operator, 
+			    Types.Type list, 
+			    Types.Type list) 
+	  =>  (Exp.Operator * Types.Type list * Types.Type) list =
+
+  axiom operator_return_unary (_,[],[]) => []
+
+  rule	operator_return_unary (op, lr,  rer) => rest & 
+	(* list only contains one type, i.e. for UNARY operations*)
+	let t = (op,[l],re)
+	---------------------------------------
+	operator_return_unary (op, l::lr, re::rer) => t::rest
 end
 
 (** relation: array_type_list

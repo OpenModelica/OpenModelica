@@ -300,7 +300,7 @@ modelica_real* calc_real_index(int ndims, size_t* idx_vec, real_array_t* arr)
 }
 
 /* One based index*/
-real* calc_real_index_va(real_array_t* source,int ndims,va_list ap)
+m_real* calc_real_index_va(real_array_t* source,int ndims,va_list ap)
 {
   int i;
   int index;
@@ -384,14 +384,14 @@ void print_real_array(real_array_t* source)
 }
 
 
-void put_real_element(real value,int i1,real_array_t* dest)
+void put_real_element(m_real value,int i1,real_array_t* dest)
 {
   /* Assert that dest has correct dimension */
   /* Assert that i1 is a valid index */
   dest->data[i1] = value;
 }
 
-void put_real_matrix_element(real value, int r, int c, real_array_t* dest)
+void put_real_matrix_element(m_real value, int r, int c, real_array_t* dest)
 {
   /* Assert that dest hast correct dimension */
   /* Assert that r and c are valid indices */
@@ -616,30 +616,30 @@ void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...)
 
 }
 
-void array_scalar_real_array(real_array_t* dest,int n,real first,...)
+void array_scalar_real_array(real_array_t* dest,int n,m_real first,...)
 {
 
 }
 
-void array_alloc_scalar_real_array(real_array_t* dest,int n,real first,...)
+void array_alloc_scalar_real_array(real_array_t* dest,int n,m_real first,...)
 {
 
 }
 
-real* real_array_element_addr1(real_array_t* source,int ndims,int dim1)
+m_real* real_array_element_addr1(real_array_t* source,int ndims,int dim1)
 {
   return source->data+dim1-1;
 }
 
-real* real_array_element_addr2(real_array_t* source,int ndims,int dim1,int dim2)
+m_real* real_array_element_addr2(real_array_t* source,int ndims,int dim1,int dim2)
 {
   return source->data+(dim1-1)*source->dim_size[1]+dim2-1;
 }
 
-real* real_array_element_addr(real_array_t* source,int ndims,...)
+m_real* real_array_element_addr(real_array_t* source,int ndims,...)
 {
   va_list ap;
-  real* tmp;
+  m_real* tmp;
 
   va_start(ap,ndims);
   tmp = calc_real_index_va(source,ndims,ap);
@@ -659,7 +659,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n, real_array_t* first,
 }
 
 
-void range_alloc_real_array(real start, real stop, real inc, real_array_t* dest)
+void range_alloc_real_array(m_real start, m_real stop, m_real inc, real_array_t* dest)
 {
   int n;
 
@@ -668,7 +668,7 @@ void range_alloc_real_array(real start, real stop, real inc, real_array_t* dest)
   range_real_array(start,stop,inc,dest);
 }
 
-void range_real_array(real start, real stop, real inc, real_array_t* dest)
+void range_real_array(m_real start, m_real stop, m_real inc, real_array_t* dest)
 {
   int i;
   /* Assert that dest has correct size */

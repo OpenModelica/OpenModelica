@@ -641,10 +641,10 @@ modelica_integer* integer_array_element_addr2(integer_array_t* source,int ndims,
   return source->data+(dim1-1)*source->dim_size[1]+dim2-1;
 }
 
-integer* integer_array_element_addr(integer_array_t* source,int ndims,...)
+m_integer* integer_array_element_addr(integer_array_t* source,int ndims,...)
 {
   va_list ap;
-  integer* tmp;
+  m_integer* tmp;
 
   va_start(ap,ndims);
   tmp = calc_integer_index_va(source,ndims,ap);

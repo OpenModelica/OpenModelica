@@ -31,17 +31,17 @@
 #define NR_INDEX_ELEMENTS 10000
 #define NR_CHAR_ELEMENTS 10000
 
-typedef double real;
-typedef int integer;
-typedef const char* string;
-typedef int boolean;
+typedef double m_real;
+typedef int m_integer;
+typedef const char* m_string;
+typedef int m_boolean;
 typedef int _index_t; 
 
-extern real real_buffer[NR_REAL_ELEMENTS];
-extern integer integer_buffer[NR_INTEGER_ELEMENTS];
-extern string string_buffer[NR_STRING_ELEMENTS];
-extern boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
-extern integer size_buffer[NR_SIZE_ELEMENTS];
+extern m_real real_buffer[NR_REAL_ELEMENTS];
+extern m_integer integer_buffer[NR_INTEGER_ELEMENTS];
+extern m_string string_buffer[NR_STRING_ELEMENTS];
+extern m_boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
+extern m_integer size_buffer[NR_SIZE_ELEMENTS];
 extern int* index_buffer[NR_INDEX_ELEMENTS];
 extern char char_buffer[NR_CHAR_ELEMENTS];
 
@@ -69,10 +69,10 @@ void print_current_state();
 /*size_mem current_size;*/
 
 /* Allocation functions */
-real* real_alloc(int n);
-integer* integer_alloc(int n);
-string* string_alloc(int n);
-boolean* boolean_alloc(int n);
+m_real* real_alloc(int n);
+m_integer* integer_alloc(int n);
+m_string* string_alloc(int n);
+m_boolean* boolean_alloc(int n);
 int* size_alloc(int n);
 int** index_alloc(int n);
 char* char_alloc(int n);

@@ -4,8 +4,6 @@
 
 #include "read_write.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 
 void cleanup_description(type_description* desc)
 {

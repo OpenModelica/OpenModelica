@@ -112,7 +112,7 @@ void array_alloc_scalar_integer_array(integer_array_t* dest,int n,modelica_integ
 
 modelica_integer* integer_array_element_addr(integer_array_t* source,int ndims,...);
 modelica_integer* integer_array_element_addr1(integer_array_t* source,int ndims,int dim1);
-integer* integer_array_element_addr2(integer_array_t* source,int ndims,int dim1,int dim2);
+m_integer* integer_array_element_addr2(integer_array_t* source,int ndims,int dim1,int dim2);
 
 void cat_integer_array(int k,integer_array_t* dest, int n, integer_array_t* first,...);
 void cat_alloc_integer_array(int k,integer_array_t* dest, int n, integer_array_t* first,...);
