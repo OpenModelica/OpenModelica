@@ -156,6 +156,7 @@ module SimCodegen:
 
   relation get_called_functions_in_functions : (Absyn.Path list, DAE.DAElist) => Absyn.Path list
   relation get_called_functions_in_function : (Absyn.Path, DAE.DAElist) => Absyn.Path list
+  relation print_exp_opt_str_if_const:(Exp.Exp option) => string 
 	  
 end
 
