@@ -26,11 +26,11 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "read_write.h"
 #include "../values.h"
 #include "../absyn_builder/yacclib.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "read_write.h"
 
 #define MAXPATHLEN MAX_PATH
 
