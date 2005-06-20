@@ -696,8 +696,8 @@ RML_BEGIN_LABEL(System__platform)
   rmlA0 = (void*) mk_scon("WIN32");
   RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL
-#elif CYGWIN
+RML_END_LABEL 
+#elif defined CYGWIN 
 RML_BEGIN_LABEL(System__platform)
 {
   rmlA0 = (void*) mk_scon("CYGWIN");

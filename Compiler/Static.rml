@@ -2161,6 +2161,9 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	get_optional_named_arg(env,SOME(st),impl,"numberOfIntervals",
 			       (Types.T_INTEGER([]),NONE),args,Exp.ICONST(500))
 	  => numberOfIntervals &
+	get_optional_named_arg(env,SOME(st),impl,"method",
+			       (Types.T_STRING([]),NONE),args,Exp.SCONST("dassl"))
+	  => method &
 	let recordtype = 
 	((Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
 			,[Types.VAR("resultFile",
@@ -2177,7 +2180,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("simulate"),
 		       [Exp.CREF(cr',Exp.OTHER),startTime,
-			stopTime,numberOfIntervals], (* Fill in rest of defaults here*)
+			stopTime,numberOfIntervals,method], (* Fill in rest of defaults here*)
 		       false,
 		       true),
 	      Types.PROP(recordtype,false),
@@ -2195,7 +2198,8 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP((Types.T_STRING([]),NONE),false),
 	      SOME(st))
 
-  rule	elab_variablenames(vars) => vars'
+  rule	elab_variablenames(vars) => vars' &
+	list_length(vars) => var_len 
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("readSimulationResult",_),
 			      [ Absyn.STRING(filename),
@@ -2209,9 +2213,10 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 			Exp.ICONST(size)], 
 		       false,
 		       true),
-	      Types.PROP((Types.T_STRING([]),NONE),false),
+	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(size)),
+					(Types.T_ARRAY(Types.DIM(SOME(var_len)), (Types.T_REAL([]),NONE)),NONE)),NONE),false),
 	      SOME(st))
-
+	
   rule	elab_variablenames(vars) => vars'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("plot",_),
@@ -2358,6 +2363,16 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("loadModel"),
 		       [Exp.CREF(cr',Exp.OTHER)],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),false),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("deleteFile",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("deleteFile"),
+		       [Exp.SCONST(str)],
 		       false,
 		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),false),

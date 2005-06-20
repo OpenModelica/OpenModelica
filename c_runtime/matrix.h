@@ -13,6 +13,15 @@ extern "C" {
 
 int dgesv_(integer *n, integer *nrhs, doublereal *a, integer 
 	   *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
+
+void hybrd_(void (int*, double *, double*, int*),
+	    int* n, double* x,double* fvec,double* xtol,
+	    int* maxfev, int* ml,int* mu,double* epsfcn,
+	    double* diag,int* mode, double* factor, 
+	    int* nprint,int* info,int* nfev,double* fjac,
+	    int* ldfjac,double* r, int* lr, double* qtf,
+	    double* wa1,double* wa2,double* wa3,double* wa4);
+  
 #if defined(__cplusplus)
 }
 #endif
@@ -45,7 +54,32 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  else if (info > 0) { \
    printf("Error sovling linear system of equations, system is singular.\n"); \
  } \
-} while (0) /* (no trailing ; ) */ \
+} while (0) /* (no trailing ; ) */ 
 
+
+#define start_nonlinear_system(size) { double nls_x[size]; \
+double nls_fvec[size]; \
+double nls_diag[size]; \
+double nls_r[(size*(size+1)/2)]; \
+double nls_qtf[size]; \
+double nls_wa1[size]; \
+double nls_wa2[size]; \
+double nls_wa3[size]; \
+double nls_wa4[size]; \
+double xtol = 1e-6; \
+double epsfcn=1e-6; \
+int maxfev=2000; \
+int n=size; \
+int ml=size-1; \
+int mu = size-1; \
+int mode=1; \
+int info,nfev; \
+double factor=100.0; \
+int nprint = 0; \
+int lr = (size*(size+1))/2; \
+int ldfjac = size; \
+double nls_fjac[size*size]
+
+#define end_nonlinear_system() } do {} while(0)
 
 #endif

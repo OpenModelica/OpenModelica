@@ -170,6 +170,7 @@ with "Values.rml"
 with "Codegen.rml"
 with "Print.rml"
 with "ModUtil.rml"
+with "VarTransform.rml"
 
 (** relation generate_makefile
  ** This relation generates a makefile for the simulation code.
@@ -498,10 +499,11 @@ relation generate_ode_code: (DAELow.DAELow,
   rule	Absyn.path_string(class) => cname &
         DAELow.generate_state_partition(comps,dlow,ass1,ass2,m,mt) 
 	  => (blt_states,blt_no_states) &
-	generate_ode_blocks(dlow,ass1,ass2,blt_states) => block_code &
+	generate_ode_blocks(dlow,ass1,ass2,blt_states) 
+	  => (block_code, extra_funcs) &
 	generate_ode_header() => cheader &
 	generate_ode_footer() => cfooter &
-	Util.string_append_list([cheader,block_code,cfooter]) => res
+	Util.string_append_list([extra_funcs,cheader,block_code,cfooter]) => res
 	-------------------------------------------
 	generate_ode_code(dlow,comps,ass1,ass2,m,mt,class) => res
 end
@@ -547,23 +549,27 @@ end
  ** 
 **)
 relation generate_ode_blocks:(DAELow.DAELow, int vector, int vector, int list list) 
-	  => string =
+	  => (string, (* block code*)
+	      string) (* extra functions code*) =
 
-  axiom	generate_ode_blocks(_,_,_,[]) => ""
+  axiom	generate_ode_blocks(_,_,_,[]) => ("","")
 
   rule	(* For system of equations *)
-	generate_ode_system(dae,ass1,ass2,block) => s1  &
-	generate_ode_blocks(dae,ass1,ass2,blocks) => s2 &
-	string_append(s1,s2) => res
+	generate_ode_system(dae,ass1,ass2,block) => (s1,f1)  &
+	generate_ode_blocks(dae,ass1,ass2,blocks) => (s2,f2) &
+	string_append(s1,s2) => res &
+	string_append(f1,f2) => res2 
 	-------------------------------------
-	generate_ode_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks) => res
+	generate_ode_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks) 
+	  => (res,res2)
 	
   rule	(* for single equations *)
-	generate_ode_equation(dae,ass1,ass2,eqn) => s1 &
-	generate_ode_blocks(dae,ass1,ass2,blocks) => s2 &
-	string_append(s1,s2) => res
+	generate_ode_equation(dae,ass1,ass2,eqn) => (s1,f1) &
+	generate_ode_blocks(dae,ass1,ass2,blocks) => (s2,f2) &
+	string_append(s1,s2) => res &
+	string_append(f1,f2) => res2 
 	-------------------------------------
-	generate_ode_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => res
+	generate_ode_blocks(dae,ass1,ass2,(block as [eqn])::blocks) => (res,res2)
 
   rule	print "-generate_ode_blocks failed\n" 
 	-----------------
@@ -576,7 +582,8 @@ end
  ** Generates code for a subsystem of equations, both linear and non-linear.
  **)
 relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list) 
-	  => string =
+	  => (string, (* system code *)
+	      string) = (* extra function code*) 
 
   rule	(** extract the variables and equations of the block.*)
 	Util.list_map_3_2(block,get_equation_and_solved_var,eqns,vars,ass2) 
@@ -593,7 +600,7 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list)
 	
 	DAELow.calculate_jacobian(vars',eqns',m',mt') => jac &
 	DAELow.analyze_jacobian(subsystem_dae,jac) => jac_tp &
-	generate_ode_system2(subsystem_dae,jac,jac_tp) => str &
+	generate_ode_system2(subsystem_dae,jac,jac_tp) => (str,f1) &
 	DAELow.jacobian_type_str jac_tp => jac_tp_str &
 	Util.string_append_list(["/* system of equations of type ",jac_tp_str, "*/\n",
 				 str,
@@ -602,7 +609,7 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list)
 	  => res
 	-------------------------
 	generate_ode_system(daelow as DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev),ass1,ass2,block) 
-	  => res
+	  => (res,f1)
 end
 
 (** relation: generate_ode_system2
@@ -614,7 +621,8 @@ end
 relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
 				(int * int * DAELow.Equation) list, (* jacobian *)
 				DAELow.JacobianType) (* Type of jacobian, constant,etc.*)
-	=> string = 
+	=> (string, (* system code *)
+	    string) =  (* extra functions code *)
 
 
 	  (* constant jacobians. Linear system of equations (A x = b) where
@@ -623,7 +631,7 @@ relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
 	let str  = "/*solving constant linear system of equations*/\n"
 	------------------------------
  	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,
-			     DAELow.JAC_CONSTANT) => str
+			     DAELow.JAC_CONSTANT) => (str,"")
 	
 
 	(* Time varying jacobian. Linear system of equations that needs to 
@@ -635,12 +643,211 @@ relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
 	generate_ode_system2_collect_results(v) => s4 &
 	Util.string_append_list([s1,s2,s3,s4]) => str
 	--------------------
-	generate_ode_system2(d as DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,DAELow.JAC_TIME_VARYING) => str
+	generate_ode_system2(d as DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,DAELow.JAC_TIME_VARYING) => (str,"")
 
 	(* Time varying nonlinear jacobian. Non-linear system of equations*)
-  rule	let str ="/* solving nonlinear system of equations*/\n" 
-	------------------------
-	generate_ode_system2(subdae,jac,DAELow.JAC_TIME_VARYING) => str
+  rule	DAELow.equation_list(eqn) => eqn_lst &
+	DAELow.var_list(v) => var_lst &
+	Util.list_map(var_lst,DAELow.var_cref) => crefs &
+	generate_ode_system2_nonlinear_residuals(crefs,eqn_lst) => (str,f1) 
+	------------------------------------------------------
+	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,DAELow.JAC_NONLINEAR) 
+	  => (str,f1)
+
+
+  rule	print "-generate_ode_system2 failed\n" 
+	-------------------------
+	generate_ode_system2(_,_,_) => fail
+end
+
+(** relation: generate_ode_system2_nonlinear_residuals
+ ** author: PA
+ **
+ ** Generates residual statements for nonlinear equation systems.
+ **)
+
+relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
+						     DAELow.Equation list) 
+	  => (string, (* solve code *)
+	      string) = (* extra functions: residual func*)
+
+  rule	make_residual_replacements(crs) => repl &
+	generate_ode_system2_nonlinear_residuals2(eqns,0,repl) => s1 &
+	tick() => id &
+	int_string(id) => str_id &
+	list_length(eqns) => eqn_size & int_string(eqn_size) => size_str &
+	Util.string_append_list(["void residualFunc",str_id,
+				 "(int* n, double* xloc, double*res, int* iflag)\n",
+				 "{\n",
+				 s1,
+				 "}\n"]) => func &
+	generate_ode_system2_nonlinear_setvector(crs,0) => s2 &
+	generate_ode_system2_nonlinear_call(str_id) => s3 &
+	generate_ode_system2_nonlinear_store_results(crs,0) => s4 &
+	Util.string_append_list([TAB,"start_nonlinear_system(",size_str,");\n",
+				 s2,s3,s4,
+				 TAB, "end_nonlinear_system();\n"]) => res
+	-----------------------------------------------------------
+	generate_ode_system2_nonlinear_residuals(crs,eqns) 
+	  => (res,func)
+
+  rule	print "generate_ode_system2_nonlinear_residuals failed\n" 
+	-----------------------------------------------------------
+	generate_ode_system2_nonlinear_residuals(crs,eqns) 
+	  => fail
+end
+
+(** relation: make_residual_replacements
+ ** author: PA
+ **
+ ** This relation makes replacement rules for variables occuring in a 
+ ** nonlinear equation system. They should be replaced by x[index], i.e.
+ ** an unique index in the x vector.
+ **)
+
+relation make_residual_replacements:(Exp.ComponentRef list) => 
+	VarTransform.VariableReplacements =
+
+  rule	VarTransform.empty_replacements() => repl &
+	make_residual_replacements2(repl,crefs,0) => repl'
+	---------------------
+	make_residual_replacements(crefs) => repl'
+end
+
+(** relation make_residual_replacements2
+ ** author: PA
+ ** 
+ ** Helper relation to make_residual_replacements
+ **)
+
+relation make_residual_replacements2:(VarTransform.VariableReplacements,
+				      Exp.ComponentRef list,
+				      int) => 
+	VarTransform.VariableReplacements =
+
+  axiom	make_residual_replacements2(repl,[],_) => repl
+
+  rule	int_string(pos) => pstr &
+	Util.string_append_list(["xloc[",pstr,"]"]) => str &
+	VarTransform.add_replacement(repl,cr,Exp.CREF_IDENT(str,[])) => repl' &
+	pos + 1 => pos' &
+	make_residual_replacements2(repl',crs,pos') => repl''
+	------------------------------
+	make_residual_replacements2(repl,cr::crs,pos) => repl''
+end
+
+
+(** relation: generate_ode_system2_nonlinear_setvector
+ ** author: PA
+ **
+ ** Generates code for setting the values for the x vector when solving 
+ ** nonlinear equation systems.
+ **)
+
+relation generate_ode_system2_nonlinear_setvector: (Exp.ComponentRef list,
+						    int (* index iterator *)) 
+	  => string =
+
+  axiom	generate_ode_system2_nonlinear_setvector([],_) => ""
+
+  rule  Exp.print_component_ref_str(cr) => cr_str &
+	int_string(indx) => indx_str &
+	indx + 1 => indx' &
+	generate_ode_system2_nonlinear_setvector(crs,indx') => s1 &
+	Util.string_append_list([TAB,"nls_x[",indx_str,"] = ",cr_str,";\n",
+				 s1]) => res
+	----------------------------------------
+	generate_ode_system2_nonlinear_setvector(cr::crs,indx) 
+	  => res
+end
+
+(** relation: generate_ode_system2_nonlinear_call
+ ** author: PA
+ **
+ ** Generates the call to the nonlinear equation solver.
+ **)
+
+relation generate_ode_system2_nonlinear_call: (string (* residual func id *)) 
+	  => string =
+
+  rule	Util.string_append_list([TAB,"hybrd_(residualFunc",func_id,
+				 ",&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,",
+				 "&epsfcn,\n",TAB,TAB,"nls_diag,&mode,&factor,&nprint,",
+				 "&info,&nfev,nls_fjac,&ldfjac,\n",TAB,TAB,"nls_r,",
+				 "&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,",
+				 "nls_wa4);\n",
+				 TAB,"if (info == 0) {\n",
+				 TAB,TAB,"printf(\"improper ",
+				 "input parameters to nonlinear eq. syst.\\n\");\n",
+				 TAB, "}\n",
+				 TAB,"if (info >= 2 && info <= 5) {\n",
+				 TAB,TAB,"printf(\"error solving nonlinear",
+				 " system.\\n\");\n",
+				 TAB,"}\n"
+				 ]) => res
+	---------------------------
+	generate_ode_system2_nonlinear_call(func_id) => res
+end
+
+
+(** relation: generate_ode_system2_nonlinear_store_results
+ ** author: PA
+ ** 
+ ** Generates the storing of the results of the solution to a nonlinear equation
+ ** system.
+**)
+	    
+relation generate_ode_system2_nonlinear_store_results: (Exp.ComponentRef list, int)
+	=> string =
+  axiom	generate_ode_system2_nonlinear_store_results([],_) => ""
+
+  rule	Exp.print_component_ref_str(cr) => cr_str &
+	int_string(indx) => indx_str &
+	indx + 1 => indx' &
+	generate_ode_system2_nonlinear_store_results(crs,indx') => s1 &
+	Util.string_append_list([TAB,cr_str," = nls_x[",indx_str,"];\n",s1]) 
+	  => res
+	--------------------------------
+	generate_ode_system2_nonlinear_store_results(cr::crs,indx) =>  res
+end
+
+
+(** relation: generate_ode_system2_nonlinear_residuals2
+ ** author: PA
+ ** 
+ ** Helper relation to generate_ode_system2_nonlinear_residuals
+ **)
+
+relation generate_ode_system2_nonlinear_residuals2: (DAELow.Equation list, 
+						     int, (* index iterator*) 
+						     VarTransform.VariableReplacements)
+	  => string =
+
+  axiom	generate_ode_system2_nonlinear_residuals2([],_,_) => ""
+
+  rule	Exp.typeof(e1) => tp &
+	let res_exp = Exp.BINARY(e1,Exp.SUB(tp),e2) &
+	Exp.simplify(res_exp) => res_exp' &
+	VarTransform.replace_exp(res_exp',repl) => res_exp'' &
+        print_exp_cpp_str(res_exp'') => exp_str &
+	int_string(indx) => indx_str &
+	indx + 1 => indx' &
+	generate_ode_system2_nonlinear_residuals2(rest,indx',repl) => s1 &
+	Util.string_append_list([TAB,"res[",indx_str,"] = ",exp_str, ";\n",s1])=> res
+	-----------------------
+	generate_ode_system2_nonlinear_residuals2(DAELow.EQUATION(e1,e2)::rest,indx,repl) 
+	  => res
+
+  rule	Exp.simplify(e) => res_exp' &
+	VarTransform.replace_exp(res_exp',repl) => res_exp'' &
+        print_exp_cpp_str(res_exp'') => exp_str &
+	int_string(indx) => indx_str &
+	indx + 1 => indx' &
+	generate_ode_system2_nonlinear_residuals2(rest,indx',repl) => s1 &
+	Util.string_append_list([TAB,"res[",indx_str,"] = ",exp_str, ";\n",s1])=> res
+	-----------------------
+	generate_ode_system2_nonlinear_residuals2(DAELow.RESIDUAL_EQUATION(e)::rest,indx,repl) 
+	  => res
 end
 
 
@@ -887,7 +1094,8 @@ relation generate_ode_equation: (DAELow.DAELow,
 				 int vector, (*assignements 1 *)
 				 int vector, (* assignements 2 *)
 				 int) (* equation number*)
-	  => string =
+	  => (string, (* equation code *)
+	      string) = (* extra functions *)
 
   rule	(* Solving for non-states *)
 	
@@ -901,7 +1109,8 @@ relation generate_ode_equation: (DAELow.DAELow,
 	Exp.print_component_ref_str(cr) => cr_str &
 	Util.string_append_list(["  ",cr_str,"=",expr_str,";\n"]) => res
 	-----------------------
-	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) 
+	  => (res,"")
 
   rule	(* Solving the state s means solving for der(s) *)
 	get_equation_and_solved_var(e,eqns,vars,ass2) 
@@ -916,21 +1125,23 @@ relation generate_ode_equation: (DAELow.DAELow,
 	Exp.print_component_ref_str(cr') => cr_str &
 	Util.string_append_list(["  ",cr_str,"=",expr_str,";\n"]) => res
 	----------------------------
-	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) 
+	  => (res,"")
 
 	(* state nonlinear *)
   rule	get_equation_and_solved_var(e,eqns,vars,ass2) 
-	  => (DAELow.EQUATION(e1,e2),
+	  => (eqn as DAELow.EQUATION(e1,e2),
 	      DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment)) &
 	int_string(indx) => indxs &
 	Util.string_append_list(["xd[",indxs,"]"]) => id &
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
-	generate_nonlinear_equations([varexp],[Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2)])
-	  => res
+	generate_ode_system2_nonlinear_residuals([cr'],[eqn])
+	  => (res,f1)
 	-------------------------------------
-	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) => res
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_),ass1,ass2,e) 
+	  => (res,f1)
 end
 
 (** relation: generate_nonlinear_equations
@@ -939,7 +1150,7 @@ end
  ** This relation generates a nonlinear system of equations.
  **)
 
-relation generate_nonlinear_equations: (Exp.Exp list, (* variables *)
+relation generate_nonlinear_equations: (Exp.ComponentRef list, (* variables *)
 				     Exp.Exp list) (* residuals *)
 	=> string =
   axiom	generate_nonlinear_equations(_,_) 
@@ -1301,7 +1512,7 @@ relation generate_compute_residual_state:(string,
   rule	
         build_residual_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_list &
         Util.string_append_list(eqn_str_list) => cstate &
-        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,"return 0;\n\n}\n"]) 
+        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,TAB,"return 0;\n\n}\n"]) 
 	  => res
         -------------------------------------------------------------
         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => res
