@@ -696,6 +696,27 @@ RML_BEGIN_LABEL(System__directory_5fexist)
 }
 RML_END_LABEL
 
+#ifdef WIN32
+RML_BEGIN_LABEL(System__platform)
+{
+  rmlA0 = (void*) mk_scon("WIN32");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+#elif CYGWIN
+RML_BEGIN_LABEL(System__platform)
+{
+  rmlA0 = (void*) mk_scon("CYGWIN");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+#else
+RML_BEGIN_LABEL(System__platform)
+{
+  rmlA0 = (void*) mk_scon("");
+  RML_TAILCALLK(rmlSC);
+}
+#endif
 
 float next_realelt(float *arr)
 {

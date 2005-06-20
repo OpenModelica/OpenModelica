@@ -18,7 +18,7 @@ LIBSOCKET = @LIBSOCKET@
 
 SHELL	= /bin/sh
 CC	= gcc
-CFLAGS	= $(USE_CORBA)
+CFLAGS	= $(USE_CORBA) -DCYGWIN
 RMLHOME	= @rmlhome@
 #RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
 #RML	= @rmlc_bin@ -Wc,-O3

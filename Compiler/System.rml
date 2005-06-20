@@ -183,5 +183,10 @@ relation incDebugLevel: () => ()
 
 relation decDebugLevel: () => ()
 
+(** this returns the platform as a string. 
+ ** now 2005-06-20 is CYGWIN and WIN32 implemented only 
+ **)
+ relation platform: () => string
+
 end
 
