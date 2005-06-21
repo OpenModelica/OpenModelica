@@ -1014,281 +1014,279 @@ end
 (* relation ceval_interactive_functions
  ** This relation evaluates the functions defined in the interactive environment.
  *)
-relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable)
+ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.InteractiveSymbolTable)
 	  => (Values.Value, Interactive.InteractiveSymbolTable) =
-	  
-	  
+
+
   rule	Static.component_ref_to_path(cr) => path &
-	SCode.elaborate(p) => p' &
-	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
-	Lookup.lookup_class(env,path,true) => (c, env) &
-	Env.get_env_path(env) => SOME(p1) &
-	ModUtil.path_string(p1) => s1 &
-	Print.print_buf "Found class " &
-	Print.print_buf s1 & Print.print_buf "\n\n" &
-	Print.get_string() => str
-	-------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("lookupClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	 SCode.elaborate(p) => p' &
+	 Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
+	 Lookup.lookup_class(env,path,true) => (c, env) &
+	 Env.get_env_path(env) => SOME(p1) &
+	 ModUtil.path_string(p1) => s1 &
+	 Print.print_buf "Found class " &
+	 Print.print_buf s1 & Print.print_buf "\n\n" &
+	 Print.get_string() => str
+	 -------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("lookupClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
   rule	Interactive.get_type_of_variable(varid, iv) => tp &
-	Types.unparse_type tp => str 
-	-------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("typeOf"),[Exp.CREF(Exp.CREF_IDENT(varid,_),_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	 Types.unparse_type tp => str 
+	 -------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("typeOf"),[Exp.CREF(Exp.CREF_IDENT(varid,_),_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
   rule	let newst = Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])
-	-------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+	 -------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
 
   rule	let newst = Interactive.SYMBOLTABLE(p,fp,ic,[],cf)
-	-------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearVariables"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
+	 -------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearVariables"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
 
   rule	let newst = Interactive.SYMBOLTABLE(p,fp,[],iv,cf)
-	-------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearCache"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
+	 -------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearCache"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
 
-  rule	Dump.unparse_str(p(*,false*) ) => str
-	-------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
-
-  rule	Static.component_ref_to_path(cr) => path &
-	Interactive.get_pathed_class_in_program(path,p) => class &
-	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(* ,false *)) => str
-	-------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+  rule	Dump.unparse_str(p,false) => str
+	 -------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
   rule	Static.component_ref_to_path(cr) => path &
-	SCode.elaborate(p) => p' &
-	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
-	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	DAELow.lower(dae) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_,_)) &
-	DAELow.incidence_matrix(daelow) => m &
-	DAELow.transpose_matrix(m) => mt &
-	DAELow.calculate_jacobian(vars,eqnarr,m,mt) => jac &
-	DAELow.dump_jacobian_str(jac) => res 
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 Interactive.get_pathed_class_in_program(path,p) => class &
+	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP),false) => str
+	 -------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+
+  rule	Static.component_ref_to_path(cr) => path &
+	 SCode.elaborate(p) => p' &
+	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	 DAELow.lower(dae) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_,_)) &
+	 DAELow.incidence_matrix(daelow) => m &
+	 DAELow.transpose_matrix(m) => mt &
+	 DAELow.calculate_jacobian(vars,eqnarr,m,mt) => jac &
+	 DAELow.dump_jacobian_str(jac) => res 
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
   rule	System.read_env("OPENMODELICAHOME") => omhome &
-        Static.component_ref_to_path(cr) => path & 
-	Absyn.path_string path => pathstr &
-	Print.print_error_buf "#Failed to instantiate " &
-	Print.print_error_buf pathstr & Print.print_error_buf " .\n" &
-	Print.get_error_string() => str 
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
-	
+         Static.component_ref_to_path(cr) => path & 
+	 Absyn.path_string path => pathstr &
+	 Print.print_error_buf "#Failed to instantiate " &
+	 Print.print_error_buf pathstr & Print.print_error_buf " .\n" &
+	 Print.get_error_string() => str 
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	 
   axiom
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING("The environment variable OPENMODELICAHOME was not set"),st)
-          
-	  
-	  (* FIXME: Should ceval be called with impl=true here? *)
+           
+	   
+	   (* FIXME: Should ceval be called with impl=true here? *)
   rule	(* Build and simulate model *)
-	ceval(env,starttime,true,SOME(st),NONE) 
+	 ceval(env,starttime,true,SOME(st),NONE) 
 	  => (Values.REAL(starttime_r),SOME(st)) &
-	  ceval(env,stoptime,true,SOME(st),NONE) 
+	   ceval(env,stoptime,true,SOME(st),NONE) 
 	  => (Values.REAL(stoptime_r),SOME(st)) &
-	  ceval(env,interval,true,SOME(st),NONE) 
+	   ceval(env,interval,true,SOME(st),NONE) 
 	  => (Values.INTEGER(interval_i),SOME(st)) &
-	  ceval(env,method,true,SOME(st),NONE) 
-	  => (Values.STRING(method_str),SOME(st)) &
-	  real_sub(stoptime_r,starttime_r) => delta_time &
-	int_real(interval_i) => interval_r &
-	real_div(delta_time,interval_r) => stepsize_r &
-	Static.component_ref_to_path(cr) => classname &
-	SCode.elaborate(p) => p' &
-	Inst.instantiate_class(p',classname) => (dae as DAE.DAE(dael),env) &
-	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
+	   real_sub(stoptime_r,starttime_r) => delta_time &
+	 int_real(interval_i) => interval_r &
+	 real_div(delta_time,interval_r) => stepsize_r &
+	 Static.component_ref_to_path(cr) => classname &
+	 SCode.elaborate(p) => p' &
+	 Inst.instantiate_class(p',classname) => (dae as DAE.DAE(dael),env) &
+	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
 	  => ic' &
-	  DAELow.lower(dae) => dlow &
-	DAELow.incidence_matrix(dlow) => m &
-	DAELow.transpose_matrix(m) => mT &
-	DAELow.matching_algorithm(dlow,m,mT) => (ass1,ass2,dlow',m,mT) &
-	DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
-	DAELow.translate_dae (dlow') => indexed_dlow &
-	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
-	Absyn.path_string(classname) => cname_str &
-	Util.string_append_list([cname_str,".cpp"]) => filename &
-	Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
-	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
-	Util.string_append_list([cname_str,".makefile"]) => makefilename &
-	SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
-	SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
-	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
-				      starttime_r,stoptime_r,stepsize_r) &
-	SimCodegen.generate_makefile(makefilename,classname) &
-        (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
-         *)
-	System.path_delimiter => pd &
-	System.read_env("OPENMODELICAHOME") => omhome &
-	Util.string_append_list([omhome, pd, "Compiler", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
+	   DAELow.lower(dae) => dlow &
+	 DAELow.incidence_matrix(dlow) => m &
+	 DAELow.transpose_matrix(m) => mT &
+	 DAELow.matching_algorithm(dlow,m,mT) => (ass1,ass2,dlow',m,mT) &
+	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
+	 DAELow.translate_dae (dlow') => indexed_dlow &
+	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
+	 Absyn.path_string(classname) => cname_str &
+	 Util.string_append_list([cname_str,".cpp"]) => filename &
+	 Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
+	 Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
+	 Util.string_append_list([cname_str,".makefile"]) => makefilename &
+	 SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
+	 SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
+				       starttime_r,stoptime_r,stepsize_r) &
+	 SimCodegen.generate_makefile(makefilename,classname) &
+         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
+          *)
+	 System.path_delimiter => pd &
+	 System.read_env("OPENMODELICAHOME") => omhome &
+	 Util.string_append_list([omhome, pd, "Compiler", pd, "scripts", pd, "Compile ", makefilename]) => s_call &
 
-	System.system_call(s_call) => 0 &
-	Util.string_append_list([".", pd, cname_str, " -m ",method_str]) => sim_call &
-	System.system_call(sim_call) => _ &
-	Util.string_append_list([cname_str,"_res.plt"]) => result_file &
-	let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(result_file)],["resultFile"]) &
-	let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
-				       ,[Types.VAR("resultFile",
-						   Types.ATTR(false, 
-							      SCode.RO, 
-							      SCode.VAR,
-							      Absyn.BIDIR),
-				                   false, (Types.T_STRING([]),NONE), Types.UNBOUND)
-					 ]
-				       ),NONE) &
-	Interactive.add_var_to_symboltable("currentSimulationResult",simValue,simType,st) 
+	 System.system_call(s_call) => 0 &
+	 Util.string_append_list([".", pd, cname_str]) => sim_call &
+	 System.system_call(sim_call) => _ &
+	 Util.string_append_list([cname_str,"_res.plt"]) => result_file &
+	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(result_file)],["resultFile"]) &
+	 let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
+				        ,[Types.VAR("resultFile",
+						    Types.ATTR(false, 
+							       SCode.RO, 
+							       SCode.VAR,
+							       Absyn.BIDIR),
+				                    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
+					  ]
+				        ),NONE) &
+	 Interactive.add_var_to_symboltable("currentSimulationResult",simValue,simType,st) 
 	  => newst &
-	  Print.clear_error_buf()
-	------------------------------------------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	   Print.clear_error_buf()
+	 ------------------------------------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,newst)
-	  
+	   
   rule	
-	(* simulation fail for som other reason than OPENMODELICAHOME not being set.*)
-	System.read_env("OPENMODELICAHOME") => omhome &
-	Print.get_error_string() => str &
-	Util.string_append_list(["Simulation failed.\n",str,"\n"]) => res &
-	let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(res)],["resultFile"])
-	------------------------------------------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 (* simulation fail for som other reason than OPENMODELICAHOME not being set.*)
+	 System.read_env("OPENMODELICAHOME") => omhome &
+	 Print.get_error_string() => str &
+	 Util.string_append_list(["Simulation failed.\n",str,"\n"]) => res &
+	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(res)],["resultFile"])
+	 ------------------------------------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,st)
 
   rule	
-        let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")],["resultFile"])
-	------------------------------------------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+         let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")],["resultFile"])
+	 ------------------------------------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (simValue,st)
 
   rule	Static.component_ref_to_path(cr) => path &
-	SCode.elaborate(p) => p' &
-	Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
-	Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	DAE.dump_str (dae) => str 
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 SCode.elaborate(p) => p' &
+	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
+	 DAE.dump_str (dae) => str 
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
   rule	Static.component_ref_to_path(cr) => path &
-	SCode.elaborate(p) => p' &
-	(* we do not want error msg twice.. *)
-	Print.get_error_string() => str &
-	not Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
-	Print.clear_error_buf() &
-	Print.print_error_buf(str) &
-	Print.get_error_string() => str
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 SCode.elaborate(p) => p' &
+	 (* we do not want error msg twice.. *)
+	 Print.get_error_string() => str &
+	 not Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
+	 Print.clear_error_buf() &
+	 Print.print_error_buf(str) &
+	 Print.get_error_string() => str
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
 
   rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
-	System.pwd() => pwd &
-	System.path_delimiter => pd & 
-	Util.string_append_list([pwd,pd,filename]) => filename' &
-	System.read_ptolemyplot_dataset(filename',vars',size) => value
-	------------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 System.pwd() => pwd &
+	 System.path_delimiter => pd & 
+	 Util.string_append_list([pwd,pd,filename]) => filename' &
+	 System.read_ptolemyplot_dataset(filename',vars',size) => value
+	 ------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (value,st)
 
   rule	Print.print_error_buf "#Error reading simulation result. Check that filename and variablenames are correct.\n" 
-	------------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 ------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => fail
 
   rule	(* plot *)
-	Util.list_map(vars,Exp.print_exp_str) => vars' &
-	Util.list_union_elt("time",vars') => vars'' &
-	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 Util.list_union_elt("time",vars') => vars'' &
+	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
-	  System.read_ptolemyplot_dataset(filename,vars'',0) => value &
-	System.pwd() => pwd &
-	System.read_env("OPENMODELICAHOME") => omhome &
-	System.path_delimiter => pd &
-	Util.string_append_list([omhome,pd,"Compiler",pd,"scripts",pd,"doPlot"]) => plotCmd &
-	Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
-	Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
+	   System.read_ptolemyplot_dataset(filename,vars'',0) => value &
+	 System.pwd() => pwd &
+	 System.read_env("OPENMODELICAHOME") => omhome &
+	 System.path_delimiter => pd &
+	 Util.string_append_list([omhome,pd,"Compiler",pd,"scripts",pd,"doPlot"]) => plotCmd &
+	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
+	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
-	  Util.string_append_list([plotCmd, " \"", tmpPlotFile,"\""]) => call &			   
-	System.system_call(call) => _
-	------------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	   Util.string_append_list([plotCmd, " \"", tmpPlotFile,"\""]) => call &			   
+	 System.system_call(call) => _
+	 ------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
   rule	(* Catch error reading simulation file. *)
-	Util.list_map(vars,Exp.print_exp_str) => vars' &
-	Util.list_union_elt("time",vars') => vars'' &
-	ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 Util.list_union_elt("time",vars') => vars'' &
+	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
-	  not System.read_ptolemyplot_dataset(filename,vars'',0) => _ 
-	---------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	   not System.read_ptolemyplot_dataset(filename,vars'',0) => _ 
+	 ---------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING("Error reading the simulation result."),st)
-	  
+	   
   rule	(* Catch error reading simulation file. *)
-	Util.list_map(vars,Exp.print_exp_str) => vars' &
-	Util.list_union_elt("time",vars') => vars'' &
-	not ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 Util.list_union_elt("time",vars') => vars'' &
+	 not ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE) 
 	  => (_,_)
-	  ---------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	   ---------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING("No simulation result to plot."),st)
 
   axiom ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
  	  => (Values.STRING("Unknown error while plotting"),st)
-	  
+	   
   rule	System.time => t1 &
-	ceval(env,exp,true,SOME(st),NONE) => (value,SOME(st')) &   
-	System.time => t2 &
-	real_sub(t2,t1) => time 
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("timing"),[exp],_,_),st) => (Values.REAL(time),st')
+	 ceval(env,exp,true,SOME(st),NONE) => (value,SOME(st')) &   
+	 System.time => t2 &
+	 real_sub(t2,t1) => time 
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("timing"),[exp],_,_),st) => (Values.REAL(time),st')
 
   rule	System.set_c_compiler(str)
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompiler"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompiler"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
 
   rule	System.set_c_flags(str)
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompilerFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompilerFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
 
   rule	string_append("+d=",str) => str' &
-	RTOpts.args [str'] => args 
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setDebugFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
+	 RTOpts.args [str'] => args 
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setDebugFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),st)
 
   rule	System.cd(str) => res &
-	int_eq (res,0) => true &
-	System.pwd => str' 
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+	 int_eq (res,0) => true &
+	 System.pwd => str' 
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
 
   rule	System.pwd() => str'
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
 
   rule	System.system_call(str) => res 
-	-------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("system"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.INTEGER(res),st)
+	 -------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("system"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.INTEGER(res),st)
 
 
   rule	System.read_file(str) => str'
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str'),st)
 
   rule	Print.get_error_string() => str &
-	Print.clear_error_buf()
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	 Print.clear_error_buf()
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
   rule	System.read_file(str) => scriptstr &
-	Parser.parsestringexp(scriptstr) => (istmts,msg) &
-	msg = "Ok" &
-	Interactive.evaluate(istmts,st,true) => (res,newst) &
-	Util.string_append_list([res,"\ntrue"]) => res'
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 Parser.parsestringexp(scriptstr) => (istmts,msg) &
+	 msg = "Ok" &
+	 Interactive.evaluate(istmts,st,true) => (res,newst) &
+	 Util.string_append_list([res,"\ntrue"]) => res'
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(res'),newst)
 
   axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("runScript"),[Exp.SCONST(str)],_,_),st) 
@@ -1296,89 +1294,66 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 
 
   rule	(* SCode.elaborate(p) => p' & *)
-	Static.component_ref_to_path(fcr) => path &
-	ceval_generate_function(env, path)
-        (*	& Inst.instantiate_implicit(p') => d & *)
-	--------------------------------------
-	ceval_interactive_functions (env,
-				     Exp.CALL(Absyn.IDENT("generateCode"),[funcref as Exp.CREF(fcr,_)],_,_),
-				     st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true), st)
-	(* add path to symboltable for compiled functions
-	 Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
-	 but where to get t? *)
+	 Static.component_ref_to_path(fcr) => path &
+	 ceval_generate_function(env, path)
+         (*	& Inst.instantiate_implicit(p') => d & *)
+	 --------------------------------------
+	 ceval_interactive_functions (env,
+				      Exp.CALL(Absyn.IDENT("generateCode"),[funcref as Exp.CREF(fcr,_)],_,_),
+				      st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true), st)
+	 (* add path to symboltable for compiled functions
+	  Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
+	  but where to get t? *)
 
   rule	System.modelicapath => mp &
-	Static.component_ref_to_path(cr) => path &
-	ClassLoader.load_class(path, mp) => pnew &
-	Interactive.update_program(pnew,p) => p' &
-	Print.get_string => str &
-	let newst = Interactive.SYMBOLTABLE(p', sp, [], iv, cf)
-	------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
-	
+	 Static.component_ref_to_path(cr) => path &
+	 ClassLoader.load_class(path, mp) => pnew &
+	 Interactive.update_program(pnew,p) => p' &
+	 Print.get_string => str &
+	 let newst = Interactive.SYMBOLTABLE(p', sp, [], iv, cf)
+	 ------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(true),newst)
+	 
   rule	Static.component_ref_to_path(cr) => path &
-	ModUtil.path_string(path) => pathstr &
-	Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str &
-	Print.print_error_buf str
-	------------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(false),st)
+	 ModUtil.path_string(path) => pathstr &
+	 Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str &
+	 Print.print_error_buf str
+	 ------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.BOOL(false),st)
 
 
   rule  System.regular_file_exist(name) => 0 &
-        Parser.parse(name) => p1 &
-	Interactive.update_program(p1,p) => newp
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+         Parser.parse(name) => p1 &
+	 Interactive.update_program(p1,p) => newp
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
 	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf))
 
-  rule	(* cygwin *)
-	System.platform() => "CYGWIN" &
-	string_append("rm -f ",name) => call &
-	System.system_call(call) => 0
-	-----------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("deleteFile"),[Exp.SCONST(name)],_,_),st)
-	  => (Values.BOOL(true),st)
-
-  rule	(* MS windows *)
-	System.platform() => "WIN32" &
-	string_append("del ",name) => call &
-	System.system_call(call) => 0
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("deleteFile"),[Exp.SCONST(name)],_,_),st)
-	  => (Values.BOOL(true),st)
-
-  rule	Print.print_error_buf("Error. File ") &
-	Print.print_error_buf(name) &
-	Print.print_error_buf(" could not be removed\n")
-	---------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("deleteFile"),[Exp.SCONST(name)],_,_),st)
-	  => (Values.BOOL(false),st)
-
-	  (** it the rule above have failed then check if file exists **)
+       (** it the rule above have failed then check if file exists **)
         (* without this omc crashes *)
   rule  System.regular_file_exist(name) => rest &
-        int_gt(rest,0) => true
-        ---------------------------------------------------
-        ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+         int_gt(rest,0) => true
+         ---------------------------------------------------
+         ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
 	  => (Values.BOOL(false),st)
-          
-          
+           
+           
   rule	not Parser.parse(name) => _
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
 	  => (Values.BOOL(false),st)
-          
+           
   rule	Static.component_ref_to_path(cr) => classpath &
-	Interactive.get_pathed_class_in_program(classpath,p) => class &
-	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(* ,true *)) => str &
-	System.write_file(filename,str) 
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 Interactive.get_pathed_class_in_program(classpath,p) => class &
+	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP),true) => str &
+	 System.write_file(filename,str) 
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
   rule	Static.component_ref_to_path(cr) => classpath &
 	Interactive.get_contained_class_and_file(classpath,p) => (p',filename) &
-	Dump.unparse_str(p'(*,true*)) => str &
+	Dump.unparse_str(p',true) => str &
 	System.write_file(filename,str) 
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
@@ -1387,117 +1362,117 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
   axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
-  rule	Dump.unparse_str(p(*,true*)) => str &
-	System.write_file(filename,str) 
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveAll"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+  rule	Dump.unparse_str(p,true) => str &
+	 System.write_file(filename,str) 
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveAll"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(true),st)
 
   rule	(*Error writing to file *)
-	Static.component_ref_to_path(cr) => classpath &
-	Interactive.get_pathed_class_in_program(classpath,p) => class &
-	Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(* ,true *)) => str &
-	Print.print_error_buf "Error writing to file.\n" 
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 Static.component_ref_to_path(cr) => classpath &
+	 Interactive.get_pathed_class_in_program(classpath,p) => class &
+	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP),true) => str &
+	 Print.print_error_buf "Error writing to file.\n" 
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
   rule	(*Error writing to file *)
-	Static.component_ref_to_path(cr) => classpath &
-	Print.print_error_buf "Error unknown class.\n" 
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+	 Static.component_ref_to_path(cr) => classpath &
+	 Print.print_error_buf "Error unknown class.\n" 
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
   rule	System.read_env("OPENMODELICAHOME") => omhome &
-        System.path_delimiter => pd &
-        Util.string_append_list([omhome,pd,"Compiler",pd,"helptext.txt"]) => filename &
-	print filename & 
-	System.read_file(filename) => str 
-	--------------------------
-	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("help"),[],_,_),
-				     st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+         System.path_delimiter => pd &
+         Util.string_append_list([omhome,pd,"Compiler",pd,"helptext.txt"]) => filename &
+	 print filename & 
+	 System.read_file(filename) => str 
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("help"),[],_,_),
+				      st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(str),st)
 
   rule	get_builtin_attribute(classname,cref,"unit",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getUnit"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st )
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getUnit"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st )
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"quantity",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getQuantity"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st )
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getQuantity"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st )
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"displayUnit",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getDisplayUnit"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st )
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getDisplayUnit"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st )
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"min",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMin"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st )
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMin"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st )
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"max",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMax"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st )
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getMax"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st )
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"start",st) => (v, st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStart"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st)
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStart"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st)
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"fixed",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getFixed"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st)
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getFixed"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st)
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"nominal",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getNominal"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st)
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getNominal"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st)
 	  => (v, st')
 
   rule	get_builtin_attribute(classname,cref,"stateSelect",st) => (v,st')
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStateSelect"),
-						  [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
-				    st)
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("getStateSelect"),
+						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
+				     st)
 	  => (v, st')
-	  
-          (* FIXME: test code: remove *)
+ 
+           (* FIXME: test code: remove *)
   rule	Exp.exp_contains (exp1, exp2) => res
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("exp_contains"),
-						  [exp1, exp2], _, _),
-				    st)
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("exp_contains"),
+						   [exp1, exp2], _, _),
+				     st)
 	  => (Values.BOOL(res), st)
 
   rule	Exp.solve (exp1, exp2, exp3) => res1 &
-	Exp.print_exp_str res1 => res
-	----------------------------------------------
-	ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("solve"),
-						  [exp1, exp2, exp3], _, _),
-				    st)
+	 Exp.print_exp_str res1 => res
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("solve"),
+						   [exp1, exp2, exp3], _, _),
+				     st)
 	  => (Values.STRING(res), st)
-          (* /FIXME: test code: remove *)
+           (* /FIXME: test code: remove *)
 
   end
 
