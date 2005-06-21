@@ -1990,7 +1990,7 @@ relation inst_var2 : (Env.Env,
 	(*inst_mod_equation(cr,ty,mod) => dae2 &*)
 
 
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e), 
+	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e), 
 		    inst_dims,NONE,NONE,comment)
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
@@ -2011,7 +2011,7 @@ relation inst_var2 : (Env.Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 (*	inst_mod_equation(cr,ty,mod) => dae2 &*)
 
-	dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE,comment)
+	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE,comment)
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
@@ -2053,7 +2053,7 @@ relation inst_var2 : (Env.Env,
         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr &
   	DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
         Debug.fprintln("failtrace", str_tmp) &
-        dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
+        dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
  		            inst_dims, start, dae_var_attr,comment) => dae3 &
 
 (*          dae_declare(cr,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,  *)
@@ -2085,7 +2085,7 @@ relation inst_var2 : (Env.Env,
 	(* Put the mod equation in the dae so that code will be generated *)
 	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
 
-	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE,comment) => dae1 &
+	dae_declare(cr,ci_state,ty,attr,NONE,dims',NONE,NONE,comment) => dae1 &
 	list_append (dae1, [daeeq]) => dae
 	-------------------------------
 	inst_var2(env,ci_state as
@@ -2099,7 +2099,7 @@ relation inst_var2 : (Env.Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
 	inst_dim_exp_lst(dims,impl) => dims' &
-	dae_declare(cr,ty,attr,NONE,dims',NONE,NONE,comment) => dae &
+	dae_declare(cr,ci_state,ty,attr,NONE,dims',NONE,NONE,comment) => dae &
 	make_array_type(dims,ty) => arrty 
 	-------------------------------
 	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,
@@ -3664,6 +3664,7 @@ end
  **)
 
 relation dae_declare : (Exp.ComponentRef,
+			ClassInf.State,
 			Types.Type, 
 			SCode.Attributes, 
 			Exp.Exp option,
@@ -3678,15 +3679,15 @@ relation dae_declare : (Exp.ComponentRef,
 	Debug.fprint ( "insttr", ",") &
 	Debug.fcall ( "insttr", Types.print_type,ty)  &
 	Debug.fprint ("insttr", "...)\n") &*)
-	DAE.to_flow flow => flow' &
+	DAE.to_flow (flow,ci_state) => flow' &
 	dae_declare2 (vn, ty, flow', par, dir, e, inst_dims, start,dae_var_attr,comment) => dae
 	-----------------------------------
-	dae_declare (vn, ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start,dae_var_attr,comment) 
+	dae_declare (vn, ci_state,ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
   rule	Debug.fprint("failtrace", "- dae_declare failed\n")
 	------------------------------
-	dae_declare(_,_,_,_,_,_,_,_) => fail
+	dae_declare(_,_,_,_,_,_,_,_,_) => fail
 
 end
 
@@ -4347,7 +4348,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	(** makes it a little clearer. *)
   rule	new_ident => n &
 
-	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
+	dae_declare(n,ClassInf.UNKNOWN(""), t, SCode.ATTR([], false, SCode.RW,
 				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE,NONE)
 	  => decl &
 	inst_eq_equation_2(Exp.CREF(n,Exp.OTHER), e2, t, initial) => dae1 &
@@ -4360,7 +4361,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	(** similar trick is applied.  This also catched the case *)
 	(** where none of the sides is a component reference *)
   rule	new_ident => n &
-	dae_declare(n, t, SCode.ATTR([], false, SCode.RW,
+	dae_declare(n, ClassInf.UNKNOWN(""),t, SCode.ATTR([], false, SCode.RW,
 				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE,NONE)
 	  => decl &
 	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &

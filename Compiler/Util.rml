@@ -1251,7 +1251,7 @@ relation string_split_at_char : (string, char) => string list =
         -------------------------------
         string_split_at_char(str, chr) => stringList
 
-  rule  print "string_split_at_char failed\n"
+  rule  (*print "string_split_at_char failed\n"*)
         ---------------------------------
         string_split_at_char(strList,_) => [strList]
 end

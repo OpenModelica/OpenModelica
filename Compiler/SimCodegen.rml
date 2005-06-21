@@ -309,7 +309,8 @@ relation generate_var_names:(DAELow.DAELow,int, int) => string =
 	generate_var_names_states(var_lst) => state_lst &
 	generate_var_names_derivatives(var_lst) => der_lst &
 	generate_var_names_algvars(var_lst) => algvar_lst &
-	Util.list_flatten([state_lst,der_lst,algvar_lst]) => varnames_lst &
+	generate_var_names_inputvars(knvar_lst) => inputvar_lst &
+	Util.list_flatten([state_lst,der_lst,algvar_lst,inputvar_lst]) => varnames_lst &
 	Util.string_delimit_list(varnames_lst,", ") => str &
 	int_add(nx,nx) => nxtwo &
 	int_add(ny,nxtwo) => tot_elts &
@@ -444,6 +445,54 @@ relation generate_var_names_algvars:(DAELow.Var list) => string list =
   rule	generate_var_names_algvars(vs) => res 
 	-----------------------
 	generate_var_names_algvars(_::vs)
+	  => res
+end
+
+(** relation: generate_var_names_inputvars
+ ** Helper relation to generate_var_names
+ **)
+relation generate_var_names_inputvars:(DAELow.Var list) => string list =
+
+  axiom	generate_var_names_inputvars([]) => []
+	
+  rule	generate_var_names_inputvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
+	-----------------------
+	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
+	=> origname'::res
+
+  rule	generate_var_names_inputvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
+	-----------------------
+	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
+	=> origname'::res
+
+  rule	generate_var_names_inputvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
+	-----------------------
+	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
+	=> origname'::res
+
+  rule	generate_var_names_inputvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
+	-----------------------
+	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
+	=> origname'::res
+
+  rule	generate_var_names_inputvars(vs) => res &
+	Util.string_append_list(["\"",origname,"\""]) => origname'
+	-----------------------
+	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
+				_,value,indx,origname,_,dae_var_attr,comment)::vs)
+	=> origname'::res
+
+  rule	generate_var_names_inputvars(vs) => res 
+	-----------------------
+	generate_var_names_inputvars(_::vs)
 	  => res
 end
 
@@ -628,10 +677,10 @@ relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
 	  (* constant jacobians. Linear system of equations (A x = b) where
 	   A and b are constants. *)
   rule	DAELow.equation_size(eqn) => eqn_size &
-	let str  = "/*solving constant linear system of equations*/\n"
+	generate_ode_system2(d,jac,DAELow.JAC_TIME_VARYING) => (s1,f1)
 	------------------------------
- 	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,
-			     DAELow.JAC_CONSTANT) => (str,"")
+ 	generate_ode_system2(d as DAELow.DAELOW(v,kv,eqn,_,_,_,_),jac,
+			     DAELow.JAC_CONSTANT) => (s1,f1)
 	
 
 	(* Time varying jacobian. Linear system of equations that needs to 
@@ -1241,17 +1290,20 @@ relation generate_init_data2:(DAELow.DAELow,
 	array_create(ny,"") => nyarr &
 	array_create(np,"") => nparr &
 	generate_init_data3(var_lst,nxarr,nxdarr,nyarr,nparr) 
-	  =>(nxarr',nxdarr',nyarr',nparr') &
-	generate_init_data4(knvar_lst,nxarr',nxdarr',nyarr',nparr')  
-	  =>(nxarr'',nxdarr'',nyarr'',nparr'') &
-	array_list(nxarr'') => nx_lst &
-	array_list(nxdarr'') => nxd_lst &
-	array_list(nyarr'') => ny_lst &
-	array_list(nparr'') => np_lst &
+	  =>(nxarr1,nxdarr1,nyarr1,nparr1) &
+	generate_init_data3(knvar_lst,nxarr1,nxdarr1,nyarr1,nparr1)
+	  =>(nxarr2,nxdarr2,nyarr2,nparr2) &
+	generate_init_data4(knvar_lst,nxarr2,nxdarr2,nyarr2,nparr2)  
+	  =>(nxarr3,nxdarr3,nyarr3,nparr3) &
+	array_list(nxarr3) => nx_lst &
+	array_list(nxdarr3) => nxd_lst &
+	array_list(nyarr3) => ny_lst &
+	array_list(nparr3) => np_lst &
 	Util.list_flatten([nx_lst,nxd_lst,ny_lst,np_lst]) => whole_lst &
 	Util.string_delimit_list(whole_lst,"\n") => res
 	-----------------------------
 	generate_init_data2(DAELow.DAELOW(vars,knvars,_,_,initeqn,alg,_),nx,ny,np) => res
+
 
 end
 
@@ -1347,6 +1399,12 @@ relation generate_init_data3:(DAELow.Var list,
 				       _,start,indx,origname,_,dae_var_attr,comment)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
+
+  rule	generate_init_data3(rest,nxarr,nxdarr,nyarr,nparr) 
+	  => (nxarr',nxdarr',nyarr',nparr')
+	----------------------
+	generate_init_data3(_::rest,nxarr,nxdarr,nyarr,nparr)
+	  => (nxarr',nxdarr',nyarr',nparr')
 end
 
 relation print_exp_opt_str_if_const:(Exp.Exp option) => string =
@@ -1673,7 +1731,6 @@ relation build_equation:(DAE.DAElist,
 	DAELow.is_non_state kind &
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
-        
         Exp.simplify(expr) => simplify_exp &
 	build_assignment(dae,cr,simplify_exp,origname)  => assigment_string
 	--------------------------------

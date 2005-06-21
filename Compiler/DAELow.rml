@@ -1986,11 +1986,11 @@ relation lower_var: (DAE.Element, BinTree(* states*)) => Var =
 
   rule	Exp.print_component_ref_str name => origname &
 	let newname = Exp.CREF_IDENT(origname,[]) &
-	lower_varkind(kind,tp,newname,states) => kind' & 
+	lower_varkind(kind,tp,newname,dir,flow,states) => kind' & 
 	lower_binding(bind) => bind' &
 	lower_binding(start) => start'
 	----------------------------------------
-	lower_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_,class,dae_var_attr,comment),states)
+	lower_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,flow,class,dae_var_attr,comment),states)
 	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment)
 
 (*  rule	print "-lower_var failed\n" 
@@ -2016,48 +2016,103 @@ end
  **)
 relation lower_known_var: (DAE.Element) => Var =
 
-  rule	lower_known_varkind(kind) => kind' &
+  rule	lower_known_varkind(kind,name,dir,flow) => kind' &
 	Exp.print_component_ref_str name => origname &
 	lower_binding(bind) => bind' &
 	lower_binding(start) => start'
 	----------------------------------------
-	lower_known_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,_,class,dae_var_attr,comment))
+	lower_known_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,flow,class,dae_var_attr,comment))
 	  => VAR(Exp.CREF_IDENT(origname,[]),kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment)
 end
 
 (** relation: lower_varkind
  ** Helper relation to lower_var.
  **)
-relation lower_varkind: (DAE.VarKind, DAE.Type, Exp.ComponentRef, BinTree (* states *)) 
+relation lower_varkind: (DAE.VarKind, 
+			 DAE.Type, 
+			 Exp.ComponentRef, 
+			 DAE.VarDirection, (* input/output/bidir*)
+			 DAE.Flow,
+			 BinTree (* states *)) 
 	=> VarKind =
 	(* Fails for not states that are not algebraic variables, e.g.
 	 parameters and constants *)
 
   rule	tree_get(states,v) => _
 	-----------------------------
-	lower_varkind(DAE.VARIABLE,_,v,states) => STATE
+	lower_varkind(DAE.VARIABLE,_,v,_,_,states) => STATE
 
+  rule	not top_level_input(cr,dir,flow)
+	-----------------
+	lower_varkind(DAE.VARIABLE,DAE.BOOL,cr,dir,flow,_) => DISCRETE
 
-  axiom	lower_varkind(DAE.VARIABLE,DAE.BOOL,_,_) => DISCRETE
+  rule	not top_level_input(cr,dir,flow)
+	--------------------------
+	lower_varkind(DAE.DISCRETE,DAE.BOOL,cr,dir,flow,_) => DISCRETE
 
-  axiom	lower_varkind(DAE.DISCRETE,DAE.BOOL,_,_) => DISCRETE
+  rule	not top_level_input(cr,dir,flow)
+	--------------------------
+	lower_varkind(DAE.VARIABLE,DAE.INT,cr,dir,flow,_) => DISCRETE
 
-  axiom	lower_varkind(DAE.VARIABLE,DAE.INT,_,_) => DISCRETE
-  axiom	lower_varkind(DAE.DISCRETE,DAE.INT,_,_) => DISCRETE
+  rule	not top_level_input(cr,dir,flow)
+	--------------------------
+	lower_varkind(DAE.DISCRETE,DAE.INT,cr,dir,flow,_) => DISCRETE
 
-  axiom	lower_varkind(DAE.VARIABLE,_,_,_) => VARIABLE
+  rule	not top_level_input(cr,dir,flow)
+	--------------------------
+	lower_varkind(DAE.VARIABLE,_,cr,dir,flow,_) => VARIABLE
 
-  axiom	lower_varkind(DAE.DISCRETE,_,_,_) => DISCRETE
-
+  rule	not top_level_input(cr,dir,flow)
+	--------------------------
+	lower_varkind(DAE.DISCRETE,_,cr,dir,flow,_) => DISCRETE
 end
+
+
+(** relation: top_level_input 
+ ** author: PA
+ **
+ ** Succeds if variable is input declared at the top level of the model, or if it is an
+ ** input in a connector instance at top level.
+ **)
+relation top_level_input: (Exp.ComponentRef, 
+			   DAE.VarDirection,
+			   DAE.Flow) => () =
+
+  rule	(* top level ident, no dots *)
+	Util.string_split_at_char(name, #".") => cr_str_lst &
+        list_length(cr_str_lst) => 1
+	--------------------
+	top_level_input(cr as Exp.CREF_IDENT(name,_), DAE.INPUT,_) => ()
+
+	(* Connector input variables at top level*)
+  rule	Util.string_split_at_char(name, #".") => cr_str_lst &
+        list_length(cr_str_lst) => len &
+	int_eq(len,2) => true
+	----------------------
+	top_level_input(Exp.CREF_IDENT(name,_), DAE.INPUT, DAE.NON_FLOW) =>()
+
+  rule	Util.string_split_at_char(name, #".") => cr_str_lst &
+        list_length(cr_str_lst) => len &
+	int_eq(len,2) => true
+	----------------------
+	top_level_input(Exp.CREF_IDENT(name,_), DAE.INPUT, DAE.FLOW) =>()
+end
+
 (** relation: lower_known_varkind
  ** Helper relation to lower_known_var.
  **)
-relation lower_known_varkind: (DAE.VarKind) => VarKind =
-(* Fails for everything but parameters and constants *)
+relation lower_known_varkind: (DAE.VarKind,
+			       Exp.ComponentRef,
+			       DAE.VarDirection,
+			       DAE.Flow) => VarKind =
+(* Fails for everything but parameters and constants and top level inputs *)
 
-  axiom	lower_known_varkind(DAE.PARAM) => PARAM
-  axiom	lower_known_varkind(DAE.CONST) => CONST
+  axiom	lower_known_varkind(DAE.PARAM,_,_,_) => PARAM
+  axiom	lower_known_varkind(DAE.CONST,_,_,_) => CONST
+
+  rule	top_level_input(cr,dir,flow) 
+	------------------------
+	lower_known_varkind(DAE.VARIABLE,cr,dir,flow) => VARIABLE
 end
 
 (** relation: incidence_matrix
@@ -2857,7 +2912,7 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 	--------------------------
 	matching_algorithm(dae,m,mt) => (vec1,vec2,dae,m,mt)
 	
-  rule	Print.print_error_buf "#Error, matching failed\n" &
+  rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
 	list_vector([]) => v1 & 
 	list_vector([]) => v2 
 	------------------------
@@ -2881,7 +2936,11 @@ relation check_matching : (DAELow) => () =
   rule	equation_size(eqns) => esize &
 	int_lt(esize,vars_size) => true &
 	Print.print_error_buf "#Error, too few equations. Underdetermined system\n" &
-	print "#Error, to few equations\n" 
+	int_string(esize) => esize_str &
+	int_string(vars_size) => vsize_str &
+	Print.print_error_buf "The model has " & Print.print_error_buf vsize_str &
+	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
+	Print.print_error_buf " equations\n" 
  	------------------
 	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_,_)) 
 	  => fail
@@ -2889,11 +2948,15 @@ relation check_matching : (DAELow) => () =
   rule	equation_size(eqns) => esize &
 	int_gt(esize,vars_size) => true &
 	Print.print_error_buf "#Error, to many equations. Overdetermined system.\n" &
-	print "#Error, too many equations." 
+	int_string(esize) => esize_str &
+	int_string(vars_size) => vsize_str &
+	Print.print_error_buf "The model has " & Print.print_error_buf vsize_str &
+	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
+	Print.print_error_buf " equations\n" 
 	------------------
 	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_,_)) => fail
 
-  rule	print "check_matching failed\n" 
+  rule	Debug.fprint("failtrace", "-check_matching failed\n")
 	--------------------
 	check_matching(_) => fail
 end
@@ -4007,7 +4070,7 @@ relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
 	-----------------------------------
 	strong_components(m,mt,ass1,ass2) => (comps)
 
-  rule	print "strong_components failed\n" 
+  rule	Debug.fprint("failtrace", "strong_components failed\n")
 	----------------------------------
 	strong_components(_,_,_,_) => fail
 end
@@ -4083,7 +4146,7 @@ relation strong_connect: (IncidenceMatrix,
 	strong_connect(m,mt,a1,a2,i,v,stack,comps) 
 	  => (i',stack''',comps'')
 
-  rule	print "-strong_connect failed\n" 
+  rule	Debug.fprint("failtrace", "-strong_connect failed\n")
 	--------------------
 	strong_connect(_,_,_,_,_,_,_,_) => fail
 end
@@ -4126,9 +4189,9 @@ relation reachable_nodes: (int,
 	----------------------------------------
 	reachable_nodes(eqn,m,mt,a1,a2) => reachable''
 
-  rule	print "-reachable_nodes failed, eqn: " &
-	int_string(eqn) => eqnstr & print eqnstr &
-	print "\n" 
+  rule	Debug.fprint("failtrace","-reachable_nodes failed, eqn: ") &
+	int_string(eqn) => eqnstr & Debug.fprint("failtrace", eqnstr) &
+	Debug.fprint("failtrace", "\n")
 	-----------------------
 	reachable_nodes(eqn,_,_,_,_) => fail  
 end			  
@@ -4298,8 +4361,7 @@ relation translate_dae: DAELow => DAELow =
 	
   rule  var_list(vars) => varlst &
 	var_list(knvars) => knvarlst &
-	calculate_indexes(varlst) => varlst' &
-	calculate_indexes(knvarlst) => knvarlst' &
+	calculate_indexes(varlst,knvarlst) => (varlst',knvarlst') &
 	list_append(varlst',knvarlst') => totvars &
 	equation_list(eqns) => eqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
@@ -4870,12 +4932,15 @@ end
 relation calculate_sizes: DAELow => (int, (* nx *)
 				     int, (* ny *)
 				     int) (* np *) =
-  rule	var_list(vars) => varlst &
+  rule	(* input variables are put in the known var list, 
+	 ** but they should be counted by the ny counter. *)
+	var_list(vars) => varlst &
 	var_list(knvars) => knvarlst &
 	calculate_param_sizes(knvarlst) => np &
-	calculate_var_sizes(varlst,0,0) => (nx,ny)
+	calculate_var_sizes(varlst,0,0) => (nx,ny) &
+	calculate_var_sizes(knvarlst,nx,ny) => (nx',ny')
 	-----------------------------------
-	calculate_sizes(DAELOW(vars,knvars,_,_,_,_,_)) => (nx,ny,np)
+	calculate_sizes(DAELOW(vars,knvars,_,_,_,_,_)) => (nx',ny',np)
 end
 
 (** relation: calculate_param_sizes
@@ -4934,6 +4999,11 @@ relation calculate_var_sizes:( Var list, int, int) => (int, int) =
 	----------------------------
 	calculate_var_sizes(VAR(_,DUMMY_DER,_,_,_, _,_,_,_,_,_,_,_)::vs,nx,ny) 
 	  => (nx'',ny'')
+
+  rule	calculate_var_sizes(vs,nx,ny) => (nx',ny')
+	----------------------------
+	calculate_var_sizes(_::vs,nx,ny) 
+	  => (nx',ny')
 
   rule	print "-calculate_var_sizes failed\n" 
 	----------------------------
@@ -5233,15 +5303,19 @@ end
  ** Helper relation to translate_dae. Calculates the indexes for each variable
  ** in one of the arrays. x, xd, y.
  **)
-relation calculate_indexes: (Var list) => Var list =
+relation calculate_indexes: (Var list,
+			     Var list) 
+	  => (Var list,
+	      Var list) =
 	
-  rule	calculate_indexes2(vars,0,0,0,0,0) => vars'
+  rule	calculate_indexes2(vars,0,0,0,0,0) => (vars',x,xd,y,p,dummy) &
+	calculate_indexes2(knvars,x,xd,y,p,dummy) => (knvars',_,_,_,_,_)		     
 	----------------------------------------
-	calculate_indexes(vars) => vars'
-
+	calculate_indexes(vars,knvars) => (vars',knvars')
+	
   rule	print "-calculate_indexes failed\n" 
 	------------------------
-	calculate_indexes(_) => fail
+	calculate_indexes(_,_) => fail
 end
 
 (** relation: transform_variables
@@ -5327,54 +5401,62 @@ end
 (** relation: calculate_indexes2
 ** Helper relation to calculate_indexes
  **)
-relation calculate_indexes2: (Var list,int,int,int,int,int) => Var list =
+relation calculate_indexes2: (Var list,int,int,int,int,int) 
+	  => (Var list,int,int,int,int,int) =
 
-  axiom	calculate_indexes2([],_,_,_,_,_) => []
+  axiom	calculate_indexes2([],x,xd,y,p,dummy) => ([],x,xd,y,p,dummy)
 	
   rule	int_add(y,1) => y' &
-	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	calculate_indexes2(vs,x,xd,y',p,dummy) => (vars',x1,xd1,y1,p1,dummy1)
 	----------------------------------------
 	calculate_indexes2(VAR(cr,VARIABLE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,VARIABLE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+	  => (VAR(cr,VARIABLE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars',
+	      x1,xd1,y1,p1,dummy1)
 
   rule	int_add(x,1) => x' &
-	calculate_indexes2(vs,x',xd,y,p,dummy) => vars' 
+	calculate_indexes2(vs,x',xd,y,p,dummy) => (vars',x1,xd1,y1,p1,dummy1) 
 	----------------------------------------
 	calculate_indexes2(VAR(cr,STATE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,STATE,d,tp,b,value,dim,start,x,name,cl,dae_var_attr,comment)::vars'
+	  => (VAR(cr,STATE,d,tp,b,value,dim,start,x,name,cl,dae_var_attr,comment)::vars',
+	      x1,xd1,y1,p1,dummy1)
 
  rule	(* Dummy derivatives become algebraic variables *)
 	int_add(y,1) => y' &
-	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	calculate_indexes2(vs,x,xd,y',p,dummy) => (vars',x1,xd1,y1,p1,dummy1) 
 	----------------------------------------
 	calculate_indexes2(VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy)
- 	  => VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+ 	  => (VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars',
+	      x1,xd1,y1,p1,dummy1)
 
 
   rule	(* Dummy state become algebraic variables *)
 	int_add(y,1) => y' &
-	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	calculate_indexes2(vs,x,xd,y',p,dummy) => (vars',x1,xd1,y1,p1,dummy1) 
 	----------------------------------------
 	calculate_indexes2(VAR(cr,DUMMY_STATE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,DUMMY_STATE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+	  => (VAR(cr,DUMMY_STATE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars',
+	      x1,xd1,y1,p1,dummy1)
 
   rule	int_add(y,1) => y' &
-	calculate_indexes2(vs,x,xd,y',p,dummy) => vars' 
+	calculate_indexes2(vs,x,xd,y',p,dummy) => (vars',x1,xd1,y1,p1,dummy1)
 	----------------------------------------
 	calculate_indexes2(VAR(cr,DISCRETE,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,DISCRETE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars'
+	  => (VAR(cr,DISCRETE,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment)::vars',
+	      x1,xd1,y1,p1,dummy1)
 
   rule	int_add(p,1) => p' &
-	calculate_indexes2(vs,x,xd,y,p',dummy) => vars' 
+	calculate_indexes2(vs,x,xd,y,p',dummy) => (vars',x1,xd1,y1,p1,dummy1)
 	----------------------------------------
 	calculate_indexes2(VAR(cr,PARAM,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,PARAM,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment)::vars'
+	  => (VAR(cr,PARAM,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment)::vars',
+	      x1,xd1,y1,p1,dummy1)
 
   rule	int_add(p,1) => p' &
-	calculate_indexes2(vs,x,xd,y,p',dummy) => vars' 
+	calculate_indexes2(vs,x,xd,y,p',dummy) => (vars',x1,xd1,y1,p1,dummy1)
 	----------------------------------------
 	calculate_indexes2(VAR(cr,CONST,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment)::vs,x,xd,y,p,dummy) 
-	  => VAR(cr,CONST,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment)::vars'
+	  => (VAR(cr,CONST,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment)::vars',
+	      x1,xd1,y1,p1,dummy1)
 end
 
 (** relation: print_equations

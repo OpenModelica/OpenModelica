@@ -127,6 +127,7 @@ module DAE:
   with "Algorithm.rml"
   with "Types.rml"
   with "Values.rml" 
+  with "ClassInf.rml"
 
   type Ident = string
   type InstDims = Exp.Subscript list
@@ -136,7 +137,7 @@ module DAE:
   datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
 
   datatype Type = REAL | INT | BOOL | STRING | ENUM | ENUMERATION of string list
-  datatype Flow = FLOW | NON_FLOW 
+  datatype Flow = FLOW | NON_FLOW | NON_CONNECTOR
 
   datatype VarDirection = INPUT | OUTPUT | BIDIR
 
@@ -255,7 +256,7 @@ module DAE:
   relation find_element: (Element list, Element => ()) => Element option
   relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list)
   relation get_variable_bindings_str: Element list => string
-  relation to_flow: bool => Flow
+  relation to_flow: (bool,ClassInf.State) => Flow
   relation get_flow_variables: Element list => Exp.ComponentRef list
   relation dae_to_record_value: (Absyn.Path,Element list, bool (*impl*) ) => Values.Value
   relation to_modelica_form: (DAElist) => DAElist
@@ -1965,11 +1966,12 @@ relation get_bindings_str: Element list  => string =
 end
 
 
-relation to_flow: bool => Flow =
+relation to_flow: (bool,ClassInf.State) => Flow =
 
-  axiom	to_flow(true) => FLOW
-  axiom	to_flow(false) => NON_FLOW
+  axiom	to_flow(true,_) => FLOW
 
+  axiom	to_flow(_,ClassInf.CONNECTOR(_)) => NON_FLOW
+  axiom	to_flow(_,_) => NON_CONNECTOR
 end
 
 relation get_flow_variables: Element list => Exp.ComponentRef list =

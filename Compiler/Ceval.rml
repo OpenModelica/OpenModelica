@@ -1047,7 +1047,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 	-------------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearCache"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
 
-  rule	Dump.unparse_str(p,false) => str
+  rule	Dump.unparse_str(p(*,false*) ) => str
 	-------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
@@ -1378,7 +1378,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
 
   rule	Static.component_ref_to_path(cr) => classpath &
 	Interactive.get_contained_class_and_file(classpath,p) => (p',filename) &
-	Dump.unparse_str(p',true) => str &
+	Dump.unparse_str(p'(*,true*)) => str &
 	System.write_file(filename,str) 
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
@@ -1387,7 +1387,7 @@ relation ceval_interactive_functions: (Env.Env, Exp.Exp, Interactive.Interactive
   axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
-  rule	Dump.unparse_str(p,true) => str &
+  rule	Dump.unparse_str(p(*,true*)) => str &
 	System.write_file(filename,str) 
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveAll"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 

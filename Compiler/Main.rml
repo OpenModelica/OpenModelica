@@ -546,8 +546,15 @@ relation optimize_dae: (DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 	-----------------------
 	optimize_dae(dae,daeimpl,classname) => ()
 
+  rule	(* so main can print error messages *)
+	run_backend_q() => true
+	------------------------
+	optimize_dae(_,_,_) => fail
+
 	(* If not running backend. *)
-  axiom	optimize_dae(_,_,_) => ()
+  rule	run_backend_q() => false
+	---------------------
+	optimize_dae(_,_,_) => ()
 end
 
 (*  The automatic paralellzation module.*)
@@ -607,6 +614,8 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	  => () =
 
   rule	RTOpts.simulation_cg() => true &
+	Print.clear_error_buf() &
+	Print.clear_buf() &
 	DAELow.translate_dae (dlow) => indexed_dlow &
 	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
 	Absyn.path_string(classname) => cname_str &
@@ -621,10 +630,15 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	----------------------------------------------------------------------------------
 	simcodegen(classname,dae,dlow,ass1,ass2,m,mt,comps)
 
-
+	(* If something above failed. fail so Main can print errors *)
+  rule	RTOpts.simulation_cg() => true 
+	-----------------
+	simcodegen(_,_,_,_,_,_,_,_) => fail
 
 	(* If not generating simulation code*)
-  axiom	simcodegen(_,_,_,_,_,_,_,_) => ()
+  rule	RTOpts.simulation_cg() => false
+	-----------------
+	simcodegen(_,_,_,_,_,_,_,_) => ()
 
 end
 
@@ -709,15 +723,12 @@ relation main : string list => () =
 	Debug.bcall (ismode, interactivemode, args' ) &
 	Debug.bcall (icmode, interactivemode_corba, args') &
 	Debug.bcall (imode', translate_file, args')
-	& Print.get_error_string () => errstr
-	& Debug.fcall ("errorbuf", print, errstr)
 	---------------------------------------
 	main args 
 
-  rule	print "#|Execution failed!"
-	& Print.get_error_string () => errstr
-	& Debug.fcall ("errorbuf", print, "\n\n----\n\nError buffer:\n\n")
-	& Debug.fcall ("errorbuf", print, errstr)
+  rule	(* If main fails, retrieve error messages and print to std out. *)
+	Print.get_error_string => str &
+	print str 
 	--------------
 	main _ => fail
 end
