@@ -191,11 +191,11 @@ package Boundaries
     
     redeclare record extends Data 
       parameter PartTypeEnum partType;
-      parameter Boundaries.Line.Data line;
-      parameter Boundaries.Arc.Data arc;
-      parameter Boundaries.Circle.Data circle;
-      parameter Boundaries.RectangleTemp.Data rectangle;
-      parameter Boundaries.Bezier.Data bezier;
+      parameter Boundaries.Line.Data line(bc=bc);
+      parameter Boundaries.Arc.Data arc(bc=bc);
+      parameter Boundaries.Circle.Data circle(bc=bc);
+      parameter Boundaries.RectangleTemp.Data rectangle(bc=bc);
+      parameter Boundaries.Bezier.Data bezier(bc=bc);
     end Data;
     
     redeclare function shape 
@@ -540,7 +540,7 @@ package Boundaries
     end points;
     
   end Composite4;
-
+  
   package Composite6 
     extends Boundary;
     package PartType = Boundaries.GenericTemp;

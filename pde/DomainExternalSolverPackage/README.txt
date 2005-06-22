@@ -50,3 +50,17 @@ showfield_ind('MyGenericBoundaryPoissonTest.mat','pde.fd')
 showmesh('MyGenericBoundaryDiffusionTest.mat','pde.ddomain')
 showfieldt_ind('MyGenericBoundaryDiffusionTest.mat','pde.fd',timestep)
 showmesh('MyGenericBoundaryDiffusionTest.mat','pde.ddomain.mesh')
+
+
+Troubleshooting
+---------------
+If translation works but something is not working during simulation, try running
+the dymosim.exe from the command line to see any error messages from the
+execution of external programs.
+
+Error messages like "vector size incorrect" may appear during simulation. This
+is caused by change of matrix sizes because of change of mesh or change of
+boundary conditions (number of unknown/blocked values change). When simulation
+starts, the mesh is regenerated so that next translation will get the correct
+mesh sizes (verify number of reported scalars during translation). Next
+simulation will then be correct.

@@ -207,8 +207,9 @@ together with specific boundary conditions.
         parameter Integer nbp=20;
         parameter Real refine=0.7;
         parameter Integer nbc=1;
-        parameter BCType bc[nbc]={{1,0,1} for i in 1:nbc};
-        //parameter initialField.Parameters inifp;
+        parameter BCType bc[nbc]={{1,0,0,1} for i in 1:nbc};
+        Real timeDepBndValue 
+          "Interface to time dependent dirichlet boundary condition value";
         
         // internal packages  
         package rhsFieldP = ConstConstField (redeclare package domainP = 
@@ -225,16 +226,23 @@ together with specific boundary conditions.
           nbp=nbp, 
           refine=refine);
         
+        parameter Real fixedmeshx[ddomain.mesh.nv, 3]=fixBlockedEdgeEnds(
+            ddomain.mesh.nv, ddomain.mesh.x, ddomain.mesh.ne, ddomain.mesh.edge, 
+            nbc, bc);
+        
         // Why doesn't these work?
-        // parameter FormSize formsize=getFormSize(ddomain.mesh.filename, ddomain.mesh.nv);
+        // parameter FormSize formsize=getFormSize(ddomain.mesh.filename, ddomain.mesh.nv,nbc,bc);
         // parameter FormSize formsize=getFormSize("default_mesh2d.txt", 79);
         
         parameter Integer interiorSize=integer(sum(DomainOperators.interior2D(
-            ddomain.mesh.nv, ddomain.mesh.x)));
+            ddomain.mesh.nv, fixedmeshx)));
+        // 1 + is temporary bugfix. Sometimes number of unknowns is differently calculated by rheolef
+        // don't know why. maybe something with handling common vertices on the boundary
+        parameter Integer blockedSize=integer(sum(DomainOperators.blocked2D(
+            ddomain.mesh.nv, fixedmeshx, nbc, bc)));
         
-        // Assuming boundary blocked, i.e. all dirichlet bc.
-        parameter FormSize formsize=FormSize(interiorSize, ddomain.mesh.nv - 
-            interiorSize);
+        parameter FormSize formsize=FormSize(ddomain.mesh.nv - blockedSize, 
+            blockedSize);
         parameter Integer u_indices[formsize.nu]=getUnknownIndices(ddomain.mesh
             .filename, ddomain.mesh.nv, formsize.nu, nbc, bc);
         parameter Integer b_indices[formsize.nb]=getBlockedIndices(ddomain.mesh
@@ -254,7 +262,8 @@ together with specific boundary conditions.
               .nu, u_indices), 
           val_b=interpolationP.interpolate_indirect(ddomain, rhsField, formsize
               .nb, b_indices));
-        
+        // interpolate doesn't use the boundary condition info so we can
+        // use the unfixed mesh
         package uDFieldP = DiscreteField (redeclare package ddomainP = ddomainP, 
               redeclare package fieldP = uFieldP);
         uDFieldP.Data fd(
@@ -266,12 +275,6 @@ together with specific boundary conditions.
           val_u(start={0 for i in 1:formsize.nu}));
         
       protected 
-        parameter Real laplace_uu[formsize.nu, formsize.nu]=getForm_gradgrad_uu(
-            fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
-            .nb, nbc, bc);
-        parameter Real laplace_ub[formsize.nu, formsize.nb]=getForm_gradgrad_ub(
-            fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
-            .nb, nbc, bc);
         parameter Real mass_uu[formsize.nu, formsize.nu]=getForm_mass_uu(fd.
             ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb, 
             nbc, bc);
@@ -280,12 +283,76 @@ together with specific boundary conditions.
             nbc, bc);
         parameter Real bvals[formsize.nb]=getBlockedValues(fd.ddomain.mesh.
             filename, fd.ddomain.mesh.nv, formsize.nb, nbc, bc);
+        parameter Real massb_u[formsize.nu]=getMassBdr_u(fd.ddomain.mesh.
+            filename, fd.ddomain.mesh.nv, formsize.nu, formsize.nb, nbc, bc);
+        // massb_ub is always zero, because gh.blocked is always zero since we cannot 
+        // have dirichlet bc on any nodes that already are neumann or robin.
+        // ab contribution from robin boundary conditions are incorporated into
+        // laplace_uu by the external solver code.
+        parameter Real laplace_uu[formsize.nu, formsize.nu]=getForm_gradgrad_uu(
+            fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
+            .nb, nbc, bc);
+        parameter Real laplace_ub[formsize.nu, formsize.nb]=getForm_gradgrad_ub(
+            fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
+            .nb, nbc, bc);
       equation 
         mass_uu*der(fd.val_u) = -laplace_uu*fd.val_u - laplace_ub*fd.val_b + 
-          mass_uu*g_rhs.val_u + mass_ub*g_rhs.val_b;
-        fd.val_b = bvals;
+          mass_uu*g_rhs.val_u + mass_ub*g_rhs.val_b + massb_u;
+        //    fd.val_b = bvals;
+        for i in 1:formsize.nb loop
+          // if bctype == timedepdirichlet
+          if (bc[integer(fixedmeshx[b_indices[i], 3]), BCTYPE] == 
+              BoundaryCondition.timedepdirichlet) then
+            fd.val_b[i] = timeDepBndValue;
+          else
+            fd.val_b[i] = bc[integer(fixedmeshx[b_indices[i], 3]), BCGVAL];
+          end if;
+        end for;
       end Equation;
       
+      // Rheolef seems to change end points of blocked edges so that they also
+      // get blocked if they are not already, by assigning the edges bndindex to the end node.
+      // This function fixes the mesh so that it will be consistent.
+      function fixBlockedEdgeEnds 
+        input Integer nv;
+        input Real vertices[nv, 3];
+        input Integer ne;
+        input Integer edges[ne, 3];
+        input Integer nbc;
+        input BCType bc[nbc];
+        output Real newVertices[nv, 3]=vertices;
+      algorithm 
+        for i in 1:ne loop
+          if BoundaryCondition.isBlocked(integer(bc[edges[i, 3], BCTYPE])) then
+            newVertices[edges[i, 2], 3] := edges[i, 3];
+            // assign the edge bc to the end node of the edge
+          end if;
+        end for;
+      end fixBlockedEdgeEnds;
+      
+      /*
+  function calcMassBdr_u 
+    input String meshfile;
+    input Integer nv;
+    input Integer nu;
+    input Integer nb;
+    input Integer nbc;
+    input BCType bc[nbc];
+    input Integer bsize[nbc];
+    output Real massb_u[nu]=0;
+  algorithm 
+    for bnd in 1:nbc loop
+      if bc[bnd, BCTYPE] == BoundaryCondition.neumann or bc[bnd, BCTYPE] == 
+          BoundaryCondition.robin then
+        massb_u := massb_u + getForm_mass_bdr_uu(meshfile, nv, nu, nb, nbc, bc, 
+          bnd, bsize[bnd])*fill(bc[bnd, BCGVAL], bsize[bnd]);
+      end if;
+    end for;
+  end calcMassBdr_u;
+  function calcLaplaceBdr_uu 
+  algorithm
+  end calcLaplaceBdr_uu;
+*/
       annotation (Documentation(info="<HTML>
 <pre>
 The Poisson problem in 2D for a field f(x) is defined by the Poisson-equation 
@@ -625,7 +692,7 @@ together with specific boundary conditions.
       parameter Mesh.Data mesh(
         n=size(boundary, 1), 
         polygon=boundary[:, 1:2], 
-        bc=integer(boundary[:, 3]), 
+        bcind=integer(boundary[:, 3]), 
         refine=refine);
       parameter Integer boundarySize=size(boundary, 1);
     end Data;
@@ -641,6 +708,59 @@ together with specific boundary conditions.
     algorithm 
     end createData;
     
+    // This code doesn't translate correctly. Fix inserted in FEMForms.Autonomous.Diffusion2D instead.  
+    // Rheolef seems to change end points of blocked edges so that they also
+    // get blocked if they are not already, by assigning the edges bndindex to the end node.
+    // This function fixes the mesh so that it will be consistent.
+    /*
+  function createFixedMesh 
+    input Integer nbp;
+    input BPoint boundary[nbp];
+    input Real refine;
+    input Integer nbc;
+    input BCType bc[nbc];
+    output Mesh.Data mesh=Mesh.createMesh(n=size(boundary, 1), polygon=boundary[
+        :, 1:2], bc=integer(boundary[:, 3]), refine=refine);
+    
+  protected 
+    Integer v1;
+    Integer v2;
+  algorithm 
+    for i in 1:mesh.ne loop
+      if (BoundaryCondition.isBlocked(integer(bc[integer(mesh.edge[i, 3]), 
+          BCTYPE]))) then
+        v1 := mesh.edge[i, 1];
+        v2 := mesh.edge[i, 2];
+        mesh.x[v1, 3] := mesh.edge[i, 3];
+        mesh.x[v2, 3] := mesh.edge[i, 3];
+      end if;
+    end for;
+  end createFixedMesh;
+  function createDataFixed 
+    input Integer nbp;
+    input domainP.Data domain;
+    input Real refine=0.7;
+    input Integer nbc;
+    input BCType bc[nbc];
+    output Data data(
+      nbp=nbp, 
+      domain=domain, 
+      refine=refine);
+  protected 
+    Integer v1;
+    Integer v2;
+  algorithm 
+    for i in 1:data.mesh.ne loop
+      if (BoundaryCondition.isBlocked(integer(bc[integer(data.mesh.edge[i, 3]), 
+          BCTYPE]))) then
+        v1 := data.mesh.edge[i, 1];
+        v2 := data.mesh.edge[i, 2];
+        data.mesh.x[v1, 3] := data.mesh.edge[i, 3];
+        data.mesh.x[v2, 3] := data.mesh.edge[i, 3];
+      end if;
+    end for;
+  end createDataFixed;
+*/
   end DiscreteDomain;
   
   package Mesh "2D spatial domain" 
@@ -655,7 +775,7 @@ together with specific boundary conditions.
     record Data 
       parameter Integer n;
       parameter Point polygon[n];
-      parameter Integer bc[n]={1 for i in 1:n};
+      parameter Integer bcind[n]={1 for i in 1:n};
       parameter Real refine(
         min=0, 
         max=1) = 0.7 "0 < refine < 1, less is finer";
@@ -663,7 +783,7 @@ together with specific boundary conditions.
       // will be overwritten!
       
       // If Cygwin (BAMG) not installed, bypass generation of grid, just read existing files.
-      parameter Integer status=generate(polygon, bc, filename, refine);
+      parameter Integer status=generate(polygon, bcind, filename, refine);
       
       //parameter Integer s[3] = get_s(mesh, status);
       // Necessary for dependency! Currently not supported by Dymola (BUG?)
@@ -683,7 +803,13 @@ together with specific boundary conditions.
     function createMesh 
       input Integer n;
       input Point polygon[n];
-      output Data mesh(n=n, polygon=polygon);
+      input Integer bcind[n];
+      input Real refine;
+      output Data mesh(
+        n=n, 
+        polygon=polygon, 
+        bcind=bcind, 
+        refine=refine);
     algorithm 
     end createMesh;
   end Mesh;
@@ -1167,7 +1293,7 @@ algorithm
     external "C" get_rheolef_blocked_values(meshfilename, meshnv, nbr_blockeds, 
         values, nbc, size(bc, 2), bc);
     end getBlockedValues;
-
+    
     function getForm 
       input String formname;
       input String meshfilename;
@@ -1191,7 +1317,7 @@ algorithm
       form.nu := s.nu;
       form.nb := s.nb;
     end getForm;
-
+    
     function getForm_internal 
       annotation (Include="#include <poisson_rheolef.h>", Library=
             "poisson_rheolef");
@@ -1210,6 +1336,21 @@ algorithm
     external "C" get_rheolef_form(formname, meshfilename, meshnv, nu, nb, auu, 
         aub, abu, abb, nbc, size(bc, 2), bc);
     end getForm_internal;
+    
+    function getMassBdr_u 
+      annotation (Include="#include <poisson_rheolef.h>", Library=
+            "poisson_rheolef");
+      //input Mesh.Data mesh;
+      input String meshfilename;
+      input Integer meshnv;
+      input Integer nu;
+      input Integer nb;
+      input Integer nbc;
+      input BCType bc[nbc];
+      output Real mbu[nu];
+    external "C" get_rheolef_massbdr_u(meshfilename, meshnv, nu, nb, mbu, nbc, 
+        size(bc, 2), bc);
+    end getMassBdr_u;
   end FEMSolver;
   
   package DomainOperators 
@@ -1252,6 +1393,49 @@ Returns a vector with value 0 for boundary-vertices and 1 for other vertices .
     end interior2D;
     annotation (Documentation(info=""), Icon);
     
+    function blocked2D "Field where blocked nodes have value 1, others 0" 
+      input Integer nVertices;
+      input Real vertices[nVertices, 3];
+      input Integer nbc;
+      input BCType bc[nbc];
+      output Real blocked[nVertices];
+    algorithm 
+      blocked := zeros(nVertices);
+      for i in 1:nVertices loop
+        if vertices[i, 3] > 0 then
+          // boundary node
+          if (BoundaryCondition.isBlocked(integer(bc[integer(vertices[i, 3]), 
+              BCTYPE]))) then
+            blocked[i] := 1;
+          else
+            blocked[i] := 0;
+          end if;
+        else
+          blocked[i] := 0;
+        end if;
+      end for;
+      
+      annotation (Documentation(info="<HTML>
+<pre>
+Returns a vector with value 1 for blocked (dirichlet) boundary-vertices and 0 for other vertices .
+</pre>
+</HTML>
+"));
+    end blocked2D;
+    
+    function boundarySize2D 
+      input Integer nVertices;
+      input Real vertices[nVertices, 3];
+      input Integer bcindex;
+      output Integer bsize;
+    algorithm 
+      bsize := 0;
+      for i in 1:nVertices loop
+        if (integer(vertices[i, 3]) == bcindex) then
+          bsize := bsize + 1;
+        end if;
+      end for;
+    end boundarySize2D;
   end DomainOperators;
   
 end FEMForms;
