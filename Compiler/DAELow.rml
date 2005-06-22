@@ -344,7 +344,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation vararray_length: (VariableArray) => int
   relation vararray_list:(VariableArray) => Var list
   relation is_state_var: (Var) => bool
-  relation is_non_state: VarKind => ()
+  relation is_non_state: VarKind => bool
   relation is_discrete: VarKind => ()
   relation is_var_known : (Var list, Exp.ComponentRef) => bool 
   relation is_param: (Var ) => bool 
@@ -884,12 +884,13 @@ end
  ** this equation checks if the the varkind is state of variable
  ** used both in build_equation and generate_compute_state
  **)
-relation is_non_state: VarKind => () =
+relation is_non_state: VarKind => bool =
                                                  
-  axiom	is_non_state (VARIABLE) => ()
-  axiom	is_non_state (DUMMY_DER) => ()
-  axiom	is_non_state (DUMMY_STATE) => ()
-  axiom  is_non_state (DISCRETE) => ()
+  axiom	is_non_state (VARIABLE) => true
+  axiom	is_non_state (DUMMY_DER) => true
+  axiom	is_non_state (DUMMY_STATE) => true
+  axiom  is_non_state (DISCRETE) => true
+  axiom  is_non_state (_) => false
 end
 
 (** relation: is_discrete
