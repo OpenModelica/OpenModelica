@@ -288,15 +288,15 @@ relation generate_global_data:(Absyn.Path,DAELow.DAELow,int) => string  =
 				 "double p[NP];\n",
                                  "#else\n",
 				 "double *p;\n",
-				 "#endif\n",
+                                 "#endif\n",
                                  "#if NO > 0\n",
 				 "double out_y[NO];\n",
-                                 "#else\n",
-				 "double *p;\n",
+				 "#else\n",
+				 "double *out_y;\n",
                                  "#endif\n",
 				 "double rwork[50+(MAXORD+4)*NX+NX*NX];\n",
 				 "long iwork[20+NX];\n",
-				 "long liw = 20+NX;\n",
+				 "long liw = 20+NX;\n", 
 				 "long lrw = 50+(MAXORD+4)*NX+NX*NX;\n",
 				 "long nx = NX;\n",
 				 "long ny = NY;\n",
@@ -471,13 +471,12 @@ relation generate_output_function_code:(DAELow.DAELow) => (string,int) =
   rule  DAELow.var_list(vars) => vars_lst &
         generate_output_function_code2(vars_lst,0) => res1 &
         list_length(res1) => lst_lenght &
-        
         Util.string_delimit_list_no_empty(res1,";\n  ") => res1' &
         Util.string_append_list(["\n/*\n*/\nvoid output_function(double *out_x,double *x, double *xd, double *y, double *p,\n",
                                  "                   int nx, int ny, int np)\n",
                                  "{\n  ",
                                  res1',
-                                 ";\n}\n"]) => res
+                                 "\n}\n"]) => res
         -------------------------------------
         generate_output_function_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => (res,lst_lenght)
 
@@ -485,7 +484,7 @@ end
 
 relation generate_output_function_code2:(DAELow.Var list,int) => string list =
 
-  axiom  generate_output_function_code2([],int) => [""]
+  axiom  generate_output_function_code2([],int) => []
 
   rule  DAELow.is_var_on_top_level_and_output(var) => true &
         int_string(i) => i_str &
@@ -1786,7 +1785,7 @@ relation build_equation:(DAE.DAElist,
 	vector_nth(ass2,e') => v &
 	int_sub(v,1) => v' &
 	DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
-	DAELow.is_non_state kind &
+	DAELow.is_non_state kind => true &
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
         Exp.simplify(expr) => simplify_exp &
@@ -1911,7 +1910,7 @@ end
 	 vector_nth(ass2,e') => v &
 	 int_sub(v,1) => v' &
 	 DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment)) &  
-	 DAELow.is_non_state kind &
+	 DAELow.is_non_state kind => true &
 	 (*print "Solving for non-states\n" &*)
 	 
 	 let varexp = Exp.CREF(cr,Exp.REAL) &
