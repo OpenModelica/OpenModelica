@@ -287,6 +287,8 @@ relation generate_global_data:(Absyn.Path,DAELow.DAELow,int) => string  =
                                  "#if NP > 0\n",
 				 "double p[NP];\n",
                                  "#else\n",
+				 "double *p;\n",
+				 "#endif\n",
                                  "#if NO > 0\n",
 				 "double out_y[NO];\n",
                                  "#else\n",

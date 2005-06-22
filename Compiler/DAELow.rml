@@ -1137,7 +1137,7 @@ relation remove_simple_equations: (Variables, (* vars *)
   rule	VarTransform.empty_replacements() => repl &
 	remove_simple_equations2(eqns,vars,knvars,empty_bintree,states,repl) 
 	  => (eqns',seqns,movedvars',vartransf) &
-(* 	VarTransform.dump_replacements(vartransf) => () & *)
+ 	(*VarTransform.dump_replacements(vartransf) => () & *)
 	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
 	VarTransform.replace_equations(seqns,vartransf) => seqns' &
 	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
@@ -1182,7 +1182,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr1,cr2) &
         (* is the variable to be removed is output the do not remove it *)
-        is_cref_for_val_on_top_leve_and_output(cr2,vars) => false &
+        is_top_level_input_or_output(cr2,vars,knvars) => false &
 
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
@@ -1199,7 +1199,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   rule	(* as above but swapped args: cr1 is state and cr2 not, remove cr2*)
 	simple_equation(e) => (cr2,cr1) &
         (* is the variable to be removed is output the do not remove it *)
-        is_cref_for_val_on_top_leve_and_output(cr2,vars) => false &
+        is_top_level_input_or_output(cr2,vars,knvars) => false &
 
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
@@ -1217,7 +1217,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        is_cref_for_val_on_top_leve_and_output(cr1,vars) => false &
+        is_top_level_input_or_output(cr1,vars,knvars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1235,7 +1235,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   	simple_equation(e) => (cr2,cr1) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        is_cref_for_val_on_top_leve_and_output(cr1,vars) => false &
+        is_top_level_input_or_output(cr1,vars,knvars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1253,7 +1253,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        is_cref_for_val_on_top_leve_and_output(cr1,vars) => false &
+        is_top_level_input_or_output(cr1,vars,knvars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1273,7 +1273,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
   	simple_equation(e) => (cr1,cr2) &
 	typeof_equation(e) => t &
         (* is the variable to be removed is output the do not remove it *)
-        is_cref_for_val_on_top_leve_and_output(cr1,vars) => false &
+        is_top_level_input_or_output(cr1,vars,knvars) => false &
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
@@ -1297,21 +1297,36 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (e::eqns',seqns',mvars',repl')
 end 
 
-(** rela-tion is_cref_for_val_on_top_leve_and_output
- ** this rela-tion checks if the provided cr is from a var that is on top model
- ** and has the DAE.VarDirection = OUTPUT
+(** rela-tion is_top_level_input_or_output
+ ** author: LP
+ **
+ ** This rela-tion checks if the provided cr is from a var that is on top model
+ ** and is an input or an output, and returns true for such variables.
+ ** It also returns true for input/output connector variables, i.e. variables 
+ ** instantiated from a  connector class, that are instantiated on the top level.
  ** The check for top-model is done by spliting the old name at '.' and 
- ** check if the list-lenght is 1
+ ** check if the list-lenght is 1.
+ ** Note: The rela-tion needs the known variables to search for input variables 
+ ** on the top level.
  **) 
-relation is_cref_for_val_on_top_leve_and_output:(Exp.ComponentRef, Variables) => bool =
+relation is_top_level_input_or_output:(Exp.ComponentRef, 
+				       Variables, (* Variables*)
+				       Variables(* Known Variables *)) 
+	  => bool =
 
   rule  get_var(cr,vars) => (VAR(cr,kind,DAE.OUTPUT,_,_,_,_,_,_,old_name,_,_,_),_) &
         Util.string_split_at_char(old_name, #".") => cr_str_lst &
         list_length(cr_str_lst) => 1
         ---------------------------------------------
-        is_cref_for_val_on_top_leve_and_output(cr,vars) => true
+        is_top_level_input_or_output(cr,vars,_) => true
    
-  axiom is_cref_for_val_on_top_leve_and_output(_,_) => false
+
+  rule	(* input variables stored in known variables are input on top level *)
+	get_var(cr,knvars) => (VAR(cr,kind,DAE.INPUT,_,_,_,_,_,_,_,_,_,_),_)
+	--------------------------------------------------------------------
+	is_top_level_input_or_output(cr,vars,knvars) => true
+
+  axiom is_top_level_input_or_output(_,_,_) => false
 
 end
                                   
@@ -2035,13 +2050,18 @@ end
  **)
 relation lower_known_var: (DAE.Element) => Var =
 
-  rule	lower_known_varkind(kind,name,dir,flow) => kind' &
-	Exp.print_component_ref_str name => origname &
+  rule	Exp.print_component_ref_str name => origname &
+	let newname = Exp.CREF_IDENT(origname,[]) &
+	lower_known_varkind(kind,name,dir,flow) => kind' &
 	lower_binding(bind) => bind' &
 	lower_binding(start) => start'
 	----------------------------------------
 	lower_known_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,flow,class,dae_var_attr,comment))
-	  => VAR(Exp.CREF_IDENT(origname,[]),kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment)
+	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment)
+
+  rule	print "-lower_known_var failed\n" 
+	-------------------
+	lower_known_var(_) => fail
 end
 
 (** relation: lower_varkind
@@ -2103,10 +2123,10 @@ relation top_level_input: (Exp.ComponentRef,
 	--------------------
 	top_level_input(cr as Exp.CREF_IDENT(name,_), DAE.INPUT,_) => ()
 
-	(* Connector input variables at top level*)
+	(* Connector input variables at top level for crefs that are stringified*)
   rule	Util.string_split_at_char(name, #".") => cr_str_lst &
         list_length(cr_str_lst) => len &
-	int_eq(len,2) => true
+	int_eq(len,2) => true 
 	----------------------
 	top_level_input(Exp.CREF_IDENT(name,_), DAE.INPUT, DAE.NON_FLOW) =>()
 
@@ -2115,6 +2135,11 @@ relation top_level_input: (Exp.ComponentRef,
 	int_eq(len,2) => true
 	----------------------
 	top_level_input(Exp.CREF_IDENT(name,_), DAE.INPUT, DAE.FLOW) =>()
+
+	(* For crefs that are not yet stringified, e.g. lower_known_var *)
+  axiom	top_level_input(Exp.CREF_QUAL(name,_,Exp.CREF_IDENT(_,_)), DAE.INPUT, DAE.FLOW) =>()
+  axiom	top_level_input(Exp.CREF_QUAL(name,_,Exp.CREF_IDENT(_,_)), DAE.INPUT, DAE.NON_FLOW) =>()
+
 end
 
 (** relation: lower_known_varkind
@@ -2132,6 +2157,10 @@ relation lower_known_varkind: (DAE.VarKind,
   rule	top_level_input(cr,dir,flow) 
 	------------------------
 	lower_known_varkind(DAE.VARIABLE,cr,dir,flow) => VARIABLE
+
+  rule	print "lower_known_varkind failed\n" 
+	----------------------
+	lower_known_varkind(_,_,_,_) => fail
 end
 
 (** relation: incidence_matrix

@@ -1047,13 +1047,13 @@ end
 	 -------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clearCache"),[],_,_),st as Interactive.SYMBOLTABLE(p,fp,ic,iv,cf)) => (Values.BOOL(true),newst)
 
-  rule	Dump.unparse_str(p,false) => str
+  rule	Dump.unparse_str(p(*,false*)) => str
 	 -------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
   rule	Static.component_ref_to_path(cr) => path &
 	 Interactive.get_pathed_class_in_program(path,p) => class &
-	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP),false) => str
+	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(*,false*)) => str
 	 -------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("list"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
 
@@ -1345,7 +1345,7 @@ end
            
   rule	Static.component_ref_to_path(cr) => classpath &
 	 Interactive.get_pathed_class_in_program(classpath,p) => class &
-	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP),true) => str &
+	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(*,true*)) => str &
 	 System.write_file(filename,str) 
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
@@ -1353,7 +1353,7 @@ end
 
   rule	Static.component_ref_to_path(cr) => classpath &
 	Interactive.get_contained_class_and_file(classpath,p) => (p',filename) &
-	Dump.unparse_str(p',true) => str &
+	Dump.unparse_str(p'(*,true*)) => str &
 	System.write_file(filename,str) 
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
@@ -1362,7 +1362,7 @@ end
   axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.BOOL(false),st)
 
-  rule	Dump.unparse_str(p,true) => str &
+  rule	Dump.unparse_str(p(*,true*)) => str &
 	 System.write_file(filename,str) 
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveAll"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
@@ -1371,7 +1371,7 @@ end
   rule	(*Error writing to file *)
 	 Static.component_ref_to_path(cr) => classpath &
 	 Interactive.get_pathed_class_in_program(classpath,p) => class &
-	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP),true) => str &
+	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(*,true*)) => str &
 	 Print.print_error_buf "Error writing to file.\n" 
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
