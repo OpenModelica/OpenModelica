@@ -626,7 +626,7 @@ relation generate_start_attr_code:(DAELow.DAELow) => string =
                                  "                   int nx, int ny, int np)\n",
                                  "{\n  ",
                                  res1',
-                                 "\n}\n"]) => res
+                                 ";\n}\n"]) => res
 
         ----------------------------------
         generate_start_attr_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => res
