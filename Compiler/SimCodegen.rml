@@ -351,6 +351,11 @@ end
  ** the name of the parameters. 
  **)
 relation generate_parameter_names:(DAELow.DAELow,int) => string =
+
+  rule  (* special case if no variables *)
+        DAELow.var_list(knvars) => [] 
+        ------------------------------------
+	generate_parameter_names(DAELow.DAELOW(vars,knvars,_,_,_,_,_),np) => ""
         
   rule  DAELow.var_list(knvars) => knvar_lst &
         generate_parameter_names2(knvar_lst) => param_str_lst &
