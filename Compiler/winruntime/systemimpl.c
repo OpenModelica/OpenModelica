@@ -326,7 +326,10 @@ RML_BEGIN_LABEL(System__write_5ffile)
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file=NULL;
   file = fopen(filename,"w");
-  assert(file != NULL);
+  if (file == NULL) { 
+    printf("error opening file: %s\n",filename); 
+    RML_TAILCALLK(rmlFC);
+  } 
   fprintf(file,"%s",data);
   fclose(file);
   RML_TAILCALLK(rmlSC);

@@ -1360,9 +1360,7 @@ end
  **) 
 relation is_var_on_top_level_and_input:(Var) => bool =
 
-  rule  top_level_input(cr,dir,flow) => () &
-        Exp.print_component_ref_str(cr) => cr_str &
-        print cr_str & print "  "  & print old_name & print "WWWWWWWWWWWWWWWWWWW\n" 
+  rule  top_level_input(Exp.CREF_IDENT(old_name,[]),dir,flow) => () 
         ---------------------------------------------
         is_var_on_top_level_and_input(VAR(cr,kind,dir,_,_,_,_,_,_,old_name,_,_,_,flow)) => true
    
@@ -2140,23 +2138,19 @@ end
 relation top_level_input: (Exp.ComponentRef, 
 			   DAE.VarDirection,
 			   DAE.Flow) => () =
+        
 
   rule	(* top level ident, no dots *)
-	Util.string_split_at_char(name, #".") => cr_str_lst &
-        list_length(cr_str_lst) => 1
+	Util.string_split_at_char(name, #".") => [_]
 	--------------------
 	top_level_input(cr as Exp.CREF_IDENT(name,_), DAE.INPUT,_) => ()
 
 	(* Connector input variables at top level for crefs that are stringified*)
-  rule	Util.string_split_at_char(name, #".") => cr_str_lst &
-        list_length(cr_str_lst) => len &
-	int_eq(len,2) => true 
+  rule	Util.string_split_at_char(name, #".") => [_,_]
 	----------------------
 	top_level_input(Exp.CREF_IDENT(name,_), DAE.INPUT, DAE.NON_FLOW) =>()
 
-  rule	Util.string_split_at_char(name, #".") => cr_str_lst &
-        list_length(cr_str_lst) => len &
-	int_eq(len,2) => true
+  rule	Util.string_split_at_char(name, #".") => [_,_]
 	----------------------
 	top_level_input(Exp.CREF_IDENT(name,_), DAE.INPUT, DAE.FLOW) =>()
 
