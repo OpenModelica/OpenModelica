@@ -499,4 +499,122 @@ package testFEM
     pde.timeDepBndValue = heatervalue;
     
   end MyGenericBoundaryDiffusionTest3;
+
+  model MyGenericBoundaryDiffusionTest4 
+    import PDEbhjl.Boundaries.*;
+    import PDEbhjl.*;
+    // Heat transfer parameters
+    parameter Real k=1;
+    parameter Real hh=30000;
+    /* k/l, heat transfer coefficient J/m.min.K / m */
+    parameter Real T_inf=5;
+    /* External temperature */
+    parameter Real qh=0;
+    
+    // PDE parameters
+    parameter Real c=k;
+    parameter Real q=hh;
+    parameter Real g=qh + hh*T_inf;
+    parameter Real f=0;
+    
+    // discretization parameters
+    parameter Integer n=40;
+    parameter Real refine=0.5;
+    // domain geometry parameters
+    parameter Point p0={1,1};
+    parameter Real w=5;
+    parameter Real h=3;
+    parameter Real r=0.5;
+    parameter Real cw=5;
+    // regulator parameters
+    parameter Real goalvalue=20;
+    parameter Real regk=1;
+    parameter Real regT=3;
+    
+    // Use PI regulator from Standard Library 
+    Modelica.Blocks.Continuous.PI regulator(k={regk}, T={regT});
+    
+    package MyBoundary = MyGenericBoundary3;
+    
+    parameter BoundaryCondition.Data neumann(
+      bcType=BoundaryCondition.neumann, 
+      g=0, 
+      index=1, 
+      name="neumannzero");
+    
+    parameter BoundaryCondition.Data dirheater(
+      bcType=BoundaryCondition.timedepdirichlet, 
+      g=0, 
+      index=2, 
+      name="dirheater");
+    
+    parameter BoundaryCondition.Data robin(
+      bcType=BoundaryCondition.robin, 
+      q=q, 
+      g=g, 
+      index=3, 
+      name="robin");
+    
+    parameter MyBoundary.Data bnd(
+      p0=p0, 
+      w=w, 
+      h=h, 
+      cw=cw, 
+      bottom(bc=neumann), 
+      right(bc=neumann), 
+      top1(bc=neumann), 
+      top2(bc=dirheater), 
+      top3(bc=neumann), 
+      left(bc=robin));
+    
+    package myDomainP = Domain (redeclare package boundaryP = MyBoundary);
+    myDomainP.Data mydomain(boundary=bnd);
+    
+    function myfunc 
+      input Point x;
+      input myFieldP.Data d;
+      output myFieldP.FieldType y;
+    algorithm 
+      y := cos(2*Arc.pi*x[1]/6) + sin(2*Arc.pi*x[2]/6);
+    end myfunc;
+    
+    function peaks 
+      input Point x;
+      input myFieldP.Data d;
+      output myFieldP.FieldType y;
+    algorithm 
+      y := 3*(1 - x[1])^2.*exp(-(x[1]^2) - (x[2] + 1)^2) - 10*(x[1]/5 - x[1]^3
+         - x[2]^5)*exp(-x[1]^2 - x[2]^2) - 1/3*exp(-(x[1] + 1)^2 - x[2]^2);
+    end peaks;
+    
+    package myFieldP = Field (redeclare package domainP = myDomainP, redeclare 
+          function value = myfunc);
+    myFieldP.Data myfield(domain=mydomain);
+    
+    BoundaryCondition.Buildbc buildbc(n=3, data={neumann,dirheater,robin});
+    
+    // package PDE = PDEbhjl.FEMForms.Autonomous.Poisson2D (redeclare package 
+    //      domainP = myDomainP);
+    package PDE = PDEbhjl.FEMForms.Autonomous.Diffusion2D (redeclare package 
+          domainP = myDomainP);
+    PDE.Equation pde(
+      domain=mydomain, 
+      nbp=n, 
+      refine=refine, 
+      g0=f, 
+      c=c, 
+      nbc=buildbc.n, 
+      bc=buildbc.bc);
+    Real sensorvalue;
+    Real heatervalue;
+  equation 
+    heatervalue = regulator.y[1];
+    regulator.inPort.signal[1] = goalvalue - sensorvalue;
+    sensorvalue = pde.fd.val_u[2];
+    // take value at 2.6055, 2.3320 => node 38 in mesh.x
+    // u_indices[2] => 38 => fd.val_u[2]
+    
+    pde.timeDepBndValue = heatervalue;
+    
+  end MyGenericBoundaryDiffusionTest4;
 end testFEM;

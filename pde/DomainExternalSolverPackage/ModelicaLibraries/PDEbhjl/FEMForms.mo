@@ -202,7 +202,8 @@ together with specific boundary conditions.
       //replaceable function valfunc = ConstField.value;
       
       model Equation "Poisson equation 2D" 
-        parameter Real g0=1 "Constant value of field";
+        parameter Real g0=1 "Constant value of rhs field";
+        parameter Real c=1 "Value of c in d/dx(c*du/dx)";
         parameter domainP.Data domain;
         parameter Integer nbp=20;
         parameter Real refine=0.7;
@@ -296,8 +297,9 @@ together with specific boundary conditions.
             fd.ddomain.mesh.filename, fd.ddomain.mesh.nv, formsize.nu, formsize
             .nb, nbc, bc);
       equation 
-        mass_uu*der(fd.val_u) = -laplace_uu*fd.val_u - laplace_ub*fd.val_b + 
-          mass_uu*g_rhs.val_u + mass_ub*g_rhs.val_b + massb_u;
+        // c*laplace => assume c is constant (not space dependent)
+        mass_uu*der(fd.val_u) = -c*laplace_uu*fd.val_u - c*laplace_ub*fd.val_b
+           + mass_uu*g_rhs.val_u + mass_ub*g_rhs.val_b + massb_u;
         //    fd.val_b = bvals;
         for i in 1:formsize.nb loop
           // if bctype == timedepdirichlet
@@ -667,7 +669,7 @@ together with specific boundary conditions.
       //parameter initialDField.Parameters inip(ddom=p.ddom, fld=p.fld);
       //parameter initialDField.Data inidata(p=inip);
       fieldP.FieldType val_u[formsize.nu](start=zeros(formsize.nu));
-      fieldP.FieldType val_b[formsize.nb];
+      fieldP.FieldType val_b[formsize.nb](start=zeros(formsize.nb));
       
       // What should fieldSize be? Just unknowns?
       parameter Integer fieldSize_u=size(val_u, 1);

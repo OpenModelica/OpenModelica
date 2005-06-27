@@ -13,5 +13,5 @@ y=nodes(2:2:size(nodes,1),2);
 ui=uindices(:,1);
 bi=bindices(:,1);
 z(ui)=valsu(:,timestep);
-z(bi)=valsb(:,1);
+z(bi)=valsb(:,timestep);
 trimesh(t,x,y,z);
