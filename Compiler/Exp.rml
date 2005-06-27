@@ -261,6 +261,7 @@ module Exp:
   relation cref_equal : (ComponentRef, ComponentRef) => bool
   relation cref_str : ComponentRef => string
   relation cref_to_path : ComponentRef => Absyn.Path
+  relation path_to_cref : Absyn.Path => ComponentRef 
   relation cref_modelica_str : ComponentRef => string
   relation print_list_str : ('a list, 'a => string, string) => string
   relation print_exp_str : Exp => string
@@ -281,6 +282,7 @@ module Exp:
   relation solve : (Exp, Exp, Exp) => Exp
   relation get_cref_from_exp: (Exp) => ComponentRef list	 
   relation typeof: (Exp) => Type 
+  relation type_builtin: (Type) => bool
   relation get_function_calls_list : Exp list => Exp list
   relation get_function_calls : Exp  => Exp list
   relation type_string : Type => string
@@ -320,6 +322,21 @@ relation cref_to_path : ComponentRef => Absyn.Path =
 	-------------------
 	cref_to_path CREF_QUAL(i,[],c) => Absyn.QUALIFIED(i,p)
 
+end
+
+
+(** relation: path_to_cref
+ **
+ ** This relation converts a `Absyn.Path' to a `ComponentRef'.
+ **)
+
+relation path_to_cref : Absyn.Path => ComponentRef   =
+
+  axiom	path_to_cref Absyn.IDENT(i) => CREF_IDENT(i,[]) 
+
+  rule	path_to_cref p => c
+	-------------------
+	path_to_cref Absyn.QUALIFIED(i,p) => CREF_QUAL(i,[],c) 
 end
 
 (** relation: path_string
@@ -1418,6 +1435,21 @@ relation make_sum: (Exp list) => Exp =
 	------------------------------
 	make_sum(lst) => fail
 end
+
+(** relation: type_builtin
+ **
+ ** Returns true if type is one of the builtin types.
+ **)
+relation type_builtin: (Type) => bool =
+
+  axiom	type_builtin(INT) => true
+  axiom	type_builtin(REAL) => true
+  axiom	type_builtin(STRING) => true
+  axiom	type_builtin(BOOL) => true
+  axiom	type_builtin(_) => false
+
+end
+
 (** relation typeof
  ** Retrieves the Type of the Expression
  **)

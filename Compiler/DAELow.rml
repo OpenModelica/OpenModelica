@@ -2156,7 +2156,8 @@ relation top_level_input: (Exp.ComponentRef,
 
 	(* For crefs that are not yet stringified, e.g. lower_known_var *)
   axiom	top_level_input(Exp.CREF_QUAL(name,_,Exp.CREF_IDENT(_,_)), DAE.INPUT, DAE.FLOW) =>()
-  axiom	top_level_input(Exp.CREF_QUAL(name,_,Exp.CREF_IDENT(_,_)), DAE.INPUT, DAE.NON_FLOW) =>()
+
+  axiom	top_level_input(cr as Exp.CREF_QUAL(name,_,Exp.CREF_IDENT(_,_)), DAE.INPUT, DAE.NON_FLOW) =>()
 
 end
 

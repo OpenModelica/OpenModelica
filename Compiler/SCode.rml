@@ -256,6 +256,7 @@ module SCode :
   relation print_mod : Mod => ()
   relation print_element : Element => ()
   relation print_element_str : Element => string 
+  relation equation_str : EEquation => string
   relation print_element_list : Element list => ()	  
   relation print_restr: Restriction => ()
   relation restr_string : Restriction => string 
@@ -640,6 +641,58 @@ relation elab_e_equations : Absyn.EquationItem list => EEquation list =
 	elab_e_equations Absyn.EQUATIONITEMANN(_)::es => es'
 
 end
+
+(** relation: equation_str
+ ** author: PA
+ **
+ ** Return the equation as a string.
+ **)
+relation equation_str : EEquation => string =
+
+  rule	Dump.print_exp_str(exp) => s1 &
+	Util.list_map(tb,equation_str) => tb_strs &
+	Util.list_map(fb,equation_str) => fb_strs &
+	Util.string_delimit_list(tb_strs,"\n") => s2 &
+	Util.string_delimit_list(fb_strs,"\n") => s3 &
+	Util.string_append_list(["if ",s1," then ", s2,"else ",s3, "end if;"]) => res
+	------------------------
+	equation_str(EQ_IF(exp, tb,fb)) => res
+
+  rule	Dump.print_exp_str(e1) => s1 &
+	Dump.print_exp_str(e2) => s2 &
+	Util.string_append_list([s1, " = ",s2,";"]) => res
+	----------------------
+	equation_str(EQ_EQUALS(e1,e2)) => res
+
+  rule	Dump.print_component_ref_str(cr1) => s1 &
+	Dump.print_component_ref_str(cr2) => s2 &
+	Util.string_append_list(["connect(",s1,", ", s2,");"]) => res
+	----------------------
+	equation_str(EQ_CONNECT(cr1,cr2)) => res
+
+  rule	Dump.print_exp_str(exp) => s1 &
+	Util.list_map(eqn_lst,equation_str) => str_lst &
+	Util.string_delimit_list(str_lst,"\n") => s2 &
+	Util.string_append_list(["for ",id," in ",s1, " loop\n", s2, "\nend for;"]) => res
+	----------------------
+	equation_str(EQ_FOR(id,exp,eqn_lst)) => res
+
+  rule	----------------------
+	equation_str(EQ_WHEN(_,_,_)) => "EQ_WHEN(... not impl ...)"
+
+  rule	Dump.print_exp_str(e1) => s1 &
+	Dump.print_exp_str(e2) => s2 &
+	Util.string_append_list(["assert(",s1,", ",s2,");"]) => res
+	----------------------
+	equation_str(EQ_ASSERT(e1,e2)) => res
+
+  rule	Dump.print_component_ref_str(cr) => s1 &
+	Dump.print_exp_str(e1) => s2 &
+	Util.string_append_list(["reinit(",s1,", ",s2,");"]) => res
+	----------------------
+	equation_str(EQ_REINIT(cr,e1)) => res
+end
+
 
 (** relation: elab_equation
  **

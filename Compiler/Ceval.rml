@@ -224,6 +224,8 @@ relation ceval_builtin_handler : Absyn.Ident  => ((Env.Env, Exp.Exp list, bool, 
   axiom ceval_builtin_handler "tan" => ceval_builtin_tan
   axiom ceval_builtin_handler "integer" => ceval_builtin_integer
   axiom ceval_builtin_handler "mod" => ceval_builtin_mod
+  axiom	ceval_builtin_handler "max" => ceval_builtin_max
+  axiom ceval_builtin_handler "min" => ceval_builtin_min 
   axiom ceval_builtin_handler "rem" => ceval_builtin_rem
   axiom	ceval_builtin_handler "diagonal" => ceval_builtin_diagonal
   axiom	ceval_builtin_handler "differentiate" => ceval_builtin_differentiate
@@ -1615,6 +1617,16 @@ end
 	  ------------------------------------
 	  ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl,st) => (v2,st')
 
+  rule	  (* Special case for array expressions with nonconstant values*)
+	  (* For now: only arrays of scalar elements: TODO generalize to arbitrary
+	   dimensions*)
+	  Exp.typeof(e) => tp &
+	  Exp.type_builtin(tp) => true &
+ 	  ceval(env,dim,impl,st,NONE) => (Values.INTEGER(1),st') &
+	  list_length(e::es) => len
+ 	  ---------------------------------
+ 	  ceval_builtin_size(env,Exp.ARRAY(_,_,e::es),dim,impl,st) => (Values.INTEGER(len),st')
+
   rule	(* try to ceval expression, for constant expressions *)
 	  ceval(env,exp,impl,st,NONE) => (v, st') &
 	  ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dimv),st') &
@@ -1851,6 +1863,116 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp list, bool, Interactive.Interacti
         --------------------------------------
         ceval_builtin_mod(env,[exp1,exp2],impl,st) => fail
         
+end
+
+relation ceval_builtin_max : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+	           
+  rule  ceval (env,arr,impl,st,NONE) => (v,_) &
+	ceval_builtin_max2(v) => (v')
+        --------------------------------------
+        ceval_builtin_max(env,[arr],impl,st) => (v',st)
+
+  rule  ceval (env,s1,impl,st,NONE) => (Values.INTEGER(i1),_) &
+	ceval (env,s2,impl,st,NONE) => (Values.INTEGER(i2),_) &
+	int_max(i1,i2) => i
+        --------------------------------------
+        ceval_builtin_max(env,[s1,s2],impl,st) => (Values.INTEGER(i),st)
+
+  rule  ceval (env,s1,impl,st,NONE) => (Values.REAL(r1),_) &
+	ceval (env,s2,impl,st,NONE) => (Values.REAL(r2),_) &
+	real_max(r1,r2) => r
+        --------------------------------------
+        ceval_builtin_max(env,[s1,s2],impl,st) => (Values.REAL(r),st)
+end
+
+
+(** relation: ceval_builtin_max2
+ ** Helper relation to ceval_builtin_max.
+ **)
+relation ceval_builtin_max2 : (Values.Value) => (Values.Value) =
+
+  rule	ceval_builtin_max2(v1)
+	      => (Values.INTEGER(i1)) &
+	ceval_builtin_max2(Values.ARRAY(vls)) 
+	      => (Values.INTEGER(i2)) &
+	int_max(i1,i2) => res
+	---------------------
+	ceval_builtin_max2(Values.ARRAY(v1::(vls as _::_))) 
+	  => (Values.INTEGER(res))
+
+  rule	ceval_builtin_max2(v1) => (Values.REAL(i1)) &
+	ceval_builtin_max2(Values.ARRAY(vls)) => (Values.REAL(i2)) &
+	real_max(i1,i2) => res
+	---------------------
+	ceval_builtin_max2(Values.ARRAY(v1::(vls as _::_)))
+	  => (Values.REAL(res))
+
+  rule	ceval_builtin_max2(vl) => (v)
+	------------------
+	ceval_builtin_max2(Values.ARRAY([vl]))
+	  => (v)
+
+  axiom	ceval_builtin_max2(Values.INTEGER(i))
+	  => (Values.INTEGER(i))
+
+  axiom	ceval_builtin_max2(Values.REAL(i))
+	  => (Values.REAL(i))
+end
+
+(** relation: ceval_builtin_min
+ ** author: PA
+ **
+ ** Constant evaluation of builtin min function.
+ **)
+relation ceval_builtin_min : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+	           
+  rule  ceval (env,arr,impl,st,NONE) => (v,_) &
+	ceval_builtin_min2(v) => (v')
+        --------------------------------------
+        ceval_builtin_min(env,[arr],impl,st) => (v',st)
+
+  rule  ceval (env,s1,impl,st,NONE) => (Values.INTEGER(i1),_) &
+	ceval (env,s2,impl,st,NONE) => (Values.INTEGER(i2),_) &
+	int_min(i1,i2) => i
+        --------------------------------------
+        ceval_builtin_min(env,[s1,s2],impl,st) => (Values.INTEGER(i),st)
+
+  rule  ceval (env,s1,impl,st,NONE) => (Values.REAL(r1),_) &
+	ceval (env,s2,impl,st,NONE) => (Values.REAL(r2),_) &
+	real_min(r1,r2) => r
+        --------------------------------------
+        ceval_builtin_min(env,[s1,s2],impl,st) => (Values.REAL(r),st)
+end
+
+relation ceval_builtin_min2 : (Values.Value) => (Values.Value) =
+
+  rule	ceval_builtin_min2(v1) => (Values.INTEGER(i1)) &
+	ceval_builtin_min2(Values.ARRAY(vls)) 
+	  => (Values.INTEGER(i2)) &
+	int_min(i1,i2) => res
+	---------------------
+	ceval_builtin_min2(Values.ARRAY(v1::(vls as _::_))) 
+	  => (Values.INTEGER(res))
+
+  rule	ceval_builtin_min2(v1) => (Values.REAL(i1)) &
+	ceval_builtin_min2(Values.ARRAY(vls)) => (Values.REAL(i2)) &
+	real_min(i1,i2) => res
+	---------------------
+	ceval_builtin_min2(Values.ARRAY(v1::(vls as _::_))) 
+	  => (Values.REAL(res))
+
+  rule	ceval_builtin_min2(vl) => (v)
+	------------------
+	ceval_builtin_min2(Values.ARRAY([vl]))
+	  => (v)
+
+  axiom	ceval_builtin_min2(Values.INTEGER(i))
+	  => (Values.INTEGER(i))
+
+  axiom	ceval_builtin_min2(Values.REAL(i))
+	  => (Values.REAL(i))
 end
 
 (* relation ceval_builtin_differentiate
@@ -2398,9 +2520,9 @@ end
 
   rule	Print.print_error_buf "# No constant binding for " &
 	 Exp.print_component_ref_str c => str &
-	 Print.print_error_buf str & Print.print_error_buf "\n"
+	 Print.print_error_buf str & Print.print_error_buf "\n" 
 	 -------------------------------------
-	 ceval_cref (_,c,impl as false ) => fail
+	 ceval_cref (env,c,impl as false ) => fail
 
  end
 

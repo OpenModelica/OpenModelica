@@ -2438,14 +2438,17 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	update_component_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, impl) 
 	  => env'
 
-  rule	Debug.fprint("failtrace", "-update_component_in_env failed, ident = ") &
-	Debug.fcall("failtrace", Dump.print_component_ref, cref) &
+  rule 	Debug.fprint("failtrace", "-update_component_in_env failed, ident = ") &
+	Debug.fcallret("failtrace",Dump.print_component_ref_str, cref,"") => str &
+	Debug.fprint("failtrace",str) &
 	Debug.fprint("failtrace","\n mods:") &
-	Debug.fcall("failtrace", Mod.print_mod , mod) &
+	Debug.fcallret("failtrace",Mod.print_mod_str, mod,"") => str2 &
+	Debug.fprint("failtrace",str2) &
 	Debug.fprint("failtrace", "\n   env:   " ) &
-	Debug.fcall("failtrace", Env.print_env , env) &
+	Debug.fcallret("failtrace", Env.print_env_str , env, "") => str3 &
+	Debug.fprint("failtrace",str3) &
 	Debug.fprint("failtrace","\n") 
-	---------------------------
+	------------------------------
 	update_component_in_env(mod,cref,env,ci_state,impl) => env
 end
 
@@ -2493,9 +2496,10 @@ relation make_structural_in_env:(Exp.ComponentRef,Env.Env) => Env.Env =
 	--------------------------------------------------------
 	make_structural_in_env(Exp.CREF_IDENT(id,_),env) => env'
 
-  rule	print "make_structural_in_env failed\n"
+  rule	print "make_structural_in_env failed for component " &
+	Exp.print_component_ref_str(cr) => s & print s & print "\n" 
 	--------------------------
-	make_structural_in_env(_,env) => env
+	make_structural_in_env(cr,env) => env
 end
 	
 (** relation: inst_dim_exp_lst
@@ -4085,9 +4089,12 @@ rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
 	inst_equation_common(env,mod,pre,csets,ci_state, SCode.EQ_REINIT(cr,e2),initial,impl)
           => ([DAE.REINIT(cr',e2')], env, csets, ci_state)
 
-  rule	Debug.fprint("failtrace", "- inst_equation_common failed\n")
+  rule	Debug.fprint("failtrace", "- inst_equation_common failed for eqn: ") &
+	SCode.equation_str(eqn) => s & 
+	Debug.fprint("failtrace", s) &
+	Debug.fprint("failtrace", "\n") 
 	----------------------------------
-	inst_equation_common(_,_,_,_,_,_,_,impl) => fail
+	inst_equation_common(_,_,_,_,_,eqn,_,impl) => fail
 end
 
 
@@ -5344,7 +5351,7 @@ relation inst_real_binding: (Types.Mod,int list,string) => real option =
 
   rule  Print.print_error_buf "# Wrong type on predefined.\n"
         -----------------------------------------
-        inst_real_binding(mod,index_list,_) => fail
+        inst_real_binding(mod,index_list,_) => fail 
    
 end
 

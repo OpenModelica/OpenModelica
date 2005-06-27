@@ -327,7 +327,7 @@ end
 
 (** relation: lookup_qualified_imported_class_in_env
  ** 
- ** This relation looks up imported names on the qualified form: import A.B;
+ ** This relation looks up imported class names on the qualified form: import A.B;
  **)
 relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 						 Absyn.Path) 
@@ -355,6 +355,151 @@ relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 	---------------------------------------------
 	lookup_qualified_imported_class_in_env(f::fs, env, id) => (c, env')
 end
+
+(** relation: lookup_qualified_imported_var_in_frame
+ ** author: PA
+ ** 
+ ** Looking up variables (constants) imported using qualified imports, 
+ ** i.e. import Modelica.Constants.PI;
+ **)
+relation lookup_qualified_imported_var_in_frame: ( Env.Item list,Env.Env,
+    SCode.Ident)
+	  => (Types.Attributes, Types.Type, Types.Binding) =
+
+  rule	(* For imported paths A, not possible to assert sub-path package*)
+	id = ident &
+	Env.top_frame(env) => fr & 
+	lookup_var([fr],Exp.CREF_IDENT(ident,[])) => (attr,ty,bind)
+	------------------------------------------
+	lookup_qualified_imported_var_in_frame(Env.IMPORT(Absyn.QUAL_IMPORT(Absyn.IDENT(id)))::fs,env,ident)
+	    => (attr,ty,bind)
+	    
+  rule	(* For imported path A.B.C, assert A.B is package*)
+	Absyn.path_last_ident(path) => id &
+	id = ident &
+	Env.top_frame(env) => fr & 
+	Exp.path_to_cref(path) => cref &
+	lookup_var_in_packages([fr],cref) => (attr,ty,bind) &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr],strippath,true) =>  (c2, _) &
+	assert_package(c2) 
+	----------------------------------
+	lookup_qualified_imported_var_in_frame(Env.IMPORT(Absyn.QUAL_IMPORT(path))::fs,env,ident)
+	    => (attr,ty,bind)
+
+  rule	(* If not package, error *)
+	Absyn.path_last_ident(path) => id &
+	id = ident &
+	Env.top_frame(env) => fr & 
+	Exp.path_to_cref(path) => cref &
+	lookup_var_in_packages([fr],cref) => (attr,ty,bind) &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr], strippath, true) =>  (c2,_) &
+	not assert_package(c2) &
+	Print.print_error_buf "# Error, " & 
+	Absyn.path_string strippath => str & 
+	Print.print_error_buf str &
+	Print.print_error_buf " is not a package\n"  
+	----------------------------------
+	lookup_qualified_imported_var_in_frame(Env.IMPORT(Absyn.QUAL_IMPORT(path))::fs,env,ident)
+	    => fail
+
+  rule	(* Named imports*)
+	id = ident &
+	Env.top_frame(env) => fr & 
+	Exp.path_to_cref(path) => cref &
+	lookup_var_in_packages([fr],cref) => (attr,ty,bind) &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr], strippath, true) =>  (c2, _) &
+	assert_package(c2) 
+	---------------------------------- 
+	lookup_qualified_imported_var_in_frame(Env.IMPORT(Absyn.NAMED_IMPORT(id,path))::fs,env,ident)
+	    => (attr,ty,bind)
+
+  rule	(* Assert package for Named imports *)
+	id = ident &
+	Env.top_frame(env) => fr & 
+	Exp.path_to_cref(path) => cref &
+	lookup_var_in_packages([fr],cref) => (attr,ty,bind) &
+	Absyn.strip_last(path) => strippath &
+	lookup_class([fr], strippath, true) =>  (c2, _) &
+	not assert_package(c2) &
+	Print.print_error_buf "# Error, " & 
+	Absyn.path_string strippath => str & 
+	Print.print_error_buf str &
+	Print.print_error_buf " is not a package\n"  
+	---------------------------------- 
+	lookup_qualified_imported_var_in_frame(Env.IMPORT(Absyn.NAMED_IMPORT(id,path))::fs,env,ident)
+	    => fail
+	    
+  rule	lookup_qualified_imported_var_in_frame(fs, env, ident) 
+	  => (attr,ty,bind)
+	-----------------------
+	lookup_qualified_imported_var_in_frame(_::fs,env,ident) 
+	  => (attr,ty,bind)
+end
+
+
+
+(** relation: more_lookup_unqualified_imported_var_in_frame
+ ** 
+ ** Helper relation for lookup_unqualified_imported_var_in_frame. Returns true if there are
+ ** unqualified imports that matches a sought constant.
+ ** 
+ **)
+relation more_lookup_unqualified_imported_var_in_frame: (Env.Item list, Env.Env, SCode.Ident)
+	    => bool =
+
+  rule	Env.top_frame(env) => fr & 
+	lookup_class([fr],path,false) 
+	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
+	Env.open_scope(env', encflag,SOME(id)) => env2 &
+	ClassInf.start(restr, id) => ci_state &
+	Inst.partial_inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, []) 
+	  => (env'',_) &
+	  
+	lookup_var_in_packages(env'',Exp.CREF_IDENT(ident,[])) => (_,_,_)  
+	-----------------------------------------------------
+	more_lookup_unqualified_imported_var_in_frame(Env.IMPORT(Absyn.UNQUAL_IMPORT(path))::fs,env,ident) => true
+
+  rule	more_lookup_unqualified_imported_var_in_frame(fs, env, ident) => res
+	----------------------------------------------------------------------
+	more_lookup_unqualified_imported_var_in_frame(_::fs, env, ident) => res
+
+  axiom  more_lookup_unqualified_imported_var_in_frame([],_,_) => false
+end
+
+(** relation: lookup_unqualified_imported_class_in_frame
+ ** 
+ ** Finds a class from an unqualified import locally in a frame
+ **
+ **)
+relation lookup_unqualified_imported_var_in_frame: (Env.Item list, Env.Env, SCode.Ident)
+	    => (Types.Attributes, Types.Type, Types.Binding, bool (* unique*)) =
+	    
+  rule	Env.top_frame(env) => fr & 
+	Exp.path_to_cref(path) => cref &
+	lookup_class([fr],path,false) 
+	  => (c as SCode.CLASS(id, _, encflag, restr,_), env') &
+	Env.open_scope(env', encflag,SOME(id)) => env2 &
+	ClassInf.start(restr, id) => ci_state &
+	Inst.inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [],false,false) 
+	  => (_,env'',_,_,_) &
+	lookup_var_in_packages(env'',Exp.CREF_IDENT(ident,[])) => (attr,ty,bind)  & 
+	more_lookup_unqualified_imported_var_in_frame(fs, env, ident) => more &
+	bool_not more => unique
+	-------------------------------------------
+	lookup_unqualified_imported_var_in_frame(Env.IMPORT(Absyn.UNQUAL_IMPORT(path))::fs,env,ident)
+	    => (attr,ty,bind, unique)
+
+
+  rule	lookup_unqualified_imported_var_in_frame(fs, env, ident) 
+	  => (attr,ty,bind, unique)
+	-----------------------
+	lookup_unqualified_imported_var_in_frame(_::fs, env, ident) 
+	  => (attr,ty,bind, unique)
+end
+
 
 (** relation: lookup_qualified_imported_class_in_frame
  ** 
@@ -666,6 +811,24 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	--------------------------------------------------
 	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
 
+  rule	lookup_qualified_imported_var_in_frame(items,env,id) => (attr,ty,bind)
+	--------------------------------------------------
+	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::fs), cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
+
+  rule	lookup_unqualified_imported_var_in_frame(items,env,id) => (attr,ty,bind,true)
+	--------------------------------------------------
+	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::fs), cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
+
+  rule	lookup_unqualified_imported_var_in_frame(items,env,id) => (attr,ty,bind,false) &
+	Print.print_error_buf "#Error, constant found in several unqualified import statements\n"
+	--------------------------------------------------
+	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::fs), cr as Exp.CREF_IDENT(id, sb)) => fail
+
+	(* to find imports in previous frames, search next frame.*)
+  rule	lookup_var_in_packages(fs,cr) => (attr,ty,bind)
+	----------------------------------------------
+	lookup_var_in_packages (f::fs, cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
+
   rule	not lookup_var_local(env,cr) => (attr,ty,bind) 
 	(* &Debug.fprint("failtrace",  "- lookup_var_in_packages failed\n" )*)
 	--------------------------------------------------
@@ -737,11 +900,6 @@ relation lookup_ident : (Env.Env, SCode.Ident)
 	---------------------------------
 	lookup_ident(_::rest,id) => (fv,c,i)
 
-  rule	Print.print_error_buf "# Error lookup_ident: " &
-	Print.print_error_buf id &
-	Print.print_error_buf " failed\n"
-	--------------
-	lookup_ident(env,id) => fail	
 end
 
 
@@ -1262,7 +1420,7 @@ end
 
 (** relation: lookup_var2
  ** 
- ** 
+ ** Helper relation to lookup_var_f and lookup_ident.
  ** 
  **)
 relation lookup_var2 : (Env.BinTree, SCode.Ident)

@@ -920,9 +920,15 @@ relation elab_array : (Env.Env, Absyn.Exp list,bool (*impl*), Interactive.Intera
 	---------------------------------------------------------
 	elab_array (env,e::es,impl,st) => fail
 
-  rule	Print.print_error_buf "- elab_array failed\n"
+  rule	print "- elab_array failed, expl:" &
+	Debug.fprint("failtrace","elab_array failed\n") &
+	Util.list_map(expl,Dump.print_exp_str) => strs &
+	Util.string_delimit_list(strs,",") => s & 
+	print s & print "\n" &
+	Print.get_string() => str & 
+	print str 
 	-----------------------------
-	elab_array (_,_,_,_) => fail
+	elab_array (_,expl,_,_) => fail
 
 end
 
@@ -1140,11 +1146,6 @@ end
 relation elab_builtin_transpose : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
 
-  rule	elab_exp (env,matexp,impl,NONE) => (matexp', Types.PROP(matty, true),_) &
-	elab_builtin_transpose_2(env,matexp',matty) => (exp,prop)
-	------------------------------------------------------
-	elab_builtin_transpose (env, [matexp], impl) => (exp, prop)
-
   rule	elab_exp (env,matexp,impl,NONE) 
 	  => (exp', Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) &
 	let newtp = ((Types.T_ARRAY(d2,(Types.T_ARRAY(d1,eltp),NONE)),NONE)) &
@@ -1153,18 +1154,6 @@ relation elab_builtin_transpose : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	let prop = Types.PROP(newtp,false)
 	------------------------------------
 	elab_builtin_transpose (env, [matexp], impl) => (exp, prop)
-end
-
-(** relation: elab_builtin_transpose_2
- ** Helper relation to elab_builtin_transpose
- **)
-relation elab_builtin_transpose_2 : (Env.Env, Exp.Exp, Types.Type) => 
-	(Exp.Exp, Types.Properties) =
-
-  rule	print "- elab_builtin_transpose_2 not implemented yet\n" &
-	Print.print_error_buf "- elab_builtin_transpose_2 not implemented yet\n" 
-	------------------------
-	elab_builtin_transpose_2(env, exp, tp) => fail
 end
 
 (** relation: build_exp_list
@@ -1190,18 +1179,8 @@ end
 relation elab_builtin_sum : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
 
-  rule	(* For constant expressions *)
-	elab_exp(env,arrexp,impl,NONE) 
-	      => (exp',Types.PROP((Types.T_ARRAY(dim,tp),_),c as true),_) &
-	Ceval.ceval(env, exp',impl,NONE,NONE) => (Values.ARRAY(vals),_) &
-	Values.sum_arrayelt(vals) => value &
-	value_exp value => exp''
-	----------------------
-	elab_builtin_sum(env,[arrexp],impl) => (exp'', Types.PROP(tp,c))
-
-  rule	(* For non-constant expressions *)
-	elab_exp(env,arrexp,impl,NONE) 
-	      => (exp',Types.PROP((Types.T_ARRAY(dim,tp),_),c as false),_) &
+  rule	elab_exp(env,arrexp,impl,NONE) 
+	      => (exp',Types.PROP((Types.T_ARRAY(dim,tp),_),c),_) &
 	let exp'' = Exp.CALL(Absyn.IDENT("sum"),
 			   [exp'],false,true)
 	---------------------------------------
@@ -1398,81 +1377,25 @@ end
  **  This relation elaborates on the builtin operator 'max(v1,v2)'
  **)
 relation elab_builtin_max : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
-
-  rule	(* max(vector) of type Integer *)
-	elab_exp (env,arrexp,impl,NONE) 
-	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',impl,NONE,NONE) => (Values.ARRAY(vals),_) &
-	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
+	(* max(vector) *)
+  rule	elab_exp (env,arrexp,impl,NONE) 
+	  => (arrexp', Types.PROP(ty, arrconst),_) &
+	  Types.array_element_type(ty) => elt_ty
 	-------------------------------------------------------
-	elab_builtin_max(env, [arrexp],impl) => (Exp.ICONST(i),Types.PROP(ty,true))
-
-  rule	(* max(vector) of type Real *)
-	elab_exp (env,arrexp,impl,NONE) 
-	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',impl,NONE,NONE) => (Values.ARRAY(vals),_) &
-	elab_builtin_max_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
-	-------------------------------------------------------
-	elab_builtin_max(env, [arrexp],impl) => (Exp.RCONST(r),Types.PROP(ty,true))
-
+	elab_builtin_max(env, [arrexp],impl) => (Exp.CALL(Absyn.IDENT("max"),[arrexp'],false,true),Types.PROP(elt_ty,true))
 	
-  rule	(* max(x,y) where x & y are scalar Integers *)
+  rule	(* max(x,y) where x & y are scalars *)
 	elab_exp (env,s1,impl,NONE) 
-	  => (s1', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s1',impl,NONE,NONE) => (Values.INTEGER(i1),_) &
+	  => (s1', Types.PROP(ty, c1),_) &
 	elab_exp (env,s2,impl,NONE) 
-	  => (s2', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s2',impl,NONE,NONE) => (Values.INTEGER(i2),_) &
-	int_max(i1,i2) => res
+	  => (s2', Types.PROP(_, c2),_) &
+	  bool_and(c1,c2) => c
 	-------------------------------------------------------
 	elab_builtin_max(env, [s1, s2],impl) 
-	  => (Exp.ICONST(res),Types.PROP((Types.T_INTEGER([]),NONE),true))
+	  => (Exp.CALL(Absyn.IDENT("max"),[s1',s2'],false,true),Types.PROP(ty,c))
 
-  rule	(* max(x,y) where x & y are scalar Reals *)
-	elab_exp (env,s1,impl,NONE) 
-	  => (s1', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s1',impl,NONE,NONE) => (Values.REAL(r1),_) &
-	elab_exp (env,s2,impl,NONE) 
-	  => (s2', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,s2',impl,NONE,NONE) => (Values.REAL(r2),_) &
-	real_max(r1,r2) => res
-	-------------------------------------------------------
-	elab_builtin_max(env, [s1, s2],impl) 
-	  => (Exp.RCONST(res),Types.PROP((Types.T_REAL([]),NONE),true))
 end
 
-(** relation: elab_builtin_max_2
- ** Helper relation to elab_builtin_max.
- **)
-relation elab_builtin_max_2 : (Values.Value) => (Values.Value, Types.Type) =
-
-  rule	elab_builtin_max_2(v1)
-	      => (Values.INTEGER(i1),(Types.T_INTEGER(_),_)) &
-	elab_builtin_max_2(Values.ARRAY(vls)) 
-	      => (Values.INTEGER(i2),(Types.T_INTEGER(_),_)) &
-	int_max(i1,i2) => res
-	---------------------
-	elab_builtin_max_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.INTEGER(res),(Types.T_INTEGER([]),NONE))
-
-  rule	elab_builtin_max_2(v1) => (Values.REAL(i1),(Types.T_REAL(_),_)) &
-	elab_builtin_max_2(Values.ARRAY(vls)) => (Values.REAL(i2),(Types.T_REAL(_),_)) &
-	real_max(i1,i2) => res
-	---------------------
-	elab_builtin_max_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.REAL(res),(Types.T_REAL([]),NONE))
-
-  rule	elab_builtin_max_2(vl) => (v,t)
-	------------------
-	elab_builtin_max_2(Values.ARRAY([vl]))
-	  => (v,t)
-
-  axiom	elab_builtin_max_2(Values.INTEGER(i))
-	  => (Values.INTEGER(i),(Types.T_INTEGER([]),NONE))
-
-  axiom	elab_builtin_max_2(Values.REAL(i))
-	  => (Values.REAL(i),(Types.T_REAL([]),NONE))
-end
 
 (** relation: elab_builtin_min
  ** This relation elaborates the builtin operator 'min(a,b)'
@@ -1480,51 +1403,24 @@ end
 
 relation elab_builtin_min : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
 
-  rule	(* min(v) for an Integer vector v *)
-	elab_exp (env,arrexp,impl,NONE) 
-	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',impl,NONE,NONE) => (Values.ARRAY(vals),_) &
-	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.INTEGER(i),ty)
+	(* min(vector) *)
+  rule	elab_exp (env,arrexp,impl,NONE) 
+	  => (arrexp', Types.PROP(ty, arrconst),_) &
+	  Types.array_element_type(ty) => elt_ty
 	-------------------------------------------------------
-	elab_builtin_min(env, [arrexp],impl) => (Exp.ICONST(i),Types.PROP(ty,true))
-
-  rule (* min(v) for a Real vector v *)
-	elab_exp (env,arrexp,impl,NONE) 
-	  => (arrexp', Types.PROP(arrty, arrconst),_) &
-	Ceval.ceval(env,arrexp',impl,NONE,NONE) => (Values.ARRAY(vals),_) &
-	elab_builtin_min_2 (Values.ARRAY(vals)) => (Values.REAL(r),ty)
+	elab_builtin_min(env, [arrexp],impl) => (Exp.CALL(Absyn.IDENT("min"),[arrexp'],false,true),Types.PROP(elt_ty,true))
+	
+  rule	(* min(x,y) where x & y are scalars *)
+	elab_exp (env,s1,impl,NONE) 
+	  => (s1', Types.PROP(ty, c1),_) &
+	elab_exp (env,s2,impl,NONE) 
+	  => (s2', Types.PROP(_, c2),_) &
+	  bool_and(c1,c2) => c
 	-------------------------------------------------------
-	elab_builtin_min(env, [arrexp],impl) => (Exp.RCONST(r),Types.PROP(ty,true))
+	elab_builtin_min(env, [s1, s2],impl) 
+	  => (Exp.CALL(Absyn.IDENT("min"),[s1',s2'],false,true),Types.PROP(ty,c))
 end
 
-relation elab_builtin_min_2 : (Values.Value) => (Values.Value, Types.Type) =
-
-  rule	elab_builtin_min_2(v1) => (Values.INTEGER(i1),(Types.T_INTEGER(_),_)) &
-	elab_builtin_min_2(Values.ARRAY(vls)) 
-	  => (Values.INTEGER(i2),(Types.T_INTEGER(_),_)) &
-	int_min(i1,i2) => res
-	---------------------
-	elab_builtin_min_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.INTEGER(res),(Types.T_INTEGER([]),NONE))
-
-  rule	elab_builtin_min_2(v1) => (Values.REAL(i1),(Types.T_REAL(_),_)) &
-	elab_builtin_min_2(Values.ARRAY(vls)) => (Values.REAL(i2),(Types.T_REAL(_),_)) &
-	real_min(i1,i2) => res
-	---------------------
-	elab_builtin_min_2(Values.ARRAY(v1::(vls as _::_))) 
-	  => (Values.REAL(res),(Types.T_REAL([]),NONE))
-
-  rule	elab_builtin_min_2(vl) => (v,t)
-	------------------
-	elab_builtin_min_2(Values.ARRAY([vl]))
-	  => (v,t)
-
-  axiom	elab_builtin_min_2(Values.INTEGER(i))
-	  => (Values.INTEGER(i),(Types.T_INTEGER([]),NONE))
-
-  axiom	elab_builtin_min_2(Values.REAL(i))
-	  => (Values.REAL(i),(Types.T_REAL([]),NONE))
-end
 
 (** relation: elab_builtin_floor
  ** This relation elaborates on the builtin operator floor.
@@ -3492,7 +3388,7 @@ relation elab_cref2 : (Env.Env,
 	------------------------------
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,false)) => fail
 
-  rule	Print.print_error_buf "# Constant  without a value\n" &
+  rule	Print.print_error_buf "# Constant without a value\n" &
 	Print.print_error_buf "# component: " & 
 	Exp.print_component_ref_str cr => s & 
 	Print.print_error_buf s &
@@ -3500,7 +3396,7 @@ relation elab_cref2 : (Env.Env,
 	----------------------------------------------
 	elab_cref2 (env,cr,_,SCode.CONST,_,Types.UNBOUND) => fail
 
-  rule	Print.print_error_buf "# Constant  without a value\n" &
+  rule	Print.print_error_buf "# Parameter without a value\n" &
 	Print.print_error_buf "# component: " & 
 	Exp.print_component_ref_str cr => s &
 	Print.print_error_buf s &
@@ -3509,14 +3405,14 @@ relation elab_cref2 : (Env.Env,
 	elab_cref2 (env,cr,_,SCode.PARAM,_,Types.UNBOUND) => fail
 
 
-  rule	print "- elab_cref2 failed (component: " &
+  rule	(*print "- elab_cref2 failed (component: " &
 	Exp.print_component_ref_str cr => str & print str & print "\n" &
 	Print.print_buf "- elab_cref2 failed (component: " &
 	Exp.print_component_ref cr & Print.print_buf ")\n" &
 	Types.unparse_type tp => ts & print "type = " & print ts & print ", " &
 	Types.print_binding_str bind => binds & print "binding =" & print binds & print "\n" &
 	SCode.variability_string var => vs & print "var = " & print vs & print "\n" 
-	& Env.print_env env 
+	& Env.print_env_str env => str & print str *)
 	----------------------------------------
 	elab_cref2 (env,cr,acc,var,tp,bind) => fail
 
