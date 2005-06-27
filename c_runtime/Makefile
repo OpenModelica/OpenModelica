@@ -16,14 +16,14 @@ FSRCS = daux.f \
           dpmpar.f \
 	  enorm.f \
 	  fdjac1.f \
- 	  hybrd1.f \
+	hybrd1.f \
 	  hybrd.f \
 	  hybrj.f \
 	  qform.f \
 	  qrfac.f \
- 	  r1mpyq.f \
+	  r1mpyq.f \
 	  r1updt.f 
-	  
+
 FOBJS = $(patsubst %.f,%.o,$(FSRCS))
 
 OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
@@ -34,11 +34,16 @@ all : libc_runtime.a libsim.a
 
 
 libc_runtime.a : $(OBJS) 
+	cd libf2c; make -f makefile.u 
+	mv libf2c/libf2c.a ./
 	$(AR) $@ $(OBJS) 
 libsim.a : $(SIMOBJS)
+	cd libf2c; make -f makefile.u 
+	mv libf2c/libf2c.a ./
 	$(AR) $@ $(SIMOBJS)
 
 clean :
+	cd libf2c; make -f makefile.u clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)
