@@ -235,6 +235,7 @@ module Exp:
   relation int_subscripts : int list => Subscript list
   relation simplify : Exp => Exp
   relation unelab_exp : Exp => Absyn.Exp 	   
+  relation unelab_cref: ComponentRef => Absyn.ComponentRef
   relation contain_functioncall : Exp => bool
   relation print_exp : Exp => ()
   relation print_component_ref : ComponentRef => ()

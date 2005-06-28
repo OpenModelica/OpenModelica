@@ -250,6 +250,8 @@ module Inst:
   relation make_fully_qualified : (Env.Env, Absyn.Path) => Absyn.Path
   relation add_nomod: SCode.Element list => (SCode.Element*Types.Mod) list
 
+  relation elab_component_arraydim_from_env: (Env.Env, Exp.ComponentRef) => DimExp list
+
 end
 
 with "Debug.rml"
@@ -1488,8 +1490,10 @@ relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, ClassInf.Stat
 
 	(* Use type T_NOTYPE instead of as earier trying to instantiate, since instanitation might fail without having correct
 	 modifications (e.g. when instanitating a partial class that must be redeclared through a modification)*)
+	Mod.lookup_comp_modification(mods,n) => compmod &
+	Mod.merge(compmod,cmod,env,pre) => cmod' &
 	Env.extend_frame_v(env,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
-	    prot,(Types.T_NOTYPE,NONE),Types.UNBOUND),SOME((comp,cmod)),false) => env' & 
+	    prot,(Types.T_NOTYPE,NONE),Types.UNBOUND),SOME((comp,cmod')),false) => env' & 
 	add_components_to_env2(env',mods,pre,csets,ci_state,xs,inst_dims,impl) 
 	  => env'' 
 	-----------------
@@ -2344,6 +2348,7 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, ClassI
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m,impl) => m' &
 
+
 	Mod.lookup_modification_p(mods,t) => classmod &
 	Mod.lookup_comp_modification(mods,n) => mm &
 	Mod.merge(classmod,mm,env2,Prefix.NOPRE) => mod &
@@ -2720,6 +2725,56 @@ relation inst_array : (Env.Env,
 	inst_array(_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_) => fail
 	
 end
+
+(** relation elab_component_arraydim_from_env
+ ** author: PA
+ **
+ ** Lookup uninstantiated component in env, elaborate its modifiers to
+ ** find arraydimensions and return as DimExp list.
+ ** Used when components have submodifiers (on e.g. attributes) using size 
+ ** to find dimensions of component.
+ **)
+relation elab_component_arraydim_from_env: (Env.Env, Exp.ComponentRef) 
+	  => DimExp list =
+
+  rule	Lookup.lookup_ident(env,id) 
+	  => (ty, 
+	      SOME((SCode.COMPONENT(n,final,repl,prot,
+				   attr as SCode.ATTR(ad,flow,acc,param,dir),
+				   t,m,bc,comment),cmod)),_) &
+	Types.strip_submod(cmod) => cmod' &
+	SCode.strip_submod(m) => m' &
+	Mod.elab_mod(env,Prefix.NOPRE,m',false) => m'' &
+	Mod.merge(cmod',m'',env,Prefix.NOPRE) => mod'' &
+	Mod.mod_equation mod'' => SOME(eq) &
+	elab_component_arraydim_from_env_2(eq,env) => dims
+	-----------------------------------------------
+	elab_component_arraydim_from_env(env,cref as Exp.CREF_IDENT(id,_)) => dims
+end
+
+(** relation: elab_component_arraydim_from_env_2 
+ ** author: PA
+ **
+ ** Helper relation to elab_component_arraydim_from_env. This relation is 
+ ** similar to elab_arraydim, but it will only investigate binding (Types.EqMod) ** and not the component declaration.
+ **)
+
+relation elab_component_arraydim_from_env_2:( Types.EqMod,Env.Env) 
+	  => DimExp list =
+
+  rule	Types.get_dimension_sizes(t) => lst &
+	Util.list_map(lst,make_dimexp_from_int) => lst'
+	--------------------
+	elab_component_arraydim_from_env_2(Types.TYPED(e,Types.PROP(t,c)),env) 
+	  => lst'
+end
+
+relation make_dimexp_from_int: int => DimExp =
+
+  axiom	make_dimexp_from_int(i) => DIMINT(i)
+
+end
+
 
 (** relation: elab_arraydim
  **

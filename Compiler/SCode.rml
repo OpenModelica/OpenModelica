@@ -252,8 +252,10 @@ module SCode :
   relation elaborate : Absyn.Program => Program
   relation elab_class: Absyn.Class => Class	
   relation build_mod : (Absyn.Modification option, bool (* final *)) => Mod
+  relation strip_submod: Mod => Mod
   relation get_element_named: (Ident, Class) => Element
   relation print_mod : Mod => ()
+  relation print_mod_str : Mod => string 
   relation print_element : Element => ()
   relation print_element_str : Element => string 
   relation equation_str : EEquation => string
@@ -766,6 +768,22 @@ relation build_mod : (Absyn.Modification option, bool (* final *)) => Mod =
 	build_mod(SOME(Absyn.CLASSMOD(l,e)),final) => MOD(final,subs,e)
 
 end
+
+
+(** relation: strip_submod
+ ** author: PA
+ **
+ ** Removes all submodifiers from the Mod.
+ **)
+
+relation strip_submod: Mod => Mod =
+
+  axiom	strip_submod(MOD(f,subs,e)) => MOD(f,[],e)
+
+  axiom	strip_submod(m) => m
+
+end
+
 
 (** LS: Adding elaborate for the elementspec in the redeclaration
  **)

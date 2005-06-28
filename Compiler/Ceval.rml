@@ -1581,6 +1581,21 @@ end
 	  ------------------------------------
 	  ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl,st) => (Values.INTEGER(v),st')
 
+  rule	(* If component not instantiated yet, recursive definition.
+	 For example,
+	 Real x[:](min=fill(1.0,size(x,1))) = {1.0} 
+	 *
+	 * When size(x,1) should be determined, x must be instantiated, but
+	 * that is not done yet. Solution: Examine Element to find modifier 
+	 * which will determine dimension size.
+	 *)
+	  Inst.elab_component_arraydim_from_env(env,cr) => dims &
+	  ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dimv),st') &
+	  ceval_builtin_size_3(dims,dimv) => v2
+	  ------------------------------------
+	  ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st) 
+	  => (v2,st')
+
   rule	(* If dimensions not known and impl=true, just silently fail *)
 	  Lookup.lookup_var(env,cr) => (attr, tp, bind) &
 	  Types.dimensions_known(tp) => false
@@ -1642,23 +1657,54 @@ end
 	  ceval_builtin_size(env,exp,dim,impl,st) => fail
   end
 
-  relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
+(** relation: ceval_bultin_size_2
+ ** 
+ ** Helper relation to ceval_builtin_size
+ **)
 
+relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
+	
   rule	list_length(lst) => dim
-	  ---------------------------------------
-	  ceval_builtin_size_2(Values.ARRAY(lst), 1) => Values.INTEGER(dim)
-
+	---------------------------------------
+	ceval_builtin_size_2(Values.ARRAY(lst), 1) => Values.INTEGER(dim)
+	
   rule	int_sub (ind, 1) => ind' &
-	  ceval_builtin_size_2 (l, ind') => dim
-	  --------------------------------------------------
-	  ceval_builtin_size_2 (Values.ARRAY(l::lst), ind) => dim
-
+	ceval_builtin_size_2 (l, ind') => dim
+	--------------------------------------------------
+	ceval_builtin_size_2 (Values.ARRAY(l::lst), ind) => dim
+	
   rule	Debug.fprint("failtrace","- ceval_builtin_size_2 failed\n")
-	  -------------------------------------
-	  ceval_builtin_size_2(_,_) => fail
-  end
+	-------------------------------------
+	ceval_builtin_size_2(_,_) => fail
+end
 
-  relation ceval_builtin_abs : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
+
+(** relation: ceval_builtin_size_3
+ ** author: PA
+ ** 
+ ** Helper relation to ceval_builtin_size. Used when recursive definition
+ ** (attribute modifiers using size) is used.
+**)
+
+relation ceval_builtin_size_3: (Inst.DimExp list, int ) => Values.Value =
+
+  rule	n - 1 => n' &
+	list_nth(dims,n') => Inst.DIMINT(v) 
+	-------------------------
+	ceval_builtin_size_3(dims,n) => Values.INTEGER(v)
+
+  rule	n - 1 => n' &
+	list_nth(dims,n') => Inst.DIMEXP(sub,eopt) &
+	print "ceval_builtin_size_3 failed DIMEXP in dimesion\n"
+	-------------------------
+	ceval_builtin_size_3(dims,n) => fail
+
+  rule	print "-ceval_builtin_size_3 failed\n"
+	-------------------------
+	ceval_builtin_size_3(dims,n) => fail
+end
+
+relation ceval_builtin_abs : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
             
   rule  ceval (env,exp,impl,st,NONE) => (Values.REAL(rv),_) &
