@@ -27,9 +27,9 @@ package testFEM
             {{cw,0},{0,ch}});
       
       parameter Composite4.Data boundary(
-        parts1(line=bottom, partType=PartTypeEnumC.line), 
-        parts2(bezier=right, partType=PartTypeEnumC.bezier), 
-        parts3(line=top, partType=PartTypeEnumC.line), 
+        parts1(line=bottom, partType=PartTypeEnumC.line),
+        parts2(bezier=right, partType=PartTypeEnumC.bezier),
+        parts3(line=top, partType=PartTypeEnumC.line),
         parts4(line=left, partType=PartTypeEnumC.line));
     end Data;
     
@@ -71,11 +71,11 @@ package testFEM
             ch}});
       
       Composite6.Data boundary(
-        parts1(line=bottom, partType=PartTypeEnumC.line), 
-        parts2(bezier=right, partType=PartTypeEnumC.bezier), 
-        parts3(line=top1, partType=PartTypeEnumC.line), 
-        parts4(line=top2, partType=PartTypeEnumC.line), 
-        parts5(line=top3, partType=PartTypeEnumC.line), 
+        parts1(line=bottom, partType=PartTypeEnumC.line),
+        parts2(bezier=right, partType=PartTypeEnumC.bezier),
+        parts3(line=top1, partType=PartTypeEnumC.line),
+        parts4(line=top2, partType=PartTypeEnumC.line),
+        parts5(line=top3, partType=PartTypeEnumC.line),
         parts6(line=left, partType=PartTypeEnumC.line));
       
     end Data;
@@ -90,11 +90,10 @@ package testFEM
     
     annotation (Icon(
         Line(points=[-60, 60; -60, -20; 40, -20], style(color=3, rgbcolor={0,0,
-                255})), 
-        Line(points=[-60, 60; -20, 60], style(color=3, rgbcolor={0,0,255})), 
-        Line(points=[-20, 60; 0, 60; 40, 60], style(color=3, rgbcolor={0,0,255})), 
-          
-        Line(points=[40, 60; 36, 48; 14, 40; 2, 20; 14, 0; 36, -10; 40, -20], 
+                255})),
+        Line(points=[-60, 60; -20, 60], style(color=3, rgbcolor={0,0,255})),
+        Line(points=[-20, 60; 0, 60; 40, 60], style(color=3, rgbcolor={0,0,255})),
+        Line(points=[40, 60; 36, 48; 14, 40; 2, 20; 14, 0; 36, -10; 40, -20],
             style(color=3, rgbcolor={0,0,255}))));
     
   end MyGenericBoundary3;
@@ -133,8 +132,8 @@ package testFEM
     package PDE = PDEbhjl.FEMForms.Autonomous.Poisson2D (redeclare package 
           domainP = myDomainP);
     PDE.Equation pde(
-      domain=mydomain, 
-      nbp=n, 
+      domain=mydomain,
+      nbp=n,
       refine=refine);
   end CirclePoissonTest;
   
@@ -149,26 +148,26 @@ package testFEM
       parameter Real h;
       parameter Real r;
       parameter Line.Data bottom(
-        p1=p, 
-        p2=p + {w,0}, 
+        p1=p,
+        p2=p + {w,0},
         bc(index=1));
       parameter Line.Data right(
-        p1=p + {w,0}, 
-        p2=p + {w,h - r}, 
+        p1=p + {w,0},
+        p2=p + {w,h - r},
         bc(index=2));
       parameter Line.Data top(
-        p1=p + {w - r,h}, 
-        p2=p + {0,h}, 
+        p1=p + {w - r,h},
+        p2=p + {0,h},
         bc(index=3));
       parameter Line.Data left(
-        p1=p + {0,h}, 
-        p2=p, 
+        p1=p + {0,h},
+        p2=p,
         bc(index=4));
       parameter Arc.Data roundedCorner(
-        c=p + {w - r,h - r}, 
-        r=r, 
-        a_start=0, 
-        a_end=Arc.pi/2, 
+        c=p + {w - r,h - r},
+        r=r,
+        a_start=0,
+        a_end=Arc.pi/2,
         bc(index=5));
     end Data;
     
@@ -201,26 +200,26 @@ package testFEM
     parameter Real cw=5;
     
     parameter BoundaryCondition.Data dirzero(
-      bcType=BoundaryCondition.dirichlet, 
-      val=0, 
-      index=1, 
+      bcType=BoundaryCondition.dirichlet,
+      val=0,
+      index=1,
       name="dirzero");
     
     parameter BoundaryCondition.Data dirfive(
-      bcType=BoundaryCondition.dirichlet, 
-      val=5, 
-      index=2, 
+      bcType=BoundaryCondition.dirichlet,
+      val=5,
+      index=2,
       name="dirfive");
     
     parameter MyBoundary.Data bnd(
-      p=p0, 
-      w=w, 
-      h=h, 
-      r=r, 
-      bottom(bc=dirzero), 
-      top(bc=dirzero), 
-      right(bc=dirzero), 
-      left(bc=dirzero), 
+      p=p0,
+      w=w,
+      h=h,
+      r=r,
+      bottom(bc=dirzero),
+      top(bc=dirzero),
+      right(bc=dirzero),
+      left(bc=dirzero),
       roundedCorner(bc=dirfive));
     
     package myDomainP = Domain (redeclare package boundaryP = MyBoundary);
@@ -255,10 +254,10 @@ package testFEM
     package PDE = PDEbhjl.FEMForms.Autonomous.Poisson2D (redeclare package 
           domainP = myDomainP);
     PDE.Equation pde(
-      domain=mydomain, 
-      nbp=n, 
-      refine=refine, 
-      nbc=2, 
+      domain=mydomain,
+      nbp=n,
+      refine=refine,
+      nbc=2,
       bc=buildbc.bc);
   end MyBoundaryPoissonTest;
   
@@ -270,14 +269,14 @@ package testFEM
     parameter Real refine=0.5;
     
     parameter BoundaryCondition.Data dirzero(
-      bcType=BoundaryCondition.dirichlet, 
-      val=0, 
-      index=1, 
+      bcType=BoundaryCondition.dirichlet,
+      val=0,
+      index=1,
       name="dirzero");
     
     parameter Circle.Data bnd(
-      c={0,0}, 
-      r=2, 
+      c={0,0},
+      r=2,
       bc=dirzero);
     
     parameter myDomain.Data domain(boundary=bnd);
@@ -312,10 +311,10 @@ package testFEM
     package PDE = PDEbhjl.FEMForms.Autonomous.Poisson2D (redeclare package 
           domainP = myDomain);
     PDE.Equation pde(
-      nbp=n, 
-      refine=refine, 
-      domain=domain, 
-      nbc=1, 
+      nbp=n,
+      refine=refine,
+      domain=domain,
+      nbc=1,
       bc=buildbc.bc);
     
     // Modelica part
@@ -337,25 +336,25 @@ package testFEM
     package MyBoundary = MyGenericBoundary2;
     
     parameter BoundaryCondition.Data dirzero(
-      bcType=BoundaryCondition.dirichlet, 
-      val=0, 
-      index=1, 
+      bcType=BoundaryCondition.dirichlet,
+      val=0,
+      index=1,
       name="dirzero");
     
     parameter BoundaryCondition.Data dirfive(
-      bcType=BoundaryCondition.dirichlet, 
-      val=5, 
-      index=2, 
+      bcType=BoundaryCondition.dirichlet,
+      val=5,
+      index=2,
       name="dirfive");
     
     parameter MyBoundary.Data bnd(
-      p0=p0, 
-      w=w, 
-      h=h, 
-      cw=cw, 
-      bottom(bc=dirzero), 
-      right(bc=dirfive), 
-      top(bc=dirzero), 
+      p0=p0,
+      w=w,
+      h=h,
+      cw=cw,
+      bottom(bc=dirzero),
+      right(bc=dirfive),
+      top(bc=dirzero),
       left(bc=dirzero));
     
     package myDomainP = Domain (redeclare package boundaryP = MyBoundary);
@@ -389,11 +388,11 @@ package testFEM
     package PDE = PDEbhjl.FEMForms.Autonomous.Diffusion2D (redeclare package 
           domainP = myDomainP);
     PDE.Equation pde(
-      domain=mydomain, 
-      nbp=n, 
-      refine=refine, 
-      g0=1, 
-      nbc=2, 
+      domain=mydomain,
+      nbp=n,
+      refine=refine,
+      g0=1,
+      nbc=2,
       bc=buildbc.bc);
   end MyGenericBoundaryDiffusionTest;
   
@@ -421,33 +420,33 @@ package testFEM
     package MyBoundary = MyGenericBoundary3;
     
     parameter BoundaryCondition.Data neumann(
-      bcType=BoundaryCondition.neumann, 
-      g=0, 
-      index=1, 
+      bcType=BoundaryCondition.neumann,
+      g=0,
+      index=1,
       name="neumannzero");
     
     parameter BoundaryCondition.Data dirheater(
-      bcType=BoundaryCondition.timedepdirichlet, 
-      g=0, 
-      index=2, 
+      bcType=BoundaryCondition.timedepdirichlet,
+      g=0,
+      index=2,
       name="dirheater");
     
     parameter BoundaryCondition.Data dirthree(
-      bcType=BoundaryCondition.dirichlet, 
-      g=8, 
-      index=3, 
+      bcType=BoundaryCondition.dirichlet,
+      g=8,
+      index=3,
       name="dirthree");
     
     parameter MyBoundary.Data bnd(
-      p0=p0, 
-      w=w, 
-      h=h, 
-      cw=cw, 
-      bottom(bc=neumann), 
-      right(bc=neumann), 
-      top1(bc=neumann), 
-      top2(bc=dirheater), 
-      top3(bc=neumann), 
+      p0=p0,
+      w=w,
+      h=h,
+      cw=cw,
+      bottom(bc=neumann),
+      right(bc=neumann),
+      top1(bc=neumann),
+      top2(bc=dirheater),
+      top3(bc=neumann),
       left(bc=dirthree));
     
     package myDomainP = Domain (redeclare package boundaryP = MyBoundary);
@@ -481,11 +480,11 @@ package testFEM
     package PDE = PDEbhjl.FEMForms.Autonomous.Diffusion2D (redeclare package 
           domainP = myDomainP);
     PDE.Equation pde(
-      domain=mydomain, 
-      nbp=n, 
-      refine=refine, 
-      g0=1, 
-      nbc=buildbc.n, 
+      domain=mydomain,
+      nbp=n,
+      refine=refine,
+      g0=1,
+      nbc=buildbc.n,
       bc=buildbc.bc);
     Real sensorvalue;
     Real heatervalue;
@@ -499,23 +498,26 @@ package testFEM
     pde.timeDepBndValue = heatervalue;
     
   end MyGenericBoundaryDiffusionTest3;
-
+  
   model MyGenericBoundaryDiffusionTest4 
     import PDEbhjl.Boundaries.*;
     import PDEbhjl.*;
     // Heat transfer parameters
-    parameter Real k=1;
-    parameter Real hh=30000;
+    parameter Real k=1; // 4920 "J/m.min.K";
+    parameter Real hh=54/1e-3 
+      "Thermal conduct. glass J/m.min.K/m thickness=1e-3m";
     /* k/l, heat transfer coefficient J/m.min.K / m */
-    parameter Real T_inf=5;
-    /* External temperature */
-    parameter Real qh=0;
+    parameter Real rho=1; //7820 "Density kg/m3";
+    parameter Real Cp=1; // 449 "J/kg.K";
+    parameter Real T_inf=5 "Outside temperature K";
+    parameter Real qh=0 "Source on boundary";
     
     // PDE parameters
     parameter Real c=k;
     parameter Real q=hh;
     parameter Real g=qh + hh*T_inf;
     parameter Real f=0;
+    parameter Real da=rho*Cp;
     
     // discretization parameters
     parameter Integer n=40;
@@ -537,34 +539,34 @@ package testFEM
     package MyBoundary = MyGenericBoundary3;
     
     parameter BoundaryCondition.Data neumann(
-      bcType=BoundaryCondition.neumann, 
-      g=0, 
-      index=1, 
+      bcType=BoundaryCondition.neumann,
+      g=0,
+      index=1,
       name="neumannzero");
     
     parameter BoundaryCondition.Data dirheater(
-      bcType=BoundaryCondition.timedepdirichlet, 
-      g=0, 
-      index=2, 
+      bcType=BoundaryCondition.timedepdirichlet,
+      g=0,
+      index=2,
       name="dirheater");
     
     parameter BoundaryCondition.Data robin(
-      bcType=BoundaryCondition.robin, 
-      q=q, 
-      g=g, 
-      index=3, 
+      bcType=BoundaryCondition.robin,
+      q=q,
+      g=g,
+      index=3,
       name="robin");
     
     parameter MyBoundary.Data bnd(
-      p0=p0, 
-      w=w, 
-      h=h, 
-      cw=cw, 
-      bottom(bc=neumann), 
-      right(bc=neumann), 
-      top1(bc=neumann), 
-      top2(bc=dirheater), 
-      top3(bc=neumann), 
+      p0=p0,
+      w=w,
+      h=h,
+      cw=cw,
+      bottom(bc=neumann),
+      right(bc=neumann),
+      top1(bc=neumann),
+      top2(bc=dirheater),
+      top3(bc=neumann),
       left(bc=robin));
     
     package myDomainP = Domain (redeclare package boundaryP = MyBoundary);
@@ -598,12 +600,13 @@ package testFEM
     package PDE = PDEbhjl.FEMForms.Autonomous.Diffusion2D (redeclare package 
           domainP = myDomainP);
     PDE.Equation pde(
-      domain=mydomain, 
-      nbp=n, 
-      refine=refine, 
-      g0=f, 
-      c=c, 
-      nbc=buildbc.n, 
+      domain=mydomain,
+      nbp=n,
+      refine=refine,
+      g0=f,
+      c=c,
+      da=da,
+      nbc=buildbc.n,
       bc=buildbc.bc);
     Real sensorvalue;
     Real heatervalue;
