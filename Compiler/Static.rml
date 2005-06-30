@@ -387,8 +387,8 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	Debug.fprintln("sei", "elab_exp CALL...") &
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop,st') &
 	Types.is_prop_all_const prop => c &
-	ceval_if_constant(e,prop,c,impl,env) => (e',prop')
-	& Debug.fprintln("sei", "elab_exp CALL done")
+	ceval_if_constant(e,prop,c,impl,env) => (e',prop') &
+	 Debug.fprintln("sei", "elab_exp CALL done")
 	--------------------------------------
 	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs)),impl,st) 
 		=> (e',prop',st')
@@ -1808,6 +1808,28 @@ relation elab_builtin_edge : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Ex
 	
 end
 
+(** relation: elab_builtin_der
+ ** This relation handles the built in der operator.
+ **)
+relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
+
+  rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_REAL([]),_),c as false),_)  
+	----------------------------------
+	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
+	  => (Exp.CALL(Absyn.IDENT("der"),[exp'],false,true), Types.PROP((Types.T_REAL([]),NONE),false))
+
+	  (* Constant expressions should fail *)
+  rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_REAL([]),_),c as true),_)  &
+	Print.print_error_buf "# Error, der operator applied to constant expression\n" 
+	----------------------------------
+	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
+	  => fail
+  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to der operator.\n"
+	------------------------------------
+	elab_builtin_der(env,_,_) => fail	
+end
+
 (** relation: elab_builtin_handler
  ** This relation dispatches the elaboration of builtin operators by returning the 
  ** appropriate relation. When a new builtin operator is added, a new rule has to be added to 
@@ -1841,7 +1863,8 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*
   axiom	elab_builtin_handler "simplify" => elab_builtin_simplify
   axiom	elab_builtin_handler "noEvent" => elab_builtin_noevent
   axiom	elab_builtin_handler "edge" => elab_builtin_edge
-
+  axiom	elab_builtin_handler "der" => elab_builtin_der
+ 
   axiom	elab_builtin_handler "dymTableTimeIni" => elab_builtin_dymtabletimeini
 
 end

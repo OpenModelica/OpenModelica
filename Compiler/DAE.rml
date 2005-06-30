@@ -165,6 +165,9 @@ module DAE:
 		   | IF_EQUATION   of Exp.Exp      (* Condition *) *
 		                      Element list (* Equations of true branch*) *
 		                      Element list (* Equations of false branch*)
+		   | INITIAL_IF_EQUATION   of Exp.Exp      (* Condition *) *
+		                      Element list (* Equations of true branch*) *
+		                      Element list (* Equations of false branch*)
 		   | INITIALEQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
 		   | INITIALALGORITHM of Algorithm.Algorithm
@@ -712,6 +715,15 @@ relation dump_initialequations_str: Element list => string =
 	string_append(s5,s6) => str
 	-------------------------------
 	dump_initialequations_str( INITIALDEFINE(c,e)::xs) => str
+	
+  rule	Exp.print_exp_str(c) => s &
+	dump_initialequations_str(xs1) => s1 &
+	dump_initialequations_str(xs2) => s2 &
+        dump_initialequations_str(xs) => s3 &
+	Util.string_append_list(["  if ",s," then\n", s1, "  else\n", s2, 
+             "  end if;\n", s3 ]) => str
+	-------------------------------
+	dump_initialequations_str( INITIAL_IF_EQUATION(c,xs1,xs2)::xs) => str
 
   rule	dump_initialequations_str(xs) => str
 	-----------------------------
@@ -2094,6 +2106,13 @@ relation to_modelica_form_elts: (Element list) => Element list =
 	to_modelica_form_elts(IF_EQUATION(e1,telts,eelts)::elts)
 	  => (IF_EQUATION(e1',telts',eelts')::elts')
 
+  rule	to_modelica_form_exp(e1) => e1' &
+	to_modelica_form_elts(telts) => telts' &
+	to_modelica_form_elts(eelts) => eelts' &
+	to_modelica_form_elts(elts) => elts' 
+	----------------------------------------
+	to_modelica_form_elts(INITIAL_IF_EQUATION(e1,telts,eelts)::elts)
+	  => (INITIAL_IF_EQUATION(e1',telts',eelts')::elts')
 
   rule	to_modelica_form_exp(e1) => e1' &
 	to_modelica_form_exp(e2) => e2' &
@@ -2311,6 +2330,11 @@ relation get_all_exps_element : Element => Exp.Exp list =
 	---------------------------------------------------
 	get_all_exps_element IF_EQUATION(cond, eqstrueb, eqsfalseb) => exps
 
+  rule	get_all_exps eqstrueb => explist1 &
+	get_all_exps eqsfalseb => explist2 &
+	Util.list_flatten([[cond],explist1,explist2]) => exps
+	---------------------------------------------------
+	get_all_exps_element INITIAL_IF_EQUATION(cond, eqstrueb, eqsfalseb) => exps
 
   axiom	get_all_exps_element INITIALEQUATION(e1,e2) => [e1,e2]
 

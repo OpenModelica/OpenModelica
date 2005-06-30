@@ -342,386 +342,385 @@ end
 	  => (Values.REAL(resr),st'')
 
 
-	   (* end luc_pop *)
-
-(* FIXME: disabled calling of functions during ceval for now. Some
- * functions call other functions, which must be generated together in
- * order that compilation works  *)
-(*
- axiom	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => fail
- *)
-
-(* Call functions in non-interactive mode. *) 
-(* FIXME: functions are always generated. Put back the check
- and write another rule for the false case that generates the function *)
+	   
+	   (* FIXME: disabled calling of functions during ceval for now. Some
+	    * functions call other functions, which must be generated together in
+	    * order that compilation works  *)
+	 (*
+	  axiom	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => fail
+	  *)
+	 
+	 (* Call functions in non-interactive mode. *) 
+	 (* FIXME: functions are always generated. Put back the check
+	  and write another rule for the false case that generates the function *)
   rule	ceval_list(env,expl,impl,st) => vallst &
-	ceval_call_function (env,e,vallst) => newval
--------------------------------------------------------
-ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => (newval,st)
+	 ceval_call_function (env,e,vallst) => newval
+	 -------------------------------------------------------
+	 ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => (newval,st)
+	 
+	 (*	ceval (env, e as Exp.CALL(funcpath,expl,_,_),false,st as SOME(Interactive.SYMBOLTABLE(_,_,_,_,cflist)),_) => (newval,st)
+	  *)
+	 
+	 
+	 (* FIXME: Fix this in order to allow calling of constant-marked function
+	  * calls. One should call the function as if we were in interactive
+	  * mode, and put the result instead of the function call *)
+	 
+	 (*	 
 
-(*	ceval (env, e as Exp.CALL(funcpath,expl,_,_),false,st as SOME(Interactive.SYMBOLTABLE(_,_,_,_,cflist)),_) => (newval,st)
- *)
-
-
-(* FIXME: Fix this in order to allow calling of constant-marked function
- * calls. One should call the function as if we were in interactive
- * mode, and put the result instead of the function call *)
-
-(*	 
-
- rule	Print.print_buf "# Can't call builtin functions at compile time\n" &
- Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
- -------------------------------------------------------
- ceval (env, e as Exp.CALL(_,_,_,builtin as true),impl as false,NONE,_) => fail
- *)
-
+	  rule	Print.print_buf "# Can't call builtin functions at compile time\n" &
+	  Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
+	  -------------------------------------------------------
+	  ceval (env, e as Exp.CALL(_,_,_,builtin as true),impl as false,NONE,_) => fail
+	  *)
+	 
   rule	Print.print_buf "# Can't call functions at compile time\n" &
 	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
--------------------------------------------------------
-ceval (env, e as Exp.CALL(_,_,_,_),impl as false,NONE,_) => fail
-
-
+	 -------------------------------------------------------
+	 ceval (env, e as Exp.CALL(_,_,_,_),impl as false,NONE,_) => fail
+	 
+	 
   rule	(* Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
 	 Exp.print_exp e & Print.print_buf "\n" *)
--------------------------------------------
-ceval(env, e as Exp.CALL(_,_,_,_),impl as true,NONE,_) => fail
-
+	 -------------------------------------------
+	 ceval(env, e as Exp.CALL(_,_,_,_),impl as true,NONE,_) => fail
+	 
   rule	ceval_interactive_functions(env,e,st) => (value,st)
-	-------------------------------------
-ceval (env, e as Exp.CALL(_,_,_,_),impl as true, SOME(st),_) => (value,SOME(st))
-
+	 -------------------------------------
+	 ceval (env, e as Exp.CALL(_,_,_,_),impl as true, SOME(st),_) => (value,SOME(st))
+	 
   rule	(* Call of record constructors, etc., i.e. functions that can be 
 	 constant propagated. *)
-ceval_list(env,expl,impl,st) => vallst &
-ceval_function(env,func,vallst,impl) => newval
--------------------------------------------------------
-ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(_),_) 
+	 ceval_list(env,expl,impl,st) => vallst &
+	 ceval_function(env,func,vallst,impl) => newval
+	 -------------------------------------------------------
+	 ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(_),_) 
 	  => (newval,st)
-
+	   
   rule	(* Call externally implemented functions. *) 
-	Static.is_function_in_cflist(cflist,func) => true &
-ceval_list(env,expl,impl,st) => vallst &
-ModUtil.path_string2(func,"_") => funcstr &
-string_append(funcstr,"_in.txt") => infilename &
-string_append(funcstr,"_out.txt") => outfilename &
-Values.write_to_file_as_args(vallst,infilename)  &
-System.execute_function(funcstr) &
-System.read_values_from_file(outfilename) => newval
--------------------------------------------------------
-ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist)),_) => (newval,st)
-
-(** Strings **)
-
+	 Static.is_function_in_cflist(cflist,func) => true &
+	 ceval_list(env,expl,impl,st) => vallst &
+	 ModUtil.path_string2(func,"_") => funcstr &
+	 string_append(funcstr,"_in.txt") => infilename &
+	 string_append(funcstr,"_out.txt") => outfilename &
+	 Values.write_to_file_as_args(vallst,infilename)  &
+	 System.execute_function(funcstr) &
+	 System.read_values_from_file(outfilename) => newval
+	 -------------------------------------------------------
+	 ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist)),_) => (newval,st)
+	 
+	 (** Strings **)
+	 
   rule  ceval (env, lh, impl,st, NONE) => (Values.STRING(lhv),_) &
 	ceval (env, rh, impl,st,NONE) => (Values.STRING(rhv),_) &
-string_append(lhv,rhv) => str
------------------------
-ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.STRING), rh),impl,st,_)
+	 string_append(lhv,rhv) => str
+	 -----------------------
+	 ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.STRING), rh),impl,st,_)
 	  => (Values.STRING(str),st)
-
-	  (**  Numerical *)
-
+	   
+	   (**  Numerical *)
+	 
   rule	ceval (env, lh, impl,st,dim) => (Values.REAL(lhv),st') &
-	ceval (env, rh, impl,st',dim) => (Values.REAL(rhv),st'') &
-real_add(lhv, rhv) => sum
--------------------------
-ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh),impl,st,dim)
+	 ceval (env, rh, impl,st',dim) => (Values.REAL(rhv),st'') &
+	 real_add(lhv, rhv) => sum
+	 -------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.REAL), rh),impl,st,dim)
 	  => (Values.REAL(sum),st'')
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.ARRAY(vlst1),st') &
-	ceval (env,rh,impl,st',dim) => (Values.ARRAY(vlst2),st'') &
-Values.add_elementwise_arrayelt(vlst1, vlst2) => reslst
--------------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.ADD_ARR(_),rh),impl,st,dim) 
+	 ceval (env,rh,impl,st',dim) => (Values.ARRAY(vlst2),st'') &
+	 Values.add_elementwise_arrayelt(vlst1, vlst2) => reslst
+	 -------------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.ADD_ARR(_),rh),impl,st,dim) 
 	  => (Values.ARRAY(reslst),st'')
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.ARRAY(vlst1),st') &
 	ceval (env,rh,impl,st',dim) => (Values.ARRAY(vlst2),st'') &
-Values.sub_elementwise_arrayelt(vlst1, vlst2) => reslst
--------------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh),impl,st,dim) => (Values.ARRAY(reslst),st'')
-
+	 Values.sub_elementwise_arrayelt(vlst1, vlst2) => reslst
+	 -------------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.SUB_ARR(_),rh),impl,st,dim) => (Values.ARRAY(reslst),st'')
+	 
   rule	ceval (env,lh,impl,st,dim) => (sval,st') &
-	ceval (env,rh,impl,st',dim) => (Values.ARRAY(aval),st'') &
-Values.mult_scalar_arrayelt(sval,aval) => reslst
-------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_ARRAY(_), rh),impl,st,dim) 
+	 ceval (env,rh,impl,st',dim) => (Values.ARRAY(aval),st'') &
+	 Values.mult_scalar_arrayelt(sval,aval) => reslst
+	 ------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_ARRAY(_), rh),impl,st,dim) 
 	  => (Values.ARRAY(reslst),st'')
-
+	   
   rule	ceval (env,rh,impl,st,dim) => (sval,st') &
-	ceval (env,lh,impl,st',dim) => (Values.ARRAY(aval),st'') &
-Values.mult_scalar_arrayelt(sval,aval) => reslst
-------------------------------------------------
+	 ceval (env,lh,impl,st',dim) => (Values.ARRAY(aval),st'') &
+	 Values.mult_scalar_arrayelt(sval,aval) => reslst
+	 ------------------------------------------------
 ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st,dim) 
 	  => (Values.ARRAY(reslst),st'')
-
+	   
   rule	ceval (env,rh,impl,st,dim) => (sval,st') &
-	ceval (env,lh,impl,st',dim) => (Values.ARRAY(aval),st'') &
-Values.div_arrayelt_scalar(sval,aval) => reslst
-------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.DIV_ARRAY_SCALAR(_), rh),impl,st,dim) 
+	 ceval (env,lh,impl,st',dim) => (Values.ARRAY(aval),st'') &
+	 Values.div_arrayelt_scalar(sval,aval) => reslst
+	 ------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.DIV_ARRAY_SCALAR(_), rh),impl,st,dim) 
 	  => (Values.ARRAY(reslst),st'')
-
+	   
   rule	ceval (env,rh,impl,st,dim) => (Values.ARRAY(rhvals),st') &
-	ceval (env,lh,impl,st',dim) => (Values.ARRAY(lhvals),st'') &
-Values.mult_scalar_product(rhvals,lhvals) => res
-------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh),impl,st,dim) => (res,st'')
-
+	 ceval (env,lh,impl,st',dim) => (Values.ARRAY(lhvals),st'') &
+	 Values.mult_scalar_product(rhvals,lhvals) => res
+	 ------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.MUL_SCALAR_PRODUCT(_), rh),impl,st,dim) => (res,st'')
+	 
   rule	(* {{..}..{..}} * {...} *)
-	ceval (env,lh,impl,st,dim) => (Values.ARRAY(lhvals as (elt1::_)),st') &
-ceval (env,rh,impl,st',dim) => (Values.ARRAY(rhvals as (elt2::_)),st'') &
-Values.is_array(elt1) => true &
-Values.is_array(elt2) => false &
-Values.mult_scalar_product(lhvals,rhvals) => res
-------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st,dim) => (res,st'')
-
+	 ceval (env,lh,impl,st,dim) => (Values.ARRAY(lhvals as (elt1::_)),st') &
+	 ceval (env,rh,impl,st',dim) => (Values.ARRAY(rhvals as (elt2::_)),st'') &
+	 Values.is_array(elt1) => true &
+	 Values.is_array(elt2) => false &
+	 Values.mult_scalar_product(lhvals,rhvals) => res
+	 ------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st,dim) => (res,st'')
+	 
   rule	(* {...} * {{..}..{..}} *)
-	ceval (env,rh,impl,st,dim) => (Values.ARRAY(rhvals as (elt1::_)),st') &
-ceval (env,lh,impl,st',dim) => (Values.ARRAY(lhvals as (elt2::_)),st'') &
-Values.is_array(elt1) => true &
-Values.is_array(elt2) => false &
-Values.mult_scalar_product(lhvals,rhvals) => res
-------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st,dim) => (res,st'')
-
+	 ceval (env,rh,impl,st,dim) => (Values.ARRAY(rhvals as (elt1::_)),st') &
+	 ceval (env,lh,impl,st',dim) => (Values.ARRAY(lhvals as (elt2::_)),st'') &
+	 Values.is_array(elt1) => true &
+	 Values.is_array(elt2) => false &
+	 Values.mult_scalar_product(lhvals,rhvals) => res
+	 ------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st,dim) => (res,st'')
+	 
   rule	(* {{..}..{..}} * {{..}..{..}} *)
-	ceval (env,rh,impl,st,dim) => (Values.ARRAY(rhvals as (elt1::_)),st') &
-ceval (env,lh,impl,st',dim) => (Values.ARRAY(lhvals as (elt2::_)),st'') &
-Values.is_array(elt1) => true &
-Values.is_array(elt2) => true &
-Values.mult_matrix(lhvals,rhvals) => res
-------------------------------------------------
-ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st,dim) 
+	 ceval (env,rh,impl,st,dim) => (Values.ARRAY(rhvals as (elt1::_)),st') &
+	 ceval (env,lh,impl,st',dim) => (Values.ARRAY(lhvals as (elt2::_)),st'') &
+	 Values.is_array(elt1) => true &
+	 Values.is_array(elt2) => true &
+	 Values.mult_matrix(lhvals,rhvals) => res
+	 ------------------------------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.MUL_MATRIX_PRODUCT(_), rh),impl,st,dim) 
 	  => (Values.ARRAY(res),st'')
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') &
-int_add(lhv, rhv) => sum
-------------------------
-ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh),impl,st,dim) 
+	 ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') &
+	 int_add(lhv, rhv) => sum
+	 ------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh),impl,st,dim) 
 	  => (Values.INTEGER(sum),st'')
-	  (**)
+	   (**)
   rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
-real_sub(lhv, rhv) => sum
--------------------------
-ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.REAL), rh),impl,st,dim) 
+	 ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
+	 real_sub(lhv, rhv) => sum
+	 -------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.REAL), rh),impl,st,dim) 
 	  => (Values.REAL(sum),st'')
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') &
-	ceval (env, rh,impl,st',dim) => (Values.INTEGER(rhv),st'') &
-int_sub(lhv, rhv) => sum
-------------------------
-ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh),impl,st,dim)
+	 ceval (env, rh,impl,st',dim) => (Values.INTEGER(rhv),st'') &
+	 int_sub(lhv, rhv) => sum
+	 ------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh),impl,st,dim)
 	  => (Values.INTEGER(sum),st'') 
-	  (**)
+	   (**)
   rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
-real_mul(lhv, rhv) => sum
--------------------------
-ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh),impl,st,dim) 
+	 ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
+	 real_mul(lhv, rhv) => sum
+	 -------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.REAL), rh),impl,st,dim) 
 	  => (Values.REAL(sum),st'')
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
-real_div(lhv, rhv) => div
--------------------------
-ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim) 
+	 ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
+	 real_div(lhv, rhv) => div
+	 -------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim) 
 	  => (Values.REAL(div),st'')
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.REAL(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
-not real_div(lhv,rhv) => _ &
-Print.print_error_buf "#Error, division by zero.\n" 
--------------------------
+	 ceval (env,rh,impl,st',dim) => (Values.REAL(rhv),st'') &
+	 not real_div(lhv,rhv) => _ &
+	 Print.print_error_buf "#Error, division by zero.\n" 
+	 -------------------------
 ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim) 
 	  => fail
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.INTEGER(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') &
-int_mul(lhv, rhv) => sum
-------------------------
-ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh),impl,st,dim)
+	 ceval (env,rh,impl,st',dim) => (Values.INTEGER(rhv),st'') &
+	 int_mul(lhv, rhv) => sum
+	 ------------------------
+	 ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh),impl,st,dim)
 	  => (Values.INTEGER(sum),st'')
 	  (**)
   rule	ceval (env,exp,impl,st,dim) => (Values.REAL(x),st') &
-	real_neg (x) => x'
----------------------
-ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp),impl,st,dim)
+	 real_neg (x) => x'
+	 ---------------------
+	 ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp),impl,st,dim)
 	  => (Values.REAL(x'),st')
-
+	   
   rule	ceval (env,exp,impl,st,dim) => (Values.INTEGER(x),st') &
-	int_neg (x) => x'
----------------------
-ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp),impl,st,dim)
+	 int_neg (x) => x'
+	 ---------------------
+	 ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp),impl,st,dim)
 	  => (Values.INTEGER(x'),st')
-	  (**)
+	   (**)
   rule	ceval (env,exp,impl,st,dim) => (Values.REAL(x),st') &
-	real_neg (x) => x'
----------------------
-ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp),impl,st,dim)
+	 real_neg (x) => x'
+	 ---------------------
+	 ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp),impl,st,dim)
 	  => (Values.REAL(x'),st')
-
+	   
   rule	ceval (env,exp,impl,st,dim) => (Values.INTEGER(x),st') &
-	int_neg (x) => x'
----------------------
-ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp),impl,st,dim)
+	 int_neg (x) => x'
+	 ---------------------
+	 ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp),impl,st,dim)
 	  => (Values.INTEGER(x'),st')
-
-	  (**  Logical *)
-
+	   
+	   (**  Logical *)
+	 
   rule	ceval (env,lh,impl,st,dim) => (Values.BOOL(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.BOOL(rhv),st'') &
-bool_and(lhv, rhv) => x
-------------------------
-ceval (env, Exp.LBINARY(lh, Exp.AND, rh),impl,st,dim)
+	 ceval (env,rh,impl,st',dim) => (Values.BOOL(rhv),st'') &
+	 bool_and(lhv, rhv) => x
+	 ------------------------
+	 ceval (env, Exp.LBINARY(lh, Exp.AND, rh),impl,st,dim)
 	  => (Values.BOOL(x),st'')
-
+	   
   rule	ceval (env,lh,impl,st,dim) => (Values.BOOL(lhv),st') &
-	ceval (env,rh,impl,st',dim) => (Values.BOOL(rhv),st'') &
-bool_or(lhv, rhv) => x
-------------------------
-ceval (env, Exp.LBINARY(lh, Exp.OR, rh),impl,st,dim)
+	 ceval (env,rh,impl,st',dim) => (Values.BOOL(rhv),st'') &
+	 bool_or(lhv, rhv) => x
+	 ------------------------
+	 ceval (env, Exp.LBINARY(lh, Exp.OR, rh),impl,st,dim)
 	  => (Values.BOOL(x),st'')
-
+	   
   rule	ceval (env,e,impl,st,dim) => (Values.BOOL(b),st') &
-	bool_not(b) => b'
------------------
-ceval (env, Exp.LUNARY(Exp.NOT, e),impl,st,dim) => (Values.BOOL(b'),st')
-
-(**  Relations *)
-
+	 bool_not(b) => b'
+	 -----------------
+	 ceval (env, Exp.LUNARY(Exp.NOT, e),impl,st,dim) => (Values.BOOL(b'),st')
+	 
+	 (**  Relations *)
+	 
   rule	ceval (env,lhs,impl,st,dim) => (lhs',st') &
-	ceval (env,rhs,impl,st',dim) => (rhs',st'') &
-ceval_relation (lhs',relop,rhs') => v
--------------------------------------
+	 ceval (env,rhs,impl,st',dim) => (rhs',st'') &
+	 ceval_relation (lhs',relop,rhs') => v
+	 -------------------------------------
 ceval (env, Exp.RELATION(lhs,relop,rhs),impl,st,dim) => (v, st'')
-
-(**)
-
+	 
+	 (**)
+	 
   rule	ceval (env,start,impl,st,dim) => (Values.INTEGER(start'),st') &
-	ceval (env,stop,impl,st',dim) => (Values.INTEGER(stop'),st'') &
-ceval_range(start', 1, stop') => arr
--------------------------------------------
-ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop),impl,st,dim) 
+	 ceval (env,stop,impl,st',dim) => (Values.INTEGER(stop'),st'') &
+	 ceval_range(start', 1, stop') => arr
+	 -------------------------------------------
+	 ceval (env, Exp.RANGE(Exp.INT,start, NONE, stop),impl,st,dim) 
 	  => (Values.ARRAY(arr),st')
-
+	   
   rule	ceval (env,start,impl,st,dim) => (Values.INTEGER(start'),st') &
-	ceval (env,step,impl,st',dim) => (Values.INTEGER(step'),st'') &
-ceval (env,stop,impl,st'',dim) => (Values.INTEGER(stop'),st''') &
-ceval_range(start', step', stop') => arr 
--------------------------------------------
-ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),impl,st,dim) 
+	 ceval (env,step,impl,st',dim) => (Values.INTEGER(step'),st'') &
+	 ceval (env,stop,impl,st'',dim) => (Values.INTEGER(stop'),st''') &
+	 ceval_range(start', step', stop') => arr 
+	 -------------------------------------------
+	 ceval (env, Exp.RANGE(Exp.INT,start, SOME(step), stop),impl,st,dim) 
 	  => (Values.ARRAY(arr),st''')
-
+	   
   rule	ceval (env,start,impl,st,dim) => (Values.REAL(start'),st') &
-	ceval (env,stop,impl,st',dim) => (Values.REAL(stop'),st'') &
-real_sub(stop',start') => diff &
-int_real 1 => step & (* bug in rml, 1.0 => 0.0 in cygwin  *)
-ceval_range_real(start', step, stop') => arr
--------------------------------------------
-ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),impl,st,dim) 
+	 ceval (env,stop,impl,st',dim) => (Values.REAL(stop'),st'') &
+	 real_sub(stop',start') => diff &
+	 int_real 1 => step & (* bug in rml, 1.0 => 0.0 in cygwin  *)
+	 ceval_range_real(start', step, stop') => arr
+	 -------------------------------------------
+	 ceval (env, Exp.RANGE(Exp.REAL,start, NONE, stop),impl,st,dim) 
 	  => (Values.ARRAY(arr),st'')
-
+	   
   rule	ceval (env,start,impl,st,dim) => (Values.REAL(start'),st') &
-	ceval (env,step,impl,st',dim) => (Values.REAL(step'),st'') &
-ceval (env,stop,impl,st'',dim) => (Values.REAL(stop'),st''') &
-ceval_range_real(start', step', stop') => arr
--------------------------------------------
-ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),impl,st,dim) 
+	 ceval (env,step,impl,st',dim) => (Values.REAL(step'),st'') &
+	 ceval (env,stop,impl,st'',dim) => (Values.REAL(stop'),st''') &
+	 ceval_range_real(start', step', stop') => arr
+	 -------------------------------------------
+	 ceval (env, Exp.RANGE(Exp.REAL,start, SOME(step), stop),impl,st,dim) 
 	  => (Values.ARRAY(arr),st''')
-
+	   
   rule	ceval (env,e,impl,st,dim) => (Values.INTEGER(i),st') &
-	int_real i => r
----------------
+	 int_real i => r
+	 ---------------
 ceval (env, Exp.CAST(Exp.REAL,e),impl,st,dim) => (Values.REAL(r),st')
-
+	 
   rule	ceval (env,e,impl,st,dim) => (Values.ARRAY(ivals),st') &
-	Values.type_convert(Exp.INT,Exp.REAL,ivals) => rvals
-----------------------------------------------------
+	 Values.type_convert(Exp.INT,Exp.REAL,ivals) => rvals
+	 ----------------------------------------------------
 ceval (env, Exp.CAST(Exp.REAL,e),impl,st,dim) => (Values.ARRAY(rvals),st')
-
+	 
   rule	ceval (env,e,impl,st,dim) => (Values.ARRAY(vallst),st') &
-	Values.type_convert(Exp.INT, Exp.REAL, vallst) => vallst'
---------------------------
-ceval (env, Exp.CAST(Exp.REAL,e as Exp.ARRAY(Exp.INT,_,expl)),impl,st,dim) 
+	 Values.type_convert(Exp.INT, Exp.REAL, vallst) => vallst'
+	 --------------------------
+	 ceval (env, Exp.CAST(Exp.REAL,e as Exp.ARRAY(Exp.INT,_,expl)),impl,st,dim) 
 	  => (Values.ARRAY(vallst'),st')
 
   rule	ceval (env,e,impl,st,dim) => (Values.ARRAY(vallst),st') &
-	Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
----------------------------------------
-ceval (env, Exp.CAST(Exp.REAL,e as Exp.RANGE(Exp.INT,_,_,_)),impl,st,dim) => 
-(Values.ARRAY(vallst'),st')
-
+	 Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
+	 ---------------------------------------
+	 ceval (env, Exp.CAST(Exp.REAL,e as Exp.RANGE(Exp.INT,_,_,_)),impl,st,dim) => 
+	 (Values.ARRAY(vallst'),st')
+	 
   rule	ceval (env,e,impl,st,dim) => (Values.ARRAY(vallst),st') &
-	Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
----------------------------------------
-ceval (env, Exp.CAST(Exp.REAL,e as Exp.MATRIX(Exp.INT,_,_)),impl,st,dim) => 
-(Values.ARRAY(vallst'),st')
-
+	 Values.type_convert(Exp.INT,Exp.REAL,vallst) => vallst'
+	 ---------------------------------------
+	 ceval (env, Exp.CAST(Exp.REAL,e as Exp.MATRIX(Exp.INT,_,_)),impl,st,dim) => 
+	 (Values.ARRAY(vallst'),st')
+	 
   rule	(* Ifexp, true branch *)
-	ceval (env,b,impl,st,dim) => (Values.BOOL(true),st') &
-ceval (env,e1,impl,st',dim) => (v,st'')
-------------------------------------
-ceval (env, Exp.IFEXP(b,e1,e2),impl,st,dim) 
+	 ceval (env,b,impl,st,dim) => (Values.BOOL(true),st') &
+	 ceval (env,e1,impl,st',dim) => (v,st'')
+	 ------------------------------------
+	 ceval (env, Exp.IFEXP(b,e1,e2),impl,st,dim) 
 	  => (v,st'')
   rule	(* Ifexp, false branch *)
-	ceval (env,b,impl,st,dim) => (Values.BOOL(false),st') &
-ceval (env,e2,impl,st',dim) => (v,st'')
-------------------------------------
+	 ceval (env,b,impl,st,dim) => (Values.BOOL(false),st') &
+	 ceval (env,e2,impl,st',dim) => (v,st'')
+	 ------------------------------------
 ceval (env, Exp.IFEXP(b,e1,e2),impl,st,dim) 
 	  => (v,st'')
-
+	   
   rule	(* asub *)
-	ceval (env,e,impl,st,dim) => (Values.ARRAY(vals),st') &
-int_sub(indx,1) => indx' &
-list_nth(vals,indx') => v
------------------------
-ceval (env, Exp.ASUB(e,indx),impl,st,dim) => (v,st')
-
+	 ceval (env,e,impl,st,dim) => (Values.ARRAY(vals),st') &
+	 int_sub(indx,1) => indx' &
+	 list_nth(vals,indx') => v
+	 -----------------------
+	 ceval (env, Exp.ASUB(e,indx),impl,st,dim) => (v,st')
+	 
   rule	Print.print_buf "#-- ceval reduction\n"
-	---------------------------------------
-ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim)
+	 ---------------------------------------
+	 ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim)
 	  => fail (* (v,st) *)
-
-          (*   ceval can apparently fail and that is ok, catched by other rules...*)
+	   
+           (*   ceval can apparently fa-il and that is ok, catched by other rules...*)
   rule	Debug.fprint("failtrace", "- ceval failed: ")
-	& Exp.print_exp_str e => str 
-& Debug.fprint("failtrace",str) 
-& Debug.fprint("failtrace", "\n")
-(*& Debug.fprint("failtrace", " Env:" )
- & Debug.fcall("failtrace",Env.print_env, env) *)
------------------------------------------------------
-ceval (env,e,_,_,_) => fail
+	 & Exp.print_exp_str e => str 
+	 & Debug.fprint("failtrace",str) 
+	 & Debug.fprint("failtrace", "\n")
+	 (*& Debug.fprint("failtrace", " Env:" )
+	  & Debug.fcall("failtrace",Env.print_env, env) *)
+	 -----------------------------------------------------
+	 ceval (env,e,_,_,_) => fail
+	 
+end
 
-          end
 
-
-          relation ceval_call_function : (Env.Env, Exp.Exp, Values.Value list) => Values.Value =
-
-                  (* Call functions in non-interactive mode. *) 
-	          (* FIXME: functions are always generated. Put back the check
-	           and write another rule for the false case that generates the function *)
+relation ceval_call_function : (Env.Env, Exp.Exp, Values.Value list) => Values.Value =
+	
+        (* Call functions in non-interactive mode. *) 
+	(* FIXME: functions are always generated. Put back the check
+	 and write another rule for the false case that generates the function *)
   rule	(* Static.is_function_in_cflist(cflist,funcpath) => true & *)
-	          ceval_generate_function(env, funcpath) &
-	          ModUtil.path_string2(funcpath,"_") => funcstr &
-	          string_append(funcstr,"_in.txt") => infilename &
-	          string_append(funcstr,"_out.txt") => outfilename &
-	          Values.write_to_file_as_args(vallst,infilename)  &
-	          System.execute_function(funcstr) &
-	          System.read_values_from_file(outfilename) => newval
-	          -------------------------------------------------------
-	          ceval_call_function (env, e as Exp.CALL(funcpath,expl,_,builtin), vallst) => newval
-
+	ceval_generate_function(env, funcpath) &
+	ModUtil.path_string2(funcpath,"_") => funcstr &
+	string_append(funcstr,"_in.txt") => infilename &
+	string_append(funcstr,"_out.txt") => outfilename &
+	Values.write_to_file_as_args(vallst,infilename)  &
+	System.execute_function(funcstr) &
+	System.read_values_from_file(outfilename) => newval
+	-------------------------------------------------------
+	ceval_call_function (env, e as Exp.CALL(funcpath,expl,_,builtin), vallst) => newval
+	
   rule	Debug.fprint("failtrace", "- ceval_call_function failed: ")
-	          & Exp.print_exp_str e => str 
-	          & Debug.fprintln("failtrace",str)
-	          -----------------------------------------------------
-	          ceval_call_function (env,e,_) => fail
-
-                   end
+	& Exp.print_exp_str e => str 
+	& Debug.fprintln("failtrace",str)
+	-----------------------------------------------------
+	ceval_call_function (env,e,_) => fail
+	
+end
 
 (** relation: ceval_function 
  ** 
@@ -2352,9 +2351,6 @@ end
 
 
 
-
-(* end luc_pop*)
-
 (* For size(A) *)
 relation ceval_builtin_size_matrix : (Env.Env, Exp.Exp, bool, Interactive.InteractiveSymbolTable option) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
@@ -2436,44 +2432,44 @@ end
 
 (** relation: ceval_range
  **
- ** This relation evaluates a range expression.  It only handles integers.
+ ** This re-lation evaluates a range expression.  It only handles integers.
  **)
-
- relation ceval_range : (int, int, int) => Values.Value list =
-
+		 
+relation ceval_range : (int, int, int) => Values.Value list =
+	
   rule	int_eq(start,stop) => true (* e.g. 1:1 => {1} *)
-	 ------------------
-	 ceval_range(start,_,stop) => [Values.INTEGER(start)]
-
+	------------------
+	ceval_range(start,_,stop) => [Values.INTEGER(start)]
+	
   rule	(*if d > 0 and j>k or if d < 0 and j<k *)
-	 int_gt(j,k) => b1 &
-	 int_gt(d,0) => b2 &
-	 bool_and(b1,b2) => c1 &
-	 int_lt(j,k) => b3 &
-	 int_lt(d,0) => b4 &
-	 bool_and(b3,b4) => c2 &
-	 bool_or(c1,c1) => true
-	 -----------------------------
-	 ceval_range(j,d,k) => []
-
+	int_gt(j,k) => b1 &
+	int_gt(d,0) => b2 &
+	bool_and(b1,b2) => c1 &
+	int_lt(j,k) => b3 &
+	int_lt(d,0) => b4 &
+	bool_and(b3,b4) => c2 &
+	bool_or(c1,c1) => true
+	-----------------------------
+	ceval_range(j,d,k) => []
+	
   rule	ceval_range2(start,step,stop) => res
-	 -----------------------------------
-	 ceval_range (start, step, stop) => res
+	-----------------------------------
+	ceval_range (start, step, stop) => res
+	
+end
 
-  end
-
-  relation ceval_range2: (int,int,int) => Values.Value list =
-
+relation ceval_range2: (int,int,int) => Values.Value list =
+	
   rule	int_gt(start,stop) => true
-	  --------------------------
-	  ceval_range2 (start,_,stop) => []	
-
+	--------------------------
+	ceval_range2 (start,_,stop) => []	
+	
   rule	int_gt(start,stop) => false & (* redundant *)
-	  int_add (start, step) => next &
-	  ceval_range2 (next, step, stop) => l
-	  -----------------------------------
-	  ceval_range2 (start, step, stop) => Values.INTEGER(start)::l
-  end
+	int_add (start, step) => next &
+	ceval_range2 (next, step, stop) => l
+	-----------------------------------
+	ceval_range2 (start, step, stop) => Values.INTEGER(start)::l
+end
 
 
 
@@ -2481,13 +2477,13 @@ end
  **
  ** This relation evaluates a range expression.  It only handles reals
  **)
-
+		 
  relation ceval_range_real : (real, real, real) => Values.Value list =
-
+	 
   rule	real_eq(start,stop) => true (* e.g. 1:1 => {1} *)
 	 ------------------
 	 ceval_range_real(start,_,stop) => [Values.REAL(start)]
-
+	 
   rule	(*if d > 0 and j>k or if d < 0 and j<k *)
 	 real_gt(j,k) => b1 &
 	 real_gt(d,0.0) => b2 &
@@ -2498,14 +2494,14 @@ end
 	 bool_or(c1,c1) => true
 	 -----------------------------
 	 ceval_range_real(j,d,k) => []
-
+	 
   rule	ceval_range_real2(j,d,k)=> res
 	 -----------------------------------
 	 ceval_range_real (j,d,k) => res
   end
 
-  relation ceval_range_real2 : (real, real, real) => Values.Value list =
-
+relation ceval_range_real2 : (real, real, real) => Values.Value list =
+	
   rule	real_gt(start,stop) => true
 	  --------------------------
 	  ceval_range_real2 (start,_,stop) => []
@@ -2540,7 +2536,8 @@ end
 
 (**)
 
- relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) ) => Values.Value =
+relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) ) 
+	  => Values.Value =
 
          (* Uncomment this when struct params work *)
          (*  rule	(* Parameters should not be evaluated. Exception: structural parameters *)
@@ -2565,16 +2562,18 @@ end
 	 (* default *)
 
   rule	Print.print_error_buf "# No constant binding for " &
-	 Exp.print_component_ref_str c => str &
-	 Print.print_error_buf str & Print.print_error_buf "\n" 
-	 -------------------------------------
-	 ceval_cref (env,c,impl as false ) => fail
+	Exp.print_component_ref_str c => str &
+	Print.print_error_buf str & Print.print_error_buf "\n" 
+	-------------------------------------
+	ceval_cref (env,c,impl as false ) => fail
+	
+end
 
- end
+relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
+			       Types.Binding, bool (*impl*) ) 
+	  => Values.Value =
 
- relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,Types.Binding, bool (*impl*) ) => Values.Value =
-
-         (* FIXME: For now, we don't try to check binding if implicit instantiation *)
+          (* FIXME: For now, we don't try to check binding if implicit instantiation *)
 
          (* 
           rule	Debug.fprintln("ceval", "ceval_cref_binding: shouldn't have been called.") &
@@ -2584,69 +2583,69 @@ end
           *)
 
   rule  Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
-	 Types.get_dimension_sizes(tp) => sizelst &
-	 ceval_subscript_value(env,subsc,v, sizelst,impl) => res
-	 -----------------------------------------
-	 ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl)
+	Types.get_dimension_sizes(tp) => sizelst &
+	ceval_subscript_value(env,subsc,v, sizelst,impl) => res
+	-----------------------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl)
 	  => res
-
+	  
   rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
-	 -------------------------------------
-	 ceval_cref_binding (env,_,Types.UNBOUND,impl as false) => fail
-
+	-------------------------------------
+	ceval_cref_binding (env,_,Types.UNBOUND,impl as false) => fail
+	
   rule	Debug.fprint("ceval", "#- ceval_cref__binding: Ignoring unbound when implicit")	
-	 -------------------------------------
-	 ceval_cref_binding (env,_,Types.UNBOUND,impl as true) => fail
-	 
-
+	-------------------------------------
+	ceval_cref_binding (env,_,Types.UNBOUND,impl as true) => fail
+	
+	
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
-	 rfn = "array" &
-	 Debug.fprintln("ceval", "#-- ceval_cref_binding Array evaluation")
-	 ---------------------------
-	 ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
+	rfn = "array" &
+	Debug.fprintln("ceval", "#-- ceval_cref_binding Array evaluation")
+	---------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
 	  => fail
-
+	  
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
-	 not rfn = "array" &
-	 Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
-	 Types.get_dimension_sizes(tp) => sizelst &
-	 ceval (env,exp,impl,NONE,NONE) => (v,_) &
-	 ceval_subscript_value (env,subsc,v,sizelst,impl) => res
-	 ---------------------------
-	 ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
+	not rfn = "array" &
+	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
+	Types.get_dimension_sizes(tp) => sizelst &
+	ceval (env,exp,impl,NONE,NONE) => (v,_) &
+	ceval_subscript_value (env,subsc,v,sizelst,impl) => res
+	---------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
 	  => res
-
+	  
   rule	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[])) => (_, tp, _) &
-	 Types.get_dimension_sizes(tp) => sizelst &
-	 ceval (env,exp,impl,NONE,NONE) => (v,_) &
-	 ceval_subscript_value(env,subsc,v,sizelst,impl) => res
-	 ------------------------
-	 ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl) 
+	Types.get_dimension_sizes(tp) => sizelst &
+	ceval (env,exp,impl,NONE,NONE) => (v,_) &
+	ceval_subscript_value(env,subsc,v,sizelst,impl) => res
+	------------------------
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl) 
 	  => res
-
+	  
   rule	Debug.fprint("ceval", "#- ceval_cref__binding failed (nonconstant EQBOUND(") &
-	 Exp.print_exp_str exp => expstr &
-	 Debug.fprint("ceval", expstr) &
-	 Debug.fprintln("ceval", "))") 
-	 --------------------------------
-	 ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl) => fail
-	 
- end
+	Exp.print_exp_str exp => expstr &
+	Debug.fprint("ceval", expstr) &
+	Debug.fprintln("ceval", "))") 
+	--------------------------------
+	ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl) => fail
+	
+end
 
- relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value, int list, bool (*impl*) ) 
+relation ceval_subscript_value: (Env.Env,Exp.Subscript list ,Values.Value, int list, bool (*impl*) ) 
 	  => Values.Value =
 
   rule	ceval(env,exp,impl,NONE,SOME(dim)) => (Values.INTEGER(n),_) &
-	 int_sub(n,1) => n' &
-	 list_nth(lst,n') => subval &
-	 ceval_subscript_value(env,subs,subval,dims,impl) => res
-	 ---------------------------------------------
-	 ceval_subscript_value(env,Exp.INDEX(exp)::subs,Values.ARRAY(lst), dim::dims,impl) 
+	int_sub(n,1) => n' &
+	list_nth(lst,n') => subval &
+	ceval_subscript_value(env,subs,subval,dims,impl) => res
+	---------------------------------------------
+	ceval_subscript_value(env,Exp.INDEX(exp)::subs,Values.ARRAY(lst), dim::dims,impl) 
 	  => res
-	   
+	  
   axiom	ceval_subscript_value(env,[],v,_,_) => v
-	 
- end
+	
+end
 
 (** relation: ceval_subscripts
  **
@@ -2655,17 +2654,17 @@ end
  ** values.
  **)
 
- relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list, bool (*impl*) )
+relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list, bool (*impl*) )
 	  => Exp.Subscript list =
-
+	  
   axiom	ceval_subscripts (_,[],_,_) => []
-
+	
   rule	ceval_subscript (env,sub,dim,impl) => sub' &
-	 ceval_subscripts (env,subs,dims,impl) => subs'
-	 ------------------------------------
-	 ceval_subscripts (env,sub::subs,dim::dims,impl) => (sub'::subs')
-
- end
+	ceval_subscripts (env,subs,dims,impl) => subs'
+	------------------------------------
+	ceval_subscripts (env,sub::subs,dim::dims,impl) => (sub'::subs')
+	
+end
 
 (** relation: ceval_subscript
  **
@@ -2673,20 +2672,19 @@ end
  ** when all expressions are evaluated to constant values.
  **)
 
- relation ceval_subscript : (Env.Env, Exp.Subscript, int, bool (*impl*) ) => Exp.Subscript =
-
+relation ceval_subscript : (Env.Env, Exp.Subscript, int, bool (*impl*) ) => Exp.Subscript =
+	
   axiom	ceval_subscript (env, Exp.WHOLEDIM,_,_) => Exp.WHOLEDIM
-
-  rule 
-	 ceval (env, e1,impl,NONE,SOME(dim)) => (v1,_) &
-	 Static.value_exp v1 => e1'
-	 -----------------------------------------
-	 ceval_subscript (env, Exp.INDEX(e1),dim,impl) => Exp.INDEX(e1')
-	 
+	
+  rule	
+	ceval (env, e1,impl,NONE,SOME(dim)) => (v1,_) &
+	Static.value_exp v1 => e1'
+	-----------------------------------------
+	ceval_subscript (env, Exp.INDEX(e1),dim,impl) => Exp.INDEX(e1')
+	
   rule	ceval (env, e1,impl,NONE,SOME(dim)) => (v1,_) &
-	 Static.value_exp v1 => e1'
-	 -----------------------------------------
-	 ceval_subscript (env, Exp.SLICE(e1),dim,impl) => Exp.SLICE(e1')
-	 
+	Static.value_exp v1 => e1'
+	-----------------------------------------
+	ceval_subscript (env, Exp.SLICE(e1),dim,impl) => Exp.SLICE(e1')
  end
 

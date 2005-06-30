@@ -249,6 +249,21 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 	lookup_type(_,path,true) => fail
 end
 
+(** relation: is_primitive
+ ** author: PA
+ **
+ ** Returns true if classname is any of the builtin classes:
+ ** Real, Integer, String, Boolean
+**)
+relation is_primitive: Absyn.Path => bool =
+
+  axiom	is_primitive(Absyn.IDENT("Integer")) => true
+  axiom	is_primitive(Absyn.IDENT("Real")) => true
+  axiom	is_primitive(Absyn.IDENT("Boolean")) => true
+  axiom	is_primitive(Absyn.IDENT("String")) => true
+  axiom	is_primitive(_) => false
+end
+
 (** relation: lookup_class
  ** 
  ** Tries to find a specified class in an environment
@@ -259,7 +274,15 @@ end
  **       then it outputs a error message if the class is not found.
  **)
 relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
-  
+
+	(* Builtin classes Integer, Real, String, Boolean can not be overridden
+	 search top environment directly. *)
+  rule	is_primitive(path) => true &
+	Env.top_frame(env) => f &
+	lookup_class_in_frame(f,[f],id,msg) => (c,env) 
+	-----------------------------------
+	lookup_class(env,path as Absyn.IDENT(id),msg) => (c,env)
+
   rule	(*print "searching for " & print name & print "\n" & *)
 	(*Env.print_env env & Print.get_string => str & print str & *)
 	lookup_class_in_env(env,path,msgflag) 
@@ -484,8 +507,8 @@ relation lookup_unqualified_imported_var_in_frame: (Env.Item list, Env.Env, SCod
 	Env.open_scope(env', encflag,SOME(id)) => env2 &
 	ClassInf.start(restr, id) => ci_state &
 	Inst.inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, [], ci_state, c, false, [],false,false) 
-	  => (_,env'',_,_,_) &
-	lookup_var_in_packages(env'',Exp.CREF_IDENT(ident,[])) => (attr,ty,bind)  & 
+	  => (_,f::_,_,_,_) &
+	lookup_var_in_packages([f],Exp.CREF_IDENT(ident,[])) => (attr,ty,bind)  & 
 	more_lookup_unqualified_imported_var_in_frame(fs, env, ident) => more &
 	bool_not more => unique
 	-------------------------------------------
@@ -813,33 +836,27 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 
   rule	lookup_qualified_imported_var_in_frame(items,env,id) => (attr,ty,bind)
 	--------------------------------------------------
-	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::fs), cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
-
+	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::_), cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
+	
   rule	lookup_unqualified_imported_var_in_frame(items,env,id) => (attr,ty,bind,true)
 	--------------------------------------------------
-	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::fs), cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
+	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::_), cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
 
   rule	lookup_unqualified_imported_var_in_frame(items,env,id) => (attr,ty,bind,false) &
 	Print.print_error_buf "#Error, constant found in several unqualified import statements\n"
 	--------------------------------------------------
-	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::fs), cr as Exp.CREF_IDENT(id, sb)) => fail
+	lookup_var_in_packages (env as (Env.FRAME(sid,_,_,items,_)::_), cr as Exp.CREF_IDENT(id, sb)) => fail
 
-	(* to find imports in previous frames, search next frame.*)
+	(* Search parent scopes *)
   rule	lookup_var_in_packages(fs,cr) => (attr,ty,bind)
-	----------------------------------------------
-	lookup_var_in_packages (f::fs, cr as Exp.CREF_IDENT(id, sb)) => (attr,ty,bind)
-
-  rule	not lookup_var_local(env,cr) => (attr,ty,bind) 
-	(* &Debug.fprint("failtrace",  "- lookup_var_in_packages failed\n" )*)
-	--------------------------------------------------
-	lookup_var_in_packages (env, cr as Exp.CREF_IDENT(id, sb)) => fail
+	------------------------------
+	lookup_var_in_packages(f::fs,cr) => (attr,ty,bind)
 
   rule	(*Debug.fprint("failtrace",  "lookup_var_in_packages failed\n exp:" ) &
 	Debug.fcall("failtrace", Exp.print_component_ref, cr) &
 	Debug.fprint("failtrace", "\n")*)
 	--------------------------------------------------
 	lookup_var_in_packages (env, cr) => fail
-
 end
 
 
@@ -912,9 +929,6 @@ end
  **)
 relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 
-        (* PR. Do nothing, could have used a axiom. But this led to an
-	 bug unexpected error before. I do not take my chances at the moment.
-	 *)
   axiom	lookup_functions_in_env([],id) => []
 
   rule	(* Check for builtin operators*)
@@ -1412,7 +1426,9 @@ relation lookup_class_in_frame: (Env.Frame,Env.Env,
 
   rule	lookup_unqualified_imported_class_in_frame(items, totenv, name) 
 	  => (c, env', false (*unique*) ) &
-	Print.print_error_buf "# Error, class found in several unqualified import statements\n"  
+	
+	Print.print_error_buf "# Error, class " & Print.print_error_buf name &
+	Print.print_error_buf " found in several unqualified import statements\n"  
 	---------------------------------------------------------
 	lookup_class_in_frame(Env.FRAME(sid,_,_,items,_),totenv, name,_) 
 	  => fail

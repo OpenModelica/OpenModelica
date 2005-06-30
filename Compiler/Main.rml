@@ -722,7 +722,9 @@ relation main : string list => () =
 	bool_not(imode) => imode' &
 	Debug.bcall (ismode, interactivemode, args' ) &
 	Debug.bcall (icmode, interactivemode_corba, args') &
-	Debug.bcall (imode', translate_file, args')
+	Debug.bcall (imode', translate_file, args') &
+	Print.get_error_string => s &
+	Debug.fcall("failtrace",print,s) 
 	---------------------------------------
 	main args 
 

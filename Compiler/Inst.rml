@@ -1818,6 +1818,7 @@ relation get_derived_env: (Env.Env, Absyn.Path option) => Env.Env =
   rule	Lookup.lookup_class(env,tp,true) => (_,env')
 	---------------------------------------
 	get_derived_env(env,SOME(tp)) => env'
+
 end
 
 (** relation: remove_cref_from_crefs
@@ -4051,6 +4052,15 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 			     NON_INITIAL,impl)
 	=> ([DAE.IF_EQUATION(e',dae1,dae2)],env',csets, ci_state')
 
+  rule	Static.elab_exp(env,e,impl,NONE) => (e',Types.PROP((Types.T_BOOL(_),_),false),_) &
+	inst_list(env,mod,pre,csets,ci_state,inst_e_initialequation, tb,impl)
+	  => (dae1,env',_, ci_state') &  (* There are no connections inside if-clauses. *)
+	inst_list(env',mod,pre,csets,ci_state,inst_e_initialequation, fb,impl)
+	  => (dae2,env'',_, ci_state'')
+	--------------------------------------------------------
+	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_IF(e,tb,fb),
+			     INITIAL,impl)
+	=> ([DAE.INITIAL_IF_EQUATION(e',dae1,dae2)],env',csets, ci_state')
 
 	(**  `when equation' statement, modelica 1.1 
 	 **
