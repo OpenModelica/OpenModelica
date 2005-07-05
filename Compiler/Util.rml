@@ -211,8 +211,14 @@ module Util :
   relation list_split : ('a list, int) => ('a list, 'a list)
 
   relation int_positive: int => bool
+  relation write_file_or_error_msg:(string,(*filename*)
+                                    string(*the string to be written*)) => ()
 
 end
+
+with "System.rml"
+with "Print.rml"
+
 
 (** relation: list_fill
  ** Returns a list of n elements of type 'a.
@@ -1491,4 +1497,24 @@ relation is_not_empty_string : string => bool =
   axiom is_not_empty_string "" => false
   axiom is_not_empty_string _ => true
 end
+(** 
+ ** this relation tries to write to a file and if it
+ ** fails then it outputs "# Cannot write to file: <filename>." to 
+ ** errorbuf
+ **) 
+relation write_file_or_error_msg:(string,(*filename*)
+                                     string(*the string to be written*)
+                                     ) => () =
 
+  rule  System.write_file(filename,str) 
+        --------------------------
+        write_file_or_error_msg(filename,str) 
+        
+  rule  string_append_list(["# Cannot write to file: ",
+                            filename,
+                            "."]) => error_str &
+        Print.print_error_buf(error_str)
+        --------------------------
+        write_file_or_error_msg(filename,str) 
+
+end
