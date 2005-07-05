@@ -3114,7 +3114,7 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env, bool (*impl*) ) 
 	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env,impl) => SLOT((id,tp),true,SOME(exp'))::res
 
   rule	fill_default_slots(xs,class,env,impl) => res &
-	Print.print_error_buf "#Error filling slot, id =" &
+	Print.print_error_buf "#Error filling slot, id = " &
 	Print.print_error_buf id &
 	Print.print_error_buf "\n"
 	----------

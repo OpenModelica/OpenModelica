@@ -508,7 +508,7 @@ relation generate_input_function_code2:(DAELow.Var list,int) => string list =
         int_add(i,1) => i' &
         Exp.print_component_ref_str(cr) => cr_str &
         
-        Util.string_append_list([cr_str,"= in_x[",i_str,"];"]) => assign_str &
+        Util.string_append_list([cr_str," = in_x[",i_str,"];"]) => assign_str &
         generate_input_function_code2(rest,i') => res
         --------------------------
         generate_input_function_code2((var as DAELow.VAR(cr,_,dir,tp,exp,v,dim,st,index,name,classes,attr,comment,flow))::rest,
@@ -631,8 +631,7 @@ relation generate_start_attr_code:(DAELow.DAELow) => string =
                                  "                   int nx, int ny, int np)\n",
                                  "{\n  ",
                                  res1',
-                                 ";\n}\n"]) => res
-
+                                 ";\n}\n"]) => res 
         ----------------------------------
         generate_start_attr_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => res
         

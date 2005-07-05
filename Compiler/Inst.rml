@@ -421,7 +421,7 @@ relation instantiate_class : (SCode.Program, SCode.Path) => (DAE.DAElist,Env.Env
 	  => (DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))]),env'')
 	
 
-  rule	(*Debug.fprint("failtrace", "- instantiate_class failed\n")*)
+  rule	Print.print_error_buf("# The instantiation of the model failed.")
 	------------
 	instantiate_class(_,_) => fail
 end
