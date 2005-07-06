@@ -2558,7 +2558,7 @@ relation relop_symbol : Operator => string =
   axiom	relop_symbol(LESSEQ(_))     => " <= "
   axiom	relop_symbol(GREATER(_))    => " > "
   axiom	relop_symbol(GREATEREQ(_))  => " >= "
-  axiom	relop_symbol(EQUAL(_))      => " = "
+  axiom	relop_symbol(EQUAL(_))      => " == "
   axiom	relop_symbol(NEQUAL(_))     => " <> "
 end
 

@@ -596,7 +596,7 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim)
 	 ceval (env,rhs,impl,st',dim) => (rhs',st'') &
 	 ceval_relation (lhs',relop,rhs') => v
 	 -------------------------------------
-ceval (env, Exp.RELATION(lhs,relop,rhs),impl,st,dim) => (v, st'')
+	 ceval (env, Exp.RELATION(lhs,relop,rhs),impl,st,dim) => (v, st'')
 	 
 	 (**)
 	 
@@ -2424,11 +2424,45 @@ end
 			 Exp.NEQUAL(Exp.REAL),
 			 Values.REAL(i2)) => Values.BOOL(b)
 
-  rule	Print.print_buf "- ceval_relation failed\n"
+	 (* Booleans *)
+
+
+  rule	(* b1 != b2  == (b1 and not b2) or (not b1 and b2) *)
+	 bool_not b1 => nb1 &
+	 bool_not b2 => nb2 &
+	 bool_and(b1,nb2) => ba &
+	 bool_and(nb1,b2) => bb &
+	 bool_or(ba,bb) => b
+	 -------------------------------------
+	 ceval_relation (Values.BOOL(b1),
+		 	 Exp.NEQUAL(Exp.BOOL),
+			 Values.BOOL(b2)) => Values.BOOL(b)
+       
+  rule	(* b1 == b2  ==> b1 and b2 or (not b1 and not b2) *)
+ 	 bool_not b1 => nb1 &
+	 bool_not b2 => nb2 &
+	 bool_and(b1,b2) => ba &
+	 bool_and(nb1,nb2) => bb &
+	 bool_or(ba,bb) => b
+	 -------------------------------------
+	 ceval_relation (Values.BOOL(b1),
+		 	 Exp.EQUAL(Exp.BOOL),
+			 Values.BOOL(b2)) => Values.BOOL(b)
+
+  axiom	ceval_relation (Values.BOOL(false),
+		 	 Exp.LESS(Exp.BOOL),
+			 Values.BOOL(true)) => Values.BOOL(true)
+
+  axiom	ceval_relation (Values.BOOL(_),
+		 	 Exp.LESS(Exp.BOOL),
+			 Values.BOOL(_)) => Values.BOOL(false)
+
+  rule	Debug.fprint("failtrace", "- ceval_relation failed\n")
+	 & print "-ceval_relation failed\n" 
 	 ---------------------------------
 	 ceval_relation (_,_,_) => fail
-
- end
+	 
+end
 
 (** relation: ceval_range
  **

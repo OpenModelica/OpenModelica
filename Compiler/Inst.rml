@@ -347,7 +347,7 @@ relation instantiate: SCode.Program => DAE.DAElist =
 	Util.string_delimit_list(pfuncnames,", ") => str1 &
 	Debug.fprint("insttr", "Instantiating functions: ") &
 	Debug.fprintln("insttr", str1) &
-	Env.extend_frame_classes(env,pfunc) => envimpl &
+	Env.extend_frame_classes(env,(*pfunc*)p) => envimpl &
 	inst_program_implicit(envimpl,pfunc) => (lfunc,envimpl')  &
 	Debug.fprint("insttr", "Instantiating other classes: ") &
 	Util.list_map(pnofunc, SCode.class_name) => pnofuncnames &
@@ -1050,6 +1050,10 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	  (cenv1, els, eq1, ieq1, alg1, ialg1) &
 	make_fully_qualified(cenv1,tp) => tp' &
 	add_inherit_scope(els,tp') => els' &
+	add_eqn_inherit_scope(eq1,tp') => eq1' &
+	add_eqn_inherit_scope(ieq1,tp') => ieq1' &
+	add_alg_inherit_scope(alg1,tp') => alg1' &
+	add_alg_inherit_scope(ialg1,tp') => ialg1' &
 	Env.open_scope(cenv1,encf,SOME(cn)) => cenv3 &
 	ClassInf.start(r, cn) => new_ci_state &
 	Mod.elab_untyped_mod(emod,cenv3,Prefix.NOPRE) => mod' &
@@ -1081,22 +1085,21 @@ relation	inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, ClassInf.Sta
 	Mod.print_mod mods' &	
 	Print.get_string() => str1 & print str1 &*)
 	update_components(compelts,mods',env2) => compelts3 &
-        Util.list_flatten([eq1, eq2, eq3]) => eq &
-	Util.list_flatten([ieq1, ieq2, ieq3]) => ieq &
-	Util.list_flatten([alg1, alg2, alg3]) => alg &
-	Util.list_flatten([ialg1, ialg2,ialg3]) => ialg 
+        Util.list_flatten([eq1', eq2, eq3]) => eq &
+	Util.list_flatten([ieq1', ieq2, ieq3]) => ieq &
+	Util.list_flatten([alg1', alg2, alg3]) => alg &
+	Util.list_flatten([ialg1', ialg2,ialg3]) => ialg 
 	-----------------------------------
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state,impl)
 	  => (env2, mods',compelts3, eq, ieq, alg, ialg)
 
   rule	not Lookup.lookup_class(env, tp, true) 
 	  => (c as SCode.CLASS(cn,_,encf,r,_), cenv) &
-	Debug.fprint("failtrace", "Failed lookup of inherited class ") &
-	Debug.fcall("failtrace",Dump.print_path, tp) &			
-	Debug.fprint("failtrace", ", env: ") &      
-	Debug.fcall("failtrace",Env.print_env,env) &
-	Debug.fprint("failtrace","\n") 			      
-	------------------------------------------------
+	Print.print_error_buf "#Error, base class " &
+	Absyn.path_string(tp) => s &
+	Print.print_error_buf s &			      
+	Print.print_error_buf " not found.\n" 			      
+ 	  ------------------------------------------------
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state, impl) 
 	  => fail
   rule	Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n env:") &
@@ -1150,6 +1153,46 @@ relation add_inherit_scope: ( SCode.Element list, Absyn.Path)
   rule	print "add_inherit_scope failed\n" 
 	------------------
 	add_inherit_scope(_,_) => fail
+end
+
+(** relation: add_eqn_inherit_scope
+ ** author: PA
+ **
+ ** Adds the optional base class in a SCode.EQUATION to indicate which 
+ ** base class the equation originates from. This is needed in instantiation
+ ** to be able to look up e.g. constants, etc. from the scope where the 
+ ** equation  is defined.
+ **)
+
+relation add_eqn_inherit_scope: ( SCode.Equation list, Absyn.Path) 
+	  => SCode.Equation list =
+
+  axiom	add_eqn_inherit_scope ([],_) => []
+
+  rule	add_eqn_inherit_scope(xs,tp) => res
+	-------------------------------------
+	add_eqn_inherit_scope(SCode.EQUATION(e,_)::xs,tp)
+	  => SCode.EQUATION(e,SOME(tp))::res
+end
+
+(** relation: add_alg_inherit_scope
+ ** author: PA
+ **
+ ** Adds the optional base class in a SCode.Algorithm to indicate which 
+ ** base class the algorithm originates from. This is needed in instantiation
+ ** to be able to look up e.g. constants, etc. from the scope where the 
+ ** algorithm is defined.
+ **)
+
+relation add_alg_inherit_scope: ( SCode.Algorithm list, Absyn.Path) 
+	  => SCode.Algorithm list =
+
+  axiom	add_alg_inherit_scope ([],_) => []
+
+  rule	add_alg_inherit_scope(xs,tp) => res
+	-------------------------------------
+	add_alg_inherit_scope(SCode.ALGORITHM(a,_)::xs,tp)
+	  => SCode.ALGORITHM(a,SOME(tp))::res
 end
 
 (** relation: add_nomod 
@@ -1573,10 +1616,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	   ** imports are simply added to the current frame, so that the lookup rule can find them.
 	   **)
 
-  rule	Env.extend_frame_i(env,imp) => env'
+  rule	(*Env.extend_frame_i(env,imp) => env'*)
 	------------------------------------
 	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdims,_,_) 
-	  => ([], env', csets, ci_state, [])
+	  => ([], env, csets, ci_state, [])
 		 
 	(* If a variable is declared multiple times, the first is used *)
 
@@ -1679,9 +1722,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	get_cref_from_mod(m) => crefs &
  	get_cref_from_dim(ad) => crefs2 &
-		
 	Util.list_flatten([crefs,crefs2]) => crefs' &
 	remove_cref_from_crefs(crefs',owncref) => crefs'' &
+
+	get_derived_env(env,bc) => env &
 	update_components_in_env(mods,crefs'',env,ci_state,impl) => env2 &
 	(*Debug.fprint("insttr", "updated variables in env\n") &*)
 	(* Update the untyped modifiers to typed ones, and extract class *)
@@ -1743,10 +1787,6 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(*Dump.select_string(impl,"IMPLICIT!!!\n","") => s &
 	print s &*)
 
-
- 
-
-
 	inst_var(cenv,ci_state, mod', pre, csets, n, cl, attr, dims, [], inst_dims, impl,comment)
 	  => (dae, csets', ty) &
 	  
@@ -1798,6 +1838,8 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	Debug.fprint("failtrace", "- inst_element failed\n") &
 	Debug.fcall("failtrace",SCode.print_element, el) &
+	print "- inst_element failed\n" &
+	SCode.print_element_str el => s & print s & print "\n" &
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------------
 	inst_element(_,_,_,_,_,(el,_),_,_,_) => fail 
@@ -1815,10 +1857,10 @@ relation get_derived_env: (Env.Env, Absyn.Path option) => Env.Env =
 
   axiom	get_derived_env(env,NONE) => env
 
-  rule	Lookup.lookup_class(env,tp,true) => (_,env')
+  rule	Lookup.lookup_class(env,tp,true) => (_,env') 
 	---------------------------------------
-	get_derived_env(env,SOME(tp)) => env'
-
+	get_derived_env(env as (Env.FRAME(id,cl,tps,imps,_,enc)::fs),SOME(tp)) 
+	  => Env.FRAME(id,cl,tps,imps,env',enc)::fs
 end
 
 (** relation: remove_cref_from_crefs
@@ -2056,8 +2098,7 @@ relation inst_var2 : (Env.Env,
         inst_start_binding_exp(mod,ty,idxs') => start &
 
         inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr &
-  	DAE.dump_variable_attributes_str(dae_var_attr) => str_tmp &
-        Debug.fprintln("failtrace", str_tmp) &
+
         dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
  		            inst_dims, start, dae_var_attr,comment) => dae3 &
 

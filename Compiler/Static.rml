@@ -3342,14 +3342,16 @@ relation elab_cref2 : (Env.Env,
 	elab_cref2 (_,cr, acc, SCode.DISCRETE,tt,_)
 	  =>(Exp.CREF(cr',t),false,acc)
 
-  rule	value_exp v => e
-	----------------
-	elab_cref2 (_,cr,_,SCode.CONST,t, Types.VALBOUND(v)) => (e,true,SCode.RO)
+  rule	value_exp v => e &
+	Types.type_of_value(v) => et &
+	Types.match_type(e,et,t) => (e',_)
+	-----------------------------------
+	elab_cref2 (_,cr,_,SCode.CONST,t, Types.VALBOUND(v)) => (e',true,SCode.RO)
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
 	cref_vectorize(Exp.CREF(cr',t),tt) => e'
-	---------------
+	-----------------------------------
   	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) => (e',false,acc)
 
   rule	Types.elab_type tt => t &
