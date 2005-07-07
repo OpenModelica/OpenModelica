@@ -794,23 +794,24 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	add_nomod(compelts) => compelts' &
 	add_nomod(cdefelts) => cdefelts' &
 	Util.list_flatten([extcomps,compelts',cdefelts']) => compelts' &	
-	
+
+	(* Add components from base classes to be instantiated in 3 as well. *)
+	list_append(eqs,eqs2) => eqs' &
+	list_append(initeqs,initeqs2) => initeqs' &
+	list_append(alg,alg2) => alg' &
+	list_append(initalg,initalg2) => initalg' &	
 
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
-	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',compelts',inst_dims,impl) 
+	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',
+			      compelts',eqs',inst_dims,impl) 
 	  => env3 &
 	  (* Update the modifiers of elements to typed ones, needed for modifiers
 	   on components that are inherited. *)
 	update_compelts_mods(env3,pre,compelts',ci_state,impl)  
 	  => (compelts'',env4) &
 
-	(* Add components from base classes to be instantiated in 3 as well. *)
-	list_append(eqs,eqs2) => eqs' &
-	list_append(initeqs,initeqs2) => initeqs' &
-	list_append(alg,alg2) => alg' &
-	list_append(initalg,initalg2) => initalg' &
 	(*3. Instantiate components *)
 	inst_element_list(env4, mods, pre, csets, ci_state1, compelts'', 
 			  inst_dims, impl, packimpl)
@@ -854,16 +855,19 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	add_nomod(compelts) => compelts' &
 	add_nomod(cdefelts) => cdefelts' &
 	Util.list_flatten([extcomps,compelts',cdefelts']) => compelts' &	
-	
-	(* Add variables to env, wihtout type and binding, *)
-	(* which will be added later in inst_element_list  *)
-	(* (where update_variable is called) *)
-	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',compelts',inst_dims,impl) => env3 &
+
 	(* Add components from base classes to be instantiated in 3 as well. *)
 	list_append(eqs,eqs2) => eqs' &
 	list_append(initeqs,initeqs2) => initeqs' &
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
+	
+	(* Add variables to env, wihtout type and binding, *)
+	(* which will be added later in inst_element_list  *)
+	(* (where update_variable is called) *)
+	add_components_to_env(env2,emods,pre,csets,ci_state,compelts',
+			      compelts',eqs',inst_dims,impl) => env3 &
+
 	(*3. Instantiate components *)
 	inst_element_list(env3,mods,pre,csets,ci_state1, compelts', 
 			  inst_dims, impl, true(*packimpl*))
@@ -1436,83 +1440,139 @@ end
  **)
 relation is_structural_parameter: (SCode.Variability, (* components variability*)
 				   Absyn.ComponentRef, (* component name *)
-				   (SCode.Element*Types.Mod) list) (* all elements *)		 
+				   (SCode.Element*Types.Mod) list, (* all elements *)		 
+				   SCode.Equation list) (* equations *)
 	=> bool =
 
+	  (* constants does not need to be checked. 
+	   Must return false here to prevent constants from be outputed
+	   as structural parameters, i.e. "parameter" in DAE, which is 
+	   incorrect
+	   *)
+  axiom	is_structural_parameter(SCode.CONST,_,_,_) => false
+
+	(* Check if structural:
+	 1. By investigating array dimensions.
+	 2. By infestigating if-equations.
+	 *)
   rule	SCode.is_parameter_or_const param => true &
 	get_crefs_from_compdims(allcomps) => crefs &
-	member_crefs(compname,crefs) => res
+	member_crefs(compname,crefs) => b1 &
+	is_structural_if_equation_parameter(compname,eqns) => b2 &
+	bool_or(b1,b2) => res
 	-----------------------------------
-	is_structural_parameter(param,compname,allcomps) => res
+	is_structural_parameter(param,compname,allcomps,eqns) => res
 
-  axiom	is_structural_parameter(_,_,_) => false
+  axiom	is_structural_parameter(_,_,_,_) => false
+end
+
+(** relation is_structural_if_equation_parameter
+ ** author: PA
+ **
+ ** This relation checks if a parameter is structural because it is present
+ ** in the condition expression of an if equation.
+**)
+
+relation is_structural_if_equation_parameter: (Absyn.ComponentRef, 
+					       SCode.Equation list)
+	=> bool =
+
+  axiom	is_structural_if_equation_parameter(_,[]) => false
+
+  rule	Absyn.get_cref_from_exp(cond) => crefs &
+	member_crefs(compname,crefs) => true
+	----------------------------
+	is_structural_if_equation_parameter(compname,
+					    SCode.EQUATION(SCode.EQ_IF(cond,_,_),
+							   _)::_)
+	  => true
+
+  rule	is_structural_if_equation_parameter(compname,eqns) => res
+	----------------------------
+	is_structural_if_equation_parameter(compname,_::eqns) => res
+
 end
 
 (** relation: add_components_to_env
  ** author: PA
  **
- ** Since Modelica has removed the declare before use limitation, all components are intially added
- ** untyped to the environment, i.e. the SCode.Element is added. This is performed by this relation.
- ** Later, during the second pass of the instantiation of components, the components are updated 
- **  in the environment. This is done by the relation update_components_in_env.
- ** This relation is also responsible for changing parameters intto structural 
- ** parameters if they are affecting the number of variables or equations. For now by 
- ** only looking at dimension sizes of components. This is needed because Modelica has no 
- ** language construct for structural parameters, i.e. they must be detected by the compiler.
+ ** Since Modelica has removed the declare before use limitation, all 
+ ** components are intially added untyped to the environment, i.e. the 
+ ** SCode.Element is added. This is performed by this relation. Later, 
+ ** during the second pass of the instantiation of components, the components 
+ ** are updated  in the environment. This is done by the relation 
+ ** update_components_in_env. This relation is also responsible for 
+ ** changing parameters into structural  parameters if they are affecting 
+ ** the number of variables or equations. This is needed because Modelica has
+ ** no language construct for structural parameters, i.e. they must be 
+ ** detected by the compiler.
+ **
+ ** Structural parameters are identified by investigating array dimension 
+ ** sizes of components and by investigating if-equations. If an if-equation
+ ** has a boolean expression controlled by parameter(s), these are structural
+ ** parameters.
 **)
 
 relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, 
 				  ClassInf.State,
 				  (SCode.Element*Types.Mod) list, (* iterated list of elements*)
 				  (SCode.Element*Types.Mod) list, (* all elements *)
+				  SCode.Equation list, (* equations *)
 				  InstDims, 
 				  bool (* implicit inst. *))
 	=> (Env) =
 
-  axiom	add_components_to_env(env,_,_,_,_,[],_,_,_) => env 
+  axiom	add_components_to_env(env,_,_,_,_,[],_,_,_,_) => env 
 
-  rule	(* Check if the component is a structural parameter, change it's
+  	(* Check if the component is a structural parameter, change it's
 	 attribute to STRUCTPARAM. *)
-	not ClassInf.is_function(cistate) &  (* Functions should not be considered *)
-	is_structural_parameter(param,Absyn.CREF_IDENT(n,[]),allcomps) => true &
-	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
-									  SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
-	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
-	------------------------------------------------------------------------------------
+  rule	not ClassInf.is_function(cistate) &  (* Functions not considered *)
+	is_structural_parameter(param,Absyn.CREF_IDENT(n,[]),allcomps,eqns) 
+	  => true &
+	add_components_to_env2(env,mod,pre,csets,
+			       cistate,[(SCode.COMPONENT(n,final,repl,prot,
+							 SCode.ATTR(ad,flow,acc,SCode.STRUCTPARAM,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
+	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,eqns,instdims,impl) => env''
+	-----------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
 			       ((comp as SCode.COMPONENT(n,final,repl,prot,
 				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m,bc,comment)),cmod)::xs, allcomps,instdims,impl) => env''
+				     t,m,bc,comment)),cmod)::xs, allcomps,
+			       eqns,instdims,impl) => env''
 
   rule	(* Not structural parameter. No Change.*)
 	add_components_to_env2(env,mod,pre,csets,cistate,[(SCode.COMPONENT(n,final,repl,prot,
-									  SCode.ATTR(ad,flow,acc,param,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
+									   SCode.ATTR(ad,flow,acc,param,dir),t,m,bc,comment),cmod)],instdims,impl) => env' &
 	
-	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
-	------------------------------------------------------------------------------------
+	add_components_to_env(env',mod,pre,csets,cistate,xs,allcomps,eqns,instdims,impl) => env''
+	-----------------------------------------------------------------------
 	add_components_to_env (env, mod, pre, csets, cistate, 
 			       ((comp as SCode.COMPONENT(n,final,repl,prot,
-				     attr as SCode.ATTR(ad,flow,acc,param,dir),
-				     t,m,bc,comment)),cmod)::xs, allcomps,instdims,impl) => env''
+							 attr as SCode.ATTR(ad,flow,acc,param,dir),
+							 t,m,bc,comment)),cmod)::xs, allcomps,
+			       eqns,instdims,impl) => env''
 	
-  rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
+  rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,eqns,instdims,impl) => env''
 	------------------
 	add_components_to_env(env, mod, pre, csets, cistate, 
-			       ((SCode.IMPORT(_),_))::xs, allcomps,instdims,impl) => env''
-
-  rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
+			      ((SCode.IMPORT(_),_))::xs, allcomps,
+			      eqns,instdims,impl) => env''
+	
+  rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,eqns,instdims,impl) => env''
 	------------------
 	add_components_to_env(env, mod, pre, csets, cistate, 
-			       ((SCode.EXTENDS(_,_),_))::xs, allcomps,instdims,impl) => env''
-
-  rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,instdims,impl) => env''
+			      ((SCode.EXTENDS(_,_),_))::xs, allcomps,
+			      eqns,instdims,impl) => env''
+	
+  rule	add_components_to_env(env,mod,pre,csets,cistate,xs,allcomps,eqns,instdims,impl) => env''
 	------------------
 	add_components_to_env(env, mod, pre, csets, cistate, 
-			       ((SCode.CLASSDEF(_,_,_,_,_),_))::xs, allcomps,instdims,impl) => env''
-
+			      ((SCode.CLASSDEF(_,_,_,_,_),_))::xs, allcomps,
+			      eqns,instdims,impl) => env''
+	
   rule	Debug.fprint("failtrace", "- add_components_to_env failed\n" ) 
 	-------------------------------------
-	add_components_to_env(_,_,_,_,_,comps,_,_,_) => fail
+	add_components_to_env(_,_,_,_,_,comps,_,_,_,_) => fail
 end
 
 (** relation add_components_to_env2
@@ -1732,6 +1792,10 @@ relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* and component modifiers again.*)
 	Mod.update_mod(env2,pre,mods,impl) => mods' &
 
+
+	(* refetch the component from environment, since attributes, etc.
+	 ** might have changed.. comp used in redeclare_type below... *)
+	Lookup.lookup_ident_local(env2,n) => (_,SOME((comp,_)),_) & 
 	(*Debug.fprint("insttr", "updated modifiers to typed ones: ") &
 	Debug.fcall("insttr", Mod.print_mod, mods') &
 	Debug.fprint("insttr", "\n") & *)
@@ -2064,6 +2128,25 @@ relation inst_var2 : (Env.Env,
 (*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
 	--------------------------
 	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
+		 [],idxs,inst_dims,impl (*as false*),comment)
+          => (dae,csets',ty)
+
+  rule	(* Structural Parameters *)
+	list_reverse idxs => idxs' &
+	Prefix.prefix_add(n,idxs',pre) => pre' &
+	inst_class(env,mod,pre',csets,cl,inst_dims,impl,INNER_CALL) 
+	  => (dae1,env',csets',ty,st) &
+	fix_direction(dae1,dir) => dae1' &
+	Exp.int_subscripts idxs' => subs &
+	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
+(*	inst_mod_equation(cr,ty,mod) => dae2 &*)
+
+	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE,comment)
+	  => dae3 &  
+	list_append(dae1',dae3) => dae
+(*	& Debug.fcall ("instvardae",DAE.dump2,DAE.DAE(dae))*)
+	--------------------------
+	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.STRUCTPARAM,dir),
 		 [],idxs,inst_dims,impl (*as false*),comment)
           => (dae,csets',ty)
 
@@ -3825,7 +3908,7 @@ relation dae_declare2 : (Exp.ComponentRef, Types.Type, DAE.Flow, SCode.Variabili
 	dae_declare2 (vn, ty, flow, SCode.CONST, dir, e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
-  rule	dae_declare3 (vn, ty, flow, DAE.CONST, dir, e, 
+  rule	dae_declare3 (vn, ty, flow, DAE.PARAM, dir, e, 
 		      inst_dims,start,dae_var_attr,comment) => dae
 	-----------------------------------------
 	dae_declare2 (vn, ty, flow, SCode.STRUCTPARAM, dir, e, inst_dims,start,dae_var_attr,comment) 
