@@ -173,9 +173,9 @@ RML_BEGIN_LABEL(System__remove_5ffirst_5fand_5flast_5fchar)
   int i;
   if(length > 1)
     {
-      res=malloc(length-2);
-      for(i = 1; i < length - 1; ++i)
-        res[i-1] = str[i];
+      res=malloc(length-1);
+      strncpy(res,str + 1,length-2);
+
       res[length-2] = '\0';  
     }
   rmlA0 = (void*) mk_scon(res);
