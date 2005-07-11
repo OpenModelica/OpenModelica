@@ -195,6 +195,7 @@ module Interactive:
 
   relation get_top_classnames_in_program: Absyn.Program => string list
         
+  relation build_within: Absyn.Path => Absyn.Within
 
 end
 
