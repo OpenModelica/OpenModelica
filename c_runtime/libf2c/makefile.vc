@@ -167,6 +167,7 @@ w = \
 	z_sqrt.obj
 
 all: f2c.h math.h signal1.h sysdep1.h vcf2c.lib
+	copy /Y vcf2c.lib ..\
 
 f2c.h: f2c.h0
 	copy f2c.h0 f2c.h
@@ -193,3 +194,7 @@ arith.h: arithchk.c
 	arithchk >arith.h
 	del arithchk.exe
 	del arithchk.obj
+clean:
+        del /Q /F $(w) vcf2c.lib ..\vcf2c.lib 
+
+rebuild: clean all
