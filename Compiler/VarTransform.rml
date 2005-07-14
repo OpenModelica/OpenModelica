@@ -222,6 +222,12 @@ axiom replace_equations([],_) => []
 	replace_equations(DAELow.SOLVED_EQUATION(cr,e)::es,repl) 
 	  => DAELow.SOLVED_EQUATION(cr,e')::es'
 
+  rule	replace_exp(e,repl) => e' &
+	replace_equations(es,repl) => es'
+	-----------------------
+	replace_equations(DAELow.RESIDUAL_EQUATION(e)::es,repl) 
+	  => DAELow.RESIDUAL_EQUATION(e')::es'
+
   rule	replace_equations(es,repl) => es'
 	---------------------------------
 	replace_equations(a::es,repl) 

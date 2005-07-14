@@ -160,6 +160,7 @@ module Util :
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_deletemember: (''a list,''a) => ''a list
+  relation list_deletemember_p: (''a list,''a,(''a,''a)=> bool ) => ''a list 
   relation list_getmember_p: (''a, ''a list,(''a,''a) => bool ) => ''a
   relation list_replaceat: (''a, int, ''a list) => ''a list 
   relation list_replaceat_with_fill: (''a, int, ''a list,''a) => ''a list 

@@ -316,6 +316,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation states: (DAE.DAElist,BinTree) => BinTree
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
+  relation add_var: (Var, Variables) => Variables
   relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
   relation var_list: (Variables) => Var list 
@@ -2259,18 +2260,36 @@ end
  **)
 relation incidence_row: ( Variables, Equation) 
 	  => int list =
-	  
-  rule	(*Inefficient to for each cref in equation traverse the varlist*)
-	(* Should use a map or a bintree*)
-	incidence_row_exp(e1,vars) => lst1 &
+	
+	  (* EQUATION *)
+  rule	incidence_row_exp(e1,vars) => lst1 &
 	incidence_row_exp(e2,vars) => lst2 &
 	list_append(lst1,lst2) => res
 	------------------------------------
 	incidence_row(vars,EQUATION(e1,e2)) => res
 
-  rule	(*Inefficient to for each cref in equation traverse the varlist*)
-	(* Should use a map or a bintree*)
-        get_when_equation_expr(we) => (cr, e2) &
+	 (* SOLVED_EQUATION *)
+  rule	incidence_row_exp(Exp.CREF(cr,Exp.REAL),vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	list_append(lst1,lst2) => res
+	------------------------------------
+	incidence_row(vars,SOLVED_EQUATION(cr,e)) => res
+
+	 (* SOLVED_EQUATION *)
+  rule	incidence_row_exp(Exp.CREF(cr,Exp.REAL),vars) => lst1 &
+	incidence_row_exp(e,vars) => lst2 &
+	list_append(lst1,lst2) => res
+	------------------------------------
+	incidence_row(vars,SOLVED_EQUATION(cr,e)) => res
+
+	(* RESIDUAL_EQUATION *)
+  rule	incidence_row_exp(e,vars) => res
+	------------------------------------
+	incidence_row(vars,RESIDUAL_EQUATION(e)) => res
+
+
+	(* WHEN_EQUATION *)
+  rule	get_when_equation_expr(we) => (cr, e2) &
 	let e1 = Exp.CREF(cr,Exp.OTHER) &
 	incidence_row_exp(e1,vars) => lst1 &
 	incidence_row_exp(e2,vars) => lst2 &
@@ -2278,13 +2297,14 @@ relation incidence_row: ( Variables, Equation)
 	------------------------------------
 	incidence_row(vars,WHEN_EQUATION(we)) => res
 	
-  rule	(** For now assume that algorithm will be solvable for correct variables.
-	 ** I.e. find all variables in algorithm and add to lst.
-	 ** If algorithm later on needs to be inverted, i.e. solved for different
-	 ** variables than calculated, a non linear solver or analysis of algorithm itself
-	 ** needs to be implemented. 
+	(* ALGORITHM *)
+	(** For now assume that algorithm will be solvable for correct
+	 ** variables. I.e. find all variables in algorithm and add to lst.
+	 ** If algorithm later on needs to be inverted, i.e. solved for 
+	 ** different variables than calculated, a non linear solver or
+	 ** analysis of algorithm itself needs to be implemented. 
 	 **)
-	Util.list_map_1(inputs,incidence_row_exp,vars) => lst1 &
+  rule	Util.list_map_1(inputs,incidence_row_exp,vars) => lst1 &
 	Util.list_map_1(outputs,incidence_row_exp,vars) => lst2 &
 	list_append(lst1,lst2) => res &
 	Util.list_flatten(res) => res'
