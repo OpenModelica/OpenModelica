@@ -215,6 +215,8 @@ module Util :
   relation write_file_or_error_msg:(string,(*filename*)
                                     string(*the string to be written*)) => ()
 
+  relation system_call_with_error_msg:(string,(*command*)
+                                       string)(*error_msg to error_buf if fail*) => ()
 end
 
 with "System.rml"
@@ -1519,3 +1521,21 @@ relation write_file_or_error_msg:(string,(*filename*)
         write_file_or_error_msg(filename,str) 
 
 end
+   
+(** this relation executes a command with System.system_call 
+ ** if System.system_call does not return 0 then the msg is outputed to
+ ** error_buf and the relation fails
+ **)
+relation system_call_with_error_msg:(string,(*command*)
+                                     string)(*error_msg to error_buf if fail*) => () =
+
+  rule  System.system_call(s_call) => 0
+        ------------------------------
+        system_call_with_error_msg(s_call,_) 
+
+  rule  Print.print_error_buf(e_msg) 
+        ------------------------------
+        system_call_with_error_msg(_,e_msg) => fail
+
+end
+        

@@ -1,6 +1,6 @@
 CC = gcc
 FC = g77
-AR = ar -ru
+AR = ar -ru 
 CFLAGS = -O2 -Wall -ansi -pedantic -I../mosh/src/
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O
@@ -30,20 +30,19 @@ OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
 	real_array.o string_array.o read_write.o utility.o modelica_string.o 
 SIMOBJS = $(FOBJS) simulation_runtime.o ../mosh/src/options.o dgesv_aux.o 
 
-all : libc_runtime.a libsim.a
-
+all : libc_runtime.a libsim.a libf2c.a
 
 libc_runtime.a : $(OBJS) 
-	cd libf2c; make -f makefile.u 
-	mv libf2c/libf2c.a ./
 	$(AR) $@ $(OBJS) 
+
 libsim.a : $(SIMOBJS)
-	cd libf2c; make -f makefile.u 
-	mv libf2c/libf2c.a ./
 	$(AR) $@ $(SIMOBJS)
 
+libf2c.a :
+	cd libf2c && $(MAKE) -f makefile.u 
+
 clean :
-	cd libf2c; make -f makefile.u clean
+	cd ./libf2c && $(MAKE) -f makefile.u clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)

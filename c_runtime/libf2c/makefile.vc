@@ -167,7 +167,7 @@ w = \
 	z_sqrt.obj
 
 all: f2c.h math.h signal1.h sysdep1.h vcf2c.lib
-	copy /Y vcf2c.lib ..\
+
 
 f2c.h: f2c.h0
 	copy f2c.h0 f2c.h

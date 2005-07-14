@@ -534,7 +534,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
 	  => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
 
   rule	get_extends_modifier_names(class,ident,p) => resstr 
-	--------------------------------------------
+	--------------------------------------------  
 	evaluate_graphical_api(
 	    ISTMTS([IEXP(Absyn.CALL(
 		Absyn.CREF_IDENT("getExtendsModifierNames",_),
@@ -691,11 +691,11 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) =>
         get_top_classnames(p1) => top_names_str
         ---------------------------------------------------
 	evaluate_graphical_api(
-	                       ISTMTS([IEXP(Absyn.CALL(
-		                                       Absyn.CREF_IDENT("loadFileInteractive",_),
-		                                       Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
-	                              ),
-	                       st as SYMBOLTABLE(p,s,ic,iv,cf)) => (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf))
+             ISTMTS([IEXP(Absyn.CALL(
+                Absyn.CREF_IDENT("loadFileInteractive",_),
+	        Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
+	    ),
+	    st as SYMBOLTABLE(p,s,ic,iv,cf)) => (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf))
 
 
  
