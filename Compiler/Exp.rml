@@ -715,11 +715,11 @@ relation simplify : Exp => Exp =
   rule	simplify e1 => e1' &
 	simplify e2 => e2' &
 	let exp' = BINARY(e1', op, e2') &
-	simplify_binary_sort_constants(exp') 
-	  => (exp'' as BINARY(e1'',op,e2'')) &
-	simplify_binary (exp'', op, e1'', e2'') => e
+	simplify_binary_sort_constants(exp') => exp'' &
+	try_simplify_binary(exp'') => exp''' &
+	simplify_binary_coeff(exp''') => e'
 	----------------------------------------
-	simplify (exp as BINARY(e1, op, e2)) => e
+	simplify (exp as BINARY(e1, op, e2)) => e'
 
   rule	simplify e1 => e1' &
 	simplify e2 => e2' &
@@ -755,30 +755,71 @@ end
 relation simplify_binary_sort_constants: (Exp) => Exp =
 
   rule	factors(e) => e_lst &
-	Util.list_select(e_lst,is_const) => const_es1 &
-	Util.list_select(e_lst,is_not_const) => notconst_es1 &
-	Util.list_select(e_lst,is_const) => const_es1 &
-	Util.list_select(e_lst,is_not_const) => notconst_es1 &
-	simplify_mul(notconst_es1) => notconst_es1' &
+	Util.list_map(e_lst,simplify) => e_lst' &
+	Util.list_select(e_lst',is_const) => const_es1 &
+	Util.list_select(e_lst',is_not_const) => notconst_es1 &
 	simplify_binary_mul_constants(const_es1) => const_es1' &
-	list_append(const_es1',notconst_es1') => e_lst' &
-	make_product(e_lst') => res 
+	list_append(const_es1',notconst_es1) => e_lst'' &
+	make_product(e_lst'') => res 
 	------------------------
 	simplify_binary_sort_constants(e as BINARY(e1,MUL(tp),e2)) 
 	  => res
 
-  rule	terms(e) => e_lst & 
-	Util.list_select(e_lst,is_const) => const_es1 &
-	Util.list_select(e_lst,is_not_const) => notconst_es1 &
-	simplify_add(notconst_es1) => notconst_es1' &
+  rule	terms(e) => e_lst &
+	Util.list_map(e_lst,simplify) => e_lst' &
+	Util.list_select(e_lst',is_const) => const_es1 &
+	Util.list_select(e_lst',is_not_const) => notconst_es1 &
 	simplify_binary_add_constants(const_es1) => const_es1' &
-	list_append(const_es1',notconst_es1') => e_lst' &
-	make_sum(e_lst') => res
+	list_append(const_es1',notconst_es1) => e_lst'' &
+	make_sum(e_lst'') => res 
 	------------------------
 	simplify_binary_sort_constants(e as BINARY(e1,ADD(tp),e2)) 
 	  => res
 
   axiom	simplify_binary_sort_constants(e) => e
+end
+
+(** relation: simplify_binary_coeff
+ ** author: PA
+ **
+ ** Combines expressions like 2*a+4*a and a*a*a+3*a^3, etc
+ **)
+
+relation simplify_binary_coeff: (Exp) => Exp =
+
+  rule	factors(e) => e_lst &
+	simplify_mul(e_lst) => e_lst' &
+	make_product(e_lst') => res &
+	try_simplify_binary(res) => res'
+	------------------------
+	simplify_binary_coeff(e as BINARY(e1,MUL(tp),e2)) 
+	  => res'
+
+  rule	terms(e) => e_lst & 
+	simplify_add(e_lst) => e_lst' &
+	make_sum(e_lst') => res &
+	try_simplify_binary(res) => res'
+	------------------------
+	simplify_binary_coeff(e as BINARY(e1,ADD(tp),e2)) 
+	  => res'
+
+  axiom	simplify_binary_coeff(e) => e
+end
+
+(** relation: try_simplify_binary
+ ** author: PA
+ **
+ ** Helper relation to simplify. Tries to call simplify binary.
+ **)
+
+relation try_simplify_binary:(Exp) => Exp =
+
+  rule	simplify_binary(e,op,e1,e2) => res
+	-----------------------
+	try_simplify_binary(e as BINARY(e1,op,e2)) => res
+
+  axiom	try_simplify_binary(e) => e
+
 end
 
 (** relation: simplify_binary_add_constants
@@ -796,6 +837,10 @@ relation simplify_binary_add_constants: (Exp list) => Exp list =
 	simplify_binary_const(ADD(REAL),e1,e) => e' 
 	------------------------------------
 	simplify_binary_add_constants(e1::es) => [e']
+
+  rule	print "simplify_binary_add_constants failed\n" 
+	-------------------------
+	simplify_binary_add_constants(_) => fail
 end
 
 (** relation: simplify_binary_add_constants
@@ -1030,6 +1075,12 @@ relation make_factor_division: (Exp list, Exp list) => Exp =
 	simplify res => res'
  	------------------------
 	make_factor_division(es1,[]) => res'
+
+	(* e1*...*en / 1.0 => e1*...*en *)
+  rule	is_const_one(e1) => true &
+	make_product(es1) => res 
+ 	------------------------
+	make_factor_division(es1,[e1]) => res
 
   rule	Util.list_select(es2,is_const) => const_es2 &
 	Util.list_select(es2,is_not_const) => notconst_es2 &
@@ -1853,7 +1904,7 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	factors(e2') => e2s &
 	remove_common_factors(e1s,e2s) => (e1s',e2s') &
 	make_factor_division(e1s',e2s') => res 
-		---------------------------------------
+	---------------------------------------
 	simplify_binary(_,DIV(tp),e1,e2) => res
 
   rule	is_const_zero (e1) => true &
