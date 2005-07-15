@@ -319,10 +319,12 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation add_var: (Var, Variables) => Variables
   relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
+  relation set_var_kind: (Var, VarKind) => Var 
   relation var_list: (Variables) => Var list 
   relation list_var: (Var list ) => Variables
 
   relation var_cref: (Var) => Exp.ComponentRef 
+  relation var_index: (Var) => int
   relation var_nominal: (Var) => real
 
   relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
@@ -989,6 +991,17 @@ relation var_cref: (Var) => Exp.ComponentRef =
 
 end
 
+(** relation: var_index
+ ** author: PA
+ **
+ ** extracts the index in the implementation vector of a Var
+ **)
+relation var_index: (Var) => int =
+
+  axiom	var_index(VAR(_,_,_,_,_,_,_,_,i,_,_,_,_,_)) => i
+
+end
+
 (** relation: var_nominal
  ** author: PA
  **
@@ -1530,11 +1543,12 @@ relation dump_vars2: (Var list,int) => () =
         print "  " & print comment_str &
         
         print " former: " & print old_name &
+	int_string(indx) => indx_str & print " indx = " & print indx_str &
 	int_add(varno,1) => varno' & print ",\n" &
     	DAE.dump_variable_attributes(dae_var_attr) &
         dump_vars2(xs,varno') 
 	    -------------
-	dump_vars2(VAR(cr,kind,dir,_,SOME(e),_,_,_,_,old_name,paths,dae_var_attr,comment,flow)::xs,varno)
+	dump_vars2(VAR(cr,kind,dir,_,SOME(e),_,_,_,indx,old_name,paths,dae_var_attr,comment,flow)::xs,varno)
 
   rule  int_string (varno) => varnostr &
 	print varnostr & print ": " &
@@ -1545,13 +1559,14 @@ relation dump_vars2: (Var list,int) => () =
         Dump.unparse_comment_option(comment) => comment_str &
 	print str & print ":" & dump_kind kind & print(" ") & print(path_str) & 
         print " former: " & print old_name &
-	    DAE.dump_variable_attributes(dae_var_attr) &
+	int_string(indx) => indx_str & print " indx = " & print indx_str &
+	DAE.dump_variable_attributes(dae_var_attr) &
         print "  " & print comment_str & 
         print ",\n" &
 	int_add(varno,1) => varno' &
  	dump_vars2(xs,varno') 
 	-------------
-	dump_vars2(VAR(cr,kind,dir,_,NONE,_,_,_,_,old_name,paths,dae_var_attr,comment,flow)::xs,varno)
+	dump_vars2(VAR(cr,kind,dir,_,NONE,_,_,_,indx,old_name,paths,dae_var_attr,comment,flow)::xs,varno)
 end 
 
 (** relation: dump_kind
@@ -2753,6 +2768,21 @@ relation exists_var: (Exp.ComponentRef, Variables) => bool =
 	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => false
 
   axiom	exists_var(_,_) => false
+end
+
+
+(** relation set_var_kind
+ ** author: PA
+ **
+ ** Sets the VarKind of a variable
+ **)
+	    
+relation set_var_kind: (Var, VarKind) => Var =
+
+
+  axiom	set_var_kind(VAR(cr,kind,dir,tp,bind,v,dim,st,i,origname,classes,attr,comment,flow),new_kind)
+	  => VAR(cr,new_kind,dir,tp,bind,v,dim,st,i,origname,classes,attr,comment,flow)
+
 end
 
 (** relation: get_var2

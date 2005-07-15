@@ -350,6 +350,20 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
  		     Exp.BINARY(e1,Exp.POW(tp),                 
 			        Exp.BINARY(e2,Exp.SUB(tp),const_one)))
                      
+  rule	(* der(e)^x => x*der(e,2)*der(e)^(x-1)*)
+        Exp.cref_equal (cr, tv) => true &
+        Exp.exp_contains(e2,Exp.CREF(tv,tp)) => false &
+        differentiate_exp(Exp.CREF(tv,tp),tv) => const_one
+	-----------------------------
+	differentiate_exp(Exp.BINARY((e1 as Exp.CALL(a as Absyn.IDENT("der"),[exp as Exp.CREF(cr,_)],b,c)),Exp.POW(tp),e2),tv) 
+	  => (* ax^(a-1) *)
+	  Exp.BINARY(Exp.BINARY(Exp.CALL(a,[exp,Exp.ICONST(2)],b,c),
+				Exp.MUL(tp),
+				e2),
+		     Exp.MUL(tp),
+ 		     Exp.BINARY(e1,Exp.POW(tp),                 
+			        Exp.BINARY(e2,Exp.SUB(tp),const_one)))
+
 
   rule	differentiate_exp(e1,tv) => e1' &
 	differentiate_exp(e2,tv) => e2' 
@@ -476,10 +490,11 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-------------------------
 	differentiate_exp(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1',e2',e3')
 
-  rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
+	(* der(x) *)
+  rule	Exp.cref_equal(cr,tv) => true
 	-------------------------------------------------
-	differentiate_exp(Exp.CALL(a as Absyn.IDENT("der"),expl,b,c),tv) 
-	  => Exp.CALL(a,expl',b,c)
+	differentiate_exp(Exp.CALL(a as Absyn.IDENT("der"),[exp as Exp.CREF(cr,_)],b,c),tv) 
+	  => Exp.CALL(a,[exp,Exp.ICONST(2)],b,c)
 	
   rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
 	--------------------------------------------
@@ -510,6 +525,12 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	Exp.exp_contains(e,Exp.CREF(cr,Exp.REAL)) => false
 	--------------------------------
 	differentiate_exp(e,cr) => Exp.RCONST(0.0)
+
+  rule	print "differentiate_exp " &
+	Exp.print_exp_str e => s & print s &
+	print " failed\n" 
+	------------------------
+	differentiate_exp(e,cr) => fail
 	
 end
 
