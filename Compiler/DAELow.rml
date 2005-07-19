@@ -195,11 +195,14 @@
 		  * EventInfo 
 
  datatype Variables = VARIABLES of CrefIndex list array (* HashTB, cref->indx*)
+                                   * StringIndex list array (* HashTB, cref->indx for old names*)
 				   * VariableArray (* Array of variables *)    
 				   * int (* bucket size *)
 				   * int (* no. of vars *)
 
 datatype CrefIndex = CREFINDEX of Exp.ComponentRef * int
+
+datatype StringIndex = STRINGINDEX of string * int
 
 (* array of Equations are expandable, to amortize the cost of adding 
  ** equations in a more efficient manner
@@ -316,6 +319,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation states: (DAE.DAElist,BinTree) => BinTree
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
+  relation get_var_using_name: (string, Variables) => (Var,int) 
   relation add_var: (Var, Variables) => Variables
   relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
@@ -960,7 +964,7 @@ relation var_list: (Variables) => Var list =
 
   rule	vararray_list(vararr) => varlst 
 	--------------------------------------
-	var_list(VARIABLES(_,vararr,_,_)) => varlst
+	var_list(VARIABLES(_,_,vararr,_,_)) => varlst
 end
 
 (** relation: list_var
@@ -2505,10 +2509,11 @@ end
 relation empty_vars: () => Variables =
 
   rule	array_create(10000,[]) => arr &
+	array_create(10000,[]) => arr2 &
 	Util.list_fill(NONE,1000) => lst &
 	list_array(lst) => emptyarr
 	------------------------
-	empty_vars() => VARIABLES(arr,VARIABLE_ARRAY(0,1000,emptyarr), 10000,0)
+	empty_vars() => VARIABLES(arr,arr2,VARIABLE_ARRAY(0,1000,emptyarr), 10000,0)
 end
 
 (** relation: merge_vars
@@ -2543,17 +2548,25 @@ relation add_var: (Var, Variables) => Variables =
 	array_nth(hashvec,indx)=> indexes &
 	array_setnth(hashvec,indx,CREFINDEX(cr,newpos)::indexes) => hashvec' &
 	vararray_length(varr') => n'
+        &
+	hash_string(name) => hvalold &
+	int_mod(hvalold,bsize) => indxold & 
+	array_nth(oldhashvec,indxold)=> indexexold &
+	array_setnth(oldhashvec,indxold,STRINGINDEX(name,newpos)::indexexold) => oldhashvec' 
+
 	-----------------------------
-	add_var(v as VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,flow),vars as VARIABLES(hashvec,varr,bsize,n)) 
-	  => VARIABLES(hashvec',varr',bsize,n')
+	add_var(v as VAR(cr,_,_,_,_,_,_,_,_,name,_,_,_,flow),
+                vars as VARIABLES(hashvec,oldhashvec,varr,bsize,n)) 
+	  => VARIABLES(hashvec',oldhashvec',varr',bsize,n')
 
   rule	(* adding when allready present => Updating value *) 
 	get_var(cr,vars) => (v,indx) &
 	int_sub(indx,1) => indx' &
 	vararray_setnth(varr,indx',newv) => varr'
 	-----------------------------------
-	add_var( newv as VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,flow),vars as VARIABLES(hashvec,varr,bsize,n))
-	  => VARIABLES(hashvec,varr',bsize,n)
+	add_var( newv as VAR(cr,_,_,_,_,_,_,_,_,name,_,_,_,flow),
+                vars as VARIABLES(hashvec,oldhashvec,varr,bsize,n))
+	  => VARIABLES(hashvec,oldhashvec,varr',bsize,n)
 
   rule	print "-add_var failed\n"
 	--------------------------
@@ -2711,7 +2724,7 @@ relation get_var_at:(Variables,int) => (Var) =
   rule	n - 1 => pos &
 	vararray_nth(vararr,pos) => v
 	---------------------
-	get_var_at(VARIABLES(_,vararr,_,_),n) => v
+	get_var_at(VARIABLES(_,_,vararr,_,_),n) => v
 end
 
 (** relation: get_var
@@ -2728,7 +2741,7 @@ relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
 	Exp.cref_equal(cr,cr2) => true &
 	int_add(indx,1) => indx'
 	-----------------------------
-	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => (v,indx')
+	get_var(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => (v,indx')
 
   rule	hash_component_ref(cr) => hval &
 	int_mod(hval,bsize) => hashindx &
@@ -2739,7 +2752,7 @@ relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
 	Exp.print_component_ref_str cr => str &
 	print str  & print "\n" 
 	-----------------
-	get_var(cr,VARIABLES(hashvec,varr,bsize,n)) => fail
+	get_var(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => fail
 end
 
 (** relation: exists_var
@@ -2754,7 +2767,7 @@ relation exists_var: (Exp.ComponentRef, Variables) => bool =
 	vararray_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,_,flow)) &
 	Exp.cref_equal(cr,cr2) => true 
 	-----------------------------
-	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => true
+	exists_var(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => true
 
   rule	hash_component_ref(cr) => hval &
 	int_mod(hval,bsize) => hashindx &
@@ -2765,10 +2778,39 @@ relation exists_var: (Exp.ComponentRef, Variables) => bool =
 	Exp.print_component_ref_str cr => str &
 	print str  & print "\n" 
 	-----------------
-	exists_var(cr,VARIABLES(hashvec,varr,bsize,n)) => false
+	exists_var(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => false
 
   axiom	exists_var(_,_) => false
 end
+
+(** relation: get_var_using_name
+ ** author lucian
+ ** Return a variable and its index in the vector.
+ ** The index is enumerated from 1..n 
+ **)
+relation get_var_using_name: (string, Variables) => (Var,int) =
+	
+  rule	hash_string(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(oldhashvec,hashindx) => indexes &
+	get_var_using_name2(cr, indexes) => indx &
+	vararray_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,name,_,_,_,flow)) &
+        name = cr &
+	int_add(indx,1) => indx'
+	-----------------------------
+	get_var_using_name(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => (v,indx')
+
+  rule	hash_string(cr) => hval &
+	int_mod(hval,bsize) => hashindx &
+	array_nth(oldhashvec,hashindx) => indexes &
+	get_var_using_name2(cr, indexes) => indx &
+	not vararray_nth(varr,indx) => (_) &
+	print "get var using name failed because vararray_nth failed, name:" &
+	print cr  & print "\n" 
+	-----------------
+	get_var_using_name(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => fail
+end
+
 
 
 (** relation set_var_kind
@@ -2799,6 +2841,20 @@ relation get_var2:(Exp.ComponentRef, CrefIndex list) => int =
 	get_var2(cr,v::vs) => res
 end
 
+(** relation: get_var_string2
+ ** Helper relation to get_var_using_name
+ **)
+relation get_var_using_name2:(string, StringIndex list) => int =
+
+  rule	cr = cr2
+	------------------------------
+	get_var_using_name2(cr,STRINGINDEX(cr2,v)::_) => v
+
+  rule	get_var_using_name2(cr,vs) => res
+	----------------------
+	get_var_using_name2(cr,v::vs) => res
+end
+
 (** relation: delete_var
  ** Deletes a variable from 'Variables'. This is an expensive operation since we need to create a new 
  ** binary tree with new indexes as well as a new compacted vector of variables.
@@ -2810,7 +2866,7 @@ relation delete_var: (Variables,Exp.ComponentRef) => Variables =
 	empty_vars() => newvars &
 	add_vars(varlst',newvars) => newvars'
 	--------------------------------------------------
-	delete_var(VARIABLES(hashvec,varr,bsize,n),cr) 
+	delete_var(VARIABLES(hashvec,oldhashvec,varr,bsize,n),cr) 
 	  =>  newvars'
 end
 
@@ -3083,7 +3139,7 @@ relation check_matching : (DAELow) => () =
   rule	equation_size(eqns) => esize &
 	int_eq(esize,vars_size) => true 
 	------------------
-	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_,_)) 
+	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_)) 
 	  => ()
 
   rule	equation_size(eqns) => esize &
@@ -3095,7 +3151,7 @@ relation check_matching : (DAELow) => () =
 	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
 	Print.print_error_buf " equations\n" 
  	------------------
-	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_,_)) 
+	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_)) 
 	  => fail
 
   rule	equation_size(eqns) => esize &
@@ -3107,7 +3163,7 @@ relation check_matching : (DAELow) => () =
 	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
 	Print.print_error_buf " equations\n" 
 	------------------
-	check_matching(DAELOW(VARIABLES(_,_,_,vars_size),_,eqns,_,_,_,_)) => fail
+	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_)) => fail
 
   rule	Debug.fprint("failtrace", "-check_matching failed\n")
 	--------------------
@@ -3256,7 +3312,8 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	 the original equation is removed from the system.
 	 *)
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
-	  => (dae as DAELOW(VARIABLES(_,_,_,nv'),VARIABLES(_,_,_,nkv),eqns,_,_,_,_),m,mt) &
+	  => (dae as DAELOW(VARIABLES(_,_,_,_,nv'),
+                            VARIABLES(_,_,_,_,nkv),eqns,_,_,_,_),m,mt) &
 
 	  (* and try again, restarting. This could be optimized later. It should not
 	   be necessary to restart the matching, according to Bernard Bachmann. Instead one 
@@ -3882,7 +3939,7 @@ end
  **)
 relation variable_size:(Variables) => int =
 
-  axiom	variable_size(VARIABLES(_,_,_,n)) => n 
+  axiom	variable_size(VARIABLES(_,_,_,_,n)) => n 
 end
 
 (** relation: equation_nth
@@ -5950,7 +6007,7 @@ relation print_vars_statistics: (Variables,Variables) => () =
 	int_string(bsize1) => bstr & 
 	print bstr & print "\n" 
 	-----------------------
-	print_vars_statistics(VARIABLES(_,v1,bsize1,n1),VARIABLES(_,v2,bsize2,n2)) => ()
+	print_vars_statistics(VARIABLES(_,_,v1,bsize1,n1),VARIABLES(_,_,v2,bsize2,n2)) => ()
 end
 
 
@@ -6134,7 +6191,7 @@ relation get_all_exps_vars : Variables => Exp.Exp list =
 	Util.list_map(vars, get_all_exps_var) => exps &
 	Util.list_flatten(exps) => exps
 	---------------------------------------------------------------------	
-	get_all_exps_vars VARIABLES(crefindex, vararray, bsize, nvars) => exps
+	get_all_exps_vars VARIABLES(crefindex,oldcrefindex, vararray, bsize, nvars) => exps
 
 end
 

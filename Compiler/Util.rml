@@ -135,6 +135,7 @@ module Util :
   relation list_first: 'a list => 'a
   relation list_rest: 'a list => 'a list
   relation list_last: 'a list => 'a	  
+  relation list_strip_last: 'a list => 'a list	  
   relation list_flatten : 'a list list => 'a list
   relation list_append_elt : ('a,'a list) => 'a list
   relation list_map_0 : ('a list, 'a => ()) => ()
@@ -272,6 +273,25 @@ relation list_last: 'a list => 'a =
   rule	list_last(rest) => a
 	-----------------
 	list_last(_::rest) => a
+end
+
+(** relation: list_strip_last
+ ** Remove the last element of a list. If the list is the empty list, the relation 
+ ** returns empty list
+ ** For example,
+ ** list_strip_last([3,5,7,11,13]) => [3,5,7,11]
+ ** list_strip_last([]) => []
+ **)
+relation list_strip_last: 'a list => 'a list =
+
+  axiom	list_strip_last [] => []
+	
+  axiom	list_strip_last [a] => []
+	
+  rule	list_reverse(lst) => b::rev_lst &
+        list_reverse(rev_lst) => a
+	-----------------
+	list_strip_last(lst) => a
 end
 
 (** relation: list_flatten

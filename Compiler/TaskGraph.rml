@@ -158,8 +158,8 @@ relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list
 	build_inits(dae) 
 	& print "leaving build_taskgraph\n" 
 	----------------------------------
-	build_taskgraph(dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),
-                                         DAELow.VARIABLES(_,knvararr,_,_),_,_,_,_,_),ass1,ass2,blocks)
+	build_taskgraph(dae as DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),
+                                         DAELow.VARIABLES(_,_,knvararr,_,_),_,_,_,_,_),ass1,ass2,blocks)
 
   rule	print "-build_taskgraph failed\n"
 	-----------------------
@@ -178,7 +178,7 @@ relation build_inits:(DAELow.DAELow) => () =
 	build_inits2(vars) &
 	build_inits2(kvars)
 	--------------------
-	build_inits(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),DAELow.VARIABLES(_,kvararr,_,_),_,_,_,_,_)) => ()
+	build_inits(DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),DAELow.VARIABLES(_,_,kvararr,_,_),_,_,_,_,_)) => ()
 end
 
 
@@ -357,7 +357,7 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => fail
+	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e) => fail
 *)
   rule	(* state nonlinear *)
 	int_sub(e,1) => e' &
@@ -602,7 +602,7 @@ relation build_system2: (DAELow.DAELow, int vector, int vector, int list,int) =>
 	build_system2(dae,ass1,ass2,rest,tid) => crs2 &
 	Util.list_union(crs'',crs2) => res
 	-------------------------------------
-	build_system2(dae as DAELow.DAELOW(DAELow.VARIABLES(_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e::rest,tid) => res
+	build_system2(dae as DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_),ass1,ass2,e::rest,tid) => res
 
   rule	print "build_system2 failed\n" 
 	------------------

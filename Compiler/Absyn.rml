@@ -462,6 +462,7 @@ module Absyn:
   relation get_cref_from_exp : ( Exp ) => ComponentRef list 
   relation cref_get_first : ComponentRef => ComponentRef 
   relation join_paths: (Path, Path) => Path
+  relation path_append_list: (Path list) => (Path) 
   relation strip_last: (Path) => Path 
   relation print_restr : Restriction => ()
   relation restr_string : Restriction => string
@@ -693,6 +694,26 @@ relation join_paths: (Path, Path) => (Path) =
 	-----------------------
 	join_paths(QUALIFIED(str,p),p2) => QUALIFIED(str,p')
 end
+
+(** relation: join_paths
+ ** author Lucian
+ ** This relation joins a path list
+ **)
+relation path_append_list: (Path list) => (Path) =
+
+  axiom path_append_list([]) =>  IDENT("")
+
+  axiom path_append_list(path::[]) => path
+        
+  rule  path_append_list(rest) => path &
+        join_paths(first,path) => res_path 
+        ---------------------------
+        path_append_list(first::rest) => res_path
+
+end
+        
+        
+
 
 (** relation: strip_last
  **
