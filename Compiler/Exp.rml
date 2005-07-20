@@ -789,19 +789,27 @@ relation simplify_binary_coeff: (Exp) => Exp =
 
   rule	factors(e) => e_lst &
 	simplify_mul(e_lst) => e_lst' &
-	make_product(e_lst') => res &
-	try_simplify_binary(res) => res'
+	make_product(e_lst') => res 
 	------------------------
 	simplify_binary_coeff(e as BINARY(e1,MUL(tp),e2)) 
-	  => res'
+	  => res
+
+  rule	factors(e1) => e1_lst &
+	factors(e2) => e2_lst &
+ 	inverse_factors(e2_lst) => e2_lst' &
+	list_append(e1_lst,e2_lst') => e_lst &
+ 	simplify_mul(e_lst) => e_lst' &
+	make_product(e_lst') => res 
+	------------------------
+ 	simplify_binary_coeff(e as BINARY(e1,DIV(tp),e2)) 
+	  => res
 
   rule	terms(e) => e_lst & 
 	simplify_add(e_lst) => e_lst' &
-	make_sum(e_lst') => res &
-	try_simplify_binary(res) => res'
+	make_sum(e_lst') => res 
 	------------------------
 	simplify_binary_coeff(e as BINARY(e1,ADD(tp),e2)) 
-	  => res'
+	  => res
 
   axiom	simplify_binary_coeff(e) => e
 end
@@ -868,7 +876,10 @@ end
 
 relation simplify_mul: (Exp list ) => Exp list =
 
-  rule	simplify_mul2(expl) => exp_const &
+  rule	Util.list_map(expl,print_exp_str) => sl &
+	Util.string_delimit_list(sl,", ") => s &
+	
+	simplify_mul2(expl) => exp_const &
 	simplify_mul_join_factors(exp_const) => exp_const' &
 	simplify_mul_make_pow(exp_const') => expl'
 	-------------------------
@@ -920,11 +931,19 @@ relation simplify_mul_join_factors_find: (Exp, (Exp*real) list)
 
   axiom	simplify_mul_join_factors_find(_,[]) => (0.0,[])
 
+	(* e1 == e2 *)
   rule	exp_equal(e,e2) => true &
 	simplify_mul_join_factors_find(e,rest) => (coeff2,res) &
 	real_add(coeff,coeff2) => coeff3
 	------------------------------
 	simplify_mul_join_factors_find(e,(e2,coeff)::rest) => (coeff3,res)
+
+	(* e11-e12 and e12-e11, negative -1.0 factor *)
+  rule	exp_equal(e,BINARY(e2,SUB(tp),e1)) => true &
+	simplify_mul_join_factors_find(e,rest) => (coeff2,res) &
+	real_sub(coeff,coeff2) => coeff3
+	------------------------------
+	simplify_mul_join_factors_find(e,(BINARY(e1,SUB(tp),e2),coeff)::rest) => (coeff3,res)
 
 	(* not exp_equal *)
   rule	simplify_mul_join_factors_find(e,rest) => (coeff2,res)
@@ -1161,33 +1180,27 @@ end
  **)
  relation simplify_binary_add_coeff2:(Exp) => (Exp, real) =
 
-  rule  simplify(exp) => (exp' as CREF(cr,_))
-        -------------------------------
-        simplify_binary_add_coeff2(exp) => (exp', 1.0)
+  axiom	simplify_binary_add_coeff2(exp as CREF(_,_)) => (exp, 1.0)
+	 
+  axiom	simplify_binary_add_coeff2(BINARY(RCONST(coeff),MUL(_),e1))
+	  => (e1,coeff )
 
-  rule  simplify(exp) => BINARY(RCONST(coeff),MUL(_),e1) 
-        ------------------------------
-        simplify_binary_add_coeff2(exp) => (e1,coeff )
-
-  rule  simplify(exp) => BINARY(e1,MUL(_),RCONST(coeff)) 
-        ------------------------------
-        simplify_binary_add_coeff2(exp) => (e1,coeff )
+  axiom	simplify_binary_add_coeff2(BINARY(e1,MUL(_),RCONST(coeff)))
+	  => (e1,coeff )
         
-  rule  simplify(exp) => BINARY(e1,MUL(_),ICONST(coeff)) &
-        int_real(coeff) => coeff'
+  rule	int_real(coeff) => coeff'
         -------------------------------
-        simplify_binary_add_coeff2(exp) => (e1,coeff' )
+        simplify_binary_add_coeff2(BINARY(e1,MUL(_),ICONST(coeff))) 
+	  => (e1,coeff' )
 
-  rule  simplify(exp) => BINARY(ICONST(coeff),MUL(_),e1) &
-        int_real(coeff) => coeff'
+  rule	int_real(coeff) => coeff'
         -------------------------------
-        simplify_binary_add_coeff2(exp) => (e1,coeff' )
+        simplify_binary_add_coeff2(BINARY(ICONST(coeff),MUL(_),e1)) 
+	  => (e1,coeff')
 
-  rule  simplify(e1) => e1' &
-        simplify(e2) => e2' &
-        exp_equal(e1',e2') => true
+  rule	exp_equal(e1,e2) => true
         --------------------------
-        simplify_binary_add_coeff2 (BINARY(e1,ADD(tp),e2)) => (e1',2.0)
+        simplify_binary_add_coeff2 (BINARY(e1,ADD(tp),e2)) => (e1,2.0)
 
   axiom	simplify_binary_add_coeff2(e) => (e,1.0)
        
@@ -1200,33 +1213,36 @@ end
 
 relation simplify_binary_mul_coeff2:(Exp) => (Exp, real) =
 
-  rule  simplify(exp) => (exp' as  CREF(cr,_))
+  axiom	simplify_binary_mul_coeff2(e as CREF(cr,_)) => (e, 1.0)
+
+  axiom	simplify_binary_mul_coeff2(BINARY(e1,POW(_),RCONST(coeff)))
+	  => (e1,coeff )
+
+  rule	real_sub(0.0,coeff) => coeff'
+	------------------------------------------
+	
+	simplify_binary_mul_coeff2(BINARY(e1,POW(_),UNARY(UMINUS(tp),RCONST(coeff)))) 
+	  => (e1,coeff')
+
+  rule	int_real(coeff) => coeff'
         -------------------------------
-        simplify_binary_mul_coeff2(exp) => (exp', 1.0)
+        simplify_binary_mul_coeff2(BINARY(e1,POW(_),ICONST(coeff))) 
+	  => (e1,coeff' )
 
-  rule  simplify(exp) => BINARY(e1,POW(_),RCONST(coeff))
-        ------------------------------
-        simplify_binary_mul_coeff2(exp) => (e1,coeff )
+  rule	int_real(coeff) => coeff' &
+	real_sub(0.0,coeff') => coeff''
+	------------------------------------------
+	simplify_binary_mul_coeff2(BINARY(e1,POW(_),UNARY(UMINUS(tp),ICONST(coeff)))) 
+	  => (e1,coeff')
 
-  rule  simplify(exp) => BINARY(RCONST(coeff),POW(_),e1)
-        ------------------------------
-        simplify_binary_mul_coeff2(exp) => (e1,coeff )
-
-  rule  simplify(exp) => BINARY(e1,POW(_),ICONST(coeff)) &
-        int_real(coeff) => coeff'
+  rule	int_real(coeff) => coeff'
         -------------------------------
-        simplify_binary_mul_coeff2(exp) => (e1,coeff' )
-
-  rule  simplify(exp) => BINARY(ICONST(coeff),POW(_),e1) &
-        int_real(coeff) => coeff'
-        -------------------------------
-        simplify_binary_mul_coeff2(exp) => (e1,coeff' )
+        simplify_binary_mul_coeff2(BINARY(ICONST(coeff),POW(_),e1)) 
+	  => (e1,coeff')
         
-  rule  simplify(e1) => e1' &
-        simplify(e2) => e2' &
-        exp_equal(e1',e2') => true
+  rule	exp_equal(e1,e2) => true
         --------------------------
-        simplify_binary_mul_coeff2(BINARY(e1,MUL(tp),e2)) => (e1',2.0)
+        simplify_binary_mul_coeff2(BINARY(e1,MUL(tp),e2)) => (e1,2.0)
         
   axiom	simplify_binary_mul_coeff2(e) => (e,1.0)
 
@@ -1489,6 +1505,12 @@ end
  **)
 relation inverse_factors: Exp list => Exp list =
   axiom	inverse_factors ([]) => []
+
+  rule	inverse_factors(es) => es' &
+	typeof(e2) => tp2 
+	-----------------------------
+	inverse_factors(BINARY(e1,POW(tp),e2)::es) 
+	  => BINARY(e1,POW(tp),UNARY(UMINUS(tp2),e2))::es'
 
   rule	typeof(e) => REAL &
 	inverse_factors(es) => es'
@@ -1896,7 +1918,7 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	-------------------
 	simplify_binary(_,DIV(tp),BINARY(e1,DIV(tp2),e2),e3) => e
 
-  rule	(* e1 / e2 where e1 and e2 can be factorized with common factor
+(*  rule	(* e1 / e2 where e1 and e2 can be factorized with common factor
 	 e.g  a*b/c*a => b/c *)
 	simplify(e1) => e1' &
 	simplify(e2) => e2' &
@@ -1905,7 +1927,7 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	remove_common_factors(e1s,e2s) => (e1s',e2s') &
 	make_factor_division(e1s',e2s') => res 
 	---------------------------------------
-	simplify_binary(_,DIV(tp),e1,e2) => res
+	simplify_binary(_,DIV(tp),e1,e2) => res*)
 
   rule	is_const_zero (e1) => true &
 	simplify e2 => e2'
@@ -2034,6 +2056,31 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	-------------------------------------
 	simplify_binary(_,DIV(tp2),BINARY(e2,MUL(tp),e3),e1) => e
   
+
+  rule	(* e1^e2, where e2 is one *)
+	simplify(e) => e' & 
+	simplify(e1) => e1' &
+	is_const_one(e') => true
+	------------------
+ 	simplify_binary(_, POW(_), e1,  e) => e1'
+
+  rule	(* e1^e2, where e2 is minus one *)
+	simplify(e2) => e2' &
+	simplify(e) => e' &
+	is_const_minus_one(e') => true &
+	make_const_one(tp) => one
+	------------------
+ 	simplify_binary(_, POW(tp), e2,  e) 
+	  => BINARY(one,DIV(REAL),e2')
+
+  rule	(* e1^e2, where e2 is zero *)
+	simplify(e) => e' &
+	typeof(e1) => tp &
+	is_zero(e') => true &
+	create_const_one(tp) => res
+	---------------------------
+ 	simplify_binary(_, POW(_), e1, e) => res
+
 	(* (a1*a2*...*an)^e2 => a1^e2*a2^e2*..*an^e2 *)
   rule	factors(e1) => (exp_lst as _::_::_) &
 	simplify_binary_distribute_pow(exp_lst,e2) => exp_lst' &
@@ -2041,18 +2088,6 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	---------------------------
 	simplify_binary(_,POW(_),e1,e2) => res
 
-  rule	(* e1^e2, where e2 is one *)
-	simplify(e) => e' &
-	is_const_one(e') => true
-	------------------
- 	simplify_binary(_, POW(_), CREF(e1,tp),  e) => CREF(e1,tp) 
-
-  rule	(* e1^e2, where e2 is zero *)
-	simplify(e) => e' &
-	is_zero(e') => true &
-	create_const_one(tp) => res
-	------------------
- 	simplify_binary(_, POW(_), CREF(e1,tp), e) => res
 
   axiom	simplify_binary (e, _, _, _) => e
 
