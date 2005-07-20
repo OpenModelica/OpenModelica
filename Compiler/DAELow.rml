@@ -330,6 +330,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
   relation var_cref: (Var) => Exp.ComponentRef 
   relation var_index: (Var) => int
   relation var_nominal: (Var) => real
+  relation var_equal: (Var,Var) => bool
 
   relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
 	  => int list
