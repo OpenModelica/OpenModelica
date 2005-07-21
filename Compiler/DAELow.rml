@@ -897,6 +897,7 @@ end
 relation is_non_state: VarKind => bool =
                                                  
   axiom	is_non_state (VARIABLE) => true
+  axiom	is_non_state (PARAM) => true
   axiom	is_non_state (DUMMY_DER) => true
   axiom	is_non_state (DUMMY_STATE) => true
   axiom  is_non_state (DISCRETE) => true
