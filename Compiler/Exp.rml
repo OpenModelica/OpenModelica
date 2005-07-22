@@ -741,6 +741,16 @@ relation simplify : Exp => Exp =
 	----------------------------------------
 	simplify (exp as LBINARY(e1, op, e2)) => e
 
+
+  rule	simplify(e1) => e1' &
+	simplify(e2) => e2' &
+	simplify(e3) => e3' &
+	exp_equal(e2,e3) => remove_if &
+	Util.if(remove_if,e2',IFEXP(e1,e2',e3')) => res
+	-----------------------
+	simplify (IFEXP(e1,e2,e3)) 
+	  => res
+
   axiom	simplify e => e
 
 end

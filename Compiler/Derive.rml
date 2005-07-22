@@ -349,7 +349,22 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 		     Exp.MUL(tp),
  		     Exp.BINARY(e1,Exp.POW(tp),                 
 			        Exp.BINARY(e2,Exp.SUB(tp),const_one)))
-                     
+
+  rule	(* e^x => x*der(e)*e^x-1 *)
+	differentiate_exp(e1,tv) => d_e1 &
+        Exp.exp_contains(e2,Exp.CREF(tv,tp)) => false &
+        differentiate_exp(Exp.CREF(tv,tp),tv) => const_one & 
+	let exp = Exp.BINARY(Exp.BINARY(d_e1,
+				Exp.MUL(tp),
+ 				Exp.BINARY(e2,Exp.SUB(tp),Exp.RCONST(1.0))),
+		     Exp.MUL(tp),
+		     Exp.BINARY(e1,Exp.POW(tp),                 
+			        Exp.BINARY(e2,Exp.SUB(tp),const_one)))
+	-----------------------------
+	differentiate_exp(Exp.BINARY((e1),Exp.POW(tp),e2),tv) 
+	  => exp (* ax^(a-1) *)
+	  
+
   rule	(* der(e)^x => x*der(e,2)*der(e)^(x-1)*)
         Exp.cref_equal (cr, tv) => true &
         Exp.exp_contains(e2,Exp.CREF(tv,tp)) => false &
@@ -484,11 +499,10 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-------------------------
 	differentiate_exp(Exp.RELATION(e1,rel,e2),tv) => Exp.RELATION(e1',rel,e2')
 	
-  rule	differentiate_exp(e1,tv) => e1' &
-	differentiate_exp(e2,tv) => e2' &
+  rule	differentiate_exp(e2,tv) => e2' &
 	differentiate_exp(e3,tv) => e3'
 	-------------------------
-	differentiate_exp(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1',e2',e3')
+	differentiate_exp(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1,e2',e3')
 
 	(* der(x) *)
   rule	Exp.cref_equal(cr,tv) => true
@@ -528,6 +542,8 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 
   rule	print "differentiate_exp " &
 	Exp.print_exp_str e => s & print s &
+	Exp.print_component_ref_str cr => s2 & 
+	print " w.r.t: " & print s2 & 
 	print " failed\n" 
 	------------------------
 	differentiate_exp(e,cr) => fail
