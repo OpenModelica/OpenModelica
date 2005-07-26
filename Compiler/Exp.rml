@@ -1539,6 +1539,8 @@ end
  **)
 relation make_product: (Exp list) => Exp =
 
+  axiom	make_product([]) => RCONST(1.0)
+
   axiom	make_product([e1]) => e1
 
 	(* to prevent infinite recursion, disregard constant 1. *)
@@ -1583,6 +1585,8 @@ end
  ** elements in the list.
  **)
 relation make_sum: (Exp list) => Exp =
+
+  axiom	make_sum([]) => RCONST(0.0)
 
   axiom	make_sum([e1]) => e1
 
