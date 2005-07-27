@@ -145,6 +145,8 @@ module Interactive:
 
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
 	  => (string,InteractiveSymbolTable) 
+            (* this is exported due to the need of using several interactive modules *)
+  relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable)
 
   relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program
   relation update_scope: (Absyn.Program, InteractiveVariable list) => InteractiveVariable list
