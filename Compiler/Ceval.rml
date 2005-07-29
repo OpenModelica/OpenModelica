@@ -1124,11 +1124,16 @@ end
           *)
 	 System.path_delimiter => pd &
 	 System.read_env("OPENMODELICAHOME") => omhome &
-	 Util.string_append_list([omhome, pd, "Compiler", pd, "scripts", pd, "Compile ", makefilename," > output.log 2>&1"]) => s_call &
+	 Util.string_append_list(["\"",omhome, pd, "Compiler", 
+                                  pd, "scripts", pd, "Compile ", 
+                                  makefilename," > output.log 2>&1",
+                                  "\""]) => s_call &
          (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
 
 	 System.system_call(s_call) => 0 &
-	 Util.string_append_list([".", pd, cname_str, " -m ",method_str," >> output.log 2>&1"]) => sim_call &
+	 Util.string_append_list(["\"",".", pd, cname_str, " -m ",
+                                  method_str," >> output.log 2>&1",
+                                  "\""]) => sim_call &
 	 System.system_call(sim_call) => _ &
 	 Util.string_append_list([cname_str,"_res.plt"]) => result_file &
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(result_file)],["resultFile"]) &

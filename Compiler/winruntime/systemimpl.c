@@ -62,6 +62,7 @@ void set_cflags(char *str)
   memcpy(cflags,str,strlen(str)+1);
 }
 
+
 void System_5finit(void)
 {
 	char* path;
@@ -172,6 +173,61 @@ RML_BEGIN_LABEL(System__remove_5ffirst_5fand_5flast_5fchar)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+int str_contain_char( const char* chars, const char chr)
+{
+  int length_of_chars = strlen(chars);
+  int i;
+  for(i = 0; i < length_of_chars; i++)
+    {
+      if(chr == chars[i])
+        return 1;
+    }
+  return 0;
+}
+ 
+
+/*  this removes chars in second from the beginning and end of the first
+    string and returns it */
+RML_BEGIN_LABEL(System__trim)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  char *chars_to_be_removed = RML_STRINGDATA(rmlA1);
+  int length=strlen(str);
+  char *res = malloc(length+1);
+  int i;
+  int start_pos = 0;
+  int end_pos = length - 1;
+  if(length > 1)
+    {
+      strncpy(res,str,length);
+      for(i=0; i < length; i++ )
+        {
+
+          if(str_contain_char(chars_to_be_removed,res[start_pos]))
+            start_pos++;
+          if(str_contain_char(chars_to_be_removed,res[end_pos]))
+            end_pos--;
+        }
+
+
+      res[length] = '\0';  
+    }
+  if(start_pos < end_pos)
+    {
+      res[end_pos+1] = '\0';
+      rmlA0 = (void*) mk_scon(&res[start_pos]);
+    } else {
+      rmlA0 = (void*) mk_scon("");
+    }      
+
+  free(res); 
+
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 
 RML_BEGIN_LABEL(System__strcmp)
 {

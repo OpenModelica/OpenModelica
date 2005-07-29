@@ -215,16 +215,18 @@ end
  **)
 relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	
-  rule	System.path_delimiter => pd &
+  rule  System.trim(mp'," \"\t") => mp &
+        System.path_delimiter => pd &
 	string_append(class,".mo") => classfile &
 	Util.string_append_list([mp,pd,classfile])=> classfile' &
 	exist_regular_file(classfile') &
 	print "parsing " & print classfile' & print "\n" &
 	Parser.parse(classfile') => p
 	---------------------------
-	load_class_from_mp(class,mp) => p
+	load_class_from_mp(class,mp') => p
 
-  rule	System.path_delimiter => pd &
+  rule  System.trim(mp'," \"\t") => mp &
+        System.path_delimiter => pd &
 	Util.string_append_list([mp,pd,class]) => dirfile &
 	Util.string_append_list([dirfile, pd, "package.mo"]) => packfile &
 	exist_directory_file dirfile &
@@ -233,7 +235,7 @@ relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	load_complete_package_from_mp(class,mp,Absyn.TOP,
 				      Absyn.PROGRAM([],Absyn.TOP)) => p 
 	--------------------------------------
-	load_class_from_mp(class,mp) => p
+	load_class_from_mp(class,mp') => p
 	
   rule	print "load_class_from_mp failed\n" 
 	--------------------

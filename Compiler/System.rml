@@ -123,6 +123,8 @@ with "Values.rml"
 
 relation remove_first_and_last_char: (string) => string
 
+relation trim: (string,string) => string 
+
 relation strcmp: (string,string) => int
 
 relation toupper: (string) => string
