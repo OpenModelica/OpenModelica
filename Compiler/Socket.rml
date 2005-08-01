@@ -117,29 +117,36 @@
 
 module Socket:
 (** relation: waitforconnect
+ **
  ** Takes a port number and returns a socket id, for a connected client 
- ** External implementation in C
+ ** External implementation in C.
  **)						      
           relation waitforconnect: int => int
 
 (** relation: handlerequest
+ **
  ** Takes a socket id and returns a string id from it.
  ** External implementation in C
 **)		  
 	  relation handlerequest: int => string
 	  
 (** relation: sendreply: 
- ** Takes a socket id and a string, and sends the string as a reply to a given request on that socket id.
+ **
+ ** Takes a socket id and a string, and sends the string as a reply
+ ** to a given request on that socket id.
  ** External implementation in C
  **)
 	  relation sendreply: (int, string) => ()
 (** relation: close
+ **
  ** Takes a socket id and closes the socket
 **)
 	  relation close: int => ()
 
 (** relation: cleanup
- ** Disconnects the serversocket, initialized in waitforconnect. Not the socket no return by waitforconnect, but an INTERNAL STATE
+ **
+ ** Disconnects the serversocket, initialized in waitforconnect. Not the 
+ ** socket number return by waitforconnect, but an INTERNAL STATE
   
  **)
 	  relation cleanup: () => ()

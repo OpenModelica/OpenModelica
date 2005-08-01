@@ -276,6 +276,7 @@ with "Dump.rml"
 with "Debug.rml"
 with "Print.rml"
 with "Util.rml"
+
 (** relation: elaborate
  **
  ** This relation takes an `Absyn.Program' and constructs a `Program'
@@ -307,6 +308,11 @@ relation elab_class: Absyn.Class => Class =
 
 end
 
+(** relation: elab_restriction
+ **
+ ** Convert a class restriction.
+ **)
+
 relation elab_restriction: (Absyn.Class, Absyn.Restriction) => Restriction =
 
   rule	contain_external_func_decl(d) => true 
@@ -333,7 +339,12 @@ relation elab_restriction: (Absyn.Class, Absyn.Restriction) => Restriction =
   axiom	elab_restriction(_,Absyn.R_PREDEFINED_BOOL) => R_PREDEFINED_BOOL
   axiom	elab_restriction(_,Absyn.R_PREDEFINED_ENUM) => R_PREDEFINED_ENUM
 end
-	
+
+(** relation: contain_external_func_decl
+ **
+ ** Returns true if Class contains an external function declaration.
+ **)
+
 relation contain_external_func_decl:(Absyn.Class) => bool =
 	
   axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_,_)::_,_),_)) => true
@@ -383,6 +394,11 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
   axiom	elab_classdef(Absyn.OVERLOAD(lst,_)) => OVERLOAD(lst)
 end
 
+(** relation: elab_enumlist
+ **
+ ** Convert an EnumLiteral list to an Ident list. Comments are lost.
+ **)
+
 relation elab_enumlist:(Absyn.EnumLiteral list) => Ident list =
 
   axiom	elab_enumlist([]) => []
@@ -391,6 +407,11 @@ relation elab_enumlist:(Absyn.EnumLiteral list) => Ident list =
 	-----------------------------------------
 	elab_enumlist(Absyn.ENUMLITERAL(id,_)::rest) => id::res
 end
+
+(** relation: elab_classdef_elements
+ **
+ ** Convert an Absyn.ClassPart list to an Element list.
+ **)
 
 relation elab_classdef_elements: Absyn.ClassPart list => Element list =
 
@@ -417,6 +438,10 @@ relation elab_classdef_elements: Absyn.ClassPart list => Element list =
 
 end
 
+(** relation: elab_classdef_equations
+ **
+ ** Convert an Absyn.ClassPart list to an Equation list.
+ **)
 
 relation elab_classdef_equations: Absyn.ClassPart list => Equation list = 
 
@@ -435,6 +460,10 @@ relation elab_classdef_equations: Absyn.ClassPart list => Equation list =
 
 end
 
+(** relation: elab_classdef_initialequations
+ **
+ ** Convert an Absyn.ClassPart list to an initial Equation list.
+ **)
 
 relation elab_classdef_initialequations: Absyn.ClassPart list => Equation list = 
 
@@ -454,6 +483,10 @@ relation elab_classdef_initialequations: Absyn.ClassPart list => Equation list =
 end
 
 
+(** relation: elab_classdef_algorithms
+ **
+ ** Convert an Absyn.ClassPart list to an Algorithm list.
+ **)
 
 relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
 
@@ -474,7 +507,13 @@ relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
 
 end
 
-relation elab_classdef_initialalgorithms: Absyn.ClassPart list => Algorithm list =
+(** relation: elab_classdef_initialalgorithms
+ **
+ ** Convert an Absyn.ClassPart list to an initial Algorithm list.
+ **)
+
+relation elab_classdef_initialalgorithms: Absyn.ClassPart list 
+	  => Algorithm list =
 
   axiom	elab_classdef_initialalgorithms [] => []
 
@@ -493,8 +532,14 @@ relation elab_classdef_initialalgorithms: Absyn.ClassPart list => Algorithm list
 
 end
 
+(** relation: elab_classdef_algorithmitems
+ **
+ ** Convert an Absyn.AlgorithmItem list to an Absyn.Algorithm list.
+ ** Comments are lost.
+ **)
 
-relation elab_classdef_algorithmitems: Absyn.AlgorithmItem list => Absyn.Algorithm list =
+relation elab_classdef_algorithmitems: Absyn.AlgorithmItem list 
+	  => Absyn.Algorithm list =
 
   axiom	elab_classdef_algorithmitems [] => []
 	
@@ -506,6 +551,13 @@ relation elab_classdef_algorithmitems: Absyn.AlgorithmItem list => Absyn.Algorit
 	-----------------------------------------
 	elab_classdef_algorithmitems (_::rest) => res
 end
+
+(** relation: elab_classdef_externaldecls
+ **
+ ** Converts an Absyn.ClassPart list to an Absyn.ExternalDecl option
+ ** The list should only contain one external declaration, so pick the first 
+ ** one.
+ **)
 
 relation elab_classdef_externaldecls: (Absyn.ClassPart list) => Absyn.ExternalDecl option =
 
@@ -522,7 +574,8 @@ end
  **
  ** This relation converts a list of `Absyn.ElementItem' to a list of
  ** `Element'.  The boolean argument flags whether the elements are
- ** pretected. Annotations are not elaborated, i.e. they are removed when converting to SCode.
+ ** pretected. Annotations are not elaborated, i.e. they are removed when
+ ** converting to SCode.
  **)
 
 relation elab_eitemlist : (Absyn.ElementItem list, bool) => Element list =
@@ -597,6 +650,11 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
   axiom	elab_elementspec(final,repl,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
 
 end
+
+(** relation: elab_variability
+ **
+ ** Converts an Absyn.Variability to Variability.
+**)
 relation elab_variability: Absyn.Variability => Variability =
 
   axiom elab_variability(Absyn.VAR) => VAR
@@ -628,6 +686,10 @@ relation elab_equations : Absyn.EquationItem list => Equation list =
 
 end
 
+(** relation: elab_e_equations
+ **
+ ** Helper relation to elab_equations
+**)
 
 relation elab_e_equations : Absyn.EquationItem list => EEquation list =
 
@@ -706,9 +768,6 @@ end
 (* PR Arrays seem to keep their Absyn.rml structure. *)
 relation elab_equation : Absyn.Equation => EEquation =
 
-(* REMOVE - If noone complains, I will remove this 2004-11-01
- axiom	elab_equation Absyn.EQ_EXPR(e) => EQ_EXPR(e) *)
-	
   rule	elab_e_equations tb => tb' &
 	elab_e_equations fb => fb'
 	------------------------
@@ -743,9 +802,6 @@ relation elab_equation : Absyn.Equation => EEquation =
 
   axiom	elab_equation Absyn.EQ_NORETCALL("reinit",Absyn.FUNCTIONARGS([Absyn.CREF(cr),e2],[]))
           => EQ_REINIT(cr,e2) 
-
-
-
 end
 
 (** - Modification management *)
@@ -785,8 +841,12 @@ relation strip_submod: Mod => Mod =
 end
 
 
-(** LS: Adding elaborate for the elementspec in the redeclaration
+(** relation: build_args
+ ** author: LS
+ **
+ ** Adding elaborate for the elementspec in the redeclaration
  **)
+
 relation build_args : (Absyn.ElementArg list) => SubMod list =
 
   axiom build_args [] => []
@@ -860,12 +920,23 @@ relation build_sub_sub : (Subscript list, Mod) => Mod =
 
 end
 
+(** relation: get_element_named
+ ** 
+ ** Return the Element with the name given as first argument from
+ ** the Class.
+ **)
+
 relation get_element_named: (Ident, Class) => Element =
 	
   rule	get_element_named_from_elts(id,elts) => elt
 	----------------------------------------
 	get_element_named(id,CLASS(_,_,_,_,PARTS(elts,_,_,_,_,_))) => elt
 end
+
+(** relation: get_element_named_from_elts
+ **
+ ** Helper relation to get_element_named.
+ **)
 
 relation get_element_named_from_elts: (Ident, Element list) => Element =
 
@@ -909,6 +980,11 @@ relation print_mod: Mod => () =
 	print_mod m => ()
 end 
 
+(** relation: print_mod_str
+ **
+ ** Prints Mod to a string.
+ **)
+
 relation print_mod_str : Mod => string =
 
   axiom	print_mod_str(NOMOD) => "NOMOD"
@@ -934,9 +1010,10 @@ relation print_mod_str : Mod => string =
 
 end
 
-
-(**)
-
+(** relation: restr_string
+ **
+ ** Prints Restriction to a string.
+ **)
 
 relation restr_string : Restriction => string =
 
@@ -953,8 +1030,12 @@ relation restr_string : Restriction => string =
   axiom restr_string R_PREDEFINED_REAL		=> "PREDEFINED_REAL"
   axiom restr_string R_PREDEFINED_STRING	=> "PREDEFINED_STRING"
   axiom restr_string R_PREDEFINED_BOOL		=> "PREDEFINED_BOOL"
-
 end
+
+(** relation: print_restr
+ **
+ ** Prints Restriction to the Print buffer.
+ **)
 
 relation print_restr : Restriction => () =
 
@@ -962,8 +1043,12 @@ relation print_restr : Restriction => () =
 	Print.print_buf str
 	----------------
 	print_restr restr
-
 end
+
+(** relation: print_final
+ **
+ ** Prints "final" to the Print buffer.
+ **)
 
 relation print_final : bool => () =
 
@@ -974,6 +1059,11 @@ relation print_final : bool => () =
        print_final true
 
 end
+
+(** relation: print_subs_str
+ ** 
+ ** Prints a SubMod list to a string.
+ **)
 
 relation print_subs_str : SubMod list => string =
 
@@ -1005,6 +1095,11 @@ relation print_subs_str : SubMod list => string =
 
 end
 
+(** relation: print_subs1_str
+ **
+ ** Helper relation to print_subs_str.
+**)
+
 relation print_subs1_str : SubMod list => string =
 
   axiom print_subs1_str [] => ""
@@ -1018,13 +1113,10 @@ relation print_subs1_str : SubMod list => string =
 
 end
 
-relation print_eqmod : Absyn.Exp option => () =
-
-  rule	print_eqmod_str m => s &
-	Print.print_buf s 
-	--------------------
-	print_eqmod(m) => ()
-end
+(** relation: print_eqmod_str
+ **
+ ** Helper relation to print_mod_str.
+ **)
 
 relation print_eqmod_str : Absyn.Exp option => string =
 
@@ -1037,7 +1129,10 @@ relation print_eqmod_str : Absyn.Exp option => string =
 
 end
 	
-(*!includecode*)
+(** relation: print_element_list
+ **
+ ** Print Element list to Print buffer.
+ **)
 
 relation print_element_list : Element list => () =
 
@@ -1049,6 +1144,11 @@ relation print_element_list : Element list => () =
 	print_element_list(x::xs) => ()
 end
 
+(** relation: print_element
+ **
+ ** Print Element to Print buffer.
+ **)
+
 relation print_element : Element => () =
 
   rule	print_element_str elt => str &
@@ -1057,6 +1157,10 @@ relation print_element : Element => () =
 	print_element(elt) => ()
 end
 	
+(** relation: print_element_str
+ **
+ ** Print Element to a string.
+ **)
 
 relation print_element_str : Element => string =
 
@@ -1096,6 +1200,11 @@ relation print_element_str : Element => string =
   axiom	print_element_str(IMPORT(_)) => "IMPORT(_)"
 end	
 
+(** relation: variability_string
+ **
+ ** Print Variability to a string.
+ **)
+
 relation variability_string: Variability => string =
   axiom	variability_string(VAR) => "VAR"
   axiom	variability_string(DISCRETE) => "DISCRETE"
@@ -1103,6 +1212,11 @@ relation variability_string: Variability => string =
   axiom	variability_string(STRUCTPARAM) => "STRUCTPARAM"
   axiom	variability_string(CONST) => "CONST" 
 end
+
+(** relation: is_parameter_or_const
+ **
+ ** Returns true if Variability indicates a parameter or constant.
+ **)
 
 relation is_parameter_or_const: Variability => bool =
 
@@ -1118,6 +1232,11 @@ relation is_parameter_or_const: Variability => bool =
 
 end
 
+(** relation: count_parts
+ **
+ ** Counts the number of ClassParts of a Class.
+ **)
+
 relation count_parts: Class => int =
 
   rule	list_length(elts) => res
@@ -1128,6 +1247,11 @@ relation count_parts: Class => int =
 
 end
 
+(** relation: component_names
+ **
+ ** Return a string list of all component names of a class.
+ **)
+
 relation component_names: Class => string list =
 
   rule	component_names_from_elts(elts) => res
@@ -1135,6 +1259,12 @@ relation component_names: Class => string list =
 	component_names(CLASS(_,_,_,_,PARTS(elts,_,_,_,_,_))) => res
   axiom	component_names(_) => []
 end
+
+(** relation: component_names_from_elts
+ **
+ ** Helper relation to component_names.
+ **)
+
 relation component_names_from_elts:(Element list) => string list =
 
   axiom	component_names_from_elts([]) => []
@@ -1144,6 +1274,11 @@ relation component_names_from_elts:(Element list) => string list =
 	component_names_from_elts(COMPONENT(id,_,_,_,_,_,_,_,_)::rest) => id::res
 end
 
+(** relation: is_function
+ **
+ ** Return true if Class is a function.
+**)
+ 
 relation is_function : Class => bool =
 
   axiom	is_function CLASS(n,_,_,R_FUNCTION,def) => true
@@ -1151,6 +1286,11 @@ relation is_function : Class => bool =
   axiom	is_function _ => false
 
 end
+
+(** relation: class_name
+ **
+ ** Returns the class name of a Class.
+ **)
 
 relation class_name : Class => string =
 

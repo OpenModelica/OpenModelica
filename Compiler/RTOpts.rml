@@ -120,16 +120,81 @@
 
 module RTOpts:
 
+(** relation: args
+ **
+ ** Register all command arguments to the global variables.
+ **)
+
   relation args : string list => string list
+
+(** relation: typeinfo
+ ** 
+ ** Returns true if the typeinfo flag is set.
+ **)
+
   relation typeinfo : () => bool
+
+(** relation: split_arrays
+ ** 
+ ** Returns true if the split_arrays flag is set.
+ **)
+
   relation split_arrays : () => bool
+
+(** relation: params_struct
+ ** 
+ ** Returns true if the params_struct flag is set.
+ **)
   relation params_struct : () => bool
+
+(** relation: modelica_output
+ ** 
+ ** Returns true if the modelica_output flag is set.
+ **)
   relation modelica_output : () => bool
+
+(** relation: debug_flag
+ ** 
+ ** Returns true if the debug_flag flag is set.
+ **)
+
   relation debug_flag : string => bool
-  relation no_proc: () => int 	  
+
+(** relation: no_proc
+ ** 
+ ** Returns the number of processors specified at the command line for
+ ** automatic parallelization.
+ **)
+
+  relation no_proc: () => int 
+
+(** relation: latency
+ ** 
+ ** Returns the latency number specified at the command line for
+ ** automatic parallelization.
+ **)
+	  
   relation latency:() => real
+
+(** relation: bandwidth
+ ** 
+ ** Returns the bandwidth number specified at the command line for
+ ** automatic parallelization.
+ **)
   relation bandwidth: () => real	  
+
+(** relation: simulation_cg
+ ** 
+ ** Returns true if simulation code generation should be performed,
+ ** i.e. the +s flag is in the command arguments.
+ **)
   relation simulation_cg: () => bool
+
+(** relation: silent
+ ** 
+ ** Returns true if silent mode, +q is in the command arguments.
+ **)
+
   relation silent: () => bool  	  
 end
 

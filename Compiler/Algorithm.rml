@@ -421,8 +421,13 @@ relation make_when_a : (Exp.Exp, Types.Properties,
 end
 
 (** relation: make_assert
+ **
+ ** Creates an assert statenebt from two expressions.
  **)
-relation make_assert: (Exp.Exp, Exp.Exp, Types.Properties, Types.Properties) 
+relation make_assert: (Exp.Exp, (* condition *)
+		       Exp.Exp, (* message *)
+		       Types.Properties, 
+		       Types.Properties) 
 	  => Statement =
 
   axiom	make_assert(cond, msg, Types.PROP((Types.T_BOOL(_),_),_),Types.PROP((Types.T_STRING(_),_),_)) 
@@ -452,6 +457,12 @@ relation get_all_exps : Algorithm => Exp.Exp list =
 
 end
 
+(** relation: get_all_exps_stmts
+ ** 
+ ** This relation takes a list of statements and returns all expressions
+ ** in all statements.
+ **)
+
 relation get_all_exps_stmts : Statement list => Exp.Exp list=
 
   rule	Util.list_map(stmts, get_all_exps_stmt) => expslist &
@@ -460,6 +471,11 @@ relation get_all_exps_stmts : Statement list => Exp.Exp list=
 	get_all_exps_stmts stmts => exps
 end
 
+
+(** relation: get_all_exps_stmt
+ **
+ ** Returns all expressions in a statement.
+ **)
 
 relation get_all_exps_stmt : Statement => Exp.Exp list =
 
@@ -502,6 +518,11 @@ relation get_all_exps_stmt : Statement => Exp.Exp list =
 
 end
 
+(** relation: get_all_exps_else
+ **
+ ** Helper relation to get_all_exps_stmt.
+ **)
+
 relation get_all_exps_else : Else => Exp.Exp list =
 
   axiom	get_all_exps_else NOELSE => []
@@ -518,6 +539,11 @@ relation get_all_exps_else : Else => Exp.Exp list =
 
 end
 
+(** relation: cref_to_exp
+ **
+ ** Creates an expression from a componentref.
+ ** The type of the expression will become Exp.OTHER.
+ **)
 
 relation cref_to_exp : Exp.ComponentRef => Exp.Exp =
 

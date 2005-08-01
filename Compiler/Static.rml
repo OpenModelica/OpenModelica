@@ -219,6 +219,7 @@ with "Prefix.rml"
 with "Ceval.rml"
 
 (** relation: elab_exp_list
+ **
  ** Expression elaboration of Absyn.Exp list, i.e. lists of expressions.
  **)
 
@@ -234,8 +235,11 @@ relation elab_exp_list : (Env.Env, Absyn.Exp list, bool, Interactive.Interactive
 end
 
 (** relation: elab_exp_list_list
- ** Expression elaboration of lists of lists of expressions. Used in for instance matrices, etc.
+ **
+ ** Expression elaboration of lists of lists of expressions. Used in for 
+ ** instance matrices, etc.
  **)
+
 relation elab_exp_list_list : (Env.Env, Absyn.Exp list list, bool
 			       , Interactive.InteractiveSymbolTable option)
 	  => (Exp.Exp list list, Types.Properties list list, Interactive.InteractiveSymbolTable option ) =
@@ -250,9 +254,11 @@ end
 
 
 (** relation: ceval_if_constant
+ **
  ** This relation calls Ceval.ceval if the boolean parameter is true
  ** on the expression.
  **)
+
 relation ceval_if_constant: (Exp.Exp, Types.Properties, bool (* constant *), bool (* impl *), Env.Env) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -481,9 +487,11 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 end 
 
 (** relation: add_for_loop_scope_const 
- ** Creates a new scope on the environment used for loops and adds a loop variable 
- ** which is named by the second argument. The variable is given the value 1 (one) such that
- ** elaboration of expressions of containing the loop variable become constant.
+ **
+ ** Creates a new scope on the environment used for loops and adds a loop 
+ ** variable which is named by the second argument. The variable is given 
+ ** the value 1 (one) such that elaboration of expressions of containing the 
+ ** loop variable become constant.
  **)
 relation add_for_loop_scope_const : (Env.Env, Ident, Types.Type) => Env.Env =
 
@@ -505,10 +513,10 @@ end
 
 
 (** relation: elab_call_reduction
- * 
- * This relation elaborates reduction expressions, that look like function
- * calls. For example an array constructor.
- *)
+ ** 
+ ** This relation elaborates reduction expressions, that look like function
+ ** calls. For example an array constructor.
+ **)
 relation elab_call_reduction : (Env.Env, Absyn.ComponentRef, Absyn.Exp,
 				Ident, Absyn.Exp, bool,
 				Interactive.InteractiveSymbolTable option)
@@ -533,8 +541,9 @@ relation elab_call_reduction : (Env.Env, Absyn.ComponentRef, Absyn.Exp,
 end
 
 (** relation: replace_operator_with_fcall
- ** Replaces a userdefined operator expression with a corresponding function call expression.
- ** Other expressions just passes through.
+ **
+ ** Replaces a userdefined operator expression with a corresponding function 
+ ** call expression. Other expressions just passes through.
 **)
 relation replace_operator_with_fcall: (Exp.Exp,bool (*builtin*)) => Exp.Exp =
 
@@ -557,10 +566,13 @@ relation replace_operator_with_fcall: (Exp.Exp,bool (*builtin*)) => Exp.Exp =
 end
 
 (** relation: elab_code_type
- ** This relation will construct the correct type for the given Code expression.
- ** The types are built-in classes of different types. E.g. the class TypeName is the type
+ **
+ ** This relation will construct the correct type for the given Code 
+ ** expression. The types are built-in classes of different types. E.g. 
+ ** the class TypeName is the type
  ** of Code expressions corresponding to a type name Code expression. 
 **)
+
 relation elab_code_type: (Env.Env, Absyn.Code) => Types.Type =
 
   axiom	elab_code_type(env, Absyn.C_TYPENAME(_)) 
@@ -586,15 +598,17 @@ relation elab_code_type: (Env.Env, Absyn.Code) => Types.Type =
 
 end
 
-
 (** relation elab_graphics_exp
+ **
  ** This relation is specially designed for elaboration of expressions when
  ** investigating Modelica 2.0 graphical annotations.
- ** These have an array of records representing graphical objects. These elements can
- ** have different types, therefore elab_graphic_exp will allow arrays with elements of 
- ** varying types. 
+ ** These have an array of records representing graphical objects. These 
+ ** elements can have different types, therefore elab_graphic_exp will allow
+ ** arrays with elements of varying types. 
  **)
-relation elab_graphics_exp : (Env.Env, Absyn.Exp, bool (*impl*) ) => (Exp.Exp, Types.Properties) =
+
+relation elab_graphics_exp : (Env.Env, Absyn.Exp, bool (*impl*) ) 
+	  => (Exp.Exp, Types.Properties) =
 
   axiom	elab_graphics_exp(_, Absyn.INTEGER(x),impl)
 	  => (Exp.ICONST(x), Types.PROP((Types.T_INTEGER([]),NONE),true))
@@ -717,11 +731,9 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp, bool (*impl*) ) => (Exp.Exp, T
 	  => (Exp.RANGE(rt,start'',SOME(step''),stop''), Types.PROP(t, const))
 
 
-	  (** FIXME: what is a below? Why true if is array? **)
-  rule	(*Debug.fprintln("setr", "elab_graphics_exp_array") &*)
-	elab_graphics_array (env, es,impl) => (es', Types.PROP(t, const)) & list_length es' => l&
-(*	Ceval.ceval_list(env,es',impl,NONE) => vl &
-	Util.list_map(vl, value_exp) => es'' &*)
+
+  rule	elab_graphics_array (env, es,impl) 
+	  => (es', Types.PROP(t, const)) & list_length es' => l&
 	Types.elab_type t => at &
 	Types.is_array t => a
 	--------------------------------------------------------------
@@ -753,9 +765,11 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp, bool (*impl*) ) => (Exp.Exp, T
 end
 
 (** relation: deoverload_range
- ** Does deoverloading of range expressions. They can be both Integer ranges and Real ranges.
- ** This relation determines which one to use.
+ **
+ ** Does deoverloading of range expressions. They can be both Integer ranges 
+ ** and Real ranges. This relation determines which one to use.
 **)
+
 relation deoverload_range : ((Exp.Exp*Types.Type), 
 			     (Exp.Exp*Types.Type) option,
 			     (Exp.Exp*Types.Type)) 
@@ -783,10 +797,15 @@ end
 
 
 (** relation: elab_range_type 
- ** Helper relation to elab_range. Calculates the dimension of the range expression.
- *)
-relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, Exp.Exp, bool (*const*),
-			    Exp.Type, bool (*impl*) ) => Types.Type =
+ **
+ ** Helper relation to elab_range. Calculates the dimension of the 
+ ** range expression.
+ **)
+
+relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, 
+			    Exp.Exp, bool (*const*),
+			    Exp.Type, bool (*impl*) ) 
+	  => Types.Type =
 
   rule	Ceval.ceval (env,start,impl,NONE,NONE) => (Values.INTEGER(startv),_) &
 	Ceval.ceval (env,stop,impl,NONE,NONE) => (Values.INTEGER(stopv),_) &
@@ -857,8 +876,11 @@ relation elab_range_type : (Env.Env, Exp.Exp, Exp.Exp option, Exp.Exp, bool (*co
 end
 
 (** relation: elab_tuple
- ** This relation does elaboration of tuples, i.e. function calls returning several values.
+ **
+ ** This relation does elaboration of tuples, i.e. function calls returning 
+ ** several values.
  **)
+
 relation elab_tuple : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	  => (Exp.Exp list, Types.Properties list) =
 
@@ -870,24 +892,21 @@ relation elab_tuple : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	-----------------------------
 	elab_tuple(env,e::exps,impl) => (e'::exps', p::props) 
 
-(*PR.  rule	elab_exp (env,e) => (e',p) 
-	-----------------------------
-	elab_tuple(env,e::[]) => (e', p) 
-*)
   rule 	(*Debug.print "elaborating last element."*)
 	----------------
 	elab_tuple(env,[],impl) => ([], []) 
 
-(*  axiom elab_tuple(env,[]) => ([], []) 
-*)
 end
 
 
 (** relation: elab_array 
+ **
  ** This relation elaborates on array expressions.
  **)
 
-relation elab_array : (Env.Env, Absyn.Exp list,bool (*impl*), Interactive.InteractiveSymbolTable option)
+relation elab_array : (Env.Env, Absyn.Exp list,
+		       bool (*impl*), 
+		       Interactive.InteractiveSymbolTable option)
 	  => (Exp.Exp list, Types.Properties) =
 
   rule	elab_exp (env,e,impl,st) => (e',prop,_)
@@ -933,8 +952,10 @@ relation elab_array : (Env.Env, Absyn.Exp list,bool (*impl*), Interactive.Intera
 end
 
 (** relation: elab_graphics_array
+ **
  ** This relation elaborates array expressions for graphics elaboration.
  **)
+
 relation elab_graphics_array : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	  => (Exp.Exp list, Types.Properties) =
 
@@ -955,9 +976,11 @@ relation elab_graphics_array : (Env.Env, Absyn.Exp list, bool (*impl*) )
 end
 
 (** relation elab_matrix_comma
+ **
  ** This relation is a helper relation for elab_matrix_semi.
  ** It elaborates one matrix row of a matrix.
  **)
+
 relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
 			      , Interactive.InteractiveSymbolTable option, bool (*have real*))
 	=> ((Exp.Exp*bool) list, Types.Properties, int, int) =
@@ -991,6 +1014,7 @@ relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
 end
 
 (** relation: elab_matrix_semi
+ **
  ** This relation elaborates Matrix expressions, e.g. [1,0;2,1] 
  ** A row is elaborated with elab_matrix_comma.
  *)
@@ -1051,13 +1075,14 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*
 end
 
 (** relation: elab_builtin_size
+ ** 
  ** This relation elaborates the size operator.
  ** Input is the list of arguments to size as Absyn.Exp expressions and the 
  ** environment, Env.Env.
  **)
-relation elab_builtin_size : (Env.Env, Absyn.Exp list, bool (*impl*) ) => (Exp.Exp, Types.Properties) =
 
-	(* FIXME: Why false? *)
+relation elab_builtin_size : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
+	  => (Exp.Exp, Types.Properties) =
 
   rule	(** size(A,x) that returns size of x:th dimension *)
   	elab_exp(env,dim,impl,NONE) => (dimp,Types.PROP(_,c1),_) &
@@ -1083,10 +1108,13 @@ end
 
 
 (** relation: elab_builtin_fill
+ **
  ** This relation elaborates the builtin operator fill.
  ** The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env
  **)
-relation elab_builtin_fill : (Env.Env, Absyn.Exp list, bool (*impl*) ) => (Exp.Exp, Types.Properties)	=
+
+relation elab_builtin_fill : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
+	  => (Exp.Exp, Types.Properties)	=
 
   rule	elab_exp (env,s,impl,NONE) => (s', prop,_) &
 	elab_exp_list (env,dims,impl,NONE) => (dims', dimprops,_) &
@@ -1108,8 +1136,10 @@ relation elab_builtin_fill : (Env.Env, Absyn.Exp list, bool (*impl*) ) => (Exp.E
 end
 
 (** relation: elab_builtin_fill_2
+ **
  ** Helper relation to elab_builtin_fill
  **)
+
 relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1140,9 +1170,11 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 end
 
 (** relation: elab_builtin_transpose
+ **
  ** This relation elaborates the builtin operator transpose
  ** The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env
  **)
+
 relation elab_builtin_transpose : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1157,9 +1189,11 @@ relation elab_builtin_transpose : (Env.Env, Absyn.Exp list, bool (*impl*) )
 end
 
 (** relation: build_exp_list
+ **
  ** Helper relation to e.g. elab_builtin_fill_2. Creates n copies of the same 
  ** expression given as input.
  **)
+
 relation build_exp_list : (Exp.Exp, int (* n *)) => Exp.Exp list =
 
   axiom	build_exp_list(e,0) => []
@@ -1173,9 +1207,11 @@ relation build_exp_list : (Exp.Exp, int (* n *)) => Exp.Exp list =
 end
 
 (** relation: elab_builtin_sum
+ **
  ** This relation elaborates the builtin operator sum.
  ** The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env
  **)
+
 relation elab_builtin_sum : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1188,9 +1224,11 @@ relation elab_builtin_sum : (Env.Env, Absyn.Exp list, bool (*impl*) )
 end
 
 (** relation: elab_builtin_pre
+ **
  ** This relation elaborates the builtin operator pre.
  ** Input is the arguments to the pre operator and the environment, Env.Env.
  **)
+
 relation elab_builtin_pre : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1213,9 +1251,11 @@ relation elab_builtin_pre : (Env.Env, Absyn.Exp list, bool (*impl*) )
 end
 
 (** relation: elab_builtin_initial
+ **
  ** This relation elaborates the builtin operator 'initial()'
  ** Input is the arguments to the operator, which should be an empty list.
  **)
+
 relation elab_builtin_initial : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1229,9 +1269,11 @@ relation elab_builtin_initial : (Env.Env, Absyn.Exp list, bool (*impl*) )
 end
 
 (** relation: elab_builtin_terminal
+ **
  ** This relation elaborates the builtin operator 'terminal()'
  ** Input is the arguments to the operator, which should be an empty list.
  **)
+
 relation elab_builtin_terminal : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
 
@@ -1252,10 +1294,12 @@ relation elab_builtin_terminal : (Env.Env, Absyn.Exp list, bool (*impl*) )
 end
 
 (** relation: elab_builtin_array
+ **
  ** This relation elaborates the builtin operator 'array'. For instance, 
  ** array(1,4,6) which is the same as {1,4,6}.
  ** Input is the list of arguments to the operator, as Absyn.Exp list.
  **)
+
 relation elab_builtin_array : (Env.Env, Absyn.Exp list, bool (*impl*)) 
 	  => (Exp.Exp, Types.Properties) =
   rule	elab_exp_list(env, expl, impl, NONE) 
@@ -1270,9 +1314,12 @@ relation elab_builtin_array : (Env.Env, Absyn.Exp list, bool (*impl*))
 end
 
 (** relation elab_builtin_array2.
+ **
  ** Helper relation to elab_builtin_array.
- ** Asserts that all types are of same dimensionality and of same builtin types.
+ ** Asserts that all types are of same dimensionality and of same 
+ ** builtin types.
  **)
+
 relation elab_builtin_array2: (Exp.Exp list, Types.Properties list)
 	=> (Exp.Exp list, Types.Properties) =
 
@@ -1295,9 +1342,12 @@ relation elab_builtin_array2: (Exp.Exp list, Types.Properties list)
 end
 
 (** relation: elab_bultin_array3
+ **
  ** Helper relation to elab_builtin_array.
  **)
-relation elab_builtin_array3: (Exp.Exp list, Types.Properties list, Types.Properties)
+
+relation elab_builtin_array3: (Exp.Exp list, Types.Properties list, 
+			       Types.Properties)
 	=> (Exp.Exp list, Types.Properties) =
   axiom	elab_builtin_array3([],[],tp) => ([],tp)
 
@@ -1308,9 +1358,12 @@ relation elab_builtin_array3: (Exp.Exp list, Types.Properties list, Types.Proper
 end
 
 (** relation: elab_builtin_zeros
+ **
  ** This relation elaborates the builtin operator 'zeros(n)'.
  **)
-relation elab_builtin_zeros : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+
+relation elab_builtin_zeros : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_fill (env, Absyn.INTEGER(0)::args,impl) => (e,p)
 	--------------------------------------------------------
@@ -1318,9 +1371,11 @@ relation elab_builtin_zeros : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.E
 end
 
 (** relation: same_dimensions
- ** This relation returns true of all the properties, containing types, have the same 
- ** dimensions, otherwise false. 
+ **
+ ** This relation returns true of all the properties, containing types, 
+ ** have the same dimensions, otherwise false. 
  **)
+
 relation same_dimensions: (Types.Properties list ) => bool =
 
   rule	Util.list_map(tpl,Types.get_prop_type) => tpl' &
@@ -1344,6 +1399,11 @@ relation same_dimensions2:( int list list) => bool =
 	same_dimensions2(l) => true
   axiom	same_dimensions2(_) => false
 end
+
+(** relation: same_dimensions3
+ **
+ ** Helper relation to same_dimensions2
+ **)
 			
 relation same_dimensions3: (int list) => bool =
 
@@ -1364,9 +1424,12 @@ relation same_dimensions3: (int list) => bool =
 end
 
 (** relation: elab_builtin_ones
+ **
  ** This relation elaborates on the builtin opeator 'ones(n)'.
  **)
-relation elab_builtin_ones : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+
+relation elab_builtin_ones : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
 
   rule	elab_builtin_fill (env, Absyn.INTEGER(1)::args,impl) => (e,p)
 	--------------------------------------------------------
@@ -1374,9 +1437,13 @@ relation elab_builtin_ones : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Ex
 end
 
 (** relation: elab_builtin_max
+ **
  **  This relation elaborates on the builtin operator 'max(v1,v2)'
  **)
-relation elab_builtin_max : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+
+relation elab_builtin_max : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
+
 	(* max(vector) *)
   rule	elab_exp (env,arrexp,impl,NONE) 
 	  => (arrexp', Types.PROP(ty, arrconst),_) &
@@ -1396,8 +1463,8 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp
 
 end
 
-
 (** relation: elab_builtin_min
+ **
  ** This relation elaborates the builtin operator 'min(a,b)'
  **)
 
@@ -1423,9 +1490,12 @@ end
 
 
 (** relation: elab_builtin_floor
+ **
  ** This relation elaborates on the builtin operator floor.
  **)
-relation elab_builtin_floor : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+		 
+relation elab_builtin_floor : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
 
   rule (*print "# floor function not implemented yet\n" &*)
       elab_exp (env,s1,impl,NONE) 
@@ -1437,9 +1507,11 @@ relation elab_builtin_floor : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.E
 end
 
 (** relation: elab_builtin_ceil
+ **
  ** This relation elaborates on the builtin operator ceil.
  **)
-relation elab_builtin_ceil : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+relation elab_builtin_ceil : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
         
   rule (**print "# ceil function not implemented yet\n" &**)
         elab_exp (env,s1,impl,NONE) 
@@ -1451,9 +1523,11 @@ relation elab_builtin_ceil : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Ex
 end
 
 (** relation: elab_builtin_abs
+ **
  ** This relation elaborates on the builtin operator abs
  **)
-relation elab_builtin_abs : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+relation elab_builtin_abs : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
 
   rule	elab_exp (env,s1,impl,NONE) 
 	  => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
@@ -1472,11 +1546,13 @@ relation elab_builtin_abs : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp
 end
 
 (** relation: elab_builtin_sqrt
+ **
  ** This relation elaborates on the builtin operator sqrt.
  **)
-relation elab_builtin_sqrt : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
-  rule 
-        elab_exp (env,s1,impl,NONE) 
+relation elab_builtin_sqrt : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
+
+  rule	elab_exp (env,s1,impl,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
           (**print "# sqrt function not implemented yet REAL\n" **)
      --------------------------------------
@@ -1487,9 +1563,13 @@ relation elab_builtin_sqrt : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Ex
 end
 
 (** relation: elab_builtin_div
+ **
  ** This relation elaborates on the builtin operator div.
  **)
-relation elab_builtin_div : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+
+relation elab_builtin_div : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
+
   rule  elab_exp (env,s1,impl,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
           elab_exp (env,s2,impl,NONE) 
@@ -1524,14 +1604,14 @@ relation elab_builtin_div : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp
         --------------------------------------
         elab_builtin_div(env,[s1,s2],impl) 
           => (Exp.CALL(Absyn.IDENT("div"),[s1',s2'],false,true),
-              Types.PROP((Types.T_INTEGER([]),NONE),c))
-        
+              Types.PROP((Types.T_INTEGER([]),NONE),c))        
 end
 
 (** relation: elab_builtin_mod
  ** This relation elaborates on the builtin operator mod.
  **)
-relation elab_builtin_mod : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+relation elab_builtin_mod : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
 
   rule  elab_exp (env,s1,impl,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
@@ -1572,9 +1652,12 @@ relation elab_builtin_mod : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp
 end
 
 (** relation: elab_builtin_sqrt
+ **
  ** This relation elaborates on the builtin operator rem.
  **)
-relation elab_builtin_rem : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
+
+relation elab_builtin_rem : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
 
   rule  elab_exp (env,s1,impl,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) &
@@ -1615,26 +1698,31 @@ relation elab_builtin_rem : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp
 end
 
 (** relation: elab_builtin_integer
- ** This relation elaborates on the builtin operator integer, which extracts the 
- ** Integer value of a Real value.
+ **
+ ** This relation elaborates on the builtin operator integer, which extracts 
+ ** the Integer value of a Real value.
  **)
-relation elab_builtin_integer : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties) =
-  rule 
-        elab_exp (env,s1,impl,NONE) 
+
+relation elab_builtin_integer : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties) =
+
+  rule	elab_exp (env,s1,impl,NONE) 
 	      => (s1', Types.PROP((Types.T_REAL([]),NONE),c),_) 
           (**print "# integer function not implemented yet REAL\n" **)
      --------------------------------------
      elab_builtin_integer(env,[s1],impl) 
         => (Exp.CALL(Absyn.IDENT("integer"),[s1'],false,true),
             Types.PROP((Types.T_INTEGER([]),NONE),c))
-
 end
 
 (** relation: elab_builtin_diagonal
- ** This relation elaborates on the builtin operator diagonal, creating a matrix with 
- ** a value of the diagonal. The other elements are zero.
+ **
+ ** This relation elaborates on the builtin operator diagonal, creating a
+ ** matrix with a value of the diagonal. The other elements are zero.
  **)
-relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
+
+relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
 
   rule	elab_exp (env,s1,impl,NONE) 
 	  => (s1', Types.PROP((Types.T_ARRAY(dim as Types.DIM(SOME(dimension)),
@@ -1653,10 +1741,13 @@ relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Ex
 end
 
 (** relation: elab_builtin_differentiate
+ **
  ** This relation elaborates on the builtin operator differentiate, 
  ** by deriving the Exp
  **)
-relation elab_builtin_differentiate : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
+
+relation elab_builtin_differentiate : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
         
   rule  Absyn.get_cref_from_exp(s1) => cref_list1 &
         Absyn.get_cref_from_exp(s2) => cref_list2 &
@@ -1679,12 +1770,15 @@ relation elab_builtin_differentiate : (Env.Env, Absyn.Exp list, bool (*impl*)) =
 end
 
 (** relation: elab_builtin_simplify
- ** This relation elaborates on the builtin operator simplify, 
- ** The call in mosh is: simplify(x+y*x-x,"Real") if the variable should be Real
- ** or simplify(x+y*x-x,"Integer") if the variable should be Integer
- ** This relation is only for testing simplify
+ **
+ ** This relation elaborates the simplify function.
+ ** The call in mosh is: simplify(x+y*x-x,"Real") if the variable should be 
+ ** Real or simplify(x+y*x-x,"Integer") if the variable should be Integer
+ ** This relation is only for testing Exp.simplify
  **)
-relation elab_builtin_simplify : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
+
+relation elab_builtin_simplify : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
         
   rule  Absyn.get_cref_from_exp(s1) => cref_list &
         absyn_cref_list_to_interactive_var_list(cref_list,
@@ -1715,6 +1809,14 @@ relation elab_builtin_simplify : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Ex
 	
 end
 
+(** relation: absyn_cref_list_to_interactive_var_list
+ **
+ ** Creates Interactive variables from the list of component references. Each
+ ** variable will get a value that is the AST code for the variable itself.
+ ** This is used when calling differentiate, etc., to be able to evaluate
+ ** a variable and still get the variable name.
+ **)
+
 relation absyn_cref_list_to_interactive_var_list: ( Absyn.ComponentRef list, Interactive.InteractiveSymbolTable,Types.Type)
           => Interactive.InteractiveSymbolTable =
 
@@ -1740,6 +1842,7 @@ end
 
 
 (** relation: elab_builtin_dymtabletimeini
+ **
  ** This relation elaborates on the function dymtabletimeini, which is a Dymola
  ** builtin function for table initialization. Should probably be removed in the future.
  **)
@@ -1773,10 +1876,13 @@ relation elab_builtin_dymtabletimeini : (Env.Env, Absyn.Exp list, bool (*impl*) 
 end
      
 (** relation: elab_builtin_noevent
+ **
  ** The builtin operator noevent makes sure that events are not generated
  ** for the expression.
  **)
-relation elab_builtin_noevent : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
+
+relation elab_builtin_noevent : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
 
   rule	elab_exp(env,exp,impl,NONE) => (exp',prop,_)
 	----------------------------------
@@ -1786,9 +1892,13 @@ relation elab_builtin_noevent : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp
 end
 
 (** relation: elab_builtin_edge
- ** This relation handles the built in edge operator. If the operand is constant edge is always false
+ **
+ ** This relation handles the built in edge operator. If the operand is 
+ ** constant edge is always false.
  **)
-relation elab_builtin_edge : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Exp, Types.Properties)	=
+
+relation elab_builtin_edge : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
 
   rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_BOOL([]),_),c as false),_)  
 	----------------------------------
@@ -1809,8 +1919,10 @@ relation elab_builtin_edge : (Env.Env, Absyn.Exp list, bool (*impl*)) => (Exp.Ex
 end
 
 (** relation: elab_builtin_der
+ **
  ** This relation handles the built in der operator.
  **)
+
 relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*)) 
 	  => (Exp.Exp, Types.Properties)	=
 
@@ -1831,10 +1943,12 @@ relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*))
 end
 
 (** relation: elab_builtin_handler
- ** This relation dispatches the elaboration of builtin operators by returning the 
- ** appropriate relation. When a new builtin operator is added, a new rule has to be added to 
- ** this relation.
+ **
+ ** This relation dispatches the elaboration of builtin operators by 
+ ** returning the appropriate relation. When a new builtin operator is 
+ ** added, a new rule has to be added to this relation.
 **)
+		 
 relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*) ) 
 					  => (Exp.Exp, Types.Properties)) =
 
@@ -1869,6 +1983,12 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*
 
 end
 
+(** relation: is_builtin_func
+ **
+ ** Returns true if the function name given as argument
+ ** is a builtin function, which either has a elab_builtin_handler relation
+ ** or can be found in the builtin environment.
+ **)
 
 relation is_builtin_func : Absyn.Path => bool =
 
@@ -1886,9 +2006,11 @@ end
 
 
 (** relation: elab_call_builtin
- ** This relation elaborates on builtin operators, by calling the builtin handler 
- ** to retrieve the correct relation to call.
+ **
+ ** This relation elaborates on builtin operators, by calling the builtin 
+ ** handler to retrieve the correct relation to call.
  **)
+
 relation elab_call_builtin : (Env.Env, Absyn.ComponentRef, Absyn.Exp list, bool (*impl*) )
 	=> (Exp.Exp, Types.Properties) =
 
@@ -2468,41 +2590,7 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP((Types.T_ENUMERATION(["never", "avoid", "default", "prefer", "always"],[]),NONE),false),
 	      SOME(st))
 
-
-(* FIXME: test code: remove *)
-
-  rule	elab_exp(env,aexp,impl,SOME(st)) => (exp1',prop1,SOME(st')) &
-	elab_exp(env,acref,impl,SOME(st')) => (exp2',prop2,SOME(st''))
-	------------------------------------------------------------------
-	elab_call_interactive(env, Absyn.CREF_IDENT("exp_contains",_),
-			      [ aexp, acref],[],impl,
-			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("exp_contains"),
-		       [exp1', exp2'],
-		       false,
-		       true),
-	      Types.PROP((Types.T_BOOL([]),NONE),false),
-	      SOME(st''))
-
-  rule	elab_exp(env,aexp1,impl,SOME(st)) => (exp1',prop1,SOME(st')) &
-	elab_exp(env,aexp2,impl,SOME(st')) => (exp2',prop2,SOME(st'')) &
-	elab_exp(env,acref,impl,SOME(st'')) => (exp3',prop3,SOME(st'''))
-	------------------------------------------------------------------
-	elab_call_interactive(env, Absyn.CREF_IDENT("solve",_),
-			      [ aexp1, aexp2, acref],[],impl,
-			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("solve"),
-		       [exp1', exp2', exp3'],
-		       false,
-		       true),
-	      prop3,
-	      SOME(st'''))
-
-(* /FIXME: test code: remove *)
-
-
 end
-
 (** relation: elab_variablenames
  ** This relation elaborates variablenames to Exp.Exp. A variablename can
  ** be used in e.g. plot(model,{v1[3],v2.t}) It should only be used in interactive 
@@ -2662,9 +2750,12 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 end
 
 (** relation: is_function_in_cflist
- ** This relation returns true if a function, named by an Absyn.Path, is present
- ** in the list of precompiled functions that can be executed in the interactive mode.
+ **
+ ** This relation returns true if a function, named by an Absyn.Path, 
+ ** is present in the list of precompiled functions that can be executed
+ ** in the interactive mode.
  **)
+
 relation is_function_in_cflist : ((Absyn.Path * Types.Type) list, (* list of compiled functions*)
 				  Absyn.Path)  (* function name *)
 	  => bool =
@@ -2766,10 +2857,12 @@ relation elab_call_args : (Env.Env,
 end
 
 (** relation: deoverload_funcname
- ** This relation is used to deoverload function calls. It investigates the type of the function
- ** to see if it has the optional functionname set. If so this is returned. 
- ** Otherwise return input.
+ **
+ ** This relation is used to deoverload function calls. It investigates the
+ ** type of the function to see if it has the optional functionname set. If 
+ ** so this is returned. Otherwise return input.
 **)
+
 relation deoverload_funcname: (Absyn.Path, Types.Type) => Absyn.Path =
 
   axiom	deoverload_funcname(fn,(Types.T_FUNCTION(_,_),SOME(fn'))) => fn'
@@ -2778,6 +2871,10 @@ relation deoverload_funcname: (Absyn.Path, Types.Type) => Absyn.Path =
 
 end
 
+(** relation: is_tuple
+ **
+ ** Return true if Type is a Tuple type.
+ **)
 
 relation is_tuple : Types.Type => bool =
 
@@ -2785,9 +2882,21 @@ relation is_tuple : Types.Type => bool =
   axiom	is_tuple( (_,_) )  => false
 
 end
-(*PR.*)
-relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list, bool (*impl*) ) 
-	  => (Exp.Exp list, bool list (*const*), Types.Type(*result type*), Types.Type(*function type*)) =
+
+(** relation: elab_types 
+ **
+ ** Elaborate input parameters to a function and select matching function 
+ ** type from a list of types.
+ **)
+
+relation  elab_types:  (Env.Env, 
+			Absyn.Exp list, (* argument expressions *)
+			Types.Type list, (* function candidate types *)
+			bool (*impl*) ) 
+	  => (Exp.Exp list, 
+	      bool list (*const*), 
+	      Types.Type(*result type*), 
+	      Types.Type(*function type*)) =
 
 	(* 
 	 We found nothing. This is an error. return to the calling
@@ -2820,13 +2929,13 @@ relation  elab_types:  (Env.Env, Absyn.Exp list,  Types.Type list, bool (*impl*)
   rule	Debug.fprintln("failtrace","- elab_types failed.") 
 	--------------
 	elab_types(env,_,_,_) => fail
-
 end
 
-
 (** relation: get_properties
- ** This relation creates a Properties object from a Types.Type and a Types.Const value
+ ** This relation creates a Properties object from a Types.Type and a 
+ ** Types.Const value.
  **)
+
 relation get_properties : (Types.Type, Types.Const)  => Types.Properties =
 
 	(* At least two elements in the type list, this is a tuple. *)
@@ -2851,7 +2960,9 @@ relation get_properties : (Types.Type, Types.Const)  => Types.Properties =
 	get_properties (ty,const) => fail
 end
 
-(** LS:
+
+(** relation: build_tuple_const
+ ** author: LS
  ** 
  ** Build a TUPLE_CONST (Types.Const) for a PROP_TUPLE for a function call
  ** from a list of bools derived from arguments
@@ -2859,6 +2970,7 @@ end
  ** We should check functions actual arguments instead of their formal
  ** parameters as done below
  **)
+
 relation build_tuple_const : bool list => Types.Const =
 
   rule	build_tuple_const_list blist => clist
@@ -2866,6 +2978,10 @@ relation build_tuple_const : bool list => Types.Const =
 	build_tuple_const blist => Types.TUPLE_CONST(clist)
 end
 
+(** relation: build_tuple_const_list
+ **
+ ** Helper relation to build_tuple_const
+ **)
 
 relation build_tuple_const_list : bool list => Types.Const list =
 
@@ -2877,11 +2993,14 @@ relation build_tuple_const_list : bool list => Types.Const list =
 
 end
 
-(** PR. assisting routines
+(** relation: elab_consts
+ ** author: PR
+ **
  ** This just splits the properties list into a type list and a const list. 
+ ** LS: Changed to take a Type, which is the functions return type.
+ ** LS: Update: const is derived from the input arguments and sent here.
  **)
-(* LS: Changed to take a Type, which is the functions return type *)
-(* LS: Update: const is derived from the input arguments and sent here *)
+
 relation elab_consts : (Types.Type, bool (*const*))  => Types.Const =
 
   rule	check_consts (tys,c) => consts
@@ -2897,10 +3016,14 @@ relation elab_consts : (Types.Type, bool (*const*))  => Types.Const =
 
 end
 
-(* LS: Changed to take a Type list, which is the functions return type. Only
-   for functions returning a tuple *)
-(* LS: Update: const is derived from the input arguments and sent here *)
-relation check_consts : (Types.Type list, bool (*const*)) => Types.Const list =	
+(** relation: check_consts
+ ** 
+ ** LS: Changed to take a Type list, which is the functions return type. Only
+ **  for functions returning a tuple 
+ ** LS: Update: const is derived from the input arguments and sent here 
+ **)
+relation check_consts : (Types.Type list, bool (*const*)) 
+	  => Types.Const list =	
 
   axiom	check_consts ([],_) => []
 
@@ -2912,12 +3035,16 @@ relation check_consts : (Types.Type list, bool (*const*)) => Types.Const list =
 end
 
 
-(*PR. !! At the moment this make all outputs non cons.
-* All ouputs sholud be checked in the function body for constness. 
-*)
-(* LS: but it says true? *)
-(* LS: Adapted to check one type instead of funcarg, since it just checks return type *)
-(* LS: Update: const is derived from the input arguments and sent here *)
+(** relation: check_const
+ ** author: PR
+ **  At the moment this make all outputs non cons.
+ ** All ouputs should be checked in the function body for constness. 
+ ** LS: but it says true? 
+ ** LS: Adapted to check one type instead of funcarg, since it just checks 
+ ** return type 
+ ** LS: Update: const is derived from the input arguments and sent here 
+ **)
+
 relation check_const : (Types.Type, bool (*const*)) => Types.Const  =	
 	
   rule	Print.print_error_buf("\n Error. No support for tuples built by tuples. Yet.") 
@@ -2928,8 +3055,14 @@ relation check_const : (Types.Type, bool (*const*)) => Types.Const  =
 	
 end
 
-(* Splits the properties list into the separated types list and const list. *)
-relation split_props : (Types.Properties list) => (Types.Type list, Types.Const list) =
+(** relation: split_props
+ **
+ ** Splits the properties list into the separated types list and const list. 
+ **)
+
+relation split_props : (Types.Properties list) 
+	  => (Types.Type list, Types.Const list) =
+
   rule 	(*list_append(ts,t::[]) => t1 &
 	list_append(cs,Types.CONST(c)::[]) => t2 &
 *)	split_props(props) => (types, consts)
@@ -2946,8 +3079,10 @@ relation split_props : (Types.Properties list) => (Types.Type list, Types.Const 
 end
 
 (** relation: get_types
+ **
  ** This relatoin returns the types of a Types.FuncArg list.
  **)
+
 relation get_types :(Types.FuncArg list) => Types.Type list =
 
   rule	(* print("\nDebug: Got a type for output of function. ") & *)
@@ -3056,9 +3191,11 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list,
 end
 
 (** relation: make_empty_slots
- ** Helper relatoin to elab_input_args.
+ **
+ ** Helper relation to elab_input_args.
  ** Creates the slots to be filled with arguments. Intially they are empty.
  **)
+
 relation make_empty_slots : (Types.FuncArg list) => Slot list =
 	
   axiom	make_empty_slots([]) => []
@@ -3069,8 +3206,10 @@ relation make_empty_slots : (Types.FuncArg list) => Slot list =
 end
 
 (** relation: funcarg_lst_from_slots
+ **
  ** Converts slots to Types.Funcarg
  **)
+
 relation funcarg_lst_from_slots : Slot list => Types.FuncArg list =
 	
   axiom	 funcarg_lst_from_slots [] => [] 
@@ -3081,8 +3220,10 @@ relation funcarg_lst_from_slots : Slot list => Types.FuncArg list =
 end 
 
 (** relation exp_list_from_slots
+ **
  ** Convers slots to expressions 
  **)
+
 relation exp_list_from_slots: (Slot list ) => Exp.Exp list =
 	
   axiom	exp_list_from_slots [] => []
@@ -3097,35 +3238,43 @@ relation exp_list_from_slots: (Slot list ) => Exp.Exp list =
 end
 
 (** relation: fill_default_slots
- ** This function takes a slot list and a class definition of a function and fills 
- ** default values into slots which have not been filled.
+ **
+ ** This function takes a slot list and a class definition of a function 
+ ** and fills  default values into slots which have not been filled.
  **)
-relation fill_default_slots: (Slot list , SCode.Class, Env.Env, bool (*impl*) ) => Slot list =
+
+relation fill_default_slots: (Slot list , SCode.Class, Env.Env, bool (*impl*)) 
+	  => Slot list =
 	
   rule	fill_default_slots(xs,class,env,impl) => res
 	----------------------------
-	fill_default_slots ( SLOT(fa,true,e)::xs,class,env,impl) => SLOT(fa,true,e)::res
+	fill_default_slots ( SLOT(fa,true,e)::xs,class,env,impl) 
+	  => SLOT(fa,true,e)::res
 
   rule	fill_default_slots(xs,class,env,impl) => res &
 	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,_,SCode.MOD(_,_,SOME(dexp)),_,_) &
 	elab_exp (env,dexp,impl,NONE) => (exp,Types.PROP(t,c1),_) &
 	Types.match_type(exp,t,tp) => (exp',_) 
-	---------------------------------------------------------------------------------
-	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env,impl) => SLOT((id,tp),true,SOME(exp'))::res
+	-----------------------------------------------------------------------
+	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env,impl) 
+	  => SLOT((id,tp),true,SOME(exp'))::res
 
   rule	fill_default_slots(xs,class,env,impl) => res &
 	Print.print_error_buf "#Error filling slot, id = " &
 	Print.print_error_buf id &
 	Print.print_error_buf "\n"
 	----------
-	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env,impl) => SLOT((id,tp),true,e)::xs
+	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env,impl) 
+	  => SLOT((id,tp),true,e)::xs
 
   axiom	fill_default_slots([],_,_,_) => []
 end
 
 (** relation print_slots
+ **
  ** prints the slots on Print buffer
  **)
+
 relation print_slots: Slot list => () =
   rule	Print.print_buf "SLOT(" &
 	Types.print_farg farg &
@@ -3142,9 +3291,12 @@ relation print_slots: Slot list => () =
 end 
 
 (** relation: elab_positional_input_args
+ **
  ** This relation elaborates the positional input arguments of a function.
- ** A list of slots is filled from the beginning with types of each positional argument.
+ ** A list of slots is filled from the beginning with types of each 
+ ** positional argument.
  **)
+
 relation elab_positional_input_args : (Env.Env, Absyn.Exp list, 
 				       Types.FuncArg list,  Slot list, 
 				       bool (* impl *) ) 
@@ -3162,11 +3314,15 @@ relation elab_positional_input_args : (Env.Env, Absyn.Exp list,
 end
 
 (** relation elab_named_input_args
- ** This relation takes an Env, a NamedArg list, a Types.FuncArg list and a Slot list.
+ **
+ ** This relation takes an Env, a NamedArg list, a Types.FuncArg list and a 
+ ** Slot list.
  ** It builds up a new slot list and a list of elaborated expressions.
- ** If a slot is filled twice the relation fails. If a slot is not filled at all and the 
+ ** If a slot is filled twice the relation fails. If a slot is not filled at 
+ ** all and the 
  ** value is not a parameter or a constant the relation also fails.
-*)
+ **)
+
 relation elab_named_input_args : (Env.Env, Absyn.NamedArg list, 
 				  Types.FuncArg list, Slot list, bool (*impl*) ) 
 	=> (Slot list, bool list (*const*)) =
@@ -3192,10 +3348,12 @@ axiom elab_named_input_args (_,[],_,slots,impl) => (slots,[])
 end
 
 (** relation find_named_arg_type
- ** This relation takes an Ident and a FuncArg list, and returns the FuncArg which has 
- ** that identifier.
+ **
+ ** This relation takes an Ident and a FuncArg list, and returns the FuncArg
+ ** which has  that identifier.
  ** Used for instance when looking up named arguments from the function type.
  **)
+
  relation find_named_arg_type : (Ident, Types.FuncArg list) => Types.Type =
 	 
   rule	 id = id2
@@ -3208,9 +3366,12 @@ end
 end
 
 (** relation: fill_slot
- ** This relation takses a `FuncArg' and an Exp.Exp and a Slot list and fills the slot holding the FuncArg, by setting
- ** the boolean value of the slot and setting the expression. The relation fails if the slot is allready set.
+ **
+ ** This relation takses a `FuncArg' and an Exp.Exp and a Slot list and fills 
+ ** the slot holding the FuncArg, by setting the boolean value of the slot 
+ ** and setting the expression. The relation fails if the slot is allready set.
  **)
+
 relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
 	
   rule	fa1 = fa2
@@ -3268,15 +3429,14 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef, bool (*impl*) )
 	Debug.fprint("failtrace", "\n")
 	------------------------------
 	elab_cref (env,c,impl) => fail
-
-
 end
 
 (** relation: fill_cref_subscripts
+ *
  ** This is a helper relation to elab_cref2.
- ** It investigates a Types.Type in order to fill the subscript lists of a component 
- ** reference. For instance, the name 'a.b' with the type array of one dimension will become
- ** 'a.b[:]'.
+ ** It investigates a Types.Type in order to fill the subscript lists of a 
+ ** component reference. For instance, the name 'a.b' with the type array of 
+ ** one dimension will become 'a.b[:]'.
  **)
 
 relation fill_cref_subscripts : (Exp.ComponentRef,Types.Type)
@@ -3296,8 +3456,10 @@ relation fill_cref_subscripts : (Exp.ComponentRef,Types.Type)
 end
 
 (** relation: fill_subscripts
+ ** 
  ** Helper relation to fill_cref_subscripts.
  **)
+
 relation fill_subscripts : (Exp.Subscript list, Types.Type) 
 	  => Exp.Subscript list =
 
@@ -3444,6 +3606,7 @@ relation elab_cref2 : (Env.Env,
 end	
 
 (** relation: cref_vectorize
+ **
  ** This relation takes a 'Exp.Exp' and a 'Types.Type' and if the expression
  ** is a ComponentRef and the type is an array it returns an array of 
  ** component references with subscripts for each index.
@@ -3452,6 +3615,7 @@ end
  ** This is needed since the DAE does not know what the variable 'x' is, it only
  ** knows the variables 'x[1]', 'x[2]' and 'x[3]'.
 **)
+
 relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
 
   rule	create_cref_array(cr,1,ds,exptp,t) => e
@@ -3462,8 +3626,11 @@ relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
 end
 
 (** relation: create_cref_array
- ** helper relation to cref_vectorize, creates each individual cref, e.g. {x[1],x[2], ...} from x.
-**)
+ **
+ ** helper relation to cref_vectorize, creates each individual cref, 
+ ** e.g. {x[1],x[2], ...} from x.
+ **)
+
 relation create_cref_array: (Exp.ComponentRef,
 			     int, (* index iterator *)
 			     int, (* dimension size *)
@@ -3490,6 +3657,7 @@ end
  **
  ** This relation elaborates on all subscripts in a component reference.
  **)
+
 relation elab_cref_subs : (Env.Env, Absyn.ComponentRef, bool (*impl*) )
 	  => (Exp.ComponentRef, bool) =
 
@@ -3547,7 +3715,15 @@ relation elab_subscripts : (Env.Env, Absyn.Subscript list, bool (*impl*) )
 
 end
 
-relation elab_subscripts_dims : (Env.Env, Absyn.Subscript list, int list, bool (*impl*) )
+(** relation: elab_subscripts_dims
+ **
+ ** Helper relation to elab_subscripts
+ **)
+
+relation elab_subscripts_dims : (Env.Env, 
+				 Absyn.Subscript list, 
+				 int list, 
+				 bool (*impl*) )
 	  => (Exp.Subscript list, bool) =
 
   axiom	elab_subscripts_dims (_,[],_,_) => ([], true)
@@ -4554,6 +4730,7 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 end
 
 (** relation: get_koening_function_types
+ **
  ** Used for userdefined function overloads.
  ** This relation will search the types of the arguments for matching function definitions 
  ** corresponding to the koening C++ lookup rule.
@@ -4617,12 +4794,14 @@ relation get_koening_function_types: (Env.Env, Absyn.Path, Absyn.Exp list,
 end
 
 (** relation: get_koening_operator_types
+ **
  ** Used for userdefined operator overloads.
  ** This relation will search the scopes of the classes of the two 
  ** corresponding types and look for user defined operator overloaded
  ** functions, such as 'plus', 'minus' and 'times'. This corresponds
  ** to the koening C++ lookup rule.
  **)
+
 relation get_koening_operator_types: (string, Env.Env, Types.Type, Types.Type)
 	=> (Exp.Operator * Types.Type list * Types.Type) list =
 
@@ -4664,10 +4843,12 @@ relation get_koening_operator_types: (string, Env.Env, Types.Type, Types.Type)
 end
 
 (** relation: get_koening_operator_types_in_scope
+ **
  ** This relation is a help relation to get_koening_operator_types
  ** and it will look for functions in the current scope of the passed
  ** environment, according to the koening rule. 
 **)
+
 relation get_koening_operator_types_in_scope: (string, Env.Env) 
 	  => (Exp.Operator * Types.Type list * Types.Type) list =
 
@@ -4684,6 +4865,7 @@ relation get_koening_operator_types_in_scope: (string, Env.Env)
 end
 
 (** relation: build_operator_types
+ **
  ** This relation takes the types operator overloaded user functions and
  ** builds  the type list structure suitable for the deoverload relation. 
 **)

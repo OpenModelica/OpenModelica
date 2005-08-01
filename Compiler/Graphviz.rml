@@ -124,6 +124,11 @@ module Graphviz:
   type Ident = string
   type Label = string
 
+	(** A graphviz Node is a node of the graph. 
+	 ** It has a type and attributes and children.
+	 ** It can also have a list of labels, provided by the LNODE
+	 ** constructor.
+	 **)
   datatype Node = NODE of Type
                         * Attributes 
                         * Children
@@ -137,6 +142,7 @@ module Graphviz:
 
   type Attributes = Attribute list
 
+	(** an Attribute is a pair of name an value. *)
   datatype Attribute = ATTR of string (* name *) 
                              * string (* value *)
 
@@ -146,12 +152,14 @@ module Graphviz:
 
 end
 
-
 val box = ATTR("shape","box")
 
-
-
 (* Relations *)
+
+(** relation: dump
+ **
+ ** Dumps a Graphviz Node on stdout.
+ **)
 
 relation dump : Node => () =
 	
@@ -163,6 +171,11 @@ relation dump : Node => () =
 
 end
 
+
+(** relation dump_node
+ **
+ ** Dumps a node to a string.
+ **)
 
 relation dump_node : Node => Ident =
 	
@@ -188,6 +201,10 @@ relation dump_node : Node => Ident =
 
 end
 
+(** relation: make_label
+ **
+ ** Creates a label from a list of strings.
+**)
 
 relation make_label: string list => string =
 
@@ -198,6 +215,11 @@ relation make_label: string list => string =
 	make_label sl => s2
 
 end
+
+(** relation: make_label_req
+ **
+ ** Helper relation to make_label
+ **)
 
 relation make_label_req: string list => string =
 
@@ -216,7 +238,10 @@ relation make_label_req: string list => string =
 
 end
 
-
+(** relation: dump_children
+ **
+ ** Helper relation to dump_node
+ **)
 
 relation dump_children : (Ident, Children) => () =
 
@@ -230,8 +255,11 @@ relation dump_children : (Ident, Children) => () =
 end
 
 
-(* changed use of str as part of nodename, since it may contain spaces
-*)
+(** relation: nodename
+ **
+ ** Creates a unique node name, 
+ ** changed use of str as part of nodename, since it may contain spaces
+ *)
 relation nodename : string => string =
 
   rule	tick => i & int_string i => is & string_append("GVNOD",is) => s
@@ -239,6 +267,11 @@ relation nodename : string => string =
 	nodename str => s
 end
 
+
+(** relation: print_edge
+ **
+ ** Prints an edge between two nodes.
+ **)
 
 relation print_edge : (Ident, Ident) => () =
 
@@ -248,6 +281,11 @@ relation print_edge : (Ident, Ident) => () =
 	print_edge(n1,n2)
 end
 
+
+(** relation: make_edge
+ **
+ ** Creates a string representing an edge between two nodes.
+**)
 
 relation make_edge : (Ident, Ident) => string =
 
@@ -259,6 +297,11 @@ relation make_edge : (Ident, Ident) => string =
 end
 
 
+(** relation: make_node
+ **
+ ** Creates string from a node.
+ **)
+
 relation make_node : (Ident, Attributes) => string =
 
   rule	make_attr attr => s &
@@ -269,6 +312,10 @@ relation make_node : (Ident, Attributes) => string =
 
 end
 
+(** relation: make_attr
+ **
+ ** Creates a string from an Attribute list.
+ **)
 
 relation make_attr : Attribute list => string = 
 
@@ -280,6 +327,10 @@ relation make_attr : Attribute list => string =
 
 end
 
+(** relation: make_attr_req 
+ **
+ ** Helper relation to make_attr_req.
+ **)
 
 relation make_attr_req : Attribute list => string =
 

@@ -177,6 +177,13 @@ with "Inst.rml"
 
 val c_empty_function = CFUNCTION("","",[],[],[],[],[],[])
 
+(** relation: c_make_function
+ **
+ ** Helper relation to generate_function. Creates a C-function from a 
+ ** ReturnType, FunctionName, ReturnTypeStruct and a list of 
+ ** ArgumentDeclaration's
+ **)
+
 relation c_make_function : (ReturnType,
 			    FunctionName,
 			    ReturnTypeStruct,
@@ -187,21 +194,39 @@ relation c_make_function : (ReturnType,
 
 end
 
-relation c_make_function_decl: (ReturnType, FunctionName, ReturnTypeStruct, ArgumentDeclaration list) => CFunction =
+(** relation: c_make_function_decl
+ **
+ ** Helper relation to generate_function. Generates a C function declaration.
+ ** I.e. without body of the function.
+**)
+
+relation c_make_function_decl: (ReturnType, 
+				FunctionName, 
+				ReturnTypeStruct, 
+				ArgumentDeclaration list) => CFunction =
 
   axiom	c_make_function_decl(rt,fn,rts,ads) => CEXTFUNCTION(rt,fn,rts,ads)
 
 end
 
-relation c_add_variables : (CFunction, VariableDeclaration list) => CFunction =
+(** relation: c_add_variables
+ ** 
+ ** Add local variable declarations  to a CFunction.
+ **)
+relation c_add_variables : (CFunction, VariableDeclaration list) 
+	  => CFunction =
 
   rule	list_append(vd,nvd) => vd'
 	--------------------------
 	c_add_variables (CFUNCTION(rt,fn,rts,ads,vd,is,st,cl),nvd)
 			 => CFUNCTION(rt,fn,rts,ads,vd',is,st,cl)
-
 end
 
+(** relation: c_add_inits
+ ** 
+ ** Add initialization statements to a CFunction. They will be ommitted before
+ ** the actual code of the function but after the local variable declarations.
+ **)
 
 relation c_add_inits : (CFunction, InitStatement list) => CFunction =
 
@@ -212,6 +237,10 @@ relation c_add_inits : (CFunction, InitStatement list) => CFunction =
 
 end
 
+(** relation: c_add_statements
+ ** 
+ ** Adds statements to a CFunction.
+ **)
 relation c_add_statements : (CFunction, Statement list) => CFunction =
 
   rule	list_append(st,nst) => st'
@@ -221,6 +250,12 @@ relation c_add_statements : (CFunction, Statement list) => CFunction =
 
 end
 
+(** relation: c_add_cleanups
+ ** 
+ ** Add "cleanup" statements to a CFunction. They will be ommited last, before
+ ** the return statement of the function.
+ **)
+
 relation c_add_cleanups : (CFunction, CleanupStatement list) => CFunction =
 
   rule	list_append(cl,ncl) => cl'
@@ -229,6 +264,14 @@ relation c_add_cleanups : (CFunction, CleanupStatement list) => CFunction =
 			 => CFUNCTION(rt,fn,rts,ads,vd,is,st,cl')
 
 end
+
+
+(** relation: c_merge_fns
+ **
+ ** Takes a list of functions and merges them together.
+ ** The function name, returntype and argument lists are taken from the 
+ ** first CFunction in the list.
+**)
 
 relation c_merge_fns : CFunction list => CFunction =
 	
@@ -240,6 +283,12 @@ relation c_merge_fns : CFunction list => CFunction =
 	c_merge_fns cfn1::r => cfn
 
 end
+
+(** relation: c_merge_fn
+ **
+ ** Merges two functions into one. The function name, returntype and 
+ ** argument lists are taken from the first CFunction.
+ **)
 
 relation c_merge_fn : (CFunction, CFunction) => CFunction =
 
@@ -254,6 +303,11 @@ relation c_merge_fn : (CFunction, CFunction) => CFunction =
 			 
 end
 
+(** relation: c_move_statements_to_inits
+ **
+ ** Moves all statements of the body to initialization statements.
+ **)
+
 relation c_move_statements_to_inits : CFunction => CFunction =
 
   rule	list_append(is,st) => is'
@@ -262,19 +316,29 @@ relation c_move_statements_to_inits : CFunction => CFunction =
 	  => CFUNCTION(rt,fn,rts,ad,vd,is',[],cl)
 end
 
-relation c_print_functions : CFunction list => () =
-
-  axiom	c_print_functions []
-
-  rule	c_print_function(f) &
+(** relation: c_print_functions
+ **
+ ** Prints CFunction list to Print buffer.
+ **)
+ 
+ relation c_print_functions : CFunction list => () =
+ 
+ axiom	c_print_functions []
+ 
+ rule	c_print_function(f) &
 	c_print_functions(r)
 	---------------------
 	c_print_functions f::r
 end
 
+(** relation: c_print_function
+ **
+ ** Prints a CFunction to Print buffer.
+ **)
+ 
 relation c_print_function : CFunction => () =
-
-  rule	Util.string_delimit_list(ad,", ") => args_str &
+ 
+ rule	Util.string_delimit_list(ad,", ") => args_str &
 	Util.string_append_list [rt," ",fn,"(",args_str,") {"] => stmt_str &
 	
 	let i0 = 0 &
@@ -301,6 +365,12 @@ relation c_print_function : CFunction => () =
 	c_print_function _
 end
 
+(** relation: c_print_function_headers
+ **
+ ** Prints the function declaration, i.e. the header information
+ ** of a CFunction list to the Print buffer.
+ **)
+
 relation c_print_function_headers : CFunction list => () =
 
   axiom	c_print_function_headers []
@@ -311,9 +381,15 @@ relation c_print_function_headers : CFunction list => () =
 	c_print_function_headers f::r
 end
 
-relation c_print_function_header : CFunction => () =
-
-  rule	Util.string_delimit_list(ad,", ") => args_str &
+(** relation: c_print_function_headers
+ **
+ ** Prints the function declaration, i.e. the header information
+ ** of a CFunction to the Print buffer.
+ **)
+ 
+ relation c_print_function_header : CFunction => () =
+ 
+ rule	Util.string_delimit_list(ad,", ") => args_str &
 	Util.string_append_list [rt," ",fn,"(",args_str,");"] => stmt_str &
 	
 	let i0 = 0 &
@@ -335,16 +411,31 @@ relation c_print_function_header : CFunction => () =
 	c_print_function_header _
 end
 
-relation c_print_indented_list : (string list, int) => int =
+(** relation: c_print_indented_list
+ **
+ ** Helper relation. prints a list of strings indented with a number
+ ** of indentation levels.
+ **)
+ 
+ relation c_print_indented_list : (string list, 
+				   int) (* indentation level *)
+	  => int = (* updated indentation level*)
 	
   axiom c_print_indented_list ([],i) => i
 
   rule	c_print_indented(f,i) => i' & Print.print_buf "\n" &
-	c_print_indented_list(r,i') => i''
-	-----------------
-	c_print_indented_list(f::r,i) => i''
-
+	 c_print_indented_list(r,i') => i''
+	 -----------------
+	 c_print_indented_list(f::r,i) => i''
+	 
 end
+
+(** relation: c_print_indented
+ **
+ ** Prints a string adding an indentation level. If the string
+ ** contains C-code that opens or closes a  indentation level, 
+ ** the indentation level is updated accordingly.
+ **)
 
 relation c_print_indented : (string, int) => int =
 
@@ -355,7 +446,12 @@ relation c_print_indented : (string, int) => int =
 	Print.print_buf str 
 	-----------
 	c_print_indented (str,i) => i'
-end
+end 
+
+(** relation c_next_level
+ **
+ ** Helper relation to c_print_indented. 
+ **)
 
 relation c_next_level : (char list, int) => int =
 
@@ -379,6 +475,11 @@ relation c_next_level : (char list, int) => int =
 
 end
 
+(** relation c_next_level
+ **
+ ** Helper relation to c_print_indented.
+ **)
+
 relation c_this_level : (char list, int) => int =
 
 
@@ -395,6 +496,10 @@ rule	list_string [f] => "}" &
 
 end
 
+(** relation c_print_indent
+ **
+ ** Helper relation to c_print_indented. 
+ **)
 relation c_print_indent : int => () =
 
   axiom c_print_indent 0
@@ -407,87 +512,11 @@ relation c_print_indent : int => () =
 
 end
 
-(* ------------------------------------------------------------------------- *)
-(*
- generate_functions
- generate_functions_elist
- generate_functions_elist2
- generate_params_type
- generate_function
- generate_result_struct
- generate_return_defs
- generate_return_decls
- generate_return_decl
- is_array
- is_first_in_array
- subs_is_one
- dae_exp_type
- dae_type_str
- dae_short_type_str
- exp_short_type_str
- exp_type_str
- generate_type
- generate_return_type
- generate_array_type
- generate_array_return_type
- print_int
- print_star
- generate_tuple_type
- generate_simple_type
- array_type_string
- generate_function_name
- generate_function_arg
- generate_function_body_tuple
- generate_alloc_outvars
- generate_alloc_outvar
- prefix_cr
- generate_algorithms
- generate_algorithms2
- generate_algorithm
- generate_algorithm_statements
- generate_algorithm_statement
- generate_range_expressions
- generate_else
- generate_vars
- generate_var
- is_var_q
- generate_var_q
- generate_var_q2
- generate_result_vars
- generate_result_var
- generate_equations
- generate_exp
- get_array_dim
- generate_expressions
- generate_expression
- generate_binary
- generate_temp_decl
- generate_scalar_lhs_cref
- generate_rhs_cref
- subs_to_scalar
- generate_scalar_rhs_cref
- generate_array_rhs_cref
- generate_index_spec
- generate_indices_array
- generate_indices
- generate_index_array
- generate_index
- indent_strings
- ident_cstr
- comp_ref_cstr
- generate_lbinary
- generate_lunary
- generate_relation
- generate_matrix
- generate_read_call_write
- invar_names
- generate_read
- generate_write
- is_rcw_output
- is_rcw_input
-
-*)
-(* ------------------------------------------------------------------------- *)
+(** relation: generate_functions
+ **
+ ** Generates code for all functions in a DAE and prints on
+ ** Print buffer.
+ **)
 
 relation generate_functions : DAE.DAElist => () =
 
@@ -501,6 +530,11 @@ relation generate_functions : DAE.DAElist => () =
 	generate_functions _  => fail
 
 end
+
+(** relation: generate_function_bodies
+ **
+ ** Generates the function bodies of a DAE list.
+ **)
 
 relation generate_function_bodies : DAE.DAElist => () =
 
@@ -518,6 +552,10 @@ relation generate_function_bodies : DAE.DAElist => () =
 
 end
 
+(** relation: generate_function_headers
+ **
+ ** Generates the headers of the functions in a DAE list.
+ **)
 
 relation generate_function_headers : DAE.DAElist => () =
 
@@ -537,17 +575,27 @@ relation generate_function_headers : DAE.DAElist => () =
 end
 
 
+(** relation: generate_functions_elist
+ **
+ ** Helper relation. Generates code from the Elements of a DAE.
+**)
+
 relation generate_functions_elist : DAE.Element list => CFunction list =
 
   rule	Debug.fprintln ("cgtr", "generate_functions_elist") &
 	Debug.fprintln ("cgtrdumpdae", "Dumping DAE:") &
 	Debug.fcall ("cgtrdumpdae", DAE.dump2, DAE.DAE(els)) &
-	DAE.get_matching(els,DAE.is_function) => fns &
+	Util.list_matching(els,DAE.is_function) => fns &
 	generate_functions_elist2 fns => cfns
 	----------------------------
 	generate_functions_elist els => cfns
 	
 end
+
+(** relation: generate_functions_elist2
+ ** 
+ ** Helper relation to generate_functions_elist.
+ **)
 
 relation generate_functions_elist2 : DAE.Element list => CFunction list =
 
@@ -564,17 +612,16 @@ relation generate_functions_elist2 : DAE.Element list => CFunction list =
 	
 end
 
-relation generate_params_type : Ident => string =
-
-  rule	string_append (n, "_params") => s
-	---------------------------------
-	generate_params_type n => s
-
-end
-
+(** relation: generate_function
+ **
+ ** Generates code for a DAE.FUNCTION. This results in two CFunctions, 
+ **  one declaration and one definition. There are two rules of this relation, 
+ ** one for normal Modelica functions and one for external Modelica functions.
+ **)
 
 relation generate_function : DAE.Element => CFunction list =
 
+	(* Modelica functions *)
   rule	generate_function_name fpath => fn_name_str &
 	Debug.fprintl ("cgtr", ["generating function ", fn_name_str, "\n"]) &
 
@@ -590,7 +637,7 @@ relation generate_function : DAE.Element => CFunction list =
 
 	c_make_function(retstr, fn_name_str, struct_strs,arg_strs)=> head_cfn &
 
-	generate_function_body_tuple(fpath, dae, restype) => body_cfn &
+	generate_function_body(fpath, dae, restype) => body_cfn &
 
 	c_merge_fn(head_cfn,body_cfn) => cfn &
 	
@@ -601,6 +648,7 @@ relation generate_function : DAE.Element => CFunction list =
 				       (Types.T_FUNCTION(args,restype),_)) 
 	  => [cfn,rcw_fn]
 
+	  (* External functions *)
   rule	generate_function_name fpath => fn_name_str &
 	Debug.fprintl ("cgtr", ["generating external function ", fn_name_str, "\n"]) &
 
@@ -643,6 +691,12 @@ relation generate_function : DAE.Element => CFunction list =
 end
 
 
+(** relation: generate_ext_function_name
+ **
+ ** Generates the function name for external functions. 
+ ** Fortran functions have the underscore '_' suffix.
+ **)
+
 relation generate_ext_function_name : (string, string) => string =
 
   axiom	generate_ext_function_name (name, "C") => name
@@ -656,6 +710,12 @@ relation generate_ext_function_name : (string, string) => string =
 	generate_ext_function_name (_,_) => fail
 
 end	
+
+(** relation generate_results_struct
+ **
+ ** All Modelica functions translates to a C function returning all 
+ ** Modelica ouput parameters in a struct. This relation generates that struct.
+**)
 
 relation generate_result_struct : (DAE.Element list, Absyn.Path) 
 	  => string list =
@@ -671,6 +731,11 @@ relation generate_result_struct : (DAE.Element list, Absyn.Path)
 	generate_result_struct (outvars, fpath) => strs
 
 end
+(** relation: generate_return_defs
+ **
+ ** Helper relation to generate_result_struct. Creates defines used
+ ** in the declaration of the return struct.
+ **)
 
 relation generate_return_defs : (string, string list, int) => string list =
 
@@ -684,6 +749,11 @@ relation generate_return_defs : (string, string list, int) => string list =
 	generate_return_defs (tn,f::r,i) => f'::r'
 
 end
+
+(** relation: generate_return_decls
+ ** 
+ ** Helper relation to generate_result_struct. 
+**)
 
 relation generate_return_decls : DAE.Element list => (string list, 
 						      string list) =
@@ -702,6 +772,11 @@ relation generate_return_decls : DAE.Element list => (string list,
 
 end
 
+(** relation: tmpprintinit
+ **
+ ** Helper relation to generate_return_decl.
+ **)
+
 relation tmpprintinit : Exp.Exp option => string =
 
   axiom tmpprintinit NONE => ""
@@ -713,10 +788,12 @@ relation tmpprintinit : Exp.Exp option => string =
 
 end
 
-relation generate_return_decl: DAE.Element => (string, string) =
+(** relation: generate_return_decl
+ **
+ ** Helper relation to generate_return_decls
+ **)
 
-(* changed DAE.VAR(..., NONE, inst_dims) to ..._, inst_dims) because removed second *)
-(* rule *)
+relation generate_return_decl: DAE.Element => (string, string) =
 
   rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
@@ -730,31 +807,18 @@ relation generate_return_decl: DAE.Element => (string, string) =
 	string_append(decl_str', expstr) => decl_str
 	---------------------------------------------------
 	generate_return_decl (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, 
-					     typ, initopt, inst_dims,start,flow,class,dae_var_attr,comment)) => (decl_str,id_str)
-
-(* not needed here, generate_return_decl is used to create the return struct
-  rule	is_array id => is_a &
-	is_first_in_array id => true &
-	dae_type_str (typ,is_a) => typ_str &
-	comp_ref_cstr id => (id_str,_) &
-	Util.string_append_list([typ_str," ",id_str,";"]) => decl_str' &
-	Print.print_buf "# default/init values not implemented yet: " &
-	Exp.print_exp_str e => str & Print.print_buf str &
-	Print.print_buf "\n" &
-	Util.string_append_list ([decl_str', " /* ", str, " */"]) => decl_str
-	-----------
-	generate_return_decl (DAE.VAR(id, 
-				      DAE.VARIABLE, 
-				      DAE.OUTPUT, 
-				      typ, 
-				      SOME(e),
-				      _,_,comment))
-	=> (decl_str,id_str)
-*)
+					     typ, initopt, inst_dims,start,
+					     flow,class,dae_var_attr,comment)) 
+	  => (decl_str,id_str)
 
   axiom	generate_return_decl (_) => ("","")
 
 end
+
+(** relation: is_array
+ ** 
+ ** Returns true if variable is part of an array.
+ **)
 
 relation is_array : DAE.Element => bool =
 	
@@ -779,58 +843,10 @@ relation is_array : DAE.Element => bool =
 
 end
 
-relation is_array_or_string : DAE.Element => bool =
-
-  rule	is_array var => true &
-	Print.print_error_buf "# array of strings is probably not supported yet\n"
-	------------------------------------------------------------------
-	is_array_or_string (var as DAE.VAR(cr,vk,vd,DAE.STRING,_,_,st,fl,cl,dae_var_attr,comment)) => fail
-
-  rule	is_array var => true
-	-------------------
-	is_array_or_string (var as DAE.VAR(cr,vk,vd,ty,_,_,st,fl,cl,dae_var_attr,comment)) => true
-
-  axiom	is_array_or_string (var as DAE.VAR(cr,vk,vd,DAE.STRING,_,_,st,fl,cl,dae_var_attr,comment)) => true
-
-  rule	Print.print_buf "# is_array_or_string failed\n" &
-	DAE.dump2 DAE.DAE([el])
-	------------------------------------------------------------------
-	is_array_or_string el => fail
-	
-end
-
-(*
-relation is_first_in_array : Exp.ComponentRef => bool =
-
-  axiom	is_first_in_array Exp.CREF_IDENT(_,[]) => true
-
-  rule	subs_is_one subs => b
-	---------------------
-	is_first_in_array Exp.CREF_IDENT(_,subs) => b
-
-  rule	is_first_in_array cref => b
-	---------------------------
-	is_first_in_array Exp.CREF_QUAL(_,[],cref) => b
-
-  rule	subs_is_one subs => b1 &
-	is_first_in_array cref => b2 &
-	bool_and(b1,b2) => b
-	------------------------------
-	is_first_in_array Exp.CREF_QUAL(_,subs,cref) => b
-end
-
-relation subs_is_one : Exp.Subscript list => bool =
-
-  axiom subs_is_one [] => true
-
-  rule	subs_is_one r => b
-	------------------
-	subs_is_one Exp.INDEX(Exp.ICONST(1))::r => b
-
-  axiom	subs_is_one _::_ => false
-
-end
-*)
+(** relation: dae_exp_type
+ ** 
+ ** Translates a DAE.Type to an Exp.Type.
+ **)
 
 relation dae_exp_type : DAE.Type => Exp.Type =
 
@@ -843,7 +859,13 @@ relation dae_exp_type : DAE.Type => Exp.Type =
 
 end
 
-relation dae_type_str : (DAE.Type, bool) => string =
+(** relation: dae_type_str
+ ** 
+ ** Convert a DAE.Type to a string. The boolean indicates whether the type
+ ** is an array or not.
+ **)
+relation dae_type_str : (DAE.Type, bool (* array*)) 
+	  => string =
 
   rule	dae_exp_type t => t' &
 	exp_type_str (t',a) => str
@@ -852,14 +874,10 @@ relation dae_type_str : (DAE.Type, bool) => string =
 
 end
 
-relation dae_short_type_str : DAE.Type => string =
-
-  rule	dae_exp_type t => t' &
-	exp_short_type_str t' => str
-	--------------------------
-	dae_short_type_str t => str
-
-end
+(* relation: exp_short_type_str
+ **
+ ** Translates and Exp.Type to a string, using a "short" typename.
+ **)
 
 relation exp_short_type_str : Exp.Type => string =
 
@@ -871,6 +889,11 @@ relation exp_short_type_str : Exp.Type => string =
   axiom	exp_short_type_str Exp.ENUM  => "ENUM_NOT_IMPLEMENTED"
 
 end
+
+(* relation: exp_short_type_str
+ **
+ ** Translates and Exp.Type to a string.
+ **)
 
 relation exp_type_str : (Exp.Type, bool) => string =
 
@@ -885,6 +908,11 @@ relation exp_type_str : (Exp.Type, bool) => string =
 	exp_type_str (t, true) => str
 
 end
+
+(** relation: generate_type
+ **
+ ** Generates code for a Type.
+ **)
 
 relation generate_type : Types.Type => string =
 
@@ -915,7 +943,10 @@ relation generate_type : Types.Type => string =
 
 end
 
-
+(** relation: generate_type_external
+ ** 
+ ** Generates Code for an external type.
+ **)
 relation generate_type_external : Types.Type => string =
 
   axiom	generate_type_external((Types.T_INTEGER(_),_))  => "int"
@@ -934,30 +965,10 @@ relation generate_type_external : Types.Type => string =
 
 end
 
-relation generate_type_internal : Types.Type => string =
-
-	(* for the basic types, only those must match *)
-  rule	Types.basic_type ty => true &
-	generate_type_internal_namepart ty => tystr &
-	string_append("modelica_",tystr) => str
-	---------------------------------------
-	generate_type_internal ty => str
-
-  rule	Types.is_array ty => true &
-	Types.array_element_type ty => elty &
-	generate_type_internal elty => tystr &
-	string_append (tystr,"_array") => str
-	--------------------------------
-	generate_type_internal ty => str
-
-  rule	Print.print_buf "#-- generate_type_internal failed: " &
-	Types.print_type ty & Print.print_buf "\n"
-	--------------------------------
-	generate_type_internal ty => fail
-
-end
-
-(* for the basic types, only those must match *)
+(** relation: generate_type_internal_namepart
+ ** 
+ ** Generates code for a Type only returning the typename of the basic types.
+ **)
 relation generate_type_internal_namepart : Types.Type => string =
 
   axiom	generate_type_internal_namepart((Types.T_INTEGER(_),_)) => "integer"
@@ -969,6 +980,11 @@ relation generate_type_internal_namepart : Types.Type => string =
 end
 
 
+(** relation: generate_return_type
+ **
+ ** Generates the return type name of a function given the function name.
+ **)
+
 relation generate_return_type : Absyn.Path => string =
 
   rule	generate_function_name fpath => fstr &
@@ -977,6 +993,11 @@ relation generate_return_type : Absyn.Path => string =
 	generate_return_type fpath => res
 end
 
+(** relation: generate_array_type
+ **
+ ** Generates code for the array type given a  basic type and a list 
+ ** of dimensions.
+ **)
 
 relation generate_array_type : (Types.Type, int list) => string =
 
@@ -985,6 +1006,11 @@ relation generate_array_type : (Types.Type, int list) => string =
 	generate_array_type (ty, dims) => str
 end
 
+(** relation: generate_array_type
+ **
+ ** Generates code for an array type  as return type given a  basic 
+ ** type and a list of dimensions.
+ **)
 relation generate_array_return_type : (Types.Type, int list) => string =
 
   rule	array_type_string ty => ty_str
@@ -992,24 +1018,10 @@ relation generate_array_return_type : (Types.Type, int list) => string =
 	generate_array_return_type (ty, dims) => ty_str
 end
 
-
-relation print_int : int => () =
-
-  rule	int_string i => str &
-	Print.print_buf str
-	---------
-	print_int i
-end
-
-relation print_star : int => () =
-
-  rule	Print.print_buf "*"
-	---------
-	print_star i
-
-end
-
-
+(** relation: generate_tuple_type
+ **
+ ** Generate code for a tuple type.
+ **)
 
 relation generate_tuple_type : Types.Type list => string =
 
@@ -1031,7 +1043,11 @@ relation generate_tuple_type : Types.Type list => string =
 end
 
 
-
+(** relation: generate_simple_type
+ ** 
+ ** Helper relation to generate_tuple_type. Generates code for a non-tuple
+ ** type as element of a tuple.
+ **)
 relation generate_simple_type : Types.Type => string =
 
   axiom	generate_simple_type((Types.T_INTEGER(_),_))=> "modelica_integer"
@@ -1056,6 +1072,12 @@ relation generate_simple_type : Types.Type => string =
 	generate_simple_type ty => fail
 end
 
+(** relation: array_type_string
+ **
+ ** Returns the type string of an array of the basic type passed as 
+ ** argument.
+ **)
+
 relation array_type_string : Types.Type => string =
 
   axiom	array_type_string((Types.T_INTEGER(_),_)) => "integer_array"
@@ -1065,6 +1087,11 @@ relation array_type_string : Types.Type => string =
 
 end
 
+(** relation: generate_function_name
+ **
+ ** Generates the name of a function by replacing dots with underscores.
+ **)
+
 relation generate_function_name : Absyn.Path => string =
 
   rule	ModUtil.path_string2 (fpath,"_") => fstr 
@@ -1073,7 +1100,12 @@ relation generate_function_name : Absyn.Path => string =
 
 end
 
-(* input string is language, e.g. "C" or "FORTRAN 77" *)
+(** relation: generate_ext_function_args
+ ** 
+ ** Generates Code for external function arguments.
+ ** input string is language, e.g. "C" or "FORTRAN 77" 
+ **)
+
 relation generate_ext_function_args : (DAE.ExtArg list, string) => string list = 
 
   rule	Util.list_map(extargs,generate_ext_function_arg) => arg_strs
@@ -1091,6 +1123,10 @@ relation generate_ext_function_args : (DAE.ExtArg list, string) => string list =
 
 end	
 
+(** relation: generate_function_args
+ **
+ ** Generates code from a function argument.
+ **)
 
 relation generate_function_arg : Types.FuncArg => string =
 
@@ -1102,10 +1138,11 @@ relation generate_function_arg : Types.FuncArg => string =
 
 end
 
-(* FIXME : shouldn't it be "const <type> *" instead of
-   <type> const *"
-   changed this already.
-*)
+(** relation: generate_ext_arg_type
+ **
+ ** Helper relation to generate_ext_function_arg.
+ ** Generates code for the type of an external function argument.
+ **)
 
 relation generate_ext_arg_type : (Types.Attributes, Types.Type) => string =
 
@@ -1140,22 +1177,15 @@ relation generate_ext_arg_type : (Types.Attributes, Types.Type) => string =
 
 end	
 
+(** relation: generate_ext_function_arg
+ **
+ ** Generates Code for the arguments of an external function.
+ **)
+
 relation generate_ext_function_arg : DAE.ExtArg => string =
 
-(* LS: Why different names, it's only the declaration anyway *)
-(* commenting out *)
 
-(*
-  rule	Types.is_array ty => false &
-	generate_ext_arg_type (attr,ty) => tystr &
-	var_name_external cref => name &
-	Util.string_append_list([tystr, " ", name]) => res
-	-----------------------------------
-	generate_ext_function_arg DAE.EXTARG(cref, attr, ty) => res
-*)
-
-  rule	(* Types.is_array ty => true & *)
-	generate_ext_arg_type (attr,ty) => tystr &
+  rule	generate_ext_arg_type (attr,ty) => tystr &
 	comp_ref_cstr cref => (name,_) &
 	Util.string_append_list([tystr, " ", name]) => res
 	-----------------------------------
@@ -1172,6 +1202,13 @@ relation generate_ext_function_arg : DAE.ExtArg => string =
 	generate_ext_function_arg (_) => fail
 
 end
+
+(** relation: generate_ext_arg_type_f77
+ **
+ ** Helper relation to generate_ext_function_arg.
+ ** Generates code for the type of an external function argument on fortran.
+ ** format.
+ **)
 
 relation generate_ext_arg_type_f77 : (Types.Attributes, Types.Type) => string =
 
@@ -1203,6 +1240,12 @@ relation generate_ext_arg_type_f77 : (Types.Attributes, Types.Type) => string =
 
 end	
 
+(** relation: generate_ext_function_arg_f77
+ **
+ ** Generates Code for the arguments of an external function on fortran. 
+ ** format.
+ **)
+
 relation generate_ext_function_arg_f77 : DAE.ExtArg => string =
 
   rule	generate_ext_arg_type_f77 (attr,ty) => tystr &
@@ -1223,31 +1266,10 @@ relation generate_ext_function_arg_f77 : DAE.ExtArg => string =
 
 end
 
-(*
-relation generate_ext_arg_dims : (Ident, int list) => string =
-
-  rule	generate_ext_arg_dims_2 (name,dims,1) => str	
-	-----------------------------------------
-       	generate_ext_arg_dims (name,dims) => str
-
-end
-
-relation generate_ext_arg_dims_2 : (Ident, int list, int) => string =
-
-  rule	int_string i => dimno &
-	Util.string_append_list (["size_t ", name, "_dim", dimno]) => str
-	------------------------------------------
-	generate_ext_arg_dims_2 (name, [v], i) => str
-
-  rule	int_add(i,1) => ipp &
-	generate_ext_arg_dims_2 (name, rest, ipp) => reststr &
-	int_string i => dimno &
-	Util.string_append_list(["size_t", name, "_dim", dimno, ", ", reststr]) => str
-	--------------------------------------------------------------------
-	generate_ext_arg_dims_2 (name, v::rest, i) => str
-
-end
-*)
+(** relation: generate_ext_return_type
+ **
+ ** Generates code for the return type of an external function.
+ **)
 
 relation generate_ext_return_type : DAE.ExtArg => string =
 
@@ -1262,6 +1284,11 @@ relation generate_ext_return_type : DAE.ExtArg => string =
 	generate_ext_return_type _ => fail
 end
 
+(** relation: generate_ext_return_type
+ **
+ ** Generates code for the return type of an external function.
+ **)
+
 relation generate_ext_return_type_f77 : DAE.ExtArg => string =
 
   rule	generate_ext_return_type arg => str
@@ -1270,13 +1297,17 @@ relation generate_ext_return_type_f77 : DAE.ExtArg => string =
 
 end	
 
+(** relation: generate_function_body
+ **
+ ** Generates code for the body of a Modelica function.
+ **)
 
-relation generate_function_body_tuple : (Absyn.Path, 
-					 DAE.Element list, 
-					 Types.Type) 
+relation generate_function_body : (Absyn.Path, (* func name *)
+				   DAE.Element list, (* body elts *)
+				   Types.Type) (* function type *)
 	  => CFunction =
 	  
-  rule	Debug.fprintln ("cgtr", "generate_function_body_tuple") &
+  rule	Debug.fprintln ("cgtr", "generate_function_body") &
 	
 	let tnr = 1 &
 
@@ -1308,9 +1339,14 @@ relation generate_function_body_tuple : (Absyn.Path,
 
 	c_add_cleanups(cfn''',[mem_stmt2,ret_stmt]) => cfn
 	--------------
-	generate_function_body_tuple (fpath, dae, restype) => cfn
+	generate_function_body (fpath, dae, restype) => cfn
 
 end
+
+(** relation: generate_alloc_outvars
+ **
+ ** Generates code for the allocation of output parameters of the function.
+ **)
 
 relation generate_alloc_outvars : (DAE.Element list, string, string, int) 
 	  => (CFunction,int) =
@@ -1335,6 +1371,10 @@ relation generate_alloc_outvars : (DAE.Element list, string, string, int)
 
 end
 
+(** relation: generate_alloc_outvar
+ **
+ ** Helper relation to generate_alloc_outvars.
+ **)
 	
 relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 
@@ -1365,6 +1405,11 @@ relation generate_alloc_outvar : (DAE.Element,string,int) => (CFunction,int) =
 	generate_alloc_outvar (e,_,tnr) => (c_empty_function,tnr)
 
 end
+
+(** relation: generate_alloc_outvar_ext
+ **
+ ** Helper relation to generate_alloc_outvars, for external functions.
+ **)
 
 relation generate_alloc_outvars_ext : (DAE.Element list, string,int, DAE.ExternalDecl) 
 	  => (CFunction,int) =
@@ -1399,7 +1444,10 @@ relation generate_alloc_outvars_ext : (DAE.Element list, string,int, DAE.Externa
 
 end
 
-
+(** relation: generate_alloc_outvar_f77
+ **
+ ** Helper relation to generate_alloc_outvars, for fortran code.
+ **)
 relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int) =
 
 
@@ -1433,6 +1481,11 @@ relation generate_alloc_outvar_f77 : (DAE.Element,string,int) => (CFunction,int)
 
 end
 
+(** relation: generate_size_subscripts
+ **
+ ** Generates code for calculating the subscripts of a variable.
+ **)
+
 relation generate_size_subscripts : (string, Exp.Subscript list,int)
 	  => (CFunction,string list,int) =
 
@@ -1445,16 +1498,6 @@ relation generate_size_subscripts : (string, Exp.Subscript list,int)
 	generate_size_subscripts (id, Exp.INDEX(e)::r, tnr)
 	  => (cfn, var1::vars2, tnr2)
 
-(*
-  rule	generate_temp_decl("WHOLEDIM",tnr) => (decl,var1,tnr1) &
-	c_add_variables (c_empty_function, [decl]) => cfn1 &
-	generate_size_subscripts (r,tnr1) => (cfn2,vars2,tnr2) &
-	c_merge_fn(cfn1,cfn2) => cfn
-	----------------------------
-	generate_size_subscripts (Exp.WHOLEDIM::r,tnr)
-	  => (cfn,var1::vars2,tnr2)
-*)
-
   rule	Print.print_buf "# generate_size_subscripts failed\n" & 
 	Util.string_append_list ([" - ", id, "["]) => s &
 	Print.print_buf s &
@@ -1463,6 +1506,11 @@ relation generate_size_subscripts : (string, Exp.Subscript list,int)
 	generate_size_subscripts(id,subs,_) => fail
 
 end
+
+(** relation: generate_alloc_array_f77
+ **
+ ** Generates code for allocating an array in fortran.
+ **)
 
 relation generate_alloc_array_f77 : (string , Types.Type) => CFunction =
 
@@ -1491,22 +1539,25 @@ relation generate_alloc_array_f77 : (string , Types.Type) => CFunction =
 
 end
 
-relation prefix_cr : (string, Exp.ComponentRef) => Exp.ComponentRef =
-
-  axiom	prefix_cr (prf,cref) 
-	  => Exp.CREF_QUAL(prf,[],cref)
-	  
-end
+(** relation: generate_algorithms
+ **
+ ** Generates code for all algorithms in the DAE.Element list
+ **)
 
 relation generate_algorithms: (DAE.Element list, int)
 	  => (CFunction, int) =
 
-  rule	DAE.get_matching(els,DAE.is_algorithm) => algs &
+  rule	Util.list_matching(els,DAE.is_algorithm) => algs &
 	generate_algorithms2(algs,tnr) => (cfn,tnr') 
 	------------------------
 	generate_algorithms (els, tnr) => (cfn,tnr')
 
 end
+
+(** relation: generate_algorithms
+ **
+ ** Helper relation to generate_algorithms
+ **)
 
 relation generate_algorithms2: (DAE.Element list, int)
 	  => (CFunction, int) =
@@ -1523,6 +1574,7 @@ end
 
 
 (** relation: generate_algorithm
+ **
  ** Generates C-code for an DAE.Element that is ALGORTIHM
  ** The tab indent number is passed as argument.
  **)
@@ -1541,6 +1593,11 @@ relation generate_algorithm: (DAE.Element, int)
 
 end
 
+(** relation: generate_algorithm_statements
+ **
+ ** Generates code for a list of Algorithm.Statement.
+ **)
+
 relation generate_algorithm_statements : (Algorithm.Statement list, int)
 	  => (CFunction, int) =
 
@@ -1555,18 +1612,16 @@ relation generate_algorithm_statements : (Algorithm.Statement list, int)
 end
 
 
-(*
- relation : generate_algorithm_statement
-
- returns:
-   CFunction | Code
-   string    | expression result: variable name, or 'c' expression
-   int       | next temporary number 
+(** relation : generate_algorithm_statement
+ **
+ **  returns:
+ **  CFunction | Code
+ ** int       | next temporary number 
  *)
 
 relation generate_algorithm_statement : (Algorithm.Statement, int)
 	  => (CFunction, int) =
-
+	  
   rule	Debug.fprintln("cgas","generate_algorithm_statement") &
 	generate_expression(exp,tnr) => (cfn1,var1,tnr1) &
 	generate_scalar_lhs_cref(typ,cref,tnr1)
@@ -1721,6 +1776,11 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 
 end
 
+(** relation: generate_range_expressions
+ ** 
+ ** Generates code for a range expression.
+ **)
+
 relation generate_range_expressions : (Exp.Exp, int)
 	  => (CFunction, string, string, string, int) =
 
@@ -1747,7 +1807,11 @@ relation generate_range_expressions : (Exp.Exp, int)
 	-----------------------
 	generate_range_expressions(_,_) => fail
 
-end
+end 
+(** relation: generate_else
+ ** 
+ ** Generates code for an Else branch.
+ **)
 
 relation generate_else : (Algorithm.Else, int) => (CFunction, int) =
 
@@ -1777,6 +1841,13 @@ relation generate_else : (Algorithm.Else, int) => (CFunction, int) =
 	generate_else (_,_) => fail
 end
 
+(** relation: generate_vars
+ **
+ ** Generates code for variables, given a list of elements and a relation
+ ** over the elements. Code is only generated for elements for which the 
+ ** relation succeeds.
+ **)
+
 relation generate_vars : (DAE.Element list,DAE.Element => (),int) 
 	  => (CFunction,int) =
 
@@ -1799,6 +1870,14 @@ relation generate_vars : (DAE.Element list,DAE.Element => (),int)
 	generate_vars (_,_,_) => fail
 	
 end
+
+
+(** relation: generate_var_decls
+ **
+ ** Generates declaration code for variables given a DAE.Element list 
+ ** and a relation over elements. Code is only generated for Elements for 
+ ** which the relation succeeds.
+ **)
 
 relation generate_var_decls : (DAE.Element list,DAE.Element => (),int) 
 	  => (CFunction,int) =
@@ -1823,7 +1902,17 @@ relation generate_var_decls : (DAE.Element list,DAE.Element => (),int)
 	
 end
 
-relation generate_var_inits : (DAE.Element list, DAE.Element => (), int, string) => (CFunction, int) =
+(** relation: generate_var_inits
+ **
+ ** Generates initialization code for variables given a DAE.Element list 
+ ** and a relation over elements. Code is only generated for Elements for 
+ ** which the relation succeeds.
+ **)
+
+relation generate_var_inits : (DAE.Element list, (* elements*)
+			       DAE.Element => (), int, (* verifying relation*)
+			       string) (* variable prefix*) 
+	  => (CFunction, int) =
 
   axiom	generate_var_inits ([],_,tnr,_) => (c_empty_function, tnr)
 
@@ -1845,51 +1934,15 @@ relation generate_var_inits : (DAE.Element list, DAE.Element => (), int, string)
 	
 end
 
-(*
-relation generate_var_init : (DAE.Element, int) => (CFunction, int) =
+(** relation: generate_var
+ **
+ ** Generates code for a variable.
+ **)
 
-  rule	is_array var => is_a &
-	dae_type_str (typ, is_a) => typ_str &
-	comp_ref_cstr id => (id_str,_) &
-	Exp.print_exp_str e => expstr & 
-	Util.string_append_list (["copy_", typ_str,
-				  "_data(", id_str, ",", expstr, ");"
-				  ]) => init_str &
-	c_add_statements(c_empty_function,[init_str]) => cfn
-	-----------
-	generate_var_init    (var as DAE.VAR(id, 
-					     DAE.VARIABLE, 
-					     DAE.OUTPUT, 
-					     typ, 
-					     SOME(e),
-					     _,
-					     _,start,flow,class,dae_var_attr,comment),tnr)
-	  => (cfn, tnr)
+relation generate_var : (DAE.Element,int) 
+	  => (CFunction,int) =
 
-  axiom	generate_var_init (_, tnr) => (c_empty_function, tnr)
-
-end
-*)
-
-relation generate_var : (DAE.Element,int) => (CFunction,int) =
-(*
- parameters are put in the params struct
-
-  rule	generate_var_q2 (vd) &
-	indent 2 &
-	DAE.dump_type typ &
-	Exp.print_component_ref id &
-	Print.print_buf " = 0;  /* Warning: without value, set to zero */\n"
-	-----------
-	generate_var(DAE.VAR(id, DAE.PARAM, vd, typ, NONE,_,class,dae_var_attr,comment))
-*)
-
-(*
-  rule	is_first_in_array id => false
-	-----------------------------
-	generate_var(DAE.VAR(id,_,_,_,_,_,_,_,_,_),tnr) => (c_empty_function,tnr)
-*)
-
+	  (* variables without binding *)
   rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
@@ -1911,6 +1964,7 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	----------------------------------------------------
 	generate_var(var as DAE.VAR(id, vk, vd, typ, NONE,inst_dims,start,flow,class,dae_var_attr,comment),tnr) => (cfn,tnr1)
 
+	(* variables with binding *)
   rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
 	comp_ref_cstr id => (cref_str,_) &
@@ -1958,14 +2012,12 @@ relation generate_var : (DAE.Element,int) => (CFunction,int) =
 	generate_var (e,_) => fail
 end
 
+(** relation: generate_var_decl
+ **
+ ** Generates code for a variable declaration.
+ **)
+
 relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
-
-(*
-  rule	is_first_in_array id => false
-	-----------------------------
-	generate_var_decl(DAE.VAR(id,_,_,_,_,_,_,_,_,_),tnr) => (c_empty_function,tnr)
-*)
-
 
   rule	is_array var => is_a &
 	dae_type_str (typ,is_a) => typ_str &
@@ -1984,8 +2036,10 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 					 inst_dims,start,flow,class,dae_var_attr,comment),tnr) 
 	  => (cfn,tnr)
 
-  rule	generate_var_decl(DAE.VAR(id, vk, vd, typ, NONE, inst_dims, start, flow,class,dae_var_attr,comment), tnr) => (cfn,tnr1)
-	--------------------------------------------------------------------------------------------
+  rule	generate_var_decl(DAE.VAR(id, vk, vd, typ, NONE, inst_dims, 
+				  start, flow,class,dae_var_attr,comment), tnr)
+	  => (cfn,tnr1)
+	  --------------------------------------------------------------------
 	generate_var_decl(var as DAE.VAR(id, vk, vd, typ, SOME(e), inst_dims,start,flow,class,dae_var_attr,comment),tnr) 
 	  => (cfn,tnr1)
 
@@ -1997,19 +2051,19 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 end
 
 
+(** relation: generate_var_init
+ **
+ ** Generates code for the initialization of a variable.
+ **)
+
 relation generate_var_init : (DAE.Element,int,string) => (CFunction,int) =
 
-(*
-  rule	is_first_in_array id => false
-	-----------------------------
-	generate_var_init(DAE.VAR(id,_,_,_,_,_,_,_,_,_),tnr) => (c_empty_function,tnr)
-*)
-
-
+	(* No binding *)
   axiom	generate_var_init(var as DAE.VAR(id, vk, vd, typ, NONE,
 					 inst_dims,start,flow,class,dae_var_attr,comment),tnr,pre)
 	  => (c_empty_function, tnr)
 
+	  (* Has binding *)
   rule	is_array var => is_a &
 	Util.string_equal (pre, "") => emptyprep &
 	Exp.prepend_string_cref ("out.", id) => id' &
@@ -2031,6 +2085,12 @@ relation generate_var_init : (DAE.Element,int,string) => (CFunction,int) =
 	generate_var_init (e,_,_) => fail
 end
 
+
+(** relation: dim_string
+ **
+ ** Returns a Exp.subscript as a string.
+ **)
+
 relation dim_string : Exp.Subscript => string =
 
   rule	int_string i => str
@@ -2042,6 +2102,12 @@ relation dim_string : Exp.Subscript => string =
 	dim_string e => ":"
 
 end
+
+(** relation: is_var_q
+ **
+ ** Succeds if DAE.Element is a variable or constant that is not input.
+ **)
+
 relation is_var_q : DAE.Element => () =
 
   rule	generate_var_q(vk) &
@@ -2050,6 +2116,12 @@ relation is_var_q : DAE.Element => () =
 	is_var_q DAE.VAR(id,vk,vd,_,_,_,_,_,_,_,_)
 
 end
+
+(** relation: generate_var_q
+ **
+ ** Helper relation to is_var_q.
+ **)
+
 relation generate_var_q : DAE.VarKind => () =
 
   axiom	generate_var_q DAE.VARIABLE
@@ -2058,6 +2130,11 @@ relation generate_var_q : DAE.VarKind => () =
 
 end
 
+(** relation: generate_var_q2
+ **
+ ** Helper relation to is_var_q.
+ **)
+
 relation generate_var_q2 : DAE.VarDirection => () =
 
   axiom	generate_var_q2 DAE.OUTPUT
@@ -2065,6 +2142,10 @@ relation generate_var_q2 : DAE.VarDirection => () =
 
 end
 
+(** relation: generaet_result_vars
+ **
+ ** Generates code for output variables.
+ **)
 
 relation generate_result_vars : (DAE.Element list,string, int) 
 	  => (CFunction, int) =
@@ -2079,20 +2160,30 @@ relation generate_result_vars : (DAE.Element list,string, int)
 
 end
 
-relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
+(** relation: generate_result_var
+ **
+ ** Helper relation to generate_result_vars.
+ **)
 
+relation generate_result_var : (DAE.Element, 
+				string, (* varname *)
+				int) 
+	  => (CFunction,int) =
+	  (* non-arrays *)
   rule	is_array var => false &
 	comp_ref_cstr id => (cref_str1,_) &
 	comp_ref_cstr id => (cref_str2,_) &
 	Util.string_append_list([varname,".",cref_str1," = ",cref_str2,";"])
 	  =>stmt &
 	c_add_cleanups(c_empty_function,[stmt]) => cfn
-	-----------
-	generate_result_var (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_,_,_,_),
+	----------------------------------------------
+	generate_result_var (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, 
+					    _,_,_,_,_,_,_),
 			     varname,
 			     tnr)
 	  => (cfn,tnr)
 
+	  (* arrays *)
   rule	is_array var => true &
 	dae_type_str (typ, true) => typ_str &
 	comp_ref_cstr id => (cref_str1,_) &
@@ -2107,65 +2198,14 @@ relation generate_result_var : (DAE.Element,string,int) => (CFunction,int) =
 			     tnr)
 	  => (cfn,tnr)
 
-  rule	is_array var => true
-	-----------
-	generate_result_var (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, typ, _,_,_,_,_,_,_),
-			     varname,
-			     tnr)
-	  => (c_empty_function,tnr)
-
   axiom	generate_result_var (_,_,tnr) => (c_empty_function,tnr)
 
 end
 
-
-(* LS: ATT! These can only be assignments for the moment, 
- since no sorting or solving exists *)
-
-relation generate_equations : DAE.Element list => () =
-
-  axiom	generate_equations []
-
-  rule	Exp.print_exp e1 &
-	Print.print_buf " = " &
-	Exp.print_exp e2 &
-	Print.print_buf ";\n" &
-	generate_equations rest
-	------------------
-	generate_equations DAE.EQUATION(e1,e2) :: rest
-
-  rule	generate_equations rest
-	-----------------------
-	generate_equations _ :: rest
-
-end
-
-relation generate_exp : Exp.Exp => () =
-
-  rule	Print.print_buf "{" &
-	Exp.print_list (es, generate_exp, ", ") &
-	Print.print_buf "}"
-	---------------------------------------
-	generate_exp Exp.ARRAY(_,_,es)
-
-  rule	Exp.print_exp e
-	---------------
-	generate_exp e
-
-end
-
-
-
-relation get_array_dim : Types.Type => int =
-
-  axiom	get_array_dim((Types.T_ARRAY(Types.DIM(SOME(ad)), ty2),_)) => ad
-
-	(** LS: Fail if not array, or if there is no dim value **)
-
-end
-
-
-
+(** relation: generate_expressions
+ **
+ ** Generates code for a list of expressions.
+ **)
 
 relation generate_expressions : (Exp.Exp list, int) 
 	  => (CFunction, string list, int) =
@@ -2180,17 +2220,14 @@ relation generate_expressions : (Exp.Exp list, int)
 
 end
 
-
-
-
-(*
- generate_expression
-
- returns
-   CFunction | the generated code
-   string    | expression result variable name, or c expression
-   int       | next temporary number 
-*)
+(** relation: generate_expression
+ **
+ ** Generates code for an expression.
+ ** returns
+ **  CFunction | the generated code
+ **  string    | expression result variable name, or c expression
+ **  int       | next temporary number 
+ **)
  
 relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	  
@@ -2379,6 +2416,11 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(e,_) => fail
 end
 
+(** relation: generate_unary
+ ** 
+ ** Helper relation to generate_expression.
+ **)
+
 relation generate_unary : (Exp.Operator, Exp.Exp, int)
 	  => (CFunction, string, int) =
 
@@ -2411,20 +2453,17 @@ relation generate_unary : (Exp.Operator, Exp.Exp, int)
   rule	Print.print_buf "# unary minus for arrays not implemented\n"
 	------------------------
 	generate_unary (Exp.UMINUS_ARR(_), _, _) => fail
-
-
-
 end
 
-(*
+(** relation:  generate_binary
+ **
+ ** Helper relation to generate_expression.
+ ** returns:
+ ** CFunction | the generated code
+ ** string    | expression result 
+ ** int       | next temporary number 
+ **)
 
- generate_binary
-
- returns:
-  CFunction | the generated code
-  string    | expression result 
-  int       | next temporary number 
-*)
 relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int) 
 	  => (CFunction, string, int) =
 	  
@@ -2646,10 +2685,12 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
   rule	Print.print_buf "# generate_binary failed\n"
 	-------------------------
 	generate_binary(_,_,_,_) => fail
-
-
-
 end
+
+(** relation: generate_temp_decl
+ ** 
+ ** Generates code for the declaration of a temporary variable.
+ **)
 
 relation generate_temp_decl : (string, int) => (string, string, int) =
 	 
@@ -2661,7 +2702,12 @@ relation generate_temp_decl : (string, int) => (string, string, int) =
 	generate_temp_decl(t, tnr) => (t', tmp_name, tnr')
 
 end
- 
+
+(** relation: generate_scalar_lhs_cref
+ **
+ ** Helper relation to generate_algorithm_statement.
+**)
+
 relation generate_scalar_lhs_cref : (Exp.Type, Exp.ComponentRef, int)
 	  => (CFunction, string, int) =
 
@@ -2720,6 +2766,11 @@ relation generate_scalar_lhs_cref : (Exp.Type, Exp.ComponentRef, int)
 
 end
 
+(** relation: generate_rhs_cref
+ **
+ ** Helper relation to generate_expression.
+ **)
+
 relation generate_rhs_cref : (Exp.ComponentRef, Exp.Type, int) 
 	  => (CFunction, string, int) =
 
@@ -2732,7 +2783,8 @@ relation generate_rhs_cref : (Exp.ComponentRef, Exp.Type, int)
 	generate_scalar_rhs_cref(cref_str,crt, subs,tnr) => (cfn,var,tnr')
 	--------------------------------------
 	generate_rhs_cref (cref, crt, tnr) => (cfn,var,tnr')
-
+	
+	(* array expressions *)
   rule	comp_ref_cstr cref => (cref_str,subs) &
 	subs_to_scalar subs => false &
 	generate_array_rhs_cref(cref_str,crt,subs,tnr) => (cfn,var,tnr')
@@ -2741,6 +2793,11 @@ relation generate_rhs_cref : (Exp.ComponentRef, Exp.Type, int)
 
 end
 
+(** relation: subs_to_scalar
+ **
+ ** Returns true if subscript results applied to variable or expression 
+ ** results in scalar expression.
+ **)
 relation subs_to_scalar : Exp.Subscript list => bool =
 
   axiom subs_to_scalar [] => true
@@ -2752,6 +2809,11 @@ relation subs_to_scalar : Exp.Subscript list => bool =
 	subs_to_scalar Exp.INDEX(_)::r => b
 
 end
+
+(** relation: generate_scalar_rhs_cref
+ **
+ ** Helper relation to generate_algorithm_statement.
+ **)
 
 relation generate_scalar_rhs_cref : (string, Exp.Type,Exp.Subscript list, int) 
 	  => (CFunction, string, int) =
@@ -2795,6 +2857,11 @@ relation generate_scalar_rhs_cref : (string, Exp.Type,Exp.Subscript list, int)
 	  => (cfn1,cref1,tnr1)
 end
 
+(** relation: generate_array_rhs_cref
+ **
+ ** Helper relation to generate_rhs_cref.
+ **)
+
 relation generate_array_rhs_cref : (string, Exp.Type,Exp.Subscript list, int) 
 	  => (CFunction, string, int) =
 
@@ -2809,6 +2876,11 @@ relation generate_array_rhs_cref : (string, Exp.Type,Exp.Subscript list, int)
 	generate_array_rhs_cref (cref_str,crt,subs,tnr) 
 	  => (cfn,temp,tnr2)
 end
+
+(** relation: generate_index_spec
+ **
+ ** Helper relation to generate_algorithm_statement.
+ **)
 
 relation generate_index_spec : (Exp.Subscript list, int) 
 	  => (CFunction, string, int) =
@@ -2835,6 +2907,11 @@ relation generate_index_spec : (Exp.Subscript list, int)
 
 end
 
+(** relation: generate_indices_array
+ **
+ ** Helper relation to generaet_indices_array
+ **)
+
 relation generate_indices_array : (Exp.Subscript list, int) 
 	  => (CFunction, string list, string list, int) =
 
@@ -2855,6 +2932,11 @@ relation generate_indices_array : (Exp.Subscript list, int)
 
 end
 
+(** relation: generate_indices
+ **
+ ** 
+**)
+
 relation generate_indices : (Exp.Subscript list, int) 
 	  => (CFunction, string list, int) =
 
@@ -2873,6 +2955,11 @@ relation generate_indices : (Exp.Subscript list, int)
 	generate_indices(_,_) => fail
 
 end
+
+(** relation: generate_index_array
+ **
+ ** Helper relatoin to generate_indices_array
+ **)
 
 relation generate_index_array : (Exp.Subscript, int)
 	  => (CFunction, string, string, int) =
@@ -2897,6 +2984,11 @@ relation generate_index_array : (Exp.Subscript, int)
 
 end
 
+(** relation: generate_index
+ **
+ ** Helper relation to generate_index_array.
+ **)
+
 relation generate_index : (Exp.Subscript, int)
 	  => (CFunction, string, int) =
 
@@ -2910,6 +3002,11 @@ relation generate_index : (Exp.Subscript, int)
 
 end
 
+(** relation: indent_strings
+ **
+ ** Adds a two space indentation to each string in a string list.
+ **)
+	    
 relation indent_strings : string list => string list =
 
   axiom	indent_strings [] => []
@@ -2921,35 +3018,32 @@ relation indent_strings : string list => string list =
 	
 end
 
-relation ident_cstr : string => string =
-  axiom ident_cstr s => s
-end
+(** relation: comp_ref_cstr
+ **
+ ** Returns the ComponentRef as a string and the complete Subscript list of
+ ** the ComponentRef.
+ **)
 
 relation comp_ref_cstr : Exp.ComponentRef => (string, Exp.Subscript list) =
 
-  rule	ident_cstr id => id_str
-	---------------------
-	comp_ref_cstr Exp.CREF_IDENT(id,subs) => (id_str,subs)
+  axiom	comp_ref_cstr Exp.CREF_IDENT(id,subs) => (id,subs)
 
-  rule	ident_cstr id => id_str &
-	comp_ref_cstr cref => (cref_str,cref_subs) &
+  rule	comp_ref_cstr cref => (cref_str,cref_subs) &
 	Util.string_append_list([id,"__",cref_str]) => cref_str' &
 	Util.list_flatten([subs,cref_subs]) => subs'
 	------------------------------
 	comp_ref_cstr Exp.CREF_QUAL(id,subs,cref) => (cref_str',subs')
-
 end
 
 
-(*
-
- generate_lbinary
-
- returns:
-  CFunction | the generated code
-  string    | expression result 
-  int       | next temporary number 
-*)
+(** relation: generate_lbinary
+ ** 
+ ** Generates code for logical binary expressions.
+ ** returns:
+ ** CFunction | the generated code
+ ** string    | expression result 
+ ** int       | next temporary number 
+ **)
 relation generate_lbinary : (Exp.Exp, Exp.Operator, Exp.Exp, int) 
 	  => (CFunction, string, int) =
 
@@ -2975,15 +3069,15 @@ relation generate_lbinary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 
 end
 
-(*
+(** relation: generate_lunary
+ ** 
+ ** Generates code for logical unary expressions.
+ ** returns:
+ ** CFunction | the generated code
+ ** string    | expression result 
+ ** int       | next temporary number 
+ **)
 
- generate_lunary
-
- returns:
-  CFunction | the generated code
-  string    | expression result 
-  int       | next temporary number 
-*)
 relation generate_lunary : (Exp.Operator, Exp.Exp, int) 
 	  => (CFunction, string, int) =
 
@@ -3000,15 +3094,15 @@ relation generate_lunary : (Exp.Operator, Exp.Exp, int)
 
 end
 
-(*
+(** relation: generate_relation
+ ** 
+ ** Generates code for relation expressions.
+ ** returns:
+ ** CFunction | the generated code
+ ** string    | expression result 
+ ** int       | next temporary number 
+ **)
 
- generate_relation
-
- returns:
-  CFunction | the generated code
-  string    | expression result 
-  int       | next temporary number 
-*)
 relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int) 
 	  => (CFunction, string, int) =
 
@@ -3166,6 +3260,11 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 
 end
 
+(** relation: generate_matrix
+ **
+ ** Generates code for matrix expressions.
+ **)
+
 relation generate_matrix : (Exp.Type, int, (Exp.Exp*bool) list list, int) 
 	  => (CFunction, string, int) =
 
@@ -3199,6 +3298,11 @@ relation generate_matrix : (Exp.Type, int, (Exp.Exp*bool) list list, int)
 
 end
 
+(** relation: contatenate_matrix_rows
+ **
+ ** Helper relation to generate_matrix.
+ **)
+
 relation concatenate_matrix_rows : (Exp.Type, string list list, int)
 	=> (CFunction, string list, int) =
 
@@ -3211,6 +3315,11 @@ relation concatenate_matrix_rows : (Exp.Type, string list list, int)
 	concatenate_matrix_rows (typ,f::r,tnr) => (cfn,var1::vars2,tnr2)
 
 end
+
+(** relation: contatenate_matrix_row
+ **
+ ** Helper relation to concatenate_matrix_rows
+ **)
 
 relation concatenate_matrix_row : (Exp.Type, string list, int) 
 	  => (CFunction, string, int) =
@@ -3230,6 +3339,11 @@ relation concatenate_matrix_row : (Exp.Type, string list, int)
 	concatenate_matrix_row (typ,vars,tnr) => (cfn,tvar, tnr1)
 end
 
+(** relation: generate_matrix_expressions
+ **
+ ** Helper relation to generate_matrix.
+ **)
+
 relation generate_matrix_expressions : (Exp.Type,(Exp.Exp*bool) list list, int, int) =>
 	(CFunction, string list list, int) =
 
@@ -3246,6 +3360,11 @@ relation generate_matrix_expressions : (Exp.Type,(Exp.Exp*bool) list list, int, 
 
 end
 
+(** relation: generate_matrix_expr_row
+ **
+ ** Helper relation to generate_matrix_expressions.
+ **)
+
 relation generate_matrix_expr_row : (Exp.Type,(Exp.Exp*bool) list, int, int)
 	  => (CFunction,string list, int) =
 
@@ -3259,6 +3378,11 @@ relation generate_matrix_expr_row : (Exp.Type,(Exp.Exp*bool) list, int, int)
 
 
 end
+
+(** relation: generate_matrix_expressions.
+ **
+ ** Helper relation to generate_matrix_expressions.
+ **)
 	
 relation generate_matrix_expression : (Exp.Type,(Exp.Exp*bool), int, int) 
 	=> (CFunction, string, int) =
@@ -3278,7 +3402,13 @@ relation generate_matrix_expression : (Exp.Type,(Exp.Exp*bool), int, int)
 	generate_matrix_expression(t,(e,b),maxn,tnr) => (cfn,tvar,tnr2)
 
 end
-(* generate_read_call_write(fpath,outvars,retstr,args) => rcw_fn *)
+
+(** relation  generate_read_call_write
+ ** 
+ ** Generates code for reading input parameters from file, executing function
+ ** and writing result to file.
+ **)
+
 relation generate_read_call_write : (string,
 				     DAE.Element list,
 				     string,
@@ -3319,72 +3449,11 @@ relation generate_read_call_write : (string,
 
 end
 
-(*
-
-
-  rule	Debug.fprintln ("cgtr", "generate_read_call_write_external") &
-	let tnr = 1 &
-	string_append(fnname,"_read_call_write") => rcw_fnname &
-	c_make_function("int",rcw_fnname,[],
-			["char const* in_filename",
-			 "char const* out_filename"]) => cfn1 &
-
-	Util.string_append_list([retstr," out;"]) => out_decl &
-	c_add_inits(cfn1, ["PRE_VARIABLES"]) => cfn11' &
-	c_add_variables(cfn11', [out_decl]) => cfn1' &
-
-	(*generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &*)
-
-	generate_alloc_outvars_ext(outvars, "out", tnr, extdecl) 
-	  => (allocstmts, tnr_ret) &
-	generate_alloc_outvars_ext(bivars, "", tnr_ret, extdecl) 
-	  => (biallocstmts, tnr_bialloc) &
-
-	generate_temp_decl("state",tnr_bialloc) => (mem_decl, mem_var, tnr_mem) &
-	Util.string_append_list([mem_var, " = get_memory_state();"])
-	  => mem_stmt1 &
-	Util.string_append_list(["restore_memory_state(",mem_var,");"]) 
-	  => mem_stmt2 &
-	
-	c_add_variables(mem_stmt1, [mem_decl]) => mem_fn' &
-	c_add_inits(mem_fn', [allocstmts]) => mem_fn &
-
-	generate_var_decls(invars,is_rcw_input,tnr_mem) => (cfn31,tnr_invars1) &
-	generate_var_inits(invars,is_rcw_input,tnr_invars1,"") => (cfn32,tnr_invars) &
-
-	generate_var_decls(bivars,is_rcw_bidir,tnr_invars) => (cfn33, tnr_bivars1) &
-	generate_var_inits(bivars,is_rcw_bidir,tnr_bivars1,"") => (cfn34, tnr_bivars) &
-	
-	c_merge_fns([cfn31, cfn32, cfn33, cfn34]) => cfn3 &
-
-	c_add_inits(cfn3,["PRE_OPEN_INFILE"]) => cfn3' &
-
-	generate_read(invars) => readinvars & 
-	c_add_inits(readinvars, ["PRE_READ_DONE"]) => readdone &
-
-	list_append (invars, outvars) => vars' &
-	list_append (vars', bivars) => vars &
-
-	generate_ext_call (vars, extdecl, tnr_bivars) => (extcall, tnr_extcall) &
-	c_add_statements(extcall,["PRE_OPEN_OUTFILE"]) => cfn4' &
-
-	generate_write(outvars) => cfn5 &
-	c_add_statements(cfn5,["PRE_WRITE_DONE"]) => cfn5' &
-
-	c_merge_fns([cfn1',cfn3',readdone,mem_fn,biallocstmts,cfn4',cfn5']) => cfn' &
-
-	c_add_cleanups(cfn', [mem_stmt2, "return 0;"]) => cfn
-	------------------------------------------------------
-	generate_read_call_write_external(fnname,outvars,retstr,invars,extdecl,bivars) => cfn
-
-  rule	Print.print_buf "#-- generate_read_call_write_external failed\n"
-	----------------------------------------------------------------
-	generate_read_call_write_external (_,_,_,_,_,_) => fail
-
-end
-
-*)
-
+(** relation: generate_read_call_write_external
+ **
+ ** Generates code for reading input parameters from file, executing function
+ ** and writing result to file fo external functions.
+ **)
 
 relation generate_read_call_write_external : (string,
 				     DAE.Element list,
@@ -3442,22 +3511,11 @@ relation generate_read_call_write_external : (string,
 	list_append (invars, outvars) => vars' &
 	list_append (vars', bivars) => vars &
 
-(*
-	generate_var_inits(outvars, tnr_bivars) => (cfnvarinits1, tnr_varinits1) &
-	generate_var_inits(bivars, tnr_varinits1) => (cfnvarinits2, tnr_varinits2) &
-
-	c_merge_fns([cfnvarinits1,cfnvarinits2]) => cfnvarinits &
-
-	generate_ext_call (vars, extdecl, tnr_varinits2) => (extcall, tnr_extcall) &
-*)
-
 	generate_ext_call (vars, extdecl, tnr_bivars) => (extcall, tnr_extcall) &
 	c_add_statements(extcall,["PRE_OPEN_OUTFILE"]) => cfn4' &
 
 	generate_write(outvars) => cfn5 &
 	c_add_statements(cfn5,["PRE_WRITE_DONE"]) => cfn5' &
-
-(*	c_merge_fns([cfn1',cfn3',readdone,mem_fn,biallocstmts,cfnvarinits,cfn4',cfn5']) => cfn' & *)
 
 	c_merge_fns([cfn1',cfn3',readdone,mem_fn,cfn4',cfn5']) => cfn' &
 
@@ -3471,6 +3529,12 @@ relation generate_read_call_write_external : (string,
 
 end
 
+(** relation: generate_ext_call
+ **
+ ** Helper relation to generate_read_call_write_external. Generates the actual
+ ** call to the external function.
+ **)
+ 
 
 relation generate_ext_call : (DAE.Element list, DAE.ExternalDecl, int) => (CFunction, int) =
 
@@ -3490,6 +3554,10 @@ relation generate_ext_call : (DAE.Element list, DAE.ExternalDecl, int) => (CFunc
 	generate_ext_call (_,_,_) => fail
 end
 
+(** relation: generate_extcall_vardecls
+ **
+ ** Helper relation to generate_ext_call.
+ **)
 
 relation generate_extcall_vardecls : (DAE.Element list, DAE.ExtArg list,
 				      DAE.ExtArg, string, int) 
@@ -3511,6 +3579,10 @@ relation generate_extcall_vardecls : (DAE.Element list, DAE.ExtArg list,
 
 end
 
+(** relation: generate_extcall_copydecls_f77
+ **
+ ** Helper relation to generate_extcall_vardecls
+ **)
 relation generate_extcall_copydecls_f77 : (DAE.Element list, int) => (CFunction, int) =
 
   axiom	generate_extcall_copydecls_f77 ([], tnr) => (c_empty_function, tnr)
@@ -3535,6 +3607,11 @@ relation generate_extcall_copydecls_f77 : (DAE.Element list, int) => (CFunction,
 
 end
 
+(** relation: generate_extcall_vardecls2
+ **
+ ** Helper relation to generate_extcall_vardecls
+ **)
+
 relation generate_extcall_vardecls2 : (DAE.ExtArg list, DAE.ExtArg) => CFunction =
 
   axiom	generate_extcall_vardecls2 ([],DAE.NOEXTARG) => c_empty_function
@@ -3555,6 +3632,11 @@ relation generate_extcall_vardecls2 : (DAE.ExtArg list, DAE.ExtArg) => CFunction
 
 end
 
+(** relation: generate_vardecl_func
+ **
+ ** Helper relation to generate_extcall_vardecl.
+ **)
+
 relation generate_vardecl_func : (string, string, string option) => CFunction =
 
   rule	Util.string_append_list ([tystr, " ", name, ";"]) => str &
@@ -3570,6 +3652,11 @@ relation generate_vardecl_func : (string, string, string option) => CFunction =
 	generate_vardecl_func (tystr, name, NONE) => res
 
 end
+
+(** relation: generate_extcall_vardecl
+ **
+ ** Helper relation to generate_extcall_vardecls.
+ **)
 
 relation generate_extcall_vardecl : DAE.ExtArg => CFunction =
 
@@ -3632,6 +3719,10 @@ relation generate_extcall_vardecl : DAE.ExtArg => CFunction =
 end
 
 
+(** relation: generate_extcall_vardecls2_f77
+ **
+ ** Helper relation to generate_extcall_vardecls
+ **)
 
 relation generate_extcall_vardecls2_f77 : (DAE.ExtArg list, DAE.ExtArg, int)
 	  => (CFunction, DAE.ExtArg list, int) =
@@ -3654,6 +3745,11 @@ relation generate_extcall_vardecls2_f77 : (DAE.ExtArg list, DAE.ExtArg, int)
 
 end
 
+(** relation: generate_c_to_f77_converter
+ **
+ ** 
+ **)
+
 relation generate_c_to_f77_converter : Types.Type => string =
 
   rule	Types.array_element_type ty => elty &
@@ -3670,6 +3766,11 @@ relation generate_c_to_f77_converter : Types.Type => string =
 
 end
 
+(** relation: generate_c_to_f77_converter
+ **
+ ** 
+ **)
+
 relation generate_f77_to_c_converter : Types.Type => string =
 
   rule	Types.array_element_type ty => elty &
@@ -3685,6 +3786,11 @@ relation generate_f77_to_c_converter : Types.Type => string =
 
 end
 
+(** relation: is_output_or_bidir
+ **
+ ** Returns true if attributes indicates an output or bidirectional variable.
+ **)
+
 relation is_output_or_bidir : Types.Attributes => bool =
 
   rule	Types.is_output_attr attr => outvar &
@@ -3693,6 +3799,11 @@ relation is_output_or_bidir : Types.Attributes => bool =
 	---------------------------------
 	is_output_or_bidir attr => res
 end
+
+(** relation: generate_extcall_vardecl_f77
+ **
+ ** 
+ **)
 
 relation generate_extcall_vardecl_f77 : (DAE.ExtArg,int) => (CFunction, DAE.ExtArg, int) =
 
@@ -3796,8 +3907,14 @@ relation generate_extcall_vardecl_f77 : (DAE.ExtArg,int) => (CFunction, DAE.ExtA
 
 end
 
-(* input string is language *)
-relation generate_ext_call_fcall : (Ident, DAE.ExtArg list, DAE.ExtArg, string) => CFunction =
+(** relation: generate_ext_call_fcall
+ ** 
+ **  
+ **)
+relation generate_ext_call_fcall : (Ident, DAE.ExtArg list, 
+				    DAE.ExtArg, 
+				    string)  (* language *)
+	  => CFunction =
 
 	(* call without return value *)
   rule	generate_ext_call_fcall2 (fnname,args,lang) => fcall2 &
@@ -3821,6 +3938,10 @@ relation generate_ext_call_fcall : (Ident, DAE.ExtArg list, DAE.ExtArg, string) 
 
 end	
 
+(** relation: generate_ext_call_fcall2
+ **
+ ** Helper relation to generate_ext_call_fcall
+ **)
 
 relation generate_ext_call_fcall2 : (Ident, DAE.ExtArg list, string) => string =
 
@@ -3842,9 +3963,11 @@ relation generate_ext_call_fcall2 : (Ident, DAE.ExtArg list, string) => string =
 
 end
 
-(* HERE!!! is_array AND is_string
-   string has also .data
-*)
+(** relation: generate_ext_call_fcall_arg
+ **
+ ** LS: is_array AND is_string, string has also .data
+ **)
+	    
 relation generate_ext_call_fcall_arg : DAE.ExtArg => string =
 
 	(* INPUT NON-ARRAY NON-STRING *)
@@ -3894,13 +4017,6 @@ relation generate_ext_call_fcall_arg : DAE.ExtArg => string =
 	------------------------------------------
 	generate_ext_call_fcall_arg arg => res
 
-(*
-  rule	var_name_external cref => name &
-	string_append("&", name) => res 
-	-----------------------------
-	generate_ext_call_fcall_arg DAE.EXTARG(cref, Types.ATTR(_,_,_,Absyn.BIDIR), ty) => res
-*)
-
 	(* SIZE *)
   rule	generate_array_size_call arg => str
 	-----------------------------
@@ -3914,6 +4030,11 @@ relation generate_ext_call_fcall_arg : DAE.ExtArg => string =
 	generate_ext_call_fcall_arg arg => fail
 
 end
+
+(** relation: generate_ext_call_fcall_arg_f77
+ **
+ ** 
+**)
 
 relation generate_ext_call_fcall_arg_f77 : DAE.ExtArg => string =
 
@@ -3992,6 +4113,10 @@ relation generate_ext_call_fcall_arg_f77 : DAE.ExtArg => string =
 
 end
 
+(** relation: generate_array_size_call
+ **
+ ** 
+ **)
 
 relation generate_array_size_call : DAE.ExtArg => string = 
 
@@ -4017,6 +4142,11 @@ relation generate_array_size_call : DAE.ExtArg => string =
 	
 end
 
+(** relation: generate_ext_array_size_call
+ **
+ **
+ **)
+
 relation generate_ext_array_size_call : DAE.ExtArg => string = 
 
   rule	Types.array_element_type ty => ((Types.T_INTEGER(_),_)) &
@@ -4041,6 +4171,10 @@ relation generate_ext_array_size_call : DAE.ExtArg => string =
 	
 end
 
+(** relation:  is_extarg_output
+ **
+ ** Succeeds if variable is external argument and output.
+ **)
 
 relation is_extarg_output : DAE.ExtArg => () =
 
@@ -4048,11 +4182,21 @@ relation is_extarg_output : DAE.ExtArg => () =
 
 end
 
+(** relation:  is_extarg_output
+ **
+ ** Succeeds if variable is external argument and bidirectional.
+ **)
+
 relation is_extarg_bidir : DAE.ExtArg => () =
 
   axiom	is_extarg_bidir DAE.EXTARG(_,Types.ATTR(_,_,_,Absyn.BIDIR),_)
 
 end
+
+(** relation:  is_extarg_output_or_bidir
+ **
+ ** Succeeds if variable is external argument and output or bidirectional.
+ **)
 
 relation is_extarg_output_or_bidir : DAE.ExtArg => () =
 
@@ -4066,7 +4210,15 @@ relation is_extarg_output_or_bidir : DAE.ExtArg => () =
 
 end
 
-relation generate_extcall_varcopy : (DAE.ExtArg list, DAE.ExtArg, string, int) => (CFunction, int) =
+(** relation: generate_extcall_varcopy
+ **
+ **
+ **)
+
+relation generate_extcall_varcopy : (DAE.ExtArg list, 
+				     DAE.ExtArg, 
+				     string, (* language *)
+				     int) => (CFunction, int) =
 
   axiom	generate_extcall_varcopy ([],DAE.NOEXTARG,_,tnr) => (c_empty_function,tnr)
 
@@ -4098,6 +4250,11 @@ relation generate_extcall_varcopy : (DAE.ExtArg list, DAE.ExtArg, string, int) =
 
 end
 
+(** relation: generate_extcall_varcopy_single
+ **
+ ** Helper relation to generate_extcall_varcopy
+ **)
+
 relation generate_extcall_varcopy_single : DAE.ExtArg => CFunction =
 
   rule	Types.is_array ty => false &
@@ -4116,15 +4273,6 @@ relation generate_extcall_varcopy_single : DAE.ExtArg => CFunction =
 	generate_extcall_varcopy_single DAE.EXTARG(cref, attr, ty) 
 	  => c_empty_function
 
-(*
-  rule	var_name_external cref => name &
-	comp_ref_cstr cref => (orgname, _) &
-	generate_type ty => typcast &
-	Util.string_append_list (["out.", orgname, " = (", typcast, ")", name, ";"]) => str
-	--------------------------------------------------------
-	generate_extcall_varcopy_single DAE.EXTARG(cref, Types.ATTR(_,_,_,Absyn.BIDIR), ty) => str
-*)
-
   axiom	generate_extcall_varcopy_single DAE.EXTARG(cref, attr, ty) => c_empty_function
 
   rule	Print.print_buf "#-- generate_extcall_varcopy_single failed\n"
@@ -4132,6 +4280,11 @@ relation generate_extcall_varcopy_single : DAE.ExtArg => CFunction =
 	generate_extcall_varcopy_single _ => fail
 
 end
+
+(** relation: generate_extcall_varcopy_single_f77
+ **
+ ** Helper relation to generate_extcall_varcopy
+ **)
 
 relation generate_extcall_varcopy_single_f77 : DAE.ExtArg => CFunction =
 
@@ -4185,23 +4338,6 @@ relation generate_extcall_varcopy_single_f77 : DAE.ExtArg => CFunction =
 	----------------------------------------------------------------
 	generate_extcall_varcopy_single_f77 extarg => res
 
-(*
-  rule	let DAE.EXTARG(cref, attr, ty) = extarg &
-	Types.is_output_attr attr => true &
-	Types.is_array ty => true
-	---------------------------
-	generate_extcall_varcopy_single_f77 extarg => c_empty_function
-*)
-
-(*
-  rule	var_name_external cref => name &
-	comp_ref_cstr cref => (orgname, _) &
-	generate_type ty => typcast &
-	Util.string_append_list (["out.", orgname, " = (", typcast, ")", name, ";"]) => str
-	--------------------------------------------------------
-	generate_extcall_varcopy_single_f77 DAE.EXTARG(cref, Types.ATTR(_,_,_,Absyn.BIDIR), ty) => str
-*)
-
   axiom	generate_extcall_varcopy_single_f77 DAE.EXTARG(cref, attr, ty) => c_empty_function
 
   rule	Print.print_buf "#-- generate_extcall_varcopy_single_f77 failed\n"
@@ -4210,6 +4346,10 @@ relation generate_extcall_varcopy_single_f77 : DAE.ExtArg => CFunction =
 
 end
 
+(** relation: invar_names
+ **
+ ** Returns a string list of all input parameter names.
+ **)
 
 relation invar_names : DAE.Element list => string list =
 
@@ -4227,12 +4367,10 @@ relation invar_names : DAE.Element list => string list =
 
 end
 
-relation is_input_or_output_var : DAE.Element => () =
-	
-  axiom	is_input_or_output_var DAE.VAR(_,_,DAE.INPUT,_,_,_,_,_,_,_,_)
-  axiom	is_input_or_output_var DAE.VAR(_,_,DAE.OUTPUT,_,_,_,_,_,_,_,_)
-
-end
+(** relation: var_name_external
+ **
+ ** Returns the variable name of a variable used in an external function.
+ **)
 
 relation var_name_external : Exp.ComponentRef => string =
 
@@ -4243,12 +4381,23 @@ relation var_name_external : Exp.ComponentRef => string =
 
 end
 
+(** relation: var_name_external_cref
+ **
+ ** Helper relation to var_name_external.
+ **)
+
 relation var_name_external_cref : Exp.ComponentRef => Exp.ComponentRef =
 
   rule	suffix_cref (cref,"_ext") => cref'
 	---------------------------------------
 	var_name_external_cref cref => cref'
 end
+
+
+(** relation: suffix_cref
+ **
+ ** Prepends a string, suffix, to a ComponentRef.
+ **)
 
 relation suffix_cref : (Exp.ComponentRef, string) => Exp.ComponentRef =
 
@@ -4260,6 +4409,11 @@ relation suffix_cref : (Exp.ComponentRef, string) => Exp.ComponentRef =
 	---------------------------------------
 	suffix_cref (Exp.CREF_QUAL(id,subs,cref), str) => Exp.CREF_QUAL(id,subs,cref')
 end
+
+(** relation: var_name_array
+ **
+ ** 
+ **)
 
 relation var_name_array : (Exp.ComponentRef, Types.Attributes) => string =
 
@@ -4283,6 +4437,11 @@ relation var_name_array : (Exp.ComponentRef, Types.Attributes) => string =
 
 end
 
+(** relation: var_arg_names_external
+ **
+ **
+ **)
+
 relation var_arg_names_external : DAE.Element list => string list =
 
   axiom	var_arg_names_external [] => []
@@ -4305,6 +4464,10 @@ relation var_arg_names_external : DAE.Element list => string list =
 
 end
 
+(** relation: generate_read
+ **
+ **
+ **)
 
 relation generate_read : DAE.Element list => CFunction =
 
@@ -4341,6 +4504,10 @@ relation generate_read : DAE.Element list => CFunction =
 
 end
 
+(** relation: generate_write
+ **
+ **
+**)
 
 relation generate_write : DAE.Element list => CFunction =
 
@@ -4377,6 +4544,11 @@ relation generate_write : DAE.Element list => CFunction =
 
 end
 
+(** relation: is_rcw_output
+ **
+ **
+ **)
+
 relation is_rcw_output : DAE.Element => () =
 
   rule	DAE.is_var e &
@@ -4385,6 +4557,11 @@ relation is_rcw_output : DAE.Element => () =
 	is_rcw_output e 
 
 end
+
+(** relation: is_rcw_input
+ **
+ **
+ **)
 
 relation is_rcw_input : DAE.Element => () =
 
@@ -4395,6 +4572,10 @@ relation is_rcw_input : DAE.Element => () =
 
 end
 
+(** relation: is_rcw_bidir
+ **
+ **
+ **)
 relation is_rcw_bidir : DAE.Element => () =
 
   rule	DAE.is_var e &
@@ -4404,12 +4585,4 @@ relation is_rcw_bidir : DAE.Element => () =
 
 end
 
-
-relation new_ident : string => Exp.ComponentRef =
-
-  rule	tick => i & int_string i => is & string_append(str,is) => s
-	-----------------------------------------------------------------
-	new_ident str => Exp.CREF_IDENT(s,[])
-
-end
 

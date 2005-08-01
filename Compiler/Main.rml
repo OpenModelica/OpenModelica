@@ -144,7 +144,7 @@ with "SimCodegen.rml"
 (** relation: server_loop
  **
  ** This relation is the main loop of the server listening to a port
-    which recieves modelica expressions,  
+ ** which recieves modelica expressions,  
 **)
 
 relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
@@ -178,41 +178,9 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	server_loop (shandle,isymb) => isymb
 end
 
-relation charlistcompare: (char list, char list, int) => bool =
-
-  rule	a = b
-	-------------------
-	charlistcompare(a::_,b::_,1) => true
-
-  rule	not a = b
-	------------
-	charlistcompare(a::_,b::_,1) => false
-
-  rule	int_sub(n,1) => n1 &
-	a = b &
-	charlistcompare(l1,l2,n1) => true
-	-------------------------------------
-	charlistcompare(a::l1,b::l2,n) => true
-	
-  axiom	charlistcompare(_,_,_) => false
-end
-
-relation strncmp: (string,string,int)=>bool =
-  rule	string_list(s1) => clst1 &
-	string_list(s2) => clst2 &
-	string_length(s1) => s1len &
-	string_length(s2) => s2len &
-	int_ge(s1len,n) => true &
-	int_ge(s2len,n) => true &
-	charlistcompare(clst1,clst2,n) => true
-	-------------------------------------
-	strncmp (s1,s2,n) => true
-	axiom strncmp(_,_,_) => false
-end
-
 relation check_classdef: string => bool =
 
-  rule	strncmp(" ",str,1) => true & 
+  rule	Util.strncmp(" ",str,1) => true & 
 	string_list(str) => clst &
 	list_delete(clst,0) => clst' &
 	list_string(clst') => str' &
@@ -221,18 +189,18 @@ relation check_classdef: string => bool =
 	check_classdef(str) => res
 	(* Need to check for a whitespace after as well to get the keyword,
 	e.g typeOf function would be taken as a type definition otherwise *)
-  rule	strncmp ("end ",str,4) => false &
-	strncmp ("type ",str,5) => false &
-	strncmp ("class ",str,6) => false &
-	strncmp ("model ",str,6) => false &
-	strncmp ("block ",str,6) => false &
-	strncmp ("within ",str,7) => false &
-	strncmp ("record ",str,7) => false &
- 	strncmp ("package ",str,8) => false &
-	strncmp ("partial ",str,8) => false &
-	strncmp ("function ",str,9) => false &
-	strncmp ("connector ",str,10) => false &
-	strncmp ("encapsulated ",str,12) => false 
+  rule	Util.strncmp ("end ",str,4) => false &
+	Util.strncmp ("type ",str,5) => false &
+	Util.strncmp ("class ",str,6) => false &
+	Util.strncmp ("model ",str,6) => false &
+	Util.strncmp ("block ",str,6) => false &
+	Util.strncmp ("within ",str,7) => false &
+	Util.strncmp ("record ",str,7) => false &
+ 	Util.strncmp ("package ",str,8) => false &
+	Util.strncmp ("partial ",str,8) => false &
+	Util.strncmp ("function ",str,9) => false &
+	Util.strncmp ("connector ",str,10) => false &
+	Util.strncmp ("encapsulated ",str,12) => false 
 	-------------------------------
 	check_classdef str => false
 
@@ -258,14 +226,16 @@ end
 (** relation handle_command
  **
  ** This relation handles the commands in form of strings send to the server
- ** If the command is quit, the relation returns false, otherwise it sends the string to the parse relation and returns true.
+ ** If the command is quit, the relation returns false, otherwise it sends 
+ ** the string to the parse relation and returns true.
 **)
+
 relation handle_command: (string,Interactive.InteractiveSymbolTable)  => 
 	(bool, string, Interactive.InteractiveSymbolTable) =
 
-  rule	strncmp("quit()",str,6) => true 
-		-------------------------------
-		handle_command (str, isymb) => (false,"Ok\n",isymb)
+  rule	Util.strncmp("quit()",str,6) => true 
+	-------------------------------
+	handle_command (str, isymb) => (false,"Ok\n",isymb)
 	
   rule	(*check_classdef str => true &*)
 	Debug.fcall0 ("dump", Print.clear_buf) &
@@ -317,8 +287,12 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	string_append (debugstr,"Syntax Error\n") => str
 	----------------------------------
 	handle_command (_,isymb) => (true,str,isymb)
-
 end
+
+(** relation: is_modelica_file
+ **
+ ** Succeeds if filename ends with .mo or .mof
+ **)
 
 relation is_modelica_file: string => () =
   rule	System.strtok(filename,".") => lst &
@@ -335,6 +309,11 @@ relation is_modelica_file: string => () =
 
 end
 
+(** relation: is_flat_modelica_file
+ **
+ ** Succeeds if filename ends with .mof
+ **)
+
 relation is_flat_modelica_file: string => () =
 
   rule	System.strtok(filename,".") => lst &
@@ -343,6 +322,11 @@ relation is_flat_modelica_file: string => () =
 	------------
 	is_flat_modelica_file(filename)
 end
+
+(** relation: is_modelica_script_file
+ **
+ ** Succeeds if filname end with .mos
+ **)
 
 relation is_modelica_script_file: string => () =
 
@@ -368,39 +352,6 @@ relation transform_if_flat: (string, DAE.DAElist) => DAE.DAElist =
 
 end
 
-relation is_not_function : SCode.Class => bool =
-
-  rule	SCode.is_function cls => res &
-	bool_not(res) => res
-	------------------------------
-	is_not_function cls => res
-
-end
-
-relation remove_functions : SCode.Program => SCode.Program =
-
-  rule	Util.list_select (classes, is_not_function) => classes'
-	------------------------------------------------------
-	remove_functions classes => classes'
-
-  rule	print "#-- remove_functions failed"
-	--------------------------------------
-	remove_functions _ => fail
-
-end
-
-relation keep_only_functions : SCode.Program => SCode.Program =
-
-  rule	Util.list_select (classes, SCode.is_function) => classes'
-	------------------------------------------------------
-	keep_only_functions classes => classes'
-
-  rule	print "#-- keep_only_functions failed"
-	--------------------------------------
-	keep_only_functions _ => fail
-
-end	
-
 (** relation: translate_file
  **
  ** This relation invokes the translator on a source file.  The
@@ -409,8 +360,8 @@ end
 
 relation translate_file : string list => () =
 
-  rule	(*Print.print_buf "Parsing\n" &	 *)
-	is_modelica_file(f) 
+	(* A Modelica file .mo *)
+  rule	is_modelica_file(f) 
 	& Parser.parse f => p
 	& Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n")
 	& Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, p)
@@ -420,15 +371,6 @@ relation translate_file : string list => () =
 	& Debug.fprint ("info", "---elaborating\n")
 	& SCode.elaborate(p) => p'
 
-(*	 & Dump.dump p' *)
-
-(*	& Debug.fprint ("info", "---Removing functions\n")
-	& remove_functions p' => pnofunc'
-	& Debug.fprint ("info", "---Removed functions\n---Filtering functions\n")
-	& keep_only_functions p' => pfunc'
-	& Debug.fprint ("info", "---Filtered functions\n")
-	& Debug.fprint ("info", "---instantiating\n")
-*)
 	& Debug.fprint ("info", "\n------------------------------------------------------------ \n")
 	& Debug.fprint ("info", "---instantiating\n")
 	& Inst.instantiate(p') => d'
@@ -440,7 +382,6 @@ relation translate_file : string list => () =
 *)	& fix_modelica_output (d') => d
 (*	& fix_modelica_output (dimpl') => dimpl
 *)
-(* & Debug.	print "\nJust instantiated" *)
 	& Print.clear_buf()
 	& Debug.fprint ("info", "---dumping\n")
 	& Debug.fcallret ("flatmodelica", DAE.dump_str, d, "") => s
@@ -458,8 +399,6 @@ relation translate_file : string list => () =
 	(*& ModUtil.string_prefix_params d => d'*)
 	(* & Debug.fcall ("codegen", Codegen.generate_functions, d)  *)
 	& Absyn.last_classname(p) => cname
-(*	& optimize_dae(d, dimpl, cname)
-*)
 
 	& Print.get_string () => str
 	& RTOpts.silent() => silent 
@@ -469,8 +408,8 @@ relation translate_file : string list => () =
 	------------------------------
 	translate_file [f]
 
-  rule	(*Print.print_buf "Parsing\n" &
-*)	is_modelica_script_file(f) &
+	(* Modelica script file .mos *)
+  rule	is_modelica_script_file(f) &
  	Parser.parseexp f => stmts &
 	Interactive.evaluate(stmts,Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),true) => (res,newst) &
 	print res
@@ -495,23 +434,14 @@ relation translate_file : string list => () =
 	Print.print_buf "    ..., see DEBUG.TXT for further flags\n" 
  	----------------------------
  	translate_file [] => fail
-
-(*
-  rule	Print.print_error_buf "# An error occured. Perhaps this is not a Modelica file or does not end with .mo?\n" &
-	Print.get_error_string () => str 
-	& print str 
-	& Print.get_string => printstr
-	& print printstr
-	----------------------------
-	translate_file _ => fail
-*)
-
 end
 
-(* Determine if backend, i.e. BLT etc. should be run.
-It should be run if either "blt" flag is set or if 
-parallelization is enabled by giving flag -n=<no proc.>
- *)
+(** relation: runt_backend_q
+ **
+ ** Determine if backend, i.e. BLT etc. should be run.
+ ** It should be run if either "blt" flag is set or if 
+ ** parallelization is enabled by giving flag -n=<no proc.>
+ **)
 relation run_backend_q: () => bool =
 
   rule	RTOpts.debug_flag "blt" => bltflag &
@@ -524,7 +454,11 @@ relation run_backend_q: () => bool =
 	run_backend_q() => res' 
 end
 
-(* Used for both parallization and for normal execution.*)
+(** relation: optimize_dae
+ ** 
+ ** Run the backend. Used for both parallization and for normal execution.
+ **)
+
 relation optimize_dae: (DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 
   rule	run_backend_q() => true
@@ -557,7 +491,11 @@ relation optimize_dae: (DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 	optimize_dae(_,_,_) => ()
 end
 
-(*  The automatic paralellzation module.*)
+(** relation: modpar
+ **
+ ** The automatic paralellzation module.
+ **)
+
 relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 
   rule	(* If modpar not enabled, nproc = 0, return *) 
@@ -601,8 +539,10 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 end
 
 (** relation simcodegen
+ **
  ** Genereates simulation code using the SimCodegen module
  **)
+
 relation simcodegen: (Absyn.Path, (* classname *)
 		      DAE.DAElist, 
 		      DAELow.DAELow, 
@@ -642,6 +582,10 @@ relation simcodegen: (Absyn.Path, (* classname *)
 
 end
 
+(** relation: run_modpar_q
+ **
+ ** Returns true if parallelization should be run.
+ **)
 
 relation run_modpar_q: () => bool =
 	
@@ -650,6 +594,12 @@ relation run_modpar_q: () => bool =
 	------------------
 	run_modpar_q() => res
 end
+
+(** relation: fix_modelica_output
+ **
+ ** Transform the dae, replacing dots with underscore in variables and 
+ ** equations.
+ **)
 
 relation fix_modelica_output : DAE.DAElist => DAE.DAElist =
 
@@ -664,6 +614,10 @@ relation fix_modelica_output : DAE.DAElist => DAE.DAElist =
 
 end
 
+(** relation: interactivemode
+ **
+ ** Initiate the interactive mode using socket communication.
+ **)
 
 relation interactivemode: string list => () =
 
@@ -672,6 +626,11 @@ relation interactivemode: string list => () =
 	-------------------
 	interactivemode _
 end
+
+(** relation: interactivemode_corba
+ **
+ ** Initiate the interactive mode using corba communication.
+ **)
 	
 relation interactivemode_corba: string list => () =
 

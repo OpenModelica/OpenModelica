@@ -136,6 +136,11 @@ with "Util.rml"
 with "Print.rml" 
 with "Graphviz.rml" 
 
+(** relation: differentiate_equation_time
+ **
+ ** Differentiates an equation with respect to the time variable.
+ **)
+
 relation differentiate_equation_time: (DAELow.Equation,
 				  DAELow.Variables) (* time varying variables *)
 	  => DAELow.Equation =
@@ -161,6 +166,7 @@ relation differentiate_equation_time: (DAELow.Equation,
 end
 
 (** relation: differentiate_exp_time
+ **
  ** This relation differentiates expressions with respect to the 'time' variable.
  ** All other variables that are varying over time are given as the second variable.
  ** For instance, given the model:
@@ -173,6 +179,7 @@ end
  ** gives
  ** differentiate_exp_time('x+y=5*PI', [x,y]) => der(x)+der(y)=0
  **)
+
 relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 
   axiom	differentiate_exp_time(Exp.ICONST(_),_) => Exp.RCONST(0.0)
@@ -300,17 +307,13 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 end
 
 (** relation: differenatiate_exp
+ **
  ** This relation differentiates expressions with respect to a given variable, given as second argument.
  ** For example.
  ** differentiate_exp('2*x*y+2*x+y',x) => 2*x+2
  **)
+		 
 relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
-
-(*   rule  Exp.dump_exp_str(exp,0) => exp_str & *)
-(*         print exp_str & print "\n" & *)
-(*         int_eq(1,0) => true *)
-(*         ------------------------------- *)
-(*         differentiate_exp(exp,cr) => fail *)
         
   axiom	differentiate_exp(Exp.ICONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp(Exp.RCONST(_),_) => Exp.RCONST(0.0)

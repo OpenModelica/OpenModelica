@@ -164,6 +164,11 @@ end
  ** same, they are merged.
  **)
 
+(** relation: add_equ
+ **
+ ** Adds an equal equation, see explaining text above.
+ **)
+
 relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 
   rule	find_equ_set(ss,r1) => s1 &
@@ -174,7 +179,10 @@ relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 	
 end
 
-(**)
+(** relation: add_flow
+ ** 
+ ** Adds an flow equation, see add_equ above.
+ **)
 
 relation add_flow : (Sets, Exp.ComponentRef, Face, Exp.ComponentRef, Face)
 	  => Sets =
@@ -188,7 +196,11 @@ relation add_flow : (Sets, Exp.ComponentRef, Face, Exp.ComponentRef, Face)
 end
 
 
-(* For connecting two arrays, an equal equation for each index should be generated.*)
+(** relation: add_array_equ
+ **
+ ** For connecting two arrays, an equal equation for each index should 
+ ** be generated.
+ **)
 
 relation add_array_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef, int) => Sets =
 
@@ -546,7 +558,13 @@ relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool) => 
 	unconnected_flow_equations(csets,dae,env,_) => []
 end
 
-relation remove_variables: (Exp.ComponentRef list, Exp.ComponentRef list) 
+(** relation: remove_variables
+ **
+ ** Removes all the variables in the second list from the first list.
+ **)
+
+relation remove_variables: (Exp.ComponentRef list, (* vars*)
+			    Exp.ComponentRef list) (* remove *)
 	  => Exp.ComponentRef list =
   axiom	remove_variables(vars,[]) => vars 
 
@@ -555,6 +573,12 @@ relation remove_variables: (Exp.ComponentRef list, Exp.ComponentRef list)
 	-----------------------------------------
 	remove_variables(vars,r1::removelist) => res
 end
+
+(** relation: remove_variable
+ **
+ ** Removes a variable from a list of variables.
+ **)
+
 relation remove_variable: (Exp.ComponentRef, Exp.ComponentRef list) 
 	  => Exp.ComponentRef list =
 
@@ -569,6 +593,12 @@ relation remove_variable: (Exp.ComponentRef, Exp.ComponentRef list)
 	remove_variable(cr,cr2::xs) => cr2::res
 end
 
+(** relation: generate_zeroflow_equations
+ **
+ ** Unconnected flow variables should be set to zero. This relation 
+ ** generates equations setting each variable in the list to zero.
+**)
+
 relation generate_zeroflow_equations: Exp.ComponentRef list 
 	  => DAE.Element list =
   axiom	generate_zeroflow_equations ([]) => []
@@ -579,6 +609,11 @@ relation generate_zeroflow_equations: Exp.ComponentRef list
 	  => DAE.EQUATION(Exp.CREF(cr,Exp.REAL),Exp.RCONST(0.0))::res
 end
 
+
+(** relation: get_all_flow_variables
+ ** 
+ ** Return a list of all flow variables from the connection sets.
+ **)
 
 relation get_all_flow_variables: Sets => Exp.ComponentRef list =
 
@@ -594,6 +629,11 @@ relation get_all_flow_variables: Sets => Exp.ComponentRef list =
 	---------------------------------- 
 	get_all_flow_variables(EQU(res1)::xs) => res 
 end
+
+(** relation: get_inner_flow_variables
+ **
+ ** Get all flow variables that are inner variables from the Sets.
+ **)
 
 relation get_inner_flow_variables: Sets => Exp.ComponentRef list =
 
@@ -613,6 +653,11 @@ relation get_inner_flow_variables: Sets => Exp.ComponentRef list =
 	----------------------------------
 	get_inner_flow_variables(_) => fail 
 end
+
+(** relation: get_inner_flow_variables_2
+ **
+ ** Help relation to get_inner_flow_variables.
+ **)
 
 relation get_inner_flow_variables_2: (Exp.ComponentRef * Face) list 
 	  => Exp.ComponentRef list =

@@ -137,11 +137,12 @@ module DAE:
   datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
 
   datatype Type = REAL | INT | BOOL | STRING | ENUM | ENUMERATION of string list
+ (** The Flow of a variable indicates if it is a Flow variable or not, or if
+  ** it is not a connector variable at all.*)
   datatype Flow = FLOW | NON_FLOW | NON_CONNECTOR
 
   datatype VarDirection = INPUT | OUTPUT | BIDIR
 
-(* LS: Removed VARVAL completely, and added Exp.Exp as an option to VAR *)
   datatype Element = VAR of Exp.ComponentRef *  (* varible name *)
 			VarKind *		(* variable, constant, parameter, etc. *)
 			VarDirection *		(* input, output or bidir *)
@@ -171,11 +172,13 @@ module DAE:
 		   | INITIALEQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
 		   | INITIALALGORITHM of Algorithm.Algorithm
-		   | COMP of Ident * DAElist
+		   | COMP of Ident * DAElist	  (** a component with 
+						   ** subelements, normally 
+						   ** only used at top level.*)
 		   | FUNCTION of Absyn.Path * DAElist * Types.Type
 		   | EXTFUNCTION of Absyn.Path * DAElist * Types.Type * ExternalDecl 
-	            | ASSERT of Exp.Exp
-                     | REINIT of Exp.ComponentRef * Exp.Exp
+	           | ASSERT of Exp.Exp
+                   | REINIT of Exp.ComponentRef * Exp.Exp
 
   datatype VariableAttributes = VAR_ATTR_REAL of string option * (* quantity *)
              string option *(* unit *)
@@ -204,24 +207,18 @@ module DAE:
   datatype StateSelect = NEVER | AVOID | DEFAULT | PREFER | ALWAYS
   
   datatype ExtArg = EXTARG of Exp.ComponentRef * Types.Attributes * Types.Type
-                     | EXTARGEXP of Exp.Exp * Types.Type
-                     | EXTARGSIZE of Exp.ComponentRef * Types.Attributes * Types.Type * Exp.Exp
-                     | NOEXTARG
+                  | EXTARGEXP of Exp.Exp * Types.Type
+                  | EXTARGSIZE of Exp.ComponentRef * Types.Attributes * Types.Type * Exp.Exp
+                  | NOEXTARG
 
   datatype ExternalDecl = EXTERNALDECL of Ident * (* external function name *)
 					  ExtArg list * (* parameters *)
 					  ExtArg * (* return type *)
 					  string (* language *)
-	  
 
-(* 
- LS: Could have extended DAElist to have two lists, one with 
- functions and one with elements, but that would mean a lot of
- change in places where two daes are built and appended, in 
- Inst.rml 
- FUNCTION could also consist of SCode.Class instead.
- *)
-
+(** A DAElist is a list of Elements. Variables, equations, functions, 
+ ** algorithms, etc. are all found in this list.
+**)
   datatype DAElist = DAE of Element list
 
 
@@ -242,7 +239,6 @@ module DAE:
   relation dump_variable_attributes: (VariableAttributes option )=> ()
   relation dump_variable_attributes_str: (VariableAttributes option ) => string 
   relation get_matching_elements: (Element list, Element => () )  => Element list
-  relation get_matching: ('a list, 'a => () )  => 'a list
   relation get_output_vars: Element list  => Element list
   relation get_bidir_vars: Element list  => Element list
   relation get_input_vars: Element list  => Element list
@@ -268,14 +264,6 @@ module DAE:
 
 end
 
-(** - Relations
- **
- ** The only relations in this module are for printing, and are not
- ** included in the report.
- **)
-
-(*!ignorecode*)
-
 with "RTOpts.rml"
 with "Graphviz.rml"
 with "Dump.rml"
@@ -292,11 +280,16 @@ with "Debug.rml"
 
 relation dump : DAElist => () =
 	
-  rule	dump_list (daelist, dump_function) &
-	dump_list (daelist, dump_comp_element) 
+  rule	Util.list_map_0 (daelist, dump_function) &
+	Util.list_map_0 (daelist, dump_comp_element) 
 	-------------
 	dump DAE(daelist)
 end
+
+(** relation: dump2
+ **
+ ** Helper relation to dump
+ **)
 
 relation dump2: DAElist => () =
   rule	Print.print_buf "VAR(" &
@@ -409,6 +402,11 @@ relation dump2: DAElist => () =
 	dump2 (_)
 end
 
+(** relation: dump_start_value
+ **
+ ** Dumps the StartValue for a variable.
+ **)
+
 relation dump_start_value: StartValue => () =
 
   rule	Print.print_buf("(start=") &
@@ -421,6 +419,11 @@ relation dump_start_value: StartValue => () =
 
 end
 
+(** relation: dump_start_value_str
+ **
+ ** Dumps the start value for a variable to a string.
+ **)
+
 relation dump_start_value_str: StartValue => string =
 
   rule	Exp.print_exp_str e => s &
@@ -432,6 +435,11 @@ relation dump_start_value_str: StartValue => string =
 
 end
 
+(** relation: dump_ext_decl_str
+ **
+ ** Dumps the external declaration to a string.
+ **)
+
 relation dump_ext_decl_str : ExternalDecl => string = 
 
   rule	Dump.get_string_list (extargs, dump_ext_arg_str, ",") => extargsstr &
@@ -441,6 +449,11 @@ relation dump_ext_decl_str : ExternalDecl => string =
 	-----------------------------------------------------------------------
 	dump_ext_decl_str EXTERNALDECL(id,extargs,retty,lang) => str
 end
+
+(** relation: dump_ext_arg_str
+ **
+ ** Helper relation to dump_ext_decl_str
+ **)
 
 relation dump_ext_arg_str : ExtArg => string = 
 
@@ -480,26 +493,11 @@ relation dump_str : DAElist => string =
 	dump_str DAE(daelist) => str
 
 end
-	
-	
-relation dump_list : ('a list, 'a => ()) => () =
-	
-  axiom	dump_list ([],_)
-	
-  rule	r(first) &
-	dump_list (rest, r)
-	-------------------
-	dump_list (first::rest, r)
-	
-end
 
-relation dump_list_str : (Element list, Element => string) => string =
-	
-  rule	Util.list_map (daelist, func) => slist &
-	Util.string_append_list(slist) => str
-	-------------------------------------
-	dump_list_str (daelist,func) => str
-end
+(** relation: dump_comp_element
+ **
+ ** Dumps Component elements.
+ **)
 
 relation dump_comp_element : Element => () =
 	
@@ -521,6 +519,11 @@ relation dump_comp_element : Element => () =
 axiom	dump_comp_element _
 
 end
+
+(** relation: dump_comp_element_str
+ **
+ ** Dumps components to a string.
+**)
 
 relation dump_comp_element_str : Element => string =
 	
@@ -552,20 +555,29 @@ relation dump_comp_element_str : Element => string =
 
 end
 
+(** relation: dump_elements
+ **
+ ** Dump elements. 
+ **)
 
 relation dump_elements : Element list => () =
  rule	dump_vars l &
 	Print.print_buf "initial equation\n" &
-	dump_list (l, dump_initialequation) &
+	Util.list_map_0(l, dump_initialequation) &
 	Print.print_buf "equation\n" &
-	dump_list (l, dump_equation) &
-	dump_list (l, dump_initialalgorithm) & 
-	dump_list (l, dump_algorithm) & 
-	dump_list (l, dump_comp_element)
+	Util.list_map_0(l, dump_equation) &
+	Util.list_map_0(l, dump_initialalgorithm) & 
+	Util.list_map_0(l, dump_algorithm) & 
+	Util.list_map_0(l, dump_comp_element)
 	-----------------
 	dump_elements l
 
 end
+
+(** relation: dump_elements_str
+ **
+ ** Dump elements to a string
+ **)
 
 relation dump_elements_str : Element list => string =
 
@@ -589,6 +601,11 @@ relation dump_elements_str : Element list => string =
 
 end
 
+(** relation: dump_algorithms_str
+ **
+ ** Dump algorithms to a string.
+ **)
+
 relation dump_algorithms_str: Element list => string = 
 	
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -606,6 +623,11 @@ relation dump_algorithms_str: Element list => string =
 
 end
 
+(** relation: dump_initialalgorithms_str
+ **
+ ** Dump initialalgorithms to a string.
+ **)
+
 relation dump_initialalgorithms_str: Element list => string = 
 	
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -622,6 +644,11 @@ relation dump_initialalgorithms_str: Element list => string =
   axiom dump_initialalgorithms_str([])  => ""
 
 end
+
+(** relation: dump_equations_str
+ **
+ ** Dump equations to a string.
+ **)
 
 relation dump_equations_str: Element list => string =
 
@@ -692,6 +719,11 @@ relation dump_equations_str: Element list => string =
 
 end
 
+(** relation: dump_initialequations_str
+ **
+ ** Dump initial equations to a string.
+ **)
+
 relation dump_initialequations_str: Element list => string =
 
   rule	Exp.print_exp_str e1 => s1 &
@@ -734,18 +766,22 @@ relation dump_initialequations_str: Element list => string =
 end
 
 
-(* replace this with dump_list when everything works after the VARVAL removal *)
- (* project *)
+(** relation: dump_vars
+ **
+ ** Dump variables to Print buffer.
+ **)
 relation dump_vars: Element list => () =
 	
-  axiom	dump_vars []
-	
-  rule	dump_var first &
-	dump_vars rest
+ rule	dump_vars_str lst => str &
+	Print.print_buf str 
 	-------------------
-	dump_vars first :: rest
-
+	dump_vars lst
 end
+
+(** relation: dump_vars_str
+ **
+ ** Dump variables to a string.
+ **)
 
 relation dump_vars_str: Element list => string =
 	
@@ -759,6 +795,10 @@ relation dump_vars_str: Element list => string =
 
 end
 
+(** relation: dump_kind
+ **
+ ** Dump VarKind.
+ **)
 
 relation dump_kind =
 
@@ -780,6 +820,11 @@ relation dump_kind =
 
 end
 
+(** relation: dump_kind_str 
+ **
+ ** Dump VarKind to a string.
+ **)
+
 relation dump_kind_str: VarKind => string =
 
   axiom	dump_kind_str CONST => "constant "
@@ -789,6 +834,11 @@ relation dump_kind_str: VarKind => string =
 
 end
 
+
+(** relation: dump_direction
+ **
+ ** Dump VarDirection.
+ **)
 
 relation dump_direction =
 
@@ -806,6 +856,11 @@ relation dump_direction =
 
 end
 
+(** relation: dump_direction_str
+ **
+ ** Dump VarDirection to a string
+**)
+
 relation dump_direction_str: VarDirection => string =
 
   axiom	dump_direction_str INPUT => "input "
@@ -815,6 +870,11 @@ relation dump_direction_str: VarDirection => string =
   axiom	dump_direction_str BIDIR => ""
 
 end
+
+(** relation dump_stateSelect_str
+ **
+ ** Dump StateSelect to a string.
+ **)
 
 relation dump_stateSelect_str: StateSelect => string =
 
@@ -826,6 +886,11 @@ relation dump_stateSelect_str: StateSelect => string =
 
 end
 
+(** relation: dump_variable_attributes 
+ **
+ ** Dump VariableAttributes option.
+ **)
+
 relation dump_variable_attributes: VariableAttributes option => () =
  
   rule  dump_variable_attributes_str attr => res &
@@ -836,11 +901,21 @@ relation dump_variable_attributes: VariableAttributes option => () =
 
 end
 
+(** relation: string_to_string
+ **
+ ** Convert a string to a Modelica string, enclosed in citation marks.
+ **)
+
 relation string_to_string: string => string =
   rule  Util.string_append_list(["\"",str,"\""]) => str'
         -----------------------------
         string_to_string str => str'
 end
+
+(** relation: dump_variable_attributes_str
+ **
+ ** Dump VariableAttributes option to a string.
+ **)
 
 relation dump_variable_attributes_str: VariableAttributes option => string =
  
@@ -957,6 +1032,10 @@ relation dump_variable_attributes_str: VariableAttributes option => string =
 
 end
 
+(** relation: dump_type
+ **
+ ** Dump Type.
+ **)
 
 relation dump_type =
 
@@ -987,6 +1066,11 @@ relation dump_type =
 	dump_type ENUMERATION(l)
 end
 
+(** relation: dump_type_str
+ **
+ ** Dump Type to a string.
+ **)
+
 relation dump_type_str =
 
   axiom	dump_type_str INT => "Integer" 
@@ -1005,6 +1089,11 @@ relation dump_type_str =
 	----------------------------
 	dump_type_str ENUMERATION(l) => str
 end
+
+(** relation: dump_var
+ **
+ ** Dump Var.
+ **)
 
 relation dump_var : Element => () =
 	
@@ -1037,6 +1126,11 @@ relation dump_var : Element => () =
   axiom	dump_var (_)
 
 end
+
+(** relation: dump_var_str
+ **
+ ** Dump var to a string.
+ **)
 
 relation dump_var_str : Element => string =
 	
@@ -1072,6 +1166,11 @@ relation dump_var_str : Element => string =
 
 end
 
+(** relation: dump_comment_option_str
+ **
+ ** Dump Comment option to a string.
+ **)
+
 relation dump_comment_option_str : (Absyn.Comment option) => string =
 
   axiom dump_comment_option_str(NONE) => ""
@@ -1084,6 +1183,11 @@ relation dump_comment_option_str : (Absyn.Comment option) => string =
 	
 end
 
+(** relation: dump_comment_option_str
+ **
+ ** Dump Comment option.
+ **)
+
 relation dump_comment_option : (Absyn.Comment option) => () =
 
   rule  dump_comment_option_str(comment) => str &
@@ -1093,6 +1197,10 @@ relation dump_comment_option : (Absyn.Comment option) => () =
 	
 end
 
+(** relation: dump_equation
+ **
+ ** Dump equation.
+ **)
 
 relation dump_equation : Element => () =
 	
@@ -1115,6 +1223,11 @@ relation dump_equation : Element => () =
 
 end
 
+(** relation: dump_initialequation
+ **
+ ** Dump initial equation.
+ **)
+
 relation dump_initialequation : Element => () =
 	
   rule	Print.print_buf "  " & Exp.print_exp e1 &
@@ -1130,6 +1243,11 @@ relation dump_initialequation : Element => () =
   axiom	dump_initialequation _
 
 end
+
+(** relation: dump_equation_str
+ **
+ ** Dump equation to a string.
+ **)
 
 relation dump_equation_str : Element => string =
 	
@@ -1161,6 +1279,11 @@ rule	Exp.print_exp_str e => s &
 
 end
 
+(** relation: dump_algorithm
+ **
+ ** Dump algorithm.
+ **)
+
 relation dump_algorithm : Element => () =
 
   rule	Print.print_buf "algorithm\n" &
@@ -1171,6 +1294,11 @@ relation dump_algorithm : Element => () =
   axiom	dump_algorithm _
 
 end
+
+(** relation: dump_algorithm
+ **
+ ** Dump initial algorithm.
+ **)
 
 relation dump_initialalgorithm : Element => () =
 
@@ -1183,6 +1311,11 @@ relation dump_initialalgorithm : Element => () =
 
 end
 
+(** relation: dump_algorithm_str
+ **
+ ** Dump algorithm to a string
+ **)
+
 relation dump_algorithm_str : Element => string =
 
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -1194,6 +1327,10 @@ relation dump_algorithm_str : Element => string =
 
 end
 
+(** relation: dump_algorithm_str
+ **
+ ** Dump initial algorithm to a string
+ **)
 
 relation dump_initialalgorithm_str : Element => string =
 
@@ -1206,7 +1343,10 @@ relation dump_initialalgorithm_str : Element => string =
 
 end
 
-(* LS *)
+(** relation: dump_function
+ **
+ ** Dump function
+ **)
 relation dump_function: Element => () =
 
 
@@ -1223,7 +1363,10 @@ relation dump_function: Element => () =
 
 end
 
-(* LS *)
+(** relation: dump_function_str
+ **
+ ** Dump function to a string.
+ **)
 relation dump_function_str: Element => string =
 
 
@@ -1253,6 +1396,11 @@ relation pp_statement : Algorithm.Statement => () =
 
 end
 
+(** relation: pp_statement_str
+ **
+ ** Prettyprint an algorithm statement to a string.
+ **)
+
 relation pp_statement_str : Algorithm.Statement => string =
 
   rule	pp_stmt_str (alg,2) => str
@@ -1260,6 +1408,11 @@ relation pp_statement_str : Algorithm.Statement => string =
 	pp_statement_str alg => str
 
 end
+
+(** relation: pp_stmt
+ **
+ ** Helper relation to pp_statement.
+ **)
 
 relation pp_stmt : (Algorithm.Statement, int) => () =
 
@@ -1321,6 +1474,11 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 	pp_stmt (_,i)
 
 end
+
+(** relation: pp_stmt_str
+ **
+ ** Helper relation to pp_statement_str
+ **)
 
 relation pp_stmt_str : (Algorithm.Statement, int) => string =
 
@@ -1410,6 +1568,11 @@ relation pp_stmt_str : (Algorithm.Statement, int) => string =
 
 end
 
+(** relation: pp_stmt_list
+ **
+ ** Helper relation to pp_stmt
+ **)
+
 relation pp_stmt_list : (Algorithm.Statement list, int) => () =
 
   axiom	pp_stmt_list ([],_)
@@ -1419,6 +1582,11 @@ relation pp_stmt_list : (Algorithm.Statement list, int) => () =
 	pp_stmt_list (stmt::stmts,i)
 
 end
+
+(** relation: pp_stmt_list_str
+ **
+ ** Helper relation to pp_stmt_str
+ **)
 
 relation pp_stmt_list_str : (Algorithm.Statement list, int) => string =
 
@@ -1430,6 +1598,11 @@ relation pp_stmt_list_str : (Algorithm.Statement list, int) => string =
 	pp_stmt_list_str (stmt::stmts,i) => str
 
 end
+
+(** relation: pp_else
+ **
+ ** Helper relation to pp_stmt
+ **)
 
 relation pp_else : (Algorithm.Else, int) => () =
 
@@ -1451,6 +1624,11 @@ relation pp_else : (Algorithm.Else, int) => () =
 	pp_else (Algorithm.ELSE(stmts), i)
 
 end
+
+(** relation: pp_else
+ **
+ ** Helper relation to pp_else_str
+ **)
 
 relation pp_else_str : (Algorithm.Else, int) => string =
 
@@ -1479,6 +1657,11 @@ relation pp_else_str : (Algorithm.Else, int) => string =
 
 end
 
+(** relation: indent
+ **
+ ** Print an indentation, given an indent level.
+ **)
+
 relation indent : int => () =
 
   axiom indent 0
@@ -1488,6 +1671,11 @@ relation indent : int => () =
 	indent i
 
 end
+
+(** relation: indent_str
+ **
+ ** Print an indentation to a string, given an indent level.
+ **)
 
 relation indent_str : int => string =
 
@@ -1500,49 +1688,48 @@ relation indent_str : int => string =
 
 end
 
-(* LS *)
+(** relation get_matching_elements
+ ** author:  LS 
+ **
+ ** Retrive the elements for which the relation given as second argument
+ ** succeeds.
+ **)
 relation get_matching_elements: (Element list, Element => () )  => Element list =
 
-  rule	get_matching (elist, cond ) => elist
+  rule	Util.list_matching (elist, cond ) => elist
 	------------------------------------
 	get_matching_elements (elist, cond) => elist
 end	
 
-(* LS *)
-relation get_matching: ('a list, 'a => () )  => 'a list =
 
-  axiom	get_matching ([],_) => []
-
-  rule	cond(v) &
-	get_matching (vl, cond) => vl'
-	-------------------
-	get_matching (v::vl, cond) => v::vl'
-
-  rule	not cond(v) &
-	get_matching (vl, cond) => vl'
-	--------------------------
-	get_matching (v::vl, cond) => vl'
-end	
-
-
-(* LS *)
+(** relation is_parameter
+ ** author: LS 
+ **
+ ** Succeeds if element is parameter.
+ **)
 relation is_parameter: Element => () =
 
-  (* LS: false means not protected, hence we ignore protected variables *)
   axiom	is_parameter VAR(_, PARAM, _, _, _,  _,_,_,_,_,_)
 
 end
 
-(* LS *)
+(** relation is_comp
+ ** author: LS 
+ **
+ ** Succeeds if element is component, COMP.
+ **)
 relation is_comp: Element => () =
 
   axiom	is_comp COMP(_,_) 
 
 end
 
+(** relation get_output_vars
+ ** author: LS 
+ **
+ ** Retrieve all output variables from an Element list.
+ **)
 
-
-(* LS *)
 relation get_output_vars: Element list  => Element list =
 	
   rule	get_matching_elements(vl, is_output_var) => vl'
@@ -1550,7 +1737,12 @@ relation get_output_vars: Element list  => Element list =
 	get_output_vars vl => vl'
 end
 
-(* LS *)
+
+(** relation get_output_vars
+ ** author: LS 
+ **
+ ** Retrieve all bidirectional variables from an Element list.
+ **)
 relation get_bidir_vars: Element list  => Element list =
 	
   rule	get_matching_elements(vl, is_bidir_var) => vl'
@@ -1558,7 +1750,11 @@ relation get_bidir_vars: Element list  => Element list =
 	get_bidir_vars vl => vl'
 end
 
-(* HJ *)
+(** relation get_input_vars
+ ** author: HJ 
+ **
+ ** Retrieve all input variables from an Element list.
+ **)
 relation get_input_vars: Element list  => Element list =
 	
   rule	get_matching_elements(vl, is_input_var) => vl'
@@ -1566,7 +1762,9 @@ relation get_input_vars: Element list  => Element list =
 	get_input_vars vl => vl'
 end
 
-(* Generate a Types.Type from a DAE.Type
+(** relation generate_dae_type
+ **
+ ** Generate a Types.Type from a DAE.Type
  ** Is needed when investigating the DAE and want to e.g. evaluate expressions.
  **)
 relation generate_dae_type: Type => Types.Type =
@@ -1578,9 +1776,12 @@ relation generate_dae_type: Type => Types.Type =
 end
 
 (**  relation: set_component_type
- ** This relation takes a dae element list and a type name and inserts the type name 
- ** into each Var  (variable) of the dae. This type name is the origin of the variable.
+ ** 
+ ** This relation takes a dae element list and a type name and 
+ ** inserts the type name into each Var (variable) of the dae.
+ ** This type name is the origin of the variable.
  **)
+
 relation set_component_type: (Element list,Absyn.Path) => Element list =
 
   axiom	set_component_type ([],_) => []
@@ -1597,29 +1798,45 @@ relation set_component_type: (Element list,Absyn.Path) => Element list =
 end
 
 
-(* LS *)
+(** relation: is_output_var 
+ ** author: LS 
+ **
+ ** Succeeds if Element is an output variable.
+ **)
 relation is_output_var: Element => () =
 
   axiom	is_output_var VAR(n, VARIABLE, OUTPUT, ty, _, _, _, _,_,_,_)
 
 end
 
-(* LS *)
+(** relation: is_bidir_var 
+ ** author: LS 
+ **
+ ** Succeeds if Element is a bidirectional variable.
+ **)
 relation is_bidir_var: Element => () =
-
+	
   axiom	is_bidir_var VAR(n, VARIABLE, BIDIR, ty, _, _, _, _,_,_,_)
-
+	
 end
 
-(* HJ *)
+(** relation: is_input_var 
+ ** author: HJ
+ **
+ ** Succeeds if Element is an input variable.
+ **)
+
 relation is_input_var: Element => () =
 
   axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _,_,_,_)
 
 end
 
-
-(* LS *)
+(** relation: is_not_var 
+ ** author: LS
+ **
+ ** Succeeds if Element is not a variable.
+ **)
 relation is_not_var: Element => () =
 
   rule	not is_var e
@@ -1627,18 +1844,34 @@ relation is_not_var: Element => () =
 	is_not_var e
 end
 
-(* LS *)
+(** relation: is_var 
+ ** author: LS
+ **
+ ** Succeeds if Element is a variable.
+ **)
 relation is_var: Element => () =
 
   axiom	is_var VAR(_,_,_,_,_,_,_,_,_,_,_)
 
 end
 
+(** relation: is_algorithm
+ ** author: LS
+ **
+ ** Succeeds if Element is an algorithm.
+ **)
+
 relation is_algorithm : Element => () =
 
   axiom is_algorithm ALGORITHM(_)
 
 end
+
+(** relation: is_function
+ ** author: LS
+ **
+ ** Succeeds if Element is not a function.
+ **)
 
 relation is_function : Element => () =
 
@@ -1654,7 +1887,6 @@ end
 
 ********************************)
 
-
 relation dump_debug : DAElist => () =
 
   rule	Print.print_buf "DAE(" & dump_debug_elist elist & Print.print_buf ")"
@@ -1662,6 +1894,11 @@ relation dump_debug : DAElist => () =
 	dump_debug DAE(elist)
 
 end
+
+(** relation: dump_debug_elist
+ **
+ ** Helper relation to dump_debug.
+ **)
 
 relation dump_debug_elist : Element list => () =
 
@@ -1673,6 +1910,11 @@ relation dump_debug_elist : Element list => () =
 	dump_debug_elist first :: rest
 
 end
+
+(** relation: dump_debug_element
+ **
+ ** Dump element using parenthesis.
+ **)
 
 relation dump_debug_element : Element => () =
 
@@ -1762,6 +2004,12 @@ relation dump_debug_element : Element => () =
 end
 
 
+(** relation: find_element
+ **
+ ** Search for an element for which the relation passed as second 
+ ** argument succeds. If no element is found return NONE.
+ **)
+
 relation find_element : (Element list, Element => ()) => Element option =
 
   axiom	find_element ([],_) => NONE
@@ -1792,6 +2040,10 @@ relation dump_graphviz : DAElist => () =
 
 end
 
+(** relation: build_graphviz
+ **
+ ** Builds the graphviz node from a dae list.
+**)
 
 relation build_graphviz : DAElist => Graphviz.Node =
 
@@ -1805,6 +2057,11 @@ relation build_graphviz : DAElist => Graphviz.Node =
 
 end
 
+(** relation build_gr_list
+ **
+ ** Helper relation to build_graphviz.
+ **)
+
 relation build_gr_list : Element list => Graphviz.Node list =
 
   axiom build_gr_list [] => []
@@ -1816,6 +2073,11 @@ relation build_gr_list : Element list => Graphviz.Node list =
 
 end
 
+(** relation build_gr_vars
+ **
+ ** Helper relation to build_graphviz.
+ **)
+
 relation build_gr_vars : Element list => Graphviz.Node list =
 
   axiom build_gr_vars [] => []
@@ -1825,6 +2087,11 @@ relation build_gr_vars : Element list => Graphviz.Node list =
 	build_gr_vars vars => [Graphviz.LNODE("VARS",strlist,[Graphviz.box],[])]
 
 end
+
+(** relation build_gr_strlist
+ **
+ ** Helper relation to build_graphviz.
+ **)
 
 relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list) =
 
@@ -1843,6 +2110,11 @@ relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a lis
 
 end
 
+(** relation build_gr_var_str
+ **
+ ** Helper relation to build_graphviz.
+ **)
+
 relation build_gr_var_str : Element => string =
 
   rule	Exp.print_component_ref_str cr => str
@@ -1858,6 +2130,11 @@ relation build_gr_var_str : Element => string =
 
 end
 
+(** relation: print_exp_str_special
+ **
+ ** Prints an expression to a string suitable for graphviz.
+ **)
+
 relation print_exp_str_special : (Exp.Exp) => string =
 
   rule	string_append ("\\\"", s) => s' &
@@ -1871,7 +2148,10 @@ relation print_exp_str_special : (Exp.Exp) => string =
 
 end
 
-
+(** relation: build_gr_element
+ **
+ ** Builds a Graphviz.Node from an element.
+ **)
 
 relation build_gr_element : Element => Graphviz.Node =
 
@@ -1930,7 +2210,9 @@ relation build_gr_element : Element => Graphviz.Node =
 end
 
 (** relation: get_variable_bindings_str
- ** This relation takes a `DAE.Element' list and returns a comma separated string of variable bindings.
+ **
+ ** This relation takes a `DAE.Element' list and returns a comma separated 
+ ** string of variable bindings.
  ** E.g. model A Real x=1; Real y=2; end A; => "1,2"
  **)
 relation get_variable_bindings_str: Element list => string =
@@ -1940,6 +2222,11 @@ relation get_variable_bindings_str: Element list => string =
 	------------------------------
 	get_variable_bindings_str elts => str
 end
+
+(** relation: get_variable_list
+ **
+ ** Return all variables from an Element list.
+ **)
 
 relation get_variable_list: Element list  => Element list =
 
@@ -1954,6 +2241,11 @@ relation get_variable_list: Element list  => Element list =
 
   axiom	get_variable_list [] => []
 end
+
+(** relation: get_bindings_str
+ **
+ ** Retrive the bindings from a list of Elements and output to a string.
+ **)
 
 relation get_bindings_str: Element list  => string =
 	
@@ -1977,7 +2269,10 @@ relation get_bindings_str: Element list  => string =
   axiom	get_bindings_str([v as VAR(cr,_,_,_,NONE,_,_,_,_,_,_)]) => ""	
 end
 
-
+(** relation: to_flow
+ **
+ ** Create a Flow, given a ClassInf.State and a boolean flow value.
+ **)
 relation to_flow: (bool,ClassInf.State) => Flow =
 
   axiom	to_flow(true,_) => FLOW
@@ -1985,6 +2280,11 @@ relation to_flow: (bool,ClassInf.State) => Flow =
   axiom	to_flow(_,ClassInf.CONNECTOR(_)) => NON_FLOW
   axiom	to_flow(_,_) => NON_CONNECTOR
 end
+
+(** relation: get_flow_variables
+ **
+ ** Retrive the flow variables of an Element list.
+ **)
 
 relation get_flow_variables: Element list => Exp.ComponentRef list =
 
@@ -2005,6 +2305,11 @@ relation get_flow_variables: Element list => Exp.ComponentRef list =
 	-----------------------------
 	get_flow_variables(_::xs) => res
 end
+
+(** relation: get_flow_variables_2
+ **
+ ** Helper relation to get_flow_variables.
+ **)
 
 relation get_flow_variables_2: (Exp.ComponentRef list ,Ident) 
 	  => Exp.ComponentRef list =
@@ -2042,13 +2347,23 @@ rule	Ceval.ceval([],rhs,impl,NONE,NONE)  => (value,_) &
 	dae_to_record_value(_,_,_) => fail
 end
 
-(* Transforms all variables from a.b.c to a_b_c, etc*)
+(** relation to_modelica_form.
+ **
+ ** Transforms all variables from a.b.c to a_b_c, etc
+ **)
+
 relation to_modelica_form: (DAElist) => DAElist =
 
   rule	to_modelica_form_elts(elts) => elts'
 	-------------------------------
 	to_modelica_form(DAE(elts)) => DAE(elts')
 end
+
+
+(** relation: to_modelica_form_elts
+ **
+ ** Helper relation to to_modelica_form.
+ **)
 
 relation to_modelica_form_elts: (Element list) => Element list =
 
@@ -2158,6 +2473,11 @@ relation to_modelica_form_elts: (Element list) => Element list =
 	  => ASSERT(e')::elts'
 end
 
+(** relation: to_modelica_form_exp_opt
+ **
+ ** Helper relation to to_mdelica_form_elts.
+ **)
+
 relation to_modelica_form_exp_opt: Exp.Exp option => Exp.Exp option =
 
   rule	to_modelica_form_exp(e) => e'
@@ -2167,6 +2487,11 @@ relation to_modelica_form_exp_opt: Exp.Exp option => Exp.Exp option =
   axiom	to_modelica_form_exp_opt(NONE) => NONE
 end
 
+(** relation: to_modelica_form_cref
+ **
+ ** Helper relation to to_modelica_form_elts.
+ **)
+
 relation to_modelica_form_cref: Exp.ComponentRef => Exp.ComponentRef =
 
   rule	Exp.print_component_ref_str(cr) => str &
@@ -2174,6 +2499,11 @@ relation to_modelica_form_cref: Exp.ComponentRef => Exp.ComponentRef =
 	------------------------
 	to_modelica_form_cref(cr) => Exp.CREF_IDENT(str',[])
 end
+
+(** relation: to_modelica_form_exp
+ **
+ ** Helper relation to to_modelica_form_elts.
+ **)
 
 relation to_modelica_form_exp: (Exp.Exp) => Exp.Exp =
 
@@ -2244,6 +2574,7 @@ rule	to_modelica_form_exp(e) => e'
 end
 
 (** relation: get_named_function
+ **
  ** return the FUNCTION with the given name. Returns empty list if not found
  ** TODO: Only top level functions are checked. Add recursing into the DAE
  ** and path name checking.
@@ -2281,6 +2612,11 @@ relation get_all_exps : Element list => Exp.Exp list =
 	get_all_exps elements => exps
 
 end
+
+(** relation: cref_to_exp
+ **
+ ** Makes an expression from a ComponentRef.
+ **)
 
 relation cref_to_exp : Exp.ComponentRef => Exp.Exp =
 
@@ -2321,8 +2657,8 @@ relation get_all_exps_element : Element => Exp.Exp list =
 	list_append(eqs,ellist) => elements &
 	get_all_exps elements => exps
 	---------------------------------------------------
-	get_all_exps_element WHEN_EQUATION(cond, eqs, elsewhenopt) => cond::exps
-	
+	get_all_exps_element WHEN_EQUATION(cond, eqs, elsewhenopt) 
+	  => cond::exps
 
   rule	get_all_exps eqstrueb => explist1 &
 	get_all_exps eqsfalseb => explist2 &
@@ -2372,8 +2708,6 @@ relation get_all_exps_element : Element => Exp.Exp list =
   rule	Debug.fprintln("failtrace", "-- get_all_exps_element failed")
 	-------------------------------------------------------------
 	get_all_exps_element _ => fail
-
-
 end
 
 			     
@@ -2422,5 +2756,3 @@ relation get_all_exps_extarg : ExtArg => Exp.Exp list =
 	get_all_exps_extarg _ => fail	     
 
 end
-
-

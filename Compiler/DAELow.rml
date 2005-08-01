@@ -388,6 +388,7 @@ with "RTOpts.rml"
 val empty_bintree = TREENODE(NONE,NONE,NONE)
 
 (** relation: lower
+ **
  ** This relation translates a DAE, which is the result from instantiating a 
  ** class, into a more precise form, called DAELow defined in this module.
  ** The DAELow representation splits the DAE into equations and variables
@@ -425,6 +426,7 @@ relation lower: (DAE.DAElist) => DAELow =
 end
 
 (** relation: dump_zc_str
+ **
  ** Dumps a zerocrossing into a string, for debugging purposes.
  **)
 relation dump_zc_str : (ZeroCrossing) => string =
@@ -441,6 +443,7 @@ relation dump_zc_str : (ZeroCrossing) => string =
 end
 
 (** relation: merge_zero_crossings
+ **
  ** Takes a list of zero crossings and if more than one have identical
  ** relation expressions they are merged into one zerocrossing.
  ** In trhe resulting list all zerocrossing have uniq relation expressions.
@@ -461,6 +464,7 @@ relation merge_zero_crossings : ZeroCrossing list => ZeroCrossing list =
 end
 
 (** relation: merge_zero_crossing
+ **
  ** Merges two zero crossings into one by makeing the union of the lists of 
  ** equaions and when clauses they appear in.
  **)
@@ -474,6 +478,7 @@ relation merge_zero_crossing : (ZeroCrossing, ZeroCrossing) => ZeroCrossing =
 end
 
 (** relation: same_zero_crossing
+ **
  ** Returns true if both zero crossings have the same relation expression
  **)
 relation same_zero_crossing : (ZeroCrossing, ZeroCrossing) => bool =
@@ -485,6 +490,7 @@ relation same_zero_crossing : (ZeroCrossing, ZeroCrossing) => bool =
 end
 
 (** relation: different_zero_crossing
+ **
  ** Return true if the realation expressions differ.
  **)
 relation different_zero_crossing : (ZeroCrossing, ZeroCrossing) => bool =
@@ -497,6 +503,7 @@ relation different_zero_crossing : (ZeroCrossing, ZeroCrossing) => bool =
 end
 
 (** relation: find_zero_crossings
+ **
  ** This relation finds all zerocrossings in the list ogf equations and
  ** the list of when clauses. Used in lower2.
  **)
@@ -510,6 +517,7 @@ relation find_zero_crossings : (Variables, Equation list, WhenClause list)
 end
 
 (** relation: find_zero_crossings2
+ **
  ** Helper function to find_zero_crossing.
  **)
 relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list, int) 
@@ -544,6 +552,7 @@ relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list,
 end
 
 (** relation: make_zero_crossing
+ **
  ** Constructs a ZeroCrossing from an expression and lists of equation indecies
  ** and when clause indecies.
  **) 
@@ -554,6 +563,7 @@ relation make_zero_crossing : (Exp.Exp, int list, int list) => ZeroCrossing =
 end
 
 (** relation: make_zero_crossings
+ **
  ** Constructs a list of ZeroCrossings from a list expressions and lists of 
  ** equation indecies and when clause indecies.
  ** Each Zerocrossing gets the same lists of indecies.
@@ -569,6 +579,7 @@ relation make_zero_crossings : (Exp.Exp list, int list, int list) => ZeroCrossin
 end
 
 (** relation: detect_implicit_discrete
+ **
  ** This relation updates the variable kind to discrete for variables set 
  ** in when equations.
  **)
@@ -591,12 +602,10 @@ relation detect_implicit_discrete : (Variables, Equation list) => Variables =
 end
 
 
-
-
 (** relation: sort_eqn 
+ **
  ** This relation sorts the equation. It puts first the algebraic eqns
  ** and last the differentiated eqns
- **
  **
  **)
 relation sort_eqn :  Equation list => Equation list =
@@ -616,7 +625,15 @@ relation sort_eqn :  Equation list => Equation list =
         sort_eqn(eqns) => fail
 end
 
-relation extract_algebraic_and_differential_eqn: (Equation list) => (Equation list,Equation list) =
+(** relation: extract_algebraic_and_differential_eqn
+ **
+ ** Splits the equation list into two lists. One that only contain differential
+ ** equations and one that only contain algebraic equations.
+ **)
+
+relation extract_algebraic_and_differential_eqn: (Equation list) 
+	  => (Equation list, (* algebraic equations *)
+	      Equation list) = (* differential equations*)
 
   axiom	extract_algebraic_and_differential_eqn([]) => ([],[]) 
 
@@ -641,6 +658,7 @@ relation extract_algebraic_and_differential_eqn: (Equation list) => (Equation li
 end
 
 (** relation:generate_state_partition
+ **
  ** This relation traverses the equations to find out which blocks needs to
  ** be solved by the numerical solver (Dynamic Section) and which blocks only 
  ** needs to be solved for output to file ( Accepted Section).
@@ -674,6 +692,7 @@ relation generate_state_partition:(int list list, (* blocks *)
 end
 
 (** relation: split_blocks
+ **
  ** Split the blocks into two parts, one dynamic and one output, depedning
  ** on if an equation in the block is marked or not.
  **)
@@ -698,6 +717,7 @@ relation split_blocks:( int list list (* blocks *), int array (* marks *))
 end
 
 (* relation block_is_dynamic
+ **
  ** Return true if the block contains a variable that is marked
  **)
 relation block_is_dynamic: (int list, int array) => bool =
@@ -718,6 +738,7 @@ relation block_is_dynamic: (int list, int array) => bool =
 end
 
 (** relation: mark_state_equations
+ **
  ** This relation goes through all equations and marks the ones that
  ** calculates a state, or is needed in order to calculate a state, 
  ** with a non-zero value in the array passed as argument.
@@ -747,6 +768,7 @@ relation mark_state_equations:(DAELow,
 end
 
 (** relation: mark_state_equation
+ **
  ** This relation is a helper relation to mark_state_equations
  ** It performs marking for one equation and its transitive closure by 
  ** following edges in backward direction.
@@ -795,6 +817,7 @@ relation mark_state_equation: (Var, (DAELow *
 end
 
 (** relation: mark_state_equation2
+ **
  ** Helper relation to mark_state_equation
  ** Does the job by looking at variable indexes and incidencematrices.
  **)
@@ -838,6 +861,7 @@ relation mark_state_equation2: (int (* eqn*), ( int array * (* marks *)
 end
 
 (** relation: inv_reachable_nodes
+ **
  ** Similar to reachable_nodes, but follows edges in backward direction
  ** I.e. what equations/variables needs to be solved to solve this one.
  **)
@@ -860,6 +884,7 @@ relation inv_reachable_nodes:(int, IncidenceMatrix, IncidenceMatrixT,
 end
 
 (** relation: inv_reachable_nodes2
+ **
  ** Helper relation to inv_reachable_nodes
  **)
 relation inv_reachable_nodes2:(int list (* variables *), 
@@ -882,8 +907,9 @@ relation inv_reachable_nodes2:(int list (* variables *),
 end
 		  
 (** relation: is_state_var
+ **
  ** Returns true for state variables, false otherwise.
-**)
+ **)
 relation is_state_var: (Var) => bool =
 
   axiom	is_state_var (VAR(_,STATE,_,_,_,_,_,_,_,_,_,_,_,flow)) => true
@@ -891,6 +917,7 @@ relation is_state_var: (Var) => bool =
 end
 
 (** relation: is_non_state 
+ **
  ** this equation checks if the the varkind is state of variable
  ** used both in build_equation and generate_compute_state
  **)
@@ -905,7 +932,8 @@ relation is_non_state: VarKind => bool =
 end
 
 (** relation: is_discrete
- ** this equation checks if the the varkind is discrete,
+ **
+ ** This equation checks if the the varkind is discrete,
  ** used both in build_equation and generate_compute_state
  **)
 relation is_discrete: VarKind => () =
@@ -913,6 +941,7 @@ relation is_discrete: VarKind => () =
 end
 
 (** relation: dump
+ **
  ** This relation dumps the DAELow representaton to stdout.
  **)
 relation dump: DAELow => () =
@@ -960,6 +989,7 @@ relation dump: DAELow => () =
 end
 
 (** relation: var_list
+ **
  ** Takes Variables and returns a list of 'Var', useful for e.g. dumping.
  **)
 relation var_list: (Variables) => Var list =
@@ -971,6 +1001,7 @@ end
 
 (** relation: list_var
  ** author: PA
+ **
  ** Takes Var list and creates a Variables structure, see also var_list.
  **)
 
@@ -1022,6 +1053,7 @@ relation var_nominal: (Var) => real =
 end
 
 (** relation: vararray_list
+ **
  ** Transforms a VariableArray to a Var list
  **)
 
@@ -1040,6 +1072,7 @@ relation vararray_list:(VariableArray) => Var list =
 end
 
 (** relation: vararray_list2
+ **
  ** Helper relation to vararray_list
 **)
 
@@ -1058,6 +1091,7 @@ relation vararray_list2:(Var option array,int,int) => Var list =
 end
 
 (** relation: dump_jacobian_str
+ **
  ** Dumps the sparse jacobian.
  ** Uses the variables to determine size of Jacobian matrix.
  **)
@@ -1070,6 +1104,7 @@ relation dump_jacobian_str: ((int*int*Equation) list ) => string =
 end
 
 (** relation: dump_jacobian_str2
+ **
  ** Helper relation to dump_jacobian_str
 **)
 relation dump_jacobian_str2:((int*int*Equation) list) => string list =
@@ -1086,6 +1121,7 @@ relation dump_jacobian_str2:((int*int*Equation) list) => string list =
 end
 
 (** relation: dump_eqns
+ **
  ** Helper relation to dump.
  **)
 relation dump_eqns: Equation list => () =
@@ -1094,6 +1130,11 @@ relation dump_eqns: Equation list => () =
 	------------------
 	dump_eqns(eqns)
 end
+
+(** relation: dump_eqns2
+ **
+ ** Helper relation to dump_eqns
+ **)
 
 relation dump_eqns2: (Equation list,int) => () =
 
@@ -1109,8 +1150,10 @@ relation dump_eqns2: (Equation list,int) => () =
 end
 
 (** relation: equation_str
+ **
  ** Helper relation to e.g. dump.
  **)
+
 relation equation_str: Equation => string =
 
   rule	Exp.print_exp_str e1 => s1 &
@@ -1144,9 +1187,11 @@ relation equation_str: Equation => string =
 end
 
 (** relation: remove_simple_equations
+ **
  ** This relation moves simple equations on the form a=b from equations 2nd 
  ** in DAELow to simple equations 3rd in DAELow to speed up assignment alg. 
  **)
+
 relation remove_simple_equations: (Variables, (* vars *)
 				   Variables, (* known vars *)
 				   Equation list, (* eqns *) 
@@ -1175,6 +1220,7 @@ relation remove_simple_equations: (Variables, (* vars *)
 end
 
 (** relation: remove_simple_equations2
+ **
  ** helper relation to remove_simple_equations
  **)
 relation remove_simple_equations2: (Equation list, (* all equations*)
@@ -1320,16 +1366,16 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	  => (e::eqns',seqns',mvars',repl')
 end 
 
-(** rela-tion is_top_level_input_or_output
+(** relation is_top_level_input_or_output
  ** author: LP
  **
- ** This rela-tion checks if the provided cr is from a var that is on top model
+ ** This relation checks if the provided cr is from a var that is on top model
  ** and is an input or an output, and returns true for such variables.
  ** It also returns true for input/output connector variables, i.e. variables 
  ** instantiated from a  connector class, that are instantiated on the top level.
  ** The check for top-model is done by spliting the old name at '.' and 
  ** check if the list-lenght is 1.
- ** Note: The rela-tion needs the known variables to search for input variables 
+ ** Note: The relation needs the known variables to search for input variables 
  ** on the top level.
  **) 
 relation is_top_level_input_or_output:(Exp.ComponentRef, 
@@ -1354,15 +1400,14 @@ relation is_top_level_input_or_output:(Exp.ComponentRef,
 end
                                   
 
-(** rela-tion is_var_on_top_level_and_output§
- ** this rela-tion checks if the provided cr is from a var that is on top model
+(** relation is_var_on_top_level_and_output
+ **
+ ** this relation checks if the provided cr is from a var that is on top model
  ** and has the DAE.VarDirection = OUTPUT
  ** The check for top-model is done by spliting the old name at '.' and 
  ** check if the list-lenght is 1
  **) 
 relation is_var_on_top_level_and_output:(Var) => bool =
-
-
 
   rule  top_level_output(cr,dir,flow) => ()
         ---------------------------------------------
@@ -1372,12 +1417,14 @@ relation is_var_on_top_level_and_output:(Var) => bool =
 
 end
                                   
-(** rela-tion is_var_on_top_level_and_input§
- ** this rela-tion checks if the provided cr is from a var that is on top model
+(** relation is_var_on_top_level_and_input
+ **
+ ** this relation checks if the provided cr is from a var that is on top model
  ** and has the DAE.VarDirection = INPUT
  ** The check for top-model is done by spliting the old name at '.' and 
  ** check if the list-lenght is 1
  **) 
+
 relation is_var_on_top_level_and_input:(Var) => bool =
 
   rule  top_level_input(Exp.CREF_IDENT(old_name,[]),dir,flow) => () 
@@ -1388,12 +1435,8 @@ relation is_var_on_top_level_and_input:(Var) => bool =
 
 end
                                   
-
-
-
-
-
 (** relation: typeof_equation
+ **
  ** Returns the Exp.Type of an equation
 **)
 relation typeof_equation: (Equation) => Exp.Type =
@@ -1413,11 +1456,13 @@ end
 
 
 (** relation: move_variables
- ** This relation takes the two variable lists of a dae (states+alg) and known vars
- ** and moves a set of variables from the first to the second set.
- ** This relation is needed to manage this in complexity O(n) by only traversing 
- ** the set once for all variables.
+ **
+ ** This relation takes the two variable lists of a dae (states+alg) and
+ ** known vars and moves a set of variables from the first to the second set.
+ ** This relation is needed to manage this in complexity O(n) by only 
+ ** traversing the set once for all variables.
  **)
+
 relation move_variables:(Variables,	(* alg+state *)
 			 Variables,	(* known *)
 			 BinTree)	(* vars to move from first7 to second*)
@@ -1437,6 +1482,7 @@ relation move_variables:(Variables,	(* alg+state *)
 end
 
 (** relation: move_variables2
+ **
  ** helper relation to move_variables.
  **)
 relation move_variables2: (Var list,	(* alg+state vars as list *)
@@ -1463,10 +1509,16 @@ relation move_variables2: (Var list,	(* alg+state vars as list *)
 end
 
 (** relation: is_variable
- ** This relation takes a Exp.ComponentRef and two Variables. It searches the two sets of variables and 
- ** succed if the variable is STATE or VARIABLE. Otherwise it fails.
+ **
+ ** This relation takes a Exp.ComponentRef and two Variables. It searches
+ ** the two sets of variables and succeed if the variable is STATE or 
+ ** VARIABLE. Otherwise it fails.
  **)
-relation is_variable: (Exp.ComponentRef, Variables, Variables) => () =
+
+relation is_variable: (Exp.ComponentRef, 
+		       Variables, (* vars *)
+		       Variables) (* known vars *)
+	  => () =
 
   rule	get_var(cr,vars) => (VAR(_,VARIABLE,_,_,_,_,_,_,_,_,_,_,_,flow),_)
 	---------------------------------------------------------
@@ -1482,6 +1534,7 @@ relation is_variable: (Exp.ComponentRef, Variables, Variables) => () =
 end
 
 (** relation: simple_equation
+ **
  ** This relation investigates if an Equation is simple, i.e. on the form
  ** a = b or a-b=0 
  ** These relations can be removed from the set of equations.
@@ -1502,6 +1555,7 @@ relation simple_equation: (Equation) => (Exp.ComponentRef, Exp.ComponentRef) =
 end
 
 (** relation: remove_variable_named
+ **
  ** Removes a varaible from the 'Variables' set given a ComponentRef name.
  ** The removed variable is returned, such that is can be used elsewhere.
  **)
@@ -1525,6 +1579,7 @@ relation remove_variable_named: (Variables,  Exp.ComponentRef) => (Variables, Va
 end
 
 (** relation: dump_vars
+ **
  ** Helper relation to dump.
  **)
 relation dump_vars: Var list => ()=
@@ -1533,6 +1588,12 @@ relation dump_vars: Var list => ()=
 	----------------
 	dump_vars(vars)
 end
+
+(** relation: dump_vars2
+ **
+ ** Helper relation to dump_vars.
+ **)
+
 relation dump_vars2: (Var list,int) => () =
 
   axiom	dump_vars2([],_) => ()
@@ -1576,6 +1637,7 @@ relation dump_vars2: (Var list,int) => () =
 end 
 
 (** relation: dump_kind
+ **
  ** Helper relation to dump.
  **)
 relation dump_kind: VarKind => () =
@@ -1610,6 +1672,7 @@ relation dump_kind: VarKind => () =
 end
 
 (** relation: states
+ **
  ** Returns a BinTree of all states in the DAE.
  ** This relation is used by the lower relation.
  **)
@@ -1634,6 +1697,7 @@ relation states: (DAE.DAElist,BinTree) => BinTree =
 end
 
 (** relation: states_exp
+ **
  ** Helper relation to states.
  **)
 relation states_exp: (Exp.Exp,BinTree) => BinTree =
@@ -1707,6 +1771,7 @@ relation states_exp: (Exp.Exp,BinTree) => BinTree =
 end
 
 (** relation: lower_when_eqn
+ **
  ** This relation lowers a when clause. The condition expresion is but in the 
  ** WhenClause list and the equations inside are but in the equation list.
  ** if the condition involves expressions that are not pure boolean variables
@@ -1723,6 +1788,11 @@ relation lower_when_eqn: (DAE.Element, int (* when-clause index *),WhenClause li
 	  => (res,vars,i',WHEN_CLAUSE(cond)::whenList)
 end
 
+(** relation: lower_when_eqn2
+ **
+ ** Helper relation to lower_when_eqn.
+ **)
+
 relation lower_when_eqn2: (DAE.Element list, int) => Equation list = 
 	
   axiom lower_when_eqn2([],_) => []
@@ -1738,6 +1808,7 @@ relation lower_when_eqn2: (DAE.Element list, int) => Equation list =
 end
 
 (** relation: lower2
+ **
  ** Helper relation to lower.
  **)
 relation lower2: (DAE.DAElist, BinTree (* states *), WhenClause list) 
@@ -1829,6 +1900,7 @@ relation lower2: (DAE.DAElist, BinTree (* states *), WhenClause list)
 end
 
 (** relation: lower_algorithms
+ **
  ** This relation lowers algorithm sections by generating a list
  ** of ALGORITHMS nodes for the BLT sorting, which are put in 
  ** the equation list.
@@ -1845,9 +1917,11 @@ relation lower_algorithms: (Variables, (* vars *)
 end
 
 (** relation: lower_algorithms2
+ **
  ** Helper relation to lower_algorithms. To handle indexes in Equation nodes
  ** for algorithms to indentify the corresponding algorithm.
  **)
+
 relation lower_algorithms2: (Variables, (*vars*)
 			     Algorithm.Algorithm list, 
 			     int (* algindex*)) 
@@ -1865,8 +1939,10 @@ relation lower_algorithms2: (Variables, (*vars*)
 end
 
 (** relation: lower_algorithm
+ **
  ** Lowers a single algorithm. Creates n ALGORITHM nodes for blt sorting.
  **)
+
 relation lower_algorithm: (Variables, (*vars*)
 			   Algorithm.Algorithm, 
 			   int) (*algindx*) 
@@ -1879,6 +1955,11 @@ relation lower_algorithm: (Variables, (*vars*)
 	-----------------------------------------------------
 	lower_algorithm(vars,a,aindx) => lst
 end
+
+(** relation: lower_algorithm2
+ **
+ ** Helper relation to lower_algorithm
+ **)
 
 relation lower_algorithm2:(Exp.Exp list, (* inputs *) 
 			   Exp.Exp list, (* outputs *)
@@ -1896,11 +1977,13 @@ relation lower_algorithm2:(Exp.Exp list, (* inputs *)
 end
 
 (** relation: lower_algorithm_inputs_outputs
+ **
  ** This relation finds the inputs and the outputs of an algorithm.
  ** An input is all values that are reffered on the right hand side of any 
  ** statement in the algorithm and an output is a variables belonging to the 
  ** variables that are assigned a value in the algorithm.
  **)
+
 relation lower_algorithm_inputs_outputs: (Variables, 
 					  Algorithm.Algorithm)
 	=> (Exp.Exp list,
@@ -1919,11 +2002,13 @@ relation lower_algorithm_inputs_outputs: (Variables,
 end
 
 (** relation: lower_statement_inputs_outputs
+ **
  ** Helper relatoin to lower_algorithm_inputs_outputs
  ** Investigates single statements. Returns Exp.Exp list
  ** instead of Exp.ComponentRef list because derivatives must
  ** be handled as well.
  **)
+
 relation lower_statement_inputs_outputs: (Variables, (* vars *)
 					  Algorithm.Statement) => 
 	(Exp.Exp list, (* inputs, CREF or der(CREF) *)
@@ -1941,9 +2026,11 @@ relation lower_statement_inputs_outputs: (Variables, (* vars *)
 end
 
 (** relation: states_and_vars_exp
+ **
  ** This relation investigates an expression and returns as subexpressions
  ** that are variable names or derivatives of state names or states
  **)
+
  relation states_and_vars_exp: (Exp.Exp,
 				Variables) (* vars *)
  				 
@@ -2034,9 +2121,11 @@ end
 
 
 (** relation: lower_eqn
+ **
  ** Helper relation to lower2.
  ** Transforma a DAE.Element to Equation.
  **)
+
 relation lower_eqn: (DAE.Element) => Equation =
 
   rule	Exp.simplify(e1) => e1' &
@@ -2056,10 +2145,13 @@ relation lower_eqn: (DAE.Element) => Equation =
 end
 
 (** relation: lower_var
+ **
  ** Transforms a DAE variable to DAELOW variable.
- ** Includes changing the ComponentRef name to a simpler form 'a'.'b'.'c' becomes
+ ** Includes changing the ComponentRef name to a simpler form 
+ ** 'a'.'b'.'c' becomes
  ** 'a.b.c' (as CREF_IDENT("a.b.c",[]) )
  **)
+
 relation lower_var: (DAE.Element, BinTree(* states*)) => Var =
 
   rule	Exp.print_component_ref_str name => origname &
@@ -2078,8 +2170,10 @@ relation lower_var: (DAE.Element, BinTree(* states*)) => Var =
 end
 
 (** relation: lower_binding
+ **
  ** Helper relation to lower_var
  **)
+
 relation lower_binding: Exp.Exp option => Exp.Exp option =
 	
   axiom	 lower_binding NONE => NONE 
@@ -2090,8 +2184,10 @@ relation lower_binding: Exp.Exp option => Exp.Exp option =
 end
 
 (** relation: lower_known_var
+ **
  ** Helper relation to lower2
  **)
+		   
 relation lower_known_var: (DAE.Element) => Var =
 
   rule	Exp.print_component_ref_str name => origname &
@@ -2109,8 +2205,10 @@ relation lower_known_var: (DAE.Element) => Var =
 end
 
 (** relation: lower_varkind
+ **
  ** Helper relation to lower_var.
  **)
+
 relation lower_varkind: (DAE.VarKind, 
 			 DAE.Type, 
 			 Exp.ComponentRef, 
@@ -2154,9 +2252,10 @@ end
 (** relation: top_level_input 
  ** author: PA
  **
- ** Succeds if variable is input declared at the top level of the model, or if it is an
- ** input in a connector instance at top level.
+ ** Succeds if variable is input declared at the top level of the model, 
+ ** or if it is an input in a connector instance at top level.
  **)
+
 relation top_level_input: (Exp.ComponentRef, 
 			   DAE.VarDirection,
 			   DAE.Flow) => () =
@@ -2183,12 +2282,11 @@ relation top_level_input: (Exp.ComponentRef,
 
 end
 
-
 (** relation: top_level_output 
  ** author: PA
  **
- ** Succeds if variable is output declared at the top level of the model, or if it is an
- ** output in a connector instance at top level.
+ ** Succeds if variable is output declared at the top level of the model, 
+ ** or if it is an output in a connector instance at top level.
  **)
 relation top_level_output: (Exp.ComponentRef, 
 			   DAE.VarDirection,
@@ -2220,6 +2318,7 @@ relation top_level_output: (Exp.ComponentRef,
 end
 
 (** relation: lower_known_varkind
+ **
  ** Helper relation to lower_known_var.
  **)
 relation lower_known_varkind: (DAE.VarKind,
@@ -2241,9 +2340,12 @@ relation lower_known_varkind: (DAE.VarKind,
 end
 
 (** relation: incidence_matrix
+ ** author: PA
+ **
  ** Calculates the incidence matrix, i.e. which variables are present
  ** in each equation.
  **)
+
 relation incidence_matrix: (DAELow)
 	  => IncidenceMatrix =
 
@@ -2257,10 +2359,14 @@ relation incidence_matrix: (DAELow)
 	----------------------
 	incidence_matrix(_) => fail
 end
+
 (** relation: incidence_matrix2
+ ** author: PA
+ **
  ** Helper relation to incidence_matrix
  ** Calculates the incidence matrix as a list of list of integers
  **)
+
 relation incidence_matrix2:(Variables, Equation list) => int list list =
 	  
   axiom	incidence_matrix2(_,[]) => [] 
@@ -2276,9 +2382,12 @@ relation incidence_matrix2:(Variables, Equation list) => int list list =
 end
 
 (** relation: incidence_row
+ ** author: PA
+ **
  ** Helper relation to incidence_matrix. Calculates the indidence row
  ** in the matrix for one equation.
  **)
+
 relation incidence_row: ( Variables, Equation) 
 	  => int list =
 	
@@ -2338,10 +2447,14 @@ relation incidence_row: ( Variables, Equation)
 end 
 
 (** relation: incidence_row_stmts
+ ** author: PA
+ **
  ** Helper relation to incidence_row, investigates statements for
  ** variables, returning variable indexes.
  **)
-relation incidence_row_stmts: (Algorithm.Statement list, Variables) => int list =
+
+relation incidence_row_stmts: (Algorithm.Statement list, Variables) 
+	  => int list =
 
   axiom	incidence_row_stmts ([],_) => []
 
@@ -2396,9 +2509,12 @@ relation incidence_row_stmts: (Algorithm.Statement list, Variables) => int list 
 end
 
 (** relation: incidence_row_exp
+ ** author: PA
+ **
  ** Helper relation to incidence_row, investigates expressions for
  ** variables, returning variable indexes.
  **)
+
 relation incidence_row_exp: (Exp.Exp, Variables ) 
 	  => int list =
 
@@ -2504,7 +2620,9 @@ relation incidence_row_exp: (Exp.Exp, Variables )
   axiom	incidence_row_exp(_,_) => []
 end
 
-(**relation empty_vars
+(** relation: empty_vars
+ ** author: PA
+ **
  ** Returns a Variable datastructure that is empty.
  ** Using the bucketsize 10000 and array size 1000.
  **)
@@ -2519,10 +2637,14 @@ relation empty_vars: () => Variables =
 end
 
 (** relation: merge_vars
- ** Takes two sets of Variables and merges them. The variables of the first argument takes 
- ** precedence over the second set, i.e. if a variable name exists in both sets, the variable
- ** definition from the first set is used.
+ ** author: PA
+ **
+ ** Takes two sets of Variables and merges them. The variables of the 
+ ** first argument takes precedence over the second set, i.e. if a 
+ ** variable name exists in both sets, the variable definition from 
+ ** the first set is used.
  **)
+
 relation merge_vars: (Variables, Variables) => Variables =
 
 rule	var_list(vars2) => varlst &
@@ -2536,9 +2658,12 @@ rule	var_list(vars2) => varlst &
 end
 
 (** relation: add_var
+ ** author: PA
+ **
  ** Add a variable to Variables.
  ** If the variable allready exists, the relation updates the variable.
  **)
+
 relation add_var: (Var, Variables) => Variables =
 
   rule	(* adding when not existing previously *)
@@ -2577,8 +2702,11 @@ end
 
 
 (** relation: vararray_length
+ ** author: PA
+ **
  ** Returns the number of variable in the VariableArray
  **)
+
 relation vararray_length: (VariableArray) => int =
 
   axiom	vararray_length(VARIABLE_ARRAY(n,_,_)) => n
@@ -2586,9 +2714,12 @@ relation vararray_length: (VariableArray) => int =
 end
 
 (** relation: vararray_add
+ ** author: PA
+ **
  ** Adds a variable last to the VariableArray, increasing array size
  ** if no space left by factor 1.4
 **)
+
 relation vararray_add:(VariableArray,Var) => VariableArray =
 
   rule	(* Have space to add array elt. *)
@@ -2618,6 +2749,8 @@ relation vararray_add:(VariableArray,Var) => VariableArray =
 end
 
 (** relation: vararray_setnth
+ ** author: PA
+ **
  ** Set the n:th variable in the VariableArray to v.
  **)
 
@@ -2639,8 +2772,11 @@ relation vararray_setnth:(VariableArray,
 end
 
 (** relation: vararray_nth
+ ** author: PA
+ **
  ** Retrieve the n:th Var from VariableArray, index from 0..n-1.
 **)
+
 relation vararray_nth:(VariableArray,
 		       int (* n *)) 
 	  => Var =
@@ -2666,9 +2802,12 @@ relation vararray_nth:(VariableArray,
 end
 
 (** relation: replace_var
+ ** author: PA
+ **
  ** Takes a 'Var' list and a 'Var' and replaces the var with the 
  ** same ComponentRef in Var list with Var
 **)
+
 relation replace_var: (Var list, Var) => Var list =
 
   axiom	 replace_var([],_) => []
@@ -2682,8 +2821,11 @@ relation replace_var: (Var list, Var) => Var list =
 end
 
 (** relation: hash_component_ref
+ ** author: PA
+ **
  ** Calculates a hash value for Exp.ComponentRef
  **)
+
 relation hash_component_ref: (Exp.ComponentRef) => int =
 	
   rule	Exp.print_component_ref_str(cr) => crstr &
@@ -2693,8 +2835,11 @@ relation hash_component_ref: (Exp.ComponentRef) => int =
 end
 
 (** relation: hash_string
+ ** author: PA
+ **
  ** Calculates a hash value of a string
  **)
+
 relation hash_string:(string)  => int =
 
   rule	System.hash(str)=> res 
@@ -2705,8 +2850,11 @@ relation hash_string:(string)  => int =
 end
 
 (** relation: hash_chars
+ ** author: PA
+ **
  ** Calculates a hash value for a list of chars
  **)
+
 relation hash_chars:(char list) => int =
 
   axiom	hash_chars([]) => 0
@@ -2719,8 +2867,11 @@ relation hash_chars:(char list) => int =
 end
 
 (** relation: get_var_at
+ ** author: PA
+ **
  ** Return variable at a given position, enumerated from 1..n
  **)
+
 relation get_var_at:(Variables,int) => (Var) =
 
   rule	n - 1 => pos &
@@ -2730,9 +2881,12 @@ relation get_var_at:(Variables,int) => (Var) =
 end
 
 (** relation: get_var
+ ** author: PA
+ **
  ** Return a variable and its index in the vector.
  ** The index is enumerated from 1..n 
  **)
+
 relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
 	
   rule	hash_component_ref(cr) => hval &
@@ -2758,8 +2912,11 @@ relation get_var: (Exp.ComponentRef, Variables) => (Var,int) =
 end
 
 (** relation: exists_var
+ ** author: PA
+ **
  ** Return true if a variable exists in th vector
  **)
+
 relation exists_var: (Exp.ComponentRef, Variables) => bool =
 	
   rule	hash_component_ref(cr) => hval &
@@ -2786,10 +2943,12 @@ relation exists_var: (Exp.ComponentRef, Variables) => bool =
 end
 
 (** relation: get_var_using_name
- ** author lucian
+ ** author: lucian
+ **
  ** Return a variable and its index in the vector.
  ** The index is enumerated from 1..n 
  **)
+
 relation get_var_using_name: (string, Variables) => (Var,int) =
 	
   rule	hash_string(cr) => hval &
@@ -2813,8 +2972,6 @@ relation get_var_using_name: (string, Variables) => (Var,int) =
 	get_var_using_name(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => fail
 end
 
-
-
 (** relation set_var_kind
  ** author: PA
  **
@@ -2830,8 +2987,11 @@ relation set_var_kind: (Var, VarKind) => Var =
 end
 
 (** relation: get_var2
+ ** author: PA
+ **
  ** Helper relation to get_var
  **)
+
 relation get_var2:(Exp.ComponentRef, CrefIndex list) => int =
 
   rule	Exp.cref_equal(cr,cr2) => true 
@@ -2844,8 +3004,11 @@ relation get_var2:(Exp.ComponentRef, CrefIndex list) => int =
 end
 
 (** relation: get_var_string2
+ ** author: PA
+ **
  ** Helper relation to get_var_using_name
  **)
+
 relation get_var_using_name2:(string, StringIndex list) => int =
 
   rule	cr = cr2
@@ -2858,9 +3021,13 @@ relation get_var_using_name2:(string, StringIndex list) => int =
 end
 
 (** relation: delete_var
- ** Deletes a variable from 'Variables'. This is an expensive operation since we need to create a new 
- ** binary tree with new indexes as well as a new compacted vector of variables.
+ ** author: PA
+ **
+ ** Deletes a variable from 'Variables'. This is an expensive operation 
+ ** since we need to create a new binary tree with new indexes as well 
+ ** as a new compacted vector of variables.
  **)
+
 relation delete_var: (Variables,Exp.ComponentRef) => Variables =
 
   rule	vararray_list(varr) => varlst &
@@ -2873,9 +3040,12 @@ relation delete_var: (Variables,Exp.ComponentRef) => Variables =
 end
 
 (** relation: delete_var2
+ ** author: PA
+ **
  ** Helper relation to delete_var.
  ** Deletes the var named 'Exp.ComponentRef' from the 'Var' list.
  **)
+
 relation delete_var2: (Exp.ComponentRef,Var list) => Var list =
 
   axiom	delete_var2(_,[]) => []
@@ -2890,9 +3060,12 @@ relation delete_var2: (Exp.ComponentRef,Var list) => Var list =
 end
 
 (** relation: transpose_matrix
+ ** author: PA
+ **
  ** Calculates the transpose of the incidence matrix, i.e. which equations 
  ** each variable is present in.
  **)
+
 relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
 
   rule	array_list(m) => mlst &
@@ -2901,6 +3074,12 @@ relation transpose_matrix: IncidenceMatrix => IncidenceMatrixT =
 	------------------
 	transpose_matrix(m) => mt
 end
+
+(** relation: transpose_matrix2
+ ** author: PA
+ **
+ ** Helper relation to transpose_matrix
+ **)
 
 relation transpose_matrix2: (int list list) => int list list =
 
@@ -2913,6 +3092,12 @@ relation transpose_matrix2: (int list list) => int list list =
 	---------------------
 	transpose_matrix2(_) => fail
 end
+
+(** relation: transpose_matrix3
+ ** author: PA
+ **
+ ** Helper relation to transpose_matrix2
+ **)
 
 relation transpose_matrix3: (int list list,int,int,int list list) 
 	  => int list list =
@@ -2945,11 +3130,14 @@ relation abs_incidence_matrix: IncidenceMatrix => IncidenceMatrix =
 end
 
 (* relation: transpose_row
+ ** author: PA
+ **
  ** Helper relation to transpose_matrix2.
  ** Input: IncidenceMatrix (eqn => var)
  ** Input: row number (variable)
  ** Input: iterator (start with one)
 **)
+
 relation transpose_row: (int list list,int(*row*),int(*iter*)) => int list =
 
   axiom	transpose_row([],_,_) => []
@@ -2982,8 +3170,11 @@ relation transpose_row: (int list list,int(*row*),int(*iter*)) => int list =
 end
 
 (** relation: dump_incidence_matrix
+ ** author: PA
+ **
  ** Prints the incidence matrix on stdout.
  **)
+
 relation dump_incidence_matrix: IncidenceMatrix => () =
 
   rule	print "Incidence Matrix (row == equation)\n" &
@@ -2998,6 +3189,8 @@ relation dump_incidence_matrix: IncidenceMatrix => () =
 end 
 
 (** relation: dump_incidence_matrix_t
+ ** author: PA
+ **
  ** Prints the transposed incidence matrix on stdout.
  **)
 relation dump_incidence_matrix_t: IncidenceMatrix => () =
@@ -3014,6 +3207,8 @@ relation dump_incidence_matrix_t: IncidenceMatrix => () =
 end 
 	
 (** relation: dump_incidence_matrix2
+ ** author: PA
+ **
  ** Helper relation to dump_incidence_matrix (+_t).
  **)
 relation dump_incidence_matrix2: int list list => () =
@@ -3027,8 +3222,11 @@ relation dump_incidence_matrix2: int list list => () =
 end
 
 (** relation: dump_incidence_row
+ ** author: PA
+ **
  ** Helper relation to dump_incidence_matrix2.
  **)
+
 relation dump_incidence_row: int list => () =
 
   rule	print "\n"
@@ -3043,6 +3241,8 @@ relation dump_incidence_row: int list => () =
 end
 
 (** relation: dump_matching
+ ** author: PA
+ **
  ** prints the matching information on stdout.
  **)
 relation dump_matching: (int vector) => () =
@@ -3058,6 +3258,8 @@ relation dump_matching: (int vector) => () =
 end
 
 (** relation: dump_matching2
+ ** author: PA
+ **
  ** Helper relation to dump_matching.
  **)
 relation dump_matching2: (int vector, int) => () =
@@ -3089,6 +3291,8 @@ relation dump_matching2: (int vector, int) => () =
 end
 
 (** relation: matching_algorithm
+ ** author: PA
+ **
  ** This relation performs the matching algorithm, which is the first
  ** part of sorting the equations into BLT (Block Lower Triangular) form.
  ** The matching algorithm finds a variable that is solved in each equation.
@@ -3132,6 +3336,8 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 end
 
 (** relation: check_matching
+ ** author: PA
+ **
  ** Checks that the matching is correct, i.e. that the number of variables
  ** is the same as the number of equations. If not, the relation fails and
  ** prints an error message.
@@ -3173,8 +3379,11 @@ relation check_matching : (DAELow) => () =
 end
 
 (** relation: assignments_vector
+ ** author: PA
+ **
 ** Converts Assignments to vector of int elements
  **)
+
 relation assignments_vector: (Assignments) => int vector =
 
   rule	array_create(size,0) => newarr &
@@ -3189,6 +3398,8 @@ relation assignments_vector: (Assignments) => int vector =
 end
 
 (** relation: assignments_create
+ ** author: PA
+ **
  ** Creates an assignment array of n elements, filled with value v
  **)
 relation assignments_create: (int (*size*), int(*memsize*), int) 
@@ -3204,8 +3415,11 @@ relation assignments_create: (int (*size*), int(*memsize*), int)
 end
 
 (** relation: assignments_setnth
+ ** author: PA
+ **
  ** Sets the n:nt assignment value to 'value'.
  **)
+
 relation assignments_setnth:(Assignments,int (*n*),int (*value*)) 
 	  => Assignments =
 	  
@@ -3220,6 +3434,8 @@ relation assignments_setnth:(Assignments,int (*n*),int (*value*))
 end
 
 (** relation: assignments_expand
+ ** author: PA
+ **
  ** Expands the assignments array with n values, initialized with zero.
  **)
 relation assignments_expand: (Assignments, int (*n*)) => Assignments =
@@ -3235,6 +3451,8 @@ end
 
 
 (** relation: assignments_add
+ ** author: PA
+ **
  ** Adds a value to the end of the assignments array. If memsize = actual size
  ** this means copying the whole array, expanding it size to fit the value 
  ** Expansion is made by a factor 1.4. Otherwise, the element is inserted taking O(1) in 
@@ -3271,6 +3489,8 @@ end
 
 
 (** relation: matching_algorithm2
+ ** author: PA
+ **
  ** This is the outer loop of the matching algorithm
  ** The find_path algorithm is called for each equation/variable.
 **)
@@ -3348,6 +3568,8 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 end
 
 (** relation: reduce_index_dummy_der
+ ** author: PA
+ **
  ** When matching fails, this relation is called to try to 
  ** reduce the index by differentiating the marked equations and
  ** replacing one of the variable with a dummy derivative, i.e. making 
@@ -3405,14 +3627,17 @@ relation reduce_index_dummy_der: (DAELow,
 end
 
 (** relation: update_incidence_matrix
- ** Takes a daelow and the incidence matrix and its transposed represenation and a list of 
- ** equation indexes that needs to be updated.
- ** First the IncidenceMatrix is updated, i.e. the mapping from equations to variables.
- ** Then, by collecting all variables in the list of equations to update, a list of changed variables
- ** are retrieved. This is used to update the IncidenceMatrixT (transpose) mapping from variables to 
- ** equations.
- ** The relation returns an updated incidence matrix.
+ ** author: PA
+ **
+ ** Takes a daelow and the incidence matrix and its transposed represenation
+ ** and a list of  equation indexes that needs to be updated.
+ ** First the IncidenceMatrix is updated, i.e. the mapping from equations
+ ** to variables. Then, by collecting all variables in the list of equations
+ ** to update, a list of changed variables are retrieved. This is used to 
+ ** update the IncidenceMatrixT (transpose) mapping from variables to 
+ ** equations. The relation returns an updated incidence matrix.
  **)
+
 relation update_incidence_matrix:(DAELow,
 				  IncidenceMatrix, 
 				  IncidenceMatrixT,
@@ -3431,6 +3656,12 @@ relation update_incidence_matrix:(DAELow,
 	---------------------------------------
 	update_incidence_matrix(dae,m,mt,eqns) => fail
 end
+
+(** relation: update_incidence_matrix2
+ ** author: PA
+ ** 
+ ** Helper relation to update_incidence_matrix
+ **)
 
 relation update_incidence_matrix2: (DAELow,
 				    IncidenceMatrix,
@@ -3456,11 +3687,16 @@ relation update_incidence_matrix2: (DAELow,
 
 end
 
-(* relation: update_transposed_matrix
- ** Takes a list of variables and the transposed IncidenceMatrix, and updates the
- ** variable rows.
+(** relation: update_transposed_matrix
+ ** author: PA
+ **
+ ** Takes a list of variables and the transposed IncidenceMatrix, and 
+ ** updates the variable rows.
 **)
-relation update_transposed_matrix: (int list(*var list*), IncidenceMatrix,IncidenceMatrixT) 
+
+relation update_transposed_matrix: (int list(*var list*), 
+				    IncidenceMatrix,
+				    IncidenceMatrixT) 
 	  => IncidenceMatrixT =
 
   axiom	update_transposed_matrix([],m,mt) => mt
@@ -3479,9 +3715,11 @@ relation update_transposed_matrix: (int list(*var list*), IncidenceMatrix,Incide
 end
 
 (** relation: make_algebraic
- Make the variable a dummy derivative, i.e. change varkind from STATE 
+ ** author: PA
+ ** Make the variable a dummy derivative, i.e. change varkind from STATE 
  ** to DUMMY_STATE.
  **)
+
 relation make_algebraic: (DAELow, 
 			  Exp.ComponentRef) (* state *)
 	  => (DAELow) =
@@ -3498,9 +3736,12 @@ relation make_algebraic: (DAELow,
 end	  
 
 (** relation: replace_dummy_der
+ ** author: PA
+ **
  ** Helper relation to reduce_index_dummy_der
  ** replaces der(state) with the variable dummy der.
  **)
+
 relation replace_dummy_der: (Exp.ComponentRef, (* state *)
 			     Exp.ComponentRef, (* dummy der name *)
 			     DAELow, 
@@ -3533,6 +3774,8 @@ relation replace_dummy_der: (Exp.ComponentRef, (* state *)
 end
 
 (** relation: replace_dummy_der2
+ ** author: PA
+ **
  ** Helper relation to reduce_index_dummy_der
  ** replaces der(state) with dummy_der variable in equation 
  **)
@@ -3563,6 +3806,8 @@ relation replace_dummy_der2:(Exp.ComponentRef,
 	replace_dummy_der2(_,_,_) => fail
 end
 (** relation: replace_dummy_der_others
+ ** author: PA
+ **
  ** Helper relation to reduce_index_dummy_der.
  ** This relation replaces
  ** 1. der(der_s)  with der2_s (Where der_s is a dummy state)
@@ -3590,9 +3835,13 @@ relation replace_dummy_der_others:(Equation, Variables) => (Equation, Variables)
 end
 
 (** relation: replace_dummy_der_others_exp
+ ** author: PA
+ **
  ** Helper relation for replace_dummy_der_others
  **)
-relation replace_dummy_der_others_exp: (Exp.Exp, Variables) => (Exp.Exp,Variables) =
+
+relation replace_dummy_der_others_exp: (Exp.Exp, Variables) 
+	  => (Exp.Exp,Variables) =
 	
   axiom	replace_dummy_der_others_exp(e as Exp.ICONST(_),vars) => (e,vars)
   axiom	replace_dummy_der_others_exp(e as Exp.RCONST(_),vars) => (e,vars)
@@ -3676,14 +3925,23 @@ relation replace_dummy_der_others_exp: (Exp.Exp, Variables) => (Exp.Exp,Variable
   axiom	replace_dummy_der_others_exp(e,vars) => (e,vars)
 end
 
+(** relation: var_equal
+ ** author: PA
+ ** 
+ ** Returns true if two Var's are equal.
+ **)
+
 relation var_equal: (Var,Var) => bool =
 	
+	(* A Var is identified by its component reference *)
   rule	Exp.cref_equal(cr1,cr2) => res 
 	------------------------------
 	var_equal(VAR(cr1,_,_,_,_ ,_,_,_,_,_,_,_,_,flow1),VAR(cr2,_,_,_,_ ,_,_,_,_,_,_,_,_,flow2)) => res
 end
 
 (** relation: new_dummy_var
+ ** author: PA
+ **
  ** This relation creates a new variable named "der_"+<varname> and 
  ** adds it to the dae.
  **) 
@@ -3703,9 +3961,12 @@ relation new_dummy_var:(Exp.ComponentRef,DAELow) => (Exp.ComponentRef,DAELow) =
 end
 
 (** relation: create_dummy_var
+ ** author: PA
+ **
  ** Creates a new variable name by adding "der_" before it.
  ** Helper relation to new_dummy_var.
  **)
+
 relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
 	  
   rule  string_append("der_",id) => id'
@@ -3718,11 +3979,15 @@ relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
 	create_dummy_var(Exp.CREF_QUAL(id,subs,cr)) 
 	  => Exp.CREF_QUAL(id,subs,cr')
 end
+
 (** relation: select_dummy_state
+ ** author: PA
+ **
  ** This relation is the heuristic to select among the states which one
  ** will be transformed into  an algebraic variable, a so called dummy state
  **(dummy derivative). It should in the future consider initial values, etc.
  **)
+
 relation select_dummy_state: (Exp.ComponentRef list, (* variable names *)
 			      int list, (* variable numbers *)
 			      DAELow, 
@@ -3739,9 +4004,12 @@ relation select_dummy_state: (Exp.ComponentRef list, (* variable names *)
 end
 
 (** relation: states_in_eqns
+ ** author: PA
+ **
  ** Helper relation to reduce_index_dummy_der.
  ** Returns all states in the equations given as equation index list.
  **)
+
 relation states_in_eqns: (int list (* eqns *),
 			  DAELow, 
 			  IncidenceMatrix,
@@ -3770,8 +4038,11 @@ relation states_in_eqns: (int list (* eqns *),
 end
 
 (** relation: states_in_vars
+ ** author: PA
+ **
  ** Helper relation to states_in_eqns
  **)
+
 relation states_in_vars: (Var list, int list) => 
 	(Exp.ComponentRef list, (* names of the states *)
 	 int list ) (* number for each state *)  =
@@ -3791,6 +4062,8 @@ end
 
 
 (** relation: differentiate_eqns
+ ** author: PA
+ **
  ** This relation takes a dae, its incidence matrices and the number of 
  ** equations an variables and a list of equation indices to 
  ** differentiate. This is used in the index reduction algorithm
@@ -3799,6 +4072,7 @@ end
  ** a list of indices of the differentiated equations, they are added last in
  ** the dae.
  **)
+
 relation differentiate_eqns: (DAELow, 
 			      IncidenceMatrix, 
 			      IncidenceMatrixT,
@@ -3841,18 +4115,24 @@ relation differentiate_eqns: (DAELow,
 	differentiate_eqns(_,_,_,_,_,_) => fail
 end
 
+(** relation: equation_add
+ ** author: PA
+ **
+ ** Adds an equation to an EquationArray.
+ **)
+
 relation equation_add: (EquationArray,Equation) => EquationArray =
-	
-  rule	(* Have space to add array elt. *)
-	int_lt(n,size) => true &
+
+	(* Have space to add array elt. *)
+  rule	int_lt(n,size) => true &
 	n + 1 => n' &
 	array_setnth(arr,n,SOME(e)) => arr'
 	-------------------------------
 	equation_add(EQUATION_ARRAY(n,size,arr),e) 
 	  =>  EQUATION_ARRAY(n',size,arr')
 
-  rule	(* Do NOT Have space to add array elt. Expand array with factor 1.4 *)
-	int_lt(n,size) => false &
+	  (* Do NOT Have space to add array elt. Expand array 1.4 times *)
+  rule	int_lt(n,size) => false &
 	int_real(size) => rsize &
 	real_mul(rsize,0.4) => rexpandsize &
 	real_int(rexpandsize) => expandsize &
@@ -3870,8 +4150,11 @@ relation equation_add: (EquationArray,Equation) => EquationArray =
 end
 
 (** relation: equation_list
+ ** author: PA
+ ** 
  ** Transform the expandable Equation array to a list of Equations.
  **)
+
 relation equation_list:(EquationArray) => Equation list =
 
   axiom	equation_list(EQUATION_ARRAY(0,_,arr)) => []
@@ -3889,10 +4172,12 @@ relation equation_list:(EquationArray) => Equation list =
 	equation_list(_) => fail
 end
 
-
 (** relation: list_equation
+ ** author: PA
+ **
  ** Transform the a list of Equations into an expandable Equation array.
  **)
+
 relation list_equation:(Equation list ) => EquationArray =
 	
   rule	list_length(lst) => len &
@@ -3908,8 +4193,11 @@ relation list_equation:(Equation list ) => EquationArray =
 end
 
 (** relation: equation_list2
+ ** author: PA
+ **
  ** Helper relation to equation_list
  **)
+
 relation equation_list2:(Equation option array,
 			int(*pos*),
 			int(*lastpos*)) 
@@ -3928,23 +4216,30 @@ relation equation_list2:(Equation option array,
 end
 
 (** relation: equation_size
+ ** author: PA
+ **
  ** Returns the number of equations
  **)
+
 relation equation_size:(EquationArray) => int =
 
   axiom	equation_size(EQUATION_ARRAY(n,_,_)) => n
 end
 
-
 (** relation: variable_size
+ ** author: PA
+ **
  ** Returns the number of variables
  **)
+
 relation variable_size:(Variables) => int =
 
   axiom	variable_size(VARIABLES(_,_,_,_,n)) => n 
 end
 
 (** relation: equation_nth
+ ** author: PA
+ **
  ** Return the n:th equation from the expandable equation array 
  ** indexed from 0..1.
 **)
@@ -3964,8 +4259,11 @@ relation equation_nth:(EquationArray,
 end
 
 (** relation: equation_setnth
+ ** author: PA
+ ** 
  ** Sets the nth array element of an EquationArray.
  **)
+
 relation equation_setnth: (EquationArray,int,Equation) => EquationArray =
 
   rule	array_setnth(arr,pos,SOME(eqn)) => arr'
@@ -3975,8 +4273,11 @@ relation equation_setnth: (EquationArray,int,Equation) => EquationArray =
 end
 
 (** relation: add_marked_vars
+ ** author: PA
+ **
  ** This relation is part of the matching algorithm.
 **)
+
 relation add_marked_vars:(DAELow, 
 			  IncidenceMatrix, 
 			  IncidenceMatrixT,
@@ -4000,10 +4301,13 @@ relation add_marked_vars:(DAELow,
 end
 
 (** relation: path_found
+ ** author: PA
+ **
  ** This relation is part of the matching algorithm.
  ** It tries to find a matching for the equation index given as 
  ** third argument, i.
  **)
+
 relation path_found: (IncidenceMatrix, IncidenceMatrixT, int (* equation *), 
 		      Assignments, Assignments) 
 	=> (Assignments, Assignments) =
@@ -4020,8 +4324,11 @@ relation path_found: (IncidenceMatrix, IncidenceMatrixT, int (* equation *),
 end
 
 (** relation: assign_one_in_eqn
+ ** author: PA
+ ** 
  ** Helper relation to path_found.
  **)
+
 relation assign_one_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int, 
 		      Assignments, Assignments) => (Assignments, Assignments) =
 	
@@ -4036,8 +4343,10 @@ relation assign_one_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int,
 end 
 
 (** relation: states_in_eqn
+ ** author: PA
  ** Helper relation to states_in_eqns
  **)
+
 relation states_in_eqn: (Equation, Variables) => int list =
 
   rule	states_as_algebraic_vars(vars) => vars' &
@@ -4047,8 +4356,12 @@ relation states_in_eqn: (Equation, Variables) => int list =
 end
 
 (** relation: states_as_algebraic_vars
- ** Return the subset of variables consisting of all states, but changed varkind to variable.
+ ** author: PA
+ ** 
+ ** Return the subset of variables consisting of all states, but changed 
+ ** varkind to variable.
  **)
+
 relation states_as_algebraic_vars:( Variables) => Variables =
 	 
   rule	(* Creates a new set of Variables from a Var list *)
@@ -4061,6 +4374,8 @@ relation states_as_algebraic_vars:( Variables) => Variables =
 end
 
 (** relation: states_as_algebraic_vars2
+ ** author: PA
+ **
  ** helper relation to states_as_algebraic_vars
 **)
 relation states_as_algebraic_vars2: (Var list ) => Var list =
@@ -4086,10 +4401,13 @@ relation states_as_algebraic_vars2: (Var list ) => Var list =
 end
 
 (** relation: vars_in_eqn
+ ** author: PA
+ **
  ** This relation returns all variable indices as a list for a given
  ** equation, given as an equation index. (1...n)
  ** Negative indexes are removed.
 **)
+
 relation vars_in_eqn: (IncidenceMatrix, int(* equation*)) 
 	  => int list (* variables *) =
 
@@ -4106,8 +4424,11 @@ relation vars_in_eqn: (IncidenceMatrix, int(* equation*))
 end
 
 (** relation: remove_negative
+ ** author: PA
+ **
  ** Removes all negative integers.
 **)
+
 relation remove_negative:(int list) => int list =
 
   rule	Util.list_select(lst,Util.int_positive) => lst'
@@ -4116,9 +4437,12 @@ relation remove_negative:(int list) => int list =
 end
 
 (** relation: eqns_for_var
+ ** author: PA
+ **
  ** This relation returns all equations as a list of equation indices
  ** given a variable as a variable index.
 **)
+
 relation eqns_for_var: (IncidenceMatrixT, int (* variable *)) 
 	  => int list (* equations *) =
 
@@ -4135,13 +4459,17 @@ relation eqns_for_var: (IncidenceMatrixT, int (* variable *))
 end
 
 (** relation: eqns_for_var_with_states
+ ** author: PA
+ **
  ** This relation returns all equations as a list of equation indices
- ** given a variable as a variable index, including the equations containing the 
- ** state variable but not its derivative. This must be used to update equations
- ** when a state is changed to algebraic variable in index reduction using dummy derivatives.
- ** These equation indices are represented with negative index, thus all indices are mapped
- ** trough int_abs (absolute value).
+ ** given a variable as a variable index, including the equations containing 
+ ** the state variable but not its derivative. This must be used to update 
+ ** equations when a state is changed to algebraic variable in index reduction 
+ ** using dummy derivatives.
+ ** These equation indices are represented with negative index, thus all 
+ ** indices are mapped trough int_abs (absolute value).
 **)
+
 relation eqns_for_var_with_states: (IncidenceMatrixT, int (* variable *)) 
 	  => int list (* equations *) =
 
@@ -4158,9 +4486,12 @@ relation eqns_for_var_with_states: (IncidenceMatrixT, int (* variable *))
 end
 
 (** relation: assign_first_unassigned
+ ** author: PA
+ **
  ** This relation assigns the first unassign variable to the equation
  ** given as first argument. It is part of the matching algorithm.
  **)
+
 relation assign_first_unassigned: (int(* equation*),
 				   int list (* variables*), 
 				   Assignments (* ass1 *), 
@@ -4179,8 +4510,11 @@ relation assign_first_unassigned: (int(* equation*),
 end
 
 (** relation: get_assigned
+ ** author: PA
+ **
  ** returns the assigned equation for a variable.
  **)
+
 relation get_assigned: (int		(* variable *), 
 			Assignments,	(* ass1 *) 
 			Assignments)	(* ass2 *) 
@@ -4193,8 +4527,11 @@ relation get_assigned: (int		(* variable *),
 end
 
 (** relation: assign
+ ** author: PA
+ **
  ** Assign a variable to an equation, updating both assignment lists.
  **)
+
 relation assign: (int,		(* variable *)
 		  int,		(* equation *)
 		  Assignments,	(* ass1 *)
@@ -4214,9 +4551,12 @@ relation assign: (int,		(* variable *)
 end
 
 (** relation: forall_unmarked_vars_in_eqn
+ ** author: PA
+ **
  ** This relation is part of the matching algorithm. It loops over all umarked
  ** variables in an equation.
  **)
+
 relation forall_unmarked_vars_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int, 
 		      Assignments (* ass1*), Assignments (*ass2*)) 
 	  => (Assignments, Assignments)  =
@@ -4230,8 +4570,11 @@ relation forall_unmarked_vars_in_eqn: (IncidenceMatrix, IncidenceMatrixT, int,
 end
 
 (** relation: is_not_v_marked
+ ** author: PA
+ **
  ** This relation succeds for variables that are not marked.
 **)
+
 relation is_not_v_marked: int => () =
 
   rule	DAEEXT.get_v_mark(i) => false
@@ -4240,9 +4583,12 @@ relation is_not_v_marked: int => () =
 end
 
 (** relation: forall_unmarked_vars_in_eqn_body
+ ** author: PA
+ **
  ** This relation is part of the matching algorithm.
  ** It is the body of the loop over all unmarked variables.
  **)
+
 relation forall_unmarked_vars_in_eqn_body: (IncidenceMatrix, IncidenceMatrixT
 					    , int
 					    , int list (* var list*)
@@ -4266,10 +4612,13 @@ relation forall_unmarked_vars_in_eqn_body: (IncidenceMatrix, IncidenceMatrixT
 end
 
 (** relation: strong_components
+ ** author: PA
+ **
  ** This is the second part of the BLT sorting. It takes the variable 
  ** assignments and the incidence matrix as input and identifies strong 
  ** components, i.e. subsystems of equations.
  **)
+
 relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
 			     int vector, int vector) => 
 	(int list list ) (* list of components *) =
@@ -4288,8 +4637,11 @@ relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
 end
 
 (** relation: strong_connect_main
+ ** author: PA
+ **
  ** Helper relation to strong_components
  **)
+
 relation strong_connect_main:(IncidenceMatrix,
 			 IncidenceMatrixT,
 			 int vector, (* Assignment *)
@@ -4328,8 +4680,11 @@ relation strong_connect_main:(IncidenceMatrix,
 end
 
 (** relation: strong_connect
+ ** author: PA
+ **
  ** Helper relation to strong_connect_main
  **)
+
 relation strong_connect: (IncidenceMatrix,
 			  IncidenceMatrixT,
 			  int vector,
@@ -4364,9 +4719,12 @@ relation strong_connect: (IncidenceMatrix,
 end
 
 (** relation: cons_if_nonempty
+ ** author: PA
+ **
  ** Small helper relation to avoid empty sublists.
  ** Consider moving to Util?
  **)
+
 relation cons_if_nonempty: (int list, int list list) => int list list =
   axiom	cons_if_nonempty ([],lst) => lst 
 
@@ -4374,6 +4732,8 @@ relation cons_if_nonempty: (int list, int list list) => int list list =
 end 
 
 (** relation: reachable_nodes
+ ** author: PA
+ **
  ** Helper relation to strong_connect.
  ** Returns a list of reachable nodes (equations), corresponding
  ** to those equations that uses the solved variable of this equation.
@@ -4382,6 +4742,7 @@ end
  ** that n1 solves for a variable (e.g. 'a') that is used in the equation
  ** of n2, i.e. the equation of n1 must be solved before the equation of n2.
  **)
+
 relation reachable_nodes: (int,
 			   IncidenceMatrix,
 			   IncidenceMatrixT,
@@ -4409,8 +4770,11 @@ relation reachable_nodes: (int,
 end			  
 
 (** relation: iterate_reachable_nodes
+ ** author: PA
+ **
  ** Helper relation to strong_connect.
  **)
+
 relation iterate_reachable_nodes: (int list, 
 				   IncidenceMatrix,
 				   IncidenceMatrixT,
@@ -4461,8 +4825,11 @@ relation iterate_reachable_nodes: (int list,
 end
 
 (** relation: dump_list
+ ** author: PA
+ **
  ** Helper relation to dump.
  **)
+
 relation dump_list: (int list, string) => () =
 
   rule	Util.list_map(l,int_string) => s &
@@ -4473,8 +4840,11 @@ relation dump_list: (int list, string) => () =
 end
 	    
 (** relation: check_root
+ ** author: PA
+ **
  ** Helper relation to strong_connect.
  **)
+
 relation check_root: (IncidenceMatrix,
 		      IncidenceMatrixT,
 		      int vector,
@@ -4501,8 +4871,11 @@ relation check_root: (IncidenceMatrix,
 end
 
 (** relation: check_stack
+ ** author: PA
+ **
  ** Helper relation to check_root.
  **)
+
 relation check_stack: (IncidenceMatrix,
 		       IncidenceMatrixT,
 		       int vector,
@@ -4530,8 +4903,11 @@ relation check_stack: (IncidenceMatrix,
 end
 
 (** relation: dump_components
+ ** author: PA
+ **
  ** Prints the blocks of the BLT sorting on stdout.
  **)
+
 relation dump_components: (int list list) => () =
 
   rule	print "Blocks\n" &
@@ -4542,8 +4918,11 @@ relation dump_components: (int list list) => () =
 end
 
 (** relation: dump_components2
+ ** author: PA
+ **
  ** Helper relation to dump_components.
  **)
+
 relation dump_components2: (int list list,int) => () =
 
   axiom	dump_components2([],_) => ()
@@ -4558,7 +4937,10 @@ relation dump_components2: (int list list,int) => () =
 	---------------------
 	dump_components2(l::lst,i) 
 end
+
 (** relation: translate_dae
+ ** author: PA
+ **
  ** Translates the dae so variables are indexed into different arrays:
  ** - xd for derivatives
  ** - x for states
@@ -4569,6 +4951,7 @@ end
  ** 
  **  The equations are updated with the new variable names.
  **)
+
 relation translate_dae: DAELow => DAELow =
 	
   rule  var_list(vars) => varlst &
@@ -4592,7 +4975,10 @@ relation translate_dae: DAELow => DAELow =
 	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al',EVENT_INFO(wc',zc)) 
 end
 
-
+(** relation: replace_variables_in_when_clauses
+ **
+ ** Replace variables present in all the expressions in when clauses.
+ **)
 
 relation replace_variables_in_when_clauses: (WhenClause list, 
 					     Exp.Exp list, (* source list *) 
@@ -4607,6 +4993,11 @@ relation replace_variables_in_when_clauses: (WhenClause list,
 	replace_variables_in_when_clauses(wc::wcx,s,t) => (wc'::wcx')
 end
 
+(** relation: replace_variables_in_when_clause
+ **
+ ** Helper relation to replace_variables_in_when_clauses.
+ **)
+
 relation replace_variables_in_when_clause: (WhenClause, 
 					     Exp.Exp list, (* source list *) 
 					     Exp.Exp list) (* target list *)
@@ -4620,6 +5011,8 @@ end
 
 
 (** relation: replace_variables_in_alg
+ ** author: PA
+ **
  ** This relation replaces variabless in algorithms.
  ** See also replace_variables.
  **)
@@ -4641,8 +5034,11 @@ relation replace_variables_in_alg:(Algorithm.Algorithm array,
 end
 
 (** relation: replace_variables_in_alg2
+ ** author: PA
+ **
  ** Helper relation to replace_variables_in_alg.
  **)
+
 relation replace_variables_in_alg2: (Algorithm.Algorithm list, 
 				     Exp.Exp list, (* source list *)
 				     Exp.Exp list) (* target list *)
@@ -4658,9 +5054,12 @@ relation replace_variables_in_alg2: (Algorithm.Algorithm list,
 end
 
 (** relation: replace_variables_in_stmts
+ ** author: PA
+ **
  ** Helper relation to replace_variables_in_alg2
  ** Traverses a list of statements.
  **)
+
 relation replace_variables_in_stmts: (Algorithm.Statement list, 
 				     Exp.Exp list, (* source list *)
 				     Exp.Exp list) (* target list *)
@@ -4674,9 +5073,12 @@ relation replace_variables_in_stmts: (Algorithm.Statement list,
 end
 
 (** relation: replace_variables_in_stmt
+ ** author: PA
+ **
  ** Helper relation to replace_variables_in_stmts
  ** Investigates a single statement.
  **)
+
 relation replace_variables_in_stmt:(Algorithm.Statement,
 				   Exp.Exp list, (* source list *)
 				   Exp.Exp list) (* target list *)				   
@@ -4731,13 +5133,17 @@ relation replace_variables_in_stmt:(Algorithm.Statement,
 end
 	
 (** relation: replace_variables_in_else_branch
+ ** author: PA
+ **
  ** Helper relation to replace_varibels_in_stmt
  ** Investigates the else branch of if statements.
  **)
+
 relation replace_variables_in_else_branch: (Algorithm.Else,
 				   Exp.Exp list, (* source list *)
 				   Exp.Exp list) (* target list *)				   => Algorithm.Else =
-  axiom	replace_variables_in_else_branch(Algorithm.NOELSE,_,_) => Algorithm.NOELSE
+  axiom	replace_variables_in_else_branch(Algorithm.NOELSE,_,_) 
+	  => Algorithm.NOELSE
 	
   rule	replace_variables_in_else_branch(else_branch,s,t) => else_branch' &
 	Exp.replace_exp_list(e,s,t) => (e',_) &
@@ -4754,6 +5160,8 @@ end
 					    
 			     
 (** relation: add_vars
+ ** author: PA
+ **
  ** Adds a list of 'Var' to 'Variables'
  **)
 
@@ -4767,10 +5175,13 @@ end
 (** relation: analyze_jacobian
  ** author: PA
  ** 
- ** Analyze the jacobian to find out if the jacobian of system of equations can be solved
- ** at compiletime or runtime or if it is a nonlinear system of equations.
+ ** Analyze the jacobian to find out if the jacobian of system of equations 
+ ** can be solved at compiletime or runtime or if it is a nonlinear system 
+ ** of equations.
 **)
-relation analyze_jacobian:(DAELow, (int * int * Equation) list) => JacobianType =
+
+relation analyze_jacobian:(DAELow, (int * int * Equation) list) 
+	  => JacobianType =
 
   rule	jacobian_constant(jac) => true &
 	rhs_constant(daelow) => true
@@ -4791,8 +5202,8 @@ end
  ** Determines if the right hand sides of an equation system,
  ** represented as a DAELow, is constant. 
  **)
-relation rhs_constant: (DAELow) => bool =
 
+relation rhs_constant: (DAELow) => bool =
 
   rule	equation_list(eqns) => eqn_lst &
 	rhs_constant2(eqn_lst,vars) => res
@@ -4806,6 +5217,7 @@ end
  ** Retrieve the right hand side expression of an equation
  ** in an equation system, given a set of variables.
  **)
+
 relation get_eqnsys_rhs_exp: (Exp.Exp, 
 			      Variables) (* variables of the eqn sys.*) 
 	  => Exp.Exp =
@@ -4969,6 +5381,7 @@ end
  ** Returns true if any of the variables given as ComponentRef list is among 
  ** the Variables.
  **)
+
 relation contain_any_var:(Exp.ComponentRef list, Variables) => bool =
 
   axiom	contain_any_var([],_) => false
@@ -5005,13 +5418,16 @@ relation calculate_jacobian: (Variables,
 end
 
 (** relation: calculate_jacobian_rows
- ** This relation takes a list of Equations and a set of variables and calculates
- ** the jacobian expression for each variable over each equations, returned in 
- ** a sparse matrix representation. 
+ ** author: PA
+ **
+ ** This relation takes a list of Equations and a set of variables and 
+ ** calculates the jacobian expression for each variable over each equations,
+ ** returned in a sparse matrix representation. 
  ** For example, the equation on index e1: 3*a*x+5*y*z+ z*z  given the 
  ** variables {x,y,z} on index x1,y1,z1 gives
  ** {(e1,x1,3*a), (e1,y1,5*z), (e1,z1,5*y+2*z)}
  **)
+
 relation calculate_jacobian_rows:(Equation list, Variables, 
 				 IncidenceMatrix, IncidenceMatrixT) 
 	  => ((int * int * Equation) list) =
@@ -5022,8 +5438,11 @@ relation calculate_jacobian_rows:(Equation list, Variables,
 end
 
 (** relation: calculate_jacobian_rows2
+ ** author: PA
+ **
  ** Helper relation to calculate_jacobian_rows
  **)
+
 relation calculate_jacobian_rows2:(Equation list, Variables, 
 				 IncidenceMatrix, IncidenceMatrixT, int)
 	  => ((int * int * Equation) list) =
@@ -5038,8 +5457,11 @@ relation calculate_jacobian_rows2:(Equation list, Variables,
 end
 
 (** relation: calculate_jacobian_row
+ ** author: PA
+ **
  ** Calculates the jacobian for one equation. See calculate_jacobian_rows.
  **)
+
 relation calculate_jacobian_row: (Equation, 
 				  Variables,
 				  IncidenceMatrix,
@@ -5061,17 +5483,23 @@ relation calculate_jacobian_row: (Equation,
 end
 
 (** relation: make_residual_eqn
+ ** author: PA
+ **
  ** Transforms an expression into a residual equation
  **)
+
 relation make_residual_eqn: Exp.Exp => Equation =
 
 axiom make_residual_eqn(e) => RESIDUAL_EQUATION(e)
 end
 
 (** relation: calculate_jacobian_row2
+ ** author: PA
+ **
  ** Helper relation to calculate_jacobian_row
  ** Differentiates expression for each variable cref.
  **)
+
 relation calculate_jacobian_row2: (Exp.Exp, 
 				   Variables,
 				   int, (* equation index *)
@@ -5091,8 +5519,11 @@ relation calculate_jacobian_row2: (Exp.Exp,
 end
 
 (** relation: residual_exp
-** This relation extracts the residual expression from a residual equation
+ ** author: PA
+ **
+ ** This relation extracts the residual expression from a residual equation
  **)
+
 relation residual_exp: (Equation) => Exp.Exp =
 
   axiom	residual_exp(RESIDUAL_EQUATION(e)) => e
@@ -5104,6 +5535,7 @@ end
  **
  ** This relation transforms a daelow to residualform on the equations.
  **)
+
 relation to_residual_form: (DAELow) => DAELow =
 
   rule	equation_list(eqns) => eqn_lst &
@@ -5115,9 +5547,12 @@ relation to_residual_form: (DAELow) => DAELow =
 end
 
 (** relation: equation_to_residual_form
+ ** author: PA
+ **
  ** This relation transforms an equation to its residual form.
  ** For instance, a=b is transformed to a-b=0 
  **)
+
 relation equation_to_residual_form:(Equation) => Equation =
 
   rule	Exp.simplify(Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2))=> e
@@ -5137,10 +5572,13 @@ relation equation_to_residual_form:(Equation) => Equation =
 end
 
 (** relation: calculate_sizes
+ ** author: PA
+ **
  ** Calculates the number of state variables, nx,
  ** the number of algebraic variables, ny
  ** and the number of parameters/constants, np.
  **)
+
 relation calculate_sizes: DAELow => (int, (* nx *)
 				     int, (* ny *)
 				     int) (* np *) =
@@ -5156,8 +5594,11 @@ relation calculate_sizes: DAELow => (int, (* nx *)
 end
 
 (** relation: calculate_param_sizes
+ ** author: PA
+ **
  ** Helper relation to calculate_sizes
  **)
+
 relation calculate_param_sizes:( Var list) => (int) =
 
   axiom	calculate_param_sizes([]) => 0
@@ -5175,8 +5616,11 @@ relation calculate_param_sizes:( Var list) => (int) =
 end
 	
 (** relation: calculate_var_sizes
+ ** author: PA
+ **
  ** Helper relation to calculate_sizes
  **)
+
 relation calculate_var_sizes:( Var list, int, int) => (int, int) =
 
   axiom	calculate_var_sizes([],nx,ny) => (nx,ny)
@@ -5225,9 +5669,12 @@ end
 
 
 (** relation: replace_variables
+ ** author: PA
+ **
  ** Transforms the equations, given two lists with source and target
  ** expressions
  **) 
+
 relation replace_variables: (Equation list, 
 			     Exp.Exp list, (* source list *)
 			     Exp.Exp list) (* target list *)
@@ -5263,13 +5710,17 @@ relation replace_variables: (Equation list,
 end
 
 (** relation: calculate_values
+ ** author: PA
+ **
  ** This relation calculates the values from the parameter binding expressions.
- ** This is performed by building an environment and adding all the parameters and constants
- ** to it and then calling ceval to retreive the constant values of each parameter or constant.
- ** NOTE: This depends on the DAELow having the indexed forms of component references, since the 
- ** environmen requires simple names for each variable.
+ ** This is performed by building an environment and adding all the parameters
+ ** and constants to it and then calling ceval to retreive the constant values
+ ** of each parameter or constant.
+ ** NOTE: This depends on the DAELow having the indexed forms of component
+ ** references, since the environmen requires simple names for each variable.
  **
 **)
+
 relation calculate_values: (DAELow) => DAELow =
 	
   rule	Builtin.initial_env => env &
@@ -5284,8 +5735,11 @@ relation calculate_values: (DAELow) => DAELow =
 end
 
 (** relation: add_variables_to_env
+ ** author: PA
+ **
  ** Helper relation to calculate_values
  **)
+
 relation add_variables_to_env: (Var list, Env.Env) => Env.Env =
 	
   axiom	add_variables_to_env([],env) => env
@@ -5323,8 +5777,11 @@ relation add_variables_to_env: (Var list, Env.Env) => Env.Env =
 end
 
 (** relation: update_variables
+ ** author: PA
+ **
  ** Helper relation to calculate_values
  **)
+
 relation update_variables:(Var list, Env.Env) => Var list =
 
   axiom	update_variables([],_) => []
@@ -5350,12 +5807,15 @@ relation update_variables:(Var list, Env.Env) => Var list =
 end
 
 (** relation: variable_replacements
+ ** author: PA
+ **
  ** Returns a two list of replacement expressions for variable transformations.
  ** For instance, replacing state s with x[3] and der(s) with xd[3],
  ** NOTE: The derivative expressions must be first, so they are replaced first
  ** i.e der(s) is replaced before s is replaced which gives a wrong 
  ** variable like der(x[5])
  **)
+
 relation variable_replacements: (Var list, Equation list) 
 	  => (Exp.Exp list, Exp.Exp list) =
 	  
@@ -5374,9 +5834,12 @@ relation variable_replacements: (Var list, Equation list)
 end
 
 (** relation: alg_variable_replacements
+ ** author: PA
+ **
  ** Build replacement "rules" for the variables, eg. states, 
  ** algebraic variables, parameters, etc. 
  **)
+
 relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 
   axiom	alg_variable_replacements([]) => ([],[])
@@ -5443,9 +5906,12 @@ relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 end
 
 (** relation: states_eqns
+ ** author: PA
+ **
  ** Takes a list of equations and an (empty) BinTree and 
  ** fills the tree with the state variables present in the equations
  **)
+
 relation states_eqns: (Equation list,BinTree) => BinTree =
 	
  axiom	states_eqns([],bt) => bt
@@ -5472,8 +5938,11 @@ relation states_eqns: (Equation list,BinTree) => BinTree =
 end
 
 (** relation: derivative_replacements
+ ** author: PA
+ **
  ** Helper relation for variable_replacements 
  **)
+
 relation derivative_replacements: (Exp.ComponentRef list, Var list) 
 	  => (Exp.Exp list, Exp.Exp list) =
 
@@ -5498,8 +5967,11 @@ relation derivative_replacements: (Exp.ComponentRef list, Var list)
 end
 
 (** relation: get_index
+ ** author: PA
+ **
  ** Helper relation to derivative_replacements 
  **)
+
 relation get_index: (Exp.ComponentRef, Var list) => int =
 
   rule	Exp.cref_equal(cr1,cr2) => true
@@ -5512,9 +5984,12 @@ relation get_index: (Exp.ComponentRef, Var list) => int =
 end
 
 (** relation: calculate_indexes
+ ** author: PA
+ **
  ** Helper relation to translate_dae. Calculates the indexes for each variable
  ** in one of the arrays. x, xd, y.
  **)
+
 relation calculate_indexes: (Var list,
 			     Var list) 
 	  => (Var list,
@@ -5531,8 +6006,11 @@ relation calculate_indexes: (Var list,
 end
 
 (** relation: transform_variables
+ ** author: PA
+ **
  ** Helper relation to translate_dae
 **)
+
 relation transform_variables: (Var list, Exp.Exp list, Exp.Exp list) => (Var list) =
 
   axiom transform_variables([],_,_) => []
@@ -5557,9 +6035,13 @@ relation transform_variables: (Var list, Exp.Exp list, Exp.Exp list) => (Var lis
 end
 
 (** relation: transform_startValue
+ ** author: PA
+ **
  ** Helper relation to transform_variables
 **)
-relation transform_startValue:(DAE.StartValue, Exp.Exp list, Exp.Exp list) => DAE.StartValue =
+
+relation transform_startValue:(DAE.StartValue, Exp.Exp list, Exp.Exp list) 
+	  => DAE.StartValue =
 
   rule  Exp.replace_exp_list(e,s,t) => (e',_)
         --------------------------
@@ -5570,8 +6052,11 @@ relation transform_startValue:(DAE.StartValue, Exp.Exp list, Exp.Exp list) => DA
 end
 
 (** relation: transform_variable
+ ** author: PA
+ **
  ** Helper relation to transform_variables
 **)
+
 relation transform_variable: (int, VarKind) => Exp.ComponentRef =
 
   rule	int_string(i) => is &
@@ -5611,8 +6096,11 @@ relation transform_variable: (int, VarKind) => Exp.ComponentRef =
 end
 
 (** relation: calculate_indexes2
-** Helper relation to calculate_indexes
+ ** author: PA
+ **
+ ** Helper relation to calculate_indexes
  **)
+
 relation calculate_indexes2: (Var list,int,int,int,int,int) 
 	  => (Var list,int,int,int,int,int) =
 
@@ -5639,7 +6127,6 @@ relation calculate_indexes2: (Var list,int,int,int,int,int)
 	calculate_indexes2(VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment,flow)::vs,x,xd,y,p,dummy)
  	  => (VAR(cr,DUMMY_DER,d,tp,b,value,dim,start,y,name,cl,dae_var_attr,comment,flow)::vars',
 	      x1,xd1,y1,p1,dummy1)
-
 
   rule	(* Dummy state become algebraic variables *)
 	int_add(y,1) => y' &
@@ -5672,8 +6159,11 @@ relation calculate_indexes2: (Var list,int,int,int,int,int)
 end
 
 (** relation: print_equations
+ ** author: PA
+ **
  ** Helper relation to dump
  **)
+
 relation print_equations: (int list, DAELow) => () =
 
   axiom	print_equations ([],_) => ()
@@ -5685,8 +6175,11 @@ relation print_equations: (int list, DAELow) => () =
 end
 
 (** relation: print_equation_no
+ ** author: PA
+ **
  ** Helper relation to print_equations
  **)
+
 relation print_equation_no: (int, DAELow) => () =
 
   rule	int_sub(eqno,1) => eqno' &
@@ -5697,8 +6190,11 @@ relation print_equation_no: (int, DAELow) => () =
 end
 
 (** relation: print_equation
+ ** author: PA
+ **
  ** Helper relation to print_equations
  **)
+
 relation print_equation: Equation =>  () =
 
   rule	Exp.print_exp_str e1 => s1 &
@@ -5719,10 +6215,13 @@ relation print_equation: Equation =>  () =
  
  
 (** relation: tree_get
+ ** author: PA
+ **
  ** Copied from generic implementation. Changed that no hashrelation is passed
  ** since a string can not be uniquely mapped to an int. Therefore we need to compare two strings
  ** to get a unique ordering.
 **)
+
 relation tree_get: (BinTree, Key) => Value =
 
 
@@ -5732,8 +6231,11 @@ relation tree_get: (BinTree, Key) => Value =
 	tree_get(bt,key) => v
 end
 (** relation: tree_get2
+ ** author: PA
+ **
  ** Helper relation to tree_get
  **)
+
 relation tree_get2:(BinTree, string) => Value =
  
  rule	Exp.print_component_ref_str(rkey) => rkeystr &
@@ -5766,10 +6268,13 @@ relation tree_get2:(BinTree, string) => Value =
 end
 
 (** relation: tree_add
+ ** author: PA
+ **
  ** Copied from generic implementation. Changed that no hashrelation is passed
  ** since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
  ** to get a unique ordering.
 **)
+
 relation tree_add: (BinTree, Key, Value) => (BinTree) =
 
   axiom	tree_add (TREENODE(NONE,NONE,NONE),key,value) 
@@ -5829,8 +6334,11 @@ relation tree_add: (BinTree, Key, Value) => (BinTree) =
  end 
 
 (** relation: tree_delete
+ ** author: PA
+ **
  ** This relation deletes an entry from the BinTree.
  **)
+
 relation tree_delete: (BinTree, Key) => (BinTree) =
 
   axiom	tree_delete(bt as TREENODE(NONE,NONE,NONE),key) => bt
@@ -5899,10 +6407,13 @@ relation tree_delete: (BinTree, Key) => (BinTree) =
 end
 
 (** relation: tree_delete_rightmost_value
+ ** author: PA
+ **
  ** This relation takes a BinTree and deletes the rightmost value of the tree.
  ** Tt returns this value and the updated BinTree. This relation is used in 
  ** the binary tree deletion relation 'tree_delete'.
  **)
+
  relation tree_delete_rightmost_value: (BinTree) 
 		     => (TreeValue,	(* deleted value*)  
 			 BinTree) =	(* updated bintree*) 
@@ -5932,19 +6443,25 @@ end
 end
 
 (** relation: tree_prune_emtpy_nodes
+ ** author: PA
+ **
  ** This relation is a helper relation to tree_delete
  ** It is used to delete empty nodes of the BinTree representation, that might be introduced
  ** when deleting nodes.
  **)
+
 relation tree_prune_empty_nodes: (BinTree) => BinTree option =
   axiom	tree_prune_empty_nodes TREENODE(NONE,NONE,NONE) => NONE
   axiom	tree_prune_empty_nodes bt => SOME(bt)
 end
 
 (** relation: bintree_to_list
+ ** author: PA
+ **
  ** This relation takes a BinTree and transform it into a list
  ** representation, i.e. two lists of keys and values
  **)
+
  relation bintree_to_list: (BinTree) => (Key list, Value list) =
 
   rule	bintree_to_list2(bt,[],[]) => (klst,vlst) 
@@ -5957,8 +6474,11 @@ end
 end
 
 (** relation: bintree_to_list2
+ ** author: PA
+ **
  ** helper relation to bintree_to_list
  **)
+
 relation bintree_to_list2: (BinTree,Key list,Value list ) 
 	  => (Key list, Value list) =
 
@@ -5977,8 +6497,11 @@ relation bintree_to_list2: (BinTree,Key list,Value list )
 end
 
 (** relation: bintree_to_list_opt
+ ** author: PA
+ **
  ** helper relation to bintree_to_list
  **)
+
 relation bintree_to_list_opt: (BinTree option, Key list, Value list) 
 	  => (Key list, Value list) =
 
@@ -5990,6 +6513,8 @@ relation bintree_to_list_opt: (BinTree option, Key list, Value list)
 end
 
 (** relation: print_vars_statistics
+ ** author: PA
+ **
  ** Prints statistics on variables, currently depth of BinTree, etc.
  **)
 relation print_vars_statistics: (Variables,Variables) => () =
@@ -6014,10 +6539,13 @@ end
 
 
 (** relation: bintree_depth
+ ** author: PA
+ **
  ** This relation calculates the depth of the Binary Tree given
  ** as input. It can be used for debugging purposes to investigate
  ** how balanced binary trees are.
  **)
+
 relation bintree_depth : (BinTree) => int =
 
   axiom	bintree_depth(TREENODE(_,NONE,NONE)) => 1 
@@ -6039,10 +6567,13 @@ relation bintree_depth : (BinTree) => int =
 end	
 
 (** relation: is_algebraic
+ ** author: PA
+ **
  ** This relation returns true if an expression is purely algebraic, i.e. not
  ** containing any derivatives
  ** Otherwise it returns false.
  **)
+
 relation is_algebraic : (Exp.Exp) => bool =
         
   axiom is_algebraic(Exp.END) => true
@@ -6138,10 +6669,13 @@ relation is_algebraic : (Exp.Exp) => bool =
  end
 
 (** relation: is_var_known
+ ** author: PA
+ **
  ** Returns true if the the variable is present in the variable list.
  ** This is done by traversing the list, searching for a matching variable 
  ** name.
  **)
+
 relation is_var_known : (Var list, Exp.ComponentRef) => bool =
 	
   rule	
@@ -6161,10 +6695,12 @@ end
 
 
 (** relation: get_all_exps
- ** 
+ ** author: PA
+ **
  ** This relation goes through the DAELow structure and finds all the
  ** expressions and returns them in a list
  **)
+
 relation get_all_exps : DAELow => Exp.Exp list =
 
   rule	get_all_exps_vars vars1 => exps1 &
@@ -6183,6 +6719,7 @@ end
 
 
 (** relation: get_all_exps_vars
+ ** author: PA
  ** 
  ** Helper to get_all_exps. Goes through the Variables type
  **)
@@ -6200,6 +6737,7 @@ end
 
 
 (** relation: get_all_exps_var
+ ** author: PA
  ** 
  ** Helper to get_all_exps_vars. Get all exps from a  Var.
  ** Exp.OTHER is used as type for componentref. Not important here.
@@ -6219,9 +6757,11 @@ relation get_all_exps_var : Var => Exp.Exp list =
 end
 
 (** relation: get_all_exps_subscript
+ ** author: PA
  ** 
  ** Get all exps from a Subscript 
  **)
+
 relation get_all_exps_subscript : Exp.Subscript => Exp.Exp list =
 
   axiom	get_all_exps_subscript Exp.WHOLEDIM => []
@@ -6232,9 +6772,11 @@ end
 
 
 (** relation: get_all_exps_eqns
+ ** author: PA
  ** 
  ** Helper to get_all_exps. Goes through the EquationArray type
  **)
+
 relation get_all_exps_eqns : EquationArray => Exp.Exp list =
 
   rule	equation_list eqnarray => eqns &
@@ -6246,9 +6788,11 @@ relation get_all_exps_eqns : EquationArray => Exp.Exp list =
 end
 
 (** relation: get_all_exps_eqn
+ ** author: PA
  ** 
  ** Helper to get_all_exps_eqns. Get all exps from an Equation.
  **)
+
 relation get_all_exps_eqn : Equation => Exp.Exp list =
 
   axiom	get_all_exps_eqn EQUATION(e1, e2) => [e1, e2]

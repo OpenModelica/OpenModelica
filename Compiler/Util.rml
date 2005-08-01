@@ -218,6 +218,8 @@ module Util :
 
   relation system_call_with_error_msg:(string,(*command*)
                                        string)(*error_msg to error_buf if fail*) => ()
+  relation strncmp: (string, string, int) => bool
+  relation charlistcompare: (char list, char list, int) => bool
 end
 
 with "System.rml"
@@ -1511,19 +1513,31 @@ relation flatten_option: ('a option, 'a) => 'a =
 
 end
 
+(** relation: is_empty_string
+ **
+ ** Returns true if string is the empty string.
+ **)
+
 relation is_empty_string : string => bool =
 
   axiom is_empty_string "" => true
   axiom is_empty_string _ => false
 end
 
+(** relation: is_not_empty_string
+ **
+ ** Returns true if string is not the empty string.
+ **)
+
 relation is_not_empty_string : string => bool =
 
   axiom is_not_empty_string "" => false
   axiom is_not_empty_string _ => true
 end
-(** 
- ** this relation tries to write to a file and if it
+
+(** relation: write_file_or_error_msg
+ **
+ ** This relation tries to write to a file and if it
  ** fails then it outputs "# Cannot write to file: <filename>." to 
  ** errorbuf
  **) 
@@ -1560,4 +1574,47 @@ relation system_call_with_error_msg:(string,(*command*)
         system_call_with_error_msg(_,e_msg) => fail
 
 end
+
+(** relation: charlistcompare
+ **
+ ** Compares two char lists up to the nth potision and
+ ** returns true if they are equal.
+ **)
         
+relation charlistcompare: (char list, char list, int) => bool =
+
+  rule	a = b
+	-------------------
+	charlistcompare(a::_,b::_,1) => true
+
+  rule	not a = b
+	------------
+	charlistcompare(a::_,b::_,1) => false
+
+  rule	int_sub(n,1) => n1 &
+	a = b &
+	charlistcompare(l1,l2,n1) => true
+	-------------------------------------
+	charlistcompare(a::l1,b::l2,n) => true
+	
+  axiom	charlistcompare(_,_,_) => false
+end
+
+(** relation: strncmp
+ **
+ ** Comparse two strings up to the nth character
+ ** Returns true if they are equal.
+ **)
+
+relation strncmp: (string,string,int)=>bool =
+  rule	string_list(s1) => clst1 &
+	string_list(s2) => clst2 &
+	string_length(s1) => s1len &
+	string_length(s2) => s2len &
+	int_ge(s1len,n) => true &
+	int_ge(s2len,n) => true &
+	charlistcompare(clst1,clst2,n) => true
+	-------------------------------------
+	strncmp (s1,s2,n) => true
+	axiom strncmp(_,_,_) => false
+end

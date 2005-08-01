@@ -176,7 +176,6 @@ module Exp:
    ** operators. It also contains expression indexing with the `ASUB'
    ** constructor.  Indexing arbitrary array expressions is currently
    ** not supported in Modelica, but it is needed here. *)
-  (** LS: Added size for external function interface **)
 
   datatype Operator = ADD    	  of Type
 		    | SUB    	  of Type
@@ -209,13 +208,16 @@ module Exp:
    ** and the real addition operator (`ADD(REAL)') are two distinct
    ** operators. *)
 
-  (** - Componebnt references *)
+  (** - Component references
+   ** CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
+   ** CREF_IDENT(..) is used for non-qualifed component names, e.g. x 
+   **)
   datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
 		    	| CREF_IDENT of Ident * (Subscript list)
 
   datatype Subscript = WHOLEDIM     (* a[:,1] *)
 		     | SLICE of Exp (* a[1:3,1], a[1:2:10,2] *)
-		     | INDEX of Exp
+		     | INDEX of Exp (* a[i+1] *)
   (** The `Subscript' and `ComponentRef' datatypes are simple *)
   (** translations of the corresponding types in the `Absyn' module. *)
 
@@ -295,8 +297,6 @@ module Exp:
   relation make_sum: (Exp list) => Exp 
   relation abs: (Exp) => Exp
 
-
-
   relation dump_exp_str : (Exp,int) => string  
 end
 
@@ -326,9 +326,7 @@ relation cref_to_path : ComponentRef => Absyn.Path =
   rule	cref_to_path c => p
 	-------------------
 	cref_to_path CREF_QUAL(i,[],c) => Absyn.QUALIFIED(i,p)
-
 end
-
 
 (** relation: path_to_cref
  **
@@ -344,9 +342,9 @@ relation path_to_cref : Absyn.Path => ComponentRef   =
 	path_to_cref Absyn.QUALIFIED(i,p) => CREF_QUAL(i,[],c) 
 end
 
-(** relation: path_string
+(** relation: cref_str
  **
- ** This relation simply converts a `Path' to a `string'.
+ ** This relation simply converts a `ComponentRef' to a `string'.
  **)
 
 relation cref_str: ComponentRef => string =
@@ -360,7 +358,11 @@ relation cref_str: ComponentRef => string =
 	cref_str(CREF_QUAL(s,_,n)) => ss
 end
 
-(* As above but uses '_' instead of '.' *)
+(** relation: cref_modelica_str
+ **
+ ** Same as cre_str, but uses '_' instead of '.' 
+ **)
+
 relation cref_modelica_str : ComponentRef => string =
   axiom	cref_modelica_str(CREF_IDENT(s,_)) => s
   
@@ -370,6 +372,11 @@ relation cref_modelica_str : ComponentRef => string =
 	-------------------------------------
 	cref_modelica_str(CREF_QUAL(s,_,n)) => ss
 end
+
+(** relation: is_range
+ **
+ ** Returns true if expression is a range expression.
+ **)
 
 relation is_range : Exp => bool =
 
@@ -409,28 +416,23 @@ end
  ** Returns true íf an expression is constant 
  ** otherwise false
  **)
+
 relation is_const: Exp => bool =
+
+  axiom	is_const(ICONST(ival)) => true
+
+  axiom	is_const(RCONST(rval)) => true
 
   rule	is_const(e) => res
 	---------------------------
 	is_const(UNARY(op,e)) => res
 
-  rule	
-	----------------------
-	is_const(ICONST(ival)) => true
-
-  rule	(* Due to bug in rml, go trough a cast from int *)
-	
-	---------------------------
-	is_const(RCONST(rval)) => true
-
-  rule	(* Casting to zero is still zero *)
-	is_const(e) => res 
+	(* Casting to zero is still zero *)
+  rule	is_const(e) => res 
 	------------------
 	is_const(CAST(t,e)) => res
 
   axiom	is_const(_) => false
-
 end
 
 (** relation is_not_const
@@ -445,7 +447,11 @@ relation is_not_const: Exp => bool =
 	-----------------
 	is_not_const(e) => nb
 end
-	
+
+(** relation: is_relation
+ **
+ ** Returns true if expression is a relation expression.
+ **)
 
 relation is_relation : (Exp) => bool =
 
@@ -461,6 +467,10 @@ relation is_relation : (Exp) => bool =
   axiom	is_relation(_) => false
 end
 
+(** relation: get_relations
+ **
+ ** Retrieve all relation sub expressions in an expression.
+ **)
 
 relation get_relations : (Exp) => Exp list =
   axiom	get_relations(e as RELATION(_,_,_)) => [e]
@@ -503,16 +513,14 @@ relation get_relations : (Exp) => Exp list =
 	----------------------------------------
 	get_relations(UNARY(_,e)) => rellst
 
-	
-
   axiom	get_relations(_) => []
 end
 
-(** LS:
- ** Replace this with a call to print_component_ref_str
- ** and comparison of the resulting strings, after the _str relations are 
- ** working
+(** relation: join_crefs
+ **
+ ** Join two component references by concatenating them.
  **)
+
 relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
 
   axiom	join_crefs ( CREF_IDENT(id,sub),cr2) => CREF_QUAL(id,sub,cr2)
@@ -521,6 +529,12 @@ relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
 	------------------------
 	join_crefs (CREF_QUAL(id,sub,cr),cr2) => CREF_QUAL(id,sub,cr')
 end 
+
+(** relation: cref_equal
+ **
+ ** Returns true if two component references are equal
+ **)
+
 relation cref_equal : (ComponentRef, ComponentRef) => bool =
 
   rule	n1 = n2 &
@@ -550,7 +564,7 @@ end
 
 (** relation: subscript_equal
  ** 
- ** Returns true if two subscript lists are equal
+ ** Returns true if two subscript lists are equal.
  **)
 
 relation subscript_equal: ( Subscript list, Subscript list) => bool =
@@ -573,6 +587,13 @@ relation subscript_equal: ( Subscript list, Subscript list) => bool =
 
   axiom	subscript_equal(_,_) => false
 end
+
+(** relation: prepend_string_cref
+ **
+ ** Prepend a string to a component reference.
+ ** For qualified named, this means prepending a string to the 
+ ** first identifier.
+ **)
 
 relation prepend_string_cref : (string, ComponentRef) => ComponentRef =
 
@@ -603,12 +624,14 @@ relation extend_cref : (ComponentRef, Ident, Subscript list) => ComponentRef =
 	extend_cref (CREF_QUAL(i1,s1,c), i, s) => CREF_QUAL(i1,s1,c')
 
 end
+
 (** relation: subscript_cref
  **
  ** The 'subscript_cref' relation adds a subscript to the 'ComponentRef'
  ** For instance 'a.b' with subscript 10 becomes 'a.b[10] and 'c.d[1,2] with subscript 
  ** 3,4 becomes 'c.d[1,2,3,4]' 
  **)
+
 relation subscript_cref: (ComponentRef, Subscript list) => ComponentRef	=
 
   rule	list_append(sub,newsub) => newsub'
@@ -1185,9 +1208,11 @@ relation find_pow_factor: (ComponentRef, Exp list) => (Exp, Exp list) =
 end
 
 
-(**
- ** this relatin checks for x+x+x+x and returns (x,4.0)
+(** relation: simplify_binary_add_coeff2
+ **
+ ** This relation checks for x+x+x+x and returns (x,4.0)
  **)
+
  relation simplify_binary_add_coeff2:(Exp) => (Exp, real) =
 
   axiom	simplify_binary_add_coeff2(exp as CREF(_,_)) => (exp, 1.0)
@@ -1216,11 +1241,12 @@ end
        
 end
 
-(**
-** this relation takes an expression X*X*X*X*X and return (X,5.0)
-** to be used for X^5
-**)
-
+(** relation: simplify_binary_mul_coeff2
+ **
+ ** This relation takes an expression X*X*X*X*X and return (X,5.0)
+ ** to be used for X^5.
+ **)
+		 
 relation simplify_binary_mul_coeff2:(Exp) => (Exp, real) =
 
   axiom	simplify_binary_mul_coeff2(e as CREF(cr,_)) => (e, 1.0)
@@ -1258,6 +1284,7 @@ relation simplify_binary_mul_coeff2:(Exp) => (Exp, real) =
 
 end
 (** relation: simplify_asub
+ **
  ** This relation simplifies array subscripts on vector operations
  **)
 		 
@@ -1316,29 +1343,25 @@ relation divide: (Exp,Exp) => Exp =
 end
 
 (** relation: remove_factor
+ **
  ** Remove the factor from the expression (factorize it out)
-**)
+ **)
 relation remove_factor: (Exp, (* factor *)
 			 Exp) (* expr *)
 	=> (Exp) =	(* updated expr *)
 
 
-	  (* factor = expr *)
+	  (* factor = expr, return one *)
   rule  factors(factor) => e1::rest  &
 	factors(expr) => e2s &
 	make_product(e1::rest) => factor1 &
 	make_product(e2s) => expr1 &
-	print_exp_str factor1 => s1 & 
-	print_exp_str expr1 => s2 &
-	print "remove_factor, factor =" & print s1 &
-	print " expr = " & print s2 & print "\n" &
 	Util.list_setdifference_p(e2s,e1::rest,exp_equal) => [] & 
-	print "returning 1 \n" &
 	typeof(e1) => tp &
 	make_const_one(tp) => one
 	----------------------
 	remove_factor(factor,expr) => one
-
+	
   rule  factors(factor) => e1s &
 	factors(expr) => e2s &
 	Util.list_setdifference_p(e2s,e1s,exp_equal) => factors' &
@@ -1358,9 +1381,12 @@ rule	print_exp_str factor => fs &
 end
 
 (** relation: gcd
+ **
  ** Return the greatest common divisor expression from two expressions.
- ** If no common divisor besides a numerical expression can be found, the relation fails.
+ ** If no common divisor besides a numerical expression can be found, the 
+ ** relation fails.
  **)
+
 relation gcd: (Exp, Exp) => Exp =
 
 
@@ -1373,6 +1399,7 @@ relation gcd: (Exp, Exp) => Exp =
 end
 
 (** relation no_factors
+ **
  ** Helper relation to factors.
  ** If a factor list is empty, the expression has no subfactors.
  ** But the complete expression is then a factor for larger expressions,
@@ -1398,12 +1425,12 @@ relation negate: (Exp) => Exp =
 
 end
 
-
 (**  relation: terms
  ** author: PA
  **
  ** Returns the terms of the expression if any as a list of expressiosn
  **)
+
 relation terms: Exp => Exp list =
 
   rule	terms(e1) => f1 &
@@ -1467,8 +1494,10 @@ relation quotient: Exp => (Exp, (* nominator*)
 end
 
 (** relation: factors
+ **
  ** Returns the factors of the expression if any as a list of expressions
  **)
+
 relation factors: Exp => Exp list =
 
   rule	(* Both subexpression has factors*)
@@ -1510,10 +1539,14 @@ relation factors: Exp => Exp list =
 end
 
 (** relation inverse_factors
- ** Takes a list of expressions and returns each expression in the list inversed.
+ **
+ ** Takes a list of expressions and returns each expression in the list 
+ ** inversed.
  ** For example inverse_factors [a,3+b] => [1/a, 1/3+b]
  **)
+
 relation inverse_factors: Exp list => Exp list =
+
   axiom	inverse_factors ([]) => []
 
   rule	inverse_factors(es) => es' &
@@ -1534,9 +1567,11 @@ relation inverse_factors: Exp list => Exp list =
 end
 
 (** relation: make_product
+ **
  ** Takes a list of expressions an makes a product expression multiplying all 
  ** elements in the list.
  **)
+
 relation make_product: (Exp list) => Exp =
 
   axiom	make_product([]) => RCONST(1.0)
@@ -1581,9 +1616,11 @@ end
 
 
 (** relation: make_sum
+ **
  ** Takes a list of expressions an makes a sum expression adding all 
  ** elements in the list.
  **)
+
 relation make_sum: (Exp list) => Exp =
 
   axiom	make_sum([]) => RCONST(0.0)
@@ -1613,6 +1650,7 @@ end
  **
  ** Makes the expression absolute. i.e. non-negative.
  **)
+
 relation abs: (Exp) => Exp =
 
   rule	int_abs(i) => i2 
@@ -1639,6 +1677,7 @@ end
  **
  ** Returns true if type is one of the builtin types.
  **)
+
 relation type_builtin: (Type) => bool =
 
   axiom	type_builtin(INT) => true
@@ -1650,8 +1689,10 @@ relation type_builtin: (Type) => bool =
 end
 
 (** relation typeof
+ **
  ** Retrieves the Type of the Expression
  **)
+
 relation typeof: (Exp) => Type =
   axiom	typeof (ICONST(_)) =>  INT
   axiom	typeof (RCONST(_)) =>  REAL
@@ -1703,6 +1744,11 @@ relation typeof: (Exp) => Type =
   axiom	typeof(END) => OTHER (* Can be any type. *)
 end
 
+(** relation: typeof_op
+ **
+ ** Helper relation to typeof
+ **)
+
 relation typeof_op: Operator => Type =
 
   axiom	typeof_op(ADD(t)) => t
@@ -1733,6 +1779,11 @@ relation typeof_op: Operator => Type =
   axiom	typeof_op(USERDEFINED(t)) => OTHER
 end
 
+(** relation: is_const_one
+ ** 
+ ** Return true if expression is 1
+ **)
+
 relation is_const_one : Exp => bool =
 
   rule	int_real(1) => rval &
@@ -1744,6 +1795,11 @@ relation is_const_one : Exp => bool =
   axiom is_const_one (_) => false
 
 end
+
+(** relation: is_const_minus_one
+ **
+ ** Return true if expression is -1
+**)
 
 relation is_const_minus_one : Exp => bool =
 
@@ -1757,6 +1813,10 @@ relation is_const_minus_one : Exp => bool =
 
 end
 
+(** relation: is_const_zero
+ **
+ ** Return true if expression is 0
+ **)
 
 relation is_const_zero : Exp => bool =
 
@@ -1932,17 +1992,6 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	-------------------
 	simplify_binary(_,DIV(tp),BINARY(e1,DIV(tp2),e2),e3) => e
 
-(*  rule	(* e1 / e2 where e1 and e2 can be factorized with common factor
-	 e.g  a*b/c*a => b/c *)
-	simplify(e1) => e1' &
-	simplify(e2) => e2' &
-	factors(e1') => e1s &
-	factors(e2') => e2s &
-	remove_common_factors(e1s,e2s) => (e1s',e2s') &
-	make_factor_division(e1s',e2s') => res 
-	---------------------------------------
-	simplify_binary(_,DIV(tp),e1,e2) => res*)
-
   rule	is_const_zero (e1) => true &
 	simplify e2 => e2'
 	---------------------------
@@ -2113,6 +2162,7 @@ end
  ** Distributes the pow operator over a list of expressions.
  ** ([e1,e2,..,en] , pow_e) =>  [e1^pow_e, e2^pow_e,..,en^pow_e]
  **)
+
 relation simplify_binary_distribute_pow: (Exp list, Exp) => Exp list =
 
 axiom simplify_binary_distribute_pow([],_) => []
@@ -2127,6 +2177,7 @@ end
 (** relation: create_const_one
  ** Creates a constant value one, given a type INT or REAL
  **)
+
 relation create_const_one:(Type) => Exp =
 
   rule	int_real(1) => realv
@@ -2135,6 +2186,11 @@ relation create_const_one:(Type) => Exp =
 
   axiom	create_const_one(INT) => ICONST(1)
 end
+
+(** relation: simplify_unary
+ **
+ ** Simplifies unary expressions.
+ **)
 
 relation simplify_unary : (Exp, Operator, Exp) => Exp =
 
@@ -2182,13 +2238,11 @@ relation simplify_unary : (Exp, Operator, Exp) => Exp =
 
 end
 
-
-
-
 (** relation: contain_functioncall
  ** Returns true if expression or subexpression is a functioncall.
  ** otherwise false 
 **)
+	    
 relation contain_functioncall : Exp => bool =
 
   axiom	contain_functioncall(CALL(_,_,_,_)) => true
@@ -2289,6 +2343,13 @@ relation contain_functioncall : Exp => bool =
   axiom	contain_functioncall(_) => false
 end
 
+(** relation: unelab_exp
+ **
+ ** Transform an Exp into Absyn.Exp. 
+ ** Note: This relation currently only works for constants and component 
+ ** references.
+ **)
+
 relation unelab_exp : Exp => Absyn.Exp =
 
   axiom	unelab_exp(ICONST(i)) => Absyn.INTEGER(i)
@@ -2301,6 +2362,11 @@ relation unelab_exp : Exp => Absyn.Exp =
 	unelab_exp(CREF(cr,t))=> Absyn.CREF(cr')
 end
 
+(** relation: unelab_cref
+ **
+ ** Helper relation to unelab_exp, handles component references.
+ **)
+
 relation unelab_cref: ComponentRef => Absyn.ComponentRef =
 
   rule	unelab_subscripts(subs) => subs'
@@ -2312,6 +2378,11 @@ relation unelab_cref: ComponentRef => Absyn.ComponentRef =
 	----------------------
 	unelab_cref(CREF_QUAL(id,subs,cr)) => Absyn.CREF_QUAL(id,subs',cr')
 end
+
+(** relation: unelab_subscripts
+ **
+ ** Helper relation to unelab_cref, handles subscripts.
+ **)
 
 relation unelab_subscripts: Subscript list => Absyn.Subscript list =
 	
@@ -2333,7 +2404,12 @@ relation unelab_subscripts: Subscript list => Absyn.Subscript list =
 end
 
 
-(* Only support for indexed subscripts of integers*)
+(** relation: to_exp_cref
+ **
+ ** Translate an Absyn.ComponentRef into a ComponentRef.
+ ** Note: Only support for indexed subscripts of integers
+ **)
+
 relation to_exp_cref: Absyn.ComponentRef => ComponentRef =
 
   rule	to_exp_cref_subs(subs) => subs'
@@ -2345,6 +2421,11 @@ relation to_exp_cref: Absyn.ComponentRef => ComponentRef =
 	-------------------------------
 	to_exp_cref(Absyn.CREF_QUAL(id,subs,cr)) => CREF_QUAL(id,subs',cr')
 end
+
+(** relation: to_exp_cref_subs
+ **
+ ** Helper relation to to_exp_cref.
+ **)
 
 relation to_exp_cref_subs: Absyn.Subscript list => Subscript list =
 	
@@ -2435,6 +2516,11 @@ relation print_component_ref : ComponentRef => () =
 
 end
 
+(** relation: print_component_ref2
+ **
+ ** Helper relation to print_component_ref
+ **)
+
 relation print_component_ref2 =
 
   rule	Print.print_buf s
@@ -2488,6 +2574,11 @@ relation print_exp : Exp => () =
 	print_exp e
 
 end
+
+(** relation: print_exp2
+ **
+ ** Helper relation to print_exp.
+ **)
 
 relation print_exp2 : (Exp,int) => () =
 	
@@ -2658,8 +2749,12 @@ relation print_exp2 : (Exp,int) => () =
 
 end
 
-
-relation print_leftpar : (int,int) => int =
+(** relation: print_leftpar
+ **
+ ** Print a left paranthesis if priorities require it.
+ **)
+	    
+relation print_leftpar : (int(* prio1 *),int (* prio2 *)) => int =
 
   rule	int_gt(x,y) => true & Print.print_buf "("
 	-----------------------
@@ -2669,7 +2764,12 @@ relation print_leftpar : (int,int) => int =
 
 end
 
-relation print_rightpar : (int,int) => () =
+(** relation: print_leftpar
+ **
+ ** Print a left paranthesis if priorities require it.
+ **)
+
+relation print_rightpar : (int (* prio1 *),int (* prio2 *)) => () =
 
   rule	int_gt(x,y) => true & Print.print_buf ")"
 	-----------------------
@@ -2680,28 +2780,33 @@ relation print_rightpar : (int,int) => () =
 end
 
 
-(* LS: Changed precedence for unary +-
-   which must be higher than binary operators but lower than power
-   according to e.g. matlab *)
 
-(* LS: Changed precedence for binary - , should be higher than + and also
-   itself, but this is specially handled in print_exp2 and print_exp2_str *)
 
-(* priorities:
- *
- *   and, or		10
- *   not		11
- *   <, >, =, != etc.	21
- *   bin +		32
- *   bin -		33
- *   *			35
- *   /			36
- *   unary +, unary -	37
- *   ^			38
- *   :			41
- *   []			51
- *
- *)
+(** relation: binop_priority
+ **
+ ** Returns a priority number for each operator. Used to determine when
+ ** parenthesis in expressions is required.
+ ** priorities:
+ **
+ **   and, or		10
+ **   not		11
+ **   <, >, =, != etc.	21
+ **   bin +		32
+ **   bin -		33
+ **   *			35
+ **   /			36
+ **   unary +, unary -	37
+ **   ^			38
+ **   :			41
+ **   []		51
+ **
+ ** LS: Changed precedence for unary +-
+ **  which must be higher than binary operators but lower than power
+ **  according to e.g. matlab 
+ **
+ ** LS: Changed precedence for binary - , should be higher than + and also
+ **  itself, but this is specially handled in print_exp2 and print_exp2_str 
+ **)
 
 relation binop_priority : Operator => int =
   axiom	binop_priority(ADD(_))    	      	 => 32
@@ -2718,20 +2823,39 @@ relation binop_priority : Operator => int =
   axiom	binop_priority(POW(_))   	      	 => 38
 end
 
+(** relation: unaryop_priority
+ **
+ ** Determine unary operator priorities, see binop_priority.
+ **)
+
 relation unaryop_priority : Operator => int =
   axiom	unaryop_priority(UMINUS(_))   => 37
   axiom	unaryop_priority(UPLUS(_))    => 37
 end
+
+(** relation: lbinop_priority
+ **
+ ** Determine logical binary operator priorities, see binop_priority.
+ **)
 
 relation lbinop_priority : Operator => int =
   axiom	lbinop_priority(AND) => 10
   axiom	lbinop_priority(OR) => 10
 end
 
+(** relation: lunaryop_priority
+ **
+ ** Determine logical unary operator priorities, see binop_priority.
+ **)
+
 relation lunaryop_priority : Operator => int =
   axiom	lunaryop_priority(NOT) => 11
 end
 
+(** relation: relop_priority
+ **
+ ** Determine relation operator priorities, see binop_priority.
+ **)
 relation relop_priority : Operator => int =
   axiom	relop_priority(LESS(_))       => 21
   axiom	relop_priority(LESSEQ(_))     => 21
@@ -2740,8 +2864,6 @@ relation relop_priority : Operator => int =
   axiom	relop_priority(EQUAL(_))      => 21
   axiom	relop_priority(NEQUAL(_))     => 21
 end
-
-(**)
 
 (** relation: make_real_add
  ** Construct an add node of the two expressions of type REAL
@@ -2752,6 +2874,7 @@ relation make_real_add: (Exp, Exp) => Exp =
 end
 
 (** relation: make_real_array
+ **
  ** Construct an array node of an Exp list of type REAL
  **)
 relation make_real_array: (Exp list) => Exp =
@@ -2760,8 +2883,13 @@ relation make_real_array: (Exp list) => Exp =
 
 end
 
+(** relation: binop_symbol
+ **
+ ** Return a string representation of the Operator.
+ **)
+	    
 relation binop_symbol : Operator => string =
-
+	
   rule	RTOpts.typeinfo => false &
 	binop_symbol_1 op => s
 	----------------------
@@ -2774,8 +2902,11 @@ relation binop_symbol : Operator => string =
 
 end
 
-(**)
-
+(** relation: binop_symbol_1
+ **
+ ** Helper relation to binop_symbol
+ **)
+	    
 relation binop_symbol_1 : Operator => string =
   axiom	binop_symbol_1(ADD(_)) => " + "
   axiom	binop_symbol_1(SUB(_)) => " - "
@@ -2789,24 +2920,12 @@ relation binop_symbol_1 : Operator => string =
   axiom	binop_symbol_1(MUL_SCALAR_PRODUCT(_)) => " * "
   axiom	binop_symbol_1(MUL_MATRIX_PRODUCT(_)) => " * "
   axiom	binop_symbol_1(DIV_ARRAY_SCALAR(_)) => " / "
-
-(*
-  rule	int_string dim => s1 &
-	string_append(" <int[",s1) => s2 &
-	string_append(s2,"] *> ") => s3
-	-------------------------------
-	binop_symbol(INT_ARRAY_SCALAR_MUL(dim)) => s3
-
-  rule	int_string dim => s1 &
-	string_append(" <real[",s1) => s2 &
-	string_append(s2,"] *> ") => s3
-	-------------------------------
-	binop_symbol(REAL_ARRAY_SCALAR_MUL(dim)) => s3
-
-  axiom	binop_symbol(_) => " <unknown binop> "
-*)
-
 end
+
+(** relation: binop_symbol_2
+ **
+ ** Helper relation to binop_symbol.
+ **)
 
 relation binop_symbol_2 : Operator => string =
   rule	type_string t => ts &
@@ -2834,37 +2953,41 @@ relation binop_symbol_2 : Operator => string =
   axiom	binop_symbol_2(MUL_MATRIX_PRODUCT(_)) => " * "
   axiom	binop_symbol_2(DIV_ARRAY_SCALAR(_)) => " / "
 
-(*
-  rule	int_string dim => s1 &
-	string_append(" <int[",s1) => s2 &
-	string_append(s2,"] *> ") => s3
-	-------------------------------
-	binop_symbol(INT_ARRAY_SCALAR_MUL(dim)) => s3
-
-  rule	int_string dim => s1 &
-	string_append(" <real[",s1) => s2 &
-	string_append(s2,"] *> ") => s3
-	-------------------------------
-	binop_symbol(REAL_ARRAY_SCALAR_MUL(dim)) => s3
-
-  axiom	binop_symbol(_) => " <unknown binop> "
-*)
-
 end
+
+(** relation: unaryop_symbol
+ **
+ ** Return string representation of unary operators.
+ **)
 
 relation unaryop_symbol : Operator => string =
   axiom	unaryop_symbol(UMINUS(_)) => "-"
   axiom	unaryop_symbol(UPLUS(_)) => "+"
 end
 
+(** relation: lbinop_symbol
+ **
+ ** Return string representation of logical binary operator.
+**)
+
 relation lbinop_symbol : Operator => string =
   axiom	lbinop_symbol(AND) => " AND "
   axiom	lbinop_symbol(OR) => " OR "
 end
 
+(** relation: lunaryop_symbol
+ **
+ ** Return string representation of logical unary operator.
+**)
+
 relation lunaryop_symbol : Operator => string =
   axiom	lunaryop_symbol(NOT) => " NOT "
 end
+
+(** relation: relop_symbol
+ **
+ ** Return string representation of relation operator.
+**)
 
 relation relop_symbol : Operator => string =
   axiom	relop_symbol(LESS(_))       => " < "
@@ -2874,6 +2997,12 @@ relation relop_symbol : Operator => string =
   axiom	relop_symbol(EQUAL(_))      => " == "
   axiom	relop_symbol(NEQUAL(_))     => " <> "
 end
+
+(** relation: print_list
+ **
+ ** Print a list of values given a print-relation and a separator
+ ** string.
+ **)
 
 relation print_list : ('a list, 'a => (), string) => () =
 
@@ -2889,7 +3018,10 @@ relation print_list : ('a list, 'a => (), string) => () =
 
 end
 
-(**)
+(** relation: print_row
+ **
+ ** Print a list of expressions to the Print buffer.
+ **)
 
 relation print_row : (Exp*bool) list =>() =
 
@@ -2899,9 +3031,6 @@ relation print_row : (Exp*bool) list =>() =
 	print_row es
 
 end
-
-(*!includecode*)
-
 
 
 (******************************************************************)
@@ -2948,6 +3077,11 @@ relation print_component_ref_str : ComponentRef => string =
 
 end
 
+(** relation: print_component_ref2_str
+ **
+ ** Helper relation to print_component_ref_str.
+ **)
+
 relation print_component_ref2_str : (Ident, Subscript list) => string =
 
   axiom	print_component_ref2_str (s,[]) => s
@@ -2993,8 +3127,6 @@ relation print_list_str : ('a list, 'a => string, string) => string =
 
 end
 
-
-
 (** relation: print_subscript_str
  **
  ** Print a `Subscript'.
@@ -3014,7 +3146,6 @@ relation print_subscript_str: Subscript => string =
 	
 end
 
-
 (** relation: print_exp_str
  **
  ** This relation prints a complete expression.
@@ -3028,6 +3159,10 @@ relation print_exp_str : Exp => string =
 
 end
 
+(** relation: print_exp2_str
+ **
+ ** Helper relation to print_exp_str.
+ **)
 
 relation print_exp2_str : (Exp,int) => string =
 	
@@ -3256,6 +3391,11 @@ relation print_exp2_str : (Exp,int) => string =
 
 end
 
+(** relation: print_row_str
+ **
+ ** Prints a list of expressions to a string.
+ **)
+
 relation print_row_str : (Exp*bool) list => string =
 
   rule	Util.list_map (es,Util.tuple2_1) => es' &
@@ -3266,7 +3406,13 @@ relation print_row_str : (Exp*bool) list => string =
 end
 
 
-relation print_leftpar_str : (int,int) => (string, int) =
+(** relation: print_leftpar_str
+ **
+ ** Print a left parenthesis to a string if priorities require it.
+ **)
+
+relation print_leftpar_str : (int (* prio1 *),int (* prio2 *)) 
+ => (string, int) =
 
   rule	int_gt(x,y) => true
 	-----------------------
@@ -3275,6 +3421,11 @@ relation print_leftpar_str : (int,int) => (string, int) =
   axiom	print_leftpar_str (pri1,pri2) => ("", pri2)
 
 end
+
+(** relation: print_rightpar_str
+ **
+ ** Print a right parenthesis to a string if priorities require it.
+ **)
 
 relation print_rightpar_str : (int,int) => string =
 
@@ -3285,6 +3436,11 @@ relation print_rightpar_str : (int,int) => string =
   axiom	print_rightpar_str (_,_) => ""
 
 end
+
+(** relation: exp_equal
+ **
+ ** Returns true if the two expressions are equal.
+ **)
 
 relation exp_equal: (Exp,Exp) => bool =
 
@@ -3425,6 +3581,11 @@ relation exp_equal: (Exp,Exp) => bool =
   axiom	exp_equal(_,_) => false
 end
 
+(** relation: operator_equal
+ **
+ ** Helper relation to exp_equal.
+ **)
+
 relation operator_equal: (Operator,Operator) => bool =
 
   axiom	operator_equal(ADD(_),ADD(_)) => true
@@ -3458,11 +3619,17 @@ relation operator_equal: (Operator,Operator) => bool =
   axiom	operator_equal(_,_) => false
 end
 
-(* Replaces an expression with a list of several expressions. 
- NOTE: Not repreteadly applied, so the source and target lists must be disjunct
- Useful for instance when replacing several variables at once in an expression. 
- *)
- relation replace_exp_list: (Exp (*expr*), Exp list (* source list*), Exp list (* target list*))
+(** relation: replace_exp_list.
+ **
+ ** Replaces an expression with a list of several expressions. 
+ ** NOTE: Not repreteadly applied, so the source and target lists must be 
+ ** disjunct Useful for instance when replacing several variables at once 
+ ** in an expression. 
+ **)
+
+ relation replace_exp_list: (Exp (*expr*), 
+			     Exp list (* source list*), 
+			     Exp list (* target list*))
 	  => (Exp,int) =
 
   axiom	replace_exp_list(e,[],[]) => (e,0)
@@ -3473,6 +3640,11 @@ end
 	----------------------------------------
 	replace_exp_list(e,s1::sr,t1::tr) => (e'',c)
 end
+
+(** relation: replace_exp
+ **
+ ** Helper relation to replace_exp_list.
+ **)
 
 relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*)) 
 	  => (Exp,int) =
@@ -3595,14 +3767,14 @@ relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*))
 	replace_exp(REDUCTION(p,e,id,r),source,target) 
 	  => (REDUCTION(p,e',id,r'),c)
 
-(*  rule	print "WARNING WARNING replace_exp failed for Exp:" & 
-	print_exp_str e => es & print es & print " source: " &
-	print_exp_str s => ss & print ss & print "\n" 
-	------------------------------
-	replace_exp(e,s,_) => (e,0)*)
  axiom	replace_exp(e,s,_) => (e,0)
 end
 
+(** relation: stringify_component_ref
+ **
+ ** Translates a ComponentRef into a CREF_IDENT by putting the string
+ ** representation of the ComponentRef into it. See also stringigy_crefs.
+ **)
 
 relation stringify_component_ref: ComponentRef => ComponentRef =
 	
@@ -3612,11 +3784,13 @@ relation stringify_component_ref: ComponentRef => ComponentRef =
 end
 
 (** relation: stringify_crefs
- ** This relation takes an expression and transforms all component reference names
- ** contained in the expression to a simpler form.
+ **
+ ** This relation takes an expression and transforms all component reference 
+ ** names contained in the expression to a simpler form.
  ** For instance CREF_QUAL("a",[], CREF_IDENT("b",[])) becomes
  ** CREF_IDENT("a.b",[])
  **)
+
 relation stringify_crefs: Exp => Exp =
 
   axiom	stringify_crefs(e as ICONST(_)) => e
@@ -3713,9 +3887,10 @@ relation stringify_crefs: Exp => Exp =
   axiom	stringify_crefs (e) => e
 end
 
-
-
-
+(** relation: dump_exp_graphviz
+ **
+ ** Creates a Graphviz Node from an Expression.
+ **)
 
 relation dump_exp_graphviz : Exp => Graphviz.Node =
 	
@@ -3838,8 +4013,11 @@ relation dump_exp_graphviz : Exp => Graphviz.Node =
 
 end
 
-
-relation gen_string_n_time:(string,int) => string =
+(** relation:get_string_n_time
+**
+ ** Appends the string to itself n times.
+ **)
+relation gen_string_n_time:(string,int(* n *)) => string =
 
   axiom gen_string_n_time(str,0) => ""
         
@@ -3852,6 +4030,10 @@ relation gen_string_n_time:(string,int) => string =
 
 end
 
+(** relation: dump_exp_str
+ **
+ ** Dumps expression to a string.
+ **)
 
 relation dump_exp_str : (Exp,int) => string  =
 	
@@ -4057,23 +4239,28 @@ relation dump_exp_str : (Exp,int) => string  =
 
 end
 
-(* Solves an equation consisting of a right hand side (rhs) and a left hand side (lhs),
- with respect to the expression given as third argument, usually a variable. *)
+(** relation: solve
+ **
+ ** Solves an equation consisting of a right hand side (rhs) and a left hand 
+ ** side (lhs), with respect to the expression given as third argument, 
+ ** usually a variable. 
+ **)
+
 relation solve : (Exp, (* lhs *)
 		  Exp, (* rhs *)
 		  Exp) (* solve for *)
 	  => Exp =
 
-  rule	(* Special case when already solved, otherwise division by zero 
-	 when dividing with derivative *)
-	cref_equal(cr1,cr2) => true &
+	  (** Special case when already solved, cr1 = rhs
+	   ** otherwise division by zero when dividing with derivative *)
+  rule	cref_equal(cr1,cr2) => true &
 	exp_contains (rhs,crexp) => false 
 	---------------------------------
 	solve (crexp as CREF(cr1,_), rhs, CREF(cr2,_)) => rhs
-
-  rule	(* Special case when already solved, otherwise division by zero 
-	 when dividing with derivative *)
-	cref_equal(cr1,cr2) => true &
+	
+	(* Special case when already solved, lhs = cr1
+	 ** otherwise division by zero  when dividing with derivative *)
+  rule	cref_equal(cr1,cr2) => true &
 	exp_contains (lhs,crexp) => false 
 	---------------------------------
 	solve (lhs, crexp as CREF(cr1,_), CREF(cr2,_)) => lhs
@@ -4094,8 +4281,10 @@ relation solve : (Exp, (* lhs *)
 end
 
 (** relation: solve2
+ **
  ** This relation solves an equation e1 = e2 with respect to the variable
- ** given as an expression e3 *)
+ ** given as an expression e3 
+ **)
 relation solve2 : ( Exp (*e1*), Exp (*e2*), Exp(*e3*)) => Exp =
 
   rule	let lhs = BINARY(e1, SUB(REAL), e2) &
@@ -4203,17 +4392,13 @@ relation get_terms_containing_x : (Exp, Exp) => (Exp, Exp) =
 
 end
 
-relation print_bool : bool => () =
-
-  rule	Util.if (b, "true", "false") => str &
-	Print.print_buf str
-	-----------------------------------
-	print_bool b
-
-end	
-
-(* Only component references can be checked so far,
-   i.e. check whether an expression contains a given component reference *)
+(** relation: exp_contains
+ ** 
+ ** Returns true if first expression contains the second one as a sub
+ ** expression.
+ ** Only component references can be checked so far,
+ **  i.e. check whether an expression contains a given component reference 
+ **)
 
 relation exp_contains : (Exp, Exp) => bool =
 
@@ -4285,10 +4470,14 @@ relation exp_contains : (Exp, Exp) => bool =
 	Print.print_buf "\n"
         ----------------------------------
 	exp_contains (e, cr) => fail
-
-
 end
 
+
+(** relation: get_cref_from_exp
+ **
+ ** Return a list of all component references occuring in the
+ ** expression.
+ **)
 
 relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 
@@ -4379,8 +4568,10 @@ end
 
 
 (** relation: get_function_calls_list
+ **
  ** calls get_function_calls for a list of exps
  **)
+
 relation get_function_calls_list : Exp list => Exp list =
 
   rule	Util.list_map(exps, get_function_calls) => explists &
@@ -4389,14 +4580,14 @@ relation get_function_calls_list : Exp list => Exp list =
 	get_function_calls_list exps => res
 end
 
-
-
 (** relation: get_function_calls
+ **
  ** Return all exps that are function calls.
  ** Inner call exps are returned separately but not extracted from the exp they
  ** are in, e.g. CALL(foo, [CALL(bar)]) will return
  ** [CALL(foo, [CALL(bar)]), CALL(bar,[])]
  **)
+
 relation get_function_calls : Exp => Exp list =
 
   rule	get_function_calls_list args => argexps &
@@ -4477,4 +4668,3 @@ relation get_function_calls : Exp => Exp list =
  axiom	get_function_calls(_) => []
 
 end
-

@@ -182,19 +182,6 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__vector_5fsetnth)
-  {
-    void* vec = rmlA0;
-    int pos = RML_UNTAGFIXNUM(rmlA1);
-    int val = RML_UNTAGFIXNUM(rmlA2);
-    if ( pos >= RML_HDRSLOTS(RML_GETHDR(vec)) ) {
-      RML_TAILCALLK(rmlFC);
-    }
-    ((int*)RML_STRUCTDATA(vec))[pos]=val;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-
   RML_BEGIN_LABEL(DAEEXT__init_5fv)
   {
     int size = RML_UNTAGFIXNUM(rmlA1);

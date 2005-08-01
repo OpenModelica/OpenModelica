@@ -129,24 +129,12 @@ module ModUtil :
   relation opt_path_string: Absyn.Path option => string
   relation path_string2: (Absyn.Path, string) => string
 
-  relation string_prefix_component_refs : (string, 
-					   (Exp.ComponentRef, 'b) => (), 
-					   'b, 
-					   Exp.Exp list) => Exp.Exp list
 
-  relation string_prefix_component_ref : (string, 
-					  (Exp.ComponentRef, 'b) => (), 
-					  'b, 
-					  Exp.Exp) => Exp.Exp
-
-  relation string_prefix_elements : (string, 
-				     DAE.Element list, 
-				     DAE.Element list) => DAE.Element list
 
   relation string_prefix_params : DAE.DAElist => DAE.DAElist
 
   relation path_equal : (Absyn.Path, Absyn.Path) => bool
-  relation path_subsuffix_equal : (Absyn.Path, Absyn.Path) => bool
+
 end
 
 with "RTOpts.rml"
@@ -164,8 +152,6 @@ relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b)
 	----------------------------------------------
 	string_prefix_component_refs (str, r, rarg, e::rest) => e'::res
 end
-
-
 relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b) 
 					=> (), 'b, Exp.Exp) 
 	  => Exp.Exp =
@@ -265,7 +251,6 @@ relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b)
   axiom	string_prefix_component_ref (str, r, rarg, e) => e
 
 end
-
 relation string_prefix_component_refs_list : 
 	(string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list list) => Exp.Exp list list =
 
@@ -277,7 +262,6 @@ relation string_prefix_component_refs_list :
 	string_prefix_component_refs_list (str, r, rarg, el::rest) => el'::res
 
 end
-
 relation string_prefix_cref : (string, Exp.ComponentRef) 
 	  => Exp.ComponentRef =
 
@@ -291,8 +275,6 @@ relation string_prefix_cref : (string, Exp.ComponentRef)
 	  => Exp.CREF_QUAL(s', si, cr)
 
 end
-
-
 relation string_prefix_elements : (string, DAE.Element list, DAE.Element list) 
 	  => DAE.Element list =
 
@@ -304,7 +286,6 @@ relation string_prefix_elements : (string, DAE.Element list, DAE.Element list)
 	string_prefix_elements (str, dae, el::rest) => el'::res
 
 end
-
 relation string_prefix_element : (string, DAE.Element list, DAE.Element) 
 	  => DAE.Element =
 
@@ -350,8 +331,6 @@ relation string_prefix_element : (string, DAE.Element list, DAE.Element)
   axiom	string_prefix_element (str, dae, e) => e
 
 end
-
-
 relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
 
   rule	Exp.cref_equal (cr, crv) => true
@@ -367,7 +346,6 @@ relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
 	is_parameter_daelist (cr, e::rest)
 
 end
-
 relation string_prefix_params : DAE.DAElist => DAE.DAElist =
 
   rule	string_prefix_elements ("params->", dae, dae) => dae'
@@ -376,51 +354,10 @@ relation string_prefix_params : DAE.DAElist => DAE.DAElist =
 
 end
 
-
-relation get_component_ref_next : Exp.ComponentRef => Exp.ComponentRef =
-
-  axiom	get_component_ref_next Exp.CREF_QUAL(n, sl, cr) => cr
-  rule	Print.print_buf "#-- Cannot get subname of an unqualified component reference\n" &
-	Exp.print_component_ref cr
-	----------------------------------------------------------------------
-	get_component_ref_next (cr as Exp.CREF_IDENT(n, sl)) => fail
-
-end
-
-relation get_var_value_expr : (DAE.Element list, Exp.ComponentRef) 
-	  => Exp.Exp =
-
-  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, NONE,_,_,_,_,_,_)) &
-	Print.print_buf "#-- get_var_value_expr: Warning: Variable is not initialized\n" &
-	Exp.print_component_ref cr & Print.print_buf "\n"
-	---------------------------------------------------------
-	get_var_value_expr (dae, cr) => Exp.SCONST("UNDEF")
-
-
-  rule	find_var (dae, cr) => SOME(DAE.VAR(cr2, vk, vd, ty, SOME(value),_,_,_,_,_,_))
-	---------------------------------------------------------
-	get_var_value_expr (dae, cr) => value
-
-  rule	Print.print_buf "#-- get_var_value_expr: Error: Variable not found\n" &
-	Exp.print_component_ref cr & Print.print_buf "\n"
-	---------------------------------------
-	get_var_value_expr (dae, cr) => fail
-
-end
-
-
-relation print_exp_no_funcall : Exp.Exp => () =
-
-  rule	path_string(fcn) => fs &
-	Print.print_buf fs
-	--------
-	print_exp_no_funcall Exp.CALL(fcn, args,_,_)
-
-  rule	Exp.print_exp e
-	---------------
-	print_exp_no_funcall e
-	
-end
+(** relation: opt_path_string
+ **
+ ** Prints a Path option to a string.
+ **)
 
 relation opt_path_string: Absyn.Path option => string =
 
@@ -430,6 +367,11 @@ relation opt_path_string: Absyn.Path option => string =
 	-----------------
 	opt_path_string(SOME(p)) => str
 end
+
+(** relation: path_string
+ **
+ ** Prints a Path to a string.
+ **)
 
 relation path_string: Absyn.Path => string =
 
@@ -445,6 +387,10 @@ relation path_string: Absyn.Path => string =
 	
 end
 
+(** relation: path_string2
+ **
+ ** Helper relation to path_string.
+ **)
 
 relation path_string2: (Absyn.Path, string) => string =
 
@@ -458,23 +404,10 @@ relation path_string2: (Absyn.Path, string) => string =
 	
 end
 
-
-
-
-relation find_var : (DAE.Element list, Exp.ComponentRef) => DAE.Element option =
-
-  axiom	find_var ([], _) => NONE
-
-  rule	Exp.cref_equal (cr1, cr2) => true
-	--------------------
-	find_var ((e as DAE.VAR(cr1, vk, vd, ty, value,_,_,_,_,_,_))::rest, cr2) => SOME(e)
-
-  rule	find_var (rest, cr) => e'
-	----------------------------
-	find_var (_::rest, cr) => e'
-
-end
-
+(** relation: path_equal
+ **
+ ** Returns true if two paths are equal.
+ **)
 
 relation path_equal : (Absyn.Path, Absyn.Path) => bool =
 
@@ -497,28 +430,4 @@ relation path_equal : (Absyn.Path, Absyn.Path) => bool =
 
   axiom	path_equal (_,_) => false
 
-end
-
-(* This relation returns true if the first argument is a sub suffix of the second argument.*)
-(* Examples:
- path_subsuffix_equal(A.B, X.Y.A.B) => true
- path_subsuffix_equal(A.B.C, X.Y.A.B) => false
-*)
-relation path_subsuffix_equal : (Absyn.Path, Absyn.Path) => bool =
-
-  rule	Absyn.path_last_ident(p1) => p1str &
-	Absyn.path_last_ident(p2) => p2str &
-	p1str = p2str &
-	Absyn.strip_last(p1) => p1' &
-	Absyn.strip_last(p2) => p2' &
-	path_subsuffix_equal(p1',p2') => res
-	------------------------------------
-	path_subsuffix_equal(p1 as Absyn.QUALIFIED(_,_), p2 as Absyn.QUALIFIED(_,_)) => res
-
-  rule	Absyn.path_last_ident(p2) => p2str &
-	id1 = p2str 
-	-------------
-	path_subsuffix_equal(p1 as Absyn.IDENT(id1), p2) => true
-
-  axiom	path_subsuffix_equal(_,_) => false
 end

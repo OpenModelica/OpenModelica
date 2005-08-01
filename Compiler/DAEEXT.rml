@@ -117,32 +117,149 @@
 module DAEEXT:
   
 
-  relation init_marks: (int,int) => () (* sets v_mark(i), e_mark(i) to false *)
-  relation e_mark: (int) => () (* sets e_mark(i) to true *)
-  relation get_e_mark: (int) => bool (* returns e_mark(i) *) 
-  relation v_mark: (int) => () (* sets v_mark(i) to true *)
+(** relation: init_marks
+ **
+ ** sets v_mark(i), e_mark(i) to false 
+ **)
+
+  relation init_marks: (int,int) => () 
+
+(** relation: e_mark
+ **
+ ** sets e_mark(i) to true,
+ **)
+
+relation e_mark: (int) => () (*  *)
+
+(** relation: get_e_mark
+ **
+ ** returns e_mark(i) 
+ **)
+
+  relation get_e_mark: (int) => bool 
+
+(** relation: v_mark
+ **
+ ** sets v_mark(i) to true,
+ **)
+  relation v_mark: (int) => () 
+
+(** relation: get_v_mark
+ **
+ ** returns v_mark(i).
+ **)
+
   relation get_v_mark: (int) => bool (* returns e_mark(i) *)
+
+(** relation: get_marked_eqns
+ **
+ ** returns all i for which e_mark(i) == true
+ **)
+
   relation get_marked_eqns:() => int list 
+
+(** relation: get_marked_variables
+ **
+ ** returns all i for which v_mark(i) == true
+ **)
+
   relation get_marked_variables:() => int list 
+
+(** relation: dump_marked_equations
+ **
+ ** Prints all marked equations.
+ **)
+
   relation dump_marked_equations: (int) => ()
+
+(** relation: dump_marked_variables
+ **
+ ** Prints all marked equations.
+ **)
+
   relation dump_marked_variables: (int) => ()
 
+(** relation: init_lowlink
+ **
+ ** initializes lowlink vector to n elements.
+ **)
+
   relation init_lowlink: int => ()
+
+(** relation: init_number
+ **
+ ** initializes number vector to n elements.
+ **)
+
   relation init_number: int => ()
+
+(** relation: set_lowlink
+ **
+ ** set lowlink vector elt.
+ **)
+
   relation set_lowlink: (int,int) => ()
+
+(** relation: get_lowlink
+ **
+ ** get lowlink vector elt.
+ **)
   relation get_lowlink: (int) => int
+
+(** relation: set_number
+ **
+ ** set number vector elt.
+ **)
+
   relation set_number: (int,int) => ()
+
+(** relation: get_number
+ **
+ ** get number vector elt.
+ **)
+
   relation get_number: (int) => int
 
+(** relation: init_v
+ **
+ ** initialize v vector.
+ **)
+
   relation init_v: (int) => ()
+
+(** relation: init_v
+ **
+ ** initialize f vector.
+ **)
+
   relation init_f: (int) => ()	  
+
+(** relation: set_v
+ **
+ ** set v vector element.
+ **)
+
   relation set_v: (int,int) => ()
+
+(** relation: get_v
+ **
+ ** get v vector element.
+ **)
+
   relation get_v: (int) => (int) 
 
+(** relation: set_f
+ **
+ ** set f vector element.
+ **)
   relation set_f: (int,int) => ()
-  relation get_f: (int) => (int) 
 
-  relation vector_setnth: (int vector,int,int) => ()
+(** relation: get_f
+ **
+ ** get f vector element.
+ **)
+
+  relation get_f: (int) => (int) 
 	  
 end 
 

@@ -103,18 +103,13 @@
     See http://www.ida.liu.se/~pelab/modelica/OpenModelica.html
 *)
 (**
- ** file:	 Dump.rml
- ** module:      Dump
- ** description: debug printing
+ ** file:	 DumpGraphviz.rml
+ ** module:      DumpGraphviz
+ ** description: Dumps the AST to a graph representation that can be read
+ **		 by the graphviz tool.
  **
  ** RCS: $Id$
  **
- ** Printing routines for debugging of the AST.  These relations do
- ** nothing but print the data structures to the standard output.
- **
- ** The implementation of the relations are excluded from the report,
- ** as they occupy a lot of space and do not convey any useful
- ** semantic information.
  **)
 
 
@@ -142,6 +137,12 @@ with "Dump.rml"
 
 (* Relations *)
 
+
+(** relation: dump
+ **
+ ** Dumps a Program to a Graphviz graph.
+ **)
+
 relation dump : Absyn.Program => () =
 	
   rule	(* print "> Beginning of rule dump\n" & *)
@@ -152,6 +153,10 @@ relation dump : Absyn.Program => () =
 	dump p 
 end
 
+(** relation: build_graphviz
+ **
+ ** Build the graphviz graph for a Program.
+ **)
 
 relation build_graphviz : Absyn.Program => Node =
 
@@ -160,9 +165,12 @@ relation build_graphviz : Absyn.Program => Node =
 	(* & print "> End of rule build_graphviz\n" *)
 	----------------------
 	build_graphviz(Absyn.PROGRAM(cs,_)) => Graphviz.NODE("ROOT",[],nl)
-
 end
 
+(** relation: print_classes
+ **
+ ** Creates Nodes from a Class list.
+ **)
 
 relation print_classes : Absyn.Class list => Node list =
 
@@ -177,6 +185,11 @@ relation print_classes : Absyn.Class list => Node list =
 
 end
 
+(** relation: print_class
+ **
+ ** Creates a Node for a Class.
+ **)
+
 relation print_class: Absyn.Class => Node =
 
   rule	(* print "> Beginning of rule print_class\n" & *)
@@ -188,33 +201,34 @@ relation print_class: Absyn.Class => Node =
 
 end
 
+(** relation: print_parts
+ **
+ ** Creates a Node list from a ClassPart list.
+ **)
 
 relation print_parts : Absyn.ClassPart list => Node list =
 
   axiom print_parts [] => []
 	
-  rule	(* print "> Beginning of rule print_parts\n" & *)
-	print_class_part(c) => node &
+  rule	print_class_part(c) => node &
 	print_parts cs => nl
-	(* & print "> End of rule print_parts\n" *)
 	-----------------------------
 	print_parts c::cs => node::nl
 end
 
-(**)
+(** relation: print_class_part
+ ** 
+ ** Creates a Node from A ClassPart.
+ **)
 
 relation print_class_part: Absyn.ClassPart => Node =
 
-  rule	(* print "> Beginning of rule print_class_part\n" & *)
-	print_elementitems el => nl
-	(* & print "> End of rule print_class_part\n" *)
+  rule	print_elementitems el => nl
 	-----------------------
 	print_class_part(Absyn.PUBLIC(el)) => Graphviz.NODE("PUBLIC",[],nl)
 
 
-  rule	(* print "> Beginning of rule print_class_part\n" & *)
-	print_elementitems el => nl
-	(* & print "> End of rule print_class_part\n" *)
+  rule	print_elementitems el => nl
 	-----------------------
 	print_class_part(Absyn.PROTECTED(el)) => Graphviz.NODE("PROTECTED",[],nl)
 
@@ -227,12 +241,6 @@ relation print_class_part: Absyn.ClassPart => Node =
 	------------------------
 	print_class_part(Absyn.ALGORITHMS(eqs)) => Graphviz.NODE("ALGORITHMS",[],nl)
 
-(*
-  rule	print_constraints eqs => nl
-	------------------------
-	print_class_part(Absyn.CONSTRAINTS(eqs)) => Graphviz.NODE("CONSTRAINTS",[],nl)
-*)
-
 
   rule	(* print "> Error in print_class_part\n" *)
 	print ""
@@ -241,7 +249,10 @@ relation print_class_part: Absyn.ClassPart => Node =
 end
 
 
-(**)
+(** relation: print_elementitems
+ **
+ ** Creates a Node list from ElementItem list.
+ **)
 
 
 relation print_elementitems: Absyn.ElementItem list => Node list =
@@ -252,31 +263,39 @@ relation print_elementitems: Absyn.ElementItem list => Node list =
 	-----------------------------
 	print_elementitems (Absyn.ANNOTATIONITEM(_)::el) => nl
 
-  rule	(* print "> Beginning of rule print_elements\n" & *)
-	print_element e => node &
+  rule	print_element e => node &
 	print_elementitems el => nl
-	(* & print "> End of rule print_elements\n" *)
 	--------------------------
 	print_elementitems (Absyn.ELEMENTITEM(e)::el) => node::nl
 end
 
-(**)
+(** relation: make_bool_attr
+ **
+ ** Create an Attribute from a bool value and a description string.
+ **)
 
 relation make_bool_attr: (string,bool) => Graphviz.Attribute =
 
-  rule	select_string(flag,"true","false") => s
+  rule	Dump.select_string(flag,"true","false") => s
 	---------------------------------------
 	make_bool_attr (str,flag) => Graphviz.ATTR(str,s)
 
 end
 
+(** relation: make_leaf
+ **
+ ** Create a leaf Node from a string an a list of attributes.
+ **)
 relation make_leaf: (string, Graphviz.Attribute list) => Node =
 
   axiom	make_leaf (str, al) => Graphviz.NODE(str,al,[])
 
 end
 
-
+(** relation: print_element
+ **
+ ** Create a Node from an Element.
+ **)
 relation print_element: Absyn.Element => Node =
 
   rule	(* print "> Beginning of rule print_element\n" & *)
@@ -288,6 +307,10 @@ relation print_element: Absyn.Element => Node =
 
 end
 
+(** relation print_path
+ **
+ ** Create a Node from a Path.
+ **)
 
 relation print_path: Absyn.Path => Node =
 
@@ -297,7 +320,10 @@ relation print_path: Absyn.Path => Node =
 	print_path p => pn
 end
 
-
+(** relation: print_elementspec
+ **
+ ** Create a Node from an ElementSpec
+ **)
 relation print_elementspec: Absyn.ElementSpec => Node =
 
   rule	print_class cl => nl &
@@ -319,6 +345,11 @@ relation print_elementspec: Absyn.ElementSpec => Node =
 	print_elementspec(_) => Graphviz.NODE("ELSPEC_ERROR",[],[])
 end
 
+(** relation: print_components
+ **
+ ** Create a Node list from a ComponentItem list.
+ **)
+
 relation print_components: Absyn.ComponentItem list => Node list =
 
   axiom	print_components [] => []
@@ -331,6 +362,11 @@ relation print_components: Absyn.ComponentItem list => Node list =
 end
 
 
+(** relation: print_componentitem
+ **
+ ** Create a Node from a ComponentItem.
+ **)
+
 relation print_componentitem: Absyn.ComponentItem => Node =
 
   rule	print "" &
@@ -339,6 +375,10 @@ relation print_componentitem: Absyn.ComponentItem => Node =
 	print_componentitem(Absyn.COMPONENTITEM(Absyn.COMPONENT(n,a,m),_)) => Graphviz.LNODE("COMPONENT",[n],[],[nn])
 end
 
+(** relation: print_equations
+ ** 
+ ** Create a Node list from an EquationItem list.
+ **)
 
 relation print_equations: Absyn.EquationItem list => Node list =
 
@@ -351,6 +391,10 @@ relation print_equations: Absyn.EquationItem list => Node list =
 	
 end
 
+(** relation: print_equation
+ **
+ **Create a Node from an Equation.
+ **) 
 
 relation print_equation: Absyn.Equation => Node =
 
@@ -378,6 +422,10 @@ relation print_equation: Absyn.Equation => Node =
 
 end
 
+(** relation: print_algorithms
+ **
+ ** Create a Node list from an AlgorithmItem list.
+ **)
 
 relation print_algorithms: Absyn.AlgorithmItem list => Node list =
 
@@ -390,6 +438,11 @@ relation print_algorithms: Absyn.AlgorithmItem list => Node list =
 	
 end
 
+(** relation: print_algorithmitem
+ **
+ ** Create a Node from an AlgorithmItem.
+ **)
+
 relation print_algorithmitem: Absyn.AlgorithmItem => Node =
 	
   rule	print_algorithm (alg) => node
@@ -398,6 +451,11 @@ relation print_algorithmitem: Absyn.AlgorithmItem => Node =
 
   axiom	print_algorithmitem (_) => Graphviz.NODE("ALG_ERROR",[],[])
 end
+
+(** relation: print_algorithm
+ **
+ ** Create a Node from an Algorithm.
+ **)
 
 relation print_algorithm: Absyn.Algorithm => Node =
 
@@ -410,34 +468,10 @@ relation print_algorithm: Absyn.Algorithm => Node =
 	print_algorithm (_) => Graphviz.NODE("ALG_ERROR",[],[])
 end
 
-
-(*
-relation print_constraints: Absyn.Constraint list => Node list =
-
-  axiom	print_constraints [] => []
-
-  rule	print_constraint e => node &
-	print_constraints el => nl
-	--------------------------
-	print_constraints e::el => node::nl
-	
-end
-
-
-relation print_constraint: Absyn.Constraint => Node =
-
-  rule	print "" 
-	------------------
-	print_constraint (Absyn.INEQ_EXPR(e)) => Graphviz.NODE("INEQ_EXPR",[],[])
-
-  rule	print ""
-	--------
-	print_constraint (_) => Graphviz.NODE("ALG_ERROR",[],[])
-end
-*)
-
-
-
+(** relation: variability_symbol
+ **
+ ** Return Variability as a string.
+ **)
 
 relation variability_symbol: Absyn.Variability => string =
 
@@ -448,18 +482,16 @@ relation variability_symbol: Absyn.Variability => string =
 
 end
 
+(** relation: direction_symbol
+ **
+ ** Return direction as a string.
+ **)
+
 relation direction_symbol: Absyn.Direction => string =
 
   axiom direction_symbol(Absyn.BIDIR) => ""
   axiom	direction_symbol(Absyn.INPUT) => "INPUT"
   axiom	direction_symbol(Absyn.OUTPUT) => "OUTPUT"
-
-end
-
-relation select_string: (bool,string,string) => string =
-
-  axiom	select_string(true,a,b) => a
-  axiom	select_string(false,a,b) => b
 
 end
 

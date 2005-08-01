@@ -125,7 +125,7 @@ module ClassInf :
 
   with "SCode.rml"
 
-  (** - Machine states *)
+  (** - Machine states, the string contains the classname. *)
   datatype State = UNKNOWN       of string
 		 | MODEL	 of string
 		 | RECORD	 of string
@@ -260,6 +260,11 @@ relation print_state : State => () =
 	print_state HAS_EQUATIONS(s)
 
 end
+
+(** relation: get_state_name
+ ** 
+ ** Returns the classname of the state.
+ **)
 
 relation get_state_name : State => string =
 
@@ -460,9 +465,14 @@ relation assert_valid : (State, SCode.Restriction) => () =
 
 end
 
+(** relation: matching_state
+ ** 
+ ** Finds a State in the list that matches the state given as first argument.
+ ** NOTE: Currently not used anywhere.
+ **)
 
 relation matching_state : (State, State list) => bool =
-
+	
   axiom	matching_state (st, []) => false
 
   axiom	matching_state (UNKNOWN(_),	  UNKNOWN(_)::rest) => true
@@ -487,6 +497,10 @@ relation matching_state : (State, State list) => bool =
 	matching_state (st, first::rest) => res
 end
 
+(** relation: is_function
+ **
+ ** Fails for states that are not FUNCTION.
+ **)
 
 relation is_function: State => () =
   axiom is_function FUNCTION(_) => ()

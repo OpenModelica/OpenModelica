@@ -136,11 +136,15 @@ end
 
 with "RTOpts.rml"
 with "Print.rml"
+with "Util.rml"
 
 
-(* PR 
- * This realtion is used for debug printing. 
+(** relation: print
+ ** author: PR
+ **
+ * This relation is used for debug printing. 
  *)
+
 relation print: string => () =
    (* Debug output.
 	Takes a lot of time during runtime. Hangs
@@ -163,10 +167,13 @@ relation print: string => () =
    rule fprint ("olddebug", s)
 	----------------------
 	print s => ()
-
 end 
 
-(* LS: Flag controlled debugging *)
+(** relation: fprint
+ ** author: LS
+ ** 
+ ** Flag controlled debugging 
+ **)
 
 relation fprint: (string, string) => () =
 
@@ -178,6 +185,11 @@ relation fprint: (string, string) => () =
   axiom	fprint (_,_)
 
 end
+
+(** relation: fprintln
+ ** 
+ ** Flag controlled debugging, printing with newline.
+ **)
 
 relation fprintln: (string, string) => () =
 
@@ -191,10 +203,15 @@ relation fprintln: (string, string) => () =
 
 end
 
+(** relation: fprintl
+ **
+ ** flag controlled debugging, printing of string list.
+ **)
+
 relation fprintl: (string, string list) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
-	make_string strlist => str &
+	Util.string_append_list strlist => str &
 	Print.print_error_buf str
 	-------------------
 	fprintl (flag, strlist)
@@ -203,19 +220,10 @@ relation fprintl: (string, string list) => () =
 
 end
 
-relation make_string : string list => string =
-
-  axiom	make_string [] => ""
-
-  rule	make_string rest => res &
-	string_append (first, res) => res'
-	----------------------------------
-	make_string first::rest => res'
-
-end
-
-
-(* Call the given function (2nd arg) if the flag given in 1st arg is set *)
+(** relation: fcall
+ ** 
+ ** Flag controlled calling of the given relation (2nd arg) 
+ **)
 
 relation fcall: (string, 'a => (), 'a) => () =
 
@@ -228,7 +236,10 @@ relation fcall: (string, 'a => (), 'a) => () =
 
 end
 
-(* Call the given function (2nd arg) if the flag given in 1st arg is set *)
+(** relation: fcall0
+ **
+ ** Flag controlled calling of given relation  (2nd arg) 
+ **)
 
 relation fcall0: (string, () => ()) => () =
 
@@ -242,9 +253,11 @@ relation fcall0: (string, () => ()) => () =
 end
 
 
-(* Call the given function (2nd arg) if the flag given in 1st arg is set, and *)
-(* return its return value *)
-
+(** relation: fcallret
+ **
+ ** Flag controlled calling of given relation (2nd arg).
+ ** The passed relations return value is returned.
+ **)
 relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -256,6 +269,11 @@ relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b =
 
 end
 
+(** relation: bcall
+ **
+ ** bool controlled calling of relation.
+ **)
+
 relation bcall: (bool, 'a => (), 'a) => () =
 
   rule	func(str)
@@ -265,6 +283,11 @@ relation bcall: (bool, 'a => (), 'a) => () =
   axiom	bcall (false,_,_)
 
 end
+
+(** relation: bcall_2
+ **
+ ** bool controlled calling of relation.
+ **)
 
 relation bcall_2: (bool, ('a,'b) => (), 'a,'b) => () =
 
@@ -276,7 +299,11 @@ relation bcall_2: (bool, ('a,'b) => (), 'a,'b) => () =
 
 end
 
-(* Call the given function (2nd arg) if the flag given in 1st arg is NOT set *)
+(** relation: notfcall
+ **
+ ** Call the given function (2nd arg) if the flag given in 1st arg is 
+ ** NOT set 
+ **)
 
 relation notfcall: (string, 'a => (), 'a) => () =
 
@@ -289,6 +316,12 @@ relation notfcall: (string, 'a => (), 'a) => () =
 
 end
 
+(** relation: fprint_list
+ **
+ **  If flag is set, print the elements in the list, using the passed
+ ** relation.
+ **)
+
 relation fprint_list: (string, 'a list, 'a => (), string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -299,6 +332,12 @@ relation fprint_list: (string, 'a list, 'a => (), string) => () =
   axiom	fprint_list (_,_,_,_)
 
 end
+
+(** relation: fprint_list
+ **
+ **  If flag is set, print the elements in the list, using the passed
+ ** relation.
+ **)
 
 relation print_list : ('a list, 'a => (), string) => () =
 

@@ -295,6 +295,11 @@ with "Print.rml"
 with "Util.rml"
 with "Static.rml"
 
+(** relation: is_array
+ **
+ ** Returns true if Type is an array.
+ **)
+
 relation is_array : Type => bool =
 
   axiom	is_array((T_ARRAY(_,_),_)) => true
@@ -302,12 +307,22 @@ relation is_array : Type => bool =
 
 end
 
+(** relation: is_string
+ **
+ ** Return true if Type is the builtin String type.
+ **)
+
 relation is_string : Type => bool =
 
   axiom	is_string ((T_STRING(_),_)) => true
   axiom	is_string ((_,_)) => false
 
 end
+
+(** relation: is_array_or_string
+ **
+ ** Return true if Type is array or the builtin String type.
+ **)
 
 relation is_array_or_string : Type => bool =
 
@@ -323,6 +338,11 @@ relation is_array_or_string : Type => bool =
 
 end
 
+(** relation: ndims
+ **
+ ** Return the number of dimensions of a Type.
+ **)
+
 relation ndims : Type => int =
 
   rule	ndims t => n &
@@ -331,8 +351,13 @@ relation ndims : Type => int =
 	ndims( (T_ARRAY(_,t),_) ) => n'
 
   axiom ndims( (_,_) ) => 0
-
 end
+
+(** relation: dimensions_known
+ **
+ ** Returns true of the dimensions of the type is known.
+ **)
+
 relation dimensions_known: Type => bool =
 	
   rule	get_dimension_sizes(tp) => []
@@ -347,6 +372,7 @@ end
 (** relation: strip_submod
  ** author: PA
  ** 
+ ** Removes the sub modifiers of a modifier.
  **)
 
 relation strip_submod: Mod => Mod =
@@ -357,15 +383,16 @@ relation strip_submod: Mod => Mod =
 
 end
 
+(** relation: get_dimension_sizes
+ ** 
+ ** Return the dimension sizes of a Type.
+ **)
+
 relation get_dimension_sizes: Type => int list =
 
   rule	get_dimension_sizes(tp) => res
 	----------------
 	get_dimension_sizes((T_ARRAY(DIM(SOME(i)),tp),_)) => i::res
-
-(*  rule	get_dimension_sizes(tp) => res
-	------------------------------
-	get_dimension_sizes((T_ARRAY(DIM(NONE),tp),_)) => -1::res *)
 
   axiom	get_dimension_sizes((_,_)) => []
 
@@ -1000,6 +1027,11 @@ relation unparse_type: Type => string =
 
 end	
 
+(** relation: unparse_const
+ **
+ ** This relation prints a Modelica Const as a string.
+ **)
+
 relation unparse_const : Const => string =
 
   rule	Util.bool_string b => bstr
@@ -1101,6 +1133,11 @@ relation print_type : Type => () =
 
 end
 
+(** relation: print_arraydim
+ **
+ ** Prints an ArrayDim to the Print buffer.
+ **)
+
 relation print_arraydim: ArrayDim => () =
 
   rule	get_arraydim_str ad => s &
@@ -1110,6 +1147,10 @@ relation print_arraydim: ArrayDim => () =
 
 end
 
+(** relation: get_arraydim_str
+ **
+ ** Prints ArrayDim to a string.
+ **)
 
 relation get_arraydim_str: ArrayDim => string =
 
@@ -1123,6 +1164,10 @@ relation get_arraydim_str: ArrayDim => string =
 
 end
 
+(** relation: print_params
+ ** 
+ ** Prints function arguments to the Print buffer.
+ **)
 
 relation print_params : FuncArg list => () =
 
@@ -1139,7 +1184,10 @@ relation print_params : FuncArg list => () =
 
 end
 
-(*!includecode*)
+(** relation: unparse_var
+ **
+ ** Prints a variable to a string.
+ **)
 
 relation unparse_var: Var => string =
 
@@ -1149,6 +1197,11 @@ relation unparse_var: Var => string =
 	unparse_var VAR(n, attr, prot, typ, bind) => res
 end
 
+(** relation: unparse_param
+ **
+ ** Prints a function argument to a string.
+ **)
+
 relation unparse_param: FuncArg => string =
 
   rule	unparse_type ty => tstr &
@@ -1157,7 +1210,11 @@ relation unparse_param: FuncArg => string =
 	unparse_param ((id, ty)) => res
 end
 
-(* LS *)
+(** relation: print_var
+ ** author: LS
+ **
+ ** Prints a Var to the Print buffer.
+ **)
 relation print_var : Var => () =
 
   rule	print_type typ & Print.print_error_buf " " &
@@ -1170,7 +1227,12 @@ relation print_var : Var => () =
 
 end
 
-(* LS *)
+(** relation: print_binding
+ ** author: LS
+ **
+ ** Print a variable binding to the Print buffer.
+ **)
+
 relation print_binding : Binding => () =
 
   rule	Print.print_error_buf "UNBOUND"
@@ -1190,6 +1252,11 @@ relation print_binding : Binding => () =
 
 end
 
+(** relation: pritn_binding_str
+ **
+ ** Print a variable binding to a string.
+ **)
+
 relation print_binding_str : Binding => string =
 
   axiom	print_binding_str UNBOUND => "UNBOUND" 
@@ -1207,7 +1274,13 @@ relation print_binding_str : Binding => string =
 
 end
 
-(* LS *)
+(** relation: make_function_type
+ ** author: LS 
+ **
+ ** Creates a function type from a function name an a list of input and
+ ** output variables.
+ **)
+	    
 relation make_function_type: (Absyn.Path, Var list) => Type =
 
   rule	get_input_vars vl => invl &
@@ -1228,6 +1301,11 @@ relation make_function_type: (Absyn.Path, Var list) => Type =
 
 end
 
+(** relation: make_enumeration_type
+ **
+ ** Creates an enumeration type from a name and a list of variables.
+ **)
+
 relation make_enumeration_type: (Absyn.Path, Var list) => Type =
 
   rule	make_enumeration_type(p,xs) => ((T_ENUMERATION(strs,[]),_))
@@ -1238,6 +1316,11 @@ relation make_enumeration_type: (Absyn.Path, Var list) => Type =
   axiom	make_enumeration_type(p,[]) => ((T_ENUMERATION([],[]),SOME(p)))
 end
 
+(** relation: print_farg
+ **
+ ** Prints a function argument to the Print buffer.
+ **)
+
 relation print_farg: FuncArg => () =
 
   rule	print_type ty & Print.print_error_buf " " & Print.print_error_buf n
@@ -1246,7 +1329,12 @@ relation print_farg: FuncArg => () =
 
 end
 
-(* LS *)
+(** relation: get_input_vars
+ ** author: LS
+ ** 
+ ** Retrieve all the input variables from a list of variables.
+ **)
+
 relation get_input_vars: Var list  => Var list =
 	
   rule	get_vars(vl, is_input_var) => vl'
@@ -1254,7 +1342,12 @@ relation get_input_vars: Var list  => Var list =
 	get_input_vars vl => vl'
 end
 
-(* LS *)
+(** relation: get_output_vars
+ ** author: LS
+ **
+ ** Retrieve all output variables from a list of variables.
+ **)
+
 relation get_output_vars: Var list  => Var list =
 	
   rule	get_vars(vl, is_output_var) => vl'
@@ -1262,6 +1355,10 @@ relation get_output_vars: Var list  => Var list =
 	get_output_vars vl => vl'
 end
 
+(** relation: get_classname
+ **
+ ** Return the classname from a type.
+ **)
 
 relation get_classname: (Type) => Absyn.Path =
 
@@ -1269,7 +1366,12 @@ relation get_classname: (Type) => Absyn.Path =
 
 end
 
-(* LS *)
+(** relation get_vars
+ ** author: LS 
+ ** 
+ ** Select the variables from the list for which the condition relation given
+ ** as second argument succeeds.
+ **)
 relation get_vars: (Var list, Var => () )  => Var list =
 
   axiom	get_vars ([],_) => []
@@ -1287,7 +1389,12 @@ relation get_vars: (Var list, Var => () )  => Var list =
 end	
 
 
-(* LS *)
+(** relation: is_input_var
+ ** author: LS
+ ** 
+ ** Succeds if variable is an input variable.
+**)
+
 relation is_input_var: Var => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
@@ -1296,6 +1403,12 @@ relation is_input_var: Var => () =
 	is_input_var VAR(n, attr, false, ty, bnd)
 
 end
+
+(** relation: is_output_var
+ ** author: LS
+ ** 
+ ** Succeds if variable is an output variable.
+**)
 
 relation is_output_var: Var => () =
 
@@ -1306,11 +1419,23 @@ relation is_output_var: Var => () =
 
 end
 
+(** relation: is_input_attr
+ ** 
+ ** Returns true if the Attributes of a variable indicates
+ ** that the variable is input.
+ **)
+
 relation is_input_attr : Attributes => bool =
 
   axiom	is_input_attr ATTR(_,_,_,Absyn.INPUT) => true
 
 end
+
+(** relation: is_output_attr
+ ** 
+ ** Returns true if the Attributes of a variable indicates
+ ** that the variable is output.
+ **)
 
 relation is_output_attr : Attributes => bool =
 
@@ -1318,13 +1443,24 @@ relation is_output_attr : Attributes => bool =
 
 end
 
+(** relation: is_bidir_attr
+ **
+ ** Returns true if the Attributes of a variable indicates that the variable
+ ** is bidirectional, i.e. neither input nor output.
+ **)
+ 
+
 relation is_bidir_attr : Attributes => bool =
 
   axiom	is_bidir_attr ATTR(_,_,_,Absyn.BIDIR) => true
 
 end
 
-(* LS *)
+(** relation: make_fargs_list
+ ** author: LS 
+ **
+ ** Makes a function argument list from a list of variables.
+ **)
 relation make_fargs_list: Var list => FuncArg list =
 
   axiom	make_fargs_list [] => []
@@ -1340,7 +1476,14 @@ relation make_fargs_list: Var list => FuncArg list =
 
 end
 
-(* LS *)
+(** relation: make_return_type
+ ** author: LS 
+ **
+ ** Create a return type from a list of output variables.
+ ** Depending on the length of the output variable list, different 
+ ** kinds of return types are created.
+ **) 
+
 relation make_return_type: Var list => Type =
 
   axiom	make_return_type [] => ((T_NOTYPE,NONE))
@@ -1355,14 +1498,25 @@ relation make_return_type: Var list => Type =
 
 end
 
-(* LS *)
+(** relation: make_return_type_single
+ ** author: LS 
+ **
+ ** Create the return type for a single return value.
+ **)
+
 relation make_return_type_single: Var => Type =
 
   axiom	make_return_type_single VAR(n,attr,pr,ty,bnd) => ty
 
 end
 
-(* LS *)
+(** relation: make_return_type_tuple
+ ** author: LS
+ **
+ ** Create the return type for a tuple, i.e. a function returning several
+ ** values.
+ **)
+
 relation make_return_type_tuple: (Var list) => Type list =
 
   axiom	make_return_type_tuple [] => []
@@ -1373,7 +1527,12 @@ relation make_return_type_tuple: (Var list) => Type list =
 
 end
 
-(* LS *)
+(** relation: is_parameter
+ ** author: LS 
+ **
+ ** Succeds if a variable is a parameter.
+ **)
+
 relation is_parameter: Var => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
@@ -1381,7 +1540,11 @@ relation is_parameter: Var => () =
 
 end
 
-(* Returns true if a buitlin type, or array-type is Real *)
+(** relation: contain_real
+ ** 
+ ** Returns true if a buitlin type, or array-type is Real.
+ **)
+
 relation contain_real: Type list => bool =
 
   rule	contain_real([tp]) => r1 &
@@ -1399,6 +1562,11 @@ relation contain_real: Type list => bool =
   axiom	contain_real(_)=> false
 end
 
+(** relation: flatten_array_type
+ **
+ ** Returns the element type of a Type and the list of dimensions of the type.
+ **)
+
 relation flatten_array_type : Type => (Type, int list) =
 
   rule	flatten_array_type ty => (ty', dimlist')
@@ -1413,6 +1581,11 @@ relation flatten_array_type : Type => (Type, int list) =
   axiom	flatten_array_type ty => (ty, [])
 
 end
+
+(** relation: get_type_name
+ **
+ ** Return the type name of a Type.
+ **)
 
 relation get_type_name: Type => string =
 
@@ -1438,7 +1611,12 @@ relation get_type_name: Type => string =
 
 end
 
-(** LS: If PROP_TUPLE, returns true if all of the flags are true **)
+(** relation: is_prop_all_const
+ ** author: LS
+ ** 
+ ** If PROP_TUPLE, returns true if all of the flags are true 
+ **)
+
 relation is_prop_all_const: Properties => bool =
 
   axiom	is_prop_all_const PROP(_,constant) => constant
@@ -1454,7 +1632,12 @@ relation is_prop_all_const: Properties => bool =
 	is_prop_all_const prop => fail
 end
 
-(** LS: If PROP_TUPLE, returns true if any of the flags are true **)
+(** relation: is_prop_any_const
+ ** author: LS
+ ** 
+ ** If PROP_TUPLE, returns true if any of the flags are true 
+ **)
+
 relation is_prop_any_const: Properties => bool =
 
   axiom	is_prop_any_const PROP(_,constant) => constant
@@ -1470,7 +1653,11 @@ relation is_prop_any_const: Properties => bool =
 	is_prop_any_const prop => fail
 end
 
-(** LS: **)
+(** relation: is_prop_tuple_any_const
+ ** author: LS
+ ** 
+ ** Helper relation to is_prop_any_const.
+ **)
 relation is_prop_tuple_any_const: Const => bool =
 
   axiom	is_prop_tuple_any_const CONST(f) => f
@@ -1495,7 +1682,12 @@ relation is_prop_tuple_any_const: Const => bool =
 	is_prop_tuple_any_const const => fail
 end
 
-(** LS: **)
+(** relation: is_prop_tuple_all_const
+ ** author: LS 
+ **
+ ** Helper relation to is_prop_all_const.
+ **)
+
 relation is_prop_tuple_all_const: Const => bool =
 
   axiom	is_prop_tuple_all_const CONST(f) => f
@@ -1521,17 +1713,26 @@ relation is_prop_tuple_all_const: Const => bool =
 
 end
 
+(** relation: is_prop_array
+ **
+ ** Return true if properties contain an array type.
+ **)
 
 relation is_prop_array : Properties => bool =
 
   rule	get_prop_type p => t &
-	is_type_array t => b
+	is_array t => b
 	----------------------
 	is_prop_array p => b
 
 end
 
-(** LS: **)
+(** relation: get_prop_type
+ ** author: LS
+ **
+ ** Return the Type from Properties.
+ **)
+
 relation get_prop_type: Properties => Type = 
 
   axiom	get_prop_type PROP(ty,_) => ty
@@ -1539,12 +1740,6 @@ relation get_prop_type: Properties => Type =
 
 end
 
-relation is_type_array : Type => bool =
-	
-	axiom is_type_array((T_ARRAY(_,_),_)) => true
-	axiom is_type_array((_,_)) => false
-
-end
 
 relation elab_type : Type => Exp.Type =
 
@@ -1610,11 +1805,12 @@ end
 (** relation: match_type_list
  **
  ** This relation matches a list of types, with a list of other types.
- ** Type conversion is disredaded, but an expression is given (the rhs of a tuple assignment)
- ** if such conversions should be implemented
+ ** Type conversion is disredaded, but an expression is given 
+ ** (the rhs of a tuple assignment) if such conversions should be implemented
  **)
 
-relation match_type_list : (Exp.Exp, Type list, Type list ) => (Exp.Exp, Type list) =
+relation match_type_list : (Exp.Exp, Type list, Type list ) 
+	  => (Exp.Exp, Type list) =
 
   axiom	match_type_list(e,[],[]) => (e,[])
 
@@ -1788,6 +1984,11 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	type_convert (_,t1,t2) => fail *)
 end
 
+(** relation: type_convert_array
+ **
+ ** Helper relation to type_convert. Handles array expressions.
+ **)
+
 relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
 
   axiom type_convert_array ([], _, _) => []
@@ -1809,7 +2010,13 @@ relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
 
 end
 
-relation type_convert_matrix : ((Exp.Exp*bool) list list, Type, Type) => (Exp.Exp*bool) list list =
+(** relation: type_convert_matrix
+ **
+ ** Helper relation to type_convert. Handles matrix expressions.
+ **)
+
+relation type_convert_matrix : ((Exp.Exp*bool) list list, Type, Type) 
+	  => (Exp.Exp*bool) list list =
 
   axiom type_convert_matrix ([], _, _) => []
 
@@ -1829,6 +2036,11 @@ relation type_convert_matrix : ((Exp.Exp*bool) list list, Type, Type) => (Exp.Ex
 
 end
 
+(** relation: type_convert_matrix_row
+ **
+ ** Helper relation to type_convert_matrix.
+ **)
+
 relation type_convert_matrix_row: ((Exp.Exp*bool) list , Type, Type) 
 	    => ( Exp.Exp * bool) list =
   axiom type_convert_matrix_row ([],_,_) => []
@@ -1839,6 +2051,11 @@ relation type_convert_matrix_row: ((Exp.Exp*bool) list , Type, Type)
 	---------------------------------
 	type_convert_matrix_row((exp,_)::rest,t1,t2 )=> ((exp',a)::rest)
 end
+
+(** relation: type_convert_list
+ **
+ ** Helper relation to type_convert.
+ **)
 
 relation type_convert_list : (Exp.Exp list, Type list, Type list) 
 	  => (Exp.Exp list, Type list) =
@@ -1851,6 +2068,12 @@ relation type_convert_list : (Exp.Exp list, Type list, Type list)
 	type_convert_list (first::rest, ty1::ty1rest, ty2::ty2rest) => (first'::rest',ty'::tyrest')
 
 end
+
+(** relation: match_with_promote
+ **
+ ** Similar to match_prop, but having a flag indicating that Integer to Real 
+ ** conversion can be used.
+ **)
 
 relation match_with_promote : (Properties, Properties, bool (* Allow Integer => Real *)) 
 	  => Properties =
@@ -1909,6 +2132,11 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
 	  => PROP((T_REAL([]),p2),c)
 end
 
+(** relation: print_prop_str
+ **
+ ** Print the properties to a string.
+ **)
+
 relation print_prop_str: Properties => string =
 
   rule	unparse_type ty => ty_str &
@@ -1924,6 +2152,10 @@ relation print_prop_str: Properties => string =
 	print_prop_str PROP_TUPLE(ty,const) => res
 end
 
+(** relation: print_prop
+ **
+ ** Print the Properties to the Print buffer.
+ **)
 
 relation print_prop : Properties => () =
 
@@ -2020,6 +2252,11 @@ relation get_all_exps_tt : TType => Exp.Exp list =
 
 end
 
+(** relation: get_all_exps_vars
+ **
+ ** Helper relation to get_all_exps_tt.
+ **)
+
 relation get_all_exps_vars : Var list => Exp.Exp list =
 
   rule	Util.list_map(vars, get_all_exps_var) => explist &
@@ -2028,6 +2265,11 @@ relation get_all_exps_vars : Var list => Exp.Exp list =
 	get_all_exps_vars vars => exps
 	
 end
+
+(** relation: get_all_exps_var
+ **
+ ** Helper relation to get_all_exps_vars.
+ **)
 
 relation get_all_exps_var : Var => Exp.Exp list =
 
@@ -2039,6 +2281,10 @@ relation get_all_exps_var : Var => Exp.Exp list =
 	
 end
 
+(** relation: get_all_exps_binding
+ **
+ ** Helper relation to get_all_exps_var.
+ **)
 
 relation get_all_exps_binding : Binding => Exp.Exp list =
 
@@ -2054,6 +2300,11 @@ relation get_all_exps_binding : Binding => Exp.Exp list =
 
 end
 
+
+(** relation: get_funcarg_type
+ **
+ ** Retrieve the type from a function argument.
+ **)
 
 relation get_funcarg_type: FuncArg => Type =
 

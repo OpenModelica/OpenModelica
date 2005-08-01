@@ -124,9 +124,12 @@ module Prefix:
   with "Exp.rml"
   with "Env.rml"
   with "Lookup.rml"
-  
+
+	(* A 'Prefix' has a name an a list of constant valued subscripts. **)
   datatype Prefix = NOPRE
-		  | PRE of string * int list * Prefix
+		  | PRE of string * (* prefix name *) 
+			   int list * (* subscripts *)
+			   Prefix (* next prefix *)
 
   relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix
   relation prefix_to_cref : Prefix => Exp.ComponentRef
@@ -145,6 +148,11 @@ end
 
 with "Util.rml"
 with "Print.rml"
+
+(** relation: print_prefix_str
+ ** 
+ ** Prints a Prefix to a string.
+ **)
 
 relation print_prefix_str : Prefix => string =
 
@@ -170,6 +178,11 @@ relation print_prefix_str : Prefix => string =
 	print_prefix_str PRE(str, _, rest) => s''
 
 end
+
+(** relation: print_prefix
+ **
+ ** Prints a prefix to the Print buffer.
+ **)
 
 relation print_prefix : Prefix => () =
 
