@@ -177,7 +177,6 @@ module Interactive:
   relation get_elementitems_in_class: (Absyn.Class) => Absyn.ElementItem list 
   relation get_components_in_class: (Absyn.Class) => Absyn.Element list 
   relation get_classnames_in_elts: (Absyn.ElementItem list) => string list
-  relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env) => string list
   relation get_components: (Absyn.ComponentRef,Absyn.Program) => string 
   relation is_primitive_class: (Absyn.Class,Absyn.Program) => bool 
   relation get_componentitems_name: Absyn.ComponentItem list => string list 
@@ -3741,7 +3740,7 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
 	   => (env'',_) &
 	 get_nth_component_in_class(cdef,n) => comp &
-	 get_component_name_and_type_and_comment (comp,env'') => [s1] &
+	 get_component_info_old (comp,env'') => [s1] &
 	 string_append("{",s1) => s2 &
 	 string_append(s2,"}") => str
 	 --------------------------
@@ -3771,12 +3770,14 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	 ClassInf.start(restr,id) => ci_state &
 	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
 	   => (env'',_) &
-	 get_components_in_class(cdef) => comps &
-	 get_components_name_and_type_and_comment (comps,env'') => s1 &
-	 string_append("{",s1) => s2 &
-	 string_append(s2,"}") => str
+	 get_public_components_in_class(cdef) => comps1 &
+	 get_components_info (comps1,"\"public\"",env'') => s1 &
+	 get_protected_components_in_class(cdef) => comps2 &
+	 get_components_info(comps2,"\"protected\"",env'') => s2 &
+	 Util.string_delimit_list_no_empty([s1,s2],",") => str &
+	 Util.string_append_list(["{",str,"}"]) => res
 	 -------------------------------------------------
-	 get_components(model,p) => str
+	 get_components(model,p) => res
 
 	 axiom get_components(_,_) => "Error"
  end
@@ -5321,6 +5322,52 @@ relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
   axiom	get_components_in_class(_) => []
  end
 
+ (** relation: get_public_components_in_class
+  ** 
+  ** Public lists are searched.
+ **)
+relation get_public_components_in_class: (Absyn.Class) => Absyn.Element list =
+
+  axiom	 get_public_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
+
+   (* Search in public list *)
+   rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
+	get_components_in_elementitems(elts) => lst2 &
+	list_append(lst2,lst1) => res
+	------------------------------
+	 get_public_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elts)::lst,cmt),file)) => res
+
+   rule	get_public_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) 
+	  => res
+	------------------------------
+	get_public_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file)) => res
+
+  axiom	get_public_components_in_class(_) => []
+ end
+
+ (** relation: get_protected_components_in_class
+  ** 
+  ** Protected lists are searched.
+ **)
+relation get_protected_components_in_class: (Absyn.Class) => Absyn.Element list =
+
+  axiom	 get_protected_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
+
+   (* Search in protected list *)
+   rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
+	get_components_in_elementitems(elts) => lst2 &
+	list_append(lst2,lst1) => res
+	------------------------------
+	 get_protected_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PROTECTED(elts)::lst,cmt),file)) => res
+
+   rule	get_protected_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) 
+	  => res
+	------------------------------
+	get_protected_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file)) => res
+
+  axiom	get_protected_components_in_class(_) => []
+ end
+
 (** relation: get_components_in_elementitems
  **
  ** Helper relation to get_components_in_class.
@@ -5446,46 +5493,63 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
   axiom	get_nth_component_in_elementitems([],_) => fail
  end
 
-(** relation: get_components_name_and_type_and_comment
+(** relation: get_components_info
  **
  ** Helper relation to get_components.
+ ** Return all the info as a comma separated list of values.
+
+ ** get_component_info => {{name, type, comment, access, final, flow, 
+ ** replaceable, variability,innerouter,vardirection},..}
+ ** where access is one of: "public", "protected"
+ ** where final is one of: true, false
+ ** where flow is one of: true, false
+ ** where replaceable is one of: true, false
+ ** where variability is one of: "constant", "parameter", "discrete" 
+ **  or "unspecified"
+ ** where innerouter is one of: "inner", "outer", ("innerouter") or "none"
+ ** where vardirection is one of: "input", "output" or "unspecified".
  **)
 
- relation get_components_name_and_type_and_comment: (Absyn.Element list,
-						     Env.Env)
+ relation get_components_info: (Absyn.Element list,
+				string, (* "public" or "protected" *)
+				Env.Env)
 	  => string =
 
- rule	get_components_name_and_type_and_comment2(elts,env) => lst &
+ rule	get_components_info2(elts,access,env) => (lst as _::_) &
 	 Util.string_delimit_list(lst,"},{") => lst' &
 	 Util.string_append_list(["{",lst',"}"]) => res
 	 -----------------------------------------------
-	 get_components_name_and_type_and_comment(elts,env) => res
+	 get_components_info(elts,access,env) => res
+  axiom	get_components_info(_,_,_) => ""
  end
 
-(** relation: get_components_name_and_type_and_comment2
+(** relation: get_components_info2
  **
- ** Helper relation to get_components_name_and_type_and_comment
+ ** Helper relation to get_components_info
  **)
 
- relation get_components_name_and_type_and_comment2: (Absyn.Element list, Env.Env) => string list =
-   axiom	get_components_name_and_type_and_comment2([],_) => []
+ relation get_components_info2: (Absyn.Element list, 
+				 string, (* "public" or "protected" *)
+				 Env.Env) => string list =
+   axiom	get_components_info2([],_,_) => []
 
-   rule	get_component_name_and_type_and_comment(elt,env) => lst1 &
-	 get_components_name_and_type_and_comment2(rest,env) => lst2 &
+   rule	get_component_info(elt,access,env) => lst1 &
+	 get_components_info2(rest,access,env) => lst2 &
 	 list_append(lst1,lst2) => res
 	 ----------------------------------------------------------
-	 get_components_name_and_type_and_comment2(elt::rest,env) => res
+	 get_components_info2(elt::rest,access,env) => res
  end
 
- (** relation: get_component_name_and_type_and_comment
+ (** relation: get_component_info
   **
   ** This relation takes an `Element' and returns a list of strings 
   ** of comma separated values of the 
-  **  type and name and comment of the component, e.g. 'Resistor,R1, "comment"' 
-  ** or 'Resistor,R1,"comment1",R2,"comment2"'
+  **  type and name and comment, and attributes of  of the component, 
   ** If Element is not a component, the empty string is returned
  **)
- relation get_component_name_and_type_and_comment: (Absyn.Element,Env.Env) 
+ relation get_component_info: (Absyn.Element,
+			       string, (* "public" or "protected" *)
+			       Env.Env) 
 	   => string list =
 
    rule	Lookup.lookup_class(env,p,true) => (c,env') &
@@ -5494,22 +5558,154 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	 Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
 	 Absyn.path_string(p') => typename &
 	 get_componentitems_name(lst) => names &
-	 prefix_typename(typename,names) => lst
-	 -------------------------------------------
-	 get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_),env) => lst
+	 prefix_typename(typename,names) => lst &
+	 Util.bool_string(f) => final &
+	 Util.bool_string(r) => repl &
+	 inner_outer_str(inout) => inout_str &
+	 attr_flow_str(attr) => flow_str &
+	 attr_variability_str(attr) => variability_str &
+	 attr_direction_str(attr) => dir_str &
+	 Util.string_delimit_list([access,final,flow_str,repl,variability_str,
+				   inout_str,dir_str],", ") => str &
+	 suffix_infos(lst,str) => lst' 
+	 --------------------------------------
+	 get_component_info(Absyn.ELEMENT(f,r,inout,_,Absyn.COMPONENTS(attr,p,lst),_,_,_),access,env) => lst'
 
 	 rule	Absyn.path_string(p) => typename &
 	 get_componentitems_name(lst) => names &
-	 prefix_typename(typename,names) => lst
+	 prefix_typename(typename,names) => lst &
+	 Util.bool_string(f) => final &
+	 Util.bool_string(r) => repl &
+	 inner_outer_str(inout) => inout_str &
+	 attr_flow_str(attr) => flow_str &
+	 attr_variability_str(attr) => variability_str &
+	 attr_direction_str(attr) => dir_str &
+	 Util.string_delimit_list([access,final,flow_str,repl,variability_str,
+				   inout_str,dir_str],", ") => str &
+	 suffix_infos(lst,str) => lst' 
 	 -------------------------------------------
-	 get_component_name_and_type_and_comment(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,p,lst),_,_,_),env) => lst
+	 get_component_info(Absyn.ELEMENT(f,r,inout,_,Absyn.COMPONENTS(attr,p,lst),_,_,_),access,env) => lst'
 
-	 axiom	get_component_name_and_type_and_comment(_,env) => []
+	 axiom	get_component_info(_,_,env) => []
 
-   rule	print "get_component_name_and_type_and_comment failed\n"
+   rule	print "get_component_info failed\n"
 	 -------------------------------------------
-	 get_component_name_and_type_and_comment(_,_) => fail
+	 get_component_info(_,_,_) => fail
  end
+
+ (** relation: get_component_info_old
+  **
+  ** This relation takes an `Element' and returns a list of strings 
+  ** of comma separated values of the 
+  **  type and name and comment of the component, e.g. 'Resistor,R1, "comment"' 
+  ** or 'Resistor,R1,"comment1",R2,"comment2"'
+  ** If Element is not a component, the empty string is returned
+ **)
+ relation get_component_info_old: (Absyn.Element,
+			       Env.Env) 
+	   => string list =
+
+   rule	Lookup.lookup_class(env,p,true) => (c,env') &
+	 Env.get_env_path(env') => SOME(envpath) &
+	 Absyn.path_last_ident(p) => tpname &
+	 Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
+	 Absyn.path_string(p') => typename &
+	 get_componentitems_name(lst) => names &
+	 prefix_typename(typename,names) => lst 
+	 --------------------------------------
+	 get_component_info_old(Absyn.ELEMENT(f,r,inout,_,Absyn.COMPONENTS(attr,p,lst),_,_,_),env) => lst
+
+	 rule	Absyn.path_string(p) => typename &
+	 get_componentitems_name(lst) => names &
+	 prefix_typename(typename,names) => lst 
+	 -------------------------------------------
+	 get_component_info_old(Absyn.ELEMENT(f,r,inout,_,Absyn.COMPONENTS(attr,p,lst),_,_,_),env) => lst
+
+	 axiom	get_component_info_old(_,env) => []
+
+   rule	print "get_component_info_old failed\n"
+	 -------------------------------------------
+	 get_component_info_old(_,_) => fail
+ end
+
+(** relation: inner_outer_str
+ **
+ ** Helper relation to get_component_info, retrieve the inner outer string.
+ **)
+ relation inner_outer_str: Absyn.InnerOuter => string =
+
+  axiom	inner_outer_str (Absyn.INNER) =>  "\"inner\""
+  axiom	inner_outer_str (Absyn.OUTER) => "\"outer\""
+  axiom	inner_outer_str (Absyn.UNSPECIFIED) => "\"none\""
+end
+	
+(** relation: attr_flow_str
+ **
+ ** Helper relation to get_component_info, retrieve flow attribite as bool 
+ ** string.
+ **)
+
+ relation attr_flow_str: (Absyn.ElementAttributes) => string =
+	 
+  rule	Util.bool_string(f) => res
+	----------------------
+	 attr_flow_str(Absyn.ATTR(f,_,_,_)) => res
+ end
+
+(** relation: attr_variability_str
+ **
+ ** Helper relation to get_component_info, retrieve variability as a 
+ ** string.
+ **)
+		   
+ relation attr_variability_str: (Absyn.ElementAttributes) => string =
+
+  axiom	attr_variability_str(Absyn.ATTR(_,Absyn.VAR,_,_)) => "\"unspecified\""
+  axiom	attr_variability_str(Absyn.ATTR(_,Absyn.DISCRETE,_,_)) 
+	  => "\"discrete\""  
+  axiom	attr_variability_str(Absyn.ATTR(_,Absyn.PARAM,_,_)) 
+	  => "\"parameter\"" 
+  axiom	attr_variability_str(Absyn.ATTR(_,Absyn.CONST,_,_)) 
+	  => "\"constant\""
+ end
+	
+(** relation: attr_direction_str
+ **
+ ** Helper relation to get_component_info, retrieve direction as a 
+ ** string.
+ **)
+		   
+ relation attr_direction_str: (Absyn.ElementAttributes) => string =
+
+  axiom	attr_direction_str(Absyn.ATTR(_,_,Absyn.INPUT,_)) => "\"input\""
+  axiom	attr_direction_str(Absyn.ATTR(_,_,Absyn.OUTPUT,_)) => "\"output\""
+  axiom	attr_direction_str(Absyn.ATTR(_,_,Absyn.BIDIR,_)) => "\"unspecified\""
+
+ end
+
+
+(** relation: suffix_infos
+**
+ ** Helper relation to get_component_info. Add suffix info to 
+ ** element names, etc.
+ **)
+		   
+		   
+ relation suffix_infos: (string list ,string) => string list =
+
+  axiom	suffix_infos ([],_) => []
+	 
+  rule	suffix_infos(rest,suffix) => res &
+	 Util.string_append_list([str,", ",suffix]) => str'
+	 ---------------------
+	 suffix_infos(str::rest,suffix) => str'::res 
+ end
+
+(** relation: prefix_typename 
+ **
+ ** Helper relation to get_component_info. Add a prefix typename to each
+ ** string in the list.
+ **)
 
  relation prefix_typename: (string, string list) => string list =
    axiom	prefix_typename (_,[]) => []
@@ -5554,7 +5750,7 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	 ---------------------------------------
 	 get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_)]) => [res]
 
-   axiom	get_componentitems_name([_]) => []
+  axiom	get_componentitems_name([_]) => []
  end
 
  (** relation: add_to_public

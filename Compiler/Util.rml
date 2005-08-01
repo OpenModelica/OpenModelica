@@ -1224,8 +1224,8 @@ relation string_delimit_list_no_empty : (string list, string) => string =
 	
   rule  list_select(lst,is_not_empty_string) => lst1 &
         string_delimit_list(lst1,delim) => str 
-	    ---------------------------
-	    string_delimit_list_no_empty(lst,delim) => str
+	---------------------------
+	string_delimit_list_no_empty(lst,delim) => str
 end
 
 (** relation string_replace_char

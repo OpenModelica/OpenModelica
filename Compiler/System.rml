@@ -121,71 +121,204 @@ module System:
 
 with "Values.rml"
 
+(** relation: remove_first_and_last_char
+ **
+ ** Used e.g. when de-stringifying a Modelica string. "foo" becomes foo.
+ **)
+
 relation remove_first_and_last_char: (string) => string
+
+
+(** relation: trim
+ **
+ ** Removes all characters in second string from the first string from the 
+ ** beginning and the end of the string. E.g. used for removing white spaces
+ ** and tabs in the beginning and end of a string.
+ **)
 
 relation trim: (string,string) => string 
 
+ (** relation: strcmp
+  **
+  ** The strcmp function in libc.
+  **)
+
 relation strcmp: (string,string) => int
+
+(** relation: toupper
+ **
+ ** Convert string to upper case characters.
+ **)
 
 relation toupper: (string) => string
 
+(** relation
+ ** 
+ ** the strtok function in libc.
+ **)
+
 relation strtok: (string,string) => string list
+
+(** relation: compile_c_file 
+ **
+ ** Compiles the c-file given as argument.
+ ** Requires that the compiler and compiler flags have been set.
+ **)
 
 relation compile_c_file: (string) => ()
 
-relation compile_flat_class: (string) => (string)
+(** relation: set_c_compiler
+ **
+ ** Sets the C compiler used by compile_c_file.
+ **)
 
 relation set_c_compiler: (string) => ()
 
+(** relation: set_c_flags
+ **
+ ** Sets the compiler flags used by compile_c_file.
+ **)
+
 relation set_c_flags: (string) => ()
+
+(** relation: execute_function
+ **
+ ** Execute a function which have been generated code for.
+ **)
 
 relation execute_function: (string) => ()
 
+(** relation: write_file
+ **
+ ** Writes a string to a file.
+ **)
+
 relation write_file: (string(*filename*),string(*data*)) => ()
+
+(** relation: read_file
+ **
+ ** Read the content of a file into a string.
+ **)
 
 relation read_file: (string) => string
 
+(** relation: read_values_from_file
+ **
+ ** Read values from a file into 'Values' data, used e.g. when storing
+ ** values for executing functions.
+ **)
+
 relation read_values_from_file: (string) => Values.Value
 
-relation read_ptolemyplot_dataset: (string,string list,int) => Values.Value
+(** relation: read_ptoleyplot_dataset
+ **
+ ** Reads a dataset using the ptolemy plot data format.
+ **)
+
+relation read_ptolemyplot_dataset: (string, (* filename *)
+				    string list, (* variables*)
+				    int) (* size *)
+ => Values.Value
+
+(** relation: system_call
+ ** 
+ ** Execute a system call, returning the exit code of the call.
+**)
 
 relation system_call: (string) => int
 
+(** relation: cd
+ **
+ ** Changes the current directory. Returns zero if it succeeds, 
+ ** otherwise non-zero.
+ **)
+
 relation cd: (string) => int
+
+(** relation: pwd
+ **
+ ** Returns the current directory.
+ **)
 
 relation pwd: () => string
 
+(** relation: modelicapath
+ **
+ ** Returns the content of the MODELCIAPATH environment variable.
+**)
+
 relation modelicapath: () => string
+
+(** read_env
+ **
+ ** Returns the value of an environment variable.
+ ** If the environment variable is not set, the relation fails.
+ **)
 
 relation read_env: (string) => string
 
+(** relation: sub_directories
+ **
+ ** Return a list of sub directory strings given a directory path.
+ **)
+
 relation sub_directories: (string) => string list
+
+(** relation: mo_files
+ **
+ ** Return a list of all .mo files in a directory path.
+ **)
 
 relation mo_files: (string) => string list
 
+(** relation: time
+ **
+ ** Returns the time using the clock function.
+**)
 relation time: () => real
+
+(** relation: hash
+ **
+ ** Calculates a hash value for a string by adding the integer value
+ ** for each character.
+ **)
 
 relation hash: string => int 
 
+(** relation: path_delimiter
+ **
+ ** Returns the string used for path delimiter, e.g. "\" on Windows and "/"
+ ** on Cygwin.
+ **)
+
 relation path_delimiter: () => string
+
+(** relation: group_delimiter
+ **
+ ** Returns the group delimiter for groups of paths, e.g. used in MODELICAPATH.
+ **)
 
 relation group_delimiter: () => string
 
+(** relation: regular_file_exist
+ **
+ ** Returns zero if the string passed as argument is a regular file.
+ ** Otherwise a non-zero value is returned.
+**)
+
 relation regular_file_exist: (string) => int
+
+(** relation: directory_exist
+ **
+ ** Returns zero fi the string passed as argument is a directory.
+ ** Otherwise a non-zero value is returned.
+ **)
 
 relation directory_exist: (string) => int
 
-relation getDebugString: (string) => string
-
-relation startDebug: () => ()
-
-relation endDebug: () => ()
-
-relation incDebugLevel: () => ()
-
-relation decDebugLevel: () => ()
-
-(** this returns the platform as a string. 
+(** relation: platform
+ ** 
+ ** Rreturns the platform as a string. 
  ** now 2005-06-20 is CYGWIN and WIN32 implemented only 
  **)
  relation platform: () => string
