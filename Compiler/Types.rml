@@ -238,6 +238,7 @@ returns multiple arguments. *)
   relation print_prop : Properties => ()
   relation print_prop_str: Properties => string 
   relation unparse_type : Type => string
+  relation unparse_var: Var => string 
   relation unparse_const : Const => string
   relation print_var : Var => ()
   relation print_binding : Binding => ()
