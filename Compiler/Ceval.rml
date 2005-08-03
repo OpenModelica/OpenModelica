@@ -1651,11 +1651,11 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool, Interactive.Inte
 	 * that is not done yet. Solution: Examine Element to find modifier 
 	 * which will determine dimension size.
 	 *)
-	  Inst.elab_component_arraydim_from_env(env,cr) => dims &
-	  ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dimv),st') &
-	  ceval_builtin_size_3(dims,dimv) => v2
-	  ------------------------------------
-	  ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st) 
+	Inst.elab_component_arraydim_from_env(env,cr) => dims &
+	ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dimv),st') &
+	ceval_builtin_size_3(dims,dimv) => v2
+	------------------------------------
+	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st) 
 	  => (v2,st')
 
   rule	(* If dimensions not known and impl=true, just silently fail *)
@@ -1689,7 +1689,7 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool, Interactive.Inte
   rule	(*For crefs with value binding*) 
 	  Lookup.lookup_var(env,cr) => (attr, tp, binding) &
 	  ceval(env,dim,impl,st,NONE) => (Values.INTEGER(dimv),st') &
-	  ceval_cref_binding (env,cr,attr,tp,binding,impl) => v &
+	  ceval_cref_binding (env,cr,binding,impl) => v &
 	  ceval_builtin_size_2(v,dimv) => v2
 	  ------------------------------------
 	  ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl,st) => (v2,st')
@@ -2796,7 +2796,7 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) )
 
 	  (* Search in env for binding. *)
   rule	Lookup.lookup_var (env, c) => (attr,ty,binding) &
-	ceval_cref_binding (env,c,attr,ty,binding,impl) => v
+	ceval_cref_binding (env,c,binding,impl) => v
 	-------------------------------------
 	ceval_cref (env,c,impl) => v 
 
@@ -2807,7 +2807,7 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) )
 	-------------------------------------
 	ceval_cref (env,c,impl as false ) => fail
 	
-end
+end 
 
 (** relation: ceval_cref_binding
  **
@@ -2816,50 +2816,54 @@ end
  **)
 
 relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
-			       Types.Attributes,
-			       Types.Type,
 			       Types.Binding, 
 			       bool (*impl*) ) 
 	  => Values.Value =
-
-  rule	Types.get_dimension_sizes(tp) => sizelst &
+	  
+  rule	(* lookup without subscripts, so dimension sizes can be determined.*)
+	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[]))  => (_,tp,_) &
+	Types.get_dimension_sizes(tp) => sizelst &
 	ceval_subscript_value(env,subsc,v, sizelst,impl) => res
 	-----------------------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),attr,tp,Types.VALBOUND(v),impl)
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.VALBOUND(v),impl)
 	  => res
 	  
   rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
-	ceval_cref_binding (env,_,attr,tp,Types.UNBOUND,impl as false) => fail
+	ceval_cref_binding (env,_,Types.UNBOUND,impl as false) => fail
 	
   rule	Debug.fprint("ceval", "#- ceval_cref__binding: Ignoring unbound when implicit")	
 	-------------------------------------
-	ceval_cref_binding (env,_,attr,tp,Types.UNBOUND,impl as true) => fail
+	ceval_cref_binding (env,_,Types.UNBOUND,impl as true) => fail
 	
 	(* REDUCTION bindings*)
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
 	rfn = "array" &
 	Debug.fprintln("ceval", "#-- ceval_cref_binding Array evaluation")
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),attr,tp,Types.EQBOUND(exp,true),impl)
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
 	  => fail
 	  
 	  (* REDUCTION bindings*)
   rule	let Exp.REDUCTION(Absyn.IDENT(rfn),elexp,iter,iterexp) = exp &
 	not rfn = "array" &
+	(* lookup without subscripts, so dimension sizes can be determined.*)
+	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[]))  => (_,tp,_) &
 	Types.get_dimension_sizes(tp) => sizelst &
 	ceval (env,exp,impl,NONE,NONE) => (v,_) &
 	ceval_subscript_value (env,subsc,v,sizelst,impl) => res
 	---------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),attr,tp,Types.EQBOUND(exp,true),impl)
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl)
 	  => res
 
 	(* arbitrary expressions *)  
-  rule	Types.get_dimension_sizes(tp) => sizelst &
+  rule	(* lookup without subscripts, so dimension sizes can be determined.*)
+	Lookup.lookup_var(env,Exp.CREF_IDENT(id,[]))  => (_,tp,_) &
+	Types.get_dimension_sizes(tp) => sizelst &
 	ceval (env,exp,impl,NONE,NONE) => (v,_) &
 	ceval_subscript_value(env,subsc,v,sizelst,impl) => res
 	------------------------
-	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),attr,tp,Types.EQBOUND(exp,true),impl) 
+	ceval_cref_binding (env,Exp.CREF_IDENT(id,subsc),Types.EQBOUND(exp,true),impl) 
 	  => res
 	  
   rule	Debug.fprint("ceval", "#- ceval_cref__binding failed (nonconstant EQBOUND(") &
@@ -2867,7 +2871,7 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
 	Debug.fprint("ceval", expstr) &
 	Debug.fprintln("ceval", "))") 
 	--------------------------------
-	ceval_cref_binding (env,_,attr,tp,Types.EQBOUND(exp,false),impl) => fail
+	ceval_cref_binding (env,_,Types.EQBOUND(exp,false),impl) => fail
 end
 
 (** relation: ceval_subscript_value
@@ -2893,6 +2897,9 @@ relation ceval_subscript_value: (Env.Env,
 	  
   axiom	ceval_subscript_value(env,[],v,_,_) => v
 	
+  rule	Debug.fprint("failtrace","-ceval_subscript_value failed\n") 
+	-----------------------
+	ceval_subscript_value(_,_,_,_,_) => fail
 end
 
 (** relation: ceval_subscripts

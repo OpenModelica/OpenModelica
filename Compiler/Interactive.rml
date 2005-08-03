@@ -5331,7 +5331,7 @@ relation get_public_components_in_class: (Absyn.Class) => Absyn.Element list =
   axiom	 get_public_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
 
    (* Search in public list *)
-   rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
+   rule	get_public_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
 	get_components_in_elementitems(elts) => lst2 &
 	list_append(lst2,lst1) => res
 	------------------------------
@@ -5354,7 +5354,7 @@ relation get_protected_components_in_class: (Absyn.Class) => Absyn.Element list 
   axiom	 get_protected_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
 
    (* Search in protected list *)
-   rule	get_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
+   rule	get_protected_components_in_class(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file)) => lst1 &
 	get_components_in_elementitems(elts) => lst2 &
 	list_append(lst2,lst1) => res
 	------------------------------

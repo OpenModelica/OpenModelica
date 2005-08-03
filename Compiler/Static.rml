@@ -3493,6 +3493,13 @@ relation elab_cref2 : (Env.Env,
 		       Types.Type, Types.Binding)
 	  => (Exp.Exp,bool,SCode.Accessibility) =
 
+	  (* If type not yet determined, component must be referencing itself. 
+	   ** constantness undecidable since binding not available, return false.
+	   **)
+  rule	Types.elab_type t => t' 
+	----------------
+	elab_cref2(_,cr,acc,_,t as (Types.T_NOTYPE,_),_) => (Exp.CREF(cr,t'),false,acc)
+
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	-----------------------------------
