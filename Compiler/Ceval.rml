@@ -1108,14 +1108,30 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
 	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
-  rule	System.read_env("OPENMODELICAHOME") => omhome &
-         Static.component_ref_to_path(cr) => path & 
-	 Absyn.path_string path => pathstr &
-	 Print.print_error_buf "#Failed to instantiate " &
-	 Print.print_error_buf pathstr & Print.print_error_buf " .\n" &
-	 Print.get_error_string() => str 
+  rule  Static.component_ref_to_path(cr) => classname &
+	 SCode.elaborate(p) => p' &
+	 Inst.instantiate_class(p',classname) => (dae as DAE.DAE(dael),env) &
+	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
+	  => ic' &
+	   DAELow.lower(dae) => dlow &
+	 DAELow.incidence_matrix(dlow) => m &
+	 DAELow.transpose_matrix(m) => mT &
+	 DAELow.matching_algorithm(dlow,m,mT) => (ass1,ass2,dlow',m,mT) &
+	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
+	 DAELow.translate_dae (dlow') => indexed_dlow &
+	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
+	 Absyn.path_string(classname) => cname_str &
+	 Util.string_append_list([cname_str,".cpp"]) => filename &
+	 Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
+	 Util.string_append_list([cname_str,".makefile"]) => makefilename &
+	 SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
+	 SimCodegen.generate_makefile(makefilename,classname) 
+         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
+          *)
 	 -------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) => (Values.STRING(str),st)
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+          => (Values.STRING("The model have been translated"),st)
 	 
   axiom
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
