@@ -171,6 +171,7 @@ with "Codegen.rml"
 with "Print.rml"
 with "ModUtil.rml"
 with "VarTransform.rml"
+with "Dump.rml"
 
 (** relation: generate_makefile
  **
@@ -263,7 +264,7 @@ end
 	int_string(np) => np_str &
         int_string(no) => no_str &
         int_string(ni) => ni_str &
-	generate_var_names(dlow,nx,ny) => varnames &
+	generate_var_names_and_comments(dlow,nx,ny) => (varnames,comments) &
         generate_parameter_names(dlow,np) => paramnames &
 	Util.string_append_list(["\n",
 				 "#define NX ",nx_str,"\n",
@@ -321,6 +322,7 @@ end
 				 "char *model_name=\"",class_str,
 				 "\";\n",
 				 varnames,"\n",
+                                 comments,"\n",
                                  paramnames,"\n"]
 				 )  => str 
 	---------------------------
@@ -328,29 +330,33 @@ end
 	
 end
 
-(** relation: generate_var_names
+(** relation: generate_var_names_and_comments
  **
  ** Generates an array of the original variable names.
  **)
 
-relation generate_var_names:(DAELow.DAELow,int, int) => string =
+relation generate_var_names_and_comments:(DAELow.DAELow,int, int) => (string,string) =
 
   rule	DAELow.var_list(vars) => var_lst &
 	DAELow.var_list(knvars) => knvar_lst &
-	generate_var_names_states(var_lst) => state_lst &
-	generate_var_names_derivatives(var_lst) => der_lst &
-	generate_var_names_algvars(var_lst) => algvar_lst &
-	generate_var_names_inputvars(knvar_lst) => inputvar_lst &
+	generate_var_names_and_comments_states(var_lst) => (state_lst,state_comment_lst) &
+	generate_var_names_and_comments_derivatives(var_lst) => (der_lst,der_comment_lst) &
+	generate_var_names_and_comments_algvars(var_lst) => (algvar_lst,algvar_comment_lst) &
+	generate_var_names_and_comments_inputvars(knvar_lst) => (inputvar_lst,inputvar_comment_lst) &
 	Util.list_flatten([state_lst,der_lst,algvar_lst,inputvar_lst]) => varnames_lst &
+	Util.list_flatten([state_comment_lst,der_comment_lst,algvar_comment_lst,inputvar_comment_lst]) => comments_lst &
 	Util.string_delimit_list(varnames_lst,", ") => str &
+	Util.string_delimit_list(comments_lst,", ") => str2 &
 	int_add(nx,nx) => nxtwo &
 	int_add(ny,nxtwo) => tot_elts &
 	int_string(tot_elts) => tot_elts_str & 
 
 	Util.string_append_list(["char* varnames[",tot_elts_str,"] = {",
-				 str, "};\n"]) => res
+				 str, "};\n"]) => res &
+	Util.string_append_list(["char* comments[",tot_elts_str,"] = {",
+				 str2, "};\n"]) => res2
 	-------------------
-	generate_var_names(DAELow.DAELOW(vars,knvars,_,_,_,_,_),nx,ny) => res
+	generate_var_names_and_comments(DAELow.DAELOW(vars,knvars,_,_,_,_,_),nx,ny) => (res,res2)
 
 end
 
@@ -401,98 +407,105 @@ relation generate_parameter_names2:(DAELow.Var list) => string list =
 	  => res
 end
 
-(** relation: generate_var_names_states
+(** relation: generate_var_names_and_comments_states
  **
- ** Helper relation to generate_var_names
+ ** Helper relation to generate_var_names_and_comments
  **)
 
-relation generate_var_names_states:(DAELow.Var list) => string list =
+relation generate_var_names_and_comments_states:(DAELow.Var list) => (string list,string list) =
 
-  axiom	generate_var_names_states([]) => []
+  axiom	generate_var_names_and_comments_states([]) => ([],[])
 	
-  rule	generate_var_names_states(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_states(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_states(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
+	generate_var_names_and_comments_states(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_states(vs) => res 
+  rule	generate_var_names_and_comments_states(vs) => (res,res2) 
 	-----------------------
-	generate_var_names_states(_::vs)
-	  => res
+	generate_var_names_and_comments_states(_::vs)
+	  => (res,res2)
 end
 
-(** relation: generate_var_names_derivatives
+(** relation: generate_var_names_and_comments_derivatives
  **
- ** Helper relation to generate_var_names
+ ** Helper relation to generate_var_names_and_comments
  **)
 
-relation generate_var_names_derivatives:(DAELow.Var list) => string list =
+relation generate_var_names_and_comments_derivatives:(DAELow.Var list) => (string list,string list)  =
 
-  axiom	generate_var_names_derivatives([]) => []
+  axiom	generate_var_names_and_comments_derivatives([]) => ([],[])
 	
-  rule	generate_var_names_derivatives(vs) => res &
-	Util.string_append_list(["\"der(",origname,")\""]) => origname'
+  rule	generate_var_names_and_comments_derivatives(vs) => (res,res2) &
+	Util.string_append_list(["\"der(",origname,")\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_derivatives(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
+	generate_var_names_and_comments_derivatives(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_derivatives(vs) => res 
+  rule	generate_var_names_and_comments_derivatives(vs) =>(res,res2) 
 	-----------------------
-	generate_var_names_derivatives(_::vs)
-	  => res
+	generate_var_names_and_comments_derivatives(_::vs)
+	  => (res,res2)
 end
 
-(** relation: generate_var_names_algvars
+(** relation: generate_var_names_and_comments_algvars
  **
- ** Helper relation to generate_var_names
+ ** Helper relation to generate_var_names_and_comments
  **)
 
-relation generate_var_names_algvars:(DAELow.Var list) => string list =
+relation generate_var_names_and_comments_algvars:(DAELow.Var list) => (string list,string list)  =
 
-  axiom	generate_var_names_algvars([]) => []
+  axiom	generate_var_names_and_comments_algvars([]) => ([],[])
 	
-  rule	generate_var_names_algvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_algvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
+	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_algvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
+	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_algvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
+	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_algvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
+	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_algvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
+	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_algvars(vs) => res 
+  rule	generate_var_names_and_comments_algvars(vs) => (res,res2)
 	-----------------------
-	generate_var_names_algvars(_::vs)
-	  => res
+	generate_var_names_and_comments_algvars(_::vs)
+	  => (res,res2)
 end
 
 
@@ -599,54 +612,59 @@ relation generate_output_function_code2:(DAELow.Var list,int) => string list =
 
 end
 
-(** relation: generate_var_names_inputvars
+(** relation: generate_var_names_and_comments_inputvars
  **
- ** Helper relation to generate_var_names
+ ** Helper relation to generate_var_names_and_comments
  **)
 
-relation generate_var_names_inputvars:(DAELow.Var list) => string list =
+relation generate_var_names_and_comments_inputvars:(DAELow.Var list) => (string list,string list) =
 
-  axiom	generate_var_names_inputvars([]) => []
+  axiom	generate_var_names_and_comments_inputvars([]) => ([],[])
 	
-  rule	generate_var_names_inputvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname'&
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
+	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_inputvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname'&
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
+	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_inputvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname'&
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
+	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_inputvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname'&
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
+	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_inputvars(vs) => res &
-	Util.string_append_list(["\"",origname,"\""]) => origname'
+  rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
+	Util.string_append_list(["\"",origname,"\""]) => origname'&
+        Dump.unparse_comment_option(comment) => comment 
 	-----------------------
-	generate_var_names_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
+	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> origname'::res
+	=> (origname'::res,comment::res2)
 
-  rule	generate_var_names_inputvars(vs) => res 
+  rule	generate_var_names_and_comments_inputvars(vs) => (res,res2)
 	-----------------------
-	generate_var_names_inputvars(_::vs)
-	  => res
+	generate_var_names_and_comments_inputvars(_::vs)
+	  => (res,res2)
 end
 
 
