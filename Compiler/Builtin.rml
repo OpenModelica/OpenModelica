@@ -372,6 +372,9 @@ val string2string = (Types.T_FUNCTION([("x",(Types.T_STRING([]),NONE))],
 				 (Types.T_STRING([]),NONE)),NONE)
 
 
+val real2bool = (Types.T_FUNCTION([("x",(Types.T_REAL([]),NONE))],
+				      (Types.T_BOOL([]),NONE)),NONE)
+
 val real_real2bool = (Types.T_FUNCTION([("x",(Types.T_REAL([]),NONE)),("y",(Types.T_REAL([]),NONE))],
 				      (Types.T_BOOL([]),NONE)),NONE)
 
@@ -782,7 +785,7 @@ relation initial_env =
 	Env.extend_frame_c(env, string_type) => env &
 	Env.extend_frame_c(env, boolean_type) => env &
 	Env.extend_frame_c(env, state_select_type) => env &
-	Env.extend_frame_v(env, time_var,NONE,false) => env &
+	Env.extend_frame_v(env, time_var,NONE,false,[]) => env &
 
 	(* non-functions *)
 	Env.extend_frame_t(env, "inital", nil2real)                => env &
@@ -790,6 +793,8 @@ relation initial_env =
 	Env.extend_frame_t(env, "event", bool2bool)                => env &
 	Env.extend_frame_t(env, "switch", bool2bool)               => env &
 	Env.extend_frame_t(env, "timeEvent", real_real2bool)       => env &
+        Env.extend_frame_t(env, "sample", real_real2bool)	   => env &
+        Env.extend_frame_t(env, "change", real2bool)		   => env &
 	Env.extend_frame_t(env, "der", real2real)                  => env &
 
 	(* non-differentiable functions *)

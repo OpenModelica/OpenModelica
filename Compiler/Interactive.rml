@@ -296,7 +296,8 @@ with "Ceval.rml"
 
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	 Ceval.ceval (env,sexp,true,SOME(st'),NONE) => (value,SOME(st'')) &
+	 Ceval.ceval (env,sexp,true,SOME(st'),NONE,Ceval.MSG) 
+	  => (value,SOME(st'')) &
 	 Values.val_string value =>  str
 	 -------------------------------
 	 evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
@@ -308,14 +309,14 @@ with "Ceval.rml"
 
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	 not Ceval.ceval (env,sexp,true,SOME(st'),NONE) => (_,_) 
+	 not Ceval.ceval (env,sexp,true,SOME(st'),NONE,Ceval.NO_MSG) => (_,_) 
 	 -------------------------------
 	 evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => fail
 
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,cond,true,SOME(st)) 
 	   => (econd,prop,SOME(st')) &
-	 Ceval.ceval (env,econd,true,SOME(st'),NONE) 
+	 Ceval.ceval (env,econd,true,SOME(st'),NONE,Ceval.MSG) 
 	   => (Values.BOOL(true),SOME(st'')) 
 	 -----------------------------------------------
 	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_)),st as SYMBOLTABLE(p,_,_,_,_))
@@ -324,7 +325,7 @@ with "Ceval.rml"
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,msg,true,SOME(st)) 
 	   => (msg',prop,SOME(st')) &
-	 Ceval.ceval (env,msg',true,SOME(st'),NONE) 
+	 Ceval.ceval (env,msg',true,SOME(st'),NONE,Ceval.MSG) 
 	   => (Values.STRING(str),SOME(st'')) 
 	 -----------------------------------------------
 	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_)),st as SYMBOLTABLE(p,_,_,_,_))
@@ -332,7 +333,8 @@ with "Ceval.rml"
 
    rule	build_env_from_symboltable(st) => env &
 	 Static.elab_exp(env,exp,true,SOME(st)) => (sexp,Types.PROP(t,_),SOME(st'))  &
-	 Ceval.ceval(env,sexp,true,SOME(st'),NONE) => (value,SOME(st'')) &
+	 Ceval.ceval(env,sexp,true,SOME(st'),NONE,Ceval.MSG) 
+	  => (value,SOME(st'')) &
 	 Values.val_string value =>  str &
 	 add_var_to_symboltable(ident,value,t,st'') => newst	
 	 -----------------------------------------------
@@ -344,7 +346,8 @@ with "Ceval.rml"
 	 Static.elab_exp(env,rexp,true,SOME(st)) => (srexp,rprop,SOME(st'))	&
 	 Types.get_prop_type rprop => ((Types.T_TUPLE(types),_)) &
 	 Util.list_map(crefexps, get_ident_from_crefexp) => idents &
-	 Ceval.ceval(env,srexp,true,SOME(st'),NONE) => (Values.TUPLE(values), SOME(st'')) &
+	 Ceval.ceval(env,srexp,true,SOME(st'),NONE,Ceval.MSG) 
+	  => (Values.TUPLE(values), SOME(st'')) &
 	 add_vars_to_symboltable(idents,values,types,st'') => newst
 	 -----------------------------------------------
 	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),rexp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
@@ -509,7 +512,7 @@ with "Ceval.rml"
 		 false,
 		 tp,
 		 Types.VALBOUND(v)
-	     ),false) => env' &
+	     ),false,[]) => env' &
 	 add_vars_to_env(rest,env') => env''
 	 ---------------------------------------
 	 add_vars_to_env (IVAR(id,v,tp)::rest,env) => env''
@@ -522,7 +525,7 @@ with "Ceval.rml"
 		 false,
 		 tp,
 		 Types.VALBOUND(v)
-	     ),NONE,false) => env' &
+	     ),NONE,false,[]) => env' &
 	 add_vars_to_env(rest,env') => env''
 	 ---------------------------------------
 	 add_vars_to_env (IVAR(id,v,tp)::rest,env) => env''

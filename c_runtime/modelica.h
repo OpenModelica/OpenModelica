@@ -48,7 +48,7 @@ typedef modelica_string_t modelica_string;
 typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;
 
-
+typedef modelica_real cos_rettype;
 #if defined(__cplusplus)
 }
 #endif

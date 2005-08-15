@@ -2328,10 +2328,11 @@ end
  ** For a general approach we need to build an environment from the DAE and then
  ** instead investigate the variables and lookup their values from the created environment.
  **)
-relation dae_to_record_value: (Absyn.Path, Element list, bool (*impl*) ) => Values.Value =
+relation dae_to_record_value: (Absyn.Path, Element list, bool (*impl*) ) 
+	  => Values.Value =
   axiom	dae_to_record_value(cname,[],_) => Values.RECORD(cname,[],[])
 
-rule	Ceval.ceval([],rhs,impl,NONE,NONE)  => (value,_) &
+rule	Ceval.ceval([],rhs,impl,NONE,NONE,Ceval.MSG)  => (value,_) &
 	dae_to_record_value(cname,rest,impl) => Values.RECORD(cname,vals,names) &
 	Exp.print_component_ref_str(cr) => cr_str 
 	--------------------------------------------------

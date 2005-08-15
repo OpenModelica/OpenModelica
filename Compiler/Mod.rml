@@ -133,7 +133,6 @@ module Mod:
 
   type Ident = string
 
-
   relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.Mod
   relation unelab_mod : (Types.Mod) => SCode.Mod
   relation update_mod: (Env.Env, Prefix.Prefix, Types.Mod, bool (*impl*)) => Types.Mod 
@@ -157,6 +156,7 @@ with "Inst.rml"
 with "Static.rml"
 with "Values.rml"
 with "Util.rml"
+with "Ceval.rml"
 
 (** relation: elab_mod
  **
@@ -177,13 +177,14 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.
 	
   rule	elab_submods (env,pre,subs,impl) => subs' &
 	Static.elab_exp(env,e,impl,NONE) => (e',prop,_) &
+	elab_mod_value(env,e') => e_val &
 	(* Bug: will cause elaboration of parameters without value to fail,
 	 But this can be ok, since a modifier is present, giving it a value 
 	 from outer modifications.. *)
 	Prefix.prefix_exp(env,e',pre) => e''
 	------------------------------------
 	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)),impl)
-	  => Types.MOD(final,subs',SOME(Types.TYPED(e'',prop)))
+	  => Types.MOD(final,subs',SOME(Types.TYPED(e'',e_val,prop)))
 
   rule	Inst.add_nomod(elist) => elist' 
 	-------------------------------
@@ -194,6 +195,25 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.
 	-------------------------------------------------
 	elab_mod (_,pre,mod,impl) => fail 
 end
+
+(** relation: elab_mod_value
+** author: PA
+ **
+ ** Helper relation to elab_mod. Builds values from modifier expressions
+ ** if possible.
+ ** Tries to Constant evaluate an expressions an create a Value option for it.
+ **)
+
+relation elab_mod_value: (Env.Env, Exp.Exp) => Values.Value option =
+
+	(* If ceval fails, it should not print error messages. *)
+  rule	Ceval.ceval(env,e,false,NONE,NONE,Ceval.NO_MSG) => (v,_) 
+	-------------------------------------------
+	elab_mod_value(env,e) => SOME(v)
+
+  axiom	elab_mod_value(_,_) => NONE
+end
+ 
 
 (** relation: unelab_mod
  **
@@ -214,10 +234,12 @@ relation unelab_mod: Types.Mod => SCode.Mod =
 	unelab_mod (m as Types.MOD(final,subs,SOME(Types.UNTYPED(e))))
 	  => SCode.MOD(final,subs',SOME(e))
 	  
-  rule	unelab_submods (subs) => subs' &
+  rule	Exp.print_exp_str e => es &
+	print "unelab typed mod...  = " & print es & print "\n" &
+	unelab_submods (subs) => subs' &
 	Exp.unelab_exp(e) => e'
 	------------------------------------
-	unelab_mod (m as Types.MOD(final,subs,SOME(Types.TYPED(e,p))))
+	unelab_mod (m as Types.MOD(final,subs,SOME(Types.TYPED(e,_,p))))
 	  => SCode.MOD(final,subs',SOME(e'))
 	  
   rule	Util.list_map(elist,Util.tuple2_1) => elist'
@@ -285,17 +307,18 @@ relation update_mod: (Env.Env,Prefix.Prefix, Types.Mod, bool (*impl*)) => Types.
 
   rule	update_submods (env,pre,subs,impl) => subs' &
 	Static.elab_exp(env,e,impl,NONE) => (e',prop,_)  &
+	elab_mod_value(env,e') => e_val &
 	Prefix.prefix_exp(env,e',pre) => e'' &
 	Debug.fprint("updmod","Updated mod: ") &
-	Debug.fcall("updmod",print_mod ,Types.MOD(f, subs', SOME(Types.TYPED(e'', prop)))) 
+	Debug.fcall("updmod",print_mod ,Types.MOD(f, subs', SOME(Types.TYPED(e'', NONE,prop)))) 
 	-----------------
 	update_mod(env, pre, m as Types.MOD(f, subs, SOME(Types.UNTYPED(e))),impl)
-	  => Types.MOD(f, subs', SOME(Types.TYPED(e'', prop)))
+	  => Types.MOD(f, subs', SOME(Types.TYPED(e'',e_val, prop)))
 
   rule	update_submods (env, pre, subs,impl) => subs' 
 	---------------------------------------
-	update_mod(env, pre, Types.MOD(f, subs, SOME(Types.TYPED(e, p))),impl) 
-	  => Types.MOD(f, subs', SOME(Types.TYPED(e, p)))
+	update_mod(env, pre, Types.MOD(f, subs, SOME(Types.TYPED(e, e_val, p))),impl) 
+	  => Types.MOD(f, subs', SOME(Types.TYPED(e,e_val, p)))
 
   rule	update_submods (env,pre,subs,impl) => subs' 	
 	-------------------------
@@ -405,7 +428,7 @@ relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod, bool (*impl*)) => 
 	--------------------------
 	elab_submod (env,pre,SCode.NAMEMOD(i,m),impl) => [Types.NAMEMOD(i,m')]
 
-  rule	Static.elab_subscripts (env,ss,impl) => (ss',true) &
+  rule	Static.elab_subscripts (env,ss,impl) => (ss',Types.C_CONST) &
 	elab_mod (env,pre,m,impl) => m' &
 	make_idxmods (ss',m') => smods
 	---------------------------
@@ -512,14 +535,14 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Types.Mod)
 	Types.unlift_array(t) => t' &
 	make_idxmods(Exp.INDEX(x)::ss,
 		     Types.MOD(final, [],
-			 SOME(Types.TYPED(e',Types.PROP(t',const))))) => mods1 &
+			 SOME(Types.TYPED(e',e_val,Types.PROP(t',const))))) => mods1 &
 	int_add(n, 1) => n' &
 	expand_slice(xs, ss, n', m) => mods2 &
 	list_append(mods1, mods2) => mods
 	---------------------------------
 	expand_slice(x::xs, ss, n,
 		     m as Types.MOD(final, [],
-			      SOME(Types.TYPED(e,Types.PROP(t,const))))) => mods
+			      SOME(Types.TYPED(e,e_val,Types.PROP(t,const))))) => mods
 
   rule	Print.print_error_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
 	--------------------------------
@@ -761,9 +784,9 @@ relation index_eqmod : (Types.EqMod option, int list) => Types.EqMod option =
 
   rule	Types.unlift_array t => t' &
 	Exp.simplify Exp.ASUB(e,x) => exp &
-	index_eqmod (SOME(Types.TYPED(exp,Types.PROP(t',c))),xs) => e
+	index_eqmod (SOME(Types.TYPED(exp,e_val,Types.PROP(t',c))),xs) => e
 	------------------------------------------
-	index_eqmod (SOME(Types.TYPED(e,Types.PROP(t,c))),x::xs) => e
+	index_eqmod (SOME(Types.TYPED(e,e_val,Types.PROP(t,c))),x::xs) => e
 
 end
 
@@ -891,7 +914,7 @@ relation merge_eq : (Types.EqMod option, Types.EqMod option) => Types.EqMod opti
 
 	(* Outer assignments take precedence *)
 
-  axiom merge_eq(e as SOME(Types.TYPED(_,_)), _) => e
+  axiom merge_eq(e as SOME(Types.TYPED(_,_,_)), _) => e
   axiom merge_eq(e as SOME(Types.UNTYPED(_)), _) => e
   axiom merge_eq(NONE,e) => e
 
@@ -1036,9 +1059,17 @@ relation print_eqmod_str : Types.EqMod option => string =
 
   rule  Exp.print_exp_str e  => str &
 	Types.print_prop_str prop => str2 &
+	Values.val_string(e_val) => e_val_str &
+	Util.string_append_list([" = (typed)",str, str2,", E_VALUE:",
+				 e_val_str]) => res
+	-----------------------------
+	print_eqmod_str SOME(Types.TYPED(e,SOME(e_val),prop)) => res
+
+  rule  Exp.print_exp_str e  => str &
+	Types.print_prop_str prop => str2 &
 	Util.string_append_list([" = (typed)",str, str2]) => res
 	-----------------------------
-	print_eqmod_str SOME(Types.TYPED(e,prop)) => res
+	print_eqmod_str SOME(Types.TYPED(e,NONE,prop)) => res
 
   rule  Dump.print_exp_str e => str &
 	string_append(" =(untyped) ",str) => res

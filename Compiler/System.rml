@@ -323,5 +323,27 @@ relation directory_exist: (string) => int
  **)
  relation platform: () => string
 
+(** relation: asin
+ **
+ ** Arcsin is not defined in rml.
+ **)
+
+relation asin: real => real 
+
+(** relation: acos
+ **
+ ** Arccos is not defined in rml.
+ **)
+
+relation acos: real => real 
+
+(** relation: atan
+ **
+ ** Arctan is not defined in rml.
+ **)
+
+relation atan: real => real 
+
+
 end
 

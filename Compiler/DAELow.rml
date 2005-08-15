@@ -5746,9 +5746,9 @@ relation add_variables_to_env: (Var list, Env.Env) => Env.Env =
 	
   rule	(* Some of the attributes added to env here does not matter, defaults are used *)
 	DAE.generate_dae_type(t) => t' &
-	    Env.extend_frame_v(env,Types.VAR(crn,Types.ATTR(false,SCode.RW,SCode.CONST,Absyn.BIDIR),
-                                         false,t',Types.EQBOUND(e,true)),
-			               NONE,false) 
+	Env.extend_frame_v(env,Types.VAR(crn,Types.ATTR(false,SCode.RW,SCode.CONST,Absyn.BIDIR),
+                                         false,t',Types.EQBOUND(e,NONE,Types.C_CONST)),
+			   NONE,false,[]) 
 	  => env' &
 	add_variables_to_env(rest,env') => env'' 
 	------------------
@@ -5757,7 +5757,7 @@ relation add_variables_to_env: (Var list, Env.Env) => Env.Env =
   rule	(* Some of the attributes added to env here does not matter, defaults are used *)
 	DAE.generate_dae_type(t) => t' &
 	Env.extend_frame_v(env,Types.VAR(crn,Types.ATTR(false,SCode.RW,SCode.CONST,Absyn.BIDIR),false,t',Types.UNBOUND),
-			   NONE,false)
+			   NONE,false,[])
 	  => env' &
 	add_variables_to_env(rest,env') => env'' 
 	-------------------------------------------
@@ -5787,13 +5787,13 @@ relation update_variables:(Var list, Env.Env) => Var list =
   axiom	update_variables([],_) => []
 
   rule	update_variables(rest,env) => rest' &
-	Ceval.ceval(env,e,false,NONE,NONE) => (v,_)
+	Ceval.ceval(env,e,false,NONE,NONE,Ceval.MSG) => (v,_)
 	-----------------------------------
 	update_variables(VAR(cr,a,b,c,SOME(e),_,d,f,g,h,i,dae_var_attr,comment,flow)::rest,env)
 	  => (VAR(cr,a,b,c,SOME(e),SOME(v),d,f,g,h,i,dae_var_attr,comment,flow)::rest')
 
   rule	update_variables(rest,env) => rest' &
-	not Ceval.ceval(env,e,false,NONE,NONE) => (_,_) &
+	not Ceval.ceval(env,e,false,NONE,NONE,Ceval.NO_MSG) => (_,_) &
 	Print.print_buf "Warning, ceval failed for parameter: " &
 	Exp.print_component_ref cr & Print.print_buf "\n" 
 	-----------------------------------

@@ -201,8 +201,15 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 			    Exp.Exp, Types.Properties,
 			    SCode.Accessibility) => Statement =
 
-  rule	Types.is_prop_any_const (lprop) => true &
+  rule	Types.prop_any_const (lprop) => Types.C_CONST &
 	Print.print_error_buf "# Trying to assign to constant component\n" &
+	Print.print_error_buf "    " & Exp.print_exp lhs &
+ 	Print.print_error_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
+	-------------------------------------------
+	make_assignment (lhs,lprop,rhs,rprop,_) => fail
+
+  rule	Types.prop_any_const (lprop) => Types.C_PARAM &
+	Print.print_error_buf "# Trying to assign to parameter component\n" &
 	Print.print_error_buf "    " & Exp.print_exp lhs &
  	Print.print_error_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
 	-------------------------------------------
@@ -213,7 +220,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	make_assignment(e,_,_,_, SCode.RO) => fail
 
 	(* LS: Replaced "as Types.PROP(_,false)" from lhprop", by the first predicate *)
-  rule	Types.is_prop_any_const (lhprop) => false &
+  rule	Types.prop_any_const (lhprop) => Types.C_VAR &
 	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
 	Types.is_prop_array lhprop => false &
 	get_prop_exp_type lhprop => t
@@ -221,7 +228,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	make_assignment(Exp.CREF(c,crt), lhprop,
 			rhs, rhprop, _) => ASSIGN(t,c,rhs')
 
-  rule	Types.is_prop_any_const (lhprop) => false &
+  rule	Types.prop_any_const (lhprop) => Types.C_VAR &
 	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
 	Types.is_prop_array lhprop => true &
 	get_prop_exp_type lhprop => t
@@ -257,8 +264,8 @@ end
 relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 			    Exp.Exp, Types.Properties) => Statement =
 
-  rule	Util.list_map(lprop, Types.is_prop_any_const) => bvals &
-	Util.bool_or_list(bvals) => true &
+  rule	Util.list_map(lprop, Types.prop_any_const) => bvals &
+	Util.list_reduce(bvals,Types.const_or) => Types.C_CONST &
 	Print.print_error_buf "# Trying to assign to constant component in tuple assignment\n" &
 	Print.print_error_buf "    " & 
 	Dump.print_list(lhs, Exp.print_exp, ", ") &
@@ -267,8 +274,19 @@ relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 	-------------------------------------------
 	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
 
-  rule	Util.list_map(lhprops, Types.is_prop_any_const) => bvals &
-	Util.bool_or_list(bvals) => false &
+  rule	Util.list_map(lprop, Types.prop_any_const) => bvals &
+	Util.list_reduce(bvals,Types.const_or) => Types.C_PARAM &
+	Print.print_error_buf "# Trying to assign to parameter component in tuple assignment\n" &
+	Print.print_error_buf "    " & 
+	Dump.print_list(lhs, Exp.print_exp, ", ") &
+ 	Print.print_error_buf " := " & Exp.print_exp rhs &
+	Print.print_error_buf "\n"
+	-------------------------------------------
+	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
+
+
+  rule	Util.list_map(lhprops, Types.prop_any_const) => bvals &
+	Util.list_reduce(bvals,Types.const_or) => Types.C_VAR &
 	Util.list_map(lhprops,Types.get_prop_type) => lhrtypes &
 	Types.match_type_list(rhs,tpl,lhrtypes) => (rhs',_)
 	(* Don't use the new rhs', since type conversions of several output args

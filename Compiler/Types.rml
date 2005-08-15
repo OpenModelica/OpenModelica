@@ -145,7 +145,8 @@ module Types :
 
   datatype Binding = UNBOUND
 		   | EQBOUND of Exp.Exp * 
-				bool (* constant *)
+				Values.Value option * (* evaluated exp*)
+				Const (* constant *)
 		   | VALBOUND of Values.Value
 
   (** - Types *)
@@ -181,16 +182,25 @@ module Types :
 	(* A tuple is added to the Types. This is used by functions whom
 returns multiple arguments. *)
 
+(** The degree of constantness of an expression is determined by the Const 
+ ** datatype. Variables declared as 'constant' will get C_CONST constantness.
+ ** Variables declared as 'parameter' will get C_PARAM constantness and
+ ** all other variables are not constant and will get C_VAR constantness.
+ **)
+  datatype Const = C_CONST | (* 'constant's, should always be evaluated *)
+		   C_PARAM | (* 'parameter's, evaluated if structural *)
+		   C_VAR     (* not constants, never evaluated *)
+
 (* Used by split_props  *)
-  datatype Const = CONST of bool |
-		   TUPLE_CONST  of Const list 
+  datatype TupleConst = CONST of Const |
+		   TUPLE_CONST  of TupleConst list 
 
   datatype Properties = PROP of Type * (* type *)
-				 bool (* if the type is a tuple, each element 
+				 Const (* if the type is a tuple, each element 
 				          have a const flag. *)
 
 (* Type is meant to be T_TUPLE *)
-			| PROP_TUPLE of Type * Const (* The elements might be 
+			| PROP_TUPLE of Type * TupleConst (* The elements might be 
 							    tuple themselfs. *)
 	
 (*	* P.R 1.1 for multiple return arguments from functions, 
@@ -216,10 +226,13 @@ returns multiple arguments. *)
 
   (** - Modification datatype, was originally in Mod *)
 
-  datatype EqMod = TYPED of Exp.Exp * Properties |
-		   UNTYPED of Absyn.Exp
+  datatype EqMod = TYPED of Exp.Exp * (* modifier as expression *)
+			    Values.Value option * (* modifier as Value option*)
+			    Properties 
+		   | UNTYPED of Absyn.Exp
   datatype SubMod = NAMEMOD of Ident * Mod
-		  | IDXMOD of int list * Mod
+		  | IDXMOD of int 
+list * Mod
   and Mod = MOD of bool (* final *) * (SubMod list) * EqMod option
   	  | REDECL of bool (* final *) * (SCode.Element*Mod) list
 	  | NOMOD
@@ -239,6 +252,7 @@ returns multiple arguments. *)
   relation print_prop_str: Properties => string 
   relation unparse_type : Type => string
   relation unparse_var: Var => string 
+  relation unparse_tupleconst : TupleConst => string
   relation unparse_const : Const => string
   relation print_var : Var => ()
   relation print_binding : Binding => ()
@@ -268,10 +282,14 @@ returns multiple arguments. *)
   relation values_to_mods: (Values.Value list,string list) => Mod
   relation values_to_vars:(Values.Value list,Exp.Ident list) => Var list
 	  
-  relation is_prop_any_const : Properties => bool
-  relation is_prop_all_const : Properties => bool
+  relation prop_any_const : Properties => Const
+  relation prop_all_const : Properties => Const
   relation get_prop_type : Properties => Type
   relation is_prop_array : Properties => bool
+
+  relation const_and: (Const, Const) => Const
+  relation const_or: (Const, Const) => Const
+  relation bool_const: (bool) => Const
 
   relation elab_type : Type => Exp.Type
   relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
@@ -287,6 +305,9 @@ returns multiple arguments. *)
 
   relation get_all_exps : Type => Exp.Exp list
 
+  relation integer_or_real: Type => () 
+  relation simple_type: Type => () 
+
 end
 
 
@@ -295,6 +316,30 @@ with "Debug.rml"
 with "Print.rml"
 with "Util.rml"
 with "Static.rml"
+
+(** relation: simple_type
+ ** author: PA
+ ** 
+ ** Succeeds for all the builtin types, Integer, String, Real, Boolean
+ **)
+relation simple_type: Type => () = 
+
+  axiom	simple_type((T_REAL(_),_)) => ()
+  axiom	simple_type((T_INTEGER(_),_)) => ()
+  axiom	simple_type((T_STRING(_),_)) => ()
+  axiom	simple_type((T_BOOL(_),_)) => ()
+end
+
+(** relation: integer_or_real 
+ ** author: PA
+ ** 
+ ** Succeeds for the builtin types Integer and Real.
+ **)
+relation integer_or_real: Type => () =
+
+  axiom	integer_or_real((T_REAL(_),_)) => ()
+  axiom	integer_or_real((T_INTEGER(_),_)) => ()
+end
 
 (** relation: is_array
  **
@@ -416,22 +461,22 @@ relation values_to_mods: (Values.Value list,Ident list) => Mod =
   rule	values_to_mods(rest,ids) => MOD(_,res,_)
 	---------------------------------------
 	values_to_mods(Values.INTEGER(i)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.ICONST(i),PROP((T_INTEGER([]),NONE),false)))))::res,NONE)
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.ICONST(i),SOME(Values.INTEGER(i)),PROP((T_INTEGER([]),NONE),C_VAR)))))::res,NONE)
 
   rule	values_to_mods(rest,ids) => MOD(_,res,_)
 	---------------------------------------
 	values_to_mods(Values.REAL(r)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.RCONST(r),PROP((T_REAL([]),NONE),false)))))::res,NONE)
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.RCONST(r),SOME(Values.REAL(r)),PROP((T_REAL([]),NONE),C_VAR)))))::res,NONE)
 
   rule	values_to_mods(rest,ids) => MOD(_,res,_)
 	---------------------------------------
 	values_to_mods(Values.STRING(s)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.SCONST(s),PROP((T_STRING([]),NONE),false)))))::res,NONE)
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.SCONST(s),SOME(Values.STRING(s)),PROP((T_STRING([]),NONE),C_VAR)))))::res,NONE)
 
   rule	values_to_mods(rest,ids) => MOD(_,res,_)
 	---------------------------------------
 	values_to_mods(Values.BOOL(b)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.BCONST(b),PROP((T_BOOL([]),NONE),false)))))::res,NONE)
+	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),PROP((T_BOOL([]),NONE),C_VAR)))))::res,NONE)
 
   rule	values_to_mods(rest,ids) => MOD(_,res,_) &
 	values_to_record_constructor_call(cname,vals) => rec_call &
@@ -440,7 +485,8 @@ relation values_to_mods: (Values.Value list,Ident list) => Mod =
 	----------------------------------------
 	values_to_mods(Values.RECORD(cname,vals,val_names)::rest,id::ids)
 	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(rec_call,
-							  PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst),NONE),false)))))::res,NONE)
+							  SOME(Values.RECORD(cname,vals,val_names)),
+							  PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst),NONE),C_VAR)))))::res,NONE)
 
   rule	Debug.fprint("failtrace","-values_to_mods failed for value: ") &
 	Values.val_string(v) => vs & 
@@ -1030,22 +1076,36 @@ end
 
 (** relation: unparse_const
  **
- ** This relation prints a Modelica Const as a string.
+ ** This relation prints a Const as a string.
  **)
 
 relation unparse_const : Const => string =
 
-  rule	Util.bool_string b => bstr
-	--------------------------
-	unparse_const CONST(b) => bstr
+  axiom	unparse_const C_CONST => "C_CONST"
+  axiom	unparse_const C_PARAM => "C_PARAM"
+  axiom	unparse_const C_VAR => "C_VAR"
 
-  rule	Util.list_map(constlist, unparse_const) => strlist &
+end
+
+(** relation: unparse_tupleconst
+ **
+ ** This relation prints a Modelica TupleConst as a string.
+ **)
+
+relation unparse_tupleconst : TupleConst => string =
+
+  rule	unparse_const c => cstr
+	--------------------------
+	unparse_tupleconst CONST(c) => cstr
+
+  rule	Util.list_map(constlist, unparse_tupleconst) => strlist &
 	Util.string_delimit_list(strlist, ", ") => res &
 	Util.string_append_list(["(", res, ")"]) => res'
 	----------------------------------------------
-	unparse_const TUPLE_CONST(constlist) => res'
+	unparse_tupleconst TUPLE_CONST(constlist) => res'
 
 end
+
 
 (** relation: print_type
  **
@@ -1242,9 +1302,10 @@ relation print_binding : Binding => () =
 
   rule	Print.print_error_buf "EQBOUND: " &
 	Exp.print_exp exp &
-	Dump.print_select (f, " true", " false")
+	unparse_const(f) => str &
+	Print.print_error_buf str 
 	----------------------------------------
-	print_binding EQBOUND (exp,f)
+	print_binding EQBOUND (exp,_,f)
 
   rule	Print.print_error_buf "VALBOUND: " &
 	Values.print_val v
@@ -1263,10 +1324,17 @@ relation print_binding_str : Binding => string =
   axiom	print_binding_str UNBOUND => "UNBOUND" 
 
   rule	Exp.print_exp_str exp => str &
-	Dump.select_string (f, " true", " false") => str2 &
-	Util.string_append_list(["EQBOUND(", str, ", ",str2, ")"]) => res
+	unparse_const(f) => str2 &
+	Util.string_append_list(["EQBOUND(", str, ",NONE ",str2, ")"]) => res
 	----------------------------------------
-	print_binding_str EQBOUND (exp,f) => res
+	print_binding_str EQBOUND (exp,NONE,f) => res
+
+  rule	Exp.print_exp_str exp => str &
+	unparse_const(f) => str2 &
+	Values.val_string(v) => v_str &
+	Util.string_append_list(["EQBOUND(", str, ",SOME(",v_str,"), ",str2, ")"]) => res
+	----------------------------------------
+	print_binding_str EQBOUND (exp,SOME(v),f) => res
 
   rule	Values.unparse_values [v] => s &
 	Util.string_append_list(["VALBOUND(",s,")"]) => res
@@ -1612,105 +1680,118 @@ relation get_type_name: Type => string =
 
 end
 
-(** relation: is_prop_all_const
+(** relation: prop_all_const
  ** author: LS
  ** 
- ** If PROP_TUPLE, returns true if all of the flags are true 
+ ** If PROP_TUPLE, returns true if all of the flags are constant.
  **)
 
-relation is_prop_all_const: Properties => bool =
+relation prop_all_const: Properties => Const =
 
-  axiom	is_prop_all_const PROP(_,constant) => constant
+  axiom	prop_all_const PROP(_,c) => c
 
-  rule	is_prop_tuple_all_const constant => res
+  rule	prop_tuple_all_const constant => res
 	-----------------------------------
-	is_prop_all_const PROP_TUPLE(_,constant) => res
+	prop_all_const PROP_TUPLE(_,constant) => res
 
-  rule	Debug.fprint("failtrace", "- is_prop_all_const failed: ") &
+  rule	Debug.fprint("failtrace", "- prop_all_const failed: ") &
 	print_prop_str prop => str &
 	Debug.fprintln("failtrace", str)
 	---------------------------------------------------------------
-	is_prop_all_const prop => fail
+	prop_all_const prop => fail
 end
 
-(** relation: is_prop_any_const
+(** relation: prop_any_const
  ** author: LS
  ** 
  ** If PROP_TUPLE, returns true if any of the flags are true 
  **)
 
-relation is_prop_any_const: Properties => bool =
+relation prop_any_const: Properties => Const =
 
-  axiom	is_prop_any_const PROP(_,constant) => constant
+  axiom	prop_any_const PROP(_,constant) => constant
 
-  rule	is_prop_tuple_any_const constant => res
+  rule	prop_tuple_any_const constant => res
 	-----------------------------------
-	is_prop_any_const PROP_TUPLE(_,constant) => res
+	prop_any_const PROP_TUPLE(_,constant) => res
 
-  rule	Debug.fprint("failtrace", "- is_prop_any_const failed: ") &
+  rule	Debug.fprint("failtrace", "- prop_any_const failed: ") &
 	print_prop_str prop => str &
 	Debug.fprintln("failtrace", str)
 	---------------------------------------------------------------
-	is_prop_any_const prop => fail
+	prop_any_const prop => fail
 end
 
-(** relation: is_prop_tuple_any_const
+(** relation: prop_tuple_any_const
  ** author: LS
  ** 
- ** Helper relation to is_prop_any_const.
+ ** Helper relation to prop_any_const.
  **)
-relation is_prop_tuple_any_const: Const => bool =
+relation prop_tuple_any_const: TupleConst => Const =
 
-  axiom	is_prop_tuple_any_const CONST(f) => f
+  axiom	prop_tuple_any_const CONST(c) => c
 
-  rule	is_prop_tuple_any_const first => true
+  rule	prop_tuple_any_const first => C_CONST
 	---------------------------------
-	is_prop_tuple_any_const TUPLE_CONST(first::rest) => true
+	prop_tuple_any_const TUPLE_CONST(first::rest) => C_CONST
 
-  rule	is_prop_tuple_any_const first => false
+  rule	prop_tuple_any_const first => C_PARAM
 	--------------------------------------------
-	is_prop_tuple_any_const TUPLE_CONST(first::[]) => false
+	prop_tuple_any_const TUPLE_CONST(first::[]) => C_PARAM
 
-  rule	is_prop_tuple_any_const first => false &
-	is_prop_tuple_any_const TUPLE_CONST(rest) => res
+  rule	prop_tuple_any_const first => C_VAR
 	--------------------------------------------
-	is_prop_tuple_any_const TUPLE_CONST(first::rest) => res
+	prop_tuple_any_const TUPLE_CONST(first::[]) => C_VAR
 
-  rule	Debug.fprint("failtrace", "- is_prop_tuple_any_const failed: ") &
-	unparse_const const => str &
+  rule	prop_tuple_any_const first => C_PARAM &
+	prop_tuple_any_const TUPLE_CONST(rest) => res
+	--------------------------------------------
+	prop_tuple_any_const TUPLE_CONST(first::rest) => res
+
+  rule	prop_tuple_any_const first => C_VAR &
+	prop_tuple_any_const TUPLE_CONST(rest) => res
+	--------------------------------------------
+	prop_tuple_any_const TUPLE_CONST(first::rest) => res
+
+  rule	Debug.fprint("failtrace", "- prop_tuple_any_const failed: ") &
+	unparse_tupleconst const => str &
 	Debug.fprintln("failtrace", str)
 	---------------------------------------------------------------
-	is_prop_tuple_any_const const => fail
+	prop_tuple_any_const const => fail
 end
 
-(** relation: is_prop_tuple_all_const
+(** relation: prop_tuple_all_const
  ** author: LS 
  **
- ** Helper relation to is_prop_all_const.
+ ** Helper relation to prop_all_const.
  **)
 
-relation is_prop_tuple_all_const: Const => bool =
+relation prop_tuple_all_const: TupleConst => Const =
 
-  axiom	is_prop_tuple_all_const CONST(f) => f
+  axiom	prop_tuple_all_const CONST(c) => c
 
-  rule	is_prop_tuple_all_const first => false
+  rule	prop_tuple_all_const first => C_PARAM
 	---------------------------------
-	is_prop_tuple_all_const TUPLE_CONST(first::rest) => false
+	prop_tuple_all_const TUPLE_CONST(first::rest) => C_PARAM
 
-  rule	is_prop_tuple_all_const first => true
+  rule	prop_tuple_all_const first => C_VAR
+	---------------------------------
+	prop_tuple_all_const TUPLE_CONST(first::rest) => C_VAR
+
+  rule	prop_tuple_all_const first => C_CONST
 	--------------------------------------------
-	is_prop_tuple_all_const TUPLE_CONST(first::[]) => true
+	prop_tuple_all_const TUPLE_CONST(first::[]) => C_CONST
 
-  rule	is_prop_tuple_all_const first => true &
-	is_prop_tuple_all_const TUPLE_CONST(rest) => res
+  rule	prop_tuple_all_const first => C_CONST &
+	prop_tuple_all_const TUPLE_CONST(rest) => res
 	--------------------------------------------
-	is_prop_tuple_all_const TUPLE_CONST(first::rest) => res
+	prop_tuple_all_const TUPLE_CONST(first::rest) => res
 
-  rule	Debug.fprint("failtrace", "- is_prop_tuple_all_const failed: ") &
-	unparse_const const => str &
+  rule	Debug.fprint("failtrace", "- prop_tuple_all_const failed: ") &
+	unparse_tupleconst const => str &
 	Debug.fprintln("failtrace", str)
 	---------------------------------------------------------------
-	is_prop_tuple_all_const const => fail
+	prop_tuple_all_const const => fail
 
 end
 
@@ -2105,32 +2186,79 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
 	is_array t2 => false &	
 	t1 = t2 &
 	let t = t1 &
-	bool_and(c1,c2) => c
+	const_and(c1,c2) => c
 	--------------
 	match_with_promote(PROP(t1,c1),PROP(t2,c2), false) => PROP(t,c)
 
 
   rule	(* Have real and both Real *)
-	bool_and(c1,c2) => c
+	const_and(c1,c2) => c
 	--------------
 	match_with_promote(PROP((T_REAL(v),_),c1),PROP((T_REAL(_),p2),c2), true) => PROP((T_REAL(v),p2),c)
 
   rule	(* Have real and first Integer *)
-	bool_and(c1,c2) => c
+	const_and(c1,c2) => c
 	--------------
 	match_with_promote(PROP((T_INTEGER(_),_),c1),PROP((T_REAL(v),p2),c2), true) 
 	  => PROP((T_REAL(v),p2),c)
 
   rule	(* Have real and second Integer *)
-	bool_and(c1,c2) => c
+	const_and(c1,c2) => c
 	--------------
 	match_with_promote(PROP((T_REAL(v),_),c1),PROP((T_INTEGER(_),p2),c2), true) => PROP((T_REAL(v),p2),c)
 
   rule	(* Have real and both Integer *)
-	bool_and(c1,c2) => c
+	const_and(c1,c2) => c
 	--------------
 	match_with_promote(PROP((T_INTEGER(_),_),c1),PROP((T_INTEGER(_),p2),c2), true) 
 	  => PROP((T_REAL([]),p2),c)
+end
+
+(** relation: const_and
+ **
+ ** Returns the 'and' operator of two Const's. I.e. C_CONST iff. both are 
+ ** C_CONST, C_PARAM iff both are C_PARAM (or one of them C_CONST),
+ ** V_VAR otherwise.
+ **)
+
+relation const_and: (Const, Const) => Const =
+
+  axiom	const_and(C_CONST, C_CONST) => C_CONST 
+  axiom	const_and(C_CONST,C_PARAM) => C_PARAM
+  axiom	const_and(C_PARAM,C_CONST) => C_PARAM
+  axiom	const_and(C_PARAM,C_PARAM) => C_PARAM
+
+  axiom	const_and(_,_) => C_VAR
+end
+
+(** relation: const_or
+ **
+ ** Returns the 'or' operator of two Const's. I.e. C_CONST if some is 
+ ** C_CONST, C_PARAM if none is C_CONST but some is C_PARAM and
+ ** V_VAR otherwise.
+ **)
+
+relation const_or: (Const, Const) => Const =
+
+  axiom	const_or(C_CONST, _) => C_CONST 
+  axiom	const_or(_,C_CONST) => C_CONST 
+  axiom	const_or(C_PARAM,_) => C_PARAM
+  axiom	const_or(_,C_PARAM) => C_PARAM
+end
+
+(** relation: bool_const
+ ** author: PA
+ **
+ ** Creates a Const value from a bool. If true, C_CONST,
+ ** if false C_VAR, i.e. there is no way to create a C_PARAM using this 
+ ** relation.
+ **)
+
+relation bool_const: (bool) => Const =
+
+  axiom	bool_const(false) => C_VAR
+  axiom	bool_const(true) => C_CONST
+
 end
 
 (** relation: print_prop_str
@@ -2141,17 +2269,19 @@ end
 relation print_prop_str: Properties => string =
 
   rule	unparse_type ty => ty_str &
-	Util.if(const,"const","non_const")  => const_str &
+	unparse_const const => const_str &
 	Util.string_append_list(["PROP(",ty_str,const_str,")"]) => res
 	-------------------
 	print_prop_str PROP(ty,const) => res
 
   rule	unparse_type ty => ty_str &
-	unparse_const const => const_str &
+	unparse_tupleconst const => const_str &
 	Util.string_append_list(["PROP_TUPLE(",ty_str, ", ", const_str, ")"]) => res
 	---------------------------------
 	print_prop_str PROP_TUPLE(ty,const) => res
 end
+
+
 
 (** relation: print_prop
  **
@@ -2289,7 +2419,7 @@ end
 
 relation get_all_exps_binding : Binding => Exp.Exp list =
 
-  axiom	get_all_exps_binding EQBOUND(exp,cnst) => [exp]
+  axiom	get_all_exps_binding EQBOUND(exp,_,cnst) => [exp]
 
   axiom	get_all_exps_binding UNBOUND => []
 
