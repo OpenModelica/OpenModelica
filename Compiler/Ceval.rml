@@ -194,6 +194,7 @@ relation ceval_builtin : (Env.Env, Exp.Exp, bool (*impl*),
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
 
 	  (* Handle size separately *)
+	
   rule	ceval_builtin_size(env,exp,dim,impl,st,msg) => (v,st)
 	-----------------------------------------
 	ceval_builtin (env,Exp.SIZE(exp,SOME(dim)),impl,st,_,msg) => (v,st) 	
@@ -594,6 +595,14 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 ---------------------
 	 ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp),impl,st,dim,msg)
 	  => (Values.REAL(x'),st')
+
+	   (* unary minus of array*)
+  rule	ceval (env,exp,impl,st,dim,msg) => (Values.ARRAY(arr),st') &
+	Util.list_map(arr,Values.value_neg) => arr'
+	 ---------------------
+	 ceval (env, Exp.UNARY(Exp.UMINUS_ARR(_), exp),impl,st,dim,msg)
+	  => (Values.ARRAY(arr'),st')
+
 	   
   rule	ceval (env,exp,impl,st,dim,msg) => (Values.INTEGER(x),st') &
 	 int_neg (x) => x'
@@ -1744,7 +1753,9 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool,
 	 * which will determine dimension size.
 	 *)
 	Inst.elab_component_arraydim_from_env(env,cr) => dims &
+	print "got dims\n" &
 	ceval(env,dim,impl,st,NONE,msg) => (Values.INTEGER(dimv),st') &
+	print "cevaled\n" &
 	ceval_builtin_size_3(dims,dimv) => v2
 	------------------------------------
 	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st,msg) 
@@ -1813,7 +1824,7 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool,
   rule	Print.print_error_buf "#-- ceval_builtin_size failed: "  &
 	  Exp.print_exp_str exp => expstr &
 	  Print.print_error_buf expstr &
-	  Print.print_error_buf "\n"
+	  Print.print_error_buf "\n" 
 	  ------------------------------------
 	  ceval_builtin_size(env,exp,dim,impl,st,MSG) => fail
   end
@@ -1860,9 +1871,9 @@ relation ceval_builtin_size_3: (Inst.DimExp list, int ) => Values.Value =
 	-------------------------
 	ceval_builtin_size_3(dims,n) => fail
 
-  rule	print "-ceval_builtin_size_3 failed\n"
+(*  rule	print "-ceval_builtin_size_3 failed\n"
 	-------------------------
-	ceval_builtin_size_3(dims,n) => fail
+	ceval_builtin_size_3(dims,n) => fail*)
 end
 
 (** relation: ceval_builtin_abs
@@ -3097,7 +3108,7 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool, (*impl*) Msg)
 	Print.print_error_buf "# Variable  " &
 	Exp.print_component_ref_str c => str &
 	Print.print_error_buf str & 
-	Print.print_error_buf "not found.\n" 
+	Print.print_error_buf " not found.\n" 
 	-------------------------------------
 	ceval_cref (env,c,impl as false ,MSG) => fail
 

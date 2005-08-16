@@ -296,7 +296,7 @@ relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 			rhs, Types.PROP_TUPLE((Types.T_TUPLE(tpl),_),Types.TUPLE_CONST(clist))) 
 	  => TUPLE_ASSIGN(Exp.OTHER,expl,rhs)
 
-  rule	(*Debug.fprint("failtrace", "- make_tuple_assignment failed\n")*)
+  rule	Debug.fprint("failtrace", "- make_tuple_assignment failed\n")
 	-------------------------------------------
 	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
 

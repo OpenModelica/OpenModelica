@@ -2026,6 +2026,7 @@ end
 relation elab_builtin_change : (Env.Env, Absyn.Exp list, bool (*impl*)) 
 	  => (Exp.Exp, Types.Properties)	=
 
+	  (* simple type, 'discrete' variable *)
   rule	elab_exp(env,exp,impl,NONE) 
 	  => (exp' as Exp.CREF(cr',_),Types.PROP(tp1,_),_) &
 	  Types.simple_type(tp1) &
@@ -2033,6 +2034,32 @@ relation elab_builtin_change : (Env.Env, Absyn.Exp list, bool (*impl*))
 	----------------------------------
 	elab_builtin_change(env,[exp as Absyn.CREF(cr)],impl) 
 	  => (Exp.CALL(Absyn.IDENT("change"),[exp'],false,true), Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR))
+
+	  (* simple type, boolean or integer => discrete variable *)
+  rule	elab_exp(env,exp,impl,NONE) 
+	  => (exp' as Exp.CREF(cr',_),Types.PROP(tp1,_),_) &
+	  Types.simple_type(tp1) &
+	Types.discrete_type(tp1) 
+	----------------------------------
+	elab_builtin_change(env,[exp as Absyn.CREF(cr)],impl) 
+	  => (Exp.CALL(Absyn.IDENT("change"),[exp'],false,true), Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR))
+
+	  (* simple type, constant variability *)
+  rule	elab_exp(env,exp,impl,NONE) 
+	  => (exp' as Exp.CREF(cr',_),Types.PROP(tp1,Types.C_CONST),_) &
+	  Types.simple_type(tp1) 
+	----------------------------------
+	elab_builtin_change(env,[exp as Absyn.CREF(cr)],impl) 
+	  => (Exp.CALL(Absyn.IDENT("change"),[exp'],false,true), Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR))
+
+	  (* simple type, param variability *)
+  rule	elab_exp(env,exp,impl,NONE) 
+	  => (exp' as Exp.CREF(cr',_),Types.PROP(tp1,Types.C_PARAM),_) &
+	  Types.simple_type(tp1) 
+	----------------------------------
+	elab_builtin_change(env,[exp as Absyn.CREF(cr)],impl) 
+	  => (Exp.CALL(Absyn.IDENT("change"),[exp'],false,true), Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR))
+
 
   rule	elab_exp(env,exp,impl,NONE) 
 	  => (exp' as Exp.CREF(cr',_),Types.PROP(tp1,_),_) &
@@ -4484,7 +4511,9 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
   axiom	compute_return_type (Exp.DIV(_),_,typ) => typ
   axiom	compute_return_type (Exp.POW(_),_,typ) => typ
   axiom	compute_return_type (Exp.UMINUS(_),_,typ) => typ
+  axiom	compute_return_type (Exp.UMINUS_ARR(_),typ1::_,_) => typ1
   axiom	compute_return_type (Exp.UPLUS(_),_,typ) => typ
+  axiom	compute_return_type (Exp.UPLUS_ARR(_),typ1::_,_) => typ1
   axiom	compute_return_type (Exp.AND,_,typ) => typ
   axiom	compute_return_type (Exp.OR,_,typ) => typ
   axiom	compute_return_type (Exp.NOT,_,typ) => typ
@@ -4743,11 +4772,11 @@ relation operators : (Absyn.Operator, Env.Env, Types.Type, Types.Type)
 	array_type_list(9, (Types.T_INTEGER([]),NONE)) => intarrtypes &
 	array_type_list(9, (Types.T_REAL([]),NONE)) => realarrtypes &
 	
-	operator_return_unary(Exp.UMINUS(Exp.INT), 
+	operator_return_unary(Exp.UMINUS_ARR(Exp.INT), 
 			intarrtypes, 
 			intarrtypes) => intarrs &
 
-	operator_return_unary(Exp.UMINUS(Exp.REAL), 
+	operator_return_unary(Exp.UMINUS_ARR(Exp.REAL), 
 			realarrtypes, 
 			realarrtypes) => realarrs &
 	get_koening_operator_types("unaryMinus",env,t1,t2) => userops &

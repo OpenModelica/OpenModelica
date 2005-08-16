@@ -2395,7 +2395,7 @@ relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 	(* Find in sub modifications e.g A(B=3) find B *)
   rule	get_cref_from_submods(submods) => l1 &
 	Absyn.get_cref_from_exp(e) => l2 &
-	list_append(l1,l2) => res
+	list_append(l2,l1) => res
 	-------------------------
 	get_cref_from_mod(mod as SCode.MOD(_,submods,SOME(e))) => res
 

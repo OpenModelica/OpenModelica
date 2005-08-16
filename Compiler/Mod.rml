@@ -191,7 +191,7 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.
 	elab_mod (env, pre, m as SCode.REDECL(final, elist),impl) 
 	  =>  Types.REDECL(final, elist')
 
-  rule	(*Debug.fprint("failtrace", "#-- elab_mod failed\n")*)
+  rule	Debug.fprint("failtrace", "#-- elab_mod failed\n")
 	-------------------------------------------------
 	elab_mod (_,pre,mod,impl) => fail 
 end

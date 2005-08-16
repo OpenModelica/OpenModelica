@@ -2831,6 +2831,8 @@ end
 relation unaryop_priority : Operator => int =
   axiom	unaryop_priority(UMINUS(_))   => 37
   axiom	unaryop_priority(UPLUS(_))    => 37
+  axiom	unaryop_priority(UMINUS_ARR(_))   => 37
+  axiom	unaryop_priority(UPLUS_ARR(_))    => 37
 end
 
 (** relation: lbinop_priority
@@ -2963,6 +2965,8 @@ end
 relation unaryop_symbol : Operator => string =
   axiom	unaryop_symbol(UMINUS(_)) => "-"
   axiom	unaryop_symbol(UPLUS(_)) => "+"
+  axiom	unaryop_symbol(UMINUS_ARR(_)) => "-"
+  axiom	unaryop_symbol(UPLUS_ARR(_)) => "+"
 end
 
 (** relation: lbinop_symbol

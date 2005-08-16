@@ -138,6 +138,7 @@ with "Absyn.rml"
   relation print_val : Value => ()
   relation add_elementwise_arrayelt: (Value list, Value list) => Value list
   relation sub_elementwise_arrayelt: (Value list, Value list) => Value list
+  relation value_neg: (Value ) => Value
   relation sum_arrayelt: (Value list) => Value	  
   relation mult_scalar_arrayelt: (Value, Value list) => Value list
   relation mult_scalar_product: (Value list, Value list) => Value
@@ -445,6 +446,22 @@ relation sub_elementwise_arrayelt: (Value list, Value list) => Value list =
 	    => REAL(res)::res2
 
   axiom	sub_elementwise_arrayelt([],[]) => []
+end
+
+(** relation: value_neg
+ ** author: PA
+ **
+ ** Negates a Value
+ **)
+relation value_neg: (Value) => Value =
+
+  rule	real_neg(r) => r' 
+	----------------
+	value_neg(REAL(r)) => REAL(r')
+
+  rule	int_neg(i) => i' 
+	---------------------
+	value_neg(INTEGER(i)) => INTEGER(i')
 end
 
 (** relation: sum_arrayelt

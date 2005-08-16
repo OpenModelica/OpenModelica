@@ -307,7 +307,7 @@ list * Mod
 
   relation integer_or_real: Type => () 
   relation simple_type: Type => () 
-
+  relation discrete_type: Type => () 
 end
 
 
@@ -316,6 +316,20 @@ with "Debug.rml"
 with "Print.rml"
 with "Util.rml"
 with "Static.rml"
+
+(** relation: discrete_type
+ ** author: PA
+ ** 
+ ** Succeeds for all the discrete types, Integer, String, Boolean and 
+ ** enumeration.
+ **)
+relation discrete_type: Type => () = 
+
+  axiom	discrete_type((T_INTEGER(_),_)) => ()
+  axiom	discrete_type((T_STRING(_),_)) => ()
+  axiom	discrete_type((T_BOOL(_),_)) => ()
+  axiom	discrete_type((T_ENUMERATION(_,_),_)) => ()
+end
 
 (** relation: simple_type
  ** author: PA
