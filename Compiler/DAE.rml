@@ -1432,6 +1432,15 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 	----------
 	pp_stmt (Algorithm.ASSIGN_ARR(_,c,e), i)
 
+  rule	indent_str i => s1 &
+	Exp.print_exp_str e => s2 &
+	Util.list_map(expl,Exp.print_exp_str) => es &
+	Util.string_delimit_list(es,", ") => s3 &
+	Util.string_append_list([s1,"(",s3,") := ",s2,";\n"]) => str &
+	Print.print_buf str
+	--------------------------------------------
+	pp_stmt (Algorithm.TUPLE_ASSIGN(_,expl,e), i) 
+
   rule	indent i &
  	Print.print_buf "if " & Exp.print_exp e & Print.print_buf " then\n" &
 	int_add(i,2) => i' &
@@ -1503,6 +1512,14 @@ relation pp_stmt_str : (Algorithm.Statement, int) => string =
 	pp_stmt_str (Algorithm.ASSIGN_ARR(_,c,e), i) => str
 
   rule	indent_str i => s1 &
+	Exp.print_exp_str e => s2 &
+	Util.list_map(expl,Exp.print_exp_str) => es &
+	Util.string_delimit_list(es,", ") => s3 &
+	Util.string_append_list([s1,"(",s3,") := ",s2,";\n"]) => str
+	-----------------------------------------------------------
+	pp_stmt_str (Algorithm.TUPLE_ASSIGN(_,expl,e), i) => str
+
+  rule	indent_str i => s1 &
 	string_append(s1,"if ") => s2 &
 	Exp.print_exp_str e => s3 &
 	string_append(s2,s3) => s4 &
@@ -1561,7 +1578,7 @@ relation pp_stmt_str : (Algorithm.Statement, int) => string =
 	string_append(s9,"end when;\n") => str
         -------------------
 	pp_stmt_str (Algorithm.WHEN(e,stmts), i) => str
-	
+
   rule	indent_str i => s1 & string_append(s1,"**ALGORITHM**;\n") => str
 	----------------------------------
 	pp_stmt_str (_,i) => str

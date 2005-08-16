@@ -1915,9 +1915,9 @@ relation match_type_list : (Exp.Exp, Type list, Type list )
 	--------------------------------------
 	match_type_list(e, t1::ts1, t2::ts2) => (e',tp::res)
 
-(*  rule	Debug.fprint("failtrace","- match_type_list failed\n") 
+  rule	Debug.fprint("failtrace","- match_type_list failed\n") 
 	-----------------------------------------------------
-	match_type_list(e, t1::ts1, t2::ts2) => fail*)
+	match_type_list(e, t1::ts1, t2::ts2) => fail
 end
 
 (** relation: type_convert
@@ -2258,6 +2258,8 @@ relation const_or: (Const, Const) => Const =
   axiom	const_or(_,C_CONST) => C_CONST 
   axiom	const_or(C_PARAM,_) => C_PARAM
   axiom	const_or(_,C_PARAM) => C_PARAM
+
+  axiom	const_or(_,_) => C_VAR
 end
 
 (** relation: bool_const
