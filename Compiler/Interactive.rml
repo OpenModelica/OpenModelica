@@ -2268,8 +2268,10 @@ with "Ceval.rml"
  (** relation: traverse_classes
   ** 
   ** This relation traverses all classes of a program and applies a relation 
-  ** to each class. The relation takes the Absyn.Class and an additional 
-  ** argument and returns an updated class and the additional values.
+  ** to each class. The relation takes the Absyn.Class, Absyn.Path option 
+  ** and an additional argument and returns an updated class and the 
+  ** additional values. The Absyn.Path option contains the path to the class
+  ** that is traversed
   **)
 
   relation traverse_classes: (Absyn.Program, 
