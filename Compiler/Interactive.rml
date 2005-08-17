@@ -691,7 +691,7 @@ with "Ceval.rml"
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
    rule update_program(
-       Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile")],Absyn.TOP),
+       Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"")],Absyn.TOP),
        p) => newp &
 	 let newst = SYMBOLTABLE(newp,s,ic,iv,cf) 
 	 ----------------------------------------
@@ -706,7 +706,7 @@ with "Ceval.rml"
 	 Absyn.path_last_ident(path') => name &
 	 Absyn.strip_last(path') => wpath &
 	 update_program(
-	     Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile")],Absyn.WITHIN(wpath)),p) => newp &
+	     Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"")],Absyn.WITHIN(wpath)),p) => newp &
 	 let newst = SYMBOLTABLE(newp,s,ic,iv,cf)
 	 ---------------------------------------------------
 	 evaluate_graphical_api(
@@ -718,7 +718,7 @@ with "Ceval.rml"
 
    rule	Absyn.cref_to_path(cr) => path &
 	 update_program(
-	     Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile")],Absyn.WITHIN(path)),
+	     Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"")],Absyn.WITHIN(path)),
 	     p) => newp &
 	 let newst = SYMBOLTABLE(newp,s,ic,iv,cf) &
 	 string_append(name,"\n") => resstr
@@ -2846,7 +2846,7 @@ with "Ceval.rml"
   axiom	update_program (Absyn.PROGRAM([],_),prg) => prg
 
    rule	(* For split definitions at top, when introducing new model, eg. "package A" *)
-	 let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile") &
+	 let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"") &
 	 update_program(Absyn.PROGRAM([newclass],Absyn.TOP),oldp) => newp
 	 -------------------------------------------------------
 	 update_program(Absyn.BEGIN_DEFINITION(Absyn.IDENT(name),restr,p,e),oldp) => newp
@@ -2854,7 +2854,7 @@ with "Ceval.rml"
    rule	(* For split definitions not at top,  eg. "package A.B" *)
 	 Absyn.strip_last(path) => w &
 	 Absyn.path_last_ident(path) => name &
-	 let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"NoFile") &
+	 let newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS([Absyn.PUBLIC([])],NONE),"") &
 	 update_program(Absyn.PROGRAM([newclass],Absyn.WITHIN(w)),oldp) => newp
 	 -------------------------------------------------------
 	 update_program(Absyn.BEGIN_DEFINITION(path as Absyn.QUALIFIED(_,_),
@@ -3136,19 +3136,19 @@ with "Ceval.rml"
 	 lookup_classdef(path,_,p) => (cdef,path)
 
    axiom	lookup_classdef(Absyn.IDENT("Real"),_,_) => 
-	 (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL,Absyn.PARTS([],NONE),"NoFile"), 
+	 (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL,Absyn.PARTS([],NONE),""), 
 	  Absyn.IDENT("Real"))
 
    axiom	lookup_classdef(Absyn.IDENT("Integer"),_,_) => 
-	 (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INT,Absyn.PARTS([],NONE),"NoFile"), 
+	 (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INT,Absyn.PARTS([],NONE),""), 
 	  Absyn.IDENT("Integer"))
 
    axiom	lookup_classdef(Absyn.IDENT("String"),_,_) => 
-	 (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING,Absyn.PARTS([],NONE),"NoFile"), 
+	 (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING,Absyn.PARTS([],NONE),""), 
 	  Absyn.IDENT("String"))
 
    axiom	lookup_classdef(Absyn.IDENT("Boolean"),_,_) => 
-	 (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([],NONE),"NoFile"), 
+	 (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([],NONE),""), 
 	  Absyn.IDENT("Boolean"))
 
    rule	Print.print_error_buf "#Error, lookup_classdef failed\n" &

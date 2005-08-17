@@ -171,6 +171,7 @@ extern "C"
 				parse_tree_dumper dumper(std::cerr);
 				dumper.dump(RefMyAST(e.node));	 
 				ast = mk_nil();
+				modelicafilename=string("");
 				RML_TAILCALLK(rmlFC);
 			}
 			catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e) 
@@ -193,9 +194,10 @@ extern "C"
 				if (flat_parse) delete parse;
 				if (lex) delete lex;
 				ast = mk_nil();
+				modelicafilename=string("");
 				RML_TAILCALLK(rmlSC); // rmlFC
 			}
-
+			modelicafilename=string("");
 			if (debug) 
 			{
 				std::cout << "Build done\n";
@@ -208,6 +210,7 @@ extern "C"
 			if (parse) delete parse;
 			if (lex) delete lex;
 			if (flat_lex) delete flat_lex;
+
 			RML_TAILCALLK(rmlSC); 
 		}    
 		else 
@@ -220,6 +223,7 @@ extern "C"
 			ast = mk_nil();
 			std::cerr << "Error building AST" << std::endl;
 		}
+
 		RML_TAILCALLK(rmlSC); // rmlFC
 	}
 	RML_END_LABEL
