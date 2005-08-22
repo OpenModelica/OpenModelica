@@ -130,6 +130,7 @@ module SimCodegen:
   with "DAELow.rml"
   with "Absyn.rml"
   with "Exp.rml"
+  with "SCode.rml"
 
   relation generate_simulation_code: (DAE.DAElist,
 				    DAELow.DAELow, 		      
@@ -152,7 +153,7 @@ module SimCodegen:
 	  
   relation cref_modelica_str : Exp.ComponentRef => string 
 	  
-  relation generate_functions: (DAE.DAElist, DAELow.DAELow, Absyn.Path, string) => ()
+  relation generate_functions: (SCode.Program,DAE.DAElist, DAELow.DAELow, Absyn.Path, string) => ()
 
   relation get_called_functions_in_functions : (Absyn.Path list, DAE.DAElist) => Absyn.Path list
   relation get_called_functions_in_function : (Absyn.Path, DAE.DAElist) => Absyn.Path list
@@ -172,6 +173,7 @@ with "Print.rml"
 with "ModUtil.rml"
 with "VarTransform.rml"
 with "Dump.rml"
+with "Inst.rml"
 
 (** relation: generate_makefile
  **
@@ -344,7 +346,7 @@ relation generate_var_names_and_comments:(DAELow.DAELow,int, int) => (string,str
 	generate_var_names_and_comments_algvars(var_lst) => (algvar_lst,algvar_comment_lst) &
 	generate_var_names_and_comments_inputvars(knvar_lst) => (inputvar_lst,inputvar_comment_lst) &
 	Util.list_flatten([state_lst,der_lst,algvar_lst,inputvar_lst]) => varnames_lst &
-	Util.list_flatten([state_comment_lst,der_comment_lst,algvar_comment_lst,inputvar_comment_lst]) => comments_lst &
+	Util.list_flatten([state_comment_lst,der_comment_lst,algvar_comment_lst,inputvar_comment_lst]) => comments_lst &	
 	Util.string_delimit_list(varnames_lst,", ") => str &
 	Util.string_delimit_list(comments_lst,", ") => str2 &
 	int_add(nx,nx) => nxtwo &
@@ -418,17 +420,32 @@ relation generate_var_names_and_comments_states:(DAELow.Var list) => (string lis
 	
   rule	generate_var_names_and_comments_states(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_states(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_states(vs) => (res,res2) 
 	-----------------------
 	generate_var_names_and_comments_states(_::vs)
 	  => (res,res2)
 end
+
+(** relation: generate_empty_string
+ **
+ ** This relation adds citation chars to an empty string. Non empty strings
+ ** are returned as is.
+**)
+		 
+relation generate_empty_string: (string) => string =
+
+  axiom	generate_empty_string("") => "\"\""
+
+  axiom	generate_empty_string(s) => s 
+end
+	
 
 (** relation: generate_var_names_and_comments_derivatives
  **
@@ -441,11 +458,12 @@ relation generate_var_names_and_comments_derivatives:(DAELow.Var list) => (strin
 	
   rule	generate_var_names_and_comments_derivatives(vs) => (res,res2) &
 	Util.string_append_list(["\"der(",origname,")\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_derivatives(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_derivatives(vs) =>(res,res2) 
 	-----------------------
@@ -464,43 +482,48 @@ relation generate_var_names_and_comments_algvars:(DAELow.Var list) => (string li
 	
   rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_algvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_algvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_algvars(vs) => (res,res2)
 	-----------------------
@@ -623,43 +646,48 @@ relation generate_var_names_and_comments_inputvars:(DAELow.Var list) => (string 
 	
   rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname'&
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname'&
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname'&
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname'&
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_inputvars(vs) => (res,res2) &
 	Util.string_append_list(["\"",origname,"\""]) => origname'&
-        Dump.unparse_comment_option(comment) => comment 
+        Dump.unparse_comment_option(comment) => comment &
+	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_inputvars(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment::res2)
+	=> (origname'::res,comment'::res2)
 
   rule	generate_var_names_and_comments_inputvars(vs) => (res,res2)
 	-----------------------
@@ -1388,27 +1416,129 @@ end
  ** Finds the called functions in daelow and generates code for them
  ** from the given DAE. Hence, the functions must exist in the DAE.Element list.
 **)
-relation generate_functions: (DAE.DAElist, DAELow.DAELow, Absyn.Path, string) => () =
+relation generate_functions: (SCode.Program, (* Needed to instantiate functions*)
+			      DAE.DAElist, 
+			      DAELow.DAELow, 
+			      Absyn.Path, 
+			      string) => () =
 
   rule	get_called_functions(dae, dlow) => funcpaths & 
 	(*debug*) Debug.fprint("info", "Found called functions: ") &
+	print "found called functions: " &
 	(*debug*) Util.list_map(funcpaths, Absyn.path_string) => debugpathstrs &
 	(*debug*) Util.string_delimit_list(debugpathstrs, ", ") => debugpathstr &
+	print debugpathstr & print "\n" &
 	(*debug*) Debug.fprintln("info", debugpathstr) &
-	Util.list_map_1(funcpaths, DAE.get_named_function, elements) => funcelems &
-	Util.list_flatten(funcelems) => funcelems &
+	generate_functions_2(p,funcpaths) => funcelems &
+	DAE.dump_str DAE.DAE(funcelems) => str &
+	print "func DAE =" & print str & print "\n" &
 	Print.get_string => debugstr &
 	Print.clear_buf &
 	Codegen.generate_functions(DAE.DAE(funcelems)) &
 	Print.write_buf(filename)
 	--------------------------------------------------
-	generate_functions (dae as DAE.DAE(elements), dlow, path, filename)
+	generate_functions (p,dae as DAE.DAE(elements), dlow, path, filename)
 
 
   rule	print "-generate_functions failed\n" 
 	-------------------------------------
-	generate_functions (_, _, _, _) => fail
+	generate_functions (_, _, _, _, _) => fail
 
+end
+
+(** relation: generate_functions_2
+ ** author: PA
+ **
+ ** Helper relation to generate_functions.
+ **)
+
+relation generate_functions_2: (SCode.Program, Absyn.Path list) 
+	  => DAE.Element list =
+  rule	generate_functions_3(p,paths,paths) => dae
+	-------------------
+	generate_functions_2(p,paths) => dae
+end
+
+
+
+relation generate_functions_3: (SCode.Program, 
+				Absyn.Path list, (* iterated over *)
+				Absyn.Path list) (* complete list *)
+	  => DAE.Element list =
+
+  axiom	generate_functions_3(_,[],allpaths) => ([])
+
+  rule	print "entering generate_functions_3\n" &
+	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
+	print "insted class\n" &
+	let DAE.DAE([DAE.FUNCTION(_,dae,t)]) = fdae &
+	print "matched DAE function\n" &
+       let patched_dae = DAE.DAE([DAE.FUNCTION(path,dae,t)]) &
+	print "instantiated function. about to collect subfuncs\n" &
+	get_called_functions_in_function(path,patched_dae) => subfuncs &
+	append_nonpresent_paths(subfuncs,allpaths,paths) 
+	  => (allpaths',paths') &
+	  print "appended paths\n" &
+	generate_functions_3(p,paths',allpaths') => elts &
+	print "generated functions\n" &
+	list_append(elts,[DAE.FUNCTION(path,dae,t)]) => res
+	---------------------------------------
+	generate_functions_3(p,path::paths,allpaths) => res
+
+  rule	print "entering generate_functions_3 external decl\n" &
+	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
+	print "insted class\n" &
+	let DAE.DAE([DAE.EXTFUNCTION(_,dae,t,extdecl)]) = fdae &
+	print "matched DAE function\n" &
+       let patched_dae = DAE.DAE([DAE.EXTFUNCTION(path,dae,t,extdecl)]) &
+	print "instantiated function. about to collect subfuncs\n" &
+	get_called_functions_in_function(path,patched_dae) => subfuncs &
+	append_nonpresent_paths(subfuncs,allpaths,paths) 
+	  => (allpaths',paths') &
+	  print "appended paths\n" &
+	generate_functions_3(p,paths',allpaths') => elts &
+	print "generated functions\n" &
+	list_append(elts,[DAE.EXTFUNCTION(path,dae,t,extdecl)]) => res
+	---------------------------------------
+	generate_functions_3(p,path::paths,allpaths) => res
+  rule	print "generaet_functions_3 failed\n" 
+	--------------------------
+	generate_functions_3(_,_,_) => fail
+    
+end
+
+(** relation: append_nonpresent_paths
+ ** 
+ **
+ ** Appends the paths in first argument to the two path lists given as second
+ ** and third argument, given that the path is not present in the second 
+ ** path list.
+ **
+ **)
+
+relation append_nonpresent_paths:(Absyn.Path list, (* paths to append*)
+				  Absyn.Path list, (* all paths *)
+				  Absyn.Path list) (* iterated paths *)
+	  => (Absyn.Path list, (* updated all paths *)
+	      Absyn.Path list) = (* update iterated paths *)
+
+  axiom	append_nonpresent_paths([],allpaths,iterpaths) => (allpaths,iterpaths)
+
+  rule	Util.list_getmember_p(path,allpaths,ModUtil.path_equal) => _ &
+	append_nonpresent_paths(paths,allpaths,iterpaths) 
+	  => (allpaths,iterpaths)
+	------------------------------------------
+	append_nonpresent_paths(path::paths, allpaths, iterpaths)
+	  => (allpaths,iterpaths)
+
+  rule	not Util.list_getmember_p(path,allpaths,ModUtil.path_equal) => _ &
+	list_append(allpaths,[path]) => allpaths' &
+	list_append(iterpaths,[path]) => iterpaths' &
+	append_nonpresent_paths(paths,allpaths',iterpaths') 
+	  => (allpaths'',iterpaths'')
+	------------------------------------------
+	append_nonpresent_paths(path::paths, allpaths, iterpaths)
+	  => (allpaths'',iterpaths'')
 end
 
 
@@ -1804,11 +1934,44 @@ end
   rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xd, double* y, double* p)\n{\n" &
 	 let func_footer = "return 0;\n\n}\n" &
 	 build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &
-	 Util.list_flatten([[func_header],eqn_str_lst,[func_footer]]) => res &
+	 generate_compute_removed_eqns(dlow) => eqn_str_lst2 &
+	 Util.list_flatten([[func_header],eqn_str_lst, eqn_str_lst2,
+			    [func_footer]]) => res &
          Util.string_append_list(res) => coutput 
          -------------------------------------------------------------
          generate_compute_output(cname,dae,dlow,ass1,ass2,blocks) => coutput
  end
+
+(** relation: generate_compute_removed_eqns
+ ** author: PA
+ **
+ ** Generates compute code for the removed equations
+ **)
+relation generate_compute_removed_eqns: (DAELow.DAELow) => string list =
+
+  rule	DAELow.equation_list(reqns) => eqn_lst &
+	generate_compute_removed_eqns_2(eqn_lst) => res
+	-----------------
+	generate_compute_removed_eqns(DAELow.DAELOW(_,_,_,reqns,_,_,_)) => res
+end
+
+(** relation: generate_compute_removed_eqns_2
+ **
+ ** Helper relation to generate_computed_remove_eqns
+ **)
+relation generate_compute_removed_eqns_2: DAELow.Equation list  => string list =
+
+  axiom	generate_compute_removed_eqns_2([]) => []
+
+  rule	generate_compute_removed_eqns_2(rest) => res &
+	Exp.print_component_ref_str(cr) => cr_str &	
+	print_exp_cpp_str(exp) => exp_str &
+	Util.string_append_list(["  ",cr_str," = ",exp_str,";\n"]) => s1 
+	------------------------------
+	generate_compute_removed_eqns_2(DAELow.SOLVED_EQUATION(cr,exp)::rest)
+	  => s1::res
+end
+
 
 (** relation: build_solved_blocks
  **
@@ -2529,10 +2692,7 @@ relation get_called_functions : (DAE.DAElist, DAELow.DAELow) => Absyn.Path list 
 	Exp.get_function_calls_list explist => fcallexps &
 	Util.list_select(fcallexps, is_not_builtin_call) => fcallexps' &
 	Util.list_map(fcallexps', get_call_path) => calledfuncs &
-	remove_duplicate_paths calledfuncs => res1 &
-	get_called_functions_in_functions (res1, dae) => res2 &
-	list_append(res1,res2) => restemp &
-	remove_duplicate_paths restemp => res
+	remove_duplicate_paths calledfuncs => res
 	-------------------------------------
 	get_called_functions (dae, dlow) => res
 	

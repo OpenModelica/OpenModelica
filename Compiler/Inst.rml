@@ -209,6 +209,7 @@ module Inst:
 	  => Types.Binding
 
   relation instantiate_class : (SCode.Program,SCode.Path) => (DAE.DAElist,Env.Env)
+  relation instantiate_class_implicit : (SCode.Program,SCode.Path) => (DAE.DAElist,Env.Env)
 
   relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
   relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
@@ -408,7 +409,7 @@ end
  ** needs to be possible to instantiate. This relation performs the same 
  ** action as `inst_program', but given a specific class to instantiate.
  ** 
- **  First, all the class definitions is added to the environment without 
+ **  First, all the class definitions are added to the environment without 
  ** modifications, and then the specified class is instantiated in the 
  ** relation `inst_class_in_program'
  **)
@@ -445,6 +446,46 @@ relation instantiate_class : (SCode.Program, SCode.Path)
 	instantiate_class(_,_) => fail
 end
 
+(** relation: instantiate_class_implicit
+ ** author: PA
+ **
+ ** Similar to instantiate_class, i.e. instantation of arbitrary classes
+ ** but this one instantiates the class implicit, e.g. for functions.
+ **)
+
+relation instantiate_class_implicit : (SCode.Program, SCode.Path) 
+	  => (DAE.DAElist,Env.Env) =
+
+  rule	Print.print_error_buf "# Empty program\n"
+	------------------------------
+	instantiate_class_implicit([],cr) => fail
+
+	(* top level class *)
+  rule	Builtin.initial_env => env &
+	inst_class_decls(env,cdecls,path) => (env',dae1) &
+ 	inst_class_in_program_implicit(env',cdecls,path) => (dae,env'')
+	---------------------------------------------------------------
+	instantiate_class_implicit(cdecls as _::_, path as Absyn.IDENT(name2)) 
+	  => (DAE.DAE(dae),env'')
+	  
+	  (* class in package *)
+  rule	Builtin.initial_env => env &
+	inst_class_decls(env,cdecls,path)=> (env',_) &
+	Lookup.lookup_class(env',path,true) 
+	  => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
+	  print "found class to instantiate implicit\n" &
+	implicit_instantiation(env'',Types.NOMOD,Prefix.NOPRE,[],cdef,[],false)
+	  => (env,dae) 
+	  & print "instantiated class\n" 
+	--------------------------------------------
+	instantiate_class_implicit(cdecls as _::_, path as Absyn.QUALIFIED(name,_)) 
+	  => (DAE.DAE(dae),env)
+	
+  rule	print "-instantiate_class_implicit failed\n"
+	------------
+	instantiate_class_implicit(_,_) => fail
+end
+
 (** relation: inst_class_in_program
  **
  ** Instantitates a specifc class in a Program. The class must reside on top
@@ -472,6 +513,36 @@ relation inst_class_in_program: (Env, SCode.Program, SCode.Path )
   rule	(*Debug.fprint("failtrace", "inst_class_in_program failed\n")*)
 	-------------------------------
 	inst_class_in_program(env,_,_) => fail
+
+end
+
+(** relation: inst_class_in_program_implicit
+ **
+ ** Instantitates a specifc class in a Program using implicit instatiation. 
+ ** The class must reside on top level.
+ **)
+
+relation inst_class_in_program_implicit: (Env, SCode.Program, SCode.Path ) 
+	  => (DAE.Element list, Env.Env) =
+
+  rule	name = name2 &
+	implicit_instantiation(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false(*packimpl*)) 
+	  => ( env',dae) 
+	-------------------------------------------------------------
+	inst_class_in_program_implicit(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) 
+	  => (dae,env')
+
+  rule	not name = name2 &
+	inst_class_in_program_implicit(env,cs,path) => (dae,env)
+	-------------------------------------------------------------
+	inst_class_in_program_implicit(env,(c as SCode.CLASS(name,_,_,_,_))::cs, path as Absyn.IDENT(name2)) 
+	  => (dae, env)
+
+  axiom	inst_class_in_program_implicit(env,[],_) => ([],env)
+	
+  rule	(*Debug.fprint("failtrace", "inst_class_in_program failed\n")*)
+	-------------------------------
+	inst_class_in_program_implicit(env,_,_) => fail
 
 end
 

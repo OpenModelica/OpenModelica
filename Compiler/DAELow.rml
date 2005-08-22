@@ -4959,8 +4959,10 @@ relation translate_dae: DAELow => DAELow =
 	calculate_indexes(varlst,knvarlst) => (varlst',knvarlst') &
 	list_append(varlst',knvarlst') => totvars &
 	equation_list(eqns) => eqnsl &
+	equation_list(seqns) => seqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
 	replace_variables(eqnsl,s,t) => eqnsl' &
+	replace_variables(seqnsl,s,t) => seqnsl' &
 	replace_variables_in_alg(al,s,t) => al' &
 	replace_variables_in_when_clauses(wc,s,t) => wc' &
 	transform_variables(varlst',s,t) => varlst'' &
@@ -4969,10 +4971,11 @@ relation translate_dae: DAELow => DAELow =
 	empty_vars() => knvars' &
 	add_vars(varlst'',vars') => vars'' &
 	add_vars(knvarlst'',knvars') => knvars'' &
-	list_equation(eqnsl') => eqns'  
+	list_equation(eqnsl') => eqns'  &
+	list_equation(seqnsl') => seqns'  
 	------------------------------------
 	translate_dae(DAELOW(vars,knvars,eqns,seqns,ie,al,EVENT_INFO(wc,zc))) 
-	  => DAELOW(vars'',knvars'',eqns',seqns,ie,al',EVENT_INFO(wc',zc)) 
+	  => DAELOW(vars'',knvars'',eqns',seqns',ie,al',EVENT_INFO(wc',zc)) 
 end
 
 (** relation: replace_variables_in_when_clauses
@@ -5687,6 +5690,14 @@ relation replace_variables: (Equation list,
 	replace_variables(es,s,t) => es'
 	---------------------------------------
 	replace_variables(EQUATION(e1,e2)::es,s,t) => EQUATION(e1',e2')::es'
+
+  rule	Exp.replace_exp_list(Exp.CREF(cr,Exp.OTHER),s,t) 
+	  => (Exp.CREF(cr',_),_) &
+	Exp.replace_exp_list(e1,s,t) => (e1',_) &
+	replace_variables(es,s,t) => es'
+	---------------------------------------
+	replace_variables(SOLVED_EQUATION(cr,e1)::es,s,t) 
+	  => SOLVED_EQUATION(cr',e1')::es' 
 
   rule	let e1 = Exp.CREF(cr,Exp.OTHER) &
 	Exp.replace_exp_list(e1,s,t) => (e1' as Exp.CREF(cr',_),_) &

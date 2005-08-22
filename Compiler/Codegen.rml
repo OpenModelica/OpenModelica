@@ -651,8 +651,6 @@ relation generate_function : DAE.Element => CFunction list =
 	  (* External functions *)
   rule	generate_function_name fpath => fn_name_str &
 	Debug.fprintl ("cgtr", ["generating external function ", fn_name_str, "\n"]) &
-
-
 	let  DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang) = extdecl &
 
 	Debug.fprintln ("cgtrdumpdae1", "Dumping DAE:") &
@@ -671,7 +669,7 @@ relation generate_function : DAE.Element => CFunction list =
 	generate_ext_function_args (extargs, lang) => arg_strs &
         c_make_function_decl(retstr,extfnname',struct_strs,arg_strs) => func_decl &
 	generate_read_call_write_external(fn_name_str,outvars,retstructtype,invars,extdecl,bivars) => rcw_fn
-	---------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------
 	generate_function DAE.EXTFUNCTION(fpath, 
 				       DAE.DAE(orgdae), 
 				       (Types.T_FUNCTION(args,restype),_),
@@ -682,12 +680,10 @@ relation generate_function : DAE.Element => CFunction list =
 	----------------------
 	generate_function DAE.COMP(n, DAE.DAE(daelist)) => cfns
 
-
   rule	Print.print_buf "# generate_function failed\n" &
 	DAE.dump2 DAE.DAE([comp]) 
 	------------------------------------
-	generate_function comp => fail
-	
+	generate_function comp => fail	
 end
 
 
@@ -715,11 +711,22 @@ end
  **
  ** All Modelica functions translates to a C function returning all 
  ** Modelica ouput parameters in a struct. This relation generates that struct.
+ ** Exception: Functions only returning one value does not need a struct.
 **)
 
 relation generate_result_struct : (DAE.Element list, Absyn.Path) 
 	  => string list =
 
+	  (* functions with one return value *)
+  rule	generate_return_type fpath => ptname &
+	generate_single_return_type outvar => (type_str) &
+	Util.string_append_list(["typedef ",ptname," ", type_str, ";\n"]) 
+	  => res
+	-----------------------------------------
+	generate_result_struct ([outvar], fpath) => [res]
+	
+
+	(* functions with several return values *)
   rule	generate_return_type fpath => ptname &
 	generate_return_decls outvars => (var_strs,var_names) &
 	generate_return_defs (ptname,var_names,1) => defs &
@@ -813,6 +820,24 @@ relation generate_return_decl: DAE.Element => (string, string) =
 
   axiom	generate_return_decl (_) => ("","")
 
+end
+
+(** relation: generate_single_return_type
+ **
+ ** Helper relation to generate_result_struct
+ **)
+
+relation generate_single_return_type: DAE.Element => (string) =
+
+  rule	is_array var => is_a &
+	dae_type_str (typ,is_a) => typ_str 
+	---------------------------------------------------
+	generate_single_return_type (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, 
+					     typ, initopt, inst_dims,start,
+					     flow,class,dae_var_attr,comment)) 
+	  => typ_str
+
+  axiom	generate_single_return_type (_) => ""
 end
 
 (** relation: is_array

@@ -1205,7 +1205,7 @@ end
 	 Util.string_append_list([cname_str,".cpp"]) => filename &
 	 Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
 	 Util.string_append_list([cname_str,".makefile"]) => makefilename &
-	 SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	 SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) &
 	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
 	 SimCodegen.generate_makefile(makefilename,classname) 
          (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
@@ -1249,7 +1249,7 @@ end
 	 Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
 	 Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
 	 Util.string_append_list([cname_str,".makefile"]) => makefilename &
-	 SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	 SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) &
 	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
 	 SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
 				       starttime_r,stoptime_r,stepsize_r) &
@@ -1257,17 +1257,18 @@ end
          (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
           *)
 	 System.path_delimiter => pd &
-	 System.read_env("OPENMODELICAHOME") => omhome &
-	 Util.string_append_list(["\"",omhome, pd, "Compiler", 
+	 System.read_env("OPENMODELICAHOME") => omhome & 
+	 win_citation() => cit &
+	 Util.string_append_list([cit,omhome, pd, "Compiler", 
                                   pd, "scripts", pd, "Compile ", 
-                                  makefilename," > output.log 2>&1",
-                                  "\""]) => s_call &
+                                  makefilename," > output.log 2>&1",cit
+                                  ]) => s_call &
          (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
 
 	 System.system_call(s_call) => 0 &
-	 Util.string_append_list(["\"",".", pd, cname_str, " -m ",
+	 Util.string_append_list([cit,".", pd, cname_str, " -m ",
                                   method_str," >> output.log 2>&1",
-                                  "\""]) => sim_call &
+                                  cit]) => sim_call &
 	 System.system_call(sim_call) => _ &
 	 Util.string_append_list([cname_str,"_res.plt"]) => result_file &
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(result_file)],["resultFile"]) &
@@ -1617,6 +1618,24 @@ end
            (* /FIXME: test code: remove *)
 
 end
+
+(** relation: win_citation
+ ** author: PA
+ **
+ ** Returns a cition mark if platform is windows, otherwise empty string. Used
+ ** by simulate to make whitespaces work in filepaths for WIN32
+ **)
+relation win_citation: () => string =
+
+
+  rule	System.platform => "WIN32"
+	-------------------
+	win_citation () => "\""
+
+  axiom	win_citation() => ""
+end
+
+	
 
 (** relation: get_builtin_attribute
  **
