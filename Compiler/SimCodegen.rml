@@ -229,7 +229,7 @@ relation generate_simulation_code: (DAE.DAElist,
           generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blt_states) 
 	  => cstate &
 	generate_ode_code(dlow,blt_states,ass1,ass2,m,mt,class) => c_ode &
-        generate_start_attr_code(dlow) => s_code &
+        generate_initial_value_code(dlow) => s_code &
 	generate_when_clauses(cname,dae,dlow,ass1,ass2,comps) => cwhen &
 	string_append(cname,"_functions.cpp") => funcfilename &
 	Util.string_append_list(["//Simulation code for ",cname,
@@ -696,47 +696,79 @@ relation generate_var_names_and_comments_inputvars:(DAELow.Var list) => (string 
 end
 
 
-(** relation: generate_start_attr_code
+(** relation: generate_initial_value_code
  **
- ** Because of that some of the veriables are of the form: Real x(start=p*4) 
- ** this relation generatese a start_function in c to calculate the 
- ** start-function of the variables
+ ** This relation generates the code for solving the initial value problem.
+ ** Information is gathered from the start and fixed attributes of variables
+ ** and from initial equations.
  **)
 
-relation generate_start_attr_code:(DAELow.DAELow) => string =
+relation generate_initial_value_code:(DAELow.DAELow) => string =
 
   rule  DAELow.var_list(vars) => vars_lst &
-        Util.list_map(vars_lst,generate_start_attr_code2) => res1 &
-        Util.string_delimit_list_no_empty(res1,";\n  ") => res1' &
-        Util.string_append_list(["\n/*\n*/\nvoid start_function(double *x, double *xd, double *y, double *p,\n",
+	DAELow.equation_list(ie) => initial_eqns1 &
+	generate_initial_equations_from_start(vars_lst) => initial_eqns2 &
+	
+	list_append(initial_eqns1,initial_eqns2) => initial_eqns &
+	DAELow.list_equation(initial_eqns) => initial_eqns' &
+	list_array([]) => arr &
+	let empty_eqn = DAELow.EQUATION_ARRAY(0,0,arr) &
+
+	let initial_dae = DAELow.DAELOW(vars,knvars,initial_eqns',empty_eqn,empty_eqn,al,ev) &
+	(* States are no longer special, they are just a variable that 
+	 * needs an initial value. *)
+	DAELow.make_all_states_algebraic(initial_dae) => initial_dae' &
+ 	DAELow.incidence_matrix(initial_dae') => m &
+ 	DAELow.transpose_matrix(m) => mT &
+	(* once dae has been translated, state or not should not matter *)
+	DAELow.abs_incidence_matrix(m) => m' &
+	DAELow.abs_incidence_matrix(mT) => mT' &
+	DAELow.dump initial_dae' &
+	DAELow.dump_incidence_matrix m' &
+	(* index reduction for intitial equations makes no sense.. *)
+	DAELow.matching_algorithm(initial_dae',m',mT',DAELow.NO_INDEX_REDUCTION) 
+	  => (ass1,ass2,initial_dae',m,mT) &
+	DAELow.strong_components(m',mT',ass1,ass2) => blocks &
+	generate_ode_blocks(initial_dae',ass1,ass2,blocks)
+	  => (block_code,extra_funcs) &
+        Util.string_append_list([extra_funcs,
+				 "\n/*\n*/\nvoid start_function(double *x, double *xd, double *y, double *p,\n",
                                  "                   int nx, int ny, int np)\n",
-                                 "{\n  ",
-                                 res1',
-                                 ";\n}\n"]) => res 
+                                 "{\n",
+                                 block_code,
+                                 "\n}\n"]) => res 
         ----------------------------------
-        generate_start_attr_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => res
+        generate_initial_value_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => res
         
-  axiom generate_start_attr_code(_) => ""
+  axiom generate_initial_value_code(_) => ""
 
 end
 
-(** relation: generate_start_attr_code2
+(** relation: generate_initial_equations_from_start
  **
- ** Helper relation to generate_start_attr_code
+ ** This relation generates equations from the expressions in the start 
+ ** attributes of variables. Only variables with a start value and 
+ ** fixed set to true is converted by this relation. Fixed set to false
+ ** means an initial guess, and is not considered here.
  **)
 
-relation generate_start_attr_code2:(DAELow.Var) => string =
+relation generate_initial_equations_from_start: DAELow.Var list => DAELow.Equation list =
 
-  rule  Exp.print_component_ref_str(cr) => cr_str &
-        print_exp_cpp_str(st) => st_str &
-        Util.string_append_list([cr_str,"=",st_str]) => res
-        --------------------------
-        generate_start_attr_code2(DAELow.VAR(cr,_,dir,tp,exp,v,dim,SOME(st),index,name,classes,attr,comment,flow))
-          => res
+  axiom	generate_initial_equations_from_start ([]) => []
+	
+	(* add equations for variables with fixed = true*)
+  rule	DAELow.var_fixed(attr,kind) => true &
+	generate_initial_equations_from_start(vars) => eqns 
+	--------------------------
+	generate_initial_equations_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
+	  => DAELow.EQUATION(Exp.CREF(cr,Exp.OTHER),startv)::eqns
 
-  axiom generate_start_attr_code2(_) => ""
-
+  rule	generate_initial_equations_from_start(vars) => eqns 
+	--------------------------
+	generate_initial_equations_from_start(_::vars)
+	  => eqns
 end
+
 (** relation generate_ode_code
  ** Outputs simulation code from a DAELow. 
  ** The state calculations are generated on explicit ode form: 

@@ -1197,7 +1197,8 @@ end
 	   DAELow.lower(dae) => dlow &
 	 DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
-	 DAELow.matching_algorithm(dlow,m,mT) => (ass1,ass2,dlow',m,mT) &
+	 DAELow.matching_algorithm(dlow,m,mT,DAELow.INDEX_REDUCTION) 
+	  => (ass1,ass2,dlow',m,mT) &
 	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
 	 DAELow.translate_dae (dlow') => indexed_dlow &
 	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
@@ -1240,7 +1241,8 @@ end
 	   DAELow.lower(dae) => dlow &
 	 DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
-	 DAELow.matching_algorithm(dlow,m,mT) => (ass1,ass2,dlow',m,mT) &
+	 DAELow.matching_algorithm(dlow,m,mT,DAELow.INDEX_REDUCTION) 
+	  => (ass1,ass2,dlow',m,mT) &
 	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
 	 DAELow.translate_dae (dlow') => indexed_dlow &
 	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &

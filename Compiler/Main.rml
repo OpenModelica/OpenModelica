@@ -404,7 +404,7 @@ relation translate_file : string list => () =
 	& RTOpts.silent() => silent 
 	& bool_not(silent) => notsilent
 	& Debug.bcall(notsilent,print, str)
-	& optimize_dae(d, d, cname)
+	& optimize_dae(p',d, d, cname)
 	------------------------------
 	translate_file [f]
 
@@ -459,7 +459,7 @@ end
  ** Run the backend. Used for both parallization and for normal execution.
  **)
 
-relation optimize_dae: (DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
+relation optimize_dae: (SCode.Program, DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 
   rule	run_backend_q() => true
 	& DAELow.lower(dae) => dlow 
@@ -468,27 +468,28 @@ relation optimize_dae: (DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 	& DAELow.transpose_matrix(m) => mT 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
-	& DAELow.matching_algorithm(dlow,m,mT) => (v1,v2,dlow',m,mT) 
+	& DAELow.matching_algorithm(dlow,m,mT,DAELow.INDEX_REDUCTION) 
+	  => (v1,v2,dlow',m,mT) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
 	& Debug.fcall("bltdump", DAELow.dump,dlow')
 	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
 	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
 	& modpar(dlow',v1,v2,comps) 
-	& simcodegen(classname,daeimpl,dlow',v1,v2,m,mT,comps)
+	& simcodegen(classname,p,daeimpl,dlow',v1,v2,m,mT,comps)
 (*	& DAELow.dump_components(comps) *)
 	-----------------------
-	optimize_dae(dae,daeimpl,classname) => ()
+	optimize_dae(p,dae,daeimpl,classname) => ()
 
   rule	(* so main can print error messages *)
 	run_backend_q() => true
 	------------------------
-	optimize_dae(_,_,_) => fail
+	optimize_dae(_,_,_,_) => fail
 
 	(* If not running backend. *)
   rule	run_backend_q() => false
 	---------------------
-	optimize_dae(_,_,_) => ()
+	optimize_dae(_,_,_,_) => ()
 end
 
 (** relation: modpar
@@ -544,6 +545,7 @@ end
  **)
 
 relation simcodegen: (Absyn.Path, (* classname *)
+		      SCode.Program,
 		      DAE.DAElist, 
 		      DAELow.DAELow, 
 		      int vector, (* ass1 *)
@@ -563,22 +565,22 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
 	Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
 	Util.string_append_list([cname_str,".makefile"]) => makefilename &
-	SimCodegen.generate_functions(dae,indexed_dlow',classname,funcfilename) &
+	SimCodegen.generate_functions(p,dae,indexed_dlow',classname,funcfilename) &
 	SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mt,comps,classname,filename) &
 	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,0.0,1.0,0.01) &
 	SimCodegen.generate_makefile(makefilename,classname)
 	----------------------------------------------------------------------------------
-	simcodegen(classname,dae,dlow,ass1,ass2,m,mt,comps)
+	simcodegen(classname,p,dae,dlow,ass1,ass2,m,mt,comps)
 
 	(* If something above failed. fail so Main can print errors *)
   rule	RTOpts.simulation_cg() => true 
 	-----------------
-	simcodegen(_,_,_,_,_,_,_,_) => fail
+	simcodegen(_,_,_,_,_,_,_,_,_) => fail
 
 	(* If not generating simulation code*)
   rule	RTOpts.simulation_cg() => false
 	-----------------
-	simcodegen(_,_,_,_,_,_,_,_) => ()
+	simcodegen(_,_,_,_,_,_,_,_,_) => ()
 
 end
 

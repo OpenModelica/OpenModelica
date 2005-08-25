@@ -262,6 +262,8 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 				     * means that a nonlinear system of equations needs to be
 				     * solved *)
 
+datatype IndexReduction = INDEX_REDUCTION | NO_INDEX_REDUCTION
+
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
   relation dump_eqns: Equation list => () 
@@ -282,7 +284,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 
   relation dump_matching: (int vector) => () 
 	  
-  relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT) 
+  relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,IndexReduction) 
 	  => (int vector,(* var solved in eqn*) 
 	      int vector, (* eqn solves var *) 
 	      DAELow,
@@ -318,12 +320,15 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 
   relation states: (DAE.DAElist,BinTree) => BinTree
 
+  relation make_all_states_algebraic: DAELow => DAELow 
+
   relation get_var: (Exp.ComponentRef, Variables) => (Var,int)
   relation get_var_using_name: (string, Variables) => (Var,int) 
   relation add_var: (Var, Variables) => Variables
   relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
   relation set_var_kind: (Var, VarKind) => Var 
+  relation var_fixed: (DAE.VariableAttributes option,VarKind) => bool
   relation var_list: (Variables) => Var list 
   relation list_var: (Var list ) => Variables
 
@@ -2986,6 +2991,42 @@ relation set_var_kind: (Var, VarKind) => Var =
 
 end
 
+(** relation: var_fixed
+ **
+ ** Returns the value of the fixed attribute. If not defined in attributes,
+ ** inspect varkind to find default values.
+ **)
+
+relation var_fixed: (DAE.VariableAttributes option, VarKind) => bool =
+
+  axiom	var_fixed(NONE,PARAM) => true 
+  axiom	var_fixed(NONE,CONST) => true 
+  axiom	var_fixed(NONE,_) => false
+
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,SOME(fixed),_,_)),_)
+	  => fixed
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,NONE,_,_)),_)
+	  => false
+
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_INT(_,_,_,SOME(fixed))),_)
+	  => fixed
+
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_INT(_,_,_,NONE)),_)
+	  => false
+
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_BOOL(_,_,SOME(fixed))),_)
+	  => fixed
+
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_BOOL(_,_,NONE)),_)
+	  => false
+
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_ENUMERATION(_,_,_,SOME(fixed))),_)
+	  => fixed
+
+  axiom	var_fixed(SOME(DAE.VAR_ATTR_ENUMERATION(_,_,_,NONE)),_)
+	  => false
+end
+
 (** relation: get_var2
  ** author: PA
  **
@@ -3306,7 +3347,8 @@ end
  ** equation indices.
  **)
 		 
-relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT) 
+relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
+			      IndexReduction) 
 	  => (int vector(* vector of equation indices*) , 
 	      int vector (* vector of variable indices*),
 	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
@@ -3319,19 +3361,19 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT)
 	int_add(nvars,nvars) => memsize &
 	assignments_create(nvars,memsize,0) => assign1 &
 	assignments_create(nvars,memsize,0) => assign2 &
-	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2) 
+	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2,indx_red) 
 	  => (ass1, ass2,dae,m,mt) &
 
 	assignments_vector(ass1) => vec1 &
 	assignments_vector(ass2) => vec2 
 	--------------------------
-	matching_algorithm(dae,m,mt) => (vec1,vec2,dae,m,mt)
+	matching_algorithm(dae,m,mt,indx_red) => (vec1,vec2,dae,m,mt)
 	
   rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
 	list_vector([]) => v1 & 
 	list_vector([]) => v2 
 	------------------------
-	matching_algorithm(dae,m,mt) => (v1,v2,dae,m,mt)
+	matching_algorithm(dae,m,mt,indx_red) => (v1,v2,dae,m,mt)
 	
 end
 
@@ -3499,7 +3541,8 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 			       ,int (* number of eqns*)
 			       ,int (* current var*)
 			       ,Assignments(*assignments, array of eqn indices*) 
-			       ,Assignments)(*assignments, array of var indices*)
+			       ,Assignments,(*assignments, array of var indices*)
+			       IndexReduction) (* index reduction or not*)
 	  =>  (Assignments, (* assignments, array of equation indices*) 
 	       Assignments, (* assignments, list of variable indices *)
 	       DAELow,
@@ -3510,16 +3553,16 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
 	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')  (* exit loop *)
 	---------------------------------------------
-	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,_) 
 	  => (ass1',ass2',dae,m,mt)
 
   rule	int_add(i,1) => i' &
 	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
 	path_found(m,mt,i,ass1,ass2) => (ass1',ass2') & 
-	matching_algorithm2(dae,m,mt,nv,nf,i',ass1',ass2') 
+	matching_algorithm2(dae,m,mt,nv,nf,i',ass1',ass2',index_red) 
 	  => (ass1'',ass2'',dae,m,mt)
 	----------------------------------------------------------------
-	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,index_red) 
 	  => (ass1'',ass2'',dae,m,mt) 
 
   rule	(* path_found failed, Try index reduction using dummy derivatives.
@@ -3551,10 +3594,10 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	int_sub(nv',nv) => nvd &
 	assignments_expand(ass1,nvd) => ass1' &
 	assignments_expand(ass2,nvd) => ass2' &
-	matching_algorithm2(dae,m,mt,nv',nf',i,ass1',ass2')
+	matching_algorithm2(dae,m,mt,nv',nf',i,ass1',ass2',INDEX_REDUCTION)
 	  => (ass1'',ass2'',dae,m,mt)
 	------------------------
-	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) 
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,INDEX_REDUCTION) 
 	  => (ass1'',ass2'',dae,m,mt)
 
   rule	(* When index reduction also fails, the model is structurally 
@@ -3564,7 +3607,7 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	& DAEEXT.dump_marked_equations(nf) 
 	& DAEEXT.dump_marked_variables(nv)
 	------------------------------
- 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2) => fail
+ 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,_) => fail
 end
 
 (** relation: reduce_index_dummy_der
@@ -3712,6 +3755,44 @@ relation update_transposed_matrix: (int list(*var list*),
   rule	print "-update_transposed_matrix failed\n" 
 	------------------
 	update_transposed_matrix(_,_,_) => fail
+end
+
+(** relation: make_all_states_algebraic
+ ** author: PA
+ **
+ ** This relation makes all states of a DAELow algebraic.
+ ** Is used when solving an initial value problem, since states are just
+ ** an algebraic variable in that case.
+ **)
+relation make_all_states_algebraic: DAELow => DAELow =
+
+  rule	var_list(vars) => var_lst &
+	make_all_states_algebraic2(var_lst) => var_lst' &
+	list_var(var_lst') => vars' 
+	-----------
+	make_all_states_algebraic(DAELOW(vars,knvar,eqns,reqns,ieqns,al,ev))
+	  => DAELOW(vars',knvar,eqns,reqns,ieqns,al,ev)
+end
+
+(** relation: make_all_states_algebraic2
+ ** author: PA
+ **
+ ** Helper relation to make_all_states_algebraic
+**)
+
+relation make_all_states_algebraic2: Var list => Var list =
+
+  axiom	make_all_states_algebraic2([]) => []
+
+  rule	make_all_states_algebraic2(vs) => vs'
+	-----------------------------
+	make_all_states_algebraic2(VAR(cr,STATE,d,t,b,value,dim,start,idx,name,class,dae_var_attr,comment,flow)::vs)
+	  => VAR(cr,VARIABLE,d,t,b,value,dim,start,idx,name,class,dae_var_attr,comment,flow)::vs'
+
+  rule	make_all_states_algebraic2(vs) => vs'
+	-----------------------------
+	make_all_states_algebraic2(v::vs)
+	  => v::vs'
 end
 
 (** relation: make_algebraic
@@ -4960,9 +5041,11 @@ relation translate_dae: DAELow => DAELow =
 	list_append(varlst',knvarlst') => totvars &
 	equation_list(eqns) => eqnsl &
 	equation_list(seqns) => seqnsl &
+	equation_list(ieqns) => ieqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
 	replace_variables(eqnsl,s,t) => eqnsl' &
 	replace_variables(seqnsl,s,t) => seqnsl' &
+	replace_variables(ieqnsl,s,t) => ieqnsl' &
 	replace_variables_in_alg(al,s,t) => al' &
 	replace_variables_in_when_clauses(wc,s,t) => wc' &
 	transform_variables(varlst',s,t) => varlst'' &
@@ -4972,10 +5055,11 @@ relation translate_dae: DAELow => DAELow =
 	add_vars(varlst'',vars') => vars'' &
 	add_vars(knvarlst'',knvars') => knvars'' &
 	list_equation(eqnsl') => eqns'  &
-	list_equation(seqnsl') => seqns'  
+	list_equation(seqnsl') => seqns' &
+	list_equation(ieqnsl') => ieqns' 
 	------------------------------------
-	translate_dae(DAELOW(vars,knvars,eqns,seqns,ie,al,EVENT_INFO(wc,zc))) 
-	  => DAELOW(vars'',knvars'',eqns',seqns',ie,al',EVENT_INFO(wc',zc)) 
+	translate_dae(DAELOW(vars,knvars,eqns,seqns,ieqns,al,EVENT_INFO(wc,zc))) 
+	  => DAELOW(vars'',knvars'',eqns',seqns',ieqns',al',EVENT_INFO(wc',zc)) 
 end
 
 (** relation: replace_variables_in_when_clauses
