@@ -82,15 +82,24 @@ functionDAE_output(double *t, double *x, double *xprimne, double *y, double* p);
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
 
+// function for calculating states on explicit ODE form
 void functionODE(double *x, double *xd, double *y, double *p, 
 		 int nx, int ny, int np, double *t);
 
+// function for calculate initial values from initial equations
+// and fixed start attibutes
+void initial_function(double*x, double *xd, double*y, double*p,
+		    int nx, int ny, int np); 
+
+// Adds a result to the simulation result data.
 void add_result(double *data, double time,double *nx, double *ndx, double *y,
 		long nx, long ny, long *actual_points);
 
+// stores the result on file.
 void store_result(const char * filename, double*data,
 		  long numpoints, long nx, long ny);
 
+// euler numerical solver
 void euler ( double *x, double *xd, double *y, double *p, double *data,
 	     int nx, int ny, int np, double *time, double *step,
 	     void (*f)(double*,// x

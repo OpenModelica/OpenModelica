@@ -732,7 +732,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	generate_ode_blocks(initial_dae',ass1,ass2,blocks)
 	  => (block_code,extra_funcs) &
         Util.string_append_list([extra_funcs,
-				 "\n/*\n*/\nvoid start_function(double *x, double *xd, double *y, double *p,\n",
+				 "\n/*\n*/\nvoid initial_function(double *x, double *xd, double *y, double *p,\n",
                                  "                   int nx, int ny, int np)\n",
                                  "{\n",
                                  block_code,
@@ -1456,14 +1456,10 @@ relation generate_functions: (SCode.Program, (* Needed to instantiate functions*
 
   rule	get_called_functions(dae, dlow) => funcpaths & 
 	(*debug*) Debug.fprint("info", "Found called functions: ") &
-	print "found called functions: " &
 	(*debug*) Util.list_map(funcpaths, Absyn.path_string) => debugpathstrs &
 	(*debug*) Util.string_delimit_list(debugpathstrs, ", ") => debugpathstr &
-	print debugpathstr & print "\n" &
 	(*debug*) Debug.fprintln("info", debugpathstr) &
 	generate_functions_2(p,funcpaths) => funcelems &
-	DAE.dump_str DAE.DAE(funcelems) => str &
-	print "func DAE =" & print str & print "\n" &
 	Print.get_string => debugstr &
 	Print.clear_buf &
 	Codegen.generate_functions(DAE.DAE(funcelems)) &
@@ -1500,40 +1496,29 @@ relation generate_functions_3: (SCode.Program,
 
   axiom	generate_functions_3(_,[],allpaths) => ([])
 
-  rule	print "entering generate_functions_3\n" &
-	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
-	print "insted class\n" &
+  rule	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
 	let DAE.DAE([DAE.FUNCTION(_,dae,t)]) = fdae &
-	print "matched DAE function\n" &
        let patched_dae = DAE.DAE([DAE.FUNCTION(path,dae,t)]) &
-	print "instantiated function. about to collect subfuncs\n" &
 	get_called_functions_in_function(path,patched_dae) => subfuncs &
 	append_nonpresent_paths(subfuncs,allpaths,paths) 
 	  => (allpaths',paths') &
-	  print "appended paths\n" &
 	generate_functions_3(p,paths',allpaths') => elts &
-	print "generated functions\n" &
 	list_append(elts,[DAE.FUNCTION(path,dae,t)]) => res
 	---------------------------------------
 	generate_functions_3(p,path::paths,allpaths) => res
 
-  rule	print "entering generate_functions_3 external decl\n" &
-	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
-	print "insted class\n" &
+  rule	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
 	let DAE.DAE([DAE.EXTFUNCTION(_,dae,t,extdecl)]) = fdae &
-	print "matched DAE function\n" &
        let patched_dae = DAE.DAE([DAE.EXTFUNCTION(path,dae,t,extdecl)]) &
-	print "instantiated function. about to collect subfuncs\n" &
 	get_called_functions_in_function(path,patched_dae) => subfuncs &
 	append_nonpresent_paths(subfuncs,allpaths,paths) 
 	  => (allpaths',paths') &
-	  print "appended paths\n" &
 	generate_functions_3(p,paths',allpaths') => elts &
-	print "generated functions\n" &
 	list_append(elts,[DAE.EXTFUNCTION(path,dae,t,extdecl)]) => res
 	---------------------------------------
 	generate_functions_3(p,path::paths,allpaths) => res
-  rule	print "generaet_functions_3 failed\n" 
+
+  rule	print "generate_functions_3 failed\n" 
 	--------------------------
 	generate_functions_3(_,_,_) => fail
     

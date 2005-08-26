@@ -105,9 +105,14 @@ int euler_main(int argc,char** argv) {
   read_input(argc,argv,x,xd,y,p,nx,ny,np,&start,&stop,&step);
   
   long numpoints = long((stop-start)/step)+2;
-
+  
+  // load default initial values.
   double *data =  initialize_simdata(numpoints,nx,ny);
-
+  
+  // Calculate initial values from (fixed) start attributes and intial equation
+  // sections
+  initial_function(x,xd,y,p,nx,ny,np);
+  
   int npts_per_result=int((stop-start)/(step*(numpoints-2)));
   long actual_points =0 ; // the number of actual points saved
   int pt=0;
@@ -194,7 +199,12 @@ int dassl_main(int argc, char **argv)
   
   numpoints = long((stop-start)/step)+2;
 
+  // load default initial values.
   double *data =  initialize_simdata(numpoints,nx,ny);
+
+  // Calculate initial values from (fixed) start attributes and intial equation
+  // sections
+  initial_function(x,xd,y,p,nx,ny,np);
   
   t=start;
   tout = t+step;

@@ -711,22 +711,11 @@ end
  **
  ** All Modelica functions translates to a C function returning all 
  ** Modelica ouput parameters in a struct. This relation generates that struct.
- ** Exception: Functions only returning one value does not need a struct.
 **)
 
 relation generate_result_struct : (DAE.Element list, Absyn.Path) 
 	  => string list =
 
-	  (* functions with one return value *)
-  rule	generate_return_type fpath => ptname &
-	generate_single_return_type outvar => (type_str) &
-	Util.string_append_list(["typedef ",ptname," ", type_str, ";\n"]) 
-	  => res
-	-----------------------------------------
-	generate_result_struct ([outvar], fpath) => [res]
-	
-
-	(* functions with several return values *)
   rule	generate_return_type fpath => ptname &
 	generate_return_decls outvars => (var_strs,var_names) &
 	generate_return_defs (ptname,var_names,1) => defs &
@@ -820,24 +809,6 @@ relation generate_return_decl: DAE.Element => (string, string) =
 
   axiom	generate_return_decl (_) => ("","")
 
-end
-
-(** relation: generate_single_return_type
- **
- ** Helper relation to generate_result_struct
- **)
-
-relation generate_single_return_type: DAE.Element => (string) =
-
-  rule	is_array var => is_a &
-	dae_type_str (typ,is_a) => typ_str 
-	---------------------------------------------------
-	generate_single_return_type (var as DAE.VAR(id, DAE.VARIABLE, DAE.OUTPUT, 
-					     typ, initopt, inst_dims,start,
-					     flow,class,dae_var_attr,comment)) 
-	  => typ_str
-
-  axiom	generate_single_return_type (_) => ""
 end
 
 (** relation: is_array
