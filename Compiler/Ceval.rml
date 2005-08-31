@@ -1197,7 +1197,7 @@ end
 	   DAELow.lower(dae) => dlow &
 	 DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
-	 DAELow.matching_algorithm(dlow,m,mT,DAELow.INDEX_REDUCTION) 
+	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
 	  => (ass1,ass2,dlow',m,mT) &
 	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
 	 DAELow.translate_dae (dlow') => indexed_dlow &
@@ -1241,7 +1241,7 @@ end
 	   DAELow.lower(dae) => dlow &
 	 DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
-	 DAELow.matching_algorithm(dlow,m,mT,DAELow.INDEX_REDUCTION) 
+	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
 	  => (ass1,ass2,dlow',m,mT) &
 	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
 	 DAELow.translate_dae (dlow') => indexed_dlow &
@@ -2629,6 +2629,7 @@ relation ceval_generate_function : (Env.Env, Absyn.Path) => () =
 	Print.print_buf "{\n\n  if (argc != 3)\n" &
 	Print.print_buf "{\n      fprintf(stderr,\"# Incorrect number of arguments\\n\");\n" &
 	Print.print_buf "return 1;\n    }\n" &
+	Print.print_buf "_" &
 	Print.print_buf pathstr &
 	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
         (*

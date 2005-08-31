@@ -723,10 +723,10 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	(* once dae has been translated, state or not should not matter *)
 	DAELow.abs_incidence_matrix(m) => m' &
 	DAELow.abs_incidence_matrix(mT) => mT' &
-	DAELow.dump initial_dae' &
-	DAELow.dump_incidence_matrix m' &
+	(*DAELow.dump initial_dae' &
+	DAELow.dump_incidence_matrix m' &*)
 	(* index reduction for intitial equations makes no sense.. *)
-	DAELow.matching_algorithm(initial_dae',m',mT',DAELow.NO_INDEX_REDUCTION) 
+	DAELow.matching_algorithm(initial_dae',m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED)) 
 	  => (ass1,ass2,initial_dae',m,mT) &
 	DAELow.strong_components(m',mT',ass1,ass2) => blocks &
 	generate_ode_blocks(initial_dae',ass1,ass2,blocks)
@@ -1487,8 +1487,10 @@ relation generate_functions_2: (SCode.Program, Absyn.Path list)
 	generate_functions_2(p,paths) => dae
 end
 
-
-
+(** relation: generate_functions_3
+ **
+ ** Helper relation to generate_functions_2
+ **)
 relation generate_functions_3: (SCode.Program, 
 				Absyn.Path list, (* iterated over *)
 				Absyn.Path list) (* complete list *)
@@ -1498,7 +1500,7 @@ relation generate_functions_3: (SCode.Program,
 
   rule	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
 	let DAE.DAE([DAE.FUNCTION(_,dae,t)]) = fdae &
-       let patched_dae = DAE.DAE([DAE.FUNCTION(path,dae,t)]) &
+	let patched_dae = DAE.DAE([DAE.FUNCTION(path,dae,t)]) &
 	get_called_functions_in_function(path,patched_dae) => subfuncs &
 	append_nonpresent_paths(subfuncs,allpaths,paths) 
 	  => (allpaths',paths') &
@@ -1509,7 +1511,7 @@ relation generate_functions_3: (SCode.Program,
 
   rule	Inst.instantiate_class_implicit(p,path) => (fdae,_) &
 	let DAE.DAE([DAE.EXTFUNCTION(_,dae,t,extdecl)]) = fdae &
-       let patched_dae = DAE.DAE([DAE.EXTFUNCTION(path,dae,t,extdecl)]) &
+        let patched_dae = DAE.DAE([DAE.EXTFUNCTION(path,dae,t,extdecl)]) &
 	get_called_functions_in_function(path,patched_dae) => subfuncs &
 	append_nonpresent_paths(subfuncs,allpaths,paths) 
 	  => (allpaths',paths') &
@@ -2559,9 +2561,12 @@ end
 	 ----------------------------------------------------------------------
 	 print_exp2_str(Exp.CALL(fcn, args,_,builtin as true),_) => s
 
+	 (* user defined Modelica functions, incl. external starts with an
+	  ** underscore, to distringuish betweeen the lib function for external
+	  ** functions and the wrapper function. *)
   rule	Absyn.path_string2(fcn,"_") => fs &
 	 Exp.print_list_str(args,print_exp_cpp_str,",") => argstr &
-	 Util.string_append_list([fs, "(", argstr, ").",fs,"_rettype_1"]) => s
+	 Util.string_append_list(["_",fs, "(", argstr, ").",fs,"_rettype_1"]) => s
 	 ----------------------------------------------------------------------
 	 print_exp2_str(Exp.CALL(fcn, args,_,builtin as false),_) => s
 

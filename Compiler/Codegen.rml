@@ -623,6 +623,7 @@ relation generate_function : DAE.Element => CFunction list =
 
 	(* Modelica functions *)
   rule	generate_function_name fpath => fn_name_str &
+	string_append("_",fn_name_str) => fn_name_str &
 	Debug.fprintl ("cgtr", ["generating function ", fn_name_str, "\n"]) &
 
 	Debug.fprintln ("cgtrdumpdae3", "Dumping DAE:") &
@@ -650,6 +651,7 @@ relation generate_function : DAE.Element => CFunction list =
 
 	  (* External functions *)
   rule	generate_function_name fpath => fn_name_str &
+	string_append("_",fn_name_str) => fn_name_str &
 	Debug.fprintl ("cgtr", ["generating external function ", fn_name_str, "\n"]) &
 	let  DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang) = extdecl &
 
@@ -668,13 +670,14 @@ relation generate_function : DAE.Element => CFunction list =
 	generate_ext_function_name (extfnname, lang) => extfnname' &
 	generate_ext_function_args (extargs, lang) => arg_strs &
         c_make_function_decl(retstr,extfnname',struct_strs,arg_strs) => func_decl &
-	generate_read_call_write_external(fn_name_str,outvars,retstructtype,invars,extdecl,bivars) => rcw_fn
+	generate_read_call_write_external(fn_name_str,outvars,retstructtype,invars,extdecl,bivars) => rcw_fn &
+	generate_external_wrapper_call(fn_name_str,outvars,retstructtype,invars,extdecl,bivars,tp) => ext_decl
 	-----------------------------------------------------------------------
 	generate_function DAE.EXTFUNCTION(fpath, 
 				       DAE.DAE(orgdae), 
-				       (Types.T_FUNCTION(args,restype),_),
+				       tp as (Types.T_FUNCTION(args,restype),_),
 					  extdecl) 
-	  => [func_decl,rcw_fn]
+	  => [func_decl,rcw_fn,ext_decl]
 
   rule	generate_functions_elist daelist => cfns
 	----------------------
@@ -1190,8 +1193,12 @@ relation generate_ext_function_arg : DAE.ExtArg => string =
   rule	generate_type_external ty => res
 	-----------------------------------
 	generate_ext_function_arg DAE.EXTARGEXP(exp, ty) => res
-
-  axiom	generate_ext_function_arg DAE.EXTARGSIZE(_,_,_,_) => "size_t"
+	
+  rule  comp_ref_cstr cr => (name,_) &
+	Exp.print_exp_str exp => e_str &
+	Util.string_append_list(["size_t ",name,"_",e_str]) => res
+	--------------------------------
+	generate_ext_function_arg DAE.EXTARGSIZE(cr,_,_,exp) => res
 
   rule	Print.print_buf "#-- generate_ext_function_arg failed\n"
 	----------------------------------------------------
@@ -2294,7 +2301,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	c_add_variables(cfn1,[tdecl]) => cfn2 &
 		
 	Util.string_delimit_list(vars1,", ") => args_str &
-	Util.string_append_list([tvar," = ",fn_name,"(", args_str,");"])
+	Util.string_append_list([tvar," = _",fn_name,"(", args_str,");"])
 	  => stmt &
 
 	c_add_statements(cfn2,[stmt]) => cfn &
@@ -2312,7 +2319,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	c_add_variables(cfn1,[tdecl]) => cfn2 &
 		
 	Util.string_delimit_list(vars1,", ") => args_str &
-	Util.string_append_list([tvar," = ",fn_name,"(", args_str,");"]) => stmt &
+	Util.string_append_list([tvar," = _",fn_name,"(", args_str,");"]) => stmt &
 
 	c_add_statements(cfn2,[stmt]) => cfn
 	-------------------------
@@ -3405,9 +3412,9 @@ end
  ** and writing result to file.
  **)
 
-relation generate_read_call_write : (string,
+relation generate_read_call_write : (string, (* external function name *)
 				     DAE.Element list,
-				     string,
+				     string, (* return type *)
 				     DAE.Element list)
 	=> CFunction =
 
@@ -3445,18 +3452,69 @@ relation generate_read_call_write : (string,
 
 end
 
+(** relation: generate_external_wrapper_call
+ **
+ ** This relation generates the wrapper function for external functions
+ ** when used in e.g. simulation code.
+ **)
+
+ relation generate_external_wrapper_call:(string, (* function name *)
+					  DAE.Element list, (* output variables *)
+					  string, (* return type *)
+					  DAE.Element list, (* input variables*)
+					  DAE.ExternalDecl, (* external declaration*)
+					  DAE.Element list, (* bidirectional vars *)
+					  Types.Type) (* function type *)
+	  => CFunction =
+  rule	let tnr = 1 &
+	 Util.list_map(args,generate_function_arg) => arg_strs &
+
+	c_make_function(retstr,fnname,[],
+			arg_strs) => cfn1 &
+	 Util.string_append_list([retstr," out;"]) => out_decl &
+
+	 c_add_variables(cfn1, [out_decl]) => cfn1' &
+	 generate_var_decls(invars,is_rcw_input,tnr) 
+	  => (cfn31,tnr_invars1) &
+	 generate_var_inits(invars,is_rcw_input,tnr_invars1,"") 
+	  => (cfn32,tnr_invars) &
+	generate_var_decls(bivars,is_rcw_bidir,tnr_invars) 
+	  => (cfn33, tnr_bivars1) &
+	generate_var_inits(bivars,is_rcw_bidir,tnr_bivars1,"") 
+	  => (cfn34, tnr_bivars) &
+	
+	c_merge_fns([cfn1',cfn31, cfn32, cfn33, cfn34]) => cfn3 &
+
+	list_append (invars, outvars) => vars' &
+	list_append (vars', bivars) => vars &
+
+	generate_ext_call (vars, extdecl, tnr_bivars) => (extcall, tnr_extcall) &
+
+	c_merge_fns([cfn1',extcall]) => cfn' &
+
+	c_add_cleanups(cfn', ["return out;"]) => cfn
+	------------------------------------------------------
+	generate_external_wrapper_call(fnname,outvars,retstr,invars,
+				       extdecl as DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang),bivars,(Types.T_FUNCTION(args,restype),_)) => cfn
+
+  rule	Print.print_buf "#-- generate_external_wrapper_call failed\n"
+	----------------------------------------------------------------
+	generate_external_wrapper_call (_,_,_,_,_,_,_) => fail
+
+end
+
 (** relation: generate_read_call_write_external
  **
  ** Generates code for reading input parameters from file, executing function
  ** and writing result to file fo external functions.
  **)
 
-relation generate_read_call_write_external : (string,
-				     DAE.Element list,
-				     string,
-				     DAE.Element list,
-				     DAE.ExternalDecl,
-				     DAE.Element list)
+relation generate_read_call_write_external : (string, (* function name *)
+				     DAE.Element list, (* output variables *)
+				     string, (* return type *)
+				     DAE.Element list, (* input variables*)
+				     DAE.ExternalDecl, (* external declaration*)
+				     DAE.Element list) (* bidirectional vars *)
 	=> CFunction =
 
 

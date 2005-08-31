@@ -468,7 +468,7 @@ relation optimize_dae: (SCode.Program, DAE.DAElist, DAE.DAElist, Absyn.Path) => 
 	& DAELow.transpose_matrix(m) => mT 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
-	& DAELow.matching_algorithm(dlow,m,mT,DAELow.INDEX_REDUCTION) 
+	& DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
 	  => (v1,v2,dlow',m,mT) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
 	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 

@@ -473,10 +473,8 @@ relation instantiate_class_implicit : (SCode.Program, SCode.Path)
 	inst_class_decls(env,cdecls,path)=> (env',_) &
 	Lookup.lookup_class(env',path,true) 
 	  => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
-	  print "found class to instantiate implicit\n" &
 	implicit_instantiation(env'',Types.NOMOD,Prefix.NOPRE,[],cdef,[],false)
 	  => (env,dae) 
-	  & print "instantiated class\n" 
 	--------------------------------------------
 	instantiate_class_implicit(cdecls as _::_, path as Absyn.QUALIFIED(name,_)) 
 	  => (DAE.DAE(dae),env)

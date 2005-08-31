@@ -2606,6 +2606,10 @@ relation get_named_function : (Absyn.Path, Element list) => Element list  =
 	-----------------------------------------	
 	get_named_function (path, (el as FUNCTION(elpath, _, _))::rest) => [el]
 
+  rule	ModUtil.path_equal (path, elpath) => true
+	-----------------------------------------	
+	get_named_function (path, (el as EXTFUNCTION(elpath, _, _,_))::rest) => [el]
+
   rule	get_named_function (path, rest) => res
 	-----------------------------------------	
 	get_named_function (path, el::rest) => res

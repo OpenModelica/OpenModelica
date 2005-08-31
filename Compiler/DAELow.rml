@@ -262,7 +262,16 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 				     * means that a nonlinear system of equations needs to be
 				     * solved *)
 
-datatype IndexReduction = INDEX_REDUCTION | NO_INDEX_REDUCTION
+datatype IndexReduction = INDEX_REDUCTION (* Use index reduction during matching*)
+			| NO_INDEX_REDUCTION (* do not use index reduction during matching *)
+
+datatype EquationConstraints = ALLOW_UNDERCONSTRAINED  (* for e.g. initial eqns.
+						      where not all variables 
+						      have a solution *)
+			    |  EXACT		      (*exact as many equations
+						       as variables *)
+
+type MatchingOptions = (IndexReduction*EquationConstraints)
 
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
@@ -284,7 +293,7 @@ datatype IndexReduction = INDEX_REDUCTION | NO_INDEX_REDUCTION
 
   relation dump_matching: (int vector) => () 
 	  
-  relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,IndexReduction) 
+  relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,MatchingOptions) 
 	  => (int vector,(* var solved in eqn*) 
 	      int vector, (* eqn solves var *) 
 	      DAELow,
@@ -3345,15 +3354,19 @@ end
  ** assignments is returned as a vector of variable indices, as well as its
  ** inverse, i.e. which equation a variable is solved in as a vector of 
  ** equation indices.
+ ** MatchingOptions contain options given to the algorithm.
+ **   - if index reduction should be used or not.
+ **   - if the equation system is allowed to be under constrained or not 
+ **     which is used when generating code for initial equations.
  **)
 		 
 relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
-			      IndexReduction) 
+			      MatchingOptions) 
 	  => (int vector(* vector of equation indices*) , 
 	      int vector (* vector of variable indices*),
 	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
 
-  rule	check_matching(dae) &  	
+  rule	check_matching(dae,match_opts) &  	
 	array_length(m) => nvars &
 	array_length(mt) => neqns &
 	int_gt(nvars,0) => true &
@@ -3361,13 +3374,13 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 	int_add(nvars,nvars) => memsize &
 	assignments_create(nvars,memsize,0) => assign1 &
 	assignments_create(nvars,memsize,0) => assign2 &
-	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2,indx_red) 
+	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2,match_opts) 
 	  => (ass1, ass2,dae,m,mt) &
 
 	assignments_vector(ass1) => vec1 &
 	assignments_vector(ass2) => vec2 
 	--------------------------
-	matching_algorithm(dae,m,mt,indx_red) => (vec1,vec2,dae,m,mt)
+	matching_algorithm(dae,m,mt,match_opts) => (vec1,vec2,dae,m,mt)
 	
   rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
 	list_vector([]) => v1 & 
@@ -3383,13 +3396,16 @@ end
  ** Checks that the matching is correct, i.e. that the number of variables
  ** is the same as the number of equations. If not, the relation fails and
  ** prints an error message.
+ ** If matching options indicate that underconstrained systems are ok, no 
+ ** check is performed.
  **)
-relation check_matching : (DAELow) => () =
+relation check_matching : (DAELow,MatchingOptions) => () =
+  axiom	check_matching(_,(_,ALLOW_UNDERCONSTRAINED)) => ()
 	
   rule	equation_size(eqns) => esize &
 	int_eq(esize,vars_size) => true 
 	------------------
-	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_)) 
+	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_),_) 
 	  => ()
 
   rule	equation_size(eqns) => esize &
@@ -3401,7 +3417,7 @@ relation check_matching : (DAELow) => () =
 	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
 	Print.print_error_buf " equations\n" 
  	------------------
-	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_)) 
+	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_),_) 
 	  => fail
 
   rule	equation_size(eqns) => esize &
@@ -3413,11 +3429,11 @@ relation check_matching : (DAELow) => () =
 	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
 	Print.print_error_buf " equations\n" 
 	------------------
-	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_)) => fail
+	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_),_) => fail
 
   rule	Debug.fprint("failtrace", "-check_matching failed\n")
 	--------------------
-	check_matching(_) => fail
+	check_matching(_,_) => fail
 end
 
 (** relation: assignments_vector
@@ -3542,7 +3558,7 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 			       ,int (* current var*)
 			       ,Assignments(*assignments, array of eqn indices*) 
 			       ,Assignments,(*assignments, array of var indices*)
-			       IndexReduction) (* index reduction or not*)
+			       MatchingOptions) (* options for matching alg.*)
 	  =>  (Assignments, (* assignments, array of equation indices*) 
 	       Assignments, (* assignments, list of variable indices *)
 	       DAELow,
@@ -3559,10 +3575,10 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
   rule	int_add(i,1) => i' &
 	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
 	path_found(m,mt,i,ass1,ass2) => (ass1',ass2') & 
-	matching_algorithm2(dae,m,mt,nv,nf,i',ass1',ass2',index_red) 
+	matching_algorithm2(dae,m,mt,nv,nf,i',ass1',ass2',match_opts) 
 	  => (ass1'',ass2'',dae,m,mt)
 	----------------------------------------------------------------
-	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,index_red) 
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,match_opts) 
 	  => (ass1'',ass2'',dae,m,mt) 
 
   rule	(* path_found failed, Try index reduction using dummy derivatives.
@@ -3594,10 +3610,11 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	int_sub(nv',nv) => nvd &
 	assignments_expand(ass1,nvd) => ass1' &
 	assignments_expand(ass2,nvd) => ass2' &
-	matching_algorithm2(dae,m,mt,nv',nf',i,ass1',ass2',INDEX_REDUCTION)
+	matching_algorithm2(dae,m,mt,nv',nf',i,ass1',ass2',
+			    (INDEX_REDUCTION,eq_cons))
 	  => (ass1'',ass2'',dae,m,mt)
 	------------------------
-	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,INDEX_REDUCTION) 
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION,eq_cons)) 
 	  => (ass1'',ass2'',dae,m,mt)
 
   rule	(* When index reduction also fails, the model is structurally 
